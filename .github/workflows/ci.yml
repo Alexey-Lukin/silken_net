@@ -626,7 +626,16 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        # Мажор ТУТ мусить дорівнювати продовому (`terraform/database.tf`
+        # POSTGRES_17) — інакше CI судить код на СТАРІШОМУ движку, ніж той, що
+        # виконає його в проді. Доти було 16 при 17 у dev і в проді, і єдиним
+        # наслідком, який хтось помічав, був ручний крок «зняти pg17-only
+        # `SET transaction_timeout` із дампу» — тобто симптом, а не причина.
+        # Виміряно контейнерами 2026-08-21 [OPS.27]: pg17 вантажить дамп у тому
+        # вигляді, як його віддає pg17 (EXIT=0), pg16 на ньому падає
+        # (`unrecognized configuration parameter`), pg17 вантажить і поточний
+        # стрипнутий дамп. Паритет із продом стереже `structure_sql_pg_portability_spec`.
+        image: postgis/postgis:17-3.4
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -708,7 +717,16 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:16-3.4
+        # Мажор ТУТ мусить дорівнювати продовому (`terraform/database.tf`
+        # POSTGRES_17) — інакше CI судить код на СТАРІШОМУ движку, ніж той, що
+        # виконає його в проді. Доти було 16 при 17 у dev і в проді, і єдиним
+        # наслідком, який хтось помічав, був ручний крок «зняти pg17-only
+        # `SET transaction_timeout` із дампу» — тобто симптом, а не причина.
+        # Виміряно контейнерами 2026-08-21 [OPS.27]: pg17 вантажить дамп у тому
+        # вигляді, як його віддає pg17 (EXIT=0), pg16 на ньому падає
+        # (`unrecognized configuration parameter`), pg17 вантажить і поточний
+        # стрипнутий дамп. Паритет із продом стереже `structure_sql_pg_portability_spec`.
+        image: postgis/postgis:17-3.4
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

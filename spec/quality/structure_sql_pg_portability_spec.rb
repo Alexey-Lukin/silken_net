@@ -1,64 +1,110 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "rails_helper"
+require "spec_helper"
+require_relative "../support/repo_root"
 
-# 🔴 `db/structure.sql` не сміє нести pg17-only GUC `transaction_timeout`.
+# 🔴 Мажор Postgres у CI мусить дорівнювати продовому — а GUC у `db/structure.sql`
+# судиться ПРОТИ цього мажора, не проти зашитого числа.
 #
-# Механізм. Дамп робиться pg17-им `pg_dump` (партиції вимагають свіжого), а
-# Postgres у CI — нижчої мажорної версії. `SET transaction_timeout = 0;` у
-# ТАКОМУ сервері невідомий, тож `db:structure:load` падає на першому ж рядку
-# файлу — тобто не на тій міграції, яку людина щойно писала, а на схемі цілком.
-# Рядок треба зрізати ПЕРЕД комітом; це вже ловилось одного разу вручну
-# (CHANGELOG: «drop PG17-only `SET transaction_timeout = 0;`»).
+# Механізм, і чому гейт саме такий. Дамп знімається `pg_dump`-ом тієї ж мажорної
+# версії, що dev-сервер; кожен новий мажор додає у шапку свої `SET`-и, і сервер
+# СТАРІШОГО мажора падає на першому ж рядку — тобто не на міграції, яку людина
+# щойно писала, а на схемі цілком.
 #
-# 🔒 Чому спека, а не покладатись на CI. CI цей клас таки ловить — але аж на
-# кроці завантаження схеми, повідомленням про синтаксис, і вже після push'у.
-# Тут він червоніє в тому ж `bin/rspec`, що й так біжить перед комітом, і
-# називає причину словами. Правило доти жило ЛИШЕ прозою (`CLAUDE.md §2`,
-# `.cursorrules`) — тобто трималось памʼяттю того, хто робить дамп.
+# 🔴 **Доти цей гейт забороняв `transaction_timeout` БЕЗУМОВНО — і це було
+# лікуванням симптому.** Причина була не в дампі: dev і прод стояли на pg17
+# (`terraform/database.tf` → `POSTGRES_17`), а CI — на pg16, тобто CI СУДИВ КОД
+# НА СТАРІШОМУ ДВИГУНІ, ніж той, що виконає його в проді. Ручний крок «зрізати
+# рядок перед комітом» був єдиним наслідком, який хтось помічав, і він
+# приховував ширшу розбіжність. Виміряно контейнерами 2026-08-21 [OPS.27]:
+# pg17 вантажить дамп у тому вигляді, як його віддає pg17 (EXIT=0) · pg16 на
+# ньому падає (`unrecognized configuration parameter "transaction_timeout"`) ·
+# pg17 вантажить і поточний стрипнутий дамп. Тож CI піднято до 17, а гейт
+# перецілено з ОДНОГО забороненого слова на ПАРИТЕТ версій.
 #
-# 🔒 Чесна стеля, названа, а не обійдена: гейт пінує ОДИН відомий GUC, а не
-# «будь-що, чого не знає стара мажорна версія». Allowlist усіх легальних `SET`
-# гнив би тихо (кожен новий легальний GUC = червоне на здоровому дампі), а
-# множину «pg18-only» сьогодні ніхто не знає. Тож коли впаде наступний такий
-# рядок, лік — додати його сюди поіменно, а не узагальнювати цей гейт.
+# 🔒 Стелі, названі чесно:
+#   · Прод-мажор читається з `terraform/database.tf` — це НАША декларація, не
+#     жива Cloud SQL API. Гейт доводить згоду двох наших домів, ніколи не
+#     істинність жодного з них (§Guard-craft #67); якщо інстанс у хмарі
+#     оновлять поза terraform, обидва файли лишаться згодні й обидва хибні.
+#   · `VERSION_GATED_GUC` — реєстр ПОІМЕННО, а не «будь-що, чого не знає старий
+#     мажор»: множину «pg18-only» сьогодні ніхто не знає, а allowlist усіх
+#     легальних `SET` гнив би тихо. Наступний такий рядок додається сюди з
+#     номером мажора, у якому він зʼявився.
+#   · Гейт не бачить випадку «дамп знято КЛІЄНТОМ, новішим за CI і за прод
+#     одночасно» — там обидва наші доми згодні, а файл усе одно нестерпний.
+#     Проти цього працює не гейт, а те, що dev-сервер і прод тримають один мажор.
 module StructureSqlPortability
-  PATH = Rails.root.join("db/structure.sql")
+  ROOT = REPO_ROOT
+  STRUCTURE = ROOT.join("db/structure.sql")
+  CI_WORKFLOW = ROOT.join(".github/workflows/ci.yml")
+  TERRAFORM_DB = ROOT.join("terraform/database.tf")
 
-  # pg17-only GUC-и, що ламають завантаження на нижчій мажорній версії.
-  # Поіменно — див. стелю в шапці.
-  FORBIDDEN = [ "transaction_timeout" ].freeze
-end
+  # GUC → мажор, починаючи з якого сервер його розуміє.
+  VERSION_GATED_GUC = { "transaction_timeout" => 17 }.freeze
 
-RSpec.describe "db/structure.sql portability to the CI Postgres major" do # rubocop:disable RSpec/DescribeClass
-  let(:sql) { File.read(StructureSqlPortability::PATH) }
-
-  # Ліхтар на власний вимір: без цього «нуль порушень» означало б і «нуль
-  # перевірок» — файл перейменували чи обрізали, а гейт звітує зелене над
-  # порожнім рядком.
-  it "reads a non-trivial dump that actually carries a GUC header" do
-    expect(StructureSqlPortability::PATH).to exist
-    expect(sql.lines.size).to be > 1_000
-    expect(sql).to include("SET statement_timeout = 0;")
+  def self.ci_majors
+    CI_WORKFLOW.read.scan(%r{image:\s*postgis/postgis:(\d+)-}).flatten.map(&:to_i)
   end
 
-  it "carries no pg17-only GUC the CI Postgres cannot parse" do
-    offenders = StructureSqlPortability::FORBIDDEN.flat_map do |guc|
+  def self.prod_majors
+    TERRAFORM_DB.read.scan(/database_version\s*=\s*"POSTGRES_(\d+)"/).flatten.map(&:to_i)
+  end
+end
+
+RSpec.describe "Postgres major: CI ⟷ prod parity, and structure.sql against it [OPS.27]" do # rubocop:disable RSpec/DescribeClass
+  let(:ci) { StructureSqlPortability.ci_majors }
+  let(:prod) { StructureSqlPortability.prod_majors }
+
+  # Ліхтар на власний вимір: обидва regex мусять щось знайти, інакше «паритет»
+  # доводиться порівнянням двох порожніх множин — зелено й порожньо.
+  it "actually extracts a major from BOTH sides" do
+    expect(ci).not_to be_empty, "не знайдено `image: postgis/postgis:NN-` у ci.yml — regex осліп"
+    expect(prod).not_to be_empty, "не знайдено `database_version = \"POSTGRES_NN\"` у terraform/database.tf"
+    expect(StructureSqlPortability::STRUCTURE.read.lines.size).to be > 1_000
+  end
+
+  it "runs every CI service on the SAME major as production" do
+    expect(ci.uniq).to eq(prod.uniq), <<~MSG
+      Мажор Postgres у CI розійшовся з продовим.
+
+        CI   (.github/workflows/ci.yml)  → #{ci.uniq.inspect}
+        prod (terraform/database.tf)     → #{prod.uniq.inspect}
+
+      ЧОМУ це не косметика: CI судить код на іншому движку, ніж той, що виконає
+      його в проді. Розходження бачать не як «версії різні», а як випадковий
+      симптом — саме так pg16-у CI при pg17-му проді роками виглядав як ручний
+      крок «зрізати `SET transaction_timeout` із дампу».
+
+      ЛІК — вирівняти образ у ci.yml по продовому мажору (обидві джоби), а не
+      підганяти дамп під старіший движок.
+    MSG
+  end
+
+  it "carries no GUC newer than the major CI actually runs" do
+    major = ci.min or raise "немає CI-мажора"
+    sql = StructureSqlPortability::STRUCTURE.read
+
+    offenders = StructureSqlPortability::VERSION_GATED_GUC.flat_map do |guc, since|
+      next [] if major >= since
+
       sql.lines.each_with_index.filter_map do |line, idx|
-        "db/structure.sql:#{idx + 1}: #{line.strip}" if line.include?(guc)
+        "db/structure.sql:#{idx + 1}: #{line.strip}  (потребує pg#{since}, CI має pg#{major})" if line.include?(guc)
       end
     end
 
     expect(offenders).to be_empty, <<~MSG
-      `db/structure.sql` carries a pg17-only GUC. The CI Postgres is an older
-      major and does not know it, so `db:structure:load` dies on the schema
-      header — the failure points at the whole schema, never at your migration.
-
-      Fix: strip the offending line from the dump (do NOT hand-edit the rest of
-      structure.sql — regenerate, then remove just this line), then re-run.
+      `db/structure.sql` несе GUC, новіший за мажор, який реально біжить у CI —
+      `db:structure:load` помре на шапці схеми, і помилка вкаже на всю схему,
+      а не на твою міграцію.
 
       #{offenders.join("\n")}
+
+      Два ліки, і перший майже завжди правильний:
+        1. ПІДНЯТИ CI до мажора прода (корінь — див. приклад паритету вище);
+        2. лише якщо (1) неможливе — зрізати саме цей рядок із дампу
+           (не редагувати решту structure.sql руками: перегенеруй і зніми рядок).
     MSG
   end
 end

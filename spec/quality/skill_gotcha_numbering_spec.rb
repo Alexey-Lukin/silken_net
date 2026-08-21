@@ -118,7 +118,7 @@ module SkillGotchaNumbering
   end
 end
 
-RSpec.describe "нумерований ряд гоч живе у своїй секції [DOC-T.80]" do
+RSpec.describe "нумерований ряд гоч живе у своїй секції [DOC-T.80]" do # rubocop:disable RSpec/DescribeClass
   # Без цього прикладу «нуль порушень» не відрізнити від «нуль перевірок»:
   # порожня множина тут МЕТА, тож живість доводиться популяцією окремо
   # (`ssot-maintenance` §Guard-craft #61).

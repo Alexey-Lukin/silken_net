@@ -25,7 +25,7 @@
 - **LoRa-крипто = AES-`128`-ECB** (НЕ 256 — поширене стале припущення), CoAP = AES-256-CBC → `§5`. Після CBC-flush ОБОВ'ЯЗКОВО відновити ECB+128 (Queen) → `§6`.
 - **Backend Lorenz = Float (IEEE 754 double)**, НЕ BigDecimal (після FW.7, бітово ≡ firmware mruby) → `§6`.
 - **StatusByte post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (НЕ припускай 6-bit GP) → `§5`. Wire unpack: `"N n c C n C C a4"`.
-- **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції; dump = pg17 + strip `transaction_timeout`).
+- **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції; dump = pg17 `pg_dump`, стрипати нічого не треба — CI на pg17, OPS.27).
 - **Thin controllers** — логіка лише в `app/services/` / `app/workers/`.
 - **Sidekiq `:strict: true`** — порядок черг незмінний (`§5`); не міняти чергу воркера без обґрунтування.
 - **Партиції — моделей ЧОТИРИ, і One-Home у них РІЗНИЙ** (двоє хелпера не мають узагалі): завжди передавай `created_at_iso`, але метод не вгадуй — бери в `§6`.
