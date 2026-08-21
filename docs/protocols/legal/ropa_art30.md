@@ -162,9 +162,9 @@
 | §2.3 Моніторинг лісу — anchor-geo DPIA | `SEC.18` (чекбокс, EDPB WP248 3/9) → [`b2b_readiness §2.2`](../business/b2b_readiness.md) |
 | §2.4 Maintenance-фото — незнищенність | `SEC.28` (закрито 2026-08-19) |
 | §2.4 Maintenance-фото — EXIF (🔴 знахідка) | без ID — не канонізовано жодним прочитаним пунктом |
-| §2.5 Аудит-слід — append-only ↔ erasure | `ARCH.57`(4), над яким `SEC.18` |
+| §2.5 Аудит-слід — append-only ↔ erasure | `SEC.18` (`ARCH.57` вичерпано й заархівовано 08-21) |
 | §2.5 Аудит-слід — Pinata поза реєстром (🔴 знахідка) | без ID — див. §6 нижче |
-| §2.6 Сповіщення — email/SMS/push мертві канали | `ARCH.60`, `ARCH.78` |
+| §2.6 Сповіщення — стан каналів (email ✅ · Telegram ✅ · push ⚖️ · SMS відкинуто) | `ARCH.60` (поглинув `ARCH.78` 08-21) |
 | §2.7 Web3/KYC — Alchemy IP+wallet | `SEC.23` |
 | Усі §2.x — retention-строки | `SEC.18` (а) |
 | Усі §2.x — DSAR self-serve tooling | `SEC.18` (над `ARCH.57`) |
