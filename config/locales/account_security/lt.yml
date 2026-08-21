@@ -38,6 +38,10 @@ lt:
       subtitle: Jūsų vienkartiniai prisijungimo kodai, jei autentifikatorius nepasiekiamas.
       title: Atkūrimo kodai
     show:
+      data_export:
+        button: Eksportuoti mano duomenis
+        heading: Jūsų duomenys
+        hint: Atsisiųskite visus jūsų asmens duomenų įrašus, kuriuos saugome, mašininiu būdu nuskaitomu JSON formatu (BDAR 15 ir 20 str.).
       heading: "🔐 Paskyros saugumas"
       identities:
         available_heading: Galimi tiekėjai

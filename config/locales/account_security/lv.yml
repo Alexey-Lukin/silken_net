@@ -38,6 +38,10 @@ lv:
       subtitle: Jūsu vienreizējie pieteikšanās kodi gadījumam, ja autentifikators nav pieejams.
       title: Atjaunošanas kodi
     show:
+      data_export:
+        button: Eksportēt manus datus
+        heading: Jūsu dati
+        hint: Lejupielādējiet visus personas datu ierakstus, ko par jums glabājam, mašīnlasāmā JSON formātā (VDAR 15. un 20. pants).
       heading: "🔐 Konta drošība"
       identities:
         available_heading: Pieejamie pakalpojumu sniedzēji

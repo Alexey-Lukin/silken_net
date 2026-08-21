@@ -238,4 +238,43 @@ RSpec.describe AccountSecurity::Show do
       expect(html).to include("🔗")
     end
   end
+
+  # [SEC.18] Двері до DSAR-експорту. Механізм жив із 2026-08-20, а посилань на
+  # нього в дереві було НУЛЬ — «сервіс відвантажено» ⊥ «субʼєкт може ним
+  # скористатись», і на комплаєнс-поверхні це різні твердження.
+  describe "DSAR data-export door" do
+    # 🔴 Пін цілить в АРГУМЕНТ (href), а не в наявність будь-якого посилання:
+    # інакше приклад був би зелений і на кнопці, що веде куди завгодно —
+    # рівно той клас, що вже коштував на UI.7 («кнопка є, веде не туди»).
+    it "links to the real export route" do
+      expect(html).to include(%(href="#{Rails.application.routes.url_helpers.account_security_data_export_path}"))
+    end
+
+    # 🔴 Свідок ЛОКАЛІЗАЦІЇ мусить жити в НЕ-базовій локалі: в `en` мітка і
+    # її англійське джерело збіглися б, тож приклад був би зелений і з
+    # зашитим рядком, тобто про механізм не доводив би нічого.
+    it "renders the localized label outside the base locale" do
+      localized = I18n.with_locale(:uk) { render_component(user: user, identities: []) }
+
+      expect(localized).to include("Експортувати мої дані")
+      expect(localized).not_to include("Export my data")
+    end
+
+    # 🔴 Пін на ФОРМУ керування, і він не косметичний: правило UI.7 («дію рендери
+    # через `button_to`/`form_with`») читається як універсальне, тож наступний
+    # прохід має природний мотив «полагодити» це посилання у форму — а екшен GET,
+    # і POST на нього дав би routing-помилку. Anchor тут ПРАВИЛЬНИЙ, бо нічого
+    # не мутує; форма оголосила б мутацію, якої немає.
+    # ⚠️ Перша редакція цього прикладу пінила відсутність кнопки СТИРАННЯ через
+    # `method="delete"` — рядка, якого Rails не друкує ніколи (`button_to` кладе
+    # прихований `_method`), тож приклад був ВАКУУМНИЙ і пережив би появу такої
+    # кнопки. Спіймала пакетна мутація, не сюїта: питай не «чи червоніє мій пін»,
+    # а «які з N пінів НЕ почервоніли».
+    it "offers the export as a GET link, never a mutating form" do
+      path = Rails.application.routes.url_helpers.account_security_data_export_path
+
+      expect(html).to include(%(<a href="#{path}"))
+      expect(html).not_to include(%(action="#{path}"))
+    end
+  end
 end

@@ -38,6 +38,10 @@ en:
       subtitle: Your one-time sign-in codes for when the authenticator is unavailable.
       title: Recovery Codes
     show:
+      data_export:
+        button: Export my data
+        heading: Your data
+        hint: Download every personal record we hold about you as machine-readable JSON (GDPR Art. 15 and 20).
       heading: "🔐 Account Security"
       identities:
         available_heading: Available Providers

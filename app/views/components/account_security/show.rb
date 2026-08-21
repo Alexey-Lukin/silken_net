@@ -20,6 +20,7 @@ module AccountSecurity
         render_mfa_section
         render_password_section
         render_identities_section
+        render_data_export_section
       end
     end
 
@@ -143,6 +144,32 @@ module AccountSecurity
         "text-tiny uppercase tracking-widest text-center"
       ), role: "alert") do
         @password_error
+      end
+    end
+
+    # --- ЕКСПОРТ ДАНИХ (GDPR Art.15 доступ / Art.20 портованість) ---
+    # 🔴 [SEC.18] Це ДВЕРІ до вже відвантаженого механізму, не новий механізм.
+    # Маршрут `account_security_data_export` живе з 2026-08-20, а посилань на
+    # нього в `app/views/` було НУЛЬ — тобто субʼєкт даних міг дістатись лише
+    # прямим URL. На комплаєнс-поверхні «сервіс відвантажено» і «людина може
+    # ним скористатись» — різні твердження, і зливати їх найдорожче саме тут:
+    # Art.12 self-service не вимагає, але від його наявності залежить, скільки
+    # місячного строку відповіді зʼїдає ручна робота оператора.
+    #
+    # ⚠️ Звичайний `a`, а НЕ `button_to`: екшен — GET, ідемпотентний, нічого не
+    # мутує (`send_data` зі зліпка). Правило UI.7 вимагає форму для ДІЙ, а не
+    # для завантаження; загортати це у форму означало б оголосити мутацію, якої
+    # немає. Дзеркально: кнопки СТИРАННЯ тут свідомо немає — той акт незворотний
+    # і живе за консоллю (`Gdpr::AnonymizeUserService`, `04_02 §5`).
+    def render_data_export_section
+      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".data_export.heading") }
+        p(class: "text-tiny text-gaia-text-muted mb-4") { t(".data_export.hint") }
+
+        a(href: account_security_data_export_path,
+          class: "inline-block text-mini text-gaia-primary-strong uppercase tracking-widest hover:text-gaia-text-strong transition-colors border border-gaia-border-strong px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
+          t(".data_export.button")
+        end
       end
     end
 
