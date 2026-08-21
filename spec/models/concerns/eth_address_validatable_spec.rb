@@ -87,7 +87,11 @@ RSpec.describe EthAddressValidatable do
       org.valid?
 
       uk = I18n.with_locale(:uk) { org.errors.generate_message(:crypto_public_address, :invalid_eip55_checksum) }
-      expect(uk).to eq("має невалідну EIP-55 контрольну суму (звір регістр літер)")
+      # [I18N.1] Форма «— <іменникова група>» узгоджена з generic-набором uk:
+      # повідомлення дописується до імені поля, тож не сміє нести ані роду, ані
+      # числа (`04_04 §12.8`). Пін лишається про ЛОКАЛІЗАЦІЮ — рядок нижче
+      # доводить, що uk ≠ базова, тобто текст резолвиться, а не зашитий.
+      expect(uk).to eq("— недійсна EIP-55 контрольна сума (звір регістр літер)")
       expect(uk).not_to eq(org.errors[:crypto_public_address].first)
     end
 
@@ -118,7 +122,7 @@ RSpec.describe EthAddressValidatable do
       org.valid?
 
       uk = I18n.with_locale(:uk) { org.errors.generate_message(:crypto_public_address, :invalid_eth_address) }
-      expect(uk).to eq("має бути валідною 0x адресою")
+      expect(uk).to eq("— недійсна 0x адреса")
       expect(uk).not_to eq(org.errors[:crypto_public_address].first)
     end
 
