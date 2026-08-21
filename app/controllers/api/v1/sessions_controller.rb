@@ -104,22 +104,50 @@ module Api
       def omniauth_create
         auth = request.env["omniauth.auth"]
 
-        # 1. Спершу знаходимо або створюємо користувача (Захист від RecordInvalid)
-        user = User.find_or_create_by!(email_address: auth.info.email) do |u|
+        # 🔴 [ARCH.69] Гард на порожній env — і він НЕ теоретичний саме через форму
+        # дротування: маршрут оголошується безумовно, а middleware стоїть за
+        # config-гейтом (немає ключів → немає провайдера). Тобто прод без секретів
+        # має цілком робочу адресу, на якій `auth.info` дав би `NoMethodError` →
+        # `rescue_from StandardError` → 500 на ПУБЛІЧНОМУ неавтентифікованому шляху.
+        # Тиха відмова тут чесніша за помилку сервера: провайдера не налаштовано.
+        if auth.blank?
+          redirect_to login_path, error: I18n.t("flash.sessions.blocked_provider")
+          return
+        end
+
+        # 1. Ідентичність шукаємо ПЕРШОЮ, і це не перестановка рядків, а вибір
+        # ДОКАЗУ. `uid` провайдера засвідчує володіння провайдерським акаунтом;
+        # `email` не засвідчує нічого — його провайдер лише ПОВІДОМЛЯЄ.
+        # 🔴 Доти резолв ішов від email, і це давало два незалежні наслідки, обидва
+        # мовчазні: (а) якщо той самий `uid` уже належав користувачу B, а email
+        # резолвився в A, токени оновлювались на identity B, а сесія відкривалась
+        # для A — `find_or_create_from_auth_hash` переприв'язки не робить
+        # (`identity.user = user if identity.new_record?`), а `uniqueness: {scope:
+        # :provider}` не порушено, тож не червоніло НІЩО; (б) той самий рядок
+        # заразом СТВОРЮВАВ порожній акаунт A, якого ніхто не просив — зміна пошти
+        # на боці Google (uid стабільний, email новий) відрізала б людину від
+        # власного акаунта й видала їй чистий.
+        identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
+
+        # 2. Заблокована ідентичність (Account Takeover Protection) — до будь-якого
+        # запису, бо заблокований провайдер не сміє навіть створювати користувача.
+        if identity&.locked?
+          redirect_to login_path, error: I18n.t("flash.sessions.blocked_provider")
+          return
+        end
+
+        # 3. Власник відомої ідентичності — це її `user`, ніколи не збіг за поштою.
+        # ⚠️ Гілка `find_or_create_by!` лишається тільки для НЕВІДОМОГО uid, і саме
+        # там живе відкрите питання прив'язки до наявного парольного акаунта
+        # (`00_07` ARCH.69: довіряти чи не довіряти чужому твердженню про пошту).
+        user = identity&.user || User.find_or_create_by!(email_address: auth.info.email) do |u|
           u.password = SecureRandom.hex(16) # Тимчасовий пароль для has_secure_password
           u.first_name = auth.info.first_name
           u.last_name = auth.info.last_name
           u.role = :investor # Ранг за замовчуванням
         end
 
-        # 2. Перевіряємо чи ідентичність заблокована (Account Takeover Protection)
-        existing_identity = Identity.find_by(provider: auth.provider, uid: auth.uid)
-        if existing_identity&.locked?
-          redirect_to login_path, error: I18n.t("flash.sessions.blocked_provider")
-          return
-        end
-
-        # 3. Прив'язуємо ідентичність через наш оновлений метод (v2.0)
+        # 4. Прив'язуємо ідентичність через наш оновлений метод (v2.0)
         Identity.find_or_create_from_auth_hash(auth, user: user)
 
         # 🔴 [ARCH.69] Salt-стемп для акаунта, що ПРИЙШОВ без пароля. `user.rb`
@@ -130,8 +158,14 @@ module Api
         # ВІДКИДАЄТЬСЯ наступним же запитом, тобто вхід дає нескінченний редирект
         # на `/login` без жодного повідомлення. Блок `find_or_create_by!` вище
         # ставить пароль лише при СТВОРЕННІ; сюди потрапляє акаунт, у якого
-        # digest зник пізніше — і такий шлях реальний: `Gdpr::AnonymizeUserService`
-        # занулює `password_digest`.
+        # digest зник пізніше.
+        # ⚠️ Підстава ПЕРЕМІРЯНА 2026-08-21 і виявилась слабшою, ніж тут стояло:
+        # доти рядок називав `Gdpr::AnonymizeUserService` живим шляхом, бо той
+        # занулює `password_digest`. Занулює — але ТИМ САМИМ `update_columns`
+        # переписує `email_address` на tombstone-адресу, тож резолв за поштою
+        # такого рядка більше не знаходить. Отже гард лишається (fail-closed
+        # коштує один предикат), але його пускач сьогодні НЕ виміряний — це
+        # форма, що чекає першого справді passwordless-входу, а не жива діра.
         user.update!(password: SecureRandom.hex(16)) if user.session_salt_stamp.blank?
 
         # 🔴 [ARCH.69] ДРУГИЙ ФАКТОР — той самий інваріант, що в `create` вище:

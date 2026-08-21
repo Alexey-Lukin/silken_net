@@ -416,9 +416,63 @@ RSpec.describe Api::V1::SessionsController, type: :request do
       expect(controller).to have_received(:establish_session)
     end
 
-    # 🔴 [ARCH.69] Salt-стемп: акаунт без `password_digest` (реальний шлях —
-    # `Gdpr::AnonymizeUserService`) діставав `session[:ps] = nil`, тобто сесію,
-    # яку наступний запит відкидає — вхід перетворювався на нескінченний редирект.
+    # 🔴 [ARCH.69] ВЛАСНИКА ВИРІШУЄ `uid`, НІКОЛИ ЗБІГ ЗА ПОШТОЮ. Провайдер
+    # засвідчує володіння СВОЇМ акаунтом; пошту він лише повідомляє. Доти резолв
+    # ішов від пошти, і при відомому `uid` з іншим email екшен відкривав сесію
+    # чужому користувачеві, оновлюючи токени на identity власника — а не червоніло
+    # НІЩО: `find_or_create_from_auth_hash` переприв'язки не робить
+    # (`identity.user = user if identity.new_record?`), і `uniqueness: {scope:
+    # :provider}` не порушено, бо рядок той самий.
+    # ⚠️ Найпростіший живий пускач — зміна пошти на боці провайдера: `uid` стабільний.
+    it "opens the session for the identity OWNER, not for an email match" do
+      owner     = create(:user, organization: organization, password: "password12345")
+      namesake  = create(:user, organization: organization, password: "password12345")
+      uid       = "owned_uid_#{SecureRandom.hex(4)}"
+      Identity.create!(provider: "google_oauth2", uid: uid, user: owner)
+
+      # Провайдер повідомляє пошту ІНШОГО акаунта при тому самому uid.
+      auth_hash = build_auth_hash(email: namesake.email_address, uid: uid)
+
+      controller = build_controller_with_auth(auth_hash)
+      allow(controller).to receive(:establish_session)
+      controller.send(:omniauth_create)
+
+      expect(controller).to have_received(:establish_session).with(owner)
+    end
+
+    # Дзеркало: невідомий `uid` мусить і далі резолвити за поштою — інакше пін вище
+    # був би задоволений будь-яким звуженням, включно з «ніколи нікого не пускати».
+    it "still resolves by email when the uid is unknown" do
+      newcomer  = create(:user, organization: organization, password: "password12345")
+      auth_hash = build_auth_hash(email: newcomer.email_address, uid: "unknown_uid_#{SecureRandom.hex(4)}")
+
+      controller = build_controller_with_auth(auth_hash)
+      allow(controller).to receive(:establish_session)
+      controller.send(:omniauth_create)
+
+      expect(controller).to have_received(:establish_session).with(newcomer)
+    end
+
+    # 🔴 [ARCH.69] Порожній `omniauth.auth` — не гіпотеза, а прямий наслідок форми
+    # дротування: маршрут оголошується безумовно, middleware стоїть за config-гейтом.
+    # Без гарда прод без ключів віддавав би 500 на публічному шляху.
+    it "refuses politely when the provider middleware did not populate the env" do
+      controller = build_controller_with_auth(nil)
+      allow(controller).to receive(:establish_session)
+      controller.send(:omniauth_create)
+
+      expect(controller).not_to have_received(:establish_session)
+      expect(controller).to have_received(:redirect_to)
+    end
+
+    # 🔴 [ARCH.69] Salt-стемп: акаунт без `password_digest` діставав
+    # `session[:ps] = nil`, тобто сесію, яку наступний запит відкидає — вхід
+    # перетворювався на нескінченний редирект.
+    # ⚠️ Підстава ПЕРЕМІРЯНА 2026-08-21: доти тут стояло «реальний шлях —
+    # `Gdpr::AnonymizeUserService`», але той тим самим `update_columns` переписує
+    # й `email_address` на tombstone-адресу, тож резолв такого рядка не знаходить.
+    # Пін лишається (форма fail-closed коштує один предикат), але його пускач —
+    # ще не виміряний, і фікстура нижче конструює стан РУКАМИ саме тому.
     it "restores a session salt for an account that arrived without a password" do
       passwordless = create(:user, organization: organization, password: "password12345")
       # `password_salt` — не колонка, а дериват `password_digest`
