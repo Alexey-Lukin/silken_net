@@ -289,7 +289,7 @@
 | **Файл** | `app/services/gdpr/data_export_service.rb` |
 | **Вхід** | `user` (User AR instance — субʼєкт запиту) |
 | **Що робить** | Збирає структурований машиночитний зліпок User-owned персональних даних за PII-реєстром ([`04_01 §11`](04_01_Data_Models_and_Entities)): рядок users · sessions (слід входу) · identities (OAuth-профіль `auth_data` БЕЗ токенів) · audit_logs де субʼєкт є актором · maintenance_records авторства з МЕТАДАНИМИ фото (байти блобів не вбудовуються — оригінали доступні штатним авторизованим шляхом). Креденшели (password_digest · otp_secret · recovery_codes · access/refresh_token) свідомо поза віддачею — DSAR віддає дані ПРО особу, не секрети автентифікації. Schema-parity приклад у власній спеці червонить нову PII-колонку users, доки вона не дістане рішення про експорт |
-| **Виклик** | `GET /account_security/data_export` (self-service, JSON-attachment) |
+| **Виклик** | `GET /account_security/data_export` (JSON-attachment). ⚠️ **НЕ «self-service» у сенсі, доступному субʼєкту:** маршрут живий, але посилань на нього в `app/views/` нуль (виміряно 2026-08-21) — людина потрапить лише за прямим URL, тож сьогодні це шлях ОПЕРАТОРА. Різниця несуча саме на комплаєнс-поверхні: «сервіс відвантажено» ⊥ «субʼєкт може цим скористатись», і другого Art.12 не вимагає, але від нього залежить, скільки місячного строку зʼїдає ручна робота. Процедура й годинник → [`gdpr_runbook.md`](protocols/legal/gdpr_runbook.md); двері → [`00_07`](00_07_Action_Plan_Tracker) SEC.18 |
 | **Вихід** | `Hash` (format_version + секції); контролер віддає `send_data` файлом |
 
 ### `Gdpr::AnonymizeUserService` [SEC.18 — erasure Art.17, безсуперечна половина]
@@ -299,7 +299,7 @@
 | **Файл** | `app/services/gdpr/anonymize_user_service.rb` |
 | **Вхід** | `user` (субʼєкт) · `actor:` (ініціатор; дефолт — сам субʼєкт) |
 | **Що робить** | Атомарно: синхронний `AuditLog.create!` ПЕРЕД мутаціями (слід незворотного акту без жодного PII в metadata) → `sessions.destroy_all` → `identities.destroy_all` → tombstone users-рядка (email → `erased-{id}@anonymized.invalid`, решта PII → nil, digest/OTP зняті). Після цього вхід неможливий за побудовою — анонімізація Є ефективним offboarding-ом без окремого механізму деактивації. 🔒 Стелі оголошені в докблоці й у [`04_01 §11`](04_01_Data_Models_and_Entities): audit_logs (ip/user_agent у chain_payload — псевдонімізація вимагає ⚖️ про форму) і maintenance_records (Evidence Protocol) свідомо НЕ чіпаються; спека пінить, що ланцюг переживає анонімізацію цілим |
-| **Виклик** | оператор (консоль) або майбутній workflow — UI-кнопки свідомо немає |
+| **Виклик** | оператор (консоль) або майбутній workflow — UI-кнопки свідомо немає; викликачів у застосунку **нуль** (ані маршруту, ані контролера). Людська процедура навколо цього виклику — [`gdpr_runbook.md`](protocols/legal/gdpr_runbook.md) §2 (строк Art.12(3), ідентифікація, реєстр запитів) |
 | **Вихід** | `user` (анонімізований) |
 
 ### `Iotex::W3bstreamVerificationService`
