@@ -223,6 +223,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 78. A pin on a TRANSFORM is vacuous whenever the input you happened to choose makes the transform IDENTITY — and the pin still reads as a pin — **for any pin that asserts a lookup/override/normalisation beats a fallback, compute the FALLBACK for that exact input and check the two differ — if they agree, the example is testing nothing, however correct it looks**
 79. A mutation that reds MORE examples than you aimed at is not automatically over-broad — the extra one may be a SECOND WITNESS of your own axis, and the reflex reading («collision, narrow the mutation») destroys evidence — **when a mutation reds a neighbour, read what that neighbour ASSERTS before touching anything — if its claim is entailed by yours, you have double coverage, and the honest act is to write that down next to both**
 80. A gate can DOCUMENT the very event it exists to catch — thoroughly, in its own header — and never pin it; and the thoroughness is exactly what hides the hole — **when a gate's header explains a MECHANISM, ask which example goes red when that mechanism changes — an explanation of a mechanism and a pin on it live in the same file and read as one thing**
+81. An item that asks for a GATE is often describing a SYMPTOM — ask what happens if you remove the CAUSE instead, because a gate over a workaround CEMENTS the workaround
 
 <!-- /GUARD-CRAFT-INDEX -->
 
