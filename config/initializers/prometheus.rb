@@ -424,10 +424,11 @@ module SilkenNet
       labels: [ :firmware_version ]
     )
 
-    # [INF.26] «created», а НЕ «dispatched»: доставки не існує (ARCH.60/78), тож старий
-    # докстрінг обіцяв канал, якого немає. Дім інкременту — `EwsAlert.after_create_commit`,
-    # один на застосунок; доти сайт стояв у dClimate-воркері під `if result` і лічив
-    # одну підмножину з тринадцяти сайтів створення.
+    # [INF.26] «created», а НЕ «dispatched»: дім інкременту — `EwsAlert.after_create_commit`,
+    # тобто лічиться СТВОРЕННЯ, один сайт на застосунок; доти сайт стояв у dClimate-воркері
+    # під `if result` і лічив одну підмножину з тринадцяти сайтів створення.
+    # ⚠️ Доставка (ARCH.60 — пошта, Telegram) реальна й лічильника НЕ має, тож ім'я мусить
+    # називати рівно ту подію, яку воно рахує: сплутати їх тепер значить вигадати число.
     EWS_ALERTS_TOTAL = REGISTRY.counter(
       :silkennet_ews_alerts_total,
       docstring: "Total EWS alerts created (fire, drought, pest, storm)",
