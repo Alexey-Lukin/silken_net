@@ -43,8 +43,10 @@ class EcosystemHealingWorker
       # (присуд власника 2026-08-14): відкликання довіри Королеви без фізичного
       # re-provision є театром — вкрадений шлюз тримає у флеші CoAP-ключ,
       # QATT-seed і KEYB УСЬОГО кластера, а `rotate_gateway_random!` із
-      # Dual-Key Grace такого не гасить. Поле вирішує, як це має виглядати;
-      # доти чесніша гучна відмова, ніж тихий успіх → `00_07` ARCH.76.
+      # Dual-Key Grace такого не гасить. Поле вирішує, як це має виглядати —
+      # тим самим заходом, що й порядок паління option bytes (`00_07` 🚦 Critical
+      # Path, рядок «Перед польовим деплоєм»); доти чесніша гучна відмова, ніж
+      # тихий успіх. Присуд і його підстава → `00_07 §🗄️` ARCH.76.
       if target.is_a?(Gateway) && record.action_type_decommissioning?
         Rails.logger.error(
           "[ARCH.76] `decommissioning` на Gateway ##{target.id} — життєвого циклу " \
