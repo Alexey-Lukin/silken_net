@@ -19,6 +19,7 @@ lt:
         data_export: Duomenų eksportas
         deploy: Diegimas
         edit: Redagavimas
+        erase: Paskyros ištrynimas
         execute: Vykdymas
         financial_summary: Finansinė suvestinė
         firmwares: Mikroprograminė įranga

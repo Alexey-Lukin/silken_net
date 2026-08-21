@@ -8,10 +8,14 @@ module AccountSecurity
     #   їхали `redirect_to … error:`, тобто викидали людину з форми зі стертими
     #   полями — при тому, що сусідній `PasswordsController` ту саму задачу
     #   розв'язував правильно: лишав у формі з 422. Асиметрія, не задум.
-    def initialize(user:, identities:, password_error: nil)
+    # @param erasure_error [String, nil] помилка ПОТОЧНОГО сабміту форми стирання
+    #   [SEC.18]. Власний слот, а не реюз `password_error`: спільний показав би
+    #   відмову стирання над полями зміни пароля — у секції, якої людина не чіпала.
+    def initialize(user:, identities:, password_error: nil, erasure_error: nil)
       @user = user
       @identities = identities
       @password_error = password_error
+      @erasure_error = erasure_error
     end
 
     def view_template
@@ -21,6 +25,7 @@ module AccountSecurity
         render_password_section
         render_identities_section
         render_data_export_section
+        render_erasure_section
       end
     end
 
@@ -159,8 +164,9 @@ module AccountSecurity
     # ⚠️ Звичайний `a`, а НЕ `button_to`: екшен — GET, ідемпотентний, нічого не
     # мутує (`send_data` зі зліпка). Правило UI.7 вимагає форму для ДІЙ, а не
     # для завантаження; загортати це у форму означало б оголосити мутацію, якої
-    # немає. Дзеркально: кнопки СТИРАННЯ тут свідомо немає — той акт незворотний
-    # і живе за консоллю (`Gdpr::AnonymizeUserService`, `04_02 §5`).
+    # немає. Дзеркальна половина — стирання — живе окремою секцією нижче
+    # (`render_erasure_section`, ⚖️ founder 2026-08-21): вона МУТУЄ й незворотна,
+    # тож іде формою зі step-up, а не посиланням.
     def render_data_export_section
       div(class: "p-6 border border-gaia-border bg-gaia-surface") do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".data_export.heading") }
@@ -170,6 +176,56 @@ module AccountSecurity
           class: "inline-block text-mini text-gaia-primary-strong uppercase tracking-widest hover:text-gaia-text-strong transition-colors border border-gaia-border-strong px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
           t(".data_export.button")
         end
+      end
+    end
+
+    # --- СТИРАННЯ АКАУНТА (GDPR Art.17 erasure) ---
+    # 🔴 [SEC.18, ⚖️ founder 2026-08-21] Це ДВЕРІ до вже відвантаженого механізму:
+    # `Gdpr::AnonymizeUserService` живе з 2026-08-20 із нулем викликачів, бо форма
+    # запобіжника була відкритим присудом. Обрано step-up на пароль — той самий
+    # зразок, що вже стоїть на `toggle_mfa` disable, тобто нових концепцій нуль.
+    #
+    # ⚠️ Секція рендериться ЛИШЕ для акаунта з паролем, і це дзеркало гарда в
+    # контролері, а не косметика: акт незворотний, тож без спільного секрета
+    # доказу наміру не існує, і кнопка вела б у гарантовану відмову. OAuth-only
+    # акаунт іде людським шляхом (`gdpr_runbook.md` §2, місячний строк Art.12(3)
+    # витримує). Сьогодні таких акаунтів у дереві нуль — OmniAuth без дроту
+    # ([`00_07`](../../../../docs/00_07_Action_Plan_Tracker.md) ARCH.69), — тож
+    # гілка чекає свого тригера, а не покриває наявний стан.
+    def render_erasure_section
+      return if @user.password_digest.blank?
+
+      div(class: "p-6 border border-status-danger bg-gaia-surface space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-status-danger-accent mb-4") { t(".erasure.heading") }
+        p(class: "text-tiny text-gaia-text-muted mb-4") { t(".erasure.hint") }
+
+        # [UI.7] `form_with` без скоупу — `current_password` не є атрибутом `User`,
+        # тож контролер читає його плоско (дзеркало форми пароля вище).
+        form_with(url: account_security_erase_path, method: :delete, class: "space-y-4") do
+          render_erasure_error
+
+          field_container(t(".erasure.current_label"), "erasure_current_password") do |id|
+            input(id: id, type: "password", name: "current_password", class: input_classes, required: true)
+          end
+
+          button(type: "submit", class: "px-6 py-2 bg-status-danger border border-status-danger text-tiny text-status-danger-text uppercase tracking-widest hover:bg-status-danger-accent transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-accent") do
+            t(".erasure.submit")
+          end
+        end
+      end
+    end
+
+    # [SEC.18] Дзеркало `render_password_error` — власний слот, бо відмова мусить
+    # зʼявитись У СВОЇЙ формі; `role="alert"` обовʼязковий (вузол приходить разом
+    # із відповіддю, і без нього AT його не оголосить).
+    def render_erasure_error
+      return if @erasure_error.blank?
+
+      div(class: tokens(
+        "p-3 border border-status-danger bg-status-danger text-status-danger-text",
+        "text-tiny uppercase tracking-widest text-center"
+      ), role: "alert") do
+        @erasure_error
       end
     end
 

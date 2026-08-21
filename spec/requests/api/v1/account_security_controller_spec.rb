@@ -384,4 +384,69 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(identity.reload.locked?).to be false
     end
   end
+
+  # =========================================================================
+  # DELETE /account_security/erase — GDPR Art.17 self-service [SEC.18]
+  # =========================================================================
+  # ⚖️ founder 2026-08-21: запобіжник = step-up на пароль. Механізм
+  # (`Gdpr::AnonymizeUserService`) відвантажено раніше з нулем викликачів — ці
+  # приклади стережуть саме ДВЕРІ до нього, і кожен пінить НАСЛІДОК, не статус:
+  # акт незворотний, тож «повернувся 422» без «дані на місці» нічого не доводить.
+  describe "DELETE /account_security/erase" do
+    it "anonymizes the account when the password confirms the intent" do
+      delete "/account_security/erase",
+             params: { current_password: "password12345" }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      user.reload
+      expect(user.email_address).to end_with("@anonymized.invalid")
+      expect(user.password_digest).to be_nil
+      expect(user.organization_id).to be_nil
+    end
+
+    it "leaves everything intact when the password is wrong" do
+      original_email = user.email_address
+
+      delete "/account_security/erase",
+             params: { current_password: "wrong-password" }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      # 🔴 НАСЛІДОК, а не лише код: гілка відмови мусить лишити субʼєкта цілим.
+      expect(user.reload.email_address).to eq(original_email)
+      expect(user.password_digest).to be_present
+    end
+
+    it "refuses an account with no password instead of skipping the step-up" do
+      # 🔴 Розходження з `toggle_mfa` НАВМИСНЕ й тут пінується: там акаунт без
+      # пароля step-up МИНАЄ (дія оборотна, спільного секрета немає), тут —
+      # ВІДМОВА, бо акт незворотний. Форма «чекає свого тригера»: сьогодні таких
+      # акаунтів нема, перший passwordless-вхід зробив би пропуск дірою мовчки.
+      passwordless = create(:user, organization: organization, password: "password12345")
+      passwordless.update_columns(password_digest: nil)
+      passwordless_headers = { "Authorization" => "Bearer #{passwordless.generate_token_for(:api_access)}" }
+
+      delete "/account_security/erase",
+             params: { current_password: "" }, headers: passwordless_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(passwordless.reload.email_address).not_to end_with("@anonymized.invalid")
+    end
+
+    it "records the act in the audit chain BEFORE the mutation" do
+      expect {
+        delete "/account_security/erase",
+               params: { current_password: "password12345" }, headers: headers, as: :json
+      }.to change { AuditLog.where(action: "user_anonymized").count }.by(1)
+
+      trail = AuditLog.where(action: "user_anonymized").last
+      # Слід не сміє нести жодного старого PII — інакше запис про стирання сам
+      # стає його копією (докблок `Gdpr::AnonymizeUserService`).
+      expect(trail.metadata.to_s).not_to include("@")
+    end
+
+    it "returns 401 without authentication" do
+      delete "/account_security/erase", params: { current_password: "password12345" }, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

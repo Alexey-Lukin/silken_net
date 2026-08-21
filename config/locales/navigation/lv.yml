@@ -19,6 +19,7 @@ lv:
         data_export: Datu eksports
         deploy: Izvietošana
         edit: Rediģēšana
+        erase: Konta dzēšana
         execute: Izpilde
         financial_summary: Finanšu kopsavilkums
         firmwares: Programmaparatūras

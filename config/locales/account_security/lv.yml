@@ -1,6 +1,9 @@
 ---
 lv:
   account_security:
+    erasure:
+      done: Konts ir dzēsts. Jūsu personas dati ir iznīcināti, un šī pieteikšanās vairs nepastāv.
+      password_invalid: Pašreizējā parole nav pareiza — konts NETIKA dzēsts.
     identity:
       cannot_unlink_last: Nevar atvienot pēdējo pieteikšanās metodi bez paroles.
       locked_flash: "%{provider} bloķēts."
@@ -42,6 +45,11 @@ lv:
         button: Eksportēt manus datus
         heading: Jūsu dati
         hint: Lejupielādējiet visus personas datu ierakstus, ko par jums glabājam, mašīnlasāmā JSON formātā (VDAR 15. un 20. pants).
+      erasure:
+        current_label: Apstipriniet ar paroli
+        heading: Konta dzēšana
+        hint: Neatgriezeniski iznīcina jūsu personas datus un slēdz šo kontu. Darbību nevar atsaukt, un mēs to nevarēsim atjaunot pēc jūsu pieprasījuma (VDAR 17. pants).
+        submit: Dzēst manu kontu
       heading: "🔐 Konta drošība"
       identities:
         available_heading: Pieejamie pakalpojumu sniedzēji

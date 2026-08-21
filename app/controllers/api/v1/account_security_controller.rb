@@ -50,6 +50,41 @@ module Api
                   disposition: "attachment"
       end
 
+      # --- СТИРАННЯ АКАУНТА [SEC.18] ---
+      # DELETE /account_security/erase — self-service право на стирання (Art.17).
+      # ⚖️ founder 2026-08-21: запобіжник = step-up на пароль, той самий, що вже
+      # стоїть на `toggle_mfa` disable нижче. Механізм не новий — `AnonymizeUserService`
+      # відвантажено 2026-08-20 із нулем викликачів; це його ДВЕРІ.
+      #
+      # 🔴 Гард fail-CLOSED, і відмінність від `toggle_mfa` тут НАВМИСНА. Там
+      # акаунт без пароля (OAuth-only) step-up МИНАЄ — бо спільного секрета не
+      # існує, а дія оборотна. Тут дія НЕЗВОРОТНА (tombstone + знищення сесій та
+      # identities), тож відсутність доказу мусить означати ВІДМОВУ, а не
+      # пропуск: інакше перший passwordless-вхід тихо відкриє незворотний акт
+      # будь-кому з вкраденою cookie (`04_03 §1.2` називає цю форму такою, що
+      # «чекає свого тригера»). Людський шлях для таких акаунтів лишається —
+      # `docs/protocols/legal/gdpr_runbook.md` §2, і місячний строк Art.12(3)
+      # він витримує.
+      def erase_account
+        unless current_user.password_digest.present? &&
+               current_user.authenticate(params[:current_password].to_s)
+          return respond_to do |format|
+            format.json { render json: { error: t("account_security.erasure.password_invalid") }, status: :unprocessable_content }
+            format.html { render_erasure_error(t("account_security.erasure.password_invalid")) }
+          end
+        end
+
+        Gdpr::AnonymizeUserService.call(current_user)
+        # Симетрично до `establish_session`: після tombstone сесія не має чого
+        # ідентифікувати, а `session[:ps]` вказував би на знятий digest.
+        reset_session
+
+        respond_to do |format|
+          format.json { render json: { message: t("account_security.erasure.done") }, status: :ok }
+          format.html { redirect_to login_path, status: :see_other, security: t("account_security.erasure.done") }
+        end
+      end
+
       # --- ВВІМКНЕННЯ/ВИМКНЕННЯ MFA ---
       # PATCH /account_security/mfa
       def toggle_mfa
@@ -206,6 +241,22 @@ module Api
             user: current_user,
             identities: current_user.identities.order(created_at: :asc),
             password_error: message
+          ),
+          status: :unprocessable_content
+        )
+      end
+
+      # [SEC.18] Власна посадка, а не реюз `render_password_error`: помилка
+      # мусить зʼявитись У СВОЇЙ формі. Спільний слот показав би відмову
+      # стирання над полями зміни пароля — тобто в секції, якої людина не
+      # чіпала, і читалась би вона як інший клас події (`04_03 §2.2б`).
+      def render_erasure_error(message)
+        render_dashboard(
+          title: t("account_security.title"),
+          component: AccountSecurity::Show.new(
+            user: current_user,
+            identities: current_user.identities.order(created_at: :asc),
+            erasure_error: message
           ),
           status: :unprocessable_content
         )

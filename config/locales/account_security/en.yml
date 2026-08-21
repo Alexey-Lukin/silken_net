@@ -1,6 +1,9 @@
 ---
 en:
   account_security:
+    erasure:
+      done: Your account has been erased. Your personal data is gone and this login no longer exists.
+      password_invalid: Current password is incorrect — the account was NOT erased.
     identity:
       cannot_unlink_last: Cannot unlink the last login method without a password.
       locked_flash: "%{provider} locked."
@@ -42,6 +45,11 @@ en:
         button: Export my data
         heading: Your data
         hint: Download every personal record we hold about you as machine-readable JSON (GDPR Art. 15 and 20).
+      erasure:
+        current_label: Confirm with your password
+        heading: Erase account
+        hint: Permanently destroys your personal data and closes this account. This cannot be undone, and we will not be able to restore it for you (GDPR Art. 17).
+        submit: Erase my account
       heading: "🔐 Account Security"
       identities:
         available_heading: Available Providers

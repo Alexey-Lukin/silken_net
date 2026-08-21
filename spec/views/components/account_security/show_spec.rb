@@ -277,4 +277,54 @@ RSpec.describe AccountSecurity::Show do
       expect(html).not_to include(%(action="#{path}"))
     end
   end
+
+  # [SEC.18] Дзеркальна половина експорту: двері до Art.17 erasure.
+  # ⚖️ founder 2026-08-21 — запобіжник step-up на пароль; механізм
+  # (`Gdpr::AnonymizeUserService`) жив із нулем викликачів, поки форма присуду
+  # була відкрита.
+  describe "Art.17 erasure door" do
+    let(:erase_path) { Rails.application.routes.url_helpers.account_security_erase_path }
+    # ⚠️ Дефолтний `user` цієї спеки — БЕЗ пароля, тож він і є негативним
+    # контролем нижче; для позитивних прикладів пароль потрібен явно.
+    let(:with_password) { render_component(user: mock_user(password_digest: "argon2-digest"), identities: []) }
+
+    # 🔴 Пін цілить в АРГУМЕНТ (`action`), не в наявність форми: інакше приклад
+    # був би зелений і на формі, що постить куди завгодно — той самий клас, що
+    # вже коштував на UI.7.
+    it "submits to the real erase route" do
+      expect(with_password).to include(%(action="#{erase_path}"))
+    end
+
+    # 🔴 Дієслово їде прихованим `_method`, бо браузер не вміє DELETE із форми.
+    # Пін саме на нього: `form_with(method: :delete)` без цього рядка означав би
+    # POST на маршрут, якого немає, тобто кнопка вела б у routing-помилку.
+    it "carries the DELETE verb as Rails encodes it" do
+      expect(with_password).to include(%(name="_method" value="delete"))
+    end
+
+    # 🔴 Дзеркало гарда контролера, і це НЕ косметика: акт незворотний, тож для
+    # акаунта без спільного секрета step-up неможливий, і кнопка вела б у
+    # гарантовану відмову. Негативний контроль — дефолтний `user` без пароля.
+    # ⚠️ Цей гард має ДРУГОГО свідка, і він точніший за цей приклад: MFA-секція
+    # пінить `not_to include('name="current_password"')` для OAuth-only власника,
+    # а форма стирання несе поле з тим самим імʼям. Тож зняття гарда червонить
+    # ОБИДВА приклади — сусідній не зламався, він спрацював. Записано, щоб
+    # наступний читач не шукав колізії там, де є подвійне покриття.
+    it "hides the whole section when the account has no password to step up with" do
+      expect(html).not_to include(%(action="#{erase_path}"))
+      expect(html).not_to include("Erase account")
+    end
+
+    # 🔴 Свідок ЛОКАЛІЗАЦІЇ живе в НЕ-базовій локалі: в `en` мітка збіглася б із
+    # власним англійським джерелом, і приклад був би зелений навіть із зашитим
+    # рядком.
+    it "renders the localized label outside the base locale" do
+      localized = I18n.with_locale(:uk) do
+        render_component(user: mock_user(password_digest: "argon2-digest"), identities: [])
+      end
+
+      expect(localized).to include("Стерти мій акаунт")
+      expect(localized).not_to include("Erase my account")
+    end
+  end
 end

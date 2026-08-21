@@ -19,6 +19,7 @@ en:
         data_export: Data export
         deploy: Deploy
         edit: Edit
+        erase: Account erasure
         execute: Execute
         financial_summary: Financial summary
         firmwares: Firmwares
