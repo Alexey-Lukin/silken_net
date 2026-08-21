@@ -31,7 +31,9 @@ en:
         open_matrix: Open Matrix →
         population: Population
         sector_name: Sector Name
-        soldiers_count: "%{count} Soldiers"
+        soldiers_count:
+          one: "%{count} Soldier"
+          other: "%{count} Soldiers"
         title: Assigned Sectors (Clusters)
         vitality: Vitality
       current_context: ACTIVE_CONTEXT

@@ -45,7 +45,7 @@ lv:
         organizations: Organizācijas
         password: Parole
         photos: Fotogrāfijas
-        provisioning: Mezgla inicializācija
+        provisioning: Mezgla iniciācija
         register: Reģistrācija
         reports: Atskaites
         reset_password: Paroles atiestatīšana
@@ -74,7 +74,7 @@ lv:
       clan_hierarchy: Klana hierarhija
       crew_registry: Apkalpes reģistrs
       firmware_ota: Programmaparatūras OTA
-      initiate_node: Inicializēt mezglu
+      initiate_node: Iniciēt mezglu
       live_telemetry: Tiešraides telemetrija
       maintenance_log: Apkopes žurnāls
       naas_contracts: NaaS līgumi
@@ -96,7 +96,7 @@ lv:
       administration: Administrācija
       forest_operations: Meža operācijas
       neural_network: Neirālais tīkls
-      strategic_insight: Stratēģiskā ieskats
+      strategic_insight: Stratēģiskais ieskats
     status:
       version: v8.0.ocean
     top_bar:

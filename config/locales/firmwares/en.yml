@@ -24,7 +24,9 @@ en:
       queens: Queens (Gateways)
       registry_title: Available Binary Evolutions
       soldiers: Soldiers (Trees)
-      units: "%{count} units"
+      units:
+        one: "%{count} unit"
+        other: "%{count} units"
       upload: "+ Inject New Code"
       upload_aria: Upload new firmware binary
       version_label: v%{version}

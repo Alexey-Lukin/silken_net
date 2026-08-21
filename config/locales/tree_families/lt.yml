@@ -28,7 +28,10 @@ lt:
       edit_aria: Redaguoti %{name} rūšį
       kicker: Biologinė matrica
       range_value: "%{min} - %{max}"
-      soldiers_count: "%{count} kariai"
+      soldiers_count:
+        few: "%{count} kariai"
+        one: "%{count} karys"
+        other: "%{count} karių"
       title: Globalios rūšių konstantos
     index_title: Biologinės konstantos // Genomai
     new_title: Apibrėžti naują rūšį

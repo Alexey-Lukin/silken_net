@@ -24,7 +24,9 @@ lv:
       queens: Queens (Vārtejas)
       registry_title: Pieejamās bināro evolūciju versijas
       soldiers: Soldiers (Koki)
-      units: "%{count} vienības"
+      units:
+        one: "%{count} vienība"
+        other: "%{count} vienības"
       upload: "+ Injicēt jaunu kodu"
       upload_aria: Augšupielādēt jaunu programmaparatūras bināro failu
       version_label: v%{version}

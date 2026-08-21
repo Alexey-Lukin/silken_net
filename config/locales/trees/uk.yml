@@ -13,7 +13,11 @@ uk:
         minting: Емісія
         recovery: Відновлення
         stress: Стрес
-      events: "%{count} подій"
+      events:
+        few: "%{count} події"
+        many: "%{count} подій"
+        one: "%{count} подія"
+        other: "%{count} подій"
       heading: Цифровий хронограф
       templates:
         alert:

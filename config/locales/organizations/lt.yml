@@ -31,7 +31,10 @@ lt:
         open_matrix: Atidaryti matricą →
         population: Populiacija
         sector_name: Sektoriaus pavadinimas
-        soldiers_count: "%{count} kariai"
+        soldiers_count:
+          few: "%{count} kariai"
+          one: "%{count} karys"
+          other: "%{count} karių"
         title: Priskirti sektoriai (klasteriai)
         vitality: Gyvybingumas
       current_context: AKTYVUS_KONTEKSTAS

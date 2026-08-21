@@ -83,7 +83,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       # фіксу статусу сторінка все одно мовчала — компонент не мав куди покласти
       # причину. Пін на статус цього не бачив за побудовою.
       expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
-      expect(response.body).to include("Telegram chat is invalid")
+      expect(response.body).to include("Telegram chat ID is invalid")
     end
   end
 end

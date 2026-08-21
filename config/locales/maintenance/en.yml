@@ -53,7 +53,9 @@ en:
       heading: Maintenance Records
       hw_pending_title: Pending Verification
       hw_verified_title: Hardware Verified
-      page_info: "%{count} interventions · Page %{page} of %{total}"
+      page_info:
+        one: "%{count} intervention · Page %{page} of %{total}"
+        other: "%{count} interventions · Page %{page} of %{total}"
       register: "+ Register Intervention"
       register_aria: Register new maintenance intervention
       table:

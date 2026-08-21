@@ -13,7 +13,9 @@ lv:
         minting: Emisija
         recovery: Atjaunošanās
         stress: Stress
-      events: "%{count} notikumi"
+      events:
+        one: "%{count} notikums"
+        other: "%{count} notikumi"
       heading: Digitālā hronika
       templates:
         alert:

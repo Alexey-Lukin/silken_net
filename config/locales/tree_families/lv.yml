@@ -28,7 +28,9 @@ lv:
       edit_aria: Rediģēt %{name} sugu
       kicker: Bioloģiskā matrica
       range_value: "%{min} - %{max}"
-      soldiers_count: "%{count} karavīri"
+      soldiers_count:
+        one: "%{count} karavīrs"
+        other: "%{count} karavīri"
       title: Globālās sugas konstantes
     index_title: Bioloģiskās konstantes // Genomi
     new_title: Definēt jaunu sugu

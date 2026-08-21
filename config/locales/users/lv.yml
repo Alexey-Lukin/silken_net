@@ -37,7 +37,9 @@ lv:
       security:
         active: Aktīvs
         disabled: Atspējots
-        linked_count: "%{count} saistīti"
+        linked_count:
+          one: "%{count} saistīts"
+          other: "%{count} saistīti"
         manage: Pārvaldīt →
         mfa: 2FA / MFA
         not_set: Nav iestatīts

@@ -37,7 +37,11 @@ uk:
       security:
         active: Активний
         disabled: Вимкнено
-        linked_count: "%{count} прив'язано"
+        linked_count:
+          few: "%{count} прив'язано"
+          many: "%{count} прив'язано"
+          one: "%{count} прив'язано"
+          other: "%{count} прив'язано"
         manage: Керувати →
         mfa: 2FA / MFA
         not_set: Не встановлено

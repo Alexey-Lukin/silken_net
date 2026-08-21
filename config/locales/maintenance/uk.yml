@@ -53,7 +53,11 @@ uk:
       heading: Журнал обслуговування
       hw_pending_title: Очікує верифікації
       hw_verified_title: Обладнання верифіковано
-      page_info: "%{count} втручань · Сторінка %{page} з %{total}"
+      page_info:
+        few: "%{count} втручання · Сторінка %{page} з %{total}"
+        many: "%{count} втручань · Сторінка %{page} з %{total}"
+        one: "%{count} втручання · Сторінка %{page} з %{total}"
+        other: "%{count} втручань · Сторінка %{page} з %{total}"
       register: "+ Реєстрація втручання"
       register_aria: Зареєструвати нове втручання
       table:

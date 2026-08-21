@@ -69,5 +69,5 @@ lt:
         not_set: "⚠️ Slaptažodis nenustatytas. Nustatykite slaptažodį, kad galėtumėte atjungti tiekėjus."
         set_ok: "✅ Slaptažodis nustatytas"
         set_submit: Nustatyti slaptažodį
-      subtitle: Tvarkykite prisijungimo metodus, dviejų veiksnių autentifikaciją ir susietų tiekėjus.
+      subtitle: Tvarkykite prisijungimo metodus, dviejų veiksnių autentifikaciją ir susietus tiekėjus.
     title: Paskyros saugumas

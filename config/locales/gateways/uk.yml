@@ -28,7 +28,11 @@ uk:
         uid_label: 'Апаратний UID:'
         uid_undefined: НЕ ВИЗНАЧЕНО
       fleet:
-        active_nodes: "%{count} Активних вузлів"
+        active_nodes:
+          few: "%{count} Активні вузли"
+          many: "%{count} Активних вузлів"
+          one: "%{count} Активний вузол"
+          other: "%{count} Активних вузлів"
         heading: Флот солдатів під командою
       header:
         heartbeat: Пульс

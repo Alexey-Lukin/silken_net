@@ -1,0 +1,50 @@
+---
+lt:
+  activerecord:
+    attributes:
+      maintenance_record:
+        maintainable: Taikinys
+        user: Vykdytojas
+  attributes:
+    action_type: Veiksmo tipas
+    ai_sensitivity: DI jautrumas
+    alert_threshold_critical_z: Įspėjimo slenkstis (Kritinis Z)
+    bark_thickness: Žievės storis
+    billing_email: Atsiskaitymo el. paštas
+    biomass_yield_kg: Išgauta biomasė (kg)
+    bytecode_payload: Baitkodas
+    carbon_sequestration_coefficient: CO₂ sekvestracijos koeficientas
+    cluster: Klasteris
+    config_sleep_interval_s: Miego intervalas (s)
+    critical_z_max: Kritinis Z maks.
+    critical_z_min: Kritinis Z min.
+    crypto_public_address: Kriptovaliutos viešasis adresas
+    data_region: Duomenų regionas
+    did: DID
+    email_address: El. pašto adresas
+    fire_resistance_rating: Atsparumo ugniai reitingas
+    foliage_density: Lajos tankumas
+    hadron_kyc_status: KYC būsena
+    hardware_verified: Aparatūros patikrinimas
+    ip_address: IP adresas
+    labor_hours: Darbo valandos
+    latitude: Platuma
+    locale: Kalba
+    logo: Logotipas
+    longitude: Ilguma
+    name: Pavadinimas
+    notes: Lauko pastabos
+    optimal_z_target: Optimalus Z tikslas
+    parts_cost: Atsarginių dalių kaina
+    password: Slaptažodis
+    performed_at: Atlikimo laikas
+    photos: Nuotraukos
+    role: Vaidmuo
+    rollout_percentage: Diegimo procentas
+    scientific_name: Mokslinis pavadinimas
+    silicon_uid_hex: Silicio UID
+    target_hardware_type: Tikslinė aparatūra
+    telegram_chat_id: Telegram pokalbio ID
+    tree_family: Rūšis
+    uid: UID
+    version: Versija

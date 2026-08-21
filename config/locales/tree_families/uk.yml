@@ -28,7 +28,11 @@ uk:
       edit_aria: Редагувати вид %{name}
       kicker: Біологічна матриця
       range_value: "%{min} - %{max}"
-      soldiers_count: "%{count} солдатів"
+      soldiers_count:
+        few: "%{count} солдати"
+        many: "%{count} солдатів"
+        one: "%{count} солдат"
+        other: "%{count} солдатів"
       title: Глобальні константи видів
     index_title: Біологічні константи // Геноми
     new_title: Визначити новий вид

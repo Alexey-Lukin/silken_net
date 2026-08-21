@@ -28,7 +28,9 @@ lv:
         uid_label: 'Aparatūras UID:'
         uid_undefined: NAV DEFINĒTS
       fleet:
-        active_nodes: "%{count} aktīvie mezgli"
+        active_nodes:
+          one: "%{count} aktīvs mezgls"
+          other: "%{count} aktīvi mezgli"
         heading: Karavīru flote komandā
       header:
         heartbeat: Sirdsdarbība

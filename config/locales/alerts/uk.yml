@@ -3,8 +3,8 @@ uk:
   alerts:
     index:
       filter_all: усі
-      filter_aria_all: Показати всі попередження
-      filter_aria_severity: Фільтрувати попередження за рівнем %{severity}
+      filter_aria_all: Показати всі тривоги
+      filter_aria_severity: Фільтрувати тривоги за рівнем %{severity}
       filter_critical: критичні
       filter_low: низькі
       filter_medium: середні
@@ -75,7 +75,7 @@ uk:
       tree_returned: Вузол %{did} знову в ефірі (%{seen_at}).
     row:
       acknowledge: Підтвердити та локалізувати →
-      resolve_aria: Локалізувати попередження №%{id}
+      resolve_aria: Локалізувати тривогу №%{id}
       resolve_confirm: Підтверджуєте локалізацію загрози №%{id}?
       resolved: "✓ Локалізовано"
       severity_aria: 'Рівень небезпеки: %{severity}'

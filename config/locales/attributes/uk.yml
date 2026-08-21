@@ -1,0 +1,50 @@
+---
+uk:
+  activerecord:
+    attributes:
+      maintenance_record:
+        maintainable: Ціль
+        user: Виконавець
+  attributes:
+    action_type: Тип дії
+    ai_sensitivity: Чутливість AI
+    alert_threshold_critical_z: Поріг тривоги (Critical Z)
+    bark_thickness: Товщина кори
+    billing_email: Платіжний Email
+    biomass_yield_kg: Вилучена біомаса (кг)
+    bytecode_payload: Байткод
+    carbon_sequestration_coefficient: Коеф. поглинання CO₂
+    cluster: Кластер
+    config_sleep_interval_s: Інтервал сну (с)
+    critical_z_max: Критичний Z макс.
+    critical_z_min: Критичний Z мін.
+    crypto_public_address: Публічна крипто-адреса
+    data_region: Регіон даних
+    did: DID
+    email_address: Email-адреса
+    fire_resistance_rating: Вогнестійкість
+    foliage_density: Щільність крони
+    hadron_kyc_status: Статус KYC
+    hardware_verified: Верифікація обладнання
+    ip_address: IP-адреса
+    labor_hours: Трудо-години
+    latitude: Широта
+    locale: Мова
+    logo: Логотип
+    longitude: Довгота
+    name: Назва
+    notes: Польові нотатки
+    optimal_z_target: Оптимальний Z
+    parts_cost: Вартість деталей
+    password: Пароль
+    performed_at: Час виконання
+    photos: Фото
+    role: Роль
+    rollout_percentage: Відсоток розгортання
+    scientific_name: Наукова назва
+    silicon_uid_hex: Кремнієвий UID
+    target_hardware_type: Цільове обладнання
+    telegram_chat_id: Telegram Chat ID
+    tree_family: Вид
+    uid: UID
+    version: Версія

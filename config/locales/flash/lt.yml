@@ -15,15 +15,15 @@ lt:
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'
       invalid_token_type: 'Neteisingas token_type filtras: %{value}.'
     firmwares:
-      deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Karalienės jį paims kitame poll užklausime.
+      deployment_dispatched: Diegimo užsakymas v%{version} įtrauktas į eilę — Queen šliuzai jį paims kitame poll užklausime.
       deployment_no_targets: 'OTA atmesta: nėra tinkamų šliuzų diegimui.'
-      deployment_oversized: 'OTA atmesta: programinė įranga viršija Karalienės surinkimo lubas (16 gabalų x 512 B = 8 KB).'
-      deployment_rejected_stale: 'OTA atmesta: versija neviršija klasterio aukščiausios žymos (anti-rollback). Sukurkite naują programinės įrangos įrašą.'
+      deployment_oversized: 'OTA atmesta: mikroprograminė įranga viršija Queen surinkimo lubas (16 gabalų x 512 B = 8 KB).'
+      deployment_rejected_stale: 'OTA atmesta: versija neviršija klasterio aukščiausios žymos (anti-rollback). Sukurkite naują mikroprograminės įrangos įrašą.'
       file_too_large: Failo dydis viršija %{limit} MB limitą.
       invalid_target_type: 'target_type turi būti vienas iš: %{allowed}.'
       target_all: Visas miškas
       target_cluster: 'Klasteris #%{id}'
-      target_type_mismatch: target_type neatitinka programinės įrangos aparatūros tipo (%{expected}).
+      target_type_mismatch: target_type neatitinka mikroprograminės įrangos aparatūros tipo (%{expected}).
       uploaded: Nauja evoliucija v%{version} įkelta į Vandenyną.
     maintenance:
       hardware_pulse_missing: Mazgas po šios priežiūros dar nepranešė — patikrinimui pirmiausia reikia impulso iš aparatūros.

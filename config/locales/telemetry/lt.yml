@@ -3,7 +3,7 @@ lt:
   telemetry:
     live_stream:
       awaiting: Laukiama Starlink ryšio aukštyn... CoAP:5683 klauso...
-      carrier_label: 'Operatorius: Tiesiogiai į ląstelę'
+      carrier_label: 'Operatorius: Direct-to-Cell'
       header_eyebrow: Neuralinio ryšio išvestis
       header_title: Globalus telemetrijos srautas
     live_title: Tiesioginė telemetrija // Pulsas

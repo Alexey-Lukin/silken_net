@@ -28,7 +28,9 @@ en:
         uid_label: 'Hardware UID:'
         uid_undefined: UNDEFINED
       fleet:
-        active_nodes: "%{count} Active nodes"
+        active_nodes:
+          one: "%{count} Active node"
+          other: "%{count} Active nodes"
         heading: Soldier Fleet Under Command
       header:
         heartbeat: Heartbeat

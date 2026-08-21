@@ -16,7 +16,7 @@ lv:
               must_be_even_length_hex: jābūt tīrai HEX virknei ar pāra garumu (baitu robežās)
             compatible_hardware_versions:
               must_be_array: jābūt masīvam
-              version_must_be_non_blank_string: katrai versijai jābūt nepustukšai virknei
+              version_must_be_non_blank_string: katrai versijai jābūt netukšai virknei
         gateway:
           attributes:
             uid:
@@ -24,7 +24,7 @@ lv:
         maintenance_record:
           attributes:
             photos:
-              required_for_action_type: nepieciešams 'remontam' un 'uzstādīšanas' darbību veidiem (Uzticības protokols)
+              required_for_action_type: nepieciešamas 'repair' un 'installation' darbību veidiem (Uzticības protokols)
         naas_contract:
           attributes:
             end_date:

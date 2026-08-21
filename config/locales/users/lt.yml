@@ -37,7 +37,10 @@ lt:
       security:
         active: Aktyvus
         disabled: Išjungta
-        linked_count: "%{count} susieti"
+        linked_count:
+          few: "%{count} susieti"
+          one: "%{count} susietas"
+          other: "%{count} susietų"
         manage: Valdyti →
         mfa: 2FA / MFA
         not_set: Nenustatyta

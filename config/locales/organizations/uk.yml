@@ -31,7 +31,11 @@ uk:
         open_matrix: Відкрити матрицю →
         population: Популяція
         sector_name: Назва сектору
-        soldiers_count: "%{count} солдатів"
+        soldiers_count:
+          few: "%{count} солдати"
+          many: "%{count} солдатів"
+          one: "%{count} солдат"
+          other: "%{count} солдатів"
         title: Призначені сектори (кластери)
         vitality: Життєздатність
       current_context: АКТИВНИЙ_КОНТЕКСТ

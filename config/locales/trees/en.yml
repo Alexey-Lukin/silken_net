@@ -13,7 +13,9 @@ en:
         minting: Emission
         recovery: Recovery
         stress: Stress
-      events: "%{count} events"
+      events:
+        one: "%{count} event"
+        other: "%{count} events"
       heading: Digital Chronicle
       templates:
         alert:

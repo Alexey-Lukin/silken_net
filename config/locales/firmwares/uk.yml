@@ -24,7 +24,11 @@ uk:
       queens: Королеви (Шлюзи)
       registry_title: Доступні бінарні еволюції
       soldiers: Солдати (Дерева)
-      units: "%{count} одиниць"
+      units:
+        few: "%{count} одиниці"
+        many: "%{count} одиниць"
+        one: "%{count} одиниця"
+        other: "%{count} одиниць"
       upload: "+ Ввести новий код"
       upload_aria: Завантажити нову бінарну прошивку
       version_label: v%{version}

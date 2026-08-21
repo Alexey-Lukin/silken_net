@@ -428,7 +428,10 @@ RSpec.describe "Controller coverage — uncovered paths" do
              headers: forester_headers
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.parsed_body["errors"]).to include(a_string_matching(/family/i))
+        # [I18N.1] Асоціація зветься `tree_family`, а людині її називає локаль:
+        # `attributes.tree_family` = «Species» (домашній термін екрана видів),
+        # тож якір на імені КОЛОНКИ тут був заявою про `String#humanize`.
+        expect(response.parsed_body["errors"]).to include(a_string_matching(/species/i))
         expect(Tree.count).to eq(0)
       end
 

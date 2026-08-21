@@ -3,7 +3,7 @@ lv:
   telemetry:
     live_stream:
       awaiting: Gaida Starlink augšupsaiti... CoAP:5683 klausās...
-      carrier_label: 'Operators: Tiešs uz šūnu'
+      carrier_label: 'Operators: Direct-to-Cell'
       header_eyebrow: Neirālā saites izeja
       header_title: Globālā telemetrijas plūsma
     live_title: Tiešraides telemetrija // Pulss

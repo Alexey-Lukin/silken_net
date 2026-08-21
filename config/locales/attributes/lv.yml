@@ -1,0 +1,50 @@
+---
+lv:
+  activerecord:
+    attributes:
+      maintenance_record:
+        maintainable: Mērķis
+        user: Izpildītājs
+  attributes:
+    action_type: Darbības veids
+    ai_sensitivity: MI jutība
+    alert_threshold_critical_z: Brīdinājuma slieksnis (Kritiskais Z)
+    bark_thickness: Mizas biezums
+    billing_email: Norēķinu e-pasts
+    biomass_yield_kg: Izņemtā biomasa (kg)
+    bytecode_payload: Baitkods
+    carbon_sequestration_coefficient: CO₂ sekvestrācijas koeficients
+    cluster: Klasteris
+    config_sleep_interval_s: Miega intervāls (s)
+    critical_z_max: Kritiskais Z maks.
+    critical_z_min: Kritiskais Z min.
+    crypto_public_address: Kriptovalūtas publiskā adrese
+    data_region: Datu reģions
+    did: DID
+    email_address: E-pasta adrese
+    fire_resistance_rating: Ugunsizturības reitings
+    foliage_density: Lapotnes blīvums
+    hadron_kyc_status: KYC statuss
+    hardware_verified: Aparatūras verifikācija
+    ip_address: IP adrese
+    labor_hours: Darba stundas
+    latitude: Platuma grādi
+    locale: Valoda
+    logo: Logotips
+    longitude: Garuma grādi
+    name: Nosaukums
+    notes: Lauka piezīmes
+    optimal_z_target: Optimālais Z mērķis
+    parts_cost: Rezerves daļu izmaksas
+    password: Parole
+    performed_at: Izpildes laiks
+    photos: Fotogrāfijas
+    role: Loma
+    rollout_percentage: Izvietošanas procents
+    scientific_name: Zinātniskais nosaukums
+    silicon_uid_hex: Silīcija UID
+    target_hardware_type: Mērķa aparatūra
+    telegram_chat_id: Telegram tērzēšanas ID
+    tree_family: Suga
+    uid: UID
+    version: Versija

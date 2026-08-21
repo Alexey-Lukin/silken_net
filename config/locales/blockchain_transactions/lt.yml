@@ -2,9 +2,9 @@
 lt:
   blockchain_transactions:
     index:
-      audit_aria: 'Operacijos #%{id} detalės'
+      audit_aria: 'Sandorio #%{id} detalės'
       audit_details: Detalės
-      explorer_aria: Peržiūrėti operaciją blokų grandinės naršyklėje
+      explorer_aria: Peržiūrėti sandorį blokų grandinės naršyklėje
       heading: Blokų grandinės knyga — globalus auditas
       subtitle: Kalimas, baudos ir visi grandinės įvykiai jūsų organizacijai.
       table:

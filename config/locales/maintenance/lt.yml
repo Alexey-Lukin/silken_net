@@ -53,7 +53,10 @@ lt:
       heading: Priežiūros įrašai
       hw_pending_title: Laukia patikrinimo
       hw_verified_title: Aparatūra patikrinta
-      page_info: "%{count} įsikišimų · Puslapis %{page} iš %{total}"
+      page_info:
+        few: "%{count} įsikišimai · Puslapis %{page} iš %{total}"
+        one: "%{count} įsikišimas · Puslapis %{page} iš %{total}"
+        other: "%{count} įsikišimų · Puslapis %{page} iš %{total}"
       register: "+ Registruoti įsikišimą"
       register_aria: Registruoti naują priežiūros intervenciją
       table:
@@ -100,7 +103,7 @@ lt:
         heading: Įsikišimo koordinatės
         lat: Plat
         lng: Ilg
-        locate: Surasti patruliavimą →
+        locate: Surasti patrulį →
         no_gps: GPS neužregistruotas
         no_gps_sub: Koordinatės įvedamos rankiniu būdu kuriant įrašą.
       hardware:

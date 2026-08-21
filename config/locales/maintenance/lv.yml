@@ -53,7 +53,9 @@ lv:
       heading: Apkopes ieraksti
       hw_pending_title: Gaida verifikāciju
       hw_verified_title: Aparatūra verificēta
-      page_info: "%{count} iejaukšanās · Lapa %{page} no %{total}"
+      page_info:
+        one: "%{count} iejaukšanās · Lapa %{page} no %{total}"
+        other: "%{count} iejaukšanās · Lapa %{page} no %{total}"
       register: "+ Reģistrēt iejaukšanos"
       register_aria: Reģistrēt jaunu apkopes iejaukšanos
       table:

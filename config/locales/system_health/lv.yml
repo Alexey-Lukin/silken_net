@@ -3,7 +3,7 @@ lv:
   system_health:
     show:
       all_operational: "✓ VISAS APAKŠSISTĒMAS DARBOJAS — Pārbaudīts %{at}"
-      all_systems_go: VISAS SISTĒMAS GATAVS
+      all_systems_go: VISAS SISTĒMAS GATAVAS
       coap:
         host: Resursdators
         host_unset: "—"

@@ -37,7 +37,9 @@ en:
       security:
         active: Active
         disabled: Disabled
-        linked_count: "%{count} linked"
+        linked_count:
+          one: "%{count} linked"
+          other: "%{count} linked"
         manage: Manage →
         mfa: 2FA / MFA
         not_set: Not Set

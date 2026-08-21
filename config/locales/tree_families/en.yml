@@ -28,7 +28,9 @@ en:
       edit_aria: Edit %{name} species
       kicker: Biological Matrix
       range_value: "%{min} - %{max}"
-      soldiers_count: "%{count} Soldiers"
+      soldiers_count:
+        one: "%{count} Soldier"
+        other: "%{count} Soldiers"
       title: Global Species Constants
     index_title: Biological Constants // The Genomes
     new_title: Define New Species

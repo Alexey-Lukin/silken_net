@@ -42,9 +42,9 @@ lt:
       faulty: sugedusi
       fulfilled: įvykdyta
       idle: laukimo režimas
-      maintenance: priežiūra
+      maintenance: priežiūros režimas
       maintenance_needed: reikalinga priežiūra
-      manual_review: rankinis peržiūra
+      manual_review: rankinė peržiūra
       offline: neprisijungęs
       pending: laukiama
       processing: apdorojama

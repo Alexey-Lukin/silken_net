@@ -15,9 +15,9 @@ lv:
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'
       invalid_token_type: 'Nederīgs token_type filtrs: %{value}.'
     firmwares:
-      deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Karalienes to paņems nākamajā poll pieprasījumā.
+      deployment_dispatched: Izvietošanas rīkojums v%{version} ierindots — Queen vārtejas to paņems nākamajā poll pieprasījumā.
       deployment_no_targets: 'OTA noraidīta: nav piemērotu vārteju izvietošanai.'
-      deployment_oversized: 'OTA noraidīta: programmaparatūra pārsniedz Karalienes montāžas griestus (16 gabali x 512 B = 8 KB).'
+      deployment_oversized: 'OTA noraidīta: programmaparatūra pārsniedz Queen montāžas griestus (16 gabali x 512 B = 8 KB).'
       deployment_rejected_stale: 'OTA noraidīta: versija nepārsniedz klastera augstākā ūdens atzīmi (anti-rollback). Izveidojiet jaunu programmaparatūras ierakstu.'
       file_too_large: Faila izmērs pārsniedz %{limit} MB ierobežojumu.
       invalid_target_type: 'target_type jābūt vienam no: %{allowed}.'

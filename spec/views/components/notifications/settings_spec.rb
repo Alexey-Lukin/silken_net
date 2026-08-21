@@ -125,7 +125,9 @@ RSpec.describe Notifications::Settings do
     let(:user) { account.tap { |u| u.errors.add(:telegram_chat_id, :invalid) } }
 
     it "renders the reason the update was refused" do
-      expect(html).to include("Telegram chat is invalid")
+      # [I18N.1] Імʼя поля приходить із `attributes.telegram_chat_id`, а не з
+      # `String#humanize` — доти воно було англійським у ВСІХ локалях.
+      expect(html).to include("Telegram chat ID is invalid")
     end
   end
 

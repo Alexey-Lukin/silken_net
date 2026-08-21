@@ -205,8 +205,12 @@ RSpec.describe Gateways::Show do
   end
 
   describe "soldier fleet overview" do
-    it "displays active soldiers count" do
-      expect(html).to include("1 Active nodes")
+    # [I18N.1] Пін доти вимагав «1 Active nodes» — тобто цементував зламану
+    # англійську множину в БАЗОВІЙ локалі. Ключ тепер plural-блок, і однина є
+    # свідком того, що блок обирається, а не декоративний.
+    it "displays active soldiers count in the singular form" do
+      expect(html).to include("1 Active node")
+      expect(html).not_to include("1 Active nodes")
     end
 
     it "renders soldier node indicator with DID" do

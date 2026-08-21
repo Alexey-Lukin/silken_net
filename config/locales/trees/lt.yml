@@ -13,7 +13,10 @@ lt:
         minting: Emisija
         recovery: Atsigavimas
         stress: Stresas
-      events: "%{count} įvykiai"
+      events:
+        few: "%{count} įvykiai"
+        one: "%{count} įvykis"
+        other: "%{count} įvykių"
       heading: Skaitmeninė kronika
       templates:
         alert:
@@ -65,7 +68,7 @@ lt:
         supply_sub: MCU maitinimo šina, kalibruota VREFINT
         supply_voltage: Maitinimo įtampa
       headings:
-        biometrics: Tiesioginės biometrinės matricos
+        biometrics: Tiesioginė biometrinė matrica
         deployment_matrix: Diegimo matrica
         economic_yield: Sukaupti augimo taškai
         hardware_vault: Aparatūros saugumo saugykla

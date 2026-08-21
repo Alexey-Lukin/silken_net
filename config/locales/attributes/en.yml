@@ -1,0 +1,50 @@
+---
+en:
+  activerecord:
+    attributes:
+      maintenance_record:
+        maintainable: Target
+        user: Performer
+  attributes:
+    action_type: Action type
+    ai_sensitivity: AI sensitivity
+    alert_threshold_critical_z: Alert threshold (Critical Z)
+    bark_thickness: Bark thickness
+    billing_email: Billing email
+    biomass_yield_kg: Biomass extracted (kg)
+    bytecode_payload: Bytecode payload
+    carbon_sequestration_coefficient: CO₂ sequestration coefficient
+    cluster: Cluster
+    config_sleep_interval_s: Sleep interval (s)
+    critical_z_max: Critical Z max
+    critical_z_min: Critical Z min
+    crypto_public_address: Crypto public address
+    data_region: Data region
+    did: DID
+    email_address: Email address
+    fire_resistance_rating: Fire resistance rating
+    foliage_density: Foliage density
+    hadron_kyc_status: KYC status
+    hardware_verified: Hardware verification
+    ip_address: IP address
+    labor_hours: Labor hours
+    latitude: Latitude
+    locale: Language
+    logo: Logo
+    longitude: Longitude
+    name: Name
+    notes: Field notes
+    optimal_z_target: Optimal Z target
+    parts_cost: Parts cost
+    password: Password
+    performed_at: Time performed
+    photos: Photos
+    role: Role
+    rollout_percentage: Rollout percentage
+    scientific_name: Scientific name
+    silicon_uid_hex: Silicon UID
+    target_hardware_type: Target hardware
+    telegram_chat_id: Telegram chat ID
+    tree_family: Species
+    uid: UID
+    version: Version

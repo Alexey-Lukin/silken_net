@@ -24,7 +24,7 @@ lt:
         maintenance_record:
           attributes:
             photos:
-              required_for_action_type: reikalinga 'remonto' ir 'montavimo' veiksmų tipams (Pasitikėjimo protokolas)
+              required_for_action_type: reikalingos 'repair' ir 'installation' veiksmų tipams (Pasitikėjimo protokolas)
         naas_contract:
           attributes:
             end_date:

@@ -18,15 +18,18 @@ lt:
         target_hardware: Tikslinė aparatūra
         uploaded: Įkelta
         version: Versija
-      deploy_aria: Diegti programinę įrangą v%{version}
+      deploy_aria: Diegti mikroprograminę įrangą v%{version}
       inventory_no_context: Klano kontekstas nepasirinktas — inventorius priklauso organizacijai, o ne platformai. Pasirinkite klaną viršutinėje juostoje, kad matytumėte versijų pasiskirstymą.
       inventory_title: Miško inventorius (versijų pasiskirstymas)
       queens: Queens (Šliuzai)
       registry_title: Galimos dvejetainių evoliucijų versijos
       soldiers: Soldiers (Medžiai)
-      units: "%{count} vienetai"
+      units:
+        few: "%{count} vienetai"
+        one: "%{count} vienetas"
+        other: "%{count} vienetų"
       upload: "+ Injekuoti naują kodą"
-      upload_aria: Įkelti naują programinės įrangos dvejetainį failą
+      upload_aria: Įkelti naują mikroprograminės įrangos dvejetainį failą
       version_label: v%{version}
     index_title: Programinės įrangos evoliucija
     new:

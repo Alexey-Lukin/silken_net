@@ -9,7 +9,7 @@ lt:
         actuators: Aktuatoriai
         alerts: Įspėjimai
         audit_logs: Audito žurnalas
-        balance: Balansas
+        balance: Likutis
         blockchain_transactions: Blokų grandinės sandoriai
         carbon_absorption: Anglies absorbcija
         chronicle: Kronika
@@ -21,7 +21,7 @@ lt:
         edit: Redagavimas
         execute: Vykdymas
         financial_summary: Finansinė suvestinė
-        firmwares: Programinė įranga
+        firmwares: Mikroprograminė įranga
         forgot_password: Slaptažodžio atkūrimas
         gateways: Šliuzai
         identities: Tapatybės

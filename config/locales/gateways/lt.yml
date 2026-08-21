@@ -28,7 +28,10 @@ lt:
         uid_label: 'Aparatūros UID:'
         uid_undefined: NEAPIBRĖŽTA
       fleet:
-        active_nodes: "%{count} aktyvūs mazgai"
+        active_nodes:
+          few: "%{count} aktyvūs mazgai"
+          one: "%{count} aktyvus mazgas"
+          other: "%{count} aktyvių mazgų"
         heading: Karių flotilė komandoje
       header:
         heartbeat: Širdies plakimas

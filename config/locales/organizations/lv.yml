@@ -31,7 +31,9 @@ lv:
         open_matrix: Atvērt matricu →
         population: Populācija
         sector_name: Sektora nosaukums
-        soldiers_count: "%{count} karavīri"
+        soldiers_count:
+          one: "%{count} karavīrs"
+          other: "%{count} karavīri"
         title: Piesaistītie sektori (klasteri)
         vitality: Vitalitāte
       current_context: AKTĪVAIS_KONTEKSTS
