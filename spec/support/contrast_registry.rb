@@ -132,6 +132,47 @@ module ContrastRegistry
         "api/v1/account_security#show" => ->(_ctx) { "/account_security" },
         "api/v1/notifications#settings" => ->(_ctx) { "/notifications/settings" }
       }
+    },
+
+    # [UI.1 ⚖️ знято, 2026-08-21] Хвилі `money` + `ops` спорожніли РАЗОМ, і подія
+    # їхнього `back:` — не «присуд ухвалено», а «присуд виявився вакуумним».
+    # Обидві чекали на ⚖️ про status-token refactor; вимір показав, що той
+    # рефактор УЖЕ відбувся двома чужими роботами: `-accent`-ярус завела UI.3
+    # 08-15 (пастельний токен робив індикатор невидимим), а сирі `red/amber/blue`
+    # вичерпала кампанія UI.1 08-19/08-20 — у view-шарі їх НУЛЬ, усі живі хіти
+    # виявились повнорядковими коментарями-надгробками.
+    #
+    # ⚠️ Хвиля ОДНА, хоч черг було дві: вони ділять і фікстури, і подію
+    # розблокування, а окремі контури дали б два підйоми браузера на ту саму
+    # сесію. Підстави ж їхніх `why` збіглися в одну — обидві казали «залежить
+    # від status-присуду», і саме він зник.
+    money_ops_sweep: {
+      spec: "spec/features/money_ops_contrast_spec.rb",
+      why: "грошові та операційні поверхні — найгустіші споживачі `token-*` і " \
+           "`status-*` токенів; повний AA-зріз обома темами після зняття " \
+           "status-присуду, чистим ратчетом без реєстру винятків",
+      paths: {
+        "api/v1/wallets#index"                 => ->(_ctx) { "/wallets" },
+        "api/v1/wallets#show"                  => ->(ctx) { "/wallets/#{ctx.fetch(:wallet).id}" },
+        "api/v1/blockchain_transactions#index" => ->(_ctx) { "/blockchain_transactions" },
+        "api/v1/blockchain_transactions#show"  => ->(ctx) { "/blockchain_transactions/#{ctx.fetch(:transaction).id}" },
+        "api/v1/contracts#index"               => ->(_ctx) { "/contracts" },
+        "api/v1/contracts#show"                => ->(ctx) { "/contracts/#{ctx.fetch(:contract).id}" },
+        "api/v1/reports#index"                 => ->(_ctx) { "/reports" },
+        "api/v1/reports#carbon_absorption"     => ->(_ctx) { "/reports/carbon_absorption" },
+        "api/v1/reports#financial_summary"     => ->(_ctx) { "/reports/financial_summary" },
+        "api/v1/oracle_visions#index"          => ->(_ctx) { "/oracle_visions" },
+        "api/v1/alerts#index"                  => ->(_ctx) { "/alerts" },
+        "api/v1/alerts#show"                   => ->(ctx) { "/alerts/#{ctx.fetch(:alert).id}" },
+        "api/v1/audit_logs#index"              => ->(_ctx) { "/audit_logs" },
+        "api/v1/audit_logs#show"               => ->(ctx) { "/audit_logs/#{ctx.fetch(:audit_log).id}" },
+        "api/v1/maintenance_records#index"     => ->(_ctx) { "/maintenance_records" },
+        "api/v1/maintenance_records#show"      => ->(ctx) { "/maintenance_records/#{ctx.fetch(:record).id}" },
+        "api/v1/maintenance_records#new"       => ->(_ctx) { "/maintenance_records/new" },
+        "api/v1/maintenance_records#edit"      => ->(ctx) { "/maintenance_records/#{ctx.fetch(:record).id}/edit" },
+        "api/v1/system_audits#index"           => ->(_ctx) { "/system_audits" },
+        "api/v1/system_health#show"            => ->(_ctx) { "/system_health" }
+      }
     }
   }.freeze
 
@@ -212,41 +253,6 @@ module ContrastRegistry
         api/v1/wallets#metadata
         api/v1/actuators#command_status
         api/v1/trees#chronicle
-      ]
-    },
-    money: {
-      why: "грошові поверхні — та сама порційність, але з окремим наслідком: " \
-           "вони найгустіше вживають `token-*` і `status-*` токени, тож їх вимір " \
-           "має сенс ПІСЛЯ присуду про status-кольори (`00_07` UI.1)",
-      back: "після ⚖️ про status-token refactor у `00_07` UI.1",
-      routes: %w[
-        api/v1/wallets#index
-        api/v1/wallets#show
-        api/v1/blockchain_transactions#index
-        api/v1/blockchain_transactions#show
-        api/v1/contracts#index
-        api/v1/contracts#show
-        api/v1/reports#index
-        api/v1/reports#carbon_absorption
-        api/v1/reports#financial_summary
-        api/v1/oracle_visions#index
-      ]
-    },
-    ops: {
-      why: "операційні поверхні — та сама порційність; сюди ж журнали, чиї рядки " \
-           "малюються спільним бейджем, тож їх число залежить від того ж status-присуду",
-      back: "разом із хвилею `money` — вони ділять ту саму залежність від status-токенів",
-      routes: %w[
-        api/v1/alerts#index
-        api/v1/alerts#show
-        api/v1/audit_logs#index
-        api/v1/audit_logs#show
-        api/v1/maintenance_records#index
-        api/v1/maintenance_records#show
-        api/v1/maintenance_records#new
-        api/v1/maintenance_records#edit
-        api/v1/system_audits#index
-        api/v1/system_health#show
       ]
     },
     stateful_auth: {

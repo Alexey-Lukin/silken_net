@@ -164,11 +164,12 @@ module BlockchainTransactions
 
     def token_badge_styles
       case @tx.token_type
-      # [UI.1] `token-carbon` у ролі ФОН/РАМКА (текст — нейтральний gaia-text):
-      # непридатність токена виміряна для ТЕКСТ-ролі; форма — дзеркало
+      # [UI.1] Монетні токени — ролі ФОН/РАМКА, текст нейтральний `gaia-text`
+      # для ОБОХ: парного `-text` жоден не має, і обидва провалюють AA у
+      # текст-ролі на власній `/20`-підкладці. Правило + числа — дім
       # `Wallets::TransactionRow#tx_type_styles`.
       when "carbon_coin" then "bg-token-carbon/20 text-gaia-text border-token-carbon/30"
-      when "forest_coin" then "bg-token-forest/20 text-token-forest border-token-forest/30"
+      when "forest_coin" then "bg-token-forest/20 text-gaia-text border-token-forest/30"
       # `cusd` СВІДОМО падає в else (зовнішній Celo-долар без власного токена
       # дизайн-системи) — окрема гілка робила б else недосяжним.
       else "bg-gaia-surface text-gaia-text-subtle border-gaia-border-strong"

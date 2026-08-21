@@ -211,10 +211,17 @@ RSpec.describe "[UI.3] Популяція контуру контрастнос�
     #
     # Анкор знову ЗОВНІШНІЙ: роутер сам каже, у що резолвиться побудований шлях.
     it "кожен побудований шлях резолвиться САМЕ в той маршрут, під яким записаний" do
+      # ⚠️ Перелік ЯВНИЙ свідомо, хоч `Hash.new { stub }` виглядав би стійкішим:
+      # новий ключ у реєстрі мусить впасти тут гучним `KeyError`, а не мовчки
+      # дістати заглушку. Дефолтний хеш перетворив би «ключ не оголошено» на
+      # зелений прогін — тобто зняв би саме ту вісь, заради якої приклад існує.
       stub = ->(n) { Struct.new(:id).new(n) }
       ctx = { cluster: stub.(1), tree: stub.(2), gateway: stub.(3), actuator: stub.(4),
               tree_family: stub.(5), organization: stub.(6), member: stub.(7),
-              reset_token: "t0ken" }
+              reset_token: "t0ken",
+              # [UI.1] контур `money_ops_sweep`
+              wallet: stub.(8), transaction: stub.(9), contract: stub.(10),
+              alert: stub.(11), audit_log: stub.(12), record: stub.(13) }
 
       drifted = ContrastRegistry::CONTOURS.flat_map do |slug, contour|
         contour[:paths].filter_map do |key, builder|

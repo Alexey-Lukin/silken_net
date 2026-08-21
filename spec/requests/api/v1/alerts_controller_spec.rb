@@ -196,6 +196,28 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
+    # [ARCH.31] ЦІЛЬ посилання, і довести її може лише цей шар: компонентна спека
+    # рендерить повз маршрутизатор І повз викликача, тож вона однаково зелена,
+    # коли `Alerts::Index` забуде передати `linked:`. Доти `alert_path` не мав у
+    # всьому `app/` ЖОДНОГО виклику — маршрут `GET /alerts/:id` існував, рендерив
+    # SOP-панель, і дістатись її можна було тільки набравши адресу руками.
+    it "реєстр веде на сторінку тривоги — вхід на SOP існує в розмітці" do
+      get "/alerts", headers: html_headers
+      expect(response.body).to include("href=\"/alerts/#{own_alert.id}\"")
+    end
+
+    # HTML-рендер `show` не пінив ЖОДЕН приклад цього файлу — усі йшли `as: :json`,
+    # тобто найдорожча половина сторінки (операційний runbook) трималась виключно
+    # на компонентній спеці, яка ходить повз контролер і повз `render_dashboard`.
+    it "сторінка тривоги віддає HTML із SOP-панеллю" do
+      get "/alerts/#{own_alert.id}", headers: html_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/html")
+      expect(response.body).to include(I18n.t("alerts.show.sop.title"))
+      expect(response.body).to include(I18n.t("alerts.show.sop.steps.acknowledge.title"))
+    end
+
     # Дзеркало піна `telemetry_controller_spec` / `dashboard_controller_spec`:
     # єдиний рядок, що вирішує ЧИЯ організація, живе в контролері, і компонентна
     # спека його не бачить (вона дістає організацію моком). Підписане імʼя стріму —
@@ -238,6 +260,18 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response.body).to include(%(target="ews_alert_#{own_alert.id}"))
       expect(response.body).to include("✓ Resolved")
       expect(response.body).not_to include("Acknowledge & Resolve")
+    end
+
+    # [ARCH.31] Замінений рядок стоїть у РЕЄСТРІ, тож мусить донести туди й
+    # контекст: без `linked:` підтверджена тривога мовчки втрачала б єдиний вхід
+    # на власну SOP-сторінку — саме там, де оператор щойно діяв, і саме тоді,
+    # коли runbook потрібен. Дефолт компонента fail-closed, тож пропущений kwarg
+    # тут не падає, а тихо звужує — його ловить рівно цей рядок.
+    it "замінений рядок ЗБЕРІГАЄ вхід на сторінку тривоги" do
+      patch resolve_alert_path(own_alert),
+            headers: headers.merge("Accept" => "text/vnd.turbo-stream.html")
+
+      expect(response.body).to include("href=\"/alerts/#{own_alert.id}\"")
     end
   end
 end

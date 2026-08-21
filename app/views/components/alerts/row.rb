@@ -8,9 +8,22 @@ module Alerts
     # УСІМ ролям (investor теж), а `alerts#resolve` стоїть за `authorize_forester!,
     # only: :resolve`, тож read-only глядач бачив бойову кнопку, яка після
     # turbo-confirm мовчки вмирала в 403. Дефолт `nil` fail-CLOSED.
-    def initialize(alert:, current_user: nil)
+    # @param detail_href [String, nil] КОНТЕКСТ РЕНДЕРУ, не оздоблення, і адресу
+    #   БУДУЄ ПРОДЮСЕР — точна форма `Wallets::TransactionRow#status_src`.
+    #   `nil` = рядок стоїть УСЕРЕДИНІ самої сторінки тривоги, де посилання вело б
+    #   на себе; рядок-адреса = рядок стоїть у РЕЄСТРІ `/alerts`, звідки тип веде
+    #   на сторінку з SOP-панеллю.
+    #   🔴 Чому не булевий прапорець із `alert_path` усередині: цей компонент
+    #   рендериться ЩЕ Й через `.call` (turbo_stream-відповідь `alerts#resolve`),
+    #   а там немає view-контексту — маршрут-хелпер падає
+    #   `undefined method 'default_url_options' for nil`, тобто 500 на дії
+    #   оператора. Виміряно: сусідній `resolve_alert_path` уцілів лише тому, що
+    #   в тій відповіді рядок ЗАВЖДИ резолвлений і його гілка не виконується.
+    #   Дефолт fail-closed: забутий kwarg дає рядок без входу, не виняток.
+    def initialize(alert:, current_user: nil, detail_href: nil)
       @alert = alert
       @current_user = current_user
+      @detail_href = detail_href
     end
 
     def view_template
@@ -23,8 +36,23 @@ module Alerts
         # Мітка типу — через TextFormatter, а не власний лукап: одна деривація
         # ключа на застосунок (див. `ALERT_TYPE_SCOPE`), тож спека покриває оби́два
         # шляхи рендеру. Раніше тут жив locale-сліпий `.humanize`.
+        # [ARCH.31] Тип — ЄДИНИЙ вхід на сторінку тривоги, а з нею й на SOP-панель.
+        # Доти маршрут `GET /alerts/:id` існував, рендерив `Alerts::Show` із
+        # операційним runbook'ом — і не мав ЖОДНОГО викликача `alert_path` у всьому
+        # `app/`, тобто лісник міг дістатись інструкцій лише набравши адресу руками,
+        # тоді як сам пункт обіцяє «інструкції ПРИ КЛІКУ на EwsAlert».
+        # ⚠️ Без `aria-label` СВІДОМО: видимий текст локалізований, а мітка поверх
+        # нього перекрила б accessible name (`04_04 §9` — ратифіковане правило цього
+        # ж дерева). Призначення посилання визначає КОНТЕКСТ рядка — джерело, час і
+        # рівень небезпеки стоять поруч, що і є критерієм WCAG 2.4.4 (In Context).
         td(class: "p-4 text-mini uppercase text-gaia-text-subtle tracking-widest", data_label: t("alerts.table.alert_type")) do
-          TreeChronicle::TextFormatter.alert_title(@alert)
+          if @detail_href
+            a(href: @detail_href, class: alert_link_classes) do
+              TreeChronicle::TextFormatter.alert_title(@alert)
+            end
+          else
+            TreeChronicle::TextFormatter.alert_title(@alert)
+          end
         end
         td(class: "p-4 text-gaia-primary-strong", data_label: t("alerts.table.source")) do
           "#{@alert.cluster&.name} // #{@alert.tree&.did || 'System'}"
@@ -104,6 +132,14 @@ module Alerts
         "bg-gaia-surface-sunken": @alert.status_resolved?,
         "hover:bg-gaia-surface-sunken": !@alert.status_resolved?
       )
+    end
+
+    # Форма — дзеркало `gateways/index` («відкрити деталі»): успадкований колір
+    # комірки, брендовий hover і власне focus-кільце, бо посилання всередині
+    # `<td>` інакше не має видимого фокуса.
+    def alert_link_classes
+      "hover:text-gaia-primary-strong focus-visible:outline-none focus-visible:ring-2 " \
+        "focus-visible:ring-gaia-primary-strong transition-colors"
     end
 
     def resolve_button_classes

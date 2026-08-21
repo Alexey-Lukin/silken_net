@@ -111,7 +111,13 @@ module Api
               # дістаючи вже відмову AASM.
               render turbo_stream: turbo_stream.replace(
                 ActionView::RecordIdentifier.dom_id(@alert),
-                Alerts::Row.new(alert: @alert, current_user: current_user).call
+                # [ARCH.31] Адресу будує ПРОДЮСЕР, і тут це не стиль: у `.call`
+                # немає view-контексту, тож `alert_path` усередині компонента дав би
+                # `default_url_options for nil` — 500 на дії оператора. Stream
+                # замінює рядок у РЕЄСТРІ, тож вхід на SOP-сторінку мусить пережити
+                # підтвердження тривоги — саме там, де оператор щойно діяв.
+                Alerts::Row.new(alert: @alert, current_user: current_user,
+                                detail_href: alert_path(@alert)).call
               )
             end
           format.html { redirect_to alerts_path, success: I18n.t("flash.alerts.resolved") }

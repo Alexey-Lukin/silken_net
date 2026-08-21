@@ -118,10 +118,13 @@ RSpec.describe BlockchainTransactions::Show do
       expect(html).not_to include("carbon_coin")
     end
 
-    it "renders forest_coin as its label with the forest token style" do
+    it "renders forest_coin as its label with the token-forest surface/border pair" do
       rendered = render_component(transaction: mock_transaction(token_type: "forest_coin"))
       expect(rendered).to include("Silken Forest Coin")
-      expect(rendered).to include("text-token-forest")
+      expect(rendered).to include("bg-token-forest/20")
+      # [UI.1] Текст-роль монетного токена провалює AA — див. дім правила
+      # `Wallets::TransactionRow#tx_type_styles`.
+      expect(rendered).not_to include("text-token-forest")
     end
 
     # Реальне `cusd` замість вигаданого `"unknown_coin"` — див. сусідній `index_spec`.

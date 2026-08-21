@@ -55,10 +55,15 @@ RSpec.describe Wallets::TransactionRow do
       expect(html).not_to include("bg-emerald-900/20")
     end
 
-    it "renders forest_coin with token-forest style" do
+    it "renders forest_coin with the token-forest surface/border pair" do
       html = render_component(tx: mock_tx(token_type: "forest_coin"))
       expect(html).to include("bg-token-forest/20")
-      expect(html).to include("text-token-forest")
+      expect(html).to include("border-token-forest/30")
+      # [UI.1] Негативна половина несуча: монетний токен у ТЕКСТ-ролі на власній
+      # `/20`-підкладці провалює AA (3.80 світла · 4.70 темна — на межі бару),
+      # і доти цей приклад вимагав саме її. Позитив на фон/рамку зелений в
+      # обох формах, тож регресію ловить рівно цей рядок.
+      expect(html).not_to include("text-token-forest")
     end
 
     # `cusd` — третє РЕАЛЬНЕ значення enum'а, для якого стилю не заведено; доти тут

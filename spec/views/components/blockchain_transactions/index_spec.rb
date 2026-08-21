@@ -136,10 +136,13 @@ RSpec.describe BlockchainTransactions::Index do
       expect(html).to include("bg-token-carbon/20")
     end
 
-    it "renders forest_coin with forest token style" do
+    it "renders forest_coin with the token-forest surface/border pair" do
       txs = [ mock_transaction(token_type: "forest_coin") ]
       rendered = render_index(transactions: txs, pagy: pagy)
-      expect(rendered).to include("text-token-forest")
+      expect(rendered).to include("bg-token-forest/20")
+      # [UI.1] Текст-роль монетного токена провалює AA — див. дім правила
+      # `Wallets::TransactionRow#tx_type_styles`.
+      expect(rendered).not_to include("text-token-forest")
     end
 
     # `cusd` — третє РЕАЛЬНЕ значення enum'а, якому стилю не заведено. Доти тут

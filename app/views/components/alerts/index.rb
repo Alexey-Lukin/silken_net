@@ -59,7 +59,11 @@ module Alerts
     def render_tbody
       tbody(id: "alerts_list", class: "md:divide-y md:divide-gaia-border") do
         @alerts.each do |alert|
-          render Alerts::Row.new(alert: alert, current_user: @current_user)
+          # [ARCH.31] Адресу будує ПРОДЮСЕР — рядок рендериться ще й через `.call`
+          # (turbo_stream `alerts#resolve`), де маршрут-хелпера немає. На самій
+          # сторінці тривоги той самий рядок їде без `detail_href`.
+          render Alerts::Row.new(alert: alert, current_user: @current_user,
+                                 detail_href: alert_path(alert))
         end
       end
     end
