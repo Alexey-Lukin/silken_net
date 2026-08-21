@@ -35,7 +35,7 @@
 
 **DPO (Art.37):** не потрібен сьогодні — жоден із трьох тригерів Art.37(1) не виконується на поточному pre-revenue/ранньому B2B-етапі ([`b2c_tos_privacy §B.13`](b2c_tos_privacy.md)). Внутрішній privacy-контакт: `[TBD]`. Переглянути при появі великомасштабної EU-бази або систематичного моніторингу *людей* (не дерев — межа названа в §2.3 нижче).
 
-**Спільні контролери (joint controllers):** не ідентифіковано. OAuth-провайдери (Google/Facebook/LinkedIn/X) — **не** спільні контролери, а незалежні окремі контролери власного профільного шару ([`b2c_tos_privacy §B.5`](b2c_tos_privacy.md)).
+**Спільні контролери (joint controllers):** не ідентифіковано. OAuth-провайдер (**Google** — єдиний, ⚖️ 2026-08-21; дім переліку — `Identity::SUPPORTED_PROVIDERS`) — **не** спільний контролер, а незалежний окремий контролер власного профільного шару ([`b2c_tos_privacy §B.5`](b2c_tos_privacy.md)).
 
 ---
 
@@ -47,7 +47,7 @@
 
 | Art.30(1) | Зміст |
 |---|---|
-| **(b) Цілі** | Створення й адміністрування облікового запису; вхід (OAuth Google/Facebook/LinkedIn/X + email/Argon2id-пароль); безпека сесії; відновлення пароля; MFA (TOTP, [S6.21](../../00_07_Action_Plan_Tracker.md) — механізм з 2026-08-20). *(Art.6(1)(b) — виконання договору; безпека сесії — Art.6(1)(f) легітимний інтерес, [`b2c_tos_privacy §B.3`](b2c_tos_privacy.md))* |
+| **(b) Цілі** | Створення й адміністрування облікового запису; вхід (OAuth Google + email/Argon2id-пароль); безпека сесії; відновлення пароля; MFA (TOTP, [S6.21](../../00_07_Action_Plan_Tracker.md) — механізм з 2026-08-20). *(Art.6(1)(b) — виконання договору; безпека сесії — Art.6(1)(f) легітимний інтерес, [`b2c_tos_privacy §B.3`](b2c_tos_privacy.md))* |
 | **(c) Субʼєкти + дані** | Зареєстровані користувачі (усі ролі). → [`04_01 §11`](../../04_01_Data_Models_and_Entities.md) рядки `users` (PII ядро: `email_address`/`first_name`/`last_name`/`telegram_chat_id`/`push_token`; + `role`/`otp_*`/`recovery_codes`/`locale`/`password_digest`) і `sessions` (PII слід входу: `ip_address`/`user_agent`, `validates presence` — заповнені завжди). OAuth-профіль (`identities`): `provider`/`uid`/`access_token`/`refresh_token`/`auth_data` — зашифровані at-rest. |
 | **(d) Отримувачі** | Внутрішньо — сам застосунок. OAuth-провайдери — **не отримувачі-процесори**, незалежні окремі контролери ([`b2c_tos_privacy §B.5`](b2c_tos_privacy.md)). Інфраструктурні процесори: **GCP Cloud SQL** (Postgres, `europe-west1`), **Akash Network** (цільовий compute самого застосунку після pivot — mainnet ще НЕ задіяний, TRL5), **Upstash** (Redis — сесії/черги), **Sentry** (error tracking, `send_default_pii = false`), GHCR (образи, не персональні дані). |
 | **(e) Треті країни** | Залежить від резидентства користувача. UA (контролер) без adequacy decision від ЄК → SCC-2021 як backup-механізм для US-вендорів (Sentry), поряд із DPF де застосовно ([`b2c_tos_privacy §B.10`](b2c_tos_privacy.md)). Akash — регіон провайдера непередбачуваний (permissionless-маркетплейс, `00_07` SEC.23). |

@@ -116,11 +116,12 @@ module Users
     end
 
     def provider_badge(identity)
+      # ⚖️ [ARCH.69, 2026-08-21] Гілки Facebook/LinkedIn/Twitter зняті разом зі
+      # звуженням `Identity::SUPPORTED_PROVIDERS` до одного провайдера. Fallback
+      # `🔗` покриває і майбутнього провайдера, і теоретичний історичний рядок —
+      # у проді таких немає за побудовою (OmniAuth не був задротований жодного дня).
       icon = case identity.provider
       when "google_oauth2" then "🔵"
-      when "facebook"      then "🟦"
-      when "linkedin"      then "🔷"
-      when "twitter"       then "🐦"
       else "🔗"
       end
 

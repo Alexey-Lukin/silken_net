@@ -977,7 +977,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 - `delegate :organization, :role, to: :user`
 - `delegate :wallets, to: :organization`
 
-**Підтримувані провайдери:** `google_oauth2`, `facebook`, `linkedin`, `twitter`
+**Підтримувані провайдери:** `google_oauth2` — рівно один (⚖️ founder 2026-08-21: від Facebook/LinkedIn/Twitter відмовились зовсім). 🔴 **`Identity::SUPPORTED_PROVIDERS` є ДЖЕРЕЛОМ, а не дзеркалом:** перелік третіх сторін у Privacy Policy ([`b2c_tos_privacy §B.5`](protocols/legal/b2c_tos_privacy.md)) і в RoPA Art.30 ([`ropa_art30.md`](protocols/legal/ropa_art30.md)) писаний за нею, тож кожен провайдер коштує не лише гема й реєстрації застосунку, а й рядка про НЕЗАЛЕЖНОГО контролера в юр-шарі. Валідації `inclusion:` на колонці свідомо немає — історичний рядок із іншим провайдером лишається читабельним (`PROVIDER_NAMES` має `titleize`-fallback), просто новий таким шляхом не створюється.
 
 **Ключові поля:**
 

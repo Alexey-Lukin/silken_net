@@ -346,12 +346,11 @@ module AccountSecurity
       "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors"
     end
 
+    # ⚖️ [ARCH.69, 2026-08-21] Дзеркало `Users::Profile#provider_badge`: гілки
+    # трьох знятих провайдерів прибрано разом зі звуженням `SUPPORTED_PROVIDERS`.
     def provider_icon(provider)
       case provider
       when "google_oauth2" then "🔵"
-      when "facebook"      then "🟦"
-      when "linkedin"      then "🔷"
-      when "twitter"       then "🐦"
       else "🔗"
       end
     end

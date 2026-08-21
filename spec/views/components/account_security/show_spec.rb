@@ -30,22 +30,21 @@ RSpec.describe AccountSecurity::Show do
   let(:identities) { [] }
   let(:html) { render_component(user: user, identities: identities) }
 
-  # ⚠️ Не «покриття заради покриття»: гілки провайдерів чекають на дротування
-  # OmniAuth ([`ARCH.69`]), тобто це міна на запобіжнику, а не мертвий код —
-  # видаляти не можна, а непокритою вона тягне групову підлогу `Views` вниз.
-  # Приклад заразом фіксує, що іконки РІЗНІ: спільна мапа зі збігом значень
-  # зробила б провайдерів невідрізнюваними на екрані.
+  # ⚠️ Не «покриття заради покриття»: гілка чекає на дротування OmniAuth
+  # ([`ARCH.69`]), тобто це міна на запобіжнику, а не мертвий код — видаляти не
+  # можна, а непокритою вона тягне групову підлогу `Views` вниз.
+  # ⚖️ [2026-08-21] Перелік звузився до ОДНОГО провайдера, тож вісь «іконки
+  # різні між собою» виродилась і знята разом із трьома гілками. Лишається та,
+  # що дискримінує й на одному записі: підтримуваний ⊥ будь-який інший.
   describe "provider icons" do
-    it "дає кожному відомому провайдеру власну іконку" do
-      known = %w[google_oauth2 facebook linkedin twitter]
+    it "дає підтримуваному провайдеру власну іконку, а не запасну" do
       rendered = render_component(
         user: user,
-        identities: known.map { |p| mock_identity(provider: p, uid: "uid-#{p}") }
+        identities: [ mock_identity(provider: "google_oauth2", uid: "uid-google") ]
       )
 
-      icons = %w[🔵 🟦 🔷 🐦]
-      icons.each { |icon| expect(rendered).to include(icon) }
-      expect(icons.uniq.size).to eq(known.size)
+      expect(rendered).to include("🔵")
+      expect(rendered).not_to include("🔗")
     end
 
     it "невідомий провайдер дістає запасну іконку" do

@@ -209,24 +209,20 @@ RSpec.describe Users::Profile do
   end
 
   describe "provider badges" do
-    it "renders provider badge for linkedin" do
-      identity = mock_identity(provider: "linkedin")
+    # ⚖️ [ARCH.69, 2026-08-21] Три приклади на знятих провайдерів замінено ОДНИМ,
+    # і він навмисно вужчий за них. 🔴 Два з трьох були ВАКУУМНІ —
+    # `"twitter".titleize == "Twitter"` і `"facebook".titleize == "Facebook"`,
+    # тобто проходили однаково з `PROVIDER_NAMES` і без неї; дискримінував лише
+    # `linkedin` (`titleize` → «Linkedin»). ⚠️ Ту єдину живу вісь — «канонічна
+    # назва ⊥ titleize» — уже стереже сусідній приклад «renders the provider
+    # name» (`google_oauth2.titleize` → «Google Oauth2»), тож дублювати її тут
+    # означало б третій доказ того самого. Лишається те, чого сусід НЕ покриває.
+    it "renders the supported provider's own icon, not the generic fallback" do
+      identity = mock_identity(provider: "google_oauth2")
       html = render_component(user: user, active_identities: [ identity ])
-      # «LinkedIn», не «Linkedin»: `.titleize` ламав саме власну назву бренду.
-      expect(html).to include("LinkedIn")
-    end
 
-    it "renders provider badge for twitter" do
-      identity = mock_identity(provider: "twitter")
-      html = render_component(user: user, active_identities: [ identity ])
-      expect(html).to include("Twitter")
-    end
-
-    it "renders provider badge for facebook with blue icon" do
-      identity = mock_identity(provider: "facebook")
-      html = render_component(user: user, active_identities: [ identity ])
-      expect(html).to include("Facebook")
-      expect(html).to include("🟦")
+      expect(html).to include("🔵")
+      expect(html).not_to include("🔗")
     end
 
     it "renders generic link icon for unknown provider" do

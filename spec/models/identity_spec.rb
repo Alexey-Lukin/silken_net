@@ -130,8 +130,13 @@ RSpec.describe Identity, type: :model do
   # SUPPORTED PROVIDERS
   # =========================================================================
   describe "SUPPORTED_PROVIDERS" do
-    it "includes the four expected providers" do
-      expect(Identity::SUPPORTED_PROVIDERS).to contain_exactly("google_oauth2", "facebook", "linkedin", "twitter")
+    # ⚖️ [ARCH.69, 2026-08-21] Рівно ОДИН провайдер: від Facebook/LinkedIn/Twitter
+    # відмовились зовсім. Пін не косметичний — ця константа є ДЖЕРЕЛОМ переліку
+    # третіх сторін у Privacy Policy (`b2c_tos_privacy §B.5` писана за нею), тож
+    # мовчазне повернення провайдера означало б юр-документ, що не називає
+    # контролера, якому реально їдуть дані.
+    it "lists exactly the one provider we support" do
+      expect(Identity::SUPPORTED_PROVIDERS).to contain_exactly("google_oauth2")
     end
   end
 
