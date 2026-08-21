@@ -98,15 +98,20 @@ ignore_missing:
   - 'errors.messages.file_size_not_less_than'
   - 'errors.messages.limit_out_of_range'
 
-  # [I18N.1] Rails-дефолти валідації, ПЕРЕКРИТІ лише для uk — і асиметрія тут
-  # предмет, а не недогляд. `errors.full_messages` = «%{attribute} %{message}»,
-  # тож generic-повідомлення дописується до імені поля будь-якого роду й числа;
-  # англійське «can't be blank» до цього байдуже, а українське «не може бути
-  # пустим» несе ЧОЛОВІЧИЙ рід і давало «Публічна крипто-адреса не може бути
-  # пустим» / «Польові нотатки занадто короткий». Дім цих ключів — гем
-  # `rails-i18n`, тож копія в en/lv/lt була б другим домом чужого значення
-  # (той самий доказ, що для active_storage_validations вище). lv/lt мають ТОЙ
-  # САМИЙ клас дефекту й чекають носія мови — 👤-нога I18N.1, не цей рядок.
+  # [I18N.1] Rails-дефолти валідації, ПЕРЕКРИТІ у ФЛЕКТИВНИХ локалях (uk, lv, lt)
+  # — і асиметрія з `en` тут предмет, а не недогляд. `errors.full_messages` =
+  # «%{attribute} %{message}», тож generic-повідомлення дописується до імені поля
+  # будь-якого роду й числа; англійське «can't be blank» до цього байдуже, а
+  # флективне — ні: uk «не може бути пустим» · lv «ir jābūt aizpildītam» · lt
+  # «negali būti tuščias» — усі три ЧОЛОВІЧОГО роду, тож давали «Публічна
+  # крипто-адреса не може бути пустим» і «Lauka piezīmes ir jābūt aizpildītam».
+  # Лік однаковий у трьох мовах за ФОРМОЮ (тире + іменникова група), але
+  # словниково власний у кожній — узгодження знімає кожна мова своїм способом.
+  # Дім цих ключів — гем `rails-i18n`, тож копія в `en` була б другим домом
+  # чужого значення без жодної осі, яку вона лікує (той самий доказ, що для
+  # active_storage_validations вище). Вісь стереже
+  # `spec/i18n/validation_message_agreement_spec.rb` — по три осі × три локалі,
+  # не цей рядок.
   - 'errors.messages.{accepted,blank,confirmation,empty,equal_to,even,exclusion,greater_than,greater_than_or_equal_to,inclusion,invalid,less_than,less_than_or_equal_to,not_a_number,not_an_integer,odd,other_than,present,required,taken,too_long,too_short}'
 
 ignore_unused:

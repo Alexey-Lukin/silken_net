@@ -58,17 +58,45 @@ lt:
       validation_failed: Citadelė atmetė šias reikšmes. Grįžkite į formą ir jas pataisykite.
       validation_failed_title: Patikra nepavyko
     messages:
+      accepted: "— reikalingas sutikimas"
+      blank: "— reikalinga reikšmė"
+      confirmation: "— nesutampa su patvirtinimu"
       content_type_invalid:
         few: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
         one: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
         other: turi būti paveikslėlis (JPEG, PNG, WebP, HEIC)
+      empty: "— reikalinga reikšmė"
+      equal_to: "— lygiai %{count}"
+      even: "— reikalingas lyginis skaičius"
+      exclusion: "— rezervuota reikšmė"
       file_size_not_less_than: failo dydis turi būti mažesnis nei %{max} (dabartinis dydis %{file_size})
-      invalid_eip55_checksum: turi neteisingą EIP-55 kontrolinę sumą (patikrinkite raidžių registrą)
-      invalid_eth_address: turi būti galiojantis 0x adresas
+      greater_than: "— daugiau nei %{count}"
+      greater_than_or_equal_to: "— ne mažiau nei %{count}"
+      inclusion: "— reikšmė ne iš sąrašo"
+      invalid: "— netinkama reikšmė"
+      invalid_eip55_checksum: "— netinkama EIP-55 kontrolinė suma (patikrinkite raidžių registrą)"
+      invalid_eth_address: "— netinkamas 0x adresas"
+      less_than: "— mažiau nei %{count}"
+      less_than_or_equal_to: "— ne daugiau nei %{count}"
       limit_out_of_range:
         few: ne daugiau kaip %{max} nuotraukos viename įraše
         one: ne daugiau kaip %{max} nuotraukos viename įraše
         other: ne daugiau kaip %{max} nuotraukos viename įraše
+      not_a_number: "— ne skaičius"
+      not_an_integer: "— ne sveikasis skaičius"
+      odd: "— reikalingas nelyginis skaičius"
+      other_than: "— bet kas, tik ne %{count}"
+      present: "— pildyti negalima"
+      required: "— reikalinga reikšmė"
+      taken: "— tokia reikšmė jau naudojama"
+      too_long:
+        few: "— daugiausiai %{count} ženklai"
+        one: "— daugiausiai %{count} ženklas"
+        other: "— daugiausiai %{count} ženklų"
+      too_short:
+        few: "— mažiausiai %{count} ženklai"
+        one: "— mažiausiai %{count} ženklas"
+        other: "— mažiausiai %{count} ženklų"
     no_organization:
       body_1: Jūsų paskyra šiuo metu nesusieta su jokia organizacija Miško matricoje. Be klasterio Citadelė negali apriboti telemetrijos, piniginių ar įspėjimų.
       body_2: Susisiekite su administratoriumi, kad būtumėte prijungti prie klasterio.

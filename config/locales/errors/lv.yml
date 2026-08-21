@@ -58,15 +58,41 @@ lv:
       validation_failed: Citadele noraidīja šīs vērtības. Atgriezieties formā un izlabojiet tās.
       validation_failed_title: Pārbaude neizdevās
     messages:
+      accepted: "— nepieciešama piekrišana"
+      blank: "— nepieciešama vērtība"
+      confirmation: "— nesakrīt ar apstiprinājumu"
       content_type_invalid:
         one: jābūt attēlam (JPEG, PNG, WebP, HEIC)
         other: jābūt attēlam (JPEG, PNG, WebP, HEIC)
+      empty: "— nepieciešama vērtība"
+      equal_to: "— tieši %{count}"
+      even: "— nepieciešams pāra skaitlis"
+      exclusion: "— rezervēta vērtība"
       file_size_not_less_than: faila izmēram jābūt mazākam par %{max} (pašreizējais izmērs %{file_size})
-      invalid_eip55_checksum: ir nederīga EIP-55 kontrolsumma (pārbaudiet burtu reģistru)
-      invalid_eth_address: jābūt derīgai 0x adresei
+      greater_than: "— vairāk nekā %{count}"
+      greater_than_or_equal_to: "— ne mazāk kā %{count}"
+      inclusion: "— vērtība ārpus saraksta"
+      invalid: "— nederīga vērtība"
+      invalid_eip55_checksum: "— nederīga EIP-55 kontrolsumma (pārbaudiet burtu reģistru)"
+      invalid_eth_address: "— nederīga 0x adrese"
+      less_than: "— mazāk nekā %{count}"
+      less_than_or_equal_to: "— ne vairāk kā %{count}"
       limit_out_of_range:
         one: ne vairāk kā %{max} fotoattēli vienā ierakstā
         other: ne vairāk kā %{max} fotoattēli vienā ierakstā
+      not_a_number: "— nav skaitlis"
+      not_an_integer: "— nav vesels skaitlis"
+      odd: "— nepieciešams nepāra skaitlis"
+      other_than: "— jebkas, tikai ne %{count}"
+      present: "— aizpildīt nedrīkst"
+      required: "— nepieciešama vērtība"
+      taken: "— šāda vērtība jau tiek izmantota"
+      too_long:
+        one: "— maksimums %{count} zīme"
+        other: "— maksimums %{count} zīmes"
+      too_short:
+        one: "— minimums %{count} zīme"
+        other: "— minimums %{count} zīmes"
     no_organization:
       body_1: Jūsu konts pašlaik nav saistīts ar nevienu organizāciju Meža matricā. Bez klastera Citadele nevar norobežot telemetriju, makus vai brīdinājumus.
       body_2: Sazinieties ar administratoru, lai tiktu iekļauts klasterī.
