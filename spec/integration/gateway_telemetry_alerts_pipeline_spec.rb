@@ -114,7 +114,14 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       AlertNotificationWorker.new.perform(alert.id)
     end
 
-    it "enqueues push and telegram notifications for critical alerts to admin/forester" do
+    # 🔴 [E.33] ДРУГИЙ сайт того самого класу: приклад пінив енкʼю ОБОХ каналів у
+    # тест-середовищі, де `TELEGRAM_BOT_TOKEN` не заданий, а `available?(:push)` —
+    # жорсткий `false`. Тобто інтеграційний пін стверджував доставку транспортами,
+    # яких платформа не має. Стабимо ТРАНСПОРТ (не предикат), щоб приклад ішов
+    # через реальну диспетчеризацію `DeliveryChannels.available?`.
+    it "enqueues notifications for critical alerts to admin/forester — only via LIVE channels" do
+      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+
       AlertNotificationWorker.new.perform(alert.id)
 
       # [A-4]: push_bulk enqueues jobs via Sidekiq::Client, verified through .jobs in fake mode
@@ -125,7 +132,8 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
 
       # [ARCH.78] SMS відкинуто присудом 2026-08-20 — джоб немає навіть для critical.
       expect(sms_args).to be_empty
-      expect(push_args).to contain_exactly(admin.id, forester.id)
+      # [E.33] Push відсіяно на вході в чергу — транспорту немає, тож і джоби нема.
+      expect(push_args).to be_empty
       expect(telegram_args).to contain_exactly(admin.id, forester.id)
     end
 

@@ -11,6 +11,13 @@ RSpec.describe AlertNotificationWorker, type: :worker do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    # 🔴 [E.33] Без цього рядка КОЖЕН приклад нижче вимірює світ, у якому живих
+    # оперативних каналів НЕМА: `TELEGRAM_BOT_TOKEN` у тест-середовищі не заданий,
+    # а `available?(:push)` — жорсткий `false`. Доти піни стверджували «2 push +
+    # 2 telegram» саме в такому світі, тобто цементували енкʼю каналів, яких
+    # платформа не має. Стабимо ТРАНСПОРТ, а не предикат: тоді приклад іде через
+    # реальну диспетчеризацію `DeliveryChannels.available?`, і її зняття почервонить.
+    allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
   end
 
   describe "#perform" do
@@ -21,30 +28,42 @@ RSpec.describe AlertNotificationWorker, type: :worker do
 
       described_class.new.perform(alert.id)
 
-      # Push + Telegram for admin and forester, no jobs for investor.
       # [ARCH.78] SMS-джоб немає навіть для critical — канал відкинуто присудом.
+      # [E.33] Push-джоб немає, бо транспорту НЕМА: канал відсівається на вході
+      # в чергу, а не після того, як джоба доїде до `logger.warn`.
       sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
       push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
       telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
 
       expect(sms_jobs).to be_empty
-      expect(push_jobs.size).to eq(2)
+      expect(push_jobs).to be_empty
       expect(telegram_jobs.size).to eq(2)
+    end
+
+    # [E.33] Дзеркальна половина: гейт читає ПРЕДИКАТ, а не зашитий перелік —
+    # тож дротування FCM вмикає канал без правки воркера. Без цього прикладу
+    # «push відсіяно» не відрізнити від «push видалили назавжди».
+    it "enqueues a channel again once its transport appears" do
+      create(:user, :admin, organization: organization)
+      allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+      allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
+
+      described_class.new.perform(alert.id)
+
+      push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
+      expect(push_jobs.size).to eq(1)
     end
 
     it "uses Sidekiq::Client.push_bulk for batch enqueue (A-4 optimization)" do
       create(:user, :admin, organization: organization)
       create(:user, :forester, organization: organization)
 
-      # Verify push_bulk is called with correct args count:
-      # Critical alert → 2 Push + 2 Telegram (admin + forester) = 4 entries
+      # Один живий канал × два стейкхолдери = 2 записи в ОДНОМУ push_bulk.
       expect(Sidekiq::Client).to receive(:push_bulk).with(
         hash_including(
           "class" => SingleNotificationWorker,
           "args" => a_collection_containing_exactly(
-            [ anything, alert.id, "push" ],
             [ anything, alert.id, "telegram" ],
-            [ anything, alert.id, "push" ],
             [ anything, alert.id, "telegram" ]
           )
         )
@@ -54,9 +73,26 @@ RSpec.describe AlertNotificationWorker, type: :worker do
     end
 
     it "does not call push_bulk when no stakeholders exist" do
+      # ⚠️ Канал ЖИВИЙ (див. `before`) — інакше приклад проходив би з другої
+      # причини й не розрізняв би «нема кому слати» від «нема чим слати».
       expect(Sidekiq::Client).not_to receive(:push_bulk)
 
       described_class.new.perform(alert.id)
+    end
+
+    # [E.33] Голос НУЛЮ: «каналів немає» ⊥ «стейкхолдерів немає» — два різні
+    # світи, і мовчання злило б їх в один. Перший означає, що тривогу побачить
+    # лише той, хто саме дивиться на дашборд.
+    it "reports the silent world when no operational channel is live" do
+      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
+      create(:user, :admin, organization: organization)
+      create(:user, :forester, organization: organization)
+      allow(Rails.logger).to receive(:warn)
+
+      expect(Sidekiq::Client).not_to receive(:push_bulk)
+      described_class.new.perform(alert.id)
+
+      expect(Rails.logger).to have_received(:warn).with(/Жодного оперативного каналу.*2 стейкхолдерів/)
     end
 
     it "sends email for critical alerts with billing email" do

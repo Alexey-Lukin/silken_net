@@ -7,6 +7,11 @@ class AlertNotificationWorker
   # за 5 хвилин втрачають актуальність — патрульні вже побачили новіші.
   sidekiq_options queue: "alerts", retry: 5, expires_in: 5.minutes
 
+  # [E.33] Канали, що доставляються ЧЕРЕЗ `SingleNotificationWorker`. Пошта сюди
+  # не входить свідомо: вона має власний шлях (mailer → `billing_email`), одна
+  # відправка на алерт незалежно від числа стейкхолдерів.
+  OPERATIONAL_CHANNELS = %i[push telegram].freeze
+
   def perform(ews_alert_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
     return unless alert
@@ -50,17 +55,39 @@ class AlertNotificationWorker
     # у масив та відправляємо одним Sidekiq::Client.push_bulk.
     # Це зменшує кількість Redis round-trips з N до 1 при масовому розсиланні.
     # find_each замість each — завантажує батчами, запобігає OOM при 10 000+ лісниках.
-    bulk_args = []
     stakeholders = organization.users.where(role: [ :admin, :forester ])
 
-    stakeholders.find_each(batch_size: 500) do |user|
-      # Push для всіх рівнів тривог. SMS-каналу немає: відкинуто присудом
-      # [ARCH.78, 2026-08-20] — email (critical ↑) + Telegram покривають сценарій.
-      bulk_args << [ user.id, alert.id, "push" ]
+    # 🔴 [E.33] Найдешевший лімітер — не ставити в чергу канал, ЯКОГО НЕМАЄ.
+    # Доти сюди безумовно летіло по джобі `"push"` на кожного стейкхолдера, тоді
+    # як `DeliveryChannels.available?(:push)` віддає жорсткий `false` — тобто
+    # платформа сама оголошувала транспорт неіснуючим, а черга однаково несла
+    # `2 × N` джоб, половина яких була `logger.warn` без жодного I/O. Ціна не
+    # косметична: `alerts` дренується STRICT-пріоритетом ПОВНІСТЮ перед
+    # `critical`, тож холості джоби вдвічі відсували живі доставки.
+    # Предикат тут — ТОЙ САМИЙ One-Home, що питають екран налаштувань і
+    # boot-гард пошти; отже дротування FCM вмикає канал без правки цього файлу.
+    # ⚠️ Перевірка в `SingleNotificationWorker` лишається backstop-ом, а не
+    # дублем: джоба могла лягти в чергу за живого каналу й виконатись уже після
+    # зняття токена.
+    live_channels = OPERATIONAL_CHANNELS.select { |channel| Notifications::DeliveryChannels.available?(channel) }
 
-      # [ARCH.60] Telegram — теж усі рівні: канал opt-in через chat_id, тож
-      # адресну вибірку робить сам SingleNotificationWorker (як push із token).
-      bulk_args << [ user.id, alert.id, "telegram" ]
+    if live_channels.empty?
+      # Голос НУЛЮ: «оперативних каналів немає» ⊥ «стейкхолдерів немає» — два
+      # різні світи, і мовчання злило б їх у один. Перший з них означає, що
+      # тривогу побачить лише той, хто дивиться на дашборд.
+      Rails.logger.warn(
+        "[Notification] Жодного оперативного каналу (#{OPERATIONAL_CHANNELS.join('/')}) — " \
+        "#{stakeholders.count} стейкхолдерів НЕ отримають тривогу ##{alert.id} поза дашбордом"
+      )
+      return 0
+    end
+
+    bulk_args = []
+    stakeholders.find_each(batch_size: 500) do |user|
+      # [ARCH.60] Канал opt-in через chat_id/token, тож адресну вибірку робить
+      # сам SingleNotificationWorker. SMS-каналу немає: відкинуто присудом
+      # [ARCH.78, 2026-08-20] — email (critical ↑) + Telegram покривають сценарій.
+      live_channels.each { |channel| bulk_args << [ user.id, alert.id, channel.to_s ] }
     end
 
     Sidekiq::Client.push_bulk("class" => SingleNotificationWorker, "args" => bulk_args) if bulk_args.any?
