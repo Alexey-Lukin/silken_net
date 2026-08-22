@@ -84,7 +84,7 @@ RSpec.describe Actuators::CommandStatusBadge do
     # ⚠️ Вхід досяжний ЛИШЕ стабом РИДЕРА: `status` — справжній enum, тож
     # `ActuatorCommand.new(status: "something_else")` кидає `ArgumentError` просто в
     # конструкторі. Доти цю гілку «перевіряло» значення, якого прод не дає.
-    # ⊕ Фолбек тут ЧЕСНО розрізнимий, на відміну від `trees/chronicle` ([`04_06 §A.4`] BP 20):
+    # ⊕ Фолбек тут ЧЕСНО розрізнимий, на відміну від `trees/chronicle` ([`04_06 §B.2` #20] BP 20):
     # `surface-elevated` не належить жодному з пʼяти живих статусів, а мітка через
     # `t(default: status)` друкує САМЕ значення — тобто ознака в розмітці є.
     it "falls back to the elevated-surface style for unknown status" do

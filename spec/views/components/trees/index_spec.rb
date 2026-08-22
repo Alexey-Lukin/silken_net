@@ -199,7 +199,7 @@ RSpec.describe Trees::Index do
     # (2) Пін НЕ на клас: доти стояв `text-gaia-text`, який носять і `h2` кластера,
     #     і DID-спан, тобто був зелений незалежно від статусу. А на клас фолбеку
     #     пінити теж не можна — `bg-status-neutral` належить ще й живому `removed`,
-    #     тому клас не розрізняє «фолбек» від «нормальний стан» (`04_06 §A.4` BP 20).
+    #     тому клас не розрізняє «фолбек» від «нормальний стан» (`04_06 §B.2` #20).
     #     Розрізняє лише сам текст: `StatusBadge` fail-open віддає сире значення.
     it "renders an unknown status verbatim, via the fail-open branch" do
       broken = build_tree
