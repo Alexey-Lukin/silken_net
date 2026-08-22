@@ -420,7 +420,7 @@ module Tracker
     # row on 2026-08-10 and survived only in the commit message; restored here 2026-08-15,
     # because the incident is what BOUGHT this guard and a rule whose evidence lives only
     # in git history is a rule nobody can weigh.) 📌 backlog / 🗄️ archive sections
-    # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror, 00_06 §4)
+    # are module-agnostic (section_modules nil/empty) → exempt. (canon-mirror; гейт зареєстровано в 00_06 §3)
     #
     # ⛔ Curation is by THEME — by the subject's unchanging identity — and the obvious
     # alternative was tested and REJECTED (§07, 2026-07-26; moved here from the 00_06 §3

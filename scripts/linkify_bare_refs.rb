@@ -18,7 +18,7 @@
 # §S6.14, §DOC.11) is left as prose AFTER the link (00_06 §1: descriptive context in
 # prose, not the §-slot).
 #
-# Safety (00_06 §4 sweep method): dry-run by default (--apply writes); presence-checked
+# Safety (sweep method — `.claude/prompts/module_restructure.md`, крок 3): dry-run by default (--apply writes); presence-checked
 # (unresolved ids REPORTED, left alone); skips ``` fences + spans already in a link.
 #
 # Usage:

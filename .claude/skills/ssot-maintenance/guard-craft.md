@@ -80,7 +80,7 @@ FIX      Reworded the 3 stale lines → "зайнято FW.2"; gate flipped HARD
 A z-divergence wording fix in 07_01 §6.5 snowballed into extracting two
 oversized, scattered topics into their own canon pages: slashing (00_01 §6,
 ~half the vision page) → `05_05`, governance (05_03 §749, ~156 lines) → `05_06`.
-Repeatable shape (now canon in `00_06 §4`):
+Repeatable shape (method → `.claude/prompts/module_restructure.md`; the NORM stays canon in `00_06 §4`):
 
 ```
 GENRE FIRST    does the page describe anything BUILT? if not, it is a spec for
