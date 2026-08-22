@@ -1214,10 +1214,23 @@ RSpec.describe DocsLinter do
       expect(hits).to include(a_string_matching(/\(рядок 31\)/), a_string_matching(/\(р\.76,80,84,88\)/))
     end
 
-    it "does not flag a ClassName:NNN ref inside 00_06/00_07 (they cite the bad forms as examples)" do
-      txt = "example of the bad form: `BlockchainMintingService:107`\n"
-      expect(described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", txt)).to be_empty
-      expect(described_class.source_line_ref_drift("00_07_Action_Plan_Tracker", txt)).to be_empty
+    # Narrowed 2026-08-22: the illustration exemption is SECTION-scoped, not
+    # file-scoped. It used to bless two whole files — the standard and the
+    # tracker — and that blanket hid a LIVE volatile ref on the hot path.
+    it "exempts a ClassName:NNN ref only INSIDE the illustration section of 00_06/00_07" do
+      inside_std = "## 🛡️ 3. Drift-prevention tooling\nexample of the bad form: `BlockchainMintingService:107`\n"
+      inside_trk = "## 🗄️ Архів закритих пунктів\n| X | was `BlockchainMintingService:107` |\n"
+      expect(described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", inside_std)).to be_empty
+      expect(described_class.source_line_ref_drift("00_07_Action_Plan_Tracker", inside_trk)).to be_empty
+    end
+
+    it "FLAGS the same ref in a live section of those files — the blanket used to hide it" do
+      live_std = "## 🏠 2. Canonical-home registry\nчитач стоїть на `BlockchainMintingService:107`\n"
+      live_trk = "## §04 · Backend\n- **Стан:** гейт у `TelemetryUnpackerService:946`\n"
+      expect(described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", live_std))
+        .to include(a_string_matching(/BlockchainMintingService:107/))
+      expect(described_class.source_line_ref_drift("00_07_Action_Plan_Tracker", live_trk))
+        .to include(a_string_matching(/TelemetryUnpackerService:946/))
     end
   end
 

@@ -1038,15 +1038,33 @@ module DocsLinter
   # tail after a doc-id is never legitimate. Tracker NOT exempt (the ref lived there).
   DOC_LINE_REF_RE = /(?<![\w.:])\d\d_\d\d:\d+\b/
 
+  # 🔴 The illustration exemption is SECTION-scoped, not file-scoped (narrowed
+  # 2026-08-22). It used to be `base.start_with?("00_06", "00_07")` — a blanket
+  # immunity for two whole files, i.e. exactly the standard and the tracker, the
+  # two largest and most consequential documents in the corpus. Measured cost of
+  # narrowing: six hits total, five of them legitimate illustrations inside the
+  # gate registry and one ARCHIVE row — and one LIVE volatile ref on the hot path
+  # (`TelemetryUnpackerService:<line>` inside an open item) that the blanket had
+  # hidden. A green run on those two files was therefore never evidence for these
+  # dialects. Illustrations legitimately live in exactly two places: the drift-gate
+  # registry of the standard, and the tracker's archive — both are declarations
+  # ABOUT bad forms; everywhere else in those files a line-ref is a live claim.
+  ILLUSTRATION_SECTION_RE = /\A##+\s*(?:🛡️\s*)?3\.\s*Drift-prevention|\A##\s*🗄️/
+
   def source_line_ref_drift(path, text)
     base = File.basename(path.to_s)
-    cites_examples = base.start_with?("00_06", "00_07")           # standard + tracker name the bad forms
+    exempt_file = base.start_with?("00_06", "00_07")
+    in_illustration = false
     text.each_line.flat_map do |line|
+      if line.start_with?("#")
+        in_illustration = exempt_file && line.match?(ILLUSTRATION_SECTION_RE)
+      end
+      cites_examples = in_illustration
       [
         line[SOURCE_LINE_REF_RE],
         (line[CLASS_LINE_REF_RE] unless cites_examples),
         (line[PROSE_LINE_REF_RE] unless cites_examples),
-        (line[DOC_LINE_REF_RE] unless base.start_with?("00_06"))
+        (line[DOC_LINE_REF_RE] unless in_illustration && base.start_with?("00_06"))
       ].compact.map do |ref|
         "#{path}: volatile source line-ref `#{ref}` — cite the symbol/#define, not a line → #{line.strip[0, 80]}"
       end
