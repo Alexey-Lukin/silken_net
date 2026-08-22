@@ -265,7 +265,7 @@ rb_dark() {
 # 2026-08-18: 136 → 137 — `log_dependabot_sweep.md`, the last home that had no
 # journal twin. 34203 → 11626 B, i.e. the whole «Пастки» section (31 bullets)
 # moved VERBATIM and the home kept compressed imperatives + routers.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-144}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-145}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
