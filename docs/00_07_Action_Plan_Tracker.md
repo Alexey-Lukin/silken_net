@@ -817,7 +817,7 @@
 #### FW.18b — OTA threshold invalid counter (production-visibility)
 - **P2** · 👤 · 🟢 · → [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference)
 - **Стан:** OTA-поріг validation + invalid-counter — `TinyML_Apply/Validate_Threshold` (NaN/out-of-range/інверсія → default; інваріант `SILENCE<WARNING<CRITICAL`) + saturating `tinyml_threshold_invalid_count` (байт 11 `[thr_invalid:5|TTL:3]`; CCM-дім `diag` byte 18) + backend-метрика `silkennet_tinyml_threshold_invalid_reports_total` (без per-DID — [`06_03 §2.9`](06_03_Prometheus_Observability)) + Grafana IaC (`deploy/grafana/`, `import.rb` ідемпотентний) — host-done + канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
-- [ ] 🔗 їде з S2.2-Grafana-сесією (vilize 07-11: 👤→🔗): `deploy/grafana/import.rb` імпортує ВСЕ (dashboard+alerts) одним запуском — FW.18b не додає окремої операторської дії; structure 100% CI-gated (`import.rb --dry-run` у `ci.yml:538`)
+- [ ] 🔗 їде з S2.2-Grafana-сесією (vilize 07-11: 👤→🔗): `deploy/grafana/import.rb` імпортує ВСЕ (dashboard+alerts) одним запуском — FW.18b не додає окремої операторської дії; structure 100% CI-gated (`import.rb --dry-run` — крок `Grafana dashboards · import dry-run` у `ci.yml`; номер рядка тут стояв і встиг дрейфнути 538→577)
 
 #### FW.8 — CRITICAL_Z_MIN/MAX hardcoded
 - **P2** · 👤 · 🟢 · → [`03_01 §2.3`](03_01_Firmware_Lifecycle_and_DMA)
