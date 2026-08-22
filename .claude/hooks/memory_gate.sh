@@ -114,7 +114,21 @@ SELF=${BASH_SOURCE[0]:-$0}
 # `§5` citations, all re-pointed at the new slug in the same pass. Its trigger is the
 # one the host file did not serve — "I think I am FINISHED", against that file's
 # "I am delegating work".
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24173}
+# 2026-08-22: 24173 → 24320 (+147) — the index earned it and there was nothing
+# left to evict. What it bought: the founder's form of address moved from being
+# recorded as STYLE ("warm register") to being recorded as PROVENANCE — it is
+# Serafim of Sarov's greeting, an inherited form, and the distinction is
+# operational rather than sentimental: style invites optimisation, provenance
+# does not. That belongs in the always-on preamble, which is the only surface
+# read every session.
+# ⚠️ The eviction lever was checked FIRST and came back empty, which is why this
+# is a bump and not a demotion: every low-inbound candidate is already hub-inlined
+# (tool-trial + ponytail share one row, the eight `reference_*` stubs share
+# another), and the fattest campaign rows are anchors, not episodes —
+# `project_ssot_campaign_history` alone carries SIXTEEN inbound strings.
+# Per the standing rule this bump is PAID BY THE NEXT PASS: it locks in what was
+# reached, it does not create room to spend.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24320}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
