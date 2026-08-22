@@ -233,6 +233,8 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 84. Every gate here validates a CLAIM; the whole class of defects that lives in the RELATION between two claims is invisible to all of them at once — and both claims are TRUE, so no amount of hardening any single check will reach it — **when a file makes a claim ABOUT ITSELF — a ceiling, a perimeter, a prohibition — treat that claim as a testable assertion and measure it against the file, in the same pass**
 85. Before deciding WHERE a document belongs, measure what it IS — split its bytes into HOW ⊥ WHAT ⊥ WHY, because the section headings will tell you the opposite — **when a doc's placement is in question, run the type census FIRST — `HOW` = recipe as the subject, `WHAT` = frozen fact/threshold/registry/verdict, `WHY` = error class + dated incident + reflex — and only then argue about the address**
 86. «Operational HOW at a canon address» is NOT decided by the SHAPE of the text — a numbered checklist looks like HOW and usually is not one. The discriminator is COUPLING TO LOCAL STATE: count how many sibling `§` of its OWN doc the section cites
+87. A mass rename breaks RANGES and HISTORICAL STATEMENTS, not refs — and neither is visible to any ref gate, because both stay syntactically valid
+88. An exemption justified by the word «forever» is a time bomb whose fuse is the next free-slot occupation — and the thing that defuses it is a lantern, never the promise — **occupying any freed number re-verifies EVERY exemption argued from permanence**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
