@@ -1098,7 +1098,27 @@ skills.each_key do |nm|
     dups[nm] |= nums.tally.select { |_n, c| c > 1 }.keys
   end
 end
-names = skills.keys.sort_by { |k| -k.length }
+# 🔴 A skill's address space is reachable by MORE THAN ITS DIRECTORY NAME, and
+# the corpus cites it by the COMPANION FILE's title far more often than by the
+# directory. Measured 2026-08-22: of 136 live `§Guard-craft #N` citations, 66
+# (48.5%) name only «Guard-craft»/«guard-craft» — never «ssot-maintenance» — so
+# the anchor walk never evaluated them AT ALL. They carry a `#`, a real number
+# and the right subject; they simply were not reachable, and the gate was green
+# throughout. The split that produced `backend/gotchas.md` the same day would
+# have opened the identical hole for «gotchas #N».
+# Cure is generative, not a hard-coded alias: every non-SKILL.md file of a skill
+# lends the skill its basename. A future split needs no patch here.
+aliases = {}
+skills.each_key { |nm| aliases[nm] = nm }
+skill_files.each do |p2|
+  nm = File.basename(File.dirname(p2))
+  base = File.basename(p2, ".md")
+  next if base == "SKILL" || !skills.key?(nm)
+  aliases[base] ||= nm
+  cap = base.sub(/\A([a-z])/) { $1.upcase }
+  aliases[cap] ||= nm
+end
+names = aliases.keys.sort_by { |k| -k.length }
 
 # ── HOMOGLYPH · item suffixes must live in ONE alphabet ──────────────────────
 # Cyrillic `а` is U+0430 and Latin `a` is U+0061; they are indistinguishable on
@@ -1222,7 +1242,7 @@ sources.each do |label, path|
           # A `§Section` between the skill name and the number disambiguates —
           # and that is not a proposal but the convention USAGE already settled
           # on: every live citation to a doubled number already carries one.
-          if dups[nm].include?(n) && !w[0...Regexp.last_match.begin(0)].to_s.include?("§")
+          if dups[aliases[nm]].include?(n) && !w[0...Regexp.last_match.begin(0)].to_s.include?("§")
             if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
               used_exempt[label] << "#{nm} ##{n}"
             else
@@ -1230,7 +1250,7 @@ sources.each do |label, path|
                    "one file — the number is not an address. Name the sequence: `#{nm} §Section ##{n}`"
             end
           end
-          next if skills[nm].include?(n)
+          next if skills[aliases[nm]].include?(n)
           if EXEMPT.fetch(label, []).include?("#{nm} ##{n}")
             used_exempt[label] << "#{nm} ##{n}"
             next
@@ -1243,7 +1263,7 @@ sources.each do |label, path|
           next if reported.key?(key)
           reported[key] = true
           puts "NUMREF  #{label}:#{ln + 1} cites `#{nm} ##{n}` — that skill defines no item " \
-               "##{n} (max ##{skills[nm].max_by { |x| x.to_i }}). A line number is not an address: cite an " \
+               "##{n} (max ##{skills[aliases[nm]].max_by { |x| x.to_i }}). A line number is not an address: cite an " \
                "unnumbered paragraph by its opening phrase"
         end
       end
@@ -1266,6 +1286,14 @@ EXEMPT.each do |label, refs|
   end
 end
 RUBY
+  # 🔴 A ruby EXCEPTION here used to exit 0 with the battery GREEN. Found
+  # 2026-08-22 while adding the alias map: one un-retargeted `skills[nm]` raised
+  # NoMethodError, ruby printed the backtrace to STDERR — and `--audit` collects
+  # STDOUT and decides by `[ -z "$out" ]`, so a check that DIED read exactly like
+  # a check that PASSED. Same class the DARK banners exist for: a gate may decline
+  # to check, it may not decline QUIETLY.
+  rc=$?
+  [ "$rc" -eq 0 ] || echo "DARK  skill_item_check exited $rc — it DIED rather than passed; NUMREF/AMBIG/HOMOGLYPH are unguarded this run (rerun with stderr visible)"
   return 0
 }
 
@@ -1569,6 +1597,15 @@ EOF
 
 🔴 **An unnumbered load-bearing paragraph** — the shape that has no address.
 EOF
+  # A COMPANION file, so the alias half of the address space is exercised: the
+  # corpus cites a split skill by its companion's title far more often than by
+  # the directory name (measured 66 of 136 for `§Guard-craft`).
+  cat >"$d.repo/.claude/skills/fixtureskill/auxnotes.md" <<'EOF'
+# Fixture companion
+
+3. **Third item** — body, lives only in the companion.
+4. **Fourth item** — body, lives only in the companion.
+EOF
   cat >"$d/MEMORY.md" <<'EOF'
 - [Alpha](feedback_alpha.md) — the naming rule
 - [Beta](feedback_beta.md) — the gateway note
@@ -1766,6 +1803,20 @@ selftest() {
   #      cites one past the skill's last item.
   _st_build "$d"; printf '\nOperational pair → `fixtureskill` #66.\n' >>"$d/feedback_beta.md"
   _st_check "NUMREF on a skill item number out of range" expect 'NUMREF'
+
+  # 10d-bis. The ALIAS half [2026-08-22]: a citation may name the COMPANION FILE
+  #      instead of the skill directory, and until this landed the anchor walk
+  #      never evaluated such a line at all — 66 of 136 live `§Guard-craft #N`
+  #      citations were unreachable while the gate read green. Positive control:
+  #      a phantom cited through the companion's name MUST still be caught.
+  _st_build "$d"; printf '\nSee `auxnotes` #99 for the rest.\n' >>"$d/feedback_beta.md"
+  _st_check "NUMREF reaches a phantom cited by the COMPANION name" expect 'NUMREF'
+
+  # 10d-ter. And its negative half — otherwise the alias would merely SILENCE a
+  #      whole citation family instead of checking it. Item 4 lives only in the
+  #      companion, so this also proves items are collected across all files.
+  _st_build "$d"; printf '\nSee `auxnotes` #4 for the rest.\n' >>"$d/feedback_beta.md"
+  _st_check "a live item cited by the COMPANION name stays silent" reject 'NUMREF'
 
   # 10e. Its negative control, and it is load-bearing here: a detector keyed on
   #      `#N` near a skill name would fire on every legitimate gotcha citation in
