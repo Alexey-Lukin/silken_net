@@ -150,9 +150,12 @@ namespace :docs do
         rest = lines[(si + 1)..] || []
         ei = rest.index { |l| l =~ /^\#{2}\s/ }
         section = (ei ? rest[0...ei] : rest).join
-        # Anchored on the DECLARATION form, never on the digit: 00_08's subject is
-        # literally «Beyond TRL 9», so a bare `TRL\s*\d` would fire on the page's own
-        # topic. What makes a number a CLAIM here is the skeleton's bold label.
+        # Anchored on the DECLARATION form, never on the digit. ⚠️ The page that bought this
+        # (its subject was literally «Beyond TRL 9») has since been dissolved by DOC-T.68
+        # фаза 4, so the ground is no longer readable in the tree — ⛔ do NOT «simplify»
+        # this back to a bare `TRL\s*\d`: any future page whose SUBJECT is a TRL level
+        # would fire on its own topic. What makes a number a CLAIM here is the
+        # skeleton's bold label, not the digit.
         trl_misapplied << "#{base} — #{TRL_NOT_APPLICABLE[base[0, 5]]}" if section =~ /\*\*Поточний TRL|\*\*TRL[[:space:]-]*\d/
       end
 
