@@ -89,7 +89,7 @@ STM32WLE5JC ─[UART1 AT]─▶ SIM7070G (Київстар SIM)
 - Зайди на [Starlink Availability Map](https://www.starlink.com/map) → фільтр "Direct to Cell"
 - Або запитай Київстар: чи активовано DTC для корпоративних SIM у зоні Черкаський бір / Канівські гори
 
-> **⚠️ Транспортна надійність через D2C (2026-05-28):** Direct-to-Cell працює за LTE-протоколами (SMS + базовий 4G) через жорсткий **Carrier-NAT**, який може блокувати вхідний UDP (а CoAP — UDP) або змінювати порти. Тому **чистий CoAP/UDP ненадійний** на D2C; архітектура має передбачати фолбек **CoAP-over-TCP** ([RFC 8323](https://www.rfc-editor.org/rfc/rfc8323)) або **MQTT-SN**, а Ingress Proxy ([`06_01`](06_01_Deployment_Kamal_Terraform)) — толерувати високий jitter / packet loss супутникового LTE. HIL `realistic_mode` ([`00_03 §3.2`](00_03_TRL_Matrix_HIL_and_Beyond)) моделює саме ці умови.
+> **⚠️ Транспортна надійність через D2C (2026-05-28):** Direct-to-Cell працює за LTE-протоколами (SMS + базовий 4G) через жорсткий **Carrier-NAT**, який може блокувати вхідний UDP (а CoAP — UDP) або змінювати порти. Тому **чистий CoAP/UDP ненадійний** на D2C; архітектура має передбачати фолбек **CoAP-over-TCP** ([RFC 8323](https://www.rfc-editor.org/rfc/rfc8323)) або **MQTT-SN**, а Ingress Proxy ([`06_01`](06_01_Deployment_Kamal_Terraform)) — толерувати високий jitter / packet loss супутникового LTE. планований HIL-профіль навантаження (**ще не в коді** — [`00_03 §3.2`](00_03_TRL_Matrix_HIL_and_Beyond)) ([`00_03 §3.2`](00_03_TRL_Matrix_HIL_and_Beyond)) моделює саме ці умови.
 
 #### Що залишається відкритим
 

@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Механізм якорування повністю імплементовано (broadcast + confirmation-lifecycle → `:confirmed`/`:failed`/`:manual_review` + stuck-reconcile, [ARCH.66] §5.1).
-- **Цільовий TRL:** TRL 9 = mainnet deploy (контракт на Ethereum Mainnet + перший щотижневий anchor підтверджено), per [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond). Поточні gas-management + аудит-трейл у БД вже на рівні TRL 8.
+- **Цільовий TRL:** TRL 9 — ⚠️ **НЕ «deploy»**: mainnet-присутність із лімітом емісії та multi-sig настає вже на TRL 7-8; TRL 9 = доведена стабільна робота + зняття лімітів/DAO (⛔ не переписуй це на «TRL 9 = mainnet deploy»: та редакція суперечила корекції [`00_03 §4`](00_03_TRL_Matrix_HIL_and_Beyond), узгоджено 2026-08-22). Технічний маркер модуля лишається той самий: контракт на Ethereum Mainnet + перший щотижневий anchor підтверджено, per [`00_03`](00_03_TRL_Matrix_HIL_and_Beyond). Поточні gas-management + аудит-трейл у БД вже на рівні TRL 8.
 - **Відкрите:** Production gas-management tuning + Mainnet contract deploy → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
