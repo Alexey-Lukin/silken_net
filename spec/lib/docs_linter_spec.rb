@@ -558,7 +558,7 @@ RSpec.describe DocsLinter do
   end
 
   describe ".ai_vendor_name_drift" do
-    it "flags an AI-vendor name re-stated outside the 00_02 roster owner" do
+    it "flags an AI-vendor name re-stated outside the 00_06 roster owner" do
       hits = described_class.ai_vendor_name_drift("00_03_TRL_Matrix_HIL_and_Beyond", "Handoff: Gemini (Shaping) → Cursor (Implementation)\n")
       expect(hits.size).to eq(1) # one violation per line (first vendor reported)
       expect(hits.first).to include("AI-vendor name `Gemini`")
@@ -582,7 +582,7 @@ RSpec.describe DocsLinter do
 
     it "does not flag a labelled mirror or a line referencing the roster home" do
       expect(described_class.ai_vendor_name_drift(
-        "01_02_Ti", "ростер — дзеркало, правити в 00_02 (Cursor/Copilot)\n")).to be_empty
+        "01_02_Ti", "ростер — дзеркало, правити в 00_06 §5.1 (Cursor/Copilot)\n")).to be_empty
     end
 
     it "skips fenced code and does not false-positive on lowercase cursor/grok or excluded tokens" do

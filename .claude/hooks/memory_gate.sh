@@ -1002,7 +1002,6 @@ exempt = {
   "project_ssot_campaign_history.md" => ["05_03 §749", "08_03 §11", "08_01 §2"],
   "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15"],
   "project_ip_posture_defensive_publication.md" => ["08_01 §2"],
-  "project_uwei_process_layer_cut.md" => ["00_04 §2"],
   "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5"]
 }
 # Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
