@@ -14,7 +14,8 @@
 # steps of the lane, though — the hint text says so and points at
 # `docs_band.rb`, because reading its green as a verdict about the whole Docs
 # lane is exactly what reddened `main` three times (OPS.25). What no gate
-# can see is the one red line `deep_archival.md` itself flags as ungated: the
+# can see is a red line `deep_archival.md` itself flags as ungated (one of
+# several — the sentence below already says "plus the ordering rule"): the
 # zero-loss set-diff is grep-based, so a fact that is present-by-token but
 # gutted-in-substance passes GREEN. That is the only thing worth interrupting
 # for — plus the ordering rule, whose violations are invisible by construction.
