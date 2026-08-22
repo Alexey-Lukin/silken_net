@@ -1133,7 +1133,28 @@ module DocsLinter
   # exactly like the thing it guards. A constant naming no `NN_NN` contributes nothing
   # (`TL_CHAIN_HASH_EXEMPT` matches prose; `THERMAL_STRESS_OWNER_DOC` matches a report
   # basename), so the sweep is safe over the whole family. Returns number → [const names].
-  EXEMPTION_CONST_RE = /_(?:OWNER_DOC|EXEMPT|HOMES)\z/
+  #
+  # 🔴 The suffix list is the lantern's OWN blind spot, and it was measured on 2026-08-22:
+  # four `*_MIRROR_RE` constants name a doc number literally and were invisible here, so
+  # renaming that doc broke them TWO ways at once and neither was loud — legitimate lines
+  # citing the NEW number lost their immunity, while the dead old number stayed in the
+  # regex granting immunity to anything that happened to mention it, forever. Widening the
+  # list to include them cost NOTHING: 7 more constants, exactly one new number key, and
+  # zero false positives, because the real filter is the `\d\d_\d\d` scan on the VALUE —
+  # the name filter does no protective work at all today (removing it entirely measured
+  # identical). It is kept narrow only so a future detector-regex that merely *mentions* a
+  # number in an error string does not silently join the owner family.
+  #
+  # ⛔ TWO CEILINGS THIS GATE HAS AND CANNOT CLOSE — do not read a green run as coverage:
+  # (1) `constants` here resolves to the constants of THIS FILE, not the process. Every
+  #     doc-number-keyed constant in `scripts/*.rb`, `lib/tracker/dashboard.rb` and
+  #     `lib/docs_graph.rb` is structurally out of reach; no suffix widens into them.
+  #     Most break loudly (`Errno::ENOENT` on a path), but the regex-shaped ones do not.
+  # (2) The Hash branch below reads KEYS only by design, so a number living in a Hash
+  #     VALUE (`DEPRECATED_TERMS`, `SUPERSEDED_FRONTMATTER`) is invisible on purpose and
+  #     stays invisible. Their numbers must be swept by hand on any renumber.
+  # Mirror of this ceiling in prose: `00_06 §3`, row "exemption subject".
+  EXEMPTION_CONST_RE = /_(?:OWNER_DOC|EXEMPT|HOMES|MIRROR_RE|META_DOC|DRIFT)\z/
 
   def number_keyed_exemptions
     constants.grep(EXEMPTION_CONST_RE).each_with_object({}) do |name, out|

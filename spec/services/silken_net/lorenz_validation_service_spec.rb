@@ -3,7 +3,7 @@
 
 require "rails_helper"
 
-# [Lorenz de-risk / 07_03 §1.4] Unit coverage for the ground-truth validation harness.
+# [Lorenz de-risk / 05_05 §8] Unit coverage for the ground-truth validation harness.
 # Pure functions — no DB. Verifies the stats are correct so the eventual ЧНУ
 # analysis (Z↔health) can be trusted.
 RSpec.describe SilkenNet::LorenzValidationService do

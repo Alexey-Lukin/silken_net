@@ -11,7 +11,7 @@
 > - Архітектура моделі / класи / пороги — `docs/03_03 §4` / §5 / §10
 > - Трекер блокерів — [`docs/00_07`](../../../docs/00_07_Action_Plan_Tracker.md) FW.4 / FW.25 / FW.26 / FW.42 / ARCH.40
 > - ML-метод (parity-інваріант, скаффолди) — [`tools/ml/README.md`](../README.md) + скіл `ml-engineering`
-> - Validation Gate (специфікація ДО коду) — `docs/00_02`
+> - Validation Gate (специфікація ДО коду) — [`00_06 §5`](../../../docs/00_06_SSOT_Documentation_Standard.md) ⚠️ доти цей рядок казав `docs/00_02` — номер розчинено 2026-08-10, і форма без імені доку й без `§` невидима обом реф-гейтам
 
 ---
 
@@ -76,7 +76,7 @@ CMSIS-DSP (лінкується у `silken_common` через `LOGMEL_USE_CMSIS`
 
 ---
 
-## 2. Специфікація моделі (гіпотеза за Validation Gate `00_02`)
+## 2. Специфікація моделі (гіпотеза за Validation Gate `00_06 §5`)
 
 - **Вхід:** `float[40]` per-frame log-mel — наявний контракт `Run_Inference`
   (`MODEL_INPUT_SIZE=40`); **НЕ** 2D-патч спектрограми. Деплой-інференс — покадровий.

@@ -181,7 +181,7 @@
 |---|---|
 | **Файл** | `app/services/silken_net/lorenz_validation_service.rb` |
 | **Вхід** | парні `(telemetry, ground_truth)`-спостереження (передаються аргументом — **pure / read-only**, без DB-доступу й slashing-side-effects) |
-| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) / [`07_03 §1.4`](07_03_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
+| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) — ⚠️ парний реф на медакадемію тут стояв помилково: харнес про Z↔health, а не про токсикологію; партнер аналізу — ЧНУ, [`07_03 §1.1`](07_03_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
 | **Вихід** | `report` (Hash кореляцій/інкрементів). Чиста функція. |
 
 ### `TreeChronicleService`

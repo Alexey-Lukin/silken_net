@@ -385,7 +385,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | **Накопичувач енергії** | Supercapacitor 0.47 F / 5.5 В | До 500,000 циклів заряду/розряду. |
 | **MCU & Radio** | STM32WLE5JC (LoRa-E5) | ARM Cortex-M4, LoRa 868 МГц (custom mesh), Edge AI (TinyML). |
 | **Антена** | Ceramic SMD Antenna 868 МГц (LTCC) | Пайка роботом, Keep-Out Zone ≥3 мм. Альтернатива: Ignion Virtual Antenna™. Детально → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM). |
-| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (**∅25 мм** frozen), **байонет** (НЕ різьба, §3.5 Z-stack) до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM). |
+| **Корпус / Радом** | PEEK Medical Grade (IP68) — окрема деталь IoT-капсули, **НЕ Zone 2** | Радіопрозорий купол (**∅25 мм** frozen), **байонет** (НЕ різьба — Z-стек-детермінізм, [`02_02 §3.5`](02_02_Blind_Mate_Pogo_Pin_Interface)) до катодного фланця Zone 3, O-ring EPDM. Захист від вандалізму та вологи. Детально → [`02_01 §5.2`](02_01_Hardware_Architecture_and_BOM). |
 
 > **Архітектурна зміна (Pivot v2):** 4 титанові голки-електроди (система Кельвіна) та каскад LTC3108 + трансформатор 1:100 **повністю видалено**. Замінено на коаксіальну «Матрьошку» з EBFC, що напряму живить BQ25570 без проміжного підсилення.
 

@@ -4277,7 +4277,7 @@ TEST(test_fw18_arch21_dr13_dr14_corruption_falls_back_to_defaults) {
  * Критично: НА НАСТУПНОМУ boot'і, коли Lorenz state продовжується з DR16-DR19,
  * новий payload має знову правильно укладатися у [PanicFlag:1|Status:2|GP:5] —
  * НЕ у legacy [Status:2|GP:6], інакше bit 7 status'у конфліктує з PANIC_FLAG_BIT
- * mask'ом і backend читає anomaly як homeostasis (forensics див. 10_02 FW.29-PACK).
+ * mask'ом і backend читає anomaly як homeostasis (розкладка й пак — 03_04 §4.3).
  */
 
 #define FW29P_PANIC_FLAG_BIT  0x80
@@ -5210,7 +5210,7 @@ TEST(test_fw42_raw_adc_range_always_skips_fail_closed) {
 /* ════════════════════════════════════════════════════════════════════
  * [FW.29] Follow-up boundary tests
  * ════════════════════════════════════════════════════════════════════
- * Закриваємо edge-case прогалини з `10_02 FW.29 follow-ups`:
+ * Закриваємо edge-case прогалини пак-розкладки (03_04 §4.4, дріт 03_05 §2.1):
  *   - StatusByte boundary при максимальних growth_points + panic
  *   - Взаємодія panic-кадру і acoustic saturation @ 255 (FW.22)
  */

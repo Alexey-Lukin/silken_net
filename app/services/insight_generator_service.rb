@@ -324,7 +324,7 @@ class InsightGeneratorService < ApplicationService
   # INERT (returns stress unchanged) when ANY holds — by design we ship NO guessed
   # kPa threshold into the slashing path:
   #   • avg_vpd nil       → firmware not yet emitting VPD (HW.32 / 03_01)
-  #   • calibration nil   → ground-truth thresholds unset (07_03 §1.4)
+  #   • calibration nil   → ground-truth thresholds unset (05_05 §8)
   #   • VPD not low        → normal/high VPD = no weather excuse for low sap
   #   • sap near baseline  → nothing weather could account for
   #
