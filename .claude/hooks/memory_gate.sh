@@ -1275,6 +1275,88 @@ RUBY
 # them: BROKEN is caused by an Edit to MEMORY.md (the most-edited file in the
 # corpus), FORMAT by a Write/Edit that drops a frontmatter key. Auditing them
 # later means telling the author about a break they can no longer see the cause of.
+# ── STALE-STATE ───────────────────────────────────────────────────────────────
+# The class no other stance can see, and the reason is its TRIGGER, not its
+# shape: memory says «стан звіряй у `00_07` X», the item is later ARCHIVED, and
+# the sentence rots — but the edit that rots it happens in the REPO, so the
+# PostToolUse hook (which fires on writes into the corpus) never runs at the
+# moment of decay. Measured 2026-08-22, the day after four whole families
+# (I18N.*, TEST.*, PERF.*, DOC-T.*) went to §🗄️ in two nights: 64 raw hits.
+#
+# WORKLIST, never a verdict — always exit 0, deliberately OUTSIDE `--audit`.
+# Its yield runs to dozens after any archival wave, and a permanently-red
+# battery trains the reader to skim the one stance that must stay loud.
+#
+# The live/archived split comes from `Tracker::Dashboard`, never from a local
+# regex: `parse` skips `## 🗄️` by construction and its ITEM_HEAD tolerates the
+# STAGE-emoji prefix (`#### 🌿 UNI.13a`) that a bare `[A-Z]` anchor drops
+# silently — a hand-rolled matcher got that wrong twice in the session that
+# wrote this, in both directions.
+#
+# DECLARED CEILING, read it before trusting a green run:
+#   · Perimeter is the literal `00_07` only. The corpus also routes by BARE ID
+#     (`стан → ARCH.85`), which this does not see; that form is rarer for STATE
+#     clauses but it exists, so a clean run is not a census.
+#   · A PROVENANCE citation of an archived ID is NOT a defect — an instance
+#     legitimately names the item it was bought under. Only a clause PROMISING
+#     current state is reported, which is why the promise-vocabulary is
+#     bilingual: an English-only pattern is blind to half this corpus.
+stale_state_check() {
+  [ -n "$RB" ] || { echo "DARK  stale_state_check did not run — no usable ruby"; return 0; }
+  [ -f "$REPO/lib/tracker/dashboard.rb" ] || { echo "SKIP  no tracker resolver at $REPO/lib/tracker — cannot split live from archived"; return 0; }
+  "$RB" - "$MEM_DIR" "$REPO" <<'RUBY'
+dir, repo = ARGV
+begin
+  require File.join(repo, "lib", "tracker", "dashboard")
+rescue Exception => e
+  puts "DARK  stale_state_check did not run — #{e.class}: #{e.message.lines.first.to_s.strip[0, 120]}"
+  exit 0
+end
+# Overridable so the selftest can pin this against a FIXTURE tracker. Keying the
+# cases to real IDs would make them rot the day those items are archived — i.e. the
+# very event this detector exists to notice would break its own proof.
+md    = File.read(ENV["MEMORY_GATE_TRACKER"].to_s.empty? ? Tracker::Dashboard::DEFAULT_PATH : ENV["MEMORY_GATE_TRACKER"])
+live  = Tracker::Dashboard.parse(md).map(&:id).to_set
+allid = Tracker::Dashboard.all_item_ids(md).to_set
+arch  = allid - live
+
+ID      = /\b([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]*[0-9A-Za-z])\b/
+# Bilingual on purpose — see the ceiling note above the function.
+# 🔴 The lookarounds are LOAD-BEARING, not tidiness. A bare /стан/ matches inside
+# «ін-СТАН-с» and «СТАН-дарт» — two of the commonest words in this corpus — and the
+# first run of this detector reported 53 hits of which a third were exactly that.
+# Same shape as `SMS` matching inside `mechanisMS`: in a corpus whose content IS
+# cross-references, the substring and the signal share their characters. Any future
+# widening of this pattern gets the same treatment: read the top hits, then trust it.
+PROMISE = /(?<!\p{L})[Сс]тан(?:у|і|ом|ів|и)?(?!\p{L})|(?<!\p{L})[Сс]татус(?:у|и|ів)?(?!\p{L})|звіряй|\bStatuses?\b|\bstate\b|\bState\b|verify there|Tracked in/
+# A clause that already SAYS the item is closed is doing its job, not rotting.
+MARKED  = /🗄️|архівн|archiv|історичн|закрит|closed|вичерпан|retired/i
+
+rows = []
+Dir["#{dir}/*.md"].sort.each do |p|
+  f = File.basename(p)
+  File.foreach(p).with_index(1) do |l, n|
+    next unless l.include?("00_07") && l.match?(PROMISE)
+    seen = false
+    l.enum_for(:scan, "00_07").each do
+      s = Regexp.last_match.begin(0)
+      frag = l[[0, s - 140].max, 280].to_s
+      ids  = frag.scan(ID).flatten.uniq.select { |i| allid.include?(i) }
+      next if ids.empty?
+      next if ids.any? { |i| live.include?(i) }   # a live heir keeps the route honest
+      next if frag.match?(MARKED)
+      next if seen
+      seen = true
+      rows << [f, n, ids.sort, l.strip.gsub(/\s+/, " ")[0, 150]]
+    end
+  end
+end
+rows.each { |f, n, ids, t| puts format("STALE-STATE %-40s:%-4d %-22s %s", f, n, ids.join(","), t) }
+puts "── #{rows.size} clauses promise CURRENT state at an ID that is archived (live heir = not reported; provenance citation = not reported)"
+puts "── fix by NAMING the closure («§🗄️ <date>» / «закрито») or by re-pointing at the live successor — never by deleting the ID: it is the provenance"
+RUBY
+}
+
 broken_check() {
   local fn
   # Grammar lives in IDX_LINK_RE, not here — see the note at its definition for
@@ -1913,6 +1995,35 @@ selftest() {
   if printf '%s' "$out" | grep -q 'FLOOR corpus holds'; then pass=$((pass+1)); printf '  ok    %s\n' "write stance reports a loss at the moment of action"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "write stance reports a loss at the moment of action" "$out"; fi
 
+  # 19c. STALE-STATE: memory promising CURRENT state at an ARCHIVED item. Pinned
+  #      against a FIXTURE tracker (MEMORY_GATE_TRACKER) rather than the live one —
+  #      keying it to real IDs would break the proof on the very day an item is
+  #      archived, which is the event the detector exists to notice.
+  _st_build "$d"
+  printf '## §04 · X\n\n#### ZZ.2 — live one\n\n## \xf0\x9f\x97\x84\xef\xb8\x8f Архів\n\n| ID | Пункт | Канон |\n|----|-------|-------|\n| ZZ.1 | closed | 04_01 |\n' >"$root/trk.md"
+  printf '\nСтан → `00_07` ZZ.1, механіка → `04_01`.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then pass=$((pass+1)); printf '  ok    %s\n' "STALE-STATE on a state-promise at an archived ID"
+  else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "STALE-STATE on a state-promise at an archived ID" "$out"; fi
+
+  # 19d. The half that proves it reads the PROMISE, not the ID: name the closure
+  #      and the same clause must go quiet. Without this the detector would pass
+  #      just as well if it flagged every mention of an archived item — which is
+  #      provenance, the commonest legitimate form in this corpus.
+  _st_build "$d"
+  printf '\nСтан → `00_07` \xf0\x9f\x97\x84\xef\xb8\x8f ZZ.1 (закрито), механіка → `04_01`.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "naming the closure silences it" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "naming the closure silences it"; fi
+
+  # 19e. And a LIVE heir in the same clause keeps the route honest — the reader
+  #      still has somewhere current to go, so the sentence is not rotten.
+  _st_build "$d"
+  printf '\nСтан → `00_07` ZZ.1 / ZZ.2, механіка → `04_01`.\n' >>"$d/feedback_beta.md"
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a live heir keeps the route honest" "$out"
+  else pass=$((pass+1)); printf '  ok    %s\n' "a live heir keeps the route honest"; fi
+
   # 20. The verdict must not be quietly computed against foreign thresholds.
   _st_build "$d"
   out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_CORPUS_FLOOR=1 bash "$SELF" --audit 2>&1)
@@ -2383,6 +2494,11 @@ puts <<~CEIL
        Verify the ID against 00_07's live-vs-archive split before relying on it.
 CEIL
 RUBY
+    ;;
+  --stale-state)
+    # WORKLIST (always exit 0) — see the block comment on stale_state_check for
+    # why this cannot live in --audit and why its trigger is in the REPO, not here.
+    stale_state_check
     ;;
   --genre)
     # Journals are exempt HERE too, and the omission was not cosmetic: a journal
