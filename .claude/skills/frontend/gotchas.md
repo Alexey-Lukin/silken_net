@@ -185,3 +185,22 @@ Three things about that case generalise past it. **The shared `ui.status` bag is
 36. 🔴 **Перевір ІНСТРУМЕНТ міграції перш ніж гнати ним хвилю — `bin/migrate-tailwind-tokens` виробляв той самий дефект, який знімає** [UI.1, 2026-08-19]. Дві його мапи вели в провальні токени (`text-emerald-500`→`text-gaia-primary`, `-600`→`-hover`), тож кожна наступна порція множила б порушення 1.4.3, а звіт казав «змігровано». Плюс дві родини були поза мапою взагалі (`text-zinc-*`, `bg-zinc-*` — 19 вживань, які прогін лишав позаду). **Рефлекс перед будь-яким codemod'ом: візьми його MAPPING як СПИСОК ЗАЯВ і зміряй КОЖНУ ЦІЛЬ проти реальних поверхонь у ДВОХ темах; окремо грепни, яких родин у мапі немає взагалі** (`grep -rhoE 'text-[a-z]+-[0-9]00' app/views/components/ | sort -u` проти ключів мапи). Після фіксу прогін звітує 673 заміни в 47 файлах — тобто ціна помилки в мапі масштабується з розміром хвилі. ⊕ **Пастка самого «у ДВОХ темах» (2026-08-20, порція 7): парсячи теми з `application.css`, regex `@media[^{]*prefers-color-scheme` матчить СПОЧАТКУ рядок `@custom-variant dark (@media screen and …)` — той самий текст стоїть у файлі ДВІЧІ, і «light»-половина тоді тихо несе dark-значення, тобто міряєш dark-проти-dark і присуджуєш «обидві теми чисті».** Лік двоскладовий: якір на ПОЧАТОК рядка (`^@media screen and \(prefers-color-scheme: dark\)`) + обовʼязковий ліхтар `abort if light["gaia-surface"] == dark["gaia-surface"]` — розкол, що не довів власної розколотості, не є виміром.
 
 37. 🔴 **Un-layered CSS перемагає layered-утиліти НЕЗАЛЕЖНО від специфічності — тож «глобальний дефолт» поза `@layer` тихо зʼїдає явні Tailwind-класи** [UI.1 п.11, 2026-08-20]. Tailwind v4 кладе утиліти в `@layer utilities`; голе правило `::placeholder { color: … }` у нашому CSS стоїть поза шарами, а за каскадом un-layered > будь-який layer — виміряно: глобал переміг явний `placeholder:text-gaia-text-subtle` auth-полів (клас специфічніший — і програв) і поклав 4.39 на sunken. **Правило: наш рукописний дефолт, що мусить ПОСТУПАТИСЬ утилітам, їде в `@layer base`** (base < utilities, але > UA-дефолту — рівно потрібний ярус). ⊕ Сама причина глобалу — клас «мовчазний дефолт БРАУЗЕРА»: інпут без placeholder-класу діставав UA-колір (3.42:1), якого жоден токен-сканер не бачить за побудовою, бо класу в розмітці немає взагалі; дім-лік — токен-пара `--gaia-input-placeholder` (`04_04 §3.4`).
+
+38. **Перш ніж писати Stimulus controller — пройди список нативних шляхів; якщо хоч один підходить, контролер не потрібен.** Це виконуваний чек-лист до сходинки 3 «лінивого сеньйора» (`CLAUDE.md §4`: «чи покриває нативна платформа? фронт: HTML/Turbo/Phlex ДО Stimulus»), і до 2026-08-22 він жив у каноні `04_04 §15.3`, тобто там, де його читає автор доку, а не автор контролера. Якщо **жодне** не підходить — Stimulus нормальний вибір.
+
+Перш ніж писати новий Stimulus controller — пройдіть цей список. Якщо
+**будь-яке** "так" — спробуйте нативний шлях:
+
+    - Це dropdown / menu / tooltip → **HTML Popover API** (`popover="auto"`)
+    - Це modal / dialog / sheet / off-canvas drawer → **`<dialog>`** + `.showModal()`
+    - Це collapsible accordion → **`<details>`** з опційним `name="..."` для exclusive
+    - Це form submission з UI feedback → **Turbo Forms** + Turbo Stream response
+    - Це validation помилки → **Constraint Validation API** + `:user-invalid` CSS
+    - Це date/time picker → **`<input type="date">`**, **`type="time">`**
+    - Це color picker → **`<input type="color">`**
+    - Це search з autocomplete → **`<input list>` + `<datalist>`**
+    - Це auto-resize textarea → **`field-sizing: content`** CSS (Baseline 2024)
+    - Це smooth scroll / scroll-snap → **`scroll-behavior: smooth`** + `scroll-snap-*`
+    - Це responsive container — →  **CSS container queries** `@container`
+
+Якщо **жодне** не підходить — Stimulus це нормальний вибір.

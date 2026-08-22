@@ -2252,27 +2252,11 @@ h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  }
 | `mobile_nav_controller` (тонкий шим) | Native `<dialog>` не закривається на backdrop-click + scroll-lock у Safari через `.showModal()` не завжди — лишаємо ~25 рядків шіма. |
 | `clipboard_controller`, `map_controller` | Інтеграція з 3rd-party / складна логіка. |
 
-### 15.3 Чек-ліст: коли можна **не** писати Stimulus controller
+### 15.3 Нативна платформа ДО Stimulus
 
-Перш ніж писати новий Stimulus controller — пройдіть цей список. Якщо
-**будь-яке** "так" — спробуйте нативний шлях:
-
-- [ ] Це dropdown / menu / tooltip → **HTML Popover API** (`popover="auto"`)
-- [ ] Це modal / dialog / sheet / off-canvas drawer → **`<dialog>`** + `.showModal()`
-- [ ] Це collapsible accordion → **`<details>`** з опційним `name="..."` для exclusive
-- [ ] Це form submission з UI feedback → **Turbo Forms** + Turbo Stream response
-- [ ] Це validation помилки → **Constraint Validation API** + `:user-invalid` CSS
-- [ ] Це date/time picker → **`<input type="date">`**, **`type="time">`**
-- [ ] Це color picker → **`<input type="color">`**
-- [ ] Це search з autocomplete → **`<input list>` + `<datalist>`**
-- [ ] Це auto-resize textarea → **`field-sizing: content`** CSS (Baseline 2024)
-- [ ] Це smooth scroll / scroll-snap → **`scroll-behavior: smooth`** + `scroll-snap-*`
-- [ ] Це responsive container — →  **CSS container queries** `@container`
-
-Якщо **жодне** не підходить — Stimulus це нормальний вибір.
+Принцип — сходинка 3 драбинки «лінивого сеньйора» (`CLAUDE.md §4`): якщо поведінку дає HTML/CSS/Turbo, контролер не пишемо. **Виконуваний чек-ліст (одинадцять нативних шляхів: Popover, `<dialog>`, `<details>`, Turbo Forms, Constraint Validation, `field-sizing`, container queries…) живе у скілі `frontend` → `gotchas.md`** — він стріляє в момент, коли ти збираєшся написати контролер, а не коли читаєш канон. ⛔ Не повертай список сюди: він автономний (нуль локальних §-рефів — виміряно), і саме тому його дім скіл.
 
 ---
-
 ## 16. Codemod-Driven Migration (Phase 4)
 
 > Page-component migration from raw Tailwind to gaia tokens is automated
