@@ -265,7 +265,7 @@ rb_dark() {
 # 2026-08-18: 136 → 137 — `log_dependabot_sweep.md`, the last home that had no
 # journal twin. 34203 → 11626 B, i.e. the whole «Пастки» section (31 bullets)
 # moved VERBATIM and the home kept compressed imperatives + routers.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-143}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-144}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -1002,7 +1002,12 @@ exempt = {
   "project_ssot_campaign_history.md" => ["05_03 §749", "08_03 §11", "08_01 §2"],
   "log_portfolio_surgery.md" => ["08_03 §9", "08_03 §15"],
   "project_ip_posture_defensive_publication.md" => ["08_01 §2"],
-  "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5"]
+  # Розкол 07_01 (DOC-T.83, 2026-08-22) забрав §11–§20 у 02_06. Три записи нижче —
+  # ІСТОРІЯ vilize-кампанії: субʼєкт речення факт («оновив §3, але забув §17.1
+  # дзеркало»), і правку тоді робили САМЕ за тією адресою. Перенаведення на 02_06
+  # зробило б запис хибним — guard-craft #29, «субʼєкт — адреса чи факт».
+  "project_vilize_02b_gateway.md" => ["07_01 §14а"],
+  "project_vilize_07_08.md" => ["08_01 §0.1", "08_02 §2", "08_03 §2", "08_02 §5", "07_01 §17"]
 }
 # Test seam, same shape as the MEMORY_GATE_* overrides elsewhere: the curated
 # table names a real corpus file, which no fixture repo has, so the self-test
