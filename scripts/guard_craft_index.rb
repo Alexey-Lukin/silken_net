@@ -84,7 +84,21 @@ TARGETS = [
     floor: 17,
     open:  "<!-- MEMORY-TRAPS-INDEX:AUTO — generated from traps.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /MEMORY-TRAPS-INDEX -->" }
+    close: "<!-- /MEMORY-TRAPS-INDEX -->" },
+  # Fifth target. 44 163 B of gotchas = 88% of a 50 kB skill, loaded on every web3
+  # session. The MONEY path, so this split carries one obligation the others did not:
+  # the invariants a reader must have WITHOUT opening anything (unit/direction,
+  # minting guard-clauses, SLASH-1 positive-A) live inline in CLAUDE.md §5-§6 and were
+  # verified there BEFORE the move — never fund a split by demoting one of those.
+  # 14 of 23 leads were LABELS, a far higher share than the earlier splits: the early
+  # cohort here was written as captions, so widening WAS the work, not the moving.
+  { name:  "web3-pipeline",
+    skill: File.join(ROOT, ".claude/skills/web3-pipeline/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/web3-pipeline/gotchas.md"),
+    floor: 23,
+    open:  "<!-- WEB3-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /WEB3-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
