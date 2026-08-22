@@ -522,17 +522,13 @@ it "test that status works" do
 | `spec/views/shared/ui/stat_card_spec.rb` | Props, danger-режим, перевизначення класу |
 | `spec/views/shared/ui/action_badge_spec.rb` | Pattern matching, семантичні стилі |
 | `spec/views/shared/ui/empty_state_spec.rb` | За замовчуванням, кастомна іконка, table-режим |
-| `spec/views/shared/ui/meta_row_spec.rb` | Мітка/значення, обробка nil |
 | `spec/views/shared/ui/relative_time_spec.rb` | Інтервали часу, граничні випадки |
 | `spec/views/shared/web3/address_spec.rb` | Обрізання, clipboard, nil fallback |
-| `spec/views/shared/iot/metric_value_spec.rb` | Точність, nil, BigDecimal, одиниця |
-| `spec/views/components/alerts/badge_spec.rb` | Матриця severity × status |
 | `spec/views/components/dashboard/event_row_spec.rb` | Поліморфні типи подій |
 | `spec/views/components/wallets/transaction_row_spec.rb` | Типи токенів, обрізання хешу |
 | `spec/views/components/wallets/balance_display_spec.rb` | Рендеринг балансу, Turbo target |
 | `spec/views/components/actuators/card_spec.rb` | Статус LED, рендеринг матриці |
 | `spec/views/components/actuators/command_status_frame_spec.rb` | Пара класу 2 ([`04_04 §8.1а`](04_04_Phlex_UI_and_Tailwind)): фрейм сторінки/відповіді **без** `src` (self-referencing `src` Turbo не зациклює, а гасить — `references itself` у консоль і порожній фрейм, тобто симптом тихий) ⟷ broadcast-заглушка **зі** `src`; id фрейма ≠ id бейджа всередині; байт-у-байт однаковий рендер у всіх налаштованих локалях |
-| `spec/views/shared/ui/data_table_spec.rb` | Стовпці+рядки, порожній стан, кастомний empty_message, відповідність дизайн-системі, доступність, перевизначення класу, один стовпець |
 | `spec/views/shared/ui/pagination_spec.rb` | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
 | `spec/views/shared/ui/photo_card_spec.rb` | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
 | `spec/views/shared/ui/skeleton_spec.rb` | Всі 6 варіантів, кастомні рядки, перевизначення класу |

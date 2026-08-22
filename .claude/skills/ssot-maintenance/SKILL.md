@@ -86,7 +86,7 @@ CI: `docs.yml` is the home of the doc-gate RAKE PAIR. ⚠️ Not of every doc ga
 
 ## Add a new drift guard — *how this skill evolves*
 
-This is the point: the skill stays small, but it lets you turn **any** newly-found drift class into a permanent gate. The defenses grow; the skill doesn't. Recipe, mirroring the existing `DocsLinter` methods:
+This is the point: it lets you turn **any** newly-found drift class into a permanent gate. 🔴 **The line that stood here — «The defenses grow; the skill doesn't» — was FALSE, and it was false in the most expensive way available: it reads as a measured property, it sits in the recipe you are reading precisely while deciding whether to write here, and so it granted permission for exactly the growth it denied.** Measured 2026-08-22: it was written in this file's first commit at **10 116 B** and stood unchanged while the file reached **69 292 B** (×6.85) — the largest SKILL.md in the tree. **The bound is a MECHANISM, never a property, and it has to be operated: the body of a new blindness shape goes into `guard-craft.md`, and only its generated index line lands here** (`ruby scripts/guard_craft_index.rb --write`). Write a paragraph into this file instead and nothing stops you — the sentence that claimed something would is gone. Recipe, mirroring the existing `DocsLinter` methods:
 
 0. **Name the KIND of gate first — the three kinds carry different obligations** (migrated from `00_06 §4` on 2026-08-10, which was its only home; `00_06 §3` LISTS the gates and never classifies them, so the taxonomy had no home in the skill that builds them).
    1. **owned-value** — a specific value restated outside its home (Lorenz β, RTC registers, mint/carbon rate). Instrument: owner-only vocabulary inside `docs:check_refs`, with the owner doc exempt by construction.
@@ -226,6 +226,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 81. An item that asks for a GATE is often describing a SYMPTOM — ask what happens if you remove the CAUSE instead, because a gate over a workaround CEMENTS the workaround
 82. A detector measures a LEVEL; the decay it reports is an EVENT — and shipping the level-detector feels like closing the class, which is exactly how the event stays unguarded — **having built a detector, ask not "is it correct" but WHAT IT MEASURES — state or transition; if state, the transition is still unwatched, and its carrier belongs in the procedure that causes it**
 83. A ref-resolver that requires the section marker is blind to the WHOLE-DOC reference — and the corpus's own ref standard canonises exactly that invisible shape — **when a resolver's pattern requires a component, enumerate what citations legitimately OMIT that component — and check whether your own house style recommends the omitted form**
+84. Every gate here validates a CLAIM; the whole class of defects that lives in the RELATION between two claims is invisible to all of them at once — and both claims are TRUE, so no amount of hardening any single check will reach it — **when a file makes a claim ABOUT ITSELF — a ceiling, a perimeter, a prohibition — treat that claim as a testable assertion and measure it against the file, in the same pass**
 
 <!-- /GUARD-CRAFT-INDEX -->
 

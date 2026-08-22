@@ -97,7 +97,12 @@ EXEMPT_REFS = {
   # перенаведення адреси знищило б приклад, а не полагодило б його. Док
   # розчинено [DOC-T.68 фаза 1], тож реф мертвий назавжди — і саме тому
   # придатний як фікстура.
-  ".claude/skills/memory-maintenance/SKILL.md"     => [ "00_05 §2.7" ]
+  # ⊕ Moved SKILL.md → traps.md 2026-08-22 with trap (14), which cites it. Second time
+  # in two days a section split orphaned an exemption, so the rule is now stated where it
+  # is executed: AN EXEMPTION FOLLOWS ITS SUBJECT. The stale-exempt lantern below caught
+  # both — and its advice ("delete it") was wrong both times, which is why it now names
+  # the second cause too.
+  ".claude/skills/memory-maintenance/traps.md"     => [ "00_05 §2.7" ]
 }.freeze
 
 # `.rake` was the remaining half of this gate's declared ceiling [DOC-T.60]: the
@@ -130,7 +135,12 @@ stale_exempts = EXEMPT_REFS.flat_map do |rel, refs|
 end
 unless stale_exempts.empty?
   warn "code_doc_section_refs ✗ — #{stale_exempts.size} EXEMPT_REFS entr(y/ies) guard nothing:"
-  stale_exempts.each { |s| warn "  · #{s} — the ref resolves now; delete the exemption" }
+  # 🔴 TWO causes, and only one of them licenses deletion. Either the ref came back to
+  # life (delete), or its SUBJECT moved to another file and the exemption stayed behind
+  # (re-point it — deleting would un-guard a live citation). Naming one cause made this
+  # gate prescribe the destructive fix twice in two days, both times while correctly
+  # detecting that the entry had stopped guarding anything.
+  stale_exempts.each { |s| warn "  · #{s} — either the ref resolves now (delete), or its subject MOVED (re-point); CHECK which" }
   exit 1
 end
 

@@ -71,7 +71,20 @@ TARGETS = [
     floor: 47,
     open:  "<!-- FRONTEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /FRONTEND-GOTCHAS-INDEX -->" }
+    close: "<!-- /FRONTEND-GOTCHAS-INDEX -->" },
+  # Fourth target, and the one that indicts the engine's own author: this skill is the
+  # CURATOR of the memory corpus, and it declared «Keep this skill a thin pointer» on its
+  # last line while 62% of its 65 kB was this one section — auto-invoked on every memory
+  # session. Kurtz-form: both halves flawless, the contradiction only in their relation, so
+  # no check of a single claim can see it. 17 items, cited as «пастка (N)» — a form carrying
+  # no `#`, hence invisible to `skill_item_check`: here the floor is the ONLY guard.
+  { name:  "memory-maintenance",
+    skill: File.join(ROOT, ".claude/skills/memory-maintenance/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/memory-maintenance/traps.md"),
+    floor: 17,
+    open:  "<!-- MEMORY-TRAPS-INDEX:AUTO — generated from traps.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /MEMORY-TRAPS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів

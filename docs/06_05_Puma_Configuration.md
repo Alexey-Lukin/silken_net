@@ -22,9 +22,8 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `config/puma.rb` | Конфігурація (SSOT) |
-| `app/middleware/mark_web3_requests_as_io_bound.rb` | IO-bound middleware |
 | `Dockerfile` | `LD_PRELOAD=libjemalloc.so` (symlink на `libjemalloc.so.2`, пакет `libjemalloc2`), `CMD: thrust ./bin/rails server` |
-| `config/application.rb` | Реєстрація middleware (після `PrometheusCollector`) |
+| `config/application.rb` | Стек мідлварів: `Rack::Attack`, далі `PrometheusCollector` (після нього — НІЧОГО; те, що там стояло, знято [ARCH.80] — див. §IO-bound нижче) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
 | [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
@@ -219,8 +218,4 @@ bundle exec ruby -e '
   puts "before_worker_boot hooks: #{opts[:before_worker_boot]&.size || 0}"
 '
 # Очікується: workers=2, threads=3/3, max_io_threads=16, shutdown_debug=:on_force
-
-# 4. RSpec для middleware
-bin/rspec spec/middleware/mark_web3_requests_as_io_bound_spec.rb
-# Очікується: 0 failures
 ```
