@@ -1396,6 +1396,14 @@ end
 rows.each { |f, n, ids, t| puts format("STALE-STATE %-40s:%-4d %-22s %s", f, n, ids.join(","), t) }
 puts "── #{rows.size} clauses promise CURRENT state at an ID that is archived (live heir = not reported; provenance citation = not reported)"
 puts "── fix by NAMING the closure («§🗄️ <date>» / «закрито») or by re-pointing at the live successor — never by deleting the ID: it is the provenance"
+puts "── DECLARED CEILING, and it lives HERE rather than only in the playbook, because the"
+puts "   reader who sees the count is the one who needs it: MARKED is matched inside a 280-char"
+puts "   WINDOW, so a file that declares its perimeter ONCE — «тут лише історичні ID» — has every"
+puts "   later clause reported anyway. On a disciplined journal a share of these is false BY"
+puts "   CONSTRUCTION. A per-file exemption was considered and REFUSED: a blanket silently"
+puts "   un-checks every other address in that file (the sibling gate learned that the hard way)."
+puts "── And it is a LEVEL, not a front: the moment this is actually cheap to get right is the"
+puts "   archival itself — `deep_archival.md` Фаза 5 — not a later sweep of the corpus."
 RUBY
 }
 
