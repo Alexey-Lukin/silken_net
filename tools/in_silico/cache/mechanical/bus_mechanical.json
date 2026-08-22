@@ -108,5 +108,5 @@
     }
   ],
   "verdict": "Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF 29x); the liner doubles as lateral support \u2192 fatigue SF 9-26x (infinite life, all alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal \u2192 leading HW.24 candidates win on both.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (07_03). Comparative supported-vs-unsupported + per-alloy ranking robust."
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust."
 }

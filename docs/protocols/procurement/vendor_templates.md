@@ -192,7 +192,7 @@
 
 ## C. Mutual CDA / NDA — ВНЗ-MoU (DRAFT)
 
-> ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **Аблязов Д.Е.** (СЄУ, к.ю.н., господарське/комерційне право) + профільний IP-юрист — [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
+> ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **Аблязов Д.Е.** (СЄУ, к.ю.н., господарське/комерційне право) + профільний IP-юрист — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
 > **Мета:** розблокувати лаб-доступ ЧНУ/ЧДТУ (**UNI.2**, passive-гейт) через **mutual** confidentiality у рамках MoU.
 > **Governing law:** Україна (ЦК України · ЗУ «Про захист від недобросовісної конкуренції» — комерційна таємниця).
 > 🔑 **Ядро-принцип (defensive-publication, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** цей NDA покриває **ЛИШЕ нерозкрите**. **Технологія (код під open-source-ліцензіями · доки CC-BY-SA · defensive-published ядро) — вже public → carve-out §C.2, НЕ конфіденційне.** MoU **не embargo-їть** технологію (сам [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md): «MoU з ВНЗ містять open-license + co-authorship, **не** embargo/NDA на технологію»).
@@ -369,7 +369,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`01_02 §1.6/§1.7/§3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | SLM≠EBM · HIP · dehydrogenation bake · ZnO-Ta-заборона (§A.4 дім) |
 | [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + ізоеластичність/пористість як CEM-параметр (C2 геометрія-дім) |
 | [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Grade 23 ELI · ≥60% пористості · ISO 13485) — дім порогів C2/C6 |
-| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
+| [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 |
 

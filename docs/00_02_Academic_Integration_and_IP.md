@@ -1,4 +1,4 @@
-# 07_03: Академічна Інтеграція, Партнери та IP
+# 00_02: Академічна Інтеграція, Партнери та IP
 
 ## 🎯 Мета
 
@@ -22,8 +22,8 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | NaaS/RWA-право (Аблязов); фінансові константи |
-| [`07_01` — Unit Economics and BOM](07_01_Nature_as_a_Service_Contracts) | Юніт-економіка |
+| [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS/RWA-право (Аблязов); фінансові константи |
+| [`00_04` — Unit Economics and BOM](00_04_Nature_as_a_Service_Contracts) | Юніт-економіка |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (governance/treasury — утримуємо) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC — Мінаєв (spin-кінетика O₂) + ЧМА фарм-стабілізація (Бушуєва); DFT-редокс self-owned + TBD |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — Гусак + ЧМА токсикологія (Суховий) |
@@ -85,7 +85,7 @@
 |---|---|---|---|
 | проф. **Мінаєв Б.Ф.** (+ проф. Мінаєва В.О.) | квантова хімія: spin-orbit, фотофізика, активація O₂ | **Spin-forbidden кінетика активації O₂** на біоелектродах (triplet→singlet: FAD-оксидазний анод + laccase ORR-катод) — світовий фах школи (SOC), механізм поза власним L3 → [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | Ст. 1/28 |
 | проф. **Гусак А.М.** | фізика (Wiley-монографія, UCLA-колаб.) | PEEK creep (Prony/Maxwell-Wiechert, виміряні дані) + ICP-MS-калібрація Kirkendall-моделі (наш script 51) → [`01_02 §2`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS), [`01_01`](01_01_Coaxial_Gyroid_Topology_and_PEEK); sheet-vs-network FEA-E homogenization (⚖️ [`00_07` HW.33](00_07_Action_Plan_Tracker) — self-own-кандидат vs школа Гусака, вісь відкрита) | Ст. 2/29 |
-| доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`07_01`](07_01_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29 |
+| доц. **Спрягайло О.В.** (проректор з науки — **інституційний якір / MoU-канал ЧНУ**) + к.б.н. **Гаврилюк М.В.** (дир. ННІ) | біо-хаб (дендрофлора/ПЗФ/екологія) + парасольовий MoU ЧНУ↔SilkenNet → [`00_04`](00_04_Nature_as_a_Service_Contracts) | *Pinus sylvestris* baseline + хім. склад ксилемного соку + dawn/dusk «Cherkasy Soundscape Library» → [`03_04`](03_04_mruby_Lorenz_Attractor), [`03_03 §10`](03_03_TinyML_Acoustic_Inference), [`01_04`](01_04_CODIT_and_Xylemointegration) | Ст. 2/24a/29 |
 | доц. **Ярмілко А.В.** (ФОТІУС) | IIoT / embedded / lightweight crypto | Engaged partner (зустрічі 2026, вхід у ректорат); airtime↔CCM tradeoff = spot-check нашого self-own розрахунку (Ст.23), не незалежна валідація; SPI/DMA-консультація ([`00_07` E.9](00_07_Action_Plan_Tracker)); mesh Markov/percolation-теорія (Open Research → [`06_08`](06_08_Resilience_and_Failover_Policy)); far-horizon PQC | Ст. 23 |
 | доц. **Косенюк Г.В.** (ФОТІУС) | військова радіотехніка, теорія кодування | RF impedance / Link Budget / ground-plane / 3D-діаграма з Ti-фланцем як Ground Plane — **аналітичний розрахунок + FEKO/CST** прихованої антени під PEEK ([`02_01 §5`](02_01_Hardware_Architecture_and_BOM)); фізична VNA-верифікація = Гончаров (§1.2) | Ст. 23 |
 | ст.викл. **Любченко К.М.** (ФОТІУС) | нейромережі, GA, Master of Logic | Ст.24a + 2 магістерські (real-fit двері): NSGA-II 5-class TinyML tuning + циркадні пороги ([`03_03`](03_03_TinyML_Acoustic_Inference)) — метод generic (pymoo, self-generable), **опц., не load-bearing валідація** ([`00_07` FW.4](00_07_Action_Plan_Tracker)); gate = ground-truth Біо-хаб | Ст. 24a |
@@ -93,7 +93,7 @@
 > Протоколи Hard-Science (Quantum-Sap, Long-Term Integrity, Homeostasis Baseline, Xylem-Sim, Steril) — already-canon: дім у [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK) / [`01_02`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) / [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / [`01_04 §6`](01_04_CODIT_and_Xylemointegration) / [`03_04`](03_04_mruby_Lorenz_Attractor) + [`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md).
 
 **Суміжні канали ЧНУ (не наукова валідація):**
-- **Медіа (PR):** Михайло Калініченко (Засл. журналіст, гендиректор ТРК «Ільдана», викладач ЧНУ) + Валентина Душок (Рабцун) (директорка ТРК «Ільдана», вихід на ОДА через Спрягайла) — документальний супровід + превентивний інфо-фон проти екопанік → [`07_01`](07_01_Nature_as_a_Service_Contracts).
+- **Медіа (PR):** Михайло Калініченко (Засл. журналіст, гендиректор ТРК «Ільдана», викладач ЧНУ) + Валентина Душок (Рабцун) (директорка ТРК «Ільдана», вихід на ОДА через Спрягайла) — документальний супровід + превентивний інфо-фон проти екопанік → [`00_04`](00_04_Nature_as_a_Service_Contracts).
 - **Мистецька кафедра:** Тетяна Касьян (Засл. художник України, зав. кафедри образотворчого мистецтва ЧНУ) — інституційний доступ до студентів-художників (cross-faculty мистецтво × CS).
 - **Графічний дизайн:** Віктор Афонін (Засл. художник України, викладач ЧНУ — книжковий дизайн/плакат/фірмовий стиль) — брендинг платформи → [`04_04`](04_04_Phlex_UI_and_Tailwind).
 - **B2G land-access:** Юрій Сегеда (Засл. природоохоронець, директор ДП «Смілянське лісове господарство» — єдиний лісовий масив із Черкасами; мешкає в с. Геронимівка, серце Черкаського бору, найближча точка до Genesis-полігону) — доступ до заказників Смілянщини + еко-аудит; ПЗФ-сумісність координується зі Спрягайлом. Дім-стан → [`00_07`](00_07_Action_Plan_Tracker) (STK.2).
@@ -142,7 +142,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | Партнер | Роль | Що валідує → канон-дім |
 |---|---|---|
 | **Ус Г.О.** (проф. каф. економіки) | цифрова економіка / матем. моделювання | Д.е.н.; математичні методи та ІТ в економіці; цифрова економіка (2021); управління знаннями (2024) |
-| **Аблязов Д.Е.** (віцепрезидент СЄУ) | комерційне право / legal-risk | к.ю.н.; господарське/комерційне право, протидія корпоративному рейдерству (2021), інвестиції → MSA/MoU/co-founder IP-carve-out ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)) → [`07_01`](07_01_Nature_as_a_Service_Contracts) — консультація (§4.2), не публікаційний співавтор |
+| **Аблязов Д.Е.** (віцепрезидент СЄУ) | комерційне право / legal-risk | к.ю.н.; господарське/комерційне право, протидія корпоративному рейдерству (2021), інвестиції → MSA/MoU/co-founder IP-carve-out ([`00_07` BIZ.2/BIZ.20](00_07_Action_Plan_Tracker)) → [`00_04`](00_04_Nature_as_a_Service_Contracts) — консультація (§4.2), не публікаційний співавтор |
 | **Гедз М.Й.** (проректор з якості) | фінанси / облік криптоактивів | Д.е.н., проф. (ex-ЧДТУ); регіональна економіка, фінансовий облік криптоактивів в Україні (2025), якість/акредитація (ISO 9001) |
 
 > **Суміжна роль — титулований юрист для Legal Wrapper SCC (особа TBD, не контактовано).** Потрібна **не для консультації** (її дає Аблязов), а для **підпису, що має вагу перед державним органом**: перекласифікація анкера з «втручання» у «науково-вимірювальний прилад» у зверненні до прокуратури — питання, де важить титул, а не лише фах. Канали пошуку: ННІ права ЧНУ (доступ через Спрягайла, §1.1) + рекомендація Аблязова. Роль канонізована тут 2026-07-26 — доти вона існувала **лише** в трекері, тобто item не мав канон-дому. Дім-стан → [`00_07`](00_07_Action_Plan_Tracker) (STK.3).
@@ -344,7 +344,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 ### 4.2 UA-юр-review → Аблязов + крипто/IP-юрист TBD
 
-**Точковий UA-юр-review:** RWA як `hadron_asset_id` vs Лісовий Кодекс/ПЗФ ([`00_07` BIZ.11](00_07_Action_Plan_Tracker)) · SCC utility-vs-security за ЗУ «Про віртуальні активи» + MiCA ([`05_03`](05_03_Tokenomics_SCC_and_SFC)) · NaaS у Civil Code + `parametric_insurance` ([`07_01`](07_01_Nature_as_a_Service_Contracts)) · AGPL-enforcement + open-license/AF3 ([`00_01 §8`](00_01_Vision_Mission_and_Roadmap)). Виконавець: **Аблязов Д.Е.** (СЄУ, персонально) + профільний крипто/IP-юрист TBD.
+**Точковий UA-юр-review:** RWA як `hadron_asset_id` vs Лісовий Кодекс/ПЗФ ([`00_07` BIZ.11](00_07_Action_Plan_Tracker)) · SCC utility-vs-security за ЗУ «Про віртуальні активи» + MiCA ([`05_03`](05_03_Tokenomics_SCC_and_SFC)) · NaaS у Civil Code + `parametric_insurance` ([`00_04`](00_04_Nature_as_a_Service_Contracts)) · AGPL-enforcement + open-license/AF3 ([`00_01 §8`](00_01_Vision_Mission_and_Roadmap)). Виконавець: **Аблязов Д.Е.** (СЄУ, персонально) + профільний крипто/IP-юрист TBD.
 
 ### 4.3 Операційна послідовність
 

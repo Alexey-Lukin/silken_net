@@ -20,7 +20,7 @@ at the OUTER interface (PEEK shrinks away from the outer Ti shell).
 
 No FEA needed — axisymmetric Lamé equations have closed-form solution.
 Relaxation params are literature-grounded estimates pending a Prony-series
-fit from школа Гусака (07_03 Стаття 2).
+fit from школа Гусака (00_02 Стаття 2).
 """
 from __future__ import annotations
 
@@ -90,7 +90,7 @@ P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap
 # forest temperatures (−30…+40 °C, all ≪ Tg 143 °C) PEEK is glassy-semicrystalline → relaxation is slow and
 # the retained fraction is likely HIGHER than 0.65, so this UNDER-states residual P_c (safe direction). The
 # authoritative multi-term Maxwell-Wiechert fit (with measured creep data) stays with школа Гусака
-# (07_03 Стаття 2) — door open; we do NOT fabricate coefficients from unavailable (paywalled) data.
+# (00_02 Стаття 2) — door open; we do NOT fabricate coefficients from unavailable (paywalled) data.
 PEEK_RELAX_FLOOR = 0.65      # E_∞/E_0 — retained modulus fraction (conservative; lit ≥0.65 below Tg)
 PEEK_RELAX_TAU_YEARS = 1.0   # relaxation time constant (years) — interim conservative estimate
 
@@ -288,7 +288,7 @@ def main() -> int:
             "sap_pressure_MPa": P_SAP_MPa,
             "seal_holds_20yr_min_fit": bool(pc_20_min > P_SAP_MPa),
             "relaxation_series": relax_results,
-            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 07_03 Стаття 2).",
+            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 00_02 Стаття 2).",
         },
         "winter": {
             "dT_K": dT_cold,

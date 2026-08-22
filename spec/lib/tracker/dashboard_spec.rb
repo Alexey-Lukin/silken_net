@@ -138,7 +138,7 @@ RSpec.describe Tracker::Dashboard do
     end
 
     it "does not flag a valid bare §-ref" do
-      expect(described_class.file_section_dangling_refs("| E.99 | x | `07_03` §1.1 | y |")).to be_empty
+      expect(described_class.file_section_dangling_refs("| E.99 | x | `00_02` §1.1 | y |")).to be_empty
     end
 
     it "is boundary-aware: §3.1 does NOT resolve against a 1.3.1 heading" do
@@ -211,7 +211,7 @@ RSpec.describe Tracker::Dashboard do
     # prefix: these all carry the prefix and must stay OUT of scope — prose-shorthand named
     # refs and placeholders live on the weaker `section_label_drift` ADVISORY (00_06 §3).
     it "still ignores NAMED / placeholder / non-section §-refs that DO carry a doc-id" do
-      named = "`05_02 §Модель` `05_04 §Merkle` `03_04 §X.Y` `00_07 §NN` `07_01 §B-02` `03_05 §FW.2`"
+      named = "`05_02 §Модель` `05_04 §Merkle` `03_04 §X.Y` `00_07 §NN` `00_04 §B-02` `03_05 §FW.2`"
       expect(described_class.file_section_dangling_refs(named)).to be_empty
     end
   end
@@ -477,7 +477,7 @@ RSpec.describe Tracker::Dashboard do
     md = <<~MD
       ## §07a · Академічна інтеграція
       #### 🌿 UNI.13a — emoji-prefixed item
-      - **P1** · 👤 · → `07_03 §2.2`
+      - **P1** · 👤 · → `00_02 §2.2`
     MD
     expect(described_class.parse(md).map(&:id)).to contain_exactly("UNI.13a")
   end
@@ -1032,24 +1032,24 @@ RSpec.describe Tracker::Dashboard do
       <<~MD
         ## §07 · Бізнес
         #### BIZ.1 — machine half shipped, meta still advertises 🤖
-        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **P1** · 🤖+👤 · 🟡 · → `00_04 §8`
         - **Стан:** артефакт написано, лишився юрист.
         - [ ] 👤 юр-review
         #### BIZ.2 — meta 🤖 backed by a live 🤖 residual
-        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **P1** · 🤖+👤 · 🟡 · → `00_04 §8`
         - **Стан:** x.
         - [ ] 👤 зустріч
         - [ ] 🤖 написати скрипт
         #### BIZ.3 — 🔗-led residual: delegated, eventual WHO lives elsewhere
-        - **P2** · 🤖 · 🔗 · → `07_01 §8`
+        - **P2** · 🤖 · 🔗 · → `00_04 §8`
         - **Стан:** x.
         - [ ] 🔗 gated на SEC.1 — Vote-Escrow
         #### BIZ.4 — residual with NO explicit WHO (🌿-led): WHO undeclared, not "done"
-        - **P3** · 🤖+👤 · 🌿 · → `07_01 §8`
+        - **P3** · 🤖+👤 · 🌿 · → `00_04 §8`
         - **Стан:** x.
         - [ ] 🌿 far-horizon rewrite (post-TRL 8)
         #### BIZ.5 — no 🤖 in meta at all
-        - **P3** · 👤 · ⚪ · → `07_01 §8`
+        - **P3** · 👤 · ⚪ · → `00_04 §8`
         - **Стан:** x.
         - [ ] 👤 зустріч
       MD
@@ -1095,7 +1095,7 @@ RSpec.describe Tracker::Dashboard do
       done_only = <<~MD
         ## §07 · Бізнес
         #### BIZ.9 — 🤖 residual already checked off
-        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **P1** · 🤖+👤 · 🟡 · → `00_04 §8`
         - **Стан:** x.
         - [x] 🤖 скрипт написано
         - [ ] 👤 юр-review
@@ -1109,7 +1109,7 @@ RSpec.describe Tracker::Dashboard do
 
         ## §07 · Бізнес
         #### BIZ.7 — real item
-        - **P1** · 🤖+👤 · 🟡 · → `07_01 §8`
+        - **P1** · 🤖+👤 · 🟡 · → `00_04 §8`
         - **Стан:** x.
         - [ ] 👤 юр-review
       MD
@@ -1156,7 +1156,7 @@ RSpec.describe Tracker::Dashboard do
       none = <<~MD
         ## §07 · Бізнес
         #### BIZ.8 — nothing open, WHO axis still full
-        - **P1** · 🤖+👤 · 🟢 · → `07_01 §8`
+        - **P1** · 🤖+👤 · 🟢 · → `00_04 §8`
         - **Стан:** все закрито.
       MD
       expect(described_class.stale_who(none)).to include(a_string_matching(/BIZ\.8.*ZERO open residuals/))
@@ -1166,7 +1166,7 @@ RSpec.describe Tracker::Dashboard do
       far = <<~MD
         ## §07 · Бізнес
         #### BIZ.10 — far-horizon, no checkbox by construction
-        - **P3** · 🤖 · 🌿 · → `07_01 §8`
+        - **P3** · 🤖 · 🌿 · → `00_04 §8`
         - **Стан:** post-TRL, робота ще попереду.
       MD
       expect(described_class.stale_who(far)).to be_empty
@@ -1176,7 +1176,7 @@ RSpec.describe Tracker::Dashboard do
       vacuous = <<~MD
         ## §07 · Бізнес
         #### BIZ.11 — premise refuted, item kept in place as a note
-        - **P3** · ⚖️ · ⚫ · → `07_01 §8`
+        - **P3** · ⚖️ · ⚫ · → `00_04 §8`
         - **Стан:** нема-що-завершувати.
       MD
       expect(described_class.stale_who(vacuous)).to be_empty
@@ -1186,7 +1186,7 @@ RSpec.describe Tracker::Dashboard do
       blocked = <<~MD
         ## §07 · Бізнес
         #### BIZ.12 — blocked, but nothing open and no trigger residual
-        - **P2** · 👤 · 🔗 · → `07_01 §8`
+        - **P2** · 👤 · 🔗 · → `00_04 §8`
         - **Стан:** чекає.
       MD
       expect(described_class.stale_who(blocked)).to include(a_string_matching(/BIZ\.12.*ZERO open residuals/))
@@ -1264,7 +1264,7 @@ RSpec.describe Tracker::Dashboard do
       inverted = <<~MD
         ## §07 · Бізнес
         #### BIZ.30 — meta ⚖️ over an open 👤 residual
-        - **P1** · ⚖️ · 🟡 · → `07_01 §8`
+        - **P1** · ⚖️ · 🟡 · → `00_04 §8`
         - **Стан:** x.
         - [ ] 👤 зустріч із юристом
       MD

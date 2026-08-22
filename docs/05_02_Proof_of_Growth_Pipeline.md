@@ -353,7 +353,7 @@ end
 | *Picea abies* (Ялина звичайна) | **1.5** | **46.0** | **30.0** | Ширший діапазон гомеостазу |
 | *Betula pendula* (Береза бородавчаста) | **2.0** | **44.0** | **28.5** | Подібна до сосни |
 
-> **Джерело значень:** Попередні пороги (сосна). Точні значення інших видів потребують калібрування з Lorenz trajectory analysis. **Рекомендовано:** запросити ботанічний baseline від Спрягайла/Гаврилюка (ЧНУ, [`07_03`](07_03_Academic_Integration_and_IP)).
+> **Джерело значень:** Попередні пороги (сосна). Точні значення інших видів потребують калібрування з Lorenz trajectory analysis. **Рекомендовано:** запросити ботанічний baseline від Спрягайла/Гаврилюка (ЧНУ, [`00_02`](00_02_Academic_Integration_and_IP)).
 
 ##### 4а.5 Backend Mirror (TelemetryUnpackerService)
 
@@ -852,7 +852,7 @@ blockchain_transactions
 | `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
 | `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService`, `OtaHmacKeyService` (runtime-fallback; фабрична `Session` передає ключ параметром від `MasterKeySource` — SEC.3 DI, [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)) | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
 
-> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (canon B-02 — [`07_01`](07_01_Nature_as_a_Service_Contracts); INF.22).
+> **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (canon B-02 — [`00_04`](00_04_Nature_as_a_Service_Contracts); INF.22).
 
 ---
 

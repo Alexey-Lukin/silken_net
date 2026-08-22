@@ -9,17 +9,17 @@
 
 Система побудована за принципами **Zero-Trust** та **«нульового лагу»** — де «нульовий лаг» означає **event-driven реакцію без polling-затримки на рівні заліза** (DMA/EXTI async-wakeup + RTC-WUT розклад — канон wake-source [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA); `VBAT_OK` — апаратний живлення-гейт, [`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), а **не** миттєвість end-to-end: сама система **свідомо асинхронна** (STOP2-сон ~99 % часу, батчинг на Королеві, governance-timelock 48 год). Будь-який код, згенерований ШІ, або фізичний прототип, створений підрядником, повинен суворо відповідати документації на цих сторінках.
 
-> **Структура SSOT — тришарова.** **Модуль 00 — Фундамент** (read-first мета-лінза): *НАВІЩО* (візія/місія/дорожня карта) та *ЯК* (методологія, TRL, governance процесу) ми будуємо — плюс конституція всієї системи (карта нижче). **Tier I (Система, 01–06)** — інженерний канон того, *ЩО* ми будуємо: вертикальний стек шарів (01 анкер у дереві → 06 інфраструктура). **Tier II (Програма, 07)** — економіка/фінансування та академічні партнерства довкола системи. Стандарт самих доків — [`00_06`](00_06_SSOT_Documentation_Standard).
+> **Структура SSOT — двошарова.** **Модуль 00 — Фундамент** (read-first мета-лінза): *НАВІЩО* (візія/місія/дорожня карта, NaaS-умови, академічні партнери та IP) та *ЯК* (методологія, TRL, governance процесу) ми будуємо — плюс конституція всієї системи (карта нижче). **Tier I (Система, 01–06)** — інженерний канон того, *ЩО* ми будуємо: вертикальний стек шарів (01 анкер у дереві → 06 інфраструктура). Стандарт самих доків — [`00_06`](00_06_SSOT_Documentation_Standard).
 
 ---
 
 # 🧭 Модуль 00 — Фундамент (Foundation: Візія + Метод)
 
-_Read-first мета-лінза проєкту: **НАВІЩО** (візія, місія, дорожня карта) і **ЯК** (методологія AI-Native, NASA TRL, governance процесу, стандарт SSOT-доків) ми будуємо — плюс **конституція всієї системи** (карта 8 рівнів нижче). Деталі кожного рівня розкриваються у профільних модулях Tier I (01–06)._
+_Read-first мета-лінза проєкту: **НАВІЩО** (візія, місія, дорожня карта; NaaS-пропозиція, академічна валідація та IP-постава) і **ЯК** (методологія AI-Native, NASA TRL, governance процесу, стандарт SSOT-доків) ми будуємо — плюс **конституція всієї системи** (карта 8 рівнів нижче). Деталі кожного рівня розкриваються у профільних модулях Tier I (01–06), і партнерська R&D-субстанція їх реферить, а не дублює; культурний шар (митці) — `cultural_layer.md`._
 
 ## 🗺️ Системна Карта: 8 Рівнів Кіберфізики (The Constitution)
 
-_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **Proof-of-Growth конвеєр** (кроки A–F) — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/процес — цей Модуль 00 (Фундамент, сторінки нижче); економіка/фінансування — Tier II (07)._
+_Top-down конституція системи: дані течуть знизу вгору — від біохімії дерева до фіналізації в Ethereum L1. Кожен рівень розгортається у профільному модулі Tier I (01–06). Повний **Proof-of-Growth конвеєр** (кроки A–F) — канонічно [`05_02`](05_02_Proof_of_Growth_Pipeline) (операційний потік) + [`05_01 §1–2`](05_01_Multichain_Architecture) (ролі 12 мереж); політика resilience/failover — [`06_08`](06_08_Resilience_and_Failover_Policy). Методологія/процес, а віднедавна й економіка з партнерствами — цей Модуль 00 (Фундамент, сторінки нижче); BOM-рол-ап і юніт-економіка — при залізі, [`02_06`](02_06_Unit_Economics_and_BOM)._
 
 | Рівень | Сутність | Канон |
 |--------|----------|-------|
@@ -75,6 +75,8 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 ### 📚 Сторінки Фундаменту (Read-First)
 
 - [`00_01` — Vision Mission and Roadmap](00_01_Vision_Mission_and_Roadmap) (Місія, проблема VCM, науковий підхід, NaaS, дорожня карта, Proof-of-Growth; філософія Slashing → 05_05)
+- [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) (NaaS контракти · параметричне страхування · фінансові константи · юридичні події → on-chain)
+- [`00_02` — Academic Integration and IP](00_02_Academic_Integration_and_IP) (Реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд-архітектура)
 - [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) (Шкала NASA TRL + канон per-module матриці · per-domain TRL · HIL-симулятори · критерій закриття задачі та TRL Gate Events; шкали SRL/MRL за межами TRL 9)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/IaC-політика: SSOT-Guard · Solidity audit · Labels-as-Code · supply-chain hardening)
 - [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод; 🚦 Validation Gate і AI-ростер — §5/§5.1)
@@ -104,6 +106,7 @@ _Електроніка Soldier/Queen, енергетичні буфери, ме
 - [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) (BQ25570 MPPT нано-потужність + пряме живлення від EBFC + EDLC-буфер іоністор 0.47Ф / 5.5В §12)
 - [`02_04` — Bench Build & Test Guide](02_04_Bench_Build_Guide) (🔧 Живий bench build+test guide — повний Soldier поблоково на макетці: harvester-фронт + production sense/SE/radio на LoRa-E5)
 - [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) (Шлюз Королева + SIM7070G + Starlink Direct-to-Cell)
+- [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) (BOM Soldier/Queen · CAPEX/OPEX кластера · ROI-waterfall · supply chain — виділено з `00_04` 2026-08-22, DOC-T.83, поруч із залізом, яке рахує)
 
 ## 🧠 Модуль 03: Прошивка та Edge AI (The Brain)
 
@@ -149,15 +152,3 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)
 - [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
-
----
-
-# 🌿 Tier II — Програма
-
-## 💰 Модуль 07: Екосистема та Партнерства (Ecosystem & Partnerships)
-
-_Зовнішній шар довкола системи: NaaS-контракти, юніт-економіка, академічні партнери та IP. Культурний шар (митці) — `cultural_layer.md`. Візія/місія/дорожня карта — у Фундаменті [`00_01`](00_01_Vision_Mission_and_Roadmap). Інженерна R&D-субстанція партнерів реферить канон Tier I (01–06), не дублює._
-
-- [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) (NaaS контракти · параметричне страхування · фінансові константи · юридичні події → on-chain)
-- [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) (BOM Soldier/Queen · CAPEX/OPEX кластера · ROI-waterfall · supply chain — виділено з `07_01` 2026-08-22, DOC-T.83, поруч із залізом, яке рахує)
-- [`07_03` — Academic Integration and IP](07_03_Academic_Integration_and_IP) (Реєстр 5 ВНЗ + спільні публікації + IP-постава + бренд-архітектура)

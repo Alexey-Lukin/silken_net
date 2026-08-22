@@ -23,7 +23,7 @@
 #   A second failure mode (ARCH.47): minting and slashing resolving to the SAME
 #   key — identical MINTER/SLASHER values — collide on one Kredis oracle lock
 #   and serialize mint↔slash, so a 120s mint stalls a time-sensitive slash (and
-#   a LockTimeout there silently aborts the burn, ARCH.48). E.2 (canon 07_01
+#   a LockTimeout there silently aborts the burn, ARCH.48). E.2 (canon 00_04
 #   §B-02) mandates physically separate keys. The retired legacy name is a
 #   tripwire: a value under ORACLE_PRIVATE_KEY is a dead plaintext surface no
 #   code reads — refuse it so zombie deploy-config can't linger.
@@ -183,7 +183,7 @@ module Security
         out << "[oracle-key] minting and slashing resolve to the SAME signer key — identical " \
                "MINTER/SLASHER keys collide on one Kredis lock 'lock:web3:oracle:<addr>', " \
                "stalling a time-sensitive slash. Provision distinct " \
-               "ORACLE_MINTER_PRIVATE_KEY ≠ ORACLE_SLASHER_PRIVATE_KEY (E.2; canon 07_01 §B-02)."
+               "ORACLE_MINTER_PRIVATE_KEY ≠ ORACLE_SLASHER_PRIVATE_KEY (E.2; canon 00_04 §B-02)."
       end
 
       out

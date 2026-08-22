@@ -15,7 +15,7 @@
 #
 # Usage:
 #   ruby scripts/doc_structure_map.rb              # увесь канон (00_00..08_99)
-#   ruby scripts/doc_structure_map.rb 00_01 07_03  # діапазон [from..to] включно
+#   ruby scripts/doc_structure_map.rb 00_01 00_02  # діапазон [from..to] включно
 #   ruby scripts/doc_structure_map.rb --secs       # + повний список § кожної сторінки
 
 SHOW_SECS = ARGV.delete("--secs")

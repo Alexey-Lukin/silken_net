@@ -59,14 +59,14 @@ namespace :docs do
   TRL_NOT_APPLICABLE = {
     "00_01" => "візія / місія / дорожня карта — намір, не готовність технології",
     "00_06" => "стандарт самих доків — процес",
-    "07_01" => "юр/бізнес-шар NaaS — договірна, не технологічна зрілість",
+    "00_04" => "юр/бізнес-шар NaaS — договірна, не технологічна зрілість",
     # ⚠️ ДРУГИЙ виняток усередині бандованого модуля (після 04_06), і критерій тут той
     # самий, узагальнений: предмет не є технологією, а модуль-контейнер байдужий.
     # Вартісна економіка заліза ⊥ готовність заліза: BOM-як-специфікація несе TRL і
     # живе в 02_01/02_05, BOM-як-грошовий-підсумок TRL не має. Не давати цій сторінці
     # й owner-імунітету на курс — вузький імунітет кращий за широкий.
     "02_06" => "вартісна економіка заліза — гроші, не готовність технології",
-    "07_03" => "академічні партнери та IP — рівно той «TRL партнерств», що §1 називає помилкою",
+    "00_02" => "академічні партнери та IP — рівно той «TRL партнерств», що §1 називає помилкою",
     # 🔴 ФОРМА ПРАВИЛА ЗВУЖЕНА 2026-08-22, і це варте рядка: чотири записи вище лежать у
     # модулях БЕЗ band-рядка (00 і 07), тож критерій де-факто читався як «модуль не
     # технологічний». 04_06 — перший виняток УСЕРЕДИНІ банованого модуля, тобто критерій
@@ -113,7 +113,7 @@ namespace :docs do
     label_drift = []  # hard: link label leads with a different NN_NN than its href resolves to
     magic_drift = []  # hard: magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46 flip — deterministic byte-packing, 0 residual)
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
-    rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
+    rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/00_04)
     rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
     # 🔴 Оголошені доми курсу, ЗУСТРІНУТІ у скані. Без цього гейт вироджувався
     # мовчки: резолв іде за префіксом імені файлу, тож звільнений номер дому просто
@@ -436,9 +436,9 @@ namespace :docs do
       canon_secrefs.sort.uniq.first(50).each { |s| puts "    · #{s}" }
     end
     if rate_drift.empty?
-      puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/07_01 ✓"
+      puts "  rate One-Home: no tokenomics/carbon rate value restated outside 05_03/00_04 ✓"
     else
-      puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 07_01 §3:"
+      puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 00_04 §3:"
       rate_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     rate_homes_missing = DocsLinter::RATE_ANCHOR_HOMES.keys - rate_anchor_seen
@@ -666,7 +666,7 @@ namespace :docs do
     failed << "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" unless thermal_drift.empty?
     failed << "unbalanced code fences (unclosed ``` desyncs fence-aware guards + ToC — DOC-T.45)" unless fence_unbalanced.empty?
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
-    failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
+    failed << "tokenomics/carbon rate restated outside One-Home (05_03/00_04)" unless rate_drift.empty?
     failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?
     failed << "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" if rate_homes_missing.any?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?

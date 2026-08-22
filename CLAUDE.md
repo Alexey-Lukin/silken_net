@@ -1,6 +1,6 @@
 # SilkenNet — контекст для Claude (orientation + routing)
 
-> **Цей файл prepend-иться в КОЖЕН промпт — він тугий orientation, НЕ manual.** Глибина живе в `docs/` (canon, `00_00`→`07_03`) + скілах (авто-інвокуються). Один факт — один дім (`00_06 §2`): тут — філософія, навігація, критичні інваріанти, крос-доменні пастки; решта — pointers. Конфлікт із `docs/` → **canon WINS**.
+> **Цей файл prepend-иться в КОЖЕН промпт — він тугий orientation, НЕ manual.** Глибина живе в `docs/` (canon, `00_00`→`06_08`) + скілах (авто-інвокуються). Один факт — один дім (`00_06 §2`): тут — філософія, навігація, критичні інваріанти, крос-доменні пастки; решта — pointers. Конфлікт із `docs/` → **canon WINS**.
 
 ## 1. Що це
 
@@ -10,7 +10,7 @@
 
 ## 2. Як тут працювати
 
-**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.** Канон-bird's-eye (🎯/TRL/секції 00→07, без читання всього) → `ruby scripts/doc_structure_map.rb`.
+**Скіли авто-інвокуються за доменом і маршрутизують у точний canon-doc. НЕ читай усі docs наосліп — дай скілу привести тебе.** Канон-bird's-eye (🎯/TRL/секції 00→06, без читання всього) → `ruby scripts/doc_structure_map.rb`.
 
 | Домен | Скіл (авто) | Дім-canon |
 |-------|-------------|-----------|
@@ -23,9 +23,9 @@
 | TinyML / log-mel / INT8 | `ml-engineering` | `03_03` + `tools/ml` |
 | EBFC DFT/MD in-silico | `in-silico` | `01_03` + `protocols/ebfc/in_silico` |
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01/01_02/02_01/02_02` + `tools/cad` |
-| Hardware §02 (BOM · BQ25570-power · pogo-механіка · Queen-HW) | — (bench-важка, скілу НЕМА) · machine-half: механіка→`in-silico` (5x-скрипти), CAD→`picogk`, energy/SCC-гейти `tools/firmware/*.rb`; bench-збірка → `02_04` | `02_01`–`02_05` |
+| Hardware §02 (BOM · BQ25570-power · pogo-механіка · Queen-HW) | — (bench-важка, скілу НЕМА) · machine-half: механіка→`in-silico` (5x-скрипти), CAD→`picogk`, energy/SCC-гейти `tools/firmware/*.rb`; bench-збірка → `02_04`; BOM-рол-ап/юніт-економіка → `02_06` (дім у скіла `legal-business`) | `02_01`–`02_05` |
 | Деплой / Akash / Kamal / observability | `deploy` | `06_01`–`06_08` |
-| §07 Юр/бізнес/академ/IP (NaaS-умови · юніт-економіка · партнер-реєстр · IP-постава й бренд · робочі чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `07_01`–`07_03` (+ стан `00_07 §07`) |
+| Юр/бізнес/академ/IP (NaaS-умови · юніт-економіка · партнер-реєстр · IP-постава й бренд · робочі чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `00_04` · `00_02` · `02_06` (юніт-економіка/BOM-рол-ап) (+ стан `00_07 §00b`) |
 | Оновлення залежностей (будь-який домен) | `dependency-update` | (polyglot) |
 | SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_06` |
 | **Подія, а не домен:** будуєш ГЕЙТ · питаєш «чи ця спека ВЗАГАЛІ здатна впасти» · масово ВИДАЛЯЄШ · ЗВУЖУЄШ правило · ведеш КАМПАНІЮ | `ssot-maintenance` → **`guard-craft.md`** (on-demand). ⊥ **ФОРМА** спеки (конвенції · фікстури · покриття · тріаж) — це інше питання й інший дім: `04_06` | `00_06 §3` |
@@ -115,7 +115,7 @@ uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6
 app/{controllers/api/v1, services/<domain>, workers, views/components}   # Rails моноліт; api/v1 = каталог, НЕ адреса (ARCH.77 → backend-скіл)
 firmware/{soldier,queen}/main.c · queen/lorawan_glue/ (ARCH.34 glue до LoRaMac-node) · bio_contracts/ (mruby) · common/ (header-libs) · test/ (host x86)
 contracts/*.sol + test/*.t.sol            # Solidity (Foundry) — §8
-docs/NN_NN_*.md                           # SSOT canon (00→07); відкрите/блокери → 00_07
+docs/NN_NN_*.md                           # SSOT canon (00→06); відкрите/блокери → 00_07
 tools/{ml, cad, in_silico}                # Python / .NET допоміжні
 deploy/akash · terraform · subgraph       # infra / The Graph
 ```

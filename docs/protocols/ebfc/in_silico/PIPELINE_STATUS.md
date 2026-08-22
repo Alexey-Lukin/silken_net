@@ -150,7 +150,7 @@ Validation:
 2. Full bpy model (54 atoms) closes π-backbonding gap ✅; ωB97X/def2-TZVP adiabatic ΔSCF **done ourselves** (+1.03 eV dimethyl / +0.884 plain)
 3. **Ask:** QM/MM with explicit solvation shell to overcome the **~1 eV PCM differential-solvation limit** we established via ωB97X adiabatic ΔSCF (raw DOWNHILL is unreachable with implicit solvent — proven, not pending)
 4. **Ask:** CDFT hopping integrals for the full periodic ZIF lattice (our 24 used cluster ΔSCF; multi-week project)
-5. Co-authored Q1 paper → 07_03 Стаття 1 (title home; "Computational Electron-Transfer Energetics…") — incl. a "limitations of implicit solvation" section (λ + cascade)
+5. Co-authored Q1 paper → 00_02 Стаття 1 (title home; "Computational Electron-Transfer Energetics…") — incl. a "limitations of implicit solvation" section (λ + cascade)
 
 ---
 
@@ -186,4 +186,4 @@ Validation:
 | [`00_07`](../../../00_07_Action_Plan_Tracker.md) | Operational tracker |
 | [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md) | DFT details + L3b |
 | [`L1_protein_architecture.md`](L1_protein_architecture.md) | AlphaFold 3 results |
-| [`07_03`](../../../07_03_Academic_Integration_and_IP.md) | Synthetic sap protocol (bio hub) |
+| [`00_02`](../../../00_02_Academic_Integration_and_IP.md) | Synthetic sap protocol (bio hub) |

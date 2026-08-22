@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # [E.63/SCC-rate] SCC-generation rate — параметрична модель, single-source.
-# Канон (07_01 §17.1 · 07_01 §3) ПОСИЛАЄТЬСЯ сюди, не restate'ить magnitude.
+# Канон (00_04 §17.1 · 00_04 §3) ПОСИЛАЄТЬСЯ сюди, не restate'ить magnitude.
 # Дзеркало queen_energy_budget.rb (HW.39).
 #
 # Pure Ruby (no Rails). Виклик:
@@ -53,7 +53,7 @@ def scc_per_tree_year(delta_t_s)
 end
 
 # CO₂-еквівалент (BIZ.1, on-chain): 2000 SCC = 1 tCO₂ = 0.5 kg/SCC — canonical
-# (ProtocolParameters.sol#sccPerTonneCo2() default + SystemParameter + doc 07_01 §3/§17.1).
+# (ProtocolParameters.sol#sccPerTonneCo2() default + SystemParameter + doc 00_04 §3/§17.1).
 SCC_PER_TONNE_CO2 = 2000
 
 realistic = scc_per_tree_year(VARIANT_C_S)     # Variant C 1.77h

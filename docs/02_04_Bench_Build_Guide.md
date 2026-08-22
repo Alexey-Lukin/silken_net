@@ -47,7 +47,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | [`02_06 §1.2`](02_06_Unit_Economics_and_BOM) | Повна вартість вузла (node-rollup) |
 | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) / [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker) | Secure Element (SE05x, роль/eval) |
 | `firmware/scripts/bench/RUNBOOK.md` | Silicon-атестація на готовій платі (crypto/power/timing) |
-| [`07_03`](07_03_Academic_Integration_and_IP) | Лабораторні протоколи ЧНУ |
+| [`00_02`](00_02_Academic_Integration_and_IP) | Лабораторні протоколи ЧНУ |
 | [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Beyond-TRL9 SKU-roadmap (5 SKU на біом, Stage 5+) — доти цей рядок вказував на дорожню карту фаз, де жодного SKU немає |
 
 ## 📑 Зміст
@@ -252,7 +252,7 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 ## 5. Legacy Harvester — Фізика (для розуміння + ЧНУ)
 
 > Навчальна цінність: як 44 мВ піднімаються до 3.3 В. Для лаб-робіт ЧНУ
-> ([`07_03`](07_03_Academic_Integration_and_IP)) + розуміння harvester-ланцюга.
+> ([`00_02`](00_02_Academic_Integration_and_IP)) + розуміння harvester-ланцюга.
 > LTC3108/трансформатор **виключені з production** (EBFC >500 мВ живить BQ25570
 > напряму), але лишаються **DNP cold-start fallback** ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)).
 

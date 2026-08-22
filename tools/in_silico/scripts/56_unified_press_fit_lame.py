@@ -19,7 +19,7 @@ Because P_c is LINEAR in δ, the mechanical and thermal hoop superpose EXACTLY:
 same formula so the sum is real.
 
 Pure analytical (numpy sweep + lib.mechanics scalar core); no FEA. Authoritative Prony relaxation
-+ barb-tip stress-concentration FEA stay with школа Гусака (07_03 Стаття 2). Result + the
++ barb-tip stress-concentration FEA stay with школа Гусака (00_02 Стаття 2). Result + the
 reconciliation feed THERMAL_STRESS_REPORT.md + 00_07 HW.3.IS.
 """
 from __future__ import annotations

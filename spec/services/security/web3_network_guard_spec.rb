@@ -16,7 +16,7 @@ RSpec.describe Security::Web3NetworkGuard do
 
     # [E.2 / ARCH.47] A clean strict env uses PHYSICALLY SEPARATE minter + slasher keys.
     # A bare-ORACLE_PRIVATE_KEY-only env is NOT clean — both roles would resolve to one
-    # address and collide on a single oracle lock (the canon 07_01 §B-02 rule, now boot-enforced).
+    # address and collide on a single oracle lock (the canon 00_04 §B-02 rule, now boot-enforced).
     # The silent-address set (treasury + SCC/SFC) and the Solana signer set are part of a
     # clean signer env: their read-sites fail SILENT (rescue umbrellas / no-escalation batch
     # loop), so boot presence is the only loud gate they have.

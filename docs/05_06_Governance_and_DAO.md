@@ -25,7 +25,7 @@
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz σ/ρ/β — DCI-locked константи (FW.7); on-chain ключі = резерв OTA-ери, НЕ живий важіль (§7) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `SystemParameter` model, `Governance::ParameterSyncWorker` |
 | [`00_03` — TRL Matrix HIL and Beyond](00_03_TRL_Matrix_HIL_and_Beyond) | TRL-матриця + beyond-TRL-9 контекст для §5 (Auto-Immune Sentinel R&D) |
-| [`07_01` — Nature as a Service Contracts](07_01_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
+| [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | DAO Agreement (тип контракту §1.3) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): mainnet DAO activation → `SEC.1` (поглинув BIZ.4); read-path ✅ GOV.1 (§🗄️) |
 
 ## 📑 Зміст

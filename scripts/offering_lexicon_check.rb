@@ -6,7 +6,7 @@
 # customer actually receives (HARD for the storefront, advisory for the code layer).
 #
 # WHY THIS EXISTS. The 2026-07-25 sweep moved the storefront off investment wording
-# (locale labels, manifest, 00_01, 07_01 §1/§4/§5/§10) because the Kik test reads the
+# (locale labels, manifest, 00_01, 00_04 §1/§4/§5/§10) because the Kik test reads the
 # communication delivered to the acquirer, not an identifier buried in a repository.
 # That sweep was a HUNT and a FIX with no AUTOMATE: nothing stopped the wording from
 # coming back on the next locale, component or README edit. Everywhere else in this
@@ -22,7 +22,7 @@
 #   HOMONYM   — words that are financial in a UI label and innocent everywhere else:
 #               `yield` (also a materials property and a reaction yield), `portfolio`
 #               (also a publication and an R&D portfolio), `ROI` / `payback` /
-#               `окупність` (legitimate about OUR OWN unit economics — 07_01 §11-§20 exists to
+#               `окупність` (legitimate about OUR OWN unit economics — 00_04 §11-§20 exists to
 #               do exactly that — and a problem only about the customer's return, which
 #               no regex can tell apart), `funding`, `invested`. Locale VALUES only.
 #   HOMONYM_CODE — the same idea narrowed for Ruby source (below).
@@ -203,7 +203,7 @@ if __FILE__ == $PROGRAM_NAME
     warn "offering_lexicon_check ✗ — offering lexicon returned to a customer-facing surface (BIZ.22):"
     r[:hard].each { |h| warn "  ✗ #{h}" }
     warn "\nThese surfaces are what the acquirer receives. Use service wording " \
-         "(contracted / service fee / emission / cluster health) — canon 07_01 §1."
+         "(contracted / service fee / emission / cluster health) — canon 00_04 §1."
     exit 1
   end
 end

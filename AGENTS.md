@@ -1,6 +1,6 @@
 # AGENTS.md — SilkenNet
 
-> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`07_03`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
+> **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`06_08`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
 > This is the tool-agnostic agent guide (the open [AGENTS.md](https://agents.md) standard) — a **thin pointer**, not a second home. **If anything here conflicts with `CLAUDE.md`, `CLAUDE.md` WINS**: it is the single maintained home (prepended to every session), and this file is kept deliberately thin so it cannot drift. Cursor reads `.cursorrules`, Copilot reads `.github/copilot-instructions.md`, other agents read this — all three are pointers to the same home.
 
 **SilkenNet** — planetary Bio-IoT D-MRV platform for forest monitoring: Ti-6Al-4V gyroid anchor + EBFC (~500 mV harvested from xylem, "zero-grid") → STM32 **"Soldier"** (sense → TinyML → Lorenz → encrypt → LoRa 868) → **"Queen"** gateway (CoAP) → Rails 8.1 / Ruby 4.0.6 / PostgreSQL / Sidekiq → 12-chain Web3 Proof-of-Growth → mint SCC. **Polyglot:** Ruby · firmware-C (STM32) · mruby · Solidity (Foundry) · Python (DFT/MD in-silico) · .NET C# (PicoGK CAD).

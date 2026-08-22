@@ -69,7 +69,7 @@ class ParametricInsurance < ApplicationRecord
   validates :payout_amount, :threshold_value, presence: true
   validates :threshold_value, numericality: { greater_than: 0, less_than_or_equal_to: 100 }
   validates :required_confirmations, numericality: { greater_than: 0 }
-  # [INS.1] Застрахований перил задається ПРИ СТВОРЕННІ полісу (07_01 §5) — без нього
+  # [INS.1] Застрахований перил задається ПРИ СТВОРЕННІ полісу (00_04 §5) — без нього
   # peril-honest маршрутизація (fire → FIRMS / не-пожежа → Field-Audit) і audit-трейл
   # сліпі. Прод-шляху створення полісів ще немає (E.20-майбутнє) — валідація гарантує,
   # що будь-який майбутній шлях перил проставить.

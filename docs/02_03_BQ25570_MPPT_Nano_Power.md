@@ -111,7 +111,7 @@ R_int = 20 кΩ → V_drop = 300 мВ → V_actual = 200 мВ ❌
 **Threshold:** charge pump ≈ R_load_eq = 350мВ/15µA = 23.3 кΩ. Умова `V_OC × R_load_eq/(R_int+R_load_eq) ≥ 330 мВ` → **R_int ≤ 12.0 кΩ** для гарантованого cold-start. Половина діапазону 5–20 кΩ провалюється → **oscillation loop** (charge pump вмикається@500мВ → просідає <330 → вимикається → відновлюється → …; supercap ніколи не сягає 1.8 В MPPT-boost).
 
 **Мітигація (пріоритизовано):**
-- **Lab (обов'язково):** виміряти R_int двома точками — V_OC та V@15µA (резистор 23.3 кΩ); R_int = (V_OC − V_loaded)·23.3/V_loaded. Запит у [`07_03 §1.4`](07_03_Academic_Integration_and_IP).
+- **Lab (обов'язково):** виміряти R_int двома точками — V_OC та V@15µA (резистор 23.3 кΩ); R_int = (V_OC − V_loaded)·23.3/V_loaded. Запит у [`00_02 §1.4`](00_02_Academic_Integration_and_IP).
 - **A (рекоменд., якщо R_int > 12 кΩ):** 2 анкери **паралельно** → R_int /2 (аноди на одному потенціалі → shunt-free; потребує узгоджених V_OC). Дім — anchor stacking ([`01_03 §6.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)). +1 анкер.
 - **B (⚠️ лише між РІЗНИМИ деревами):** серійний стек 2× EBFC → V_OC = 1.0 В → R_int_max ≤ 47.3 кΩ, **АЛЕ** серія у спільному ксилемному соку = **ionic shunting → електроліз → емболія** ([`01_03 §6.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); within-tree ЗНЯТО, допустиме лише між стовбурами (дроти).
 - **C:** LTC3108 cold-start preboost у **DNP footprint** (pads лишити, паяти лише для проблемних анкерів).
@@ -730,7 +730,7 @@ EBFC (Ti-6Al-4V anchor)  >500 мВ
 - [ ] Зафіксувати фінальні номінали у KiCad-схемі
 
 **MPPT ([`00_07` — HW.13](00_07_Action_Plan_Tracker)):**
-- [ ] Виміряти повну P-V криву EBFC у лабораторії ([`07_03 §1.4`](07_03_Academic_Integration_and_IP)); зафіксувати MPP%
+- [ ] Виміряти повну P-V криву EBFC у лабораторії ([`00_02 §1.4`](00_02_Academic_Integration_and_IP)); зафіксувати MPP%
 - [ ] Налаштувати ROC1/ROC2 згідно з виміряним MPP (стартова конфігурація 65%)
 
 **Cold-Start Loop (§1.5):**

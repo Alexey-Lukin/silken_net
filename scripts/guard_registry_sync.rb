@@ -84,7 +84,7 @@ DOCS_RAKE_LABELS = {
   "anchor dimension drift (superseded flange/Zone2 range outside 01_01 §1 freeze)"         => "anchor dimension drift",
   "thermal-stress drift (superseded HW.3.IS SF/P_c number outside 01_01 §4.2 / the report)" => "thermal-stress One-Home",
   "superseded term in front-matter (🎯/Статус names a reversed decision)"                   => "superseded term in front-matter",
-  "tokenomics/carbon rate restated outside One-Home (05_03/07_01)"                         => "tokenomics/carbon rate One-Home",
+  "tokenomics/carbon rate restated outside One-Home (05_03/00_04)"                         => "tokenomics/carbon rate One-Home",
   "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)"                          => "rate-guard self-anchor",
   "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" => "rate-home lantern",
   "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",

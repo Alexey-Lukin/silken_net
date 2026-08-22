@@ -46,7 +46,7 @@
 - **Ti-6Al-7Nb** — ISO-13485 ортопед-стандарт (medical AM-бюро).
 
 **Tier-2 — vendor-hunt паралельно (НЕ блокує):**
-- **β-Ti-13Nb-13Zr** — research-grade порошок (гаряча LPBF-тема 2024; UTS~1020/yield~795 — ⚠️ літ-оцінка **розходиться** з дім-значенням `ALLOY_PROPERTIES` (`tools/in_silico/lib/constants.py`) `yield_MPa: 900`; жодне з двох не несе джерела — ймовірно as-built LPBF vs HIP'd, але це **не звірено**; для vendor-hunt-контексту не несуче, для acceptance — звірити ДО спека) → академ-колаборація (co-pub, Гусак/[`07_03`](../../07_03_Academic_Integration_and_IP.md)) або спец-порошок.
+- **β-Ti-13Nb-13Zr** — research-grade порошок (гаряча LPBF-тема 2024; UTS~1020/yield~795 — ⚠️ літ-оцінка **розходиться** з дім-значенням `ALLOY_PROPERTIES` (`tools/in_silico/lib/constants.py`) `yield_MPa: 900`; жодне з двох не несе джерела — ймовірно as-built LPBF vs HIP'd, але це **не звірено**; для vendor-hunt-контексту не несуче, для acceptance — звірити ДО спека) → академ-колаборація (co-pub, Гусак/[`00_02`](../../00_02_Academic_Integration_and_IP.md)) або спец-порошок.
 - **Ta** — LPBF **рідко** (вартість/відбивність/ризик принтеру) → **думка-outside workaround: Ta-coating на дешевому Ti-купоні** (біоінертна Ta-поверхня без bulk-Ta друку; EBFC бачить поверхню). Bulk-Ta — лише за EBM-Ta вендором.
 - **Ti-15Zr** — Roxolid пропрієтарний (Straumann); AM-порошок research-grade → спец-постачальник або defer.
 
@@ -55,12 +55,12 @@
 ## 3. Test battery + acceptance (дім — `01_03 §3.5`)
 
 На кожному функціоналізованому купоні (Gen 2.0 стек з [`ebfc_chem_rfq`](ebfc_chem_rfq.md)):
-- **CV/EIS** у синт. ксилемному соку *Pinus sylvestris* pH 4.5-5.5 ([`07_03 §1.1`](../../07_03_Academic_Integration_and_IP.md)): j_max, k_s, DET-маржа.
+- **CV/EIS** у синт. ксилемному соку *Pinus sylvestris* pH 4.5-5.5 ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)): j_max, k_s, DET-маржа.
 - **ICP-MS** іон-release у сік: V≤0.02 / Al≤0.05 µg/cm² (4V/7Nb); Nb/Zr/Ta — informational (біоінертні). Predicted — `tools/in_silico` script 51.
 - **30-day stability** ≥80% retention · **chloride** 0.25M ramp · **UCST** −10→+25°C recovery (квантитативні пороги — дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - **Нано-індентор E** (post-coin) — ізоеластичність vs деревина 9-16 ГПа (β-Ti dual-win check); predicted — script 50.
 
-**Electrochem-CRO:** **EL-CELL (DE)** — бере клієнтські купони + custom-electrolyte CV/EIS, будує протокол. Альт: ЧНУ/ЧМА co-pub ([`07_03 §1.2`](../../07_03_Academic_Integration_and_IP.md)).
+**Electrochem-CRO:** **EL-CELL (DE)** — бере клієнтські купони + custom-electrolyte CV/EIS, будує протокол. Альт: ЧНУ/ЧМА co-pub ([`00_02 §1.2`](../../00_02_Academic_Integration_and_IP.md)).
 
 ---
 
@@ -76,7 +76,7 @@
 - [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ / EU medical AM-бюро: 3 репліки×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
 - [ ] 👤 **Tier-2 vendor-hunt** (∥): β-Ti — академ-колаб/спец-порошок; Ta — coating-вендор (Ti+Ta-thin); Ti-15Zr — спец-постачальник.
 - [ ] 👤 **Electrochem-CRO RFQ** → EL-CELL: CV/EIS+EIS у custom-electrolyte (синт. сік), 30-day, chloride, UCST, ICP-MS.
-- [ ] 👤 Синт. сік — біо-хаб ЧНУ Спрягайло (рецептура, [`07_03 §1.1`](../../07_03_Academic_Integration_and_IP.md)).
+- [ ] 👤 Синт. сік — біо-хаб ЧНУ Спрягайло (рецептура, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
 - [ ] 👤 **Критичний шлях паралельно:** chem-стек ([`ebfc_chem_rfq`](ebfc_chem_rfq.md) Spec A фермент 🔴 4-8тиж) — усе сходиться на функціоналізованих купонах.
 
 ---

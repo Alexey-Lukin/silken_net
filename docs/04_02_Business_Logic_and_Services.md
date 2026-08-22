@@ -171,7 +171,7 @@
 | **Файл** | `app/services/silken_net/entropy_calculator_service.rb` |
 | **Вхід** | `z_values` (Array\<Float>) — масив Z-значень атрактора Лоренца з кластера |
 | **Що робить** | Обчислює нормалізовану ентропію Шеннона для розподілу Z-значень. Фіксоване бінування по діапазону [2.0, 45.0] (homeostasis zone Лоренца). 20 бінів, ширина ~2.15. Мінімум 30 точок даних для статистичної значущості. Здоровий ліс: diverse Z → entropy ≈ 0.75-0.95. Стрес: homogeneous Z → entropy < 0.5. **[Lorenz de-risk]** інтерпретація Z-розподіл → здоров'я лісу — недоведена гіпотеза ([`05_05 §7–8`](05_05_Slashing_and_Risk_Policy)); сигнал, не вердикт. |
-| **Чому Z-value, а не HRNG seed** | `chaos_seed` (HRNG) НЕ передається у 21-байтному LoRa-пакеті (03_01, Phase 2). Backend використовує z_value як проксі. Див. ЧДТУ task #12 (07_03 §1.2). |
+| **Чому Z-value, а не HRNG seed** | `chaos_seed` (HRNG) НЕ передається у 21-байтному LoRa-пакеті (03_01, Phase 2). Backend використовує z_value як проксі. Див. ЧДТУ task #12 (00_02 §1.2). |
 | **Математика** | `H = -Σ p(x) × log₂(p(x))`, `H_norm = H / log₂(NUM_BINS)` ∈ [0.0, 1.0] |
 | **Вихід** | `Float` (0.0-1.0) або `nil` (недостатньо даних). |
 
@@ -181,7 +181,7 @@
 |---|---|
 | **Файл** | `app/services/silken_net/lorenz_validation_service.rb` |
 | **Вхід** | парні `(telemetry, ground_truth)`-спостереження (передаються аргументом — **pure / read-only**, без DB-доступу й slashing-side-effects) |
-| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) — ⚠️ парний реф на медакадемію тут стояв помилково: харнес про Z↔health, а не про токсикологію; партнер аналізу — ЧНУ, [`07_03 §1.1`](07_03_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
+| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) — ⚠️ парний реф на медакадемію тут стояв помилково: харнес про Z↔health, а не про токсикологію; партнер аналізу — ЧНУ, [`00_02 §1.1`](00_02_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
 | **Вихід** | `report` (Hash кореляцій/інкрементів). Чиста функція. |
 
 ### `TreeChronicleService`
@@ -996,7 +996,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Вхід** | `cluster_id` (Integer) |
 | **Сервіси** | `SilkenNet::EntropyCalculatorService.call(z_values)` |
 | **Side Effects** | Оновлює `cluster.entropy_score` (денормалізація). При entropy < `CRITICAL_ENTROPY_THRESHOLD` (0.65) створює `EwsAlert` (type: `entropy_anomaly`, severity: `medium`). Redis silence filter: 1 год per cluster. Prometheus gauge: `silkennet_cluster_entropy_score`. Інвалідація кешу `oracle_expected_yield_24h`. |
-| **Примітка** | Аналізує Z-значення за останні 24 години (partition-aware query). Мінімум 30 точок даних для статистичної значущості. Alignment: ЧДТУ task #12 (07_03 §1.2). Чому Z-value, а не HRNG seed: `chaos_seed` НЕ передається у 21-байтному пакеті (03_01, Phase 2). |
+| **Примітка** | Аналізує Z-значення за останні 24 години (partition-aware query). Мінімум 30 точок даних для статистичної значущості. Alignment: ЧДТУ task #12 (00_02 §1.2). Чому Z-value, а не HRNG seed: `chaos_seed` НЕ передається у 21-байтному пакеті (03_01, Phase 2). |
 
 ---
 

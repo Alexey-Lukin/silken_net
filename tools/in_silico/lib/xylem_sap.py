@@ -2,7 +2,7 @@
 """
 Xylem sap composition profiles for different tree species.
 
-Based on literature and 07_03 §1.1 (Xylem-Sim) protocol. Each profile defines
+Based on literature and 00_02 §1.1 (Xylem-Sim) protocol. Each profile defines
 the ionic composition for OpenMM solvation to simulate realistic
 xylem-like environments instead of generic TIP3P-FB + NaCl.
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 # Xylem sap profiles by tree species
 # ═══════════════════════════════════════════════════════════════════
 # Sources:
-#   Pinus sylvestris: 07_03 §1.1 (Xylem-Sim) (Cherkasy forest, Spriahailo data)
+#   Pinus sylvestris: 00_02 §1.1 (Xylem-Sim) (Cherkasy forest, Spriahailo data)
 #   Quercus robur: Losso et al. 2016, Tree Physiology
 #   Picea abies: Mayr et al. 2014, New Phytologist
 #   Fagus sylvatica: Cochard 2006, Comptes Rendus Geoscience

@@ -1,4 +1,4 @@
-# 07_01: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
+# 00_04: Контракти Nature-as-a-Service (Юридичний та Бізнес-Шар)
 
 ## 🎯 Мета
 
@@ -21,10 +21,10 @@
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SCC/SFC + фінансові константи (home) |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof of Growth (мінтинг-тригер) |
 | [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка, BOM, CAPEX/OPEX — друга половина питання клієнта |
-| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | MSA / KYC legal (Аблязов) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | MSA / KYC legal (Аблязов) |
 | [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source для [`02_06 §1`](02_06_Unit_Economics_and_BOM)) |
 | [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM → [`02_06 §4`](02_06_Unit_Economics_and_BOM)) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім: BIZ.2/3/9/11/14/15/18/19/20/21/22 (BIZ.17 → [`07_01`](07_01_Nature_as_a_Service_Contracts); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім: BIZ.2/3/9/11/14/15/18/19/20/21/22 (BIZ.17 → [`00_04`](00_04_Nature_as_a_Service_Contracts); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
 
 ## 📑 Зміст
 
@@ -324,10 +324,10 @@ NaasContract (status: cancelled, cancelled_at: now)
 ## 🔗 9. Міжланцюгові Залежності (Cross-Module Dependencies)
 
 ```
-[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [07_01 NaaS Contracts]
+[05_03 Tokenomics] ──── СИНХРОНІЗОВАНО ────► [00_04 NaaS Contracts]
 [§1-§7 NaaS Contracts] ── ЖИВЛЯТЬ ──► [02_06 Unit Economics & BOM]
-[07_01 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
-[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [07_01 NaaS Contracts]
+[00_04 NaaS Contracts] ──── БЛОКУЄ ────► B2B Sales (onboarding)
+[05_02 Proof of Growth] ──── ЗАБЕЗПЕЧУЄ ────► [00_04 NaaS Contracts]
 ```
 
 ---

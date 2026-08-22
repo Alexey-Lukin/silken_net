@@ -448,17 +448,17 @@ module DocsLinter
   # [SSOT anti-drift] Tokenomics / carbon RATE One-Home (HARD after the 2026-05-31
   # dedup). The mint rate (`10,000 growth_points = 1 SCC`) and carbon rate
   # (`2000 SCC = 1 tCO₂`) are governance-CHANGEABLE parameters (05_06), so they get
-  # ONE home: 05_03 (technical) + 07_01 §3 (business view). Re-stating the VALUE
+  # ONE home: 05_03 (technical) + 00_04 §3 (business view). Re-stating the VALUE
   # elsewhere drifts the instant governance re-prices — exactly the silent dup found
-  # across 8 docs (00_01/04_01/05_01/05_02/05_06/07_01 body/03_03). Other docs must
-  # REFERENCE the home, never restate the number. Exempt: 05_03 + 07_01 (homes),
+  # across 8 docs (00_01/04_01/05_01/05_02/05_06/00_04 body/03_03). Other docs must
+  # REFERENCE the home, never restate the number. Exempt: 05_03 + 00_04 (homes),
   # 00_07 (tracker archive) and manifest
   # (the standalone manifesto). A line that itself references the home or is a
   # labelled mirror is not flagged — same shape as lorenz_formula_drift.
-  RATE_OWNER_DOC     = /\A05_03_|\A07_01_|\A00_07_|\Amanifest/
+  RATE_OWNER_DOC     = /\A05_03_|\A00_04_|\A00_07_|\Amanifest/
   TOKENOMICS_RATE_RE = /10[ .,]?000[^\n]{0,30}=\s*1\s*SCC/i
   CARBON_RATE_RE     = /2[ .,]?000\s*SCC\s*=\s*1\s*[тt]/i
-  RATE_MIRROR_RE     = /дзеркал|mirror|05_03|07_01|ProtocolParameters|SystemParameter/i
+  RATE_MIRROR_RE     = /дзеркал|mirror|05_03|00_04|ProtocolParameters|SystemParameter/i
 
   def tokenomics_rate_drift(basename, text)
     return [] if basename.match?(RATE_OWNER_DOC)
@@ -467,9 +467,9 @@ module DocsLinter
       next if line.match?(RATE_MIRROR_RE)
 
       if line.match?(TOKENOMICS_RATE_RE)
-        "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 07_01 §3) → #{line.strip[0, 90]}"
+        "mint rate `10,000 gp = 1 SCC` re-stated outside home (05_03 / 00_04 §3) → #{line.strip[0, 90]}"
       elsif line.match?(CARBON_RATE_RE)
-        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 07_01 §3) → #{line.strip[0, 90]}"
+        "carbon rate `2000 SCC = 1 tCO₂` re-stated outside home (05_03 / 00_04 §3) → #{line.strip[0, 90]}"
       end
     end
   end
@@ -484,7 +484,7 @@ module DocsLinter
   # so THIS is the only red light that will ever name them on a re-price (DOC-T.41).
   RATE_ANCHOR_HOMES = {
     "05_03" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ] ],
-    "07_01" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ],
+    "00_04" => [ [ :TOKENOMICS_RATE_RE, "mint rate `10,000 gp = 1 SCC`" ],
                  [ :CARBON_RATE_RE, "carbon rate `2000 SCC = 1 tCO₂`" ] ]
   }.freeze
 
@@ -653,7 +653,7 @@ module DocsLinter
     # Retired project codename (BIZ.16, 2026-06-16): dissolved by altitude →
     # SilkenNet (product) / GaiaNexus (planetary federation). Distinct literal from
     # the LIVE "Gen 2.0" EBFC biochem axis (substring match → no false positive).
-    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 07_03 §5",
+    "Gaia 2.0" => "retired project codename → SilkenNet (product) / GaiaNexus (planetary federation), 00_02 §5",
     # Binstub'и (CLAUDE.md §3): `bin/X` вантажиться швидше й не залежить від
     # того, чи активний правильний gemset. Ключі ПОІМЕННІ, а не голий
     # "bundle exec": `i18n-tasks`, `sidekiq`, `ruby` binstub'ів НЕ мають, тож
@@ -770,7 +770,7 @@ module DocsLinter
   # 🔴 The LABEL is parsed by walking back to the MATCHING `[`, not by `[^\]]*`,
   # and that is a correctness fix rather than a nicety. A character class starting
   # at the FIRST bracket mis-captures two live shapes in opposite directions: a
-  # bold prose marker wrapping a real link (`**[`00_07`-прямий + [`07_03 §4.3`](…)]**`)
+  # bold prose marker wrapping a real link (`**[`00_07`-прямий + [`00_02 §4.3`](…)]**`)
   # yields a label of foreign text and a FALSE accusation, while a legitimate label
   # carrying nested brackets (`[`05_02 §… [DOC.7]`](…)`) is not seen AT ALL. Both
   # exist in the tree today; measured on the flip: naive widening = 1 false positive,
@@ -1160,7 +1160,7 @@ module DocsLinter
   # constant must still resolve to a real doc.
   #
   # WHY this is its own guard: the owner-only-vocabulary gates above grant immunity by
-  # NUMBER PREFIX (`\A05_03_`, `\A07_01_`, …), and a number is not a stable identity —
+  # NUMBER PREFIX (`\A05_03_`, `\A00_04_`, …), and a number is not a stable identity —
   # it can be freed and later re-populated by an unrelated page. When that happens the
   # stale entry hands the previous occupant's immunity to whatever lands there next: the
   # new page may restate the mint rate, name an AI vendor or carry a retired term, and

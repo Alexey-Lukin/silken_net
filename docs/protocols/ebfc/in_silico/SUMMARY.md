@@ -3,7 +3,7 @@
 > **Date:** 2026-05-28 | **TRL Gate 3→4:** ✅ PASSED (2026-05-25)
 > **Purpose:** Computational proof that EBFC Gen 2.0 is thermodynamically viable, mechanically stable, and kinetically functional — BEFORE ordering any Ti-coin prototypes.
 >
-> 🟢 **CANONICAL SOURCE (SSOT).** This file + [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) are the **single source of truth** for in-silico results (this = results, PIPELINE_STATUS = per-script/operational status). All other docs (01_03, 07_03, 00_01, READMEs) must **link here, not duplicate numbers**. When a result changes, update here + PIPELINE_STATUS only. Volatile counts (script/test totals) live in PIPELINE_STATUS exclusively.
+> 🟢 **CANONICAL SOURCE (SSOT).** This file + [`PIPELINE_STATUS.md`](PIPELINE_STATUS.md) are the **single source of truth** for in-silico results (this = results, PIPELINE_STATUS = per-script/operational status). All other docs (01_03, 00_02, 00_01, READMEs) must **link here, not duplicate numbers**. When a result changes, update here + PIPELINE_STATUS only. Volatile counts (script/test totals) live in PIPELINE_STATUS exclusively.
 
 ---
 
@@ -422,5 +422,5 @@ bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with
 - Action plan tracker → `docs/00_07_Action_Plan_Tracker.md`
 - L1 protein details → `docs/protocols/ebfc/in_silico/L1_protein_architecture.md`
 - L3 DFT details → `docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md`
-- Academic R&D partners → `docs/07_03_Academic_Integration_and_IP.md`
-- Publication strategy → `docs/07_03_Academic_Integration_and_IP.md`
+- Academic R&D partners → `docs/00_02_Academic_Integration_and_IP.md`
+- Publication strategy → `docs/00_02_Academic_Integration_and_IP.md`

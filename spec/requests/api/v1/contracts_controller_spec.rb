@@ -390,7 +390,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
     context "when organization has no clusters" do
       # [ARCH.84] Доти: «returns cluster_health as 1.0». Клієнтський контракт
-      # (`07_01`) лишає шкалу 0..1, але поле стало **nullable**, і покриття їде
+      # (`00_04`) лишає шкалу 0..1, але поле стало **nullable**, і покриття їде
       # поруч — саме воно розводить «нема чого міряти» від «не змогли».
       it "returns cluster_health as null with an honest zero coverage" do
         allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)

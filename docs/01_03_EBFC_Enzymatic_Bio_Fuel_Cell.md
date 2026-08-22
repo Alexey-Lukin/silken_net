@@ -19,7 +19,7 @@
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Фізичний носій Ti-6Al-4V, поверхня (EAAE) |
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | Ксилемна реакція дерева; §4 PTFE-GDL (катод anti-flooding) |
 | [`02_03` — BQ25570 MPPT Nano Power](02_03_BQ25570_MPPT_Nano_Power) | Електричний приймач (MPPT boost) + буфер EDLC 0.47F (§12) |
-| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Біохімічна валідація ферментів (ЧМА) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Біохімічна валідація ферментів (ЧМА) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.5 enzyme/ZIF stack, HW.6 membrane/resin barrier, HW.24 Ti-coin |
 
 ## 📑 Зміст
@@ -369,7 +369,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 - **GPU на macOS arm64:** локально доступні платформи OpenMM — `Reference`, `CPU`, `OpenCL` (legacy Apple GPU backend, deprecated Apple-ом але ще працює — verified 2026-05-24 на M-серії: forces within tolerance). `CUDA` — Nvidia only. Tobто **локальний Mac = розробка скриптів + sanity runs (≤ 1 нс)**, production runs (10–100 нс) → GCP L4 / AWS A10G/H100.
 - **Локальна інфраструктура in-silico стеку:** код у `tools/in_silico/scripts/`, conda env spec у `tools/in_silico/environment.yml`, SSOT артефакти (PDB, AF3 output, results) у `docs/protocols/ebfc/in_silico/`. Quickstart — `tools/in_silico/README.md`.
 
-**Зв'язок з ЧНУ ([`07_03 §1.1`](07_03_Academic_Integration_and_IP)):** наш in-silico стек стоїть на **власному PySCF** — (a) повна Python-інтеграція з нашим AI-pipeline, (b) open source (без ліцензій), (c) GPU-acceleration; редокс/charge-transfer обчислення — власні. Школа Мінаєва (ЧНУ) лишається потенційним академічним QM-партнером для профільних follow-up кроків. Спільна Q1-стаття — [`07_03 §2.1`](07_03_Academic_Integration_and_IP) Стаття 1 (in-silico electron-transfer energetics EBFC; повна назва — дім 07_03).
+**Зв'язок з ЧНУ ([`00_02 §1.1`](00_02_Academic_Integration_and_IP)):** наш in-silico стек стоїть на **власному PySCF** — (a) повна Python-інтеграція з нашим AI-pipeline, (b) open source (без ліцензій), (c) GPU-acceleration; редокс/charge-transfer обчислення — власні. Школа Мінаєва (ЧНУ) лишається потенційним академічним QM-партнером для профільних follow-up кроків. Спільна Q1-стаття — [`00_02 §2.1`](00_02_Academic_Integration_and_IP) Стаття 1 (in-silico electron-transfer energetics EBFC; повна назва — дім 00_02).
 
 > **Філософія Zero-Lab:** Сучасна deep-tech фармакологія (Insilico Medicine, Recursion, Schrödinger) вже не починає з пробірок — вони починають з симуляцій і верифікують у CRO лише фінальний "рецепт". Silken Net наслідує цю парадигму для біоелектрохімії — **математично доведена молекула** перед механічним синтезом.
 
@@ -378,7 +378,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 > Біоелектрохімічна функціоналізація — найдорожчий і найризикованіший крок виробництва анкера. Тому повний MET-/DET-стек спочатку валідується на **плоских Ti-«монетах»** (Stage 2 з [`01_01 §6.1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)), а не одразу на повноцінних гіроїдних анкерах.
 
 **Що тестується на монетах (Gen 2.0 — пріоритет):**
-- **dgrFAD-GDH + Os анод (одношаровий)** → циклічна вольтамперометрія (CV) у синтетичному ксилемному соку *Pinus sylvestris* (pH 4.5–5.5, [`07_03 §1.1`](07_03_Academic_Integration_and_IP)). Метрики: j_max (мкА/см²), k_s, n_e, 30-day stability.
+- **dgrFAD-GDH + Os анод (одношаровий)** → циклічна вольтамперометрія (CV) у синтетичному ксилемному соку *Pinus sylvestris* (pH 4.5–5.5, [`00_02 §1.1`](00_02_Academic_Integration_and_IP)). Метрики: j_max (мкА/см²), k_s, n_e, 30-day stability.
 - **nCoCuCeZIF/Lac катод** → CV у симульованому катодному середовищі (pH 4.5, експозиція повітрям + 0.25 М NaCl для chloride-tolerance тесту).
 - **Genipin-chitosan-CNC матриця** → mechanical testing на циклічне навантаження (тигмоморфогенез simulation, ±5% strain @ 0.1 Гц, 10,000 циклів).
 - **Nafion-g-PSBMA мембрана** → protein adsorption assay з суспензією абієтинової кислоти (10 мг/мл у симульованому ксилемному соку), 7 днів експозиції. UCST behavior — тест при -10°C → +25°C цикл.
@@ -391,7 +391,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 > - **UCST recovery:** −10°C → +25°C цикл → струм відновлюється до **100%** (тест відновлення, НЕ вимір при холоді).
 > - **Substrate ICP-MS (6-alloy bake-off, per-alloy):** V ≤ **0.02** / Al ≤ **0.05** µg/cm² (токсичні — 4V/7Nb); Nb/Zr/Ta informational (біоінертні). Down-select сплаву → [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) + RFQ [anchor_alloy_rfq](protocols/procurement/anchor_alloy_rfq.md). Predicted — `tools/in_silico` 51.
 
-**Гейт TRL 4 → TRL 5:** Стабільні мілівольти/мікроампери протягом **≥ 30 днів** на монетах. Деталі координації з лабораторіями ЧНУ — [`07_03 §1.2`](07_03_Academic_Integration_and_IP).
+**Гейт TRL 4 → TRL 5:** Стабільні мілівольти/мікроампери протягом **≥ 30 днів** на монетах. Деталі координації з лабораторіями ЧНУ — [`00_02 §1.2`](00_02_Academic_Integration_and_IP).
 
 ### 3.6. Gen 1.0 → Gen 2.0 — Чому Кожен Компонент Замінено (Decision Record)
 
@@ -470,7 +470,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 ## 💰 5. Unit Economics — Біохімія Gen 2.0
 
-> Деталізована Unit Economics анкера — [`07_01`](07_01_Nature_as_a_Service_Contracts). Ця секція дає виключно біохімічну BOM.
+> Деталізована Unit Economics анкера — [`00_04`](00_04_Nature_as_a_Service_Contracts). Ця секція дає виключно біохімічну BOM.
 
 ### 5.1. BOM на 1000 анкерів (Gen 2.0 baseline)
 
@@ -505,7 +505,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 
 Очікувана вартість біохімії при 50K+ шт: **$5–$8 на анкер**.
 
-> **Контекст:** $15–25 за хімію, яка живе **20 років** і генерує SCC — атестації стану дерева (НЕ registry-визнані кредити, [`07_01 §3`](07_01_Nature_as_a_Service_Contracts)) — це блискуча юніт-економіка. Для першої тисячі бюджет ~$20K на "мокру" частину — повністю прийнятно для seed/Series A.
+> **Контекст:** $15–25 за хімію, яка живе **20 років** і генерує SCC — атестації стану дерева (НЕ registry-визнані кредити, [`00_04 §3`](00_04_Nature_as_a_Service_Contracts)) — це блискуча юніт-економіка. Для першої тисячі бюджет ~$20K на "мокру" частину — повністю прийнятно для seed/Series A.
 
 ---
 
@@ -564,11 +564,11 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 | «Целюлозний п'єзо — додаткове джерело живлення» | Power density ~pW/cm² на 6 порядків нижча за EBFC (~µW/cm²) | ❌ Не плануємо як harvesting source |
 | «Анкер в зоні постійних п'єзоелектричних бур» | Анкер фізично присутній у заболоні, але **не задіяний електрично** | ⚠️ Не для енергетики, але **потенційно для калібрування акустичного TinyML** |
 
-**Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) вже задіяна як власник п'єзо-експертизи та EIS-стенду ([`07_03 §1.2`](07_03_Academic_Integration_and_IP)).
+**Можливий R&D напрямок (joint з ЧДТУ ПМКТ):** Кафедра Прикладної Механіки + Комп'ютерних Технологій ЧДТУ (проф. Базіло К.В., проф. Бондаренко М.О.) вже задіяна як власник п'єзо-експертизи та EIS-стенду ([`00_02 §1.2`](00_02_Academic_Integration_and_IP)).
 
 **Cross-references:**
-- ЧДТУ ПМКТ співпраця → [`07_03 §1.2`](07_03_Academic_Integration_and_IP)
-- Joint publication tracker → [`07_03` — Joint Publications and IP Strategy](07_03_Academic_Integration_and_IP) Стаття 24
+- ЧДТУ ПМКТ співпраця → [`00_02 §1.2`](00_02_Academic_Integration_and_IP)
+- Joint publication tracker → [`00_02` — Joint Publications and IP Strategy](00_02_Academic_Integration_and_IP) Стаття 24
 - Lorenz-attractor input vector → [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor)
 
 **Статус:** Research thread, **не входить** у поточний BOM, scope або critical path.

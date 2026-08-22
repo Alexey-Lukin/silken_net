@@ -81,7 +81,7 @@ RSpec.describe SpdxHeaders do
         "tools/cad/extern/LEAP71_ShapeKernel/x.cs",  # ditto
         "contracts/node_modules/oz/ERC20.sol",       # gitignored npm install
         "contracts/out/SCC.json",                    # forge build output
-        "docs/07_03_Academic_Integration_and_IP.md", # CC-BY-SA, no per-file tag
+        "docs/00_02_Academic_Integration_and_IP.md", # CC-BY-SA, no per-file tag
         "config/credentials.yml.enc",                # encrypted blob
         "config/credentials/production.key",         # key material
         "db/structure.sql",                          # pg_dump regenerates it

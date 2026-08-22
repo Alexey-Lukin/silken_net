@@ -14,7 +14,7 @@
 >
 > **Це 🤖-половина першого чекбокса BIZ.9** ([`00_07`](../../00_07_Action_Plan_Tracker.md) — «🤖+⚖️ порівняльна registry-matrix … → 🤖 складе, ⚖️ вибір»). 👤-половина = engagement методолога (~$50–100k) → PDD, gated на реальний ліс роки downstream.
 >
-> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (chainsaw_detected/SLASH-1), [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) (TinyML 5-клас).
+> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (chainsaw_detected/SLASH-1), [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) (TinyML 5-клас).
 >
 > **Легенда впевненості:** 🟢 висока (офіц. реєстр-док / ≥2 незалежні джерела) · 🟡 середня (одне якісне джерело / trade-press) · 🔴 низька (paywall / суперечливо / unknown).
 
@@ -29,7 +29,7 @@
 5. **Biodiversity (both/and) — co-benefit evidence ЗАРАЗ, не окремий SKU 2026.** Cercarbono/Savimbo ISBM = єдиний живий реєстр, що приймає звукозапис як доказ — але **species-level** (56 indicator species), а наш TinyML = 5-клас presence → gap. COP17 (Єреван, жовт-2026) = контрольна точка (§4).
 6. **Репутаційно:** вести ARR/IFM + sensor-permanence-verification, **НЕ** REDD+ «повірте базовій лінії» (спалив Verra 2023). Carpathian illegal-logging = двосічний меч. UA-ліс 73% державний → пілот через держлісгосп (§5).
 
-**Чи міняє metrology-gap SCC-наратив?** — **Так, суттєво.** Коротко: SCC — це **Condition/homeostasis-токен (Proof-of-Growth)**, а не сертифікований tCO₂e; on-chain «2000 SCC = 1 tCO₂» = внутрішня облікова конвенція, НЕ registry-визнаний кредит (дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md); правити там). Розгорнуто → §1.4 + §6.3.
+**Чи міняє metrology-gap SCC-наратив?** — **Так, суттєво.** Коротко: SCC — це **Condition/homeostasis-токен (Proof-of-Growth)**, а не сертифікований tCO₂e; on-chain «2000 SCC = 1 tCO₂» = внутрішня облікова конвенція, НЕ registry-визнаний кредит (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там). Розгорнуто → §1.4 + §6.3.
 
 ---
 
@@ -73,16 +73,16 @@
 | Прочитання | Твердження | Метрологічний статус |
 |---|---|---|
 | **«Condition Coin»** | SCC підтверджує гомеостаз дерева (Proof-of-Growth) | ✅ **Захищене** — це те, що сенсор реально вимірює |
-| **«Carbon Coin»** | 1 SCC = 0.5 kg поглиненого CO₂ (2000 SCC = 1 tCO₂ — дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md)) | ⚠️ **НЕ registry-визнане** — flat ratio = внутрішня облікова конвенція |
+| **«Carbon Coin»** | 1 SCC = 0.5 kg поглиненого CO₂ (2000 SCC = 1 tCO₂ — дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md)) | ⚠️ **НЕ registry-визнане** — flat ratio = внутрішня облікова конвенція |
 
 **Наратив-зсув (honesty-корекція):**
 
 1. SCC — насамперед **Condition/homeostasis-токен**. Це прочитання **вже латентне в каноні** ([`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md): «SCC (Silken Carbon/**Condition** Coin)») — треба на нього спертися, а не на «Carbon» половину.
-2. On-chain «2000 SCC = 1 tCO₂» (BIZ.1, `ProtocolParameters.sol#sccPerTonneCo2()`; дім → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md)) — **внутрішня облікова конвенція**, НЕ заява, що 1 SCC = визнаний реєстром 0.5 kg tCO₂e-кредит. Продати його institutional-buyer'у як останнє **без** registry-approved методології = рівно той unbacked-baseline-claim, що спалив Verra REDD+ 2023.
+2. On-chain «2000 SCC = 1 tCO₂» (BIZ.1, `ProtocolParameters.sol#sccPerTonneCo2()`; дім → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md)) — **внутрішня облікова конвенція**, НЕ заява, що 1 SCC = визнаний реєстром 0.5 kg tCO₂e-кредит. Продати його institutional-buyer'у як останнє **без** registry-approved методології = рівно той unbacked-baseline-claim, що спалив Verra REDD+ 2023.
 3. Шлях SCC → продаваний carbon-credit — **не «сертифікувати наше число»**, а **репозиціювання** у (A) MRV-data-provider або (B) permanence-monitor поверх чужого credited-проєкту. Прямий SCC-мінт-як-carbon-credit — **поза столом** за поточного registry-ландшафту.
 4. Це **НЕ применшує платформу** — коректно локалізує цінність SCC (continuous ground-truth condition + real-time permanence) там, де remote-sensing-реєстри сліпі = диференційована цінність.
 
-> ✅ **Канонізовано — різницю зроблено explicit (2026-07-24).** На момент написання чернетки канон подавав «2000 SCC = 1 tCO₂» просто як `✅ done`, і зробити явною різницю «внутрішня конвенція ≠ продаваний кредит» було лише **кандидатом** на ssot-задачу. Її **закрито в обох домах**: [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) тепер прямо каже «**внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor», а [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) несе те саме застереження у деривації `MAX_SUPPLY`. Metrology-gap ніколи не суперечив BIZ.1 («методологічна сертифікація post-TRL 7 тримає BIZ.9») — він **розширював природу розриву**: це репозиціювання, не аудит числа, і саме це тепер сказано в каноні. Ця секція — дзеркало канону, не другий дім.
+> ✅ **Канонізовано — різницю зроблено explicit (2026-07-24).** На момент написання чернетки канон подавав «2000 SCC = 1 tCO₂» просто як `✅ done`, і зробити явною різницю «внутрішня конвенція ≠ продаваний кредит» було лише **кандидатом** на ssot-задачу. Її **закрито в обох домах**: [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) тепер прямо каже «**внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor», а [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) несе те саме застереження у деривації `MAX_SUPPLY`. Metrology-gap ніколи не суперечив BIZ.1 («методологічна сертифікація post-TRL 7 тримає BIZ.9») — він **розширював природу розриву**: це репозиціювання, не аудит числа, і саме це тепер сказано в каноні. Ця секція — дзеркало канону, не другий дім.
 
 ---
 
@@ -109,7 +109,7 @@
 
 ### 2.2 Puro.earth — важлива both/and-корекція (death-path, не living-carbon)
 
-Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/durable-CDR стандарт. **АЛЕ** у SilkenNet Puro вже живе на ІНШОМУ треку: коли дерево вмирає біологічно (`Tree.status = :deceased`), `PuroEarthPassportWorker` генерує **biochar CORC** на Puro.earth ([`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md), рядок «Смерть дерева»). Тобто:
+Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/durable-CDR стандарт. **АЛЕ** у SilkenNet Puro вже живе на ІНШОМУ треку: коли дерево вмирає біологічно (`Tree.status = :deceased`), `PuroEarthPassportWorker` генерує **biochar CORC** на Puro.earth ([`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md), рядок «Смерть дерева»). Тобто:
 - Живий ліс (carbon-sink, поглинання) → Verra/GS/Isometric-клас (§2, з metrology-gap §1).
 - Мертве дерево → biochar → Puro CORC (durable removal, вже `[MAINNET READY]`).
 Це **не конфлікт, а два різні продукти** з одного лісу. Puro-експорт — уже доведений патерн (ARCH.5), що обслуговує лише death-path.
@@ -217,10 +217,10 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 ### 6.3 Що це означає для SCC-наративу (стисло)
 
 - SCC = **Condition/Proof-of-Growth-токен** (homeostasis), не сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже в каноні [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md)).
-- «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція**, не продаваний реєстром кредит (дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md); правити там). Не продавати як останнє без methodology-ID.
+- «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція**, не продаваний реєстром кредит (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там). Не продавати як останнє без methodology-ID.
 - Carbon-credit-конверсія = **окремий, downstream, methodology-gated науковий проєкт** (калібрація growth_points ↔ біомаса), не критичний шлях пілоту.
 - Це honesty-корекція класу «in-silico ≠ TRL 4» — **диференціює**, а не применшує: наша цінність (continuous ground-truth + real-time permanence) там, де remote-sensing-реєстри сліпі.
-- ✅ Різницю «внутрішня конвенція ≠ продаваний кредит» **уже зроблено explicit у каноні** — [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) + [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) (деривація `MAX_SUPPLY`). Тут — дзеркало, не другий дім (§1.4).
+- ✅ Різницю «внутрішня конвенція ≠ продаваний кредит» **уже зроблено explicit у каноні** — [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (рядок `[BIZ.1]`) + [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) (деривація `MAX_SUPPLY`). Тут — дзеркало, не другий дім (§1.4).
 
 ### 6.4 Наступні дії (не gold-plate)
 

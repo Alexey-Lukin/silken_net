@@ -212,7 +212,7 @@ groups:
         annotations:
           summary: "{{ $values.A.Value | printf \"%.0f\" }} страхових виплат зупинено reserve-gate за годину (причина: {{ $labels.reason }})."
           description: "Internal-mode виплата мінтить НОВИЙ SCC, тож gate спинив емісію: aggregate 24h correlated stop-loss або reserve-adequacy проти DAO_TREASURY. Заявки лежать у manual_review — звір подію ПЕРЕД ручним резолвом; це не збій, а спрацювання політики. Поріг transient-RPC (:eval_error) сюди НЕ потрапляє — той шлях іде в Sidekiq-retry."
-          runbook_url: "docs/07_01_Nature_as_a_Service_Contracts.md#reserve-gate"
+          runbook_url: "docs/00_04_Nature_as_a_Service_Contracts.md#reserve-gate"
         labels:
           severity: critical
           component: web3

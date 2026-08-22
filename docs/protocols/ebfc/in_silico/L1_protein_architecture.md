@@ -170,5 +170,5 @@ distance #1:FAD@N5 #1:90@OH
 - 4-рівневий in-silico pipeline → [`01_03 §3.4`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - TRL-гейт біохімії → [`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)
 - Action Plan tracker → [`00_07`](../../../00_07_Action_Plan_Tracker.md)
-- Joint Q1-publication scope → [`07_03 Стаття 1`](../../../07_03_Academic_Integration_and_IP.md)
+- Joint Q1-publication scope → [`00_02 Стаття 1`](../../../00_02_Academic_Integration_and_IP.md)
 - Майбутні R&D напрямки → [`01_03 §3.1, §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)

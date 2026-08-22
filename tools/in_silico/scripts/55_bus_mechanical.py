@@ -147,7 +147,7 @@ def main() -> int:
     print("  4. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
     print("  5. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
-    print("     sway spectrum is bench/field (07_03). Comparative supported-vs-unsupported is robust.")
+    print("     sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported is robust.")
 
     out = {
         "method": "slender-beam closed form — Euler buckling (fixed-free) + cantilever tip-load bending "
@@ -167,7 +167,7 @@ def main() -> int:
                     "fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
                     "thermal → leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
-                   "is bench/field (07_03). Comparative supported-vs-unsupported + per-alloy ranking robust.",
+                   "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust.",
     }
     json_path = OUT_DIR / "bus_mechanical.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))

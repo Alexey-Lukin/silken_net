@@ -188,7 +188,7 @@
   "min_mitigation_pass": "L2 spacer + bayonet hard-stop",
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
-    "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 07_03 \u00a71.2, unresponsive"
+    "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"
   },
   "verdict": "3-spring Z-stack holds at 'L2 spacer + bayonet hard-stop' incl. 20yr pad creep"
 }

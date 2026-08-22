@@ -20,7 +20,7 @@
 > - 🔴 **НЕСУЧИЙ НАСЛІДОК:** «під operational-vehicle» коректно **лише** якщо розвести **operational-vehicle** (так) від **IP/value-owner** (ні — титул лишається на фізособі founder'а). Ця вісь — центральна для всієї матриці (§1.2).
 > - Founder особисто = **ФОП** (персональний-дохід-канал **+ IP/trademark-holder**, НЕ токен — п.291.5 ПКУ).
 >
-> **Канон:** [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) (BIZ.15 SPV, RWA, MSA/KYC open-items) · [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (IP-постава: copyright/™ на фізособу) + [`07_03 §5`](../../07_03_Academic_Integration_and_IP.md) (бренд-архітектура) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20/BIZ.15/UNI.14/UNI.16/UNI.15/BIZ.2/BIZ.21.
+> **Канон:** [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (BIZ.15 SPV, RWA, MSA/KYC open-items) · [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (IP-постава: copyright/™ на фізособу) + [`00_02 §5`](../../00_02_Academic_Integration_and_IP.md) (бренд-архітектура) · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20/BIZ.15/UNI.14/UNI.16/UNI.15/BIZ.2/BIZ.21.
 
 ---
 
@@ -41,7 +41,7 @@
 |---|---|---|---|
 | **Phase-1** | ЗАРАЗ (2026, R&D-пілот) | SilkenNet operational-під-наявним vehicle; IP+™ на фізособі; ФОП = персональний дохід | ≈0 (структура існує) |
 | **Phase-2** | securities-консультація вирішена **+** перший revenue/mint horizon **+** TRL4+ | Offshore token-co (емісія SCC/SFC) + SPV-міст (BIZ.15) | $8–34k+ setup |
-| **Phase-3** | далекий горизонт (DAO launch, [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) DAO-governance) | Foundation-as-DAO (Swiss Verein/Cayman) | залежить від форми |
+| **Phase-3** | далекий горизонт (DAO launch, [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) DAO-governance) | Foundation-as-DAO (Swiss Verein/Cayman) | залежить від форми |
 
 **Don't gold-plate:** Phase-2/3 нижче — **інформаційна карта «коли/як»**, а НЕ «зробити зараз». Зараз робиться лише Phase-1-мінімум (§5).
 
@@ -84,7 +84,7 @@ Operational-vehicle — **multi-founder** компанія (founder = співз
 
 | Роль / артефакт | Хто | Обґрунтування · джерело |
 |---|---|---|
-| **MSA counterparty** (BIZ.2) | **Operational-vehicle** | MSA потребує named legal person ([`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2). Готовий підписант із liability-щитом. **Розблоковує BIZ.2**. |
+| **MSA counterparty** (BIZ.2) | **Operational-vehicle** | MSA потребує named legal person ([`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2). Готовий підписант із liability-щитом. **Розблоковує BIZ.2**. |
 | **Грант-заявник** | **Operational-vehicle** (юрособа-грант) АБО **фізособа** (персональний грант) — обидва живі | Юрособа-заявник = liability-щит + інституційна довіра + можливий неоподаткований режим для бюджетних/МТД-грантів [R1 §5]. ⚠️ Якщо грант фінансує SilkenNet-IP-створення → узгодити з §1.2 (deliverable-IP → founder). Персональний грант на фізособу — [R1 §5], [`tax_posture_ua`](tax_posture_ua.md) Q1.3. **Вибір per-grant.** |
 | **Trademark-заявник** (UNI.15) | **Фізособа (Oleksii Lukin)** | **Три причини сходяться:** (1) ™ у спільній компанії робить титул на бренд-рів неоднозначним (§1.2); (2) R1 §3/R5 — ™ на фізособу переживає ліквідацію/продаж, переходить у спадок; (3) уже ⚖️-default у UNI.15. |
 | **IP / copyright holder** | **Фізособа (Oleksii Lukin)**, license-back компанії для операцій | **Три причини:** (1) однозначність титулу solo-mission (§1.2); (2) `/NOTICE` уже вестить copyright на фізособу, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) пілар 2 — copyright заради enforcement копілефту (AGPL); (3) єдиний copyright-holder = standing to enforce ([`securities_review`](securities_review.md) Блок 4.3). License-back, НЕ assignment. |
@@ -184,7 +184,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 
 ## 4. SPV-ВІСЬ (BIZ.15 fiat-to-retirement) — де в драбині
 
-**Що це:** корпорація платить **фіатом** → SPV купує+гасить SCC → ISO 14064-сумісний сертифікат офсету (voluntary Scope 1-3, НЕ regulatory-compliance). Знімає бар'єр «не хочу тримати токени/ключі» ([`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.15).
+**Що це:** корпорація платить **фіатом** → SPV купує+гасить SCC → ISO 14064-сумісний сертифікат офсету (voluntary Scope 1-3, НЕ regulatory-compliance). Знімає бар'єр «не хочу тримати токени/ключі» ([`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.15).
 
 | Ось | Розклад |
 |---|---|
@@ -252,7 +252,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 |---|---|
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.20** (дім стану) + BIZ.15 / BIZ.22 / UNI.14 / UNI.15 / UNI.16 / BIZ.2 / BIZ.21 |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава + канонізований тришар «хто оперує ≠ хто володіє ≠ хто емітує» |
-| [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | юр/бізнес-передумови NaaS (MSA, RWA, SPV/BIZ.15, KYC) |
+| [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) | юр/бізнес-передумови NaaS (MSA, RWA, SPV/BIZ.15, KYC) |
 | [`securities_review`](securities_review.md) | securities/RWA/IP fact-pattern + питання до юриста (Блок 4.5 = IP-структурування) |
 | [`tax_posture_ua`](tax_posture_ua.md) | Дія.City-ставки, 90%-тест, token-емісія/банкування — податковий дім |
 | [`R1_ua_legal.md`](../research/R1_ua_legal.md) · [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) | орієнтаційний research, на який спираються [R1 §X] / [R2 §X] |

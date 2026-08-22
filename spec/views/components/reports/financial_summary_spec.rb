@@ -55,13 +55,13 @@ RSpec.describe Reports::FinancialSummary do
 
   describe "stat cards" do
     it "renders Total Contracted stat card" do
-      # Service wording, not investment wording — BIZ.22 / 07_01 §1. The label moved
+      # Service wording, not investment wording — BIZ.22 / 00_04 §1. The label moved
       # from "Total Invested"; the i18n KEY (`metrics.total_invested`) deliberately did
       # not, since keys are never shown to a user.
       expect(html).to include("Total Contracted")
     end
 
-    # Плата за послугу номінована в USD (`07_01 §5`) — і саме тут підпис це каже
+    # Плата за послугу номінована в USD (`00_04 §5`) — і саме тут підпис це каже
     # ПРАВДИВО, на відміну від сусідів, де той самий стовпчик підписано карбоновим
     # тікером (`I18N.1`). Пін тримає обидві половини одним вузлом: масштаб Float
     # (модель підсумовує `.to_f`) і саму одиницю, тож «уніфікація» підпису під SCC

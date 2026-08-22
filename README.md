@@ -28,7 +28,7 @@ A titanium gyroid anchor with an enzymatic biofuel cell (EBFC — "zero-grid", >
 
 ## 📚 Documentation
 
-The canon lives in [`docs/`](docs/) as SSOT documents grouped into modules 00–07, and is mirrored to the GitHub wiki on every push to `main`.
+The canon lives in [`docs/`](docs/) as SSOT documents grouped into modules 00–06, and is mirrored to the GitHub wiki on every push to `main`.
 
 > **Start at [`docs/00_00` — SSOT Index](docs/00_00_SSOT_Index.md):** reading order, the eight-layer system map, and a one-line description of every document. That index is the **single home of the list** — it is deliberately not restated here, so it cannot drift in two places.
 

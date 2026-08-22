@@ -37,7 +37,7 @@
 # The replacement discriminator is the LABEL SHAPE, not the `NN_NN` prefix — the prefix was
 # always required and does NOT separate the genres, since prose-shorthand named refs
 # (`05_02 §Модель`, `05_04 §Merkle`), placeholders (`03_04 §X.Y`, `00_07 §NN`) and
-# non-section IDs (`07_01 §B-02`, `03_05 §FW.2`) all carry one. Those 74 refs stay on the
+# non-section IDs (`00_04 §B-02`, `03_05 §FW.2`) all carry one. Those 74 refs stay on the
 # weaker `section_label_drift` ADVISORY by design (00_06 §3). Measured before the flip
 # across all four corpora sharing this resolver: 46 refs newly in scope, 3 dead.
 #
@@ -59,7 +59,7 @@ CLAUDE_TREE = ".claude"
 # The §-resolution engine + its unit tests legitimately cite stale-LOOKING example refs
 # (fixtures that exercise the resolver) — exempt them, same idea as protocols_ref_check
 # skipping the subtree's own filename-link convention. The ssot-maintenance SKILL is exempt
-# for the same reason: its "worked example" cites `05_03 §749` / `07_01 §6.5` as deliberate
+# for the same reason: its "worked example" cites `05_03 §749` / `00_04 §6.5` as deliberate
 # renumber-drift teaching cases (a doc renumber MOVED those sections — that IS the lesson).
 # `lib/tasks/docs.rake` joins them for the same reason once `.rake` came into
 # scope: it is the gate's own rake body, and it cites `05_03 §749` twice while
@@ -86,11 +86,11 @@ EXEMPT_REFS = {
   # доказ, що redirect-стаб небезпечний («реф не резолвиться проти тонкого стаба»).
   # Побачив його аж фліп fail-OPEN→fail-CLOSED [DOC-T.68 фаза 0]: доти реф на мертвий
   # doc-id резолвер мовчки пропускав, тож цитата була невидима, а не дозволена.
-  # ⊕ `05_03 §749` / `07_01 §6.5` joined this row 2026-08-22: they moved here with
+  # ⊕ `05_03 §749` / `00_04 §6.5` joined this row 2026-08-22: they moved here with
   # the worked example that cites them (that prose left the auto-loaded half).
   # An exemption follows its SUBJECT — it does not stay where the subject used to
   # be, or it stops guarding and starts blessing the next phantom at that address.
-  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "07_03 §7", "08_01 §2", "05_03 §749", "07_01 §6.5" ],
+  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "00_02 §7", "08_01 §2", "05_03 §749", "00_04 §6.5" ],
   "lib/tasks/docs.rake"                            => [ "05_03 §749" ],
   # Trap (14) цитує компаунд-реф БЕЗ пробілу як приклад того, що детектор
   # хибно емітував із нього ще й голий числовий якір. Цитата і є доказом:
@@ -115,7 +115,7 @@ EXEMPT_REFS = {
 # 96% of the glob — scanning them took the gate from 4s to 34s». Це правда про ПОВНИЙ
 # глоб, і хибно про звужений: `/extern/` дає 2385 файлів із 2595, тож після його зняття
 # додаток коштує 210 файлів і +23% часу. Улов на день зняття — ЧОТИРИ мертві реф-и в
-# 318 живих (`05_02 §554` = номер РЯДКА як §; `07_03 §1.1B` = вигаданий суфікс;
+# 318 живих (`05_02 §554` = номер РЯДКА як §; `00_02 §1.1B` = вигаданий суфікс;
 # `02_02 §1.4` і `03_03 §1.4` = неіснуючі секції), жоден із яких не бачив ЖОДЕН гейт.
 # ⛔ `scripts/` СВІДОМО лишається поза периметром і це не недогляд: там 44 реф-и, з
 # них не резолвляться сім — і всі сім у ЦЬОМУ файлі, це його ж декларовані фікстури

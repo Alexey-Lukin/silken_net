@@ -8,7 +8,7 @@
 
 - **Backend (`TelemetryUnpackerService`)**: сервер знає точну математичну модель і може перевіряти коректність надісланих деревом `growth_points`.
 - **Proof of Growth Pipeline (05_02)**: мінтинг SCC заблокований, поки бекенд не розуміє математику, що генерує бали.
-- **University R&D (07_03)**: академічна верифікація числової стабільності методу Ейлера у системі Лоренца.
+- **University R&D (00_02)**: академічна верифікація числової стабільності методу Ейлера у системі Лоренца.
 
 ---
 
@@ -28,7 +28,7 @@
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | TelemetryUnpacker, SeedDerivation, DCI check |
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Dual Computation Integrity (Z крос-верифікація) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | CRITICAL_Z_MIN/MAX → slashing |
-| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Матем. верифікація числової стабільності |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Матем. верифікація числової стабільності |
 | `firmware/bio_contracts/bio_contract.rb` · `app/services/silken_net/attractor.rb` · `seed_derivation.rb` | mruby + Rails-дзеркало (Float parity); SEC.11 entry-point |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): FW.31 numeric-DCI flip (deferred); ARCH.18 int-Lorenz (🌿 zkVM-мотив; drift-мотив знято FW.55/FW.31, §5) |
 

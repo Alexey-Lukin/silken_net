@@ -19,9 +19,9 @@
 > 1. [`securities_review`](securities_review.md) — 🔴 **securities fact-pattern**. Цей каркас written так, щоб НЕ підсилювати F1–F13 звідти.
 > 2. [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) — metrology-gap: SCC-токен = Condition/Proof-of-Growth токен, НЕ сертифікований tCO₂; carbon-credit продаж — через зовнішній реєстр.
 > 3. [`sla_exhibit`](../business/sla_exhibit.md) — Availability-SLA, хукається сюди як **Exhibit A**.
-> 4. [`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) — NaaS lifecycle (код-реальність) + [`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md) «Таблиця SLA» (legal-event→tx mapping — **інше значення**, ніж Exhibit A) + [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) (юр-передумови, BIZ.2/9/18/20/21).
+> 4. [`00_04`](../../00_04_Nature_as_a_Service_Contracts.md) — NaaS lifecycle (код-реальність) + [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) «Таблиця SLA» (legal-event→tx mapping — **інше значення**, ніж Exhibit A) + [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) (юр-передумови, BIZ.2/9/18/20/21).
 >
-> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`07_03 §1.5/§4.2`](../../07_03_Academic_Integration_and_IP.md) (Аблязов) → [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md).
+> **Канон-маршрут:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 (цей item) → [`00_02 §1.5/§4.2`](../../00_02_Academic_Integration_and_IP.md) (Аблязов) → [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md).
 
 ---
 
@@ -116,7 +116,7 @@ B.3.1. Кожне окреме залучення оформлюється Order
 | Поле Order Form | Замінює (код-реальність) | Примітка |
 |---|---|---|
 | Клієнт + контакт | `Organization` | — |
-| Ділянка/кластер (ID, локація) | `Cluster` | Cross-ref RWA лише якщо `hadron_asset_id` активовано (окремий трек, [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md)) |
+| Ділянка/кластер (ID, локація) | `Cluster` | Cross-ref RWA лише якщо `hadron_asset_id` активовано (окремий трек, [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md)) |
 | Service Term (початок/кінець) | `start_date`/`end_date` | Нейтральна назва |
 | **Service Fee** + графік платежів | `total_funding` | 🔴 НІКОЛИ «investment amount» |
 | Обраний Tier (A/B/C) | — | Cross-ref `Exhibit A §1.1` |
@@ -134,7 +134,7 @@ B.4.2. **Tier B (D-MRV звітність)** — періодичні звіти
 
 B.4.3. **Умовні Токени (опційно, `[⚖️ TBD: включати за замовчуванням чи ні]`)** — якщо Order Form це передбачає, Провайдер видає Клієнту записи-атестації (SCC-токен) як **звітний елемент** виконання Послуги (доказ безперервного моніторингу конкретного дерева/кластера). **Рекомендація каркаса:** за замовчуванням **НЕ включати** токен-доставку до Клієнта в базовий MSA (найбезпечніша постава — UNI.16 Q15 «проблема в продуктовому дизайні, не в лейблінгу»); токен-Deliverable — окремий, явно позначений опційний розділ Order Form, активований лише після того, як юрист підтвердить прийнятність механіки (не лише термінології) за [`securities_review`](securities_review.md) Блок 1.
 
-B.4.4. **Risk-Protection Feature (опційно)** — якщо активовано в Order Form: параметричний захист від визначених подій (пожежа/посуха/шкідники), з виплатою за підтвердженим незалежним тригером. **Формулювання:** описати як окремий, чітко-визначений risk-protection продукт з платою за захист («Protection Fee»), що фінансує (переважно) ЗОВНІШНЬОГО ліцензованого страховика (Etherisc-рейл, [`07_01 §7`](../../07_01_Nature_as_a_Service_Contracts.md) Oracle mode) — уникати мови «pooled» / «спільний фонд», щоб не підсилювати «common enterprise» Howey-prong-2 читання (UNI.16 F8/Q5). `[⚖️ TBD юрист: чи internal-mode (DAO Treasury pool) взагалі можна пропонувати B2B без ліцензії на страхову діяльність]`
+B.4.4. **Risk-Protection Feature (опційно)** — якщо активовано в Order Form: параметричний захист від визначених подій (пожежа/посуха/шкідники), з виплатою за підтвердженим незалежним тригером. **Формулювання:** описати як окремий, чітко-визначений risk-protection продукт з платою за захист («Protection Fee»), що фінансує (переважно) ЗОВНІШНЬОГО ліцензованого страховика (Etherisc-рейл, [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) Oracle mode) — уникати мови «pooled» / «спільний фонд», щоб не підсилювати «common enterprise» Howey-prong-2 читання (UNI.16 F8/Q5). `[⚖️ TBD юрист: чи internal-mode (DAO Treasury pool) взагалі можна пропонувати B2B без ліцензії на страхову діяльність]`
 
 B.4.5. **Явно виключено з Deliverables:** SFC (governance-токен) — не постачається, не згадується як частина комерційного обміну за цією Угодою (UNI.16 F13).
 
@@ -175,7 +175,7 @@ B.7.1. Провайдер зобов'язується надавати Посл�
 
 B.7.2. У разі суперечності між Exhibit A та цією Угодою щодо доступності Послуг і Service Credits — переважає Exhibit A (`Exhibit A §0.2`); в усіх інших питаннях — ця Угода.
 
-B.7.3. ⚠️ **Термінологічна відмінність (нагадування, не дублювати деталь):** «SLA» тут = availability/uptime-гарантія (`Exhibit A`). Це **НЕ** те саме, що «Таблиця SLA» в [`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md) (legal-event → on-chain транзакція mapping) — різні значення одного скорочення в різних документах екосистеми; тримати чітко розведеними в комунікації з Клієнтом.
+B.7.3. ⚠️ **Термінологічна відмінність (нагадування, не дублювати деталь):** «SLA» тут = availability/uptime-гарантія (`Exhibit A`). Це **НЕ** те саме, що «Таблиця SLA» в [`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md) (legal-event → on-chain транзакція mapping) — різні значення одного скорочення в різних документах екосистеми; тримати чітко розведеними в комунікації з Клієнтом.
 
 ## B.8 Обов'язки Клієнта
 
@@ -293,7 +293,7 @@ Entire Agreement, Order of Precedence (MSA → Exhibits → Order Form, чи н�
 
 > ## ⚠️ СТАТУС: УМОВНИЙ RIDER — Rider B НЕ активний до вирішення BIZ.9 (вибір реєстру)
 >
-> **Термінологічна нота:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 tracker-item історично називає цей документ «Carbon Credit Purchase Agreement». Цей каркас **свідомо уникає** цієї назви — «purchase agreement» для carbon-credit разом із «SCC» у назві ризикує (а) підсилити securities-fact-pattern (купівля інструмента з очікуванням вартості, UNI.16), (б) представити SCC-токен як сертифікований кредит, яким він не є (BIZ.9 §1.4 metrology-gap). Назва тут — **«Carbon-Related Services Rider»**; рекомендація — синхронізувати номенклатуру в [`00_07`](../../00_07_Action_Plan_Tracker.md)/[`07_01`](../../07_01_Nature_as_a_Service_Contracts.md) окремим ssot-проходом (не тут, read-only).
+> **Термінологічна нота:** [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.2 tracker-item історично називає цей документ «Carbon Credit Purchase Agreement». Цей каркас **свідомо уникає** цієї назви — «purchase agreement» для carbon-credit разом із «SCC» у назві ризикує (а) підсилити securities-fact-pattern (купівля інструмента з очікуванням вартості, UNI.16), (б) представити SCC-токен як сертифікований кредит, яким він не є (BIZ.9 §1.4 metrology-gap). Назва тут — **«Carbon-Related Services Rider»**; рекомендація — синхронізувати номенклатуру в [`00_07`](../../00_07_Action_Plan_Tracker.md)/[`00_04`](../../00_04_Nature_as_a_Service_Contracts.md) окремим ssot-проходом (не тут, read-only).
 
 ## C.0 Мета та залежність
 
@@ -325,7 +325,7 @@ C.2.4. **Комерційні умови:** `[⚖️ TBD: додаткова Dat
 
 > Активується ЛИШЕ після: (а) BIZ.9 founder-вибору реєстру ([`carbon_registry_matrix §6.2`](../business/carbon_registry_matrix.md) — Isometric/GS Microscale/Verra залежно від наявності anchor-buyer); (б) отримання methodology-ID; (в) підтвердження UA Article-6/double-count питання ([`carbon_registry_matrix §3`](../business/carbon_registry_matrix.md) — прямий запит нац-focal-point, НЕ web-research). До того — цей підрозділ ІНФОРМАЦІЙНИЙ, не контрактний.
 
-C.3.1. Якщо активовано: Провайдер (або партнер-SPV, cross-ref [`07_01 §8`](../../07_01_Nature_as_a_Service_Contracts.md) Fiat-to-Retirement SPV / BIZ.15) за окрему Fee купує + ретайрить Registry-Issued Credit від імені Клієнта на обраному External Registry; видає сертифікат офсету (ISO 14064-сумісний, voluntary Scope 1-3 — **не** regulatory-compliance інструмент).
+C.3.1. Якщо активовано: Провайдер (або партнер-SPV, cross-ref [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) Fiat-to-Retirement SPV / BIZ.15) за окрему Fee купує + ретайрить Registry-Issued Credit від імені Клієнта на обраному External Registry; видає сертифікат офсету (ISO 14064-сумісний, voluntary Scope 1-3 — **не** regulatory-compliance інструмент).
 
 C.3.2. Юрисдикція/ліцензія SPV, кастодіан — `[⚖️ TBD, залежить від BIZ.20 + окремого юр-опрацювання SPV]`.
 
@@ -355,7 +355,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 |---|---|---|---|
 | **F1** | `role: investor` — дефолт для кожного user (`User` → `enum :role, prefix: true, default: :investor`) | MSA називає сторону «Клієнт», ніколи «investor» | 🔴 Контракт-рівень НЕ фіксить код-рівень — `User.role` enum лишається, поки engineering-slice не перейменує/переструктурує (UNI.16 Q9) |
 | **F2** | investor-роль = `:read_only` пасивна | Права Клієнта в MSA — звичайні SaaS customer rights (доступ/звітність), мова «passive investor» відсутня | Косметичне на MSA-рівні; underlying RBAC-модель поза скоупом |
-| **F3** | `total_funding` документовано як «інвестиція» ([`07_01 §5`](../../07_01_Nature_as_a_Service_Contracts.md), `NaasContract` → `alias_attribute :total_value, :total_funding`) | MSA/Order Form використовують «Service Fee» скрізь | Канон [`07_01 §5`](../../07_01_Nature_as_a_Service_Contracts.md) і code-alias `total_value` досі кажуть «інвестиція» — розсинхрон MSA-мова vs internal docs/code, до вирівнювання |
+| **F3** | `total_funding` документовано як «інвестиція» ([`00_04 §5`](../../00_04_Nature_as_a_Service_Contracts.md), `NaasContract` → `alias_attribute :total_value, :total_funding`) | MSA/Order Form використовують «Service Fee» скрізь | Канон [`00_04 §5`](../../00_04_Nature_as_a_Service_Contracts.md) і code-alias `total_value` досі кажуть «інвестиція» — розсинхрон MSA-мова vs internal docs/code, до вирівнювання |
 | **F4** | Lifecycle-стани іменовані investor-мовою (`draft`/`cancel` коментарі) | `§B.6` описує Termination нейтрально | Те саме — code comments не міняються цим документом |
 | **F5/F6** | Early-exit fee + пропорційний refund від `total_funding` | `§B.6.3` — Опція 1 (без refund, default) або Опція 2 (fixed fee, не pro-rata-investment) | 🔴 Найвищий пріоритет юр-відповіді (UNI.16 Q9/Q11) — код (`NaasContract#calculate_early_exit_fee`/`#calculate_prorated_refund`) досі реалізує третій, найризикованіший варіант |
 | **F7** | ~~`current_yield_performance` — «yield» у назві методу~~ | Жодного «yield»/«performance»/«return» в MSA; Service Fee прив'язана до SLA-метрик, не токен-метрик | ✅ **Розсинхрон знято 2026-08-14: метод ВИДАЛЕНО** (не перейменовано) — величина ділила SCC на USD і не міряла нічого, а датчик під нею стояв під підписом «Cluster Health» ([`00_07`](../../00_07_Action_Plan_Tracker.md) UI.10). Тобто MSA-мова й код тут більше не розходяться, і зійшлись вони з боку коду |
@@ -412,7 +412,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 | Крок | Дія | Виконавець |
 |---|---|---|
 | 1 | Прочитати [`securities_review`](securities_review.md) (securities) + [`carbon_registry_matrix`](../business/carbon_registry_matrix.md) (metrology) | Founder → юрист |
-| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **Аблязов Д.Е.** (СЄУ, к.ю.н., віцепрезидент — господарське/комерційне право, [`07_03 §1.5`](../../07_03_Academic_Integration_and_IP.md)/[`§4.2`](../../07_03_Academic_Integration_and_IP.md)) |
+| 2 | Юр-консультація MiCA/ERC-3643/RWA (UA-складова) | **Аблязов Д.Е.** (СЄУ, к.ю.н., віцепрезидент — господарське/комерційне право, [`00_02 §1.5`](../../00_02_Academic_Integration_and_IP.md)/[`§4.2`](../../00_02_Academic_Integration_and_IP.md)) |
 | 3 | Юр-консультація securities/Howey/MiFID/AIFMD (найвищі ставки, [`securities_review`](securities_review.md) Блок 1) | **Профільний crypto/securities-юрист (TBD)** — окремий фахівець, НЕ Аблязов (поза його фахом, memo явно це розділяє) |
 | 4 | Фіналізація цього MSA-каркаса з відповідями на `[⚖️ TBD]` | Founder + обидва юристи |
 | 5 | Review практикуючим юристом фінальної версії | Обидва вище |

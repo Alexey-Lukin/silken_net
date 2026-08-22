@@ -46,7 +46,7 @@ protocols.each do |f|
   # (silent since DOC-T.26 landed).
   # The depth half closes the sibling blind spot: the check was NAME-only, so a wrong
   # `../` count passed while rendering a dead link — `paper/` (4 levels deep) carried
-  # `../../../07_03_…`, resolving to docs/protocols/07_03_… i.e. nowhere, and CI stayed
+  # `../../../00_02_…`, resolving to docs/protocols/00_02_… i.e. nowhere, and CI stayed
   # green because the BASENAME was a real canon doc (found 2026-07-25, 2 live hits).
   text.scan(%r{\]\(((?:\.\./)+)(\d\d_\d\d_[A-Za-z0-9_]+)(?:\.md)?(#[^)]*)?\)}).each do |ups, base, frag|
     unless existing.include?(base)

@@ -114,7 +114,7 @@
         "P_c_max_MPa": 2.156299842903541
       }
     ],
-    "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 07_03 \u0421\u0442\u0430\u0442\u0442\u044f 2)."
+    "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 00_02 \u0421\u0442\u0430\u0442\u0442\u044f 2)."
   },
   "winter": {
     "dT_K": -50.0,

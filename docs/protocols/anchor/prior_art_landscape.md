@@ -1,13 +1,13 @@
 # Prior-Art Landscape — SilkenNet (novelty evidence + anti-capture scan)
 
 > **Що це:** карта попереднього рівня техніки навколо SilkenNet. Під **defensive-publication** поставою
-> ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)) її мета **подвійна**: (a) **доказ новизни** для наукової статті ([`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)); (b)
+> ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)) її мета **подвійна**: (a) **доказ новизни** для наукової статті ([`00_02 §2.1`](../../00_02_Academic_Integration_and_IP.md)); (b)
 > **анти-захоплення FTO-lite** — підтвердити, що жодна третя сторона вже не тримає блокуючого патенту на
 > ту саму синергію, тож наше відкрите використання безпечне. **Це НЕ patentability-пошук перед поданням
 > заявки** (ми не подаємо — [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)).
 > **Cross-ref:** [`defensive_disclosure.md`](defensive_disclosure.md) (що саме ми розкриваємо) ·
 > [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (постава) ·
-> [`07_03 §4.1`](../../07_03_Academic_Integration_and_IP.md) (TISC може прогнати ці запити).
+> [`00_02 §4.1`](../../00_02_Academic_Integration_and_IP.md) (TISC може прогнати ці запити).
 
 ---
 

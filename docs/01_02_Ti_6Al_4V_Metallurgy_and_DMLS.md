@@ -23,7 +23,7 @@
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія анкера (TPMS-гіроїд, PEEK, press-fit) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC: ферменти на поверхні анкера |
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT: біологічна реакція дерева, GDL/PTFE |
-| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | R&D протоколи ЧНУ (Ti-coin, синтетичний ксилемний сік) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | R&D протоколи ЧНУ (Ti-coin, синтетичний ксилемний сік) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.2 roughness, HW.3 aging/V-release, HW.4 self-healing, HW.23 HIP |
 
 ## 📑 Зміст
@@ -180,7 +180,7 @@
             і блокуватиме EBFC-провідність. Деталі — §3.6.
 ```
 
-> 🔴 **КРИТИЧНИЙ ПОРЯДОК ВИРОБНИЦТВА (інакше — зварені ферменти):** Гаряча press-fit-збірка (Ti+PEEK+Ti, PEEK ~150°C, [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) **миттєво денатурує** будь-які ферменти. Тому послідовність **жорстко**: **(1)** SLM-друк + HIP → **(2)** збірка "голого" анкера (гаряча press-fit Ti↔PEEK↔Ti) → **(3)** EAAE-травлення (§1.3) → **(4)** dehydrogenation bake (Крок 5b) → **(5) ЛИШЕ ПОТІМ, на холодному металі** — біохімічна функціоналізація (dgrFAD-GDH/Os + Genipin-Chitosan-CNC + Nafion-g-PSBMA + Laccase/ZIF — це робить ЧМА/Бушуєва, [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`07_03 §1.4`](07_03_Academic_Integration_and_IP)). Жодного нагріву >40°C після кроку (5).
+> 🔴 **КРИТИЧНИЙ ПОРЯДОК ВИРОБНИЦТВА (інакше — зварені ферменти):** Гаряча press-fit-збірка (Ti+PEEK+Ti, PEEK ~150°C, [`01_01 §3`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) **миттєво денатурує** будь-які ферменти. Тому послідовність **жорстко**: **(1)** SLM-друк + HIP → **(2)** збірка "голого" анкера (гаряча press-fit Ti↔PEEK↔Ti) → **(3)** EAAE-травлення (§1.3) → **(4)** dehydrogenation bake (Крок 5b) → **(5) ЛИШЕ ПОТІМ, на холодному металі** — біохімічна функціоналізація (dgrFAD-GDH/Os + Genipin-Chitosan-CNC + Nafion-g-PSBMA + Laccase/ZIF — це робить ЧМА/Бушуєва, [`01_03 §2.1`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell), [`00_02 §1.4`](00_02_Academic_Integration_and_IP)). Жодного нагріву >40°C після кроку (5).
 
 ### 1.3a. Failure Modes, Виключені з Протоколу
 
@@ -336,7 +336,7 @@ HIP закриває внутрішні мікропустоти, знімає �
 - Іонно-електронний змішаний транспорт → не блокує EBFC-струм (на відміну від чистого діелектричного покриття)
 - Модуль пружності 10–500 кПа → плавний перехід від твердого Ti до м'якого калюсу
 
-**Статус:** Експериментально досліджується для bioelectronic implants (EU labs, в т.ч. VTT). Для рослинних тканин — **спекулятивно**, потребує in vitro верифікації на культурі клітин паренхіми Pinus sylvestris (запит до ЧМА / біо-хабу ЧНУ; см. [`07_03`](07_03_Academic_Integration_and_IP)).
+**Статус:** Експериментально досліджується для bioelectronic implants (EU labs, в т.ч. VTT). Для рослинних тканин — **спекулятивно**, потребує in vitro верифікації на культурі клітин паренхіми Pinus sylvestris (запит до ЧМА / біо-хабу ЧНУ; см. [`00_02`](00_02_Academic_Integration_and_IP)).
 
 > ⚠️ **Caveat:** Не плутати з біоміметичними покриттями для маскування під «своє» (HAp, RGD, лігнін) — ті розглядаються в [`01_04 §4`](01_04_CODIT_and_Xylemointegration) як засіб обману CODIT, а не як механічний інтерфейс.
 

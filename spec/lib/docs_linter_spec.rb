@@ -497,8 +497,8 @@ RSpec.describe DocsLinter do
       mint = "курс 10,000 growth_points = 1 SCC\n"
       carbon = "2000 SCC = 1 tCO₂\n"
       expect(described_class.tokenomics_rate_drift("05_03_Tokenomics_SCC_and_SFC", mint)).to be_empty
-      expect(described_class.tokenomics_rate_drift("07_01_Nature_as_a_Service_Contracts", mint)).to be_empty
-      expect(described_class.tokenomics_rate_drift("07_01_Nature_as_a_Service_Contracts", carbon)).to be_empty
+      expect(described_class.tokenomics_rate_drift("00_04_Nature_as_a_Service_Contracts", mint)).to be_empty
+      expect(described_class.tokenomics_rate_drift("00_04_Nature_as_a_Service_Contracts", carbon)).to be_empty
       expect(described_class.tokenomics_rate_drift("00_07_Action_Plan_Tracker", carbon)).to be_empty
       expect(described_class.tokenomics_rate_drift("manifest", mint)).to be_empty
     end
@@ -519,14 +519,14 @@ RSpec.describe DocsLinter do
   describe ".tokenomics_rate_anchor" do
     it "flags a rate HOME that no longer matches the guard's own regex (re-price mine, DOC-T.40)" do
       hits = described_class.tokenomics_rate_anchor(
-        "07_01_Nature_as_a_Service_Contracts", "Конверсія: 12,000 growth_points = 1 SCC; 2500 SCC = 1 tCO₂\n")
+        "00_04_Nature_as_a_Service_Contracts", "Конверсія: 12,000 growth_points = 1 SCC; 2500 SCC = 1 tCO₂\n")
       expect(hits.size).to eq(2)
       expect(hits.join).to include("TOKENOMICS_RATE_RE").and include("CARBON_RATE_RE").and include("manifest.md")
     end
 
     it "passes homes that still carry the pinned values; 05_03 is not required to carry carbon" do
       expect(described_class.tokenomics_rate_anchor(
-        "07_01_Nature_as_a_Service_Contracts", "10,000 growth_points = 1 SCC; 2000 SCC = 1 tCO₂\n")).to be_empty
+        "00_04_Nature_as_a_Service_Contracts", "10,000 growth_points = 1 SCC; 2000 SCC = 1 tCO₂\n")).to be_empty
       expect(described_class.tokenomics_rate_anchor(
         "05_03_Tokenomics_SCC_and_SFC", "10,000 growth_points = 1 SCC\n")).to be_empty
     end
@@ -832,7 +832,7 @@ RSpec.describe DocsLinter do
     end
 
     it "ignores a label with no doc-ID token (plain prose link text)" do
-      expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](07_01_Nature_as_a_Service_Contracts)")).to be_empty
+      expect(described_class.link_label_target_mismatch("[Insurance Layer mechanics](00_04_Nature_as_a_Service_Contracts)")).to be_empty
     end
 
     # 🔴 The RELATIVE href is the dialect a file one directory down can only write —
@@ -858,12 +858,12 @@ RSpec.describe DocsLinter do
       expect(described_class.link_label_target_mismatch(
         "[`05_02 §Усі Шляхи [DOC.7]`](05_02_Proof_of_Growth_Pipeline)")).to be_empty
       expect(described_class.link_label_target_mismatch(
-        "[`05_02 §Усі Шляхи [DOC.7]`](07_01_Nature_as_a_Service_Contracts)").size).to eq(1)
+        "[`05_02 §Усі Шляхи [DOC.7]`](00_04_Nature_as_a_Service_Contracts)").size).to eq(1)
     end
 
     it "does not accuse a link wrapped in a bold prose marker (the [^\\]]* false positive)" do
       expect(described_class.link_label_target_mismatch(
-        "**[`00_07`-прямий + [`07_03 §4.3`](../../07_03_Academic_Integration_and_IP.md)]** UNI.15")).to be_empty
+        "**[`00_07`-прямий + [`00_02 §4.3`](../../00_02_Academic_Integration_and_IP.md)]** UNI.15")).to be_empty
     end
 
     # An unbalanced bracket must make the link INVISIBLE, never mis-attributed —
@@ -953,9 +953,9 @@ RSpec.describe DocsLinter do
     it "skips meta-syntactic placeholders (§NN / §X.Y / §x), flags real alphanumeric refs (§1A)" do
       ph = "форма `03_04 §X.Y`; `00_07 §NN` placeholder; приклад `02_01 §x`\n"
       expect(described_class.bare_section_ref("00_03_TRL", ph)).to be_empty
-      hits = described_class.bare_section_ref("07_03_Acad", "ЧНУ Hard-Science — `07_03 §1A`\n")
+      hits = described_class.bare_section_ref("00_02_Acad", "ЧНУ Hard-Science — `00_02 §1A`\n")
       expect(hits.size).to eq(1)
-      expect(hits.first).to include("07_03 §1A")
+      expect(hits.first).to include("00_02 §1A")
     end
 
     it "skips fenced code but does NOT skip table rows (cells carry real refs)" do
@@ -1092,7 +1092,7 @@ RSpec.describe DocsLinter do
 
     it "flags the directory-form label too (`[`NN_NN` — Title](Doc) §X`)" do
       expect(described_class.section_ref_after_doclink(
-        "07_01_NaaS",
+        "00_04_NaaS",
         "Детально: [`08_02` — Academic Institutions Registry](08_02_Academic_Institutions_Registry) §5.\n").size).to eq(1)
     end
 
@@ -1338,7 +1338,7 @@ RSpec.describe DocsLinter do
     end
 
     it "collects from a Hash constant, reading its KEYS" do
-      expect(map["07_01"]).to include("RATE_ANCHOR_HOMES")
+      expect(map["00_04"]).to include("RATE_ANCHOR_HOMES")
     end
 
     it "attributes one number to EVERY constant that grants it" do

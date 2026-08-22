@@ -24,7 +24,7 @@
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC біопаливний елемент |
 | [`01_04` — CODIT and Xylemointegration](01_04_CODIT_and_Xylemointegration) | CODIT та хірургічне встановлення |
 | [`02_02` — Blind Mate Pogo Pin Interface](02_02_Blind_Mate_Pogo_Pin_Interface) | Pogo Pin інтерфейс (сліпе сполучення) |
-| [`07_03` — Academic Institutions Registry](07_03_Academic_Integration_and_IP) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
+| [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Ti-coin протокол + синтетичний ксилемний сік (Мінаєв/Гусак, §2) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.3 FEA/aging, HW.24 staged validation, HW.26 PEEK mechanical-lock |
 
 ## 📑 Зміст
@@ -392,7 +392,7 @@ TPMS-гіроїд із періодичними каналами діє як **�
 | Етап | Що друкуємо | Мета | Орієнтовний термін |
 |---|---|---|---|
 | **Stage 1** | 5 шт. SLA-макетів (фотополімер) | Перевірка form & fit: ергономіка, ступінчасте свердління (Flush Mount), допуски press-fit «пластик-в-пластик» | 2–4 тижні |
-| **Stage 2** | ~15 шт. Ti-«монет» **Ø16×1 мм** (**6-сплавний bake-off** down-select: 4V control + 7Nb + CP-Ti + β-Ti + Ta benchmark + Ti-15Zr, CV/EIS + ICP-MS у соку, [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); 1 грань = 2.01 см² ≈ A_electrode — §6 + `cem/ti_coin.<alloy>`) | In vitro біохімія Gen 2.0: іммобілізація dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, циклічна вольтамперометрія, 30-day stability (**@ 20–25°C**), chloride tolerance, UCST **recovery** тест (freeze −10°C → thaw +25°C → перевірка відновлення струму до 100%, НЕ вимір струму при холоді — деталі [`07_03 §1.4`](07_03_Academic_Integration_and_IP)) | 4–8 тижнів |
+| **Stage 2** | ~15 шт. Ti-«монет» **Ø16×1 мм** (**6-сплавний bake-off** down-select: 4V control + 7Nb + CP-Ti + β-Ti + Ta benchmark + Ti-15Zr, CV/EIS + ICP-MS у соку, [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS); 1 грань = 2.01 см² ≈ A_electrode — §6 + `cem/ti_coin.<alloy>`) | In vitro біохімія Gen 2.0: іммобілізація dgrFAD-GDH + Os у Genipin-Chitosan-CNC матриці з Nafion-g-PSBMA + Laccase/ZIF-nanozyme DET, циклічна вольтамперометрія, 30-day stability (**@ 20–25°C**), chloride tolerance, UCST **recovery** тест (freeze −10°C → thaw +25°C → перевірка відновлення струму до 100%, НЕ вимір струму при холоді — деталі [`00_02 §1.4`](00_02_Academic_Integration_and_IP)) | 4–8 тижнів |
 | **Stage 3** | 3–5 шт. повноцінних SLM+HIP гіроїдних анодів + PEEK + катодний фланець | Зборка + лабораторний тест EBFC у синтетичному соку Pinus sylvestris | 8–12 тижнів |
 | **Stage 4** | 100 шт. оптової партії | Польові випробування на тестовому полігоні (Черкаський бір) | TRL 5→6 |
 | **Stage 5+ (Beyond TRL 9 vision)** | 5 SKU per biome (pine / oak / broadleaf / mangrove / tropical-hardwood) — геометрію вже несе PicoGK CEM-родина (`tools/cad/cem/anchor_zone1.*`, machine-half ✅); відкрите = ферментна хімія під породи + фіз-друк | Cross-biome generalization: розгортання у 3+ кліматичних зонах одночасно (Pinus sylvestris baseline + Quercus / Rhizophora / Eucalyptus pilots) | SRL:Concept→Deployed + MRL:8-10 (5 SKU) |
@@ -401,7 +401,7 @@ TPMS-гіроїд із періодичними каналами діє як **�
 
 **Чому Ti-«монети»:** Плоский **диск Ø16×1 мм** друкується за хвилини і коштує копійки порівняно з повним гіроїдним анкером. Одна грань = `π·8² = 2.01 см² ≈ A_electrode 2 см²` ([`01_03 §3.5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)); `j` нормують на **проєкційну геометричну площу** (EAAE-шорсткість r=10–50× робить реальну площу невимірною, [`01_02 §1.4`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)). Диск (не квадрат): RDE-сумісність, рівномірна радіальна j, без кутових edge-ефектів; стандарт Ti-coupon-характеризації — flat O-ring cell, де площу задає **вікно комірки**, не край купона (CAD `tools/cad` підтримує defined active-window). На монетах перевіряємо найдорожчу і найризикованішу частину системи — біоелектрохімічну функціоналізацію (MWCNT + Os-полімер + ферменти + кросс-лінкінг) — за допомогою стандартних електрохімічних методів (циклічна вольтамперометрія, EIS). Тільки коли on-coin система видає стабільні мілівольти/мікроампери в склянці з симульованим соком — переходимо до Stage 3.
 
-**Cross-ref:** Деталі Ti-coin протоколу — [`07_03 §1.2`](07_03_Academic_Integration_and_IP) Протокол «Quantum-Sap» (Школа Мінаєва) та Протокол «Long-Term Integrity» (Школа Гусака); рецептура синтетичного ксилемного соку (Scholander pressure chamber, узгоджена з біо-хабом Спрягайла) — [`07_03 §1.1`](07_03_Academic_Integration_and_IP).
+**Cross-ref:** Деталі Ti-coin протоколу — [`00_02 §1.2`](00_02_Academic_Integration_and_IP) Протокол «Quantum-Sap» (Школа Мінаєва) та Протокол «Long-Term Integrity» (Школа Гусака); рецептура синтетичного ксилемного соку (Scholander pressure chamber, узгоджена з біо-хабом Спрягайла) — [`00_02 §1.1`](00_02_Academic_Integration_and_IP).
 
 ### 6.2. Виробничі Партнери (Україна)
 

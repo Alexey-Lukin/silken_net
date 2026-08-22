@@ -349,7 +349,7 @@ module Tracker
     # `NN_NN` prefix this regex already requires. It is the LABEL SHAPE: one letter + `.` +
     # a digit. That keeps out the genre the ceiling actually meant to skip — prose-shorthand
     # NAMED refs (`05_02 §Модель`, `05_04 §Merkle`, `06_02 §Security`), placeholders
-    # (`03_04 §X.Y`, `00_07 §NN`), and non-section IDs (`07_01 §B-02`, `03_05 §FW.2`) — all
+    # (`03_04 §X.Y`, `00_07 §NN`), and non-section IDs (`00_04 §B-02`, `03_05 §FW.2`) — all
     # of which DO carry the NN_NN prefix and stay on the weaker `section_label_drift`
     # ADVISORY by design (00_06 §3). Widening to any letter would sweep in 74 such refs.
     DOC_SECTION_TOKEN = /(?:\p{L}\.)?[0-9][\p{L}0-9.]*/

@@ -39,7 +39,7 @@ name: Sec · SBOM
 #   · Flat merge — no `dependencies[]` graph (conda-lock carries ranges, not
 #     resolved refs; a faked graph is worse than a declared absence).
 #
-# Canon: 07_01 §18 · CI inventory 06_07 §1 · guard registry 00_06 §3.
+# Canon: 00_04 §18 · CI inventory 06_07 §1 · guard registry 00_06 §3.
 
 on:
   release:

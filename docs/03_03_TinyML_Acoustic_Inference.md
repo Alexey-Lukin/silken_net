@@ -751,7 +751,7 @@ TinyML-результат безпосередньо впливає на Lorenz 
 | 8 | Confidence threshold конфігурується (не хардкод) | ✅ FW.18: dual-threshold у RTC DR13/DR14 + 19 host-tests + Soldier OTA CMD dispatcher `0x9D` (`CMD_SET_AUDIO_THRESHOLDS`) з 7 host-tests |
 | 9 | DSP preprocessing задокументовано (чи є FFT в моделі) | ✅ Path B log-mel — `Compute_LogMel` (RFFT + HTK mel-bank + log; §3.1/§3.4), не сирий time-domain |
 | 10 | `acoustic_events` overflow захист реалізовано | ✅ Реалізовано (FW.22: `uint8_t` + saturating increment) |
-| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 07_03/00_07) |
+| 11 | План 5-го класу «Fauna Activity» (§10, Mongabay pivot) задокументовано | ✅ Реалізовано (цей doc §10 + cross-ref до 00_02/00_07) |
 
 ---
 
@@ -847,10 +847,10 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 |------------|---------|----------|-------------|
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
 | ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | Ярмілко-консультація по SPI/DMA лишається опційною ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) |
-| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`07_03 §1.2`](07_03_Academic_Integration_and_IP) (ПМКТ калібрувальний датасет), [`07_03 §1.2`](07_03_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
-| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`07_03 §1.1`](07_03_Academic_Integration_and_IP) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo), compute = наш Akash-deploy |
-| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`07_03 §1.2`](07_03_Academic_Integration_and_IP) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
-| Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`07_03 §1.2`](07_03_Academic_Integration_and_IP) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
+| Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) (ПМКТ калібрувальний датасет), [`00_02 §1.2`](00_02_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
+| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo), compute = наш Akash-deploy |
+| Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
+| Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
 
 ### 10.6 Дорожня карта (TRL крок за кроком)
 

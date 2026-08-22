@@ -4,11 +4,11 @@
 
 ## 🎯 Мета
 
-Зафіксувати **вартісний бік заліза**: BOM одного вузла «Soldier» і шлюзу «Queen», витратні матеріали, економіку анкера, CAPEX/OPEX кластера, модель окупності та ланцюг постачання. Документ відповідає на питання «**за скільки**» — на відміну від [`07_01`](07_01_Nature_as_a_Service_Contracts), який відповідає «**за яким договором**».
+Зафіксувати **вартісний бік заліза**: BOM одного вузла «Soldier» і шлюзу «Queen», витратні матеріали, економіку анкера, CAPEX/OPEX кластера, модель окупності та ланцюг постачання. Документ відповідає на питання «**за скільки**» — на відміну від [`00_04`](00_04_Nature_as_a_Service_Contracts), який відповідає «**за яким договором**».
 
 > ⚙️ **Спека-at-source лишається біля своєї підсистеми.** Тут — АГРЕГАТ і ціна: компонентні специфікації живуть у [`02_01`](02_01_Hardware_Architecture_and_BOM) (Soldier) і [`02_05`](02_05_Queen_Hardware_and_Starlink) (Queen), а цей док їх підсумовує. Рольова межа `spec-at-source → aggregate → price` — [`00_06 §2`](00_06_SSOT_Documentation_Standard); не втягуй сюди специфікацій і не розсипай звідси агрегатів.
 
-> 🗃️ **Провенанс сторінки.** Тіло виділено з [`07_01`](07_01_Nature_as_a_Service_Contracts) 2026-08-22 (DOC-T.83) — розворот злиття DOC-T.68 фази 5, яке 2026-08-10 зсунуло ці секції на +10. Нумерацію `§1`–`§10` **відновлено**, і саме тому 48 внутрішніх самопосилань тіла знову резолвляться без жодної правки — вони весь час були написані під цю нумерацію.
+> 🗃️ **Провенанс сторінки.** Тіло виділено з [`00_04`](00_04_Nature_as_a_Service_Contracts) 2026-08-22 (DOC-T.83) — розворот злиття DOC-T.68 фази 5, яке 2026-08-10 зсунуло ці секції на +10. Нумерацію `§1`–`§10` **відновлено**, і саме тому 48 внутрішніх самопосилань тіла знову резолвляться без жодної правки — вони весь час були написані під цю нумерацію.
 
 ---
 
@@ -29,7 +29,7 @@
 | [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Компонентна специфікація Queen — джерело для §4 |
 | [`01_02` — Ti-6Al-4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Друк-cost анкера (дім вартості друку) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Курс SCC — SSOT токеноміки (тут лише дзеркало) |
-| [`07_01` — Nature-as-a-Service Contracts](07_01_Nature_as_a_Service_Contracts) | Юридична модель NaaS і фінансові константи — друга половина того самого питання клієнта |
+| [`00_04` — Nature-as-a-Service Contracts](00_04_Nature_as_a_Service_Contracts) | Юридична модель NaaS і фінансові константи — друга половина того самого питання клієнта |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Відкрите: BIZ.7 (replacement OPEX), BIZ.17 (RFQ/procurement), HW.39 (Queen energy) |
 
 ## 📑 Зміст
@@ -95,7 +95,7 @@
 
 > 🏠 **Component-BOM One-Home:** per-component моделі + ціни + **Electronics TOTAL живуть у [`02_01 §3`](02_01_Hardware_Architecture_and_BOM)** (component-spec дім — cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут НЕ дублюємо — §1.2 бере Electronics-підсумок (Power Deck + RF Deck) звідти; per-item розбивка (MCU/PMIC/supercap/antenna/piezo/pogo/buffer) — у домі.
 
-> **Climate add-on (BME280 + TPS22860 gate + PTFE vent, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** опційний **+$2.60/вузол** якщо populated — **НЕ** входить у baseline node-cost (§1.2), доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder False-Slashing kill — [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy) + NaaS клімат-оракул — [`07_01`](07_01_Nature_as_a_Service_Contracts)) → підвищує D-MRV-цінність для агро/страхового ринку.
+> **Climate add-on (BME280 + TPS22860 gate + PTFE vent, ADR [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM)):** опційний **+$2.60/вузол** якщо populated — **НЕ** входить у baseline node-cost (§1.2), доки ADR не закрито bench'ем. Перетворює вузол на кліматичний (VPD-confounder False-Slashing kill — [`05_05 §6/§7`](05_05_Slashing_and_Risk_Policy) + NaaS клімат-оракул — [`00_04`](00_04_Nature_as_a_Service_Contracts)) → підвищує D-MRV-цінність для агро/страхового ринку.
 
 ---
 
@@ -281,11 +281,11 @@
 | Stored GP / день / дерево | **~217** |
 | Днів до 1 SCC (10,000 GP) | **~46 днів** |
 | **Realistic продуктивність (Variant C)** | **~8 SCC/дерево/рік** (calibration-pending [E.63]; стеля Δt=600s ≈ 326) |
-| **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) — **дзеркало**, дім значення [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts); при зміні правити ТАМ |
+| **1 SCC = CO₂ еквівалент** | **0.5 кг CO₂** (2000 SCC = 1 tCO₂) — **дзеркало**, дім значення [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts); при зміні правити ТАМ |
 | 1 дерево / рік (~8 SCC) | **~4 кг CO₂** |
 | Кластер 100 дерев / рік (~800 SCC) | **~0.4 tCO₂** |
 
-> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
+> **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
 
 > **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude calibration-pending [E.63]). Канон посилається сюди, не restate'ить.
 >
@@ -482,4 +482,4 @@ PCBA + Збірка (Черкаси — SVS-ARTA)
 | [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Розрахунки MPPT і живлення від EBFC + EDLC іоністор 0.47 F ([`02_03 §12`](02_03_BQ25570_MPPT_Nano_Power)) |
 | [`02_05`](02_05_Queen_Hardware_and_Starlink) | Queen CAPEX та Starlink Mother Gateway |
 | [`05_03`](05_03_Tokenomics_SCC_and_SFC) | Механізм мінтингу SCC, Proof of Growth (10k growth_points = 1 SCC) |
-| [`07_01`](07_01_Nature_as_a_Service_Contracts) | Юридична модель NaaS |
+| [`00_04`](00_04_Nature_as_a_Service_Contracts) | Юридична модель NaaS |

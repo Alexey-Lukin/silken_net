@@ -113,7 +113,7 @@ they constitute an enabling publication of the combination described in §2 and 
 - **Technical Disclosure Commons** — a no-fee defensive-publication venue whose records are indexed and
   consulted by patent offices.
 - **The public SilkenNet git repository** — this file, with a verifiable commit date.
-- **A peer-reviewed article** (Article 1, [`07_03 §2.1`](../../07_03_Academic_Integration_and_IP.md)) —
+- **A peer-reviewed article** (Article 1, [`00_02 §2.1`](../../00_02_Academic_Integration_and_IP.md)) —
   peer-reviewed prior art for the mechanism.
 
 Together these create **citable prior art** for the combination disclosed above, which should prevent a

@@ -9,7 +9,7 @@
  *          compiles. The PRIMARY header now EXISTS — a self-owned INT8 baseline
  *          (ESC-50, FW.4, `silken_ml.export`, gemmlowp pure-C forward pass); a
  *          future partner/field model (Любченко + Cherkasy soundscape,
- *          `docs/07_03 §1.1` (Любченко, ЧНУ ФОТІУС)) replaces it. FW.4 closed the model gap 2026-06-12 (model
+ *          `docs/00_02 §1.1` (Любченко, ЧНУ ФОТІУС)) replaces it. FW.4 closed the model gap 2026-06-12 (model
  *          landed, call-site uncommented).
  *
  *          With this stub present the ARM toolchain can compile main.c and

@@ -15,7 +15,7 @@ the acoustic pad is the missing 3rd spring (this script closes that gap).
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
 spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance (02_01 §5.3,
 ~12 mm antenna↔Ti) is enforced here as a GEOMETRIC constraint; the VNA/HFSS validation is lab-side
-(Гончаров, 07_03 §1.2 — currently unresponsive, so the geometry is self-owned, not blocked on him).
+(Гончаров, 00_02 §1.2 — currently unresponsive, so the geometry is self-owned, not blocked on him).
 
 1D linear tolerance chain — closed-form RSS + worst-case, no FEA / numpy.
 """
@@ -180,7 +180,7 @@ def main() -> int:
         "mitigation_escalation": escalation,
         "min_mitigation_pass": final_label,
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
-                          "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 07_03 §1.2, unresponsive"},
+                          "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 00_02 §1.2, unresponsive"},
         "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"
                     if mit_ok else "no ladder level holds — widen O-ring CS / bigger pogo travel"),
     }

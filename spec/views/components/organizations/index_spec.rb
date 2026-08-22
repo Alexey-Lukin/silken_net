@@ -15,7 +15,7 @@ RSpec.describe Organizations::Index do
   #
   # 🔴 `total_contracted` віддає **Float** (`.to_f` у моделі), тому рендер несе «.0».
   # Доти фікстура подавала Integer і пін «12000 SCC» був недосяжний у проді ДВІЧІ:
-  # і типом, і валютою (величина деномінована в USD — 07_01 §5).
+  # і типом, і валютою (величина деномінована в USD — 00_04 §5).
   def build_org(id: 1, name: "EcoInvest DAO", total_clusters: 5, total_contracted: 12_000.0,
                 crypto_public_address: "0xAbCD1234ABCD1234AbCD1234ABcD1234ABCD1234")
     org = Organization.new(id: id, name: name, crypto_public_address: crypto_public_address)
@@ -62,7 +62,7 @@ RSpec.describe Organizations::Index do
 
     # 🔴 Пін навмисно несе «.0» і «USD»: обидва — правда про прод, і обидва доти були
     # недосяжні. Float дає десяткову частку (`naas_contracts.sum(...).to_f`), а одиниця
-    # тут USD, бо `total_funding` — «сума оплати за послугу (USDC/USD)» (07_01 §5), тоді
+    # тут USD, бо `total_funding` — «сума оплати за послугу (USDC/USD)» (00_04 §5), тоді
     # як SCC є карбоновою емісією. Сусідня колонка «SCC Minted» лишається в SCC правомірно.
     it "renders total contracted with the USD unit and the Float scale it really has" do
       expect(html).to include("12000.0 USD")

@@ -100,7 +100,7 @@ Model: `P_c(t) = P_c(0)·[E∞/E0 + (1−E∞/E0)·exp(−t/τ)]`, E∞/E0 ≈ 0
 literature-Prony** estimate (the 2-term structure is validated by published PEEK 450G ISV models — MDPI
 Polymers 2021 PMC8199459, two relaxing components — and kept **conservative**: at forest temps (≪ Tg 143°C)
 PEEK relaxation is slow → real retention likely > 0.65, so this **under-states** residual P_c). The
-authoritative multi-term Maxwell-Wiechert fit stays with **школа Гусака** (`07_03 Стаття 2`).
+authoritative multi-term Maxwell-Wiechert fit stays with **школа Гусака** (`00_02 Стаття 2`).
 
 **The H7/s6 band is well-bounded:** at MIN fit the relaxed PEEK P_c (0.32 MPa) ≤ sap → the O-ring is
 essential; at MAX fit the press-fit hoop stress (script 51, thick-wall: σ_hoop ≈ **17.9 MPa** @ -30°C + max
@@ -148,7 +148,7 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 ## Remaining Tasks
 
 - [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert, measured creep data) — the
-  authoritative multi-term fit replacing the interim conservative 2-term estimate (школа Гусака, `07_03 Стаття 2`).
+  authoritative multi-term fit replacing the interim conservative 2-term estimate (школа Гусака, `00_02 Стаття 2`).
 - [ ] **Barb-tip stress-concentration FEA** → школа Гусака (heavy mesh-FEA outsourced, `00_03 §3.6`). 👤 — but
   if Гусак stays unresponsive, a **self-own** light bound is a future-candidate (00_07 HW.3.IS).
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK via MSD (classical MD, like script 13) — NOT DFT.
@@ -162,5 +162,5 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
 - Frozen dims + ΔCTE window (combined SF 5.6×) → `docs/01_01 §1` + `§4.2`
 - O-ring seal + Flush Mount → `docs/01_04 §3.1`
-- Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6`, `docs/07_03 Стаття 2` (школа Гусака)
+- Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6`, `docs/00_02 Стаття 2` (школа Гусака)
 - Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` + `56_unified_press_fit_lame.py` (core `lib/mechanics.py`) · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation,unified_press_fit_lame}.json`
