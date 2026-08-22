@@ -110,7 +110,19 @@ EXEMPT_REFS = {
 # rake bodies are exactly where doc-gate prose lives, so a canon renumber rots
 # them as silently as any comment. Measured on the flip: 1 dead ref, and it was
 # the teaching citation now exempted above.
+# 🔴 ПЕРИМЕТР РОЗШИРЕНО НА `firmware/` + `tools/` (2026-08-22), і підстава — переміряна
+# СТЕЛЯ, а не нова ідея. Виключення цих дерев стояло на вартості: «vendored trees are
+# 96% of the glob — scanning them took the gate from 4s to 34s». Це правда про ПОВНИЙ
+# глоб, і хибно про звужений: `/extern/` дає 2385 файлів із 2595, тож після його зняття
+# додаток коштує 210 файлів і +23% часу. Улов на день зняття — ЧОТИРИ мертві реф-и в
+# 318 живих (`05_02 §554` = номер РЯДКА як §; `07_03 §1.1B` = вигаданий суфікс;
+# `02_02 §1.4` і `03_03 §1.4` = неіснуючі секції), жоден із яких не бачив ЖОДЕН гейт.
+# ⛔ `scripts/` СВІДОМО лишається поза периметром і це не недогляд: там 44 реф-и, з
+# них не резолвляться сім — і всі сім у ЦЬОМУ файлі, це його ж декларовані фікстури
+# мертвих адрес. Скан себе почервонив би на власній таблиці винятків.
 files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
+         Dir[File.join(ROOT, "firmware", "**", "*.{c,h}")].reject { |f| f.include?("/extern/") } +
+         Dir[File.join(ROOT, "tools", "**", "*.py")] +
          Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")])
         .map { |f| f.sub("#{ROOT}/", "") }
         .reject { |rel| rel =~ EXEMPT }

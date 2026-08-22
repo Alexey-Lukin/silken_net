@@ -329,7 +329,7 @@ def main() -> int:
           f"{abs(t_base['Ti']-t_base['none']):.1f}°C of bare; Cu drives it {t_base['none']-t_base['Cu']:.0f}°C colder (into a freeze).")
     print("  3. Electrically the swap is FREE (µA → sub-mV IR-drop even for Ti's 100× resistivity).")
     print("  4. RECOMMENDATION: a Ti-6Al-4V bus printed MONOLITHIC with the Zone-1 anode (same SLM) —")
-    print("     kills the thermal bridge AND the bottom Ti↔Cu galvanic joint (02_02 §1.4) in one move.")
+    print("     kills the thermal bridge AND the bottom Ti↔Cu galvanic joint (02_02 §1.2) in one move.")
     print("     (Material is a founder call → 00_07 HW.34, not baseline canon; no-premature-canon.)")
     print("  5. Caveat: 1D lumped ladder, steady state; absolute T_anode depends on the swept wood")
     print("     reservoir. The Cu≫Ti ranking is robust to all of it. Conjugate FEA = bench-side.")

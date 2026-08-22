@@ -15,7 +15,7 @@
  * ЖОДНІЙ ері (ECB: Королева знімає шар сама; CCM: 0x57=cluster KEYB, Rails не
  * має) → re-decrypt дав би сміття, канарка мертва fail-open. Королева вже
  * тримає plaintext — форвардимо його, не ciphertext. Per-event device-підпис
- * фізично неможливий (64B у 16B кадр, канон 05_02 §554) → L1 Queen-attest =
+ * фізично неможливий (64B у 16B кадр, канон 05_02, §Trust-origin ladder — ⛔ не номер РЯДКА) → L1 Queen-attest =
  * правильний рівень назавжди, L2-Merkle його не торкнеться.
  *
  * Trust-клас події: L1-observational ops-алерт — НІКОЛИ не money-path (лише

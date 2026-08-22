@@ -13,7 +13,7 @@ Pipeline (when a trained model exists, ``silken_ml.train``):
         gemmlowp-style integer requantize; NO TFLM/CMSIS-NN dependency), replacing the
         stub via ``__has_include`` (``firmware/soldier/main.c``).
 
-The deployed runtime is a fixed-topology integer forward pass (docs/03_03 §1.4 of the
+The deployed runtime is a fixed-topology integer forward pass (docs/03_03 §4.1 of the
 program doc / runtime reconciliation), NOT a TFLM interpreter — see
 ``tools/ml/docs/baseline_model_program.md`` §1.
 """
