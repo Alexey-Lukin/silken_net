@@ -229,7 +229,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 
 **Синтез:** усі integrity-стандарти сходяться на одному — **enterprise-цінність SilkenNet НЕ в емісії кредиту, а в data/permanence-шарі, що робить ЧУЖИЙ кредит більш integrity-defensible.** Це не применшення — це рівно те, за що ринок 2025-26 платить премію.
 
-1. **SCC = Condition/Proof-of-Growth-токен** (homeostasis), НЕ сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже латентне в каноні [`07_01 §17`](../../07_01_Nature_as_a_Service_Contracts.md)). «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція** (дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md); правити там), не CCP/VCMI-визнаний кредит. — не пом'якшую (guardrail).
+1. **SCC = Condition/Proof-of-Growth-токен** (homeostasis), НЕ сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже латентне в каноні [`02_06 §7`](../../07_01_Nature_as_a_Service_Contracts.md)). «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція** (дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md); правити там), не CCP/VCMI-визнаний кредит. — не пом'якшую (guardrail).
 
 2. **Enterprise-pitch-каркас (3 чесні value-props, жоден не претендує на quantification):**
    - **(A) Permanence-monitor** — real-time `chainsaw_detected` закриває CCP-P6 + rating-permanence-risk там, де remote-sensing сліпий між прольотами. **Найсильніший.**

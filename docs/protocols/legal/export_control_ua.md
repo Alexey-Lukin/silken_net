@@ -112,7 +112,7 @@
 | Ресурс | Що бере / дає |
 |---|---|
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **дім стану** — BIZ.25 (там же EU-половина + маршрут-присуд ⚖️) |
-| [`07_01 §18`](../../07_01_Nature_as_a_Service_Contracts.md) | supply chain / виробничі хаби — контекст фізичних передач |
+| [`02_06 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | supply chain / виробничі хаби — контекст фізичних передач |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава (defensive-publication) — **ортогональна вісь**, див. §6 |
 | [`03_05`](../../03_05_Hardware_Symmetric_Crypto_and_Security.md) | що саме шифрується й чим (AES-режими, ключова модель) — предмет класифікації |
 | [`legal_registry.md`](legal_registry.md) | індекс юр-концерну |

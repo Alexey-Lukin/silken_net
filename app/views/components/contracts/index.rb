@@ -58,7 +58,7 @@ module Contracts
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
         # Одиниця тут USD, а не SCC: `total_contracted` агрегує `naas_contracts.total_value`
         # (alias на `total_funding`) — «сума оплати за послугу (USDC/USD)» за 07_01 §5, і вся
-        # юніт-економіка 07_01 §11-§20 рахує в $. Сусідня картка нижче правомірно в SCC —
+        # юніт-економіка 02_06 §1-§10 рахує в $. Сусідня картка нижче правомірно в SCC —
         # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
         render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{formatted_amount(@stats[:total_contracted])} USD", sub: t(".stats.total_injected"))
         render Views::Shared::UI::StatCard.new(label: t(".stats.net_cluster_emission"), value: "#{formatted_amount(@stats[:total_minted])} SCC", sub: t(".stats.total_minted"))

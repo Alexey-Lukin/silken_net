@@ -15,7 +15,7 @@
 - **Ключовий Півот (v3 — тризонний анкер):** Стара «Матрьошка» (моноліт 120 мм з катодом у глибині стовбура) замінена на **тризонний коаксіальний анкер** ([`01_01 §1`](01_01_Coaxial_Gyroid_Topology_and_PEEK)): Zone 1 (анод-гіроїд 30–50 мм у заболоні) + Zone 2 (PEEK-терморозрив 50 мм frozen) + Zone 3 (катодний фланець Ø25 на межі кори/повітря з PTFE-GDL мембраною). Усуває три ранні ризики: (a) тепловий міст крізь титан → некроз камбію взимку; (b) кисневе голодування катода в глибині стовбура; (c) неможливий моноліт-друк Ti+PEEK в одному DMLS-циклі.
 - **Ключовий Півот (v4 — EBFC Gen 2.0 baseline, 2026-05-22):** Біохімічний стек переписаний. Анод — одношаровий **dgrFAD-GDH + Os** (deglycosylated FAD-залежна глюкозодегідрогеназа) у захисній **Genipin-Chitosan-CNC** матриці з **Nafion-g-PSBMA** цвітеріонною мембраною; катод — гібрид **Laccase + ZIF-nanozyme** (nCoCuCeZIF/Lac). Очікуваний термін служби 20–25 років. Gen 1.0 (GOx+CAT+глутаральдегід+PEG) виключена як нежиттєздатна ([`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)).
 - **Антенна Підсистема (v2):** Відмова від зовнішніх U.FL-кабелів та 4 голок-електродів. Прийнято рішення: керамічна SMD-антена 868 МГц + PEEK-радом (детально в розділі 5).
-- **Повна вартість вузла (node):** дім [`07_01 §11.2`](07_01_Nature_as_a_Service_Contracts) — v4 ~$54.65–$69.65 (1K) / ~$44.65–$53.15 (50K+); значення дзеркало, правити там. Component-BOM + Electronics TOTAL — §3 нижче.
+- **Повна вартість вузла (node):** дім [`02_06 §1.2`](02_06_Unit_Economics_and_BOM) — v4 ~$54.65–$69.65 (1K) / ~$44.65–$53.15 (50K+); значення дзеркало, правити там. Component-BOM + Electronics TOTAL — §3 нижче.
 - **Відкриті:** conformal coating Parylene C (HW.11), EBFC >5.5V overcharge protection (HW.12/HW.7) → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
@@ -179,9 +179,9 @@ STM32WLE5JC
 | 13 | **NXP SE05x Secure Element (baseline SE051C2) — DNP footprint** (опційно) | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) SEC.6 / SE050-MIGRATION: pads + I²C (PB6/PB7, спільна шина з BME280) + pull-ups + **load-switch гейт** (always-on SE sleep з'їдає запас Сценарію C — розрахунок [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Power impact; окремий TPS22860 чи спільний з BME280 — KiCad-рішення HW.9), **Do Not Populate** на пілоті. Монтується на mass (>10k) ПІСЛЯ FW.2 ([`00_07` — ARCH.43](00_07_Action_Plan_Tracker)) | Роль = ідентичність/provisioning (SEC.14 provisioning-only, [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) Статус): non-extractable Ed25519 (голос дерева, L2) + anti-clone serial + монотонні лічильники (checkpoint-only — SE за гейтом); LoRa KEYL лишається у Protected Flash, SE Slot 0 reserved (urban-варіант) | $0.00 (pads) / +$2.40–3.25 якщо populated |
 | — | **Electronics TOTAL** | | **Собівартість лише електроніки** | **~$12.05** |
 
-**Повна вартість вузла Soldier (node-rollup) — дім [`07_01 §11.2`](07_01_Nature_as_a_Service_Contracts):**
+**Повна вартість вузла Soldier (node-rollup) — дім [`02_06 §1.2`](02_06_Unit_Economics_and_BOM):**
 
-> 🏠 **One-Home:** node $/Soldier (агрегація анкер + PEEK + electronics + **біохімія Gen 2.0** + стерилізація + герметизація → вузол: **v4 ~$54.65–69.65** 1K / ~$44.65–53.15 50K+) живе у [`07_01 §11.2`](07_01_Nature_as_a_Service_Contracts) (cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут — лише **component-spec** (Electronics BOM вище); node-агрегацію + cluster CAPEX/OPEX/ROI не дублюємо. _(Колишній тут rollup «$32–35» був v2 — без Gen 2.0 біохімії $15–24.50; знято, щоб не дрейфував проти v4-дому.)_
+> 🏠 **One-Home:** node $/Soldier (агрегація анкер + PEEK + electronics + **біохімія Gen 2.0** + стерилізація + герметизація → вузол: **v4 ~$54.65–69.65** 1K / ~$44.65–53.15 50K+) живе у [`02_06 §1.2`](02_06_Unit_Economics_and_BOM) (cost-домен registry [`00_06 §2`](00_06_SSOT_Documentation_Standard)). Тут — лише **component-spec** (Electronics BOM вище); node-агрегацію + cluster CAPEX/OPEX/ROI не дублюємо. _(Колишній тут rollup «$32–35» був v2 — без Gen 2.0 біохімії $15–24.50; знято, щоб не дрейфував проти v4-дому.)_
 
 ### 3.2. Виключені / Умовно Виключені Компоненти
 

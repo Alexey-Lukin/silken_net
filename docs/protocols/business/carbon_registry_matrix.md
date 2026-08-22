@@ -14,7 +14,7 @@
 >
 > **Це 🤖-половина першого чекбокса BIZ.9** ([`00_07`](../../00_07_Action_Plan_Tracker.md) — «🤖+⚖️ порівняльна registry-matrix … → 🤖 складе, ⚖️ вибір»). 👤-половина = engagement методолога (~$50–100k) → PDD, gated на реальний ліс роки downstream.
 >
-> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`07_01 §17`](../../07_01_Nature_as_a_Service_Contracts.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (chainsaw_detected/SLASH-1), [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) (TinyML 5-клас).
+> **Джерела:** [`R3_carbon_registries.md`](../research/R3_carbon_registries.md) (carbon, несучий metrology-gap) · [`R4_biodiversity_credits.md`](../research/R4_biodiversity_credits.md) (biodiversity both/and). **Канон:** [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md) (фін-константи, 2000 SCC = 1 tCO₂) + [`07_01 §2`](../../07_01_Nature_as_a_Service_Contracts.md) (Puro death-path) · [`02_06 §7`](../../07_01_Nature_as_a_Service_Contracts.md) (unit-economics; SCC = «Silken Carbon/**Condition** Coin») · [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9 / BIZ.1 / ARCH.5 · дотично [`05_02`](../../05_02_Proof_of_Growth_Pipeline.md) (Proof-of-Growth), [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) (chainsaw_detected/SLASH-1), [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) (TinyML 5-клас).
 >
 > **Легенда впевненості:** 🟢 висока (офіц. реєстр-док / ≥2 незалежні джерела) · 🟡 середня (одне якісне джерело / trade-press) · 🔴 низька (paywall / суперечливо / unknown).
 
@@ -77,7 +77,7 @@
 
 **Наратив-зсув (honesty-корекція):**
 
-1. SCC — насамперед **Condition/homeostasis-токен**. Це прочитання **вже латентне в каноні** ([`07_01 §17`](../../07_01_Nature_as_a_Service_Contracts.md): «SCC (Silken Carbon/**Condition** Coin)») — треба на нього спертися, а не на «Carbon» половину.
+1. SCC — насамперед **Condition/homeostasis-токен**. Це прочитання **вже латентне в каноні** ([`02_06 §7`](../../07_01_Nature_as_a_Service_Contracts.md): «SCC (Silken Carbon/**Condition** Coin)») — треба на нього спертися, а не на «Carbon» половину.
 2. On-chain «2000 SCC = 1 tCO₂» (BIZ.1, `ProtocolParameters.sol#sccPerTonneCo2()`; дім → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md)) — **внутрішня облікова конвенція**, НЕ заява, що 1 SCC = визнаний реєстром 0.5 kg tCO₂e-кредит. Продати його institutional-buyer'у як останнє **без** registry-approved методології = рівно той unbacked-baseline-claim, що спалив Verra REDD+ 2023.
 3. Шлях SCC → продаваний carbon-credit — **не «сертифікувати наше число»**, а **репозиціювання** у (A) MRV-data-provider або (B) permanence-monitor поверх чужого credited-проєкту. Прямий SCC-мінт-як-carbon-credit — **поза столом** за поточного registry-ландшафту.
 4. Це **НЕ применшує платформу** — коректно локалізує цінність SCC (continuous ground-truth condition + real-time permanence) там, де remote-sensing-реєстри сліпі = диференційована цінність.
@@ -216,7 +216,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 
 ### 6.3 Що це означає для SCC-наративу (стисло)
 
-- SCC = **Condition/Proof-of-Growth-токен** (homeostasis), не сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже в каноні [`07_01 §17`](../../07_01_Nature_as_a_Service_Contracts.md)).
+- SCC = **Condition/Proof-of-Growth-токен** (homeostasis), не сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже в каноні [`02_06 §7`](../../07_01_Nature_as_a_Service_Contracts.md)).
 - «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція**, не продаваний реєстром кредит (дзеркало SSOT → [`07_01 §3`](../../07_01_Nature_as_a_Service_Contracts.md); правити там). Не продавати як останнє без methodology-ID.
 - Carbon-credit-конверсія = **окремий, downstream, methodology-gated науковий проєкт** (калібрація growth_points ↔ біомаса), не критичний шлях пілоту.
 - Це honesty-корекція класу «in-silico ≠ TRL 4» — **диференціює**, а не применшує: наша цінність (continuous ground-truth + real-time permanence) там, де remote-sensing-реєстри сліпі.

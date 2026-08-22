@@ -136,7 +136,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 ## 8. Decided (founder, 2026-06-21)
 
 Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / Дніпро **ALT Ukraine** / EU backup
-hubs — `07_01 §18.1`) + web-grounding (sources below).
+hubs — `02_06 §8.1`) + web-grounding (sources below).
 
 1. **Deliverable format** — **DXF (netDxf) + SVG + STL**. No STEP for now: AM shops print from
    STL/3D, and the drawing is for **GD&T/CMM acceptance**, not the print. STEP = deferred path B if a

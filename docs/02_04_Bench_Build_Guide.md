@@ -44,7 +44,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | [`02_03`](02_03_BQ25570_MPPT_Nano_Power) | Production power-архітектура Soldier (BQ25570, post-pivot) |
 | [`02_05`](02_05_Queen_Hardware_and_Starlink) | Королева HW: SIM7070G модем, solar/BMS/Victron, Starlink (Частина II) |
 | [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) | Electronics BOM (production-специфікація + ціни) |
-| [`07_01 §11.2`](07_01_Nature_as_a_Service_Contracts) | Повна вартість вузла (node-rollup) |
+| [`02_06 §1.2`](02_06_Unit_Economics_and_BOM) | Повна вартість вузла (node-rollup) |
 | [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security) / [`00_07` SE050-MIGRATION](00_07_Action_Plan_Tracker) | Secure Element (SE05x, роль/eval) |
 | `firmware/scripts/bench/RUNBOOK.md` | Silicon-атестація на готовій платі (crypto/power/timing) |
 | [`07_03`](07_03_Academic_Integration_and_IP) | Лабораторні протоколи ЧНУ |
@@ -91,7 +91,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 ## 1. Повний BOM Стенду (живий чекліст закупівлі)
 
 > Production-специфікація + ціни (10k) — дім [`02_01 §3`](02_01_Hardware_Architecture_and_BOM);
-> node-вартість — [`07_01 §11.2`](07_01_Nature_as_a_Service_Contracts). Тут — **bench-статус + що кусає**.
+> node-вартість — [`02_06 §1.2`](02_06_Unit_Economics_and_BOM). Тут — **bench-статус + що кусає**.
 > Статус: ✅ в руках · 🛒 замовити.
 
 ### Блок 0 — Інструменти bring-up
@@ -323,7 +323,7 @@ E(0.47Ф до 3.4В)=½·0.47·3.4²=2.71 Дж → t=2.71/1µВт≈31 доба
 
 ## 8. BOM Королеви (живий чекліст)
 
-> Production-spec + ціни — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink); node-вартість — [`07_01 §14`](07_01_Nature_as_a_Service_Contracts).
+> Production-spec + ціни — [`02_05 §7`](02_05_Queen_Hardware_and_Starlink); node-вартість — [`02_06 §4`](02_06_Unit_Economics_and_BOM).
 > Нові позиції — постав ✅ в руках / 🛒 замовити по факту.
 
 ### Compute / LoRa-RX

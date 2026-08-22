@@ -291,7 +291,7 @@ RSpec.describe Tracker::Dashboard do
       md = <<~MD
         ## §07 · Юридичні / Бізнес
         #### OPS.5 — active procurement item
-        - **P1** · 👤 · → `07_01 §18.1.1`
+        - **P1** · 👤 · → `02_06 §8.1.1`
         ## 📌 Backlog · Додаткові знахідки
         | ✅ OPS.5 | a different, done item reusing the ID | note |
       MD
@@ -929,7 +929,7 @@ RSpec.describe Tracker::Dashboard do
         - **P1** · 👤 · ⚪ · → `06_04` · ✅ done extra
         - **Стан:** x.
         #### S9.10 — clean multi-ref
-        - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `07_01 §11.3`
+        - **P1** · 👤 · 🟢 · → `02_01 §3.4`, `02_06 §1.3`
         - **Стан:** x.
       MD
       res = described_class.meta_form_violations(md)
