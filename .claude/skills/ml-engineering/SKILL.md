@@ -21,7 +21,7 @@ on-device features, proven, not hoped.**
 | `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 Validation Gate — LLM proposes a *hypothesis*, it does NOT compute physics; no code until the spec is approved. (Moved from the dissolved method page 2026-08-10.) |
 | `docs/03_01_Firmware_Lifecycle_and_DMA.md §12.4` | **Firmware ARM cross-compile build** (FW.46) — CMake, pinned submodules (`firmware/extern/`), mrbc bytecode, toolchain pin, footprint, mruby `double`/NO_BOXING/minimal-gembox invariants. |
 
-**State** (what's built / next) lives in memory, not here: `[[project_e61_done_next_machine_doable]]`, plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
+**State** lives in the tracker, not here and not in memory: open ML work = `docs/00_07` §03a (`FW.4`-family). Memory carries the LESSONS, not the queue — `[[project_baseline_tinyml_model]]` (what shipped + why), `[[project_e61_done_next_machine_doable]]` (⚠️ its own header says «pointer INTO 00_07, not a live queue» — do not read it for «what's next»), plus `[[feedback_no_volatile_counts]]`, `[[feedback_comment_style]]`.
 
 ## Core invariant — three implementations, one definition, proven equal
 
