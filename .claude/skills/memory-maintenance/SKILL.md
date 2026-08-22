@@ -27,7 +27,7 @@ the measurement and the provenance are in the companion. Numbering is append-onl
 2. A «half-home» may be a duplicate — compare the two texts before believing they are coverage
 3. One-way strings fake homelessness — a home that CITES you is a home you already have
 4. Machine dedup is capped at VERBATIM, and on a bilingual corpus the gap is an order of magnitude
-5. Declare the UNIT first — «debt weight» and «what an excision returns» differ in the SIGN
+5. Declare the UNIT first — «debt weight» and «what an excision returns» differ in the SIGN — **when you write «partial», name BOTH edges — what was verified and what was left unverified — or you have recorded the state of your own fatigue rather than the state of the subject**
 6. Mechanism ⊥ frame — «does this have a home» is TWO questions, and the homeless one is almost always the FRAME
 7. An excision that TRANSLATES pays the bytes back — and looks like honest work while doing it
 8. Measure the RECEIVER's headroom, not just the source's debt — **the first over-ceiling on a NEW entry reads «is this even a memory fact?»; only the second reads «where does it go inside memory»**
