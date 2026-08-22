@@ -31,7 +31,7 @@
 
 | | **R&D-RFQ** (TRL 3→5, Stage 1-3) | **Production-procurement** (TRL 6+, Stage 4 100-партія) |
 |---|---|---|
-| **Дім** | `protocols/procurement/` (цей шар) | [`02_06 §8`](../../07_01_Nature_as_a_Service_Contracts.md) (BOM/хаби) + §8.1.1 Frame Agreement |
+| **Дім** | `protocols/procurement/` (цей шар) | [`02_06 §8`](../../02_06_Unit_Economics_and_BOM.md) (BOM/хаби) + §8.1.1 Frame Agreement |
 | **Вендор-зв'язок** | spot-quote (CRO / academ-co-pub) | Frame Agreement (+20% premium, 30-day activation, SLA) |
 | **Авторитет** | architect + ЧНУ-PI | CEO/Partnerships (контракт) |
 | **00_07** | HW.5/HW.24/HW.3 | **BIZ.6** (EU-backup) |
@@ -79,7 +79,7 @@ Stage-2 coin-bake-off = **R&D-шар**; 100-партія = **Production-шар**
 | Ресурс | Що бере |
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у |
-| [`02_06 §8`](../../07_01_Nature_as_a_Service_Contracts.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
+| [`02_06 §8`](../../02_06_Unit_Economics_and_BOM.md) | economics/BOM + україн­ські DMLS-хаби + Production-шар (Frame Agreement) |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP/CDA/NDA-політика (defensive-publication) — дім |
 | [`07_03`](../../07_03_Academic_Integration_and_IP.md) | академічні co-pub канали (ЧНУ/ЧМА/ЧДТУ) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | HW.*/BIZ.* procurement-action-items + DOC-T (інкрементальне авторство) |

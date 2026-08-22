@@ -37,8 +37,8 @@ description: "Use when working on the silken_net §07 surface — legal / busine
 | Параметричне страхування **клієнта** | [`07_01 §7`](../../../docs/07_01_Nature_as_a_Service_Contracts.md); політика-дім — [`05_05 §4`](../../../docs/05_05_Slashing_and_Risk_Policy.md) |
 | Яких юр/бізнес-артефактів бракує | [`07_01 §8`](../../../docs/07_01_Nature_as_a_Service_Contracts.md) |
 | Per-component BOM Soldier | [`02_01 §3`](../../../docs/02_01_Hardware_Architecture_and_BOM.md) — **не** `02_06 §1` (той агрегує rollup, не per-component spec) |
-| Node-rollup $ · cluster CAPEX · ROI-крива | [`02_06 §1.2`](../../../docs/07_01_Nature_as_a_Service_Contracts.md) · `§15.3` · `§17.3` (решта — дзеркала, правити в домі) |
-| Виробничі хаби, EU-backup, Frame Agreement | [`02_06 §8`](../../../docs/07_01_Nature_as_a_Service_Contracts.md) |
+| Node-rollup $ · cluster CAPEX · ROI-крива | [`02_06 §1.2`](../../../docs/02_06_Unit_Economics_and_BOM.md) · `§15.3` · `§17.3` (решта — дзеркала, правити в домі) |
+| Виробничі хаби, EU-backup, Frame Agreement | [`02_06 §8`](../../../docs/02_06_Unit_Economics_and_BOM.md) |
 | Академ-реєстр 5 ВНЗ · план публікацій | [`07_03 §1`](../../../docs/07_03_Academic_Integration_and_IP.md) · `§2` |
 | IP-постава, ліцензійна матриця, межа «відкрито/утримуємо», правовий актор | [`00_01 §8`](../../../docs/00_01_Vision_Mission_and_Roadmap.md) — значення ліцензій = дзеркало `/LICENSE*` + `/NOTICE`; виконавчі IP-**інструменти** (TISC · ™ · юр-review) лишились у [`07_03 §4`](../../../docs/07_03_Academic_Integration_and_IP.md) |
 | TISC · ™ · UA-юр-review · послідовність кроків | [`07_03 §4`](../../../docs/07_03_Academic_Integration_and_IP.md) |
@@ -102,7 +102,7 @@ description: "Use when working on the silken_net §07 surface — legal / busine
 
 1. **AF3 carve-out.** Виходи AlphaFold-3 (`alphafold3/**` + `*_AF3.pdb`) лишаються під **non-commercial Terms** і **виключені** з CC-BY-SA — це явний виняток у `/NOTICE`, не недогляд. Наша позиція: виняток #1 («via publication/open-source») покриває відкритий опублікований пайплайн, а наш MD = симуляція стабільності, не protein-ligand docking. Позиція **прийнята з residual-ризиком** до комерціалізації; шлях відступу — ESMFold-репредикт із відкритими вагами. Юр-review цього — окремий пункт у `00_07` UNI.16. Не «спрощуй» ліцензійну матрицю, стираючи цей виняток.
 2. **Бренд — за висотою, і GaiaNexus не ретрофітиться.** `SilkenNet` = продукт/лісовий net, що існує сьогодні; `GaiaNexus` = планетарна федерація, far-horizon. Нова назва вводиться **у новому каноні**, а не дописується в продуктові доки заднім числом — інакше висоти змішуються й читач вирішує, що федерація вже існує. Ретирований codename стереже HARD-гейт (див. deprecated-terms нижче). Конвенція — [`07_03 §5`](../../../docs/07_03_Academic_Integration_and_IP.md).
-3. **Procurement — це ДВА workflow, не один.** R&D-RFQ (spot-quote, academ-co-pub, дім `protocols/procurement/`) ⊥ production-procurement (Frame Agreement, дім [`02_06 §8`](../../../docs/07_01_Nature_as_a_Service_Contracts.md)). І дисципліна реєстру: він індексує **всі** компонент-групи stub-рядками, а повні аркуші авторяться **інкрементально, як компонент реально procure'иться** — не boil-the-ocean.
+3. **Procurement — це ДВА workflow, не один.** R&D-RFQ (spot-quote, academ-co-pub, дім `protocols/procurement/`) ⊥ production-procurement (Frame Agreement, дім [`02_06 §8`](../../../docs/02_06_Unit_Economics_and_BOM.md)). І дисципліна реєстру: він індексує **всі** компонент-групи stub-рядками, а повні аркуші авторяться **інкрементально, як компонент реально procure'иться** — не boil-the-ocean.
 
 ## Як додати документ у concern-шар
 

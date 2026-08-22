@@ -80,10 +80,10 @@
 | Tokenomics rate / slashing thresholds / insurance pool / **Dynamic Tax** (ставка+поріг, S6.17 — governance-aware via `SystemParameter` ← `ProtocolParameters.sol`) | `05_03` · `05_05 §3/§4` |
 | Carbon (2000 SCC = 1 tCO₂) | `05_03` + `07_01 §3` (business view) |
 | Financial constants (business) | `07_01 §3` (з рефами на 05_03/00_01) |
-| **Cost-домен — spec-at-source → aggregate-in-`07_01 §11-§20` → price.** Component-spec (моделі + per-unit $) живе у технічному домі підсистеми; комерційна сторінка АГРЕГУЄ (rollup→CAPEX→OPEX→ROI) через реф, не дублює spec; ціна — tokenomics | ⬇ розклад нижче |
-| ├ Soldier BOM (component-моделі + per-unit $ + Electronics TOTAL) | `02_01 §3` (component-spec дім). Node-rollup/CAPEX — 07_01 §11.2; інші реферять, не дублюють |
-| ├ Queen BOM (component) | `02_05 §7`. Node CAPEX — 07_01 §14 |
-| ├ Анкер виробничий cost (DMLS друк / HIP) · EBFC biochem cost | `01_02 §6` · `01_03 §5`. Rollup — 07_01 §11.2/§3 |
+| **Cost-домен — spec-at-source → aggregate-in-[`02_06`](02_06_Unit_Economics_and_BOM) → price.** Component-spec (моделі + per-unit $) живе у технічному домі підсистеми; комерційна сторінка АГРЕГУЄ (rollup→CAPEX→OPEX→ROI) через реф, не дублює spec; ціна — tokenomics | ⬇ розклад нижче |
+| ├ Soldier BOM (component-моделі + per-unit $ + Electronics TOTAL) | `02_01 §3` (component-spec дім). Node-rollup/CAPEX — [`02_06 §1.2`](02_06_Unit_Economics_and_BOM); інші реферять, не дублюють |
+| ├ Queen BOM (component) | `02_05 §7`. Node CAPEX — [`02_06 §4`](02_06_Unit_Economics_and_BOM) |
+| ├ Анкер виробничий cost (DMLS друк / HIP) · EBFC biochem cost | `01_02 §6` · `01_03 §5`. Rollup — [`02_06 §1.2`](02_06_Unit_Economics_and_BOM) · курс [`07_01 §3`](07_01_Nature_as_a_Service_Contracts) |
 | ├ Node $/вузол (Soldier/Queen) · cluster CAPEX (waterfall) · OPEX · ROI/payback (waterfall) | [`07_01`](07_01_Nature_as_a_Service_Contracts) §11.2/§14 (node) · §15.3 (cluster CAPEX) · §16 + §18a (OPEX) · §17.3 (ROI). Агрегує component-доми через реф; §15а/§17.2/§18a.4/§19 = дзеркала кривої. ⚠️ Номери зсунуті +10 при злитті `07_02` (DOC-T.68 фаза 5, 2026-08-10) |
 | └ Vendor-landscape / DMLS-хаби / Frame Agreement (production-procurement) | `02_06 §8` (`protocols/procurement/rfq_registry` реферить рядок, не дублює) |
 | Центральна провідна шина анкера (топологія · матеріал · ізоляція каналу · термінус · реалізація) | `01_01 §1.4` — monolithic = сплав анода (HW.24-gated); Ø → frozen-dims `01_01 §1`; термоміст → `01_01 §4.1` + in-silico `54`; механіка → in-silico `55`; матеріал/реалізація-рішення → `00_07` HW.34. Інші доки реферять, не дублюють |

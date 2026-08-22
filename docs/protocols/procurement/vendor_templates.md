@@ -65,7 +65,7 @@
 | 2 | загальний AM-сертифікат · без lattice-досвіду · self-report QC |
 | 1 | без релевантної сертифікації або не тримає ≥60%-поруватість/точність |
 
-> Поруватість ≥60% = **vendor-кваліфікаційний поріг** (дзеркало [`02_06 §8.1.1`](../../07_01_Nature_as_a_Service_Contracts.md)); геометрія гіроїда й ізоеластичність-таргет — окремий дім [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (там пористість = CEM-параметр, не зафіксована константа). Точність тонкої стінки — picogk (voxel-dependent porosity — **MEASURE it**, не декларація). Vendor мусить показати як тримає wallParam на друці, не лише в STL.
+> Поруватість ≥60% = **vendor-кваліфікаційний поріг** (дзеркало [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md)); геометрія гіроїда й ізоеластичність-таргет — окремий дім [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (там пористість = CEM-параметр, не зафіксована константа). Точність тонкої стінки — picogk (voxel-dependent porosity — **MEASURE it**, не декларація). Vendor мусить показати як тримає wallParam на друці, не лише в STL.
 
 **C3 — Price-per-unit** (нижче = краще; нормувати на однакову geometry/сплав):
 | Бал | Умова |
@@ -368,7 +368,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`anchor_alloy_rfq`](anchor_alloy_rfq.md) | парний Ti-coupon RFQ (Grade-cert контекст — критерій C6 §A.2) · стиль-еталон |
 | [`01_02 §1.6/§1.7/§3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | SLM≠EBM · HIP · dehydrogenation bake · ZnO-Ta-заборона (§A.4 дім) |
 | [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + ізоеластичність/пористість як CEM-параметр (C2 геометрія-дім) |
-| [`02_06 §8.1.1`](../../07_01_Nature_as_a_Service_Contracts.md) | vendor-кваліфікаційні критерії DMLS-хабів (Grade 23 ELI · ≥60% пористості · ISO 13485) — дім порогів C2/C6 |
+| [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Grade 23 ELI · ≥60% пористості · ISO 13485) — дім порогів C2/C6 |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`07_03 §4.2`](../../07_03_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 |
