@@ -8,12 +8,12 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — 30 best practices задокументовані та застосовуються у всіх нових спеках; покриття тестами для backend / firmware / contracts на operationally-ready рівні.
+- **Поточний TRL:** TRL 8 — best practices Частини A задокументовані й застосовуються у всіх нових спеках (⛔ без числа в прозі: воно вже розійшлось із тілом і встигло піти в чужий гейтовий коментар); покриття тестами для backend / firmware / contracts на operationally-ready рівні.
 - **Охоплені фреймворки:**
   - RSpec (Ruby / Rails)
   - Firmware C (host-based, Make)
   - Foundry (Solidity)
-- **Відкрите:** test-coverage gaps / відкриті ризики (§B.1) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** методологічних гепів немає — **відкритих `TEST.*` у [`00_07`](00_07_Action_Plan_Tracker) нуль** (усі 15 в `§🗄️`). Залишкові обмеження §B.1 — bench-only, і їхні доми названі в самих рядках. ⛔ Не шли читача в трекер по «що з тестами відкрито»: стрілка вказувала б у порожню множину.
 
 ---
 
@@ -50,7 +50,7 @@
 
 ---
 
-# Частина A — View Component Testing Guide (30 Best Practices)
+# Частина A — View Component Testing Guide
 
 Всі нові та існуючі спеки ПОВИННІ слідувати цим правилам.
 
@@ -324,9 +324,12 @@ expect(html).to include("SNET-00000042")
 # ❌ Крихкий
 expect(html).to include('<div class="p-6 border border-emerald-900 bg-black">')
 
-# ✅ Стійкий
-expect(html).to include("border-emerald-900")
-expect(html).to include("bg-black")
+# ✅ Стійкий — але ЗА ТОКЕНАМИ, не за сирою палітрою
+expect(html).to include("border-gaia-border")
+expect(html).to include("bg-gaia-surface-base")
+# ⛔ `border-emerald-900` / `bg-black` тут стояли до 2026-08-22 і суперечили §19 нижче,
+#    яка ту саму форму називає дефектом теми. Свіп переписав §18/§19 і пропустив §17 —
+#    рівно те, від чого застерігає правило «правлячи правило, грепни ГАЙД»
 ```
 
 ### 18. Тестуй CSS-класи окремо, не разом
@@ -476,8 +479,8 @@ DRY застосовується ВСЕРЕДИНІ одного файлу.
 
 ## A.8 Документація та стиль
 
-### 29. `# frozen_string_literal: true` + `require "rails_helper"` — завжди
-Перші два рядки кожного файлу. Без виключень.
+### 29. Шапка спеки — фіксований порядок трьох рядків
+`# SPDX-License-Identifier: AGPL-3.0-or-later` (UNI.3, HARD-гейт `scripts/spdx_headers.rb`) → `# frozen_string_literal: true` → порожній рядок → `require "rails_helper"`. Порядок несучий, винятків немає. ⛔ Не переписуй це назад на «перші ДВА рядки»: така редакція порушувалась **усіма 472 файлами з 472** — SPDX-кампанія відвантажила третій рядок пізніше, і норму ніхто не переміряв. Абсолютне формулювання, яке порушує все дерево, знецінює сусідні 32 правила швидше, ніж відсутність правила.
 
 ### 30. Опис `it` — англійською, декларативно
 ```ruby
@@ -547,10 +550,10 @@ it "test that status works" do
 
 | Ризик | Серйозність | Опис |
 |-------|------------|------|
-| Mock AES | 🔴 CRITICAL | `hal_mock.h` копіює plaintext→ciphertext; реальна AES верифікація неможлива без ARM HW |
+| Mock AES | 🟡 MEDIUM | `hal_mock.h` **дефолтом** копіює plaintext→ciphertext — але CCM і симетричний тракт **верифіковані на host через OpenSSL EVP** на NIST-векторах (`HAL_MOCK_CCM_ENABLED` / `HAL_MOCK_SYM_ENABLED` → `test_ccm.c` · `test_ccm_selftest.c` · `test_sym_selftest.c`, усі в CI). Відкрито лише byte-parity на кремнії — дім [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security), який те саме позначає «✅ host / 🟡 bench». ⛔ Не читай цей рядок як «host-верифікації немає» — так було до FW.2 |
 | Mock TinyML | 🟡 MEDIUM | `test_tinyml_pipeline.c` мокає `Run_Inference()` для decision-логіки; **реальна модель тестується** окремо — `test_audio_model.c` (12 golden, INT8 forward-pass ≡ silken_ml reference, FW.4) |
-| AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Retry/timeout-логіка верифікована `test_at_engine.c` (conversation-fail) + `test_fw51_*` (fail→retry→no-loss) (FW.9) |
-| DMA Audio Timing | 🟠 HIGH | 512-sample DMA transfer timing не верифікується на host |
+| AT Command UART | 🟡 MEDIUM | SIM7070G modem I/O не тестується повністю (апаратна залежність). Retry/timeout-логіка верифікована `test_at_engine.c` (conversation-fail) + `test_queen_logic.c::test_fw51_*` (fail→retry→no-loss). ⚠️ Живий дім цього залишку — **FW.3** ([`00_07`](00_07_Action_Plan_Tracker), відкритий), не FW.9 (архів); host-половина закрита архітектурно ([`03_01`](03_01_Firmware_Lifecycle_and_DMA)), лишається silicon-bench |
+| DMA Audio Timing | 🟡 MEDIUM | 512-sample DMA timing не верифікується на host — але **host-половину закрито архітектурно** (ring buffer + circular-DMA RX, [`03_01`](03_01_Firmware_Lifecycle_and_DMA); FW.3 «закрито host-рівнем»), лишається silicon-bench. ⛔ Не читай 🟠 як «є що робити на host» |
 
 **Coverage-lane (TEST.1, 2026-06-11):** `make -C firmware/test coverage` — gcov-звіт по owned-модулях (`../common`, `../queen`: і `.c`, і header-only через атрибуцію у TU) + CI-крок у `ci.yml` (visibility, без порога). Чесні межі звіту: `test_soldier/queen_logic` міряють **дзеркала** логіки `main.c`, не сам `main.c` (його покриває QEMU/bench-фаза, [`03_01 §12.7`](03_01_Firmware_Lifecycle_and_DMA)); непокритий хвіст у звіті — переважно defensive ops-failure guards (таксономія §B.4: leave + чому).
 
