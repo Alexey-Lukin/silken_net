@@ -77,7 +77,7 @@ Install these before `bundle install`.
 **PostGIS** (required — cluster geometry lives in the database):
 
 ```bash
-sudo apt-get install -y postgresql-16-postgis-3 postgresql-16-postgis-3-scripts   # Ubuntu / Debian
+sudo apt-get install -y postgresql-17-postgis-3 postgresql-17-postgis-3-scripts   # Ubuntu / Debian
 brew install postgis                                                             # macOS
 ```
 

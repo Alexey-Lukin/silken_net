@@ -36,9 +36,15 @@
 #        space (канон пише `allow-iap-ssh`/«growth_points clamp drift») +
 #        CamelCase case-sensitive (`coap_smoke`→`CoapSmoke`; substring-склейку
 #        delete("_") знято — префікс-колізія hardwarekeys⊂HardwareKeyService);
-#      • `Class#method`: якщо КЛАС названий у домі (case-sensitive \b-слово —
-#        прозове «wallet» ≠ клас `Wallet`) — метод = деталь, OK. Свідома
-#        стеля: конкретний метод при цемент-розборі перевіряй очима;
+#      • `Class#method` **І `Class.method`** (крапка додана 2026-08-22): якщо
+#        КЛАС названий у домі (case-sensitive \b-слово — прозове «wallet» ≠
+#        клас `Wallet`) — метод = деталь, OK. Свідома стеля: конкретний метод
+#        при цемент-розборі перевіряй очима. 🔴 Крапкова форма була сліпою
+#        зоною, і саме в бік «діра є»: канон іменує метод ГОЛИМ («Ключові
+#        методи: `find_or_create_from_auth_hash(...)`»), трекер цитує його з
+#        префіксом класу, а великий перший символ не проходить у `is_chain`
+#        (той вимагає малий), тож правий сегмент навіть не пробувався →
+#        «канон НІДЕ не називає» при живому описі в домі (ARCH.69);
 #      • `00_06` = universal-дім (guard-table §3 + home-registry §2 легітимно
 #        реєструють будь-який символ);
 #      • статуси ⚪/⚫/🌿/🔗 → поза основним рахунком (дім у мета-рядку =
@@ -185,8 +191,15 @@ items.each do |id, it|
     probes = is_chain ? [ stem, segs.last ] : [ stem ]
     next if probes.any? { |p| homes.any? { |d| doc_texts_lc[d] && found_in?(doc_texts_lc[d], doc_texts[d], p) } }
 
-    # Class#method: клас канонізований у домі (case-sensitive слово) → метод = деталь
-    cls = tok[/\A[A-Z]\w*(?:::\w+)*(?=#)/]
+    # Class#method АБО Class.method: клас канонізований у домі (case-sensitive
+    # слово) → метод = деталь.
+    # 🔴 Крапкова форма додана 2026-08-22: канон іменує метод ГОЛИМ
+    # (`04_01` «Ключові методи: `find_or_create_from_auth_hash(...)`»), а трекер
+    # цитує його з префіксом класу — і префікс ламав матч, бо великий перший
+    # символ не проходить у `is_chain` (той вимагає малий), тож правий сегмент
+    # навіть не пробувався. Виміряно на `Identity.find_or_create_from_auth_hash`:
+    # хибний хіт «канон НІДЕ не називає» при живому описі методу в домі.
+    cls = tok[/\A[A-Z]\w*(?:::\w+)*(?=[#.])/]
     next if cls && homes.any? { |d| doc_texts[d]&.match?(/\b#{Regexp.escape(cls)}\b/) }
 
     # negation / memory-дім у ±90 символах довкола токена → не клейм, skip
