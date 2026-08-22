@@ -1,4 +1,4 @@
-# Web3 gotchas — the twenty-three things not obvious from the docs
+# Web3 gotchas — the things not obvious from the docs
 
 > **Auxiliary file of the `web3-pipeline` skill. Read this when you are touching the
 > money path** — minting, slashing, payouts, the L1 anchor, governance parameters,
