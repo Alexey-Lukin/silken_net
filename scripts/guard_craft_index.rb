@@ -49,7 +49,17 @@ TARGETS = [
     floor: 42,
     open:  "<!-- GUARD-CRAFT-INDEX:AUTO — generated from guard-craft.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /GUARD-CRAFT-INDEX -->" }
+    close: "<!-- /GUARD-CRAFT-INDEX -->" },
+  # Split 2026-08-22 (the second application of this engine). 80 items, 96% of
+  # the pre-split file, loaded on EVERY backend session; 26 of the numbers carry
+  # inbound citations from 13 files, `CLAUDE.md` among them — hence append-only.
+  { name:  "backend",
+    skill: File.join(ROOT, ".claude/skills/backend/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/backend/gotchas.md"),
+    floor: 80,
+    open:  "<!-- BACKEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /BACKEND-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів

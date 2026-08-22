@@ -301,8 +301,11 @@ jobs:
         # mutants exposed that.
         run: bash .claude/hooks/bash_verify_guard.sh --selftest
 
-      - name: Docs · Guard-craft index ⇄ source
-        # The 42 blindness shapes live in `ssot-maintenance/guard-craft.md`; SKILL.md
+      - name: Docs · Generated skill indexes ⇄ their sources
+        # TWO targets since 2026-08-22 (ssot-maintenance/guard-craft.md and
+        # backend/gotchas.md) — one engine, a table of targets; a copy per skill
+        # would be the second-home defect the engine exists to prevent.
+        # The blindness shapes live in `ssot-maintenance/guard-craft.md`; SKILL.md
         # carries a GENERATED one-line index of them, because that skill auto-invokes
         # on most sessions and the bodies do not need to. A hand-edited index would be
         # a second home for 42 rules — the exact class §Guard-craft #31 describes — so
