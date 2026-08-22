@@ -34,25 +34,34 @@
 #   ruby scripts/guard_craft_index.rb --check   # exit 1, якщо індекс розійшовся
 #   ruby scripts/guard_craft_index.rb --write   # перегенерувати блок у SKILL.md
 
-ROOT  = File.expand_path("..", __dir__)
-SKILL = File.join(ROOT, ".claude/skills/ssot-maintenance/SKILL.md")
-AUX   = File.join(ROOT, ".claude/skills/ssot-maintenance/guard-craft.md")
+ROOT = File.expand_path("..", __dir__)
 
-OPEN  = "<!-- GUARD-CRAFT-INDEX:AUTO — generated from guard-craft.md by " \
-        "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->"
-CLOSE = "<!-- /GUARD-CRAFT-INDEX -->"
+# 🔴 ONE engine, a TABLE of targets — not a copy per skill. The repo's own
+# doctrine argues it (#13 «Closed for one caller is not closed for the CLASS»),
+# and a second copy would be exactly the second-home defect this generator
+# exists to make impossible. Adding a split = adding a row here.
+#   floor: the item count on split day. It is a bulk-loss backstop, never a
+#   per-number pin — see the ITEM_FLOOR note below.
+TARGETS = [
+  { name:  "ssot-maintenance",
+    skill: File.join(ROOT, ".claude/skills/ssot-maintenance/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/ssot-maintenance/guard-craft.md"),
+    floor: 42,
+    open:  "<!-- GUARD-CRAFT-INDEX:AUTO — generated from guard-craft.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /GUARD-CRAFT-INDEX -->" }
+].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
 # цього репо. ITEM_FLOOR тримає нумерацію append-only: зниклий номер валить
 # гейт, бо на пункти вказують 65 цитат у 33 файлах, а `skill_item_check` ловить
 # лише out-of-range, ніколи «номер існує й означає інше».
-ITEM_FLOOR = 42
+# (ITEM_FLOOR тепер живе в TARGETS[:floor] — по одному на скіл.)
 # Нижче цього рядок індексу не може бути носієм — він стає ярликом. Міряємо
 # СЛОВАМИ, не байтами: корпус двомовний, а кирилиця коштує 2 B/символ, тож
 # байтовий поріг мовчки вимагав би від українських рядків бути коротшими.
 WORD_FLOOR = 8
 
-abort "guard-craft.md missing — the index has no source" unless File.exist?(AUX)
 
 def items(text)
   # Пункт = від маркера номера до наступного маркера номера (або кінця).
@@ -87,72 +96,82 @@ def items(text)
   end
 end
 
-def render(list)
+def render(list, t)
   lines = list.map do |it|
     body = it[:reflex] ? "#{it[:lead]} — **#{it[:reflex]}**" : it[:lead]
     "#{it[:num]}. #{body}"
   end
-  [ OPEN, "", *lines, "", CLOSE ].join("\n")
+  [ t[:open], "", *lines, "", t[:close] ].join("\n")
 end
 
-list = items(File.read(AUX))
-block = render(list)
+ok = true
+TARGETS.each do |t|
+  unless File.exist?(t[:aux])
+    warn "guard_craft_index ✗ — #{t[:name]}: aux file missing (#{t[:aux]}) — the index has no source"
+    ok = false; next
+  end
+  list  = items(File.read(t[:aux]))
+  block = render(list, t)
 
-# ── guards ──────────────────────────────────────────────────────────────────
-errs = []
-errs << "item count #{list.size} < floor #{ITEM_FLOOR} — a vanished number orphans its citations" if list.size < ITEM_FLOOR
-dupes = list.map { _1[:num] }.tally.select { |_, v| v > 1 }
-errs << "duplicate item numbers: #{dupes.keys.join(', ')}" if dupes.any?
-list.each do |it|
-  next if it[:lead].to_s.split.size + it[:reflex].to_s.split.size >= WORD_FLOOR
-  errs << "item #{it[:num]} renders as a LABEL, not a carrier: «#{it[:lead]}» " \
-          "(< #{WORD_FLOOR} words) — widen the bolded lead in guard-craft.md, not here"
-end
+  # ── guards ────────────────────────────────────────────────────────────────
+  errs = []
+  errs << "item count #{list.size} < floor #{t[:floor]} — a vanished number orphans its citations" if list.size < t[:floor]
+  dupes = list.map { _1[:num] }.tally.select { |_, v| v > 1 }
+  errs << "duplicate item numbers: #{dupes.keys.join(', ')}" if dupes.any?
+  list.each do |it|
+    next if it[:lead].to_s.split.size + it[:reflex].to_s.split.size >= WORD_FLOOR
+    errs << "item #{it[:num]} renders as a LABEL, not a carrier: «#{it[:lead]}» " \
+            "(< #{WORD_FLOOR} words) — widen the bolded lead in #{File.basename(t[:aux])}, not here"
+  end
 
-# ⚠️ ПІДЛОГА ЛОВИТЬ КОРОТКІСТЬ, НЕ АБСТРАКТНІСТЬ, і це названо, а не сховано:
-# пункт може мати 20 слів чистої логіки й однаково не спинити нікого (#22, #24
-# — кандидати саме такі). Механічної перевірки на «чи цей рядок стріляє» не
-# існує; підлога необхідна, але не достатня, і другий контур тут — читання.
-multi = list.select { it[:nrefs].to_i > 1 }
-unless multi.empty?
-  warn "  ℹ️ multi-Reflex items (index carries the FIRST — the one paired with the lead): " +
-       multi.map { "##{_1[:num]}×#{_1[:nrefs]}" }.join(" ")
-  warn "     Verify by reading whenever a NEW reflex is added to one of these: if a later"
-  warn "     one ever SUPERSEDES the first rather than adding a sub-shape, the index would"
-  warn "     keep carrying the withdrawn advice — measured today as not the case for any."
-end
+  # ⚠️ ПІДЛОГА ЛОВИТЬ КОРОТКІСТЬ, НЕ АБСТРАКТНІСТЬ, і це названо, а не сховано:
+  # пункт може мати 20 слів чистої логіки й однаково не спинити нікого (#22, #24
+  # — кандидати саме такі). Механічної перевірки на «чи цей рядок стріляє» не
+  # існує; підлога необхідна, але не достатня, і другий контур тут — читання.
+  multi = list.select { it[:nrefs].to_i > 1 }
+  unless multi.empty?
+    warn "  ℹ️ #{t[:name]}: multi-Reflex items (index carries the FIRST — the one paired with the lead): " +
+         multi.map { "##{_1[:num]}×#{_1[:nrefs]}" }.join(" ")
+    warn "     Verify by reading whenever a NEW reflex is added to one of these: if a later"
+    warn "     one ever SUPERSEDES the first rather than adding a sub-shape, the index would"
+    warn "     keep carrying the withdrawn advice — measured today as not the case for any."
+  end
 
-if ARGV.include?("--write")
-  abort "refusing to write:\n  #{errs.join("\n  ")}" if errs.any?
-  src = File.read(SKILL)
-  i = src.index(OPEN)
-  j = src.index(CLOSE)
-  abort "markers not found in SKILL.md — place #{OPEN} … #{CLOSE} first" unless i && j
-  File.write(SKILL, src[0...i] + block + src[(j + CLOSE.length)..])
-  puts "wrote #{list.size} index lines (#{block.bytesize} B) into SKILL.md"
-  exit 0
-end
+  src = File.read(t[:skill])
+  i = src.index(t[:open])
+  j = src.index(t[:close])
 
-# --check (default)
-unless errs.empty?
-  warn "guard_craft_index ✗ — #{errs.size} problem(s):"
-  errs.each { |e| warn "  · #{e}" }
-  exit 1
-end
+  if ARGV.include?("--write")
+    if errs.any?
+      warn "guard_craft_index ✗ — refusing to write #{t[:name]}:\n  #{errs.join("\n  ")}"
+      ok = false; next
+    end
+    unless i && j
+      warn "guard_craft_index ✗ — #{t[:name]}: markers not found in #{File.basename(t[:skill])} — place them first"
+      ok = false; next
+    end
+    File.write(t[:skill], src[0...i] + block + src[(j + t[:close].length)..])
+    puts "wrote #{list.size} index lines (#{block.bytesize} B) into #{t[:name]}/#{File.basename(t[:skill])}"
+    next
+  end
 
-src = File.read(SKILL)
-i = src.index(OPEN)
-j = src.index(CLOSE)
-unless i && j
-  warn "guard_craft_index ✗ — SKILL.md carries no index block (markers absent)"
-  exit 1
+  # --check (default)
+  if errs.any?
+    warn "guard_craft_index ✗ — #{t[:name]}: #{errs.size} problem(s):"
+    errs.each { |e| warn "  · #{e}" }
+    ok = false; next
+  end
+  unless i && j
+    warn "guard_craft_index ✗ — #{t[:name]}: #{File.basename(t[:skill])} carries no index block (markers absent)"
+    ok = false; next
+  end
+  if src[i..(j + t[:close].length - 1)] == block
+    puts "guard_craft_index ✓ — #{t[:name]}: index matches #{File.basename(t[:aux])} (#{list.size} items, floor #{t[:floor]})"
+  else
+    warn "guard_craft_index ✗ — #{t[:name]}: index has DRIFTED from #{File.basename(t[:aux])}"
+    warn "  Regenerate: ruby scripts/guard_craft_index.rb --write"
+    warn "  (if you edited the index by hand, move the edit into #{File.basename(t[:aux])} — it is the source)"
+    ok = false
+  end
 end
-current = src[i..(j + CLOSE.length - 1)]
-if current == block
-  puts "guard_craft_index ✓ — index matches guard-craft.md (#{list.size} items, floor #{ITEM_FLOOR})"
-  exit 0
-end
-warn "guard_craft_index ✗ — SKILL.md index has DRIFTED from guard-craft.md"
-warn "  Regenerate: ruby scripts/guard_craft_index.rb --write"
-warn "  (if you edited the index by hand, move the edit into guard-craft.md — it is the source)"
-exit 1
+exit(ok ? 0 : 1)
