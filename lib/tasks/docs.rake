@@ -129,6 +129,8 @@ namespace :docs do
     sec_after_link = [] # hard: bare §X dangling after a whole-doc link — fold into label (DOC-T.16)
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
+    cited_specs  = [] # hard: canon names its honesty-gates by path (DOC-T.84 друге плече)
+    spec_exists  = ->(p) { File.file?(File.join(File.expand_path("..", DOCS_DIR), p)) }
     anchor_dim   = []  # hard: superseded anchor dimension range near part keyword (01_01 §1 freeze)
     thermal_drift = [] # hard: superseded HW.3.IS thermal-stress/press-fit number (01_01 §4.2 / report)
     fence_unbalanced = [] # hard: unclosed ``` code fence (odd count) desyncs fence-aware guards + truncates ToC — DOC-T.45
@@ -208,6 +210,7 @@ namespace :docs do
       anchor_dim.concat(DocsLinter.anchor_dimension_drift(base, text).map { |h| "#{base}: #{h}" })
       thermal_drift.concat(DocsLinter.thermal_stress_drift(base, text).map { |h| "#{base}: #{h}" })
       src_line_refs.concat(DocsLinter.source_line_ref_drift(base, text))
+      cited_specs.concat(DocsLinter.cited_spec_path_drift(base, text, spec_exists))
       fence_unbalanced.concat(DocsLinter.unbalanced_code_fences(text).map { |h| "#{base}: #{h}" })
     end
 
@@ -277,6 +280,7 @@ namespace :docs do
       # another resolves perfectly — so the two must run as a PAIR or the lie stays
       # invisible exactly on the surfaces no in-docs gate reads [DOC-T.68 закривна].
       label_drift.concat(DocsLinter.link_label_target_mismatch(body).map { |h| "#{rel}: #{h}" })
+      cited_specs.concat(DocsLinter.cited_spec_path_drift(rel, body, spec_exists))
       DocsLinter.external_doc_path_drift(rel, body, existing)
     rescue ArgumentError
       [] # skip non-UTF-8 / binary files
@@ -406,6 +410,12 @@ namespace :docs do
     else
       puts "  MAGIC-MARKER HEX DRIFT (#{magic_drift.uniq.size}) — literal ≠ BE/LE packing of its quoted name (DOC-T.46):"
       magic_drift.sort.uniq.each { |s| puts "    ✗ #{s}" }
+    end
+    if cited_specs.empty?
+      puts "  cited specs:    every `spec/…rb` named in canon + routing layer exists ✓"
+    else
+      puts "  CITED SPEC PATHS (#{cited_specs.uniq.size}) — canon names a guard nothing answers to (DOC-T.84):"
+      cited_specs.sort.uniq.each { |x| puts "    ✗ #{x}" }
     end
     if src_line_refs.empty?
       puts "  source line-refs: no volatile `*.c`/`*.h`/`*.rb` in docs/ + .github/ (cite symbol/#define) ✓"
@@ -687,6 +697,7 @@ namespace :docs do
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
+    failed << "cited spec paths that do not exist (DOC-T.84 — canon names a guard by a dead name)" unless cited_specs.empty?
     failed << "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)" unless magic_drift.empty?
     failed << "§-section label ≠ any heading in its linked target (DOC-T.48)" unless suspect.empty?
     abort("docs:check_refs FAILED — #{failed.join(', ')}") unless failed.empty?

@@ -1165,6 +1165,29 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".cited_spec_path_drift" do
+    # Обидві половини навмисно: пін лише з RED вважав би дефектом кожну цитату,
+    # а пін лише з GREEN не червонів би НІКОЛИ — і саме друге DOC-T.84 виміряв
+    # як реальний стан справ до цього гейта.
+    let(:exists) { ->(p) { p == "spec/quality/live_spec.rb" } }
+
+    it "flags a cited spec path that no file answers to" do
+      txt = "гейт `spec/quality/renamed_away_spec.rb` стереже цю вісь\n"
+      expect(described_class.cited_spec_path_drift("04_02_Business_Logic", txt, exists))
+        .to contain_exactly(a_string_matching(%r{cited spec `spec/quality/renamed_away_spec\.rb` does not exist}))
+    end
+
+    it "passes a cited spec that exists" do
+      txt = "носій — `spec/quality/live_spec.rb`, і він біжить у смузі\n"
+      expect(described_class.cited_spec_path_drift("00_06_Standard", txt, exists)).to be_empty
+    end
+
+    it "ignores spec paths outside a code-span (prose glob, wildcard roster)" do
+      txt = "усі spec/quality/*.rb та `spec/quality/**/*.rb` — це периметр, не цитата\n"
+      expect(described_class.cited_spec_path_drift("00_06_Standard", txt, exists)).to be_empty
+    end
+  end
+
   describe ".source_line_ref_drift" do
     it "flags bare, path-qualified and ranged *.c/*.h line-refs" do
       txt = "| `K` | `1` | main.c:39 | x |\n// firmware/queen/main.c:87-97\nsee silken_sha256.h:12\n"

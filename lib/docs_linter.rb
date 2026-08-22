@@ -1028,6 +1028,30 @@ module DocsLinter
   # Pure: caller passes path + text + existing.
   EXTERNAL_DOC_PATH_RE = %r{docs/(\d\d_\d\d_[A-Za-z0-9_]+)}
 
+  # [SSOT anti-drift, DOC-T.84 друге плече] Canon names its own honesty-gates BY PATH
+  # (`spec/quality/…_spec.rb`), and until 2026-08-23 nothing checked those paths: the
+  # ref family only knows `docs/NN_NN_Name`, so renaming a cited gate spec left every
+  # gate green while the canon kept promising a guard that no longer answers to that
+  # name — proven by mutation, not suspected. Cost of switching this on was measured
+  # first: 297 citations across canon + routing layer, ZERO dead.
+  #
+  # ⚠️ Declared ceiling — `spec/` ONLY, and that is deliberate. The neighbouring genres
+  # under `app/`/`firmware/`/`deploy/` are dominated by paths that MUST NOT exist:
+  # ❌-marked anti-examples («this component may not live here»), files marked
+  # «(планований)», and one that is gitignored by construction. Measured 2026-08-22:
+  # 11 dead paths outside `spec/`, essentially all legitimate — a broader rule would be
+  # almost pure false positive. `spec/` carries no such genre, which is why it gates.
+  CITED_SPEC_PATH_RE = %r{`(spec/[\w./-]*\.rb)`}
+
+  def cited_spec_path_drift(path, text, exists)
+    text.each_line.flat_map do |line|
+      line.scan(CITED_SPEC_PATH_RE).flatten.reject { |p| exists.call(p) }.map do |p|
+        "#{path}: cited spec `#{p}` does not exist — canon promises a guard under a name " \
+          "nothing answers to (renamed? deleted? then say so here) → #{line.strip[0, 80]}"
+      end
+    end
+  end
+
   def external_doc_path_drift(path, text, existing)
     text.each_line.flat_map do |line|
       line.scan(EXTERNAL_DOC_PATH_RE).filter_map do |(base)|

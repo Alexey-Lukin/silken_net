@@ -100,7 +100,8 @@ DOCS_RAKE_LABELS = {
   "stale external docs/NN_NN refs (.github / root *.md / source)"                          => "external doc-path",
   "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift",
   "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)"                            => "magic-marker hex",
-  "§-section label ≠ any heading in its linked target (DOC-T.48)"                            => "§-section label drift"
+  "§-section label ≠ any heading in its linked target (DOC-T.48)"                            => "§-section label drift",
+  "cited spec paths that do not exist (DOC-T.84 — canon names a guard by a dead name)"      => "cited spec path"
 }.freeze
 
 # tracker.rake guard method (Tracker::Dashboard.<name>) → §3-row anchor.
