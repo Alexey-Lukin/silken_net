@@ -93,6 +93,24 @@ if [[ "${1:-}" == "--selftest" ]]; then
   # smoke over the standing rules — a refactor must not disable a neighbour
   t "smoke: backtick in commit -m" deny \
     'git commit -m "чи `gates` пройшли"'
+  # The MULTI-LINE arm, added 2026-08-22 after walking into it: the opening
+  # `-m "` and the backtick sit on different LINES, and grep is per-line — so the
+  # guard was blind to exactly the shape a substantive commit message takes. A
+  # one-line case cannot pin this; only a message containing a newline can.
+  # And the FALSE-POSITIVE arm, bought the same minute: a `-F -` commit whose
+  # BODY documents this rule contains the forbidden shape as PROSE, and after
+  # flattening it read as the command. `-F -` takes stdin — no shell expansion —
+  # so it must stay silent no matter what the message says.
+  t "smoke: -F - stays silent even when the body quotes the rule" silent \
+    'git commit -F - <<EOF
+fix: щось
+
+не пиши git commit -m "…`x`…" ніколи
+EOF'
+  t "smoke: backtick in MULTI-LINE commit -m" deny \
+    'git commit -q -m "fix: header
+
+body with `01_02:177` inside"'
   t "smoke: rg -rn clustered replace" deny \
     'rg -rn "pattern" app/'
   t "smoke: rg -n stays silent" silent \
@@ -124,12 +142,27 @@ session=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
 # warns, and git history cannot be rewritten after a push.
 # The dominant idioms are already safe and stay silent: `-F -` (587 uses),
 # `-m "$(cat <<'QUOTED')"` (110), `$(printf …)`, and escaped \`.
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+commit[^|;]*-m[[:space:]]+"[^"]*[^\\]`'; then
-  if ! printf '%s' "$cmd" | grep -qE -- '-m[[:space:]]+"\$\('; then
+# 🔴 FLATTEN FIRST. `grep` works per LINE, and a substantive `-m "…"` is
+# MULTI-LINE: the opening `-m "` sits on line 1 while the backtick sits five
+# lines down, so the pattern never matched the very shape it exists to catch.
+# Measured by walking into it 2026-08-22 — a memory commit lost every one of its
+# `NN_NN:NNN` coordinates, silently, with this guard installed and green.
+# ⚠️ Flattening created a FALSE POSITIVE the first time it ran: a `-F -` commit
+# whose BODY described this very rule matched, because after flattening the
+# prose «-m "…`x`…»» looks like the command. A rule that documents a forbidden
+# form necessarily contains it. `-F -` is safe by construction (stdin, no shell
+# expansion), so it short-circuits before the flattened match.
+if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+commit[^|;]*-F[[:space:]]+-'; then
+  :
+else
+_flat=$(printf '%s' "$cmd" | tr '\n' ' ')
+if printf '%s' "$_flat" | grep -qE 'git[[:space:]]+commit[^|;]*-m[[:space:]]+"[^"]*[^\\]`'; then
+  if ! printf '%s' "$_flat" | grep -qE -- '-m[[:space:]]+"\$\('; then
     jq -nc --arg r 'Backtick inside git commit -m "…": the shell will RUN it as a command substitution and silently drop the text — it does not fail, and after a push the message cannot be fixed. This repo already carries one such sentence, meaningless forever. Use `git commit -F -` with a heredoc instead.' \
       '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
     exit 0
   fi
+fi
 fi
 
 # ── BLOCK · `rg -<cluster>` where `r` is not the last letter ─────────────────
