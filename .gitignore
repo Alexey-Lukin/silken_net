@@ -134,3 +134,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+
+# особисті вкладення, що потрапляють у корінь із чату — НЕ версіонуються
+image-*.jpg
+image-*.png
