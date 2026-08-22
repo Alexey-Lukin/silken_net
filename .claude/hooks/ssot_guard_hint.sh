@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # PreToolUse hook — SSOT discipline reminder, fired ONCE per session per class.
 #
-# Why PreToolUse and not PostToolUse (like our two other hooks): this one must
+# Why PreToolUse and not PostToolUse (which is where most of the hook set sits
+# — count them with `jq '.hooks' .claude/settings.json`, never from a number
+# written here: this line said "our two other hooks" and was falsified a week
+# later by two hooks landing in ANOTHER file): this one must
 # land BEFORE the edit. A reminder that arrives after I have already collapsed a
 # canon section is worth nothing — the damage is the edit itself.
 #
