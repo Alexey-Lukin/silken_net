@@ -206,7 +206,7 @@ RSpec.describe "Dashboard in a real browser", :js do
     # ВАКУУМНА і показала це мутацією: без слухача морф-скіпу вона лишалась
     # зеленою, бо `have_css` встигав прочитати панелі ДО того, як візит доїхав.
     # Тобто зелене означало «ще не сталось», не «вижило». Turbo шле `turbo:morph`
-    # після рендеру (`turbo.js:4034`) — чекаємо саме на нього.
+    # після рендеру — чекаємо саме на нього.
     page.execute_script(<<~JS)
       window.__morphSeen = false;
       document.addEventListener("turbo:morph", () => { window.__morphSeen = true }, { once: true });

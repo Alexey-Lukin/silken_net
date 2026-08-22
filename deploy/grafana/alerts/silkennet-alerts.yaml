@@ -163,8 +163,8 @@ groups:
         for: 5m
         annotations:
           summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (поріг: 1.0, критично: < 0.2)."
-          description: "Oracle-підписант ({{ $labels.signer }}) вичерпує кошти. Його web3-шлях заблокується при 0. Поповни wallet через multisig: docs/05_03_Smart_Contracts_and_Tokenomics.md"
-          runbook_url: "docs/05_03_Smart_Contracts_and_Tokenomics.md#OracleBalance"
+          description: "Oracle-підписант ({{ $labels.signer }}) вичерпує кошти. Його web3-шлях заблокується при 0. Поповни wallet через multisig: docs/05_03_Tokenomics_SCC_and_SFC.md"
+          runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md#OracleBalance"
         labels:
           severity: critical
           component: web3
@@ -247,7 +247,7 @@ groups:
         annotations:
           summary: "Panic replay rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
           description: "SEC.10 Frame Counter SETNX nonce відхиляє дублікати. Різкий стрибок означає або attacker (replay forged panic = false fire alert) або LoRa mesh duplicate storm. Перевір DID pattern."
-          runbook_url: "docs/03_05_Hardware_AES256_and_Security.md#SEC10"
+          runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md#SEC10"
         labels:
           severity: critical
           component: security

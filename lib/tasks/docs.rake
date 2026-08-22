@@ -252,7 +252,9 @@ namespace :docs do
     # 00_07→00_05 + 08_07→08_03 + 00_08→00_07 + 03_05-rename). Validate every
     # `docs/NN_NN_Name` resolves to a current doc.
     root_dir = File.expand_path("..", DOCS_DIR)
-    # Scope: .github/** + root *.md + source trees (code comments reference canon docs by
+    # Scope: .github/** + root *.md + `.cursorrules` + .claude/**/*.md + deploy/** + source
+    # trees (code
+    # comments reference canon docs by
     # path too and rot on a renumber — the bin/app/spec blind spot that hid 00_08→00_07 +
     # 03_05-rename residue). Text source extensions only (skips contracts/out JSON +
     # binaries). Exempt the linter + its spec: they cite stale paths as deliberate examples.
@@ -261,6 +263,9 @@ namespace :docs do
                             "**", "*.{rb,sh,c,h,sol,py,rake,erb}")
     external_files = (Dir[File.join(root_dir, ".github", "**", "*")].select { |p| File.file?(p) } +
                       Dir[File.join(root_dir, "*.md")] +
+                      Dir[File.join(root_dir, ".cursorrules")].select { |p| File.file?(p) } +
+                      Dir[File.join(root_dir, ".claude", "**", "*.md")].select { |p| File.file?(p) } +
+                      Dir[File.join(root_dir, "deploy", "**", "*")].select { |p| File.file?(p) } +
                       Dir[source_glob].select { |p| File.file?(p) })
                      .reject { |f| ext_exempt.include?(f.delete_prefix("#{root_dir}/")) }
     ext_drift = external_files.flat_map do |f|

@@ -10,8 +10,8 @@ require "rails_helper"
 # дієслово вже двічі записували з ЧИТАННЯ джерела, і обидва рази хибно:
 # `04_03 §2.2а` і скіл `backend` #22 посилались на `determineFetchMethod` як на
 # доказ, що Turbo шле справжній PATCH/DELETE — тоді як ця функція викликається
-# ВСЕРЕДИНІ `encodeMethodIntoRequestBody` (`turbo-rails` 2.0.23, `turbo.js:5472`,
-# підписаний глобально на `turbo:before-fetch-request` рядком 5525) рівно щоб
+# ВСЕРЕДИНІ `encodeMethodIntoRequestBody` (`turbo-rails` 2.0.23,
+# підписаний глобально на `turbo:before-fetch-request`) рівно щоб
 # покласти метод у `_method` і виставити `fetchOptions.method = "post"`.
 #
 # На цій хибній підставі стояло правило «редирект із не-POST мутації мусить

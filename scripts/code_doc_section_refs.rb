@@ -122,7 +122,7 @@ EXEMPT_REFS = {
 # мертвих адрес. Скан себе почервонив би на власній таблиці винятків.
 files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
          Dir[File.join(ROOT, "firmware", "**", "*.{c,h}")].reject { |f| f.include?("/extern/") } +
-         Dir[File.join(ROOT, "tools", "**", "*.py")] +
+         Dir[File.join(ROOT, "tools", "**", "*.{py,rb}")] +
          Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")])
         .map { |f| f.sub("#{ROOT}/", "") }
         .reject { |rel| rel =~ EXEMPT }
