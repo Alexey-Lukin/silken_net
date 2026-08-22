@@ -1,6 +1,6 @@
 ---
 name: factory-flashing
-description: "SEC.3 Factory Flashing pipeline — provision per-device keys into STM32/SE05x at manufacture. Read SSOT docs first."
+description: "Use when working on the SEC.3 factory-flashing pipeline — provisioning per-device keys into an STM32 at manufacture (app/services/factory_flashing/, lib/tasks/factory.rake): the one-pass silicon UID→DID derivation [FW.54], the wrong-board guard, UID collision → quarantine, the six Flash key blocks and their magics, word→big-endian byte order [FW.30], the chain-hashed audit trail, and the 2-Person supervisor rule. ⚠️ Гілка B / SE05x is EMIT-ONLY today — the provisioner writes textual legacy ATECC calls and no real transport, so a unit flashed by it gets no Flash KEYL and bricks; treat any SE05x request as blocked, not supported. Routes to 03_06 §5 + 03_01 §7, does not restate. Examples: \"why did factory:flash raise CollisionError\", \"add a key slot\", \"the backend DID does not match the silicon\", \"provision a new board\", \"what does the flashing session do, in order\", \"why is Гілка B not usable\"."
 ---
 
 # Factory Flashing (SEC.3)
