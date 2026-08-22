@@ -1999,10 +1999,16 @@ selftest() {
   #      against a FIXTURE tracker (MEMORY_GATE_TRACKER) rather than the live one —
   #      keying it to real IDs would break the proof on the very day an item is
   #      archived, which is the event the detector exists to notice.
+  #      🔴 MEMORY_GATE_REPO is passed for the same hermetic reason `_st_build`
+  #      states three lines above its own fake repo: `$REPO` defaults to a
+  #      hard-coded developer path that does NOT exist on a CI runner, so without
+  #      this the case reads the live tree — green here, SKIP→FAIL there. These
+  #      three cases shipped without it and would have reddened CI, in the one
+  #      direction that looks like health locally.
   _st_build "$d"
   printf '## §04 · X\n\n#### ZZ.2 — live one\n\n## \xf0\x9f\x97\x84\xef\xb8\x8f Архів\n\n| ID | Пункт | Канон |\n|----|-------|-------|\n| ZZ.1 | closed | 04_01 |\n' >"$root/trk.md"
   printf '\nСтан → `00_07` ZZ.1, механіка → `04_01`.\n' >>"$d/feedback_beta.md"
-  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
   if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then pass=$((pass+1)); printf '  ok    %s\n' "STALE-STATE on a state-promise at an archived ID"
   else fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "STALE-STATE on a state-promise at an archived ID" "$out"; fi
 
@@ -2012,7 +2018,7 @@ selftest() {
   #      provenance, the commonest legitimate form in this corpus.
   _st_build "$d"
   printf '\nСтан → `00_07` \xf0\x9f\x97\x84\xef\xb8\x8f ZZ.1 (закрито), механіка → `04_01`.\n' >>"$d/feedback_beta.md"
-  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
   if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "naming the closure silences it" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "naming the closure silences it"; fi
 
@@ -2020,7 +2026,7 @@ selftest() {
   #      still has somewhere current to go, so the sentence is not rotten.
   _st_build "$d"
   printf '\nСтан → `00_07` ZZ.1 / ZZ.2, механіка → `04_01`.\n' >>"$d/feedback_beta.md"
-  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
+  out=$(env MEMORY_GATE_DIR="$d" MEMORY_GATE_REPO="$d.repo" MEMORY_GATE_TRACKER="$root/trk.md" bash "$SELF" --stale-state 2>&1)
   if printf '%s' "$out" | grep -q 'STALE-STATE feedback_beta'; then fail=$((fail+1)); printf '  FAIL  %s\n         got: %s\n' "a live heir keeps the route honest" "$out"
   else pass=$((pass+1)); printf '  ok    %s\n' "a live heir keeps the route honest"; fi
 

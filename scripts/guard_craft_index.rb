@@ -58,7 +58,15 @@ def items(text)
   # Пункт = від маркера номера до наступного маркера номера (або кінця).
   text.split(/^(?=\d+[a-z]?[.)] )/).filter_map do |chunk|
     num = chunk[/\A(\d+[a-z]?)[.)] /, 1] or next nil
-    bolds = chunk.scan(/\*\*(.+?)\*\*/m).flatten.map { |s| s.gsub(/\s+/, " ").strip }
+    # 🔴 Mask `**` INSIDE inline code spans before pairing (found 2026-08-22 while
+    # reverse-engineering this file for a second split). A glob like `.claude/**`
+    # is legal prose here, and its literal `**` was pairing as a bold delimiter —
+    # shifting every subsequent pair in the chunk. Live cost, with --check GREEN:
+    # item #1's true first reflex was invisible and its index line rendered as the
+    # stump «— **, sharpened: …**». Masking (not stripping) keeps lead text intact.
+    scan_src = chunk.gsub(/`[^`\n]*`/) { |m| m.gsub("**", "\u0000") }
+    bolds = scan_src.scan(/\*\*(.+?)\*\*/m).flatten
+                    .map { |s| s.gsub("\u0000", "**").gsub(/\s+/, " ").strip }
     lead = bolds.first.to_s.sub(/[.,;:]\z/, "")
     # 🔴 ПЕРШИЙ рефлекс — і це ВИМІРЯНО, а не вибрано за замовчуванням.
     # Проміжна редакція брала `.last`, боячись, що перший може бути ВІДКЛИКАНИЙ
@@ -72,7 +80,9 @@ def items(text)
     # з лідом у всіх, а #36 має рефлекс ОДИН — його відкликана порада живе в
     # прозі `(a)`, не в жирному `Reflex:`, тож селектор її не бачить у принципі.
     refs = bolds.select { |b| b =~ /\A(Reflex|Рефлекс)\b/ }
-    reflex = refs.first&.sub(/\A(Reflex|Рефлекс):?\s*/, "")&.sub(/[.]\z/, "")
+    # `Reflex, sharpened:` / `Рефлекс (звужено):` are live forms — a bare `:?` strip
+    # left the connective behind, so the index carried «, sharpened: …» as its lead-in.
+    reflex = refs.first&.sub(/\A(Reflex|Рефлекс)[^:]{0,24}:?\s*/, "")&.sub(/[.]\z/, "")
     { num:, lead:, reflex:, nrefs: refs.size }
   end
 end
