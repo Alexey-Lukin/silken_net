@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — best practices Частини A задокументовані й застосовуються у всіх нових спеках (⛔ без числа в прозі: воно вже розійшлось із тілом і встигло піти в чужий гейтовий коментар); покриття тестами для backend / firmware / contracts на operationally-ready рівні.
+- **Стан:** Шкала готовності тут **незастосовна** — предмет сторінки практика верифікації, не технологія ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond), DOC-T.70). Best practices Частини A задокументовані й застосовуються у всіх нових спеках; покриття для backend / firmware / contracts — на operationally-ready рівні (пороги живуть тільки в `spec/spec_helper.rb`).
 - **Охоплені фреймворки:**
   - RSpec (Ruby / Rails) + **Capybara/cuprite** (браузерний ярус — §B.1.4)
   - Firmware C (host-based, Make) + QEMU bit-parity

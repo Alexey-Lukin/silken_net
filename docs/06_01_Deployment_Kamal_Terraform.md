@@ -754,7 +754,7 @@ Series D архітектура (>1M вузлів):
 
 | Компонент | Поточний стан | Необхідна дія |
 |-----------|--------------|--------------|
-| CoAP Listener | `lib/daemons/coap_listener.rb` (Ruby) | Достатньо до ~10k вузлів |
+| CoAP Listener | `lib/daemons/coap_listener` (Ruby) | Достатньо до ~10k вузлів |
 | Ingress Anchor (`e2-small`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
