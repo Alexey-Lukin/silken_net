@@ -48,19 +48,41 @@ module DocsLinter
 
   def trl_range_consistency(matrix_text, doc_trls)
     bands = {}
+    rows  = {}
     matrix_text.each_line do |line|
       m = line.match(TRL_BAND_ROW_RE)
-      bands[m[1]] = [ m[2].to_i, m[3].to_i ] if m
+      next unless m
+
+      bands[m[1]] = [ m[2].to_i, m[3].to_i ]
+      rows[m[1]]  = line
     end
     return [] if bands.empty?
 
     members = doc_trls.group_by { |base, _| base[0, 2] }.transform_values { |pairs| pairs.map(&:last) }
+    by_doc  = doc_trls.group_by { |base, _| base[0, 2] }
 
     out = []
     bands.each do |mod, (cur, tgt)|
       out << "00_03 §1: module #{mod} current TRL #{cur} > target #{tgt} (band inverted)" if cur > tgt
       max = members[mod]&.max
       out << "00_03 §1: module #{mod} current TRL #{cur} > its highest sub-doc member-TRL #{max} (row is a min, never above every member)" if max && cur > max
+      # 🔴 Друга половина ТОГО САМОГО правила, якої не було до 2026-08-22. §1 каже
+      # жирним «рядок модуля = агрегат (МІНІМУМ) member-TRL», а перевірялась лише
+      # верхня межа — тож рядок 4 при члені 3 проходив мовчки. Виміряно: порушували
+      # ДВА модулі, і один свій розрив оголошував у клітинці блокера поіменно, другий
+      # ні. Тому гейт вимагає не рівності, а ОГОЛОШЕННЯ: рядок вище мінімуму
+      # легітимний (успадкований System-lock, fallback-шлях поза критичним шляхом) —
+      # але клітинка мусить НАЗВАТИ гейтуючий док, інакше розрив мовчазний.
+      minm = members[mod]&.min
+      if minm && cur > minm
+        low = by_doc[mod].to_a.select { |_, v| v == minm }.map(&:first)
+        named = low.any? { |d| rows[mod].to_s.include?(d[0, 5]) }
+        unless named
+          out << "00_03 §1: module #{mod} row #{cur} is ABOVE its lowest member #{minm} (#{low.map { |d| d[0, 5] }.join(", ")}) " \
+                 "and the blocker cell names none of them — the row IS the minimum by §1, so a higher row is " \
+                 "legitimate only when the cell says WHICH doc gates and why (the 06 row is the reference form)"
+        end
+      end
     end
     doc_trls.each do |base, trl|
       tgt = bands[base[0, 2]]&.last

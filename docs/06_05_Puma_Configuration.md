@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — конфігурація відповідає SSOT; IO-bound пул, cluster hooks та graceful shutdown верифіковані в Canopy.
+- **Поточний TRL:** TRL 6 — конфігурація відповідає SSOT; IO-bound пул, cluster hooks і graceful shutdown **зашиті й покриті host-тестами**. ⚠️ **У Canopy НЕ верифіковані — staging-деплою не було жодного** (виправлено 2026-08-22: рядок стверджував верифікацію в середовищі, яке ніколи не піднімалось; дім факту — [`06_01`](06_01_Deployment_Kamal_Terraform), «реальний деплой не проводився»). Реальна верифікація — після першого деплою, [`00_07`](00_07_Action_Plan_Tracker) S1.1.
 - **Версія:** `puma (8.0.2)` (`Gemfile.lock`)
 - **Конфігураційний SSOT:** `config/puma.rb`
 - **Runtime-архітектура:** `Thruster (HTTP/2, TLS) → Puma (clustered, preload_app!) → Rails 8.1`

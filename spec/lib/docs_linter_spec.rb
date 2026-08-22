@@ -42,7 +42,7 @@ RSpec.describe DocsLinter do
         |--------|-----|----------|--------|
         | 01 Materials & EBFC | 3 | 6 | Ti-coin |
         | 03 Firmware | 6 | 8 | AES |
-        | 06 DevOps | 5 | 9 | deploy |
+        | 06 DevOps | 5 | 9 | deploy; 06_01=4, не на критичному шляху |
       MD
     end
 
@@ -51,9 +51,20 @@ RSpec.describe DocsLinter do
       expect(described_class.trl_range_consistency(matrix, trls)).to be_empty
     end
 
-    it "allows a sub-doc ABOVE its row (row = min) and BELOW it (off-critical-path) — no lower bound" do
+    # Звужено 2026-08-22: член НИЖЧЕ рядка лишається легітимним (off-critical-path,
+    # успадкований System-lock) — але клітинка блокера мусить НАЗВАТИ його поіменно.
+    # Доти нижньої межі не було зовсім, і рядок 4 при члені 3 проходив мовчки, попри
+    # те що §1 жирним каже «рядок = МІНІМУМ». Матриця фікстури несе `06_01=4` у
+    # клітинці рядка 06 — саме тому цей приклад лишається зеленим.
+    it "allows a sub-doc ABOVE its row, and BELOW it WHEN the blocker cell names the gating doc" do
       trls = { "03_05_Crypto" => 6, "06_01_Kamal" => 4, "06_03_Prom" => 6 }
       expect(described_class.trl_range_consistency(matrix, trls)).to be_empty
+    end
+
+    it "FLAGS a member below the row when the cell names NO gating doc — the silent gap" do
+      silent = matrix.sub("06_01=4, не на критичному шляху", "fallback path")
+      hits = described_class.trl_range_consistency(silent, { "06_01_Kamal" => 4, "06_03_Prom" => 6 })
+      expect(hits).to include(a_string_matching(/module 06 row 5 is ABOVE its lowest member 4 \(06_01\)/))
     end
 
     it "flags a doc claiming a member-TRL above its module target (ceiling)" do

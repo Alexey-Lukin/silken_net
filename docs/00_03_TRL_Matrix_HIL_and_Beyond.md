@@ -68,7 +68,7 @@
 | Модуль | TRL | Цільовий | Головний блокер |
 |--------|-----|----------|-----------------|
 | 01 Materials & EBFC | 3 | 6 | Фізичний Ti-coin in-vitro (Zero-Lab in-silico ✅; physical TRL 4 pending — ЧНУ) |
-| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK |
+| 02 Hardware & BOM | 4 | 6 | BQ25570, PCB, Pogo, PEEK; **02_04=3** — bench-гайд успадковує System-lock від анкера (нуль зібраних плат), а не власну незрілість, тож рядок стоїть вище мінімуму СВІДОМО (форма оголошення — як у рядку 06) |
 | 03 Firmware | 6 | 8 | STM32 bench (silicon class C — FW.2 CCM verify + RDP/RF/300nA floor); host-half ✅ (AES/HKDF FW.1 · TinyML FW.4 · AT/CoAP FW.3/FW.56) |
 | 04 Backend Rails | 8 | 9 | RSpec-хвости — ⚠️ це найближчий техборг, НЕ гейт: перехід 8→9 визначає §4.1 і він System-TRL-bound |
 | 05 Web3 Pipeline | 8 | 9 | SFC-адреса після mainnet-деплою — ⚠️ найближчий техборг, НЕ гейт: 8→9 = §4.1, System-TRL-bound |
