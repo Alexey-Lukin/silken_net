@@ -123,7 +123,7 @@
 | `CACHE_MAX_ENTRIES` | `50` | main.c | Місткість CIFO EdgeCache |
 | `CMD_DEDUP_SIZE` | `16` | main.c | Розмір кільцевого буфера dedup |
 | `UUID_STR_LEN` | `36` | main.c | Довжина UUID рядка (8-4-4-4-12) |
-| `CMD_DECRYPT_BUF_SIZE` | `544` | main.c | Буфер decrypt CoAP команд/OTA |
+| `CMD_DECRYPT_BUF_SIZE` | `544` | main.c | Буфер decrypt CoAP команд/OTA. **Деривація (відновлено 2026-08-22 з git — константа стояла магічною):** `512` OTA payload + `5` header + `2` CRC + `16` AES padding + `9` margin. Міняючи будь-який доданок, перерахуй суму тут, а не підганяй її |
 | `OTA_MARKER` | `0x99` | main.c | Маркер OTA-пакета |
 | `OTA_HEADER_SIZE` | `5` | main.c | Маркер + idx:2 + total:2 |
 | `OTA_CRC_SIZE` | `2` | main.c | CRC16-CCITT |
