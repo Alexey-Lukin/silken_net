@@ -505,13 +505,16 @@ module DocsLinter
 
   # [SSOT anti-drift] AI-vendor name re-stated outside owner (HARD, owner-only vocabulary).
   # The AI tool roster is VOLATILE (vendors come and go); canon must describe stable ROLES
-  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_03
+  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_06 §5.1
   # A vendor token re-stated elsewhere drifts the moment the roster shifts. Same shape as
   # solc/tokenomics. Case-sensitive on purpose (lowercase "cursor"/"grok" = UI/verb, не вендор).
   # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (OpenAI's coding
   # agent collides with "The Codex" SSOT-guard nickname), bare "Claude"/"Opus"/"Sonnet"/"Fable"
-  # (model words that collide with prose). Exempt: 00_02 (roster home), 00_06 (cites examples),
-  # 00_07 (tracker). Skips fenced code (a script may legitimately name a tool).
+  # (model words that collide with prose). Exempt набір — це САМЕ те, що кодує AI_VENDOR_OWNER_DOC нижче: 00_06 (дім
+  # ростера + цитує приклади) і 00_07 (трекер). ⛔ Не переказуй його прозою:
+  # тут доти стояв ще й 00_02 «roster home», розчинений DOC-T.68 фазою 3, і
+  # number_keyed_exemptions цього не бачив за побудовою — він валідує КОНСТАНТУ,
+  # а не коментар поруч. Skips fenced code (a script may legitimately name a tool).
   AI_VENDOR_OWNER_DOC = /\A00_06_|\A00_07_/
   AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
   AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_06 §5/i

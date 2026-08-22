@@ -302,16 +302,20 @@ jobs:
         run: bash .claude/hooks/bash_verify_guard.sh --selftest
 
       - name: Docs · Generated skill indexes ⇄ their sources
-        # TWO targets since 2026-08-22 (ssot-maintenance/guard-craft.md and
-        # backend/gotchas.md) — one engine, a table of targets; a copy per skill
-        # would be the second-home defect the engine exists to prevent.
-        # The blindness shapes live in `ssot-maintenance/guard-craft.md`; SKILL.md
-        # carries a GENERATED one-line index of them, because that skill auto-invokes
-        # on most sessions and the bodies do not need to. A hand-edited index would be
-        # a second home for 42 rules — the exact class §Guard-craft #31 describes — so
-        # the index is regenerated, never written, and this step is what makes that
-        # true rather than intended. Unlike the memory gates it CAN run here: both
-        # files are in the repo.
+        # One engine, a TABLE of targets (scripts/guard_craft_index.rb TARGETS) — a
+        # copy per skill would be the second-home defect the engine exists to prevent.
+        # Do NOT restate the target list or its size here: it grew from two to five in
+        # a single day (2026-08-22) and this comment did not follow, which is the
+        # mirror-half class the engine itself guards against. The current roster and
+        # each floor are readable from TARGETS; this step proves them, and `--check`
+        # prints them.
+        # Why generated at all: a split skill keeps its bodies in a companion file and
+        # its SKILL.md carries a GENERATED one-line index, because those skills
+        # auto-invoke on most sessions and the bodies do not need to. A hand-edited
+        # index would be a second home for every rule — the exact class §Guard-craft
+        # #31 describes — so the index is regenerated, never written, and this step is
+        # what makes that true rather than intended. Unlike the memory gates it CAN
+        # run here: both files are in the repo.
         run: ruby scripts/guard_craft_index.rb --check
 
   docs-ok:
