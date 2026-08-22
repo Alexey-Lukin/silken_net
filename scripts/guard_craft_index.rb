@@ -59,7 +59,19 @@ TARGETS = [
     floor: 80,
     open:  "<!-- BACKEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /BACKEND-GOTCHAS-INDEX -->" }
+    close: "<!-- /BACKEND-GOTCHAS-INDEX -->" },
+  # Third target, same day. 47 items but the heaviest file in the practice
+  # (237 kB pre-split, 96% of it this one section). ⚠️ Unlike backend it carries
+  # TWELVE unnumbered load-bearing paragraphs: the splitter appends each to the
+  # PRECEDING item's chunk, so their bold spans join that item's lead/reflex
+  # pool — every generated line for an item followed by one was eyeballed.
+  { name:  "frontend",
+    skill: File.join(ROOT, ".claude/skills/frontend/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/frontend/gotchas.md"),
+    floor: 47,
+    open:  "<!-- FRONTEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /FRONTEND-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
@@ -101,7 +113,13 @@ def items(text)
     refs = bolds.select { |b| b =~ /\A(Reflex|Рефлекс)\b/ }
     # `Reflex, sharpened:` / `Рефлекс (звужено):` are live forms — a bare `:?` strip
     # left the connective behind, so the index carried «, sharpened: …» as its lead-in.
-    reflex = refs.first&.sub(/\A(Reflex|Рефлекс)[^:]{0,24}:?\s*/, "")&.sub(/[.]\z/, "")
+    # 🔴 The colon is MANDATORY, and that is a regression fixed the same day it
+    # shipped. With `:?` optional the strip ate a fixed 24 chars whenever the
+    # connective ran long — mid-word — and `frontend #1`, the most-cited item of
+    # that skill, rendered as the stump «— **URABLE bucket in any of our…**».
+    # Requiring the colon means a long form is left INTACT rather than truncated:
+    # a lead-in that reads oddly is cheap, a mangled sentence is not.
+    reflex = refs.first&.sub(/\A(Reflex|Рефлекс)\b[^:]{0,24}:\s*/, "")&.sub(/[.]\z/, "")
     { num:, lead:, reflex:, nrefs: refs.size }
   end
 end
