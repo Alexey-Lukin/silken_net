@@ -472,7 +472,7 @@ module DocsLinter
 
       "home #{basename[/\A\d\d_\d\d/]} no longer matches the guard's #{const} (#{label}) — " \
         "re-price? Update the regex in lib/docs_linter.rb AND sweep the mirrors: " \
-        "manifest.md (§2 genre home), 07_01 §17 ROI, 03_04/05_02 references"
+        "manifest.md (§2 genre home), 02_06 §7 ROI, 03_04/05_02 references"
     end
   end
 

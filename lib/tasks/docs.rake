@@ -115,6 +115,12 @@ namespace :docs do
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/07_01)
     rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
+    # 🔴 Оголошені доми курсу, ЗУСТРІНУТІ у скані. Без цього гейт вироджувався
+    # мовчки: резолв іде за префіксом імені файлу, тож звільнений номер дому просто
+    # ніколи не консультується, і вердикт друкував «both … ✓», вимірявши ОДИН із двох.
+    # Мутаційно доведено 2026-08-22. Той самий лік, що в TRL-ліхтаря: недосяжне
+    # джерело = RED зі словом «did NOT run», ніколи тихий зелений.
+    rate_anchor_seen = []
     solc_drift  = []  # hard: solc/pragma version re-stated outside 05_03 owner (code SSOT = foundry.toml)
     ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_06 §5 roster (use roles)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
@@ -190,6 +196,7 @@ namespace :docs do
       magic_drift.concat(DocsLinter.magic_marker_hex_drift(text).map { |h| "#{base}: #{h}" })
       bare_refs.concat(DocsLinter.bare_section_ref(base, text).map { |h| "#{base}: #{h}" })
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
+      rate_anchor_seen << base[/\A\d\d_\d\d/] if DocsLinter::RATE_ANCHOR_HOMES.key?(base[/\A\d\d_\d\d/])
       rate_anchor.concat(DocsLinter.tokenomics_rate_anchor(base, text))
       solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
       ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
@@ -434,8 +441,15 @@ namespace :docs do
       puts "  RATE DRIFT (#{rate_drift.size}) — mint/carbon rate value belongs only in 05_03 / 07_01 §3:"
       rate_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
-    if rate_anchor.empty?
-      puts "  rate anchor:    both rate homes still match the guard's own regexes ✓"
+    rate_homes_missing = DocsLinter::RATE_ANCHOR_HOMES.keys - rate_anchor_seen
+    if rate_homes_missing.any?
+      puts "  RATE ANCHOR DID NOT RUN (#{rate_homes_missing.size}) — declared home(s) never met in the scan:"
+      rate_homes_missing.sort.each do |n|
+        puts "    ✗ #{n} — RATE_ANCHOR_HOMES declares it, no doc carries that number. Freed/renamed? " \
+             "The guard did NOT evaluate it; a re-price there is unguarded (DOC-T.40 / DOC-T.84)"
+      end
+    elsif rate_anchor.empty?
+      puts "  rate anchor:    all #{DocsLinter::RATE_ANCHOR_HOMES.size} declared rate homes met and still match ✓"
     else
       puts "  RATE ANCHOR STALE (#{rate_anchor.size}) — a home was re-priced but the guard regex was not (DOC-T.40):"
       rate_anchor.sort.each { |d| puts "    ✗ #{d}" }
@@ -654,6 +668,7 @@ namespace :docs do
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/07_01)" unless rate_drift.empty?
     failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?
+    failed << "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" if rate_homes_missing.any?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?
     failed << "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)" unless ai_vendor.empty?
