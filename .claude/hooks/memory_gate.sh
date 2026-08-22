@@ -2455,14 +2455,22 @@ wide = { "skills"  => Dir["#{repo}/.claude/skills/**/*.md"],
          "hooks"   => Dir["#{repo}/.claude/hooks/*.sh"],
          "CLAUDE"  => ["#{repo}/CLAUDE.md"] }
        .transform_values { |ps| ps.select { |p| File.file?(p) }.sum { |p| File.size(p) } }
-biggest = Dir["#{repo}/.claude/skills/**/*.md"].max_by { |p| File.size(p) }
+# 🔴 AUTO-INVOKED means SKILL.md, not «the biggest file in a skill directory».
+# The line below said `**/*.md` and, the day three skills were split, promptly
+# reported an ON-DEMAND companion as the heaviest auto-loaded artifact — a
+# measurement whose LABEL is wider than its scope, which is the very defect this
+# mode's own header documents. Companions are priced on the next line instead.
+biggest = Dir["#{repo}/.claude/skills/*/SKILL.md"].max_by { |p| File.size(p) }
+companion = Dir["#{repo}/.claude/skills/*/*.md"]
+            .reject { |p| File.basename(p) == "SKILL.md" }.max_by { |p| File.size(p) }
 
 puts "corpus #{tot} B in #{sz.size} files · MEMORY apparatus in git #{a} B (#{app.map { |n, v| "#{n} #{v}" }.join(' · ')})"
 puts "core META (feedback_* + method journals) = #{c} B — #{(100.0 * c / tot).round(1)}% of the corpus"
 puts
 puts "PRACTICE apparatus in git = #{wide.values.sum} B (#{wide.map { |n, v| "#{n} #{v}" }.join(' · ')})"
 puts "  — #{(wide.values.sum.to_f / a).round(1)}× the memory-apparatus subset above; NOT folded into the ratio (label ≠ scope, see source)"
-puts "  — heaviest single auto-invoked artifact: #{biggest&.sub("#{repo}/", '')} #{biggest ? File.size(biggest) : 0} B" if biggest
+puts "  — heaviest AUTO-INVOKED artifact: #{biggest&.sub("#{repo}/", '')} #{biggest ? File.size(biggest) : 0} B" if biggest
+puts "  — heaviest ON-DEMAND companion (NOT auto-loaded): #{companion&.sub("#{repo}/", '')} #{companion ? File.size(companion) : 0} B" if companion
 puts
 [["LOW   swing → DOMAIN", 0], ["HIGH  swing → META", s]].each do |label, extra|
   m = c + extra
