@@ -13,6 +13,14 @@
 # The .tpl is not valid YAML (terraform templatefile syntax), so directives
 # and ${var} placeholders are stripped before parsing — this doubles as the
 # only parse-validation the template gets.
+#
+# ✅ MUTATION-VERIFIED 2026-08-23, all three invariants.
+# 🔴 Invariant 3 needed an ISOLATED mutation, and that is the lesson worth the line:
+#    dropping coap from the tpl's `deployment:` alone was caught by invariant 1 FIRST
+#    ("services != deployment" *within* the tpl), which would have falsely credited 3.
+#    Removing coap from the tpl ENTIRELY satisfies 1 and leaves only the cross-manifest
+#    comparison to fire — it did, with a distinct message ("service sets diverge").
+#    Two mechanisms on one input mask each other: mutate one at a time.
 
 require "yaml"
 

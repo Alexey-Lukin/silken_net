@@ -16,6 +16,11 @@
 #
 # Mirrors scripts/sdl_consistency_check.rb (pure Ruby+YAML; .tpl directives/${var}
 # stripped before parsing).
+#
+# ✅ MUTATION-VERIFIED 2026-08-23, both invariants, isolated:
+#   A. real key literal planted in a service env → RED naming service+var+truncated value;
+#   B. ORACLE_MINTER_PRIVATE_KEY added to the web service → RED naming the leaked member.
+#   Both reverted byte-identically; the gate was GREEN before and after each.
 
 require "yaml"
 
