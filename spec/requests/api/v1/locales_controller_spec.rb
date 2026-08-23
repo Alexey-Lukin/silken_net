@@ -273,9 +273,8 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     describe "tier 3 — persisted users.locale" do
       let(:user) { create(:user, locale: "lv") }
 
-      def sign_in!
-        post "/login", params: { email: user.email_address, password: "password12345" }
-      end
+      # [TEST.16] Ліхтар успіху — інакше приклад міряв би АНОНІМА.
+      def sign_in! = sign_in_via_form(user, password: "password12345")
 
       it "renders the dashboard in the account language when no cookie is present" do
         sign_in!
@@ -342,7 +341,7 @@ RSpec.describe Api::V1::LocalesController, type: :request do
         # би відсутність щабля так само, як його наявність (`04_06 §B.2` BP 21).
         expect(organization.reload.locale).to eq("lv")
 
-        post "/login", params: { email: user.email_address, password: "password12345" }
+        sign_in_via_form(user, password: "password12345")
         get "/dashboard"
 
         expect(response.body).to include(vitality_text(:en))

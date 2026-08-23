@@ -114,9 +114,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     before do
       allow_any_instance_of(Tree).to receive(:broadcast_map_update)
       allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-      post "/login",
-           params: { email: super_admin.email_address, password: "password12345" },
-           as: :json
+      sign_in_via_form(super_admin, password: "password12345", as: :json)
     end
 
     # 🔴 ЦЕЙ приклад — головний, бо він єдиний пінить ПОВНИЙ ланцюг
@@ -156,9 +154,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     # перемикання йде «нізвідки».
     it "працює для super_admin без домашньої організації" do
       homeless = create(:user, :super_admin, organization: nil)
-      post "/login",
-           params: { email: homeless.email_address, password: "password12345" },
-           as: :json
+      sign_in_via_form(homeless, password: "password12345", as: :json)
 
       post "/organizations/#{other_organization.id}/switch", as: :json
 
@@ -235,9 +231,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
 
     it "не дає перемкнутись звичайному адміністраторові" do
       admin = create(:user, :admin, organization: organization)
-      post "/login",
-           params: { email: admin.email_address, password: "password12345" },
-           as: :json
+      sign_in_via_form(admin, password: "password12345", as: :json)
 
       post "/organizations/#{other_organization.id}/switch", as: :json
 
