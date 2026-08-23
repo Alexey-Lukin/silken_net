@@ -255,14 +255,16 @@ class UnpackTelemetryWorker
   end
 
   # Дзеркало claim у degraded mode (read→compare→write не атомарні — як і було).
+  # [ARCH.105] Атомарний так само, як Redis-шлях: `unless_exist: true` — це SET NX
+  # самого сховища. Доти тут стояла пара read-then-write, тобто ВІКНО між
+  # перевіркою й записом рівно там, де фолбек і потрібен — під час аварії, коли
+  # ретраї щільніші за звичайні.
   def claim_qatt_nonce_fallback(digest)
     fallback_key = "qatt_nonce_fallback:#{digest}"
-    existing = Rails.cache.read(fallback_key)
-    return :resumed if existing == qatt_owner_token
-    return :replay unless existing.nil?
+    return :acquired if Rails.cache.write(fallback_key, qatt_owner_token,
+                                          expires_in: QATT_NONCE_TTL, unless_exist: true)
 
-    Rails.cache.write(fallback_key, qatt_owner_token, expires_in: QATT_NONCE_TTL)
-    :acquired
+    Rails.cache.read(fallback_key) == qatt_owner_token ? :resumed : :replay
   end
 
   # [L1 QATT] Фаза 2 (finalize): після успішного unpack і чужі replay, і

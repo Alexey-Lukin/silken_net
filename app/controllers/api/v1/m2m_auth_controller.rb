@@ -101,9 +101,12 @@ module Api
         rescue Redis::BaseConnectionError, RedisClient::ConnectionError => e
           # [S6.1]: Graceful degradation — fallback to Solid Cache (DB-backed)
           # when Redis is unavailable. Gateways remain operational instead of 503.
-          # Note: This fallback has a small TOCTOU window between exist?/write.
-          # Acceptable tradeoff: Redis SET NX (primary path) is fully atomic;
-          # this is the degraded fallback for Redis outage scenarios only.
+          # [ARCH.105] Фолбек АТОМАРНИЙ так само, як первинний шлях: `write` із
+          # `unless_exist: true` — це SET NX самого сховища, а не пара
+          # exist?/write. Доти тут стояло read-then-write із нотою «прийнятний
+          # компроміс», і саме її спростували двоє сусідів по дереву, які вже
+          # вживали атомарну форму на ТОМУ САМОМУ Solid Cache: компроміс був не
+          # платою за деградацію, а невикористаним примітивом.
           # [S6.19]: Counter живить Grafana-алерт sn-alert-m2m-nonce-fallback
           # (escalation-семантика multi-zone Upstash — дім: 04_03 §5.15).
           SilkenNet::Metrics::M2M_NONCE_FALLBACK_TOTAL.increment
@@ -111,13 +114,11 @@ module Api
 
           fallback_key = "m2m_nonce_fallback:#{nonce_digest}"
 
-          if Rails.cache.exist?(fallback_key)
+          unless Rails.cache.write(fallback_key, true, expires_in: 10.minutes, unless_exist: true)
             Rails.logger.warn "⚠️ [M2M Replay] Blocked duplicate M2M auth for #{did} (DB fallback, signature reuse)"
             render json: { error: I18n.t("m2m_auth.replay_detected") }, status: :unauthorized
             return
           end
-
-          Rails.cache.write(fallback_key, true, expires_in: 10.minutes)
         end
 
         # Верифікація Ed25519 підпису: signature = Ed25519.sign(private_key, "#{did}:#{timestamp}")
