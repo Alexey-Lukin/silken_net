@@ -17,9 +17,19 @@ dependencies:
   # --- DSP + canonical log-mel oracle (parity vs pure-stdlib, tol 1e-6) ---
   # Floors raised to tested-current (2026-06-13 sweep): an older numpy/librosa could
   # silently change the log-mel computation and break the librosa≡stdlib parity contract.
+  #
+  # 🔴 A `>=` floor does NOT cap, and this job's env is CACHED + path-gated — so the
+  # first resolve onto a new major happens in CI, on an unrelated PR, unattended.
+  # librosa 1.0.0 (2026-08-11) was therefore verified by hand before the floor moved:
+  # `filters.mel` and the periodic Hann window come out BIT-IDENTICAL to 0.11.0
+  # (`np.array_equal` True, maxdiff 0.0), `util.frame` unchanged, and the full
+  # tools/ml parity suite is green on librosa 1.0.0 with numpy both 2.4.6 and 2.5.2.
+  # ⚠️ Scope of that measurement: the ORACLE path only (numpy + librosa + the parity
+  # suite). The full env with `tensorflow` was NOT re-resolved, so the numpy floor
+  # stays where TF's own resolution can move it — raise it only against a TF run.
   - numpy>=2.0
   - scipy>=1.13
-  - librosa>=0.11        # log-mel oracle; pulls soundfile (audio I/O) transitively
+  - librosa>=1.0         # log-mel oracle; pulls soundfile (audio I/O) transitively
   # --- classical ML (dataset eval / future backend-RF parity) ---
   - scikit-learn>=1.5
   - matplotlib>=3.9

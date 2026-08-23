@@ -286,8 +286,13 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   one, leaving the sweep half-applied and looking finished. Write the reason as a tweet with an
   ID to follow (`SEC.30 / canon 04_03 §2.2б`), never as an essay, and length-check **before**
   sending. Instances → memory `project_dependabot_sweep_2026_07`.
-- **Conda `>=` env vs lock.** ML env is a `>=` spec (raise floors to tested-current — esp. a
-  DSP floor like `librosa>=0.11` that protects the parity contract). in-silico has a real
+- **Conda `>=` env vs lock.** ML env is a `>=` spec (raise floors to tested-current — esp. the
+  DSP floor that protects the parity contract; read the current literal in
+  `tools/ml/environment.yml`, never from here). 🔴 **And a `>=` floor plus a CACHED,
+  path-gated CI job is not the guard it reads as:** the env only re-resolves when the cache
+  is cold, so the first run on a new major lands on an unrelated PR, unattended. Before
+  moving that floor, verify the new major BY HAND against the contract it guards — the
+  bit-level comparison, not just a green suite. in-silico has a real
   `conda-lock.yml` — that's the reproducible pin the DFT ran on; the env.yml floors are loose
   on purpose. A local conda env can drift behind the lock (re-sync with `conda-lock install`).
   📌 **The GENERATOR is pinned too — `uv==0.12.3`, in the `requirements-conda-lock.in` header**
