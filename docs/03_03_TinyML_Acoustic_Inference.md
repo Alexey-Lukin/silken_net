@@ -949,6 +949,10 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 
 **Статус:** Не реалізовано. Post-TRL 8. Прерквізити FW.4 ✅ (inference + `model.h` приземлено) — federated retraining лишається TRL-8 надбудовою.
 
+> 🔴 **Rails-половина сьогодні — виміряно, а не оцінено** (мігровано з [`00_07`](00_07_Action_Plan_Tracker) ARCH.71 при його архівації; трекер тримає ВІДКРИТЕ, а це заморожений факт про те, чого немає). Транспорт **існує й гілку типу вже вміє**: `OtaTransmissionWorker#fetch_firmware_record` розрізняє `tinyml`/`weights` і резолвить `TinyMlModel`. Не існує **пускача**: контролера й маршруту для TinyML-деплою в дереві нуль, `TinyMlModel#activate!` має нуль викликачів поза спеками, а `firmware_compatible?`/`min_firmware_version` через нього транзитивно мертві. Єдиний шлях створення моделі — `db/seeds.rb` (демо), тож вимір «нуль `.create` поза спеками» був би ХИБНИМ — це окремий клас промаху, коли зонд не бачить сідів.
+>
+> **Форма реалізації, коли дійде (щоб не виводити наново):** параметризувати `Ota::DeploymentDispatcherService` по `firmware_type` + ендпоінт із власною policy + anti-rollback у **власному просторі версій** моделі — дзеркало Rails-половини `SEC.20`, не її повторне винайдення. ⛔ До появи ДРУГОЇ моделі це чистий YAGNI: один `.tflite` у сідах не створює потреби в тракті доставки.
+
 ### 11.4 Beyond TRL 9: On-Device Learning — Edge RL та Evolutionary Algorithms
 
 > **Контекст:** Federated Learning Pipeline вище — це **top-down** (cloud навчає → edge виконує). Це **достатньо для TRL 9**, але обмежує адаптивність: модель оновлюється раз на тижні/місяці, а кліматичні мікро-зміни відбуваються щодоби.
