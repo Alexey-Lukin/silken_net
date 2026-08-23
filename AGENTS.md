@@ -1,5 +1,6 @@
 # AGENTS.md — SilkenNet
 
+> **Операційна модель (як ми працюємо) — `docs/00_05_AI_Native_Operating_Model.md`.**
 > **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`06_08`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
 > This is the tool-agnostic agent guide (the open [AGENTS.md](https://agents.md) standard) — a **thin pointer**, not a second home. **If anything here conflicts with `CLAUDE.md`, `CLAUDE.md` WINS**: it is the single maintained home (prepended to every session), and this file is kept deliberately thin so it cannot drift. Cursor reads `.cursorrules`, Copilot reads `.github/copilot-instructions.md`, other agents read this — all three are pointers to the same home.
 

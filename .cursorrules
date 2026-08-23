@@ -1,5 +1,6 @@
 # SilkenNet — Cursor IDE Rules
 
+> **Операційна модель (як ми працюємо) — `docs/00_05_AI_Native_Operating_Model.md`.**
 > **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`06_08`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Читай їх ПЕРШИМИ.**
 > Цей файл — лише тонкий pointer + Cursor-specific поведінка + cheat-sheet пасток.
 > **Конфлікт між цим файлом і `CLAUDE.md` → `CLAUDE.md` WINS** (він — єдиний підтримуваний дім; цей файл навмисно тонкий, щоб не дрейфувати).
