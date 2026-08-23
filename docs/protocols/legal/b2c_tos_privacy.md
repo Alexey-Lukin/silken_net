@@ -276,7 +276,7 @@ DPO обов'язковий (Art. 37) лише за: (а) публічний о�
 | §A.11 Застосовне право | token-контур юрисдикція (Phase-2) gated на securities-присуд | `BIZ.22`; entity-вісь → `BIZ.20` |
 | §B.7 Anchor-геолокація | re-identification власника через кадастр — design-review відкритий | `SEC.18` (деталь → «Compliance-gaps» нижче) |
 | §B.8 Retention | TTL/auto-expiry retention-політика не формалізована | `SEC.18` |
-| §B.9 DSAR | self-serve export **і** erasure відвантажені (сторінка безпеки; erasure зі step-up на пароль, ⚖️ 2026-08-21) — рядок оновлено 08-23, доти казав «не почато» й суперечив тілу §B.9. Відкритим лишається **форма стирання там, де запис незнищенний**: `audit_logs` (append-only ланцюг) і оригінали фото `maintenance_records` (Evidence Protocol) | `SEC.18` |
+| §B.9 DSAR | self-serve export **і** erasure відвантажені (сторінка безпеки; erasure зі step-up на пароль, ⚖️ 2026-08-21). Відкритим лишається **форма стирання там, де запис незнищенний**: `audit_logs` (append-only ланцюг) і оригінали фото `maintenance_records` (Evidence Protocol) | `SEC.18` |
 
 Повний трекер — [`00_07`](../../00_07_Action_Plan_Tracker.md).
 
