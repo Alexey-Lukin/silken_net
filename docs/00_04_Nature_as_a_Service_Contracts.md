@@ -308,6 +308,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 |---|---|
 | B2B MSA + SLA + Subscription Order Form (каркас — [`msa_skeleton.md`](protocols/legal/msa_skeleton.md)) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 |
 | B2C ToS / Privacy / Cookie (чернетки — [`b2c_tos_privacy.md`](protocols/legal/b2c_tos_privacy.md)); чи адресуємо CCPA/CPRA | [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 |
+| Машинна інтеграційна поверхня для Клієнта (OpenAPI-контракт · org-scoped outbound-webhooks). ⚠️ Канон її НЕ обіцяє: [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) тримає production API-доступ серед **УТРИМУВАНИХ** активів — а чернетковий шар уже продає «Tier A (Dashboard + API)» | [`00_07`](00_07_Action_Plan_Tracker) ARCH.63 |
 | KYC/AML-процес для B2B (регуляторний шар поверх `hadron_kyc_status`) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 |
 | B2B Fiat-to-Retirement SPV (юрисдикція · ліцензія · кастодіан · сертифікат-флоу) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.15 |
 | Юр-оболонка DAO (LLC / Swiss Verein / Wyoming DUNA) — механіка вже в [`05_06`](05_06_Governance_and_DAO) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 |
