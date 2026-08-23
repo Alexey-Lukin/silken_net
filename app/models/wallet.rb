@@ -59,7 +59,12 @@ class Wallet < ApplicationRecord
 
   # [KYC.1] KYC чіпляється до адреси-бенефіціара: власна адреса → власний статус;
   # зміна адреси = новий суб'єкт → скидання у pending + ре-верифікація.
+  # rubocop:disable Rails/ActiveRecordCallbacksOrder -- обидві позиції свідомі:
+  # `before_destroy` стоїть одразу за `dependent:`-асоціаціями (його `prepend: true`
+  # читається лише поруч із ними), а ця пара `before_update`+`after_commit` є
+  # ОДНИМ механізмом KYC.1 і розлучати її заради канонічного порядку — втрата.
   before_update :reset_hadron_kyc_on_address_change
+  # rubocop:enable Rails/ActiveRecordCallbacksOrder
   after_commit :enqueue_hadron_kyc_verification,
                if: -> { saved_change_to_crypto_public_address? && crypto_public_address.present? }
 

@@ -15,7 +15,8 @@ RSpec.describe CoapServerPdu do
       "B974656C656D65747279" \
       "056261746368" \
       "0D02534E45542D512D4141424243434444" \
-      "FF" "DEAD"
+      "FF" \
+      "DEAD"
   end
 
   # Пін-кейс бага Брами: 0xFF у MID (coap_mid++ → кожен 256-й flush) і в
@@ -27,7 +28,8 @@ RSpec.describe CoapServerPdu do
       "B974656C656D65747279" \
       "056261746368" \
       "0D02534E45542D512D3030464630304646" \
-      "FF" "FF01FF"
+      "FF" \
+      "FF01FF"
   end
 
   def bin(hex) = [ hex ].pack("H*")

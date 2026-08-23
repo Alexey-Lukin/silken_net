@@ -42,7 +42,12 @@ module AccountSecurity
     # у `gaia_lint.rake` парний до цього коментаря.
     def render_qr_block
       div(class: "flex justify-center p-6 bg-white w-fit mx-auto") do
+        # rubocop:disable Rails/OutputSafety -- розмітка ГЕНЕРУЄТЬСЯ RQRCode
+        # (`as_svg`) із нашого ж provisioning-URI: у SVG іде path-геометрія, а не
+        # текст користувача, тож інтерполювати сюди нічого. Phlex-ів `raw safe(...)`
+        # і є санкціонований шлях для довіреної розмітки.
         raw safe(qr_svg)
+        # rubocop:enable Rails/OutputSafety
       end
     end
 

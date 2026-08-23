@@ -75,8 +75,16 @@ class ParametricInsurance < ApplicationRecord
   # що будь-який майбутній шлях перил проставить.
   validates :trigger_event, presence: true
 
-  # Поліморфний зв'язок: виплата буде зафіксована в блокчейні
-  has_one :blockchain_transaction, as: :sourceable
+  # Поліморфний зв'язок: виплата буде зафіксована в блокчейні.
+  # 🔴 `:restrict_with_error`, а не відсутність `dependent:`: поліморфний FK не має
+  # DB-обмеження, тож знищення поліса лишило б `blockchain_transactions` рядок із
+  # живим `sourceable_type` і мертвим `sourceable_id`. Ціна не абстрактна —
+  # `Insurance::ReserveGate` рахує виплачений резерв саме через
+  # `sourceable_id IN (ParametricInsurance…)`, тож сирота ТИХО випала б із суми,
+  # занизивши її. ⚠️ `:nullify` тут гірший за відсутність: він лишає напів-запис
+  # (тип є, id немає), а `:destroy` знищив би грошовий рядок. Прод-шляху destroy
+  # сьогодні немає — це гард під майбутній, поставлений до його появи.
+  has_one :blockchain_transaction, as: :sourceable, dependent: :restrict_with_error
 
   # =========================================================================
   # АВТОНОМНИЙ ОРАКУЛ (D-MRV) — Trigger-1 двотригерного страхування

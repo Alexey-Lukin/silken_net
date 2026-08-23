@@ -151,5 +151,8 @@ puts "  %-8s %10s %10s %10s" % [ "panel_w", "10%", "12.5%", "15%" ]
     pp2 = params.merge(panel_w: pw, canopy_pct: canopy)
     daily_generation_wh(pp2) - daily_consumption_wh(pp2, phase3: false)
   end
+  # rubocop:disable Lint/FormatParameterMismatch -- коп не рахує splat: `balances`
+  # це три елементи, тож аргументів рівно чотири, як і полів.
   puts "  %-8.0f %+10.2f %+10.2f %+10.2f" % [ pw, *balances ]
+  # rubocop:enable Lint/FormatParameterMismatch
 end

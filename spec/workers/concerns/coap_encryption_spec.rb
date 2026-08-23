@@ -127,7 +127,7 @@ RSpec.describe CoapEncryption do
       decrypted = decrypt(encrypted)
 
       # Plaintext = [5 envelope][5 payload][6 null padding] inside a 16-byte block
-      padding = decrypted.byteslice(5 + payload.bytesize..)
+      padding = decrypted.byteslice((5 + payload.bytesize)..)
       expect(padding.bytes).to all(eq(0))
     end
 

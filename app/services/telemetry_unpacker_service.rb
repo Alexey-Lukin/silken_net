@@ -580,8 +580,11 @@ class TelemetryUnpackerService < ApplicationService
     # «всі три непорожні». Лишено свідомо: трійка пишеться атомарно, а частковий
     # рядок мусить дати cold-start (його ловить finite-гард нижче), НЕ мовчазне
     # продовження з давнішого хвоста через розрив ланцюга.
+    # rubocop:disable Rails/WhereNotWithMultipleConditions -- АБО-семантика тут
+    # СВІДОМА й пояснена вище: частковий рядок мусить дати cold-start.
     scope = tree.telemetry_logs
                 .where.not(lorenz_state_x: nil, lorenz_state_y: nil, lorenz_state_z: nil)
+    # rubocop:enable Rails/WhereNotWithMultipleConditions
 
     row = lorenz_tail_row(scope.where(created_at: LORENZ_TAIL_FAST_WINDOW.ago..)) ||
           lorenz_tail_row(scope)

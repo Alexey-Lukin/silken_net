@@ -46,7 +46,9 @@ module TurboStreamInventory
   }.freeze
 
 
-  Site = Struct.new(:file, :line, :method, :arg_kind, :arg_pattern, keyword_init: true)
+  # ⚠️ Член зветься `call_name`, а НЕ `method`: `Struct.new(:method)` перекриває
+  # `Object#method`, тобто мовчки ламає інтроспекцію на кожному екземплярі.
+  Site = Struct.new(:file, :line, :call_name, :arg_kind, :arg_pattern, keyword_init: true)
 
   class << self
     # Місця ПІДПИСКИ (`turbo_stream_from`) — саме вони мінтять capability-токен.
@@ -120,7 +122,7 @@ module TurboStreamInventory
           # Не-`_to` форма адресує не аргументом, а САМИМ записом (`[self]`),
           # тож її перший аргумент — не імʼя стріму, і класифікувати його хибно.
           kind, pattern = name.end_with?("_to") || name == SUBSCRIBE_METHOD ? classify(first_arg) : [ :implicit_self, nil ]
-          Site.new(file: path, line: line, method: name, arg_kind: kind, arg_pattern: pattern)
+          Site.new(file: path, line: line, call_name: name, arg_kind: kind, arg_pattern: pattern)
         end
       end
     end
@@ -133,7 +135,12 @@ module TurboStreamInventory
     # ЗЕЛЕНИМ при приземленій мутації — гейт не бачив рівно свого класу.
     # `consumed` не дає порахувати `X.foo(a)` двічі: внутрішній `:call`-вузол
     # уже спожитий обгорткою `:method_add_arg` (та відвідується раніше).
-    def calls(node, acc = [], consumed = {})
+    # ⚠️ `consumed` — identity-хеш, а не мапа `object_id`: ключем іде сам вузол.
+    # `object_id` як ключ переживає свій обʼєкт (id перевикористовуються після
+    # GC), тобто теоретично дає ХИБНЕ «вже спожито» на чужому вузлі; тут дерево
+    # живе весь прохід, тож різниця не в поведінці, а в тому, що форма більше
+    # не спирається на цю обставину.
+    def calls(node, acc = [], consumed = {}.compare_by_identity)
       name_node, args_node = shape(node, consumed)
       ident = name_node && ident_token(name_node)
       acc << [ ident[0], ident[1], first_arg(args_node) ] if ident
@@ -148,12 +155,12 @@ module TurboStreamInventory
     def shape(node, consumed)
       case node[0]
       when :method_add_arg
-        consumed[node[1].object_id] = true
+        consumed[node[1]] = true
         [ target_name(node[1]), node[2] ]
       when :command      then [ node[1], node[2] ]
       when :command_call then [ node[3], node[4] ]
       when :vcall        then [ node[1], nil ]
-      when :call         then [ consumed[node.object_id] ? nil : node[3], nil ]
+      when :call         then [ consumed[node] ? nil : node[3], nil ]
       else [ nil, nil ]
       end
     end

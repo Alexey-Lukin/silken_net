@@ -6,6 +6,25 @@ plugins:
 
 AllCops:
   NewCops: enable
+  # [OPS.33] 🔴 Project-index (`rubydex`) стоїть ВИМКНЕНИМ — і це вимір, не
+  # обережність. Увімкнення дало **60 хибних позитивів на коректному коді**, бо
+  # індекс приписує спільний простір імен тому, що ділить лише файлову систему:
+  #   · `Lint/ConstantReassignment` × ~55 — кожен `scripts/*.rb` є ОКРЕМОЮ
+  #     програмою (`ruby scripts/x.rb`) зі своїм top-level `ROOT`/`TREES`/`EXEMPT`;
+  #     🔴 і найгірший хіт — пара `app/services/silken_net/attractor.rb` ⟷
+  #     `firmware/bio_contracts/bio_contract.rb`, тобто НАВМИСНЕ дзеркало
+  #     подвійного обчислення [FW.7], на якому стоїть увесь DCI.
+  #   · `Lint/DuplicateMethods` × 5 — той самий клас, і він уже стоїть у CI-кроці
+  #     «Lint for dead code» по периметру `app lib scripts config`, тож індекс
+  #     ЗЛАМАВ БИ наявний гейт.
+  # Ціна відмови названа вголос: без індексу мовчать `Lint/UnusedPrivateMethod`
+  # і `Lint/DeprecatedReference` (обидва нижче). Обмін вигідний — ті двоє дали
+  # 1 хіт, і той свідомий [ARCH.103], а ці двоє живі й безкоштовні.
+  # 🔎 Гем лишається в дереві як ON-DEMAND лінза, не як гейт:
+  #   printf 'inherit_from: .rubocop.yml\nAllCops:\n  UseProjectIndex: true\nLint/UnusedPrivateMethod:\n  Enabled: true\n' > /tmp/idx.yml
+  #   bin/rubocop --config /tmp/idx.yml --only Lint/UnusedPrivateMethod --cache false
+  # Ціна прогону виміряна: +1.0 с на 18 с холодного по 995 файлах.
+  UseProjectIndex: false
   # Сторонній вендорнутий код (git-сабмодулі: mruby, CMSIS-DSP, CMSIS_6) —
   # не наш стиль, не лінтимо. RuboCop ігнорує vendor/ за замовчуванням, але не firmware/extern.
   Exclude:
@@ -13,6 +32,221 @@ AllCops:
 
 Bundler/OrderedGems:
   Enabled: true
+
+# ═══════════════════════════════════════════════════════════════════════════
+# [OPS.33] Департаменти, які omakase гасить ЦІЛКОМ
+# ═══════════════════════════════════════════════════════════════════════════
+# 🔴 Механізм точніший за «omakase все вимикає»: `DisabledByDefault` він НЕ
+# ставить — він гасить десять департаментів ПОІМЕННО. Саме тому вцілів `RSpec`
+# (гем про нього не знає), тобто вся наша лінт-спроможність трималась на тому,
+# чого omakase не побачив: із 914 копів було ввімкнено 150, і 104 з них — RSpec.
+# Поза тим департаментом жило 46 із 799.
+#
+# Вмикаємо ДЕПАРТАМЕНТОМ, а не переліком копів, і це несуче: перелік застигає,
+# а департамент разом із `NewCops: enable` впускає нові копи наступних версій
+# самі. Ціною цього є явний реєстр нижче — усе, чого ми свідомо НЕ тримаємо.
+#
+# ⚠️ Ціна периметра зміряна ДО вмикання (`--only` вмикає коп в обхід
+# `Enabled: false`, перевірено контролем): кожен коп цих чотирьох департаментів,
+# НЕ названий у реєстрі нижче, дає на цьому дереві НУЛЬ хітів. Тобто гейт
+# народжується зеленим — а гейт, народжений червоним, знімає перший, кому він
+# заважає.
+Security:
+  Enabled: true
+Lint:
+  Enabled: true
+Rails:
+  Enabled: true
+Performance:
+  Enabled: true
+
+# ── Реєстр НЕ-тримань. Дві різні речі під одним `Enabled: false` ────────────
+# (а) СВІДОМА ПРАКТИКА — коп суперечить ратифікованому рішенню, це won't-do;
+# (б) БОРГ — коп має рацію, просто не взято сьогодні.
+# Різницю тримаємо словами, бо `Enabled: false` її не несе, і без неї наступний
+# прохід читає won't-do як недороблене (або навпаки — борг як присуд).
+
+# — (а) свідома практика —
+Lint/ConstantResolution:            # вимагає `::` на КОЖНІЙ константі; вимкнений і в самому RuboCop
+  Enabled: false
+Lint/NumberConversion:              # `Integer(x)` замість `to_i` — не наш стиль
+  Enabled: false
+Lint/MissingSuper:                  # Phlex-компоненти й сервіси свідомо не кличуть super
+  Enabled: false
+Lint/ScriptPermission:              # `scripts/*.rb` кличуться через `ruby`, не через shebang
+  Enabled: false
+Lint/UselessAssignment:             # живі хіти лише у `spec/` (фікстурні привʼязки); в `app lib scripts config` коп уже HARD у CI-кроці «Lint for dead code»
+  Enabled: false
+Lint/AmbiguousOperatorPrecedence:   # вимагає дужок навколо кожного змішаного виразу
+  Enabled: false
+Rails/EnvironmentVariableAccess:    # ENV читаємо свідомо — `ENV[..].presence || credentials` [SEC.22]
+  Enabled: false
+Rails/Output:                       # `scripts/`/`lib/tasks/` друкують звіти за призначенням
+  Enabled: false
+Rails/SkipsModelValidations:        # `update_column`/`update_all`/`insert_all` на hot-path телеметрії — KENOSIS, свідомий обхід колбеків
+  Enabled: false
+Performance/OpenStruct:             # тест-фікстури; їх окремо конвертує кампанія TEST.12
+  Enabled: false
+
+# — (б) борг: коп має рацію, робота не взята —
+# ⛔ Не «вмикати за настроєм»: кожен рядок тут = окремий прохід із власною
+# валідацією. Знімати рядок можна лише разом із доведеним нулем хітів.
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+Lint/DuplicateBranch:
+  Enabled: false
+Lint/IncompatibleIoSelectWithFiberScheduler:
+  Enabled: false
+Lint/IneffectiveAccessModifier:
+  Enabled: false
+Lint/ParenthesesAsGroupedExpression:
+  Enabled: false
+Lint/RedundantDirGlobSort:
+  Enabled: false
+Lint/RedundantRequireStatement:
+  Enabled: false
+Lint/ShadowingOuterLocalVariable:
+  Enabled: false
+Lint/SuppressedExceptionInNumberConversion:
+  Enabled: false
+Lint/SymbolConversion:
+  Enabled: false
+Lint/UnderscorePrefixedVariableName:
+  Enabled: false
+Lint/UnusedBlockArgument:
+  Enabled: false
+Lint/UnusedMethodArgument:
+  Enabled: false
+Lint/UselessAccessModifier:
+  Enabled: false
+Lint/UselessConstantScoping:
+  Enabled: false
+Rails/ActionOrder:
+  Enabled: false
+Rails/ApplicationController:
+  Enabled: false
+Rails/Blank:
+  Enabled: false
+Rails/BulkChangeTable:
+  Enabled: false
+Rails/Date:
+  Enabled: false
+Rails/Delegate:
+  Enabled: false
+Rails/DurationArithmetic:
+  Enabled: false
+Rails/Env:
+  Enabled: false
+Rails/EnvLocal:
+  Enabled: false
+Rails/ExpandedDateRange:
+  Enabled: false
+Rails/FilePath:
+  Enabled: false
+Rails/FreezeTime:
+  Enabled: false
+Rails/I18nLocaleAssignment:
+  Enabled: false
+Rails/I18nLocaleTexts:
+  Enabled: false
+Rails/IndexBy:
+  Enabled: false
+Rails/IndexWith:
+  Enabled: false
+Rails/InverseOf:                    # 🔴 названо в урожаї OPS.33: асоціації з кастомним FK без `inverse_of`
+  Enabled: false
+Rails/NegateInclude:
+  Enabled: false
+Rails/OrderById:
+  Enabled: false
+Rails/Pick:
+  Enabled: false
+Rails/Pluck:
+  Enabled: false
+Rails/PluckId:
+  Enabled: false
+Rails/RakeEnvironment:
+  Enabled: false
+Rails/RedundantTravelBack:
+  Enabled: false
+Rails/ResponseParsedBody:
+  Enabled: false
+Rails/RootPathnameMethods:
+  Enabled: false
+Rails/SaveBang:                     # 🔴 проігнорований результат `save` = тихий незапис; клас реальний
+  Enabled: false
+Rails/SchemaComment:
+  Enabled: false
+Rails/SquishedSQLHeredocs:
+  Enabled: false
+Rails/StrongParametersExpect:
+  Enabled: false
+Rails/TimeZone:
+  Enabled: false
+Rails/WhereExists:
+  Enabled: false
+Rails/WhereRange:
+  Enabled: false
+Performance/ArraySemiInfiniteRangeSlice:
+  Enabled: false
+Performance/BigDecimalWithNumericArgument:
+  Enabled: false
+Performance/Casecmp:
+  Enabled: false
+Performance/ChainArrayAllocation:
+  Enabled: false
+Performance/CollectionLiteralInLoop:
+  Enabled: false
+Performance/ConstantRegexp:
+  Enabled: false
+Performance/Count:
+  Enabled: false
+Performance/DeletePrefix:
+  Enabled: false
+Performance/DeleteSuffix:
+  Enabled: false
+Performance/DoubleStartEndWith:
+  Enabled: false
+Performance/EndWith:
+  Enabled: false
+Performance/IoReadlines:
+  Enabled: false
+Performance/MapCompact:
+  Enabled: false
+Performance/RegexpMatch:
+  Enabled: false
+Performance/ReverseFirst:
+  Enabled: false
+Performance/SelectMap:
+  Enabled: false
+Performance/StringInclude:
+  Enabled: false
+Performance/StringReplacement:
+  Enabled: false
+Performance/Sum:
+  Enabled: false
+Performance/TimesMap:
+  Enabled: false
+Performance/ZipWithoutBlock:
+  Enabled: false
+
+# ── Три копи, додані в RuboCop 1.89 — кожен розібрано окремо ───────────────
+# Усі три потребують project-index, який вимкнено вище з виміряної причини.
+# ⚠️ Лишати їх «увімкненими» було б гірше за вимкнення: без індексу вони віддають
+# НУЛЬ, а прогін виходить 0 — тобто зелений читався б як доказ там, де прилад
+# не дивиться (доведено позитивним контролем: файл із мертвим private-методом,
+# `@deprecated`-посиланням і навмисним одруком не дав жодного хіта).
+Lint/UnusedPrivateMethod:           # on-demand лінза — рецепт у шапці `AllCops`
+  Enabled: false
+Lint/DeprecatedReference:           # `@deprecated`-тегів у дереві нема; оживе разом з індексом
+  Enabled: false
+# `NameTypo` — окремий випадок: він мовчить НАВІТЬ з індексом. Позитивний
+# контроль (`def recieve_paylod`) не дав хіта ні так, ні так, тобто коп у нас
+# не падає взагалі. Переоцінити, коли він навчиться падати.
+Lint/NameTypo:
+  Enabled: false
 
 # --- RSpec cops ---
 RSpec/MultipleExpectations:

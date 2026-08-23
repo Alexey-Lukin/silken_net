@@ -614,7 +614,12 @@ class BlockchainBurningService < ApplicationService
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip,
                                                       :actuator_stuck, :emergency_response_undeliverable ])
+                             # rubocop:disable Rails/WhereNotWithMultipleConditions -- заперечення
+                             # КОНʼЮНКЦІЇ тут і є наміром [SLASH-1 gap-E]: викидаємо рівно
+                             # машинно-закриті (`resolved` І `resolved_by` NULL), лишаючи
+                             # і відкриті, і закриті людиною.
                              .where.not(status: :resolved, resolved_by: nil)
+                             # rubocop:enable Rails/WhereNotWithMultipleConditions
                              .where(created_at: ..30.minutes.ago)
     return false unless stale_critical.exists?
 

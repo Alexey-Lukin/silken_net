@@ -86,7 +86,7 @@ module FontDeliveryGate
   def generic?(family) = CSS_GENERIC_FAMILIES.include?(family)
 end
 
-RSpec.describe "Font delivery", type: :model do # rubocop:disable RSpec/DescribeClass
+RSpec.describe "Font delivery", type: :model do
   let(:family) { FontDeliveryGate.declared_mono_family }
 
   # Ліхтар на ПОПУЛЯЦІЮ: без нього кожен приклад нижче зелений на порожньому

@@ -37,7 +37,11 @@ class Tree < ApplicationRecord
   # ⛔ Не міняти на дубль умови в Ruby (`any?(&:status_active?)`): лямбда КЛИЧЕ
   # скоуп, тобто правило лишається в одному домі — `EwsAlert.unresolved`.
   # `dependent:` свідомо немає — знищення веде батьківська асоціація вище.
+  # rubocop:disable Rails/HasManyOrHasOneDependent -- відсутність свідома й
+  # пояснена вище: це відфільтрована ПРОЄКЦІЯ тієї самої таблиці, знищенням якої
+  # відає батьківська асоціація.
   has_many :unresolved_ews_alerts, -> { unresolved }, class_name: "EwsAlert", inverse_of: :tree
+  # rubocop:enable Rails/HasManyOrHasOneDependent
   has_many :maintenance_records, as: :maintainable, dependent: :delete_all
   has_many :ai_insights, as: :analyzable, dependent: :delete_all
 
@@ -140,7 +144,12 @@ class Tree < ApplicationRecord
 
   # --- СКОУПИ (The Watchers) ---
   # `Tree.active` автогенерується `enum :status, { active: 0, ... }`, не дублюємо.
-  scope :geolocated, -> { where.not(latitude: nil, longitude: nil) }
+  # ⚠️ ДВА окремі `where.not`, не один із двома ключами: другий дає
+  # `NOT (lat IS NULL AND lng IS NULL)`, тобто АБО — запис з однією координатою
+  # вважався б геолокованим. Дім поняття — `GeoLocatable#geolocated?` (обидва
+  # поля), і `broadcast_map_update` гейтується так само, тож напів-координатне
+  # дерево скоуп віддавав, а броадкаст по ньому мовчки не робив нічого.
+  scope :geolocated, -> { where.not(latitude: nil).where.not(longitude: nil) }
 
   # [SILENCE-1] Аномальна тиша: active-дерево, що ВЖЕ виходило в ефір, але мовчить
   # довше порога. Поза скоупом свідомо: last_seen_at NULL («мовчання ненародженого» —

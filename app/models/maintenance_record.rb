@@ -162,7 +162,10 @@ class MaintenanceRecord < ApplicationRecord
   scope :recent,            -> { order(performed_at: :desc) }
   scope :by_type,           ->(type) { where(action_type: type) }
   scope :hardware_verified, -> { where(hardware_verified: true) }
-  scope :with_gps,          -> { where.not(latitude: nil, longitude: nil) }
+  # ⚠️ ДВА окремі `where.not` — див. `Tree.geolocated`: один виклик із двома
+  # ключами дає ЗАПЕРЕЧЕННЯ КОНʼЮНКЦІЇ (АБО), а це доказова поверхня
+  # Anti-Sofa-Repair — «є GPS» тут мусить означати обидві координати.
+  scope :with_gps,          -> { where.not(latitude: nil).where.not(longitude: nil) }
 
 # =========================================================================
 # КОЛБЕКИ (The Healing Protocol)

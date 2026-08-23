@@ -79,7 +79,7 @@ RSpec.describe "[UI.1] Дашборд-сторінки тримають AA в о
   end
 
   %i[light dark].each do |theme|
-    # rubocop:disable RSpec/NoExpectationExample — обидва expect живуть у
+    # rubocop:disable RSpec/NoExpectationExample -- обидва expect живуть у
     # `sweep` (спільні для чотирьох прикладів); статичний коп у хелпер не ходить.
     it "нуль провальних AA-пар у #{theme}-темі на всіх сторінках контуру" do
       sweep(theme)

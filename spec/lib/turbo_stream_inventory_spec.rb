@@ -45,14 +45,19 @@ RSpec.describe TurboStreamInventory do
     end
 
     it "recognises an org-scoped interpolation" do
+      # rubocop:disable Lint/InterpolationCheck -- це РЯДОК-ФІКСТУРА вихідного коду
+      # під розбір Ripper-ом; `#{...}` мусить лишитись літеральним.
       site = subscription_kind('"telemetry_stream_org_#{@organization.id}"')
+      # rubocop:enable Lint/InterpolationCheck
 
       expect(site.arg_kind).to eq(:scoped_string)
       expect(site.arg_pattern).to include("_org_")
     end
 
     it "separates interpolation WITHOUT an org token (safe only transitively)" do
+      # rubocop:disable Lint/InterpolationCheck -- рядок-фікстура вихідного коду, див. вище.
       expect(subscription_kind('"ota_channel_#{@gateway.uid}"').arg_kind).to eq(:unscoped_interpolation)
+      # rubocop:enable Lint/InterpolationCheck
     end
 
     it "treats an ivar as a record reference" do

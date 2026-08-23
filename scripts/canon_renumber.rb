@@ -124,7 +124,7 @@ def span_index(text)
   in_fence = false
   text.each_line do |line|
     in_fence = !in_fence if line.start_with?("```")
-    spans[:fence] << (off...off + line.length) if in_fence || line.start_with?("```")
+    spans[:fence] << (off...(off + line.length)) if in_fence || line.start_with?("```")
     off += line.length
   end
 

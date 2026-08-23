@@ -164,7 +164,10 @@ RSpec.describe ApplicationWeb3Worker do
       allow(worker).to receive(:within_rpc_limit).and_raise(Sidekiq::Limiter::OverLimit)
 
       expect {
+        # rubocop:disable Lint/EmptyBlock -- порожній блок і Є предметом: метод
+        # мусить впасти ДО того, як дійде до `yield`.
         worker.with_web3_error_handling("Polygon", "TX #123") { }
+        # rubocop:enable Lint/EmptyBlock
       }.to raise_error(Sidekiq::Limiter::OverLimit)
 
       expect(Rails.logger).to have_received(:warn).with(/RPC rate limit exceeded for TX #123/)
@@ -176,7 +179,9 @@ RSpec.describe ApplicationWeb3Worker do
       allow(worker).to receive(:within_rpc_limit).and_raise(Sidekiq::Limiter::OverLimit)
 
       expect {
+        # rubocop:disable Lint/EmptyBlock -- див. вище: порожній блок навмисний.
         worker.with_web3_error_handling("Polygon") { }
+        # rubocop:enable Lint/EmptyBlock
       }.to raise_error(Sidekiq::Limiter::OverLimit)
 
       expect(Rails.logger).to have_received(:warn).with(/RPC rate limit exceeded\./)

@@ -362,6 +362,18 @@ RSpec.describe MaintenanceRecord, type: :model do
         expect(described_class.with_gps).to include(with_gps)
         expect(described_class.with_gps).not_to include(without_gps)
       end
+
+      # 🔦 Дзеркало ліхтаря з `tree_spec` — обидві фікстури вище мають або
+      # обидві координати, або жодної, тож зламану (АБО-) форму скоупа вони
+      # пропускають. Тут це не гігієна: `with_gps` — доказова поверхня
+      # Anti-Sofa-Repair, і «є GPS» з однією координатою є хибним свідченням.
+      it "excludes a record that has only one coordinate" do
+        half_lat = create(:maintenance_record, latitude: 49.4, longitude: nil)
+        half_lng = create(:maintenance_record, latitude: nil, longitude: 32.0)
+
+        expect(described_class.with_gps).not_to include(half_lat)
+        expect(described_class.with_gps).not_to include(half_lng)
+      end
     end
   end
 

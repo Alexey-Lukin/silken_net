@@ -85,7 +85,10 @@ class OtaTransmissionWorker
 
         raise "NACK: Шлюз відхилив чанк #{chunk_index} [Code: #{response&.code}]" unless response&.success?
       end
-    rescue Timeout::Error, StandardError => e
+    # `Timeout::Error < RuntimeError < StandardError`, тож перелічувати його
+    # окремо було ЗАТІНЕННЯМ: перша гілка недосяжна, а читалась як окрема
+    # обробка таймауту. Поведінка не змінюється — вона й була однією гілкою.
+    rescue StandardError => e
       handle_chunk_failure(queen_uid, firmware_type, record_id, chunk_index, retry_count, e.message)
       return
     end

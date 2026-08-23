@@ -91,7 +91,7 @@ module Users
     def security_indicator(label, is_active, value)
       div(class: "p-3 border border-gaia-border text-center") do
         div(class: "flex items-center justify-center gap-2 mb-2") do
-          div(class: tokens("h-2 w-2 rounded-full", "bg-gaia-primary-strong": is_active, "bg-status-danger-accent": !is_active)) { }
+          div(class: tokens("h-2 w-2 rounded-full", "bg-gaia-primary-strong": is_active, "bg-status-danger-accent": !is_active))
           span(class: "text-mini text-gaia-text-muted uppercase") { label }
         end
         p(class: tokens("text-compact", "text-gaia-primary-strong": is_active, "text-status-danger-accent": !is_active)) { value }

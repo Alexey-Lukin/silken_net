@@ -87,7 +87,7 @@ module Actuators
     def render_controls
       # Route helpers потребують request context (url_options).
       # При Turbo broadcast з воркера — request context відсутній.
-      return unless respond_to?(:view_context) && view_context&.respond_to?(:url_options)
+      return unless respond_to?(:view_context) && view_context.respond_to?(:url_options)
 
       # [UI.14, присуд founder 2026-08-13] Ручна дія тут рівно ОДНА — аварійна
       # зупинка, і вона єдина, що має спостережуваний ефект сьогодні: `STOP` є

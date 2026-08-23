@@ -84,7 +84,7 @@ module SystemParameterDeliveryGate
   end
 end
 
-RSpec.describe "SystemParameter delivery", type: :model do # rubocop:disable RSpec/DescribeClass
+RSpec.describe "SystemParameter delivery", type: :model do
   # ── Ліхтарі на ВХОДИ. Без них кожне твердження нижче зелене на порожньому наборі.
   it "is a live check (the seed file and the read surface are both non-empty)" do
     expect(SystemParameterDeliveryGate.seeded_keys.size).to be > 10,

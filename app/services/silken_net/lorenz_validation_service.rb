@@ -126,7 +126,11 @@ module SilkenNet
       i = 0
       while i < indexed.size
         j = i
+        # rubocop:disable Lint/FloatComparison -- ТОЧНА рівність тут і є предметом:
+        # це виявлення ЗБІГІВ у рангуванні Спірмена. Epsilon-порівняння злило б у
+        # звʼязку різні-але-близькі значення, тобто зіпсувало б сам ранг.
         j += 1 while j < indexed.size && indexed[j][0].to_f == indexed[i][0].to_f
+        # rubocop:enable Lint/FloatComparison
         avg_rank = ((i + 1) + j) / 2.0 # 1-based ranks (i+1)..j averaged over ties
         (i...j).each { |k| out[indexed[k][1]] = avg_rank }
         i = j

@@ -220,6 +220,18 @@ RSpec.describe Tree, type: :model do
         expect(described_class.geolocated).to include(located)
         expect(described_class.geolocated).not_to include(unlocated)
       end
+
+      # 🔦 Ліхтар, без якого приклад вище зелений і на ЗЛАМАНОМУ скоупі: обидві
+      # його фікстури мають координати або обидві, або жодної, тож негація
+      # конʼюнкції (`where.not(latitude:, longitude:)` = АБО) від правильного
+      # І не відрізняється. Розрізняє лише напів-координатний запис.
+      it "excludes a tree that has only one coordinate" do
+        half_lat = create(:tree, latitude: 49.4, longitude: nil)
+        half_lng = create(:tree, latitude: nil, longitude: 32.0)
+
+        expect(described_class.geolocated).not_to include(half_lat)
+        expect(described_class.geolocated).not_to include(half_lng)
+      end
     end
 
     # [SILENCE-1] Аномальна тиша: active + вже виходив в ефір + мовчить довше порога.

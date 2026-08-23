@@ -22,8 +22,13 @@ class Gateway < ApplicationRecord
   # Телеметрія дерев та власна діагностика Королеви
   has_many :telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :nullify
   has_many :gateway_telemetry_logs, foreign_key: :queen_uid, primary_key: :uid, dependent: :delete_all
+  # rubocop:disable Rails/HasManyOrHasOneDependent -- це READ-проєкція «останній
+  # рядок», а не володіння: знищенням журналу відає сусідній
+  # `has_many :gateway_telemetry_logs, dependent: :delete_all`. `dependent:` тут
+  # означав би «знести лише найсвіжіший запис», що не є ніяким наміром.
   has_one :latest_gateway_telemetry_log, -> { order(created_at: :desc) },
           class_name: "GatewayTelemetryLog", foreign_key: :queen_uid, primary_key: :uid
+  # rubocop:enable Rails/HasManyOrHasOneDependent
 
   # [ВИПРАВЛЕНО]: Знищення Журналу Обслуговування (Аудит).
   # Використовуємо :restrict_with_error, щоб зберегти історію витрат та ремонтів.

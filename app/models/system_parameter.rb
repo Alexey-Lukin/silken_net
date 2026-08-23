@@ -117,11 +117,15 @@ class SystemParameter < ApplicationRecord
   end
 
   def value_within_bounds
+    # `return` усередині `begin…end` у контексті ПРИСВОЄННЯ читається так, ніби
+    # він віддає значення змінній, — насправді він виходить із методу. Розводимо
+    # два наміри явно: rescue дає `nil`, вихід стоїть окремим рядком.
     numeric = begin
       BigDecimal(value)
     rescue ArgumentError, TypeError
-      return
+      nil
     end
+    return if numeric.nil?
 
     if min_value.present? && numeric < min_value
       errors.add(:value, "must be >= #{min_value}")
