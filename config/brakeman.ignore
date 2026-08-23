@@ -5,8 +5,8 @@
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain burning service (INF.22: dedicated ORACLE_SLASHER_PRIVATE_KEY, fallback chain removed; the key derives from Eth::Key.address, never user input)."
     },
     {
-      "fingerprint": "ba7472990b21494f91cd890baeb0770e75a757a2ba1c624da6c4b4db67ab3f30",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain minting service (S6.5: lock timeout increased from 30s to 120s)."
+      "fingerprint": "b988c2dbcafbefd862b1efa58a7ab995efc263a91efe91eecbc3c65cb9258b27",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain minting service; the key derives from Eth::Key.address, never user input. [ARCH.106] The TTL now lives in the MINT_LOCK_TTL constant rather than a literal — deliberately no number here: this fingerprint is keyed on the expression, so a note that restates the value goes stale in exactly the pass that re-fingerprints it (the previous note still said '30s to 120s' after the value moved)."
     },
     {
       "fingerprint": "291c420b3b7cce44791c0f3d0b15625b917dd925987da32022dab8e3acd776aa",
