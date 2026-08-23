@@ -405,20 +405,20 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
-      # `rubocop-rails-omakase` disables the whole Lint department — measured:
-      # 154 Lint cops, 5 enabled. So a green `bin/rubocop` says nothing about
-      # dead code, and that blindness already shipped an orphaned payload in a
-      # money-path worker. This re-enables only the "the code says something
-      # that cannot be true or has no effect" subset, on the perimeter where it
-      # is currently CLEAN (0 offences over 505 files) — a gate born green.
-      # `spec/` and `db/seeds.rb` are deliberately out: they hold 24 hits of a
-      # different, low-stakes kind (unused fixture bindings), and a gate born
-      # red is removed by the first person it obstructs.
-      - name: Lint for dead code (Lint department, disabled by omakase)
-        run: >
-          bin/rubocop -f github --only
-          Lint/UselessAssignment,Lint/UselessMethodDefinition,Lint/UnreachableCode,Lint/UnreachableLoop,Lint/DuplicateMethods,Lint/Debugger,Lint/EmptyWhen,Lint/DuplicateCaseCondition,Lint/ShadowedArgument,Lint/BinaryOperatorWithIdenticalOperands
-          app lib scripts config
+      # [OPS.33, 2026-08-23] Цей крок був списком із ДЕСЯТИ копів, бо omakase
+      # гасив увесь департамент `Lint`. Тепер департамент увімкнено в
+      # `.rubocop.yml`, і девʼять із тих десяти покриває крок вище — на ВСЬОМУ
+      # дереві, а не на цьому периметрі. Лишається рівно один, і саме тому, що
+      # його не можна ввімкнути глобально: `spec/` тримає ~два десятки хітів
+      # іншого, низькоставкового роду (невживані фікстурні привʼязки), а гейт,
+      # народжений червоним, знімає перший, кому він заважає.
+      # ⚠️ Тобто цінність кроку тепер не в НАБОРІ копів, а в ПЕРИМЕТРІ:
+      # `app lib scripts config` без `spec/`. Додавати сюди коп можна лише з
+      # тією ж підставою — «глобально не можна через spec/».
+      # Клас, за який заплачено: видалений call-site лишив осиротілий `payload =`
+      # у money-path воркері, і коміт стверджував, що змінна ще потрібна.
+      - name: Lint for dead code (perimeter without spec/)
+        run: bin/rubocop -f github --only Lint/UselessAssignment app lib scripts config
 
   python_lint:
     needs: changes

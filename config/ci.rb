@@ -6,15 +6,16 @@ CI.run do
 
   step "Style: Ruby", "bin/rubocop"
 
-  # Omakase turns the whole Lint department off (154 cops, 5 enabled), so a green
-  # `bin/rubocop` is silent about dead code — that blindness already shipped an
-  # orphaned payload in a money-path worker. Perimeter is the one measured clean;
-  # `spec/` stays out on purpose (24 low-stakes hits; a gate born red gets removed).
-  step "Lint: dead code", "bin/rubocop --only " \
-    "Lint/UselessAssignment,Lint/UselessMethodDefinition,Lint/UnreachableCode," \
-    "Lint/UnreachableLoop,Lint/DuplicateMethods,Lint/Debugger,Lint/EmptyWhen," \
-    "Lint/DuplicateCaseCondition,Lint/ShadowedArgument,Lint/BinaryOperatorWithIdenticalOperands " \
-    "app lib scripts config"
+  # [OPS.33, 2026-08-23] Був список із десяти копів, бо omakase гасив увесь
+  # департамент `Lint`. Департамент увімкнено в `.rubocop.yml`, і девʼять із них
+  # тепер покриває крок «Style: Ruby» вище — на ВСЬОМУ дереві. Лишається один,
+  # і саме тому, що глобально його ввімкнути не можна: `spec/` тримає ~два
+  # десятки хітів іншого роду (невживані фікстурні привʼязки), а гейт,
+  # народжений червоним, знімає перший, кому він заважає.
+  # ⚠️ Цінність кроку тепер у ПЕРИМЕТРІ, не в наборі. Дзеркало — крок
+  # `Lint for dead code (perimeter without spec/)` у `.github/workflows/ci.yml`;
+  # правити ОБИДВА, інакше локальна смуга й CI розійдуться мовчки.
+  step "Lint: dead code", "bin/rubocop --only Lint/UselessAssignment app lib scripts config"
 
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/importmap audit"
