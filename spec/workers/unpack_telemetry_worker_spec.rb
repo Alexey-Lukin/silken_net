@@ -16,18 +16,26 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     allow(ActionCable.server).to receive(:broadcast)
   end
 
-  # Хелпер для створення зашифрованого payload (AES-256-CBC)
-  def encrypt_payload(data, key)
-    cipher = OpenSSL::Cipher.new("aes-256-cbc")
-    cipher.encrypt
-    cipher.key = key
-    iv = cipher.random_iv
+  # [TEST.16] Зашифрований payload — ОДИН дім, `TelemetryChunkHelper`.
+  # Локальна копія тут пропускала `cipher.padding = 0` (PKCS#7 увімкнено за
+  # замовчуванням), тобто виробляла байти, яких пристрій не шле ніколи.
+  def encrypt_payload(data, key) = encrypt_queen_batch(data, key: key)
 
-    block_size = 16
-    padding_length = (block_size - (data.bytesize % block_size)) % block_size
-    padded = data + ("\x00" * padding_length)
+  # [TEST.16] Ліхтар на САМУ фікстуру. Доти цей клас був німим за побудовою:
+  # хибна форма (PKCS#7 замість `padding = 0`) дописує зайвий блок `16 × \x10`,
+  # а `bytesize % 16` при цьому НЕ змінюється — тобто residue-дискримінатор
+  # QATT сліпий, а споживач у цьому файлі заглушений. Єдине, що робить
+  # регресію червоною, — пін на ДОВЖИНУ конверта.
+  describe "фікстура конверта Королеви (wire-fidelity)" do
+    it "does not append a PKCS#7 block — ciphertext matches the zero-padded plaintext" do
+      key       = SecureRandom.bytes(32)
+      plaintext = "A" * 21 # один 21-байтовий чанк, як на дроті
+      padded    = plaintext.bytesize + ((16 - (plaintext.bytesize % 16)) % 16)
 
-    iv + cipher.update(padded) + cipher.final
+      envelope = encrypt_payload(plaintext, key)
+
+      expect(envelope.bytesize - 16).to eq(padded) # −16 = IV
+    end
   end
 
   describe "#perform" do

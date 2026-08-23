@@ -27,15 +27,11 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     allow(ActionCable.server).to receive(:broadcast)
   end
 
-  # Шифрування як у Queen: [IV:16][AES-256-CBC ct, zero-pad]
-  def encrypt_body(data, key)
-    cipher = OpenSSL::Cipher.new("aes-256-cbc")
-    cipher.encrypt
-    cipher.key = key
-    iv = cipher.random_iv
-    padding = (16 - (data.bytesize % 16)) % 16
-    iv + cipher.update(data + ("\x00" * padding)) + cipher.final
-  end
+  # [TEST.16] Шифрування як у Queen — ОДИН дім, `TelemetryChunkHelper`.
+  # Локальна копія тут пропускала `cipher.padding = 0`, тож PKCS#7 дописував
+  # зайвий блок `16 × \x10`, який прод-декрипт віддавав як частину plaintext;
+  # невидимо, бо споживач у цьому файлі заглушений, а residue той самий.
+  def encrypt_body(data, key) = encrypt_queen_batch(data, key: key)
 
   # Підписаний конверт v2 РІВНО як Flush_Cache_To_Rails ([ARCH.54]):
   # [ver:1][ts:4 BE][seq:4 BE][health:8][IV][ct][sig:64];
