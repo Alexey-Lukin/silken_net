@@ -635,7 +635,15 @@ jobs:
         # вигляді, як його віддає pg17 (EXIT=0), pg16 на ньому падає
         # (`unrecognized configuration parameter`), pg17 вантажить і поточний
         # стрипнутий дамп. Паритет із продом стереже `structure_sql_pg_portability_spec`.
-        image: postgis/postgis:17-3.4
+# 🔒 [OPS.21] Digest поруч із тегом: тег МУТАБЕЛЬНИЙ — апстрим перепушує його
+# під тим самим іменем, і тоді начинка merge-required джоби змінюється без
+# жодного нашого коміту (клас, яким slither зламав money-path гейт).
+# Паритету з продом це не ламає: OPS.27 довів контейнерами, що вирішує МАЖОР,
+# а мажор тримає сам тег — digest морозить лише патч.
+# ⚠️ Бампера НЕМА: у `dependabot.yml` екосистема `docker` дивиться `/`
+# (`Dockerfile`), а `github-actions` не читає `image:` сервіс-контейнерів —
+# тож оновлення digest'а є ручним кроком рецепту скіла `dependency-update`.
+        image: postgis/postgis:17-3.4@sha256:d0b5a6ecab18997637f55a83cb4a9467391de5645916cfa1b6f2a8d19eee7be5
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -644,7 +652,10 @@ jobs:
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
 
       redis:
-        image: valkey/valkey:8
+# 🔒 [OPS.21] Digest поруч із тегом — той самий мутабельно-тегний клас, що й у
+# postgis вище; `:8` до того ж плаває через УСІ мінори 8.x. Бампера немає (див.
+# там же), тож підняття — ручний крок рецепту `dependency-update`.
+        image: valkey/valkey:8@sha256:f0ba225266310efba5fb33383e21c64fbd07907304224786c780606e7ebd7327
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -726,7 +737,8 @@ jobs:
         # вигляді, як його віддає pg17 (EXIT=0), pg16 на ньому падає
         # (`unrecognized configuration parameter`), pg17 вантажить і поточний
         # стрипнутий дамп. Паритет із продом стереже `structure_sql_pg_portability_spec`.
-        image: postgis/postgis:17-3.4
+        # 🔒 [OPS.21] digest — підстава при першому вжитку в цьому файлі; бамп ручний
+        image: postgis/postgis:17-3.4@sha256:d0b5a6ecab18997637f55a83cb4a9467391de5645916cfa1b6f2a8d19eee7be5
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -735,7 +747,8 @@ jobs:
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
 
       redis:
-        image: valkey/valkey:8
+        # 🔒 [OPS.21] digest — підстава при першому вжитку в цьому файлі; бамп ручний
+        image: valkey/valkey:8@sha256:f0ba225266310efba5fb33383e21c64fbd07907304224786c780606e7ebd7327
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5

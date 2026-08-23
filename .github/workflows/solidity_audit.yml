@@ -80,7 +80,18 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
-          version: stable
+# 🔒 [OPS.21] Пін замість `stable`. SHA-пін тримає ОБГОРТКУ дії, а `stable`
+# тягне свіжий `forge` на КОЖЕН прогін — рівно той клас, яким апстрим-реліз
+# slither на три дні заблокував мердж money-path контрактів. Периметр тут
+# найгустіший: цей вхід стоїть у чотирьох джобах (`foundry-tests` · slither ·
+# halmos · medusa), тобто на всьому грошовому шляху.
+# v1.7.1 = і поточний `stable`, і версія, що стоїть у дев-середовищі, тож пін
+# ЗАКРІПЛЮЄ наявний паритет, а не вводить новий (дзеркало pg17-паритету OPS.27).
+# ⊕ Побічно морозить кодоген, від якого дрейфить μ-газ у `.gas-snapshot`.
+# ⚠️ Бампера НЕМА: Dependabot читає `uses:`, але не `version:` — підняття є
+# ручним кроком рецепту скіла `dependency-update`, і це названо, щоб пін не
+# старів мовчки.
+          version: v1.7.1
 
       - name: Install contract dependencies
         run: npm ci
@@ -283,7 +294,8 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
-          version: stable
+          # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
+          version: v1.7.1
 
       - name: Install contract dependencies
         run: npm ci
@@ -347,7 +359,8 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
-          version: stable
+          # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
+          version: v1.7.1
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -446,7 +459,8 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
-          version: stable
+          # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
+          version: v1.7.1
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
