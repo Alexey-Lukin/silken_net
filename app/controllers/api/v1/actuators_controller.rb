@@ -4,6 +4,8 @@
 module Api
   module V1
     class ActuatorsController < BaseController
+      include IdempotentRequest
+
       before_action :authorize_forester!
       before_action :set_cluster, only: [ :index ]
       before_action :set_actuator, only: [ :show, :execute ]
@@ -60,24 +62,19 @@ module Api
       # [IDEMPOTENCY FIX]: POST /actuators/:id/execute requires Idempotency-Key header
       # for JSON requests. This prevents duplicate physical actuations caused by network retries
       # (e.g., ranger's mobile app in forest with poor connectivity).
-      # Cached responses are stored in Redis with 24h TTL — subsequent requests with the
-      # same key return the original response without creating a new command.
+      # Протокол цілком — `IdempotentRequest` (один дім на обидва майданчики).
       def execute
-        idempotency_key = request.headers["Idempotency-Key"]
-
-        if request.format.json? && idempotency_key.blank?
-          return render json: { error: I18n.t("flash.actuators.idempotency_required") },
-                        status: :bad_request
-        end
-
-        # Check idempotency cache for JSON requests with key
-        if idempotency_key.present?
-          cache_key = "idempotency:actuator:#{@actuator.id}:#{Digest::SHA256.hexdigest(idempotency_key)}"
-          cached = Rails.cache.read(cache_key)
-          if cached
-            return render json: cached, status: :accepted
-          end
-        end
+        # Скоуп — сам АКТУАТОР: об'єкт існує до запиту, тож він і є стабільною
+        # координатою. `202 Accepted` на повторі — бо наказ виконується
+        # асинхронно (edge забирає його поллом), тобто на момент відповіді робота
+        # ще НЕ завершена. ⊥ Сиблінг `maintenance_records#create` віддає `200 OK`:
+        # там робота вже завершена, і «Accepted» брехало б про стан. Розбіжність
+        # свідома — не «уніфікувати».
+        return if handle_idempotency!(
+          scope: "actuator:#{@actuator.id}",
+          error: I18n.t("flash.actuators.idempotency_required"),
+          replay_status: :accepted
+        )
 
         # [ARCH.58] In-flight гард НЕ поширюється на override (STOP/EMERGENCY_*):
         # інакше оператор не може подати аварійну зупинку саме тоді, коли в черзі
@@ -126,23 +123,9 @@ module Api
           format.json do
             response_body = { command_id: @command.id, status: "accepted" }
 
-            # [PUMA-RACK-1]: Store in idempotency cache AFTER response is flushed to client.
-            # rack.response_finished callback (Puma 7.0+) executes after the response body
-            # is sent, saving ~1-2ms from the critical path.
-            # Rack SPEC: callables are invoked with (env, status, headers, error) — a
-            # narrower lambda raises ArgumentError that Puma swallows into debug logs,
-            # silently skipping the cache write (retry would double-actuate hardware).
-            #
-            # `idempotency_key` is unconditionally present in this branch: the guard
-            # above (`if request.format.json? && idempotency_key.blank? → 400`) already
-            # rejected a blank key for any request that resolves to this `format.json`
-            # block, so no `if idempotency_key.present?` re-check is needed here.
-            cached_key = cache_key
-            cached_body = response_body
-            request.env["rack.response_finished"] ||= []
-            request.env["rack.response_finished"] << ->(_env, _status, _headers, _error) {
-              Rails.cache.write(cached_key, cached_body, expires_in: 24.hours)
-            }
+            # Механіка відкладеного запису й пастка Rack-арності живуть у
+            # `IdempotentRequest` — тут лишається лише ЩО кешуємо.
+            remember_idempotent_response!(response_body)
 
             render json: response_body, status: :accepted
           end

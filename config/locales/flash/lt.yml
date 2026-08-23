@@ -28,6 +28,7 @@ lt:
     maintenance:
       hardware_pulse_missing: Mazgas po šios priežiūros dar nepranešė — patikrinimui pirmiausia reikia impulso iš aparatūros.
       hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
+      idempotency_required: JSON priežiūros įrašų teikimui reikalinga Idempotency-Key antraštė.
       invalid_date: 'Neteisinga ISO8601 data: %{value}.'
       photo_deleted: Nuotrauka pašalinta iš įrodymų matricos.
       photo_evidence_locked: Ši nuotrauka yra remonto arba įrengimo įrašo įrodymas, todėl jos ištrinti negalima. Vietoj to pridėkite pataisytą kadrą.

@@ -148,10 +148,15 @@ RSpec.describe "Controller coverage — uncovered paths" do
     end
 
     describe "POST /maintenance_records — validation error" do
+      # [E.20] JSON-гілка `create` вимагає `Idempotency-Key` і віддає 400 РАНІШЕ
+      # за валідацію, тож без нього обидва приклади нижче доводили б формат
+      # запиту замість валідації моделі, яку називають їхні імена.
+      let(:idem_headers) { forester_headers.merge("Idempotency-Key" => SecureRandom.uuid) }
+
       it "returns validation errors for invalid data" do
         post "/maintenance_records",
              params: { maintenance_record: { notes: "", action_type: nil } },
-             headers: forester_headers
+             headers: idem_headers
 
         expect(response).to have_http_status(:unprocessable_content)
         json = response.parsed_body
@@ -170,7 +175,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
                  notes: "Short"
                }
              },
-             headers: forester_headers
+             headers: idem_headers
 
         expect(response).to have_http_status(:unprocessable_content)
         json = response.parsed_body
@@ -432,10 +437,13 @@ RSpec.describe "Controller coverage — uncovered paths" do
   describe "BaseController error handling" do
     describe "ActionController::ParameterMissing → 400" do
       it "returns 400 when required params are missing" do
-        # POST to maintenance_records without the required :maintenance_record key
+        # POST to maintenance_records without the required :maintenance_record key.
+        # [E.20] `Idempotency-Key` присутній НАВМИСНО: без нього 400 приходив би
+        # від гарда ідемпотентності, і приклад доводив би не `ParameterMissing`,
+        # а сусідній механізм — при тому самому статусі.
         post "/maintenance_records",
              params: { wrong_key: { notes: "test" } },
-             headers: forester_headers
+             headers: forester_headers.merge("Idempotency-Key" => SecureRandom.uuid)
 
         expect(response).to have_http_status(:bad_request)
         json = response.parsed_body

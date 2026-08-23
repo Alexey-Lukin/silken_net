@@ -197,6 +197,11 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
   # є ознакою ПРОВЕНАНСУ, а не полем форми: щойно воно потрапить у permit-список,
   # будь-який лісник зніме з себе вимогу фотодоказів одним ключем у payload'і.
   describe "POST /maintenance_records (Evidence Protocol не обходиться payload'ом)" do
+    # [E.20] JSON-гілка `create` вимагає `Idempotency-Key` (400 без нього), тож
+    # приклади нижче мусять його нести — інакше вони перестають доводити те, що
+    # заявлено їхніми іменами, і мовчки стають тестами на 400.
+    let(:idem_headers) { idempotent(headers) }
+
     let(:params) do
       {
         maintenance_record: {
@@ -209,7 +214,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
 
     it "ignores a client-supplied system_generated and still demands photos" do
-      expect { post "/maintenance_records", params: params, headers: headers, as: :json }
+      expect { post "/maintenance_records", params: params, headers: idem_headers, as: :json }
         .not_to change(MaintenanceRecord, :count)
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -218,10 +223,115 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
 
     it "persists an installation record as forester-authored, never system-generated" do
       params[:maintenance_record][:action_type] = "inspection"
-      post "/maintenance_records", params: params, headers: headers, as: :json
+      post "/maintenance_records", params: params, headers: idem_headers, as: :json
 
       expect(response).to have_http_status(:created).or have_http_status(:ok)
       expect(MaintenanceRecord.order(:id).last.system_generated).to be false
+    end
+
+    # =========================================================================
+    # [E.20 HARD-gate] Ідемпотентність — передумова offline-черги guild-клієнта.
+    # Небезпека, заради якої це існує, не «подвійний клік»: service worker ставить
+    # у чергу запит, чия ВІДПОВІДЬ загубилась, хоча сервер його вже виконав, — і
+    # флаш створює ДРУГИЙ запис про те саме втручання. На записах обслуговування
+    # рахується `critical_unmaintained?` у слешинг-тракті.
+    # =========================================================================
+    context "with idempotency key" do
+      let(:valid_params) do
+        {
+          maintenance_record: {
+            maintainable_type: "Tree", maintainable_id: own_tree.id,
+            action_type: "inspection", performed_at: 1.hour.ago.iso8601,
+            notes: "Routine inspection of the node completed successfully."
+          }
+        }
+      end
+
+      it "returns 400 when Idempotency-Key is missing for a JSON request" do
+        expect { post "/maintenance_records", params: valid_params, headers: headers, as: :json }
+          .not_to change(MaintenanceRecord, :count)
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body["error"]).to include("Idempotency-Key")
+      end
+
+      # 🔴 Ліхтар периметра: гард НАВМИСНО не накриває браузерний контур — форма
+      # дашборда заголовка не шле й слати не може. Без цього прикладу звуження
+      # гарда до `request.format.json?` було б недоведеним, і наступний прохід
+      # «уніфікував» би його на всі формати, зламавши живу сторінку.
+      it "does NOT demand the key on the browser (HTML) contour" do
+        expect {
+          post "/maintenance_records", params: valid_params,
+               headers: { "Authorization" => "Bearer #{api_token}", "Accept" => "text/html" }
+        }.to change(MaintenanceRecord, :count).by(1)
+
+        expect(response).to have_http_status(:see_other).or have_http_status(:found)
+      end
+
+      it "replays the original response and creates NO second record on a repeat" do
+        key = SecureRandom.uuid
+
+        expect {
+          post "/maintenance_records", params: valid_params,
+               headers: idempotent(headers, key: key), as: :json
+        }.to change(MaintenanceRecord, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+        first_id = response.parsed_body["record"]["id"]
+
+        flush_response_finished!
+
+        expect {
+          post "/maintenance_records", params: valid_params,
+               headers: idempotent(headers, key: key), as: :json
+        }.not_to change(MaintenanceRecord, :count)
+
+        # 200, а НЕ 201: цим запитом не створено нічого. І не 202 (як у сиблінга
+        # `actuators#execute`) — там наказ виконується асинхронно, тут робота вже
+        # завершена, тож «Accepted» брехало б про стан.
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["record"]["id"]).to eq(first_id)
+      end
+
+      it "writes the idempotency cache under a USER-scoped key" do
+        key = SecureRandom.uuid
+        cache_key = idempotency_cache_key_for("maintenance_record:#{forester.id}", key)
+
+        post "/maintenance_records", params: valid_params,
+             headers: idempotent(headers, key: key), as: :json
+        expect(response).to have_http_status(:created)
+
+        # Ліхтар: механізм відкладеного запису мусить бути ЗАРЕЄСТРОВАНИЙ, інакше
+        # приклад нижче був би зелений на кеші, записаному будь-чим іншим.
+        expect(flush_response_finished!).to be_present
+
+        cached = Rails.cache.read(cache_key)
+        expect(cached).to be_present
+        expect(cached[:record][:id]).to eq(response.parsed_body["record"]["id"])
+      end
+
+      it "does not cache a FAILED save — a rejected record stays retryable" do
+        key = SecureRandom.uuid
+        invalid = valid_params.deep_dup
+        invalid[:maintenance_record][:notes] = ""
+
+        post "/maintenance_records", params: invalid,
+             headers: idempotent(headers, key: key), as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+
+        flush_response_finished!
+
+        expect(Rails.cache.read("idempotency:maintenance_record:#{forester.id}:#{Digest::SHA256.hexdigest(key)}")).to be_nil
+      end
+
+      it "creates separate records for different keys" do
+        expect {
+          post "/maintenance_records", params: valid_params,
+               headers: idempotent(headers), as: :json
+          post "/maintenance_records", params: valid_params,
+               headers: idempotent(headers), as: :json
+        }.to change(MaintenanceRecord, :count).by(2)
+      end
     end
   end
 
@@ -561,9 +671,13 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.body).to include(CGI.escapeHTML("can't be blank"))
     end
 
+    # ⚠️ [E.20] Три IDOR-приклади нижче НЕСУТЬ `Idempotency-Key` НАВМИСНО, і знімати
+    # його не можна: JSON-гілка `create` без нього віддає 400 РАНІШЕ за IDOR-гард,
+    # тож приклад лишився б зеленим, довівши помилку формату замість відмови
+    # доступу — тобто пін із назвою про безпеку перестав би стерегти безпеку.
     it "rejects creating a record against another organization's tree (IDOR)" do
       expect {
-        post "/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: idempotent(headers), as: :json, params: {
           maintenance_record: {
             maintainable_type: "Tree", maintainable_id: other_tree.id,
             action_type: :inspection, performed_at: Time.current
@@ -581,7 +695,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     # =========================================================================
     it "rejects a maintainable_type outside {Tree, Gateway} (IDOR default-deny)" do
       expect {
-        post "/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: idempotent(headers), as: :json, params: {
           maintenance_record: {
             maintainable_type: "User", maintainable_id: forester.id,
             action_type: :inspection, performed_at: Time.current
@@ -600,7 +714,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       foreign_alert = create(:ews_alert, cluster: other_cluster, tree: other_tree)
 
       expect {
-        post "/maintenance_records", headers: headers, as: :json, params: {
+        post "/maintenance_records", headers: idempotent(headers), as: :json, params: {
           maintenance_record: {
             maintainable_type: "Tree", maintainable_id: own_tree.id,
             ews_alert_id: foreign_alert.id,

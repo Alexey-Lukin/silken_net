@@ -28,6 +28,7 @@ uk:
     maintenance:
       hardware_pulse_missing: Вузол ще не виходив в ефір після цього обслуговування — верифікація потребує спершу пульсу від заліза.
       hardware_verified: Стан обладнання верифіковано. Імпульс STM32 підтверджено.
+      idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-подання записів обслуговування.
       invalid_date: 'Невірна ISO8601-дата: %{value}.'
       photo_deleted: Фото видалено з Evidence Matrix.
       photo_evidence_locked: Це фото — доказ запису про ремонт або встановлення, тож знищити його не можна. Додайте виправлений кадр.

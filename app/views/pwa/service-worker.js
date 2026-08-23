@@ -1,5 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-const CACHE_NAME = 'silken-net-matrix-v1';
+//
+// ⚠️ ІНЕРТНИЙ [E.20]: цей worker ніде не реєструється (нуль `navigator.serviceWorker`
+// у дереві), і активація його — Phase 2 за окремим присудом. Тут живе лише КОНТРАКТ
+// офлайн-черги; те, що робить контракт чесним (ідемпотентність), відвантажено обома
+// половинами одразу, щоб у день реєстрації не довелось довіряти пам'яті.
+//
+// ⛔ Знято як мертве — не відбудовувати без споживача:
+//   · `CACHE_NAME` — оголошувався й ніде не вживався, а `caches.match()` ходив у
+//     сховище, яке ніхто не наповнював: офлайн-читання не існувало, зате
+//     `respondWith(undefined)` перетворював будь-який офлайн-GET на мережеву
+//     помилку замість власної офлайн-сторінки браузера;
+//   · слухач `FORCE_SYNC` — єдиний можливий шлях флашу на iOS (Safari не має
+//     Background Sync) — не мав ЖОДНОГО відправника, тобто обіцяв підтримку,
+//     якої не було. Обовʼязок переїхав у чекбокс реєстрації `[ex-ARCH.16]`.
 const DB_NAME = 'SilkenNetDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'maintenance_sync_queue';
@@ -69,39 +82,53 @@ self.addEventListener('fetch', (event) => {
   // Ловимо тільки POST-запити до нашого API створення записів обслуговування
   if (event.request.method === 'POST' && event.request.url.includes('/maintenance_records')) {
     event.respondWith(handleOfflinePost(event.request));
-  } else {
-    // Стандартна логіка для інших запитів: Network-first, fallback to Cache
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
   }
+  // Решту не чіпаємо СВІДОМО: власного кешу цей worker не веде, тож будь-яка
+  // «network-first, fallback to cache» гілка тут віддавала б `undefined`.
+  // Не викликати `respondWith` = браузер обробляє запит сам, включно з власною
+  // офлайн-поведінкою.
 });
 
 async function handleOfflinePost(request) {
-  const clonedRequest = request.clone();
-  
+  // 🔑 Ключ ідемпотентності народжується ДО першої спроби й переживає ВСІ повтори.
+  // Саме перша спроба є найнебезпечнішою: якщо сервер прийняв запис, а відповідь
+  // загубилась у дорозі, `fetch` кидає — ми йдемо в офлайн-гілку й ставимо в чергу
+  // запит, який УЖЕ виконано. Без спільного ключа флаш створив би другий запис про
+  // те саме втручання, а на записах обслуговування рахується `critical_unmaintained?`
+  // у слешинг-тракті. Тому ключ ставиться на запит, а не на повтор.
+  const idempotencyKey = crypto.randomUUID();
+  const keyedHeaders = new Headers(request.headers);
+  keyedHeaders.set('Idempotency-Key', idempotencyKey);
+  const keyedRequest = new Request(request, { headers: keyedHeaders });
+  const clonedRequest = keyedRequest.clone();
+
   try {
     // 1. Спроба відправити дані на Королеву (онлайн)
-    return await fetch(request);
+    return await fetch(keyedRequest);
   } catch (error) {
     // 2. ЗВ'ЯЗКУ НЕМАЄ: Запускаємо Кенозис (Офлайн-збереження)
-    
+
     // Парсимо payload. Оскільки це Rails Turbo, це найчастіше FormData або JSON
     let payload;
     const contentType = clonedRequest.headers.get('content-type') || '';
-    
-    if (contentType.includes('application/json')) {
+    const isJson = contentType.includes('application/json');
+
+    if (isJson) {
       payload = await clonedRequest.json();
     } else {
       const formData = await clonedRequest.formData();
       payload = Object.fromEntries(formData.entries());
     }
 
-    // Зберігаємо запит у локальний банк пам'яті
+    // Зберігаємо запит у локальний банк пам'яті.
+    // `isJson` зберігається ОКРЕМИМ полем, бо на флаші заголовок `content-type`
+    // доводиться викидати (нижче), і після цього відновити форму тіла нізвідки.
     await saveToQueue({
       url: clonedRequest.url,
       headers: [...clonedRequest.headers.entries()],
       payload: payload,
+      isJson: isJson,
+      idempotencyKey: idempotencyKey,
       timestamp: new Date().getTime()
     });
 
@@ -132,13 +159,6 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Додатковий fallback для iOS (Safari не підтримує Background Sync)
-self.addEventListener('message', (event) => {
-  if (event.data === 'FORCE_SYNC') {
-    event.waitUntil(flushQueue());
-  }
-});
-
 async function flushQueue() {
   const queue = await getQueue();
   if (queue.length === 0) return;
@@ -146,13 +166,28 @@ async function flushQueue() {
   for (const item of queue) {
     try {
       const headers = new Headers(item.headers);
-      
+
+      // Той САМИЙ ключ, що й на першій спробі — інакше сервер не має чим
+      // упізнати повтор, і вся конструкція вироджується в лічильник дублів.
+      if (item.idempotencyKey) {
+        headers.set('Idempotency-Key', item.idempotencyKey);
+      }
+
+      // ⚠️ `content-type` збереженого запиту ВИКИДАЄМО для не-JSON: у multipart
+      // він несе boundary ПЕРШОГО тіла, а `createFormData` будує нове зі своїм —
+      // явно заданий заголовок заважає браузеру перегенерувати boundary, і сервер
+      // не розбирає тіло взагалі. Тобто повтор запису з фото падав би завжди,
+      // а це рівно доказовий випадок.
+      if (!item.isJson) {
+        headers.delete('content-type');
+      }
+
       // Формуємо запит із збережених даних
       const response = await fetch(item.url, {
         method: 'POST',
         headers: headers,
-        body: headers.get('content-type').includes('application/json') 
-                ? JSON.stringify(item.payload) 
+        body: item.isJson
+                ? JSON.stringify(item.payload)
                 : createFormData(item.payload)
       });
 

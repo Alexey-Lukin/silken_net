@@ -4,6 +4,8 @@
 module Api
   module V1
     class MaintenanceRecordsController < BaseController
+      include IdempotentRequest
+
       before_action :authorize_forester!
       before_action :set_record, only: [ :show, :edit, :update, :verify, :photos ]
       before_action :authorize_record_mutation!, only: [ :edit, :update, :verify ]
@@ -73,11 +75,35 @@ module Api
       end
 
       # --- ФІКСАЦІЯ ЗЦІЛЕННЯ ---
+      # [E.20 HARD-gate] `Idempotency-Key` — передумова offline-черги guild-клієнта:
+      # без неї повтор запиту, чия відповідь загубилась у дорозі, створює ДРУГИЙ
+      # запис про те саме втручання, а на записах обслуговування рахується
+      # `critical_unmaintained?` у слешинг-тракті — тобто дубль тут не косметичний.
+      # Форма взята з `actuators#execute` (єдиний наявний носій патерну), з ОДНІЄЮ
+      # свідомою розбіжністю, яку не треба «уніфікувати»: там повтор віддає `202
+      # Accepted`, бо наказ виконується асинхронно й на момент відповіді ще не
+      # завершений; тут робота вже ЗАВЕРШЕНА, тож повтор віддає `200 OK` з тим
+      # самим тілом. `201 Created` віддавати не можна — цим запитом не створено
+      # нічого.
       def create
+        # Скоуп — КОРИСТУВАЧ, а не запис: у момент перевірки запису ще не існує,
+        # тож єдина стабільна координата це автор. Заразом це відсікає колізію
+        # ключів між двома лісниками.
+        return if handle_idempotency!(
+          scope: "maintenance_record:#{current_user.id}",
+          error: I18n.t("flash.maintenance.idempotency_required"),
+          replay_status: :ok
+        )
+
         @record = current_user.maintenance_records.build(maintenance_params)
         verify_maintainable_within_organization!(@record)
 
         if @record.save
+          remember_idempotent_response!(
+            message: I18n.t("flash.maintenance.record_created"),
+            record: MaintenanceRecordBlueprint.render_as_hash(@record, view: :show)
+          )
+
           respond_to do |format|
             format.json do
               render json: {

@@ -147,10 +147,13 @@ module BrowserContourRegistry
         why:  "той самий клас (невалідна ISO-дата у query)",
         back: "UI почне породжувати невалідну дату в query"
       },
-      "app/controllers/api/v1/actuators_controller.rb#execute" => {
+      "app/controllers/concerns/idempotent_request.rb#handle_idempotency!" => {
         why:  "ПЕРШИЙ сайт (400 на відсутній Idempotency-Key) гейтований `request.format.json?`, тож " \
               "браузер туди не доходить; ДРУГИЙ (віддача кешованої відповіді) гейта формату не має " \
-              "взагалі — його тримає лише те, що браузерна форма цього заголовка не шле",
+              "взагалі — його тримає лише те, що браузерна форма цього заголовка не шле. " \
+              "⊕ Рядок переїхав сюди з `actuators_controller#execute`, коли протокол дістав ОДИН дім: " \
+              "тепер запис покриває обидва майданчики (`actuators#execute` · `maintenance_records#create`) " \
+              "одразу — доти другий майданчик додав би ДРУГИЙ рядок про ту саму гілку",
         back: "браузерна гілка почне слати Idempotency-Key, або зникне `request.format.json?`-гейт"
       }
     }.freeze

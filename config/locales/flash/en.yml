@@ -28,6 +28,7 @@ en:
     maintenance:
       hardware_pulse_missing: No pulse from the unit after this maintenance yet — verification needs the hardware to report in first.
       hardware_verified: Hardware state verified. STM32 pulse acknowledged.
+      idempotency_required: Idempotency-Key header is required for JSON maintenance-record submissions.
       invalid_date: 'Invalid ISO8601 date: %{value}.'
       photo_deleted: Photo removed from the Evidence Matrix.
       photo_evidence_locked: This photo is evidence for a repair or installation record and cannot be deleted. Add a corrected frame instead.

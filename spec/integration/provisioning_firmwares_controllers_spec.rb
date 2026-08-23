@@ -340,7 +340,12 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
                  notes: "Routine check"
                }
              },
-             headers: { "Authorization" => "Bearer #{forester_token}", "Accept" => "application/json" }
+             headers: {
+               "Authorization" => "Bearer #{forester_token}",
+               "Accept" => "application/json",
+               # [E.20] JSON-гілка `create` вимагає ключ ідемпотентності
+               "Idempotency-Key" => SecureRandom.uuid
+             }
       }.to change(MaintenanceRecord, :count).by(1)
     end
   end
