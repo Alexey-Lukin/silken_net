@@ -34,9 +34,14 @@ class HardwareKeyService
   IOTEX_SEED_SIZE_BYTES = 32
   IOTEX_HKDF_INFO       = "silken-ed25519-iotex-v1"
 
-  # Backwards-compat aliases (CoAP keys — поточний default до повного code-side rollout).
-  KEY_SIZE_BYTES = COAP_KEY_SIZE_BYTES
-  HKDF_INFO      = COAP_HKDF_INFO
+  # ⛔ [SEC.34] Тут стояли compat-аліаси `KEY_SIZE_BYTES`/`HKDF_INFO` = CoAP-пара,
+  # позначені «поточний default до повного code-side rollout». Rollout відбувся:
+  # вимір 2026-08-23 дав НУЛЬ споживачів обох — усі сайти вже звуться явно
+  # (`COAP_*`/`LORA_*`/`BROADCAST_*`/`IOTEX_*`). Не відбудовувати: голе імʼя
+  # `HKDF_INFO` існує ще й у `OtaHmacKeyService` з ІНШИМ значенням
+  # (`silken-ota-hmac-v1`), тож нова деривація, написана як `info: HKDF_INFO`,
+  # мовчки підхопила б те, що опинилось у лексичному скоупі — і при
+  # `device_uid`-солі стала б байт-у-байт ключем CoAP-каналу Королеви.
 
   # Помилка подвійної ротації: пристрій ще не підтвердив попереднє оновлення ключа.
   class RotationPendingError < StandardError; end

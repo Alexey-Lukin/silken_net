@@ -14,8 +14,12 @@ require "rails_helper"
 # після RDP-lock ротації не існує взагалі.
 #
 # ⚠️ ОГОЛОШЕНА СТЕЛЯ (читай перед тим, як діагностувати зелене):
-#   1. Гейт судить КОНСТАНТИ, а не місця виклику. Деривація, що передасть
-#      info-рядок літералом повз константу, тут невидима.
+#   1. Реєстр перелічує КОНСТАНТИ, і сам по собі протух би від нової родини
+#      ключів. Вісь 3 цього не дає: вона сканує ДЖЕРЕЛО й вимагає, щоб кожен
+#      `info:` у виклику HKDF посилався на константу, а не ніс літерал —
+#      інакше нова деривація обійшла б реєстр мовчки (скіл `firmware`: «New
+#      factory key slot? Mirror it in FactoryFlashing::CommandBuilder +
+#      03_06 §2»). Чого вісь 3 НЕ бачить: виклик HKDF поза `app/`+`lib/`.
 #   2. Salt НЕ порівнюється: він рантаймовий (`device_uid` · `"cluster:N"`), і
 #      два різні сервіси законно ділять `"cluster:N"` (KEYB ⊥ K_ota). Саме тому
 #      вся вага domain separation лежить на info — і саме тому його
@@ -68,5 +72,35 @@ RSpec.describe "HKDF domain separation [SEC.34]" do # rubocop:disable RSpec/Desc
     expect(owners.map(&:name)).to eq([ "OtaHmacKeyService" ]),
                                   "голе `HKDF_INFO` мусить мати ОДНОГО власника — інакше " \
                                   "`info: HKDF_INFO` у новій деривації означає різне залежно від файлу"
+  end
+
+  # Вісь 3 — те, що НЕ дає реєстрові вгорі протухнути. Без неї нова родина
+  # ключів, чий `info:` переданий літералом, ніде б не зʼявилась: реєстр
+  # лишився б повним «на вигляд», а гейт — зеленим на неповній множині.
+  it "passes every HKDF info: through a CONSTANT, never a bare literal" do
+    sources = Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")]
+    offenders = []
+
+    sources.each do |path|
+      text = File.read(path)
+      next unless text.include?("OpenSSL::KDF.hkdf")
+
+      text.each_line.with_index(1) do |line, no|
+        next unless line =~ /^\s*info:\s*(.+?),?\s*$/
+
+        arg = Regexp.last_match(1).strip
+        # Легальні форми: голе імʼя константи (`HKDF_INFO`, `info`) або
+        # інтерполяція, що НЕСЕ константу (`"#{HKDF_INFO_PREFIX}|#{uid}"`).
+        next if arg.match?(/\A[a-z_][A-Za-z0-9_]*\z/)          # параметр методу
+        next if arg.match?(/\A[A-Z][A-Za-z0-9_:]*\z/)          # константа
+        next if arg.match?(/#\{[A-Z][A-Za-z0-9_:]*\}/)         # інтерполяція константи
+
+        offenders << "#{path.delete_prefix(Rails.root.to_s + '/')}:#{no} → #{arg}"
+      end
+    end
+
+    expect(offenders).to be_empty,
+                         "HKDF `info:` літералом обходить реєстр цієї спеки — родина ключів " \
+                         "стала б невидимою для перевірки попарної відмінності:\n  #{offenders.join("\n  ")}"
   end
 end
