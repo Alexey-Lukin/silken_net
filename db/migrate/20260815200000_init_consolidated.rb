@@ -26,8 +26,17 @@
 #   3. Rename this file's timestamp to a fresh one (e.g. now()).
 #   4. Replace the schema_migrations INSERT block in structure.sql with
 #      that single timestamp.
-#   5. Bump StrongMigrations.start_after in
-#      config/initializers/strong_migrations.rb to the new timestamp.
+#   ⊕ Кроку 5 БІЛЬШЕ НЕМАЄ [OPS.24]. Він звучав «bump StrongMigrations.start_after»
+#     і був єдиним МОВЧАЗНИМ кроком процедури: значення нижче за живий анкер знімає
+#     перевірки з уже застосованих міграцій, і ніщо не червоніє. Тепер
+#     `config/initializers/strong_migrations.rb` виводить його з імені ЦЬОГО файлу,
+#     тож переносити нема чого — і перенести неправильно неможливо.
+#     ⚠️ Дзеркальний наслідок: кроки 3 і 4 стали ще несучішими — перейменування
+#     файлу тепер рухає і `start_after`, тож воно мусить іти в ОДНОМУ коміті з
+#     переписаним блоком `schema_migrations`.
+#
+# Нагадування, що борг накопичився, друкує сам `db:migrate`
+# (`lib/tasks/migration_hygiene.rake`, поріг — присуд founder-а).
 #
 # Data seeding (system_parameters, organizations, oracle_executioner, ...)
 # lives in db/seeds.rb and is invoked by `bin/rails db:seed`. Do NOT add
