@@ -648,7 +648,7 @@ ENV-блоки `web` та `job` сервісів **дзеркалюють** од
 | Змінна | Значення в SDL | Required for | Опис |
 |--------|---------------|-------------|------|
 | `PROVISIONING_MASTER_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | HKDF root key. `config/initializers/master_key_strength_check.rb` raises `SecurityError` у `after_initialize` → Puma crash. Generate: `SecureRandom.hex(32)` |
-| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | AR-encryption at-rest (`hardware_keys` / `identities`). `Security::EncryptionKeyGuard::REQUIRED_ENVS` → `config/initializers/active_record_encryption_keys_check.rb` raises fail-closed. Свідомо **ENV, не credentials** — інакше вертається runtime-залежність від `RAILS_MASTER_KEY` (SEC.22). Generate: `bin/rails db:encryption:init` |
+| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | AR-encryption at-rest (`hardware_keys` / `users.otp_secret`). `Security::EncryptionKeyGuard::REQUIRED_ENVS` → `config/initializers/active_record_encryption_keys_check.rb` raises fail-closed. Свідомо **ENV, не credentials** — інакше вертається runtime-залежність від `RAILS_MASTER_KEY` (SEC.22). Generate: `bin/rails db:encryption:init` |
 | `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` | `REQUIRED_SECRET_NOT_SET` | **boot** | ↑ той самий guard (min 32 символи) |
 | `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` | `REQUIRED_SECRET_NOT_SET` | **boot** | ↑ той самий guard (min 32 символи) |
 
