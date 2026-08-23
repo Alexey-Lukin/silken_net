@@ -2037,6 +2037,10 @@ Verra визнає SCC → Carbon Credit Certificate
 }
 ```
 
+✅ **Це НЕ greenfield — перший реальний registry-export уже відвантажено, і планована робота = формат-адаптери × N поверх доведеного патерну.** `PuroEarth::PassportService` + `PuroEarth::RegistryApiService` (обидва `[MAINNET READY]`, картки вище) уже проходять той самий ланцюг, який ця секція малює для Verra: трансформація → канонічний JSON → SHA-256 → on-chain anchor → IPFS → REST submit. Джерело те саме (`AuditLog` immutable-chain), формат-шар звітів (JSON/CSV/PDF) теж стоїть. Тобто `CrossRegistryExportService` — новий **адаптер формату**, а не новий тракт.
+
+⛔ **Схему при цьому НЕ чіпати наперед.** Спокуса завести колонки `vintage` / `serial` / `methodology_id` передчасна з двох боків: перші дві деривуються з періоду `AuditLog`, а серійний номер реєстр **присвоює сам** (Verra зокрема). Доки методології немає, будь-які такі колонки — спекулятивна схема під формат, якого ще не обрано; monitoring-параметри диктує саме затверджений PDD. Гейт вибору реєстру — [`00_07`](00_07_Action_Plan_Tracker) BIZ.9 (методолог → PDD), виконання — [`00_07`](00_07_Action_Plan_Tracker) ARCH.5.
+
 **Пріоритет:** Post-TRL 7. Критично для institutional sales. Не блокує прототип.
 
 ---
