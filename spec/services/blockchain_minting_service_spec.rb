@@ -1515,13 +1515,29 @@ end
         locked_points: 1000
       )
 
+      # [ARCH.106] Пін на КОНСТАНТУ, не на літерал: доти тут стояло `120.seconds`,
+      # тобто спека цементувала число, МЕНШЕ за задокументований worst case
+      # (~130 с) — і тому мовчки підтверджувала авто-реліз локу під час легального
+      # проходу. ⚠️ Пін на саму константу не довів би нічого про її ВЕЛИЧИНУ, тож
+      # поруч стоїть окремий приклад, який порівнює її з worst case.
       expect(Kredis).to receive(:lock).with(
         anything,
-        expires_in: 120.seconds,
+        expires_in: described_class::MINT_LOCK_TTL,
         after_timeout: :raise
       ).and_yield
 
       described_class.call(tx.id)
+    end
+
+    # [ARCH.106] Величина, а не лише ідентичність. Лок є авто-релізним, тож TTL,
+    # МЕНШИЙ за найдовший легальний прохід, відпускає підписанта, поки холдер ще
+    # працює — і повертає рівно той double-mint, заради якого його підіймали з
+    # 30 с. Worst case задокументовано на місці виклику: dry-run (~5 с) +
+    # binary-search до 6 рівнів × 2 eth_call (~36 с) + fallback individual mints
+    # (~90 с) ≈ 130 с.
+    it "holds the signer lock LONGER than the documented worst-case batch (~130s)" do
+      documented_worst_case = 130.seconds
+      expect(described_class::MINT_LOCK_TTL).to be > documented_worst_case
     end
 
     it "raises when lock cannot be acquired (concurrent minting prevention)" do

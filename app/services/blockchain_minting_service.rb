@@ -31,6 +31,13 @@ class BlockchainMintingService < ApplicationService
   TREASURY_CACHE_TTL = 15.minutes
   TREASURY_RPC_TIMEOUT = 10
 
+  # [ARCH.106] Авто-релізний TTL локу підписанта. Число мусить ПЕРЕКРИВАТИ
+  # задокументований worst case батча — інакше лок відпускається, поки холдер ще
+  # працює, і повертає рівно той double-mint, заради якого його й підіймали з 30 с.
+  # Розклад worst case живе на місці виклику (dry-run + binary-search + fallback
+  # individual mints ≈ 130 с); тут — він плюс запас на RPC-джитер.
+  MINT_LOCK_TTL = 180.seconds
+
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint.
   # [E.60 Фаза 1б] +archiveRoot (bytes32): Merkle-корінь архів-батчу телеметрії
   # (mint-anchored witness; zero32 = «без witness-клейму»). СПІЛЬНИЙ для SCC і
@@ -219,7 +226,12 @@ class BlockchainMintingService < ApplicationService
       #   - Binary Search Isolation при revert: до MAX_BINARY_SEARCH_DEPTH=6 рівнів × 2 eth_call = ~36s
       #   - Fallback individual mints для poisoned records: до ~30 × transact() = ~90s
       # Загальний worst case: ~130s. З 30s lock виникає double-mint ризик при RPC congestion.
-      Kredis.lock(lock_key, expires_in: 120.seconds, after_timeout: :raise) do
+      # 🔴 [ARCH.106] Доти тут стояло `120.seconds` — МЕНШЕ за власний worst case
+      # рядком вище, тобто лок авто-відпускався за ~10 с до кінця найдовшого
+      # легального проходу й пускав другого воркера на того самого підписанта.
+      # Дефект був невидимий, бо число й розрахунок стояли поруч і обидва
+      # виглядали обдуманими; TTL тепер константа, що ПЕРЕКРИВАЄ розрахунок.
+      Kredis.lock(lock_key, expires_in: MINT_LOCK_TTL, after_timeout: :raise) do
         archive_groups.each do |group|
           safe_fail_error ||= dispatch_archive_group(client, contract, oracle_key, token_type, group)
         end
