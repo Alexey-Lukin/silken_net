@@ -447,6 +447,16 @@ jobs:
     if: ${{ needs.changes.outputs.workflows == 'true' }}
     # actionlint — статичний аналіз GitHub Actions workflow'ів (синтаксис, ${{ }}
     # вирази, типи подій, permissions-скоупи, glob'и) + shellcheck кожного `run:`.
+    #
+    # 🔒 СТЕЛЯ, названа поіменно [OPS.28]: «кожного `run:`» стосується ЛИШЕ
+    # `.github/workflows/**`. Голий `actionlint` (як він і кличеться нижче) сканує
+    # тільки їх, а `.github/actions/**/action.yml` не читає ЗОВСІМ — і не може:
+    # composite-екшен не є workflow, тож поданий явно він падає «jobs section is
+    # missing». Доведено мутацією 2026-08-23: свідомо зламаний shell-рядок у
+    # `setup-rails-test/action.yml` лишив прогін EXIT=0. Тобто `run:`-блоки, від
+    # яких залежать ОБИДВІ джоби `test`/`feature-test`, стоять поза shellcheck.
+    # Клас малий (два блоки в одному екшені), тож ставити сюди окремий інструмент
+    # непропорційно — але зелене тут не є твердженням про них.
     # Pinned-binary + sha256-verify (OPS.10 supply-chain-стандарт; runner вже має
     # shellcheck → shell-блоки лінтяться автоматично).
     runs-on: ubuntu-latest

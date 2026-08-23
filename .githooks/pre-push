@@ -123,4 +123,74 @@ for _cmd in missing check-consistent-interpolations check-normalized; do
   exit 1
 done
 
+# [OPS.28] Path-gated tool checks — the third carrier on this hook.
+#
+# Інвентар «CI-крок ⊥ локальний носій» знайшов пʼять джоб, чий носій слабший за
+# CI-крок. Форму обрано не на смак, а ЗАПИСАНИМ правилом цього файлу («межа — ЦІНА»),
+# застосованим до виміряних чисел (2026-08-23, це дерево, за 30 днів історії):
+#
+#   actionlint   тригер `.github/workflows/**` — 63 коміти (~2/добу), ЦІНА 1.28 с
+#                → найчастіший і найдешевший; я двічі за одну годину забув його
+#                  прогнати, тобто «памʼятати команду» вже виміряно як НЕ-носій.
+#   alloy-пара   тригер `deploy/**` — 11 комітів, ЦІНА 82 мс на обидва скрипти
+#   cppcheck     тригер `firmware/**` — 13 комітів (~0.4/добу), ЦІНА 6.7 с
+#                → дорожче за весь наявний бюджет хука, але спрацьовує рідко;
+#                  амортизовано ~87 с/місяць проти ~5–10 хв round-trip на червоний CI.
+#   importmap    тригер — 0 комітів за 30 днів → свідомо лишається CI-only:
+#                  носій без пускача є декорацією, і його ціну ніхто б не побачив.
+#
+# Кожен блок ПЛАТИТЬ ЛИШЕ КОЛИ ЙОГО ШЛЯХ ЗМІНИВСЯ, тож звичайний push коштує
+# рівно стільки, скільки коштував (DCO + i18n ≈ 4 с).
+#
+# ⚠️ NOT-RUN тут поводиться ІНАКШЕ, ніж у двох блоках вище, і різниця навмисна.
+# Там відсутній інструмент БЛОКУЄ, бо ті перевірки є мандатом самого хука. Тут
+# інструмент — девелоперський, і блокувати push через його відсутність означало б
+# зробити свіжий clone непушабельним. Тож NOT-RUN друкує ГУЧНУ ноту, що називає
+# себе не-вердиктом, і пропускає. Це не «тиха капітуляція» DOC-T.64 (`|| exit 0`
+# без жодного виводу): там мовчала сама відсутність, тут вона названа.
+_changed=$(git diff --name-only origin/main...HEAD 2>/dev/null)
+
+if printf '%s\n' "$_changed" | grep -q '^\.github/workflows/'; then
+  if command -v actionlint >/dev/null 2>&1; then
+    if ! ( cd "$root" && actionlint .github/workflows/*.yml ); then
+      echo
+      echo "pre-push BLOCKED — actionlint reports violations in .github/workflows/** (above)."
+      echo "Fix:  actionlint .github/workflows/*.yml"
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  else
+    echo "pre-push NOTE — workflows changed but actionlint is not installed locally."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`workflow_lint\`)."
+    echo "  Install:  brew install actionlint"
+  fi
+fi
+
+if printf '%s\n' "$_changed" | grep -q '^deploy/'; then
+  for _script in sdl_consistency_check deploy_secret_scan; do
+    [ -f "$root/scripts/$_script.rb" ] || continue
+    if ! ( cd "$root" && "$_rb" "scripts/$_script.rb" ); then
+      echo
+      echo "pre-push BLOCKED — \`scripts/$_script.rb\` reports violations (above)."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  done
+fi
+
+if printf '%s\n' "$_changed" | grep -qE '^firmware/.*\.(c|h)$'; then
+  if [ -x "$root/firmware/scripts/cppcheck.sh" ] && command -v cppcheck >/dev/null 2>&1; then
+    if ! ( cd "$root" && sh firmware/scripts/cppcheck.sh ); then
+      echo
+      echo "pre-push BLOCKED — cppcheck reports findings in firmware/** (above)."
+      echo "Fix:  sh firmware/scripts/cppcheck.sh"
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  else
+    echo "pre-push NOTE — firmware C changed but cppcheck (or its script) is unavailable."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`firmware_lint\`)."
+  fi
+fi
+
 echo "pre-push: DCO + i18n parity OK."

@@ -142,4 +142,23 @@ RSpec.configure do |config|
   # Run specs in random order to surface order dependencies.
   config.order = :random
   Kernel.srand config.seed
+
+  # 🔦 [OPS.28] Ліхтар «ця сюїта НЕ та, якою CI міряє поріг».
+  #
+  # Носієм тут не могла бути команда: локальний `bin/rspec` і CI-джоба `test`
+  # виконують РІЗНІ множини. CI ганяє `--exclude-pattern "features/**"` (features
+  # мають власну джобу з нульовим порогом), а локально вони входять у прогін —
+  # тобто те саме число рахується по більшому знаменнику. Ціна не гіпотетична:
+  # `main` червонів на 97.99 при локальних 98.01, і обидва були правдиві.
+  # Тому носій — рядок у ВИВОДІ, а не команда, яку треба памʼятати: він стоїть
+  # рівно там, де читають число, і мовчить, коли множини збігаються.
+  config.after(:suite) do
+    next unless COLLECT_COVERAGE && ENV["FEATURE_TEST"].nil?
+    next unless RSpec.configuration.files_to_run.any? { |f| f.include?("spec/features/") }
+
+    warn "\n🔦 [OPS.28] Цей прогін ВКЛЮЧАЄ `spec/features/**`, а CI-джоба `test` їх " \
+         "виключає (`--exclude-pattern`). Отже покриття нижче порахувано по ІНШІЙ " \
+         "множині, ніж та, на якій CI судить підлогу — воно систематично ВИЩЕ. " \
+         "Щоб побачити CI-число: bin/rspec --exclude-pattern \"features/**/*_spec.rb\"\n"
+  end
 end
