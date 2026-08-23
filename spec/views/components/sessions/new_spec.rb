@@ -65,18 +65,6 @@ RSpec.describe Sessions::New do
     end
   end
 
-  # 🔴 Тут стояли пʼять прикладів, які пінили ЧОТИРИ кнопки в 404 — включно з
-  # прямим `include("/auth/google_oauth2")`, тобто спека стверджувала існування
-  # цілі, якої в маршрутах немає (і гема OmniAuth теж). Interim-присуд ARCH.69
-  # («сховати 404-кнопки до дротування + ключів») ратифіковано 2026-07-16 і
-  # застосовано лише до `AccountSecurity::Show` — сюди коміт не дійшов, а пункт
-  # рахувався закритим. Пін тепер стереже САМ interim, а не його порушення.
-  describe "OAuth provider buttons (ARCH.69 interim: hidden until wired)" do
-    it "renders no dead /auth/:provider targets" do
-      expect(html).not_to include("/auth/")
-    end
-  end
-
   # [SEC.25] Помилка ПОТОЧНОГО сабміту (401/429) — інше дієслово, ніж `FlashMessages`.
   # Приклад про notice-варіант знято разом із kwargом: нуль викликачів у дереві,
   # тобто гілку тримала лише ця спека.

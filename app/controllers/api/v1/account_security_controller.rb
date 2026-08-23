@@ -8,30 +8,19 @@ module Api
       # GET /account_security
       def show
         @user = current_user
-        @identities = @user.identities.order(created_at: :asc).to_a
 
         respond_to do |format|
           format.json do
             render json: {
               mfa_enabled: @user.mfa_enabled?,
               recovery_codes_remaining: @user.recovery_codes_remaining,
-              has_password: @user.password_digest.present?,
-              identities: @identities.map { |i|
-                {
-                  id: i.id,
-                  provider: i.provider,
-                  uid: i.uid,
-                  primary: i.primary?,
-                  locked: i.locked?,
-                  created_at: i.created_at
-                }
-              }
+              has_password: @user.password_digest.present?
             }
           end
           format.html do
             render_dashboard(
               title: t("account_security.title"),
-              component: AccountSecurity::Show.new(user: @user, identities: @identities)
+              component: AccountSecurity::Show.new(user: @user)
             )
           end
         end
@@ -57,14 +46,11 @@ module Api
       # відвантажено 2026-08-20 із нулем викликачів; це його ДВЕРІ.
       #
       # 🔴 Гард fail-CLOSED, і відмінність від `toggle_mfa` тут НАВМИСНА. Там
-      # акаунт без пароля (OAuth-only) step-up МИНАЄ — бо спільного секрета не
-      # існує, а дія оборотна. Тут дія НЕЗВОРОТНА (tombstone + знищення сесій та
-      # identities), тож відсутність доказу мусить означати ВІДМОВУ, а не
-      # пропуск: інакше перший passwordless-вхід тихо відкриє незворотний акт
-      # будь-кому з вкраденою cookie (`04_03 §1.2` називає цю форму такою, що
-      # «чекає свого тригера»). Людський шлях для таких акаунтів лишається —
-      # `docs/protocols/legal/gdpr_runbook.md` §2, і місячний строк Art.12(3)
-      # він витримує.
+      # відсутній пароль step-up МИНАЄ — дія оборотна, тож вимагати доказу нічим.
+      # Тут дія НЕЗВОРОТНА (tombstone + знищення сесій), тож відсутність доказу
+      # мусить означати ВІДМОВУ, а не пропуск. Дискримінатор — оборотність дії,
+      # ніколи «однаковий вигляд коду»: обидві форми різняться одним символом,
+      # і симетрія тут виглядала б як охайність.
       def erase_account
         unless current_user.password_digest.present? &&
                current_user.authenticate(params[:current_password].to_s)
@@ -92,9 +78,10 @@ module Api
           # [STEP-UP AUTH FIX]: Disabling MFA is a critical downgrade — if a
           # session is hijacked (XSS, stolen cookie) the attacker could turn
           # off the second factor silently. Require fresh proof of the
-          # account password before lowering the security level. Users who
-          # signed in purely via OAuth (no local password) keep the previous
-          # behaviour, since there is no shared secret to challenge with.
+          # account password before lowering the security level. The
+          # `password_digest.present?` guard stays fail-OPEN because this act is
+          # reversible — the mirror of `erase_account`, where it is fail-CLOSED
+          # (see there: the discriminator is reversibility, not code shape).
           if current_user.password_digest.present? &&
              !current_user.authenticate(params[:current_password].to_s)
             return respond_to do |format|
@@ -116,52 +103,6 @@ module Api
             format.json { render json: { error: t("account_security.mfa_setup.use_setup_flow"), code: "mfa_setup_required" }, status: :conflict }
             format.html { redirect_to mfa_setup_path, status: :see_other }
           end
-        end
-      end
-
-      # --- ВІДВ'ЯЗКА ПРОВАЙДЕРА ---
-      # DELETE /account_security/identities/:id
-      def unlink_identity
-        identity = current_user.identities.find(params[:id])
-
-        # Не можна відв'язати всіх провайдерів, якщо немає пароля
-        if current_user.password_digest.blank? && current_user.identities.active.count <= 1
-          respond_to do |format|
-            format.json { render json: { error: t("account_security.identity.cannot_unlink_last") }, status: :unprocessable_content }
-            format.html { redirect_to account_security_path, status: :see_other, error: t("account_security.identity.set_password_first") }
-          end
-          return
-        end
-
-        identity.destroy!
-
-        respond_to do |format|
-          format.json { render json: { message: t("account_security.identity.unlinked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.unlinked_flash", provider: identity.provider.titleize) }
-        end
-      end
-
-      # --- БЛОКУВАННЯ ПРОВАЙДЕРА ---
-      # PATCH /account_security/identities/:id/lock
-      def lock_identity
-        identity = current_user.identities.find(params[:id])
-        identity.lock!
-
-        respond_to do |format|
-          format.json { render json: { message: t("account_security.identity.locked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.locked_flash", provider: identity.provider.titleize) }
-        end
-      end
-
-      # --- РОЗБЛОКУВАННЯ ПРОВАЙДЕРА ---
-      # PATCH /account_security/identities/:id/unlock
-      def unlock_identity
-        identity = current_user.identities.find(params[:id])
-        identity.unlock!
-
-        respond_to do |format|
-          format.json { render json: { message: t("account_security.identity.unlocked_json", provider: identity.provider) }, status: :ok }
-          format.html { redirect_to account_security_path, status: :see_other, security: t("account_security.identity.unlocked_flash", provider: identity.provider.titleize) }
         end
       end
 
@@ -239,7 +180,6 @@ module Api
           title: t("account_security.title"),
           component: AccountSecurity::Show.new(
             user: current_user,
-            identities: current_user.identities.order(created_at: :asc),
             password_error: message
           ),
           status: :unprocessable_content
@@ -255,7 +195,6 @@ module Api
           title: t("account_security.title"),
           component: AccountSecurity::Show.new(
             user: current_user,
-            identities: current_user.identities.order(created_at: :asc),
             erasure_error: message
           ),
           status: :unprocessable_content

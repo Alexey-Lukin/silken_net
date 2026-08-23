@@ -6,17 +6,15 @@ module Gdpr
   # структурований машиночитний зліпок УСІХ user-owned персональних даних.
   #
   # Периметр = User-owned вісь PII-реєстру (`04_01 §11`): сам рядок users,
-  # sessions (слід входу), identities (OAuth-профіль), audit_logs де субʼєкт
+  # sessions (слід входу), audit_logs де субʼєкт
   # є АКТОРОМ, maintenance_records авторства (+ мета фотодоказів). Org-owned
   # дані (clusters/trees/wallets/gateways) свідомо ПОЗА експортом — вони
   # належать організації, а «у дерев немає GDPR-даних» (`03_04 §6.3`).
   #
-  # КРЕДЕНШЕЛИ НЕ віддаються (password_digest · otp_secret · recovery_codes ·
-  # access_token · refresh_token): DSAR віддає дані ПРО особу, а не секрети
+  # КРЕДЕНШЕЛИ НЕ віддаються (password_digest · otp_secret · recovery_codes):
+  # DSAR віддає дані ПРО особу, а не секрети
   # автентифікації — їх віддача створила б нову витікову поверхню, і жоден
   # DSAR-прецедент (експорти великих платформ) секретів не включає.
-  # `identities.auth_data` натомість ВІДДАЄТЬСЯ: це профільні дані від
-  # провайдера (імʼя/email/аватар), тобто рівно «дані про особу».
   #
   # 🔒 Стеля названа: фотодокази їдуть МЕТАДАНИМИ (filename/byte_size/…), не
   # байтами — оригінали (свідомо з EXIF, ⚖️ 2026-08-20) доступні штатним
@@ -35,7 +33,6 @@ module Gdpr
         generated_at: Time.current.iso8601,
         user: user_payload,
         sessions: sessions_payload,
-        identities: identities_payload,
         audit_trail: audit_logs_payload,
         maintenance_records: maintenance_records_payload
       }
@@ -67,19 +64,6 @@ module Gdpr
           user_agent: s.user_agent,
           created_at: s.created_at.iso8601,
           last_active_at: s.updated_at.iso8601
-        }
-      end
-    end
-
-    def identities_payload
-      @user.identities.order(:created_at).map do |i|
-        {
-          provider: i.provider,
-          uid: i.uid,
-          primary: i.primary,
-          locked_at: i.locked_at&.iso8601,
-          profile_data: i.auth_data,
-          created_at: i.created_at.iso8601
         }
       end
     end

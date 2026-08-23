@@ -4,15 +4,6 @@ en:
     erasure:
       done: Your account has been erased. Your personal data is gone and this login no longer exists.
       password_invalid: Current password is incorrect — the account was NOT erased.
-    identity:
-      cannot_unlink_last: Cannot unlink the last login method without a password.
-      locked_flash: "%{provider} locked."
-      locked_json: Identity %{provider} locked.
-      set_password_first: Set a password before unlinking the last provider.
-      unlinked_flash: "%{provider} unlinked."
-      unlinked_json: Provider %{provider} unlinked.
-      unlocked_flash: "%{provider} unlocked."
-      unlocked_json: Identity %{provider} unlocked.
     mfa:
       disabled: MFA disabled.
       enabled: MFA enabled.
@@ -51,19 +42,6 @@ en:
         hint: Permanently destroys your personal data and closes this account. This cannot be undone, and we will not be able to restore it for you (GDPR Art. 17).
         submit: Erase my account
       heading: "🔐 Account Security"
-      identities:
-        available_heading: Available Providers
-        heading: Linked Identity Providers
-        link_provider: Link %{provider}
-        lock: Lock
-        locked: Locked
-        none_linked: No providers linked.
-        primary: Primary
-        uid_line: 'UID: %{prefix}...'
-        unlink: Unlink
-        unlink_confirm: Unlink %{provider}?
-        unlink_disabled_title: Set a password before unlinking.
-        unlock: Unlock
       mfa:
         disable_button: Disable MFA
         disabled_hint: "⚠️ MFA disabled. We recommend enabling it to protect your account."

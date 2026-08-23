@@ -46,19 +46,6 @@ RSpec.describe Gdpr::DataExportService do
       expect(trail.first).to include(ip_address: "203.0.113.7", user_agent: "FieldTablet/1.0")
     end
 
-    it "includes OAuth profile data but not its tokens" do
-      user.identities.create!(
-        provider: "google_oauth2", uid: "g-123",
-        auth_data: { "name" => "Oksana V", "email" => "ok@example.com" },
-        access_token: "secret-token-value"
-      )
-
-      identities = described_class.call(user)[:identities]
-      expect(identities.first).to include(provider: "google_oauth2", uid: "g-123")
-      expect(identities.first[:profile_data]).to include("name" => "Oksana V")
-      expect(JSON.generate(identities)).not_to include("secret-token-value")
-    end
-
     it "includes audit rows where the subject is the actor" do
       AuditLog.create!(
         user_id: user.id, organization_id: organization.id,
@@ -90,17 +77,14 @@ RSpec.describe Gdpr::DataExportService do
       expect(JSON.generate(records)).not_to include("fake-jpeg-bytes")
     end
 
-    # Гілкові хвости nullable-полів: org відсутня (анонімізований сусід/безорговий
-    # актор) · locked identity · performed_at=nil (колонка nullable БЕЗ NOT NULL —
-    # рядок повз валідації можливий, тож `&.` живий, не декоративний).
-    it "serializes a user without an organization and a locked identity" do
+    # Гілковий хвіст nullable-поля: org відсутня (анонімізований сусід/безорговий
+    # актор) — `&.` живий, не декоративний.
+    it "serializes a user without an organization" do
       orgless = create(:user, organization: nil)
-      orgless.identities.create!(provider: "github", uid: "g-1", locked_at: Time.zone.local(2026, 8, 1, 12, 0))
 
       export = described_class.call(orgless)
 
       expect(export[:user][:organization_name]).to be_nil
-      expect(export[:identities].first[:locked_at]).to eq(Time.zone.local(2026, 8, 1, 12, 0).iso8601)
     end
 
     it "serializes a maintenance record whose performed_at bypassed validations" do

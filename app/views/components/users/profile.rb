@@ -4,10 +4,8 @@ module Users
   class Profile < ApplicationComponent
     # @param user [User] the user to display
     # @param maintenance_count [Integer] pre-computed count (eager-load in controller)
-    # @param active_identities [Array<Identity>] pre-loaded active identities (eager-load in controller)
-    def initialize(user:, maintenance_count: 0, active_identities: [])
+    def initialize(user:, maintenance_count: 0)
       @user = user
-      @active_identities = active_identities
       @maintenance_count = maintenance_count
     end
 
@@ -21,7 +19,6 @@ module Users
         end
 
         render_security_status
-        render_linked_providers
       end
     end
 
@@ -59,8 +56,8 @@ module Users
           access_item(t(".access.command_execution"), @user.admin_or_above? ? t(".access.full") : t(".access.limited"))
           # [UI.17] Тут стояв `access_item(t(".access.encryption"), "AES-256-GCM")`.
           # Режим названо правильно — це дефолт AR-encryption, — але НЕ ПРО ЦЬОГО
-          # СУБʼЄКТА: `User` не має жодного `encrypts` (шифруються лише `Identity`
-          # і `HardwareKey`), тож у панелі привілеїв акаунта рядок читався як
+          # СУБʼЄКТА: `User` шифрує лише `otp_secret`, а не рядок акаунта (повний
+          # at-rest контур — `HardwareKey`), тож у панелі привілеїв він читався як
           # обіцянка захисту, якої цій таблиці ніхто не давав. Хибною була АДРЕСА
           # твердження, не термін — і саме тому греп за «чи існує GCM» його виправдовував.
         end
@@ -84,23 +81,9 @@ module Users
           a(href: account_security_path, class: "text-mini text-gaia-primary-strong uppercase tracking-widest hover:text-gaia-text-strong transition-colors border border-gaia-border-strong px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") { t(".security.manage") }
         end
 
-        div(class: "grid grid-cols-3 gap-4 font-mono text-compact") do
+        div(class: "grid grid-cols-2 gap-4 font-mono text-compact") do
           security_indicator(t(".security.mfa"), @user.mfa_enabled?, @user.mfa_enabled? ? t(".security.active") : t(".security.disabled"))
           security_indicator(t(".security.password"), @user.password_digest.present?, @user.password_digest.present? ? t(".security.set") : t(".security.not_set"))
-          security_indicator(t(".security.providers"), @active_identities.any?, t(".security.linked_count", count: @active_identities.size))
-        end
-      end
-    end
-
-    def render_linked_providers
-      return if @active_identities.empty?
-
-      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-4") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".sections.linked_providers") }
-        div(class: "flex flex-wrap gap-3") do
-          @active_identities.each do |identity|
-            provider_badge(identity)
-          end
         end
       end
     end
@@ -112,25 +95,6 @@ module Users
           span(class: "text-mini text-gaia-text-muted uppercase") { label }
         end
         p(class: tokens("text-compact", "text-gaia-primary-strong": is_active, "text-status-danger-accent": !is_active)) { value }
-      end
-    end
-
-    def provider_badge(identity)
-      # ⚖️ [ARCH.69, 2026-08-21] Гілки Facebook/LinkedIn/Twitter зняті разом зі
-      # звуженням `Identity::SUPPORTED_PROVIDERS` до одного провайдера. Fallback
-      # `🔗` покриває і майбутнього провайдера, і теоретичний історичний рядок —
-      # у проді таких немає за побудовою (OmniAuth не був задротований жодного дня).
-      icon = case identity.provider
-      when "google_oauth2" then "🔵"
-      else "🔗"
-      end
-
-      div(class: "flex items-center gap-2 px-3 py-2 border border-gaia-border-strong bg-gaia-surface-sunken") do
-        span { icon }
-        span(class: "text-tiny text-gaia-primary-strong font-mono") { identity.provider_name }
-        if identity.primary?
-          span(class: "text-micro px-1 bg-gaia-primary/10 text-gaia-primary-strong uppercase") { t(".provider.primary") }
-        end
       end
     end
 

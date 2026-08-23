@@ -17,8 +17,6 @@ en:
       forgot_link: Forgot Access Code?
       identity_label: Identity (Email)
       identity_placeholder: operator@silken.net
-      provider_aria: Sign in with %{provider}
-      provider_separator: Or authenticate via provider
       submit: Authenticate
       subtitle: Establishing Neural Link
       title: Citadel

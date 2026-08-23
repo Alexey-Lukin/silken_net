@@ -4,15 +4,6 @@ lv:
     erasure:
       done: Konts ir dzēsts. Jūsu personas dati ir iznīcināti, un šī pieteikšanās vairs nepastāv.
       password_invalid: Pašreizējā parole nav pareiza — konts NETIKA dzēsts.
-    identity:
-      cannot_unlink_last: Nevar atvienot pēdējo pieteikšanās metodi bez paroles.
-      locked_flash: "%{provider} bloķēts."
-      locked_json: Identitāte %{provider} bloķēta.
-      set_password_first: Iestatiet paroli pirms atvienot pēdējo pakalpojumu sniedzēju.
-      unlinked_flash: "%{provider} atvienots."
-      unlinked_json: Pakalpojumu sniedzējs %{provider} atvienots.
-      unlocked_flash: "%{provider} atbloķēts."
-      unlocked_json: Identitāte %{provider} atbloķēta.
     mfa:
       disabled: MFA atspējota.
       enabled: MFA ieslēgta.
@@ -51,19 +42,6 @@ lv:
         hint: Neatgriezeniski iznīcina jūsu personas datus un slēdz šo kontu. Darbību nevar atsaukt, un mēs to nevarēsim atjaunot pēc jūsu pieprasījuma (VDAR 17. pants).
         submit: Dzēst manu kontu
       heading: "🔐 Konta drošība"
-      identities:
-        available_heading: Pieejamie pakalpojumu sniedzēji
-        heading: Saistītie identitātes pakalpojumu sniedzēji
-        link_provider: Saistīt %{provider}
-        lock: Bloķēt
-        locked: Bloķēts
-        none_linked: Nav saistītu pakalpojumu sniedzēju.
-        primary: Primārais
-        uid_line: 'UID: %{prefix}...'
-        unlink: Atvienot
-        unlink_confirm: Atvienot %{provider}?
-        unlink_disabled_title: Iestatiet paroli pirms atvienot.
-        unlock: Atbloķēt
       mfa:
         disable_button: Atspējot MFA
         disabled_hint: "⚠️ MFA atspējota. Iesakām to iespējot, lai aizsargātu kontu."

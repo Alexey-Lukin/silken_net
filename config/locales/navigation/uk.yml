@@ -25,12 +25,10 @@ uk:
         firmwares: Прошивки
         forgot_password: Відновлення пароля
         gateways: Шлюзи
-        identities: Ідентичності
         inventory: Інвентар
         ledger: Леджер
         live: Наживо
         locale: Мова
-        lock: Блокування
         login: Вхід
         logout: Вихід
         maintenance_records: Записи обслуговування
@@ -61,7 +59,6 @@ uk:
         transactions: Транзакції
         tree_families: Родини дерев
         trees: Дерева
-        unlock: Розблокування
         users: Користувачі
         verify: Верифікація
         wallets: Гаманці

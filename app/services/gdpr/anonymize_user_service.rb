@@ -7,10 +7,9 @@ module Gdpr
   #
   #   · sessions.destroy_all   — слід входу (ip/user_agent), не append-only;
   #     заразом гасить усі живі входи (той самий ефект, що change_password)
-  #   · identities.destroy_all — OAuth-профіль разом із шифрованими секретами
   #   · users-рядок            — PII-поля → tombstone/nil; після цього вхід
   #     неможливий за побудовою (email затерто, digest знято — `authenticate`
-  #     має nil-гард, — сесії вбиті, identities знищені), тобто анонімізація
+  #     має nil-гард, — сесії вбиті), тобто анонімізація
   #     Є ефективним offboarding-ом без окремого механізму деактивації
   #
   # 🔒 Стелі названі СВІДОМО, і кожна чекає власного присуду (`00_07` SEC.18):
@@ -44,7 +43,6 @@ module Gdpr
       ActiveRecord::Base.transaction do
         record_anonymization_trail!
         @user.sessions.destroy_all
-        @user.identities.destroy_all
         scrub_user_row!
       end
       @user
@@ -62,8 +60,7 @@ module Gdpr
         # Лише структурні факти: скільки чого стерто — жодного значення PII.
         metadata: {
           subject_user_id: @user.id,
-          sessions_destroyed: @user.sessions.count,
-          identities_destroyed: @user.identities.count
+          sessions_destroyed: @user.sessions.count
         }
       )
     end

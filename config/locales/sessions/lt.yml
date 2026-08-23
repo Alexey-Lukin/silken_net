@@ -17,8 +17,6 @@ lt:
       forgot_link: Pamiršote prieigos kodą?
       identity_label: Tapatybė (El. paštas)
       identity_placeholder: operatorius@silken.net
-      provider_aria: Prisijungti su %{provider}
-      provider_separator: Arba autentifikuotis per tiekėją
       submit: Autentifikuotis
       subtitle: Neuralinio ryšio kūrimas
       title: Citadelė

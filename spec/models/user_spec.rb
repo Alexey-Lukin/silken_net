@@ -472,12 +472,6 @@ RSpec.describe User, type: :model do
       expect(assoc.options[:dependent]).to eq(:destroy)
     end
 
-    it "has many identities" do
-      assoc = described_class.reflect_on_association(:identities)
-      expect(assoc.macro).to eq(:has_many)
-      expect(assoc.options[:dependent]).to eq(:destroy)
-    end
-
     it "has many wallets through organization" do
       assoc = described_class.reflect_on_association(:wallets)
       expect(assoc.macro).to eq(:has_many)

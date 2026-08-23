@@ -262,10 +262,11 @@ RSpec.describe "Rack::Attack", type: :request do
 
     # Друге дієслово списку — і воно не церемоніальне: `%w[PATCH DELETE]` живе
     # в одному рядку, тож приклад лише на PATCH лишався б зеленим, якби DELETE
-    # звідти випав, а саме відв'язування ідентичності знімає фактор автентифікації.
-    it "throttles identity-unlink DELETEs on the same rule" do
+    # звідти випав, — а єдина DELETE-дія цього периметра НЕЗВОРОТНА (стирання
+    # акаунта), тобто саме та, де перебір `current_password` коштує найдорожче.
+    it "throttles account-erasure DELETEs on the same rule" do
       11.times do
-        delete "/account_security/identities/1",
+        delete "/account_security/erase",
           headers: { "REMOTE_ADDR" => "9.8.7.2" }
       end
 

@@ -43,8 +43,6 @@ en:
       node_initiated: 'Node initiation complete. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Device with UID %{uid} is already registered in the system.
     sessions:
-      authenticated_via: Authenticated via %{provider}.
-      blocked_provider: This login method is blocked. Contact an administrator or use a different method.
       invalid_credentials: Invalid access coordinates.
       logout_success: Logout successful. The Gate is closed.
       neural_link_established: Neural Link Established.

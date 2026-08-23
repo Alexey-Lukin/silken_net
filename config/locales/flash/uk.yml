@@ -43,8 +43,6 @@ uk:
       node_initiated: 'Ініціація вузла завершена. DID: %{did}. Hardware UID: %{uid}'
       uid_taken: Пристрій з UID %{uid} вже зареєстрований в системі.
     sessions:
-      authenticated_via: Автентифіковано через %{provider}.
-      blocked_provider: Цей метод входу заблоковано. Зверніться до адміністратора або використайте інший метод.
       invalid_credentials: Невірні координати доступу.
       logout_success: Вихід успішний. Брама закрита.
       neural_link_established: Нейронний зв'язок встановлено.

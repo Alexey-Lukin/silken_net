@@ -17,8 +17,6 @@ uk:
       forgot_link: Забули код доступу?
       identity_label: Ідентифікатор (email)
       identity_placeholder: operator@silken.net
-      provider_aria: Увійти через %{provider}
-      provider_separator: Або увійдіть через провайдера
       submit: Автентифікувати
       subtitle: Встановлення нейронного зв'язку
       title: Цитадель

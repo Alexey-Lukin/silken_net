@@ -13,7 +13,6 @@ class User < ApplicationRecord
 
   # --- ЗВ'ЯЗКИ (The Neural Links) ---
   has_many :sessions, dependent: :destroy
-  has_many :identities, dependent: :destroy
   belongs_to :organization, optional: true
 
   # ⚡ [СИНХРОНІЗАЦІЯ]: Прямий доступ до фінансової мережі підлеглих дерев
@@ -30,9 +29,8 @@ class User < ApplicationRecord
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 
-  # [ВИПРАВЛЕНО]: Тепер пароль вимагається лише тоді, коли немає зовнішніх ідентичностей.
   # confirmation: true додає автоматичну перевірку password_confirmation.
-  validates :password, presence: true, confirmation: true, on: :create, if: :password_required?
+  validates :password, presence: true, confirmation: true, on: :create
   validates :password, length: { minimum: 12 }, allow_blank: true
 
   # Telegram Bot API приймає chat_id як ціле (відʼємне для груп/каналів).
@@ -152,11 +150,12 @@ class User < ApplicationRecord
   # ⚠️ **`&.` тут НЕ оборонний рефлекс, а дискримінатор.** Попередня форма
   # `password_salt.to_s.last(10)` для користувача без `password_digest` давала
   # `""`, і порожній стемп сесії згортався в `""` теж — тобто перевірка
-  # ставала **істинною**, fail-OPEN, синхронно в усіх чотирьох місцях. Сьогодні
-  # недосяжно (сесія вимагає логіну паролем), але це форма, що чекає свого
-  # тригера: перший passwordless/OAuth-шлях, який не проставить пароля, зробить
-  # її дірою МОВЧКИ. Тому предикат вимагає непорожнього очікуваного значення
-  # ЯВНО, а не покладається на те, що порожнеча недосяжна.
+  # ставала **істинною**, fail-OPEN, синхронно в усіх чотирьох місцях. Пускача
+  # в цієї форми більше немає: акаунт без `password_digest` не народжується —
+  # валідація вимагає пароля безумовно, а єдиний, хто його занулює
+  # (`Gdpr::AnonymizeUserService`), тим самим записом ставить tombstone-пошту.
+  # Предикат усе одно вимагає непорожнього очікуваного значення ЯВНО — він коштує
+  # один виклик, а недосяжність не є доказом на майбутнє.
   SESSION_STAMP_LENGTH = 10
 
   def session_salt_stamp
@@ -328,11 +327,5 @@ class User < ApplicationRecord
       organization_id: organization_id,
       metadata: { from: from.to_s, to: to.to_s }
     )
-  end
-
-  # [ВИПРАВЛЕНО]: Тепер ця логіка реально керує валідацією.
-  # Пароль не потрібен, якщо користувач прийшов через OAuth (`Identity::SUPPORTED_PROVIDERS`) і вже має Identity.
-  def password_required?
-    identities.none?
   end
 end

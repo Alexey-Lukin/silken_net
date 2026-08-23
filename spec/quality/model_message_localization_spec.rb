@@ -76,12 +76,6 @@ module ModelMessageLocalization
            "`alerts_controller` має лише index/show/resolve",
       back: "поява create-шляху тривоги з UI"
     },
-    [ "app/models/identity.rb",
-      "Цей акаунт вже прив\x27язаний до іншого користувача." ] => {
-      why: "прив'язка OAuth-акаунта; `save!` у `sessions#omniauth_create` → generic 500, " \
-           "текст лише в лозі",
-      back: "коли omniauth-гілка почне рендерити помилку у формі входу"
-    },
     [ "app/models/tiny_ml_model.rb",
       "має відповідати формату семантичного версіонування (напр. v2.1.0)" ] => {
       why: "семантична версія; єдине місце створення в дереві — `db/seeds.rb`, поза продовим трафіком",

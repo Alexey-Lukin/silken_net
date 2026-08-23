@@ -85,8 +85,9 @@ module Api
       # [S6.21] «Загубив аркуш, телефон живий»: ротація лишає TOTP-секрет
       # недоторканим (disable→enable змусив би пересканувати QR). Step-up —
       # дзеркало disable-гілки `toggle_mfa`: ротація ЗНЕЦІНЮЄ збережені коди,
-      # тобто вкрадена сесія не сміє робити це мовчки; OAuth-only акаунт без
-      # пароля step-up не має — спільного секрета не існує.
+      # тобто вкрадена сесія не сміє робити це мовчки. Гард на `password_digest`
+      # лишається fail-OPEN за формою, але недосяжним: акаунт без пароля не
+      # народжується (валідація безумовна).
       def rotate_recovery_codes
         return redirect_to account_security_path, status: :see_other unless current_user.mfa_enabled?
 

@@ -43,8 +43,6 @@ lv:
       node_initiated: 'Mezgla iniciācija pabeigta. DID: %{did}. Aparatūras UID: %{uid}'
       uid_taken: Ierīce ar UID %{uid} jau ir reģistrēta sistēmā.
     sessions:
-      authenticated_via: Autentificēts ar %{provider}.
-      blocked_provider: Šī pieteikšanās metode ir bloķēta. Sazinieties ar administratoru vai izmantojiet citu metodi.
       invalid_credentials: Nepareizas piekļuves koordinātes.
       logout_success: Iziet veiksmīgi. Vārti ir slēgti.
       neural_link_established: Neirālais savienojums izveidots.

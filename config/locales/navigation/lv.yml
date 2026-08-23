@@ -25,12 +25,10 @@ lv:
         firmwares: Programmaparatūras
         forgot_password: Paroles atjaunošana
         gateways: Vārtejas
-        identities: Identitātes
         inventory: Inventārs
         ledger: Virsgrāmata
         live: Tiešraide
         locale: Valoda
-        lock: Bloķēšana
         login: Pieteikšanās
         logout: Atteikšanās
         maintenance_records: Apkopes ieraksti
@@ -61,7 +59,6 @@ lv:
         transactions: Darījumi
         tree_families: Koku dzimtas
         trees: Koki
-        unlock: Atbloķēšana
         users: Lietotāji
         verify: Verifikācija
         wallets: Maki

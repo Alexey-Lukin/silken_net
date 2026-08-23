@@ -113,7 +113,7 @@ end
 
 # ---------------------------------------------------------------------------
 # 5c. ACCOUNT SECURITY THROTTLE [SEC.16] — step-up brute-force guard:
-# підбір current_password на password-change / identity-churn. Keyed на IP
+# підбір current_password на password-change / MFA-toggle / erase. Keyed на IP
 # (Rack::Attack сидить перед session-middleware — user_id тут недоступний;
 # IP = actor-проксі, дзеркало logins/ip вище).
 # ---------------------------------------------------------------------------

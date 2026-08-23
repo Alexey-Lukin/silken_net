@@ -30,7 +30,7 @@
    - §2 Біологічний (TreeFamily, Tree, Cluster) — фізичний об'єкт моніторингу
    - §3 Апаратний (Gateway, HardwareKey, DeviceCalibration, TelemetryLog, GatewayTelemetryLog) — IoT-edge
    - §4 AI / OTA / Актуатори (TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand) — інтелект та фізична відповідь
-   - §5 Люди та Організації (Organization, User, Session, Identity) — соціальний шар
+   - §5 Люди та Організації (Organization, User, Session) — соціальний шар
    - §6 Економічний (Wallet, BlockchainTransaction, NaasContract, ParametricInsurance) — токеноміка
    - §7 Інтелект та Аудит (AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter, ProvisioningSession) — спостережуваність + governance
 4. **§8 Seeds, §9 Індекси, §10 Карта зв'язків, §11 Архітектурні Принципи, §12 SSOT Drift Register** — horizontal cross-cuts (не належать до конкретного домену; стосуються всіх моделей одразу).
@@ -47,7 +47,7 @@
 - [2. Біологічний Рівень](#-2-біологічний-рівень) — TreeFamily, **Tree** (Soldier), Cluster
 - [3. Апаратний Рівень](#-3-апаратний-рівень) — **Gateway** (Queen), HardwareKey, DeviceCalibration, **TelemetryLog** (partitioned), GatewayTelemetryLog (partitioned)
 - [4. AI / OTA / Актуатори](#-4-ai--ota--актуатори) — TinyMlModel, BioContractFirmware, Actuator, ActuatorCommand
-- [5. Люди та Організації](#-5-люди-та-організації) — Organization, User, Session, Identity
+- [5. Люди та Організації](#-5-люди-та-організації) — Organization, User, Session
 - [6. Економічний Рівень](#-6-економічний-рівень) — Wallet, **BlockchainTransaction** (partitioned), NaasContract, ParametricInsurance
 - [7. Інтелект та Аудит](#-7-інтелект-та-аудит) — AiInsight, EwsAlert, AuditLog, MaintenanceRecord, EthereumAnchor, SystemParameter, ProvisioningSession
 - [8. Seeds — Початковий Стан Системи](#-8-seeds--початковий-стан-системи)
@@ -97,7 +97,7 @@
 
 ### DB-level integrity backstops [ARCH.56]
 
-Кожна Ruby-`uniqueness`-валідація має **дзеркальний unique-індекс** (race-вікно між SELECT і INSERT валідація не закриває): `organizations.name` + `organizations.crypto_public_address` · `clusters.name` · `tree_families.name` · `identities (provider, uid)` · `actuators (gateway_id, endpoint)` · `bio_contract_firmwares.version` · `tiny_ml_models.version` · `wallets.tree_id` · `device_calibrations.tree_id` (останні два — `has_one`: друга row = phantom; `Tree.after_create` сам створює wallet+калібровку, тож фабрики специв реюзають авто-створені через `initialize_with`).
+Кожна Ruby-`uniqueness`-валідація має **дзеркальний unique-індекс** (race-вікно між SELECT і INSERT валідація не закриває): `organizations.name` + `organizations.crypto_public_address` · `clusters.name` · `tree_families.name` · `actuators (gateway_id, endpoint)` · `bio_contract_firmwares.version` · `tiny_ml_models.version` · `wallets.tree_id` · `device_calibrations.tree_id` (останні два — `has_one`: друга row = phantom; `Tree.after_create` сам створює wallet+калібровку, тож фабрики специв реюзають авто-створені через `initialize_with`).
 
 Money-інваріант застраховано CHECK-констрейнтом `wallets_balance_invariants`: `balance ≥ 0 AND locked_balance ≥ 0 AND esg_retired_balance ≥ 0 AND locked_balance ≤ balance` (семантика `Wallet#available_balance = balance − locked_balance`; прод-шляхи `lock_funds!`/`lock_and_mint!` мають guard, CHECK ловить bypass через `update_all`/SQL). `blockchain_transactions.amount` = `numeric(24,6)` (був bare `numeric`). `gateways.state` = `NOT NULL DEFAULT 0` (AASM nil-state footgun). Композитний PK партиційованих таблиць вимагає `self.primary_key = "id"` у моделі — інакше `record.id` повертає масив `[id, created_at]` (TelemetryLog / GatewayTelemetryLog / BlockchainTransaction — усі три декларують). ⚠️ **Клас куплено кровʼю, і його вартий памʼятати без носія** (ARCH.56, 2026-07-26): четверта партиційована модель тодішнього дерева декларувала `self.primary_key = [:id, :created_at]`, через що `record.id` віддавав МАСИВ — він летів у bigint-колонку (`StatementInvalid` повз rescue → DeadSet) і друкувався як `"id": [42, …]` у публічній JSON-відповіді через блупринт-`identifier`. Тобто композитний DB-PK — вимога партиціювання, а скалярний AR-PK — вимога всього, що читає `.id`. Живого інстансу в дереві немає; правило лишається чинним для КОЖНОЇ нової партиційованої моделі.
 
@@ -971,31 +971,6 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 ---
 
-### `Identity` — OAuth2 Ідентичність
-
-**Асоціації:**
-- `belongs_to :user`
-- `delegate :organization, :role, to: :user`
-- `delegate :wallets, to: :organization`
-
-**Підтримувані провайдери:** `google_oauth2` — рівно один (⚖️ founder 2026-08-21: від Facebook/LinkedIn/Twitter відмовились зовсім). 🔴 **`Identity::SUPPORTED_PROVIDERS` є ДЖЕРЕЛОМ, а не дзеркалом:** перелік третіх сторін у Privacy Policy ([`b2c_tos_privacy §B.5`](protocols/legal/b2c_tos_privacy.md)) і в RoPA Art.30 ([`ropa_art30.md`](protocols/legal/ropa_art30.md)) писаний за нею, тож кожен провайдер коштує не лише гема й реєстрації застосунку, а й рядка про НЕЗАЛЕЖНОГО контролера в юр-шарі. Валідації `inclusion:` на колонці свідомо немає — історичний рядок із іншим провайдером лишається читабельним (`PROVIDER_NAMES` має `titleize`-fallback), просто новий таким шляхом не створюється.
-
-**Ключові поля:**
-
-| Поле | Тип | Опис |
-|------|-----|------|
-| `provider` | string | Назва провайдера |
-| `uid` | string | Унікальний ID у провайдера (unique per provider) |
-| `access_token` / `refresh_token` | string (encrypted) | OAuth2 токени — at-rest AR-encryption [SEC.22 / ARCH.57(4)] |
-| `expires_at` | datetime | Термін дії токена |
-| `auth_data` | text (encrypted, JSON-серіалізовано) | Повний зліпок профілю — `serialize :auth_data, coder: JSON` + `encrypts` (НЕ jsonb-колонка) [SEC.22] |
-| `primary` | boolean | Основний метод входу |
-| `locked_at` | datetime | Час блокування (Account Takeover Protection) |
-
-**Ключові методи:** `find_or_create_from_auth_hash(auth_hash, user:)`, `token_expired?`, `locked?`, `lock!`, `unlock!`, `make_primary!`.
-
----
-
 ### `Current` — Контекст Виконавця Запиту [SEC.25 Ф2]
 
 **Не AR-модель** — `ActiveSupport::CurrentAttributes` (живе в `app/models/`, звідси й місце
@@ -1568,7 +1543,7 @@ supervisor_approved/active ──fail_with(reason)──► failed
 Порядок видалення при очищенні (від листя до кореня):
 
 ```
-AuditLog, Session, Identity, EthereumAnchor
+AuditLog, Session, EthereumAnchor
 ActuatorCommand, MaintenanceRecord
 BlockchainTransaction, TelemetryLog, GatewayTelemetryLog, AiInsight, EwsAlert
 Wallet, DeviceCalibration
@@ -1668,7 +1643,6 @@ Organization
 
 User
   ├── Sessions (destroy)
-  ├── Identities (destroy)
   ├── MaintenanceRecords (restrict_with_error)
   └── AuditLogs (restrict_with_error)
 
@@ -1729,11 +1703,10 @@ Polymorphic:
 |---|---|---|
 | `users` — `email_address` · `first_name` · `last_name` · `telegram_chat_id` · `push_token` | **PII (ядро)** | Прямі ідентифікатори живої людини. Усі скрабляться з логів (`filter_parameters`); `recovery_codes` і `password_digest` — креденшели, не PII, але видаляються тим самим ходом |
 | `sessions` — `ip_address` · `user_agent` | **PII (слід входу)** | Обидва `validates presence`, тобто заповнені ЗАВЖДИ. Стирання сесій — найдешевша половина erasure: таблиця не append-only |
-| `audit_logs` — `ip_address` · `user_agent` · `user_id` | 🔴 **PII в APPEND-ONLY** | Ядро напруги з [`ARCH.57`](00_07_Action_Plan_Tracker): ланцюг tamper-evident, тож рядок не видаляють — erasure тут можлива лише ПСЕВДОНІМІЗАЦІЄЮ поля при збереженні хеш-ланцюга. Це ⚖️-половина erasure ([`00_07`](00_07_Action_Plan_Tracker) SEC.18): `Gdpr::AnonymizeUserService` (безсуперечна половина — users-tombstone + sessions/identities destroy, слід у ланцюг ДО мутацій) ці рядки свідомо НЕ чіпає, і його спека пінить, що ланцюг переживає анонімізацію цілим |
+| `audit_logs` — `ip_address` · `user_agent` · `user_id` | 🔴 **PII в APPEND-ONLY** | Ядро напруги з [`ARCH.57`](00_07_Action_Plan_Tracker): ланцюг tamper-evident, тож рядок не видаляють — erasure тут можлива лише ПСЕВДОНІМІЗАЦІЄЮ поля при збереженні хеш-ланцюга. Це ⚖️-половина erasure ([`00_07`](00_07_Action_Plan_Tracker) SEC.18): `Gdpr::AnonymizeUserService` (безсуперечна половина — users-tombstone + sessions destroy, слід у ланцюг ДО мутацій) ці рядки свідомо НЕ чіпає, і його спека пінить, що ланцюг переживає анонімізацію цілим |
 | `organizations` — `billing_email` | **PII (умовно)** | Для ФОП/одноосібного власника платіжна адреса Є персональними даними; для ТОВ — ні. Клас залежить від контрагента, тож поле трактується як PII за замовчуванням |
 | `gateways` — `ip_address` | **Межовий: пристрій** | Спостережений CGNAT/Starlink-egress ШЛЮЗА, не людини (§3). Лінкується з оператором ділянки опосередковано, тож не PII-ядро, але й не «нічого» — потрапляє в RoPA як дані пристрою |
 | `wallets` · `organizations` — `crypto_public_address` · `solana_public_address`; `blockchain_transactions.to_address` | **Псевдонімні** | Адреси публічного ланцюга. `wallets.tree_id` — `NOT NULL`, тож гаманець завжди належить ДЕРЕВУ, не людині ([`03_04 §6.3`](03_04_mruby_Lorenz_Attractor) — «у дерев немає GDPR-даних»). ⚠️ Стане PII в мить, коли зʼявиться виплата рейнджеру ([`E.20`](00_07_Action_Plan_Tracker)): адреса отримувача-людини вже персональна |
-| `identities` — `auth_data` (·`access_token`·`refresh_token` — креденшели) | **PII (OAuth-профіль)** | `auth_data` зберігає ПОВНИЙ зліпок профілю провайдера (імʼя/email/аватар) — AR-encrypted at-rest [SEC.22]. ⚠️ Жодне імʼя колонок таблиці не матчить іменний патерн гейта, тож `pii_register_spec` цю таблицю НЕ бачить за побудовою — рядок тримається читанням, не приладом. DSAR віддає `auth_data` (дані про особу) і ніколи токени (секрети доступу); erasure = `destroy` рядка разом із шифрованими секретами |
 | `maintenance_records` — `biomass_passport_tx_hash` · `biomass_passport_status` | **НЕ PII** | Хибний позитив свіпу по імені («passport» = документ ОСОБИ в патерні): TX-хеш паспорта біомаси Puro.earth та його lifecycle-стан [PERF.1(д)] — обидва про мертву деревину, не про людину |
 | ActiveStorage-блоби `maintenance_records.photos` — **EXIF усередині файла** (GPS · timestamp · модель телефона) | 🔴 **PII поза колонками** | Смартфонний кадр везе координати й час ТЕХНІКА в самому JPEG — поверхня, якої не бачить жоден колонковий свіп. ⚖️ [SEC.18, 2026-08-20]: **стрип із ПОКАЗУ, оригінал ТРИМАЄМО** — variant `:thumb` (єдина поверхня показу глядачам) іде `saver: { strip: true }`, оригінал лишається незачепленим свідомо: EXIF-геотег є потенційним незалежним доказом «технік був на місці» (Anti-Sofa-Repair, ⚖️ [`00_07`](00_07_Action_Plan_Tracker) UI.7), і глобальний стрип знищив би його незворотно. Erasure видаляє блоб цілком (purge), тож EXIF помирає разом із ним; DSAR-експорт віддає оригінал СВІДОМО — з метаданими, бо вони і є частиною запису про субʼєкта. Носій обох половин — `spec/models/maintenance_record_photos_exif_spec.rb` (mutation-verified: знятий strip червонить variant-половину) |
 

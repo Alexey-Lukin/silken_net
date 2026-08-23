@@ -11,9 +11,8 @@ module AccountSecurity
     # @param erasure_error [String, nil] помилка ПОТОЧНОГО сабміту форми стирання
     #   [SEC.18]. Власний слот, а не реюз `password_error`: спільний показав би
     #   відмову стирання над полями зміни пароля — у секції, якої людина не чіпала.
-    def initialize(user:, identities:, password_error: nil, erasure_error: nil)
+    def initialize(user:, password_error: nil, erasure_error: nil)
       @user = user
-      @identities = identities
       @password_error = password_error
       @erasure_error = erasure_error
     end
@@ -23,7 +22,6 @@ module AccountSecurity
         render_header
         render_mfa_section
         render_password_section
-        render_identities_section
         render_data_export_section
         render_erasure_section
       end
@@ -80,8 +78,9 @@ module AccountSecurity
 
     # [S6.21] Ротація recovery-набору: «загубив аркуш, телефон живий» — новий
     # набір без пересканування QR. Step-up дзеркалить disable-форму (ротація
-    # знецінює збережені коди, вкрадена сесія не сміє робити це мовчки);
-    # OAuth-only акаунт поля не має — спільного секрета не існує.
+    # знецінює збережені коди, вкрадена сесія не сміє робити це мовчки).
+    # Гілка без поля лишається дзеркалом контролерного гарда: акаунт без
+    # `password_digest` сьогодні не народжується, тож вона недосяжна.
     def render_rotate_codes_form
       form_with(url: mfa_recovery_codes_path, method: :post, class: "space-y-4") do |f|
         if @user.password_digest.present?
@@ -187,11 +186,9 @@ module AccountSecurity
     #
     # ⚠️ Секція рендериться ЛИШЕ для акаунта з паролем, і це дзеркало гарда в
     # контролері, а не косметика: акт незворотний, тож без спільного секрета
-    # доказу наміру не існує, і кнопка вела б у гарантовану відмову. OAuth-only
-    # акаунт іде людським шляхом (`gdpr_runbook.md` §2, місячний строк Art.12(3)
-    # витримує). Сьогодні таких акаунтів у дереві нуль — OmniAuth без дроту
-    # ([`00_07`](../../../../docs/00_07_Action_Plan_Tracker.md) ARCH.69), — тож
-    # гілка чекає свого тригера, а не покриває наявний стан.
+    # доказу наміру не існує, і кнопка вела б у гарантовану відмову. Акаунта без
+    # пароля в дереві не буває за побудовою (валідація безумовна), тож цей
+    # `return` — недосяжний запобіжник, а не гілка під наявний стан.
     def render_erasure_section
       return if @user.password_digest.blank?
 
@@ -230,103 +227,6 @@ module AccountSecurity
     end
 
     # --- ПРОВАЙДЕРИ СЕКЦІЯ ---
-    def render_identities_section
-      div(class: "p-6 border border-gaia-border bg-gaia-surface space-y-6") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-4") { t(".identities.heading") }
-
-        if @identities.any?
-          div(class: "space-y-3") do
-            @identities.each { |identity| render_identity_row(identity) }
-          end
-        else
-          p(class: "text-tiny text-gaia-text-muted") { t(".identities.none_linked") }
-        end
-
-        render_available_providers
-      end
-    end
-
-    def render_identity_row(identity)
-      div(class: "flex items-center justify-between p-4 border border-gaia-border bg-gaia-surface-sunken") do
-        div(class: "flex items-center gap-4") do
-          span(class: "text-lg") { provider_icon(identity.provider) }
-          div do
-            div(class: "flex items-center gap-2") do
-              span(class: "text-compact text-gaia-text-strong font-mono") { identity.provider_name }
-              if identity.primary?
-                span(class: "text-micro px-2 py-0.5 bg-gaia-primary/10 text-gaia-primary-strong uppercase") { t(".identities.primary") }
-              end
-              if identity.locked?
-                span(class: "text-micro px-2 py-0.5 bg-status-danger text-status-danger-text uppercase") { t(".identities.locked") }
-              end
-            end
-            span(class: "text-mini text-gaia-text-muted font-mono") { t(".identities.uid_line", prefix: identity.uid[0..12]) }
-          end
-        end
-
-        div(class: "flex items-center gap-2") do
-          render_lock_toggle(identity)
-          render_unlink_button(identity)
-        end
-      end
-    end
-
-    # [UI.7] `button_to`, не рукописна `<form>`: обидві гілки — дія без вводу, тож
-    # форма була лише обгорткою. ⚠️ `form_class: "inline"` НЕСУЧИЙ: без нього
-    # `button_to` перезаписує клас самої `<form>` своїм дефолтним `"button_to"`,
-    # і кнопка втрачає інлайн-розкладку.
-    def render_lock_toggle(identity)
-      if identity.locked?
-        button_to(
-          t(".identities.unlock"),
-          unlock_account_security_identity_path(identity),
-          method: :patch,
-          form_class: "inline",
-          class: "px-3 py-1 border border-gaia-border-strong text-micro text-gaia-primary-strong uppercase hover:text-gaia-text-strong transition-all"
-        )
-      else
-        button_to(
-          t(".identities.lock"),
-          lock_account_security_identity_path(identity),
-          method: :patch,
-          form_class: "inline",
-          class: "px-3 py-1 border border-status-warning-accent text-micro text-status-warning-accent uppercase hover:bg-status-warning hover:text-status-warning-text transition-all"
-        )
-      end
-    end
-
-    def render_unlink_button(identity)
-      # [TEST.12] `Identity#active?` НЕ існує — `active` є лише скоупом (`where(locked_at: nil)`),
-      # тож цей рядок кидав NoMethodError на кожному OAuth-only власнику (`password_digest`
-      # порожній за побудовою: `User#password_required?` = `identities.none?`), тобто сторінка
-      # безпеки віддавала 500. Ховала це фікстура, що вигадала предикат. Контролер той самий
-      # намір уже виражав правильно — `identities.active.count` (account_security_controller.rb).
-      can_unlink = @user.password_digest.present? || @identities.count { |i| !i.locked? } > 1
-
-      if can_unlink
-        # [UI.7] `button_to` — див. ноту біля `render_lock_toggle`. `_method=delete`
-        # хелпер кладе сам, і саме він робить його ВАЛІДНИМ: у розмітці
-        # `method="delete"` — неіснуюче значення, браузер відкотився б на GET.
-        button_to(
-          t(".identities.unlink"),
-          account_security_identity_path(identity),
-          method: :delete,
-          form_class: "inline",
-          class: "px-3 py-1 border border-status-danger-accent text-micro text-status-danger-accent uppercase hover:bg-status-danger hover:text-status-danger-text transition-all",
-          data: { turbo_confirm: t(".identities.unlink_confirm", provider: identity.provider_name) }
-        )
-      else
-        span(class: "px-3 py-1 border border-gaia-border text-micro text-gaia-text-subtle uppercase cursor-not-allowed", title: t(".identities.unlink_disabled_title")) { t(".identities.unlink") }
-      end
-    end
-
-    # [ARCH.69] Interim-stub: OmniAuth ще не задротований (гемів/роутів нема) —
-    # «Available Providers»-лінки вели на /auth/:provider = 404. Повне тіло
-    # (рендер лінків) — у git; повертається разом із дротуванням + ключами.
-    def render_available_providers
-      nil
-    end
-
     # [UI.3] Мітка ЗВʼЯЗАНА з полем: `for` ⟷ `id`, обидва з одного дому
     # (`field_id_for`). Доти `<label>` і `<input>` були сиблінгами без жодної
     # асоціації — ні явної, ні через вкладеність, — тож скрінрідер не називав поле
@@ -344,15 +244,6 @@ module AccountSecurity
 
     def input_classes
       "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors"
-    end
-
-    # ⚖️ [ARCH.69, 2026-08-21] Дзеркало `Users::Profile#provider_badge`: гілки
-    # трьох знятих провайдерів прибрано разом зі звуженням `SUPPORTED_PROVIDERS`.
-    def provider_icon(provider)
-      case provider
-      when "google_oauth2" then "🔵"
-      else "🔗"
-      end
     end
   end
 end

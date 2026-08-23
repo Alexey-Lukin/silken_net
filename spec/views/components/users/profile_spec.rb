@@ -25,13 +25,9 @@ RSpec.describe Users::Profile do
     )
   end
 
-  def mock_identity(provider: "google_oauth2", primary: false)
-    Identity.new(provider: provider, primary: primary)
-  end
-
-  def render_component(user:, maintenance_count: 0, active_identities: [])
+  def render_component(user:, maintenance_count: 0)
     ApplicationController.renderer.render(
-      component_class.new(user: user, maintenance_count: maintenance_count, active_identities: active_identities),
+      component_class.new(user: user, maintenance_count: maintenance_count),
       layout: false
     )
   end
@@ -163,13 +159,13 @@ RSpec.describe Users::Profile do
 
     # [UI.1 сигнальна хвиля] Крапки індикаторів — токенна пара, не сира палітра
     # (сирий `bg-emerald-500` давав 2.43 у світлій, `bg-red-500` — те саме поле).
-    # Ціль — самі ВУЗЛИ по порядку (MFA · пароль · провайдери): include по
-    # документу тут вакуумний, бо при змішаному стані присутні ОБИДВА токени.
+    # Ціль — самі ВУЗЛИ по порядку (MFA · пароль): include по документу тут
+    # вакуумний, бо при змішаному стані присутні ОБИДВА токени.
     it "signals each indicator with the token pair — strong when on, danger accent when off" do
       rendered = render_component(user: mock_user(mfa_enabled: false))
       dots = Nokogiri::HTML5.fragment(rendered).css("div.h-2.w-2.rounded-full").map { |n| n["class"].to_s }
 
-      expect(dots.length).to eq(3)
+      expect(dots.length).to eq(2)
       expect(dots[0]).to include("bg-status-danger-accent")   # MFA вимкнено
       expect(dots[0]).not_to include("bg-red-500")
       expect(dots[1]).to include("bg-gaia-primary-strong")    # пароль стоїть
@@ -178,57 +174,6 @@ RSpec.describe Users::Profile do
 
     it "renders Manage link to account security" do
       expect(html).to include("Manage →")
-    end
-  end
-
-  describe "linked identities list" do
-    context "with identities" do
-      let(:identity) { mock_identity(provider: "google_oauth2", primary: true) }
-      let(:html) { render_component(user: user, active_identities: [ identity ]) }
-
-      it "renders Linked Identity Providers heading" do
-        expect(html).to include("Linked Identity Providers")
-      end
-
-      it "renders the provider name" do
-        expect(html).to include("Google")
-        expect(html).not_to include("Google Oauth2")
-      end
-
-      it "renders Primary badge for primary identity" do
-        expect(html).to include("Primary")
-      end
-    end
-
-    context "without identities" do
-      it "does not render the linked providers section" do
-        html = render_component(user: user, active_identities: [])
-        expect(html).not_to include("Linked Identity Providers")
-      end
-    end
-  end
-
-  describe "provider badges" do
-    # ⚖️ [ARCH.69, 2026-08-21] Три приклади на знятих провайдерів замінено ОДНИМ,
-    # і він навмисно вужчий за них. 🔴 Два з трьох були ВАКУУМНІ —
-    # `"twitter".titleize == "Twitter"` і `"facebook".titleize == "Facebook"`,
-    # тобто проходили однаково з `PROVIDER_NAMES` і без неї; дискримінував лише
-    # `linkedin` (`titleize` → «Linkedin»). ⚠️ Ту єдину живу вісь — «канонічна
-    # назва ⊥ titleize» — уже стереже сусідній приклад «renders the provider
-    # name» (`google_oauth2.titleize` → «Google Oauth2»), тож дублювати її тут
-    # означало б третій доказ того самого. Лишається те, чого сусід НЕ покриває.
-    it "renders the supported provider's own icon, not the generic fallback" do
-      identity = mock_identity(provider: "google_oauth2")
-      html = render_component(user: user, active_identities: [ identity ])
-
-      expect(html).to include("🔵")
-      expect(html).not_to include("🔗")
-    end
-
-    it "renders generic link icon for unknown provider" do
-      identity = mock_identity(provider: "github")
-      html = render_component(user: user, active_identities: [ identity ])
-      expect(html).to include("🔗")
     end
   end
 end

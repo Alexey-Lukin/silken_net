@@ -4,15 +4,6 @@ uk:
     erasure:
       done: Акаунт стерто. Персональні дані знищено, і цей вхід більше не існує.
       password_invalid: Поточний пароль неправильний — акаунт НЕ стерто.
-    identity:
-      cannot_unlink_last: Неможливо відв'язати останній метод входу без пароля.
-      locked_flash: "%{provider} заблоковано."
-      locked_json: Ідентичність %{provider} заблоковано.
-      set_password_first: Встановіть пароль перед відв'язкою останнього провайдера.
-      unlinked_flash: "%{provider} відв'язано."
-      unlinked_json: Провайдер %{provider} відв'язано.
-      unlocked_flash: "%{provider} розблоковано."
-      unlocked_json: Ідентичність %{provider} розблоковано.
     mfa:
       disabled: MFA вимкнено.
       enabled: MFA увімкнено.
@@ -51,19 +42,6 @@ uk:
         hint: Назавжди знищує ваші персональні дані й закриває цей акаунт. Дію неможливо скасувати, і ми не зможемо відновити її на ваш запит (GDPR ст. 17).
         submit: Стерти мій акаунт
       heading: "🔐 Безпека акаунту"
-      identities:
-        available_heading: Доступні провайдери
-        heading: Підключені провайдери
-        link_provider: Підключити %{provider}
-        lock: Заблокувати
-        locked: Заблоковано
-        none_linked: Жоден провайдер не прив'язаний.
-        primary: Основний
-        uid_line: 'UID: %{prefix}...'
-        unlink: Відв'язати
-        unlink_confirm: Відв'язати %{provider}?
-        unlink_disabled_title: Встановіть пароль перед відв'язкою.
-        unlock: Розблокувати
       mfa:
         disable_button: Вимкнути MFA
         disabled_hint: "⚠️ MFA вимкнено. Рекомендуємо увімкнути для захисту акаунту."

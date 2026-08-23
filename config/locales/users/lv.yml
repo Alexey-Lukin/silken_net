@@ -26,25 +26,18 @@ lv:
         records: Ieraksti
       id: 'ID: #%{id}'
       none: Nav
-      provider:
-        primary: Primārais
       role: 'Loma: %{role}'
       sections:
         access_privileges: Neirālās piekļuves privilēģijas
         activity: Operacionālā aktivitāte
-        linked_providers: Saistītie identitātes pakalpojumu sniedzēji
         security: Drošības statuss
       security:
         active: Aktīvs
         disabled: Atspējots
-        linked_count:
-          one: "%{count} saistīts"
-          other: "%{count} saistīti"
         manage: Pārvaldīt →
         mfa: 2FA / MFA
         not_set: Nav iestatīts
         password: Parole
-        providers: Pakalpojumu sniedzēji
         set: Iestatīts
     roles:
       admin: Administrators

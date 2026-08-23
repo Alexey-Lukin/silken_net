@@ -26,25 +26,18 @@ en:
         records: Records
       id: 'ID: #%{id}'
       none: None
-      provider:
-        primary: Primary
       role: 'Role: %{role}'
       sections:
         access_privileges: Neural Access Privileges
         activity: Operational Activity
-        linked_providers: Linked Identity Providers
         security: Security Status
       security:
         active: Active
         disabled: Disabled
-        linked_count:
-          one: "%{count} linked"
-          other: "%{count} linked"
         manage: Manage →
         mfa: 2FA / MFA
         not_set: Not Set
         password: Password
-        providers: Providers
         set: Set
     roles:
       admin: Administrator

@@ -4,15 +4,6 @@ lt:
     erasure:
       done: Paskyra ištrinta. Jūsų asmens duomenys sunaikinti, o šis prisijungimas nebeegzistuoja.
       password_invalid: Dabartinis slaptažodis neteisingas — paskyra NEBUVO ištrinta.
-    identity:
-      cannot_unlink_last: Negalima atjungti paskutinio prisijungimo metodo be slaptažodžio.
-      locked_flash: "%{provider} užblokuotas."
-      locked_json: Tapatybė %{provider} užblokuota.
-      set_password_first: Nustatykite slaptažodį prieš atjungiant paskutinį tiekėją.
-      unlinked_flash: "%{provider} atjungtas."
-      unlinked_json: Tiekėjas %{provider} atjungtas.
-      unlocked_flash: "%{provider} atblokuotas."
-      unlocked_json: Tapatybė %{provider} atblokuota.
     mfa:
       disabled: MFA išjungta.
       enabled: MFA įjungta.
@@ -51,19 +42,6 @@ lt:
         hint: Negrįžtamai sunaikina jūsų asmens duomenis ir uždaro šią paskyrą. Veiksmo atšaukti negalima, ir mes negalėsime jo atkurti jūsų prašymu (BDAR 17 straipsnis).
         submit: Ištrinti mano paskyrą
       heading: "🔐 Paskyros saugumas"
-      identities:
-        available_heading: Galimi tiekėjai
-        heading: Susieti tapatybės tiekėjai
-        link_provider: Susieti %{provider}
-        lock: Užblokuoti
-        locked: Užblokuotas
-        none_linked: Nesusieti tiekėjai.
-        primary: Pirminis
-        uid_line: 'UID: %{prefix}...'
-        unlink: Atjungti
-        unlink_confirm: Atjungti %{provider}?
-        unlink_disabled_title: Nustatykite slaptažodį prieš atjungiant.
-        unlock: Atblokuoti
       mfa:
         disable_button: Išjungti MFA
         disabled_hint: "⚠️ MFA išjungta. Rekomenduojame ją įjungti, kad apsaugotumėte paskyrą."

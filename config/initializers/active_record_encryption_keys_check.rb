@@ -4,16 +4,16 @@
 # [SEC.22] Refuse to boot production / canopy without ActiveRecord Encryption keys.
 #
 # The three keys decrypt `hardware_keys` (device AES / Lorenz-seed columns) and
-# `identities` (OAuth access/refresh tokens + auth_data). They live in ENV, never
+# `users.otp_secret` (the TOTP seed). They live in ENV, never
 # credentials.yml.enc — see config/environments/production.rb and docs/06_04 §5.7.
 # Without them, non-deterministic `encrypts` raises Configuration at the first
-# encrypt/decrypt, so provisioning + telemetry-decrypt + OAuth are dead-on-first-use
+# encrypt/decrypt, so provisioning + telemetry-decrypt + MFA are dead-on-first-use
 # rather than failing loudly up front. The content judgement lives in
 # `Security::EncryptionKeyGuard` (unit-tested); this initializer only decides WHEN
 # to enforce + how to bypass — mirroring master_key_strength_check.rb.
 #
 # NOT process-scoped (contrast web3_network_guard's signer_process:): the web
-# containers (provisioning / m2m / OAuth) and the Sidekiq workers (telemetry unpack,
+# containers (provisioning / m2m / MFA) and the Sidekiq workers (telemetry unpack,
 # OTA, key rotation) both decrypt AR-encrypted columns, so every process that boots
 # the full app needs the keys. (The coap daemon only enqueues and never decrypts,
 # but these are narrow column-scoped keys — not the vault key — so a uniform check

@@ -43,8 +43,6 @@ lt:
       node_initiated: 'Mazgo inicijavimas baigtas. DID: %{did}. Aparatūros UID: %{uid}'
       uid_taken: Įrenginys su UID %{uid} jau užregistruotas sistemoje.
     sessions:
-      authenticated_via: Autentifikuota per %{provider}.
-      blocked_provider: Šis prisijungimo metodas užblokuotas. Susisiekite su administratoriumi arba naudokite kitą metodą.
       invalid_credentials: Neteisingos prieigos koordinatės.
       logout_success: Atsijungta sėkmingai. Vartai uždaryti.
       neural_link_established: Neuralinis ryšys užmegztas.

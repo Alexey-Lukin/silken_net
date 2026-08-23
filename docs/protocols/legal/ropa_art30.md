@@ -35,7 +35,7 @@
 
 **DPO (Art.37):** не потрібен сьогодні — жоден із трьох тригерів Art.37(1) не виконується на поточному pre-revenue/ранньому B2B-етапі ([`b2c_tos_privacy §B.13`](b2c_tos_privacy.md)). Внутрішній privacy-контакт: `[TBD]`. Переглянути при появі великомасштабної EU-бази або систематичного моніторингу *людей* (не дерев — межа названа в §2.3 нижче).
 
-**Спільні контролери (joint controllers):** не ідентифіковано. OAuth-провайдер (**Google** — єдиний, ⚖️ 2026-08-21; дім переліку — `Identity::SUPPORTED_PROVIDERS`) — **не** спільний контролер, а незалежний окремий контролер власного профільного шару ([`b2c_tos_privacy §B.5`](b2c_tos_privacy.md)).
+**Спільні контролери (joint controllers):** не ідентифіковано.
 
 ---
 
@@ -47,12 +47,12 @@
 
 | Art.30(1) | Зміст |
 |---|---|
-| **(b) Цілі** | Створення й адміністрування облікового запису; вхід (OAuth Google + email/Argon2id-пароль); безпека сесії; відновлення пароля; MFA (TOTP, [S6.21](../../00_07_Action_Plan_Tracker.md) — механізм з 2026-08-20). *(Art.6(1)(b) — виконання договору; безпека сесії — Art.6(1)(f) легітимний інтерес, [`b2c_tos_privacy §B.3`](b2c_tos_privacy.md))* |
-| **(c) Субʼєкти + дані** | Зареєстровані користувачі (усі ролі). → [`04_01 §11`](../../04_01_Data_Models_and_Entities.md) рядки `users` (PII ядро: `email_address`/`first_name`/`last_name`/`telegram_chat_id`/`push_token`; + `role`/`otp_*`/`recovery_codes`/`locale`/`password_digest`) і `sessions` (PII слід входу: `ip_address`/`user_agent`, `validates presence` — заповнені завжди). OAuth-профіль (`identities`): `provider`/`uid`/`access_token`/`refresh_token`/`auth_data` — зашифровані at-rest. |
-| **(d) Отримувачі** | Внутрішньо — сам застосунок. OAuth-провайдери — **не отримувачі-процесори**, незалежні окремі контролери ([`b2c_tos_privacy §B.5`](b2c_tos_privacy.md)). Інфраструктурні процесори: **GCP Cloud SQL** (Postgres, `europe-west1`), **Akash Network** (цільовий compute самого застосунку після pivot — mainnet ще НЕ задіяний, TRL5), **Upstash** (Redis — сесії/черги), **Sentry** (error tracking, `send_default_pii = false`), GHCR (образи, не персональні дані). |
+| **(b) Цілі** | Створення й адміністрування облікового запису; вхід (email/Argon2id-пароль); безпека сесії; відновлення пароля; MFA (TOTP, [S6.21](../../00_07_Action_Plan_Tracker.md) — механізм з 2026-08-20). *(Art.6(1)(b) — виконання договору; безпека сесії — Art.6(1)(f) легітимний інтерес, [`b2c_tos_privacy §B.3`](b2c_tos_privacy.md))* |
+| **(c) Субʼєкти + дані** | Зареєстровані користувачі (усі ролі). → [`04_01 §11`](../../04_01_Data_Models_and_Entities.md) рядки `users` (PII ядро: `email_address`/`first_name`/`last_name`/`telegram_chat_id`/`push_token`; + `role`/`otp_*`/`recovery_codes`/`locale`/`password_digest`) і `sessions` (PII слід входу: `ip_address`/`user_agent`, `validates presence` — заповнені завжди). |
+| **(d) Отримувачі** | Внутрішньо — сам застосунок. Інфраструктурні процесори: **GCP Cloud SQL** (Postgres, `europe-west1`), **Akash Network** (цільовий compute самого застосунку після pivot — mainnet ще НЕ задіяний, TRL5), **Upstash** (Redis — сесії/черги), **Sentry** (error tracking, `send_default_pii = false`), GHCR (образи, не персональні дані). |
 | **(e) Треті країни** | Залежить від резидентства користувача. UA (контролер) без adequacy decision від ЄК → SCC-2021 як backup-механізм для US-вендорів (Sentry), поряд із DPF де застосовно ([`b2c_tos_privacy §B.10`](b2c_tos_privacy.md)). Akash — регіон провайдера непередбачуваний (permissionless-маркетплейс, `00_07` SEC.23). |
 | **(f) Зберігання** | ⚖️ `[TBD — 00_07 SEC.18(а), retention-policy не формалізована]`. Механізм там, де він є: `sessions` **не** append-only — найдешевша половина erasure (рядок стирається); `generates_token_for`-токени мають власний access-TTL (password_reset 15 хв, email_verification 24 год, api_access 30 днів) — це TTL токена, не data-retention. |
-| **(g) TOM** | Специфічно тут (baseline — §3): Argon2id пароль-хеш; AR-encryption OAuth-токенів/`otp_secret`; httponly+secure(prod)+`SameSite=Lax` сесійний cookie (14 днів); **salt-bound session invalidation** — `session[:ps]` (хвіст `password_salt`) знецінює всі активні сесії при зміні пароля; TOTP MFA (S6.21). |
+| **(g) TOM** | Специфічно тут (baseline — §3): Argon2id пароль-хеш; AR-encryption `otp_secret`; httponly+secure(prod)+`SameSite=Lax` сесійний cookie (14 днів); **salt-bound session invalidation** — `session[:ps]` (хвіст `password_salt`) знецінює всі активні сесії при зміні пароля; TOTP MFA (S6.21). |
 
 ### 2.2 Організації та NaaS B2B-контракти
 
@@ -127,7 +127,7 @@
 Специфічні (g)-рядки вище **доповнюють** цей baseline, не повторюють його:
 
 - **Argon2id** — memory-hard пароль-хешування (Password Hashing Competition winner), стійкий до GPU/ASIC-атак.
-- **AR-encryption at-rest** — `identities` (`access_token`/`refresh_token`/`auth_data`), `hardware_keys`, `users.otp_secret`; ключі з ENV (`ACTIVE_RECORD_ENCRYPTION_*`), **не** `credentials.yml.enc` (SEC.22 — інакше вертає runtime-залежність від `RAILS_MASTER_KEY`).
+- **AR-encryption at-rest** — `hardware_keys`, `users.otp_secret`; ключі з ENV (`ACTIVE_RECORD_ENCRYPTION_*`), **не** `credentials.yml.enc` (SEC.22 — інакше вертає runtime-залежність від `RAILS_MASTER_KEY`).
 - **`filter_parameters`** — PII-скраб логів: `email`/`telegram_chat_id`/`push_token`/`first_name`/`last_name`/`recovery_codes` (+ `phone_number` як defense-in-depth після зняття колонки) (+ секрети/ключі), той самий список успадковує Sentry.
 - **Sentry** — `send_default_pii = false` + defense-in-depth редакція секретів/PII у breadcrumbs і stack-trace (`config/initializers/sentry.rb`).
 - **Zero-Network-Exposure ключів** — апаратні AES-ключі не покидають Ruby-процес (`HardwareKey#cached_binary_key`, in-process LRU, без Redis-serialize).
@@ -189,7 +189,7 @@
 ## Джерела / Cross-references
 
 - [`04_01 §11`](../../04_01_Data_Models_and_Entities.md) — PII-реєстр, One-Home колонкового рівня для всіх (c)-клітинок вище.
-- [`b2c_tos_privacy`](b2c_tos_privacy.md) §B.3 (категорії даних × правова підстава), §B.5–§B.13 (ролі/transfers/DPO/Art.27), §D.1–§D.4 (controller/processor-мапа, субпроцесор-реєстр), §A.1/§A.9/§A.14 (контролер, on-chain незворотність, контакти).
+- [`b2c_tos_privacy`](b2c_tos_privacy.md) §B.3 (категорії даних × правова підстава), §B.6–§B.13 (ролі/transfers/DPO/Art.27), §D.1–§D.4 (controller/processor-мапа, субпроцесор-реєстр), §A.1/§A.9/§A.14 (контролер, on-chain незворотність, контакти).
 - [`b2b_readiness`](../business/b2b_readiness.md) §2.1 (RoPA gap-analysis, звідки цей документ виводиться), §2.2 (DPIA anchor-geo мапінг), §2.6 (GDPR-стандарт ↔ трекер-мапа).
 - [`03_04 §6.3`](../../03_04_mruby_Lorenz_Attractor.md) — canon-підстава «дерево не є субʼєктом даних».
 - [`entity_structure`](entity_structure.md) — тришар-матриця operational-vehicle/IP-owner/token-контур (BIZ.20).

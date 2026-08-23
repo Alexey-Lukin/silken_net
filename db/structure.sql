@@ -1,6 +1,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1276,45 +1277,6 @@ CREATE SEQUENCE public.hardware_keys_id_seq
 --
 
 ALTER SEQUENCE public.hardware_keys_id_seq OWNED BY public.hardware_keys.id;
-
-
---
--- Name: identities; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.identities (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    provider character varying,
-    uid character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    access_token character varying,
-    refresh_token character varying,
-    auth_data text,
-    expires_at timestamp(6) without time zone,
-    locked_at timestamp(6) without time zone,
-    "primary" boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: identities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.identities_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: identities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.identities_id_seq OWNED BY public.identities.id;
 
 
 --
@@ -2594,13 +2556,6 @@ ALTER TABLE ONLY public.hardware_keys ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- Name: identities id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.identities ALTER COLUMN id SET DEFAULT nextval('public.identities_id_seq'::regclass);
-
-
---
 -- Name: maintenance_records id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2920,14 +2875,6 @@ ALTER TABLE ONLY public.gateways
 
 ALTER TABLE ONLY public.hardware_keys
     ADD CONSTRAINT hardware_keys_pkey PRIMARY KEY (id);
-
-
---
--- Name: identities identities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.identities
-    ADD CONSTRAINT identities_pkey PRIMARY KEY (id);
 
 
 --
@@ -4359,20 +4306,6 @@ CREATE UNIQUE INDEX index_gateways_on_uid ON public.gateways USING btree (uid);
 --
 
 CREATE UNIQUE INDEX index_hardware_keys_on_device_uid ON public.hardware_keys USING btree (device_uid);
-
-
---
--- Name: index_identities_on_provider_and_uid; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_identities_on_provider_and_uid ON public.identities USING btree (provider, uid);
-
-
---
--- Name: index_identities_on_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_identities_on_user_id ON public.identities USING btree (user_id);
 
 
 --
@@ -6714,14 +6647,6 @@ ALTER TABLE ONLY public.maintenance_records
 
 
 --
--- Name: identities fk_rails_5373344100; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.identities
-    ADD CONSTRAINT fk_rails_5373344100 FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: gateways fk_rails_637a591322; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6920,6 +6845,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260823100000'),
 ('20260820150000'),
 ('20260820120000'),
 ('20260820090000'),
@@ -6928,5 +6854,17 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260819210000'),
 ('20260817090000'),
 ('20260816120000'),
-('20260815200000');
+('20260815200000'),
+('20260815190000'),
+('20260814120000'),
+('20260813140416'),
+('20260813060830'),
+('20260813045042'),
+('20260812231500'),
+('20260812175736'),
+('20260729052758'),
+('20260727130640'),
+('20260726165258'),
+('20260726161614'),
+('20260719200000');
 

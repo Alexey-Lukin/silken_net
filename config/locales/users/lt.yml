@@ -26,26 +26,18 @@ lt:
         records: Įrašai
       id: 'ID: #%{id}'
       none: Nėra
-      provider:
-        primary: Pirminis
       role: 'Vaidmuo: %{role}'
       sections:
         access_privileges: Neuralinės prieigos privilegijos
         activity: Veiklos aktyvumas
-        linked_providers: Susieti tapatybės tiekėjai
         security: Saugumo būsena
       security:
         active: Aktyvus
         disabled: Išjungta
-        linked_count:
-          few: "%{count} susieti"
-          one: "%{count} susietas"
-          other: "%{count} susietų"
         manage: Valdyti →
         mfa: 2FA / MFA
         not_set: Nenustatyta
         password: Slaptažodis
-        providers: Tiekėjai
         set: Nustatyta
     roles:
       admin: Administratorius

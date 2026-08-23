@@ -19,7 +19,7 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(response).to have_http_status(:ok)
       body = response.parsed_body
 
-      expect(body).to include("mfa_enabled", "recovery_codes_remaining", "has_password", "identities")
+      expect(body).to include("mfa_enabled", "recovery_codes_remaining", "has_password")
       expect(body["mfa_enabled"]).to be false
       expect(body["has_password"]).to be true
     end
@@ -27,40 +27,6 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     it "returns 401 without authentication" do
       get "/account_security", as: :json
       expect(response).to have_http_status(:unauthorized)
-    end
-
-    it "lists linked identities" do
-      create(:identity, user: user, provider: "google_oauth2")
-      create(:identity, :facebook, user: user)
-
-      get "/account_security", headers: headers, as: :json
-
-      identities = response.parsed_body["identities"]
-      expect(identities.size).to eq(2)
-      expect(identities.map { |i| i["provider"] }).to contain_exactly("google_oauth2", "facebook")
-    end
-
-    # 🔴 [TEST.12 вісь D, друга група присуду D3] Сторінка несе ДАНІ З КОНТРОЛЕРА
-    # (`@user` + `@identities`), тож смок на 200 сліпий рівно там, де сліпа й
-    # компонентна спека: та рендерить повз маршрутизатор і повз викликача, тобто
-    # проводку не бачить НІХТО. `nil` у рядку Phlex не кидає — сторінка чесно
-    # віддала б 200 із порожнім місцем там, де має стояти власник.
-    # ⚠️ Ціль піна — `@identities`, а НЕ дані користувача: сторінка свідомо не друкує
-    # ані email, ані імені (це власний екран «моя безпека», ідентифікувати нікого не
-    # треба), тож із `@user` компонент читає лише булеве `password_digest.present?`.
-    # Проводку доводить саме прив'язаний провайдер: без нього сторінка малює
-    # «No providers linked.» — тобто той самий чесний 200 на порожньому місці.
-    it "друкує прив'язані ідентичності, що приїхали з контролера" do
-      create(:identity, user: user, provider: "google_oauth2")
-
-      get "/account_security", headers: headers
-
-      expect(response).to have_http_status(:ok)
-      # [I18N.1] Канонічне написання: `.titleize` давав «Google Oauth2», тобто цей пін
-      # (як і два компонентні) цементував дефект показу.
-      expect(response.body).to include("Google")
-      expect(response.body).not_to include("Google Oauth2")
-      expect(response.body).not_to include("No providers linked.")
     end
   end
 
@@ -319,69 +285,6 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
         get "/account_security"
         expect(response).to have_http_status(:ok)
       end
-    end
-  end
-
-  # =========================================================================
-  # DELETE /account_security/identities/:id — Unlink Identity
-  # =========================================================================
-  describe "DELETE /account_security/identities/:id" do
-    it "unlinks an identity when user has a password" do
-      identity = create(:identity, user: user, provider: "google_oauth2")
-
-      delete "/account_security/identities/#{identity.id}", headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      expect(Identity.find_by(id: identity.id)).to be_nil
-    end
-
-    it "prevents unlinking last identity when user has no password" do
-      user.update_columns(password_digest: nil)
-      identity = create(:identity, user: user, provider: "google_oauth2")
-
-      delete "/account_security/identities/#{identity.id}", headers: headers, as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(Identity.find_by(id: identity.id)).to be_present
-    end
-
-    it "allows unlinking one identity when user has multiple (no password)" do
-      user.update_columns(password_digest: nil)
-      google = create(:identity, user: user, provider: "google_oauth2")
-      _facebook = create(:identity, :facebook, user: user)
-
-      delete "/account_security/identities/#{google.id}", headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      expect(Identity.find_by(id: google.id)).to be_nil
-    end
-  end
-
-  # =========================================================================
-  # PATCH /account_security/identities/:id/lock — Lock Identity
-  # =========================================================================
-  describe "PATCH /account_security/identities/:id/lock" do
-    it "locks an identity" do
-      identity = create(:identity, user: user)
-
-      patch "/account_security/identities/#{identity.id}/lock", headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      expect(identity.reload.locked?).to be true
-    end
-  end
-
-  # =========================================================================
-  # PATCH /account_security/identities/:id/unlock — Unlock Identity
-  # =========================================================================
-  describe "PATCH /account_security/identities/:id/unlock" do
-    it "unlocks a locked identity" do
-      identity = create(:identity, :locked, user: user)
-
-      patch "/account_security/identities/#{identity.id}/unlock", headers: headers, as: :json
-
-      expect(response).to have_http_status(:ok)
-      expect(identity.reload.locked?).to be false
     end
   end
 

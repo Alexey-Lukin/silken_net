@@ -25,12 +25,10 @@ lt:
         firmwares: Mikroprograminė įranga
         forgot_password: Slaptažodžio atkūrimas
         gateways: Šliuzai
-        identities: Tapatybės
         inventory: Inventorius
         ledger: Sandorių knyga
         live: Tiesiogiai
         locale: Kalba
-        lock: Blokavimas
         login: Prisijungimas
         logout: Atsijungimas
         maintenance_records: Priežiūros įrašai
@@ -61,7 +59,6 @@ lt:
         transactions: Sandoriai
         tree_families: Medžių šeimos
         trees: Medžiai
-        unlock: Atblokavimas
         users: Naudotojai
         verify: Patikrinimas
         wallets: Piniginės

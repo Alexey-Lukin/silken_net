@@ -12,8 +12,8 @@
 #   • httponly:    true      — block JavaScript access (XSS theft).
 #   • secure:      true (prod)— never sent over plain HTTP.
 #   • same_site:   :lax      — block cross-site POST CSRF while still
-#                              allowing top-level navigation logins from
-#                              OAuth2 callbacks (Google/Facebook/etc.).
+#                              allowing top-level navigation from an emailed
+#                              link (password-reset lands mid-session).
 #   • expire_after: 14.days  — bound the lifetime of a stolen cookie.
 #                              Active users get touched on every request
 #                              via touch_visit!.

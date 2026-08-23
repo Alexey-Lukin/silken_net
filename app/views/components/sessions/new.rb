@@ -47,7 +47,6 @@ module Sessions
             end
 
             render_forgot_password_link
-            render_social_providers
           end
         end
       end
@@ -106,16 +105,6 @@ module Sessions
           t(".forgot_link")
         end
       end
-    end
-
-    # [ARCH.69] Interim-stub — ДРУГИЙ сайт того самого рішення. OmniAuth не
-    # задротований (гемів і роуту `/auth/:provider` немає), тож чотири провайдер-
-    # кнопки на сторінці входу вели в 404. Дзеркало `AccountSecurity::Show
-    # #render_available_providers`, яке зробили ще 2026-07-16 — сюди той коміт не
-    # дійшов, і пункт лишився позначеним закритим при живій половині. Повне тіло —
-    # у git; повертається разом із дротуванням + ключами.
-    def render_social_providers
-      nil
     end
 
     # [UI.17] Тут стояв `render_footer_seal` — «System Integrity Verified //

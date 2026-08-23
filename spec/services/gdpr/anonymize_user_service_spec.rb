@@ -26,13 +26,11 @@ RSpec.describe Gdpr::AnonymizeUserService do
       expect(user.organization_id).to be_nil
     end
 
-    it "destroys sessions and identities together with their encrypted secrets" do
+    it "destroys sessions together with their encrypted secrets" do
       user.sessions.create!(ip_address: "203.0.113.7", user_agent: "FieldTablet/1.0")
-      user.identities.create!(provider: "google_oauth2", uid: "g-9", access_token: "tok")
 
       expect { described_class.call(user) }
         .to change { user.sessions.count }.from(1).to(0)
-        .and change { user.identities.count }.from(1).to(0)
     end
 
     # Анонімізація і Є ефективним offboarding-ом: вхід далі неможливий за

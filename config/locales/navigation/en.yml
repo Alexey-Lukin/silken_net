@@ -25,12 +25,10 @@ en:
         firmwares: Firmwares
         forgot_password: Forgot password
         gateways: Gateways
-        identities: Identities
         inventory: Inventory
         ledger: Ledger
         live: Live
         locale: Locale
-        lock: Lock
         login: Login
         logout: Logout
         maintenance_records: Maintenance records
@@ -61,7 +59,6 @@ en:
         transactions: Transactions
         tree_families: Tree families
         trees: Trees
-        unlock: Unlock
         users: Users
         verify: Verify
         wallets: Wallets

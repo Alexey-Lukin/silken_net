@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require "ostruct"
 
 RSpec.describe "Controller coverage — uncovered paths" do
   let(:organization) { create(:organization) }
@@ -101,32 +100,6 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["message"]).to be_present
-      end
-    end
-
-    describe "POST /login — omniauth_create path" do
-      it "creates or finds identity from auth hash" do
-        test_user = create(:user, organization: organization, password: "password12345")
-        # Identity.find_or_create_from_auth_hash expects an OpenStruct-like object
-        auth_hash = OpenStruct.new(
-          provider: "google_oauth2",
-          uid: "google_uid_integration_#{SecureRandom.hex(4)}",
-          info: OpenStruct.new(
-            email: test_user.email_address,
-            first_name: "OAuth",
-            last_name: "User"
-          )
-        )
-
-        identity = Identity.find_or_create_from_auth_hash(auth_hash, user: test_user)
-        expect(identity).to be_persisted
-        expect(identity.provider).to eq("google_oauth2")
-        expect(identity.user).to eq(test_user)
-      end
-
-      it "detects locked identity" do
-        locked_identity = create(:identity, :locked, provider: "google_oauth2")
-        expect(locked_identity.locked?).to be true
       end
     end
   end
