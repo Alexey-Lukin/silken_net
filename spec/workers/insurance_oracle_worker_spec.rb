@@ -13,8 +13,7 @@ RSpec.describe InsuranceOracleWorker, type: :worker do
     allow(SystemParameter).to receive(:current)
       .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
     # EwsAlert-колбеки (arm_candidate! піднімає field_audit).
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+    silence_broadcasts!(:alert_notify, :alert_new)
   end
 
   # Активна страховка + 5 active-дерев у критичному стресі → перетинає поріг → arm.

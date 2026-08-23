@@ -16,8 +16,7 @@ RSpec.describe "Pundit authorization integration" do
   let(:super_admin_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:tree_map, :wallet_balance)
   end
 
   describe "GET /users" do

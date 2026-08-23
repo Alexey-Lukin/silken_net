@@ -195,8 +195,7 @@ RSpec.describe ApplicationPolicy do
 
     describe "#resolve" do
       before do
-        allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-        allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+        silence_broadcasts!(:tree_map, :wallet_balance)
       end
 
       # 🔴 Доти обидва приклади звалися «returns scope.all» і асертили лише

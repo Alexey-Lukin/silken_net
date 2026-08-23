@@ -5,9 +5,7 @@ require "rails_helper"
 
 RSpec.describe DeviceCalibration, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+    silence_broadcasts!(:tree_map, :alert_notify, :alert_update)
   end
 
   describe "validations" do

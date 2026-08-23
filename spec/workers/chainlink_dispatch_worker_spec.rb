@@ -9,7 +9,7 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
   let(:telemetry_log) { create(:telemetry_log, tree: tree, verified_by_iotex: true, zk_proof_ref: "zk-proof-abc123") }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "#perform" do

@@ -6,7 +6,7 @@ require "rails_helper"
 RSpec.describe ParametricInsurance, type: :model do
   before do
     allow(InsurancePayoutWorker).to receive(:perform_async)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   # =========================================================================

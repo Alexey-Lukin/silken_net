@@ -11,7 +11,7 @@ RSpec.describe AlertDispatchService, type: :service do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
     allow(EmergencyResponseService).to receive(:call)
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+    silence_broadcasts!(:alert_notify)
     allow(SilkenNet::Attractor).to receive(:homeostatic?).and_return(true)
   end
 

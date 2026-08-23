@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe TelemetryLog, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   # [ARCH.56] Composite partition-PK (id, created_at) авто-детектується Rails —

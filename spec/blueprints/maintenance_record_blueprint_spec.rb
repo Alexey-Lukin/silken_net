@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe MaintenanceRecordBlueprint, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   let(:user) { create(:user, first_name: "Andriy", last_name: "Melnyk") }

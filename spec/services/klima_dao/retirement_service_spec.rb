@@ -27,8 +27,7 @@ RSpec.describe KlimaDao::RetirementService do
     allow(Eth::Contract).to receive(:from_abi).and_return(mock_scc_contract, mock_klima_contract)
     allow(mock_client).to receive(:transact).and_return(fake_approve_hash, fake_retire_hash)
 
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
 
     # [ARCH.95] Тракт fail-closed до присуду (три нерозвʼязані осі — шапка сервісу).
     # Механіка нижче все одно мусить бути коректною, тож гард тут знімається явно;

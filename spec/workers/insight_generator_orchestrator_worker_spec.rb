@@ -5,8 +5,7 @@ require "rails_helper"
 
 RSpec.describe InsightGeneratorOrchestratorWorker, type: :worker do
   before do
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 

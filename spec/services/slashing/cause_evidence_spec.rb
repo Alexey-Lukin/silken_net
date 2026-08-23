@@ -16,8 +16,7 @@ RSpec.describe Slashing::CauseEvidence do
 
   before do
     # Глушимо broadcast-колбеки EwsAlert (рендер/Turbo не потрібні в unit-спеці).
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+    silence_broadcasts!(:alert_new, :alert_notify)
   end
 
   describe "#positive_a?" do

@@ -8,8 +8,7 @@ RSpec.describe "OTA firmware deployment flow" do
   let(:cluster) { create(:cluster, organization: organization) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:tree_map, :wallet_balance)
   end
 
   describe "OtaPackagerService" do

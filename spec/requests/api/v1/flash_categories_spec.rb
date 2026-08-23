@@ -42,9 +42,9 @@ RSpec.describe "flash-категорії", type: :request do
 
     before do
       allow(AlertNotificationWorker).to receive(:perform_async)
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      silence_broadcasts!(:alert_notify)
       allow_any_instance_of(EwsAlert).to receive(:close_associated_maintenance!)
-      allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+      silence_broadcasts!(:alert_update)
     end
 
     it "success доїжджає до сторінки й сідає в polite" do

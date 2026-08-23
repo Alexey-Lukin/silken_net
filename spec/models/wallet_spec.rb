@@ -321,7 +321,7 @@ RSpec.describe Wallet, type: :model do
     let(:wallet) { tree.wallet }
 
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      silence_broadcasts!(:tree_map)
       wallet.update!(balance: 10_000)
     end
 
@@ -391,7 +391,7 @@ RSpec.describe Wallet, type: :model do
     let(:wallet_bc) { tree_bc.wallet }
 
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      silence_broadcasts!(:tree_map)
     end
 
     describe "organization&.crypto_public_address when organization is nil" do

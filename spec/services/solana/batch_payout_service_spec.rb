@@ -16,8 +16,7 @@ RSpec.describe Solana::BatchPayoutService do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
 
     ENV["SOLANA_WALLET_KEYPAIR"] = "a" * 64
     ENV["SOLANA_FEE_PAYER_PUBKEY"] = "SiLkEnFeEpAyEr11111111111111111111111111111"

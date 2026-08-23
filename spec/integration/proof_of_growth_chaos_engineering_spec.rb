@@ -19,7 +19,7 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
   let!(:wallet) { tree.wallet || create(:wallet, tree: tree, organization: organization) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   # ---------------------------------------------------------------

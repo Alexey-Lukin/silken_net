@@ -112,8 +112,7 @@ RSpec.describe Api::V1::OrganizationsController, type: :request do
     let!(:other_tree) { create(:tree, cluster: other_cluster) }
 
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+      silence_broadcasts!(:tree_map, :wallet_balance)
       sign_in_via_form(super_admin, password: "password12345", as: :json)
     end
 

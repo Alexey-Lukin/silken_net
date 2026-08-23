@@ -17,7 +17,7 @@ RSpec.describe Api::V1::OracleCallbacksController, type: :request do
   end
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "POST /oracle_callbacks" do

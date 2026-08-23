@@ -245,8 +245,7 @@ RSpec.describe ApplicationWeb3Worker do
   # =========================================================================
   describe "#find_telemetry_log_with_pruning" do
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+      silence_broadcasts!(:tree_map, :wallet_balance)
     end
 
     let(:tree) { create(:tree) }
@@ -291,8 +290,7 @@ RSpec.describe ApplicationWeb3Worker do
   # =========================================================================
   describe "#find_blockchain_tx_with_pruning" do
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+      silence_broadcasts!(:tree_map, :wallet_balance)
     end
 
     let(:tree) { create(:tree) }

@@ -194,7 +194,7 @@ RSpec.describe ApplicationWeb3Worker do
     let!(:telemetry_log) { create(:telemetry_log, tree: tree) }
 
     before do
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      silence_broadcasts!(:tree_map)
     end
 
     it "finds telemetry log with partition pruning" do

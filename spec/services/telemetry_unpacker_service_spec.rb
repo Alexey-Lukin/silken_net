@@ -24,8 +24,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
   before do
     tree.create_device_calibration! if tree.device_calibration.nil?
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
     allow(AlertDispatchService).to receive(:analyze_and_trigger!)
     # [SEC.11] Pin the post-cutover entry-point so attribute-level
     # assertions are stable. Returns [z, x, y, z_final] tuple.

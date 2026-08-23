@@ -28,8 +28,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
     allow(Turbo::StreamsChannel).to receive(:broadcast_append_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     allow(ActionCable.server).to receive(:broadcast)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
   end
 
   # ==========================================================================

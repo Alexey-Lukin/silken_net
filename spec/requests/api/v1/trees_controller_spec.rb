@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Api::V1::TreesController, type: :request do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   def build_chronicle_pagy(page: 1, limit: 20, count: 2, pages: 1)

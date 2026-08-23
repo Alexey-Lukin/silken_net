@@ -302,7 +302,7 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       it "handles broadcast on transactions whose wallet has no broadcast method" do
         tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
         allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC Error")
-        allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+        silence_broadcasts!(:wallet_balance)
 
         expect {
           described_class.new.perform

@@ -5,8 +5,7 @@ require "rails_helper"
 
 RSpec.describe Actuator, type: :model do
   before do
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+    silence_broadcasts!(:alert_notify, :alert_update)
   end
 
   # =========================================================================
@@ -283,7 +282,7 @@ RSpec.describe Actuator, type: :model do
 
     describe "#report_fault! (via require_maintenance!)" do
       it "transitions from idle to maintenance_needed and creates EWS alert" do
-        allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+        silence_broadcasts!(:alert_notify)
         actuator.require_maintenance!("CoAP timeout")
         expect(actuator.reload).to be_maintenance_needed
       end

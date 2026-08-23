@@ -9,7 +9,7 @@ RSpec.describe Streamr::BroadcasterService, type: :service do
   let(:telemetry_log) { create(:telemetry_log, tree: tree) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
     # SEC.22: creds resolve ENV-primary; neutralize ambient .env (dotenv) so these
     # specs deterministically exercise the credentials path regardless of a local .env.
     allow(ENV).to receive(:[]).and_call_original

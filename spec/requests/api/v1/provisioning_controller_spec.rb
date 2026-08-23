@@ -22,7 +22,7 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     )
     allow(HardwareKeyService).to receive(:provision).and_return(SecureRandom.hex(32).upcase)
     allow(PeaqRegistrationWorker).to receive(:perform_async)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "POST /provisioning/register" do

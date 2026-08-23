@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe NaasContract, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "#check_cluster_health!" do

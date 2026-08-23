@@ -16,7 +16,7 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
   let(:other_tree) { create(:tree, cluster: other_cluster) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
     allow(EcosystemHealingWorker).to receive(:perform_async)
   end
 

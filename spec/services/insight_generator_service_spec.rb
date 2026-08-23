@@ -9,8 +9,7 @@ RSpec.describe InsightGeneratorService, type: :service do
   let(:tree) { create(:tree, cluster: cluster, status: :active) }
 
   before do
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
 
     # create_fraud_alert! — ПУБЛІЧНИЙ class method (AlertDispatchService); стаб
     # верифікується штатно й служить обом полюсам: «не шле» (інертний гард) ⊥

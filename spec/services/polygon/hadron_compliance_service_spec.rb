@@ -9,8 +9,7 @@ RSpec.describe Polygon::HadronComplianceService do
     let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending") } }
 
     before do
-      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      silence_broadcasts!(:wallet_balance, :tree_map)
     end
 
     context "when wallet has no crypto address" do
@@ -156,8 +155,7 @@ RSpec.describe Polygon::HadronComplianceService do
     let(:naas_contract) { create(:naas_contract) }
 
     before do
-      allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-      allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+      silence_broadcasts!(:wallet_balance, :tree_map)
     end
 
     context "when contract is not active" do

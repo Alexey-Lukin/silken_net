@@ -26,10 +26,9 @@ RSpec.describe Treasury::MonitorService do
     allow(Web3::HttpClient).to receive(:post).and_return(mock_solana_response)
 
     # Не створювати реальні EWS алерти з побічними ефектами
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+    silence_broadcasts!(:alert_notify)
     allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update)
+    silence_broadcasts!(:alert_new, :alert_update)
 
     Web3::RpcConnectionPool.reset!
   end

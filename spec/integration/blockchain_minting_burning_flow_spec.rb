@@ -35,7 +35,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
     allow(Kredis).to receive(:lock).and_yield
 
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:wallet_balance)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(ActionCable.server).to receive(:broadcast)
@@ -213,8 +213,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     # event (e.g. planned tree-death / drought-as-fraud / natural fire).
     it "freezes (no burn, no breach) end-to-end when there is no Category-A evidence" do
       allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_call_original
-      allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      silence_broadcasts!(:alert_new, :alert_notify)
 
       result = BlockchainBurningService.call(organization.id, naas_contract.id, source_tree: tree)
 

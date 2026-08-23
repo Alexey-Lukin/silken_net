@@ -8,7 +8,7 @@ RSpec.describe PeaqRegistrationWorker, type: :worker do
   let(:tree) { create(:tree, cluster: cluster) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "#perform" do

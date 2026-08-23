@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe BlockchainTransactionBlueprint, type: :model do
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   let(:tree) { create(:tree) }

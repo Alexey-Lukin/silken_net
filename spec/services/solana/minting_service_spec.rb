@@ -20,8 +20,7 @@ RSpec.describe Solana::MintingService do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
 
     # Configure mandatory ENV variables for production transaction flow
     ENV["SOLANA_WALLET_KEYPAIR"] = valid_keypair_hex

@@ -9,7 +9,7 @@ RSpec.describe StreamrBroadcastWorker, type: :worker do
   let(:telemetry_log) { create(:telemetry_log, tree: tree) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:tree_map)
   end
 
   describe "#perform" do

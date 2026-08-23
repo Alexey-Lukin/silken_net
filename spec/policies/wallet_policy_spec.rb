@@ -12,8 +12,7 @@ RSpec.describe WalletPolicy do
   let(:super_admin) { create(:user, :super_admin) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:tree_map, :wallet_balance)
   end
 
   describe "#show?" do

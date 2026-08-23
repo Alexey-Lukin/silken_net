@@ -9,8 +9,7 @@ RSpec.describe "Parametric insurance payout flow" do
   let(:tree_family) { create(:tree_family) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:tree_map, :wallet_balance)
     allow(AlertNotificationWorker).to receive(:perform_async)
     allow(BlockchainMintingService).to receive(:call)
   end
@@ -27,8 +26,7 @@ RSpec.describe "Parametric insurance payout flow" do
     before do
       Cluster.where(id: cluster.id).update_all(active_trees_count: 2)
       allow(InsurancePayoutWorker).to receive(:perform_async)
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
-      allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+      silence_broadcasts!(:alert_notify, :alert_new)
       insurance.reload
     end
 
@@ -90,9 +88,9 @@ RSpec.describe "Parametric insurance payout flow" do
       allow(SystemParameter).to receive(:current).and_call_original
       allow(SystemParameter).to receive(:current)
         .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      silence_broadcasts!(:alert_notify)
       allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
-      allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
+      silence_broadcasts!(:alert_new)
       create(:ews_alert, :fire, cluster: cluster, tree: nil, satellite_status: :verified)
     end
 

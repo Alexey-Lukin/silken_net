@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe ChainAuditService do
   before do
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:wallet_balance)
     ENV["ALCHEMY_POLYGON_RPC_URL"] ||= "https://polygon-rpc.example.com"
     ENV["CARBON_COIN_CONTRACT_ADDRESS"] ||= "0x#{'0' * 40}"
   end

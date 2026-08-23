@@ -11,8 +11,7 @@ RSpec.describe BlockchainMintingService do
     ENV["FOREST_COIN_CONTRACT_ADDRESS"] ||= "0x" + "1" * 40
     ENV["DAO_TREASURY_ADDRESS"] ||= "0x" + "9" * 40
 
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
     allow(BlockchainConfirmationWorker).to receive(:perform_in)
 unless defined?(Kredis)

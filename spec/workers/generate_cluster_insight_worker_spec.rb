@@ -9,8 +9,7 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
   let(:date) { Date.new(2026, 3, 6) }
 
   before do
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
 
     # create_fraud_alert! — публічний class method; ізоляційний стаб (гард інертний,

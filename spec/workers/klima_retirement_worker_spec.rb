@@ -14,8 +14,7 @@ RSpec.describe KlimaRetirementWorker, type: :worker do
   before do
     allow(KlimaDao::RetirementService).to receive(:new).and_return(mock_service)
     allow(mock_service).to receive(:retire_carbon!)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
+    silence_broadcasts!(:wallet_balance, :tree_map)
   end
 
   describe "#perform" do

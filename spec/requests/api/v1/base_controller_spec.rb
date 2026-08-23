@@ -270,7 +270,7 @@ RSpec.describe Api::V1::BaseController, type: :request do
 
     before do
       allow(AlertNotificationWorker).to receive(:perform_async)
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+      silence_broadcasts!(:alert_notify)
       Rails.cache.clear
       # Pause: `Tree.after_create` тягне wallet+calibration на кожне дерево фабрики —
       # це N+1 У ФІКСТУРІ, не в коді під тестом.

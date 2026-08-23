@@ -9,8 +9,7 @@ RSpec.describe "Emergency response and actuator command flow" do
   let(:tree_family) { create(:tree_family) }
 
   before do
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
+    silence_broadcasts!(:tree_map, :wallet_balance)
     allow(AlertNotificationWorker).to receive(:perform_async)
   end
 

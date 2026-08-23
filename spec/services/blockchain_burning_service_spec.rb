@@ -38,10 +38,7 @@ RSpec.describe BlockchainBurningService do
     # лишаються дійсні). Clamp/evasion-гілки перевизначають :call локально.
     allow(mock_client).to receive_messages(transact: fake_tx_hash, call: 10_000 * (10**18))
 
-    allow_any_instance_of(Wallet).to receive(:broadcast_balance_update)
-    allow_any_instance_of(Tree).to receive(:broadcast_map_update)
-    allow_any_instance_of(EwsAlert).to receive(:broadcast_new_alert)
-    allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!)
+    silence_broadcasts!(:wallet_balance, :tree_map, :alert_new, :alert_notify)
 
     # [SLASH-1 §3.2] Default: positive-A evidence present, so the existing burn-mechanics
     # specs exercise the slash path. CauseEvidence's own logic is unit-tested in
