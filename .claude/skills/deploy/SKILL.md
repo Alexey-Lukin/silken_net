@@ -24,7 +24,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | **Puma 8** config + cluster hooks + runbook'и | `06_05` |
 | **Disaster Recovery** / backup / RTO-RPO / master-key | `06_06` (config SSOT = `terraform/database.tf`) |
 | **CI/CD** workflows + єдиний operations runbook-індекс | `06_07` |
-| **Resilience** — Queen failover (4 рівні) + Per-Chain Fallback Matrix | `06_08` |
+| **Resilience** — Queen failover (4 рівні) + Per-Chain Fallback Matrix + **топологія черг Sidekiq** (`§2.5` — anti-starvation через ізоляцію ПРОЦЕСІВ, не перестановку черг; flip = `sidekiq -q`-прапори в deploy-конфізі, тобто deploy-рішення, НЕ код) | `06_08` |
 
 ## Несучі інваріанти (не очевидні з коду)
 

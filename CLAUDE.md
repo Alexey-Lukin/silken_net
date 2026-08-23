@@ -77,6 +77,7 @@ bundle exec i18n-tasks missing   # i18n-парність (+`check-consistent-int
 ```
 uplink(1) > alerts(2) > critical(3) > downlink(4) > default(5) > web3_critical(6) > web3(7) > web3_low(8) > low(9)
 ```
+⚠️ **Правило вище — про ВОРКЕРІВ, і воно сліпе до другої половини черг.** ActiveJob-джоби (пошта · Turbo-броадкасти · ActiveStorage) приходять із гемів **без `queue_as`**, тож `default`(5) їм призначає фреймворк, а не ми — і так було з УСІМА (виміряно `ActiveJob::Base.descendants`, ARCH.60). Ціна не теоретична: лист про critical-тривогу їхав позаду чанків OTA, поки рішення його надіслати ухвалювалось у `alerts`(2). Присуд: **довговічний канал несе пріоритет своєї події, ефемерний ні** (`AlertMailer`→`alerts`; `PasswordMailer` і Turbo-редрави лишаються `default` свідомо). Носій — `spec/quality/activejob_queue_declaration_spec.rb`; ⛔ черга поза `sidekiq.yml` не слухається жодним процесом → джоби тонуть мовчки.
 
 **AES-режими + двоключова модель** (post-FW.2 (в), 2026-07-03; дім `03_05 §3.1`+`§6`):
 
