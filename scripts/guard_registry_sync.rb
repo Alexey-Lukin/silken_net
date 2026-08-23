@@ -97,6 +97,9 @@ DOCS_RAKE_LABELS = {
   "§-after-link refs (DOC-T.16 — fold §X into the link label)"                             => "§-after-link → fold",
   "canon §-refs (numbered `NN_NN §X` not resolving to a heading)"                          => "canon §-ref resolution",
   "dangling #anchors (fragment ≠ heading slug)"                                            => "#anchor resolution",
+  # Другий ДІАЛЕКТ того самого рядка §3 (path-форма поза `docs/`, OPS.32): один рушій
+  # слагів, два читачі — тож і анкор реєстру спільний, окремого рядка це не потребує.
+  "dead #anchors outside docs/ (runbook_url & friends — OPS.32)"                            => "#anchor resolution",
   "stale external docs/NN_NN refs (.github / root *.md / source)"                          => "external doc-path",
   "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)"          => "source line-ref drift",
   "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)"                            => "magic-marker hex",

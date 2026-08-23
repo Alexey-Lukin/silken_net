@@ -130,6 +130,7 @@ namespace :docs do
     superseded_fm = [] # hard: superseded term (ATECC608B) in 🎯/Статус front-matter
     src_line_refs = [] # hard: volatile `*.c`/`*.h`/`*.rb` source line-refs (DOC-T.15)
     cited_specs  = [] # hard: canon names its honesty-gates by path (DOC-T.84 друге плече)
+    dead_ext_anchors = [] # hard: `docs/NN_NN_Name.md#frag` OUTSIDE docs/ whose frag ≠ heading slug (OPS.32)
     spec_exists  = ->(p) { File.file?(File.join(File.expand_path("..", DOCS_DIR), p)) }
     anchor_dim   = []  # hard: superseded anchor dimension range near part keyword (01_01 §1 freeze)
     thermal_drift = [] # hard: superseded HW.3.IS thermal-stress/press-fit number (01_01 §4.2 / report)
@@ -272,6 +273,13 @@ namespace :docs do
                       Dir[File.join(root_dir, "deploy", "**", "*")].select { |p| File.file?(p) } +
                       Dir[source_glob].select { |p| File.file?(p) })
                      .reject { |f| ext_exempt.include?(f.delete_prefix("#{root_dir}/")) }
+    # Heading-slug sets, computed once and shared by BOTH anchor dialects: the in-docs
+    # `](DocName#frag)` form below (DocsGraph.dangling_anchors) and the path form
+    # `docs/NN_NN_Name.md#frag` used OUTSIDE docs/ [OPS.32]. One engine, two readers —
+    # the second dialect had no reader at all, which is how three `runbook_url`
+    # fragments in `deploy/grafana/**` stood dead while the doc-path axis was green.
+    anchor_sets = graph_docs.transform_values { |t| DocsGraph.anchor_set(t) }
+
     ext_drift = external_files.flat_map do |f|
       rel = f.delete_prefix("#{root_dir}/")
       body = File.read(f)
@@ -281,6 +289,8 @@ namespace :docs do
       # invisible exactly on the surfaces no in-docs gate reads [DOC-T.68 закривна].
       label_drift.concat(DocsLinter.link_label_target_mismatch(body).map { |h| "#{rel}: #{h}" })
       cited_specs.concat(DocsLinter.cited_spec_path_drift(rel, body, spec_exists))
+      # Third axis on the same read: the doc may resolve while its `#fragment` does not.
+      dead_ext_anchors.concat(DocsLinter.external_doc_anchor_drift(rel, body, anchor_sets))
       DocsLinter.external_doc_path_drift(rel, body, existing)
     rescue ArgumentError
       [] # skip non-UTF-8 / binary files
@@ -385,7 +395,6 @@ namespace :docs do
     # [#anchor resolution] HARD — every link #fragment resolves to a heading slug
     # in its target (DocsGraph engine, mirrors docs:graph). Cross-doc links to an
     # absent target are left to the dangling guard above.
-    anchor_sets      = graph_docs.transform_values { |t| DocsGraph.anchor_set(t) }
     dangling_anchors = DocsGraph.dangling_anchors(graph_docs, anchor_sets)
 
     puts "docs:check_refs — #{files.size} docs scanned"
@@ -576,6 +585,12 @@ namespace :docs do
       puts "  DANGLING #anchors (#{dangling_anchors.size}) — fragment has no matching heading slug:"
       dangling_anchors.each { |h| puts "    ✗ #{h[:from]} → #{h[:to]}##{h[:anchor]}" }
     end
+    if dead_ext_anchors.empty?
+      puts "  #anchors outside docs/: every `docs/NN_NN_*.md#frag` fragment resolves ✓"
+    else
+      puts "  DEAD #anchors OUTSIDE docs/ (#{dead_ext_anchors.size}) — path resolves, heading slug does not:"
+      dead_ext_anchors.sort.uniq.each { |d| puts "    ✗ #{d}" }
+    end
     if rtc_drift.empty?
       puts "  RTC reg-map:    no out-of-owner DRn availability claims ✓"
     else
@@ -696,6 +711,7 @@ namespace :docs do
     failed << "canon §-refs (numbered `NN_NN §X` not resolving to a heading)" unless canon_secrefs.empty?
     failed << "dangling #anchors (fragment ≠ heading slug)" unless dangling_anchors.empty?
     failed << "stale external docs/NN_NN refs (.github / root *.md / source)" unless ext_drift.empty?
+    failed << "dead #anchors outside docs/ (runbook_url & friends — OPS.32)" unless dead_ext_anchors.empty?
     failed << "volatile source line-refs `*.c`/`*.h`/`*.rb` (DOC-T.15 — cite symbol/#define)" unless src_line_refs.empty?
     failed << "cited spec paths that do not exist (DOC-T.84 — canon names a guard by a dead name)" unless cited_specs.empty?
     failed << "magic-marker hex ≠ BE/LE ASCII of its quoted name (DOC-T.46)" unless magic_drift.empty?

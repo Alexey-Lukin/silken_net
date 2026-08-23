@@ -1062,6 +1062,44 @@ module DocsLinter
     end
   end
 
+  # [OPS.32] Друга вісь тієї самої поверхні: шлях може РЕЗОЛВИТИСЬ, а `#фрагмент`
+  # після нього — ні, і тоді читача мовчки викидає на початок сторінки. Найдорожчий
+  # споживач саме тут: `deploy/grafana/**` кладе такі URL у `runbook_url`, тобто
+  # читає їх ЛЮДИНА в мить інциденту. Виміряно 2026-08-23 по всьому набору
+  # `external_files`: фрагмент-рефів у path-формі рівно ЧОТИРИ, усі в `deploy/`,
+  # і ТРИ з них були мертві (`#OracleBalance` · `#reserve-gate` · `#SEC10`), а
+  # четвертий ніс великі літери там, де слаг GitHub завжди нижнього регістру.
+  # Ціна вмикання = нуль хибних позитивів, множина непорожня → живість гейта
+  # доводиться мутацією на реальному члені, а не порожнім зеленим.
+  #
+  # ⚠️ Стеля, названа поіменно — ЩО цей гейт НЕ бачить:
+  #   • лише path-форма `docs/NN_NN_Name.md#frag`; внутрішньодокову
+  #     `[мітка](DocName#frag)` судить `docs:graph`, і той **advisory за дизайном**
+  #     ([`00_06 §Статус`]) — цю асиметрію знято не було й тут вона не змінюється;
+  #   • `anchor_set` збирає слаги ЛИШЕ із заголовків, тож явний HTML-якір
+  #     (`<a id="…">`) у цілі читатиметься як відсутній — з'явиться такий, гейт
+  #     треба вчити, а не послаблювати;
+  #   • мертвий сам ДОКУМЕНТ лишається предметом `external_doc_path_drift` вище
+  #     (`anchors` його не має → пропускаємо), щоб один гейт не судив двох речей.
+  #
+  # `anchors` = та сама мапа, що живить `DocsGraph.dangling_anchors` — ключ `NN_NN`,
+  # значення Set слагів. Ключуємось на НОМЕР, а не на повний basename, свідомо: ім'я
+  # після номера вже судить `external_doc_path_drift`, і дублювати ту вісь тут означало
+  # б два вироки на один дефект, з яких другий назве не ту причину.
+  EXTERNAL_DOC_ANCHOR_RE = %r{docs/(\d\d_\d\d)(?:_[A-Za-z0-9_]+)\.md\#([^\s"'`)\]]+)}
+
+  def external_doc_anchor_drift(path, text, anchors)
+    text.each_line.flat_map do |line|
+      line.scan(EXTERNAL_DOC_ANCHOR_RE).filter_map do |(base, frag)|
+        known = anchors[base]
+        next if known.nil? || known.include?(frag)
+
+        "#{path}: dead anchor `#{base} ##{frag}` — the doc resolves, the heading slug " \
+          "does not (a reader following this link lands at the top of the page)"
+      end
+    end
+  end
+
   # [SSOT anti-drift, DOC-T.15 firmware + DOC-T.17 Ruby + DOC-T.29 class/prose] Volatile
   # source line-refs in three dialects: (1) path-form `*.c`/`*.h`/`*.rb`/`*.rake`/`*.sol`,
   # (2) Ruby-symbol `ClassName:NNN`, (3) Ukrainian-prose `(р.162)`/`(рядок 31)`. A file

@@ -1165,6 +1165,44 @@ RSpec.describe DocsLinter do
     end
   end
 
+  describe ".external_doc_anchor_drift" do
+    # [OPS.32] Три піни, і кожен закриває свою половину: RED на мертвому слагу,
+    # GREEN на живому, і near-miss — мертвий сам ДОКУМЕНТ, який судить сусідня
+    # вісь (`external_doc_path_drift`). Без третього гейт видавав би два вироки
+    # на один дефект, і другий називав би не ту причину.
+    let(:anchors) do
+      { "00_04" => Set.new(%w[-7-параметричне-страхування-insurance-layer]),
+        "04_02" => Set.new(%w[blockchainmintingservice]) }
+    end
+
+    it "flags a fragment that matches no heading slug in the target" do
+      txt = %(          runbook_url: "docs/00_04_Nature_as_a_Service_Contracts.md#reserve-gate"\n)
+      expect(described_class.external_doc_anchor_drift("deploy/grafana/alerts/x.yaml", txt, anchors))
+        .to contain_exactly(a_string_matching(/dead anchor `00_04 #reserve-gate`/))
+    end
+
+    it "flags a fragment whose case differs — a GitHub heading slug is always lowercase" do
+      txt = %(runbook_url: "docs/04_02_Business_Logic_and_Services.md#BlockchainMintingService"\n)
+      expect(described_class.external_doc_anchor_drift("deploy/x.yaml", txt, anchors))
+        .to contain_exactly(a_string_matching(/dead anchor `04_02 #BlockchainMintingService`/))
+    end
+
+    it "passes a fragment that resolves to a real heading slug" do
+      txt = %(runbook_url: "docs/04_02_Business_Logic_and_Services.md#blockchainmintingservice"\n)
+      expect(described_class.external_doc_anchor_drift("deploy/x.yaml", txt, anchors)).to be_empty
+    end
+
+    it "stays silent when the DOC itself is unknown — that axis belongs to external_doc_path_drift" do
+      txt = %(runbook_url: "docs/09_99_Renamed_Away.md#whatever"\n)
+      expect(described_class.external_doc_anchor_drift("deploy/x.yaml", txt, anchors)).to be_empty
+    end
+
+    it "ignores a path with no #fragment at all (16 of our 20 runbook_urls are this form)" do
+      txt = %(runbook_url: "docs/00_04_Nature_as_a_Service_Contracts.md"\n)
+      expect(described_class.external_doc_anchor_drift("deploy/x.yaml", txt, anchors)).to be_empty
+    end
+  end
+
   describe ".cited_spec_path_drift" do
     # Обидві половини навмисно: пін лише з RED вважав би дефектом кожну цитату,
     # а пін лише з GREEN не червонів би НІКОЛИ — і саме друге DOC-T.84 виміряв
