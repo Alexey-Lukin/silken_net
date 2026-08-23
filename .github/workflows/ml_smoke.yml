@@ -112,8 +112,21 @@ jobs:
           exit 1
       - name: Fail if the ML smoke job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        # [OPS.30] Вердикт мусить називати ЕТАП: `failure` = перевірка виконалась
+        # і сказала «ні»; `cancelled` = вона НЕ БІГЛА (стеля `timeout-minutes`
+        # або скасування прогону). Один меседж на два світи читається як
+        # «впали тести» і жене наступний прохід шукати дефект у власному діфі.
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
-          echo "::error::The ML smoke job failed or was cancelled — see the job list above."
+          failed=$(jq -r 'to_entries|map(select(.value.result=="failure").key)|join(", ")' <<<"$NEEDS_JSON")
+          stopped=$(jq -r 'to_entries|map(select(.value.result=="cancelled").key)|join(", ")' <<<"$NEEDS_JSON")
+          if [ -n "$failed" ]; then
+            echo "::error title=ВПАЛО (вердикт є)::${failed} — The ML smoke job failed — see the job list above."
+          fi
+          if [ -n "$stopped" ]; then
+            echo "::error title=НЕ БІГЛО (вердикту НЕМАЄ)::${stopped} — скасовано: стеля timeout-minutes або скасування прогону. Це не твердження про код."
+          fi
           exit 1
       - name: All clear
         run: echo "ML smoke passed (path-skipped on a non-ML change is OK)."

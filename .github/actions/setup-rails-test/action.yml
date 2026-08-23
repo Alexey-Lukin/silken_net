@@ -15,7 +15,23 @@ runs:
       # Потрібна ≥ 8.13 — інакше Active Storage не вимкне unfuzzed-лоадери.
       # Периметр саме тут: `bin/rails` без `:environment` (docs/i18n-гейти) vips
       # НЕ вантажить — гем стоїть `require: false`.
-      run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+      #
+      # ⏱ ВЛАСНА СТЕЛЯ [OPS.30]. Норма цього кроку ~40 с; 2026-08-19 він з'їв
+      # 14 хв 35 с — не збоєм, а колапсом пропускної здатності apt-дзеркала
+      # (87 КБ за 1 хв 34 с на ланцюгу залежностей libvips). Бюджету джоби
+      # `test` (`timeout-minutes: 15`) не лишилось, GitHub позначив перевищення
+      # як `cancelled`, і зведення прочиталось як «впали тести» — хоча ті не
+      # бігли жодного разу. Тим самим стало й `feature-test` у свої 10 хв.
+      # ⛔ Ретрай тут НЕ лік: жоден пакет не ВПАВ, вони їхали повільно, тож
+      # повтор лише подвоїв би стал́ь. `Acquire::Retries` лишається — воно
+      # лікує ІНШИЙ клас (обірване з'єднання), і стал́ь ним не маскується.
+      # Стеля 300 с = ×7.5 норми; вона падає ГУЧНО й ПОІМЕНОВАНО, доки бюджет
+      # найтіснішої з двох джоб (`feature-test`, 10 хв) іще лишається.
+      run: |
+        if ! sudo timeout 300 bash -c 'apt-get update -qq && apt-get install --no-install-recommends -y -o Acquire::Retries=3 libpq-dev libvips'; then
+          echo "::error title=apt не вклався у 300 с::Встановлення libpq-dev+libvips перевищило власну стелю кроку. Це затримка (або збій) apt-дзеркала — НЕ дефект коду й НЕ падіння тестів: жоден приклад не виконувався. Перезапусти прогін. [OPS.30]"
+          exit 1
+        fi
 
     - name: Set up Ruby
       uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
