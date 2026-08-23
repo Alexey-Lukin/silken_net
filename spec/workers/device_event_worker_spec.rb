@@ -76,6 +76,53 @@ RSpec.describe DeviceEventWorker do
     expect { perform(payload) }.not_to change(EwsAlert, :count) # той самий sig → nonce skip
   end
 
+  # =========================================================================
+  # [ARCH.105] Двофазний nonce. Однофазний спалював би токен ДО диспетчу, тож
+  # будь-який raise усередині нього віддавав би батч у Sidekiq-retry, де claim
+  # уже сказав би «бачив» — підписаний батч із tamper-кодом зникав би мовчки.
+  # `jid` тут не декорація: Sidekiq зберігає його на ретраях, і саме він
+  # відрізняє власний краш від чужого реплею.
+  # =========================================================================
+  def perform_as(jid, payload)
+    worker = described_class.new
+    worker.jid = jid
+    worker.perform(Base64.strict_encode64(payload), gateway.uid)
+  end
+
+  it "re-processes its OWN batch after a crash mid-dispatch (nonce not burned)" do
+    payload = valid_payload
+    jid     = SecureRandom.hex(12)
+
+    allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::StatementInvalid, "deadlock detected")
+    expect { perform_as(jid, payload) }.to raise_error(ActiveRecord::StatementInvalid)
+    expect(EwsAlert.count).to eq(0)
+
+    # Sidekiq ретраїть ТОЙ САМИЙ джоб — той самий `jid`.
+    allow(EwsAlert).to receive(:create!).and_call_original
+    expect { perform_as(jid, payload) }.to change(EwsAlert, :count).by(1)
+  end
+
+  it "denies a DIFFERENT job the resume, even mid-flight (only the owner resumes)" do
+    payload = valid_payload
+
+    allow(EwsAlert).to receive(:create!).and_raise(ActiveRecord::StatementInvalid, "deadlock detected")
+    expect { perform_as("owner-jid", payload) }.to raise_error(ActiveRecord::StatementInvalid)
+
+    # Чужий джоб на той самий підпис — це реплей, а не резюме.
+    allow(EwsAlert).to receive(:create!).and_call_original
+    expect { perform_as("someone-else-jid", payload) }.not_to change(EwsAlert, :count)
+  end
+
+  it "closes the batch on success — even its own jid cannot resume afterwards" do
+    payload = valid_payload
+    jid     = SecureRandom.hex(12)
+
+    expect { perform_as(jid, payload) }.to change(EwsAlert, :count).by(1)
+    EwsAlert.last.update!(status: :resolved) # звільнити uniqueness [tree,type,status]
+
+    expect { perform_as(jid, payload) }.not_to change(EwsAlert, :count)
+  end
+
   it "processes multiple records — one alert per distinct tree" do
     tree2 = create(:tree, cluster: cluster)
     payload = valid_payload(records: [ record(tree), record(tree2) ])

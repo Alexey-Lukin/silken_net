@@ -18,6 +18,16 @@
 # підпис (свіжий unix_ts+count), тож справжня повторна канарка НЕ глушиться
 # (на відміну від Солдатового per-boot seq). Дедуп реальних подій = EwsAlert
 # uniqueness [tree,type,status] (один активний canary/дерево).
+#
+# 🔴 [ARCH.105] Протокол ДВОФАЗНИЙ, і однофазним бути не може: claim ПЕРЕД
+# роботою, `done` — ПІСЛЯ. Одна фаза означала б, що nonce згорає до диспетчу,
+# і будь-який raise усередині нього (БД · enqueue в `after_commit`) віддає
+# батч у Sidekiq-retry, де claim уже скаже «бачив» — тобто підписаний батч із
+# tamper-кодом зникає мовчки на весь TTL. Розрізняє «мій краш» від ЧУЖОГО
+# реплею owner-токен: Sidekiq зберігає той самий `jid` на ретраях, тож власна
+# спроба резюмується, а стороння отримує `:replay`. Дім патерну —
+# `UnpackTelemetryWorker#claim_qatt_nonce`; тут його Solid-Cache-половина
+# (Redis цьому тракту не потрібен), і `unless_exist: true` атомарний.
 class DeviceEventWorker
   include Sidekiq::Worker
   sidekiq_options queue: "uplink", retry: 2
@@ -30,6 +40,7 @@ class DeviceEventWorker
   EVT_CANARY_TRIP   = 0x02
   NONCE_TTL         = 25.hours
   NONCE_PREFIX      = "silken:devevt:nonce"
+  NONCE_DONE        = "done"
 
   def perform(encoded_payload, gateway_uid)
     payload = Base64.strict_decode64(encoded_payload)
@@ -45,9 +56,16 @@ class DeviceEventWorker
     sig  = payload.byteslice(-DEVENV_SIG_LEN, DEVENV_SIG_LEN)
     body = payload.byteslice(0, payload.bytesize - DEVENV_SIG_LEN)
     return unless verify_signature(gateway, key_record, sig, body)
-    return if replayed?(sig)
+
+    case claim_nonce(sig)
+    when :replay
+      return
+    when :resumed
+      Rails.logger.info "🔁 [SEC.21] crash-retry власного device-event батча (#{nonce_owner_token}) — resume без спалення nonce."
+    end
 
     dispatch_records(body, gateway)
+    finalize_nonce!
   rescue ArgumentError => e
     Rails.logger.warn "🛑 [SEC.21] Корупція Base64 device-event від #{gateway_uid.inspect}: #{e.message}"
   rescue Ed25519Crypto::SigningService::SigningError => e
@@ -68,11 +86,27 @@ class DeviceEventWorker
     )
   end
 
-  # Anti-replay/crash-retry: той самий Королевин підпис двічі → skip.
-  def replayed?(signature)
-    digest = Digest::SHA256.hexdigest(signature)
-    !Rails.cache.write("#{NONCE_PREFIX}:#{digest}", "1",
-                       expires_in: NONCE_TTL, unless_exist: true)
+  # Фаза 1 — claim. `:acquired` = ми перші · `:resumed` = наш власний ретрай
+  # (той самий `jid`) · `:replay` = хтось інший уже обробив або обробляє.
+  def claim_nonce(signature)
+    @nonce_key = "#{NONCE_PREFIX}:#{Digest::SHA256.hexdigest(signature)}"
+    return :acquired if Rails.cache.write(@nonce_key, nonce_owner_token,
+                                          expires_in: NONCE_TTL, unless_exist: true)
+
+    Rails.cache.read(@nonce_key) == nonce_owner_token ? :resumed : :replay
+  end
+
+  # Фаза 2 — робота завершена, токен замінюється термінальним маркером: відтепер
+  # навіть наш власний `jid` не зможе резюмувати цей батч.
+  def finalize_nonce!
+    Rails.cache.write(@nonce_key, NONCE_DONE, expires_in: NONCE_TTL)
+  end
+
+  # `jid` переживає ретраї того самого джоба — саме це й робить «мій краш»
+  # відрізнимим. Фолбек потрібен для прямого `perform` поза Sidekiq (специ,
+  # консоль), де `jid` порожній.
+  def nonce_owner_token
+    @nonce_owner_token ||= jid.presence || SecureRandom.hex(8)
   end
 
   def dispatch_records(body, gateway)
