@@ -965,7 +965,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 **Ключові поля:** `ip_address`, `user_agent`, `updated_at` (оновлюється `after_touch`).
 
-**Методи:** `mobile_app?` (regex `SilkenNetMobile`), `touch_activity!`.
+**Методи:** `mobile_app?` (regex `SilkenNetMobile` — ⚠️ **заготовка без контракту**: нуль прод-викликачів, а UA-рядок мусить збігтися з оболонкою, форма якої ще не обрана — [`00_07`](00_07_Action_Plan_Tracker) E.20), `touch_activity!`.
 
 **Scopes:** `stale` (> 30 днів), `active_in_field` (foresters за 24 год).
 

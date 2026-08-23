@@ -1872,7 +1872,7 @@ score(ranger, bounty) =
 - `specialization_match = 1.0` якщо ranger робив >5 bounty цього task_type, 0.5 якщо 1-5, 0.0 якщо 0
 - `cluster_familiarity = 1.0` якщо ranger робив >3 bounty у тому ж `Cluster`, 0.5 — у сусідньому, 0.0 — нове місце
 
-Ваги (`0.40 / 0.25 / 0.20 / 0.10 / 0.05`) — стартові, налаштовуються через `SystemParameter(:forester_assignment_weights, ...)` (динамічно через `BIZ.4` DAO Governance, не hardcoded).
+Ваги (`0.40 / 0.25 / 0.20 / 0.10 / 0.05`) — стартові. 🔴 **Механізм їхньої настройки, названий тут, СЬОГОДНІ не існує, і в цій формі існувати не може — виміряно 2026-08-23.** Ключа `forester_assignment_weights` немає ніде (`app/` · `db/seeds.rb` · `PARAMETER_MAP` · `contracts/ProtocolParameters.sol` — нуль), і `spec/quality/system_parameter_delivery_spec.rb` червонів би на ньому за побудовою (`db/seeds.rb`: «ручка, якої ніхто не крутить, не «на майбутнє», а просто не існує»). Плюс форма: `ProtocolParameters.sol` це `mapping(bytes32 => uint256)` — **один скаляр на ключ**, тож вектор із пʼяти ваг у нього не лягає взагалі; DAO-налаштування ваг потребує іншої форми (пʼять окремих ключів ⊥ packed-uint ⊥ off-chain з on-chain хешем), і це частина ⚖️ [`00_07`](00_07_Action_Plan_Tracker) BIZ.13, а не деталь реалізації.
 
 #### Етап 4 — Notification Cascade (escalation)
 
@@ -1978,7 +1978,7 @@ end
 
 **Waterfall** (після positive-A-guard підтвердив A): holdback (`forester_share`-escrow) → operator-bond → sponsor-bond → investor `locked_balance` (excess). **Уніфікація A/B:** `ParametricInsurance#evaluate_daily_health!` (B→payout) і slashing daily-health (A→bond-slash) — паралельні евалуатори; cause-route = розвилка A→bond-waterfall / B→payout / C→freeze (спільне денне читання реалізовано як `DailyHealthRouter` — [INS.1], DRY).
 
-**DAO-параметри + передумови.** bond-sizing `max(BOND_FLOOR, k×expected_cluster_reward)`, holdback-%, sponsor-cap, reputation-scaling (`ProtocolParameters`/`SystemParameter`). Передумови: operator↔cluster assignment (E.20) + forester-payout disbursement (зараз computed-only) + DAO-ратифікація. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
+**DAO-параметри + передумови.** bond-sizing `max(BOND_FLOOR, k×expected_cluster_reward)`, holdback-%, sponsor-cap, reputation-scaling (`ProtocolParameters`/`SystemParameter`). ⚠️ **Жодного з цих чотирьох ключів у дереві немає** (перевірено 2026-08-23 по [`05_06 §7`](05_06_Governance_and_DAO) · `db/seeds.rb` · `PARAMETER_MAP` · `ProtocolParameters.sol`), а `BOND_FLOOR` записаний капслоком як константа, будучи словом — 0 збігів. 🔴 **І ширше, про ВСЮ цю секцію: пороги, радіуси, TTL, ваги та грошовий поріг `$100` ручного ревʼю — ВГАДАНІ, джерела не має жоден.** Це легально для design-RFC, але мусить бути сказано вголос, бо цей самий файл декларує протилежний принцип для живого коду (BME280-нога, HW.32) — «жодного вгаданого порогу в slashing-шляху», — а `$100` тут стоїть саме в payout-тракті. **Читати всі числа секції як `calibration-pending` placeholder'и** (форма — [`00_04 §3`](00_04_Nature_as_a_Service_Contracts)); при E.20-go кожне потребує підстави ДО коду. Передумови: operator↔cluster assignment (E.20) + forester-payout disbursement (зараз computed-only) + DAO-ратифікація. Tracked → [`00_07` BIZ.13/SLASH-1](00_07_Action_Plan_Tracker).
 
 ---
 

@@ -154,4 +154,4 @@ _Деплой, моніторинг, секрети та децентраліз�
 - [`06_05` — Puma Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 - [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)
-- [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) (Queen failover 4 рівні + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
+- [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) (Queen failover — 3 виконувані рівні, L4 без носія + Per-Chain Fallback Matrix для Web3-ланок — runtime resilience)
