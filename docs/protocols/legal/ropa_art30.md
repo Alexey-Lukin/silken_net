@@ -168,7 +168,7 @@
 | §2.7 Web3/KYC — Alchemy IP+wallet | `SEC.23` |
 | Усі §2.x — retention-строки | `SEC.18` (а) |
 | Усі §2.x — DSAR self-serve tooling | `SEC.18` (над `ARCH.57`) |
-| Усі §2.x — outbound breach-notification 72h | `SEC.18` (чекбокс gap-pass §07) |
+| Усі §2.x — outbound breach-notification 72h | `SEC.18` (чекбокс gap-pass §00b) |
 
 Повний трекер — [`00_07`](../../00_07_Action_Plan_Tracker.md).
 

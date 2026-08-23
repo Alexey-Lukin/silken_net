@@ -306,7 +306,7 @@ RSpec.describe Tracker::Dashboard do
         ## 📌 Backlog
         | ✅ E.58 | done finding | note |
         ## 🗄️ Архів
-        | OPS.5 | archived item keeping its origin ID | `00_05 §1.1` |
+        | OPS.5 | archived item keeping its origin ID | `99_99 §1.1` |
       MD
       expect(described_class.duplicate_ids(md)).to be_empty
     end

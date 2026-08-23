@@ -1,4 +1,4 @@
-# Legal Registry — SilkenNet (§07 юр-концерн)
+# Legal Registry — SilkenNet (юр-концерн)
 
 > **Що це:** індекс **робочих юр-артефактів** SilkenNet (контракт-каркаси · entity-структура · податкова постава · ™-бриф · securities-review) — один рядок на артефакт: про що, чий канон він дзеркалить, де живе його стан.
 > **Concern-шар** (як [`procurement/`](../procurement/rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе всередині — робочі чернетки й вказівники, **не підписані документи**; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
@@ -42,7 +42,7 @@
 | Ресурс | Що бере |
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у (дзеркала → правити в домі) |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | §07 BIZ.*/UNI.* — **дім стану** кожного артефакта (що зроблено, що 👤/⚖️) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | §00b BIZ.*/UNI.* — **дім стану** кожного артефакта (що зроблено, що 👤/⚖️) |
 | [`00_04`](../../00_04_Nature_as_a_Service_Contracts.md) | NaaS-контракти: типи (§1), фін-константи (§3), відкриті юр-передумови (§8) |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава (defensive-publication, ліцензійна матриця) + ™/юр-review-канали (§4) |
 | [`../outreach/legal_business_outreach.md`](../outreach/legal_business_outreach.md) | Dispatch-карта: пакет → людина → що просимо → що розблокує |

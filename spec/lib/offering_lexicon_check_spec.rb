@@ -134,7 +134,7 @@ RSpec.describe OfferingLexicon do
     end
 
     it "does not flag our own unit-economics payback wording" do
-      # 00_04 §17 exists to state OUR payback; only the customer's return is the problem,
+      # 02_06 §7 exists to state OUR payback; only the customer's return is the problem,
       # and no regex tells them apart — so ROI/payback are locale-value-only.
       with_tree("README.md" => "юніт-економіка та ROI кластера; payback ~58 місяців\n") do |root|
         expect(described_class.audit(root)[:hard]).to be_empty

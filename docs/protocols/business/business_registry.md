@@ -1,4 +1,4 @@
-# Business Registry — SilkenNet (§07 бізнес-концерн)
+# Business Registry — SilkenNet (бізнес-концерн)
 
 > **Що це:** індекс **робочих бізнес-артефактів** SilkenNet (SLA-exhibit · carbon/biodiversity-реєстри · страхова спека · enterprise-readiness · integrity- та OSS/Web3-стандарт-ландшафти) — один рядок на артефакт: про що, чий канон він дзеркалить, де живе його стан.
 > **Concern-шар** (як [`procurement/`](../procurement/rfq_registry.md) / [`paper/`](../paper/self_review_checklist.md)) — **НЕ канон**: усе всередині — робочі чернетки й вказівники, **не підписані документи**; правити факт у його домі ([`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)), не тут.
@@ -14,7 +14,7 @@
 
 | Артефакт | Про що | Канон-дім (правити там) | 00_07 |
 |---|---|---|---|
-| [`../outreach/legal_business_outreach.md`](../outreach/legal_business_outreach.md) | Dispatch-карта: пакет → людина → що просимо → що розблокує | — (сама карта; канон-домів не дзеркалить) | **§07 загалом** (маршрутизує до items, власного не має) |
+| [`../outreach/legal_business_outreach.md`](../outreach/legal_business_outreach.md) | Dispatch-карта: пакет → людина → що просимо → що розблокує | — (сама карта; канон-домів не дзеркалить) | **§00b загалом** (маршрутизує до items, власного не має) |
 | [`sla_exhibit.md`](sla_exhibit.md) | Шаблон customer-facing availability-SLA (exhibit до MSA) | [`06_06 §3`](../../06_06_Disaster_Recovery_and_Backup.md) (RTO/RPO) · [`06_08 §2.4`](../../06_08_Resilience_and_Failover_Policy.md) (internal SLO) | **BIZ.18** (живить BIZ.2 → [`legal/`](../legal/legal_registry.md)) |
 | [`carbon_registry_matrix.md`](carbon_registry_matrix.md) | Порівняння carbon/biodiversity-реєстрів + метрологічний розрив | [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md) (фін-константи) · [`02_06 §7.3`](../../02_06_Unit_Economics_and_BOM.md) | **BIZ.9** (вибір реєстру = ⚖️) |
 | [`eo_insurance_spec.md`](eo_insurance_spec.md) | Спека coverage-вимог для страхового брокера (E&O / CGL) | [`00_04 §7`](../../00_04_Nature_as_a_Service_Contracts.md) (параметричне страхування **клієнта** — сусіднє, не це) · [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) | **BIZ.21** (поліс gated на BIZ.20-entity) |
@@ -37,7 +37,7 @@
 | Ресурс | Що бере |
 |---|---|
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home реєстрація цього concern'у (дзеркала → правити в домі) |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | §07 BIZ.*/UNI.* — **дім стану** кожного артефакта (що зроблено, що 👤/⚖️) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | §00b BIZ.*/UNI.* — **дім стану** кожного артефакта (що зроблено, що 👤/⚖️) |
 | [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) | Відкриті юр/бізнес-передумови NaaS (SLA · страхування · RWA) — дім присудів |
 | [`00_02`](../../00_02_Academic_Integration_and_IP.md) | IP/ліцензійна постава (§3) + академ-канал, на який спираються OSS-стандарти |
 | [`legal/legal_registry.md`](../legal/legal_registry.md) | Сусідній реєстр — право (MSA/ToS · entity · податки · ™ · securities) |
