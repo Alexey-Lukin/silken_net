@@ -265,7 +265,9 @@ rb_dark() {
 # 2026-08-18: 136 → 137 — `log_dependabot_sweep.md`, the last home that had no
 # journal twin. 34203 → 11626 B, i.e. the whole «Пастки» section (31 bullets)
 # moved VERBATIM and the home kept compressed imperatives + routers.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-145}
+# 2026-08-23: 145 → 146 — `log_verdict_grounds.md`, twin for
+# `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-146}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -354,7 +356,15 @@ index_reach_expected() {
 # 2026-08-18: 43583 → 43755 (+172) — the last journal twin's own trigger, same
 # shape as the two entries above. With it the twinless set is EMPTY, so this
 # particular reason for a bump cannot recur.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43755}
+# 2026-08-23: 43755 → 43826 (+71) — `log_verdict_grounds.md`, the twin for
+# `feedback_verdict_vs_its_grounds` (36791 → 33.3 kB). 🔴 And it falsifies the
+# clause directly above it: "the twinless set is EMPTY, so this reason cannot
+# recur" was a SELF-LOCATION claim, true only for the population measured that
+# day — a rule-home that had no twin then simply had not yet grown into needing
+# one. Read the two entries together: the shape recurs whenever a rule-home
+# crosses the working ceiling, and the honest response is the twin plus this
+# bump, never shaving the new description toward the old ratchet.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43826}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
