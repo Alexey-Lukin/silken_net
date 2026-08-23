@@ -497,6 +497,10 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 Нумерація рядків наскрізна й НЕ перевпорядкована між контурами — крос-посилання на кшталт «(#48)»
 лишаються чинними в обох підсекціях.
 
+> 🔑 **Ця таблиця ГЕЙТОВАНА проти роутера [DOC-T.87, 2026-08-23]** — `spec/quality/route_doc_parity_spec.rb`, двонапрямно: маршрут без рядка ⊥ рядок без маршруту. Доти вона була **єдиним механічним реєстром модуля 04 без сторожа** ([`04_01`](04_01_Data_Models_and_Entities)/[`04_02`](04_02_Business_Logic_and_Services) тримає `model_doc_sync`, [`04_04`](04_04_Phlex_UI_and_Tailwind) — `component_doc_sync`), і дрейфнула: `GET /wallets/:wallet_id/transactions/:id/status` існував у роутері, контролері, політиці й двох спеках, а рядка тут не мав 17 діб при зеленому CI.
+>
+> ⚠️ **Оголошена стеля — гейт судить рівно пару (метод, шлях).** Колонки `Доступ`, `Controller#Action` і `Опис` він НЕ звіряє: право доступу живе в `before_action`-ланцюгу й політиках, а зіставляти його з прозою означало б доводити узгодженість двох наших описів, ніколи коректність. **Рядок із хибним `🔑 Auth` пройде зеленим** — ця вісь лишається ручним семантичним аудитом ([`00_06 §3а`](00_06_SSOT_Documentation_Standard)). ⊕ Гейт свідомо виключає `PUT`, що ділить шлях **І** `controller#action` із власним `PATCH` — це авто-дзеркало `resources`, не авторський ендпоінт (без цього правила точність падає з 2/2 до 2/5). ⛔ І він свідомо **не має рядка в реєстрі** [`00_06 §3`](00_06_SSOT_Documentation_Standard): джерелом істини мусить бути живий роутер, тобто потрібен Rails-boot, якого джоба `docs_check` не робить — а CHECK E реверс-перевіряє дослівну команду у workflow, тож рядок став би вічно червоним. Дім форми — сама ця секція плюс шапка спеки.
+
 ### 4.1 Браузерний контур (кореневі шляхи)
 
 | # | Метод | Шлях | Controller#Action | Доступ | Опис |
@@ -527,6 +531,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 14 | PATCH | `/account_security/identities/:id/unlock` | `account_security#unlock_identity` | 🔑 Auth | Розблокувати OAuth-ідентичність |
 | **🏰 Dashboard** | | | | | |
 | 15 | GET | `/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації (кеш 2 хв per-org). **[ARCH.77]** Той самий `dashboard#index` віддає й корінь застосунку — `root_path` існує. **[ARCH.88]** Блок `economy` несе ДВІ РІЗНІ величини: `growth_points` — офчейн-бали, що ростуть від телеметрії, і `minted_scc` — чинний monetary supply організації (Σmints − Σburns через One-Home `BlockchainTransaction.net_minted_supply`, скоуплений парою `wallet&.organization_id \|\| cluster&.organization_id`). ⚠️ `total_scc` лишається **депрекованим аліасом** `growth_points` — ім’я успадковане від колонкового аліаса й БРЕШЕ (колонка тримає бали); тихий ренейм заборонено, бо ключ уже читають клієнти. |
+| 121 | GET | `/` | `dashboard#index` | 🔑 Auth | **Корінь застосунку** (ARCH.77). Той самий екшен, що рядок 15 — окремий рядок тут не дубль, а вимога реєстру: людина, що шукає `GET /`, мусить його ЗНАЙТИ. **[DOC-T.87]** доти корінь жив лише ПРОЗОЮ всередині опису рядка 15, тобто був невидимий і для читача, і для будь-якого гейта |
 | **👤 Користувачі та Організації** | | | | | |
 | 16 | GET | `/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
 | 17 | GET | `/users` | `users#index` | 👑 Admin | Список користувачів організації |
@@ -559,6 +564,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 41 | GET | `/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
 | 42 | GET | `/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
 | 43 | GET | `/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
+| 120 | GET | `/wallets/:wallet_id/transactions/:id/status` | `wallets#transaction_status` | 🔑 Auth | Turbo Frame статусу однієї транзакції. ⚠️ Несе **`?created_at=`** — `blockchain_transactions` партиційована RANGE, тож без ключа резолв сканує всі партиції, а промах ТИХИЙ (скіл `backend` #59). Право переспитує `WalletPolicy#transaction_status? = show?`. **[DOC-T.87]** Рядка тут не було 17 діб при зеленому CI — саме цей випадок купив гейт парності роутер⟷таблиця |
 | 112 | GET | `/wallets/:id/ledger` | `wallets#ledger` | 🔑 Auth | CSV-вивантаження леджера гаманця (UI.7). Напрямок кожного рядка — деривація `#burn?` (знак `amount` напрямку не видає), одиниці стоять у заголовках колонок (`amount` = монети, `locked` = бали); стрімиться `CsvStreamable` |
 | 44 | GET | `/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
 | 45 | GET | `/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
