@@ -14,7 +14,13 @@
 #
 # Цей колбек:
 # 1. Запускає ClusterHealthCheckWorker для аудиту NaaS-контрактів
-# 2. Очищує старі TelemetryLog записи (>7 днів)
+# 2. [INS.1] Fan-out страхового оракула за kill-switch-прапором
+#
+# ⛔ Тут доти стояв третій пункт — «Очищує старі TelemetryLog записи (>7 днів)».
+# Механізм знято ⚖️ 2026-08-21: рядкове видалення телеметрії заборонене, єдиний
+# легітимний ретеншн — дроп партицій ([ARCH.70]). Коментар пережив свій код на
+# два дні; носій `spec/quality/telemetry_retention_home_spec.rb` цього не ловить
+# за побудовою — він сканує `delete_all`, а не прозу.
 class InsightBatchCallbacks
   # Спрацьовує коли ВСІ GenerateClusterInsightWorker джоби успішно завершились.
   # Гарантує, що аудит контрактів запускається тільки після повної агрегації.
@@ -25,7 +31,7 @@ class InsightBatchCallbacks
     date_string = options["date"]
 
     Rails.logger.info "✅ [Insight Batch] Батч #{status.bid} завершено успішно. " \
-                      "Дата: #{date_string}. Запуск аудиту контрактів та очищення логів..."
+                      "Дата: #{date_string}. Запуск аудиту контрактів..."
 
     # 1. Аудит NaaS-контрактів (Slashing Protocol / Celo Rewards)
     ClusterHealthCheckWorker.perform_async(date_string)

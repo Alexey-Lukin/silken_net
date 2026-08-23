@@ -951,7 +951,11 @@ class TelemetryUnpackerService < ApplicationService
     # стану. Дієвий рядок (`update_all(firmware_update_status: :fw_pending)`)
     # знято, а не закоментовано: закоментований код гниє мовчки, а `git log -S`
     # його віддає. Повертати — ПІСЛЯ того, як цей лічильник покаже правдоподібні
-    # числа на живому флоті → `00_07` ARCH.85.
+    # числа на живому флоті.
+    #
+    # ⚠️ Стрілка тут вела в `ARCH.85`, а той у §🗄️ і цієї умови НЕ несе: реф
+    # резолвився ідеально, зміст помер. Живий дім тригера — `00_07` ARCH.59
+    # (residual `fw_pending`-споживача), і саме там його треба питати.
     Rails.logger.info(
       "🔄 [ARCH.85 OTA Mismatch · спостереження] Дерево #{tree.did}: " \
       "contract #{reported_contract} != latest #{latest_id}. Стан НЕ змінено."
