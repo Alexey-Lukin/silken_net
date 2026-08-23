@@ -105,11 +105,11 @@ RSpec.describe Api::V1::ClustersController, type: :request do
   describe "перемикання acting-організації [SEC.25 Ф2]" do
     let!(:super_admin) { create(:user, :super_admin, organization: organization) }
 
-    before do
-      post "/login",
-           params: { email: super_admin.email_address, password: "password12345" },
-           as: :json
-    end
+    # [TEST.16] Ліхтар успіху. Тут він особливо несучий: приклади нижче міряють,
+    # ЩО САМЕ бачить super_admin, а анонімний запит теж повертає порожньо —
+    # тобто без ліхтаря «не бачить чужого кластера» доводилось би відсутністю
+    # сесії, а не скоупом.
+    before { sign_in_via_form(super_admin, password: "password12345", as: :json) }
 
     it "перемикає те, що super_admin реально бачить" do
       get "/clusters", as: :json

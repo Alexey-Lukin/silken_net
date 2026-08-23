@@ -8,8 +8,13 @@ require "rails_helper"
 RSpec.describe "Sidekiq Web UI mount", type: :request do
   let(:organization) { create(:organization) }
 
+  # 🔴 [TEST.16] Через `sign_in_via_form` (ліхтар успіху), НЕ через голий
+  # `post "/login"`. Доти три з чотирьох прикладів нижче чекали `404` — рівно
+  # те, що віддає АНОНІМНИЙ запит на admin-only маршрут, — тож невдалий логін
+  # лишав їх зеленими. Серед них пін на salt-bound відкликання (`SEC.16`):
+  # найгостріший приклад файлу доводив нуль.
   def login_as(user)
-    post "/login", params: { email: user.email_address, password: "password12345" }
+    sign_in_via_form(user, password: "password12345")
   end
 
   it "returns 404 for anonymous visitors (path not revealed)" do

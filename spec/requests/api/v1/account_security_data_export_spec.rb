@@ -13,9 +13,8 @@ RSpec.describe "GET /account_security/data_export", type: :request do
            password: "Str0ng!Passw0rd", password_confirmation: "Str0ng!Passw0rd")
   end
 
-  def sign_in!(u)
-    post "/login", params: { email: u.email_address, password: "Str0ng!Passw0rd" }
-  end
+  # [TEST.16] Ліхтар успіху — інакше невдалий логін лишає приклад на АНОНІМІ.
+  def sign_in!(u) = sign_in_via_form(u, password: "Str0ng!Passw0rd")
 
   it "returns the subject's data as a JSON attachment" do
     sign_in!(user)

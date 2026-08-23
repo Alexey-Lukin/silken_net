@@ -27,7 +27,9 @@ RSpec.describe "flash-категорії", type: :request do
   let(:organization) { create(:organization) }
   let(:user) { create(:user, :forester, organization: organization) }
 
-  before { post "/login", params: { email: user.email_address, password: "password12345" } }
+  # [TEST.16] Ліхтар успіху — сам файл нижче й пояснює клас: «всі асерти
+  # лишились би чесно зеленими про іншу сторінку».
+  before { sign_in_via_form(user, password: "password12345") }
 
   # Обидва регіони рендеряться завжди, навіть порожні, тож сама лише наявність id
   # нічого не доводить — доводить ПОЗИЦІЯ тексту відносно межі між регіонами

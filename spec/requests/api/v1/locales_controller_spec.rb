@@ -43,9 +43,9 @@ RSpec.describe Api::V1::LocalesController, type: :request do
     describe "persisting the choice for a signed-in user" do
       let(:user) { create(:user, locale: nil) }
 
-      def sign_in!
-        post "/login", params: { email: user.email_address, password: "password12345" }
-      end
+      # [TEST.16] Через ліхтар: голий post лишав приклади на АНОНІМІ, і вони
+      # проходили б, бо їхні очікування збігаються з поведінкою анонімного.
+      def sign_in! = sign_in_via_form(user, password: "password12345")
 
       it "stores the chosen locale on the user record" do
         sign_in!
