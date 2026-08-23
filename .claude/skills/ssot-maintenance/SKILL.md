@@ -236,6 +236,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 87. A mass rename breaks RANGES and HISTORICAL STATEMENTS, not refs — and neither is visible to any ref gate, because both stay syntactically valid
 88. An exemption justified by the word «forever» is a time bomb whose fuse is the next free-slot occupation — and the thing that defuses it is a lantern, never the promise — **occupying any freed number re-verifies EVERY exemption argued from permanence**
 89. The same detector pointed at two surfaces can measure OPPOSITE things — so «this gate works over there» is not evidence that it should be extended here — **before porting a gate to a new surface, ask what the flagged FORM usually MEANS there, and expect the dominant genre to be the legitimate one at least once**
+90. When the candidate class is SMALL, you can measure a gate's precision EXHAUSTIVELY before writing a line of it — and twice in two days that killed the gate for under an hour of work
 
 <!-- /GUARD-CRAFT-INDEX -->
 
