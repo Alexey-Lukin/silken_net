@@ -75,6 +75,11 @@ group :development, :test do
   gem "rspec-rails"
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", require: false
+  # [OPS.33] Project index for RuboCop 1.89+. Three Lint cops added in 1.89 —
+  # `UnusedPrivateMethod` (project-wide dead code), `DeprecatedReference`,
+  # `NameTypo` — are INERT without it: they return zero while RuboCop exits 0,
+  # i.e. a blind zero, not a clean one (verified with a positive control).
+  gem "rubydex", require: false
 end
 
 group :development do
