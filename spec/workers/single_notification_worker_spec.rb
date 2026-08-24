@@ -16,9 +16,11 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       it "routes into the loud unknown-channel branch instead of a silent stub" do
         user = create(:user, :forester, organization: organization)
 
-        expect(Rails.logger).to receive(:error).with(/Невідомий канал.*"sms".*доставки НЕ буде/)
+        allow(Rails.logger).to receive(:error).with(/Невідомий канал.*"sms".*доставки НЕ буде/)
 
         described_class.new.perform(user.id, alert.id, "sms")
+
+        expect(Rails.logger).to have_received(:error).with(/Невідомий канал.*"sms".*доставки НЕ буде/)
       end
     end
 
@@ -30,10 +32,13 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       it "reports the push channel as unconfigured instead of claiming delivery" do
         user = create(:user, :admin, organization: organization)
 
-        expect(Rails.logger).to receive(:warn).with(/\[Push\].*не сконфігуровано.*НЕ доставлено/)
-        expect(Rails.logger).not_to receive(:info)
+        allow(Rails.logger).to receive(:warn).with(/\[Push\].*не сконфігуровано.*НЕ доставлено/)
+        allow(Rails.logger).to receive(:info)
 
         described_class.new.perform(user.id, alert.id, "push")
+
+        expect(Rails.logger).to have_received(:warn).with(/\[Push\].*не сконфігуровано.*НЕ доставлено/)
+        expect(Rails.logger).not_to have_received(:info)
       end
     end
 
@@ -60,20 +65,26 @@ RSpec.describe SingleNotificationWorker, type: :worker do
 
       it "stays silent for users who did not opt in with a chat id" do
         user = create(:user, :forester, organization: organization, telegram_chat_id: nil)
-        expect(Notifications::TelegramTransport).not_to receive(:send_message)
-        expect(Rails.logger).not_to receive(:warn).with(/\[Telegram\]/)
+        allow(Notifications::TelegramTransport).to receive(:send_message)
+        allow(Rails.logger).to receive(:warn)
 
         described_class.new.perform(user.id, alert.id, "telegram")
+
+        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
+        expect(Rails.logger).not_to have_received(:warn).with(/\[Telegram\]/)
       end
 
       it "reports the channel as unconfigured instead of claiming delivery" do
         user = create(:user, :forester, organization: organization, telegram_chat_id: "123456789")
         allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
 
-        expect(Notifications::TelegramTransport).not_to receive(:send_message)
-        expect(Rails.logger).to receive(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
+        allow(Notifications::TelegramTransport).to receive(:send_message)
+        allow(Rails.logger).to receive(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
 
         described_class.new.perform(user.id, alert.id, "telegram")
+
+        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
+        expect(Rails.logger).to have_received(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
       end
 
       it "lets transport errors escape so Sidekiq retries the delivery" do
@@ -109,11 +120,13 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       it "logs the unknown channel loudly instead of dying silently" do
         user = create(:user, :admin, organization: organization)
 
-        expect(Rails.logger).to receive(:error).with(/Невідомий канал.*"email".*доставки НЕ буде/)
+        allow(Rails.logger).to receive(:error).with(/Невідомий канал.*"email".*доставки НЕ буде/)
 
         expect {
           described_class.new.perform(user.id, alert.id, "email")
         }.not_to raise_error
+
+        expect(Rails.logger).to have_received(:error).with(/Невідомий канал.*"email".*доставки НЕ буде/)
       end
     end
 

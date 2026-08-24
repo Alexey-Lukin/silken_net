@@ -105,14 +105,17 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
     end
 
     it "[ARCH.54] енкʼює пульс з ПІДПИСАНОГО health-блоку (byte-parity з wire)" do
-      expect(GatewayTelemetryWorker).to receive(:perform_async).with(
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
+
+      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(GatewayTelemetryWorker).to have_received(:perform_async).with(
         gateway.uid,
         hash_including(
           "uptime_min" => 5310, "cifo_fill" => 42, "lora_rx_drops" => 3,
           "coap_fail_count" => 1, "cellular_signal_csq" => 17, "flags" => 0
         )
       )
-      described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
     end
 
     it "[ARCH.54] csq-сентинель 0xFF → nil (модем не відповів — не брешемо нулем)" do
@@ -120,28 +123,36 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_ct,
         health: golden_health.merge(csq: 0xFF)
       )
-      expect(GatewayTelemetryWorker).to receive(:perform_async).with(
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
+
+      described_class.new.perform(Base64.strict_encode64(hb), "10.0.0.1", gateway.uid)
+
+      expect(GatewayTelemetryWorker).to have_received(:perform_async).with(
         gateway.uid, hash_including("cellular_signal_csq" => nil)
       )
-      described_class.new.perform(Base64.strict_encode64(hb), "10.0.0.1", gateway.uid)
     end
 
     it "[ARCH.54] empty-flush heartbeat (ct=0) верифікується і несе пульс" do
       iv_only = OpenSSL::Random.random_bytes(16)
       hb = build_signed_payload(seed_hex: keypair[:seed_hex], uid: gateway.uid, iv_ct: iv_only)
-      expect(GatewayTelemetryWorker).to receive(:perform_async)
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
         .with(gateway.uid, hash_including("uptime_min" => 5310))
 
       described_class.new.perform(Base64.strict_encode64(hb), "10.0.0.1", gateway.uid)
+
+      expect(GatewayTelemetryWorker).to have_received(:perform_async)
+        .with(gateway.uid, hash_including("uptime_min" => 5310))
       expect(gateway.reload.last_attested_at).to be_present
     end
 
     it "[ARCH.54] пульс НЕ енкʼюється без валідного підпису (masking закрито)" do
       tampered = payload.dup
       tampered.setbyte(12, tampered.getbyte(12) ^ 0x01) # байт усередині health
-      expect(GatewayTelemetryWorker).not_to receive(:perform_async)
+      allow(GatewayTelemetryWorker).to receive(:perform_async)
 
       described_class.new.perform(Base64.strict_encode64(tampered), "10.0.0.1", gateway.uid)
+
+      expect(GatewayTelemetryWorker).not_to have_received(:perform_async)
     end
 
     it "передає сервісу РІВНО legacy-байти [IV][ct] (конверт зрізано)" do

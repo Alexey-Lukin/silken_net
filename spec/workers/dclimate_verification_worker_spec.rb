@@ -50,8 +50,11 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
       let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified) }
 
       it "skips verification" do
-        expect(Dclimate::VerificationService).not_to receive(:new)
+        allow(Dclimate::VerificationService).to receive(:new)
+
         described_class.new.perform(alert.id)
+
+        expect(Dclimate::VerificationService).not_to have_received(:new)
       end
     end
 
@@ -59,8 +62,11 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
       let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :rejected_fraud) }
 
       it "skips verification" do
-        expect(Dclimate::VerificationService).not_to receive(:new)
+        allow(Dclimate::VerificationService).to receive(:new)
+
         described_class.new.perform(alert.id)
+
+        expect(Dclimate::VerificationService).not_to have_received(:new)
       end
     end
 
@@ -68,8 +74,11 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
       let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive) }
 
       it "skips verification" do
-        expect(Dclimate::VerificationService).not_to receive(:new)
+        allow(Dclimate::VerificationService).to receive(:new)
+
         described_class.new.perform(alert.id)
+
+        expect(Dclimate::VerificationService).not_to have_received(:new)
       end
     end
   end
@@ -91,9 +100,11 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
       allow(Dclimate::VerificationService).to receive(:new).with(alert).and_return(service)
       allow(service).to receive(:perform).and_return(true)
 
-      expect(SilkenNet::Metrics::EWS_ALERTS_TOTAL).not_to receive(:increment)
+      allow(SilkenNet::Metrics::EWS_ALERTS_TOTAL).to receive(:increment)
 
       described_class.new.perform(alert.id)
+
+      expect(SilkenNet::Metrics::EWS_ALERTS_TOTAL).not_to have_received(:increment)
     end
   end
 
@@ -119,8 +130,11 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
 
     it "logs a warning" do
       job = { "args" => [ alert.id ] }
-      expect(Rails.logger).to receive(:warn).with(/Cosmic Eye Exhausted/)
+      allow(Rails.logger).to receive(:warn).with(/Cosmic Eye Exhausted/)
+
       described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
+
+      expect(Rails.logger).to have_received(:warn).with(/Cosmic Eye Exhausted/)
     end
 
     context "when alert does not exist" do

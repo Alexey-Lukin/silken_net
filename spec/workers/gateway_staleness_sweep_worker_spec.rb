@@ -116,10 +116,15 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
   describe "метрики" do
     it "ставить gauge флоту та інкрементить лічильник переходів" do
       silent_gateway
-      expect(SilkenNet::Metrics::GATEWAYS_OFFLINE_TOTAL).to receive(:increment)
-      expect(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set).with(1)
-      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(0)
+      allow(SilkenNet::Metrics::GATEWAYS_OFFLINE_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set).with(1)
+      allow(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(0)
+
       sweep
+
+      expect(SilkenNet::Metrics::GATEWAYS_OFFLINE_TOTAL).to have_received(:increment)
+      expect(SilkenNet::Metrics::GATEWAYS_FAULTY).to have_received(:set).with(1)
+      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to have_received(:set).with(0)
     end
   end
 
@@ -132,9 +137,12 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       create(:hardware_key, device_uid: gateway.uid,
                             ed25519_public_key_hex: "a" * 64)
 
-      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(1)
+      allow(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(1)
       allow(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set)
+
       sweep
+
+      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to have_received(:set).with(1)
     end
 
     it "рахує QATT-шлюз, що НІКОЛИ не атестувався (attested nil при pubkey)" do
@@ -144,9 +152,12 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
       create(:hardware_key, device_uid: gateway.uid,
                             ed25519_public_key_hex: "b" * 64)
 
-      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(1)
+      allow(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(1)
       allow(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set)
+
       sweep
+
+      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to have_received(:set).with(1)
     end
 
     it "не рахує L0-шлюз без pubkey" do
@@ -154,9 +165,12 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
                        config_sleep_interval_s: 3600,
                        last_seen_at: 1.minute.ago, last_attested_at: nil)
 
-      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(0)
+      allow(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to receive(:set).with(0)
       allow(SilkenNet::Metrics::GATEWAYS_FAULTY).to receive(:set)
+
       sweep
+
+      expect(SilkenNet::Metrics::GATEWAY_ATTEST_LAPSED).to have_received(:set).with(0)
     end
   end
 

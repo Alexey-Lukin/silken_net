@@ -12,9 +12,11 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
     it "re-enqueues a stale archive-requested log still missing ipfs_cid" do
       log = archive_intent(archive_requested_at: 3.hours.ago)
 
-      expect(FilecoinArchiveWorker).to receive(:perform_async).with(log.id)
+      allow(FilecoinArchiveWorker).to receive(:perform_async).with(log.id)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).to have_received(:perform_async).with(log.id)
     end
 
     # GOLDEN LINCHPIN: a direct-create! log (factory/console) has NO archive_requested_at →
@@ -23,33 +25,41 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
     it "IGNORES a not-archived log with no outbox marker (factory/console never pinned)" do
       create(:audit_log, archive_requested_at: nil, ipfs_cid: nil)
 
-      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
     end
 
     it "ignores an already-archived log (ipfs_cid present — idempotency)" do
       archive_intent(archive_requested_at: 3.hours.ago, ipfs_cid: "bafybeigdyrztest")
 
-      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
     end
 
     it "leaves a fresh archive request alone (still inside FilecoinArchiveWorker retry window)" do
       archive_intent(archive_requested_at: 5.minutes.ago)
 
-      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
     end
 
     it "skips requests older than LOOKBACK (budget-starvation guard — forensic tail)" do
       archive_intent(archive_requested_at: 40.days.ago)
 
-      expect(FilecoinArchiveWorker).not_to receive(:perform_async)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
     end
 
     it "caps re-enqueues at BATCH_LIMIT, oldest-first (backlog drains across crons)" do
@@ -58,10 +68,13 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
       mid    = archive_intent(archive_requested_at: 4.hours.ago)
       archive_intent(archive_requested_at: 3.hours.ago) # newest — skipped by cap
 
-      expect(FilecoinArchiveWorker).to receive(:perform_async).with(oldest.id)
-      expect(FilecoinArchiveWorker).to receive(:perform_async).with(mid.id)
+      allow(FilecoinArchiveWorker).to receive(:perform_async).with(oldest.id)
+      allow(FilecoinArchiveWorker).to receive(:perform_async).with(mid.id)
 
       described_class.new.perform
+
+      expect(FilecoinArchiveWorker).to have_received(:perform_async).with(oldest.id)
+      expect(FilecoinArchiveWorker).to have_received(:perform_async).with(mid.id)
     end
 
     it "is a no-op (no warn) when nothing is stuck" do
@@ -83,10 +96,13 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
       [ stale, trace ].each { |b| b.update_column(:updated_at, 3.hours.ago) }
       TelemetryArchiveBatch.create!(archive_root: "b" * 64, token_type: :carbon_coin) # fresh
 
-      expect(TelemetryArchiveBatchWorker).to receive(:perform_async).with(stale.id)
-      expect(TelemetryArchiveBatchWorker).to receive(:perform_async).with(trace.id)
+      allow(TelemetryArchiveBatchWorker).to receive(:perform_async).with(stale.id)
+      allow(TelemetryArchiveBatchWorker).to receive(:perform_async).with(trace.id)
 
       described_class.new.perform
+
+      expect(TelemetryArchiveBatchWorker).to have_received(:perform_async).with(stale.id)
+      expect(TelemetryArchiveBatchWorker).to have_received(:perform_async).with(trace.id)
     end
   end
 end

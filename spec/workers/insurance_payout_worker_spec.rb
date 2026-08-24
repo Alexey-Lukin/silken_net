@@ -31,10 +31,13 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
   it "memoizes the kill-switch flag — SystemParameter is read once per worker instance" do
     worker = described_class.new
-    expect(SystemParameter).to receive(:current)
-      .with(:parametric_insurance_oracle_enabled, default: false).once.and_return(true)
+    allow(SystemParameter).to receive(:current)
+      .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
 
     2.times { worker.send(:oracle_enabled?) } # 2nd call hits the `defined?(@oracle_enabled)` memo
+
+    expect(SystemParameter).to have_received(:current)
+      .with(:parametric_insurance_oracle_enabled, default: false).once
   end
 
   # [INS.1 kill-switch] Прапор OFF → money-path не виконується (кандидат тримається).
@@ -220,16 +223,20 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
       it "logs satellite pending message for unverified alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :unverified)
-        expect(Rails.logger).to receive(:info).with(/\[Insurance\] Виплата відкладена — очікуємо незалежну верифікацію для кластера ##{cluster.id}/)
+        allow(Rails.logger).to receive(:info).with(/\[Insurance\] Виплата відкладена — очікуємо незалежну верифікацію для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
+
+        expect(Rails.logger).to have_received(:info).with(/\[Insurance\] Виплата відкладена — очікуємо незалежну верифікацію для кластера ##{cluster.id}/)
       end
 
       it "logs manual audit message for inconclusive alerts" do
         create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :inconclusive)
-        expect(Rails.logger).to receive(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO \/ Field-Audit для кластера ##{cluster.id}/)
+        allow(Rails.logger).to receive(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO \/ Field-Audit для кластера ##{cluster.id}/)
 
         described_class.new.perform(insurance.id)
+
+        expect(Rails.logger).to have_received(:warn).with(/\[Insurance\] Виплата заблокована — потрібен ручний DAO \/ Field-Audit для кластера ##{cluster.id}/)
       end
 
       # [INS.1] Не-пожежний перил (посуха) → :inconclusive (Field Audit) → HOLD, консистентно з fire.
@@ -251,9 +258,11 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       empty_insurance = create(:parametric_insurance, :triggered, cluster: empty_cluster, organization: organization)
       create(:ews_alert, :fire, cluster: empty_cluster, tree: nil, satellite_status: :verified)
 
-      expect(Rails.logger).to receive(:error).with(/без жодного дерева/)
+      allow(Rails.logger).to receive(:error).with(/без жодного дерева/)
 
       described_class.new.perform(empty_insurance.id)
+
+      expect(Rails.logger).to have_received(:error).with(/без жодного дерева/)
       expect(BlockchainMintingService).not_to have_received(:call)
     end
 
@@ -286,11 +295,13 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         allow(insurance).to receive(:status_triggered?).and_return(true)
         allow(insurance).to receive(:lock!).and_raise(ActiveRecord::RecordNotFound)
 
-        expect(Rails.logger).to receive(:warn).with(/зник із Матриці/)
+        allow(Rails.logger).to receive(:warn).with(/зник із Матриці/)
 
         expect {
           described_class.new.perform(insurance.id)
         }.not_to raise_error
+
+        expect(Rails.logger).to have_received(:warn).with(/зник із Матриці/)
       end
     end
 
@@ -469,9 +480,11 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         it "escalates to manual_review WITHOUT re-claiming (double-pay guard)" do
           # [ARCH.45] Сліпий re-claim тут = можлива подвійна зовнішня USDC-виплата (claim! міг
           # пройти до краху tx.update). Замість повтору — manual_review для ручної звірки DIP.
-          expect(Etherisc::ClaimService).not_to receive(:new)
+          allow(Etherisc::ClaimService).to receive(:new)
 
           described_class.new.perform(etherisc_insurance.id)
+
+          expect(Etherisc::ClaimService).not_to have_received(:new)
 
           expect(orphaned_tx.reload.status).to eq("manual_review")
         end

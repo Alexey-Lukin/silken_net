@@ -59,73 +59,87 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "re-raises HTTPX::TimeoutError with structured log" do
-      expect(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
+      allow(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
 
       expect {
         worker.perform_with_handling("Polygon", "TX #42") do
           raise HTTPX::TimeoutError.new(nil, "request timed out")
         end
       }.to raise_error(HTTPX::TimeoutError)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Polygon\] RPC Timeout/)
     end
 
     it "re-raises HTTPX::ConnectionError with connection error log" do
-      expect(Rails.logger).to receive(:error).with(/\[Solana\] RPC Connection Error/)
+      allow(Rails.logger).to receive(:error).with(/\[Solana\] RPC Connection Error/)
 
       expect {
         worker.perform_with_handling("Solana") do
           raise HTTPX::ConnectionError.new("failed to open TCP connection")
         end
       }.to raise_error(HTTPX::ConnectionError)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Solana\] RPC Connection Error/)
     end
 
     it "re-raises Net::OpenTimeout with structured log" do
-      expect(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
+      allow(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout/)
 
       expect {
         worker.perform_with_handling("Polygon", "TX #123") do
           raise Net::OpenTimeout, "execution expired"
         end
       }.to raise_error(Net::OpenTimeout)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Polygon\] RPC Timeout/)
     end
 
     it "re-raises Net::ReadTimeout with structured log" do
-      expect(Rails.logger).to receive(:error).with(/\[Celo\] RPC Timeout/)
+      allow(Rails.logger).to receive(:error).with(/\[Celo\] RPC Timeout/)
 
       expect {
         worker.perform_with_handling("Celo") do
           raise Net::ReadTimeout, "Net::ReadTimeout with #<TCPSocket>"
         end
       }.to raise_error(Net::ReadTimeout)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Celo\] RPC Timeout/)
     end
 
     it "re-raises Errno::ECONNREFUSED with connection error log" do
-      expect(Rails.logger).to receive(:error).with(/\[Solana\] RPC Connection Error/)
+      allow(Rails.logger).to receive(:error).with(/\[Solana\] RPC Connection Error/)
 
       expect {
         worker.perform_with_handling("Solana", "Wallet #456") do
           raise Errno::ECONNREFUSED, "Connection refused"
         end
       }.to raise_error(Errno::ECONNREFUSED)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Solana\] RPC Connection Error/)
     end
 
     it "re-raises Errno::ECONNRESET with connection error log" do
-      expect(Rails.logger).to receive(:error).with(/\[Ethereum\] RPC Connection Error/)
+      allow(Rails.logger).to receive(:error).with(/\[Ethereum\] RPC Connection Error/)
 
       expect {
         worker.perform_with_handling("Ethereum") do
           raise Errno::ECONNRESET, "Connection reset by peer"
         end
       }.to raise_error(Errno::ECONNRESET)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Ethereum\] RPC Connection Error/)
     end
 
     it "re-raises IOError with connection error log" do
-      expect(Rails.logger).to receive(:error).with(/\[IoTeX\] RPC Connection Error/)
+      allow(Rails.logger).to receive(:error).with(/\[IoTeX\] RPC Connection Error/)
 
       expect {
         worker.perform_with_handling("IoTeX") do
           raise IOError, "closed stream"
         end
       }.to raise_error(IOError)
+
+      expect(Rails.logger).to have_received(:error).with(/\[IoTeX\] RPC Connection Error/)
     end
 
     it "does not catch non-RPC errors (lets them propagate naturally)" do
@@ -137,23 +151,27 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "includes resource_info in log message when provided" do
-      expect(Rails.logger).to receive(:error).with(/for TX #999/)
+      allow(Rails.logger).to receive(:error).with(/for TX #999/)
 
       expect {
         worker.perform_with_handling("Polygon", "TX #999") do
           raise Net::OpenTimeout, "timeout"
         end
       }.to raise_error(Net::OpenTimeout)
+
+      expect(Rails.logger).to have_received(:error).with(/for TX #999/)
     end
 
     it "omits resource_info in log message when not provided" do
-      expect(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout:/)
+      allow(Rails.logger).to receive(:error).with(/\[Polygon\] RPC Timeout:/)
 
       expect {
         worker.perform_with_handling("Polygon") do
           raise Net::OpenTimeout, "timeout"
         end
       }.to raise_error(Net::OpenTimeout)
+
+      expect(Rails.logger).to have_received(:error).with(/\[Polygon\] RPC Timeout:/)
     end
   end
 
@@ -208,9 +226,12 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "returns nil for non-existent log" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
+
       result = worker.find_log(-1, Time.current.iso8601(6))
+
       expect(result).to be_nil
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
     end
 
     it "handles invalid ISO format gracefully" do
@@ -219,8 +240,11 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "uses custom log_prefix" do
-      expect(Rails.logger).to receive(:error).with(/\[Solana\] TelemetryLog/)
+      allow(Rails.logger).to receive(:error).with(/\[Solana\] TelemetryLog/)
+
       worker.find_log(-1, nil, prefix: "[Solana]")
+
+      expect(Rails.logger).to have_received(:error).with(/\[Solana\] TelemetryLog/)
     end
   end
 

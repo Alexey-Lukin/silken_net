@@ -44,9 +44,11 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
                                    chainlink_request_id: "existing-req", oracle_status: "dispatched")
 
-      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new)
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(Iotex::W3bstreamVerificationService).not_to have_received(:new)
 
       telemetry_log.reload
       expect(telemetry_log.zk_proof_ref).to eq("existing-proof")
@@ -60,9 +62,11 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
                                    chainlink_request_id: nil, oracle_status: "pending")
 
-      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new)
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(Iotex::W3bstreamVerificationService).not_to have_received(:new)
 
       expect(ChainlinkDispatchWorker.jobs.size).to eq(1)
       expect(ChainlinkDispatchWorker.jobs.first["args"]).to eq([
@@ -71,10 +75,13 @@ RSpec.describe IotexVerificationWorker, type: :worker do
     end
 
     it "returns early when telemetry_log is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
-      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new)
 
       described_class.new.perform(-1, Time.current.iso8601(6))
+
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
+      expect(Iotex::W3bstreamVerificationService).not_to have_received(:new)
     end
 
     # [PERF.1/S6.16] Битий created_at_iso — зіпсована ПІДКАЗКА прунінгу, а не
@@ -136,8 +143,11 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       telemetry_log.update_columns(verified_by_iotex: true, zk_proof_ref: "existing-proof",
                                    chainlink_request_id: "existing-req", oracle_status: "dispatched")
 
-      expect(Iotex::W3bstreamVerificationService).not_to receive(:new)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new)
+
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(Iotex::W3bstreamVerificationService).not_to have_received(:new)
     end
 
     it "does not chain ChainlinkDispatchWorker when verification fails" do

@@ -44,8 +44,11 @@ RSpec.describe TreasuryMonitorWorker, type: :worker do
     end
 
     it "logs summary with counts" do
-      expect(Rails.logger).to receive(:info).with(/2 healthy, 1 critical, 1 errors/)
+      allow(Rails.logger).to receive(:info).with(/2 healthy, 1 critical, 1 errors/)
+
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/2 healthy, 1 critical, 1 errors/)
     end
 
     it "logs correct counts when all healthy" do
@@ -54,8 +57,11 @@ RSpec.describe TreasuryMonitorWorker, type: :worker do
         { network: "solana", status: :healthy, ratio: 15.0 }
       ])
 
-      expect(Rails.logger).to receive(:info).with(/2 healthy, 0 critical, 0 errors/)
+      allow(Rails.logger).to receive(:info).with(/2 healthy, 0 critical, 0 errors/)
+
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/2 healthy, 0 critical, 0 errors/)
     end
 
     it "logs correct counts when all critical" do
@@ -64,15 +70,21 @@ RSpec.describe TreasuryMonitorWorker, type: :worker do
         { network: "celo", status: :critical, ratio: 0.01 }
       ])
 
-      expect(Rails.logger).to receive(:info).with(/0 healthy, 2 critical, 0 errors/)
+      allow(Rails.logger).to receive(:info).with(/0 healthy, 2 critical, 0 errors/)
+
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/0 healthy, 2 critical, 0 errors/)
     end
 
     it "handles empty results from MonitorService" do
       allow(Treasury::MonitorService).to receive(:call).and_return([])
 
-      expect(Rails.logger).to receive(:info).with(/0 healthy, 0 critical, 0 errors/)
+      allow(Rails.logger).to receive(:info).with(/0 healthy, 0 critical, 0 errors/)
+
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/0 healthy, 0 critical, 0 errors/)
     end
 
     it "re-raises HTTPX::TimeoutError for Sidekiq retry" do

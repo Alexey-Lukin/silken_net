@@ -19,25 +19,31 @@ RSpec.describe StuckSentAnchorSweeperWorker, type: :worker do
     it "re-arms confirmation for an anchor stuck in :sent past the threshold" do
       stuck = make_stuck(create(:ethereum_anchor, :sent))
 
-      expect(EthereumAnchorConfirmationWorker).to receive(:perform_async).with(stuck.id)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async).with(stuck.id)
 
       described_class.new.perform
+
+      expect(EthereumAnchorConfirmationWorker).to have_received(:perform_async).with(stuck.id)
     end
 
     it "ignores a fresh :sent anchor still within the live-poller window" do
       create(:ethereum_anchor, :sent)
 
-      expect(EthereumAnchorConfirmationWorker).not_to receive(:perform_async)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(EthereumAnchorConfirmationWorker).not_to have_received(:perform_async)
     end
 
     it "ignores terminal anchors (confirmed) regardless of age" do
       make_stuck(create(:ethereum_anchor, :confirmed))
 
-      expect(EthereumAnchorConfirmationWorker).not_to receive(:perform_async)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(EthereumAnchorConfirmationWorker).not_to have_received(:perform_async)
     end
 
     it "skips a row already resolved before re-arm (reload-guard vs a live poller)" do
@@ -45,18 +51,23 @@ RSpec.describe StuckSentAnchorSweeperWorker, type: :worker do
       allow(EthereumAnchor).to receive(:stuck_sent).and_return(EthereumAnchor.where(id: stuck.id))
       stuck.update_column(:status, EthereumAnchor.statuses[:confirmed])
 
-      expect(EthereumAnchorConfirmationWorker).not_to receive(:perform_async)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async)
 
       described_class.new.perform
+
+      expect(EthereumAnchorConfirmationWorker).not_to have_received(:perform_async)
     end
 
     it "does not log when nothing is stuck" do
       create(:ethereum_anchor, :sent) # fresh — not stuck
 
-      expect(Rails.logger).not_to receive(:warn).with(/Re-armed/)
-      expect(Rails.logger).not_to receive(:info).with(/Розглянуто/)
+      allow(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:info)
 
       described_class.new.perform
+
+      expect(Rails.logger).not_to have_received(:warn).with(/Re-armed/)
+      expect(Rails.logger).not_to have_received(:info).with(/Розглянуто/)
     end
 
     # 🔴 [PERF.1] Свідок для НУЛЬОВОГО результату — третій член класу (два сусіди
@@ -68,9 +79,11 @@ RSpec.describe StuckSentAnchorSweeperWorker, type: :worker do
       allow(EthereumAnchor).to receive(:stuck_sent).and_return(EthereumAnchor.where(id: stuck.id))
       stuck.update_column(:status, EthereumAnchor.statuses[:confirmed])
 
-      expect(Rails.logger).to receive(:info).with(/Розглянуто 1 stuck-:sent anchor/)
+      allow(Rails.logger).to receive(:info).with(/Розглянуто 1 stuck-:sent anchor/)
 
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/Розглянуто 1 stuck-:sent anchor/)
     end
 
     it "skips a row deleted between SELECT and reload (RecordNotFound)" do
@@ -78,8 +91,11 @@ RSpec.describe StuckSentAnchorSweeperWorker, type: :worker do
       allow(EthereumAnchor).to receive(:stuck_sent).and_return(EthereumAnchor.where(id: stuck.id))
       allow_any_instance_of(EthereumAnchor).to receive(:reload).and_raise(ActiveRecord::RecordNotFound)
 
-      expect(EthereumAnchorConfirmationWorker).not_to receive(:perform_async)
+      allow(EthereumAnchorConfirmationWorker).to receive(:perform_async)
+
       expect { described_class.new.perform }.not_to raise_error
+
+      expect(EthereumAnchorConfirmationWorker).not_to have_received(:perform_async)
     end
 
     it "caps re-arms at BATCH_LIMIT per run (backlog drains across successive crons)" do

@@ -92,13 +92,15 @@ RSpec.describe ApplicationWeb3Worker do
       it "logs error, increments Prometheus metric, and re-raises" do
         allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment)
 
-        expect(Rails.logger).to receive(:error).with(/Polygon.*RPC Timeout.*for TX #123.*execution expired/)
+        allow(Rails.logger).to receive(:error).with(/Polygon.*RPC Timeout.*for TX #123.*execution expired/)
 
         expect {
           worker.with_web3_error_handling("Polygon", "TX #123") do
             raise HTTPX::TimeoutError.new(nil, "execution expired")
           end
         }.to raise_error(HTTPX::TimeoutError)
+
+        expect(Rails.logger).to have_received(:error).with(/Polygon.*RPC Timeout.*for TX #123.*execution expired/)
 
         expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to have_received(:increment)
           .with(labels: { network: "Polygon", error_type: "timeout" })
@@ -109,13 +111,15 @@ RSpec.describe ApplicationWeb3Worker do
       it "logs error, increments Prometheus metric, and re-raises" do
         allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment)
 
-        expect(Rails.logger).to receive(:error).with(/Polygon.*RPC Connection Error/)
+        allow(Rails.logger).to receive(:error).with(/Polygon.*RPC Connection Error/)
 
         expect {
           worker.with_web3_error_handling("Polygon") do
             raise HTTPX::ConnectionError.new("Connection refused")
           end
         }.to raise_error(HTTPX::ConnectionError)
+
+        expect(Rails.logger).to have_received(:error).with(/Polygon.*RPC Connection Error/)
 
         expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to have_received(:increment)
           .with(labels: { network: "Polygon", error_type: "connection" })
@@ -199,23 +203,27 @@ RSpec.describe ApplicationWeb3Worker do
 
     context "when Sidekiq::Limiter::OverLimit is raised" do
       it "logs warning and re-raises for Enterprise rescheduling" do
-        expect(Rails.logger).to receive(:warn).with(/Polygon.*RPC rate limit exceeded.*for Batch Collector/)
+        allow(Rails.logger).to receive(:warn).with(/Polygon.*RPC rate limit exceeded.*for Batch Collector/)
 
         expect {
           worker.with_web3_error_handling("Polygon", "Batch Collector") do
             raise Sidekiq::Limiter::OverLimit
           end
         }.to raise_error(Sidekiq::Limiter::OverLimit)
+
+        expect(Rails.logger).to have_received(:warn).with(/Polygon.*RPC rate limit exceeded.*for Batch Collector/)
       end
 
       it "includes empty context when no resource_info" do
-        expect(Rails.logger).to receive(:warn).with(/Polygon.*RPC rate limit exceeded\./)
+        allow(Rails.logger).to receive(:warn).with(/Polygon.*RPC rate limit exceeded\./)
 
         expect {
           worker.with_web3_error_handling("Polygon") do
             raise Sidekiq::Limiter::OverLimit
           end
         }.to raise_error(Sidekiq::Limiter::OverLimit)
+
+        expect(Rails.logger).to have_received(:warn).with(/Polygon.*RPC rate limit exceeded\./)
       end
     end
 
@@ -272,16 +280,20 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "returns nil and logs error when log is not found" do
-      expect(Rails.logger).to receive(:error).with(/TelemetryLog #999999 не знайдено/)
+      allow(Rails.logger).to receive(:error).with(/TelemetryLog #999999 не знайдено/)
 
       result = worker.find_telemetry_log_with_pruning(999_999, nil)
+
+      expect(Rails.logger).to have_received(:error).with(/TelemetryLog #999999 не знайдено/)
       expect(result).to be_nil
     end
 
     it "uses custom log_prefix when provided" do
-      expect(Rails.logger).to receive(:error).with(/\[Solana\].*TelemetryLog #999999/)
+      allow(Rails.logger).to receive(:error).with(/\[Solana\].*TelemetryLog #999999/)
 
       worker.find_telemetry_log_with_pruning(999_999, nil, log_prefix: "[Solana]")
+
+      expect(Rails.logger).to have_received(:error).with(/\[Solana\].*TelemetryLog #999999/)
     end
   end
 
@@ -305,16 +317,20 @@ RSpec.describe ApplicationWeb3Worker do
     end
 
     it "returns nil and logs error when transaction is not found" do
-      expect(Rails.logger).to receive(:error).with(/BlockchainTransaction #999999 не знайдено/)
+      allow(Rails.logger).to receive(:error).with(/BlockchainTransaction #999999 не знайдено/)
 
       result = worker.find_blockchain_tx_with_pruning(999_999, nil)
+
+      expect(Rails.logger).to have_received(:error).with(/BlockchainTransaction #999999 не знайдено/)
       expect(result).to be_nil
     end
 
     it "uses custom log_prefix when provided" do
-      expect(Rails.logger).to receive(:error).with(/\[Chainlink\].*BlockchainTransaction/)
+      allow(Rails.logger).to receive(:error).with(/\[Chainlink\].*BlockchainTransaction/)
 
       worker.find_blockchain_tx_with_pruning(999_999, nil, log_prefix: "[Chainlink]")
+
+      expect(Rails.logger).to have_received(:error).with(/\[Chainlink\].*BlockchainTransaction/)
     end
   end
 end

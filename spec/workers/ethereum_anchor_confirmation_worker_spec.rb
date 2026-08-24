@@ -65,9 +65,11 @@ RSpec.describe EthereumAnchorConfirmationWorker, type: :worker do
 
   it "fails a reverted anchor (status 0x0) and increments the reverted counter" do
     allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x0"))
-    expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).to receive(:increment)
+    allow(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).to receive(:increment)
 
     described_class.new.perform(anchor.id)
+
+    expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).to have_received(:increment)
 
     expect(anchor.reload).to be_status_failed
   end
@@ -231,27 +233,33 @@ RSpec.describe EthereumAnchorConfirmationWorker, type: :worker do
       allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x1"))
       allow_any_instance_of(EthereumAnchor).to receive(:confirm!).and_return(false)
 
-      expect(Rails.logger).not_to receive(:info).with(/запечатано/)
+      allow(Rails.logger).to receive(:info)
 
       described_class.new.perform(anchor.id)
+
+      expect(Rails.logger).not_to have_received(:info).with(/запечатано/)
     end
 
     it "does NOT increment reverted_total when mark_failed! is a no-op (LOW-A2 double-count guard)" do
       allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x0"))
       allow_any_instance_of(EthereumAnchor).to receive(:mark_failed!).and_return(false)
 
-      expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).not_to receive(:increment)
+      allow(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).to receive(:increment)
 
       described_class.new.perform(anchor.id)
+
+      expect(SilkenNet::Metrics::ETHEREUM_ANCHOR_REVERTED_TOTAL).not_to have_received(:increment)
     end
 
     it "does not log 'вичерпано' when escalate_to_review! is a no-op (Sonnet-1)" do
       allow(mock_client).to receive(:eth_get_transaction_receipt).and_return({ "result" => nil })
       allow_any_instance_of(EthereumAnchor).to receive(:escalate_to_review!).and_return(false)
 
-      expect(Rails.logger).not_to receive(:warn).with(/вичерпано/)
+      allow(Rails.logger).to receive(:warn)
 
       described_class.sidekiq_retries_exhausted_block.call({ "args" => [ anchor.id ] }, StandardError.new("x"))
+
+      expect(Rails.logger).not_to have_received(:warn).with(/вичерпано/)
     end
   end
 end

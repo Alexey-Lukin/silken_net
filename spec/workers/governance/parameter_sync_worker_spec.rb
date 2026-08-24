@@ -122,10 +122,13 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         allow(ENV).to receive(:[]).with("PROTOCOL_PARAMETERS_CONTRACT_ADDRESS").and_return(nil)
         allow(ENV).to receive(:fetch).and_call_original
 
-        expect(Rails.logger).to receive(:info).with(/Skipping sync/)
-        expect(Web3::RpcConnectionPool).not_to receive(:client_for)
+        allow(Rails.logger).to receive(:info).with(/Skipping sync/)
+        allow(Web3::RpcConnectionPool).to receive(:client_for)
 
         worker.perform
+
+        expect(Rails.logger).to have_received(:info).with(/Skipping sync/)
+        expect(Web3::RpcConnectionPool).not_to have_received(:client_for)
       end
     end
 
@@ -151,9 +154,9 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       it "connects to Polygon RPC" do
         stub_all_parameters_unset
 
-        expect(Web3::RpcConnectionPool).to receive(:client_for).with("ALCHEMY_POLYGON_RPC_URL")
-
         worker.perform
+
+        expect(Web3::RpcConnectionPool).to have_received(:client_for).with("ALCHEMY_POLYGON_RPC_URL")
       end
 
       context "when no parameters are set on-chain" do
@@ -161,9 +164,11 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
         it "skips all parameters" do
           allow(Rails.logger).to receive(:info)
-          expect(SystemParameter).not_to receive(:set)
+          allow(SystemParameter).to receive(:set)
 
           worker.perform
+
+          expect(SystemParameter).not_to have_received(:set)
 
           expect(Rails.logger).to have_received(:info).with(/9 skipped/)
         end
@@ -177,24 +182,28 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "updates SystemParameter with governance source and bounds" do
-          expect(SystemParameter).to receive(:set).with(
+          allow(SystemParameter).to receive(:set)
+
+          worker.perform
+
+          expect(SystemParameter).to have_received(:set).with(
             :slash_gamma,
             anything,
             hash_including(source: "governance", value_type: "float", category: "alerts",
                            min_value: 1.0, max_value: 3.0)
           )
-
-          worker.perform
         end
 
         it "converts 18-decimal fixed-point to Ruby float" do
-          expect(SystemParameter).to receive(:set).with(
+          allow(SystemParameter).to receive(:set)
+
+          worker.perform
+
+          expect(SystemParameter).to have_received(:set).with(
             :slash_gamma,
             "1.5",
             anything
           )
-
-          worker.perform
         end
 
         it "logs the update" do
@@ -218,9 +227,11 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "skips the parameter (no update)" do
-          expect(SystemParameter).not_to receive(:set)
+          allow(SystemParameter).to receive(:set)
 
           worker.perform
+
+          expect(SystemParameter).not_to have_received(:set)
         end
       end
 
@@ -232,13 +243,15 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "converts to integer correctly" do
-          expect(SystemParameter).to receive(:set).with(
+          allow(SystemParameter).to receive(:set)
+
+          worker.perform
+
+          expect(SystemParameter).to have_received(:set).with(
             :emission_threshold,
             "10000",
             hash_including(value_type: "integer", category: "tokenomics")
           )
-
-          worker.perform
         end
       end
 
@@ -269,10 +282,13 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "increments the rejected-parameters metric" do
-          expect(SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL)
+          allow(SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL)
             .to receive(:increment).with(labels: { parameter: "dynamic_tax_rate" })
 
           worker.perform
+
+          expect(SilkenNet::Metrics::GOVERNANCE_PARAM_REJECTED_TOTAL)
+            .to have_received(:increment).with(labels: { parameter: "dynamic_tax_rate" })
         end
       end
 
@@ -284,9 +300,11 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
         it "does NOT sync it into SystemParameter (tripwire only)" do
           allow(Rails.logger).to receive(:warn)
-          expect(SystemParameter).not_to receive(:set)
+          allow(SystemParameter).to receive(:set)
 
           worker.perform
+
+          expect(SystemParameter).not_to have_received(:set)
 
           expect(Rails.logger).to have_received(:warn).with(/DCI-locked lorenz_sigma/)
         end
@@ -300,9 +318,11 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "updates all changed parameters" do
-          expect(SystemParameter).to receive(:set).twice
+          allow(SystemParameter).to receive(:set)
 
           worker.perform
+
+          expect(SystemParameter).to have_received(:set).twice
         end
 
         it "reports correct sync count" do
@@ -328,13 +348,15 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "passes User.oracle_executioner as updated_by" do
-          expect(SystemParameter).to receive(:set).with(
+          allow(SystemParameter).to receive(:set)
+
+          worker.perform
+
+          expect(SystemParameter).to have_received(:set).with(
             :slash_gamma,
             anything,
             hash_including(updated_by: oracle_user)
           )
-
-          worker.perform
         end
       end
 
@@ -345,13 +367,15 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
         end
 
         it "passes nil as updated_by" do
-          expect(SystemParameter).to receive(:set).with(
+          allow(SystemParameter).to receive(:set)
+
+          worker.perform
+
+          expect(SystemParameter).to have_received(:set).with(
             :slash_gamma,
             anything,
             hash_including(updated_by: nil)
           )
-
-          worker.perform
         end
       end
     end

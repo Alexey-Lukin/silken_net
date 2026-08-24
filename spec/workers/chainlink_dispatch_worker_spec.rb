@@ -26,16 +26,21 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
     it "skips dispatch when telemetry_log already has chainlink_request_id" do
       telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
 
-      expect(Chainlink::OracleDispatchService).not_to receive(:new)
+      allow(Chainlink::OracleDispatchService).to receive(:new)
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(Chainlink::OracleDispatchService).not_to have_received(:new)
     end
 
     it "returns early when telemetry_log is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
-      expect(Chainlink::OracleDispatchService).not_to receive(:new)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Chainlink::OracleDispatchService).to receive(:new)
 
       described_class.new.perform(-1, Time.current.iso8601(6))
+
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
+      expect(Chainlink::OracleDispatchService).not_to have_received(:new)
     end
 
     it "re-raises DispatchError for Sidekiq retry" do
@@ -94,25 +99,31 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
       allow(service).to receive(:dispatch!).and_return("chainlink-req-abc123")
 
       metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
-      expect(metric).to receive(:observe).with(a_value > 0)
+      allow(metric).to receive(:observe).with(a_value > 0)
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(metric).to have_received(:observe).with(a_value > 0)
     end
 
     it "does not observe ORACLE_DISPATCH_DURATION when log already dispatched" do
       telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
 
       metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
-      expect(metric).not_to receive(:observe)
+      allow(metric).to receive(:observe)
 
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(metric).not_to have_received(:observe)
     end
 
     it "does not observe ORACLE_DISPATCH_DURATION when log not found" do
       metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
-      expect(metric).not_to receive(:observe)
+      allow(metric).to receive(:observe)
 
       allow(Rails.logger).to receive(:error)
+
+      expect(metric).not_to have_received(:observe)
       described_class.new.perform(-1, Time.current.iso8601(6))
     end
   end
@@ -124,8 +135,11 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
     it "skips dispatch when log already has chainlink_request_id (idempotency)" do
       telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
 
-      expect(Chainlink::OracleDispatchService).not_to receive(:new)
+      allow(Chainlink::OracleDispatchService).to receive(:new)
+
       described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(Chainlink::OracleDispatchService).not_to have_received(:new)
     end
 
     it "preserves oracle_status as dispatched after successful dispatch" do
