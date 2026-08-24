@@ -271,15 +271,20 @@ RSpec.describe ActuatorSafetySweepWorker, type: :worker do
   describe "метрика" do
     it "інкрементить лічильник відновлень із типом пристрою" do
       stuck
-      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL)
+      allow(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL)
         .to receive(:increment).with(labels: { device_type: "water_valve" })
       sweep
+
+      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL)
+        .to have_received(:increment).with(labels: { device_type: "water_valve" })
     end
 
     it "не інкрементить, коли нічого не залипло" do
       stuck(duration: 300, elapsed: 1.minute)
-      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL).not_to receive(:increment)
+      allow(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL).to receive(:increment)
       sweep
+
+      expect(SilkenNet::Metrics::ACTUATOR_STUCK_RECOVERED_TOTAL).not_to have_received(:increment)
     end
   end
 end

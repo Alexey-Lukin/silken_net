@@ -36,10 +36,13 @@ RSpec.describe TimeSyncDownlinkWorker, type: :worker do
     end
 
     it "logs success including cluster id and gateway uid" do
-      expect(Rails.logger).to receive(:info)
+      allow(Rails.logger).to receive(:info)
         .with(a_string_matching(/\[TimeSyncDownlink\] Cluster #{cluster.id}: time beacon queued via #{gateway.uid}/))
 
       described_class.new.perform(cluster.id)
+
+      expect(Rails.logger).to have_received(:info)
+        .with(a_string_matching(/\[TimeSyncDownlink\] Cluster #{cluster.id}: time beacon queued via #{gateway.uid}/))
     end
 
     it "selects the most recently-seen eligible gateway when several exist" do
@@ -118,20 +121,25 @@ RSpec.describe TimeSyncDownlinkWorker, type: :worker do
     it "logs a warning and re-raises so Sidekiq can retry" do
       allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
 
-      expect(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:warn)
         .with(a_string_matching(/\[TimeSyncDownlink\] Cluster #{cluster.id}: #{gateway.uid} timeout/))
 
       expect { described_class.new.perform(cluster.id) }.to raise_error(Timeout::Error)
+
+      expect(Rails.logger).to have_received(:warn)
+        .with(a_string_matching(/\[TimeSyncDownlink\] Cluster #{cluster.id}: #{gateway.uid} timeout/))
     end
   end
 
   describe "sidekiq_retries_exhausted (FW.60 — слід замість тихого DeadSet)" do
     it "logs the dead job loudly (Королева синкнеться наступним poll'ом)" do
-      expect(Rails.logger).to receive(:error).with(a_string_matching(/TimeSyncDownlink.*помер/))
+      allow(Rails.logger).to receive(:error).with(a_string_matching(/TimeSyncDownlink.*помер/))
 
       described_class.sidekiq_retries_exhausted_block.call(
         { "args" => [ 42 ], "error_message" => "Timeout::Error" }, StandardError.new
       )
+
+      expect(Rails.logger).to have_received(:error).with(a_string_matching(/TimeSyncDownlink.*помер/))
     end
 
     it "is nil-safe on a malformed job payload" do

@@ -28,19 +28,23 @@ RSpec.describe PeaqRegistrationWorker, type: :worker do
       existing_did = "did:peaq:0x#{"b" * 40}"
       tree.update_column(:peaq_did, existing_did)
 
-      expect(Peaq::DidRegistryService).not_to receive(:new)
+      allow(Peaq::DidRegistryService).to receive(:new)
 
       described_class.new.perform(tree.id)
 
+      expect(Peaq::DidRegistryService).not_to have_received(:new)
       tree.reload
       expect(tree.peaq_did).to eq(existing_did)
     end
 
     it "returns early when tree is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
-      expect(Peaq::DidRegistryService).not_to receive(:new)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Peaq::DidRegistryService).to receive(:new)
 
       described_class.new.perform(-1)
+
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
+      expect(Peaq::DidRegistryService).not_to have_received(:new)
     end
 
     it "re-raises RegistrationError for Sidekiq retry" do

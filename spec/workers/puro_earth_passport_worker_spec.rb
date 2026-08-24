@@ -152,9 +152,11 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
         tree = create(:tree, status: :deceased)
         record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
 
-        expect(Rails.logger).to receive(:info).with(a_string_matching(/Biomass Passport pass complete.*sent/))
+        allow(Rails.logger).to receive(:info).with(a_string_matching(/Biomass Passport pass complete.*sent/))
 
         described_class.new.perform(record.id)
+
+        expect(Rails.logger).to have_received(:info).with(a_string_matching(/Biomass Passport pass complete.*sent/))
       end
 
       it "continues successfully when REST API submission fails" do
@@ -179,10 +181,11 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
         gateway = create(:gateway)
         record = create(:maintenance_record, maintainable: gateway, action_type: :inspection)
 
-        expect(Rails.logger).to receive(:warn).with(a_string_matching(/not a Tree/))
+        allow(Rails.logger).to receive(:warn).with(a_string_matching(/not a Tree/))
 
         described_class.new.perform(record.id)
 
+        expect(Rails.logger).to have_received(:warn).with(a_string_matching(/not a Tree/))
         record.reload
         expect(record.biomass_passport_tx_hash).to be_nil
       end

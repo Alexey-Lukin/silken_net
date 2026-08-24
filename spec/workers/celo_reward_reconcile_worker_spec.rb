@@ -92,9 +92,11 @@ RSpec.describe CeloRewardReconcileWorker, type: :worker do
         orig.call(*args, **kwargs)
       end
 
-      expect(Rails.logger).to receive(:info).with(/Розглянуто 1 Celo-reward/)
+      allow(Rails.logger).to receive(:info).with(/Розглянуто 1 Celo-reward/)
 
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:info).with(/Розглянуто 1 Celo-reward/)
     end
 
     it "caps escalations at BATCH_LIMIT per run (backlog drains across crons)" do

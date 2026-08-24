@@ -71,9 +71,11 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         gateway = create(:gateway)
         record = create(:maintenance_record, maintainable: gateway, action_type: :decommissioning)
 
-        expect(Rails.logger).to receive(:error).with(/ARCH\.76.*НЕ змінив стан/m)
+        allow(Rails.logger).to receive(:error).with(/ARCH\.76.*НЕ змінив стан/m)
 
         described_class.new.perform(record.id)
+
+        expect(Rails.logger).to have_received(:error).with(/ARCH\.76.*НЕ змінив стан/m)
       end
 
       it "не вигадує шлюзу термінального стану" do
@@ -185,9 +187,11 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         tree = create(:tree, status: :active)
         record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
 
-        expect(PuroEarthPassportWorker).to receive(:perform_async).with(record.id)
+        allow(PuroEarthPassportWorker).to receive(:perform_async).with(record.id)
 
         described_class.new.perform(record.id)
+
+        expect(PuroEarthPassportWorker).to have_received(:perform_async).with(record.id)
       end
     end
 

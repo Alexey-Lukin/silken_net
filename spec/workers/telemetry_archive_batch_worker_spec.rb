@@ -71,10 +71,13 @@ RSpec.describe TelemetryArchiveBatchWorker do
       victim = Mrv::TelemetryArchiveBatchService.union_logs([ tx ]).first
       victim.update_column(:z_value, 99.99) # raw-SQL повз seal-guard
 
-      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+      allow(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
         .to receive(:increment).with(labels: { reason: "mismatch" })
+
       described_class.new.perform(batch.id)
 
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to have_received(:increment).with(labels: { reason: "mismatch" })
       expect(batch.reload).to be_status_mismatch
       expect(Filecoin::ArchiveService).not_to have_received(:pin_json!)
     end
@@ -84,10 +87,13 @@ RSpec.describe TelemetryArchiveBatchWorker do
       victim = Mrv::TelemetryArchiveBatchService.union_logs([ tx ]).first
       TelemetryLog.where(id: victim.id, created_at: victim.created_at).delete_all
 
-      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+      allow(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
         .to receive(:increment).with(labels: { reason: "retention_expired" })
+
       described_class.new.perform(batch.id)
 
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to have_received(:increment).with(labels: { reason: "retention_expired" })
       expect(batch.reload).to be_status_retention_expired
       expect(Filecoin::ArchiveService).not_to have_received(:pin_json!)
     end
@@ -340,12 +346,15 @@ RSpec.describe TelemetryArchiveBatchWorker do
 
     it "інкрементить pin-метрику і пише error_message на pending-батч" do
       batch, = build_batch!
-      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+      allow(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
         .to receive(:increment).with(labels: { reason: "pin" })
 
       described_class.sidekiq_retries_exhausted_block.call(
         { "args" => [ batch.id ] }, RuntimeError.new("pinata down")
       )
+
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to have_received(:increment).with(labels: { reason: "pin" })
       expect(batch.reload.error_message).to include("pin exhausted")
       expect(batch).to be_status_pending
     end

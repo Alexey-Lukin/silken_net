@@ -26,10 +26,11 @@ RSpec.describe KlimaRetirementWorker, type: :worker do
     end
 
     it "returns early when wallet is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
 
       described_class.new.perform(-1, "100.0")
 
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
       expect(KlimaDao::RetirementService).not_to have_received(:new)
     end
 

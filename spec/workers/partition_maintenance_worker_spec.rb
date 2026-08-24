@@ -126,11 +126,13 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         # PARTITIONED_TABLES has 3 entries (telemetry_logs, gateway_telemetry_logs,
         # blockchain_transactions) × 2 months = 6 ensure_partition invocations,
         # each emitting one "OK" line.
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Перевірка партицій/).ordered
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*OK/).exactly(6).times.ordered
-        expect(Rails.logger).to receive(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 6/).ordered
+        allow(Rails.logger).to receive(:info)
 
         described_class.new.perform
+
+        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*Перевірка партицій/).ordered
+        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*OK/).exactly(6).times.ordered
+        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 6/).ordered
       end
     end
   end

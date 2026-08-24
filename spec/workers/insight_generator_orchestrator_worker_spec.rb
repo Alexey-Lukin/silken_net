@@ -86,9 +86,11 @@ RSpec.describe InsightGeneratorOrchestratorWorker, type: :worker do
       end
 
       it "returns early without creating a batch" do
-        expect(Sidekiq::Batch).not_to receive(:new)
+        allow(Sidekiq::Batch).to receive(:new)
 
         described_class.new.perform("2026-03-06")
+
+        expect(Sidekiq::Batch).not_to have_received(:new)
       end
     end
 

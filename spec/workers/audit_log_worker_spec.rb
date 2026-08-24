@@ -80,8 +80,11 @@ RSpec.describe AuditLogWorker, type: :worker do
     it "logs error for invalid attributes without raising" do
       attrs = { "action" => nil, "user_id" => 0, "organization_id" => 0 }
 
-      expect(Rails.logger).to receive(:error).with(/Невалідний запис/)
+      allow(Rails.logger).to receive(:error).with(/Невалідний запис/)
+
       expect { described_class.new.perform(attrs) }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:error).with(/Невалідний запис/)
     end
 
     it "does not enqueue FilecoinArchiveWorker on failure" do

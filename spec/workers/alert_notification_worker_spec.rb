@@ -59,7 +59,11 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       create(:user, :forester, organization: organization)
 
       # Один живий канал × два стейкхолдери = 2 записи в ОДНОМУ push_bulk.
-      expect(Sidekiq::Client).to receive(:push_bulk).with(
+      allow(Sidekiq::Client).to receive(:push_bulk).and_call_original
+
+      described_class.new.perform(alert.id)
+
+      expect(Sidekiq::Client).to have_received(:push_bulk).with(
         hash_including(
           "class" => SingleNotificationWorker,
           "args" => a_collection_containing_exactly(
@@ -67,17 +71,17 @@ RSpec.describe AlertNotificationWorker, type: :worker do
             [ anything, alert.id, "telegram" ]
           )
         )
-      ).and_call_original
-
-      described_class.new.perform(alert.id)
+      )
     end
 
     it "does not call push_bulk when no stakeholders exist" do
       # ⚠️ Канал ЖИВИЙ (див. `before`) — інакше приклад проходив би з другої
       # причини й не розрізняв би «нема кому слати» від «нема чим слати».
-      expect(Sidekiq::Client).not_to receive(:push_bulk)
+      allow(Sidekiq::Client).to receive(:push_bulk)
 
       described_class.new.perform(alert.id)
+
+      expect(Sidekiq::Client).not_to have_received(:push_bulk)
     end
 
     # [E.33] Голос НУЛЮ: «каналів немає» ⊥ «стейкхолдерів немає» — два різні
@@ -89,9 +93,11 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       create(:user, :forester, organization: organization)
       allow(Rails.logger).to receive(:warn)
 
-      expect(Sidekiq::Client).not_to receive(:push_bulk)
+      allow(Sidekiq::Client).to receive(:push_bulk)
+
       described_class.new.perform(alert.id)
 
+      expect(Sidekiq::Client).not_to have_received(:push_bulk)
       expect(Rails.logger).to have_received(:warn).with(/Жодного оперативного каналу.*2 стейкхолдерів/)
     end
 

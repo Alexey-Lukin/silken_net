@@ -112,8 +112,11 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
         allow_any_instance_of(Wallet).to receive(:tree).and_return(nil)
         allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_raise(StandardError, "test error")
 
-        expect(Rails.logger).to receive(:error).with(/Помилка вузла Tree /)
+        allow(Rails.logger).to receive(:error).with(/Помилка вузла Tree /)
+
         described_class.new.perform([ wallet.id ], "test-cycle")
+
+        expect(Rails.logger).to have_received(:error).with(/Помилка вузла Tree /)
       end
     end
 
@@ -127,9 +130,11 @@ RSpec.describe EvaluateTreeBatchWorker, type: :worker do
         wallet = create(:wallet, tree: tree, balance: 10_000)
         allow_any_instance_of(Wallet).to receive(:lock_and_mint!).and_raise(StandardError, "boom")
 
-        expect(SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL).to receive(:increment)
 
         described_class.new.perform([ wallet.id ], "test-cycle")
+
+        expect(SilkenNet::Metrics::MINT_CHUNK_ERRORS_TOTAL).to have_received(:increment)
       end
     end
   end

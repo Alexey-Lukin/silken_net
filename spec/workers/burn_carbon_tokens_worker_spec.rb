@@ -50,10 +50,11 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
     end
 
     it "returns early when contract is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
 
       described_class.new.perform(organization.id, -1)
 
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
       expect(BlockchainBurningService).not_to have_received(:call)
     end
 

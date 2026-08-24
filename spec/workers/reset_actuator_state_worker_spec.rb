@@ -154,9 +154,11 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
     end
 
     it "returns early when command not found" do
-      expect(Rails.logger).to receive(:warn).with(/не знайдено/)
+      allow(Rails.logger).to receive(:warn).with(/не знайдено/)
 
       described_class.new.perform(-1)
+
+      expect(Rails.logger).to have_received(:warn).with(/не знайдено/)
     end
   end
 end

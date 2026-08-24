@@ -29,10 +29,13 @@ RSpec.describe StreamrBroadcastWorker, type: :worker do
     # lookup'а без прунінгу — це вже аномалія цілісності, спільна для всіх трьох
     # воркерів тракту, тож і звучить вона однаково.
     it "logs an error when telemetry_log is not found" do
-      expect(Rails.logger).to receive(:error).with(/не знайдено/)
-      expect(Streamr::BroadcasterService).not_to receive(:new)
+      allow(Rails.logger).to receive(:error).with(/не знайдено/)
+      allow(Streamr::BroadcasterService).to receive(:new)
 
       described_class.new.perform(-1, Time.current.iso8601(6))
+
+      expect(Rails.logger).to have_received(:error).with(/не знайдено/)
+      expect(Streamr::BroadcasterService).not_to have_received(:new)
     end
 
     it "does not re-raise BroadcastError (graceful degradation)" do
@@ -42,11 +45,13 @@ RSpec.describe StreamrBroadcastWorker, type: :worker do
         Streamr::BroadcasterService::BroadcastError, "Streamr node unreachable"
       )
 
-      expect(Rails.logger).to receive(:error).with(/Streamr/)
+      allow(Rails.logger).to receive(:error).with(/Streamr/)
 
       expect {
         described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
       }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:error).with(/Streamr/)
     end
 
     it "uses low queue" do

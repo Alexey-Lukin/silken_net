@@ -47,8 +47,11 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
       silent_tree
       allow(EwsAlert).to receive(:escalate_field_audit!).and_return(nil)
 
-      expect(SilkenNet::Metrics::TREE_SILENCE_TOTAL).not_to receive(:increment)
+      allow(SilkenNet::Metrics::TREE_SILENCE_TOTAL).to receive(:increment)
+
       expect { sweep }.not_to change { EwsAlert.alert_type_field_audit.count }
+
+      expect(SilkenNet::Metrics::TREE_SILENCE_TOTAL).not_to have_received(:increment)
     end
 
     # ⊥ dedup-скоупів (SILENCE-1 факт (2)) живе на рівні моделі — тест
@@ -182,9 +185,13 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
   describe "метрики" do
     it "ставить gauge флоту та інкрементить лічильник переходів" do
       silent_tree
-      expect(SilkenNet::Metrics::TREE_SILENCE_TOTAL).to receive(:increment)
-      expect(SilkenNet::Metrics::TREES_SILENT).to receive(:set).with(1)
+      allow(SilkenNet::Metrics::TREE_SILENCE_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::TREES_SILENT).to receive(:set).with(1)
+
       sweep
+
+      expect(SilkenNet::Metrics::TREE_SILENCE_TOTAL).to have_received(:increment)
+      expect(SilkenNet::Metrics::TREES_SILENT).to have_received(:set).with(1)
     end
   end
 end

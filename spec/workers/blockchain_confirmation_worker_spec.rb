@@ -129,11 +129,13 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
 
     context "when sent transactions exist for the tx_hash" do
       it "delegates to MintingRollbackService" do
-        expect(MintingRollbackService).to receive(:call) do |transactions:|
+        allow(MintingRollbackService).to receive(:call) do |transactions:|
           expect(transactions.map(&:id)).to include(transaction.id)
         end
 
         described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+
+        expect(MintingRollbackService).to have_received(:call)
       end
     end
 
@@ -141,9 +143,11 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
       before { transaction.update_column(:status, "confirmed") }
 
       it "logs warning and does not call MintingRollbackService" do
-        expect(MintingRollbackService).not_to receive(:call)
+        allow(MintingRollbackService).to receive(:call)
 
         described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+
+        expect(MintingRollbackService).not_to have_received(:call)
       end
     end
 
@@ -151,9 +155,11 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
       let(:msg) { { "args" => [ nil ] } }
 
       it "does nothing gracefully" do
-        expect(MintingRollbackService).not_to receive(:call)
+        allow(MintingRollbackService).to receive(:call)
 
         described_class.sidekiq_retries_exhausted_block.call(msg, StandardError.new("timeout"))
+
+        expect(MintingRollbackService).not_to have_received(:call)
       end
     end
   end

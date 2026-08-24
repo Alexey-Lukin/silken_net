@@ -117,9 +117,11 @@ RSpec.describe DailyAggregationWorker, type: :worker do
 
     context "when error handling" do
       it "handles invalid date format" do
-        expect(Rails.logger).to receive(:error).with(/Невірний формат дати/)
+        allow(Rails.logger).to receive(:error).with(/Невірний формат дати/)
 
         expect { described_class.new.perform("not-a-date") }.not_to raise_error
+
+        expect(Rails.logger).to have_received(:error).with(/Невірний формат дати/)
       end
 
       # [OPS.19] Пін на ДЕТАЛЬ, а не на факт логування: сусідній приклад вище

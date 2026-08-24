@@ -66,9 +66,11 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
     it "logs flagged (degraded) contracts" do
       allow_any_instance_of(NaasContract).to receive(:check_cluster_health!).and_return(:degraded)
 
-      expect(Rails.logger).to receive(:warn).with(/ФЛАГОВАНО/).at_least(:once)
+      allow(Rails.logger).to receive(:warn).with(/ФЛАГОВАНО/)
 
       described_class.new.perform
+
+      expect(Rails.logger).to have_received(:warn).with(/ФЛАГОВАНО/).at_least(:once)
     end
 
     context "with explicit date_string parameter" do

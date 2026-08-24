@@ -87,16 +87,22 @@ RSpec.describe PuroEarthConfirmationWorker, type: :worker do
       allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(envelope("0x0"))
       allow(record).to receive(:fail_biomass_passport!).and_return(false)
 
-      expect(Rails.logger).not_to receive(:error)
+      allow(Rails.logger).to receive(:error)
+
       described_class.new.resolve!(record, final: false)
+
+      expect(Rails.logger).not_to have_received(:error)
     end
 
     it "does not warn when escalate loses the race on the final re-check" do
       allow(mock_client).to receive(:eth_get_transaction_receipt).and_return({ "result" => nil })
       allow(record).to receive(:escalate_biomass_passport!).and_return(false)
 
-      expect(Rails.logger).not_to receive(:warn)
+      allow(Rails.logger).to receive(:warn)
+
       described_class.new.resolve!(record, final: true)
+
+      expect(Rails.logger).not_to have_received(:warn)
     end
   end
 

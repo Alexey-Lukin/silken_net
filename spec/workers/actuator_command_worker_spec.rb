@@ -198,8 +198,10 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       allow(command).to receive(:may_fail?).and_return(false)
 
       job = { "args" => [ command.id ], "error_message" => "some error" }
-      expect(described_class).not_to receive(:broadcast_command_state_static)
+      allow(described_class).to receive(:broadcast_command_state_static)
       described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("test"))
+
+      expect(described_class).not_to have_received(:broadcast_command_state_static)
     end
   end
 

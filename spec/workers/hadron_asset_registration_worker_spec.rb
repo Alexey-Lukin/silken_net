@@ -50,9 +50,11 @@ RSpec.describe HadronAssetRegistrationWorker, type: :worker do
     end
 
     it "logs warning when NaaS contract is not found" do
-      expect(Rails.logger).to receive(:warn).with(/NaaSContract #999999 not found/)
+      allow(Rails.logger).to receive(:warn).with(/NaaSContract #999999 not found/)
 
       expect { described_class.new.perform(999_999) }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:warn).with(/NaaSContract #999999 not found/)
     end
 
     it "does not raise when NaaS contract is not found" do

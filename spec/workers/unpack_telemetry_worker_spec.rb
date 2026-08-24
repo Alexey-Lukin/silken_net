@@ -238,7 +238,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       encrypted = encrypt_payload(payload_data, key_record.binary_key)
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(key_record).to receive(:clear_grace_period!)
+      allow(key_record).to receive(:clear_grace_period!)
       allow(HardwareKey).to receive(:find_by).with(device_uid: gateway.uid).and_return(key_record)
       allow(key_record).to receive_messages(binary_key: key_record.binary_key, binary_previous_key: nil)
 
@@ -248,6 +248,8 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       allow(worker).to receive(:decrypt_aes).and_return(payload_data)
 
       worker.perform(encoded, "192.168.1.1", gateway.uid)
+
+      expect(key_record).to have_received(:clear_grace_period!)
     end
   end
 
@@ -343,9 +345,11 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       encrypted = encrypt_payload(raw_data, key_record.binary_key)
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(Sentry).to receive(:set_tags).with(gateway_uid: gateway.uid)
+      allow(Sentry).to receive(:set_tags).with(gateway_uid: gateway.uid)
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(Sentry).to have_received(:set_tags).with(gateway_uid: gateway.uid)
     end
 
     it "sets 'unknown' tag when gateway_uid is nil" do
@@ -353,9 +357,11 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       encrypted = encrypt_payload(raw_data, key_record.binary_key)
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(Sentry).to receive(:set_tags).with(gateway_uid: "unknown")
+      allow(Sentry).to receive(:set_tags).with(gateway_uid: "unknown")
 
       described_class.new.perform(encoded, gateway.ip_address, nil)
+
+      expect(Sentry).to have_received(:set_tags).with(gateway_uid: "unknown")
     end
   end
 

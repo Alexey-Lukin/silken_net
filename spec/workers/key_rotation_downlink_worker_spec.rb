@@ -106,12 +106,15 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
 
   describe "sidekiq_retries_exhausted (FW.60 — key_version уже бампнутий, кадр не доставлений)" do
     it "logs loudly and names the Grace-derivation recovery path" do
-      expect(Rails.logger).to receive(:error)
+      allow(Rails.logger).to receive(:error)
         .with(a_string_matching(/KeyRotationDownlink.*помер.*poll-derivation/))
 
       described_class.sidekiq_retries_exhausted_block.call(
         { "args" => [ "SNET-00000001", 3 ], "error_message" => "boom" }, StandardError.new
       )
+
+      expect(Rails.logger).to have_received(:error)
+        .with(a_string_matching(/KeyRotationDownlink.*помер.*poll-derivation/))
     end
 
     it "is nil-safe on a malformed job payload" do

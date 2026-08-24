@@ -183,11 +183,13 @@ RSpec.describe GenerateClusterInsightWorker, type: :worker do
       end
 
       it "logs the error and re-raises for Sidekiq retry" do
-        expect(Rails.logger).to receive(:error).with(/Помилка чанку/)
+        allow(Rails.logger).to receive(:error).with(/Помилка чанку/)
 
         expect {
           described_class.new.perform([ cluster.id ], date.to_s)
         }.to raise_error(StandardError, "DB timeout")
+
+        expect(Rails.logger).to have_received(:error).with(/Помилка чанку/)
       end
     end
   end

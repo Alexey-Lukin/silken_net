@@ -48,9 +48,11 @@ RSpec.describe FilecoinArchiveWorker, type: :worker do
     end
 
     it "logs warning when audit log is not found (RecordNotFound rescue)" do
-      expect(Rails.logger).to receive(:warn).with(/AuditLog #999999 not found/)
+      allow(Rails.logger).to receive(:warn).with(/AuditLog #999999 not found/)
 
       expect { described_class.new.perform(999_999) }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:warn).with(/AuditLog #999999 not found/)
     end
 
     it "does not raise when audit log is not found" do
