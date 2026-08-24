@@ -24,8 +24,18 @@
 #   1. `bin/rails db:schema:dump` to make sure structure.sql is current.
 #   2. Delete every migration file *except this one*.
 #   3. Rename this file's timestamp to a fresh one (e.g. now()).
-#   4. Replace the schema_migrations INSERT block in structure.sql with
-#      that single timestamp.
+#   4. 🔴 Скинути `schema_migrations` У БАЗІ (dev І test), не у файлі:
+#        DELETE FROM schema_migrations;
+#        INSERT INTO schema_migrations (version) VALUES ('<новий timestamp>');
+#      і аж тоді повторити `db:schema:dump`.
+#      ⚠️ Формулювання «replace the INSERT block in structure.sql» стояло тут із
+#      народження й було МАРНИМ ЗА ПОБУДОВОЮ: `db:schema:dump` генерує цей блок
+#      із БАЗИ, тож будь-яка правка файлу відкочується наступним же дампом.
+#      Ціна не гіпотетична — сквош 2026-08-15 виконали за старим приписом, і до
+#      2026-08-24 блок ніс **22 версії при 10 файлах**, включно з ПОПЕРЕДНІМ
+#      анкером. Шкоди не сталось (на `schema:load` Rails просто вважає ті
+#      міграції виконаними, а файлів для них немає), але сам факт був невидимий:
+#      єдиний, хто на нього дивиться, — цей крок, і він вказував не туди.
 #   ⊕ Кроку 5 БІЛЬШЕ НЕМАЄ [OPS.24]. Він звучав «bump StrongMigrations.start_after»
 #     і був єдиним МОВЧАЗНИМ кроком процедури: значення нижче за живий анкер знімає
 #     перевірки з уже застосованих міграцій, і ніщо не червоніє. Тепер
