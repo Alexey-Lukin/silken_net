@@ -32,7 +32,7 @@ module Governance
     # узгоджені з db/seeds.rb (той самий запис, та сама валідація).
     # On-chain значення зберігаються як uint256 з 18 decimals (1e18 = 1.0).
     # min/max — safety-межі проти мис-скейлу (18-decimals slip / нонсенс-голос,
-    # напр. tax=2e18 «200%» → forester_amount<0 → mint-halt): out-of-bounds
+    # напр. tax=2e18 «200%» → beneficiary_amount<0 → mint-halt): out-of-bounds
     # значення НЕ записується (bounds-валідація SystemParameter), чинним
     # лишається попереднє + ERROR-лог + метрика → коригувальний DAO-голос.
     PARAMETER_MAP = {

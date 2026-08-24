@@ -257,8 +257,8 @@ module Dclimate
 
     # Хмарність/кронопокрив → ретрай через Sidekiq (48h orbital window), АЛЕ:
     # [E.41] критичний fire-алерт НЕ може чекати повні 48h retry — це life-safety
-    # (пожежа спалить ліс раніше). Дизайн передбачав ForestBounty-дрон для негайної
-    # фізичної перевірки (04_02 §11), але він deferred (E.20). Тому критичний obscured
+    # (пожежа спалить ліс раніше). ⛔ Дрон-bounty як Резервний Оракул — won't-do
+    # (E.20): платити свідкові за зміст його ж свідчення. Тому критичний obscured
     # fire → негайний Field Audit (дзеркало escalate_non_fire_to_field_audit! / INS.1:
     # :inconclusive = HOLD, людський/DAO-вердикт, fail-safe — НЕ авто-payout/slash).
     # Non-critical obscured → retry (48h вікно прийнятне; exhaustion → worker
@@ -311,8 +311,9 @@ module Dclimate
     # ні спростувати → ескалюємо у незалежний Field Audit (Кат-C DAO peer-review, 05_05 §5), а НЕ
     # rejected_fraud (це таврувало б жертву force-majeure фродом і слало у trigger_slashing). Вердикт
     # :inconclusive — наявний стан «потрібен людський/DAO-аудит», на якому InsurancePayoutWorker уже
-    # HOLD-ить. Фізичний дрон-fallback = ForestBountyService (E.20/E.34) [PLANNED]; реальний
-    # drought-оракул = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
+    # HOLD-ить, а повістку для людини несе окремий `EwsAlert(:field_audit)` нижче.
+    # ⛔ Дрон-bounty як фізичний fallback — won't-do (E.20); реальний drought-оракул
+    # = North-Star (S3.2 / ДСНС-API UNI.12). Без FIRMS-запиту (нерелевантний).
     def escalate_non_fire_to_field_audit!
       # [I18N.1] Ключ замість укр. прози. Тип перила у фразу НЕ інтерпольовано
       # свідомо: він видно з самого алерту, а сирий enum у перекладеному реченні —

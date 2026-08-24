@@ -284,7 +284,7 @@ type SlashingEvent @entity { ... }
 5. Kredis distributed lock (**120s** expiration — покриває dry-run + binary-search worst-case ~130s, [S6.5]) — запобігає подвійному мінтингу
 6. **[ARCH.62]** per-token circuit-break — `mint_circuit_broken?(token_type)` (Kredis `mint:circuit_broken:<token>`, ставить `Treasury::MonitorService` при volume-аномалії за `:mint_circuit_breaker_enabled`); tripped → HOLD того токена у `:pending` (re-runnable, **НЕ** escalate), fail-open на Redis-збої. Inert default → [`00_07` ARCH.62](00_07_Action_Plan_Tracker)
 
-**HYBRID PROTOCOL GAIA:** 2% Dynamic Tax на carbon\_coin мінтинг, коли insurance pool потребує поповнення (розділяє recipients між forester та DAO Treasury).
+**HYBRID PROTOCOL GAIA:** 2% Dynamic Tax на carbon\_coin мінтинг, коли insurance pool потребує поповнення: бенефіціар отримує `amount − tax`, а податок їде ОДНИМ агрегованим `DAO_TREASURY`-записом на підбатч (`TAX_BATCH_*`), не по одному запису на транзакцію. ⚠️ Окремого отримувача-форестера в цьому тракті НЕМАЄ — `forester_share_amount` живе на `NaasContract` і диспенс-шляху не має ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 
 #### 7. Polygon Hadron (Identity & Compliance)
 
