@@ -324,7 +324,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
   describe "perform — response with code but not success" do
     it "raises with the response code in the message" do
-      response = double("response", success?: false, code: "5.00")
+      response = instance_double(CoapClient::Response, success?: false, code: "5.00")
       allow(CoapClient).to receive(:put).and_return(response)
       allow(ResetActuatorStateWorker).to receive(:perform_in)
 

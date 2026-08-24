@@ -17,7 +17,7 @@ RSpec.describe ChainAuditService do
       # Стабуємо Web3 виклики
       mock_client = instance_double(Eth::Client)
       allow(Eth::Client).to receive(:create).and_return(mock_client)
-      allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(mock_client).to receive(:call).and_return(chain_total_raw)
     end
 

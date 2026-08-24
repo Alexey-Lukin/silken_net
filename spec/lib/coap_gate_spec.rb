@@ -17,7 +17,7 @@ RSpec.describe CoapGate do
   end
 
   def result(status:, payload: nil, reply: nil, gateway_uid: nil)
-    double("CoapResult", status: status, payload: payload, reply: reply, gateway_uid: gateway_uid)
+    instance_double(CoapServerPdu::Intake, status: status, payload: payload, reply: reply, gateway_uid: gateway_uid)
   end
 
   context "when telemetry_batch — enqueue ПЕРЕД ACK" do

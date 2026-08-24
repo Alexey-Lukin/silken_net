@@ -583,7 +583,11 @@ RSpec.describe InsightGeneratorService, type: :service do
   describe "nil stats branch" do
     it "returns false when stats.avg_temp is nil" do
       service = described_class.new
-      stats = double("stats", avg_temp: nil)
+      # ⚠️ Verifying double тут НЕМОЖЛИВИЙ: `stats` — рядок GROUP BY-агрегату
+      # (`prefetch_tree_stats`), де `avg_temp` живе лише як SQL-псевдонім SELECT.
+      # `TelemetryLog` не оголошує його статично, тож `instance_double(TelemetryLog)`
+      # падає «does not implement the instance method: avg_temp» (виміряно).
+      stats = double("stats", avg_temp: nil) # rubocop:disable RSpec/VerifiedDoubles
       result = service.send(:generate_for_tree, tree, { temp: 25.0, z: 0.5 }, stats)
       expect(result).to be false
     end

@@ -8,8 +8,8 @@ RSpec.describe KlimaDao::RetirementService do
   let(:fake_retire_hash)  { "0x#{'b' * 64}" }
   let(:mock_client)       { instance_double(Eth::Client) }
   let(:mock_key)          { instance_double(Eth::Key, address: "0x#{'d' * 40}") }
-  let(:mock_scc_contract) { double("scc_contract") }
-  let(:mock_klima_contract) { double("klima_contract") }
+  let(:mock_scc_contract) { instance_double(Eth::Contract) }
+  let(:mock_klima_contract) { instance_double(Eth::Contract) }
 
   let(:organization) { create(:organization, crypto_public_address: "0x#{'b' * 40}") }
   let(:cluster)      { create(:cluster, organization: organization) }

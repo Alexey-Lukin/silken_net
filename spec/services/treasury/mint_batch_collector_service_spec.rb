@@ -36,7 +36,7 @@ RSpec.describe Treasury::MintBatchCollectorService do
   let(:fake_tx_hash) { "0x" + "f" * 64 }
   let(:mock_client) { instance_double(Eth::Client) }
   let(:mock_key) { instance_double(Eth::Key, address: "0x" + "d" * 40) }
-  let(:mock_contract) { double("contract") }
+  let(:mock_contract) { instance_double(Eth::Contract) }
 
   describe ".call" do
     context "when no pending transactions exist" do

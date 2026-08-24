@@ -38,8 +38,7 @@ end
   let(:fake_tx_hash) { "0x" + "f" * 64 }
   let(:mock_client) { instance_double(Eth::Client) }
   let(:mock_key) { instance_double(Eth::Key, address: "0x" + "d" * 40) }
-  let(:mock_contract) { double("contract") }
-  let(:mock_lock) { double("kredis_lock") }
+  let(:mock_contract) { instance_double(Eth::Contract) }
 
 
   describe ".call" do
@@ -1024,7 +1023,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:mint_individual, mock_client, double("contract"), mock_key, "carbon_coin", tx, "0x" + "0" * 64)
+          service.send(:mint_individual, mock_client, instance_double(Eth::Contract), mock_key, "carbon_coin", tx, "0x" + "0" * 64)
         }.not_to raise_error
         expect(tx.reload.status).to eq("manual_review")
       end
@@ -1043,7 +1042,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:send_clean_batch, mock_client, double("contract"), mock_key, "carbon_coin", txs, "0x" + "0" * 64)
+          service.send(:send_clean_batch, mock_client, instance_double(Eth::Contract), mock_key, "carbon_coin", txs, "0x" + "0" * 64)
         }.not_to raise_error
         txs.each { |t| expect(t.reload.status).to eq("manual_review") }
       end

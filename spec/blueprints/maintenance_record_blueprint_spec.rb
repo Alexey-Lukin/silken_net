@@ -201,7 +201,7 @@ RSpec.describe MaintenanceRecordBlueprint, type: :model do
         content_type: "image/jpeg"
       )
 
-      url_helpers = double("url_helpers")
+      url_helpers = object_double(Rails.application.routes.url_helpers)
       allow(url_helpers).to receive_messages(rails_representation_url: "/thumb.jpg", rails_blob_url: "/full.jpg")
 
       json = described_class.render_as_hash(

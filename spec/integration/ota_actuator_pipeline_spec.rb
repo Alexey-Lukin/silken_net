@@ -21,7 +21,7 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
   describe "OtaTransmissionWorker" do
     let!(:firmware) { create(:bio_contract_firmware, version: "3.0.0", bytecode_payload: "AA" * 600) }
 
-    let(:mock_response) { double("response", success?: true, code: "2.04") }
+    let(:mock_response) { instance_double(CoapClient::Response, success?: true, code: "2.04") }
 
     before do
       allow(CoapClient).to receive(:put).and_return(mock_response)
@@ -102,7 +102,7 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
              status: :issued)
     end
 
-    let(:mock_response) { double("response", success?: true, code: "2.04") }
+    let(:mock_response) { instance_double(CoapClient::Response, success?: true, code: "2.04") }
 
     before do
       allow(CoapClient).to receive(:put).and_return(mock_response)

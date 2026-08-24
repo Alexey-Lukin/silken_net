@@ -11,7 +11,7 @@ RSpec.describe ApplicationPolicy do
   let(:admin) { create(:user, :admin, organization: organization) }
   let(:super_admin) { create(:user, :super_admin) }
 
-  let(:record) { double("Record") }
+  let(:record) { instance_double(ApplicationRecord) }
 
   # [SEC.16] Deny-default: база ЗАБОРОНЯЄ читання, поки політика не дозволить явно.
   # Доти тут стояло `index?`/`show? == true` по чотирьох ролях — тобто спека

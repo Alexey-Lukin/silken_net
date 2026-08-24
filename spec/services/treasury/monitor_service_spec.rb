@@ -41,7 +41,7 @@ RSpec.describe Treasury::MonitorService do
 
   # Solana RPC response: healthy balance (1 SOL = 1_000_000_000 lamports)
   let(:mock_solana_response) do
-    double("response", parsed_body: { "result" => { "value" => 1_000_000_000 } })
+    instance_double(Web3::HttpClient::Response, parsed_body: { "result" => { "value" => 1_000_000_000 } })
   end
 
   describe ".call" do
@@ -553,7 +553,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "handles nil parsed_body gracefully" do
       allow(Web3::HttpClient).to receive(:post).and_return(
-        double("response", parsed_body: nil)
+        instance_double(Web3::HttpClient::Response, parsed_body: nil)
       )
 
       result = described_class.new.send(:fetch_solana_balance, solana_config)
@@ -572,7 +572,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "handles malformed response (missing result key)" do
       allow(Web3::HttpClient).to receive(:post).and_return(
-        double("response", parsed_body: { "error" => { "message" => "bad request" } })
+        instance_double(Web3::HttpClient::Response, parsed_body: { "error" => { "message" => "bad request" } })
       )
 
       result = described_class.new.send(:fetch_solana_balance, solana_config)
@@ -588,7 +588,7 @@ RSpec.describe Treasury::MonitorService do
     it "creates EwsAlerts for multiple critical networks" do
       # Make Solana critical too
       allow(Web3::HttpClient).to receive(:post).and_return(
-        double("response", parsed_body: { "result" => { "value" => 100 } })
+        instance_double(Web3::HttpClient::Response, parsed_body: { "result" => { "value" => 100 } })
       )
 
       expect { described_class.call }.to change(EwsAlert, :count).by_at_least(2)

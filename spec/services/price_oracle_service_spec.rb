@@ -64,7 +64,7 @@ RSpec.describe PriceOracleService do
 
     context "when in production environment" do
       let(:mock_client) { instance_double(Eth::Client) }
-      let(:mock_contract) { double("contract") }
+      let(:mock_contract) { instance_double(Eth::Contract) }
       let(:raw_amount_out) { 26_000_000 } # 26.0 USDC (6 decimals)
 
       before do

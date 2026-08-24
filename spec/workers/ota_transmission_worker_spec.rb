@@ -189,7 +189,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
 
   describe "NACK when response.success? is false" do
     it "handles unsuccessful response" do
-      response = double("response", success?: false, code: "4.04")
+      response = instance_double(CoapClient::Response, success?: false, code: "4.04")
       allow(CoapClient).to receive(:put).and_return(response)
       expect {
         described_class.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)

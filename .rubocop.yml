@@ -293,10 +293,6 @@ RSpec/AnyInstance:
 RSpec/MessageSpies:
   Enabled: false
 
-# Блокчейн/IoT сервіси використовують double для зовнішніх API (Polygon RPC, CoAP)
-RSpec/VerifiedDoubles:
-  Enabled: false
-
 # Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
 RSpec/IndexedLet:
   Enabled: false

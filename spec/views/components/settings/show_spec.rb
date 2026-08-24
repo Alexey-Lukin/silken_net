@@ -29,8 +29,15 @@ RSpec.describe Settings::Show do
     error_messages.each { |m| org.errors.add(:base, m) }
     # Блоб без БД не збудувати — стаб іде через RSpec-API, тож `verify_partial_doubles`
     # звіряє, що `logo` на моделі взагалі існує (`OpenStruct` цього не робив).
+    #
+    # ⚠️ Сам повернений об'єкт verifying double бути НЕ може: справжній клас —
+    # `ActiveStorage::Attached::One`, а `filename` там не оголошено статично, він
+    # їде через `delegate_missing_to :attachment`. `instance_double` бачить лише
+    # реальні методи класу, тож падає «does not implement … filename» (виміряно на
+    # всіх 23 прикладах). `object_double` теж не рятує: без attachment
+    # `respond_to?(:filename)` == false.
     allow(org).to receive(:logo).and_return(
-      double("logo", attached?: logo_attached, filename: ActiveStorage::Filename.new("logo.png"))
+      double("logo", attached?: logo_attached, filename: ActiveStorage::Filename.new("logo.png")) # rubocop:disable RSpec/VerifiedDoubles
     )
     org
   end

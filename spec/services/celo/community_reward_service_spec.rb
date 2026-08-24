@@ -35,7 +35,7 @@ RSpec.describe Celo::CommunityRewardService do
     mock_client = instance_double(Eth::Client)
     allow(Eth::Client).to receive(:create).and_return(mock_client)
     allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-    allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+    allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
     allow(mock_client).to receive_messages(transact: tx_hash, get_balance: 1 * 10**18)
     allow(Kredis).to receive(:lock).and_yield
     mock_client
@@ -313,7 +313,7 @@ RSpec.describe Celo::CommunityRewardService do
       mock_client = instance_double(Eth::Client)
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
-      allow(Eth::Contract).to receive(:from_abi).and_return(double("Contract"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(mock_client).to receive(:get_balance).and_return((0.01 * 10**18).to_i)
       allow(Kredis).to receive(:lock).and_yield
 

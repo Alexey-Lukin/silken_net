@@ -62,7 +62,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(Eth::Key).to receive(:new).and_return(mock_key)
       allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xfake_tx_hash")
       allow(mock_client).to receive(:call).and_return(0)
-      allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
       Rails.cache.delete(BlockchainMintingService::TREASURY_BALANCE_CACHE_KEY)
     end
@@ -150,7 +150,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(Eth::Key).to receive(:new).and_return(mock_key)
       # [SLASH.2] transact + slashUpTo balanceOf pre-read (1000 SCC ≫ burn ≤100, clamp inert).
       allow(mock_client).to receive_messages(transact: "0xburn_hash", call: 1000 * (10**18))
-      allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
       # [SLASH-1] Slash-path tests assume direct Category-A evidence (gate passes).
       allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_return(true)
@@ -380,7 +380,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
       allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xtrustless_tx")
-      allow(Eth::Contract).to receive(:from_abi).and_return(double("contract"))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
     end
 

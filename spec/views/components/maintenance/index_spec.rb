@@ -37,7 +37,7 @@ RSpec.describe Maintenance::Index do
     rec_maintainable = maintainable || build_maintainable
 
     # photos_attachments mock
-    photos_mock = double("photos_attachments", size: photos_count)
+    photos_mock = instance_double(ActiveRecord::Associations::CollectionProxy, size: photos_count)
 
     r = MaintenanceRecord.new(
       id: id,
