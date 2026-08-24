@@ -136,23 +136,12 @@ module Maintenance
             end
           end
 
-          # -----------------------------------------------------------------------
-          # HARDWARE VERIFIED (тільки при редагуванні)
-          # -----------------------------------------------------------------------
-          if @editing
-            div(class: "flex items-center gap-3") do
-              f.check_box :hardware_verified,
-                class: "h-4 w-4 border border-gaia-border bg-gaia-input-bg text-gaia-primary-strong focus-visible:ring-0"
-              # [UI.3] Через білдер, не голий `label(for: …)`: рукописний id тримався
-              # на тому, що ім'я моделі не змінюється — а перевіряти це не було чим
-              # (мутація «зламати for» лишала сюїту зеленою, бо пін на сироти-мітки
-              # цієї спеки не мав узагалі; він приїхав тим самим ходом).
-              f.label :hardware_verified,
-                class: "text-mini uppercase tracking-widest text-gaia-text-muted cursor-pointer" do
-                t(".hardware_verified")
-              end
-            end
-          end
+          # ⛔ Поля `hardware_verified` тут НЕ буде [UI.7]. Прапорець ставиться
+          # виключно екшеном `verify`, і лише коли вузол вийшов в ефір ПІСЛЯ
+          # `performed_at` (`MaintenanceRecord#hardware_pulse_confirmed?`). Чекбокс
+          # у формі редагування давав тому самому технікові поставити «залізо
+          # підтвердило» власною рукою — тобто рівно ту самоатестацію, проти якої
+          # предикат і будували.
 
           # --- SUBMIT ---
           div(class: "pt-6 flex items-center gap-4") do
@@ -222,8 +211,7 @@ module Maintenance
     # [UI.3] `form.label`, не голий `label` — той не має `for=`, тож AT не звʼязує
     # підпис із полем, а клік по підпису не фокусує ввід. `id` уже генерує білдер
     # (`form_with model:` → `maintenance_record_*`), тож уся робота — передати
-    # атрибут. Чекбокс `hardware_verified` теж на білдері (останній рукописний
-    # id знято 2026-08-18 разом із розширенням носія на обидва рендери форми).
+    # атрибут. Рукописних `id` у формі не лишилось — усі мітки йдуть білдером.
     # [UI.3] Блок дістає ARIA-атрибути ПОЛЯ — інакше `aria-invalid` нікуди
     # поставити: контрол рендерить викликач, а не цей хелпер. Порожній хеш на
     # валідному полі, тож `**aria` у викликача безпечний завжди.

@@ -24,7 +24,6 @@ lv:
         heading: Iejaukšanās koordinātas
         latitude: Platuma grādi
         longitude: Garuma grādi
-      hardware_verified: Aparatūra verificēta — STM32 apstiprināja jaunu impulsu
       header:
         edit: 'Rediģēt iejaukšanās ierakstu // #%{id}'
         new: Reģistrēt iejaukšanās rituālu

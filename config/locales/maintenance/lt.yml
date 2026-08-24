@@ -24,7 +24,6 @@ lt:
         heading: Įsikišimo koordinatės
         latitude: Platuma
         longitude: Ilguma
-      hardware_verified: Aparatūra patikrinta — STM32 patvirtino naują impulsą
       header:
         edit: 'Redaguoti įsikišimo įrašą // #%{id}'
         new: Registruoti įsikišimo ritualą

@@ -345,7 +345,12 @@ module Api
           :maintainable_id, :maintainable_type, :ews_alert_id,
           :action_type, :notes, :performed_at,
           :labor_hours, :parts_cost,
-          :hardware_verified,
+          # ⛔ `:hardware_verified` сюди НЕ повертати [UI.7]. Дім критерію —
+          # `MaintenanceRecord#hardware_pulse_confirmed?`, і його сенс у тому, що
+          # це ЄДИНИЙ канал, якого технік не контролює. Клієнтський ключ робив
+          # прапорець самоатестацією: `verify` гейтований пульсом, а `create`/
+          # `update` писали те саме поле напряму — тобто гард стояв на одних
+          # дверях із трьох. Єдиний писач тепер — екшен `verify`.
           :latitude, :longitude,
           photos: []
         )

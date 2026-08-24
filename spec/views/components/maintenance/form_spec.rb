@@ -28,8 +28,10 @@ RSpec.describe Maintenance::Form do
   # закритим міграцією, але носій стояв лише на трьох формах із десяти — тобто
   # закрито було для файлів, які правили, а не для поверхні.
   #
-  # ⚠️ Обидва рендери, і це несуче: чекбокс `hardware_verified` існує ЛИШЕ в гілці
-  # редагування, тож пін на формі створення до нього не дотягується за побудовою.
+  # ⚠️ Обидва рендери, і це несуче: гілки різняться складом контролів, тож пін на
+  # формі створення до edit-гілки не дотягується за побудовою. Взірець, яким цей
+  # клас вимірювався (чекбокс `hardware_verified`), у дереві більше не живе —
+  # його знято [UI.7] як самоатестацію; урок лишається, приклад історичний.
   describe "label ⟷ control association" do
     it "associates every label with a real control (new record)" do
       doc = Nokogiri::HTML5.fragment(render_component(record: build(:maintenance_record)))
@@ -38,11 +40,14 @@ RSpec.describe Maintenance::Form do
       expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
     end
 
-    it "associates every label with a real control (edit record — extra checkbox)" do
+    it "associates every label with a real control (edit record)" do
       doc = Nokogiri::HTML5.fragment(render_component(record: create(:maintenance_record)))
 
-      expect(doc.css("input[type=checkbox]")).not_to be_empty,
-        "edit-only checkbox absent — the branch this pin exists for did not render"
+      # Anti-vacuous: доводимо, що рендерилась саме edit-гілка, перш ніж
+      # стверджувати щось про її мітки. Доти цю роль ніс edit-only чекбокс
+      # `hardware_verified`; його знято [UI.7], тож маркером гілки став submit.
+      expect(doc.to_html).to include("Update Record")
+      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
       expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
     end
   end
@@ -163,8 +168,8 @@ RSpec.describe Maintenance::Form do
       expect(html).to include("Commit to Matrix")
     end
 
-    it "does not render hardware verified checkbox for new record" do
-      expect(html).not_to include("Hardware Verified")
+    it "does not render a hardware_verified control for new record" do
+      expect(html).not_to include("hardware_verified")
     end
 
     it "shows PENDING when maintainable_type is not yet chosen (blank new record)" do
@@ -187,8 +192,13 @@ RSpec.describe Maintenance::Form do
       expect(html).to include("Update Record")
     end
 
-    it "renders hardware verified checkbox in edit mode" do
-      expect(html).to include("Hardware Verified")
+    # 🔴 [UI.7] Негативний пін — носій заборони, а не звіт про рендер. Прапорець
+    # «залізо підтвердило» ставить ЛИШЕ `verify`, звіривши пульс вузла проти
+    # `performed_at`; поле у формі редагування дозволяло тому самому технікові
+    # проставити його рукою. Пін цілиться в ІМʼЯ поля, а не в текст мітки: мітка
+    # локалізована й зникне разом із ключем, а поле — те, чим пишуть.
+    it "does not render a hardware_verified control in edit mode" do
+      expect(html).not_to include("hardware_verified")
     end
 
     it "renders a cancel link back to the show page" do

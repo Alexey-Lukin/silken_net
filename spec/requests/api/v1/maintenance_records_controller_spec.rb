@@ -229,6 +229,25 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(MaintenanceRecord.order(:id).last.system_generated).to be false
     end
 
+    # 🔴 [UI.7] Дзеркало гарда вище на сусідній осі: `hardware_verified` — це
+    # вердикт ЗАЛІЗА (вузол вийшов в ефір ПІСЛЯ `performed_at`), а не поле автора.
+    # Доти ключ стояв у `permit`, тож той самий технік проставляв його і payload'ом,
+    # і чекбоксом у формі редагування — предикат `hardware_pulse_confirmed?` стеріг
+    # ОДНІ двері з трьох. Пін навмисно REQUEST-рівня: компонентні приклади форми
+    # лишаються зеленими й тоді, коли ключ повернуть у `permit`, бо вони міряють
+    # розмітку, а не параметри. `permit` спільний для `create` і `update`, тож
+    # цей приклад покриває обидва шляхи.
+    it "ignores a client-supplied hardware_verified" do
+      params[:maintenance_record].delete(:system_generated)
+      params[:maintenance_record][:action_type] = "inspection"
+      params[:maintenance_record][:hardware_verified] = true
+
+      post "/maintenance_records", params: params, headers: idem_headers, as: :json
+
+      expect(response).to have_http_status(:created).or have_http_status(:ok)
+      expect(MaintenanceRecord.order(:id).last.hardware_verified).to be false
+    end
+
     # =========================================================================
     # [E.20 HARD-gate] Ідемпотентність — передумова offline-черги guild-клієнта.
     # Небезпека, заради якої це існує, не «подвійний клік»: service worker ставить

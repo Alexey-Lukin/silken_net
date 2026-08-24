@@ -24,7 +24,6 @@ en:
         heading: Intervention Coordinates
         latitude: Latitude
         longitude: Longitude
-      hardware_verified: Hardware Verified — STM32 confirmed new pulse
       header:
         edit: 'Edit Intervention Record // #%{id}'
         new: Register Intervention Ritual
