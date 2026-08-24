@@ -17,7 +17,7 @@ RSpec.describe Wallet, type: :model do
     let(:captured) { [] }
 
     before do
-      allow_any_instance_of(described_class).to receive(:broadcast_balance_update).and_call_original
+      restore_broadcasts!(:wallet_balance)
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to) { |*args, **kwargs| captured << [ args, kwargs ] }
     end
 
@@ -84,7 +84,7 @@ RSpec.describe Wallet, type: :model do
     describe "коалесування броадкасту балансу" do
       it "останній кадр бачить баланс ПІСЛЯ останнього кредиту" do
         # Знімаємо файловий стаб (рядок 8) — інакше приклад міряв би заглушку.
-        allow_any_instance_of(described_class).to receive(:broadcast_balance_update).and_call_original
+        restore_broadcasts!(:wallet_balance)
 
         wallet = create(:tree).wallet
         start  = wallet.balance

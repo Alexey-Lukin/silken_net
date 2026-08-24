@@ -371,7 +371,7 @@ RSpec.describe EwsAlert, type: :model do
   describe "callbacks" do
     describe "after_create_commit :dispatch_notifications!" do
       it "enqueues AlertNotificationWorker" do
-        allow_any_instance_of(described_class).to receive(:dispatch_notifications!).and_call_original
+        restore_broadcasts!(:alert_notify)
         create(:ews_alert, :fire)
 
         expect(AlertNotificationWorker).to have_received(:perform_async).with(kind_of(Integer))
@@ -396,7 +396,6 @@ RSpec.describe EwsAlert, type: :model do
 
     describe "after_create_commit :schedule_satellite_verification!" do
       it "enqueues DclimateVerificationWorker for fire_detected" do
-        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
         create(:ews_alert, :fire)
 
@@ -404,7 +403,6 @@ RSpec.describe EwsAlert, type: :model do
       end
 
       it "enqueues DclimateVerificationWorker for severe_drought" do
-        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
         create(:ews_alert, :drought)
 
@@ -412,7 +410,6 @@ RSpec.describe EwsAlert, type: :model do
       end
 
       it "does not enqueue DclimateVerificationWorker for vandalism_breach" do
-        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         allow(DclimateVerificationWorker).to receive(:perform_in)
         create(:ews_alert, alert_type: :vandalism_breach)
 
@@ -420,7 +417,6 @@ RSpec.describe EwsAlert, type: :model do
       end
 
       it "does not enqueue DclimateVerificationWorker for system_fault" do
-        allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
         allow(DclimateVerificationWorker).to receive(:perform_in)
         create(:ews_alert, alert_type: :system_fault)
 
@@ -672,7 +668,7 @@ RSpec.describe EwsAlert, type: :model do
     # обгорнутий у `refresh_debouncer_for(...).debounce`, ключований ІМЕНЕМ
     # СТРІМУ і **trailing-edge** — останній виклик завжди виграє.
     it "сигналить і на оновлення, що йде ОДРАЗУ за попереднім (закриття не губиться)" do
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      restore_broadcasts!(:alert_update)
 
       cluster = create(:cluster)
       alert   = create(:ews_alert, cluster: cluster, tree: nil)
@@ -702,7 +698,7 @@ RSpec.describe EwsAlert, type: :model do
     it "is a silent no-op when cluster is nil (no NoMethodError on cluster.organization_id)" do
       # Дозволяємо реальний broadcast_alert_update (знімаємо outer stub) лише
       # для цього прикладу — інакше тест перевіряв би тільки stub.
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      restore_broadcasts!(:alert_update)
 
       alert = create(:ews_alert, tree: nil, cluster: nil)
 
@@ -785,7 +781,7 @@ RSpec.describe EwsAlert, type: :model do
     # org-список), і жоден із них не `replace`.
     it "sends both refresh signals and never a replace" do
       tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      restore_broadcasts!(:alert_update)
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
@@ -803,7 +799,7 @@ RSpec.describe EwsAlert, type: :model do
     # продюсера всім підписникам.
     it "signals BOTH surfaces and pushes no rendered markup to either" do
       tree = create(:tree, cluster: cluster_bc)
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      restore_broadcasts!(:alert_update)
       allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
@@ -831,7 +827,7 @@ RSpec.describe EwsAlert, type: :model do
       # цьому файлі метод заглушено, тож без нього `send` бʼє в заглушку й
       # приклад «проходить», не виконавши нічого — саме так він і збрехав під
       # час написання (0 викликів при цілком живому стані).
-      allow_any_instance_of(described_class).to receive(:broadcast_alert_update).and_call_original
+      restore_broadcasts!(:alert_update)
       alert = create(:ews_alert, cluster: cluster_bc, tree: tree)
       cluster_bc.update_columns(organization_id: nil)
       alert.cluster.reload
@@ -854,7 +850,7 @@ RSpec.describe EwsAlert, type: :model do
     let(:cluster_bc) { create(:cluster) }
 
     before do
-      allow_any_instance_of(described_class).to receive(:broadcast_new_alert).and_call_original
+      restore_broadcasts!(:alert_new)
       allow(Turbo::StreamsChannel).to receive(:broadcast_refresh_later_to)
       allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_later_to)
     end

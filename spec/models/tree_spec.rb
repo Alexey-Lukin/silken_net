@@ -365,7 +365,7 @@ RSpec.describe Tree, type: :model do
 
   describe "broadcast_map_update when latitude is nil" do
     it "returns nil without broadcasting when latitude is absent" do
-      allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original
+      restore_broadcasts!(:tree_map)
       tree = create(:tree)
       tree.update_columns(latitude: nil)
       tree.reload
@@ -377,7 +377,7 @@ RSpec.describe Tree, type: :model do
 
   describe "broadcast_map_update when longitude is nil" do
     it "returns nil without broadcasting when longitude is absent" do
-      allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original
+      restore_broadcasts!(:tree_map)
       tree = create(:tree)
       tree.update_columns(longitude: nil)
       tree.reload
@@ -391,7 +391,7 @@ RSpec.describe Tree, type: :model do
   # Пін саме на АРГУМЕНТ: «броадкаст стався» лишався б зеленим і для
   # голого `"geospatial_matrix"`, тобто для крос-тенант витоку.
   describe "#broadcast_map_update stream scoping" do
-    before { allow_any_instance_of(described_class).to receive(:broadcast_map_update).and_call_original }
+    before { restore_broadcasts!(:tree_map) }
 
     it "broadcasts into the stream of the owning organization" do
       organization = create(:organization)

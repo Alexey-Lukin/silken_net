@@ -57,20 +57,49 @@ module SideEffectSilencer
   # `silence_broadcasts!(:tree_map, :wallet_balance)` — рівно 1:1 із тим, що
   # стояло рядками раніше; жодного ключа «за замовчуванням» немає навмисно.
   def silence_broadcasts!(*keys)
-    silence_from!(BROADCASTS, keys, "silence_broadcasts!", SIDE_EFFECTS, "silence_side_effects!")
+    each_pair!(BROADCASTS, keys, "silence_broadcasts!", SIDE_EFFECTS, "silence_side_effects!") do |klass, method|
+      allow_any_instance_of(klass).to receive(method)
+    end
   end
 
   # `silence_side_effects!(:actuator_dispatch)` — сіблінг для не-броадкастів.
   def silence_side_effects!(*keys)
-    silence_from!(SIDE_EFFECTS, keys, "silence_side_effects!", BROADCASTS, "silence_broadcasts!")
+    each_pair!(SIDE_EFFECTS, keys, "silence_side_effects!", BROADCASTS, "silence_broadcasts!") do |klass, method|
+      allow_any_instance_of(klass).to receive(method)
+    end
+  end
+
+  # 🔑 ЗВОРОТНА половина пари [OPS.33, 2026-08-25]: приклад, який САМЕ цей ефект
+  # і пінить, знімає глушник свого файлу. Доти зняття писалось від руки
+  # (`allow_any_instance_of(EwsAlert).to receive(:broadcast_alert_update).and_call_original`),
+  # тобто пара (клас, метод) дублювалась поза реєстром — і рукописна форма не
+  # має ЧИМ сказати, що глушника не існує: чотири такі рядки знімали
+  # `schedule_satellite_verification!` у файлі, який глушить лише броадкасти,
+  # тож не робили нічого й читались як гарантія. Ключ це червонить одразу.
+  # ⚠️ Сіблінга `restore_side_effects!` НЕМА свідомо — жоден приклад ще не
+  # знімав глушник не-броадкастового ефекту; заводити його наперед означало б
+  # додати абстракцію без викликача.
+  def restore_broadcasts!(*keys)
+    each_pair!(BROADCASTS, keys, "restore_broadcasts!", SIDE_EFFECTS, "silence_side_effects!") do |klass, method|
+      allow_any_instance_of(klass).to receive(method).and_call_original
+    end
   end
 
   private
 
-  # ⚠️ Помилка НАЗИВАЄ сусідній реєстр, а не лише «невідомий ключ»: два методи
-  # мають ціну лише тоді, коли викликач мусить угадувати, який із них його.
-  # Тут не мусить — промах відповідає адресою.
-  def silence_from!(registry, keys, own_name, sibling, sibling_name)
+  # ⚠️ Помилка НАЗИВАЄ сусідній реєстр, а не лише «невідомий ключ»: методи мають
+  # ціну лише тоді, коли викликач мусить угадувати, який із них його. Тут не
+  # мусить — промах відповідає адресою.
+  #
+  # 🔑 `allow_any_instance_of` у блоках викликачів — ЄДИНІ санкціоновані в дереві:
+  # екземпляри створює код під тестом, тож дістати їх до `allow(instance)` ніде.
+  # Стабити натомість `Turbo::StreamsChannel` не можна — тіло методу рендерить
+  # Phlex-компонент, і той рендер лишився б у КОЖНОМУ прикладі.
+  # ⚠️ Директиви `rubocop:disable RSpec/AnyInstance` тут НЕМАЄ навмисно: коп
+  # вимкнений глобально ратифікованим присудом, тож директива була б зайвою —
+  # і це не здогад, її зловив `Lint/RedundantCopDisableDirective`.
+  # Якщо присуд колись перевернуть — директиву повернути рівно сюди.
+  def each_pair!(registry, keys, own_name, sibling, sibling_name)
     raise ArgumentError, "#{own_name} потребує щонайменше один ключ" if keys.empty?
 
     keys.each do |key|
@@ -80,15 +109,7 @@ module SideEffectSilencer
         end
         raise ArgumentError, "невідомий ключ #{key.inspect}; відомі #{own_name}: #{registry.keys.join(', ')}"
       end
-      # 🔑 ЄДИНИЙ санкціонований `allow_any_instance_of` у дереві: екземпляри
-      # створює код під тестом, тож дістати їх до `allow(instance)` ніде. Стабити
-      # натомість `Turbo::StreamsChannel` не можна — тіло методу рендерить
-      # Phlex-компонент, і той рендер лишився б у КОЖНОМУ прикладі.
-      # ⚠️ Директиви `rubocop:disable RSpec/AnyInstance` тут НЕМАЄ навмисно: коп
-      # вимкнений глобально ратифікованим присудом, тож директива була б зайвою —
-      # і це не здогад, її зловив `Lint/RedundantCopDisableDirective`.
-      # Якщо присуд колись перевернуть — директиву повернути рівно сюди.
-      allow_any_instance_of(klass_name.constantize).to receive(method)
+      yield(klass_name.constantize, method)
     end
   end
 end

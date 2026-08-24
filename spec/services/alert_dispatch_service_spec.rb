@@ -581,7 +581,7 @@ RSpec.describe AlertDispatchService, type: :service do
       # [A-1 FIX]: Notification тепер відбувається через after_create_commit :dispatch_notifications!
       # замість явного AlertNotificationWorker.perform_async в сервісі.
       # Дозволяємо колбеку виконатися для перевірки повного ланцюга.
-      allow_any_instance_of(EwsAlert).to receive(:dispatch_notifications!).and_call_original
+      restore_broadcasts!(:alert_notify)
 
       described_class.create_fraud_alert!(tree, "Fraud detected")
 

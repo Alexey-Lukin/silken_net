@@ -26,7 +26,7 @@ RSpec.describe CoapClient do
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
 
         # We need to control the random message_id
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1:5683/telemetry/batch/QUEEN1", "test_payload")
 
@@ -53,7 +53,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
           described_class.put("coap://192.168.1.1/telemetry", "test")
@@ -69,7 +69,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
           described_class.put("coap://192.168.1.1/telemetry", "test")
@@ -85,7 +85,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         expect {
           described_class.put("coap://192.168.1.1/telemetry", "test")
@@ -100,7 +100,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1/telemetry?key=value", "test")
         expect(result.success?).to be true
@@ -115,7 +115,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1/telemetry", "test")
         expect(result.success?).to be false
@@ -139,7 +139,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         # Large option delta >= 13 is triggered with specific URI path patterns
         # Since Uri-Path is option 11, it won't trigger delta >= 13 on its own.
@@ -160,7 +160,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         # Build a URL with a long path segment (>= 13 bytes) to exercise extended length encoding
         long_segment = "a" * 20
@@ -177,7 +177,7 @@ RSpec.describe CoapClient do
 
         allow(IO).to receive(:select).and_return([ [ mock_socket ] ])
         allow(mock_socket).to receive(:recvfrom).and_return([ response_packet, nil ])
-        allow_any_instance_of(Object).to receive(:rand).with(1..65535).and_return(message_id)
+        allow(described_class).to receive(:rand).with(1..65535).and_return(message_id)
 
         result = described_class.put("coap://192.168.1.1/telemetry", "test")
         expect(result.success?).to be true

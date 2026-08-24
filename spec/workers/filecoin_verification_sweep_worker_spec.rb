@@ -78,7 +78,7 @@ RSpec.describe FilecoinVerificationSweepWorker, type: :worker do
   describe "leaf-stamp sample leg" do
     let(:tree) { create(:tree) }
 
-    before { allow_any_instance_of(Tree).to receive(:broadcast_map_update) }
+    before { silence_broadcasts!(:tree_map) }
 
     it "ловить drift: перерахований CID ≠ merkle_leaf → метрика leaf_stamp_drift" do
       log = create(:telemetry_log, tree: tree, created_at: 1.hour.ago)

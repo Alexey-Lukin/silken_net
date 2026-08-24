@@ -181,11 +181,17 @@ RSpec.describe Mrv::TelemetryArchiveBatchService do
       expect(batch.txs_created_from).to be_within(1.second).of(tx.created_at)
       expect(batch.txs_created_to).to be_within(1.second).of(tx.created_at)
 
+      # Другий шлях — build_failed-слід (`record_build_failure`): він несе ті самі
+      # межі вікна. ⚠️ tx тут мусить бути WINDOWED, інакше збірка не доходить до
+      # `update_all`, винятку немає й сліду не створюється ЗОВСІМ; і стаб ставиться
+      # ПІСЛЯ створення, бо `lock_and_mint!` сам ходить через `update_all`.
+      failed_tx = windowed_tx!
       allow_any_instance_of(ActiveRecord::Relation).to receive(:update_all).and_raise("boom")
-      failed_tx = windowless_tx!
-      described_class.group([ tx.reload, failed_tx ], token_type: "carbon_coin")
-      trace = TelemetryArchiveBatch.status_build_failed.last
-      expect(trace&.txs_created_from).to be_present if trace
+      described_class.group([ failed_tx ], token_type: "carbon_coin")
+
+      trace = TelemetryArchiveBatch.status_build_failed.sole
+      expect(trace.txs_created_from).to be_within(1.second).of(failed_tx.created_at)
+      expect(trace.txs_created_to).to be_within(1.second).of(failed_tx.created_at)
     end
   end
 
