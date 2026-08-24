@@ -19,7 +19,7 @@ RSpec.describe OtaTransmissionWorker, type: :worker do
   before do
     key_record # Ensure key exists
     allow(OtaPackagerService).to receive(:prepare).and_return(ota_packages)
-    allow(CoapClient).to receive(:put).and_return(double(success?: true, code: "2.04"))
+    allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: true, code: "2.04"))
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 

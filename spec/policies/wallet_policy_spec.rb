@@ -124,14 +124,14 @@ RSpec.describe WalletPolicy do
     let(:wallet) { tree.wallet }
 
     it "denies access when wallet has no org chain and user is not admin" do
-      allow(wallet).to receive_messages(organization_id: nil, tree: double(cluster: nil))
+      allow(wallet).to receive_messages(organization_id: nil, tree: instance_double(Tree, cluster: nil))
 
       other_user = create(:user, :investor, organization: other_org)
       expect(described_class.new(other_user, wallet).show?).to be false
     end
 
     it "denies when tree has no cluster" do
-      tree_double = double(cluster: nil)
+      tree_double = instance_double(Tree, cluster: nil)
       allow(wallet).to receive_messages(organization_id: nil, tree: tree_double)
 
       expect(described_class.new(investor, wallet).show?).to be false

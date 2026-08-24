@@ -95,8 +95,8 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
 
     before do
       allow(AlertNotificationWorker).to receive(:perform_async).and_call_original
-      mailer_delivery = double(deliver_later: nil)
-      mailer_with = double(critical_notification: mailer_delivery)
+      mailer_delivery = instance_double(ActionMailer::MessageDelivery, deliver_later: nil)
+      mailer_with = double(critical_notification: mailer_delivery) # rubocop:disable RSpec/VerifiedDoubles -- проксі від `.with(...)` віддає ActionMailer::Parameterized::Mailer, а той не ВИЗНАЧАЄ mailer-методів (method_missing) — verifying double їх не бачить за побудовою; звірено `public_method_defined?`
       allow(AlertMailer).to receive(:with).and_return(mailer_with)
     end
 

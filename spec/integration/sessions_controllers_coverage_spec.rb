@@ -227,7 +227,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
         tree.update!(last_seen_at: 10.minutes.ago)
         allow_any_instance_of(MaintenanceRecord).to receive(:update).and_return(false)
         allow_any_instance_of(MaintenanceRecord).to receive(:errors).and_return(
-          double(full_messages: [ "Hardware verification failed" ])
+          instance_double(ActiveModel::Errors, full_messages: [ "Hardware verification failed" ])
         )
 
         patch "/maintenance_records/#{maintenance_record.id}/verify",

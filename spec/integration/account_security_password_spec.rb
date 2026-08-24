@@ -72,8 +72,8 @@ RSpec.describe "Account security and password management" do
   # ---------------------------------------------------------------------------
   describe "Password Reset API" do
     it "POST /forgot_password sends reset email" do
-      mailer_double = double(deliver_later: nil)
-      mailer_with = double(reset_instructions: mailer_double)
+      mailer_double = instance_double(ActionMailer::MessageDelivery, deliver_later: nil)
+      mailer_with = double(reset_instructions: mailer_double) # rubocop:disable RSpec/VerifiedDoubles -- проксі від `.with(...)` віддає ActionMailer::Parameterized::Mailer, а той не ВИЗНАЧАЄ mailer-методів (method_missing) — verifying double їх не бачить за побудовою; звірено `public_method_defined?`
       allow(PasswordMailer).to receive(:with).and_return(mailer_with)
 
       post "/forgot_password",

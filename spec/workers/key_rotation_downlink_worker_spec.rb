@@ -19,7 +19,7 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
   let!(:gateway_key) { create(:hardware_key, device_uid: gateway.uid) }
 
   before do
-    allow(CoapClient).to receive(:put).and_return(double(success?: true, code: "2.04"))
+    allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: true, code: "2.04"))
     allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
   end
 
@@ -43,7 +43,7 @@ RSpec.describe KeyRotationDownlinkWorker, type: :worker do
       sent_payload = nil
       allow(CoapClient).to receive(:put) do |_url, payload|
         sent_payload = payload
-        double(success?: true, code: "2.04")
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
       end
 
       described_class.new.perform(tree.did, 3)

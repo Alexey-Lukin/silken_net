@@ -102,8 +102,8 @@ RSpec.describe AlertNotificationWorker, type: :worker do
     end
 
     it "sends email for critical alerts with billing email" do
-      mailer_double = double(deliver_later: true)
-      notification_double = double(critical_notification: mailer_double)
+      mailer_double = instance_double(ActionMailer::MessageDelivery, deliver_later: true)
+      notification_double = double(critical_notification: mailer_double) # rubocop:disable RSpec/VerifiedDoubles -- проксі від `.with(...)` віддає ActionMailer::Parameterized::Mailer, а той не ВИЗНАЧАЄ mailer-методів (method_missing) — verifying double їх не бачить за побудовою; звірено `public_method_defined?`
       allow(AlertMailer).to receive(:with).and_return(notification_double)
 
       described_class.new.perform(alert.id)

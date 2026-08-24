@@ -20,7 +20,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
   before do
     key_record # Ensure key exists
-    allow(CoapClient).to receive(:put).and_return(double(success?: true, code: "2.04"))
+    allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: true, code: "2.04"))
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
   end
 
@@ -133,7 +133,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
     end
 
     it "raises on CoAP failure response for Sidekiq retry" do
-      allow(CoapClient).to receive(:put).and_return(double(success?: false, code: "4.04"))
+      allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: false, code: "4.04"))
 
       expect { described_class.new.perform(command.id) }.to raise_error(RuntimeError, /Королева відхилила/)
     end
@@ -142,7 +142,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       encrypted = nil
       allow(CoapClient).to receive(:put) do |_url, payload|
         encrypted = payload
-        double(success?: true, code: "2.04")
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
       end
 
       described_class.new.perform(command.id)
@@ -225,7 +225,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       allow(CoapClient).to receive(:put) do |_url, _payload|
         cmd = ActuatorCommand.find(command.id)
         states << cmd.status
-        double(success?: true, code: "2.04")
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
       end
 
       described_class.new.perform(command.id)
@@ -256,7 +256,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
       captured_payload = nil
       allow(CoapClient).to receive(:put) do |_url, payload|
         captured_payload = payload
-        double(success?: true, code: "2.04")
+        instance_double(CoapClient::Response, success?: true, code: "2.04")
       end
 
       before_ts = Time.now.utc.to_i

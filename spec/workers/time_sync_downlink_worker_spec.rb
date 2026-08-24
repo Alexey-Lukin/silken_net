@@ -16,7 +16,7 @@ RSpec.describe TimeSyncDownlinkWorker, type: :worker do
   let!(:key_record) { create(:hardware_key, device_uid: gateway.uid) }
 
   before do
-    allow(CoapClient).to receive(:put).and_return(double(success?: true, code: "2.04"))
+    allow(CoapClient).to receive(:put).and_return(instance_double(CoapClient::Response, success?: true, code: "2.04"))
   end
 
   describe "sidekiq configuration" do

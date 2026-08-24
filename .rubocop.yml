@@ -285,9 +285,27 @@ RSpec/NestedGroups:
 RSpec/MultipleMemoizedHelpers:
   Max: 15
 
-# allow_any_instance_of — поступова міграція
+# [OPS.33] ⚖️ Присуд, делегований founder-ом: бланкетний коп НЕ вмикаємо —
+# розклад живих сайтів за жанром дав більшість доброякісних глушників межі
+# (Turbo-броадкаст · нотифікації · зовнішній HTTP/RPC у файлі, чий предмет
+# інший) і меншість несучих, тобто він спрацював би на всій популяції заради
+# меншої її частини, а шумний гейт функціонально вимкнений. Оборонний хід
+# натомість — реєстр `spec/support/broadcast_silencer.rb`. ⛔ Не перевідкривати
+# без НОВОГО заміру. Повний присуд із ціною відмови — `00_07` OPS.33.
 RSpec/AnyInstance:
   Enabled: false
+
+# [OPS.33] ⚖️ ЗВУЖЕНО проти дефолту гема (`IgnoreNameless: true`): безіменні
+# `double(…)` у нашому дереві стоять за РЕАЛЬНИМИ класами, якими ми володіємо
+# (`CoapClient::Response`, `ActionMailer::MessageDelivery`, `ActiveModel::Errors`,
+# `Tree`) — тобто дефолт, писаний під throwaway-значення, нашій популяції не
+# відповідає. Ціна виміряна ПЕРЕД вмиканням і мала; кожен цільовий клас звірено
+# живою пробою `public_method_defined?`, не здогадом. ⚠️ Три сайти лишились
+# голими з інлайн-директивою: проксі від `.with(...)` віддає
+# `ActionMailer::Parameterized::Mailer`, який mailer-методів не ВИЗНАЧАЄ
+# (method_missing), тож verifying double їх не бачить за побудовою.
+RSpec/VerifiedDoubles:
+  IgnoreNameless: false
 
 # Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
 RSpec/IndexedLet:

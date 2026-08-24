@@ -488,7 +488,7 @@ RSpec.describe EwsAlert, type: :model do
 
       allow(MaintenanceRecord).to receive(:where)
         .with(ews_alert_id: alert.id)
-        .and_return(double(update_all: 0))
+        .and_return(instance_double(ActiveRecord::Relation, update_all: 0))
 
       alert.resolve!
 
