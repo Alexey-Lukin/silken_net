@@ -47,7 +47,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
   describe "POST /actuators/:id/execute" do
     before do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
     end
 
     # 🔴 [UI.14] Пін на ЖИВИЙ вхід, і саме його бракувало роками. Кожен приклад
@@ -88,7 +88,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "returns conflict when actuator already has pending command" do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
       own_actuator.commands.create!(
         user: user,
         command_payload: "TEST",
@@ -108,7 +108,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     # несе `Idempotency-Key`, тож 400-гард його не перехоплює. Пін на ФОРМУ:
     # статус не змінювався, тож пін на нього лишався б зеленим і на блобі.
     it "redirects instead of blobbing JSON when the browser double-submits" do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
       own_actuator.commands.create!(
         user: user, command_payload: "TEST", duration_seconds: 10, status: :issued
       )
@@ -130,7 +130,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     # того, як наказ уже створено. Пін на форму + на КАТЕГОРІЮ: `pending`, бо
     # команда тут лише поставлена в чергу, а не виконана.
     it "відповідає редиректом, коли браузер шле звичайний text/html" do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
 
       expect {
         post "/actuators/#{own_actuator.id}/execute",
@@ -291,7 +291,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
   describe "GET /actuator_commands/:id" do
     let(:own_command) do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
       own_actuator.commands.create!(
         user: user,
         command_payload: "OPEN_VALVE",
@@ -301,7 +301,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     let(:other_command) do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
       other_actuator.commands.create!(
         user: create(:user, :forester, organization: other_organization),
         command_payload: "OPEN_VALVE",
@@ -372,7 +372,7 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
 
   context "with turbo_stream format" do
     before do
-      allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+      silence_side_effects!(:actuator_dispatch)
     end
 
     # 🔴 Тут статус приймався множиною {200, 202, 406, 500} під скопійованою

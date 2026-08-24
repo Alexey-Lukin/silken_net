@@ -89,7 +89,7 @@ RSpec.describe "Parametric insurance payout flow" do
       allow(SystemParameter).to receive(:current)
         .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
       silence_broadcasts!(:alert_notify)
-      allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+      silence_side_effects!(:satellite_verification)
       silence_broadcasts!(:alert_new)
       create(:ews_alert, :fire, cluster: cluster, tree: nil, satellite_status: :verified)
     end

@@ -9,8 +9,8 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
   let!(:naas_contract) { create(:naas_contract, organization: organization, cluster: cluster, status: :active) }
 
   before do
-    allow_any_instance_of(Cluster).to receive(:recalculate_health_index!)
-    allow_any_instance_of(NaasContract).to receive(:check_cluster_health!)
+    silence_side_effects!(:cluster_health_recalc)
+    silence_side_effects!(:naas_health_check)
   end
 
   describe "#perform" do

@@ -43,7 +43,7 @@ RSpec.describe "flash-категорії", type: :request do
     before do
       allow(AlertNotificationWorker).to receive(:perform_async)
       silence_broadcasts!(:alert_notify)
-      allow_any_instance_of(EwsAlert).to receive(:close_associated_maintenance!)
+      silence_side_effects!(:maintenance_cascade)
       silence_broadcasts!(:alert_update)
     end
 

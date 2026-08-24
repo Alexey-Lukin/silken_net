@@ -26,7 +26,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
       .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
     # EwsAlert-колбеки (after_create_commit не фаєрить у транзакційних тестах — стабимо про всяк).
     silence_broadcasts!(:alert_notify, :alert_new, :alert_update)
-    allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+    silence_side_effects!(:satellite_verification)
   end
 
   it "memoizes the kill-switch flag — SystemParameter is read once per worker instance" do
@@ -171,7 +171,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     context "with satellite verification guard (Cosmic Eye)" do
       before do
         silence_broadcasts!(:alert_notify, :alert_new, :alert_update)
-        allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+        silence_side_effects!(:satellite_verification)
       end
 
       it "skips payout when unverified fire alerts exist in cluster" do
@@ -401,7 +401,7 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     context "with mixed alert types (fire + vandalism)" do
       before do
         silence_broadcasts!(:alert_notify, :alert_new, :alert_update)
-        allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+        silence_side_effects!(:satellite_verification)
       end
 
       it "blocks payout only when fire/drought alerts are unverified" do

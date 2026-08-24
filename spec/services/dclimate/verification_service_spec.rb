@@ -11,7 +11,7 @@ RSpec.describe Dclimate::VerificationService, type: :service do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
     silence_broadcasts!(:alert_notify, :alert_update, :alert_new)
-    allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+    silence_side_effects!(:satellite_verification)
     allow(InsurancePayoutWorker).to receive(:perform_async)
     allow(BurnCarbonTokensWorker).to receive(:perform_async)
   end

@@ -14,7 +14,7 @@ RSpec.describe CeloConfirmationWorker, type: :worker do
 
   before do
     allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
-    allow_any_instance_of(BlockchainTransaction).to receive(:broadcast_status_change)
+    silence_broadcasts!(:tx_status)
   end
 
   def envelope(status)

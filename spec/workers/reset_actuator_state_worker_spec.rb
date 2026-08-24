@@ -16,7 +16,7 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
   describe "#perform" do
     context "when actuator is active" do
       let(:command) do
-        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        silence_side_effects!(:actuator_dispatch)
         cmd = create(:actuator_command, actuator: actuator, status: :acknowledged, sent_at: 1.minute.ago)
         cmd.update_column(:status, :acknowledged)
         cmd
@@ -79,7 +79,7 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
 
     context "when actuator is not active" do
       let(:command) do
-        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        silence_side_effects!(:actuator_dispatch)
         cmd = create(:actuator_command, actuator: actuator, status: :acknowledged)
         cmd.update_column(:status, :acknowledged)
         cmd
@@ -111,14 +111,14 @@ RSpec.describe ResetActuatorStateWorker, type: :worker do
     # ПЕРШИМ. Без гарду він обривав вікно найновішого.
     describe "наказ, витіснений пізнішим" do
       let(:superseded) do
-        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        silence_side_effects!(:actuator_dispatch)
         cmd = create(:actuator_command, actuator: actuator, duration_seconds: 60)
         cmd.update_columns(status: ActuatorCommand.statuses[:acknowledged], sent_at: 10.minutes.ago)
         cmd
       end
 
       let!(:newer) do
-        allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+        silence_side_effects!(:actuator_dispatch)
         cmd = create(:actuator_command, actuator: actuator, duration_seconds: 60)
         cmd.update_columns(status: ActuatorCommand.statuses[:acknowledged], sent_at: 1.minute.ago)
         cmd

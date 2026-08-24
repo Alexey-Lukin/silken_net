@@ -12,7 +12,7 @@ RSpec.describe ActuatorCommandWorker, type: :worker do
 
   # Пригнічуємо after_commit :dispatch_to_edge!, щоб не тригерити Phlex-компоненти
   let(:command) do
-    allow_any_instance_of(ActuatorCommand).to receive(:dispatch_to_edge!)
+    silence_side_effects!(:actuator_dispatch)
     cmd = create(:actuator_command, actuator: actuator, expires_at: 30.minutes.from_now)
     cmd.update_column(:status, :issued)
     cmd

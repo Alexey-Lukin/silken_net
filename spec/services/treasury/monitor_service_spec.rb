@@ -27,7 +27,7 @@ RSpec.describe Treasury::MonitorService do
 
     # Не створювати реальні EWS алерти з побічними ефектами
     silence_broadcasts!(:alert_notify)
-    allow_any_instance_of(EwsAlert).to receive(:schedule_satellite_verification!)
+    silence_side_effects!(:satellite_verification)
     silence_broadcasts!(:alert_new, :alert_update)
 
     Web3::RpcConnectionPool.reset!
