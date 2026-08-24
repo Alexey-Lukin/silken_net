@@ -18,7 +18,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр + кількість — §2.8), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
+- **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр — §2.8; парність реєстру з кодом тримає гейт, не лічильник у прозі), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
 - **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.2).
 
 ---
@@ -57,7 +57,7 @@
 | `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 4.2.5 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
-| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (кількість — §2.8) |
+| Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (перелік — §2.8) |
 | `/metrics` endpoint | `app/middleware/prometheus_collector.rb` | ✅ Реалізований (IP allowlist + Basic Auth) |
 | Middleware registration | `config/application.rb` | ✅ `config.middleware.use PrometheusCollector` |
 | `SCC_MINTED_TOTAL` instrumentation | `app/services/blockchain_minting_service.rb` | ✅ Реалізовано |
@@ -319,7 +319,7 @@ end
 >
 > **Разом: 79 метрик = 45 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (48):**
+**Counters:**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -372,7 +372,7 @@ end
 | `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (36):**
+**Gauges:**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -413,7 +413,7 @@ end
 | `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
 | `silkennet_trees_silent` | — | Current number of active trees silent beyond the silence threshold (set on each staleness sweep) |
 
-**Histograms (2):**
+**Histograms:**
 
 | Metric | Labels | Призначення |
 |---|---|---|
