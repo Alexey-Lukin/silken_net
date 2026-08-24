@@ -47,6 +47,8 @@ en:
       insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: the reserve could not be evaluated, so the gate failed closed. Error: %{error}'
       insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] for #%{id}: 30d internal insurance emission %{outstanding} exceeds reserve %{reserve} × %{ratio}. Payout stopped — top up DAO_TREASURY before a manual resolve.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} minted in the last %{window} exceeds the configured ceiling (%{ceiling}). Possible firmware/pipeline bug or misused MINTER key. Verify recent mint tx before topping the ceiling.'
+      non_fire_peril: 'The peril behind alert #%{alert_id} cannot be adjudicated by the fire satellite (FIRMS sees fire only) — neither confirmed nor refuted. Payout and verdict stay frozen until physical inspection: a site visit is required.'
+      obscured_critical_fire: "🔥 Critical fire alert #%{alert_id} is obscured by cloud/canopy — the satellite can neither confirm nor refute it. IMMEDIATE physical inspection required: waiting 48 h for an orbital pass is unacceptable here (life-safety)."
       oracle_balance_low: "%{network} %{signer} Oracle wallet balance (%{balance} %{currency}) is below the minimum threshold (%{min_threshold} %{currency}). Ratio: %{ratio}x. Blockchain transactions will fail without a top-up."
       power_loss: "🚨 CRITICAL: Power loss (%{voltage_mv} mV)! DID: %{did}"
       queen_ota_stuck: "👑 Queen %{uid} was stuck mid-OTA for %{stuck_for_h} h (firmware #%{firmware_id}). The campaign has been withdrawn and the gateway released, so it can receive future updates again; the firmware version is unchanged. Re-deploy manually after checking the link."

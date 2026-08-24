@@ -47,6 +47,8 @@ uk:
       insurance_reserve_hold_eval_error: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: резерв не вдалося оцінити, тож гейт спрацював fail-closed. Error: %{error}'
       insurance_reserve_hold_reserve_inadequate: 'Insurance reserve-gate HOLD [INS.2] для #%{id}: 30-денна внутрішня емісія %{outstanding} перевищує резерв %{reserve} × %{ratio}. Виплату зупинено — поповни DAO_TREASURY перед ручним resolve.'
       mint_volume_anomaly: 'Mint-volume anomaly [ARCH.62] %{token_type}: %{volume} намінтовано за %{window}, що перевищує стелю (%{ceiling}). Можливий баг прошивки/пайплайну або зловжитий MINTER-ключ. Звір останні mint-tx перед підняттям стелі.'
+      non_fire_peril: 'Перил алерту #%{alert_id} не адьюдикує fire-супутник (FIRMS бачить лише пожежу) — ані підтвердити, ані спростувати. Виплата й вирок заморожені до фізичного огляду: потрібен виїзд.'
+      obscured_critical_fire: "🔥 Критичний fire-алерт #%{alert_id} затемнений хмарою/кронопокривом — супутник не підтвердить і не спростує. Потрібен НЕГАЙНИЙ фізичний огляд: чекати 48 год на орбіту тут неприйнятно (life-safety)."
       oracle_balance_low: "%{network} %{signer}: баланс гаманця Оракула (%{balance} %{currency}) нижчий за мінімальний поріг (%{min_threshold} %{currency}). Ratio: %{ratio}x. Блокчейн-транзакції провалюватимуться без поповнення."
       power_loss: "🚨 КРИТИЧНО: Втрата живлення (%{voltage_mv} мВ)! DID: %{did}"
       queen_ota_stuck: "👑 Королева %{uid} зависла посеред OTA на %{stuck_for_h} год (прошивка #%{firmware_id}). Кампанію знято, шлюз звільнено — майбутні оновлення знову доступні; версія прошивки лишилась старою. Повторний деплой — вручну, перевіривши звʼязок."

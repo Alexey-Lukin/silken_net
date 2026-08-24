@@ -301,6 +301,7 @@ module Dclimate
       # локаллю глядача в момент показу; час — поле самого запису.
       @alert.log_resolution(key: "obscured_critical_fire")
       @alert.update!(satellite_status: :inconclusive)
+      escalate_to_field_audit!(message_key: "obscured_critical_fire")
 
       Rails.logger.warn "🛰️ [Cosmic Eye] Алерт ##{@alert.id} — критичний obscured fire → негайний Field Audit " \
                         "(Кат-C, 05_05 §5), без 48h orbital retry."
@@ -318,9 +319,37 @@ module Dclimate
       # окремий оголошений клас (⚖️ у `00_07` I18N.1).
       @alert.log_resolution(key: "non_fire_peril")
       @alert.update!(satellite_status: :inconclusive)
+      escalate_to_field_audit!(message_key: "non_fire_peril")
 
       Rails.logger.info "🛰️ [Cosmic Eye] Алерт ##{@alert.id} (#{@alert.alert_type}) — не-пожежний перил, " \
                         "fire-супутник не адьюдикує → Field Audit (Кат-C, 05_05 §5)."
+    end
+
+    # Спільна нога обох ескалацій вище: `:inconclusive` — це стан ГРОШЕЙ (він HOLD-ить
+    # `InsurancePayoutWorker`), і єдиний його читач саме там. Повістку для ЛЮДИНИ несе
+    # окремий `EwsAlert(:field_audit)` — без нього «ескалація» зупиняла виплату й нікого
+    # не кликала.
+    #
+    # ⛔ **Cluster-scoped СВІДОМО, `tree:` не передавати.** `TreeStalenessSweepWorker`
+    # оголошує стелю: всі per-tree `field_audit` походять звідти, тож його
+    # `resolve_returned_trees` авто-закриє будь-яку per-tree ескалацію, щойно дерево
+    # вийде в ефір. Для пожежі це означало б «вузол відповів по LoRa» ≡ «ліс не горить».
+    # Дискримінатора джерела не існує — доки його немає, tree-гілка тут заборонена.
+    #
+    # Гард на `cluster` — не косметика: `belongs_to :cluster, optional: true`, а
+    # cluster-гілка дедупу ходить у `cluster.ews_alerts` (той самий ідіом, що
+    # `trigger_insurance_payout`/`trigger_slashing` нижче).
+    def escalate_to_field_audit!(message_key:)
+      unless @alert.cluster
+        Rails.logger.warn "🛰️ [Cosmic Eye] Алерт ##{@alert.id} — Field-Audit не створено: алерт без кластера."
+        return
+      end
+
+      EwsAlert.escalate_field_audit!(
+        cluster: @alert.cluster,
+        message_key: message_key,
+        message_params: { alert_id: @alert.id }
+      )
     end
 
     # Генерує dclimate_ref з метаданими супутника для аудит-трейлу.

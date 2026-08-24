@@ -132,6 +132,10 @@ RSpec.describe Dclimate::VerificationService, type: :service do
 
           expect(alert.reload).to be_satellite_inconclusive
           expect(alert.resolution_log.last["key"]).to eq("obscured_critical_fire")
+          # Гард: повістку нема до чого чіпляти (cluster-гілка дедупу ходить у
+          # `cluster.ews_alerts`), тож ескалація тихо пропускається — але тракт
+          # НЕ падає. Дзеркало `trigger_insurance_payout`/`trigger_slashing`.
+          expect(EwsAlert.alert_type_field_audit.count).to eq(0)
         end
       end
     end
@@ -149,6 +153,11 @@ RSpec.describe Dclimate::VerificationService, type: :service do
           expect { service.perform }.not_to raise_error
           expect(alert.reload).to be_satellite_inconclusive
           expect(alert.resolution_log.last["key"]).to eq("obscured_critical_fire")
+          # 🔴 Пін саме на СТВОРЕННЯ повістки. `:inconclusive` — стан ГРОШЕЙ (його
+          # єдиний читач HOLD-ить виплату); людину кличе окремий `EwsAlert`. Без
+          # цього рядка приклад лишається зеленим і тоді, коли «ескалація» не
+          # кличе нікого — саме так дефект і прожив.
+          expect(EwsAlert.alert_type_field_audit.where(cluster: cluster).count).to eq(1)
           # Рендер-свідок: фраза збирається локаллю ГЛЯДАЧА в момент показу.
           I18n.with_locale(:uk) do
             expect(alert.resolution_texts.join).to include("негайний Field Audit")
