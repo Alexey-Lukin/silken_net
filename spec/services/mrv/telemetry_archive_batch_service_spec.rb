@@ -194,9 +194,13 @@ RSpec.describe Mrv::TelemetryArchiveBatchService do
       tx = windowed_tx!
       tx.update_column(:telemetry_merkle_root, "f" * 64)
 
-      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+      allow(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
         .to receive(:increment).with(labels: { reason: "dispatch_drift" })
+
       group = described_class.group([ tx.reload ], token_type: "carbon_coin").first
+
+      expect(SilkenNet::Metrics::TELEMETRY_ARCHIVE_FAILURES_TOTAL)
+        .to have_received(:increment).with(labels: { reason: "dispatch_drift" })
       expect(group.batch).to be_present
     end
   end

@@ -309,8 +309,9 @@ RSpec.describe HardwareKeyService, type: :service do
     it "memoizes the ENV-path derivation (second call touches no crown-jewel)" do
       described_class.derive_iotex_seed("DEVICE-A") # warm: miss → one HKDF call
 
-      expect(OpenSSL::KDF).not_to receive(:hkdf)
+      allow(OpenSSL::KDF).to receive(:hkdf)
       expect(described_class.derive_iotex_seed("DEVICE-A").length).to eq(64)
+      expect(OpenSSL::KDF).not_to have_received(:hkdf)
     end
 
     # [SEC.3 DI] Explicit master_key: derives fresh and must NOT poison the shared
@@ -393,21 +394,31 @@ RSpec.describe HardwareKeyService, type: :service do
     end
 
     it "uses SHA256 as hash algorithm" do
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything,
         hash_including(hash: "SHA256")
       ).and_call_original
 
       described_class.derive_device_key("TEST-DEVICE-001")
+
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything,
+        hash_including(hash: "SHA256")
+      )
     end
 
     it "uses HKDF_INFO constant as info parameter" do
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything,
         hash_including(info: "silken-aes-256-device-key")
       ).and_call_original
 
       described_class.derive_device_key("TEST-DEVICE-002")
+
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything,
+        hash_including(info: "silken-aes-256-device-key")
+      )
     end
 
     # 🔴 [TEST.12, вісь ПРОВЕНАНСУ] Решта трьох info-рядків доти не мали ЖОДНОГО
@@ -419,20 +430,29 @@ RSpec.describe HardwareKeyService, type: :service do
     # Форму взято в сусіда вище: рядок ЛІТЕРАЛОМ, бо саме рядок є контрактом із
     # прошитим пристроєм. Дім значень — `03_05 §3`.
     it "прибиває три інші HKDF-info ЛІТЕРАЛАМИ, бо контракт із залізом — сам рядок" do
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything, hash_including(info: "silken-aes-128-lora-key")
       ).and_call_original
-      described_class.derive_lora_key("TEST-DEVICE-004")
-
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything, hash_including(info: "silken-aes-128-broadcast-key")
       ).and_call_original
-      described_class.derive_broadcast_key(42)
-
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything, hash_including(info: "silken-ed25519-iotex-v1")
       ).and_call_original
+
+      described_class.derive_lora_key("TEST-DEVICE-004")
+      described_class.derive_broadcast_key(42)
       described_class.derive_iotex_seed("TEST-DEVICE-004")
+
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything, hash_including(info: "silken-aes-128-lora-key")
+      )
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything, hash_including(info: "silken-aes-128-broadcast-key")
+      )
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything, hash_including(info: "silken-ed25519-iotex-v1")
+      )
     end
 
     it "returns exactly 64 hex characters (32 bytes)" do
@@ -442,12 +462,17 @@ RSpec.describe HardwareKeyService, type: :service do
     end
 
     it "uses device_uid as HKDF salt" do
-      expect(OpenSSL::KDF).to receive(:hkdf).with(
+      allow(OpenSSL::KDF).to receive(:hkdf).with(
         anything,
         hash_including(salt: "UNIQUE-UID-123")
       ).and_call_original
 
       described_class.derive_device_key("UNIQUE-UID-123")
+
+      expect(OpenSSL::KDF).to have_received(:hkdf).with(
+        anything,
+        hash_including(salt: "UNIQUE-UID-123")
+      )
     end
   end
 

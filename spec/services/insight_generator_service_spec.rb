@@ -468,8 +468,9 @@ RSpec.describe InsightGeneratorService, type: :service do
       allow(AiInsight).to receive(:create!).and_call_original
       allow(AiInsight).to receive(:create!).with(hash_including(analyzable: tree)).and_raise(StandardError, "test error")
 
-      expect(Rails.logger).to receive(:error).with(/Insight.*Помилка/)
+      allow(Rails.logger).to receive(:error).with(/Insight.*Помилка/)
       described_class.call(date)
+      expect(Rails.logger).to have_received(:error).with(/Insight.*Помилка/)
     end
 
     context "with stress_index calculations" do
@@ -766,7 +767,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
 
       it "falls back to heuristic and logs error" do
-        expect(Rails.logger).to receive(:error).with(/ML-модель не містить клас 1/)
+        allow(Rails.logger).to receive(:error).with(/ML-модель не містить клас 1/)
 
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
@@ -776,6 +777,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
         described_class.call(date)
 
+        expect(Rails.logger).to have_received(:error).with(/ML-модель не містить клас 1/)
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
         # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
         expect(insight.stress_index).to be_zero
@@ -790,7 +792,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
 
       it "falls back to heuristic and logs warning" do
-        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+        allow(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
 
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
@@ -800,6 +802,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
         described_class.call(date)
 
+        expect(Rails.logger).to have_received(:warn).with(/Не вдалося завантажити ML-модель/)
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
         # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
         expect(insight.stress_index).to be_zero
@@ -817,7 +820,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
 
       it "falls back to heuristic and logs warning about integrity" do
-        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+        allow(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
 
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 3.0,
@@ -827,6 +830,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
         described_class.call(date)
 
+        expect(Rails.logger).to have_received(:warn).with(/Не вдалося завантажити ML-модель/)
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
         # [E.64] Heuristic fallback: homeostasis(0), z=3.0 no longer penalized → 0.0
         expect(insight.stress_index).to be_zero
@@ -842,7 +846,7 @@ RSpec.describe InsightGeneratorService, type: :service do
       end
 
       it "falls back to heuristic and logs warning about missing digest" do
-        expect(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
+        allow(Rails.logger).to receive(:warn).with(/Не вдалося завантажити ML-модель/)
 
         create(:telemetry_log, tree: tree,
           temperature_c: 25.0, voltage_mv: 3500, z_value: 0.5,
@@ -852,6 +856,7 @@ RSpec.describe InsightGeneratorService, type: :service do
 
         described_class.call(date)
 
+        expect(Rails.logger).to have_received(:warn).with(/Не вдалося завантажити ML-модель/)
         insight = AiInsight.find_by(analyzable: tree, insight_type: :daily_health_summary, target_date: date)
         expect(insight.stress_index).to be_zero
       end

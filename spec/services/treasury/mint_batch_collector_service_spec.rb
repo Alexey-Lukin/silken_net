@@ -41,8 +41,9 @@ RSpec.describe Treasury::MintBatchCollectorService do
   describe ".call" do
     context "when no pending transactions exist" do
       it "returns early without calling BlockchainMintingService" do
-        expect(BlockchainMintingService).not_to receive(:call_batch)
+        allow(BlockchainMintingService).to receive(:call_batch)
         described_class.call
+        expect(BlockchainMintingService).not_to have_received(:call_batch)
       end
     end
 
@@ -68,14 +69,17 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "dispatches batch minting for transactions above threshold" do
-        expect(BlockchainMintingService).to receive(:call_batch)
+        allow(BlockchainMintingService).to receive(:call_batch)
           .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
         described_class.call
+        expect(BlockchainMintingService).to have_received(:call_batch)
+          .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
       end
 
       it "sends all transactions in a single batch" do
-        expect(BlockchainMintingService).to receive(:call_batch).once
+        allow(BlockchainMintingService).to receive(:call_batch)
         described_class.call
+        expect(BlockchainMintingService).to have_received(:call_batch).once
       end
     end
 
@@ -101,8 +105,9 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "does not dispatch when below minimum batch size" do
-        expect(BlockchainMintingService).not_to receive(:call_batch)
+        allow(BlockchainMintingService).to receive(:call_batch)
         described_class.call
+        expect(BlockchainMintingService).not_to have_received(:call_batch)
       end
     end
 
@@ -129,9 +134,11 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "dispatches urgent transactions even below threshold" do
-        expect(BlockchainMintingService).to receive(:call_batch)
+        allow(BlockchainMintingService).to receive(:call_batch)
           .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
         described_class.call
+        expect(BlockchainMintingService).to have_received(:call_batch)
+          .with(array_including(*transactions.map(&:id)), created_at_span: all(be_a(Time)).and(be_present))
       end
     end
 
@@ -170,8 +177,9 @@ RSpec.describe Treasury::MintBatchCollectorService do
       end
 
       it "dispatches separate batches per token type" do
-        expect(BlockchainMintingService).to receive(:call_batch).twice
+        allow(BlockchainMintingService).to receive(:call_batch)
         described_class.call
+        expect(BlockchainMintingService).to have_received(:call_batch).twice
       end
     end
   end

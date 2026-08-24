@@ -52,9 +52,11 @@ RSpec.describe Chainlink::OracleDispatchService do
 
     # [ARCH.53]: демоут-інваріант — dispatch суто локальний (жодного RPC/LINK-cost).
     it "never opens an RPC connection" do
-      expect(Web3::RpcConnectionPool).not_to receive(:client_for)
+      allow(Web3::RpcConnectionPool).to receive(:client_for)
 
       described_class.new(telemetry_log).dispatch!
+
+      expect(Web3::RpcConnectionPool).not_to have_received(:client_for)
     end
   end
 end

@@ -273,11 +273,13 @@ RSpec.describe EmergencyResponseService do
     it "logs info but does not create commands" do
       create(:actuator, :water_valve, gateway: gateway, state: :idle)
 
-      expect(Rails.logger).to receive(:info).with(/Тип тривоги.*обробляється лише сповіщенням/)
+      allow(Rails.logger).to receive(:info).with(/Тип тривоги.*обробляється лише сповіщенням/)
 
       expect {
         described_class.call(alert)
       }.not_to change(ActuatorCommand, :count)
+
+      expect(Rails.logger).to have_received(:info).with(/Тип тривоги.*обробляється лише сповіщенням/)
     end
   end
 
@@ -310,9 +312,11 @@ RSpec.describe EmergencyResponseService do
 
       allow(ActuatorCommand).to receive(:insert_all).and_raise(StandardError, "DB insert failed")
 
-      expect(Rails.logger).to receive(:error).with(/Масове створення наказів провалене/)
+      allow(Rails.logger).to receive(:error).with(/Масове створення наказів провалене/)
 
       described_class.call(alert)
+
+      expect(Rails.logger).to have_received(:error).with(/Масове створення наказів провалене/)
     end
   end
 

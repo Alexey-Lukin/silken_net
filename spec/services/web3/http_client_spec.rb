@@ -149,9 +149,9 @@ RSpec.describe Web3::HttpClient do
       described_class.get("https://api.example.com/test")
 
       # Reset should close and clear the session
-      expect(mock_session).to receive(:close)
       described_class.reset!
 
+      expect(mock_session).to have_received(:close)
       expect(Thread.current[:web3_httpx_session]).to be_nil
     end
   end
@@ -163,12 +163,12 @@ RSpec.describe Web3::HttpClient do
       allow(success_response).to receive(:is_a?).with(HTTPX::ErrorResponse).and_return(false)
       allow(configured_session).to receive_messages(post: success_response, get: success_response)
 
-      # HTTPX.plugin(:persistent) should be called only once
-      expect(HTTPX).to receive(:plugin).with(:persistent).once.and_return(mock_session)
-
       described_class.post("https://api.example.com/first", body: { a: 1 })
       described_class.get("https://api.example.com/second")
       described_class.post("https://api.example.com/third", body: { b: 2 })
+
+      # HTTPX.plugin(:persistent) should be called only once
+      expect(HTTPX).to have_received(:plugin).with(:persistent).once
     end
   end
 

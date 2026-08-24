@@ -260,22 +260,30 @@ RSpec.describe Web3::ResilientClient do
       allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
       allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
 
-      expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment).with(
+      allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment).with(
         labels: { network: "alchemy.example.com:443", error_type: "timeout" }
       )
 
       client.eth_block_number
+
+      expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to have_received(:increment).with(
+        labels: { network: "alchemy.example.com:443", error_type: "timeout" }
+      )
     end
 
     it "sets RPC_CIRCUIT_BREAKER_OPEN gauge to 1.0 when circuit opens" do
       allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)
       allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
 
-      expect(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to receive(:set).with(
+      allow(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to receive(:set).with(
         1.0, labels: { provider: "alchemy.example.com:443" }
       )
 
       described_class::MAX_FAILURES.times { client.eth_block_number }
+
+      expect(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to have_received(:set).with(
+        1.0, labels: { provider: "alchemy.example.com:443" }
+      )
     end
 
     it "sets RPC_CIRCUIT_BREAKER_OPEN gauge to 0.0 when circuit recovers" do
@@ -291,11 +299,15 @@ RSpec.describe Web3::ResilientClient do
       # Allow primary to succeed now
       allow(primary_eth_client).to receive(:eth_block_number).and_return("0xrecovered")
 
-      expect(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to receive(:set).with(
+      allow(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to receive(:set).with(
         0.0, labels: { provider: "alchemy.example.com:443" }
       )
 
       client.eth_block_number
+
+      expect(SilkenNet::Metrics::RPC_CIRCUIT_BREAKER_OPEN).to have_received(:set).with(
+        0.0, labels: { provider: "alchemy.example.com:443" }
+      )
     end
 
     it "classifies rate limit errors correctly" do
@@ -303,11 +315,15 @@ RSpec.describe Web3::ResilientClient do
       allow(primary_eth_client).to receive(:eth_block_number).and_raise(error)
       allow(secondary_eth_client).to receive(:eth_block_number).and_return("0xok")
 
-      expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment).with(
+      allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment).with(
         labels: { network: "alchemy.example.com:443", error_type: "rate_limited" }
       )
 
       client.eth_block_number
+
+      expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to have_received(:increment).with(
+        labels: { network: "alchemy.example.com:443", error_type: "rate_limited" }
+      )
     end
   end
 

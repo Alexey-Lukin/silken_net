@@ -348,9 +348,11 @@ RSpec.describe BlockchainBurningService do
       end
 
       it "schedules BlockchainConfirmationWorker after sending transaction" do
-        expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
+        allow(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String)) # [ARCH.52] +created_at
 
         described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, fake_tx_hash, kind_of(String))
       end
 
       # [ARCH.45] Double-burn crash-window guard — slash() необоротний; на повторному виклику
@@ -756,10 +758,13 @@ RSpec.describe BlockchainBurningService do
       # `defined?`-memo (не ||=): false — легітимне закешоване значення, а не привід re-query.
       it "memoizes cause_uplift_enabled? — false is cached, not re-read from SystemParameter" do
         allow(SystemParameter).to receive(:current).and_call_original
-        expect(SystemParameter).to receive(:current)
-          .with(:slash_cause_uplift_enabled, default: false).once.and_return(false)
+        allow(SystemParameter).to receive(:current)
+          .with(:slash_cause_uplift_enabled, default: false).and_return(false)
 
         2.times { service.send(:cause_uplift_enabled?) }
+
+        expect(SystemParameter).to have_received(:current)
+          .with(:slash_cause_uplift_enabled, default: false).once
       end
 
       it "stays inert even when a real cause signal is present" do

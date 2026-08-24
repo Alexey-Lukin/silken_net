@@ -173,9 +173,11 @@ RSpec.describe Ethereum::StateAnchorService do
       # Verify that generate_state_root wraps SQL queries in a transaction
       # with isolation level :repeatable_read to prevent inconsistent snapshots
       # when parallel workers (MintCarbonCoinWorker, AuditLogWorker) write between queries.
-      expect(ActiveRecord::Base).to receive(:transaction).with(isolation: :repeatable_read).and_call_original
+      allow(ActiveRecord::Base).to receive(:transaction).with(isolation: :repeatable_read).and_call_original
 
       described_class.new.generate_state_root
+
+      expect(ActiveRecord::Base).to have_received(:transaction).with(isolation: :repeatable_read)
     end
   end
 
@@ -316,12 +318,13 @@ RSpec.describe Ethereum::StateAnchorService do
     it "rescues IOError and keeps anchor as pending (S6.7 double-anchor guard)" do
       allow(mock_client).to receive(:transact).and_raise(IOError, "Connection reset by peer")
 
-      expect(Rails.logger).to receive(:warn).with(/Connection error.*kept as :pending/)
+      allow(Rails.logger).to receive(:warn).with(/Connection error.*kept as :pending/)
 
       expect {
         described_class.new.anchor_to_l1!
       }.to raise_error(RuntimeError, /Ethereum L1 Connection Error/)
 
+      expect(Rails.logger).to have_received(:warn).with(/Connection error.*kept as :pending/)
       expect(EthereumAnchor.last).to be_status_pending
     end
 
@@ -352,9 +355,11 @@ RSpec.describe Ethereum::StateAnchorService do
     it "logs successful anchoring" do
       allow(mock_client).to receive(:transact).and_return("0x" + "bb" * 32)
 
-      expect(Rails.logger).to receive(:info).with(/State Root anchored/)
+      allow(Rails.logger).to receive(:info).with(/State Root anchored/)
 
       described_class.new.anchor_to_l1!
+
+      expect(Rails.logger).to have_received(:info).with(/State Root anchored/)
     end
 
     context "with double-anchoring guard" do
@@ -368,10 +373,11 @@ RSpec.describe Ethereum::StateAnchorService do
           tx_hash: "0x#{"dd" * 32}"
         )
 
-        expect(Rails.logger).to receive(:info).with(/In-flight anchor detected/)
+        allow(Rails.logger).to receive(:info).with(/In-flight anchor detected/)
 
         result = described_class.new.anchor_to_l1!
 
+        expect(Rails.logger).to have_received(:info).with(/In-flight anchor detected/)
         expect(result).to eq(sent_anchor)
         expect(EthereumAnchor.count).to eq(1)
         # [ARCH.66 INFO-7] resume-гілка re-arm'ить поллер (recovery якщо enqueue загубився / поллер помер)

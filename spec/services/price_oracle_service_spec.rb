@@ -57,9 +57,11 @@ RSpec.describe PriceOracleService do
       allow(Rails.cache).to receive(:fetch).and_call_original
       allow(Rails.cache).to receive(:fetch).with("scc_market_price", anything).and_raise(StandardError, "RPC connection failed")
 
-      expect(Rails.logger).to receive(:error).with(/ORACLE ERROR.*RPC connection failed/)
+      allow(Rails.logger).to receive(:error).with(/ORACLE ERROR.*RPC connection failed/)
 
       described_class.current_scc_price
+
+      expect(Rails.logger).to have_received(:error).with(/ORACLE ERROR.*RPC connection failed/)
     end
 
     context "when in production environment" do

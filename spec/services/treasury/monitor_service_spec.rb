@@ -438,8 +438,9 @@ RSpec.describe Treasury::MonitorService do
       create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
       arm(max_scc: 1_000, breaker: false)
 
-      expect(Kredis).not_to receive(:flag)
+      allow(Kredis).to receive(:flag)
       described_class.call
+      expect(Kredis).not_to have_received(:flag)
     end
   end
 
@@ -564,9 +565,11 @@ RSpec.describe Treasury::MonitorService do
       stub_const("ENV", ENV.to_h.except(solana_config[:env_rpc_key].to_s))
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
 
-      expect(Rails.logger).to receive(:warn).with(/not set in production/)
+      allow(Rails.logger).to receive(:warn).with(/not set in production/)
 
       result = described_class.new.send(:fetch_solana_balance, solana_config)
+
+      expect(Rails.logger).to have_received(:warn).with(/not set in production/)
       expect(result).to eq(0)
     end
 

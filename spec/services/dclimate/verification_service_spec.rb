@@ -111,8 +111,9 @@ RSpec.describe Dclimate::VerificationService, type: :service do
       end
 
       it "не питає dClimate узагалі — верифікувати нема чого" do
-        expect(service).not_to receive(:fetch_firms_data)
+        allow(service).to receive(:fetch_firms_data)
         service.perform
+        expect(service).not_to have_received(:fetch_firms_data)
       end
 
       # 🔴 Критична гілка — і провал гілкового покриття вказав саме на неї,
@@ -223,8 +224,9 @@ RSpec.describe Dclimate::VerificationService, type: :service do
           end
 
           it "never marks rejected_fraud and never queries the FIRMS fire-API" do
-            expect(service).not_to receive(:query_dclimate_api)
+            allow(service).to receive(:query_dclimate_api)
             service.perform
+            expect(service).not_to have_received(:query_dclimate_api)
             expect(alert.reload).not_to be_satellite_rejected_fraud
           end
 
@@ -497,14 +499,16 @@ RSpec.describe Dclimate::VerificationService, type: :service do
     end
 
     it "returns 0 for unexpected non-nil string values with warning" do
-      expect(Rails.logger).to receive(:warn).with(/Unexpected FIRMS confidence/)
+      allow(Rails.logger).to receive(:warn).with(/Unexpected FIRMS confidence/)
       result = service.send(:parse_confidence, "unknown_value")
+      expect(Rails.logger).to have_received(:warn).with(/Unexpected FIRMS confidence/)
       expect(result).to eq(0)
     end
 
     it "returns 0 for nil without warning" do
-      expect(Rails.logger).not_to receive(:warn)
+      allow(Rails.logger).to receive(:warn)
       result = service.send(:parse_confidence, nil)
+      expect(Rails.logger).not_to have_received(:warn)
       expect(result).to eq(0)
     end
   end

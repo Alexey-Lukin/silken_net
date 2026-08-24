@@ -193,10 +193,13 @@ RSpec.describe FactoryFlashing::Session do
 
     it "Гілка B: обидва OTA call-sites отримують адаптерний ключ" do
       session = make_session(gilka: "B", se_serial_hex: "0123456789ABCDEF01")
-      expect(OtaHmacKeyService).to receive(:fetch_for)
-        .with(tree.cluster_id, master_key: di_key).at_least(:once).and_call_original
+      allow(OtaHmacKeyService).to receive(:fetch_for)
+        .with(tree.cluster_id, master_key: di_key).and_call_original
 
       described_class.run(session: session, executor: executor, master_key_source: di_source)
+
+      expect(OtaHmacKeyService).to have_received(:fetch_for)
+        .with(tree.cluster_id, master_key: di_key).at_least(:once)
     end
   end
 
@@ -207,10 +210,11 @@ RSpec.describe FactoryFlashing::Session do
     end
 
     it "completes without running SecureElementProvisioner (gateway has no ATCA chip)" do
-      expect(FactoryFlashing::SecureElementProvisioner).not_to receive(:new)
+      allow(FactoryFlashing::SecureElementProvisioner).to receive(:new)
       outcome = described_class.run(
         session: session, executor: executor, master_key_source: master_key_source
       )
+      expect(FactoryFlashing::SecureElementProvisioner).not_to have_received(:new)
       expect(session.reload).to be_completed
       expect(outcome.se_transcript).to be_nil
     end
@@ -241,11 +245,13 @@ RSpec.describe FactoryFlashing::Session do
       allow(session).to receive(:fail_with!).and_raise(ActiveRecord::StatementInvalid, "db down")
       service.instance_variable_set(:@session, session)
 
-      expect(Rails.logger).to receive(:error).with(a_string_matching(/Could not record session failure.*db down/))
+      allow(Rails.logger).to receive(:error).with(a_string_matching(/Could not record session failure.*db down/))
 
       expect {
         service.send(:capture_failure, StandardError.new("boom"))
       }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:error).with(a_string_matching(/Could not record session failure.*db down/))
     end
   end
 end

@@ -164,9 +164,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       # `check_firmware_mismatch!` — останній такий крок, і він лишається живим.
       allow_any_instance_of(described_class).to receive(:check_firmware_mismatch!).and_raise(ActiveRecord::RecordInvalid)
 
-      expect(Rails.logger).to receive(:error).with(/Telemetry Error/)
+      allow(Rails.logger).to receive(:error).with(/Telemetry Error/)
       expect { described_class.call(chunk) }.not_to raise_error
 
+      expect(Rails.logger).to have_received(:error).with(/Telemetry Error/)
       # The key assertion: workers must NOT be enqueued when transaction rolls back
       expect(IotexVerificationWorker).not_to have_received(:perform_async)
       expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
@@ -258,8 +259,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
-      expect(Rails.logger).to receive(:error).with(/Telemetry Error/)
+      allow(Rails.logger).to receive(:error).with(/Telemetry Error/)
       expect { described_class.call(chunk) }.not_to raise_error
+      expect(Rails.logger).to have_received(:error).with(/Telemetry Error/)
     end
   end
 
@@ -382,9 +384,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         stale = TelemetryLog::FW_REPORT_SEMANTIC_BIT |
                 ((active_firmware.id + 999) & TelemetryLog::FW_REPORT_ID_MASK)
 
-        expect(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
+        allow(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
         service.send(:check_firmware_mismatch!, tree, stale)
 
+        expect(Rails.logger).to have_received(:info).with(/ARCH\.85 OTA Mismatch/)
         expect(tree.reload.firmware_update_status).to eq("fw_idle")
       end
 
@@ -523,31 +526,36 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       end
 
       it "stays silent for a conformant homeostasis packet (GP within 5..31)" do
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :homeostasis }, status_byte_for(0, 18))
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "flags a homeostasis packet whose GP is below the metabolic floor (GP < 5)" do
         # firmware pack_status_byte clamps homeostasis GP to ≥ 5; GP=3 cannot come
         # from current firmware → a corrupt/forged StatusByte.
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :homeostasis }, status_byte_for(0, 3))
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
       it "stays silent for a conformant stress packet (GP == 1)" do
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 1))
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "flags a stress packet whose GP is not the survival floor (GP ≠ 1)" do
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 7))
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
       it "does not flag anomaly/vm_error — GP already neutralised by emission_eligible_growth_points" do
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :anomaly }, status_byte_for(2, 9))
         service.send(:check_metabolic_divergence!, tree, { bio_status: :vm_error }, status_byte_for(3, 31))
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
     end
 
@@ -568,8 +576,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         # device says "homeostasis" → divergence MUST be detected (server_healthy=false)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
       it "[FW.8] no divergence when z_value is within global defaults and family is nil" do
@@ -578,48 +587,54 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, bio_status: :homeostasis } # well within 2..45
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_no_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "skips when server_z is nil" do
         service = described_class.new("", nil)
         attributes = { z_value: nil, bio_status: :homeostasis }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "skips when device_bio_status is nil" do
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, bio_status: nil }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
         service = described_class.new("", nil)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
       it "does not flag when both device and server agree on healthy" do
         service = described_class.new("", nil)
         attributes = { z_value: 25.0, bio_status: :homeostasis }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       it "does not flag when both device and server agree on unhealthy" do
         service = described_class.new("", nil)
         attributes = { z_value: 50.0, bio_status: :stress }
 
-        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
       # [FW.8] Дискримінуючий пін родинної смуги НА РІВНІ СЕРВІСУ — шов, якого
@@ -662,8 +677,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
           # Even with absurd device_z drift, when toggle is off the
           # categorical pathway is the only one that runs and stays silent.
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
         end
 
         it "runs numeric branch and stays silent when drift is within ε" do
@@ -673,8 +689,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           ))
           attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
         end
 
         it "increments fraud metric when drift exceeds ε (numeric mismatch)" do
@@ -686,8 +703,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           # Categorical also passes (both healthy) → only ONE increment from numeric.
           attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.5 }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment).once
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment).once
         end
 
         it "uses DEFAULT_DCI_EPSILON (0.001) when GAIA_DCI_NUMERIC_EPSILON is unset" do
@@ -695,8 +713,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           # |25.0 - 25.0005| = 0.0005 < 0.001 (default) → silent.
           attributes = { z_value: 25.0, bio_status: :homeostasis, device_z: 25.0005 }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
           expect(service.send(:numeric_dci_epsilon)).to eq(described_class::DEFAULT_DCI_EPSILON)
         end
 
@@ -717,8 +736,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           # No device_z key — feature-flagged hook cannot fire.
           attributes = { z_value: 25.0, bio_status: :homeostasis }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, tree_with_family, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
         end
       end
 
@@ -752,9 +772,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be(true)
           expect(TimeSyncDownlinkWorker).to have_received(:perform_async).with(recovery_tree.cluster_id)
         end
@@ -770,9 +791,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
@@ -788,9 +810,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, recovery_tree, attributes)
 
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
           expect(attributes[:time_unsynced_fallback]).to be_falsey
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
@@ -809,8 +832,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
             temperature_c: 20, acoustic_events: 5, metabolism_s: 60, voltage_mv: 3300
           }
 
-          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+          allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
           service.send(:check_z_divergence!, no_key_tree, attributes)
+          expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
           expect(TimeSyncDownlinkWorker).not_to have_received(:perform_async)
         end
       end
@@ -845,8 +869,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
           allow(TimeSyncDownlinkWorker).to receive(:perform_async)
           attributes = { temperature_c: 20, acoustic_events: 0, metabolism_s: 60, voltage_mv: 3300 }
 
-          expect(SilkenNet::SeedDerivation).to receive(:initial_state).exactly(3).times.and_return([ 0.1, 0.2, 0.3 ])
+          allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_return([ 0.1, 0.2, 0.3 ])
           service.send(:try_time_sync_recovery, recovery_tree, attributes, thresholds, true)
+          expect(SilkenNet::SeedDerivation).to have_received(:initial_state).exactly(3).times
         end
 
         it "includes FIRMWARE_RTC_DEFAULT_EPOCH_DAY as one of the candidates" do
@@ -961,18 +986,20 @@ RSpec.describe TelemetryUnpackerService, type: :service do
         chunk = build_chunk(did_hex, -70, 3500, 25, 255, 100, 0, 3)
 
         allow(Rails.logger).to receive(:warn).and_call_original
-        expect(Rails.logger).to receive(:warn).with(/Acoustic Overflow/).once
 
         described_class.call(chunk)
+
+        expect(Rails.logger).to have_received(:warn).with(/Acoustic Overflow/).once
       end
 
       it "does not log warning for acoustic_events below 255" do
         chunk = build_chunk(did_hex, -70, 3500, 25, 254, 100, 0, 3)
 
         allow(Rails.logger).to receive(:warn).and_call_original
-        expect(Rails.logger).not_to receive(:warn).with(/Acoustic Overflow/)
 
         described_class.call(chunk)
+
+        expect(Rails.logger).not_to have_received(:warn).with(/Acoustic Overflow/)
       end
     end
 
@@ -1285,7 +1312,7 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     end
 
     it "writes nonce key with TTL ≈ 25 hours (replay window guard)" do
-      expect(Rails.cache).to receive(:write).with(
+      allow(Rails.cache).to receive(:write).with(
         "silken:panic:nonce:#{extracted_did}:42",
         "1",
         hash_including(expires_in: TelemetryUnpackerService::PANIC_NONCE_TTL,
@@ -1293,6 +1320,13 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       ).and_call_original
 
       described_class.call(build_panic_chunk(did_hex, 42))
+
+      expect(Rails.cache).to have_received(:write).with(
+        "silken:panic:nonce:#{extracted_did}:42",
+        "1",
+        hash_including(expires_in: TelemetryUnpackerService::PANIC_NONCE_TTL,
+                       unless_exist: true)
+      )
     end
   end
 
@@ -1750,8 +1784,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
     it "does not credit the wallet when growth_points is zero" do
       # status_byte=0 → wire growth_points nibble=0 → stored gp=0.
-      expect(tree.wallet).not_to receive(:credit!)
+      allow(tree.wallet).to receive(:credit!)
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(tree.wallet).not_to have_received(:credit!)
       expect(TelemetryLog.last.growth_points).to eq(0)
     end
 
@@ -1769,8 +1804,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       tree.update!(tree_family: tiny)
       tiny_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 1, 3) # wire nibble=1 → gp=2
 
-      expect(tree.wallet).not_to receive(:credit!)
+      allow(tree.wallet).to receive(:credit!)
       expect { described_class.call(tiny_chunk) }.to change(TelemetryLog, :count).by(1)
+      expect(tree.wallet).not_to have_received(:credit!)
     end
   end
 end

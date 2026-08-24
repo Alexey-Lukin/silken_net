@@ -166,7 +166,7 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         before { allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")) }
 
         it "raises VerificationError (fail-closed) and does not call W3bstream" do
-          expect(Web3::HttpClient).not_to receive(:post)
+          allow(Web3::HttpClient).to receive(:post)
 
           service = described_class.new(telemetry_log)
 
@@ -176,6 +176,8 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
             Iotex::W3bstreamVerificationService::VerificationError,
             /SHA256 fallback заборонений у production/
           )
+
+          expect(Web3::HttpClient).not_to have_received(:post)
         end
 
         it "still increments the fallback metric for observability" do
@@ -242,11 +244,14 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
         # Це усуває key-reuse antipattern: AES key (LoRa AES-128 = 16 bytes) НЕ
         # підходить як Ed25519 seed (потребує рівно 32 bytes).
         expected_seed_hex = HardwareKeyService.derive_iotex_seed(tree.did)
-        expect(Ed25519Crypto::SigningService).to receive(:sign)
+        allow(Ed25519Crypto::SigningService).to receive(:sign)
           .with(expected_seed_hex, kind_of(String))
           .and_call_original
 
         described_class.new(telemetry_log).verify!
+
+        expect(Ed25519Crypto::SigningService).to have_received(:sign)
+          .with(expected_seed_hex, kind_of(String))
         expect(signed_payload[:hardware_signature]).to be_present
       end
     end

@@ -60,8 +60,9 @@ RSpec.describe FactoryFlashing::TreeResolver do
     end
 
     it "не enqueue'ить peaq-реєстрацію (offline-фабрика, transitional)" do
-      expect(PeaqRegistrationWorker).not_to receive(:perform_async)
+      allow(PeaqRegistrationWorker).to receive(:perform_async)
       described_class.resolve!(uid_hex: uid, cluster_id: cluster.id, tree_family_id: family.id)
+      expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
     end
   end
 end

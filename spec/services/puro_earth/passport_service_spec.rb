@@ -127,9 +127,11 @@ RSpec.describe PuroEarth::PassportService do
     end
 
     it "logs successful anchoring" do
-      expect(Rails.logger).to receive(:info).with(a_string_matching(/Passport anchored on-chain/))
+      allow(Rails.logger).to receive(:info).with(a_string_matching(/Passport anchored on-chain/))
 
       described_class.new(payload).anchor!
+
+      expect(Rails.logger).to have_received(:info).with(a_string_matching(/Passport anchored on-chain/))
     end
 
     it "wraps RPC errors in AnchoringError for Sidekiq retry" do

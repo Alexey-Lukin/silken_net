@@ -20,8 +20,9 @@ RSpec.describe FactoryFlashing::Executor do
     end
 
     it "prints each command with a [dry-run] prefix and does not spawn" do
-      expect(Open3).not_to receive(:capture3)
+      allow(Open3).to receive(:capture3)
       executor.run(commands)
+      expect(Open3).not_to have_received(:capture3)
       expect(io.string.lines.map(&:chomp)).to eq([
         "[dry-run] STM32_Programmer_CLI -c port=SWD",
         "[dry-run] STM32_Programmer_CLI -w32 0x0803E000 0x4B45594C"
@@ -48,8 +49,9 @@ RSpec.describe FactoryFlashing::Executor do
     it "spawns each command via Open3.capture3 when programmer is present" do
       allow(described_class).to receive(:programmer_available?).and_return(true)
       ok_status = instance_double(Process::Status, success?: true, exitstatus: 0)
-      expect(Open3).to receive(:capture3).twice.and_return([ "OK", "", ok_status ])
+      allow(Open3).to receive(:capture3).and_return([ "OK", "", ok_status ])
       executor.run(commands)
+      expect(Open3).to have_received(:capture3).twice
       expect(executor.results.map(&:stdout)).to eq([ "OK", "OK" ])
     end
 
@@ -57,12 +59,13 @@ RSpec.describe FactoryFlashing::Executor do
       allow(described_class).to receive(:programmer_available?).and_return(true)
       ok = instance_double(Process::Status, success?: true, exitstatus: 0)
       bad = instance_double(Process::Status, success?: false, exitstatus: 7)
-      expect(Open3).to receive(:capture3).twice.and_return(
+      allow(Open3).to receive(:capture3).and_return(
         [ "OK", "", ok ],
         [ "", "device locked", bad ]
       )
       expect { executor.run(commands) }
         .to raise_error(described_class::CommandFailedError, /exit=7.*device locked/)
+      expect(Open3).to have_received(:capture3).twice
       expect(executor.results.size).to eq(2)
     end
   end

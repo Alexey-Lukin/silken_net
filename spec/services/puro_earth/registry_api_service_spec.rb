@@ -163,11 +163,15 @@ RSpec.describe PuroEarth::RegistryApiService do
     end
 
     it "logs successful submission" do
-      expect(Rails.logger).to receive(:info).with(
+      allow(Rails.logger).to receive(:info).with(
         a_string_matching(/D-MRV submission accepted.*CORC ref: #{corc_ref}/)
       )
 
       described_class.new(payload, tx_hash: tx_hash).submit!
+
+      expect(Rails.logger).to have_received(:info).with(
+        a_string_matching(/D-MRV submission accepted.*CORC ref: #{corc_ref}/)
+      )
     end
 
     context "when API response contains only submission_id" do

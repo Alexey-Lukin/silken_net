@@ -36,13 +36,19 @@ RSpec.describe Notifications::TelegramTransport do
       allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with("TELEGRAM_BOT_TOKEN").and_return(token)
 
-      expect(Web3::HttpClient).to receive(:post).with(
+      allow(Web3::HttpClient).to receive(:post).with(
         "https://api.telegram.org/bot#{token}/sendMessage",
         body: { chat_id: "42", text: "Пожежа в кластері" },
         service_name: "Telegram"
       )
 
       described_class.send_message(chat_id: "42", text: "Пожежа в кластері")
+
+      expect(Web3::HttpClient).to have_received(:post).with(
+        "https://api.telegram.org/bot#{token}/sendMessage",
+        body: { chat_id: "42", text: "Пожежа в кластері" },
+        service_name: "Telegram"
+      )
     end
   end
 end
