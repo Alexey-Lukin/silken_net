@@ -6,9 +6,7 @@ require "rails_helper"
 RSpec.describe EwsAlert, type: :model do
   before do
     allow(AlertNotificationWorker).to receive(:perform_async)
-    allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
-    allow_any_instance_of(described_class).to receive(:broadcast_alert_update)
-    allow_any_instance_of(described_class).to receive(:broadcast_new_alert)
+    silence_broadcasts!(:alert_notify, :alert_update, :alert_new)
   end
 
   # =========================================================================
@@ -887,10 +885,6 @@ RSpec.describe EwsAlert, type: :model do
   describe "AASM state machine" do
     let(:cluster) { create(:cluster, organization: create(:organization)) }
     let(:tree) { create(:tree, cluster: cluster) }
-
-    before do
-      allow_any_instance_of(described_class).to receive(:dispatch_notifications!)
-    end
 
     describe "initial state" do
       it "starts as active" do

@@ -4,9 +4,7 @@
 require "rails_helper"
 
 RSpec.describe Tree, type: :model do
-  before do
-    allow_any_instance_of(described_class).to receive(:broadcast_map_update)
-  end
+  before { silence_broadcasts!(:tree_map) }
 
   describe "after_create callbacks" do
     it "creates a wallet after creation" do
@@ -454,10 +452,6 @@ RSpec.describe Tree, type: :model do
   # AASM STATE MACHINE
   # =========================================================================
   describe "AASM state machine" do
-    before do
-      allow_any_instance_of(described_class).to receive(:broadcast_map_update)
-    end
-
     describe "initial state" do
       it "starts as active" do
         tree = build(:tree, status: :active)

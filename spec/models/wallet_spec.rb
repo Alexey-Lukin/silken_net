@@ -4,9 +4,7 @@
 require "rails_helper"
 
 RSpec.describe Wallet, type: :model do
-  before do
-    allow_any_instance_of(described_class).to receive(:broadcast_balance_update)
-  end
+  before { silence_broadcasts!(:wallet_balance) }
 
   # [UI.4 · I18N.2] Контракт трансляції балансу. Кожен із трьох прикладів пінить
   # окремий баг, який тут уже жив: (1) стрім був голий `wallet`, якого не слухала
