@@ -289,10 +289,6 @@ RSpec/MultipleMemoizedHelpers:
 RSpec/AnyInstance:
   Enabled: false
 
-# Дозволяємо expect(Logger) для перевірки логування
-RSpec/MessageSpies:
-  Enabled: false
-
 # Іменовані let з індексами (tree1, tree2) допустимі для парних порівнянь
 RSpec/IndexedLet:
   Enabled: false
