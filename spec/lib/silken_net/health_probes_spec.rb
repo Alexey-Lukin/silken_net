@@ -93,9 +93,10 @@ RSpec.describe SilkenNet::HealthProbes do
 
   describe ".database_reachable?" do
     it "робить раунд-тріп, а не питає обʼєкт зʼєднання про нього самого" do
-      expect(ActiveRecord::Base.connection).to receive(:execute).with("SELECT 1").and_call_original
+      allow(ActiveRecord::Base.connection).to receive(:execute).with("SELECT 1").and_call_original
 
       expect(described_class.database_reachable?).to be(true)
+      expect(ActiveRecord::Base.connection).to have_received(:execute).with("SELECT 1")
     end
 
     it "віддає false, коли база не відповідає" do

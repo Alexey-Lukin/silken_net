@@ -29,9 +29,11 @@ RSpec.describe TokenomicsBatchCallbacks do
         # available = balance − locked = 0 → сконвертовано, більше не eligible
         tree.wallet.update!(balance: threshold, locked_balance: threshold)
 
-        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(0)
+        allow(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(0)
 
         described_class.new.on_success(status, options)
+
+        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to have_received(:set).with(0)
       end
 
       it "reports a non-zero depth when an eligible wallet produced no mint" do
@@ -39,9 +41,11 @@ RSpec.describe TokenomicsBatchCallbacks do
         # Фікстура МУСИТЬ перетинати поріг, інакше клас невидимий (04_06 §B.2 BP #14).
         tree.wallet.update!(balance: threshold * 2, locked_balance: 0)
 
-        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(1)
+        allow(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(1)
 
         described_class.new.on_success(status, options)
+
+        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to have_received(:set).with(1)
       end
 
       it "never lets the visibility probe break the money path" do
@@ -56,9 +60,11 @@ RSpec.describe TokenomicsBatchCallbacks do
       status = Sidekiq::Batch::Status.new("abc123")
       options = { "cycle_id" => "my-cycle" }
 
-      expect(Rails.logger).to receive(:info).with(/Батч abc123 завершено.*my-cycle/)
+      allow(Rails.logger).to receive(:info).with(/Батч abc123 завершено.*my-cycle/)
 
       described_class.new.on_success(status, options)
+
+      expect(Rails.logger).to have_received(:info).with(/Батч abc123 завершено.*my-cycle/)
     end
   end
 end

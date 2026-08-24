@@ -163,20 +163,22 @@ RSpec.describe PrometheusCollector, type: :request do
       it "refreshes all nine strict-priority queue gauges on scrape" do
         # Один Sidekiq::Queue.new на кожну з 9 черг (uplink…low) — не-вакуумний доказ, що
         # refresh_sidekiq_gauges справді відпрацював, а не лише зареєстровані імена метрик.
-        expect(Sidekiq::Queue).to receive(:new).exactly(9).times.and_call_original
+        allow(Sidekiq::Queue).to receive(:new).and_call_original
 
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
+        expect(Sidekiq::Queue).to have_received(:new).exactly(9).times
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("silkennet_sidekiq_queue_size")
         expect(response.body).to include("silkennet_sidekiq_queue_latency_seconds")
       end
 
       it "refreshes the DeadSet size gauge [ARCH.45]" do
-        expect(Sidekiq::DeadSet).to receive(:new).and_call_original
+        allow(Sidekiq::DeadSet).to receive(:new).and_call_original
 
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
 
+        expect(Sidekiq::DeadSet).to have_received(:new)
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("silkennet_sidekiq_dead_set_size")
       end
@@ -184,10 +186,12 @@ RSpec.describe PrometheusCollector, type: :request do
 
     describe "on-scrape gauges without a Sidekiq server (web/coap targets)" do
       it "renders metrics but skips the Sidekiq refresh when not a server process" do
-        expect(Sidekiq::Queue).not_to receive(:new) # §2.9: тільки job-процес семплить черги
+        allow(Sidekiq::Queue).to receive(:new) # §2.9: тільки job-процес семплить черги
         allow(Sidekiq).to receive(:server?).and_return(false)
 
         get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
+
+        expect(Sidekiq::Queue).not_to have_received(:new)
         expect(response).to have_http_status(:ok)
       end
     end

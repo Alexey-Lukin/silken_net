@@ -343,23 +343,27 @@ RSpec.describe Maintenance::Show do
 
   describe "GPS drift-check guards" do
     it "skips the drift calc when the maintainable is not a Tree" do
-      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m)
       gw = build_maintainable
       gw.define_singleton_method(:latitude) { 49.0 }
       gw.define_singleton_method(:longitude) { 32.0 }
       rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Gateway", maintainable: gw)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(SilkenNet::GeoUtils).not_to have_received(:haversine_distance_m)
     end
 
     it "skips the drift calc when the Tree has no coordinates" do
-      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m)
       bare = build_maintainable # реальний Tree: latitude/longitude порожні самі, без підпірки
       rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree", maintainable: bare)
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(SilkenNet::GeoUtils).not_to have_received(:haversine_distance_m)
     end
 
     it "skips the drift calc when the maintainable Tree record itself is gone (nullified FK)" do
-      expect(SilkenNet::GeoUtils).not_to receive(:haversine_distance_m)
+      allow(SilkenNet::GeoUtils).to receive(:haversine_distance_m)
       rec = build_record(latitude: 49.0, longitude: 32.0, maintainable_type: "Tree")
       rec.maintainable = nil
       # 🔴 Без цього рядка приклад тихо міняє гілку: занулення поліморфної асоціації
@@ -367,6 +371,8 @@ RSpec.describe Maintenance::Show do
       # «Tree є, запису немає» — тобто ім'я прикладу лишалось би, а предмет зникав.
       rec.maintainable_type = "Tree"
       render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos)
+
+      expect(SilkenNet::GeoUtils).not_to have_received(:haversine_distance_m)
     end
   end
 

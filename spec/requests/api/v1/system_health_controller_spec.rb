@@ -114,10 +114,11 @@ RSpec.describe Api::V1::SystemHealthController, type: :request do
     # зʼєднання про його власну думку про себе (`connection.active?` лишався
     # true й тоді, коли сервер уже помер).
     it "proves the database by round-trip, not by asking the connection object" do
-      expect(ActiveRecord::Base.connection).to receive(:execute).with("SELECT 1").and_call_original
+      allow(ActiveRecord::Base.connection).to receive(:execute).with("SELECT 1").and_call_original
 
       get "/system_health", headers: admin_headers, as: :json
 
+      expect(ActiveRecord::Base.connection).to have_received(:execute).with("SELECT 1")
       expect(response.parsed_body["database"]["connected"]).to be(true)
     end
 

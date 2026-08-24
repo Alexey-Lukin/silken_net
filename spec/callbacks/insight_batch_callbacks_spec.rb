@@ -19,9 +19,11 @@ RSpec.describe InsightBatchCallbacks do
       status = Sidekiq::Batch::Status.new("abc123")
       options = { "date" => "2026-03-06" }
 
-      expect(Rails.logger).to receive(:info).with(/Батч abc123 завершено.*2026-03-06/)
+      allow(Rails.logger).to receive(:info).with(/Батч abc123 завершено.*2026-03-06/)
 
       described_class.new.on_success(status, options)
+
+      expect(Rails.logger).to have_received(:info).with(/Батч abc123 завершено.*2026-03-06/)
     end
 
     # [INS.1] Страховий оракул — per-cluster fan-out, за майстер-прапором (kill-switch).

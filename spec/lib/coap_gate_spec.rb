@@ -28,37 +28,48 @@ RSpec.describe CoapGate do
     end
 
     it "ставить у чергу і повертає reply для ACK" do
-      expect(UnpackTelemetryWorker).to receive(:perform_async)
+      allow(UnpackTelemetryWorker).to receive(:perform_async)
+
       expect(described_class.handle_datagram(data: "small", gateway_ip: gateway_ip)).to eq(reply_bytes)
+      expect(UnpackTelemetryWorker).to have_received(:perform_async)
     end
 
     it "НЕ повертає reply, якщо enqueue впав (демон не шле ACK) + метрика enqueue_error" do
       allow(UnpackTelemetryWorker).to receive(:perform_async).and_raise(StandardError, "redis down")
-      expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
-        .to receive(:increment).with(labels: { status: "enqueue_error" })
+
       expect { described_class.handle_datagram(data: "small", gateway_ip: gateway_ip) }
         .to raise_error(StandardError, "redis down")
+
+      expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
+        .to have_received(:increment).with(labels: { status: "enqueue_error" })
     end
   end
 
   it "oversized → nil (мовчазний дроп, без парсингу/черги, FW.51)" do
-    expect(CoapServerPdu).not_to receive(:handle_telemetry_datagram)
-    expect(UnpackTelemetryWorker).not_to receive(:perform_async)
+    allow(CoapServerPdu).to receive(:handle_telemetry_datagram)
+    allow(UnpackTelemetryWorker).to receive(:perform_async)
+
     expect(described_class.handle_datagram(data: "x" * described_class::MAX_PACKET_SIZE, gateway_ip: gateway_ip)).to be_nil
+    expect(CoapServerPdu).not_to have_received(:handle_telemetry_datagram)
+    expect(UnpackTelemetryWorker).not_to have_received(:perform_async)
   end
 
   it "unknown_route → reply без черги" do
     allow(CoapServerPdu).to receive(:handle_telemetry_datagram)
       .and_return(result(status: :unknown_route, reply: reply_bytes))
-    expect(UnpackTelemetryWorker).not_to receive(:perform_async)
+    allow(UnpackTelemetryWorker).to receive(:perform_async)
+
     expect(described_class.handle_datagram(data: "small", gateway_ip: gateway_ip)).to eq(reply_bytes)
+    expect(UnpackTelemetryWorker).not_to have_received(:perform_async)
   end
 
   it "malformed → reply без черги" do
     allow(CoapServerPdu).to receive(:handle_telemetry_datagram)
       .and_return(result(status: :malformed, reply: reply_bytes))
-    expect(UnpackTelemetryWorker).not_to receive(:perform_async)
+    allow(UnpackTelemetryWorker).to receive(:perform_async)
+
     expect(described_class.handle_datagram(data: "small", gateway_ip: gateway_ip)).to eq(reply_bytes)
+    expect(UnpackTelemetryWorker).not_to have_received(:perform_async)
   end
 
   # [FW.60] Queen-pull гілки: poll + ota chunk-server
@@ -86,9 +97,10 @@ RSpec.describe CoapGate do
 
     it "невідомий uid → 4.04, derivation не торкається" do
       allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: "SNET-Q-DEADBEEF"), build_ack: "ACK404".b)
-      expect(Downlink::PendingQueueService).not_to receive(:poll_reply)
+      allow(Downlink::PendingQueueService).to receive(:poll_reply)
 
       expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to eq("ACK404".b)
+      expect(Downlink::PendingQueueService).not_to have_received(:poll_reply)
     end
 
     it "NON-poll → мовчазний дроп (контракт = CON)" do

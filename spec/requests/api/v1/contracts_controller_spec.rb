@@ -362,10 +362,11 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     # множення на невідоме — витрата без результату, чия тиша ще й читалась би як
     # «оцінка не працює», ховаючи справжню причину.
     it "does not call the price oracle while the minted amount is unmeasured" do
-      expect(PriceOracleService).not_to receive(:current_scc_price)
+      allow(PriceOracleService).to receive(:current_scc_price)
 
       get "/contracts/stats", headers: headers, as: :json
 
+      expect(PriceOracleService).not_to have_received(:current_scc_price)
       expect(response).to have_http_status(:ok)
     end
 
