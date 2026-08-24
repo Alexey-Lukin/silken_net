@@ -319,7 +319,7 @@ end
 >
 > **Разом: 79 метрик = 45 counters + 32 gauges + 2 histograms** (звірено регенерацією нижче).
 
-**Counters (47):**
+**Counters (48):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -340,6 +340,7 @@ end
 | `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
 | `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
 | `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator) |
+| `silkennet_insurance_reserve_hold_total` | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
 | `silkennet_lineage_root_failures_total` | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
 | `silkennet_mint_attempts_total` | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
@@ -371,7 +372,7 @@ end
 | `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature |
 
-**Gauges (33):**
+**Gauges (36):**
 
 | Metric | Labels | Призначення |
 |---|---|---|
@@ -392,9 +393,11 @@ end
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
 | `silkennet_mint_eligible_unminted_depth` | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
 | `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
-| `silkennet_insurance_reserve_hold_total` | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
 | `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
+| `silkennet_partition_sample_timestamp_seconds` | — | [ARCH.70] Unix-час останнього успішного семплу росту — свідок СВІЖОСТІ двох гейджів нижче. Без нього обидва вакуумні: cron наповнює їх у живому процесі, тож зупинка воркера серію не прибирає, а ЗАМОРОЖУЄ, і алерти лишаються зеленими |
+| `silkennet_partitioned_table_bytes` | `table` | [ARCH.70] Байти RANGE-таблиці разом з усіма партиціями, індексами й TOAST. Диск межею НЕ є (`disk_autoresize`) — це вісь ЦІНИ: PD_SSD, розмір 30 бекапів, час DR-відновлення ([`06_06`](06_06_Disaster_Recovery_and_Backup)) |
+| `silkennet_partitions` | `table` | [ARCH.70] Листові партиції RANGE-таблиці. Монотонний ЗА ПОБУДОВОЮ (`DETACH`/`DROP PARTITION` у репо нуль), тож фактично дорівнює місяцям накопиченої сирої історії — вісь ⚖️ ширини вікна дропу |
 | `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
 | `silkennet_puma_backlog` | — | Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned) |
 | `silkennet_puma_max_threads` | — | Puma configured max threads (pool ceiling) |

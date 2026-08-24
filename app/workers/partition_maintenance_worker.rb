@@ -27,6 +27,8 @@ class PartitionMaintenanceWorker
     end
 
     Rails.logger.info "✅ [Partition Maintenance] Завершено. Створено нових партицій: #{created}"
+
+    sample_growth_gauges!
   rescue StandardError => e
     # CRITICAL: silent partition-creation failure is catastrophic — the very next
     # INSERT against the affected table on day-1 of the new month crashes with
@@ -74,6 +76,44 @@ class PartitionMaintenanceWorker
       Rails.logger.error "🛑 [Partition Maintenance] Помилка створення #{partition_name}: #{e.message}"
       raise
     end
+  end
+
+  # [ARCH.70] Прилад росту: скільки партицій накопичено і скільки вони важать.
+  # Без нього поріг «пора дропати» невидимий, тобто ⚖️ про ширину вікна дропу
+  # ухвалюється наосліп.
+  #
+  # 🔴 Власний `rescue` тут НЕ дублює зовнішній, а свідомо його оминає: той
+  # інкрементить `PARTITION_MAINTENANCE_FAILURES_TOTAL` і re-raise'ить, тобто
+  # виняток ВИМІРЮВАННЯ підняв би P0-пейдж «партиція наступного місяця може бути
+  # відсутня» і Sidekiq-ретрай уже виконаного DDL. Ціна тиші приладу менша за
+  # ціну хибного P0 на критичному шляху.
+  #
+  # `pg_partition_tree` віддає предка + усіх нащадків; предок партиційної таблиці
+  # сторінок не має, тож сума по всьому дереву і є розміром таблиці з індексами
+  # й TOAST. Агрегат завжди повертає рядок (на порожньому дереві — 0/NULL), тому
+  # `select_one` тут не може віддати `nil` через відсутність партицій.
+  def sample_growth_gauges!
+    conn = ActiveRecord::Base.connection
+
+    PARTITIONED_TABLES.each do |table_name|
+      row = conn.select_one(<<~SQL.squish)
+        SELECT count(*) FILTER (WHERE isleaf) AS leaves,
+               COALESCE(sum(pg_total_relation_size(relid)), 0) AS bytes
+        FROM pg_partition_tree(#{conn.quote(table_name)})
+      SQL
+
+      SilkenNet::Metrics::PARTITIONS_PRESENT.set(row["leaves"].to_i, labels: { table: table_name })
+      SilkenNet::Metrics::PARTITIONED_TABLE_BYTES.set(row["bytes"].to_i, labels: { table: table_name })
+
+      Rails.logger.info "📊 [Partition Growth] #{table_name}: #{row['leaves']} партицій, #{row['bytes']} Б"
+    end
+
+    # Штамп ставиться ЛИШЕ після повного проходу — частковий семпл не є свідком
+    # свіжості: якби він оновлював штамп, замерзлий гейдж однієї таблиці виглядав
+    # би щойно виміряним.
+    SilkenNet::Metrics::PARTITION_SAMPLE_TIMESTAMP.set(Time.current.to_i)
+  rescue StandardError => e
+    Rails.logger.warn "📊 [Partition Growth] семпл не вдався (прилад, не критичний шлях): #{e.class}: #{e.message}"
   end
 
   # Генерує ім'я партиції у форматі, що використовується в проєкті:

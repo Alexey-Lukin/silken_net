@@ -1306,6 +1306,127 @@ groups:
           team: backend
 
       # -----------------------------------------------------------------------
+      # P2 [ARCH.70]: партиції накопичуються МОНОТОННО — механізму `DETACH`/`DROP
+      # PARTITION` у репо нуль, тож лічильник партицій фактично дорівнює місяцям
+      # накопиченої сирої історії. Сенс алерту той самий, що в E.37-сусіда вище:
+      # зробити ⚖️ розвʼязним ДО пожежі. ⚠️ Поріг 24 = операторська стеля, а НЕ
+      # канонізоване вікно ретеншну: два роки лежать за межами кожного з трьох
+      # незакритих TBD (SLA §3.3 · RoPA/SEC.18 · сам ARCH.70), тож перетин означає
+      # «присуд уже прострочено», а не «наближається».
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-partition-count-unbounded
+        title: "ℹ️ RANGE partitions accumulating with no drop mechanism (ARCH.70)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: max(silkennet_partitions)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [24], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        annotations:
+          summary: "Найбільша RANGE-таблиця тримає {{ $values.A.Value | printf \"%.0f\" }} партицій (>24) — це стільки ж місяців сирої історії, і жодна ще не дропалась."
+          description: "Механізму дропу партицій у коді немає (`DETACH`/`DROP PARTITION` = 0 входжень), тож ретеншн сирої телеметрії фактично нескінченний. Дія: ухвалити ⚖️ ширини вікна — РАЗОМ із двома сусідніми осями, бо жодна з трьох не бачить інших: retention-періоди PII (SEC.18) і комерційна обіцянка SLA §3.3. ⛔ Перед першим дропом закрити три передумови ARCH.70 (lineage-діагноз · глибина черги `low` під архівний пін · незакритий `oracle_status: dispatched`). 04_01 §3 картка TelemetryLog, дім DOC.8."
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+        labels:
+          severity: info
+          component: database
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P2 [ARCH.70]: друга вісь того самого росту — ЦІНА, не місяці. Диск межею
+      # НЕ є (`disk_autoresize = true`, terraform/database.tf), тож це не «місце
+      # закінчується», а «сирі дані переросли припущення сайзингу»: 30 ГБ = 60%
+      # від початкових `db_disk_size_gb = 50`. Наслідки живі й поза БД — розмір
+      # 30 бекапів і час DR-відновлення (`06_06`) масштабуються разом.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-partitioned-table-growth
+        title: "ℹ️ Raw telemetry outgrew the disk sizing assumption (ARCH.70)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum(silkennet_partitioned_table_bytes)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [32212254720], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        annotations:
+          summary: "Три RANGE-таблиці займають {{ $values.A.Value | printf \"%.0f\" }} Б (>30 ГБ) — 60% початкового сайзингу диска йде на саму лише сиру телеметрію."
+          description: "Crash тут НЕ загрожує: `disk_autoresize = true`. Ціна тиха — PD_SSD за ГБ, розмір 30 утримуваних бекапів і час DR-відновлення (06_06). Дія: звірити з ⚖️ ширини вікна дропу (ARCH.70) і з ⚖️ двигуна E.37 — осі різні (cold-history vs hot-OLAP), але ClickHouse потенційно закриває обидві. terraform/variables.tf `db_disk_size_gb`."
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+        labels:
+          severity: info
+          component: database
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P2 [ARCH.70]: свідок ЖИВОСТІ двох алертів вище — без нього вони вакуумні.
+      # Гейджі наповнює добовий cron у ЖИВОМУ процесі, тож «воркер перестав бігти»
+      # серію не прибирає, а ЗАМОРОЖУЄ; партиції ж лише накопичуються, отже
+      # замерзлий гейдж недооцінює і тримає обидва алерти зеленими саме тоді, коли
+      # вони мали б спрацювати. 48 год = два пропущені прогони поспіль.
+      # ⚠️ ВІДСУТНЯ серія (свіжий процес до найближчих 00:30 UTC) тут свідомо не
+      # ловиться — мертвий таргет має власний дім `sn-alert-scrape-target-down`.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-partition-sampler-stale
+        title: "ℹ️ Partition growth sampler has not run for 48h (ARCH.70 instrument dead)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: time() - max(silkennet_partition_sample_timestamp_seconds)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [172800], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        annotations:
+          summary: "Семпл росту партицій не оновлювався {{ $values.A.Value | printf \"%.0f\" }} с (>48 год) — обидва ARCH.70-алерти зараз читають ЗАМЕРЗЛЕ значення."
+          description: "PartitionMaintenanceWorker (cron `30 0 * * *`, config/sidekiq.yml) або не запускається, або падає до кроку вимірювання. Наслідок тихий: партиції накопичуються далі, а `silkennet_partitions` показує старе число — тобто `sn-alert-partition-count-unbounded` не спрацює. Перевірити cron-планувальник (особливо після зміни платформи деплою) і `sn-alert-partition-maintenance-failed`. 00_07 ARCH.70."
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+        labels:
+          severity: info
+          component: database
+          team: backend
+
+      # -----------------------------------------------------------------------
       # P2: QATT batch-nonce Redis→DB fallback (L1 QATT) — той самий S6.1-патерн,
       # СВІДОМО окремий counter+алерт: батч-стрім щогодинний (кожна Queen), і
       # змішування з M2M поховало б рідкісний auth-сигнал у батч-шумі

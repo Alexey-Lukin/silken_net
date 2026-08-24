@@ -665,6 +665,58 @@ module SilkenNet
       docstring: "PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk)"
     )
 
+    # [00_07 ARCH.70]: прилад РОСТУ партиційних таблиць. Сусід згори стереже
+    # СТВОРЕННЯ партицій, цей — їх накопичення: доти алерту на ріст не існувало
+    # взагалі, тож поріг «пора дропати» був невидимий, а ⚖️ про ширину вікна
+    # ухвалювався б наосліп (та сама сліпота, яку E.37 уже оплатив: метрика
+    # per-row існувала, дивитись на неї проти порога не було кому).
+    #
+    # Дві осі, бо питання РІЗНІ. `partitions` = скільки МІСЯЦІВ сирої історії
+    # накопичено: `DETACH`/`DROP PARTITION` у репо нуль, тож лічильник монотонний
+    # ЗА ПОБУДОВОЮ і фактично дорівнює наявному вікну ретеншну. `bytes` = чого це
+    # коштує (PD_SSD + розмір бекапів + час DR-відновлення — `06_06`).
+    # ⚠️ Диск межею НЕ є: `disk_autoresize = true` (`terraform/database.tf`), тож
+    # режим відмови тут не crash, а тиха ціна й план-латентність на зайвих
+    # партиціях — саме тому обидва алерти `info`, а не `critical`.
+    #
+    # 🔴 Писач ОДИН — `PartitionMaintenanceWorker` (той самий дім, що й лічильник
+    # збоїв вище). Факт ГЛОБАЛЬНИЙ (одна БД на всі процеси), тож семплить job-
+    # процес, а не кожен скрейп: інакше три scrape-таргети (web/job/coap, §2.9)
+    # віддали б три ІДЕНТИЧНІ серії — та сама причина, з якої `refresh_sidekiq_gauges`
+    # гейтований `Sidekiq.server?`.
+    # ⚠️ Оголошена стеля: гейджі живуть у памʼяті job-процесу й наповнюються раз на
+    # добу (cron `30 0 * * *`), тож між рестартом процесу і найближчим прогоном
+    # серії немає. Тому `noDataState: OK` — ВІДСУТНІСТЬ виміру не є ростом, і
+    # мертвий scrape-таргет має власний дім (`sn-alert-scrape-target-down`).
+    # ⊥ ЗАМЕРЗЛИЙ вимір — інша річ, і його ловить третій гейдж нижче.
+    PARTITIONS_PRESENT = REGISTRY.gauge(
+      :silkennet_partitions,
+      docstring: "Leaf partitions currently attached to a RANGE-partitioned table (monotonic — no DROP mechanism exists yet)",
+      labels: [ :table ]
+    )
+
+    PARTITIONED_TABLE_BYTES = REGISTRY.gauge(
+      :silkennet_partitioned_table_bytes,
+      docstring: "On-disk bytes of a RANGE-partitioned table including every partition, index and TOAST",
+      labels: [ :table ]
+    )
+
+    # 🔴 Третя вісь — ЖИВІСТЬ самого приладу, і без неї дві вищі вакуумні за
+    # побудовою. Обидва гейджі наповнює добовий cron у живому процесі, тож
+    # «воркер перестав бігти» НЕ прибирає серію — вона ЗАМЕРЗАЄ на останньому
+    # значенні. А партиції лише накопичуються, тобто замерзлий гейдж
+    # НЕДООЦІНЮЄ, і алерт лишається зеленим рівно тоді, коли має кричати.
+    # Це той самий клас «конфіг повний, шлях мертвий», що вже кусав §06, і він
+    # найімовірніший там, де cron-планувальник переїжджає на нову платформу.
+    # ⚠️ Межа: ВІДСУТНЯ серія (свіжий процес до найближчих 00:30 UTC) цим не
+    # ловиться свідомо — мертвий scrape-таргет має власний дім
+    # (`sn-alert-scrape-target-down`), і дублювати його тут означало б пейджити
+    # на кожному деплої.
+    PARTITION_SAMPLE_TIMESTAMP = REGISTRY.gauge(
+      :silkennet_partition_sample_timestamp_seconds,
+      docstring: "Unix time of the last successful partition growth sample (freshness witness for the two gauges above)"
+    )
+
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).

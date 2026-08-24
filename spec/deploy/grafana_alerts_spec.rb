@@ -83,4 +83,20 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
     expect(referenced).to include("silkennet_telemetry_processed_total"),
       "row-count-тригер E.37 (>100M/міс) знову сліпий — ⚖️-рішення про scale-двигун без раннього сигналу"
   end
+
+  # [ARCH.70] Сиблінг E.37-піна вище, і поставлений із тієї самої підстави: обидві
+  # осі росту існують ЛИШЕ щоб ⚖️ (ширина вікна дропу) ухвалювався за кривою, а не
+  # наосліп. Гейдж без alert-правила — саме той дефект, який E.37 уже оплатив
+  # («метрика існувала, дивитись на неї проти порога не було кому»).
+  it "the ARCH.70 partition-growth gauges are wired to an alert" do
+    %w[
+      silkennet_partitions
+      silkennet_partitioned_table_bytes
+      silkennet_partition_sample_timestamp_seconds
+    ].each do |name|
+      expect(referenced).to include(name),
+        "#{name} без alert-правила — поріг «пора дропати» знову невидимий, і ⚖️ ширини вікна (ARCH.70) " \
+        "ухвалюватиметься наосліп разом із SEC.18-retention та SLA §3.3"
+    end
+  end
 end

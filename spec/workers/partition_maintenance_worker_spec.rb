@@ -137,6 +137,59 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
     end
   end
 
+  # [ARCH.70] Прилад росту. Три приклади, і третій несучий: він пінить не значення,
+  # а АСИМЕТРІЮ — вимірювання свідомо винесене з-під критичного rescue, бо той
+  # інкрементить P0-лічильник і re-raise'ить.
+  describe "growth instrument" do
+    let(:tree_sql) do
+      lambda do |table|
+        connection.select_one(<<~SQL.squish)
+          SELECT count(*) FILTER (WHERE isleaf) AS leaves,
+                 COALESCE(sum(pg_total_relation_size(relid)), 0) AS bytes
+          FROM pg_partition_tree(#{connection.quote(table)})
+        SQL
+      end
+    end
+
+    it "records leaf-partition count and byte size for every partitioned table" do
+      described_class.new.perform
+
+      described_class::PARTITIONED_TABLES.each do |table|
+        expected = tree_sql.call(table)
+
+        # Пін на РОЗМІР множини: на порожньому дереві обидва ассерти нижче були б
+        # зелені й без механізму.
+        expect(expected["leaves"].to_i).to be > 0
+
+        expect(SilkenNet::Metrics::PARTITIONS_PRESENT.get(labels: { table: table }))
+          .to eq(expected["leaves"].to_f)
+        expect(SilkenNet::Metrics::PARTITIONED_TABLE_BYTES.get(labels: { table: table }))
+          .to eq(expected["bytes"].to_f)
+      end
+    end
+
+    it "stamps the freshness witness after a full pass" do
+      described_class.new.perform
+
+      expect(SilkenNet::Metrics::PARTITION_SAMPLE_TIMESTAMP.get)
+        .to be_within(60).of(Time.current.to_i)
+    end
+
+    it "keeps a sampling failure OFF the P0 failure counter and out of Sidekiq retry" do
+      allow(connection).to receive(:select_one).and_call_original
+      allow(connection).to receive(:select_one)
+        .with(a_string_matching(/pg_partition_tree/))
+        .and_raise(ActiveRecord::StatementInvalid.new("PG::Error: boom"))
+      allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
+
+      counter = SilkenNet::Metrics::PARTITION_MAINTENANCE_FAILURES_TOTAL
+      before = counter.get
+
+      expect { described_class.new.perform }.not_to raise_error
+      expect(counter.get).to eq(before)
+    end
+  end
+
   describe "sidekiq options" do
     it "uses default queue" do
       expect(described_class.get_sidekiq_options["queue"]).to eq("default")

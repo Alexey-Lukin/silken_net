@@ -47,6 +47,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network+signer (INF.22 per-signer: Polygon minter/slasher + activation-gated aux) | Treasury / Oracle balance monitoring |
 | Database Pool | db_pool_connections / db_pool_size, db_pool_waiting | Database connection pool stats |
+| 🗂️ Partition Growth [ARCH.70] | partitions by table, partitioned_table_bytes by table, partition_sample_timestamp_seconds (свіжість) | Крива росту, на якій ухвалюється ⚖️ ширини вікна дропу |
 | 💰 Money-Path Reliability [ARCH.45] | mint/slash/solana-payout/insurance-payout success-rate (SLO ratio), sidekiq_dead_set_size, manual_review_depth, limbo_locked_total, chain_audit_delta [G1/G2] | Money-path SLO + DeadSet + manual-review/limbo/chain-audit gauges |
 | ⚙️ Process / Runtime Health | process_resident_memory_bytes (RSS), ruby_gc_count/major_count, ruby_gc_heap_live_slots, ruby_threads, puma_running/max/pool_capacity/backlog | Runtime observability gap (RSS/GC/Puma) |
 | 👑 Gateway / Queen Fleet Health [ARCH.54] | gateways_faulty, gateway_attest_lapsed, helium_sos_received_total by outcome | Fleet-health dashboard-gap |
@@ -64,6 +65,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-scrape-target-down | min by(process) up{job="silken_net_scraper"} < 1 (3 таргети; NoData→Alerting = Alloy впав) | critical | 5m |
 | sn-alert-gateway-faulty | gateways_faulty > 0 (dead-man switch ARCH.54) | critical | 5m |
 | sn-alert-chain-audit-drift | chain_audit_delta > 0.0001 (DB vs on-chain SCC drift [G2]) | critical | 15m |
+| sn-alert-trees-silent | trees_silent > 0 (дерево замовкло — per-tree field_audit) | warning | 30m |
 | sn-alert-rpc-errors | rpc_errors > 10/хв | warning | 2m |
 | sn-alert-sidekiq-latency | queue latency > 300s | warning | 5m |
 | sn-alert-sidekiq-deadset | sidekiq_dead_set_size > 0 (money-path = stranded tx) | warning | 5m |
@@ -86,6 +88,12 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-gateway-flapping | gateways_offline_total increase > 2 за 30хв (нестабільний зв'язок, ARCH.54) | info | 5m |
 | sn-alert-filecoin-unarchived-backlog | filecoin_unarchived_depth sustained (Pinata-exhaustion backlog; INF.22 крок 11) | info | 1h |
 | sn-alert-hadron-kyc-backlog | hadron_kyc_pending_depth sustained[6h] (KYC backlog; ARCH.65, auto-heal) | info | 30m |
+| sn-alert-m2m-nonce-fallback | m2m_nonce_fallback increase[1h] > 0 (Redis→DB, S6.1) | info | 0m |
+| sn-alert-qatt-nonce-fallback | qatt_nonce_fallback increase[1h] > 0 (Redis→DB на батч-стрімі, S6.1) | info | 0m |
+| sn-alert-telemetry-volume-approaching | telemetry_processed increase[30d] > 30M (scale-двигун ⚖️ E.37) | info | 1h |
+| sn-alert-partition-count-unbounded | max(partitions) > 24 (стільки ж місяців сирої історії; механізму дропу немає — ⚖️ ARCH.70) | info | 1h |
+| sn-alert-partitioned-table-growth | sum(partitioned_table_bytes) > 30 ГБ (60% початкового `db_disk_size_gb`; ціна, не crash — autoresize) | info | 1h |
+| sn-alert-partition-sampler-stale | time() − partition_sample_timestamp > 48h (два ARCH.70-алерти читають ЗАМЕРЗЛЕ значення) | info | 1h |
 
 > Повний SSOT правил — сам `alerts/silkennet-alerts.yaml`; ця таблиця — людська шпаргалка, і `import.rb` рахує з yaml, не звідси. Числа правил тут свідомо немає: воно протухало б тихо при кожному додаванні, а єдиний, хто його реально знає, друкує його на імпорті.
 
