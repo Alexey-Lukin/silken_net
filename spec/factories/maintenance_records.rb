@@ -38,16 +38,26 @@ FactoryBot.define do
       notes       { "Installed new titanium anchor and LoRa sensor unit on node." }
     end
 
-    # [E.20] Фотодоказ. Потрібен ДВОМ різним споживачам, і межі в них різні:
-    # моделі (`evidence_backed?` — repair/installation, валідація на кожен save)
-    # і `PuroEarthPassportWorker` (biomass_extraction — гейт незворотної
-    # CORC-заявки; на моделі його ставити ⛔, бо валідація зламала б Puro-тракт).
+    # [E.20] Фотодоказ. Споживачів ТРИ, і межі в них РІЗНІ — плутати їх дорого:
+    #   • `evidence_backed?`  — repair/installation, валідація на КОЖЕН save;
+    #   • `photo_required_for_biomass_claim` — biomass, валідація `on: :create`
+    #     (⛔ every-save форма вбила б Puro-тракт: обидва воркери роблять `update!`);
+    #   • `evidence_locked?`  — замок на видалення (усі три типи).
+    # ⚠️ Цей коментар до 2026-08-24 стверджував, що на моделі гейта для biomass
+    # ⛔ немає взагалі — присуд founder-а того ж дня зробив його хибним.
     trait :with_evidence do
       after(:build) do |record|
         record.photos.attach(
           io: StringIO.new("evidence"), filename: "evidence.jpg", content_type: "image/jpeg"
         )
       end
+    end
+
+    # [E.20] «Атестатор ≠ бенефіціар»: асоціація створює ОКРЕМОГО користувача, тож
+    # інваріант «підписант ≠ автор» тримається фабрикою за побудовою, а не збігом.
+    trait :attested do
+      association :attestor, factory: [ :user, :forester ]
+      attested_at { 1.hour.ago }
     end
 
     trait :biomass_extraction do

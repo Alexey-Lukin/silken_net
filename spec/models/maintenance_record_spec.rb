@@ -53,7 +53,7 @@ RSpec.describe MaintenanceRecord, type: :model do
   # with_lock + status-гард = перехід рівно-раз; false = програна гонка, не помилка.
   describe "biomass passport lifecycle transitions" do
     let(:record) do
-      create(:maintenance_record, :biomass_extraction,
+      create(:maintenance_record, :biomass_extraction, :with_evidence,
              maintainable: create(:tree, status: :deceased),
              biomass_passport_tx_hash: "0x#{"ab" * 32}", biomass_passport_status: :sent)
     end
@@ -227,7 +227,7 @@ RSpec.describe MaintenanceRecord, type: :model do
       end
 
       it "accepts positive value for biomass_extraction" do
-        expect(build(:maintenance_record, :biomass_extraction)).to be_valid
+        expect(build(:maintenance_record, :biomass_extraction, :with_evidence)).to be_valid
       end
 
       it "does not require biomass_yield_kg for other action types" do
@@ -292,8 +292,49 @@ RSpec.describe MaintenanceRecord, type: :model do
         expect(build(:maintenance_record, action_type: :decommissioning)).to be_valid
       end
 
-      it "does NOT require photos for :biomass_extraction" do
-        expect(build(:maintenance_record, :biomass_extraction)).to be_valid
+      # 🔴 [E.20, ⚖️ founder 2026-08-24] Пін ПЕРЕВЕРНУТО: доти цей приклад стверджував,
+      # що biomass фото НЕ вимагає, і саме на цьому трималась заявка-самозвіт. Тепер
+      # доказ вимагається від дверей — заявка на вилучення біомаси незворотно виходить
+      # у ЗОВНІШНІЙ реєстр (Puro.earth CORC).
+      it "DOES require a photo for :biomass_extraction (claim leaves for an external registry)" do
+        record = build(:maintenance_record, :biomass_extraction)
+
+        expect(record).not_to be_valid
+        expect(record.errors[:photos]).to be_present
+        expect(build(:maintenance_record, :biomass_extraction, :with_evidence)).to be_valid
+      end
+
+      # 🔴 Другі двері, і саме вони визначили ФОРМУ гейта: `on: :create` лишав би
+      # обхід «створити як inspection → перевести в biomass». Пін живе ТУТ, а не в
+      # request-спеці: через HTTP переведення сьогодні падає раніше, на
+      # `biomass_yield_kg` (його немає в permit-списку), тож request-пін був би
+      # зеленим із ЧУЖОЇ причини й пережив би зняття цієї валідації.
+      it "refuses a photo-less record being FLIPPED into :biomass_extraction" do
+        record = create(:maintenance_record, action_type: :inspection)
+
+        expect(record.update(action_type: :biomass_extraction, biomass_yield_kg: 42.0)).to be false
+        expect(record.errors[:photos]).to be_present
+        expect(record.reload.action_type).to eq("inspection")
+      end
+
+      # ⛔ Дзеркало сусіда з ПРОТИЛЕЖНИМ знаком: `system_generated` звільняє від
+      # Evidence Protocol (у платформи немає камери) — і саме тому платформа НЕ МОЖЕ
+      # подати заявку, що виходить у зовнішній реєстр. Скопійований сюди виняток був
+      # би дірою з виглядом однорідності.
+      it "refuses a biomass claim even from a system-generated record (the platform has no camera)" do
+        record = build(:maintenance_record, :biomass_extraction, system_generated: true)
+
+        expect(record).not_to be_valid
+        expect(record.errors[:photos]).to be_present
+      end
+
+      # Дзеркало: пізніші `update!` (їх роблять ОБИДВА Puro-воркери) типу не міняють,
+      # тож валідація на них мовчить — інакше паспорт завис би в `:sent` назавжди.
+      it "stays silent on later updates that do not touch action_type" do
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence)
+        record.photos.purge
+
+        expect(record.reload.update(biomass_passport_status: :sent)).to be true
       end
 
       # [ARCH.91] Виняток мусить пережити reload: валідація біжить на кожен
@@ -616,6 +657,44 @@ RSpec.describe MaintenanceRecord, type: :model do
     it "reports a fresh record as not attested" do
       expect(record).not_to be_attested
       expect(record.attestor).to be_nil
+    end
+
+    # 🔴 [E.20] Підпис — ПУСКАЧ незворотної заявки. Пін несе не зручність, а
+    # підставу присуду: доти паспорт ставив у чергу healing-воркер безумовно, тож
+    # «вікно для атестатора» фактично дорівнювало життю джоби (≈8 хв до DeadSet).
+    it "files the biomass passport claim at the moment of attestation" do
+      biomass = create(:maintenance_record, :biomass_extraction, :with_evidence, user: author)
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+
+      biomass.attest!(auditor)
+
+      expect(PuroEarthPassportWorker).to have_received(:perform_async).with(biomass.id)
+    end
+
+    it "does not file a claim when the attested record is not a biomass extraction" do
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+
+      record.attest!(auditor)
+
+      expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
+    end
+  end
+
+  # 🔴 [E.20] Односторонні двері: без них замок доказу знімається одним enum-полем.
+  describe "biomass claim is one-way" do
+    it "refuses flipping a filed biomass claim back to another action type" do
+      record = create(:maintenance_record, :biomass_extraction, :with_evidence)
+
+      expect(record.update(action_type: :inspection)).to be false
+      expect(record.errors[:action_type]).to be_present
+      expect(record.reload.action_type).to eq("biomass_extraction")
+    end
+
+    # Дзеркало: інші типи лишаються редагованими — правило вузьке за наміром.
+    it "still allows correcting a non-biomass action type" do
+      record = create(:maintenance_record, action_type: :inspection)
+
+      expect(record.update(action_type: :cleaning)).to be true
     end
   end
 end

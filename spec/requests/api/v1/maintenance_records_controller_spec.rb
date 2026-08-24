@@ -791,6 +791,53 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
     end
   end
 
+# 🔴 [E.20] Двері, які форма `on: :create` НЕ закривала: `#update` пермітить
+# `:action_type`, тож запис можна створити як `inspection` (фото не потрібні) і
+# ПЕРЕВЕСТИ в biomass. ⚠️ Але пін нижче НЕ доводить фото-гейт: сьогодні HTTP-шлях
+# перекриває ІНША валідація — `biomass_yield_kg` у permit-списку немає, тож
+# переведення падає на presence ще до питання про доказ. Тримаємо як фіксацію
+# ФАКТИЧНОГО стану дверей; пін на сам фото-гейт живе в `spec/models`, де він
+# мутаційно перевірний.
+describe "PATCH /maintenance_records/:id — переведення типу в biomass" do
+  let!(:plain) do
+    MaintenanceRecord.create!(maintainable: own_tree, user: forester, action_type: :inspection,
+                              performed_at: 1.hour.ago, notes: "Plain inspection filed without any photo.")
+  end
+
+  it "не пропускає переведення через HTTP (перша відмова — biomass_yield_kg)" do
+    patch "/maintenance_records/#{plain.id}",
+          params: { maintenance_record: { action_type: "biomass_extraction" } },
+          headers: headers, as: :json
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(plain.reload.action_type).to eq("inspection")
+  end
+end
+
+# [E.20] Замок доказу: `guard_evidence_purge!` читає `evidence_locked?`, а не
+# `evidence_backed?` — інакше фото, обовʼязкове на вході заявки на біомасу,
+# знімалося б наступним кліком (`purge_later`, незворотно).
+describe "DELETE фотодоказу на biomass-записі" do
+  let!(:biomass) do
+    rec = MaintenanceRecord.new(maintainable: own_tree, user: forester,
+                                action_type: :biomass_extraction, biomass_yield_kg: 42.0,
+                                performed_at: 1.hour.ago, notes: "Biomass extraction with evidence attached.")
+    # Фото ПЕРЕД `save`: із 2026-08-24 запис без доказу не створюється взагалі.
+    rec.photos.attach(io: StringIO.new("evidence"), filename: "e.jpg", content_type: "image/jpeg")
+    rec.save!
+    rec
+  end
+
+  it "не дає знищити доказ заявки, що йде в зовнішній реєстр" do
+    photo_id = biomass.photos.first.id
+
+    delete "/maintenance_records/#{biomass.id}/photos/#{photo_id}", headers: headers, as: :json
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(biomass.reload.photos.count).to eq(1)
+  end
+end
+
   # [E.20] «Атестатор ≠ бенефіціар». ⛔ Екшен свідомо ПОЗА
   # `authorize_record_mutation!`: той пускає АВТОРА або admin+, тобто рівно того,
   # кого тут треба відсікти — гард, скопійований із сусіда, легалізував би самозвіт.

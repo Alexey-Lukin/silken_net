@@ -59,8 +59,14 @@ module Api
       # запис і далі гасив `PF_NO_MAINTENANCE` — тобто економічний ефект «обслуговування
       # відбулося» переживав знищення власного доказу. Виправлення робиться ДОДАВАННЯМ
       # кадру, не зняттям — як і на кожній іншій доказовій поверхні платформи.
+      # 🔴 [E.20, 2026-08-24] Предикат ЗАМКА — `evidence_locked?`, не
+      # `evidence_backed?`: другий відповідає на питання «чи фото обовʼязкові на
+      # кожен save», і `biomass_extraction` туди входити не може (вбило б Puro-тракт).
+      # Доти замок успадковував ту межу, тож доказ, обовʼязковий на створенні заявки
+      # на вилучення біомаси, знімався наступним кліком — а саме він іде в
+      # ЗОВНІШНІЙ реєстр незворотно.
       def guard_evidence_purge!
-        return unless @record.evidence_backed?
+        return unless @record.evidence_locked?
 
         message = I18n.t("flash.maintenance.photo_evidence_locked")
         respond_to do |format|

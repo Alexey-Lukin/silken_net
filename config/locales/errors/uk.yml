@@ -23,8 +23,11 @@ uk:
               must_match_hardware_format: має відповідати апаратному формату (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
+            action_type:
+              biomass_claim_is_final: не можна змінити після подання заявки на вилучення біомаси — разом із ним спав би замок доказу
             photos:
               required_for_action_type: обов'язкові для типів 'repair' та 'installation' (Trust Protocol)
+              required_for_biomass_claim: обовʼязкові для заявки на вилучення біомаси — вона незворотно виходить у зовнішній реєстр (Trust Protocol)
         naas_contract:
           attributes:
             end_date:

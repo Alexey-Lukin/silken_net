@@ -153,6 +153,31 @@ class MaintenanceRecord < ApplicationRecord
   # `save`, і виняток, що не переживає reload, робить запис невиправно
   # невалідним після першого ж `find` [ARCH.91].
   validate :photos_required_for_critical_actions
+  # [E.20, ⚖️ founder 2026-08-24] Заявка на вилучення біомаси веде до
+  # `declare_deceased!` (→ слешинг-тракт) і до НЕЗВОРОТНОЇ CORC-заявки в
+  # зовнішній реєстр — тож вона мусить приходити з доказом ВІД ДВЕРЕЙ, а не
+  # ловитись за три ланки звідси.
+  #
+  # 🔴 Умова спрацювання — «ТИП щойно став biomass», і кожна з трьох альтернатив
+  # виміряно гірша. (а) Every-save форма (як у сусіда вище) зламала б Puro-тракт:
+  # обидва воркери роблять `update!` на вже-створеному записі, а
+  # `sidekiq_retries_exhausted` поллера кличе `escalate_biomass_passport!`
+  # усередині `rescue` — `RecordInvalid` полетів би незловленим і запис завис би в
+  # `:sent` назавжди. (б) `on: :create` лишає ОБХІД: `maintenance_records#update`
+  # пермітить `:action_type`, тож запис створюють як `inspection` (фото не
+  # потрібні) і переводять у biomass наступним запитом. (в) Заборона міняти тип
+  # узагалі — ширше рішення, ніж вимагає предмет. ⊥ ARCH.91 відкинув `on: :create`
+  # для ТРАНЗІЄНТНОГО accessor'а, що зникав після `find`; тут читається реальна
+  # асоціація, і lock-out'у немає за побудовою: запис, який утратив фото ПІЗНІШЕ,
+  # типу не міняє, тож валідація на ньому мовчить.
+  validate :photo_required_for_biomass_claim
+  # 🔴 [E.20] ОДНОСТОРОННІ двері, і без них замок доказу знімається одним
+  # enum-полем: `biomass → inspection` вимикає і presence `biomass_yield_kg`, і
+  # `evidence_locked?` — після чого фото, на якому стоїть виданий у зовнішньому
+  # реєстрі CORC, знищується `purge_later` (незворотно) ТИМ САМИМ актором, проти
+  # якого гейт і будувався. `action_type` клієнт-керований (`maintenance_params`),
+  # `attr_readonly` на ньому немає, політики теж — тож єдиний носій правила тут.
+  validate :biomass_claim_is_one_way
 
   # Тип вкладень — тільки зображення, max 20 МБ кожне, max 10 фото на запис
   # [I18N.4] `message:` тут СВІДОМО немає: `active_storage_validations` везе власні
@@ -253,6 +278,25 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     action_type_repair? || action_type_installation?
   end
 
+  # 🔴 [E.20, 2026-08-24] ДРУГЕ питання, яке доти вело той самий предикат — і саме
+  # тому вимога фото для `biomass_extraction` без цього розколу була б ТЕАТРОМ:
+  # `guard_evidence_purge!` читає `evidence_backed?`, а biomass туди не входить,
+  # тож доказ, обовʼязковий на вході, знімався б наступним кліком (`purge_later`,
+  # незворотно). Питання РІЗНІ:
+  #   • `evidence_backed?` — «чи фото обовʼязкові на КОЖЕН save» (валідація);
+  #   • `evidence_locked?` — «чи фото цього запису НЕЗНИЩЕННІ» (гард + кнопка).
+  # ⛔ Не зливати назад і ⛔ не додавати `biomass_extraction` у предикат вище:
+  # валідація там оголошена БЕЗ `on:`, а обидва Puro-воркери роблять `update!` на
+  # вже-створеному записі — вимога поїхала б на кожен їхній save і завісила б
+  # паспорт у `:sent` назавжди (механіка — [ARCH.91] + картка воркера `04_02 §11`).
+  # Для biomass доказ вимагається ОДИН раз, на створенні (`on: :create` вище).
+  # ⚠️ Власного `system_generated`-гарда тут НЕ ТРЕБА: `evidence_backed?` уже його
+  # несе, а biomass-заявка системною бути не може за побудовою (валідація нижче не
+  # має винятку). Додати його означало б завести гілку, якої ніщо не досягає.
+  def evidence_locked?
+    evidence_backed? || action_type_biomass_extraction?
+  end
+
   # [E.20] «Атестатор ≠ бенефіціар» у машинній частині. ⚖️ founder 2026-08-24:
   # незалежність тримає ДОГОВІР, а код стереже єдине, що взагалі може стерегти —
   # що підписав НЕ той, хто написав. Це слабший інваріант, ніж «інша організація»,
@@ -267,6 +311,13 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     raise SelfAttestation if actor.id == user_id
 
     update!(attested_by_id: actor.id, attested_at: Time.current)
+    # 🔴 [E.20] Підпис — ПУСКАЧ незворотної заявки, а не лише її дозвіл. Доти
+    # паспорт ставив у чергу `EcosystemHealingWorker` безумовно, тож атестатор мав
+    # рівно стільки часу, скільки живе джоба (≈7–10 хв до DeadSet) — дедлайн, що
+    # селектує підпис не дивлячись. Тепер порядок природний: спершу друга пара
+    # очей, потім вихід у зовнішній реєстр.
+    PuroEarthPassportWorker.perform_async(id) if action_type_biomass_extraction?
+    true
   end
 
   def attested?
@@ -330,5 +381,31 @@ end
     return if photos.any?
 
     errors.add(:photos, :required_for_action_type)
+  end
+
+  # [E.20] Заявка на вилучення біомаси — єдина дія, що виходить у ЗОВНІШНІЙ реєстр
+  # незворотно, тож доказ вимагається від дверей. Системні записи звільнені тією ж
+  # колонкою, що й сусід: платформа камери не має.
+  # ⛔ Винятку для `system_generated` тут НЕМА, і це не пропуск, а протилежність
+  # сусідові: платформа камери не має (тому її записи звільнені від Evidence
+  # Protocol) — отже вона й НЕ МОЖЕ подавати заявку, що виходить у зовнішній
+  # реєстр. Скопійований виняток був би дірою з виглядом однорідності: гейт
+  # паспортного воркера системних записів не звільняє, тож звільнений тут запис
+  # усе одно помер би там — лише пізніше й тихіше.
+  def photo_required_for_biomass_claim
+    return unless action_type_biomass_extraction?
+    # Лише в мить, коли запис СТАЄ заявкою на біомасу — на створенні або на зміні
+    # типу. Пізніші `update!` Puro-воркерів сюди не входять за побудовою.
+    return unless new_record? || action_type_changed?
+    return if photos.any?
+
+    errors.add(:photos, :required_for_biomass_claim)
+  end
+
+  def biomass_claim_is_one_way
+    return unless action_type_changed?
+    return unless action_type_was == "biomass_extraction"
+
+    errors.add(:action_type, :biomass_claim_is_final)
   end
 end

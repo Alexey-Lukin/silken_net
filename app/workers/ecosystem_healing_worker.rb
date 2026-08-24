@@ -11,10 +11,6 @@ class EcosystemHealingWorker
     record = MaintenanceRecord.find(record_id)
     target = record.maintainable
 
-    # [P0 FIX]: Sidekiq job НЕ повинен ставитись в чергу всередині транзакції.
-    # Збираємо record_id для PuroEarthPassportWorker під час транзакції, enqueue — після commit.
-    pending_passport_record_id = nil
-
     ActiveRecord::Base.transaction do
       # 1. ОСВІЖЕННЯ ПУЛЬСУ
       target.mark_seen! if target.respond_to?(:mark_seen!)
@@ -55,11 +51,13 @@ class EcosystemHealingWorker
       end
 
       # 3a. AFTERLIFE ECONOMY (Puro.earth Biochar D-MRV)
-      # Biomass extraction marks a dead tree and initiates Biomass Passport generation
-      # for Puro.earth CORC certification. The passport anchors provenance on-chain.
+      # Biomass extraction marks the tree dead; the D-MRV Biomass Passport that
+      # anchors provenance on-chain is filed later, on attestation.
+      # 🔴 [E.20, ⚖️ 2026-08-24] Тут ЛИШЕ смерть дерева. Паспорт у чергу ставить
+      # `MaintenanceRecord#attest!` — пускачем незворотної заявки є сам підпис;
+      # підстава й вимір ≈7–10 хв — картка воркера `04_02 §11` + скіл `backend` #77.
       if target.is_a?(Tree) && record.action_type_biomass_extraction?
         target.declare_deceased! unless target.deceased?
-        pending_passport_record_id = record.id
       end
 
       # 4. [ВИПРАВЛЕНО]: ЗАКРИТТЯ ТРИВОГИ (Enum Method Fix)
@@ -73,8 +71,5 @@ class EcosystemHealingWorker
                        params: { record_id: record.id })
       end
     end
-
-    # Enqueue passport worker ПІСЛЯ успішного commit транзакції
-    PuroEarthPassportWorker.perform_async(pending_passport_record_id) if pending_passport_record_id
   end
 end

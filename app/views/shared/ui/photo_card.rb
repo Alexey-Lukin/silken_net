@@ -74,12 +74,15 @@ module Views
         end
 
         # [SEC.28] Дві НЕЗАЛЕЖНІ осі, і зводити їх в одну не можна: `@editable` каже про
-        # АКТОРА (право мутувати запис), `evidence_backed?` — про сам ЗАПИС (його фото є
+        # АКТОРА (право мутувати запис), `evidence_locked?` — про сам ЗАПИС (його фото є
         # доказом і не знищуються нікому). Без другої половини гард у контролері зробив
         # би кнопку, що веде в нікуди — рівно клас [UI.7]. Умову не дублюємо: дім один,
-        # `MaintenanceRecord#evidence_backed?`, і його ж читають валідація та гард.
+        # `MaintenanceRecord#evidence_locked?`, і його ж читає гард у контролері.
+        # ⚠️ [E.20] Саме `evidence_locked?`, а НЕ `evidence_backed?`: другий відповідає
+        # на питання валідації («чи фото обовʼязкові на кожен save»), і biomass туди
+        # входити не може. Кнопка мусить дзеркалити ЗАМОК, інакше вона знову веде в 422.
         def deletable?
-          @editable && !@record.evidence_backed?
+          @editable && !@record.evidence_locked?
         end
 
         def render_delete_button

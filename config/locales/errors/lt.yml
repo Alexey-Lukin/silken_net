@@ -23,8 +23,11 @@ lt:
               must_match_hardware_format: turi atitikti aparatinės įrangos formatą (SNET-Q-XXXXXXXX)
         maintenance_record:
           attributes:
+            action_type:
+              biomass_claim_is_final: negalima keisti po biomasės išgavimo paraiškos pateikimo — kartu nukristų įrodymų užraktas
             photos:
               required_for_action_type: reikalingos 'repair' ir 'installation' veiksmų tipams (Pasitikėjimo protokolas)
+              required_for_biomass_claim: reikalingos biomasės išgavimo paraiškai — ji negrįžtamai iškeliauja į išorinį registrą (Pasitikėjimo protokolas)
         naas_contract:
           attributes:
             end_date:

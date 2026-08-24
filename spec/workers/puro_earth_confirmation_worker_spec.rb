@@ -10,7 +10,7 @@ RSpec.describe PuroEarthConfirmationWorker, type: :worker do
   let(:fake_tx_hash) { "0x#{"fa" * 32}" }
   let(:tree) { create(:tree, status: :deceased) }
   let(:record) do
-    create(:maintenance_record, :biomass_extraction, maintainable: tree,
+    create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                      biomass_passport_tx_hash: fake_tx_hash,
                                                      biomass_passport_status: :sent)
   end

@@ -161,7 +161,7 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
     context "when target is a Tree with biomass_extraction" do
       it "transitions active tree to deceased" do
         tree = create(:tree, status: :active)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         allow(PuroEarthPassportWorker).to receive(:perform_async)
 
@@ -173,7 +173,7 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
 
       it "does not transition an already deceased tree" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         allow(PuroEarthPassportWorker).to receive(:perform_async)
 
@@ -183,36 +183,59 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
         expect(tree.status).to eq("deceased")
       end
 
-      it "triggers PuroEarthPassportWorker" do
-        tree = create(:tree, status: :active)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+  # 🔴 [E.20, ⚖️ founder 2026-08-24] Контракт ЗМІНЕНО: пускачем незворотної заявки
+  # є ПІДПИС, а не зцілення — цей воркер її більше не ставить у чергу ВЗАГАЛІ.
+  # Доти enqueue був безумовним, і атестатор мав рівно стільки часу, скільки живе
+  # джоба (`retry: 5` без власного `sidekiq_retry_in` ≈ 7–10 хв до DeadSet) —
+  # дедлайн, що селектує підпис не дивлячись, тобто рівно ту профанацію, проти
+  # якої правило «атестатор ≠ бенефіціар» і стоїть.
+  it "declares the tree deceased but files NO claim — the trigger moved to attestation" do
+    tree = create(:tree, status: :active)
+    record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
-        allow(PuroEarthPassportWorker).to receive(:perform_async).with(record.id)
+    allow(PuroEarthPassportWorker).to receive(:perform_async)
 
-        described_class.new.perform(record.id)
+    described_class.new.perform(record.id)
 
-        expect(PuroEarthPassportWorker).to have_received(:perform_async).with(record.id)
-      end
-    end
+    # Смерть дерева тут ЛИШАЄТЬСЯ — гейт не про неї, а про вихід у зовнішній
+    # реєстр; ⚖️ про гейтування самої смерті відкрите (`00_07` E.20).
+    expect(tree.reload.status).to eq("deceased")
+    expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
+  end
 
-    # -----------------------------------------------------------------
-    # Transaction Safety (P0 Fix)
-    # -----------------------------------------------------------------
-    context "when transaction rolls back during biomass_extraction" do
-      it "does not enqueue PuroEarthPassportWorker" do
-        tree = create(:tree, status: :active)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+  # ⚠️ І для ЗААТЕСТОВАНОГО запису теж — інакше заявка подавалась би двічі
+  # (вдруге вже з `attest!`). Пін мусить бути саме тут: «не ставить нікому»
+  # відрізняється від «не ставить неатестованому» рівно цим прикладом.
+  it "files no claim even for an already attested record (single trigger)" do
+    tree = create(:tree, status: :active)
+    record = create(:maintenance_record, :biomass_extraction, :with_evidence, :attested, maintainable: tree)
 
-        # Force declare_deceased! to raise, triggering a transaction rollback
-        # before we reach the post-commit enqueue line
-        allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(StandardError, "DB constraint violation")
+    allow(PuroEarthPassportWorker).to receive(:perform_async)
 
-        PuroEarthPassportWorker.jobs.clear
+    described_class.new.perform(record.id)
 
-        expect {
-          described_class.new.perform(record.id) rescue nil
-        }.not_to change(PuroEarthPassportWorker.jobs, :size)
-      end
+    expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
+  end
+end
+
+# -----------------------------------------------------------------
+# Transaction Safety (P0 Fix)
+# -----------------------------------------------------------------
+context "when transaction rolls back during biomass_extraction" do
+  # 🔴 Пін ПЕРЕЦІЛЕНО: доти він стеріг «джоба не ставиться в чергу всередині
+  # транзакції», а після переносу пускача в `attest!` тут ставити нічого — тобто
+  # старий приклад став би вакуумним (зелений на порожній множині). Реальний
+  # інваріант відкату — дерево НЕ мертве.
+  it "leaves the tree alive when the transaction rolls back" do
+    tree = create(:tree, status: :active)
+    record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
+
+    allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(StandardError, "DB constraint violation")
+
+    expect { described_class.new.perform(record.id) }.to raise_error(StandardError, /DB constraint/)
+
+    expect(tree.reload.status).to eq("active")
+  end
     end
   end
 end

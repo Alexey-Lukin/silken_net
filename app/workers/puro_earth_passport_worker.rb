@@ -35,6 +35,12 @@ class PuroEarthPassportWorker
   # [E.20] Заявка на CORC незворотна й іде в ЗОВНІШНІЙ реєстр, а Evidence Protocol
   # моделі `biomass_extraction` не покриває (`evidence_backed?` = repair+installation).
   class MissingEvidence < StandardError; end
+  # [E.20, ⚖️ founder 2026-08-24] Друга умова тих самих воріт, і вона СВІДОМО стоїть
+  # тут, а не на створенні: атестатор не мусить бути поруч у мить роботи в полі —
+  # драбинка «фото на вході, незалежний підпис перед виходом у ЗОВНІШНІЙ реєстр»
+  # дає йому вікно. Вимога на створенні штовхала б до профанації (підпише
+  # найближчий колега, не дивлячись).
+  class MissingAttestation < StandardError; end
 
   def perform(maintenance_record_id)
     record = MaintenanceRecord.find(maintenance_record_id)
@@ -107,12 +113,19 @@ class PuroEarthPassportWorker
   # `EcosystemHealingWorker` — чи гейтувати і їх, лишається відкритим
   # ([`00_07`](../../docs/00_07_Action_Plan_Tracker.md) E.20).
   def require_evidence!(record)
-    return if record.photos.any?
+    unless record.photos.any?
+      Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} (biomass_extraction) БЕЗ фотодоказу — " \
+                         "заявку на CORC не подано. Дія: додати фото до запису й " \
+                         "re-enqueue PuroEarthPassportWorker з консолі."
+      raise MissingEvidence, "MaintenanceRecord ##{record.id}: biomass passport requires photo evidence"
+    end
 
-    Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} (biomass_extraction) БЕЗ фотодоказу — " \
-                       "заявку на CORC не подано. Дія: додати фото до запису й " \
-                       "re-enqueue PuroEarthPassportWorker з консолі."
-    raise MissingEvidence, "MaintenanceRecord ##{record.id}: biomass passport requires photo evidence"
+    return if record.attested?
+
+    Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} НЕ ЗААТЕСТОВАНИЙ — заявку на CORC не подано. " \
+                       "Дія: інший форестер (НЕ автор запису) тисне «Засвідчити» на сторінці запису, " \
+                       "далі re-enqueue PuroEarthPassportWorker з консолі."
+    raise MissingAttestation, "MaintenanceRecord ##{record.id}: biomass passport requires an independent attestation"
   end
 
   # Phase 2: Submit passport to Puro.earth REST API for CORC issuance.
