@@ -266,7 +266,10 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
                            critical_z_min: 5.0, critical_z_max: 40.0)
     end
 
-    it "uses cluster-overridden bounds when judging healthy_z?" do
+    # ⚠️ Назва свідомо НЕ згадує `TreeFamily#healthy_z?` — цей приклад його не
+    # кличе й кликати не може: предикат родини кластерних override-ів не бачить.
+    # Судить тут `Tree#effective_lorenz_thresholds`, і саме його споживає сервіс.
+    it "honours the cluster per-species override over the family band" do
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
                                    "lorenz_overrides_by_species" => {
