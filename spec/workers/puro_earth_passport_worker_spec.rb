@@ -24,7 +24,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
     context "when record is a biomass_extraction on a Tree" do
       it "generates a biomass passport tx_hash and stamps :sent alongside it" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         described_class.new.perform(record.id)
 
@@ -37,7 +37,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "delegates to PuroEarth::PassportService for on-chain anchoring" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         expect_any_instance_of(PuroEarth::PassportService).to receive(:anchor!)
 
@@ -48,7 +48,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       # у blockchain_transactions, куди паспортний хеш не потрапляє ніколи).
       it "schedules PuroEarthConfirmationWorker for receipt tracking" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         described_class.new.perform(record.id)
 
@@ -58,7 +58,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       # [ARCH.53/PuroEarth] Idempotency + crash-recovery on Sidekiq retry.
       it "does NOT re-anchor when a passport tx_hash already exists (double-anchor guard)" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :sent)
 
@@ -69,7 +69,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "re-schedules confirmation on retry even when anchoring is skipped (B5 gap recovery)" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :sent)
 
@@ -86,7 +86,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       # коли конфірмейшн-нога вела в чужу таблицю.
       it "does NOT submit to the CORC API while the anchor is unconfirmed (:sent)" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :sent)
 
@@ -99,7 +99,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "submits to the CORC API once the anchor is :confirmed and stores corc_ref" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :confirmed)
 
@@ -110,7 +110,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "does NOT re-submit to the CORC API when corc_ref already exists (double-CORC guard)" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :confirmed,
                                                                    puro_earth_corc_ref: fake_corc_ref)
@@ -122,7 +122,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "does not run any phase for a terminally :failed anchor" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :failed)
 
@@ -136,7 +136,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "returns the D-MRV passport payload with correct fields" do
         tree = create(:tree, status: :deceased, latitude: 49.4285, longitude: 32.0620)
-        record = create(:maintenance_record, :biomass_extraction, :with_gps, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, :with_gps, maintainable: tree)
 
         payload = described_class.new.perform(record.id)
 
@@ -150,7 +150,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "logs the pass outcome with the anchor status" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         allow(Rails.logger).to receive(:info).with(a_string_matching(/Biomass Passport pass complete.*sent/))
 
@@ -161,7 +161,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
 
       it "continues successfully when REST API submission fails" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree,
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree,
                                                                    biomass_passport_tx_hash: fake_tx_hash,
                                                                    biomass_passport_status: :confirmed)
 
@@ -198,7 +198,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
     context "when record has nil coordinates" do
       it "falls back to tree coordinates" do
         tree = create(:tree, status: :deceased, latitude: 49.4285, longitude: 32.0620)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
         record.update_columns(latitude: nil, longitude: nil)
 
         result = described_class.new.perform(record.id)
@@ -211,7 +211,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
       it "yields nil gps coordinates (tree fallback also absent)" do
         tree = create(:tree, status: :deceased)
         tree.update_columns(latitude: nil, longitude: nil)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
         record.update_columns(latitude: nil, longitude: nil)
 
         result = described_class.new.perform(record.id)
@@ -223,7 +223,7 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
     context "when anchoring fails" do
       it "re-raises the error for Sidekiq retry" do
         tree = create(:tree, status: :deceased)
-        record = create(:maintenance_record, :biomass_extraction, maintainable: tree)
+        record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
         allow_any_instance_of(PuroEarth::PassportService).to receive(:anchor!)
           .and_raise(PuroEarth::PassportService::AnchoringError, "RPC timeout")
@@ -231,6 +231,41 @@ RSpec.describe PuroEarthPassportWorker, type: :worker do
         expect {
           described_class.new.perform(record.id)
         }.to raise_error(PuroEarth::PassportService::AnchoringError)
+      end
+    end
+
+    # [E.20] Заявка на CORC незворотна й іде в ЗОВНІШНІЙ реєстр, а Evidence
+    # Protocol моделі цей тип не покриває (`evidence_backed?` = repair+installation),
+    # і додати його туди ⛔ — валідація зламала б Puro-тракт (ARCH.91).
+    context "when the record carries no photo evidence" do
+      let(:tree) { create(:tree, status: :deceased) }
+      let(:record) { create(:maintenance_record, :biomass_extraction, maintainable: tree) }
+
+      it "refuses LOUDLY instead of filing an irreversible CORC claim" do
+        expect {
+          described_class.new.perform(record.id)
+        }.to raise_error(described_class::MissingEvidence, /##{record.id}/)
+      end
+
+      # Пін на САМУ незворотну дію, не лише на виняток: гейт, що кидає ПІСЛЯ
+      # анкеринга, лишався б зеленим на прикладі вище.
+      it "does not anchor and leaves the passport untouched" do
+        expect_any_instance_of(PuroEarth::PassportService).not_to receive(:anchor!)
+
+        expect { described_class.new.perform(record.id) }.to raise_error(described_class::MissingEvidence)
+
+        expect(record.reload.biomass_passport_tx_hash).to be_nil
+        expect(record.biomass_passport_status).to be_nil
+      end
+
+      # Дзеркало «легітимний актор не зачеплений»: без нього «нуль заявок»
+      # не відрізнити від «нуль тракту».
+      it "still anchors once the evidence is attached" do
+        record.photos.attach(io: StringIO.new("evidence"), filename: "e.jpg", content_type: "image/jpeg")
+
+        described_class.new.perform(record.id)
+
+        expect(record.reload.biomass_passport_tx_hash).to be_present
       end
     end
   end

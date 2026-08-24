@@ -38,6 +38,18 @@ FactoryBot.define do
       notes       { "Installed new titanium anchor and LoRa sensor unit on node." }
     end
 
+    # [E.20] Фотодоказ. Потрібен ДВОМ різним споживачам, і межі в них різні:
+    # моделі (`evidence_backed?` — repair/installation, валідація на кожен save)
+    # і `PuroEarthPassportWorker` (biomass_extraction — гейт незворотної
+    # CORC-заявки; на моделі його ставити ⛔, бо валідація зламала б Puro-тракт).
+    trait :with_evidence do
+      after(:build) do |record|
+        record.photos.attach(
+          io: StringIO.new("evidence"), filename: "evidence.jpg", content_type: "image/jpeg"
+        )
+      end
+    end
+
     trait :biomass_extraction do
       action_type      { :biomass_extraction }
       notes            { "Extracted dead wood biomass for Puro.earth Biochar CORC certification." }

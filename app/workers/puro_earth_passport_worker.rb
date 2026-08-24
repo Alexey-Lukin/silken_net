@@ -32,6 +32,10 @@ class PuroEarthPassportWorker
   include ApplicationWeb3Worker
   sidekiq_options queue: "web3", retry: 5
 
+  # [E.20] Заявка на CORC незворотна й іде в ЗОВНІШНІЙ реєстр, а Evidence Protocol
+  # моделі `biomass_extraction` не покриває (`evidence_backed?` = repair+installation).
+  class MissingEvidence < StandardError; end
+
   def perform(maintenance_record_id)
     record = MaintenanceRecord.find(maintenance_record_id)
     tree   = record.maintainable
@@ -40,6 +44,8 @@ class PuroEarthPassportWorker
       Rails.logger.warn "🌿 [Puro.earth] Record ##{maintenance_record_id} maintainable is not a Tree, skipping."
       return
     end
+
+    require_evidence!(record)
 
     payload = build_passport_payload(record, tree)
 
@@ -77,6 +83,37 @@ class PuroEarthPassportWorker
   end
 
   private
+
+  # [E.20] Гейт фотодоказу стоїть ТУТ — на місці незворотної дії, — а не на моделі,
+  # і це присуд, не смак ([`00_07`](../../docs/00_07_Action_Plan_Tracker.md) E.20):
+  # ⛔ додавання `biomass_extraction` у `evidence_backed?` зламало б тракт, бо
+  # валідація біжить на КОЖЕН `save` (форму `on: :create` відкинуто, ARCH.91), а
+  # обидва Puro-воркери роблять `update!` на вже-створеному записі. Найгірше —
+  # `sidekiq_retries_exhausted` поллера кличе `escalate_biomass_passport!` усередині
+  # `rescue`, тож `RecordInvalid` полетів би незловленим і запис завис би в `:sent`
+  # назавжди з мертвим власним запобіжником.
+  #
+  # 🔴 Форма відмови — RAISE, а не тихий `return`, і носій обрано ВИМІРОМ, не смаком:
+  # per-tree `EwsAlert(:field_audit)` тут був би зʼїдений — `TreeStalenessSweepWorker`
+  # закриває такі алерти для дерев, що покинули `active`, а це дерево вже
+  # `deceased` (його оголосив `EcosystemHealingWorker` до нас). Тобто ескалація
+  # прожила б хвилини й зникла. Cluster-level теж хибний: він входить у
+  # `dark_cluster_ids` і осліпив би per-tree dead-man switch на весь кластер.
+  # Тому — гучний провал: 5 ретраїв (фото ще можуть додати) → DeadSet + Sentry,
+  # де вже стоїть алерт `sn-alert-sidekiq-deadset`. Заявка не подається.
+  #
+  # ⚠️ Оголошена стеля: цей гейт стереже ОСТАННЮ ланку. `declare_deceased!` і
+  # звʼязаний із ним `trigger_slashing_protocol` спрацювали РАНІШЕ, у
+  # `EcosystemHealingWorker` — чи гейтувати і їх, лишається відкритим
+  # ([`00_07`](../../docs/00_07_Action_Plan_Tracker.md) E.20).
+  def require_evidence!(record)
+    return if record.photos.any?
+
+    Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} (biomass_extraction) БЕЗ фотодоказу — " \
+                       "заявку на CORC не подано. Дія: додати фото до запису й " \
+                       "re-enqueue PuroEarthPassportWorker з консолі."
+    raise MissingEvidence, "MaintenanceRecord ##{record.id}: biomass passport requires photo evidence"
+  end
 
   # Phase 2: Submit passport to Puro.earth REST API for CORC issuance.
   # Non-blocking: REST API failure does NOT invalidate on-chain anchoring.
