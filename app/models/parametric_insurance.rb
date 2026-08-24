@@ -71,7 +71,8 @@ class ParametricInsurance < ApplicationRecord
   validates :required_confirmations, numericality: { greater_than: 0 }
   # [INS.1] Застрахований перил задається ПРИ СТВОРЕННІ полісу (00_04 §5) — без нього
   # peril-honest маршрутизація (fire → FIRMS / не-пожежа → Field-Audit) і audit-трейл
-  # сліпі. Прод-шляху створення полісів ще немає (E.20-майбутнє) — валідація гарантує,
+  # сліпі. Прод-шляху створення полісів ще немає ([`INS.1`] — E.20-реф знято 2026-08-24,
+  # він указував на гільдію, а поліси до неї стосунку не мали) — валідація гарантує,
   # що будь-який майбутній шлях перил проставить.
   validates :trigger_event, presence: true
 
