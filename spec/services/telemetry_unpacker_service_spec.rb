@@ -1782,11 +1782,16 @@ RSpec.describe TelemetryUnpackerService, type: :service do
   describe "commit_telemetry credit guards" do
     let(:chunk) { build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3) }
 
+    # 🔴 Тут стояв `allow(tree.wallet).to receive(:credit!)` + `not_to have_received`,
+    # і воно було ВАКУУМНИМ: сервіс тримає власний кеш `Tree.where(did:)` і кредитує
+    # гаманець СВОГО екземпляра, тож стаб на нашому обʼєкті він не бачить ніколи —
+    # асерція була істинною тривіально. Доведено мутацією: зняття гарда лишало
+    # приклад зеленим. Спостерігаємо натомість НАСЛІДОК у БД, і стаб не потрібен.
     it "does not credit the wallet when growth_points is zero" do
       # status_byte=0 → wire growth_points nibble=0 → stored gp=0.
-      allow(tree.wallet).to receive(:credit!)
+      before_balance = tree.wallet.balance
       expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(tree.wallet).not_to have_received(:credit!)
+      expect(tree.wallet.reload.balance).to eq(before_balance)
       expect(TelemetryLog.last.growth_points).to eq(0)
     end
 
@@ -1804,9 +1809,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       tree.update!(tree_family: tiny)
       tiny_chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 1, 3) # wire nibble=1 → gp=2
 
-      allow(tree.wallet).to receive(:credit!)
+      # Той самий вакуум, що вище: стаб на НАШОМУ `tree.wallet` сервіс не бачить.
+      before_balance = tree.wallet.balance
       expect { described_class.call(tiny_chunk) }.to change(TelemetryLog, :count).by(1)
-      expect(tree.wallet).not_to have_received(:credit!)
+      expect(tree.wallet.reload.balance).to eq(before_balance)
     end
   end
 end
