@@ -249,6 +249,13 @@ module DocsLinter
   # "звільнило"/"зарезервовано:"/"резервних" do NOT match (those are "freed a
   # different reg" / bit-field / "no reserves left"); only standalone
   # вільн*/резерв/free/reserve(-for) — the real "this register is spare" claim.
+  #
+  # ⚠️ Оголошена стеля (виміряна 2026-08-24, FP): словник збігається з
+  # ІДЕНТИФІКАТОРАМИ, а не лише з прозою — метрика `…_insurance_reserve_hold_total`
+  # у code-span на тому самому РЯДКУ, що й приклад `DR0..DR19`, дає хибний хіт.
+  # Гейт лишено як є свідомо: він рядковий, а лік дешевший за зміну периметра —
+  # не тримати назву-ідентифікатор в одному рядку з DRn (у нас це вирішилось
+  # розбиттям надто довгого булета, який і без того просився на два).
   RTC_AVAIL_RE = /(?<!\p{L})(вільн|spare|vacant|вакант|free\b|reserve(?!d?:)|резерв(?![\p{L}:]))/i
 
   def rtc_register_allocation_drift(basename, text)
