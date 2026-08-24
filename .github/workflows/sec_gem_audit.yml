@@ -1,0 +1,74 @@
+name: Sec · Gem Audit
+
+# Розкладний аудит `Gemfile.lock` проти ruby-advisory-db.
+#
+# ⚖️ ЧОМУ ВІН ІСНУЄ, хоча `bin/bundler-audit` уже стоїть у `ci.yml` (job
+# `scan_ruby`) — присуд OPS.26, ратифіковано founder-ом. Той виклик
+# **path-gated на КОД**, тобто його пускачем є НАШ діф; а подія, що створює
+# ризик, приходить ззовні й щодня — запис у базі вразливостей. Наслідок
+# структурний: advisory проти НЕЗМІНЕНОГО `Gemfile.lock` невидима доти, доки
+# хтось не відкриє code-PR, і зелений `main` після docs-only комітів читається
+# як «залежності здорові», хоча ніхто їх не міряв.
+#
+# 🔑 Дискримінатор, який вирішив присуд, — НЕ частота, а те, що два канали
+# читають РІЗНІ БАЗИ: `bundler-audit` живиться ruby-advisory-db і саме вона
+# валить required-чек `CI passed`; Dependabot-алерти живляться GitHub Advisory
+# DB. Тож «покластися на алерти» лишило б без жодного проактивного пускача
+# рівно ту базу, яка блокує наші мерджі.
+#
+# 📊 Ціна шуму виміряна, не вгадана: за місяць спостережень таких подій було
+# дві, кожна тривала години до фіксу. Це рідкісний змістовний сигнал, а не
+# регулярний шум, який перестають читати.
+#
+# 🔒 Свідомо БЕЗ `pull_request`: цей workflow не є merge-гейтом і не входить у
+# required-периметр (`scripts/workflow_gate_perimeter.rb` класифікує лише
+# PR-тригернуті). Merge стереже `scan_ruby`; цей — вікно між мерджами.
+#
+# Канон: 06_07 §1. Трекер: OPS.26 (docs/00_07).
+
+on:
+  schedule:
+    - cron: "11 6 * * *" # daily 06:11 UTC — унікальний слот, зміщений від круглих годин
+  workflow_dispatch: # ручний прогін — ним і перевірено перше виконання
+
+permissions:
+  contents: read
+
+jobs:
+  gem_audit:
+    name: bundler-audit (ruby-advisory-db)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          bundler-cache: true
+
+      # Два кроки замість одного `check --update` — щоб РОЗВЕСТИ «не побігло»
+      # ⊥ «знайшло вразливість». Обидва червонять, але червоне тут читає
+      # людина, і злиті в один крок вони дають лог «аудит упав» там, де
+      # насправді не викачалась база. Регулярне хибне червоне на безпековій
+      # смузі коштує дорожче за саму смугу: його перестають читати.
+      - name: Fetch the advisory database (ruby-advisory-db)
+        # Прочитано в джерелі гема, не припущено: `CLI#check` тягне базу САМА
+        # лише коли її немає (`!Database.exists?` → download), а наявний клон
+        # без `--update` не оновлює. Тобто на кешованому раннері неявний шлях
+        # мовчки судив би вчорашню базу — зелене, що вимірює інструмент.
+        run: bin/bundler-audit update
+
+      - name: Audit Gemfile.lock against that database
+        # ⚠️ Дзеркало для локального прогону: `bin/bundler-audit` БЕЗ `update`
+        # судить той клон, що вже лежить у тебе; CI завжди свіжий.
+        # Ignore-список береться з `config/bundler-audit.yml` — його підставляє
+        # бінстаб, коли в ARGV є `check`.
+        run: bin/bundler-audit check

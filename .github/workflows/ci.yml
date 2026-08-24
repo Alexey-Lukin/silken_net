@@ -607,9 +607,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Terraform
+        # 🔒 [OPS.21] Точний пін, не діапазон, і причина не в безпеці, а в тому,
+        # ЩО цей крок судить: `fmt -check` порівнює з канонічним форматуванням
+        # САМОГО бінарника, тож будь-який мінор 1.x, що зсуне канон, червонить
+        # merge-required смугу `CI passed` при незмінному дереві. `~> 1.5`
+        # відкривав для цього десять мінорів. Друга половина — паритет: цю саму
+        # версію тепер ставлять `deploy`, `deploy-production` і `terraform_drift`,
+        # інакше CI валідує один Terraform, а розгортає інший.
+        # ⚠️ Бампера немає (Dependabot читає `uses:`, не `with:`) — підняття
+        # ручне, скіл `dependency-update`, і ОДРАЗУ в усіх чотирьох.
+        # ⚠️ Друга названа стеля: пін заморожує рівно те, що `~> 1.5` резолвив
+        # тут і так, тож зміни поведінки немає — але паритету dev⟷CI він НЕ
+        # дає (локальний бінарник відстає на кілька патчів). Сьогодні обидва
+        # дають однаковий `fmt`; у день, коли розійдуться, вердикт належить
+        # ЦЬОМУ кроку, а лік — підняти локальний, не послабити пін.
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
-          terraform_version: "~> 1.5"
+          terraform_version: "1.15.9"
           terraform_wrapper: false # preserve real exit codes (drift-detector lesson, INF.22)
 
       - name: Format check (both roots)

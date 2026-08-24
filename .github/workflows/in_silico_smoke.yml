@@ -112,8 +112,17 @@ jobs:
         # environment-name. Cache keys on the lock hash, so it changes only when
         # the lock changes → deterministic, and warm runs reuse the ~2.5 GB env
         # in ~30 s instead of installing for ~8 min.
+        #
+        # 🔒 [OPS.21] Той самий клас, що в `ml_smoke`, але тут він гостріший:
+        # lock дає точні версії+хеші ПАКЕТІВ, а версія самого micromamba —
+        # це ПАРСЕР того lock'а, і вона дефолтилась у `latest`. Тобто зміна
+        # формату unified-lock в апстрімі клала б merge-required смугу
+        # `In-silico passed` при незмінному дереві. Пін закріплює наявний
+        # бінарник; бампера немає (Dependabot не читає `with:`) → ручний крок
+        # рецепту скіла `dependency-update`.
         uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3
         with:
+          micromamba-version: 2.9.0-0
           environment-file: tools/in_silico/conda-lock.yml
           environment-name: silken_md
           cache-environment: true

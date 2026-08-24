@@ -103,7 +103,10 @@ jobs:
         if: steps.guard.outputs.configured == 'true'
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
-          terraform_version: "~> 1.5"
+          # [OPS.21] Той самий точний пін, що валідує `ci.yml`: детектор дрейфу
+          # мусить порівнювати стан тим самим бінарником, що його й записав,
+          # інакше зміна плану самого Terraform читається як дрейф інфри.
+          terraform_version: "1.15.9"
           # terraform_wrapper: false is LOAD-BEARING — the default wrapper's own
           # process exits 0 for BOTH "no diff" AND "diff present", collapsing
           # `plan -detailed-exitcode`'s exit 2 → real drift would read green

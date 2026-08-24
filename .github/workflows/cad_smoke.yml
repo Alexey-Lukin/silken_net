@@ -65,9 +65,22 @@ jobs:
           submodules: recursive
 
       - name: Set up .NET 9
+        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому пiну,
+        # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
+        # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
+        # збірка з `TreatWarningsAsErrors` їхала на SDK, якого ніхто не називав:
+        # новий аналізатор у свіжому фіча-бенді = червона merge-required смуга
+        # `CAD passed` при незмінному дереві.
+        # 🔒 СТЕЛЯ, названа поіменно: цей вхід зобовʼязує лише те, що СТАВИТЬ
+        # раннер; яку версію обере `dotnet`, вирішує `rollForward` усередині
+        # global.json (нині `latestFeature`), тож передвстановлений вищий
+        # фіча-бенд усе ще може виграти. Звуження до `latestPatch` — окреме
+        # рішення про допустимий дрейф SDK, не побічний ефект цього піну.
+        # ⚠️ Бампера немає (Dependabot не читає global.json) — підняття ручне,
+        # скіл `dependency-update`.
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '9.0.x'
+          global-json-file: tools/cad/global.json
 
       - name: Build (LEAP source vs PicoGK 2.2 — 0W/0E gate)
         run: dotnet build tools/cad/SilkenCad.sln -c Release
@@ -88,9 +101,22 @@ jobs:
           submodules: recursive
 
       - name: Set up .NET 9
+        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому пiну,
+        # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
+        # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
+        # збірка з `TreatWarningsAsErrors` їхала на SDK, якого ніхто не називав:
+        # новий аналізатор у свіжому фіча-бенді = червона merge-required смуга
+        # `CAD passed` при незмінному дереві.
+        # 🔒 СТЕЛЯ, названа поіменно: цей вхід зобовʼязує лише те, що СТАВИТЬ
+        # раннер; яку версію обере `dotnet`, вирішує `rollForward` усередині
+        # global.json (нині `latestFeature`), тож передвстановлений вищий
+        # фіча-бенд усе ще може виграти. Звуження до `latestPatch` — окреме
+        # рішення про допустимий дрейф SDK, не побічний ефект цього піну.
+        # ⚠️ Бампера немає (Dependabot не читає global.json) — підняття ручне,
+        # скіл `dependency-update`.
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '9.0.x'
+          global-json-file: tools/cad/global.json
 
       - name: Build
         run: dotnet build tools/cad/SilkenCad.sln -c Release
@@ -111,6 +137,13 @@ jobs:
           done
 
       - name: Generate SBOM (CycloneDX — supply-chain provenance, matches the GHCR SBOM)
+        # 🔒 [OPS.21] Свідомо БЕЗ `--version`, і підстава вимірна, а не смакова:
+        # крок `continue-on-error`, тож він НЕ здатен зачервонити смугу — пін
+        # тут не купує нічого з того класу, заради якого пінять начинку
+        # («апстрім кладе merge-required гейт»). ⚠️ Названа ціна відмови:
+        # зламана версія тихо лишить збірку БЕЗ SBOM-артефакта, і помітити це
+        # можна лише за його відсутністю — це інший клас (мовчазний артефакт),
+        # не клас піна, і лікується він детектором порожнього виходу.
         continue-on-error: true
         working-directory: tools/cad
         run: |
