@@ -419,8 +419,9 @@ RSpec.describe MaintenanceRecord, type: :model do
   # =========================================================================
   describe "callbacks" do
     it "triggers EcosystemHealingWorker after create" do
-      expect(EcosystemHealingWorker).to receive(:perform_async).with(kind_of(Integer))
       create(:maintenance_record)
+
+      expect(EcosystemHealingWorker).to have_received(:perform_async).with(kind_of(Integer))
     end
   end
 

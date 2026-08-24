@@ -153,8 +153,10 @@ RSpec.describe DeviceCalibration, type: :model do
       calibration = build(:device_calibration, :critical_drift, tree: tree)
 
       # Verify we access cluster_id directly from tree (FK column), not through cluster association
-      expect(tree).not_to receive(:cluster)
+      allow(tree).to receive(:cluster)
       calibration.save!
+
+      expect(tree).not_to have_received(:cluster)
     end
   end
 end

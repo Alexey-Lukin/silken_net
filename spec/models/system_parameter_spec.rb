@@ -171,8 +171,10 @@ RSpec.describe SystemParameter, type: :model do
       described_class.current(:lorenz_sigma)
 
       # Second call should use cache (no DB query) and return same value
-      expect(described_class).not_to receive(:find_by)
+      allow(described_class).to receive(:find_by)
       expect(described_class.current(:lorenz_sigma)).to eq(10.0)
+
+      expect(described_class).not_to have_received(:find_by)
     end
 
     it "invalidates cache on update" do
@@ -195,8 +197,10 @@ RSpec.describe SystemParameter, type: :model do
       expect(described_class.current(:disabled_flag)).to be(false)
 
       # Second call should return cached false (not fall through to DB)
-      expect(described_class).not_to receive(:find_by)
+      allow(described_class).to receive(:find_by)
       expect(described_class.current(:disabled_flag)).to be(false)
+
+      expect(described_class).not_to have_received(:find_by)
     end
 
     # Regression: попередня реалізація використовувала `exist? + read + write` —
@@ -205,12 +209,14 @@ RSpec.describe SystemParameter, type: :model do
     # тож повторні lookups неіснуючих keys мають бути SQL-free.
     it "caches missing keys to avoid repeated DB lookups (MISS_SENTINEL)" do
       # Перший виклик — find_by виконається один раз, нічого не знаходить.
-      expect(described_class).to receive(:find_by).once.and_call_original
+      allow(described_class).to receive(:find_by).and_call_original
       expect(described_class.current(:never_seeded, default: 42)).to eq(42)
 
       # Подальші виклики мають читати з кешу: find_by НЕ викликається.
       expect(described_class.current(:never_seeded, default: 42)).to eq(42)
       expect(described_class.current(:never_seeded, default: 99)).to eq(99)
+
+      expect(described_class).to have_received(:find_by).once
     end
 
     # Regression: попередній `exist? + read` був TOCTOU-race — якщо entry

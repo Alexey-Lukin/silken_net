@@ -226,12 +226,13 @@ RSpec.describe Wallet, type: :model do
     it "fail-open: root computation failure never blocks the mint (WARN + metric, root NULL)" do
       create(:telemetry_log, tree: wallet.tree, created_at: 2.hours.ago)
       allow(Mrv::LineageWindow).to receive(:root_for).and_raise(StandardError, "leaf exploded")
-      expect(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to receive(:increment)
+      allow(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to receive(:increment)
 
       tx = wallet.lock_and_mint!(500, 100)
 
       expect(tx).to be_persisted
       expect(tx.reload.telemetry_merkle_root).to be_nil
+      expect(SilkenNet::Metrics::LINEAGE_ROOT_FAILURES_TOTAL).to have_received(:increment)
     end
 
     it "zero-mint (points below threshold) does not move the cursor" do
@@ -451,11 +452,12 @@ RSpec.describe Wallet, type: :model do
         original_balance = wallet.balance
 
         # Verify that with_lock is used (lock! is called internally)
-        expect(wallet).to receive(:lock!).and_call_original
+        allow(wallet).to receive(:lock!).and_call_original
 
         wallet.credit!(100)
         wallet.reload
 
+        expect(wallet).to have_received(:lock!)
         expect(wallet.balance).to eq(original_balance + 100)
       end
 
@@ -477,11 +479,12 @@ RSpec.describe Wallet, type: :model do
         wallet = create(:tree).wallet
         wallet.update!(balance: 1000)
 
-        expect(wallet).to receive(:lock!).and_call_original
+        allow(wallet).to receive(:lock!).and_call_original
 
         wallet.lock_funds!(400)
         wallet.reload
 
+        expect(wallet).to have_received(:lock!)
         expect(wallet.locked_balance).to eq(400)
       end
 
@@ -498,11 +501,12 @@ RSpec.describe Wallet, type: :model do
         wallet = create(:tree).wallet
         wallet.update!(balance: 1000, locked_balance: 400)
 
-        expect(wallet).to receive(:lock!).and_call_original
+        allow(wallet).to receive(:lock!).and_call_original
 
         wallet.release_locked_funds!(200)
         wallet.reload
 
+        expect(wallet).to have_received(:lock!)
         expect(wallet.locked_balance).to eq(200)
       end
 
@@ -517,22 +521,28 @@ RSpec.describe Wallet, type: :model do
     describe "consistent locking pattern across all mutation methods" do
       it "credit! uses with_lock" do
         wallet = create(:tree).wallet
-        expect(wallet).to receive(:with_lock).and_call_original
+        allow(wallet).to receive(:with_lock).and_call_original
         wallet.credit!(10)
+
+        expect(wallet).to have_received(:with_lock)
       end
 
       it "lock_funds! uses with_lock" do
         wallet = create(:tree).wallet
         wallet.update!(balance: 1000)
-        expect(wallet).to receive(:with_lock).and_call_original
+        allow(wallet).to receive(:with_lock).and_call_original
         wallet.lock_funds!(100)
+
+        expect(wallet).to have_received(:with_lock)
       end
 
       it "release_locked_funds! uses with_lock" do
         wallet = create(:tree).wallet
         wallet.update!(balance: 500, locked_balance: 500)
-        expect(wallet).to receive(:with_lock).and_call_original
+        allow(wallet).to receive(:with_lock).and_call_original
         wallet.release_locked_funds!(100)
+
+        expect(wallet).to have_received(:with_lock)
       end
     end
   end

@@ -365,8 +365,10 @@ RSpec.describe BlockchainTransaction, type: :model do
       end
 
       it "logs the failure" do
-        expect(Rails.logger).to receive(:error).with(/провалилася/)
+        allow(Rails.logger).to receive(:error).with(/провалилася/)
         tx.fail!("revert")
+
+        expect(Rails.logger).to have_received(:error).with(/провалилася/)
       end
 
       # [M2/ARCH.45] fail! must release the growth_points a mint-tx locked, else the forester's
@@ -525,23 +527,31 @@ RSpec.describe BlockchainTransaction, type: :model do
       let(:counter) { SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL }
 
       it "counts a lookup with no created_at at all" do
-        expect(counter).to receive(:increment).with(labels: { caller: "Spec:missing_created_at" })
+        allow(counter).to receive(:increment).with(labels: { caller: "Spec:missing_created_at" })
         described_class.find_with_partition_pruning(tx.id, nil, metric_caller: "Spec")
+
+        expect(counter).to have_received(:increment).with(labels: { caller: "Spec:missing_created_at" })
       end
 
       it "counts a lookup whose created_at cannot be parsed" do
-        expect(counter).to receive(:increment).with(labels: { caller: "Spec:invalid_created_at" })
+        allow(counter).to receive(:increment).with(labels: { caller: "Spec:invalid_created_at" })
         described_class.find_with_partition_pruning(tx.id, "not-a-date", metric_caller: "Spec")
+
+        expect(counter).to have_received(:increment).with(labels: { caller: "Spec:invalid_created_at" })
       end
 
       it "labels an undeclared caller rather than dropping the event" do
-        expect(counter).to receive(:increment).with(labels: { caller: "undeclared:missing_created_at" })
+        allow(counter).to receive(:increment).with(labels: { caller: "undeclared:missing_created_at" })
         described_class.find_with_partition_pruning(tx.id)
+
+        expect(counter).to have_received(:increment).with(labels: { caller: "undeclared:missing_created_at" })
       end
 
       it "stays silent on the pruned happy path" do
-        expect(counter).not_to receive(:increment)
+        allow(counter).to receive(:increment)
         described_class.find_with_partition_pruning(tx.id, tx.created_at, metric_caller: "Spec")
+
+        expect(counter).not_to have_received(:increment)
       end
     end
   end
@@ -589,24 +599,35 @@ RSpec.describe BlockchainTransaction, type: :model do
     end
 
     it "degrades to an unpruned relation, and says so, when no span is given" do
-      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+      allow(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
         .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
+
       expect(described_class.where_ids_pruned(ids, nil, metric_caller: "Spec").to_a).to match_array(txs)
+
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment).with(labels: { caller: "Spec:missing_span" })
     end
 
     it "treats an all-nil span as no span rather than as an empty window" do
-      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+      allow(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
         .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
+
       expect(described_class.where_ids_pruned(ids, [ nil, nil ], metric_caller: "Spec").to_a).to match_array(txs)
+
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment).with(labels: { caller: "Spec:missing_span" })
     end
 
     # 🔴 [PERF.1] Порожній `ids` — це `WHERE 1=0`: деградації НЕ БУЛО, бо сканувати нема
     # чого. Лічильник там труїв саме ту панель, задля якої його заводили.
     it "does NOT count a degradation when there is nothing to scan" do
-      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
-        .not_to receive(:increment)
+      allow(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to receive(:increment)
 
       expect(described_class.where_ids_pruned([], nil, metric_caller: "Spec").to_a).to be_empty
+
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .not_to have_received(:increment)
     end
 
     # 🔴 [PERF.1] Ексклюзивний Range, побудований із самих рядків, викидав би рядок із
@@ -625,12 +646,15 @@ RSpec.describe BlockchainTransaction, type: :model do
     # ⚠️ Сьогодні такий вхід недосяжний (`created_at` у composite PK → NOT NULL), тож
     # приклад стереже ЛАТЕНТНУ міну — саме тому він тут, а не «коли знадобиться».
     it "degrades on a PARTIAL nil span instead of silently narrowing the window" do
-      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+      allow(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
         .to receive(:increment).with(labels: { caller: "Spec:missing_span" })
 
       partial = [ txs.first.created_at, nil ]
       expect(described_class.where_ids_pruned(ids, partial, metric_caller: "Spec").to_a)
         .to match_array(txs)
+
+      expect(SilkenNet::Metrics::BLOCKCHAIN_TRANSACTION_UNPRUNED_LOOKUPS_TOTAL)
+        .to have_received(:increment).with(labels: { caller: "Spec:missing_span" })
     end
   end
 
@@ -742,8 +766,9 @@ RSpec.describe BlockchainTransaction, type: :model do
         tx = create(:blockchain_transaction, status: :sent)
         allow(tx).to receive(:wallet).and_return(nil)
         # Verify no broadcast occurs specifically because wallet is nil
-        expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_later_to)
         tx.send(:broadcast_status_change)
+
+        expect(Turbo::StreamsChannel).not_to have_received(:broadcast_replace_later_to)
       end
     end
   end

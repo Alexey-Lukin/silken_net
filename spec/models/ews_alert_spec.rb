@@ -372,8 +372,9 @@ RSpec.describe EwsAlert, type: :model do
     describe "after_create_commit :dispatch_notifications!" do
       it "enqueues AlertNotificationWorker" do
         allow_any_instance_of(described_class).to receive(:dispatch_notifications!).and_call_original
-        expect(AlertNotificationWorker).to receive(:perform_async).with(kind_of(Integer))
         create(:ews_alert, :fire)
+
+        expect(AlertNotificationWorker).to have_received(:perform_async).with(kind_of(Integer))
       end
     end
 
@@ -396,26 +397,34 @@ RSpec.describe EwsAlert, type: :model do
     describe "after_create_commit :schedule_satellite_verification!" do
       it "enqueues DclimateVerificationWorker for fire_detected" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
-        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
+        allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
         create(:ews_alert, :fire)
+
+        expect(DclimateVerificationWorker).to have_received(:perform_in).with(1.hour, kind_of(Integer))
       end
 
       it "enqueues DclimateVerificationWorker for severe_drought" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
-        expect(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
+        allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
         create(:ews_alert, :drought)
+
+        expect(DclimateVerificationWorker).to have_received(:perform_in).with(1.hour, kind_of(Integer))
       end
 
       it "does not enqueue DclimateVerificationWorker for vandalism_breach" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
-        expect(DclimateVerificationWorker).not_to receive(:perform_in)
+        allow(DclimateVerificationWorker).to receive(:perform_in)
         create(:ews_alert, alert_type: :vandalism_breach)
+
+        expect(DclimateVerificationWorker).not_to have_received(:perform_in)
       end
 
       it "does not enqueue DclimateVerificationWorker for system_fault" do
         allow_any_instance_of(described_class).to receive(:schedule_satellite_verification!).and_call_original
-        expect(DclimateVerificationWorker).not_to receive(:perform_in)
+        allow(DclimateVerificationWorker).to receive(:perform_in)
         create(:ews_alert, alert_type: :system_fault)
+
+        expect(DclimateVerificationWorker).not_to have_received(:perform_in)
       end
     end
   end
@@ -720,8 +729,10 @@ RSpec.describe EwsAlert, type: :model do
     it "does nothing when tree_id is nil" do
       alert = create(:ews_alert, tree: nil)
 
-      expect(Rails.cache).not_to receive(:delete)
+      allow(Rails.cache).to receive(:delete)
       alert.send(:clear_silence_filter!)
+
+      expect(Rails.cache).not_to have_received(:delete)
     end
   end
 
