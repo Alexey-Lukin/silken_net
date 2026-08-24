@@ -600,7 +600,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "increments fraud metric when device says homeostasis but server Z is unhealthy" do
         service = described_class.new("", nil)
-        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
@@ -609,7 +608,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "does not flag when both device and server agree on healthy" do
         service = described_class.new("", nil)
-        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(true)
         attributes = { z_value: 25.0, bio_status: :homeostasis }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
@@ -618,11 +616,34 @@ RSpec.describe TelemetryUnpackerService, type: :service do
 
       it "does not flag when both device and server agree on unhealthy" do
         service = described_class.new("", nil)
-        allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(false)
         attributes = { z_value: 50.0, bio_status: :stress }
 
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
+      end
+
+      # [FW.8] Дискримінуючий пін родинної смуги НА РІВНІ СЕРВІСУ — шов, якого
+      # доти не тримав ніхто. Сусіди вище доводять лише fallback (родини нема →
+      # глобальні межі), а ланцюг `Tree#effective_lorenz_thresholds` пінить
+      # `spec/integration/fw8_threshold_governance_spec.rb`. Між ними лишалось
+      # питання, чи `check_z_divergence!` ту межу СПОЖИВАЄ, чи мовчки їде на
+      # глобальній — і жодне z, ужите поруч (25.0 · 50.0), відповісти не може,
+      # бо лежить по один бік ОБОХ смуг.
+      # z=3.0 і є той дискримінатор: здорове глобально (≥ 2.0), хворе для
+      # родини (< critical_z_min 5.0).
+      it "[FW.8] uses the tree_family band, not the global floor, when a family is present" do
+        service = described_class.new("", nil)
+        # Ліхтар: якщо фікстура з'їде так, що 3.0 перестане розрізняти смуги,
+        # приклад мусить сказати це прямо, а не тихо стати вакуумним.
+        expect(tree_with_family.effective_lorenz_thresholds[:min]).to eq(5.0)
+        expect(Tree::GLOBAL_LORENZ_Z_MIN).to be < 3.0
+        attributes = { z_value: 3.0, bio_status: :homeostasis }
+
+        # Spy-форма свідомо: `RSpec/MessageSpies` вмикається, і новий приклад
+        # не має права дописувати в чергу міграції те, що сам же й зрізає.
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
       # [FW.31] Numeric tolerance band feature-flag.
@@ -633,10 +654,6 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       # e2e-шлях покритий у describe "FW.2 CCM path".
       describe "[FW.31] numeric tolerance band" do
         let(:service) { described_class.new("", nil) }
-
-        before do
-          allow_any_instance_of(TreeFamily).to receive(:healthy_z?).and_return(true)
-        end
 
         it "does NOT run the numeric branch when feature-flag is off (default)" do
           stub_const("ENV", ENV.to_h.except("GAIA_DCI_NUMERIC_TOLERANCE", "GAIA_DCI_NUMERIC_EPSILON"))

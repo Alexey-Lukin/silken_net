@@ -22,11 +22,19 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
 ```
 0. ALERTS     read the OPEN security alerts FIRST — they are a channel no
               "outdated" command covers, and nothing else in the repo forces
-              you to open them (OPS.26): `gh api repos/:owner/:repo/dependabot/
-              alerts --paginate -q '.[] | select(.state=="open")'`. A green
-              `main` says nothing here: `bundler-audit` runs only in the
-              path-gated `scan_ruby` job, so an advisory filed against an
-              UNCHANGED lock stays invisible until someone opens a code PR.
+              you to open them: `gh api repos/:owner/:repo/dependabot/
+              alerts --paginate -q '.[] | select(.state=="open")'`.
+              🔑 Why this step survives even though a scheduled `bundler-audit`
+              now exists (`Sec · Gem Audit`, daily — OPS.26 ratified the split):
+              the two channels read DIFFERENT databases. `bundler-audit` reads
+              ruby-advisory-db; these alerts read the GitHub Advisory DB. So the
+              scheduled lane covers the base that blocks merges, and NOTHING
+              covers this one but you. ⚠️ Still true, and narrower than it used
+              to be: a green `main` alone says nothing, because the in-CI
+              `bundler-audit` lives in the path-gated `scan_ruby` job — an
+              advisory against an UNCHANGED lock is invisible to *that* job
+              until someone opens a code PR. The daily lane is what closes that
+              window; the PR lane never did.
 1. INVENTORY  what's behind: the domain's "outdated" command (table below).
 2. RESEARCH   read THIS version's changelog/release-notes (web/gh). Classify:
               security(CVE) · breaking · behavior/default · feature · routine/regen.
