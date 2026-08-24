@@ -61,7 +61,7 @@ module Api
       # --- ПРЯМЕ ВИКОНАННЯ КОМАНДИ ---
       # [IDEMPOTENCY FIX]: POST /actuators/:id/execute requires Idempotency-Key header
       # for JSON requests. This prevents duplicate physical actuations caused by network retries
-      # (e.g., ranger's mobile app in forest with poor connectivity).
+      # (e.g., a forester's mobile client in a forest with poor connectivity).
       # Протокол цілком — `IdempotentRequest` (один дім на обидва майданчики).
       def execute
         # Скоуп — сам АКТУАТОР: об'єкт існує до запиту, тож він і є стабільною

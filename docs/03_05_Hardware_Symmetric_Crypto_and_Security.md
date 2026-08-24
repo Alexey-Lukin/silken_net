@@ -923,7 +923,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 >
 > **True-DePIN ladder («голос дерева»):** L0 custodial → L1 Queen-attest → L2 per-tree (SE050 Ed25519 + Merkle, energy-gated). Повний ladder (рунги/гейти/статус/енергобюджет) — канон [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline). §3.7 володіє лише SE/крипто-частиною (Slot-0 AES, Slot-1 Ed25519 keygen).
 >
-> **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.5) і operator-bond/slashing (економічний ризик — BIZ.13). Голос + точні «вуха» + skin-in-game = довірений RWA.
+> **Що SE050 дає / межі:** дає **голос** (non-extractable Ed25519 = origin) + AES-128 tamper-storage (LoRa-ключ) + монотонні лічильники (FW.2 nonce + panic) + anti-clone serial + SHA/HMAC OTA. **НЕ замінює** ЗВТ-метрологію (точність/legal — STK.5) і slashing (економічний ризик — [`05_05 §3`](05_05_Slashing_and_Risk_Policy); ⚫ `operator-bond`/BIZ.13 відкликано ⚖️ 2026-08-24, розбір — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Голос + точні «вуха» + skin-in-game = довірений RWA.
 >
 > **Усі залишкові кроки (docs/firmware/code/honesty/eval-kit/L1-L2) занесено в** [`00_07` — SE050-MIGRATION](00_07_Action_Plan_Tracker). Cross-ref [`00_07` — SEC.6](00_07_Action_Plan_Tracker), [`00_07` — ARCH.43](00_07_Action_Plan_Tracker), [`00_07` — E.60](00_07_Action_Plan_Tracker).
 
