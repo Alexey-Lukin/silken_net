@@ -238,6 +238,8 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 89. The same detector pointed at two surfaces can measure OPPOSITE things — so «this gate works over there» is not evidence that it should be extended here — **before porting a gate to a new surface, ask what the flagged FORM usually MEANS there, and expect the dominant genre to be the legitimate one at least once**
 90. When the candidate class is SMALL, you can measure a gate's precision EXHAUSTIVELY before writing a line of it — and twice in two days that killed the gate for under an hour of work
 91. Read a gate's DECLARED CEILING before you diagnose its false positives — the answer is often already in its own header, and re-deriving it by measurement costs real passes
+92. A gate can be ENABLED, correct and green while its INPUT FILE does not exist in this project — and that zero measures the instrument, not the tree — **for every gate you inherit or enable, ask not «is it on» but «what FILE does it read, and does that file exist HERE» — one `ls` per gate, and it is the cheapest audit in this document**
+93. A tool disabled BY ITS OWN VENDOR carries a PREMISE about your framework — and the premise is a claim, not a fact, so it ages exactly like a declared ceiling — **when a tool declines to run, read WHY it declines, and test that reason against your own runtime before accepting the silence — the rationale sits in the vendor's source, is written once, and is never re-measured against your version**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
