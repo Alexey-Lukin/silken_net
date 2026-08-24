@@ -30,6 +30,7 @@ lv:
       target_type_mismatch: target_type neatbilst programmaparatūras aparatūras tipam (%{expected}).
       uploaded: Jaunā evolūcija v%{version} augšupielādēta Okeānā.
     maintenance:
+      attested: Apstiprināts ar otru acu pāri.
       hardware_pulse_missing: Mezgls pēc šīs apkopes vēl nav ziņojis — verifikācijai vispirms nepieciešams impulss no aparatūras.
       hardware_verified: Aparatūras stāvoklis verificēts. STM32 impulss apstiprināts.
       idempotency_required: JSON apkopes ierakstu iesniegšanai nepieciešama Idempotency-Key galvene.
@@ -39,6 +40,7 @@ lv:
       photo_not_found: Fotogrāfija nav atrasta.
       record_created: Dziedināšanas ieraksts saglabāts. Ekosistēma atjaunināta.
       record_updated: Ieraksts atjaunināts.
+      self_attestation: Nevar apstiprināt savu ierakstu — otrs acu pāris ir visa jēga.
     notifications:
       updated: Paziņojumu iestatījumi atjaunināti.
     organizations:

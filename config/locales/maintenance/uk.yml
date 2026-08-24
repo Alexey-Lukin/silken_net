@@ -119,14 +119,19 @@ uk:
         pending: Очікує верифікації
         verified: "✓ ОБЛ Верифіковано"
       header:
+        attest: Засвідчити
+        attest_aria: 'Засвідчити запис обслуговування #%{id}'
+        attest_confirm: 'Засвідчити запис #%{id}? Ви ручаєтесь за роботу, якої не виконували самі.'
         new_record: "+ Новий запис"
         verify_confirm: 'STM32 підтвердив імпульс для запису #%{id}?'
         verify_hardware: Верифікувати обладнання →
       metadata:
         action: Дія
+        attested: Засвідчив
         created: Створено
         ews_alert: EWS-тривога
         heading: Метадані втручання
+        not_attested: Не засвідчено — самозвіт
         photos: Фото
         role: Роль
         target: Ціль

@@ -8,6 +8,7 @@ uk:
         actuator_commands: Команди актуаторів
         actuators: Актуатори
         alerts: Тривоги
+        attest: Засвідчити
         audit_logs: Журнал аудиту
         balance: Баланс
         blockchain_transactions: Транзакції блокчейну

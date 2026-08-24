@@ -156,7 +156,7 @@ RSpec.describe Alerts::Show do
     end
 
     it "shows the assignee and offers release to them" do
-      rendered = render_for(forester, build_alert(id: 42, assignee: forester))
+      rendered = render_for(forester, build_alert(id: 42, assignee: forester, assigned_at: Time.zone.local(2026, 8, 24, 9, 0, 0)))
 
       expect(rendered).to include(forester.full_name)
       expect(rendered).to include("/alerts/42/release")
@@ -166,7 +166,7 @@ RSpec.describe Alerts::Show do
     # Право взяти ⊥ право відпустити: звичайний колега бачить, ХТО на гачку,
     # але кнопки не має — інакше вона обіцяла б 403.
     it "shows a colleague who holds it, without offering them any action" do
-      rendered = render_for(colleague, build_alert(id: 42, assignee: forester))
+      rendered = render_for(colleague, build_alert(id: 42, assignee: forester, assigned_at: Time.zone.local(2026, 8, 24, 9, 0, 0)))
 
       expect(rendered).to include(forester.full_name)
       expect(rendered).not_to include("/alerts/42/release")
@@ -175,7 +175,7 @@ RSpec.describe Alerts::Show do
 
     # Без цієї гілки один хибний клік замикав би тривогу на людині назавжди.
     it "lets an admin release someone else's alert" do
-      rendered = render_for(admin, build_alert(id: 42, assignee: forester))
+      rendered = render_for(admin, build_alert(id: 42, assignee: forester, assigned_at: Time.zone.local(2026, 8, 24, 9, 0, 0)))
 
       expect(rendered).to include("/alerts/42/release")
     end

@@ -30,6 +30,7 @@ lt:
       target_type_mismatch: target_type neatitinka mikroprograminės įrangos aparatūros tipo (%{expected}).
       uploaded: Nauja evoliucija v%{version} įkelta į Vandenyną.
     maintenance:
+      attested: Patvirtinta antrąja akių pora.
       hardware_pulse_missing: Mazgas po šios priežiūros dar nepranešė — patikrinimui pirmiausia reikia impulso iš aparatūros.
       hardware_verified: Aparatūros būsena patikrinta. STM32 impulsas patvirtintas.
       idempotency_required: JSON priežiūros įrašų teikimui reikalinga Idempotency-Key antraštė.
@@ -39,6 +40,7 @@ lt:
       photo_not_found: Nuotrauka nerasta.
       record_created: Gydymo įrašas išsaugotas. Ekosistema atnaujinta.
       record_updated: Įrašas atnaujintas.
+      self_attestation: Negalima patvirtinti savo įrašo — esmė būtent antroji akių pora.
     notifications:
       updated: Pranešimų nustatymai atnaujinti.
     organizations:

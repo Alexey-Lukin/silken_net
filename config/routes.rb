@@ -215,6 +215,9 @@ Rails.application.routes.draw do
 
     resources :maintenance_records, only: [ :index, :new, :create, :show, :edit, :update ] do
       patch :verify,  on: :member
+      # [E.20] «Атестатор ≠ бенефіціар» — друга пара очей на записі. Окремий
+      # маршрут, а не поле форми: підписати мусить ІНША людина, тож це її дія.
+      patch :attest,  on: :member
       get   :photos,  on: :member
       # [UI.6] БЕЗ `as:` — вкладений `resources` уже дає префікс
       # `maintenance_record_`, тож `as: :maintenance_record_photo` доклеював

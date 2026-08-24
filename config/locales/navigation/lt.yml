@@ -8,6 +8,7 @@ lt:
         actuator_commands: Aktuatorių komandos
         actuators: Aktuatoriai
         alerts: Įspėjimai
+        attest: Patvirtinti
         audit_logs: Audito žurnalas
         balance: Likutis
         blockchain_transactions: Blokų grandinės sandoriai

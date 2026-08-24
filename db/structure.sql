@@ -1305,7 +1305,9 @@ CREATE TABLE public.maintenance_records (
     biomass_passport_tx_hash character varying,
     puro_earth_corc_ref character varying,
     system_generated boolean DEFAULT false NOT NULL,
-    biomass_passport_status character varying
+    biomass_passport_status character varying,
+    attested_by_id bigint,
+    attested_at timestamp(6) without time zone
 );
 
 
@@ -4325,6 +4327,13 @@ CREATE INDEX index_maintenance_records_on_action_type ON public.maintenance_reco
 
 
 --
+-- Name: index_maintenance_records_on_attested_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_maintenance_records_on_attested_by_id ON public.maintenance_records USING btree (attested_by_id);
+
+
+--
 -- Name: index_maintenance_records_on_ews_alert_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6736,6 +6745,14 @@ ALTER TABLE ONLY public.naas_contracts
 
 
 --
+-- Name: maintenance_records fk_rails_b9e3cca8bb; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maintenance_records
+    ADD CONSTRAINT fk_rails_b9e3cca8bb FOREIGN KEY (attested_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6862,6 +6879,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260824180746'),
 ('20260824172441'),
 ('20260824041557');
 

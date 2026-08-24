@@ -31,6 +31,14 @@ class MaintenanceRecord < ApplicationRecord
   belongs_to :user
   belongs_to :maintainable, polymorphic: true
   belongs_to :ews_alert, optional: true
+  # [E.20] Друга пара очей. ⚖️ founder 2026-08-24: акаунт атестатора живе В
+  # організації власника, а незалежність купується ДОГОВОРОМ (сторонній аудитор /
+  # академічний партнер, якому платить не бенефіціар) — буквальну форму
+  # «організація атестатора ≠ організація власника» відкинуто виміром: читацький
+  # скоуп деривується з `acting_organization!.clusters`, тож атестатор із чужої
+  # орг запису не бачить, і вимагати цього означало б пробити крос-тенантне
+  # читання. Машинно тут перевірний рівно ОДИН інваріант — підписант ≠ автор.
+  belongs_to :attestor, class_name: "User", foreign_key: "attested_by_id", optional: true
 
   # Evidence Protocol (Trust Protocol) — фото до/після для аудиту Series C.
   # Variant :thumb генерується VIPS у фоні (queued job), не блокуючи запит.
@@ -243,6 +251,26 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     return false if system_generated?
 
     action_type_repair? || action_type_installation?
+  end
+
+  # [E.20] «Атестатор ≠ бенефіціар» у машинній частині. ⚖️ founder 2026-08-24:
+  # незалежність тримає ДОГОВІР, а код стереже єдине, що взагалі може стерегти —
+  # що підписав НЕ той, хто написав. Це слабший інваріант, ніж «інша організація»,
+  # і канон каже це прямо, замість вдавати сильніший ([`04_01 §7`]).
+  class SelfAttestation < StandardError; end
+
+  # Ідемпотентно: повтор тим самим атестатором не зсуває `attested_at` — інакше
+  # другий клік переписував би ЧАС засвідчення, тобто саме те, що робить запис
+  # доказом. Дзеркало `EwsAlert#claim!`, і з тієї ж підстави.
+  def attest!(actor)
+    return true if attested_by_id == actor.id
+    raise SelfAttestation if actor.id == user_id
+
+    update!(attested_by_id: actor.id, attested_at: Time.current)
+  end
+
+  def attested?
+    attested_by_id.present?
   end
 
   # [UI.7, ⚖️ 2026-08-20] Дім питання «чи залізо ПІДТВЕРДИЛО обслуговування» —

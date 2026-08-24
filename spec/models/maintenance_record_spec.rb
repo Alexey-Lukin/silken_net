@@ -573,4 +573,49 @@ RSpec.describe MaintenanceRecord, type: :model do
       expect(described_class.new.hardware_pulse_confirmed?).to be false
     end
   end
+
+  # =========================================================================
+  # [E.20] «АТЕСТАТОР ≠ БЕНЕФІЦІАР» — друга пара очей
+  # ⚖️ founder 2026-08-24: незалежність тримає ДОГОВІР, а код стереже єдине, що
+  # взагалі здатен, — що підписав НЕ той, хто написав.
+  # =========================================================================
+  describe "#attest!" do
+    let(:organization) { create(:organization) }
+    let(:author) { create(:user, :forester, organization: organization) }
+    let(:auditor) { create(:user, :forester, organization: organization) }
+    let(:record) { create(:maintenance_record, user: author) }
+
+    it "records the attestor and the moment" do
+      freeze_time do
+        expect(record.attest!(auditor)).to be_truthy
+        expect(record.reload.attestor).to eq(auditor)
+        expect(record.attested_at).to eq(Time.current)
+        expect(record).to be_attested
+      end
+    end
+
+    # 🔴 Ядро присуду: самозвіт — рівно те, проти чого стоїть увесь won't-do
+    # гільдії. Без цієї гілки поле лишалось би декорацією.
+    it "refuses self-attestation by the record's own author" do
+      expect { record.attest!(author) }.to raise_error(described_class::SelfAttestation)
+      expect(record.reload).not_to be_attested
+    end
+
+    # Дзеркало `EwsAlert#claim!`: повтор не сміє зсувати ЧАС засвідчення — саме
+    # штамп робить запис доказом.
+    it "is a no-op on re-attestation by the same auditor" do
+      record.attest!(auditor)
+      original = record.reload.attested_at
+
+      travel 20.minutes do
+        expect(record.attest!(auditor)).to be_truthy
+        expect(record.reload.attested_at).to eq(original)
+      end
+    end
+
+    it "reports a fresh record as not attested" do
+      expect(record).not_to be_attested
+      expect(record.attestor).to be_nil
+    end
+  end
 end

@@ -115,14 +115,19 @@ en:
         pending: Pending Verify
         verified: "✓ HW Verified"
       header:
+        attest: Attest
+        attest_aria: 'Attest maintenance record #%{id}'
+        attest_confirm: 'Attest record #%{id}? You are vouching for work you did not perform yourself.'
         new_record: "+ New Record"
         verify_confirm: 'STM32 acknowledged the pulse for record #%{id}?'
         verify_hardware: Verify Hardware →
       metadata:
         action: Action
+        attested: Attested by
         created: Created
         ews_alert: EWS Alert
         heading: Intervention Metadata
+        not_attested: Not attested — self-reported
         photos: Photos
         role: Role
         target: Target

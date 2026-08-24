@@ -115,14 +115,19 @@ lv:
         pending: Gaida verifikāciju
         verified: "✓ APR Verificēts"
       header:
+        attest: Apstiprināt
+        attest_aria: 'Apstiprināt apkopes ierakstu #%{id}'
+        attest_confirm: 'Apstiprināt ierakstu #%{id}? Jūs galvojat par darbu, ko neveicāt pats.'
         new_record: "+ Jauns ieraksts"
         verify_confirm: 'STM32 apstiprināja impulsu ierakstam #%{id}?'
         verify_hardware: Verificēt aparatūru →
       metadata:
         action: Darbība
+        attested: Apstiprināja
         created: Izveidots
         ews_alert: EWS brīdinājums
         heading: Iejaukšanās metadati
+        not_attested: Nav apstiprināts — pašziņojums
         photos: Fotogrāfijas
         role: Loma
         target: Mērķis

@@ -460,6 +460,48 @@ RSpec.describe Maintenance::Show do
   # стоять за `authorize_record_mutation!` — тобто гард ГЛИБШЕ за дію, якою сторінка
   # відкривається. Тут пінимо, що компонент СЛУХАЄТЬСЯ предиката; що предикат каже
   # правду — `spec/models`, що актор доїжджає з контролера — request-спека.
+  # [E.20] «Атестатор ≠ бенефіціар». 🔴 Напрямок гарда тут ПРОТИЛЕЖНИЙ до сусіднього
+  # `mutable_by?`: той пускає автора, а тут автор — саме той, кого треба відсікти.
+  # ⚠️ Обидва актори несуть ЯВНІ id: `build_user` віддає `User.new` без id, тож на
+  # дефолтній фікстурі `nil != nil` хибне — і всі піни нижче були б зелені на
+  # порожній множині, ніколи не відрендеривши кнопки.
+  describe "атестація [E.20]" do
+    def render_as(actor, rec)
+      render_component(record: rec, photos: [], pagy_photos: mock_pagy_photos, current_user: actor)
+    end
+
+    let(:author)  { build_user.tap { |u| u.id = 11 } }
+    let(:auditor) { build_user(first_name: "Olena", last_name: "Sydor").tap { |u| u.id = 22 } }
+    let(:unattested) { build_record(user: author) }
+
+    it "пропонує дію другій парі очей" do
+      expect(render_as(auditor, unattested)).to include(attest_path)
+    end
+
+    it "ховає дію від АВТОРА запису — самозвіт і є предметом присуду" do
+      out = render_as(author, unattested)
+
+      # Рядок стану відрендерився → «немає кнопки» не вакуумне.
+      expect(out).to include(I18n.t("maintenance.show.metadata.not_attested"))
+      expect(out).not_to include(attest_path)
+    end
+
+    it "називає ВІДСУТНІСТЬ засвідчення, а не малює прочерк" do
+      expect(render_as(auditor, unattested)).to include(I18n.t("maintenance.show.metadata.not_attested"))
+    end
+
+    it "показує атестатора й прибирає дію, коли запис уже засвідчено" do
+      attested = build_record(user: author)
+      attested.attestor = auditor
+      attested.attested_at = Time.zone.local(2026, 8, 24, 12, 0, 0)
+
+      out = render_as(auditor, attested)
+
+      expect(out).to include("Olena")
+      expect(out).not_to include(attest_path)
+    end
+  end
+
   describe "мутаційні дії за предикатом запису" do
     it "показує verify/edit/attach тому, кому запис підвладний" do
       out = render_component(record: build_record(mutable: true), photos: [], pagy_photos: mock_pagy_photos)
@@ -514,4 +556,5 @@ RSpec.describe Maintenance::Show do
 
   def verify_path = "/maintenance_records/7/verify"
   def edit_path   = "/maintenance_records/7/edit"
+  def attest_path = "/maintenance_records/7/attest"
 end

@@ -8,6 +8,7 @@ lv:
         actuator_commands: Aktuatoru komandas
         actuators: Aktuatori
         alerts: Brīdinājumi
+        attest: Apstiprināt
         audit_logs: Audita žurnāls
         balance: Atlikums
         blockchain_transactions: Blokķēdes darījumi

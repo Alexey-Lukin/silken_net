@@ -30,6 +30,7 @@ en:
       target_type_mismatch: target_type does not match the firmware hardware type (%{expected}).
       uploaded: New evolution v%{version} uploaded to the Ocean.
     maintenance:
+      attested: Attested by a second pair of eyes.
       hardware_pulse_missing: No pulse from the unit after this maintenance yet — verification needs the hardware to report in first.
       hardware_verified: Hardware state verified. STM32 pulse acknowledged.
       idempotency_required: Idempotency-Key header is required for JSON maintenance-record submissions.
@@ -39,6 +40,7 @@ en:
       photo_not_found: Photo not found.
       record_created: Healing record committed. Ecosystem updated.
       record_updated: Record updated.
+      self_attestation: You cannot attest your own record — a second pair of eyes is the whole point.
     notifications:
       updated: Notification settings updated.
     organizations:

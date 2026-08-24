@@ -30,6 +30,7 @@ uk:
       target_type_mismatch: target_type не відповідає типу обладнання прошивки (%{expected}).
       uploaded: Нову еволюцію v%{version} завантажено в Океан.
     maintenance:
+      attested: Засвідчено другою парою очей.
       hardware_pulse_missing: Вузол ще не виходив в ефір після цього обслуговування — верифікація потребує спершу пульсу від заліза.
       hardware_verified: Стан обладнання верифіковано. Імпульс STM32 підтверджено.
       idempotency_required: Заголовок Idempotency-Key обов'язковий для JSON-подання записів обслуговування.
@@ -39,6 +40,7 @@ uk:
       photo_not_found: Фото не знайдено.
       record_created: Запис про зцілення зафіксовано. Екосистема оновлена.
       record_updated: Запис оновлено.
+      self_attestation: Не можна засвідчити власний запис — сенс саме в другій парі очей.
     notifications:
       updated: Налаштування сповіщень оновлено.
     organizations:

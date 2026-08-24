@@ -8,6 +8,7 @@ en:
         actuator_commands: Actuator commands
         actuators: Actuators
         alerts: Alerts
+        attest: Attest
         audit_logs: Audit logs
         balance: Balance
         blockchain_transactions: Blockchain transactions

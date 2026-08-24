@@ -7,7 +7,7 @@ module Api
       include IdempotentRequest
 
       before_action :authorize_forester!
-      before_action :set_record, only: [ :show, :edit, :update, :verify, :photos ]
+      before_action :set_record, only: [ :show, :edit, :update, :verify, :photos, :attest ]
       before_action :authorize_record_mutation!, only: [ :edit, :update, :verify ]
 
       # --- ЖУРНАЛ ВТРУЧАНЬ ---
@@ -254,6 +254,34 @@ module Api
                           error: @record.errors.full_messages.to_sentence
             end
           end
+        end
+      end
+
+      # PATCH /maintenance_records/:id/attest
+      # [E.20] Друга пара очей. ⛔ СВІДОМО поза `authorize_record_mutation!`: той
+      # пускає АВТОРА (`user_id == actor.id`) або admin+, тобто рівно того, кого
+      # тут треба відсікти — гард, скопійований із сусіда, легалізував би самозвіт.
+      # Периметр тримають два інші: `authorize_forester!` (весь контролер) і
+      # `set_record` через `organization_scoped_records`.
+      def attest
+        @record.attest!(current_user)
+
+        respond_to do |format|
+          format.json do
+            render json: { message: I18n.t("flash.maintenance.attested"),
+                           attested_by_id: @record.attested_by_id, record_id: @record.id }
+          end
+          format.html do
+            redirect_to maintenance_record_path(@record), status: :see_other,
+                        success: I18n.t("flash.maintenance.attested")
+          end
+        end
+      rescue MaintenanceRecord::SelfAttestation
+        message = I18n.t("flash.maintenance.self_attestation")
+
+        respond_to do |format|
+          format.json { render json: { error: message }, status: :forbidden }
+          format.html { redirect_to maintenance_record_path(@record), status: :see_other, error: message }
         end
       end
 

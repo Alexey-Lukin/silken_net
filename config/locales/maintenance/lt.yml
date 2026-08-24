@@ -117,14 +117,19 @@ lt:
         pending: Laukia patikrinimo
         verified: "✓ APR Patikrinta"
       header:
+        attest: Patvirtinti
+        attest_aria: 'Patvirtinti priežiūros įrašą #%{id}'
+        attest_confirm: 'Patvirtinti įrašą #%{id}? Jūs laiduojate už darbą, kurio pats neatlikote.'
         new_record: "+ Naujas įrašas"
         verify_confirm: 'STM32 patvirtino impulsą įrašui #%{id}?'
         verify_hardware: Patikrinti aparatūrą →
       metadata:
         action: Veiksmas
+        attested: Patvirtino
         created: Sukurta
         ews_alert: EWS įspėjimas
         heading: Įsikišimo metaduomenys
+        not_attested: Nepatvirtinta — savarankiškas pranešimas
         photos: Nuotraukos
         role: Vaidmuo
         target: Taikinys

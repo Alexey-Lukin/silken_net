@@ -92,8 +92,45 @@ module Maintenance
               data: { turbo_confirm: t(".header.verify_confirm", id: @record.id) }
             )
           end
+
+          if attestable?
+            button_to(
+              t(".header.attest"),
+              attest_maintenance_record_path(@record),
+              method: :patch,
+              aria: { label: t(".header.attest_aria", id: @record.id) },
+              class: "px-4 py-2 border border-gaia-border-strong text-gaia-text-strong hover:border-gaia-primary " \
+                     "transition-all uppercase text-mini tracking-widest " \
+                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
+              data: { turbo_confirm: t(".header.attest_confirm", id: @record.id) }
+            )
+          end
         end
       end
+    end
+
+    # [E.20] Кнопку бачить лише той, хто МОЖЕ підписати — тобто НЕ автор запису.
+    # 🔴 Це дзеркало моделі (`SelfAttestation`), і напрямок тут протилежний до
+    # сусіднього `mutable?`: той пускає автора, а тут автор — саме той, кого треба
+    # відсікти. Скопіювати сусідній гард означало б легалізувати самозвіт, а
+    # розходження в інший бік дало б кнопку-обманку тому, хто найімовірніше її й
+    # натисне.
+    def attestable?
+      @current_user.present? && @current_user.id != @record.user_id && !@record.attested?
+    end
+
+    # «Не засвідчено» — це ІМʼЯ стану, не прочерк (ARCH.103: порожнеча мусить мати
+    # голос). Відсутність другої пари очей і є тим фактом, який читач мусить
+    # побачити, а тире прочиталось би як «поле не заповнили».
+    def attestation_label
+      return t(".metadata.not_attested") unless @record.attested?
+
+      # Без `&.`-гардів свідомо: пару (атестатор, час) пише ОДНА операція
+      # (`attest!`), а FK не дає атестатору зникнути — тож захисна гілка тут
+      # була б мертвим кодом із виглядом обачності (її й спіймала гілкова
+      # підлога покриття). Якщо інваріант колись зламають, чесніше впасти
+      # гучно, ніж намалювати правдоподібний напівряд.
+      "#{@record.attestor.full_name} — #{@record.attested_at.strftime('%d.%m.%Y %H:%M')}"
     end
 
     # =========================================================================
@@ -211,6 +248,7 @@ module Maintenance
           meta_row(t(".metadata.target"), "#{@record.maintainable_type} // #{@record.maintainable&.display_identifier || '—'}")
           meta_row(t(".metadata.action"), @record.action_type_label.upcase)
           meta_row(t(".metadata.photos"), @pagy_photos.count.to_s)
+          meta_row(t(".metadata.attested"), attestation_label)
           if @record.ews_alert_id
             meta_row(t(".metadata.ews_alert"), "##{@record.ews_alert_id}")
           end

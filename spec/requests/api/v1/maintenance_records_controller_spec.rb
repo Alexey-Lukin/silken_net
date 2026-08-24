@@ -790,4 +790,54 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.body).to include("evidence.jpg")
     end
   end
+
+  # [E.20] «Атестатор ≠ бенефіціар». ⛔ Екшен свідомо ПОЗА
+  # `authorize_record_mutation!`: той пускає АВТОРА або admin+, тобто рівно того,
+  # кого тут треба відсікти — гард, скопійований із сусіда, легалізував би самозвіт.
+  describe "PATCH /maintenance_records/:id/attest" do
+    let(:auditor) { create(:user, :forester, organization: organization) }
+    let(:auditor_headers) { { "Authorization" => "Bearer #{auditor.generate_token_for(:api_access)}" } }
+    let!(:record) do
+      MaintenanceRecord.create!(maintainable: own_tree, user: forester, action_type: :inspection,
+                                performed_at: 1.hour.ago, notes: "Routine inspection for attestation test.")
+    end
+
+    it "lets a second pair of eyes vouch for the record" do
+      patch "/maintenance_records/#{record.id}/attest", headers: auditor_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(record.reload.attestor).to eq(auditor)
+      expect(record.attested_at).to be_present
+    end
+
+    it "refuses self-attestation with 403" do
+      patch "/maintenance_records/#{record.id}/attest", headers: headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(record.reload).not_to be_attested
+    end
+
+    # Асоціативний скоуп `set_record` — чужий запис не матеріалізується взагалі.
+    it "does not reach a record outside the acting organization" do
+      other_user = create(:user, :forester, organization: other_organization)
+      foreign = MaintenanceRecord.create!(maintainable: other_tree, user: other_user, action_type: :inspection,
+                                          performed_at: 1.hour.ago, notes: "Foreign org record for isolation test.")
+
+      patch "/maintenance_records/#{foreign.id}/attest", headers: auditor_headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(foreign.reload).not_to be_attested
+    end
+
+    # Увесь контролер стоїть за `authorize_forester!`, тож investor не засвідчує.
+    it "does not let an investor attest" do
+      investor = create(:user, :investor, organization: organization)
+      investor_headers = { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+
+      patch "/maintenance_records/#{record.id}/attest", headers: investor_headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(record.reload).not_to be_attested
+    end
+  end
 end

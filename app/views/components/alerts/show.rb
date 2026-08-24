@@ -56,11 +56,9 @@ module Alerts
       end
 
       span(class: "text-gaia-text-strong font-bold") { @alert.assignee.full_name }
-      # Час — ДОДАТКОВИЙ, не обов'язковий: його відсутність просто не рендериться.
-      # Вигаданого «—» тут немає свідомо — пара (виконавець, час) пишеться однією
-      # операцією, тож розходження було б аномалією, яку прочерк сховав би.
-      return if @alert.assigned_at.blank?
-
+      # Без гарда на `assigned_at` свідомо: пару (виконавець, час) пише ОДНА
+      # операція (`claim!`), тож захисна гілка тут була б мертвим кодом із
+      # виглядом обачності — її й спіймала гілкова підлога покриття.
       span(class: "text-mini text-gaia-text-muted ml-2") do
         t(".assignment.since", at: @alert.assigned_at.strftime("%Y-%m-%d %H:%M"))
       end
