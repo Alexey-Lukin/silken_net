@@ -13,6 +13,7 @@ uk:
         blockchain_transactions: Транзакції блокчейну
         carbon_absorption: Поглинання вуглецю
         chronicle: Хроніка
+        claim: Взяти на себе
         clusters: Кластери
         contracts: Контракти
         dashboard: Панель
@@ -46,6 +47,7 @@ uk:
         photos: Фото
         provisioning: Ініціювання вузла
         register: Реєстрація
+        release: Відпустити
         reports: Звіти
         reset_password: Скидання пароля
         resolve: Локалізація

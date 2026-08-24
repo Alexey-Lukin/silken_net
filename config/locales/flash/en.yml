@@ -7,9 +7,13 @@ en:
       idempotency_required: Idempotency-Key header is required for actuator command execution.
     alerts:
       acknowledged: 'Alert #%{id} acknowledged.'
+      already_assigned: 'Alert #%{id} is already taken by another forester.'
       already_resolved: 'Alert #%{id} was already resolved.'
+      claimed: 'Alert #%{id} is now yours.'
       invalid_severity: 'Invalid severity filter: %{value}.'
       invalid_status: 'Invalid status filter: %{value}.'
+      not_assignee: Only the assigned forester (or an admin) can release this alert.
+      released: 'Alert #%{id} released.'
       resolved: Threat localised.
     blockchain_transactions:
       invalid_status: 'Invalid status filter: %{value}.'

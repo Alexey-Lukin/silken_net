@@ -86,6 +86,14 @@ lt:
       low: žemas
       medium: vidutinis
     show:
+      assignment:
+        claim: Paimti
+        claim_aria: 'Paimti įspėjimą #%{id}'
+        release: Atlaisvinti
+        release_aria: 'Atlaisvinti įspėjimą #%{id}'
+        since: nuo %{at}
+        title: Atsakingas
+        unassigned: Įspėjimo dar niekas nepaėmė
       sop:
         domain:
           pending: Partnerio SOP turinio šiam įspėjimo tipui dar nėra — srities vadovai priklauso išorės savininkui.
@@ -96,6 +104,7 @@ lt:
             title: Patvirtinti ir išspręsti
           field_audit:
             body: Jei įspėjimas liečia sutartį arba įrodymai dviprasmiški — siųskite lauko auditą; fizinė patikra svarbesnė už bet kokį nuotolinį signalą.
+            cta: Registruoti lauko auditą
             title: Lauko auditas
           verify:
             body: Prieš fizinį veiksmą palyginkite įvykį su palydovo/klimato duomenimis (dClimate) — jutiklis yra vienas liudininkas, o ne nuosprendis.

@@ -1258,6 +1258,7 @@ active/draft ──cancel──► cancelled
 - `belongs_to :cluster` (optional)
 - `belongs_to :tree` (optional)
 - `belongs_to :resolver, class_name: "User"` via `resolved_by` (optional)
+- `belongs_to :assignee, class_name: "User"` via `assigned_to_id` (optional) — **[E.20]** «хто зараз на гачку» ⊥ `resolver` («хто закрив»): дві РІЗНІ ролі в часі
 
 **Enums:**
 
@@ -1279,6 +1280,8 @@ active/draft ──cancel──► cancelled
 | `message_params` | jsonb | **Виміряні значення** для інтерполяції (`did`, `voltage_mv`, `temperature_c`, `acoustic_events`, `z_value`, …) — те, що від мови не залежить. ⊕ **Enum-параметр теж їде СИРИМ** (`token_type`), а мітку збирає читач у момент показу: `PARAM_LABEL_RESOLVERS` конвертує named-параметри через label-дім (`BlockchainTransaction.token_type_label`) в обох читачах — `#message` і `#resolution_texts` (⚖️ 2026-08-20; готова мітка в JSONB заморозила б локаль продюсера) |
 | ~~`message`~~ | — | **Колонки НЕМА** (знята 2026-07-26). `EwsAlert#message` — це МЕТОД-рендер: `I18n.t("alerts.messages.<key>", **params, default: key.humanize)`. Fail-open на невідомий ключ, `nil` за порожнього. Присутність несе валідація на `message_key` — не на `message`, інакше кожен `save` гнав би I18n-лукап заради того самого висновку |
 | `resolved_at` | datetime | Час вирішення |
+| `assigned_to_id` | bigint, FK→users, nullable | **[E.20]** Виконавець, що взяв тривогу. Пишуть лише `EwsAlert#claim!`/`#release!` — обидва вимагають `status_active?`, тож приєднання ПІСЛЯ резолюції неможливе за побудовою. Претензія лише на нічию (`AlreadyAssigned` → 409); відпустити може виконавець **АБО** admin+ (`NotAssignee` → 403), інакше хибний клік замикав би тривогу назавжди |
+| `assigned_at` | datetime, nullable | **[E.20]** Момент приєднання. Окрема колонка, а НЕ деривація з `updated_at`: різниця `assigned_at − created_at` і є Кат-A-сигналом [`05_05 §2`](05_05_Slashing_and_Risk_Policy) «неприєднання Forester'а до інциденту в SLA», у якого доти не було референта в коді. 🔴 Повтор ВЛАСНОЇ претензії — no-op саме тому: `update!` зсунув би цей штамп, тобто другий клік мовчки покращував би власний SLA. ⚠️ Сам ПОРІГ SLA лишається ⚖️ — колонка робить сигнал виразним, а не вирішує його |
 | `resolution_log` | jsonb, NOT NULL, default `[]` | **[I18N.1]** Масив записів закриття: машинні `{key, params, at}` ⊥ людські `{text, at}` — у БД ідентифікатор події, фраза локаллю глядача в момент показу (`resolution_texts`; контракт і ключі — рядок `resolve!` нижче). Замінив text-колонку `resolution_notes` 2026-08-20: append-проза мовами впереміш пара «ключ+параметри» виразити не могла |
 | `dclimate_ref` | string | Посилання на dClimate для супутникової верифікації |
 

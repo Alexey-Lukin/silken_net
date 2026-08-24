@@ -86,6 +86,14 @@ lv:
       low: zems
       medium: vidējs
     show:
+      assignment:
+        claim: Paņemt
+        claim_aria: 'Paņemt brīdinājumu #%{id}'
+        release: Atbrīvot
+        release_aria: 'Atbrīvot brīdinājumu #%{id}'
+        since: kopš %{at}
+        title: Atbildīgais
+        unassigned: Brīdinājumu vēl neviens nav paņēmis
       sop:
         domain:
           pending: Partnera SOP saturs šim brīdinājuma tipam vēl nav pieejams — domēna rokasgrāmatas pieder ārējam īpašniekam.
@@ -96,6 +104,7 @@ lv:
             title: Apstiprināt un atrisināt
           field_audit:
             body: Ja brīdinājums skar līgumu vai pierādījumi ir neviennozīmīgi — nosūtiet lauka auditu; fiziska pārbaude ir svarīgāka par jebkuru attālinātu signālu.
+            cta: Reģistrēt lauka auditu
             title: Lauka audits
           verify:
             body: Pirms fiziskas rīcības salīdziniet notikumu ar satelīta/klimata datiem (dClimate) — sensors ir viens liecinieks, nevis spriedums.

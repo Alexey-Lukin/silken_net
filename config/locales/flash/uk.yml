@@ -7,9 +7,13 @@ uk:
       idempotency_required: Заголовок Idempotency-Key обов'язковий для виконання команд актуатора.
     alerts:
       acknowledged: 'Тривогу #%{id} втихомирено.'
+      already_assigned: 'Тривогу #%{id} уже взяв інший лісник.'
       already_resolved: 'Тривогу #%{id} вже закрито.'
+      claimed: 'Тривога #%{id} — на вас.'
       invalid_severity: 'Невірний фільтр severity: %{value}.'
       invalid_status: 'Невірний фільтр status: %{value}.'
+      not_assignee: Відпустити тривогу може лише її виконавець або адміністратор.
+      released: 'Тривогу #%{id} відпущено.'
       resolved: Загрозу локалізовано.
     blockchain_transactions:
       invalid_status: 'Невірний фільтр status: %{value}.'

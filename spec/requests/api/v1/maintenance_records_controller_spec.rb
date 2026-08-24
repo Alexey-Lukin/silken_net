@@ -668,6 +668,25 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
       expect(response.body).not_to include("Validation Errors")
     end
 
+    # [E.20] Round-trip лінка з SOP-панелі тривоги. Компонентна спека доводить, що
+    # `Alerts::Show` будує ЦЕЙ query — вона рендерить повз маршрутизатор і повз
+    # контролер, тож не бачить, чи параметри взагалі доїжджають у форму. Пін
+    # цілиться у ЗНАЧЕННЯ в полі, а не в статус: сторінка віддає 200 і без
+    # жодного prefill'у.
+    it "prefills the form from the alert link (ews_alert_id + maintainable)" do
+      alert = EwsAlert.create!(cluster: own_cluster, tree: own_tree, severity: :critical,
+                               alert_type: :field_audit, status: :active,
+                               message_key: "chainsaw_detected")
+
+      get "/maintenance_records/new",
+          params: { ews_alert_id: alert.id, maintainable_type: "Tree", maintainable_id: own_tree.id },
+          headers: html_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("value=\"#{alert.id}\"")
+      expect(response.body).to include("value=\"#{own_tree.id}\"")
+    end
+
     it "re-renders the form with visible reasons when create fails" do
       post "/maintenance_records",
            params: { maintenance_record: { maintainable_type: "Tree", maintainable_id: own_tree.id, action_type: nil, performed_at: nil } },

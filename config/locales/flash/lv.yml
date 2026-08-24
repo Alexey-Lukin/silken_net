@@ -7,9 +7,13 @@ lv:
       idempotency_required: Aktuatora komandas izpildei nepieciešama Idempotency-Key galvene.
     alerts:
       acknowledged: 'Brīdinājums #%{id} apstiprināts.'
+      already_assigned: 'Brīdinājumu #%{id} jau paņēmis cits mežsargs.'
       already_resolved: 'Brīdinājums #%{id} jau ir atrisināts.'
+      claimed: 'Brīdinājums #%{id} tagad ir jūsu.'
       invalid_severity: 'Nederīgs smaguma filtrs: %{value}.'
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'
+      not_assignee: Atbrīvot brīdinājumu var tikai norīkotais mežsargs vai administrators.
+      released: 'Brīdinājums #%{id} atbrīvots.'
       resolved: Draudi lokalizēti.
     blockchain_transactions:
       invalid_status: 'Nederīgs statusa filtrs: %{value}.'

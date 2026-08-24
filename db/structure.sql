@@ -943,7 +943,9 @@ CREATE TABLE public.ews_alerts (
     dclimate_ref character varying,
     message_key character varying,
     message_params jsonb DEFAULT '{}'::jsonb NOT NULL,
-    resolution_log jsonb DEFAULT '[]'::jsonb NOT NULL
+    resolution_log jsonb DEFAULT '[]'::jsonb NOT NULL,
+    assigned_to_id bigint,
+    assigned_at timestamp(6) without time zone
 );
 
 
@@ -4239,6 +4241,13 @@ CREATE UNIQUE INDEX index_ethereum_anchors_on_tx_hash ON public.ethereum_anchors
 
 
 --
+-- Name: index_ews_alerts_on_assigned_to_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_ews_alerts_on_assigned_to_id_and_status ON public.ews_alerts USING btree (assigned_to_id, status);
+
+
+--
 -- Name: index_ews_alerts_on_cluster_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6647,6 +6656,14 @@ ALTER TABLE ONLY public.maintenance_records
 
 
 --
+-- Name: ews_alerts fk_rails_5fccd341aa; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ews_alerts
+    ADD CONSTRAINT fk_rails_5fccd341aa FOREIGN KEY (assigned_to_id) REFERENCES public.users(id);
+
+
+--
 -- Name: gateways fk_rails_637a591322; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6845,5 +6862,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260824172441'),
 ('20260824041557');
 

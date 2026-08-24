@@ -207,6 +207,10 @@ Rails.application.routes.draw do
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     resources :alerts, only: [ :index, :show ] do
       patch :resolve, on: :member
+      # [E.20] Диспетчеризація: «взяти на себе» / «відпустити». Окремі дієслова, а
+      # не один тумблер — перемикач ховає намір, а тут намір і є предметом запису.
+      patch :claim,   on: :member
+      patch :release, on: :member
     end
 
     resources :maintenance_records, only: [ :index, :new, :create, :show, :edit, :update ] do

@@ -7,9 +7,13 @@ lt:
       idempotency_required: Aktuatoriaus komandos vykdymui reikalinga Idempotency-Key antraštė.
     alerts:
       acknowledged: 'Įspėjimas #%{id} patvirtintas.'
+      already_assigned: 'Įspėjimą #%{id} jau paėmė kitas miškininkas.'
       already_resolved: 'Įspėjimas #%{id} jau išspręstas.'
+      claimed: 'Įspėjimas #%{id} dabar priskirtas jums.'
       invalid_severity: 'Neteisingas sunkumo filtras: %{value}.'
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'
+      not_assignee: Atlaisvinti įspėjimą gali tik priskirtas miškininkas arba administratorius.
+      released: 'Įspėjimas #%{id} atlaisvintas.'
       resolved: Grėsmė lokalizuota.
     blockchain_transactions:
       invalid_status: 'Neteisingas būsenos filtras: %{value}.'

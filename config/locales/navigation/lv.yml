@@ -13,6 +13,7 @@ lv:
         blockchain_transactions: Blokķēdes darījumi
         carbon_absorption: Oglekļa absorbcija
         chronicle: Hronika
+        claim: Paņemt
         clusters: Klasteri
         contracts: Līgumi
         dashboard: Panelis
@@ -46,6 +47,7 @@ lv:
         photos: Fotogrāfijas
         provisioning: Mezgla iniciācija
         register: Reģistrācija
+        release: Atbrīvot
         reports: Atskaites
         reset_password: Paroles atiestatīšana
         resolve: Atrisināšana

@@ -274,4 +274,71 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response.body).to include("href=\"/alerts/#{own_alert.id}\"")
     end
   end
+
+  # [E.20] Диспетчеризація. Коди РІЗНІ й не взаємозамінні: 409 = стан зайнятий
+  # (конфлікт), 403 = стан коректний, бракує ПРАВА. Пінимо саме їх, бо саме на
+  # цій парі різниця між «спробуй пізніше» і «тобі не можна».
+  describe "PATCH /alerts/:id/claim та /release" do
+    let(:other_forester) { create(:user, :forester, organization: organization) }
+    let(:other_token) { other_forester.generate_token_for(:api_access) }
+    let(:other_headers) { { "Authorization" => "Bearer #{other_token}" } }
+
+    it "записує виконавця й момент приєднання" do
+      patch claim_alert_path(own_alert), headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(own_alert.reload.assignee).to eq(user)
+      expect(own_alert.assigned_at).to be_present
+    end
+
+    it "віддає 409 на тривогу, яку вже взяв інший лісник" do
+      own_alert.claim!(user)
+
+      patch claim_alert_path(own_alert), headers: other_headers, as: :json
+
+      expect(response).to have_http_status(:conflict)
+      expect(own_alert.reload.assignee).to eq(user)
+    end
+
+    it "віддає 403 на спробу відпустити чуже" do
+      own_alert.claim!(user)
+
+      patch release_alert_path(own_alert), headers: other_headers, as: :json
+
+      expect(response).to have_http_status(:forbidden)
+      expect(own_alert.reload.assignee).to eq(user)
+    end
+
+    it "відпускає власну тривогу й чистить ОБИДВІ половини" do
+      own_alert.claim!(user)
+
+      patch release_alert_path(own_alert), headers: headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(own_alert.reload.assignee).to be_nil
+      expect(own_alert.assigned_at).to be_nil
+    end
+
+    # [UI.6/SEC] Обидва `before_action` перелічують екшени ПОІМЕННО, тож нова дія
+    # їде без гарда доти, доки її туди не допишуть — і мовчки. Цей пін і є носієм
+    # правила: investor (read-only роль) не диспетчеризує бойові тривоги.
+    it "не пускає investor до диспетчеризації" do
+      investor = create(:user, :investor, organization: organization)
+      investor_headers = { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+
+      patch claim_alert_path(own_alert), headers: investor_headers
+
+      expect(response).to have_http_status(:forbidden)
+      expect(own_alert.reload.assigned_to_id).to be_nil
+    end
+
+    # Асоціативний скоуп `set_alert` — чужа тривога не матеріалізується взагалі
+    # (404 без оракула існування), тож диспетчеризація крос-тенантно недосяжна.
+    it "не бачить чужу тривогу" do
+      patch claim_alert_path(other_alert), headers: headers
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_alert.reload.assigned_to_id).to be_nil
+    end
+  end
 end

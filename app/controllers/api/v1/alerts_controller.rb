@@ -4,13 +4,16 @@
 module Api
   module V1
     class AlertsController < BaseController
-      before_action :set_alert, only: [ :show, :resolve ]
+      before_action :set_alert, only: [ :show, :resolve, :claim, :release ]
       # [SEC]: resolve = операційна дія (закрити бойову тривогу пожежі/tamper) —
       # лише forester+. Намір колись декларувала `EwsAlertPolicy#resolve?`, якої
       # контролер ніколи не викликав, тож investor (read-only роль) міг гасити активну
       # EWS-тривогу. Політику знято як мертвий код ⚖️ 2026-07-31, і цей гард лишився
       # ЄДИНИМ носієм правила — не прибирай його «бо десь є політика».
-      before_action :authorize_forester!, only: :resolve
+      # 🔴 Перелік ПОІМЕННИЙ, тож кожна нова операційна дія мусить дописатись сюди
+      # руками — інакше вона їде без гарда, і мовчки: investor (read-only роль)
+      # дістав би право диспетчеризувати бойові тривоги. Дії, не читання.
+      before_action :authorize_forester!, only: [ :resolve, :claim, :release ]
 
       # GET /alerts
       def index
@@ -136,7 +139,49 @@ module Api
         end
       end
 
+      # PATCH /alerts/:id/claim
+      # [E.20] Форма й обробка відмови дзеркалять `#resolve`: модель кидає,
+      # контролер перекладає в код. 409 саме тому, що це КОНФЛІКТ стану, а не
+      # невалідний запит — тривогу вже взяв інший лісник.
+      def claim
+        @alert.claim!(current_user)
+        render_assignment_result(:claimed)
+      rescue EwsAlert::AlreadyAssigned
+        render_assignment_conflict(:already_assigned)
+      rescue EwsAlert::AlertClosed
+        render_assignment_conflict(:already_resolved)
+      end
+
+      # PATCH /alerts/:id/release
+      def release
+        @alert.release!(current_user)
+        render_assignment_result(:released)
+      rescue EwsAlert::NotAssignee
+        # 403, а не 409: стан коректний, бракує ПРАВА — відпустити чуже може лише
+        # admin+ (інакше один хибний клік замикав би тривогу на людині назавжди).
+        respond_to do |format|
+          format.json { render json: { error: I18n.t("flash.alerts.not_assignee") }, status: :forbidden }
+          format.html { redirect_to alert_path(@alert), error: I18n.t("flash.alerts.not_assignee") }
+        end
+      end
+
       private
+
+      def render_assignment_result(kind)
+        respond_to do |format|
+          format.json { render json: { message: I18n.t("flash.alerts.#{kind}", id: @alert.id), alert: @alert } }
+          format.html { redirect_to alert_path(@alert), success: I18n.t("flash.alerts.#{kind}", id: @alert.id) }
+        end
+      end
+
+      def render_assignment_conflict(key)
+        message = I18n.t("flash.alerts.#{key}", id: @alert.id)
+
+        respond_to do |format|
+          format.json { render json: { error: message }, status: :conflict }
+          format.html { redirect_to alert_path(@alert), pending: message }
+        end
+      end
 
       def set_alert
         @alert = acting_organization!.ews_alerts.find(params[:id])

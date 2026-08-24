@@ -9,6 +9,11 @@ class EwsAlert < ApplicationRecord
   belongs_to :cluster, optional: true
   belongs_to :tree, optional: true
   belongs_to :resolver, class_name: "User", foreign_key: "resolved_by", optional: true
+  # [E.20] «Хто зараз на гачку» ⊥ `resolver` («хто закрив»). Дві РІЗНІ ролі в часі:
+  # доти схема вміла записати лише другу, тож питання адресата було структурно
+  # невиразним — `escalate_field_audit!` мав дванадцять продюсерів і жодного
+  # споживача, що призначає або виконує.
+  belongs_to :assignee, class_name: "User", foreign_key: "assigned_to_id", optional: true
 
   # --- СТАТУСИ ТА РІВНІ ---
   # [СИНХРОНІЗОВАНО]: prefix: true гарантує виклики status_active? та status_resolved?
@@ -297,6 +302,42 @@ class EwsAlert < ApplicationRecord
   # локаллю ГЛЯДАЧА. Людська нотатка резолвера — виняток за родом: це вільний
   # текст його мовою, він не локалізується жодною схемою і їде як `"text"`.
   RESOLUTION_SCOPE = "alerts.resolutions"
+
+  # [E.20] Конфлікт претензії й спроба відпустити чуже — це РІЗНІ відповіді
+  # (409 ⊥ 403), тож і винятки різні. Форма взята з сусіда `resolve!`: модель
+  # КИДАЄ, контролер перекладає в код — там це вже врятувало від JSON-500 на
+  # повторному кліку.
+  class AlreadyAssigned < StandardError; end
+  class NotAssignee < StandardError; end
+  class AlertClosed < StandardError; end
+
+  # Узяти тривогу на себе. Претензія ЛИШЕ на нічию: перехоплення чужої — це
+  # диспетчерська дія, і вона свідомо не будується (residual `00_07` E.20).
+  #
+  # 🔴 Повтор ВЛАСНОЇ претензії — no-op, і це не косметика: `update!` тут скинув
+  # би `assigned_at`, тобто ЗАМІРЯНИЙ час приєднання, заради якого колонка й
+  # заводилась (Кат-A-сигнал `05_05 §2` «неприєднання Forester'а до інциденту в
+  # SLA»). Другий клік по кнопці мовчки покращував би власний SLA.
+  def claim!(user)
+    return true if assigned_to_id == user.id
+    raise AlreadyAssigned if assigned_to_id.present?
+    # Гард стану живе ТУТ, а не лише в кнопці: інакше API дозволяв би «взяти»
+    # вже закриту тривогу, і `assigned_at` фіксував би приєднання ПІСЛЯ
+    # резолюції — тобто отруював саме ту метрику, заради якої колонка є.
+    raise AlertClosed unless status_active?
+
+    update!(assigned_to_id: user.id, assigned_at: Time.current)
+  end
+
+  # Відпустити. Право має сам виконавець АБО admin+ — інакше один хибний клік
+  # замикав би тривогу на людині назавжди, тобто ми створили б стан без виходу
+  # (той самий клас, що «призначений орган без адресата», проти якого пункт і
+  # заведено).
+  def release!(user)
+    raise NotAssignee unless assigned_to_id == user.id || user.admin_or_above?
+
+    update!(assigned_to_id: nil, assigned_at: nil)
+  end
 
   # Протокол завершення інциденту.
   #

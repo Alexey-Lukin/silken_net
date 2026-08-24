@@ -86,6 +86,14 @@ en:
       low: low
       medium: medium
     show:
+      assignment:
+        claim: Take it
+        claim_aria: 'Take alert #%{id}'
+        release: Release
+        release_aria: 'Release alert #%{id}'
+        since: since %{at}
+        title: Assignee
+        unassigned: Nobody has taken this alert yet
       sop:
         domain:
           pending: Partner SOP content for this alert type is not available yet — domain playbooks are owned externally and arrive via the academic channel.
@@ -96,6 +104,7 @@ en:
             title: Acknowledge and resolve
           field_audit:
             body: If the alert affects a contract or the evidence is ambiguous, dispatch a field audit — physical inspection outranks any remote signal.
+            cta: Log a field audit
             title: Field audit
           verify:
             body: Cross-check the event against satellite/climate data (dClimate) before physical action — the sensor is one witness, not the verdict.

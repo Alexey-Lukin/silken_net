@@ -942,4 +942,77 @@ RSpec.describe EwsAlert, type: :model do
       end
     end
   end
+
+  # =========================================================================
+  # [E.20] ДИСПЕТЧЕРИЗАЦІЯ — «хто зараз на гачку» ⊥ «хто закрив»
+  # =========================================================================
+  describe "assignment" do
+    let(:organization) { create(:organization) }
+    let(:forester) { create(:user, :forester, organization: organization) }
+    let(:other_forester) { create(:user, :forester, organization: organization) }
+    let(:admin) { create(:user, :admin, organization: organization) }
+    # Фабрика сама будує cluster+tree — власні `let` тут не потрібні.
+    let(:alert) { create(:ews_alert, status: :active) }
+
+    describe "#claim!" do
+      it "records the assignee and the moment of joining" do
+        freeze_time do
+          expect(alert.claim!(forester)).to be_truthy
+          expect(alert.reload.assignee).to eq(forester)
+          expect(alert.assigned_at).to eq(Time.current)
+        end
+      end
+
+      # 🔴 Найдорожчий пін групи: `update!` на повторі зсунув би `assigned_at`,
+      # тобто другий клік по власній кнопці МОВЧКИ покращував би власний SLA —
+      # а саме різниця `assigned_at − created_at` і є Кат-A-сигналом `05_05 §2`.
+      it "is a no-op on re-claim by the same user — the SLA clock must not move" do
+        alert.claim!(forester)
+        original = alert.reload.assigned_at
+
+        travel 30.minutes do
+          expect(alert.claim!(forester)).to be_truthy
+          expect(alert.reload.assigned_at).to eq(original)
+        end
+      end
+
+      it "refuses a claim on an alert someone else already took" do
+        alert.claim!(forester)
+
+        expect { alert.claim!(other_forester) }.to raise_error(EwsAlert::AlreadyAssigned)
+        expect(alert.reload.assignee).to eq(forester)
+      end
+
+      # Гард стану живе на МОДЕЛІ, не лише в кнопці: інакше API фіксував би
+      # приєднання після резолюції й отруював метрику, заради якої колонка є.
+      it "refuses a claim on a closed alert" do
+        alert.resolve!(user: forester)
+
+        expect { alert.reload.claim!(other_forester) }.to raise_error(EwsAlert::AlertClosed)
+        expect(alert.reload.assigned_to_id).to be_nil
+      end
+    end
+
+    describe "#release!" do
+      before { alert.claim!(forester) }
+
+      it "clears both halves of the assignment" do
+        expect(alert.release!(forester)).to be_truthy
+        expect(alert.reload.assignee).to be_nil
+        expect(alert.assigned_at).to be_nil
+      end
+
+      # Без цієї гілки один хибний клік замикав би тривогу на людині назавжди —
+      # тобто ми створили б стан без виходу.
+      it "lets an admin release someone else's alert" do
+        expect(alert.release!(admin)).to be_truthy
+        expect(alert.reload.assignee).to be_nil
+      end
+
+      it "refuses release by an unrelated forester" do
+        expect { alert.release!(other_forester) }.to raise_error(EwsAlert::NotAssignee)
+        expect(alert.reload.assignee).to eq(forester)
+      end
+    end
+  end
 end

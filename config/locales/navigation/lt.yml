@@ -13,6 +13,7 @@ lt:
         blockchain_transactions: Blokų grandinės sandoriai
         carbon_absorption: Anglies absorbcija
         chronicle: Kronika
+        claim: Paimti
         clusters: Klasteriai
         contracts: Sutartys
         dashboard: Skydelis
@@ -46,6 +47,7 @@ lt:
         photos: Nuotraukos
         provisioning: Mazgo inicijavimas
         register: Registracija
+        release: Atlaisvinti
         reports: Ataskaitos
         reset_password: Slaptažodžio nustatymas
         resolve: Sprendimas

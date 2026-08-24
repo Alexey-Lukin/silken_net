@@ -584,40 +584,42 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 55 | GET | `/alerts` | `alerts#index` | 🔑 Auth | Список EWS-тривог |
 | 56 | GET | `/alerts/:id` | `alerts#show` | 🔑 Auth | Деталі EWS-тривоги (з cluster, tree, coordinates, actionable?) |
 | 57 | PATCH | `/alerts/:id/resolve` | `alerts#resolve` | 🔑 Auth | Закрити тривогу. **409** на вже закритій (гонка подвійного кліку — броадкаст тротлений 5 с, тож оператор не бачить оновлення й тисне вдруге). Доти цей шлях кидав `AASM::InvalidTransition` у catch-all і віддавав **500**; `if @alert.resolve!` обіцяв булеву гілку, якої метод не має — він завершується `true` або кидає [SEC.25, 2026-07-30] |
-| 58 | GET | `/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
-| 59 | GET | `/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
-| 60 | POST | `/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
-| 61 | GET | `/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
-| 62 | GET | `/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML). **Тільки автор або admin+** |
-| 63 | PATCH | `/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
-| 64 | PATCH | `/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
-| 65 | GET | `/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
-| 66 | DELETE | `/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
+| 58 | PATCH | `/alerts/:id/claim` | `alerts#claim` | 🌿 Forester | [E.20] Узяти тривогу на себе («хто зараз на гачку» — окремо від `resolved_by`, «хто закрив»). Претензія ЛИШЕ на нічию: **409** якщо її вже взяв інший, **409** якщо тривогу закрито. Повтор ВЛАСНОЇ претензії — no-op: `assigned_at` НЕ зсувається, бо саме `assigned_at − created_at` є Кат-A-сигналом [`05_05 §2`](05_05_Slashing_and_Risk_Policy) «неприєднання Forester'а до інциденту в SLA» |
+| 59 | PATCH | `/alerts/:id/release` | `alerts#release` | 🌿 Forester | [E.20] Відпустити тривогу. Право ширше за право взяти — сам виконавець **АБО** admin+, інакше один хибний клік замикав би тривогу на людині назавжди (стан без виходу). Чужа без цього права → **403** (стан коректний, бракує ПРАВА — на відміну від 409 вище) |
+| 60 | GET | `/maintenance_records` | `maintenance_records#index` | 🌿 Forester | Журнал технічного обслуговування. Query: `?action_type=`, `?verified=1`, `?maintainable_type=`, `?maintainable_id=`, `?from=<ISO8601>`, `?to=<ISO8601>`. Невалідні `from`/`to` → `400 Bad Request` (`flash.maintenance.invalid_date`). |
+| 61 | GET | `/maintenance_records/new` | `maintenance_records#new` | 🌿 Forester | Форма нового запису |
+| 62 | POST | `/maintenance_records` | `maintenance_records#create` | 🌿 Forester | Створити запис обслуговування |
+| 63 | GET | `/maintenance_records/:id` | `maintenance_records#show` | 🌿 Forester | Деталі запису |
+| 64 | GET | `/maintenance_records/:id/edit` | `maintenance_records#edit` | 🌿 Forester | Форма редагування запису (HTML). **Тільки автор або admin+** |
+| 65 | PATCH | `/maintenance_records/:id` | `maintenance_records#update` | 🌿 Forester | Оновити запис. **Тільки автор або admin+** (запобігає cross-forester tampering). |
+| 66 | PATCH | `/maintenance_records/:id/verify` | `maintenance_records#verify` | 🌿 Forester | Підтвердити hardware-стан (STM32). **Тільки автор або admin+** (запобігає cross-forester tampering). |
+| 67 | GET | `/maintenance_records/:id/photos` | `maintenance_records#photos` | 🌿 Forester | Фото запису (пагінація) |
+| 68 | DELETE | `/maintenance_records/:maintenance_record_id/photos/:id` | `maintenance_record_photos#destroy` | 🌿 Forester | Видалити фото. **Тільки автор або admin+** [UI.6] — доти гарда не було зовсім, хоч шлях мутує той самий запис, що рядки 63/64 |
 | **⊙ Оракул (AI Insights)** | | | | | |
-| 67 | GET | `/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
+| 69 | GET | `/oracle_visions` | `oracle_visions#index` | 🌿 Forester | AI-прогнози та SCC-врожайність |
 | **⛓️ Блокчейн** | | | | | |
-| 69 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. **Дефолтне ВІКНО `?window=`** [UI.4]: без параметра віддається останні `LEDGER_WINDOW_DAYS` діб (таблиця RANGE-партиційна помісячно, тож вікно partition-shaped); `?window=all` знімає його. Будь-яке інше значення падає у вікно — fail-closed тут означає вужчий зріз, а не скан усіх партицій. **Зріз ОГОЛОШУЄТЬСЯ в самій відповіді** — `window.since` (ISO-8601, `null` = повна історія): без цього поля та сама адреса віддавала б урізаний набір без жодної ознаки того, що він урізаний. **Провенанс — ДВА поля, не одне** [ARCH.98/ARCH.101]: `tree_did` ⊥ `cluster_name`, бо cluster-sourced рухи гаманця не мають за побудовою, тож `tree_did` для них `null` — і HTML-комірка «Джерело» читає ту саму пару (розходження форматів = клас [`ARCH.90`](00_07_Action_Plan_Tracker)). |
-| 70 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції. Та сама пара провенансу: `cluster_name` + `wallet` (з деревом) — **і з 2026-08-18 обидва ФОРМАТИ її несуть** [ARCH.101]: доти `cluster_name` віддавав лише блупринт, а HTML-сторінка на cluster-sourced рядку друкувала «гаманця не прив'язано» й джерела не називала взагалі, тобто дві репрезентації одного ендпоінта розходились (клас [`ARCH.90`](00_07_Action_Plan_Tracker)) |
-| 71 | GET | `/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
+| 71 | GET | `/blockchain_transactions` | `blockchain_transactions#index` | 🔑 Auth | Список блокчейн-транзакцій. Query: `?token_type=` (allow-list з `BlockchainTransaction.token_types.keys`: `carbon_coin`, `forest_coin`, `cusd`), `?status=` (allow-list з `.statuses.keys`). Невідомі значення → `400 Bad Request`. **Дефолтне ВІКНО `?window=`** [UI.4]: без параметра віддається останні `LEDGER_WINDOW_DAYS` діб (таблиця RANGE-партиційна помісячно, тож вікно partition-shaped); `?window=all` знімає його. Будь-яке інше значення падає у вікно — fail-closed тут означає вужчий зріз, а не скан усіх партицій. **Зріз ОГОЛОШУЄТЬСЯ в самій відповіді** — `window.since` (ISO-8601, `null` = повна історія): без цього поля та сама адреса віддавала б урізаний набір без жодної ознаки того, що він урізаний. **Провенанс — ДВА поля, не одне** [ARCH.98/ARCH.101]: `tree_did` ⊥ `cluster_name`, бо cluster-sourced рухи гаманця не мають за побудовою, тож `tree_did` для них `null` — і HTML-комірка «Джерело» читає ту саму пару (розходження форматів = клас [`ARCH.90`](00_07_Action_Plan_Tracker)). |
+| 72 | GET | `/blockchain_transactions/:id` | `blockchain_transactions#show` | 🔑 Auth | Деталі транзакції. Та сама пара провенансу: `cluster_name` + `wallet` (з деревом) — **і з 2026-08-18 обидва ФОРМАТИ її несуть** [ARCH.101]: доти `cluster_name` віддавав лише блупринт, а HTML-сторінка на cluster-sourced рядку друкувала «гаманця не прив'язано» й джерела не називала взагалі, тобто дві репрезентації одного ендпоінта розходились (клас [`ARCH.90`](00_07_Action_Plan_Tracker)) |
+| 73 | GET | `/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
 | **🔔 Сповіщення** | | | | | |
-| 73 | GET | `/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 74 | PATCH | `/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
+| 75 | GET | `/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
+| 76 | PATCH | `/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 75 | GET | `/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 76 | GET | `/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 77 | GET | `/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 77 | GET | `/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 78 | GET | `/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 79 | GET | `/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 78 | GET | `/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 79 | PATCH | `/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 80 | GET | `/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 81 | PATCH | `/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 80 | GET | `/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
-| 81 | GET | `/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 82 | GET | `/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
+| 83 | GET | `/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 82 | GET | `/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 83 | POST | `/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation.** ⚠️ **[ARCH.77]** Браузерний попри назву — `authorize_forester!` + `format.html`; машинного клієнта нема (фабричний тракт [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) ходить rake-задачами у власному процесі, не HTTP). |
+| 84 | GET | `/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 85 | POST | `/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation.** ⚠️ **[ARCH.77]** Браузерний попри назву — `authorize_forester!` + `format.html`; машинного клієнта нема (фабричний тракт [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) ходить rake-задачами у власному процесі, не HTTP). |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 84 | GET | `/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 85 | GET | `/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 86 | GET | `/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 87 | GET | `/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 | **🌐 Локалізація** | | | | | |
 | 111 | POST | `/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (**рік**, `expires:` ЯВНО — `cookies.permanent` дало б 20 років, тобто retention обирав би дефолт фреймворку проти заявленого в `b2c_tos_privacy`) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp) — і причин ДВІ: пошта рендериться в Sidekiq, куди cookie не доїжджає, а від [I18N.3] колонка ще й є третім щаблем веб-резолву ([`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind)), тобто переживає зміну пристрою. Редірект `back` |
 | **🩺 Health-проби (без автентифікації)** | | | | | |

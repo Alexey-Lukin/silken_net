@@ -13,6 +13,7 @@ en:
         blockchain_transactions: Blockchain transactions
         carbon_absorption: Carbon absorption
         chronicle: Chronicle
+        claim: Take it
         clusters: Clusters
         contracts: Contracts
         dashboard: Dashboard
@@ -46,6 +47,7 @@ en:
         photos: Photos
         provisioning: Provisioning
         register: Register
+        release: Release
         reports: Reports
         reset_password: Reset password
         resolve: Resolve
