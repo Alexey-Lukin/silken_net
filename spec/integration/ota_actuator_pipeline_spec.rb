@@ -28,10 +28,11 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     end
 
     it "transmits first chunk and schedules next" do
-      expect(OtaTransmissionWorker).to receive(:perform_in).with(0.4.seconds, gateway.uid, "firmware", firmware.id, 1, 0)
+      allow(OtaTransmissionWorker).to receive(:perform_in).with(0.4.seconds, gateway.uid, "firmware", firmware.id, 1, 0)
 
       OtaTransmissionWorker.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
 
+      expect(OtaTransmissionWorker).to have_received(:perform_in).with(0.4.seconds, gateway.uid, "firmware", firmware.id, 1, 0)
       gateway.reload
       expect(gateway.state).to eq("updating")
     end
@@ -68,9 +69,11 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     it "retries with exponential backoff on CoAP failure" do
       allow(CoapClient).to receive(:put).and_raise(StandardError, "CoAP NACK")
 
-      expect(OtaTransmissionWorker).to receive(:perform_in).with(15.seconds, gateway.uid, "firmware", firmware.id, 0, 1)
+      allow(OtaTransmissionWorker).to receive(:perform_in).with(15.seconds, gateway.uid, "firmware", firmware.id, 0, 1)
 
       OtaTransmissionWorker.new.perform(gateway.uid, "firmware", firmware.id, 0, 0)
+
+      expect(OtaTransmissionWorker).to have_received(:perform_in).with(15.seconds, gateway.uid, "firmware", firmware.id, 0, 1)
     end
 
     it "marks gateway faulty after max retries" do
@@ -119,8 +122,9 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
     end
 
     it "schedules reset worker after command duration" do
-      expect(ResetActuatorStateWorker).to receive(:perform_in).with(60.seconds, command.id)
       ActuatorCommandWorker.new.perform(command.id)
+
+      expect(ResetActuatorStateWorker).to have_received(:perform_in).with(60.seconds, command.id)
     end
 
     it "fails expired commands" do
@@ -160,13 +164,15 @@ RSpec.describe "OTA transmission and actuator command pipeline" do
 
     it "skips already acknowledged commands" do
       command.update!(status: :acknowledged)
-      expect(CoapClient).not_to receive(:put)
       ActuatorCommandWorker.new.perform(command.id)
+
+      expect(CoapClient).not_to have_received(:put)
     end
 
     it "skips when command not found" do
-      expect(CoapClient).not_to receive(:put)
       ActuatorCommandWorker.new.perform(-1)
+
+      expect(CoapClient).not_to have_received(:put)
     end
 
     it "uses explicit key when provided" do

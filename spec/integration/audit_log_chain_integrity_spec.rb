@@ -58,7 +58,8 @@ RSpec.describe "Audit log chain integrity and reporting" do
     end
 
     it "records async via Sidekiq" do
-      expect(AuditLogWorker).to receive(:perform_async)
+      allow(AuditLogWorker).to receive(:perform_async)
+
       AuditLog.record_async!(
         {
           user_id: user.id,
@@ -66,6 +67,8 @@ RSpec.describe "Audit log chain integrity and reporting" do
           action: "async_test"
         }
       )
+
+      expect(AuditLogWorker).to have_received(:perform_async)
     end
 
     it "bulk records with chain hashes" do

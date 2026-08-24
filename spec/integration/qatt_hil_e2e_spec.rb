@@ -61,10 +61,11 @@ RSpec.describe "QATT HIL end-to-end" do
 
     # [ARCH.54] Heartbeat ct=0: unpack легально скипається — батча нема,
     # пульс іде з ПІДПИСАНОГО header'а (enqueue_envelope_health).
-    expect(TelemetryUnpackerService).not_to receive(:call)
+    allow(TelemetryUnpackerService).to receive(:call)
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
 
+    expect(TelemetryUnpackerService).not_to have_received(:call)
     expect(gateway.reload.last_attested_at).to be_present
     expect(GatewayTelemetryWorker.jobs.size).to eq(1)
     stats = GatewayTelemetryWorker.jobs.last["args"].last
@@ -78,9 +79,11 @@ RSpec.describe "QATT HIL end-to-end" do
     tampered.setbyte(30, tampered.getbyte(30) ^ 0x01) # inside IV, past the 17-byte header
     allow(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL).to receive(:increment)
 
-    expect(TelemetryUnpackerService).not_to receive(:call)
+    allow(TelemetryUnpackerService).to receive(:call)
+
     UnpackTelemetryWorker.new.perform(Base64.strict_encode64(tampered), gateway.ip_address, package[:uid])
 
+    expect(TelemetryUnpackerService).not_to have_received(:call)
     expect(gateway.reload.last_attested_at).to be_nil
     expect(SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL)
       .to have_received(:increment).with(labels: { status: "attest_bad_signature" })
@@ -110,10 +113,11 @@ RSpec.describe "QATT HIL end-to-end" do
 
     # :unverified → конверт зрізано, але heartbeat ct=0 без атестації не
     # несе НІЧОГО (нема ні батча, ні довіреного пульсу) — чесний no-op.
-    expect(TelemetryUnpackerService).not_to receive(:call)
+    allow(TelemetryUnpackerService).to receive(:call)
 
     UnpackTelemetryWorker.new.perform(package[:encoded], gateway.ip_address, package[:uid])
 
+    expect(TelemetryUnpackerService).not_to have_received(:call)
     expect(gateway.reload.last_attested_at).to be_nil
     expect(GatewayTelemetryWorker.jobs).to be_empty
   end
@@ -176,12 +180,14 @@ RSpec.describe "QATT HIL end-to-end" do
     cipher.padding = 0
     legacy = iv + cipher.update("LEGACY_BATCH_16B") + cipher.final
 
-    expect(TelemetryUnpackerService).to receive(:call)
+    allow(TelemetryUnpackerService).to receive(:call)
       .with(anything, gateway.id, gateway_attested: false).and_call_original
 
     UnpackTelemetryWorker.new.perform(Base64.strict_encode64(legacy),
                                       gateway.ip_address, gateway.uid)
 
+    expect(TelemetryUnpackerService).to have_received(:call)
+      .with(anything, gateway.id, gateway_attested: false)
     expect(gateway.reload.last_attested_at).to be_nil
     expect(GatewayTelemetryWorker.jobs).to be_empty
   end

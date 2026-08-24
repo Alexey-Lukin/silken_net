@@ -79,7 +79,7 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
     end
 
     it "does not trigger Chainlink dispatch for unverified data" do
-      expect(ChainlinkDispatchWorker).not_to receive(:perform_async)
+      allow(ChainlinkDispatchWorker).to receive(:perform_async)
 
       service = Iotex::W3bstreamVerificationService.new(telemetry_log)
       allow(Web3::HttpClient).to receive(:post).and_raise(
@@ -89,6 +89,8 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
       expect {
         service.verify!
       }.to raise_error(Iotex::W3bstreamVerificationService::VerificationError)
+
+      expect(ChainlinkDispatchWorker).not_to have_received(:perform_async)
     end
   end
 
@@ -176,11 +178,13 @@ RSpec.describe "Chaos Engineering: Proof of Growth Pipeline" do
         "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-rpc.example.com",
         "ORACLE_PRIVATE_KEY" => "a" * 64
       ))
-      expect(Web3::RpcConnectionPool).not_to receive(:client_for)
-      expect(Eth::Client).not_to receive(:create)
+      allow(Web3::RpcConnectionPool).to receive(:client_for)
+      allow(Eth::Client).to receive(:create)
 
       request_id = Chainlink::OracleDispatchService.new(telemetry_log).dispatch!
 
+      expect(Web3::RpcConnectionPool).not_to have_received(:client_for)
+      expect(Eth::Client).not_to have_received(:create)
       expect(request_id).to start_with("chainlink-req-")
     end
 

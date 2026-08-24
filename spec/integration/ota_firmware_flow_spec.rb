@@ -92,9 +92,11 @@ RSpec.describe "OTA firmware deployment flow" do
       before = tree.firmware_update_status
 
       service = TelemetryUnpackerService.new(nil, nil)
-      expect(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
+      allow(Rails.logger).to receive(:info).with(/ARCH\.85 OTA Mismatch/)
+
       service.send(:check_firmware_mismatch!, tree, stale_report)
 
+      expect(Rails.logger).to have_received(:info).with(/ARCH\.85 OTA Mismatch/)
       expect(tree.reload.firmware_update_status).to eq(before)
     end
   end

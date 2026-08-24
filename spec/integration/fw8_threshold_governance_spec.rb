@@ -281,8 +281,11 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
 
       # Z=42 would be unhealthy under family bounds (5..40) but healthy under cluster bounds (1..50)
       attrs = { z_value: 42.0, bio_status: :homeostasis }
-      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to receive(:increment)
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+
       service.send(:check_z_divergence!, tree, attrs)
+
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
   end
 end

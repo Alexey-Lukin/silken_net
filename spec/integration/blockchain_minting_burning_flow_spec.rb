@@ -127,8 +127,9 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "schedules confirmation worker after successful send" do
-      expect(BlockchainConfirmationWorker).to receive(:perform_in).with(30.seconds, "0xfake_tx_hash", kind_of(String))
       BlockchainMintingService.call(tx.id)
+
+      expect(BlockchainConfirmationWorker).to have_received(:perform_in).with(30.seconds, "0xfake_tx_hash", kind_of(String))
     end
   end
 
@@ -242,21 +243,24 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     it "processes pending transactions via telemetry_log (oracle-driven flow)" do
-      expect(BlockchainMintingService).to receive(:call_batch)
-        .with([ pending_tx.id ], telemetry_log: telemetry_log, created_at_span: all(be_a(Time)).and(be_present))
       MintCarbonCoinWorker.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+
+      expect(BlockchainMintingService).to have_received(:call_batch)
+        .with([ pending_tx.id ], telemetry_log: telemetry_log, created_at_span: all(be_a(Time)).and(be_present))
     end
 
     it "auto-discovers pending transactions when no IDs given" do
-      expect(BlockchainMintingService).to receive(:call_batch)
-        .with(array_including(pending_tx.id), created_at_span: all(be_a(Time)).and(be_present))
       MintCarbonCoinWorker.new.perform
+
+      expect(BlockchainMintingService).to have_received(:call_batch)
+        .with(array_including(pending_tx.id), created_at_span: all(be_a(Time)).and(be_present))
     end
 
     it "skips when no pending transactions exist" do
       pending_tx.update!(status: :confirmed)
-      expect(BlockchainMintingService).not_to receive(:call_batch)
       MintCarbonCoinWorker.new.perform
+
+      expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
 
     it "resets to pending on RPC error for retry (auto-discovery)" do
@@ -307,13 +311,15 @@ RSpec.describe "Blockchain minting and burning pipeline" do
 
     it "skips already breached contracts" do
       naas.update!(status: :breached)
-      expect(BlockchainBurningService).not_to receive(:call)
       BurnCarbonTokensWorker.new.perform(organization.id, naas.id)
+
+      expect(BlockchainBurningService).not_to have_received(:call)
     end
 
     it "skips when contract not found" do
-      expect(BlockchainBurningService).not_to receive(:call)
       BurnCarbonTokensWorker.new.perform(organization.id, -1)
+
+      expect(BlockchainBurningService).not_to have_received(:call)
     end
   end
 

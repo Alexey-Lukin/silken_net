@@ -109,9 +109,9 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
     # недосяжність, а тому що імʼя каналу там — довільний рядок без жодної
     # поверхні авторизації, на відміну від підписаного Turbo-тракту.
     it "does not reach for raw ActionCable — the alert rides the signed Turbo tract" do
-      expect(ActionCable.server).not_to receive(:broadcast)
-
       AlertNotificationWorker.new.perform(alert.id)
+
+      expect(ActionCable.server).not_to have_received(:broadcast)
     end
 
     # 🔴 [E.33] ДРУГИЙ сайт того самого класу: приклад пінив енкʼю ОБОХ каналів у
@@ -196,9 +196,9 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       encrypted = iv + cipher.update(data) + cipher.final
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(TelemetryUnpackerService).to receive(:call)
-
       UnpackTelemetryWorker.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(TelemetryUnpackerService).to have_received(:call)
     end
 
     it "identifies gateway by IP when UID not provided" do
@@ -212,26 +212,30 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       encrypted = iv + cipher.update(data) + cipher.final
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(TelemetryUnpackerService).to receive(:call)
       UnpackTelemetryWorker.new.perform(encoded, gateway.ip_address, nil)
+
+      expect(TelemetryUnpackerService).to have_received(:call)
     end
 
     it "skips unknown gateway" do
       encoded = Base64.strict_encode64("X" * 48)
-      expect(TelemetryUnpackerService).not_to receive(:call)
       UnpackTelemetryWorker.new.perform(encoded, "192.168.99.99", "UNKNOWN-UID")
+
+      expect(TelemetryUnpackerService).not_to have_received(:call)
     end
 
     it "skips when no hardware key found" do
       hw_key.destroy!
       encoded = Base64.strict_encode64("X" * 48)
-      expect(TelemetryUnpackerService).not_to receive(:call)
       UnpackTelemetryWorker.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(TelemetryUnpackerService).not_to have_received(:call)
     end
 
     it "handles corrupted Base64 gracefully" do
-      expect(TelemetryUnpackerService).not_to receive(:call)
       expect { UnpackTelemetryWorker.new.perform("NOT_VALID_BASE64!!!", "10.0.0.1", gateway.uid) }.not_to raise_error
+
+      expect(TelemetryUnpackerService).not_to have_received(:call)
     end
 
     it "falls back to previous key during grace period" do
@@ -249,8 +253,9 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       encrypted = iv + cipher.update(data) + cipher.final
       encoded = Base64.strict_encode64(encrypted)
 
-      expect(TelemetryUnpackerService).to receive(:call)
       UnpackTelemetryWorker.new.perform(encoded, "10.0.0.1", gateway.uid)
+
+      expect(TelemetryUnpackerService).to have_received(:call)
     end
   end
 end
