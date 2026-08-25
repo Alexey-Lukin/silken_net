@@ -92,14 +92,36 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
       end
     end
 
-    context "when target responds to mark_seen!" do
-      it "calls mark_seen! on the target" do
-        tree = create(:tree, status: :active)
-        record = create(:maintenance_record, maintainable: tree, action_type: :inspection)
-
-        expect_any_instance_of(Tree).to receive(:mark_seen!)
+    # -----------------------------------------------------------------
+    # [ARCH.109] Людський запис НЕ пише машинний канал живості.
+    #
+    # 🔬 Піни навмисно читають СТАН ПІСЛЯ прогону воркера, а не мок на
+    # `mark_seen!`: попередня форма пінила виклик, тож будь-яка інша дорога до
+    # `last_seen_at` пройшла б повз неї. Дім класу — скіл `backend` #78.
+    # -----------------------------------------------------------------
+    describe "запис обслуговування на мовчазному вузлі" do
+      it "лишає дерево мовчазним — пульс, тиша й вердикт про залізо незмінні" do
+        silent_since = 3.days.ago
+        tree = create(:tree, status: :active, last_seen_at: silent_since)
+        record = create(:maintenance_record, maintainable: tree,
+                                             action_type: :inspection, performed_at: 1.hour.ago)
 
         described_class.new.perform(record.id)
+
+        expect(tree.reload.last_seen_at).to be_within(1.second).of(silent_since)
+        expect(Tree.silent).to include(tree)
+        expect(tree.fresh_signal?).to be false
+        expect(record.reload.hardware_pulse_confirmed?).to be false
+      end
+
+      it "лишає шлюз мовчазним — `Gateway#online?` не оживає з паперу" do
+        gateway = create(:gateway, last_seen_at: 3.days.ago)
+        record = create(:maintenance_record, maintainable: gateway, action_type: :inspection)
+
+        expect { described_class.new.perform(record.id) }
+          .not_to change { gateway.reload.last_seen_at }
+
+        expect(gateway.online?).to be false
       end
     end
 
@@ -145,11 +167,9 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
     end
 
     context "when target is a Gateway" do
-      it "calls mark_seen! on the gateway and completes without error" do
+      it "completes without error" do
         gateway = create(:gateway)
         record = create(:maintenance_record, maintainable: gateway, action_type: :inspection)
-
-        expect_any_instance_of(Gateway).to receive(:mark_seen!)
 
         expect { described_class.new.perform(record.id) }.not_to raise_error
       end
@@ -159,7 +179,9 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
     # Afterlife Economy — Biomass Extraction (Puro.earth)
     # -----------------------------------------------------------------
     context "when target is a Tree with biomass_extraction" do
-      it "transitions active tree to deceased" do
+      # ⚖️ [E.20, 2026-08-25] Заявка більше НЕ вбиває дерево — обидві незворотні
+      # дії (смерть + CORC-паспорт) переїхали за підпис другої пари очей.
+      it "лишає дерево живим — смерть оголошує підпис, не заявка" do
         tree = create(:tree, status: :active)
         record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
@@ -167,11 +189,10 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
 
         described_class.new.perform(record.id)
 
-        tree.reload
-        expect(tree.status).to eq("deceased")
+        expect(tree.reload.status).to eq("active")
       end
 
-      it "does not transition an already deceased tree" do
+      it "не чіпає вже мертве дерево й не падає" do
         tree = create(:tree, status: :deceased)
         record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
@@ -189,7 +210,7 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
   # джоба (`retry: 5` без власного `sidekiq_retry_in` ≈ 7–10 хв до DeadSet) —
   # дедлайн, що селектує підпис не дивлячись, тобто рівно ту профанацію, проти
   # якої правило «атестатор ≠ бенефіціар» і стоїть.
-  it "declares the tree deceased but files NO claim — the trigger moved to attestation" do
+  it "не оголошує смерті й не подає заявки — обидва пускачі переїхали в підпис" do
     tree = create(:tree, status: :active)
     record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
 
@@ -197,9 +218,10 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
 
     described_class.new.perform(record.id)
 
-    # Смерть дерева тут ЛИШАЄТЬСЯ — гейт не про неї, а про вихід у зовнішній
-    # реєстр; ⚖️ про гейтування самої смерті відкрите (`00_07` E.20).
-    expect(tree.reload.status).to eq("deceased")
+    # ⚖️ [E.20, 2026-08-25] Присуд ухвалено: гейт стереже ОБИДВІ незворотні ланки,
+    # тож і смерть дерева тепер за підписом. Заявка сама по собі не робить нічого,
+    # чого не можна відкликати.
+    expect(tree.reload.status).to eq("active")
     expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
   end
 
@@ -221,19 +243,28 @@ end
 # -----------------------------------------------------------------
 # Transaction Safety (P0 Fix)
 # -----------------------------------------------------------------
-context "when transaction rolls back during biomass_extraction" do
-  # 🔴 Пін ПЕРЕЦІЛЕНО: доти він стеріг «джоба не ставиться в чергу всередині
-  # транзакції», а після переносу пускача в `attest!` тут ставити нічого — тобто
-  # старий приклад став би вакуумним (зелений на порожній множині). Реальний
-  # інваріант відкату — дерево НЕ мертве.
-  it "leaves the tree alive when the transaction rolls back" do
+context "when the transaction rolls back mid-perform" do
+  # 🔴 Пін ПЕРЕЦІЛЕНО двічі, і другий раз — цією ж сесією. Спершу він стеріг
+  # «джоба не ставиться в чергу всередині транзакції»; далі — відкат
+  # `declare_deceased!`. Після ⚖️ [E.20, 2026-08-25] смерть переїхала в
+  # `attest!`, тож обидва предмети тут зникли, і приклад лишився б ЗЕЛЕНИМ на
+  # порожній множині (мок на метод, якого воркер більше не кличе).
+  # Дзеркало відкату підпису стоїть у `spec/models/maintenance_record_spec.rb`.
+  #
+  # Тут лишається інваріант, який у воркера ЖИВИЙ: крах у життєвому циклі дерева
+  # мусить відкотити й закриття тривоги — інакше журнал стверджував би усунення
+  # проблеми, якої ніхто не усунув.
+  it "не закриває тривогу, коли життєвий цикл дерева впав" do
     tree = create(:tree, status: :active)
-    record = create(:maintenance_record, :biomass_extraction, :with_evidence, maintainable: tree)
+    alert = create(:ews_alert, cluster: tree.cluster, tree: tree, status: :active)
+    record = create(:maintenance_record, maintainable: tree, ews_alert: alert,
+                                         action_type: :decommissioning)
 
-    allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(StandardError, "DB constraint violation")
+    allow_any_instance_of(Tree).to receive(:decommission!).and_raise(StandardError, "DB constraint violation")
 
     expect { described_class.new.perform(record.id) }.to raise_error(StandardError, /DB constraint/)
 
+    expect(alert.reload.status).to eq("active")
     expect(tree.reload.status).to eq("active")
   end
     end

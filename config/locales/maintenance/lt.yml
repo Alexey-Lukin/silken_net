@@ -22,7 +22,7 @@ lt:
       action_type: Veiksmo tipas
       afterlife:
         heading: Afterlife Economy // Puro.earth
-        hint: Tik «Biomasės išgavimui». Toks įrašas paskelbia medį negyvu ir, kitam eiguliui patvirtinus, pateikia NEGRĮŽTAMĄ CORC paraišką išoriniam registrui — iš čia jos atšaukti nebegalima.
+        hint: Tik «Biomasės išgavimui». Kitam eiguliui patvirtinus, toks įrašas paskelbia medį negyvu ir pateikia NEGRĮŽTAMĄ CORC paraišką išoriniam registrui — nė vieno iš šių veiksmų atšaukti nebegalima.
         yield_kg: Išgauta biomasė (kg)
       cancel: Atšaukti
       evidence:

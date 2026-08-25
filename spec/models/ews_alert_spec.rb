@@ -117,6 +117,30 @@ RSpec.describe EwsAlert, type: :model do
       expect(described_class.escalate_field_audit!(cluster: other_cluster, message_key: "cluster_data_blackout")).to be_persisted
     end
 
+    # 🔴 [ARCH.110] Дедуп тепер за (кластер, ПРИЧИНА). Доти продюсер, що приходив
+    # другим, діставав `nil`, а виклик-сайти на `nil` не реагують за побудовою —
+    # тобто після slash-freeze справжній blackout не був би записаний НІДЕ, хоч
+    # це протилежні за змістом вироки з різними діями людини.
+    it "не конфлатить РІЗНІ вердикти на одному кластері" do
+      freeze = described_class.escalate_field_audit!(cluster: cluster,
+                                                     message_key: "slash_frozen_no_evidence_cluster")
+      blackout = described_class.escalate_field_audit!(cluster: cluster,
+                                                       message_key: "cluster_data_blackout")
+
+      expect(freeze).to be_persisted
+      expect(blackout).to be_persisted
+      expect(blackout.id).not_to eq(freeze.id)
+    end
+
+    # Дзеркало, без якого правило вище знімає анти-спам: ТОЙ САМИЙ продюсер
+    # (щоденний cron при тривалій деградації) дедуплікується далі.
+    it "той самий вердикт дедуплікується, як і доти" do
+      described_class.escalate_field_audit!(cluster: cluster, message_key: "slash_frozen_no_evidence_cluster")
+
+      expect(described_class.escalate_field_audit!(cluster: cluster,
+                                                   message_key: "slash_frozen_no_evidence_cluster")).to be_nil
+    end
+
     # Програна unique-гонка МУСИТЬ гаситись SAVEPOINT'ом: викликач (arm_candidate!)
     # тримає відкриту транзакцію — без requires_new PG-абортована транзакція тихо
     # перетворює імпліцитний COMMIT на ROLLBACK і trigger! зникає без ексепшена.

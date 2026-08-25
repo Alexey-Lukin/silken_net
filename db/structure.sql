@@ -4281,7 +4281,7 @@ CREATE INDEX index_ews_alerts_on_tree_id ON public.ews_alerts USING btree (tree_
 -- Name: index_ews_alerts_unique_active_cluster_field_audit; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_ews_alerts_unique_active_cluster_field_audit ON public.ews_alerts USING btree (cluster_id) WHERE ((alert_type = 7) AND (status = 0) AND (tree_id IS NULL));
+CREATE UNIQUE INDEX index_ews_alerts_unique_active_cluster_field_audit ON public.ews_alerts USING btree (cluster_id, message_key) WHERE ((alert_type = 7) AND (status = 0) AND (tree_id IS NULL));
 
 
 --
@@ -6879,6 +6879,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260825094500'),
 ('20260824180746'),
 ('20260824172441'),
 ('20260824041557');

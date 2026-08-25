@@ -97,12 +97,22 @@ class TreeStalenessSweepWorker
   end
 
   # Кластери, що ВЖЕ ескальовані cluster-рівнем як темні: Queen мовчить/без
-  # uplink (comms-пара) або cluster-level Field-Audit (blackout/freeze/insurance).
+  # uplink (comms-пара) або cluster-level Field-Audit, що СТВЕРДЖУЄ нечутність.
+  #
+  # 🔴 [ARCH.110] Фільтр за `SILENCE_ASSERTING_KEYS` несучий, а не оптимізація.
+  # Доти сюди входив БУДЬ-ЯКИЙ cluster-level `field_audit`, тож slash-freeze,
+  # порожній баланс чи озброєний страховий кандидат викидали ВСІ дерева кластера
+  # з dead-man switch'а — тиша глушилась грішми, і машинного резолвера для
+  # cluster-level `field_audit` не існує (`resolve_returned_trees` бʼє
+  # `joins(:tree)`), тож глушник жив, доки алерт не закриє людина.
+  # Канон [`06_08 §1.3`] описував намір саме так («cluster-level field_audit
+  # (blackout)») — код лише тепер його виконує.
   def dark_cluster_ids
     EwsAlert.unresolved.where.not(cluster_id: nil)
             .where(alert_type: %i[queen_offline queen_uplink_lost])
             .or(EwsAlert.unresolved.where.not(cluster_id: nil)
-                        .where(alert_type: :field_audit, tree_id: nil))
+                        .where(alert_type: :field_audit, tree_id: nil,
+                               message_key: EwsAlert::SILENCE_ASSERTING_KEYS))
             .distinct.pluck(:cluster_id)
   end
 

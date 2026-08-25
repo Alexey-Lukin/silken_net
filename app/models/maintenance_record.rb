@@ -314,12 +314,25 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
     return true if attested_by_id == actor.id
     raise SelfAttestation if actor.id == user_id
 
-    update!(attested_by_id: actor.id, attested_at: Time.current)
-    # 🔴 [E.20] Підпис — ПУСКАЧ незворотної заявки, а не лише її дозвіл. Доти
-    # паспорт ставив у чергу `EcosystemHealingWorker` безумовно, тож атестатор мав
-    # рівно стільки часу, скільки живе джоба (≈7–10 хв до DeadSet) — дедлайн, що
+    # 🔴 [E.20] Підпис — ПУСКАЧ обох незворотних дій, а не лише їхній дозвіл.
+    # Доти паспорт ставив у чергу `EcosystemHealingWorker` безумовно, тож атестатор
+    # мав рівно стільки часу, скільки живе джоба (≈7–10 хв до DeadSet) — дедлайн, що
     # селектує підпис не дивлячись. Тепер порядок природний: спершу друга пара
     # очей, потім вихід у зовнішній реєстр.
+    #
+    # ⚖️ [E.20, 2026-08-25] Сюди ж переїхало ОГОЛОШЕННЯ СМЕРТІ. `declare_deceased!`
+    # термінальний (подій `from: :deceased` немає) і тим самим переходом смикає
+    # `trigger_slashing_protocol` — тобто з заявки його виконувала одна людина
+    # одним рядком форми. Дерево, яке вже мовчить, не може заперечити за себе,
+    # тож незворотне тут ставить незалежний свідок, не автор заявки.
+    # Смерть і підпис — в ОДНІЙ транзакції: заатестована заявка, що не змінила
+    # статус дерева, стверджувала б виконану дію, якої не сталося.
+    transaction do
+      update!(attested_by_id: actor.id, attested_at: Time.current)
+      maintainable.declare_deceased! if action_type_biomass_extraction? && !maintainable.deceased?
+    end
+
+    # Поза транзакцією СВІДОМО: enqueue до коміту дає джобу, яка не бачить рядка.
     PuroEarthPassportWorker.perform_async(id) if action_type_biomass_extraction?
     true
   end

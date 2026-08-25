@@ -22,7 +22,7 @@ lv:
       action_type: Darbības veids
       afterlife:
         heading: Afterlife Economy // Puro.earth
-        hint: Tikai «Biomasas izņemšanai». Šāds ieraksts pasludina koku par mirušu un pēc otra mežsarga apliecinājuma iesniedz NEATGRIEZENISKU CORC pieteikumu ārējā reģistrā — no šejienes to vairs atsaukt nevar.
+        hint: Tikai «Biomasas izņemšanai». Pēc otra mežsarga apliecinājuma šāds ieraksts pasludina koku par mirušu un iesniedz NEATGRIEZENISKU CORC pieteikumu ārējā reģistrā — nevienu no abām darbībām vairs atsaukt nevar.
         yield_kg: Izņemtā biomasa (kg)
       cancel: Atcelt
       evidence:

@@ -22,7 +22,7 @@ en:
       action_type: Action Type
       afterlife:
         heading: Afterlife Economy // Puro.earth
-        hint: For «Biomass extraction» only. Such a record declares the tree dead and, once a second forester attests it, files an IRREVERSIBLE CORC claim with an external registry — it cannot be withdrawn from here.
+        hint: For «Biomass extraction» only. Once a second forester attests it, such a record declares the tree dead and files an IRREVERSIBLE CORC claim with an external registry — neither action can be withdrawn afterwards.
         yield_kg: Biomass extracted (kg)
       cancel: Cancel
       evidence:

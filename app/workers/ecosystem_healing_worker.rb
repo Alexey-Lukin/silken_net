@@ -12,10 +12,17 @@ class EcosystemHealingWorker
     target = record.maintainable
 
     ActiveRecord::Base.transaction do
-      # 1. ОСВІЖЕННЯ ПУЛЬСУ
-      target.mark_seen! if target.respond_to?(:mark_seen!)
+      # ⛔ [ARCH.109] Тут НЕ місце `mark_seen!`, і повертати його не можна.
+      # `last_seen_at` — канал живості САМОГО вузла; з нього виводять вердикт
+      # `hardware_pulse_confirmed?` [UI.7], `Tree.silent` [SILENCE-1] і
+      # `fresh_signal?` [ARCH.99]. Штамп на людському записі замикав ланцюг
+      # однією парою рук: подав форму → платформа проставила пульс → підтвердив
+      # «залізо відгукнулось». Пульс пишуть лише ті, хто справді почув вузол —
+      # `TelemetryUnpackerService` (дерево) і `GatewayTelemetryWorker` (шлюз).
+      # Підстава не інженерна, а місійна (`00_01 §1.1`): у вузла тут відбирали
+      # не запис, а голос — тишу, яка єдина в цій системі не бреше.
 
-      # 2. РЕАНІМАЦІЯ АКТУАТОРІВ
+      # 1. РЕАНІМАЦІЯ АКТУАТОРІВ
       # [SAFETY]: guard may_deactivate? — repair-запис на вже-idle актуаторі
       # (preventive maintenance) інакше кидав AASM::InvalidTransition (mark_idle! =
       # deactivate!, валідний лише from active/offline/maintenance_needed) →
@@ -24,7 +31,7 @@ class EcosystemHealingWorker
         target.mark_idle!
       end
 
-      # 3. ЖИТТЄВИЙ ЦИКЛ ДЕРЕВА
+      # 2. ЖИТТЄВИЙ ЦИКЛ ДЕРЕВА
       if target.is_a?(Tree) && record.action_type_decommissioning? && target.may_decommission?
         target.decommission!
       end
@@ -50,18 +57,17 @@ class EcosystemHealingWorker
         )
       end
 
-      # 3a. AFTERLIFE ECONOMY (Puro.earth Biochar D-MRV)
-      # Biomass extraction marks the tree dead; the D-MRV Biomass Passport that
-      # anchors provenance on-chain is filed later, on attestation.
-      # 🔴 [E.20, ⚖️ 2026-08-24] Тут ЛИШЕ смерть дерева. Паспорт у чергу ставить
-      # `MaintenanceRecord#attest!` — пускачем незворотної заявки є сам підпис;
-      # підстава й вимір ≈7–10 хв — картка воркера `04_02 §11` + скіл `backend` #77.
-      if target.is_a?(Tree) && record.action_type_biomass_extraction?
-        target.declare_deceased! unless target.deceased?
-      end
+      # ⛔ [E.20, ⚖️ 2026-08-25] Смерть дерева тут БІЛЬШЕ не оголошується, і
+      # повертати її сюди не можна. `declare_deceased!` термінальний — подій
+      # `from: :deceased` немає жодної, — і тим самим переходом смикає
+      # `trigger_slashing_protocol`. Тобто з заявки його виконувала ОДНА людина
+      # одним рядком форми, без жодної передумови (ні тиші, ні стресу).
+      # Тепер обидві незворотні дії — смерть і CORC-паспорт — має ОДИН пускач:
+      # підпис другої пари очей (`MaintenanceRecord#attest!`, «атестатор ≠
+      # бенефіціар»). Дерево, яке вже мовчить, не може заперечити за себе —
+      # тому свідком тут мусить бути незалежна людина, а не автор заявки.
 
-      # 4. [ВИПРАВЛЕНО]: ЗАКРИТТЯ ТРИВОГИ (Enum Method Fix)
-      # Тепер використовуємо status_resolved? замість resolved?
+      # 3. ЗАКРИТТЯ ТРИВОГИ
       alert = record.ews_alert
       if alert.present? && !alert.status_resolved?
         # [I18N.1] Ключ замість зашитої укр. прози з `.humanize`-токеном усередині:

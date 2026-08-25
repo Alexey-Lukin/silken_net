@@ -757,6 +757,42 @@ RSpec.describe MaintenanceRecord, type: :model do
 
       expect(PuroEarthPassportWorker).not_to have_received(:perform_async)
     end
+
+    # ⚖️ [E.20, 2026-08-25] Друга незворотна ланка переїхала сюди ж: смерть
+    # дерева оголошує ПІДПИС. Доти її виконувала одна людина одним рядком форми,
+    # без жодної передумови, і відкату `deceased` не має.
+    it "declares the tree deceased — the terminal step needs the second pair of eyes" do
+      tree = create(:tree, status: :active)
+      biomass = create(:maintenance_record, :biomass_extraction, :with_evidence,
+                       user: author, maintainable: tree)
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+
+      expect { biomass.attest!(auditor) }
+        .to change { tree.reload.status }.from("active").to("deceased")
+    end
+
+    it "leaves a non-biomass target alive" do
+      tree = create(:tree, status: :active)
+      inspection = create(:maintenance_record, user: author, maintainable: tree,
+                                               action_type: :inspection)
+
+      expect { inspection.attest!(auditor) }.not_to change { tree.reload.status }
+    end
+
+    # 🔴 Смерть і підпис — в ОДНІЙ транзакції: заатестований запис, що не змінив
+    # статус дерева, стверджував би виконану дію, якої не сталося (самосвідчення).
+    it "rolls the signature back when the terminal transition fails" do
+      tree = create(:tree, status: :active)
+      biomass = create(:maintenance_record, :biomass_extraction, :with_evidence,
+                       user: author, maintainable: tree)
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+      allow_any_instance_of(Tree).to receive(:declare_deceased!).and_raise(ActiveRecord::Rollback)
+
+      biomass.attest!(auditor)
+
+      expect(biomass.reload).not_to be_attested
+      expect(tree.reload.status).to eq("active")
+    end
   end
 
   # 🔴 [E.20] Односторонні двері: без них замок доказу знімається одним enum-полем.

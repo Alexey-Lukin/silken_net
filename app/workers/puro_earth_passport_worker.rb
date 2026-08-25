@@ -102,16 +102,19 @@ class PuroEarthPassportWorker
   # 🔴 Форма відмови — RAISE, а не тихий `return`, і носій обрано ВИМІРОМ, не смаком:
   # per-tree `EwsAlert(:field_audit)` тут був би зʼїдений — `TreeStalenessSweepWorker`
   # закриває такі алерти для дерев, що покинули `active`, а це дерево вже
-  # `deceased` (його оголосив `EcosystemHealingWorker` до нас). Тобто ескалація
+  # `deceased` (його оголошує сам `attest!` — той самий підпис, що поставив цю
+  # джобу в чергу, однією транзакцією). Тобто ескалація
   # прожила б хвилини й зникла. Cluster-level теж хибний: він входить у
   # `dark_cluster_ids` і осліпив би per-tree dead-man switch на весь кластер.
   # Тому — гучний провал: 5 ретраїв (фото ще можуть додати) → DeadSet + Sentry,
   # де вже стоїть алерт `sn-alert-sidekiq-deadset`. Заявка не подається.
   #
-  # ⚠️ Оголошена стеля: цей гейт стереже ОСТАННЮ ланку. `declare_deceased!` і
-  # звʼязаний із ним `trigger_slashing_protocol` спрацювали РАНІШЕ, у
-  # `EcosystemHealingWorker` — чи гейтувати і їх, лишається відкритим
-  # ([`00_07`](../../docs/00_07_Action_Plan_Tracker.md) E.20).
+  # ⚖️ [E.20, 2026-08-25] Стеля ЗНЯТА: гейт більше не стереже саму лише останню
+  # ланку. `declare_deceased!` і звʼязаний із ним `trigger_slashing_protocol`
+  # переїхали в `MaintenanceRecord#attest!` — той самий підпис, що ставить цю
+  # джобу, — тож обидві незворотні дії тепер за ОДНИМ незалежним свідком.
+  # ⛔ Дзеркальний двір `decommissioning` → `removed` присуд свідомо НЕ накрив
+  # (окремий предмет, тригер — перша реальна колізія в полі).
   def require_evidence!(record)
     unless record.photos.any?
       Rails.logger.error "🌿 [Puro.earth] Record ##{record.id} (biomass_extraction) БЕЗ фотодоказу — " \

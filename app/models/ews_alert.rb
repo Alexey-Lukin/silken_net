@@ -239,10 +239,51 @@ class EwsAlert < ApplicationRecord
   scope :critical, -> { severity_critical.unresolved }
   scope :recent, -> { order(created_at: :desc).limit(20) }
 
+  # [ARCH.110] РЕЄСТР причин cluster-level Field-Audit, розділений ОДНИМ питанням:
+  # чи цей алерт СТВЕРДЖУЄ, що кластера не чути.
+  #
+  # Дискримінатор несе `message_key`, а не власний `alert_type` (⚖️ 2026-08-25):
+  # причини вже розрізнені ключем у КОЖНОГО продюсера, тоді як новий `critical`-тип
+  # за замовчуванням увійшов би в `critical_unmaintained?` і штрафував би оператора
+  # за нашу ж діагностику ([`05_05 §3.2`]).
+  #
+  # 🔴 Реєстр мусить лишатись ПОВНИМ: `TreeStalenessSweepWorker#dark_cluster_ids`
+  # глушить per-tree dead-man switch саме за `SILENCE_ASSERTING_KEYS`, тож новий
+  # некласифікований ключ тихо випав би з обох списків — і зламав би глушник у той
+  # бік, якого ніхто не помітить. Повноту стереже
+  # `spec/quality/cluster_field_audit_key_registry_spec.rb`.
+  #
+  # ⚠️ `insurance_no_data` живе САМЕ ТУТ, хоч ім'я й читається як страховий вердикт:
+  # його єдиний пускач — `router.blackout?` (`активні дерева є && інсайтів немає`),
+  # тобто він стверджує рівно нечутність. Класифікувати за іменем ключа — помилка.
+  SILENCE_ASSERTING_KEYS = %w[
+    cluster_data_blackout
+    global_blackout
+    insurance_no_data
+  ].freeze
+
+  # Вердикт утримано або зовнішня перешкода — про чутність кластера НЕ кажуть нічого,
+  # тож глушити ними dead-man switch означало б гасити тишу грішми.
+  VERDICT_HELD_KEYS = %w[
+    cluster_small_sample_degradation
+    slash_frozen_indeterminate_cluster
+    slash_frozen_no_evidence_cluster
+    slash_evasion_cluster
+    insurance_candidate_armed
+    obscured_critical_fire
+    non_fire_peril
+  ].freeze
+
+  CLUSTER_FIELD_AUDIT_KEYS = (SILENCE_ASSERTING_KEYS + VERDICT_HELD_KEYS).freeze
+
   # [SLASH-1] One-Home Field-Audit ескалації, два скоупи за dedup-ключем:
-  #   • cluster-level (tree: nil) — (cluster_id, :field_audit, :active, tree_id NULL):
-  #     щоденні crons (freeze slash-гейта / blackout / insurance no-data) при тривалій
-  #     деградації плодили дубль щодоби. Одна АКТИВНА ескалація на кластер.
+  #   • cluster-level (tree: nil) — (cluster_id, :field_audit, :active, tree_id NULL,
+  #     message_key): щоденні crons при тривалій деградації плодили дубль щодоби —
+  #     той самий продюсер дедуплікується власним ключем і далі. 🔴 [ARCH.110]
+  #     `message_key` у ключі СВІДОМО: без нього продюсер, що прийшов другим,
+  #     діставав `nil`, а виклик-сайти на `nil` не реагують за побудовою — тобто
+  #     після slash-freeze справжній blackout не був би записаний НІДЕ. Це
+  #     протилежні за змістом вироки з різними діями людини.
   #   • per-tree ([SILENCE-1], tree: задано) — dedup тримають модельна валідація
   #     (scope [tree_id, status]) + частковий unique-index (..._unique_active_per_tree);
   #     індекси взаємовиключні (tree_id IS NULL ⊥ IS NOT NULL) → скоупи співіснують:
@@ -251,7 +292,7 @@ class EwsAlert < ApplicationRecord
   # Повертає алерт або nil (dedup-skip) — виклик-сайти на nil НЕ реагують
   # (аудит-виїзд спільний, контекст лишається у їхніх логах).
   def self.escalate_field_audit!(cluster:, message_key:, message_params: {}, tree: nil)
-    existing = tree ? active_tree_field_audit_for(tree) : active_cluster_field_audit_for(cluster)
+    existing = tree ? active_tree_field_audit_for(tree) : active_cluster_field_audit_for(cluster, message_key)
     if existing
       Rails.logger.info "🔍 [SLASH-1] Field-Audit по #{tree ? "дереву #{tree.did}" : "кластеру ##{cluster.id}"} вже активний (##{existing.id}) — дубль не створюємо."
       return nil
@@ -282,8 +323,9 @@ class EwsAlert < ApplicationRecord
 
   # Виокремлено з escalate_field_audit! (тестований шов гонки: спек стабить nil
   # при реальному дублі в БД → форсує RecordNotUnique з індексу).
-  def self.active_cluster_field_audit_for(cluster)
-    cluster.ews_alerts.critical.alert_type_field_audit.where(tree_id: nil).first
+  def self.active_cluster_field_audit_for(cluster, message_key)
+    cluster.ews_alerts.critical.alert_type_field_audit
+           .where(tree_id: nil, message_key: message_key).first
   end
 
   # [SILENCE-1] Per-tree дзеркало ↑. Предикат = ТОЧНО модельна валідація

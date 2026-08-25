@@ -118,6 +118,37 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
         .not_to change { EwsAlert.alert_type_field_audit.where.not(tree_id: nil).count }
     end
 
+    # 🔴 [ARCH.110] Дзеркало піна вище, і саме воно несе присуд: cluster-level
+    # field_audit, що НЕ стверджує нечутності, глушити тишу не сміє. Доти
+    # slash-freeze, порожній баланс і озброєний страховий кандидат викидали ВСІ
+    # дерева кластера з dead-man switch'а — тиша гасилась грішми.
+    it "slash-freeze НЕ глушить per-tree fan-out — він про кошти, не про чутність" do
+      EwsAlert.escalate_field_audit!(cluster: cluster, message_key: "slash_frozen_no_evidence_cluster")
+      silent_tree
+
+      expect { sweep }
+        .to change { EwsAlert.alert_type_field_audit.where.not(tree_id: nil).count }.by(1)
+    end
+
+    it "озброєний страховий кандидат НЕ глушить — про чутність він не каже нічого" do
+      EwsAlert.escalate_field_audit!(cluster: cluster, message_key: "insurance_candidate_armed")
+      silent_tree
+
+      expect { sweep }
+        .to change { EwsAlert.alert_type_field_audit.where.not(tree_id: nil).count }.by(1)
+    end
+
+    # ⚠️ Дзеркальний бік: `insurance_no_data` ГЛУШИТЬ, хоч ім'я й читається як
+    # страховий вердикт — його єдиний пускач `router.blackout?`, тобто він
+    # стверджує рівно нечутність. Класифікація йде за ПУСКАЧЕМ, не за іменем.
+    it "insurance_no_data глушить — його пускач і є blackout" do
+      EwsAlert.escalate_field_audit!(cluster: cluster, message_key: "insurance_no_data")
+      silent_tree
+
+      expect { sweep }
+        .not_to change { EwsAlert.alert_type_field_audit.where.not(tree_id: nil).count }
+    end
+
     it "cluster-less дерево НЕ глушиться темним чужим кластером (NOT IN NULL-пастка)" do
       create(:ews_alert, cluster: cluster, tree: nil, severity: :critical,
                          alert_type: :queen_offline, status: :active)
