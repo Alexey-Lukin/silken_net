@@ -312,7 +312,7 @@ dormant ──reactivate──► active
 - `after_update_commit :trigger_slashing_protocol` — при `removed?` або `deceased?` → `BurnCarbonTokensWorker`
 - `after_update_commit :broadcast_map_update, if: :map_relevant_change?` — **множина тригерів = множина колонок, які маркер справді малює** (`Dashboard::MapNode`: lat · lng · status · `latest_stress_index`), і рівність тут не косметика, бо розійтись вона вміє В ОБИДВА боки, обидва тихо [ARCH.84]: тригер, якого бракує, вбиває живе оновлення (стрес — колір маркера — не броадкастився ніколи), а зайвий перемальовує вузол на величину, якої вже не існує в розмітці (`latest_voltage_mv` лишався тригером ще після того, як [ARCH.99] зняв `data-charge`) — у механізмі, збудованому саме щоб броадкасти скоротити. 🔴 **Колбек — лише ОДНА з двох умов доставки:** усі писачі денормалізованого стресу йдуть `update_column`/`update_all`, які колбеків не пускають взагалі, тож броадкаст там **явний** ([`04_02 §3`](04_02_Business_Logic_and_Services), `InsightGeneratorService`). Правлячи будь-яку з половин, полагодь ОБИДВІ — кожна поодинці не міняє нічого видимого. Носії: `spec/models/tree_spec.rb` (тригери, з дзеркалом «напруга НЕ перемальовує») + `spec/services/insight_generator_service_spec.rb` (пін на кожного з трьох писачів)
 
-**Scopes:** `active`, `geolocated`, `silent` (> 24 год мовчання), `critical_stress` (stress > 0.8).
+**Scopes:** `active`, `geolocated`, `silent` (> 24 год мовчання). ⛔ `critical_stress` **знято 2026-08-25** [SLASH-1] як мертву гілку — нуль викликачів поза власною спекою, при трьох пастках усередині (сирий `0.8` замість DAO-live `AiInsight.slash_stress_threshold` · строге `>` проти `>=` у живих споживачів · `joins` без `.distinct`, тобто лічба РЯДКІВ замість ДЕРЕВ — рівно та, що вже роздувала спалення [ARCH.46]).
 
 > ⚡ **«НЕ ВИМІРЯНО» = СТАН, А НЕ ЗНАЧЕННЯ — друга колонка того ж класу [ARCH.84].**
 > `latest_stress_index` більше не має ані `DEFAULT 0.0`, ані ридера-підстановки.
@@ -1238,7 +1238,7 @@ active/draft ──cancel──► cancelled
 | `total_growth_points` | bigint | Загальні бали зростання за день |
 | `summary` | text | Текстовий підсумок (human-readable) |
 
-**Ключові методи:** `contract_breach?`, `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`.
+**Ключові методи:** `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`. ⛔ `contract_breach?` **знято 2026-08-25** [SLASH-1]: його докстрінг стверджував «використовується в Slashing Protocol» при нулі викликачів, а поріг усередині був `0.8` — НЕ slash-поріг (той DAO-live `slash_stress_threshold`, дефолт `0.83`). Небезпечним його робила не мертвість, а підпис: перший читач, що повірив би імені, взяв би чужий поріг на грошовому шляху.
 
 **Класові методи:** `AiInsight.slash_stress_threshold` (DAO-live поріг, ARCH.46 — дім спільності «тригер ≡ розмір») · **`AiInsight.reporting_date(now = Time.current)`** — див. ⚡ нижче.
 

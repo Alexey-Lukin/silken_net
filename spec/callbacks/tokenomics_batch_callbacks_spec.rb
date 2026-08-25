@@ -16,44 +16,20 @@ RSpec.describe TokenomicsBatchCallbacks do
       expect(MintCarbonCoinWorker.jobs.first["args"]).to be_empty
     end
 
-    # [ARCH.94] Детектор застрягання емісії. Дискримінатор точний: мінт піднімає
-    # `locked_balance`, тож ПІСЛЯ здорового циклу eligible-множина порожня за
-    # побудовою — усе, що в ній лишилось, мало змінтувати й не змінтувало.
-    describe "stall depth gauge" do
-      let(:threshold) { TokenomicsEvaluatorWorker.emission_threshold }
-      let(:status) { Sidekiq::Batch::Status.new("bid") }
-      let(:options) { { "cycle_id" => "cycle" } }
+    # [ARCH.94 / ARCH.59] Семпл stall-глибини ПЕРЕЇХАВ у `MintStallProbeWorker`
+    # (cron `55 * * * *`), бо `on(:success)` не спрацьовує саме тоді, коли емісія
+    # застрягла найгірше — коли чанки падають. Вісь перецілено: тут лишається пін
+    # на ВІДСУТНІСТЬ сайту, з фікстурою, що перетинає поріг — інакше він був би
+    # зелений і при поверненому семплі, що звітує нуль.
+    it "does NOT sample the stall gauge from here" do
+      tree = create(:tree, status: :active)
+      tree.wallet.update!(balance: TokenomicsEvaluatorWorker.emission_threshold * 2, locked_balance: 0)
 
-      it "reports depth 0 when every eligible wallet converted its points" do
-        tree = create(:tree, status: :active)
-        # available = balance − locked = 0 → сконвертовано, більше не eligible
-        tree.wallet.update!(balance: threshold, locked_balance: threshold)
+      allow(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set)
 
-        allow(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(0)
+      described_class.new.on_success(Sidekiq::Batch::Status.new("bid"), { "cycle_id" => "cycle" })
 
-        described_class.new.on_success(status, options)
-
-        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to have_received(:set).with(0)
-      end
-
-      it "reports a non-zero depth when an eligible wallet produced no mint" do
-        tree = create(:tree, status: :active)
-        # Фікстура МУСИТЬ перетинати поріг, інакше клас невидимий (04_06 §B.2 BP #14).
-        tree.wallet.update!(balance: threshold * 2, locked_balance: 0)
-
-        allow(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to receive(:set).with(1)
-
-        described_class.new.on_success(status, options)
-
-        expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).to have_received(:set).with(1)
-      end
-
-      it "never lets the visibility probe break the money path" do
-        allow(TokenomicsEvaluatorWorker).to receive(:eligible_wallets).and_raise(StandardError, "db down")
-
-        expect { described_class.new.on_success(status, options) }.not_to raise_error
-        expect(MintCarbonCoinWorker.jobs.size).to eq(1)
-      end
+      expect(SilkenNet::Metrics::MINT_ELIGIBLE_UNMINTED_DEPTH).not_to have_received(:set)
     end
 
     it "logs batch completion with cycle_id" do

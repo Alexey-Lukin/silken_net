@@ -126,6 +126,30 @@ contract SFCMedusaTest {
         }
     }
 
+    // ── [CONTRACT.2] pause / unpause — B-07 INSIDE a sequence ────────────────
+
+    /// @notice Mirror of the SCC harness (full rationale there), but the SFC side carries a
+    ///         second invariant a paused window can break and its sibling cannot: voting
+    ///         power. `_update` is overridden `(ERC20, ERC20Votes)`, so a burn under pause
+    ///         must move BOTH the balance and the checkpoint — if the pause branch ever
+    ///         short-circuits before the votes half, `property_votingPowerMatchesSupply`
+    ///         and `property_votesTrackBalances` are what notice, and only an interleaved
+    ///         sequence puts them in a position to look.
+    /// @dev Entry is seed-gated for the same reason as SCC — a fair toggle would park the
+    ///      campaign in a state where mint/transfer revert and every other property idles.
+    function pauseToken(uint256 seed) external {
+        if (seed % 4 != 0) return;
+        if (sfc.paused()) return;
+        vm.prank(ADMIN);
+        sfc.pause();
+    }
+
+    function unpauseToken() external {
+        if (!sfc.paused()) return;
+        vm.prank(ADMIN);
+        sfc.unpause();
+    }
+
     // ── [CONTRACT.2] batchMint — auto-delegate + multi-element checkpoint churn ───
 
     /// @notice Mismatch is a deliberate MINORITY arm (three independent `% 8` lengths would

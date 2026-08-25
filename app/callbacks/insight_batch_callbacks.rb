@@ -14,7 +14,13 @@
 #
 # Цей колбек:
 # 1. Запускає ClusterHealthCheckWorker для аудиту NaaS-контрактів
-# 2. [INS.1] Fan-out страхового оракула за kill-switch-прапором
+#
+# ⛔ Тут доти стояв другий пункт — «[INS.1] Fan-out страхового оракула». Він переїхав
+# у `ClusterHealthCheckWorker` (ARCH.59, 2026-08-25) і сюди НЕ повертається: цей
+# колбек у проді не виконується (шим `Sidekiq::Batch`, `sidekiq-pro` поза Gemfile —
+# DOC-R.10), тож fan-out тут був єдиним enqueue-сайтом `InsuranceOracleWorker`, до
+# якого не доходить керування. Воркер нижче має власний cron-дублер; додавати сюди
+# другий сайт означало б завести дім, який мовчить рівно тоді, коли потрібен.
 #
 # ⛔ Тут доти стояв третій пункт — «Очищує старі TelemetryLog записи (>7 днів)».
 # Механізм знято ⚖️ 2026-08-21: рядкове видалення телеметрії заборонене, єдиний
@@ -33,26 +39,8 @@ class InsightBatchCallbacks
     Rails.logger.info "✅ [Insight Batch] Батч #{status.bid} завершено успішно. " \
                       "Дата: #{date_string}. Запуск аудиту контрактів..."
 
-    # 1. Аудит NaaS-контрактів (Slashing Protocol / Celo Rewards)
+    # Аудит NaaS-контрактів (Slashing Protocol / Celo Rewards) + [INS.1] fan-out
+    # страхового оракула, який живе ВСЕРЕДИНІ цього воркера (шапка вище).
     ClusterHealthCheckWorker.perform_async(date_string)
-
-    # 1b. [INS.1] Страховий оракул (Trigger-1, arm-кандидат) — per-cluster fan-out за майстер-
-    # прапором :parametric_insurance_oracle_enabled (kill-switch, default off → інертно).
-    # Settlement окремо за НЕЗАЛЕЖНИМ підтвердженням (dClimate / Field-Audit), 05_05 §6.
-    enqueue_insurance_oracle(date_string)
-  end
-
-  private
-
-  # [INS.1] Fan-out лише по кластерах з активними страховками; за прапором (kill-switch).
-  def enqueue_insurance_oracle(date_string)
-    return unless ActiveModel::Type::Boolean.new.cast(
-      SystemParameter.current(:parametric_insurance_oracle_enabled, default: false)
-    )
-
-    Cluster.joins(:parametric_insurances).merge(ParametricInsurance.status_active)
-           .distinct.find_each do |cluster|
-      InsuranceOracleWorker.perform_async(cluster.id, date_string)
-    end
   end
 end

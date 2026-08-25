@@ -138,6 +138,37 @@ contract SCCMedusaTest {
         }
     }
 
+    // ── [CONTRACT.2] pause / unpause — B-07 INSIDE a sequence ────────────────
+
+    /// @notice B-07 says `slash()` must never be blocked by `pause()`. That invariant is
+    ///         already proven in isolation — a unit test and, stronger, a Halmos symbolic
+    ///         proof over all balances. What NO layer covered is the invariant holding
+    ///         through an arbitrary INTERLEAVING (mint → pause → slash → unpause →
+    ///         transfer): the Foundry invariant harnesses exclude pause by construction
+    ///         (`pauser=admin`, no wrapper), and this file had no pause surface at all.
+    ///         Adding it here is the only place the accounting properties get to observe a
+    ///         paused window, and the accounting is exactly what a pause can corrupt: under
+    ///         `_update` a burn passes while mint/transfer revert, so a bookkeeping bug
+    ///         would show up as ghost drift, not as a failed call.
+    /// @dev Pause is deliberately made RARE rather than a fair coin. A bare toggle pair
+    ///      settles at ~50% of the campaign spent in a state where mint/transfer revert —
+    ///      i.e. it would buy this invariant by halving coverage of every other one. The
+    ///      seed gate makes entry ~1/4 of this handler's calls while exit stays ungated, so
+    ///      the chain sits in a paused window roughly a fifth of the time and every window
+    ///      is short enough to be re-entered many times per sequence.
+    function pauseToken(uint256 seed) external {
+        if (seed % 4 != 0) return;
+        if (scc.paused()) return;
+        vm.prank(ADMIN);
+        scc.pause();
+    }
+
+    function unpauseToken() external {
+        if (!scc.paused()) return;
+        vm.prank(ADMIN);
+        scc.unpause();
+    }
+
     // ── [CONTRACT.2] batchMint — the production mint path ─────────────────────
 
     /// @notice The fuzzer owns the SHAPE. Three lengths are derived from one base so that

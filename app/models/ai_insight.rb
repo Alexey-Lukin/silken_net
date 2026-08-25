@@ -96,10 +96,15 @@ class AiInsight < ApplicationRecord
   # --- СКОУПИ ---
   scope :highly_probable, -> { where("probability_score > ?", 80.0) }
   scope :upcoming, -> { where("target_date >= ?", Time.current.utc.to_date) }
-  # ⚠️ [ARCH.84] Викликачів нуль (переміряно) — тож поверхня без споживача, а не
-  # без фільтра: якби він зʼявився, `analyzable_type` довелось би вирішувати так
-  # само, як у `stress_training_set` нижче (кластерний рядок — АГРЕГАТ, не дерево).
-  scope :critical_stress, -> { daily_health_summary.where("stress_index >= ?", 0.8) }
+  # ⛔ [SLASH-1, 2026-08-25] Тут стояв `scope :critical_stress` із сирим `0.8` — знято,
+  # і саме ЗНЯТО, а не дротовано на DAO-поріг. Викликачів у нього не було ані в проді,
+  # ані в спеках, тобто пастка чекала першого читача: сирий поріг замість
+  # `slash_stress_threshold`, лічба РЯДКІВ замість дерев (`analyzable_type` тут не
+  # фільтрується, а кластерний рядок — АГРЕГАТ, не дерево). Мертву гілку дешевше
+  # знести, ніж дотягувати: дотягнута вона лишилась би поверхнею без споживача, але
+  # вже з виглядом благословенної. Живий поріг читають РІВНО двоє, обидва через метод
+  # `slash_stress_threshold` (тригер `ContractHealthCheckService`, розмір
+  # `BlockchainBurningService`), і саме ця пара несе інваріант «тригер ≡ розмір».
 
   # 🔴 [ARCH.84] Навчальний набір моделі стресу — ЛИШЕ дерев'яні рядки, і це не
   # гігієна. Тренер (`lib/tasks/ai_train.rake`) будує вектор фіч із
@@ -154,12 +159,15 @@ class AiInsight < ApplicationRecord
 
   # --- МЕТОДИ (The Lens of Truth) ---
 
-  # Чи вважається цей стан порушенням умов контракту?
-  # Використовується в Slashing Protocol
-  # Порівнюємо decimal напряму — без .to_f, щоб уникнути похибки плаваючої коми
-  def contract_breach?
-    daily_health_summary? && stress_index.present? && stress_index >= BigDecimal("0.8")
-  end
+  # ⛔ [SLASH-1, 2026-08-25] Тут стояв `contract_breach?` — знято як мертву гілку.
+  # Його докстрінг стверджував «Використовується в Slashing Protocol», і це було
+  # неправдою: нуль викликачів у `app/`/`lib/`/`config/`, живий лише у власній спеці.
+  # Небезпечним його робила саме та неправда — імʼя й коментар із slash-лексики над
+  # порогом `0.8`, який slash-порогом НЕ є (той DAO-live `slash_stress_threshold`,
+  # дефолт `0.83`). Перший читач, що повірив би підпису, дістав би чужий поріг на
+  # грошовому шляху. Ширший insurance/UI-концепт `0.8` живий і має власні доми
+  # (`ParametricInsurance`, `TreeChronicleService`, маркер мапи) — сюди він не
+  # повертається під slash-іменем.
 
   # Візуалізація впевненості для Патрульного
   def confidence_level

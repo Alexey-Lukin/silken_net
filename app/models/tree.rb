@@ -160,12 +160,14 @@ class Tree < ApplicationRecord
   # delta_t навмисно варіативний, поріг НЕ виводиться з конфіга). Стеля: індексу на
   # last_seen_at нема — на тисячах рядків seq-scan дешевий, scale → індекс.
   scope :silent, ->(threshold = SILENCE_THRESHOLD) { active.where(last_seen_at: ...threshold.ago) }
-  # [ARCH.100] Доба звіту — з One-Home `AiInsight.reporting_date`, не власною копією виразу.
-  scope :critical_stress, -> {
-    joins(:ai_insights)
-      .where(ai_insights: { insight_type: :daily_health_summary, target_date: AiInsight.reporting_date })
-      .where("ai_insights.stress_index > 0.8")
-  }
+  # ⛔ [SLASH-1, 2026-08-25] Тут стояв `scope :critical_stress` — знято як мертву гілку
+  # (нуль викликачів поза власною спекою). Ніс ТРИ пастки одночасно, і кожна коштувала б
+  # першому ж читачеві: сирий `0.8` замість DAO-live `AiInsight.slash_stress_threshold`
+  # (дефолт `0.83`) · СТРОГЕ `>` там, де обидва живі споживачі порога беруть `>=` ·
+  # `joins(:ai_insights)` без `.distinct`, тож дерево з N інсайтами поверталось би N разів
+  # — рівно та лічба РЯДКІВ замість ДЕРЕВ, яка вже роздувала спалення 813 → 2000 SCC
+  # [ARCH.46]. Дротувати не стали: поверхня без споживача, дотягнута до правильної форми,
+  # лишається без споживача, але вже виглядає санкціонованою.
 
   # --- МЕТОДИ (Intelligence) ---
 

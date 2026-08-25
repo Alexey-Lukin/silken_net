@@ -573,7 +573,14 @@ module SilkenNet
     # (бо raise вже спрацював) АБО legacy fallback використовується у не-prod.
     W3BSTREAM_SIGNATURE_FALLBACK_TOTAL = REGISTRY.counter(
       :silkennet_w3bstream_signature_fallback_total,
-      docstring: "Total W3bstream verifications using SHA256 fallback instead of Ed25519 hardware signature",
+      # [INF.26] Рахує ПЕРЕДУМОВУ — telemetry без придатного `HardwareKey`, — а не
+      # результат: інкремент стоїть ДО розвилки prod/dev, тож у dev за ним справді йде
+      # SHA256-fallback, а в production / WEB3_STRICT_MODE той самий рядок означає
+      # ВІДМОВУ (fail-closed raise). Так і має бути: перенести інкремент у dev-гілку
+      # означало б осліпнути на проді саме там, де сигнал найпотрібніший. Тому докстрінг
+      # називає подію, а не наслідок — ім'я метрики (`_fallback_`) лишається вужчим за
+      # неї, і перейменування тут коштувало б дорожче за уточнення (алерт+серії).
+      docstring: "Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production",
       labels: [ :reason ]
     )
 

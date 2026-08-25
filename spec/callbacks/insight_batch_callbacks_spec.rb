@@ -26,29 +26,22 @@ RSpec.describe InsightBatchCallbacks do
       expect(Rails.logger).to have_received(:info).with(/Батч abc123 завершено.*2026-03-06/)
     end
 
-    # [INS.1] Страховий оракул — per-cluster fan-out, за майстер-прапором (kill-switch).
-    context "with the insurance oracle fan-out (gated)" do
-      let(:org)        { create(:organization) }
-      let(:cluster)    { create(:cluster, organization: org) }
-      let!(:insurance) { create(:parametric_insurance, organization: org, cluster: cluster, status: :active) }
-      let(:status)     { Sidekiq::Batch::Status.new("test-bid") }
-      let(:options)    { { "date" => "2026-03-06" } }
+    # [INS.1 / ARCH.59] Fan-out страхового оракула ПЕРЕЇХАВ у `ClusterHealthCheckWorker`
+    # (там і живуть обидві гілки прапора). Вісь не знято, а ПЕРЕЦІЛЕНО: цей приклад
+    # стереже, щоб сайт не повернувся сюди — у колбек, який у проді не виконується.
+    # Фікстура несе ЖИВИЙ кластер зі страховкою І увімкнений прапор, тобто умови, за
+    # яких старий код enqueue'вав би: без цього приклад був би зелений на порожній
+    # множині й не відрізняв би «сайт знято» від «нічого не підходило».
+    it "does NOT reach the insurance oracle from here — even with the flag on" do
+      org = create(:organization)
+      cluster = create(:cluster, organization: org)
+      create(:parametric_insurance, organization: org, cluster: cluster, status: :active)
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
 
-      it "enqueues InsuranceOracleWorker per active-insurance cluster when the flag is on" do
-        allow(SystemParameter).to receive(:current).and_call_original
-        allow(SystemParameter).to receive(:current)
-          .with(:parametric_insurance_oracle_enabled, default: false).and_return(true)
-
-        expect { described_class.new.on_success(status, options) }
-          .to change { InsuranceOracleWorker.jobs.size }.by(1)
-
-        expect(InsuranceOracleWorker.jobs.first["args"]).to eq([ cluster.id, "2026-03-06" ])
-      end
-
-      it "does NOT enqueue the insurance oracle when the flag is off (default)" do
-        expect { described_class.new.on_success(status, options) }
-          .not_to change { InsuranceOracleWorker.jobs.size }
-      end
+      expect { described_class.new.on_success(Sidekiq::Batch::Status.new("test-bid"), { "date" => "2026-03-06" }) }
+        .not_to change { InsuranceOracleWorker.jobs.size }
     end
   end
 end

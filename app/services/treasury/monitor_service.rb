@@ -146,6 +146,12 @@ module Treasury
               .where(status: [ :sent, :manual_review ])
               .where("created_at < ?", 1.hour.ago)
               .sum(:locked_points)
+      # [INF.26, переміряно 2026-08-25] `.to_i` тут БЕЗПЕЧНИЙ, і це не здогад: колонка
+      # `blockchain_transactions.locked_points` — `bigint`, тож сума завжди ціла й
+      # приведення є no-op. Підозра «зрізає дробові бали» стосувалась би `wallets.
+      # locked_balance` (`numeric`), але сюди та шкала не заходить. ⛔ Не «лагодити» на
+      # `.to_f`: правка стверджувала б дефект, якого немає, і наступний читач витратив
+      # би прохід, шукаючи його причину.
       SilkenNet::Metrics::BLOCKCHAIN_LIMBO_LOCKED_TOTAL.set(limbo.to_i)
 
       # ChainAuditService кешується (5хв) — дешевий тут; critical=true теж читає gauge.

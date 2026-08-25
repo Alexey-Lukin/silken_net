@@ -33,60 +33,6 @@ RSpec.describe AiInsight, type: :model do
     end
   end
 
-  describe "#contract_breach?" do
-    it "returns true for daily summary with stress_index >= 0.8" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: BigDecimal("0.8")
-      )
-
-      expect(insight.contract_breach?).to be true
-    end
-
-    it "returns false for daily summary with stress_index < 0.8" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: BigDecimal("0.79")
-      )
-
-      expect(insight.contract_breach?).to be false
-    end
-
-    it "returns false when stress_index is nil" do
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: nil
-      )
-
-      expect(insight.contract_breach?).to be false
-    end
-
-    it "returns false for non-summary types even with high stress" do
-      insight = described_class.new(
-        insight_type: :drought_probability,
-        target_date: Date.tomorrow,
-        stress_index: BigDecimal("0.9")
-      )
-
-      expect(insight.contract_breach?).to be false
-    end
-
-    it "uses decimal precision, not float" do
-      # BigDecimal("0.8") == 0.8 exactly, no floating point drift
-      insight = described_class.new(
-        insight_type: :daily_health_summary,
-        target_date: Date.yesterday,
-        stress_index: BigDecimal("0.8")
-      )
-
-      expect(insight.stress_index).to eq(BigDecimal("0.8"))
-      expect(insight.contract_breach?).to be true
-    end
-  end
-
   describe ".fraudulent" do
     it "returns only insights with fraud_detected true" do
       tree = create(:tree)

@@ -811,6 +811,90 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # P1: Застрягла емісія [ARCH.94] — гаманці стоять над порогом і не мінтять.
+      # Комплемент до mint-SLO вище, і саме там його сліпота: SLO-знаменник
+      # (`MINT_ATTEMPTS_TOTAL`) інкрементиться ПІСЛЯ KYC-, SEC.13- і circuit-фільтрів,
+      # а алерт несе гард `attempts > 0` — тож ПОВНИЙ mint-stop не тригерить нічого.
+      # Цей лічильник СТАНУ бачить обидва режими: і відмову з винятком, і відмову
+      # без нього (порожній селектор, знятий cron, хибний фільтр).
+      # ⚠️ Зріз знімає `MintStallProbeWorker` о :55, перед циклом емісії о :00 —
+      # здоровий прохід спорожнює множину за побудовою (`lock_and_mint!` піднімає
+      # `locked_balance` синхронно в чанку). `for: 3h` = три послідовні зрізи, щоб
+      # гаманець, який щойно перетнув поріг, не пейджив сам собою.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-mint-stall-depth
+        title: "🟠 Застрягла емісія (гаманці над порогом не мінтять)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 10800, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: max(silkennet_mint_eligible_unminted_depth)
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: NoData
+        execErrState: Error
+        for: 3h
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} гаманців стоять над порогом емісії три зрізи поспіль."
+          description: "Здоровий годинний цикл спорожнює eligible-множину за побудовою. Непорожня три зрізи = емісія не доходить. Перевір: чи біжить cron tokenomics_evaluation (:00), чи не падають EvaluateTreeBatchWorker (DeadSet + MINT_CHUNK_ERRORS_TOTAL), чи не відсікає всіх KYC-/SEC.13-фільтр, чи не активний mint circuit-breaker. ⚠️ noDataState=NoData свідомо: мовчання приладу тут — теж інцидент, бо метрика має єдиного писача. ARCH.94 / 05_02."
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
+        labels:
+          severity: warning
+          component: web3
+          team: backend
+
+      # -----------------------------------------------------------------------
+      # P1: Незворотне спалення відбулось [SLASH-1]. Лічильник інкрементиться
+      # ВИКЛЮЧНО на `outcome == :slashed` — freeze/no-op сюди не потрапляють, тож
+      # кожна подія тут означає реально спалені кошти оператора. Доти метрика не
+      # мала жодного споживача: писач був, читача не було.
+      # ⚠️ Поки A-сет доказів порожній, авто-slash freeze-only — тобто нуль подій
+      # ЗА ПОБУДОВОЮ, і перша ж подія варта погляду людини негайно (`for: 0m`).
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-slashing-event
+        title: "🟠 Відбулось незворотне спалення (slash)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum by (reason) (increase(silkennet_slashing_events_total[1h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "Slash виконано ({{ $labels.reason }}): {{ $values.A.Value | printf \"%.0f\" }} за годину."
+          description: "Незворотний burn пройшов positive-A gate (Кат-A, прямий доказ) — freeze сюди не рахується. Звір вердикт: BlockchainTransaction зі sourceable NaasContract, MaintenanceRecord-надгробок, contextHash on-chain. reason=tree_death — загибель конкретного дерева; cluster_degradation — частка стресованих понад поріг. 05_05 §3.2."
+          runbook_url: "docs/05_05_Slashing_and_Risk_Policy.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P1: Ethereum L1 anchor stalled — weekly state-root не приземлявся >8 днів.
       # detect_missed_anchor_weeks! інкрементить лічильник при gap>MISSED_ANCHOR_THRESHOLD (8д).
       # Finality-сигнал (не runtime). Один із 4 anchor-liveness сигналів (ARCH.66): цей

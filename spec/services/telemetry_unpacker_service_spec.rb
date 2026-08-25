@@ -172,6 +172,33 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       expect(IotexVerificationWorker).not_to have_received(:perform_async)
       expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
     end
+
+    # [INF.26] Та сама межа, лише для лічильника: Prometheus-реєстр не транзакційний,
+    # тож інкремент, зроблений усередині блоку, ПЕРЕЖИВАЄ rollback — і метрика з
+    # докстрінгом «processed» звітувала б чанки, яких у БД немає. Пін цілиться в
+    # `.increment` саме тому, що жоден інший приклад цього не побачить: розходження
+    # тихе обабіч (лічильник росте, рядка немає, помилки немає).
+    it "does not count a chunk that never committed" do
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      allow_any_instance_of(described_class).to receive(:check_firmware_mismatch!).and_raise(ActiveRecord::RecordInvalid)
+      allow(Rails.logger).to receive(:error).with(/Telemetry Error/)
+      allow(SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL).to receive(:increment)
+
+      described_class.call(chunk)
+
+      expect(SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL).not_to have_received(:increment)
+    end
+
+    # Позитивна половина — інакше пін вище зелений і на знятому інкременті
+    # (§Guard-craft: мутація в ОБИДВА боки, «не рахує» доводить лише половину).
+    it "counts a chunk that did commit" do
+      chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+      allow(SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL).to receive(:increment)
+
+      described_class.call(chunk)
+
+      expect(SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL).to have_received(:increment).once
+    end
   end
 
   describe "[ARCH.54] DID=0 у батчі — retired" do

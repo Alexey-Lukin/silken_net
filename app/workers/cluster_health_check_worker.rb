@@ -59,5 +59,35 @@ class ClusterHealthCheckWorker
     end
 
     Rails.logger.info "✅ [D-MRV Audit] Завершено. Оброблено: #{summary[:checked]}, Флаговано: #{summary[:flagged]}, Помилок: #{summary[:errors]}"
+
+    # 3. [INS.1] Страховий оракул (Trigger-1, arm-кандидат) — per-cluster fan-out.
+    enqueue_insurance_oracle(target_date)
+  end
+
+  private
+
+  # [INS.1 / ARCH.59] Fan-out страхового оракула по кластерах з активними страховками.
+  #
+  # 🔴 **Чому дім саме ТУТ, а не в `InsightBatchCallbacks`, звідки він переїхав.** Той
+  # колбек вішається на `Sidekiq::Batch#on(:success)`, а `sidekiq-pro` у `Gemfile`
+  # немає — активний шим лише складає колбеки в масив, тож у проді вони не
+  # виконуються ЖОДНОГО разу (DOC-R.10). Fan-out був ЄДИНИМ enqueue-сайтом
+  # `InsuranceOracleWorker` у всьому дереві, тобто фліп kill-switch нікого б не
+  # озброїв — і це саме той момент, коли всі вважатимуть, що озброїв.
+  #
+  # Цей воркер має ВЛАСНИЙ cron (`0 2 * * *`, `config/sidekiq.yml` — там він і
+  # названий «defensive fallback»), тож перенесення сюди не додає ані розкладу, ані
+  # воркера: ланка успадковує вже ратифікованого пускача. Доба береться та сама
+  # (`target_date` вище, якір `AiInsight.reporting_date` [ARCH.100]), тому подвійний
+  # enqueue при живому Pro ідемпотентний рівно з тієї ж підстави, що й health-recalc.
+  def enqueue_insurance_oracle(target_date)
+    return unless ActiveModel::Type::Boolean.new.cast(
+      SystemParameter.current(:parametric_insurance_oracle_enabled, default: false)
+    )
+
+    Cluster.joins(:parametric_insurances).merge(ParametricInsurance.status_active)
+           .distinct.find_each do |cluster|
+      InsuranceOracleWorker.perform_async(cluster.id, target_date.to_s)
+    end
   end
 end

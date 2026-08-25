@@ -195,4 +195,28 @@ RSpec.describe IotexVerificationWorker, type: :worker do
       expect(ChainlinkDispatchWorker.jobs.size).to eq(1)
     end
   end
+
+  # [INF.22] Слід мусить нести ОБИДВА аргументи re-enqueue: `TelemetryLog`
+  # партиційований, тож без `created_at` рядок не резолвиться, і оголошений спосіб
+  # відновлення (ручний re-enqueue) стає недосяжним саме в момент, коли потрібен.
+  # Пін цілиться в ЗМІСТ рядка, не в сам факт логування — інакше він зелений і на
+  # сліді «щось не вдалося», з якого відновити не можна нічого.
+  describe ".sidekiq_retries_exhausted" do
+    it "logs both re-enqueue coordinates of the stranded log" do
+      job = { "args" => [ 4242, "2026-03-06T01:02:03.000000Z" ] }
+      allow(Rails.logger).to receive(:warn)
+
+      described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("iotex down"))
+
+      expect(Rails.logger).to have_received(:warn).with(/4242/)
+      expect(Rails.logger).to have_received(:warn).with(/2026-03-06T01:02:03/)
+    end
+
+    it "does not raise — a terminal hook that throws destroys the trail it exists for" do
+      job = { "args" => [ 1, nil ] }
+
+      expect { described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new("boom")) }
+        .not_to raise_error
+    end
+  end
 end

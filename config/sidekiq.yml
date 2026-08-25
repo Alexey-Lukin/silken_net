@@ -243,3 +243,16 @@
     ethereum_anchor_reconcile:
       cron: '40 * * * *' # Щогодини о :40
       class: StuckSentAnchorSweeperWorker
+
+    # --- ЗРІЗ ЗАСТРЯГЛОЇ ЕМІСІЇ (The Mint Stall Probe) [ARCH.94 / ARCH.59] ---
+    # Знімає `MINT_ELIGIBLE_UNMINTED_DEPTH` — скільки гаманців стоять над порогом,
+    # не давши мінту. Раніше семпл жив у `TokenomicsBatchCallbacks#on_success`, тобто
+    # у Batch-колбеці, який у проді не виконується взагалі (`sidekiq-pro` поза Gemfile,
+    # DOC-R.10) — метрика стояла порожня від народження.
+    # ⚠️ Час НЕ довільний: цикл емісії стартує о :00 (`tokenomics_evaluation` вище), а
+    # `lock_and_mint!` виводить гаманець із eligible-множини СИНХРОННО, ще в чанку —
+    # тож :55 є зрізом перед наступним циклом, коли здоровий прохід уже спорожнив
+    # множину. Зсунеш час — зміниш ЗНАЧЕННЯ метрики, не лише її свіжість.
+    mint_stall_probe:
+      cron: '55 * * * *' # Щогодини о :55 — перед наступним циклом емісії
+      class: MintStallProbeWorker

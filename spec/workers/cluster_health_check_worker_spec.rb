@@ -116,5 +116,45 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
         expect(CeloRewardWorker).not_to have_received(:perform_async)
       end
     end
+
+    # [INS.1 / ARCH.59] Fan-out страхового оракула переїхав сюди з мертвого
+    # Batch-колбека — цей воркер має власний cron, тож ланка дістала пускача.
+    context "with the insurance oracle fan-out (gated)" do
+      let!(:insurance) do
+        create(:parametric_insurance, organization: organization, cluster: cluster, status: :active)
+      end
+
+      def flag!(enabled)
+        allow(SystemParameter).to receive(:current).and_call_original
+        allow(SystemParameter).to receive(:current)
+          .with(:parametric_insurance_oracle_enabled, default: false).and_return(enabled)
+      end
+
+      it "enqueues InsuranceOracleWorker per active-insurance cluster when the flag is on" do
+        flag!(true)
+
+        expect { described_class.new.perform("2026-03-06") }
+          .to change { InsuranceOracleWorker.jobs.size }.by(1)
+
+        expect(InsuranceOracleWorker.jobs.first["args"]).to eq([ cluster.id, "2026-03-06" ])
+      end
+
+      it "does NOT enqueue the insurance oracle when the flag is off (default)" do
+        expect { described_class.new.perform("2026-03-06") }
+          .not_to change { InsuranceOracleWorker.jobs.size }
+      end
+
+      # 🔴 Доба fan-out'у мусить бути ТІЄЮ, якою судився контракт — інакше оракул
+      # оцінює іншу добу, ніж аудит, і порожня вибірка читається як «даних немає»
+      # [ARCH.100]. На cron-шляху (без аргументу) якір — `AiInsight.reporting_date`.
+      it "passes the audit's own reporting date on the cron path" do
+        flag!(true)
+
+        described_class.new.perform
+
+        expect(InsuranceOracleWorker.jobs.first["args"])
+          .to eq([ cluster.id, AiInsight.reporting_date.to_s ])
+      end
+    end
   end
 end

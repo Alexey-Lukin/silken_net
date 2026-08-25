@@ -868,9 +868,6 @@ class TelemetryUnpackerService < ApplicationService
       # DCI, серверна істина z_value вже зберігається окремо.
       record = tree.telemetry_logs.create!(attributes.except(:lorenz_temperature_c, :device_z, :ema_delta_t_s))
 
-      # [OBSERVABILITY]: Count successfully committed telemetry chunks
-      SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment
-
       # [СИНХРОНІЗАЦІЯ]: Оновлюємо денормалізований вольтаж для мапи без N+1
       tree.mark_seen!(record.voltage_mv)
 
@@ -886,6 +883,13 @@ class TelemetryUnpackerService < ApplicationService
 
       record
     end
+
+    # [OBSERVABILITY / INF.26] Лічимо ЗАКОМІЧЕНІ чанки — і саме тому інкремент стоїть
+    # ПІСЛЯ транзакції, а не всередині неї. Prometheus-реєстр не транзакційний: інкремент
+    # усередині блоку переживає `ROLLBACK`, тож лічильник із докстрінгом «processed» рахував
+    # би й ті чанки, яких у БД не існує. Це та сама межа, за якою вище винесено credit,
+    # Sidekiq-джоби й alert-dispatch — метрика просто не була в тому переліку.
+    SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment
 
     # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
     # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.

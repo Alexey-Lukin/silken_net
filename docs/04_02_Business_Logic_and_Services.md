@@ -823,8 +823,10 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 > 2. Видалити shim і замість нього у `sidekiq_pro.rb` зробити `raise "sidekiq-pro required" unless defined?(Sidekiq::Pro)`. ⚠️ **Форма кроку покриває не все, що обіцяє:** шимляться лише `Sidekiq::Batch` і `Sidekiq::Limiter` (класи), а `expires_in` — **опція `sidekiq_options`**, тож шима для неї не існує й `raise ... unless defined?` її не бачить за побудовою. Шапка `sidekiq_pro.rb` перелічує її поруч із `Batch`, і саме це читається як «покрито».
 > 🔴 **ПЕРИМЕТР «колбеки не спрацьовують» виміряно поіменно 2026-08-21 [ARCH.59], і він РОЗПАДАЄТЬСЯ НАВПІЛ — саме тому загальна фраза вище читалась як рівномірна деградація, якою вона не є.** Шапка `sidekiq_pro.rb` при цьому стверджує, що шими «просто делегують виконання без обмежень — вся бізнес-логіка залишається ідентичною, лише enforcement-механізми відключені»: для `Limiter` це правда (rate-limit і Є enforcement), для `Batch` — ні, бо колбек не enforcement, а гілка тракту. Двоє з п'яти споживачів мають НЕЗАЛЕЖНИЙ пускач і не постраждали: `MintCarbonCoinWorker` (батч-мінт однаково збирає `MintBatchCollectorWorker`, cron `*/5`) і `ClusterHealthCheckWorker` (власний cron `0 2 * * *`). Троє дублера НЕ мають:
 > - **КЕНОЗИС-очищення сирої телеметрії ⛔ ЗНЯТО ⚖️ 2026-08-21** ([`00_07`](00_07_Action_Plan_Tracker) ARCH.59). Тут стояв рядковий `delete_all` по вікну 7 днів, чий єдиний продовий виклик жив у мертвому Batch-колбеці — тобто механізм був недосяжний, а покупка Pro-ліцензії озброїла б його МОВЧКИ, без окремого рішення. Ретеншн тепер має РІВНО ОДИН механізм — дроп місячних партицій ([`04_01 §11`](04_01_Data_Models_and_Entities); самого дропу ще немає — [`00_07`](00_07_Action_Plan_Tracker) ARCH.70), і другого свідомо не буде: він зробив би `TelemetryArchiveBatch.retention_expired` неоднозначним, тобто зіпсував би єдиний прилад, яким відрізняють ретеншн від підміни. Носій заборони — `spec/quality/telemetry_retention_home_spec.rb`.
-> - **`MINT_ELIGIBLE_UNMINTED_DEPTH`** — детектор застрягання емісії [ARCH.94]. Його єдиний писач у тому ж колбеку, алерт-правила на метрику немає взагалі. ⚠️ І перенести його НЕ можна: обґрунтування ARCH.94 («після здорового циклу eligible-множина порожня ЗА ПОБУДОВОЮ») істинне рівно в момент завершення батчу, а в будь-який інший множина непорожня штатно — тобто **чесність детектора куплена ціною його недосяжності**, і лік тут лише один: оживити колбек.
-> - **`InsuranceOracleWorker`** fan-out [INS.1] — сьогодні нешкідливо, бо kill-switch `:parametric_insurance_oracle_enabled` за замовчуванням `false`. 🔴 Але **вмикання прапора його не оживить**, а це саме той момент, коли всі вважатимуть, що оживило.
+> - **`MINT_ELIGIBLE_UNMINTED_DEPTH`** — детектор застрягання емісії [ARCH.94]. ✅ **Дім переїхав у `MintStallProbeWorker`** (cron `55 * * * *`) 2026-08-25, алерт `sn-alert-mint-stall-depth` дротовано. 🔴 **Тут доти стояло «перенести його НЕ можна», і підставу спростовано виміром — записуємо, бо саме вона тримала метрику порожньою.** Твердження було: обґрунтування ARCH.94 («після здорового циклу eligible-множина порожня ЗА ПОБУДОВОЮ») істинне рівно в момент завершення батчу, тож «чесність детектора куплена ціною його недосяжності». Три хиби: **(а)** вибір був не між колбеком і cron, а між НІЧИМ і cron — писача в проді не існувало, метрика стояла порожня від народження; **(б)** `on(:success)` означає «всі джоби завершились БЕЗ ПОМИЛОК», тож навіть із купленою ліцензією детектор мовчав би рівно в тому сценарії, заради якого існує — коли чанки емісії падають (детектор, що вимикається від власного предмета); **(в)** передумова не потребує миті завершення — `lock_and_mint!` піднімає `locked_balance` СИНХРОННО всередині `EvaluateTreeBatchWorker`, тож гаманець виходить із множини в мить обробки чанка, і зріз перед наступним циклом бачить залишок здорового проходу. Час зрізу через це несучий: зсув міняє ЗНАЧЕННЯ метрики, не лише її свіжість.
+> - **`InsuranceOracleWorker`** fan-out [INS.1] — ✅ **дім переїхав у `ClusterHealthCheckWorker`** 2026-08-25. Fan-out був ЄДИНИМ enqueue-сайтом цього воркера в дереві, тобто «вмикання прапора його не оживить» — а це саме той момент, коли всі вважатимуть, що оживило. Ліком стало не нове розкладом, а перенесення ланки на споживача, який уже має власний cron (`0 2 * * *`, там же названий «defensive fallback») і вже якорить ту саму добу (`AiInsight.reporting_date` [ARCH.100]) — тож подвійний enqueue при живому Pro ідемпотентний із тієї ж підстави, що й health-recalc.
+>
+> ✅ **Отже сиріт у цьому периметрі більше НЕМАЄ** (2026-08-25): з трьох одну знято присудом, дві дістали незалежних пускачів. Клас лишається чинним як застереження на майбутнє — **кожен новий `batch.on(:success, …)` народжується мертвим**, тож ланка, яку туди вішають, мусить або мати власний cron, або не існувати.
 >
 > ⚠️ Сюїта до цієї осі сліпа за побудовою: `spec/callbacks/*` викликають `on_success` РУКАМИ, конструюючи шим-клас `Sidekiq::Batch::Status.new(…)` — перевірено реалізацію колбека, ніколи його ВИКЛИК. Той самий маскувальник, що вже одного разу тримав тут мертвий `sidekiq_retries_exhausted` під `retry: false`.
 >
@@ -1174,7 +1176,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Файл** | `app/callbacks/insight_batch_callbacks.rb` |
 | **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`, не `app/workers/`) |
 | **Тригер** | `InsightGeneratorOrchestratorWorker` (реєструє через `batch.on(:success, InsightBatchCallbacks, "date" => ...)`) |
-| **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає: 1) `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів; **1b) [INS.1]** `enqueue_insurance_oracle` — per-cluster fan-out `InsuranceOracleWorker` по кластерах з активними страховками, за прапором `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op); 2) `InsightGeneratorService.⛔ рядкового cleanup тут БІЛЬШЕ НЕМАЄ (⚖️ 2026-08-21 — ретеншн робить лише дроп партицій, [`04_01 §11`](04_01_Data_Models_and_Entities)). |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `GenerateClusterInsightWorker` jobs завершились успішно. Запускає РІВНО одне: `ClusterHealthCheckWorker.perform_async(date_string)` — аудит NaaS-контрактів. ⛔ Рядкового cleanup тут БІЛЬШЕ НЕМАЄ (⚖️ 2026-08-21 — ретеншн робить лише дроп партицій, [`04_01 §11`](04_01_Data_Models_and_Entities)); ⛔ fan-out страхового оракула теж — він переїхав ВСЕРЕДИНУ `ClusterHealthCheckWorker` [ARCH.59, 2026-08-25], бо цей колбек у проді не виконується (DOC-R.10 вище), а той воркер має власний cron. Носій обох зняттів — негативні піни у `spec/callbacks/insight_batch_callbacks_spec.rb`. |
 
 #### `ClusterHealthCheckWorker`
 
@@ -1185,7 +1187,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Тригер** | (1) `InsightBatchCallbacks#on_success` — після успішного завершення всіх `GenerateClusterInsightWorker` чанків (real-time після ≈01:00 UTC batch); (2) Sidekiq cron `0 2 * * *` (`cluster_health_arbitration` у `config/sidekiq.yml`) — захисний fallback, відпрацьовує навіть коли denний batch мав нуль кластерів з даними і callback не спрацював. |
 | **Вхід** | `date_string` (String ISO8601, опціонально). Якщо `nil` — **уся ітерація бере ОДНУ добу**, `AiInsight.reporting_date` [ARCH.100]. ⚠️ Доти кожен кластер брав власну `local_yesterday`, і для поясів західніше UTC−2 нічний крон читав добу, якої агрегатор не писав: `health_index` затирався фальшивою 1.0, вердикт ставав `:blackout` (Field Audit + невиплачена Celo-винагорода) на здоровому лісі. |
 | **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` (повертає verdict `:healthy`/`:degraded`/`:blackout`/`:insufficient_sample`/`:skipped`) |
-| **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index` — і [ARCH.84] **без інсайту за добу пише явний `NULL`** («не виміряно»), а не вигадану 1.0. ⛔ Форма сусіда `ClusterEntropyAnalyzerWorker` (`return if score.nil?` — ПРОПУСТИТИ запис) сюди НЕ переноситься: цю колонку переписує щонічний `Cluster.find_each`, тож пропуск лишав би вчорашнє число на сьогоднішній темряві. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів. Захист — на рівні `Celo::CommunityRewardService`: **[ARCH.50]** dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ Kredis-lock (раніше dedup будувався по `created_at` ≠ audit-день → запит НЕ знаходив свій рядок → детермінований 10 cUSD/день double-pay; виправлено), див. §10. |
+| **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index` — і [ARCH.84] **без інсайту за добу пише явний `NULL`** («не виміряно»), а не вигадану 1.0. ⛔ Форма сусіда `ClusterEntropyAnalyzerWorker` (`return if score.nil?` — ПРОПУСТИТИ запис) сюди НЕ переноситься: цю колонку переписує щонічний `Cluster.find_each`, тож пропуск лишав би вчорашнє число на сьогоднішній темряві. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів. Захист — на рівні `Celo::CommunityRewardService`: **[ARCH.50]** dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ Kredis-lock (раніше dedup будувався по `created_at` ≠ audit-день → запит НЕ знаходив свій рядок → детермінований 10 cUSD/день double-pay; виправлено), див. §10. ⊕ **[INS.1 / ARCH.59, 2026-08-25] Останнім кроком — `enqueue_insurance_oracle(target_date)`:** per-cluster fan-out `InsuranceOracleWorker` по кластерах з активними страховками, за прапором `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op). Дім переїхав сюди з `InsightBatchCallbacks`, бо там він був єдиним enqueue-сайтом воркера, а той колбек у проді не виконується (DOC-R.10). Ланка нічого не додала до розкладу — вона успадкувала cron-дублера цього воркера, і ту саму добу, якою вище судився контракт (розходження дат тут дало б оракулові порожню вибірку, невідрізненну від «даних немає» [ARCH.100]). |
 
 #### `InsuranceOracleWorker`
 
@@ -1193,7 +1195,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `default` |
 | **Retry** | 3 |
-| **Тригер** | **[INS.1]** `InsightBatchCallbacks#on_success` (per-cluster fan-out за прапором `:parametric_insurance_oracle_enabled`) |
+| **Тригер** | **[INS.1]** `ClusterHealthCheckWorker#enqueue_insurance_oracle` — per-cluster fan-out за прапором `:parametric_insurance_oracle_enabled`. 🔴 **Доти тригером був `InsightBatchCallbacks#on_success`, і це означало НУЛЬ досяжних enqueue** (Batch-колбек у проді не виконується, DOC-R.10) — тобто фліп kill-switch нікого не озброював. Переїзд [ARCH.59, 2026-08-25] дав ланці пускача з власним cron `0 2 * * *`. |
 | **Вхід** | `cluster_id`, `date_string` (опц.) |
 | **Сервіси** | `ParametricInsurance#evaluate_daily_health!` (Trigger-1 — **arm-кандидат**, НЕ payout) для кожної активної страховки кластера |
 | **Side Effects** | Озброює `:triggered`-кандидатів + `EwsAlert(:field_audit)`; per-insurance-збій ізольований (`rescue` → log → next). Kill-switch re-check на вході. Per-cluster fan-out тримає планетарний масштаб (як `InsightGeneratorOrchestratorWorker`). |
@@ -1216,7 +1218,19 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Файл** | `app/callbacks/tokenomics_batch_callbacks.rb` |
 | **Тип** | Sidekiq Pro Batch callback клас (не Worker; живе у `app/callbacks/`) |
 | **Тригер** | `TokenomicsEvaluatorWorker` (реєструє через `batch.on(:success, TokenomicsBatchCallbacks, ...)`) |
-| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). |
+| **`on_success`** | Спрацьовує тільки якщо **всі** `EvaluateTreeBatchWorker` jobs завершились успішно. Запускає РІВНО одне: `MintCarbonCoinWorker.perform_async` (без аргументів — auto-discovery всіх pending BlockchainTransaction). ⛔ Семпл ARCH.94-детектора звідси ЗНЯТО [ARCH.59, 2026-08-25] — дім `MintStallProbeWorker` нижче; носій зняття — негативний пін у `spec/callbacks/tokenomics_batch_callbacks_spec.rb`. |
+
+#### `MintStallProbeWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` |
+| **Retry** | 1 — пропущений зріз не втрачає даних (наступний за годину), тож наполегливий ретрай купував би лише шум |
+| **Тригер** | Sidekiq cron `55 * * * *` (`mint_stall_probe`) — **зріз ПЕРЕД наступним циклом емісії**, який стартує о `:00` |
+| **Вхід** | — |
+| **Сервіси** | — (читає One-Home предикат `TokenomicsEvaluatorWorker.eligible_wallets`) |
+| **Side Effects** | `MINT_ELIGIBLE_UNMINTED_DEPTH.set(depth)` + `info`-рядок НАВІТЬ на нулі [PERF.1] — мовчазний прохід був би невідрізненний від приладу, який не біг, а на нулі метрика найцінніша. Нічого не мутує: це прилад, не гроші, тому `rescue StandardError` ковтає збій замість того, щоб валити розклад сусідів по черзі. |
+| **Чому окремий воркер** | [ARCH.94 / ARCH.59] Семпл жив у `TokenomicsBatchCallbacks#on_success`, тобто в Batch-колбеці, який у проді не виконується — метрика стояла порожня від народження. Канон доти казав «перенести НЕ можна»; підставу спростовано (розбір — DOC-R.10 §11 вище). Ключове для будь-якої майбутньої правки: **час зрізу несучий** — `lock_and_mint!` виводить гаманець із eligible-множини синхронно в чанку, тож `:55` міряє залишок здорового годинного проходу; зсув часу змінить ЗНАЧЕННЯ метрики, не лише її свіжість. Алерт — `sn-alert-mint-stall-depth` ([`06_03 §2.8`](06_03_Prometheus_Observability)). |
 
 #### `EvaluateTreeBatchWorker`
 
@@ -1621,8 +1635,12 @@ Sidekiq Cron 01:00 UTC
                           │     └─→ BurnCarbonTokensWorker [critical] (якщо breached)
                           │           └─→ BlockchainBurningService
                           │                 └─→ BlockchainConfirmationWorker [web3_critical]
+                          │     └─→ InsuranceOracleWorker [default] ×N кластерів (за kill-switch)
+                          │           └─→ ParametricInsurance#evaluate_daily_health! (Trigger-1)
                           └─→ (ретеншн сюди НЕ підвішений: лише дроп партицій, ARCH.59 ⚖️)
 ```
+
+> ⚠️ **Гілка `InsuranceOracleWorker` висить під `ClusterHealthCheckWorker`, а НЕ під колбеком** — і саме тому вона жива: колбек у проді не виконується (DOC-R.10), а той воркер має власний cron `0 2 * * *`. Доти fan-out був єдиним enqueue-сайтом оракула, тобто фліп kill-switch нікого не озброював [ARCH.59, 2026-08-25].
 
 ### ⏰ Щогодинний Цикл (Tokenomics)
 
@@ -1632,6 +1650,8 @@ Sidekiq Cron (кожну годину)
         └─→ Sidekiq::Batch → EvaluateTreeBatchWorker [default] ×N
               └─→ wallet.lock_and_mint!
                     └─→ MintCarbonCoinWorker [web3_critical]
+   (о :55, ОКРЕМИЙ cron — не колбек) MintStallProbeWorker [low]
+        └─→ MINT_ELIGIBLE_UNMINTED_DEPTH.set — зріз залишку перед наступним циклом
                           └─→ BlockchainMintingService
                                 └─→ BlockchainConfirmationWorker
 ```
