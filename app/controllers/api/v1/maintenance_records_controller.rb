@@ -25,6 +25,10 @@ module Api
 
         @records = @records.where(action_type: params[:action_type]) if params[:action_type].present?
         @records = @records.hardware_verified if params[:verified].present?
+        # [E.20] Черга «чекає на засвідчення»: заявки на біомасу без другої пари
+        # очей. Без неї застрягла заявка була видима лише в Sidekiq DeadSet, тобто
+        # платформа адресувала оператора числом, а не лісника, який ще може підписати.
+        @records = @records.awaiting_attestation if params[:pending_attestation].present?
 
         # [INPUT GUARD]: invalid ISO8601 dates passed to `where("performed_at >= ?")`
         # surface as `PG::InvalidDatetimeFormat` mid-query (HTTP 500). Parse and
@@ -375,6 +379,13 @@ module Api
           :maintainable_id, :maintainable_type, :ews_alert_id,
           :action_type, :notes, :performed_at,
           :labor_hours, :parts_cost,
+          # [E.20] Писач `biomass_yield_kg` — інакше форма пропонує «Вилучення
+          # біомаси» у випадайці, а модель вимагає поле, якого на формі немає:
+          # лісник дістає 422 про величину, яку ввести нічим. ⚠️ Безпечно лише
+          # ПОВЕРХ інваріантів заявки (`photo_required_for_biomass_claim` +
+          # `biomass_claim_is_one_way`): без них це відкривало б подання
+          # незворотної CORC-заявки без жодного доказу.
+          :biomass_yield_kg,
           # ⛔ `:hardware_verified` сюди НЕ повертати [UI.7]. Дім критерію —
           # `MaintenanceRecord#hardware_pulse_confirmed?`, і його сенс у тому, що
           # це ЄДИНИЙ канал, якого технік не контролює. Клієнтський ключ робив

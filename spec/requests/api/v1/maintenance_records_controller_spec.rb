@@ -793,24 +793,98 @@ RSpec.describe Api::V1::MaintenanceRecordsController, type: :request do
 
 # 🔴 [E.20] Двері, які форма `on: :create` НЕ закривала: `#update` пермітить
 # `:action_type`, тож запис можна створити як `inspection` (фото не потрібні) і
-# ПЕРЕВЕСТИ в biomass. ⚠️ Але пін нижче НЕ доводить фото-гейт: сьогодні HTTP-шлях
-# перекриває ІНША валідація — `biomass_yield_kg` у permit-списку немає, тож
-# переведення падає на presence ще до питання про доказ. Тримаємо як фіксацію
-# ФАКТИЧНОГО стану дверей; пін на сам фото-гейт живе в `spec/models`, де він
-# мутаційно перевірний.
+# ПЕРЕВЕСТИ в biomass.
+# ⚠️ Цей блок доти НЕ доводив фото-гейт і сам це оголошував: `biomass_yield_kg`
+# не було в permit-списку, тож HTTP-переведення падало на presence ще до питання
+# про доказ. Писача додано (E.20, 2026-08-25) — підстава відпала, і приклад
+# перецілено: тепер запит несе ОБИДВА поля, тож єдина відмова, яка лишається, і є
+# фото-гейтом. Пін на message несучий: без нього приклад лишався б зеленим на
+# будь-якій майбутній 422 з іншої причини.
 describe "PATCH /maintenance_records/:id — переведення типу в biomass" do
   let!(:plain) do
     MaintenanceRecord.create!(maintainable: own_tree, user: forester, action_type: :inspection,
                               performed_at: 1.hour.ago, notes: "Plain inspection filed without any photo.")
   end
 
-  it "не пропускає переведення через HTTP (перша відмова — biomass_yield_kg)" do
+  it "не пропускає переведення через HTTP — і відмовляє САМЕ фото-гейт" do
     patch "/maintenance_records/#{plain.id}",
-          params: { maintenance_record: { action_type: "biomass_extraction" } },
+          params: { maintenance_record: { action_type: "biomass_extraction", biomass_yield_kg: 42.0 } },
           headers: headers, as: :json
 
     expect(response).to have_http_status(:unprocessable_content)
+    expect(response.parsed_body["errors"].to_s).to include(
+      I18n.t("activerecord.errors.models.maintenance_record.attributes.photos.required_for_biomass_claim")
+    )
     expect(plain.reload.action_type).to eq("inspection")
+  end
+
+  it "пропускає ВЕЛИЧИНУ врожаю в модель — писач у permit живий" do
+    biomass = MaintenanceRecord.create!(
+      maintainable: own_tree, user: forester, action_type: :biomass_extraction,
+      biomass_yield_kg: 10.0, performed_at: 1.hour.ago,
+      notes: "Biomass extraction with evidence attached.",
+      photos: [ { io: StringIO.new("evidence"), filename: "e.jpg", content_type: "image/jpeg" } ]
+    )
+
+    patch "/maintenance_records/#{biomass.id}",
+          params: { maintenance_record: { biomass_yield_kg: 77.5 } },
+          headers: headers, as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(biomass.reload.biomass_yield_kg).to eq(77.5)
+  end
+end
+
+# [E.20] Черга «чекає засвідчення» — поверхня, з якої лісник бачить заявки, що ЩЕ
+# можна врятувати підписом. Доти такої вибірки не існувало ніде, і провал тракту
+# адресував лише ops-а числом у DeadSet.
+describe "GET /maintenance_records?pending_attestation=1" do
+  let!(:pending_claim) do
+    MaintenanceRecord.create!(
+      maintainable: own_tree, user: forester, action_type: :biomass_extraction,
+      biomass_yield_kg: 12.0, performed_at: 2.hours.ago,
+      notes: "Biomass extraction awaiting an independent signature.",
+      photos: [ { io: StringIO.new("e"), filename: "e.jpg", content_type: "image/jpeg" } ]
+    )
+  end
+  let!(:plain) do
+    MaintenanceRecord.create!(maintainable: own_tree, user: forester, action_type: :inspection,
+                              performed_at: 3.hours.ago, notes: "Ordinary inspection of the node.")
+  end
+
+  it "звужує реєстр до незасвідчених заявок на біомасу" do
+    get "/maintenance_records", params: { pending_attestation: "1" }, headers: headers, as: :json
+
+    expect(response).to have_http_status(:ok)
+    ids = response.parsed_body["data"].map { |r| r["id"] }
+    expect(ids).to include(pending_claim.id)
+    expect(ids).not_to include(plain.id)
+  end
+
+  # Негативна половина: без параметра реєстр лишається повним — інакше фільтр
+  # тихо став би дефолтом, і решта журналу зникла б з очей.
+  it "лишає реєстр повним без параметра" do
+    get "/maintenance_records", headers: headers, as: :json
+
+    ids = response.parsed_body["data"].map { |r| r["id"] }
+    expect(ids).to include(pending_claim.id, plain.id)
+  end
+
+  # [E.20] Блупринт доти не віддавав ЖОДНОГО паспортного чи атестаційного поля,
+  # тож інтегратор був сліпий рівно там само, де UI.
+  it "віддає стан заявки в списку, а деталі паспорта — на картці" do
+    get "/maintenance_records", headers: headers, as: :json
+    row = response.parsed_body["data"].find { |r| r["id"] == pending_claim.id }
+    expect(row["biomass_claim_state"]).to eq("awaiting_attestation")
+    expect(row).to have_key("attested_at")
+    expect(row).not_to have_key("biomass_passport_tx_hash")
+
+    get "/maintenance_records/#{pending_claim.id}", headers: headers, as: :json
+    body = response.parsed_body
+    expect(body["biomass_claim_state"]).to eq("awaiting_attestation")
+    expect(body["biomass_yield_kg"].to_f).to eq(12.0)
+    expect(body).to have_key("biomass_passport_tx_hash")
+    expect(body).to have_key("puro_earth_corc_ref")
   end
 end
 

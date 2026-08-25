@@ -8,11 +8,22 @@ lt:
       inspection: Apžiūra
       installation: Montavimas
       repair: Remontas
+    biomass_claim_states:
+      awaiting_attestation: Laukia patvirtinimo
+      confirmed: Paraiška patvirtinta
+      failed: Tinklas atmetė inkarą
+      manual_review: Reikalingas rankinis sutikrinimas
+      not_filed: Paraiška nepateikta
+      sent: Inkaras išsiųstas, kvitas dar neįrodytas
     create_error_title: Klaida rituale
     edit_title: 'Redaguoti įrašą // #%{id}'
     form:
       action_prompt: "— Pasirinkite įsikišimo tipą —"
       action_type: Veiksmo tipas
+      afterlife:
+        heading: Afterlife Economy // Puro.earth
+        hint: Tik «Biomasės išgavimui». Toks įrašas paskelbia medį negyvu ir, kitam eiguliui patvirtinus, pateikia NEGRĮŽTAMĄ CORC paraišką išoriniam registrui — iš čia jos atšaukti nebegalima.
+        yield_kg: Išgauta biomasė (kg)
       cancel: Atšaukti
       evidence:
         attach_photos: Pridėti nuotraukas
@@ -47,6 +58,8 @@ lt:
         by_aria: Filtruoti pagal %{type}
         clear: Valyti
         clear_aria: Išvalyti visus filtrus
+        pending_attestation: "⏳ Patvirtinimo eilė"
+        pending_attestation_aria: Rodyti tik paraiškas, laukiančias patvirtinimo
         verified: "✓ Tik patikrinti"
         verified_aria: Rodyti tik patvirtintus įrašus
       heading: Priežiūros įrašai
@@ -126,6 +139,7 @@ lt:
       metadata:
         action: Veiksmas
         attested: Patvirtino
+        attested_outside_org: už savininko organizacijos ribų
         created: Sukurta
         ews_alert: EWS įspėjimas
         heading: Įsikišimo metaduomenys
@@ -137,4 +151,17 @@ lt:
         updated: Atnaujinta
       notes:
         heading: Lauko pastabos
+      passport:
+        action:
+          awaiting_attestation: Paraiška dar nepateikta. Ją pateikia kito eigulio parašas — to, kuris šio darbo neatliko.
+          confirmed: Įrodymas patvirtintas, paraiška perduota Puro.earth registrui.
+          failed: Tinklas atmetė inkarą. Pakartotinis inkaravimas — operatoriaus sprendimas.
+          manual_review: Inkaro likimas nenustatytas. Reikalingas operatoriaus rankinis sutikrinimas.
+          not_filed: Parašas yra, bet paraiška nepasiekė registro. Reikalingas platformos operatoriaus įsikišimas.
+          sent: Inkaras tinkle; kvito patvirtinimas ateis automatiškai.
+        corc_label: CORC registro numeris
+        heading: CORC paraiška // Puro.earth
+        none: nėra
+        tx_label: Inkaras tinkle (TX)
+        yield_label: Išgauta biomasė (kg)
     show_title: 'Įrašas // #%{id}'

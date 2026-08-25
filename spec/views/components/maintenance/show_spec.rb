@@ -543,6 +543,89 @@ RSpec.describe Maintenance::Show do
     end
   end
 
+  # =========================================================================
+  # [E.20] ПОВЕРХНЯ ЗАСТРЯГЛОЇ ЗАЯВКИ
+  # Доти стан заявки на CORC не рендерився ніде, тож єдиною поверхнею провалу
+  # лишався Sidekiq DeadSet — тобто число для оператора, а не адреса для лісника.
+  # =========================================================================
+  describe "biomass claim panel" do
+    def biomass_record(attested_by: nil, passport: nil, yield_kg: 125.5)
+      r = build_record(action_type: "biomass_extraction",
+                       notes: "Extracted dead wood biomass for CORC certification.")
+      r.biomass_yield_kg = yield_kg
+      r.biomass_passport_status = passport
+      # `build_user` віддає НЕзбереженого `User`, тобто `id` там `nil` — а `attested?`
+      # питає саме FK. Ставимо id явно: інакше фікстура мовчки лишається
+      # незасвідченою, і три «attested»-приклади зеленіли б із чужої причини.
+      if attested_by
+        attested_by.id ||= 99
+        r.attested_by_id = attested_by.id
+        r.attestor = attested_by
+        r.attested_at = 30.minutes.ago
+      end
+      r
+    end
+
+    def render_claim(record)
+      render_component(record: record, photos: [], pagy_photos: mock_pagy_photos)
+    end
+
+    # Негативна половина несуча: панель не сміє зʼявлятись на записах, до яких
+    # питання «де заявка» не стоїть — інакше вона стає шумом на кожному огляді.
+    it "стоїть німо на не-biomass записі" do
+      expect(html).not_to include("CORC claim")
+    end
+
+    it "називає ВІДСУТНІЙ підпис як стан і адресує наступного ходока" do
+      out = render_claim(biomass_record)
+
+      expect(out).to include("Awaiting attestation")
+      expect(out).to include("second forester")
+    end
+
+    # 🔴 Сама суть ноги: підпис Є, а заявка не вийшла — і доти цей стан був
+    # невідрізнимий від попереднього, бо обидва несуть порожній `biomass_passport_status`.
+    it "відрізняє «підписано, але не подано» і адресує ОПЕРАТОРА, не лісника" do
+      out = render_claim(biomass_record(attested_by: build_user(first_name: "Olha", last_name: "Kravets")))
+
+      expect(out).to include("Claim not filed")
+      expect(out).to include("operator intervention")
+      expect(out).not_to include("Awaiting attestation")
+    end
+
+    it "показує lifecycle якоря, коли той уже існує" do
+      out = render_claim(biomass_record(attested_by: build_user, passport: "confirmed"))
+
+      expect(out).to include("Claim confirmed")
+    end
+
+    # [E.20] Підміна атестатора платформою мусить бути ВИДИМОЮ. Доти єдиним
+    # її слідом було голе `attested_by_id`, якого людина не читає.
+    it "оголошує підписанта поза організацією власника" do
+      author   = build_user
+      author.organization_id = 1
+      platform = build_user(first_name: "Super", last_name: "Admin", role: :super_admin)
+      platform.organization_id = 2
+
+      record = biomass_record(attested_by: platform)
+      record.user = author
+
+      expect(render_claim(record)).to include("outside the owner organisation")
+    end
+
+    it "мовчить про організацію, коли підписант живе в організації власника" do
+      author   = build_user
+      author.organization_id = 1
+      auditor  = build_user(first_name: "Petro", last_name: "Lys")
+      auditor.organization_id = 1
+
+      record = biomass_record(attested_by: auditor)
+      record.user = author
+
+      expect(render_claim(record)).not_to include("outside the owner organisation")
+    end
+  end
+
   def mock_photo
     photo = OpenStruct.new(
       id: 99,

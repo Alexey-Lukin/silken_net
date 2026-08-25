@@ -8,11 +8,22 @@ en:
       inspection: Inspection
       installation: Installation
       repair: Repair
+    biomass_claim_states:
+      awaiting_attestation: Awaiting attestation
+      confirmed: Claim confirmed
+      failed: Anchor rejected by the network
+      manual_review: Manual reconciliation required
+      not_filed: Claim not filed
+      sent: Anchor sent, receipt not yet proven
     create_error_title: Error in Ritual
     edit_title: 'Edit Record // #%{id}'
     form:
       action_prompt: "— Select intervention type —"
       action_type: Action Type
+      afterlife:
+        heading: Afterlife Economy // Puro.earth
+        hint: For «Biomass extraction» only. Such a record declares the tree dead and, once a second forester attests it, files an IRREVERSIBLE CORC claim with an external registry — it cannot be withdrawn from here.
+        yield_kg: Biomass extracted (kg)
       cancel: Cancel
       evidence:
         attach_photos: Attach Photos
@@ -47,6 +58,8 @@ en:
         by_aria: Filter by %{type}
         clear: Clear
         clear_aria: Clear all filters
+        pending_attestation: "⏳ Attestation queue"
+        pending_attestation_aria: Show only claims awaiting attestation
         verified: "✓ Verified Only"
         verified_aria: Show only verified records
       heading: Maintenance Records
@@ -124,6 +137,7 @@ en:
       metadata:
         action: Action
         attested: Attested by
+        attested_outside_org: outside the owner organisation
         created: Created
         ews_alert: EWS Alert
         heading: Intervention Metadata
@@ -135,4 +149,17 @@ en:
         updated: Updated
       notes:
         heading: Field Notes
+      passport:
+        action:
+          awaiting_attestation: The claim has not been filed yet. It is filed by a second forester's signature — someone who did not do this work.
+          confirmed: Proof confirmed; the claim has been submitted to the Puro.earth registry.
+          failed: The network rejected the anchor. Re-anchoring is an operator decision.
+          manual_review: The anchor's fate is undetermined. Manual reconciliation by an operator is required.
+          not_filed: Signed, but the claim never reached the registry. Platform operator intervention is required.
+          sent: Anchored on-chain; receipt confirmation follows automatically.
+        corc_label: CORC registry reference
+        heading: CORC claim // Puro.earth
+        none: none
+        tx_label: On-chain anchor (TX)
+        yield_label: Biomass extracted (kg)
     show_title: 'Record // #%{id}'

@@ -8,11 +8,22 @@ lv:
       inspection: Apskate
       installation: Uzstādīšana
       repair: Remonts
+    biomass_claim_states:
+      awaiting_attestation: Gaida apliecinājumu
+      confirmed: Pieteikums apstiprināts
+      failed: Tīkls noraidīja enkuru
+      manual_review: Nepieciešama manuāla saskaņošana
+      not_filed: Pieteikums nav iesniegts
+      sent: Enkurs nosūtīts, kvīts vēl nav pierādīta
     create_error_title: Kļūda rituālā
     edit_title: 'Rediģēt ierakstu // #%{id}'
     form:
       action_prompt: "— Izvēlēties iejaukšanās veidu —"
       action_type: Darbības veids
+      afterlife:
+        heading: Afterlife Economy // Puro.earth
+        hint: Tikai «Biomasas izņemšanai». Šāds ieraksts pasludina koku par mirušu un pēc otra mežsarga apliecinājuma iesniedz NEATGRIEZENISKU CORC pieteikumu ārējā reģistrā — no šejienes to vairs atsaukt nevar.
+        yield_kg: Izņemtā biomasa (kg)
       cancel: Atcelt
       evidence:
         attach_photos: Pievienot fotogrāfijas
@@ -47,6 +58,8 @@ lv:
         by_aria: Filtrēt pēc %{type}
         clear: Notīrīt
         clear_aria: Notīrīt visus filtrus
+        pending_attestation: "⏳ Apliecinājumu rinda"
+        pending_attestation_aria: Rādīt tikai pieteikumus, kas gaida apliecinājumu
         verified: "✓ Tikai verificētie"
         verified_aria: Rādīt tikai apstiprinātos ierakstus
       heading: Apkopes ieraksti
@@ -124,6 +137,7 @@ lv:
       metadata:
         action: Darbība
         attested: Apstiprināja
+        attested_outside_org: ārpus īpašnieka organizācijas
         created: Izveidots
         ews_alert: EWS brīdinājums
         heading: Iejaukšanās metadati
@@ -135,4 +149,17 @@ lv:
         updated: Atjaunināts
       notes:
         heading: Lauka piezīmes
+      passport:
+        action:
+          awaiting_attestation: Pieteikums vēl nav iesniegts. To iesniedz otra mežsarga paraksts — tāda, kas šo darbu nav veicis.
+          confirmed: Pierādījums apstiprināts, pieteikums nodots Puro.earth reģistram.
+          failed: Tīkls noraidīja enkuru. Atkārtota enkurošana ir operatora lēmums.
+          manual_review: Enkura liktenis nav noskaidrots. Nepieciešama operatora manuāla saskaņošana.
+          not_filed: Paraksts ir, bet pieteikums nesasniedza reģistru. Nepieciešama platformas operatora iejaukšanās.
+          sent: Enkurs tīklā; kvīts apstiprinājums pienāks automātiski.
+        corc_label: CORC reģistra numurs
+        heading: CORC pieteikums // Puro.earth
+        none: nav
+        tx_label: Enkurs tīklā (TX)
+        yield_label: Izņemtā biomasa (kg)
     show_title: 'Ieraksts // #%{id}'

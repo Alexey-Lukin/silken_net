@@ -305,10 +305,13 @@ RSpec.describe MaintenanceRecord, type: :model do
       end
 
       # 🔴 Другі двері, і саме вони визначили ФОРМУ гейта: `on: :create` лишав би
-      # обхід «створити як inspection → перевести в biomass». Пін живе ТУТ, а не в
-      # request-спеці: через HTTP переведення сьогодні падає раніше, на
-      # `biomass_yield_kg` (його немає в permit-списку), тож request-пін був би
-      # зеленим із ЧУЖОЇ причини й пережив би зняття цієї валідації.
+      # обхід «створити як inspection → перевести в biomass».
+      # ⚠️ Цей коментар доти обґрунтовував модельне розміщення піна тим, що через
+      # HTTP переведення падає РАНІШЕ — на `biomass_yield_kg`, якого немає в
+      # permit-списку. Ця підстава померла разом із додаванням писача (E.20,
+      # 2026-08-25): поле пермітиться, тож HTTP-двері реальні. Пін лишається тут
+      # (модель — дім інваріанта), а дзеркальний request-приклад стереже, що
+      # двері закриті САМЕ на цій валідації, а не збігом іншої.
       it "refuses a photo-less record being FLIPPED into :biomass_extraction" do
         record = create(:maintenance_record, action_type: :inspection)
 
@@ -586,6 +589,82 @@ RSpec.describe MaintenanceRecord, type: :model do
   # пульс вузла ПІСЛЯ performed_at — єдиний канал, якого технік не контролює.
   # Межа несуча в ОБИДВА боки: пульс ДО не рахується (ефір міг бути до втручання),
   # відсутній пульс — тим паче.
+  # =========================================================================
+  # [E.20] СТАН ЗАЯВКИ НА CORC — дім питання «де вона зараз і хто ходить далі»
+  # =========================================================================
+  describe "#biomass_claim_state" do
+    let(:organization) { create(:organization) }
+    let(:author)   { create(:user, :forester, organization: organization) }
+    let(:auditor)  { create(:user, :forester, organization: organization) }
+    let(:biomass)  { create(:maintenance_record, :biomass_extraction, :with_evidence, user: author) }
+
+    it "is nil for every non-biomass action type — питання до них не стоїть" do
+      expect(create(:maintenance_record, user: author).biomass_claim_state).to be_nil
+    end
+
+    it "reports :awaiting_attestation while the second pair of eyes is missing" do
+      expect(biomass.biomass_claim_state).to eq(:awaiting_attestation)
+    end
+
+    # 🔴 Ядро пункту: `biomass_passport_status` сам по собі на це не відповідає —
+    # його `nil` однаковий у двох станах із РІЗНИМИ адресатами (інший лісник ⊥
+    # оператор платформи). Саме тому стан є деривацією, а не колонкою.
+    it "reports :not_filed when the signature exists but the claim never left" do
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+      biomass.attest!(auditor)
+
+      expect(biomass.reload.biomass_passport_status).to be_nil
+      expect(biomass.biomass_claim_state).to eq(:not_filed)
+    end
+
+    it "surfaces the passport lifecycle once the anchor exists" do
+      allow(PuroEarthPassportWorker).to receive(:perform_async)
+      biomass.attest!(auditor)
+      biomass.update!(biomass_passport_status: :sent, biomass_passport_tx_hash: "0x#{'ab' * 32}")
+
+      expect(biomass.biomass_claim_state).to eq(:sent)
+      expect(biomass.confirm_biomass_passport!).to be_truthy
+      expect(biomass.biomass_claim_state).to eq(:confirmed)
+    end
+  end
+
+  describe ".awaiting_attestation" do
+    let(:author) { create(:user, :forester) }
+
+    it "collects only unsigned biomass claims" do
+      pending_claim = create(:maintenance_record, :biomass_extraction, :with_evidence, user: author)
+      signed_claim  = create(:maintenance_record, :biomass_extraction, :with_evidence, :attested, user: author)
+      plain         = create(:maintenance_record, user: author)
+
+      ids = described_class.awaiting_attestation.pluck(:id)
+      expect(ids).to include(pending_claim.id)
+      expect(ids).not_to include(signed_claim.id, plain.id)
+    end
+  end
+
+  # [E.20] Ратифікована незалежність — акаунт У організації власника + ДОГОВІР.
+  # Підпис super_admin рятує орг з одним лісником від глухого кута, але це СЛАБША
+  # форма, і поверхня мусить її показувати, а не ховати.
+  describe "#attested_outside_owner_organization?" do
+    let(:owner_org) { create(:organization) }
+    let(:author)    { create(:user, :forester, organization: owner_org) }
+    let(:record)    { create(:maintenance_record, user: author) }
+
+    it "is false for an unsigned record" do
+      expect(record.attested_outside_owner_organization?).to be false
+    end
+
+    it "is false when the attestor lives in the owner organization" do
+      record.attest!(create(:user, :forester, organization: owner_org))
+      expect(record.reload.attested_outside_owner_organization?).to be false
+    end
+
+    it "is true when the platform signs from another organization" do
+      record.attest!(create(:user, :super_admin, organization: create(:organization)))
+      expect(record.reload.attested_outside_owner_organization?).to be true
+    end
+  end
+
   describe "#hardware_pulse_confirmed?" do
     let(:record) { create(:maintenance_record, performed_at: 1.hour.ago) }
 

@@ -1061,10 +1061,10 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `critical` |
 | **Retry** | 3 |
-| **Тригер** | Після закриття `EwsAlert` через `MaintenanceRecord` |
+| **Тригер** | `MaintenanceRecord` `after_create_commit :trigger_ecosystem_healing!` — БЕЗУМОВНО, на кожен створений запис. ⚠️ Тут доти стояло «Після закриття `EwsAlert` через `MaintenanceRecord`»: причина й наслідок переставлені місцями — закриття тривоги є КРОКОМ 4 цього воркера, а не його пускачем, і алерту в записі може не бути взагалі (`belongs_to :ews_alert, optional: true`) |
 | **Вхід** | `record_id` (Integer, MaintenanceRecord) |
 | **Сервіси** | — |
-| **Side Effects** | `actuator.mark_idle!` (при repair), `tree.decommission!` (при decommissioning), `tree.declare_deceased!` (при biomass_extraction — ⚠️ **паспорт звідси БІЛЬШЕ НЕ ставиться в чергу**, пускач переїхав у `MaintenanceRecord#attest!`, [E.20] ⚖️ 2026-08-24), `alert.resolve!`. |
+| **Side Effects** | 🔴 **`target.mark_seen!` — КРОК 1, безумовний, на будь-якому `maintainable`** (дотепер у цій картці НЕ значився взагалі, і саме тому найдорожчий side-effect воркера був невидимий з канону): пише `last_seen_at = NOW()` через `update_all`, тобто ЛЮДСЬКИЙ запис штампує МАШИННИЙ канал живості, з якого виводять вердикт `hardware_pulse_confirmed?` [UI.7], `Tree.silent` [SILENCE-1] і `fresh_signal?` [ARCH.99] → [`00_07` ARCH.109](00_07_Action_Plan_Tracker). Далі: `actuator.mark_idle!` (при repair), `tree.decommission!` (при decommissioning), `tree.declare_deceased!` (при biomass_extraction — ⚠️ **паспорт звідси БІЛЬШЕ НЕ ставиться в чергу**, пускач переїхав у `MaintenanceRecord#attest!`, [E.20] ⚖️ 2026-08-24), `alert.resolve!`. |
 
 ---
 

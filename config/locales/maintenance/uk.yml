@@ -8,11 +8,22 @@ uk:
       inspection: Огляд
       installation: Монтаж
       repair: Ремонт
+    biomass_claim_states:
+      awaiting_attestation: Очікує засвідчення
+      confirmed: Заявку підтверджено
+      failed: Якір відхилено мережею
+      manual_review: Потрібна ручна звірка
+      not_filed: Заявку не подано
+      sent: Якір надіслано, чек ще не доведено
     create_error_title: Помилка в ритуалі
     edit_title: Редагування запису // №%{id}
     form:
       action_prompt: "— Оберіть тип втручання —"
       action_type: Тип дії
+      afterlife:
+        heading: Afterlife Economy // Puro.earth
+        hint: Лише для «Вилучення біомаси». Такий запис оголошує дерево мертвим і після засвідчення іншим лісником подає НЕЗВОРОТНУ заявку на CORC у зовнішній реєстр — відкликати її звідси вже не можна.
+        yield_kg: Вилучена біомаса (кг)
       cancel: Скасувати
       evidence:
         attach_photos: Прикріпити фото
@@ -47,6 +58,8 @@ uk:
         by_aria: Фільтрувати за %{type}
         clear: Очистити
         clear_aria: Очистити всі фільтри
+        pending_attestation: "⏳ Черга засвідчення"
+        pending_attestation_aria: Показати лише заявки, що чекають на засвідчення
         verified: "✓ Тільки верифіковані"
         verified_aria: Показати лише підтверджені записи
       heading: Журнал обслуговування
@@ -128,6 +141,7 @@ uk:
       metadata:
         action: Дія
         attested: Засвідчив
+        attested_outside_org: поза організацією власника
         created: Створено
         ews_alert: EWS-тривога
         heading: Метадані втручання
@@ -139,4 +153,17 @@ uk:
         updated: Оновлено
       notes:
         heading: Польові нотатки
+      passport:
+        action:
+          awaiting_attestation: Заявку ще не подано. Її подасть підпис іншого лісника — того, хто цієї роботи не виконував.
+          confirmed: Доказ підтверджено, заявку передано в реєстр Puro.earth.
+          failed: Мережа відхилила якір. Повторне якорення — рішення оператора.
+          manual_review: Долю якоря не встановлено. Потрібна ручна звірка оператором.
+          not_filed: Підпис є, але заявка не вийшла в реєстр. Потрібне втручання оператора платформи.
+          sent: Якір у мережі; підтвердження чека надійде автоматично.
+        corc_label: Реєстровий номер CORC
+        heading: Заявка на CORC // Puro.earth
+        none: немає
+        tx_label: Якір у мережі (TX)
+        yield_label: Вилучена біомаса (кг)
     show_title: Запис // №%{id}

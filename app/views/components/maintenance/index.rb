@@ -51,6 +51,14 @@ module Maintenance
             class: filter_link_classes
           ) { MaintenanceRecord.action_type_label(type) }
         end
+        # [E.20] Черга «чекає на засвідчення» — єдина поверхня, з якої лісник бачить
+        # заявки, що ЩЕ можна врятувати підписом. Доти такої вибірки не існувало
+        # взагалі, і застрягла заявка була видима лише ops-у як число в DeadSet.
+        a(
+          href: maintenance_records_path(pending_attestation: "1"),
+          aria_label: t(".filter.pending_attestation_aria"),
+          class: filter_pending_classes
+        ) { t(".filter.pending_attestation") }
         a(
           href: maintenance_records_path(verified: "1"),
           aria_label: t(".filter.verified_aria"),
@@ -100,7 +108,10 @@ module Maintenance
         td(class: "p-4 text-gaia-primary-strong text-tiny") do
           "#{record.maintainable_type} // #{record.maintainable&.display_identifier || '—'}"
         end
-        td(class: "p-4") { action_badge(record.action_type) }
+        td(class: "p-4") do
+          action_badge(record.action_type)
+          claim_marker(record)
+        end
         td(class: "p-4 text-right text-gaia-text-muted") do
           # 🔴 [ARCH.103] Тут була ТРЕТЯ поведінка того самого числа: `cost > 0`
           # зливало «безкоштовний візит» (явний нуль — законний вимір) із «не
@@ -166,6 +177,36 @@ module Maintenance
       span(class: tokens("uppercase", colors[type.to_s] || "text-gaia-text-subtle")) do
         MaintenanceRecord.action_type_label(type)
       end
+    end
+
+    # [E.20] Маркер стану заявки на CORC у самому рядку — БЕЗ жодного запиту
+    # (`biomass_claim_state` читає лише колонки вже завантаженого рядка).
+    # 🔴 Він стоїть тут, а не за фільтром, свідомо: фільтр знаходить того, хто вже
+    # ШУКАЄ, а подавач заявки не шукає — він вважає, що подав. Мовчить лише
+    # `confirmed`: доти заявки в реєстрі НЕМА, хай яка причина.
+    def claim_marker(record)
+      state = record.biomass_claim_state
+      return if state.nil? || state == :confirmed
+
+      div(class: tokens("text-micro mt-1", claim_marker_color(state))) do
+        record.biomass_claim_state_label
+      end
+    end
+
+    # Колір — з ТОГО САМОГО `state`, що й текст (frontend #25).
+    def claim_marker_color(state)
+      case state
+      when :sent then "text-status-info-accent"
+      when :awaiting_attestation, :manual_review then "text-status-warning-accent"
+      else "text-status-danger-accent"
+      end
+    end
+
+    def filter_pending_classes
+      "px-3 py-1 border border-status-warning-accent text-mini uppercase text-status-warning-accent " \
+        "hover:bg-status-warning/10 " \
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong " \
+        "transition-all font-mono"
     end
 
     def register_button_classes

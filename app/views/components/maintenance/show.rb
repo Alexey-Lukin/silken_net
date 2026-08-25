@@ -24,6 +24,7 @@ module Maintenance
         render_header
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
           div(class: "xl:col-span-2 space-y-8") do
+            render_biomass_claim_panel
             render_evidence_gallery
             render_notes_panel
             render_cost_breakdown
@@ -130,7 +131,57 @@ module Maintenance
       # була б мертвим кодом із виглядом обачності (її й спіймала гілкова
       # підлога покриття). Якщо інваріант колись зламають, чесніше впасти
       # гучно, ніж намалювати правдоподібний напівряд.
-      "#{@record.attestor.full_name} — #{@record.attested_at.strftime('%d.%m.%Y %H:%M')}"
+      label = "#{@record.attestor.full_name} — #{@record.attested_at.strftime('%d.%m.%Y %H:%M')}"
+      return label unless @record.attested_outside_owner_organization?
+
+      # [E.20] Ратифікована незалежність — акаунт У організації власника плюс
+      # ДОГОВІР. `super_admin` рятує орг з одним лісником від глухого кута, але
+      # підписує вже СЛАБШОЮ формою, і доти це не було видно ніде. Показуємо, а
+      # не ховаємо: читач доказу мусить знати, чиїм підписом той доказ стоїть.
+      "#{label} · #{t('.metadata.attested_outside_org')}"
+    end
+
+    # =========================================================================
+    # ЗАЯВКА НА CORC (Afterlife Economy) — де вона зараз і хто наступний ходить
+    # =========================================================================
+    # [E.20] Доти стан заявки не рендерився НІДЕ (`app/views` — нуль входжень) і не
+    # віддавався блупринтом, тож єдиною поверхнею провалу лишався Sidekiq DeadSet —
+    # тобто платформа адресувала оператора числом, а лісника, який ще МОЖЕ підписати,
+    # не адресувала взагалі. Заявка могла мовчки не подаватись, і подавач цього не
+    # дізнавався.
+    def render_biomass_claim_panel
+      state = @record.biomass_claim_state
+      return if state.nil?
+
+      div(class: "p-8 border border-gaia-border bg-gaia-surface space-y-4") do
+        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".passport.heading") }
+
+        p(class: tokens("text-lg font-light", claim_state_color(state))) do
+          MaintenanceRecord.biomass_claim_state_label(state)
+        end
+        # Кожен стан несе НАСТУПНИЙ ХІД, а не лише назву: стан без адресата — це
+        # рівно те, чим був DeadSet (`00_05 §7`: механізм із повісткою й без пристава).
+        p(class: "text-micro text-gaia-text-muted") { t(".passport.action.#{state}") }
+
+        div(class: "space-y-3 text-tiny font-mono pt-2 border-t border-gaia-border") do
+          # Одиниця живе в МІТЦІ (`yield_label` несе «(кг)»), не склеюється тут:
+          # зашитий суфікс лишався б українським у всіх чотирьох локалях.
+          meta_row(t(".passport.yield_label"), @record.biomass_yield_kg&.to_s || t("ui.measurement.not_measured"))
+          meta_row(t(".passport.tx_label"), @record.biomass_passport_tx_hash.presence || t(".passport.none"))
+          meta_row(t(".passport.corc_label"), @record.puro_earth_corc_ref.presence || t(".passport.none"))
+        end
+      end
+    end
+
+    # [UI.1 + frontend #25] Колір деривується З ТОГО САМОГО `state`, що й текст —
+    # інакше він стає другим, власним прочитанням поля й бреше окремо від підпису.
+    def claim_state_color(state)
+      case state
+      when :confirmed          then "text-gaia-primary-strong"
+      when :sent               then "text-status-info-accent"
+      when :awaiting_attestation, :manual_review then "text-status-warning-accent"
+      else "text-status-danger-accent"
+      end
     end
 
     # =========================================================================

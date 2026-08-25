@@ -199,6 +199,10 @@ class MaintenanceRecord < ApplicationRecord
   # ключами дає ЗАПЕРЕЧЕННЯ КОНʼЮНКЦІЇ (АБО), а це доказова поверхня
   # Anti-Sofa-Repair — «є GPS» тут мусить означати обидві координати.
   scope :with_gps,          -> { where.not(latitude: nil).where.not(longitude: nil) }
+  # [E.20] Черга «чекає на засвідчення» — заявки на біомасу без другої пари очей.
+  # Доти такого скоупа не існувало ніде, і саме тому провал тракту адресував
+  # ops-а числом у DeadSet, а не лісника, який ЩЕ МОЖЕ підписати.
+  scope :awaiting_attestation, -> { where(action_type: :biomass_extraction, attested_by_id: nil) }
 
 # =========================================================================
 # КОЛБЕКИ (The Healing Protocol)
@@ -322,6 +326,54 @@ after_commit :broadcast_maintenance_signal, on: %i[create update]
 
   def attested?
     attested_by_id.present?
+  end
+
+  # [E.20] Дім питання «де зараз заявка на CORC», і він ОДИН, бо читачів троє:
+  # сторінка запису, рядок реєстру й блупринт. `biomass_passport_status` сам по
+  # собі на це не відповідає — його `nil` не розрізняє «підпису ще немає» від
+  # «підпис є, а заявка не пішла», а це два РІЗНІ адресати: перше лікує інший
+  # лісник, друге — оператор.
+  #
+  # 🔴 Порожній паспорт при наявному підписі НЕ є транзієнтним станом «джоба в
+  # дорозі», і поріг тут не потрібен: `PuroEarthPassportWorker` вичерпує ретраї за
+  # ≈7–10 хв і осідає в DeadSet, після чого `biomass_passport_status` не зміниться
+  # НІКОЛИ без консольного re-enqueue. Тобто «не подано» правдиве в обох випадках,
+  # і вигаданий таймер лише додав би третю відповідь на те саме питання.
+  def biomass_claim_state
+    return nil unless action_type_biomass_extraction?
+    return :awaiting_attestation unless attested?
+    return :not_filed if biomass_passport_status.blank?
+
+    biomass_passport_status.to_sym
+  end
+
+  # [I18N.1] Мітка стану заявки — дзеркало `ACTION_TYPE_LABEL_SCOPE`, і з тієї ж
+  # підстави: показують її ДВА компоненти (сторінка запису й рядок реєстру), тож
+  # скоуп належить домену МОДЕЛІ. Інакше другий компонент тягнув би абсолютний
+  # ключ із чужого скоупу — тобто заводив би мітці другий дім.
+  BIOMASS_CLAIM_STATE_LABEL_SCOPE = "maintenance.biomass_claim_states"
+
+  # Fail-open, як у сусіда: новий стан рендериться сирим токеном, доки мітка не
+  # доїде в локалі — і саме це червонить гейт парності.
+  def self.biomass_claim_state_label(state)
+    value = state.to_s
+    I18n.t("#{BIOMASS_CLAIM_STATE_LABEL_SCOPE}.#{value}", default: value)
+  end
+
+  def biomass_claim_state_label
+    state = biomass_claim_state
+    state && self.class.biomass_claim_state_label(state)
+  end
+
+  # [E.20] Ратифікована форма незалежності — акаунт У організації власника плюс
+  # ДОГОВІР. Підписант поза нею це не порушення (super_admin рятує орг з одним
+  # лісником від глухого кута), але це СЛАБША форма, ніж ратифікована, — і доти
+  # вона не була видима ніде: у полі лежить лише `attested_by_id`. Поверхня
+  # мусить її ПОКАЗУВАТИ, а не ховати ([`04_01 §7`]).
+  def attested_outside_owner_organization?
+    return false unless attested?
+
+    attestor.organization_id != user.organization_id
   end
 
   # [UI.7, ⚖️ 2026-08-20] Дім питання «чи залізо ПІДТВЕРДИЛО обслуговування» —

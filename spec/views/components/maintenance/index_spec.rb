@@ -67,6 +67,47 @@ RSpec.describe Maintenance::Index do
   let(:record) { build_record }
   let(:html) { render_component(records: [ record ], pagy: mock_pagy) }
 
+  # =========================================================================
+  # [E.20] МАРКЕР ЗАСТРЯГЛОЇ ЗАЯВКИ У САМОМУ РЯДКУ
+  # Він стоїть у рядку, а не лише за фільтром, свідомо: фільтр знаходить того, хто
+  # вже ШУКАЄ, а подавач заявки не шукає — він вважає, що подав.
+  # =========================================================================
+  describe "biomass claim marker" do
+    def biomass_row(attested_by_id: nil, passport: nil)
+      r = build_record(id: 42, action_type: :biomass_extraction, notes: "Biomass extraction")
+      r.biomass_yield_kg = 125.5
+      r.biomass_passport_status = passport
+      r.attested_by_id = attested_by_id
+      r
+    end
+
+    it "мовчить на не-biomass рядку" do
+      expect(html).not_to include("Awaiting attestation")
+    end
+
+    it "називає незасвідчену заявку просто в реєстрі" do
+      out = render_component(records: [ biomass_row ], pagy: mock_pagy)
+      expect(out).to include("Awaiting attestation")
+    end
+
+    it "відрізняє «підписано, але не подано»" do
+      out = render_component(records: [ biomass_row(attested_by_id: 99) ], pagy: mock_pagy)
+      expect(out).to include("Claim not filed")
+    end
+
+    # Єдиний стан, що мовчить: доти заявки в реєстрі НЕМА, хай яка причина.
+    it "мовчить лише на підтвердженій заявці" do
+      out = render_component(records: [ biomass_row(attested_by_id: 99, passport: "confirmed") ], pagy: mock_pagy)
+
+      expect(out).not_to include("Claim confirmed")
+      expect(out).not_to include("Claim not filed")
+    end
+
+    it "пропонує чергу «чекають засвідчення» у смузі фільтрів" do
+      expect(html).to include("pending_attestation=1")
+    end
+  end
+
   describe "header" do
     it "renders the Maintenance Records heading" do
       expect(html).to include("Maintenance Records")
