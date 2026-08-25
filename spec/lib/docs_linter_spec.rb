@@ -480,6 +480,42 @@ RSpec.describe DocsLinter do
     end
   end
 
+# [SLASH-1] Сусід rate-guard, але інший ЗВІР: той стереже СТАВКИ (конвенції, що не
+# рухаються без присуду), цей — DAO-мутабельний ПОРІГ, поданий клієнтові як фіксована
+# умова. Порожня множина тут МЕТА, тож живість доводить мутація, не популяція.
+describe ".customer_facing_threshold_drift" do
+  it "flags a bare 0.83 in the customer-facing legal home" do
+    hits = described_class.customer_facing_threshold_drift(
+      "00_04_Nature", "| Поріг | >20% дерев з `stress_index >= 0.83` | X |\n"
+    )
+    expect(hits.size).to eq(1)
+    expect(hits.first).to include("без маркера DAO-мутабельності")
+  end
+
+  it "stays silent once the same line declares the value mutable" do
+    hits = described_class.customer_facing_threshold_drift(
+      "00_04_Nature", "| Поріг | `stress_index >= 0.83` — DAO-керований дефолт |\n"
+    )
+    expect(hits).to be_empty
+  end
+
+  # Ліхтар на прохід рядків БЕЗ порога: без нього гілка «рядок не матчить» жодного
+  # разу не виконується, і скан лишається недоведеним на звичайному вмісті документа.
+  it "walks past lines that carry no threshold at all" do
+    text = "| Курс | 2000 SCC = 1 tCO₂ |\n| Поріг | `stress_index >= 0.83` — DAO-керований |\n"
+    expect(described_class.customer_facing_threshold_drift("00_04_Nature", text)).to be_empty
+  end
+
+  # ⛔ Оголошена стеля: периметр — ЛИШЕ 00_04. В інженерних домах поріг цитується як
+  # факт, і застереження там було б шумом; без цього прикладу гейт тихо розповз би.
+  it "does not police engineering docs that cite the threshold as a fact" do
+    hits = described_class.customer_facing_threshold_drift(
+      "05_05_Slashing", "| Поріг | >20% дерев з `stress_index >= 0.83` | X |\n"
+    )
+    expect(hits).to be_empty
+  end
+end
+
   describe ".tokenomics_rate_drift" do
     it "flags the mint rate re-stated outside the home" do
       hits = described_class.tokenomics_rate_drift("05_06_Governance", "фіксований курс 10,000 growth_points = 1 SCC.\n")

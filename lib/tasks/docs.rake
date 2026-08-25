@@ -116,6 +116,7 @@ namespace :docs do
     bare_refs   = []  # hard: bare code-span `NN_NN §X` ref that should be a full link
     rate_drift  = []  # hard: tokenomics/carbon rate value re-stated outside its One-Home (05_03/00_04)
     rate_anchor = []  # hard: a rate HOME no longer matches the guard's own regex (re-price w/o updating the tripwire — DOC-T.40)
+    threshold_pub = []  # hard: DAO-мутабельний поріг поданий клієнтові як фіксована умова (SLASH-1)
     # 🔴 Оголошені доми курсу, ЗУСТРІНУТІ у скані. Без цього гейт вироджувався
     # мовчки: резолв іде за префіксом імені файлу, тож звільнений номер дому просто
     # ніколи не консультується, і вердикт друкував «both … ✓», вимірявши ОДИН із двох.
@@ -202,6 +203,7 @@ namespace :docs do
       rate_drift.concat(DocsLinter.tokenomics_rate_drift(base, text).map { |h| "#{base}: #{h}" })
       rate_anchor_seen << base[/\A\d\d_\d\d/] if DocsLinter::RATE_ANCHOR_HOMES.key?(base[/\A\d\d_\d\d/])
       rate_anchor.concat(DocsLinter.tokenomics_rate_anchor(base, text))
+      threshold_pub.concat(DocsLinter.customer_facing_threshold_drift(base, text).map { |h| "#{base}: #{h}" })
       solc_drift.concat(DocsLinter.solc_pragma_version_drift(base, text).map { |h| "#{base}: #{h}" })
       ai_vendor.concat(DocsLinter.ai_vendor_name_drift(base, text).map { |h| "#{base}: #{h}" })
       bare_doc.concat(DocsLinter.bare_doc_ref(base, text, valid_ids).map { |h| "#{base}: #{h}" })
@@ -479,6 +481,13 @@ namespace :docs do
       puts "  RATE ANCHOR STALE (#{rate_anchor.size}) — a home was re-priced but the guard regex was not (DOC-T.40):"
       rate_anchor.sort.each { |d| puts "    ✗ #{d}" }
     end
+
+if threshold_pub.empty?
+  puts "  customer-facing поріг: кожна згадка `stress_index 0.83` в 00_04 несе маркер DAO-мутабельності ✓"
+else
+  puts "  CUSTOMER-FACING ПОРІГ (#{threshold_pub.size}) — DAO-мутабельне значення подано як фіксовану умову (SLASH-1):"
+  threshold_pub.sort.each { |d| puts "    ✗ #{d}" }
+end
     if solc_drift.empty?
       puts "  solc One-Home: no solc/pragma version restated outside 05_03 ✓"
     else
@@ -699,6 +708,7 @@ namespace :docs do
     failed << "superseded term in front-matter (🎯/Статус names a reversed decision)" unless superseded_fm.empty?
     failed << "tokenomics/carbon rate restated outside One-Home (05_03/00_04)" unless rate_drift.empty?
     failed << "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)" unless rate_anchor.empty?
+    failed << "customer-facing поріг без маркера DAO-мутабельності (SLASH-1)" unless threshold_pub.empty?
     failed << "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" if rate_homes_missing.any?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?

@@ -505,6 +505,38 @@ module DocsLinter
     end
   end
 
+# [SLASH-1] DAO-мутабельний ПОРІГ, поданий клієнтові як ФІКСОВАНА умова.
+#
+# Сусідній rate-guard вище стереже СТАВКИ (10 000:1 · 2000:1) — конвенції, що не
+# рухаються без присуду. `stress_index >= 0.83` інший звір: він DAO-live
+# (`SystemParameter :stress_threshold` ← `ProtocolParameters.sol`, bounds 0.65..1.0),
+# тож голос governance МОВЧКИ інвалідує вже опубліковану умову — а `00_04` є тим
+# документом, із якого ростуть MSA/SLA. Клас був відомий репо, але поріг у сітку
+# rate-guard'а не потрапляв: той шукає ставку, а не заяву про фіксованість.
+#
+# ⛔ ОГОЛОШЕНА СТЕЛЯ (без неї зелений почав би читатись ширше, ніж є):
+#   • Периметр — ЛИШЕ `00_04` (customer-facing юр-дім). `05_05`/`04_02` цитують
+#     поріг як інженерний факт, і там застереження було б шумом.
+#   • Гейт судить НАЯВНІСТЬ маркера мутабельності в тому самому рядку, ніколи —
+#     чи він доречний і чи число ще правильне.
+#   • Порожня множина тут — МЕТА, не провал: у мить написання всі три сайти вже
+#     несуть маркер, тож живість доводиться мутацією, не популяцією (§Guard-craft #61).
+MUTABLE_THRESHOLD_RE = /stress_index\s*[<>=]{1,2}\s*0[.,]83/i
+THRESHOLD_MUTABILITY_RE = /DAO-керован|DAO-live|SystemParameter|ProtocolParameters|поточний дефолт/i
+
+def customer_facing_threshold_drift(basename, text)
+  return [] unless basename.start_with?("00_04")
+
+  text.each_line.filter_map do |line|
+    next unless line.match?(MUTABLE_THRESHOLD_RE)
+    next if line.match?(THRESHOLD_MUTABILITY_RE)
+
+    "customer-facing `stress_index 0.83` подано без маркера DAO-мутабельності — " \
+      "голос governance інвалідує опубліковану умову мовчки (SLASH-1; дім значення — " \
+      "`SystemParameter :stress_threshold`) → #{line.strip[0, 90]}"
+  end
+end
+
   # [SSOT anti-drift] Solidity solc / pragma version One-Home (HARD). The locked
   # compiler version (`pragma solidity 0.8.X`, foundry `solc_version`, myth `--solv`) is a
   # single repo-wide fact — every contract pins the SAME version. Its documented home is

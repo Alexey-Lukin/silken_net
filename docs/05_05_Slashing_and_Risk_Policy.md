@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!` + **positive-A-evidence guard `Slashing::CauseEvidence` ✅ SLASH-1 фаза 1** + cause-driven `penalty_factor` de-correlation `#calculate_penalty_factor` (INERT за gate), RSpec-покрито). **Відкрите (👤):** розширення A-сету + активація `penalty_factor`-uplift перед mainnet (DAO), operator-bond (BIZ.13) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 8 — політика затверджена; backend-механіка реалізована (convex-формула `BlockchainBurningService#calculate_slash_ratio` + blackout-routing `ContractHealthCheckService#flag_data_blackout!` + **positive-A-evidence guard `Slashing::CauseEvidence` ✅ SLASH-1 фаза 1** + cause-driven `penalty_factor` de-correlation `#calculate_penalty_factor` (INERT за gate), RSpec-покрито). **Відкрите (👤):** розширення A-сету + активація `penalty_factor`-uplift перед mainnet (DAO), ~~operator-bond (BIZ.13)~~ ⚫ **відкликано** ⚖️ 2026-08-24 разом із маркетплейсом — premise існував лише в Моделі B (§3.1) → [`00_07`](00_07_Action_Plan_Tracker).
 - **Slashing v2:** жорстке "burn-on-degradation" замінено двокатегорійною моделлю (халатність / форс-мажор) + safety-default (невизначеність).
 - **De-risk інваріант:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца — потрібен ≥1 прямий некорельований сигнал (`delta_t`-метаболізм / VPD / acoustic — §7).
 
@@ -29,7 +29,7 @@
 | [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | Insurance Layer mechanics (Etherisc, два режими); NaaS breach terms; SFC voting after slash |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `BlockchainBurningService`, `ContractHealthCheckService`, `InsightGeneratorService#stress_index`; divergence registry §13b |
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | Партнерський ростер ФОТІУС/ЧНУ + академічний вихід для ground-truth протоколу (сам протокол — §8) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate, BIZ.13 operator-bond |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкрите** (SSOT): SLASH-1 cause-gate. ⚫ BIZ.13 operator-bond ВІДКЛИКАНО (§3.1) |
 
 ## 📑 Зміст
 

@@ -87,6 +87,7 @@ DOCS_RAKE_LABELS = {
   "tokenomics/carbon rate restated outside One-Home (05_03/00_04)"                         => "tokenomics/carbon rate One-Home",
   "rate-guard anchor stale (home re-priced, regex not — DOC-T.40)"                          => "rate-guard self-anchor",
   "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" => "rate-home lantern",
+  "customer-facing поріг без маркера DAO-мутабельності (SLASH-1)"                            => "customer-facing поріг",
   "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",
   "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" => "canonical source-block pin",
   "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)"                  => "AI-vendor name One-Home",
