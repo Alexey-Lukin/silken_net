@@ -171,6 +171,29 @@ RSpec.describe EthereumAnchorWorker, type: :worker do
       expect(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to have_received(:increment)
     end
 
+    # 🔴 [INF.26] Лічильник рахує ТИЖНІ, як обіцяє докстрінг, а не спрацювання детектора.
+    # Доти `missed_weeks` обчислювався й логувався, а до метрики не доїжджав — тож
+    # пʼятитижнева прогалина важила стільки ж, скільки одна, і недолік був НЕЗВОРОТНИЙ:
+    # наступного тижня `last_anchor` уже свіжий, детекція мовчить, і ті тижні не долічить
+    # ніхто. ⚠️ Сусідні приклади вище пінять ФАКТ інкременту (`have_received(:increment)`),
+    # тобто зелені й на голому виклику — розрізняє лише пін на ВЕЛИЧИНУ.
+    it "counts missed WEEKS, not detector firings" do
+      travel_to(36.days.ago) do
+        EthereumAnchor.create!(
+          state_root: "d" * 64, total_growth_points: 200.0, chain_hash: "very_old",
+          anchored_at: Time.current, status: :confirmed, tx_hash: "0x#{"dd" * 32}"
+        )
+      end
+
+      allow(Rails.logger).to receive(:warn).with(/Missed anchor week detected/)
+      allow(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to receive(:increment)
+
+      described_class.new.perform
+
+      # 36 днів ≈ 5 тижнів; поточний (очікуваний) віднімається → 4.
+      expect(SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL).to have_received(:increment).with(by: 4)
+    end
+
     it "ignores failed anchors when checking for gaps" do
       EthereumAnchor.create!(
         state_root: "c" * 64,

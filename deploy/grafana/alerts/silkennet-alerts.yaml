@@ -729,6 +729,40 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # P1: Treasury probe cannot READ — distinct from «oracle is empty» [INF.26]
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-treasury-check-errors
+        title: "🛑 Treasury balance probe failing (cannot read)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum by (network, signer) (increase(silkennet_treasury_check_errors_total[1h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [2], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "{{ $labels.network }}/{{ $labels.signer }} — проба балансу впала {{ $values.A.Value }} разів за годину."
+          description: "[INF.26] «НЕ ЗМОГЛИ ПРОЧИТАТИ» — окремий стан від «оракул порожній», і саме тому має власний канал. Доти RPC-збій писав ratio=0.0 у silkennet_oracle_balance_ratio, тобто один таймаут пейджив ДВОМА balance-правилами на гаманці, який міг бути повний (підміна виміру: показник хибний через ПРИЛАД). Тепер ratio при збої не оновлюється взагалі — а щоб та тиша не була сліпою, гучним є цей лічильник. ⚠️ Наслідок для читача: якщо горить ЦЕЙ алерт, balance-gauge показує ОСТАННЄ ВІДОМЕ значення, не поточне. Дії: перевірити RPC-ендпоінт мережі та ліміти провайдера."
+        labels:
+          severity: critical
+          component: treasury
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P1: Acoustic overflow (firmware data loss)
       # -----------------------------------------------------------------------
       - uid: sn-alert-acoustic-overflow
@@ -993,7 +1027,7 @@ groups:
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Ethereum L1 anchor пропустив тиждень — weekly state-root не приземлявся >8 днів."
+          summary: "Ethereum L1 anchor пропустив {{ $values.A.Value }} тижн(і) — weekly state-root не приземлявся >8 днів."
           description: "detect_missed_anchor_weeks! зафіксував gap>8днів між CONFIRMED anchor'ами (ARCH.66 звузив підрахунок на :confirmed). State-root тижня не запечатано на L1 (finality-деградація, не runtime-збій). Причини: RPC down / порожній ETH-баланс anchor-гаманця / контракт не задеплоєно / поллер не доводить до :confirmed. Один із 4 anchor-liveness сигналів (+ stuck-sent / manual-review / reverted). Звір EthereumAnchorWorker + EthereumAnchorConfirmationWorker логи + anchor-wallet баланс. 05_04 §5.1 / 06_08 §2.2."
           runbook_url: "docs/05_04_Ethereum_L1_State_Anchor.md"
         labels:

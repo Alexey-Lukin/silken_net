@@ -438,7 +438,7 @@ module SilkenNet
     # Chainlink oracle dispatch latency (histogram for percentile analysis)
     ORACLE_DISPATCH_DURATION = REGISTRY.histogram(
       :silkennet_oracle_dispatch_duration_seconds,
-      docstring: "Chainlink oracle dispatch latency in seconds",
+      docstring: "Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down)",
       buckets: [ 0.5, 1, 2.5, 5, 10, 30, 60 ]
     )
 

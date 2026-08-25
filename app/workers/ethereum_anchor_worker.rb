@@ -55,7 +55,14 @@ class EthereumAnchorWorker
       "cannot be retroactively computed — current state will be anchored as catch-up."
     )
 
-    SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL.increment
+    # 🔴 [INF.26] `by: missed_weeks`, не голий інкремент: докстрінг обіцяє «Total missed
+    # **weeks**», а величина обчислена рядком вище й до лічильника не доїжджала — тож
+    # пʼятитижнева прогалина рахувалась як ОДНА. І недолік незворотний: наступного тижня
+    # `last_anchor` уже свіжий, детекція не спрацює, і ті тижні не долічить ніхто.
+    # ⚠️ Вердикт алерту від цього НЕ змінюється (`sn-alert-anchor-stalled` гейтить на
+    # `> 0`) — змінюється придатність числа до питання «наскільки довго», яке саме й
+    # ставить людина, побачивши алерт. Саме тому фікс дешевий і безпечний.
+    SilkenNet::Metrics::ANCHOR_MISSED_WEEKS_TOTAL.increment(by: missed_weeks)
   rescue StandardError => e
     # Detection failure should not block anchoring
     Rails.logger.warn "⚠️ [EthereumAnchor] Missed anchor detection failed: #{e.message}"

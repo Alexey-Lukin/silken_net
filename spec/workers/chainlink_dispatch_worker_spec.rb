@@ -106,6 +106,43 @@ RSpec.describe ChainlinkDispatchWorker, type: :worker do
       expect(metric).to have_received(:observe).with(a_value > 0)
     end
 
+    # 🔴 [INF.26] Гістограма мусить бачити ПРОВАЛИ — інакше вона міряє «латентність
+    # диспатчів, що вдались», називаючись «dispatch latency». Ціна survivorship bias
+    # тут максимальна: деградований оракул, що таймаутить, не додає до p99 НІЧОГО,
+    # тобто панель показує здорову латентність саме під час аварії.
+    it "observes the latency of a FAILED dispatch too" do
+      service = instance_double(Chainlink::OracleDispatchService)
+      allow(Chainlink::OracleDispatchService).to receive(:new).with(telemetry_log).and_return(service)
+      allow(service).to receive(:dispatch!)
+        .and_raise(Chainlink::OracleDispatchService::DispatchError, "oracle timeout")
+
+      metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
+      allow(metric).to receive(:observe)
+
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Chainlink::OracleDispatchService::DispatchError)
+
+      expect(metric).to have_received(:observe).with(a_value > 0)
+    end
+
+    # ⊥ Дзеркальна межа, і без неї попередній пін штовхав би до «спостерігати завжди»:
+    # circuit-open відмовляє за мікросекунди й НЕ є латентністю оракула — ті семпли
+    # занизили б p99, тобто наш власний запобіжник малював би оракул швидшим, ніж він є.
+    it "does NOT observe when our own breaker refuses (that is not oracle latency)" do
+      allow_any_instance_of(described_class).to receive(:with_circuit_breaker)
+        .and_raise(Web3CircuitBreaker::CircuitOpenError, "Circuit OPEN")
+
+      metric = SilkenNet::Metrics::ORACLE_DISPATCH_DURATION
+      allow(metric).to receive(:observe)
+
+      expect {
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      }.to raise_error(Web3CircuitBreaker::CircuitOpenError)
+
+      expect(metric).not_to have_received(:observe)
+    end
+
     it "does not observe ORACLE_DISPATCH_DURATION when log already dispatched" do
       telemetry_log.update_columns(chainlink_request_id: "existing-req-id")
 

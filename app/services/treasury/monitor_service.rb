@@ -401,6 +401,23 @@ module Treasury
           SilkenNet::Metrics::ORACLE_BALANCE.set(result[:balance_raw], labels: labels)
         end
 
+        # 🔴 [INF.26] Той САМИЙ гард, що в сусіда — і асиметрія між ними була доказом
+        # дефекту, а не стилю. `check_balance`'s `rescue` віддає `balance_raw: nil` разом
+        # із `ratio: 0.0`, тож незахищений `set` писав нуль, НЕВІДРІЗНИМИЙ від «оракул
+        # справді порожній»: один RPC-таймаут пейджив ДВОМА правилами
+        # (`sn-alert-oracle-balance-critical` P0 + `…-low` P2) на гаманці, який може бути
+        # повний. Класична підміна виміру — показник хибний ЧЕРЕЗ ПРИЛАД.
+        #
+        # ⊕ Друга гілка того ж нуля: `ratio` рахується як `0.0` і коли поріг не
+        # налаштований (`min_threshold.zero?`) — тобто «не сконфігуровано» теж читалось
+        # як «критично». Обидва стани тепер МОВЧАТЬ на цьому gauge.
+        #
+        # ⚠️ Ціна названа: при збої gauge завмирає на останньому значенні, а не падає в
+        # нуль. Саме тому «не змогли прочитати» дістає ВЛАСНИЙ голос — лічильник
+        # `TREASURY_CHECK_ERRORS_TOTAL` (інкрементиться в тому ж `rescue`) і алерт на
+        # нього; інакше ми проміняли б гучну брехню на тиху.
+        next unless result[:balance_raw] && result[:min_threshold_raw].to_i.positive?
+
         SilkenNet::Metrics::ORACLE_BALANCE_RATIO.set(result[:ratio], labels: labels)
       end
     end

@@ -91,6 +91,37 @@ RSpec.describe Treasury::MonitorService do
         end
       end
 
+      # 🔴 [INF.26] Підміна виміру: `check_balance`'s rescue віддає `balance_raw: nil`
+      # РАЗОМ із `ratio: 0.0`, і незахищений `set` писав нуль, невідрізнимий від «оракул
+      # справді порожній» — тобто один RPC-таймаут пейджив ДВОМА balance-правилами на
+      # гаманці, який може бути повний. Асиметрія гарда з сусіднім `ORACLE_BALANCE` і
+      # була доказом дефекту, а не стилем.
+      it "does NOT write a zero ratio when the balance could not be READ" do
+        labels = { network: "polygon", signer: "minter" }
+        described_class.call
+        healthy = SilkenNet::Metrics::ORACLE_BALANCE_RATIO.get(labels: labels)
+        expect(healthy).to be_positive
+
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_raise(StandardError, "RPC timeout")
+
+        described_class.call
+
+        # Значення завмерло на останньому ВІДОМОМУ, а не впало в «критично».
+        expect(SilkenNet::Metrics::ORACLE_BALANCE_RATIO.get(labels: labels)).to eq(healthy)
+      end
+
+      # Друга половина того ж ліку: тиша не сміє бути СЛІПОЮ — «не змогли прочитати»
+      # дістає власний гучний канал, інакше ми проміняли б гучну брехню на тиху.
+      it "gives the unreadable state its own voice instead of a fabricated zero" do
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_raise(StandardError, "RPC timeout")
+        before_val = SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.values.values.sum
+
+        described_class.call
+
+        after_val = SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.values.values.sum
+        expect(after_val).to be > before_val
+      end
+
       it "monitors an aux signer once its activation-gated key is injected" do
         ENV["ORACLE_ETHERISC_PRIVATE_KEY"] = "0x" + "f" * 64
 

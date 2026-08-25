@@ -420,7 +420,7 @@ end
 | Metric | Labels | Призначення |
 |---|---|---|
 | `silkennet_lorenz_computation_duration_seconds` | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
-| `silkennet_oracle_dispatch_duration_seconds` | — | Chainlink oracle dispatch latency in seconds |
+| `silkennet_oracle_dispatch_duration_seconds` | — | Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down) |
 
 **Регенерація таблиці** (після зміни реєстру):
 ```bash
