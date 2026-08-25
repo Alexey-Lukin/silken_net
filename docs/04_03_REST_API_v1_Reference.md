@@ -1240,11 +1240,14 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | `maintenance_record[performed_at]` | DateTime | Час виконання |
 | `maintenance_record[labor_hours]` | Float | Витрачені людино-години |
 | `maintenance_record[parts_cost]` | Decimal | Вартість запчастин |
-| `maintenance_record[hardware_verified]` | Boolean | STM32 підтвердив стан |
 | `maintenance_record[latitude]` | Float | GPS широта |
 | `maintenance_record[longitude]` | Float | GPS довгота |
-| `maintenance_record[photos][]` | File | Фото (масив файлів, опційно) |
+| `maintenance_record[photos][]` | File | Фото (масив файлів). Опційно для більшості типів; **обовʼязково** для `repair`/`installation` (Evidence Protocol) і для `biomass_extraction` ([E.20] — заявка йде в зовнішній реєстр незворотно) → інакше **422** |
 | `maintenance_record[ews_alert_id]` | Integer | Прив'язка до EWS-тривоги (опційно) |
+
+⛔ **`hardware_verified` СВІДОМО не приймається** [UI.7] — прапорець «залізо підтвердило» має ЄДИНОГО легітимного писача, екшен `verify`, гейтований `#hardware_pulse_confirmed?` (вузол вийшов в ефір ПІСЛЯ `performed_at`). Клієнтський ключ робив його самоатестацією другого кліку. ⚠️ Рядок у цій таблиці жив довше за саму можливість — довідник обіцяв параметр, якого `permit` не приймає.
+
+⚠️ **`biomass_yield_kg` теж не приймається — і це НЕ присуд, а незакрита нога** ([`00_07`](00_07_Action_Plan_Tracker) E.20): поля немає ні в `permit`, ні у формі, при тому що модель вимагає його `presence` для `biomass_extraction`. Тобто вибір «Вилучення біомаси» сьогодні впирається в 422 про поле, якого клієнт надіслати не може; заявку заводять із консолі.
 
 ⛔ **`system_generated` СВІДОМО не приймається** — це ознака провенансу, яку ставлять лише машинні писачі (дім і перелік — [`04_01 §7`](04_01_Data_Models_and_Entities)). Вона звільняє запис від Evidence Protocol, тож у permit-списку означала б, що лісник знімає з себе вимогу фотодоказів одним ключем payload'а. Носій — request-приклад, mutation-verified [ARCH.91].
 
