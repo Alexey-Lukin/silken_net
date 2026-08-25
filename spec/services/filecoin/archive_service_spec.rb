@@ -6,10 +6,15 @@ require "rails_helper"
 RSpec.describe Filecoin::ArchiveService do
   let(:user) { create(:user) }
   let(:audit_log) do
+    # [SEC.18] Фікстура моделює РЕАЛЬНИЙ archive-шлях — money/MRV-лог від
+    # `BlockchainTransaction#record_audit_trail`. Доти тут стояв `update_settings`
+    # із фабричними `field/old_value/new_value`, тобто ops-лог, який `Auditable`
+    # свідомо НЕ архівує (`archive: false`, INF.22): спека цементувала сценарій,
+    # заборонений каноном, і сама ж робила його виглядом норми.
     create(:audit_log,
       user: user,
-      action: "update_settings",
-      metadata: { field: "critical_z", old_value: 100, new_value: 200 }
+      action: "blockchain_tx_confirm",
+      metadata: { from: "sent", to: "confirmed", token_type: "SCC", amount: "12.5", tx_hash: "0xabc123" }
     )
   end
 
@@ -39,8 +44,11 @@ RSpec.describe Filecoin::ArchiveService do
 
         content = expected_body[:pinataContent]
         expect(content[:chain_hash]).to eq(audit_log.chain_hash)
-        expect(content[:action]).to eq("update_settings")
-        expect(content[:metadata]).to eq("field" => "critical_z", "old_value" => 100, "new_value" => 200)
+        expect(content[:action]).to eq("blockchain_tx_confirm")
+        expect(content[:metadata]).to eq(
+          "from" => "sent", "to" => "confirmed",
+          "token_type" => "SCC", "amount" => "12.5", "tx_hash" => "0xabc123"
+        )
       end
 
       it "embeds a deterministic content_cid witness in the payload (E.60)" do
@@ -92,6 +100,38 @@ RSpec.describe Filecoin::ArchiveService do
         result = described_class.new(audit_log).archive!
 
         expect(result).to be_nil
+      end
+    end
+
+    # [SEC.18 / DPIA M6 проти R7] Стеля на вміст того, що пінується ПУБЛІЧНО.
+    # Це гейт-ЗАБОРОНА: його перемога Є порожньою множиною (сьогодні недекларованих
+    # ключів у проді нуль), тож живість йому дає ДЕТЕКТОР — позитивний контроль поруч
+    # із негативним, — а не популяція. Обидві половини несучі: без першої недекларований
+    # ключ їде в незворотний пін, без другої гейт червонить на законному money-лозі,
+    # і найдешевшою реакцією на це стало б його послаблення.
+    context "when metadata carries a key nobody declared [SEC.18]" do
+      before { stub_pinata_success }
+
+      it "refuses to pin it, naming the offending keys" do
+        audit_log.update_column(:metadata, { "tx_hash" => "0xabc123", "reporter_email" => "forester@example.com" })
+
+        expect {
+          described_class.new(audit_log).archive!
+        }.to raise_error(Filecoin::ArchiveService::UndeclaredMetadataError, /reporter_email/)
+
+        expect(audit_log.reload.ipfs_cid).to be_nil
+      end
+
+      it "still pins the FULL declared money-path shape (proves it is not over-broad)" do
+        audit_log.update_column(:metadata, AuditLog::ARCHIVED_METADATA_KEYS.index_with { |key| "v-#{key}" })
+
+        expect(described_class.new(audit_log).archive!).to eq("QmTestCid12345")
+      end
+
+      it "pins an empty metadata hash without complaint" do
+        audit_log.update_column(:metadata, {})
+
+        expect(described_class.new(audit_log).archive!).to eq("QmTestCid12345")
       end
     end
 
@@ -192,7 +232,8 @@ RSpec.describe Filecoin::ArchiveService do
     # `belongs_to :organization` без `optional:` інакше не дасть його зберегти.
     context "when the audit log belongs to the GLOBAL system chain (no organization)" do
       it "omits the telemetry summary instead of scooping org-less clusters" do
-        global_log = create(:audit_log, user: user, organization: nil, action: "system_parameter_changed")
+        global_log = create(:audit_log, user: user, organization: nil,
+          action: "system_parameter_changed", metadata: {})
         orphan_cluster = create(:cluster, organization: user.organization)
         Cluster.where(id: orphan_cluster.id).update_all(organization_id: nil)
         create(:ai_insight, :daily_health_summary,

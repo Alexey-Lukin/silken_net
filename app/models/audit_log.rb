@@ -30,6 +30,19 @@ class AuditLog < ApplicationRecord
   # лише архівні поля (Filecoin pin ставить ipfs_cid post-create). delete_all/
   # update_all обходять колбеки — org-каскад закрито restrict_with_error.
   ARCHIVAL_MUTABLE_COLUMNS = %w[ipfs_cid archive_requested_at updated_at].freeze
+
+  # [SEC.18 / DPIA захід M6 проти ризику R7] Стеля на вміст `metadata`, що їде в
+  # ПУБЛІЧНИЙ пін: запінене не відкликається, тож персональне поле, потрапивши сюди,
+  # стає нестиральним фізично. Перелік — ДЕКЛАРАЦІЯ людини (той самий принцип, яким
+  # стоїть PII-реєстр `04_01 §11`), а не вивід регексу: чи є значення персональним,
+  # форма ключа не каже. Сьогодні archive-шлях має рівно одного писача —
+  # `BlockchainTransaction#record_audit_trail`; `Auditable` дефолтить `archive: false`
+  # свідомо (security/ops-метадані на публічний IPFS не йдуть — INF.22).
+  # ⚠️ Стеля самої стелі: судяться КЛЮЧІ, ніколи ЗНАЧЕННЯ — `error` несе текст чужого
+  # RPC/винятку, і його звуження є окремим питанням (`00_07` SEC.18).
+  ARCHIVED_METADATA_KEYS = %w[
+    from to token_type amount tx_hash error telemetry_merkle_root
+  ].freeze
   before_update :forbid_business_field_mutation!
   before_destroy { raise ActiveRecord::ReadOnlyRecord, "AuditLog append-only [ARCH.57]" }
 

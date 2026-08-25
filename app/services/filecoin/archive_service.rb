@@ -13,6 +13,10 @@ module Filecoin
   # криптографічно підтверджений звіт через Filecoin Explorer.
   # =========================================================================
   class ArchiveService
+    # [SEC.18 / DPIA M6] Ключ metadata, не оголошений у `AuditLog::ARCHIVED_METADATA_KEYS`,
+    # у публічний пін не їде — перелік легальних ключів веде людина, не регекс.
+    class UndeclaredMetadataError < StandardError; end
+
     # Pinata IPFS pinning endpoint (сумісний з Web3.storage та іншими шлюзами)
     # Може бути перевизначений через ENV для інших середовищ
     PINATA_API_URL = ENV.fetch("FILECOIN_PINNING_API_URL", "https://api.pinata.cloud/pinning/pinJSONToIPFS")
@@ -81,12 +85,28 @@ module Filecoin
     # Pinata-обгортку (pinataContent/pinataMetadata) додає pin_json!.
     def build_content
       content = self.class.content_attrs(@audit_log).merge(
-        metadata: @audit_log.metadata,
+        metadata: declared_metadata,
         telemetry_summary: build_telemetry_summary,
         archived_at: Time.current.iso8601
       )
       content[:content_cid] = self.class.content_cid(content)
       content
+    end
+
+    # [SEC.18 / DPIA M6 проти R7] Межа незворотності. Відмова тут ГУЧНА свідомо:
+    # тихий стрип змінив би сам доказ, а тихий пропуск — незворотний, тоді як raise
+    # нічого не губить (`archive_requested_at` лишається, `FilecoinReconcileWorker`
+    # підбирає, `FILECOIN_REPIN_TOTAL` росте). Дім переліку — модель, бо факт про
+    # аудит-запис, а не про транспорт.
+    def declared_metadata
+      metadata = @audit_log.metadata || {}
+      undeclared = metadata.keys.map(&:to_s) - AuditLog::ARCHIVED_METADATA_KEYS
+      return metadata if undeclared.empty?
+
+      raise UndeclaredMetadataError,
+        "🛑 [SEC.18] AuditLog ##{@audit_log.id}: недекларовані ключі metadata для " \
+        "публічного піна — #{undeclared.sort.join(', ')}. Оголоси їх у " \
+        "AuditLog::ARCHIVED_METADATA_KEYS (з підставою) або не архівуй цей шлях."
     end
 
     # Збирає добове зведення телеметрії для організації на дату аудит-логу.
