@@ -62,6 +62,32 @@ class ParametricInsurance < ApplicationRecord
   # неї не «недоробка», а кандидат, що висить вічно.
   enum :trigger_event, { critical_fire: 0, extreme_drought: 1 }
 
+  # 🔴 [INS.1] Дім відповідності ПЕРИЛ ⟷ ТИП АЛЕРТУ, що його підтверджує.
+  #
+  # Без цієї пари Trigger-2 гейтувався КЛАСТЕРОМ: `awaiting_independent_confirmation?`
+  # питав «чи є в кластері хоч якийсь verified перил-алерт», не читаючи `trigger_event`
+  # поліса. А `satellite_status: :verified` пише рівно ОДИН сайт у дереві
+  # (`Dclimate::VerificationService#handle_fire_confirmed`), і він fire-only за гардом
+  # `alert_type_fire_detected?`. Отже поліс від ПОСУХИ виплачувався б за доказом
+  # ПОЖЕЖІ — чужий перил як підстава для власних грошей.
+  #
+  # ⚠️ Це дзеркало вже ратифікованого peril-honest routing (`05_05 §4`): посуху не
+  # таврують фраудом — і так само не ОПЛАЧУЮТЬ чужим доказом. Обидві половини
+  # стверджують те саме: детектор пожежі свідчить лише про пожежу.
+  #
+  # ⛔ Додаючи перил, додай сюди рядок — інакше гейт віддасть `nil` і поліс
+  # триматиметься вічно (fail-closed, але мовчки). Перил без арм-сутності вже
+  # заборонено вище; ця мапа — друга половина тієї ж заборони, з боку виплати.
+  PERIL_CONFIRMING_ALERT = {
+    "critical_fire" => :fire_detected,
+    "extreme_drought" => :severe_drought
+  }.freeze
+
+  # Тип EwsAlert, чиє незалежне підтвердження рухає виплату САМЕ цього поліса.
+  def confirming_alert_type
+    PERIL_CONFIRMING_ALERT[trigger_event]
+  end
+
   # Тип токена виплати — обирається інвестором при підписанні контракту
   enum :token_type, { carbon_coin: 0, forest_coin: 1 }, prefix: true
 

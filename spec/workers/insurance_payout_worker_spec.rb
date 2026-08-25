@@ -250,6 +250,38 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
 
         expect(BlockchainMintingService).not_to have_received(:call)
       end
+
+      # 🔴 [INS.1 cross-peril] Гейт мусить питати про перил ЦЬОГО поліса, а не «чи є в
+      # кластері хоч якийсь verified-алерт». Доти фільтр брав ОБИДВА перил-типи, тож поліс
+      # від ПОСУХИ платився б за доказом ПОЖЕЖІ — а `:verified` пише рівно один сайт у
+      # дереві, і він fire-only. Це дзеркало ратифікованого peril-honest routing: посуху
+      # не таврують фраудом (`05_05 §4`) — і так само не оплачують чужим доказом.
+      context "when the policy's peril differs from the confirmed one" do
+        let(:drought_policy) do
+          create(:parametric_insurance, :drought, cluster: cluster, status: :triggered,
+                                                  payout_amount: 100, token_type: :carbon_coin)
+        end
+
+        it "holds a drought policy even when a FIRE alert is satellite_verified" do
+          confirmation.destroy
+          create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified)
+
+          described_class.new.perform(drought_policy.id)
+
+          expect(BlockchainMintingService).not_to have_received(:call)
+          expect(drought_policy.reload).to be_status_triggered
+        end
+
+        # Позитивна половина, без якої попередній приклад зелений і на гейті, що тримає
+        # ВСЕ: fire-поліс на fire-доказі мусить проходити далі.
+        it "still pays a fire policy on its own verified fire alert" do
+          create(:ews_alert, :fire, cluster: cluster, tree: tree, satellite_status: :verified)
+
+          expect {
+            described_class.new.perform(insurance.id)
+          }.to change(BlockchainTransaction, :count).by(1)
+        end
+      end
     end
 
     it "returns early when no trees exist in cluster" do

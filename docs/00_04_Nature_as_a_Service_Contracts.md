@@ -294,7 +294,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 **Guard clauses перед виплатою:**
 - `required_confirmations` (default: 3) незалежних D-MRV підтверджень (Trigger-1 oracle-consensus).
 - `ParametricInsurance.status = :active` (ще не тригернуто раніше).
-- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 (fire — dClimate FIRMS-супутник; посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard).
+- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 **власного перилу поліса** (fire — dClimate FIRMS-супутник; посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard). ⚠️ Практичний наслідок для клієнта, який варто називати в умовах: поліс від посухи сьогодні **не має шляху до авто-виплати** — його рухає лише людський Field-Audit, доки не приземлиться реальне drought-джерело.
 - **[INS.1] No-data guard:** активні дерева Є, нуль AiInsight (катастрофа знищила сенсори) → `escalate_no_data_field_audit!` (Field Audit), а НЕ тихий `damage_ratio = 0` («не карати жертву», [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
 - Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → інертно до DAO/founder-активації).
 

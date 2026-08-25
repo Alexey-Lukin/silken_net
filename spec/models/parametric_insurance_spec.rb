@@ -27,6 +27,26 @@ RSpec.describe ParametricInsurance, type: :model do
       expect(insurance).to respond_to(:extreme_drought?)
     end
 
+    # 🔴 [INS.1] Інваріант замість рантайм-гарда. Виплату рухає підтвердження ВЛАСНОГО
+    # перилу, тож перил без рядка в мапі мовчки перестав би бути виплатним (fail-closed
+    # структурно — `where(alert_type: nil)` не матчить нічого). Гард у воркері був би
+    # мертвою гілкою; тут та сама помилка ловиться за ПРИЧИНОЮ і в CI.
+    # ⚠️ Пін НАВМИСНО деривує очікування з самого enum'а, а не перелічує пару вручну:
+    # рукописний список був би третьою копією й розійшовся б тихо — рівно тим способом,
+    # проти якого цей приклад ставиться.
+    it "maps EVERY insured peril to the alert type that confirms it" do
+      unmapped = described_class.trigger_events.keys - described_class::PERIL_CONFIRMING_ALERT.keys
+
+      expect(unmapped).to be_empty,
+                          "перил без типу підтвердження ніколи не дістане авто-виплати: #{unmapped.join(', ')}"
+    end
+
+    it "points every mapped peril at a real EwsAlert type" do
+      strangers = described_class::PERIL_CONFIRMING_ALERT.values.map(&:to_s) - EwsAlert.alert_types.keys
+
+      expect(strangers).to be_empty, "неіснуючий alert_type у мапі перилів: #{strangers.join(', ')}"
+    end
+
     it "defines token_type values with prefix" do
       insurance = build(:parametric_insurance)
       expect(insurance).to respond_to(:token_type_carbon_coin?)

@@ -27,7 +27,7 @@ class InsurancePayoutWorker
     # підтвердження (dClimate satellite fire/drought). Кандидат, озброєний AI-оракулом
     # (Trigger-1), тримається, поки незалежне джерело не підтвердить — закриває basis-risk
     # (не платимо лише за нашим сигналом, 05_05 §6).
-    return if awaiting_independent_confirmation?(insurance.cluster)
+    return if awaiting_independent_confirmation?(insurance)
 
     organization = insurance.cluster.organization
 
@@ -208,7 +208,28 @@ class InsurancePayoutWorker
   # Повертає true (ТРИМАТИ виплату) якщо: жодного незалежного перил-алерту (basis-risk guard); unverified
   # (ще не підтверджено); inconclusive (потрібен ручний DAO / Field-Audit — сюди йдуть УСІ не-пожежні
   # перили: fire-супутник їх не адьюдикує, Dclimate::VerificationService).
-  def awaiting_independent_confirmation?(cluster)
+  def awaiting_independent_confirmation?(insurance)
+    cluster = insurance.cluster
+
+    # 🔴 [INS.1] Гейт питає про ПЕРИЛ ЦЬОГО ПОЛІСА, а не «чи є в кластері хоч якийсь
+    # verified-алерт». Доти фільтр брав ОБИДВА перил-типи й `trigger_event` не читав —
+    # а `:verified` пише лише fire-гілка, тож поліс від посухи платився б за доказом
+    # пожежі. Дім пари — `ParametricInsurance::PERIL_CONFIRMING_ALERT`.
+    # ⛔ Рантайм-гарда на «перил без рядка в мапі» тут НЕМА свідомо: він був би мертвою
+    # гілкою (обидва члени enum'а покриті, `trigger_event` має `validates presence`), а
+    # мертвий гард лише імітує обачність. Причину ловить інваріант
+    # `PERIL_CONFIRMING_ALERT покриває кожен trigger_event` у спеці моделі — тобто в CI,
+    # а не в проді. ⊕ Навіть якби мапа розійшлась, поведінка лишається fail-closed
+    # СТРУКТУРНО: `nil` → `where(alert_type: nil)` → `none?` → HOLD.
+    confirming_type = insurance.confirming_alert_type
+
+    # ⚖️ **Периметри двох половин РІЗНІ, і асиметрія тут несуча.**
+    # ТРИМАЮТЬ — усі перил-алерти кластера (широко): HOLD оборотний, тож чужа
+    # непевність цілком може відкласти виплату. ПЛАТИТЬ — лише verified-алерт
+    # ВЛАСНОГО перилу (вузько): виплата необоротна, тож чужий доказ підставою не є.
+    # Симетричне звуження обох половин було б хибним — воно зняло б працюючий гард
+    # (fire-поліс перестав би чекати на непідтверджену посуху), тобто заплатило б за
+    # фікс послабленням. Дім пари — `ParametricInsurance::PERIL_CONFIRMING_ALERT`.
     peril_alerts = cluster.ews_alerts
                           .where(alert_type: [ :fire_detected, :severe_drought ])
                           .where(status: :active)
@@ -228,13 +249,15 @@ class InsurancePayoutWorker
       return true
     end
 
-    # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням. `:rejected_fraud` буває лише для
-    # fire-алерту (заявлено пожежу, супутник вогню не бачить) — ВІДМОВА, не confirmation → hold.
-    # Не-пожежний перил іде у :inconclusive (Field Audit), НІКОЛИ rejected_fraud.
-    # ⚠️ Такий перил сьогодні ОДИН (`severe_drought`), тож ця гілка має рівно один
-    # вхід — і поки він єдиний, «HOLD до людського аудиту» = стан за замовчуванням
-    # для всього, що не пожежа.
-    return false if peril_alerts.exists?(satellite_status: :verified)
+    # [INS.1] Платимо ЛИШЕ за VERIFIED незалежним підтвердженням ВЛАСНОГО перилу.
+    # `:rejected_fraud` буває лише для fire-алерту (заявлено пожежу, супутник вогню не
+    # бачить) — ВІДМОВА, не confirmation → hold. Не-пожежний перил іде у :inconclusive
+    # (Field Audit), НІКОЛИ rejected_fraud.
+    # ⚠️ Наслідок звуження, який треба бачити прямо: `severe_drought`-алерт НЕ МАЄ
+    # у дереві жодного писача `:verified`, тож поліс від посухи структурно недосяжний
+    # для авто-виплати доти, доки не приземлиться реальне drought-джерело (S3.2 /
+    # UNI.12). Це не регресія — це та сама діра, яку доти ХОВАВ чужий доказ.
+    return false if peril_alerts.exists?(alert_type: confirming_type, satellite_status: :verified)
 
     Rails.logger.info "🛡️ [Insurance] Кластер ##{cluster.id}: незалежний алерт є, але НЕ verified (можливо rejected) — тримаємо, payout НЕ запущено."
     true

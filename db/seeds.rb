@@ -93,7 +93,28 @@ system_params = [
   { key: "insurance_aggregate_payout_cap_scc", value: "0", value_type: "integer", category: "insurance",
     min_value: 0, max_value: 10_000_000_000, description: "[INS.2] 24h correlated-event cap on Internal-mint insurance payouts (0=off)" },
   { key: "insurance_reserve_adequacy_ratio", value: "0", value_type: "decimal", category: "insurance",
-    min_value: 0, max_value: 1000, description: "[INS.2] Max ratio of 30d Internal insurance-mint to DAO_TREASURY reserve (0=off)" }
+    min_value: 0, max_value: 1000, description: "[INS.2] Max ratio of 30d Internal insurance-mint to DAO_TREASURY reserve (0=off)" },
+  # [INS.1] Майстер-прапор параметричного оракула. Доти рядка НЕ БУЛО, хоча `05_06 §7`
+  # називав його серед seed-параметрів — тобто «фліп» був не тумблером, а створенням
+  # запису з консолі. 🔴 І це не косметика: `SystemParameter.current` кешує ПРОМАХ
+  # (`MISS_SENTINEL`) на 24 год, тож інжект повз модель лишив би прапор мертвим до доби
+  # без жодної помилки. Засіяний `false` робить фліп звичайним `update` з інвалідацією.
+  { key: "parametric_insurance_oracle_enabled", value: "false", value_type: "boolean", category: "insurance",
+    description: "[INS.1] Kill-switch дуального оракула: false → Trigger-1 нікого не озброює й payout-воркер no-op" },
+  # ⊕ Три сусіди того самого класу, виміряні разом із INS.1-прапором (2026-08-25):
+  # живий читач у коді ⊥ жодного рядка в seeds. Усі три — ІНЕРТНІ ВАЖЕЛІ, чий фліп є
+  # подією (DAO-активація uplift'у · перехід Solana на батчі · калібрування тиші), тож
+  # «немає рядка» означало «фліп = створення запису з консолі», з тією самою
+  # 24-годинною пасткою кешованого промаху. Значення дослівно дорівнюють кодовим
+  # дефолтам — поведінка не змінюється, змінюється ДОСЯЖНІСТЬ важеля.
+  # ⚠️ Гейт `system_parameter_delivery_spec` цю вісь не бачить за оголошеною стелею:
+  # він судить «засіяне → читається», ніколи «читане → засіяне».
+  { key: "slash_cause_uplift_enabled", value: "false", value_type: "boolean", category: "slashing",
+    description: "[SLASH-1] DAO-активація penalty_factor-uplift; false → комбінатор причин інертний" },
+  { key: "solana_batch_threshold_usdc", value: "0", value_type: "decimal", category: "minting",
+    min_value: 0, max_value: 1_000_000, description: "Поріг переходу Solana-виплат з per-event на погодинні батчі (0=per-event)" },
+  { key: "tree_silence_threshold_hours", value: "24", value_type: "integer", category: "alerts",
+    min_value: 1, max_value: 720, description: "Скільки годин тиші дерева до field_audit-ескалації (дзеркало Tree::SILENCE_THRESHOLD)" }
 ]
 
 system_params.each do |attrs|
