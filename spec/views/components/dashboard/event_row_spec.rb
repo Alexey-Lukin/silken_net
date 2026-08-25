@@ -38,14 +38,14 @@ RSpec.describe Dashboard::EventRow do
 
   # 🔴 [TEST.12] Грошові рядки будуються РЕАЛЬНИМ `new`, а не `.allocate` +
   # сингլетонами: `#ticker` і `#burn?` ВИВОДЯТЬСЯ з колонок (`token_type`,
-  # `sourceable_type`), тож фікстура, що оголошувала б їх окремими полями, описувала
+  # `direction`), тож фікстура, що оголошувала б їх окремими полями, описувала
   # транзакцію, яку неможливо побудувати — і саме так тут роками жив пін, що
   # стверджував «Minted» для спалення. Клас ідентичності `case/when` незбережений
   # `new` тримає так само добре, як `allocate`.
-  def money_row(token_type: :carbon_coin, amount: "0.005", wallet: nil, cluster: nil, sourceable_type: nil)
+  def money_row(token_type: :carbon_coin, amount: "0.005", wallet: nil, cluster: nil, direction: "mint")
     BlockchainTransaction.new(
       token_type: token_type, amount: amount, wallet: wallet, cluster: cluster,
-      sourceable_type: sourceable_type, created_at: 1.minute.ago
+      direction: direction, created_at: 1.minute.ago
     )
   end
 
@@ -143,10 +143,11 @@ RSpec.describe Dashboard::EventRow do
       tx.define_singleton_method(:amount) { "12.50" }
       tx.define_singleton_method(:to_address) { to_address }
       tx.define_singleton_method(:sourceable) { pi }
-      # [ARCH.101] `event_color` тепер читає й деривацію напрямку; `.allocate`
-      # вимагає стабити КОЖНЕ читане поле (04_06 §A.2 10б) — чесна колонка
-      # insurance-рядка, тож `burn?` віддає false.
-      tx.define_singleton_method(:sourceable_type) { "ParametricInsurance" }
+      # [ARCH.101 → ARCH.95] `event_color` читає НАПРЯМОК, і після ARCH.95 це
+      # колонка `direction`, а не деривація з `sourceable_type`. `.allocate`
+      # вимагає стабити КОЖНЕ читане поле (04_06 §A.2 10б); чесний напрямок
+      # insurance-виплати — мінт, тож `burn?` віддає false.
+      tx.define_singleton_method(:direction) { "mint" }
       tx.define_singleton_method(:created_at) { 1.minute.ago }
       tx
     end
@@ -176,14 +177,14 @@ RSpec.describe Dashboard::EventRow do
     end
   end
 
-  # 🔴 НАПРЯМОК не є полем — він деривується з `sourceable_type`, і знак `amount`
+  # 🔴 НАПРЯМОК — це колонка `direction` [ARCH.95], а НЕ знак `amount`: той
   # його НЕ видає (slash-інтент пишеться ДОДАТНИМ). Доти обидва приклади нижче
   # друкувались «⬢ Minted … SCC», тобто екран стверджував емісію на спаленні.
   describe "BlockchainTransaction that is a slash burn" do
     it "names the burn and points the arrow away from the tree that paid" do
       html = render_component(
         event: money_row(amount: "3.0", wallet: tree_wallet("SNET-0BADCAFE"),
-                         sourceable_type: "NaasContract")
+                         direction: "burn")
       )
       expect(html).to include("Burned 3.0 SCC ← SNET-0BADCAFE")
       expect(html).not_to include("Minted")
@@ -195,7 +196,7 @@ RSpec.describe Dashboard::EventRow do
     it "paints the burn with the danger accent, not the neutral text token" do
       html = render_component(
         event: money_row(amount: "3.0", wallet: tree_wallet("SNET-0BADCAFE"),
-                         sourceable_type: "NaasContract")
+                         direction: "burn")
       )
       expect(html).to include("text-status-danger-accent")
     end
@@ -203,7 +204,7 @@ RSpec.describe Dashboard::EventRow do
     it "names the CLUSTER when the last tree is gone and the row carries no wallet" do
       html = render_component(
         event: money_row(amount: "3.0", cluster: Cluster.new(name: "Карпати-7"),
-                         sourceable_type: "NaasContract")
+                         direction: "burn")
       )
       expect(html).to include("Burned 3.0 SCC ← Карпати-7")
       expect(html).not_to include("System")

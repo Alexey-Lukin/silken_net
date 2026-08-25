@@ -13,13 +13,13 @@ RSpec.describe Wallets::TransactionRow do
   # типах токена. Голий `.new` замість фабрики свідомо: фабрика тягне
   # `wallet → tree → cluster → organization`, чого рядку таблиці не треба.
   def mock_tx(token_type: "carbon_coin", status: "confirmed", amount: "0.005",
-              tx_hash: "0xabcdef1234567890abcdef", sourceable_type: nil)
+              tx_hash: "0xabcdef1234567890abcdef", direction: "mint")
     tx = BlockchainTransaction.new(
       token_type: token_type,
       status: status,
       amount: amount,
       tx_hash: tx_hash,
-      sourceable_type: sourceable_type,
+      direction: direction,
       created_at: Time.current
     )
     tx.id = 42
@@ -32,7 +32,7 @@ RSpec.describe Wallets::TransactionRow do
   # тож include не проходить через сусідній вузол.
   describe "direction sign and loudness [ARCH.101]" do
     it "prints a burn as a NEGATIVE amount with the danger accent" do
-      html = render_component(tx: mock_tx(sourceable_type: "NaasContract"))
+      html = render_component(tx: mock_tx(direction: "burn"))
       expect(html).to include("-0.005")
       expect(html).to include("text-status-danger-accent")
     end

@@ -31,8 +31,12 @@ module Wallets
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".network") }
             p(class: "text-gaia-text-strong") { t(".polygon_mainnet") }
           end
-          # [ARCH.88] Усі три величини нижче — БАЛИ росту (locked/available/esg живуть
-          # у тій самій колонковій родині, що й `balance`), тож тікер монети знято.
+          # [ARCH.88] Дві величини нижче — БАЛИ росту (locked/available живуть у тій
+          # самій колонковій родині, що й `balance`), тож тікер монети там знято.
+          # 🔴 [ARCH.95] `esg_retired` із цієї трійки ВИБУВ: він рахує погашені МОНЕТИ,
+          # і саме тому несе власний тікер. Доти цей коментар стверджував «усі три»,
+          # а суфікс друкував `GP` над величиною, яку `00_04` двічі називає SCC —
+          # тобто екран сперечався з юр-домом, що росте в MSA/SLA.
           div(class: "pt-3 border-t border-gaia-border") do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".locked_balance") }
             p(class: "text-status-warning-text") { "#{formatted_points(@wallet.locked_balance)} #{t('.unit')}" }
@@ -43,7 +47,7 @@ module Wallets
           end
           div do
             p(class: "text-gaia-text-muted mb-1 uppercase") { t(".esg_retired") }
-            p(class: "text-gaia-text-muted") { "#{formatted_points(@wallet.esg_retired_balance)} #{t('.unit')}" }
+            p(class: "text-gaia-text-muted") { "#{formatted_amount(@wallet.esg_retired_balance)} #{t('.coin_unit')}" }
           end
         end
       end

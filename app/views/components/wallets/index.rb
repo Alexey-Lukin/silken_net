@@ -80,7 +80,9 @@ module Wallets
               t(".locked_label", amount: locked)
             end
           end
-          retired = formatted_points(wallet.esg_retired_balance)
+          # [ARCH.95] Погашене — МОНЕТИ (`formatted_amount`, ARCH.89); сусідній
+          # `locked` рядком вище лишається балами.
+          retired = formatted_amount(wallet.esg_retired_balance)
           if retired > 0
             div(class: "mt-1 text-micro font-mono text-gaia-text-muted") do
               t(".retired_label", amount: retired)

@@ -88,12 +88,22 @@ RSpec.describe Wallets::MetadataFrame do
       expect(html).to include("5.25")
     end
 
-    # [ARCH.88] Усі три величини цієї картки — БАЛИ росту; тікер монети тут був
-    # завищенням у 10 000×. Негативна половина несуча: без неї пін пройшов би
-    # і на поверненому «SCC».
-    it "shows GP unit labels, never the coin ticker" do
+    # [ARCH.88 → ARCH.95] Картка несе ДВІ шкали, і саме тому пін тут не про
+    # «яка одиниця присутня», а про те, що кожна стоїть при СВОЇЙ величині.
+    # Доти приклад звався «never the coin ticker» і забороняв «SCC» на всій картці
+    # — тобто цементував твердження «усі три величини балові», яке присуд ARCH.95
+    # спростував: `esg_retired_balance` рахує погашені МОНЕТИ.
+    it "labels the points scales as GP and the retired coins as SCC" do
       expect(html).to include("GP")
-      expect(html).not_to include("SCC")
+      expect(html).to include("SCC")
+    end
+
+    # Негативна половина, що пережила присуд і несе його: тікер монети не сміє
+    # заповзти на балові рядки — саме там він і був би завищенням у 10 000×.
+    it "never prints the coin ticker beside a points balance" do
+      points_rows = html.scan(%r{<p[^>]*>\s*[\d.]+\s*GP\s*</p>})
+      expect(points_rows.size).to eq(2)
+      expect(points_rows.join).not_to include("SCC")
     end
   end
 

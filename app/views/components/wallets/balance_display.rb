@@ -35,7 +35,9 @@ module Wallets
           end
           div do
             span(class: "text-gaia-text-muted uppercase") { "#{t('.esg_retired')} " }
-            span(class: "text-gaia-text-muted") { formatted_points(@wallet.esg_retired_balance) }
+            # [ARCH.95] МОНЕТИ, не бали — тому `formatted_amount` (ARCH.89), а не
+            # `formatted_points`: сусідні величини цього ж блоку лишаються баловими.
+            span(class: "text-gaia-text-muted") { formatted_amount(@wallet.esg_retired_balance) }
           end
         end
         p(class: "mt-4 text-xs font-mono text-gaia-text-muted") { t(".locked_for", owner: @wallet.tree&.did || @wallet.organization&.name) }

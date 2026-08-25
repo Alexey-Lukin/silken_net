@@ -252,7 +252,7 @@ RSpec.describe "[UI.3] Колекційні сторінки: гігієна з�
       create_list(:tree, 2, cluster: cluster).each do |tree|
         create(:ews_alert, tree: tree, cluster: cluster, status: :active)
         create(:blockchain_transaction, wallet: tree.wallet,
-                                        sourceable: create(:naas_contract, organization: organization, cluster: cluster))
+                                        sourceable: create(:naas_contract, organization: organization, cluster: cluster), direction: :burn)
         create(:maintenance_record, user: user, maintainable: tree)
       end
     end

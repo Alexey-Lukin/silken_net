@@ -31,8 +31,16 @@ require "rails_helper"
 #     Замість вдаваної перевірки — виміряний запас: 91 файл проти порога 50 (×1,8).
 #     Його справжній ризик не в падінні лічби, а в застарілому глобі.
 RSpec.describe "Points precision One-Home [ARCH.88]", type: :model do
+  # 🔴 [ARCH.95, 2026-08-25] `esg_retired_balance` ВИБУВ із цієї множини — і це не
+  # послаблення гейта, а виправлення його ПРЕДМЕТА. Колонка рахує погашені МОНЕТИ
+  # (присуд про одиницю: `00_04` двічі каже SCC, `retire(uint256)` приймає токени),
+  # тож її дім точності — `formatted_amount`/`AMOUNT_PRECISION` [ARCH.89], а не
+  # `formatted_points`. Лишити її тут означало б, що гейт червонить КОРЕКТНИЙ рендер
+  # — той самий клас хибного позитиву, від якого застерігає власна стеля нижче.
+  # Друга половина, без якої зміна була б тихою: точність там ТА САМА (2), тож
+  # захист від «трьох чисел на одне питання» не слабшає — міняється лише дім.
   def self.point_fields
-    %w[balance locked_balance available_balance esg_retired_balance]
+    %w[balance locked_balance available_balance]
   end
 
   # `wallet.balance.to_f.round(4)` · `@wallet.locked_balance.round(2)` ·

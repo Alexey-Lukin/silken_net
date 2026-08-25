@@ -23,6 +23,7 @@ en:
     index_title: Treasury Matrix
     metadata_frame:
       available_balance: Available Balance
+      coin_unit: SCC
       esg_retired: ESG Retired
       locked_balance: Locked Balance
       network: Network

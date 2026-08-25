@@ -23,6 +23,7 @@ lv:
     index_title: Kases matrica
     metadata_frame:
       available_balance: Pieejamais atlikums
+      coin_unit: SCC
       esg_retired: ESG izņemts
       locked_balance: Bloķētais atlikums
       network: Tīkls

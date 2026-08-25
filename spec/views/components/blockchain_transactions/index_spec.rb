@@ -29,7 +29,7 @@ RSpec.describe BlockchainTransactions::Index do
   def mock_transaction(id: 1, amount: "0.005", status: "confirmed", token_type: "carbon_coin",
                        tx_hash: "0xabcdef1234567890abcdef1234567890abcdef12",
                        blockchain_network: "evm", wallet_tree_did: "SNET-00000042",
-                       has_wallet: true, cluster_name: nil, sourceable_type: nil)
+                       has_wallet: true, cluster_name: nil, direction: "mint")
     tx = BlockchainTransaction.new(
       amount: amount,
       status: status,
@@ -37,7 +37,7 @@ RSpec.describe BlockchainTransactions::Index do
       tx_hash: tx_hash,
       blockchain_network: blockchain_network,
       cluster: cluster_name && Cluster.new(name: cluster_name),
-      sourceable_type: sourceable_type,
+      direction: direction,
       created_at: Time.current
     )
     tx.id = id
@@ -96,7 +96,7 @@ RSpec.describe BlockchainTransactions::Index do
     # [ARCH.101 ⚖️ 08-20] Знак деривується з `#burn?`; колір на цій чорній панелі
     # свідомо чекає UI.1-міграції домену (світла тема: accent на чорному 3.9 < 4.5).
     it "prints a burn as a NEGATIVE amount [ARCH.101]" do
-      txs = [ mock_transaction(sourceable_type: "NaasContract") ]
+      txs = [ mock_transaction(direction: "burn") ]
       rendered = render_index(transactions: txs, pagy: pagy)
       expect(rendered).to include("-0.005 SCC")
     end

@@ -18,11 +18,11 @@ class DashboardEventRowPreview < Lookbook::Preview
   end
 
   # @label Blockchain Burn Event (slashing)
-  # @notes Direction is DERIVED from `sourceable_type`, never from the sign of
+  # @notes Direction is the `direction` COLUMN [ARCH.95], never the sign of
   #   `amount` — a slash intent is written POSITIVE. Until 2026-08-13 this state
   #   rendered as «Minted», i.e. the feed reported an emission on a burn.
   def blockchain_burn
-    render Dashboard::EventRow.new(event: mock_blockchain_tx(amount: "3.0", sourceable_type: "NaasContract"))
+    render Dashboard::EventRow.new(event: mock_blockchain_tx(amount: "3.0", direction: "burn"))
   end
 
   # @label Cluster-sourced Celo Reward
@@ -70,12 +70,12 @@ class DashboardEventRowPreview < Lookbook::Preview
   end
 
   # Грошовий рядок будується РЕАЛЬНИМ `new`, а не `.allocate`: тікер і НАПРЯМОК
-  # виводяться з колонок (`token_type`, `sourceable_type`), тож запис без атрибутів
+  # виводяться з колонок (`token_type`, `direction`), тож запис без атрибутів
   # їх віддати не може взагалі. Класову ідентичність для `case/when` незбережений
   # `new` тримає так само — саме вона й була єдиною причиною брати `.allocate`.
-  def mock_blockchain_tx(token_type: :carbon_coin, amount: "0.0042", cluster: nil, sourceable_type: nil)
+  def mock_blockchain_tx(token_type: :carbon_coin, amount: "0.0042", cluster: nil, direction: "mint")
     BlockchainTransaction.new(
-      token_type: token_type, amount: amount, sourceable_type: sourceable_type,
+      token_type: token_type, amount: amount, direction: direction,
       wallet: cluster ? nil : Wallet.new(tree: Tree.new(did: "SNET-0A7F3B21")),
       cluster: cluster, created_at: 45.seconds.ago
     )

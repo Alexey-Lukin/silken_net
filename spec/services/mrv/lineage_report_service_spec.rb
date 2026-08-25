@@ -115,19 +115,22 @@ RSpec.describe Mrv::LineageReportService do
     expect(result[:credits]).to be_empty
   end
 
-  # 🔴 [ARCH.101] Пара «своє лишається ⊥ своє відпадає», і ОБИДВА боки свої: чужа
+  # 🔴 [ARCH.101 → ARCH.95] Пара «своє лишається ⊥ своє відпадає», і ОБИДВА боки свої: чужа
   # організація довела б тенант-скоуп (сусідній приклад це вже робить), а не напрямок.
   # Форма спалення взята з реального писача — `BlockchainBurningService#create_slash_intent!`
-  # кладе `sourceable: naas_contract`, `token_type: :carbon_coin` і ДОДАТНУ суму, — а стан
-  # проганяється тим самим AASM, бо загроза реалізується лише на `:confirmed`.
-  it "тримає мінт у credits і НЕ пускає туди спалення — напрямок деривується, не читається зі знака" do
+  # кладе `sourceable: naas_contract`, `direction: :burn`, `token_type: :carbon_coin` і
+  # ДОДАТНУ суму, — а стан проганяється тим самим AASM, бо загроза реалізується лише на
+  # `:confirmed`. ⚠️ Назва прикладу казала «напрямок ДЕРИВУЄТЬСЯ» — після ARCH.95 це
+  # неправда: він ОГОЛОШУЄТЬСЯ, і саме тому ESG-погашення (яке `sourceable` не має)
+  # більше не проскакує в credits емісією.
+  it "тримає мінт у credits і НЕ пускає туди спалення — напрямок оголошено, не читається зі знака" do
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
     mint = mint_confirmed!
 
     contract = create(:naas_contract, cluster: cluster)
     slash = BlockchainTransaction.create!(
       wallet: wallet, sourceable: contract, to_address: "0x#{SecureRandom.hex(20)}",
-      amount: 3.0, token_type: :carbon_coin, status: :pending
+      amount: 3.0, token_type: :carbon_coin, status: :pending, direction: :burn
     )
     slash.process!
     slash.mark_as_sent!("0x#{SecureRandom.hex(32)}")

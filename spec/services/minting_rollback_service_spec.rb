@@ -131,7 +131,7 @@ RSpec.describe MintingRollbackService do
       wallet.update!(balance: 5_000, locked_balance: 5_000)
       contract = create(:naas_contract, organization: organization, cluster: cluster)
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending,
-                  locked_points: nil, tx_hash: nil, amount: 2, sourceable: contract)
+                  locked_points: nil, tx_hash: nil, amount: 2, sourceable: contract, direction: :burn)
 
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
 

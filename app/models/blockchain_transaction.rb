@@ -230,18 +230,37 @@ class BlockchainTransaction < ApplicationRecord
       .or(where(cluster_id: cluster_id))
   }
 
-  # Дім ЗНАЧЕННЯ дискримінатора напрямку. Винесено в константу, бо споживачів у
-  # нього тепер двоє в РІЗНИХ формах — SQL-агрегат `net_minted_supply` нижче й
-  # рядковий предикат `#burn?` — а той самий літерал, написаний двічі, розійшовся б
-  # тихо: обидві сторони «present» для будь-якого гейта.
+  # Дім ЗНАЧЕННЯ ознаки «цей burn є СЛЕШЕМ». ⚠️ Після [ARCH.95] це вже НЕ
+  # дискримінатор напрямку — напрямок носить колонка `direction` нижче. Константа
+  # відповідає на вужче питання: яка ПРИЧИНА вилучення з обігу є слешингом (база
+  # розміру — [`05_05 §3`](../../docs/05_05_Slashing_and_Risk_Policy.md)). Рід
+  # операції ⊥ її причина: `slash` і `esg_retirement` обидва `direction: :burn`,
+  # але лише перший несе `sourceable: NaasContract`.
+  # Живий споживач один — інваріант `slash_intent_must_be_a_burn` нижче.
   BURN_SOURCEABLE_TYPE = "NaasContract"
 
-  # Напрямок руху коштів НЕ є полем — він ДЕРИВУЄТЬСЯ (`CLAUDE.md §6`), і саме тому
-  # UI не сміє вгадувати його зі знака `amount`: slash-інтент пишеться ДОДАТНИМ.
-  # Рядковий бік того самого дискримінатора, яким агрегат нижче відділяє спалення
-  # від емісії.
+  # [ARCH.95 ⚖️ 2026-08-25] Напрямок руху коштів — ЯВНА колонка, не деривація.
+  #
+  # Доти він виводився з `sourceable_type = "NaasContract"`, і [ARCH.101] цю
+  # деривацію ратифікував — але на ПЕРЕДУМОВІ, записаній тут же дослівно: «єдиний
+  # slash-шлях». ESG-погашення (`KlimaDao::RetirementService`) є ДРУГИМ родом
+  # вилучення з обігу й природного `sourceable`-об'єкта не має, тобто передумову
+  # знімає. Ратифіковано було «деривація, доки burn має одну причину».
+  #
+  # ⛔ Знак `amount` напрямку НЕ несе й нести не буде: slash пишеться ДОДАТНИМ.
+  # Читай `direction`, ніколи не вгадуй зі знака.
+  enum :direction, { mint: "mint", burn: "burn" }, prefix: true, default: "mint"
+
+  # Рядковий бік напрямку. Ім'я лишається `burn?` (не `direction_burn?`) — його
+  # читають одинадцять в'ю/сервіс-сайтів, і воно є частиною публічної форми моделі.
+  #
+  # ⚠️ Читає ПУБЛІЧНИЙ reader, а не enum-предикат `direction_burn?`, і це не стиль:
+  # той іде прямо в `@attributes`, тож на `.allocate`-фікстурі (єдина законна форма
+  # для рядка стрічки — вона не тягне `wallet → tree → cluster → organization`)
+  # кидає `NoMethodError` замість читатись. Reader же стабиться, як і решта полів,
+  # що їх така фікстура оголошує. У проді різниці немає: колонка `NOT NULL`.
   def burn?
-    sourceable_type == BURN_SOURCEABLE_TYPE
+    direction.to_s == "burn"
   end
 
   # [ARCH.101 ⚖️ 2026-08-20] Дисплей-форма суми: напрямок входить у ЧИСЛО (−X для
@@ -256,17 +275,21 @@ class BlockchainTransaction < ApplicationRecord
 
   # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
   #
-  # Slash-інтенти теж `carbon_coin` і теж доходять до `:confirmed`
-  # (`BlockchainBurningService#create_slash_intent!` → `sourceable: NaasContract`),
-  # але on-chain `slash()` ЗМЕНШУЄ supply — тож сумувати їх позитивно роздуває
-  # результат на 2×burn. Дискримінатор: `sourceable_type = "NaasContract"` = burn
-  # (єдиний slash-шлях); усе інше (mint / insurance-payout mint) = емісія.
+  # Вилучення з обігу теж `carbon_coin` і теж доходить до `:confirmed`, але on-chain
+  # ЗМЕНШУЄ supply — тож сумувати його позитивно роздуває результат на 2×burn.
+  # Причин вилучення ДВІ: slash (`BlockchainBurningService#create_slash_intent!`)
+  # і ESG-погашення (`KlimaDao::RetirementService`); обидві несуть `direction: :burn`.
   #
-  # NULL-safe `IS DISTINCT FROM`: mint-tx мають `sourceable_type IS NULL`, а
-  # звичайний `!=` відсіяв би їх (SQL `NULL != 'x'` = NULL, не TRUE), лишивши
-  # −Σburns. ⚠️ Дім свідомо ОДИН: два місця з цим дискримінатором розійшлися б
-  # тихо, і саме тому формула переїхала сюди з приватного методу chain-аудиту —
-  # її другим споживачем став L1-якір ([`05_04 §3`](../../docs/05_04_Ethereum_L1_State_Anchor.md)).
+  # 🔴 **[ARCH.95] Дискримінатор — колонка `direction`, а не `sourceable_type`.**
+  # Доти тут стояв `IS DISTINCT FROM 'NaasContract'`, і та форма мала ДВІ ціни:
+  # (а) вона рахувала ESG-погашення ЕМІСІЄЮ, бо погашення `sourceable` не має;
+  # (б) NULL-пастку (`NULL != 'x'` = NULL, не TRUE) мусив відтворювати руками
+  # кожен новий читач — і два сайти вже робили це ПОЗА моделлю, попри «Дім
+  # свідомо ОДИН» рядком нижче. `direction` — `NOT NULL`, тож вісь зникає.
+  #
+  # ⚠️ Дім свідомо ОДИН: два місця з цим дискримінатором розійшлися б тихо, і саме
+  # тому формула переїхала сюди з приватного методу chain-аудиту — її другим
+  # споживачем став L1-якір ([`05_04 §3`](../../docs/05_04_Ethereum_L1_State_Anchor.md)).
   #
   # ✅ Викликається і на КЛАСІ, і на RELATION (перевірено рантаймом: `where` всередині
   # чіпляється до `current_scope`), тож кластерний споживач бере ТОЙ САМИЙ дім:
@@ -276,8 +299,8 @@ class BlockchainTransaction < ApplicationRecord
   # Повертає BigDecimal (без `.to_f`): Float дав би e-нотацію в хешованому payload'і.
   def self.net_minted_supply(token_type)
     base  = where(token_type: token_type, status: :confirmed)
-    mints = base.where("sourceable_type IS DISTINCT FROM ?", BURN_SOURCEABLE_TYPE).sum(:amount)
-    burns = base.where(sourceable_type: BURN_SOURCEABLE_TYPE).sum(:amount)
+    mints = base.where(direction: :mint).sum(:amount)
+    burns = base.where(direction: :burn).sum(:amount)
     mints - burns
   end
 
@@ -286,10 +309,10 @@ class BlockchainTransaction < ApplicationRecord
   # кластерну семантику кожен рядок списку контрактів питав би власний агрегат — N
   # запитів на грошовій поверхні, які Prosopite побачив би лише з другого рядка.
   #
-  # ⚠️ Дискримінатор напрямку тут ТОЙ САМИЙ (`BURN_SOURCEABLE_TYPE`) і в тій самій
-  # ідіомі `IS DISTINCT FROM` — третьої КОПІЇ формули не заводимо, лише третю ФОРМУ її
-  # застосування (агрегат по групах). Наївний `!=` дав би `NULL`, тобто мінти
-  # (`sourceable_type IS NULL`) випали б і лишилось би −Σburns.
+  # ⚠️ Дискримінатор напрямку тут ТОЙ САМИЙ (колонка `direction`, [ARCH.95]) — третьої
+  # КОПІЇ формули не заводимо, лише третю ФОРМУ її застосування (агрегат по групах).
+  # Доти тут стояв `IS DISTINCT FROM 'NaasContract'` з обов'язковою NULL-обережністю;
+  # `NOT NULL`-колонка цю вісь зняла, тож `= 'mint'` тут достатній і безпечний.
   #
   # 🔴 Координата кластера резолвиться ДВОМА шляхами, і друга гілка не косметична —
   # рівно як у `for_cluster` [ARCH.96]: slash-інтент «останнього дерева» чіпляється
@@ -308,8 +331,8 @@ class BlockchainTransaction < ApplicationRecord
     return {} if ids.empty?
 
     coordinate = "COALESCE(trees.cluster_id, blockchain_transactions.cluster_id)"
-    signed_amount = "CASE WHEN blockchain_transactions.sourceable_type IS DISTINCT FROM " \
-                    "#{connection.quote(BURN_SOURCEABLE_TYPE)} " \
+    signed_amount = "CASE WHEN blockchain_transactions.direction = " \
+                    "#{connection.quote(directions[:mint])} " \
                     "THEN blockchain_transactions.amount ELSE -blockchain_transactions.amount END"
 
     where(token_type: token_type, status: :confirmed)
@@ -361,6 +384,27 @@ class BlockchainTransaction < ApplicationRecord
 
   # [MULTICHAIN]: blockchain_network визначає мережу транзакції
   validates :blockchain_network, inclusion: { in: %w[evm solana celo] }
+
+  # 🔴 [ARCH.95] Інваріант, а НЕ деривація — і різниця тут несуча.
+  #
+  # Деривація («якщо `sourceable_type` = NaasContract, значить burn») — це рівно те,
+  # що присуд ARCH.95 зняв: вона за побудовою не бачить ESG-погашення, бо те
+  # `sourceable` не має, тобто відновила б half-fix. Інваріант робить зворотне: він
+  # НІЧОГО не виводить, а лише не дає slash-інтенту поїхати мінтом. Погашення й далі
+  # оголошує напрямок само.
+  #
+  # Ціна названа: писач, що забуде `direction: :burn` на slash-шляху, дістане ГУЧНУ
+  # відмову замість тихого завищення емісії — а завищення тут годує L1-якір і базу
+  # розміру спалення. Це також єдиний живий споживач `BURN_SOURCEABLE_TYPE` після
+  # того, як напрямок переїхав у колонку.
+  validate :slash_intent_must_be_a_burn
+
+  def slash_intent_must_be_a_burn
+    return unless sourceable_type == BURN_SOURCEABLE_TYPE
+    return if direction_burn?
+
+    errors.add(:direction, "slash-інтент мусить нести напрямок :burn [ARCH.95]")
+  end
 
   # [ARCH.45 / ARCH.51] ЄДИНИЙ живий money-path intent-marker guard: незавершена tx у `window`
   # (включно з `:manual_review` — можливо-landed виплата під ручною звіркою блокує re-pay).

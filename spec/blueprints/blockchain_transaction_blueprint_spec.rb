@@ -30,7 +30,7 @@ RSpec.describe BlockchainTransactionBlueprint, type: :model do
     let(:contract) { create(:naas_contract) }
     let(:burn_tx) do
       create(:blockchain_transaction, wallet: wallet, amount: 3.0,
-                                      sourceable: contract, status: :confirmed)
+                                      sourceable: contract, direction: :burn, status: :confirmed)
     end
 
     it "позначає спалення в обох вʼю" do

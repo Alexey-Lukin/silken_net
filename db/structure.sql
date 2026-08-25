@@ -405,7 +405,8 @@ CREATE TABLE public.blockchain_transactions (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 )
 PARTITION BY RANGE (created_at);
 
@@ -466,7 +467,8 @@ CREATE TABLE public.blockchain_transactions_default (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -507,7 +509,8 @@ CREATE TABLE public.blockchain_transactions_y2026m01 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -548,7 +551,8 @@ CREATE TABLE public.blockchain_transactions_y2026m02 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -589,7 +593,8 @@ CREATE TABLE public.blockchain_transactions_y2026m03 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -630,7 +635,8 @@ CREATE TABLE public.blockchain_transactions_y2026m04 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -671,7 +677,8 @@ CREATE TABLE public.blockchain_transactions_y2026m05 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -712,7 +719,8 @@ CREATE TABLE public.blockchain_transactions_y2026m06 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -753,7 +761,8 @@ CREATE TABLE public.blockchain_transactions_y2026m07 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -794,7 +803,8 @@ CREATE TABLE public.blockchain_transactions_y2026m08 (
     telemetry_window_to_id bigint,
     telemetry_merkle_root character varying(64),
     telemetry_lineage_version integer,
-    archive_batch_id bigint
+    archive_batch_id bigint,
+    direction character varying DEFAULT 'mint'::character varying NOT NULL
 );
 
 
@@ -6879,6 +6889,7 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260825200000'),
 ('20260825094500'),
 ('20260824180746'),
 ('20260824172441'),

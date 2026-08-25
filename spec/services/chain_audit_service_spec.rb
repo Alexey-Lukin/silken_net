@@ -96,7 +96,7 @@ RSpec.describe ChainAuditService do
         # Slash-intent: 300 SCC (sourceable NaasContract) — a burn, must SUBTRACT
         wallet.blockchain_transactions.create!(
           amount: 300, token_type: :carbon_coin, status: :confirmed,
-          sourceable: naas, to_address: wallet.crypto_public_address, tx_hash: "0x#{'e' * 64}"
+          sourceable: naas, direction: :burn, to_address: wallet.crypto_public_address, tx_hash: "0x#{'e' * 64}"
         )
       end
 

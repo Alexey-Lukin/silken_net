@@ -167,7 +167,7 @@ RSpec.describe TreeChronicleService do
         wallet = tree.wallet
         wallet.update!(crypto_public_address: "0x" + "a" * 40)
         contract = create(:naas_contract, organization: tree.cluster.organization, cluster: tree.cluster)
-        create(:blockchain_transaction, wallet: wallet, sourceable: contract,
+        create(:blockchain_transaction, wallet: wallet, sourceable: contract, direction: :burn,
                status: :confirmed, token_type: :carbon_coin,
                confirmed_at: 1.day.ago, tx_hash: "0x" + SecureRandom.hex(32))
 

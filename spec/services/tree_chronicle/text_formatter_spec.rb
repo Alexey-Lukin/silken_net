@@ -18,7 +18,7 @@ RSpec.describe TreeChronicle::TextFormatter do
 
     # Напрямок — ДВА ключі, не булевий параметр; мітка токена приїжджає з дому.
     it "renders the burn direction as its own key, with the token label localized" do
-      burn = BlockchainTransaction.new(token_type: :carbon_coin, sourceable_type: BlockchainTransaction::BURN_SOURCEABLE_TYPE)
+      burn = BlockchainTransaction.new(token_type: :carbon_coin, direction: :burn)
       mint = BlockchainTransaction.new(token_type: :carbon_coin)
 
       uk_burn = I18n.with_locale(:uk) { described_class.blockchain_title(burn) }

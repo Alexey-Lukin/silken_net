@@ -369,9 +369,9 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Два кроки (Atomic):**
 1. **Approve** — дозвіл на трансфер SCC до KlimaDAO контракту
-2. **Retire** — безповоротне спалення → баланс переходить до `wallet.esg_retired_balance`
+2. **Retire** — безповоротне спалення `retire(scc × 10**18)` → інкремент `wallet.esg_retired_balance` (лічильник погашених **МОНЕТ**)
 
-**Захист:** Pessimistic locking запобігає подвійному списанню.
+**Захист:** Pessimistic locking + гард запасу монет (`net_minted_supply`, [ARCH.95]). ⚠️ «Переходу балансу» тут НЕМА і не було правильним: балансові колонки гаманця погашення не рухає взагалі — `balance` лишається gross-лічильником балів ([`04_01 §6`](04_01_Data_Models_and_Entities)), а вилучення з обігу фіксує рядок `BlockchainTransaction(direction: :burn)`.
 
 ---
 

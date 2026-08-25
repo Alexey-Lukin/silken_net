@@ -7,7 +7,11 @@ class KlimaRetirementWorker
   # а фінансова дія з ESG-звітності, яка може зачекати.
   sidekiq_options queue: "web3_low", retry: 3
 
-  def perform(wallet_id, amount)
+  # [ARCH.95] Параметр названий одиницею. Sidekiq-аргументи позиційні, тож kwarg
+  # сервісу сюди не дотягується — а саме цей рядок і є місцем, де майбутній
+  # enqueue-викликач передасть число. Ім'я `amount` не казало НІЧОГО про те, бали
+  # це чи монети, і рівно ця німота коштувала класу ARCH.95.
+  def perform(wallet_id, scc_amount)
     wallet = Wallet.find_by(id: wallet_id)
 
     unless wallet
@@ -16,10 +20,10 @@ class KlimaRetirementWorker
     end
 
     with_web3_error_handling("KlimaDAO", "Wallet ##{wallet_id}") do
-      KlimaDao::RetirementService.new(wallet, amount).retire_carbon!
+      KlimaDao::RetirementService.new(wallet, scc: scc_amount).retire_carbon!
     end
 
-    Rails.logger.info "🌿 [KlimaDAO] Retirement Worker завершив погашення #{amount} SCC для Wallet ##{wallet_id}."
+    Rails.logger.info "🌿 [KlimaDAO] Retirement Worker завершив погашення #{scc_amount} SCC для Wallet ##{wallet_id}."
   rescue KlimaDao::RetirementService::InsufficientBalanceError => e
     Rails.logger.warn "⚠️ [KlimaDAO] Недостатньо коштів для Wallet ##{wallet_id}: #{e.message}"
   rescue KlimaDao::RetirementService::InvalidTokenTypeError => e

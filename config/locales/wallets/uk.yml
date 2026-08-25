@@ -23,6 +23,7 @@ uk:
     index_title: Скарбнична матриця
     metadata_frame:
       available_balance: Доступний баланс
+      coin_unit: SCC
       esg_retired: ESG погашено
       locked_balance: Заблокований баланс
       network: Мережа

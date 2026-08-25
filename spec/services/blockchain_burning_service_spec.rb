@@ -66,7 +66,7 @@ RSpec.describe BlockchainBurningService do
         tree = create(:tree, cluster: cluster)
         tree.wallet.blockchain_transactions.create!(
           amount: 25, token_type: :carbon_coin, status: :confirmed,
-          sourceable: naas_contract,
+          sourceable: naas_contract, direction: :burn,
           to_address: organization.crypto_public_address, tx_hash: "0x#{'e' * 64}"
         )
 
@@ -361,7 +361,7 @@ RSpec.describe BlockchainBurningService do
         it "does NOT re-slash when an in-flight :sent slash already exists for the contract" do
           BlockchainTransaction.create!(
             sourceable: naas_contract, cluster: cluster, amount: 500, token_type: :carbon_coin,
-            status: :sent, to_address: organization.crypto_public_address, tx_hash: fake_tx_hash,
+            direction: :burn, status: :sent, to_address: organization.crypto_public_address, tx_hash: fake_tx_hash,
             notes: "prior in-flight slash"
           )
 
@@ -374,7 +374,7 @@ RSpec.describe BlockchainBurningService do
         it "re-slashes after a :pending intent (crash before broadcast), failing the stale one" do
           stale = BlockchainTransaction.create!(
             sourceable: naas_contract, cluster: cluster, amount: 500, token_type: :carbon_coin,
-            status: :pending, to_address: organization.crypto_public_address,
+            direction: :burn, status: :pending, to_address: organization.crypto_public_address,
             notes: "pre-broadcast crash intent"
           )
 
@@ -1024,11 +1024,11 @@ RSpec.describe BlockchainBurningService do
     it "ВІДНІМАЄ попереднє спалення — повторний слеш не палить із роздутої бази" do
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100,
                                       token_type: :carbon_coin, status: :confirmed)
-      # Завершений burn-інтент: той самий тип, ДОДАТНИЙ amount; дискримінатор — sourceable.
+      # Завершений burn-інтент: той самий тип, ДОДАТНИЙ amount; напрямок ОГОЛОШЕНО [ARCH.95].
       # `:confirmed` свідомо: незавершений перехопив би in-flight guard і слеш би не стався.
       create(:blockchain_transaction, wallet: wallet_burn, amount: 30,
                                       token_type: :carbon_coin, status: :confirmed,
-                                      sourceable: naas_contract)
+                                      sourceable: naas_contract, direction: :burn)
 
       expect(slash_intent_amount).to eq(70)
     end

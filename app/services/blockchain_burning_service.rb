@@ -424,6 +424,10 @@ class BlockchainBurningService < ApplicationService
       to_address: @organization.crypto_public_address,
       amount:     amount,
       token_type: :carbon_coin,
+      # [ARCH.95] Напрямок ЯВНИЙ. `sourceable: NaasContract` лишається — але тепер
+      # він відповідає на інше питання («цей burn є слешем», база розміру `05_05 §3`),
+      # а не на «це burn». Знак `amount` тут ДОДАТНИЙ і напрямку не несе.
+      direction:  :burn,
       status:     :pending,
       notes:      "🚨 SLASHING: Кошти вилучено. Причина: #{reason}."
     )

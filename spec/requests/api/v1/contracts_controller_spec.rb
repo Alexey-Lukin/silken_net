@@ -62,7 +62,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         create(:blockchain_transaction, wallet: wallet, amount: 120,
                                         token_type: :carbon_coin, status: :confirmed)
         create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
-                                        status: :confirmed, sourceable: own_contract)
+                                        status: :confirmed, sourceable: own_contract, direction: :burn)
 
         get "/contracts", headers: headers
 
@@ -77,7 +77,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         create(:blockchain_transaction, wallet: wallet, amount: 20,
                                         token_type: :carbon_coin, status: :confirmed)
         create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
-                                        status: :confirmed, sourceable: own_contract)
+                                        status: :confirmed, sourceable: own_contract, direction: :burn)
         second_cluster = create(:cluster, organization: organization)
         second_tree = create(:tree, cluster: second_cluster)
         create(:naas_contract, organization: organization, cluster: second_cluster)
@@ -110,7 +110,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         create(:blockchain_transaction, wallet: wallet, amount: 120,
                                         token_type: :carbon_coin, status: :confirmed)
         create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
-                                        status: :confirmed, sourceable: own_contract)
+                                        status: :confirmed, sourceable: own_contract, direction: :burn)
 
         get "/contracts", headers: headers, as: :json
 
@@ -241,7 +241,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         create(:blockchain_transaction, wallet: wallet, amount: 120,
                                         token_type: :carbon_coin, status: :confirmed)
         create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
-                                        status: :confirmed, sourceable: own_contract)
+                                        status: :confirmed, sourceable: own_contract, direction: :burn)
 
         get "/contracts/#{own_contract.id}", headers: headers, as: :json
 
@@ -259,7 +259,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         create(:blockchain_transaction, wallet: wallet, amount: 20,
                                         token_type: :carbon_coin, status: :confirmed)
         create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
-                                        status: :confirmed, sourceable: own_contract)
+                                        status: :confirmed, sourceable: own_contract, direction: :burn)
 
         get "/contracts/#{own_contract.id}", headers: headers, as: :json
 
@@ -273,7 +273,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       it "scopes the emission ledger to the hero's cluster, orphan slash rows included" do
         orphan_slash = create(:blockchain_transaction, wallet: nil, cluster: own_cluster,
                                                        amount: 5, token_type: :carbon_coin,
-                                                       status: :confirmed, sourceable: own_contract)
+                                                       status: :confirmed, sourceable: own_contract, direction: :burn)
         other_cluster = create(:cluster, organization: organization)
         other_tree = create(:tree, cluster: other_cluster)
         foreign_row = create(:blockchain_transaction, wallet: other_tree.wallet, amount: 7,

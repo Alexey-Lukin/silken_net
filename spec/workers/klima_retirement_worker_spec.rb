@@ -18,10 +18,13 @@ RSpec.describe KlimaRetirementWorker, type: :worker do
   end
 
   describe "#perform" do
-    it "calls KlimaDao::RetirementService with correct arguments" do
+    # [ARCH.95] Пін цілиться в ОДИНИЦЮ, а не лише в число: Sidekiq-аргумент
+    # позиційний, тож саме тут майбутній enqueue-викликач передасть скаляр, і
+    # `scc:` — єдине, що не дає йому мовчки передати бали.
+    it "hands the amount to the service as SCC, never as a bare scalar" do
       described_class.new.perform(wallet.id, "100.0")
 
-      expect(KlimaDao::RetirementService).to have_received(:new).with(wallet, "100.0")
+      expect(KlimaDao::RetirementService).to have_received(:new).with(wallet, scc: "100.0")
       expect(mock_service).to have_received(:retire_carbon!)
     end
 

@@ -53,7 +53,7 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       create(:blockchain_transaction, wallet: wallet, amount: 120,
                                       token_type: :carbon_coin, status: :confirmed)
       create(:blockchain_transaction, wallet: wallet, amount: 20, token_type: :carbon_coin,
-                                      status: :confirmed, sourceable: contract)
+                                      status: :confirmed, sourceable: contract, direction: :burn)
 
       get "/clusters/#{own_cluster.id}", headers: headers, as: :json
 
@@ -75,7 +75,7 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       create(:blockchain_transaction, wallet: wallet, amount: 20,
                                       token_type: :carbon_coin, status: :confirmed)
       create(:blockchain_transaction, wallet: wallet, amount: 120, token_type: :carbon_coin,
-                                      status: :confirmed, sourceable: contract)
+                                      status: :confirmed, sourceable: contract, direction: :burn)
 
       get "/clusters/#{own_cluster.id}", headers: headers, as: :json
 

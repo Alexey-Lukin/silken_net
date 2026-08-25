@@ -14,11 +14,11 @@ module KlimaDao
   # і отримує криптографічний доказ погашення.
   #
   # Потік:
-  #   1. Перевірка балансу та типу токена (Guard Clause)
+  #   1. Перевірка ЗАПАСУ МОНЕТ і типу токена (Guard Clause)
   #   2. Approve KlimaDAO контракту на витрату SCC
   #   3. Виклик retire(uint256) на KlimaDAO Retirement контракті
-  #   4. Оновлення балансів у БД (balance ↓, esg_retired_balance ↑)
-  #   5. Запис BlockchainTransaction з аудитом
+  #   4. Облік у БД: `esg_retired_balance ↑` — і НІЧОГО більше [ARCH.95 вісь 3]
+  #   5. Запис BlockchainTransaction (`direction: :burn`) з аудитом
   # =========================================================================
   class RetirementService
     # ABI для ERC-20 approve та KlimaDAO retire
@@ -29,42 +29,48 @@ module KlimaDao
 
     class InsufficientBalanceError < StandardError; end
     class InvalidTokenTypeError < StandardError; end
-    class UnresolvedSemanticsError < StandardError; end
 
-    # 🔴 [ARCH.95] FAIL-CLOSED до присуду. Тракт сьогодні МЕРТВИЙ (`KlimaRetirementWorker`
-    # не має жодного enqueue-викликача поза спекою — виміряно), і саме тому три
-    # незалежні розходження в ньому лишались невидимими. Кожне з них озброїлось би
-    # ПЕРШОЮ ж миттю дротування, а два з трьох мутують необоротні поверхні:
+    # ✅ [ARCH.95] ПРИСУД УХВАЛЕНО 2026-08-25 (машина за делегуванням founder).
+    # Осей виявилось ЧОТИРИ, і четверта жила рівно там, де пункт вважав уже
+    # виправленим. Усі закриті цим комітом; fail-closed гард знято.
     #
-    #   1. ОДИНИЦЯ. Один скаляр трактується двома одиницями в одному методі:
-    #      on-chain шле `amount × 10**18` (тобто МОНЕТИ), а в БД робить
-    #      `decrement!(:balance, amount)` (тобто БАЛИ). За курсом 10 000:1 половини
-    #      розходяться на чотири порядки — в обидва боки, і один із них палить
-    #      реальних SCC у 10 000× більше, необоротно.
+    #   1. ОДИНИЦЯ = МОНЕТИ (SCC). Дискримінатор ЗОВНІШНІЙ, не смаковий: клієнт
+    #      погашає, щоб довести tCO₂, а єдиний міст до tCO₂ — курс `2000 SCC =
+    #      1 tCO₂` (`00_04 §Фінансові Константи`); бали в ту формулу не входять
+    #      узагалі. Підпирає з трьох боків: `retire(uint256)` — чужий ABI KlimaDAO,
+    #      приймає токени · `00_04` двічі каже «SCC» (тракт-таблиця + опис колонки)
+    #      · «бали» зробили б розмір НЕОБОРОТНОГО спалення функцією поточного
+    #      DAO-голосу, бо поріг емісії DAO-керований.
     #
-    #   2. НАПРЯМОК. Запис іде БЕЗ `sourceable`, з ДОДАТНИМ `amount` і
-    #      `token_type: :carbon_coin`, тож `BlockchainTransaction.net_minted_supply`
-    #      (дискримінатор `sourceable_type IS DISTINCT FROM 'NaasContract'`) рахує
-    #      ВИЛУЧЕННЯ з обігу як ЕМІСІЮ. А цей One-Home годує дві незворотні
-    #      поверхні: поле `total_scc_supply` тижневого L1-якоря (`05_04 §3`) і базу
-    #      розміру спалення (`05_05 §3`) — тобто погашення завищувало б розмір
-    #      майбутнього слешингу.
+    #   2. НАПРЯМОК = явна колонка `blockchain_transactions.direction`
+    #      ([ARCH.95] у моделі). Деривація з `sourceable_type` була ратифікована
+    #      [ARCH.101] на ПЕРЕДУМОВІ «єдиний slash-шлях», яку це погашення знімає.
     #
-    #   3. GROSS-СЕМАНТИКА. `decrement!(:balance, …)` — єдине в застосунку місце,
-    #      де `balance` СПАДАЄ, а `04_01 §6` визначає його як gross-лічильник
-    #      («усе, що дерево заробило за життя»). Наслідок для доказу: перше поле
-    #      L1-якоря = `Wallet.sum(:balance)`, тож погашення тихо переписало б
-    #      офчейн-леджер балів заднім числом.
+    #   3. GROSS. `balance`/`locked_balance`/`available_balance` НЕ РУХАЮТЬСЯ.
+    #      `esg_retired_balance` став лічильником погашених МОНЕТ. Записана в пункті
+    #      альтернатива (`available_balance = balance − locked − esg_retired`) сама
+    #      несла дефект одиниці: щоб мати SCC, гаманець їх намінтив, а мінт уже
+    #      наклав ті бали в `locked_balance` НАЗАВЖДИ (reserve-семантика `04_01 §6`)
+    #      — віднімати їх удруге є подвійним списанням. Виняток із gross-визначення
+    #      зникає сам, без нової формули.
     #
-    # Три осі не лікуються поодинці — фікс одної без інших дає ту саму
-    # половинчастість, що вже коштувала пів дня на `total_sfc` (§Guard-craft #35).
-    # Гард знято НЕ буде, доки присуд не ухвалено; знімати його = свідома дія,
-    # а не побічний ефект дротування. → `00_07` ARCH.95.
-    def self.semantics_resolved? = false
+    #   4. 🔴 ГАРД МІРЯВ НЕ ТУ ВЕЛИЧИНУ — вісь, якої пункт не називав, бо вважав
+    #      її закритою [ARCH.56]. `available_balance = balance − locked_balance` є
+    #      «скільки балів ще МОЖНА сконвертувати», а не «скільки монет Є». Дві
+    #      протилежні поломки: гаманець, що намінтив усе (`available = 0`), дістав
+    #      би ВІДМОВУ погасити наявні SCC; гаманець, що не мінтив нічого, дістав би
+    #      ДОЗВІЛ спалити те, чого не має. ARCH.56 рухав цей гард `balance` →
+    #      `available_balance`, тобто ВСЕРЕДИНІ балової шкали, не спитавши одиниці.
+    #      Тепер запас читається там, де він справді живе — `net_minted_supply`,
+    #      яка після осі (2) уже віднімає власні погашення.
 
-    def initialize(wallet, amount_to_retire)
+    # [ARCH.95] Одиниця НЕРЕПРЕЗЕНТОВНА в хибному вигляді: kwarg `scc:` замість
+    # голого скаляра. Позиційний виклик тепер неможливий, тож наступний викликач
+    # не має способу мовчки передати бали — на відміну від форми, що цей клас
+    # і породила.
+    def initialize(wallet, scc:)
       @wallet = wallet
-      @amount_to_retire = BigDecimal(amount_to_retire.to_s)
+      @scc_to_retire = BigDecimal(scc.to_s)
     end
 
     def retire_carbon!
@@ -74,50 +80,55 @@ module KlimaDao
       #    щоб не тримати довгі локи під час RPC-запитів.
       tx_hash = execute_blockchain_retirement
 
-      # 2. DB: Атомарне оновлення балансів та створення аудит-запису
+      # 2. DB: Атомарний облік погашення + аудит-запис
       ActiveRecord::Base.transaction do
         @wallet.lock!
 
         # Повторна перевірка після блокування (Race Condition Protection).
-        # [ARCH.56] available_balance, НЕ balance: locked-частина зарезервована
-        # pending-мінтом — retire повз неї впирався в wallets_balance_invariants
-        # CHECK ПІСЛЯ необоротного on-chain burn (money-burned-without-record).
-        if @wallet.available_balance < @amount_to_retire
+        if retirable_scc < @scc_to_retire
           raise InsufficientBalanceError,
-                "Баланс змінився під час транзакції (Доступно: #{@wallet.available_balance}, Потрібно: #{@amount_to_retire})"
+                "Запас змінився під час транзакції (Доступно: #{retirable_scc} SCC, Потрібно: #{@scc_to_retire} SCC)"
         end
 
-        @wallet.decrement!(:balance, @amount_to_retire)
-        @wallet.increment!(:esg_retired_balance, @amount_to_retire)
+        # [ARCH.95 вісь 3] Балансові колонки НЕ рухаються: `balance` лишається
+        # gross-лічильником балів за все життя дерева (`04_01 §6`), і перше поле
+        # тижневого L1-якоря (`Wallet.sum(:balance)`) більше не переписується
+        # заднім числом. Рухається рівно лічильник погашених МОНЕТ.
+        @wallet.increment!(:esg_retired_balance, @scc_to_retire)
 
         create_retirement_transaction(tx_hash)
       end
 
-      Rails.logger.info "🌿 [KlimaDAO] Погашено #{@amount_to_retire} SCC для Wallet ##{@wallet.id}. TX: #{tx_hash}"
+      Rails.logger.info "🌿 [KlimaDAO] Погашено #{@scc_to_retire} SCC для Wallet ##{@wallet.id}. TX: #{tx_hash}"
     end
 
     private
 
     def validate!
-      # [ARCH.95] Перед будь-якою перевіркою балансу — гард семантики (шапка класу).
-      unless self.class.semantics_resolved?
-        raise UnresolvedSemanticsError,
-              "🛑 [ARCH.95] ESG-погашення заблоковано: одиниця (`monety` vs `бали`), напрямок " \
-              "у `net_minted_supply` і gross-семантика `balance` НЕ вирішені. Тракт мертвий " \
-              "(нуль enqueue-викликачів), тож блокування нічого не ламає. Присуд → `00_07` ARCH.95."
-      end
-
       # Guard Clause: Перевірка типу токена
       unless @wallet.blockchain_transactions.exists?(token_type: :carbon_coin)
         raise InvalidTokenTypeError,
               "Wallet ##{@wallet.id} не має carbon_coin транзакцій. Погашення доступне лише для SCC."
       end
 
-      # Guard Clause: достатність ДОСТУПНОГО балансу (мінус locked, [ARCH.56])
-      if @wallet.available_balance < @amount_to_retire
+      # Guard Clause: достатність ЗАПАСУ МОНЕТ [ARCH.95 вісь 4].
+      if retirable_scc < @scc_to_retire
         raise InsufficientBalanceError,
-              "Недостатньо коштів (Доступно: #{@wallet.available_balance}, Потрібно: #{@amount_to_retire})"
+              "Недостатньо SCC (Доступно: #{retirable_scc}, Потрібно: #{@scc_to_retire})"
       end
+    end
+
+    # 🔴 [ARCH.95 вісь 4] Скільки МОНЕТ цей гаманець реально має на руках.
+    #
+    # ⛔ Це НЕ `available_balance`. Той є `balance − locked_balance`, тобто «скільки
+    # БАЛІВ ще можна сконвертувати в монети» — величина протилежного боку конвертації.
+    # Монети з'являються рівно від мінту, тож запас = чиста емісія цього гаманця.
+    #
+    # ⚠️ Віднімати `esg_retired_balance` тут НЕ ТРЕБА й НЕ МОЖНА: після [ARCH.95] кожне
+    # погашення пише власний рядок із `direction: :burn`, тож `net_minted_supply` уже
+    # його відняла. Друге віднімання дало б −2× за кожне погашення.
+    def retirable_scc
+      @wallet.blockchain_transactions.net_minted_supply(:carbon_coin)
     end
 
     def execute_blockchain_retirement
@@ -141,7 +152,9 @@ module KlimaDao
         abi: RETIRE_ABI
       )
 
-      amount_in_wei = (@amount_to_retire * 10**TOKEN_DECIMALS).to_i
+      # [ARCH.95] `@scc_to_retire` — МОНЕТИ, тож `× 10**18` тут коректний за
+      # визначенням: це ERC-20 decimals того самого SCC, який приймає `retire(uint256)`.
+      amount_in_wei = (@scc_to_retire * 10**TOKEN_DECIMALS).to_i
 
       # Step 1: Approve KlimaDAO контракту на витрату SCC
       client.transact(
@@ -160,12 +173,19 @@ module KlimaDao
 
     def create_retirement_transaction(tx_hash)
       @wallet.blockchain_transactions.create!(
-        amount: @amount_to_retire,
+        amount: @scc_to_retire,
         token_type: :carbon_coin,
+        # [ARCH.95 вісь 2] ДРУГИЙ рід вилучення з обігу поруч зі слешем. Без цього
+        # рядка `net_minted_supply` рахувала б погашення ЕМІСІЄЮ — а вона годує
+        # `total_scc_supply` тижневого L1-якоря (`05_04 §3`) і базу розміру спалення
+        # (`05_05 §3`), тобто погашення завищувало б майбутній слешинг.
+        # ⛔ `sourceable` тут НЕМА свідомо: погашення не є слешем, і саме ця
+        # відсутність робила стару деривацію хибною.
+        direction: :burn,
         status: :sent,
         tx_hash: tx_hash,
-        to_address: ENV.fetch("KLIMA_RETIREMENT_CONTRACT"),
-        notes: "🌿 ESG Retirement via KlimaDAO: #{@amount_to_retire} SCC погашено для вуглецевої нейтральності."
+        notes: "🌿 ESG Retirement via KlimaDAO: #{@scc_to_retire} SCC погашено для вуглецевої нейтральності.",
+        to_address: ENV.fetch("KLIMA_RETIREMENT_CONTRACT")
       )
     end
   end

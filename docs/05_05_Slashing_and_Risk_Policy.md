@@ -69,7 +69,7 @@ slash_ratio  = clamp( damage_ratio^GAMMA × min(penalty_factor, PENALTY_FACTOR_M
 slash_amount = net_minted_scc(cluster) × slash_ratio
                    # [ARCH.96] База — ЧИСТА намінтована емісія кластера в МОНЕТАХ SCC:
                    # Σ(confirmed carbon_coin mints) − Σ(confirmed burns), де burn-інтент
-                   # розпізнається за `sourceable_type = NaasContract`. Дім формули —
+                   # розпізнається за колонкою `direction = burn` [ARCH.95]. Дім формули —
                    # `BlockchainTransaction.net_minted_supply`, скоуп — `.for_cluster`.
                    # ⚠️ Доти цей рядок казав `locked_balance × slash_ratio` — і це БАЛИ
                    # (`04_01 §6`: locked_balance = сконвертовані бали росту), тоді як

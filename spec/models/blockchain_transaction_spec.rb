@@ -1040,7 +1040,7 @@ RSpec.describe BlockchainTransaction, type: :model do
     it "віднімає спалення, прив'язане до САМОГО кластера (пастка останнього дерева)" do
       create(:blockchain_transaction, wallet: wallet, amount: 100, token_type: :carbon_coin, status: :confirmed)
       create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 25, token_type: :carbon_coin,
-                                      status: :confirmed, sourceable: naas_contract)
+                                      status: :confirmed, sourceable: naas_contract, direction: :burn)
 
       expect(net_scc).to eq(75)
     end
@@ -1066,7 +1066,7 @@ RSpec.describe BlockchainTransaction, type: :model do
                                       token_type: :carbon_coin, status: :confirmed)
       create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 30,
                                       token_type: :carbon_coin, status: :confirmed,
-                                      sourceable: naas_contract)
+                                      sourceable: naas_contract, direction: :burn)
 
       expect(described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin))
         .to eq(cluster.id => 70)
@@ -1098,7 +1098,7 @@ RSpec.describe BlockchainTransaction, type: :model do
                                       token_type: :carbon_coin, status: :confirmed)
       create(:blockchain_transaction, wallet: nil, cluster: cluster, amount: 30,
                                       token_type: :carbon_coin, status: :confirmed,
-                                      sourceable: naas_contract)
+                                      sourceable: naas_contract, direction: :burn)
 
       batched = described_class.net_minted_by_cluster([ cluster.id ], :carbon_coin)[cluster.id]
       single  = described_class.for_cluster(cluster.id).net_minted_supply(:carbon_coin)

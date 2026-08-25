@@ -23,6 +23,7 @@ lt:
     index_title: Iždo matrica
     metadata_frame:
       available_balance: Galimas balansas
+      coin_unit: SCC
       esg_retired: ESG išimta
       locked_balance: Užblokuotas balansas
       network: Tinklas
