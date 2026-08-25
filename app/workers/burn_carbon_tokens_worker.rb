@@ -10,7 +10,12 @@ class BurnCarbonTokensWorker
   # claim у BlockchainBurningService (defense-in-depth, не заміна).
   sidekiq_options queue: "critical", retry: 5
 
-  def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false, target_date = nil)
+  # ⚠️ `stress_threshold` — 6-й позиційний, і ІМʼЯ параметра тут єдиний носій семантики:
+  # Sidekiq-аргументи позиційні, kwarg сервісу сюди не дотягується (той самий урок, що
+  # ARCH.95 купив на одиниці). `nil` для тригерів, які розміру з вибірки не питають
+  # (tree-death / dClimate / contractual), і для джоб, поставлених у чергу до цієї зміни.
+  def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false,
+              target_date = nil, stress_threshold = nil)
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
@@ -38,7 +43,9 @@ class BurnCarbonTokensWorker
         contractual: contractual,
         # [ARCH.46] target_date прокинутий від ContractHealthCheckService (Sidekiq → String ISO8601);
         # nil/blank → сервіс дефолтить на `AiInsight.reporting_date` (tree-death/dClimate/contractual).
-        target_date: (Date.parse(target_date) if target_date.present?)
+        target_date: (Date.parse(target_date) if target_date.present?),
+        # [SLASH-1] Поріг, зафіксований тригером — друга координата «тригер ≡ розмір».
+        stress_threshold: stress_threshold
       )
     end
 

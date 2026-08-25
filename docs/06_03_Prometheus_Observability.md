@@ -332,6 +332,7 @@ end
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
 | `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
 | `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
+| `silkennet_iotex_backfill_rearmed_total` | — | TelemetryLogs re-armed for IoTeX verification by the backfill sweep (sustained-outage recovery; a healthy tract leaves this at zero) |
 | `silkennet_filecoin_verification_failures_total` | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
 | `silkennet_telemetry_archive_batch_failures_total` | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
 | `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
@@ -380,6 +381,7 @@ end
 | `silkennet_blockchain_manual_review_depth` | — | Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue) |
 | `silkennet_chain_audit_delta` | — | Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply |
 | `silkennet_cluster_entropy_score` | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
+| `silkennet_cluster_tree_count_drift` | `cluster_id` | Live active-tree COUNT minus the denormalized active_trees_count (0 = in sync; nonzero means the slashing trigger measures a fabricated denominator) |
 | `silkennet_db_pool_connections` | `database` | Number of active (checked out) database connections |
 | `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
 | `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |

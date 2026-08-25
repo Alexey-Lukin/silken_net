@@ -266,6 +266,37 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }.not_to change(BlockchainTransaction, :count)
     end
 
+    # 🔴 [SLASH-1] Правило консенсусу: при ДВОХ легальних oracle-джерелах за добу гейт
+    # питає НАЙГІРШЕ, а не те, що записалось першим. Доти голий `.first` віддавав
+    # найстаріший рядок (AR додає `ORDER BY id ASC`), тож 5 cUSD залежали від порядку
+    # запису — дефект систематичний, а не «плаваючий», і саме тому тихий.
+    # Фікстура навмисно кладе ЗДОРОВЕ джерело ПЕРШИМ: без правила приклад зелений.
+    context "when two oracle sources disagree that day" do
+      it "withholds the reward when the LATER source sees stress" do
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: target_date, stress_index: 0.05,
+                            fraud_detected: false, model_source: "oracle_a")
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: target_date, stress_index: 0.9,
+                            fraud_detected: false, model_source: "oracle_b")
+
+        expect { described_class.new(cluster, target_date).reward_community! }
+          .not_to change(BlockchainTransaction, :count)
+      end
+
+      it "withholds the reward when only the LATER source flags fraud" do
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: target_date, stress_index: 0.05,
+                            fraud_detected: false, model_source: "oracle_a")
+        create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                            target_date: target_date, stress_index: 0.05,
+                            fraud_detected: true, model_source: "oracle_b")
+
+        expect { described_class.new(cluster, target_date).reward_community! }
+          .not_to change(BlockchainTransaction, :count)
+      end
+    end
+
     it "is eligible at the boundary stress_index 0.2" do
       stub_healthy_and_eligible
       AiInsight.last.update!(stress_index: 0.2)

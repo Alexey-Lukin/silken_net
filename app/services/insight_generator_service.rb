@@ -433,15 +433,19 @@ class InsightGeneratorService < ApplicationService
   # обходять — той самий вибір, що в `calculate_damage_ratio` (тригер має право читати
   # лічильник, розмір — ні).
   #
-  # ⛔ СТЕЛЯ, названа явно й ВИМІРЯНА (спроба збудувати пін її й показала):
-  # `average(:stress_index)` усереднює РЯДКИ, а `measured` рахує ДЕРЕВА (`.distinct`,
-  # дзеркало `DailyHealthRouter#critical_count`). Розійтись вони могли б лише на
-  # дублікаті одного дерева за добу, який unique-індекс легалізує через nullable
-  # `model_source` — але такий рядок до цього підрахунку НЕ ДОЖИВАЄ: `#perform`
-  # починається з тотального `AiInsight…delete_all` по добі, тобто зносить і чужі
-  # `model_source`. Отже `.distinct` тут — не виправлення живого дефекту, а дзеркало
-  # ратифікованої форми на випадок, коли ідемпотентний зріз перестане бути тотальним.
-  # 🔓 Тригер перегляду ОБОХ: перший писач денного інсайту поза цим сервісом.
+  # ✅ [SLASH-1] Стеля ЗНЯТА 2026-08-25 — усі чотири величини рахують ДЕРЕВА.
+  #
+  # Доти тут стояло чесне застереження: `average(:stress_index)`/`sum(:total_growth_points)`
+  # усереднювали РЯДКИ, тоді як `measured`/`fraud` рахували ДЕРЕВА, — і воно ж пояснювало,
+  # чому це не живий дефект: тотальний `delete_all` на початку `#perform` зносить дубль
+  # раніше, ніж той доживе до підрахунку. Підстава лишається правдивою; змінилось те, що
+  # вона більше нічого не тримає — розходження знято В КОДІ, а не відкладено до тригера.
+  #
+  # 🔑 Чому не «дочекатись першого писача поза сервісом»: розходження осідало б у
+  # НЕЗВОРОТНОМУ артефакті (`Filecoin::ArchiveService` пінить кластерний рядок в IPFS як
+  # доказ), тобто ціна помилки тут не «неточний екран», а «доказ, що бреше про власне
+  # покриття» — при тому, що `measured_trees` лежить у тому самому об'єкті й робить
+  # розходження видимим аудиторові. Для такої поверхні латентність не є пом'якшенням.
   def aggregate_cluster!(cluster)
     active_tree_ids = cluster.trees.active.select(:id)
 
@@ -452,7 +456,30 @@ class InsightGeneratorService < ApplicationService
       target_date: @date
     )
 
-    measured_trees = tree_insights.select(:analyzable_id).distinct.count
+    # 🔴 [SLASH-1] ПРЕ-АГРЕГАЦІЯ НА ДЕРЕВО — одиниця лічби тут «дерево», ніколи «рядок».
+    #
+    # Unique-індекс `idx_ai_insights_unique_report` несе `model_source`, тож ДВА інсайти
+    # на одне дерево за ту саду добу легальні за дизайном (oracle-consensus), а генератор
+    # пише `model_source` NULL — і PG unique NULL-и не дедуплікує. Доти `average`/`sum`
+    # нижче йшли по РЯДКАХ, тобто дерево з двома джерелами діставало ПОДВІЙНУ вагу.
+    # Сусідні лічильники (`measured_trees`, `fraud_trees`) цю вісь уже тримали через
+    # `.distinct` — тобто загроза була відома репо, а числові поля лишались відкритими.
+    #
+    # ⚠️ Ціна не «інвестор-фейсінг число»: цей рядок пінується в IPFS ЯК ДОКАЗ
+    # (`Filecoin::ArchiveService` кладе `stress_index` + `total_growth_points` поруч із
+    # `measured_trees`), тобто артефакт стверджував би «середнє по N деревах», рахуючи
+    # по M ≥ N рядках — і саме `measured_trees` робить розходження видимим аудиторові.
+    #
+    # 🔑 Агрегати РІЗНІ, бо семантика різна:
+    #   • `stress_index` — ОЦІНКА: кілька джерел про одне дерево зводяться СЕРЕДНІМ;
+    #   • `total_growth_points` — ЛІЧИЛЬНИК виміряного за добу, не оцінка: усереднення
+    #     вигадало б проміжне число, тож береться MAX (повніше врахування телеметрії).
+    per_tree = tree_insights.group(:analyzable_id).pluck(
+      Arel.sql("AVG(stress_index)"),
+      Arel.sql("MAX(total_growth_points)")
+    )
+
+    measured_trees = per_tree.size
     return if measured_trees.zero?
 
     total_trees = cluster.trees.active.count
@@ -469,8 +496,8 @@ class InsightGeneratorService < ApplicationService
       analyzable: cluster,
       insight_type: :daily_health_summary,
       target_date: @date,
-      stress_index: tree_insights.average(:stress_index).to_f.round(3),
-      total_growth_points: tree_insights.sum(:total_growth_points),
+      stress_index: (per_tree.sum { |avg, _| avg.to_f } / measured_trees).round(3),
+      total_growth_points: per_tree.sum { |_, gp| gp.to_i },
       summary: summary,
       reasoning: { measured_trees: measured_trees, total_trees: total_trees }
     )

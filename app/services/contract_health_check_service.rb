@@ -44,7 +44,11 @@ class ContractHealthCheckService < ApplicationService
     # читання AiInsight.slash_stress_threshold, щоб тригер і розмір не розходились.
     # [GOV.1] Обидва пороги DAO-live (SystemParameter ← ProtocolParameters.sol); Rational
     # із to_s — точна десяткова частка без IEEE-похибки на межі (спадок Rational(1,5)).
-    critical_insights_count = router.critical_count(AiInsight.slash_stress_threshold)
+    # [SLASH-1] Поріг читається РІВНО РАЗ і далі подорожує з вироком: те саме число
+    # сайзить damage у `BlockchainBurningService`. Доти кожна половина читала DAO-live
+    # у свій момент, тож голос між диспатчем і виконанням розводив тригер і розмір.
+    stress_threshold = AiInsight.slash_stress_threshold
+    critical_insights_count = router.critical_count(stress_threshold)
 
     slash_fraction = Rational(SystemParameter.current(:slash_threshold, default: 0.2).to_s)
 
@@ -73,7 +77,7 @@ class ContractHealthCheckService < ApplicationService
     end
 
     if critical_insights_count > router.total_active_trees * slash_fraction
-      flag_degradation!
+      flag_degradation!(stress_threshold)
     else
       :healthy
     end
@@ -86,11 +90,14 @@ class ContractHealthCheckService < ApplicationService
   # cause-gate чокпоінта вирішує slash-vs-freeze (§3.2). Це й полагодило латентний баг:
   # раніше pre-breach коротко-замикав воркер (`return if status_breached?`) → daily-шлях
   # ніколи реально не палив. Тепер не пре-маркуємо → daily нарешті доходить до burn/freeze.
-  def flag_degradation!
+  def flag_degradation!(stress_threshold)
     Rails.logger.warn "🚨 [D-MRV] NaasContract ##{@contract.id}: >20% критичних аномалій — на чокпоінт слешингу (cause-gate вирішить slash/freeze)."
     # [ARCH.46] Прокидаємо @target_date у burn (5-й позиц. арг), щоб damage-ratio рахувався за ТУ Ж
     # добу, що тут — інакше burn перевираховує добу у свій момент → інша дата → 100%.
-    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, false, @target_date.to_s)
+    # [SLASH-1] Разом із датою їде ПОРІГ (6-й) — друга координата того самого інваріанта
+    # «тригер ≡ розмір»: дату ARCH.46 звів, а поріг кожна половина читала у свій момент.
+    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, false,
+                                         @target_date.to_s, stress_threshold)
     :degraded
   end
 

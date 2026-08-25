@@ -25,7 +25,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         naas_contract.id,
         source_tree: tree,
         contractual: false,
-        target_date: nil
+        target_date: nil,
+        stress_threshold: nil
       )
     end
 
@@ -95,7 +96,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         naas_contract.id,
         source_tree: tree,
         contractual: false,
-        target_date: Date.new(2026, 7, 1)
+        target_date: Date.new(2026, 7, 1),
+        stress_threshold: nil
       )
     end
 
@@ -107,7 +109,8 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         naas_contract.id,
         source_tree: nil,
         contractual: true,
-        target_date: nil
+        target_date: nil,
+        stress_threshold: nil
       )
     end
   end

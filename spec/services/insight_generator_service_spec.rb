@@ -337,14 +337,48 @@ RSpec.describe InsightGeneratorService, type: :service do
       expect(cluster_insight.total_trees).to eq(5)
     end
 
-    # ⛔ [ARCH.84] Свідка на `.distinct` тут НЕМАЄ, і причина виміряна, а не забута:
-    # `perform` починається з `AiInsight…delete_all` по всій добі, тож ЧУЖИЙ рядок
-    # (oracle-consensus, який unique-індекс легалізує через nullable `model_source`)
-    # знищується ще ДО агрегації — дублікат не доживає до підрахунку в жодному
-    # сценарії, що проходить через цього писача. `.distinct` лишається дзеркалом
-    # ратифікованого `DailyHealthRouter#critical_count`, тобто захистом на випадок,
-    # коли ідемпотентний зріз перестане бути тотальним. Спроба збудувати пін і є
-    # тим виміром: фікстура, яку доводиться «домовляти», називає чуже правило.
+    # ✅ [SLASH-1] Свідок на пре-агрегацію ТЕПЕР Є — і заходить він НИЖЧЕ ідемпотентного
+    # зрізу, бо саме той зріз доти робив пін неможливим: `perform` починається з
+    # `AiInsight…delete_all` по всій добі, тож другий `model_source` не доживає до
+    # агрегації в жодному сценарії, що йде через публічний вхід.
+    #
+    # 🔴 Тому приклад кличе `aggregate_cluster!` напряму (прецедент прямого виклику
+    # приватного в цьому файлі — `calculate_stress_index` та сусіди; стаба на агрегацію
+    # у файлі немає, перевірено). Це не обхід правила, а єдиний спосіб поставити
+    # фікстуру у стан, який unique-індекс легалізує через nullable `model_source`, —
+    # тобто у світ ПІСЛЯ першого писача денного інсайту поза цим сервісом.
+    #
+    # ⚠️ Обидві числові осі пінимо окремо, бо агрегати РІЗНІ за семантикою:
+    # стрес — середнє (оцінка), бали — MAX на дерево (лічильник, не оцінка).
+    describe "per-tree pre-aggregation [SLASH-1]" do
+      it "weighs a tree ONCE even when two oracle sources reported it that day" do
+        service = described_class.new(date)
+        other = create(:tree, cluster: cluster, tree_family: tree.tree_family)
+
+        # Дерево з ДВОМА джерелами (легально: `model_source` у unique-індексі)…
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                            target_date: date, stress_index: 0.9, total_growth_points: 100,
+                            model_source: "oracle_a")
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+                            target_date: date, stress_index: 0.9, total_growth_points: 100,
+                            model_source: "oracle_b")
+        # …і сусід з одним.
+        create(:ai_insight, analyzable: other, insight_type: :daily_health_summary,
+                            target_date: date, stress_index: 0.1, total_growth_points: 10,
+                            model_source: "oracle_a")
+
+        service.send(:aggregate_cluster!, cluster)
+
+        insight = AiInsight.find_by(analyzable: cluster, insight_type: :daily_health_summary,
+                                    target_date: date)
+
+        # Рядково-зважене дало б (0.9+0.9+0.1)/3 = 0.633; по деревах — (0.9+0.1)/2 = 0.5.
+        expect(insight.stress_index.to_f).to eq(0.5)
+        # Сума по рядках дала б 210; MAX-на-дерево — 110.
+        expect(insight.total_growth_points).to eq(110)
+        expect(insight.measured_trees).to eq(2)
+      end
+    end
 
     # 🔴 [ARCH.84] Популяція середнього = ЖИВИЙ ліс, як у всіх трьох денних читачів
     # (`DailyHealthRouter`, `BlockchainBurningService#calculate_damage_ratio`). Доти

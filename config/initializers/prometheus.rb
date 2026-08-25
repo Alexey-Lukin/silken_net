@@ -537,6 +537,15 @@ module SilkenNet
       docstring: "AuditLog archive re-enqueues issued by FilecoinReconcileWorker"
     )
 
+    # [INF.22] Скільки логів ре-армовано backfill-проходом. ⚠️ Рахує ЛОГИ (`by:`),
+    # не проходи — прецедент `FILECOIN_REPIN_TOTAL` вище, де батч подій теж лічиться
+    # величиною. Стійке ненульове = sustained IoTeX-outage, а не разовий блип: у
+    # здоровому тракті per-uplink enqueue не лишає роботи цьому воркеру.
+    IOTEX_BACKFILL_REARMED_TOTAL = REGISTRY.counter(
+      :silkennet_iotex_backfill_rearmed_total,
+      docstring: "TelemetryLogs re-armed for IoTeX verification by the backfill sweep (sustained-outage recovery; a healthy tract leaves this at zero)"
+    )
+
     # [E.60 Фаза 1б] Mint-anchored телеметрія-батч-архівація: збої тракту по фазах.
     # reason: build (fail-open → мінт із zero32 при непорожніх вікнах = кандидат-інцидент) ·
     # pin (Pinata-вичерпання, retries_exhausted-hook) · mismatch (rebuild ≠ stored root при
@@ -730,6 +739,17 @@ module SilkenNet
     CLUSTER_ENTROPY_SCORE = REGISTRY.gauge(
       :silkennet_cluster_entropy_score,
       docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0)",
+      labels: [ :cluster_id ]
+    )
+
+    # [SLASH-1] Розходження денормалізованого active_trees_count із живим COUNT
+    # (live − cached). Ненульове означає, що ЗНАМЕННИК тригера слешингу хибний:
+    # поріг `> N × slash_fraction` і межа виродження `N < 1/slash_fraction` міряють
+    # вигадану популяцію. Нуль тут — стан за побудовою (писачів в обхід колбеків не
+    # існує), тож будь-яке відхилення є подією, а не шумом.
+    CLUSTER_TREE_COUNT_DRIFT = REGISTRY.gauge(
+      :silkennet_cluster_tree_count_drift,
+      docstring: "Live active-tree COUNT minus the denormalized active_trees_count (0 = in sync; nonzero means the slashing trigger measures a fabricated denominator)",
       labels: [ :cluster_id ]
     )
 

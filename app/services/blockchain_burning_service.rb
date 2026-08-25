@@ -63,7 +63,19 @@ class BlockchainBurningService < ApplicationService
   # @param contractual [Boolean] true — це погоджена контрактна форфейтура (early-exit
   #   `burn_accrued_points`, `ContractTerminationService`), НЕ slash-за-провину → гейт
   #   positive-A пропускається (інвестор сам розірвав, burn — погоджена умова, не Кат-A).
-  def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false, target_date: nil)
+  # @param stress_threshold [Numeric, nil] поріг «стресованого дерева», ЗАФІКСОВАНИЙ на
+  #   момент тригера [SLASH-1, 2026-08-25]. Дзеркало `target_date`: ARCH.46 протягнув сюди
+  #   ДАТУ, щоб обидві половини вироку міряли одну добу, — але поріг кожна половина й далі
+  #   читала у СВІЙ момент, тож DAO-голос (чи закінчення 24-год TTL `SystemParameter`)
+  #   між диспатчем і виконанням розводив тригер і розмір ТІЄЮ САМОЮ парою, лише іншою
+  #   координатою. Напрямок помилки асиметричний: підняли поріг у вікні → менший burn
+  #   (безпечний бік), знизили → burn БІЛЬШИЙ за підставу, на якій тригер спрацював.
+  #   ⚖️ Підстава протягування — не «акуратність», а принцип, уже ратифікований для дати:
+  #   вирок судиться правом на момент ПОДІЇ, не на момент виконання.
+  #   `nil` → сервіс читає DAO-live сам (tree-death / dClimate / contractual тригери порога
+  #   не мають, бо розміру з вибірки не питають).
+  def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false,
+                 target_date: nil, stress_threshold: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
@@ -74,6 +86,13 @@ class BlockchainBurningService < ApplicationService
     # (date-mismatch → запит на іншу добу → нуль записів → хибне 100%). Інші тригери
     # (tree-death/dClimate/contractual) дати не передають → дефолт `AiInsight.reporting_date`.
     @target_date = target_date
+    @stress_threshold = stress_threshold
+  end
+
+  # [SLASH-1] Поріг вироку: зафіксований тригером, інакше DAO-live на цю мить.
+  # Дзеркало `effective_target_date` — та сама форма для тієї самої пари.
+  def effective_stress_threshold
+    @effective_stress_threshold ||= (@stress_threshold || AiInsight.slash_stress_threshold).to_f
   end
 
   def perform
@@ -478,7 +497,10 @@ class BlockchainBurningService < ApplicationService
     # (oracle-consensus), а генератор пише `model_source` NULL — PG unique NULL-и не дедуплікує.
     # Голий `.count` давав одному дереву вагу двох; від 100% рятував лише `.min`-clamp нижче,
     # тобто симптом маскувався. Дзеркало `DailyHealthRouter#critical_count`. [⚖️ 2026-07-30]
-    critical_count = daily_insights.where("stress_index >= ?", AiInsight.slash_stress_threshold)
+    # ⊕ [SLASH-1] Поріг береться ЗАФІКСОВАНИЙ тригером (`effective_stress_threshold`), а не
+    # перечитується тут: доти ARCH.46 звів обидві половини на один ДЕНЬ, лишивши їм два
+    # РІЗНІ моменти читання порога — те саме розходження, лише іншою координатою.
+    critical_count = daily_insights.where("stress_index >= ?", effective_stress_threshold)
                                    .select(:analyzable_id).distinct.count
 
     # Ділення в обох гілках безпечне БЕЗ zero-guard, і доказ тримається лише тому, що чисельник

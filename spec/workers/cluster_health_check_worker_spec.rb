@@ -18,6 +18,47 @@ RSpec.describe ClusterHealthCheckWorker, type: :worker do
       expect { described_class.new.perform }.not_to raise_error
     end
 
+    # 🔴 [SLASH-1] Денормалізований `active_trees_count` годує ЗНАМЕННИК тригера слешингу
+    # (поріг `> N × slash_fraction` І межу виродження `N < 1/slash_fraction`), а тримають
+    # його `Tree`-колбеки — тож `update_all`/`update_columns` їх обходять. Розмір спалення
+    # з цієї залежності знято [⚖️ 2026-07-30], тригер лишався сліпим. Звірка їде в проході,
+    # що вже обходить кластери, — нуль воркерів, нуль розкладу.
+    describe "active_trees_count drift audit" do
+      it "stays silent while the counter matches the live COUNT" do
+        create(:tree, cluster: cluster)
+        allow(Rails.logger).to receive(:error)
+
+        described_class.new.perform
+
+        expect(Rails.logger).not_to have_received(:error).with(/SLASH-1 drift/)
+      end
+
+      # Мутація писача — рівно та форма, що обходить колбеки й через яку клас існує.
+      it "names the cluster when the counter drifted from the live COUNT" do
+        create(:tree, cluster: cluster)
+        Cluster.where(id: cluster.id).update_all(active_trees_count: 99)
+        allow(Rails.logger).to receive(:error)
+
+        described_class.new.perform
+
+        expect(Rails.logger).to have_received(:error).with(/SLASH-1 drift.*##{cluster.id}/)
+      end
+
+      # 🔴 Прилад не сміє валити добовий аудит контрактів: звірка — спостережність,
+      # а навколо неї йде вирок про гроші. Без цього гарду збій метрики (Redis/registry)
+      # зупиняв би перевірку ВСІХ наступних кластерів.
+      it "never lets a broken probe abort the contract audit" do
+        create(:tree, cluster: cluster)
+        Cluster.where(id: cluster.id).update_all(active_trees_count: 99)
+        allow(SilkenNet::Metrics::CLUSTER_TREE_COUNT_DRIFT).to receive(:set).and_raise(StandardError, "registry down")
+        allow(Rails.logger).to receive(:warn)
+
+        expect { described_class.new.perform }.not_to raise_error
+
+        expect(Rails.logger).to have_received(:warn).with(/SLASH-1 drift.*не вдалась/)
+      end
+    end
+
     it "passes date_string to NaasContract health check" do
       date = "2026-03-06"
 

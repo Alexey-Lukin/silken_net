@@ -304,6 +304,27 @@ RSpec.describe BlockchainBurningService do
         expect(mock_client).to have_received(:transact)
       end
 
+      # 🔴 [SLASH-1] Друга координата того самого інваріанта: ПОРІГ теж подорожує з
+      # вироком, а не перечитується в момент виконання. Доти ARCH.46 звів обидві
+      # половини на одну ДОБУ, лишивши їм два різні моменти читання порога — тож
+      # DAO-голос (чи закінчення 24-год TTL) між диспатчем і виконанням розводив
+      # тригер і розмір. Небезпечний напрямок: поріг ЗНИЖЕНО у вікні → burn більший
+      # за підставу, на якій тригер спрацював.
+      it "sizes damage on the threshold FIXED at trigger time, not the one live at execution" do
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: AiInsight.reporting_date, stress_index: 0.9)
+
+        # DAO знизив поріг ПІСЛЯ того, як тригер спрацював на 0.95.
+        SystemParameter.set(:stress_threshold, "0.5", value_type: "decimal", source: "governance")
+
+        result = described_class.call(organization.id, naas_contract.id, stress_threshold: 0.95)
+
+        # За зафіксованим порогом 0.95 дерево зі стресом 0.9 НЕ критичне → нема шкоди.
+        # Якби сервіс перечитав живий 0.5 — воно стало б критичним і спалило б кошти.
+        expect(result).not_to eq(:slashed)
+        expect(mock_client).not_to have_received(:transact)
+      end
+
       # [ARCH.46] Contractual early-exit forfeiture MUST still full-burn on no-data (NOT freeze).
       it "still full-burns a contractual forfeiture with no data and no source_tree (ARCH.46 exempts contractual)" do
         described_class.call(organization.id, naas_contract.id, contractual: true)

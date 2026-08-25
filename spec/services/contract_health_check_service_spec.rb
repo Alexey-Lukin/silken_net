@@ -144,7 +144,7 @@ RSpec.describe ContractHealthCheckService do
         # [ARCH.46] burn-воркер МУСИТЬ отримати прокинутий target_date (5-й арг) — інакше burn
         # перевираховує добу в момент виконання → date-mismatch over-burn (regression guard).
         expect(BurnCarbonTokensWorker.jobs.last["args"]).to eq(
-          [ contract.organization_id, contract.id, nil, false, target_date.to_s ]
+          [ contract.organization_id, contract.id, nil, false, target_date.to_s, AiInsight.slash_stress_threshold ]
         )
 
         expect(contract.reload).to be_status_active # no pre-breach — chokepoint owns the verdict
