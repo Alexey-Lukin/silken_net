@@ -11,16 +11,34 @@
 # This prevents a telemetry queue flood from evicting critical Web3 locks.
 
 SIDEKIQ_REDIS_URL = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
-SIDEKIQ_REDIS_POOL_SIZE = ENV.fetch("SIDEKIQ_REDIS_POOL_SIZE", 15).to_i
-SIDEKIQ_REDIS_TIMEOUT = ENV.fetch("SIDEKIQ_REDIS_TIMEOUT", 5).to_i
+
+# `.presence`, не `fetch`-дефолт: присутня-порожня змінна віддає "", і `"".to_i`
+# дало б нуль — тобто таймаут без межі та пул нульового розміру.
+SIDEKIQ_REDIS_TIMEOUT = (ENV["SIDEKIQ_REDIS_TIMEOUT"].presence || 5).to_i
+
+# ⛔ `size:` тут СВІДОМО відсутній [ARCH.59]: Sidekiq 7+ тримає ДВА пули й виводить
+# обидва сам — капсульний із `:concurrency` (`config/sidekiq.yml`) та окремий
+# internal під heartbeat / sidekiq-scheduler / Web UI. Явний `size:` іде через
+# `.merge(@redis_config)`, тобто перекривав ОБИДВА: прибивав капсульний до
+# константи незалежно від `:concurrency` (крок 3 DOC-R.10 розщеплює процеси
+# per-queue — там розходження стає живим) і роздував internal. Розбір — дім
+# `04_02 §11` DOC-R.10.
+SIDEKIQ_REDIS_OPTIONS = {
+  url: SIDEKIQ_REDIS_URL,
+  network_timeout: SIDEKIQ_REDIS_TIMEOUT,
+  pool_timeout: SIDEKIQ_REDIS_TIMEOUT
+}.freeze
+
+# Клієнтський процес капсул не має, тож вивести стелю Sidekiq'у нізвідки — її
+# задають треди, що кличуть `perform_async`, плюс запас на Sidekiq::Web. Дзеркалить
+# `config/database.yml`, але БЕЗ `PUMA_MAX_IO_THREADS`: io-позначених шляхів нуль
+# [ARCH.80], а Redis у нас managed (Upstash), тож стеля з'єднань не безкоштовна.
+SIDEKIQ_CLIENT_POOL_SIZE = (
+  ENV["SIDEKIQ_CLIENT_POOL_SIZE"].presence || (ENV["RAILS_MAX_THREADS"].presence || 3).to_i + 2
+).to_i
 
 Sidekiq.configure_server do |config|
-  config.redis = {
-    url: SIDEKIQ_REDIS_URL,
-    network_timeout: SIDEKIQ_REDIS_TIMEOUT,
-    pool_timeout: SIDEKIQ_REDIS_TIMEOUT,
-    size: SIDEKIQ_REDIS_POOL_SIZE
-  }
+  config.redis = SIDEKIQ_REDIS_OPTIONS
 
   # [INF.14 / 06_03 §2.9] Job-контейнер віддає власний /metrics: реєстр
   # Prometheus — in-process, тож money-path/telemetry-лічильники воркерів
@@ -31,10 +49,5 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.configure_client do |config|
-  config.redis = {
-    url: SIDEKIQ_REDIS_URL,
-    network_timeout: SIDEKIQ_REDIS_TIMEOUT,
-    pool_timeout: SIDEKIQ_REDIS_TIMEOUT,
-    size: ENV.fetch("SIDEKIQ_CLIENT_POOL_SIZE", 5).to_i
-  }
+  config.redis = SIDEKIQ_REDIS_OPTIONS.merge(size: SIDEKIQ_CLIENT_POOL_SIZE)
 end
