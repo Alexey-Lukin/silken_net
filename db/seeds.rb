@@ -6,7 +6,7 @@ require "securerandom"
 puts "🔥 Очищення старого світу (Кенозис)..."
 # Порядок враховує залежності (Foreign Keys) — від листя до кореня
 [
-  AuditLog, Session, Identity,
+  AuditLog, Session,
   ActuatorCommand, MaintenanceRecord,
   BlockchainTransaction, TelemetryLog, GatewayTelemetryLog, AiInsight, EwsAlert,
   Wallet, DeviceCalibration,
@@ -112,7 +112,7 @@ system_params = [
   # дефолтам — поведінка не змінюється, змінюється ДОСЯЖНІСТЬ важеля.
   # ⚠️ Гейт `system_parameter_delivery_spec` цю вісь не бачить за оголошеною стелею:
   # він судить «засіяне → читається», ніколи «читане → засіяне».
-  { key: "slash_cause_uplift_enabled", value: "false", value_type: "boolean", category: "slashing",
+  { key: "slash_cause_uplift_enabled", value: "false", value_type: "boolean", category: "alerts",
     description: "[SLASH-1] DAO-активація penalty_factor-uplift; false → комбінатор причин інертний" },
   { key: "solana_batch_threshold_usdc", value: "0", value_type: "decimal", category: "minting",
     min_value: 0, max_value: 1_000_000, description: "Поріг переходу Solana-виплат з per-event на погодинні батчі (0=per-event)" },
