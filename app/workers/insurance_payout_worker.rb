@@ -42,19 +42,6 @@ class InsurancePayoutWorker
       return
     end
 
-    # [DOC-T.89] SFC-виплата зупиняється ТУТ, а не лише в мінт-лійці. Лійковий гард
-    # мовчки повертає ПІСЛЯ `pay!`, тож поліс став би `:paid`, `INSURANCE_PAYOUT_SUCCESS_TOTAL`
-    # інкрементнувся б (він лічить виклик, не результат), а tx лишився б вічним `:pending`,
-    # якого recovery не бачить (тягне лише `:triggered`). Тобто система засвідчила б
-    # виплату, якої не було. Лійковий гард лишається — він ловить УСІ шляхи, включно з
-    # майбутнім admin-екраном; цей потрібен, щоб самосвідчення не брехало.
-    # 🔦 Знімати разом із лійковим — грепай DOC-T.89.
-    if insurance.token_type_forest_coin?
-      Rails.logger.error "🛑 [DOC-T.89] Виплата ##{insurance_id} у SFC відхилена до активації " \
-                         "governance (SEC.1): поліс лишається :triggered, tx не створюється."
-      return
-    end
-
     # 2. АТОМАРНА ФІКСАЦІЯ ВИПЛАТИ (Postgres Domain)
     tx = nil
     ActiveRecord::Base.transaction do
@@ -193,7 +180,29 @@ class InsurancePayoutWorker
         within_rpc_limit do
           BlockchainMintingService.call(tx.id, created_at_span: tx.created_at) # [S6.16] partition-prune
         end
-        SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
+        # 🔴 [INF.26] Лічимо РЕЗУЛЬТАТ, не виклик. Доти інкремент стояв одразу за
+        # сервісом і стверджував лише «не кинуло винятку» — а сервіс мовчки
+        # ПОВЕРТАЄ на чотирьох живих шляхах: KYC-фільтр (гейт читає `audit_wallet`,
+        # тобто дерево кластера, тож не-KYC'нуте дерево тихо блокує виплату
+        # ОРГАНІЗАЦІЇ), SEC.13 `peaq_did_compromised`, ARCH.62 circuit-break і
+        # ambiguous-ескалація в `:manual_review`. Тобто панель «Money-Path Success
+        # Rate (SLO)» була структурно приліплена до 1.0 і падала б рівно ніколи.
+        # Гілки, що RAISE'ять (низький баланс оракула, `ENV.fetch`, LockTimeout,
+        # pre-broadcast revert), і доти лічильника не рухали — дефект вибірковий
+        # саме на ТИХИХ відмовах, тобто на тих, про які нема кому доповісти.
+        #
+        # Дискримінатор той самий, що в трьох сиблінгів SLO (`MINT_SUCCESS_TOTAL`,
+        # `SLASH_SUCCESS_TOTAL`, `SOLANA_PAYOUT_SUCCESS_TOTAL`): чисельник = BROADCAST,
+        # тобто status→sent. Insurance був єдиним, чий докстрінг казав «mint
+        # initiated» — чесний опис хибної поведінки, не інша семантика.
+        # [S6.16] Пере-читання через One-Home: голий `.reload` сканує ВСІ партиції.
+        settled = BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at)
+        if settled.status_sent? || settled.status_confirmed?
+          SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL.increment
+        else
+          Rails.logger.warn "⚠️ [Insurance] ##{insurance.id}: мінт повернувся мовчки " \
+                            "(tx ##{tx.id} у стані #{settled.status}) — SLO-чисельник не рухаємо."
+        end
       end
     end
 

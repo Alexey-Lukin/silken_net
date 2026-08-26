@@ -47,10 +47,16 @@ RSpec.describe ParametricInsurance, type: :model do
       expect(strangers).to be_empty, "неіснуючий alert_type у мапі перилів: #{strangers.join(', ')}"
     end
 
-    it "defines token_type values with prefix" do
+    # [DOC-T.89, ⚖️ 2026-08-26] SFC як тип виплати знято В ДЖЕРЕЛІ вибору. Пін
+    # тримає обидві половини присуду: `carbon_coin` лишається єдиним легальним, а
+    # ціле `1` лишається ЗАЙНЯТИМ — інакше наступний перил тихо сів би на адресу
+    # колишнього `forest_coin` і оживив би історичні рядки в новому значенні.
+    it "offers carbon_coin ONLY — and keeps integer 1 retired, not free" do
       insurance = build(:parametric_insurance)
+
       expect(insurance).to respond_to(:token_type_carbon_coin?)
-      expect(insurance).to respond_to(:token_type_forest_coin?)
+      expect(insurance).not_to respond_to(:token_type_forest_coin?)
+      expect(described_class.token_types).to eq({ "carbon_coin" => 0 })
     end
   end
 

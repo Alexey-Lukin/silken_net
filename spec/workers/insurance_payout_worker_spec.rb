@@ -29,23 +29,13 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     silence_side_effects!(:satellite_verification)
   end
 
-  # [DOC-T.89] Гард у мінт-лійці спрацьовує ПІСЛЯ `pay!`, тож без цього відсікання
-  # поліс став би `:paid`, `INSURANCE_PAYOUT_SUCCESS_TOTAL` зріс би, а грошей не пішло б —
-  # система засвідчила б виплату, якої не було. Пін стереже саме порядок, не сам факт.
-  context "when the policy pays in SFC (forest_coin)" do
-    let(:insurance) do
-      create(:parametric_insurance, :triggered, cluster: cluster,
-             organization: organization, token_type: :forest_coin)
-    end
-
-    it "відхиляє виплату до pay!: поліс лишається :triggered, транзакції немає" do
-      expect { described_class.new.perform(insurance.id) }
-        .not_to change(BlockchainTransaction, :count)
-
-      expect(insurance.reload.status).to eq("triggered")
-      expect(BlockchainMintingService).not_to have_received(:call)
-    end
-  end
+  # [DOC-T.89, ⚖️ 2026-08-26] Гард на SFC-виплату ЗНЯТО разом із самим значенням:
+  # `forest_coin` більше не в енумі `ParametricInsurance`, тож поліс не може бути
+  # підписаний у типі, який система відмовляється виконувати. Пін переїхав у
+  # `spec/models/parametric_insurance_spec.rb` — там він стереже ДЖЕРЕЛО вибору,
+  # а не наслідок. Тутешній приклад був би тепер невибудовним: фабрика підняла б
+  # `ArgumentError` ще в `let`, тобто зелений давав би сам факт неможливості —
+  # це вимір фікстури, не поведінки воркера.
 
   it "memoizes the kill-switch flag — SystemParameter is read once per worker instance" do
     worker = described_class.new
