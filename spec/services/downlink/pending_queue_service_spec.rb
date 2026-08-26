@@ -206,6 +206,21 @@ RSpec.describe Downlink::PendingQueueService do
       expected = OtaPackagerService.build_rotate_key_block(3)
       expect(inner.byteslice(0, expected.bytesize)).to eq(expected)
     end
+
+    # 🔴 Третій стан, і він НЕ дорівнює жодному з двох вище: гейт ВІДЧИНЕНО, а
+    # джерела ротації в кластері немає. Різниця не академічна — «мовчить, бо
+    # заборонено» і «мовчить, бо нема з чого вивести» ведуть до протилежних дій
+    # оператора, а на дроті вони невідрізнимі (обидва = нулі в конверті). Доти
+    # виконувалась лише перша гілка, тож регресія, що почала б віддавати 0x9E з
+    # НЕротованого ключа (напр. знятий `where.not(previous_aes_key_hex: nil)`),
+    # проходила б зеленою: Солдат дістав би наказ ратчетитись у версію, якої
+    # ніхто не роздавав.
+    it "мовчить, коли гейт ВІДЧИНЕНО, але незавершеної ротації в кластері немає" do
+      allow(HardwareKeyService).to receive(:ratchet_dispatch_enabled?).and_return(true)
+      tree_key.update!(previous_aes_key_hex: nil)
+
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+    end
   end
 
   describe "OTA-hint + chunk-server" do
@@ -260,6 +275,20 @@ RSpec.describe Downlink::PendingQueueService do
       )).to be_nil
       expect(described_class.ota_chunk_reply(
         gateway: gateway, query: { "v" => (firmware.id + 99).to_s, "ch" => "0" }
+      )).to be_nil
+    end
+
+    # 🔴 Гард «без KEYC → nil» мав пін лише на ОДНОМУ з двох входів (`poll_reply`,
+    # див. «порожня черга»), а chunk-сервер — окрема точка входу CoapGate й окремий
+    # `return nil unless encryption_key`. Дзеркало наполовину: зняття гарда саме тут
+    # лишалось зеленим, а ціна — конверт, зашифрований НЕ тим ключем (або виняток
+    # усередині синхронного reply-шляху демона), тобто шлюз без провізії тягнув би
+    # чанки прошивки замість чесної 4.04.
+    it "chunk-сервер теж fail-closed без KEYC — гард стоїть на ОБОХ входах" do
+      key_record.destroy!
+
+      expect(described_class.ota_chunk_reply(
+        gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" }
       )).to be_nil
     end
 
