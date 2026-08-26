@@ -243,6 +243,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 94. A gate keyed on a FORM is blind exactly where the form goes DYNAMIC — and that is where the dangerous writer lives, so its zero is an argument AGAINST building it
 95. A DERIVATION written as prose in ONE canon line has nothing to go red with — so it survives every change to its own inputs, and the fix is not a constancy-gate on the number but a MODEL that recomputes the chain
 96. A mutation that lands inside a `rescue StandardError` proves NOTHING — and the pin it "verified" can be measuring an empty set
+97. Ask what SHAPE your pin engine can extract before believing a canon mirror is gated — ours reads `NAME = value`, so every mirror that is not a constant assignment sits outside every gate BY CONSTRUCTION, and the tell is a doc that CERTIFIES ITSELF — **(1) for any canon page that restates code, name the gate that watches it, and if the answer is the pin engine, check that the restated thing is literally a `NAME = value`; (2) if it is not, look for a property of the restatement that is INVARIANT across every dialect the corpus uses to spell it — here arity, which all four spellings agree on and which is exactly what moved — and gate THAT rather than the text; (3) treat every ✅ column inside the doc as a claim needing its own gate, because a matrix that certifies agreement is the highest-trust, lowest-evidence artifact a canon page can contain**
 
 <!-- /GUARD-CRAFT-INDEX -->
 

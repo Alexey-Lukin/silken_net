@@ -34,7 +34,7 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 1a. A monitoring read that MUTATES what it reports is not a probe — and both circuit breakers in this tree had exactly that — **Reflex for any «probe / status / health» method: read what it CALLS, not what it is named — and ask whether the call writes**
 2. manual_review state — **before reading a depth gauge as an incident signal, list every writer that parks a row in that state**
 3. `batchMint` bisects a reverting batch to isolate the poisoned record — never bypass the dry-run, and bisect only WITHIN one archive-root subgroup
-4. Dynamic tax is governance-read, applies to `batchMint` ONLY, and is on from genesis — a single `mint()` never taxes, and an RPC failure fails to `false`
+4. Dynamic tax is governance-read, applies to `batchMint` ONLY, and is on from genesis — a single `mint()` never taxes, and an RPC failure fails to `false` — **умову «чи оподатковується» питай ЛИШЕ через One-Home `taxing?(token_type)` — половин ДВІ (тип І стан пулу), а споживачів теж два: сама ДІЯ і ЗАПИС ПРО ДІЮ, і розходження між ними тихе за побудовою, бо запис ніхто не звіряє з дією**
 5. Solana reward is `10,000 + growth_points * 100` lamports, signed Ed25519 — not secp256k1 — with the ATA resolved by owner
 6. The partition helper depends on CARDINALITY — one known row versus a SET — and a `status`-scan deliberately stays unbounded
 7. Solana payouts flip from per-event to hourly batching the moment `solana_batch_threshold_usdc` rises above zero
