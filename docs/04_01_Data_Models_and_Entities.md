@@ -267,6 +267,7 @@ normalize_identifier :device_uid  # HardwareKey
 | `did` | string | `SNET-[8 HEX]` — ДЕРИВОВАНИЙ з 96-біт silicon UID (murmur3-fmix32, [`03_01 §7`](03_01_Firmware_Lifecycle_and_DMA)); НЕ сирий апаратний ідентифікатор |
 | `silicon_uid_hex` | string | [FW.54] 24-hex кремнієвий паспорт (три %08X-слова UID); unique-nullable — відрізняє re-flash від DID-колізії (quarantine); nil = legacy-дерево до one-pass провіженінгу |
 | `status` | enum | `active(0) / dormant(1) / removed(2) / deceased(3)` |
+| `status_changed_at` | **datetime, nullable** | [SLASH-1, 2026-08-26] Мить останньої зміни `status` — штампує `before_save`-колбек моделі, і ЛИШЕ він. Носій `dead_count` у формулі шкоди ([`05_05 §3`](05_05_Slashing_and_Risk_Policy)): вирок мусить лічити й трупів, а не самих вцілілих. 🔴 **Три кандидати відхилено з ОДНІЄЇ підстави — чисельник шкоди не має бути клієнт-контрольованим:** `AuditLog` (Tree не аудитується), `MaintenanceRecord#performed_at` (мить вводить ОПЕРАТОР — той самий, чию шкоду міряють), `updated_at` (шумний — рухається від будь-якого запису). ⚠️ `NULL` для дерев, що вмерли ДО міграції — читач це знає й падає на `Time.current` |
 | `firmware_update_status` | enum | OTA lifecycle (via Firmwareable) |
 | `latitude`, `longitude` | decimal | WGS-84 координати (via GeoLocatable) |
 | `last_seen_at` | datetime | Останній пакет телеметрії |
