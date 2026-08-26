@@ -53,11 +53,22 @@ class ChainAuditService < ApplicationService
   end
 
   # DB-дзеркало on-chain totalSupply = Σ(mints) − Σ(burns). Slash-інтенти теж `carbon_coin`
-  # і теж доходять до `:confirmed` (BlockchainBurningService#create_slash_intent! → sourceable:
-  # NaasContract), але on-chain `slash()` ЗМЕНШУЄ totalSupply — тож сумувати їх позитивно
-  # роздуває delta на 2×burn → хибний `critical` після кожного slash. Дискримінатор:
-  # `sourceable_type = "NaasContract"` = burn (єдиний slash-шлях); усе інше (mint / insurance-
-  # payout mint) = емісія. [G4]
+  # і теж доходять до `:confirmed` (BlockchainBurningService#create_slash_intent!), але
+  # on-chain `slash()` ЗМЕНШУЄ totalSupply — тож сумувати їх позитивно роздуває delta на
+  # 2×burn → хибний `critical` після кожного slash. [G4]
+  #
+  # [ARCH.95] Дискримінатор — колонка `direction`, і деривувати його з `sourceable_type`
+  # ⛔ ЗАБОРОНЕНО. Стара форма («`NaasContract` = burn, усе інше = емісія») стояла на
+  # передумові «slash — ЄДИНИЙ шлях зменшення обігу», і ESG-погашення цю передумову зняло:
+  # `KlimaDao::RetirementService` теж вилучає монети й `sourceable` не має, тож деривація
+  # зарахувала б погашення ЕМІСІЄЮ. Передумова померла, вердикт («не сумувати burn
+  # позитивно») лишився правильним — тому міняється джерело ознаки, не висновок.
+  #
+  # ⚠️ Конфлат ПРИРОДИ мінта тут НЕ дефект, а вимога: `totalSupply()` включає і страхові
+  # мінти, і податкові — отже DB-бік мусить включати їх теж, інакше звірка зламається.
+  # Розщеплення «за що намінтили» належить доказовим поверхням (субграф, MRV-lineage),
+  # ніколи цій. [DOC-T.89]
+  #
   # [ARCH.97] Формула переїхала в One-Home `BlockchainTransaction.net_minted_supply`:
   # її другим споживачем став L1-якір, а два доми дискримінатора розійшлися б тихо.
   def fetch_db_scc_total
