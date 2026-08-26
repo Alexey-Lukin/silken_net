@@ -52,14 +52,25 @@
 #     a candidate needs ≥2 top-level parameters, and no `:` — Solidity parameter
 #     lists never contain one, Ruby kwarg diagrams always do.
 #   * 🔴 An argument list written with NAMES ONLY — a CALL rather than a
-#     declaration, e.g. the mint-flow diagram's `mint(to, amount, treeDid)` — is
-#     invisible here, because it carries no type token and the type token is the
-#     single discriminator holding precision at 100%. Two such lines existed in
-#     `05_03` at the time this gate was written and were fixed BY HAND. So a
-#     green run is not a statement about call-shaped prose: when a signature
-#     changes, grep the flow diagrams too. Widening the gate to cover them was
-#     measured and refused — dropping the type-token requirement admits every
-#     Ruby/JS call named `mint(` in the corpus.
+#     declaration, e.g. a flow diagram's `mint(to, amount, treeDid)` or a Ruby
+#     `client.transact(contract, "mint", …)` where the symbol is a STRING
+#     argument — is invisible here, because it carries no type token, and the
+#     type token is the single discriminator holding precision at 100%.
+#     🔴 **Do not read the first draft of this paragraph: it said "two such
+#     lines" and was wrong by 4×.** A hand sweep the same day found EIGHT,
+#     across FIVE docs (`05_03` mint-flow ×2, `00_04` batchMint, `05_01`
+#     diagram ×2, `05_02` transact ×2, `05_03` transact) — the author counted
+#     the doc he was editing and generalised. So the honest statement is: this
+#     blind zone is corpus-wide and its size is unknown until swept BY HAND;
+#     when a signature changes, grep the flow diagrams AND the `transact(`
+#     call sites, in every doc, not only the owner.
+#     ⛔ **Widening was MEASURED and REFUSED — do not re-open it.** Dropping the
+#     type-token requirement gives 78 candidates and 12 hits, of which 3 are
+#     real: **25% precision**, i.e. a noisy advisory, which is a disabled gate.
+#     The 9 false ones are legitimate house conventions — the semantic-pair
+#     shorthand (`slashUpTo(investor, maxAmount)`, three deliberate sites), a
+#     business-doc shorthand naming WHAT is minted (`mint(to, payout)`), plain
+#     prose, and one pure collision on the word `state(` in a `gs://` comment.
 #
 # ── Perimeter ───────────────────────────────────────────────────────────────
 # ALL of `docs/**/*.md`, not a named allow-list. Measured before enabling: 44

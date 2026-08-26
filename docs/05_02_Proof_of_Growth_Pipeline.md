@@ -684,8 +684,8 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 ```
 
 **Мінтинг:**
-- Одиночний: `client.transact(contract, "mint", to, amount, identifier)`
-- Пакетний: `client.transact(contract, "batchMint", recipients[], amounts[], identifiers[])`
+- Одиночний: `client.transact(contract, "mint", to, amount, identifier, root_arg)`
+- Пакетний: `client.transact(contract, "batchMint", recipients[], amounts[], identifiers[], root_arg)`
 - Dynamic Tax: 2% до `DAO_TREASURY_ADDRESS` (якщо `insurance_pool_requires_funding?`)
 
 **Solidity ABI контракту:**

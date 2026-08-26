@@ -259,7 +259,7 @@ function mint(address to, uint256 amount, string calldata treeDid, bytes32 archi
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
 - **Делегує до:** `_mintSCC()` — внутрішня реалізація, спільна з `mintForTree()`
 - **Guard on pause:** Опосередковано через `_update` — мінтинг блокується при паузі, слешинг дозволений
-- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mint", to, amount, identifier)` — контракт експонує і `mintForTree()`, і `mint()` alias, але бекенд-ABI (`CONTRACT_ABI`) реєструє лише `"mint"` + `"batchMint"`
+- **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mint", to, amount, identifier, root_arg)` — контракт експонує і `mintForTree()`, і `mint()` alias, але бекенд-ABI (`CONTRACT_ABI`) реєструє лише `"mint"` + `"batchMint"`
 
 #### `_mintSCC(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)` — internal
 

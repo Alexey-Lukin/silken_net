@@ -496,7 +496,7 @@ SCC мінтинг ініціюється двома незалежними шл
 OracleCallbacksController → oracle_status = "fulfilled"
   → MintCarbonCoinWorker → BlockchainMintingService
   → Guard: verified_by_iotex? + oracle_status_fulfilled? + wallet.kyc_approved_for_minting?
-  → Polygon: mint(to_address, amount, tree_did)
+  → Polygon: mint(to_address, amount, tree_did, archive_root)
   → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
 ```
 
@@ -509,7 +509,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
   → Guard: wallet.kyc_approved_for_minting? (тільки; бенефіціар — KYC.1)
          (verified_by_iotex? + oracle_status свідомо пропускаються —
           per-packet integrity вже забезпечена AES-CBC decrypt + valid_sensor_data?)
-  → Polygon: mint(to_address, amount, tree_did)
+  → Polygon: mint(to_address, amount, tree_did, archive_root)
   → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
 ```
 
