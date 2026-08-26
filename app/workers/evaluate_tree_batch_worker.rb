@@ -38,7 +38,15 @@ class EvaluateTreeBatchWorker
         points_to_lock = tokens_to_mint * threshold
         tx = wallet.lock_and_mint!(points_to_lock, threshold)
 
-        stats[:minted] += tokens_to_mint if tx&.persisted?
+        # [DOC-T.89] Лічимо ЛЕДЖЕР (`tx.amount`), а не власний намір (`tokens_to_mint`).
+        # Обидві величини сьогодні тотожні, і тримають це три незалежні примуси:
+        # integer-typed `emission_threshold` (гейт GOV.3), добуток < 2⁵³, і CHECK
+        # `wallets_balance_invariants` на невідʼємність. Але конверсію рахують ДВІ
+        # арифметики — тут BigDecimal, у `lock_and_mint!` Float, — і якщо вони колись
+        # розійдуться, намір збреше НА КОРИСТЬ воркера: метрика й лог покажуть, скільки
+        # ми хотіли, а не скільки лягло в леджер. Той самий клас, що [ARCH.94], де
+        # виняток жив лише в лічильнику й джоба поверталась успіхом.
+        stats[:minted] += tx.amount.to_i if tx&.persisted?
       rescue StandardError => e
         stats[:errors] += 1
         # [ARCH.94] Доти цей виняток жив лише в лічильнику й лог-рядку: джоба

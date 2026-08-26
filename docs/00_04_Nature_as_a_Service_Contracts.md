@@ -100,7 +100,7 @@ NaaS — це модель підписки, де клієнти (Організ
 
 **Що дає SFC:**
 - Право голосу у протокольних рішеннях (зміна параметрів слешингу, схвалення нових кластерів).
-- SFC мінтується за ті ж самі кластери, що генерують SCC, але через окремий виклик `SilkenForestCoin.mint(to, amount, clusterId)` з `MINTER_ROLE`.
+- SFC мінтується за ті ж самі кластери, що генерують SCC, але через окремий виклик `SilkenForestCoin.mint(to, amount, clusterId, archiveRoot)` з `MINTER_ROLE`. 🔴 **ОБІЦЯНКА, А НЕ ОПИС — код цього не робить** (виміряно 2026-08-26): `Wallet#lock_and_mint!` дефолтить `token_type: :carbon_coin`, і його ЄДИНИЙ живий викликач третього аргумента не передає, тож емісії SFC за ріст не існує; єдиний живий writer `forest_coin` — страхова виплата. ⚠️ Сигнатуру теж виправлено: аргументів ЧОТИРИ, не три. Правила емісії SFC (курс, бенефіціар, стеля голосів) не визначені ніде — осі присуду в [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89.
 
 **Умови входу:**
 - Участь у верифікованій екосистемі (SCC-адреса на Polygon).
@@ -142,7 +142,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Частка форестера** | 95% від `total_funding` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |
 | **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
-| **Динамічна ціна SCC** | Uniswap V3 Quoter (Polygon), fallback $25.50 | `PriceOracleService` |
+| **Динамічна ціна SCC** | Uniswap V3 Quoter (Polygon), fallback $25.50 | `PriceOracleService` — ⚠️ **нуль прод-споживачів** (переміряно 2026-08-26: сервіс кличе лише власна спека; `attested_value_usd` теж `null` назавжди за [ARCH.103]). 🔴 **І число живе в ІНШОМУ світі, ніж sensitivity-крива** [`02_06 §7.3`](02_06_Unit_Economics_and_BOM): та перебирає $0.15…$5.00, тобто $25.50 стоїть у 5× вище найоптимістичнішого її сценарію. Обидва — гіпотези різного ЖАНРУ (fallback оракула ⊥ вхід payback-моделі), і доки ціну ніхто не читає, розбіжність не має операційного наслідку — але інвесторський розрахунок візьме навмання, тож ⚖️ [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89 |
 | **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
 | **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
 | **Поріг слешингу** | >20% дерев кластера з `stress_index >= 0.83` — **поточний дефолт, DAO-керований**: `SystemParameter.current(:stress_threshold, default: 0.83)` ← `ProtocolParameters.sol` (bounds 0.65..1.0, [GOV.1]). ⚠️ Значення змінюється голосуванням, тож у MSA/SLA його НЕ можна подавати як зафіксовану контрактну умову — або цитуй як «поточний дефолт», або фіксуй КОНТРАКТНУ стелю окремо від протокольної | `ContractHealthCheckService` |
