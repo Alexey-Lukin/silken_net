@@ -295,7 +295,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       }.to change(MaintenanceRecord, :count).by(1)
 
       expect(BlockchainBurningService).to have_received(:call)
-        .with(organization.id, naas.id, source_tree: nil, contractual: false, target_date: nil, stress_threshold: nil)
+        .with(organization.id, naas.id, source_tree: nil, contractual: false, target_date: nil, stress_threshold: nil,
+              slash_gamma: nil, penalty_factor_max: nil)
 
       record = MaintenanceRecord.last
       expect(record.action_type).to eq("decommissioning")
@@ -306,7 +307,8 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       BurnCarbonTokensWorker.new.perform(organization.id, naas.id, tree.id)
 
       expect(BlockchainBurningService).to have_received(:call)
-        .with(organization.id, naas.id, source_tree: tree, contractual: false, target_date: nil, stress_threshold: nil)
+        .with(organization.id, naas.id, source_tree: tree, contractual: false, target_date: nil, stress_threshold: nil,
+              slash_gamma: nil, penalty_factor_max: nil)
 
       record = MaintenanceRecord.last
       expect(record.notes).to include(tree.did)
