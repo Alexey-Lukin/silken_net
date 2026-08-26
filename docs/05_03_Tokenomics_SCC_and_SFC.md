@@ -764,7 +764,7 @@ app/workers/
 ├── blockchain_confirmation_worker.rb # queue: web3_critical, retry: 5
 ├── tokenomics_evaluator_worker.rb    # cron: 0 * * * *, queue: default
 └── governance/
-    └── parameter_sync_worker.rb      # ✅ [ARCH.4] queue: web3_low, cron: 0 3 * * *, sync on-chain → SystemParameter
+    └── parameter_sync_worker.rb      # ✅ [ARCH.4] queue: web3_low, cron: 30 3 * * *, sync on-chain → SystemParameter
 
 subgraph/
 ├── schema.graphql                    # CarbonMintEvent (treeDidHash), SlashingEvent, ProtocolFinancials

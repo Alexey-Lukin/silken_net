@@ -48,7 +48,10 @@ system_params = [
   { key: "insurance_pool_threshold", value: "100000", value_type: "integer", category: "insurance",
     min_value: 10_000, max_value: 1_000_000, description: "SCC threshold for dynamic tax activation" },
   # [BIZ.1] CO2 equivalence: 2000 SCC = 1 tonne CO2 absorbed (D-MRV, 1 SCC = 0.5 kg CO2).
-  # Governs: KlimaDAO retirement, Puro.earth CORC issuance, corporate ESG reporting.
+  # ⚠️ ЧИТАЧІВ У ПРОД-КОДІ НЕМА (переміряно 2026-08-26): ані KlimaDAO-retirement (той погашає
+  # МОНЕТИ і курсу не читає), ані Puro.earth-паспорт, ані ESG-звіт цей ключ не споживають.
+  # Ключ легальний як DAO-ручка без коду — прод-споживач прийде з carbon-registry (05_06 §7,
+  # 00_07 BIZ.1). Доти голос за нього НЕ змінює нічого.
   { key: "scc_per_tonne_co2", value: "2000", value_type: "integer", category: "tokenomics",
     min_value: 100, max_value: 100_000, description: "SCC tokens equivalent to 1 tonne CO2 absorbed (2000 SCC = 1 tCO2)" },
 

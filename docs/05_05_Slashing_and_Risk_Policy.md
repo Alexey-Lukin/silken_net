@@ -56,7 +56,7 @@
 
 | Категорія | Приклади | Прокся-сигнал | Реакція |
 |-----------|----------|---------------|---------|
-| **A. Negligence / Operator fault** | Несанкціонована вирубка, незаконний випас, відсутність протипожежної смуги після алерту, неприєднання Forester'а до інциденту в SLA, втручання у hardware (tamper) | Acoustic: chainsaw class (panic→`chainsaw_detected`), ручна Field-Audit C→A ескалація → `vandalism_breach` (§3.2 — авто-writer'а немає), відсутність MaintenanceRecord після P0 alert | **Slashing активний** — спалюється за прогресивною кривою `damage_ratio^GAMMA × penalty_factor` (до 100% при повній загибелі; §3) |
+| **A. Negligence / Operator fault** | Несанкціонована вирубка, незаконний випас, відсутність протипожежної смуги після алерту, неприєднання Forester'а до інциденту в SLA, втручання у hardware (tamper) | Acoustic: chainsaw class (panic→`chainsaw_detected`), ручна Field-Audit C→A ескалація → `vandalism_breach` (§3.2 — авто-writer'а немає), відсутність MaintenanceRecord після P0 alert | **Slashing активний** — спалюється за прогресивною кривою `damage_ratio^GAMMA × penalty_factor` (до 100% при повній загибелі; §3) ⚠️ **обіцянка «до 100%» СЬОГОДНІ НЕ ВИКОНУЄТЬСЯ на масовій вирубці** — виміряно 2026-08-26: `tree-death`-тракт сайзить кожну смерть окремо, перший приземлений вирок ставить контракт `:breached` (термінальний), тож 100 зрубаних зі 101 дають `damage = 1/(0+1)` лише для ОДНОГО дерева, а після `^1.3` це ≈0,25% замість 100%. Розбір трьох опцій присуду (включно з правкою однієї гілки, яка обіцянку відновлює) — [`00_07`](00_07_Action_Plan_Tracker) SLASH-1 |
 | **B. Force Majeure / Acts of Nature** | Блискавка, лісова пожежа природного походження, землетрус, екстремальна посуха (Trigger-2 = Field-Audit/DAO — супутникового drought-оракула немає, §4), повінь, ураган, біопатоген | Кореляція з dClimate / NASA FIRMS / параметричні тригери; **відсутність ознак людської активності** в acoustic feed | **Slashing вимкнено** — кошти **заморожуються** у `wallet.locked_balance`, активується `InsurancePayoutWorker` через Etherisc (§4) |
 | **C. Indeterminate (default safety)** | Дані недостатні для класифікації (втрата зв'язку, перерване покриття, мала вибірка) | `oracle_status_failed` для класифікаційного callback'а | **Заморозка без спалювання** — DAO голосує `peer-review` upgrade до A або B (§5, вікно 30 днів) |
 
@@ -175,10 +175,13 @@ PENALTY_FACTOR_MAX = 2.0   # стеля застосовується до МНО
 
 ```
 ForceMajeure event → InsurancePayoutWorker
-  → Etherisc::ClaimService.dispatch(policy_id, claim_amount: damage_ratio × insured_value)
-  → Polygon → smart contract payout до wallet.balance
+  → Internal:  amount = insurance.payout_amount        # СТАТИЧНА колонка полісу
+  → Etherisc:  ClaimService.new(insurance).claim!      # on-chain triggerClaim(policyId) — БЕЗ суми
+  → Polygon → payout до wallet
   → AuditLog action="insurance.payout.force_majeure"
 ```
+
+> 🔴 **Виплата НЕ масштабується шкодою — і це властивість параметричної моделі, а не пропуск** (переміряно проти коду 2026-08-26; доти цей блок описував `claim_amount: damage_ratio × insured_value`, тобто ІНДЕМНІТЕТНУ схему, якої в дереві немає жодною половиною). Реальність: розмір — статичний `payout_amount` полісу ([`04_01`](04_01_Data_Models_and_Entities)), `damage_ratio` (`ParametricInsurance#evaluate_daily_health!`) є **бінарним тригером** у ВІДСОТКАХ і на суму не впливає, величини `insured_value` в коді не існує взагалі, а Etherisc-гілка суму навіть не передає — чужий DIP-контракт приймає `triggerClaim(uint256 policyId)` і визначає виплату сам. **Саме тим параметричне страхування й відрізняється від індемнітетного: воно не оцінює збиток, а платить домовлену суму за настанням виміряної події** — тож all-or-nothing тут є виконанням визначення, а не грубим наближенням. ⚠️ Наслідок для хвоста розподілу, який має знати кожен, хто рахує інфляцію: часткова шкода коштує стільки ж, скільки повна. ⛔ Не «лагодити» це пропорційністю без окремого присуду — він змінив би ПРОДУКТ, а не формулу.
 
 - Параметричні тригери (Trigger-2 джерело): `dClimate.fire_detected ≥ FRP 10MW` (FIRMS, ✅ реалізовано). ⚠️ **Drought-супутникового оракула НЕМАЄ** — fire-FIRMS не адьюдикує не-пожежу (`Dclimate::VerificationService` повертає `:inconclusive`) → посуха йде у **Field Audit / DAO** (Кат-C, §5), доки не з'явиться реальне джерело (dClimate `drought_index` / soil-moisture / ДСНС-API — 👤 [`00_07` S3.2/INS.1/UNI.12](00_07_Action_Plan_Tracker); фізичний дрон-fallback E.20/E.34). `NOAA earthquake ≥ M6` — теж майбутнє джерело.
 - Cap: `insurance_pool` ≥ 100,000 SCC підтримується через **Dynamic Tax** (2% від кожного `batchMint`, якщо pool < threshold) — механіка [`05_03 §Dynamic Tax`](05_03_Tokenomics_SCC_and_SFC).

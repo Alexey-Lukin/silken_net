@@ -273,7 +273,16 @@ class BlockchainTransaction < ApplicationRecord
     burn? ? -amount : amount
   end
 
-  # [G4/ARCH.97] One-Home DB-дзеркала on-chain `totalSupply()`: Σ(mints) − Σ(burns).
+  # [G4/ARCH.97] One-Home ЧИСТОЇ ЕМІСІЇ: Σ(mints) − Σ(burns).
+  #
+  # 🔴 **«Дзеркало `totalSupply()`» — правда лише доти, доки живий ЛИШЕ slash-burn**
+  # (переміряно 2026-08-26). Slash кличе `_burn` нашого контракту, тож `totalSupply`
+  # справді падає. ESG-ретайрмент — НІ: `retire()` це чужий ABI KlimaDAO після `approve`,
+  # тобто трансфер, і on-chain supply не змінюється (канон-дім наслідку — `05_03`).
+  # А тут він однаково віднімається, бо несе `direction: :burn`. Отже після першого
+  # погашення DB і ланцюг розходяться НАЗАВЖДИ, і `ChainAuditService` (поріг 0.0001)
+  # читатиме легальне погашення як фрод. Сьогодні латентно — ESG-рейка має нуль
+  # enqueue-сайтів; озброюється рівно тим комітом, що її дротує → `00_07` ARCH.95.
   #
   # Вилучення з обігу теж `carbon_coin` і теж доходить до `:confirmed`, але on-chain
   # ЗМЕНШУЄ supply — тож сумувати його позитивно роздуває результат на 2×burn.

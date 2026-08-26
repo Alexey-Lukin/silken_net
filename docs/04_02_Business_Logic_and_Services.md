@@ -1460,8 +1460,8 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `web3_low` |
 | **Retry** | 3 |
-| **Тригер** | Ручний запуск через API (ESG reporting) |
-| **Вхід** | `wallet_id`, `amount` |
+| **Тригер** | ⛔ **ЖОДНОГО — воркер має НУЛЬ enqueue-сайтів** (переміряно 2026-08-26; доти цей рядок казав «ручний запуск через API», і жодного retire-маршруту в `config/routes.rb` немає). Дзеркала стану — [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) і [`00_07`](00_07_Action_Plan_Tracker) ARCH.95, обидва називають рейку мертвою; дротування gated на перший B2B-запит на ретайрмент |
+| **Вхід** | `wallet_id`, **`scc_amount`** — ⚠️ ім'я несе ОДИНИЦЮ свідомо [ARCH.95]: аргумент джоби позиційний, kwarg туди не дотягується, тож безіменний `amount` тут був носієм класу «два units в одному скалярі» |
 | **Сервіси** | `KlimaDao::RetirementService.new(wallet, scc: scc_amount).retire_carbon!` — kwarg іменує ОДИНИЦЮ [ARCH.95] |
 
 #### `HadronAssetRegistrationWorker`
