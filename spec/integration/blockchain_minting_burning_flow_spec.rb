@@ -388,7 +388,13 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     before do
       allow(Eth::Client).to receive(:create).and_return(mock_client)
       allow(Eth::Key).to receive(:new).and_return(mock_key)
-      allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xtrustless_tx")
+      # [DOC-T.89] `:call` стабиться, бо архів-групування питає тепер ОБИДВІ половини
+      # податкової умови через One-Home `taxing?`, а стан пулу — це `balanceOf` eth_call.
+      # Доти сюди доходили лише одиночні мінти, тож `build_batch_arrays` не викликався
+      # і читання балансу на цьому шляху не було. `MockExpectationError < Exception`, а
+      # не `StandardError`, тож fail-open-`rescue` в `insurance_pool_requires_funding?`
+      # його НЕ ковтає — без цього рядка приклад падав би гучно, а не деградував тихо.
+      allow(mock_client).to receive_messages(get_balance: 1 * 10**18, transact: "0xtrustless_tx", call: 0)
       allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
       allow(BlockchainConfirmationWorker).to receive(:perform_in)
     end

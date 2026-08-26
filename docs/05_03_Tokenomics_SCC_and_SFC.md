@@ -563,7 +563,7 @@ function nonces(address owner)
 
 ```ruby
 # При batchMint для carbon_coin — [O2/O4] податок агрегується:
-taxing = token_type == "carbon_coin" && insurance_pool_requires_funding?
+taxing = taxing?(token_type)   # [DOC-T.89] One-Home: тип І стан пулу
 txs.each do |tx|
   tax_amount = taxing ? (tx.amount * dynamic_tax_rate).round(4) : 0
   tax_total += tax_amount
@@ -580,6 +580,8 @@ end
 ```
 
 > ⚠️ `ENV.fetch` тут — під E.46 rescue-парасолькою (`insurance_pool_requires_funding?` → `false` при будь-якій помилці): зламаний/відсутній `DAO_TREASURY_ADDRESS` НЕ падає на use — tax тихо вимикається, лог хибно каже «RPC degraded». Гучність забезпечує boot-guard `Web3NetworkGuard.address_violations` ([`04_02 §8`](04_02_Business_Logic_and_Services)).
+
+> 🏠 **Умова оподаткування має ОДИН дім — предикат `taxing?(token_type)`** [DOC-T.89, 2026-08-26]. Доти вона жила у двох місцях у РІЗНИХ формах: `build_batch_arrays` питав обидві половини (тип І стан пулу), а `tax_rate:`, що їде в **архів-артефакт** батчу, — лише ТИП. Наслідок був тихий і однобічний: при повному пулі, коли податку не стягували, `TelemetryArchiveBatch#tax_rate_applied` діставав ставку й пінився в IPFS поруч із сумами — поле з іменем «applied» стверджувало те, чого не сталось. Аудитор хибної арифметики з цього не виводив (`VERIFICATION_INSTRUCTIONS` оголошують `amount` як ISSUER-ASSERTED), але критерій місії [`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap) — «правдиво» — це не косметика. ⚠️ **Предикат мемоїзований, і це ІНВАРІАНТ, не оптимізація:** два call-site'и читають стан пулу в різні моменти тракту, а `Web3::Erc20Reader` кешує 15-хвилинним вікном — без memo батч, що перетнув межу вікна, дістав би дві податкові правди (суми за однією, артефакт за іншою); дзеркало «один поріг на чанк» з `EvaluateTreeBatchWorker`. ⊕ Форма ще й тримає майбутню безпеку: у день зняття SFC-гарда `taxing?("forest_coin")` віддає `false` СТРУКТУРНО, тож carbon-ставка не може мовчки потрапити в артефакт SFC-батчу.
 
 ```ruby
 def insurance_pool_requires_funding?

@@ -777,10 +777,14 @@ end
     # [DOC-T.89] Цей приклад пінить інкремент у `dispatch_archive_group` — звичайний
     # батч-шлях. Близнюк у `send_clean_batch` має власний пін (binary-search context
     # нижче): один коментар над одним прикладом не свідчить про два різні тракти.
-    # ⛔ Дві гілки, які гард лишив недосяжними (резолв SFC-контракту і `tax_rate: nil`),
-    # тут НЕ пінені й пінитись не мають: `04_06 §B.4` велить financial-safety-defensive
-    # лишати з поясненням, а не оживляти `send`-піном заради відсотка (§A.4 BP 16-17).
-    # Їхній надгробок стоїть у самому сервісі, поруч із гардом.
+    # ⛔ Гілка резолву SFC-контракту лишається недосяжною за гардом і НЕ пінена свідомо:
+    # `04_06 §B.4` велить financial-safety-defensive лишати з поясненням, а не оживляти
+    # `send`-піном заради відсотка (§A.4 BP 16-17); її надгробок стоїть у самому сервісі.
+    # 🔴 А от `tax_rate: nil` більше НЕ в тому переліку: [DOC-T.89] звів умову на One-Home
+    # `taxing?`, тож гілка стала ДОСЯЖНОЮ. Пін на НЕЇ живе не тут, а в `archive-batch root
+    # wiring [E.60]` — тільки там `windowed_tx!` створює РЯДОК батчу; спроба пінити її
+    # звідси дала вакуумний зелений (windowless-диспатч не створює рядка, тож
+    # `TelemetryArchiveBatch.last` = nil в обох світах, і мутація це показала).
     it "не інкрементує лічильник податку, коли пул не потребує поповнення" do
       allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
       allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
@@ -1909,6 +1913,36 @@ end
       allow_any_instance_of(Tree).to receive(:active?).and_return(true)
       create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
       wallet.reload.lock_and_mint!(500, 100)
+    end
+
+    # [DOC-T.89] Пара на `tax_rate_applied` архів-рядка. Пінити її можна ЛИШЕ тут: у
+    # решті спеки диспатч windowless, а windowless свідомо НЕ створює рядка (ZERO_ROOT
+    # derived-only), тож будь-який `TelemetryArchiveBatch.last&.…` там зелений в обох
+    # світах. ⚠️ Обидві половини несучі: без НЕГАТИВНОЇ повертається сам дефект (поле
+    # стверджує ставку, якої не стягували), без ПОЗИТИВНОЇ пін не відрізняє «правильно
+    # nil» від «завжди nil» — тобто від зламаного `taxing?`, який просто не таксує.
+    it "артефакт НЕ стверджує ставку, коли пул повний (tax_rate_applied = nil)" do
+      allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
+      allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+      tx = windowed_tx!(create(:tree, cluster: cluster), "7")
+
+      described_class.call_batch([ tx.id ])
+
+      batch = tx.reload.archive_batch
+      expect(batch).to be_present, "фікстура не створила архів-рядка — пін був би вакуумним"
+      expect(batch.tax_rate_applied).to be_nil
+    end
+
+    it "артефакт НЕСЕ ставку, коли пул потребує поповнення" do
+      allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(true)
+      allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+      tx = windowed_tx!(create(:tree, cluster: cluster), "8")
+
+      described_class.call_batch([ tx.id ])
+
+      batch = tx.reload.archive_batch
+      expect(batch).to be_present
+      expect(batch.tax_rate_applied).to eq(BlockchainMintingService::DEFAULT_DYNAMIC_TAX_RATE)
     end
 
     it "одиночний windowed-мінт несе root свого батчу (≡ telemetry_merkle_root)" do

@@ -233,11 +233,10 @@ class BlockchainMintingService < ApplicationService
     # свіжий диспатч = усі tx у nil-групі → 1 батч → 1 виклик (без gas-регресу).
     archive_groups = Mrv::TelemetryArchiveBatchService.group(
       txs, token_type: token_type,
-      # [DOC-T.89 §B.4 leave] else-гілка недосяжна за тим самим гардом. ⛔ НЕ спрощувати
-      # до голого `dynamic_tax_rate`: у день SEC.1 це мовчки запише carbon-ставку 2% в
-      # archive-артефакт SFC-батчу — а `archive_root` уже запінений на IPFS, переписати
-      # не можна. Тиха міна там, де сьогодні порожня гілка.
-      tax_rate: token_type == "carbon_coin" ? dynamic_tax_rate : nil
+      # [DOC-T.89] ОБИДВІ половини умови, через One-Home `taxing?` — той самий предикат,
+      # що й у `build_batch_arrays`. Доти тут стояв лише ТИП, тож при повному пулі поле
+      # `tax_rate_applied` артефакту стверджувало ставку, якої не стягували.
+      tax_rate: taxing?(token_type) ? dynamic_tax_rate : nil
     )
 
     # [OBSERVABILITY]: every tx we commit to minting counts as an attempt — the
@@ -527,7 +526,7 @@ class BlockchainMintingService < ApplicationService
     recipients = []
     amounts = []
     identifiers = []
-    taxing = token_type == "carbon_coin" && insurance_pool_requires_funding?
+    taxing = taxing?(token_type) # [DOC-T.89] One-Home — дзеркало `tax_rate:` архів-групування
     tax_total = 0
 
     txs.each do |tx|
@@ -704,6 +703,32 @@ class BlockchainMintingService < ApplicationService
     Rails.logger.error "🛑 [Web3] DAO Treasury balance check failed (RPC degraded): #{e.message}"
     # [E.46] Завжди false при RPC-збої — не штрафуємо мінтинг під час деградації мережі.
     false
+  end
+
+  # [DOC-T.89] ОДИН дім питання «чи цей мінт оподатковується».
+  #
+  # Доти умова жила у ДВОХ місцях у РІЗНИХ формах: `build_batch_arrays` питав обидві
+  # половини (тип І стан пулу), а `tax_rate:`, що їде в архів-артефакт, — лише ТИП.
+  # Тож коли пул повний і податку НЕ брали, `TelemetryArchiveBatch#tax_rate_applied`
+  # діставав `dynamic_tax_rate` і їхав в IPFS-артефакт поруч із сумами: поле з іменем
+  # «applied» казало про себе неправду. Аудитор хибної арифметики не отримував —
+  # `VERIFICATION_INSTRUCTIONS` оголошують `amount` як ISSUER-ASSERTED, — але критерій
+  # місії («правдиво») це не косметика.
+  #
+  # ⚠️ Мемоїзація тут НЕ оптимізація, а ІНВАРІАНТ. Два call-site'и читають стан пулу в
+  # різні моменти тракту, а `Web3::Erc20Reader` кешує 15-хвилинним вікном — без memo
+  # батч, що перетнув межу вікна, дістав би ДВІ податкові правди: суми за однією,
+  # артефакт за іншою. Дзеркало `EvaluateTreeBatchWorker` («один поріг на чанк»).
+  # `defined?`-форма, а не `||=`, бо легітимне значення тут — `false`.
+  #
+  # 🔑 Форма зберігає й майбутню безпеку, заради якої тут стояв надгробок: у день
+  # зняття SFC-гарда (SEC.1) `taxing?("forest_coin")` віддає `false` СТРУКТУРНО, тож
+  # carbon-ставка не може мовчки потрапити в артефакт SFC-батчу.
+  def taxing?(token_type)
+    return false unless token_type == "carbon_coin"
+    return @taxing_carbon if defined?(@taxing_carbon)
+
+    @taxing_carbon = insurance_pool_requires_funding?
   end
 
   # Баланс DAO Treasury у wei (Integer). [One-Home] через Web3::Erc20Reader зі спільним
