@@ -123,6 +123,15 @@ class Tree < ApplicationRecord
   validates :silicon_uid_hex, uniqueness: true, allow_nil: true,
             format: { with: SilkenNet::DidDerivation::UID_HEX_FORMAT, allow_nil: true }
 
+  # 🕰️ [SLASH-1] Момент переходу статусу — носій `dead_count` для розміру вироку.
+  # `before_save`, а НЕ commit-хук: колонка мусить лягти ТИМ САМИМ UPDATE, що й
+  # статус, інакше вони розходяться фізично (той самий клас, що денормалізований
+  # `active_trees_count`, який обходять `update_all`/`update_column`).
+  # Пишемо на КОЖНУ зміну статусу, не лише термінальну: ім'я колонки це й означає,
+  # а читач однаково гейтується `status IN (removed, deceased)` — обидва стани
+  # термінальні (в aasm-блоці нижче подій `from:` для них немає), тож після смерті
+  # колонка більше не рухається.
+  before_save :stamp_status_changed_at, if: :will_save_change_to_status?
   # --- КОЛБЕКИ ---
   after_create :build_default_wallet
   after_create :ensure_calibration
@@ -329,6 +338,14 @@ class Tree < ApplicationRecord
 
   def ensure_calibration
     create_device_calibration! unless device_calibration
+  end
+
+  # [SLASH-1] UTC-час переходу. Час береться UTC свідомо: читач порівнює його з
+  # `AiInsight.reporting_date`, а той — UTC-доба; узяти `Time.zone` означало б
+  # відтворити SLASH-1 («два різні моменти читання того самого якоря»), лише
+  # координатою часового поясу.
+  def stamp_status_changed_at
+    self.status_changed_at = Time.current.utc
   end
 
   def trigger_slashing_protocol

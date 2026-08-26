@@ -518,7 +518,17 @@ class BlockchainBurningService < ApplicationService
       # тоді дерево ВЖЕ в `total_trees` і += 1 не спрацьовує).
       # ⚠️ Свідомо НЕ глобально: у статистичній гілці труп не рахується ні тут, ні в чисельнику
       # (канон §3), бо смерть має власний тракт. Глобальний += 1 розбавляв би частку живого лісу.
-      [ 1.0 / (total_trees + (@source_tree.active? ? 0 : 1)), 1.0 ].min
+      # 🔴 [SLASH-1, ⚖️ 2026-08-26] Чисельник — УСІ трупи доби, не один. Доти тут
+      # стояло `1.0 / (total + 1)`, тобто N зрубаних дерев давали розмір ОДНОГО, а
+      # решта N−1 не входили ні в чисельник, ні в знаменник — і канон §2 обіцяв
+      # «до 100% при повній загибелі», чого ця форма дати не могла НІКОЛИ (100
+      # зрубаних зі 101 → ≈0,25% після `^GAMMA`).
+      # `.max` із мертвим source — це і zero-guard, і зворотна сумісність: у дерев,
+      # що вмерли ДО появи `status_changed_at`, колонка NULL, тож без нього
+      # мертвий кластер дав би `0/0`. При одному трупі формула тотожна старій.
+      dead = [ dead_tree_count, @source_tree.active? ? 0 : 1 ].max
+      victims = @source_tree.active? ? dead + 1 : dead
+      [ victims.to_f / (total_trees + dead), 1.0 ].min
     elsif daily_insights.exists?
       0.0                                              # дані Є, ліс здоровий → 0 шкоди → 0 slash
     end
@@ -531,6 +541,28 @@ class BlockchainBurningService < ApplicationService
   # (tree-death/dClimate/contractual) — той САМИЙ якір, яким інсайти записані.
   def effective_target_date
     @target_date || AiInsight.reporting_date
+  end
+
+  # [SLASH-1] Скільки дерев кластера перейшли в термінальний статус у добу вироку.
+  #
+  # Носій — `trees.status_changed_at`, а НЕ `MaintenanceRecord.performed_at`: ту
+  # дату вводить у форму сам оператор (валідація лише `<= Time.current`), тобто на
+  # грошовому шляху вона була б клієнт-контрольованим чисельником — подати
+  # демонтажі поза вікном і обнулити власне спалення. Розбір трьох кандидатів —
+  # у шапці міграції `add_status_changed_at_to_trees`.
+  #
+  # ⚠️ Вікно якореться на смерті SOURCE, а НЕ на `effective_target_date` — і це не
+  # деталь: `AiInsight.reporting_date` є ВЧОРАШНЬОЮ UTC-добою (інсайти рахуються за
+  # вчора), тоді як трупи вмирають у момент вироку. Прив'язка до дати звітності
+  # давала б нуль на кожній реальній вирубці — спіймано піном, не читанням.
+  # Предмет лічби — один ІНЦИДЕНТ (багато смертей в одному вікні), тож якір
+  # природний саме такий. UTC-межі, бо колонку пишемо в UTC.
+  def dead_tree_count
+    anchor = @source_tree.status_changed_at&.utc || Time.current.utc
+    @cluster.trees
+            .where(status: %i[removed deceased])
+            .where(status_changed_at: anchor.beginning_of_day..anchor.end_of_day)
+            .count
   end
 
   # [05_05 §3 Slashing curve] Progressive CONVEX penalty:

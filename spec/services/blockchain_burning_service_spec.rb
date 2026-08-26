@@ -291,6 +291,63 @@ RSpec.describe BlockchainBurningService do
         end
       end
 
+# 🔴 [SLASH-1, ⚖️ 2026-08-26] Масова вирубка сайзиться від УСІХ трупів доби, не від одного.
+# Доти N зрубаних дерев давали розмір ОДНОГО (`1/(вцілілі+1)`), а решта N−1 не входили
+# ні в чисельник, ні в знаменник — тобто суцільна вирубка коштувала як одне дерево.
+it "рахує ВСІХ трупів доби, не лише source (3 мертві + 1 живий → 3/4)" do
+  survivor = create(:tree, cluster: cluster)
+  survivor.wallet.blockchain_transactions.create!(
+    amount: 1000, token_type: :carbon_coin, status: :confirmed,
+    to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+  )
+  two_more = create_list(:tree, 2, cluster: cluster)
+  two_more.each { |t| t.update!(status: :removed) }
+  tree.update!(status: :deceased)
+
+  described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+  expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+    burn_amount = (2000 * ((3.0 / 4)**1.3)).ceil # 3 трупи з 4 дерев ДО події
+    expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+  end
+end
+
+# 🔴 [SLASH-1] Повна загибель мусить давати РІВНО 100% — це обіцянка канону §2, якої
+# стара форма не могла виконати НІКОЛИ (при нулі вцілілих вона давала 1/(0+1) для
+# одного дерева, тобто ≈0,25% після ^GAMMA при сотні трупів).
+it "дає 100% при повній загибелі кластера (3 мертвих, 0 живих)" do
+  two_more = create_list(:tree, 2, cluster: cluster)
+  two_more.each { |t| t.update!(status: :removed) }
+  tree.update!(status: :deceased)
+
+  described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+  expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+    # damage 3/3 = 1.0 → 100% ЧИСТОЇ емісії кластера (тут лише tree-транзакція, 1000)
+    expect(amount_in_wei).to eq((1000.0 * (10**18)).to_i)
+  end
+end
+
+# 🔴 [SLASH-1] Legacy-дерево: `status_changed_at` NULL (колонка молодша за нього).
+# Це стан УСІХ наявних дерев на момент міграції, тож fallback тут — не крайній
+# випадок, а базовий: без нього мертвий кластер дав би `0/0`.
+it "не ділить на нуль, коли source вмер ДО появи status_changed_at (NULL)" do
+  survivor = create(:tree, cluster: cluster)
+  survivor.wallet.blockchain_transactions.create!(
+    amount: 1000, token_type: :carbon_coin, status: :confirmed,
+    to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+  )
+  tree.update!(status: :deceased)
+  tree.update_column(:status_changed_at, nil) # legacy: колонки тоді не існувало
+
+  described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+  expect(mock_client).to have_received(:transact) do |_contract, _method, _addr, amount_in_wei, **_opts|
+    burn_amount = (2000 * (0.5**1.3)).ceil # 1 труп із 2 дерев ДО події — стара поведінка
+    expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+  end
+end
+
       # [ARCH.46] Date threading: damage is queried on the PASSED target_date, not a re-derived local_yesterday.
       it "queries AiInsight on the passed target_date, not local_yesterday (ARCH.46 date-threading)" do
         explicit_date = AiInsight.reporting_date - 1.day
