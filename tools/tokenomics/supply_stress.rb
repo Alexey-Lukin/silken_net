@@ -196,8 +196,11 @@ def assert_run(prm)
   # 1. КАНОН-АРБІТР: 05_03 виводить MAX_SUPPLY як ≈2M дерев × 10 років × 50
   #    SCC/дерево/рік. Модель мусить відтворити саме 10 років — інакше розійшлись
   #    константи або сама деривація.
+  # ⚠️ horizon_years ПРИБИТО явно, не успадковується: інакше легітимний override
+  # (`horizon_years=5` для звіту) робить канонічні 10 р. недосяжними, і гейт
+  # червоніє на КОРЕКТНОМУ коді — а найдешевша реакція на такий гейт послабити його.
   arb = scenario(prm, { trees: 2_000_000, scc_per_tree_year: 50.0, degradation_rate: 0.0,
-                        payout_rate: 0.0, ramp_years: 0 })
+                        payout_rate: 0.0, ramp_years: 0, horizon_years: 30 })
   if arb[:years_p50].nil? || !(9.5..10.5).cover?(arb[:years_p50])
     errors << "канон-арбітр 05_03 (2M дерев × 50 SCC/рік) дав #{fmt_years(arb[:years_p50])}, " \
               "очікується ≈10 р. — MAX_SUPPLY↔деривація розійшлись"
