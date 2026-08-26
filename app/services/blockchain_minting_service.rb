@@ -300,7 +300,7 @@ class BlockchainMintingService < ApplicationService
       # 💎 ПАКЕТНИЙ МІНТИНГ (Gas Saving Mode)
       # [HYBRID PROTOCOL GAIA]: Для carbon_coin при недофінансованому страховому пулі
       # застосовується Dynamic Tax — 2% від суми кожної транзакції до DAO Treasury.
-      recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
+      recipients, amounts, identifiers, tax_total = build_batch_arrays(txs, token_type)
 
       Rails.logger.info "📦 [Web3] BatchMinting #{txs.size} транзакцій для #{token_type} " \
                         "(root #{group.root[0, 12]}…)..."
@@ -318,6 +318,8 @@ class BlockchainMintingService < ApplicationService
         )
         # [ARCH.52] earliest батч-created_at → ConfirmationWorker partition-prune
         # (батч ділить один tx_hash; спільний confirm_at → unique_for дедуплікує до 1).
+        # [DOC-T.89] Податок лічимо ПІСЛЯ broadcast — саме те, що реально полетіло.
+        SilkenNet::Metrics::TAX_COLLECTED_TOTAL.increment(by: tax_total.to_f, labels: { token_type: }) if tax_total.to_f.positive?
         batch_confirm_at = txs.min_by(&:created_at).created_at
         txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type, batch_confirm_at) }
         Rails.logger.info "🛰️ [Web3] Пакет відправлено в мемпул. TX: #{tx_hash}"
@@ -467,7 +469,7 @@ class BlockchainMintingService < ApplicationService
   def process_half(client, contract, oracle_key, token_type, half_txs, poisoned, clean, root_arg, depth:, original_batch_size:)
     return if half_txs.empty?
 
-    recipients, amounts, identifiers = build_batch_arrays(half_txs, token_type)
+    recipients, amounts, identifiers, = build_batch_arrays(half_txs, token_type)
 
     if batch_dry_run_reverts?(client, contract, oracle_key, recipients, amounts, identifiers, root_arg)
       # Ця половина містить отруйний запис — ділимо далі
@@ -514,7 +516,10 @@ class BlockchainMintingService < ApplicationService
       identifiers.push("TAX_BATCH_#{identifier_for(txs.first)}")
     end
 
-    [ recipients, amounts, identifiers ]
+    # [DOC-T.89] `tax_total` віддається НАЗОВНІ, а не інкрементується тут: цей метод
+    # біжить на КОЖНОМУ рівні бінарного пошуку (`process_half`), тож лічильник усередині
+    # рахував би той самий податок 2–14 разів при жодному реальному broadcast'і.
+    [ recipients, amounts, identifiers, tax_total ]
   end
 
   # Відправляє "чистий" батч через batchMint (або mint для одиночних).
@@ -526,7 +531,7 @@ class BlockchainMintingService < ApplicationService
       return
     end
 
-    recipients, amounts, identifiers = build_batch_arrays(txs, token_type)
+    recipients, amounts, identifiers, tax_total = build_batch_arrays(txs, token_type)
 
     tx_hash = client.transact(
       contract, "batchMint", recipients, amounts, identifiers, root_arg,
@@ -535,6 +540,8 @@ class BlockchainMintingService < ApplicationService
 
     # [ARCH.52] Спільний earliest created_at → усі finalize шлють ІДЕНТИЧНІ ConfirmationWorker-args
     # на спільний batchMint tx_hash → unique_for дедуплікує до 1 воркера (не N).
+    # [DOC-T.89] Податок лічимо ПІСЛЯ broadcast — саме те, що реально полетіло.
+    SilkenNet::Metrics::TAX_COLLECTED_TOTAL.increment(by: tax_total.to_f, labels: { token_type: }) if tax_total.to_f.positive?
     batch_confirm_at = txs.min_by(&:created_at).created_at
     txs.each { |tx| finalize_sent_transaction(tx, tx_hash, token_type, batch_confirm_at) }
 

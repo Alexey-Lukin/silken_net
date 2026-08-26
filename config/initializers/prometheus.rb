@@ -47,6 +47,24 @@ module SilkenNet
       labels: [ :token_type ]
     )
 
+    # [DOC-T.89] Ефективна ставка Dynamic Tax ≠ оголошені 2%: податок стягується
+    # ЛИШЕ в `batchMint`, а одиночний `mint()` його не застосовує — і в одинака
+    # веде щонайменше вісім детермінованих каналів (urgent-група розміром 1,
+    # хвостовий слайс, KYC-зріз батча, poisoned-одинаки бінарного пошуку,
+    # pre-broadcast fallback, страхова виплата через `call(id)`, existing-група
+    # після ретраю, fail-open при RPC-збої). Знаменник уже стоїть:
+    # `SCC_MINTED_TOTAL` інкрементується СУМОЮ, не штуками [INF.26], тож
+    # `tax_collected / scc_minted` є готовим відношенням в одних одиницях.
+    # ⚠️ Інкремент — ТІЛЬКИ після успішного broadcast: `build_batch_arrays`
+    # рахує `tax_total` заново на КОЖНОМУ рівні бінарного пошуку, тож інкремент
+    # усередині нього дав би 2–14× на тому самому наборі при жодній реальній
+    # відправці.
+    TAX_COLLECTED_TOTAL = REGISTRY.counter(
+      :silkennet_dynamic_tax_collected_total,
+      docstring: "Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate",
+      labels: [ :token_type ]
+    )
+
     # [ARCH.94] Дві метрики проти класу «емісія зупинилась, і ніхто не дізнався».
     # Обидві потрібні, бо відповідають на РІЗНІ питання й ловлять протилежні
     # режими відмови:
