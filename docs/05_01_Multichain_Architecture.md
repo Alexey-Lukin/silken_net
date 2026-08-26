@@ -540,8 +540,8 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 | **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 
 **Ключові функції:**
-- `mint(address to, uint256 amount, string memory treeDid)` — Базовий мінтинг. Емітує `CarbonMinted`.
-- `batchMint(address[] recipients, uint256[] amounts, string[] treeDids)` — До 100 дерев за один виклик (`MAX_BATCH_SIZE`, дім [`05_03`](05_03_Tokenomics_SCC_and_SFC)).
+- `mint(address to, uint256 amount, string memory treeDid, bytes32 archiveRoot)` — Базовий мінтинг. Емітує `CarbonMinted`.
+- `batchMint(address[] recipients, uint256[] amounts, string[] treeDids, bytes32 archiveRoot)` — До 100 дерев за один виклик (`MAX_BATCH_SIZE`, дім [`05_03`](05_03_Tokenomics_SCC_and_SFC)); `archiveRoot` ОДИН на батч [E.60].
 - `slash(address investor, uint256 amount)` — Спалює токени при порушенні. Емітує `TokenSlashed`.
 - `pause() / unpause()` — Екстрене заморожування.
 - `nonces(address)` — Override для ERC20Permit/Nonces MRO сумісності.
@@ -556,7 +556,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 | **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 
 **Ключові функції:**
-- `mint(address to, uint256 amount, string memory clusterId)` — Мінтинг з прив'язкою до кластера.
+- `mint(address to, uint256 amount, string memory clusterId, bytes32 archiveRoot)` — Мінтинг з прив'язкою до кластера.
 - `batchMint(...)` — Batch варіант.
 - Gasless approvals через EIP-712 (`ERC20Permit`).
 - Governance voting power (`ERC20Votes`).

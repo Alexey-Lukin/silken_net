@@ -230,6 +230,20 @@ jobs:
         # `numeric(24,6)` source makes an honest anchor fail its own verify.
         run: ruby scripts/anchor_payload_sync.rb
 
+      - name: Solidity signature arity (DOC-T.89 — contracts/*.sol ⟷ canon restatements)
+        # Pure Ruby, no Rails. contracts/*.sol is the code-SSOT of every on-chain
+        # signature; 05_03 (the home) and 05_01 (a neighbouring module's summary)
+        # restate them, and both mirrors are WANTED — so pin them rather than
+        # delete them. E.60 added `bytes32 archiveRoot` to mint/batchMint and to
+        # both Minted events; the canon kept the 4-param form in TWENTY places
+        # and went on certifying ✅ in its own matrix against a signature neither
+        # the contract nor subgraph.yaml uses. No ref-gate can see that (a ref
+        # gate judges resolution, never truth), and the canonical-pin engine
+        # extracts `NAME = value`, so it is blind to parameter lists. The axis is
+        # ARITY only — the one property all four spelling dialects agree on.
+        # Inputs `docs/**` + `contracts/**` are already in the changes-filter.
+        run: ruby scripts/solidity_signature_arity_check.rb
+
       - name: Governance-bounds sync (GOV.3 — db/seeds.rb ⟷ PARAMETER_MAP)
         # Pure Ruby, no Rails — sibling of GOV.2 on the OTHER axis of the same
         # worker mirror: the bounds/value_type/category the 9 governance-synced

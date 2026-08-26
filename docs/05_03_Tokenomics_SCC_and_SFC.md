@@ -237,15 +237,15 @@ cast call $SCC "hasRole(bytes32,address)(bool)" $(cast keccak "SLASHER_ROLE") $(
 
 ### SCC — SilkenCarbonCoin
 
-#### `mint(address to, uint256 amount, string calldata treeDid)`
+#### `mint(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)`
 
 ```solidity
-function mint(address to, uint256 amount, string calldata treeDid)
+function mint(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)
     external
-    onlyRole(MINTER_ROLE)
     nonReentrant
+    onlyRole(MINTER_ROLE)
 {
-    _mintSCC(to, amount, treeDid);
+    _mintSCC(to, amount, treeDid, archiveRoot);
 }
 ```
 
@@ -253,38 +253,41 @@ function mint(address to, uint256 amount, string calldata treeDid)
 |---|---|---|
 | `to` | `address` | Адреса інвестора / власника дерева |
 | `amount` | `uint256` | Кількість у wei (1 SCC = 10^18 wei) |
-| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`), max 256 bytes |
+| `treeDid` | `string` | DID дерева (напр. `SNET-00A1B2C3`), max `MAX_STRING_BYTES` = 256 bytes |
+| `archiveRoot` | `bytes32` | **[E.60]** Merkle-корінь телеметрія-архів-батчу диспатчу (mint-anchored witness). `bytes32(0)` = «без witness-клейму» (windowless / fail-open мінт), **НЕ** «порожньо». Корінь свідчить про evidence-набір ДИСПАТЧУ (N:1), не про 1:1 композицію мінта — механіка [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) |
 
 - **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
 - **Делегує до:** `_mintSCC()` — внутрішня реалізація, спільна з `mintForTree()`
 - **Guard on pause:** Опосередковано через `_update` — мінтинг блокується при паузі, слешинг дозволений
 - **Виклик з бекенду:** `BlockchainMintingService` → `client.transact(contract, "mint", to, amount, identifier)` — контракт експонує і `mintForTree()`, і `mint()` alias, але бекенд-ABI (`CONTRACT_ABI`) реєструє лише `"mint"` + `"batchMint"`
 
-#### `_mintSCC(address to, uint256 amount, string calldata treeDid)` — internal
+#### `_mintSCC(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot)` — internal
 
 ```solidity
-function _mintSCC(address to, uint256 amount, string calldata treeDid) internal {
+function _mintSCC(address to, uint256 amount, string calldata treeDid, bytes32 archiveRoot) internal {
     require(to != address(0), "SCC: zero recipient");
     require(amount > 0, "SCC: zero amount");
     require(bytes(treeDid).length > 0, "SCC: empty treeDid");
-    require(bytes(treeDid).length <= 256, "SCC: treeDid too long");
+    require(bytes(treeDid).length <= MAX_STRING_BYTES, "SCC: treeDid too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SCC: cap exceeded");
     _mint(to, amount);
-    emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid);
+    emit CarbonMinted(to, amount, keccak256(bytes(treeDid)), treeDid, archiveRoot);
 }
 ```
 
 - **Призначення:** Усунення дублювання коду між `mint()` та `mintForTree()`. Будь-які зміни валідації або логіки застосовуються до обох entry points одночасно.
-- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
+- **Валідація:** `to != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ `MAX_STRING_BYTES` (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SCC: cap exceeded"`)
+- ⛔ **`archiveRoot` СВІДОМО без валідації:** `bytes32(0)` — легальний «мінт без witness-клейму» (E.60), а не помилка виклику; require на ненульовий корінь заблокував би windowless / fail-open мінт, який канон дозволяє явно
 
-#### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids)`
+#### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata treeDids, bytes32 archiveRoot)`
 
 ```solidity
 function batchMint(
     address[] calldata recipients,
     uint256[] calldata amounts,
-    string[] calldata treeDids
-) external onlyRole(MINTER_ROLE) nonReentrant {
+    string[] calldata treeDids,
+    bytes32 archiveRoot
+) external nonReentrant onlyRole(MINTER_ROLE) {
     uint256 length = recipients.length;
     require(length > 0, "SCC: empty batch");
     require(length == amounts.length && length == treeDids.length, "SCC: array length mismatch");
@@ -295,18 +298,21 @@ function batchMint(
     for (uint256 i = 0; i < length; i++) {
         require(recipients[i] != address(0), "SCC: zero recipient");
         require(amounts[i] > 0, "SCC: zero amount");
-        require(bytes(treeDids[i]).length > 0, "SCC: empty treeDid");
-        require(bytes(treeDids[i]).length <= 256, "SCC: treeDid too long");
+        uint256 didLen = bytes(treeDids[i]).length;
+        require(didLen > 0, "SCC: empty treeDid");
+        require(didLen <= MAX_STRING_BYTES, "SCC: treeDid too long");
         batchTotal += amounts[i];
     }
     require(totalSupply() + batchTotal <= MAX_SUPPLY, "SCC: cap exceeded");
 
     for (uint256 i = 0; i < length; i++) {
         _mint(recipients[i], amounts[i]);
-        emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i]);
+        emit CarbonMinted(recipients[i], amounts[i], keccak256(bytes(treeDids[i])), treeDids[i], archiveRoot);
     }
 }
 ```
+
+- 🔑 **`archiveRoot` — ОДИН на весь батч, не масив.** Це не оптимізація підпису, а вираження інваріанта E.60 «один `batchMint` = один архів-батч»: Ruby-шар групує tx'и за `archive_root` ДО диспатчу, тож масив коренів був би структурно недосяжним станом. Наслідок для читача події: корінь у `CarbonMinted` однаковий для всіх N записів одного виклику.
 
 - **Призначення:** Газово-ефективна масова емісія для цілих секторів/кластерів
 - **Валідація:** `length > 0` (revert: `"SCC: empty batch"`); рівність довжин масивів; `MAX_BATCH_SIZE = 100` — захист від gas overflow (зменшено з 200 після аудиту для гарантії gas safety з максимальними рядками 256 bytes); кожен `recipient != address(0)`, `amount > 0`, `treeDid` не порожній, `treeDid` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` перевіряється атомарно до мінтингу
@@ -403,25 +409,25 @@ function _update(address from, address to, uint256 value)
 
 ### SFC — SilkenForestCoin
 
-#### `mint(address to, uint256 amount, string calldata clusterId)`
+#### `mint(address to, uint256 amount, string calldata clusterId, bytes32 archiveRoot)`
 
 ```solidity
-function mint(address to, uint256 amount, string calldata clusterId)
+function mint(address to, uint256 amount, string calldata clusterId, bytes32 archiveRoot)
     external
-    onlyRole(MINTER_ROLE)
     nonReentrant
+    onlyRole(MINTER_ROLE)
 {
     require(to != address(0), "SFC: zero recipient");
     require(amount > 0, "SFC: zero amount");
     require(bytes(clusterId).length > 0, "SFC: empty clusterId");
-    require(bytes(clusterId).length <= 256, "SFC: clusterId too long");
+    require(bytes(clusterId).length <= MAX_STRING_BYTES, "SFC: clusterId too long");
     require(totalSupply() + amount <= MAX_SUPPLY, "SFC: cap exceeded");
     _mint(to, amount);
     // Auto-delegate to self if not yet delegated
     if (delegates(to) == address(0)) {
         _delegate(to, to);
     }
-    emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId);
+    emit ForestMinted(to, amount, keccak256(bytes(clusterId)), clusterId, archiveRoot);
 }
 ```
 
@@ -429,18 +435,19 @@ function mint(address to, uint256 amount, string calldata clusterId)
 |---|---|---|
 | `to` | `address` | Адреса отримувача (організація / DAO учасник) |
 | `amount` | `uint256` | Кількість SFC у wei |
-| `clusterId` | `string` | Ідентифікатор кластера, max 256 bytes. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
+| `clusterId` | `string` | Ідентифікатор кластера, max `MAX_STRING_BYTES` = 256 bytes. Бекенд формує: `"CLUSTER_#{tree.cluster_id}"` або `"CLUSTER_GLOBAL"` |
+| `archiveRoot` | `bytes32` | **[E.60]** Merkle-корінь архів-батчу; `bytes32(0)` = без witness-клейму. Семантика спільна з SCC — [`05_02 §E.60`](05_02_Proof_of_Growth_Pipeline) |
 
-- **Модифікатор:** `onlyRole(MINTER_ROLE)`, `nonReentrant`
-- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
+- **Модифікатор:** `nonReentrant`, `onlyRole(MINTER_ROLE)`
+- **Валідація:** `to != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ `MAX_STRING_BYTES` (The Graph safety), `totalSupply() + amount <= MAX_SUPPLY` (revert: `"SFC: cap exceeded"`)
 - **Auto-delegation:** При першому мінті для адреси автоматично делегує voting power до самого себе (`_delegate(to, to)`). Без цього ERC20Votes вимагає явний `delegate()` виклик, і більшість отримувачів не знатимуть про необхідність делегації, що призводить до штучно низького governance quorum.
 - **Guard on pause:** Мінтинг блокується при паузі через `_update`, слешинг дозволений
 - **Виклик з бекенду:** `BlockchainMintingService` — однакова логіка з SCC, але `token_type == "forest_coin"` → `FOREST_COIN_CONTRACT_ADDRESS`
 
-#### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds)`
+#### `batchMint(address[] calldata recipients, uint256[] calldata amounts, string[] calldata clusterIds, bytes32 archiveRoot)`
 
-- Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`
-- Модифікатор: `onlyRole(MINTER_ROLE)`, `nonReentrant`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE = 100`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ 256 bytes; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
+- Аналогічний SCC `batchMint`, але прив'язаний до `clusterId` замість `treeDid`; `archiveRoot` так само ОДИН на весь батч
+- Модифікатор: `nonReentrant`, `onlyRole(MINTER_ROLE)`; перевіряє `length > 0`, рівність масивів, `MAX_BATCH_SIZE = 100`; per-element: `recipient != address(0)`, `amount > 0`, `clusterId` не порожній, `clusterId` ≤ `MAX_STRING_BYTES`; `totalSupply() + batchTotal <= MAX_SUPPLY` атомарно
 - **Auto-delegation:** Як і в `mint()`, автоматично делегує voting power при першому мінті для кожної адреси
 
 #### `slash(address investor, uint256 amount)`
@@ -513,26 +520,40 @@ function nonces(address owner)
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid)` | `investor`, `treeDidHash` | ✅ `handleCarbonMinted` |
+| `CarbonMinted` | `CarbonMinted(address indexed investor, uint256 amount, bytes32 indexed treeDidHash, string treeDid, bytes32 indexed archiveRoot)` | `investor`, `treeDidHash`, `archiveRoot` | ✅ `handleCarbonMinted` |
 | `TokenSlashed` | `TokenSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleTokenSlashed` (пише `contextHash` — CONTRACT.1) |
 
 ### SFC
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId)` | `investor`, `clusterIdHash` (bytes32 keccak256) | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
+| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot)` | `investor`, `clusterIdHash` (bytes32 keccak256), `archiveRoot` | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
 | `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleGovernanceSlashed` (пише `contextHash`; ⚠️ contract address placeholder) |
 
 ### Subgraph vs Контракт — Повна Матриця
 
 | Event у subgraph.yaml | Подія у контракті | Статус |
 |---|---|---|
-| `CarbonMinted(indexed address,uint256,indexed bytes32,string)` | `CarbonMinted` | ✅ `treeDidHash` (bytes32) |
+| `CarbonMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)` | `CarbonMinted` | ✅ `treeDidHash` + `archiveRoot` (обидва bytes32, обидва indexed) |
 | `TokenSlashed(indexed address,uint256,bytes32)` | `TokenSlashed` | ✅ Синхронізовано (contextHash — CONTRACT.1) |
-| `ForestMinted(indexed address,uint256,indexed bytes32,string)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
+| `ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
 | `GovernanceSlashed(indexed address,uint256,bytes32)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5; contextHash — CONTRACT.1) |
 
 > ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
+
+🛡️ **Арність цих сигнатур гейтована** — `ruby scripts/solidity_signature_arity_check.rb` (HARD, `docs.yml`) звіряє КОЖЕН переказ параметричного списку в `docs/**` проти декларації в `contracts/*.sol`. ⛔ Стеля оголошена: гейт судить **лише кількість параметрів** — типи, порядок, імена й `indexed` лишаються на очах ревʼюера. Заведено [DOC-T.89] після того, як `archiveRoot` (E.60 Фаза 1б) прожив у контрактах і `subgraph.yaml`, а канон тримав чотирипараметричну форму у **двадцяти** місцях і ставив ✅ у цій самій матриці навпроти сигнатури, якої не вживає жоден бік.
+
+### 🏷️ Префікси ідентифікатора мінта — що саме несе `treeDid`/`clusterId`
+
+Поле `treeDid` події — це **не завжди DID дерева**: бекенд (`BlockchainMintingService#identifier_for`) кодує в ньому ще й ПРИРОДУ мінта, бо окремого поля під неї в події немає. Три форми, усі детерміновані:
+
+| Форма | Коли | Що означає для читача події |
+|---|---|---|
+| `<did>` · `ORG_<id>` · `CLUSTER_<id>` | звичайний мінт за верифікований ріст | базова форма: SCC — DID дерева (або `ORG_`-фолбек для custodial-гаманця без дерева), SFC — кластер |
+| `INS_<база>` | мінт за страховою виплатою (`sourceable_type == "ParametricInsurance"`) | емісія **за збиток**, не за вимір. `MRV.1`-lineage для такого мінта веде до вимірів, яких не було, — тому префікс і потрібен |
+| `TAX_BATCH_<база>` | агрегований елемент Dynamic Tax у батчі (отримувач = `DAO_TREASURY_ADDRESS`) | не мінт для дерева взагалі, а N+1-й елемент батча — див. §Dynamic Tax |
+
+⚠️ **Префікс сьогодні ЕМІТУЄТЬСЯ, але не СПОЖИВАЄТЬСЯ.** `subgraph/src/mapping.ts` кладе значення в `treeDid` як є й додає суму до `ProtocolFinancials.totalMinted` **без гілкування**, тож агрегат конфлатить «намінтили за виміряний ріст», «намінтили за страховим випадком» і «податок». Те саме робить `chain_audit_delta`. Тобто розрізнення існує на дроті й не існує в жодного читача — відкрите питання живе в [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89. 🔑 **Ціна рішення асиметрична в ЧАСІ:** доки [`SEC.1`](00_07_Action_Plan_Tracker) не задеплоєний, формат ідентифікатора коштує один рядок; після mainnet це міграція формату on-chain події з розривом історії.
 
 ---
 
@@ -614,8 +635,8 @@ Telemetry → Lorenz Z-value → growth_points++
                                        ├── >30% poisoned → fallback to individual mints
                                        └── isolated poisoned → mint_individual() (fails gracefully)
                                     ↓
-                    SCC: mint(to, amount, treeDid)          ← MINTER_ROLE
-                    SFC: mint(to, amount, "CLUSTER_{id}")   ← MINTER_ROLE
+                    SCC: mint(to, amount, treeDid, archiveRoot)          ← MINTER_ROLE
+                    SFC: mint(to, amount, "CLUSTER_{id}", archiveRoot)   ← MINTER_ROLE
                                     ↓
                     BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
                                     ↓
@@ -688,15 +709,15 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 # subgraph/subgraph.yaml — поточний стан eventHandlers:
 
 # SCC data source
-- event: CarbonMinted(indexed address,uint256,indexed bytes32,string)
-  handler: handleCarbonMinted           # ✅ treeDidHash як bytes32
+- event: CarbonMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
+  handler: handleCarbonMinted           # ✅ treeDidHash + archiveRoot [E.60], обидва bytes32
 
 - event: TokenSlashed(indexed address,uint256,bytes32)
   handler: handleTokenSlashed           # ✅ Синхронізовано (contextHash — CONTRACT.1)
 
 # SFC data source (додано S3.5)
-- event: ForestMinted(indexed address,uint256,indexed bytes32,string)
-  handler: handleForestMinted           # ✅ clusterIdHash як bytes32
+- event: ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
+  handler: handleForestMinted           # ✅ clusterIdHash + archiveRoot [E.60]
 
 - event: GovernanceSlashed(indexed address,uint256,bytes32)
   handler: handleGovernanceSlashed      # ✅ Governance slashing tracking (contextHash)
