@@ -96,8 +96,14 @@ module Treasury
 
     # [ARCH.62] Токен-типи, чий заминчений обсяг детектор стежить (SCC + SFC).
     MINT_TOKEN_TYPES = %w[carbon_coin forest_coin].freeze
-    # Ковзне вікно виміру обсягу мінту (partition-prune bound на created_at).
+    # Ковзне вікно виміру обсягу мінту — по МОМЕНТУ BROADCAST (`sent_at`), [INF.26].
     MINT_VOLUME_WINDOW = 1.hour
+    # ⚠️ ЛИШЕ partition-prune: `sent_at` не є ключем партиціювання й не індексований,
+    # тож без нижньої `created_at`-межі кожен прохід сканував би всі партиції. Число
+    # НЕ семантичне — воно мусить лише надійно накривати найдовший шлях
+    # `created_at → sent_at` (circuit-TTL + KYC-беклог + Sidekiq-ретраї), і тиждень
+    # перекриває його з великим запасом.
+    VOLUME_PRUNE_LOOKBACK = 7.days
     # Kredis-прапор inert circuit-break: детектор ставить per-token лише коли поріг увімкнено;
     # BlockchainMintingService читає його per token-group (ключ-prefix = One-Home там). TTL >
     # monitor-schedule → авто-release коли сплеск минув, авто-re-trip поки триває.
@@ -199,10 +205,28 @@ module Treasury
         # ВЕЛИКЕ СПАЛЕННЯ вимикало б ЛЕГІТИМНИЙ мінтинг того самого токена. Дискримінатор
         # той самий, що в `net_minted_supply` — колонка `direction` [ARCH.95]; тримати
         # обидва боки в одному домі.
+        # 🔴 [INF.26] Вікно ключується на BROADCAST (`sent_at`), не на `created_at`, і
+        # дефект тут САМОРЕФЕРЕНТНИЙ — це його найгірша властивість. Розбіжність
+        # моменту наміру й моменту відправки виникає рівно тоді, коли tx довго стояла
+        # `:pending`, а НАЙЧАСТІША причина цього — САМ ЦЕЙ ДЕТЕКТОР:
+        # `trip_mint_circuit!` тримає батч `:pending` із TTL `MINT_CIRCUIT_TTL` = 1 год,
+        # тобто рівно ширину вікна. Коли прапор спливає, пул зливається в мемпул
+        # рядками, ЯКІ ВЖЕ СТАРШІ за годину — тож дренаж після власного HOLD'у детектор
+        # не бачив узагалі. Те саме для KYC-беклогу і Sidekiq-ретраїв.
+        # Прецедент форми — `StuckSentTransactionSweeperWorker` (той самий присуд:
+        # «поріг ключується на момент broadcast, бо reset-to-pending тримає СТАРИЙ
+        # `created_at`», ARCH.52 trap).
+        #
+        # ⚠️ Нижня `created_at`-межа семантично НЕ ПОТРІБНА — вона тут ЛИШЕ прунить
+        # партиції: `sent_at` не є ключем партиціювання й не має індексу, тож без неї
+        # це seq-scan усіх партицій щочверть години. Стеля оголошена: мінт, відправлений
+        # у вікно, але СТВОРЕНИЙ раніше за `VOLUME_PRUNE_LOOKBACK`, у лік не потрапить —
+        # це недосяжно для живого тракту (ретраї обмежені), і чесніше за повний скан.
         volume = BlockchainTransaction
                  .where(token_type: token_type, status: [ :sent, :confirmed ])
                  .where(direction: :mint)
-                 .where("created_at >= ?", MINT_VOLUME_WINDOW.ago)
+                 .where(sent_at: MINT_VOLUME_WINDOW.ago..)
+                 .where("created_at >= ?", VOLUME_PRUNE_LOOKBACK.ago) # [prune-only, не семантика]
                  .sum(:amount).to_f
         SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.set(volume, labels: { token_type: token_type })
 

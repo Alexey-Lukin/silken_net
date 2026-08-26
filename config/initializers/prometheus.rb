@@ -130,7 +130,7 @@ module SilkenNet
 
     INSURANCE_PAYOUT_SUCCESS_TOTAL = REGISTRY.counter(
       :silkennet_insurance_payout_success_total,
-      docstring: "Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator)"
+      docstring: "Parametric insurance payouts BROADCAST — Etherisc claim sent / internal mint status→sent (SLO numerator)"
     )
 
     # [INS.2/ARCH.82] Reserve-gate HOLD — виплату зупинено казначейською політикою.
@@ -304,7 +304,7 @@ module SilkenNet
     # gauge завжди живий для видимості обсягу. 05_02 §Модель довіри / 06_03 §2.8.
     MINT_VOLUME_WINDOW_SCC = REGISTRY.gauge(
       :silkennet_mint_volume_window_scc,
-      docstring: "SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input)",
+      docstring: "SCC/SFC BROADCAST (sent_at) in the trailing 1h window (ARCH.62 volume-anomaly detector input)",
       labels: [ :token_type ]
     )
 

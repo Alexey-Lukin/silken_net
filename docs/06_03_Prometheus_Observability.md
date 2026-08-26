@@ -213,7 +213,7 @@ end
 | `silkennet_solana_payout_attempts_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_ATTEMPTS_TOTAL` | — | `Solana::BatchPayoutService` | **[ARCH.45]** Спроби Solana batch payout — знаменник payout success-rate SLO |
 | `silkennet_solana_payout_success_total` | `SilkenNet::Metrics::SOLANA_PAYOUT_SUCCESS_TOTAL` | — | `Solana::BatchPayoutService` (status→sent) | **[ARCH.45]** Успішні Solana batch payout — чисельник того ж SLO |
 | `silkennet_insurance_payout_attempts_total` | `SilkenNet::Metrics::INSURANCE_PAYOUT_ATTEMPTS_TOTAL` | — | `InsurancePayoutWorker` (payout attempt) | **[INS.1]** Спроби страхової виплати — знаменник insurance payout success-rate SLO |
-| `silkennet_insurance_payout_success_total` | `SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL` | — | `InsurancePayoutWorker` (Etherisc claim sent / mint initiated) | **[INS.1]** Успішні страхові виплати — чисельник того ж SLO |
+| `silkennet_insurance_payout_success_total` | `SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL` | — | `InsurancePayoutWorker` (Etherisc claim sent / internal mint status→sent [INF.26]) | **[INS.1]** Успішні страхові виплати — чисельник того ж SLO |
 
 #### Gauges (поточне значення — оновлюються при кожному scrape)
 
@@ -341,7 +341,7 @@ end
 | `silkennet_governance_param_rejected_total` | `parameter` | Governance parameter syncs rejected by bounds validation |
 | `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
 | `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
-| `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts executed — Etherisc claim sent / mint initiated (SLO numerator) |
+| `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts BROADCAST — Etherisc claim sent / internal mint status→sent (SLO numerator) |
 | `silkennet_insurance_reserve_hold_total` | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
 | `silkennet_lineage_root_failures_total` | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
 | `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
@@ -396,7 +396,7 @@ end
 | `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
 | `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
 | `silkennet_mint_eligible_unminted_depth` | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
-| `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC minted in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
+| `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC BROADCAST (sent_at) in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
 | `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
 | `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
 | `silkennet_partition_sample_timestamp_seconds` | — | [ARCH.70] Unix-час останнього успішного семплу росту — свідок СВІЖОСТІ двох гейджів нижче. Без нього обидва вакуумні: cron наповнює їх у живому процесі, тож зупинка воркера серію не прибирає, а ЗАМОРОЖУЄ, і алерти лишаються зеленими |

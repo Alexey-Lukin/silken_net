@@ -399,8 +399,8 @@ RSpec.describe Treasury::MonitorService do
 
     it "sets the rolling-1h mint-volume gauge per token_type (partition-prune window)" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 40.0, created_at: 10.minutes.ago)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :sent, amount: 25.0, created_at: 90.minutes.ago) # too old → excluded
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 40.0, sent_at: 10.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :sent, amount: 25.0, sent_at: 90.minutes.ago) # too old → excluded
       arm(max_scc: 0)
 
       described_class.call
@@ -408,9 +408,40 @@ RSpec.describe Treasury::MonitorService do
       expect(SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.get(labels: { token_type: "carbon_coin" })).to eq(40.0)
     end
 
+# 🔴 [INF.26] Пін, що робить повернення до `created_at` НЕМОЖЛИВИМ, і саме він
+# виражає дефект: рядок, СТВОРЕНИЙ поза вікном, але ВІДПРАВЛЕНИЙ усередині нього,
+# мусить рахуватись. Це не екзотика — це нормальний дренаж після власного
+# `trip_mint_circuit!` (TTL = 1 год = рівно ширина вікна), після KYC-беклогу і
+# після Sidekiq-ретраїв. На старій шкалі детектор такого мінту не бачив ЗОВСІМ.
+it "counts a mint CREATED before the window but BROADCAST inside it" do
+  wallet = create(:wallet)
+  create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :sent,
+         amount: 70.0, created_at: 3.hours.ago, sent_at: 10.minutes.ago)
+  arm(max_scc: 0)
+
+  described_class.call
+
+  expect(SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.get(labels: { token_type: "carbon_coin" })).to eq(70.0)
+end
+
+# 🔴 [ARCH.101] Напрямок був фільтром БЕЗ ЖОДНОГО ПІНА: фабрика дефолтить
+# `direction: 'mint'`, тож мутація «зняти `.where(direction: :mint)`» лишалась би
+# зеленою на КОЖНІЙ наявній фікстурі. Ціна зворотна до очікуваної — спалення
+# рахувалось би мінт-обсягом, і ВЕЛИКИЙ СЛЕШ вимикав би легітимну емісію.
+it "excludes burns from the mint-volume gauge — a slash must not trip the mint circuit" do
+  wallet = create(:wallet)
+  create(:blockchain_transaction, :slash_burn, wallet: wallet, token_type: :carbon_coin,
+         status: :confirmed, amount: 9_000.0, sent_at: 5.minutes.ago)
+  arm(max_scc: 0)
+
+  described_class.call
+
+  expect(SilkenNet::Metrics::MINT_VOLUME_WINDOW_SCC.get(labels: { token_type: "carbon_coin" })).to eq(0.0)
+end
+
     it "is inert when the ceiling is off (0) — gauge still live, no alert" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 0)
 
       expect { described_class.call }.not_to change(EwsAlert, :count)
@@ -418,7 +449,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "raises a system_fault alert when volume breaches the configured ceiling" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 1_000)
 
       expect { described_class.call }.to change { EwsAlert.where(alert_type: :system_fault).count }.by(1)
@@ -426,7 +457,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "dedups the volume alert across cycles (no 15-min storm on a sustained breach)" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 1_000)
 
       described_class.call # 1st cycle → creates the alert
@@ -435,7 +466,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "trips a PER-TOKEN Kredis circuit flag ONLY when the breaker kill-switch is on" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 1_000, breaker: true)
       flag = instance_double(Kredis::Types::Flag)
       allow(Kredis).to receive(:flag).and_return(flag)
@@ -451,8 +482,8 @@ RSpec.describe Treasury::MonitorService do
 
     it "trips INDEPENDENT per-token flags + alerts when both tokens breach (isolation)" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
-      create(:blockchain_transaction, wallet: wallet, token_type: :forest_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :forest_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 1_000, breaker: true)
       flag = instance_double(Kredis::Types::Flag)
       allow(Kredis).to receive(:flag).and_return(flag)
@@ -466,7 +497,7 @@ RSpec.describe Treasury::MonitorService do
 
     it "does NOT trip the circuit flag when the breaker is off (breach alerts only)" do
       wallet = create(:wallet)
-      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, created_at: 5.minutes.ago)
+      create(:blockchain_transaction, wallet: wallet, token_type: :carbon_coin, status: :confirmed, amount: 5_000.0, sent_at: 5.minutes.ago)
       arm(max_scc: 1_000, breaker: false)
 
       allow(Kredis).to receive(:flag)
