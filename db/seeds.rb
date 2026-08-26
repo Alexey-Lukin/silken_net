@@ -1,20 +1,28 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-require "securerandom"
-
 puts "🔥 Очищення старого світу (Кенозис)..."
-# Порядок враховує залежності (Foreign Keys) — від листя до кореня
+# Порядок враховує залежності (Foreign Keys) — від листя до кореня.
+# ⛔ Перелік мусить накривати УСІ AR-моделі дерева, а не лише ті, що сід сіє:
+# `delete_all` не бачить рядка, записаного кимось іншим, і той рядок валить не
+# себе, а КОРІНЬ. Три позиції з нижчезазначеною підставою:
+#   · `ProvisioningSession` — `operator_id`/`supervisor_id` це FK на `users`, тож
+#     будь-який прогін `factory:flash` робив наступний `db:seed` фатальним на
+#     `User.delete_all` (тому стоїть у листі, ПЕРЕД користувачами);
+#   · `TelemetryArchiveBatch` — на нього дивиться `blockchain_transactions.archive_batch_id`,
+#     тож зноситься ПІСЛЯ транзакцій;
+#   · `EthereumAnchor` — FK не має в жоден бік, позиція вільна.
 [
-  AuditLog, Session,
+  AuditLog, Session, ProvisioningSession,
   ActuatorCommand, MaintenanceRecord,
-  BlockchainTransaction, TelemetryLog, GatewayTelemetryLog, AiInsight, EwsAlert,
+  BlockchainTransaction, TelemetryArchiveBatch,
+  TelemetryLog, GatewayTelemetryLog, AiInsight, EwsAlert,
   Wallet, DeviceCalibration,
   Actuator, HardwareKey,
   Tree, TinyMlModel, TreeFamily,
   Gateway,
   ParametricInsurance, NaasContract,
-  BioContractFirmware,
+  BioContractFirmware, EthereumAnchor,
   SystemParameter,
   Cluster, User, Organization
 ].each do |model|
@@ -206,6 +214,12 @@ cherkasy_forest = Cluster.create!(
   # читає, не існує (сейсмічний вердикт знято — вимірювача немає), тож демо друкувало на
   # картці кластера чутливість детектора, якого платформа не має. Ключ лишається живим
   # forward-контрактом на моделі; сід не сміє його ВИГАДУВАТИ.
+  # 🔥 `custom_fire_threshold` — ПЕРША ланка `AlertDispatchService#fire_limit`
+  # (кластер → `TreeFamily#fire_resistance_rating` → `DEFAULT_FIRE_TEMP_C`), і вона
+  # перекриває обидві наступні. Значення дорівнює платформному дефолту 60 °C свідомо:
+  # це біом-ПІН, а не розходження. Наслідок для телеметрії названо в §7 біля
+  # `temperature_c` — там число мусить триматись під цим порогом, інакше кадр
+  # класифікується пожежею незалежно від того, що каже його власний коментар.
   environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
   geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ] }
 )
@@ -305,8 +319,12 @@ ParametricInsurance.create!(
   status: :active,
   trigger_event: :extreme_drought,
   # ⚖️ [DOC-T.89, 2026-08-26] Було `:forest_coin` — демо роздавало 200k ГОЛОСІВ одній
-  # організації за страховий випадок. SFC є governance-токеном з авто-делегацією, а
-  # quorum рахується від `totalSupply`, тож сіди моделювали б захоплення DAO як норму.
+  # організації за страховий випадок, і моделювало захоплення DAO як норму.
+  # 🔴 Присуд лишається, але тримає його ТЕПЕР інша, сильніша підстава: вибору більше
+  # немає взагалі — `ParametricInsurance` оголошує `enum :token_type, { carbon_coin: 0 }`,
+  # тобто SFC із цієї моделі вилучено, і `:forest_coin` тут просто не існує як значення.
+  # (Первісна причина — «quorum рахується від `totalSupply`» — мертва з того ж дня:
+  # `SilkenGovernor` рахує quorum від СТЕЛІ емісії `QUORUM_BASE`, не від обігу.)
   token_type: :carbon_coin
 )
 
@@ -402,10 +420,25 @@ GatewayTelemetryLog.create!(
 # =========================================================================
 puts "🌳 Висаджуємо 100 Солдатів у Черкаський бір..."
 cherkasy_trees = []
+# 🔇 [SILENCE-1] Індекси навмисних мовчунок. `Tree.silent` — це active-дерево, що ВЖЕ
+# виходило в ефір і замовкло довше за `Tree::SILENCE_THRESHOLD` (24 год); NULL-мітка в
+# скоуп свідомо НЕ входить («мовчання ненародженого»). Доти жодне засіяне дерево не мало
+# `last_seen_at` взагалі, тож вісь тиші не мала в демо ЖОДНОГО зі своїх двох станів —
+# ані свіжого сигналу, ані тиші, — а вона несуча: мовчазне дерево виключається зі
+# знаменника слешингу й підбирається `TreeStalenessSweepWorker` у Field Audit.
+# Індекси вибрані з вільних: 0 несе грошовий тракт (§9), 5 і 10 — обслуговування (§10),
+# 7 — пилку (§8), останній — тривогу посухи (§8). Мовчунка в будь-якому з них зробила б
+# сусідній сюжет самосуперечливим.
+silent_tree_indexes = [ 3, 42 ]
+cherkasy_measured_trees = 0
 100.times do |i|
   gateway = gateways.sample
   family = tree_families.sample
   did = "SNET-#{format('%08X', i + 1)}"
+  is_silent = silent_tree_indexes.include?(i)
+  # Момент останнього почутого пакета: для мовчунки — минуле, і рівно ним датований
+  # її `TelemetryLog` (дві мітки про ОДНУ подію не мають права розходитись).
+  last_heard_at = is_silent ? 73.hours.ago : Time.current
 
   tree = Tree.create!(
     did: did,
@@ -419,40 +452,104 @@ cherkasy_trees = []
   # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128 (16 bytes / 32 hex).
   HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
-  # Wallet створюється через after_create в Tree, тут лише оновлюємо
-  tree.wallet.update!(
-    balance: rand(5000..15000),
-    crypto_public_address: "0x#{SecureRandom.hex(20)}"
-  )
+  # Wallet створюється через after_create в Tree, тут лише оновлюємо.
+  #
+  # 💰 ОДИНИЦЯ `balance` — БАЛИ РОСТУ, не монети (`04_01 §6`; курс `emission_threshold`
+  # вище: 10 000 балів = 1 SCC). Аліас `scc_balance` на цій колонці — депрекований
+  # ренейм, не конверсія [ARCH.88].
+  #
+  # 🔑 [KYC.1] Демо мусить показувати ОБИДВІ гілки `Wallet#kyc_approved_for_minting?`:
+  #   · custodial (адреси НЕМА) → статус успадковується від організації, а мінт їде
+  #     на її адресу (`lock_and_mint!` бере `organization.crypto_public_address`);
+  #   · власна адреса → читається ВЛАСНИЙ статус гаманця, і org-схвалення його НЕ
+  #     перекриває.
+  # ⛔ Тому власна адреса виставляється РАЗОМ зі статусом одним `update!`:
+  # `reset_hadron_kyc_on_address_change` скидає в `pending` рівно тоді, коли явного
+  # статусу в тому самому записі немає. Доти сід давав власну адресу ВСІМ і статусу не
+  # ставив — тобто з ~120 гаманців мінтити не міг ЖОДЕН (`BlockchainMintingService`
+  # відсіював їх усі), і кожен рядок ще й ставив у чергу `HadronKycVerificationWorker`.
+  self_custodial = (i % 25).zero?
+  if self_custodial
+    tree.wallet.update!(
+      balance: rand(5000..15000),
+      crypto_public_address: "0x#{SecureRandom.hex(20)}",
+      hadron_kyc_status: "approved"
+    )
+  else
+    tree.wallet.update!(balance: rand(5000..15000))
+  end
 
   # Симуляція стану
   is_anomaly = rand < 0.05
   status = is_anomaly ? :anomaly : :homeostasis
+  # Напруга шини цього пакета — ОДИН вираз на два записи (`TelemetryLog.voltage_mv` і
+  # денормалізований `trees.latest_voltage_mv`): два літерали розійшлись би тихо, і база
+  # суперечила б сама собі про ОДИН вимір.
+  packet_voltage_mv = is_anomaly ? 3100 : 3800
 
   # [СИНХРОНІЗОВАНО]: Сира телеметрія (Uplink Pulse).
   # Z values відповідають реальному діапазону Lorenz attractor:
   #   homeostasis ∈ [critical_z_min, critical_z_max] (pine: 5..45, optimum 29),
   #   anomaly = поза band (тут 48.5 → понад MAX, тобто перегрів атрактора).
+  #
+  # 🔥 `temperature_c` аномалії — 41 °C, і число тут НЕСУЧЕ. Доти стояло 65 °C, тобто
+  # ВИЩЕ за `fire_limit` цього кластера (60 °C, §2), а пожежна гілка
+  # `AlertDispatchService` стоїть ПЕРШОЮ і робить `return` — отже кожен «дестабілізований
+  # атрактор» демо живий код класифікував би як `fire_detected`/`critical`. Хибним було
+  # саме число: 65 °C на стовбурі є пожежею за власним означенням платформи, хай би який
+  # поріг із трьох ланок спрацював.
+  # ⚠️ І чесно про те, що НЕ змінилось: кадр із `bio_status: :anomaly` навіть під порогом
+  # веде в АКУСТИЧНУ гілку (`chainsaw_detected`), а не в `attractor_destabilised` —
+  # той medium-алерт народжується лише зі stress-кадру або з Z поза обвідною при
+  # гомеостазному статусі. Сюжет «дестабілізація» демо тримає окремим EwsAlert у §8.
+  # ⊕ Добове середнє інсайту нижче поїхало слідом (45 → 38 °C): середнє, ВИЩЕ за кожен
+  # свій замір, є станом, якого світ не має.
   TelemetryLog.create!(
     tree: tree,
     queen_uid: gateway.uid,
-    voltage_mv: is_anomaly ? 3100 : 3800,
-    temperature_c: is_anomaly ? 65.0 : 22.0,
+    voltage_mv: packet_voltage_mv,
+    temperature_c: is_anomaly ? 41.0 : 22.0,
     acoustic_events: is_anomaly ? 150 : 5,
     metabolism_s: 15,
     growth_points: is_anomaly ? 0 : 5,
     mesh_ttl: 5,
     bio_status: status,
     z_value: is_anomaly ? 48.5 : 28.5,
-    rssi: -rand(60..90)
+    rssi: -rand(60..90),
+    created_at: last_heard_at
   )
 
-  # [СИНХРОНІЗОВАНО]: Вчорашній підсумок (The Insight Oracle)
+  # 🔊 [ARCH.109] Канал «вузол чули» має право писати ЛИШЕ той, хто його справді почув.
+  # Сід створює сам уплінк рядком вище, тож підстава є — і мітка йде РІВНО поруч із ним,
+  # ніколи з обслуговування (людський артефакт `mark_seen!` не кличе: `00_01 §1.1`).
+  # `voltage_mv` = мВ шини VDDA, діагностика просідання, а НЕ запас іоністора [ARCH.99].
+  if is_silent
+    # `mark_seen!` за побудовою клемпить мітку в NOW (`GREATEST(COALESCE(…), now)`) —
+    # МИНУЛИМ моментом ним не напишеш, тож пара йде прямо, тим самим уплінком.
+    tree.update_columns(last_seen_at: last_heard_at, latest_voltage_mv: packet_voltage_mv)
+  else
+    tree.mark_seen!(packet_voltage_mv)
+  end
+
+  cherkasy_trees << tree
+
+  # 🔇 Мовчунка добового агрегату не потрапляє: вона не виходила в ефір за звітну добу.
+  # Тому ані інсайту, ані `latest_stress_index` — і саме це робить пару
+  # `measured_trees`/`total_trees` кластерного рядка (§13) справжнім числом, а не 100/100.
+  next if is_silent
+
+  cherkasy_measured_trees += 1
+
+  # [СИНХРОНІЗОВАНО]: Вчорашній підсумок (The Insight Oracle).
+  # 📅 [ARCH.100] Доба звіту — ОДИН дім, `AiInsight.reporting_date`. Доти сід називав її
+  # власним виразом (`Date.yesterday`), і збігався той із писачем лише поки `Time.zone`
+  # дорівнює UTC; будь-який інший пояс розвів би писача й читача (`for_date` шукає
+  # ТОЧНОЮ рівністю), а промах тут ТИХИЙ — порожня вибірка не є помилкою.
   AiInsight.create!(
     analyzable: tree,
     insight_type: :daily_health_summary,
-    target_date: Date.yesterday,
-    average_temperature: is_anomaly ? 45.0 : 21.0,
+    target_date: AiInsight.reporting_date,
+    average_temperature: is_anomaly ? 38.0 : 21.0,
     stress_index: is_anomaly ? 0.95 : 0.1,
     summary: is_anomaly ? "Критично: Виявлено аномальний тепловий фон." : "Стабільно: Вузол у стані гомеостазу.",
     reasoning: { max_z: (is_anomaly ? 48.5 : 28.5), source: "Simulation" }
@@ -464,11 +561,11 @@ cherkasy_trees = []
   # мовчання сіда означало б «не виміряно» на кожному засіяному дереві, і
   # найгучніше — на аномальних, чий інсайт каже 0.95.
   tree.update_column(:latest_stress_index, is_anomaly ? 0.95 : 0.1)
-
-  cherkasy_trees << tree
 end
 
 puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
+# Один вираз напруги на два записи — дзеркало сіда Черкас (див. `packet_voltage_mv`).
+amazon_packet_voltage_mv = 3600
 20.times do |i|
   family = oak
   did = "SNET-#{format('%08X', 200 + i)}"
@@ -484,16 +581,15 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
   # Post-ARCH.42 (2026-05-23): Tree LoRa channel — AES-128 (16 bytes / 32 hex).
   HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
 
-  tree.wallet.update!(
-    balance: rand(2000..8000),
-    crypto_public_address: "0x#{SecureRandom.hex(20)}"
-  )
+  # [KYC.1] Тропічний сектор — весь custodial (власної адреси немає), тож mint-гейт
+  # читає статус організації-власниці. Розбір обох гілок предиката — у сіді Черкас вище.
+  tree.wallet.update!(balance: rand(2000..8000))
 
   # Дуб (oak): band 8..40, optimum 24 → ставимо homeostasis ~ 24.
   TelemetryLog.create!(
     tree: tree,
     queen_uid: amazon_gw.uid,
-    voltage_mv: 3600,
+    voltage_mv: amazon_packet_voltage_mv,
     temperature_c: 32.0,
     acoustic_events: 3,
     metabolism_s: 20,
@@ -504,10 +600,13 @@ puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
     rssi: -rand(55..80)
   )
 
+  # [ARCH.109] Дзеркало сіда вище: мітку «чули» ставить той самий уплінк, що й рядком вище.
+  tree.mark_seen!(amazon_packet_voltage_mv)
+
   AiInsight.create!(
     analyzable: tree,
     insight_type: :daily_health_summary,
-    target_date: Date.yesterday,
+    target_date: AiInsight.reporting_date,
     average_temperature: 31.0,
     stress_index: 0.15,
     summary: "Стабільно: Тропічний вузол у нормі.",
@@ -558,8 +657,35 @@ EwsAlert.create!(
 # 9. БЛОКЧЕЙН ТРАНЗАКЦІЇ
 # =========================================================================
 puts "⛓️ Реєстрація блокчейн-транзакцій..."
+# 💰 ДВІ ОДИНИЦІ НА ОДНОМУ РЯДКУ, і з імені колонки жодна не видна:
+#   `locked_points` = БАЛИ росту (та сама шкала, що `wallets.balance`/`locked_balance`);
+#   `amount`, `esg_retired_balance` = МОНЕТИ SCC (лише до них застосовне `×10**18`).
+# Курс — `emission_threshold`, засіяний у §0 цього ж файлу: 10 000 балів = 1 SCC.
+# ⛔ Доти обидва рядки несли 500 і 250 балів на 10 і 5 монет, тобто курс 50:1 — у 200
+# разів дешевший за протокольний, і та сама вигадка стояла в `notes`, які рендерить
+# `BlockchainTransactions::Show`. Демо навчало рівно тієї помилки, на виправлення якої
+# грошовий тракт витратив місяць.
 sample_wallet = cherkasy_trees.first.wallet
 
+# Скільки МОНЕТ цей гаманець уже погасив у KlimaDAO (див. ESG-рядок нижче).
+esg_retired_scc = 4
+
+# Гаманець-носій грошового тракту дістає ВЛАСНІ числа, бо решта флоту їх не має:
+#   · `locked_balance` = рівно сума `locked_points` обох мінт-рядків нижче. Інакше база
+#     суперечить сама собі: транзакції стверджують заблоковані бали на гаманці, де
+#     заблоковано нуль, — а `available_balance = balance − locked_balance` є ЄДИНИМ
+#     носієм double-spend-гарда, і при `locked_balance = 0` він у демо невидимий;
+#   · ⛔ DB-CHECK `wallets_balance_invariants` вимагає `locked_balance <= balance`,
+#     тож баланс мусить накривати заблоковане;
+#   · `esg_retired_balance` — МОНЕТИ, і рухає його рівно `KlimaDao::RetirementService`
+#     (балансових колонок він не чіпає взагалі, [ARCH.95] вісь 3).
+sample_wallet.update!(
+  balance: 200_000,
+  locked_balance: 150_000,
+  esg_retired_balance: esg_retired_scc
+)
+
+# --- ЕМІСІЯ (`direction: :mint` — дефолт колонки) ---
 BlockchainTransaction.create!(
   wallet: sample_wallet,
   amount: 10,
@@ -574,21 +700,68 @@ BlockchainTransaction.create!(
   gas_price: 30_000_000_000,
   gas_used: 21_000,
   nonce: 42,
-  locked_points: 500,
-  notes: "Мінтинг 10 SCC за 500 балів росту."
+  locked_points: 100_000,
+  notes: "Мінтинг 10 SCC за 100 000 балів росту."
 )
 
 BlockchainTransaction.create!(
   wallet: sample_wallet,
   amount: 5,
-  # ⚖️ [DOC-T.89] Було `:forest_coin` із `locked_points: 250` — тобто демо вдавало
-  # growth-мінт SFC за курсом 50:1, якого не існує НІДЕ (правил емісії SFC немає).
+  # ⚖️ [DOC-T.89] `carbon_coin`, не `forest_coin`: правил емісії SFC не існує ніде, тож
+  # growth-мінт другого токена демо вигадувало б. Курс — той самий, що в сусіда вище.
   token_type: :carbon_coin,
   status: :pending,
   blockchain_network: "evm",
   to_address: active_bridge.crypto_public_address,
-  locked_points: 250,
+  locked_points: 50_000,
   notes: "Очікує підтвердження в мережі Polygon."
+)
+
+# --- ВИЛУЧЕННЯ З ОБІГУ (`direction: :burn`) ---
+# 🔴 [ARCH.95] Напрямок несе КОЛОНКА `direction` — ані `sourceable_type`, ані знак
+# `amount` (слеш пишеться ДОДАТНИМ). Доти сіди не мали жодного burn-рядка, тож
+# `net_minted_supply` ніколи не заходила у власну другу гілку: ані дискримінатор
+# напрямку, ані мінусовий рендер `signed_amount` [ARCH.103] не мали на чому спрацювати,
+# а стрічка друкувала б спалення емісією й ніхто б цього в демо не побачив.
+# Родів вилучення ДВА, і розрізняє їх `sourceable`, а не напрямок.
+
+# (1) SLASH-інтент — форма `BlockchainBurningService#create_slash_intent!`.
+# `sourceable: NaasContract` відповідає на ВУЖЧЕ питання «цей burn є СЛЕШЕМ» (база
+# розміру, `05_05 §3`); модельний інваріант `slash_intent_must_be_a_burn` не дасть
+# записати цей `sourceable` без `direction: :burn`.
+# ⚠️ `:pending`, а не `:sent`, і це не дрібниця: контракт переходить у `:breached` рівно
+# тоді, коли інтент дістає `tx_hash`, — а обидва засіяні NaaS-контракти лишаються
+# `:active`. Отже депіктується стан «інтент створено, broadcast ще не було».
+BlockchainTransaction.create!(
+  wallet: sample_wallet,
+  sourceable: naas_contract,
+  amount: 2,
+  token_type: :carbon_coin,
+  direction: :burn,
+  status: :pending,
+  blockchain_network: "evm",
+  to_address: eco_future_fund.crypto_public_address,
+  notes: "🚨 SLASHING: Кошти вилучено. Причина: degradation_checkpoint."
+)
+
+# (2) ESG-ПОГАШЕННЯ — форма `KlimaDao::RetirementService#create_retirement_transaction`.
+# ⛔ `sourceable` тут НЕМА свідомо: погашення слешем не є, і саме ця відсутність робила
+# стару деривацію напрямку хибною. `:confirmed` — щоб burn-гілка `net_minted_supply`
+# (вона рахує ЛИШЕ підтверджені) справді працювала; запас монет гаманця після цього
+# рядка = 10 − 4 = 6 SCC, тобто гард `retirable_scc` лишається несуперечливим.
+BlockchainTransaction.create!(
+  wallet: sample_wallet,
+  amount: esg_retired_scc,
+  token_type: :carbon_coin,
+  direction: :burn,
+  status: :confirmed,
+  blockchain_network: "evm",
+  # Плейсхолдер адреси `KLIMA_RETIREMENT_CONTRACT` — сід не вигадує чужу справжню.
+  to_address: "0x#{SecureRandom.hex(20)}",
+  tx_hash: "0x#{SecureRandom.hex(32)}",
+  sent_at: 40.minutes.ago,
+  confirmed_at: 30.minutes.ago,
+  notes: "🌿 ESG Retirement via KlimaDAO: #{esg_retired_scc} SCC погашено для вуглецевої нейтральності."
 )
 
 # =========================================================================
@@ -651,13 +824,19 @@ ActuatorCommand.create!(
   completed_at: 1.hour.ago
 )
 
+# ⏱️ Наказ, породжений ТРИВОГОЮ, несе TTL — інакше він живий вічно. `scope :live_pending`
+# матчить `expires_at IS NULL OR expires_at > now`, а контролер тримає на ньому 409: без
+# цього рядка засіяна сирена назавжди відрізала форестера від власного актуатора, і
+# `scope :expired` такий труп не бачить ніколи. 15 хв — вікно релевантності кроку
+# `fire_siren` з `EmergencyResponseService::PROTOCOLS`, тобто число не вигадане тут.
 ActuatorCommand.create!(
   actuator: fire_siren,
   ews_alert: fire_alert,
   command_payload: "ACTIVATE:120",
   duration_seconds: 120,
   priority: :high,
-  status: :issued
+  status: :issued,
+  expires_at: 15.minutes.from_now
 )
 
 # =========================================================================
@@ -667,12 +846,22 @@ puts "📋 Запис аудит-логів..."
 # [I18N.1] `action:` — лише значення РЕАЛЬНИХ писачів (`record_audit_trail!`-сайти):
 # доти сіди несли dot-конвенцію (`cluster.create`…), якої не пише жоден код, тож
 # dev-БД брехала про можливі значення журналу.
+#
+# 🔴 [ARCH.57] Актор запису живе у ВЛАСНИХ колонках `ip_address`/`user_agent`, не в
+# `metadata`. Це не форматування: обидві входять у `chain_payload`, тобто в ланцюговий
+# хеш, і саме тому tamper по актору через `update_all` видно `verify_chain_integrity`;
+# плюс `scope :by_ip` фільтрує колонку. Доти сід клав ті самі факти всередину JSONB —
+# журнал ставав неперевірним по актору, а фільтр по IP не знаходив нічого.
+# ⊕ Ключі `metadata` — рядки в усіх трьох рядках: `chain_payload_from_row` сортує ключі
+# для детермінізму, тож мішанина символів і рядків в одному JSONB нічого не «економить».
 AuditLog.create!(
   user: alexey,
   organization: active_bridge,
   action: "user_role_changed",
   auditable: alexey,
-  metadata: { "from" => "forester", "to" => "admin", ip: "192.168.1.1", user_agent: "SilkenNetAdmin/1.0" }
+  ip_address: "192.168.1.1",
+  user_agent: "SilkenNetAdmin/1.0",
+  metadata: { "from" => "forester", "to" => "admin" }
 )
 
 AuditLog.create!(
@@ -680,28 +869,42 @@ AuditLog.create!(
   organization: eco_future_fund,
   action: "naas_contract_to_active",
   auditable: naas_contract,
-  metadata: { "from" => "draft", "to" => "active", ip: "10.0.0.1", user_agent: "Chrome/120.0" }
+  ip_address: "10.0.0.1",
+  user_agent: "Chrome/120.0",
+  metadata: { "from" => "draft", "to" => "active" }
 )
 
+# Системний бот працює без HTTP-запиту, тож `ip_address`/`user_agent` тут порожні —
+# і це стан, а не прогалина: писача-людини в цього рядка немає.
 AuditLog.create!(
   user: oracle,
   organization: active_bridge,
   action: "slash_verdict_frozen",
   auditable: naas_contract,
-  metadata: { source: "DailyAggregationWorker", trees_evaluated: 100 }
+  metadata: { "source" => "DailyAggregationWorker", "trees_evaluated" => 100 }
 )
 
 # =========================================================================
 # 13. AI ІНСАЙТИ НА РІВНІ КЛАСТЕРА
 # =========================================================================
 puts "🧠 Генерація AI інсайтів для кластерів..."
+# 🔴 [ARCH.84] Кластерний рядок — АГРЕГАТ, і він зобов'язаний нести власне ПОКРИТТЯ:
+# `measured_trees`/`total_trees` (форма `InsightGeneratorService#aggregate_cluster!`).
+# Без цієї пари `stress_index` кластера, порахований по двох деревах зі ста, машинному
+# читачеві невідрізнимий від порахованого повністю — а читачі тут не косметичні
+# (`health_index` → комерційний `backing_asset.cluster_health`, Celo-виплата, IPFS-доказ).
+# Числа беруться з реального прогону сіда, не з голови: дві мовчунки §7 у добовий агрегат
+# не входять, тож пара тут ЩОСЬ розрізняє, а не декорує рівністю 100/100.
 AiInsight.create!(
   analyzable: cherkasy_forest,
   insight_type: :daily_health_summary,
-  target_date: Date.yesterday,
+  target_date: AiInsight.reporting_date,
   stress_index: 0.12,
-  summary: "Кластер у стані гомеостазу. Середній рівень стресу мінімальний.",
-  reasoning: { avg_z: 28.5, max_temp: 24.0, source: "ClusterHealthCheckWorker" }
+  summary: "Сектор #{cherkasy_forest.name}: Оброблено #{cherkasy_measured_trees} вузлів. Стан стабільний.",
+  reasoning: {
+    avg_z: 28.5, max_temp: 24.0, source: "ClusterHealthCheckWorker",
+    measured_trees: cherkasy_measured_trees, total_trees: cherkasy_forest.trees.active.count
+  }
 )
 
 AiInsight.create!(
@@ -718,10 +921,13 @@ AiInsight.create!(
 AiInsight.create!(
   analyzable: amazon_sector,
   insight_type: :daily_health_summary,
-  target_date: Date.yesterday,
+  target_date: AiInsight.reporting_date,
   stress_index: 0.45,
   summary: "Підвищений стрес через виявлену пожежу на периферії.",
-  reasoning: { avg_z: 41.5, max_temp: 62.0, source: "ClusterHealthCheckWorker" }
+  reasoning: {
+    avg_z: 41.5, max_temp: 62.0, source: "ClusterHealthCheckWorker",
+    measured_trees: amazon_sector.trees.active.count, total_trees: amazon_sector.trees.active.count
+  }
 )
 
 # Інсайт на рівні організації
@@ -752,16 +958,24 @@ Session.create!(
 )
 
 # =========================================================================
-# 15. ОНОВЛЕННЯ COUNTER CACHE
+# 15. ДЕНОРМАЛІЗАЦІЯ (counter cache + health_index)
 # =========================================================================
-puts "🔄 Синхронізація counter cache..."
+puts "🔄 Синхронізація денормалізованих колонок..."
 Cluster.find_each do |cluster|
   active_count = cluster.trees.active.count
   cluster.update_column(:active_trees_count, active_count)
 end
 
+# [ARCH.84] `health_index` пише сід — рівно як `ClusterHealthCheckWorker` після добового
+# агрегату. Доти колонка лишалась NULL на ОБОХ кластерах, тобто кожна комерційна поверхня
+# рендерила «не виміряно», а `Cluster.health_coverage` віддавала 0 з 2 — при тому, що
+# кластерні `daily_health_summary` у §13 уже стояли. ⛔ Кличемо метод моделі, а не пишемо
+# число: він єдиний знає, що `nil` (немає виміру) ≠ `1.0` (виміряний ідеал), і бере добу
+# з `AiInsight.reporting_date` — того самого дому, яким §13 штампує `target_date` [ARCH.100].
+Cluster.find_each(&:recalculate_health_index!)
+
 # =========================================================================
-# 17. ПІДСУМОК
+# 16. ПІДСУМОК
 # =========================================================================
 puts ""
 puts "✅ [PROJECT SILKEN NET] Екосистему ініціалізовано."
@@ -777,6 +991,9 @@ puts "   🧬 Породи дерев:        #{TreeFamily.count}"
 puts "   🌳 Дерева:              #{Tree.count}"
 puts "   📡 Шлюзи (Queens):      #{Gateway.count}"
 puts "   ⚙️  Актуатори:           #{Actuator.count}"
+puts "   🎛️  Накази актуаторам:   #{ActuatorCommand.count}"
+puts "   🧠 TinyML моделі:       #{TinyMlModel.count}"
+puts "   📐 Калібрування:        #{DeviceCalibration.count}"
 puts "   📜 NaaS контракти:      #{NaasContract.count}"
 puts "   🛡️  Страховки:           #{ParametricInsurance.count}"
 puts "   🚨 EWS тривоги:         #{EwsAlert.count}"

@@ -18,34 +18,48 @@
 #   * Kamal post-deploy hook: `bin/rails governance:seed_parameters`
 #   * Manual recovery:        `bundle exec rake governance:seed_parameters`
 #
-# Source values: `db/seeds.rb` (kept as the single declarative source of
-# default protocol constants); this task duplicates the *minimal* subset
-# that previously lived in the now-squashed
-# `20260501160000_seed_governance_system_parameters.rb` migration so the
-# behaviour is preserved end-to-end.
+# 🔴 МЕЖІ ТУТ НЕ ЖИВУТЬ, і це не стиль. Дім `min`/`max`/`value_type`/`category` — один,
+# `Governance::ParameterSyncWorker::PARAMETER_MAP` (канон `05_06 §7`: «One-Home меж =
+# PARAMETER_MAP ↔ db/seeds.rb», гейт `scripts/governance_bounds_sync.rb`). Та пара
+# гейтована ДВОСТОРОННЬО — а третя копія в неї не входила взагалі й не звірялась нічим:
+# саме так тут дожили `dynamic_tax_rate` з `max 0.5` проти 0.10 в обох дзеркалах і
+# `insurance_pool_threshold` без верхньої межі проти 10_000..1_000_000. Ціна не
+# теоретична — це ПРОДОВИЙ bootstrap, тож прод приймав би DAO-значення, яке dev і
+# синк-воркер відхилили б, і розходження було б видно лише на живих грошах.
+# Локально лишається рівно те, чого в `PARAMETER_MAP` немає за побудовою: bootstrap-ЗНАЧЕННЯ
+# (мапа несе конфіг синку, не дефолти) і людський опис.
 namespace :governance do
   desc "Idempotently UPSERT governance-critical SystemParameter rows (production-safe)"
   task seed_parameters: :environment do
-    parameters = [
-      {
-        key: "dynamic_tax_rate", value: "0.02", value_type: "decimal",
-        category: "minting", source: "default",
-        min_value: 0, max_value: 0.5,
+    bootstrap = {
+      dynamic_tax_rate: {
+        value: "0.02",
         description: "DAO Treasury tax rate applied when insurance pool is below threshold (2% default)."
       },
-      {
-        key: "insurance_pool_threshold", value: "100000", value_type: "integer",
-        category: "insurance", source: "default",
-        min_value: 0, max_value: nil,
+      insurance_pool_threshold: {
+        value: "100000",
         description: "SCC balance below which the dynamic tax rate activates."
       }
-    ]
+    }
+
+    parameter_map = Governance::ParameterSyncWorker::PARAMETER_MAP
+
+    # Fail-closed ПЕРЕД будь-яким записом: ключ, вилучений із `PARAMETER_MAP`, означає,
+    # що DAO ним більше не керує. Мовчазний fallback тут записав би ручку без меж —
+    # тобто гард, що не відрізняє «межі такі» від «я не зміг подивитись».
+    orphans = bootstrap.keys - parameter_map.keys
+    if orphans.any?
+      abort "[governance:seed_parameters] ⛔ #{orphans.join(', ')} — немає в PARAMETER_MAP. " \
+            "Або ключ свідомо знято з governance-синку (тоді зніми його і звідси), " \
+            "або дзеркало розійшлось. Bootstrap без меж не пишемо."
+    end
 
     upserted = 0
     skipped  = 0
 
-    parameters.each do |attrs|
-      record = SystemParameter.find_or_initialize_by(key: attrs[:key])
+    bootstrap.each do |key, local|
+      config = parameter_map.fetch(key)
+      record = SystemParameter.find_or_initialize_by(key: key.to_s)
 
       # Preserve DAO-authored values: if the parameter has been promoted
       # from `default` (this seed) to any other source (`dao_governance`,
@@ -55,7 +69,15 @@ namespace :governance do
         next
       end
 
-      record.assign_attributes(attrs)
+      record.assign_attributes(
+        value: local[:value],
+        description: local[:description],
+        source: "default",
+        value_type: config[:value_type],
+        category: config[:category],
+        min_value: config[:min],
+        max_value: config[:max]
+      )
       record.save!
       upserted += 1
     end
