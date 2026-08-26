@@ -61,6 +61,14 @@ PARAMS = {
   slash_gamma: 1.3,           # bounds 1.0 .. 3.0
   penalty_factor: 1.0,        # відвантажений стан: uplift інертний → рівно 1.0
   penalty_factor_max: 2.0,    # bounds 1.0 .. 5.0
+  # 🔴 [E.67] Що DAO НАПИСАВ у контракт — на відміну від `slash_gamma`, який є
+  # ЕФЕКТИВНИМ значенням після бекенд-перевірки. Розрив не гіпотетичний:
+  # `ProtocolParameters.setParameter` не валідує значення ВЗАГАЛІ (лише `key != 0`),
+  # тож голос за γ=3.5 лягає on-chain успішно, а `Governance::ParameterSyncWorker`
+  # ВІДКИДАЄ позамежне при читанні назад і лишає попереднє. Стан «ланцюг каже одне,
+  # протокол робить інше» стійкий — і саме він є економічним предметом, а не багом.
+  # Дефолт = `slash_gamma` ⇒ розриву немає (відвантажений стан).
+  slash_gamma_voted: 1.3,
   degradation_rate: 0.0,      # частка флоту/рік, що дає ПІДТВЕРДЖЕНИЙ Кат-A доказ
   damage_ratio_mean: 0.30,    # середня частка стресованих дерев у такій події
   # ── страхові виплати (00_04 §7 · INS.2) ─────────────────────────────────────
@@ -155,6 +163,28 @@ def scenario(prm, over)
   run(prm.merge(over))
 end
 
+# [E.67] Governance-розрив: скільки коштує те, що ланцюг прийняв значення, яке
+# бекенд відкинув. Обидва прогони беруть ОДИН seed, тож послідовність подій
+# тотожна й різниця чисто параметрична, не стохастична.
+#
+# 🔴 Напрямок ВИМІРЯНО, а не виведено — і перша спроба записати його «з голови»
+# була ХИБНОЮ, гейт її й зловив. Крива `damage^γ` при `damage < 1` УБУВАЄ по γ:
+# `0.3^1.3 = 0.215`, `0.3^3.5 = 0.0044`. Тобто ВИЩА γ ПОМʼЯКШУЄ вирок, а не
+# жорсткішає — інтуїція «більший показник = суворіше» тут просто хибна.
+#
+# Звідси форма розриву: бекенд ВІДКИДАЄ позамежне (лишає попереднє), а не КЛАМПИТЬ
+# до межі, тож ефективним лишається СТАРЕ значення в обох випадках. Знак шкоди
+# задає те, ЧЕРЕЗ ЯКУ межу перелетів голос:
+#   γ > 3.0 (голос ПОМʼЯКШИТИ, відкинутий) → палимо БІЛЬШЕ, ніж ухвалено;
+#   γ < 1.0 (голос ПОСИЛИТИ, відкинутий)   → палимо МЕНШЕ, ніж ухвалено.
+# Спільне й головне: governance вважає, що зрушив важіль, а не зрушило НІЩО.
+def governance_divergence(prm, over)
+  effective = scenario(prm, over)
+  intended  = scenario(prm, over.merge(slash_gamma: prm.merge(over)[:slash_gamma_voted]))
+  { effective: effective, intended: intended,
+    burn_gap: intended[:burned] - effective[:burned] }
+end
+
 def fmt_years(value)
   value.nil? ? "не впирається" : format("%.1f р.", value)
 end
@@ -188,6 +218,21 @@ def report(prm)
        "#{(prm[:insurance_pool_threshold] / 1e3).round(0)}k"
   puts "⚠️ Retirement supply НЕ зменшує (чужий ABI, не _burn) — у моделі його немає."
   puts "⚠️ Baseline burn = 0 за конструкцією: A-сет порожній, uplift інертний [SLASH-1]."
+
+  puts
+  puts "Governance-розрив [E.67] — ланцюг прийняв, `ParameterSyncWorker` відкинув " \
+       "(ефективна γ лишається #{prm[:slash_gamma]}):"
+  base_over = { scc_per_tree_year: 7.92, degradation_rate: 0.05 }
+  [ [ 3.5, "вище межі 3.0 — голос ПОМʼЯКШИТИ" ],
+    [ 0.5, "нижче межі 1.0 — голос ПОСИЛИТИ"  ] ].each do |voted, label|
+    d = governance_divergence(prm, base_over.merge(slash_gamma_voted: voted))
+    puts "  γ=#{voted} (#{label}): ефективно #{(d[:effective][:burned] / 1e6).round(2)}M ⊥ " \
+         "за ухваленим #{(d[:intended][:burned] / 1e6).round(2)}M SCC → палимо " \
+         "#{d[:burn_gap].negative? ? 'БІЛЬШЕ' : 'МЕНШЕ'} за ухвалене на " \
+         "#{(d[:burn_gap].abs / 1e6).round(2)}M"
+  end
+  puts "  ⚠️ Знак задає межа, через яку перелетів голос; спільне — що governance " \
+       "вважає важіль зрушеним, а не зрушило НІЩО."
 end
 
 def assert_run(prm)
@@ -233,6 +278,31 @@ def assert_run(prm)
   ceiling = prm[:insurance_pool_threshold] * 1.5
   errors << "treasury=#{taxed[:treasury].round} перевищив #{ceiling.round} — " \
             "гістерезис податку не спрацював" if taxed[:treasury] > ceiling
+
+  # 6. GOVERNANCE-РОЗРИВ [E.67]: on-chain безмежний ⊥ off-chain обмежений. Голос за
+  #    γ поза бекенд-межею лягає в контракт успішно (`setParameter` не валідує
+  #    значення взагалі), а `ParameterSyncWorker` відкидає його на читанні назад —
+  #    тож ефективним лишається СТАРЕ значення. Інваріант пінить і ІСНУВАННЯ розриву,
+  #    і те, що його ЗНАК визначає перелетіла межа — обидві половини несучі:
+  #    без першої модель не бачить класу взагалі, без другої вона пропустила б
+  #    «спрощення» опуклої кривої, що перевернуло б економіку вироку мовчки.
+  #    ⚠️ Знак виведено ВИМІРОМ: `damage^γ` при damage<1 УБУВАЄ по γ, тож вища γ
+  #    ПОМʼЯКШУЄ. Перша редакція цього інваріанта стверджувала протилежне — і саме
+  #    він її й зловив, що й є найкращим сортом доказу живості гейта.
+  softer = governance_divergence(prm, { scc_per_tree_year: 7.92, degradation_rate: 0.05,
+                                        slash_gamma_voted: 3.5 })
+  harder = governance_divergence(prm, { scc_per_tree_year: 7.92, degradation_rate: 0.05,
+                                        slash_gamma_voted: 0.5 })
+  if softer[:burn_gap].zero? || harder[:burn_gap].zero?
+    errors << "governance-розрив не виражається (γ=3.5 → #{softer[:burn_gap].round(2)}, " \
+              "γ=0.5 → #{harder[:burn_gap].round(2)}) — модель не бачить стану " \
+              "«ланцюг прийняв, бекенд відкинув»"
+  elsif !(softer[:burn_gap].negative? && harder[:burn_gap].positive?)
+    errors << "знак governance-розриву перевернувся: відкинутий голос ПОМʼЯКШИТИ (γ=3.5) " \
+              "мусить лишати спалення БІЛЬШИМ за ухвалене, а ПОСИЛИТИ (γ=0.5) — меншим; " \
+              "дістали #{softer[:burn_gap].round(2)} / #{harder[:burn_gap].round(2)} — " \
+              "опукла крива 05_05 §3 зламана"
+  end
 
   if errors.empty?
     puts "✅ supply_stress: канон-арбітр=#{fmt_years(arb[:years_p50])} · " \
