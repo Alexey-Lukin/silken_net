@@ -41,11 +41,15 @@ set -uo pipefail
 # case N+1's expected warning.
 if [[ "${1:-}" == "--selftest" ]]; then
   self="$0"; fails=0; n=0
+  # 4th arg = the `run_in_background` flag (default false). It exists because
+  # rule F is the one detector whose verdict turns on CONTEXT, not on text: the
+  # SAME command must stay silent in the foreground and warn in the background,
+  # so a battery that could only send one context could not pin it at all.
   t() {
-    local name=$1 expect=$2 cmdstr=$3 out got
+    local name=$1 expect=$2 cmdstr=$3 bgflag=${4:-false} out got
     n=$((n + 1))
-    out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" \
-            '{tool_input:{command:$c},session_id:$s}' | bash "$self")
+    out=$(jq -nc --arg c "$cmdstr" --arg s "selftest-$$-$n" --argjson b "$bgflag" \
+            '{tool_input:{command:$c,run_in_background:$b},session_id:$s}' | bash "$self")
     got="silent"
     if [[ "$out" == *'"permissionDecision":"deny"'* ]]; then
       got="deny"
@@ -90,6 +94,18 @@ if [[ "${1:-}" == "--selftest" ]]; then
     'ruby scripts/docs_band.rb > /tmp/b.log 2>&1; echo "EXIT=$?"'
   t "E: git alone (no gate)" silent \
     'git add -A && git commit -s -m "chore: bump" && git push'
+  # F — the SAME text in both contexts, which is the whole point of the rule.
+  # The negative arm is not decoration: it is the pin that keeps rule F from
+  # degenerating into "a gate followed by echo is suspicious", which would
+  # contradict rule B's deliberate foreground exclusion two blocks down.
+  t "F: gate backgrounded + trailing echo" warn \
+    'bin/rspec --format progress 2>&1 | tail -20; echo "DONE"' true
+  t "F: same text in the FOREGROUND stays silent" silent \
+    'bin/rspec > /tmp/s.log 2>&1; echo "EXIT=$?"'
+  t "F: backgrounded but verdict grepped, not echoed" silent \
+    'bin/rspec > /tmp/s.log 2>&1; grep -E "examples," /tmp/s.log' true
+  t "F: backgrounded non-gate + echo stays silent" silent \
+    'ruby scripts/mem_find.rb --all > /tmp/m.log 2>&1; echo "готово"' true
   # smoke over the standing rules — a refactor must not disable a neighbour
   t "smoke: backtick in commit -m" deny \
     'git commit -m "чи `gates` пройшли"'
@@ -126,13 +142,15 @@ body with `01_02:177` inside"'
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
     exit 1
   fi
-  echo "bash_verify_guard --selftest: OK (${n} cases — rule E both arms + smoke over A/B/C/backtick/rg)"
+  echo "bash_verify_guard --selftest: OK (${n} cases — rules E and F both arms + smoke over A/B/C/backtick/rg)"
   exit 0
 fi
 
 input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 session=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
+# Rule F's discriminator: ONE text has opposite verdicts in the two contexts.
+bg=$(printf '%s' "$input" | jq -r '.tool_input.run_in_background // false' 2>/dev/null)
 [[ -n "$cmd" ]] || exit 0
 
 # ── BLOCK · backtick inside `git commit -m "…"` ──────────────────────────────
@@ -247,23 +265,40 @@ if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
   # it is. So `&` counts only when it TERMINATES the statement (`… & ; echo`),
   # never when preceded by `>`/`<`/another `&`. Caught by shipping it, which is
   # also the argument for shipping: the measurement missed this class entirely.
-  # 🔴 KNOWN GAP, measured 2026-08-11 and deliberately NOT patched here. That
-  # exclusion is right only in the FOREGROUND. Launched with the tool's
-  # `run_in_background`, the very same `cmd > log 2>&1; echo "EXIT=$?"` makes the
-  # HARNESS report the chain's status — i.e. the `echo`'s 0 — so its completion
-  # notice said "exit code 0" about an rspec run that had died on the coverage
-  # floor with 2. One text, two contexts, opposite verdicts; this detector keys
-  # on text alone, while the discriminator (`.tool_input.run_in_background`) sits
-  # in the JSON already parsed above. Patching it unmeasured would violate this
-  # file's own stance (every block carries its corpus count), so the honest form
-  # is: measure that flag's real firing rate first, then add a narrow rule.
-  # Until then the carrier has a hole — the reader is the check. Rule-home for
-  # the class: memory `feedback_verify_gate_exit_code`, fourth family (a).
+  # ✅ The gap this block used to declare (foreground-only exclusion, background
+  # verdict laundered past the harness notice) is CLOSED by rule F below — the
+  # measurement it asked for was taken 2026-08-27. Keep this exclusion as is:
+  # in the FOREGROUND `cmd > log 2>&1; echo "EXIT=$?"` is exactly right, and the
+  # discriminator is the flag, not the text. Rule-home for the class: memory
+  # `feedback_verify_gate_exit_code`, fourth family (a).
   if { printf '%s' "$cmd" | grep -qE '[^|]\|[^|][^;]*;[[:space:]]*echo[^;]*\$\?' ||
        printf '%s' "$cmd" | grep -qE '[^>&<]&[[:space:]]*;[[:space:]]*echo[^;]*\$\?' ; } &&
      ! printf '%s' "$cmd" | grep -qE '\|[[:space:]]*grep[^|;]*;[[:space:]]*echo[^;]*\$\?' ; then
     warn exit-after-pipe '[bash-guard] `$?` after a pipe or a background start reports the LAST element, and head/tail/`&` always exit 0 — so this reads success no matter what happened upstream. Use $pipestatus[1] — this shell is zsh, where the array is lowercase and 1-INDEXED; ${PIPESTATUS[0]} expands to an empty string, so a check built on it silently compares against nothing. Or run the command unpiped and echo $? on its own line. (Fires once per session.)'
   fi
+fi
+
+# ── F · WARN · a verdict-bearing gate BACKGROUNDED behind a trailing `echo` ──
+# The one shape whose verdict flips with CONTEXT rather than with text, which is
+# why it needed the flag and not a better regex. In the foreground
+# `gate > log 2>&1; echo "EXIT=$?"` is correct and stays silent (rule B above).
+# Backgrounded, the harness reports the STATEMENT CHAIN — i.e. the echo's 0 —
+# so the completion notice reads "exit code 0" about a run that failed.
+# Measured 2026-08-27 over 181 session transcripts: 525 unique background Bash
+# calls, 305 carrying this file's `gate` vocabulary, and 169 of those (55.4%)
+# ending in a trailing `echo`. 32 kept the verdict NOWHERE but inside the log.
+# ⚠️ A 55% base rate would be noise for a per-call warning; it is not for a
+# per-SESSION one — warn() is keyed by session+class, so this fires once in
+# exactly the sessions that background a gate, which is the population at risk.
+# ⚠️ Two ceilings, named: (1) `grep` works per LINE, so a mid-command `; echo`
+# that ends its own line also matches — accepted, the advice stays true either
+# way; (2) the vocabulary is `gate` verbatim, NOT widened, because rules A and E
+# share it and widening it would change their measured behaviour unmeasured —
+# so a backgrounded `ruby scripts/docs_band.rb` is out of scope here by design.
+if [[ "$bg" == "true" ]] &&
+   printf '%s' "$cmd" | grep -qE "(^|[;&]|&&|\|\||^[[:space:]]*)[[:space:]]*(env [^|;]* )?${gate}" &&
+   printf '%s' "$cmd" | grep -qE ';[[:space:]]*echo[^;|]*$' ; then
+  warn bg-verdict '[bash-guard] This gate runs in the BACKGROUND and its last statement is an echo — so the completion notice will carry the echo status (0), never the gate. Measured here: 169 of 305 background gate-runs have this shape, and one of them announced "exit code 0" for an rspec run that had died on the coverage floor with 2. Read the verdict out of the .output file yourself (grep for "examples," and for "SimpleCov"/"EXIT="). An EXIT= line captured INSIDE the log is not the notice — the notice still says 0. (Fires once per session.)'
 fi
 
 # ── D · WARN · `git checkout <file>` while that file carries UNCOMMITTED edits ──
