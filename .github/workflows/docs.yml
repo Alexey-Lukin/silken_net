@@ -179,6 +179,15 @@ jobs:
         # (курс 10 000:1) і burn повз positive-A гейт [SLASH-1].
         run: ruby tools/tokenomics/supply_stress.rb --assert
 
+      - name: GUM uncertainty-budget (STK.5)
+        # Pure Ruby — бюджет невизначеності тракту delta_t→GP→SCC. Пінить, що
+        # EMA-редукція відтворює канон-цифри 03_01 з ТОГО САМОГО α, що прошитий
+        # у firmware (доми різні, тож розходяться тихо), що квадратура GUM
+        # порахована правильно, і що ланцюг ЗУПИНЕНО на SCC — крок SCC→tCO₂ є
+        # обліковою конвенцією, і приписати їй інструментальну невизначеність
+        # означало б видати домовленість за вимірювану величину.
+        run: ruby tools/firmware/uncertainty_budget.rb --assert
+
       - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04)
         # Pure Ruby stdlib (json) — pins shipped cem geometry to its canon owner;
         # catches what the C# xUnit (validates record-defaults, even locks off-spec
