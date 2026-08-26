@@ -96,8 +96,10 @@ class ContractHealthCheckService < ApplicationService
     # добу, що тут — інакше burn перевираховує добу у свій момент → інша дата → 100%.
     # [SLASH-1] Разом із датою їде ПОРІГ (6-й) — друга координата того самого інваріанта
     # «тригер ≡ розмір»: дату ARCH.46 звів, а поріг кожна половина читала у свій момент.
-    BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, false,
-                                         @target_date.to_s, stress_threshold)
+    BurnCarbonTokensWorker.perform_async(
+      @contract.organization_id, @contract.id, nil, false, @target_date.to_s,
+      BlockchainBurningService.frozen_verdict_law(stress_threshold: stress_threshold)
+    )
     :degraded
   end
 

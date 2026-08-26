@@ -14,8 +14,15 @@ class BurnCarbonTokensWorker
   # Sidekiq-аргументи позиційні, kwarg сервісу сюди не дотягується (той самий урок, що
   # ARCH.95 купив на одиниці). `nil` для тригерів, які розміру з вибірки не питають
   # (tree-death / dClimate / contractual), і для джоб, поставлених у чергу до цієї зміни.
+  #   `stress_threshold` · `slash_gamma` · `penalty_factor_max`. [DOC-T.89]
+  #   Один хеш, а не три позиційні аргументи: воркер уже ніс шість, а формула
+  #   вироку множить ТРИ DAO-параметри — кожен новий як окремий слот перетворив би
+  #   сигнатуру на власну поверхню дрейфу. Ключі РЯДКОВІ: Sidekiq `strict_args`
+  #   пропускає лише JSON-нативне, символи не переживають серіалізацію.
+  #   `nil` → сервіс читає DAO-live сам (див. оголошену стелю в його шапці).
   def perform(organization_id, naas_contract_id, tree_id = nil, contractual = false,
-              target_date = nil, stress_threshold = nil)
+              target_date = nil, verdict_params = nil)
+    frozen = verdict_params || {}
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
@@ -44,8 +51,11 @@ class BurnCarbonTokensWorker
         # [ARCH.46] target_date прокинутий від ContractHealthCheckService (Sidekiq → String ISO8601);
         # nil/blank → сервіс дефолтить на `AiInsight.reporting_date` (tree-death/dClimate/contractual).
         target_date: (Date.parse(target_date) if target_date.present?),
-        # [SLASH-1] Поріг, зафіксований тригером — друга координата «тригер ≡ розмір».
-        stress_threshold: stress_threshold
+        # [SLASH-1 / DOC-T.89] Закон вироку, зафіксований тригером — координати 2-4
+        # того самого інваріанта «тригер ≡ розмір» (перша — дата, ARCH.46).
+        stress_threshold: frozen["stress_threshold"],
+        slash_gamma: frozen["slash_gamma"],
+        penalty_factor_max: frozen["penalty_factor_max"]
       )
     end
 

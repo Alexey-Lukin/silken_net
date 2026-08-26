@@ -74,8 +74,24 @@ class BlockchainBurningService < ApplicationService
   #   вирок судиться правом на момент ПОДІЇ, не на момент виконання.
   #   `nil` → сервіс читає DAO-live сам (tree-death / dClimate / contractual тригери порога
   #   не мають, бо розміру з вибірки не питають).
+  # @param slash_gamma [Numeric, nil] показник опуклої кривої, ЗАФІКСОВАНИЙ тригером
+  # @param penalty_factor_max [Numeric, nil] стеля множника, ЗАФІКСОВАНА тригером
+  #   🔴 [DOC-T.89] Третя й четверта координати того самого інваріанта. Формула
+  #   `calculate_slash_ratio` множить ТРИ входи, і доти рівно ОДИН із них судився
+  #   правом ПОДІЇ (`damage_ratio`, виведений із замороженого порога), а два —
+  #   правом ВИКОНАННЯ. Тобто один вирок стояв на двох різних законах одночасно.
+  #   Напрямок ризику виміряно: `damage^γ` при damage<1 УБУВАЄ по γ, тож голос
+  #   ЗНИЗИТИ γ у вікні між диспатчем і виконанням робить burn БІЛЬШИМ за підставу,
+  #   на якій тригер спрацював — рівно та асиметрія, яку цей файл уже називає для
+  #   порога вісьмома рядками вище.
+  #   ⚠️ **Стеля оголошена: заморожує ЛИШЕ статистичний канал.** Три інші тригери
+  #   (смерть дерева · dClimate · contractual) параметрів не передають і читають
+  #   DAO-live у момент виконання — і це не половинчастий фікс, а другий ЗВʼЯЗНИЙ
+  #   режим: їхній вирок не виводиться з ВИБІРКИ, тож інваріанта «тригер ≡ розмір»
+  #   там нема чому порушувати, а розрив диспатч→виконання в них — один хоп черги.
   def initialize(organization_id, naas_contract_id, source_tree: nil, contractual: false,
-                 target_date: nil, stress_threshold: nil)
+                 target_date: nil, stress_threshold: nil,
+                 slash_gamma: nil, penalty_factor_max: nil)
     @organization = Organization.find(organization_id)
     @naas_contract = NaasContract.find(naas_contract_id)
     @cluster = @naas_contract.cluster
@@ -87,6 +103,25 @@ class BlockchainBurningService < ApplicationService
     # (tree-death/dClimate/contractual) дати не передають → дефолт `AiInsight.reporting_date`.
     @target_date = target_date
     @stress_threshold = stress_threshold
+    @frozen_slash_gamma = slash_gamma
+    @frozen_penalty_factor_max = penalty_factor_max
+  end
+
+  #
+  # Ключі й дефолти живуть ТУТ, поруч із формулою, що їх споживає: тригер не
+  # мусить знати ані імен `SystemParameter`, ані чим вони дефолтяться. Інакше
+  # кожен новий тригер відтворював би цю трійку з голови — і розійшовшись,
+  # обидва доми лишились би зеленими, бо жоден не звіряється з іншим.
+  #
+  # ⚠️ Повертає РЯДКОВІ ключі: значення їде через Sidekiq, а `strict_args`
+  # пропускає лише JSON-нативне — символи серіалізації не переживають.
+  def self.frozen_verdict_law(stress_threshold:)
+    {
+      "stress_threshold"   => stress_threshold.to_f,
+      "slash_gamma"        => SystemParameter.current(:slash_gamma, default: DEFAULT_SLASH_GAMMA).to_f,
+      "penalty_factor_max" => SystemParameter.current(:slash_penalty_factor_max,
+                                                      default: DEFAULT_PENALTY_FACTOR_MAX).to_f
+    }
   end
 
   # [SLASH-1] Поріг вироку: зафіксований тригером, інакше DAO-live на цю мить.
@@ -691,12 +726,13 @@ class BlockchainBurningService < ApplicationService
   # DAO-governed slash curve exponent (SystemParameter ← on-chain ProtocolParameters.sol).
   # Memoized per instance. Falls back to the canon default (1.3) when unset.
   def slash_gamma
-    @slash_gamma ||= SystemParameter.current(:slash_gamma, default: DEFAULT_SLASH_GAMMA).to_f
+    @slash_gamma ||= (@frozen_slash_gamma || SystemParameter.current(:slash_gamma, default: DEFAULT_SLASH_GAMMA)).to_f
   end
 
   # DAO-governed ceiling on the penalty MULTIPLIER (not the final slash_ratio). Memoized.
   def penalty_factor_max
-    @penalty_factor_max ||= SystemParameter.current(:slash_penalty_factor_max, default: DEFAULT_PENALTY_FACTOR_MAX).to_f
+    @penalty_factor_max ||= (@frozen_penalty_factor_max ||
+      SystemParameter.current(:slash_penalty_factor_max, default: DEFAULT_PENALTY_FACTOR_MAX)).to_f
   end
 
   def handle_slashing_failure(error_msg, amount, ambiguous: false)

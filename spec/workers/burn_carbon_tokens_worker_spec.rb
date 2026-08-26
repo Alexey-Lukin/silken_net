@@ -26,7 +26,9 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         source_tree: tree,
         contractual: false,
         target_date: nil,
-        stress_threshold: nil
+        stress_threshold: nil,
+        slash_gamma: nil,
+        penalty_factor_max: nil
       )
     end
 
@@ -97,7 +99,9 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         source_tree: tree,
         contractual: false,
         target_date: Date.new(2026, 7, 1),
-        stress_threshold: nil
+        stress_threshold: nil,
+        slash_gamma: nil,
+        penalty_factor_max: nil
       )
     end
 
@@ -110,7 +114,9 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
         source_tree: nil,
         contractual: true,
         target_date: nil,
-        stress_threshold: nil
+        stress_threshold: nil,
+        slash_gamma: nil,
+        penalty_factor_max: nil
       )
     end
   end

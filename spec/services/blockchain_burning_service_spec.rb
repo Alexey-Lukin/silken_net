@@ -783,6 +783,36 @@ end
       # γ=2.0 → 0.5^2 × 1.0 = 0.25
       expect(service.send(:calculate_slash_ratio, 0.5)).to be_within(1e-9).of(0.25)
     end
+
+    # 🔴 [DOC-T.89] Заморожений закон вироку БʼЄ DAO-live. Без цього піна сама
+    # заморозка не має чим почервоніти: усі приклади вище конструюють сервіс БЕЗ
+    # неї, тож читають DAO-live і лишились би зеленими при повністю знятому каналі.
+    #
+    # Сценарій відтворює реальне вікно: тригер зняв γ=1.3, а між диспатчем і
+    # виконанням DAO проголосував за 2.0. Напрямок несучий — `damage^γ` при
+    # damage<1 УБУВАЄ по γ, тож DAO-live дав би МЕНШИЙ burn, ніж підстава, на якій
+    # тригер спрацював. Пін вимагає саме замороженого числа, не «якогось».
+    it "uses the verdict law frozen at the TRIGGER, not the DAO-live value at execution" do
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current).with(:slash_gamma, default: 1.3).and_return(2.0)
+
+      frozen = described_class.new(organization.id, naas_contract.id, slash_gamma: 1.3)
+
+      # Заморожена γ=1.3 → 0.5^1.3 ≈ 0.4061; DAO-live γ=2.0 дала б 0.25.
+      expect(frozen.send(:calculate_slash_ratio, 0.5)).to be_within(1e-9).of(0.5**1.3)
+      expect(frozen.send(:calculate_slash_ratio, 0.5)).not_to be_within(1e-9).of(0.25)
+    end
+
+    it "freezes the penalty ceiling at the trigger too — both coordinates or neither" do
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with(:slash_penalty_factor_max, default: 2.0).and_return(5.0)
+
+      frozen = described_class.new(organization.id, naas_contract.id, penalty_factor_max: 2.0)
+
+      # pf=5.0 клемпиться ЗАМОРОЖЕНОЮ стелею 2.0 → 0.5^1.3 × 2.0; DAO-live дала б ×5.0.
+      expect(frozen.send(:calculate_slash_ratio, 0.5, 5.0)).to be_within(1e-9).of((0.5**1.3) * 2.0)
+    end
   end
 
   describe "#combine_penalty_factor (SLASH-1 de-correlation §6, pure)" do

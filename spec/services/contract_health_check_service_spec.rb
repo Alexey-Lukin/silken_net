@@ -144,7 +144,14 @@ RSpec.describe ContractHealthCheckService do
         # [ARCH.46] burn-воркер МУСИТЬ отримати прокинутий target_date (5-й арг) — інакше burn
         # перевираховує добу в момент виконання → date-mismatch over-burn (regression guard).
         expect(BurnCarbonTokensWorker.jobs.last["args"]).to eq(
-          [ contract.organization_id, contract.id, nil, false, target_date.to_s, AiInsight.slash_stress_threshold ]
+[ contract.organization_id, contract.id, nil, false, target_date.to_s,
+  # [DOC-T.89] Шостий аргумент — ЗАКОН ВИРОКУ, а не один скаляр. Формула
+  # `calculate_slash_ratio` множить ТРИ DAO-параметри, і доти рівно один із
+  # них судився правом ПОДІЇ, а два — правом ВИКОНАННЯ; тобто один вирок
+  # стояв на двох законах. Ключі РЯДКОВІ — Sidekiq `strict_args`.
+  { "stress_threshold" => AiInsight.slash_stress_threshold,
+    "slash_gamma" => BlockchainBurningService::DEFAULT_SLASH_GAMMA,
+    "penalty_factor_max" => BlockchainBurningService::DEFAULT_PENALTY_FACTOR_MAX } ]
         )
 
         expect(contract.reload).to be_status_active # no pre-breach — chokepoint owns the verdict
