@@ -24,6 +24,49 @@ groups:
     folder: SilkenNet
     interval: 1m
     rules:
+      
+      # -----------------------------------------------------------------------
+      # P0: CCM MIC verification failure (FW.2) — метрика роками НОСИЛА заяву
+      # «any nonzero rate in production is a security signal worth paging on»
+      # у власному докстрінгу й не мала жодного споживача, тоді як сусід
+      # `w3bstream_signature_fallback_total` алертився. Асиметрію названо
+      # поіменно в INF.26; закривається дротуванням споживача, не ремонтом.
+      # Ненульовий rate = чужий ключ, підмінений ciphertext, покалічений AAD
+      # або хибна пара DID/FrameCounter — жоден не лікується retry.
+      # Поріг `gt 0` не шумить ЗА ПОБУДОВОЮ: CCM-шлях gated (TELEMETRY_CCM_ENABLED
+      # default off), тож база нульова й перша ж подія справжня.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-ccm-mic-fail
+        title: "🔴 CCM MIC verification failed (tamper / wrong key)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_ccm_mic_fail_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "CCM MIC не проходить перевірку ({{ $values.A.Value }}/s) — можливий tamper або розʼїхані ключі."
+          description: "FW.2 CCM-кадр не пройшов MIC: чужий ключ, підмінений ciphertext, покалічений AAD або хибна пара DID/FrameCounter. Retry не лікує ЖОДНОЇ з причин. Звір ротацію session KEYL (FW.17) і Dual-Key Grace на пристрої; сплеск по одному DID = кандидат на tamper, по багатьох = розʼїхана ротація. 03_05 §3.1 / FW.2."
+          runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
+        labels:
+          severity: critical
+          component: telemetry
+          team: ops
 
       # -----------------------------------------------------------------------
       # P0: PartitionMaintenanceWorker failure — silent monthly PG-crash guard
@@ -371,6 +414,81 @@ groups:
     folder: SilkenNet
     interval: 1m
     rules:
+      
+      # -----------------------------------------------------------------------
+      # P1: партиційний промах у lookup'ах — ОБИДВА носії класу (INF.26).
+      # Обидві метрики носили ГОТОВЕ Grafana-правило у власному коментарі
+      # ініціалізатора, якого ніхто не переніс у yaml; вирази взято ЗВІДТИ
+      # дослівно, щоб yaml не міг розійтися з кодом-джерелом.
+      # ⚠️ Стеля названа: у telemetry-виразі фільтр `caller` уже несе присуд
+      # «cold paths acceptable, hot paths page», а money-двійник фільтра НЕ
+      # має — його два викликачі беруть ключ прямо з URL-параметра, тож
+      # одиничний кривий рядок клієнта є легальним хітом. Розводить їх саме
+      # `for:` — стійкий rate означає СИСТЕМНОГО викликача, не одну адресу.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-telemetry-unpruned-lookups
+        title: "⚠️ TelemetryLog lookups without partition pruning"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~\"oracle.*|.*Worker\"}[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Гарячий викликач читає TelemetryLog без партиційного прунінгу ({{ $values.A.Value }}/s)."
+          description: "Викликач із oracle-/Worker-класу звертається до партиційованої `telemetry_logs` без `created_at_iso` (або з невалідним ISO8601) → повний скан замість однієї партиції. Знайди викликача за міткою `caller` і передай ключ через One-Home `TelemetryLog.partition_pruned(iso, metric_caller:)`. CLAUDE.md §6 / 04_01 §0."
+          runbook_url: "docs/04_01_Data_Models_and_Entities.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: ops
+
+      - uid: sn-alert-blockchain-tx-unpruned-lookups
+        title: "⚠️ BlockchainTransaction lookups without partition pruning (money twin)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_blockchain_transaction_unpruned_lookups_total[5m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "Гроші читаються без партиційного прунінгу ({{ $values.A.Value }}/s стійко за 15 хв)."
+          description: "Звертання до партиційованої `blockchain_transactions` без `created_at` → повний скан на найдорожчій таблиці money-path. Два викликачі (`wallets#transaction_status`, `blockchain_transactions#show`) беруть ключ з URL, тож одиничний хіт може бути кривим рядком клієнта — стійкий rate означає системного викликача. One-Home: `find_with_partition_pruning` (один рядок) / `where_ids_pruned` (набір). CLAUDE.md §6."
+          runbook_url: "docs/04_01_Data_Models_and_Entities.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
 
       # -----------------------------------------------------------------------
       # P1: Per-tree тиша — dead-man switch Солдата (SILENCE-1, 06_08 §1.3).
