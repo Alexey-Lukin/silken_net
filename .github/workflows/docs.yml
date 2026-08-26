@@ -171,6 +171,14 @@ jobs:
         # (adversarial 2026-07-14: 24 пакети × 50 GP були фізично несумісні).
         run: ruby tools/firmware/scc_rate.rb --assert
 
+      - name: Supply-stress model guard (E.67)
+        # Pure Ruby — ВІДТВОРЮЄ канон-деривацію 05_03 MAX_SUPPLY чисельно
+        # (2M дерев × 50 SCC/рік = 10 років). Той ланцюг живе прозою в одному
+        # рядку канону, тож зміна MAX_SUPPLY чи emission_threshold лишає його
+        # правдоподібним і хибним. Плюс ловить змішування балів із монетами
+        # (курс 10 000:1) і burn повз positive-A гейт [SLASH-1].
+        run: ruby tools/tokenomics/supply_stress.rb --assert
+
       - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04)
         # Pure Ruby stdlib (json) — pins shipped cem geometry to its canon owner;
         # catches what the C# xUnit (validates record-defaults, even locks off-spec

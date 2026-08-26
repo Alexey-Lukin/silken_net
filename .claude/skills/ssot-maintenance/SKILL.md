@@ -241,6 +241,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 92. A gate can be ENABLED, correct and green while its INPUT FILE does not exist in this project — and that zero measures the instrument, not the tree — **for every gate you inherit or enable, ask not «is it on» but «what FILE does it read, and does that file exist HERE» — one `ls` per gate, and it is the cheapest audit in this document**
 93. A tool disabled BY ITS OWN VENDOR carries a PREMISE about your framework — and the premise is a claim, not a fact, so it ages exactly like a declared ceiling — **when a tool declines to run, read WHY it declines, and test that reason against your own runtime before accepting the silence — the rationale sits in the vendor's source, is written once, and is never re-measured against your version**
 94. A gate keyed on a FORM is blind exactly where the form goes DYNAMIC — and that is where the dangerous writer lives, so its zero is an argument AGAINST building it
+95. A DERIVATION written as prose in ONE canon line has nothing to go red with — so it survives every change to its own inputs, and the fix is not a constancy-gate on the number but a MODEL that recomputes the chain
 
 <!-- /GUARD-CRAFT-INDEX -->
 
