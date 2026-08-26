@@ -40,6 +40,10 @@ contract SilkenGovernorTest is Test {
     uint256 public constant VOTING_DELAY = 43200; // ~1 day on Polygon
     uint256 public constant VOTING_PERIOD = 302400; // ~7 days on Polygon
     uint256 public constant PROPOSAL_THRESHOLD = 10_000e18; // [CONTRACT.1] 10 000 SFC = 0.01% MAX_SUPPLY (anti-spam)
+    /// @dev [DOC-T.89] 4% of the SFC HARD CAP (100 000 000 SFC) — deliberately a LITERAL, not
+    ///      `sfc.MAX_SUPPLY() * 4 / 100`: a derived expectation mirrors the implementation
+    ///      formula and would co-mutate with it, which is exactly what this pin must not do.
+    uint256 public constant EXPECTED_QUORUM = 4_000_000e18;
 
     function setUp() public {
         // 1. Deploy SFC (governance token)
@@ -68,9 +72,13 @@ contract SilkenGovernorTest is Test {
         timelock.grantRole(timelock.CANCELLER_ROLE(), address(governor));
         vm.stopPrank();
 
-        // 6. Mint SFC tokens and setup voting power
+        // 6. Mint SFC tokens and setup voting power.
+        // [DOC-T.89] voter1 + voter2 must clear the 4 000 000 SFC quorum together, since quorum
+        // is now a fraction of the CAP and no longer shrinks with circulating supply. voter1
+        // stays at exactly 1M — test_flashLoanDefense_snapshotVoting asserts that number — so
+        // the whole scaling lands on voter2, whose balance is asserted nowhere.
         _mintAndDelegate(voter1, 1_000_000e18, "cluster-1");
-        _mintAndDelegate(voter2, 500_000e18, "cluster-2");
+        _mintAndDelegate(voter2, 3_500_000e18, "cluster-2");
         _mintAndDelegate(voter3, 200e18, "cluster-3"); // Below proposal threshold
     }
 
@@ -99,20 +107,31 @@ contract SilkenGovernorTest is Test {
 
     // ─── Quorum Calculation ───────────────────────────────────────────
 
-    function test_quorum_is4PercentOfTotalSupply() public {
-        // Advance 1 block so we can query past checkpoints
+    /// @dev [DOC-T.89] Quorum is a fraction of the SFC HARD CAP, not of circulating supply.
+    ///      TWO assertions, and the second is the load-bearing one. The absolute number pins
+    ///      the base today; SUPPLY-INDEPENDENCE is what a silent revert to `getPastTotalSupply`
+    ///      cannot fake — under that base the value moves with every mint, so the property
+    ///      fails even if someone re-tunes the numerator to make the first assertion pass.
+    function test_quorum_is4PercentOfMaxSupply() public {
         vm.roll(block.number + 1);
 
-        uint256 totalSupply = sfc.totalSupply(); // 1_000_000 + 500_000 + 200 = 1_500_200 SFC
-        uint256 expectedQuorum = totalSupply * 4 / 100;
+        // The base itself is the SFC cap, read from the token at deploy time (One-Home).
+        assertEq(governor.QUORUM_BASE(), sfc.MAX_SUPPLY());
+        assertEq(governor.quorum(block.number - 1), EXPECTED_QUORUM);
 
-        assertEq(governor.quorum(block.number - 1), expectedQuorum);
+        // Circulating supply is ~1.5M SFC here; under the old `getPastTotalSupply` base the
+        // quorum would have been ~60k. Now mint 10× that supply — quorum must NOT move.
+        _mintAndDelegate(makeAddr("quorumWhale"), 15_000_000e18, "cluster-whale");
+        vm.roll(block.number + 1);
+
+        assertEq(governor.quorum(block.number - 1), EXPECTED_QUORUM);
+        assertGt(sfc.totalSupply(), EXPECTED_QUORUM); // supply passed the quorum; quorum stood still
     }
 
     // ─── Proposal Threshold ───────────────────────────────────────────
 
     function test_propose_succeedsAboveThreshold() public {
-        // voter1 has 1M SFC (above 100 SFC threshold)
+        // voter1 has 1M SFC — far above the 10 000 SFC [CONTRACT.1] threshold.
         vm.roll(block.number + 1);
 
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
@@ -124,7 +143,9 @@ contract SilkenGovernorTest is Test {
     }
 
     function testRevert_propose_belowThreshold() public {
-        // voter3 has 200 SFC (below 100 SFC threshold — but 200 > 100, so let's test with no tokens)
+        // voter3's 200 SFC is already below the 10 000 SFC [CONTRACT.1] threshold, but this test
+        // deliberately uses a zero-balance address so the expected revert carries votes == 0
+        // — a fixed, supply-independent argument to pin the selector against.
         address noTokens = makeAddr("noTokensProposer");
         vm.roll(block.number + 1);
 

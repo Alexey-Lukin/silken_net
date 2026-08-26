@@ -22,10 +22,17 @@ import "../../SilkenForestCoin.sol";
  *         transfer into an undelegated address would break votes == supply legitimately
  *         (OZ by design), and that is an invariant, not a preference.
  *
- *         Panics are NOT caught (a caught Panic is invisible to Medusa, which inspects only
- *         the top-level call result) and ghost accounting is summed from the INPUT amounts,
- *         never from a totalSupply delta — the two decisions are coupled: atomicity of the
- *         ghost update depends entirely on there being no catch.
+ *         On the MINT paths panics are NOT caught (a caught Panic is invisible to Medusa,
+ *         which inspects only the top-level call result) and ghost accounting is summed from
+ *         the INPUT amounts, never from a totalSupply delta — the two decisions are coupled:
+ *         atomicity of the ghost update depends entirely on there being no catch there.
+ *
+ *         TWO handler families DO catch, deliberately, mirroring the SCC harness (full
+ *         rationale on each property): slash / slashUpTo latch B-07 into a bool, because a
+ *         `property_` reads STATE and "the call succeeded" is not state; grantAdmin /
+ *         revokeAdmin / renounceAdmin swallow the last-admin guard's revert, because there
+ *         the revert IS the mechanism. In both, the state update lives inside the SUCCESS
+ *         arm, so atomicity comes from placement rather than from the absence of a catch.
  */
 interface IMedusaVm {
     function prank(address) external;
@@ -44,15 +51,29 @@ contract SFCMedusaTest {
     uint256 internal constant ACTORS = 6; // + [4..5] batch-only, deliberately undelegated
     address[ACTORS] internal actors;
 
+    /// @dev DEFAULT_ADMIN_ROLE read from the token (not restated as `0x00`) and cached in an
+    ///      immutable so no handler needs an external call for it — a call there would CONSUME
+    ///      the pending `vm.prank`.
+    bytes32 internal immutable ADMIN_ROLE;
+
+    /// @dev Candidate admin set = ADMIN + every actor. CLOSED by construction: the constructor
+    ///      grants DEFAULT_ADMIN_ROLE to ADMIN and the only other grant path here targets
+    ///      `_adminCandidate`, so enumerating it re-derives the private `_adminCount` from outside.
+    uint256 internal constant ADMIN_CANDIDATES = ACTORS + 1;
+
     uint256 public ghostMinted;
     uint256 public ghostSlashed;
     mapping(address => uint256) public ghostBalance;
+    /// @dev Latch: set when a WELL-FORMED slash reverted. Never cleared — a later successful
+    ///      slash must not be able to repair the record of a broken one.
+    bool public slashReverted;
 
     uint256 internal constant AMOUNT_CAP = 1e21;
     uint256 internal constant MAX_BATCH = 100;
 
     constructor() {
         sfc = new SilkenForestCoin(ADMIN, ADMIN, MINTER, SLASHER);
+        ADMIN_ROLE = sfc.DEFAULT_ADMIN_ROLE();
         actors[0] = address(0x2001);
         actors[1] = address(0x2002);
         actors[2] = address(0x2003);
@@ -76,6 +97,12 @@ contract SFCMedusaTest {
         return actors[seed % ACTORS];
     }
 
+    /// @dev index 0 → ADMIN (the genesis admin), 1..ACTORS → the actor array.
+    function _adminCandidate(uint256 seed) internal view returns (address) {
+        uint256 i = seed % ADMIN_CANDIDATES;
+        return i == 0 ? ADMIN : actors[i - 1];
+    }
+
     // ── Wrapper calls the fuzzer drives (always-valid, role-correct) ──────────
 
     function mint(uint256 actorSeed, uint256 amount) external {
@@ -89,15 +116,19 @@ contract SFCMedusaTest {
         ghostBalance[to] += amount;
     }
 
+    /// @dev The catch here is the B-07 mirror — rationale and ceilings on property_slashAlwaysSucceeds.
     function slash(uint256 actorSeed, uint256 amount) external {
         address from = _actor(actorSeed);
         uint256 bal = sfc.balanceOf(from);
         if (bal == 0) return;
         amount = (amount % bal) + 1;
         vm.prank(SLASHER);
-        sfc.slash(from, amount);
-        ghostSlashed += amount;
-        ghostBalance[from] -= amount;
+        try sfc.slash(from, amount) {
+            ghostSlashed += amount;
+            ghostBalance[from] -= amount;
+        } catch {
+            slashReverted = true;
+        }
     }
 
     /// @dev [SLASH.2] maxAmount may EXCEED the balance (up to 2×) — the clamp is the point.
@@ -107,9 +138,12 @@ contract SFCMedusaTest {
         if (bal == 0) return;
         maxAmount = (maxAmount % (bal * 2)) + 1;
         vm.prank(SLASHER);
-        uint256 slashed = sfc.slashUpTo(from, maxAmount, bytes32(0));
-        ghostSlashed += slashed;
-        ghostBalance[from] -= slashed;
+        try sfc.slashUpTo(from, maxAmount, bytes32(0)) returns (uint256 slashed) {
+            ghostSlashed += slashed;
+            ghostBalance[from] -= slashed;
+        } catch {
+            slashReverted = true;
+        }
     }
 
     function transferTokens(uint256 fromSeed, uint256 toSeed, uint256 amount) external {
@@ -148,6 +182,39 @@ contract SFCMedusaTest {
         if (!sfc.paused()) return;
         vm.prank(ADMIN);
         sfc.unpause();
+    }
+
+    // ── [CONTRACT.2] DEFAULT_ADMIN_ROLE churn — the last-admin invariant ──────
+
+    /// @notice Mirror of the SCC harness (full rationale there): `_revokeRole` refuses to remove
+    ///         the LAST DEFAULT_ADMIN_ROLE holder, `testRevert_cannotRemoveLastAdmin` proves it on
+    ///         ONE call, and nothing proved it across an arbitrary interleaving — which is where an
+    ///         `_adminCount` bookkeeping bug (re-granting an existing holder must NOT raise the
+    ///         counter) actually lives. On SFC the stake is a notch higher than on its sibling: the
+    ///         admin role is the seat production hands to the Timelock ([SEC.1]), so an ungovernable
+    ///         SFC is an ungovernable DAO — the very capture this file's token is meant to prevent.
+    /// @dev Deliberate catch site: the revert IS the mechanism, and the verdict is read from state
+    ///      by property_adminAlwaysExists. Same declared ceiling as SCC — a Panic inside these
+    ///      three is invisible to the panic channel, accepted because the only arithmetic reachable
+    ///      here is `_adminCount++/--` and its underflow is what the property already observes.
+    function grantAdmin(uint256 callerSeed, uint256 targetSeed) external {
+        address target = _adminCandidate(targetSeed);
+        vm.prank(_adminCandidate(callerSeed));
+        try sfc.grantRole(ADMIN_ROLE, target) {} catch {}
+    }
+
+    function revokeAdmin(uint256 callerSeed, uint256 targetSeed) external {
+        address target = _adminCandidate(targetSeed);
+        vm.prank(_adminCandidate(callerSeed));
+        try sfc.revokeRole(ADMIN_ROLE, target) {} catch {}
+    }
+
+    /// @dev Renounce is the sharper half: OZ requires `callerConfirmation == _msgSender()`, so it
+    ///      is the one path where the LAST admin can remove themselves with nobody else involved.
+    function renounceAdmin(uint256 callerSeed) external {
+        address who = _adminCandidate(callerSeed);
+        vm.prank(who);
+        try sfc.renounceRole(ADMIN_ROLE, who) {} catch {}
     }
 
     // ── [CONTRACT.2] batchMint — auto-delegate + multi-element checkpoint churn ───
@@ -283,5 +350,37 @@ contract SFCMedusaTest {
             if (sfc.getVotes(actors[i]) != sfc.balanceOf(actors[i])) return false;
         }
         return true;
+    }
+
+    /// @notice INV-7 [CONTRACT.2]: at least one DEFAULT_ADMIN_ROLE holder always exists — the
+    ///         Medusa mirror of `testRevert_cannotRemoveLastAdmin`, which until now had none.
+    /// @dev `_adminCount` is `private`, and that is a feature here: the property re-derives the
+    ///      answer from `hasRole` over the closed candidate set instead of trusting the counter
+    ///      the guard itself reads. A counter that drifts while the roles are fine, or roles that
+    ///      drift while the counter is fine, both surface as this returning false.
+    function property_adminAlwaysExists() public view returns (bool) {
+        for (uint256 i = 0; i < ADMIN_CANDIDATES; i++) {
+            if (sfc.hasRole(ADMIN_ROLE, _adminCandidate(i))) return true;
+        }
+        return false;
+    }
+
+    /// @notice B-07 [CONTRACT.2]: a well-formed `slash` must NEVER revert — least of all because
+    ///         the token is paused. On SFC the burn also has to move the ERC20Votes checkpoint, so
+    ///         this property and `property_votingPowerMatchesSupply` fail on opposite halves of the
+    ///         same defect: this one if the paused burn is REFUSED, that one if it is accepted but
+    ///         only half-applied.
+    /// @dev Expressed as a latch because a `property_` reads STATE, and "the call succeeded" is not
+    ///         state. TWO ceilings, both deliberate:
+    ///         1. The latch is set on ANY revert, not only a paused one. Both slash wrappers are
+    ///            well-formed BY CONSTRUCTION (SLASHER-pranked, investor != 0, amount ∈ [1, bal],
+    ///            bal > 0), so under the shipped contract NO revert is legitimate — paused or not.
+    ///            A `paused()`-conditional catch would swallow an unpaused revert in silence,
+    ///            which is the very blindness this property exists to remove.
+    ///         2. The latch names the FACT, not the CAUSE: it says a well-formed slash reverted,
+    ///            not whether the pause branch or a plain slash defect did it. That verdict is read
+    ///            off Medusa's shrunk call sequence, which shows whether `pauseToken` ran.
+    function property_slashAlwaysSucceeds() public view returns (bool) {
+        return !slashReverted;
     }
 }

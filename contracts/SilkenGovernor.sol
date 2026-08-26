@@ -8,6 +8,15 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
+/// @notice Мінімальна вʼюха на governance-токен — ЛИШЕ його стеля емісії.
+/// @dev Свідомо НЕ імпортуємо `SilkenForestCoin` цілком: Governor приймає будь-який
+///      `IVotes`-токен зі стелею, і жорсткий тип заборонив би SFC v2 без редеплою
+///      Governor'а. One-Home числа при цьому збережено — стеля лишається у ТОКЕНА,
+///      сюди вона потрапляє читанням, а не копією літерала.
+interface ICappedVotesToken {
+    function MAX_SUPPLY() external view returns (uint256);
+}
+
 /**
  * @title SilkenGovernor
  * @notice DAO Governor для SilkenNet — управління параметрами протоколу через SFC голосування.
@@ -17,14 +26,41 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
  *         Flash Loan отримується ПІСЛЯ snapshot → не має voting power.
  *      2. **Voting Delay** (GovernorSettings): 43200 блоків (~1 день на Polygon, block time ~2s).
  *         Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий.
- *      3. **Quorum** (GovernorVotesQuorumFraction): 4% від totalSupply().
- *         Запобігає атакам малими обсягами.
+ *      3. **Quorum** (GovernorVotesQuorumFraction із перевизначеною БАЗОЮ): 4% від SFC
+ *         `MAX_SUPPLY` = 4 000 000 SFC — фіксовано, НЕ від `getPastTotalSupply`.
+ *         Запобігає і атакам малими обсягами, і захопленню на старті (↓ [DOC-T.89]).
  *      4. **Timelock** (GovernorTimelockControl): 48h затримка через SilkenTimelock.
  *         Дає час для реакції та vetoing шкідливих пропозицій.
  *
  *      Pipeline: SFC holders → propose() → vote() → queue() → [48h] → execute()
  *                                                                ↓
  *                                                   ProtocolParameters.setParameter()
+ *
+ *      ─── [DOC-T.89] Чому база quorum — СТЕЛЯ, а не обіг (присуд founder, 2026-08-26) ───
+ *
+ *      Genesis-supply нульовий: `Deploy.s.sol` не мінтить нічого, конструктори обох токенів
+ *      роблять лише `_grantRole`. При базі `getPastTotalSupply` це означає, що ПЕРШИЙ
+ *      отримувач емісії володіє DAO цілком — 4% від власного балансу він перекриває сам,
+ *      а SFC ще й авто-делегує голос при мінті, тож жодної дії з його боку не потрібно.
+ *
+ *      Вийти з цього зсередини НЕМОЖЛИВО: обидва важелі — `updateQuorumNumerator` і
+ *      `setProposalThreshold` — `onlyGovernance`, тобто міняються лише успішною пропозицією,
+ *      а проксі в `contracts/` немає ЖОДНОГО. Зламаний старт незворотний.
+ *
+ *      Тому база = стеля емісії. Незворотна шкода тут — ЗАХОПЛЕННЯ, а не сон: DAO, що спить
+ *      до реальної дистрибуції, — це відкладена подія (активація DAO і так окрема віха,
+ *      [SEC.1]); DAO, захоплений на першому мінті, — це втрачений протокол.
+ *
+ *      ⚠️ Залишок, названий вголос: `quorumDenominator()` лишається 100, тож чисельник 100
+ *      тепер означає 100% СТЕЛІ, а не 100% обігу. Зміст важеля змінився разом із базою —
+ *      це свідомо, і голосування за чисельник має читати його саме так.
+ *
+ *      🔴 `proposalThreshold` лишається АБСОЛЮТНИМ `10_000e18` — НЕ робити його часткою і НЕ
+ *      опускати в 0. Виміряно: `10_000e18` УЖЕ Є 0.01% від `MAX_SUPPLY`, тобто «зробити
+ *      часткою» відтворює те саме число; а власний override зробив би `setProposalThreshold`
+ *      ІНЕРТНИМ — governance-голос, який виглядає успішним і не змінює нічого. При quorum
+ *      4 000 000 SFC поріг подання вже не є вектором захоплення: ПОДАТИ зможе багато хто,
+ *      ПРИЙНЯТИ — лише реальна дистрибуція.
  *
  * [ARCH.4] Governance DAO — protocol constants via on-chain governance.
  * [E.35]   Flash Loan defense: getPastVotes + 48h Timelock + votingDelay.
@@ -48,8 +84,14 @@ contract SilkenGovernor is
     // УВАГА: block time на Polygon може варіюватись (1.5–3s).
     // Ці значення є приблизними для governance UX, не для фінансових розрахунків.
 
+    /// @notice [DOC-T.89] База розрахунку quorum — стеля емісії governance-токена (SFC `MAX_SUPPLY`).
+    /// @dev Читається з токена ОДИН раз, у конструкторі: число лишається у власності токена
+    ///      (One-Home), а `quorum()` не платить зовнішнім CALL за кожен виклик. Immutable —
+    ///      отже після деплою база незмінна навіть для governance; тюниться лише чисельник.
+    uint256 public immutable QUORUM_BASE;
+
     /// @notice Конструктор SilkenGovernor.
-    /// @param _token SFC (SilkenForestCoin) — governance token з ERC20Votes.
+    /// @param _token SFC (SilkenForestCoin) — governance token з ERC20Votes + стелею `MAX_SUPPLY`.
     /// @param _timelock SilkenTimelock — TimelockController з 48h мінімальною затримкою.
     constructor(IVotes _token, TimelockController _timelock)
         Governor("Silken Governor")
@@ -58,15 +100,22 @@ contract SilkenGovernor is
             302400, // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
             // [CONTRACT.1] proposalThreshold: 10 000 SFC (0.01% MAX_SUPPLY) — anti-spam
             // (було 100 SFC = 0.0001%, spam-griefing вектор); founder-рішення 2026-07-04.
-            // Змінюється DAO-голосом через GovernorSettings.setProposalThreshold.
+            // [DOC-T.89] Лишається АБСОЛЮТНИМ свідомо: 10_000e18 і Є 0.01% стелі, а override
+            // зробив би setProposalThreshold інертним. Змінюється DAO-голосом (GovernorSettings).
             10_000e18
         )
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4) // 4% quorum від totalSupply для прийняття
+        // [DOC-T.89] 4% — ЧИСЕЛЬНИК; база = QUORUM_BASE (стеля SFC), не totalSupply. Батька
+        // лишено навмисно: чисельник і далі живий onlyGovernance-важіль із власною історією.
+        GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
-        // solhint-disable-next-line no-empty-blocks
-
-    {}
+    {
+        // Fail-closed на межі довіри: база 0 зробила б quorum нульовим, тобто будь-яка
+        // пропозиція проходила б з одним голосом — рівно та шкода, яку цей фікс закриває.
+        uint256 cap = ICappedVotesToken(address(_token)).MAX_SUPPLY();
+        require(cap > 0, "Governor: zero quorum base");
+        QUORUM_BASE = cap;
+    }
 
     // ─── Required Overrides (OZ Diamond Inheritance Resolution) ──────
 
@@ -85,9 +134,13 @@ contract SilkenGovernor is
         return super.proposalThreshold();
     }
 
-    /// @dev Повертає поточний quorum (4% від totalSupply при заданому timepoint).
+    /// @dev [DOC-T.89] Quorum = `quorumNumerator(timepoint)`/`quorumDenominator()` від
+    ///      `QUORUM_BASE` (стеля SFC) — сьогодні 4% × 100 000 000 = 4 000 000 SFC, і це число
+    ///      НЕ залежить від обігу. Дзеркалить `GovernorVotesQuorumFraction.quorum`, підмінивши
+    ///      ЛИШЕ базу: чисельник читається з тієї самої checkpoint-історії, тож він і далі
+    ///      живий `onlyGovernance`-важіль, а `quorumNumerator()` лишається арифметично правдивим.
     function quorum(uint256 blockNumber) public view override(Governor, GovernorVotesQuorumFraction) returns (uint256) {
-        return super.quorum(blockNumber);
+        return (QUORUM_BASE * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
     /// @dev Стан пропозиції з урахуванням Timelock.

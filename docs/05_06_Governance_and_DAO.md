@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — governance pipeline повністю реалізований (`SilkenGovernor.sol` + `SilkenTimelock.sol` + `ProtocolParameters.sol` + `Governance::ParameterSyncWorker` + `SystemParameter` model, RSpec-покрито). Mainnet-активація DAO + multisig council → [`00_07`](00_07_Action_Plan_Tracker) (BIZ.*).
-- **Реактивний захист (TRL 9-ready):** Snapshot Voting + Timelock 48h + Quorum 4% + Voting Delay — Flash-Loan attack закрито.
+- **Реактивний захист (TRL 9-ready):** Snapshot Voting + Timelock 48h + Quorum 4% від **стелі** SFC (= 4 000 000 SFC, immutable `QUORUM_BASE` — [DOC-T.89] §4) + Voting Delay — Flash-Loan attack закрито, захоплення на старті закрито за побудовою.
 - **Проактивний захист (Beyond TRL 9):** Auto-Immune Sentinel — R&D-напрям, не блокує поточний TRL.
 
 ---
@@ -89,7 +89,7 @@ PriceOracleService (scc_fallback_price_usd)
 ```
 
 **Нові смарт-контракти (✅ Реалізовано):**
-1. `SilkenGovernor.sol` — OpenZeppelin Governor з GovernorVotes, GovernorTimelockControl (48h), GovernorCountingSimple, GovernorVotesQuorumFraction (4%)
+1. `SilkenGovernor.sol` — OpenZeppelin Governor з GovernorVotes, GovernorTimelockControl (48h), GovernorCountingSimple, GovernorVotesQuorumFraction (чисельник 4%; **база перевизначена** на SFC `MAX_SUPPLY` — §4)
 2. `SilkenTimelock.sol` — TimelockController з 48h мінімальною затримкою
 3. `ProtocolParameters.sol` — on-chain registry з generic `setParameter(bytes32 key, uint256 value)` + batch `setParameters()` + named getters (`lorenzSigma()`, `slashThreshold()`, etc.)
 
@@ -109,7 +109,7 @@ PriceOracleService (scc_fallback_price_usd)
 | **Пріоритет** | ✅ Реалізовано (ARCH.4 / BIZ.4 / E.35). Governance DAO pipeline повністю функціональний |
 | **Залежить від** | `SilkenForestCoin.sol` (SFC) — ⚠️ **НЕ задеплоєний** (виправлено 2026-08-26: доти стояло «✅ є» і суперечило [`05_03`](05_03_Tokenomics_SCC_and_SFC), де адреса — placeholder до mainnet). Контракт написаний і CI-audited; гейт деплою — [`SEC.1`](00_07_Action_Plan_Tracker) |
 | **Блокує** | Планетарне масштабування з різними кліматичними зонами — far-horizon гейт: **кожен новий біом потребує community vote (SFC) + слот лабораторної валідації ПЕРШ ніж із нього можуть мінтитись SCC**. Це не бюрократія, а пряме продовження «правдиво» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)): мінтити з породи, чиї Lorenz-константи ніхто не калібрував, означає видавати вгадане за виміряне (hardware-бік 5 SKU → [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
-| **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% + timelock 48h + snapshot voting + votingDelay 43200 blocks |
+| **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% від стелі SFC (4 000 000 SFC) + timelock 48h + snapshot voting + votingDelay 43200 blocks |
 
 ## 4. ⚠️ Flash Loan Attack Vector (Критичний)
 
@@ -124,34 +124,57 @@ PriceOracleService (scc_fallback_price_usd)
 |--------|----------|-------------|
 | **Snapshot Voting** | `getPastVotes(account, blockNumber)` замість `balanceOf()` | Голоси рахуються за балансом на момент створення пропозиції, а не поточним. Flash Loan отримується ПІСЛЯ snapshot → не має voting power |
 | **Voting Delay** | Мінімум 1 блок (рекомендовано 1 день / ~43200 блоків на Polygon при ~2s block time) між створенням пропозиції та початком голосування | Зловмисник мусить тримати токени протягом delay — Flash Loan неможливий |
-| **Quorum** | Мінімум 4% від `totalSupply()` для прийняття пропозиції | Запобігає атакам малими обсягами |
+| **Quorum** | Мінімум 4% від SFC `MAX_SUPPLY` = **4 000 000 SFC** (immutable `QUORUM_BASE`, НЕ від обігу) | Запобігає і атакам малими обсягами, і захопленню на старті: база не рухається з емісією, тож перший отримувач токенів не перекриває її сам (↓ [DOC-T.89]) |
 | **Timelock** | `TimelockController` з 48h затримкою між прийняттям та виконанням | Дає час для реакції та vetoing |
 | **Vote Weight = Past Balance** | `ERC20Votes._delegate()` + checkpoint system (вже реалізовано в SFC) | Кожен трансфер створює checkpoint; `getPastVotes` читає історичний checkpoint |
 
-🔴 **Ці пʼять захистів стережуть ЗРІЛИЙ DAO і мовчать про його НАРОДЖЕННЯ — і другий стан має власну механіку, яку треба назвати вголос** [DOC-T.89, виміряно 2026-08-26]. Три факти про відвантажений контракт, кожен перевірний у `contracts/`:
+🔴 **Ці пʼять захистів стережуть ЗРІЛИЙ DAO; його НАРОДЖЕННЯ має власну механіку — і вона тепер закрита в коді** [DOC-T.89: виміряно 2026-08-26, ⚖️ присуд founder того ж дня — **база quorum = стеля**]. Три факти про відвантажений контракт, кожен перевірний у `contracts/SilkenGovernor.sol`:
 
-1. **Пороги різнорідні за природою.** `proposalThreshold` — **АБСОЛЮТНЕ** число (`10_000e18`), `quorum` — **ЧАСТКА** (`GovernorVotesQuorumFraction(4)` від `getPastTotalSupply`). Genesis-supply нульовий: `Deploy.s.sol` не мінтить нічого, конструктори обох токенів роблять лише `_grantRole`. Тож доки в жодній адресі немає 10 000 SFC, пропозицію не подасть НІХТО; а перша адреса, що їх набере, водночас перекриває і поріг подання, і quorum (4% від 10 000 = 400).
-2. 🔴 **Вийти з цього зсередини не можна: обидва важелі — `GovernorVotesQuorumFraction.updateQuorumNumerator` і `GovernorSettings.setProposalThreshold` — `onlyGovernance`**, тобто змінюються ЛИШЕ успішною пропозицією. Отже це не «незручний дефолт, який потім підкрутимо», а **замкнене коло**: механізм самолагодження гейтований тим самим порогом, що зламаний. ⛔ І проксі в `contracts/` немає ЖОДНОГО — після деплою БАЗА quorum (`totalSupply` проти фіксованого знаменника) незмінна взагалі; governance-тюнінгу піддається лише ЧИСЕЛЬНИК, і лише коли governance уже працює.
-3. **Вага виникає без дії отримувача:** `mint` і `batchMint` SFC авто-делегують голос собі (`if (delegates(to) == address(0)) _delegate(to, to)` — два сайти). Це свідомий лік проти «штучно низького quorum», але він означає, що будь-яка емісія SFC є роздачею ГОЛОСІВ, а не лише токенів.
+1. **Пороги різнорідні за природою — і це СВІДОМО.** `proposalThreshold` — **АБСОЛЮТНЕ** число (`10_000e18`), `quorum` — **ЧАСТКА**, але **база частки — стеля емісії, а не обіг**: конструктор читає SFC `MAX_SUPPLY` один раз у `public immutable QUORUM_BASE`, і `quorum()` рахує `QUORUM_BASE × quorumNumerator / quorumDenominator` = **4 000 000 SFC**, скільки б токенів не було випущено. Поріг подання лишається абсолютним теж свідомо: `10_000e18` УЖЕ Є 0.01% стелі, тож «зробити його часткою» відтворило б те саме число, а власний override зробив би `setProposalThreshold` **ІНЕРТНИМ** — governance-голос, що виглядає успішним і не змінює нічого. При quorum 4 000 000 SFC поріг подання більше й не є вектором захоплення: ПОДАТИ зможе багато хто, ПРИЙНЯТИ — лише реальна дистрибуція.
+2. 🔴 **Чому база — саме стеля: зламаний старт незворотний.** Genesis-supply нульовий (`Deploy.s.sol` не мінтить нічого, конструктори обох токенів роблять лише `_grantRole`). При базі `getPastTotalSupply` це означало б, що ПЕРШИЙ отримувач емісії володіє DAO цілком — 4% від власного балансу він перекриває сам. А вийти з цього зсередини було б **неможливо**: обидва важелі — `GovernorVotesQuorumFraction.updateQuorumNumerator` і `GovernorSettings.setProposalThreshold` — `onlyGovernance`, тобто змінюються ЛИШЕ успішною пропозицією, і проксі в `contracts/` немає ЖОДНОГО. Присуд читає **асиметрію шкоди**: незворотне тут — **ЗАХОПЛЕННЯ, а не сон.** DAO, що спить до реальної дистрибуції, — відкладена подія (активація DAO і так окрема віха, [`SEC.1`](00_07_Action_Plan_Tracker)); DAO, захоплений на першому мінті, — втрачений протокол. ⚠️ **Залишок названо вголос — і в контракті теж:** `quorumDenominator()` лишається 100, тож чисельник 100 тепер означає 100% **СТЕЛІ**, а не обігу — зміст важеля змінився разом із базою, і голос за чисельник має читати його саме так. Батька `GovernorVotesQuorumFraction` лишено навмисно: чисельник і далі живий `onlyGovernance`-важіль із власною checkpoint-історією, а `quorumNumerator()` лишається арифметично правдивим.
+3. **Вага виникає без дії отримувача:** `mint` і `batchMint` SFC авто-делегують голос собі (`if (delegates(to) == address(0)) _delegate(to, to)` — два сайти). Це свідомий лік проти «штучно низького quorum», але він означає, що будь-яка емісія SFC є роздачею ГОЛОСІВ, а не лише токенів. ⊕ Вектором захоплення він більше не є: голоси роздаються, але планка — 4% СТЕЛІ, а не 4% роздачі.
 
-⚠️ **Наслідок для планування, а не для коду:** вікно дешевого рішення закривається деплоєм [`SEC.1`](00_07_Action_Plan_Tracker) — сьогодні це рядок конструктора, після mainnet — редеплой Governor'а плюс міграція токена. Осі присуду й міряні опції — [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89. ⊕ Емісія SFC при цьому **не входить** до девʼяти економічних governance-ключів `ProtocolParameters` (перелічені §7), тоді як [`00_01`](00_01_Vision_Mission_and_Roadmap) обіцяє «DAO для управління параметрами емісії» — розбіжність між обіцянкою й реєстром ключів теж належить тому присуду.
+✅ **Вікно дешевого рішення (до деплою [`SEC.1`](00_07_Action_Plan_Tracker)) використано:** фікс — рядок конструктора плюс тіло `quorum()`, без міграції токена; після mainnet це коштувало б редеплою Governor'а. Носій — `test_quorum_is4PercentOfMaxSupply` (`contracts/test/SilkenGovernor.t.sol`), і він пінить ДВІ речі: абсолютне число **і незалежність від обігу** — друга половина є саме тим, чого тихе повернення до `getPastTotalSupply` підробити не може. ⊕ Що присуд про базу quorum НЕ закрив і що лишається в [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89: емісія SFC **не входить** до девʼяти економічних governance-ключів `ProtocolParameters` (перелічені §7), тоді як [`00_01`](00_01_Vision_Mission_and_Roadmap) обіцяє «DAO для управління параметрами емісії» — розбіжність між обіцянкою й реєстром ключів належить окремій нозі.
 
 **Реалізація (`contracts/SilkenGovernor.sol`):**
 ```solidity
-// SilkenGovernor.sol — SSOT: contracts/SilkenGovernor.sol
+// SilkenGovernor.sol — SSOT: contracts/SilkenGovernor.sol (фрагменти нижче — ДОСЛІВНО з нього)
+interface ICappedVotesToken {
+    function MAX_SUPPLY() external view returns (uint256);
+}
+
 contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
     GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+
+    uint256 public immutable QUORUM_BASE;
 
     constructor(IVotes _token, TimelockController _timelock)
         Governor("Silken Governor")
         GovernorSettings(
-            43200,     // votingDelay: ~1 day on Polygon (block time ~2s)
-            302400,    // votingPeriod: ~7 days on Polygon
-            10_000e18  // [CONTRACT.1] proposalThreshold: 10 000 SFC = 0.01% MAX_SUPPLY (anti-spam)
+            43200, // votingDelay: ~1 день на Polygon (86400s / 2s per block)
+            302400, // votingPeriod: ~7 днів на Polygon (604800s / 2s per block)
+            // [CONTRACT.1] proposalThreshold: 10 000 SFC (0.01% MAX_SUPPLY) — anti-spam
+            // (було 100 SFC = 0.0001%, spam-griefing вектор); founder-рішення 2026-07-04.
+            // [DOC-T.89] Лишається АБСОЛЮТНИМ свідомо: 10_000e18 і Є 0.01% стелі, а override
+            // зробив би setProposalThreshold інертним. Змінюється DAO-голосом (GovernorSettings).
+            10_000e18
         )
-        GovernorVotesQuorumFraction(4)  // 4% quorum
+        GovernorVotes(_token)
+        // [DOC-T.89] 4% — ЧИСЕЛЬНИК; база = QUORUM_BASE (стеля SFC), не totalSupply. Батька
+        // лишено навмисно: чисельник і далі живий onlyGovernance-важіль із власною історією.
+        GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
-    {}
+    {
+        // Fail-closed на межі довіри: база 0 зробила б quorum нульовим, тобто будь-яка
+        // пропозиція проходила б з одним голосом — рівно та шкода, яку цей фікс закриває.
+        uint256 cap = ICappedVotesToken(address(_token)).MAX_SUPPLY();
+        require(cap > 0, "Governor: zero quorum base");
+        QUORUM_BASE = cap;
+    }
+
+    function quorum(uint256 blockNumber) public view override(Governor, GovernorVotesQuorumFraction) returns (uint256) {
+        return (QUORUM_BASE * quorumNumerator(blockNumber)) / quorumDenominator();
+    }
 }
 ```
 
@@ -174,7 +197,7 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 
 ## 6. Bonding Curves — Динамічне Ціноутворення (Перспектива TRL 9+)
 
-Поточна модель: фіксований курс емісії ⚠️ **— і це правда лише про SCC.** Правила емісії SFC не існує НІДЕ (виміряно 2026-08-26): [`05_03`](05_03_Tokenomics_SCC_and_SFC) дає курс тільки для SCC, а SFC-комірка стелі стоїть без деривації взагалі. 🔴 Наслідок гостріший за прогалину в документі: quorum рахується від `totalSupply`, genesis-supply = 0 (premine немає), тож перші `10_000 SFC` дають своєму власникові 100% голосів, а доти `proposalThreshold` не дає подати пропозицію НІКОМУ. Осі присуду — [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89 ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Для планетарного масштабу можна розглянути алгоритмічне ціноутворення:
+Поточна модель: фіксований курс емісії ⚠️ **— і це правда лише про SCC.** Правила емісії SFC не існує НІДЕ (виміряно 2026-08-26): [`05_03`](05_03_Tokenomics_SCC_and_SFC) дає курс тільки для SCC, а SFC-комірка стелі стоїть без деривації взагалі. 🔴 Наслідок був гостріший за прогалину в документі — і саме він купив присуд [DOC-T.89] (§4): доки quorum рахувався від `totalSupply`, genesis-supply = 0 (premine немає) означав, що перші `10_000 SFC` дають своєму власникові 100% голосів. **Це закрито:** база quorum тепер — стеля SFC (`QUORUM_BASE` = 4 000 000 SFC), тож захоплення на старті неможливе за побудовою. ⚠️ Але **прогалина ЛИШАЄТЬСЯ, і вона тепер про інше**: правила емісії SFC як не було, так і немає — а без нього невідомо, КОЛИ 4 000 000 SFC узагалі наберуться, тобто коли DAO прокинеться. Осі — [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89 ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Для планетарного масштабу можна розглянути алгоритмічне ціноутворення:
 
 **Концепт:** Вартість мінтингу SCC алгоритмічно залежить від глобального показника здоров'я лісу (середній Z-value атрактора Лоренца по всіх кластерах). Чим здоровіший ліс → тим цінніший актив → тим більше growth_points потрібно для 1 SCC. ⚠️ **[Lorenz de-risk]** Прив'язка ціни до «середній Z = здоров'я лісу» передбачає доведений Z↔health ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)) — ще одна причина «відкладено до TRL 9+».
 

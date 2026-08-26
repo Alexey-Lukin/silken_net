@@ -214,7 +214,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 - Кошти заморожені у `wallet.locked_balance`.
 - DAO ставить пропозицію `Reclassify(): cluster_X_event_Y → upgrade_to(A | B)` через `SilkenGovernor` (механіка governance — [`05_06` — Governance & DAO](05_06_Governance_and_DAO)).
-- Quorum: 4% SFC voting power (стандарт `GovernorVotesQuorumFraction`), затримка 48 годин у `SilkenTimelock`.
+- Quorum: 4% від **стелі** SFC = 4 000 000 SFC (чисельник — стандартний `GovernorVotesQuorumFraction`, база перевизначена на `MAX_SUPPLY` — [DOC-T.89], [`05_06 §4`](05_06_Governance_and_DAO)), затримка 48 годин у `SilkenTimelock`. ⚠️ Планка НЕ зменшується з обігом: доки реальної дистрибуції SFC немає, реклас Кат-C голосом недосяжний, і кошти лишаються замороженими за замовчуванням (↓).
 - Після затвердження пропозиції — застосовується відповідна реакція (slash або insurance payout).
 - **Якщо DAO не голосує протягом 30 днів — кошти ЗАЛИШАЮТЬСЯ замороженими**, статус кластера → `Field Audit Required`. Розморозка/виплата відбувається ЛИШЕ за підтвердженими даними (фізична інспекція рейнджером або підтверджена телеметрія після відновлення зв'язку).
 

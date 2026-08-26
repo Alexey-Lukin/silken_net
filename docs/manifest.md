@@ -124,7 +124,7 @@ Together this pipeline is the substrate of **Proof of Growth** — a consensus m
 The protocol mints two tokens, both ERC-20 on Polygon (anchored weekly to Ethereum L1 via SHA-256 state-root storage):
 
 - **SCC (Silken Carbon Coin)** — utility token, max supply 1,000,000,000. Minted at the rate of **10,000 verified growth_points = 1 SCC**, with a species-specific carbon-sequestration coefficient applied per credit. EIP-2612 gasless approvals; ReentrancyGuard; `MINTER_ROLE` and `SLASHER_ROLE` are separated by design.
-- **SFC (Silken Forest Coin)** — governance token, max supply 100,000,000, ERC-20Votes. Holders vote on protocol parameters — slashing ratios, insurance-pool thresholds, dynamic-tax rate — through a Governor + Timelock setup with 4% quorum and 48-hour delay.
+- **SFC (Silken Forest Coin)** — governance token, max supply 100,000,000, ERC-20Votes. Holders vote on protocol parameters — slashing ratios, insurance-pool thresholds, dynamic-tax rate — through a Governor + Timelock setup with a 48-hour delay and a quorum of 4% **of max supply** — 4,000,000 SFC, fixed rather than a fraction of circulating supply, so the first recipient of an emission cannot carry a vote alone. The trade is deliberate: a DAO that sleeps until real distribution is a postponed event, a DAO captured at genesis is unrecoverable, because both tuning levers are themselves `onlyGovernance` and there is no proxy.
 
 Crucially, **slashing is not collective punishment**. Our v2 policy categorizes every degradation event:
 
