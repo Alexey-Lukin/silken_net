@@ -35,9 +35,22 @@ require "rails_helper"
 module MoneyDirectionHome
   HOME = "app/models/blockchain_transaction.rb"
 
-  # Заборонена форма: `sourceable_type` в одному виразі з burn-маркером.
+  # Заборонена форма: `sourceable_type` як ПОРІВНЯННЯ з burn-маркером.
   SOURCEABLE_TYPE = /sourceable_type/
   BURN_TOKEN      = /BURN_SOURCEABLE_TYPE|"NaasContract"/
+
+  # 🔴 Виняток, знайдений закриваючим свіпом ПЕРШ ніж на ньому хтось спіткнувся:
+  # `sourceable_type` як КЛЮЧ ХЕША (`where(sourceable_type: …)`) — це ФІЛЬТР, а не
+  # деривація напрямку, і `CLAUDE.md §6` прямо лишає `BURN_SOURCEABLE_TYPE` живим
+  # як вужчу ознаку «цей burn є слешем». Тобто перший, хто написав би ПРАВИЛЬНИЙ
+  # запит «дай мені слеш-рядки», дістав би червоне на коректному коді — а найдешевша
+  # реакція на такий гейт відома: послабити його. База сьогодні порожня, тож хибний
+  # позитив був би невидимий до першого ж легітимного вжитку.
+  # ⚠️ Стара ЗАБОРОНЕНА форма при цьому лишається в периметрі: вона писалась або як
+  # `sourceable_type == BURN_SOURCEABLE_TYPE` (голий ідентифікатор), або як
+  # `where("… sourceable_type IS DISTINCT FROM ?", BURN_SOURCEABLE_TYPE)` — де
+  # `sourceable_type` живе в РЯДКУ, а не ключем. Обидві предикат бачить.
+  HASH_KEY_FILTER = /sourceable_type:/
 
   # Дім читання: агрегат «скільки монет існує».
   HOME_CALL = /net_minted_supply/
@@ -58,7 +71,9 @@ module MoneyDirectionHome
   end
 
   def self.deriving_files
-    files_where { |line| line.match?(SOURCEABLE_TYPE) && line.match?(BURN_TOKEN) }
+    files_where do |line|
+      line.match?(SOURCEABLE_TYPE) && line.match?(BURN_TOKEN) && !line.match?(HASH_KEY_FILTER)
+    end
   end
 
   def self.consumer_files
