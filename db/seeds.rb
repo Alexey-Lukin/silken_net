@@ -65,10 +65,6 @@ system_params = [
   { key: "slash_penalty_factor_max", value: "2.0", value_type: "float", category: "alerts",
     min_value: 1.0, max_value: 5.0, description: "Ceiling on the slash penalty multiplier (not final ratio)" },
 
-  # --- Pricing (04_02, S6.9) ---
-  { key: "scc_fallback_price_usd", value: "25.50", value_type: "float", category: "tokenomics",
-    min_value: 0.01, max_value: 1000.0, description: "SCC fallback price (USD) when Uniswap/RPC unreachable" },
-
   # --- Oracle Balance Thresholds (INF.22) ---
   # Мінімальні баланси Oracle wallets (у нативній валюті). Нижче — транзакції fail.
   # Рекомендується зробити configurable через ProtocolParameters для on-chain governance.

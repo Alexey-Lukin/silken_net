@@ -258,11 +258,11 @@ type SlashingEvent @entity { ... }
 
 | Параметр | Значення |
 |----------|----------|
-| **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `PriceOracleService`, `MintingRollbackService` |
+| **Сервіси** | `BlockchainMintingService`, `BlockchainBurningService`, `ChainAuditService`, `MintingRollbackService` |
 | **Воркери** | `MintCarbonCoinWorker`, `BurnCarbonTokensWorker`, `BlockchainConfirmationWorker`, `TokenomicsEvaluatorWorker`, `Governance::ParameterSyncWorker` |
 | **Черги** | `web3_critical` (мінтинг, підтвердження), `critical` (спалювання), `default` (токеноміка), `web3_low` (governance sync) |
 | **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (dedicated-only — legacy `ORACLE_PRIVATE_KEY` retired [INF.22]; [E.2] розділені ключі mint/slash, blast-radius), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
-| **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/price_oracle_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
+| **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
 
 **Governance DAO (✅ ARCH.4):**
 
@@ -272,7 +272,7 @@ type SlashingEvent @entity { ... }
 |----------|------|------|
 | `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% — ЧИСЕЛЬНИК; БАЗА = `QUORUM_BASE` = SFC `MAX_SUPPLY`, не `totalSupply` [DOC-T.89]). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=10 000 SFC (0.01% MAX_SUPPLY, anti-spam — CONTRACT.1) |
 | `SilkenTimelock` | `contracts/SilkenTimelock.sol` | TimelockController з 48h мінімальною затримкою. Proposer: Governor, Executor: address(0) (permissionless після delay) |
-| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. Well-known keys: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target — **DCI-locked**, backend свідомо не синхронізує; FW.7) + 9 економічних (emission_threshold, dynamic_tax_rate, insurance_pool_threshold, scc_per_tonne_co2, scc_fallback_price_usd, slash_threshold, stress_threshold, slash_gamma, slash_penalty_factor_max — GOV.1 read-path у [`05_06 §7`](05_06_Governance_and_DAO)). Fixed-point 18 decimals |
+| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. Well-known keys: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target — **DCI-locked**, backend свідомо не синхронізує; FW.7) + 8 економічних (emission_threshold, dynamic_tax_rate, insurance_pool_threshold, scc_per_tonne_co2, slash_threshold, stress_threshold, slash_gamma, slash_penalty_factor_max — GOV.1 read-path у [`05_06 §7`](05_06_Governance_and_DAO)). Fixed-point 18 decimals |
 
 **Flash Loan Defense:** snapshot voting (`getPastVotes`), 1-day voting delay, 4% quorum **від `MAX_SUPPLY`** (= 4 000 000 SFC — база не росте разом із емісією [DOC-T.89]), 48h timelock.
 

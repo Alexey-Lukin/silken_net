@@ -107,7 +107,6 @@ ethereum_anchor_private_key  = "0xCHANGE_ME_separate_wallet_for_weekly_L1_anchor
 alchemy_polygon_rpc_url  = "https://polygon-mainnet.g.alchemy.com/v2/CHANGE_ME"
 alchemy_ethereum_rpc_url = "https://eth-mainnet.g.alchemy.com/v2/CHANGE_ME"
 solana_rpc_url           = "https://api.mainnet-beta.solana.com"
-polygon_rpc_url          = "https://polygon-rpc.com"
 celo_rpc_url             = "https://forno.celo.org"
 
 # =============================================================================

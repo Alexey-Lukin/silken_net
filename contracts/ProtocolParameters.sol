@@ -65,11 +65,10 @@ contract ProtocolParameters is AccessControl {
     bytes32 public constant KEY_SLASH_GAMMA = keccak256("slash_gamma");
     bytes32 public constant KEY_SLASH_PENALTY_FACTOR_MAX = keccak256("slash_penalty_factor_max");
 
-    // Pricing (S6.9 — governance-controlled fallback price)
-    // [GOV.1] Одиниця — USD у 18-decimal fixed-point (25.5e18 = $25.50); ключ = бекендовому
-    // SystemParameter(:scc_fallback_price_usd). Раніше "…_usd_cents" — 100× units-mismatch
-    // зі споживачем PriceOracleService, усунено на джерелі pre-deploy.
-    bytes32 public constant KEY_SCC_FALLBACK_PRICE_USD = keccak256("scc_fallback_price_usd");
+    // ⛔ Ціни SCC серед well-known ключів НЕМАЄ, і це не пропуск: протокол курсу не
+    // тримає (00_04 §3 «не зафіксовано»), а бекенд не має жодного цінового читача.
+    // Ключ без читача = DAO-ручка, якою нікому крутити (гейт ARCH.104). Зʼявиться
+    // реальний споживач ціни — тоді й ключ, разом із ним.
 
     /// @notice Емітується при зміні будь-якого параметра.
     /// @param key Keccak256 хеш назви параметра.
@@ -239,13 +238,6 @@ contract ProtocolParameters is AccessControl {
     /// @notice [GOV.1] Стеля penalty-МНОЖНИКА slash-кривої (не фінального ratio). Default: 2.0 (2e18).
     function slashPenaltyFactorMax() external view returns (uint256) {
         return _parameters[KEY_SLASH_PENALTY_FACTOR_MAX];
-    }
-
-    /// @notice Fallback ціна SCC у USD при недоступності Uniswap/RPC.
-    ///         Default: 25.5e18 (= $25.50). Governance-controlled щоб уникнути
-    ///         фінансового ризику від hardcoded значення. [S6.9]
-    function sccFallbackPriceUsd() external view returns (uint256) {
-        return _parameters[KEY_SCC_FALLBACK_PRICE_USD];
     }
 
     // ─── Admin Protection ─────────────────────────────────────────────

@@ -58,8 +58,7 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
       - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
       - SOLANA_RPC_URL=${solana_rpc_url}
-      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
-      - POLYGON_RPC_URL=${polygon_rpc_url}
+      # Separate from ALCHEMY_*: Celo rewards (CELO_RPC_URL).
       - CELO_RPC_URL=${celo_rpc_url}
       # --- Solana public identifiers (signing keypair is job-only) ---
       - SOLANA_FEE_PAYER_PUBKEY=${solana_fee_payer_pubkey}
@@ -162,8 +161,7 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=${alchemy_polygon_rpc_url}
       - ALCHEMY_ETHEREUM_RPC_URL=${alchemy_ethereum_rpc_url}
       - SOLANA_RPC_URL=${solana_rpc_url}
-      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
-      - POLYGON_RPC_URL=${polygon_rpc_url}
+      # Separate from ALCHEMY_*: Celo rewards (CELO_RPC_URL).
       - CELO_RPC_URL=${celo_rpc_url}
       # --- Solana minting (SolanaMicroRewardWorker) ---
       - SOLANA_WALLET_KEYPAIR=${solana_wallet_keypair}

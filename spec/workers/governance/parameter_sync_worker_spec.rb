@@ -25,15 +25,13 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
   end
 
   describe "PARAMETER_MAP" do
-    it "defines 9 economic parameters" do
-      expect(described_class::PARAMETER_MAP.size).to eq(9)
+    it "defines 8 economic parameters" do
+      expect(described_class::PARAMETER_MAP.size).to eq(8)
     end
 
     it "includes tokenomics parameters" do
       tokenomics_keys = described_class::PARAMETER_MAP.select { |_, v| v[:category] == "tokenomics" }.keys
-      expect(tokenomics_keys).to contain_exactly(
-        :emission_threshold, :scc_per_tonne_co2, :scc_fallback_price_usd
-      )
+      expect(tokenomics_keys).to contain_exactly(:emission_threshold, :scc_per_tonne_co2)
     end
 
     it "keeps dynamic_tax_rate and insurance_pool_threshold in their seeded categories" do
@@ -170,7 +168,11 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
           expect(SystemParameter).not_to have_received(:set)
 
-          expect(Rails.logger).to have_received(:info).with(/9 skipped/)
+          # Твердження — «пропущено ВСІ», а не «пропущено дев'ять»: захардкоджений
+          # підсумок робив би чесне додавання/зняття параметра червоним ТУТ, за
+          # кілометр від причини (доктрина «економічну к-сть не пінимо» —
+          # `scripts/governance_key_sync.rb`).
+          expect(Rails.logger).to have_received(:info).with(/#{described_class::PARAMETER_MAP.size} skipped/)
         end
       end
 
@@ -331,7 +333,9 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
 
           worker.perform
 
-          expect(Rails.logger).to have_received(:info).with(/2 updated, 7 skipped, 0 rejected/)
+          # Два змінені, решта пропущена — «решта» деривується з мапи (див. вище).
+          expect(Rails.logger).to have_received(:info)
+            .with(/2 updated, #{described_class::PARAMETER_MAP.size - 2} skipped, 0 rejected/)
         end
       end
 

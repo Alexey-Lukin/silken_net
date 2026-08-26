@@ -33,9 +33,9 @@
 #   degradation, so a missing / placeholder / garbage value never surfaces as
 #   a config bug — the E.46 mint-tax check silently disables the tax, the
 #   ChainAuditService returns a false "delta 0, all clean" (the db<->chain
-#   fraud-detector masked), PriceOracleService silently serves fallback_price,
-#   and the INS.2 reserve gate fail-CLOSES but mislabels the bug as transient
-#   RPC. Boot is the only loud moment this class has. Values are never echoed
+#   fraud-detector masked), and the INS.2 reserve gate fail-CLOSES but mislabels
+#   the bug as transient RPC. Boot is the only loud moment this class has.
+#   Values are never echoed
 #   into the violation text — a mispasted secret must not leak into logs.
 #
 # Solana signer set [E.61]. No stub mode exists; absence self-reveals only
@@ -50,7 +50,6 @@ module Security
     RPC_URL_ENVS = %w[
       ALCHEMY_ETHEREUM_RPC_URL
       ALCHEMY_POLYGON_RPC_URL
-      POLYGON_RPC_URL
       CELO_RPC_URL
       SOLANA_RPC_URL
     ].freeze
@@ -87,9 +86,8 @@ module Security
     SILENT_ADDRESS_ENVS = {
       "DAO_TREASURY_ADDRESS"         => "the 2% Dynamic Tax silently stays off — the DAO treasury " \
                                         "leaks revenue and the log lies 'RPC degraded' (E.46 umbrella)",
-      "CARBON_COIN_CONTRACT_ADDRESS" => "ChainAuditService reports a false 'all clean' (the db<->chain " \
-                                        "fraud-detector is masked) and PriceOracleService silently " \
-                                        "serves fallback_price",
+      "CARBON_COIN_CONTRACT_ADDRESS" => "ChainAuditService reports a false 'all clean' — the db<->chain " \
+                                        "fraud-detector is masked",
       "FOREST_COIN_CONTRACT_ADDRESS" => "the SFC half of the chain-audit read-site degrades silently " \
                                         "(same umbrella as the SCC address)"
     }.freeze

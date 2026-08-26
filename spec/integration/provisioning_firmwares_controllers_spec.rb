@@ -367,17 +367,6 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
   end
 
   # ---------------------------------------------------------------------------
-  # PriceOracleService
-  # ---------------------------------------------------------------------------
-  describe "PriceOracleService" do
-    it "returns a mock price in test environment" do
-      price = PriceOracleService.current_scc_price
-      expect(price).to be_a(Numeric)
-      expect(price).to be > 0
-    end
-  end
-
-  # ---------------------------------------------------------------------------
   # ChainAuditService
   # ---------------------------------------------------------------------------
   describe "ChainAuditService" do

@@ -93,7 +93,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
         .to match_array(%w[SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT
                            SOLANA_USDC_MINT_ADDRESS])
       expect(g::SIGNER_KEYS.values).to match_array(%w[ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY])
-      expect(g::RPC_URL_ENVS).to include("CELO_RPC_URL", "SOLANA_RPC_URL", "POLYGON_RPC_URL")
+      expect(g::RPC_URL_ENVS).to include("CELO_RPC_URL", "SOLANA_RPC_URL", "ALCHEMY_POLYGON_RPC_URL")
       expect(g::ORACLE_KEY_ENVS)
         .to include("ORACLE_MINTER_PRIVATE_KEY", "ORACLE_SLASHER_PRIVATE_KEY", "ETHEREUM_ANCHOR_PRIVATE_KEY")
     end

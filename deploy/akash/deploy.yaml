@@ -195,8 +195,7 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
       - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
       - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
-      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
-      - POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      # Separate from ALCHEMY_*: Celo rewards (CELO_RPC_URL).
       - CELO_RPC_URL=REQUIRED_SECRET_NOT_SET
 
       # ════════════════════════════════════════════════════════════════════════
@@ -360,8 +359,7 @@ services:
       - ALCHEMY_POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
       - ALCHEMY_ETHEREUM_RPC_URL=REQUIRED_SECRET_NOT_SET
       - SOLANA_RPC_URL=REQUIRED_SECRET_NOT_SET
-      # Separate from ALCHEMY_*: PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL).
-      - POLYGON_RPC_URL=REQUIRED_SECRET_NOT_SET
+      # Separate from ALCHEMY_*: Celo rewards (CELO_RPC_URL).
       - CELO_RPC_URL=REQUIRED_SECRET_NOT_SET
 
       # --- Solana minting (SolanaMicroRewardWorker → Solana::MintingService) ---

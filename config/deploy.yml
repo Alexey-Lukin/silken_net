@@ -127,8 +127,7 @@ env:
     - ALCHEMY_POLYGON_RPC_URL
     - ALCHEMY_ETHEREUM_RPC_URL
     - SOLANA_RPC_URL
-    # PriceOracleService (POLYGON_RPC_URL) + Celo rewards (CELO_RPC_URL) — separate from ALCHEMY_*.
-    - POLYGON_RPC_URL
+    # Celo rewards (CELO_RPC_URL) — separate from ALCHEMY_*.
     - CELO_RPC_URL
     # --- Solana public identifiers (the signing keypair is job-only) ---
     - SOLANA_FEE_PAYER_PUBKEY

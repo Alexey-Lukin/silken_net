@@ -102,7 +102,6 @@ resource "local_file" "akash_sdl" {
     alchemy_polygon_rpc_url  = var.alchemy_polygon_rpc_url
     alchemy_ethereum_rpc_url = var.alchemy_ethereum_rpc_url
     solana_rpc_url           = var.solana_rpc_url
-    polygon_rpc_url          = var.polygon_rpc_url
     celo_rpc_url             = var.celo_rpc_url
     # Solana minting (SolanaMicroRewardWorker)
     solana_wallet_keypair          = var.solana_wallet_keypair

@@ -13,10 +13,14 @@
 # enforced the `↔`.
 #
 # Two homes, deliberately NOT collapsed (like the keccak bridge): seeds carries
-# 26 keys with values + descriptions (dev/test bootstrap defaults); PARAMETER_MAP
-# carries the 9 economic keys' sync-config. For those 9 the bounds/type/category
-# must be identical — the worker comment says so verbatim ("той самий запис, та
-# сама валідація"). Three silent-failure classes this closes:
+# every bootstrap default with values + descriptions (dev/test); PARAMETER_MAP
+# carries the sync-config of the governance-synced economic SUBSET. For that
+# subset the bounds/type/category must be identical — the worker comment says so
+# verbatim ("той самий запис, та сама валідація"). Neither side is tallied here
+# on purpose: both sets legitimately grow and shrink with the protocol, and the
+# script PRINTS the live economic count on success — a number frozen in this
+# header would just rot (it did: it read "26 seeds / 17 local" against a file
+# holding 22 / 13). Three silent-failure classes this closes:
 #
 #   1. a bounds drift — seeds floor edited but not PARAMETER_MAP (or vice-versa):
 #      the E.64 class, review-caught 2026-07-11 (stress_threshold min 0.5 in
@@ -30,7 +34,7 @@
 #      but until the first sync `SystemParameter.current` is nil → the code
 #      falls back to its hardcoded default, so the seed IS the precondition for
 #      the governed value to exist at all. (The reverse — a seed key absent from
-#      PARAMETER_MAP — is by design: 17 keys are LOCAL/inert and deliberately not
+#      PARAMETER_MAP — is by design: the LOCAL/inert keys are deliberately not
 #      synced, per the seeds comments, so the check is directional.)
 #
 # Pure Ruby (stdlib only — the worker pulls in `eth` + ApplicationWeb3Worker, and
@@ -74,7 +78,7 @@ seeds_block.scan(/\{([^{}]+)\}/) do |(inner)|
 end
 abort("governance_bounds_sync: жодного seed-запису не витягнуто з system_params (форма змінилась?)") if seed_rows.empty?
 
-# ── worker: PARAMETER_MAP (the 9 governance-synced economic keys) ────────────
+# ── worker: PARAMETER_MAP (the governance-synced economic keys) ──────────────
 worker = File.read(WORKER)
 param_block = worker[/PARAMETER_MAP\s*=\s*\{(.*?)^\s*\}\.freeze/m, 1] or
   abort("governance_bounds_sync: PARAMETER_MAP не розпарсився у parameter_sync_worker.rb (форма змінилась?)")

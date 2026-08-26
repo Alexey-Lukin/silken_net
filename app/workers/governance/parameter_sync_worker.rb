@@ -41,7 +41,6 @@ module Governance
       dynamic_tax_rate:          { value_type: "decimal", category: "minting",    min: 0,      max: 0.10 },
       insurance_pool_threshold:  { value_type: "integer", category: "insurance",  min: 10_000, max: 1_000_000 },
       scc_per_tonne_co2:         { value_type: "integer", category: "tokenomics", min: 100,    max: 100_000 },
-      scc_fallback_price_usd:    { value_type: "float",   category: "tokenomics", min: 0.01,   max: 1000.0 },
       # Slashing (05_05 §3) + slash/stress пороги
       slash_threshold:           { value_type: "float",   category: "alerts",     min: 0.05,   max: 1.0 },
       stress_threshold:          { value_type: "float",   category: "alerts",     min: 0.65,   max: 1.0 }, # [E.64] floor > Z-anomaly base_stress 0.6 (§7 «Z alone never slashes»: DAO не може опустити поріг під anomaly-рівень, інакше Z сам би слешив)

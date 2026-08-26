@@ -267,12 +267,6 @@ variable "solana_rpc_url" {
   sensitive   = true
 }
 
-variable "polygon_rpc_url" {
-  description = "Polygon RPC for PriceOracleService (Web3::RpcConnectionPool.client_for(\"POLYGON_RPC_URL\"), ENV.fetch without fallback → KeyError if absent). May equal alchemy_polygon_rpc_url or a public endpoint (https://polygon-rpc.com)."
-  type        = string
-  sensitive   = true
-}
-
 variable "celo_rpc_url" {
   description = "Celo RPC for CommunityRewardService. Code falls back to Alfajores TESTNET (DEFAULT_RPC_URL) if blank — set a mainnet endpoint (Forno/Alchemy) in prod to avoid paying real cUSD on testnet (E.49)."
   type        = string

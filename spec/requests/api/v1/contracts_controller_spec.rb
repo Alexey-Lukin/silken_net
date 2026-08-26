@@ -332,8 +332,6 @@ RSpec.describe Api::V1::ContractsController, type: :request do
 
   describe "GET /contracts/stats" do
     it "returns financial analytics for the user's organization" do
-      allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
-
       get "/contracts/stats", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 
@@ -351,23 +349,15 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       # вимірювана, тож пін перецілено з «не виміряно» на САМЕ ЗНАЧЕННЯ — інакше він
       # стеріг би стан, якого вже немає. Дискримінатор до цього нуля (він пройшов би й
       # на захардкодженому) стоїть у `GET /contracts` вище.
-      # ⛔ `attested_value_usd` лишається `nil` СВІДОМО: він потребує зовнішнього
-      # цінового оракула на списковому ендпоінті, і рішення про той виклик — окреме.
+      # ⛔ `attested_value_usd` лишається `nil` СВІДОМО, і тримає це вже не рішення,
+      # а КОНСТРУКЦІЯ: цінового шляху в дереві немає — ні DEX-читача, ні fallback-
+      # параметра, тож «зайвий зовнішній виклик заради множення на невідоме» тут
+      # неможливо лишити, його нема звідки взяти. Щоб віддати звідси долари, оракул
+      # треба спершу ПОБУДУВАТИ (DEX-quoter read; тригер — перший B2B-запит фіат-
+      # оцінки, [`04_03 §5.14б`]), і це окреме рішення, а не однорядковий фікс.
+      # Цей пін — те, що почервоніє, якщо оцінку почнуть фабрикувати.
       expect(body["total_tokens_minted"]).to eq(0.0)
       expect(body["attested_value_usd"]).to be_nil
-    end
-
-    # ⚠️ Пара до піна вище: оракул більше не смикають узагалі. Без цього прикладу
-    # «полагодити» відсутню оцінку можна було б, лишивши зовнішній виклик заради
-    # множення на невідоме — витрата без результату, чия тиша ще й читалась би як
-    # «оцінка не працює», ховаючи справжню причину.
-    it "does not call the price oracle while the minted amount is unmeasured" do
-      allow(PriceOracleService).to receive(:current_scc_price)
-
-      get "/contracts/stats", headers: headers, as: :json
-
-      expect(PriceOracleService).not_to have_received(:current_scc_price)
-      expect(response).to have_http_status(:ok)
     end
 
     # [SEC.25 Ф2] Доти цей екшен мав ВЛАСНУ відповідь на «нема організації» (403 через
@@ -394,8 +384,6 @@ RSpec.describe Api::V1::ContractsController, type: :request do
       # (`00_04`) лишає шкалу 0..1, але поле стало **nullable**, і покриття їде
       # поруч — саме воно розводить «нема чого міряти» від «не змогли».
       it "returns cluster_health as null with an honest zero coverage" do
-        allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
-
         fresh_org = create(:organization)
         fresh_user = create(:user, organization: fresh_org)
         fresh_headers = { "Authorization" => "Bearer #{fresh_user.generate_token_for(:api_access)}" }
@@ -414,7 +402,6 @@ RSpec.describe Api::V1::ContractsController, type: :request do
     # `rescue` більше немає: аварія мусить читатись як аварія, а не як бездоганний ліс.
     context "when the health calculation blows up" do
       it "surfaces the failure instead of laundering it into perfect health" do
-        allow(PriceOracleService).to receive(:current_scc_price).and_return(25.5)
         allow(Cluster).to receive(:health_coverage).and_raise(ActiveRecord::StatementInvalid, "DB error")
 
         get "/contracts/stats", headers: headers, as: :json

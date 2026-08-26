@@ -779,7 +779,7 @@ Series D архітектура (>1M вузлів):
 
 ## 🔑 Змінні Середовища: Web3 та Мультичейн
 
-> **One-home:** повний інвентар Web3/мультичейн ENV — secret + clear, RPC (`ALCHEMY_*` + окремі `POLYGON_RPC_URL`/`CELO_RPC_URL`), контракт-адреси (post-`forge deploy` placeholders), Solana/Chainlink, Active-Storage `aws`/`gcs` + credentials-only ключі (peaq/iotex/streamr/the_graph/hadron/filecoin) — живе в [`06_04 §2.1`](06_04_Secrets_Checklist) (+ §2.2 credentials), НЕ дублюється тут. ⚠️ `CELO_RPC_URL` порожній → Alfajores TESTNET (E.49; mainnet обов'язковий); контракт-адреси відомі лише після `forge deploy`.
+> **One-home:** повний інвентар Web3/мультичейн ENV — secret + clear, RPC (`ALCHEMY_*` + окремий `CELO_RPC_URL`), контракт-адреси (post-`forge deploy` placeholders), Solana/Chainlink, Active-Storage `aws`/`gcs` + credentials-only ключі (peaq/iotex/streamr/the_graph/hadron/filecoin) — живе в [`06_04 §2.1`](06_04_Secrets_Checklist) (+ §2.2 credentials), НЕ дублюється тут. ⚠️ `CELO_RPC_URL` порожній → Alfajores TESTNET (E.49; mainnet обов'язковий); контракт-адреси відомі лише після `forge deploy`.
 
 ### Деплой контрактів (Foundry)
 
