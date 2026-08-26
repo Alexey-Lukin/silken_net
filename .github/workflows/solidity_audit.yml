@@ -32,6 +32,7 @@ on:
       # зеленим, поки хтось не торкнеться контрактів (лаг детонації = число
       # не-contracts комітів поспіль, не обмежене нічим).
       - 'scripts/solidity_test_naming_check.rb'
+      - 'scripts/solidity_expect_revert_subject_check.rb'
 
 jobs:
   changes:
@@ -55,6 +56,7 @@ jobs:
               - 'contracts/**'
               - '.github/workflows/solidity_audit.yml'
               - 'scripts/solidity_test_naming_check.rb'
+              - 'scripts/solidity_expect_revert_subject_check.rb'
 
   foundry-tests:
     needs: changes
@@ -190,6 +192,10 @@ jobs:
       - name: Naming gate — a revert test is named testRevert_*
         working-directory: ${{ github.workspace }}
         run: ruby scripts/solidity_test_naming_check.rb
+
+      - name: Revert-subject gate — expectRevert() must name its subject
+        working-directory: ${{ github.workspace }}
+        run: ruby scripts/solidity_expect_revert_subject_check.rb
 
       - name: Run tests with gas report
         run: forge test -vvv --gas-report
