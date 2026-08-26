@@ -11,6 +11,27 @@ RSpec.describe BlockchainTransaction, type: :model do
       expect(tx.errors[:amount]).to be_present
     end
 
+    # 🔴 [ARCH.95] Валідація існує рівно заради ГУЧНОЇ відмови — а сам момент її
+    # спрацювання не виконувався в сюїті жодного разу (виміряно branch-coverage'ом:
+    # непокритою була гілка «маркер слешу є, напрямок не burn»). Тобто гард, чия
+    # єдина робота — не дати тихо завищити емісію, стояв недоведеним: зняття
+    # `errors.add` лишалось зеленим. Ціна промаху названа в самій моделі — напрямок
+    # годує `net_minted_supply`, а той годує L1-якір і базу розміру спалення.
+    it "відхиляє slash-інтент, що не несе напрямку :burn (гард ARCH.95 справді кусає)" do
+      tx = build(:blockchain_transaction,
+                 sourceable: create(:naas_contract), direction: :mint)
+
+      expect(tx).not_to be_valid
+      expect(tx.errors[:direction].join).to include("ARCH.95")
+    end
+
+    it "той самий рядок із напрямком :burn валідний — гард не ширший за свій предмет" do
+      tx = build(:blockchain_transaction,
+                 sourceable: create(:naas_contract), direction: :burn)
+
+      expect(tx).to be_valid
+    end
+
     it "rejects zero amount" do
       tx = build(:blockchain_transaction, amount: 0)
       expect(tx).not_to be_valid
