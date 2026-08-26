@@ -16,11 +16,39 @@ import {
   SlashingEvent,
 } from "../generated/schema";
 
+// 🔴 [DOC-T.89, ⚖️ 2026-08-26] Природа емісії деривується з префікса `identifier`.
+// Дім префіксів — Rails `BlockchainMintingService` (`INSURANCE_MINT_PREFIX`,
+// `"TAX_BATCH_"` у `build_batch_arrays`); дзеркало типу — `enum MintKind` у
+// schema.graphql. Розійдуться — класифікація поїде МОВЧКИ, тож грепай DOC-T.89 обабіч.
+const INSURANCE_MINT_PREFIX = "INS_";
+const TAX_BATCH_PREFIX = "TAX_BATCH_";
+
+function mintKindOf(identifier: string): string {
+  // Порядок НЕ довільний: податковий запис несе identifier ПЕРШОЇ tx підбатча, а вона
+  // сама може бути страховою → `TAX_BATCH_INS_<did>`. Спершу зовнішній префікс.
+  if (identifier.startsWith(TAX_BATCH_PREFIX)) return "TAX";
+  if (identifier.startsWith(INSURANCE_MINT_PREFIX)) return "INSURANCE";
+  // ⚠️ GROWTH = ВІДСУТНІСТЬ мітки, а не власна мітка (на дроті її немає). Отже будь-який
+  // майбутній нерозпізнаний префікс упаде сюди — помилка класифікації завжди на користь
+  // «це вуглецевий клейм». Саме тому розбіжність із Rails — money-path-баг, не косметика.
+  return "GROWTH";
+}
+
+function subjectDidOf(identifier: string): string {
+  let did = identifier;
+  if (did.startsWith(TAX_BATCH_PREFIX)) did = did.slice(TAX_BATCH_PREFIX.length);
+  if (did.startsWith(INSURANCE_MINT_PREFIX)) did = did.slice(INSURANCE_MINT_PREFIX.length);
+  return did;
+}
+
 function getProtocolFinancials(): ProtocolFinancials {
   let financials = ProtocolFinancials.load("1");
   if (financials == null) {
     financials = new ProtocolFinancials("1");
     financials.totalMinted = BigInt.zero();
+    financials.totalMintedGrowth = BigInt.zero();
+    financials.totalMintedInsurance = BigInt.zero();
+    financials.totalMintedTax = BigInt.zero();
     financials.totalBurned = BigInt.zero();
     financials.totalForestMinted = BigInt.zero();
     financials.totalGovernanceSlashed = BigInt.zero();
@@ -38,7 +66,10 @@ export function handleCarbonMinted(event: CarbonMinted): void {
   entity.to = event.params.investor;
   entity.amount = event.params.amount;
   entity.treeDidHash = event.params.treeDidHash;
-  entity.treeDid = event.params.treeDid;
+  entity.treeDid = event.params.treeDid; // RAW, вербатим — префікс природи ВКЛЮЧЕНО
+  let kind = mintKindOf(event.params.treeDid);
+  entity.kind = kind;
+  entity.subjectDid = subjectDidOf(event.params.treeDid);
   entity.archiveRoot = event.params.archiveRoot; // [E.60] dispatch archive-batch witness
   entity.timestamp = event.block.timestamp;
   entity.blockNumber = event.block.number;
@@ -47,7 +78,21 @@ export function handleCarbonMinted(event: CarbonMinted): void {
   entity.save();
 
   let financials = getProtocolFinancials();
+  // ⚖️ `totalMinted` лишається Σ УСІХ природ (supply-бік тотожності з `totalBurned`) —
+  // рознесення додається ПОРУЧ, не замість. Інваріант, який тримає цей блок:
+  // totalMinted == totalMintedGrowth + totalMintedInsurance + totalMintedTax.
   financials.totalMinted = financials.totalMinted.plus(event.params.amount);
+  if (kind == "TAX") {
+    financials.totalMintedTax = financials.totalMintedTax.plus(event.params.amount);
+  } else if (kind == "INSURANCE") {
+    financials.totalMintedInsurance = financials.totalMintedInsurance.plus(
+      event.params.amount
+    );
+  } else {
+    financials.totalMintedGrowth = financials.totalMintedGrowth.plus(
+      event.params.amount
+    );
+  }
   financials.save();
 }
 
@@ -71,6 +116,13 @@ export function handleTokenSlashed(event: TokenSlashed): void {
 }
 
 // [S3.5] SFC: ForestMinted event handler — governance token minting per cluster
+//
+// ⚠️ [DOC-T.89] Рознесення природ тут СВІДОМО НЕМАЄ, і межа названа: `TAX_BATCH_` на
+// SFC не буває взагалі (`taxing?` віддає false для всього, крім carbon_coin), а `INS_`
+// теоретично можливий — `identifier_for` клеїть префікс незалежно від токена — але
+// SFC-виплату жорстко відхиляє `InsurancePayoutWorker` до активації governance (SEC.1).
+// Тобто `clusterId` тут сьогодні завжди чистий. 🔦 Знімаєш той гард — дзеркаль `kind`
+// і на `ForestMintEvent`, інакше `totalForestMinted` успадкує рівно цей дефект.
 export function handleForestMinted(event: ForestMinted): void {
   let id =
     event.transaction.hash.toHexString() +

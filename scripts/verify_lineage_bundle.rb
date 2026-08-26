@@ -18,6 +18,9 @@
 #
 # Межа довіри (свідома, задекларована): amount, ПОВНОТА набору кредитів/листя і
 # континуїтет вікон — issuer-asserted (backstop = org AuditLog-ланцюг у leaf0).
+# [DOC-T.89] `insurance_payouts` — емісія за ЗБИТОК, НЕ вуглецеві кредити: крипто під
+# нею немає за конструкцією (немає листя), тож тут вона лише ПЕРЕЛІЧУЄТЬСЯ вголос.
+# Мовчазна секція гірша за відсутню: аудитор прийняв би її за перевірену.
 # On-chain звірка state_root — людина: tx МУСИТЬ таргетити канонічний
 # StateRootAnchor-контракт; адресу `anchor_contract` звіряй з НЕЗАЛЕЖНИМ
 # джерелом (канон проєкту / офіційний сайт), не з цим файлом.
@@ -28,6 +31,7 @@
 
 require "json"
 require "digest"
+require "bigdecimal"
 require_relative "../lib/merkle_tree"
 require_relative "../app/services/filecoin/cid_generator"
 
@@ -132,6 +136,24 @@ puts "── Lineage bundle: #{bundle['credits'].size} credits " \
      "(org #{bundle.dig('organization', 'id')}, #{bundle.dig('period', 'from')}..#{bundle.dig('period', 'to')})"
 puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} · " \
      "credits sealed=#{sealed_credits} unsealed=#{unsealed_credits}"
+
+# [DOC-T.89] Страхові виплати: НЕ верифікуються (нічого верифікувати) — але й НЕ
+# замовчуються. М'яке читання замість `fetch` свідомо: bundle без секції (старіший
+# випуск) лишається валідним, а не падає на відсутньому ключі.
+payouts = bundle["insurance_payouts"]
+payouts = [] unless payouts.is_a?(Array)
+if payouts.any?
+  # 💰 Сума ГРУПУЄТЬСЯ за `token_type` і друкується З ОДИНИЦЕЮ: рядки різних токенів —
+  # різні шкали, і зведення їх в одне число тут було б тим самим класом дефекту, який
+  # ця секція лікує ярусом вище. BigDecimal, а не Float: це аудиторський артефакт.
+  totals = payouts.group_by { |p| p.dig("tx", "token_type") }
+                  .map { |token, rows| "#{rows.sum { |r| BigDecimal(r.dig('tx', 'amount').to_s) }.to_s('F')} #{token}" }
+                  .join(" + ")
+  puts "   ⚠️  insurance_payouts=#{payouts.size} (Σ #{totals}): емісія за ЗБИТОК, НЕ вуглецеві " \
+       "кредити — lineage під ними НЕМАЄ за конструкцією, крипто-перевірок тут НУЛЬ. " \
+       "On-chain вони несуть префікс `INS_`; звіряй суму з subgraph " \
+       "`ProtocolFinancials.totalMintedInsurance`."
+end
 
 if unsealed_credits.positive?
   puts "   ⚠️  #{unsealed_credits} unsealed-кредит(и): mint-root-binding для них НЕ перевірявся " \

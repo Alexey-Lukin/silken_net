@@ -1,10 +1,44 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-type CarbonMintEvent @entity {
+
+# 🔴 [DOC-T.89, ⚖️ 2026-08-26] ПРИРОДА ЕМІСІЇ SCC — машинно-читаний дискримінатор.
+#
+# Мінт SCC має ТРИ різні природи, і доти жоден зовнішній читач їх не розрізняв:
+# виміряний ріст (Proof-of-Growth), страхова виплата (ЗБИТОК, не ріст) і динамічний
+# податок у DAO-казну (перерозподіл уже нарахованого, отримувач — не дерево).
+# Прецедент — [ARCH.101]: «машинний споживач не міг відрізнити спалення від емісії,
+# і це ПОВНОТА КОНТРАКТУ, не смак». Дискримінатор УЖЕ на дроті (префікс в `identifier`,
+# тобто й індексований `treeDidHash` для `INS_<did>` ≠ для `<did>`) — subgraph його
+# просто не читав, а `totalMinted` мовчки складав усі три в одне число.
+#
+# ⚠️ Джерело істини префіксів — Rails: `BlockchainMintingService#identifier_for`
+# (`INSURANCE_MINT_PREFIX = "INS_"`) і `#build_batch_arrays` (`"TAX_BATCH_"`).
+# Розійдуться — розійдеться й ця класифікація МОВЧКИ (нерозпізнаний префікс падає
+# в GROWTH, бо саме GROWTH не має власної мітки на дроті). Грепай DOC-T.89 обабіч.
+enum MintKind {
+  GROWTH    # Proof-of-Growth: намінчено за верифікований вимір. ЄДИНА природа, під якою
+            # стоїть lineage-доказ (`archiveRoot` ≠ 0x0 при sealed-вікні, MRV.1).
+  INSURANCE # Параметрична страхова виплата: намінчено за ЗБИТОК. Вимірів під нею немає
+            # за конструкцією — ESG-покупець НЕ сміє рахувати це поглинанням.
+  TAX       # Dynamic Tax: агрегований запис у DAO_TREASURY на батч. Отримувач — казна,
+            # не форестер; це перерозподіл, а не нове поглинання.
+}
+
+type CarbonMintEvent @entity(immutable: false) {
   id: ID!
   to: Bytes!
   amount: BigInt!
   treeDidHash: Bytes!
+  # RAW on-chain identifier, ВЕРБАТИМ з події — префікс природи ВКЛЮЧЕНО
+  # (`INS_did:peaq:0x…`, `TAX_BATCH_did:peaq:0x…`). Інформація не руйнується:
+  # `kind`/`subjectDid` — похідні, це — першоджерело для їх перевірки.
   treeDid: String!
+  # Природа емісії, деривована з префікса `treeDid`.
+  kind: MintKind!
+  # `treeDid` без префікса природи. Для GROWTH ідентичний `treeDid`.
+  # ⚠️ Для TAX це НЕ бенефіціар: податковий запис іде в DAO_TREASURY, а вкладений
+  # ідентифікатор — лише хлібна крихта провенансу (перша tx батча, яка сама може
+  # бути страховою → `TAX_BATCH_INS_<did>`, тому префікси знімаються ПО ЧЕРЗІ).
+  subjectDid: String!
   archiveRoot: Bytes! # [E.60] Merkle-root of the dispatch archive batch; 0x0 = no witness claim
   timestamp: BigInt!
   blockNumber: BigInt!
@@ -12,7 +46,7 @@ type CarbonMintEvent @entity {
 }
 
 # [S3.5] SFC ForestMinted event — governance token minting per cluster
-type ForestMintEvent @entity {
+type ForestMintEvent @entity(immutable: false) {
   id: ID!
   to: Bytes!
   amount: BigInt!
@@ -25,7 +59,7 @@ type ForestMintEvent @entity {
 }
 
 # [S3.5] SFC GovernanceSlashed event — DAO slashing of voting power
-type GovernanceSlashEvent @entity {
+type GovernanceSlashEvent @entity(immutable: false) {
   id: ID!
   target: Bytes!
   amount: BigInt!
@@ -35,15 +69,28 @@ type GovernanceSlashEvent @entity {
   transactionHash: Bytes!
 }
 
-type ProtocolFinancials @entity {
+type ProtocolFinancials @entity(immutable: false) {
   id: ID!
+  # ⚖️ [DOC-T.89] СЕМАНТИКА `totalMinted` СВІДОМО НЕ ЗМІНЕНА: це Σ ВСІЄЇ емісії SCC,
+  # усіх трьох природ. Воно — supply-бік тотожності з `totalBurned`
+  # (`totalMinted − totalBurned` = чиста емісія в обігу, дзеркало Rails-One-Home
+  # `BlockchainTransaction.net_minted_supply`). Переозначити його в «лише ріст»
+  # означало б ТИХО зламати цю тотожність — тобто відтворити рівно той дефект,
+  # який ми лікуємо, ярусом вище.
+  # 🔴 Інваріант, який аудитор може перевірити САМ:
+  #     totalMinted == totalMintedGrowth + totalMintedInsurance + totalMintedTax
+  # Хто питає «скільки намінчено за ВИМІРЯНИЙ РІСТ» (ESG-покупець, ISO 14064/Verra)
+  # читає `totalMintedGrowth` і ЛИШЕ його.
   totalMinted: BigInt!
+  totalMintedGrowth: BigInt!    # природа GROWTH — єдина, що є вуглецевим клеймом
+  totalMintedInsurance: BigInt! # природа INSURANCE — виплата за збиток
+  totalMintedTax: BigInt!       # природа TAX — перерозподіл у DAO-казну
   totalBurned: BigInt!
   totalForestMinted: BigInt!
   totalGovernanceSlashed: BigInt!
 }
 
-type SlashingEvent @entity {
+type SlashingEvent @entity(immutable: false) {
   id: ID!
   target: Bytes!
   amount: BigInt!

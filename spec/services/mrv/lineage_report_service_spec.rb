@@ -35,6 +35,23 @@ RSpec.describe Mrv::LineageReportService do
     )
   end
 
+  # Реальний писач страхової виплати: `InsurancePayoutWorker` кличе
+  # `create_blockchain_transaction!` БЕЗ `direction:`, тож напрямок дає DB-default
+  # `'mint'` — і саме тому виплата проходила фільтр `credits:` [ARCH.95] наскрізь.
+  # Пін мусить іти ЦИМ шляхом, а не власноруч зібраним рядком: інакше він пінує
+  # мою гіпотезу про писача, а не писача.
+  def insurance_payout_confirmed!(amount: 100.0)
+    insurance = create(:parametric_insurance, :triggered, organization: organization, cluster: cluster)
+    tx = insurance.create_blockchain_transaction!(
+      wallet: wallet, amount: amount, token_type: :carbon_coin,
+      to_address: "0x#{SecureRandom.hex(20)}", status: :pending
+    )
+    tx.process!
+    tx.mark_as_sent!("0x#{SecureRandom.hex(32)}")
+    tx.confirm!(12_347, 0.01)
+    tx.reload
+  end
+
   def bundle
     described_class.call(organization: organization, from: 1.day.ago, to: 1.minute.from_now)
   end
@@ -221,5 +238,61 @@ RSpec.describe Mrv::LineageReportService do
       expect(leaf[:anchor_proof][:status]).to eq("anchored")
       expect(leaf[:anchor_proof][:anchor][:state_root]).to eq(anchor2.state_root)
     end
+  end
+
+  # 🔴 [DOC-T.89, ⚖️ 2026-08-26] Страхова виплата — емісія за ЗБИТОК, і в `credits:` їй
+  # не місце: її вікно вимірів ПОРОЖНЄ за конструкцією, тож bundle стверджував би
+  # виміряний ріст, якого не було (ISO 14064/Verra — це не незручність, а хибний клейм).
+  # Дискримінатор — `sourceable_type`, бо напрямок тут ЧЕСНО `:mint`; пін тримає й це.
+  it "не пускає страхову виплату в credits — вона їде окремою секцією з чесним «вимірів немає»" do
+    create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
+    growth = mint_confirmed!
+    payout = insurance_payout_confirmed!
+
+    # ⊥ Несуче окремо: виплата — СПРАВЖНІЙ `direction: :mint`, тобто [ARCH.95]-фільтр її
+    # НЕ ловить. Без цього рядка приклад не відрізняє «відсіяв sourceable» від
+    # «відсіяв напрямок» — і зелень нічого не доводила б.
+    expect(payout).to be_direction_mint
+
+    result = bundle
+    expect(result[:credits].map { |c| c.dig(:tx, :id) }).to eq([ growth.id ])
+
+    payouts = result[:insurance_payouts]
+    expect(payouts.map { |p| p.dig(:tx, :id) }).to eq([ payout.id ])
+    expect(payouts.first[:lineage]).to eq("none_by_construction")
+    expect(payouts.first[:on_chain_identifier_prefix]).to eq(BlockchainMintingService::INSURANCE_MINT_PREFIX)
+
+    # ⊥ Секція мусить бути ВИДНОЮ в консолі аудитора, а не лише лежати у файлі: мовчазну
+    # він прийме за перевірену. Тому пін іде через сам верифікатор — і тримає обидва
+    # твердження: bundle із новим ключем усе ще exit 0, і виплати в звіті НАЗВАНІ.
+    path = Rails.root.join("tmp/lineage_payout_spec_#{Process.pid}.json")
+    File.write(path, JSON.generate(result))
+    out, status = Open3.capture2e(RbConfig.ruby, Rails.root.join("scripts/verify_lineage_bundle.rb").to_s, path.to_s)
+    expect(status.success?).to be(true), "верифікатор мав пройти з новою секцією: #{out}"
+    expect(out).to include("insurance_payouts=1")
+    expect(out).to include("НЕ вуглецеві")
+  ensure
+    FileUtils.rm_f(path) if path
+  end
+
+  # 🔴 [DOC-T.89] Друга половина ТОГО САМОГО предиката: `prev`-межа успадкування читала
+  # «будь-який confirmed рядок гаманця», тож confirmed-виплата (або спалення) МІЖ
+  # провалом і наступним кредитом обрізала успадкування — вікно вимірів, що доказує
+  # кредит, тихо зникало з доказового bundle. Межа мусить бути тим самим «виміряним
+  # кредитом», що й `credits:`, інакше фікс лишається половинчастим.
+  it "не дає страховій виплаті обрізати успадкування failed-вікон (межа = виміряний кредит)" do
+    old_log = create(:telemetry_log, tree: tree, created_at: 3.hours.ago)
+    failed_tx = wallet.lock_and_mint!(300, 100)
+    failed_tx.fail!("rpc down")
+
+    insurance_payout_confirmed! # confirmed МІЖ провалом і наступним кредитом
+
+    create(:telemetry_log, tree: tree, created_at: 1.hour.ago)
+    tx = mint_confirmed!(600)
+
+    credit = bundle[:credits].find { |c| c[:tx][:id] == tx.id }
+    expect(credit[:inherited_windows].map { |w| w[:tx_id] }).to eq([ failed_tx.id ])
+    inherited = credit[:leaves].select { |l| l[:window_source].nil? }.map { |l| l[:telemetry_log_id] }
+    expect(inherited).to eq([ old_log.id ])
   end
 end
