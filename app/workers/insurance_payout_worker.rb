@@ -42,6 +42,19 @@ class InsurancePayoutWorker
       return
     end
 
+    # [DOC-T.89] SFC-виплата зупиняється ТУТ, а не лише в мінт-лійці. Лійковий гард
+    # мовчки повертає ПІСЛЯ `pay!`, тож поліс став би `:paid`, `INSURANCE_PAYOUT_SUCCESS_TOTAL`
+    # інкрементнувся б (він лічить виклик, не результат), а tx лишився б вічним `:pending`,
+    # якого recovery не бачить (тягне лише `:triggered`). Тобто система засвідчила б
+    # виплату, якої не було. Лійковий гард лишається — він ловить УСІ шляхи, включно з
+    # майбутнім admin-екраном; цей потрібен, щоб самосвідчення не брехало.
+    # 🔦 Знімати разом із лійковим — грепай DOC-T.89.
+    if insurance.token_type_forest_coin?
+      Rails.logger.error "🛑 [DOC-T.89] Виплата ##{insurance_id} у SFC відхилена до активації " \
+                         "governance (SEC.1): поліс лишається :triggered, tx не створюється."
+      return
+    end
+
     # 2. АТОМАРНА ФІКСАЦІЯ ВИПЛАТИ (Postgres Domain)
     tx = nil
     ActiveRecord::Base.transaction do

@@ -116,14 +116,17 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect { BlockchainMintingService.call(tx.id) }.to raise_error(RuntimeError, /Критично низький баланс/)
     end
 
-    it "supports forest_coin token type" do
+    # [DOC-T.89, ⚖️ 2026-08-26] Перевернуто разом із присудом: SFC-мінт заблоковано до
+    # активації governance (SEC.1). Підстава — quorum рахується від `totalSupply` при
+    # нульовому genesis-supply, тож перші 10k SFC = 100% голосів.
+    it "НЕ мінтить forest_coin до активації governance" do
       tx.update!(token_type: :forest_coin)
       allow(ENV).to receive(:fetch).and_call_original
       allow(ENV).to receive(:fetch).with("FOREST_COIN_CONTRACT_ADDRESS").and_return("0xForestCoin")
 
       BlockchainMintingService.call(tx.id)
-      tx.reload
-      expect(tx.status).to eq("sent")
+
+      expect(tx.reload.status).to eq("pending")
     end
 
     it "schedules confirmation worker after successful send" do

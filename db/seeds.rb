@@ -308,7 +308,10 @@ ParametricInsurance.create!(
   threshold_value: 15.0,
   status: :active,
   trigger_event: :extreme_drought,
-  token_type: :forest_coin
+  # ⚖️ [DOC-T.89, 2026-08-26] Було `:forest_coin` — демо роздавало 200k ГОЛОСІВ одній
+  # організації за страховий випадок. SFC є governance-токеном з авто-делегацією, а
+  # quorum рахується від `totalSupply`, тож сіди моделювали б захоплення DAO як норму.
+  token_type: :carbon_coin
 )
 
 # =========================================================================
@@ -582,7 +585,9 @@ BlockchainTransaction.create!(
 BlockchainTransaction.create!(
   wallet: sample_wallet,
   amount: 5,
-  token_type: :forest_coin,
+  # ⚖️ [DOC-T.89] Було `:forest_coin` із `locked_points: 250` — тобто демо вдавало
+  # growth-мінт SFC за курсом 50:1, якого не існує НІДЕ (правил емісії SFC немає).
+  token_type: :carbon_coin,
   status: :pending,
   blockchain_network: "evm",
   to_address: active_bridge.crypto_public_address,

@@ -186,8 +186,39 @@ class BlockchainMintingService < ApplicationService
       return
     end
 
+    # 🔴 [DOC-T.89, ⚖️ 2026-08-26] SFC-мінт ЗАБЛОКОВАНО до активації governance (SEC.1).
+    #
+    # Підстава не «ще не готово», а арифметика Governor'а: quorum рахується як частка
+    # від `totalSupply`, а не від `MAX_SUPPLY`, і genesis-supply нульовий (deploy-скрипт
+    # не мінтить нічого). Отже ПЕРШІ `10_000 SFC`, кому б вони не дістались, дають своєму
+    # власникові 100% голосів і одноосібне право пропозиції — а доти `proposalThreshold`
+    # не дає подати пропозицію взагалі. Мінт ще й авто-делегує голос, тож вага виникає
+    # без жодної дії отримувача.
+    #
+    # Сьогодні єдиний живий writer `forest_coin` — страхова виплата, тобто голоси
+    # роздавались би ЗА ЗБИТОК, у розмірі полісу, без Dynamic Tax і без можливості
+    # зняття (бекенд-slash SFC не існує — `00_07` BIZ.14).
+    #
+    # ⚖️ Гард ЗВОРОТНИЙ і нічого не фіксує: він не обирає курс емісії, не роздає
+    # allocation і не суперечить ⛔ «не фіксувати до securities-розв'язки» — він лише
+    # тримає supply на нулі, доки Safe/Timelock не на місці. Знімається разом із
+    # `SEC.1`-деплоєм, тим самим заходом, що вмикає governance.
+    # ⛔ Не «полагодити» через ENV — це присуд, а не конфіг; зняття = редагування ЦЬОГО
+    # блоку разом із записом у `00_07` DOC-T.89.
+    if token_type == "forest_coin"
+      Rails.logger.warn "🛑 [DOC-T.89] SFC-мінт заблоковано до активації governance (SEC.1): " \
+                        "#{txs.size} tx лишаються :pending. Перші 10k SFC = 100% голосів."
+      return
+    end
+
     contract_address = case token_type
     when "carbon_coin" then ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
+    # [DOC-T.89 §B.4 leave] Гард вище повертає ДО цієї точки, тож гілка недосяжна й
+    # лишається непокритою свідомо: `04_06 §B.4` велить financial-safety-defensive
+    # лишати з поясненням, а не оживляти `send`-піном заради відсотка. Знімати НЕ можна —
+    # у день SEC.1 вона знадобиться, і `else raise ArgumentError` до того часу тримає
+    # SFC гучно. Ліхтар на подію: hold-пін ("тримає SFC-мінт") почервоніє в мить зняття
+    # гарда — грепай DOC-T.89, щоб зняти обидва надгробки одним комітом.
     when "forest_coin" then ENV.fetch("FOREST_COIN_CONTRACT_ADDRESS")
     else raise ArgumentError, "Невідомий тип токена: #{token_type}"
     end
@@ -202,6 +233,10 @@ class BlockchainMintingService < ApplicationService
     # свіжий диспатч = усі tx у nil-групі → 1 батч → 1 виклик (без gas-регресу).
     archive_groups = Mrv::TelemetryArchiveBatchService.group(
       txs, token_type: token_type,
+      # [DOC-T.89 §B.4 leave] else-гілка недосяжна за тим самим гардом. ⛔ НЕ спрощувати
+      # до голого `dynamic_tax_rate`: у день SEC.1 це мовчки запише carbon-ставку 2% в
+      # archive-артефакт SFC-батчу — а `archive_root` уже запінений на IPFS, переписати
+      # не можна. Тиха міна там, де сьогодні порожня гілка.
       tax_rate: token_type == "carbon_coin" ? dynamic_tax_rate : nil
     )
 
@@ -627,9 +662,28 @@ class BlockchainMintingService < ApplicationService
     BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, (confirm_at || tx.created_at).iso8601)
   end
 
+  # 🔴 [DOC-T.89, ⚖️ 2026-08-26] Страхова емісія дістає ВЛАСНИЙ префікс.
+  #
+  # Доти `identifier_for` віддавав той самий `tree.did` і за верифікований ріст, і за
+  # страховий випадок, а subgraph зберігає це поле як є й додає суму до `totalMinted`
+  # БЕЗ гілкування — тобто зовнішній аудитор, ESG-покупець і `chain_audit_delta` не
+  # відділяли «намінтили за вимір» від «намінтили за збиток». Для `MRV.1` це гірше за
+  # незручність: lineage payout-мінта веде до вимірів, яких не було.
+  #
+  # Форма запозичена в податку (`TAX_BATCH_…`) — префікс на тому самому полі, без зміни
+  # ABI. ⏳ Ціна рішення асиметрична в ЧАСІ: сьогодні нічого не задеплоєно (SEC.1
+  # pending), тож це один рядок; після mainnet — міграція формату on-chain події з
+  # розривом історії. Саме тому робиться ЗАРАЗ, а не «коли знадобиться».
+  INSURANCE_MINT_PREFIX = "INS_"
+
   def identifier_for(tx)
     tree = tx.wallet&.tree
-    tx.token_type == "carbon_coin" ? (tree&.did || "ORG_#{tx.wallet&.organization_id}") : "CLUSTER_#{tree&.cluster_id || 'GLOBAL'}"
+    base = if tx.token_type == "carbon_coin"
+      tree&.did || "ORG_#{tx.wallet&.organization_id}"
+    else
+      "CLUSTER_#{tree&.cluster_id || 'GLOBAL'}"
+    end
+    tx.sourceable_type == "ParametricInsurance" ? "#{INSURANCE_MINT_PREFIX}#{base}" : base
   end
 
   def to_wei(amount)

@@ -107,8 +107,18 @@ end
 
         described_class.call_batch([ txc.id, txf.id ])
 
-        expect(txc.reload.status).to eq("pending") # carbon held
-        expect(txf.reload.status).to eq("sent")    # forest minted
+        # 🔴 [DOC-T.89] Доти цей приклад доводив ізоляцію end-to-end: carbon held ⊥ SFC
+        # ЗАМІНЧЕНО. Після гарда активації governance SFC не мінтиться НІКОЛИ, тож
+        # інвертувати умову не можна — приклад став би зеленим із ДВОХ причин одразу
+        # (circuit tripped ⊥ SFC-гард), тобто вакуумним щодо самої ізоляції.
+        # Ізоляція лишається доказовною на рівні ПРЕДИКАТА: він per-token і від гарда
+        # не залежить. End-to-end доказ через SFC-двері повернеться разом із SEC.1.
+        expect(txc.reload.status).to eq("pending") # carbon held circuit-breaker'ом
+        expect(txf.reload.status).to eq("pending") # forest held DOC-T.89-гардом, не circuit'ом
+
+        service = described_class.new(txc.id)
+        expect(service.send(:mint_circuit_broken?, "carbon_coin")).to be(true)
+        expect(service.send(:mint_circuit_broken?, "forest_coin")).to be(false)
       end
     end
 
@@ -698,7 +708,13 @@ end
   end
 
   describe "forest_coin transaction" do
-    it "processes a forest_coin transaction using the correct contract" do
+    # 🔴 [DOC-T.89, ⚖️ 2026-08-26] Приклад ПЕРЕВЕРНУТО, і це не «фікс тесту»: доти він
+    # доводив, що SFC мінтиться правильним контрактом. Присуд заблокував SFC-мінт до
+    # активації governance (SEC.1) — quorum Governor'а рахується від `totalSupply` при
+    # нульовому genesis-supply, тож перші 10k SFC дають своєму власникові 100% голосів,
+    # а єдиний живий writer сьогодні — страхова виплата (голоси ЗА ЗБИТОК, без зняття).
+    # Тепер приклад стереже сам гард; контракт-резолв нижче по методу недосяжний.
+    it "НЕ мінтить forest_coin до активації governance — tx лишається :pending" do
       ENV["FOREST_COIN_CONTRACT_ADDRESS"] = "0x" + "1" * 40
 
       tree = create(:tree)
@@ -712,8 +728,76 @@ end
 
       described_class.call(tx.id)
 
-      tx.reload
-      expect(tx.status).to eq("sent")
+      expect(mock_client).not_to have_received(:transact)
+      expect(tx.reload.status).to eq("pending")
+    end
+  end
+
+  # 🔴 [DOC-T.89, ⚖️ 2026-08-26] Страхова емісія мусить бути ВІДРІЗНЕННОЮ on-chain.
+  # Доти `identifier_for` віддавав той самий tree-DID і за верифікований ріст, і за
+  # страховий випадок, а subgraph зберігає поле як є й додає суму до `totalMinted`
+  # без гілкування — тобто аудитор не відділяв «намінтили за вимір» від «намінтили
+  # за збиток», а MRV-lineage payout-мінта вів до вимірів, яких не було.
+  describe "attribution of insurance-sourced mints [DOC-T.89]" do
+    it "префіксує ідентифікатор страхового мінту, лишаючи звичайний недоторканим" do
+      tree = create(:tree)
+      wallet = tree.wallet
+      wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+      insurance = create(:parametric_insurance, organization: wallet.organization, cluster: tree.cluster)
+
+      growth_tx = wallet.blockchain_transactions.create!(
+        amount: 10, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address
+      )
+      payout_tx = wallet.blockchain_transactions.create!(
+        amount: 10, token_type: :carbon_coin, status: :pending,
+        to_address: wallet.crypto_public_address, sourceable: insurance
+      )
+
+      service = described_class.new(growth_tx.id)
+      expect(service.send(:identifier_for, growth_tx)).to eq(tree.did)
+      expect(service.send(:identifier_for, payout_tx)).to eq("INS_#{tree.did}")
+    end
+
+    # ⚠️ Гілка `ORG_…` досяжна НЕ через гаманець без дерева (`Wallet belongs_to :tree`
+    # без `optional`, тож такого не буває), а через транзакцію без ГАМАНЦЯ — це
+    # cluster-sourced гроші [ARCH.98]. Пін тримає саме цей шлях, інакше гілка
+    # читалася б як мертва й перший рефактор зняв би її.
+    it "падає на org-форму для транзакції без гаманця (cluster-sourced)" do
+      tree = create(:tree)
+      tx = BlockchainTransaction.create!(
+        wallet: nil, cluster_id: tree.cluster_id, amount: 1,
+        token_type: :carbon_coin, status: :pending, to_address: "0x" + "e" * 40
+      )
+
+      service = described_class.new(tx.id)
+      expect(service.send(:identifier_for, tx)).to eq("ORG_")
+    end
+
+    # [DOC-T.89] Цей приклад пінить інкремент у `dispatch_archive_group` — звичайний
+    # батч-шлях. Близнюк у `send_clean_batch` має власний пін (binary-search context
+    # нижче): один коментар над одним прикладом не свідчить про два різні тракти.
+    # ⛔ Дві гілки, які гард лишив недосяжними (резолв SFC-контракту і `tax_rate: nil`),
+    # тут НЕ пінені й пінитись не мають: `04_06 §B.4` велить financial-safety-defensive
+    # лишати з поясненням, а не оживляти `send`-піном заради відсотка (§A.4 BP 16-17).
+    # Їхній надгробок стоїть у самому сервісі, поруч із гардом.
+    it "не інкрементує лічильник податку, коли пул не потребує поповнення" do
+      allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
+      allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+      tree_a = create(:tree)
+      tree_b = create(:tree)
+      [ tree_a, tree_b ].each do |t|
+        t.wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+      end
+      txs = [ tree_a, tree_b ].map do |t|
+        t.wallet.blockchain_transactions.create!(
+          amount: 10, token_type: :carbon_coin, status: :pending,
+          to_address: t.wallet.crypto_public_address
+        )
+      end
+
+      expect { described_class.call_batch(txs.map(&:id)) }
+        .not_to(change { SilkenNet::Metrics::TAX_COLLECTED_TOTAL.get(labels: { token_type: "carbon_coin" }) })
     end
   end
 
@@ -807,16 +891,18 @@ end
         tx2.update_column(:token_type, "forest_coin")
       end
 
-      it "does not apply dynamic tax for forest_coin" do
-        allow(mock_client).to receive(:transact) do |_c, _m, recipients, amounts, _identifiers, **_|
-          expect(recipients.size).to eq(2)
-          expect(amounts.size).to eq(2)
-          fake_tx_hash
-        end
+      # ⚠️ [DOC-T.89] Твердження «SFC не оподатковується» лишається ІСТИННИМ, але доводити
+      # його батч-формою більше не можна: SFC не доходить до `build_batch_arrays` взагалі —
+      # гард активації governance відсікає раніше. Приклад переорієнтовано на те, що
+      # реально спостережне сьогодні, інакше він був би зеленим із ДВОХ причин одразу
+      # (не оподатковано ⊥ не відправлено) — тобто вакуумним.
+      it "не доходить до податкової гілки — SFC відсічено гардом раніше" do
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
 
         described_class.call_batch([ tx1.id, tx2.id ])
 
-        expect(mock_client).to have_received(:transact)
+        expect(mock_client).not_to have_received(:transact)
+        expect([ tx1.reload.status, tx2.reload.status ]).to all(eq("pending"))
       end
     end
 
@@ -1195,6 +1281,34 @@ end
         transactions.each do |tx|
           expect(tx.reload.status).to eq("sent")
         end
+      end
+    end
+
+    # [DOC-T.89] Інкрементів `TAX_COLLECTED_TOTAL` у сервісі ДВА: у `dispatch_archive_group`
+    # (звичайний батч) і близнюк у `send_clean_batch` — той досяжний ЛИШЕ через
+    # binary-search, тож пін звичайного шляху про нього не свідчить нічого. Глобальний
+    # `before` (:30) стабить `balanceOf → 0`, тобто вся сюїта живе з ПОРОЖНІМ пулом і
+    # вправляє лише гілку «податок є». Тут — дзеркальна: пул повний, податку немає.
+    context "when the insurance pool needs no funding" do
+      before do
+        first_call = true
+        allow(mock_client).to receive(:call).with(anything, "batchMint", anything, anything, anything, anything, anything) do |*_args|
+          if first_call
+            first_call = false
+            raise StandardError, "execution reverted: KYC not approved"
+          end
+          nil # sub-batch dry-runs succeed → чистий sub-batch іде в send_clean_batch
+        end
+        allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(false)
+      end
+
+      it "не інкрементує лічильник податку на чистому sub-batch" do
+        allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+
+        expect { described_class.call_batch(transactions.map(&:id)) }
+          .not_to(change { SilkenNet::Metrics::TAX_COLLECTED_TOTAL.get(labels: { token_type: "carbon_coin" }) })
+
+        expect(transactions.map { |tx| tx.reload.status }).to all(eq("sent"))
       end
     end
 

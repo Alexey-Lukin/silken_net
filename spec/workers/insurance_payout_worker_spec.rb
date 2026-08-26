@@ -29,6 +29,24 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
     silence_side_effects!(:satellite_verification)
   end
 
+  # [DOC-T.89] Гард у мінт-лійці спрацьовує ПІСЛЯ `pay!`, тож без цього відсікання
+  # поліс став би `:paid`, `INSURANCE_PAYOUT_SUCCESS_TOTAL` зріс би, а грошей не пішло б —
+  # система засвідчила б виплату, якої не було. Пін стереже саме порядок, не сам факт.
+  context "when the policy pays in SFC (forest_coin)" do
+    let(:insurance) do
+      create(:parametric_insurance, :triggered, cluster: cluster,
+             organization: organization, token_type: :forest_coin)
+    end
+
+    it "відхиляє виплату до pay!: поліс лишається :triggered, транзакції немає" do
+      expect { described_class.new.perform(insurance.id) }
+        .not_to change(BlockchainTransaction, :count)
+
+      expect(insurance.reload.status).to eq("triggered")
+      expect(BlockchainMintingService).not_to have_received(:call)
+    end
+  end
+
   it "memoizes the kill-switch flag — SystemParameter is read once per worker instance" do
     worker = described_class.new
     allow(SystemParameter).to receive(:current)
