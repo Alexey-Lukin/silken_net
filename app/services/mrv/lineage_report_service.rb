@@ -184,7 +184,17 @@ module Mrv
           to_address: tx.to_address, created_at: tx.created_at.utc.iso8601(6)
         },
         policy: { type: tx.sourceable_type, id: tx.sourceable_id },
-        audit_anchor_tree_did: tx.wallet&.tree&.did,
+        # ⚠️ Без `&.` — і обидві гарантії названо, як велить `04_06 §B.5` («завжди
+        # перевіряй ГАРАНТІЮ перед тим, як назвати `&.` мертвим»): вибірка тут —
+        # виключно `sourceable_type: ParametricInsurance`, а їх пише ОДИН писач
+        # (`InsurancePayoutWorker`), який без `audit_wallet` до створення рядка не
+        # доходить взагалі (early-return); `wallets.tree_id` — `NOT NULL`.
+        # 🔴 І це не лише про лічильник гілок: у ДОКАЗОВОМУ пакеті тихий `null` у
+        # єдиному полі, що звʼязує виплату з деревом, гірший за гучний збій — його
+        # ніхто не продифить у великому JSON, а гейта на «якір порожній» немає.
+        # Тобто якщо гарантія колись впаде, аудитор мусить дізнатись про це відразу,
+        # а не отримати пакет із мовчазною дірою в ланцюзі свідчень.
+        audit_anchor_tree_did: tx.wallet.tree.did,
         on_chain_identifier_prefix: BlockchainMintingService::INSURANCE_MINT_PREFIX,
         lineage: "none_by_construction"
       }

@@ -291,6 +291,32 @@ RSpec.describe Treasury::MonitorService do
         end
       end
 
+      context "when NOTHING recovered — усі п'ять пар лишились критичними" do
+        before do
+          allow(mock_evm_client).to receive(:get_balance).and_return(critical_balance)
+          # Solana має власний тракт (HTTP RPC, не Eth::Client) — без нього прохід
+          # мав би одну НЕкритичну пару, і резолвер увійшов би в тіло циклу.
+          allow(Web3::HttpClient).to receive(:post).and_return(
+            instance_double(Web3::HttpClient::Response,
+                            parsed_body: { "result" => { "value" => 1_000_000 } })
+          )
+        end
+
+        # 🔦 Дзеркало ліхтаря «не ширший за ключ дедупу», але з іншого боку: там
+        # резолвер не сміє закрити ЧУЖИЙ рід, тут — не сміє закрити нічий. Прохід,
+        # у якому не одужав НІХТО, мусить лишити всі висячі тривоги стояти: інакше
+        # найгірший стан (усі оракули порожні) виглядав би як загальне одужання.
+        it "не закриває жодного висячого алерта — резолверу нічого закривати" do
+          minter = hanging_oracle_alert(network: "polygon", signer: "minter")
+          rewards = hanging_oracle_alert(network: "celo", signer: "rewards")
+
+          described_class.call
+
+          expect(minter.reload.status).to eq("active")
+          expect(rewards.reload.status).to eq("active")
+        end
+      end
+
       context "with the mint-volume detector" do
         before { allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance) }
 

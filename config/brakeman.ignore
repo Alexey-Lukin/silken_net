@@ -1,30 +1,30 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "3c29683f6b2ae5042a60b7158e2d71fe83b53bfc5d9c053f26d6a1fdf8344e57",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain burning service (INF.22: dedicated ORACLE_SLASHER_PRIVATE_KEY, fallback chain removed; the key derives from Eth::Key.address, never user input)."
+      "fingerprint": "965acb5849720e216bd24db753af56c9366521d4a6a12665f21b038b3b6f1e33",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain burning service (INF.22: dedicated ORACLE_SLASHER_PRIVATE_KEY, fallback chain removed; the key derives from Eth::Key.address, never user input). [SEC.17] The fingerprint moved because the address now comes through the Web3::OracleSigner seam instead of a direct Eth::Key call — the expression changed, the grounds for the ignore did not."
     },
     {
-      "fingerprint": "b988c2dbcafbefd862b1efa58a7ab995efc263a91efe91eecbc3c65cb9258b27",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain minting service; the key derives from Eth::Key.address, never user input. [ARCH.106] The TTL now lives in the MINT_LOCK_TTL constant rather than a literal — deliberately no number here: this fingerprint is keyed on the expression, so a note that restates the value goes stale in exactly the pass that re-fingerprints it (the previous note still said '30s to 120s' after the value moved)."
+      "fingerprint": "5b88435adb1e5165d1804612b6bca650e9109d69b60d01b268e493a41d9d0386",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is used for the Redis key name in blockchain minting service; the key derives from Eth::Key.address, never user input. [ARCH.106] The TTL now lives in the MINT_LOCK_TTL constant rather than a literal — deliberately no number here: this fingerprint is keyed on the expression, so a note that restates the value goes stale in exactly the pass that re-fingerprints it (the previous note still said '30s to 120s' after the value moved). [SEC.17] Re-fingerprinted again when the signer moved behind the Web3::OracleSigner seam — this is the second refactor to invalidate these five entries, and both times the breach surfaced only in CI, since no local hook runs brakeman."
     },
     {
-      "fingerprint": "291c420b3b7cce44791c0f3d0b15625b917dd925987da32022dab8e3acd776aa",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Celo reward service (ARCH.50: chain-prefixed lock; INF.22: fallback chain removed, dedicated ORACLE_CELO_PRIVATE_KEY only; the key derives from Eth::Key.address, never user input)."
+      "fingerprint": "5491eff8051a01293f4c9b63079b4a7788e87cb672680521d74759f15fabad50",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Celo reward service (ARCH.50: chain-prefixed lock; INF.22: fallback chain removed, dedicated ORACLE_CELO_PRIVATE_KEY only; the key derives from Eth::Key.address, never user input). [SEC.17] The fingerprint moved because the address now comes through the Web3::OracleSigner seam instead of a direct Eth::Key call — the expression changed, the grounds for the ignore did not."
     },
     {
-      "fingerprint": "26413751ef0f84ed1d6b10b25a5ca52d1538d880be332616ad47c6cd8796a5d8",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Etherisc claim service (ARCH.49 nonce-serialization; INF.22: dedicated ORACLE_ETHERISC_PRIVATE_KEY replaced the shared base-EOA; the key derives from Eth::Key.address, never user input)."
+      "fingerprint": "c4a3e2bb3ffbea7d31691399123b3ea7b2128dc61dcf6c56cad8a23dd79525cb",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in Etherisc claim service (ARCH.49 nonce-serialization; INF.22: dedicated ORACLE_ETHERISC_PRIVATE_KEY replaced the shared base-EOA; the key derives from Eth::Key.address, never user input). [SEC.17] The fingerprint moved because the address now comes through the Web3::OracleSigner seam instead of a direct Eth::Key call — the expression changed, the grounds for the ignore did not."
     },
     {
-      "fingerprint": "4e2b579766af173d1566118c4be4a877d34688191a4514a6374402cb94986c5d",
-      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in PuroEarth passport service (ARCH.49 nonce-serialization; INF.22: dedicated ORACLE_PURO_PRIVATE_KEY replaced the shared base-EOA; the key derives from Eth::Key.address, never user input)."
+      "fingerprint": "6e90929d0f2b6bd0e77546601121fb893de2f10d903e1c375edef0e544dc6a89",
+      "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in PuroEarth passport service (ARCH.49 nonce-serialization; INF.22: dedicated ORACLE_PURO_PRIVATE_KEY replaced the shared base-EOA; the key derives from Eth::Key.address, never user input). [SEC.17] The fingerprint moved because the address now comes through the Web3::OracleSigner seam instead of a direct Eth::Key call — the expression changed, the grounds for the ignore did not."
     },
     {
       "fingerprint": "e20e6bdeb0ca4f73c441c913ba78b013155d0e5a5b0cf7c3499f255f5219941e",
       "note": "Marshal.load is guarded by SHA256 integrity verification (verify_model_integrity!). The .marshal file is generated exclusively by the internal ai:train rake task, never from external input."
     }
   ],
-  "updated": "2026-07-10 13:00:00 +0000",
-  "brakeman_version": "8.0.5"
+  "updated": "2026-08-26 21:00:00 +0000",
+  "brakeman_version": "8.0.6"
 }

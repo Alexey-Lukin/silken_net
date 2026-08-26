@@ -87,6 +87,37 @@ RSpec.describe InsurancePayoutWorker, type: :worker do
         .with(kind_of(Integer), created_at_span: kind_of(Time)) # [S6.16] partition-prune hint
     end
 
+    # [INF.26] Чисельник SLO рахує РЕЗУЛЬТАТ, не виклик — і пін тут навмисно ПАРНИЙ.
+    # Доти інкремент стояв одразу за сервісом і стверджував лише «не кинуло винятку»,
+    # тож панель «Money-Path Success Rate» була структурно приліплена до 1.0. Один
+    # приклад цього не тримає: «рахує на broadcast'і» лишився б зеленим і на старому
+    # безумовному інкременті. Дискримінатором є ДРУГИЙ приклад — той, де сервіс
+    # повертає МОВЧКИ (KYC-фільтр · SEC.13 · ARCH.62 circuit · ambiguous-ескалація),
+    # і лічильник СТОЯТЬ мусить.
+    it "рахує виплату лише коли мінт справді пішов у мемпул (status→sent)" do
+      allow(BlockchainMintingService).to receive(:call) do |tx_id, **|
+        BlockchainTransaction.find(tx_id).mark_as_sent!("0x" + "cd" * 32)
+      end
+      counter = SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL
+      before_count = counter.get.to_i
+
+      described_class.new.perform(insurance.id)
+
+      expect(counter.get.to_i).to eq(before_count + 1)
+    end
+
+    it "НЕ рухає чисельник, коли сервіс повернувся мовчки (tx лишився :pending)" do
+      # Дефолтний стаб `BlockchainMintingService.call` — no-op, тобто рівно та тиха
+      # відмова, на якій дефект і був вибірковим: про неї нема кому доповісти.
+      counter = SilkenNet::Metrics::INSURANCE_PAYOUT_SUCCESS_TOTAL
+      before_count = counter.get.to_i
+
+      described_class.new.perform(insurance.id)
+
+      expect(counter.get.to_i).to eq(before_count)
+      expect(BlockchainTransaction.last.status).to eq("pending")
+    end
+
     context "with the INS.2 reserve gate" do
       it "holds the payout in manual_review WITHOUT minting when the reserve gate fails" do
         allow(Insurance::ReserveGate).to receive(:call).and_return(
