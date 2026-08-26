@@ -54,6 +54,7 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 21. A device-side "neutral" fallback constant landed on the MAXIMUM of the money output — a shipped latent defect (no fleet, no incident), and the fix leaves a NEW wire pair every money consumer must know — **when you choose a fallback constant, substitute it through the WHOLE chain and look at what it lands on — a "neutral" input is routinely an extremum of the output**
 22. «Скільки намінтовано» рахують ТРИ незалежні поверхні, вони НЕ взаємозамінні, і дві з них подаються на одному екрані — **перш ніж підставити «живе джерело» замість мертвого, спитай не «чи воно правдиве», а «чи про ТУ САМУ множину»**
 23. SFC не мінтиться взагалі — і заборона стоїть у ДВОХ місцях навмисно, бо одного мало
+24. Третя вісь грошового рядка — не одиниця й не напрямок, а ВИБІРКА: хто обирає, які дані оракул узагалі побачить — **Рефлекс перед будь-яким оракулом, агрегатом або вікном: спитай не «чи можна підробити показник», а «ХТО КОНТРОЛЮЄ ВИБІРКУ» — відповідь на перше не каже про друге нічого**
 
 <!-- /WEB3-GOTCHAS-INDEX -->
 

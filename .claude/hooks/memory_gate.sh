@@ -267,7 +267,7 @@ rb_dark() {
 # moved VERBATIM and the home kept compressed imperatives + routers.
 # 2026-08-23: 145 → 146 — `log_verdict_grounds.md`, twin for
 # `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-152}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-153}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
