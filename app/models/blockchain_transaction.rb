@@ -284,6 +284,16 @@ class BlockchainTransaction < ApplicationRecord
   # читатиме легальне погашення як фрод. Сьогодні латентно — ESG-рейка має нуль
   # enqueue-сайтів; озброюється рівно тим комітом, що її дротує → `00_07` ARCH.95.
   #
+  # 🔴 **Рахує ЛИШЕ `:confirmed`, і межа несуча** [DOC-T.89, названо 2026-08-26]:
+  # `:manual_review` канон оголошує age-unbounded BY DESIGN, і саме туди їде
+  # ambiguous-broadcast batchMint («міг landed»). Отже монети, що ЙМОВІРНО існують
+  # on-chain, для бази слешингу, L1-якоря і org/cluster-поверхонь дорівнюють нулю
+  # НАЗАВЖДИ — доки людина не розсудить. Напрямок помилки безпечний (недо-, не
+  # над-облік), але він не нульовий, і жоден дім цього доти не називав.
+  # ⊕ Сиблінг: `KlimaDao::RetirementService` пише `:sent` і НЕ планує
+  # `BlockchainConfirmationWorker`, тож гард `retirable_scc` не бачить щойно
+  # зробленого погашення, поки його не підбере sweeper.
+  #
   # Вилучення з обігу теж `carbon_coin` і теж доходить до `:confirmed`, але on-chain
   # ЗМЕНШУЄ supply — тож сумувати його позитивно роздуває результат на 2×burn.
   # Причин вилучення ДВІ: slash (`BlockchainBurningService#create_slash_intent!`)
