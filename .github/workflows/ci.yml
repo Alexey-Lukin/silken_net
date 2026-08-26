@@ -695,6 +695,20 @@ jobs:
       - name: Setup Rails test environment
         uses: ./.github/actions/setup-rails-test
 
+      # гіпотетична: файл падав `NameError` із 2026-08-23 і три доби лишався
+      # непоміченим, бо його читають ПʼЯТЕРО (`system_parameter_delivery_spec`,
+      # `seeded_tree_families_lorenz_alignment_spec`, `spdx_headers_spec`,
+      # `governance_bounds_sync.rb`, `offering_lexicon_check.rb`) — усі як ТЕКСТ, і
+      # виконує НУЛЬ. Пʼять зелених гейтів на файлі, який неможливо завантажити.
+      # ⚠️ Стоїть ПЕРЕД `Run tests` навмисно: наступний крок робить власний
+      # `db:test:prepare`, тобто скидає БД, і засіяні рядки не течуть у сюїту.
+      - name: Seeds must actually LOAD (db:seed executes, not just parses)
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/silken_net_test
+          REDIS_URL: redis://localhost:6379/0
+        run: bin/rails db:test:prepare && bin/rails db:seed
+
       - name: Run tests
         env:
           RAILS_ENV: test
