@@ -43,7 +43,8 @@ module Etherisc
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       # [INF.22] Dedicated Etherisc-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
       # E.2-ізоляція blast-radius. Ключ інжектиться при активації insurance-шляху (06_04 §2.1).
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_ETHERISC_PRIVATE_KEY"))
+      # [SEC.17] Деривація — через seam `Web3::OracleSigner` (ENV-дефолт незмінний).
+      signer = Web3::OracleSigner.for(:etherisc)
 
       contract_address = ENV.fetch("ETHERISC_DIP_CONTRACT_ADDRESS")
       contract = Eth::Contract.from_abi(
@@ -63,11 +64,11 @@ module Etherisc
       # взято → transact не виконувався → LockTimeout пробрасується для Sidekiq-retry
       # (idempotency double-claim уже закрита ARCH.45 у воркері).
       tx_hash = nil
-      lock_key = "lock:web3:oracle:#{oracle_key.address}"
+      lock_key = "lock:web3:oracle:#{signer.address}"
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
-        tx_hash = client.transact(
-          contract, "triggerClaim", policy_id,
-          sender_key: oracle_key, legacy: false
+        tx_hash = signer.transact(
+          client, contract, "triggerClaim", policy_id,
+          legacy: false
         )
       end
 

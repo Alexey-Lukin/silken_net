@@ -135,7 +135,8 @@ module KlimaDao
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       # [INF.22] Dedicated Klima-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
       # E.2-ізоляція blast-radius. Ключ інжектиться при активації Klima-шляху (06_04 §2.1).
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_KLIMA_PRIVATE_KEY"))
+      # [SEC.17] Деривація — через seam `Web3::OracleSigner` (ENV-дефолт незмінний).
+      signer = Web3::OracleSigner.for(:klima)
 
       scc_contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
       klima_contract_address = ENV.fetch("KLIMA_RETIREMENT_CONTRACT")
@@ -157,15 +158,15 @@ module KlimaDao
       amount_in_wei = (@scc_to_retire * 10**TOKEN_DECIMALS).to_i
 
       # Step 1: Approve KlimaDAO контракту на витрату SCC
-      client.transact(
-        scc_contract, "approve", klima_contract_address, amount_in_wei,
-        sender_key: oracle_key, legacy: false
+      signer.transact(
+        client, scc_contract, "approve", klima_contract_address, amount_in_wei,
+        legacy: false
       )
 
       # Step 2: Виклик retire на KlimaDAO контракті
-      tx_hash = client.transact(
-        klima_contract, "retire", amount_in_wei,
-        sender_key: oracle_key, legacy: false
+      tx_hash = signer.transact(
+        client, klima_contract, "retire", amount_in_wei,
+        legacy: false
       )
 
       tx_hash

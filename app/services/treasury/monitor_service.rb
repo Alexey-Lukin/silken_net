@@ -358,11 +358,15 @@ module Treasury
         Web3::RpcConnectionPool.client_for(config[:env_rpc_key])
       end
 
+      # ⛔ [SEC.17] СВІДОМО не через `Web3::OracleSigner.for` — цей прохід світить УСІ
+      # сім гаманців, включно з дормантними aux-підписантами (etherisc/puro/klima), чиї
+      # ключі на деплой-поверхні відсутні за побудовою. `OracleSigner` б'є `KeyError`
+      # (fail-loud — правильно на money-шляху), а тут відсутній ключ = «гаманець не
+      # активований», не збій: `ENV[..]` + blank-гард лишають 0 і свіп триває.
       private_key = ENV[config[:env_private_key]]
       return 0 if private_key.blank?
 
-      oracle_key = Eth::Key.new(priv: private_key)
-      client.get_balance(oracle_key.address)
+      client.get_balance(Web3::LocalEnvSigner.new(private_key).address)
     end
 
     # Solana: getBalance через JSON RPC

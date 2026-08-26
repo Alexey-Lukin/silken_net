@@ -95,7 +95,8 @@ module PuroEarth
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL")
       # [INF.22] Dedicated Puro-підписант (легасі спільний ORACLE_PRIVATE_KEY retired) —
       # E.2-ізоляція blast-radius. Ключ інжектиться при активації passport-шляху (06_04 §2.1).
-      signing_key = Eth::Key.new(priv: ENV.fetch("ORACLE_PURO_PRIVATE_KEY"))
+      # [SEC.17] Деривація — через seam `Web3::OracleSigner` (ENV-дефолт незмінний).
+      signer = Web3::OracleSigner.for(:puro)
 
       contract = Eth::Contract.from_abi(
         name: "PuroEarthRegistry",
@@ -111,11 +112,11 @@ module PuroEarth
       # тож lock серіалізує лише конкурентні Puro-anchors. LockTimeout пробрасується
       # крізь anchor! (re-raise перед StandardError) для чистого Sidekiq-retry.
       tx_hash = nil
-      lock_key = "lock:web3:oracle:#{signing_key.address}"
+      lock_key = "lock:web3:oracle:#{signer.address}"
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
-        tx_hash = client.transact(
-          contract, "anchorPassport", tree_did, hash_bytes32,
-          sender_key: signing_key, legacy: false
+        tx_hash = signer.transact(
+          client, contract, "anchorPassport", tree_did, hash_bytes32,
+          legacy: false
         )
       end
       tx_hash

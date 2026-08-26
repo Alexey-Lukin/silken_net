@@ -201,13 +201,14 @@ module Ethereum
       end
 
       client = Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
-      anchor_key = Eth::Key.new(priv: ENV.fetch("ETHEREUM_ANCHOR_PRIVATE_KEY"))
+      # [SEC.17] Деривація — через seam `Web3::OracleSigner` (ENV-дефолт незмінний).
+      signer = Web3::OracleSigner.for(:anchor)
 
       # [BLOCKER-4] Inline guard clause — перевірка балансу ETH перед відправленням.
       # [INF.22] Threshold configurable через SystemParameter (governance-aware, 24h cache).
       min_eth = (SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH) || DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
       min_balance_wei = (min_eth * (10**18)).to_i
-      balance = client.get_balance(anchor_key.address)
+      balance = client.get_balance(signer.address)
       if balance < min_balance_wei
         anchor.update!(status: :failed, error_message: "Insufficient ETH balance: #{balance}")
         raise "🚨 [Ethereum L1] Insufficient anchor wallet balance: #{balance} wei " \
@@ -236,11 +237,10 @@ module Ethereum
       # on-chain запис (обидва майнились би; контракт revert'нув би дубль, але спалений gas +
       # брехливий :failed). Новий anchor → get_nonce (pending-tag) + persist; resume → nonce уже є,
       # get_nonce НЕ кликається → same-nonce re-broadcast (node: replace / already-known / nonce-too-low).
-      anchor.update!(nonce: client.get_nonce(anchor_key.address)) if anchor.nonce.nil?
+      anchor.update!(nonce: client.get_nonce(signer.address)) if anchor.nonce.nil?
 
-      tx_hash = client.transact(
-        contract, "storeStateRoot", root_bytes,
-        sender_key: anchor_key,
+      tx_hash = signer.transact(
+        client, contract, "storeStateRoot", root_bytes,
         nonce: anchor.nonce,
         legacy: false,
         gas_limit: gas_limit,
@@ -282,7 +282,7 @@ module Ethereum
         anchor.escalate_pending_ambiguous!(
           "Resume re-broadcast rejected (nonce #{anchor.nonce} already used: #{e.message.truncate(200)}) — " \
           "перший broadcast досяг мережі, tx_hash втрачено у crash; звірити storeStateRoot на etherscan за " \
-          "адресою #{anchor_key.address} nonce #{anchor.nonce}."
+          "адресою #{signer.address} nonce #{anchor.nonce}."
         )
         Rails.logger.warn "⚓ [ARCH.66] Resume ambiguous ##{anchor.id} (nonce #{anchor.nonce} spent) → " \
                           ":manual_review (tx_hash lost, оператор звіряє etherscan)."

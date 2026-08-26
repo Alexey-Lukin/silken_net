@@ -89,10 +89,11 @@ module Celo
       # [ARCH.50] Виділений Celo-підписант — ізолює blast-radius від Polygon-флоту (ARCH.49).
       # Легасі-fallback на спільний base retired [INF.22]. Чейни мають незалежні
       # nonce-простори, тож ключ — лише security.
-      oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_CELO_PRIVATE_KEY"))
+      # [SEC.17] Деривація — через seam `Web3::OracleSigner` (ENV-дефолт незмінний).
+      signer = Web3::OracleSigner.for(:celo)
 
       # [BLOCKER-1 FIX]: Guard clause — перевірка балансу оракула перед відправкою.
-      balance = client.get_balance(oracle_key.address)
+      balance = client.get_balance(signer.address)
       raise "🚨 [Celo] Критично низький баланс Оракула: #{balance}" if balance < MIN_ORACLE_BALANCE_WEI
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")
@@ -101,7 +102,7 @@ module Celo
       amount_in_wei = Web3::WeiConverter.to_wei(REWARD_AMOUNT, TOKEN_DECIMALS)
       recipient = organization.crypto_public_address
       # [ARCH.49/ARCH.50] Chain-prefixed lock key → Celo не контендить хибно з Polygon base-key.
-      lock_key = "lock:web3:celo:oracle:#{oracle_key.address}"
+      lock_key = "lock:web3:celo:oracle:#{signer.address}"
 
       intent = nil
       begin
@@ -113,9 +114,9 @@ module Celo
           return if reward_already_sent?
 
           intent = create_reward_intent!(recipient, insight: insight)
-          tx_hash = client.transact(
-            contract, "transfer", recipient, amount_in_wei,
-            sender_key: oracle_key, legacy: false
+          tx_hash = signer.transact(
+            client, contract, "transfer", recipient, amount_in_wei,
+            legacy: false
           )
           intent.mark_as_sent!(tx_hash) if tx_hash.present?
         end

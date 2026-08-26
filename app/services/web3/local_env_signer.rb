@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# frozen_string_literal: true
+
+require "eth"
+
+module Web3
+  # =========================================================================
+  # 🗝️ LOCAL ENV SIGNER (SEC.17 default backend)
+  # =========================================================================
+  # Обгортка над локальним `Eth::Key`, дерівованим із deploy-ENV — тобто
+  # рівно те, що money-сервіси робили інлайном. Жодної зміни поведінки:
+  # `sender_key:` у `client.transact`/`client.call` лишається ТИМ САМИМ
+  # `Eth::Key`-обʼєктом, решта kwargs проходить наскрізь недоторканою.
+  #
+  # 🔴 Клієнт — ПАРАМЕТР кожного виклику, ніколи не стан підписанта:
+  # `Web3::RpcConnectionPool.client_for` = per-thread кеш, тож підписант, що
+  # тримав би клієнта, дублював би той кеш (і пережив би `reset!`).
+  # =========================================================================
+  class LocalEnvSigner
+    # @param private_key [String] hex-приватник із deploy-ENV
+    def initialize(private_key)
+      # ⛔ Не прибирати: `Eth::Key.new(priv: nil)` НЕ падає — він тихо генерує
+      # ВИПАДКОВУ пару ключів. Тобто порожній/забутий ENV дав би валідного
+      # підписанта з чужою адресою: mint пішов би з нуль-балансного гаманця, а
+      # lock-key `lock:web3:oracle:<addr>` переїхав би на кожному рестарті.
+      raise ArgumentError, "private_key порожній — Eth::Key згенерував би ВИПАДКОВУ пару" if private_key.blank?
+
+      @key = Eth::Key.new(priv: private_key)
+    end
+
+    # 🔴 Повертає `Eth::Key#address` ВЕРБАТИМ (обʼєкт `Eth::Address`, не рядок).
+    # Значення інтерполюється у Kredis-ключ `lock:web3:oracle:#{address}` — це
+    # точка серіалізації nonce'ів ARCH.47 на money-path. Будь-яка нормалізація
+    # (`.to_s`, `.downcase`, checksum-фліп) ПЕРЕСУВАЄ цей ключ, тобто два
+    # процеси взяли б різні локи на одну адресу → колізія nonce.
+    def address
+      @key.address
+    end
+
+    # @param client [Eth::Client] per-thread клієнт мережі (параметр, не стан)
+    def transact(client, contract, function, *args, **kwargs)
+      client.transact(contract, function, *args, sender_key: @key, **kwargs)
+    end
+
+    # `eth_call`-симуляція (zero-gas). Ім'я `static_call`, бо `call` на Ruby-обʼєкті
+    # читалось би як proc-виклик.
+    # @param client [Eth::Client] per-thread клієнт мережі (параметр, не стан)
+    def static_call(client, contract, function, *args, **kwargs)
+      client.call(contract, function, *args, sender_key: @key, **kwargs)
+    end
+  end
+end

@@ -38,6 +38,15 @@ end
   let(:fake_tx_hash) { "0x" + "f" * 64 }
   let(:mock_client) { instance_double(Eth::Client) }
   let(:mock_key) { instance_double(Eth::Key, address: "0x" + "d" * 40) }
+
+  # [SEC.17] Білі-скриньки нижче кличуть ПРИВАТНІ методи напряму, а ті приймають
+  # тепер ПІДПИСАНТА, не голий `Eth::Key` — разом із сеймом змінився ТИП колаборанта
+  # у приватній сигнатурі. `Eth::Key` не має `transact`, тож verifying-double на нього
+  # відмовляє виклик; це не зміна поведінки, а зміна того, ЩО стоїть у слоті.
+  # ⚠️ І саме ця пара доводить behavior-preservation: `Eth::Key.new` застабано вище,
+  # тож підписант обгортає ТОЙ САМИЙ `mock_key`, а всі `sender_key: mock_key`
+  # очікування нижче лишаються чинними недоторканими.
+  let(:mock_signer) { Web3::OracleSigner.for(:minter) }
   let(:mock_contract) { instance_double(Eth::Contract) }
 
 
@@ -1123,7 +1132,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:mint_individual, mock_client, instance_double(Eth::Contract), mock_key, "carbon_coin", tx, "0x" + "0" * 64)
+          service.send(:mint_individual, mock_client, instance_double(Eth::Contract), mock_signer, "carbon_coin", tx, "0x" + "0" * 64)
         }.not_to raise_error
         expect(tx.reload.status).to eq("manual_review")
       end
@@ -1142,7 +1151,7 @@ end
         allow(mock_client).to receive(:transact).and_raise(Net::ReadTimeout, "timeout")
 
         expect {
-          service.send(:send_clean_batch, mock_client, instance_double(Eth::Contract), mock_key, "carbon_coin", txs, "0x" + "0" * 64)
+          service.send(:send_clean_batch, mock_client, instance_double(Eth::Contract), mock_signer, "carbon_coin", txs, "0x" + "0" * 64)
         }.not_to raise_error
         txs.each { |t| expect(t.reload.status).to eq("manual_review") }
       end
@@ -1827,17 +1836,17 @@ end
 
     it "delegates to mint_individual when there is exactly one clean tx" do
       allow(service).to receive(:mint_individual)
-        .with(mock_client, mock_contract, mock_key, "carbon_coin", tx, "0x" + "0" * 64)
+        .with(mock_client, mock_contract, mock_signer, "carbon_coin", tx, "0x" + "0" * 64)
 
-      service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [ tx ], "0x" + "0" * 64)
+      service.send(:send_clean_batch, mock_client, mock_contract, mock_signer, "carbon_coin", [ tx ], "0x" + "0" * 64)
 
       expect(service).to have_received(:mint_individual)
-        .with(mock_client, mock_contract, mock_key, "carbon_coin", tx, "0x" + "0" * 64).once
+        .with(mock_client, mock_contract, mock_signer, "carbon_coin", tx, "0x" + "0" * 64).once
       expect(mock_client).not_to have_received(:transact)
     end
 
     it "is a no-op for an empty txs array (defensive recursion guard)" do
-      expect { service.send(:send_clean_batch, mock_client, mock_contract, mock_key, "carbon_coin", [], "0x" + "0" * 64) }
+      expect { service.send(:send_clean_batch, mock_client, mock_contract, mock_signer, "carbon_coin", [], "0x" + "0" * 64) }
         .not_to raise_error
       expect(mock_client).not_to have_received(:transact)
     end
@@ -1850,7 +1859,7 @@ end
 
     it "returns immediately when half_txs is empty" do
       allow(service).to receive(:batch_dry_run_reverts?)
-      service.send(:process_half, mock_client, mock_contract, mock_key, "carbon_coin", [],
+      service.send(:process_half, mock_client, mock_contract, mock_signer, "carbon_coin", [],
                    [], [], "0x" + "0" * 64, depth: 0, original_batch_size: 6)
       expect(service).not_to have_received(:batch_dry_run_reverts?)
     end

@@ -202,7 +202,9 @@ class BlockchainBurningService < ApplicationService
     # [E.2 ROLE SEPARATION]: Окремий ключ для SLASHER_ROLE зменшує blast radius
     # при компрометації — мінтинг залишається під окремим ключем.
     # Легасі-fallback на спільний ORACLE_PRIVATE_KEY retired [INF.22] — ключ dedicated-only.
-    oracle_key = Eth::Key.new(priv: ENV.fetch("ORACLE_SLASHER_PRIVATE_KEY"))
+    # [SEC.17] Деривація живе в seam'і `Web3::OracleSigner` — E.2 mint⊥burn лишається
+    # роздільним ключем, лише дім деривації спільний.
+    signer = Web3::OracleSigner.for(:slasher)
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
@@ -241,7 +243,7 @@ class BlockchainBurningService < ApplicationService
     )
 
     # 3. ВИКОНАННЯ (The Verdict)
-    lock_key = "lock:web3:oracle:#{oracle_key.address}"
+    lock_key = "lock:web3:oracle:#{signer.address}"
 
     audit = nil
     begin
@@ -270,9 +272,9 @@ class BlockchainBurningService < ApplicationService
         # [CONTRACT.1] contextHash = bytes32(intent tx id) — subgraph/аудитор атрибутує
         # on-chain подію прямо до BlockchainTransaction (manual DAO-slash емітить нуль).
         context_hash = "0x" + audit.id.to_i.to_s(16).rjust(64, "0")
-        tx_hash = client.transact(
-          contract, "slashUpTo", investor_address, amount_in_wei, context_hash,
-          sender_key: oracle_key, legacy: false
+        tx_hash = signer.transact(
+          client, contract, "slashUpTo", investor_address, amount_in_wei, context_hash,
+          legacy: false
         )
       end
 
