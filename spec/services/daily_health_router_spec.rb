@@ -49,6 +49,31 @@ RSpec.describe DailyHealthRouter do
     end
   end
 
+  # 🔴 [SLASH-1, ⚖️ 2026-08-26] Дім величини «хто СПРАВДІ свідчив». Мовчазне дерево
+  # лишається `active`, але свідком не є — інакше його мовчання рахувалось би
+  # свідченням про виживання й розбавляло шкоду тих, хто свідчив.
+  describe "#witnessing_trees" do
+    it "counts trees that actually reported — not every active tree" do
+      loud = create(:tree, cluster: cluster)
+      create(:ai_insight, analyzable: loud, insight_type: :daily_health_summary,
+             target_date: target_date, stress_index: 0.9)
+      create_list(:tree, 5, cluster: cluster) # мовчать
+
+      expect(router.witnessing_trees).to eq(1)
+      expect(cluster.trees.active.count).to be >= 6 # ⊥ і саме в цьому вся різниця
+    end
+
+    it "counts a TREE once even with several insights (oracle-consensus rows)" do
+      loud = create(:tree, cluster: cluster)
+      %w[oracle_a oracle_b].each do |src|
+        create(:ai_insight, analyzable: loud, insight_type: :daily_health_summary,
+               target_date: target_date, stress_index: 0.9, model_source: src)
+      end
+
+      expect(router.witnessing_trees).to eq(1)
+    end
+  end
+
   describe "#critical_count" do
     it "counts insights at or above the given threshold" do
       trees = create_list(:tree, 3, cluster: cluster, status: :active)

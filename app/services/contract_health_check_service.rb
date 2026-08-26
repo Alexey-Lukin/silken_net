@@ -72,11 +72,18 @@ class ContractHealthCheckService < ApplicationService
     # (deceased/removed) розміру кластера НЕ питає — і не повинен: смерть дерева це прямий
     # факт, а не висновок із вибірки, тож вироджуватись там нічому. Причину там однаково
     # зважує чокпоінт `BlockchainBurningService` (cause-gate slash-vs-freeze).
-    if critical_insights_count.positive? && router.total_active_trees < (1 / slash_fraction)
-      return flag_insufficient_sample!(critical_insights_count, router.total_active_trees)
+    # 🔴 [SLASH-1, ⚖️ 2026-08-26] І ГАРД, і ТРИГЕР міряють тепер тих, хто СВІДЧИВ,
+    # а не всіх `active`. Переносити треба ОБИДВА разом: лишити гард на старій
+    # шкалі означало б відтворити [ARCH.95] — кластер зі 100 дерев і 99 мовчазними
+    # пройшов би поріг виродження (100 ≥ 5) і рахував би частку по ОДНОМУ дереву.
+    # ⊕ Побічно це й ліпший захист від масової тиші: зникнення свідків саме́ по
+    # собі опускає вибірку під поріг → `:insufficient_sample` → Field Audit, тобто
+    # людина, а не автоматичний вирок.
+    if critical_insights_count.positive? && router.witnessing_trees < (1 / slash_fraction)
+      return flag_insufficient_sample!(critical_insights_count, router.witnessing_trees)
     end
 
-    if critical_insights_count > router.total_active_trees * slash_fraction
+    if critical_insights_count > router.witnessing_trees * slash_fraction
       flag_degradation!(stress_threshold)
     else
       :healthy

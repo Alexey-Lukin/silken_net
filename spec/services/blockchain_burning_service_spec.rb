@@ -4,6 +4,26 @@
 require "rails_helper"
 
 RSpec.describe BlockchainBurningService do
+  # 🔴 [SLASH-1 §7, ⚖️ 2026-08-26] Статистичний вирок вимагає НЕвиродженої вибірки
+  # СВІДКІВ (≥ `1/slash_fraction` = 5 за дефолтних 0.2), інакше сервіс віддає `nil`
+  # → freeze + Field Audit. Доти фікстури будували «одне з двох», бо знаменником
+  # були ВСІ активні дерева — а мовчазне дерево рахувалось свідченням про виживання.
+  # Тепер пара «одне з двох» описує стан, у якому система свідомо ВІДМОВЛЯЄТЬСЯ
+  # судити, тож приклади нижче будують когорту з ТІЄЮ САМОЮ часткою — очікувані
+  # суми спалення від цього не рухаються, і саме тому вони лишились дослівними.
+  def witness_cohort!(cluster, critical:, healthy:, stress: 1.0, date: AiInsight.reporting_date)
+    Array.new(critical) do
+      create(:ai_insight, analyzable: create(:tree, cluster: cluster),
+             insight_type: :daily_health_summary,
+             target_date: date, stress_index: stress)
+    end
+    Array.new(healthy) do
+      create(:ai_insight, analyzable: create(:tree, cluster: cluster),
+             insight_type: :daily_health_summary,
+             target_date: date, stress_index: 0.1)
+    end
+  end
+
   let(:fake_tx_hash) { "0x#{'f' * 64}" }
   let(:mock_client)  { instance_double(Eth::Client) }
   let(:mock_key)     { instance_double(Eth::Key, address: "0x#{'d' * 40}") }
@@ -99,7 +119,8 @@ RSpec.describe BlockchainBurningService do
           tx_hash: "0x#{'c' * 64}"
         )
 
-        # 1 of 2 trees is critically stressed → damage_ratio = 0.5
+        # [SLASH-1] 3 критичні з 6 СВІДКІВ → та сама частка 0.5, але вибірка невироджена.
+        witness_cohort!(cluster, critical: 2, healthy: 3)
         create(:ai_insight,
                analyzable: tree,
                insight_type: :daily_health_summary,
@@ -152,7 +173,8 @@ RSpec.describe BlockchainBurningService do
           amount: 1000, token_type: :carbon_coin, status: :confirmed,
           to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
         )
-        # 1 of 2 trees at 0.9 (below the retired 1.0 ceiling) → damage 0.5, NOT critical=0 → 100%.
+        # [SLASH-1] 3 із 6 свідків на 0.9 → та сама частка 0.5, вибірка невироджена.
+        witness_cohort!(cluster, critical: 2, healthy: 3, stress: 0.9)
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
                target_date: AiInsight.reporting_date, stress_index: 0.9)
 
@@ -180,6 +202,7 @@ RSpec.describe BlockchainBurningService do
       # без `.distinct` critical=2 із двох рядків одного дерева дає damage 2/2 = 1.0 замість 0.5,
       # і `.min`-clamp маскує це як «повна загибель» замість «половина».
       it "не рахує два інсайти одного дерева як два дерева (розмір спалення)" do
+        witness_cohort!(cluster, critical: 2, healthy: 2) # [SLASH-1] 3 критичні з 6 свідків → частка 0.5 незмінна
         other_tree = create(:tree, cluster: cluster)
         other_tree.wallet.blockchain_transactions.create!(
           amount: 1000, token_type: :carbon_coin, status: :confirmed,
@@ -236,7 +259,10 @@ RSpec.describe BlockchainBurningService do
         )
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
                target_date: AiInsight.reporting_date, stress_index: 1.0)
-        # Дрейф колонки: обидва дерева ЖИВІ, а лічильник каже 0.
+        # [SLASH-1] 3 із 6 свідків → 0.5; лічильник лишається дрейфованим у нуль, і саме
+        # це доводить, що знаменник його БІЛЬШЕ НЕ ЧИТАЄ (він тепер із `daily_insights`).
+        witness_cohort!(cluster, critical: 2, healthy: 3)
+        # Дрейф колонки: дерева ЖИВІ, а лічильник каже 0.
         cluster.update_column(:active_trees_count, 0)
 
         described_class.call(organization.id, naas_contract.id)
@@ -261,6 +287,11 @@ RSpec.describe BlockchainBurningService do
                target_date: AiInsight.reporting_date, stress_index: 1.0)
         create(:ai_insight, analyzable: others.first, insight_type: :daily_health_summary,
                target_date: AiInsight.reporting_date, stress_index: 1.0)
+        # [SLASH-1] Решта вісім свідчать і здорові → множина свідків = 10, критичних 2.
+        others.drop(1).each do |t|
+          create(:ai_insight, analyzable: t, insight_type: :daily_health_summary,
+                 target_date: AiInsight.reporting_date, stress_index: 0.1)
+        end
         dead = create(:tree, cluster: cluster)
         dead.update!(status: :deceased)
 
@@ -270,6 +301,40 @@ RSpec.describe BlockchainBurningService do
           burn_amount = (2000 * ((2.0 / 10)**1.3)).ceil # 2 критичні з 10 ЖИВИХ
           expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
         end
+      end
+
+      # 🔴 [SLASH-1, ⚖️ 2026-08-26] ГОЛОВНИЙ пін доктрини: мовчання НЕ є свідченням
+      # про виживання. Мовчазне дерево в чисельник потрапити не може (немає інсайту),
+      # а в знаменнику стояло — і РОЗБАВЛЯЛО шкоду тих, хто справді свідчив.
+      # Сценарій: 6 дерев свідчать (3 критичні), ще 20 мовчать. Стара шкала дала б
+      # 3/26 ≈ 11.5%; чесна — 3/6 = 50%.
+      it "мовчазні дерева не рахуються ЗНАМЕННИКОМ — мовчання НЕ є свідченням про виживання" do
+        # Когорта — ЄДИНЕ джерело свідків: `tree` (носій мінту) свідомо лишається
+        # МОВЧАЗНИМ, тобто теж належить множині, яку доктрина виключає.
+        witness_cohort!(cluster, critical: 3, healthy: 3)
+        create_list(:tree, 20, cluster: cluster) # мовчать: жодного AiInsight
+
+        described_class.call(organization.id, naas_contract.id)
+
+        expect(mock_client).to have_received(:transact) do |_c, _m, _a, amount_in_wei, **_o|
+          # База спалення в ЦЬОМУ прикладі — 1000 (один мінт `tree`), не 2000:
+          # сусідні приклади додають другий мінт, цей ні. Частка 3/6, а НЕ 3/27.
+          burn_amount = (1000 * (0.5**1.3)).ceil
+          expect(amount_in_wei).to eq((burn_amount.to_f * (10**18)).to_i)
+        end
+      end
+
+      # 🔴 [SLASH-1 §7] Друга половина, без якої перша була б МНОЖНИКОМ: при виродженій
+      # вибірці свідків будь-яке одне критичне дерево дало б ≈100%. Нижче межі
+      # (`1/slash_fraction` = 5) статистичного вироку немає — freeze + Field Audit,
+      # рівно як ратифіковано для тригерного боку.
+      it "не судить статистично за виродженою вибіркою свідків — freeze, не 100%" do
+        create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
+               target_date: AiInsight.reporting_date, stress_index: 1.0)
+        create_list(:tree, 9, cluster: cluster) # мовчать → свідків рівно 1
+
+        expect(described_class.call(organization.id, naas_contract.id)).to eq(:frozen)
+        expect(mock_client).not_to have_received(:transact)
       end
 
       # 🔴 [⚖️ 2026-07-30] Знаменник source_tree-гілки = ліс ДО події. Дерево, за смерть якого
@@ -351,6 +416,7 @@ end
       # [ARCH.46] Date threading: damage is queried on the PASSED target_date, not a re-derived local_yesterday.
       it "queries AiInsight on the passed target_date, not local_yesterday (ARCH.46 date-threading)" do
         explicit_date = AiInsight.reporting_date - 1.day
+        witness_cohort!(cluster, critical: 4, healthy: 0, date: explicit_date) # [SLASH-1] когорта на ТІЙ САМІЙ даті
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
                target_date: explicit_date, stress_index: 1.0)
 
@@ -686,6 +752,7 @@ end
       # Evasion БЕЗ source_tree → context-гілка «кластер», не «дерево» (330-else). Потрібен
       # AiInsight, щоб damage_ratio був визначений (інакше freeze спрацював би до balanceOf).
       it "escalates evasion with cluster context (not tree) when there is no source_tree" do
+        witness_cohort!(cluster, critical: 4, healthy: 0) # [SLASH-1] невироджена вибірка
         create(:ai_insight, analyzable: tree, insight_type: :daily_health_summary,
                target_date: AiInsight.reporting_date, stress_index: 1.0)
         allow(mock_client).to receive(:call).and_return(0)
@@ -1176,6 +1243,7 @@ end
     let!(:wallet_burn) { tree_burn.wallet || create(:wallet, tree: tree_burn) }
 
     it "uses cluster.trees.active.first wallet as audit_wallet" do
+      witness_cohort!(cluster, critical: 4, healthy: 0) # [SLASH-1] невироджена вибірка
       create(:blockchain_transaction, wallet: wallet_burn, amount: 100, status: :confirmed)
       # [ARCH.46] critical AiInsight → damage via critical_count (no source_tree path still burns).
       create(:ai_insight, analyzable: tree_burn, insight_type: :daily_health_summary,
@@ -1295,6 +1363,7 @@ end
     end
 
     it "prefers AiInsight ratio over source_tree ratio" do
+      witness_cohort!(cluster, critical: 3, healthy: 0) # [SLASH-1] 5 свідків, частка 1.0 незмінна
       # AiInsight says 2/2 trees critical = 100% damage
       create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
              target_date: AiInsight.reporting_date, stress_index: 1.0)
@@ -1311,6 +1380,7 @@ end
     end
 
     it "caps damage_ratio at 1.0 maximum" do
+      witness_cohort!(cluster, critical: 3, healthy: 0) # [SLASH-1] 5 свідків, частка 1.0 незмінна
       # Even with many critical trees, ratio can't exceed 1.0
       create(:ai_insight, analyzable: tree1, insight_type: :daily_health_summary,
              target_date: AiInsight.reporting_date, stress_index: 1.0)

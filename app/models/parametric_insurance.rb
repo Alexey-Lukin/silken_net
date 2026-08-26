@@ -174,7 +174,14 @@ class ParametricInsurance < ApplicationRecord
     end
 
     # [BigDecimal]: точна арифметика — для страхування мікропохибка Float неприпустима.
-    damage_ratio = (BigDecimal(confirmed_anomalous_count.to_s) / router.total_active_trees * 100).round(2)
+    # 🔴 [SLASH-1, ⚖️ 2026-08-26] Знаменник — ті, хто СВІДЧИВ, а не всі `active`. Тут
+    # розбавлення працює в ПРОТИЛЕЖНИЙ бік, ніж на слешингу, і саме тому правка
+    # симетрична, а не «жорсткіша до власника»: мовчазні дерева занижували частку
+    # шкоди, тобто відсували поліс від виплати. Одна правка робить обидва вироки
+    # правдивішими — власник програє там, де сьогодні виграє незаслужено, і виграє
+    # там, де сьогодні недоотримує.
+    # ⚠️ Повна тиша сюди не доходить — її ловить `router.blackout?` вище (Field Audit).
+    damage_ratio = (BigDecimal(confirmed_anomalous_count.to_s) / router.witnessing_trees * 100).round(2)
 
     arm_candidate!(damage_ratio) if damage_ratio >= threshold_value
   end

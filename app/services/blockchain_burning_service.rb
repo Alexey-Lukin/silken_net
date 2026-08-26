@@ -545,7 +545,41 @@ class BlockchainBurningService < ApplicationService
     # активні дерева ⇒ `total_trees > 0`. З денормалізованим лічильником ця імплікація була б
     # НЕдоведеною — два джерела правди не дають виводити одне з одного.
     if critical_count.positive?
-      [ critical_count.to_f / total_trees, 1.0 ].min   # частка живого лісу
+      # 🔴 [SLASH-1, ⚖️ 2026-08-26] Знаменник — ті, хто СВІДЧИВ цієї доби, а не всі
+      # `active`. Мовчазне дерево в чисельник потрапити не може (немає інсайту), а в
+      # знаменнику стояло — тобто його мовчання рахувалось свідченням про ВИЖИВАННЯ й
+      # РОЗБАВЛЯЛО шкоду тих, хто справді свідчив. 100 зрубаних зі 101 давали ≈1%.
+      # Множина тепер ОДНА в обох частинах дробу — той самий інваріант ARCH.46
+      # «тригер ≡ розмір», застосований ще раз: чисельник і знаменник беруться з
+      # `daily_insights`, тож розійтись їм ніде.
+      # ⛔ Не порушує «тиша НІКОЛИ не slash»: мовчазне дерево штрафу не дістає — воно
+      # лише перестає бути доказом здоров'я (скіл `backend` #61: машина знімає
+      # твердження про СИГНАЛ, не про світ за ним).
+      # ⚠️ Гілка нижче (`@source_tree`) СВІДОМО лишається на `total_trees`: вона судить
+      # прямий факт смерті, а не вибірку, тож її знаменник — «ліс до події».
+      witnessing = daily_insights.select(:analyzable_id).distinct.count
+      # 🔴 [SLASH-1 §7] Поріг ВИРОДЖЕННЯ переїхав сюди РАЗОМ зі знаменником, і без
+      # нього перенос був би не фіксом, а множником: при малій вибірці свідків
+      # будь-яке одне критичне дерево дає ≈100%, тоді як стара шкала давала
+      # частку від усього кластера. Тригерний шлях це вже гейтує
+      # (`ContractHealthCheckService` → `:insufficient_sample`), але ПРЯМІ тригери
+      # (смерть дерева · dClimate · contractual) приходять сюди повз нього —
+      # тобто гард стояв би на одній гілці розвилки, а гроші текли б другою.
+      # Межа деривується з САМОГО порога (`1 / slash_fraction`), як і в §7, тож
+      # DAO-зміна рухає її автоматично. Нижче межі — `nil`, тобто той самий
+      # genuine-no-data шлях: `freeze_for_field_audit!`, НІКОЛИ авто-burn.
+      # 🔴 І межа НЕ коротить метод: нижче неї статистична гілка лише ВІДМОВЛЯЄТЬСЯ,
+      # а оцінка йде далі. Голий `return nil` глушив би й гілку `@source_tree` —
+      # тобто вироджена вибірка скасовувала б вирок за ПРЯМИМ ФАКТОМ смерті, який
+      # вибірки не питає взагалі. Freeze лишається лише там, де критичні дерева Є,
+      # а прямого факту НЕМА: тоді судити нема з чого й нема кому, крім людини.
+      if witnessing >= degeneracy_floor
+        [ critical_count.to_f / witnessing, 1.0 ].min   # частка тих, хто свідчив
+      elsif @source_tree.blank?
+        nil
+      else
+        source_tree_damage_ratio(total_trees)
+      end
     elsif @source_tree.present?
       # «Ліс ДО події» — і ТІЛЬКИ тут: жертву додаємо в знаменник, якщо її вже нема серед
       # активних (інакше кластер із двох дерев дав би 1/1 = 100% замість чесних 1/2, а останнє
@@ -563,14 +597,21 @@ class BlockchainBurningService < ApplicationService
       # `.max` із мертвим source — це і zero-guard, і зворотна сумісність: у дерев,
       # що вмерли ДО появи `status_changed_at`, колонка NULL, тож без нього
       # мертвий кластер дав би `0/0`. При одному трупі формула тотожна старій.
-      dead = [ dead_tree_count, @source_tree.active? ? 0 : 1 ].max
-      victims = @source_tree.active? ? dead + 1 : dead
-      [ victims.to_f / (total_trees + dead), 1.0 ].min
+      source_tree_damage_ratio(total_trees)
     elsif daily_insights.exists?
       0.0                                              # дані Є, ліс здоровий → 0 шкоди → 0 slash
     end
     # else: нуль AiInsight-записів (вкл. кластер без жодного живого дерева) → nil (genuine
     # no-data) → perform → freeze_for_field_audit!, а НЕ старе `total_trees.zero? → 1.0`.
+  end
+
+  # Гілка «ліс ДО події» — винесена в ОДИН дім, бо кличуть її ДВА входи: звичайний
+  # source_tree-тракт і статистична гілка, що відмовилась через вироджену вибірку.
+  # Порізно вони розійшлися б тихо — рівно клас, який цей файл і лікує.
+  def source_tree_damage_ratio(total_trees)
+    dead = [ dead_tree_count, @source_tree.active? ? 0 : 1 ].max
+    victims = @source_tree.active? ? dead + 1 : dead
+    [ victims.to_f / (total_trees + dead), 1.0 ].min
   end
 
   # [ARCH.46] Дата для AiInsight-запиту: прокинута від `ContractHealthCheckService` (де порахована
@@ -721,6 +762,14 @@ class BlockchainBurningService < ApplicationService
     stale_critical.where.not(
       id: MaintenanceRecord.where.not(ews_alert_id: nil).select(:ews_alert_id)
     ).exists?
+  end
+
+  # [SLASH-1 §7] Мінімальна вибірка свідків, нижче якої статистичний вирок не
+  # виноситься. Деривується з порога, не хардкодиться: при `N < 1/f` добуток
+  # `N × f` менший за одиницю, тобто БУДЬ-ЯКЕ одне дерево перетинає поріг і
+  # «понад f» перестає бути статистичним твердженням. Для дефолтних 0.2 це N ≤ 4.
+  def degeneracy_floor
+    @degeneracy_floor ||= 1 / Rational(SystemParameter.current(:slash_threshold, default: 0.2).to_s)
   end
 
   # DAO-governed slash curve exponent (SystemParameter ← on-chain ProtocolParameters.sol).
