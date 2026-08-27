@@ -118,6 +118,7 @@ TRACKER_GUARDS = {
   "section_home_violations"      => "section↔canon-home",
   "orphan_item_violations"       => "item visibility",
   "inbound_ref_violations"       => "inbound 00_07 item-ref",
+  "inbound_ref_population"       => "inbound 00_07 item-ref",
   "inbound_prose_ref_violations" => "prose 00_07 ID-ref",
   "chem_note_ref_violations"     => "CHEM.N in-silico note-ref",
   "chem_note_ids"                => "CHEM.N in-silico note-ref",
@@ -133,7 +134,10 @@ TRACKER_GUARDS = {
   # [DOC-T.73] Обидва імені мапляться в ОДИН §3-рядок: перевірка та її ліхтар —
   # одна вісь, і розводити їх на два рядки реєстру означало б обіцяти два гейти.
   "priority_order_violations"    => "priority order",
-  "priority_ordered_sections"    => "priority order"
+  "priority_ordered_sections"    => "priority order",
+  # [DOC-T.92] Той самий принцип «перевірка + її ліхтар = ОДНА вісь, один рядок».
+  "residual_lead_form_violations" => "residual lead-form",
+  "residual_lead_population"      => "residual lead-form"
 }.freeze
 # Non-guard Dashboard calls in tracker.rake (parsing/reporting helpers).
 TRACKER_HELPERS = %w[parse open_items].freeze

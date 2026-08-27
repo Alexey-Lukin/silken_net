@@ -27,7 +27,17 @@
 require_relative "../lib/tracker/dashboard"
 
 ROOT  = File.expand_path("..", __dir__)
-TREES = %w[app lib firmware contracts spec scripts tools bin config db .claude].freeze
+# `deploy` + `terraform` + `subgraph` joined 2026-08-27 (DOC-T.92 · OPS.36). All three
+# cite tracker IDs in prose a human reads at 3am — the Grafana alert `description:`
+# fields route the on-call to an item by ID — and none was supervised by anything.
+# Price was MEASURED before enabling (00_05 §5): zero hits, so the widening is free.
+# ⛔ `docs/` deliberately stays OUT, and that is a MEASUREMENT, not an omission: the
+# same probe over `docs/**` returned 36 candidates (retired facets, ranges the split
+# does not reach, historical mentions). The tracker item that prescribed this leg read
+# «ціна = 0», but that zero belongs to the LINK form `[`ID`](00_07…)` — which is gated
+# on the OTHER side now (`Tracker::Dashboard::INBOUND_LABEL_REF_RE`) — never to every
+# ID-shaped token in canon prose. Widening here is work-then-gate, not gate.
+TREES = %w[app lib firmware contracts spec scripts tools bin config db deploy terraform subgraph .claude].freeze
 EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 
 # The tracker parser + its spec fixtures legitimately carry ID-shaped tokens
@@ -44,7 +54,13 @@ EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 # plus deliberate phantoms as TEST DATA — the same reason `spec/lib/` is exempt.
 # Named per-file rather than blanketing `spec/quality/`: a blanket would silently
 # drop every other quality spec out of this gate's reach.
-EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|spec/quality/tracker_id_range_split_spec\.rb|scripts/code_tracker_id_check\.rb|contracts/(?:out|cache|node_modules|lib)/|firmware/extern/|tools/[^/]+/(?:node_modules|venv)/)}
+#
+# 🔴 `node_modules` is exempted as a CLASS (any depth), never per-directory: it is
+# gitignored, so a per-name list makes the gate scan a tree LOCALLY that does not exist
+# in CI — the "on the FS, not in git" divergence. Measured when `subgraph/` joined
+# TREES: 6873 vendored files entered the scan from one gitignored directory, i.e. the
+# local run and the CI run were grading different trees while both printed green.
+EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|spec/quality/tracker_id_range_split_spec\.rb|scripts/code_tracker_id_check\.rb|[^\n]*node_modules/|contracts/(?:out|cache|lib)/|firmware/extern/|tools/[^/]+/venv/)}
 ADVISORY_ONLY = %r{\ACHANGELOG\.md:}
 
 # ID-shaped tokens that are NOT tracker refs: external standards etc.

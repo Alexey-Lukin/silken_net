@@ -96,6 +96,74 @@ RSpec.describe Tracker::Dashboard do
       item = described_class.parse(md).first
       expect(item.executors).to contain_exactly(:owner)
     end
+
+    # [DOC-T.92] Meta-рядок читається РІВНО ОДИН раз. Без цього будь-який рядок тіла, що
+    # ЦИТУЄ `**P?**`, дарує пункту виконавця й стадію, яких у нього немає — і сусідній
+    # сканер (`scan_priority_runs`) від цього вже захищений, тобто дві ходи розходились у
+    # тому, що ТАКЕ meta-рядок.
+    it "не бере WHO/STAGE з рядка ТІЛА, що цитує `**P?**` (meta читається один раз)" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.52 — item
+        - **P2** · 🤖 · 🟡 · → `03_01 §1`
+        - **Стан:** сусід колись був **P0** · 👤 · ⚪ · → `04_01 §1`, і цитата не сміє це змінювати.
+      MD
+      item = described_class.parse(md).first
+
+      expect(item.executors).to contain_exactly(:machine)
+      expect(item.stage).to eq(:in_progress)
+      expect(item.priority).to eq("P2")
+      expect(item.canon).to eq("03_01 §1")
+    end
+
+    # 🔴 Канон-реф належить META-рядку. Fallback на будь-який рядок тіла був не зручністю,
+    # а ризиком ХИБНОГО ПРИПИСУВАННЯ: `section_home_violations` судить §-дім пункту САМЕ
+    # цим значенням, тож пункт без рефа в meta судився б номером модуля, позиченим із
+    # власної прози, — і вердикт (пройшов / не пройшов) належав би чужому рядку.
+    it "бере канон-реф ЛИШЕ з meta-рядка — проза Стану його не рятує" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.53 — meta без канон-спана
+        - **P2** · 🤖 · 🟡 · → дивись сусідній модуль
+        - **Стан:** механіка описана в `04_01 §1`.
+      MD
+      item = described_class.parse(md).first
+
+      expect(item.canon).to be_nil
+      expect(described_class.issues([ item ])).to contain_exactly(a_string_matching(/FW\.53: missing canon-ref/))
+    end
+  end
+
+  # [DOC-T.92] «(N actionable)» доти НЕ МОГЛО відрізнятись від N: `meta_form` HARD-вимагає
+  # WHO на meta-рядку, `parse` звідти ж його й бере, тож предикат був істинний завжди.
+  # Число, що не вміє рухатись, не є виміром — а надруковане поруч зі справжнім, воно
+  # вчить читача, що рядок щось означає.
+  describe ".open_items" do
+    it "рахує пункти з ВІДКРИТИМИ ногами, а не всі підряд" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.54 — має відкрите
+        - **P2** · 🤖 · 🟡 · → `03_01 §1`
+        - [ ] 🤖 робота
+        #### FW.55 — усе закрито
+        - **P2** · 🤖 · 🌿 · → `03_01 §1`
+        - [x] 🤖 зроблено
+      MD
+
+      expect(described_class.parse(md).size).to eq(2)
+      expect(described_class.open_items(md)).to eq(1)
+    end
+
+    # 🔦 Ліхтар на живому корпусі: число мусить бути НЕПОРОЖНІМ і СТРОГО меншим за
+    # кількість пунктів — рівність означала б повернення тавтології.
+    it "на живому трекері відрізняється від загальної кількості пунктів" do
+      md = File.read(described_class::DEFAULT_PATH)
+      total = described_class.parse(md).size
+      open_count = described_class.open_items(md)
+
+      expect(open_count).to be_positive
+      expect(open_count).to be < total
+    end
   end
 
   it "flags a malformed item missing priority/executor/stage/canon (#3 conformance)" do
@@ -354,6 +422,55 @@ RSpec.describe Tracker::Dashboard do
         expect(described_class.inbound_ref_violations(dir))
           .to contain_exactly(a_string_matching(/06_99_Sample → `00_07 — DOC\.5`/))
       end
+    end
+
+    # [DOC-T.92] Третій — і ДОМІНАНТНИЙ — діалект: ID у ТЕКСТІ лінка без префікса.
+    # Саме його виробляє власний cross-ref-стандарт корпусу, тож він house style,
+    # а не край; обидва наявні резолвери були до нього сліпі за побудовою.
+    it "ловить label-діалект (ID у тексті лінка) і не FP-ить на directory-формі" do
+      expect("[`ARCH.9`](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_LABEL_REF_RE).flatten)
+        .to eq([ "ARCH.9" ])
+      # мітка, що починається з ЦИФРИ (сам doc-id), не є ID-рефом
+      expect("[`00_07`](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_LABEL_REF_RE).flatten)
+        .to be_empty
+      expect("[`00_07 §00a`](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_LABEL_REF_RE).flatten)
+        .to be_empty
+      # directory-діалект не має ловитись двічі
+      expect("[`00_07` — DOC.5](00_07_Action_Plan_Tracker)".scan(described_class::INBOUND_LABEL_REF_RE).flatten)
+        .to be_empty
+    end
+
+    it "судить label-діалект і ВСЕРЕДИНІ 00_07 — пункт, що цитує сусіда, робить те саме твердження" do
+      require "tmpdir"
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "00_07_Action_Plan_Tracker.md"), <<~MD)
+          ## §03 · Firmware
+          #### FW.1 — real item
+          - **P0** · 🤖 · ⚪ · → `03_05 §1`
+          - **Стан:** блокує [`FW.404`](00_07_Action_Plan_Tracker), сусід [`FW.1`](00_07_Action_Plan_Tracker).
+        MD
+
+        expect(described_class.inbound_ref_violations(dir))
+          .to contain_exactly(a_string_matching(/00_07_Action_Plan_Tracker → `00_07 — FW\.404`/))
+      end
+    end
+
+    # 🔴 Ліхтар: гейт ПЕРЕМАГАЄ порожньою множиною, тож живість доводить лише популяція
+    # (§Guard-craft #61) — інакше регекс, що перестав матчити діалект, друкує «всі
+    # резолвяться ✓» про ніщо.
+    it "рахує популяцію ОБОХ діалектів, і вона непорожня на живому корпусі" do
+      require "tmpdir"
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "00_07_Action_Plan_Tracker.md"),
+                   "## §03 · Firmware\n#### FW.1 — real\n- **P0** · 🤖 · ⚪ · → `03_05 §1`\n" \
+                   "- **Стан:** сусід [`FW.1`](00_07_Action_Plan_Tracker).\n")
+        File.write(File.join(dir, "06_99_Sample.md"),
+                   "[`00_07` — FW.1](00_07_Action_Plan_Tracker) і [`FW.1`](00_07_Action_Plan_Tracker)\n")
+
+        expect(described_class.inbound_ref_population(dir)).to eq(3)
+      end
+
+      expect(described_class.inbound_ref_population).to be >= 200
     end
   end
 
@@ -1397,6 +1514,146 @@ RSpec.describe Tracker::Dashboard do
 
     it "живий трекер тримає порядок" do
       expect(described_class.priority_order_violations).to be_empty
+    end
+  end
+
+  # [DOC-T.92] Форма ЛІДА ноги: інтро закриває словник ліда так само, як `WHO_CANON`
+  # закриває meta-рядок, але гейт мав лише meta-вісь. Ціна форм-дрейфу тут — не
+  # некрасивий рядок, а РОЗЗБРОЄННЯ сусіда: одна нога без WHO-гліфа знімає `stale_who`
+  # з УСЬОГО пункту, а обидва WHO-гейти читають виконавця лише з ПРОВІДНОГО токена,
+  # тож декоративний лід ховає машинну роботу від сканувального шару.
+  describe ".residual_lead_form_violations" do
+    def item(*residuals, meta: "- **P1** · 🤖+👤 · 🟡 · → `04_01 §1`")
+      <<~MD
+        ## §04 · Backend
+        #### A.1 — заголовок
+        #{meta}
+        - **Стан:** щось.
+        #{residuals.join("\n")}
+      MD
+    end
+
+    it "пропускає сольний WHO і `+`-комбо" do
+      md = item("- [ ] 🤖 машинна", "- [ ] 👤 руки", "- [ ] ⚖️ присуд", "- [ ] 🤖+👤 неподільна")
+      expect(described_class.residual_lead_form_violations(md)).to be_empty
+    end
+
+    it "пропускає теги `🔗` і `🌿`, що стоять НА МІСЦІ WHO" do
+      md = item("- [ ] 🔗 делеговано в інший пункт", "- [ ] 🌿 far-horizon, виконавця нема")
+      expect(described_class.residual_lead_form_violations(md)).to be_empty
+    end
+
+    it "ловить ДЕКОРАЦІЮ перед WHO — саме той лід, який осліплює обидва WHO-гейти" do
+      md = item("- [ ] ✨ 🤖 refinements")
+      violations = described_class.residual_lead_form_violations(md)
+
+      expect(violations.size).to eq(1)
+      expect(violations.first).to include("A.1", "✨")
+    end
+
+    it "ловить гліф, ніде не оголошений" do
+      md = item("- [ ] 🔭 future-lever, bench-gated")
+      expect(described_class.residual_lead_form_violations(md).size).to eq(1)
+    end
+
+    it "ловить ногу зовсім без ліда" do
+      md = item("- [ ] просто проза без жодного токена")
+      expect(described_class.residual_lead_form_violations(md).size).to eq(1)
+    end
+
+    # Санкціонований карв-аут: HW.5.IS — це ТРІАЖНИЙ БЮЛЕТЕНЬ, ключований власними
+    # `CHEM.N` (схема, яку читає `chem_note_ids`), а не residual-список із виконавцями.
+    it "звільняє CHEM.N-ноги in-silico беклогу — і в жирній, і в голій формі" do
+      md = item("- [ ] CHEM.11 — aggregation: 4 SASA hotspots", "- [ ] **CHEM.22** + **CHEM.5** — COSMO-RS")
+      expect(described_class.residual_lead_form_violations(md)).to be_empty
+    end
+
+    # 🔴 Якір карв-ауту — ЛІД, та сама позиція, яку судить гейт. Без цього піна `CHEM.`
+    # у середині рядка купувала б звільнення будь-якій нозі, і виняток, обґрунтований
+    # ПО-ЧЛЕННО, застосувався б ПО-РЯДКОВО (§Guard-craft #102).
+    it "НЕ звільняє ногу, де `CHEM.` стоїть глибше в рядку" do
+      md = item("- [ ] 🔭 lever, дотично до CHEM.11 — але лід не CHEM")
+      expect(described_class.residual_lead_form_violations(md).size).to eq(1)
+    end
+
+    # Оголошена стеля, запінена, щоб зелене не читалось ширше за неї: закриті бокси
+    # свідомо поза скоупом (стандарт і так хоче їх спорожнити), а сам гейт живе на
+    # `OPEN_RESIDUAL`, тобто лише top-level.
+    it "не судить закриті бокси `[x]`/`[~]` — оголошена стеля" do
+      md = item("- [x] ✅ 🤖 зроблено", "- [~] ⏸️ частково")
+      expect(described_class.residual_lead_form_violations(md)).to be_empty
+    end
+
+    it "не судить ВКЛАДЕНУ ногу — вона й так невидима парсеру (окреме правило інтро)" do
+      md = item("- [ ] 🤖 машинна", "  - [ ] 🔭 вкладена, поза скоупом")
+      expect(described_class.residual_lead_form_violations(md)).to be_empty
+    end
+
+    it "ігнорує приклади в fence і в intro-blockquote та не-реєстрові секції" do
+      noisy = <<~MD
+        ## 🎯 Мета
+        > - [ ] 🔭 приклад із легенди інтро
+        ```
+        - [ ] 🔭 приклад у fence
+        ```
+        ## 🗄️ Архів закритих пунктів
+        #### Z.9 — архівний
+        - **P0** · 🤖 · 🟢 · → `04_01 §1`
+        - [ ] 🔭 архівна нога поза реєстром
+        ## §04 · Backend
+        #### A.1 — живий
+        - **P1** · 🤖 · 🟡 · → `04_01 §1`
+        - [ ] 🤖 конформна
+      MD
+
+      expect(described_class.residual_lead_form_violations(noisy)).to be_empty
+    end
+
+    # 🔴 Ліхтар: перемога цього гейта — ПОРОЖНЯ множина знахідок, тож його живість
+    # доводить лише ПОПУЛЯЦІЯ (§Guard-craft #61). Пін — ПІДЛОГА, не лічильник: підлога
+    # лишається правдивою, поки ноги чесно додають, а пін на точне число червонів би
+    # на кожному додаванні й був би вимкнений (no-volatile-counts, застосоване до
+    # власного ліхтаря гейта).
+    it "сканує непорожню популяцію ніг живого трекера" do
+      expect(described_class.residual_lead_population).to be >= 400
+    end
+
+    it "живий трекер тримає форму ліда" do
+      expect(described_class.residual_lead_form_violations).to be_empty
+    end
+  end
+
+  # [DOC-T.92] Спільна хода — ОДИН дім для «які рядки є відкритими ногами цього пункту».
+  # Витягнута, а не склонована: три гейти читають рівно цю популяцію, і друга копія
+  # ходи стала б другим домом для того, ДЕ вони дивляться (дрейф, проти якого свого
+  # часу витягли `each_item_lead`).
+  describe ".item_residuals" do
+    it "віддає meta-рядок СИРИМ, лишаючи семантику сегментів викликачам" do
+      md = <<~MD
+        ## §04 · Backend
+        #### A.1 — заголовок
+        - **P1** · 🤖+👤 · 🟡 · → `04_01 §1`
+        - **Стан:** щось.
+        - [ ] 🤖 відкрита
+        - [x] 👤 закрита
+      MD
+
+      it_hash = described_class.item_residuals(md).first
+      expect(it_hash[:id]).to eq("A.1")
+      expect(it_hash[:meta]).to include("**P1**", "🤖+👤", "🟡")
+      expect(it_hash[:open]).to eq([ "🤖 відкрита" ])
+    end
+
+    it "бере ЛИШЕ перший `**P?**`-рядок за meta — цитата в тілі його не підміняє" do
+      md = <<~MD
+        ## §04 · Backend
+        #### A.1 — заголовок
+        - **P1** · 🤖 · 🟡 · → `04_01 §1`
+        - **Стан:** сусід колись був **P0** · 👤 · ⚪ ·
+        - [ ] 🤖 відкрита
+      MD
+
+      expect(described_class.item_residuals(md).first[:meta]).to include("**P1**")
     end
   end
 end

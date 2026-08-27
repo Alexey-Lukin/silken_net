@@ -32,6 +32,7 @@ namespace :tracker do
     home     = Tracker::Dashboard.section_home_violations(items)
     orphan   = Tracker::Dashboard.orphan_item_violations(md)
     inbound  = Tracker::Dashboard.inbound_ref_violations
+    inbndpop = Tracker::Dashboard.inbound_ref_population
     prose    = Tracker::Dashboard.inbound_prose_ref_violations
     chem     = Tracker::Dashboard.chem_note_ref_violations
     chemdups = Tracker::Dashboard.chem_note_ids(md).tally.select { |_, c| c > 1 }
@@ -44,10 +45,12 @@ namespace :tracker do
     bench    = Tracker::Dashboard.bench_tag_violations(md)
     stalewho = Tracker::Dashboard.stale_who(md)
     thinwho  = Tracker::Dashboard.understated_who(md)
+    leadform = Tracker::Dashboard.residual_lead_form_violations(md)
+    leadpop  = Tracker::Dashboard.residual_lead_population(md)
     prio     = Tracker::Dashboard.priority_order_violations(md)
     priosect = Tracker::Dashboard.priority_ordered_sections(md)
 
-    puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(items).size} actionable)"
+    puts "00_07 lint — #{items.size} #### items (#{Tracker::Dashboard.open_items(md)} з відкритими residual'ами)"
     puts "  duplicate IDs:    #{dups.empty? ? 'none ✓' : dups.inspect}"
     if issues.empty?
       puts "  #3 conformance:   every item has priority + executor + stage + canon-ref ✓"
@@ -88,7 +91,7 @@ namespace :tracker do
       orphan.each { |o| puts "    - #{o}" }
     end
     if inbound.empty?
-      puts "  inbound refs:     every `00_07 — ID` ref resolves to a real item ✓"
+      puts "  inbound refs:     every 00_07 item-ref resolves ✓ (#{inbndpop} refs, both dialects)"
     else
       puts "  dangling inbound 00_07 item-refs (#{inbound.size}) — ref to a non-existent tracker ID:"
       inbound.each { |i| puts "    - #{i}" }
@@ -192,6 +195,21 @@ namespace :tracker do
       puts "  understated WHO (#{thinwho.size}) — meta-line omits an executor its open residuals carry:"
       thinwho.each { |s| puts "    - #{s}" }
     end
+    # [DOC-T.92] residual lead-form — HARD from birth: the intro closes the LEAD vocabulary
+    # of an open residual exactly as WHO_CANON closes the meta-line, and the meta axis has
+    # been gated since DOC-T.23 while the residual axis had nothing. Form-drift here
+    # DISARMS a neighbour — one glyph-less leg lifts `stale_who` off the WHOLE item, and
+    # both WHO gates read the executor from the LEADING token only, so a decorative lead
+    # hides machine work from the scan layer. Baseline 5 (HW.33 + HW.5.IS ×4) was swept in
+    # the SAME commit, so the gate never shipped over known drift. The POPULATION is printed
+    # on purpose: it is the lantern — «0 violations» means «clean» only while the walk still
+    # has a subject (§Guard-craft #61). (00_06 §3.)
+    if leadform.empty?
+      puts "  residual lead:    every open residual leads with a declared WHO / 🔗 / 🌿 ✓ (#{leadpop} residuals scanned)"
+    else
+      puts "  residual lead-form (#{leadform.size}) — лід ноги поза словником інтро (00_07 §розмітка):"
+      leadform.each { |s| puts "    - #{s}" }
+    end
     # [DOC-T.73] priority monotonicity — HARD from birth (baseline 8 violations across 5
     # sections was sorted to 0 by `scripts/tracker_sort.rb` in the SAME commit, so the
     # gate never shipped over known drift). The section COUNT is printed on purpose: it is
@@ -203,6 +221,6 @@ namespace :tracker do
       prio.each { |s| puts "    - #{s}" }
     end
 
-    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || labour.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any? || prio.any?
+    abort("tracker:check FAILED") if dups.any? || issues.any? || dangling.any? || sect.any? || filesect.any? || home.any? || orphan.any? || inbound.any? || prose.any? || chem.any? || chemdups.any? || chemambig.any? || runon.any? || verdict.any? || labour.any? || metaform.any? || cluster.any? || bench.any? || stalewho.any? || thinwho.any? || leadform.any? || prio.any?
   end
 end

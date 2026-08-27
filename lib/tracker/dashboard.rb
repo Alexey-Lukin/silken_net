@@ -66,11 +66,13 @@ module Tracker
       current = nil
       in_registry = false
       section_modules = nil
+      seen_meta = false
 
       markdown.each_line do |line|
         if line.start_with?("## ")
           items << current if current
           current = nil
+          seen_meta = false
           in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
           # only `## §NN` headers carry a module set; anything else → nil (exempt)
           section_modules = line.start_with?("## §") ? line.scan(SECTION_NUMS).flatten : nil
@@ -80,9 +82,17 @@ module Tracker
 
         if (m = line.match(ITEM_HEAD))
           items << current if current
+          seen_meta = false
           current = Item.new(id: m[1], title: m[2].sub(/\s*✅\s*\z/, ""), executors: [], section_modules: section_modules)
         elsif current
-          if (pr = line[/\*\*(P[0-3])\*\*/, 1])
+          # The meta-line is read EXACTLY ONCE [DOC-T.92]. Without `seen_meta` this branch
+          # fires on any body line quoting `**P1**` — and a Стан sentence quoting a
+          # neighbour's meta («сусід колись був **P0** · 👤 · ⚪») would then donate an
+          # executor and a STAGE the item does not have. Latent when measured (zero such
+          # lines), but the sibling scanner `scan_priority_runs` already guards it and its
+          # spec pins it, so the two walks disagreed about what a meta-line IS.
+          if !seen_meta && (pr = line[/\*\*(P[0-3])\*\*/, 1])
+            seen_meta = true
             current.priority ||= pr
             # meta-line `- **P?** · WHO · STAGE · → canon` carries WHO (executor) on one
             # axis and STAGE (lifecycle) on the other [DOC-T.18]. STAGE is read ONLY here
@@ -90,12 +100,19 @@ module Tracker
             # block, not the item's stage.
             EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
             STAGES.each { |emoji, st| current.stage ||= st if line.include?(emoji) }
+            # 🔴 The canon-ref belongs to the META-LINE, and reading it from ANY body line
+            # was not a convenience but a mis-attribution risk [DOC-T.92]: `section_home_violations`
+            # judges an item's §-home BY THIS VALUE, so an item whose meta carried no ref
+            # would silently be judged by a module number borrowed from its Стан prose —
+            # a DIFFERENT module, verdict included. It also made the `issues` canon-ref axis
+            # the only one of four that could still fire, and then took its subject away.
+            # Measured free: zero items relied on the body fallback when it was removed.
+            current.canon ||= line[/`(\d{2}_\d{2}[^`]*)`/, 1]
           end
           # also pick up executors from unchecked checkbox bullets (HW light-touch items)
           if line.match?(/^\s*-\s*\[ \]/)
             EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
           end
-          current.canon ||= line[/`(\d{2}_\d{2}[^`]*)`/, 1]
         end
       end
       items << current if current
@@ -127,6 +144,22 @@ module Tracker
     # (`[`00_07` — Action Plan Tracker](…)`) is NOT a false positive. Pure (caller passes docs_dir).
     ANY_ITEM_HEAD  = /^####\s+(?:[✅\p{So}\p{Sk}\u{FE0F}]+\s+)*([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)/
     INBOUND_REF_RE = /\[`00_07`\s*(?:[—-]\s*)?([A-Z][A-Za-z0-9]*[.\-][0-9A-Za-z.\-]+)\]\(00_07/
+    # Second DIALECT of the same reference [DOC-T.92], and the DOMINANT one — gated by
+    # nothing at all until now: the ID sits in the LINK LABEL with no `00_07` prefix,
+    # `` [`ARCH.9`](00_07_Action_Plan_Tracker) ``. That is precisely what this corpus's own
+    # cross-ref standard produces (code-span label + doc href), so it is HOUSE STYLE, not
+    # an edge case — the shape a resolver is most likely to be written blind to, because
+    # the author reads the two dialects as one thing (§Guard-craft #83: enumerate what a
+    # citation legitimately OMITS). `INBOUND_REF_RE` cannot see it — it anchors on the
+    # literal `00_07` INSIDE the label — and `code_tracker_id_check` cannot either, since
+    # `docs/` sits outside its TREES by measurement (36 candidates there: work-then-gate).
+    # `[`00_07` — ID](…)` never false-matches: its label opens with a digit.
+    #
+    # 🔴 00_07 is deliberately NOT skipped for this dialect, unlike the directory form: a
+    # tracker item citing a SIBLING item makes the same claim a foreign doc does, and it is
+    # the LARGER population by 2:1 (190 inside vs 99 outside when this shipped, zero broken
+    # on either side — the perimeter was priced before it was switched on, 00_05 §5).
+    INBOUND_LABEL_REF_RE = /\[`([A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-][0-9A-Za-z.\-]+)`\]\(00_07/
 
     def self.all_item_ids(markdown)
       markdown.each_line.filter_map { |l| (l.match(ANY_ITEM_HEAD) || l.match(TABLE_ID_RE))&.captures&.first }
@@ -158,20 +191,35 @@ module Tracker
     # so "what IDs exist" has one definition. Returns the >1 tally (id => count).
     def self.duplicate_ids(markdown) = all_item_ids(markdown).tally.select { |_, count| count > 1 }
 
+    # Both dialects share ONE resolver: the directory form (`[`00_07` — ID](…)`, foreign
+    # docs only) and the label form (`[`ID`](00_07…)`, everywhere INCLUDING the tracker).
+    def self.each_inbound_ref(docs_dir = DOCS_DIR)
+      return to_enum(:each_inbound_ref, docs_dir) unless block_given?
+
+      Dir.glob(File.join(docs_dir, "*.md")).sort.each do |f|
+        base = File.basename(f, ".md")
+        text = File.read(f)
+        text.scan(INBOUND_LABEL_REF_RE).flatten.each { |id| yield base, id }
+        next if base.start_with?("00_07")
+
+        text.scan(INBOUND_REF_RE).flatten.each { |id| yield base, id }
+      end
+    end
+
     def self.inbound_ref_violations(docs_dir = DOCS_DIR)
       tracker = File.join(docs_dir, "00_07_Action_Plan_Tracker.md")
       return [] unless File.exist?(tracker)
 
       valid = all_item_ids(File.read(tracker))
-      Dir.glob(File.join(docs_dir, "*.md")).sort.flat_map do |f|
-        base = File.basename(f, ".md")
-        next [] if base.start_with?("00_07")
-
-        File.read(f).scan(INBOUND_REF_RE).flatten.filter_map do |id|
-          "#{base} → `00_07 — #{id}` (no such 00_07 item)" unless valid.include?(id)
-        end
+      each_inbound_ref(docs_dir).filter_map do |base, id|
+        "#{base} → `00_07 — #{id}` (no such 00_07 item)" unless valid.include?(id)
       end
     end
+
+    # Lantern — this gate WINS on an empty set, so its liveness is the POPULATION, never
+    # the finding count (§Guard-craft #61). Without it, a regex that stops matching either
+    # dialect reports «all resolve ✓» about nothing at all.
+    def self.inbound_ref_population(docs_dir = DOCS_DIR) = each_inbound_ref(docs_dir).count
 
     # --- prose ID-list refs after a 00_07 link ---
     # Beyond the `[`00_07` — ID]` directory form, Status lines cite tracker IDs in PROSE
@@ -272,10 +320,31 @@ module Tracker
       end
     end
 
-    # Open = has ≥1 unchecked bullet with a known executor.
-    def self.open_items(items) = items.select { |it| it.executors.any? }
+    # Items that still carry OPEN work — an item with ≥1 unchecked residual [DOC-T.92].
+    #
+    # 🔴 It used to read `it.executors.any?`, and that made the printed «(N actionable)»
+    # STRUCTURALLY unable to differ from N: `meta_form_violations` HARD-requires a WHO
+    # token on every meta-line, `parse` derives executors from exactly that line, so the
+    # predicate was true for every parsed item forever. A number that cannot move is not a
+    # measurement — and printed beside a real one it teaches the reader that the line means
+    # something. Counting items with an open residual restores BOTH halves: the number can
+    # move, and it becomes the lantern for the residual walk (if that walk breaks, this
+    # drops toward zero while `items.size` holds).
+    # ⚠️ Takes the markdown, not the parsed items: residuals are not on `Item`, and putting
+    # them there would give the walk a second home (`item_residuals` is the one).
+    def self.open_items(markdown = File.read(DEFAULT_PATH))
+      item_residuals(markdown).count { |it| it[:open].any? }
+    end
 
-    # --- #3 conformance: open items missing priority / canon-ref ---
+    # --- #3 conformance: items missing priority / WHO / STAGE / canon-ref ---
+    # 🔒 CEILING, stated because three of these four axes are ENTAILED by a neighbour and
+    # so cannot fire while it is green [DOC-T.92]: `meta_form_violations` HARD-requires
+    # `**P?** · WHO · STAGE · → ref`, and `parse` reads priority/WHO/STAGE from exactly
+    # that line. What this check still owns alone is the **canon-ref** axis — the meta-line
+    # must carry a `NN_NN` code-span — which became a real subject only once `parse` stopped
+    # falling back to any body line for it. Read the green accordingly: it attests the
+    # canon-ref axis, plus the parser still finding items at all; it does NOT independently
+    # attest the other three.
     def self.issues(items)
       items.filter_map do |it|
         missing = []
@@ -700,7 +769,19 @@ module Tracker
     # head, and both existing exemptions were derived from real honest hits instead.
     FORWARD_WHO_STAGES = %w[🌿 ⚫].freeze
 
-    def self.stale_who(markdown = File.read(DEFAULT_PATH))
+    # --- ONE home for "which lines are this item's open residuals" [DOC-T.92] ---
+    # THREE gates read exactly this population — `stale_who` (meta OVERSTATES it),
+    # `understated_who` (meta UNDERSTATES it) and `residual_lead_form_violations`
+    # (the lead token itself). A second copy of the walk would be a second home for
+    # WHERE they look, which is the drift `each_item_lead` was extracted to prevent
+    # (DOC-T.63) — so the third gate arrived by EXTRACTING this, not by cloning it.
+    #
+    # Yields one Hash per registry item: `id` · `meta` (the raw meta-line, so each
+    # caller slices the segments IT needs and the walk stays free of their semantics)
+    # · `open` (each open residual's body, `- [ ] ` already stripped).
+    # Scope, shared by construction: registry sections only, outside fences, outside
+    # the intro blockquote, TOP-LEVEL `- [ ]` (inherited from `OPEN_RESIDUAL`).
+    def self.item_residuals(markdown = File.read(DEFAULT_PATH))
       in_registry = false
       in_fence = false
       current = nil
@@ -718,24 +799,28 @@ module Tracker
         next unless in_registry
 
         if (m = line.match(ITEM_HEAD))
-          current = { id: m[1], who: nil, stage: nil, seen_meta: false, open: [] }
+          current = { id: m[1], meta: nil, open: [] }
           items << current
           next
         end
         next unless current
 
-        if !current[:seen_meta] && line.match?(/\*\*P[0-3]\*\*/)
-          current[:seen_meta] = true
-          # WHO / STAGE are the 2nd / 3rd `·`-separated meta segments (shape HARD-enforced)
-          current[:who]   = line.split("·")[1].to_s
-          current[:stage] = line.split("·")[2].to_s
+        if current[:meta].nil? && line.match?(/\*\*P[0-3]\*\*/)
+          current[:meta] = line
         elsif (r = line.match(OPEN_RESIDUAL))
           current[:open] << r[1]
         end
       end
 
-      items.filter_map do |it|
-        next unless it[:who]
+      items
+    end
+
+    def self.stale_who(markdown = File.read(DEFAULT_PATH))
+      item_residuals(markdown).filter_map do |it|
+        next unless it[:meta]
+
+        # WHO / STAGE are the 2nd / 3rd `·`-separated meta segments (shape HARD-enforced)
+        it = it.merge(who: it[:meta].split("·")[1].to_s, stage: it[:meta].split("·")[2].to_s)
 
         # ZERO open residuals: the union is EMPTY, so any WHO overstates it. The standard
         # has no empty WHO token (`WHO_CANON`), so the honest resolutions are «finished →
@@ -825,39 +910,10 @@ module Tracker
     # in both guards depend on; swapping it for `EXECUTORS.keys` silently breaks ⚖️ ⊂ 👤.
 
     def self.understated_who(markdown = File.read(DEFAULT_PATH))
-      in_registry = false
-      in_fence = false
-      current = nil
-      items = []
+      item_residuals(markdown).filter_map do |it|
+        next unless it[:meta]
 
-      markdown.each_line do |line|
-        in_fence = !in_fence if line.lstrip.start_with?("```")
-        next if in_fence || line.lstrip.start_with?(">") # intro blockquote examples
-
-        if line.start_with?("## ")
-          in_registry = line.match?(REGISTRY_SECTION) && !line.match?(SKIP_SECTION)
-          current = nil
-          next
-        end
-        next unless in_registry
-
-        if (m = line.match(ITEM_HEAD))
-          current = { id: m[1], who: nil, seen_meta: false, open: [] }
-          items << current
-          next
-        end
-        next unless current
-
-        if !current[:seen_meta] && line.match?(/\*\*P[0-3]\*\*/)
-          current[:seen_meta] = true
-          current[:who] = line.split("·")[1].to_s
-        elsif (r = line.match(OPEN_RESIDUAL))
-          current[:open] << r[1]
-        end
-      end
-
-      items.filter_map do |it|
-        next unless it[:who]
+        it = it.merge(who: it[:meta].split("·")[1].to_s)
 
         # 🔗-led residuals delegate their WHO to the gating item — same exemption the
         # overstate axis makes, and for the same reason.
@@ -872,6 +928,69 @@ module Tracker
         counts = missing.map { |g| "#{g}×#{live.count { |b| b.include?(g) }}" }.join(" ")
         "#{it[:id]}: meta WHO «#{it[:who].strip}» misses #{counts} (open residuals it never declares)"
       end
+    end
+
+    # --- residual lead-form guard [DOC-T.92] ---
+    # The 00_07 intro closes the LEAD vocabulary of an open residual exactly as
+    # `WHO_CANON` closes the meta-line: `- [ ] WHO — …` with WHO ∈ {🤖,👤,⚖️} or a
+    # `+`-joined combo, or the `🔗` / `🌿` tag standing IN PLACE of WHO (delegated /
+    # far-horizon — executor deliberately unassigned). The META axis has been gated
+    # since DOC-T.23; the RESIDUAL axis had nothing, so a leg could open with any
+    # glyph at all and no gate blinked.
+    #
+    # 🔴 Not cosmetic — form-drift here DISARMS A NEIGHBOURING GATE, and disarming is
+    # quieter than any false negative because the gate stays GREEN and does so on the
+    # WHOLE item at once: `stale_who` drops its check from the entire item the moment
+    # one open residual carries no WHO glyph (the item-wide exemption ratified in
+    # DOC-T.90), and BOTH WHO gates read the executor from `WHO_LEAD` only, so a
+    # decorative lead (`✨ 🤖 …`) hides real machine work from the scan layer.
+    # Baseline when built: 5 violations (`HW.33` an undeclared glyph, `HW.5.IS` ×4
+    # decorative leads), swept in the SAME commit → HARD from birth.
+    #
+    # ⚠️ MEASURED, and it CORRECTS the tracker item that prescribed this gate: fixing
+    # the five does NOT re-arm `stale_who` on those two items. The honest replacement
+    # for a leg with no assigned executor is `🔗`/`🌿`, and both are themselves
+    # exemption triggers — so the diagnosis ("form-drift disarms the neighbour") is
+    # right while the implied remedy is not. What the sweep actually buys is narrower
+    # and worth stating: `understated_who` regains sight of the two decorative-lead 🤖
+    # legs, and the vocabulary becomes closed so the NEXT glyph cannot be invented.
+    #
+    # 🔒 CEILING, three parts, so green never reads as more than it is:
+    #  · OPEN residuals only. A `[x]`/`[~]` box is a transitional artifact the standard
+    #    already wants emptied («чекбокс несе ЛИШЕ відкрите»), and the two WHO gates
+    #    this protects read only the open set. 13 closed boxes carry decorative leads
+    #    today and are deliberately NOT flagged.
+    #  · TOP-LEVEL only, inherited from `OPEN_RESIDUAL` — a nested checkbox is
+    #    invisible to the parser by construction and is the intro's separate rule.
+    #  · MEMBERSHIP, never TRUTH — it judges that the lead token is IN the vocabulary,
+    #    never that the executor it names is the right one. Same ceiling
+    #    `meta_form_violations` declares one axis over.
+    #
+    # The HW.5.IS in-silico chemistry backlog is a sanctioned carve-out: it is a TRIAGED
+    # BULLET LIST keyed by its own `CHEM.N` IDs (the scheme `chem_note_ids` reads), whose
+    # legs carry no executor by construction. Anchored at the LEAD — the same position
+    # this gate judges — so a `CHEM.` token deeper in a line never buys an exemption.
+    RESIDUAL_LEAD_TAGS = %w[🔗 🌿].freeze
+    CHEM_LEAD = /\A\*{0,2}CHEM\.\d/
+
+    def self.residual_lead_form_violations(markdown = File.read(DEFAULT_PATH))
+      item_residuals(markdown).flat_map do |it|
+        it[:open].filter_map do |body|
+          lead = body.lstrip
+          next if lead[WHO_LEAD] || lead.start_with?(*RESIDUAL_LEAD_TAGS) || lead.match?(CHEM_LEAD)
+
+          "#{it[:id]}: «#{lead[0, 40]}…» — лід поза словником {🤖 👤 ⚖️ (+комбо) · 🔗 · 🌿}"
+        end
+      end
+    end
+
+    # Lantern for the guard above — its victory condition is an EMPTY violation set,
+    # so liveness must be proven by the POPULATION, never by the finding count
+    # (§Guard-craft #61). A spec pins a FLOOR rather than the tally: a floor stays true
+    # as residuals are honestly added, while a pinned count would red on every addition
+    # and get switched off (the no-volatile-counts rule applied to a gate's own lantern).
+    def self.residual_lead_population(markdown = File.read(DEFAULT_PATH))
+      item_residuals(markdown).sum { |it| it[:open].size }
     end
 
     # --- bench-session tag symmetry [DOC-T.34 ①] ---
