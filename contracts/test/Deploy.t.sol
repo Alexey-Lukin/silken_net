@@ -84,6 +84,42 @@ contract DeployWiringTest is Test {
         assertTrue(d.timelock.hasRole(d.timelock.DEFAULT_ADMIN_ROLE(), safe), "Safe must be Timelock admin");
     }
 
+    // [ARCH.112] EXECUTOR_ROLE is OPEN by construction — `executors = [address(0)]`, which in
+    // OZ TimelockController means `onlyRoleOrOpenRole` lets ANY address execute an operation
+    // once its 48h delay has matured. This is a STANDING AUTHORITY held by the whole world,
+    // and it is deliberate: a closed executor set makes a passed, matured proposal hostage to
+    // one keyholder's liveness (and to their censorship), which is the failure the timelock
+    // exists to prevent. The veto that makes it safe is CANCELLER (Safe + Governor), pinned
+    // above — so execution being permissionless is only sound while the cancel path is real.
+    //
+    // Both halves are pinned, and the order matters: the DECLARATION is what a grep finds,
+    // the BEHAVIOUR is what actually holds. Narrowing `executors` to a named list reds both.
+    function test_timelock_executorIsOpenToAnyone() public {
+        assertTrue(
+            d.timelock.hasRole(d.timelock.EXECUTOR_ROLE(), address(0)),
+            "EXECUTOR_ROLE must be open (address(0)): a closed set makes matured proposals hostage"
+        );
+
+        bytes memory data = "";
+        bytes32 salt = keccak256("open-executor-test");
+        uint256 delay = d.timelock.getMinDelay();
+        address opTarget = makeAddr("openExecTarget");
+
+        vm.prank(safe); // bootstrap PROPOSER
+        d.timelock.schedule(opTarget, 0, data, bytes32(0), salt, delay);
+
+        vm.warp(block.timestamp + delay + 1);
+
+        // A random third party — no role, no relationship to the deploy — executes.
+        address stranger = makeAddr("strangerExecutor");
+        assertFalse(d.timelock.hasRole(d.timelock.EXECUTOR_ROLE(), stranger), "stranger holds no role");
+        vm.prank(stranger);
+        d.timelock.execute(opTarget, 0, data, bytes32(0), salt);
+
+        bytes32 id = d.timelock.hashOperation(opTarget, 0, data, bytes32(0), salt);
+        assertTrue(d.timelock.isOperationDone(id), "a role-less stranger executed the matured operation");
+    }
+
     function test_timelock_governorAndSafeProposers() public view {
         assertTrue(d.timelock.hasRole(d.timelock.PROPOSER_ROLE(), address(d.governor)), "Governor PROPOSER");
         assertTrue(d.timelock.hasRole(d.timelock.CANCELLER_ROLE(), address(d.governor)), "Governor CANCELLER");

@@ -54,6 +54,15 @@ import "../ProtocolParameters.sol";
  *         Safe is also a Timelock PROPOSER (bootstrap: it can schedule role grants pre-DAO,
  *         but only with the 48h delay). Production: ADMIN_ADDRESS = Gnosis Safe (3/5 or
  *         2/3) + REQUIRE_SAFE_ADMIN=true.
+ * [ARCH.112] EXECUTOR_ROLE is deliberately OPEN — `executors = [address(0)]`, so once the 48h
+ *         delay matures ANY address may execute. This is a standing authority held by the whole
+ *         world, and it is the SAFER side of the trade: a named executor set makes a passed,
+ *         matured proposal hostage to one keyholder's liveness or censorship, which is the very
+ *         failure the timelock exists to prevent. The counterweight is that execution is then
+ *         NOT discretionary — the only defence inside the window is CANCELLER (Safe + Governor,
+ *         [CONTRACT.1]), which is why that role is load-bearing rather than a convenience.
+ *         Pinned both ways by `test_timelock_executorIsOpenToAnyone` (Deploy.t.sol): the role
+ *         declaration AND a role-less stranger actually executing.
  * [S3.5]  After deployment: update subgraph.yaml with the real SFC contract address.
  */
 contract DeploySilkenNet is Script {
@@ -173,7 +182,9 @@ contract DeploySilkenNet is Script {
         }
     }
 
-    /// @dev Open executor (anyone can execute after the delay); `deployer` is a temporary admin.
+    /// @dev [ARCH.112] Open executor — `address(0)` means anyone may execute after the delay.
+    ///      Deliberate; rationale + counterweight in the contract-level `[ARCH.112]` block above,
+    ///      pin in `Deploy.t.sol#test_timelock_executorIsOpenToAnyone`. `deployer` is a temporary admin.
     function _deployTimelock(address deployer) internal returns (SilkenTimelock timelock) {
         address[] memory proposers = new address[](0);
         address[] memory executors = new address[](1);
