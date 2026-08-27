@@ -126,12 +126,13 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 
 ## 3. Operations Runbook Index (канонічні доми — НЕ дублювати тут)
 
-> 🔴 **Передумова, спільна для ВСІХ console-рецептів нижче, і документована вона лише наполовину.** Кожен із них починається з доступу до Rails-процесу, а канон описує цей доступ **тільки для Kamal/GCP-fallback** ([`06_01 §Deploy runbook`](06_01_Deployment_Kamal_Terraform) — `kamal app exec --interactive --reuse "bin/rails console"`). Для **живого** шляху (Akash — так його називає `config/database.yml`) еквівалента в каноні немає. Тобто рецепти коректні, а от дорога до них перевірена не на тому таргеті — і виявиться це в інциденті. Нота стоїть ТУТ одним домом, а не копією в кожному рецепті. Стан → [`00_07`](00_07_Action_Plan_Tracker) OPS.20.
+> 🔴 **Передумова, спільна для ВСІХ console-рецептів нижче, і документована вона лише наполовину.** Кожен із них починається з доступу до Rails-процесу, а канон описує цей доступ **тільки для Kamal/GCP-fallback** ([`06_01 §Deploy runbook`](06_01_Deployment_Kamal_Terraform) — `kamal app exec --interactive --reuse "bin/rails console"`). Для **живого** шляху (Akash — так його називає `config/database.yml`) з 2026-08-28 є **рецепт-КАНДИДАТ** [`06_02 §4.5`](06_02_Akash_Network_Integration), і його дві половини свідомо розведені: те, що доводиться НАШИМ кодом уже зараз (Cloud SQL Auth Proxy — фоновий процес у ТОМУ САМОМУ контейнері, під наглядом PID 1, тож контейнер, у який вдалося зайти, за побудовою має живий проксі), і сам механізм входу, який без живого lease не доводиться. ⚠️ Слово «кандидат» знімає лише `👤`-верифікація. Тобто рецепти коректні, а от дорога до них перевірена не на тому таргеті — і виявиться це в інциденті. Нота стоїть ТУТ одним домом, а не копією в кожному рецепті. Стан → [`00_07`](00_07_Action_Plan_Tracker) OPS.20.
 
 | Runbook | Дім (SSOT) |
 |---|---|
 | Перший деплой інфраструктури (GCS state → terraform → secrets → deploy) | [`06_01 §Quickstart`](06_01_Deployment_Kamal_Terraform) |
 | Akash SDL deploy + `ALLOY_CONFIG_BASE64` encode + Alloy debug | [`06_02 §2 ENV (Секрети SDL)/INF.7`](06_02_Akash_Network_Integration) |
+| **Доступ до Rails-процесу на ЖИВОМУ lease** (`lease-shell` → `bin/rails console`) — ⚠️ статус **КАНДИДАТ**, не доведено на живому lease | [`06_02 §4.5`](06_02_Akash_Network_Integration) |
 | TLS / Cloudflare verification (8-step) | [`06_02 §TLS термінація`](06_02_Akash_Network_Integration) |
 | Secrets: pre-deploy checklist, rotation, audit | [`06_04 §5.1–5.3`](06_04_Secrets_Checklist) |
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |
