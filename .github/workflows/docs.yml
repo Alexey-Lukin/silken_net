@@ -188,6 +188,15 @@ jobs:
         # означало б видати домовленість за вимірювану величину.
         run: ruby tools/firmware/uncertainty_budget.rb --assert
 
+      - name: Verdict-denominator sensitivity (SLASH-1)
+        # Pure Ruby — будує ПОПУЛЯЦІЮ кластера й проганяє гілку СМЕРТІ вироку через
+        # три політики знаменника. Сусідній supply_stress бере damage_ratio екзогенним
+        # випадковим кидком, тобто на питання «чи мовчання робить дерево вибулим для
+        # РОЗМІРУ вироку» відповісти не здатен за побудовою. Інваріанти пінять обидва
+        # роги: недокарання суцільної вирубки, що прийшла тишею (чинна політика), і
+        # вироджений край, де виключення тиші дає 1/1 = 100% на здоровому кластері.
+        run: ruby tools/tokenomics/verdict_sensitivity.rb --assert
+
       - name: CEM↔canon geometry guard (HW.33 — shipped cem/*.json ↔ 01_01/01_02/01_04)
         # Pure Ruby stdlib (json) — pins shipped cem geometry to its canon owner;
         # catches what the C# xUnit (validates record-defaults, even locks off-spec
