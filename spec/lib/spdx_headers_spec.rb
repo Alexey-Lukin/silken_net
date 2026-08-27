@@ -498,6 +498,65 @@ RSpec.describe SpdxHeaders do
       end
     end
 
+    # [OPS.36] Маніфест робить ТУ САМУ заяву, що per-file теги, лише на рівень вище — і
+    # саме його першим читає ліцензійний сканер. Пари ніхто не звіряв, тож `contracts/`
+    # оголошував AGPL у `package.json` при MIT у всіх чотирнадцяти `*.sol` і в зонній карті
+    # `NOTICE`; обидва боки внутрішньо несуперечливі, тож зелено було СКРІЗЬ (§Guard-craft
+    # #31 — реєстр валідує кожен ЗАПИС і не питає, чи двоє записів ЗГОДНІ).
+    describe ".manifest_licences" do
+      it "ловить маніфест, чия заява суперечить зонній карті" do
+        with_repo(
+          "contracts/SCC.sol" => "// SPDX-License-Identifier: MIT\npragma solidity;\n",
+          "contracts/package.json" => %({\n  "license": "AGPL-3.0-or-later"\n})
+        ) do |root|
+          drift = described_class.manifest_licences(root)
+
+          expect(drift.size).to eq(1)
+          expect(drift.first).to include(path: "contracts/package.json",
+                                         found: "AGPL-3.0-or-later",
+                                         licence: described_class::MIT)
+        end
+      end
+
+      it "мовчить, коли маніфест і зона згодні" do
+        with_repo(
+          "contracts/package.json" => %({\n  "license": "MIT"\n}),
+          "subgraph/package.json" => %({\n  "license": "#{described_class::AGPL}"\n})
+        ) { |root| expect(described_class.manifest_licences(root)).to be_empty }
+      end
+
+      # 🔒 Оголошена стеля: маніфест БЕЗ поля не є порушенням — три `.csproj` і один
+      # `pyproject.toml` живуть саме так, свідомо. Судиться заява, не її відсутність.
+      it "не судить маніфест, що ліцензії не оголошує" do
+        with_repo("contracts/package.json" => %({\n  "name": "x"\n})) do |root|
+          expect(described_class.manifest_licences(root)).to be_empty
+        end
+      end
+
+      # 🔒 Друга половина стелі: дерево, якого нема в `ALLOW`, РЕПОРТУЄТЬСЯ, а не вгадується
+      # — та сама стійка, що в `unclassified`.
+      it "репортує маніфест у дереві, якого зонна карта не знає (не вгадує)" do
+        with_repo("newtree/package.json" => %({\n  "license": "MIT"\n})) do |root|
+          drift = described_class.manifest_licences(root)
+
+          expect(drift.size).to eq(1)
+          expect(drift.first[:licence]).to be_nil
+        end
+      end
+
+      # 🔦 Ліхтар: перемога — порожня множина, тож живість доводить лише те, що в реальному
+      # дереві маніфести з полем ВЗАГАЛІ Є; інакше «чисто» означало б «нічого не дивились».
+      it "реальне дерево чисте, і популяція маніфестів із полем непорожня" do
+        root = File.expand_path("../..", __dir__)
+
+        expect(described_class.manifest_licences(root)).to be_empty
+        declaring = described_class.tracked_files(root)
+                                   .select { |r| described_class::MANIFEST_LICENCE_RE.key?(File.basename(r)) }
+                                   .select { |r| File.read(File.join(root, r)).match?(/"license"\s*:/) }
+        expect(declaring).not_to be_empty
+      end
+    end
+
     it "preserves CRLF line endings when a file uses them" do
       with_repo("app/models/tree.rb" => "# frozen_string_literal: true\r\nclass Tree; end\r\n") do |root|
         action = described_class.plan(root:, paths: []).first

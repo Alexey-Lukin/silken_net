@@ -549,7 +549,7 @@ class BlockchainMintingService < ApplicationService
     if tax_total.positive?
       recipients.push(ENV.fetch("DAO_TREASURY_ADDRESS"))
       amounts.push(to_wei(tax_total))
-      identifiers.push("TAX_BATCH_#{identifier_for(txs.first)}")
+      identifiers.push("#{TAX_BATCH_PREFIX}#{identifier_for(txs.first)}")
     end
 
     # [DOC-T.89] `tax_total` віддається НАЗОВНІ, а не інкрементується тут: цей метод
@@ -676,6 +676,12 @@ class BlockchainMintingService < ApplicationService
   # pending), тож це один рядок; після mainnet — міграція формату on-chain події з
   # розривом історії. Саме тому робиться ЗАРАЗ, а не «коли знадобиться».
   INSURANCE_MINT_PREFIX = "INS_"
+  # Той самий клас, що `INSURANCE_MINT_PREFIX`, і доти він жив ГОЛИМ ЛІТЕРАЛОМ усередині
+  # `build_batch_arrays` [OPS.36, 2026-08-27]. Ім'я потрібне не для краси: обидва префікси
+  # продубльовані в `subgraph/src/mapping.ts`, а наш пін-двигун ключується на `NAME = value`
+  # (§Guard-craft #97), тож незіменований літерал сидить поза БУДЬ-ЯКИМ гейтом за побудовою.
+  # Паритет двох боків тепер стереже `spec/quality/mint_prefix_parity_spec.rb`.
+  TAX_BATCH_PREFIX = "TAX_BATCH_"
 
   def identifier_for(tx)
     tree = tx.wallet&.tree

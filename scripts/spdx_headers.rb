@@ -243,6 +243,40 @@ module SpdxHeaders
     rule&.last
   end
 
+  # --- package-manifest licence ⟷ zone map [OPS.36, 2026-08-27] ---
+  # A manifest's `license` field makes the SAME claim the per-file tags make, one level up —
+  # and it is the level an automated licence scanner reads FIRST. Nothing paired the two:
+  # `contracts/package.json` declared `AGPL-3.0-or-later` while all fourteen `contracts/*.sol`
+  # and the `NOTICE` zone map said **MIT** (ratified DOC-T.47, with a reason — on-chain
+  # composability / OpenZeppelin-consistency), and every gate stayed green because each side
+  # was internally consistent. That is §Guard-craft #31 exactly: a registry validates each
+  # RECORD and never asks whether two records AGREE. The cost here is not tidiness — a repo
+  # is public, and a licence field is a legal statement about someone else's rights to use it.
+  #
+  # 🔒 CEILING, three parts:
+  #  · only manifests that DECLARE a licence are judged. No `license` field = out of scope,
+  #    NOT a violation — three `.csproj` and one `pyproject.toml` sit there deliberately.
+  #  · the comparison is to the ZONE MAP (`ALLOW`), never to NOTICE's prose: the map is the
+  #    machine-readable half, NOTICE is its narrative, and pairing prose would be a second home.
+  #  · a manifest in a tree NO rule covers is REPORTED, never guessed — same stance as
+  #    `unclassified`: the gate refuses to invent a licence for a tree nobody has decided.
+  MANIFEST_LICENCE_RE = { "package.json" => /"license"\s*:\s*"([^"]+)"/ }.freeze
+
+  def manifest_licences(root, paths = [])
+    tracked_files(root, paths).filter_map do |rel|
+      re = MANIFEST_LICENCE_RE[File.basename(rel)]
+      next unless re
+
+      declared = File.read(File.join(root, rel))[re, 1]
+      next unless declared # no `license` field — out of scope by the declared ceiling
+
+      expected = ALLOW.find { |prefix, _, _| rel.start_with?(prefix) }&.last
+      next if expected == declared
+
+      { path: rel, found: declared, licence: expected }
+    end
+  end
+
   # The comment prefix to use, or nil when the file has no usable comment syntax.
   def comment_prefix(path, first_line)
     # By name first: CMakeLists.txt's `.txt` must not fall through to the extension map.
@@ -420,8 +454,18 @@ if __FILE__ == $PROGRAM_NAME
       warn "Decide the licence, then record it in ALLOW or DENY — the gate will not guess.\n\n"
     end
 
+    manifests = SpdxHeaders.manifest_licences(root, paths)
+    unless manifests.empty?
+      warn "spdx_headers ✗ — #{manifests.size} package manifest(s) declare a licence the zone map contradicts."
+      warn "A manifest field is what a licence SCANNER reads first, so this is the loudest of the two claims:"
+      manifests.each do |m|
+        warn "  ⚠ #{m[:path]} — declares #{m[:found]}, zone map says #{m[:licence] || 'nothing (tree not in ALLOW — decide it)'}"
+      end
+      warn ""
+    end
+
     if inserts.empty?
-      held = foreign.size + unsupported.size + mismatch.size + stray.size
+      held = foreign.size + unsupported.size + mismatch.size + stray.size + manifests.size
       puts "spdx_headers #{held.zero? ? '✓' : '✗'} — #{ok} in-scope file(s) tagged, #{held} held back."
       # foreign / unsupported / mismatch are ALL failures here. Leaving them out of the exit
       # code was a live silent lie: the warnings go to stderr, which CI folds away, while the

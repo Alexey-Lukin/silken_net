@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "SilkenNet Solidity smart contracts (SCC, SFC, StateRootAnchor, Governance)",
   "private": true,
-  "license": "AGPL-3.0-or-later",
+  "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "~5.7.0"
   },
