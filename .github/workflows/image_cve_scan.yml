@@ -1,0 +1,119 @@
+name: Sec · Image CVE Scan
+
+# [OPS.10] CVE-скан ОПУБЛІКОВАНОГО образу GHCR — останній незакритий 🤖-хвіст
+# supply-chain-гарту. Образ `ghcr.io/alexey-lukin/silken_net` **публічний за
+# конструкцією** (INF.2: недовірені Akash-провайдери не можуть тягнути з приватного
+# GCP Artifact Registry), тож його вміст читає будь-хто, а вразливості базового шару
+# ніхто не рахував. Дзеркало Slither/Aderyn/Scorecard: знахідки → SARIF у Security-tab
+# з власною `category`.
+#
+# 🔴 ФОРМА ОБРАНА ІНША, НІЖ ПРИПУСКАЛА НОГА, і різниця несуча. Нога казала «скан
+# побудованого образу» — тобто крок усередині `mirror-ghcr.yml`. Але CVE-фід
+# оновлюється БЕЗ наших комітів: скан на момент збірки правдивий рівно в ту хвилину
+# й тихо старіє, а образ лежить публічним місяцями. Тому вісь — ПЛАНОВА, над уже
+# опублікованим тегом, і це той самий критерій, за яким щоденні `akash_escrow_watch`
+# і Dependabot не прив'язані до наших комітів. ⊕ Побічно це знімає весь ризик
+# зв'язування з релізним шляхом: жодна помилка тут не може заблокувати дзеркало.
+#
+# 🔒 SOFT ЗА КОНСТРУКЦІЄЮ, і це названо, а не мається на увазі: `exit-code: '0'` —
+# скан звітує, ніколи не валить. Базовий шар Ruby несе CVE, яких ми не фіксимо
+# інакше як бампом образу, тож HARD із народження зробив би цей воркфлоу вічно
+# червоним, а вічно червоний гейт перестають читати (00_05 §5). Перехід у HARD =
+# окрема нога: тріаж базлайну до нуля, як зробив `iac_scan` (INF.22).
+# ⚠️ `.trivyignore` у корені — базлайн IaC-МІСКОНФІГІВ (AVD-*), і для CVE-скану він
+# інертний за побудовою (різні простори ID). Коли ця вісь піде в HARD, їй потрібен
+# ВЛАСНИЙ ignore-файл: злити два базлайни в один означало б, що тріаж однієї осі
+# мовчки послаблює другу.
+#
+# Skip-clean (патерн `coap_smoke`/`akash_escrow_watch`): доки образу в GHCR немає,
+# джоба видимо пропускається через ::notice, а не падає — свіжий форк не має бути
+# червоним через відсутність чужого пакета.
+#
+# Канон: політика scan-тулів = 06_07 §1a (SHA-пін + явний `version:`), інвентар
+# воркфлоу = 06_07 §1. Трекер: OPS.10 (docs/00_07 §06).
+
+on:
+  schedule:
+    - cron: "17 4 * * *" # щодня, зсунуто від рівних годин (піки навантаження GH)
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "Повний ref образу (default: ghcr.io/<repo>:latest)"
+        required: false
+        type: string
+
+# Least-privilege floor; джоба піднімає лише SARIF-запис і читання пакета.
+permissions:
+  contents: read
+
+concurrency:
+  group: image-cve-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Trivy image CVE
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read           # checkout (потрібен для upload-sarif)
+      packages: read           # pull образу з GHCR
+      security-events: write   # завантаження SARIF у code-scanning
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Skip-clean преflight: образ може ще не існувати (свіжий форк, перший день
+      # після включення). Відсутність пакета — НЕ вердикт про наш код, тож джоба
+      # видимо пропускає скан замість падати.
+      - name: Resolve image ref and check it exists
+        id: img
+        env:
+          OVERRIDE: ${{ inputs.image_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -n "$OVERRIDE" ]; then
+            ref="$OVERRIDE"
+          else
+            ref="ghcr.io/${REPO,,}:latest"
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          if docker manifest inspect "$ref" >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Скануємо $ref"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Образу $ref у GHCR немає — скан пропущено (skip-clean, не вердикт про код)."
+          fi
+
+      - name: Trivy image scan
+        if: ${{ steps.img.outputs.present == 'true' }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.img.outputs.ref }}
+          version: v0.72.0
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true # без апстрім-фіксу дія неможлива — це шум, не робота
+          exit-code: '0' # SOFT за конструкцією (див. шапку); HARD = окрема нога OPS.10
+
+      - name: Upload SARIF to code-scanning
+        if: ${{ steps.img.outputs.present == 'true' }}
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
