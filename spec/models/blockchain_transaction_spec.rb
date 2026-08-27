@@ -992,6 +992,31 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(attrs["metadata"]).to include("from" => "pending", "to" => "failed")
       end
 
+      # [SEC.18 / DPIA M6] Цей рядок їде в ПУБЛІЧНИЙ незворотний IPFS-пін, а
+      # `error_message` несе `e.message` довільного винятку. Пін цілиться саме в
+      # ЗНАЧЕННЯ, не в наявність ключа: `have_key`-форма була б зелена й на сирому
+      # тексті, тобто доводила б форму відповіді й нічого про витік.
+      # 🔴 Мутація, що ламає САМЕ його: повернути `error: error_message` у
+      # `record_money_audit_trail` — приклад мусить почервоніти з обох боків
+      # (код не той І фрагмент тексту присутній).
+      it "carries an error CODE in metadata, never the raw exception text" do
+        tx.fail!("Ambiguous mint broadcast — https://user:s3cret@rpc.example/eth reverted")
+
+        metadata = AuditLogWorker.jobs.last["args"].first["metadata"]
+
+        expect(metadata["error"]).to eq("broadcast_ambiguous")
+        expect(metadata["error"]).not_to include("s3cret")
+        expect(metadata["error"]).not_to include("rpc.example")
+        # Сирий текст лишається локально — діагностику не втрачено, її переадресовано.
+        expect(tx.reload.error_message).to include("s3cret")
+      end
+
+      it "writes the no-text sentinel when there is no error at all" do
+        tx.process!
+
+        expect(AuditLogWorker.jobs.last["args"].first["metadata"]["error"]).to eq("none")
+      end
+
       # [MRV.1/ARCH.12] Транзитивна печатка lineage: корінь вікна їде в AuditLog-ланцюг
       # (→ leaf0 наступного тижневого якоря); nil = чесний unsealed у bundle.
       it "carries telemetry_merkle_root in metadata (lineage transitive seal)" do

@@ -41,6 +41,23 @@ updates:
   open-pull-requests-limit: 10
   labels:
   - "type:deps"
+- package-ecosystem: npm           # subgraph/: @graphprotocol/graph-cli + graph-ts
+  # [OPS.35] Заведено 2026-08-27 разом із присудом «прийняти dev-scope-експозицію».
+  # 🔴 Ця директорія — НОСІЙ того присуду, а не гігієна. Присуд стоїть на вимірі
+  # «upstream не лікує»: `graph-cli@0.98.1` = `latest` у npm, і навіть `0.99.0-alpha`
+  # тягне той самий `decompress@^4.2.1`. Підстава такого роду («події ще не сталось»)
+  # не помирає нічим, окрім самої події — тобто релізу, що знімає транзитивне дерево.
+  # Без цього запису алерти приходили б і далі (security-скан репо-широкий і
+  # `directory:` не знає), а КАНАЛ, яким прийде фікс, не існував би — і присуд
+  # «прийняти» тихо став би «прийняти назавжди».
+  # Прецедент проти тієї самої форми стоїть двома записами вище: `github-actions`
+  # дістав власний `directories:`-рядок саме тому, що без нього пін дрейфував мовчки.
+  directory: "/subgraph"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  labels:
+  - "type:deps"
 - package-ecosystem: terraform     # terraform/: google + akash providers
   directory: "/terraform"
   schedule:

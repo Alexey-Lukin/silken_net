@@ -11,5 +11,16 @@
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.98.1",
     "@graphprotocol/graph-ts": "0.38.2"
+  },
+  "overrides": {
+    "axios": "1.20.0",
+    "undici": "7.29.0",
+    "js-yaml": "4.3.2",
+    "immutable": "5.1.9",
+    "glob": "11.1.0",
+    "yaml": "2.9.0",
+    "cross-spawn": "7.0.6",
+    "ejs": "3.1.10",
+    "semver": "7.7.3"
   }
 }

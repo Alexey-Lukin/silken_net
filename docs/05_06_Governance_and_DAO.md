@@ -166,9 +166,11 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
     {
         // Fail-closed на межі довіри: база 0 зробила б quorum нульовим, тобто будь-яка
         // пропозиція проходила б з одним голосом — рівно та шкода, яку цей фікс закриває.
-        uint256 cap = ICappedVotesToken(address(_token)).MAX_SUPPLY();
-        require(cap > 0, "Governor: zero quorum base");
-        QUORUM_BASE = cap;
+        // ⚠️ Порядок «присвоїти РЕЗУЛЬТАТОМ виклику, потім перевірити» — навмисний: зворотна
+        // форма давала Aderyn HIGH `reentrancy-state-change` (запис стану ПІСЛЯ зовнішнього
+        // виклику). Семантика тотожна — revert відкочує все, тож нульова база недосяжна.
+        QUORUM_BASE = ICappedVotesToken(address(_token)).MAX_SUPPLY();
+        require(QUORUM_BASE > 0, "Governor: zero quorum base");
     }
 
     function quorum(uint256 blockNumber) public view override(Governor, GovernorVotesQuorumFraction) returns (uint256) {

@@ -638,7 +638,13 @@ class BlockchainTransaction < ApplicationRecord
         metadata: {
           from: from.to_s, to: to.to_s,
           token_type: token_type, amount: amount.to_s,
-          tx_hash: tx_hash, error: error_message,
+          tx_hash: tx_hash,
+          # [SEC.18 / DPIA M6] КОД, ніколи сирий текст: цей рядок їде в публічний
+          # незворотний IPFS-пін, а `error_message` несе `e.message` довільного
+          # винятку (чуже RPC-тіло, URL, Kredis). Класифікатор fail-CLOSED —
+          # невідоме стає `:unknown` і не виносить назовні жодного байта.
+          # Повний текст лишається в `blockchain_transactions.error_message`.
+          error: Web3::TransactionErrorClassifier.classify(error_message).to_s,
           # [MRV.1/ARCH.12] транзитивна печатка: корінь вікна → AuditLog-ланцюг →
           # leaf0 наступного тижневого якоря (nil = unsealed, bundle покаже чесно)
           telemetry_merkle_root: telemetry_merkle_root
