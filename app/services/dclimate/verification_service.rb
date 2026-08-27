@@ -46,6 +46,23 @@ module Dclimate
     # > 70% = поверхню не видно, дані неможливо інтерпретувати.
     CLOUD_COVER_THRESHOLD = 70.0
 
+    # 🔭 [ARCH.111] Півширина часового вікна запиту до FIRMS, у добах: питаємо
+    # `[дата_алерту − N, дата_алерту + N]`. Константа існує окремо саме тому, що
+    # ЦЕ Й Є ВИБІРКА — множина, з якої береться вердикт, і обирає її ВИКЛИКАЧ,
+    # а не супутник. FIRMS на будь-яке вікно відповідає чесно; питання лише в
+    # тому, чи містить воно подію.
+    #
+    # ⚠️ Чому симетрична, а не «від дати алерту вперед»: `date` деривується з
+    # `@alert.created_at`, тобто з моменту, коли МИ помітили, а не коли ГОРІЛО.
+    # Між подією і алертом лежить сон Солдата + батчинг Королеви + черга, тож
+    # алерт регулярно народжується вже наступної UTC-доби. Вікно, що починається
+    # опівночі дати алерту, тоді стартує ПІСЛЯ пожежі — і `interpret_fire_data`
+    # чесно віддає `:clear_sky_no_fire`, тобто `rejected_fraud` + slash-enqueue.
+    # Асиметрія ціни однобічна: розширення назад робить хибний фрод-вердикт
+    # менш імовірним, звуження — більш; тому мінімальне чесне вікно ≥ періоду
+    # прольоту VIIRS (~12 год) плюс NRT-затримка (~3 год), тобто одна доба.
+    FIRMS_WINDOW_DAYS = 1
+
     # --- HTTP Timeouts (суворі для Sidekiq-воркерів) ---
     OPEN_TIMEOUT = 10  # секунд на TCP/TLS handshake
     READ_TIMEOUT = 15  # секунд на відповідь (FIRMS API зазвичай < 5с)
@@ -81,9 +98,10 @@ module Dclimate
     # 🛰️ HTTP-запит до dClimate API (FIRMS — Fire Radiative Power)
     # ---------------------------------------------------------------
     # Витягує координати алерту (tree → cluster geo_center → [0,0]),
-    # формує GET-запит до dClimate FIRMS endpoint з часовим вікном
-    # ±1 день від дати алерту, парсить JSON-відповідь та інтерпретує
-    # супутникові дані через порогові значення FRP/confidence/cloud_cover.
+    # формує GET-запит до dClimate FIRMS endpoint із симетричним часовим вікном
+    # довкола дати алерту (`FIRMS_WINDOW_DAYS` — там же підстава ширини), парсить
+    # JSON-відповідь та інтерпретує супутникові дані через порогові значення
+    # FRP/confidence/cloud_cover.
     #
     # При будь-якій мережевій помилці (timeout, HTTP 5xx, DNS failure)
     # повертає :obscured_by_clouds → OrbitalLagError → Sidekiq retry.
@@ -137,12 +155,17 @@ module Dclimate
 
     # Формує URL для FIRMS point query.
     # dClimate geo-temporal API: /v4/geo/grid-history/{dataset}?lat=...&lon=...
+    # 🔭 [ARCH.111] Вікно СИМЕТРИЧНЕ довкола дати алерту — підстава в
+    # `FIRMS_WINDOW_DAYS`. ⛔ Не зводь нижню межу на саму дату алерту: питання до
+    # супутника почалося б після півночі тієї доби, коли ми ПОМІТИЛИ, і подія
+    # попереднього вечора не входила б у вибірку взагалі. Носій — приклад
+    # «питає симетричне вікно довкола дати алерту» (мутаційно перевірений).
     def build_firms_url(lat, lng, date)
       params = URI.encode_www_form(
         latitude: lat,
         longitude: lng,
-        start_date: date.iso8601,
-        end_date: (date + 1.day).iso8601
+        start_date: (date - FIRMS_WINDOW_DAYS.days).iso8601,
+        end_date: (date + FIRMS_WINDOW_DAYS.days).iso8601
       )
 
       "#{DCLIMATE_BASE_URL}/v4/geo/grid-history/#{FIRMS_DATASET}?#{params}"

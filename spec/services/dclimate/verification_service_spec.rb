@@ -292,11 +292,33 @@ RSpec.describe Dclimate::VerificationService, type: :service do
         expect(result).to eq(:fire_confirmed)
       end
 
-      it "sends request with correct coordinates and date" do
+      it "sends request with correct coordinates" do
         service.send(:query_dclimate_api)
         expect(Web3::HttpClient).to have_received(:get).with(
           a_string_matching(/latitude=#{tree.latitude}.*longitude=#{tree.longitude}/),
           hash_including(service_name: "dClimate")
+        )
+      end
+
+      # 🔭 [ARCH.111] Вибірка — це ВІКНО, і обирає його викликач, а не супутник.
+      # Пін стоїть на ОБИДВОХ межах: без нижньої повертається форма, за якої
+      # алерт, народжений після півночі UTC, питає добу, що почалась ПІСЛЯ
+      # події, — і чесна відповідь «вогню в цьому вікні немає» їде далі як
+      # `rejected_fraud` + slash-enqueue. Дата задана `travel_to`, а очікування —
+      # ЛІТЕРАЛИ, а не переобчислення тієї самої арифметики.
+      it "питає симетричне вікно довкола дати алерту, а не лише вперед" do
+        travel_to(Time.utc(2026, 3, 15, 0, 10)) do
+          alert.update_column(:created_at, Time.utc(2026, 3, 15, 0, 10))
+          described_class.new(alert.reload).send(:query_dclimate_api)
+        end
+
+        expect(Web3::HttpClient).to have_received(:get).with(
+          a_string_matching(/start_date=2026-03-14&/),
+          anything
+        )
+        expect(Web3::HttpClient).to have_received(:get).with(
+          a_string_matching(/end_date=2026-03-16(&|\z)/),
+          anything
         )
       end
 
