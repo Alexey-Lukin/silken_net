@@ -51,7 +51,7 @@ lt:
         capital_injected: Sutarčių suma
         capital_injected_sub: USD iš viso
         carbon_yield: Nukalta SCC
-        carbon_yield_sub: Nukalinta SCC
+        carbon_yield_sub: Nukalta SCC
       switch: PERJUNGTI →
       switch_aria: Perjungti darbo kontekstą į %{name}
     show_title: Klano profilis // %{name}

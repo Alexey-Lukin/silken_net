@@ -5,7 +5,7 @@ lt:
       burned: "⬢ Sudeginta %{amount} %{ticker} ← %{target}"
       etherisc_claim: "🛡️ Etherisc DIP reikalavimas %{amount} USDC → %{address}"
       maintenance: "🔧 %{action}: atliko %{user}"
-      minted: "⬢ Nukalinta %{amount} %{ticker} → %{target}"
+      minted: "⬢ Nukalta %{amount} %{ticker} → %{target}"
       pool: Fondas
       system_pulse: "● Aptiktas sistemos impulsas"
       system_user: Sistema
