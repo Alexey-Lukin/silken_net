@@ -64,9 +64,13 @@ RSpec.describe Web3::LocalEnvSigner do
   end
 
   describe "#static_call" do
-    # `Eth::Client#call` never reads sender_key — it is inert here and forwarded anyway:
-    # dropping it would be a real behaviour change smuggled inside a seam commit.
-    it "forwards to client.call with the inert sender_key preserved" do
+    # 🔴 [SEC.17] `Eth::Client#call` reads `from:` and never reads `sender_key:` — so the
+    # sender MUST arrive as `from:`. With the old (inert) form the payload carried no
+    # sender at all, and `batchMint` is `onlyRole(MINTER_ROLE)`: on a live chain the
+    # dry-run would revert on EVERY batch and drive the poisoned-record binary search
+    # over clean data. The literal is pinned rather than `address.to_s` on purpose — an
+    # expectation written with the code's own expression cannot fail when the code does.
+    it "passes the sender as `from:`, checksummed, and never as the inert sender_key" do
       allow(client).to receive(:call).and_return(0)
 
       result = described_class.new(private_key)
@@ -74,9 +78,22 @@ RSpec.describe Web3::LocalEnvSigner do
 
       aggregate_failures do
         expect(client).to have_received(:call)
-          .with(contract, "batchMint", [ "0x#{'b' * 40}" ], [ 1 ], sender_key: key_double)
+          .with(contract, "batchMint", [ "0x#{'b' * 40}" ], [ 1 ],
+                from: "0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd")
         expect(result).to eq(0)
       end
+    end
+
+    # The caller keeps the last word: a site that knows better than the signer (a
+    # simulation deliberately run as somebody else) must not be silently overridden.
+    it "lets an explicit from: from the caller win over the signer address" do
+      allow(client).to receive(:call).and_return(0)
+
+      described_class.new(private_key)
+        .static_call(client, contract, "balanceOf", from: "0x#{'c' * 40}")
+
+      expect(client).to have_received(:call)
+        .with(contract, "balanceOf", from: "0x#{'c' * 40}")
     end
   end
 
@@ -93,7 +110,8 @@ RSpec.describe Web3::LocalEnvSigner do
 
     aggregate_failures do
       expect(client).to have_received(:transact).with(contract, "mint", sender_key: key_double)
-      expect(other_client).to have_received(:call).with(contract, "balanceOf", sender_key: key_double)
+      expect(other_client).to have_received(:call)
+        .with(contract, "balanceOf", from: "0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd")
     end
   end
 end

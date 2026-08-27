@@ -287,11 +287,12 @@ Eth::Contract.from_abi(name: "StateRootAnchor", address: ETHEREUM_ANCHOR_CONTRAC
 root_bytes = "0x#{state_root}"   # 64-char hex → 0x-prefixed bytes32
        │
        ▼
+client.max_fee_per_gas = DEFAULT_MAX_FEE_GWEI          # 100 Gwei cap  [SEC.17]
+client.max_priority_fee_per_gas = DEFAULT_PRIORITY_FEE_GWEI  # 2 Gwei tip
+       │
 client.transact(contract, "storeStateRoot", root_bytes,
                 sender_key: anchor_key, legacy: false,
-                gas_limit: DEFAULT_GAS_LIMIT,          # 100_000 (ENV-overridable)
-                max_fee_per_gas: DEFAULT_MAX_FEE_GWEI,  # 100 Gwei cap
-                max_priority_fee_per_gas: DEFAULT_PRIORITY_FEE_GWEI)  # 2 Gwei tip
+                gas_limit: DEFAULT_GAS_LIMIT)          # 100_000 (ENV-overridable)
        │
        ▼
 anchor.update!(status: :sent, tx_hash:)
@@ -318,6 +319,8 @@ return anchor   # EthereumAnchor (:sent → поллер доведе до :conf
 | `ETHEREUM_GAS_LIMIT` | Gas limit для `storeStateRoot` | `100_000` |
 
 > ⚠️ **Безпека:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ніколи не повинен потрапляти в Git. Зберігається в Rails encrypted credentials або secrets manager.
+
+🔴 **Дві fee-змінні діють через АТРИБУТИ клієнта, а не через kwargʼи `transact` — і доти вони не діяли взагалі [SEC.17, 2026-08-27].** `Eth::Client#transact` (eth 0.5.17) читає рівно `tx_value/gas_limit/address/legacy/sender_key/nonce`; обидва fee-kwargʼи він **ігнорує мовчки**, беручи значення з атрибутів клієнта. Ми ж їх сумлінно рахували з ENV і передавали в порожнечу, тож на дроті стояли gem-дефолти `Tx::DEFAULT_GAS_PRICE` = **42.69 Gwei** / `DEFAULT_PRIORITY_FEE` = **1.01 Gwei** — тобто НИЖЧІ за наші 100/2. **Наслідок операційний:** на завантаженому L1 (base fee > 42.69) якір не майнився б узагалі й осідав у `:sent`-лімбі [ARCH.66], а `ETHEREUM_MAX_FEE_GWEI` — важіль, яким його розчищають, — не робив НІЧОГО. ⚠️ Присвоєння стоїть впритул до `transact`, бо клієнт кешований per-thread і спільний із `EthereumAnchorConfirmationWorker`/`Treasury::MonitorService` (обидва лише ЧИТАЮТЬ, тож на них це не впливає). ⊕ Дзеркало для мультипровайдерного шляху — `Web3::ResilientClient` тримає fee-політику ВЛАСНИМИ методами й накладає її на кожного клієнта каскаду, включно з перествореними після збою; через `method_missing` присвоєння дійшло б лише до першого провайдера й зникало б на першому ж `record_failure`.
 
 ### Smart Contract ABI (в константі `ANCHOR_ABI`)
 
@@ -472,7 +475,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 | `creates EthereumAnchor with status: pending before TX` | Crash recovery: запис до TX |
 | `updates EthereumAnchor to sent with tx_hash on success` | Persistence BLOCKER-2 |
 | `raises and sets status: failed if ETH balance too low` | Balance guard BLOCKER-4 |
-| `uses gas_limit, max_fee_per_gas, priority_fee from ENV` | Gas management BLOCKER-3 |
+| `puts the ENV fee-cap on the client attributes the gem actually reads` | Gas management BLOCKER-3 — пін на АТРИБУТИ, не на kwargʼи [SEC.17] |
 | `stores all state_root components for independent verification` | BLOCKER-6 |
 | `connects to Alchemy Ethereum RPC` | Правильний RPC endpoint |
 | `calls storeStateRoot with a 0x-prefixed bytes32 root` | Формат bytes32 аргументу |

@@ -204,6 +204,11 @@ RSpec.describe Ethereum::StateAnchorService do
       # [ARCH.66 companion] get_nonce кличеться для нового anchor (nonce nil) перед broadcast.
       allow(mock_client).to receive_messages(get_balance: 1 * (10**18), get_nonce: 42)
 
+      # [SEC.17] fee-cap ставиться АТРИБУТАМИ клієнта — гем fee-kwargʼи ігнорує, тож
+      # кожен шлях, що доходить до broadcast, тепер їх присвоює.
+      allow(mock_client).to receive(:max_fee_per_gas=)
+      allow(mock_client).to receive(:max_priority_fee_per_gas=)
+
       # [ARCH.66] Не запускати реальний confirmation-поллер (happy-path enqueue після :sent /
       # re-arm на resume-гілці).
       allow(EthereumAnchorConfirmationWorker).to receive(:perform_in)
@@ -244,16 +249,27 @@ RSpec.describe Ethereum::StateAnchorService do
       expect(result.verify_state_root).to be true
     end
 
-    it "passes gas parameters to transact (BLOCKER-3)" do
+    # 🔴 [SEC.17] Пін переїхав із KWARGʼІВ на АТРИБУТИ, бо саме звідти гем читає fee.
+    # Стара форма пінила `opts[:max_fee_per_gas]` — тобто засвідчувала, що ми ПЕРЕДАЛИ
+    # значення, і не мала чим помітити, що `#transact` його не читає взагалі. Тобто
+    # спека цементувала дефект як норму: на дроті стояли gem-дефолти 42.69/1.01 Gwei,
+    # НИЖЧІ за наші 100/2, і `ETHEREUM_MAX_FEE_GWEI` не робив нічого.
+    it "puts the ENV fee-cap on the client attributes the gem actually reads (BLOCKER-3)" do
       allow(mock_client).to receive(:transact).and_return("0x" + "aa" * 32)
 
       described_class.new.anchor_to_l1!
 
-      expect(mock_client).to have_received(:transact) do |_contract, _method, _root, **opts|
-        expect(opts[:gas_limit]).to eq(100_000)
-        expect(opts[:max_fee_per_gas]).to eq(100 * (10**9))
-        expect(opts[:max_priority_fee_per_gas]).to eq(2 * (10**9))
-        expect(opts[:legacy]).to be false
+      aggregate_failures do
+        expect(mock_client).to have_received(:max_fee_per_gas=).with(100 * (10**9))
+        expect(mock_client).to have_received(:max_priority_fee_per_gas=).with(2 * (10**9))
+        expect(mock_client).to have_received(:transact) do |_contract, _method, _root, **opts|
+          expect(opts[:gas_limit]).to eq(100_000)
+          expect(opts[:legacy]).to be false
+          # ⛔ fee-kwargʼи більше НЕ їдуть: kwarg, якого приймач не читає, є
+          # оголошенням без механізму — рівно те, що тут і зламалось.
+          expect(opts).not_to include(:max_fee_per_gas)
+          expect(opts).not_to include(:max_priority_fee_per_gas)
+        end
       end
     end
 

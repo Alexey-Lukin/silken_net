@@ -44,9 +44,22 @@ module Web3
 
     # `eth_call`-симуляція (zero-gas). Ім'я `static_call`, бо `call` на Ruby-обʼєкті
     # читалось би як proc-виклик.
+    #
+    # 🔴 [SEC.17] ВІДПРАВНИК ЇДЕ ЯК `from:`, І ЦЕ НЕ СТИЛЬ. `Eth::Client#call` читає
+    # рівно `kwargs[:address] · [:from] · [:gas] · [:gas_price] · [:value]` і
+    # `sender_key:` не читає ЖОДНОГО разу — при тому, що власний докстрінг гема
+    # його рекламує (eth 0.5.17 `client.rb`: докстрінг ~271, тіло 275-296).
+    # Тобто попередня форма давала `from: nil`, `.compact` його викидав, і
+    # симуляція йшла БЕЗ відправника. Ціна не теоретична: `batchMint` має
+    # `onlyRole(MINTER_ROLE)`, тож на живому ланцюгу dry-run ревертив би на
+    # КОЖНОМУ батчі → `batch_dry_run_reverts?` → бінарний пошук отруєного запису
+    # щоразу, на чистих даних.
+    # ⚠️ `**kwargs` стоїть ПІСЛЯ — викликач, що передав власний `from:`, виграє.
+    # ⛔ Не повертати `sender_key:` «про всяк випадок»: kwarg, якого приймач не
+    # читає, є оголошенням без механізму — саме він тут і коштував дефекту.
     # @param client [Eth::Client] per-thread клієнт мережі (параметр, не стан)
     def static_call(client, contract, function, *args, **kwargs)
-      client.call(contract, function, *args, sender_key: @key, **kwargs)
+      client.call(contract, function, *args, from: @key.address.to_s, **kwargs)
     end
   end
 end

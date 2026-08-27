@@ -239,13 +239,27 @@ module Ethereum
       # get_nonce НЕ кликається → same-nonce re-broadcast (node: replace / already-known / nonce-too-low).
       anchor.update!(nonce: client.get_nonce(signer.address)) if anchor.nonce.nil?
 
+      # 🔴 [SEC.17] FEE ЇДЕ АТРИБУТАМИ КЛІЄНТА, НЕ KWARG'АМИ — і це не стиль.
+      # `Eth::Client#transact` (eth 0.5.17 `client.rb:322-336`) читає рівно
+      # `tx_value/gas_limit/address/legacy/sender_key/nonce`; обидва fee-kwarg'и
+      # він ІГНОРУЄ й бере значення з атрибутів клієнта. Доти ми їх сумлінно
+      # рахували з ENV і передавали в порожнечу, тобто на дроті стояли gem-дефолти
+      # `Tx::DEFAULT_GAS_PRICE` = 42.69 Gwei / `DEFAULT_PRIORITY_FEE` = 1.01 Gwei —
+      # НИЖЧЕ за наші 100/2. Наслідок операційний, а не косметичний: на завантаженому
+      # L1 (base fee > 42.69) якір не майниться взагалі й осідає в `:sent`-лімбі, а
+      # `ETHEREUM_MAX_FEE_GWEI` — важіль, яким рунбук велить його розчистити, — не
+      # робив НІЧОГО. ⚠️ Клієнт кешований per-thread і спільний із
+      # `EthereumAnchorConfirmationWorker`/`Treasury::MonitorService`; обидва лише
+      # ЧИТАЮТЬ, тож присвоєння тут ні на кого не впливає — але саме тому воно
+      # стоїть впритул до `transact`, а не в конструкторі.
+      client.max_fee_per_gas = max_fee
+      client.max_priority_fee_per_gas = priority_fee
+
       tx_hash = signer.transact(
         client, contract, "storeStateRoot", root_bytes,
         nonce: anchor.nonce,
         legacy: false,
-        gas_limit: gas_limit,
-        max_fee_per_gas: max_fee,
-        max_priority_fee_per_gas: priority_fee
+        gas_limit: gas_limit
       )
 
       # [BLOCKER-2] Оновлюємо запис з tx_hash

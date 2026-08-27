@@ -45,6 +45,34 @@ module Web3
       @failure_counts = Hash.new(0)
       @circuit_opened_at = {}
       @clients = {}
+      @max_fee_per_gas = nil
+      @max_priority_fee_per_gas = nil
+    end
+
+    # 🔴 [SEC.17] FEE-ПОЛІТИКА — РЕАЛЬНІ методи, а не `method_missing`, і це несуче.
+    # `Eth::Client#transact` EIP-1559 fee-kwargs НЕ читає взагалі (eth 0.5.17
+    # `client.rb:322-336` бере лише `tx_value/gas_limit/address/legacy/sender_key/nonce`);
+    # fee приходить з АТРИБУТІВ клієнта, тобто cap ставиться присвоєнням.
+    # Через `method_missing` присвоєння дійшло б лише до ПЕРШОГО доступного
+    # провайдера (цикл `return`ає на першому успіху), а `record_failure` викидає
+    # кешованого клієнта — тож cap мовчки зникав би на fallback і після кожного
+    # збою. Саме тому [ARCH.62] називав таку форму «декоративним захистом».
+    # Тут політика ЗАПАМʼЯТОВУЄТЬСЯ і застосовується до КОЖНОГО клієнта каскаду,
+    # включно зі створеними пізніше (`client_for` нижче).
+    attr_reader :max_fee_per_gas, :max_priority_fee_per_gas
+
+    def max_fee_per_gas=(value)
+      @mutex.synchronize do
+        @max_fee_per_gas = value
+        @clients.each_value { |c| c.max_fee_per_gas = value }
+      end
+    end
+
+    def max_priority_fee_per_gas=(value)
+      @mutex.synchronize do
+        @max_priority_fee_per_gas = value
+        @clients.each_value { |c| c.max_priority_fee_per_gas = value }
+      end
     end
 
     # Делегуємо виклики Eth::Client через fallback cascade.
@@ -187,9 +215,16 @@ module Web3
       end
     end
 
+    # ⚠️ [SEC.17] Клієнт створюється ТУТ і не лише на старті: `record_failure` викидає
+    # кешованого при кожному збої провайдера, тож fee-політику треба накладати саме
+    # в момент створення — інакше перший же RPC-збій повертав би gem-дефолти
+    # (`Tx::DEFAULT_GAS_PRICE` 42.69 Gwei) під виглядом чинного cap'а.
     def client_for(url)
       @mutex.synchronize do
-        @clients[url] ||= Eth::Client.create(url)
+        @clients[url] ||= Eth::Client.create(url).tap do |client|
+          client.max_fee_per_gas = @max_fee_per_gas if @max_fee_per_gas
+          client.max_priority_fee_per_gas = @max_priority_fee_per_gas if @max_priority_fee_per_gas
+        end
       end
     end
 

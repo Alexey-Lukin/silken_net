@@ -348,4 +348,60 @@ RSpec.describe Web3::ResilientClient do
       expect(client.send(:provider_available?, primary_url)).to be true
     end
   end
+
+  # 🔴 [SEC.17] `Eth::Client#transact` ignores EIP-1559 fee kwargs entirely — the fee is
+  # read off client ATTRIBUTES. Routed through `method_missing` an assignment would reach
+  # only the FIRST available provider (the loop returns on first success) and would then
+  # be lost on `record_failure`, which evicts the cached client. That is exactly the shape
+  # [ARCH.62] called "decorative". These examples pin the two properties that make the cap
+  # real: it reaches EVERY provider, and it survives client re-creation.
+  describe "fee policy" do
+    # ⚠️ Both providers are materialised directly rather than by driving a failover: a
+    # retriable error EVICTS the failing client (`record_failure` deletes it from the
+    # cache), so a failover run leaves exactly one entry behind. Both entries coexist in
+    # production only once an evicted provider is rebuilt on a later call — which is the
+    # state pinned here.
+    it "applies the cap to every client already in the cascade, not just the first" do
+      allow(primary_eth_client).to receive(:max_fee_per_gas=)
+      allow(secondary_eth_client).to receive(:max_fee_per_gas=)
+      client.send(:client_for, primary_url)
+      client.send(:client_for, secondary_url)
+
+      client.max_fee_per_gas = 100 * (10**9)
+
+      aggregate_failures do
+        expect(primary_eth_client).to have_received(:max_fee_per_gas=).with(100 * (10**9))
+        expect(secondary_eth_client).to have_received(:max_fee_per_gas=).with(100 * (10**9))
+        expect(client.max_fee_per_gas).to eq(100 * (10**9))
+      end
+    end
+
+    # The load-bearing half: a provider failure DELETES its cached client, so a policy
+    # applied only to live instances would silently revert to the gem defaults
+    # (Tx::DEFAULT_GAS_PRICE = 42.69 Gwei) on the first RPC hiccup.
+    it "re-applies the cap to a client rebuilt after a provider failure" do
+      rebuilt = instance_double(Eth::Client)
+      allow(rebuilt).to receive(:max_fee_per_gas=)
+      allow(rebuilt).to receive(:max_priority_fee_per_gas=)
+
+      client.max_fee_per_gas = 100 * (10**9)
+      client.max_priority_fee_per_gas = 2 * (10**9)
+      allow(Eth::Client).to receive(:create).with(primary_url).and_return(rebuilt)
+
+      client.send(:client_for, primary_url)
+
+      aggregate_failures do
+        expect(rebuilt).to have_received(:max_fee_per_gas=).with(100 * (10**9))
+        expect(rebuilt).to have_received(:max_priority_fee_per_gas=).with(2 * (10**9))
+      end
+    end
+
+    it "leaves a freshly built client untouched when no policy was declared" do
+      allow(primary_eth_client).to receive(:max_fee_per_gas=)
+
+      client.send(:client_for, primary_url)
+
+      expect(primary_eth_client).not_to have_received(:max_fee_per_gas=)
+    end
+  end
 end
