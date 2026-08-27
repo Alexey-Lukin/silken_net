@@ -244,6 +244,18 @@ jobs:
         # Inputs `docs/**` + `contracts/**` are already in the changes-filter.
         run: ruby scripts/solidity_signature_arity_check.rb
 
+      - name: On-chain role registry sync (ARCH.112 — кожна роль має вирок про складання)
+        # Pure Ruby, no Rails. Ролі роздають окремими комітами, а перелік того, що
+        # СКЛАДАЄТЬСЯ, пишуть один раз — тож він старіє тільки в бік НЕПОВНОТИ й
+        # нічим не червоніє. Виміряно на собі: `EXECUTOR_ROLE` (відкритий екзекутор
+        # — повноваження, яке має весь світ) не існував у каноні зовсім, а
+        # `CANCELLER_ROLE` випав із renounce-переліку SEC.1, тобто постійне вето над
+        # DAO лишалось не присудом, а пропуском. ⛔ Вісь — КОНСТАНТИ ролей, не виклики
+        # `grantRole`: EXECUTOR приходить масивом `executors` у конструкторі
+        # TimelockController, тож форма «шукати grantRole» була б сліпа саме на ній.
+        # Inputs `contracts/**` + `docs/**` уже в changes-filter.
+        run: ruby scripts/onchain_role_registry_sync.rb
+
       - name: Governance-bounds sync (GOV.3 — db/seeds.rb ⟷ PARAMETER_MAP)
         # Pure Ruby, no Rails — sibling of GOV.2 on the OTHER axis of the same
         # worker mirror: the bounds/value_type/category the 9 governance-synced
