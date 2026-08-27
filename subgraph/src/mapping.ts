@@ -111,6 +111,10 @@ export function handleTokenSlashed(event: TokenSlashed): void {
   entity.amount = event.params.amount;
   entity.contextHash = event.params.contextHash; // [CONTRACT.1] DB-attribution
   entity.timestamp = event.block.timestamp;
+  // [OPS.36] Симетрія з `handleGovernanceSlashed` — обидва поля НЕ-nullable у схемі,
+  // тож пропуск тут не є «менше даних», а падінням в graph-node при зеленій збірці.
+  entity.blockNumber = event.block.number;
+  entity.transactionHash = event.transaction.hash;
 
   entity.save();
 

@@ -96,6 +96,13 @@ type SlashingEvent @entity(immutable: true) {
   amount: BigInt!
   contextHash: Bytes! # [CONTRACT.1] bytes32(intent BlockchainTransaction.id); 0x0 = manual DAO slash
   timestamp: BigInt!
+  # [OPS.36] Симетрія з `GovernanceSlashEvent`, доданa 2026-08-28. Асиметрія була не
+  # косметичною: `transactionHash` тут відновний парсингом `id` (він і є `hash-logIndex`),
+  # а `blockNumber` — НІ, тож упорядкувати слеші SCC за блоками з самого індексу було
+  # неможливо, тоді як для SFC-близнюка — можливо. Для зовнішнього читача це різниця між
+  # «можу відтворити послідовність подій» і «мушу вірити нашому `timestamp`».
+  blockNumber: BigInt!
+  transactionHash: Bytes!
 }
 
 # 🔭 [ARCH.111] ЗАКОН, за яким видали гроші — арифметична передумова вже
