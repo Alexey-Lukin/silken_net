@@ -812,6 +812,40 @@ end
       expect { described_class.call_batch(txs.map(&:id)) }
         .not_to(change { SilkenNet::Metrics::TAX_COLLECTED_TOTAL.get(labels: { token_type: "carbon_coin" }) })
     end
+
+    # 🔴 [DOC-T.89] Речення, яке пінить цей приклад: **у межах одного диспатчу ставка
+    # читається РІВНО ОДИН раз**, тож два її споживачі — суми в `build_batch_arrays` і
+    # `tax_rate:` архів-артефакту — не можуть розійтись. Носій потрібен саме тут, бо
+    # значення йде через `SystemParameter.current` → `Rails.cache`, а той інвалідується
+    # `after_commit` на БУДЬ-який запис параметра: коміт `ParameterSyncWorker` посеред
+    # диспатчу без memo дав би артефакту одну ставку, а сумам іншу.
+    #
+    # ⚠️ Пін лічить ВИКЛИКИ, і це свідомо: розходження, проти якого він стоїть, виникає
+    # лише коли читань більше одного, тож саме кількість і є властивістю. Мутаційно
+    # перевірено — зняття `||=` червонить рівно цей приклад (доти воно не червонило
+    # ЖОДНОГО прикладу цього файлу).
+    it "читає ставку податку РІВНО ОДИН раз на диспатч (memo = інваріант, не оптимізація)" do
+      allow_any_instance_of(described_class).to receive(:insurance_pool_requires_funding?).and_return(true)
+      allow(mock_client).to receive(:transact).and_return(fake_tx_hash)
+      allow(SystemParameter).to receive(:current).and_call_original
+
+      tree_a = create(:tree)
+      tree_b = create(:tree)
+      [ tree_a, tree_b ].each do |t|
+        t.wallet.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "approved")
+      end
+      txs = [ tree_a, tree_b ].map do |t|
+        t.wallet.blockchain_transactions.create!(
+          amount: 10, token_type: :carbon_coin, status: :pending,
+          to_address: t.wallet.crypto_public_address
+        )
+      end
+
+      described_class.call_batch(txs.map(&:id))
+
+      expect(SystemParameter).to have_received(:current)
+        .with(:dynamic_tax_rate, anything).once
+    end
   end
 
   describe "nil tx_hash from transact" do

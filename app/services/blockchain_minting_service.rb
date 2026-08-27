@@ -746,13 +746,27 @@ class BlockchainMintingService < ApplicationService
   # [S6.17] Governance-aware Dynamic Tax Rate.
   # Reads from SystemParameter (synced from on-chain ProtocolParameters.sol via ParameterSyncWorker).
   # Falls back to DEFAULT_DYNAMIC_TAX_RATE if not set.
-  # Memoized per service instance to avoid N+1 queries inside batch loops.
+  #
+  # 🔴 [DOC-T.89] Memo тут НЕСУЧЕ, а не «щоб не робити N+1». Читачів ДВА і вони в
+  # різних кінцях диспатчу: `tax_rate:`, що їде в архів-артефакт батчу, і суми в
+  # `build_batch_arrays` — причому другий біжить на КОЖНОМУ рівні бінарного пошуку.
+  # Значення приходить через `SystemParameter.current`, тобто через `Rails.cache`,
+  # який `after_commit` інвалідує при БУДЬ-ЯКОМУ записі параметра. Отже коміт
+  # `Governance::ParameterSyncWorker` посеред диспатчу без memo дав би артефакту одну
+  # ставку, а сумам іншу — той самий клас, що DOC-T.89 закрив на половині СТАНУ
+  # (`taxing?`), лише тут на половині ЗАКОНУ. ⛔ Не знімати як «зайву мемоїзацію».
   def dynamic_tax_rate
     @dynamic_tax_rate ||= BigDecimal(SystemParameter.current(:dynamic_tax_rate, default: DEFAULT_DYNAMIC_TAX_RATE).to_s)
   end
 
   # [S6.17] Governance-aware Insurance Pool Threshold.
-  # Memoized per service instance to avoid N+1 queries inside batch loops.
+  #
+  # ⚠️ [DOC-T.89] На відміну від сусіда вище, це memo сьогодні ІНЕРТНЕ — і різниця
+  # названа явно саме тому, що обидва місця роками несли той самий коментар про N+1,
+  # тож розрізнити їх з коду було ніяк. Єдиний читач іде через `taxing?`, який сам
+  # мемоїзований, отже значення береться рівно раз на інстанс і без цього рядка.
+  # Лишається як другий замок на тих самих дверях: перший же читач в обхід `taxing?`
+  # робить його несучим, а ціна нульова.
   def insurance_pool_threshold
     @insurance_pool_threshold ||= SystemParameter.current(:insurance_pool_threshold, default: DEFAULT_INSURANCE_POOL_THRESHOLD).to_i
   end
