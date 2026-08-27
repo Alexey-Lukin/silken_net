@@ -9,9 +9,13 @@ import {
   GovernanceSlashed,
 } from "../generated/SilkenForestCoin/SilkenForestCoin";
 import {
+  ParameterUpdated,
+} from "../generated/ProtocolParameters/ProtocolParameters";
+import {
   CarbonMintEvent,
   ForestMintEvent,
   GovernanceSlashEvent,
+  ParameterChangeEvent,
   ProtocolFinancials,
   SlashingEvent,
 } from "../generated/schema";
@@ -169,4 +173,33 @@ export function handleGovernanceSlashed(event: GovernanceSlashed): void {
   financials.totalGovernanceSlashed =
     financials.totalGovernanceSlashed.plus(event.params.amount);
   financials.save();
+}
+
+// 🔭 [ARCH.111] ЗАКОН, за яким видали гроші.
+//
+// Це ЄДИНА governance-подія індексу, і вона тут не заради повноти: без історії
+// ставки вже опубліковане `ProtocolFinancials.totalMintedTax` зовнішньо
+// неперевірне — аудитор бачить зібраний податок і не може звірити його з чинною
+// на той момент ставкою. Тобто арифметична передумова наявного числа.
+//
+// ⛔ Агрегату тут СВІДОМО немає: «остання ставка» була б новим твердженням
+// системи про себе, тоді як предмет — сам ПОТІК змін, який читач згортає сам за
+// потрібне вікно. Ролі/пауза/Timelock/Governor не індексуються — оголошена межа
+// предмета в шапці `subgraph.yaml`.
+export function handleParameterUpdated(event: ParameterUpdated): void {
+  let id =
+    event.transaction.hash.toHexString() +
+    "-" +
+    event.logIndex.toString();
+  let entity = new ParameterChangeEvent(id);
+
+  entity.key = event.params.key;
+  entity.oldValue = event.params.oldValue;
+  entity.newValue = event.params.newValue;
+  entity.updatedBy = event.params.updatedBy;
+  entity.timestamp = event.block.timestamp;
+  entity.blockNumber = event.block.number;
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
 }

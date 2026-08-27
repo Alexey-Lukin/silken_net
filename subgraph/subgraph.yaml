@@ -16,19 +16,16 @@
 # Реєстр того, ХТО які повноваження тримає й чи складає їх — канон
 # `05_03 §Стоячі повноваження після деплою` [ARCH.112], не цей файл.
 #
-# ⚠️ ОДИН виняток із межі вище є БОРГОМ, а не вибором, і в нього є дедлайн:
-# `ProtocolParameters.ParameterUpdated`. Без історії ставки Dynamic Tax поле
-# `ProtocolFinancials.totalMintedTax`, яке цей індекс УЖЕ публікує, зовнішньо
-# неперевірне — аудитор не може звірити зібраний податок із чинною на той момент
-# ставкою. Тобто це не governance-повнота, а арифметична передумова вже наявного
-# числа. Заводиться до `SEC.1`-деплою (після — переіндексація з розривом
-# історії) → `00_07` ARCH.111.
+# ⊕ ОДИН виняток із межі вище — `ProtocolParameters.ParameterUpdated`, і він тут
+# не заради governance-повноти, а тому що без історії ставки Dynamic Tax поле
+# `ProtocolFinancials.totalMintedTax`, яке цей індекс публікує, зовнішньо
+# неперевірне: аудитор бачить зібраний податок і не може звірити його з чинною
+# на той момент ставкою. Тобто це АРИФМЕТИЧНА ПЕРЕДУМОВА вже наявного числа —
+# і саме цей критерій вирішує, що сюди входить, а що ні.
 #
-# ⛔ І чому воно не зроблено ЦИМ комітом: у `subgraph/` немає компілятора в CI —
-# ні `graph codegen`, ні `graph build`, ні джоби; `docs.yml` бачить `subgraph/**`
-# лише текстовими гейтами. Тож будь-який доданий тут handler був би
-# неперевіреним кодом на поверхні, що годує зовнішнього аудитора. Дірка має
-# власний пункт → `00_07` ARCH.111.
+# ⛔ Не розширюй набір «за симетрією». Кожна нова подія тут мусить відповісти на
+# те саме питання: без якого ВЖЕ ОПУБЛІКОВАНОГО числа цього індексу читач не може
+# обійтись? Якщо відповіді немає — подія публічна on-chain і читається експлорером.
 specVersion: 1.0.0
 indexerHints:
   prune: auto
@@ -97,4 +94,32 @@ dataSources:
           handler: handleForestMinted
         - event: GovernanceSlashed(indexed address,uint256,bytes32)
           handler: handleGovernanceSlashed
+      file: ./src/mapping.ts
+
+  # 🔭 [ARCH.111] ProtocolParameters — ЄДИНА governance-подія в цьому індексі, і вона
+  # тут не заради повноти, а тому що без неї вже опубліковане
+  # `ProtocolFinancials.totalMintedTax` зовнішньо неперевірне: аудитор бачить зібраний
+  # податок і не може звірити його з чинною на той момент ставкою.
+  # ⛔ Ролі / пауза / Timelock / Governor СВІДОМО не індексуються — див. оголошену межу
+  # предмета в шапці цього файла; реєстр повноважень — `05_03 §Стоячі повноваження`.
+  - kind: ethereum
+    name: ProtocolParameters
+    network: polygon-amoy
+    source:
+      # ⚠️ BLOCKER [S3.5]: замінити на реальну адресу після деплою (як SCC/SFC вище).
+      address: "0x0000000000000000000000000000000000000000"
+      abi: ProtocolParameters
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ParameterChangeEvent
+      abis:
+        - name: ProtocolParameters
+          file: ./abis/ProtocolParameters.json
+      eventHandlers:
+        - event: ParameterUpdated(indexed bytes32,uint256,uint256,indexed address)
+          handler: handleParameterUpdated
       file: ./src/mapping.ts

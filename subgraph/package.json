@@ -1,0 +1,15 @@
+{
+  "name": "silkennet-subgraph",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "SilkenNet subgraph — the surface an external ESG buyer / ISO auditor reads our emission from. Build it, do not just lint it [OPS.34].",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.98.1",
+    "@graphprotocol/graph-ts": "0.38.2"
+  }
+}

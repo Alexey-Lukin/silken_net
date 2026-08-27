@@ -84,7 +84,17 @@ module WorkflowGatePerimeter
     # protection is a founder action this repo's CI token cannot perform, and
     # claiming :required early would be exactly the "canon says gating, nothing
     # gates" drift this guard exists to catch.
-    "dco.yml"             => [ :required,           "DCO passed" ]
+    "dco.yml"             => [ :required,           "DCO passed" ],
+    # [OPS.34] Компіляція субграфа — поверхні, з якої ЗОВНІШНІЙ читач бере нашу
+    # емісію. `:flip_pending`, а не `:required`, і причина рівно та сама, що
+    # тримала `dco.yml` тут до 2026-07-25: зробити його девʼятим обовʼязковим
+    # контекстом є дією над налаштуваннями репо, якої CI-токен виконати не може,
+    # тож заявити `:required` наперед означало б відтворити дрейф «канон каже
+    # gating, не гейтить ніщо», проти якого цей вартовий і поставлений.
+    # ⊕ Флip тягне за собою `if: always()`-aggregate (перевірка (c)): path-gated
+    # required-чек без нього блокує мердж назавжди на скіпі. Aggregate свідомо НЕ
+    # написано наперед — він їде тим самим рухом, що й зміна branch protection.
+    "subgraph.yml"        => [ :flip_pending,       "OPS.34" ]
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze

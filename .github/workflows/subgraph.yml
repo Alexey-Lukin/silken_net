@@ -1,0 +1,70 @@
+name: CI · Subgraph
+
+# [OPS.34] Субграф — поверхня, з якої ЗОВНІШНІЙ читач (ESG-покупець, ISO/Verra-аудитор)
+# бере нашу емісію. До цього воркфлоу її не ВИКОНУВАВ ніхто: пʼять гейтів читали теку
+# як ТЕКСТ (SPDX · ref-drift · path-drift), і жоден не компілював — клас
+# `ssot-maintenance` §Guard-craft #98. Прецедент, що знімає сумнів у реальності класу:
+# закомічений субграф уже одного разу НЕ ЗБИРАВСЯ ВЗАГАЛІ (кожен `@entity` падав на
+# відсутньому `immutable`) і був полагоджений очима, не гейтом.
+#
+# ⚠️ Це НЕ required-check: вісім обовʼязкових контекстів гілки визначені окремо, і
+# додати девʼятий є дією над налаштуваннями репо (👤). Тут — щоб воно БІГЛО й було видно.
+#
+# 🔒 Периметр тригера містить сам файл воркфлоу: без цього рядка правка САМОГО сторожа
+# його не перезапускала б (той самий припис, що в `solidity_audit.yml` для naming-гейта).
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'subgraph/**'
+      - '.github/workflows/subgraph.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'subgraph/**'
+      - '.github/workflows/subgraph.yml'
+
+jobs:
+  build:
+    name: graph codegen + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Node береться з раннера — той самий вибір, що для `npm ci` у
+      # `solidity_audit.yml`. Стеля названа: РАНТАЙМ не запінено, запінено ІНСТРУМЕНТ
+      # (`@graphprotocol/graph-cli` точною версією в `subgraph/package.json` +
+      # `package-lock.json`), бо саме CLI визначає, чи приймається наш `apiVersion`.
+      - name: Install subgraph toolchain
+        working-directory: subgraph
+        run: npm ci
+
+      # 🔴 ДВА кроки, і порядок несучий — не зливати в один і не лишати самий `build`.
+      # `graph build` компілює мапінг проти `generated/`, тож без свіжого `codegen` він
+      # оцінює СТАРИЙ знімок типів, а не дерево: спіймано вживу 2026-08-27 —
+      # відкат зламаної схеми лишив стейл-`generated/`, і `build` червонів на вже
+      # полагодженому дереві. Клас — §Guard-craft #69 (локально згенерований артефакт
+      # ЗАТІНЮЄ файл під тестом). `generated/` і `build/` у `.gitignore`, тож у CI
+      # вони завжди свіжі — саме тому крок чесний.
+      - name: graph codegen (schema.graphql + ABI → generated/)
+        working-directory: subgraph
+        run: npx graph codegen
+
+      - name: graph build (AssemblyScript mapping → wasm)
+        working-directory: subgraph
+        run: npx graph build

@@ -23,7 +23,7 @@ enum MintKind {
             # не форестер; це перерозподіл, а не нове поглинання.
 }
 
-type CarbonMintEvent @entity(immutable: false) {
+type CarbonMintEvent @entity(immutable: true) {
   id: ID!
   to: Bytes!
   amount: BigInt!
@@ -46,7 +46,7 @@ type CarbonMintEvent @entity(immutable: false) {
 }
 
 # [S3.5] SFC ForestMinted event — governance token minting per cluster
-type ForestMintEvent @entity(immutable: false) {
+type ForestMintEvent @entity(immutable: true) {
   id: ID!
   to: Bytes!
   amount: BigInt!
@@ -59,7 +59,7 @@ type ForestMintEvent @entity(immutable: false) {
 }
 
 # [S3.5] SFC GovernanceSlashed event — DAO slashing of voting power
-type GovernanceSlashEvent @entity(immutable: false) {
+type GovernanceSlashEvent @entity(immutable: true) {
   id: ID!
   target: Bytes!
   amount: BigInt!
@@ -90,10 +90,34 @@ type ProtocolFinancials @entity(immutable: false) {
   totalGovernanceSlashed: BigInt!
 }
 
-type SlashingEvent @entity(immutable: false) {
+type SlashingEvent @entity(immutable: true) {
   id: ID!
   target: Bytes!
   amount: BigInt!
   contextHash: Bytes! # [CONTRACT.1] bytes32(intent BlockchainTransaction.id); 0x0 = manual DAO slash
   timestamp: BigInt!
+}
+
+# 🔭 [ARCH.111] ЗАКОН, за яким видали гроші — арифметична передумова вже
+# опублікованого `ProtocolFinancials.totalMintedTax`, а не governance-повнота.
+#
+# Без історії ставки зовнішній читач бачить зібраний податок і НЕ МОЖЕ звірити
+# його з чинною на той момент ставкою: `totalMintedTax` лишався б issuer-asserted
+# усередині індексу, який усе інше подає як перевірне. Саме тому це ЄДИНА
+# governance-подія тут — решта (ролі, пауза, Timelock, Governor) публічні
+# on-chain, читаються експлорером, і їх невключення є оголошеною межею предмета
+# (шапка `subgraph.yaml`), а не приховуванням.
+#
+# `key` — keccak256 імені параметра (`dynamic_tax_rate`, `slash_gamma`, …), тобто
+# індексований on-chain топік; словник ключів — `ProtocolParameters.sol` §Well-Known.
+# Значення зберігаються як uint256 з 18 decimals (1e18 = 1.0).
+type ParameterChangeEvent @entity(immutable: true) {
+  id: ID!
+  key: Bytes!
+  oldValue: BigInt!
+  newValue: BigInt!
+  updatedBy: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
 }
