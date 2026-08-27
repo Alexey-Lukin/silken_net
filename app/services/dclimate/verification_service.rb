@@ -161,11 +161,20 @@ module Dclimate
     # попереднього вечора не входила б у вибірку взагалі. Носій — приклад
     # «питає симетричне вікно довкола дати алерту» (мутаційно перевірений).
     def build_firms_url(lat, lng, date)
+      # 🔭 [ARCH.111] One-Home самого вікна: обчислюється РІВНО тут і тут же
+      # запамʼятовується, щоб поїхати в `dclimate_ref` разом із вердиктом.
+      # Оголошена константа стереже наступного програміста; аудиторові, який
+      # тримає в руках `rejected_fraud`, вона не каже нічого — тому вибірка
+      # мусить бути В ЗАПИСІ, а не лише в коді.
+      window_from = (date - FIRMS_WINDOW_DAYS.days).iso8601
+      window_to   = (date + FIRMS_WINDOW_DAYS.days).iso8601
+      @queried_window = "#{window_from}..#{window_to}"
+
       params = URI.encode_www_form(
         latitude: lat,
         longitude: lng,
-        start_date: (date - FIRMS_WINDOW_DAYS.days).iso8601,
-        end_date: (date + FIRMS_WINDOW_DAYS.days).iso8601
+        start_date: window_from,
+        end_date: window_to
       )
 
       "#{DCLIMATE_BASE_URL}/v4/geo/grid-history/#{FIRMS_DATASET}?#{params}"
@@ -378,10 +387,16 @@ module Dclimate
 
     # Генерує dclimate_ref з метаданими супутника для аудит-трейлу.
     # Формат: "dclimate:firms:{satellite}:{timestamp}:{nonce}"
+    # 🔭 [ARCH.111] Останній сегмент — ВИБІРКА, з якої виведено вердикт: часове
+    # вікно запиту до FIRMS. Він тут не для повноти, а тому що без нього
+    # `satellite_status` є твердженням без множини: аудитор бачить «ясне небо,
+    # вогню немає» й не може спитати «за яку добу питали». `UNKNOWN` тут чесний
+    # стан — шляхи без запиту (немає координат) вікна не мають за конструкцією.
     def generate_dclimate_ref
       timestamp = Time.current.utc.strftime("%Y%m%dT%H%M%SZ")
       satellite = @satellite_metadata&.dig("satellite") || "UNKNOWN"
-      "dclimate:firms:#{satellite}:#{timestamp}:#{SecureRandom.hex(8)}"
+      window = @queried_window || "UNKNOWN"
+      "dclimate:firms:#{satellite}:#{timestamp}:#{SecureRandom.hex(8)}:#{window}"
     end
 
     # Знаходимо активні страховки кластера та тригеримо виплату

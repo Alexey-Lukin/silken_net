@@ -505,18 +505,38 @@ RSpec.describe Dclimate::VerificationService, type: :service do
     it "includes satellite name from metadata" do
       service.instance_variable_set(:@satellite_metadata, { "satellite" => "VIIRS_SNPP" })
       ref = service.send(:generate_dclimate_ref)
-      expect(ref).to match(/\Adclimate:firms:VIIRS_SNPP:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
+      expect(ref).to match(%r{\Adclimate:firms:VIIRS_SNPP:\d{8}T\d{6}Z:[a-f0-9]{16}:UNKNOWN\z})
     end
 
     it "uses UNKNOWN when no satellite metadata" do
       ref = service.send(:generate_dclimate_ref)
-      expect(ref).to match(/\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
+      expect(ref).to match(%r{\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}:UNKNOWN\z})
     end
 
     it "uses UNKNOWN when satellite_metadata is nil (safe-nav fallback)" do
       service.instance_variable_set(:@satellite_metadata, nil)
       ref = service.send(:generate_dclimate_ref)
-      expect(ref).to match(/\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}\z/)
+      expect(ref).to match(%r{\Adclimate:firms:UNKNOWN:\d{8}T\d{6}Z:[a-f0-9]{16}:UNKNOWN\z})
+    end
+
+    # 🔭 [ARCH.111] Найважливіший сегмент рефа — ВИБІРКА, і саме заради нього він
+    # тут: без вікна `satellite_status` є твердженням без множини («вогню немає» —
+    # а за яку добу питали?). Пін іде через РЕАЛЬНИЙ запит, а не через підстановку
+    # ivar'а: інакше він доводив би форматування рядка, а не те, що вікно, яким
+    # справді питали супутник, доїжджає до запису вердикту.
+    it "несе ВІКНО, яким справді питали супутник (вибірка — у записі, не лише в коді)" do
+      firms_response = Web3::HttpClient::Response.new(JSON.generate({
+        "data" => [ { "frp" => 25.5, "confidence" => 85 } ],
+        "metadata" => { "satellite" => "VIIRS_SNPP", "cloud_cover" => 10.0 }
+      }))
+      allow(Web3::HttpClient).to receive(:get).and_return(firms_response)
+
+      travel_to(Time.utc(2026, 3, 15, 0, 10)) do
+        alert.update_column(:created_at, Time.utc(2026, 3, 15, 0, 10))
+        svc = described_class.new(alert.reload)
+        svc.send(:query_dclimate_api)
+        expect(svc.send(:generate_dclimate_ref)).to end_with(":2026-03-14..2026-03-16")
+      end
     end
   end
 
