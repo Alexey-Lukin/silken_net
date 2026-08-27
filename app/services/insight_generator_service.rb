@@ -499,7 +499,10 @@ class InsightGeneratorService < ApplicationService
       stress_index: (per_tree.sum { |avg, _| avg.to_f } / measured_trees).round(3),
       total_growth_points: per_tree.sum { |_, gp| gp.to_i },
       summary: summary,
-      reasoning: { measured_trees: measured_trees, total_trees: total_trees }
+      # [SEC.18] `fraud_trees` тут, а не лише в прозі `summary`: саме ця магнітуда
+      # їхала в IPFS-доказ ВСЕРЕДИНІ речення, разом із `cluster.name`. Проза з піна
+      # знята — число лишається структурним, тож доказ не збіднів.
+      reasoning: { measured_trees: measured_trees, total_trees: total_trees, fraud_trees: fraud_trees }
     )
   end
 

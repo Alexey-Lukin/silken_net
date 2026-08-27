@@ -78,7 +78,15 @@ class AiInsight < ApplicationRecord
   # `Cluster.health_coverage` поверхом вище й `measurement_coverage` у в'ю.
   # ⚠️ На TREE-рядку обидва `nil` за побудовою — там пара безпредметна (дерево не
   # агрегат), і `nil` тут значить саме це, а не «не порахували».
-  store_accessor :reasoning, :measured_trees, :total_trees
+  #
+  # 🔴 [SEC.18] `fraud_trees` — той самий ARCH.84-рух, куплений іншою ціною: скільки
+  # вузлів сектора дали фрод-телеметрію. Доти ця величина існувала ЛИШЕ всередині
+  # відрендереного речення `summary`, а воно несло `cluster.name` — вільний рядок,
+  # який вводить людина, — і їхало в НЕЗВОРОТНИЙ публічний пін. Прозу з піна знято,
+  # тож магнітуда мусила піднятись у структуру, інакше зняття коштувало б доказу.
+  # ⚠️ `nil` = інсайт старший за це поле (як і в пари вище), НЕ «фроду не було»:
+  # «не було» виражає `fraud_detected: false`, і саме він лишається предикатом.
+  store_accessor :reasoning, :measured_trees, :total_trees, :fraud_trees
   store_accessor :recommendation, :action_required, :priority
 
   # --- ВАЛІДАЦІЇ ---

@@ -315,6 +315,47 @@ RSpec.describe Filecoin::ArchiveService do
         expect(row[:total_trees]).to eq(5)
       end
 
+      # 🔴 [SEC.18] Другий вільнотекстовий канал того самого піна. Пін цілиться в
+      # ЗНАЧЕННЯ, не в наявність ключа — `have_key`-форма була б зелена й на сирому
+      # реченні. Назва сектора є вільним рядком ЛЮДИНИ (`clusters.name` валідована
+      # лише на presence+uniqueness), і вона їхала в НЕЗВОРОТНИЙ пін усередині
+      # `AiInsight#summary`. Тому маркер шукається в УСЬОМУ тілі запиту, а не лише
+      # в очікуваному ключі: інакше приклад стеріг би одну адресу замість каналу.
+      it "never carries the human-entered cluster name into the irreversible pin" do
+        cluster = create(:cluster,
+                         organization: user.organization,
+                         name: "Сектор Петренка Івана, вул. Лісова 7")
+        create(:ai_insight, :daily_health_summary,
+               analyzable: cluster,
+               target_date: audit_log.created_at.to_date,
+               stress_index: 0.42,
+               total_growth_points: 500,
+               summary: "⚠️ Сектор #{cluster.name}: Виявлено 3 вузлів із фрод-телеметрією.",
+               reasoning: { "measured_trees" => 4, "total_trees" => 5, "fraud_trees" => 3 },
+               fraud_detected: true)
+
+        expected_body = nil
+        allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+          expected_body = kwargs[:body]
+          Web3::HttpClient::Response.new({ "IpfsHash" => "QmNoFreeText" }.to_json)
+        end
+
+        described_class.new(audit_log).archive!
+
+        row = expected_body[:pinataContent][:telemetry_summary][:clusters].first
+        # Магнітуда, що доти жила ЛИШЕ всередині речення, тепер структурна — зняття
+        # прози не коштувало доказу.
+        expect(row[:fraud_trees]).to eq(3)
+        expect(row[:fraud_detected]).to be(true)
+        # …а сам текст не виїхав ЖОДНИМ ключем. Порядок несучий: контракт КАНАЛУ
+        # («цього рядка немає ніде в тілі») стоїть ПЕРШИМ, бо саме він мусить
+        # червоніти при мутації — інакше його доводив би лише вужчий сусід нижче,
+        # і витік під іншим імʼям ключа пройшов би зеленим.
+        expect(expected_body.to_json).not_to include("Петренка")
+        expect(expected_body.to_json).not_to include("вул. Лісова")
+        expect(row).not_to have_key(:summary)
+      end
+
       it "handles nil stress_index in insight" do
         cluster = create(:cluster, organization: user.organization)
         create(:ai_insight, :daily_health_summary,

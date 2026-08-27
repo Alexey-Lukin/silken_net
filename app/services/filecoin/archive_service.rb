@@ -139,7 +139,7 @@ module Filecoin
         .daily_health_summary
         .where(target_date: target_date)
         .where(analyzable_type: "Cluster", analyzable_id: org_cluster_ids)
-        .select(:analyzable_id, :stress_index, :total_growth_points, :summary, :fraud_detected, :reasoning)
+        .select(:analyzable_id, :stress_index, :total_growth_points, :fraud_detected, :reasoning)
 
       return nil if summaries.empty?
 
@@ -156,7 +156,21 @@ module Filecoin
             measured_trees: insight.measured_trees,
             total_trees: insight.total_trees,
             total_growth_points: insight.total_growth_points,
-            summary: insight.summary,
+            # 🔴 [SEC.18] ВІЛЬНОГО ТЕКСТУ тут немає й бути не може — це стеля, а не
+            # оптимізація. `AiInsight#summary` є відрендереним реченням, яке інтерполює
+            # `cluster.name`: колонка `character varying`, валідована лише на presence
+            # і uniqueness, тобто вільний рядок ЛЮДИНИ (назва сектора вміє нести
+            # прізвище, господарство чи адресу). Пін незворотний — запінене не стирає
+            # ані DSAR, ані `Gdpr::AnonymizeUserService`, — тож форму обрано за тим
+            # самим дискримінатором, що й для `error` (⚖️ 2026-08-27): напрямок
+            # дефолту на НЕЗВОРОТНІЙ поверхні. Тут він дає не класифікатор, а
+            # ВІДСУТНІСТЬ поля: fail-closed за побудовою, бо текстового каналу немає.
+            # ⊕ Доказ від цього не збіднів: решта рядка — ті самі величини, з яких
+            # проза й рендериться, а єдина, що жила ТІЛЬКИ в реченні, піднята в
+            # структуру (`fraud_trees`, `04_01 §7`). Проза лишається в БД і на екрані.
+            # ⚠️ `telemetry_summary` не входить у `CONTENT_DIGEST_KEYS`, тож зміна
+            # форми цього блоку НЕ зсуває жодного вже виданого `content_cid`.
+            fraud_trees: insight.fraud_trees,
             fraud_detected: insight.fraud_detected
           }
         end

@@ -1229,7 +1229,7 @@ active/draft ──cancel──► cancelled
 | `target_date` | date | Дата, до якої відноситься (unique per analyzable+type) |
 | `stress_index` | decimal | 0.0..1.0 (ключовий показник) |
 | `probability_score` | decimal, **nullable** | 0.0..100.0 (впевненість Оракула). 🔴 **[ARCH.84] Писачів НУЛЬ:** `InsightGeneratorService` створює лише `daily_health_summary`, тож прогноз-інсайт у проді не народжується взагалі, а значення приходить винятково з `db/seeds.rb`. `NULL` = «не виміряно» — окремий СТАН, і модель це вже кодує (`#confidence_level` → `:n_a`). ⛔ Читач не сміє друкувати його голим: `ForecastCard` давав «%» без числа і `style="width: %"` (невалідний CSS) — смуга тепер **не малюється взагалі**, бо будь-яка довжина є твердженням про вимір. Те саме стосується сусіда `prediction_data["yield_impact"]` — у нього писачів теж нуль |
-| `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`). ⚡ **[ARCH.84] На КЛАСТЕРНОМУ рядку несе покриття** — `measured_trees`/`total_trees` (`store_accessor`), див. ⚡ нижче |
+| `reasoning` | jsonb (GIN) | Структуровані причини рішення. Два індекси: `idx_ai_insights_reasoning_gin` (JSONB GIN — containment `@>` запити) та `idx_ai_insights_reasoning_fts` (tsvector GIN — повнотекстовий пошук по `reasoning->>'description'`). ⚡ **[ARCH.84] На КЛАСТЕРНОМУ рядку несе покриття** — `measured_trees`/`total_trees` (`store_accessor`), див. ⚡ нижче. ⊕ **[SEC.18] Третій із тієї ж родини — `fraud_trees`**: скільки вузлів сектора дали фрод-телеметрію. Заведений 2026-08-27 не заради нової осі, а тому, що ця магнітуда існувала ЛИШЕ всередині відрендереного `summary`, а той несе `cluster.name` і їхав у незворотний пін; знявши прозу, число мусили підняти в структуру, інакше зняття коштувало б доказу. ⚠️ `nil` = інсайт старший за поле, **не** «фроду не було» — «не було» виражає колонка `fraud_detected` |
 | `source_log_ids` | integer[] (GIN) | IDs telemetry_logs, що стали джерелом |
 | `fraud_detected` | boolean | Прапор маніпуляції даними |
 | `model_source` | string | AI-модель (GPT-4, Claude, тощо) |
@@ -1238,7 +1238,7 @@ active/draft ──cancel──► cancelled
 | `analyzed_date` | date | Reserve-стовпець для майбутнього партиціонування за датою аналізу. Зараз у коді не читається — канонічна дата інсайту лежить у `target_date`. Лишається у схемі як точка розширення для багатоосей партиціонування post-TRL 8 (cross-ref E.37 TimescaleDB roadmap). |
 | `average_temperature` | decimal | Середня температура за аналізований день |
 | `total_growth_points` | bigint | Загальні бали зростання за день |
-| `summary` | text | Текстовий підсумок (human-readable) |
+| `summary` | text | Текстовий підсумок (human-readable). 🔒 **[SEC.18] У публічний пін НЕ їде — це стеля, оголошена 2026-08-27.** На КЛАСТЕРНОМУ рядку речення інтерполює `cluster.name` (вільний рядок людини: `presence`+`uniqueness`, формат не судить ніхто), а `Filecoin::ArchiveService` пінить артефакт у IPFS незворотно. Форму обрано тим самим дискримінатором, що й для `AuditLog.metadata[:error]` — напрямок дефолту на незворотній поверхні, — але вихід ІНШИЙ: `error` є єдиним джерелом свого факту, тож звужений до КОДУ, а `summary` джерелом не був (решта рядка вже несе величини, з яких він рендериться), тож дешевше зняти поверхню, ніж класифікувати вміст. Проза лишається в БД і на екрані; носій — приклад `never carries the human-entered cluster name into the irreversible pin` |
 
 **Ключові методи:** `confidence_level`, `forecast?`, `source_logs`, `attach_evidence!(log_ids)`, `status_label`. ⛔ `contract_breach?` **знято 2026-08-25** [SLASH-1]: його докстрінг стверджував «використовується в Slashing Protocol» при нулі викликачів, а поріг усередині був `0.8` — НЕ slash-поріг (той DAO-live `slash_stress_threshold`, дефолт `0.83`). Небезпечним його робила не мертвість, а підпис: перший читач, що повірив би імені, взяв би чужий поріг на грошовому шляху.
 
@@ -1758,8 +1758,16 @@ PII-патерном у `db/structure.sql`, мусить бути КЛАСИФІ
 звіряючи його з БД, бачив би розбіжність — і пін перестав би бути доказом. Повний текст
 лишається в `blockchain_transactions.error_message` під retention/erasure, тобто діагностику
 переадресовано, не втрачено. ⛔ **Другий канал того ж класу лишається поза периметром цього
-переліку ЗА ПОБУДОВОЮ** — `telemetry_summary` їде в той самий пін і несе `AiInsight#summary`,
-а гард судить лише `metadata.keys` ([`00_07`](00_07_Action_Plan_Tracker) SEC.18). ⛔ Периметр вужчий за таблицю: `Auditable`
+переліку ЗА ПОБУДОВОЮ** — `telemetry_summary` їде в той самий пін і **не є** `metadata`,
+тож `ARCHIVED_METADATA_KEYS` його не судить і судити не може. ✅ **Канал закрито 2026-08-27
+іншим ліком, і різниця між двома ліками несуча:** `AiInsight#summary` із піна **знято
+зовсім**, бо він інтерполював `cluster.name` — вільний рядок ЛЮДИНИ. `error` є ЄДИНИМ
+джерелом свого факту, тому його звужують до коду; `summary` джерелом не був — решта
+рядка вже несе величини, з яких він рендериться, — тому дешевше зняти поверхню, ніж
+класифікувати вміст (У-ВЕЙ: важке зробити непотрібним). Єдину магнітуду, що жила лише
+в реченні, піднято в структуру (`reasoning.fraud_trees`, картка `AiInsight` §7).
+⚠️ `telemetry_summary` не входить у `CONTENT_DIGEST_KEYS`, тож зміна форми блоку не
+зсуває жодного вже виданого `content_cid` — свідок E.60 цілий. ⛔ Периметр вужчий за таблицю: `Auditable`
 дефолтить `archive: false`, тобто security/ops-метадані на публічний IPFS не йдуть узагалі
 (INF.22 over-exposure) — і саме тому фікстура, що архівує `update_settings`-лог, описувала
 сценарій, якого канон не дозволяє.
