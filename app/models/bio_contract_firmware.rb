@@ -15,19 +15,20 @@ class BioContractFirmware < ApplicationRecord
   HARDWARE_TYPES = %w[Tree Gateway].freeze
 
   # --- ЗВ'ЯЗКИ ---
-  # [TODO E.62 — Per-cluster firmware tracking, не реалізовано]:
-  # Архітектурний намір — кожен Cluster мав би мати "активну" прошивку через
-  # колонку `clusters.active_firmware_id` (FK на `bio_contract_firmwares`).
-  # Колонки в `db/structure.sql` досі немає; асоціація ніким не викликається.
-  # Фактично tracking зараз йде через per-device SemVer string:
+  # Трекінг версій — per-device SemVer-РЯДОК, і це вся правда:
   #   * `Tree.firmware_version` + `Gateway.firmware_version` (рядок SemVer)
   #   * `BioContractFirmware.is_active` + `rollout_percentage` (global toggle)
   #   * `deployment_count` рахує string-match: `Tree.where(firmware_version: ...)`
   #
-  # Поки FK активно не використовується — асоціація закоментована (silent
-  # dead code = grep noise + ризик "хтось напише код проти неіснуючої колонки").
-  # Запис у `docs/00_07_Action_Plan_Tracker` (E.62) тримає намір видимим.
-  # has_many :clusters, foreign_key: :active_firmware_id
+  # 🔴 Тут стояв TODO про per-cluster трекінг через `clusters.active_firmware_id`
+  # разом із закоментованою асоціацією — і його останній рядок ЦИТУВАВ ВЛАСНЕ
+  # СПРОСТУВАННЯ: «запис у 00_07 (E.62) тримає намір видимим», тоді як E.62 є
+  # рядком §🗄️ Архіву «Dead `clusters.active_firmware_id` assoc removed». Колонки
+  # немає в `db/structure.sql`, наміру не тримає жоден живий пункт, а форма
+  # посилання при цьому бездоганна — ID резолвиться, тож не червоніє НІЩО
+  # [DOC-T.93]. Знято 2026-08-27: сам патерн лишається citable під тим же ID —
+  # `04_01` описує його на СУСІДНЬОМУ випадку (`firmware_version_id` як
+  # wire-ідентифікатор, mis-join trap), і саме там він і живий.
 
   # Специфікація породи (прошивка для Дуба != прошивка для Сосни)
   belongs_to :tree_family, optional: true
