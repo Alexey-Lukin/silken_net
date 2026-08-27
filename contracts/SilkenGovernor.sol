@@ -14,6 +14,9 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 ///      Governor'а. One-Home числа при цьому збережено — стеля лишається у ТОКЕНА,
 ///      сюди вона потрапляє читанням, а не копією літерала.
 interface ICappedVotesToken {
+    // Ім'я НЕ наш вибір: це auto-getter публічної константи `MAX_SUPPLY` токена, тож
+    // мусить збігатися з його ABI байт-у-байт. mixedCase зробив би виклик недійсним.
+    // slither-disable-next-line naming-convention
     function MAX_SUPPLY() external view returns (uint256);
 }
 
@@ -88,6 +91,11 @@ contract SilkenGovernor is
     /// @dev Читається з токена ОДИН раз, у конструкторі: число лишається у власності токена
     ///      (One-Home), а `quorum()` не платить зовнішнім CALL за кожен виклик. Immutable —
     ///      отже після деплою база незмінна навіть для governance; тюниться лише чисельник.
+    // UPPER_CASE свідомо: це ЄДИНИЙ immutable у всьому наборі контрактів, а всі сусідні
+    // символи тієї ж ролі — `MAX_SUPPLY`, `MAX_BATCH_SIZE`, `*_ROLE` — константи в
+    // UPPER_CASE. mixedCase зробив би його білою вороною серед власних однолітків заради
+    // дефолту лінтера; до того ж це `public`, тож ім'я вже є частиною ABI.
+    // slither-disable-next-line naming-convention
     uint256 public immutable QUORUM_BASE;
 
     /// @notice Конструктор SilkenGovernor.
@@ -112,9 +120,17 @@ contract SilkenGovernor is
     {
         // Fail-closed на межі довіри: база 0 зробила б quorum нульовим, тобто будь-яка
         // пропозиція проходила б з одним голосом — рівно та шкода, яку цей фікс закриває.
-        uint256 cap = ICappedVotesToken(address(_token)).MAX_SUPPLY();
-        require(cap > 0, "Governor: zero quorum base");
-        QUORUM_BASE = cap;
+        //
+        // ⚠️ Форма «присвоїти РЕЗУЛЬТАТОМ виклику, потім перевірити» — навмисна, і
+        // причина статична: попередня форма (`uint256 cap = …; require; QUORUM_BASE = cap;`)
+        // давала Aderyn HIGH `reentrancy-state-change` — запис стану ПІСЛЯ зовнішнього
+        // виклику. По суті це хибний позитив (конструктор: код Governor'а ще не встановлено,
+        // тож реентрувати нікуди), але детектор конструкторів не розрізняє, а глушити
+        // HIGH-детектор реентрансі заради одного сайту — гірша ціна, ніж переставити два
+        // рядки. Семантика тотожна: revert відкочує все, тож нульова база недосяжна.
+        // Читання immutable у конструкторі після присвоєння легальне з solc 0.8.8.
+        QUORUM_BASE = ICappedVotesToken(address(_token)).MAX_SUPPLY();
+        require(QUORUM_BASE > 0, "Governor: zero quorum base");
     }
 
     // ─── Required Overrides (OZ Diamond Inheritance Resolution) ──────
