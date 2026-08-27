@@ -53,8 +53,10 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 20. A money row carries TWO units in adjacent columns; the DIRECTION gap is CLOSED — the unit one is not — **Reflex when you touch any money row: name the UNIT of every scalar you pass, ask what marks its DIRECTION — and ask the same of every GUARD on that path, because a guard is a scalar comparison too, and a fix that moves it within one scale looks exactly like a fix that corrects the scale**
 21. A device-side "neutral" fallback constant landed on the MAXIMUM of the money output — a shipped latent defect (no fleet, no incident), and the fix leaves a NEW wire pair every money consumer must know — **when you choose a fallback constant, substitute it through the WHOLE chain and look at what it lands on — a "neutral" input is routinely an extremum of the output**
 22. «Скільки намінтовано» рахують ТРИ незалежні поверхні, вони НЕ взаємозамінні, і дві з них подаються на одному екрані — **перш ніж підставити «живе джерело» замість мертвого, спитай не «чи воно правдиве», а «чи про ТУ САМУ множину»**
-23. SFC не мінтиться взагалі — і заборона стоїть у ДВОХ місцях навмисно, бо одного мало
+23. SFC не мінтиться взагалі — заборона стоїть у ДВОХ місцях, і друге з них ПЕРЕЇХАЛО з гарда в ЕНУМ
 24. Третя вісь грошового рядка — не одиниця й не напрямок, а ВИБІРКА: хто обирає, які дані оракул узагалі побачить — **Рефлекс перед будь-яким оракулом, агрегатом або вікном: спитай не «чи можна підробити показник», а «ХТО КОНТРОЛЮЄ ВИБІРКУ» — відповідь на перше не каже про друге нічого**
+25. Приватний ключ оракула береться ЛИШЕ через seam `Web3::OracleSigner` — інлайновий `Eth::Key.new(priv: ENV[...])` є дефектом, навіть якщо поведінка тотожна — **рефакторячи вираз, що стоїть під придушенням, перепризначай фінгерпринт ТИМ САМИМ комітом**
+26. Вирок судиться правом ПОДІЇ, а не правом ВИКОНАННЯ — і знаменник шкоди рахує тих, хто СВІДЧИВ
 
 <!-- /WEB3-GOTCHAS-INDEX -->
 

@@ -258,7 +258,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | `trigger_event` | integer (enum) | `critical_fire(0)`, `extreme_drought(1)` |
 | `payout_amount` | numeric | Сума виплати |
 | `threshold_value` | numeric | Поріг для тригера (% аномальних дерев) |
-| `token_type` | integer (default: 0) | Тип токена виплати (SCC або SFC) |
+| `token_type` | integer (default: 0) | Тип токена виплати — **лише SCC** (`carbon_coin`); SFC знято з енуму присудом DOC-T.89, ціле `1` зарезервоване |
 | `required_confirmations` | integer (default: 3) | Мін. підтверджень D-MRV перед виплатою |
 | `paid_at` | timestamp | Час виплати |
 | `etherisc_policy_id` | varchar | ID Etherisc DIP policy (режим Oracle, виплата в USDC) |
@@ -287,7 +287,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 **Два режими виплати:**
 
-1. **Internal mode (default):** `InsurancePayoutWorker` → `BlockchainMintingService` → SCC/SFC емісія на Polygon. **[INS.2]** Ця емісія **інфляційна** (мінтить новий SCC, не бере з пулу) → перед mint `Insurance::ReserveGate` накладає systemic stop-loss: (1) aggregate 24h correlated-event cap + (2) reserve-adequacy (30d Internal-mint vs `DAO_TREASURY`-баланс × ratio). Обидва пороги **inert-default** (`SystemParameter` 0 = off; калібрування = 👤 economic-політика → [`00_07` INS.2](00_07_Action_Plan_Tracker)). Breach → HOLD у `manual_review` (не незабезпечений mint); transient RPC → Sidekiq-retry (fail-closed, без permanent park). Etherisc-виплати з cap виключено (зовнішній USDC, не наша емісія).
+1. **Internal mode (default):** `InsurancePayoutWorker` → `BlockchainMintingService` → **SCC**-емісія на Polygon (SFC не мінтиться взагалі — присуд DOC-T.89; поліс у типі SFC відтепер невиразний структурно). **[INS.2]** Ця емісія **інфляційна** (мінтить новий SCC, не бере з пулу) → перед mint `Insurance::ReserveGate` накладає systemic stop-loss: (1) aggregate 24h correlated-event cap + (2) reserve-adequacy (30d Internal-mint vs `DAO_TREASURY`-баланс × ratio). Обидва пороги **inert-default** (`SystemParameter` 0 = off; калібрування = 👤 economic-політика → [`00_07` INS.2](00_07_Action_Plan_Tracker)). Breach → HOLD у `manual_review` (не незабезпечений mint); transient RPC → Sidekiq-retry (fail-closed, без permanent park). Etherisc-виплати з cap виключено (зовнішній USDC, не наша емісія).
 2. **Oracle mode (Etherisc DIP):** Якщо `etherisc_policy_id` присутній, система переключається в режим Oracle: `Etherisc::ClaimService` → `triggerClaim()` → виплата USDC з децентралізованого пулу ліквідності Etherisc. Це запобігає інфляційному тиску на внутрішню токеноміку (Internal-mode натомість капить інфляцію через `ReserveGate` ↑). **[ARCH.45]** `triggerClaim` НЕ idempotent на нашому боці → orphaned `:pending` recovery-tx ескалює в `manual_review` (не сліпий re-claim) проти double-pay ([`04_02 §4`](04_02_Business_Logic_and_Services)).
 
 **Guard clauses перед виплатою:**

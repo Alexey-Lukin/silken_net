@@ -701,7 +701,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 >
 > 🔴 **Дзеркало на грошовій моделі з'явилось лише 2026-08-07** (PERF.1): `silkennet_blockchain_transaction_unpruned_lookups_total{caller}` — доти `BlockchainTransaction` деградувала так само, але **МОВЧКИ**, тобто рівно та подія, заради якої лічильник заводили, була невидима там, де скан коштує найдорожче. Мітки: `<caller>:missing_created_at` · `:invalid_created_at` · `:missing_span` · `undeclared:*`, коли викликач себе не назвав. Два викликачі годують її прямо з URL-параметра (`wallets#transaction_status`, `blockchain_transactions#show`), тож битий клієнтський рядок — реальний пускач, не лише забутий аргумент воркера.
 >
-> Grafana alert rule (приклад): `rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~"ApplicationWeb3Worker.*|OracleCallbacksController.*"}[5m]) > 0`.
+> Grafana alert rule: **`sn-alert-telemetry-unpruned-lookups`** — живе правило в IaC (`deploy/grafana/alerts/silkennet-alerts.yaml`), не приклад у прозі [INF.26, 2026-08-26]. Money-двійник — `sn-alert-blockchain-tx-unpruned-lookups`.
 
 ---
 
@@ -1187,7 +1187,7 @@ active/draft ──cancel──► cancelled
 |------|----------|
 | `status` | `active(0) / triggered(1) / paid(2) / expired(3)` |
 | `trigger_event` | `critical_fire(0) / extreme_drought(1)` — ⛔ **ціле `2` зарезервоване, не вільне** (enum-значення лягає в колонку — переприсвоєння мовчки перейменувало б історичні рядки); **[INS.1]** застрахований перил, `validates presence` при створенні (peril-honest маршрутизація [`05_05 §4`](05_05_Slashing_and_Risk_Policy) без нього сліпа); прод-шляху створення полісів ще немає (E.20-майбутнє) — валідація = структурна гарантія, що будь-який майбутній шлях перил проставить (зараз seeds/фабрики) |
-| `token_type` | `carbon_coin(0) / forest_coin(1)` |
+| `token_type` | `carbon_coin(0)` — ⛔ **лише одне значення, і це ПРИСУД, не недороблений enum** (DOC-T.89, ⚖️ 2026-08-26): поліс не може бути підписаний у типі, який система відмовляється виконувати, тож SFC знято з ДЖЕРЕЛА вибору, а не з наслідку. Ціле `1` зарезервоване тією ж підставою, що й `2` у `trigger_event` — переприсвоєння мовчки перейменувало б історичні рядки. ⚠️ Не плутати з `blockchain_transactions.token_type`, де `forest_coin(1)` лишається законним (мінт-лійка відбиває його до `:pending`) |
 
 **AASM:** `trigger` (active→triggered), `pay` (triggered→paid), `expire` (active→expired).
 

@@ -375,6 +375,8 @@ end
 | `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | `reason` | Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production. ⚠️ [INF.26] Лічильник міряє ПЕРЕДУМОВУ, не наслідок: інкремент стоїть ДО розвилки prod/dev, тож ім'я (`_fallback_`) вужче за подію — у проді той самий рядок означає ВІДМОВУ. Перенести інкремент у dev-гілку не можна: осліпли б саме там, де сигнал найпотрібніший |
 
+**Grafana Alert Rules (INF.26, дротовано 2026-08-26):** `sn-alert-ccm-mic-fail` · `sn-alert-telemetry-unpruned-lookups` · `sn-alert-blockchain-tx-unpruned-lookups` — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). 🔴 Закриття тут було **ратчетом, не ремонтом**: усі три лічильники були коректні й мовчали правдиво — бракувало СПОЖИВАЧА, тож «метрика чиста» про них було порожнім твердженням. ⚠️ Асиметрія, що це запустила, варта запису: `w3bstream_signature_fallback_total` алертився, а сусідній `telemetry_ccm_mic_fail_total` — ні, при тому що його власний докстрінг називав ненульовий rate сигналом безпеки, вартим пейджа. Два `unpruned_lookups`-лічильники носили ГОТОВИЙ вираз правила у власному коментарі коду — і саме готовність тексту приховувала, що в yaml його немає.
+
 **Gauges:**
 
 | Metric | Labels | Призначення |
