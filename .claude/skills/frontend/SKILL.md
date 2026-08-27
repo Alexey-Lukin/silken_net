@@ -37,7 +37,7 @@ summary. The view layer is **Phlex** (Ruby components, NOT ERB) on Rails 8.1, st
 <!-- FRONTEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
 1. NO `tailwind.config.js` — **Reflex when you meet an UNMEASURABLE bucket in any of our instruments: that is a list of places to inspect by hand, not a list of things that passed**
-2. Raw Tailwind forbidden in SHARED components — **its ceiling belongs in ONE home — the script header — and a registry row that restates the dialect list beside its own router is the copy that rots**
+2. Raw Tailwind forbidden across the component tree, not just `shared/` — **its ceiling belongs in ONE home — the script header — and a registry row that restates the dialect list beside its own router is the copy that rots**
 2a. The theme rides exactly ONE shaft, and since 2026-08-08 that shaft is the ENVIRONMENT — `@media screen and (prefers-color-scheme: dark)`
 2b. Phlex формалізує в текст ЛИШЕ `Float` та `Integer` — усе інше його `format_object` віддає `nil`, і вузол виходить порожнім БЕЗ помилки
 2c. A hand-written `autoload_paths` line does NOT put the component layer into `eager_load_paths` — and the gap is invisible until production

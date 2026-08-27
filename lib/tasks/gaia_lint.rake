@@ -35,10 +35,17 @@
 # grep for palette / bracketed colour / inline `style:`), and thereby loses the
 # right to regress. `LINT_SCOPE=` still takes exactly ONE path.
 #
-# ⚠️ `app/views/layouts/` is deliberately OUT of the default: measured, its one
-# hit is `backdrop:bg-black/60` — the scrim behind the mobile drawer, which must
-# stay black in BOTH themes (a surface token there would make the light-theme
-# scrim pale). Adding layouts means adding that allowlist entry first.
+# ⚠️ `app/views/layouts/` IS IN the default since 2026-08-20 (wave 11) — see the
+# entry in `default_scopes`. Its one hit, `backdrop:bg-black/60` (the scrim behind
+# the mobile drawer), must stay black in BOTH themes — a surface token there would
+# pale the light-theme scrim — so it rides an allowlist variant-fingerprint, which
+# is exactly what admitting the directory required.
+# 🔴 This paragraph said the OPPOSITE ("deliberately OUT … adding layouts means
+# adding that allowlist entry first") for a week after the constant changed —
+# a gate's header contradicting its own list, with nothing able to red (§Guard-craft
+# #4). Corrected 2026-08-27 [DOC-T.91]. Reflex when you touch `default_scopes`:
+# the header is a MIRROR, and mirrors are what the campaign that moved the list
+# never remembers to move.
 #
 # ⚠️ LINT_SCOPE= takes ONE path. The `.then` below branches on `directory?`, so a
 # space-separated pair yields a non-directory Pathname and silently lints one
