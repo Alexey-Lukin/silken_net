@@ -1,0 +1,55 @@
+# Editor-level baseline для всього дерева [OPS.36].
+#
+# 🔒 ЩО ЦЕ Є І ЧИМ НЕ Є. Це підказка РЕДАКТОРОВІ, не гейт: жоден крок CI цього
+# файлу не читає, і це свідомо — вісь, яку він тримає, вже стабільна (див.
+# вимір нижче), тож гейт на ній народився б зеленим назавжди й лише привчав би
+# гортати. Носій тут працює в момент НАБОРУ тексту, а не в момент мерджу.
+#
+# 📐 ЗНАЧЕННЯ ВИМІРЯНІ ПО ДЕРЕВУ 2026-08-28, не взяті зі стелі. Табів на дев'яти
+# перевірених поверхнях (ruby · python · solidity · firmware-C · terraform ·
+# shell · workflow-YAML · subgraph-TS · rails-JS) — НУЛЬ, trailing-space — нуль,
+# тож `[*]`-блок нижче описує наявний стан, а не бажаний. Розподіл відступів так
+# само з виміру: 4 — Python/Solidity/C, 2 — решта.
+#
+# ⚠️ `tools/cad/.editorconfig` несе власний `root = true` і цим файлом НЕ
+# перекривається — там живе C#-специфіка (аналізатори, naming rules), і вона
+# лишається його доменом.
+#
+# ⛔ Чому НЕ `prettier`/`assemblyscript-prettier`: він тягне пакетне дерево в
+# `subgraph/devDependencies`, тобто розширює рівно те, що присуд OPS.35 стискав
+# через `overrides`. Формат — не той ризик, заради якого варто платити
+# supply-chain-поверхнею; предмет ноги («розбіжності AS↔TS») закриває компілятор
+# `graph build` + тест-шар `graph test`, а не стиль лапок.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Мова диктує 4 — виміряно, не вподобання.
+[*.py]
+indent_size = 4
+
+[*.sol]
+indent_size = 4
+
+[*.{c,h}]
+indent_size = 4
+
+# Recipe-рядки Makefile синтаксично ВИМАГАЮТЬ табу — виняток несучий, не стильовий.
+[Makefile]
+indent_style = tab
+
+# Markdown: trailing-space там є значущим (жорсткий перенос рядка), тож
+# автообрізання ламало б розмітку.
+[*.md]
+trim_trailing_whitespace = false
+
+# Згенеровані / вендоровані дерева — не наша прописка.
+[{db/structure.sql,**/package-lock.json,firmware/extern/**,**/node_modules/**}]
+insert_final_newline = false
+trim_trailing_whitespace = false
