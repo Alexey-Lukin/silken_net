@@ -27,11 +27,30 @@ require_relative "../support/repo_root"
 #   · вона не стверджує, що хук СПРАЦЮЄ: чи він узагалі побіжить, вирішує
 #     `core.hooksPath` на конкретній машині, а це стан середовища, не дерева;
 #   · порядок прапорців не судиться — лише множина, бо brakeman до нього байдужий;
-#   · path-gate хука (які шляхи вмикають блок) — окреме твердження й тут не перевіряється.
-RSpec.describe "brakeman: паритет двох стійок [OPS.28]" do
-  HOOK = REPO_ROOT.join(".githooks/pre-push")
-  CI   = REPO_ROOT.join(".github/workflows/ci.yml")
+#   · path-gate хука (які шляхи вмикають блок) — окреме твердження й тут не перевіряється;
+#   · 🔴 судяться ВСІ довгі прапорці, і серед них можуть бути ПОДАВАЛЬНІ, а не вердиктні.
+#     Сьогодні таких немає, тож стеля латентна — але сусідній `rubocop` уже стоїть у CI як
+#     `-f github` (GitHub-анотації), і якби він писався довгою формою `--format`, ця спека
+#     назвала б розходженням те, що вердикту не міняє. Норма-дім (`00_06 §3`) свідомо каже
+#     «прапорці, що ЗМІНЮЮТЬ ВЕРДИКТ», а не «побайтово»: дискримінатор — чи зняття
+#     прапорця може перевернути зелене в червоне. Якщо такий прапорець тут колись
+#     зʼявиться, правильний хід — ВИКЛЮЧИТИ його поіменно з порівняння, а не послабити
+#     гейт: мовчазний виняток за формою («ігноруємо все, що схоже на формат») відкриє
+#     рівно ту дірку, проти якої спека й стоїть.
+module BrakemanStanceParity
+  HOOK_SOURCE = REPO_ROOT.join(".githooks/pre-push")
+  CI_SOURCE   = REPO_ROOT.join(".github/workflows/ci.yml")
 
+  # Виконувані згадки виклику — коментарі відкидаються (див. чому нижче).
+  def self.flag_sets(path)
+    path.read.each_line
+        .reject { |l| l.lstrip.start_with?("#") }
+        .select { |l| l.match?(%r{bin/brakeman\s+--}) }
+        .map { |l| l.scan(/--[a-z-]+/).sort }
+  end
+end
+
+RSpec.describe BrakemanStanceParity, type: :quality do
   # 🔴 Анкор куплений ВЛАСНИМ хибним спрацюванням цієї ж спеки, у першому ж її прогоні:
   # перший рядок хука зі збігом `bin/brakeman --` виявився не викликом, а КОМЕНТАРЕМ із
   # виміром ціни (`bin/brakeman --no-pager  3.41 / 3.46 / 4.05 с`), тож «форма виклику»
@@ -44,18 +63,15 @@ RSpec.describe "brakeman: паритет двох стійок [OPS.28]" do
   # сусідній клас безкоштовно: рядок довідки «Fix: …», що розійшовся з реальним викликом,
   # дає читачеві команду, яка НЕ відтворює падіння, — і це та сама тиха брехня, лише
   # адресована людині, а не CI.
-  def flag_sets(path, pattern)
-    sets = path.read.each_line
-                .reject { |l| l.lstrip.start_with?("#") }
-                .select { |l| l.match?(pattern) }
-                .map { |l| l.scan(/--[a-z-]+/).sort }
+  def flag_sets(path)
+    sets = described_class.flag_sets(path)
     raise "виконуваної згадки brakeman не знайдено у #{path.basename}" if sets.empty?
 
     sets
   end
 
-  let(:hook_sets) { flag_sets(HOOK, %r{bin/brakeman\s+--}) }
-  let(:ci_sets)   { flag_sets(CI, %r{bin/brakeman\s+--}) }
+  let(:hook_sets)  { flag_sets(described_class::HOOK_SOURCE) }
+  let(:ci_sets)    { flag_sets(described_class::CI_SOURCE) }
   let(:hook_flags) { hook_sets.first }
   let(:ci_flags)   { ci_sets.first }
 

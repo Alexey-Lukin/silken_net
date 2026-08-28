@@ -247,4 +247,43 @@ if printf '%s\n' "$_changed" | grep -qE '^(app|lib|config)/|^Gemfile'; then
   fi
 fi
 
+# [OPS.28] rubocop — пʼятий блок, і його купив ІНЦИДЕНТ цієї ж сесії (2026-08-28).
+#
+# 🔴 Ціну відмови не оцінено, а СПЛАЧЕНО: коміт `3aa62e3e` дав червоний `main` на джобі
+# `lint` — три стилістичні порушення в новоствореному spec-файлі. Механіка промаху варта
+# запису, бо вона не про забудькуватість: rubocop прогнали ТОЧКОВО, на тому файлі, який
+# правили (`scripts/tracker_report.rb` — зелений), а файл, СТВОРЕНИЙ пізніше в тій самій
+# сесії, у той прогін не входив. Повна сюїта була зелена й сказати про це не могла —
+# rubocop до неї не належить. Тобто носієм вважався рефлекс «прогнати команду», а рефлекс
+# носієм не є: він масштабується як O(n) шансів забути, тоді як хук є O(1) точкою, де
+# забування перестає мати наслідки — рівно той самий довід, яким цей файл почався (DCO).
+#
+# ЦІНА, виміряна тут-таки, двома прогонами: 3.39 / 3.05 с → ~3.2 с на ПОВНЕ дерево
+# (1019 файлів). Це ДЕШЕВШЕ за сусідній brakeman-блок (~3.5 с) і за i18n-трійку (~4 с),
+# яка їде БЕЗУМОВНО, — тож за записаним критерієм цього файлу («межа є ЦІНОЮ») питання
+# навіть не гранична: воно вже вирішене для дорожчих сусідів.
+#
+# ⚠️ Прогін ПОВНИЙ, а не по змінених файлах, і це свідомо: інкрементальна форма створила б
+# другу стійку з іншим ПОПУЛЯЦІЙНИМ скоупом, ніж CI-джоба, а такі стійки розходяться
+# тихо (§Guard-craft #43/#44 — паритет порівнює, ЩО біжить, і сліпий до того, над ЧИМ).
+# За 3.2 с економія не варта нової осі розходження.
+#
+# NOT-RUN ⊥ FAILED — як у сусідів: rubocop є bundle-залежністю, тож свіжий clone без
+# `bundle install` дістає ГУЧНУ ноту й проходить, а не стає непушабельним.
+if printf '%s\n' "$_changed" | grep -qE '\.rb$|^\.rubocop|^Gemfile|^Rakefile'; then
+  if ( cd "$root" && bundle exec rubocop --version ) >/dev/null 2>&1; then
+    if ! ( cd "$root" && bin/rubocop ); then
+      echo
+      echo "pre-push BLOCKED — rubocop reports offenses (above)."
+      echo "Fix:  bin/rubocop -a          # autocorrect what is safe"
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  else
+    echo "pre-push NOTE — Ruby changed but rubocop could not RUN."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`lint\`)."
+    echo "  Fix the toolchain:  bundle install"
+  fi
+fi
+
 echo "pre-push: DCO + i18n parity OK."
