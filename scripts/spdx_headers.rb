@@ -140,7 +140,32 @@ module SpdxHeaders
   # available. Matched on ATTRIBUTION (a copyright mark near a year, a rights reservation,
   # or a Doxygen \copyright tag), not on the mere word — `scripts/dco_check.rb` discusses
   # "copyright-origin certification" in prose and must not trip.
+  # ⛔ ДВА бекслеші в останній гілці НЕ є зайвим екрануванням: doxygen-тег Semtech
+  # пишеться літеральним бекслешем перед словом, тож регекс мусить шукати сам бекслеш.
+  # Виміряно 2026-08-28: `bin/rubocop -a` зрізав пару до одинарної, а `\c` у Ruby-регексі
+  # є CONTROL-CHAR escape — детектор чужого копірайту тихо перестав ловити цілий
+  # вендорський діалект, лишившись синтаксично валідним. Спіймала спека
+  # `foreign_notice catches the real vendor notices`, не ревʼю й не лінтер.
+  # 🔑 Тому автофікс на цьому файлі запускай лише разом із тією спекою.
   FOREIGN_NOTICE_RE = /(?:copyright|\(c\)|©)\W{0,20}\d{4}|all\s+rights\s+reserved|\\copyright\b/i
+  #
+  # 🔒 CEILING, названа після ⚖️ 2026-08-28 (UNI.3): цей детектор ключується на
+  # копірайт-РЯДКУ, тож файл, скопійований дослівно й позбавлений копірайту, він
+  # не побачить — і той отримає наш тег. Клас перевірено на найімовірнішому
+  # кандидаті: `firmware/queen/lorawan_glue/` тримає 13 наших-тегованих файлів,
+  # чиї коментарі згадують вендорські шаблони ST/Semtech. ⚖️ ПРИСУД — тег
+  # ПРАВИЛЬНИЙ, і він стоїть на чотирьох незалежних осях: (1) жоден із 13 не несе
+  # чужого копірайту, тобто детектор не помилився, а спрацював; (2) include-guard
+  # у кожному — наш неймспейс (`SILKEN_*`); (3) vendor-згадки в них є НАШИМИ
+  # українськими нотами про походження КОНТРАКТУ ([ARCH.34]), а не успадкованим
+  # вендорським текстом — `timer.h` каже «контракт … поверх owned» дослівно;
+  # (4) обсяг (19-109 рядків) не сумірний із вендорськими шаблонами. Заповнення
+  # конфіг-контракту значеннями є реалізацією ІНТЕРФЕЙСУ, і саме тому два сусіди
+  # з ВИДИМИМ копірайтом (`firmware/hal_glue/stm32wlxx_hal_conf.h`,
+  # `firmware/queen/lorawan_glue/se-identity.h`) лишаються без тега — асиметрії
+  # між рішеннями НЕМАЄ, є один механізм на різних входах.
+  # ⛔ Не «посилювати» детектор словом `template`: воно стоїть у НАШИХ нотах про
+  # походження, тож ловило б рівно ті файли, які присуд визнав своїми.
 
   # …but OUR OWN copyright notice is not foreign. Without this, the day a SilkenNet
   # copyright header lands in a file, that file drops out of the rollout AND out of the
