@@ -57,6 +57,30 @@
 # Ignore development files
 /.devcontainer
 
+# [OPS.10] Trees the Rails runtime never reads — `COPY . .` shipped all of them
+# into the PUBLIC GHCR image, which undertrusted Akash providers pull by design.
+# Measured 2026-08-28 on the VERSIONED tree (what a CI fresh-checkout sees, not a
+# local worktree with its build artifacts): 418 MB total, of which firmware 330 MB,
+# tools 52 MB, docs 20 MB, spec 6.1 MB. Verified before cutting: nothing under
+# app/ · lib/ · config/ READS these paths at runtime — the only hits are a message
+# string, a rake-only glob and a generator output path.
+# Sibling of BUNDLE_WITHOUT="development:test" above: that one keeps the test GEMS
+# out, this one keeps the test and non-Rails SOURCE out. Closing only the first
+# leaves the larger half in place while the item reads as done.
+/spec
+/docs
+/firmware
+/tools
+/contracts
+/subgraph
+/.claude
+
+# Local-only artifacts. Gitignored, so a CI fresh-checkout never has them — but a
+# local `docker build .` / `kamal deploy` from the same cwd bakes them in, which is
+# the identical structural gap already spelled out for /terraform above.
+/coverage
+/test
+
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*

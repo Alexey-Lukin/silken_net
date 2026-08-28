@@ -26,7 +26,7 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image
@@ -72,9 +72,18 @@ FROM base
 # bypassing Akash's CAP_NET_ADMIN restriction (no VPN/Tailscale possible).
 # Only activates when CLOUD_SQL_INSTANCE_CONNECTION_NAME is set in ENV.
 # See: docs/06_02_Akash_Network_Integration.md
-# --checksum = sha256 from the release table (github.com/GoogleCloudPlatform/
-# cloud-sql-proxy v2.15.2) — a version-pinned URL alone trusts the bucket forever [INF.21].
-ADD --checksum=sha256:31607582f62be0109ee09c9165dafc7bb585c29108fc6b7b9734f3797acdd357 https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/cloud-sql-proxy.linux.amd64 /usr/local/bin/cloud-sql-proxy
+# --checksum = sha256 of the binary itself — a version-pinned URL alone trusts the
+# bucket forever [INF.21]. 🔴 Where that hash comes from, because the obvious answer
+# is wrong: the bucket publishes NO `.sha256` sidecar (404 for every version tried)
+# and the GitHub release carries zero assets. The upstream release BODY holds a hash
+# table, but only sometimes — v2.25.0/v2.25.1/v2.25.4 have none, weeks after publish.
+# So the reproducible source is the bucket itself:
+#   curl -sSf <url above> | shasum -a 256
+# Verify the method with a positive control before trusting it — recomputing the
+# PREVIOUS pin must reproduce it byte-for-byte, or the recipe, not the release, moved.
+# Dependabot cannot see an `ADD --checksum` URL (its docker ecosystem tracks the base
+# image tag+digest only), so this pin moves by hand or not at all [OPS.10].
+ADD --checksum=sha256:f0584d79e877a8a46300fe2513840972c44e704c15dc3da6a49d5408f7d6f233 https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.25.3/cloud-sql-proxy.linux.amd64 /usr/local/bin/cloud-sql-proxy
 RUN chmod +x /usr/local/bin/cloud-sql-proxy
 
 # Run and own only the runtime files as a non-root user for security
