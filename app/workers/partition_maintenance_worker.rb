@@ -73,6 +73,17 @@ class PartitionMaintenanceWorker
       Rails.logger.info "🗂️ [Partition Maintenance] Партиція #{partition_name} вже існує — пропущено"
       0
     else
+      # DEFAULT-блокування розпізнаємо КЛАСОМ причини, не текстом: `CheckViolation`
+      # тут може означати лише одне — DEFAULT-лист уже тримає рядок цього місяця,
+      # тож нова партиція звузила б його constraint. Ретрай не лікує (стан сам не
+      # змінюється), і саме це оператор мусить прочитати в логу, а не виводити з
+      # тексту Postgres. Гілку `already exists` вище свідомо не чіпаємо.
+      if e.cause.is_a?(PG::CheckViolation)
+        Rails.logger.error "🛑 [Partition Maintenance] #{partition_name}: DEFAULT-лист уже тримає рядки цього " \
+                           "місяця — створення заблоковано, і РЕТРАЇ ЦЬОГО НЕ ВИПРАВЛЯТЬ. Потрібна ручна дія " \
+                           "(DETACH default → перелити рядки → ATTACH). Прилад-попередження: " \
+                           "`silkennet_partition_default_occupied`. Рунбук — 06_06 §5.5."
+      end
       Rails.logger.error "🛑 [Partition Maintenance] Помилка створення #{partition_name}: #{e.message}"
       raise
     end
@@ -97,15 +108,29 @@ class PartitionMaintenanceWorker
 
     PARTITIONED_TABLES.each do |table_name|
       row = conn.select_one(<<~SQL.squish)
-        SELECT count(*) FILTER (WHERE isleaf) AS leaves,
-               COALESCE(sum(pg_total_relation_size(relid)), 0) AS bytes
-        FROM pg_partition_tree(#{conn.quote(table_name)})
+        SELECT count(*) FILTER (WHERE t.isleaf) AS leaves,
+               COALESCE(sum(pg_total_relation_size(t.relid)), 0) AS bytes,
+               max(t.relid::regclass::text)
+                 FILTER (WHERE pg_get_expr(c.relpartbound, c.oid) = 'DEFAULT') AS default_rel
+        FROM pg_partition_tree(#{conn.quote(table_name)}) t
+        JOIN pg_class c ON c.oid = t.relid
       SQL
 
       SilkenNet::Metrics::PARTITIONS_PRESENT.set(row["leaves"].to_i, labels: { table: table_name })
       SilkenNet::Metrics::PARTITIONED_TABLE_BYTES.set(row["bytes"].to_i, labels: { table: table_name })
 
-      Rails.logger.info "📊 [Partition Growth] #{table_name}: #{row['leaves']} партицій, #{row['bytes']} Б"
+      # DEFAULT-лист питаємо ОКРЕМО й через `EXISTS`: будь-який ОДИН рядок уже
+      # блокує `CREATE ... PARTITION OF` для свого місяця назавжди, тож кількість
+      # рішення не міняє, а `count(*)` над розрослим DEFAULT сканував би саме
+      # тоді, коли прилад найпотрібніший. Ім'я беремо з `relpartbound`, а не з
+      # конвенції `<table>_default` — конвенція правдива сьогодні й ніде не
+      # гейтована.
+      occupied = row["default_rel"] &&
+                 conn.select_value("SELECT EXISTS (SELECT 1 FROM #{conn.quote_table_name(row['default_rel'])})")
+      SilkenNet::Metrics::PARTITION_DEFAULT_OCCUPIED.set(occupied ? 1 : 0, labels: { table: table_name })
+
+      Rails.logger.info "📊 [Partition Growth] #{table_name}: #{row['leaves']} партицій, " \
+                        "#{row['bytes']} Б, default #{occupied ? 'НЕПОРОЖНІЙ ⚠️' : 'порожній'}"
     end
 
     # Штамп ставиться ЛИШЕ після повного проходу — частковий семпл не є свідком

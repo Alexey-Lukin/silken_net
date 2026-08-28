@@ -751,6 +751,27 @@ module SilkenNet
       docstring: "Unix time of the last successful partition growth sample (freshness witness for the two gauges above)"
     )
 
+    # 🔴 Четверта вісь, і вона НЕ про ріст: DEFAULT-партиція є єдиною, чия
+    # непорожність ламає обслуговування НЕЗВОРОТНО. Механізм виміряно, не
+    # виведено: щойно в DEFAULT осів рядок місяця N, `CREATE TABLE ... PARTITION
+    # OF ... FOR VALUES` для місяця N падає з `PG::CheckViolation` («updated
+    # partition constraint for default partition would be violated by some
+    # row»), і повідомлення НЕ містить `already exists`, тож
+    # `PartitionMaintenanceWorker#ensure_partition` re-raise'ить. Далі каскад:
+    # прохід падає на першій таблиці, партиції НАСТУПНОГО місяця для решти двох
+    # не створюються, а `sample_growth_gauges!` стоїть ПІСЛЯ циклу — тобто два
+    # гейджі вище замерзають рівно тоді, коли мали б кричати. Ретраї не лікують:
+    # стан сам не змінюється, потрібен ручний DETACH/переливання/ATTACH.
+    # ⚠️ Величина СВІДОМО бінарна (`EXISTS`, не `count`): рішення оператора не
+    # залежить від кількості рядків — будь-який один уже блокує місяць, — а
+    # `count(*)` над розрослим DEFAULT коштував би сканування саме тоді, коли
+    # прилад найпотрібніший. 0 тут = здоровʼя, і воно ОЧІКУВАНЕ значення.
+    PARTITION_DEFAULT_OCCUPIED = REGISTRY.gauge(
+      :silkennet_partition_default_occupied,
+      docstring: "1 when a table's DEFAULT partition holds any row — that row permanently blocks CREATE PARTITION for its month (no self-heal)",
+      labels: [ :table ]
+    )
+
     # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
     # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).

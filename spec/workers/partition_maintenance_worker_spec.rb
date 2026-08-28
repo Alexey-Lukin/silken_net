@@ -190,6 +190,57 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
     end
   end
 
+  # [ARCH.70] ЧЕТВЕРТА вісь приладу, і вона не про ріст, а про ПОЛОМКУ: DEFAULT-лист
+  # є єдиною партицією, чия непорожність ламає обслуговування НЕЗВОРОТНО. Другий
+  # приклад тут несучий — він не пінить гейдж, а ВІДТВОРЮЄ саме те падіння, задля
+  # якого гейдж заведено; без нього рунбук `06_06 §5.5` був би описом механізму,
+  # якого ніхто не спостерігав.
+  describe "DEFAULT-partition occupancy" do
+    def gauge_for(table)
+      SilkenNet::Metrics::PARTITION_DEFAULT_OCCUPIED.get(labels: { table: table })
+    end
+
+    def next_month_partition
+      nxt = Time.current.utc.to_date.next_month.beginning_of_month
+      "telemetry_logs_y#{nxt.strftime('%Y')}m#{nxt.strftime('%m')}"
+    end
+
+    it "reports 0 for every table while the DEFAULT leaves stay empty" do
+      described_class.new.perform
+
+      described_class::PARTITIONED_TABLES.each do |table|
+        expect(gauge_for(table)).to eq(0.0)
+      end
+    end
+
+    it "reports 1 for the table whose DEFAULT leaf holds a row, and 0 for its siblings" do
+      # `created_at` поза КОЖНИМ місячним діапазоном → рядок маршрутизується в
+      # DEFAULT. Пін на саму фікстуру: без нього приклад був би зелений і тоді,
+      # коли рядок насправді осів у звичайній партиції.
+      create(:telemetry_log, created_at: 3.years.ago)
+      expect(connection.select_value("SELECT count(*) FROM telemetry_logs_default").to_i).to be > 0
+
+      described_class.new.perform
+
+      expect(gauge_for("telemetry_logs")).to eq(1.0)
+      expect(gauge_for("gateway_telemetry_logs")).to eq(0.0)
+      expect(gauge_for("blockchain_transactions")).to eq(0.0)
+    end
+
+    it "fails LOUDLY and says retries will not help when DEFAULT already holds next month's rows" do
+      # Робимо приклад детермінованим незалежно від того, чи попередній прогін уже
+      # створив партицію наступного місяця: DDL відкотиться разом із транзакцією.
+      connection.execute("DROP TABLE IF EXISTS #{connection.quote_table_name(next_month_partition)}")
+      create(:telemetry_log, created_at: 1.month.from_now)
+
+      allow(Rails.logger).to receive(:error)
+
+      expect { described_class.new.perform }.to raise_error(ActiveRecord::StatementInvalid)
+
+      expect(Rails.logger).to have_received(:error).with(/РЕТРАЇ ЦЬОГО НЕ ВИПРАВЛЯТЬ/)
+    end
+  end
+
   describe "sidekiq options" do
     it "uses default queue" do
       expect(described_class.get_sidekiq_options["queue"]).to eq("default")

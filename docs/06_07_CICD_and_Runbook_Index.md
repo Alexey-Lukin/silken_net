@@ -140,6 +140,7 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 | **Emergency:** витік підписаного імені Turbo-стріму → per-tenant відкликання (епоха) | [`06_04 §5.9`](06_04_Secrets_Checklist) |
 | Puma: SIGPWR backtrace dump, IPv6 listen verify | [`06_05 §Runbooks`](06_05_Puma_Configuration) |
 | **DR:** Cloud SQL PITR restore, TF-state rollback, region rebuild | [`06_06 §5`](06_06_Disaster_Recovery_and_Backup) |
+| **DB:** DEFAULT-партиція заблокувала створення партицій (воркер падає щодня, ретраї не лікують) | [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) |
 | Runtime failover (circuit breakers, comms-loss) | [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | `config.alloy` validation (local) | [`06_03 §2.9`](06_03_Prometheus_Observability) + `alloy_config_validate` CI |
 | Grafana Cloud dashboards + alerts + contact point import (S2.2) + post-deploy metrics verify (S2.4) | `deploy/grafana/README.md` (`import.rb` — datasource UID + contact point/notification policy з ENV) + [`06_03 §2.9`](06_03_Prometheus_Observability) |

@@ -142,6 +142,43 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 ### 5.4 Redis (Upstash) loss
 Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL` + redeploy (Kredis DB 1 auto-derive з нього — `config/redis/shared.yml`; `KREDIS_REDIS_URL` окремо **не** задавати, перебило б derive).
 
+### 5.5 DEFAULT-партиція заблокувала обслуговування (`PartitionMaintenanceWorker` падає щодня)
+
+**Симптом:** `sn-alert-partition-default-occupied` (`silkennet_partition_default_occupied > 0`) АБО `sn-alert-partition-maintenance-failed` разом із логом «DEFAULT-лист уже тримає рядки цього місяця». У Sentry — `PG::CheckViolation: updated partition constraint for default partition … would be violated by some row`.
+
+🔴 **Ретраї цього НЕ виправляють, і в цьому вся різниця з рештою збоїв воркера.** Щойно в DEFAULT-лист осів рядок місяця N, `CREATE TABLE … PARTITION OF … FOR VALUES` для місяця N падає **назавжди**: нова партиція звузила б constraint DEFAULT-листа, а той уже містить рядок, який туди не влізе. Стан сам не змінюється, тож кожен добовий прогін падає на тому самому місці. **Каскад:** прохід зупиняється на першій проблемній таблиці, отже партиції НАСТУПНОГО місяця для решти таблиць теж не створюються — і наступного місяця вони почнуть писати в свій DEFAULT так само; а `sample_growth_gauges!` стоїть після циклу, тож [`06_03`](06_03_Prometheus_Observability)-гейджі росту ЗАМЕРЗАЮТЬ (їх свіжість стереже `sn-alert-partition-sampler-stale`).
+
+⛔ **Порядок несучий:** створити партицію ДО `DETACH` неможливо — це і є сам дефект.
+
+```sql
+-- 1. Які місяці осіли (partition key = created_at). Повторити для кожної
+--    таблиці, чий гейдж = 1: telemetry_logs · gateway_telemetry_logs · blockchain_transactions
+SELECT date_trunc('month', created_at) AS month, count(*)
+FROM telemetry_logs_default GROUP BY 1 ORDER BY 1;
+
+-- 2. Відчепити DEFAULT. ⚠️ Бере ACCESS EXCLUSIVE на БАТЬКА — короткий стоп записів
+--    у цю таблицю. На pg17 доступний DETACH ... CONCURRENTLY (не можна в транзакції).
+ALTER TABLE telemetry_logs DETACH PARTITION telemetry_logs_default;
+
+-- 3. Створити відсутні місяці — по одному на КОЖЕН рядок кроку 1
+CREATE TABLE telemetry_logs_y2026m09 PARTITION OF telemetry_logs
+  FOR VALUES FROM ('2026-09-01 00:00:00') TO ('2026-10-01 00:00:00');
+
+-- 4. Перелити й спорожнити відчеплений лист
+INSERT INTO telemetry_logs SELECT * FROM telemetry_logs_default;
+DELETE FROM telemetry_logs_default;
+
+-- 5. Причепити назад — інакше наступний INSERT поза відомими місяцями впаде
+--    з «no partition of relation … found for row»
+ALTER TABLE telemetry_logs ATTACH PARTITION telemetry_logs_default DEFAULT;
+```
+
+⚠️ **`DELETE` кроку 4 не є порушенням [DOC.8]** ([`04_01 §3`](04_01_Data_Models_and_Entities), картка `TelemetryLog` — «ретеншн робить ВИКЛЮЧНО дроп партицій»): рядки не зникають, вони переїхали на крок раніше, а таблиця на цьому кроці вже **відчеплена** від `telemetry_logs`. Заборона стосується ретеншну за ВІКОМ, а не переливання.
+
+⊕ **Швидший шлях, коли крок 1 дав рівно ОДИН місяць:** відчеплений лист можна не переливати, а перейменувати й причепити як місячну партицію (`ALTER TABLE … RENAME TO telemetry_logs_y2026m09` → `ATTACH PARTITION … FOR VALUES FROM … TO …`), тоді ж створивши новий порожній DEFAULT. Дешевше на великому обсязі; на мішанині місяців незастосовне.
+
+**Профілактика — прилад, а не пильність:** `silkennet_partition_default_occupied` світиться ще ДО того, як настане місяць заблокованої партиції, тобто дає вікно на реакцію. Дім гейджа — [`06_03 §2.8`](06_03_Prometheus_Observability), причина існування — [`00_07`](00_07_Action_Plan_Tracker) ARCH.70.
+
 ---
 
 ## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
