@@ -46,8 +46,43 @@ Smart contracts (contracts/):
   - forge-std (dev) .......... MIT / Apache-2.0
 
 Frontend:
-  - Turbo / Stimulus (importmap) ... MIT
+  - Turbo / Stimulus (importmap) ... MIT (served from the gems, not vendored)
   - CARTO basemap tiles ............ CC-BY (attribution) — runtime map tiles
+  - OpenStreetMap map DATA ......... ODbL-1.0 — the tiles above are rendered from
+                                     it; §4.3 requires the source to be named in
+                                     every Produced Work, which is why the
+                                     runtime attribution string in
+                                     app/javascript/controllers/map_controller.js
+                                     names OSM and CARTO separately
+
+VENDORED INTO THE TREE — no manifest, therefore invisible to license_finder
+---------------------------------------------------------------------------
+Added 2026-08-28 (UNI.3, inbound-obligation pass). These were absent from this
+file for a structural reason worth recording, because it will recur: the
+inventory above is assembled from MANIFESTS (license_finder for gems, npm/forge
+for contracts, conda/pip-licenses for tools), and our per-file gate
+(scripts/spdx_headers.rb) deliberately DENY-lists `vendor/` — correctly, since we
+must not stamp OUR SPDX onto someone else's file. Both decisions are right on
+their own; together they left the one surface we actually REDISTRIBUTE as bytes
+with no instrument looking at it. There is no root package.json at all, and
+Leaflet arrives as a bare `pin "leaflet"` line in config/importmap.rb, so no
+manifest names it anywhere.
+
+  - Leaflet 1.9.4 ............ BSD-2-Clause
+      (c) 2010-2023 Vladimir Agafonkin, (c) 2010-2011 CloudMade
+      Files: vendor/javascript/leaflet.js
+             vendor/assets/stylesheets/leaflet/leaflet.css
+             vendor/assets/stylesheets/leaflet/images/*.png  (5 sprites)
+      Notice: vendor/javascript/LICENSE-leaflet.txt  (ONE home; the stylesheet
+             directory carries a pointer, not a copy). The bundle keeps its own
+             `@preserve` banner, but the CSS and the sprites carried no notice at
+             all — and BSD-2-Clause requires it to travel with the redistribution.
+  - JetBrains Mono (variable subsets) ... SIL OFL 1.1
+      Copyright 2020 The JetBrains Mono Project Authors; repackaged by Fontsource
+      Files: vendor/assets/fonts/jetbrains-mono/*.woff2  (latin, latin-ext, cyrillic)
+      Notice: vendor/assets/fonts/jetbrains-mono/LICENSE (full OFL text, already
+             adjacent — the obligation to carry the text was met; only the
+             inventory entry was missing)
 
 TOOLS (run to generate results; NOT redistributed in the product)
 -----------------------------------------------------------------

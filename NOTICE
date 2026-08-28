@@ -88,6 +88,12 @@ inventory in THIRD_PARTY_NOTICES (regen via license_finder):
     SkiaSharp (PicoGK dep) ......... MIT          (tools/cad — transitive)
     netDxf (DXF read/write) ........ MIT          (tools/cad — engineering-drawing DXF export)
     Ruby gems (Rails, Sidekiq=LGPL-3.0, prawn=GPL-3.0 option, ...) per gem
+    Leaflet 1.9.4 .................. BSD-2-Clause (vendor/ - js + css + sprites;
+      notice: vendor/javascript/LICENSE-leaflet.txt)
+    JetBrains Mono (Fontsource) .... SIL OFL 1.1 (vendor/assets/fonts/ - notice
+      adjacent to the .woff2 files)
     CARTO basemap tiles ............ CC-BY (attribution) - frontend map
+    OpenStreetMap map data ......... ODbL-1.0 (the CARTO tiles render it; the
+      runtime attribution string names both sources)
     Small-molecule structures (docs/.../ligands/*.sdf) - public chemical data
       (PubChem / generated), informational.

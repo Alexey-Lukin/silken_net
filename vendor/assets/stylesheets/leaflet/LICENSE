@@ -1,0 +1,8 @@
+The Leaflet stylesheet and sprites in this directory are covered by the same
+BSD-2-Clause notice as the Leaflet bundle, kept in ONE home to stop two copies
+from drifting apart:
+
+    vendor/javascript/LICENSE-leaflet.txt
+
+That file lists every vendored Leaflet path, including this directory, and
+records where its copyright lines were transcribed from.

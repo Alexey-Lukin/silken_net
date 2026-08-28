@@ -78,6 +78,13 @@ jobs:
               - 'terraform/**'
               - 'subgraph/**'
               - 'deploy/**'
+              # Vendored third-party bytes we actually redistribute (UNI.3). Neither
+              # instrument saw them before: the inventory is built from MANIFESTS and
+              # there is no root package.json, while spdx_headers deliberately
+              # DENY-lists vendor/ (we must not stamp OUR SPDX on someone else's file).
+              - 'vendor/**'
+              - 'THIRD_PARTY_NOTICES'
+              - 'NOTICE'
 
   docs_check:
     needs: changes
@@ -141,7 +148,7 @@ jobs:
         # ⚠️ `grafana_alerts` додатково вантажить `config/initializers/prometheus.rb`
         # ЛІНИВО й під гардом: реєстр метрик не має Rails-вільного дому, а Rails
         # вантажить той файл через `load`, який не пише в `$LOADED_FEATURES`.
-        run: COVERAGE=0 bin/rspec spec/quality/claude_prose_path_refs_spec.rb spec/quality/skill_gotcha_numbering_spec.rb spec/quality/structure_sql_pg_portability_spec.rb spec/quality/no_future_dated_claims_spec.rb spec/lib/workflow_gate_perimeter_spec.rb spec/deploy/terraform_workflow_var_parity_spec.rb spec/deploy/coap_host_consistency_spec.rb spec/deploy/env_fetch_declaration_spec.rb spec/deploy/akash_auditor_bech32_spec.rb spec/deploy/alloy_scrape_topology_spec.rb spec/deploy/anchor_coap_env_spec.rb spec/deploy/database_dr_posture_spec.rb spec/deploy/grafana_alerts_spec.rb spec/quality/mint_prefix_parity_spec.rb spec/quality/subgraph_abi_parity_spec.rb spec/quality/subgraph_entity_completeness_spec.rb
+        run: COVERAGE=0 bin/rspec spec/quality/claude_prose_path_refs_spec.rb spec/quality/skill_gotcha_numbering_spec.rb spec/quality/structure_sql_pg_portability_spec.rb spec/quality/no_future_dated_claims_spec.rb spec/lib/workflow_gate_perimeter_spec.rb spec/deploy/terraform_workflow_var_parity_spec.rb spec/deploy/coap_host_consistency_spec.rb spec/deploy/env_fetch_declaration_spec.rb spec/deploy/akash_auditor_bech32_spec.rb spec/deploy/alloy_scrape_topology_spec.rb spec/deploy/anchor_coap_env_spec.rb spec/deploy/database_dr_posture_spec.rb spec/deploy/grafana_alerts_spec.rb spec/quality/mint_prefix_parity_spec.rb spec/quality/subgraph_abi_parity_spec.rb spec/quality/subgraph_entity_completeness_spec.rb spec/quality/vendored_component_inventory_spec.rb
 
       - name: 04_01 model↔code sync (replaces the §12 manual drift-register invariants)
         # Pure Ruby, no Rails — model files ⟷ `### `Model`` headings, concerns,
