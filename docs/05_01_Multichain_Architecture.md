@@ -36,7 +36,7 @@
 - [5. Конфігурація Credentials та ENV](#-5-конфігурація-credentials-та-env)
 - [6. Shared Infrastructure Layer](#-6-shared-infrastructure-layer)
 - [7. Повна Матриця Сервісів та Черг](#-7-повна-матриця-сервісів-та-черг)
-- [8. Disaster Recovery / Chain Outage Strategy (S6.11)](#-8-disaster-recovery--chain-outage-strategy-s611)
+- [8. Disaster Recovery / Chain Outage Strategy](#-8-disaster-recovery--chain-outage-strategy)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -633,7 +633,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 ---
 
-## 🚨 8. Disaster Recovery / Chain Outage Strategy (S6.11)
+## 🚨 8. Disaster Recovery / Chain Outage Strategy
 
 > **Принцип:** SilkenNet залежить від 12 незалежних мереж — імовірність того, що **жодна** з них не матиме outage за рік близька до нуля. Ця секція визначає, як система деградує grace при відмові кожної мережі, яким мережам категорично не можна "впасти" без zero-downtime fallback, та які інженерні відповіді закладені в Rails backend / контракти.
 

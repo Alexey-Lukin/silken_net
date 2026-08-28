@@ -24,7 +24,7 @@
 | [`00_02` — Academic Institutions Registry](00_02_Academic_Integration_and_IP) | MSA / KYC legal (Аблязов) |
 | [`02_01` — Hardware Architecture and BOM](02_01_Hardware_Architecture_and_BOM) | Апаратна архітектура (BOM source для [`02_06 §1`](02_06_Unit_Economics_and_BOM)) |
 | [`02_05` — Queen Hardware and Starlink](02_05_Queen_Hardware_and_Starlink) | Шлюз Королева (Queen BOM → [`02_06 §4`](02_06_Unit_Economics_and_BOM)) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім: BIZ.2/3/9/11/14/15/18/19/20/21/22 (BIZ.17 → [`00_04`](00_04_Nature_as_a_Service_Contracts); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | §07 юр/бізнес-дім — родина `BIZ.*` (винятки, чий дім деінде: BIZ.17 → [`00_04`](00_04_Nature_as_a_Service_Contracts); BIZ.13 → [`05_05`](05_05_Slashing_and_Risk_Policy)) |
 
 ## 📑 Зміст
 

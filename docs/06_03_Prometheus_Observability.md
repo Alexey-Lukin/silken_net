@@ -256,7 +256,7 @@ end
 | `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | Histogram observation, не observe при skip/not found |
 | `spec/workers/unpack_telemetry_worker_spec.rb` | `COAP_PACKETS_RECEIVED_TOTAL` | Статуси: success, unknown_device, decrypt_error; ізоляція між статусами |
 
-### 2.5 Додаткові метрики (S5.1 — Виконано)
+### 2.5 Додаткові метрики
 
 | Metric Name | Тип | Файл | Buckets |
 |-------------|-----|------|---------|

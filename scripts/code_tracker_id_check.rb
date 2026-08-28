@@ -31,12 +31,40 @@ ROOT  = File.expand_path("..", __dir__)
 # cite tracker IDs in prose a human reads at 3am — the Grafana alert `description:`
 # fields route the on-call to an item by ID — and none was supervised by anything.
 # Price was MEASURED before enabling (00_05 §5): zero hits, so the widening is free.
-# ⛔ `docs/` deliberately stays OUT, and that is a MEASUREMENT, not an omission: the
-# same probe over `docs/**` returned 36 candidates (retired facets, ranges the split
-# does not reach, historical mentions). The tracker item that prescribed this leg read
-# «ціна = 0», but that zero belongs to the LINK form `[`ID`](00_07…)` — which is gated
-# on the OTHER side now (`Tracker::Dashboard::INBOUND_LABEL_REF_RE`) — never to every
-# ID-shaped token in canon prose. Widening here is work-then-gate, not gate.
+# ⛔ `docs/` stays OUT — REFUSED by measurement 2026-08-28, not omitted. The leg
+# prescribing it (DOC-T.92) said «read the candidates, fix the real ones, THEN gate»;
+# all of them were read, and the split is what kills the widening:
+#
+#   * REAL defects — 7, all fixed that day, and all one class: an ID from the retired
+#     `10_02` era cited in canon as provenance after being closed with no §🗄️ row
+#     (holes in the numbering — INF.7→[INF.8]→INF.9, S6.10→[S6.11]→S6.12, BIZ.18→
+#     [BIZ.19]→BIZ.20, E.10→[E.11]→E.12, plus S1.7/S5.1). Cure was to REMOVE the
+#     tombstone, never to resurrect the ID: `00_06 §1` sends chronicle to git, and a
+#     §🗄️ row would point at a tracker that no longer exists.
+#   * The gate's OWN invention — 1, fixed in TOKEN_RE above (`INF.13/06_04` → `INF.06`).
+#   * FALSE positives — everything left, in five forms that share no cure:
+#       (a) prose tail capitalised (`FW.2-CCM`, `BIZ.20-Phase-2`, `S2.2-Grafana`) — the
+#           dominant form. The UPPERCASE-tail-is-a-facet rule is what catches the
+#           proof-case `ARCH.35-Q2Q`, so narrowing it to silence these blinds the gate
+#           to the very defect it was built for. In CODE this form is rare; in canon
+#           PROSE it is normal — the two perimeters need different predicates.
+#       (b) necrology inside §🗄️ table rows — the declared ceiling (evidence is read
+#           from `####` bodies ONLY, so a retired sub-ID is not immunised by the row
+#           documenting its retirement). Deliberate, and unavoidably loud inside 00_07.
+#       (c) ranges the split cannot reach (`E.50-53`, `UI.1-3`) — right side carries no
+#           prefix. Fixable in principle, but every such site lives in `docs/`, i.e. the
+#           fix would serve a perimeter we are not enabling (and the obvious widening
+#           `(?<=\d)-(?=\d)` breaks `PUMA-IPV6-1`).
+#       (d) this gate's own fixtures quoted in the `00_06 §3` registry (`DOC-T.999`).
+#       (e) a foreign numbering that collides with a tracker family — `msa_skeleton.md`
+#           numbers its own sections `§E.3.2`, `§E.4`.
+#
+# So the widening costs five separate exemption mechanisms, two of which trade away
+# real sensitivity, to supervise a surface whose LINK form is already gated on the
+# other side (`Tracker::Dashboard::INBOUND_LABEL_REF_RE`). Named price of refusing
+# (00_05 §5 — a refusal has no red to remind anyone of it): a dead ID cited in canon
+# prose, in the form `(S5.1)` rather than a link, stays uncaught. The 7 above were
+# found by hand, and the next batch will need the same hand.
 TREES = %w[app lib firmware contracts spec scripts tools bin config db deploy terraform subgraph .claude].freeze
 EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 
@@ -78,7 +106,24 @@ KNOWN_BENIGN = %w[E.164].to_set # ITU-T phone-number format
 # Known ceiling: dotless word-IDs (`SE050-MIGRATION`, `OS-RECOMPUTE`) are
 # shape-identical to ordinary SHOUTED prose, so they are matched only when
 # they appear verbatim in the ID-set (below) — never as phantom candidates.
-TOKEN_RE = %r{(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*(?:/\d+)*}
+#
+# 🔴 The `/`-tail needs `(?![\d_])`, and without it the gate INVENTS an ID rather
+# than missing one. A doc-id shares the `/`-joined shape (`INF.13/06_04/06_01`
+# — an inventory of canon surfaces, not a family range): `\d+` swallowed `06`,
+# `_04` was left behind, and the expansion below then prefixed the ORPHANED
+# digits into `INF.06`, which the gate duly reported as a phantom. So the fix
+# belongs in the tokeniser, not in the expansion — measured 2026-08-28, when a
+# first attempt one level down (`\A\d+\z` on the segment) changed nothing,
+# because by then the segment really was bare digits. A second attempt with a
+# bare `(?!_)` traded one invention for another: the engine BACKTRACKED to
+# `\d+` = `0`, whose next char is `6` rather than `_`, and produced `INF.0`.
+# Both digits and `_` must be excluded, or the lookahead is satisfiable by a
+# shorter match — the class of mutation that «passes» while proving nothing.
+# Price measured before the change: zero `ID/NN_NN` sites in TREES, one in
+# `docs/` — i.e. the gate was green only because the base was empty, and the
+# first legitimate such citation in a code comment would have reddened on
+# CORRECT prose (00_05 §4, «гейт, який ти щойно збудував»).
+TOKEN_RE = %r{(?<![A-Za-z0-9_])[A-Z][A-Za-z0-9]*(?:-[A-Z][A-Za-z0-9]*)*[.\-]\d[0-9A-Za-z.]*(?:-[A-Z0-9.]+)*(?:/\d+(?![\d_]))*}
 
 tracker_md     = File.read(Tracker::Dashboard::DEFAULT_PATH)
 ids            = Tracker::Dashboard.all_item_ids(tracker_md).to_set
