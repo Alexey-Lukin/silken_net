@@ -26,6 +26,13 @@ internal static class Drawing
     private const string Stroke = "#111";
     private const string Dim = "#1166cc";
 
+    // 🔴 The one rule this file exists to obey: a missing CEM field must print LOUDLY, never
+    // plausibly. A drawing is a factory instruction — an unmarked default (`?? "Ti-6Al-4V"`) is
+    // not a gap, it is a FABRICATED instruction that the shop will machine to, and neither the
+    // reviewer nor the shop can tell it apart from a real one. HW.1 / picogk gotcha #11.
+    // Deliberately verbose and ALL-CAPS: it must survive a glance at a printed A3.
+    internal const string NotSpecified = "NOT SPECIFIED IN CEM";
+
     // Standard descriptor for the footer/title block (replaces the hard-coded `first-angle (ISO)`).
     private static string StandardLabel(DrawingStandard std) => std == DrawingStandard.Iso
         ? "first-angle (ISO 128/5456 · GD&T ISO 1101)"
@@ -77,6 +84,18 @@ internal static class Drawing
         sb.AppendLine(Text(x + 4, (y1 + y2) / 2 + 3, label, 10, "start", Dim));
     }
 
+    // Title-block cell fit. The block is 250 px wide and the value column starts at +95, i.e. ~155 px —
+    // about 28 monospace glyphs at font-size 9. A CEM `process` runs 89–102 chars.
+    //
+    // 🔴 Both previous behaviours were wrong in OPPOSITE directions, and that is the whole lesson of this
+    // tract: the flange SILENTLY truncated to 22 chars (reviewer reads half a word, DXF ships the full
+    // string) while the coin did not truncate at all (text overruns the 820-wide canvas and is clipped
+    // mid-word by the viewport). Neither told anyone that something was missing.
+    // Cure: cut at the budget and SAY SO. The full value is not lost — `Process` is already a NOTES line,
+    // so the title block is a pointer, and now an honest one.
+    private static string Cell(string v, int budget = 28)
+        => v.Length <= budget ? v : $"{v[..(budget - 9)]}… → NOTES";
+
     // Title block (bottom-right grid) — part / material / scale / units / rev / notes pointer.
     private static void TitleBlock(StringBuilder sb, double x, double y, (string, string)[] rows)
     {
@@ -107,38 +126,57 @@ internal static class Drawing
 
     // Notes-block lines — consume the CEM NotesSpec (Noyron-clean: the engineering text lives in the
     // CEM, not hard-coded here). `lead` is a geometry-derived first line (e.g. the computed active area).
-    // Falls back to a minimal material/process line when the CEM carries no notes.
+    //
+    // 🔴 TWO defects lived here and they are opposite in sign:
+    //   · INVENTION — the `n is null` branch printed "Ti-6Al-4V (Grade 5)" outright, i.e. it stamped
+    //     the baseline alloy onto a Ta / Au / 7Nb / CP-Ti coupon whose CEM never said so.
+    //   · SILENT DROP — `Add` skipped empty values entirely, so the drawing came out COMPLETE-looking
+    //     with no `Post-process: ___` line for the shop to query. A missing line is unaskable; a line
+    //     reading NOT SPECIFIED IN CEM is a question the shop WILL ask before cutting metal.
+    // Both are cured the same way: the field set is FIXED, and absence is printed, not skipped.
     private static List<string> NotesLines(NotesSpec? n, string? lead = null)
     {
         var lines = new List<string>();
         if (lead is not null) lines.Add(lead);
-        if (n is null)
-        {
-            lines.Add("Material: Ti-6Al-4V (Grade 5). Geometry SSOT = the cem/*.json + STL.");
-            return lines;
-        }
-        void Add(string? label, string? v) { if (!string.IsNullOrWhiteSpace(v)) lines.Add($"{label}: {v}"); }
-        Add("Material", n.Material);
-        Add("Process", n.Process);
-        Add("Surface", n.SurfaceFinish);
-        Add("Post-process", n.PostProcess);
-        Add("Coating", n.CoatingRestriction);
-        Add("Lattice", n.LatticeSpec);
-        Add("Inspect", n.Inspection);
-        if (n.Extra is { } extra) lines.AddRange(extra);
+        void Add(string label, string? v) => lines.Add($"{label}: {(string.IsNullOrWhiteSpace(v) ? NotSpecified : v)}");
+        Add("Material", n?.Material);
+        Add("Process", n?.Process);
+        Add("Surface", n?.SurfaceFinish);
+        Add("Post-process", n?.PostProcess);
+        Add("Coating", n?.CoatingRestriction);
+        Add("Lattice", n?.LatticeSpec);
+        Add("Inspect", n?.Inspection);
+        if (n?.Extra is { } extra) lines.AddRange(extra);
         return lines;
     }
 
-    // Tolerance-block lines — consume the CEM ToleranceSpec (fits / Lamé-µm / GD&T datums). Null ⇒ empty.
+    // Tolerance-block lines — consume the CEM ToleranceSpec (fits / Lamé-µm / GD&T datums). Null ⇒ empty
+    // (a part with no ToleranceSpec at all declares no PMI; that is a different statement from a part
+    // whose spec is half-filled, and only the second one is a lie waiting to be machined).
+    //
+    // 🔴 The costliest single character in this file was `?? 0` in the feature line: a CEM carrying only
+    // `plus_mm` rendered `"bore: 0.1/0 mm"` — a ZERO minus-tolerance the CEM never stated, in the PMI, in
+    // the DXF, on the shop floor. Zero is not "unknown": it is the tightest possible limit, so the invented
+    // value is not merely wrong, it is wrong in the expensive direction. Now each side prints on its own.
+    //
+    // 🔴 And the mirror: the feature line vanished ENTIRELY when both sides were absent, so
+    // `cathode_flange.json`'s `shank_dia` (Ø9 — itself an HW.8.9 placeholder) appeared in NEITHER svg nor
+    // dxf. A named feature with no limits is exactly what the shop must be told about.
     private static List<string> ToleranceLines(ToleranceSpec? t)
     {
         var lines = new List<string>();
         if (t is null) return lines;
         if (t.Fit is { } fit) lines.Add($"Fit: {fit}");
         if (t.InterferenceMinUm is { } lo && t.InterferenceMaxUm is { } hi) lines.Add($"Interference: {N(lo)}–{N(hi)} µm (Lamé, E_PEEK-aware)");
+        else if (t.InterferenceMinUm is { } only) lines.Add($"Interference: min {N(only)} µm, max {NotSpecified}");
+        else if (t.InterferenceMaxUm is { } onlyHi) lines.Add($"Interference: min {NotSpecified}, max {N(onlyHi)} µm");
         if (t.ClearanceMm is { } cl) lines.Add($"Clearance: ≤{N(cl)} mm");
-        if (t.Feature is { } f && (t.PlusMm is { } || t.MinusMm is { }))
-            lines.Add($"{f}: {N(t.PlusMm ?? 0)}/{N(t.MinusMm ?? 0)} mm");
+        if (t.Feature is { } f)
+        {
+            string plus = t.PlusMm is { } p ? $"+{N(p)}" : NotSpecified;
+            string minus = t.MinusMm is { } m ? $"-{N(m)}" : NotSpecified;
+            lines.Add($"{f}: {plus} / {minus} mm");
+        }
         if (t.PrimaryDatum is { } d) lines.Add($"Datum A: {d}");
         if (t.SecondaryDatum is { } d2) lines.Add($"Datum B: {d2}");
         if (t.ConcentricityMm is { } cc) lines.Add($"Concentricity: ⌀{cc} (A)");
@@ -201,18 +239,26 @@ internal static class Drawing
         }
 
         // TITLE BLOCK — material/process/SSOT come from the CEM (the alloy-bake-off SKU), not hard-coded:
-        // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5). Null ⇒ the 4V baseline.
+        // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5).
+        // 🔴 A null here used to print the 4V baseline — on a bake-off part whose whole purpose is that
+        // the alloy is the VARIABLE (Ta / Au / 7Nb / CP-Ti), that default is the single most expensive
+        // string in the drawing: it names the wrong metal in the box the shop reads first.
         TitleBlock(b, 540, 470, new[]
         {
             ("PART", "Ti-coin"),
-            ("MATERIAL", cem.Notes?.Material ?? "Ti-6Al-4V"),
-            ("PROCESS", cem.Notes?.Process ?? "SLM/DMLS"),
+            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
+            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
-            ("REV", sha),
+            ("REV", Cell(sha, 34)),
             ("SSOT", $"cem/{cem.Name}.json"),
         });
 
-        return Frame(820, 560, b, sha, std);
+        // 🔴 Canvas 560 → 620. The title block runs 470..566 (6 rows × 16), so on a 560-tall frame its
+        // LAST row — SSOT, the pointer back to the manifest — was drawn outside the viewport and simply
+        // did not exist for the reviewer, while the DXF carried it. That is the inverted-risk half of
+        // gotcha #11: the human sees LESS than the factory, so a bad line rides through self-review
+        // precisely because it is invisible on screen.
+        return Frame(820, 620, b, sha, std);
     }
 
     // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
@@ -323,11 +369,16 @@ internal static class Drawing
             for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
         }
 
+        // 🔴 PROCESS was truncated to 22 chars HERE and nowhere else — so the reviewer read a half word
+        // while the DXF shipped the full string. Truncation is now gone: the value either fits or the
+        // drawing looks wrong, and "looks wrong" is the correct outcome for an over-long factory note.
+        // (The Ti-coin block never truncated, which is why the same overflow surfaced there as clipping
+        // instead — one class, two symptoms, and neither visible from the other file.)
         TitleBlock(b, 620, 470, new[]
         {
             ("PART", "Cathode flange (Деталь 3)"),
-            ("MATERIAL", cem.Notes?.Material ?? "Ti-6Al-4V"),
-            ("PROCESS", cem.Notes?.Process is { } p ? p[..Math.Min(p.Length, 22)] : "SLM/EBM"),
+            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
+            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", sha),
             ("SSOT", $"cem/{cem.Name}.json"),
@@ -398,7 +449,20 @@ internal static class Drawing
     }
 
     // DXF single-line Text is ASCII-friendliest → map the Unicode glyphs we use to DXF/ASCII equivalents.
-    private static string DxfSafe(string s) => s
+    // `internal` (not private) so the round-trip test can assert a CEM field reaches the DXF VERBATIM
+    // through the same mapping the writer used — asserting the raw CEM string would fail on Ø/µ/² and
+    // asserting a hand-copied ASCII form would be a second, drifting definition of this table.
+    // 📐 Таблиця ВИМІРЯНА проти `cem/*.json` (2026-08-28), не вгадана: скан усіх маніфестів дав ~35
+    // різних не-ASCII гліфів, із яких стара версія мапила СІМ. Решта їхала в DXF як `\U+XXXX`.
+    // ⚠️ І це НЕ дефект сам по собі — `\U+XXXX` є штатним DXF-кодуванням Unicode, яке AutoCAD рендерить;
+    // тобто мапінг тут про ЧИТАБЕЛЬНІСТЬ у простіших читачах, а не про коректність. Тому додано лише
+    // ТЕХНІЧНІ гліфи з однозначним ASCII-еквівалентом (математика, стрілки, § як `sec.`), а кирилиця
+    // («Деталь 3») лишається екранованою СВІДОМО: транслітерація власної назви деталі була б втратою
+    // сенсу заради косметики, і жодного виміру, що цех бачить її гірше, у нас немає.
+    internal static string DxfSafe(string s) => s
         .Replace("Ø", "%%c").Replace("⌀", "%%c").Replace("≈", "~").Replace("≤", "<=").Replace("≥", ">=")
-        .Replace("²", "2").Replace("³", "3").Replace("µ", "u").Replace("·", "-").Replace("–", "-").Replace("°", "deg");
+        .Replace("²", "2").Replace("³", "3").Replace("µ", "u").Replace("·", "-").Replace("–", "-").Replace("°", "deg")
+        .Replace("—", "-").Replace("−", "-").Replace("×", "x").Replace("§", "sec.")
+        .Replace("→", "->").Replace("↔", "<->").Replace("⇒", "=>").Replace("≪", "<<").Replace("≫", ">>")
+        .Replace("α", "alpha").Replace("β", "beta").Replace("₂", "2").Replace("₃", "3");
 }

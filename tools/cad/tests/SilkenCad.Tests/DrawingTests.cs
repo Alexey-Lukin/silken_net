@@ -14,10 +14,54 @@ public class DrawingTests
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø16", svg);          // disc Ø straight from the CEM
         Assert.Contains("2.01 cm²", svg);     // 1 face = π·8² ≈ 2 cm² (01_03 §3.5)
-        Assert.Contains("Ti-6Al-4V", svg);    // title-block material
         Assert.Contains("rev test", svg);     // injected revision (git SHA in practice)
         Assert.DoesNotContain("NaN", svg);
         Assert.DoesNotContain("Infinity", svg);
+    }
+
+    // 🔴 This assert used to read `Contains("Ti-6Al-4V", svg)` on a CEM with NO notes — i.e. the suite
+    // GREEN-LIT the fabrication it was supposed to guard: an empty manifest stamped the baseline alloy
+    // onto a drawing whose whole purpose (alloy bake-off, 01_02 §2.5) is that the metal is the variable.
+    // Inverted: an absent field must print loudly, and the baseline must NOT appear from nowhere.
+    [Fact]
+    public void Empty_Cem_Prints_NOT_SPECIFIED_And_Never_Invents_The_Baseline_Alloy()
+    {
+        string svg = Drawing.TiCoin(new TiCoinCem(), "test");
+        Assert.Contains(Drawing.NotSpecified, svg);
+        Assert.DoesNotContain("Ti-6Al-4V", svg);   // the defect this file exists to prevent
+        Assert.DoesNotContain("SLM/DMLS", svg);    // process fallback — same class
+    }
+
+    // Silent DROP, the mirror of invention: a null field used to remove its whole line, so the drawing
+    // looked COMPLETE and the shop had nothing to query. The note field-set is fixed — absence prints.
+    [Fact]
+    public void Absent_Note_Fields_Print_As_Lines_Rather_Than_Vanishing()
+    {
+        string svg = Drawing.TiCoin(new TiCoinCem { Notes = new NotesSpec { Material = "Ta (R05200)" } }, "t");
+        Assert.Contains("Ta (R05200)", svg);
+        foreach (string label in new[] { "Process", "Surface", "Post-process", "Coating", "Lattice", "Inspect" })
+            Assert.Contains($"{label}: {Drawing.NotSpecified}", svg);
+    }
+
+    // 🔴 The single most expensive character in the tract: `?? 0` on a one-sided tolerance rendered
+    // `bore: 0.1/0 mm` — a ZERO minus-limit the CEM never stated, and zero is not "unknown", it is the
+    // TIGHTEST possible limit. Wrong in the expensive direction, straight onto the shop floor.
+    [Fact]
+    public void One_Sided_Tolerance_Never_Fabricates_A_Zero_Limit()
+    {
+        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "bore", PlusMm = 0.1f } };
+        string svg = Drawing.TiCoin(cem, "t");
+        Assert.Contains($"bore: +0.1 / {Drawing.NotSpecified} mm", svg);
+        Assert.DoesNotContain("0.1/0 mm", svg);
+    }
+
+    // A NAMED feature with no limits at all used to vanish from BOTH svg and dxf — the live instance is
+    // `cathode_flange.json:shank_dia` (Ø9, itself an HW.8.9 placeholder). Naming it is the point.
+    [Fact]
+    public void Named_Feature_Without_Limits_Still_Reaches_The_Drawing()
+    {
+        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "shank_dia" } };
+        Assert.Contains("shank_dia", Drawing.TiCoin(cem, "t"));
     }
 
     [Fact]
@@ -64,6 +108,51 @@ public class DrawingTests
             Assert.Contains("AcDbText", dxf);               // text entities present
             Assert.Contains("%%c16", dxf);                  // Ø16 as the DXF single-line diameter code
             Assert.Contains("ZnO-Ta forbidden", dxf);       // CEM note consumed into the DXF too
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // ── The round-trip that closes the whole class ──────────────────────────────────────────────
+    // 🔴 Every other test in this file feeds an INLINE literal CEM, so none of them can see what the
+    // shipped manifests actually produce — and CI runs `verify` only, never `draw`. That gap is why a
+    // silent drop and a silent invention coexisted here for weeks while the suite stayed green.
+    // This test reads the REAL cem/*.json and asserts every non-empty note reaches the DXF verbatim
+    // (through DxfSafe, the writer's own mapping). It catches drop, fallback, truncation and escaping
+    // in one assert — the four symptoms picogk gotcha #11 lists as one class.
+    private static string CemDir()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "cem"))) dir = dir.Parent;
+        Assert.NotNull(dir); // no cem/ above the test binary ⇒ the test is measuring nothing
+        return Path.Combine(dir!.FullName, "cem");
+    }
+
+    [Theory]
+    [InlineData("ti_coin.json")]
+    [InlineData("ti_coin.7nb.json")]
+    [InlineData("ti_coin.au.json")]
+    public void Shipped_Cem_Notes_Reach_The_Dxf_Verbatim(string strFile)
+    {
+        string strJson = File.ReadAllText(Path.Combine(CemDir(), strFile));
+        var cem = Cem.Parse<TiCoinCem>(strJson);
+        string path = Path.Combine(Path.GetTempPath(), $"cem_roundtrip_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.TiCoinDxf(cem, "test", path));
+            string dxf = File.ReadAllText(path);
+
+            // Лічильник-ліхтар: без нього порожній NotesSpec зробив би цикл вакуумним.
+            var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish,
+                                 cem.Notes?.PostProcess, cem.Notes?.CoatingRestriction,
+                                 cem.Notes?.Inspection }
+                         .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            Assert.NotEmpty(fields);
+
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+
+            // Той самий маніфест не сміє нести й вигаданого: якщо поле є, маркер відсутності не
+            // з'являється замість нього (і навпаки — це ловить попередній цикл).
             Assert.DoesNotContain("NaN", dxf);
         }
         finally { if (File.Exists(path)) File.Delete(path); }

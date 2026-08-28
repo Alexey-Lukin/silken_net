@@ -103,7 +103,31 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     view-cube presets (instance, not static) but NOT `SetViewAngles`/`RequestClose` (drop explicit
     camera → auto-frame; `bEndAppWithTask` exits). `ColorFloat` alpha does NOT show a rod through a
     dense gyroid → use `section` (cutaway) + a gold material.
-11. 🔴 **The drawing tract SILENTLY invents and silently drops — and the reviewer sees LESS than the
+11. ✅ **FIXED 2026-08-28 (HW.1) — the four symptoms below are CLOSED in `Drawing.cs`; the CLASS and its
+    reflex stay, because the next null-defaulted field will read exactly as innocent as these did.**
+    What landed: a single `Drawing.NotSpecified` marker replaces every `??`-default (title block,
+    `NotesLines`, `CAD_REV`); the notes field-set is FIXED, so an absent field prints
+    `Post-process: NOT SPECIFIED IN CEM` instead of removing its own line; a one-sided tolerance prints
+    each side separately (the `?? 0` that rendered `bore: 0.1/0 mm` — a zero minus-limit, i.e. the
+    TIGHTEST possible, invented — is gone); a NAMED feature with no limits still renders (this is what
+    made `cathode_flange.json:shank_dia` reappear); the Ti-coin canvas 560 → 620 so the title block's
+    last row is inside the viewport; and title-block cells cut at a measured budget **and say
+    `… → NOTES`** — the flange's silent 22-char truncation and the coin's silent overflow were the same
+    defect in opposite directions. ⊕ `DxfSafe` was measured against every `cem/*.json`: it mapped 7 of
+    ~35 non-ASCII glyphs, so `§` · `—` · `→` · `×` · `−` · `↔` · `⇒` · `≪` · `α` · `β` · `₂` were added.
+    ⚠️ Cyrillic stays escaped as `\U+XXXX` **deliberately** — that is standard DXF Unicode encoding,
+    not corruption, and transliterating a part name would lose meaning for cosmetics.
+    🔑 **The pin that closes the whole class is the ROUND-TRIP one** (`Shipped_Cem_Notes_Reach_The_Dxf_Verbatim`):
+    it reads the REAL `cem/ti_coin*.json` and asserts every non-empty note reaches the DXF through
+    `DxfSafe`. Every other test here feeds an INLINE literal, which is precisely why a drop and an
+    invention coexisted for weeks under a green suite — and mutation confirms it: narrowing `DxfSafe`
+    by one glyph reds that test alone. **When you add a `draw` kind, add its round-trip row too.**
+    ⛔ Still OPEN in this class: `topology: "sheet"` silently defaulting (below) — that one is an unmade
+    founder verdict (HW.33 ⚖️), not a coding defect, so it is NOT covered by the fix above.
+
+    <details><summary>The original diagnosis (kept — it is what the reflex is calibrated on)</summary>
+
+    🔴 **The drawing tract SILENTLY invents and silently drops — and the reviewer sees LESS than the
     factory** (deep-dig 2026-07-16; the `topology: "sheet"` default below is ONE MEMBER of this class,
     not a one-off).
     - **Silent drop:** `Drawing.NotesLines` → `void Add(label, v) { if (!string.IsNullOrWhiteSpace(v)) … }`
@@ -125,8 +149,13 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
       i.e. it green-lights the fallback that IS the defect. CI never runs `draw` on a real CEM
       (`cad_smoke.yml` runs `verify` only). The one test worth writing: read the real `cem/ti_coin.*.json`
       and assert every non-empty field appears VERBATIM in the DXF.
-    Reflex when touching `Drawing.cs`/CEM: ask "what does a NULL here print on a factory drawing?" —
-    and prefer a loud `NOT SPECIFIED IN CEM` over a plausible default.
+    </details>
+
+    🔑 **Reflex when touching `Drawing.cs`/CEM (unchanged by the fix — it is what PREVENTS the next one):**
+    ask "what does a NULL here print on a factory drawing?" — and prefer a loud `NOT SPECIFIED IN CEM`
+    over a plausible default. ⊕ Second half, bought by the same pass: **a drawing has TWO readers with
+    different eyes** (human SVG ⊥ machine DXF), so any change to notes/title-block must be checked in
+    BOTH — every symptom above was invisible in one of them.
 
 ## Common Tasks
 

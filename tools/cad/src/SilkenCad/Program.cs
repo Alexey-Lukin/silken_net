@@ -248,7 +248,13 @@ internal static class Program
     {
         string strJson = File.ReadAllText(strCemPath);
         string strKind = Cem.Kind(strJson);
-        string strRev = Environment.GetEnvironmentVariable("CAD_REV") ?? "local";
+        // 🔴 Was `?? "local"`, and "rev local" on a factory drawing is worse than no rev at all: it LOOKS
+        // like a revision, so nobody asks which commit the geometry came from — while a drawing that
+        // cannot be traced back to a manifest revision cannot be re-issued, compared, or blamed after a
+        // bad batch. The marker is deliberately unmistakable AND actionable (it names the fix).
+        string strRev = Environment.GetEnvironmentVariable("CAD_REV") is { Length: > 0 } rev
+            ? rev
+            : "UNTRACKED (set CAD_REV=$(git rev-parse --short HEAD))";
         Directory.CreateDirectory("out");
 
         // Same CEM-native pipeline per kind: SVG (human / publication / self-review) + DXF (factory
