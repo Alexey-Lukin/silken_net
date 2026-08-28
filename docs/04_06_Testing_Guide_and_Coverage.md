@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Канонічний дім тест-**методології** SilkenNet: (а) конвенції RSpec для Phlex-компонентів (Частина A) + карта покриття view-шару (§A.10); (б) gap-аналіз ризиків покриття всіх шарів — RSpec, Firmware C, Foundry Solidity (Частина B). **One-Home-межа (за типом):** методологія/гейт/тріаж/cross-cutting-ризики + view-coverage — тут; per-subsystem spec-інвентарі («який spec що верифікує» для конкретної підсистеми) живуть БІЛЯ своєї підсистеми (Ethereum — [`05_04 §7`](05_04_Ethereum_L1_State_Anchor), Queen-firmware — [`03_02 §11`](03_02_Queen_Gateway_Firmware), crypto — [`03_05 §8`](03_05_Hardware_Symmetric_Crypto_and_Security), метрики — [`06_03`](06_03_Prometheus_Observability) тощо), посилаючись сюди за методом.
+Канонічний дім тест-**методології** SilkenNet: (а) конвенції RSpec для Phlex-компонентів (Частина A) + карта покриття view-шару (§A.10); (б) gap-аналіз ризиків покриття всіх шарів — RSpec, Firmware C, Foundry Solidity, AssemblyScript-мапінг субграфа (Частина B). **One-Home-межа (за типом):** методологія/гейт/тріаж/cross-cutting-ризики + view-coverage — тут; per-subsystem spec-інвентарі («який spec що верифікує» для конкретної підсистеми) живуть БІЛЯ своєї підсистеми (Ethereum — [`05_04 §7`](05_04_Ethereum_L1_State_Anchor), Queen-firmware — [`03_02 §11`](03_02_Queen_Gateway_Firmware), crypto — [`03_05 §8`](03_05_Hardware_Symmetric_Crypto_and_Security), метрики — [`06_03`](06_03_Prometheus_Observability) тощо), посилаючись сюди за методом.
 
 ---
 
@@ -13,6 +13,7 @@
   - RSpec (Ruby / Rails) + **Capybara/cuprite** (браузерний ярус — §B.1.4)
   - Firmware C (host-based, Make) + QEMU bit-parity
   - Foundry (Solidity) + **Halmos** (symbolic) · **Medusa** (fuzz) · Slither/Aderyn (static)
+  - **matchstick-as** (AssemblyScript — мапінг субграфа, `subgraph/tests/`, крок `npx graph test`; з 2026-08-28 [OPS.36]). ⚠️ Ratchet-форма сусідів сюди НЕ переноситься: branch coverage в AssemblyScript не існує, `-c` дає лише рядки — тож підлоги тут немає й вдавати її не треба
   - ⛔ Перелік звіряй із тілом: він уже відставав від власних секцій — три верхні рядки не називали жодного з пʼяти доданих інструментів, хоча §B.1.2/§B.1.4/§B.2 їх розбирають
 - **Відкрите:** методологічних гепів немає — **відкритих `TEST.*` у [`00_07`](00_07_Action_Plan_Tracker) нуль** (усі 15 в `§🗄️`). Залишкові обмеження §B.1 — bench-only, і їхні доми названі в самих рядках. ⛔ Не шли читача в трекер по «що з тестами відкрито»: стрілка вказувала б у порожню множину.
 

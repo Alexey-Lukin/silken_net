@@ -279,6 +279,22 @@ if printf '%s\n' "$_changed" | grep -qE '\.rb$|^\.rubocop|^Gemfile|^Rakefile'; t
       echo "Then re-push.  (Emergency bypass: git push --no-verify)"
       exit 1
     fi
+    # 🔴 ДРУГИЙ виклик, і без нього блок був би НЕПОВНИМ проти CI — знайдено свіпом того
+    # самого дня (2026-08-28), за кілька годин після того, як блок додали. `ci.yml` має ДВА
+    # rubocop-кроки, бо `Lint/UselessAssignment` вимкнений у `.rubocop.yml` (`Enabled: false`
+    # — живі хіти лише у `spec/`, де це фікстурні привʼязки) і вмикається ТОЧКОВО на
+    # периметрі без `spec/`. Отже повний `bin/rubocop` вище його не бачить ЗА ПОБУДОВОЮ, і
+    # хук мовчав би там, де CI червоніє — рівно той клас «дві стійки розходяться тихо»
+    # (§Guard-craft #44: паритет порівнює, ЩО біжить, і сліпий до того, над ЧИМ).
+    # ЦІНА виміряна окремо: 1.14 / 0.65 с на 452 файлах — дешевше за будь-який інший блок.
+    if ! ( cd "$root" && bin/rubocop --only Lint/UselessAssignment app lib scripts config ); then
+      echo
+      echo "pre-push BLOCKED — dead assignment(s) on the app/lib/scripts/config perimeter."
+      echo "This cop is OFF in .rubocop.yml on purpose and HARD in CI — a leftover"
+      echo "assignment after a call-site removal is exactly what it catches."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
   else
     echo "pre-push NOTE — Ruby changed but rubocop could not RUN."
     echo "  This is NOT a verdict: the check never ran. CI will run it (job \`lint\`)."
