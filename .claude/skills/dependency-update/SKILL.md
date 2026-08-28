@@ -135,6 +135,15 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   five automated ecosystems. The bot is a convenience, not the instrument — **make "read `tag_last_pushed`
   for the pinned base image" a standing step of the sweep**, because a digest bump is pure security patch
   and is invisible in every version-based inventory (`bundle outdated`, `gh api releases`) by construction.
+  🔴 **And the mirror of that invisibility bites on the VERDICT side: a green `bundler-audit` says nothing
+  about the runtime you ship.** Both advisory channels read a LOCK — `bundler-audit` parses `Gemfile.lock`,
+  Dependabot reads repo manifests — so gems built into Ruby itself (`specifications/default/*.gemspec`)
+  are outside both **by construction**. Measured 2026-08-28: the first `image_cve_scan` run surfaced a
+  **critical** in the image's default `json` while `bin/bundler-audit` correctly reported "No
+  vulnerabilities found", because the lock carries a newer copy of that same gem. Two true verdicts about
+  two different surfaces, and nothing reddens on the gap. **Reflex when bumping a Ruby image: do not read
+  a green gem-audit as runtime coverage** — the only instrument on that axis is the Trivy image scan, and
+  it is SOFT by design. Home of the rule (do not restate the mechanism here) → `06_07 §1a`.
 - 🔴 **A version perimeter is WIDER than its gate, and half the hits must NOT be edited** (Ruby bump,
   2026-08-06). `git grep 4.0.5` returned **15 files** while `ruby_version_sync.rb` guards **8** mirrors.
   The rest were *historical narrative* — the PR #463 post-mortem quoted inside `ci.yml`/`docs.yml`/the
