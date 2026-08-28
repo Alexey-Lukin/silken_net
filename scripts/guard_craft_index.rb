@@ -221,7 +221,7 @@ TARGETS.each do |t|
     # пропустити рефлекс, а WORD_FLOOR нижче такий пункт не бачить — самого
     # ліда вистачає на поріг. Спіймано на #98 (seeds), де в індекс не доїхало
     # головне: «чи є в CI бодай один крок, що ЗАПУСКАЄ цей артефакт».
-    if it[:reflex]&.empty?
+    if it[:reflex] == ""   # саме порожній РЯДОК; nil = рефлексу немає взагалі, і це законно
       errs << "item #{it[:num]}: bold Reflex span carries only its HEADER — the " \
               "reflex sentence sits OUTSIDE the `**…**`, so it never reaches the " \
               "index; widen the bold in #{File.basename(t[:aux])}"
