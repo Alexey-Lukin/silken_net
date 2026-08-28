@@ -6,11 +6,13 @@
   "description": "SilkenNet subgraph — the surface an external ESG buyer / ISO auditor reads our emission from. Build it, do not just lint it [OPS.34].",
   "scripts": {
     "codegen": "graph codegen",
-    "build": "graph build"
+    "build": "graph build",
+    "test": "graph test"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.98.1",
-    "@graphprotocol/graph-ts": "0.38.2"
+    "@graphprotocol/graph-ts": "0.38.2",
+    "matchstick-as": "0.6.0"
   },
   "overrides": {
     "axios": "1.20.0",

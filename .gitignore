@@ -79,6 +79,13 @@ lib/assets/silken_forest.marshal.sha256
 subgraph/build/
 subgraph/generated/
 subgraph/node_modules/
+# [OPS.36] `graph test` кладе СВОЇ артефакти у `tests/` — поруч із самими тестами, а не
+# в `build/`: прибудований бінар matchstick (`.bin/`) і кеш перевірки версії
+# (`.latest.json`, TTL доба). Обидва підтягуються самим CLI, тож у репо їм місця немає.
+# ⚠️ Правило вузьке НАВМИСНО — сама тека `tests/` версіонується, інакше тест-шар зник би
+# разом із артефактами, які він приніс.
+subgraph/tests/.bin/
+subgraph/tests/.latest.json
 
 # Smart contracts dependencies (Solidity)
 contracts/node_modules/
