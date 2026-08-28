@@ -81,11 +81,22 @@ end
 # `item_residuals`; секція додається окремим проходом, бо `item_residuals` її не несе.
 def open_legs(markdown)
   by_section = sections(markdown)
+  # STAGE живе на meta-рядку ПУНКТА, не на нозі, тож його треба принести сюди окремо:
+  # `item_residuals` знає лише ноги. [DOC-T.92, 2026-08-28]
+  stages = D.parse(markdown).to_h { |it| [ it.id, it.stage ] }
   D.item_residuals(markdown).flat_map do |it|
     section = by_section.find { |_, lines| lines.any? { |l| l.match(D::ITEM_HEAD)&.captures&.first == it[:id] } }&.first
-    it[:open].map { |b| { section:, id: it[:id], lead: b[D::WHO_LEAD].to_s, body: b } }
+    it[:open].map { |b| { section:, id: it[:id], stage: stages[it[:id]], lead: b[D::WHO_LEAD].to_s, body: b } }
   end
 end
+
+# STAGE'и, під якими пункт СТВЕРДЖУЄ, що зараз його не беруть. [DOC-T.92]
+# ⚠️ Це твердження ПУНКТА, а не вимір — саме тому такі ноги не ховаються, а виводяться
+# окремим списком: `00_05 §3` фіксує, що STAGE протухає (пункт перепризначили, гліф лишили),
+# і сховане під протухлим гліфом ніхто ніколи не перемірює.
+NOT_NOW_STAGES = %i[blocked far_horizon vacuous].freeze
+
+def stage_gated?(leg) = NOT_NOW_STAGES.include?(leg[:stage])
 
 def deferred?(body) = DEFERRAL_FORMS.any? { |_, re| body.match?(re) }
 
@@ -100,27 +111,37 @@ def takeable_report(markdown)
   puts "    нерозпізнаних лідів зараз #{unrecognised.size}."
   puts "  · проза-вісь ЕВРИСТИЧНА: знає #{DEFERRAL_FORMS.size} форм відкладення (нижче), і все, чого"
   puts "    в переліку НЕМАЄ, рахується ВІЛЬНИМ. Отже «вільних» — це ВЕРХНЯ МЕЖА, ніколи точне число."
-  puts "  · `⛔` та присуди в `**Стан:**` ПУНКТА цей фільтр не читає взагалі — заборона рівня"
-  puts "    пункту тут невидима, і саме вона найчастіше і є справжнім гейтом."
+  puts "  · `⛔` у `**Стан:**` ПУНКТА фільтр не читає — і це СВІДОМО [DOC-T.92, 2026-08-28]."
+  puts "    Прочитано всі 7 пунктів, де `⛔` стоїть у Стані ПРИ вільній нозі: справжньою"
+  puts "    забороною роботи виявилась ОДНА, решта — скоуп-нотатки, записи відхилених"
+  puts "    опцій і застереження про форму ліку. Символ несе ≥6 значень, тож він тут"
+  puts "    слабкий сигнал, а не «найчастіше справжній гейт», як стояло доти."
+  puts "  · STAGE ПУНКТА тепер читається — але НЕ фільтрує (стовпчик `∖STAGE` + список нижче)."
+  puts "    `00_05 §3`: доступність кодує STAGE пункта, а WHO ноги до неї ортогональний."
+  puts "    Ноги під `🔗`/`🌿`/`⚫` НЕ ховаються, бо STAGE протухає (пункт перепризначили,"
+  puts "    гліф лишили), а сховане під протухлим гліфом ніхто не перемірює НІКОЛИ."
   puts "  · вердикт «чи цю ногу можна брати» дає READ тіла пункту. Тут — КАНДИДАТИ."
   puts "  · форми, які фільтр знає: #{DEFERRAL_FORMS.keys.join(' · ')}"
   puts
 
   rows = legs.group_by { |l| l[:section] }.sort_by { |s, _| s.to_s }
-  puts format("%-8s %10s %10s %10s %10s", "секція", "гліф", "∖проза", "🤖 гліф", "🤖 ∖проза")
+  puts format("%-8s %10s %10s %10s %10s %10s", "секція", "гліф", "∖проза", "🤖 гліф", "🤖 ∖проза", "🤖 ∖STAGE")
   totals = Hash.new(0)
   rows.each do |section, ls|
     glyph = ls.count { |l| l[:lead].match?(D::WHO_GLYPH) }
     free  = ls.count { |l| l[:lead].match?(D::WHO_GLYPH) && !deferred?(l[:body]) }
     mglyph = ls.count { |l| l[:lead].include?("🤖") }
     mfree  = ls.count { |l| l[:lead].include?("🤖") && !deferred?(l[:body]) }
+    mstage = ls.count { |l| l[:lead].include?("🤖") && !deferred?(l[:body]) && !stage_gated?(l) }
     totals[:glyph] += glyph
     totals[:free] += free
     totals[:mglyph] += mglyph
     totals[:mfree] += mfree
-    puts format("%-8s %10d %10d %10d %10d", section, glyph, free, mglyph, mfree)
+    totals[:mstage] += mstage
+    puts format("%-8s %10d %10d %10d %10d %10d", section, glyph, free, mglyph, mfree, mstage)
   end
-  puts format("%-8s %10d %10d %10d %10d", "УСЬОГО", totals[:glyph], totals[:free], totals[:mglyph], totals[:mfree])
+  puts format("%-8s %10d %10d %10d %10d %10d", "УСЬОГО",
+              totals[:glyph], totals[:free], totals[:mglyph], totals[:mfree], totals[:mstage])
   puts
   ratio = totals[:mfree].zero? ? nil : (totals[:mglyph].to_f / totals[:mfree])
   puts "🔑 Множник завищення по `🤖`-осі: #{ratio ? format('×%.1f', ratio) : 'н/д'} — тобто скан за самим гліфом"
@@ -142,6 +163,25 @@ def takeable_report(markdown)
   stuck = by_item.reject { |_, ls| ls.any? { |l| l[:lead].match?(D::WHO_GLYPH) && !deferred?(l[:body]) } }
   puts "Пунктів, де `гліф ∖ проза` = 0 (усе відкрите виглядає відкладеним): #{stuck.size}"
   stuck.keys.sort.each_slice(12) { |s| puts "  #{s.join(' · ')}" }
+  puts
+
+  # 🔴 Розходження `∖проза` ⊥ `∖STAGE` — це НЕ шум і не подвійний облік: воно має рівно
+  # дві причини, і вони протилежні за знаком. Або STAGE правий (нога справді не на часі,
+  # і проза цього не сказала), або STAGE протух (пункт перепризначили, гліф лишили) — і
+  # тоді це найдорожчий клас, бо робота є, а її не видно ЖОДНОМУ скану. Розсудити може
+  # лише READ, тож список друкується поіменно замість того, щоб мовчки відняти число.
+  conflicted = legs.select { |l| l[:lead].include?("🤖") && !deferred?(l[:body]) && stage_gated?(l) }
+  if conflicted.empty?
+    puts "Ніг, вільних за гліфом+прозою, але під STAGE `🔗`/`🌿`/`⚫`: немає."
+  else
+    grouped = conflicted.group_by { |l| l[:id] }
+    puts "🤖-ніг, вільних за гліфом+прозою, але під STAGE `🔗`/`🌿`/`⚫`: #{conflicted.size} " \
+         "у #{grouped.size} пунктах."
+    puts "  Кожен — розвилка: STAGE правий (гейт у гліфі, не в прозі) АБО STAGE протух."
+    grouped.sort_by { |id, _| id }.each do |id, ls|
+      puts format("  · %-12s %s × %d", id, D::STAGES.key(ls.first[:stage]) || "?", ls.size)
+    end
+  end
 end
 
 def critical_path_report(markdown)

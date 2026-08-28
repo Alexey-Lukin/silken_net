@@ -198,4 +198,53 @@ if printf '%s\n' "$_changed" | grep -qE '^firmware/.*\.(c|h)$'; then
   fi
 fi
 
+# [OPS.28] brakeman — четвертий блок. ⚖️ ПРИЙНЯТО 2026-08-28 (делеговано founder'ом).
+#
+# 🔴 Підстава — НЕ «ще одна корисна перевірка», а АСИМЕТРІЯ до вже ратифікованого
+# сусіда. Критерій цього файлу — ЦІНА; за ним i18n-трійка їде БЕЗУМОВНО за ~4 с.
+# brakeman коштує МЕНШЕ і біжить РІДШЕ, тож відмовити йому означало б судити його
+# суворіше, ніж те, що вже їде — це не рішення, а недогляд.
+#
+# ЦІНА, виміряна на цьому дереві 2026-08-28 (три прогони, не оцінка):
+#   bin/brakeman --no-pager   3.41 / 3.46 / 4.05 с  → ~3.5 с
+#   тригер `app|lib|config`   427 комітів за 30 днів із 1316 (32%)
+# ⚠️ Пункт трекера казав «1.67 с» — перемір дав удвічі більше. Число тут з прогону.
+#
+# ЧОМУ КОРІНЬ НЕ ЛІКУЄТЬСЯ, і чому У-ВЕЙ тут не звільняє (перевірено в джерелі гема,
+# `brakeman/warning.rb#fingerprint`): відбиток є SHA256 над `@code.inspect`, тобто над
+# AST САМОГО ВИРАЗУ. Тому будь-який рефактор — навіть перейменування змінної — зсуває
+# його ЗА ПОБУДОВОЮ, і придушення протухає без жодної зміни ризику. Це властивість
+# інструмента, не наша форма запису, тож «зробити важке непотрібним» тут неможливо.
+# Ціна відмови, названа вголос (у відмови немає червоного, яке про неї нагадає):
+# чотири коміти «re-pin fingerprint» — 07-05, 07-10, 08-23, 08-26 — і темп РОСТЕ,
+# бо ростуть one-home рефактори. Кожен був червоним `main` на комміті, що не додав
+# ЖОДНОГО ризику, а гейт, який падає не на тому, вчить гортати червоне.
+#
+# 🔑 `--ensure-no-obsolete-ignore-entries` несучий, і він тут ГОЛОВНИЙ: без нього
+# протухле придушення виринає як «новий warning», тобто інструмент називає СИМПТОМ
+# замість ПРЕДМЕТА. Прапорець прогнано на живому дереві перед вмиканням — EXIT 0,
+# тобто периметр безкоштовний. ⚠️ Та сама форма мусить стояти в `ci.yml`: дві стійки
+# однієї перевірки розходяться тихо, і паритет тут — не охайність, а умова того, щоб
+# локальне зелене взагалі щось стверджувало про CI.
+#
+# NOT-RUN ⊥ FAILED — як у третього блоку: brakeman є bundle-залежністю, тож свіжий
+# clone без `bundle install` друкує ГУЧНУ ноту й пропускає, а не робить push неможливим.
+if printf '%s\n' "$_changed" | grep -qE '^(app|lib|config)/|^Gemfile'; then
+  if ( cd "$root" && bundle exec brakeman --version ) >/dev/null 2>&1; then
+    if ! ( cd "$root" && bin/brakeman --no-pager --ensure-no-obsolete-ignore-entries ); then
+      echo
+      echo "pre-push BLOCKED — brakeman reports findings (above)."
+      echo "Fix:  bin/brakeman --no-pager --ensure-no-obsolete-ignore-entries"
+      echo "  If the finding is an OBSOLETE ignore entry, the code moved and the"
+      echo "  suppression did not: re-pin it with  bin/brakeman -I  (keep the note)."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  else
+    echo "pre-push NOTE — app/lib/config changed but brakeman could not RUN."
+    echo "  This is NOT a verdict: the check never ran. CI will run it (job \`scan_ruby\`)."
+    echo "  Fix the toolchain:  bundle install"
+  fi
+fi
+
 echo "pre-push: DCO + i18n parity OK."

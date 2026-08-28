@@ -347,7 +347,16 @@ jobs:
           bundler-cache: true
 
       - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager
+        # --ensure-no-obsolete-ignore-entries [OPS.28]: a brakeman fingerprint is a
+        # SHA256 over the expression's own AST, so ANY refactor of a suppressed line
+        # invalidates its ignore entry while the RISK is unchanged. Without this flag
+        # the breach surfaces as a brand-new warning — the tool names the SYMPTOM, not
+        # the subject, and four commits (07-05, 07-10, 08-23, 08-26) were spent
+        # re-pinning fingerprints after reading that wrong diagnosis.
+        # ⚠️ Keep this invocation byte-identical to the one in `.githooks/pre-push`:
+        # two stances of one check drift silently, and the local green is only a
+        # statement about this step while the two forms agree.
+        run: bin/brakeman --no-pager --ensure-no-obsolete-ignore-entries
 
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
