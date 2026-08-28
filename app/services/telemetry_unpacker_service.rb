@@ -86,10 +86,16 @@ class TelemetryUnpackerService < ApplicationService
 
   # [L1 QATT] gateway_attested: батч пройшов Ed25519-верифікацію Королеви
   # (UnpackTelemetryWorker) — прапор протягується у кожен TelemetryLog-рядок.
-  def initialize(binary_batch, gateway_id = nil, gateway_attested: false)
+  # [ARCH.41] `received_at` — момент ПРИЙОМУ пакета, привезений із job-аргументів
+  # (`UnpackTelemetryWorker`), тобто стабільний між Sidekiq-ретраями. Він є єдиним
+  # чесним якорем доби для cold-start деривації Лоренца: і `Time.now.utc`, і
+  # `telemetry_log.created_at` рухаються разом зі СПРОБОЮ, а пристрій деривує зі
+  # свого RTC-дня, зафіксованого в момент передачі. `nil` ⇒ «зараз» (bench/HIL).
+  def initialize(binary_batch, gateway_id = nil, gateway_attested: false, received_at: nil)
     @binary_batch = binary_batch
     @gateway = Gateway.find_by(id: gateway_id)
     @gateway_attested = gateway_attested
+    @received_at = received_at
     @trees_cache = {}
     @latest_firmware_id = nil
   end
@@ -535,13 +541,30 @@ class TelemetryUnpackerService < ApplicationService
     attributes[:lorenz_temperature_c] || attributes[:temperature_c]
   end
 
+  # [ARCH.41] Доба для cold-start деривації. One-Home: обидва боки тракту
+  # (тут і `try_time_sync_recovery`) мусять називати добу ОДНАКОВО, інакше
+  # recovery шукав би збіг з іншою сіткою днів, ніж основний шлях.
+  # ⚠️ `current_epoch_day` лишається фолбеком лише для викликів БЕЗ прийому
+  # (bench/HIL/спеки) — у проді обидва enqueuer'и передають мітку явно.
+  def derivation_epoch_day
+    return SilkenNet::SeedDerivation.current_epoch_day if @received_at.nil?
+
+    @received_at.utc.to_i / 86_400
+  end
+
   def compute_server_z(tree, log_attributes)
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     raise MissingLorenzSeedError, "Tree #{tree.did} has no provisioned K_seed" if seed_bytes.nil?
 
     previous = previous_lorenz_state_for(tree)
     cold_start = previous.nil?
-    x0, y0, z0 = previous || SilkenNet::SeedDerivation.initial_state(seed_bytes)
+    # 🔴 [ARCH.41] Доба деривації береться з моменту ПРИЙОМУ, не з моменту
+    # ОБРОБКИ. Доти тут стояв `initial_state(seed_bytes)` без другого аргументу, тобто дефолт
+    # `current_epoch_day` = `Time.now.utc`: Sidekiq-ретрай через межу півночі UTC
+    # давав ІНШИЙ день → іншу стартову точку (x₀,y₀,z₀) → категоричний DCI-мисматч
+    # на ЧЕСНОМУ дереві. ⚠️ І саме тут його нікому зловити: `try_time_sync_recovery`
+    # (ARCH.41-A) гейтований `!cold_start_flag`, а це — гілка cold_start.
+    x0, y0, z0 = previous || SilkenNet::SeedDerivation.initial_state(seed_bytes, derivation_epoch_day)
 
     z_rounded, x_final, y_final, z_final = SilkenNet::Attractor.calculate_z_from_state(
       x0, y0, z0,
@@ -779,7 +802,10 @@ class TelemetryUnpackerService < ApplicationService
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     return false if seed_bytes.nil?
 
-    today = SilkenNet::SeedDerivation.current_epoch_day
+    # [ARCH.41] Та сама доба, що й у cold-derive (`derivation_epoch_day`) — інакше
+    # recovery шукав би збіг на ІНШІЙ сітці днів, ніж основний шлях, і «today−1»
+    # перестав би означати сусідню добу того самого прийому.
+    today = derivation_epoch_day
     candidates = [ today, today - 1, FIRMWARE_RTC_DEFAULT_EPOCH_DAY ]
 
     temp     = lorenz_temperature(attributes)

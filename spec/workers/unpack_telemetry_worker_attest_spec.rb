@@ -96,7 +96,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: true)
+        .with(anything, gateway.id, gateway_attested: true, received_at: nil)
     end
 
     it "ставить gateways.last_attested_at" do
@@ -218,7 +218,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(anything, gateway.id, gateway_attested: false)
+          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
       end
 
       it "не ставить last_attested_at" do
@@ -234,7 +234,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false)
+        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
     end
 
     # Двофазний owner-nonce (crash-window, патерн ARCH.45): claim(jid) ДО
@@ -348,7 +348,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
       described_class.new.perform(Base64.strict_encode64(legacy), "10.0.0.1", gateway.uid)
 
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false)
+        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
     end
   end
 end

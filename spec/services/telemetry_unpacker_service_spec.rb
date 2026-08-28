@@ -34,6 +34,44 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     allow(StreamrBroadcastWorker).to receive(:perform_async)
   end
 
+# 🔴 [ARCH.41] Доба cold-start деривації мусить іти з моменту ПРИЙОМУ, а не
+# обробки. Дефект був вузький і саме тому небезпечний: три ратифіковані
+# мітигації ARCH.41 (-A recovery, -B sentinel, -C grace) покривають
+# НЕсинхронізований пристрій і WARM-мисматч, а `try_time_sync_recovery`
+# гейтований `!cold_start_flag` — тобто рівно на cold-start, де деривація й
+# відбувається, ловити мисматч нікому.
+describe "[ARCH.41] доба cold-derive береться з ПРИЙОМУ, не з обробки" do
+  let(:chunk) { build_chunk(did_hex, -70, 3500, 22, 5, 100, 10, 3) }
+
+  before { allow(SilkenNet::SeedDerivation).to receive(:initial_state).and_call_original }
+
+  it "ретрай ПІСЛЯ межі півночі UTC деривує з доби прийому, а не з доби спроби" do
+    received = Time.utc(2026, 8, 20, 23, 59, 30)
+    day_of_receipt = received.to_i / 86_400
+
+    # Обробка (чи ретрай) відбувається вже НАСТУПНОЇ доби.
+    travel_to(Time.utc(2026, 8, 21, 0, 1, 0)) do
+      described_class.call(chunk, nil, received_at: received)
+    end
+
+    expect(SilkenNet::SeedDerivation).to have_received(:initial_state)
+      .with(anything, day_of_receipt)
+    # Ліхтар на РІЗНИЦЮ: без неї пін був би зелений і тоді, коли обидві доби збіглись.
+    expect(day_of_receipt).not_to eq(Time.utc(2026, 8, 21, 0, 1, 0).to_i / 86_400)
+  end
+
+  it "без мітки прийому чесно падає на добу обробки (bench/HIL-форма)" do
+    processing = Time.utc(2026, 8, 21, 0, 1, 0)
+
+    travel_to(processing) do
+      described_class.call(chunk, nil)
+    end
+
+    expect(SilkenNet::SeedDerivation).to have_received(:initial_state)
+      .with(anything, processing.to_i / 86_400)
+  end
+end
+
   describe "[FW.57 F2] Lorenz/DCI uses the raw wire temp, not drift-corrected temperature_c" do
     it "passes the RAW wire temp to the attractor; persists the calibrated value" do
       tree.device_calibration.update!(temperature_offset_c: 3.0)

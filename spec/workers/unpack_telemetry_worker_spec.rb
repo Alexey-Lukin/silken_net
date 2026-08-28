@@ -46,8 +46,39 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
       described_class.new.perform(encoded, "10.0.0.1", gateway.uid)
 
+      # [ARCH.41] `received_at:` присутній у контракті виклику; тут воркер кличуть
+      # напряму без мітки, тож він чесно `nil` = «прийом зараз» (bench/HIL-форма).
       expect(TelemetryUnpackerService).to have_received(:call)
-        .with(anything, gateway.id, gateway_attested: false)
+        .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+    end
+
+    # 🔴 [ARCH.41] Мітка прийому — єдина величина тракту, що не рухається між
+    # Sidekiq-спробами. Обидві гілки її парсера мусять бути пінованими, і
+    # особливо друга: вона ТИХО деградує до «прийом = зараз», тобто відновлює
+    # рівно той дефект, проти якого аргумент і введено.
+    context "when [ARCH.41] job несе мітку прийому" do
+      let(:encoded) { Base64.strict_encode64(encrypt_payload("RX_TS", key_record.binary_key)) }
+
+      it "прокидає розпарсену мітку в сервіс" do
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid, "2026-08-20T23:59:30Z")
+
+        expect(TelemetryUnpackerService).to have_received(:call)
+          .with(anything, gateway.id,
+                gateway_attested: false, received_at: Time.utc(2026, 8, 20, 23, 59, 30))
+      end
+
+      # ⚠️ Крива мітка НЕ сміє коштувати пакета: цей воркер веде до
+      # `wallet.credit!`, тож обмін названий — точність доби програє доставці.
+      # Пін стереже саме обмін: `nil` (а не raise) і гучний лог.
+      it "невалідний рядок → nil + попередження, батч НЕ втрачено" do
+        allow(Rails.logger).to receive(:warn)
+
+        described_class.new.perform(encoded, "10.0.0.1", gateway.uid, "не-дата")
+
+        expect(TelemetryUnpackerService).to have_received(:call)
+          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
+        expect(Rails.logger).to have_received(:warn).with(/ARCH\.41.*Невалідний received_at/)
+      end
     end
 
     it "updates gateway IP via mark_seen!" do
@@ -100,7 +131,7 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
         expect { described_class.new.perform(encoded, "10.0.0.1", gateway.uid) }.not_to raise_error
 
         expect(TelemetryUnpackerService).to have_received(:call)
-          .with(anything, gateway.id, gateway_attested: false)
+          .with(anything, gateway.id, gateway_attested: false, received_at: nil)
       end
 
       # Ізоляція мусить бути ЧУТНОЮ: мовчазний `rescue` тут перетворив би

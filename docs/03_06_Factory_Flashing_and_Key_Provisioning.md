@@ -518,7 +518,9 @@ SERVER MIRROR (TelemetryUnpackerService, byte-identical mathematics)
 IF prev_telemetry_log.lorenz_state_(x|y|z) IS NULL:
   cold_start_flag = true
   K_seed_bin = hardware_key.binary_lorenz_seed
-  epoch_day  = telemetry_log.created_at.to_i / 86400
+  # [ARCH.41] Доба = момент ПРИЙОМУ (job-аргумент `received_at`), не `created_at`:
+  # той ставиться при вставці рядка, тобто на Sidekiq-ретраї він теж новий.
+  epoch_day  = received_at.to_i / 86400
   (x₀,y₀,z₀) = SilkenNet::SeedDerivation.initial_state(K_seed_bin, epoch_day)
 ELSE:
   cold_start_flag = false

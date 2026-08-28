@@ -181,13 +181,13 @@ RSpec.describe "QATT HIL end-to-end" do
     legacy = iv + cipher.update("LEGACY_BATCH_16B") + cipher.final
 
     allow(TelemetryUnpackerService).to receive(:call)
-      .with(anything, gateway.id, gateway_attested: false).and_call_original
+      .with(anything, gateway.id, gateway_attested: false, received_at: nil).and_call_original
 
     UnpackTelemetryWorker.new.perform(Base64.strict_encode64(legacy),
                                       gateway.ip_address, gateway.uid)
 
     expect(TelemetryUnpackerService).to have_received(:call)
-      .with(anything, gateway.id, gateway_attested: false)
+      .with(anything, gateway.id, gateway_attested: false, received_at: nil)
     expect(gateway.reload.last_attested_at).to be_nil
     expect(GatewayTelemetryWorker.jobs).to be_empty
   end

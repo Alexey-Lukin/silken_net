@@ -55,7 +55,11 @@ module CoapGate
         # [FW.51] enqueue ПЕРЕД ACK: reply повертається лише ПІСЛЯ успішного
         # perform_async, тож Королева не почує 2.04 (і не почистить CIFO),
         # якщо батч не став у чергу.
-        UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid)
+        # [ARCH.41] Мітка прийому ставиться ТУТ — у демоні, що першим побачив
+        # датаграму. Вона їде job-аргументом, тож переживає Sidekiq-ретрай і
+        # лишається тією самою добою для cold-start деривації Лоренца.
+        UnpackTelemetryWorker.perform_async(encoded_payload, gateway_ip, result.gateway_uid,
+                                            Time.now.utc.iso8601)
       rescue StandardError
         # [PERF.1] Redis-enqueue-fail був невидимий: generic-rescue демона
         # ковтав без метрики → тихий drop пакетів під навантаженням.

@@ -170,9 +170,15 @@ RSpec.describe Api::V1::TelemetryController, type: :request do
       expect(body["status"]).to eq("accepted")
       expect(body["gateway_uid"]).to eq(own_gateway.uid)
 
-      # Сигнатура має збігатися з CoAP daemon: (encoded_payload, sender_ip, gateway_uid)
+      # Сигнатура має збігатися з CoAP-демоном:
+      # (encoded_payload, sender_ip, gateway_uid, received_at_iso).
+      # [ARCH.41] Четвертий аргумент пінується ФОРМОЮ, не значенням: він є міткою
+      # часу прийому, тож дослівне порівняння зробило б приклад залежним від
+      # годинника. Несуче тут одне — що він ВЗАГАЛІ їде, бо саме він переживає
+      # Sidekiq-ретрай і фіксує добу cold-start деривації Лоренца.
       expect(UnpackTelemetryWorker).to have_received(:perform_async).with(
-        "AABBCCDD11223344", "127.0.0.1", own_gateway.uid
+        "AABBCCDD11223344", "127.0.0.1", own_gateway.uid,
+        a_string_matching(/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\z/)
       )
     end
 

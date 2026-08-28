@@ -54,10 +54,26 @@ class UnpackTelemetryWorker
   # jid = 24 hex-символи, random-token = 16.
   QATT_NONCE_DONE = "done"
 
-  # Сигнатура perform: encoded_payload, sender_ip, gateway_uid (необов'язково).
+  # Сигнатура perform: encoded_payload, sender_ip, gateway_uid, received_at_iso
+  # (два останні — необов'язкові).
   # gateway_uid — незашифрований UID з CoAP URI-Path (/telemetry/batch/<UID>).
   # Дозволяє коректно ідентифікувати шлюзи за NAT / динамічним Starlink IP.
-  def perform(encoded_payload, sender_ip, gateway_uid = nil)
+  #
+  # 🔴 `received_at_iso` — момент ПРИЙОМУ пакета, зафіксований інтейком і
+  # серіалізований у job-аргументи, тобто він ПЕРЕЖИВАЄ Sidekiq-ретрай [ARCH.41].
+  # Без нього cold-start деривація Лоренца падала на `Time.now.utc` у момент
+  # ОБРОБКИ: ретрай через межу півночі UTC давав інший `epoch_day` → інший
+  # (x₀,y₀,z₀) → категоричний DCI-мисматч на чесному дереві. ⚠️ Три ратифіковані
+  # мітигації ARCH.41 цього кута НЕ покривають: `-C` (grace) і `-B` (sentinel)
+  # стережуть НЕсинхронізований пристрій, а `-A` (`try_time_sync_recovery`)
+  # викликається лише при `!cold_start_flag` — тобто рівно там, де деривації нема.
+  # ⚠️ І день ОБРОБКИ тут не рятує в жодній формі: `telemetry_log.created_at`
+  # ставиться при вставці, тобто на ретраї він теж новий — цей аргумент є єдиною
+  # величиною тракту, що не рухається між спробами.
+  # 🔒 `nil` лишається легальним (bench/HIL/спеки кличуть воркер напряму) і
+  # означає «прийом = зараз»; обидва ПРОДОВІ enqueuer'и передають його явно, і
+  # це пінує `spec/quality/telemetry_received_at_propagation_spec.rb`.
+  def perform(encoded_payload, sender_ip, gateway_uid = nil, received_at_iso = nil)
     # Sentry context: tag with gateway UID for error correlation
     Sentry.set_tags(gateway_uid: gateway_uid || "unknown")
 
@@ -131,7 +147,10 @@ class UnpackTelemetryWorker
     # 4. ПЕРЕДАЧА В СЕРВІС РОЗПАКОВКИ
     # Конвеєр: [DID:4][RSSI:1][Payload:16] x N
     # [L1 QATT] gateway_attested протягується до кожного TelemetryLog-рядка.
-    TelemetryUnpackerService.call(decrypted_data, gateway.id, gateway_attested: gateway_attested)
+    # [ARCH.41] received_at — стабільний між ретраями якір доби для cold-derive.
+    TelemetryUnpackerService.call(decrypted_data, gateway.id,
+                                  gateway_attested: gateway_attested,
+                                  received_at: parse_received_at(received_at_iso))
 
     # [L1 QATT] Фаза 2: батч розпаковано — nonce стає незворотним ("done").
     finalize_qatt_nonce! if @qatt_nonce_digest
@@ -151,6 +170,28 @@ class UnpackTelemetryWorker
   end
 
   private
+
+  # [ARCH.41] Момент прийому з job-аргументів → `Time`. `nil` (bench/HIL/спеки,
+  # що кличуть воркер напряму) означає «прийом = зараз».
+  #
+  # `Time.zone.iso8601`, НЕ `Time.iso8601` — house-конвенція (скіл `backend` #31).
+  # ⚠️ Стеля названа чесно: для рядків, які шлють наші enqueuer'и (`.utc.iso8601`,
+  # тобто завжди із `Z`), обидві форми дають ОДНАКОВИЙ `epoch_day` — виміряно.
+  # Розходяться вони рівно на мітці БЕЗ суфікса зони: там `Time.iso8601` читає
+  # зону ПРОЦЕСУ й на машині західніше UTC зсуває добу на одиницю. Конвенція
+  # тут страхує майбутнього викликача, а не сьогоднішній тракт.
+  # 🔒 Деградація названа: невалідний рядок падає на «зараз», а не валить обробку.
+  # Це свідомий обмін — аргумент є ОПТИМІЗАЦІЄЮ точності доби, і жоден пакет не
+  # має бути втрачений через криву мітку часу; ціна деградації дорівнює тій
+  # поведінці, яка була до цього фіксу.
+  def parse_received_at(iso)
+    return nil if iso.blank?
+
+    Time.zone.iso8601(iso.to_s)
+  rescue ArgumentError, TypeError
+    Rails.logger.warn "⚠️ [ARCH.41] Невалідний received_at #{iso.inspect} — деривація доби падає на «зараз»"
+    nil
+  end
 
   # [L1 QATT] Чи payload — підписаний конверт? Residue довжини — детерміністичний
   # дискримінатор (legacy ≡ 0 mod 16; підписаний ≡ QATT_RESIDUE).

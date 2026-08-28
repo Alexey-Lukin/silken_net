@@ -892,10 +892,17 @@ if prev_tail
 else
   # Cold path — лише після VBAT loss / провізіонування / повного reboot
   raise MissingLorenzSeedError unless tree.hardware_key&.binary_lorenz_seed.present?
-  epoch_day  = telemetry_log.created_at.utc.to_i / 86_400
+  # [ARCH.41] Доба береться з моменту ПРИЙОМУ пакета (job-аргумент
+  # `received_at`, зафіксований інтейком), а НЕ з `created_at` рядка й не з
+  # `Time.now`: обидві останні величини рухаються разом зі СПРОБОЮ, тож
+  # Sidekiq-ретрай через межу півночі UTC дав би іншу добу → інший (x₀,y₀,z₀)
+  # → категоричний DCI-мисматч на чесному дереві. Пристрій деривує зі свого
+  # RTC-дня, зафіксованого в момент передачі — прийом до нього найближчий.
+  epoch_day  = received_at.utc.to_i / 86_400
+  # ⚠️ Метод ПОЗИЦІЙНИЙ (`initial_state(seed_bytes, epoch_day = current_epoch_day)`),
+  # не kwargs — доти цей блок описував іменовані аргументи, яких він не має.
   x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(
-                 seed_bin:  tree.hardware_key.binary_lorenz_seed,
-                 epoch_day: epoch_day
+                 tree.hardware_key.binary_lorenz_seed, epoch_day
                )
   cold_start = true
 end

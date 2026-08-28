@@ -90,12 +90,16 @@ module Api
           return
         end
 
-        # Аргументи UnpackTelemetryWorker: (encoded_payload, sender_ip, gateway_uid)
-        # Сигнатура ідентична виклику з CoAP daemon (lib/daemons/coap_listener).
+        # Аргументи UnpackTelemetryWorker: (encoded_payload, sender_ip, gateway_uid,
+        # received_at_iso). Сигнатура ідентична виклику з CoAP-демона (`lib/coap_gate`).
+        # [ARCH.41] Четвертий аргумент — момент прийому, зафіксований на межі: він
+        # серіалізується в job і тому не рухається між Sidekiq-спробами, на відміну
+        # від `Time.now` обробки та від `created_at` рядка.
         UnpackTelemetryWorker.perform_async(
           payload,
           request.remote_ip,
-          @gateway.uid
+          @gateway.uid,
+          Time.current.utc.iso8601
         )
 
         render json: {
