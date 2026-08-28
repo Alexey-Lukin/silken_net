@@ -10,7 +10,11 @@
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/tokenomics/supply_stress.rb                    # звіт: baseline + активований + стрес
 #   ruby tools/tokenomics/supply_stress.rb trees=2000000      # override будь-якого PARAMS-ключа
-#   ruby tools/tokenomics/supply_stress.rb --assert           # гейт: 5 інваріантів (нижче)
+#   ruby tools/tokenomics/supply_stress.rb --assert           # гейт: інваріанти в assert_run
+# ⚠️ Кількість інваріантів тут СВІДОМО не названа: попередня редакція казала «5»,
+# коли їх стало шість, тобто шапка описувала власне тіло хибно. Лік — не оновити
+# число (воно протухне на наступному доданому), а не мати його: перелік читається
+# з `assert_run`, і він там пронумерований.
 #
 # ⛔ ПРЕДМЕТ — стабільність емісії протоколу, НЕ дохідність токена. Формулювання
 # несуче, не стилістичне: [BIZ.22] вимагає прибрати investor-лексику й мову
