@@ -215,6 +215,17 @@ TARGETS.each do |t|
   dupes = list.map { _1[:num] }.tally.select { |_, v| v > 1 }
   errs << "duplicate item numbers: #{dupes.keys.join(', ')}" if dupes.any?
   list.each do |it|
+    # Порожній рефлекс = сам заголовок «Рефлекс:» стоїть УСЕРЕДИНІ жирного, а
+    # речення — ЗА ним, тож носій не переїжджає в індекс узагалі. Втрата тиха
+    # двічі: "" у Ruby truthy, тож render друкує порожній спан замість того щоб
+    # пропустити рефлекс, а WORD_FLOOR нижче такий пункт не бачить — самого
+    # ліда вистачає на поріг. Спіймано на #98 (seeds), де в індекс не доїхало
+    # головне: «чи є в CI бодай один крок, що ЗАПУСКАЄ цей артефакт».
+    if it[:reflex]&.empty?
+      errs << "item #{it[:num]}: bold Reflex span carries only its HEADER — the " \
+              "reflex sentence sits OUTSIDE the `**…**`, so it never reaches the " \
+              "index; widen the bold in #{File.basename(t[:aux])}"
+    end
     next if it[:lead].to_s.split.size + it[:reflex].to_s.split.size >= WORD_FLOOR
     errs << "item #{it[:num]} renders as a LABEL, not a carrier: «#{it[:lead]}» " \
             "(< #{WORD_FLOOR} words) — widen the bolded lead in #{File.basename(t[:aux])}, not here"

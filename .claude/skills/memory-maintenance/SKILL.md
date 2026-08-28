@@ -40,7 +40,7 @@ the measurement and the provenance are in the companion. Numbering is append-onl
 15. A `TO-GIT` verdict needs THREE measurements, and the third is the one that manufactures work when skipped: does git ALREADY SEND readers to the memory copy
 16. A restatement that SENDS can still LIE — so the redundancy question has a second axis, and only the second one is dangerous
 17. Opposed frames do not protect against a shared READING habit — and the two costliest misses of a curation pass both arrived as a home that is not one
-18. Editing memory through `Bash` bypasses BOTH of its carriers silently — the growth gate and the auto-commit are hooked on `Edit|Write`, and nothing announces their absence — ****
+18. Editing memory through `Bash` bypasses BOTH of its carriers silently — the growth gate and the auto-commit are hooked on `Edit|Write`, and nothing announces their absence — **after any memory edit made outside `Edit`/`Write`, run the memory gate's `--audit` mode and a hand `git status` in the memory dir — the two things the hooks would have done**
 19. Дзеркало пастки (18): авто-коміт робить ВАКУУМНИМ будь-яке порівняння «до/після», побудоване на робочому дереві — і брехня тут іде в бік «це не я» — **у корпусі з авто-комітом «до» береться з ІСТОРІЇ (`git show <sha-до-твоєї-серії>:<file>`), ніколи зі `stash`/робочого дерева — а перед тим, як вірити порівнянню, пінуй, що стан справді змінився (`git stash list` непорожній, або діф файлу непорожній)**
 
 <!-- /MEMORY-TRAPS-INDEX -->
