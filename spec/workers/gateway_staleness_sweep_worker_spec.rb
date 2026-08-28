@@ -38,15 +38,41 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
         .not_to change { EwsAlert.alert_type_queen_offline.count }
     end
 
-    it "друга Королева кластера під активним алертом падає БЕЗ другого алерту (документована стеля guard'а)" do
-      silent_gateway
+    # 🔴 [ARCH.54] Доти цей приклад пінував ПРОТИЛЕЖНЕ під назвою «документована
+    # стеля guard'а»: друга Королева не отримувала алерту взагалі. Дедуп-ключ був
+    # вужчий за множину причин — два незалежні вердикти про два різні пристрої
+    # зливались в один, і зникало саме СПОВІЩЕННЯ (у БД `faulty` ставився чесно).
+    it "друга Королева ТОГО САМОГО кластера дістає ВЛАСНИЙ алерт (дедуп по uid, не по кластеру)" do
+      first = silent_gateway
       sweep # перша впала → queen_offline активний
 
       second = silent_gateway # той самий cluster, ще active і вже прострочена
 
       expect { described_class.new.perform }
-        .not_to change { EwsAlert.alert_type_queen_offline.count }
+        .to change { EwsAlert.alert_type_queen_offline.count }.by(1)
       expect(second.reload.state).to eq("faulty")
+
+      # Пін на СКЛАД, не на потужність: два алерти мусять називати РІЗНІ пристрої
+      # — інакше «+1» задовольнив би й дубль про ту саму Королеву.
+      uids = EwsAlert.alert_type_queen_offline.map { |a| a.message_params["uid"] }
+      expect(uids).to contain_exactly(first.uid, second.uid)
+    end
+
+    # 🔴 Гард дедупу треба ПРОЙТИ, а не обійти. Попередник цього прикладу спершу
+    # робив `sweep`, і шлюз ставав `faulty` — тобто вибував зі скоупу
+    # `flag_silent_gateways`, і `create_offline_alert` не викликався ЖОДНОГО разу:
+    # приклад був зелений при повністю знятому гарді. Тому алерт кладемо РУКАМИ,
+    # а шлюз лишаємо в робочому стані — і ліхтар на `faulty` доводить, що прохід
+    # його справді підхопив (без нього «нічого не змінилось» знову означало б
+    # «нічого й не бігло»). Спіймано груповою підлогою покриття, не сюїтою.
+    it "ту саму Королеву НЕ дублює — гард ПРОХОДИТЬСЯ, а не обходиться" do
+      gateway = silent_gateway
+      create(:ews_alert, cluster: cluster, severity: :critical,
+                         alert_type: :queen_offline, status: :active,
+                         message_params: { uid: gateway.uid })
+
+      expect { sweep }.not_to change { EwsAlert.alert_type_queen_offline.count }
+      expect(gateway.reload.state).to eq("faulty") # ліхтар: шлюз БУВ у скоупі
     end
 
     it "пропускає maintenance (людина вже знає)" do
@@ -87,14 +113,40 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
     # queen_offline → рядок лишався активним вічно й латчив comms_no_ack? назавжди.
     it "резолвить і queen_uplink_lost (Helium-SOS), не лише queen_offline" do
       gateway = silent_gateway
+      # ⚠️ `uid` у фікстурі несучий: резолвер скоупиться парою cluster+uid
+      # [ARCH.54], а живий писач (`HeliumSosWorker#create_sos_alert`) кладе його
+      # від народження — фікстура без нього описувала б рядок, якого продюсер не
+      # створює.
       sos = create(:ews_alert, cluster: cluster, severity: :critical,
-                               alert_type: :queen_uplink_lost, status: :active)
+                               alert_type: :queen_uplink_lost, status: :active,
+                               message_params: { uid: gateway.uid })
       sweep
 
       gateway.reload.mark_seen! # свіжий last_seen_at → online
       described_class.new.perform
 
       expect(sos.reload.status_resolved?).to be(true)
+    end
+
+    # 🔴 [ARCH.54] Дзеркальна половина фіксу, і без неї він створив би НОВИЙ дефект,
+    # гірший за початковий: сигнал не глушився б при народженні, а гасився б чужою
+    # подією вже після того, як його побачила людина.
+    it "повернення однієї Королеви НЕ резолвить алерт іншої, що досі faulty" do
+      returning = silent_gateway
+      staying   = silent_gateway
+      sweep # обидві faulty, обидві мають власний queen_offline
+
+      alert_of_staying = EwsAlert.alert_type_queen_offline
+                                 .find { |a| a.message_params["uid"] == staying.uid }
+      expect(alert_of_staying).to be_present # ліхтар: пін нижче не на порожнечі
+
+      returning.reload.mark_seen! # у ефірі лише вона
+      described_class.new.perform
+
+      expect(alert_of_staying.reload.status_active?).to be(true)
+      expect(EwsAlert.alert_type_queen_offline
+                     .find { |a| a.message_params["uid"] == returning.uid }
+                     .status_resolved?).to be(true)
     end
 
     # [SLASH-1 gap-E] Дискримінатор «машина vs людина» тримається на ДЕФОЛТНОМУ kwarg'у

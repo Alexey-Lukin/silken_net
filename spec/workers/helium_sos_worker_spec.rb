@@ -42,6 +42,26 @@ RSpec.describe HeliumSosWorker, type: :worker do
     }.not_to change { EwsAlert.alert_type_queen_uplink_lost.count }
   end
 
+  # 🔴 [ARCH.54] Ідемпотентність вище й це — РІЗНІ питання, і кластерний ключ
+  # відповідав на обидва однаково «мовчи». Дедуп мусить глушити повтор ТІЄЇ САМОЇ
+  # Королеви, а не крик СУСІДНЬОЇ: два SOS про два пристрої є двома свідченнями.
+  it "друга Королева того ж кластера дістає ВЛАСНИЙ SOS-алерт (дедуп по uid)" do
+    described_class.new.perform(gateway.helium_dev_eui, sos_payload)
+
+    second_did = 0xB2C3D4E5
+    second = create(:gateway, cluster: cluster, state: :active,
+                              uid: format("SNET-Q-%08X", second_did),
+                              helium_dev_eui: "AABBCCDDEEFF0022")
+
+    expect {
+      described_class.new.perform(second.helium_dev_eui, sos_payload(queen_did: second_did))
+    }.to change { EwsAlert.alert_type_queen_uplink_lost.count }.by(1)
+
+    # Пін на СКЛАД: «+1» задовольнив би й дубль про першу Королеву.
+    uids = EwsAlert.alert_type_queen_uplink_lost.map { |a| a.message_params["uid"] }
+    expect(uids).to contain_exactly(gateway.uid, second.uid)
+  end
+
   it "не чіпає maintenance-шлюз (людина вже поруч), але алерт створює" do
     gateway.update!(state: :maintenance)
 

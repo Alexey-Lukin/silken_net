@@ -248,14 +248,26 @@ class GatewayStalenessSweepWorker
     count
   end
 
-  # Дедуп по кластеру: EwsAlert-валідація uniqueness тримає лише tree_id-алерти
-  # (tree_id тут nil), тому анти-спам guard — руками. Стеля: друга Королева
-  # того ж кластера, що впала ПІД активним алертом першої, окремого алерту не
-  # отримає (uid — у message; кластер сьогодні ~1 Queen). cluster_id завжди
-  # present — Gateway#belongs_to :cluster обов'язковий.
+  # Дедуп по ПАРІ `cluster_id` + `message_params ->> 'uid'` — та сама конвенція,
+  # що в `ota_stuck_alert_exists?` вище (EwsAlert-валідація uniqueness тримає лише
+  # tree_id-алерти, а тут `tree_id` завжди nil, тож анти-спам guard — руками).
+  #
+  # 🔴 **Доти ключ був ЛИШЕ кластерний, і це глушило не дублікат, а СУСІДА** [ARCH.54]:
+  # друга Королева того ж кластера, що падала ПІД активним алертом першої, власного
+  # `EwsAlert` не отримувала — `faulty` у БД ставився коректно, зникало саме
+  # СПОВІЩЕННЯ, тобто єдине, що доходить до людини. Схема це дозволяла завжди
+  # (`Cluster has_many :gateways`); стримувала лише практика ~1 Queen/кластер, і
+  # вона не є інваріантом — жоден код не виводить «шлюз кластера» в однині.
+  # 🔑 Клас — дедуп-ключ, ВУЖЧИЙ за множину причин: він зливає два незалежні
+  # вердикти про два різні пристрої в один, і втрата тут МОВЧАЗНА.
+  # ⚠️ `?` усередині `where("… ? …")` Rails бере за bind-плейсхолдер — тому
+  # JSONB-стрілка йде рядком-умовою, а `message_key` лишається колонкою.
+  # cluster_id завжди present — Gateway#belongs_to :cluster обов'язковий.
   def create_offline_alert(gateway)
     return if EwsAlert.unresolved.alert_type_queen_offline
-                      .exists?(cluster_id: gateway.cluster_id)
+                      .where(cluster_id: gateway.cluster_id)
+                      .where("message_params ->> 'uid' = ?", gateway.uid)
+                      .exists?
 
     silent_for = ((Time.current - gateway.last_seen_at) / 60).round
     EwsAlert.create!(
@@ -276,10 +288,24 @@ class GatewayStalenessSweepWorker
   # queen_offline) → лишався активним вічно й латчив comms_no_ack? назавжди.
   # resolve! без `user:` — машинний шлях (дискримінатор gap-E: див.
   # BlockchainBurningService#critical_unmaintained?).
+  #
+  # 🔴 **Скоуп ТОЙ САМИЙ, що в `create_offline_alert` — і це не симетрія заради
+  # краси** [ARCH.54]: поки гард створення був кластерним, кластерний резолвер був
+  # йому рівний, тож дефекту не існувало. Щойно створення звузилось до `uid`,
+  # кластерний резолвер став ГІРШИМ за початковий стан — Королева A, повернувшись
+  # у ефір, закривала б живий алерт Королеви B, яка все ще `faulty`. Тобто
+  # половинчастий фікс тут не «менше користі», а НОВИЙ дефект: сигнал не глушиться
+  # при народженні, а гаситься чужою подією вже після того, як його побачили.
+  # 🔒 Стеля названа: рядок БЕЗ `uid` у `message_params` автоматично не
+  # зарезолвиться. Живих таких нуль за побудовою — обидва писачі
+  # (`create_offline_alert` тут і `HeliumSosWorker#create_sos_alert`) кладуть `uid`
+  # від народження, а продового флоту не було; людський шлях
+  # (`alerts_controller#resolve`) від цього не залежить узагалі.
   def resolve_comms_alerts(gateway)
     EwsAlert.unresolved
             .where(alert_type: [ :queen_offline, :queen_uplink_lost ])
-            .where(cluster_id: gateway.cluster_id).find_each do |alert|
+            .where(cluster_id: gateway.cluster_id)
+            .where("message_params ->> 'uid' = ?", gateway.uid).find_each do |alert|
       alert.resolve!(key: "gateway_returned",
                      params: { uid: gateway.uid,
                                seen_at: gateway.last_seen_at.utc.iso8601 }) # online ⇒ present

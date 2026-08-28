@@ -80,13 +80,23 @@ class HeliumSosWorker
     nil
   end
 
-  # Ідемпотентність: один активний queen_uplink_lost на кластер (SOS
-  # ретрансмітиться Королевою, поки uplink мертвий — не плодимо дублікати;
-  # resolve зробить лісник або sweeper-recovery після повернення батчів).
+  # Ідемпотентність: один активний queen_uplink_lost на КОРОЛЕВУ (SOS
+  # ретрансмітиться, поки uplink мертвий — не плодимо дублікати; resolve зробить
+  # лісник або sweeper-recovery після повернення батчів).
+  #
+  # 🔴 **Ключ — пара `cluster_id` + `message_params ->> 'uid'`, а не сам кластер**
+  # [ARCH.54]: кластерний ключ глушив би не повтор ТІЄЇ САМОЇ Королеви, а крик
+  # СУСІДНЬОЇ — два незалежні свідчення про два пристрої зливались в одне, і
+  # мовчазно. Дзеркало того самого фіксу в `GatewayStalenessSweepWorker` (там же
+  # й резолвер звужено симетрично — інакше повернення однієї Королеви гасить
+  # алерт іншої). ⚠️ `?` у `where("… ? …")` Rails бере за bind-плейсхолдер, тому
+  # JSONB-стрілка йде окремим рядком-умовою.
   # cluster_id завжди present (Gateway#belongs_to :cluster обов'язковий).
   def create_sos_alert(gateway, sos, reported_at)
     return if EwsAlert.unresolved.alert_type_queen_uplink_lost
-                      .exists?(cluster_id: gateway.cluster_id)
+                      .where(cluster_id: gateway.cluster_id)
+                      .where("message_params ->> 'uid' = ?", gateway.uid)
+                      .exists?
 
     reason = ERROR_CODES.fetch(sos[:error_code], "code_#{sos[:error_code]}")
     EwsAlert.create!(
