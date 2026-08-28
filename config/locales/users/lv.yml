@@ -42,6 +42,6 @@ lv:
     roles:
       admin: Administrators
       forester: Mežsargs
-      investor: Klients
+      subscriber: Klients
       super_admin: Platformas administrators
     show_title: Profils // %{name}

@@ -86,7 +86,7 @@ module Users
     # а мапа знала три — тож найпривілейованіша роль падала в той самий `else`, що й
     # пошкоджене значення, тобто візуально не відрізнялась від «невідомо що це».
     # Бурштин (warning), а не червоний: платформенний рівень стоїть НАД org-адміном,
-    # і сусідні кольори вже зайняті ієрархією investor→forester→admin.
+    # і сусідні кольори вже зайняті ієрархією subscriber→forester→admin.
     #
     # [UI.1] Бейдж = пастель + `-text`-пара (роль за каноном §3.2); мапа лишається
     # приватною, бо ключі ролей не живуть у спільному `StatusBadge::STYLES`, а мітку
@@ -96,7 +96,7 @@ module Users
       when "super_admin" then "bg-status-warning text-status-warning-text border border-status-warning-accent"
       when "admin" then "bg-status-danger text-status-danger-text border border-status-danger-accent"
       when "forester" then "bg-status-active text-status-active-text border border-gaia-primary-strong"
-      when "investor" then "bg-status-info text-status-info-text border border-status-info-accent"
+      when "subscriber" then "bg-status-info text-status-info-text border border-status-info-accent"
       else "bg-gaia-surface-elevated text-gaia-text-subtle"
       end
     end

@@ -929,7 +929,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Роль | Рівень доступу | Опис |
 |------|---------------|------|
-| `investor(0)` | `:read_only` | Лише власні ресурси |
+| `subscriber(0)` | `:read_only` | Лише власні ресурси |
 | `forester(1)` | `:field` | Польовий доступ в межах org |
 | `admin(2)` | `:organization` | Повний доступ в межах org |
 | `super_admin(3)` | `:system` | Повний доступ до платформи |
@@ -948,7 +948,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 |------|-----|------|
 | `email_address` | string | Нормалізований (lowercase + strip) |
 | `password_digest` | string | Argon2id хеш |
-| `role` | enum | investor/forester/admin/super_admin |
+| `role` | enum | subscriber/forester/admin/super_admin |
 | `first_name` / `last_name` | string | ПІБ — PII. **[SEC.18]** Обидва (+ `recovery_codes`) скрабляться з логів через `filter_parameters` (`config/initializers/filter_parameter_logging.rb`; Sentry реюзить той самий список); schema-parity гейт `spec/initializers/filter_parameter_logging_spec.rb` — кожна нова string/text-колонка `users`/`organizations` мусить бути класифікована: filtered-PII або явний allow-list |
 | `otp_required_for_login` | boolean | ✅ **[S6.21] МЕХАНІЗМ з 2026-08-20:** шлях входу ЧИТАЄ прапорець — `sessions#create` на `mfa_enabled?` кладе pending-мітку (TTL 5 хв) і шле на `/login/mfa` (`MfaChallengesController`), сесія не існує до TOTP/recovery. Піднімається ЛИШЕ setup-флоу (`MfaSetupsController`: провижн → QR → verify свіжого коду + rotation recovery-набору); toggle-enable шле туди (409 `mfa_setup_required`), disable тримає step-up. Наскрізний носій — `spec/requests/api/v1/mfa_flow_spec.rb` (анти-replay · одноразовість recovery · TTL) |
 | `otp_secret` | string | **[S6.21]** TOTP-секрет (RFC 6238) — AR-encrypted (прецедент `hardware_keys`, SEC.22); ротується кожним стартом setup-флоу до активації |
@@ -1578,7 +1578,7 @@ Cluster, User, Organization
 - `admin@silken.net` — super_admin, Архітектор платформи
 - `alexey@activebridge.org` — admin, ActiveBridge (access_level :organization)
 - `forester@activebridge.org` — forester (access_level :field)
-- `investor@ecofuture.fund` — investor (access_level :read_only)
+- `subscriber@ecofuture.fund` — subscriber (access_level :read_only)
 
 **Початковий Cluster:** "Черкаський бір" — `region: "Центральна Україна"`, timezone: `Europe/Kyiv`, fire threshold: 60°C.
 

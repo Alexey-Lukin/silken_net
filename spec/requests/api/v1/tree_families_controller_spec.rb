@@ -6,11 +6,11 @@ require "rails_helper"
 RSpec.describe Api::V1::TreeFamiliesController, type: :request do
   let(:organization) { create(:organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:admin_token) { admin.generate_token_for(:api_access) }
-  let(:investor_token) { investor.generate_token_for(:api_access) }
+  let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{admin_token}" } }
-  let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+  let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
   # Мутації TreeFamily = глобальні money/fraud-константи → лише super_admin (SEC).
   let(:super_admin) { create(:user, :super_admin, organization: organization) }
   let(:super_admin_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
@@ -51,7 +51,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/tree_families", headers: investor_headers, as: :json
+      get "/tree_families", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
@@ -83,7 +83,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/tree_families/#{scots_pine.id}", headers: investor_headers, as: :json
+      get "/tree_families/#{scots_pine.id}", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
   end
@@ -97,7 +97,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/tree_families/new", headers: investor_headers
+      get "/tree_families/new", headers: subscriber_headers
       expect(response).to have_http_status(:forbidden)
     end
   end
@@ -198,7 +198,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      post "/tree_families", params: valid_params, headers: investor_headers
+      post "/tree_families", params: valid_params, headers: subscriber_headers
       expect(response).to have_http_status(:forbidden)
     end
 
@@ -226,7 +226,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/tree_families/#{scots_pine.id}/edit", headers: investor_headers
+      get "/tree_families/#{scots_pine.id}/edit", headers: subscriber_headers
       expect(response).to have_http_status(:forbidden)
     end
   end
@@ -255,7 +255,7 @@ RSpec.describe Api::V1::TreeFamiliesController, type: :request do
     it "returns 403 for non-admin users" do
       patch "/tree_families/#{scots_pine.id}",
             params: { tree_family: { name: "Hacked" } },
-            headers: investor_headers
+            headers: subscriber_headers
 
       expect(response).to have_http_status(:forbidden)
     end

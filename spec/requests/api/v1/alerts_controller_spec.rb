@@ -321,12 +321,12 @@ RSpec.describe Api::V1::AlertsController, type: :request do
 
     # [UI.6/SEC] Обидва `before_action` перелічують екшени ПОІМЕННО, тож нова дія
     # їде без гарда доти, доки її туди не допишуть — і мовчки. Цей пін і є носієм
-    # правила: investor (read-only роль) не диспетчеризує бойові тривоги.
-    it "не пускає investor до диспетчеризації" do
-      investor = create(:user, :investor, organization: organization)
-      investor_headers = { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+    # правила: subscriber (read-only роль) не диспетчеризує бойові тривоги.
+    it "не пускає subscriber до диспетчеризації" do
+      subscriber = create(:user, :subscriber, organization: organization)
+      subscriber_headers = { "Authorization" => "Bearer #{subscriber.generate_token_for(:api_access)}" }
 
-      patch claim_alert_path(own_alert), headers: investor_headers
+      patch claim_alert_path(own_alert), headers: subscriber_headers
 
       expect(response).to have_http_status(:forbidden)
       expect(own_alert.reload.assigned_to_id).to be_nil

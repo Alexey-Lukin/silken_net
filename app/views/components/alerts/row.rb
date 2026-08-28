@@ -5,7 +5,7 @@
 module Alerts
   class Row < ApplicationComponent
     # [UI.6] `current_user` — лише для видимості «Acknowledge»: список тривог відкритий
-    # УСІМ ролям (investor теж), а `alerts#resolve` стоїть за `authorize_forester!,
+    # УСІМ ролям (subscriber теж), а `alerts#resolve` стоїть за `authorize_forester!,
     # only: :resolve`, тож read-only глядач бачив бойову кнопку, яка після
     # turbo-confirm мовчки вмирала в 403. Дефолт `nil` fail-CLOSED.
     # @param detail_href [String, nil] КОНТЕКСТ РЕНДЕРУ, не оздоблення, і адресу
@@ -101,7 +101,7 @@ module Alerts
         end
       else
         # [UI.6] Гасити тривогу може лише forester+ (`authorize_forester!, only: :resolve`).
-        # Нижчій ролі кнопку не показуємо взагалі: доти investor її бачив, тиснув, і
+        # Нижчій ролі кнопку не показуємо взагалі: доти subscriber її бачив, тиснув, і
         # turbo-submission помирала в JSON-403 без жодного пояснення.
         return unless @current_user&.forest_commander?
 

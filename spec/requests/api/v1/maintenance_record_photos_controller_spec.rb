@@ -7,11 +7,11 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
   let(:organization) { create(:organization) }
   let(:other_organization) { create(:organization) }
   let(:forester) { create(:user, :forester, organization: organization) }
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:api_token) { forester.generate_token_for(:api_access) }
-  let(:investor_token) { investor.generate_token_for(:api_access) }
+  let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
-  let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+  let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
 
   let!(:own_cluster) { create(:cluster, organization: organization) }
   let!(:other_cluster) { create(:cluster, organization: other_organization) }
@@ -199,7 +199,7 @@ RSpec.describe Api::V1::MaintenanceRecordPhotosController, type: :request do
       photo = test_record.photos.first
 
       delete "/maintenance_records/#{test_record.id}/photos/#{photo.id}",
-             headers: investor_headers, as: :json
+             headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 

@@ -7,7 +7,7 @@ RSpec.describe WalletPolicy do
   let(:organization) { create(:organization) }
   let(:other_org) { create(:organization) }
 
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
   let(:super_admin) { create(:user, :super_admin) }
 
@@ -25,7 +25,7 @@ RSpec.describe WalletPolicy do
     end
 
     it "allows user from same org" do
-      expect(described_class.new(investor, wallet).show?).to be true
+      expect(described_class.new(subscriber, wallet).show?).to be true
     end
 
     context "when wallet belongs to another org" do
@@ -34,7 +34,7 @@ RSpec.describe WalletPolicy do
       let(:other_wallet) { other_tree.wallet }
 
       it "denies user from different org" do
-        expect(described_class.new(investor, other_wallet).show?).to be false
+        expect(described_class.new(subscriber, other_wallet).show?).to be false
       end
 
       # [SEC.25 Ф2] Доти рядок звався «allows super_admin» і був правдою: платформена
@@ -55,7 +55,7 @@ RSpec.describe WalletPolicy do
     let!(:other_tree) { create(:tree, cluster: other_cluster) }
 
     it "scopes to org wallets for regular user" do
-      scope = described_class::Scope.new(investor, Wallet).resolve
+      scope = described_class::Scope.new(subscriber, Wallet).resolve
       expect(scope).to include(own_tree.wallet)
       expect(scope).not_to include(other_tree.wallet)
     end
@@ -88,7 +88,7 @@ RSpec.describe WalletPolicy do
       end
 
       it "is visible to its own organization" do
-        scope = described_class::Scope.new(investor, Wallet).resolve
+        scope = described_class::Scope.new(subscriber, Wallet).resolve
         expect(scope).to include(chain_only)
       end
 
@@ -98,8 +98,8 @@ RSpec.describe WalletPolicy do
       end
 
       it "answers the same as #show? — list and direct address must not diverge" do
-        expect(described_class.new(investor, chain_only).show?).to be true
-        expect(described_class::Scope.new(investor, Wallet).resolve).to include(chain_only)
+        expect(described_class.new(subscriber, chain_only).show?).to be true
+        expect(described_class::Scope.new(subscriber, Wallet).resolve).to include(chain_only)
       end
     end
   end
@@ -111,7 +111,7 @@ RSpec.describe WalletPolicy do
     let(:forester) { create(:user, :forester, organization: organization) }
 
     it "returns true for all users" do
-      expect(described_class.new(investor, wallet).index?).to be true
+      expect(described_class.new(subscriber, wallet).index?).to be true
       expect(described_class.new(forester, wallet).index?).to be true
       expect(described_class.new(admin, wallet).index?).to be true
       expect(described_class.new(super_admin, wallet).index?).to be true
@@ -126,7 +126,7 @@ RSpec.describe WalletPolicy do
     it "denies access when wallet has no org chain and user is not admin" do
       allow(wallet).to receive_messages(organization_id: nil, tree: instance_double(Tree, cluster: nil))
 
-      other_user = create(:user, :investor, organization: other_org)
+      other_user = create(:user, :subscriber, organization: other_org)
       expect(described_class.new(other_user, wallet).show?).to be false
     end
 
@@ -134,13 +134,13 @@ RSpec.describe WalletPolicy do
       tree_double = instance_double(Tree, cluster: nil)
       allow(wallet).to receive_messages(organization_id: nil, tree: tree_double)
 
-      expect(described_class.new(investor, wallet).show?).to be false
+      expect(described_class.new(subscriber, wallet).show?).to be false
     end
 
     it "denies when wallet.tree is nil" do
       allow(wallet).to receive_messages(organization_id: nil, tree: nil)
 
-      other_user = create(:user, :investor, organization: other_org)
+      other_user = create(:user, :subscriber, organization: other_org)
       expect(described_class.new(other_user, wallet).show?).to be false
     end
   end

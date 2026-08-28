@@ -950,12 +950,12 @@ end
       expect(foreign.reload).not_to be_attested
     end
 
-    # Увесь контролер стоїть за `authorize_forester!`, тож investor не засвідчує.
-    it "does not let an investor attest" do
-      investor = create(:user, :investor, organization: organization)
-      investor_headers = { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+    # Увесь контролер стоїть за `authorize_forester!`, тож subscriber не засвідчує.
+    it "does not let an subscriber attest" do
+      subscriber = create(:user, :subscriber, organization: organization)
+      subscriber_headers = { "Authorization" => "Bearer #{subscriber.generate_token_for(:api_access)}" }
 
-      patch "/maintenance_records/#{record.id}/attest", headers: investor_headers, as: :json
+      patch "/maintenance_records/#{record.id}/attest", headers: subscriber_headers, as: :json
 
       expect(response).to have_http_status(:forbidden)
       expect(record.reload).not_to be_attested

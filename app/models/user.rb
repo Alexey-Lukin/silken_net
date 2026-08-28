@@ -44,11 +44,11 @@ class User < ApplicationRecord
 
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
   enum :role, {
-    investor: 0,
+    subscriber: 0,
     forester: 1,
     admin: 2,
     super_admin: 3
-  }, prefix: true, default: :investor
+  }, prefix: true, default: :subscriber
 
   # [I18N.1] Людська назва РОЛІ — дзеркало `Actuator::DEVICE_TYPE_LABEL_SCOPE`.
   # Скоуп належить домену МОДЕЛІ, не компоненту, який показав значення першим
@@ -179,7 +179,7 @@ class User < ApplicationRecord
   #            редагувати глобальні довідники, читати системний аудит-ланцюг
   # :organization — повний набір дій у межах організації (admin)
   # :field — польові дії (forester)
-  # :read_only — лише перегляд (investor)
+  # :read_only — лише перегляд (subscriber)
   #
   # ⚠️ [SEC.25 Ф2] `:system` більше НЕ означає «бачить дані всіх організацій».
   # Скоуп даних відв'язаний від ролі й дається acting-організацією
@@ -190,7 +190,7 @@ class User < ApplicationRecord
   # продових викликів у нього нуль — лише спеки й доки, — тож розщеплення додало б
   # абстракцію під нульовий попит. Знести теж не стали: на нього спирається
   # `docs/protocols/legal/securities_review.md` (аргумент про пасивність ролі
-  # investor), і посилання має лишитись розв'язним. Тож лишається як опис
+  # замовника), і посилання має лишитись розв'язним. Тож лишається як опис
   # ПОВНОВАЖЕНЬ — і ця нота є єдиним, що змінилось, бо змінилось саме значення.
   def access_level
     if role_super_admin?

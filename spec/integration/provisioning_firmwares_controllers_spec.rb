@@ -88,8 +88,8 @@ RSpec.describe "Provisioning, firmwares, and controller CRUD flows" do
     end
 
     it "returns 403 for non-forester users" do
-      investor = create(:user, :investor, organization: organization)
-      inv_token = investor.generate_token_for(:api_access)
+      subscriber = create(:user, :subscriber, organization: organization)
+      inv_token = subscriber.generate_token_for(:api_access)
 
       post "/provisioning/register",
            params: { provisioning: { hardware_uid: "TEST", device_type: "tree", cluster_id: cluster.id } },

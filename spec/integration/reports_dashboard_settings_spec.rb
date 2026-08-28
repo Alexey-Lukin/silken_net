@@ -121,8 +121,8 @@ RSpec.describe "Reports, dashboard, and settings API" do
     end
 
     it "returns 403 for non-admin users" do
-      investor = create(:user, :investor, organization: organization)
-      inv_token = investor.generate_token_for(:api_access)
+      subscriber = create(:user, :subscriber, organization: organization)
+      inv_token = subscriber.generate_token_for(:api_access)
 
       get "/settings",
           headers: { "Authorization" => "Bearer #{inv_token}", "Accept" => "application/json" }

@@ -143,9 +143,9 @@ RSpec.describe Alerts::Index do
       expect(out).to include("Acknowledge")
     end
 
-    it "investor, поданий у Index, тієї самої кнопки не дістає" do
+    it "subscriber, поданий у Index, тієї самої кнопки не дістає" do
       out = render_component(alerts: [ build_alert(status: :active) ], pagy: mock_pagy(count: 1),
-                             organization: org, current_user: build_stubbed(:user, :investor))
+                             organization: org, current_user: build_stubbed(:user, :subscriber))
       expect(out).not_to include("Acknowledge")
     end
   end

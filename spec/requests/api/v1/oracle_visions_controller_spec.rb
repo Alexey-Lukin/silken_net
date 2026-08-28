@@ -7,13 +7,13 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
   let(:organization) { create(:organization) }
   let(:forester) { create(:user, :forester, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:forester_token) { forester.generate_token_for(:api_access) }
   let(:admin_token) { admin.generate_token_for(:api_access) }
-  let(:investor_token) { investor.generate_token_for(:api_access) }
+  let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
   let(:forester_headers) { { "Authorization" => "Bearer #{forester_token}" } }
   let(:admin_headers) { { "Authorization" => "Bearer #{admin_token}" } }
-  let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+  let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
 
   let!(:cluster) { create(:cluster, organization: organization) }
 
@@ -74,8 +74,8 @@ RSpec.describe Api::V1::OracleVisionsController, type: :request do
       end
     end
 
-    it "returns 403 for investor users" do
-      get "/oracle_visions", headers: investor_headers, as: :json
+    it "returns 403 for subscriber users" do
+      get "/oracle_visions", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 

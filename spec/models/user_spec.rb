@@ -27,7 +27,7 @@ RSpec.describe User, type: :model do
     end
 
     it "requires password on create" do
-      user = described_class.new(email_address: "test@example.com", password: nil, role: :investor)
+      user = described_class.new(email_address: "test@example.com", password: nil, role: :subscriber)
       expect(user).not_to be_valid
       expect(user.errors[:password]).to be_present
     end
@@ -88,24 +88,24 @@ RSpec.describe User, type: :model do
   # --- РОЛЬОВА МОДЕЛЬ (RBAC) ---
 
   describe "role enum" do
-    it "defaults to investor" do
+    it "defaults to subscriber" do
       user = described_class.new
-      expect(user.role).to eq("investor")
+      expect(user.role).to eq("subscriber")
     end
 
     it "defines all four roles" do
       expect(described_class.roles).to eq(
-        "investor" => 0, "forester" => 1, "admin" => 2, "super_admin" => 3
+        "subscriber" => 0, "forester" => 1, "admin" => 2, "super_admin" => 3
       )
     end
 
     it "generates prefixed query methods" do
       user = build(:user, :admin)
-      expect(user).to respond_to(:role_investor?, :role_forester?, :role_admin?, :role_super_admin?)
+      expect(user).to respond_to(:role_subscriber?, :role_forester?, :role_admin?, :role_super_admin?)
     end
 
     it "generates prefixed scopes" do
-      expect(described_class).to respond_to(:role_investor, :role_forester, :role_admin, :role_super_admin)
+      expect(described_class).to respond_to(:role_subscriber, :role_forester, :role_admin, :role_super_admin)
     end
   end
 
@@ -148,8 +148,8 @@ RSpec.describe User, type: :model do
       expect(build(:user, :super_admin).forest_commander?).to be true
     end
 
-    it "returns false for investor" do
-      expect(build(:user, :investor).forest_commander?).to be false
+    it "returns false for subscriber" do
+      expect(build(:user, :subscriber).forest_commander?).to be false
     end
   end
 
@@ -181,8 +181,8 @@ RSpec.describe User, type: :model do
       expect(user.access_level).to eq(:read_only)
     end
 
-    it "returns :read_only for investor" do
-      user = create(:user, :investor)
+    it "returns :read_only for subscriber" do
+      user = create(:user, :subscriber)
       expect(user.access_level).to eq(:read_only)
     end
 
@@ -203,8 +203,8 @@ RSpec.describe User, type: :model do
       expect(build(:user, :admin).super_admin?).to be false
     end
 
-    it "returns false for investor role" do
-      expect(build(:user, :investor).super_admin?).to be false
+    it "returns false for subscriber role" do
+      expect(build(:user, :subscriber).super_admin?).to be false
     end
   end
 
@@ -231,8 +231,8 @@ RSpec.describe User, type: :model do
       expect(user.organization_admin?).to be false
     end
 
-    it "returns false for investor" do
-      user = create(:user, :investor)
+    it "returns false for subscriber" do
+      user = create(:user, :subscriber)
       expect(user.organization_admin?).to be false
     end
   end
@@ -610,19 +610,19 @@ RSpec.describe User, type: :model do
     end
 
     it "audits a role change, chain-only" do
-      user = create(:user, role: :investor)
+      user = create(:user, role: :subscriber)
 
       expect { user.update!(role: :admin) }.to change { AuditLogWorker.jobs.size }.by(1)
 
       job = AuditLogWorker.jobs.last
       attrs = job["args"].first
       expect(attrs["action"]).to eq("user_role_changed")
-      expect(attrs["metadata"]).to include("from" => "investor", "to" => "admin")
+      expect(attrs["metadata"]).to include("from" => "subscriber", "to" => "admin")
       expect(job["args"][1]).to be false
     end
 
     it "does not audit non-role updates" do
-      user = create(:user, role: :investor)
+      user = create(:user, role: :subscriber)
 
       expect { user.update!(first_name: "Нове") }.not_to change { AuditLogWorker.jobs.size }
     end

@@ -128,7 +128,7 @@ class ContractHealthCheckService < ApplicationService
 
   # [SLASH-1] Absence-of-data → freeze for Field Audit, NEVER slash. A
   # cluster-wide blackout (stolen/destroyed gateway, Starlink outage, storm) is
-  # force-majeure, not the forester's negligence — burning investor tokens on it
+  # force-majeure, not the forester's negligence — burning subscriber tokens on it
   # would be a false slash (05_05 §1/§5). Raise a :field_audit escalation (NOT
   # :system_fault — see gap-D); the contract stays :active pending human
   # classification (Category C). «Тиша замовклого дерева — теж його голос».

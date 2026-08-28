@@ -54,8 +54,9 @@
 #       noise nobody reads. Canon prose is downstream of the rename, not separate work.
 #   (3) Ruby comments are skipped: internal engineering notes are not what a customer
 #       receives, and they were a third of the first advisory run.
-# The enum value `investor` is likewise out of scope — renaming it is the verdict-gated
-# half of BIZ.22, and this gate must not pre-empt a decision that belongs to a lawyer.
+# The enum value was RENAMED `investor` → `subscriber` on 2026-08-28 (BIZ.22 verdict
+# ratified: service model, ERC-3643 declined), so this gate no longer has to stay silent
+# about a pending decision. It still does not scan Ruby comments or canon prose (2)-(3).
 #
 # EXEMPT: the documents whose job IS to analyse this risk (00_07, docs/protocols/**,
 # 00_06, .claude/**) — a securities review forbidden to say "investor" is useless —

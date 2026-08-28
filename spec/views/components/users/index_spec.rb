@@ -23,8 +23,8 @@ RSpec.describe Users::Index do
 
   let(:admin_user)    { build_user(id: 1, first_name: "Ada", last_name: "Lovelace", role: "admin") }
   let(:forester_user) { build_user(id: 2, first_name: "Bob", last_name: "Oak", role: "forester") }
-  let(:investor_user) { build_user(id: 3, first_name: "Carol", last_name: "Pine", role: "investor") }
-  let(:users)         { [ admin_user, forester_user, investor_user ] }
+  let(:subscriber_user) { build_user(id: 3, first_name: "Carol", last_name: "Pine", role: "subscriber") }
+  let(:users)         { [ admin_user, forester_user, subscriber_user ] }
   let(:html)          { render_component(users: users) }
 
   # 🔴 Ціль, а не наявність кнопки. Доти тут стояв `href: "#"` — «AUDIT»-колонка
@@ -99,7 +99,7 @@ RSpec.describe Users::Index do
       expect(html).to include("text-status-active-text")
     end
 
-    it "renders investor role with the info badge pair" do
+    it "renders subscriber role with the info badge pair" do
       expect(html).to match(/bg-status-info(?!-)/)
       expect(html).to include("text-status-info-text")
     end
@@ -111,13 +111,13 @@ RSpec.describe Users::Index do
       I18n.with_locale(:uk) do
         localized = render_component(users: users)
 
-        # ⚠️ «Замовник», а не «Інвестор»: мітку ролі `investor` продиктував гейт
+        # ⚠️ «Замовник», а не «Інвестор»: мітку ролі `subscriber` продиктував гейт
         # `offering_lexicon_check` [BIZ.22] — інвестиційна рамка на customer-facing
         # поверхні є фактором Howey (`00_04 §1`), тож enum-ТОКЕН лишається технічним,
         # а людська назва описує СЕРВІСНУ роль.
         expect(localized).to include("Адміністратор", "Лісник", "Замовник")
         expect(localized).not_to include(">forester<")
-        expect(localized).not_to include(">investor<")
+        expect(localized).not_to include(">subscriber<")
       end
     end
 

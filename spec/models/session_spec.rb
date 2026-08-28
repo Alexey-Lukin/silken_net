@@ -49,10 +49,10 @@ RSpec.describe Session, type: :model do
       it "returns sessions for foresters updated within the last 24 hours" do
         forester = create(:user, :forester)
         active   = create(:session, :forester_session, user: forester, updated_at: 1.hour.ago)
-        _investor_session = create(:session)
+        _subscriber_session = create(:session)
 
         expect(described_class.active_in_field).to include(active)
-        expect(described_class.active_in_field).not_to include(_investor_session)
+        expect(described_class.active_in_field).not_to include(_subscriber_session)
       end
 
       it "excludes forester sessions older than 24 hours" do

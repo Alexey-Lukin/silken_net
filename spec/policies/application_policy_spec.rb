@@ -6,7 +6,7 @@ require "rails_helper"
 RSpec.describe ApplicationPolicy do
   let(:organization) { create(:organization) }
 
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:forester) { create(:user, :forester, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
   let(:super_admin) { create(:user, :super_admin) }
@@ -18,13 +18,13 @@ RSpec.describe ApplicationPolicy do
   # цементувала fail-open як задуману поведінку бази, і жодна мутація її не вбивала.
   describe "#index?" do
     it "denies by default — читання дозволяє лише політика, що визначила його явно" do
-      expect(described_class.new(investor, record).index?).to be false
+      expect(described_class.new(subscriber, record).index?).to be false
     end
   end
 
   describe "#create?" do
-    it "denies investors" do
-      expect(described_class.new(investor, record).create?).to be false
+    it "denies subscribers" do
+      expect(described_class.new(subscriber, record).create?).to be false
     end
 
     it "denies foresters" do
@@ -44,15 +44,15 @@ RSpec.describe ApplicationPolicy do
     # Роль тут свідомо НЕ вісь: дефолт відмовляє КОЖНОМУ, включно з super_admin —
     # інакше «база нічого не вирішує» знову означало б «база вирішує найширше».
     it "denies every role by default" do
-      [ investor, forester, admin, super_admin ].each do |actor|
+      [ subscriber, forester, admin, super_admin ].each do |actor|
         expect(described_class.new(actor, record).show?).to be(false), "#{actor.role} пройшов дефолт"
       end
     end
   end
 
   describe "#update?" do
-    it "denies investors" do
-      expect(described_class.new(investor, record).update?).to be false
+    it "denies subscribers" do
+      expect(described_class.new(subscriber, record).update?).to be false
     end
 
     it "denies foresters" do
@@ -69,8 +69,8 @@ RSpec.describe ApplicationPolicy do
   end
 
   describe "#destroy?" do
-    it "denies investors" do
-      expect(described_class.new(investor, record).destroy?).to be false
+    it "denies subscribers" do
+      expect(described_class.new(subscriber, record).destroy?).to be false
     end
 
     it "denies foresters" do
@@ -110,8 +110,8 @@ RSpec.describe ApplicationPolicy do
       expect(policy.send(:admin_or_above?)).to be false
     end
 
-    it "returns false for investor" do
-      policy = described_class.new(investor, record)
+    it "returns false for subscriber" do
+      policy = described_class.new(subscriber, record)
       expect(policy.send(:admin_or_above?)).to be false
     end
   end
@@ -132,8 +132,8 @@ RSpec.describe ApplicationPolicy do
       expect(policy.send(:super_admin?)).to be false
     end
 
-    it "returns false for investor" do
-      policy = described_class.new(investor, record)
+    it "returns false for subscriber" do
+      policy = described_class.new(subscriber, record)
       expect(policy.send(:super_admin?)).to be false
     end
   end
@@ -154,8 +154,8 @@ RSpec.describe ApplicationPolicy do
       expect(policy.send(:forester_or_above?)).to be true
     end
 
-    it "returns false for investor" do
-      policy = described_class.new(investor, record)
+    it "returns false for subscriber" do
+      policy = described_class.new(subscriber, record)
       expect(policy.send(:forester_or_above?)).to be false
     end
   end
@@ -205,7 +205,7 @@ RSpec.describe ApplicationPolicy do
       it "resolves to NOTHING by default — навіть коли в таблиці є рядки" do
         create(:tree)
 
-        expect(described_class::Scope.new(investor, Tree).resolve).to be_empty
+        expect(described_class::Scope.new(subscriber, Tree).resolve).to be_empty
       end
 
       it "denies super_admin the same way — роль не обходить дефолт" do

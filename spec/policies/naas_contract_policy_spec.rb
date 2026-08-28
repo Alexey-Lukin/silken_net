@@ -9,19 +9,19 @@ RSpec.describe NaasContractPolicy do
   let(:cluster) { create(:cluster, organization: organization) }
   let(:other_cluster) { create(:cluster, organization: other_org) }
 
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
   let(:super_admin) { create(:user, :super_admin) }
 
   describe "#show?" do
     it "allows user from same org" do
       contract = create(:naas_contract, organization: organization, cluster: cluster)
-      expect(described_class.new(investor, contract).show?).to be true
+      expect(described_class.new(subscriber, contract).show?).to be true
     end
 
     it "denies user from different org" do
       contract = create(:naas_contract, organization: other_org, cluster: other_cluster)
-      expect(described_class.new(investor, contract).show?).to be false
+      expect(described_class.new(subscriber, contract).show?).to be false
     end
 
     it "denies admin from a different org (admin is org-scoped, not platform)" do
@@ -43,8 +43,8 @@ RSpec.describe NaasContractPolicy do
     let!(:own_contract) { create(:naas_contract, organization: organization, cluster: cluster) }
     let!(:other_contract) { create(:naas_contract, organization: other_org, cluster: other_cluster) }
 
-    it "scopes to org contracts for investor" do
-      scope = described_class::Scope.new(investor, NaasContract).resolve
+    it "scopes to org contracts for subscriber" do
+      scope = described_class::Scope.new(subscriber, NaasContract).resolve
       expect(scope).to include(own_contract)
       expect(scope).not_to include(other_contract)
     end
@@ -70,7 +70,7 @@ RSpec.describe NaasContractPolicy do
     let(:super_admin_idx) { create(:user, :super_admin) }
 
     it "returns true for all users" do
-      expect(described_class.new(investor, contract).index?).to be true
+      expect(described_class.new(subscriber, contract).index?).to be true
       expect(described_class.new(forester, contract).index?).to be true
       expect(described_class.new(super_admin_idx, contract).index?).to be true
     end
@@ -82,7 +82,7 @@ RSpec.describe NaasContractPolicy do
     let(:super_admin_stats) { create(:user, :super_admin) }
 
     it "returns true for all users" do
-      expect(described_class.new(investor, contract).stats?).to be true
+      expect(described_class.new(subscriber, contract).stats?).to be true
       expect(described_class.new(forester, contract).stats?).to be true
       expect(described_class.new(admin, contract).stats?).to be true
       expect(described_class.new(super_admin_stats, contract).stats?).to be true

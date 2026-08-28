@@ -87,7 +87,7 @@ NaaS — це модель підписки, де клієнти (Організ
 
 **Умови входу:**
 - Стандартна автентифікація (Argon2id).
-- Роль `User.role = :investor` або `User.role = :forester`.
+- Роль `User.role = :subscriber` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
 **Поточний стан:** Бекенд-інфраструктура (онбординг / Wallet / rewards) готова; on-chain SCC-мінт gated на деплой контрактів (SEC.1) + securities-присуд (BIZ.22). Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).

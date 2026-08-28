@@ -7,11 +7,11 @@ RSpec.describe "Pundit authorization integration" do
   let(:organization) { create(:organization) }
   let(:other_org) { create(:organization) }
 
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
   let(:super_admin) { create(:user, :super_admin) }
 
-  let(:investor_headers) { { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" } }
+  let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber.generate_token_for(:api_access)}" } }
   let(:admin_headers) { { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" } }
   let(:super_admin_headers) { { "Authorization" => "Bearer #{super_admin.generate_token_for(:api_access)}" } }
 
@@ -20,8 +20,8 @@ RSpec.describe "Pundit authorization integration" do
   end
 
   describe "GET /users" do
-    it "returns 403 for investors (not admin)" do
-      get "/users", headers: investor_headers, as: :json
+    it "returns 403 for subscribers (not admin)" do
+      get "/users", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
@@ -33,7 +33,7 @@ RSpec.describe "Pundit authorization integration" do
 
   describe "GET /users/me" do
     it "returns 200 for any authenticated user" do
-      get "/users/me", headers: investor_headers, as: :json
+      get "/users/me", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:ok)
     end
   end
@@ -44,8 +44,8 @@ RSpec.describe "Pundit authorization integration" do
     let!(:own_tree) { create(:tree, cluster: cluster) }
     let!(:other_tree) { create(:tree, cluster: other_cluster) }
 
-    it "scopes wallets to org for investor" do
-      get "/wallets", headers: investor_headers, as: :json
+    it "scopes wallets to org for subscriber" do
+      get "/wallets", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:ok)
 
       ids = response.parsed_body["data"].map { |w| w["id"] }

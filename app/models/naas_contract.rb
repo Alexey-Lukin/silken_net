@@ -17,11 +17,11 @@ class NaasContract < ApplicationRecord
 
   # --- СТАТУСИ (The Lifecycle of Trust) ---
   enum :status, {
-    draft: 0,      # Підготовка, очікування транзакції інвестора
+    draft: 0,      # Підготовка, очікування оплати послуги замовником
     active: 1,     # Контракт у силі, емісія токенів дозволена
     fulfilled: 2,  # Успішне завершення (Audit pass)
     breached: 3,   # ПОРУШЕНО (Slashing Protocol активовано)
-    cancelled: 4   # Достроково розірвано інвестором (Early Exit)
+    cancelled: 4   # Достроково розірвано замовником (Early Exit)
   }, prefix: true
 
   # =========================================================================
@@ -40,7 +40,7 @@ class NaasContract < ApplicationRecord
     state :breached
     state :cancelled
 
-    # Активація контракту (після підтвердження інвестиції)
+    # Активація контракту (після підтвердження оплати)
     # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_funding)
     # у USDC направляється до DAO Treasury Parametric Insurance Pool.
     # Це забезпечує фінансування страхового пулу для параметричних виплат.
@@ -60,7 +60,7 @@ class NaasContract < ApplicationRecord
       transitions from: :active, to: :breached
     end
 
-    # Дострокове розірвання інвестором (Early Exit)
+    # Дострокове розірвання замовником (Early Exit)
     event :cancel do
       transitions from: [ :draft, :active ], to: :cancelled
     end

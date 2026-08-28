@@ -90,11 +90,11 @@ RSpec.describe Api::V1::DashboardController, type: :request do
       # (вона конструює сайдбар повз layout), тож забутий kwarg лишив би її зеленою
       # при повністю відкритому меню. Позитивна половина обовʼязкова: без неї
       # приклад проходив би й на порожній сторінці, тобто не доводив би нічого.
-      it "ховає від investor пункти меню, закриті рольовим гардом" do
-        investor = create(:user, :investor, organization: organization)
+      it "ховає від subscriber пункти меню, закриті рольовим гардом" do
+        subscriber = create(:user, :subscriber, organization: organization)
 
         get "/dashboard",
-            headers: { "Authorization" => "Bearer #{investor.generate_token_for(:api_access)}" }
+            headers: { "Authorization" => "Bearer #{subscriber.generate_token_for(:api_access)}" }
 
         expect(response.body).to include(%(href="#{wallets_path}"))
         expect(response.body).not_to include(%(href="#{settings_path}"))

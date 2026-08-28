@@ -133,7 +133,7 @@ class DeviceEventWorker
     # [SEC.21] Дерево мусить бути в ЕФІРІ саме цієї Королеви (її кластер).
     # L1-підпис доводить gateway-origin, але НЕ per-tree (оператор контролює
     # Королеву — 05_02 ladder): без цього guard'а Королева A підняла б
-    # investor-facing critical-алерт на дереві ЧУЖОГО кластера (ops-spoof + FUD).
+    # subscriber-facing critical-алерт на дереві ЧУЖОГО кластера (ops-spoof + FUD).
     # `.present?` теж відсіює cluster-less дерева — інакше `cluster: nil`-алерт
     # завалив би `AlertNotificationWorker` (cluster.organization на nil).
     unless tree.cluster_id.present? && tree.cluster_id == gateway.cluster_id

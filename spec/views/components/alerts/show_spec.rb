@@ -126,8 +126,8 @@ RSpec.describe Alerts::Show do
 
     # [UI.6] Увесь MaintenanceRecordsController стоїть за `authorize_forester!`,
     # тож нижчій ролі посилання вело б у 403.
-    it "hides the CTA from investor and fails closed without an actor" do
-      [ build_stubbed(:user, :investor), nil ].each do |actor|
+    it "hides the CTA from subscriber and fails closed without an actor" do
+      [ build_stubbed(:user, :subscriber), nil ].each do |actor|
         rendered = render_for(actor)
 
         # Панель СЕБЕ відрендерила — інакше «немає посилання» було б вакуумним.
@@ -187,8 +187,8 @@ RSpec.describe Alerts::Show do
       expect(rendered).not_to include("/alerts/42/claim")
     end
 
-    it "hides the actions from investor and fails closed without an actor" do
-      [ build_stubbed(:user, :investor), nil ].each do |actor|
+    it "hides the actions from subscriber and fails closed without an actor" do
+      [ build_stubbed(:user, :subscriber), nil ].each do |actor|
         rendered = render_for(actor)
 
         expect(rendered).to include(I18n.t("alerts.show.assignment.title"))

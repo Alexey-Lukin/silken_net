@@ -193,14 +193,14 @@ forester = User.create!(
   last_name: "Lisovyk"
 )
 
-# [RBAC: access_level :read_only] — Інвестор з доступом лише до власних ресурсів.
-investor = User.create!(
-  email_address: "investor@ecofuture.fund",
+# [RBAC: access_level :read_only] — Замовник з доступом лише до власних ресурсів.
+subscriber = User.create!(
+  email_address: "subscriber@ecofuture.fund",
   password: "password123456",
-  role: :investor,
+  role: :subscriber,
   organization: eco_future_fund,
   first_name: "Maria",
-  last_name: "Investor"
+  last_name: "Subscriber"
 )
 
 # =========================================================================
@@ -865,7 +865,7 @@ AuditLog.create!(
 )
 
 AuditLog.create!(
-  user: investor,
+  user: subscriber,
   organization: eco_future_fund,
   action: "naas_contract_to_active",
   auditable: naas_contract,
@@ -985,7 +985,7 @@ puts "      🔑 RBAC розподіл:"
 puts "         super_admin (system):       #{User.role_super_admin.count}"
 puts "         admin (organization):       #{User.role_admin.count}"
 puts "         forester (field):           #{User.role_forester.count}"
-puts "         investor (read_only):       #{User.role_investor.count}"
+puts "         subscriber (read_only):     #{User.role_subscriber.count}"
 puts "   🌲 Кластери:            #{Cluster.count}"
 puts "   🧬 Породи дерев:        #{TreeFamily.count}"
 puts "   🌳 Дерева:              #{Tree.count}"

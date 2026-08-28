@@ -333,8 +333,8 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
     end
 
     it "requires forester role" do
-      investor = create(:user, organization: organization, role: :investor)
-      token = investor.generate_token_for(:api_access)
+      subscriber = create(:user, organization: organization, role: :subscriber)
+      token = subscriber.generate_token_for(:api_access)
       get "/actuator_commands/#{own_command.id}",
           headers: { "Authorization" => "Bearer #{token}" }, as: :json
       expect(response).to have_http_status(:forbidden)

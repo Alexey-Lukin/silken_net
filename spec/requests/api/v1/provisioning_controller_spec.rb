@@ -266,12 +266,12 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     end
 
     context "when user is not a forester" do
-      let(:investor) { create(:user, :investor, organization: organization) }
-      let(:investor_token) { investor.generate_token_for(:api_access) }
-      let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+      let(:subscriber) { create(:user, :subscriber, organization: organization) }
+      let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
+      let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
 
       it "returns forbidden" do
-        post "/provisioning/register", params: valid_params, headers: investor_headers, as: :json
+        post "/provisioning/register", params: valid_params, headers: subscriber_headers, as: :json
 
         expect(response).to have_http_status(:forbidden)
       end

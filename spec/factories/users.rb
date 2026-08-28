@@ -8,7 +8,7 @@ FactoryBot.define do
     password { "password12345" }
     first_name { "Test" }
     last_name { "User" }
-    role { :investor }
+    role { :subscriber }
     organization
 
     trait :admin do
@@ -29,10 +29,10 @@ FactoryBot.define do
       role { :forester }
     end
 
-    trait :investor do
+    trait :subscriber do
       first_name { "Maria" }
       last_name { "Shevchenko" }
-      role { :investor }
+      role { :subscriber }
     end
   end
 end

@@ -118,7 +118,7 @@ RSpec.describe Navigation::Sidebar do
     end
   end
 
-  # [UI.5] Доти сайдбар не приймав користувача взагалі, тож investor бачив повне меню
+  # [UI.5] Доти сайдбар не приймав користувача взагалі, тож subscriber бачив повне меню
   # платформи й на кожен гейтований пункт діставав сирий JSON-блоб (`render_forbidden`).
   # Рівень пункту вказує на предикат `User` — той самий, який читає гард контролера,
   # тож ці приклади стережуть саме ЗБІГ меню з гардом.
@@ -134,14 +134,14 @@ RSpec.describe Navigation::Sidebar do
         "Audit Log", "System Audits", "System Health" ]
     end
 
-    it "ховає від investor кожен гейтований пункт" do
-      html = render_for(build_stubbed(:user, :investor))
+    it "ховає від subscriber кожен гейтований пункт" do
+      html = render_for(build_stubbed(:user, :subscriber))
 
       gated_labels.each { |label| expect(html).not_to include(label) }
     end
 
-    it "лишає investor пункти, доступні його ролі" do
-      html = render_for(build_stubbed(:user, :investor))
+    it "лишає subscriber пункти, доступні його ролі" do
+      html = render_for(build_stubbed(:user, :subscriber))
 
       expect(html).to include("Treasury Matrix", "Threat Alerts", "Account Security")
     end

@@ -32,9 +32,9 @@ RSpec.describe "User authentication and session lifecycle" do
   end
 
   describe "User roles and access levels" do
-    it "investor has read_only access" do
-      user = create(:user, :investor, organization: organization)
-      expect(user.role).to eq("investor")
+    it "subscriber has read_only access" do
+      user = create(:user, :subscriber, organization: organization)
+      expect(user.role).to eq("subscriber")
       expect(user.access_level).to eq(:read_only)
     end
 

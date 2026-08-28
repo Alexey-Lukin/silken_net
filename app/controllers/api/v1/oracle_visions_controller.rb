@@ -54,7 +54,7 @@ module Api
       # 🧬 Алгоритм Кенозису для фінансового прогнозування
       # [TENANT-ISOLATION FIX]: Cache key per-org. Previously a single global
       # key (`oracle_expected_yield_24h`) leaked the protocol-wide total across
-      # tenants — an investor at org A would see org B's yield. Cache is now
+      # tenants — an subscriber at org A would see org B's yield. Cache is now
       # keyed by org id; the inner Tree scope is also restricted to the org.
       def calculate_expected_yield(org)
         Rails.cache.fetch(Organization.expected_yield_cache_key(org.id), expires_in: 1.hour) do

@@ -42,6 +42,6 @@ uk:
     roles:
       admin: Адміністратор
       forester: Лісник
-      investor: Замовник
+      subscriber: Замовник
       super_admin: Адміністратор платформи
     show_title: Профіль // %{name}

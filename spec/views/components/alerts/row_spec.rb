@@ -143,7 +143,7 @@ RSpec.describe Alerts::Row do
   end
 
   # [UI.6] Список тривог відкритий УСІМ ролям (гард стоїть лише на `#resolve`), тож
-  # investor бачив бойову кнопку, тиснув її — і turbo-submission мовчки вмирала в
+  # subscriber бачив бойову кнопку, тиснув її — і turbo-submission мовчки вмирала в
   # JSON-403. Це найбуденніша точка класу: кнопка на кожному нерозвʼязаному рядку
   # головного операційного розділу.
   describe "роле-фільтр дії [UI.6]" do
@@ -151,8 +151,8 @@ RSpec.describe Alerts::Row do
       render_component(alert: build_alert(status: :active), current_user: actor)
     end
 
-    it "ховає Acknowledge від investor" do
-      html = render_for(build_stubbed(:user, :investor))
+    it "ховає Acknowledge від subscriber" do
+      html = render_for(build_stubbed(:user, :subscriber))
 
       expect(html).to include("Carpathian-7")   # рядок сам відрендерився
       expect(html).not_to include("Acknowledge")

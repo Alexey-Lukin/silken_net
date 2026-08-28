@@ -24,7 +24,7 @@ RSpec.describe AlertNotificationWorker, type: :worker do
     it "enqueues SingleNotificationWorker for each admin/forester" do
       admin = create(:user, :admin, organization: organization)
       forester = create(:user, :forester, organization: organization)
-      _investor = create(:user, :investor, organization: organization)
+      _subscriber = create(:user, :subscriber, organization: organization)
 
       described_class.new.perform(alert.id)
 

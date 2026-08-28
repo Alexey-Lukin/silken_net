@@ -6,11 +6,11 @@ require "rails_helper"
 RSpec.describe Api::V1::UsersController, type: :request do
   let(:organization) { create(:organization) }
   let(:admin) { create(:user, :admin, organization: organization) }
-  let(:investor) { create(:user, :investor, organization: organization) }
+  let(:subscriber) { create(:user, :subscriber, organization: organization) }
   let(:admin_token) { admin.generate_token_for(:api_access) }
-  let(:investor_token) { investor.generate_token_for(:api_access) }
+  let(:subscriber_token) { subscriber.generate_token_for(:api_access) }
   let(:admin_headers) { { "Authorization" => "Bearer #{admin_token}" } }
-  let(:investor_headers) { { "Authorization" => "Bearer #{investor_token}" } }
+  let(:subscriber_headers) { { "Authorization" => "Bearer #{subscriber_token}" } }
 
   describe "GET /users" do
     let!(:extra_user) { create(:user, :forester, organization: organization) }
@@ -56,7 +56,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
     end
 
     it "returns 403 for non-admin users" do
-      get "/users", headers: investor_headers, as: :json
+      get "/users", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:forbidden)
     end
 
@@ -80,7 +80,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       end
 
       it "works for non-admin users viewing org members" do
-        get "/users/#{admin.id}", headers: investor_headers, as: :json
+        get "/users/#{admin.id}", headers: subscriber_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
@@ -105,7 +105,7 @@ RSpec.describe Api::V1::UsersController, type: :request do
       other_org = create(:organization)
       other_user = create(:user, organization: other_org)
 
-      get "/users/#{other_user.id}", headers: investor_headers, as: :json
+      get "/users/#{other_user.id}", headers: subscriber_headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
 
@@ -118,11 +118,11 @@ RSpec.describe Api::V1::UsersController, type: :request do
   describe "GET /users/me" do
     context "when as JSON" do
       it "returns the current user's profile" do
-        get "/users/me", headers: investor_headers, as: :json
+        get "/users/me", headers: subscriber_headers, as: :json
         expect(response).to have_http_status(:ok)
 
         body = response.parsed_body
-        expect(body["email_address"]).to eq(investor.email_address)
+        expect(body["email_address"]).to eq(subscriber.email_address)
       end
 
       it "works for admin users too" do
@@ -145,10 +145,10 @@ RSpec.describe Api::V1::UsersController, type: :request do
       it "друкує профіль ВЛАСНИКА токена, а не сусіда" do
         stranger = create(:user, :forester, organization: organization)
 
-        get "/users/me", headers: investor_headers
+        get "/users/me", headers: subscriber_headers
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include(investor.email_address)
+        expect(response.body).to include(subscriber.email_address)
         expect(response.body).not_to include(stranger.email_address)
       end
     end

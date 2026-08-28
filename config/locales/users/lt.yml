@@ -42,6 +42,6 @@ lt:
     roles:
       admin: Administratorius
       forester: Girininkas
-      investor: Klientas
+      subscriber: Klientas
       super_admin: Platformos administratorius
     show_title: Profilis // %{name}
