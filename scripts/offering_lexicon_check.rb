@@ -22,9 +22,11 @@
 #   HOMONYM   — words that are financial in a UI label and innocent everywhere else:
 #               `yield` (also a materials property and a reaction yield), `portfolio`
 #               (also a publication and an R&D portfolio), `ROI` / `payback` /
-#               `окупність` (legitimate about OUR OWN unit economics — 00_04 §11-§20 exists to
-#               do exactly that — and a problem only about the customer's return, which
-#               no regex can tell apart), `funding`, `invested`. Locale VALUES only.
+#               `окупність` (legitimate about OUR OWN unit economics — that subject
+#               lives in 02_06; the 00_04 section range this line used to cite died when
+#               the unit economics moved out — and a problem only about the customer's
+#               return, which no regex can tell apart), `funding`, `invested`.
+#               Locale VALUES only.
 #   HOMONYM_CODE — the same idea narrowed for Ruby source (below).
 #
 # 🔴 THE FALSE POSITIVE THAT ALMOST KILLED THIS GUARD: `ROI` is a substring of
