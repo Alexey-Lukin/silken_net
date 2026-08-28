@@ -40,8 +40,10 @@
 # TIERS.
 #   HARD      — the storefront, verified at zero when this gate landed: locale VALUES,
 #               docs/manifest.md, README.md. Drift here fails CI.
-#   ADVISORY  — the code layer still carrying the wording while the securities verdict
-#               is outstanding (00_07 BIZ.22): response keys in app/controllers/api/**
+#   ADVISORY  — the code layer still carrying the wording. The securities verdict
+#               LANDED 2026-08-28 (direction = service model, 00_07 BIZ.22), so
+#               this layer is no longer gated on a ruling — what remains is
+#               mechanics: response keys in app/controllers/api/**
 #               and app/blueprints/**, rendered strings in app/views/**, db/seeds.rb.
 #               Reported, never fatal; flip a scope to HARD once it reaches zero.
 #
@@ -190,7 +192,7 @@ if __FILE__ == $PROGRAM_NAME
     # lines are one --verbose away.
     by_file = r[:advisory].group_by { |a| a[/\A[^:]+/] }
     puts "offering_lexicon_check — ADVISORY: #{r[:advisory].size} hit(s) in " \
-         "#{by_file.size} file(s), code layer awaiting the securities verdict (00_07 BIZ.22):"
+         "#{by_file.size} file(s), code layer not yet swept post-verdict (00_07 BIZ.22):"
     by_file.sort.each do |file, hits|
       puts "  · #{file} — #{hits.size} (lines #{hits.map { |h| h[/:(\d+) —/, 1] }.join(',')})"
     end

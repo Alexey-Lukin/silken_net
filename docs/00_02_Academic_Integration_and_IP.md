@@ -122,7 +122,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | Партнер | Роль | Що валідує → канон-дім |
 |---|---|---|
 | **Биченко А.** | диспетчеризація | Інтеграція EWS ↔ протоколи реагування ДСНС → [`04_02`](04_02_Business_Logic_and_Services) (`EwsAlert`/`AlertDispatch`) |
-| **Ротар В.** | SOP | SOP-документи per alert_type (field ops) → [`04_02`](04_02_Business_Logic_and_Services); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) |
+| **Ротар В.** | SOP | SOP-документи per alert_type (field ops) → [`04_04 §6.4`](04_04_Phlex_UI_and_Tailwind) (панель-носій `sop_panel` у компоненті `Alerts`; ⚠️ попередній маршрут вів у сервісний канон, де цього предмета немає взагалі); трек [`00_07` ARCH.31/UNI.12](00_07_Action_Plan_Tracker) (SOP-compliance = зворотний бік Кат-A negligence-evidence для slashing) |
 
 ### 1.4 ЧМА — Черкаська медична академія
 
@@ -354,7 +354,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 | Етап | Дія | Власник |
 |---|---|---|
-| 1 | Prior-art **query-set** готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); самі пошуки ще НЕ прогнані, hit-лог порожній, висновок умовний | 🤖 residual → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 |
+| 1 | Prior-art **query-set** готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); самі пошуки ще НЕ прогнані, hit-лог порожній, висновок умовний | 👤 residual (перекласифіковано з 🤖 — прогін іде через TISC) → [`00_07`](00_07_Action_Plan_Tracker) UNI.3 |
 | 2 | Заявка на ™ (прямий повірений УкрНОІВІ) — пріоритет-дата ДО disclosure-splash (squatting-guard; режими юридично незалежні, порядок = risk-management) | 👤 повірений |
 | 3 | Публікація disclosure (TDCommons) + LICENSE-файли → [`defensive_disclosure.md`](protocols/anchor/defensive_disclosure.md) | 👤 + 🤖 |
 | 4 | UA-юр-review (Аблязов + крипто/IP-юрист TBD) | 👤 |
