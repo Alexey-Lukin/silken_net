@@ -42,13 +42,9 @@ module Ethereum
     # 100,000 — безпечна верхня межа з запасом.
     DEFAULT_GAS_LIMIT = 100_000
 
-    # [BLOCKER-3] Максимальна ціна газу: 100 Gwei.
-    # Захищає від випадкових gas spikes (>500 Gwei як у грудні 2021).
-    # Configurable через ENV для оперативного реагування на ринкові умови.
-    DEFAULT_MAX_FEE_GWEI = 100
-
-    # [BLOCKER-3] Пріоритетна ціна газу: 2 Gwei (tip для validators).
-    DEFAULT_PRIORITY_FEE_GWEI = 2
+    # ⊕ [ARCH.62] Константи fee (100 Gwei cap / 2 Gwei tip) переїхали у
+    # `Web3::FeePolicy` разом із присвоєнням — тримати їх тут означало б другий
+    # дім для тих самих чисел. Імена ENV не змінились.
 
     # [BLOCKER-4] Мінімальний баланс ETH на oracle-гаманці для виконання L1 транзакції.
     # 0.01 ETH достатньо для ~3-5 storeStateRoot транзакцій при нормальних gas цінах.
@@ -226,8 +222,6 @@ module Ethereum
       root_bytes = "0x#{state_root}"
 
       # [BLOCKER-3] Gas management: явні ліміти та fee caps
-      max_fee = ENV.fetch("ETHEREUM_MAX_FEE_GWEI", DEFAULT_MAX_FEE_GWEI).to_i * (10**9)
-      priority_fee = ENV.fetch("ETHEREUM_PRIORITY_FEE_GWEI", DEFAULT_PRIORITY_FEE_GWEI).to_i * (10**9)
       gas_limit = ENV.fetch("ETHEREUM_GAS_LIMIT", DEFAULT_GAS_LIMIT).to_i
 
       # [ARCH.66 companion — F2a double-send guard] Персистимо nonce ПЕРЕД broadcast. Crash між
@@ -252,8 +246,13 @@ module Ethereum
       # `EthereumAnchorConfirmationWorker`/`Treasury::MonitorService`; обидва лише
       # ЧИТАЮТЬ, тож присвоєння тут ні на кого не впливає — але саме тому воно
       # стоїть впритул до `transact`, а не в конструкторі.
-      client.max_fee_per_gas = max_fee
-      client.max_priority_fee_per_gas = priority_fee
+      # ⊕ [ARCH.62] Fee більше НЕ присвоюється тут: політика переїхала у
+      # `Web3::FeePolicy`, який кличеться з `LocalEnvSigner#transact`. Цей сервіс
+      # перестав бути ЄДИНИМ місцем у дереві, де fee взагалі існує, і став одним
+      # зі споживачів спільного дому — числа для chain 1 там ті самі
+      # (`ETHEREUM_MAX_FEE_GWEI`/`ETHEREUM_PRIORITY_FEE_GWEI`, дефолти 100/2), тож
+      # поведінка L1 не змінилась. `gas_limit` лишається ТУТ свідомо: він
+      # властивість ЦЬОГО виклику (~45k на `storeStateRoot`), а не мережі.
 
       tx_hash = signer.transact(
         client, contract, "storeStateRoot", root_bytes,

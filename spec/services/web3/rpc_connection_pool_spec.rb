@@ -9,10 +9,24 @@ RSpec.describe Web3::RpcConnectionPool do
     described_class.reset!
   end
 
+  # ⚠️ [ARCH.62] Частковий мок на ГЛОБАЛЬНОМУ `ENV.fetch` без цього рядка робить
+  # спеку крихкою за побудовою: будь-який інший `ENV.fetch` у тому ж стеку падає
+  # як «unexpected arguments», хоч до предмета спеки стосунку не має. Спіймано
+  # тим, що `Web3::FeePolicy` (накладається на народженні клієнта) читає
+  # `<CHAIN>_*_FEE_GWEI` — і чотири приклади цього файлу зачервоніли на коді,
+  # який вони не судять. `and_call_original` лишає решту ENV собою.
+  before { allow(ENV).to receive(:fetch).and_call_original }
+
+  # Клієнти, повернуті моками, мусять приймати fee-сеттери: політика ARCH.62
+  # накладається на КОЖНОГО новонародженого клієнта пулу.
+  def stub_eth_client
+    instance_double(Eth::Client, :max_fee_per_gas= => nil, :max_priority_fee_per_gas= => nil)
+  end
+
   describe ".client_for" do
     it "returns an Eth::Client instance" do
       allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
-      allow(Eth::Client).to receive(:create).and_return(instance_double(Eth::Client))
+      allow(Eth::Client).to receive(:create).and_return(stub_eth_client)
 
       client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
       expect(client).to be_present

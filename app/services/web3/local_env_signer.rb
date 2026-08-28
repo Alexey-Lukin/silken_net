@@ -37,6 +37,10 @@ module Web3
       @key.address
     end
 
+    # ⊕ [ARCH.62] Fee тут НЕ ставиться свідомо: політика живе на місці народження
+    # клієнта (`Web3::RpcConnectionPool`), бо там мережа відома СТАТИЧНО з імені
+    # ENV-ключа. Спроба тримати її тут вимагала б `client.chain_id` від кожного
+    # тестового дубля (78 падінь у 22 файлах) — тобто дім був би не той.
     # @param client [Eth::Client] per-thread клієнт мережі (параметр, не стан)
     def transact(client, contract, function, *args, **kwargs)
       client.transact(contract, function, *args, sender_key: @key, **kwargs)

@@ -69,11 +69,23 @@ module Web3
         all_urls.reject!(&:empty?)
 
         # Якщо тільки один URL — повертаємо звичайний Eth::Client (без overhead)
-        if all_urls.size <= 1
-          Eth::Client.create(primary_url)
-        else
-          Web3::ResilientClient.new(all_urls)
-        end
+        client =
+          if all_urls.size <= 1
+            Eth::Client.create(primary_url)
+          else
+            Web3::ResilientClient.new(all_urls)
+          end
+
+        # 🔴 [ARCH.62] FEE-ПОЛІТИКА НАКЛАДАЄТЬСЯ НА НАРОДЖЕННІ, І ЦЕ ДІМ, А НЕ
+        # ЗРУЧНІСТЬ. Гем ставить fee у власному конструкторі (42.69/1.01 Gwei,
+        # позначені в ньому ж `# Do not use.`) і ціни з ноди не питає ніколи —
+        # тобто КОЖЕН клієнт народжується з чужою стелею, нижчою за ринок Polygon.
+        # Тут вона перекривається один раз для всіх, хто цей клієнт візьме:
+        # мережа відома СТАТИЧНО з `rpc_url_env_key`, тож ні RPC, ні `chain_id`
+        # для цього не потрібні. `ResilientClient` каскадить присвоєння на кожного
+        # свого клієнта власними сеттерами.
+        Web3::FeePolicy.apply!(client, rpc_url_env_key)
+        client
       end
     end
   end
