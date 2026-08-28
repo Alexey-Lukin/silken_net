@@ -586,7 +586,9 @@ function nonces(address owner)
 | `INS_<база>` | мінт за страховою виплатою (`sourceable_type == "ParametricInsurance"`) | емісія **за збиток**, не за вимір. `MRV.1`-lineage для такого мінта веде до вимірів, яких не було, — тому префікс і потрібен |
 | `TAX_BATCH_<база>` | агрегований елемент Dynamic Tax у батчі (отримувач = `DAO_TREASURY_ADDRESS`) | не мінт для дерева взагалі, а N+1-й елемент батча — див. §Dynamic Tax |
 
-⚠️ **Префікс сьогодні ЕМІТУЄТЬСЯ, але не СПОЖИВАЄТЬСЯ.** `subgraph/src/mapping.ts` кладе значення в `treeDid` як є й додає суму до `ProtocolFinancials.totalMinted` **без гілкування**, тож агрегат конфлатить «намінтили за виміряний ріст», «намінтили за страховим випадком» і «податок». Те саме робить `chain_audit_delta`. Тобто розрізнення існує на дроті й не існує в жодного читача — відкрите питання живе в [`00_07`](00_07_Action_Plan_Tracker) DOC-T.89. 🔑 **Ціна рішення асиметрична в ЧАСІ:** доки [`SEC.1`](00_07_Action_Plan_Tracker) не задеплоєний, формат ідентифікатора коштує один рядок; після mainnet це міграція формату on-chain події з розривом історії.
+🏠 **Обидва префікси — One-Home-константи `BlockchainMintingService`** (`INSURANCE_MINT_PREFIX` · `TAX_BATCH_PREFIX`), і другу з них витягнуто з голого літерала 2026-08-28 [OPS.36] саме тому, що наш пін-двигун ключується на `NAME = value`: незіменований літерал сидів **поза будь-яким гейтом за побудовою**. Дзеркало в `subgraph/src/mapping.ts` тримає `spec/quality/mint_prefix_parity_spec.rb`.
+
+✅ **Префікс СПОЖИВАЄТЬСЯ субграфом — і цей абзац доти казав протилежне** (виправлено 2026-08-28; речення «емітується, але не споживається» пережило власне закриття під DOC-T.89). `subgraph/src/mapping.ts` класифікує подію за префіксом (`mintKindOf` → `MintKind`), кладе природу в `CarbonMintEvent.kind` і веде ТРИ окремі лічильники, тож зовнішній читач має **перевірний інваріант**: `totalMinted == totalMintedGrowth + totalMintedInsurance + totalMintedTax`. Хто питає «скільки намінтовано за ВИМІРЯНИЙ РІСТ» (ESG-покупець, ISO 14064/Verra) читає `totalMintedGrowth` і **лише** його; семантику самого `totalMinted` свідомо не змінено — воно лишається supply-боком тотожності з `totalBurned` (дзеркало Rails-One-Home `BlockchainTransaction.net_minted_supply`). 🛡️ **Паритет двох боків гейтований** — `spec/quality/mint_prefix_parity_spec.rb` [OPS.36] звіряє літерали префіксів Rails ⟷ `mapping.ts` побайтово, бо `GROWTH` є **ВІДСУТНІСТЮ мітки**, а не власною міткою: будь-який нерозпізнаний субграфом префікс мовчки падає в «це вуглецевий клейм», тобто помилка завищує саме те число, яке читає покупець. ⚠️ **І одразу межа, щоб її не прочитали як діру:** `chain_audit_delta` природ НЕ розводить — і не мусить. `ChainAuditService` звіряє **СУПЛАЙ** (Σmint − Σburn проти on-chain `totalSupply()`), тож розкладка за природою там була б не покращенням, а зламаною тотожністю — рівно тією, задля збереження якої `totalMinted` у схемі свідомо лишили сумою всіх трьох. Хто питає про природу, читає `totalMintedGrowth`; хто питає про суплай — `chain_audit_delta`. Це два різні питання й два різні прилади. 🔑 **Ціна рішення асиметрична в ЧАСІ:** доки [`SEC.1`](00_07_Action_Plan_Tracker) не задеплоєний, формат ідентифікатора коштує один рядок; після mainnet це міграція формату on-chain події з розривом історії.
 
 ---
 
@@ -608,7 +610,7 @@ end
 if tax_total.positive?
   recipients.push(ENV.fetch("DAO_TREASURY_ADDRESS"))
   amounts.push(to_wei(tax_total))
-  identifiers.push("TAX_BATCH_#{identifier_for(txs.first)}")
+  identifiers.push("#{TAX_BATCH_PREFIX}#{identifier_for(txs.first)}")   # [OPS.36] One-Home-константа
 end
 ```
 

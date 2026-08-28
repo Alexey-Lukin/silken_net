@@ -225,28 +225,11 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 **Методи:**
 - `fetch_total_carbon_minted` — останні 100 `CarbonMintEvent`, сума `amount`
-- `fetch_protocol_financials` — singleton `ProtocolFinancial` entity (`totalMinted`, `totalBurned`)
+- `fetch_protocol_financials` — singleton `ProtocolFinancials` entity
 
-**Entities (GraphQL):**
-```graphql
-type CarbonMintEvent @entity {
-  id: ID!
-  to: Bytes!
-  amount: BigInt!
-  treeDid: String!
-  timestamp: BigInt!
-  blockNumber: BigInt!
-  transactionHash: Bytes!
-}
+**Entities (GraphQL) — SSOT у `subgraph/schema.graphql`, тут НЕ дзеркалимо.** 🔴 Доти на цьому місці стояла **часткова копія**, і вона протухла саме так, як протухає копія схеми: `CarbonMintEvent` перелічувався без `treeDidHash`/`kind`/`subjectDid`/`archiveRoot`, а `ProtocolFinancials` — двома лічильниками з семи, тобто без тих трьох, що несуть усю доказову поставу (`totalMintedGrowth`/`Insurance`/`Tax`). Копію знято 2026-08-28 [OPS.36]: перелік полів тут не стереже ніщо, а сама схема гейтована з двох боків — `spec/quality/subgraph_abi_parity_spec.rb` (події ⟷ `contracts/*.sol`) і `spec/quality/subgraph_entity_completeness_spec.rb` (кожне не-nullable поле присвоєне в мапінгу).
 
-type ProtocolFinancials @entity {
-  id: ID!
-  totalMinted: BigInt!
-  totalBurned: BigInt!
-}
-
-type SlashingEvent @entity { ... }
-```
+Що варто знати ЧИТАЧЕВІ ЦІЄЇ сторінки, не відкриваючи схему: індекс покриває **емісію і спалення** обох токенів плюс `ParameterUpdated` (арифметична передумова опублікованої податкової суми); межа предмета оголошена в шапці `subgraph/subgraph.yaml`. Для питання «скільки намінтовано за виміряний ріст» читають `ProtocolFinancials.totalMintedGrowth`, а не `totalMinted` — розкладка й підстава живуть у [`05_03 §Префікси ідентифікатора мінта`](05_03_Tokenomics_SCC_and_SFC).
 
 ---
 
