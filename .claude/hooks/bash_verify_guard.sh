@@ -138,11 +138,38 @@ body with `01_02:177` inside"'
   t "smoke: \$? after pipe warns (rule B)" warn \
     'ruby x.rb | tail -1; echo "EXIT=$?"'
 
+  # ── rule D · all four arms ──
+  # This detector reads git STATE, not the command text, so a case built from a
+  # string alone is vacuous: on a clean tree the deny arm is unreachable and the
+  # battery would be green for the wrong reason. The fixture therefore makes a
+  # genuinely dirty tracked path — `git add -N` registers intent-to-add, so
+  # `git diff --numstat` reports lines against an empty index entry, and no
+  # commit is involved. `trap` guarantees removal even if a case aborts.
+  dfix=".bashguard_selftest_dirty.tmp"
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    trap 'git rm --cached -q "$dfix" 2>/dev/null; rm -f "$dfix"' EXIT
+    printf 'a\nb\n' > "$dfix"
+    git add -N "$dfix" 2>/dev/null
+    t "D: checkout of a DIRTY tracked file denies" deny \
+      "git checkout $dfix"
+    t "D: declared intent (token) stays silent" silent \
+      "git checkout $dfix  # discard-dirty"
+    t "D: backup taken in the SAME call stays silent" silent \
+      "cp $dfix /tmp/f.bak && git checkout $dfix"
+    git rm --cached -q "$dfix" 2>/dev/null
+    rm -f "$dfix"
+    trap - EXIT
+    # The false-positive arm: a path with NO uncommitted lines must never deny,
+    # or every legitimate revert becomes blocked work.
+    t "D: checkout of a CLEAN file stays silent" silent \
+      "git checkout README.md"
+  fi
+
   if (( fails > 0 )); then
     echo "bash_verify_guard --selftest: ${fails}/${n} FAILED"
     exit 1
   fi
-  echo "bash_verify_guard --selftest: OK (${n} cases — rules E and F both arms + smoke over A/B/C/backtick/rg)"
+  echo "bash_verify_guard --selftest: OK (${n} cases — rules D, E and F all arms + smoke over A/B/C/backtick/rg)"
   exit 0
 fi
 
@@ -301,17 +328,34 @@ if [[ "$bg" == "true" ]] &&
   warn bg-verdict '[bash-guard] This gate runs in the BACKGROUND and its last statement is an echo — so the completion notice will carry the echo status (0), never the gate. Measured here: 169 of 305 background gate-runs have this shape, and one of them announced "exit code 0" for an rspec run that had died on the coverage floor with 2. Read the verdict out of the .output file yourself (grep for "examples," and for "SimpleCov"/"EXIT="). An EXIT= line captured INSIDE the log is not the notice — the notice still says 0. (Fires once per session.)'
 fi
 
-# ── D · WARN · `git checkout <file>` while that file carries UNCOMMITTED edits ──
+# ── D · BLOCK · `git checkout <file>` while that file carries UNCOMMITTED edits ──
 # Rule home: memory feedback_verify_before_commit («reverse Edit, never checkout»)
-# — written there 2026-08-04 and relapsed TWICE since (2026-08-20: a perl-mutation
-# + checkout revert ate the session's own un-committed fix of the same file; the
-# loss is silent — no prompt, nothing to revert). Measured over the corpus:
-# 40 `git checkout` calls, 22 against file paths, ≥2 destructive — but whether a
-# given one is destructive depends on the file's INDEX/WD state, which no regex
-# sees. This hook CAN see it: it asks git at call time, so the detector fires
-# only when there genuinely are uncommitted lines to lose, and prints how many.
-# No once-per-session marker on purpose: ~0.5 firings/day corpus-wide, and every
-# firing is a real decision point (even a deliberate revert wants the line count).
+# — written there 2026-08-04. `git checkout <path>` restores the file from the
+# index, so it DESTROYS any uncommitted edit living in it: no prompt, no stash,
+# nothing to `git revert`. Measured over the corpus: 40 `git checkout` calls, 22
+# against file paths, ≥2 destructive — but whether a given one is destructive
+# depends on the file's INDEX/WD state, which no regex sees. This hook CAN see
+# it: it asks git at call time, so it fires only when there genuinely are
+# uncommitted lines to lose, and names how many.
+#
+# 🔴 THIS IS THE SECOND deliberate override of the file's false-negative bias
+# (rule C is the first), and it was bought with FIVE relapses, the last on
+# 2026-08-28. It shipped as a WARN and the WARN was measured insufficient:
+# `additionalContext` arrives together with the result of the ALREADY-EXECUTED
+# command, so by the time the sentence is read the edits are gone — the 2026-08-28
+# instance ate 43 uncommitted lines of the session's own fix and survived only
+# because the file was still in context (reverse-Edit, one minute). A warning that
+# can only ever arrive post-mortem is not a carrier for an IRREVERSIBLE loss; the
+# nag-cost argument in the header does not apply either, because the detector is
+# state-anchored (~0.5 firings/day corpus-wide, every one a real decision point).
+#
+# The intent must be DECLARED, never guessed — the same stance as the Solidity
+# `expectRevert` gate (a bare "any revert" has to say `expectPartialRevert`).
+# Two declared exits, both silent:
+#   1. `discard-dirty` anywhere in the command — "I checked; the dirt here IS
+#      what I mean to throw away". One token, and the decision stays conscious.
+#   2. a `cp` of that same path in the SAME call — the backup makes it reversible,
+#      which is the mutation-cycle idiom the rule prescribes in the first place.
 # `-b`, branch names, `stash`, and clean files stay silent by construction.
 if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
    ! printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]+-b'; then
@@ -323,11 +367,19 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+checkout[[:space:]]' &&
     while IFS= read -r p; do
       [[ -n "$p" ]] || continue
       n=$(git diff --numstat -- "$p" 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
-      (( n > 0 )) && dirty="${dirty}${p} (${n} uncommitted line(s)); "
+      (( n > 0 )) || continue
+      # Declared exit 2: the same path is also handed to `cp` in this very call,
+      # i.e. a backup is being taken alongside — the loss is reversible.
+      if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])cp[[:space:]]' &&
+         (( $(printf '%s' "$cmd" | grep -oF "$p" | wc -l) >= 2 )); then
+        continue
+      fi
+      dirty="${dirty}${p} (${n} uncommitted line(s)); "
     done <<< "$ckpaths"
-    if [[ -n "$dirty" ]]; then
-      jq -nc --arg ctx "[bash-guard] git checkout will silently DESTROY uncommitted edits: ${dirty}— no prompt, no stash, nothing to revert. If you are undoing a mutation/experiment, restore from a cp-backup or apply a reverse Edit; checkout is only safe when the file's dirty state IS the thing you mean to discard (rule home: feedback_verify_before_commit, relapsed twice before this carrier existed)." \
-        '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:$ctx}}'
+    # Declared exit 1: an explicit token — the decision is conscious and recorded.
+    if [[ -n "$dirty" ]] && ! printf '%s' "$cmd" | grep -qF 'discard-dirty'; then
+      jq -nc --arg r "git checkout will silently DESTROY uncommitted edits: ${dirty}— no prompt, no stash, nothing to revert, and this hook can only speak BEFORE the call, never after. Relapsed five times with the rule written down, which is why this denies instead of warning. To undo a mutation or an experiment: restore from a cp-backup, or apply a reverse Edit. If the dirty state IS what you mean to discard, declare it — add the token \`discard-dirty\` to the command (a comment is enough), or take the backup in the same call (\`cp <path> \"\$T/f.bak\" && git checkout <path>\`). Rule home: memory feedback_verify_before_commit." \
+        '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
       exit 0
     fi
   fi
