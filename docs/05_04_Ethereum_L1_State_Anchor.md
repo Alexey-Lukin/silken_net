@@ -287,11 +287,11 @@ Eth::Contract.from_abi(name: "StateRootAnchor", address: ETHEREUM_ANCHOR_CONTRAC
 root_bytes = "0x#{state_root}"   # 64-char hex → 0x-prefixed bytes32
        │
        ▼
-client.max_fee_per_gas = DEFAULT_MAX_FEE_GWEI          # 100 Gwei cap  [SEC.17]
-client.max_priority_fee_per_gas = DEFAULT_PRIORITY_FEE_GWEI  # 2 Gwei tip
+# fee вже НА клієнті: Web3::FeePolicy наклала його при НАРОДЖЕННІ
+# (RpcConnectionPool#build_client) — 100/2 Gwei з ENV  [ARCH.62]
        │
-client.transact(contract, "storeStateRoot", root_bytes,
-                sender_key: anchor_key, legacy: false,
+signer.transact(client, contract, "storeStateRoot", root_bytes,
+                nonce: anchor.nonce, legacy: false,
                 gas_limit: DEFAULT_GAS_LIMIT)          # 100_000 (ENV-overridable)
        │
        ▼
@@ -314,13 +314,13 @@ return anchor   # EthereumAnchor (:sent → поллер доведе до :conf
 | `ALCHEMY_ETHEREUM_RPC_URL` | Alchemy Ethereum Mainnet HTTPS endpoint | — (required) |
 | `ETHEREUM_ANCHOR_PRIVATE_KEY` | Secp256k1 приватний ключ oracle-гаманця | — (required) |
 | `ETHEREUM_ANCHOR_CONTRACT` | Адреса `StateRootAnchor` контракту на Mainnet | — (required) |
-| `ETHEREUM_MAX_FEE_GWEI` | Gas fee cap (Gwei) | `100` |
-| `ETHEREUM_PRIORITY_FEE_GWEI` | Validator tip (Gwei) | `2` |
+| `ETHEREUM_MAX_FEE_GWEI` | Gas fee cap (Gwei) — читає `Web3::FeePolicy`, не цей сервіс [ARCH.62] | `100` |
+| `ETHEREUM_PRIORITY_FEE_GWEI` | Validator tip (Gwei) — там само | `2` |
 | `ETHEREUM_GAS_LIMIT` | Gas limit для `storeStateRoot` | `100_000` |
 
 > ⚠️ **Безпека:** `ETHEREUM_ANCHOR_PRIVATE_KEY` ніколи не повинен потрапляти в Git. Зберігається в Rails encrypted credentials або secrets manager.
 
-🔴 **Дві fee-змінні діють через АТРИБУТИ клієнта, а не через kwargʼи `transact` — і доти вони не діяли взагалі [SEC.17, 2026-08-27].** `Eth::Client#transact` (eth 0.5.17) читає рівно `tx_value/gas_limit/address/legacy/sender_key/nonce`; обидва fee-kwargʼи він **ігнорує мовчки**, беручи значення з атрибутів клієнта. Ми ж їх сумлінно рахували з ENV і передавали в порожнечу, тож на дроті стояли gem-дефолти `Tx::DEFAULT_GAS_PRICE` = **42.69 Gwei** / `DEFAULT_PRIORITY_FEE` = **1.01 Gwei** — тобто НИЖЧІ за наші 100/2. **Наслідок операційний:** на завантаженому L1 (base fee > 42.69) якір не майнився б узагалі й осідав у `:sent`-лімбі [ARCH.66], а `ETHEREUM_MAX_FEE_GWEI` — важіль, яким його розчищають, — не робив НІЧОГО. ⚠️ Присвоєння стоїть впритул до `transact`, бо клієнт кешований per-thread і спільний із `EthereumAnchorConfirmationWorker`/`Treasury::MonitorService` (обидва лише ЧИТАЮТЬ, тож на них це не впливає). ⊕ Дзеркало для мультипровайдерного шляху — `Web3::ResilientClient` тримає fee-політику ВЛАСНИМИ методами й накладає її на кожного клієнта каскаду, включно з перествореними після збою; через `method_missing` присвоєння дійшло б лише до першого провайдера й зникало б на першому ж `record_failure`.
+🔴 **Дві fee-змінні діють через АТРИБУТИ клієнта, а не через kwargʼи `transact` — і доти вони не діяли взагалі [SEC.17, 2026-08-27].** `Eth::Client#transact` (eth 0.5.17) читає рівно `tx_value/gas_limit/address/legacy/sender_key/nonce`; обидва fee-kwargʼи він **ігнорує мовчки**, беручи значення з атрибутів клієнта. Ми ж їх сумлінно рахували з ENV і передавали в порожнечу, тож на дроті стояли gem-дефолти `Tx::DEFAULT_GAS_PRICE` = **42.69 Gwei** / `DEFAULT_PRIORITY_FEE` = **1.01 Gwei** — тобто НИЖЧІ за наші 100/2. **Наслідок операційний:** на завантаженому L1 (base fee > 42.69) якір не майнився б узагалі й осідав у `:sent`-лімбі [ARCH.66], а `ETHEREUM_MAX_FEE_GWEI` — важіль, яким його розчищають, — не робив НІЧОГО. 🔴 **[ARCH.62, 2026-08-28] Присвоєння звідси ПЕРЕЇХАЛО, і разом із ним зникла причина, чому воно стояло впритул до `transact`.** Дім fee тепер один на все дерево — `Web3::FeePolicy`, яка накладається на МІСЦІ НАРОДЖЕННЯ клієнта (`Web3::RpcConnectionPool#build_client`), тобто ДО того, як його візьме будь-який споживач; мережа деривується статично з `rpc_url_env_key`, тож ні `chain_id`, ні зайвого RPC для цього не треба. `Ethereum::StateAnchorService` fee більше не присвоює й констант `DEFAULT_MAX_FEE_GWEI`/`DEFAULT_PRIORITY_FEE_GWEI` не має — у ньому лишився самий `DEFAULT_GAS_LIMIT`, бо gas-limit є властивістю ЦЬОГО виклику, а не мережі. ⚠️ **Підстава переїзду ширша за L1:** до нього присвоєння в усьому `app/` існувало РІВНО ОДНЕ — оце, — а кожен Polygon/Celo-transact money-path їхав на тих самих gem-дефолтах 42.69/1.01 Gwei. Числа для Polygon/Celo дефолту в коді НЕ мають свідомо (політика гучно мовчить і лишає gem-дефолт), а їхня ратифікація — відкритий ⚖️ у [`00_07`](00_07_Action_Plan_Tracker) ARCH.62. ⊕ Дзеркало для мультипровайдерного шляху — `Web3::ResilientClient` тримає fee-політику ВЛАСНИМИ методами й накладає її на кожного клієнта каскаду, включно з перествореними після збою; через `method_missing` присвоєння дійшло б лише до першого провайдера й зникало б на першому ж `record_failure`.
 
 ### Smart Contract ABI (в константі `ANCHOR_ABI`)
 

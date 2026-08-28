@@ -1591,7 +1591,7 @@ if (days_until_token_expiry() < 7) {
 }
 ```
 
-> **Обробка:** `UnpackTelemetryWorker.perform_async(payload, request.remote_ip, gateway_uid)` — сигнатура ідентична виклику з CoAP daemon (`lib/daemons/coap_listener`). Gateway також оновлює `last_seen_at` та IP-адресу.
+> **Обробка:** `UnpackTelemetryWorker.perform_async(payload, request.remote_ip, gateway_uid, Time.current.utc.iso8601)` — сигнатура ідентична виклику з CoAP-демона ([`lib/coap_gate.rb`](../lib/coap_gate.rb)). 🔴 **[ARCH.62→ARCH.41] Четвертий аргумент несучий:** це момент ПРИЙОМУ, зафіксований на межі й серіалізований у job. Він єдиний у тракті не рухається між Sidekiq-спробами, тож із нього береться доба cold-derive Лоренца — без нього ретрай через межу півночі UTC дає інший `epoch_day` і категоричний DCI-мисматч на ЧЕСНОМУ дереві. Gateway також оновлює `last_seen_at` та IP-адресу.
 
 ---
 
