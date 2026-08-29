@@ -139,16 +139,15 @@ jobs:
         # а `Rails.root` замінено на `spec/support/repo_root.rb` — корінь виводиться
         # з розташування самого файлу. COVERAGE=0 — субсет-прогін, як і сусід вище.
         #
-        # 🔴 [DOC-T.76] Пʼять СУСІДІВ мали рівно ту саму ваду й лишились у `test`:
-        # `akash_auditor_bech32` (bech32-адреса аудитора в `terraform/akash/`),
+        # 🔴 [DOC-T.76] Сусіди мали рівно ту саму ваду й лишились у `test`:
         # `alloy_scrape_topology`, `anchor_coap_env`, `database_dr_posture`,
-        # `grafana_alerts`. Тобто PR, що ламає адресу аудитора, свого гейта НЕ
-        # запускав. Клас закривали один раз — на половині його населення; периметр
+        # `grafana_alerts`. Тобто PR, що ламає scrape-топологію Alloy, свого
+        # гейта НЕ запускав. Клас закривали один раз — на половині його населення; периметр
         # питають переліком КАТАЛОГІВ, а не переліком уже перевіреного.
         # ⚠️ `grafana_alerts` додатково вантажить `config/initializers/prometheus.rb`
         # ЛІНИВО й під гардом: реєстр метрик не має Rails-вільного дому, а Rails
         # вантажить той файл через `load`, який не пише в `$LOADED_FEATURES`.
-        run: COVERAGE=0 bin/rspec spec/quality/claude_prose_path_refs_spec.rb spec/quality/skill_gotcha_numbering_spec.rb spec/quality/structure_sql_pg_portability_spec.rb spec/quality/no_future_dated_claims_spec.rb spec/lib/workflow_gate_perimeter_spec.rb spec/deploy/terraform_workflow_var_parity_spec.rb spec/deploy/coap_host_consistency_spec.rb spec/deploy/env_fetch_declaration_spec.rb spec/deploy/akash_auditor_bech32_spec.rb spec/deploy/alloy_scrape_topology_spec.rb spec/deploy/anchor_coap_env_spec.rb spec/deploy/database_dr_posture_spec.rb spec/deploy/grafana_alerts_spec.rb spec/quality/mint_prefix_parity_spec.rb spec/quality/subgraph_abi_parity_spec.rb spec/quality/subgraph_entity_completeness_spec.rb spec/quality/vendored_component_inventory_spec.rb
+        run: COVERAGE=0 bin/rspec spec/quality/claude_prose_path_refs_spec.rb spec/quality/skill_gotcha_numbering_spec.rb spec/quality/structure_sql_pg_portability_spec.rb spec/quality/no_future_dated_claims_spec.rb spec/lib/workflow_gate_perimeter_spec.rb spec/deploy/terraform_workflow_var_parity_spec.rb spec/deploy/coap_host_consistency_spec.rb spec/deploy/env_fetch_declaration_spec.rb spec/deploy/alloy_scrape_topology_spec.rb spec/deploy/anchor_coap_env_spec.rb spec/deploy/database_dr_posture_spec.rb spec/deploy/grafana_alerts_spec.rb spec/quality/mint_prefix_parity_spec.rb spec/quality/subgraph_abi_parity_spec.rb spec/quality/subgraph_entity_completeness_spec.rb spec/quality/vendored_component_inventory_spec.rb
 
       - name: 04_01 model↔code sync (replaces the §12 manual drift-register invariants)
         # Pure Ruby, no Rails — model files ⟷ `### `Model`` headings, concerns,

@@ -93,7 +93,6 @@ jobs:
               - 'ruff.toml'
             alloy:
               - 'deploy/**'
-              - 'scripts/sdl_consistency_check.rb'
               - 'scripts/deploy_secret_scan.rb'
               # deploy_secret_scan Invariant C guards .dockerignore/Dockerfile —
               # they MUST trigger it, else a PR that removes the credentials.yml.enc
@@ -576,16 +575,12 @@ jobs:
             grafana/alloy:v1.16.3 fmt /cfg/config.alloy > /dev/null
           echo "✅ config.alloy parses (River syntax valid)"
 
-      - name: SDL consistency (services ≡ deployment; static ≡ tpl)
-        # A service missing from `deployment:` is silently never leased by an
-        # Akash provider — the INF.17 dead-path class at the manifest level.
-        # Pure ruby+yaml, no bundle needed.
-        run: ruby scripts/sdl_consistency_check.rb
-
-      - name: Deploy-secret scan (no key literals; signing sextet job-only)
-        # Never-drift secrets gate: no committed key literal in any service env, and
-        # the money-signing sextet stays JOB-ONLY (web3_network_guard enforces this at
-        # runtime — this is the CI gate on SDL placement). Pure ruby+yaml, no bundle.
+      - name: Deploy-secret scan (Kamal chain + anchor env — no literals; quintet job-only)
+        # Never-drift secrets gate over config/deploy.yml + canopy + .kamal/secrets-common
+        # + the compute.tf COAP_ENV heredoc: no committed key literal, and the money-signing
+        # QUINTET stays JOB-ONLY — including out of the global env.secret every role inherits
+        # (web3_network_guard enforces presence at runtime; this is the CI gate on PLACEMENT).
+        # Pure ruby+yaml, no bundle.
         run: ruby scripts/deploy_secret_scan.rb
 
       - name: Validate Grafana IaC (dashboards + alerts, no credentials — S2.2)

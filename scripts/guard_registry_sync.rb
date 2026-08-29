@@ -152,7 +152,7 @@ TRACKER_HELPERS = %w[parse open_items].freeze
 CANON_CODE_GATES_OUTSIDE_DOCS = {
   "ci.yml" => [
     "check_firmware_tables.py", "check_bytecode.py", "gen_bytecode.sh --check",
-    "sdl_consistency_check.rb", "deploy_secret_scan.rb"
+    "deploy_secret_scan.rb"
   ],
   "ml_smoke.yml"        => [ "emit_c --check" ],
   "in_silico_smoke.yml" => [ "test_doc_cache_sync.py", "conda-lock lock --check-input-hash" ],

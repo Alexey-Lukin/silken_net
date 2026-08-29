@@ -132,7 +132,7 @@ done
 #   actionlint   тригер `.github/workflows/**` — 63 коміти (~2/добу), ЦІНА 1.28 с
 #                → найчастіший і найдешевший; я двічі за одну годину забув його
 #                  прогнати, тобто «памʼятати команду» вже виміряно як НЕ-носій.
-#   alloy-пара   тригер `deploy/**` — 11 комітів, ЦІНА 82 мс на обидва скрипти
+#   alloy-гейт   тригер `deploy/**` — 11 комітів, ЦІНА ~40 мс
 #   cppcheck     тригер `firmware/**` — 13 комітів (~0.4/добу), ЦІНА 6.7 с
 #                → дорожче за весь наявний бюджет хука, але спрацьовує рідко;
 #                  амортизовано ~87 с/місяць проти ~5–10 хв round-trip на червоний CI.
@@ -172,7 +172,7 @@ if printf '%s\n' "$_changed" | grep -q '^\.github/workflows/'; then
 fi
 
 if printf '%s\n' "$_changed" | grep -q '^deploy/'; then
-  for _script in sdl_consistency_check deploy_secret_scan; do
+  for _script in deploy_secret_scan; do
     [ -f "$root/scripts/$_script.rb" ] || continue
     if ! ( cd "$root" && "$_rb" "scripts/$_script.rb" ); then
       echo

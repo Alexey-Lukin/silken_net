@@ -5,8 +5,8 @@ require "spec_helper"
 require_relative "../support/repo_root"
 
 # INF.17 / SEC.22 regression guard. The Ingress Anchor coap daemon (compute.tf systemd
-# env-file heredoc) is a THIRD deploy surface for the coap boot contract, OUTSIDE the Akash
-# SDL's sdl_consistency_check. SEC.22 wired the AR-encryption keys into the SDL + Kamal but
+# env-file heredoc) is a SECOND deploy surface for the coap boot contract, outside
+# config/deploy.yml. SEC.22 wired the AR-encryption keys into the app deploy surfaces but
 # missed this heredoc → the anchor daemon raised SecurityError [SEC.22] on first boot
 # (active_record_encryption_keys_check is production-wide, no coap skip). This asserts the
 # anchor coap.env carries exactly the coap boot contract:
