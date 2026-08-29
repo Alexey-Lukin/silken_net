@@ -1308,6 +1308,357 @@ groups:
           component: web3
           team: ops
 
+      # -----------------------------------------------------------------------
+      # P1: CCM Frame-Counter не строго зростає (FW.2). ДЗЕРКАЛО асиметрії, яку
+      # INF.26 уже закривав для сусіда: докстрінг цієї метрики роками НІС готовий
+      # вираз правила («rising rate > 0.1% of all CCM packets/min → attacker
+      # injection or device clock reset event»), тоді як брат-близнюк
+      # `ccm_mic_fail_total` дістав споживача 2026-08-26, а ця лишилась без.
+      # Саме готовність тексту й ховала, що в yaml його немає.
+      # ⚠️ Severity НИЖЧА за mic-fail СВІДОМО, і різниця не косметична: MIC-fail
+      # доброякісної причини НЕ МАЄ, а тут їх дві — replay/інʼєкція (ворожа) і
+      # скидання годинника пристрою (FW.50, доброякісна). Тож це не пейдж «tamper»,
+      # а «розберись, яка з двох».
+      # Поріг `gt 0` не шумить ЗА ПОБУДОВОЮ: CCM-шлях gated (TELEMETRY_CCM_ENABLED
+      # default off) — база нульова, і перша ж подія справжня.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-ccm-fc-replay
+        title: "⚠️ CCM Frame Counter not monotonic (replay / clock reset)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_telemetry_ccm_fc_replay_rejected_total[15m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "CCM Frame Counter не строго зростає ({{ $values.A.Value | printf \"%.4f\" }}/s) — replay або скинутий годинник."
+          description: "Per-DID Frame Counter повторився або приїхав поза порядком глибше, ніж дає mesh-буферизація. ДВІ причини, і вони протилежні за знаком: (1) інʼєкція записаних кадрів зловмисником — тоді сплеск сконцентрований на ОДНОМУ DID і йде разом із ccm_mic_fail; (2) скидання RTC пристрою після брауноуту (FW.50) — тоді DID один, mic_fail нуль, і лік = переініціалізація FC, не безпековий інцидент. Розводить їх саме сусідство з sn-alert-ccm-mic-fail. 03_05 §3.1 / FW.2."
+          runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P1: Мінт-помилки рівня ГАМАНЦЯ, проковтнуті батч-воркером [ARCH.94].
+      # `EvaluateTreeBatchWorker` ловить виняток КОЖНОГО гаманця в `rescue
+      # StandardError`, рахує в `stats[:errors]` і віддає джобу УСПІШНОЮ: retry
+      # немає, DeadSet порожній, Sentry мовчить. Саме так P1-дефект сайзингу
+      # (gross-баланс проти гарда по net) прожив непоміченим.
+      # ⊥ Не дублює `sn-alert-mint-stall-depth`: той міряє СТАН («є гаманці над
+      # порогом, що не мінтять») і ловить відмову, яка винятку не кидає ЗОВСІМ;
+      # цей міряє ПОДІЮ («спроби падали»). ARCH.94 завів обидві саме тому, що
+      # вони ловлять протилежні режими, і зелений один нічого не каже про другий.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-mint-chunk-errors
+        title: "🟠 Мінт-помилки проковтнуто (джоба зелена, гаманці не змінтили)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "increase(silkennet_mint_chunk_errors_total[1h])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} per-wallet мінт-помилок за 1h — джоба звітує успіх."
+          description: "EvaluateTreeBatchWorker проковтнув виняток на рівні гаманця: джоба зелена, retry не буде, DeadSet порожній. Ненульове = емісія частково стала, і жоден інший канал про це не скаже. Читай лог-рядок воркера (stats[:errors] + per-wallet контекст), звір із sn-alert-mint-stall-depth: обидва ненульові = систематичний дефект тракту; лише цей = точкові збої RPC/KYC. ARCH.94 / 05_02."
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: Архів-батч телеметрії — розбіжність кореня при ЖИВИХ логах [E.60].
+      # `mismatch` = перерахований Merkle-корінь ≠ збережений, і листя на місці:
+      # тобто не ретеншн, не fail-open, а ЗМІНА вмісту під уже виданим доказом.
+      # ⚠️ Лейбл звужено до ДОКАЗІВ МУТАЦІЇ, і межа кожного сусіда названа окремо,
+      # бо `06_08 §4.7` приписує алерти ДВОМ різним reason, а не одному:
+      #   · `build` → має ВЛАСНЕ правило нижче (гроші течуть із zero32); канон
+      #     називає його поіменно, і зливати їх не можна — приписи дії протилежні
+      #     («лагодити тракт, НЕ зупиняти мінт» ⊥ «інцидент цілісності БД»);
+      #   · `pin` → інкремент стоїть ВСЕРЕДИНІ `sidekiq_retries_exhausted`, тобто
+      #     фіксує момент, коли ретраї вже ВИЧЕРПАНО; читач — `sn-alert-sidekiq-deadset`;
+      #   · `retention_expired` → штатний (листя поїхали з дропнутими партиціями);
+      #   · `dispatch_drift` → advisory за власним докстрінгом.
+      # ⛔ Доти тут стояло «`build`/`pin` лікуються retry» — обидві половини хибні,
+      # і `06_08 §4.7` спростовує їх дослівно. Не відновлювати.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-telemetry-archive-integrity
+        title: "⚠️ Telemetry archive root mismatch (доказ MRV розійшовся з логами)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "sum(increase(silkennet_telemetry_archive_batch_failures_total{reason=~\"mismatch|leaf_stamp_drift\"}[24h]))"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів із розбіжним коренем за 24h (integrity)."
+          description: "Перерахований Merkle-корінь батча ≠ збережений при ЖИВИХ telemetry-логах (mismatch), або перерахований CID ≠ стемп merkle_leaf (leaf_stamp_drift, sweeper-семпл). Жодна з двох не є ретеншном і жодна не лікується retry: обидві означають, що дані під уже виданим MRV-доказом змінились — raw-SQL мутація або ex-post підміна. Рунбук 06_08 §4.7; ескалюй як security-інцидент, НЕ як збій пайплайна. E.60 Фаза 1б."
+          runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P1: Fauna-сесії пропускаються через низький Vcap [FW.42]. Дзеркало
+      # `sn-alert-tinyml-threshold-invalid`: та сама cardinality-постава (без
+      # per-DID мітки, дерево атрибутується warn-логом), той самий докстрінг-
+      # патерн — і в сусіда споживач є, а тут не було. Стійкий rate > 0 =
+      # енергодефіцит кластера (зима або деградація EDLC), тобто питання до
+      # ЗАЛІЗА, не до софту.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-fauna-skip
+        title: "⚠️ Fauna-сесії пропускаються (енергодефіцит кластера)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "rate(silkennet_fauna_skip_reports_total[15m])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        annotations:
+          summary: "Soldier(и) пропускають fauna-сесії через низький Vcap (rate = {{ $values.A.Value | printf \"%.4f\" }}/s)."
+          description: "Брауноут-захист прошивки пропустив fauna-сесію: EBFC не дотягнув Vcap до порога сесії (03_03 §10.4). Поодинокі пропуски взимку штатні — СТІЙКИЙ ненульовий rate означає енергодефіцит кластера: деградація EDLC, затінення, обрив pogo-контакту. Конкретний DID — у warn-лозі бекенда (патерн FW.22). Лік польовий, не софтовий. FW.42 / 02_03 §12."
+          runbook_url: "docs/03_03_TinyML_Acoustic_Inference.md"
+        labels:
+          severity: warning
+          component: firmware
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: MRV-lineage корінь не обчислився [MRV.1/ARCH.12]. `attach_lineage_root`
+      # ловить ВСЕ в `rescue StandardError` і лишає `telemetry_merkle_root` NULL —
+      # мінт при цьому проходить (fail-open СВІДОМИЙ: witness-фіча ніколи не
+      # блокує money-path). Наслідок: кредит виданий, а доказу «з яких вимірів він
+      # виріс» під ним немає, і жоден інший канал про це не скаже.
+      # ⚠️ Порожнє вікно сюди НЕ рахується, і це несуче: `Mrv::LineageWindow.root_for`
+      # повертає nil, `update!` просто пропускається БЕЗ інкремента. Тож ненульове
+      # тут завжди означає ВИНЯТОК, ніколи нормальну порожнечу — і саме тому поріг
+      # `gt 0` тут законний, тоді як на самій порожнечі він був би шумом.
+      # (Семантика порожнього вікна лишається окремим ⚖️ в INF.26 — це не воно.)
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-lineage-root-failed
+        title: "🟠 MRV-lineage корінь не обчислився (кредит без доказу)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "increase(silkennet_lineage_root_failures_total[24h])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} мінт(ів) за 24h пройшли з порожнім lineage-коренем."
+          description: "Обчислення Merkle-кореня mint-lineage кинуло виняток; мінт НЕ зачеплено (fail-open за дизайном), але `blockchain_transactions.telemetry_merkle_root` лишився NULL — тобто виданий кредит не має машинного трейсу до вимірів, на яких виріс. Це не збій грошей, це діра в ДОКАЗІ. Причина — у warn-лозі `[MRV.1] Lineage-root failed для tx #<id>`; після ліку корінь доводиться доклеювати ретроспективно, бо `Mrv::LineageWindow` вікно рухається. MRV.1 / ARCH.12 / 05_02."
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: FC high-water інваріант втрачено [FW.2 I-HW]. ТРЕТІЙ прапорець того
+      # самого diag-байта, що `tinyml_threshold_invalid` і `fauna_skip` — три
+      # `if diag_byte.anybits?` підряд у `TelemetryUnpackerService` — і єдиний, що
+      # лишався без споживача, при тому що він найгостріший із трьох: Flash
+      # відмовляє записувати high-water, отже гарантія монотонності Frame Counter
+      # деградована, а на ній стоїть увесь anti-replay пристрою.
+      # ⊥ Не дублює `sn-alert-ccm-fc-replay`: той бачить НАСЛІДОК (кадр уже
+      # відкинуто на бекенді), цей — ПРИЧИНУ, і бачить її раніше, ще поки жоден
+      # кадр не повторився. Зелений один нічого не каже про другий.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-fw2-fc-degraded
+        title: "⚠️ FC high-water втрачено (Flash відмовляє — anti-replay деградовано)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "increase(silkennet_fw2_fc_degraded_reports_total[1h])"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} звітів про втрачений FC high-water за 1h — nonce-гарантія деградована."
+          description: "Soldier звітує, що Flash відмовляє писати high-water Frame Counter: після перезавантаження пристрій не знає, на якому FC зупинився, тож монотонність — а з нею anti-replay — більше не гарантована апаратно. Це ПРИЧИНА, а sn-alert-ccm-fc-replay побачить лише наслідок, і то пізніше. Конкретний DID — у warn-лозі (патерн FW.22). Деградована Flash не лікується софтом: вузол на заміну. FW.2 I-HW / 03_05 §3.1."
+          runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
+        labels:
+          severity: warning
+          component: firmware
+          team: security
+
+      # -----------------------------------------------------------------------
+      # P1: zero32-мінт при НЕПОРОЖНІХ персистованих вікнах [E.60 Фаза 1б].
+      # `06_08 §4.7` приписує це правило ПОІМЕННО: «тракт зламався, ГРОШІ ТЕЧУТЬ
+      # (fail-open за дизайном) — лагодити тракт, НЕ зупиняти мінт».
+      # `record_build_failure` — це `rescue`, який пише `build_failed`-рядок і
+      # пропускає мінт далі з нульовим коренем; ретраю на цьому шляху НЕМАЄ, тож
+      # без цього правила подія не має жодного каналу.
+      # ⊥ Окремо від `sn-alert-telemetry-archive-integrity` СВІДОМО: там доказ
+      # мутації (розслідування БД), тут — зламаний тракт при живих грошах, і
+      # канон дає їм протилежні приписи дії.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-telemetry-archive-build-zero32
+        title: "🟠 zero32-мінт при непорожніх вікнах (тракт доказу зламано, гроші течуть)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 21600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "sum(increase(silkennet_telemetry_archive_batch_failures_total{reason=\"build\"}[6h]))"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів не зібрались за 6h — мінт поїхав із zero32-коренем."
+          description: "Побудова Merkle-кореня батча впала при НЕПОРОЖНІХ персистованих вікнах: мінт пройшов із zero32 (fail-open за дизайном — witness ніколи не блокує гроші), тобто кредит виданий без witness-клейму. Припис канону однозначний: лагодити ТРАКТ, НЕ зупиняти мінт. Вікна персистовані, тож пізній `repair!` ще може відновити доказ; якщо repair неможливий (`abandon_repair!` → `superseded`), доказ невиправний назавжди. Рунбук 06_08 §4.7."
+          runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: незапінені архів-батчі тримаються довго [E.60 Фаза 1б]. Форма — точна
+      # копія близнюка `sn-alert-filecoin-unarchived-backlog`, і це не аналогія:
+      # обидва гейджі семпляться СУСІДНІМИ рядками `Treasury::MonitorService`, а
+      # коментар другого дослівно каже «той самий freshness-паттерн».
+      # 🔑 Чому `min_over_time[6h]`, а не поріг: SLO-межа тут («молодше за горизонт
+      # ретеншну партицій») ще НЕ ратифікована — але стійке ПЛАТО її не потребує.
+      # Транзієнтний батч осідає за хвилини; той, що тримається шість годин, уже
+      # рухається до точки, після якої листя поїдуть із дропнутими партиціями і
+      # доказ не відбудується НІКОЛИ. Правило міряє відстань до незворотності,
+      # а не порушення SLO — тому воно можливе ДО калібрування числа.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-telemetry-archive-unpinned-backlog
+        title: "🟠 Незапінені архів-батчі тримаються (доказ їде до незворотної втрати)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 21600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: max(min_over_time(silkennet_telemetry_archive_unpinned_depth[6h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів незапінені щонайменше 6h поспіль."
+          description: "Батчі в `pending`/`build_failed` не доїжджають до піна. Годинник тут НЕЗВОРОТНИЙ: коли вік незапіненого батча перевищить горизонт ретеншну партицій, telemetry-листя поїдуть разом із дропнутими партиціями, rebuild втратить вхід, і MRV-доказ не відновиться нічим. `min_over_time` бере ПЛАТО, не сплеск: транзієнтний батч осідає за хвилини. Звір Pinata-креденшли й чергу TelemetryArchiveBatchWorker. E.60 Фаза 1б / 06_08 §4.7."
+          runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
+        labels:
+          severity: warning
+          component: telemetry
+          team: ops
+
   # ---------------------------------------------------------------------------
   - orgId: 1
     name: silkennet-p2-info
@@ -1857,3 +2208,45 @@ groups:
           component: redis
           team: security
 
+
+      # -----------------------------------------------------------------------
+      # P2: Governance-параметр відхилено bounds-валідацією [GOV.1]. Ненульове
+      # означає, що DAO ПРОГОЛОСУВАВ значення поза safety-межами, sync його не
+      # застосував, і чинним лишилось попереднє — тобто голос відбувся, а стан
+      # не змінився, і жоден інший канал про це не скаже.
+      # ⚠️ Info, не warning, СВІДОМО: захист спрацював як задумано, нічого не
+      # зламано — потрібен коригувальний голос, а не втручання серед ночі.
+      # Поріг `gt 0` не шумить ЗА ПОБУДОВОЮ: DAO ще не активовано (05_06), тож
+      # база нульова.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-governance-param-rejected
+        title: "ℹ️ Governance-параметр відхилено (голос не набув чинності)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 86400, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: "sum(increase(silkennet_governance_param_rejected_total[24h]))"
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "{{ $values.A.Value | printf \"%.0f\" }} governance-параметр(ів) відхилено bounds-валідацією за 24h."
+          description: "Governance::ParameterSyncWorker відкинув проголосоване значення як позамежне (мис-скейл, нонсенс-голос) — чинним лишилось попереднє. Голос відбувся, стан НЕ змінився: без цього сигналу DAO вважає рішення застосованим. Лік — коригувальний голос у межах, або перегляд самих меж, якщо межа неправильна. Мітка `parameter` називає, який саме. GOV.1 / 05_06 §4."
+          runbook_url: "docs/05_06_Governance_and_DAO.md"
+        labels:
+          severity: info
+          component: web3
+          team: ops

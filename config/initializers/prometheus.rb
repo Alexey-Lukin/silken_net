@@ -61,7 +61,8 @@ module SilkenNet
     # відправці.
     TAX_COLLECTED_TOTAL = REGISTRY.counter(
       :silkennet_dynamic_tax_collected_total,
-      docstring: "Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate",
+      docstring: "Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate " \
+                 "[DOC-T.89; diagnostic tier: no consumer until the first live batchMint — its denominator scc_minted_total is ALREADY on a panel, so only the ratio waits, and taxing? gates the increment to underfunded-pool carbon_coin batches]",
       labels: [ :token_type ]
     )
 
@@ -189,7 +190,8 @@ module SilkenNet
     # once `TELEMETRY_CCM_ENABLED=true` ships fleet-wide.
     TELEMETRY_CCM_DECRYPT_OK_TOTAL = REGISTRY.counter(
       :silkennet_telemetry_ccm_decrypt_ok_total,
-      docstring: "FW.2 CCM packets successfully decrypted with valid MIC"
+      docstring: "FW.2 CCM packets successfully decrypted with valid MIC " \
+                 "[FW.2; diagnostic tier: no alert until TELEMETRY_CCM_ENABLED ships fleet-wide — the consumer is its ~1:1 ratio against telemetry_processed_total]"
     )
 
     # [FW.2] CCM MIC verification failed — wrong key, tampered ciphertext,
@@ -329,7 +331,8 @@ module SilkenNet
     # переходи в аномальну тишу (counter) + поточний стан флоту (gauge).
     TREE_SILENCE_TOTAL = REGISTRY.counter(
       :silkennet_tree_silence_total,
-      docstring: "Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations)"
+      docstring: "Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) " \
+                 "[SILENCE-1; diagnostic tier: no alert until (a) the INF.26 leg-1 verdict on what this counter means and (b) a fleet gives flapping a baseline — standing silence is already read by sn-alert-trees-silent, and sn-alert-gateway-flapping is the shape to copy]"
     )
 
     TREES_SILENT = REGISTRY.gauge(
@@ -345,7 +348,8 @@ module SilkenNet
     # метрику.
     ACTUATOR_STUCK_RECOVERED_TOTAL = REGISTRY.counter(
       :silkennet_actuator_stuck_recovered_total,
-      docstring: "Actuators found recorded active past their command window and reset by the safety sweep",
+      docstring: "Actuators found recorded active past their command window and reset by the safety sweep " \
+                 "[ARCH.58; diagnostic tier: no alert until the INF.26 verdict on what «recovered» counts when deactivate! itself fails — a threshold over a disputed quantity is worse than none]",
       labels: [ :device_type ]
     )
 
@@ -474,7 +478,8 @@ module SilkenNet
     # OTA firmware chunks sent to field devices
     OTA_CHUNKS_SENT_TOTAL = REGISTRY.counter(
       :silkennet_ota_chunks_sent_total,
-      docstring: "Total OTA firmware chunks transmitted to field devices",
+      docstring: "Total OTA firmware chunks transmitted to field devices " \
+                 "[INF.26; diagnostic tier: no alert until the leg-1 verdict — the name spans two incompatible moments (send vs stateless re-poll) and one of its two write sites is dead since FW.60, so any threshold measures an undefined quantity]",
       labels: [ :firmware_version ]
     )
 
@@ -485,7 +490,8 @@ module SilkenNet
     # називати рівно ту подію, яку воно рахує: сплутати їх тепер значить вигадати число.
     EWS_ALERTS_TOTAL = REGISTRY.counter(
       :silkennet_ews_alerts_total,
-      docstring: "Total EWS alerts created (fire, drought, pest, storm)",
+      docstring: "Total EWS alerts created (fire, drought, pest, storm) " \
+                 "[INF.26; diagnostic tier: no alert until a fleet establishes a baseline rate — «spike» has no threshold over a zero baseline, and each alert kind already carries its own rule]",
       labels: [ :alert_type ]
     )
 
@@ -511,7 +517,8 @@ module SilkenNet
     # Lorenz attractor computation duration (BigDecimal, 250 iterations)
     LORENZ_COMPUTATION_DURATION = REGISTRY.histogram(
       :silkennet_lorenz_computation_duration_seconds,
-      docstring: "Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations)",
+      docstring: "Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) " \
+                 "[INF.23; diagnostic tier: no alert until a real load profile exists — dev numbers are not capacity (bottleneck-class inversion, 06_08 §2.4)]",
       buckets: [ 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5 ]
     )
 
@@ -584,11 +591,13 @@ module SilkenNet
     )
     FILECOIN_ARCHIVE_EXHAUSTED_TOTAL = REGISTRY.counter(
       :silkennet_filecoin_archive_exhausted_total,
-      docstring: "FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set)"
+      docstring: "FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) " \
+                 "[E.60; diagnostic tier: no alert while sn-alert-sidekiq-deadset and sn-alert-filecoin-unarchived-backlog already read this same exhaustion]"
     )
     FILECOIN_REPIN_TOTAL = REGISTRY.counter(
       :silkennet_filecoin_repin_total,
-      docstring: "AuditLog archive re-enqueues issued by FilecoinReconcileWorker"
+      docstring: "AuditLog archive re-enqueues issued by FilecoinReconcileWorker " \
+                 "[E.60; diagnostic tier: no alert while filecoin_unarchived_depth carries the state question — repin is the VOLUME of self-healing, and a healthy tract repins]"
     )
 
     # [INF.22] Скільки логів ре-армовано backfill-проходом. ⚠️ Рахує ЛОГИ (`by:`),
@@ -623,7 +632,8 @@ module SilkenNet
     # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(
       :silkennet_streamr_broadcast_failures_total,
-      docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery)"
+      docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery) " \
+                 "[INF.26; diagnostic tier: no alert until the leg-1 verdict — Streamr is a presence stream, not consensus, and «mass failure» has no threshold over a zero baseline]"
     )
 
     # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
@@ -692,7 +702,8 @@ module SilkenNet
     # invisible). Defining it activates that existing instrumentation.
     CIRCUIT_BREAKER_REJECTIONS = REGISTRY.counter(
       :silkennet_circuit_breaker_rejections_total,
-      docstring: "Web3 requests fast-failed because a provider circuit breaker was open",
+      docstring: "Web3 requests fast-failed because a provider circuit breaker was open " \
+                 "[S2.2; diagnostic tier: no alert while sn-alert-circuit-breaker pages on the STATE — this counter is the VOLUME behind the same event, read during triage]",
       labels: [ :service ]
     )
 

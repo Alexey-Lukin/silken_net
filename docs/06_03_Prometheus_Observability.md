@@ -304,7 +304,7 @@ end
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown).
 
-**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). Споріднений firmware-діагностичний counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
+**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). Споріднений firmware-**діагностичний за ПРЕДМЕТОМ** counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — ⚠️ слово тут про ПРИРОДУ сигналу, а не про **ярус** реєстру нижче: за ярусом ця метрика **алертна** (споживач у неї є). Той самий токен у двох доменах, тож не читай його як декларацію — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
 
 ### 📊 Канонічний реєстр метрик (SSOT)
 
@@ -317,122 +317,134 @@ end
 > При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
-> **Кількість тут свідомо НЕ записана числом** (⚖️ 2026-08-25, INF.26). Реєстр — це таблиці нижче, і рівно вони гейтовані `metric_registry_doc_sync_spec` (імена + типи, обидва напрямки). А речення-підсумок гейта не має за побудовою, тож воно й протухло: цей рядок роками стверджував «79 = 45+32+2», доки таблиці під ним регенерувались до 86 = 48+36+2 — тобто секція, яка називає себе **єдиним авторитетним джерелом кількості**, була єдиним місцем, де кількість брехала. Порахувати завжди: `bin/rails runner 'puts SilkenNet::Metrics::REGISTRY.metrics.size'`, або просто прочитати таблиці.
+> **Кількість тут свідомо НЕ записана числом** (⚖️ 2026-08-25, INF.26). Реєстр — це таблиці нижче, і рівно вони гейтовані `metric_registry_doc_sync_spec` (імена + типи, обидва напрямки; з 2026-08-29 — ще й **ярус**, див. врізку нижче). А речення-підсумок гейта не має за побудовою, тож воно й протухло: цей рядок роками стверджував «79 = 45+32+2», доки таблиці під ним регенерувались до 86 = 48+36+2 — тобто секція, яка називає себе **єдиним авторитетним джерелом кількості**, була єдиним місцем, де кількість брехала. Порахувати завжди: `bin/rails runner 'puts SilkenNet::Metrics::REGISTRY.metrics.size'`, або просто прочитати таблиці.
+
+### 🎚️ Два яруси реєстру (⚖️ founder, 2026-08-29 — INF.26)
+
+Кожна метрика належить до одного з двох ярусів, і різниця в **ОБОВʼЯЗКУ**, не у важливості:
+
+| Ярус | Обовʼязок | Як оголошується |
+|---|---|---|
+| **алертна** | мусить мати **споживача** — alert-правило в `deploy/grafana/alerts/` **або** панель у `deploy/grafana/dashboards/` | дефолт: маркера не несе |
+| **діагностична** | споживача мати не мусить | маркер у власному докстрінгу: `[<ID>; diagnostic tier: <подія дротування>]` |
+
+**Що це купує.** Доти будь-яке твердження «ця метрика чиста» про метрику без споживача було **порожнім**: її ніхто не читає, тож і брехати їй нема перед ким. Декларація перетворює «без споживача» з **дефекту** на **оголошений стан** — і тоді гейт судить наявність ДЕКЛАРАЦІЇ, а не наявність алерту. Це лік класу «тихий дефолт»: ні масової чистки (втратили б корисний діагностичний сигнал), ні масового дротування (народили б два десятки алертів, яких ніхто не читає — рівно гейт, що ні на чому не падає, [`00_05 §5`](00_05_AI_Native_Operating_Model)).
+
+🔑 **«Споживач», а не «алерт» — і це несуче.** Чимало метрик живуть лише на панелях (обсяг, пул, GC), і це здоровий стан; вимога саме алерту зробила б декларацію обовʼязковою для більшості з них. ⚠️ Отже мітка «алертна» означає «**мусить мати читача**», а не «має алерт-правило» — той самий токен у двох доменах, і плутати їх тут дорого.
+
+🔴 **Подія дротування обовʼязкова, бо саме вона робить виняток ЗВОРОТНИМ.** Декларація без названої події означає «назавжди», а такого ярусу присуд не вводив. Гейт вимагає непорожню подію — але судить її **наявність, ніколи настання**: `back`-умова є передбаченням, і протухлий виняток виглядає точно як живий (`ssot-maintenance` §Guard-craft #53). Перечитувати їх — робота ревʼювера, не машини.
+
+⛔ **Декларація легітимна ЛИШЕ там, де питання справді немає.** Реєстр енфорсить **паритет, ніколи законність** (§Guard-craft #74): на грошовому, слешинговому, MRV-доказовому чи безпековому шляху «діагностична» **узаконює діру**, і гейт не відрізнить її від чесної. Виміряно на цьому ж проході: `lineage_root_failures_total` (кредит виданий, а witness-корінь NULL) і `fw2_fc_degraded_reports_total` (nonce-гарантія пристрою відпала, прошивка передає далі) обидва спокусливо читались як «діагностичні» — і обидва дістали споживача.
+
+Носій — `spec/quality/metric_registry_doc_sync_spec.rb` (чотири осі: споживач ⊥ протухла декларація ⊥ названа подія ⊥ парність колонки `Ярус`); колонка виводиться з докстрінгів скриптом регенерації, руками її не правлять.
 
 **Counters:**
 
-| Metric | Labels | Призначення |
-|---|---|---|
-| `silkennet_actuator_stuck_recovered_total` | `device_type` | Actuators found recorded active past their command window and reset by the safety sweep |
-| `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
-| `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
-| `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
-| `silkennet_dclimate_verification_total` | `result` | Total dClimate satellite verdicts by terminal result — [INF.26] вісь ГРОШОВА обабіч (`verified` → InsurancePayoutWorker, `rejected_fraud` → BurnCarbonTokensWorker, `inconclusive` → людський/DAO-вердикт); дім лічби — `EwsAlert.after_update_commit`, бо термінальних писачів `satellite_status` чотири й один із них у `sidekiq_retries_exhausted` воркера |
-| `silkennet_ethereum_anchor_reverted_total` | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
-| `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts created — [INF.26] «created», бо інкремент живе в `after_create_commit`; доставка ([`ARCH.60`](00_07_Action_Plan_Tracker)) — окрема подія й власного лічильника не має |
-| `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
-| `silkennet_filecoin_archive_exhausted_total` | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
-| `silkennet_filecoin_repin_total` | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
-| `silkennet_iotex_backfill_rearmed_total` | — | TelemetryLogs re-armed for IoTeX verification by the backfill sweep (sustained-outage recovery; a healthy tract leaves this at zero) |
-| `silkennet_filecoin_verification_failures_total` | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
-| `silkennet_telemetry_archive_batch_failures_total` | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
-| `silkennet_fw2_fc_degraded_reports_total` | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
-| `silkennet_gateways_offline_total` | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
-| `silkennet_governance_param_rejected_total` | `parameter` | Governance parameter syncs rejected by bounds validation |
-| `silkennet_helium_sos_received_total` | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
-| `silkennet_insurance_payout_attempts_total` | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
-| `silkennet_insurance_payout_success_total` | — | Parametric insurance payouts BROADCAST — Etherisc claim sent / internal mint status→sent (SLO numerator) |
-| `silkennet_insurance_reserve_hold_total` | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
-| `silkennet_lineage_root_failures_total` | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
-| `silkennet_m2m_nonce_fallback_total` | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
-| `silkennet_mint_attempts_total` | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
-| `silkennet_mint_chunk_errors_total` | — | Per-wallet mint failures swallowed by EvaluateTreeBatchWorker (job still reports success) |
-| `silkennet_mint_success_total` | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
-| `silkennet_dynamic_tax_collected_total` | `token_type` | Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate |
-| `silkennet_ota_chunks_sent_total` | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
-| `silkennet_panic_replay_rejected_total` | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
-| `silkennet_partition_maintenance_failures_total` | — | PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk) |
-| `silkennet_qatt_nonce_fallback_total` | — | Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
-| `silkennet_rpc_errors_total` | `network`, `error_type` | Total Web3 RPC errors |
-| `silkennet_scc_minted_total` | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
-| `silkennet_scc_slashed_total` | — | Total tokens slashed (burned due to cluster stress) |
-| `silkennet_slash_attempts_total` | — | Slash transactions attempted by BlockchainBurningService (SLO denominator) |
-| `silkennet_slash_success_total` | — | Slash transactions successfully broadcast — status→sent (SLO numerator) |
-| `silkennet_slashing_events_total` | `reason` | Total slashing (burn) events by reason |
-| `silkennet_solana_payout_attempts_total` | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
-| `silkennet_solana_payout_success_total` | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
-| `silkennet_streamr_broadcast_failures_total` | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
-| `silkennet_telemetry_acoustic_overflow_total` | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
-| `silkennet_telemetry_ccm_decrypt_ok_total` | — | FW.2 CCM packets successfully decrypted with valid MIC |
-| `silkennet_telemetry_ccm_fc_replay_rejected_total` | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
-| `silkennet_telemetry_ccm_mic_fail_total` | — | FW.2 CCM packets rejected due to MIC verification failure |
-| `silkennet_telemetry_fraud_detected_total` | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
-| `silkennet_telemetry_log_unpruned_lookups_total` | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
-| `silkennet_blockchain_transaction_unpruned_lookups_total` | `caller` | Total BlockchainTransaction lookups without partition pruning (degraded path; missing or invalid created_at) |
-| `silkennet_telemetry_processed_total` | — | Total telemetry chunks processed by TelemetryUnpackerService |
-| `silkennet_tinyml_threshold_invalid_reports_total` | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
-| `silkennet_treasury_check_errors_total` | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
-| `silkennet_tree_silence_total` | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
-| `silkennet_w3bstream_signature_fallback_total` | `reason` | Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production. ⚠️ [INF.26] Лічильник міряє ПЕРЕДУМОВУ, не наслідок: інкремент стоїть ДО розвилки prod/dev, тож ім'я (`_fallback_`) вужче за подію — у проді той самий рядок означає ВІДМОВУ. Перенести інкремент у dev-гілку не можна: осліпли б саме там, де сигнал найпотрібніший |
-
-**Grafana Alert Rules (INF.26, дротовано 2026-08-26):** `sn-alert-ccm-mic-fail` · `sn-alert-telemetry-unpruned-lookups` · `sn-alert-blockchain-tx-unpruned-lookups` — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). 🔴 Закриття тут було **ратчетом, не ремонтом**: усі три лічильники були коректні й мовчали правдиво — бракувало СПОЖИВАЧА, тож «метрика чиста» про них було порожнім твердженням. ⚠️ Асиметрія, що це запустила, варта запису: `w3bstream_signature_fallback_total` алертився, а сусідній `telemetry_ccm_mic_fail_total` — ні, при тому що його власний докстрінг називав ненульовий rate сигналом безпеки, вартим пейджа. Два `unpruned_lookups`-лічильники носили ГОТОВИЙ вираз правила у власному коментарі коду — і саме готовність тексту приховувала, що в yaml його немає.
+| Metric | Ярус | Labels | Призначення |
+|---|---|---|---|
+| `silkennet_actuator_stuck_recovered_total` | діагностична | `device_type` | Actuators found recorded active past their command window and reset by the safety sweep |
+| `silkennet_anchor_missed_weeks_total` | алертна | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
+| `silkennet_blockchain_transaction_unpruned_lookups_total` | алертна | `caller` | Total BlockchainTransaction lookups without partition pruning (degraded path; missing or invalid created_at) |
+| `silkennet_circuit_breaker_rejections_total` | діагностична | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
+| `silkennet_coap_packets_received_total` | алертна | `status` | Total CoAP UDP packets received by the telemetry daemon |
+| `silkennet_dclimate_verification_total` | алертна | `result` | Total dClimate satellite verdicts by terminal result — [INF.26] вісь ГРОШОВА обабіч (`verified` → InsurancePayoutWorker, `rejected_fraud` → BurnCarbonTokensWorker, `inconclusive` → людський/DAO-вердикт); дім лічби — `EwsAlert.after_update_commit`, бо термінальних писачів `satellite_status` чотири й один із них у `sidekiq_retries_exhausted` воркера |
+| `silkennet_dynamic_tax_collected_total` | діагностична | `token_type` | Dynamic Tax actually broadcast to DAO_TREASURY (SCC) — numerator of the EFFECTIVE tax rate |
+| `silkennet_ethereum_anchor_reverted_total` | алертна | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
+| `silkennet_ews_alerts_total` | діагностична | `alert_type` | Total EWS alerts created — [INF.26] «created», бо інкремент живе в `after_create_commit`; доставка ([`ARCH.60`](00_07_Action_Plan_Tracker)) — окрема подія й власного лічильника не має |
+| `silkennet_fauna_skip_reports_total` | алертна | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
+| `silkennet_filecoin_archive_exhausted_total` | діагностична | — | FilecoinArchiveWorker jobs that exhausted all retries (archive landed in Dead Set) |
+| `silkennet_filecoin_repin_total` | діагностична | — | AuditLog archive re-enqueues issued by FilecoinReconcileWorker |
+| `silkennet_filecoin_verification_failures_total` | алертна | `reason` | Filecoin archive integrity verification failures (E.60 sweep) |
+| `silkennet_fw2_fc_degraded_reports_total` | алертна | — | FW.2 telemetry packets reporting a lost FC high-water invariant (Flash refusing writes; per-DID attribution in logs) |
+| `silkennet_gateways_offline_total` | алертна | — | Total gateway offline transitions detected by the staleness sweeper (queen_offline alerts) |
+| `silkennet_governance_param_rejected_total` | алертна | `parameter` | Governance parameter syncs rejected by bounds validation |
+| `silkennet_helium_sos_received_total` | алертна | `outcome` | Queen SOS frames received via the Helium webhook, by processing outcome |
+| `silkennet_insurance_payout_attempts_total` | алертна | — | Parametric insurance payouts attempted by InsurancePayoutWorker (SLO denominator) |
+| `silkennet_insurance_payout_success_total` | алертна | — | Parametric insurance payouts BROADCAST — Etherisc claim sent / internal mint status→sent (SLO numerator) |
+| `silkennet_insurance_reserve_hold_total` | алертна | `reason` | Internal-mode виплати, зупинені reserve-gate [INS.2]. ⚖️ ARCH.82: **ЄДИНИЙ канал** — парний `EwsAlert` пишеться без кластера, тож орг-поверхні його не бачать за побудовою. Окремо від `manual_review_depth` навмисно: той не розрізняє казначейську політику від double-spend-лімбо, а відповіді протилежні. ⚠️ Штатно нуль до калібрування порогів INS.2; `:eval_error` сюди НЕ рахується (transient RPC → Sidekiq-retry) |
+| `silkennet_iotex_backfill_rearmed_total` | алертна | — | TelemetryLogs re-armed for IoTeX verification by the backfill sweep (sustained-outage recovery; a healthy tract leaves this at zero) |
+| `silkennet_lineage_root_failures_total` | алертна | — | Mint lineage Merkle-root computation failures (fail-open, root left NULL) |
+| `silkennet_m2m_nonce_fallback_total` | алертна | — | Total M2M nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
+| `silkennet_mint_attempts_total` | алертна | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
+| `silkennet_mint_chunk_errors_total` | алертна | — | Per-wallet mint failures swallowed by EvaluateTreeBatchWorker (job still reports success) |
+| `silkennet_mint_success_total` | алертна | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
+| `silkennet_ota_chunks_sent_total` | діагностична | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
+| `silkennet_panic_replay_rejected_total` | алертна | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
+| `silkennet_partition_maintenance_failures_total` | алертна | — | PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk) |
+| `silkennet_qatt_nonce_fallback_total` | алертна | — | Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
+| `silkennet_rpc_errors_total` | алертна | `network`, `error_type` | Total Web3 RPC errors |
+| `silkennet_scc_minted_total` | алертна | `token_type` | Total SCC (SilkenCarbonCoin) tokens minted |
+| `silkennet_scc_slashed_total` | алертна | — | Total tokens slashed (burned due to cluster stress) |
+| `silkennet_slash_attempts_total` | алертна | — | Slash transactions attempted by BlockchainBurningService (SLO denominator) |
+| `silkennet_slash_success_total` | алертна | — | Slash transactions successfully broadcast — status→sent (SLO numerator) |
+| `silkennet_slashing_events_total` | алертна | `reason` | Total slashing (burn) events by reason |
+| `silkennet_solana_payout_attempts_total` | алертна | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
+| `silkennet_solana_payout_success_total` | алертна | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
+| `silkennet_streamr_broadcast_failures_total` | діагностична | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
+| `silkennet_telemetry_acoustic_overflow_total` | алертна | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
+| `silkennet_telemetry_archive_batch_failures_total` | алертна | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
+| `silkennet_telemetry_ccm_decrypt_ok_total` | діагностична | — | FW.2 CCM packets successfully decrypted with valid MIC |
+| `silkennet_telemetry_ccm_fc_replay_rejected_total` | алертна | — | FW.2 CCM packets rejected because per-DID Frame Counter was not strictly increasing |
+| `silkennet_telemetry_ccm_mic_fail_total` | алертна | — | FW.2 CCM packets rejected due to MIC verification failure |
+| `silkennet_telemetry_fraud_detected_total` | алертна | — | Total telemetry packets rejected (sensor noise, unknown DID, tamper) |
+| `silkennet_telemetry_log_unpruned_lookups_total` | алертна | `caller` | Total TelemetryLog lookups without partition pruning (degraded path; missing or invalid ISO8601 created_at_iso) |
+| `silkennet_telemetry_processed_total` | алертна | — | Total telemetry chunks processed by TelemetryUnpackerService |
+| `silkennet_tinyml_threshold_invalid_reports_total` | алертна | — | FW.18b telemetry packets reporting a nonzero rejected-OTA-thresholds counter (per-DID attribution in logs) |
+| `silkennet_treasury_check_errors_total` | алертна | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
+| `silkennet_tree_silence_total` | діагностична | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
+| `silkennet_w3bstream_signature_fallback_total` | алертна | `reason` | Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production. ⚠️ [INF.26] Лічильник міряє ПЕРЕДУМОВУ, не наслідок: інкремент стоїть ДО розвилки prod/dev, тож ім'я (`_fallback_`) вужче за подію — у проді той самий рядок означає ВІДМОВУ. Перенести інкремент у dev-гілку не можна: осліпли б саме там, де сигнал найпотрібніший |
 
 **Gauges:**
 
-| Metric | Labels | Призначення |
-|---|---|---|
-| `silkennet_blockchain_limbo_locked_total` | — | Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo) |
-| `silkennet_blockchain_manual_review_depth` | — | Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue) |
-| `silkennet_chain_audit_delta` | — | Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply |
-| `silkennet_cluster_entropy_score` | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
-| `silkennet_cluster_tree_count_drift` | `cluster_id` | Live active-tree COUNT minus the denormalized active_trees_count (0 = in sync; nonzero means the slashing trigger measures a fabricated denominator) |
-| `silkennet_db_pool_connections` | `database` | Number of active (checked out) database connections |
-| `silkennet_db_pool_idle` | `database` | Number of idle database connections in the pool |
-| `silkennet_db_pool_size` | `database` | Maximum number of connections in the database pool |
-| `silkennet_db_pool_waiting` | `database` | Number of threads waiting for a database connection |
-| `silkennet_ethereum_anchor_manual_review_depth` | — | Count of EthereumAnchor rows escalated to :manual_review (unconfirmed seal awaiting human check, ARCH.66) |
-| `silkennet_ethereum_anchor_stuck_sent_depth` | — | Count of EthereumAnchor rows stuck in :sent past the confirmation-poll SLA (ARCH.66) |
-| `silkennet_filecoin_unarchived_depth` | — | Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog) |
-| `silkennet_telemetry_archive_unpinned_depth` | — | [E.60 Фаза 1б] незапінені архів-батчі (pending/build_failed); семплить `Treasury::MonitorService` (15-хв). SLO-поріг «unpinned age < ретеншн-горизонт партицій» = 👤 калібрування ([`00_07`](00_07_Action_Plan_Tracker) E.60-residual) |
-| `silkennet_gateway_attest_lapsed` | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
-| `silkennet_gateways_faulty` | — | Current number of gateways in the faulty state (set on each staleness sweep) |
-| `silkennet_hadron_kyc_pending_depth` | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
-| `silkennet_mint_eligible_unminted_depth` | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
-| `silkennet_mint_volume_window_scc` | `token_type` | SCC/SFC BROADCAST (sent_at) in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
-| `silkennet_oracle_balance` | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
-| `silkennet_oracle_balance_ratio` | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
-| `silkennet_payout_float_balance` | `network`, `token` | **[SEC.22] Флоат гарячого payout-гаманця в одиницях ТОКЕНА (SPL/ERC-20) — реальна стеля збитку при компрометації ключа виплат, а НЕ газ.** Заведено 2026-08-29, бо присуд SEC.22 прийняв резидентний Solana-ключ як bounded-blast саме на підставі «вибух = флоат гаманця», а міряли ми лише SOL на газ (`silkennet_oracle_balance`) — тобто підстава присуду не мала вимірювача. ⚠️ **Окрема серія від `oracle_balance` СВІДОМО:** там одиниця «native currency (wei/lamports)», тут — токен із власними decimals (USDC = 6); спільна серія змішала б дві шкали під одним іменем. 🔒 **ЯРУС — ДІАГНОСТИЧНИЙ (оголошено, не пропущено):** alert-правила немає, бо ПОРІГ прийнятного флоату є deploy-day присудом разом із числами `INS.2`; прилад стоїть раніше за число навмисно — інакше поріг ухвалюють без величини, яку він обмежує. Дротування правила = момент ратифікації числа. ⛔ На збої читання гейдж НЕ ставиться (нуль означав би «гаманець порожній»); помилка йде в `silkennet_treasury_check_errors_total` |
-| `silkennet_partition_default_occupied` | `table` | [ARCH.70] `1` = DEFAULT-лист таблиці тримає бодай один рядок. **Не вісь росту, а вісь ПОЛОМКИ:** такий рядок назавжди блокує `CREATE ... PARTITION OF` для свого місяця (`PG::CheckViolation`), ретраї не лікують, і прохід воркера падає щодня — а разом із ним замерзають два гейджі нижче, бо семпл стоїть ПІСЛЯ циклу. Величина свідомо бінарна (`EXISTS`, не `count`): рішення оператора не залежить від кількості, а скан розрослого DEFAULT коштував би саме в інциденті. `0` = очікуване здоровʼя; рунбук — [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) |
-| `silkennet_partition_sample_timestamp_seconds` | — | [ARCH.70] Unix-час останнього успішного семплу росту — свідок СВІЖОСТІ двох гейджів нижче. Без нього обидва вакуумні: cron наповнює їх у живому процесі, тож зупинка воркера серію не прибирає, а ЗАМОРОЖУЄ, і алерти лишаються зеленими |
-| `silkennet_partitioned_table_bytes` | `table` | [ARCH.70] Байти RANGE-таблиці разом з усіма партиціями, індексами й TOAST. Диск межею НЕ є (`disk_autoresize`) — це вісь ЦІНИ: PD_SSD, розмір 30 бекапів, час DR-відновлення ([`06_06`](06_06_Disaster_Recovery_and_Backup)) |
-| `silkennet_telemetry_oracle_dispatched_rows` | — | **[ARCH.70] ТРЕТІЙ вимір ретеншну — РЯДКИ** (місяці дає `silkennet_partitions`, байти — `silkennet_partitioned_table_bytes`; рядків доти не було, а саме вони визначають, що зітре майбутнє вікно). ⛔⛔ **Це НЕ беклог, і підпис тут є присудом** (⚖️ 2026-08-29): `ChainlinkDispatchWorker` ставить `dispatched` локальним маркером без RPC, callback unwired, PATH 1 демоутовано ([`00_07`](00_07_Action_Plan_Tracker) ARCH.53) — закривача не існує ЗА ПОБУДОВОЮ, тож популяція монотонна не через затор, а через відсутність другої половини тракту. Назвати її «скільки чекає на callback» означало б вигадати число. 🔒 **Ярус діагностичний:** алерт-правила немає, бо для монотонної-за-побудовою величини «скільки прийнятно» не визначене — законна форма це операторська стеля-дедлайн, і вона ратифікується РАЗОМ із шириною вікна ретеншну. ⊕ Ціна лічби виміряна: партіальний `idx_telemetry_logs_oracle_dispatched` дає `Index Only Scan` по кожній партиції, тож це не скан ([ARCH.52]); ⛔ не розширювати на `group(:oracle_status)` — решта станів індексу не має |
-| `silkennet_partitions` | `table` | [ARCH.70] Листові партиції RANGE-таблиці. Монотонний ЗА ПОБУДОВОЮ (автоматичного дропу в `app/`/`lib/` немає; ручний DETACH рунбука [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) — єдиний виняток, і він оператор-ініційований). 🔴 **Це НЕ «місяці накопиченої історії», і різниця не косметична, бо на цьому числі стоїть ⚖️ ширини вікна дропу:** серед листів завжди є DEFAULT (місяцем не є ніколи) і — коли воркер біжить — партиція НАСТУПНОГО місяця, яку `PartitionMaintenanceWorker` створює наперед, а поточний місяць іще неповний. Тож число більше за кількість місяців із даними **на 1 (лише DEFAULT) або на 2 (DEFAULT + створений наперед місяць)**, і поправку задає не формула, а факт, чи відпрацював воркер. Місяці з даними лічити прямо: `SELECT count(DISTINCT date_trunc('month', created_at)) FROM telemetry_logs`. ⊕ Алерт-правила ЧЕТВІРКИ (`sn-alert-partition-count-unbounded` · `sn-alert-partitioned-table-growth` · `sn-alert-partition-sampler-stale` · `sn-alert-partition-default-occupied` — останнє не про ріст, а про поломку) живуть в IaC-домі `deploy/grafana/alerts/silkennet-alerts.yaml` — пороги там, не тут; ⛔ добирати їх глобом `sn-alert-partition-*` НЕ можна: він захоплює чуже (`-maintenance-failed`) і пропускає своє (`partitioned-` не має дефіса після `partition`), тобто помиляється в обидва боки |
-| `silkennet_process_resident_memory_bytes` | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
-| `silkennet_puma_backlog` | — | Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned) |
-| `silkennet_puma_max_threads` | — | Puma configured max threads (pool ceiling) |
-| `silkennet_puma_pool_capacity` | — | Puma free thread-pool capacity (0 = saturated → requests queue in backlog) |
-| `silkennet_puma_running_threads` | — | Puma worker threads currently spawned (busy + idle) |
-| `silkennet_rpc_circuit_breaker_open` | `provider` | Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy) |
-| `silkennet_ruby_gc_count` | — | Total Ruby GC runs since process start (GC.stat[:count]) |
-| `silkennet_ruby_gc_heap_live_slots` | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
-| `silkennet_ruby_gc_major_count` | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
-| `silkennet_ruby_threads` | — | Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak |
-| `silkennet_sidekiq_dead_set_size` | — | Current size of the Sidekiq DeadSet (jobs that exhausted all retries) |
-| `silkennet_sidekiq_queue_latency_seconds` | `queue` | Latency (age of oldest job) in a Sidekiq queue |
-| `silkennet_sidekiq_queue_size` | `queue` | Current size of a Sidekiq queue |
-| `silkennet_trees_silent` | — | Current number of active trees silent beyond the silence threshold (set on each staleness sweep) |
+| Metric | Ярус | Labels | Призначення |
+|---|---|---|---|
+| `silkennet_blockchain_limbo_locked_total` | алертна | — | Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo) |
+| `silkennet_blockchain_manual_review_depth` | алертна | — | Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue) |
+| `silkennet_chain_audit_delta` | алертна | — | Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply |
+| `silkennet_cluster_entropy_score` | алертна | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
+| `silkennet_cluster_tree_count_drift` | алертна | `cluster_id` | Live active-tree COUNT minus the denormalized active_trees_count (0 = in sync; nonzero means the slashing trigger measures a fabricated denominator) |
+| `silkennet_db_pool_connections` | алертна | `database` | Number of active (checked out) database connections |
+| `silkennet_db_pool_idle` | алертна | `database` | Number of idle database connections in the pool |
+| `silkennet_db_pool_size` | алертна | `database` | Maximum number of connections in the database pool |
+| `silkennet_db_pool_waiting` | алертна | `database` | Number of threads waiting for a database connection |
+| `silkennet_ethereum_anchor_manual_review_depth` | алертна | — | Count of EthereumAnchor rows escalated to :manual_review (unconfirmed seal awaiting human check, ARCH.66) |
+| `silkennet_ethereum_anchor_stuck_sent_depth` | алертна | — | Count of EthereumAnchor rows stuck in :sent past the confirmation-poll SLA (ARCH.66) |
+| `silkennet_filecoin_unarchived_depth` | алертна | — | Count of archive-requested AuditLog rows still missing ipfs_cid (Filecoin archive backlog) |
+| `silkennet_gateway_attest_lapsed` | алертна | — | Online QATT-capable gateways whose last Ed25519-attested batch is older than the lapse window |
+| `silkennet_gateways_faulty` | алертна | — | Current number of gateways in the faulty state (set on each staleness sweep) |
+| `silkennet_hadron_kyc_pending_depth` | алертна | — | Count of Wallet+Organization rows with hadron_kyc_status=pending (KYC backlog gating mint) |
+| `silkennet_mint_eligible_unminted_depth` | алертна | — | Wallets over the emission threshold that produced no mint in the last cycle (stall detector) |
+| `silkennet_mint_volume_window_scc` | алертна | `token_type` | SCC/SFC BROADCAST (sent_at) in the trailing 1h window (ARCH.62 volume-anomaly detector input) |
+| `silkennet_oracle_balance` | алертна | `network`, `signer` | Oracle wallet balance in native currency (wei/lamports) |
+| `silkennet_oracle_balance_ratio` | алертна | `network`, `signer` | Oracle balance as ratio to minimum threshold (below 1.0 = critical) |
+| `silkennet_partition_default_occupied` | алертна | `table` | [ARCH.70] `1` = DEFAULT-лист таблиці тримає бодай один рядок. **Не вісь росту, а вісь ПОЛОМКИ:** такий рядок назавжди блокує `CREATE ... PARTITION OF` для свого місяця (`PG::CheckViolation`), ретраї не лікують, і прохід воркера падає щодня — а разом із ним замерзають два гейджі нижче, бо семпл стоїть ПІСЛЯ циклу. Величина свідомо бінарна (`EXISTS`, не `count`): рішення оператора не залежить від кількості, а скан розрослого DEFAULT коштував би саме в інциденті. `0` = очікуване здоровʼя; рунбук — [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) |
+| `silkennet_partition_sample_timestamp_seconds` | алертна | — | [ARCH.70] Unix-час останнього успішного семплу росту — свідок СВІЖОСТІ двох гейджів нижче. Без нього обидва вакуумні: cron наповнює їх у живому процесі, тож зупинка воркера серію не прибирає, а ЗАМОРОЖУЄ, і алерти лишаються зеленими |
+| `silkennet_partitioned_table_bytes` | алертна | `table` | [ARCH.70] Байти RANGE-таблиці разом з усіма партиціями, індексами й TOAST. Диск межею НЕ є (`disk_autoresize`) — це вісь ЦІНИ: PD_SSD, розмір 30 бекапів, час DR-відновлення ([`06_06`](06_06_Disaster_Recovery_and_Backup)) |
+| `silkennet_partitions` | алертна | `table` | [ARCH.70] Листові партиції RANGE-таблиці. Монотонний ЗА ПОБУДОВОЮ (автоматичного дропу в `app/`/`lib/` немає; ручний DETACH рунбука [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) — єдиний виняток, і він оператор-ініційований). 🔴 **Це НЕ «місяці накопиченої історії», і різниця не косметична, бо на цьому числі стоїть ⚖️ ширини вікна дропу:** серед листів завжди є DEFAULT (місяцем не є ніколи) і — коли воркер біжить — партиція НАСТУПНОГО місяця, яку `PartitionMaintenanceWorker` створює наперед, а поточний місяць іще неповний. Тож число більше за кількість місяців із даними **на 1 (лише DEFAULT) або на 2 (DEFAULT + створений наперед місяць)**, і поправку задає не формула, а факт, чи відпрацював воркер. Місяці з даними лічити прямо: `SELECT count(DISTINCT date_trunc('month', created_at)) FROM telemetry_logs`. ⊕ Алерт-правила ЧЕТВІРКИ (`sn-alert-partition-count-unbounded` · `sn-alert-partitioned-table-growth` · `sn-alert-partition-sampler-stale` · `sn-alert-partition-default-occupied` — останнє не про ріст, а про поломку) живуть в IaC-домі `deploy/grafana/alerts/silkennet-alerts.yaml` — пороги там, не тут; ⛔ добирати їх глобом `sn-alert-partition-*` НЕ можна: він захоплює чуже (`-maintenance-failed`) і пропускає своє (`partitioned-` не має дефіса після `partition`), тобто помиляється в обидва боки |
+| `silkennet_payout_float_balance` | діагностична | `network`, `token` | **[SEC.22] Флоат гарячого payout-гаманця в одиницях ТОКЕНА (SPL/ERC-20) — реальна стеля збитку при компрометації ключа виплат, а НЕ газ.** Заведено 2026-08-29, бо присуд SEC.22 прийняв резидентний Solana-ключ як bounded-blast саме на підставі «вибух = флоат гаманця», а міряли ми лише SOL на газ (`silkennet_oracle_balance`) — тобто підстава присуду не мала вимірювача. ⚠️ **Окрема серія від `oracle_balance` СВІДОМО:** там одиниця «native currency (wei/lamports)», тут — токен із власними decimals (USDC = 6); спільна серія змішала б дві шкали під одним іменем. 🔒 **ЯРУС — ДІАГНОСТИЧНИЙ (оголошено, не пропущено):** alert-правила немає, бо ПОРІГ прийнятного флоату є deploy-day присудом разом із числами `INS.2`; прилад стоїть раніше за число навмисно — інакше поріг ухвалюють без величини, яку він обмежує. Дротування правила = момент ратифікації числа. ⛔ На збої читання гейдж НЕ ставиться (нуль означав би «гаманець порожній»); помилка йде в `silkennet_treasury_check_errors_total` |
+| `silkennet_process_resident_memory_bytes` | алертна | — | Resident set size (RSS) of the scraped process in bytes (Linux /proc; 0 elsewhere) |
+| `silkennet_puma_backlog` | алертна | — | Puma requests waiting for a free thread (backlog; sustained >0 = under-provisioned) |
+| `silkennet_puma_max_threads` | алертна | — | Puma configured max threads (pool ceiling) |
+| `silkennet_puma_pool_capacity` | алертна | — | Puma free thread-pool capacity (0 = saturated → requests queue in backlog) |
+| `silkennet_puma_running_threads` | алертна | — | Puma worker threads currently spawned (busy + idle) |
+| `silkennet_rpc_circuit_breaker_open` | алертна | `provider` | Whether RPC provider circuit breaker is open (1=open/disabled, 0=closed/healthy) |
+| `silkennet_ruby_gc_count` | алертна | — | Total Ruby GC runs since process start (GC.stat[:count]) |
+| `silkennet_ruby_gc_heap_live_slots` | алертна | — | Live objects on the Ruby heap (GC.stat[:heap_live_slots]); sustained growth = leak |
+| `silkennet_ruby_gc_major_count` | алертна | — | Major Ruby GC runs since process start (GC.stat[:major_gc_count]) |
+| `silkennet_ruby_threads` | алертна | — | Live Ruby threads in the process (Thread.list.size); sustained growth = thread leak |
+| `silkennet_sidekiq_dead_set_size` | алертна | — | Current size of the Sidekiq DeadSet (jobs that exhausted all retries) |
+| `silkennet_sidekiq_queue_latency_seconds` | алертна | `queue` | Latency (age of oldest job) in a Sidekiq queue |
+| `silkennet_sidekiq_queue_size` | алертна | `queue` | Current size of a Sidekiq queue |
+| `silkennet_telemetry_archive_unpinned_depth` | алертна | — | [E.60 Фаза 1б] незапінені архів-батчі (pending/build_failed); семплить `Treasury::MonitorService` (15-хв). SLO-поріг «unpinned age < ретеншн-горизонт партицій» = 👤 калібрування ([`00_07`](00_07_Action_Plan_Tracker) E.60-residual) |
+| `silkennet_telemetry_oracle_dispatched_rows` | діагностична | — | **[ARCH.70] ТРЕТІЙ вимір ретеншну — РЯДКИ** (місяці дає `silkennet_partitions`, байти — `silkennet_partitioned_table_bytes`; рядків доти не було, а саме вони визначають, що зітре майбутнє вікно). ⛔⛔ **Це НЕ беклог, і підпис тут є присудом** (⚖️ 2026-08-29): `ChainlinkDispatchWorker` ставить `dispatched` локальним маркером без RPC, callback unwired, PATH 1 демоутовано ([`00_07`](00_07_Action_Plan_Tracker) ARCH.53) — закривача не існує ЗА ПОБУДОВОЮ, тож популяція монотонна не через затор, а через відсутність другої половини тракту. Назвати її «скільки чекає на callback» означало б вигадати число. 🔒 **Ярус діагностичний:** алерт-правила немає, бо для монотонної-за-побудовою величини «скільки прийнятно» не визначене — законна форма це операторська стеля-дедлайн, і вона ратифікується РАЗОМ із шириною вікна ретеншну. ⊕ Ціна лічби виміряна: партіальний `idx_telemetry_logs_oracle_dispatched` дає `Index Only Scan` по кожній партиції, тож це не скан ([ARCH.52]); ⛔ не розширювати на `group(:oracle_status)` — решта станів індексу не має |
+| `silkennet_trees_silent` | алертна | — | Current number of active trees silent beyond the silence threshold (set on each staleness sweep) |
 
 **Histograms:**
 
-| Metric | Labels | Призначення |
-|---|---|---|
-| `silkennet_lorenz_computation_duration_seconds` | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
-| `silkennet_oracle_dispatch_duration_seconds` | — | Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down) |
-
-**Регенерація таблиці** (після зміни реєстру):
-```bash
-bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m.name.to_s]}.each{|m| l=(m.instance_variable_get(:@labels)||[]).map{|x| "`#{x}`"}.join(", "); puts "| `#{m.name}` | #{l.empty? ? %(—) : l} | #{m.docstring} |"}'
-```
+| Metric | Ярус | Labels | Призначення |
+|---|---|---|---|
+| `silkennet_lorenz_computation_duration_seconds` | діагностична | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
+| `silkennet_oracle_dispatch_duration_seconds` | алертна | — | Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down) |
 
 ---
 
