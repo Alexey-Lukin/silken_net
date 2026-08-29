@@ -2,110 +2,177 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Deploy-secret scan (CI: ci.yml). Two never-drift invariants over the Akash SDL,
-# so the secrets-at-rest latch cannot silently come undone:
-#   A. No real secret LITERAL committed in any service env — secret-named vars must
-#      stay REQUIRED_SECRET_NOT_SET placeholders / ${tpl}-vars. A committed key on a
-#      PUBLIC repo is an irreversible leak.
-#   B. The money-signing quintet is JOB-ONLY — never on the internet-facing web or
-#      coap surface. `web3_network_guard` enforces this at RUNTIME (presence in the
-#      signer process at boot); this makes it a CI gate on SDL PLACEMENT, closing
-#      the "runtime, not CI" gap. (The legacy shared ORACLE_PRIVATE_KEY is retired,
-#      INF.22 — the runtime guard refuses it; SECRET_NAME still pattern-catches a
-#      re-added literal here.)
+# Deploy-secret scan (CI: ci.yml). Never-drift invariants over the Kamal chain + the
+# Ingress Anchor coap.env heredoc, so the secrets-at-rest latch cannot silently come undone:
+#   A. No real secret LITERAL committed on any env surface — a secret-named var must stay a
+#      REQUIRED_SECRET_NOT_SET placeholder, a shell reference ($VAR), or a ${terraform} interp.
+#      A committed key on a PUBLIC repo is an irreversible leak.
+#   B. The money-signing quintet is JOB-ONLY — never on the internet-facing web/coap surface,
+#      and never in the GLOBAL env.secret. Security::Web3NetworkGuard enforces PRESENCE in the
+#      signer process at runtime; this is the CI gate on PLACEMENT.
+#      🔴 The global half has no ancestor and is the sharper one: the retired Akash SDL gave
+#      every service its own env block with no shared bucket, but Kamal's top-level env.secret
+#      is INHERITED BY EVERY ROLE (config/deploy.yml names `coap` as a role with no override).
+#      So retargeting this gate off the SDL made it judge MORE, not less [OPS.37].
+#   B2. The retired ORACLE_PRIVATE_KEY [INF.22] must not resurface as a STRUCTURAL key
+#      (a key/name, never a grep — the name legitimately appears in prose comments).
+#   B3. config/deploy.canopy.yml `servers:` must stay the ARRAY form. Kamal's destination
+#      deep_merge REPLACES an array but UNIONS hash keys, so a hash here would silently inherit
+#      the base `job` role — quintet included — into a leg whose secrets are production-scoped
+#      → present-empty inject → Web3NetworkGuard raise on boot. This is the one live Kamal
+#      instance of the "role declared but not where you think" class that the retired
+#      sdl_consistency_check carried [OPS.37].
+#   D. No present-empty env (`VAR=` / `VAR:` with a blank value). Present-but-empty is worse
+#      than absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis,
+#      PROMETHEUS_AUTH→known-value bypass) — the recurring B1 class that cost a 4-month block.
+#   C. .dockerignore keeps secret files out of the PUBLIC GHCR image.
 #
-# Mirrors scripts/sdl_consistency_check.rb (pure Ruby+YAML; .tpl directives/${var}
-# stripped before parsing).
+# Surfaces (post-OPS.37 — the Akash SDL is gone; the Kamal chain is the primary runtime):
+#   config/deploy.yml · config/deploy.canopy.yml · .kamal/secrets-common ·
+#   terraform/compute.tf COAP_ENV heredoc. The heredoc's PRESENCE contract lives in
+#   spec/deploy/anchor_coap_env_spec.rb (which names must/mustn't be there); only the FORM OF
+#   VALUES is judged here — deliberately two predicates, one grammar (borrowed byte-for-byte
+#   from that spec so the heredoc never gets a second, divergent parser).
 #
-# ✅ MUTATION-VERIFIED 2026-08-23, both invariants, isolated:
-#   A. real key literal planted in a service env → RED naming service+var+truncated value;
-#   B. ORACLE_MINTER_PRIVATE_KEY added to the web service → RED naming the leaked member.
-#   Both reverted byte-identically; the gate was GREEN before and after each.
+# ⚠️ Declared vacuum: invariant A over YAML env.clear currently has ZERO subjects (no
+# secret-named var lives in a clear block). It is a standing guardrail against a future
+# env.clear secret, NOT coverage — do not read its green as "clear blocks were checked".
+# SUBJECT_FLOOR below guards the non-vacuous half: a broken text parse returns an empty set
+# and prints ✓ (guard-craft #47).
+
+# ✅ MUTATION-VERIFIED 2026-08-29 against the RETARGETED subject set, all invariants isolated
+# (the pre-OPS.37 marker was deliberately dropped with the surface it proved — a mutation
+# proof over a dead input is the most expensive form of a lying gate):
+#   A/shell   literal instead of $VAR in secrets-common      → RED naming file+var+truncated value
+#   A/interp  literal instead of the placeholder in COAP_ENV → RED
+#   B/global  quintet member added to the GLOBAL env.secret  → RED (the new, sharper half)
+#   B/missing quintet member removed from servers.job        → RED naming the member
+#   B2        ORACLE_PRIVATE_KEY as a structural key         → RED
+#   B3        canopy servers: array → hash                   → RED
+#   D ×2      present-empty in COAP_ENV and in env.clear     → RED
+# All eight reverted byte-identically; the gate was GREEN before and after each.
+# SUBJECT_FLOOR proved itself organically the same day: a z-after-(.*) parser bug collapsed the
+# set to 0 and the floor, not a human, caught the would-be green over an empty set.
 
 require "yaml"
 
-STATIC = "deploy/akash/deploy.yaml"
-TPL    = "deploy/akash/deploy.yaml.tpl"
+KAMAL_BASE   = "config/deploy.yml"
+KAMAL_CANOPY = "config/deploy.canopy.yml"
+SECRETS_FILE = ".kamal/secrets-common"
+ANCHOR_TF    = "terraform/compute.tf" # COAP_ENV heredoc — the anchor daemon's env surface
 
 # Secret-bearing var-name suffixes. `_SECRET` subsumes `_HMAC_SECRET`/`_WEBHOOK_SECRET`;
-# `_BASE64` catches GCP_SA_KEY_BASE64; `_RPC_URL`/`REDIS_URL` embed provider keys /
-# passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens. All current
-# manifests keep these as REQUIRED_SECRET_NOT_SET / ${tpl}, so no false positives.
-SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_RPC_URL|REDIS_URL|_PRIMARY_KEY|_DETERMINISTIC_KEY|_DERIVATION_SALT)\z/
+# `_BASE64` catches base64-wrapped keys; `_RPC_URL`/`REDIS_URL` embed provider keys /
+# passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens.
+SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_DSN|_RPC_URL|REDIS_URL|_PRIMARY_KEY|_DETERMINISTIC_KEY|_DERIVATION_SALT)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
-TPL_MARKER  = "TPLVAR" # what load_tpl replaces ${var} with
+SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} / ${VAR:-default}
+INTERP      = /\A\$\{[^}]+\}\z/         # ${terraform.interpolation} / "${RELEASE_VERSION}"
+
+# Measured 2026-08-29: 23 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 29.
+# A parse that breaks returns [] and the gate prints ✓ — so assert the set is still there.
+SUBJECT_FLOOR = 20
 
 SIGNING_QUINTET = %w[
   ORACLE_CELO_PRIVATE_KEY ORACLE_MINTER_PRIVATE_KEY
   ORACLE_SLASHER_PRIVATE_KEY ETHEREUM_ANCHOR_PRIVATE_KEY SOLANA_WALLET_KEYPAIR
 ].freeze
 
-def load_tpl(path)
-  text = File.read(path)
-  text = text.gsub(/^%\{[^}]*\}/, "")
-  text = text.gsub(/\$\{[^}]+\}/, TPL_MARKER)
-  YAML.safe_load(text, aliases: true)
-end
-
-def env_pairs(sdl, svc)
-  (sdl.dig("services", svc, "env") || []).map do |line|
-    name, _, value = line.to_s.partition("=")
-    [ name, value.strip ]
-  end
-end
-
-def env_names(sdl, svc)
-  env_pairs(sdl, svc).map(&:first)
-end
+RETIRED_NAME = "ORACLE_PRIVATE_KEY"
 
 failures = []
+secret_subjects = 0
 
-[ [ STATIC, YAML.safe_load_file(STATIC) ], [ TPL, load_tpl(TPL) ] ].each do |name, sdl|
-  services = (sdl["services"] || {}).keys
+# --- readers -----------------------------------------------------------------
 
-  # Invariant A — no committed secret literal (covers a hex key or any stray value).
-  services.each do |svc|
-    env_pairs(sdl, svc).each do |var, value|
-      next unless var =~ SECRET_NAME
-      next if value == PLACEHOLDER || value == TPL_MARKER || value.empty?
+# → [[scope_label, clear_hash, secret_names], ...] for every env block a Kamal config declares.
+def env_blocks(cfg)
+  blocks = [ [ "env", cfg.dig("env", "clear") || {}, Array(cfg.dig("env", "secret")) ] ]
+  # servers.web is the ARRAY form (bare host list, no env); job/coap are hashes.
+  servers = cfg["servers"]
+  servers.each { |role, spec| blocks << [ "servers.#{role}", spec.dig("env", "clear") || {}, Array(spec.dig("env", "secret")) ] if spec.is_a?(Hash) } if servers.is_a?(Hash)
+  (cfg["accessories"] || {}).each { |name, spec| blocks << [ "accessories.#{name}", spec.dig("env", "clear") || {}, Array(spec.dig("env", "secret")) ] if spec.is_a?(Hash) }
+  blocks
+end
 
-      failures << "#{name}: #{svc}.#{var} carries a non-placeholder literal " \
-                  "'#{value[0, 12]}…' — secret vars must be #{PLACEHOLDER} / ${tpl}-var"
-    end
-  end
-
-  # Invariant B — signing quintet is job-only. Allow-list (every service EXCEPT job),
-  # not a web/coap deny-list, so a future internet-facing service can't silently
-  # escape the money-key gate by not being named here.
-  (services - [ "job" ]).each do |svc|
-    leaked = SIGNING_QUINTET & env_names(sdl, svc)
-    failures << "#{name}: signing quintet #{leaked} on #{svc} env — must be JOB-ONLY" if leaked.any?
-  end
-  missing = SIGNING_QUINTET - env_names(sdl, "job")
-  failures << "#{name}: signing quintet missing from job env: #{missing}" if missing.any?
-
-  # Invariant B2 — the retired legacy name must not resurface on ANY service [INF.22]
-  # (the runtime guard refuses it; this catches the drift at CI time).
-  services.each do |svc|
-    if env_names(sdl, svc).include?("ORACLE_PRIVATE_KEY")
-      failures << "#{name}: retired ORACLE_PRIVATE_KEY on #{svc} env — INF.22 retired it; use the dedicated keys"
-    end
-  end
-
-  # Invariant D — no present-empty env (`VAR=` with a blank RHS). Present-but-empty is worse than
-  # absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis, PROMETHEUS_AUTH
-  # →known-value bypass) — the recurring B1 class. Placeholders are non-empty REQUIRED_SECRET_NOT_SET;
-  # conditional vars are .tpl-only (%{ if }→omitted at render), so a blank RHS is always a regression.
-  services.each do |svc|
-    (sdl.dig("services", svc, "env") || []).each do |line|
-      var, sep, value = line.to_s.partition("=")
-      next unless sep == "=" && value.strip.empty?
-
-      failures << "#{name}: #{svc}.#{var.strip} is present-but-empty (VAR=) — B1 silences " \
-                  "autodetect/derive; omit the key or give it a value"
-    end
+def dotenv_pairs(text)
+  text.lines.filter_map do |l|
+    m = l.chomp.match(/\A\s*([A-Z][A-Z0-9_]*)=(.*)\z/) or next
+    [ m[1], m[2].strip ]
   end
 end
+
+# Grammar lifted verbatim from spec/deploy/anchor_coap_env_spec.rb — one heredoc, one parser.
+def anchor_coap_pairs
+  lines  = File.read(ANCHOR_TF).lines
+  start  = lines.index { |l| l.include?("<< 'COAP_ENV'") } or raise "coap.env heredoc start not found"
+  length = lines[(start + 1)..].index { |l| l.strip == "COAP_ENV" } or raise "coap.env heredoc end not found"
+  dotenv_pairs(lines[start + 1, length].join)
+end
+
+# --- YAML surfaces (config/deploy.yml + canopy) -------------------------------
+
+configs = { KAMAL_BASE => YAML.safe_load_file(KAMAL_BASE), KAMAL_CANOPY => YAML.safe_load_file(KAMAL_CANOPY) }
+
+configs.each do |file, cfg|
+  env_blocks(cfg).each do |scope, clear, secret_names|
+    clear.each do |var, value|
+      str = value.to_s
+      # A — a secret-named var in a CLEAR block must not carry a real value.
+      if var.to_s =~ SECRET_NAME && !(str == PLACEHOLDER || str =~ INTERP || str.strip.empty?)
+        failures << "#{file}: #{scope}.clear.#{var} carries a non-placeholder literal '#{str[0, 12]}…' — secret vars must be #{PLACEHOLDER} / ${var}"
+      end
+      # D — present-but-empty.
+      failures << "#{file}: #{scope}.clear.#{var} is present-but-empty — B1 silences autodetect/derive; omit the key or give it a value" if value.nil? || str.strip.empty?
+    end
+
+    # B2 — retired name as a structural key.
+    failures << "#{file}: retired #{RETIRED_NAME} in #{scope} — INF.22 retired it; use the dedicated keys" if clear.key?(RETIRED_NAME) || secret_names.include?(RETIRED_NAME)
+
+    # B — quintet allow-list: only servers.job may carry it. Global env.secret is inherited by
+    # EVERY role, so it is the widest leak of all and is judged here too.
+    next if scope == "servers.job"
+
+    leaked = SIGNING_QUINTET & secret_names
+    failures << "#{file}: signing quintet #{leaked} in #{scope} — must be servers.job ONLY (global env.secret is inherited by every role, coap included)" if leaked.any?
+  end
+end
+
+# B — the completeness half, base config only (canopy is web-only by B3).
+job_secrets = Array(configs[KAMAL_BASE].dig("servers", "job", "env", "secret"))
+missing = SIGNING_QUINTET - job_secrets
+failures << "#{KAMAL_BASE}: signing quintet missing from servers.job env.secret: #{missing}" if missing.any?
+
+# B3 — canopy stays the array form (deep_merge REPLACES arrays, UNIONS hash keys).
+unless configs[KAMAL_CANOPY]["servers"].is_a?(Array)
+  failures << "#{KAMAL_CANOPY}: `servers:` must stay the ARRAY form — a hash is deep_merged as a keys-UNION, silently inheriting the base `job` role (money quintet) into a leg whose secrets are production-scoped → present-empty inject → Web3NetworkGuard raise"
+end
+
+# --- text surfaces (.kamal/secrets-common + anchor COAP_ENV) ------------------
+
+[ [ SECRETS_FILE, dotenv_pairs(File.read(SECRETS_FILE)), :shell ],
+  [ ANCHOR_TF,    anchor_coap_pairs,                     :interp ] ].each do |file, pairs, form|
+  pairs.each do |var, value|
+    # D — present-but-empty (both forms).
+    if value.empty?
+      failures << "#{file}: #{var}= is present-but-empty — B1 silences autodetect/derive; omit the line or give it a value"
+      next
+    end
+    # B2 — retired name as a structural key (never a grep: the name appears in prose here).
+    failures << "#{file}: retired #{RETIRED_NAME} declared — INF.22 retired it; use the dedicated keys" if var == RETIRED_NAME
+    next unless var =~ SECRET_NAME
+
+    secret_subjects += 1
+    ok = form == :shell ? value =~ SHELL_REF : (value == PLACEHOLDER || value =~ INTERP)
+    expected = form == :shell ? "a shell reference ($VAR / ${VAR:-…})" : "#{PLACEHOLDER} / ${terraform interpolation}"
+    failures << "#{file}: #{var} carries a non-reference literal '#{value[0, 12]}…' — must be #{expected}" unless ok
+  end
+end
+
+# Lantern on our own subject set — a broken text parse returns [] and prints ✓ otherwise.
+failures << "subject set collapsed: #{secret_subjects} secret-named vars scanned, floor is #{SUBJECT_FLOOR} — the parser, not the tree, is the likely change" if secret_subjects < SUBJECT_FLOOR
+
+# --- C: .dockerignore --------------------------------------------------------
 
 # Invariant C — .dockerignore keeps secret files out of the PUBLIC GHCR image
 # (a leaked RAILS_MASTER_KEY would decrypt a shipped credentials.yml.enc).
@@ -123,7 +190,7 @@ else
 end
 
 if failures.empty?
-  puts "✓ Deploy-secret scan: no key literals; signing quintet job-only across both manifests"
+  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only; quintet job-only (global env.secret clean); canopy array-form intact"
 else
   puts "DEPLOY-SECRET SCAN FAILED:"
   failures.each { |f| puts "  ✗ #{f}" }

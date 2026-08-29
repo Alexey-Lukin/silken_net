@@ -8,16 +8,17 @@ require_relative "../support/repo_root"
 # on first use if absent — so it must reach the runtime on EVERY deploy path the code runs on,
 # and for a SECRET that is a multi-link chain, not one surface:
 #
-#   clear var (contract address): config/deploy.yml env.clear  +  Akash SDL          (2 surfaces)
+#   clear var (contract address): config/deploy.yml env.clear                        (1 surface)
 #   secret var (signing key):     config/deploy.yml env.secret →  .kamal/secrets-common (Kamal
 #                                 resolves $VAR) → deploy workflow env: block (CI injects the
-#                                 GitHub Secret) ; AND Akash SDL                      (4 surfaces)
+#                                 GitHub Secret)                                       (3 surfaces)
 #
 # A link missing on either path = a KeyError-at-first-mint on that surface, silent until runtime.
-# The existing gates cover only parts: sdl_consistency_check = SDL static≡tpl; verify-secrets =
-# boot-critical PRESENCE (a subset). The deploy.yml↔secrets-common↔workflow chain is only a
-# comment ("MUST mirror") and deploy.yml↔SDL is unguarded. This closes the set-diff for the
-# vars the code actually ENV.fetch'es, on every surface each needs.
+# verify-secrets covers only boot-critical PRESENCE (a subset); the deploy.yml↔secrets-common↔
+# workflow chain is otherwise just a comment ("MUST mirror"). This closes the set-diff for the
+# vars the code actually ENV.fetch'es, on every surface each needs. [OPS.37] The second,
+# independent SDL declaration is gone with the platform — a narrower SURFACE, not less coverage:
+# the deploy.yml example below already judges the same set.
 #
 # Exception: activation-gated aux signers — path dead until activation, key Console-injected
 # then (never on any deploy surface — SEC.22/INF.22); ENV.fetch-without-default so activating
@@ -33,7 +34,6 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   let(:deploy_secret)  { names("config/deploy.yml", /^\s+-\s*([A-Z][A-Z0-9_]{2,})\s*$/) }
   let(:deploy_clear)   { names("config/deploy.yml", /^\s+([A-Z][A-Z0-9_]{2,}):/) }
   let(:secrets_common) { names(".kamal/secrets-common", /^([A-Z][A-Z0-9_]{2,})=/) }
-  let(:akash_sdl)      { names("deploy/akash/deploy.yaml", /^\s+-\s*([A-Z][A-Z0-9_]{2,})=/) }
   # The KEY (LHS) of `KEY: ${{ secrets.X }}` is what .kamal/secrets-common reads as $KEY — NOT
   # the secret name (RHS). A typo in the KEY (REDIS_URL:→REDIS_URI:, RHS intact) is the exact B1
   # empty-inject crash, so capture the LHS. This also picks up KEYs injected from a step output
@@ -50,11 +50,6 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   it "is declared in config/deploy.yml (env.clear or env.secret)" do
     missing = code_fetches - deploy_secret - deploy_clear
     expect(missing).to be_empty, "code ENV.fetch not declared in config/deploy.yml: #{missing.join(', ')}"
-  end
-
-  it "is present on the Akash SDL (primary money-path runtime)" do
-    missing = code_fetches - akash_sdl
-    expect(missing).to be_empty, "code ENV.fetch absent from deploy/akash/deploy.yaml: #{missing.join(', ')}"
   end
 
   # B1/INF.19 (the 4-month deploy-block root) generalised beyond the code-fetched vars: EVERY
@@ -74,7 +69,7 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   end
 
   it "keeps activation-gated aux keys OFF every deploy surface (Console-inject only — SEC.22)" do
-    leaked = activation_gated & (deploy_secret + deploy_clear + secrets_common + akash_sdl + workflow_env)
+    leaked = activation_gated & (deploy_secret + deploy_clear + secrets_common + workflow_env)
     expect(leaked).to be_empty, "activation-gated aux signer leaked onto a deploy surface: #{leaked.join(', ')}"
   end
 end

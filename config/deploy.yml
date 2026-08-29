@@ -7,16 +7,27 @@ service: silken_net
 # after `terraform apply` (matches `terraform output artifact_registry_url`). [INF.15]
 image: <GCP_PROJECT_ID>/silken-net/silken_net
 
-# Deploy to these servers (Ingress Anchor IP from Terraform: `terraform output ingress_ip`).
-# After infrastructure pivot, GCP hosts only the Ingress Anchor (e2-small) — Rails runs on Akash.
-# Kamal is retained for direct GCP deployments (fallback) and deployment tooling.
+# Deploy to these servers (host IP from Terraform). Rails + Sidekiq run here via Kamal on GCP;
+# the Ingress Anchor (e2-small) stays a separate machine carrying the PRIMARY CoAP daemon.
+# [OPS.37] The web host is not provisioned yet — `terraform/` regained the web resource as a
+# named leg of that verdict; until it lands this IP is a placeholder, like every other value here.
 servers:
   web:
-    - 192.168.0.1
+    hosts:
+      - 192.168.0.1
+    options:
+      # Metrics port on the host LOOPBACK only, for the `alloy` accessory below. The registry is
+      # in-process, so each role must be its own scrape target (06_03 §2.9); never publish these
+      # on the public interface — PrometheusCollector trusts private ranges without credentials.
+      publish:
+        - "127.0.0.1:9393:80"
   job:
     hosts:
       - 192.168.0.1
     cmd: bundle exec sidekiq -C config/sidekiq.yml
+    options:
+      publish:
+        - "127.0.0.1:9394:9394"
     env:
       clear:
         # Sidekiq concurrency=15 (config/sidekiq.yml); DB pool must match + headroom.
@@ -25,8 +36,10 @@ servers:
       secret:
         # Money/signing keys are JOB-ONLY: every signing call site is a Sidekiq
         # worker; web/coap boot keyless (Security::Web3NetworkGuard scopes the
-        # presence check via signer_process: Sidekiq.server?). Mirrors the Akash
-        # SDL split (job service carries them, web does not).
+        # presence check via signer_process: Sidekiq.server?). This is the ONLY
+        # home of the quintet — scripts/deploy_secret_scan.rb invariant B fails if a
+        # member appears in any other role OR in the global env.secret below (which
+        # every role inherits, coap included).
         # ORACLE_PRIVATE_KEY (legacy shared fallback) is fully RETIRED (INF.22):
         # no code reads it, and Security::Web3NetworkGuard refuses a value under
         # that name (zombie-config tripwire). Every signer has a dedicated key;
@@ -37,7 +50,7 @@ servers:
         - ORACLE_SLASHER_PRIVATE_KEY
         - ETHEREUM_ANCHOR_PRIVATE_KEY
         - SOLANA_WALLET_KEYPAIR
-  # CoAP/UDP telemetry intake daemon (INF.17) — mirrors the Akash `coap` service.
+  # CoAP/UDP telemetry intake daemon (INF.17) — dormant fallback to the anchor systemd daemon.
   # kamal-proxy is HTTP-only, so UDP bypasses it: the container publishes 5683/udp
   # directly on the host (NOT via boot.proxy.publish — that would park the port on
   # the proxy container with no listener behind it).
@@ -48,12 +61,13 @@ servers:
     options:
       publish:
         - "5683:5683/udp"
+        - "127.0.0.1:9395:9395"
     # ⚠️ No env: override → this role inherits the GLOBAL env.secret, incl.
     # PROVISIONING_MASTER_KEY which the coap daemon does NOT need (master_key_strength_check
     # $PROGRAM_NAME-skips coap; SEC.22 wants the HKDF fleet-forge root off coap's plaintext env).
     # Kamal has no per-role secret exclude. Accepted: the PRIMARY coap intake is the anchor
-    # systemd daemon (compute.tf) + Akash SDL coap — both correctly omit it; this Kamal coap role
-    # is a dormant fallback. If it ever goes live, move PROVISIONING_MASTER_KEY into per-role
+    # systemd daemon (compute.tf), which correctly omits it; this Kamal coap role is a dormant
+    # fallback. If it ever goes live, move PROVISIONING_MASTER_KEY into per-role
     # (web+job) env.secret so this role stops inheriting it.
 
 # Kamal proxy configuration.
@@ -85,7 +99,7 @@ registry:
   # [INF.22] Keyless: oauth2accesstoken + a short-lived WIF access token as the
   # password (GCP_ARTIFACT_REGISTRY_KEY), not a long-lived _json_key_base64. CI mints
   # it via google-github-actions/auth (token_format: access_token); locally use
-  # `gcloud auth print-access-token`. See docs/06_02 §Security Exception.
+  # `gcloud auth print-access-token`. Keyless throughout — no static-key exception [INF.22].
   server: europe-west1-docker.pkg.dev
   username: oauth2accesstoken
   password:
@@ -140,7 +154,7 @@ env:
   clear:
     # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
-    # (no Auth Proxy — that is Akash-only). Set POSTGRES_HOST to `terraform output
+    # (no Auth Proxy needed inside the VPC). Set POSTGRES_HOST to `terraform output
     # database_private_ip` after apply. POSTGRES_PASSWORD is in env.secret above.
     POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>
     POSTGRES_USER: silken_net
@@ -164,10 +178,10 @@ env:
     # claims the intake is dead just because it could not look.
     COAP_HOST: api.silkennet.com
     # Puma clustered mode — number of forked worker processes.
-    # Fallback path only (see the `servers:` note above — Rails runs on Akash at
-    # WEB_CONCURRENCY=4). 2 is a conservative default for a small 2-vCPU fallback
-    # host; it is NOT the spec of a provisioned machine — the only GCP instance is
-    # the e2-small Ingress Anchor, which runs no Puma.
+    # 🔴 [OPS.37] This stopped being a fallback default and became the ONLY value the
+    # production web host will boot with — so it is now a SPEC, and it must be set
+    # together with the machine it describes when `terraform/` regains the web resource.
+    # 2 assumes a 2-vCPU host; raising the tier without raising this wastes the tier.
     # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
     WEB_CONCURRENCY: 2
 
@@ -205,6 +219,27 @@ aliases:
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
   canopy-console: app exec --interactive --reuse "bin/rails console" -d canopy
   canopy-logs: app logs -f -d canopy
+
+# Grafana Alloy — scrapes each role's in-process /metrics off the host loopback and pushes to
+# Grafana Cloud (OBS.1: SaaS, no self-hosted Prometheus). Config SSOT: deploy/alloy/config.alloy,
+# parse-gated in CI (`alloy_config_validate`); topology pinned by spec/deploy/alloy_scrape_topology_spec.rb.
+# `network: host` is what makes 127.0.0.1:939x reachable from inside the accessory container.
+accessories:
+  alloy:
+    image: grafana/alloy:v1.16.3
+    host: 192.168.0.1
+    files:
+      - deploy/alloy/config.alloy:/etc/alloy/config.alloy
+    options:
+      network: host
+    env:
+      clear:
+        DEPLOYMENT_SLOT: production
+      secret:
+        - GRAFANA_REMOTE_WRITE_URL
+        - GRAFANA_REMOTE_WRITE_USERNAME
+        - GRAFANA_REMOTE_WRITE_TOKEN
+    cmd: run --server.http.listen-addr=127.0.0.1:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
 
 # Persistent storage volume for Active Storage files.
 volumes:

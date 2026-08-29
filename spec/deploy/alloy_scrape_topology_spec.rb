@@ -13,14 +13,14 @@ require_relative "../support/repo_root"
 RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do # rubocop:disable RSpec/DescribeClass
   # __address__ → process — the load-bearing map (06_03 §2.9): web never sees worker increments.
   let(:targets) do
-    text = File.read(REPO_ROOT.join("deploy/akash/config.alloy"))
+    text = File.read(REPO_ROOT.join("deploy/alloy/config.alloy"))
     # \s spans newlines, and ,? tolerates the trailing comma `alloy fmt` adds in the multi-line
     # form (`"process" = "web",\n}`) — so a legit reformat can't false-alarm the guard.
     text.scan(/\{\s*"__address__"\s*=\s*"([^"]+)",\s*"process"\s*=\s*"([^"]+)",?\s*\}/).to_h
   end
 
-  it "scrapes exactly web:80 / job:9394 / coap:9395 with matching process labels" do
-    expect(targets).to eq({ "web:80" => "web", "job:9394" => "job", "coap:9395" => "coap" }),
+  it "scrapes exactly 9393/9394/9395 on host loopback with matching process labels" do
+    expect(targets).to eq({ "127.0.0.1:9393" => "web", "127.0.0.1:9394" => "job", "127.0.0.1:9395" => "coap" }),
                        "config.alloy scrape topology drifted from the 3-process contract (06_03 §2.9) — " \
                        "a missing job/coap target or port-typo makes those metrics scrape as eternal " \
                        "zeros, P0 alerts dead: got #{targets.inspect}"

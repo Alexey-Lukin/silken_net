@@ -553,8 +553,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.alloy == 'true' || needs.changes.outputs.ci == 'true' }}
     # [OBS hardening, 06_03 §2.9] Parse-validate the Grafana Alloy River config so a
-    # syntax error is caught HERE, not as a crash-loop of the `alloy` sidecar on Akash
-    # deploy (06_02 §debug). `alloy fmt` parses the River AST and exits non-zero on a
+    # syntax error is caught HERE, not as a crash-loop of the `alloy` accessory on
+    # deploy. `alloy fmt` parses the River AST and exits non-zero on a
     # malformed config; it does NOT evaluate sys.env()/coalesce(), so it needs no
     # secrets and is environment-independent. Image tag matches deploy/akash/deploy.yaml.
     # Also dry-run-validates the Grafana IaC (dashboards + alert rules under
@@ -570,9 +570,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Validate Alloy config (River parse — deploy/akash/config.alloy)
+      - name: Validate Alloy config (River parse — deploy/alloy/config.alloy)
         run: |
-          docker run --rm -v "${{ github.workspace }}/deploy/akash:/cfg" \
+          docker run --rm -v "${{ github.workspace }}/deploy/alloy:/cfg" \
             grafana/alloy:v1.16.3 fmt /cfg/config.alloy > /dev/null
           echo "✅ config.alloy parses (River syntax valid)"
 

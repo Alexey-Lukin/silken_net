@@ -2,13 +2,13 @@
 // Grafana Alloy Configuration — SilkenNet Observability (River format)
 // =============================================================================
 //
-// Runs inside the Akash `alloy` sidecar. Scrapes the Rails `/metrics` endpoint
-// (web service) every 15s and pushes to Grafana Cloud via Prometheus remote_write.
+// Runs as the Kamal `alloy` accessory (config/deploy.yml) on the app host. Scrapes
+// each Rails process `/metrics` every 15s and pushes to Grafana Cloud via remote_write.
 //
 // Pipeline:  prometheus.scrape ─▶ prometheus.relabel (cardinality budget) ─▶
 //            prometheus.remote_write (queue_config + WAL) ─▶ Grafana Cloud
 //
-// Environment variables (injected via Akash SDL):
+// Environment variables (Kamal accessory env — config/deploy.yml `accessories.alloy`):
 //   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics
 //   GRAFANA_REMOTE_WRITE_URL / _USERNAME / _TOKEN   — Grafana Cloud remote_write
 //   RAILS_ENV (optional)        — environment label (default "production")
@@ -20,24 +20,26 @@
 // cardinality budget) — docs/06_03 §2.9.
 //
 // ⚠️ Validate after edits before deploy (no local linter in this repo):
-//   docker run --rm -v "$PWD/deploy/akash:/c" grafana/alloy:latest fmt /c/config.alloy
-// A River parse error makes the alloy sidecar crash-loop (see 06_02 §debug).
+//   docker run --rm -v "$PWD/deploy/alloy:/c" grafana/alloy:latest fmt /c/config.alloy
+// A River parse error makes the alloy accessory crash-loop.
 // =============================================================================
 
 prometheus.scrape "silken_net_scraper" {
   // The Prometheus registry is in-process: web never sees worker/daemon
   // increments, so every Ruby process is its own target (06_03 §2.9).
-  // job:9394 / coap:9395 are exposed service-scope only (`to: service:
-  // alloy` in the SDL) — not reachable from outside the deployment.
-  // NOTE: coap:9395 is the Akash FALLBACK service (idle → honest daemon-level
-  // zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this
-  // deployment's scrape reach — ceiling documented in 06_03 §2.9(б).
+  // Each role publishes its metrics port on the host LOOPBACK only (config/deploy.yml
+  // `options.publish: 127.0.0.1:PORT`) — never on the public interface; the accessory
+  // runs with `network: host` to reach them. PrometheusCollector::PRIVATE_RANGES already
+  // treats 127.0.0.0/8 as trusted, so no new credential is introduced by the move.
+  // NOTE: 9395 is the dormant Kamal `coap` FALLBACK role (idle → honest daemon-level
+  // zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this host's scrape
+  // reach — ceiling documented in 06_03 §2.9(б), unchanged by the platform move.
   // The `process` label makes sum/max by (process) queries readable;
   // `instance` (auto-set from __address__) already disambiguates.
   targets = [
-    { "__address__" = "web:80",    "process" = "web" },
-    { "__address__" = "job:9394",  "process" = "job" },
-    { "__address__" = "coap:9395", "process" = "coap" },
+    { "__address__" = "127.0.0.1:9393", "process" = "web" },
+    { "__address__" = "127.0.0.1:9394", "process" = "job" },
+    { "__address__" = "127.0.0.1:9395", "process" = "coap" },
   ]
   metrics_path    = "/metrics"
   scrape_interval = "15s"
@@ -75,17 +77,17 @@ prometheus.relabel "cardinality_budget" {
 
 prometheus.remote_write "grafanacloud" {
   // [Industrial-grade] External labels — attribute every series to its deployment
-  // so prod/canopy AND Akash multi-provider failover (06_02) stay distinguishable
-  // in Grafana Cloud. Without these, series from different environments/providers
-  // collide and dashboards/alerts cannot be scoped. Empty values are dropped.
+  // so the prod and canopy slots stay distinguishable in Grafana Cloud. Without these,
+  // series from different environments collide and dashboards/alerts cannot be scoped.
+  // Empty values are dropped.
   external_labels = {
     service = "silken-net",
-    source  = "akash-alloy",
+    source  = "kamal-alloy",
     env     = coalesce(sys.env("RAILS_ENV"), "production"),
     // RAILS_ENV is "production" for BOTH slots (canopy differs only by
-    // POSTGRES_DATABASE), so a canopy-on-Akash render would otherwise merge
-    // its series with production's. DEPLOYMENT_SLOT is set in the alloy
-    // service env (SDL): "production" default, "canopy" for a canopy render.
+    // POSTGRES_DATABASE), so a canopy deploy would otherwise merge its series
+    // with production's. DEPLOYMENT_SLOT is set in the accessory env:
+    // "production" default, "canopy" for a canopy deploy.
     slot    = coalesce(sys.env("DEPLOYMENT_SLOT"), "production"),
     release = sys.env("RELEASE_VERSION"),
   }
