@@ -417,6 +417,27 @@ module SilkenNet
       labels: [ :network, :signer ]
     )
 
+    # 🔴 [SEC.22] ФЛОАТ ВИПЛАТ — окрема метрика, і окремість тут НЕСУЧА, не стильова.
+    # `ORACLE_BALANCE` оголошений «in native currency (wei/lamports)», а це SPL-токен
+    # із власними decimals (USDC = 6): покласти їх на одну серію означало б змішати дві
+    # шкали під спільним іменем — рівно клас «один токен, два домени».
+    #
+    # 🔑 Чому вона взагалі існує: присуд SEC.22 прийняв Solana-ключ як bounded-blast
+    # («вибух дорівнює ФЛОАТУ гаманця, а не емісії»), але саме ФЛОАТ ніхто не міряв —
+    # монітор стежив лише SOL-баланс, тобто ГАЗ. Тобто підстава присуду не мала
+    # вимірювача, а «bounded» без числа є твердженням про надію.
+    #
+    # ⚠️ ЯРУС — ДІАГНОСТИЧНИЙ, і це ОГОЛОШЕНО, а не пропущено [INF.26, ⚖️ 2026-08-29]:
+    # алерт-правила тут свідомо немає, бо ПОРІГ («скільки флоату прийнятно тримати»)
+    # є deploy-day присудом разом із сусідніми INS.2-числами. Прилад мусить стояти
+    # РАНІШЕ за число — інакше присуд про поріг ухвалюватимуть без величини, яку він
+    # обмежує. Дротування правила = момент, коли число ратифіковано.
+    PAYOUT_FLOAT_BALANCE = REGISTRY.gauge(
+      :silkennet_payout_float_balance,
+      docstring: "Hot-wallet payout float in token units (SPL/ERC-20) — the actual blast ceiling of a compromised payout key, NOT gas [SEC.22; diagnostic tier: no alert until the threshold is ratified]",
+      labels: [ :network, :token ]
+    )
+
     # Treasury monitor errors (network unreachable, RPC timeout)
     TREASURY_CHECK_ERRORS_TOTAL = REGISTRY.counter(
       :silkennet_treasury_check_errors_total,

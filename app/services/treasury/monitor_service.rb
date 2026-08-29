@@ -125,6 +125,11 @@ module Treasury
       # [G1/G2] Money-path limbo + drift видимість (той самий 15-хв прохід).
       update_money_path_metrics
 
+      # [SEC.22] Флоат виплат — те, що СПРАВДІ обмежує вибух скомпрометованого
+      # payout-ключа. Той самий прохід, бо предмет той самий (гарячі гаманці), а
+      # окремий воркер додав би розклад без жодної нової відповіді.
+      update_payout_float_metrics
+
       # [ARCH.62] Агрегатна mint-volume аномалія (той самий money-path прохід).
       detect_mint_volume_anomaly!
 
@@ -140,6 +145,56 @@ module Treasury
     end
 
     private
+
+    # 🔴 [SEC.22] ФЛОАТ ВИПЛАТ ≠ ГАЗ, і доти монітор міряв лише газ.
+    #
+    # Присуд SEC.22 (⚖️ 2026-08-29) прийняв резидентний Solana-ключ як bounded-blast
+    # саме тому, що він не є mint-authority: він авторизує SPL-`transfer` із
+    # передфінансованого ATA, тож стеля збитку = **флоат того ATA**. Але міряли ми
+    # `getBalance` fee-payer'а, тобто SOL на газ — величину, яка про стелю збитку не
+    # каже НІЧОГО. Підстава присуду не мала вимірювача.
+    #
+    # ⛔ Тиша тут не мовчазна: відсутній `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` → просто
+    # немає серії (гейдж не ставиться), а RPC-збій піднімає той самий
+    # `TREASURY_CHECK_ERRORS_TOTAL`, що й решта проходу. Ставити `0` на збої
+    # ЗАБОРОНЕНО: нуль флоату означає «гаманець порожній», і плутати його з «не змогли
+    # прочитати» — рівно той дефект, який `ORACLE_BALANCE_RATIO` уже купив (INF.26).
+    def update_payout_float_metrics
+      ata = ENV["SOLANA_FEE_PAYER_TOKEN_ACCOUNT"]
+      return if ata.blank?
+
+      amount = fetch_spl_token_balance(ata)
+      return if amount.nil?
+
+      SilkenNet::Metrics::PAYOUT_FLOAT_BALANCE.set(amount, labels: { network: "solana", token: "USDC" })
+    rescue StandardError => e
+      SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.increment(
+        labels: { network: "solana", signer: "fee_payer_ata", error_type: e.class.name }
+      )
+      Rails.logger.warn "[Treasury] payout-float read failed: #{e.class}: #{e.message}"
+    end
+
+    # `getTokenAccountBalance` віддає `{ amount, decimals, uiAmountString }`.
+    # Беремо `uiAmountString` (десятковий рядок), бо сира `amount` — це base-units, а
+    # питання гейджа людське: «скільки USDC лежить». `nil` = не змогли прочитати, і
+    # викликач цей стан НЕ конвертує в нуль.
+    def fetch_spl_token_balance(token_account)
+      rpc_url = ENV["SOLANA_RPC_URL"]
+      return nil if rpc_url.blank?
+
+      response = Web3::HttpClient.post(rpc_url,
+        body: { jsonrpc: "2.0", id: SecureRandom.uuid, method: "getTokenAccountBalance",
+                params: [ token_account, { commitment: "confirmed" } ] },
+        open_timeout: 10,
+        read_timeout: RPC_TIMEOUT,
+        service_name: "Solana"
+      )
+
+      value = response.parsed_body&.dig("result", "value")
+      return nil if value.blank?
+
+      value["uiAmountString"].presence&.to_f
+    end
 
     # [G1] manual_review-глибина + limbo-locked + [G2] chain-audit drift → Prometheus.
     # Без цих gauge стан «кошти застрягли/розійшлися» невидимий до ручної перевірки.

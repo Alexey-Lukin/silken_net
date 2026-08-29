@@ -747,4 +747,64 @@ end
       expect { described_class.call }.not_to raise_error
     end
   end
+
+  # 🔴 [SEC.22] Прилад на ФЛОАТ виплат — те, що справді обмежує вибух payout-ключа.
+  # Присуд прийняв резидентний Solana-ключ як bounded-blast на підставі «вибух =
+  # флоат гаманця», а монітор міряв лише SOL на ГАЗ — тобто підстава не мала
+  # вимірювача. Піни нижче тримають ТРИ окремі властивості, і третя найважливіша.
+  describe "payout float gauge (SEC.22)" do
+    let(:gauge) { SilkenNet::Metrics::PAYOUT_FLOAT_BALANCE }
+    let(:ata_labels) { { network: "solana", token: "USDC" } }
+
+    before do
+      allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
+      ENV["SOLANA_FEE_PAYER_TOKEN_ACCOUNT"] = "AtaAddress1111111111111111111111111111111"
+    end
+
+    after { ENV.delete("SOLANA_FEE_PAYER_TOKEN_ACCOUNT") }
+
+    it "records the ATA float in TOKEN units, not base units" do
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        instance_double(Web3::HttpClient::Response,
+                        parsed_body: { "result" => { "value" => { "amount" => "1250000",
+                                                                  "decimals" => 6,
+                                                                  "uiAmountString" => "1.25" } } })
+      )
+
+      described_class.call
+
+      expect(gauge.get(labels: ata_labels)).to eq(1.25)
+    end
+
+    # ⛔ Найдорожчий пін із трьох: нуль флоату означає «гаманець порожній», і плутати
+    # його з «не змогли прочитати» — рівно той дефект, який ORACLE_BALANCE_RATIO уже
+    # купив (INF.26: `rescue` писав 0.0, і один RPC-таймаут пейджив на повному гаманці).
+    #
+    # 🔴 **Перша редакція цього піна була ВАКУУМНА, і мутація це показала** (2026-08-29):
+    # вона брала `before_value` на НЕВСТАНОВЛЕНОМУ гейджі, а той віддає `0.0` — тобто
+    # «лишили невстановленим» і «записали нуль» були для неї тотожні, і підсаджений
+    # `set(0)` у `rescue` проходив зеленим. Пін мусить стартувати з НЕПОРОЖНЬОГО стану:
+    # спершу здоровий прохід кладе реальне число, і лише тоді збій має його НЕ стерти.
+    it "keeps the last known float on a read failure instead of overwriting it with zero" do
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        instance_double(Web3::HttpClient::Response,
+                        parsed_body: { "result" => { "value" => { "amount" => "4200000",
+                                                                  "decimals" => 6,
+                                                                  "uiAmountString" => "4.2" } } })
+      )
+      described_class.call
+      expect(gauge.get(labels: ata_labels)).to eq(4.2), "фікстура не наповнила гейдж — пін був би вакуумним"
+
+      allow(Web3::HttpClient).to receive(:post).and_raise(StandardError, "rpc down")
+
+      expect { described_class.call }.not_to raise_error
+      expect(gauge.get(labels: ata_labels)).to eq(4.2)
+    end
+
+    it "skips silently when the ATA is not provisioned" do
+      ENV.delete("SOLANA_FEE_PAYER_TOKEN_ACCOUNT")
+
+      expect { described_class.call }.not_to raise_error
+    end
+  end
 end
