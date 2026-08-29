@@ -811,6 +811,50 @@ end
     end
   end
 
+  # [SLASH-1] Спека сідає в ТОЧКУ ДІЇ — на сам шов між двома писачами термінального
+  # стану. Доти `ContractTerminationService`-спека пінила `:cancelled`, а ця пінила
+  # `:breached`, і ЖОДНА не перетинала шва: сервіс наприкінці contractual-шляху
+  # перезаписував чужий термінальний стан, і жоден пін цього не бачив.
+  # 💰 Ціна була не реєстровою: `NaasContract.total_insurance_premiums` рахує
+  # `[active, fulfilled, breached]` з власним коментарем «cancelled повертається —
+  # виключено», тож перезапис утримував 5% премії у Real-Yield звіті за договором,
+  # який замовник ЗАКОННО скасував.
+  describe "contractual forfeiture does NOT overwrite the customer's own termination" do
+    let!(:tree) { create(:tree, cluster: cluster) }
+
+    before do
+      # Мінт, з якого рахується база форфейтури — без нього сервіс завершиться no-op'ом
+      # на нульовій базі, і жоден із пінів нижче не мав би предмета (пін на порожній
+      # множині зелений завжди).
+      tree.wallet.blockchain_transactions.create!(
+        amount: 1000, token_type: :carbon_coin, status: :confirmed, direction: :mint,
+        to_address: organization.crypto_public_address, tx_hash: "0x#{'c' * 64}"
+      )
+      allow(mock_client).to receive(:transact).and_return("0x#{'e' * 64}")
+      naas_contract.update!(status: :cancelled, cancelled_at: Time.current)
+    end
+
+    it "leaves the contract :cancelled (a voluntary exit is not a breach)" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree, contractual: true)
+
+      expect(naas_contract.reload.status).to eq("cancelled")
+    end
+
+    it "keeps the cancelled contract OUT of the insurance-premium base" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree, contractual: true)
+
+      expect(NaasContract.total_insurance_premiums).to eq(0)
+    end
+
+    it "labels the money row as forfeiture, not slashing (the customer reads this)" do
+      described_class.call(organization.id, naas_contract.id, source_tree: tree, contractual: true)
+
+      notes = BlockchainTransaction.where(sourceable: naas_contract, direction: :burn).last.notes
+      expect(notes).to include("ФОРФЕЙТУРА")
+      expect(notes).not_to include("SLASHING")
+    end
+  end
+
   describe "#calculate_slash_ratio (§6.2 convex curve)" do
     subject(:service) { described_class.new(organization.id, naas_contract.id) }
 

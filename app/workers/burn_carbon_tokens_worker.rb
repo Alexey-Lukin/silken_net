@@ -26,11 +26,23 @@ class BurnCarbonTokensWorker
     naas_contract = NaasContract.find_by(id: naas_contract_id)
     return Rails.logger.error "🛑 [Slashing] Контракт ##{naas_contract_id} не знайдено." unless naas_contract
 
-    # [ІДЕМПОТЕНТНІСТЬ]: Якщо контракт вже розірвано (попередній ретрай виконав слешинг, але впав
-    # на створенні MaintenanceRecord) — виходимо без повторного виклику. [ARCH.48] Інваріант тепер
-    # ТОЧНИЙ: `:breached` ставить ЛИШЕ happy-path сервісу на РЕАЛЬНОМУ слешингу (rescue на збої більше
-    # НЕ breach-ить) → :breached ≡ «вже слешено», тож цей skip не маскує тихий burn-abort на RPC-збої.
-    return Rails.logger.warn "⚠️ [Slashing] Контракт ##{naas_contract_id} вже розірвано. Пропускаємо." if naas_contract.status_breached?
+    # [ІДЕМПОТЕНТНІСТЬ]: якщо попередній прохід уже виконав burn (але впав на створенні
+    # MaintenanceRecord чи деінде нижче) — виходимо без повторного виклику.
+    #
+    # 🔴 [SLASH-1] Гард читає САМ ІНТЕНТ, а не статус контракту, і це не рефакторинг:
+    # доти тут стояв `status_breached?`, тобто ознака, яку contractual-шлях перестав
+    # ставити (бо форфейтура НЕ робить договір порушеним — див. `unless @contractual`
+    # у сервісі). Лишити старий гард означало б лишити early-exit БЕЗ ідемпотентності:
+    # per-contract claim у сервісі тримає лише вікно `unsettled_within(2.hours)`, тож
+    # ретрай, що прийшов пізніше, зробив би ДРУГИЙ необоротний burn.
+    # ⛔ Часового вікна тут свідомо НЕМАЄ: питання «чи вже палили за цим договором»
+    # не має горизонту, а `status`-скан партиційної таблиці навмисно лишається
+    # unbounded (CLAUDE §6 — межа тут ШКІДЛИВА, важіль = partial index [ARCH.52]).
+    # `sourceable` індексований, тож це index-scan по одному договору, не скан партицій.
+    settled_burn = BlockchainTransaction
+                   .where(sourceable: naas_contract, direction: :burn, status: [ :sent, :confirmed ])
+                   .exists?
+    return Rails.logger.warn "⚠️ [Slashing] За контрактом ##{naas_contract_id} burn уже виконано (settled intent). Пропускаємо." if settled_burn
 
     organization = Organization.find(organization_id)
     cluster = naas_contract.cluster
@@ -67,13 +79,25 @@ class BurnCarbonTokensWorker
       return
     end
 
-    # [S2.4] Track slashing event by reason for Prometheus monitoring
-    reason = source_tree ? "tree_death" : "cluster_degradation"
+    # [S2.4] Track slashing event by reason for Prometheus monitoring.
+    # 🔴 [SLASH-1] Вердикт читається ПЕРШИМ: contractual-форфейтура не є ані загибеллю
+    # дерева, ані деградацією кластера — вона є добровільним виходом замовника. Доти
+    # мітка деривувалась лише з наявності `source_tree`, тож кожен early-exit приходив
+    # на панель як `cluster_degradation`, тобто як провина оператора. Дискримінатор
+    # існував у сервісі (`verdict:` в audit-ланцюгу), просто сюди не доїжджав.
+    reason = if contractual
+               "contractual_forfeiture"
+    elsif source_tree
+               "tree_death"
+    else
+               "cluster_degradation"
+    end
     SilkenNet::Metrics::SLASHING_EVENTS_TOTAL.increment(labels: { reason: reason })
 
     # 2. СИНХРОНІЗАЦІЯ ІСТИННИ (Atomic Audit)
-    # Ми маркуємо контракт як BREACHED вже всередині сервісу, але тут
-    # створюємо "надгробний камінь" у фізичному журналі обслуговування.
+    # Сервіс уже перевів контракт у термінальний стан (`:breached` на positive-A;
+    # на contractual він лишається `:cancelled` — [SLASH-1]), а тут створюється
+    # "надгробний камінь" у фізичному журналі обслуговування.
     ActiveRecord::Base.transaction do
       # Шукаємо системного інквізитора (Oracle Executioner) для підпису запису.
       # Якщо бот відсутній у DB — fallback на першого адміна, щоб не зламати транзакцію.
@@ -87,12 +111,26 @@ class BurnCarbonTokensWorker
         # Підписант — бот, тож рядок машинний; на валідацію це не впливає
         # (`decommissioning` фото не вимагає), але провенанс мусить бути чесний.
         system_generated: true,
-        notes: <<~NOTES
-          🚨 SLASHING EXECUTED.
-          Контракт ##{naas_contract_id} анульовано через порушення біо-цілісності.
-          #{source_tree ? "Причина: Загибель Солдата #{source_tree.did}." : "Причина: Загальна деградація кластера."}
-          Вердикт Оракула: BREACHED.
-        NOTES
+        # 🔴 [SLASH-1] Надгробок мусить називати ПРИЧИНУ, а не приписувати провину.
+        # Доти цей текст був один на обидва шляхи, тож добровільний early-exit діставав
+        # у фізичному журналі обслуговування напис «анульовано через порушення
+        # біо-цілісності … Вердикт Оракула: BREACHED» — тобто запис, який людина потім
+        # читає як доказ провини замовника. Дискримінатор той самий, що в мітці метрики.
+        notes: if contractual
+                 <<~NOTES
+                   📄 CONTRACTUAL FORFEITURE.
+                   Контракт ##{naas_contract_id} завершено достроково за ініціативою замовника.
+                   Нараховані монети списано як погоджену умову (`burn_accrued_points`), НЕ як санкцію.
+                   Порушення умов НЕ встановлено; статус контракту: CANCELLED.
+                 NOTES
+               else
+                 <<~NOTES
+                   🚨 SLASHING EXECUTED.
+                   Контракт ##{naas_contract_id} анульовано через порушення біо-цілісності.
+                   #{source_tree ? "Причина: Загибель Солдата #{source_tree.did}." : "Причина: Загальна деградація кластера."}
+                   Вердикт Оракула: BREACHED.
+                 NOTES
+               end
       )
     end
 

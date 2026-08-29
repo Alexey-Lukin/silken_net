@@ -415,7 +415,17 @@ module Dclimate
       organization = @alert.cluster.organization
       return unless organization
 
-      NaasContract.where(cluster: @alert.cluster).where.not(status: :breached).find_each do |contract|
+      # 🔴 [SLASH-1] Виключаємо ОБИДВА термінальні стани, не лише `:breached`.
+      # Доти тут стояв самий `:breached`, і `:cancelled` не виключався — це «працювало»
+      # лише випадково: contractual-шлях перезаписував скасований договір на `:breached`,
+      # тобто діру затуляв рівно той дефект, який SLASH-1 виправляє. Прибрати перезапис і
+      # не розширити цей скоуп означало б ВІДКРИТИ діру: dClimate-тригер ставив би slash
+      # на договір, який замовник законно скасував.
+      # ⊕ `:draft` не виключаємо свідомо — там ще нічого не намінтовано, тож сервіс
+      # завершиться no-op'ом на нульовій базі, а не хибним вироком.
+      NaasContract.where(cluster: @alert.cluster)
+                  .where.not(status: [ :breached, :cancelled ])
+                  .find_each do |contract|
         BurnCarbonTokensWorker.perform_async(organization.id, contract.id, @alert.tree_id)
       end
     end

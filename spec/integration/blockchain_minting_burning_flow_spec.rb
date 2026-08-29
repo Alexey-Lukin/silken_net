@@ -314,8 +314,13 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect(record.notes).to include(tree.did)
     end
 
-    it "skips already breached contracts" do
-      naas.update!(status: :breached)
+    # [SLASH-1] Гард ідемпотентності читає settled burn-ІНТЕНТ, а не статус контракту:
+    # `:breached` перестав бути ознакою «вже палили», бо contractual-шлях його свідомо
+    # не ставить (форфейтура ≠ порушення). Фікстура тепер відтворює стан, який продакшн
+    # УМІЄ створити — доти вона ставила самий статус, тобто пінила проксі.
+    it "skips a contract whose burn intent already settled" do
+      create(:blockchain_transaction, sourceable: naas, wallet: wallet,
+                                      direction: :burn, token_type: :carbon_coin, status: :confirmed)
       BurnCarbonTokensWorker.new.perform(organization.id, naas.id)
 
       expect(BlockchainBurningService).not_to have_received(:call)

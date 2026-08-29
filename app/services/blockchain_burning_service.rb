@@ -284,7 +284,18 @@ class BlockchainBurningService < ApplicationService
     begin
       tx_hash = nil
       outcome = nil
-      reason = @source_tree ? "загибель дерева #{@source_tree.did}" : "порушення умов кластера"
+      # 🔴 [SLASH-1] Цей рядок їде в `notes` ГРОШОВОГО рядка, який рендериться КЛІЄНТОВІ,
+      # тож вердикт читається першим. Доти обидві гілки писали «🚨 SLASHING … порушення»
+      # навіть за добровільний early-exit — тобто платформа звинувачувала замовника в
+      # його ж власному рішенні, на поверхні, яку він бачить. Дискримінатор `@contractual`
+      # уже стояв за кілька рядків вище (у `verdict:` audit-ланцюга) і сюди не доїжджав.
+      reason = if @contractual
+                 "дострокове завершення за ініціативою замовника (погоджена умова договору)"
+      elsif @source_tree
+                 "загибель дерева #{@source_tree.did}"
+      else
+                 "порушення умов кластера"
+      end
 
       clamp_note = effective_burn < burn_amount ? " (clamp з #{burn_amount} до on-chain балансу)" : ""
       Rails.logger.warn "🔥 [Slashing] Вилучення #{effective_burn}/#{total_minted_amount} SCC#{clamp_note} (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
@@ -325,7 +336,16 @@ class BlockchainBurningService < ApplicationService
         BlockchainConfirmationWorker.perform_in(30.seconds, tx_hash, audit.created_at.iso8601) # [ARCH.52] partition-prune
 
         # Маркуємо контракт як розірваний. Це автоматично блокує майбутні виплати.
-        @naas_contract.update!(status: :breached)
+        # 🔴 [SLASH-1] ЛИШЕ на positive-A шляху. На contractual-шляху контракт уже
+        # `:cancelled` (його поставив `ContractTerminationService`), і перезапис на
+        # `:breached` був не реєстровою неточністю, а ГРОШИМА: `total_insurance_premiums`
+        # рахує `[active, fulfilled, breached]` із власним коментарем «cancelled
+        # повертається — виключено», тож перезапис утримував 5% премії у Real-Yield
+        # звіті за договором, який замовник ЗАКОННО скасував. Канон на боці ліку:
+        # `00_04 §5` колонкою результату каже `status = :cancelled`, а `04_02` —
+        # «breach лише на РЕАЛЬНОМУ positive-A слешингу». AASM теж: подія `breach`
+        # переходу з `:cancelled` не дозволяє (обидва сайти пишуть raw `update!`).
+        @naas_contract.update!(status: :breached) unless @contractual
 
         # [OBSERVABILITY]: Track slashed tokens for Prometheus/Grafana.
         # [SLASH.2] effective_burn (on-chain-реалістичний upper-bound), не pre-tax burn_amount.
@@ -353,7 +373,11 @@ class BlockchainBurningService < ApplicationService
         # [ARCH.45] Broadcast УЖЕ стався (tx_hash отримано) — крах ПІСЛЯ `mark_as_sent` (ConfirmationWorker
         # / breach-update). Slash потрапить у ланцюг → контракт МАЄ бути `:breached` (як і раніше); re-arm
         # confirmation (`:sent` ⇒ tx_hash присутній — model-validated). Retry безпечний — guard побачить :sent.
-        @naas_contract.update!(status: :breached)
+        # 🔴 [SLASH-1] Той самий `unless @contractual`, що на happy-path вище, і з тієї ж
+        # причини: контрактна форфейтура НЕ робить договір порушеним. Крах у цьому вікні
+        # не міняє ПРИРОДИ події — burn однаково стався, але для early-exit він є
+        # погодженою умовою, а не вироком.
+        @naas_contract.update!(status: :breached) unless @contractual
         BlockchainConfirmationWorker.perform_in(30.seconds, audit.tx_hash, audit.created_at.iso8601) # [ARCH.52] partition-prune
         handle_slashing_failure(e.message, total_minted_amount)
         raise e
@@ -485,7 +509,9 @@ class BlockchainBurningService < ApplicationService
       # а не на «це burn». Знак `amount` тут ДОДАТНИЙ і напрямку не несе.
       direction:  :burn,
       status:     :pending,
-      notes:      "🚨 SLASHING: Кошти вилучено. Причина: #{reason}."
+      # [SLASH-1] Префікс теж належить вердикту, не лише причина: «🚨 SLASHING» над
+      # добровільним виходом є твердженням про провину, а не описом руху коштів.
+      notes:      @contractual ? "📄 ФОРФЕЙТУРА: монети списано. Підстава: #{reason}." : "🚨 SLASHING: Кошти вилучено. Причина: #{reason}."
     )
   end
 

@@ -61,12 +61,31 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(BlockchainBurningService).not_to have_received(:call)
     end
 
-    it "skips already breached contracts (idempotency)" do
-      naas_contract.update_column(:status, :breached)
+    # [SLASH-1] Гард ідемпотентності читає САМ ІНТЕНТ, не статус контракту — і фікстура
+    # мусить відтворювати стан, який продакшн УМІЄ створити. Доти тут стояв
+    # `update_column(:status, :breached)` без жодного інтенту, тобто стан, недосяжний за
+    # побудовою: `:breached` ставиться ЛИШЕ після `mark_as_sent!`. Спека пінила ПРОКСІ —
+    # і саме тому пережила зміну шляху, яка той проксі знецінила.
+    it "skips a contract whose burn intent already settled (idempotency)" do
+      wallet = create(:wallet, tree: tree)
+      create(:blockchain_transaction, sourceable: naas_contract, wallet: wallet,
+                                      direction: :burn, token_type: :carbon_coin, status: :confirmed)
 
       described_class.new.perform(organization.id, naas_contract.id)
 
       expect(BlockchainBurningService).not_to have_received(:call)
+    end
+
+    # ⊥ Дзеркало того самого гарда: сам по собі термінальний СТАТУС більше не спиняє
+    # прохід — інакше contractual-шлях (який `:breached` не ставить) лишився б узагалі
+    # без ідемпотентності, бо `unsettled_within`-claim у сервісі тримає лише двогодинне
+    # вікно, і пізній ретрай зробив би ДРУГИЙ необоротний burn.
+    it "does NOT skip on status alone when no settled intent exists" do
+      naas_contract.update_column(:status, :breached)
+
+      described_class.new.perform(organization.id, naas_contract.id)
+
+      expect(BlockchainBurningService).to have_received(:call)
     end
 
     it "re-raises errors for Sidekiq retry" do
@@ -143,8 +162,13 @@ RSpec.describe BurnCarbonTokensWorker, type: :worker do
       expect(metric.get(labels: { reason: "cluster_degradation" })).to eq(before_val + 1.0)
     end
 
-    it "does not increment metric when contract is already breached" do
-      naas_contract.update_column(:status, :breached)
+    # [SLASH-1] Та сама поправка фікстури, що в блоці ідемпотентності вище: гард читає
+    # settled ІНТЕНТ, тож `update_column(:status, :breached)` без інтенту більше не є
+    # станом «уже слешено» — він недосяжний у продакшні за побудовою.
+    it "does not increment metric when the burn intent already settled" do
+      wallet = create(:wallet, tree: tree)
+      create(:blockchain_transaction, sourceable: naas_contract, wallet: wallet,
+                                      direction: :burn, token_type: :carbon_coin, status: :confirmed)
 
       metric = SilkenNet::Metrics::SLASHING_EVENTS_TOTAL
       before_tree = metric.get(labels: { reason: "tree_death" })
