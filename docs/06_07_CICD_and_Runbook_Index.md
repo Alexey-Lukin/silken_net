@@ -2,7 +2,7 @@
 
 ## 🎯 Мета
 
-Зафіксувати **повний набір CI/CD workflows** (`.github/workflows/`) як єдину систему — тригери, призначення, gates — та надати **єдиний індекс операційних runbook'ів** (які раніше були розкидані по 06_02/04/05/06). Runbook'и тут **не дублюються** — лише посилання на канонічний дім кожного (DRY).
+Зафіксувати **повний набір CI/CD workflows** (`.github/workflows/`) як єдину систему — тригери, призначення, gates — та надати **єдиний індекс операційних runbook'ів** (які раніше були розкидані по 06_04/05/06). Runbook'и тут **не дублюються** — лише посилання на канонічний дім кожного (DRY).
 
 ---
 
@@ -20,7 +20,6 @@
 |---|---|
 | `.github/workflows/*.yml` | workflows (SSOT — фактична конфігурація) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | deploy-flow, Kamal/Terraform |
-| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash deploy |
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | secrets/revocation |
 | [`06_05` — Puma Configuration](06_05_Puma_Configuration) | Puma runbooks |
 | [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | DR runbooks |
@@ -85,7 +84,7 @@
 | `deploy.yml` → **Deploy · Canopy** | `workflow_run` (CI success on `main`) + dispatch | **Canopy** deploy: terraform + `kamal deploy -d canopy`. **Path-gated [INF.9]** — на workflow_run деплоїть лише коли змінились image-релевантні (список mirror-ghcr — canopy = continuous для app-коду) або infra-файли (`terraform/` · `.kamal/` · сам workflow); firmware/docs/tools-only коміти видимо skip'аються, dispatch завжди деплоїть. `verify-secrets` **skips cleanly** (green run) when no deploy secrets are configured — no red noise. |
 | `deploy-production.yml` → **Deploy · Production** | `release: published` + dispatch | **Production**: `verify-secrets` (SEC.11) → terraform apply → `kamal deploy`. The GitHub Release that triggers it is created by **Ops · Release** (release-please). **[INF.22] GH Environment `production`** гейтить `verify-secrets` + `deploy` (не `terraform` — його TF-вари repo-level, drift ділить): money-п'ятірка (legacy `ORACLE_PRIVATE_KEY` retired повністю — guard-tripwire) = environment-scoped secrets, wait-timer 10 хв **per-job** (2 гейти/release) + ref-policy `v*`∪`main` (dispatch поза ними падає до секретів). Куди класти секрети → [`06_04 §1`](06_04_Secrets_Checklist). |
 | `coap_smoke.yml` → **Smoke · CoAP UDP** | `workflow_call` (job `coap-smoke` в обох deploy-workflows, `needs: deploy`) + **`schedule` кожні 30 хв** (`17,47 * * * *` — безперервний liveness анкора-SPOF, S2.4) + dispatch | Post-deploy CoAP/UDP boundary smoke (INF.6; активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`, до того — видимо skipped) |
-| `mirror-ghcr.yml` → **Deploy · GHCR Mirror** | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у GHCR (для Akash pull). **Path-gated** — на workflow_run перебудовує лише коли змінились image-релевантні файли; підписує образ **Sigstore-signed SLSA build-provenance** (`actions/attest-build-provenance`, keyless OIDC→Fulcio/Rekor) + BuildKit SBOM, attestation attached. User-facing verify → `SECURITY.md`. |
+| `mirror-ghcr.yml` → **Deploy · GHCR Mirror** | `workflow_run` + `release` + dispatch | Дзеркалить Docker image у ПУБЛІЧНИЙ GHCR — анкер тягне свій coap-образ systemd-юнітом поза Kamal/WIF-ланцюгом і не має реєстрового credential'а; плюс щоденний CVE-скан опублікованого тега й verify-обіцянка `SECURITY.md`. **Path-gated** — на workflow_run перебудовує лише коли змінились image-релевантні файли; підписує образ **Sigstore-signed SLSA build-provenance** (`actions/attest-build-provenance`, keyless OIDC→Fulcio/Rekor) + BuildKit SBOM, attestation attached. User-facing verify → `SECURITY.md`. |
 | `terraform_drift.yml` → **Ops · TF Drift** | `schedule` weekly (`43 6 * * 2`) + dispatch | Scheduled drift-детектор: `terraform plan -detailed-exitcode` GCP-root проти LIVE-стану, fail-loud при drift (exit 2) → GH-notification власнику; **skip-clean** доки WIF-провайдер (repo Variable) + `GCP_PROJECT_ID`/`POSTGRES_PASSWORD` не задані (keyless OIDC-auth, INF.22 — guard дзеркалить verify-secrets; config-half зараз, активується з першим `apply`). GCP-root only — `terraform/akash/` = `null_resource`/local-exec (не refreshable provider → plan там no-op). Дім → [`06_01`](06_01_Deployment_Kamal_Terraform) [INF.22] |
 
 ### Repo / Project governance
@@ -126,14 +125,12 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 
 ## 3. Operations Runbook Index (канонічні доми — НЕ дублювати тут)
 
-> 🔴 **Передумова, спільна для ВСІХ console-рецептів нижче, і документована вона лише наполовину.** Кожен із них починається з доступу до Rails-процесу, а канон описує цей доступ **тільки для Kamal/GCP-fallback** ([`06_01 §Deploy runbook`](06_01_Deployment_Kamal_Terraform) — `kamal app exec --interactive --reuse "bin/rails console"`). Для **живого** шляху (Akash — так його називає `config/database.yml`) з 2026-08-28 є **рецепт-КАНДИДАТ** [`06_02 §4.5`](06_02_Akash_Network_Integration), і його дві половини свідомо розведені: те, що доводиться НАШИМ кодом уже зараз (Cloud SQL Auth Proxy — фоновий процес у ТОМУ САМОМУ контейнері, під наглядом PID 1, тож контейнер, у який вдалося зайти, за побудовою має живий проксі), і сам механізм входу, який без живого lease не доводиться. ⚠️ Слово «кандидат» знімає лише `👤`-верифікація. Тобто рецепти коректні, а от дорога до них перевірена не на тому таргеті — і виявиться це в інциденті. Нота стоїть ТУТ одним домом, а не копією в кожному рецепті. Стан → [`00_07`](00_07_Action_Plan_Tracker) OPS.20.
+> 🔴 **Передумова, спільна для ВСІХ console-рецептів нижче — і вона не виконана.** Кожен із них починається з доступу до Rails-процесу; канон описує цей доступ ОДИН раз ([`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) — `kamal app exec --interactive --reuse "bin/rails console"`). ⚠️ **[OPS.37, 2026-08-29] Асиметрія «задокументований fallback ⊥ живий шлях» зникла разом із другою платформою — але діра НЕ закрилась, вона змінила природу.** Доти вона читалась як «рецепт є для не-того таргета»; тепер таргет один, рецепт один, і він **жодного разу не запускався на живому контейнері**, бо не задеплоєно нічого й ніде. Наслідок несе не цей документ, а **два money-path-рецепти, що починаються з консолі**: резолюція `manual_review` й ескалація Field-Audit C→A, яка відчиняє ворота необоротного слешингу — обидва інертні, доки доступ не доведено. Пишучи новий рецепт «виконай у консолі», не вважай доступ вирішеним питанням. Стан — [`00_07`](00_07_Action_Plan_Tracker) `OPS.20`. ⛔ `coap`-роль для консолі не брати — вона звільнена від master-key-перевірки.
 
 | Runbook | Дім (SSOT) |
 |---|---|
 | Перший деплой інфраструктури (GCS state → terraform → secrets → deploy) | [`06_01 §Quickstart`](06_01_Deployment_Kamal_Terraform) |
-| Akash SDL deploy + `ALLOY_CONFIG_BASE64` encode + Alloy debug | [`06_02 §2 ENV (Секрети SDL)/INF.7`](06_02_Akash_Network_Integration) |
-| **Доступ до Rails-процесу на ЖИВОМУ lease** (`lease-shell` → `bin/rails console`) — ⚠️ статус **КАНДИДАТ**, не доведено на живому lease | [`06_02 §4.5`](06_02_Akash_Network_Integration) |
-| TLS / Cloudflare verification (8-step) | [`06_02 §TLS термінація`](06_02_Akash_Network_Integration) |
+| TLS / Cloudflare verification (8-step) | [`06_01 §TLS`](06_01_Deployment_Kamal_Terraform) |
 | Secrets: pre-deploy checklist, rotation, audit | [`06_04 §5.1–5.3`](06_04_Secrets_Checklist) |
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |
 | **Emergency:** витік підписаного імені Turbo-стріму → per-tenant відкликання (епоха) | [`06_04 §5.9`](06_04_Secrets_Checklist) |

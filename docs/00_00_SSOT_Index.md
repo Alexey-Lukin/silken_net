@@ -43,7 +43,7 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
       │ LTE/Starlink                          │ LTE/Starlink
       ▼                                       ▼
    ┌──────────────────────────────────────────────┐
-   │  Rails Backend (Akash Network / GCP)          │
+   │  Rails Backend (GCP, Kamal)                   │
    │  CoAP Listener + Sidekiq                       │
    │                                                │
    │  ┌── Verification ─────────────────────────┐  │
@@ -145,12 +145,11 @@ _DePIN-стек, Proof of Growth pipeline, токеноміка SCC/SFC, slashin
 
 ## 🚀 Модуль 06: DevOps та Інфраструктура (The Matrix)
 
-_Деплой, моніторинг, секрети та децентралізовані обчислення (Akash + GCP failover)._
+_Деплой, моніторинг, секрети та інфраструктура (GCP + Kamal)._
 
 - [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) (Kamal + Terraform GCP, Canopy vs Production)
-- [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) (SDL 2.0 манифест + multi-provider failover)
 - [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) (Grafana Alloy → Grafana Cloud + Alerting)
-- [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Akash, Terraform)
+- [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) (Інвентаризація секретів: GitHub Secrets, Kamal, Terraform)
 - [`06_05` — Puma Configuration](06_05_Puma_Configuration) (Puma 8 IO-bound pool + кластерні хуки + runbook'и)
 - [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) (Cloud SQL PITR/HA + restore-runbook'и + RTO/RPO + master-key backup)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/CD workflows + єдиний operations runbook-індекс)

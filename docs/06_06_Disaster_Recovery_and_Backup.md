@@ -134,8 +134,8 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 ### 5.3 Region loss (full rebuild)
 1. `terraform apply` у новому регіоні (`var.region`) — підніме Cloud SQL + Ingress Anchor.
 2. Restore Cloud SQL з backup у новий регіон (`gcloud sql backups restore`).
-3. Відновити секрети ([`06_04`](06_04_Secrets_Checklist)) + master-ключі (§4) у CI/Akash SDL.
-4. `kamal deploy` (production) / Akash redeploy.
+3. Відновити секрети ([`06_04`](06_04_Secrets_Checklist)) + master-ключі (§4) у CI та `.kamal/secrets-common`.
+4. `kamal deploy` (production).
 5. Backend re-індексує on-chain стан (баланси самовідновлюються з Polygon).
 6. Оновити DNS A-запис → новий `ingress_ip`.
 

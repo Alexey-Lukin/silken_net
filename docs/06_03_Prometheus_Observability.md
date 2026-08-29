@@ -28,7 +28,6 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
-| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL (`alloy` сервіс) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2 |
 
@@ -66,14 +65,14 @@
 | `TELEMETRY_PROCESSED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано |
 | `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (2 точки) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
-| Prometheus Server | `deploy/akash/deploy.yaml` (alloy сервіс) | ✅ **Grafana Alloy sidecar → Grafana Cloud** |
+| Prometheus Server | `config/deploy.yml` (accessory `alloy`) | ✅ **Grafana Alloy → Grafana Cloud** |
 | Grafana | Grafana Cloud SaaS | ✅ **Доступна (дашборди — операційна задача)** |
 | Alertmanager | Grafana Cloud Alerting | ✅ **Доступний (правила — операційна задача)** |
-| `SENTRY_DSN` у secrets | `.kamal/secrets-common`, Akash SDL env | ✅ Додано |
-| Grafana Alloy config | `deploy/akash/config.alloy` | ✅ Scrape + remote_write |
-| Grafana Alloy SDL service | `deploy/akash/deploy.yaml` (`alloy` сервіс) | ✅ 0.5 CPU, 512Mi RAM |
-| Terraform Grafana Cloud vars | `terraform/akash/variables.tf` | ✅ 5 змінних (3 sensitive) |
-| Prometheus scrape config | `deploy/akash/config.alloy` | ✅ 3 таргети `web:80`/`job:9394`/`coap:9395` (лейбл `process`; реєстр in-process — §2.9; `coap` = Akash-**fallback**-сервіс — primary-демон на Ingress Anchor поза scrape, стеля §2.9(б)), 15s, Basic Auth |
+| `SENTRY_DSN` у secrets | `.kamal/secrets-common` | ✅ Додано |
+| Grafana Alloy config | `deploy/alloy/config.alloy` | ✅ Scrape + remote_write |
+| Grafana Alloy accessory | `config/deploy.yml` (`accessories.alloy`, `network: host`) | ✅ монтування `files:` |
+| Grafana Cloud secrets | `.kamal/secrets-common` + обидва deploy-workflow (RUNTIME-тір) | ✅ 3 змінні |
+| Prometheus scrape config | `deploy/alloy/config.alloy` | ✅ 3 таргети `127.0.0.1:9393`/`:9394`/`:9395` (лейбл `process`; реєстр in-process — §2.9; `coap` = Akash-**fallback**-сервіс — primary-демон на Ingress Anchor поза scrape, стеля §2.9(б)), 15s, Basic Auth |
 | Grafana dashboards | Grafana Cloud UI | 🟡 Операційна задача |
 
 ---
@@ -440,7 +439,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг + повний реєстр §2.8); бракувало лише атрибуції та захисних гейтів — закрито нижче (`external_labels`, `queue_config`+explicit WAL, cardinality budget, CI-валідація, runtime-метрики).
 
 **✅ Зроблено зараз (`config.alloy`):**
-- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy **та** з різних Akash-провайдерів (multi-provider failover, [`06_02`](06_02_Akash_Network_Integration)) зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
+- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
 - **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml` → `CI · Code`) — `grafana/alloy:v1.16.3 fmt` парсить `config.alloy` (образ **запінено** — версія синхронна з SDL `deploy/akash/deploy.yaml`+`.tpl`; bump оновлює всі три разом, INF.14); **path-gated** під `alloy`-домен (`changes`-job: біжить коли чіпається `deploy/**`); River parse-error = **red CI замість crash-loop sidecar** на Akash-деплої.
@@ -453,7 +452,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 
 | # | Покращення | Чому | Пріоритет |
 |---|------------|------|-----------|
-| 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop alloy-sidecar у проді ([`06_02`](06_02_Akash_Network_Integration)). Гейт ловить це до деплою | ✅ DONE |
+| 1 | ✅ **CI-валідація `config.alloy`** (2026-05-29) — CI job `alloy_config_validate` (`grafana/alloy fmt`, parse-check) | Раніше **ніщо** не лінтило River-конфіг; parse-error = crash-loop Kamal-accessory `alloy` у проді. Гейт ловить це до деплою | ✅ DONE |
 | 2 | ✅ **`queue_config` + явний WAL** (2026-06-04) на `remote_write` (`config.alloy`) | Default WAL ~2h буферить аутейдж; `capacity`/`max_shards` (1→50)/`batch_send_deadline` дають backpressure замість необмеженого росту пам'яті; WAL-вікно явне | ✅ DONE |
 | 3 | ✅ **Process/runtime метрики** (2026-05-29) — 9 gauges (RSS · GC count/major/heap_live · ruby_threads · Puma running/max/pool_capacity/backlog), sampled on-scrape (`sample_process_runtime!`) + 13 specs | Закрило сліпоту до memory leak / GC pause / thread saturation. Pure stdlib (GC.stat / Thread / /proc / Puma.stats) | ✅ DONE |
 | 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
@@ -461,7 +460,7 @@ bin/rails runner 'SilkenNet::Metrics::REGISTRY.metrics.sort_by{|m|[m.type.to_s,m
 | 6 | 🟡 **SLO + error-budget** — mint-half ✅ (IaC 2026-07-04): `sn-alert-mint-slo-breach` <80%/1h (єдина канон-ціль — [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy); PromQL-guard `and attempts>0`). Slash/payout/insurance ratios — пороги калібруються з перших live-вікон (00_07 S2.4), не вигадуються. **[ARCH.62]** `sn-alert-mint-volume-anomaly` (agg mint-volume ceiling ~MAX_SUPPLY, operator-калібрований) + per-token inert circuit-break | ops |
 | 7 | Dashboards + alerts + **contact point** import у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (auto-discovery UID + ідемпотентний upsert + contact point/root notification policy з ENV off-by-default `ALERT_CONTACT_EMAIL`/`_TELEGRAM_*`, `--dry-run` без credentials); лишається 👤 запуск із токеном + значення каналу + verify | ops |
 
-**#2 + #4 — імплементовано (2026-06-04) у `deploy/akash/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
+**#2 + #4 — імплементовано (2026-06-04) у `deploy/alloy/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
 
 ---
 
@@ -547,7 +546,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │                             │ [Alloy scrapes кожні 15s]        │
 │                             ▼                                   │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Grafana Alloy (alloy сервіс в Akash SDL)              │   │
+│  │  Grafana Alloy (Kamal accessory, network: host)        │   │
 │  │  ✅ prometheus.scrape → 3 таргети, лейбл `process`     │   │
 │  │  ✅ prometheus.remote_write → Grafana Cloud (HTTPS)     │   │
 │  └──────────────────────────┬──────────────────────────────┘   │
@@ -577,7 +576,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │  (errors, 0.1% traces)    ✅ SENTRY_DSN налаштований                 │
 │                                                                       │
 │  /metrics endpoint ──────→ Grafana Alloy ──remote_write──→           │
-│  (метрики §2.8, Basic Auth)  (Akash sidecar)             │           │
+│  (метрики §2.8, Basic Auth)  (Kamal accessory)           │           │
 │                                                           ▼           │
 │                                                    Grafana Cloud     │
 │                                                    (dashboards +     │
@@ -607,10 +606,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `app/workers/gateway_telemetry_worker.rb` | `Sentry.set_tags(queen_uid:)` | ✅ |
 | `terraform/main.tf` | `google_project_service.monitoring` (Cloud Monitoring API) | ✅ (Cloud Monitoring) |
 | `terraform/iam.tf` | `roles/monitoring.metricWriter` (для GCP-native метрик) | ✅ |
-| `deploy/akash/deploy.yaml` | Akash SDL (web + job + alloy services, CoAP/UDP) | ✅ (з Alloy sidecar) |
-| `deploy/akash/config.alloy` | Grafana Alloy конфігурація (scrape + remote_write) | ✅ Створено |
-| `terraform/akash/variables.tf` | Grafana Cloud змінні (URL, username, token, auth) | ✅ 5 змінних |
-| `terraform/akash/main.tf` | SDL generation + `filebase64(config.alloy)` | ✅ Alloy config injection |
+| `deploy/alloy/config.alloy` | Grafana Alloy конфігурація (scrape + remote_write) | ✅ Створено |
 | `prometheus.yml` (scrape config) | — | ✅ Замінено на `config.alloy` (Alloy agent) |
 | `grafana/` (дашборди) | Grafana Cloud SaaS | 🟡 Операційна задача |
 | `alertmanager.yml` | Grafana Cloud Alerting | 🟡 Операційна задача |
@@ -625,12 +621,12 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `SENTRY_TRACES_SAMPLE_RATE` | ❌ (default: 0.001) | `config/initializers/sentry.rb` | — |
 | `SENTRY_WORKER_THREADS` | ❌ (default: 2) | `config/initializers/sentry.rb` | — |
 | `RELEASE_VERSION` | ❌ (рекомендовано) | `config.release` | ✅ Додано у deploy.yml (git SHA), deploy-production.yml (release tag), config/deploy.yml (Kamal), deploy/akash/deploy.yaml |
-| `PROMETHEUS_ALLOWED_IPS` | ❌ | `app/middleware/prometheus_collector.rb` | Не задана (RFC 1918 дозволені за замовчуванням — Akash internal network) |
+| `PROMETHEUS_ALLOWED_IPS` | ❌ | `app/middleware/prometheus_collector.rb` | Не задана (RFC 1918 + loopback дозволені за замовчуванням — host-мережа accessory) |
 | `PROMETHEUS_AUTH_USER` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |
 | `PROMETHEUS_AUTH_PASSWORD` | ✅ (рекомендовано) | `app/middleware/prometheus_collector.rb`, Alloy `config.alloy` | ✅ Додано в web SDL env |
-| `GRAFANA_REMOTE_WRITE_URL` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables |
-| `GRAFANA_REMOTE_WRITE_USERNAME` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables |
-| `GRAFANA_REMOTE_WRITE_TOKEN` | ✅ Для production | `deploy/akash/config.alloy` (Alloy sidecar) | ✅ В Terraform variables (sensitive) |
+| `GRAFANA_REMOTE_WRITE_URL` | ✅ Для production | `deploy/alloy/config.alloy` (Kamal accessory) | ✅ У `.kamal/secrets-common` |
+| `GRAFANA_REMOTE_WRITE_USERNAME` | ✅ Для production | `deploy/alloy/config.alloy` (Kamal accessory) | ✅ У `.kamal/secrets-common` |
+| `GRAFANA_REMOTE_WRITE_TOKEN` | ✅ Для production | `deploy/alloy/config.alloy` (Kamal accessory) | ✅ У `.kamal/secrets-common` |
 
 ---
 
@@ -643,7 +639,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 3. **Інструментація в бізнес-логіці** — всі критичні операції (мінтинг, слешинг, RPC-помилки, телеметрія, OTA, EWS, CoAP) мають Prometheus-лічильники.
 4. **GCP Cloud Logging** — WARNING+ логи зберігаються, cost-control фільтр активний.
 5. **Structured JSON logging** — активовано у production: кожен рядок містить `timestamp`, `pid`, `request_id`, `sentry_trace_id`, `sentry_span_id`.
-6. **Grafana Alloy sidecar** — `alloy` сервіс в Akash SDL скрейпить `/metrics` кожні 15s, пушить у Grafana Cloud через remote_write.
+6. **Grafana Alloy** — Kamal accessory скрейпить `/metrics` кожні 15s, пушить у Grafana Cloud через remote_write.
 
 ### Що залишилось (операційні задачі)
 

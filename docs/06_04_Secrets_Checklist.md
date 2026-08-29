@@ -9,7 +9,6 @@
 > **Чотири місця зберігання секретів:**
 > 1. **GitHub Repository Secrets** — для CI/CD workflows (`.github/workflows/*.yml`)
 > 2. **`.kamal/secrets-common`** — runtime секрети для Kamal-деплою на VM (читаються з ENV або keychain)
-> 3. **`deploy/akash/deploy.yaml`** — секрети Akash деплою (поточно `REQUIRED_SECRET_NOT_SET` плейсхолдери)
 > 4. **`terraform/terraform.tfvars`** — секрети Terraform (НЕ комітиться, `*.tfvars` у `.gitignore`)
 
 ---
@@ -27,7 +26,6 @@
 | Ресурс | Зв'язок |
 |---|---|
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Деплой (Kamal/Terraform secrets) |
-| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL secrets (§Секрети SDL) |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Grafana Cloud + Sentry DSN |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.6 |
 
@@ -36,7 +34,6 @@
 <!-- TOC:AUTO:START -->
 - [1. GitHub Repository Secrets (CI/CD)](#1-github-repository-secrets-cicd)
 - [2. (Kamal Runtime)](#2-kamalsecrets-common-kamal-runtime)
-- [3. Akash SDL ( + )](#3-akash-sdl-deployakashdeployyaml--deployyamltpl)
 - [4. `terraform/terraform.tfvars](#4-terraformterraformtfvars)
 - [5. Operational Procedures](#5-operational-procedures)
 - [Залежності та посилання](#-залежності-та-посилання)
@@ -62,7 +59,7 @@
 > ~~`KAMAL_MASTER_KEY`~~ — **ВИДАЛЕНО 2026-07-04 (фантом):** Kamal 2.x не має механізму «encrypted secrets master key»; `.kamal/secrets-common` — plain `$VAR`-файл, споживача не існувало ніде в репо, а verify-secrets гейтив production на неіснуючу залежність. Не заводити.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF root для per-device AES-деривації (boot-critical: `config/initializers/master_key_strength_check.rb` raise при відсутності в production). **[B1]** `verify-secrets` перевіряє присутність + довжину ≥64; обидва deploy-workflow маплять його у `kamal deploy`. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. (Runtime-роль — §2.)
 - [ ] `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` · `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` · `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` — **[SEC.22] AR-encryption at-rest** (`hardware_keys` device-ключі + `users.otp_secret` TOTP-seed; §5.7). Boot-critical: `active_record_encryption_keys_check.rb` fail-closed у production без них (або на `<32` chars). **[B1 2026-07-10, R3a-fresh-eye]** обидва deploy-workflow маплять усі три у verify (BOOT_CRITICAL) + `kamal deploy` env — до того вони жили в `env.secret`/`secrets-common`, але НЕ в workflow-мапінгу → перший live-kamal інжектнув би `""` = boot-crash ПІСЛЯ зеленого verify (той самий B1-клас 4-місячної діри). Генерувати всі три разом: `bin/rails db:encryption:init`.
-> ~~`GCP_SA_KEY`~~ — **ВИДАЛЕНО як CI-secret 2026-07-09 (INF.22, keyless WIF):** CI автентифікується до GCP через **Workload Identity Federation** (`terraform/wif.tf`) — GitHub карбує короткоживучий OIDC-токен, GCP STS обмінює його на impersonated deploy-SA access-token; JSON-ключ (6-місний, boot-critical, безстроковий credential) з CI зник. Замість нього — два **repo Variables** (не secrets, це публічні ідентифікатори): `GCP_WORKLOAD_IDENTITY_PROVIDER` (з `terraform output workload_identity_provider`) + `GCP_SERVICE_ACCOUNT` (SA email). Довгоживучий SA-ключ лишається ЛИШЕ в Akash `GCP_SA_KEY_BASE64` (Cloud SQL proxy — §3.1/§4; [`06_02 §Security Exception`](06_02_Akash_Network_Integration)).
+> ~~`GCP_SA_KEY`~~ — **ВИДАЛЕНО як CI-secret 2026-07-09 (INF.22, keyless WIF):** CI автентифікується до GCP через **Workload Identity Federation** (`terraform/wif.tf`) — GitHub карбує короткоживучий OIDC-токен, GCP STS обмінює його на impersonated deploy-SA access-token; JSON-ключ (6-місний, boot-critical, безстроковий credential) з CI зник. Замість нього — два **repo Variables** (не secrets, це публічні ідентифікатори): `GCP_WORKLOAD_IDENTITY_PROVIDER` (з `terraform output workload_identity_provider`) + `GCP_SERVICE_ACCOUNT` (SA email). ⊕ **[OPS.37, 2026-08-29] Останній виняток ЗНИК разом із платформою:** `GCP_SA_KEY_BASE64` існував рівно для автентифікації з-поза VPC, його споживач (cloud-sql-proxy) знято з образу, і довгоживучих SA-ключів у системі більше **немає жодного** — WIF тепер безвинятковий.
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
 - [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
 - [ ] `REDIS_URL` — Production Redis (DB 0, Upstash): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
@@ -71,7 +68,7 @@
 
 ### 1.2. P1 — Operations (потрібні для конкретних автоматизацій)
 
-- [ ] `GCP_BILLING_ACCOUNT_ID` — **[OPS.11]** дзеркало tfvars `billing_account_id` для CI terraform apply (`TF_VAR_billing_account_id` в обох deploy-workflow). ⚠️ Заводиться **разом** із tfvars-значенням: локальний apply з бюджетом + CI-apply без секрета = count→0 → CI **знесе бюджет**. ⚠️ ПЕРЕД активацією — обов'язковий грант CI-SA `roles/billing.costsManager` на billing-акаунті (plan-refresh 403-ить і блокує весь deploy-ланцюг — точна команда/механіка → [`06_02 §4.4`](06_02_Akash_Network_Integration)). Порожній = budget просто не керується (no-op).
+- [ ] `GCP_BILLING_ACCOUNT_ID` — **[OPS.11]** дзеркало tfvars `billing_account_id` для CI terraform apply (`TF_VAR_billing_account_id` в обох deploy-workflow). ⚠️ Заводиться **разом** із tfvars-значенням: локальний apply з бюджетом + CI-apply без секрета = count→0 → CI **знесе бюджет**. ⚠️ ПЕРЕД активацією — обов'язковий грант CI-SA `roles/billing.costsManager` на billing-акаунті (plan-refresh 403-ить і блокує весь deploy-ланцюг — точна команда/механіка → [`06_01 §IAM`](06_01_Deployment_Kamal_Terraform)). Порожній = budget просто не керується (no-op).
 
 > **Repo Variables (не Secrets):** `GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_SERVICE_ACCOUNT` (keyless WIF-auth deploy/drift — INF.22; з `terraform output` після 1-го apply; їх presence = infra-provisioned deploy-gate, який раніше ніс `GCP_SA_KEY`) · `CANOPY_COAP_HOST` / `PRODUCTION_COAP_HOST` (активують `coap_smoke` — INF.6) · `AKASH_OWNER_ADDRESS` (+опц. `AKASH_MIN_RUNWAY_DAYS`, `AKASH_LCD_BASE`) — активує **Ops · Akash Escrow Watch** [OPS.11] після першого lease. До заповнення обидва workflow видимо skip-clean.
 
@@ -84,7 +81,7 @@
 
 ### 1.4. Web3 / runtime secrets — GitHub Secrets для CI Kamal deploy [B1]
 
-> Раніше ці жили лише у `.kamal/secrets-common` (§2) / Akash SDL (§3) / Terraform (§4). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
+> Раніше ці жили лише у `.kamal/secrets-common` (§2) / Terraform (§3). **Після B1** обидва deploy-workflow маплять їх із GitHub Secrets у крок `kamal deploy`, тож для CI-деплою вони **мусять існувати як GitHub Repository Secrets**. Повний опис кожного — §2.1 (one-home); тут лише перелік + boot-vs-lazy клас (`verify-secrets` гейтить boot-critical, warn на lazy).
 
 **Boot-critical** (порожній → контейнер падає на boot / terraform не apply-неться; `verify-secrets` блокує; гейт покриває і infra-передумови `GCP_PROJECT_ID` + WIF-Variables `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT` — SA-JSON `GCP_SA_KEY` вилучено, CI keyless WIF INF.22; SSH-секрети ЗНЯТО, INF.20 (в) IAP keyless, див. §1.1):
 - [ ] `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` — `web3_network_guard` raise при boot **signer-процесу (Sidekiq job)**, якщо dedicated-ключа немає (legacy fallback retired — INF.22; значення під старим ім'ям = guard-violation). **Money/signing-ключі = JOB-ONLY (2026-07-04):** signing-**п'ятірка** живе лише в `job`-поверхнях — Akash SDL job-сервіс і Kamal `servers.job.env.secret` несуть однакові 5 (`ORACLE_MINTER/SLASHER/CELO` + `ETHEREUM_ANCHOR_PRIVATE_KEY` + `SOLANA_WALLET_KEYPAIR`); web/coap бутяться keyless by design (Akash ENV = plaintext провайдеру; guard scoped `signer_process: Sidekiq.server?` — [`04_02 §Web3NetworkGuard`](04_02_Business_Logic_and_Services)). **[INF.22 2026-07-10] У GitHub п'ятірка = environment-scoped `production`** (не repo-level — §1 header): доступна лише `deploy-production.yml` jobs з `environment:`, за wait-timer + ref-policy.
@@ -116,7 +113,7 @@
 
 ### 2.1. ENV-only змінні (НЕ у `.kamal/secrets-common`, потрібні воркерам)
 
-> Ці змінні встановлюються через Kamal `env: clear:` або Akash SDL. Не є секретами в строгому сенсі, але без них Web3 пайплайн не працює.
+> Ці змінні встановлюються через Kamal `env: clear:`. Не є секретами в строгому сенсі, але без них Web3 пайплайн не працює.
 
 - [ ] `RELEASE_VERSION` — git SHA або release tag для Sentry release tracking. ✅ Налаштовано у deploy pipeline (`deploy.yml`, `deploy-production.yml`, `config/deploy.yml`, `deploy/akash/deploy.yaml`).
 - [ ] `ORACLE_ETHERISC_PRIVATE_KEY` · `ORACLE_PURO_PRIVATE_KEY` · `ORACLE_KLIMA_PRIVATE_KEY` — **activation-gated aux-підписанти** [INF.22]: dedicated-ключі `Etherisc::ClaimService` (insurance claim) / `PuroEarth::PassportService` (passport anchor) / `KlimaDao::RetirementService` (воркер DEAD, 0 enqueue). Свідомо **поза** GH/Kamal/SDL/tfvars (placeholder = guard format-raise): при активації шляху — згенерувати ключ, інжектнути в job-ENV (Console + `.kamal/secrets-common`), фондувати MATIC; `Treasury::MonitorService` підхопить **автоматично** (activation-gated `WALLETS`-записи per-signer: відсутній ключ = skip без алерту, present = власний gauge `network`+`signer` + EWS/Grafana-алерт — [`06_03 §2.8`](06_03_Prometheus_Observability)). Легасі спільний `ORACLE_PRIVATE_KEY`, що їх покривав, — **RETIRED** (guard-tripwire; жоден код не читає).
@@ -133,10 +130,11 @@
 - [ ] `ETHEREUM_ANCHOR_CONTRACT` — StateRootAnchor (Ethereum L1, weekly anchor)
 - [ ] `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` — ProtocolParameters.sol (governance sync; `ENV[]` nil-safe → skip-sync)
 - [ ] `CELO_RPC_URL` — Celo RPC. ⚠️ **БЕЗ значення → код fallback на Alfajores TESTNET** (реальні cUSD на testnet; E.49). З 2026-07-12 **умовно гейтовано boot-guard'ом**: `ORACLE_CELO_PRIVATE_KEY` присутній ∧ RPC blank → violation (озброєний Celo-шлях без mainnet-RPC не бутиться; неозброєний — чистий). Mainnet: Forno/Alchemy.
-> Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` + Akash SDL як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані (виняток — `DAO_TREASURY_ADDRESS`: use-сайти fail-SILENT, гучним його робить boot-guard — див. рядок вище).
+> Усі контракт-адреси вище = **post-`forge deploy`** (deploy-order): у Kamal `env.clear` як `REQUIRED_SECRET_NOT_SET` placeholder, fill після деплою контрактів (INF.12). Публічні on-chain → не секрети, але fail-loud на use поки не задані (виняток — `DAO_TREASURY_ADDRESS`: use-сайти fail-SILENT, гучним його робить boot-guard — див. рядок вище).
 - [ ] `SOLANA_USDC_MINT_ADDRESS` — SPL Token mint USDC (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`). Solana-четвірка (keypair · fee-payer pubkey · token-account · цей mint) також presence-чекається boot-guard'ом `solana_violations` (signer-процес; batch-payout цикл ковтає per-wallet помилки без escalation — E.61)
 - [ ] `FILECOIN_PINNING_API_URL` — Pinata IPFS pinning service URL
-- [ ] `WEB3_STRICT_MODE` — `true` у production. У production **АБО** `WEB3_STRICT_MODE=true` (belt-and-suspenders — Hadron harden 2026-07-10) Hadron-stub raise при відсутності ENV + oracle-callback HMAC fail-fast (SEC.5; Chainlink-dispatch більше не STRICT-gated — local marker, ARCH.53). Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). Інвентар Akash — §3.1 + [`06_02 §2.8`](06_02_Akash_Network_Integration).
+- [ ] `DB_POOL` — **лише job-роль** (`config/deploy.yml` → `servers.job.env.clear`). Sidekiq concurrency=15 (`config/sidekiq.yml`); дефолтна формула `database.yml` (`RAILS_MAX_THREADS+2 = 5`) дала б pool-starvation при 15 воркерах → `17`. ⚠️ Повернуто сюди 2026-08-29: запис жив у ретайрнутому §3 і зник би разом із ним (бюджет зʼєднань — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform)).
+- [ ] `WEB3_STRICT_MODE` — `true` у production. У production **АБО** `WEB3_STRICT_MODE=true` (belt-and-suspenders — Hadron harden 2026-07-10) Hadron-stub raise при відсутності ENV + oracle-callback HMAC fail-fast (SEC.5; Chainlink-dispatch більше не STRICT-gated — local marker, ARCH.53). Заведено в `config/deploy.yml` env.clear + Akash `deploy.yaml`/`.tpl` (web+job) (INF.11); canopy успадковує (`RAILS_ENV=production`). 
 - [ ] `RAILS_ALLOWED_HOSTS` — comma-separated allowlist хостів для захисту від DNS-rebinding атак (підтримує leading `.` для subdomain wildcard, напр. `.silkennet.com` покриє `api.silkennet.com`). **Канон-пара (INF.4 Опція A): `silkennet.app,api.silkennet.com`** — web-хост треба перелічити **явно**: wildcard `.silkennet.com` його НЕ покриває (інший TLD; `ActionDispatch::HostAuthorization` матчить суфікс літерально → 403 block-all на КОЖЕН запит, крім probe-шляхів ↓). Якщо INF.25 піде варіантом B (apex-redirect) — додати й `silkennet.com`. Якщо не встановлено — Rails логує попередження `[SECURITY]` при кожному старті контейнера. Встановлюється через Kamal `env.clear` або Akash SDL. **⚠️ Обов'язково для production.** Probe-шляхи `/up`/`/ready`/`/metrics` виключені і з `host_authorization`, і з `force_ssl`-redirect — single-sourced `probe_paths`/`probe_request` у `production.rb` **[S6.18]** (дрейф однієї копії ламав би deploy health-check за зеленим boot).
 - [ ] `APP_HOST` — хост для Action Mailer `default_url_options` (`config/environments/production.rb`; `ENV.fetch("APP_HOST", "silkennet.com")`). Дефолт `silkennet.com`; override для іншого домену. Заведено в `config/deploy.yml` env.clear + Akash web/job (INF.13) — замінив хардкоджений `example.com`. ⚠️ Це хост у ТІЛІ листа — транспорт і відправник окремі, нижче.
 - [ ] `MAIL_FROM` — відправник для `ApplicationMailer.default from:` (резолвить `Notifications::DeliveryChannels.configured_sender`). **Обовʼязковий у production** — без нього boot-гард `mail_transport_check.rb` відмовляє в старті (ARCH.60). Мусить бути адресою на домені, для якого нижче стоять SPF/DKIM, інакше лист = спам.
@@ -146,7 +144,7 @@
 - [ ] `SMTP_AUTHENTICATION` — дефолт `plain`; `login` для SES та деяких інших. Не секрет.
 - [ ] `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK` — `1` щоб свідомо задеплоїти БЕЗ пошти (boot-гард пропускає з гучним WARN). ⚠️ Тоді password-reset і критична тривога на цьому деплої мертві — ставити лише як тимчасовий вибір, не як норму.
 - [ ] `COAP_HOST` — адреса CoAP-інтейку для проби адмін-панелі здоров'я (ARCH.81; `api.silkennet.com` — **та сама**, яку набирає прошивка Королеви `COAP_SERVER_HOST`, тобто A-запис на Ingress Anchor із кроку 1 чеклісту [`06_01`](06_01_Deployment_Kamal_Terraform)). Заведено в `config/deploy.yml` env.clear + Akash web (`deploy.yaml`/`.tpl`). **Не секрет.** Якщо не задано — панель чесно рапортує `not_configured`; вона НІКОЛИ не називає інтейк мертвим лише тому, що не мала куди подивитись. Демон живе поза Rails-процесом (PRIMARY — анкер, [`06_03 §2.9(б)`](06_03_Prometheus_Observability)), тож loopback-дефолту тут свідомо немає.
-- [ ] `DISABLE_SSL` — встановлювати лише `true` якщо TLS термінується зовнішнім проксі (Cloudflare Full-Strict, Akash ingress) і Rails сам не повинен форсувати HTTPS. За замовчуванням (`false` або відсутнє) `force_ssl` та `assume_ssl` активні. Встановлюється через Kamal `env.clear`.
+- [ ] `DISABLE_SSL` — встановлювати лише `true` якщо TLS термінується зовнішнім проксі (Cloudflare Full-Strict) і Rails сам не повинен форсувати HTTPS. За замовчуванням (`false` або відсутнє) `force_ssl` та `assume_ssl` активні. Встановлюється через Kamal `env.clear`.
 - [ ] `ALLOW_ALL_HOSTS` — встановлювати `true` щоб заглушити попередження `[SECURITY]` про відсутній `RAILS_ALLOWED_HOSTS` (наприклад, якщо хости динамічні на Akash deployment). Не рекомендується без явного RAILS_ALLOWED_HOSTS.
 - [ ] `CSP_ENFORCE` — встановлювати `true` щоб перевести Content Security Policy з `report-only` у `enforced` режим. Рекомендується після спостереження CSP violation-репортів протягом 1–2 тижнів у production.
 
@@ -167,82 +165,7 @@
 
 ---
 
-## 3. Akash SDL (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`)
-
-> **Статус:** SDL містить `REQUIRED_SECRET_NOT_SET` плейсхолдери для критичних змінних — відкрите [`00_07`](00_07_Action_Plan_Tracker) **S4.3** (Akash SDL secrets; деталі — [`06_02 §Секрети SDL`](06_02_Akash_Network_Integration)).
->
-> **Рекомендований workflow:** використовувати `deploy/akash/deploy.yaml.tpl` Terraform-шаблон — секрети підставляються автоматично з `terraform.tfvars`.
->
-> **Принцип:** SDL `web` та `job` сервіси мають **ідентичні** ENV-блоки з **двома** класами винятків: (1) web-specific `WEB_CONCURRENCY` / `PORT`; (2) 🔴 **money/signing-п'ятірка — JOB-ONLY** (INF.22, 2026-07-04): `ORACLE_MINTER_PRIVATE_KEY` · `ORACLE_SLASHER_PRIVATE_KEY` · `ORACLE_CELO_PRIVATE_KEY` · `ETHEREUM_ANCHOR_PRIVATE_KEY` · `SOLANA_WALLET_KEYPAIR` **не заводяться у `web` взагалі**. Причина несуча: Akash SDL ENV — **plaintext для провайдера**, а кожен signing-call-site = Sidekiq-воркер, тож інтернет-обернена web-поверхня не має підстав нести ключі (`deploy/akash/deploy.yaml` несе цей інваріант коментарем у web-сервісі; boot-guard scoped через `Security::Web3NetworkGuard`, `signer_process: Sidekiq.server?`). Решта — Sidekiq у `job`-сервісі ходить через ті ж Rails initializers, що вимагають boot-critical guards.
-
-### 3.1. Web service env (та дзеркало в Job service env)
-
-**Application core (boot):**
-- [ ] `RAILS_MASTER_KEY` — те саме що в Kamal
-- [ ] `POSTGRES_HOST`=`127.0.0.1` / `POSTGRES_USER`=`silken_net` / `POSTGRES_PASSWORD` / `POSTGRES_DATABASE`=`silken_net_production` — Cloud SQL через Auth Proxy sidecar (component style; host/user/database non-secret, лише пароль секрет). **[H2]** `POSTGRES_DATABASE` тепер explicit у SDL (web+job) — canopy-on-Akash render override на `silken_net_canopy`.
-- [ ] `CLOUD_SQL_INSTANCE_CONNECTION_NAME` — `<project>:<region>:<instance>`
-- [ ] `GCP_SA_KEY_BASE64` — base64-encoded GCP SA JSON (роль `roles/cloudsql.client` only)
-- [ ] `REDIS_URL` — Upstash Redis DB 0 (`rediss://`). **[B1]** `KREDIS_REDIS_URL` НЕ в SDL — Kredis auto-derive DB 1 (`config/redis/shared.yml`).
-- [ ] `RAILS_ENV` — `production` або `canopy`
-- [ ] `RAILS_MAX_THREADS` — типово `3` (узгоджено з `database.yml` pool)
-- [ ] `WEB_CONCURRENCY` — кількість Puma workers (web only, типово `4`)
-- [ ] `PORT` — типово `80` (Thruster)
-- [ ] `TURBO_SIGNED_STREAM_KEY` — ключ підпису імен Turbo-стрімів [SEC.25]. Generate: `SecureRandom.hex(32)`. ⚠️ **Не boot-critical і саме тому легко загубити:** без нього гем деривує ключ із `secret_key_base`, застосунок працює нормально — зникає лише **важіль відкликання** (§5.9 Крок 4б), тобто єдиною відповіддю на витік record-form адреси лишається ротація `secret_key_base` з усім її колатералом. Boot-guard'а свідомо нема (щоб забутий секрет не валив деплой), тож цей рядок і є єдиним сторожем. Мусить бути **однаковий на web + job** — інакше підписи розійдуться між процесами й живі оновлення тихо помруть.
-
-**🛑 Boot-critical (Puma crash до accept loop без значення):**
-- [ ] `PROVISIONING_MASTER_KEY` — HKDF root key. `config/initializers/master_key_strength_check.rb` raises `SecurityError` у `after_initialize`. Generate: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`
-
-**Observability:**
-- [ ] `SENTRY_DSN` — без неї Sentry inert (silent prod errors)
-- [ ] `RELEASE_VERSION` — git SHA / release tag для Sentry release tracking
-- [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic Auth для `/metrics`
-
-> 🔴 **Web3 money/signing-ключі тут НЕ заводяться** — вони JOB-ONLY (§3.2, INF.22). Не «продзеркалюй» їх у web, навіть якщо решта блоку дзеркалиться: web-ENV видимий Akash-провайдеру plaintext.
-
-**RPC endpoints (`Web3::RpcConnectionPool` — `ENV.fetch` raises KeyError без значення):**
-- [ ] `ALCHEMY_POLYGON_RPC_URL`
-- [ ] `ALCHEMY_ETHEREUM_RPC_URL`
-- [ ] `SOLANA_RPC_URL`
-
-> **Boot guard:** `config/initializers/web3_network_guard.rb` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо `ORACLE_*` ключ відсутній/malformed **або** будь-який `*_RPC_URL` несе testnet-маркер (Amoy / devnet / Sepolia) — перетворює «Sidekiq DeadSet» / «mint на testnet» на гучний boot-refuse ДО прийому трафіку (розширює `E.47` на boot-time + EVM).
-
-**Solana minting (`Solana::MintingService` raises explicit errors):**
-- [ ] `SOLANA_WALLET_KEYPAIR` — 64-byte hex keypair
-- [ ] `SOLANA_FEE_PAYER_PUBKEY` — base58
-- [ ] `SOLANA_FEE_PAYER_TOKEN_ACCOUNT` — USDC ATA, base58
-- [ ] `SOLANA_USDC_MINT_ADDRESS` — base58 (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
-
-**Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):**
-- [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 для callback signature verification
-
-### 3.2. Job (Sidekiq) service env
-
-- [ ] **Усе з §3.1** (Sidekiq потребує boot-critical guards так само як Puma) — окрім `PORT` / `WEB_CONCURRENCY`.
-
-**🔴 Money/signing-п'ятірка — ЛИШЕ тут, ніколи у web** (INF.22, 2026-07-04; dual-key split B-02 — без них Sidekiq DeadSet; legacy `ORACLE_PRIVATE_KEY` retired). Кожен signing-call-site — Sidekiq-воркер, тож web-копія не давала б нічого, крім зайвої експозиції:
-- [ ] `ORACLE_MINTER_PRIVATE_KEY` — MINTER_ROLE на SCC/SFC (`BlockchainMintingService`)
-- [ ] `ORACLE_SLASHER_PRIVATE_KEY` — SLASHER_ROLE (`BlockchainBurningService`)
-- [ ] `ORACLE_CELO_PRIVATE_KEY` — **[ARCH.50]** dedicated Celo cUSD-підписант (no fallback); ізолює blast-radius Celo від Polygon-флоту (ARCH.49)
-- [ ] `ETHEREUM_ANCHOR_PRIVATE_KEY` — окремий wallet для weekly L1 anchor (`Ethereum::StateAnchorService`)
-- [ ] `SOLANA_WALLET_KEYPAIR` — Ed25519 keypair мікро-виплат (`Solana::*`)
-- [ ] `DB_POOL` — **лише job-роль.** Sidekiq concurrency=15 (`config/sidekiq.yml`); дефолтна `database.yml` формула (`RAILS_MAX_THREADS+2 = 5`) → `ActiveRecord::ConnectionTimeoutError` під навантаженням. Встанови `DB_POOL=17` (concurrency + 2 headroom). Заведено в `config/deploy.yml` job env + Akash `deploy.yaml` job (INF.13). **НЕ** виставляй на web-ролі (Puma threads = `RAILS_MAX_THREADS+2`, коректно).
-
-> **⚠️ AKASH ENV plaintext exposure:** Akash не шифрує ENV-блок SDL — значення видимі провайдеру через `lease-logs`/kubectl. Mitigation, у порядку сили: (1) 🔴 **surface-minimization — money-п'ятірка взагалі відсутня у `web`** (INF.22; ключ, якого немає в контейнері, не витікає з нього — решта пунктів лише зменшують наслідки, цей прибирає поверхню); (2) scoped on-chain roles (MINTER/SLASHER only, ніколи DEFAULT_ADMIN); (3) 90-day key rotation; (4) audited providers (`signedBy.anyOf`). Детальніше: [`06_02 §Секрети SDL (Akash ENV plaintext)`](06_02_Akash_Network_Integration).
-
-### 3.3. Grafana Alloy sidecar (observability)
-
-- [ ] `ALLOY_CONFIG_BASE64` — base64-encoded Alloy config
-- [ ] `GRAFANA_REMOTE_WRITE_URL` — Grafana Cloud Prometheus endpoint
-- [ ] `GRAFANA_REMOTE_WRITE_USERNAME` — Grafana Cloud user/instance ID
-- [ ] `GRAFANA_REMOTE_WRITE_TOKEN` — Grafana Cloud API token
-- [ ] `PROMETHEUS_AUTH_USER` / `PROMETHEUS_AUTH_PASSWORD` — Basic auth для `/metrics` endpoint
-- [ ] `PROMETHEUS_ALLOWED_IPS` — **[INF.5]** Comma-separated CIDR allowlist для `/metrics` endpoint у `PrometheusCollector` middleware (`app/middleware/prometheus_collector.rb`). Запити з адрес поза `PRIVATE_RANGES` (RFC 1918/4193 + localhost) ТА поза цим списком отримають `403 Forbidden`. Приклади:
-  - **GCP-only Kamal:** залишити пустим — внутрішня VPC IP належить RFC 1918 (`10.x`), уже allowed.
-  - **Akash deployment:** залежить від cluster network — Akash може дати немутальний CIDR. Дізнатись фактичний pod-CIDR можна лише з боку провайдера (`akash provider lease-status` / логи) — Terraform-output для цього НЕ існує. Приклад: `PROMETHEUS_ALLOWED_IPS=10.42.0.0/16,10.43.0.0/16`.
-  - **Cloudflare Proxy:** додати [Cloudflare IP ranges](https://www.cloudflare.com/ips/) якщо scrape йде через CF. Приклад: `PROMETHEUS_ALLOWED_IPS=173.245.48.0/20,103.21.244.0/22,...`.
-  - **Grafana Cloud direct scrape:** не використовуйте direct scrape з `/metrics`; використовуйте Alloy `prometheus.remote_write` — внутрішній push не потребує allowlist.
-
----
+> ⚫ **§3 — слот ретайрнуто [OPS.37, 2026-08-29].** Тут жив інвентар секретів знятої платформи. Номери СВІДОМО не зсунуто: на секції §4 і §5.x цього доку вказує **61** вхідний реф із канону, скілів і коду, тож перенумерація коштувала б 61 судження проти одного речення. Джин, не надгробок — слот мертвий і каже це прямо.
 
 ## 4. `terraform/terraform.tfvars`
 
@@ -254,49 +177,6 @@
 - [ ] `iap_admin_members` — хто входить на Ingress Anchor (INF.20 (в): IAP-тунель keyless; напр., `["user:you@example.com"]` → osAdminLogin+tunnelResourceAccessor)
 - [ ] `ssh_source_ranges` — break-glass-only CIDR (normally `[]` — канонічний SSH-шлях = IAP, правило `allow-ssh` без значень не створюється)
 - [ ] `billing_account_id` (+опц. `billing_budget_usd`) — **[OPS.11]** budget-guard; порожній = no-op; заповнив → той самий id у GH-секрет `GCP_BILLING_ACCOUNT_ID` (§1.2), інакше CI-apply знесе бюджет
-
-**Akash deployment app/infra (`terraform/akash/terraform.tfvars` рендериться у `deploy.yaml.tpl`):**
-
-> Mirror зі списку `env.secret` Kamal — повний breakdown див. [`06_02 §3.2 Змінні Terraform`](06_02_Akash_Network_Integration). Sensitive variables нижче.
-
-*Application core:*
-- [ ] `rails_master_key`
-- [ ] `db_password` — Cloud SQL пароль (host=`127.0.0.1` proxy + user `silken_net` — non-secret SDL-літерали; component style, INF.16)
-- [ ] `cloud_sql_instance_connection_name` — `terraform output database_connection_name`
-- [ ] `gcp_sa_key_base64` — base64-encoded SA JSON (роль `roles/cloudsql.client` only, див. [`06_02 §Security Exception`](06_02_Akash_Network_Integration))
-- [ ] `redis_url` — Upstash `rediss://...:6379` (DB 0)
-> **[B1]** `kredis_redis_url` variable видалено з `terraform/akash/variables.tf` + `main.tf` — Kredis auto-derive DB 1 із `redis_url` (`config/redis/shared.yml`); SDL більше не інжектить `KREDIS_REDIS_URL`.
-
-*🛑 Boot-critical:*
-- [ ] `provisioning_master_key` — `SecureRandom.hex(32)`, валідація `length >= 32`
-
-*Observability:*
-- [ ] `sentry_dsn`
-- [ ] `alloy_config_base64` — base64-encoded Grafana Alloy config (містить вбудований `grafana_remote_write_token` — sensitive!)
-- [ ] `grafana_remote_write_url` — Grafana Cloud Prometheus `remote_write` endpoint (`https://prometheus-prod-XX-XX.grafana.net/api/prom/push`)
-- [ ] `grafana_remote_write_username` — Grafana Cloud Stack ID
-- [ ] `grafana_remote_write_token` — Grafana Cloud API ключ зі scope `metrics:write`
-- [ ] `prometheus_auth_user` — Basic Auth user для `/metrics` endpoint
-- [ ] `prometheus_auth_password` — Basic Auth password (`Rails.application.config.prometheus_auth`)
-
-*Web3 oracle keys (dual-key split, B-02; легасі `oracle_private_key` RETIRED [INF.22] — значення під старим ім'ям = guard-violation):*
-- [ ] `oracle_minter_private_key` — hex `0x…`
-- [ ] `oracle_slasher_private_key` — hex `0x…` (MUST differ from minter — E.2; boot-guard колізії + deploy-гейт `_requireDistinctOracles`)
-- [ ] `ethereum_anchor_private_key` — hex `0x…` (MUST differ from minter/slasher)
-
-*RPC endpoints:*
-- [ ] `alchemy_polygon_rpc_url`
-- [ ] `alchemy_ethereum_rpc_url`
-- [ ] `solana_rpc_url`
-
-*Solana minting:*
-- [ ] `solana_wallet_keypair`
-- [ ] `solana_fee_payer_pubkey`
-- [ ] `solana_fee_payer_token_account`
-- [ ] `solana_usdc_mint_address`
-
-*Chainlink oracle-callback HMAC (dispatch вилучено — ARCH.53):*
-- [ ] `chainlink_hmac_secret`
 
 > **🔴 Drift guard:** Кожен sensitive у `terraform.tfvars` **обов'язково** на момент `terraform apply` — без нього `templatefile()` рендерить порожні рядки → SDL отримує `=` без value → Rails отримує `nil` ENV. Для boot-critical (`provisioning_master_key`) це Puma crash; для Web3 — Sidekiq DeadSet; для Alloy — німі метрики. Drift у будь-яку сторону між `.kamal/secrets-common`, Kamal `env.secret`, SDL (`web` + `job`), `deploy.yaml.tpl`, `variables.tf`, та `main.tf` `templatefile()` — критичний bug. **Single source of truth: `config/deploy.yml env.secret` блок** (Kamal canonical list).
 
@@ -310,7 +190,6 @@
 >
 > - **GitHub Secrets = дві партії:** Batch A (pre-infra, ДО `terraform apply`): `GCP_PROJECT_ID` · `POSTGRES_PASSWORD` · `RAILS_MASTER_KEY` · `PROVISIONING_MASTER_KEY` · `ACTIVE_RECORD_ENCRYPTION_*`×3 (§1.1 — генеруються `db:encryption:init` будь-коли, boot-critical на kamal-етапі) (SSH-секретів НЕМАЄ — INF.20 (в): IAP+OS Login keyless; `GCP_SA_KEY` НЕМАЄ — CI keyless через WIF, INF.22: після 1-го apply зчитай `workload_identity_provider`/`service_account_email` у repo **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`). Batch B (post-infra, значення існують лише ПІСЛЯ apply/акаунтів): `REDIS_URL`/`CANOPY_REDIS_URL` (Upstash ×2 — Фаза −1) · RPC×5 · Solana-public×3 · `SENTRY_DSN` · webhook-HMACs — repo-level; **money/signing-п'ятірка** (oracle×3: MINTER/SLASHER/CELO + anchor + Solana keypair; legacy `ORACLE_PRIVATE_KEY` retired повністю — §1 header) — **[INF.22] НЕ repo-level: environment `production`** (`gh secret set <NAME> --env production`; §1 header — wait-timer + ref-policy вже сконфігуровані API).
 > - `.kamal/secrets-common` вже закомічений ($VAR-форма) — «створювати» його не треба; треба заповнити shell-ENV (CI робить це сам з GitHub Secrets).
-> - Akash SDL секрети — через `.tpl` + `terraform/akash/terraform.tfvars` (§3/§4); gas на гаманцях — Фаза −1/4.
 
 ### 5.2. Ротація секретів
 
@@ -340,8 +219,6 @@ ruby scripts/audit_deploy_secret_scope.rb --self-test  # класифікато�
 grep -rh "secrets\." .github/workflows/ | grep -oP "secrets\.[A-Z_]+" | sort -u
 # Kamal secrets
 grep -E "^[A-Z][A-Z0-9_]*=" .kamal/secrets-common | cut -d= -f1 | sort -u
-# Akash SDL
-grep -E "^\s+[A-Z_]+:" deploy/akash/deploy.yaml | head -50
 ```
 
 ### 5.4. Emergency Revocation Runbook — `peaq_signing_key` (S6.14)
@@ -492,7 +369,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.17 (стан/тригер), 
 
 Separation тримається на: key-level IAM (не keyring-level); `purpose`-enum = hard type-barrier (symmetric НЕ підписує, asymmetric НЕ wrap'ить disk → key-role-confusion структурно неможлива; residual IAM-scope знято keyring-split'ом); E.2 mint⊥burn (окремі CryptoKey). Усі — `europe-west1` (EU at-rest pin; для tfstate це ще й hard KMS↔GCS same-region constraint). Архітектурний дім — `terraform/kms.tf` header (SEC.17 додає sign-keyring без rename). **НЕ** робити generic `silken-kms` (blast-radius-merge trap).
 
-**tfstate-CMEK latch ([SEC.22], 2026-07-10):** GCS-state = **третя** повна plaintext-копія секретів, які terraform торкається (`db_password` тече туди на кожному CI plan/apply) — після Akash-ENV та `coap.env`. Латч живе у `terraform/bootstrap.sh` **out-of-band** (chicken-and-egg: backend-bucket потребує ключ ДО `terraform init`, тому keyring/key створює gcloud, не `kms.tf`; для terraform він drift-invisible — `import`, якщо колись знадобиться). Складники: default-CMEK на `silken-net-terraform-state` + `--public-access-prevention` + versioning-retention підрізано **30в/90д → 10 noncurrent-версій / 30 днів** (кожна noncurrent-версія = ще одна копія секретів; 10/30 досі покриває rollback зіпсованого apply). Крипто-принципал = **GCS service agent** (`service-<num>@gs-project-accounts…`) — deploy-SA KMS-ролі **НЕ потребує** (terraform gcs-backend читає/пише state лише зі `storage.objectAdmin` на bucket, уже scoped в `iam.tf` [INF.15]); між authorize та bucket-update скрипт чекає 30s IAM-propagation (документований GCS race). Rotation 90d мінтить нову PRIMARY, старі версії лишаються decrypt-capable → існуючі state-версії читаються; ⚠️ ручний destroy key-версії = state-версії під нею назавжди нечитабельні → DR-inventory [`06_06 §1`](06_06_Disaster_Recovery_and_Backup).
+**tfstate-CMEK latch ([SEC.22], 2026-07-10):** GCS-state = **друга** повна plaintext-копія секретів, які terraform торкається (`db_password` тече туди на кожному CI plan/apply) — після Akash-ENV та `coap.env`. Латч живе у `terraform/bootstrap.sh` **out-of-band** (chicken-and-egg: backend-bucket потребує ключ ДО `terraform init`, тому keyring/key створює gcloud, не `kms.tf`; для terraform він drift-invisible — `import`, якщо колись знадобиться). Складники: default-CMEK на `silken-net-terraform-state` + `--public-access-prevention` + versioning-retention підрізано **30в/90д → 10 noncurrent-версій / 30 днів** (кожна noncurrent-версія = ще одна копія секретів; 10/30 досі покриває rollback зіпсованого apply). Крипто-принципал = **GCS service agent** (`service-<num>@gs-project-accounts…`) — deploy-SA KMS-ролі **НЕ потребує** (terraform gcs-backend читає/пише state лише зі `storage.objectAdmin` на bucket, уже scoped в `iam.tf` [INF.15]); між authorize та bucket-update скрипт чекає 30s IAM-propagation (документований GCS race). Rotation 90d мінтить нову PRIMARY, старі версії лишаються decrypt-capable → існуючі state-версії читаються; ⚠️ ручний destroy key-версії = state-версії під нею назавжди нечитабельні → DR-inventory [`06_06 §1`](06_06_Disaster_Recovery_and_Backup).
 
 **Availability (boot-dependency):** disabled/destroyed key → **stopped** VM не старт (DEK re-fetch fail); operator-`reset`=reboot з cached DEK (safe, нуль KMS-call), live-migration зберігає DEK. Bounded: `prevent_destroy` + KMS 30-day restore-grace + Akash coap-fallback (INF.17). Rotation 90d НЕ re-encrypt'ить live disk (старі versions decrypt-capable → boot-safe). Keyring/key **undeletable** у GCP (dev-teardown: `state rm` перед destroy).
 
@@ -500,7 +377,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) INF.22 (GCP-0033-fix), §5.5 (si
 
 ### 5.7. Secrets-at-rest/runtime latch — credentials→ENV + AR-Encryption keys (SEC.22)
 
-**Принцип (at-rest ≠ runtime):** Akash-провайдер читає `/proc/<pid>/environ` живого процесу, тож `RAILS_MASTER_KEY` у runtime-ENV дозволяє провайдеру розшифрувати `credentials.yml.enc` (→ `secret_key_base` + увесь vault). Латч розчиняє runtime-потребу в `RAILS_MASTER_KEY`: кожне читання секрету в проді йде з ENV, не з master-key-розблокованого vault. **НЕ** коштує Akash — справжній «sealed-never-undone» = pre-mainnet SEC.17 KMS-signing + KMS-MAC `PROVISIONING` (§5.5), не Akash-shuffle (blast-radius-reduction, не повний seal).
+**Принцип (at-rest ≠ runtime):** будь-хто з root на хості читає `/proc/<pid>/environ` живого процесу, тож `RAILS_MASTER_KEY` у runtime-ENV дозволяє розшифрувати `credentials.yml.enc` (→ `secret_key_base` + увесь vault). Латч розчиняє runtime-потребу в `RAILS_MASTER_KEY`: кожне читання секрету в проді йде з ENV, не з master-key-розблокованого vault. **НЕ** коштує Akash — справжній «sealed-never-undone» = pre-mainnet SEC.17 KMS-signing + KMS-MAC `PROVISIONING` (§5.5), не Akash-shuffle (blast-radius-reduction, не повний seal).
 
 **AR-Encryption keys (3, boot-critical) — SHIPPED 2026-07-09.** `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` / `_DETERMINISTIC_KEY` / `_KEY_DERIVATION_SALT` шифрують колонки `hardware_keys` (device AES/Lorenz-seed) + `users.otp_secret` (TOTP-seed). З ENV, **НЕ** `credentials.yml.enc` (інакше поглибили б `RAILS_MASTER_KEY`-залежність). Раніше не сконфігуровані НІДЕ в проді → `hardware_keys` encryption raise-ила на першому use (provisioning dead-on-first-boot). Guard `config/initializers/active_record_encryption_keys_check.rb` (production-wide — web+workers декриптять; coap лише enqueue-ить, але uniform-перевірка простіша) fail-closed на blank/`<32`/weak (пуста content-логіка = `Security::EncryptionKeyGuard`). Генерувати всі три: `bin/rails db:encryption:init`. Deploy-дім: SDL web/job/coap (23-char placeholder `<32` → guard fails-closed) + Kamal `env.secret` + **анкор `compute.tf` coap.env** (systemd env-file — 3-тя поверхня, guard production-wide БЕЗ coap-skip; пропущена SEC.22-sweep'ом → анкор-демон raise-ив на 1-му boot, виправлено 2026-07-10 + regression-guard `spec/deploy/anchor_coap_env_spec.rb`) + `terraform/akash/variables.tf` (≥32 validation) + `deploy_secret_scan` SECRET_NAME. Bypass: `SILKENNET_SKIP_AR_ENCRYPTION_KEYS_CHECK=1` (rescue-boot).
 
@@ -537,7 +414,7 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.22, §5.2 (rotation entangle
    - Re-encrypt vault: `bin/rails credentials:edit` з новим master (commit нового `.enc`) — закриває ЧИТАННЯ vault'а, але **НЕ** revoke: той самий `secret_key_base` лишається → session/token-forge триває.
    - Справжній revoke = **ротація `secret_key_base`** (інжект нового `SECRET_KEY_BASE` у deploy-ENV — механіка Phase-2 §5.7) = one-shot інвалідація **всіх**: dashboard-сесій · `password_reset` (15 хв) · `email_verification` (24 год) · **`api_access` (30 днів — усі API-клієнти re-issue)** · **`m2m_access` (30 днів, [SEC.16] — НАЙДОРОЖЧИЙ хвіст: кожна польова Королева мусить перевидати токен через Ed25519-підпис, і зробити це може лише сама)** · CSRF · ActiveStorage signed IDs.
 3. **Recovery:** користувачі re-login (очікуваний support-сплеск), API-інтеграції перевипускають токени; даних не втрачено (AR-encryption ключі — ОКРЕМІ ENV-секрети §5.7, цим інцидентом не зачеплені).
-4. **Post-Incident:** як A.4 + якщо вектор = витік із running-process на Akash — аргумент прискорити Phase-2 drop `RAILS_MASTER_KEY` (§5.7).
+4. **Post-Incident:** як A.4 + якщо вектор = витік із running-process — аргумент прискорити Phase-2 drop `RAILS_MASTER_KEY` (§5.7).
 
 Cross-ref: §5.2 (un-rotatable вердикти + 6 класів) · §5.4 (rotatable-контраст + ENV-first нота) · §5.5/§5.7 (KMS-latch = вихід із цього runbook'а) · [`06_06 §4`](06_06_Disaster_Recovery_and_Backup) (**втрата ≠ компрометація**: втрата master-keys незворотна — інший клас) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) (re-flash механіка) · §5.9 (той самий `secret_key_base` під іншим кутом: **per-tenant** відкликання без глобального вилогінювання).
 
@@ -591,7 +468,6 @@ bin/rails runner 'puts SecureRandom.hex(32)'
 | Документ | Зв'язок |
 |---|---|
 | [`06_01`](06_01_Deployment_Kamal_Terraform) | Kamal/Terraform secrets (00_07 S1.1) |
-| [`06_02`](06_02_Akash_Network_Integration) | Akash SDL secrets / `REQUIRED_SECRET_NOT_SET` (00_07 S4.3) |
 | [`06_03`](06_03_Prometheus_Observability) | `SENTRY_DSN`, Grafana Cloud tokens |
 | [`05_01`](05_01_Multichain_Architecture) | Web3 ENV variables (§5) |
 | [`00_07`](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.2, S5.6 |

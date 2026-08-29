@@ -25,7 +25,6 @@
 | `Dockerfile` | `LD_PRELOAD=libjemalloc.so` (symlink на `libjemalloc.so.2`, пакет `libjemalloc2`), `CMD: thrust ./bin/rails server` |
 | `config/application.rb` | Стек мідлварів: `Rack::Attack`, далі `PrometheusCollector` (після нього — НІЧОГО; те, що там стояло, знято [ARCH.80] — див. §IO-bound нижче) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Kamal phased restart, `WEB_CONCURRENCY` |
-| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | `WEB_CONCURRENCY=4` у Akash SDL |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | `/metrics` endpoint |
 | [`04_03` — REST API v1 Reference](04_03_REST_API_v1_Reference) | Список IO-bound endpoints |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | production verification |
@@ -51,7 +50,7 @@ threads threads_count, threads_count
 max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i       # секція 1b
 ```
 
-**Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection; пул рахує І io-burst: `pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + 2 Cable = 21` (`config/database.yml` — SSOT формули; [INF.22]: io-марковані запити біжать понад `max_threads` і теж тримають checkout — пул без них голодує під сплеском; стеля, не преалокація). Job/Sidekiq-роль override `DB_POOL=17` — concurrency 15, деталі [`06_04 §3.2`](06_04_Secrets_Checklist). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
+**Чому `threads = RAILS_MAX_THREADS` (default 3):** кожен потік відкриває власний DB-connection; пул рахує І io-burst: `pool = RAILS_MAX_THREADS + PUMA_MAX_IO_THREADS + 2 Cable = 21` (`config/database.yml` — SSOT формули; [INF.22]: io-марковані запити біжать понад `max_threads` і теж тримають checkout — пул без них голодує під сплеском; стеля, не преалокація). Job/Sidekiq-роль override `DB_POOL=17` — concurrency 15, деталі [`06_04 §2`](06_04_Secrets_Checklist). Бюджет з'єднань і запас `max_connections=400` — [`06_01 §Розрахунок max_connections`](06_01_Deployment_Kamal_Terraform).
 
 **Чому `max_io_threads 16` лишається при НУЛІ позначених шляхів [ARCH.80]:** механізм Puma справний, але жоден запит більше не кличе `puma.mark_as_io_bound` — обґрунтування обох колишніх шляхів виявилось мертвим (обидва лише `perform_async`, синхронного HTTP немає), а на `provisioning/register` прапорець ще й брехав у шкідливий бік (HKDF = CPU-bound). Значення лишається як **готовність**, а не як активний бонус; деталі зняття — розділ нижче.
 
@@ -66,7 +65,7 @@ workers ENV.fetch("WEB_CONCURRENCY", default_workers)
 
 | Platform | vCPU | `WEB_CONCURRENCY` | RSS budget |
 |---|---|---|---|
-| Akash SDL | 4 CPU units | 4 | ~4 × 300 MB = 1.2 GB |
+| Kamal app-хост | 2 vCPU (спека `config/deploy.yml`) | 2 | ~2 × 300 MB = 0.6 GB |
 | GCP Kamal (fallback) | 2 vCPU | 2 | ~2 × 300 MB = 600 MB |
 | Local dev | 8–16 cores | 0 (single-mode) | ~300 MB |
 
@@ -188,7 +187,7 @@ curl -fsS http://[::1]:3000/up               # health-check IPv6 loopback
 
 | Endpoint | Перевіряє | Код | Роль |
 |---|---|---|---|
-| `GET /up` | процес живий (Rails `rails/health#show`, без залежностей) | 200 | **liveness** — рестарт-сигнал оркестратора (k8s / Akash / Kamal) |
+| `GET /up` | процес живий (Rails `rails/health#show`, без залежностей) | 200 | **liveness** — рестарт-сигнал оркестратора (Kamal proxy / k8s) |
 | `GET /ready` | DB (primary) + Sidekiq Redis (DB 0) + Kredis (DB 1, mint/burn locks) round-trip (`ReadinessController`) | 200 `ready` / 503 `not_ready` | **readiness** — оркестратор гейтить трафік, поки залежність недоступна (обидва Redis мають відповісти — money-path safety) |
 
 Обидва неавтентифіковані й виключені (production.rb) з `force_ssl`-redirect + host-authorization + Rack::Attack throttle — внутрішні HTTP/IP-проби працюють, часті проби не ловлять 429. Оркестратор (kamal-proxy / k8s) має вказувати `/ready` як healthcheck-ціль для readiness-gated cutover (не перемикати трафік, поки DB + Sidekiq-Redis + Kredis не готові); `/up` = liveness-рестарт. Багатий human-dashboard лишається admin-only `Api::V1::SystemHealthController` (CoAP / Sidekiq / DB; [`04_03 §4`](04_03_REST_API_v1_Reference)).
