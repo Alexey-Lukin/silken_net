@@ -22,6 +22,17 @@
 #      → present-empty inject → Web3NetworkGuard raise on boot. This is the one live Kamal
 #      instance of the "role declared but not where you think" class that the retired
 #      sdl_consistency_check carried [OPS.37].
+#      🔒 DECLARED CEILING (2026-08-29): this rule is WIDER than its own ground, and the gap
+#      matters because it forbids a legitimate fix. The ground is "canopy must not INHERIT
+#      the money quintet"; the rule bans the HASH FORM. A canopy `job:` role carrying its
+#      OWN `env.secret:` array would satisfy the ground — Rails `deep_merge!` REPLACES
+#      arrays, the very mechanism this invariant already leans on. So do not read a red
+#      B3 as "canopy may never have a job role": read it as "canopy must not inherit one
+#      silently". Narrowing it is gated on the canopy-shape decision (00_07, OPS.37 ⚖️ leg),
+#      not on this file. ⚠️ And the sharper reason the current shape holds at all is NOT
+#      in this gate: canopy maps the SAME mainnet RPC secrets as production (repo-level
+#      ALCHEMY_*/SOLANA_RPC_URL), so a job role on today's keys would sign on MAINNET from
+#      staging. Today the web-only form is the only thing standing between the two.
 #   D. No present-empty env (`VAR=` / `VAR:` with a blank value). Present-but-empty is worse
 #      than absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis,
 #      PROMETHEUS_AUTH→known-value bypass) — the recurring B1 class that cost a 4-month block.

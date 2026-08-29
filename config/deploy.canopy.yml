@@ -3,11 +3,22 @@
 # The forest canopy is the first layer that meets the sun and rain,
 # protecting the forest floor (production) below. 🌿
 #
-# Canopy = the FIRST deploy of the main Kamal path (DEPLOY-1 Фаза 3), not a fallback:
-# same app host as production, isolated database set. Deploy: kamal deploy -d canopy
+# Canopy = the FIRST deploy of the main Kamal path (DEPLOY-1 Фаза 3), not a fallback.
+# Deploy: kamal deploy -d canopy
+#
+# 🔴 ⚠️ "Same host as production" is a LEFTOVER, not a design — and this comment used to
+# state it as one. Provenance (git, 2026-08-29): canopy was born 2026-03-07 with its OWN
+# server (e2-medium); the 2026-04-19 platform pivot deleted BOTH VMs because the real
+# separation was meant to live on a platform that was itself cut on 2026-08-29 [OPS.37].
+# So the cut should have RESTORED two hosts and instead cemented the leftover.
+# ⛔ Do not read the shared host as a decision: it is an OPEN ⚖️ (00_07, OPS.37 leg), and
+# so is whether canopy gets its own keys. Shared-host connection budget: 362/400 with a
+# canopy job role, 311/400 without — and shrinking canopy (WEB_CONCURRENCY=1, DB_POOL=6)
+# brings it to 266/400, which is two lines rather than a machine.
 
 # Canopy server IP — use Ingress Anchor IP from: terraform output ingress_ip
-# (same host as production — canopy is differentiated by POSTGRES_DATABASE, not by IP)
+# (⚠️ today the SAME host as production, and that is the leftover named above — canopy is
+#  differentiated only by POSTGRES_DATABASE, not by IP)
 #
 # WEB-ONLY, enforced STRUCTURALLY: `servers:` uses the ARRAY form, which Kamal's
 # destination deep_merge REPLACES wholesale (an array is not a hash) → the base
