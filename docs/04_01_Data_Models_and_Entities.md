@@ -91,7 +91,7 @@
 > **📝 Розглянута альтернатива — TimescaleDB (E.37):**
 > Для IoT-телеметрії такого масштабу розглядалось розширення TimescaleDB (hypertables, continuous aggregates, автоматична компресія до 90% економії місця). **Чому відхилено для поточного TRL:**
 > - Нативний PostgreSQL RANGE partitioning повністю покриває потреби TRL 6-8 (мільйони рядків/місяць, partition pruning через One-Home цієї моделі — `TelemetryLog.partition_pruned`, НЕ `find_with_partition_pruning`: той живе на `BlockchainTransaction`)
-> - TimescaleDB-extension **недоступний на GCP Cloud SQL** (не в allow-list; вимагає `shared_preload_libraries`) — наш prod-Postgres ([`06_02`](06_02_Akash_Network_Integration)/[`06_06`](06_06_Disaster_Recovery_and_Backup)) його фізично не прийме; шлях = ClickHouse-OLAP / Timescale Cloud окремим інстансом / pg_partman
+> - TimescaleDB-extension **недоступний на GCP Cloud SQL** (не в allow-list; вимагає `shared_preload_libraries`) — наш prod-Postgres ([`06_06`](06_06_Disaster_Recovery_and_Backup)) його фізично не прийме; шлях = ClickHouse-OLAP / Timescale Cloud окремим інстансом / pg_partman
 > - Continuous Aggregates можна замінити `AiInsight` воркером (вже реалізовано: денна агрегація)
 > - При масштабуванні за 100M+ рядків/місяць — переглянути рішення (ClickHouse або Timescale Cloud)
 

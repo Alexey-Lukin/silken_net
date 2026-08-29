@@ -2,10 +2,18 @@
 # Mirror Docker Image to GitHub Container Registry (GHCR)
 # =============================================================================
 #
-# Resolves INF.2 (06_02):
-# Akash providers cannot pull images from private GCP Artifact Registry.
-# This workflow builds the production Docker image and pushes it to GHCR
-# (ghcr.io), which is publicly accessible to Akash providers.
+# Resolves INF.2. ⚠️ [OPS.37] The ORIGINAL ground (external compute providers cannot pull
+# from a private GCP Artifact Registry) died with that platform — but the mechanism is an
+# ASSET, and its ground was re-measured, not assumed:
+#   1. terraform/compute.tf runs the Ingress Anchor's `coap-daemon` systemd unit, which does
+#      `docker pull ${var.coap_daemon_image}` — default `ghcr.io/alexey-lukin/silken_net:PIN_ME`
+#      (terraform/variables.tf). That host sits OUTSIDE the Kamal/WIF auth chain and holds no
+#      GCP registry credential; a private AR would need one in a world-readable startup script.
+#   2. image_cve_scan.yml scans the PUBLISHED tag daily — a build-time scan goes stale while
+#      the image sits public for months.
+#   3. SECURITY.md promises `gh attestation verify oci://ghcr.io/...` to anyone.
+# ⛔ Do not delete this workflow on the strength of the dead cause alone: it is the only path
+# by which the Anchor obtains its image.
 #
 # Triggers:
 #   - After CI passes on main branch (same cadence as Canopy deploy)

@@ -9,7 +9,7 @@
 > **Scope.** The software produced by the project: the Rails backend (`app/`, `lib/`, `config/`), the STM32
 > firmware (`firmware/`), the Solidity contracts (`contracts/`), and the CI/CD + deploy configuration
 > (`.github/`, `deploy/`, `terraform/`). It excludes third-party infrastructure operated by others
-> (Postgres, Redis, the chains, Chainlink DON, Akash providers) except where SilkenNet code defends against
+> (Postgres, Redis, the chains, Chainlink DON, the operator of whatever host runs the backend) except where SilkenNet code defends against
 > their misbehaviour.
 >
 > **Status.** Living document — last reviewed 2026-07-16. This is a *synthesis*: it argues and points to the
@@ -55,7 +55,10 @@ Each claim is backed by the trust-boundary guards (§3), the secure-design argum
 ### 2.2 Threat actors & goals
 
 - **LoRa/CoAP MITM** — eavesdrop or forge/replay telemetry on the 868 MHz link or the CoAP backhaul.
-- **Malicious Akash provider** — tamper with the container or host that runs the backend.
+- **Hostile host operator** — anyone with root or hypervisor access to the machine running the backend:
+  reads `/proc/<pid>/environ`, tampers with the container image or its runtime. Defined by CAPABILITY,
+  not by vendor — the capability is identical on a self-managed cloud VM, and naming a specific provider
+  here once let the presumption look like a property of that provider rather than of hosting [OPS.37].
 - **Replay attacker** — retransmit recorded packets (telemetry or panic) to re-trigger effects.
 - **Double-spender** — exploit an RPC reorg/race to mint the same growth twice.
 - **Telemetry forger / DCI fraud** — run hacked firmware or spoof a device to fake growth and mint SCC.
@@ -223,10 +226,10 @@ An assurance case is credible because it states what is **not** yet fully closed
 - **Pre-mainnet.** No production deployment has run yet; the deploy-time guards (`verify-secrets`, force_ssl,
   HSTS) are configured and CI-verified but not yet exercised live.
 - **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
-  model, that the chains finalize honestly, and that an Akash provider cannot defeat container attestation —
+  model, that the chains finalize honestly, and that a hostile host operator cannot defeat container attestation —
   defended where code can (HMAC on callbacks, signed images, multi-RPC fallback) but not eliminated.
-- **Secrets live in a running process on an untrusted Akash provider (at-rest ≠ runtime).** A provider with
-  container access reads `/proc/<pid>/environ`, so at-rest encryption cannot hide a secret that must be live
+- **Secrets live in a running process on a host we do not physically control (at-rest ≠ runtime).** Anyone with
+  root on that host reads `/proc/<pid>/environ`, so at-rest encryption cannot hide a secret that must be live
   in the process. The *unbounded-fraud* keys are being moved out of process memory — EVM signing → GCP-KMS
   remote-signer (`SEC.17`, key never in-process); `PROVISIONING_MASTER_KEY` (the HKDF root that derives every
   device key — higher blast-radius than the minter key; on compromise the derived Lorenz seed breaks the DCI
@@ -236,8 +239,12 @@ An assurance case is credible because it states what is **not** yet fully closed
   forges sessions and every `generates_token_for` token; its *runtime* need is being dissolved
   (credentials→ENV shipped, Phase-2 drop deploy-gated — `SEC.22`), and both master keys are effectively
   un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
-  (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design (Akash
-  offers no Workload Identity Federation). The third at-rest copy in the GCS Terraform-state bucket is now
+  (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design.
+  ⚠️ [OPS.37] Retiring the decentralized-compute target did NOT close this residual, and saying so matters:
+  the earlier wording blamed one platform's lack of Workload Identity Federation, which reads as if a different
+  host would fix it. It would not — on a self-managed VM the same variables sit in the same container environ,
+  readable by the same root. What the cut DID close is narrower and real: the one long-lived service-account
+  key that existed only to authenticate from outside the VPC no longer exists anywhere in the tree. The third at-rest copy in the GCS Terraform-state bucket is now
   CMEK-sealed with public-access-prevention and a deliberately short 10-version/30-day retention
   ([`06_04 §5.6`](06_04_Secrets_Checklist), 2026-07-10). Rotation-on-compromise runbooks for the two master
   keys are **written** — an ordered-degradation playbook, honest that neither key rotates cleanly →

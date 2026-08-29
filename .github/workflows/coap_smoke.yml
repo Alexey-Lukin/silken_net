@@ -6,7 +6,8 @@ name: Smoke · CoAP UDP
 # fallback = socat relay → the dormant Kamal coap role).
 #
 # Without this probe a silent UDP failure (closed firewall, missing
-# socat fork, daemon not running, SDL `5683/udp` not exposed) is not
+# socat fork, daemon not running, 5683/udp not published by the Kamal role or the
+# anchor systemd unit) is not
 # visible from HTTP-only health checks — gateways simply cannot push
 # telemetry and the network goes dark without any error in CI.
 #

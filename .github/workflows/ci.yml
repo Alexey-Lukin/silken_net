@@ -590,7 +590,7 @@ jobs:
   terraform_validate:
     needs: changes
     if: ${{ needs.changes.outputs.terraform == 'true' || needs.changes.outputs.ci == 'true' }}
-    # [INF.15] Offline validate of BOTH terraform roots so a config error (bad reference,
+    # [INF.15] Offline validate of the terraform root so a config error (bad reference,
     # type mismatch, missing required arg, undeclared var) is caught HERE, not as a
     # first-`apply` blocker. The deploy-workflow terraform job only runs once secrets are
     # configured (if: verify-secrets.configured == 'true') → pre-first-deploy the tf is never
@@ -627,7 +627,7 @@ jobs:
           terraform_version: "1.15.9"
           terraform_wrapper: false # preserve real exit codes (drift-detector lesson, INF.22)
 
-      - name: Format check (both roots)
+      - name: Format check
         working-directory: terraform
         run: terraform fmt -check -recursive
 

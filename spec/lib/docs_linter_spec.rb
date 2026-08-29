@@ -47,7 +47,7 @@ RSpec.describe DocsLinter do
     end
 
     it "passes when every doc member-TRL sits within its module band" do
-      trls = { "01_01_Anchor" => 3, "03_01_Firmware" => 6, "06_02_Akash" => 5 }
+      trls = { "01_01_Anchor" => 3, "03_01_Firmware" => 6, "06_05_Puma" => 5 }
       expect(described_class.trl_range_consistency(matrix, trls)).to be_empty
     end
 

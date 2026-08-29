@@ -755,7 +755,7 @@ Load_AES_Key();  // reads from FLASH_KEY_ADDR, validates magic "KEYL",
      puts "OK"
    ' < /path/to/new_key.txt
    ```
-3. Записати у Bitwarden / 1Password / Kamal secrets / Akash SDL (див. [`06_04`](06_04_Secrets_Checklist)).
+3. Записати у Bitwarden / 1Password / Kamal secrets (див. [`06_04`](06_04_Secrets_Checklist)).
 4. Re-deploy — initializer перезапустить guard з боку production.
 
 **Сервіс автоматично запускається при кожному production boot — будь-яка ротація, яка пройшла повз runbook, буде заблокована до старту HTTP сервера.** Це й закриває SEC.9 🤖.
@@ -1421,7 +1421,7 @@ HAL_CRYP_Init(&hcryp);
 | Питання | Документ |
 |---------|----------|
 | Чому AES-128 LoRa достатньо на 25-річний горизонт | Цей §10 + ARCH.42 у [`00_07`](00_07_Action_Plan_Tracker) |
-| Як Cloudflare hybrid Kyber+X25519 інтегровано | `06_02 INF.4` (Akash TLS strategy) |
+| Як Cloudflare hybrid Kyber+X25519 інтегровано | [`06_01 §TLS`](06_01_Deployment_Kamal_Terraform) (INF.4) |
 | Hash Ratchet KDF дизайн | `[FW.17]` у [`00_07`](00_07_Action_Plan_Tracker) (placeholder) |
 | peaq DID міграція на Substrate-PQC | `05_01 Multichain Architecture` §peaq |
 | OTA HMAC-SHA256 dual-gate | 03_06 §4 цього файла + `[FW.23]` у [`00_07`](00_07_Action_Plan_Tracker) |

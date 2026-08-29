@@ -2,8 +2,10 @@
 # PostgreSQL connection (all environments) via discrete ENV components — the Rails-8
 # default style (no URL parsing in this file; Rails owns it). Production runs 3 logical
 # DBs on ONE Cloud SQL instance (primary + Solid Cache/Cable — Solid Queue pruned,
-# INF.18), reached through the Cloud SQL Auth Proxy at 127.0.0.1:5432
-# (bin/docker-entrypoint). Every DB shares host+credentials from &default and overrides
+# INF.18), reached DIRECTLY over the GCP VPC private IP (POSTGRES_HOST) — the Auth Proxy
+# left the runtime path with the platform that needed it [OPS.37]; it survives only as a
+# break-glass admin route (terraform/outputs.tf `database_url_proxy`). Every DB shares
+# host+credentials from &default and overrides
 # only `database:`. Provision POSTGRES_HOST / POSTGRES_PORT / POSTGRES_USER /
 # POSTGRES_PASSWORD in deploy (docs/06_04).
 default: &default
