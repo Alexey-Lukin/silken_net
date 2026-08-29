@@ -241,6 +241,37 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
     end
   end
 
+  # 🔴 [ARCH.70] Третій вимір ретеншну — РЯДКИ. Пін живий (не мок): він ганяє
+  # справжній `count` проти справжніх партицій, тож стереже і величину, і те, що
+  # запит узагалі виконуваний на партиційній таблиці.
+  describe "retention row-count gauge (ARCH.70)" do
+    let(:gauge) { SilkenNet::Metrics::TELEMETRY_ORACLE_DISPATCHED_ROWS }
+
+    it "records the retained dispatched-row count, not a hardcoded zero" do
+      tree = create(:tree)
+      3.times do |i|
+        create(:telemetry_log, tree: tree, oracle_status: :dispatched)
+      end
+
+      described_class.new.perform
+
+      expect(gauge.get).to eq(3)
+    end
+
+    # ⊥ Дзеркало: величина мусить РУХАТИСЬ, інакше пін вище зелений і на константі.
+    it "reflects a population change on the next pass" do
+      tree = create(:tree)
+      create(:telemetry_log, tree: tree, oracle_status: :dispatched)
+      described_class.new.perform
+      first = gauge.get
+
+      create(:telemetry_log, tree: tree, oracle_status: :dispatched)
+      described_class.new.perform
+
+      expect(gauge.get).to eq(first + 1)
+    end
+  end
+
   describe "sidekiq options" do
     it "uses default queue" do
       expect(described_class.get_sidekiq_options["queue"]).to eq("default")

@@ -802,6 +802,31 @@ module SilkenNet
     # залежить від кількості рядків — будь-який один уже блокує місяць, — а
     # `count(*)` над розрослим DEFAULT коштував би сканування саме тоді, коли
     # прилад найпотрібніший. 0 тут = здоровʼя, і воно ОЧІКУВАНЕ значення.
+    # 🔴 [ARCH.70] ТРЕТІЙ ВИМІР РЕТЕНШНУ — РЯДКИ. Реєстр мав місяці (`silkennet_partitions`)
+    # і байти (`silkennet_partitioned_table_bytes`), а скільки РЯДКІВ ми тримаємо — ні,
+    # і саме рядки визначають, що саме зітре майбутнє вікно ретеншну.
+    #
+    # ⛔⛔ ПІДПИС ТУТ І Є ПРИСУДОМ, І ВІН НАВМИСНО НЕ КАЖЕ «БЕКЛОГ». Спокуса назвати це
+    # «скільки рядків чекає на callback» вигадала б число: `ChainlinkDispatchWorker`
+    # ставить `dispatched` як ЛОКАЛЬНИЙ маркер без RPC, callback unwired, PATH 1
+    # демоутовано ([ARCH.53]) — тобто закривача не існує ЗА ПОБУДОВОЮ, і популяція
+    # монотонна не через затор, а через відсутність другої половини тракту. Величина
+    # чесно означає «скільки верифікованих рядків ми ТРИМАЄМО», і рівно в цьому вона
+    # корисна: вона є ціною майбутнього вікна ретеншну, а не сигналом інциденту.
+    # ⚠️ Тому й алерт-порога тут бути НЕ МОЖЕ у звичайній формі: «скільки прийнятно»
+    # для монотонної-за-побудовою величини не визначене. Законна форма — операторська
+    # стеля-дедлайн (як `> 24` у сусіда), і вона ратифікується РАЗОМ із шириною вікна.
+    # 🔒 Ярус — ДІАГНОСТИЧНИЙ (оголошено, [INF.26]): правила немає, доки немає вікна.
+    # ⊕ Ціна лічби виміряна, не припущена: партіальний `idx_telemetry_logs_oracle_dispatched`
+    # дає `Index Only Scan` по кожній партиції (EXPLAIN, 2026-08-29) — тобто це не скан
+    # партицій, і важіль [ARCH.52] на місці. ⛔ Не розширювати на `group(:oracle_status)`:
+    # решта станів партіального індексу не має, і розбивка перетворила б дешеву лічбу
+    # на seq scan усіх партицій.
+    TELEMETRY_ORACLE_DISPATCHED_ROWS = REGISTRY.gauge(
+      :silkennet_telemetry_oracle_dispatched_rows,
+      docstring: "Retained telemetry rows carrying oracle_status=dispatched — the RETENTION cost of verified rows, NOT a backlog: the callback closing this state is unwired by construction (PATH 1 demoted, ARCH.53), so the population is monotonic by design [ARCH.70; diagnostic tier: no alert until the retention window is ratified]"
+    )
+
     PARTITION_DEFAULT_OCCUPIED = REGISTRY.gauge(
       :silkennet_partition_default_occupied,
       docstring: "1 when a table's DEFAULT partition holds any row — that row permanently blocks CREATE PARTITION for its month (no self-heal)",
