@@ -65,9 +65,30 @@ accessories:
       clear:
         DEPLOYMENT_SLOT: canopy
 
-# Proxy: no SSL on canopy (HTTP only for developer use).
+# Proxy: the block below is COMMENTED, so kamal-proxy boots with its defaults today —
+# HTTP only, healthcheck /up. The `ssl: true` inside is the SHAPE for the day it is
+# enabled, not a statement about now. (This line used to read "no SSL on canopy (HTTP
+# only for developer use)", which described a dev-only slot and was superseded by
+# [OPS.37]: canopy is the FIRST deploy of the main Kamal path, per the file header.)
+#
+# 🔴 [INF.10] The `healthcheck:` sub-block below is written OUT IN FULL on purpose, and
+# that is the whole point of this edit. Until 2026-08-30 this block carried only the
+# prose "same as config/deploy.yml" — so whoever uncommented exactly what was written got
+# `proxy:` WITHOUT a healthcheck and stayed silently on the default `/up` (liveness) while
+# believing they were on `/ready` (readiness: DB + Redis + Kredis). Declared parity that
+# one side does not carry is not parity; a cross-reference cannot be uncommented.
 # proxy:
 #   ssl: true
+#   # ⛔ [INF.25] `silken.net` is a FIFTH domain spelling and is NOT one of ours
+#   #    (canon: silkennet.app web · silkennet.com mailer/api parent · silkennet.io in
+#   #    contract NatSpec). With `ssl: true` this value becomes the Let's Encrypt
+#   #    certificate name, so uncommenting it as-is asks for a cert on a domain we do not
+#   #    own. The value is gated on the founder's domain decision — do not guess it here.
 #   host: canopy.silken.net
-#   # INF.10 readiness cutover (proxy.healthcheck.path: /ready) — same as config/deploy.yml;
-#   # apply on first canopy deploy after /ready→200. Runbook: docs/06_01 §Чеклист (step 18).
+#   # INF.10 readiness cutover — flip on the first canopy deploy AFTER /ready→200
+#   # (on a cold start /ready 503s until DB/Redis are wired, and kamal-proxy retries to
+#   # deploy_timeout → rollback). Runbook: docs/06_01 §Чеклист (step 18).
+#   healthcheck:
+#     path: /ready
+#     interval: 3
+#     timeout: 5
