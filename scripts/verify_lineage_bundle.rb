@@ -63,6 +63,7 @@ failures = []
 anchored = 0
 pending = 0
 regrouped = 0
+diverged = 0
 total_leaves = 0
 sealed_credits = 0
 unsealed_credits = 0
@@ -96,6 +97,14 @@ bundle.fetch("credits").each do |credit|
     case proof.fetch("status")
     when "pending_anchor" then pending += 1
     when "unprovable_regrouped" then regrouped += 1
+    when "subroot_diverged"
+      # [ARCH.70 ⚖️ 2026-08-29] Окремий рахунок, але НЕ падіння — і це присуд,
+      # не поблажливість. Розбіжність субкореня однаково настає від легітимного
+      # переїзду дерева між кластерами і від підміни payload'а; емітент причину
+      # не ізолює (стеля названа в `Mrv::LineageReportService`). Падати на
+      # неоднозначному факті означало б стверджувати tamper без доказу — рівно
+      # той клас, проти якого будувався весь тракт.
+      diverged += 1
     when "anchored"
       # 4. tier1: перерахований субкорінь МУСИТЬ збігтись із заявленим (анти-підміна ярусу)
       claimed_subroot = proof.dig("tier1", "subroot")
@@ -134,7 +143,7 @@ end
 
 puts "── Lineage bundle: #{bundle['credits'].size} credits " \
      "(org #{bundle.dig('organization', 'id')}, #{bundle.dig('period', 'from')}..#{bundle.dig('period', 'to')})"
-puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} · " \
+puts "   leaves anchored=#{anchored} pending_anchor=#{pending} unprovable_regrouped=#{regrouped} subroot_diverged=#{diverged} · " \
      "credits sealed=#{sealed_credits} unsealed=#{unsealed_credits}"
 
 # [DOC-T.89] Страхові виплати: НЕ верифікуються (нічого верифікувати) — але й НЕ

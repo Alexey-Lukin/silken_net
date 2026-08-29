@@ -188,7 +188,10 @@ RSpec.describe Mrv::LineageReportService do
     expect(leaf[:anchor_proof][:status]).to eq("unprovable_regrouped")
   end
 
-  it "marks unprovable_regrouped when the tree moved into a cluster that WAS anchored (subroot mismatch)" do
+  # [ARCH.70 ⚖️ 2026-08-29] Цей приклад ЗАВЖДИ описував integrity-розбіжність — сама
+  # його назва казала «subroot mismatch», — але очікував статус про перегрупування,
+  # бо власного імені для третього стану не існувало. Тепер очікує своє.
+  it "reports subroot_diverged when the cluster subroot no longer matches the anchor" do
     other_tree = create(:tree, cluster: create(:cluster, organization: organization))
     create(:telemetry_log, tree: other_tree, created_at: 2.hours.ago)
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
@@ -197,7 +200,10 @@ RSpec.describe Mrv::LineageReportService do
     tree.update!(cluster: other_tree.cluster) # entry існує, але recompute ≠ stored
 
     leaf = bundle[:credits].first[:leaves].first
-    expect(leaf[:anchor_proof][:status]).to eq("unprovable_regrouped")
+    expect(leaf[:anchor_proof][:status]).to eq("subroot_diverged")
+    # Негативна половина: розбіжність складу більше НЕ рапортується аудиторові
+    # як «дерево змінило кластер» — ми віддаємо НАСЛІДОК, бо причини не знаємо.
+    expect(leaf[:anchor_proof][:status]).not_to eq("unprovable_regrouped")
   end
 
   it "serializes an empty-window credit honestly (unsealed, nil window bounds)" do
