@@ -12,7 +12,7 @@
 //     помилку замість власної офлайн-сторінки браузера;
 //   · слухач `FORCE_SYNC` — єдиний можливий шлях флашу на iOS (Safari не має
 //     Background Sync) — не мав ЖОДНОГО відправника, тобто обіцяв підтримку,
-//     якої не було. Обовʼязок переїхав у чекбокс реєстрації `[ex-ARCH.16]`.
+//     якої не було. Обовʼязок переїхав у чекбокс активації слайсу — `00_07` UI.18.
 const DB_NAME = 'SilkenNetDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'maintenance_sync_queue';
@@ -117,6 +117,12 @@ async function handleOfflinePost(request) {
       payload = await clonedRequest.json();
     } else {
       const formData = await clonedRequest.formData();
+      // ⚠️ ОБОВʼЯЗОК ДО РЕЄСТРАЦІЇ [UI.18]: `Object.fromEntries` лишає
+      // ОСТАННЄ значення для повторюваного ключа, тож multi-value поля
+      // (кілька чекбоксів одного імені, `foo[]`) схлопуються в одне —
+      // мовчки, без помилки. Перш ніж реєструвати worker, це або
+      // виправити на `formData.getAll`-збірку, або довести, що жодна
+      // офлайн-форма повторюваних ключів не має.
       payload = Object.fromEntries(formData.entries());
     }
 
@@ -138,6 +144,11 @@ async function handleOfflinePost(request) {
     }
 
     // 3. Відповідаємо Turbo Streams фейковим успіхом.
+    // ⚠️ ОБОВʼЯЗОК ДО РЕЄСТРАЦІЇ [UI.18]: Turbo цю відповідь НЕ спожиє —
+    // воно чекає `text/vnd.turbo-stream.html`, а тут JSON, тож форма
+    // отримає 202 і не оновить нічого. «Zero-Lag» нижче описує намір,
+    // а не поведінку; у день реєстрації або віддавати turbo-stream, або
+    // малювати оптимістичний рядок на клієнті.
     // Для UI це виглядає як миттєве збереження (Zero-Lag).
     return new Response(JSON.stringify({
       status: "queued",
