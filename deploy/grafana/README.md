@@ -7,7 +7,7 @@ Infrastructure-as-Code конфіги для Grafana Cloud. Замінюють �
 ```
 deploy/grafana/
 ├── dashboards/
-│   └── silkennet-overview.json   # Головний дашборд (8 секцій)
+│   └── silkennet-overview.json   # Головний дашборд (склад — таблиця нижче, не число тут)
 ├── alerts/
 │   └── silkennet-alerts.yaml     # alert rules (P0/P1/P2)
 └── import.rb                     # one-command імпорт обох артефактів

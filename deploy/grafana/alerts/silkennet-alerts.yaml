@@ -132,7 +132,7 @@ groups:
             model:
               # max: Redis-global gauge — guard against duplicate series if a
               # second scrape target ever samples it (06_03 §2.9).
-              expr: max(silkennet_sidekiq_queue_size{queue="web3_critical"})
+              expr: max by (slot) (silkennet_sidekiq_queue_size{queue="web3_critical"})
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -328,7 +328,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: 'min by (process) (up{job="silken_net_scraper"})'
+              expr: 'min by (slot, process) (up{job="silken_net_scraper"})'
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -400,7 +400,7 @@ groups:
             relativeTimeRange: { from: 1800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_chain_audit_delta)
+              expr: max by (slot) (silkennet_chain_audit_delta)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -590,7 +590,7 @@ groups:
             datasourceUid: ${DATASOURCE_UID}
             model:
               # max by (queue): Redis-global gauge — duplicate-series guard (06_03 §2.9).
-              expr: max by (queue) (silkennet_sidekiq_queue_latency_seconds)
+              expr: max by (slot, queue) (silkennet_sidekiq_queue_latency_seconds)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -628,7 +628,7 @@ groups:
             datasourceUid: ${DATASOURCE_UID}
             model:
               # max: Redis-global gauge — duplicate-series guard (06_03 §2.9).
-              expr: max(silkennet_sidekiq_dead_set_size)
+              expr: max by (slot) (silkennet_sidekiq_dead_set_size)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -665,7 +665,7 @@ groups:
             relativeTimeRange: { from: 1800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_blockchain_manual_review_depth)
+              expr: max by (slot) (silkennet_blockchain_manual_review_depth)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -701,7 +701,7 @@ groups:
             relativeTimeRange: { from: 1800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_blockchain_limbo_locked_total)
+              expr: max by (slot) (silkennet_blockchain_limbo_locked_total)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -839,7 +839,7 @@ groups:
             relativeTimeRange: { from: 21600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_iotex_backfill_rearmed_total[6h]))
+              expr: sum by (slot) (increase(silkennet_iotex_backfill_rearmed_total[6h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -873,7 +873,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum by (network, signer) (increase(silkennet_treasury_check_errors_total[1h]))
+              expr: sum by (slot, network, signer) (increase(silkennet_treasury_check_errors_total[1h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -981,7 +981,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: '(sum(increase(silkennet_mint_success_total[1h])) / sum(increase(silkennet_mint_attempts_total[1h]))) and (sum(increase(silkennet_mint_attempts_total[1h])) > 0)'
+              expr: '(sum by (slot) (increase(silkennet_mint_success_total[1h])) / sum by (slot) (increase(silkennet_mint_attempts_total[1h]))) and (sum by (slot) (increase(silkennet_mint_attempts_total[1h])) > 0)'
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1022,7 +1022,7 @@ groups:
             relativeTimeRange: { from: 600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max by (token_type) (silkennet_mint_volume_window_scc)
+              expr: max by (slot, token_type) (silkennet_mint_volume_window_scc)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1066,7 +1066,7 @@ groups:
             relativeTimeRange: { from: 10800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_mint_eligible_unminted_depth)
+              expr: max by (slot) (silkennet_mint_eligible_unminted_depth)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1106,7 +1106,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum by (reason) (increase(silkennet_slashing_events_total[1h]))
+              expr: sum by (slot, reason) (increase(silkennet_slashing_events_total[1h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1147,7 +1147,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_dclimate_verification_total{result="rejected_fraud"}[1h]))
+              expr: sum by (slot) (increase(silkennet_dclimate_verification_total{result="rejected_fraud"}[1h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1186,7 +1186,7 @@ groups:
             relativeTimeRange: { from: 691200, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_anchor_missed_weeks_total[8d]))
+              expr: sum by (slot) (increase(silkennet_anchor_missed_weeks_total[8d]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1225,7 +1225,7 @@ groups:
             relativeTimeRange: { from: 7200, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(min_over_time(silkennet_ethereum_anchor_stuck_sent_depth[2h]))
+              expr: max by (slot) (min_over_time(silkennet_ethereum_anchor_stuck_sent_depth[2h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1263,7 +1263,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_ethereum_anchor_manual_review_depth)
+              expr: max by (slot) (silkennet_ethereum_anchor_manual_review_depth)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1299,7 +1299,7 @@ groups:
             relativeTimeRange: { from: 86400, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_filecoin_verification_failures_total[24h]))
+              expr: sum by (slot) (increase(silkennet_filecoin_verification_failures_total[24h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1436,7 +1436,7 @@ groups:
             relativeTimeRange: { from: 86400, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: "sum(increase(silkennet_telemetry_archive_batch_failures_total{reason=~\"mismatch|leaf_stamp_drift\"}[24h]))"
+              expr: "sum by (slot) (increase(silkennet_telemetry_archive_batch_failures_total{reason=~\"mismatch|leaf_stamp_drift\"}[24h]))"
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1606,7 +1606,7 @@ groups:
             relativeTimeRange: { from: 21600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: "sum(increase(silkennet_telemetry_archive_batch_failures_total{reason=\"build\"}[6h]))"
+              expr: "sum by (slot) (increase(silkennet_telemetry_archive_batch_failures_total{reason=\"build\"}[6h]))"
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1650,7 +1650,7 @@ groups:
             relativeTimeRange: { from: 21600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(min_over_time(silkennet_telemetry_archive_unpinned_depth[6h]))
+              expr: max by (slot) (min_over_time(silkennet_telemetry_archive_unpinned_depth[6h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1800,7 +1800,7 @@ groups:
             relativeTimeRange: { from: 1800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_gateways_offline_total[30m]))
+              expr: sum by (slot) (increase(silkennet_gateways_offline_total[30m]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1837,7 +1837,7 @@ groups:
             relativeTimeRange: { from: 21600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(min_over_time(silkennet_filecoin_unarchived_depth[6h]))
+              expr: max by (slot) (min_over_time(silkennet_filecoin_unarchived_depth[6h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1875,7 +1875,7 @@ groups:
             relativeTimeRange: { from: 21600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(min_over_time(silkennet_hadron_kyc_pending_depth[6h]))
+              expr: max by (slot) (min_over_time(silkennet_hadron_kyc_pending_depth[6h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1914,7 +1914,7 @@ groups:
             relativeTimeRange: { from: 604800, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_ethereum_anchor_reverted_total[1w]))
+              expr: sum by (slot) (increase(silkennet_ethereum_anchor_reverted_total[1w]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1954,7 +1954,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_m2m_nonce_fallback_total[1h]))
+              expr: sum by (slot) (increase(silkennet_m2m_nonce_fallback_total[1h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -1993,7 +1993,7 @@ groups:
             relativeTimeRange: { from: 2592000, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_telemetry_processed_total[30d]))
+              expr: sum by (slot) (increase(silkennet_telemetry_processed_total[30d]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2038,7 +2038,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_partitions)
+              expr: max by (slot) (silkennet_partitions)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2077,7 +2077,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(silkennet_partitioned_table_bytes)
+              expr: sum by (slot) (silkennet_partitioned_table_bytes)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2118,7 +2118,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: time() - max(silkennet_partition_sample_timestamp_seconds)
+              expr: time() - max by (slot) (silkennet_partition_sample_timestamp_seconds)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2162,7 +2162,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: max(silkennet_partition_default_occupied)
+              expr: max by (slot) (silkennet_partition_default_occupied)
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2200,7 +2200,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: sum(increase(silkennet_qatt_nonce_fallback_total[1h]))
+              expr: sum by (slot) (increase(silkennet_qatt_nonce_fallback_total[1h]))
               refId: A
           - refId: C
             datasourceUid: "__expr__"
@@ -2242,7 +2242,7 @@ groups:
             relativeTimeRange: { from: 86400, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: "sum(increase(silkennet_governance_param_rejected_total[24h]))"
+              expr: "sum by (slot) (increase(silkennet_governance_param_rejected_total[24h]))"
               refId: A
           - refId: C
             datasourceUid: "__expr__"

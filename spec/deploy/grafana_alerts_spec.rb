@@ -58,11 +58,8 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
   # [S2.4] Дашборд скоуплено по `slot` — і без носія наступна панель приїхала б без нього.
   # `RAILS_ENV` = production для ОБОХ слотів (canopy різниться лише `POSTGRES_DATABASE`),
   # тож `slot` є ЄДИНИМ, що їх розводить; панель без матчера мовчки зливає staging із продом.
-  # 🔴 ОГОЛОШЕНА СТЕЛЯ, і вона тут несуча: спека судить ЛИШЕ ДАШБОРД. 57 alert-виразів
-  # `slot` НЕ несуть свідомо — це відкритий ⚖️ (`00_07` S2.4: які правила пінити до
-  # production, а які лишити крос-слотними, бо канопі, що впав, теж варто бачити).
-  # ⛔ Тож зелена цієї спеки НЕ означає «середовища розведені» — вона означає рівно
-  # «розведені на екрані». Цитувати її як доказ ізоляції алертів — помилка.
+  # ⊥ Сиблінг для АЛЕРТІВ — нижче, і форма там ІНША: дашборд фільтрує (`{slot=~"$slot"}`),
+  # алерт РОЗЩЕПЛЮЄ (`by (slot)`). Різницю ухвалено присудом, див. коментар того прикладу.
   it "every dashboard panel query is scoped by the slot label" do
     dash = JSON.parse(REPO_ROOT.join("deploy/grafana/dashboards/silkennet-overview.json").read)
     exprs = []
@@ -85,6 +82,41 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
     expect(unscoped).to be_empty,
       "Панелі без `{slot=~\"$slot\"}` (#{unscoped.size}): #{unscoped.first(3).join(' | ')}. " \
       "Без матчера панель зливає canopy з production в одну лінію — а розводить їх лише ця мітка."
+  end
+
+  # [S2.4 · ⚖️ founder 2026-08-29] Алерти РОЗЩЕПЛЕНІ по `slot`, а не відфільтровані — і
+  # різниця несуча, бо фільтр `{slot="production"}` заглушив би рівно два правила, які
+  # глушити не можна: `sn-alert-scrape-target-down` (його анотація каже «зникнення УСІХ
+  # up-серій = сам Alloy впав» — фільтр звузив би «усіх» до продових і зробив смерть
+  # canopy-Alloy невидимою) і `sn-alert-db-pool-saturation` (Cloud SQL — ОДИН інстанс на
+  # обидва слоти, бюджет зʼєднань спільний, тож насичення з боку canopy Є продовим
+  # ризиком; мітка `database` не розводить — це `primary`/`cache`/`cable` в обох).
+  #
+  # 🔴 Проблема, яку це лікує: 33 із 57 виразів ЗНИЩУВАЛИ мітку агрегацією (28 голих
+  # `sum`/`max`, 5 із `by(…)` без slot) — і в ці 33 потрапляли ВСІ грошові агрегати.
+  # Найгірший — `sn-alert-mint-slo-breach`: `sum(succ)/sum(att)` збирав чисельник і
+  # знаменник із РІЗНИХ реєстрів, тож canopy зі 100% успіху МАСКУВАВ би продову аварію.
+  #
+  # ⚠️ ОГОЛОШЕНА СТЕЛЯ: розщеплення дає мітку на КОЖНОМУ інстансі — воно не вирішує,
+  # КОГО будити. Це окремий ⚖️ (notification-policy route на `slot=canopy`), і зелена
+  # цієї спеки його НЕ закриває. ⛔ І ще одного вона не закриває принципово:
+  # `sn-alert-chain-audit-drift` порівнює суму БД проти `totalSupply` СПІЛЬНОГО ланцюга —
+  # якщо canopy колись змінтить, продова дельта стане ненульовою назавжди, і жодна
+  # мітка цього не полагодить (дім питання — `00_07` OPS.37, ⚖️ форми canopy).
+  it "every alert-rule aggregation is split by the slot label" do
+    yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+    rules = yaml.fetch("groups").flat_map { |g| g.fetch("rules") }
+    agg = /(?<![a-zA-Z0-9_])(?:sum|max|min|count|avg)\s*(?:by\s*)?\(/
+
+    unsplit = rules.filter_map do |rule|
+      exprs = rule.fetch("data").filter_map { |d| d.dig("model", "expr") }
+      bad = exprs.select { |e| e.scan(agg).size != e.scan("by (slot").size }
+      "#{rule['uid']}: #{bad.join(' | ')}" if bad.any?
+    end
+
+    expect(unsplit).to be_empty,
+      "Агрегації без `by (slot…)` (#{unsplit.size}): #{unsplit.first(3).join('; ')}. " \
+      "Гола агрегація ЗНИЩУЄ мітку — і тоді злиття слотів міняє САМЕ ЧИСЛО, не додає серію."
   end
 
   it "every silkennet_ metric referenced in an alert expr exists in the Prometheus registry" do

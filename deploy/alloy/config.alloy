@@ -11,8 +11,13 @@
 // Environment variables (Kamal accessory env — config/deploy.yml `accessories.alloy`):
 //   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics
 //   GRAFANA_REMOTE_WRITE_URL / _USERNAME / _TOKEN   — Grafana Cloud remote_write
-//   RAILS_ENV (optional)        — environment label (default "production")
-//   RELEASE_VERSION (optional)  — release label (regression attribution; matches Sentry)
+//   DEPLOYMENT_SLOT             — slot label ("production" / "canopy"). The ONLY label that
+//                                 separates the two slots: RAILS_ENV is "production" in both.
+//   RAILS_ENV (optional)        — environment label (default "production"); CONSTANT across
+//                                 slots by design, so it discriminates nothing.
+//   RELEASE_VERSION (optional)  — release label. ⚠️ NOT SUPPLIED TODAY: it is absent from
+//                                 `accessories.alloy.env`, so the label is empty and dropped.
+//                                 The old "matches Sentry" claim had no join behind it (00_07 S2.4).
 //
 // Metric registry SSOT (names, types, count) — docs/06_03 §2.8. Deliberately NOT
 // restated here (avoids doc-drift); this agent scrapes whatever /metrics exposes.

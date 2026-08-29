@@ -144,7 +144,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 |-------------|-----------|
 | `development` | Інертний (немає `SENTRY_DSN`) |
 | `test` | Інертний (немає `SENTRY_DSN`) |
-| Canopy (staging) | Працює під `RAILS_ENV=production` (НЕ окремий Rails-env); активний, `SENTRY_DSN` присутній — розрізняється `external_labels` env/release (§2.9) |
+| Canopy (staging) | Працює під `RAILS_ENV=production` (НЕ окремий Rails-env); активний, `SENTRY_DSN` присутній. 🔴 **У Sentry canopy від прода НЕ відрізняється — виправлено 2026-08-29**: доти цей рядок посилався на `external_labels env/release`, тобто на мітки **Prometheus**, яких Sentry-подія не несе взагалі; до того ж `env` там КОНСТАНТА (`RAILS_ENV` = production в обох слотах), а `release` **не емітиться** — `RELEASE_VERSION` відсутній в `accessories.alloy.env`, тож мітка дропається як порожня. `config.environment = Rails.env` → `production` для обох; `config.release` різниться лише ВИПАДКОВО (canopy = sha, prod = tag-або-sha). Дискримінатора Sentry не має — дім питання [`00_07`](00_07_Action_Plan_Tracker) S2.4 |
 | `production` | Активний (✅ `SENTRY_DSN` додано у `.kamal/secrets-common`) |
 
 ---
@@ -453,7 +453,7 @@ end
 Аудит чинного стеку (Grafana Alloy → Grafana Cloud) на production-grade зрілість. Архітектура **достатня** (WAL-буферизація, Basic Auth, всі 9 черг + повний реєстр §2.8); бракувало лише атрибуції та захисних гейтів — закрито нижче (`external_labels`, `queue_config`+explicit WAL, cardinality budget, CI-валідація, runtime-метрики).
 
 **✅ Зроблено зараз (`config.alloy`):**
-- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`). Без них серії з prod/canopy зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
+- **`external_labels`** на `remote_write` — `service` / `source` / `env` (з `RAILS_ENV`) / `release` (з `RELEASE_VERSION`) / **`slot`** (з `DEPLOYMENT_SLOT`). 🔴 **Розводить слоти ЛИШЕ `slot`, і його тут не було названо до 2026-08-29:** `env` константна (`RAILS_ENV` = production в обох слотах свідомо), а `release` **не доїжджає на дріт** — `RELEASE_VERSION` відсутній в `accessories.alloy.env`, тож порожня мітка дропається, і «корелює з Sentry release» лишається наміром без механізму ([`00_07`](00_07_Action_Plan_Tracker) S2.4). ⊕ Споживач `slot` зʼявився тим самим днем: дашборд фільтрує (`{slot=~"$slot"}`), алерти РОЗЩЕПЛЮЮТЬ (`by (slot)`) — різниця не стильова, див. S2.4. Без них серії з prod/canopy зливаються в Grafana Cloud — неможливо скоупити дашборди/алерти за середовищем чи провайдером, ні відстежити регресію за релізом (корелює з Sentry `release`).
 - **`scrape_timeout = 10s`** явно (< 15s interval).
 - Header-коментар більше не дублює реєстр метрик — реф на §2.8 (DRY).
 - **CI-gate `alloy_config_validate`** (`.github/workflows/ci.yml` → `CI · Code`) — `grafana/alloy:v1.16.3 fmt` парсить `config.alloy` (образ **запінено** — версія синхронна з `config/deploy.yml` `accessories.alloy`; bump оновлює обидва разом, INF.14); **path-gated** під `alloy`-домен (`changes`-job: біжить коли чіпається `deploy/**`); River parse-error = **red CI замість crash-loop accessory** на деплої.
