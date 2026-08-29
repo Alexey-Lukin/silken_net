@@ -5,7 +5,8 @@ description: "Use when deploying or operating silken_net infrastructure — Kama
 
 # Deploy & Infrastructure (Module 06 — The Matrix)
 
-DevOps/Infra шар: Rails на **Akash** (децентралізовано, цензуростійко) +
+DevOps/Infra шар: Rails на **Akash** (децентралізовано; ⚠️ «цензуростійко» знято
+2026-08-29 — клас СЛОВО, дім присуду `06_02 §5` + `00_07` ARCH.114) +
 **GCP** (Cloud SQL / Redis / failover). Деплой через **Kamal**, IaC через
 **Terraform**, спостережуваність через **Grafana Alloy → Grafana Cloud**.
 

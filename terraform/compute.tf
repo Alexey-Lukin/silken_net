@@ -14,7 +14,8 @@
 #       FALLBACK = socat relay → Akash `coap` service (kept deployed, idle);
 #       switch: systemctl stop coap-daemon && systemctl start coap-relay.
 #   - TCP 80/443: HAProxy → Akash deployment (web stays decentralized —
-#       money-path/web remain on Akash by design, censorship-resistance).
+#       money-path/web remain on Akash by design). ⚠️ Підстава «censorship-resistance»
+#       знята 2026-08-29 як клас СЛОВО (мітка без вимірювача) — 06_02 §5, ARCH.114.
 #
 # Cost: ~$13/month e2-small in europe-west1 (Always Free e2-micro is US-only;
 # micro's 1 GB cannot hold the Rails daemon ~0.5 GB + HAProxy + OS headroom)

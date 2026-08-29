@@ -4,7 +4,8 @@
 # =============================================================================
 #
 # This SDL defines a decentralized deployment of the SilkenNet Rails 8.1
-# application on Akash Network — a permissionless, censorship-resistant
+# application on Akash Network — a permissionless (⚠️ «censorship-resistant» знято
+# 2026-08-29: клас СЛОВО, мітка без вимірювача — 06_02 §5 і 00_07 ARCH.114)
 # compute marketplace. It complements the existing Google Cloud (Kamal +
 # Terraform) infrastructure by providing a decentralized alternative for
 # the web/API layer while the database remains on Cloud SQL.
