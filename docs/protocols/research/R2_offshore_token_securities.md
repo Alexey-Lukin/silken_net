@@ -120,7 +120,7 @@
 Я перевірив `docs/05_03_Tokenomics_SCC_and_SFC.md`, `docs/00_04_Nature_as_a_Service_Contracts.md`, `app/models/user.rb`, `app/models/wallet.rb` (read-only). Факти:
 
 1. **`NaasContract` — це модель "підписки", де клієнт ("Organization" АБО individual) платить `total_funding` і отримує SCC + SFC.** Документ `00_04` буквально каже: «клієнти... платять за моніторинг лісів і отримують натомість... SCC та... SFC».
-2. **RBAC явно містить роль `investor` (`enum :role, { investor: 0, forester: 1, ... }`, `app/models/user.rb`).** Не метафора — literal enum value.
+2. ⚠️ **ПРЕМІСУ ЗНЯТО 2026-08-28** (роль перейменована на `subscriber`, integer `0` збережено). Історично: **RBAC явно містив роль `investor` (`enum :role, { investor: 0, forester: 1, ... }`, `app/models/user.rb`).** Не метафора — literal enum value.
 3. **`total_funding`** документовано в `04_01`/`00_04` як **«Загальна сума інвестиції (USDC/USD)»** — слово "інвестиції" в самому каноні, не моя інтерпретація.
 4. **Early-exit механіка:** `NaasContract#calculate_early_exit_fee`, `#calculate_prorated_refund` — «Дострокове розірвання (Early Exit **Investor**)» з штрафом і пропорційним поверненням. Це фінансово-інструментальна механіка (схожа на bond early-redemption / fund exit fee), НЕ типова для «купівлі carbon-credit» (carbon credit purchase не має "refund").
 5. **B2C track (`00_04 §1.2`)** прямо описує individuals, що хочуть **"монетизувати"** свій ліс: SCC + мікро-USDC-нагороди (0.01-0.0162 USDC/LoRa-пакет) + Celo ReFi (5 cUSD/добу) — DePIN-style "заробіток за участь" fact-pattern (та сама категорія, що привертала SEC-увагу до Helium-подібних мереж).
