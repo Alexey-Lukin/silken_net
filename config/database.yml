@@ -4,7 +4,7 @@
 # DBs on ONE Cloud SQL instance (primary + Solid Cache/Cable — Solid Queue pruned,
 # INF.18), reached DIRECTLY over the GCP VPC private IP (POSTGRES_HOST) — the Auth Proxy
 # left the runtime path with the platform that needed it [OPS.37]; it survives only as a
-# break-glass admin route (terraform/outputs.tf `database_url_proxy`). Every DB shares
+# break-glass admin route — ⚠️ але вже НЕ з робочої станції: `ipv4_enabled = false` знімає публічний лістенер, тож Auth Proxy треба запускати ВСЕРЕДИНІ VPC (IAP-тунель на Ingress Anchor → proxy/psql там; SSH-модель INF.20). Every DB shares
 # host+credentials from &default and overrides
 # only `database:`. Provision POSTGRES_HOST / POSTGRES_PORT / POSTGRES_USER /
 # POSTGRES_PASSWORD in deploy (docs/06_04).

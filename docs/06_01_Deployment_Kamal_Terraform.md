@@ -117,8 +117,12 @@ terraform apply
 # (дзеркало config/deploy.yml env.secret; значення з GitHub Secrets або менеджера)
 #
 # Application core:
-#   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
-#   GCP_SA_KEY_BASE64, REDIS_URL=rediss://<upstash>:6379
+#   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD,
+#   REDIS_URL=rediss://<upstash>:6379, TURBO_SIGNED_STREAM_KEY
+#   ⛔ CLOUD_SQL_INSTANCE_CONNECTION_NAME / GCP_SA_KEY_BASE64 більше НЕ заводити [OPS.37]:
+#   Auth Proxy знято з рантайм-шляху разом із платформою, що його вимагала. Ці два рядки
+#   пережили зріз коду на пів дня — 👤-процедура наказувала СТВОРИТИ довгоживучий SA-ключ,
+#   чиє зникнення той самий зріз оголосив закриттям ARCH.114.
 #   (KREDIS_REDIS_URL — НЕ задавати: Kredis auto-derive DB 1 з REDIS_URL, config/redis/shared.yml) [B1]
 # 🛑 Boot-critical (інакше Puma crash):
 #   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")

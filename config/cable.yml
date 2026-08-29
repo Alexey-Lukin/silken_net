@@ -41,7 +41,7 @@ test:
 # ⚠️ Раніше тут стояла копія переліку «звірено з кодом» — саме та форма, що
 # гниє першим же перейменуванням, і саме проти неї той дім і зроблено.
 #
-# See: docs/06_02_Akash_Network_Integration.md (GCS bootstrap, resolved → INF.*)
+# See: docs/06_01_Deployment_Kamal_Terraform.md (GCS bootstrap, resolved → INF.*)
 # =============================================================================
 production:
   adapter: solid_cable

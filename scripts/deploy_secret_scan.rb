@@ -64,12 +64,15 @@ ANCHOR_TF    = "terraform/compute.tf" # COAP_ENV heredoc — the anchor daemon's
 # Secret-bearing var-name suffixes. `_SECRET` subsumes `_HMAC_SECRET`/`_WEBHOOK_SECRET`;
 # `_BASE64` catches base64-wrapped keys; `_RPC_URL`/`REDIS_URL` embed provider keys /
 # passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens.
-SECRET_NAME = /(_PRIVATE_KEY|_KEYPAIR|MASTER_KEY|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_API_KEY|_DSN|_RPC_URL|REDIS_URL|_PRIMARY_KEY|_DETERMINISTIC_KEY|_DERIVATION_SALT)\z/
+SECRET_NAME = /(_KEY|_KEYPAIR|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_DSN|_RPC_URL|REDIS_URL|_DERIVATION_SALT)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
 SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} / ${VAR:-default}
 INTERP      = /\A\$\{[^}]+\}\z/         # ${terraform.interpolation} / "${RELEASE_VERSION}"
 
-# Measured 2026-08-29: 23 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 29.
+# Measured 2026-08-29: 25 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 31.
+# ⊕ Pattern broadened the same day (15 suffixes → 11): the generic `_KEY` subsumes four
+# narrower ones and caught TURBO_SIGNED_STREAM_KEY, which none of them matched. Zero false
+# positives on the live tree — a var named `*_KEY` on an env surface is a secret by name.
 # A parse that breaks returns [] and the gate prints ✓ — so assert the set is still there.
 SUBJECT_FLOOR = 20
 

@@ -8,7 +8,6 @@
 # credential. [OPS.37] The one long-lived static-key exception (GCP_SA_KEY_BASE64 for
 # an out-of-VPC Auth Proxy) is GONE with the platform that needed it — WIF is now
 # exception-free, and no service-account key exists anywhere in this tree.
-# (see docs/06_02 §Security Exception). This closes the CI→GCP leg only.
 #
 # Chicken-egg: this pool/provider/binding is created by the FIRST terraform apply,
 # which the founder runs locally on their own ADC (DEPLOY-DAY Phase 0) — CI never

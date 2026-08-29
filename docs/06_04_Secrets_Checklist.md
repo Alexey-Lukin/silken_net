@@ -139,6 +139,7 @@
 - [ ] `APP_HOST` — хост для Action Mailer `default_url_options` (`config/environments/production.rb`; `ENV.fetch("APP_HOST", "silkennet.com")`). Дефолт `silkennet.com`; override для іншого домену. Заведено в `config/deploy.yml` env.clear + Akash web/job (INF.13) — замінив хардкоджений `example.com`. ⚠️ Це хост у ТІЛІ листа — транспорт і відправник окремі, нижче.
 - [ ] `MAIL_FROM` — відправник для `ApplicationMailer.default from:` (резолвить `Notifications::DeliveryChannels.configured_sender`). **Обовʼязковий у production** — без нього boot-гард `mail_transport_check.rb` відмовляє в старті (ARCH.60). Мусить бути адресою на домені, для якого нижче стоять SPF/DKIM, інакше лист = спам.
 - [ ] `SMTP_ADDRESS` · `SMTP_PORT` (дефолт 587) · `SMTP_USER_NAME` · `SMTP_PASSWORD` — вихідний SMTP (`production.rb` → `config.action_mailer.smtp_settings`). **`SMTP_ADDRESS` обовʼязковий у production** — той самий boot-гард. Вендор-агностично: кожен ESP (Postmark / SES / Mailgun / SendGrid / Resend) говорить звичайним SMTP, тож гем провайдера не потрібен і зміна вендора = зміна цих трьох значень. **Секрети — лише `SMTP_PASSWORD` (і, залежно від ESP, `SMTP_USER_NAME`).**
+- [ ] `TURBO_SIGNED_STREAM_KEY` — **[SEC.25]** власний ключ гема для HMAC імен Turbo-стрімів (`config/initializers/turbo_stream_verifier.rb`, читає `ENV[…].presence`). ⚠️ **Повернуто в інвентар 2026-08-29 [OPS.37]:** його ЄДИНА deploy-поверхня жила в §3.1 — секції знятої платформи — і зникла разом із нею; рунбук ротації §5.9 при цьому вів у неіснуючу секцію, а сусідній рядок стверджував, що секрет «обовʼязковий у §1», де його не було ніколи. Runtime-тір: unset ⇒ гем деривує з `secret_key_base` (застосунок працює), але тоді відповідь на витік = ротація `secret_key_base`, тобто всі сесії + CSRF + ActiveStorage-URL разом.
 - [ ] `TELEGRAM_BOT_TOKEN` — токен бота ([ARCH.60] Telegram-канал алертів; видає BotFather безкоштовно). **Опційний, НЕ boot-critical:** порожній = канал чесно вимкнено (`Notifications::TelegramTransport.configured?` — форматна перевірка, тож деплой-плейсхолдер читається як «вимкнено», не як живий канал). Секрет.
 - [ ] `SMTP_DOMAIN` — HELO-домен; опційний, але деякі провайдери відкидають імʼя контейнера, яке `Net::SMTP` інакше оголошує. Не секрет.
 - [ ] `SMTP_AUTHENTICATION` — дефолт `plain`; `login` для SES та деяких інших. Не секрет.
@@ -448,7 +449,7 @@ org.broadcast_stream_tombstone!(org.stream_epoch - 1)   # ідемпотентн
 ```bash
 # 1. згенерувати новий секрет
 bin/rails runner 'puts SecureRandom.hex(32)'
-# 2. оновити TURBO_SIGNED_STREAM_KEY у deploy-ENV (§3.1) — ОДНАКОВО на web + job
+# 2. оновити TURBO_SIGNED_STREAM_KEY у deploy-ENV (§2) — ОДНАКОВО на всіх ролях
 # 3. прокотити РЕСТАРТ усіх процесів — без нього ротація не діє (див. ⚠️ нижче)
 ```
 

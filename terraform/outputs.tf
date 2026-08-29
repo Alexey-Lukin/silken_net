@@ -21,7 +21,7 @@ output "database_url" {
 }
 
 output "database_url_proxy" {
-  description = "PostgreSQL connection URL via Cloud SQL Auth Proxy — break-glass admin session from a workstation (runtime uses the private VPC IP)"
+  description = "PostgreSQL connection URL via Cloud SQL Auth Proxy — break-glass admin session. Must run INSIDE the VPC (IAP-tunnel onto the Ingress Anchor, then proxy/psql there) — ipv4_enabled is false, so there is no public listener to dial from a workstation [OPS.37]. Runtime uses the private VPC IP directly"
   value       = "postgres://${google_sql_user.silken_net.name}:${var.db_password}@127.0.0.1:5432/${google_sql_database.production.name}"
   sensitive   = true
 }

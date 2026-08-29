@@ -13,21 +13,11 @@ image: <GCP_PROJECT_ID>/silken-net/silken_net
 # named leg of that verdict; until it lands this IP is a placeholder, like every other value here.
 servers:
   web:
-    hosts:
-      - 192.168.0.1
-    options:
-      # Metrics port on the host LOOPBACK only, for the `alloy` accessory below. The registry is
-      # in-process, so each role must be its own scrape target (06_03 §2.9); never publish these
-      # on the public interface — PrometheusCollector trusts private ranges without credentials.
-      publish:
-        - "127.0.0.1:9393:80"
+    - 192.168.0.1
   job:
     hosts:
       - 192.168.0.1
     cmd: bundle exec sidekiq -C config/sidekiq.yml
-    options:
-      publish:
-        - "127.0.0.1:9394:9394"
     env:
       clear:
         # Sidekiq concurrency=15 (config/sidekiq.yml); DB pool must match + headroom.
@@ -61,7 +51,6 @@ servers:
     options:
       publish:
         - "5683:5683/udp"
-        - "127.0.0.1:9395:9395"
     # ⚠️ No env: override → this role inherits the GLOBAL env.secret, incl.
     # PROVISIONING_MASTER_KEY which the coap daemon does NOT need (master_key_strength_check
     # $PROGRAM_NAME-skips coap; SEC.22 wants the HKDF fleet-forge root off coap's plaintext env).
@@ -132,6 +121,13 @@ env:
     #     (Postmark server token; SES access-key id). MAIL_FROM/SMTP_ADDRESS are clear below. ---
     - SMTP_USER_NAME
     - SMTP_PASSWORD
+    # --- Turbo signed-stream key [SEC.25] — власний ключ гема для HMAC імен стрімів.
+    #     Runtime-тір: без нього гем деривує ключ із secret_key_base, застосунок працює —
+    #     але тоді єдина відповідь на витік імені стріму = ротація secret_key_base, тобто
+    #     ВСІ сесії + CSRF + ActiveStorage-URL разом. Заради уникнення саме цього колатералу
+    #     важіль і будували (⚖️ 2026-07-30). ⚠️ Заведено сюди 2026-08-29: єдина його
+    #     deploy-поверхня жила в SDL знятої платформи й зникла разом із нею [OPS.37].
+    - TURBO_SIGNED_STREAM_KEY
     # --- Telegram bot token [ARCH.60] — optional channel: transport no-ops when unset,
     #     and TelegramTransport.configured? rejects the placeholder by token format. ---
     - TELEGRAM_BOT_TOKEN
@@ -220,18 +216,31 @@ aliases:
   canopy-console: app exec --interactive --reuse "bin/rails console" -d canopy
   canopy-logs: app logs -f -d canopy
 
-# Grafana Alloy — scrapes each role's in-process /metrics off the host loopback and pushes to
-# Grafana Cloud (OBS.1: SaaS, no self-hosted Prometheus). Config SSOT: deploy/alloy/config.alloy,
-# parse-gated in CI (`alloy_config_validate`); topology pinned by spec/deploy/alloy_scrape_topology_spec.rb.
-# `network: host` is what makes 127.0.0.1:939x reachable from inside the accessory container.
+# Grafana Alloy → Grafana Cloud (OBS.1: SaaS, no self-hosted Prometheus). Config SSOT:
+# deploy/alloy/config.alloy, parse-gated in CI (`alloy_config_validate`).
+#
+# 🔴 [OPS.37] ЯК Alloy дістає три таргети — ВІДКРИТЕ питання, назване, а не вгадане.
+# Реєстр Prometheus in-process, тож кожна роль мусить бути власним таргетом (06_03 §2.9).
+# Зняту платформу це не обходило: її маніфест давав сервісам стабільні імена. Kamal 2.12 їх
+# НЕ дає — контейнери йдуть `--network kamal --name <service>-<role>-<version>` (версійовано,
+# без мережевого аліаса; перевірено в `kamal/commands/app.rb`). Чесних механізмів два, обидва
+# з ціною:
+#   (а) `options.publish` метрик-портів на ролях — 🔴 ЛАМАЄ РОЛЛІНГ: `Kamal::Cli::App::Boot#run`
+#       робить `start_new_version` ДО `stop_old_version`, тож ДРУГИЙ деплой падає на
+#       "port is already allocated", а `web` — gatekeeper, отже `close_barrier` валить ще й
+#       job/coap. Спробували 2026-08-29, відкотили того ж дня.
+#   (б) `discovery.docker` по мітках Kamal (`service`/`role`/`destination` — стабільні,
+#       `kamal/configuration/role.rb`) — вимагає монтування docker-сокета, тобто грант,
+#       рівносильний root на хості. Це рішення про безпеку, не про конфіг.
+# ⛔ Доки вибір не зроблено, accessory лишається БЕЗ пускача (`kamal deploy` не бутить
+# accessories — потрібен окремий `kamal accessory boot alloy`) і без таргетів. Це чесніше за
+# зелений деплой над мертвою телеметрією. Дім рішення — `00_07`, нога OPS.37.
 accessories:
   alloy:
     image: grafana/alloy:v1.16.3
     host: 192.168.0.1
     files:
       - deploy/alloy/config.alloy:/etc/alloy/config.alloy
-    options:
-      network: host
     env:
       clear:
         DEPLOYMENT_SLOT: production

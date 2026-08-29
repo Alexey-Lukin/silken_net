@@ -66,8 +66,9 @@ resource "google_project_iam_member" "deploy_metric_writer" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
-# Cloud SQL Client — break-glass Auth-Proxy session from an admin workstation;
-# the runtime path is the private VPC IP + password, not this role.
+# Cloud SQL Client — break-glass Auth-Proxy session. ⚠️ Since `ipv4_enabled = false`
+# (OPS.37) that session must run INSIDE the VPC: IAP-tunnel onto the Ingress Anchor and
+# proxy/psql from there. The runtime path is the private VPC IP + password, not this role.
 resource "google_project_iam_member" "deploy_cloudsql_client" {
   project = var.project_id
   role    = "roles/cloudsql.client"

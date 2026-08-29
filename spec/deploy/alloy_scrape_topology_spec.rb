@@ -4,7 +4,12 @@
 require "spec_helper"
 require_relative "../support/repo_root"
 
-# S2.4 / INF.14 drift guard. The Prometheus registry is in-process, so a job/daemon-incremented
+# S2.4 / INF.14 drift guard. ⚠️ [OPS.37] Narrowed 2026-08-29 to what stayed TRUE: the guard now
+# pins the three-PROCESS contract (a dropped target / broken process-label still fails), but no
+# longer pins the ADDRESSES — Kamal gives no stable sibling address and the mechanism is an open
+# leg (see config/deploy.yml `accessories.alloy`). Pinning an address nobody chose would make the
+# spec assert a decision that was never taken.
+# The Prometheus registry is in-process, so a job/daemon-incremented
 # metric (money-path SLO, dead-man switch, QATT-security) is scraped as an eternal ZERO unless
 # Alloy scrapes that process's own target. `alloy_config_validate` only checks River SYNTAX
 # (`alloy fmt`), NOT topology — so a removed job-target, a port-typo (9394→9395), or a broken
@@ -19,10 +24,14 @@ RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do #
     text.scan(/\{\s*"__address__"\s*=\s*"([^"]+)",\s*"process"\s*=\s*"([^"]+)",?\s*\}/).to_h
   end
 
-  it "scrapes exactly 9393/9394/9395 on host loopback with matching process labels" do
-    expect(targets).to eq({ "127.0.0.1:9393" => "web", "127.0.0.1:9394" => "job", "127.0.0.1:9395" => "coap" }),
-                       "config.alloy scrape topology drifted from the 3-process contract (06_03 §2.9) — " \
-                       "a missing job/coap target or port-typo makes those metrics scrape as eternal " \
-                       "zeros, P0 alerts dead: got #{targets.inspect}"
+  it "declares exactly three targets, one per process, with the web/job/coap labels" do
+    expect(targets.values.sort).to eq(%w[coap job web]),
+                                   "config.alloy drifted from the 3-process contract (06_03 §2.9) — " \
+                                   "a missing job/coap target or a broken process-label makes those " \
+                                   "metrics scrape as eternal zeros, P0 alerts dead: got #{targets.inspect}"
+  end
+
+  it "gives every target a distinct address (a copy-paste dupe scrapes one process twice)" do
+    expect(targets.keys.uniq.size).to eq(3), "duplicate __address__ in config.alloy: #{targets.keys.inspect}"
   end
 end

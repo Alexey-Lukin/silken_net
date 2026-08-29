@@ -27,10 +27,15 @@
 prometheus.scrape "silken_net_scraper" {
   // The Prometheus registry is in-process: web never sees worker/daemon
   // increments, so every Ruby process is its own target (06_03 §2.9).
-  // Each role publishes its metrics port on the host LOOPBACK only (config/deploy.yml
-  // `options.publish: 127.0.0.1:PORT`) — never on the public interface; the accessory
-  // runs with `network: host` to reach them. PrometheusCollector::PRIVATE_RANGES already
-  // treats 127.0.0.0/8 as trusted, so no new credential is introduced by the move.
+  // 🔴 [OPS.37] ADDRESSES ARE UNRESOLVED — the three-target CONTRACT is not.
+  // The registry is in-process, so each Ruby process must be its own target; that half is
+  // permanent (06_03 §2.9). HOW Alloy reaches them is an open leg: Kamal 2.12 gives no
+  // stable address for a sibling container (versioned names, no network alias), and the two
+  // honest mechanisms both carry a price — published host ports break the rolling deploy
+  // (start_new_version precedes stop_old_version), docker-socket discovery is a root-
+  // equivalent grant. The loopback form below is the SHAPE of option (a), NOT a decision:
+  // this config is inert until the accessory gets a launcher. Reasoning: config/deploy.yml
+  // `accessories.alloy`; decision home: 00_07 (OPS.37 leg).
   // NOTE: 9395 is the dormant Kamal `coap` FALLBACK role (idle → honest daemon-level
   // zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this host's scrape
   // reach — ceiling documented in 06_03 §2.9(б), unchanged by the platform move.

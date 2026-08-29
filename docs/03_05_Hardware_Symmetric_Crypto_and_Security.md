@@ -1391,7 +1391,7 @@ HAL_CRYP_Init(&hcryp);
 
 | Зміна | Контур | Деталі |
 |-------|--------|--------|
-| **Cloudflare PQC TLS** | Queen ↔ Rails (вже активно) | Нічого не робимо — Cloudflare auto-rolls hybrid Kyber-768 + X25519. Документація у `06_02 INF.4` |
+| **Cloudflare PQC TLS** | Queen ↔ Rails (вже активно) | Нічого не робимо — Cloudflare auto-rolls hybrid Kyber-768 + X25519. Документація у [`06_01 §TLS`](06_01_Deployment_Kamal_Terraform) (INF.4) |
 | **Hash Ratchet KDF** | LoRa AES-128 | `[FW.17]` — щотижнева ротація `K_LoRa[i+1] = AES_KDF(K_LoRa[i])`. PFS досягається: компрометація поточного ключа не розкриває минулих пакетів |
 | **W3bstream PQC anchoring** | IoTeX ZK-proof | Якщо IoTeX мігрує на PQC-friendly proving system (zk-STARK замість Groth16) — оновимо `Iotex::W3bstreamVerificationService` через RPC bump |
 | **Hybrid signature на provisioning** | peaq DID Ed25519 + Dilithium-2 | Подвійний підпис під час provisioning: Ed25519 (compat з peaq Substrate сьогодні) + Dilithium-2 (forward compat). При злам Ed25519 — Dilithium залишається валідним |
