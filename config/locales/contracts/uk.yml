@@ -44,7 +44,7 @@ uk:
         tx_hash: TX Hash
       legal:
         burn_no: Ні
-        burn_points: Спалити накопичені бали
+        burn_points: Спалити нараховані SCC
         burn_yes: Так
         cancellation_title: Умови розірвання
         early_exit_fee: Плата за дострокове розірвання

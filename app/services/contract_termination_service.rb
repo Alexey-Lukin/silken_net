@@ -30,7 +30,7 @@ class ContractTerminationService < ApplicationService
       @contract.update!(status: :cancelled, cancelled_at: Time.current)
 
       if should_burn
-        Rails.logger.warn "🔥 [NaasContract] Контракт ##{@contract.id} розірвано. Нараховані бали спалюються."
+        Rails.logger.warn "🔥 [NaasContract] Контракт ##{@contract.id} розірвано. Нараховані SCC-МОНЕТИ кластера спалюються (contractual forfeiture)."
       end
 
       Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково. Повернення: #{refund}, Штраф: #{@contract.calculate_early_exit_fee}."

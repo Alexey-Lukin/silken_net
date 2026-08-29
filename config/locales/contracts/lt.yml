@@ -44,7 +44,7 @@ lt:
         tx_hash: TX Kodas
       legal:
         burn_no: Ne
-        burn_points: Sukauptų taškų deginimas
+        burn_points: Sukauptų SCC deginimas
         burn_yes: Taip
         cancellation_title: Atšaukimo sąlygos
         early_exit_fee: Išankstinio nutraukimo mokestis

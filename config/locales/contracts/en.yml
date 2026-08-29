@@ -44,7 +44,7 @@ en:
         tx_hash: TX Hash
       legal:
         burn_no: 'No'
-        burn_points: Burn Accrued Points
+        burn_points: Burn Accrued SCC
         burn_yes: 'Yes'
         cancellation_title: Cancellation Terms
         early_exit_fee: Early Termination Charge

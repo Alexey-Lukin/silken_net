@@ -98,6 +98,10 @@ class NaasContract < ApplicationRecord
 
   # --- CANCELLATION TERMS (JSONB Accessors) ---
   # cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => true, "min_days_before_exit" => 30 }
+  # ⚠️ [SLASH-1] `burn_accrued_points` — ІСТОРИЧНА назва: виконавець палить SCC-МОНЕТИ
+  # (`BlockchainTransaction.net_minted_supply(:carbon_coin)` КЛАСТЕРА, `contractual: true`
+  # → damage_ratio 1.0), не бали. Одиниця не видна з імені прапорця — `CLAUDE.md §6`.
+  # Саме ІМʼЯ не чіпаємо: це JSONB-ключ ДАНИХ, перейменування = міграція рядків + 6 канон-домів.
   store_accessor :cancellation_terms, :early_exit_fee_percent, :burn_accrued_points, :min_days_before_exit
 
   # --- СКОУПИ ---
