@@ -58,3 +58,14 @@ output "vpc_name" {
   description = "VPC network name"
   value       = google_compute_network.silken_net_vpc.name
 }
+
+# [OPS.37] The app host's PRIVATE IP — there is no external one by design (the
+# Ingress Anchor is the single public entry). This is the value step 10 of the
+# deploy runbook feeds to the Anchor:
+#   gcloud compute instances add-metadata silken-net-ingress \
+#     --metadata app-host-ip=$(terraform output -raw app_host_ip) --zone <zone>
+# and the value that replaces the 192.168.0.1 placeholder in config/deploy.yml.
+output "app_host_ip" {
+  description = "Private IP of the Kamal app host (web+job+coap) — feeds the Anchor's app-host-ip metadata and config/deploy.yml servers"
+  value       = google_compute_instance.app.network_interface[0].network_ip
+}

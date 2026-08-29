@@ -72,6 +72,45 @@ resource "google_kms_crypto_key" "anchor_boot" {
   }
 }
 
+# Boot-disk key for the APP host (Kamal web+job+coap). Same keyring, own key —
+# key-level IAM is the barrier, so a second key costs nothing and keeps the two
+# machines independently shreddable.
+#
+# 🔴 WHY the app host needs CMEK at all, measured against the kamal source rather
+# than assumed (kamal 2.12, lib/kamal/cli/app/boot.rb): booting a role runs
+#   upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+# and `secrets_path` resolves to .kamal/apps/<service>-<dest>/env/roles/<role>.env
+# on the HOST. So the money/signing quintet (ORACLE_MINTER/SLASHER/CELO +
+# ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR) lands as PLAINTEXT on this disk under
+# the `job` role — exactly the class the Anchor got CMEK for (/etc/silkennet/
+# coap.env). At-rest ≠ runtime [SEC.22]: this does not seal anything (the real
+# seal is SEC.17 KMS-signing), it buys key-lifecycle control — disable, rotate,
+# audit, crypto-shred — over secret material that otherwise sits on a PD in the
+# clear. ⚠️ Timing is the whole discount: `kms_key_self_link` is ForceNew, so
+# adding it to a LIVE instance replaces the VM. Done pre-first-deploy it is free.
+resource "google_kms_crypto_key" "app_boot" {
+  name     = "app-boot"
+  key_ring = google_kms_key_ring.disk.id
+  purpose  = "ENCRYPT_DECRYPT"
+
+  # Same 90d/30d posture as anchor-boot — see that key for why rotation never
+  # breaks boot and why the destroy grace is pinned rather than defaulted.
+  rotation_period            = "7776000s"
+  destroy_scheduled_duration = "2592000s"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_kms_crypto_key_iam_member" "app_boot_agent" {
+  crypto_key_id = google_kms_crypto_key.app_boot.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:service-${data.google_project.project.number}@compute-system.iam.gserviceaccount.com"
+
+  depends_on = [google_project_service.compute]
+}
+
 # The KMS principal that wraps/unwraps the boot-disk DEK is the Compute Engine
 # SERVICE AGENT (service-<PROJECT_NUMBER>@compute-system…) — NOT the deploy SA,
 # NOT the default compute SA. It gets encrypter/decrypter on THIS key only.

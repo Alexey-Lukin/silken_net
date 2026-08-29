@@ -13,11 +13,12 @@
 #       Removes one hop from the hot path.
 #       FALLBACK = socat relay → the dormant Kamal `coap` role on the app host;
 #       switch: systemctl stop coap-daemon && systemctl start coap-relay.
-#   - TCP 80/443: HAProxy → the Rails app host (Kamal). ⚠️ [OPS.37] That host is
-#       NOT provisioned yet — `terraform/` regained the web resource as a named
-#       leg of that verdict. Until it lands, `app-host-ip` stays the sentinel and
-#       HAProxy deliberately does NOT start (see the guard below); the anchor's
-#       CoAP half is independent of it and comes up on its own.
+#   - TCP 80/443: HAProxy → the Rails app host (Kamal). [OPS.37] That host is
+#       `google_compute_instance.app` at the bottom of THIS file since 2026-08-30.
+#       Until the first `terraform apply` + step 10 of the runbook sets
+#       `app-host-ip`, the metadata stays the sentinel and HAProxy deliberately
+#       does NOT start (see the guard below); the anchor's CoAP half is
+#       independent of it and comes up on its own.
 #
 # Cost: ~$13/month e2-small in europe-west1 (Always Free e2-micro is US-only;
 # micro's 1 GB cannot hold the Rails daemon ~0.5 GB + HAProxy + OS headroom)
@@ -327,5 +328,136 @@ SYSTEMD_DAEMON
     # instances.insert fails with a KMS permission error. The VM references the
     # KEY, not the binding — no implicit ordering exists, so make it explicit.
     google_kms_crypto_key_iam_member.anchor_boot_agent,
+  ]
+}
+
+# =============================================================================
+# App host — the machine Kamal deploys onto (roles web + job + coap) [OPS.37]
+# =============================================================================
+#
+# Returned 2026-08-30 as the named 🤖 leg of the OPS.37 verdict. It was deleted
+# by `5236104a` (2026-04-19, "infrastructure pivot") together with the canopy VM
+# and Memorystore, because the real compute was meant to move to a platform that
+# was itself cut on 2026-08-29. The cut restored the Kamal path but not the host,
+# so `config/deploy.yml` pointed its three roles at a placeholder IP and
+# `06_01` had to carry "⚠️ ще НЕ провіжений" in its own architecture diagram.
+#
+# ⛔ THIS RESOURCE DOES NOT ANSWER THE CANOPY QUESTION, and that silence is
+# deliberate. Whether canopy gets its OWN host (and its own keys) is an OPEN ⚖️
+# in OPS.37 — canopy today maps the SAME mainnet RPC secrets as production, so a
+# `job` role there would sign on mainnet from staging. Provisioning ONE host is
+# not a vote for "canopy shares this one": production needs a host under either
+# answer. Do not read the absence of a second instance as the decision — that is
+# precisely the mistake `c604ac19` made when it wrote "same host as production"
+# into the canopy config as if it were a design.
+#
+# SIZE — 2 vCPU / 8 GB, and the binding constraint is the ROLLING DEPLOY, not
+# steady state. Steady state fits in ~3.5 GB (2 Puma workers + Sidekiq 15 threads
+# + the coap daemon, each a full Rails boot ~0.5 GB, plus kamal-proxy and the OS).
+# But `Kamal::Cli::App::Boot#run` starts the NEW version BEFORE stopping the old
+# one, so peak is roughly steady-state + one more web container — a 4 GB machine
+# would fit the first deploy and OOM on the second. 8 GB is the honest floor, and
+# it matches the "2 vCPU / 8 GB / 30 GB SSD" the (now-removed) deploy doc promised
+# for months while terraform carried nothing (class DOC-T.50).
+# Connection budget for this shape is computed in `06_01 §max_connections`
+# (WEB_CONCURRENCY=2 → 126 + job 51 + admin 8 ≈ 185 of 400).
+#
+# NO PUBLIC IP, on purpose. The Ingress Anchor is the single public entry: it
+# TCP-proxies 80/443 here via HAProxy and relays UDP 5683 via socat, and its
+# address is the one frozen into Queen firmware. Egress (Artifact Registry pulls,
+# Upstash TLS) goes through Cloud NAT, which already covers every subnet range.
+# Inbound from the anchor rides `allow_internal` (subnet CIDR, no target tags).
+# The `web-nodes` tag is here for ONE reason — `allow_iap_ssh` targets it — and
+# the two internet-facing rules that share the tag (`allow_web`, `allow_coap`)
+# are inert against an instance with no external address.
+#
+# 🔴 DOCKER IS PRE-INSTALLED, and this is a requirement rather than a courtesy —
+# verified against kamal 2.12 source (lib/kamal/cli/server.rb#bootstrap): if
+# `docker -v` fails, kamal tries `sudo -n true` and, without passwordless root,
+# RAISES "Docker is not installed … and can't be automatically installed". Our
+# deploy SA holds `roles/compute.osLogin` (iam.tf), NOT `osAdminLogin` — sudo is
+# reserved for the human `iap_admin_members` — so `kamal server bootstrap` cannot
+# provision this host by design. Pre-installing also keeps an unpinned
+# `curl -fsSL https://get.docker.com | sh` off the boot path of the machine that
+# holds the money keys.
+# ⚠️ RESIDUAL, named rather than discovered on deploy day: kamal's other bootstrap
+# step, `sudo -n usermod -aG docker`, needs the same sudo. So the OS Login
+# identity still has to reach the docker socket somehow, and HOW is part of the
+# INF.20 (б) glue (ssh.proxy_command over an IAP tunnel + the SSH user, which
+# under OS Login is `sa_<numeric>`, not the `deploy` in config/deploy.yml). This
+# host is the blueprint; the CI kamal leg stays honestly non-functional until
+# that glue lands.
+resource "google_compute_instance" "app" {
+  name = "silken-net-app"
+  # See SIZE above: sized by the rolling-deploy overlap, not steady state.
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+  # Only for allow_iap_ssh — see NO PUBLIC IP above.
+  tags = ["web-nodes"]
+
+  boot_disk {
+    initialize_params {
+      # debian-12 to match the Anchor: one OS to operate, one apt idiom in both
+      # startup scripts. (The pre-pivot host was ubuntu-24.04; nothing depends on it.)
+      image = "debian-cloud/debian-12"
+      # 30 GB: docker + several Kamal-retained versions of the Rails image
+      # (~2 GB unpacked each) + logs. Matches the long-standing doc promise.
+      size = 30
+      type = "pd-ssd"
+    }
+    # CMEK — the disk holds the money quintet in plaintext under
+    # .kamal/…/env/roles/job.env (kamal uploads it 0600 at boot). Rationale and
+    # the source citation live on the key itself, terraform/kms.tf.
+    kms_key_self_link = google_kms_crypto_key.app_boot.id
+  }
+
+  network_interface {
+    network    = google_compute_network.silken_net_vpc.name
+    subnetwork = google_compute_subnetwork.web.name
+    # No access_config → no external IP. Deliberate; see the header.
+  }
+
+  metadata = {
+    enable-oslogin = "TRUE"
+    # OS Login already ignores project-wide keys; block them explicitly too
+    # (defense-in-depth, AVD-GCP-0030) — same posture as the Anchor.
+    block-project-ssh-keys = "TRUE"
+  }
+
+  # Docker only. Everything above the daemon is Kamal's job — this host must NOT
+  # grow a second deploy mechanism, or `kamal deploy` and the startup script
+  # would both claim ownership of the same containers.
+  metadata_startup_script = <<-EOF
+    #!/bin/bash
+    set -e
+    if ! command -v docker &> /dev/null; then
+      apt-get update -qq && apt-get install -y -qq docker.io
+    fi
+    systemctl enable --now docker
+    logger -t silken-app "app host ready: docker $(docker -v 2>/dev/null || echo MISSING)"
+  EOF
+
+  shielded_instance_config {
+    enable_secure_boot          = true
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
+  }
+
+  service_account {
+    email = google_service_account.deploy.email
+    # Same two scopes as the Anchor. Artifact Registry pulls authenticate with
+    # the registry password in config/deploy.yml (a short-lived WIF token), not
+    # with instance scopes, so `storage-ro` earns nothing here.
+    scopes = ["logging-write", "monitoring-write"]
+  }
+
+  allow_stopping_for_update = true
+
+  depends_on = [
+    google_project_service.compute,
+    # Same ordering constraint as the Anchor: the compute service agent must hold
+    # encrypter/decrypter on the boot key BEFORE the encrypted disk is created,
+    # and the VM references the KEY, not the binding.
+    google_kms_crypto_key_iam_member.app_boot_agent,
   ]
 }

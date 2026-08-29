@@ -9,8 +9,9 @@ image: <GCP_PROJECT_ID>/silken-net/silken_net
 
 # Deploy to these servers (host IP from Terraform). Rails + Sidekiq run here via Kamal on GCP;
 # the Ingress Anchor (e2-small) stays a separate machine carrying the PRIMARY CoAP daemon.
-# [OPS.37] The web host is not provisioned yet — `terraform/` regained the web resource as a
-# named leg of that verdict; until it lands this IP is a placeholder, like every other value here.
+# [OPS.37] The host is `google_compute_instance.app` (terraform/compute.tf) since 2026-08-30;
+# this IP stays a placeholder until the first `terraform apply` — take the real one from
+# `terraform output -raw app_host_ip` (private IP: the Anchor fronts 80/443 and 5683).
 servers:
   web:
     - 192.168.0.1
