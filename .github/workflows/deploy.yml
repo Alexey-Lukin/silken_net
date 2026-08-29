@@ -15,12 +15,15 @@ permissions:
   contents: read
 
 env:
-  TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
-  TF_VAR_db_password: ${{ secrets.POSTGRES_PASSWORD }}
-  # [OPS.11] Must mirror terraform.tfvars once the founder sets billing_account_id
-  # locally — an apply WITHOUT it flips the budget count to 0 and destroys it.
-  # Empty secret = budget simply not managed (count-guard), no failure.
-  TF_VAR_billing_account_id: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
+  # ⛔ [INF.22] `TF_VAR_*` тут БІЛЬШЕ НЕМА — вони поїхали разом із джобою `terraform`
+  # (⚖️ founder 2026-08-29, повна підстава — біля місця, де та джоба стояла). Знімаються
+  # ТИМ САМИМ рухом свідомо: змінна, яку не читає жоден крок, є не «запасом», а мертвим
+  # конфігом — і тут вона дорожча за звичайний мертвий рядок, бо `spec/deploy/
+  # terraform_workflow_var_parity_spec.rb` визначає «terraform-воркфлоу» САМЕ за
+  # наявністю `TF_VAR_`. Лишити їх означало б тримати гейт зеленим над воркфлоу, який
+  # terraform більше не запускає, тобто судити фікцію. Дім guarded-змінних після цього —
+  # `terraform_drift.yml` (єдиний, хто справді біжить проти реальних vars) + локальний
+  # apply founder'а; `GCP_BILLING_ACCOUNT_ID` став drift-only → `06_04 §1`.
   # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
   # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
   # reach the Anchor — until then the kamal step is honestly non-functional.
@@ -46,7 +49,11 @@ jobs:
           # [INF.9] Manual dispatch always deploys. A post-CI workflow_run deploys only
           # when image-relevant (same list as mirror-ghcr — canopy is CONTINUOUS for app
           # code) or infra files changed; firmware/docs/tools/contracts-only commits used
-          # to drag the whole terraform+kamal chain for nothing. Changed files come from
+          # to drag the whole kamal chain for nothing.
+          # ⛔ [INF.22] `terraform/` вибуло з переліку разом із джобою `terraform`: коміт,
+          # що чіпає лише IaC, більше не спричиняє тут ЖОДНОЇ terraform-дії, тож тягнув би
+          # kamal-ланцюг рівно за те, проти чого цей фільтр і стоїть. Apply — founder-local.
+          # Changed files come from
           # the GitHub API, not a checkout of head_sha (untrusted-code vector — see
           # mirror-ghcr.yml). On any ambiguity we deploy — it is idempotent and cheap.
           if [ "${{ github.event_name }}" != "workflow_run" ]; then
@@ -56,7 +63,7 @@ jobs:
             echo "::warning::Could not list changed files via API — deploying to be safe."
             echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if echo "$changed" | grep -qE '^(Dockerfile|\.dockerignore|Gemfile|Gemfile\.lock|\.ruby-version|Procfile|Rakefile|config\.ru|app/|lib/|config/|bin/|db/|public/|vendor/|terraform/|\.kamal/|\.github/workflows/deploy\.yml)'; then
+          if echo "$changed" | grep -qE '^(Dockerfile|\.dockerignore|Gemfile|Gemfile\.lock|\.ruby-version|Procfile|Rakefile|config\.ru|app/|lib/|config/|bin/|db/|public/|vendor/|\.kamal/|\.github/workflows/deploy\.yml)'; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::No deploy-relevant files changed — skipping the canopy deploy [INF.9]."
@@ -78,7 +85,8 @@ jobs:
       - name: Verify deploy secrets [B1]
         id: check
         env:
-          # Boot-critical: empty → container crashes on boot or terraform can't apply.
+          # Boot-critical: empty → container crashes on boot. (Доти рядок казав ще й
+          # «or terraform can't apply» — джоби `terraform` тут більше немає, INF.22.)
           # Mirror config/deploy.yml env.secret (the kamal-deploy env: block below)
           # + the infra prerequisites (GCP project). SSH secrets removed — INF.20 (в):
           # IAP tunnel + OS Login, no key material to provision.
@@ -162,59 +170,27 @@ jobs:
           echo "All boot-critical deploy secrets present. Proceeding."
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
-  terraform:
-    name: Terraform Apply
-    needs: verify-secrets
-    runs-on: ubuntu-latest
-    if: ${{ needs.verify-secrets.outputs.configured == 'true' }}
-
-    # [INF.22] id-token:write lets google-github-actions/auth mint the OIDC token for
-    # WIF; contents:read is still needed for checkout (a per-job block overrides the
-    # top-level contents:read entirely, so both must be listed).
-    permissions:
-      contents: read
-      id-token: write
-
-    defaults:
-      run:
-        working-directory: terraform
-
-    steps:
-      - name: Harden runner (egress audit)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
-        with:
-          egress-policy: audit
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Authenticate to Google Cloud (WIF, keyless)
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
-        with:
-          # [OPS.21] Той самий точний пін, що валідує `ci.yml` — розгортати
-          # іншим Terraform, ніж той, яким перевірено конфіг, не можна.
-          terraform_version: "1.15.9"
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+  # ⛔ [INF.22] Джоби `terraform` тут БІЛЬШЕ НЕМА — і це присуд, не спрощення.
+  # ⚖️ founder 2026-08-29: `terraform apply` лишається founder-local, CI-нога = лише
+  # `kamal deploy` (registry push + VM). Підстава — керована альтернатива вимагає видати
+  # deploy-SA `workloadIdentityPoolAdmin` + `projectIamAdmin` + `serviceUsageAdmin` +
+  # `serviceAccountAdmin`, тобто GCP-root god-credential, тоді як keyless-WIF задумувався
+  # рівно як ЗВУЖЕННЯ проти старого `GCP_SA_KEY`.
+  #
+  # 🔴 Чому саме ЗНЯТТЯ, а не `plan`-only non-blocking (друга розглянута форма): `plan`
+  # теж робить refresh, тож він падає тим самим 403 на IAM/WIF-ресурсах — джоба була б
+  # ЗАВЖДИ червоною, тобто гейтом, який привчають гортати. Drift по тих ресурсах, до
+  # яких SA доступ МАЄ, уже стереже окремий weekly `terraform_drift.yml`.
+  #
+  # 🔴 І це не косметика: доти `deploy` висів на цій джобі через `needs:`, а deploy-SA
+  # жодної з чотирьох адмін-ролей не має (`terraform/iam.tf`). Тобто в день деплою,
+  # щойно WIF-Variables заведено, `terraform` діставав би 403 → `needs:` → `kamal deploy`
+  # не побіг би ЖОДНОГО разу. Невидиме доти лише тому, що Variables порожні і `if:`
+  # знімав джобу. Канон-дім присуду → `06_07 §1`, `06_01 §IAM` (Фаза 0: перший apply — локально).
 
   deploy:
     name: Kamal Deploy (Canopy)
-    needs: [verify-secrets, terraform]
+    needs: verify-secrets
     runs-on: ubuntu-latest
     if: ${{ needs.verify-secrets.outputs.configured == 'true' }}
 

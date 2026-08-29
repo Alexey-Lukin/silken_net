@@ -169,7 +169,7 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 │                     ▼                             ▼                          │
 │               ┌──────────┐       ┌────────────────────────────────┐         │
 │               │   main   │──────▶│  Deploy Canopy 🌿 (auto)       │         │
-│               └────┬─────┘       │  terraform apply → kamal -d    │         │
+│               └────┬─────┘       │  verify-secrets → kamal -d     │         │
 │                    │             │  canopy                        │         │
 │                    │ ~2 тижні    └────────────────────────────────┘         │
 │                    ▼                                                         │
@@ -512,7 +512,11 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 > 🔴 **Грант CI-SA на BILLING-акаунті — ОБОВʼЯЗКОВИЙ перед активацією бюджету, і разовий
 > founder-apply тут НЕ рятує.** Billing-ролі живуть в окремій ієрархії (проєктні ролі їх не
 > покривають), а `terraform plan` **рефрешить** бюджет щоразу (`billing.budgets.get`) — тож
-> наступний CI-plan дістає 403 і через `needs: terraform` блокує **ВЕСЬ** deploy-ланцюг.
+> наступний drift-`plan` дістає 403 і щотижнево червонить `Ops · TF Drift`. ⚠️ **Ціна цього
+> абзацу ЗНИЗИЛАСЬ 2026-08-29 [INF.22], і саме тому він переписаний, а не знятий:** доти 403
+> ішов у deploy-воркфлоу й через `needs: terraform` блокував ВЕСЬ ланцюг; тепер джоби
+> `terraform` у деплої немає (apply — founder-local), тож наслідок звузився до сліпого
+> drift-детектора. Грант лишається обовʼязковим — детектор, що завжди 403-ить, не детектор.
 > Разово:
 > ```bash
 > gcloud billing accounts add-iam-policy-binding <ACCT_ID> \
@@ -521,8 +525,12 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 > ```
 > ⚠️ `billingbudgets.googleapis.com` eventually-consistent — перший activation-apply може впасти
 > раз; re-apply проходить. Guard: порожній `billing_account_id` (tf-var) = блок no-op; той САМИЙ
-> id мусить стояти у GitHub-секреті `GCP_BILLING_ACCOUNT_ID` (обидва deploy-workflow передають
-> `TF_VAR_billing_account_id`), інакше наступний CI-apply побачить `count=0` і знесе бюджет.
+> id мусить стояти у GitHub-секреті `GCP_BILLING_ACCOUNT_ID`, який тепер читає ОДИН споживач —
+> `terraform_drift.yml`. ⚠️ **Доти цей рядок казав «обидва deploy-workflow передають
+> `TF_VAR_billing_account_id`… інакше наступний CI-apply знесе бюджет» — обидві половини
+> застаріли 2026-08-29 [INF.22]:** джобу `terraform` знято з деплою разом із `TF_VAR_*`, тож
+> CI-apply не існує, а `plan` знищити нічого не може. Розбіжність id тепер коштує ШУМУ в
+> щотижневому drift-звіті (бюджет виглядатиме як зайвий ресурс), не втрати контролю витрат.
 > Конфіг — `terraform/billing.tf`. ⚠️ Переїхало сюди 2026-08-29 [OPS.37] — доти точна команда й
 > механіка 403 жили ТІЛЬКИ в знятому доці, а рунбук про них не знав.
 
@@ -691,8 +699,13 @@ GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
 (`db:encryption:init`; boot-critical [SEC.22] — verify-secrets гейтить) — SA-JSON
 `GCP_SA_KEY` більше НЕ потрібен: CI keyless через WIF, INF.22) → tfvars: `iap_admin_members`
 (твій e-mail) + [INF.21] `coap_daemon_image` = іммутабельний `sha-<commit>` →
-`terraform init && plan && apply` (перший apply — локально твоїм ADC; він створює WIF-pool,
-тож CI не потребує ключа з дебюту) → зчитати outputs (`ingress_ip`, `database_private_ip`,
+`terraform init && plan && apply` (⛔ **apply — ЗАВЖДИ локально твоїм ADC, не лише перший**:
+⚖️ founder 2026-08-29 [INF.22] — джобу `terraform` знято з обох deploy-воркфлоу, бо CI-apply
+вимагав би видати deploy-SA чотири GCP-адмін-ролі, тобто god-credential проти самої мети
+keyless-WIF. Доти тут стояло «перший apply», і слово «перший» звужувало присуд до дебюту —
+читач мав право чекати, що далі apply підхопить CI, а він не підхопить ніколи. Локальний
+apply створює WIF-pool, тож CI не потребує ключа з дебюту; у CI лишається `kamal deploy`,
+drift стереже щотижневий `Ops · TF Drift`) → зчитати outputs (`ingress_ip`, `database_private_ip`,
 `artifact_registry_url` + `workload_identity_provider`/`service_account_email` → repo
 **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`, після чого CI-деплой keyless). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
 `gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b` —
