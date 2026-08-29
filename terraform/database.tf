@@ -13,16 +13,15 @@ resource "google_sql_database_instance" "silken_db" {
     disk_autoresize   = true
 
     ip_configuration {
-      # ipv4_enabled MUST be true for the Akash path: the Auth Proxy uses the
-      # Google API only for AUTH (ephemeral certs/IAM) — the actual socket still
-      # dials the instance IP, and from an Akash container (outside the VPC,
-      # no peering possible) only the PUBLIC IP is reachable. private-only here
-      # would crash-loop all Akash services in the entrypoint pg_isready gate.
-      # Exposure stays minimal: authorized_networks is EMPTY (no direct psql
-      # from the internet — only IAM-authorized proxy connections) and
-      # ssl_mode = ENCRYPTED_ONLY. Kamal/GCP fallback keeps using the private
-      # VPC IP directly (config/deploy.yml POSTGRES_HOST).
-      ipv4_enabled    = true
+      # PRIVATE-ONLY [OPS.37]. The public listener existed for exactly one reason:
+      # the Auth Proxy uses the Google API only for AUTH (ephemeral certs/IAM) while
+      # the socket still dials the instance IP, and a container outside the VPC could
+      # reach only the PUBLIC one. Both live clients now sit INSIDE the VPC and use the
+      # private IP directly (compute.tf anchor coap.env; config/deploy.yml POSTGRES_HOST),
+      # so the listener had no consumer left — and the read replica below has been
+      # private-only all along. Re-enabling it needs a NAMED out-of-VPC client, and the
+      # .trivyignore suppression was removed in the same commit so AVD-GCP-0017 will say so.
+      ipv4_enabled    = false
       private_network = google_compute_network.silken_net_vpc.id
       ssl_mode        = "ENCRYPTED_ONLY"
     }

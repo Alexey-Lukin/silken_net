@@ -13,19 +13,12 @@
 # without distinguishing deny from allow. All-protocols on a DENY is correct.
 AVD-GCP-0074
 
-# AVD-GCP-0017 — Cloud SQL ipv4_enabled=true. Akash containers live outside the
-# VPC (no peering possible) and can only reach the PUBLIC IP; private-only would
-# crash-loop every Akash service in the pg_isready gate. Exposure is mitigated:
-# authorized_networks is EMPTY (IAM-proxy connections only) + ssl_mode is
-# ENCRYPTED_ONLY (database.tf:14-26). Kamal/GCP fallback uses the private VPC IP.
-AVD-GCP-0017
-
 # AVD-GCP-0031 — Ingress Anchor public IP. Architecturally required: CoAP uplink
 # from field nodes (Soldier/Queen) + HTTP-ingress termination. Without a public
 # IP the Anchor cannot perform its one function.
 AVD-GCP-0031
 
 # AVD-DS-0026 — Dockerfile has no HEALTHCHECK. Liveness/readiness is done OUTSIDE
-# the container by Kamal proxy (/up->/ready, INF.10) + Akash readiness; a Docker-
-# native HEALTHCHECK would duplicate that and needs curl in the slim image.
+# the container by Kamal proxy (/up->/ready, INF.10); a Docker-native HEALTHCHECK
+# would duplicate that and needs curl in the slim image.
 AVD-DS-0026
