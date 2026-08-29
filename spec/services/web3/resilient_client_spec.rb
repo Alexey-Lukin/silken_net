@@ -27,6 +27,45 @@ RSpec.describe Web3::ResilientClient do
       end
     end
 
+    # 🔴 ГРОШОВИЙ пін, і він стереже саме те, що доти було зламано. Форма
+    # `method_missing(name, *, &)` анонімним splatʼом захоплювала keyword-аргументи
+    # й передавала їх приймачеві ПОЗИЦІЙНИМ ХЕШЕМ (`opts={}` на тому боці).
+    # `Web3::LocalEnvSigner#transact` передає ОРАКУЛЬНИЙ ключ саме kwargʼом
+    # (`sender_key: @key`), а `Eth::Client#transact` читає `sender_key`/`legacy`/
+    # `nonce` виключно з kwargs — тобто через каскад підпис money-транзакції йшов
+    # без явно переданого ключа, а EIP-1559 `legacy: false` мовчки не діяв.
+    # ⚠️ Пін дивиться на ОБИДВІ половини (позиційні ОКРЕМО від keyword): перевірка
+    # самого лише «дійшло щось» зелена і на зламаній формі, бо хеш таки доходить —
+    # просто не туди.
+    context "when the call carries keyword arguments (money-path)" do
+      it "delivers kwargs AS kwargs, not as a trailing positional hash" do
+        seen = nil
+        allow(primary_eth_client).to receive(:transact) do |*args, **kwargs|
+          seen = { args: args, kwargs: kwargs }
+          "0xdeadbeef"
+        end
+
+        client.transact("contract", "mint", "0xto", 42, sender_key: "ORACLE_KEY", legacy: false)
+
+        expect(seen[:args]).to eq([ "contract", "mint", "0xto", 42 ])
+        expect(seen[:kwargs]).to eq({ sender_key: "ORACLE_KEY", legacy: false })
+      end
+
+      it "keeps kwargs intact when it falls through to the secondary provider" do
+        allow(primary_eth_client).to receive(:transact).and_raise(Net::ReadTimeout)
+        seen = nil
+        allow(secondary_eth_client).to receive(:transact) do |*args, **kwargs|
+          seen = { args: args, kwargs: kwargs }
+          "0xfallback"
+        end
+
+        result = client.transact("contract", "mint", sender_key: "ORACLE_KEY")
+
+        expect(result).to eq("0xfallback")
+        expect(seen[:kwargs]).to eq({ sender_key: "ORACLE_KEY" })
+      end
+    end
+
     context "when primary fails with timeout" do
       it "falls back to secondary client" do
         allow(primary_eth_client).to receive(:eth_block_number).and_raise(Net::ReadTimeout)

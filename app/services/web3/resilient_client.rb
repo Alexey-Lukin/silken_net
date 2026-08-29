@@ -86,12 +86,31 @@ module Web3
 
     # Делегуємо виклики Eth::Client через fallback cascade.
     # Пробуємо кожен доступний провайдер по черзі.
-    def method_missing(method_name, *, &)
+    #
+    # 🔴 **`**kwargs` ТУТ НЕСУЧИЙ, І ЙОГО ВІДСУТНІСТЬ БУЛА ГРОШОВИМ ДЕФЕКТОМ** (2026-08-29).
+    # Форма `def method_missing(name, *, &)` анонімним splatʼом захоплює й keyword-аргументи,
+    # але передає їх приймачеві **позиційним ХЕШЕМ** — приймач бачить зайвий позиційний
+    # аргумент і `kwargs = {}`. Виміряно прямою пробою:
+    #
+    #   прямий виклик:  args=["to","amount"]                          opts={legacy:…, sender_key:…}
+    #   через splat:    args=["to","amount", {legacy:…, sender_key:…}] opts={}
+    #
+    # 💰 Ціна конкретна: `Web3::LocalEnvSigner#transact` передає ОРАКУЛЬНИЙ ключ саме
+    # kwargʼом (`sender_key: @key`), а `Eth::Client#transact` читає `sender_key`/`legacy`/
+    # `nonce`/`gas_limit` виключно з kwargs. Через каскад вони не доходили ЖОДНОГО разу —
+    # тобто підпис money-транзакції лишався без явно переданого ключа, а `legacy: false`
+    # (EIP-1559) мовчки не діяв. Дефект був ЛАТЕНТНИЙ рівно тому, що каскад вмикався лише
+    # там, де ОБИДВА сайти мережі його передавали (Celo); щойно [ARCH.114] зробив каскад
+    # властивістю мережі, він накрив би весь Polygon money-path.
+    # ⚠️ Клас той самий, що описано двома абзацами вище про fee-атрибути: **`method_missing`
+    # передає не все, що виглядає переданим.** Перш ніж класти сюди ще один метод — спитай
+    # не «чи він делегується», а «що саме з нього доходить».
+    def method_missing(method_name, *args, **kwargs, &block)
       last_error = nil
 
       available_urls.each do |url|
         client = client_for(url)
-        result = client.public_send(method_name, *, &)
+        result = client.public_send(method_name, *args, **kwargs, &block)
         record_success(url)
         return result
       rescue *RETRIABLE_ERRORS => e
