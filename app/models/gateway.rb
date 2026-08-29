@@ -125,13 +125,36 @@ class Gateway < ApplicationRecord
 
   # --- СКОУПИ (The Watchers) ---
   # [ВИПРАВЛЕНО]: Індексоване обчислення порогу (make_interval замість string-concat).
-  # Беремо інтервал сну конкретної Королеви + 20% люфту на затримку мережі/обробку.
+  #
+  # 🔴 [ARCH.115, ⚖️ 2026-08-29] БАЗУ ЗМІНЕНО: вікно рахується від ВИМІРЯНОГО каденсу
+  # прошивки, а не від колонки `config_sleep_interval_s`. Підстава — не стиль:
+  # **`grep sleep_interval firmware/` дає НУЛЬ.** Прошивка тієї колонки не читає взагалі,
+  # і downlink'а, який доніс би її до Королеви, не існує; реальний каденс зашитий
+  # компайл-тайм таймером `FLUSH_INTERVAL_MS` (3 600 000) + jitter (60 000). Тобто шлюз,
+  # провіжінений на 3600, і шлюз на 300 флашать ОДНАКОВО — колонка була Rails-side
+  # переконанням про пристрій, а не його поведінкою.
+  #
+  # 🔑 Присуд уже стояв У СУСІДНЬОМУ ДОМІ й просто не доїхав сюди: `Downlink::
+  # PendingQueueService::WORST_CASE_POLL_INTERVAL_S` несе той самий вимір із тим самим
+  # обґрунтуванням, бо там питали «чи встигне downlink». Питання «чи живий шлюз» жило
+  # в іншому домі, і вимір туди не поїхав — саме тому тут стоїть ОДНЕ джерело на обидва.
+  #
+  # ⚠️ Люфт 20% лишається як був — змінилась ЛИШЕ база. Наслідок треба знати обома
+  # боками: для прод-дефолту (3600) вікно ЗВУЖУЄТЬСЯ 4320 → 4392 с майже без змін, а для
+  # сідового шлюзу (1800) РОЗШИРЮЄТЬСЯ 2160 → 4392, і саме там жив дефект — здорова
+  # Королева ~25 хв щогодини числилась `offline`, що давало хибний critical `queen_offline`,
+  # виключало її з `ota_deployable` і робило `EmergencyResponseService.deliverable?`
+  # хибним на пожежному протоколі.
+  # ⛔ Не повертати колонку в цей вираз, доки прошивка її не читає: спершу downlink-тракт
+  # доставки конфігу, і аж тоді вона стає ВИМІРОМ, а не переконанням.
+  LIVENESS_WINDOW_S = (Downlink::PendingQueueService::WORST_CASE_POLL_INTERVAL_S * 1.2).round
+
   scope :online, -> {
-    where("last_seen_at >= CURRENT_TIMESTAMP - make_interval(secs => config_sleep_interval_s * 1.2)")
+    where("last_seen_at >= CURRENT_TIMESTAMP - make_interval(secs => ?)", LIVENESS_WINDOW_S)
   }
 
   scope :offline, -> {
-    where("last_seen_at IS NULL OR last_seen_at < CURRENT_TIMESTAMP - make_interval(secs => config_sleep_interval_s * 1.2)")
+    where("last_seen_at IS NULL OR last_seen_at < CURRENT_TIMESTAMP - make_interval(secs => ?)", LIVENESS_WINDOW_S)
   }
 
   scope :ready_for_commands, -> { idle.online }
@@ -174,10 +197,13 @@ class Gateway < ApplicationRecord
     self.latest_voltage_mv = voltage_mv if voltage_mv.present?
   end
 
+  # [ARCH.115] Те саме вікно, що в скоупах `online`/`offline` — і спільна константа тут
+  # несуча, а не охайність: предикат і скоуп відповідають на ОДНЕ питання, тож
+  # розходження між ними давало б рядок, видимий у списку й «мертвий» у деталці.
   def online?
     return false if last_seen_at.nil?
-    # Динамічна перевірка: чи не перевищено інтервал сну з люфтом
-    last_seen_at >= (config_sleep_interval_s * 1.2).seconds.ago
+
+    last_seen_at >= LIVENESS_WINDOW_S.seconds.ago
   end
 
   # Розрахунок наступного вікна зв'язку (Projected Pulse)

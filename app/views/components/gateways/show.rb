@@ -221,8 +221,10 @@ module Gateways
     end
 
     def connection_led_classes
-      # `Gateway#online?` — один дім порога (`config_sleep_interval_s * 1.2`);
+      # `Gateway#online?` — один дім порога (`Gateway::LIVENESS_WINDOW_S`);
       # локальні «5 хвилин» суперечили і сторожу, і сусідній сторінці.
+      # ⚠️ [ARCH.115] База вікна більше НЕ `config_sleep_interval_s`: прошивка тієї
+      # колонки не читає, тож поріг деривується з виміряного каденсу прошивки.
       recently_seen = @gateway.online?
       tokens("bg-gaia-primary-strong shadow-[0_0_8px_#10b981]": recently_seen, "bg-status-danger-accent animate-pulse": !recently_seen)
     end

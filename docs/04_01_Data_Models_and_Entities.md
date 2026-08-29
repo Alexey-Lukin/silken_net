@@ -481,7 +481,7 @@ dormant ──reactivate──► active
 | `uid` | string | `SNET-Q-[8 HEX]` |
 | `state` | enum | `idle/active/updating/maintenance/faulty` |
 | `firmware_update_status` | enum | OTA lifecycle (via Firmwareable) |
-| `config_sleep_interval_s` | integer | Інтервал сну (≥ 60 сек) |
+| `config_sleep_interval_s` | integer | Інтервал сну (≥ 60 сек). 🔴 **[ARCH.115] Це НАШЕ ПЕРЕКОНАННЯ про пристрій, а не його поведінка: прошивка колонку НЕ ЧИТАЄ** (`grep sleep_interval firmware/` = нуль), і downlink'а, який доніс би її Королеві, не існує — реальний каденс зашитий компайл-тайм таймером `FLUSH_INTERVAL_MS` + jitter. Тобто шлюз на 3600 і шлюз на 300 флашать ОДНАКОВО. ⛔ **Не будувати на ній вікон живості:** `Gateway#online?`/`.online`/`.offline` до 2026-08-29 рахували вікно саме звідси, і сідовий шлюз (1800) числився `offline` ~25 хв щогодини — хибний critical `queen_offline`, виключення з `ota_deployable`, і `EmergencyResponseService.deliverable?` хибний на пожежному протоколі. Дім вікна тепер — `Gateway::LIVENESS_WINDOW_S` (виміряний каденс × 1.2), спільний зі скоупами. ⊕ Колонка лишається як **намір конфігурації** (її показує UI, її валідує модель) і як вхід `next_wakeup_expected_at`; ВИМІРОМ вона стане тоді, коли зʼявиться downlink-тракт доставки конфігу |
 | `ip_address` | string | Спостережений source-IP **останнього uplink** (`mark_seen!`; nil до першого виходу в ефір). Це CGNAT/Starlink-egress — НЕ inbound-reachable адреса ([`00_07` FW.60](00_07_Action_Plan_Tracker)) |
 | `last_seen_at` | datetime | Останній CoAP batch |
 | `last_attested_at` | datetime | **[L1 QATT]** Останній батч з валідним Ed25519-підписом Королеви (wire-дім [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security)); `nil` = шлюз на L0 |

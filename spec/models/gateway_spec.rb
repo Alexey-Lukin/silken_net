@@ -102,25 +102,44 @@ RSpec.describe Gateway, type: :model do
     end
 
     it "returns false when not seen within threshold" do
-      gateway = build(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
+      gateway = build(:gateway, last_seen_at: (Gateway::LIVENESS_WINDOW_S + 60).seconds.ago)
       expect(gateway).not_to be_online
     end
 
-    it "uses 1.2x multiplier for leniency" do
+    # 🔴 [ARCH.115] Доти цей приклад звався «uses 1.2x multiplier» і будував вікно з
+    # `config_sleep_interval_s: 300` — тобто пінив ВИГАДАНУ величину: прошивка тієї
+    # колонки не читає (`grep sleep_interval firmware/` = нуль), а реальний каденс
+    # зашитий компайл-тайм таймером. Множник 1.2 лишився; змінилась БАЗА, і саме її
+    # тепер пінимо.
+    it "derives the window from the measured firmware cadence, not from the column" do
       gateway = build(:gateway, config_sleep_interval_s: 300)
-      # 300 * 1.2 = 360 seconds = 6 minutes
-      gateway.last_seen_at = 5.minutes.ago
+
+      gateway.last_seen_at = (Gateway::LIVENESS_WINDOW_S - 60).seconds.ago
       expect(gateway).to be_online
 
-      gateway.last_seen_at = 7.minutes.ago
+      gateway.last_seen_at = (Gateway::LIVENESS_WINDOW_S + 60).seconds.ago
       expect(gateway).not_to be_online
+    end
+
+    # ⊥ Дзеркало, без якого приклад вище зелений і на старій формулі: колонка більше
+    # НЕ впливає на вердикт. Два шлюзи з протилежними значеннями інтервалу й однаковим
+    # `last_seen_at` мусять судитись однаково — доти сідовий (1800) числився `offline`
+    # ~25 хв щогодини, що давало хибний critical `queen_offline`, виключало його з
+    # `ota_deployable` і робило `EmergencyResponseService.deliverable?` хибним.
+    it "judges two gateways identically regardless of their configured interval" do
+      seen = (Gateway::LIVENESS_WINDOW_S - 120).seconds.ago
+      short = build(:gateway, config_sleep_interval_s: 300, last_seen_at: seen)
+      long  = build(:gateway, config_sleep_interval_s: 3600, last_seen_at: seen)
+
+      expect(short.online?).to eq(long.online?)
+      expect(short).to be_online
     end
   end
 
   describe "scopes" do
     it ".online returns gateways seen within threshold" do
       online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
-      offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
+      offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: (Gateway::LIVENESS_WINDOW_S + 60).seconds.ago)
 
       expect(described_class.online).to include(online_gw)
       expect(described_class.online).not_to include(offline_gw)
@@ -128,7 +147,7 @@ RSpec.describe Gateway, type: :model do
 
     it ".offline returns gateways not seen within threshold or never seen" do
       online_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 1.minute.ago)
-      offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: 10.minutes.ago)
+      offline_gw = create(:gateway, config_sleep_interval_s: 300, last_seen_at: (Gateway::LIVENESS_WINDOW_S + 60).seconds.ago)
       never_seen = create(:gateway, config_sleep_interval_s: 300, last_seen_at: nil)
 
       expect(described_class.offline).to include(offline_gw, never_seen)

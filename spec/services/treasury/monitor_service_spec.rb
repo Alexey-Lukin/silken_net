@@ -806,5 +806,40 @@ end
 
       expect { described_class.call }.not_to raise_error
     end
+
+    # ⊕ Гілки «не змогли прочитати» — кожна веде в ТОЙ САМИЙ інваріант (гейдж не
+    # чіпаємо), але шляхи до нього різні, і без пінів вони лишились би непокритими,
+    # тобто інваріант тримався б на одному з трьох входів.
+    it "does not set the gauge when SOLANA_RPC_URL is absent" do
+      original = ENV.delete("SOLANA_RPC_URL")
+      before_value = gauge.get(labels: ata_labels)
+
+      expect { described_class.call }.not_to raise_error
+      expect(gauge.get(labels: ata_labels)).to eq(before_value)
+    ensure
+      ENV["SOLANA_RPC_URL"] = original
+    end
+
+    it "does not set the gauge when the RPC returns an empty result" do
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        instance_double(Web3::HttpClient::Response, parsed_body: { "result" => { "value" => nil } })
+      )
+      before_value = gauge.get(labels: ata_labels)
+
+      expect { described_class.call }.not_to raise_error
+      expect(gauge.get(labels: ata_labels)).to eq(before_value)
+    end
+
+    it "does not set the gauge when uiAmountString is blank" do
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        instance_double(Web3::HttpClient::Response,
+                        parsed_body: { "result" => { "value" => { "amount" => "0", "decimals" => 6,
+                                                                  "uiAmountString" => "" } } })
+      )
+      before_value = gauge.get(labels: ata_labels)
+
+      expect { described_class.call }.not_to raise_error
+      expect(gauge.get(labels: ata_labels)).to eq(before_value)
+    end
   end
 end

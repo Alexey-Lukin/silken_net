@@ -25,9 +25,11 @@ module Api
             }
           end
           format.html do
-            # Скоуп, а не власне вікно: поріг живе в `Gateway` і деривується з
-            # `config_sleep_interval_s` кожної Королеви. Хардкод «5 хвилин»
-            # називав офлайном шлюз, який за конфігом спить годину.
+            # Скоуп, а не власне вікно: поріг живе в `Gateway`
+            # (`LIVENESS_WINDOW_S`). Хардкод «5 хвилин» називав офлайном шлюз,
+            # який спить годину. ⚠️ [ARCH.115] Деривується він тепер із ВИМІРЯНОГО
+            # каденсу прошивки, а не з `config_sleep_interval_s` — ту колонку
+            # прошивка не читає взагалі.
             online_count = acting_organization!.gateways.online.count
             render_dashboard(
               title: I18n.t("gateways.index_title"),

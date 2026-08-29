@@ -322,7 +322,7 @@ RSpec.describe Gateways::Show do
     end
 
     it "shows red pulsing LED when not recently seen" do
-      gw = mock_gateway(last_seen_at: 10.minutes.ago)
+      gw = mock_gateway(last_seen_at: (Gateway::LIVENESS_WINDOW_S + 300).seconds.ago)
       rendered = render_component(gateway: gw, latest_log: latest_log, active_soldiers: active_soldiers)
       expect(rendered).to include("rotate-45 bg-status-danger-accent")
       expect(rendered).to include("animate-pulse")

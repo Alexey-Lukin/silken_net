@@ -10,7 +10,11 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
 
   let(:cluster) { create(:cluster) }
 
-  def silent_gateway(state: :active, silent_for: 10.minutes, sleep_s: 60)
+  # [ARCH.115] Дефолт тиші рахується від ВИМІРЯНОГО вікна живості, а не від
+  # `config_sleep_interval_s`: прошивка тієї колонки не читає, тож фікстура на 10 хв
+  # будувала «мертвий» шлюз, який мертвим не є. `sleep_s` лишається параметром, бо
+  # частина прикладів пінить саме те, що вердикт від нього НЕ залежить.
+  def silent_gateway(state: :active, silent_for: (Gateway::LIVENESS_WINDOW_S + 300).seconds, sleep_s: 60)
     create(:gateway, cluster: cluster, state: state,
                      config_sleep_interval_s: sleep_s,
                      last_seen_at: silent_for.ago)
@@ -89,7 +93,7 @@ RSpec.describe GatewayStalenessSweepWorker, type: :worker do
     it "не чіпає шлюз у межах sleep-інтервалу з люфтом" do
       gateway = create(:gateway, cluster: cluster, state: :active,
                                  config_sleep_interval_s: 3600,
-                                 last_seen_at: 10.minutes.ago)
+                                 last_seen_at: (Gateway::LIVENESS_WINDOW_S - 300).seconds.ago)
       expect { sweep }.not_to change { gateway.reload.state }
     end
   end
@@ -367,7 +371,7 @@ describe "недоставні накази на мертвому шлюзі [AR
 
   # Замовкання ПІСЛЯ видачі наказу; `update_columns` — щоб не смикати колбеки.
   def go_silent!(gateway)
-    gateway.update_columns(last_seen_at: 10.minutes.ago)
+    gateway.update_columns(last_seen_at: (Gateway::LIVENESS_WINDOW_S + 300).seconds.ago)
   end
 
   it "переводить у failed наказ, який уже неможливо доставити" do

@@ -111,7 +111,7 @@ RSpec.describe Gateways::Index do
 
     it "shows red pulsing LED for stale gateway" do
       rendered = render_component(
-        gateways: [ mock_gateway(last_seen_at: 10.minutes.ago, config_sleep_interval_s: 300) ],
+        gateways: [ mock_gateway(last_seen_at: (Gateway::LIVENESS_WINDOW_S + 300).seconds.ago, config_sleep_interval_s: 300) ],
         pagy: pagy, online_count: 0
       )
       expect(rendered).to include("bg-status-danger-accent")

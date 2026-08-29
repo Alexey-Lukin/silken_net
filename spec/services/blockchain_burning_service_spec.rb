@@ -853,6 +853,20 @@ end
       expect(notes).to include("ФОРФЕЙТУРА")
       expect(notes).not_to include("SLASHING")
     end
+
+    # 🔴 Крах ПІСЛЯ broadcast — окрема гілка, і на contractual-шляху вона мала власну
+    # прогалину: `rescue` теж писав `:breached`, тобто збій у вікні між `mark_as_sent!`
+    # і кінцем методу перетворював добровільний вихід на порушення. Мовчки, і саме
+    # тоді, коли ретрай уже нічого не виправить (burn у ланцюгу).
+    it "keeps the contract :cancelled even when the pass crashes AFTER broadcast" do
+      allow(BlockchainConfirmationWorker).to receive(:perform_in).and_raise(StandardError, "post-broadcast boom")
+
+      expect {
+        described_class.call(organization.id, naas_contract.id, source_tree: tree, contractual: true)
+      }.to raise_error(StandardError, /post-broadcast boom/)
+
+      expect(naas_contract.reload.status).to eq("cancelled")
+    end
   end
 
   describe "#calculate_slash_ratio (§6.2 convex curve)" do

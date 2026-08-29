@@ -6,8 +6,12 @@
 # вони ЗБАГАЧУЮТЬ, а цей sweeper — первинний permanence-сторож NaaS).
 #
 # Канон: 06_08 §1.3 (Queen Health Heartbeat → Rails). Тиша = last_seen_at
-# прострочив config_sleep_interval_s з люфтом 1.2 (скоуп Gateway.offline —
-# One-Home порога, той самий, що online?/дашборд).
+# прострочив `Gateway::LIVENESS_WINDOW_S` (скоуп Gateway.offline — One-Home
+# порога, той самий, що online?/дашборд).
+# ⚠️ [ARCH.115, 2026-08-29] БАЗУ вікна змінено: доти тут стояв
+# `config_sleep_interval_s` × 1.2, але прошивка ту колонку НЕ ЧИТАЄ (нуль згадок
+# у `firmware/`) — вікно рахувалось від Rails-side переконання, тож сідовий шлюз
+# (1800) числився offline ~25 хв щогодини й діставав хибний critical звідси.
 #
 # Три обов'язки за один прохід:
 #   1. offline + робочий стан → report_fault! + EwsAlert(queen_offline)
