@@ -53,9 +53,15 @@
 #       accepted for the manifest, for the same reason.
 #   (2) Canon docs under docs/*.md are NOT scanned. They legitimately name the code's
 #       own symbols — 05_03 documents `slash(address investor, …)` because that IS the
-#       ABI — and a securities-safe rename will carry that prose with it. Scanning them
-#       produced ~100 downstream lines per run, which is how an advisory tier becomes
-#       noise nobody reads. Canon prose is downstream of the rename, not separate work.
+#       ABI. Scanning them produced ~100 downstream lines per run, which is how an advisory
+#       tier becomes noise nobody reads.
+#       🔴 CORRECTED 2026-08-29: this clause used to end "a securities-safe rename will carry
+#       that prose with it — canon prose is downstream of the rename, not separate work",
+#       which PRESUMED a rename that was in fact REFUSED. ⚖️ won't-do, ratified 2026-07-25:
+#       `address investor` in `.sol`/subgraph/ABI stays — renaming it is a subgraph migration
+#       across ~250 sites for zero gain (home: 00_07 BIZ.22). The ceiling is therefore
+#       permanent, not transitional: canon prose naming the ABI symbol is CORRECT, and a
+#       future sweep must not read this exemption as an invitation to "finish the job".
 #   (3) Ruby comments are skipped: internal engineering notes are not what a customer
 #       receives, and they were a third of the first advisory run.
 # The enum value was RENAMED `investor` → `subscriber` on 2026-08-28 (BIZ.22 verdict
