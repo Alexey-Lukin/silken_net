@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Unauthenticated readiness probe for orchestrators (k8s / Akash / Kamal).
+# Unauthenticated readiness probe for orchestrators (Kamal proxy / k8s).
 #
 # Liveness ("is the process up?") is already served by Rails' `/up`
 # (`rails/health#show`). This adds the missing READINESS signal ("can it serve

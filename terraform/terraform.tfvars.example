@@ -41,4 +41,4 @@ ssh_source_ranges = []
 # Use Upstash (serverless Redis with TLS public endpoints) instead.
 # Set REDIS_URL=rediss://default:password@endpoint.upstash.io:6379 in secrets.
 # Free tier (10k commands/day) is sufficient through TRL 8.
-# See: docs/06_02_Akash_Network_Integration.md
+# See: docs/06_01_Deployment_Kamal_Terraform.md

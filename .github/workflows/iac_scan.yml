@@ -98,7 +98,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # SHA-pinned action + explicit `version:` binary pin (06_07 §1a ruff
-      # precedent). skip-dirs excludes non-target noise: deploy/akash (SDL is not
+      # precedent). skip-dirs excludes non-target noise: deploy/grafana (dashboards are not
       # a k8s manifest), deploy/grafana (alert-provisioning YAML), firmware/extern
       # (vendored third-party Dockerfiles we can't fix). config/*.yml (Rails) carry
       # no apiVersion/kind so Trivy's k8s parser ignores them; .github/workflows
@@ -111,7 +111,7 @@ jobs:
           version: v0.72.0
           format: sarif
           output: trivy-iac.sarif
-          skip-dirs: deploy/akash,deploy/grafana,firmware/extern
+          skip-dirs: deploy/grafana,firmware/extern
           exit-code: '1' # HARD gate — baseline triaged to 0 open findings.
 
       - name: Upload SARIF to code-scanning

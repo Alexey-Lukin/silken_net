@@ -552,7 +552,7 @@ jobs:
     # syntax error is caught HERE, not as a crash-loop of the `alloy` accessory on
     # deploy. `alloy fmt` parses the River AST and exits non-zero on a
     # malformed config; it does NOT evaluate sys.env()/coalesce(), so it needs no
-    # secrets and is environment-independent. Image tag matches deploy/akash/deploy.yaml.
+    # secrets and is environment-independent. Image tag matches config/deploy.yml accessories.
     # Also dry-run-validates the Grafana IaC (dashboards + alert rules under
     # deploy/grafana/) — same no-secrets discipline (S2.2).
     runs-on: ubuntu-latest

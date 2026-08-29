@@ -34,7 +34,7 @@ Rails.application.configure do
   config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # [PROD] Assume all access to the app is happening through an SSL-terminating reverse proxy
-  # (Kamal/Traefik, GCP Load Balancer, Akash Provider). This makes Rails treat upstream HTTP
+  # (Kamal proxy, GCP Load Balancer, Cloudflare). This makes Rails treat upstream HTTP
   # requests as HTTPS and emit secure cookies/links accordingly. Override with DISABLE_SSL=true
   # only for non-TLS canary deployments.
   config.assume_ssl = ENV["DISABLE_SSL"] != "true"
@@ -154,7 +154,7 @@ Rails.application.configure do
 
   # [SEC.22] ActiveRecord Encryption keys come from ENV, NEVER credentials.yml.enc.
   # Storing them in the vault would deepen the runtime RAILS_MASTER_KEY dependency
-  # SEC.22 is dissolving (an Akash provider reads /proc/<pid>/environ). dev/test pin
+  # SEC.22 is dissolving (anyone with host access reads /proc/<pid>/environ). dev/test pin
   # fixtures in their own env files; production reads real >=32-byte values injected
   # per process (web + Sidekiq workers decrypt hardware_keys + identities; the coap
   # daemon only enqueues). ENV[...] not fetch: a nil is caught loudly at boot by

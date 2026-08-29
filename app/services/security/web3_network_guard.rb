@@ -102,7 +102,7 @@ module Security
     # `env` defaults to ENV but is injectable for tests.
     # `signer_process:` scopes the key-PRESENCE requirement to processes that
     # actually sign (Sidekiq). The web/coap containers never hold money keys
-    # (plaintext-ENV exposure on an untrusted Akash provider), so demanding
+    # (plaintext-ENV exposure of any container's environ), so demanding
     # presence there would force keys BACK onto the widest attack surface.
     # Format and collision checks still run everywhere a key IS present.
     def violations(env = ENV, signer_process: true)

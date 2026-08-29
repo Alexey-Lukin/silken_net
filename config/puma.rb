@@ -12,11 +12,12 @@
 # Copy-on-Write (CoW) across forked workers, cutting per-worker RSS by ~30-40%.
 #
 # Infrastructure targets:
-#   Akash (SDL):  4 CPU units, 8 GB RAM → WEB_CONCURRENCY=4   ← Rails runs HERE
-#   Kamal (GCP):  fallback path only. After the infra pivot GCP hosts just the
-#                 e2-small Ingress Anchor (CoAP daemon + HAProxy, no Puma —
-#                 terraform/compute.tf); deploy.yml pins WEB_CONCURRENCY=2 as a
-#                 conservative default for that path, not a machine spec.
+#   Kamal (GCP):  the only target. deploy.yml pins WEB_CONCURRENCY=2 — and since
+#                 [OPS.37] that stopped being a conservative fallback default and
+#                 became the SPEC of the app host, so it moves together with the
+#                 machine when terraform regains the web resource. The separate
+#                 e2-small Ingress Anchor runs no Puma (CoAP daemon + HAProxy only —
+#                 terraform/compute.tf).
 #
 # For DSL reference see: https://puma.io/puma/Puma/DSL.html
 # =============================================================================
@@ -68,16 +69,14 @@ max_io_threads ENV.fetch("PUMA_MAX_IO_THREADS", 16).to_i
 # available CPU cores for maximum throughput. Combined with preload_app!, the
 # master loads the app once and workers share read-only memory pages (CoW).
 #
-# Formula: WEB_CONCURRENCY = number of vCPUs (or CPU units on Akash).
+# Formula: WEB_CONCURRENCY = number of vCPUs.
 # Total Puma threads = WEB_CONCURRENCY × RAILS_MAX_THREADS.
 # Total DB connections per database = WEB_CONCURRENCY × pool (see database.yml).
 #
 # Defaults:
-#   Akash (4 CPU):      WEB_CONCURRENCY=4 → 4 workers × 3 threads = 12 threads  ← live path
-#   Kamal/GCP fallback: WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
-#     — deploy.yml default for the fallback path only, NOT a spec of any live host:
-#       post-pivot GCP runs just the e2-small Ingress Anchor, which hosts no Puma
-#       (see the header above; terraform/compute.tf). [DOC-T.50]
+#   Kamal/GCP: WEB_CONCURRENCY=2 → 2 workers × 3 threads = 6 threads
+#     — assumes a 2-vCPU app host. Raising the tier without raising this wastes it;
+#       raising this without the tier oversubscribes. One value, one machine.
 #
 # In development we run single-mode (workers=0) by default, which matches the
 # `cluster do … end` block below — the connection-lifecycle hooks intentionally

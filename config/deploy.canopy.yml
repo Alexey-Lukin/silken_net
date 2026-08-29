@@ -3,13 +3,11 @@
 # The forest canopy is the first layer that meets the sun and rain,
 # protecting the forest floor (production) below. 🌿
 #
-# After infrastructure pivot, Canopy runs on Akash Network (not a dedicated GCP VM).
-# This Kamal config is retained for fallback direct-deploy scenarios only.
-# Primary deployment: deploy/akash/deploy.yaml with canopy-specific env vars.
-# Deploy manually: kamal deploy -d canopy
+# Canopy = the FIRST deploy of the main Kamal path (DEPLOY-1 Фаза 3), not a fallback:
+# same app host as production, isolated database set. Deploy: kamal deploy -d canopy
 
 # Canopy server IP — use Ingress Anchor IP from: terraform output ingress_ip
-# (same IP as production — canopy is differentiated by Akash SDL env vars, not server IP)
+# (same host as production — canopy is differentiated by POSTGRES_DATABASE, not by IP)
 #
 # WEB-ONLY, enforced STRUCTURALLY: `servers:` uses the ARRAY form, which Kamal's
 # destination deep_merge REPLACES wholesale (an array is not a hash) → the base
@@ -18,8 +16,10 @@
 # config/deploy.yml, bringing the money quintet in its env.secret; those secrets
 # are production-environment-scoped (INF.22) → they would interpolate present-empty
 # "" → Web3NetworkGuard raise on the job container's boot.
-# Canopy background jobs run on the Akash primary (deploy/akash/deploy.yaml `job`
-# service). Do NOT rely on `kamal deploy -d canopy` for background-job testing.
+# ⚠️ [OPS.37] Canopy therefore has NO background jobs anywhere: they used to ride a
+# separate `job` service on the retired platform. Open decision — give canopy its own
+# `job:` role, or keep it deliberately worker-less; until then Sidekiq debuts on
+# production, and "canopy is green" means the web half only.
 servers:
   - <INGRESS_ANCHOR_IP>
 
@@ -32,8 +32,8 @@ env:
     POSTGRES_DATABASE: silken_net_canopy
     # [ARCH.60] Canopy declares itself mail-less, and this is a statement of fact rather
     # than a workaround: `deliver_later` only ever runs in Sidekiq, and this leg is
-    # structurally web-only (see the `servers:` array note above) — its background jobs
-    # live on the Akash `job` service. Demanding SMTP here would block the deploy for a
+    # structurally web-only (see the `servers:` array note above) — it has no background
+    # jobs at all. Demanding SMTP here would block the deploy for a
     # capability the container could not exercise anyway. The bypass logs a loud WARN on
     # every boot; drop this line the day canopy gains a job role.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"

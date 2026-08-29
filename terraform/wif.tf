@@ -5,8 +5,9 @@
 # GitHub Actions mints a short-lived OIDC token per run; GCP STS exchanges it for
 # an impersonated deploy-SA access token. This replaces the long-lived GCP_SA_KEY
 # JSON in the deploy/drift workflows — a 6-place, boot-critical, never-expiring
-# credential. The Akash GCP_SA_KEY_BASE64 (Cloud SQL Auth Proxy, RUNTIME) stays a
-# deliberate exception: an external Akash provider can't reach GitHub's OIDC issuer
+# credential. [OPS.37] The one long-lived static-key exception (GCP_SA_KEY_BASE64 for
+# an out-of-VPC Auth Proxy) is GONE with the platform that needed it — WIF is now
+# exception-free, and no service-account key exists anywhere in this tree.
 # (see docs/06_02 §Security Exception). This closes the CI→GCP leg only.
 #
 # Chicken-egg: this pool/provider/binding is created by the FIRST terraform apply,

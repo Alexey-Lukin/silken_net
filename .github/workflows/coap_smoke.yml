@@ -3,7 +3,7 @@ name: Smoke · CoAP UDP
 # [INF.6/FW.56] Post-deploy smoke that exercises the end-to-end CoAP UDP
 # path: Queen-equivalent client → Ingress Anchor → CoAP daemon
 # (`lib/daemons/coap_listener` — PRIMARY runs on the Anchor itself, INF.17;
-# fallback = socat relay → Akash coap service).
+# fallback = socat relay → the dormant Kamal coap role).
 #
 # Without this probe a silent UDP failure (closed firewall, missing
 # socat fork, daemon not running, SDL `5683/udp` not exposed) is not
@@ -126,7 +126,7 @@ jobs:
             echo "::error::Troubleshooting checklist (06_01 Pre-Flight #6):"
             echo "::error::  (a) GCP firewall: allow UDP 5683 from 0.0.0.0/0"
             echo "::error::  (b) Anchor PRIMARY: systemctl status coap-daemon + docker logs silkennet-coap (/etc/silkennet/coap.env filled?)"
-            echo "::error::  (c) fallback path only: coap-relay (socat) up + Akash SDL coap service exposes 5683/udp"
+            echo "::error::  (c) fallback path only: coap-relay (socat) up + the Kamal coap role exposes 5683/udp"
             echo "::error::  (d) wire-граматика: bin/coap_smoke verdicts vs spec/lib/coap_server_pdu_spec.rb"
             exit 1
           fi

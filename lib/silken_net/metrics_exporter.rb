@@ -7,13 +7,13 @@ module SilkenNet
   # Embedded /metrics-експортер для процесів без власного HTTP-сервера
   # (Sidekiq job-контейнер, CoAP-демон). Реєстр Prometheus — in-process:
   # інкременти воркерів web:80 фізично не бачить, тож кожен процес віддає
-  # свій зріз сам, а Alloy скрейпить три таргети (web:80 / job:9394 /
-  # coap:9395 — deploy/akash/config.alloy, канон 06_03 §2.9).
+  # свій зріз сам, а Alloy скрейпить три таргети на loopback хоста
+  # (127.0.0.1:9393/9394/9395 — deploy/alloy/config.alloy, канон 06_03 §2.9).
   #
   # Реюзає PrometheusCollector (IP-allowlist + Basic Auth + gauge-refresh)
   # як Rack-app із 404-fallback — та сама security-поверхня, що на web.
-  # Порт відкривається лише всередині Akash-deployment (`to: service:
-  # alloy`), назовні не публікується.
+  # Порт публікується ЛИШЕ на loopback хоста (`options.publish: 127.0.0.1:PORT`
+  # у config/deploy.yml), на публічний інтерфейс — ніколи.
   #
   # Збій експортера НЕ вбиває основний процес: метрики — не money-path;
   # гучний лог + Sentry, процес живе без /metrics.

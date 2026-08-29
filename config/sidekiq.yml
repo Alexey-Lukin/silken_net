@@ -2,7 +2,7 @@
 :concurrency: 15
 # Explicit graceful-shutdown window (was the implicit default). On SIGTERM Sidekiq
 # re-enqueues jobs still running after this deadline — the orchestrator's grace
-# period (Akash/k8s default ~30s) MUST stay ≥ this value or in-flight jobs die by
+# period (Kamal `drain_timeout`, default ~30s) MUST stay ≥ this value or in-flight jobs die by
 # SIGKILL instead (money-path then relies on the intent-marker/reconcile crons).
 :timeout: 25
 :strict: true
@@ -59,7 +59,7 @@
     # Стиснення телеметрії в AiInsight. Має завершитися до початку аудиту.
     # Sidekiq cron schedule keys to server time. The Rails app does not set
     # `config.time_zone`, so Rails 8.1 default = UTC, and so do these crons.
-    # Kamal/Akash deployments run with TZ=UTC by Docker default, so the
+    # Kamal deploys run with TZ=UTC by Docker default, so the
     # firing wall-clock matches what the docs describe (01:00 UTC).
     daily_telemetry_aggregation:
       cron: '0 1 * * *' # 01:00 UTC щодня

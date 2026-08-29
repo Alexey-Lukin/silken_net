@@ -51,8 +51,8 @@ Rails.application.routes.draw do
 
       # 🆘 HELIUM SOS (ARCH.34 L3 — Королева кричить через чужі hotspot'и)
       # Webhook Helium Console HTTP Integration; HMAC-патерн oracle_callbacks.
-      # ⚠️ Адреса їде у ЧУЖУ консоль (terraform/akash: «Also entered in Helium
-      # Console HTTP Integration») — міняти лише разом із нею.
+      # ⚠️ Адреса їде у ЧУЖУ консоль (Helium Console HTTP Integration, канон
+      # 06_04) — міняти лише разом із нею.
       post "telemetry/helium", to: "helium_sos#create"
 
       # HTTP Telemetry Uplink — запасний канал, коли CoAP/UDP заблоковано

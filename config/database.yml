@@ -36,11 +36,12 @@ default: &default
   # actually hold 21.
   #
   # Total ceiling per database across all Puma workers:
-  #   WEB_CONCURRENCY × pool  (e.g. 4 × 21 = 84 per database on Akash, the live
-  #   path; the Kamal/GCP fallback pins WEB_CONCURRENCY=2 → 42) [DOC-T.50]
-  #   Akash live:  3 databases × 84 = 252 ceiling; + Sidekiq ~51 + proxy/admin ~8
-  #                ≈ 311, still within Cloud SQL's 400 (canon: 06_01 §max_connections)
-  #   GCP fallback: 3 × 42 = 126
+  #   WEB_CONCURRENCY × pool  (deploy.yml pins WEB_CONCURRENCY=2 → 2 × 21 = 42
+  #   per database) [OPS.37 — one target, so this is the ceiling, not a fallback]
+  #   3 databases × 42 = 126; + Sidekiq ~51 (DB_POOL=17 × 3) + admin ~8 ≈ 185,
+  #   comfortably within Cloud SQL's 400 (canon: 06_01 §max_connections).
+  #   ⚠️ Raising WEB_CONCURRENCY with the host tier re-opens this arithmetic —
+  #   at 4 it is 3 × 84 + 51 + 8 ≈ 311, still under 400 but no longer comfortable.
   #
   # For Sidekiq workers (separate process), override DB_POOL >= 15
   # in the worker container's environment to match sidekiq.yml :concurrency.

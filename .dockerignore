@@ -14,7 +14,7 @@
 /config/master.key
 /config/credentials/*.key
 # The encrypted credentials vault: ciphertext, but do NOT ship it into the PUBLIC
-# GHCR image — a leaked RAILS_MASTER_KEY (plaintext in the Akash job env) would
+# GHCR image — a leaked RAILS_MASTER_KEY (plaintext in the job container env) would
 # then decrypt it. secret_key_base comes from SECRET_KEY_BASE env at runtime, so
 # the container never needs the .enc. Canon 06_04 §2.2.
 /config/credentials.yml.enc
@@ -49,7 +49,7 @@
 /.kamal
 
 # Ignore Terraform — never part of the Rails image, and a local `terraform apply`
-# renders terraform/akash/generated-deploy.yaml + *.tfvars with REAL secrets that a
+# renders terraform/*.tfvars with REAL secrets that a
 # local `docker build .` / `kamal deploy` from the same cwd would otherwise bake
 # into the PUBLIC image (structural gap; CI is fresh-checkout so not firing today).
 /terraform
@@ -58,7 +58,7 @@
 /.devcontainer
 
 # [OPS.10] Trees the Rails runtime never reads — `COPY . .` shipped all of them
-# into the PUBLIC GHCR image, which undertrusted Akash providers pull by design.
+# into the PUBLIC GHCR image (see .github/workflows/mirror-ghcr.yml).
 # Measured 2026-08-28 on the VERSIONED tree (what a CI fresh-checkout sees, not a
 # local worktree with its build artifacts): 418 MB total, of which firmware 330 MB,
 # tools 52 MB, docs 20 MB, spec 6.1 MB. Verified before cutting: nothing under

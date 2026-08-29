@@ -21,7 +21,7 @@ output "database_url" {
 }
 
 output "database_url_proxy" {
-  description = "PostgreSQL connection URL via Cloud SQL Auth Proxy (for Akash deployments — connects through 127.0.0.1)"
+  description = "PostgreSQL connection URL via Cloud SQL Auth Proxy — break-glass admin session from a workstation (runtime uses the private VPC IP)"
   value       = "postgres://${google_sql_user.silken_net.name}:${var.db_password}@127.0.0.1:5432/${google_sql_database.production.name}"
   sensitive   = true
 }

@@ -273,7 +273,7 @@ jobs:
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
 
   # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
-  # UDP boundary (Ingress Anchor → Akash → coap_listener). HTTP health checks
+  # UDP boundary (Ingress Anchor → coap_listener). HTTP health checks
   # cannot see a dead CoAP path — without this the network goes dark silently.
   # Активація: задати repo Variable PRODUCTION_COAP_HOST (host Ingress Anchor);
   # поки змінна порожня, job видимо skipped (Брама ще не задеплоєна).

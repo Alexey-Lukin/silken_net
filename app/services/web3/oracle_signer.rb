@@ -18,7 +18,7 @@ module Web3
   # ⛔ КОЖНЕ ім'я ENV написане ЛІТЕРАЛОМ у `case` (`ENV.fetch` з рядком-константою),
   # по одному на роль — і це НЕ стиль. `spec/deploy/env_fetch_declaration_spec.rb`
   # сканує `app/**` статично саме за цією текстовою формою й рахує SET-DIFF проти
-  # `config/deploy.yml` / Akash SDL / Kamal-ланцюга. Табличний lookup
+  # `config/deploy.yml` / Kamal-ланцюга. Табличний lookup
   # (`ENV.fetch(ROLE_ENVS[role])`) вивів би змінну зі сканованої множини, і
   # гейт став би зеленим ВТРАТИВШИ ЗМІННУ — тобто відсутній на деплой-поверхні
   # money-ключ проходив би мовчки аж до KeyError у мить першого мінта.

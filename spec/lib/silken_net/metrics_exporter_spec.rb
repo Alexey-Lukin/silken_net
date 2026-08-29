@@ -5,7 +5,7 @@ require "rails_helper"
 require "net/http"
 
 # Реальний HTTP-прохід (не мок): Puma::Server — внутрішній клас гема, його
-# API-дрейф на bump'і має ламати CI, а не Akash-деплой мовчки.
+# API-дрейф на bump'і має ламати CI, а не деплой мовчки.
 RSpec.describe SilkenNet::MetricsExporter do
   it "serves the Prometheus registry on /metrics and 404s any other path" do
     server = described_class.start(port: 0, host: "127.0.0.1")

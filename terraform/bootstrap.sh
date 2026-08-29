@@ -25,7 +25,7 @@ REGION="europe-west1"
 PROJECT_ID="${GCP_PROJECT_ID:?Error: Set GCP_PROJECT_ID environment variable}"
 
 # CMEK for the state bucket [SEC.22]: tf-state is a full plaintext copy of every
-# secret terraform touches (db_password et al) — third copy after Akash-ENV and
+# secret terraform touches (db_password et al) — second copy after Kamal-ENV and
 # coap.env. Keyring MUST be in the exact bucket region (hard KMS<->GCS constraint).
 KMS_KEYRING="silken-tfstate-ew1"
 KMS_KEY="tfstate"

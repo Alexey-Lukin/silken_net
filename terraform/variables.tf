@@ -65,7 +65,7 @@ variable "db_disk_size_gb" {
 }
 
 variable "db_max_connections" {
-  description = "PostgreSQL max_connections — must exceed sum of all pool sizes across all Puma workers, Sidekiq processes, and deployment nodes (Kamal + Akash)"
+  description = "PostgreSQL max_connections — must exceed sum of all pool sizes across all Puma workers, Sidekiq processes, and the anchor coap daemon"
   type        = string
   default     = "400"
 }

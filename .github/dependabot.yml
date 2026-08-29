@@ -58,7 +58,7 @@ updates:
   open-pull-requests-limit: 10
   labels:
   - "type:deps"
-- package-ecosystem: terraform     # terraform/: google + akash providers
+- package-ecosystem: terraform     # terraform/: google provider
   directory: "/terraform"
   schedule:
     interval: weekly

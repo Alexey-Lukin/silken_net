@@ -12,7 +12,7 @@ test:
 # =============================================================================
 # Production: Solid Cable (PostgreSQL-backed ActionCable adapter)
 # =============================================================================
-# Multi-replica safe: all Puma replicas (deployment.web.count = N on Akash)
+# Multi-replica safe: all Puma replicas (N hosts in `servers.web`)
 # connect to the same Cloud SQL database `silken_net_production_cable`.
 #
 # NO sticky sessions required — any replica can serve any WebSocket client.
