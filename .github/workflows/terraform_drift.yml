@@ -4,7 +4,7 @@ name: Ops · TF Drift
 # state and fail loudly if the deployed infrastructure diverged from committed
 # IaC (someone hand-edited a resource in the GCP console, an out-of-band change,
 # a half-applied config). A red scheduled run → GitHub notification to the owner
-# — honester than a calendar reminder (same pattern as Ops · Akash Escrow Watch).
+# — honester than a calendar reminder (same pattern as Sec · Image CVE Scan).
 #
 # Config-half now, value post-deploy: on TRL-3 no `apply` has run yet, so there
 # is no state to drift from. The job SKIPS CLEANLY (green) until the WIF provider

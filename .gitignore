@@ -55,17 +55,6 @@ terraform/*.tfvars
 terraform/.terraform.lock.hcl
 terraform/tfplan
 
-# Terraform (Akash)
-terraform/akash/.terraform/
-terraform/akash/*.tfstate
-terraform/akash/*.tfstate.*
-terraform/akash/*.tfvars
-!terraform/akash/*.tfvars.example
-terraform/akash/.terraform.lock.hcl
-terraform/akash/tfplan
-terraform/akash/generated-deploy.yaml
-terraform/akash/akash-dseq.txt
-
 # ML model artifacts (trained binary, not committed)
 lib/assets/silken_forest.marshal
 lib/assets/silken_forest.marshal.sha256

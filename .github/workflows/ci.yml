@@ -102,9 +102,6 @@ jobs:
               - 'Dockerfile'
             terraform:
               - 'terraform/**'
-              # the akash root renders this via templatefile() — an unwired ${var} added here
-              # fails `terraform validate` (break-tested), so a tpl-only change must re-run it.
-              - 'deploy/akash/deploy.yaml.tpl'
             docker:
               # [OPS.13] Image-build inputs. No PR trigger built the image at all
               # (mirror-ghcr fires from main), so a base-image/gem bump that breaks
@@ -636,12 +633,6 @@ jobs:
 
       - name: Validate root (GCP)
         working-directory: terraform
-        run: |
-          terraform init -backend=false -input=false -no-color
-          terraform validate -no-color
-
-      - name: Validate Akash root
-        working-directory: terraform/akash
         run: |
           terraform init -backend=false -input=false -no-color
           terraform validate -no-color
