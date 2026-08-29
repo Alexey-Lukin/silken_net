@@ -69,7 +69,7 @@
 | **7** | **Schema bootstrap від squashed init_consolidated** | **[INF.7 — Phase 7]** На свіжій базі деплой `bin/rails db:setup` (= `db:create` + `db:schema:load` + `db:seed`). Ми **НЕ** використовуємо `db:migrate` в продакшні до першого деплою — всі pre-launch міграції згорнуті в єдиний `db/migrate/*_init_consolidated.rb` (**timestamp свідомо НЕ називається — бери з `ls db/migrate/`**: він міняється при кожному re-squash, і саме цей рядок уже двічі протухав на ньому), а схема живе в `db/structure.sql` (включно з усіма 3 RANGE-партиційними таблицями + початковими партиціями `_default` + поточним вікном). `schema_migrations` містить анкер **плюс кожну інкрементальну, додану після нього** — рівна кількість тут свідомо не називається, бо вона росте між сквошами; джерело істини — INSERT-блок у кінці `db/structure.sql`. Якщо хтось додає incremental міграцію після цього — `StrongMigrations.start_after` (стоїть на живому анкері — звіряй із `config/initializers/strong_migrations.rb`, ніколи з цього рядка) змусить її пройти всі checks. ⊕ **З 2026-08-23 воно ВИВОДИТЬСЯ з імені файлу анкера** [OPS.24], тож re-squash більше не має кроку «bump start_after» — а разом із ним зник і єдиний мовчазний спосіб зіпсувати процедуру (значення нижче за живий анкер знімало перевірки з уже застосованих міграцій, і ніщо не червоніло). **НЕ** робіть squash повторно після першого деплою (втратите history) без zero-downtime плану. |
 | **8** | **PartitionMaintenanceWorker cron у Sidekiq** | `30 0 * * *` UTC, `PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions]`. На день-1 нового місяця партиція повинна вже існувати — інакше `INSERT` падає з `no partition of relation`. Перевір через `psql -c "\d+ telemetry_logs"` що партиція на наступний місяць є. Якщо worker silent-fails — перевір Sentry alert (Phase 7 додав `Sentry.capture_exception` у rescue блок). |
 | **9** | **Kamal IP-плейсхолдери → реальний Ingress-IP** | **[S1.5]** Після `terraform apply`: `terraform output -raw ingress_ip` → підставити замість `192.168.0.1` (`config/deploy.yml` servers web/job/coap) і `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`); також `image:` → повний AR-шлях з `terraform output artifact_registry_url` [INF.15]. Без цього `kamal deploy` б'є в приватний RFC-1918 нікуди. |
-| **10** | **`akash-deployment-ip` metadata після Akash-лізи** | **[S1.5]** Після `akash provider lease-status`: `gcloud compute instances add-metadata silken-net-ingress --metadata akash-deployment-ip=<AKASH_IP> --zone <zone>` + `reset`. Живить HAProxy 80/443 → Akash і socat-**fallback**; PRIMARY CoAP-демон (INF.17) від metadata НЕ залежить. Поки unset — обидва юніти чесно логують skip (sentinel-guard), HAProxy не стартує. |
+| **10** | **`app-host-ip` metadata після провіжну app-хоста** | **[S1.5]** Після того, як app-хост існує: `gcloud compute instances add-metadata silken-net-ingress --metadata app-host-ip=<APP_HOST_IP> --zone <zone>` + `reset`. Живить HAProxy 80/443 → app-хост і socat-**fallback**; PRIMARY CoAP-демон (INF.17) від metadata НЕ залежить. Поки unset — обидва юніти чесно логують skip (sentinel-guard), HAProxy не стартує. ⚠️ [OPS.37] Самого app-хоста в `terraform/` ще НЕМА — його повернення є відкритою ногою того присуду, і цей крок до неї гейтований. |
 
 ### Менеджер Секретів (Рекомендація)
 
@@ -666,12 +666,18 @@ fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`M
 (ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
 зібрати 9 адрес → вписати у `config/deploy.yml` env.clear + Akash SDL (INF.12) → redeploy job.
 
-**Фаза 3 — ПЕРШИЙ деплой = Akash CANOPY-render (founder 2026-07-04):**
-`terraform/akash/terraform.tfvars` з example (розкоментувати canopy-пару
-`deployment_slot`/`postgres_database`!) → `terraform apply` → прийняти bid → send-manifest →
-web/job/coap up → `gcloud compute instances add-metadata silken-net-ingress
---metadata akash-deployment-ip=<AKASH_IP>` + `reset` (Pre-Flight #10). Найризикованіший
-шлях не дебютує на production; ізольований DB-set `silken_net_canopy` (INF.16).
+**Фаза 3 — ПЕРШИЙ деплой = CANOPY (Kamal/GCP), і лише потім production** (founder 2026-07-04
+про принцип; ціль переспецифіковано [`OPS.37`](00_07_Action_Plan_Tracker) 2026-08-29):
+`kamal deploy -d canopy` на app-хост → ізольований DB-set `silken_net_canopy` (INF.16) →
+`gcloud compute instances add-metadata silken-net-ingress --metadata app-host-ip=<APP_HOST_IP>`
++ `reset` (Pre-Flight #10). Принцип лишається: найризикованіший шлях не дебютує на production.
+⚠️ **Але canopy web-only СТРУКТУРНО** (масив-форма `servers:` у `config/deploy.canopy.yml`,
+яку стереже `deploy_secret_scan` інваріант B3), тож фонових джоб у ньому немає — доти їх ніс
+окремий `job`-сервіс зовнішньої платформи, і після зрізу воркерів у canopy-леґа немає ніде.
+Це не дефект рендера, а **відкрите рішення**: дати canopy власну `job:`-роль ⊥ свідомо
+тримати canopy без воркерів. Доти canopy перевіряє web-половину, а Sidekiq дебютує на
+production — і це мусить бути сказано вголос, бо «canopy зелений» інакше читається як
+перевірка всієї системи.
 
 **Фаза 4 — Верифікація (єдиний post-deploy список):**
 `db:prepare` пройшов усі 3 бази (INF.16) · `curl https://silkennet.app/up` → 200 +

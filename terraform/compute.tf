@@ -3,26 +3,25 @@
 # Ingress Anchor — Static IP entry + PRIMARY CoAP intake host (INF.17)
 # =============================================================================
 #
-# With Rails and Sidekiq running on Akash Network (decentralized compute),
-# GCP hosts no heavy application servers. This e2-small instance is the fixed
-# IP that IoT Queen gateways (SIM7070G / Starlink) reach, and — since the
-# founder decision of 2026-07-04 — it RUNS the CoAP intake daemon itself:
+# This e2-small instance is the fixed IP that IoT Queen gateways (SIM7070G /
+# Starlink) reach — firmware freezes COAP_SERVER_HOST at flash time, so this
+# address must never move — and, since the founder decision of 2026-07-04, it
+# RUNS the CoAP intake daemon itself:
 #
 #   - UDP 5683: CoAP daemon (docker, lib/daemons/coap_listener) — PRIMARY.
 #       Same VPC as Cloud SQL → private IP, no Auth Proxy; Upstash over TLS.
-#       Removes one hop + the socat/Akash-IP chase from the hot path.
-#       FALLBACK = socat relay → Akash `coap` service (kept deployed, idle);
+#       Removes one hop from the hot path.
+#       FALLBACK = socat relay → the dormant Kamal `coap` role on the app host;
 #       switch: systemctl stop coap-daemon && systemctl start coap-relay.
-#   - TCP 80/443: HAProxy → Akash deployment (web stays decentralized —
-#       money-path/web remain on Akash by design). ⚠️ Підстава «censorship-resistance»
-#       знята 2026-08-29 як клас СЛОВО (мітка без вимірювача) — 06_02 §5, ARCH.114.
+#   - TCP 80/443: HAProxy → the Rails app host (Kamal). ⚠️ [OPS.37] That host is
+#       NOT provisioned yet — `terraform/` regained the web resource as a named
+#       leg of that verdict. Until it lands, `app-host-ip` stays the sentinel and
+#       HAProxy deliberately does NOT start (see the guard below); the anchor's
+#       CoAP half is independent of it and comes up on its own.
 #
 # Cost: ~$13/month e2-small in europe-west1 (Always Free e2-micro is US-only;
 # micro's 1 GB cannot hold the Rails daemon ~0.5 GB + HAProxy + OS headroom)
-# Purpose: Stable IP for IoT devices that cannot discover dynamic Akash IPs
-#
-# The AKASH_DEPLOYMENT_IP must be updated when the Akash deployment migrates
-# to a new provider. This can be automated via a cron job or webhook.
+# Purpose: one address the field never has to re-learn.
 # =============================================================================
 
 # Static external IP for the Ingress Anchor — this is the IP that Queens target.
@@ -60,11 +59,10 @@ resource "google_compute_instance" "ingress_anchor" {
     access_config { nat_ip = google_compute_address.ingress_ip.address }
   }
 
-  # HAProxy + socat configuration for forwarding traffic to Akash deployment.
-  # AKASH_DEPLOYMENT_IP is read from instance metadata — update after each
-  # Akash deployment via:
+  # HAProxy + socat forward traffic to the Rails app host. Its IP is read from
+  # instance metadata (operator-set, out-of-band) — after provisioning the host:
   #   gcloud compute instances add-metadata silken-net-ingress \
-  #     --metadata akash-deployment-ip=<NEW_IP> --zone europe-west1-b
+  #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-b
   #   gcloud compute instances reset silken-net-ingress --zone europe-west1-b
   metadata_startup_script = <<-EOF
     #!/bin/bash
@@ -115,13 +113,13 @@ resource "google_compute_instance" "ingress_anchor" {
     fi
 
     # =========================================================================
-    # 3. Read Akash deployment IP from instance metadata
+    # 3. Read the app-host IP from instance metadata
     # =========================================================================
-    AKASH_IP=$(curl -sf "http://metadata.google.internal/computeMetadata/v1/instance/attributes/akash-deployment-ip" \
-      -H "Metadata-Flavor: Google" 2>/dev/null || echo "AKASH_IP_NOT_SET")
+    APP_HOST_IP=$(curl -sf "http://metadata.google.internal/computeMetadata/v1/instance/attributes/app-host-ip" \
+      -H "Metadata-Flavor: Google" 2>/dev/null || echo "APP_HOST_IP_NOT_SET")
 
     # =========================================================================
-    # 4. Generate HAProxy configuration (TCP 80/443 → Akash)
+    # 4. Generate HAProxy configuration (TCP 80/443 → app host)
     # =========================================================================
     cat > /etc/haproxy/haproxy.cfg << HAPROXY_CFG
 global
@@ -139,34 +137,34 @@ defaults
     timeout client  50000ms
     timeout server  50000ms
 
-# ----- TCP 80 (HTTP) → Akash -----
+# ----- TCP 80 (HTTP) → app host -----
 frontend http_in
     bind *:80
     mode tcp
-    default_backend akash_http
+    default_backend app_http
 
-backend akash_http
+backend app_http
     mode tcp
-    server akash1 $AKASH_IP:80 check
+    server app1 $APP_HOST_IP:80 check
 
-# ----- TCP 443 (HTTPS) → Akash -----
+# ----- TCP 443 (HTTPS) → app host -----
 frontend https_in
     bind *:443
     mode tcp
-    default_backend akash_https
+    default_backend app_https
 
-backend akash_https
+backend app_https
     mode tcp
-    server akash1 $AKASH_IP:443 check
+    server app1 $APP_HOST_IP:443 check
 HAPROXY_CFG
 
     # Same sentinel guard as the socat unit below: with the placeholder IP
     # HAProxy cannot parse the backend address and would fail to start —
     # a swallowed `|| true` here once hid that as a green startup-script.
-    if [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
+    if [ "$APP_HOST_IP" != "APP_HOST_IP_NOT_SET" ]; then
       systemctl restart haproxy
     else
-      logger -t ingress-anchor "HAProxy NOT started: akash-deployment-ip metadata is unset (AKASH_IP_NOT_SET)"
+      logger -t ingress-anchor "HAProxy NOT started: app-host-ip metadata is unset (APP_HOST_IP_NOT_SET)"
     fi
 
     # =========================================================================
@@ -174,17 +172,17 @@ HAPROXY_CFG
     # =========================================================================
     # HAProxy does not natively support UDP. socat provides a lightweight
     # UDP4 relay. We use a systemd service for reliability instead of nohup.
-    # The unit file is always created so that updating AKASH_IP via metadata
+    # The unit file is always created so that updating APP_HOST_IP via metadata
     # and resetting the instance immediately activates the relay.
 
     cat > /etc/systemd/system/coap-relay.service << SYSTEMD_UNIT
 [Unit]
-Description=CoAP UDP relay to Akash deployment
+Description=CoAP UDP relay to the app host
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/socat UDP4-LISTEN:5683,reuseaddr,fork UDP4:$AKASH_IP:5683
+ExecStart=/usr/bin/socat UDP4-LISTEN:5683,reuseaddr,fork UDP4:$APP_HOST_IP:5683
 Restart=always
 RestartSec=5
 
@@ -199,12 +197,12 @@ SYSTEMD_UNIT
     # 6. CoAP daemon on the Anchor — PRIMARY intake path (INF.17, 2026-07-04)
     # =========================================================================
     # The daemon runs HERE: same VPC as Cloud SQL (private IP, NO Auth Proxy),
-    # Upstash over public TLS. The Akash `coap` service stays deployed as the
-    # documented FALLBACK behind the socat relay above.
+    # Upstash over public TLS. The dormant Kamal `coap` role is the documented
+    # FALLBACK behind the socat relay above.
     # Secrets NEVER live in this startup script (instance metadata is world-
     # readable to the project): /etc/silkennet/coap.env is created once as a
     # 0600 placeholder — the operator fills real values; until then the daemon
-    # does not start and the script falls back to socat (if AKASH_IP is set).
+    # does not start and the script falls back to socat (if app-host-ip is set).
 
     if ! command -v docker &> /dev/null; then
       apt-get update -qq && apt-get install -y -qq docker.io
@@ -265,7 +263,7 @@ SYSTEMD_DAEMON
     systemctl daemon-reload
 
     # ------------------------------------------------------------------------
-    # Bring-up priority: daemon (env filled) > socat fallback (AKASH_IP set)
+    # Bring-up priority: daemon (env filled) > socat fallback (APP_HOST_IP set)
     # > loud warn. Both units always exist; exactly one binds UDP 5683.
     # ------------------------------------------------------------------------
     if ! grep -q REQUIRED_SECRET_NOT_SET /etc/silkennet/coap.env; then
@@ -275,15 +273,15 @@ SYSTEMD_DAEMON
       systemctl enable coap-daemon
       systemctl restart coap-daemon
       logger -t ingress-anchor "CoAP daemon (PRIMARY) started on :5683; socat fallback disabled"
-    elif [ "$AKASH_IP" != "AKASH_IP_NOT_SET" ]; then
+    elif [ "$APP_HOST_IP" != "APP_HOST_IP_NOT_SET" ]; then
       systemctl enable coap-relay
       systemctl restart coap-relay
-      logger -t ingress-anchor "CoAP socat FALLBACK started: :5683 → $AKASH_IP:5683 (coap.env not filled)"
+      logger -t ingress-anchor "CoAP socat FALLBACK started: :5683 → $APP_HOST_IP:5683 (coap.env not filled)"
     else
-      logger -t ingress-anchor "CoAP intake NOT started: coap.env has placeholders AND akash-deployment-ip unset"
+      logger -t ingress-anchor "CoAP intake NOT started: coap.env has placeholders AND app-host-ip unset"
     fi
 
-    logger -t ingress-anchor "Anchor configured: HTTP/HTTPS → $AKASH_IP; CoAP per bring-up priority above"
+    logger -t ingress-anchor "Anchor configured: HTTP/HTTPS → $APP_HOST_IP; CoAP per bring-up priority above"
   EOF
 
   metadata = {
@@ -291,11 +289,11 @@ SYSTEMD_DAEMON
     # OS Login already ignores project-wide SSH keys; block them explicitly too
     # (defense-in-depth, satisfies AVD-GCP-0030 — no metadata-key SSH path at all).
     block-project-ssh-keys = "TRUE"
-    # Update this value after Akash deployment to route traffic:
+    # Set this once the app host exists, to route HTTP/HTTPS through the anchor:
     #   gcloud compute instances add-metadata silken-net-ingress \
-    #     --metadata akash-deployment-ip=<NEW_AKASH_IP> --zone europe-west1-b
+    #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-b
     #   gcloud compute instances reset silken-net-ingress --zone europe-west1-b
-    akash-deployment-ip = "AKASH_IP_NOT_SET"
+    app-host-ip = "APP_HOST_IP_NOT_SET"
   }
 
   shielded_instance_config {
@@ -311,15 +309,15 @@ SYSTEMD_DAEMON
 
   allow_stopping_for_update = true
 
-  # akash-deployment-ip is operator-mutated out-of-band on every Akash re-deploy
-  # (see the add-metadata command above), so the live value ≠ the committed
-  # "AKASH_IP_NOT_SET" the moment the Anchor routes traffic. Without this,
+  # app-host-ip is operator-mutated out-of-band (see the add-metadata command
+  # above), so the live value ≠ the committed "APP_HOST_IP_NOT_SET" the moment
+  # the Anchor routes traffic. Without this,
   # `terraform plan -detailed-exitcode` (Ops · TF Drift) would report permanent
   # drift on this one field forever → red every run → alert fatigue that trains
   # the owner to ignore a REAL future drift. Ignore just this key so drift stays
   # a real signal; the live value is read by the startup script above (S1.5).
   lifecycle {
-    ignore_changes = [metadata["akash-deployment-ip"]]
+    ignore_changes = [metadata["app-host-ip"]]
   }
 
   depends_on = [
