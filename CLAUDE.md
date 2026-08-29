@@ -26,7 +26,7 @@
 | EBFC DFT/MD in-silico | `in-silico` | `01_03` + `protocols/ebfc/in_silico` |
 | Code-as-CAD (анкер/coin/radome) | `picogk` | `01_01/01_02/02_01/02_02` + `tools/cad` |
 | Hardware §02 (BOM · BQ25570-power · pogo-механіка · Queen-HW) | — (bench-важка, скілу НЕМА) · machine-half: механіка→`in-silico` (5x-скрипти), CAD→`picogk`, energy/SCC-гейти `tools/firmware/*.rb`; bench-збірка → `02_04`; BOM-рол-ап/юніт-економіка → `02_06` (дім у скіла `legal-business`) | `02_01`–`02_05` |
-| Деплой / Akash / Kamal / observability | `deploy` | `06_01`–`06_08` |
+| Деплой / Kamal / observability | `deploy` | `06_01`–`06_08` |
 | Юр/бізнес/академ/IP (NaaS-умови · юніт-економіка · партнер-реєстр · IP-постава й бренд · робочі чернетки `protocols/{legal,business,outreach,research}`) | `legal-business` | `00_04` · `00_02` · `02_06` (юніт-економіка/BOM-рол-ап) (+ стан `00_07 §00b`) |
 | Оновлення залежностей (будь-який домен) | `dependency-update` | (polyglot) |
 | SSOT-доки / drift-hunt / wiki-sync | `ssot-maintenance` | `00_06` |
@@ -120,7 +120,7 @@ firmware/{soldier,queen}/main.c · queen/lorawan_glue/ (ARCH.34 glue до LoRaMa
 contracts/*.sol + test/*.t.sol            # Solidity (Foundry) — §8
 docs/NN_NN_*.md                           # SSOT canon (00→06); відкрите/блокери → 00_07
 tools/{ml, cad, in_silico}                # Python / .NET допоміжні
-deploy/akash · terraform · subgraph       # infra / The Graph
+deploy/alloy · terraform · subgraph       # infra / The Graph
 ```
 
 Моделі, API, pipeline-кроки, web3-деталі, deploy, активні блокери — **НЕ тут**: відповідний скіл (§2) + `docs/`. Відкрите/блокери = `docs/00_07`.
