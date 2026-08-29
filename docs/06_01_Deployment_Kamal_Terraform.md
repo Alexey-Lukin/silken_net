@@ -777,7 +777,7 @@ production — і це мусить бути сказано вголос, бо �
 `/ready` → 200 (DB+Redis+Kredis) · `coap_smoke` зелений + задати repo Variables
 `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` (INF.6) · метрики: 3 process-таргети живі,
 job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import.rb` (dashboards+alerts+contact point)
-+ contact point (S2.2/S2.4) · `/sidekiq` під admin-сесією → 200, під анонімом → 404
++ contact point (S2.4 — дашборд і правила вже в стеку з 2026-08-29, лишився КАНАЛ) · `/sidekiq` під admin-сесією → 200, під анонімом → 404
 (ARCH.61 route-constraint — ops-інструмент DeadSet-runbook'ів живий і закритий) ·
 `ss -tlnp | grep 3000` IPv6 (PUMA-IPV6-1) · money fail-closed
 (INF.11) · Sentry release (S5.2) · mailer/DB_POOL/entrypoint (INF.13) · гаманці з газом

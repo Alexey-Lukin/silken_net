@@ -30,6 +30,7 @@
 # `spec/quality/metric_registry_doc_sync_spec.rb`.
 
 require "pathname"
+require "set"
 
 ROOT = Pathname.new(File.expand_path("..", __dir__))
 DOC = ROOT.join("docs/06_03_Prometheus_Observability.md")
@@ -39,23 +40,24 @@ COLUMNS = 4
 
 require_relative "../config/initializers/prometheus" unless defined?(SilkenNet::Metrics::REGISTRY)
 
-# Тіло однієї канонічної таблиці — від власної шапки до наступної. Той самий вираз,
-# що в спеці-гейті.
+# Блок однієї канонічної таблиці = шапка + роздільник + СУЦІЛЬНІ `|`-рядки, і межа тут
+# зупиняється на ПЕРШОМУ не-табличному рядку.
 #
-# 🔴 СКОУП НЕСУЧИЙ, і обидва його порушення вже траплялись за один прохід.
-# Підсекції §2.3–§2.7 несуть ВЛАСНІ таблиці з іншим розкладом колонок (там є
-# `Constant` і `Source`), тож файловий скан домішує їх: спершу до видобування
-# прози, потім до гарда, який від того червонів на цілком здорових рядках.
-def table_body(doc, label)
-  labels = SECTIONS.values.join("|")
-  body = doc[/^\*\*#{label}[^:]*:\*\*(.*?)(?=^\*\*(?:#{labels})[^:]*:\*\*|\A\z|^---$)/m, 1]
-  raise "у #{DOC.basename} немає таблиці `**#{label}:**`" if body.nil?
+# 🔴 ЧОМУ НЕ «до наступної шапки або `---`»: перша редакція брала саме так — і зʼїла
+# прозу, що стояла ПІСЛЯ останньої таблиці (секція «Регенерація таблиць» опинилась
+# усередині захопленого тіла `Histograms` і зникла при перебудові, не потрапивши в
+# жоден коміт). Тобто скрипт, написаний ПРОТИ регенератора, що знищує канон
+# (§Guard-craft #115), робив рівно те саме на сусідній межі. Табличний блок і є
+# одиницею, яку ми переписуємо; усе інше — чуже.
+def table_block(doc, label)
+  block = doc[/^\*\*#{label}:\*\*\n\n(\| Metric.*\n\|[-| ]+\n(?:\|.*\n)+)/, 1]
+  raise "у #{DOC.basename} немає таблиці `**#{label}:**` у канонічній формі" if block.nil?
 
-  body
+  block
 end
 
 def metric_rows(doc)
-  SECTIONS.values.flat_map { |label| table_body(doc, label).lines }
+  SECTIONS.values.flat_map { |label| table_block(doc, label).lines }
           .select { |line| line.start_with?("| `silkennet_") }
 end
 
@@ -65,8 +67,6 @@ end
 # регексом `\|.*?\|\s*(.*?)\s*\|$`, і він мовчки міняв значення, щойно в рядку
 # ставало на колонку більше: на вже-регенерованому рядку `.*?` захоплював
 # `Labels | Призначення` як прозу, і другий прогін ЗАДВОЮВАВ колонку `Labels`.
-# Скрипт був НЕідемпотентний, а перевірка «чи вціліла проза» цього не бачила, бо
-# міряла те саме останнє поле. Ідемпотентність тепер стереже гард нижче.
 def existing_prose(doc)
   metric_rows(doc).to_h do |line|
     [ line[/`(silkennet_[a-z0-9_]+)`/, 1], line.chomp.split("|", -1)[-2].to_s.strip ]
@@ -95,8 +95,8 @@ SECTIONS.each do |kind, label|
     row(m, text || m.docstring)
   end.join("\n")
 
-  old_body = table_body(rebuilt, label)
-  rebuilt = rebuilt.sub("**#{label}:**#{old_body}", "**#{label}:**\n\n#{HEADER}#{body}\n\n")
+  old_block = table_block(rebuilt, label)
+  rebuilt = rebuilt.sub(old_block, "#{HEADER}#{body}\n")
 end
 
 # ⛔ Гард ідемпотентності: кожен рядок КАНОНІЧНИХ таблиць мусить мати рівно чотири
@@ -104,6 +104,21 @@ end
 # жоден гейт цього не бачить — вони судять першу колонку й другу.
 bad = metric_rows(rebuilt).reject { |l| l.chomp.split("|", -1).size == COLUMNS + 2 }
 raise "рядок не з #{COLUMNS} колонок (екстрактор зʼїхав):\n#{bad.first(3).join}" unless bad.empty?
+
+# ⛔ Гард ЗБЕРЕЖЕННЯ ПРОЗИ: кожен рядок, що НЕ є рядком канонічної таблиці, мусить
+# пережити перебудову. Саме цього бракувало, коли скрипт зʼїв секцію регенерації —
+# і жоден інший гард цього не бачив, бо всі вони судять ТАБЛИЦЮ.
+# 🔴 Визначення НЕЗАЛЕЖНЕ від `table_block` — і це несуче. Перша редакція брала
+# «не-табличні» як доповнення до захопленого блоку, тобто ділила зі зламаною межею
+# ту саму сліпоту: зі старим `(.*?)(?=---)` проза потрапляла в «табличні» З ОБОХ
+# боків, різниця виходила порожньою, і мутація проходила ЗЕЛЕНОЮ. Гард, виведений
+# із того, що він перевіряє, не перевіряє нічого (§Guard-craft #67).
+def non_table_lines(doc)
+  doc.lines.reject { |line| line.start_with?("|") }
+end
+
+lost = non_table_lines(doc) - non_table_lines(rebuilt)
+raise "перебудова зʼїла #{lost.size} НЕ-табличних рядків:\n#{lost.first(3).join}" unless lost.empty?
 
 if rebuilt == doc
   puts "✓ таблиці вже в паритеті з реєстром — нічого не змінилось"

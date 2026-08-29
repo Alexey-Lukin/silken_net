@@ -11,15 +11,15 @@
 | **APM / Error Tracking** | Sentry | ✅ Реалізовано в коді |
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
 | **Logs** | GCP Cloud Logging + Structured JSON | ✅ GCP/Kamal-шлях (Cloud Logging, WARNING+, JSON+Sentry correlation); ⊕ **[OPS.37] Друга гілка знята разом із платформою:** мотив Rails-push у Loki був саме «ефемерний lease-log»; на GCP-VM stdout тече в Cloud Logging штатно, тож питання Loki звузилось до ретенції й пошуку ([`INF.22`](00_07_Action_Plan_Tracker)) |
-| **Visualization** | Grafana Cloud | ✅ **Доступна через SaaS (дашборди — операційна задача)** |
-| **Alerting** | Grafana Cloud Alerting | ✅ **Доступний через SaaS (правила — операційна задача)** |
+| **Visualization** | Grafana Cloud | ✅ **Імпортовано 2026-08-29** — дашборд `silkennet-overview-v1` у стеку (folder `SilkenNet`) |
+| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29** — усі правила з IaC у стеку; ⚠️ contact point свідомо НЕ дротований → firing-правило доставляється в нікуди ([`00_07`](00_07_Action_Plan_Tracker) S2.4) |
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр — §2.8; парність реєстру з кодом тримає гейт, не лічильник у прозі), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7); dashboard import → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.2).
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7). ⊕ **Імпорт дашборда й правил ЗРОБЛЕНО 2026-08-29** (`S2.2` → §🗄️); лишається канал доставки й post-deploy verify → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.4).
 
 ---
 
@@ -29,7 +29,7 @@
 |---|---|
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.2 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.4 (verify + канал; `S2.2`-імпорт ✅ 2026-08-29 → §🗄️) |
 
 ## 📑 Зміст
 
@@ -66,14 +66,14 @@
 | `TELEMETRY_FRAUD_DETECTED_TOTAL` instrumentation | `app/services/telemetry_unpacker_service.rb` | ✅ Реалізовано (2 точки) |
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
 | Prometheus Server | `config/deploy.yml` (accessory `alloy`) | ✅ **Grafana Alloy → Grafana Cloud** |
-| Grafana | Grafana Cloud SaaS | ✅ **Доступна (дашборди — операційна задача)** |
-| Alertmanager | Grafana Cloud Alerting | ✅ **Доступний (правила — операційна задача)** |
+| Grafana | Grafana Cloud SaaS | ✅ **Дашборд імпортовано 2026-08-29** (`ruby deploy/grafana/import.rb`) |
+| Alertmanager | Grafana Cloud Alerting | ✅ **Правила імпортовано 2026-08-29**; канал доставки — відкритий ⚖️ ([`00_07`](00_07_Action_Plan_Tracker) S2.4) |
 | `SENTRY_DSN` у secrets | `.kamal/secrets-common` | ✅ Додано |
 | Grafana Alloy config | `deploy/alloy/config.alloy` | ✅ Scrape + remote_write |
 | Grafana Alloy accessory | `config/deploy.yml` (`accessories.alloy`) | ✅ монтування `files:`; ⚠️ мережевий доступ до таргетів — ВІДКРИТА нога OPS.37, `network:` у конфізі свідомо НЕМАЄ |
 | Grafana Cloud secrets | `.kamal/secrets-common` + обидва deploy-workflow (RUNTIME-тір) | ✅ 3 змінні |
 | Prometheus scrape config | `deploy/alloy/config.alloy` | ✅ 3 таргети `127.0.0.1:9393`/`:9394`/`:9395` (лейбл `process`; реєстр in-process — §2.9; `coap` = дормантна Kamal-**fallback**-роль — PRIMARY-демон на Ingress Anchor поза scrape, стеля §2.9(б)); ⚠️ АДРЕСИ — відкрита нога OPS.37, контракт «3 процеси» — ні, 15s, Basic Auth |
-| Grafana dashboards | Grafana Cloud UI | 🟡 Операційна задача |
+| Grafana dashboards | `deploy/grafana/` IaC → `import.rb` | ✅ 2026-08-29 (звірка — `import.rb --verify`) |
 
 ---
 
@@ -274,7 +274,7 @@ end
 
 Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
 
-**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2).
+**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, ✅ імпортовано 2026-08-29.
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -304,7 +304,7 @@ end
 
 Додатково: `silkennet_rpc_errors_total` тепер інструментовано безпосередньо в `Web3::ResilientClient#record_failure` з класифікацією error_type (timeout, connection_refused, host_unreachable, dns_error, io_error, rate_limited, unknown).
 
-**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, 👤 import (S2.2). Споріднений firmware-**діагностичний за ПРЕДМЕТОМ** counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — ⚠️ слово тут про ПРИРОДУ сигналу, а не про **ярус** реєстру нижче: за ярусом ця метрика **алертна** (споживач у неї є). Той самий токен у двох доменах, тож не читай його як декларацію — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
+**Grafana Alert Rules:** `sn-alert-acoustic-overflow` (`rate(...[5m]) > 0`, for 5m) та `sn-alert-circuit-breaker` (`> 0`, for 2m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, ✅ імпортовано 2026-08-29. ⊕ Сусід по тому ж проходу — `sn-alert-ccm-mic-fail` (FW.2 CCM MIC-fail, дротований 2026-08-26): його єдина канон-згадка жила в цьому абзаці й ледь не зникла при переписі §2.8. Споріднений firmware-**діагностичний за ПРЕДМЕТОМ** counter `silkennet_tinyml_threshold_invalid_reports_total` (FW.18b, той самий патерн warn-лог-атрибуції) і його `sn-alert-tinyml-threshold-invalid` — ⚠️ слово тут про ПРИРОДУ сигналу, а не про **ярус** реєстру нижче: за ярусом ця метрика **алертна** (споживач у неї є). Той самий токен у двох доменах, тож не читай його як декларацію — канон [`03_03 §5.4`](03_03_TinyML_Acoustic_Inference).
 
 ### 📊 Канонічний реєстр метрик (SSOT)
 
@@ -314,7 +314,7 @@ end
 > раніше 07-04: GOV.1 bounds-reject + E.60 sweep counters + дожим 3 gauge-дрейфів). Усі інші
 > згадки (CLAUDE.md, `config.alloy`, підсекції §2.3–2.7 з обґрунтуванням/alert-прикладами)
 > **рефлять сюди**, не дублюють число/перелік.
-> При зміні реєстру в коді — **регенерувати ЛИШЕ цю таблицю** (команда в кінці).
+> При зміні реєстру в коді — **регенерувати таблиці скриптом** (`ruby scripts/metric_registry_table.rb --write`; повний рецепт і його межі — нижче, під таблицями).
 > Де інкрементується/оновлюється кожна — `grep -rn "SilkenNet::Metrics::<CONST>" app/`.
 >
 > **Кількість тут свідомо НЕ записана числом** (⚖️ 2026-08-25, INF.26). Реєстр — це таблиці нижче, і рівно вони гейтовані `metric_registry_doc_sync_spec` (імена + типи, обидва напрямки; з 2026-08-29 — ще й **ярус**, див. врізку нижче). А речення-підсумок гейта не має за побудовою, тож воно й протухло: цей рядок роками стверджував «79 = 45+32+2», доки таблиці під ним регенерувались до 86 = 48+36+2 — тобто секція, яка називає себе **єдиним авторитетним джерелом кількості**, була єдиним місцем, де кількість брехала. Порахувати завжди: `bin/rails runner 'puts SilkenNet::Metrics::REGISTRY.metrics.size'`, або просто прочитати таблиці.
@@ -393,7 +393,6 @@ end
 | `silkennet_treasury_check_errors_total` | алертна | `network`, `signer`, `error_type` | Total treasury monitoring RPC errors |
 | `silkennet_tree_silence_total` | діагностична | — | Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) |
 | `silkennet_w3bstream_signature_fallback_total` | алертна | `reason` | Telemetry with no usable HardwareKey — SHA256 fallback in dev, fail-closed rejection in production. ⚠️ [INF.26] Лічильник міряє ПЕРЕДУМОВУ, не наслідок: інкремент стоїть ДО розвилки prod/dev, тож ім'я (`_fallback_`) вужче за подію — у проді той самий рядок означає ВІДМОВУ. Перенести інкремент у dev-гілку не можна: осліпли б саме там, де сигнал найпотрібніший |
-
 **Gauges:**
 
 | Metric | Ярус | Labels | Призначення |
@@ -438,13 +437,24 @@ end
 | `silkennet_telemetry_archive_unpinned_depth` | алертна | — | [E.60 Фаза 1б] незапінені архів-батчі (pending/build_failed); семплить `Treasury::MonitorService` (15-хв). SLO-поріг «unpinned age < ретеншн-горизонт партицій» = 👤 калібрування ([`00_07`](00_07_Action_Plan_Tracker) E.60-residual) |
 | `silkennet_telemetry_oracle_dispatched_rows` | діагностична | — | **[ARCH.70] ТРЕТІЙ вимір ретеншну — РЯДКИ** (місяці дає `silkennet_partitions`, байти — `silkennet_partitioned_table_bytes`; рядків доти не було, а саме вони визначають, що зітре майбутнє вікно). ⛔⛔ **Це НЕ беклог, і підпис тут є присудом** (⚖️ 2026-08-29): `ChainlinkDispatchWorker` ставить `dispatched` локальним маркером без RPC, callback unwired, PATH 1 демоутовано ([`00_07`](00_07_Action_Plan_Tracker) ARCH.53) — закривача не існує ЗА ПОБУДОВОЮ, тож популяція монотонна не через затор, а через відсутність другої половини тракту. Назвати її «скільки чекає на callback» означало б вигадати число. 🔒 **Ярус діагностичний:** алерт-правила немає, бо для монотонної-за-побудовою величини «скільки прийнятно» не визначене — законна форма це операторська стеля-дедлайн, і вона ратифікується РАЗОМ із шириною вікна ретеншну. ⊕ Ціна лічби виміряна: партіальний `idx_telemetry_logs_oracle_dispatched` дає `Index Only Scan` по кожній партиції, тож це не скан ([ARCH.52]); ⛔ не розширювати на `group(:oracle_status)` — решта станів індексу не має |
 | `silkennet_trees_silent` | алертна | — | Current number of active trees silent beyond the silence threshold (set on each staleness sweep) |
-
 **Histograms:**
 
 | Metric | Ярус | Labels | Призначення |
 |---|---|---|---|
 | `silkennet_lorenz_computation_duration_seconds` | діагностична | — | Lorenz attractor server-side computation time (Float IEEE-754, 250 iterations) |
 | `silkennet_oracle_dispatch_duration_seconds` | алертна | — | Chainlink oracle dispatch ATTEMPT latency in seconds — successful and failed alike [INF.26]; circuit-open refusals are excluded on purpose (our own breaker answers in microseconds and would drag p99 down) |
+**Регенерація таблиць** (після зміни реєстру метрик у коді):
+
+```bash
+ruby scripts/metric_registry_table.rb            # dry-run: чи розійшлось
+ruby scripts/metric_registry_table.rb --write    # застосувати
+```
+
+🔴 **Однорядковика тут більше немає, і це не косметика — він ЗНИЩУВАВ канон** (⚖️ 2026-08-29, INF.26). Стара команда друкувала рядок ЦІЛКОМ, тобто перезаписувала й колонку `Призначення`; вимір того дня показав, що **дванадцять** комірок дописані руками поверх докстрінга — до +1210 символів на рядок, і саме там живуть підстави присудів (чому `silkennet_partitions` лічить ЛИСТИ, а не місяці історії — а на цьому числі стоїть ⚖️ ширини вікна ретеншну; чому флоат виплат окремий від газу). Тобто задокументована процедура, виконана ДОСЛІВНО, стирала їх мовчки, і жоден гейт цього не бачив: усі вони судять імена й типи, ніколи прозу.
+
+**Скрипт розводить колонки за ВЛАСНІСТЮ:** `Metric` · `Ярус` · `Labels` виводяться з коду й переписуються завжди; `Призначення` є канон-прозою й не чіпається ніколи (для НОВОГО рядка засівається докстрінгом). ⚠️ Він не судить, чи проза ще правдива — лише не дає її затерти.
+
+⛔ **Три гарди в ньому куплені власними промахами, і знімати їх не можна.** (1) *Ідемпотентність*: перша редакція читала прозу регексом між роздільниками, і на вже-регенерованому рядку той захоплював `Labels | Призначення`, тож ДРУГИЙ прогін задвоював стовпчик — тепер поле береться позиційно, а кількість колонок перевіряється. (2) *Збереження прози*: межа таблиці бралась «до `---`», тож секція, яку ви зараз читаєте, опинилась усередині захопленого тіла `Histograms` і **зникла при перебудові, не потрапивши в жоден коміт** — тепер блок обмежений суцільними `|`-рядками. (3) *Незалежність гарда*: перша редакція гарда (2) виводила «не-табличні рядки» з тієї самої межі — тобто ділила з дефектом його сліпоту й пропускала мутацію ЗЕЛЕНОЮ; тепер визначення незалежне (рядок не починається з `|`).
 
 ---
 
@@ -569,8 +579,8 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Grafana Cloud (SaaS)                                   │   │
 │  │  ✅ Prometheus (зберігання метрик)                       │   │
-│  │  🟡 Grafana Dashboards (операційна задача)              │   │
-│  │  🟡 Grafana Alerting (операційна задача)                │   │
+│  │  ✅ Grafana Dashboards (імпортовано 2026-08-29)         │   │
+│  │  ✅ Grafana Alerting (правила ✅; канал = ⚖️ S2.4)       │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
@@ -622,7 +632,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 | `terraform/iam.tf` | `roles/monitoring.metricWriter` (для GCP-native метрик) | ✅ |
 | `deploy/alloy/config.alloy` | Grafana Alloy конфігурація (scrape + remote_write) | ✅ Створено |
 | `prometheus.yml` (scrape config) | — | ✅ Замінено на `config.alloy` (Alloy agent) |
-| `grafana/` (дашборди) | Grafana Cloud SaaS | 🟡 Операційна задача |
+| `grafana/` (дашборди+правила) | Grafana Cloud SaaS | ✅ Імпортовано 2026-08-29 |
 | `alertmanager.yml` | Grafana Cloud Alerting | 🟡 Операційна задача |
 
 ---
