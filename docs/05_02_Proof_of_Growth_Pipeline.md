@@ -692,10 +692,12 @@ Sidekiq::Limiter.window("web3_rpc", 50, :second, wait: 5)  # 50 RPC/sec global
 **Solidity ABI контракту:**
 ```json
 [
-  { "name": "mint",      "inputs": ["address to", "uint256 amount", "string identifier"] },
-  { "name": "batchMint", "inputs": ["address[] recipients", "uint256[] amounts", "string[] treeDids"] }
+  { "name": "mint",      "inputs": ["address to", "uint256 amount", "string treeDid", "bytes32 archiveRoot"] },
+  { "name": "batchMint", "inputs": ["address[] recipients", "uint256[] amounts", "string[] treeDids", "bytes32 archiveRoot"] }
 ]
 ```
+
+> ⚠️ **`archiveRoot` — четвертий вхід ОБОХ функцій, і доти його тут не було [ARCH.117].** Розходження стояло за пʼять рядків від власного спростування: сусідній рядок «Одиночний» уже друкував `root_arg` як четвертий аргумент виклику. Ціна обмежена (хибний селектор ревертить fail-closed — монет не втрачає), але **E.60-свідок `archiveRoot` зникав із задокументованого інтерфейсу**, тобто саме та ланка, що привʼязує мінт до архівного кореня. 🔴 **Гейт `solidity_signature_arity_check` тут PASS, і це не збій, а його оголошена форма:** він шукає токен `mint(` з типами, а JSON-запис `"name": "mint"` арності не несе взагалі — тобто **зона його сліпоти ширша, ніж називає власна шапка** (там перелічені flow-діаграми й `transact(`-сайти, JSON-ABI не названий). Після будь-якої зміни сигнатури цей блок звіряють руками.
 
 **Rollback:** `MintingRollbackService.call(transactions:)` при вичерпанні 10 retry `BlockchainConfirmationWorker`
 через `sidekiq_retries_exhausted` (~15-20 хвилин поллінгу мемпулу) — покриває **confirmation-failure** (tx застрягла в мемпул-лімбі). **[ARCH.45]** broadcast↔DB crash-window (on-chain пройшов, DB-запис впав до фіксації) — окремий клас, закритий durable intent-marker + `unsettled_within` reconcile-guard (Solana payout / burn / Etherisc; [`04_02 §4/§10`](04_02_Business_Logic_and_Services)).

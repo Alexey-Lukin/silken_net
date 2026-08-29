@@ -71,6 +71,21 @@
 #     shorthand (`slashUpTo(investor, maxAmount)`, three deliberate sites), a
 #     business-doc shorthand naming WHAT is minted (`mint(to, payout)`), plain
 #     prose, and one pure collision on the word `state(` in a `gs://` comment.
+#   * 🔴 A JSON **ABI object** — `{ "name": "mint", "inputs": ["address to", …] }`
+#     or the verbose `{"internalType": …, "name": …, "type": …}` form — is a THIRD
+#     blind shape, and it is NOT covered by either bullet above: it carries the
+#     very type tokens the names-only bullet declares missing, yet no `mint(`
+#     token at all, so the extractor never sees a candidate. Recorded because the
+#     previous paragraph's own lesson is that an UNNAMED blind shape reads as
+#     covered: `05_02` carried a three-input `mint` ABI through the whole
+#     post-E.60 era while this gate ran green, and the item that finally caught
+#     it (`ARCH.117`) had to state that the ceiling was narrower than the hole.
+#     ⊕ Population MEASURED, not guessed (2026-08-29): the shape lives in exactly
+#     TWO docs — `05_02` (`mint`, `batchMint`; both were drifted, both fixed that
+#     day) and `05_04` (`storeStateRoot`, `getRootAtIndex`; both verified CORRECT
+#     against `contracts/StateRootAnchor.sol` — the negative is written down so
+#     the next pass does not re-measure it). Widening is not proposed: at two
+#     homes the honest carrier is this line plus the hand-sweep reflex above.
 #
 # ── Perimeter ───────────────────────────────────────────────────────────────
 # ALL of `docs/**/*.md`, not a named allow-list. Measured before enabling: 44
