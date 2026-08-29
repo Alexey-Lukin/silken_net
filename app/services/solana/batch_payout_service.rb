@@ -87,8 +87,12 @@ module Solana
         # `success/attempts` читала б ~200 % замість SLO.
         crash_recovered = tx.status_pending?
 
+        # 🔴 [ARCH.115] Той самий гард, що в per-event сиблінгу: `may_confirm?` доти САМ
+        # відсікав `:manual_review`, бо подія його не приймала. Операторський вихід це
+        # змінив, тож ambiguous-рядок відсікаємо ЯВНО — інакше машина закриває те, що
+        # ескальовано саме через невідомість долі.
         tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
-        tx.confirm! if tx.may_confirm?
+        tx.confirm! if tx.may_confirm? && !tx.status_manual_review?
         settle_kredis(wallet_id, tx)
         # Чисельник визначений як BROADCAST (докстрінг + три сиблінги SLO), тож рахуємо
         # лише випадок, де broadcast стався, а лічильник його проґавив через крах.

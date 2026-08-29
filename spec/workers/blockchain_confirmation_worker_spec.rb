@@ -58,6 +58,33 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
         expect(out_of_window.reload.status).to eq("sent")
       end
 
+      # 🔴 [ARCH.115] DOUBLE-SPEND GUARD ЖИВЕ ТУТ, а не в AASM. Подія `confirm` тепер
+      # приймає `:manual_review`, щоб ОПЕРАТОР мав гардований вихід зі стану, який доти
+      # був безвихідним — але машина закривати ambiguous-рядок не сміє (CLAUDE §6):
+      # поллер, побачивши квитанцію, не знає, чи вона від НАШОЇ спроби, чи від повторної.
+      it "НЕ авто-резолвить рядок у manual_review, хоч AASM це вже дозволяє" do
+        allow(Rails.logger).to receive(:warn)
+        ambiguous = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent)
+        ambiguous.escalate_to_review!("broadcast ambiguous")
+        expect(ambiguous.reload.may_confirm?).to be(true), "передумова: AASM-вихід має бути відкритим"
+
+        described_class.new.perform(tx_hash)
+
+        expect(ambiguous.reload.status).to eq("manual_review")
+      end
+
+      # ⊥ Той самий гард на ФОЛБЕК-гілці: невалідний `created_at_iso` перебудовує скоуп
+      # з нуля, і доти той шлях гарда НЕ ніс — тобто зіпсований аргумент знімав захист.
+      it "тримає гард і на невалідному ключі прунінгу (rescue-гілка)" do
+        allow(Rails.logger).to receive(:warn)
+        ambiguous = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent)
+        ambiguous.escalate_to_review!("broadcast ambiguous")
+
+        described_class.new.perform(tx_hash, "not-a-timestamp")
+
+        expect(ambiguous.reload.status).to eq("manual_review")
+      end
+
       it "parses hex blockNumber and gasUsed when the receipt includes them" do
         allow(client_double).to receive(:eth_get_transaction_receipt).and_return(
           { "result" => { "status" => "0x1", "blockNumber" => "0x10", "gasUsed" => "0x5208" } }

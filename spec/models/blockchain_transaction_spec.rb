@@ -466,6 +466,37 @@ RSpec.describe BlockchainTransaction, type: :model do
         expect(sent_tx.reload).to be_manual_review
       end
 
+      # 🔴 [ARCH.115] `:manual_review` доти був станом БЕЗ ВИХОДУ — подій із
+      # `from: :manual_review` було НУЛЬ. Наслідок не реєстровий: `net_minted_supply`
+      # рахує лише `:confirmed`, тож монети, що ЙМОВІРНО існують on-chain, дорівнювали
+      # нулю для L1-якоря й бази слешингу НАЗАВЖДИ, а єдиним шляхом лишався сирий SQL
+      # повз валідації й аудит-хук. Обидва виходи потрібні: звірка на експлорері може
+      # показати і що tx пройшла, і що ні — інакше в оператора вибір між правдою і нічим.
+      it "lets an operator resolve manual_review as confirmed (ARCH.115)" do
+        allow(Rails.logger).to receive(:warn)
+        # У `manual_review` за ВИЗНАЧЕННЯМ потрапляє рядок, у якого tx_hash Є («hash є,
+        # доля невідома») — валідація моделі це й вимагає для `:confirmed`.
+        tx.update!(tx_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        tx.escalate_to_review!("ambiguous broadcast")
+
+        expect(tx.reload.may_confirm?).to be(true)
+        tx.confirm!(123, 21_000)
+
+        expect(tx.reload).to be_confirmed
+      end
+
+      it "lets an operator resolve manual_review as failed (ARCH.115)" do
+        allow(Rails.logger).to receive(:warn)
+        allow(Rails.logger).to receive(:error)
+        tx.update!(tx_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        tx.escalate_to_review!("ambiguous broadcast")
+
+        expect(tx.reload.may_fail?).to be(true)
+        tx.fail!("checked on explorer: never landed")
+
+        expect(tx.reload).to be_failed
+      end
+
       it "rejects transition from confirmed (blockchain finality)" do
         confirmed_tx = create(:blockchain_transaction, status: :confirmed)
         expect { confirmed_tx.escalate_to_review!("test") }.to raise_error(AASM::InvalidTransition)

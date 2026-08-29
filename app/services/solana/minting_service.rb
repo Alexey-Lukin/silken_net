@@ -520,10 +520,21 @@ module Solana
       case signature_status(tx.tx_hash)
       when :confirmed
         # [ARCH.51-fix] :pending intent (крах ДО mark_as_sent!) → спершу :sent, тоді confirm!
-        # (AASM confirm лише з [:sent,:processing]; інакше :pending застряг би → 7d aging out
+        # (AASM confirm НЕ приймає :pending; інакше :pending застряг би → 7d aging out
         # unsettled_within → наступний reprocess re-pay → double-pay). Дзеркало BatchPayout reconcile.
+        # ⚠️ [ARCH.115] Доти цей рядок перелічував дозволені стани як «[:sent,:processing]» —
+        # після відкриття операторського виходу перелік став неповним (є ще :manual_review),
+        # і саме тому тут тепер названо ЗАБОРОНЕНИЙ стан, а не повний список дозволених:
+        # список дозволених старіє з кожним новим переходом, заборона на :pending — ні.
+        # 🔴 [ARCH.115] `unless tx.status_manual_review?` НЕСУЧИЙ, і доти цю роботу робив
+        # сам `may_confirm?`: подія `confirm` не приймала `:manual_review`, тож предикат
+        # був ГАРДОМ, а не перевіркою форми. Відкривши операторський вихід зі стану, ми
+        # забрали в цього сайту єдиний захист — і машина почала б закривати ambiguous-рядок
+        # сама, тобто рівно той авто-резолв, проти якого ескалація й існує (CLAUDE §6).
+        # Спіймано СЮЇТОЮ, не ревʼю: приклад «does not thrash a manual_review intent» падав
+        # саме тут. ⛔ Не спрощувати назад до самого `may_confirm?` — предикат тепер true.
         tx.mark_as_sent!(tx.tx_hash) if tx.status_pending?
-        tx.confirm! if tx.may_confirm?
+        tx.confirm! if tx.may_confirm? && !tx.status_manual_review?
         Rails.logger.info "🌊 [Solana] Per-event #{tx.tx_hash} підтверджено on-chain — re-pay пропущено."
       when :not_found
         tx.escalate_to_review!("Solana per-event payout не знайдено on-chain — ручна звірка перед re-pay (можливий RPC-лаг; ARCH.51)") if tx.may_escalate_to_review?

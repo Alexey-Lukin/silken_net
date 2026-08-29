@@ -504,7 +504,23 @@ class BlockchainTransaction < ApplicationRecord
       transitions from: [ :pending, :processing ], to: :sent
     end
 
-    # Успішне підтвердження в мережі (виклик від BlockchainConfirmationWorker)
+    # Успішне підтвердження в мережі (авто-поллер із `:sent`; ОПЕРАТОР із `:manual_review`).
+    #
+    # 🔴 [ARCH.115] `:manual_review` доти був станом БЕЗ ВИХОДУ: подій із `from:
+    # :manual_review` було нуль, тож рядок, ескальований double-spend guard'ом, лишався
+    # там назавжди, а `net_minted_supply` рахує лише `:confirmed` — отже монети, що
+    # ЙМОВІРНО існують on-chain, дорівнювали нулю для L1-якоря й бази слешингу
+    # НАЗАВЖДИ. Єдиним фактичним шляхом лишався сирий SQL повз валідації й аудит-хук.
+    #
+    # 🔑 Форму взято з ратифікованого сиблінга `EthereumAnchor` [ARCH.66], і ключове в
+    # ній — ДЕ стоїть гард: подія приймає обидва стани, а від авто-резолву захищає
+    # СПОЖИВАЧ (`BlockchainConfirmationWorker.confirmation_scope` виключає
+    # `:manual_review`). Це не послаблення double-spend guard'а (CLAUDE §6 «не
+    # авто-резолвити»), а рівно його збереження: машина далі не сміє закрити
+    # ambiguous-рядок, а людина, що звірила tx на експлорері, більше не мусить лізти
+    # в базу руками.
+    # ⛔ Не давати авто-поллеру бачити `:manual_review`: гард тримається саме там, і
+    # розширення його скоупу поверне дефект, проти якого ескалація й існує.
     event :confirm do
       before do |block_num, gas_cost|
         self.block_number = block_num if block_num.present?
@@ -512,7 +528,7 @@ class BlockchainTransaction < ApplicationRecord
         self.confirmed_at = Time.current
         self.error_message = nil
       end
-      transitions from: [ :sent, :processing ], to: :confirmed
+      transitions from: [ :sent, :processing, :manual_review ], to: :confirmed
     end
 
     # Фіксація збою (як при відправці, так і при Revert)
@@ -534,7 +550,10 @@ class BlockchainTransaction < ApplicationRecord
       end
       # :failed → :failed дозволяє оновити error_message при повторному збої
       # (напр. sidekiq_retries_exhausted після попереднього fail)
-      transitions from: [ :pending, :processing, :sent, :failed ], to: :failed
+      # [ARCH.115] `:manual_review` — другий бік операторського виходу: звірка на
+      # експлорері може показати, що tx НЕ пройшла. Без цієї гілки оператор мав би
+      # єдиний вихід «підтвердити», тобто вибір між правдою і нічим.
+      transitions from: [ :pending, :processing, :sent, :failed, :manual_review ], to: :failed
     end
 
     # [DOUBLE-SPEND GUARD]: Ескалація до ручної перевірки.

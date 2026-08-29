@@ -28,8 +28,17 @@ class BlockchainConfirmationWorker
   # партиції, старші за earliest-1h. ⚠️ Симетричне ±1h ВИКЛЮЧИЛО б рядки >1h новіші за earliest →
   # stuck :sent. Дзеркало CeloConfirmationWorker/ARCH.50 (по tx_hash, не id — batch ділить хеш;
   # lower-bound, не 1-sec — batch span). Fallback (created_at_iso=nil) → unscoped (legacy/puro).
+  # 🔴 [ARCH.115] `:manual_review` ВИКЛЮЧЕНО зі скоупу, і саме тут тепер стоїть
+  # double-spend guard. Подія `confirm` віднедавна приймає `:manual_review` — це дає
+  # ОПЕРАТОРОВІ гардований вихід зі стану, який доти був безвихідним (монети, що
+  # ймовірно існують on-chain, дорівнювали нулю для `net_minted_supply` назавжди).
+  # Але машина закривати ambiguous-рядок НЕ сміє (CLAUDE §6): ескалація саме тому й
+  # існує, що доля транзакції невідома, і поллер, який побачив би квитанцію, не знає,
+  # чи вона від НАШОЇ спроби, чи від повторної. Форма — дзеркало `EthereumAnchor`
+  # [ARCH.66]: подія широка, гард на споживачі.
+  # ⛔ Не прибирати цей фільтр «щоб поллер дочистив хвости»: це і є авто-резолв.
   def self.confirmation_scope(tx_hash, created_at_iso = nil)
-    scope = BlockchainTransaction.where(tx_hash: tx_hash)
+    scope = BlockchainTransaction.where(tx_hash: tx_hash).where.not(status: :manual_review)
     return scope if created_at_iso.blank?
 
     # `Time.zone.iso8601` [ARCH.92]. Сьогодні всі call-sites внутрішні
@@ -40,7 +49,11 @@ class BlockchainConfirmationWorker
     t = Time.zone.iso8601(created_at_iso.to_s)
     scope.where("created_at >= ?", t - 1.hour)
   rescue ArgumentError, TypeError
-    BlockchainTransaction.where(tx_hash: tx_hash)
+    # ⚠️ [ARCH.115] Фолбек НЕСЕ той самий `where.not(:manual_review)`. Доти він
+    # перебудовував скоуп з нуля — тобто невалідний `created_at_iso` ОБХОДИВ би
+    # щойно поставлений гард, і авто-резолв ambiguous-рядка став би досяжним через
+    # зіпсований аргумент. Гард, який знімається кривим входом, гардом не є.
+    BlockchainTransaction.where(tx_hash: tx_hash).where.not(status: :manual_review)
   end
 
   sidekiq_retries_exhausted do |msg, _ex|
