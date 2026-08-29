@@ -14,19 +14,18 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # ⛔ [INF.22] `TF_VAR_*` тут БІЛЬШЕ НЕМА — вони поїхали разом із джобою `terraform`
-  # (⚖️ founder 2026-08-29, повна підстава — біля місця, де та джоба стояла). Знімаються
-  # ТИМ САМИМ рухом свідомо: змінна, яку не читає жоден крок, є не «запасом», а мертвим
-  # конфігом — і тут вона дорожча за звичайний мертвий рядок, бо `spec/deploy/
-  # terraform_workflow_var_parity_spec.rb` визначає «terraform-воркфлоу» САМЕ за
-  # наявністю `TF_VAR_`. Лишити їх означало б тримати гейт зеленим над воркфлоу, який
-  # terraform більше не запускає, тобто судити фікцію. Дім guarded-змінних після цього —
-  # `terraform_drift.yml` (єдиний, хто справді біжить проти реальних vars) + локальний
-  # apply founder'а; `GCP_BILLING_ACCOUNT_ID` став drift-only → `06_04 §1`.
-  # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
-  # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
-  # reach the Anchor — until then the kamal step is honestly non-functional.
+# ⛔ [INF.22] `TF_VAR_*` тут БІЛЬШЕ НЕМА — вони поїхали разом із джобою `terraform`
+# (⚖️ founder 2026-08-29, повна підстава — біля місця, де та джоба стояла). Знімаються
+# ТИМ САМИМ рухом свідомо: змінна, яку не читає жоден крок, є не «запасом», а мертвим
+# конфігом — і тут вона дорожча за звичайний мертвий рядок, бо `spec/deploy/
+# terraform_workflow_var_parity_spec.rb` визначає «terraform-воркфлоу» САМЕ за
+# наявністю `TF_VAR_`. Лишити їх означало б тримати гейт зеленим над воркфлоу, який
+# terraform більше не запускає, тобто судити фікцію. Дім guarded-змінних після цього —
+# `terraform_drift.yml` (єдиний, хто справді біжить проти реальних vars) + локальний
+# apply founder'а; `GCP_BILLING_ACCOUNT_ID` став drift-only → `06_04 §1`.
+# SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
+# kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
+# reach the Anchor — until then the kamal step is honestly non-functional.
 
 jobs:
   changes:

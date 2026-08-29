@@ -12,13 +12,12 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # ⛔ [INF.22] `TF_VAR_*` знято разом із джобою `terraform` (⚖️ founder 2026-08-29) —
-  # підстава й механіка гейта `terraform_workflow_var_parity_spec` описані в
-  # дзеркальному блоці `deploy.yml`; тут не дублюємо.
-  # SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
-  # kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
-  # reach the Anchor — until then the kamal step is honestly non-functional.
+# ⛔ [INF.22] `TF_VAR_*` знято разом із джобою `terraform` (⚖️ founder 2026-08-29) —
+# підстава й механіка гейта `terraform_workflow_var_parity_spec` описані в
+# дзеркальному блоці `deploy.yml`; тут не дублюємо.
+# SSH secrets removed (INF.20 (в)): admin path = IAP tunnel + OS Login; the CI
+# kamal leg needs the (б) glue (ssh.proxy_command + SA tunnel role) before it can
+# reach the Anchor — until then the kamal step is honestly non-functional.
 
 jobs:
   verify-secrets:
