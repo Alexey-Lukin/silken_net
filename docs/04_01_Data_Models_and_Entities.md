@@ -1036,7 +1036,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `available_balance` | `balance - locked_balance` |
 | `lock_funds!(amount)` | **Резервує** `amount` у `locked_balance`; `balance` НЕ змінюється (reserve-, не move-семантика — див. нижче) |
 | `release_locked_funds!(amount)` | Знімає резерв із `locked_balance`; `balance` НЕ змінюється. Кличеться лише на ПРОВАЛЬНОМУ шляху (`fail`-подія tx + rollback-сервіс) — успішний мінт резерв не звільняє [E.66] |
-| `credit!(points)` | Зараховує з урахуванням `carbon_sequestration_coefficient` породи |
+| `credit!(points)` | Зараховує РІВНО те, що дали: `with_lock { increment!(:balance, points) }` — жодного множника всередині. 🔴 **Дім зважування — ВИКЛИКАЧ, не метод** [ARCH.115]: `carbon_sequestration_coefficient` накладає `TelemetryUnpackerService` (`tree.tree_family&.weighted_growth_points(points)`), і сьогодні він **єдиний** продакшн-викликач. ⚠️ Доти цей рядок казав «зараховує з урахуванням `carbon_sequestration_coefficient` породи» — тобто приписував методу чужу відповідальність, і ціна не редакційна: **другий писач балів** (Guild-виплата · backfill · ручна компенсація), що повірить картці й передасть сирі бали, дасть дубу −33% і сосні +25% — а звідти `lock_and_mint!` помножить помилку в незворотний мінт |
 | `lock_and_mint!(points_to_lock, threshold, token_type)` | Повний цикл емісії SCC (курс — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
 | `kyc_approved_for_minting?` | [KYC.1] Гейт мінтингу = статус БЕНЕФІЦІАРА адреси: власна адреса → власний статус; custodial (без власної) → успадковує `organizations.hadron_kyc_status` (гейт — [`05_02` — Крок E](05_02_Proof_of_Growth_Pipeline)) |
 | `broadcast_balance_update` | Turbo Stream оновлення UI |
