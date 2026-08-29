@@ -61,6 +61,19 @@
 #     not an in-file comment. Everything else under config/ (45 files) is unaffected —
 #     i18n-tasks reads only `config/locales/**`.
 #   · *.json — strict JSON has no comment syntax; a header would break the file.
+#   · binary assets we SHIP (images, fonts, compiled blobs) — the same reason as JSON but
+#     absolute: a PNG has no comment syntax at all, so a tag is structurally impossible
+#     rather than merely awkward. They are governed by the zone map in /NOTICE, and `plan`
+#     keeps a `\0` tripwire for anything that slips the extension allow-list. 🔴 The
+#     question such a file actually raises is PROVENANCE ("ours, stock, or generated?"),
+#     not licence — and that is a GIT question, never a question of the author's memory:
+#     `git log --follow -- <path>` plus the body of the commit that introduced it answers
+#     it in one command, because the reason a shipped asset exists is argued at the moment
+#     it lands. Measured 2026-08-30 on app/assets/images/carbon-weave.png, where a tracker
+#     leg had parked exactly that question on a human for two days as "the machine is
+#     powerless here by construction". It was not. This class is named HERE because
+#     /NOTICE calls this header the authoritative list of untagged classes, and until now
+#     it did not name the one class that can never be tagged at all.
 #   · third-party notices — a file carrying somebody else's copyright is reported and
 #     NEVER stamped (FOREIGN_NOTICE_RE); two vendor-derived firmware headers are in that
 #     state today. Founder call 2026-07-26: no tag at all rather than an inexact one.
