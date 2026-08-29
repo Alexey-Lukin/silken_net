@@ -128,7 +128,12 @@ SELF=${BASH_SOURCE[0]:-$0}
 # `project_ssot_campaign_history` alone carries SIXTEEN inbound strings.
 # Per the standing rule this bump is PAID BY THE NEXT PASS: it locks in what was
 # reached, it does not create room to spend.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24320}
+# 2026-08-29: 24320 → 24527 (+207) — `project_month_of_cuts_taxonomy`, дім виміру місяця
+# зрізів. ⚠️ Запис саме тут, бо форма бампу нетипова: ENTRY-лічильник НЕ виріс (67 як і
+# був) — новий дім увійшов ХАБ-ІНЛАЙНОМ у рядок У-ВЕЙ, а не власним рядком, тобто важіль
+# «displace one» відпрацював. Виросли лише байти інлайн-хука. Це той випадок, де ratchet на
+# БАЙТАХ і правило про ENTRIES розходяться, і чесно бампати саме байти.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24527}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -267,7 +272,9 @@ rb_dark() {
 # moved VERBATIM and the home kept compressed imperatives + routers.
 # 2026-08-23: 145 → 146 — `log_verdict_grounds.md`, twin for
 # `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-153}
+# 2026-08-29: 153 → 154 — `project_month_of_cuts_taxonomy`. Підняття робить новий дім
+# захищеним підлогою так само, як решту: без нього його тихе зникнення було б невидиме.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-154}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -364,7 +371,11 @@ index_reach_expected() {
 # one. Read the two entries together: the shape recurs whenever a rule-home
 # crosses the working ceiling, and the honest response is the twin plus this
 # bump, never shaving the new description toward the old ratchet.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43826}
+# 2026-08-29: 43826 → 44057 (+231) — той самий новий дім. Опис написано на ~370 B і
+# стиснуто до ~270 ПЕРЕД бампом (прецедент вище: спершу компресія власного, ніколи підрізка
+# чужого — це і є manufactured-cleanup, який корпус забороняє). Залишок = те, що новий дім
+# структурно коштує.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44057}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
