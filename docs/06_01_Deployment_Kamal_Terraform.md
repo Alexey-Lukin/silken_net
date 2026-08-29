@@ -5,7 +5,7 @@
 Зафіксувати повний стан конфігурацій розгортання та інфраструктури як коду (IaC). Документ відповідає на три ключові питання:
 
 1. Чим відрізняються середовища **Canopy** (Staging) та **Production**?
-2. Що розгортається в **GCP** (традиційна хмара), а що — в **Akash Network** (децентралізована мережа)?
+2. Що розгортається в **GCP**, а що — у зовнішніх SaaS (Upstash, Grafana Cloud, GHCR)?
 3. Які **API-ключі, секрети та сертифікати** потрібні для першого реального деплою?
 
 ---
@@ -13,7 +13,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — інфраструктурний код існує, реальний деплой не проводився
-- **Відкрите:** deploy-readiness (Ingress IP, GitHub Secrets, Akash SDL secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.4/6, S5.6).
+- **Відкрите:** deploy-readiness (акаунт GCP, Ingress IP, GitHub Secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.4/6, S5.6).
 
 ---
 
@@ -22,10 +22,9 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
-| `terraform/` · `terraform/akash/` | IaC: Cloud SQL, Ingress Anchor, Akash |
+| `terraform/` | IaC: Cloud SQL, Ingress Anchor, VPC, KMS |
 | `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — [`06_07`](06_07_CICD_and_Runbook_Index)) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend (що деплоїться) |
-| [`06_02` — Akash Network Integration](06_02_Akash_Network_Integration) | Akash SDL, ENV, TLS |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Observability |
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
 | [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
@@ -39,12 +38,12 @@
 - [Quickstart: Перший Деплой Інфраструктури](#-quickstart-перший-деплой-інфраструктури)
 - [Архітектура Деплою (The Big Picture)](#-архітектура-деплою-the-big-picture)
 - [Canopy vs 🌲 Production — Порівняльна Таблиця](#-canopy-vs--production--порівняльна-таблиця)
-- [GCP vs Akash — Розподіл Ресурсів](#-gcp-vs-akash--розподіл-ресурсів)
+- [Розподіл Ресурсів між провайдерами](#-розподіл-ресурсів-між-провайдерами)
 - [Redis DB Isolation Strategy](#-redis-db-isolation-strategy)
 - [Kamal — Детальний Аналіз](#-kamal--детальний-аналіз)
 - [Terraform (GCP) — Детальний Аналіз](#-terraform-gcp--детальний-аналіз)
 - [Docker — Multi-stage Build](#-docker--multi-stage-build)
-- [Akash SDL — Технічний Аналіз](#-akash-sdl--технічний-аналіз)
+- [TLS-термінація — Cloudflare](#-tls-термінація--cloudflare-inf4)
 - [DEPLOY-DAY: перший деплой фазами (Priority Order)](#-deploy-day-перший-деплой-фазами-priority-order)
 - [Масштабування до Планетарного Рівня — CoAP/UDP та Ingress](#-масштабування-до-планетарного-рівня--coapudp-та-ingress)
 - [Змінні Середовища: Web3 та Мультичейн](#-змінні-середовища-web3-та-мультичейн)
@@ -60,12 +59,12 @@
 
 | # | Перевірка | Деталі |
 |---|-----------|--------|
-| **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare / Akash hostname, рішення `[INF.4]`); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). **Той самий список застосовується для Akash SDL** (`deploy/akash/deploy.yaml` + `deploy.yaml.tpl`) та Terraform (`terraform/akash/terraform.tfvars`) — див. [`06_02 §2 ENV (Секрети SDL)`](06_02_Akash_Network_Integration). |
+| **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare — рішення `[INF.4]`, повний чекліст і верифікація нижче в §TLS); DNS усе одно потрібен для маршрутизації трафіку. |
+| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
-| **6** | **CoAP UDP smoke test через Ingress Anchor** | **[INF.6]** Перевір end-to-end UDP-шлях `Queen → Ingress Anchor → CoAP daemon` (PRIMARY: демон бере UDP прямо на анкорі — INF.17 2026-07-04; FALLBACK: socat-релей → Akash `coap`-сервіс) ПЕРЕД першим прошиванням Queen. Без цього silent UDP failure не помітний з HTTP-only health checks. **Автоматизовано:** `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc запуску; `workflow_call` — заведений post-deploy gate'ом у `deploy.yml`/`deploy-production.yml`, job `coap-smoke`, активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`); inputs: `host` / `port` (default `5683`) / `timeout_seconds` (default `10`) / `retries` (default `3`). **Ручна команда (з машини за межами VPC, що імітує Queen; stdlib-only Ruby, без libcoap):** <br>`bin/coap_smoke --host api.silkennet.com` <br>Зонди = freeze-contract FW.56 (точні байти: RST на сміття, `4.04` на невідомий маршрут з 0xFF-MID-піном, `2.04` лише після enqueue батча — НЕ generic liveness; семантика — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Якщо timeout: перевір (a) GCP firewall `allow-coap` UDP 5683 = `0.0.0.0/0`; (b) на анкорі `systemctl status coap-daemon` (PRIMARY; env-file `/etc/silkennet/coap.env` заповнений?) АБО, у fallback-режимі, `coap-relay` (socat → `<akash-pod-ip>:5683`) + (c) Akash SDL expose `5683/udp` (`coap`-сервіс); (d) rescue-логи демона: `docker logs silkennet-coap`. Швидка перевірка «чи взагалі слухає UDP» через `nc`: `echo -ne '\x40\x02\x00\x01' \| nc -u -w2 api.silkennet.com 5683 \| xxd` — повертає бінарний CoAP response якщо daemon приймає UDP. |
+| **6** | **CoAP UDP smoke test через Ingress Anchor** | **[INF.6]** Перевір end-to-end UDP-шлях `Queen → Ingress Anchor → CoAP daemon` (PRIMARY: демон бере UDP прямо на анкорі — INF.17 2026-07-04; FALLBACK: socat-релей → дормантна Kamal `coap`-роль) ПЕРЕД першим прошиванням Queen. Без цього silent UDP failure не помітний з HTTP-only health checks. **Автоматизовано:** `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc запуску; `workflow_call` — заведений post-deploy gate'ом у `deploy.yml`/`deploy-production.yml`, job `coap-smoke`, активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`); inputs: `host` / `port` (default `5683`) / `timeout_seconds` (default `10`) / `retries` (default `3`). **Ручна команда (з машини за межами VPC, що імітує Queen; stdlib-only Ruby, без libcoap):** <br>`bin/coap_smoke --host api.silkennet.com` <br>Зонди = freeze-contract FW.56 (точні байти: RST на сміття, `4.04` на невідомий маршрут з 0xFF-MID-піном, `2.04` лише після enqueue батча — НЕ generic liveness; семантика — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Якщо timeout: перевір (a) GCP firewall `allow-coap` UDP 5683 = `0.0.0.0/0`; (b) на анкорі `systemctl status coap-daemon` (PRIMARY; env-file `/etc/silkennet/coap.env` заповнений?) АБО, у fallback-режимі, `coap-relay` (socat → app-хост) + (c) Kamal `coap`-роль публікує `5683/udp`; (d) rescue-логи демона: `docker logs silkennet-coap`. Швидка перевірка «чи взагалі слухає UDP» через `nc`: `echo -ne '\x40\x02\x00\x01' \| nc -u -w2 api.silkennet.com 5683 \| xxd` — повертає бінарний CoAP response якщо daemon приймає UDP. |
 | **7** | **Schema bootstrap від squashed init_consolidated** | **[INF.7 — Phase 7]** На свіжій базі деплой `bin/rails db:setup` (= `db:create` + `db:schema:load` + `db:seed`). Ми **НЕ** використовуємо `db:migrate` в продакшні до першого деплою — всі pre-launch міграції згорнуті в єдиний `db/migrate/*_init_consolidated.rb` (**timestamp свідомо НЕ називається — бери з `ls db/migrate/`**: він міняється при кожному re-squash, і саме цей рядок уже двічі протухав на ньому), а схема живе в `db/structure.sql` (включно з усіма 3 RANGE-партиційними таблицями + початковими партиціями `_default` + поточним вікном). `schema_migrations` містить анкер **плюс кожну інкрементальну, додану після нього** — рівна кількість тут свідомо не називається, бо вона росте між сквошами; джерело істини — INSERT-блок у кінці `db/structure.sql`. Якщо хтось додає incremental міграцію після цього — `StrongMigrations.start_after` (стоїть на живому анкері — звіряй із `config/initializers/strong_migrations.rb`, ніколи з цього рядка) змусить її пройти всі checks. ⊕ **З 2026-08-23 воно ВИВОДИТЬСЯ з імені файлу анкера** [OPS.24], тож re-squash більше не має кроку «bump start_after» — а разом із ним зник і єдиний мовчазний спосіб зіпсувати процедуру (значення нижче за живий анкер знімало перевірки з уже застосованих міграцій, і ніщо не червоніло). **НЕ** робіть squash повторно після першого деплою (втратите history) без zero-downtime плану. |
 | **8** | **PartitionMaintenanceWorker cron у Sidekiq** | `30 0 * * *` UTC, `PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions]`. На день-1 нового місяця партиція повинна вже існувати — інакше `INSERT` падає з `no partition of relation`. Перевір через `psql -c "\d+ telemetry_logs"` що партиція на наступний місяць є. Якщо worker silent-fails — перевір Sentry alert (Phase 7 додав `Sentry.capture_exception` у rescue блок). |
 | **9** | **Kamal IP-плейсхолдери → реальний Ingress-IP** | **[S1.5]** Після `terraform apply`: `terraform output -raw ingress_ip` → підставити замість `192.168.0.1` (`config/deploy.yml` servers web/job/coap) і `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`); також `image:` → повний AR-шлях з `terraform output artifact_registry_url` [INF.15]. Без цього `kamal deploy` б'є в приватний RFC-1918 нікуди. |
@@ -73,7 +72,7 @@
 
 ### Менеджер Секретів (Рекомендація)
 
-З десятками API-ключів (12 блокчейнів, GCP, Akash, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
+З десятками API-ключів (12 блокчейнів, GCP, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
 
 - **Bitwarden** (open-source, self-hostable) або **1Password** — один vault per середовище (canopy / production)
 - Зберігай кожен токен, приватний ключ та credential там **до** заповнення shell-ENV перед `kamal deploy`
@@ -114,9 +113,8 @@ terraform apply
 # api.silkennet.com → $(terraform output -raw ingress_ip)
 # Дочекатися: dig api.silkennet.com → правильний IP
 
-# Крок 5: Налаштувати Akash SDL — повний список секретів (дзеркало .kamal/secrets-common)
-# Заповнити в deploy/akash/deploy.yaml АБО terraform/akash/terraform.tfvars
-# (рекомендовано — Terraform: cp terraform.tfvars.example terraform.tfvars)
+# Крок 5: Заповнити .kamal/secrets-common — повний список секретів
+# (дзеркало config/deploy.yml env.secret; значення з GitHub Secrets або менеджера)
 #
 # Application core:
 #   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, CLOUD_SQL_INSTANCE_CONNECTION_NAME,
@@ -138,22 +136,17 @@ terraform apply
 # Chainlink oracle-callback HMAC (dispatch-секрети вилучено — ARCH.53):
 #   CHAINLINK_HMAC_SECRET
 #
-# ⚠️ AKASH SECURITY NOTE: ENV vars видимі провайдеру у plaintext.
-# Ротуй keys кожні 90 днів. Akash-deployment keys — тільки з MINTER_ROLE/
-# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Детальніше: 06_02 §2 (ENV/секрети) + 00_07 S4.3.
+# ⚠️ SECURITY NOTE: ENV-змінні лежать у контейнері plaintext і читаються будь-ким
+# із root на хості. Ротуй keys кожні 90 днів; ключі деплою — тільки з MINTER_ROLE/
+# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Інвентар — 06_04 §1.
 
-# Крок 6: Деплой на Akash Network
-cd terraform/akash
-terraform init
-terraform apply
-# → Akash розгортає web (Rails + Puma), job (Sidekiq) та coap (UDP-демон) сервіси
-# → Cloud SQL Auth Proxy в контейнері тунелює DB-трафік через Google API
-# → Redis через Upstash (зовнішній, TLS)
+# Крок 6: Деплой застосунку
+kamal deploy -d canopy   # спершу canopy (ізольований DB-set), потім production
 
 # Крок 7: Верифікація
 # Коли в логах: "Listening on coap://0.0.0.0:5683" — ліс може говорити.
 # Ingress Anchor: CoAP приймає демон ПРЯМО на анкорі (PRIMARY — INF.17);
-# HAProxy проксює HTTP/HTTPS з GCP IP на Akash deployment (socat = CoAP-fallback → Akash).
+# HAProxy проксює HTTP/HTTPS зі статичного GCP IP на app-хост (socat = CoAP-fallback).
 ```
 
 ---
@@ -190,79 +183,65 @@ terraform apply
 |---------|-----------|--------------|
 | **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
-| **Платформа** | Akash (intended primary SDL) — але CI `deploy.yml` наразі робить `kamal deploy -d canopy` (Kamal/GCP-fallback, web-only) | Akash Network |
+| **Платформа** | Kamal/GCP, web-only (`kamal deploy -d canopy`) | Kamal/GCP (усі ролі) |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (HA) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
 | **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (HA) |
-| **Puma workers** | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) | `WEB_CONCURRENCY: 4` (Akash SDL; `2` на Kamal/GCP-fallback) |
+| **Puma workers** | `WEB_CONCURRENCY: 2` (спека app-хоста — `config/deploy.yml`) | `WEB_CONCURRENCY: 2` (те саме; рухається разом із тіром хоста) |
 
 ---
 
-## ☁️ GCP vs Akash — Розподіл Ресурсів
+## ☁️ Розподіл Ресурсів між провайдерами
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Google Cloud Platform (GCP)              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  Ingress Anchor (e2-small, silken-net-ingress)      │   │
+│  │  Ingress Anchor (e2-small, silken-net-ingress)        │   │
 │  │    — статична IP, CoAP-демон (PRIMARY) + HAProxy/socat│   │
-│  │    — проксює HTTP/HTTPS/CoAP на Akash deployment   │   │
-│  │  Cloud SQL PostgreSQL 17 (3 бази, HA, приватна IP)  │   │
-│  │  Artifact Registry (Docker images)                   │   │
+│  │    — проксює HTTP/HTTPS на app-хост                   │   │
+│  │  App host (Kamal: ролі web + job + coap)              │   │
+│  │    ⚠️ ще НЕ провіжений — нога OPS.37                  │   │
+│  │  Cloud SQL PostgreSQL 17 (3 бази, HA, ПРИВАТНА IP —   │   │
+│  │    ipv4_enabled = false з 2026-08-29)                 │   │
+│  │  Artifact Registry (Docker images)                    │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  ❌ Memorystore Redis — ВИДАЛЕНО (замінено на Upstash)      │
-│  ❌ web-0 / canopy VMs — ВИДАЛЕНО (Rails на Akash)          │
 └─────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────┐
-│                    Akash Network                            │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  web сервіс (Rails 8.1 + Puma + Thruster)           │   │
-│  │  4 vCPU / 8 GB RAM / 50 GB ephemeral                │   │
-│  │  Порти: :80 (HTTP)                                   │   │
-│  │                                                      │   │
-│  │  ✅ job сервіс (Sidekiq, всі воркери)                │   │
-│  │  ✅ coap сервіс (CoAP/UDP :5683 → Sidekiq) [INF.17]  │   │
-│  │  ✅ alloy сервіс (Grafana Alloy → Grafana Cloud)     │   │
-│  │  ✅ Cloud SQL через Auth Proxy (HTTPS tunnel)        │   │
-│  │  ✅ Redis через Upstash (зовнішній, TLS, rediss://) │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────┐  ┌──────────────────────────────┐
+│  Upstash (Redis 7.x TLS) │  │  Grafana Cloud (SaaS)        │
+│  публічний rediss://     │  │  remote_write · панелі·алерти│
+└──────────────────────────┘  └──────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                    Upstash (Serverless Redis)               │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Redis 7.x з TLS (публічний endpoint, rediss://)    │   │
-│  │  Доступний з Akash та будь-де через інтернет         │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                    Grafana Cloud (SaaS)                     │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Prometheus (remote_write endpoint)                  │   │
-│  │  Grafana (dashboards, PromQL)                        │   │
-│  │  Alerting (alert rules, notification channels)       │   │
-│  └──────────────────────────────────────────────────────┘   │
+│  GHCR — ПУБЛІЧНЕ дзеркало образу                            │
+│  анкер тягне coap-демона звідси (він поза WIF-ланцюгом)      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| Сервіс/Ресурс | GCP | Akash Network | Upstash | Grafana Cloud | Примітка |
-|--------------|-----|---------------|---------|---------------|---------|
-| **Rails web (Puma + Thruster)** | ❌ | ✅ | — | — | Повністю на Akash |
-| **Sidekiq (job role)** | ❌ | ✅ | — | — | `job` сервіс в Akash SDL |
-| **Grafana Alloy (metrics agent)** | ❌ | ✅ | — | — | `alloy` сервіс в Akash SDL, пушить у Grafana Cloud |
-| **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | fallback | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP без Auth Proxy — founder 2026-07-04); fallback = socat-релей → Akash `coap`-сервіс (лишається задеплоєним) + Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
-| **Cloud SQL PostgreSQL 17** | ✅ | — | — | — | Приватна IP, доступ через Auth Proxy |
-| **ActionCable (Solid Cable)** | ✅ | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |
-| **Redis** | ❌ | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
-| **Prometheus + Grafana + Alerting** | ❌ | — | — | ✅ | SaaS, Alloy → remote_write |
-| **Ingress Anchor** | ✅ | — | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443→Akash + socat (fallback) |
-| **Artifact Registry (Docker)** | ✅ | — | — | — | Kamal пушить у GCP AR |
-| **GHCR (Docker mirror)** | — | ✅ | — | — | `.github/workflows/mirror-ghcr.yml`, публічний для Akash |
+> 🔴 **[OPS.37, 2026-08-29] Провайдер компʼюту ОДИН, і це названо, а не замовчано.** Доти тут
+> стояли дві колонки — GCP і децентралізована мережа — і вони читались як дві незалежні ноги.
+> Це був **подвійний рахунок одного контролера**: под не бутився без GCP (стан у Cloud SQL,
+> бекап у GCS, CoAP-PRIMARY на анкері, образ у GHCR), тож другий деплой із тим самим контролером
+> не додавав свідка (⛔ [`00_05 §7`](00_05_AI_Native_Operating_Model), Аттар/Навої). Чесний присуд
+> формулюється не «який вендор безпечніший», а **«яку концентрацію ми ПРИЙНЯЛИ — і чи ми її
+> назвали»**; носій цього питання — [`00_07`](00_07_Action_Plan_Tracker) `ARCH.114`.
 
----
+| Сервіс/Ресурс | GCP | Upstash | Grafana Cloud | Примітка |
+|--------------|-----|---------|---------------|---------|
+| **Rails web (Puma + Thruster)** | ✅ | — | — | Kamal `web`-роль на app-хості |
+| **Sidekiq (job role)** | ✅ | — | — | Kamal `job`-роль, той самий хост |
+| **Grafana Alloy (metrics agent)** | ✅ | — | — | Kamal **accessory** (`files:`-монтування `deploy/alloy/config.alloy`), скрейпить три loopback-таргети |
+| **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP — founder 2026-07-04); fallback = socat-релей → дормантна Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
+| **Cloud SQL PostgreSQL 17** | ✅ | — | — | Приватна IP, БЕЗ Auth Proxy на рантайм-шляху |
+| **ActionCable (Solid Cable)** | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |
+| **Redis** | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
+| **Prometheus + Grafana + Alerting** | — | — | ✅ | SaaS, Alloy → remote_write |
+| **Ingress Anchor** | ✅ | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443 → app-хост + socat (fallback) |
+| **Artifact Registry (Docker)** | ✅ | — | — | Kamal пушить у GCP AR |
+| **GHCR (Docker mirror)** | ✅ | — | — | `.github/workflows/mirror-ghcr.yml` — ПУБЛІЧНЕ дзеркало, бо анкер тягне свій образ systemd-юнітом поза Kamal/WIF-ланцюгом і не має реєстрового credential'а |
 
 ## 🔴 Redis DB Isolation Strategy
 
@@ -363,7 +342,7 @@ ENV.fetch("RACK_ATTACK_REDIS_URL") {
 | Файл | Опис |
 |------|------|
 | `config/deploy.yml` | Production-конфіг (основний) |
-| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only СТРУКТУРНО** — `servers:` = array-форма, яку deep_merge замінює цілком (омітнута `job:`-секція НЕ прибирає роль: destination-merge = keys-union, роль успадкувалась би з base разом із money-`env.secret` → present-empty guard-crash; INF.22). Sidekiq для Canopy іде через Akash primary `deploy.yaml` job-сервіс (INF.13). |
+| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only СТРУКТУРНО** — `servers:` = array-форма, яку deep_merge замінює цілком (омітнута `job:`-секція НЕ прибирає роль: destination-merge = keys-union, роль успадкувалась би з base разом із money-`env.secret` → present-empty guard-crash; INF.22). ⚠️ [OPS.37] Sidekiq для Canopy тепер не їде НІДЕ — доти його ніс окремий job-сервіс знятої платформи. Відкрите рішення: дати canopy власну `job:`-роль ⊥ свідомо тримати canopy без воркерів; доти Sidekiq дебютує на production. |
 | `.kamal/secrets-common` | Runtime секрети (читаються при деплої) |
 | `.kamal/hooks/` | Хуки ЖЦ (тільки sample-файли) |
 
@@ -453,7 +432,7 @@ env:
 > | ENV | Тип | Default | Опис |
 > |-----|-----|---------|------|
 > | `RAILS_ALLOWED_HOSTS` | `env.clear` | — (попередження) | Comma-separated allowlist для DNS-rebinding захисту. ⚠️ Обов'язково у production. |
-> | `DISABLE_SSL` | `env.clear` | `false` | Вимикає `force_ssl`/`assume_ssl`. Тільки якщо TLS термінується upstream (Cloudflare/Akash ingress). |
+> | `DISABLE_SSL` | `env.clear` | `false` | Вимикає `force_ssl`/`assume_ssl`. Тільки якщо TLS термінується upstream (Cloudflare). |
 > | `ALLOW_ALL_HOSTS` | `env.clear` | `false` | Заглушує попередження `[SECURITY]` якщо `RAILS_ALLOWED_HOSTS` не встановлено. |
 > | `CSP_ENFORCE` | `env.clear` | `false` | Переводить CSP з report-only у enforced. Рекомендується після burn-in (1–2 тижні). |
 
@@ -482,14 +461,9 @@ terraform/
 ├── iam.tf        # Service Account silken-net-deploy + IAM roles (deploy-SA + IAP-operator)
 ├── variables.tf  # Всі input variables з валідацією
 └── outputs.tf    # ingress_ip, DB URL тощо
-
-terraform/akash/
-├── main.tf       # SDL generation, null_resource (akash CLI)
-├── variables.tf  # Akash-specific variables + app secrets + Grafana Cloud
-└── outputs.tf    # SDL path, deployment notes
 ```
 
-> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-small`): CoAP-демон (PRIMARY інтейк, docker + systemd, секрети в `/etc/silkennet/coap.env` 0600 — НЕ в metadata) + HAProxy 80/443 → Akash + socat-fallback. Grafana Alloy `config.alloy` знаходиться в `deploy/akash/config.alloy` і кодується в Base64 через `filebase64()` при рендерингу SDL шаблону.
+> **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` більше не містить web/canopy VMs — лише Ingress Anchor (`e2-small`): CoAP-демон (PRIMARY інтейк, docker + systemd, секрети в `/etc/silkennet/coap.env` 0600 — НЕ в metadata) + HAProxy 80/443 → app-хост + socat-fallback. Grafana Alloy `config.alloy` живе в `deploy/alloy/config.alloy` і монтується у контейнер accessory нативно (`files:` у `config/deploy.yml`) — base64-канал зник разом із платформою, що не вміла монтувати файли.
 
 ### GCP Region та Zone
 
@@ -524,10 +498,29 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
   - monitoring.metricWriter   (Cloud Monitoring)
   - cloudsql.client           (Cloud SQL connect)
   - storage.objectAdmin       (GCS Terraform state, scoped до bucket)
+Роль ПОЗА проєктною ієрархією (разово, руками — див. блок нижче):
+  - billing.costsManager      (на BILLING-акаунті, не на проєкті)
 IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адміни, не SA):
   - compute.osAdminLogin       (sudo на анкорі через IAP-тунель, INF.20)
   - iap.tunnelResourceAccessor (відкриття IAP-тунелю)
 ```
+
+> 🔴 **Грант CI-SA на BILLING-акаунті — ОБОВʼЯЗКОВИЙ перед активацією бюджету, і разовий
+> founder-apply тут НЕ рятує.** Billing-ролі живуть в окремій ієрархії (проєктні ролі їх не
+> покривають), а `terraform plan` **рефрешить** бюджет щоразу (`billing.budgets.get`) — тож
+> наступний CI-plan дістає 403 і через `needs: terraform` блокує **ВЕСЬ** deploy-ланцюг.
+> Разово:
+> ```bash
+> gcloud billing accounts add-iam-policy-binding <ACCT_ID> \
+>   --member="serviceAccount:silken-net-deploy@<project>.iam.gserviceaccount.com" \
+>   --role="roles/billing.costsManager"
+> ```
+> ⚠️ `billingbudgets.googleapis.com` eventually-consistent — перший activation-apply може впасти
+> раз; re-apply проходить. Guard: порожній `billing_account_id` (tf-var) = блок no-op; той САМИЙ
+> id мусить стояти у GitHub-секреті `GCP_BILLING_ACCOUNT_ID` (обидва deploy-workflow передають
+> `TF_VAR_billing_account_id`), інакше наступний CI-apply побачить `count=0` і знесе бюджет.
+> Конфіг — `terraform/billing.tf`. ⚠️ Переїхало сюди 2026-08-29 [OPS.37] — доти точна команда й
+> механіка 403 жили ТІЛЬКИ в знятому доці, а рунбук про них не знав.
 
 ### Розрахунок `max_connections` (database.tf)
 
@@ -535,13 +528,13 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 
 | Компонент | З'єднання (стеля checkout) |
 |-----------|------------|
-| Akash web | `WEB_CONCURRENCY` (4) × pool (21) × 3 бази = **252 стеля** (факт ≪: io-burst рідкісний, idle реляться) |
-| Akash job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~51** (17 × 3 бази) |
-| Cloud SQL Auth Proxy + admin/console | **~8** |
+| Kamal web | `WEB_CONCURRENCY` (2) × pool (21) × 3 бази = **126 стеля** (факт ≪: io-burst рідкісний, idle реляться) |
+| Kamal job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~51** (17 × 3 бази) |
+| admin/console (break-glass Auth Proxy з робочої станції) | **~8** |
 
-Навіть за одночасного пікового checkout усіх пулів — нижче `400` (≈311); запас під read-репліки/canopy тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
+Навіть за одночасного пікового checkout усіх пулів — нижче `400` (≈**185**); запас під read-репліки/canopy тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
 
-> ⚠️ **Друга вісь того самого бюджету — ГОРИЗОНТАЛЬНА, і в будь-якому плані scale-out вона приходить першою.** Тригер `WEB_CONCURRENCY > 4` вертикальний, але арифметика ламається ідентично на **другому web-вузлі при тій самій конкурентності**: 2 × 252 + 51 + 8 = **563 > 400**. Тобто горизонтальне масштабування web упирається не в CPU і не в пам'ять аппки, а в цей рядок Terraform. Важелів рівно два, і обидва вимагають рішення заздалегідь: підняти `db_max_connections` (на `db-custom-2-7680` кожне з'єднання коштує реальну пам'ять — тобто це тягне і зміну tier) **або** завести пулер, якого в репозиторії немає **ніде** (`db_read_replica_count` теж `0`). Наслідок ширший за ємність: цей самий інстанс несе primary + cache + cable + canopy-staging, тож за REGIONAL-HA байти UI-фан-ауту cable реплікуються тим самим WAL, що money-записи — один інстанс вниз = money+cable+cache+staging разом. Ревізит: **або** `WEB_CONCURRENCY > 4`, **або** web-репліка №2 — що настане раніше.
+> ⚠️ **Друга вісь того самого бюджету — ГОРИЗОНТАЛЬНА, і після [`OPS.37`](00_07_Action_Plan_Tracker) висновок цієї нотатки ПЕРЕВЕРНУВСЯ.** Доти вона рахувала від `WEB_CONCURRENCY=4` і давала 2 × 252 + 51 + 8 = **563 > 400**, тобто «другий web-вузол не влазить». Єдиний таргет тепер пінить `WEB_CONCURRENCY=2` (`config/deploy.yml`), тож реально 2 × 126 + 51 + 8 = **311 < 400** — горизонтальне масштабування web **влазить**, і другий вузол більше не гейтований цим рядком Terraform. 🔴 Числа під цим абзацом не містили слова «Akash» УЗАГАЛІ — вони мовчки успадкували мертву четвірку, і саме тому клас міграційного залишку ([`00_06 §1`](00_06_SSOT_Documentation_Standard)) вимагає **перечитати арифметику навколо**, а не лише замінений множник. Вертикальний тригер лишається: при `WEB_CONCURRENCY > 4` на двох вузлах стеля знову перевищить 400. Важелів рівно два, і обидва вимагають рішення заздалегідь: підняти `db_max_connections` (на `db-custom-2-7680` кожне з'єднання коштує реальну пам'ять — тобто це тягне і зміну tier) **або** завести пулер, якого в репозиторії немає **ніде** (`db_read_replica_count` теж `0`). Наслідок ширший за ємність: цей самий інстанс несе primary + cache + cable + canopy-staging, тож за REGIONAL-HA байти UI-фан-ауту cable реплікуються тим самим WAL, що money-записи — один інстанс вниз = money+cable+cache+staging разом. Ревізит: **або** `WEB_CONCURRENCY > 4`, **або** web-репліка №2 — що настане раніше.
 
 ---
 
@@ -550,72 +543,133 @@ IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адм�
 ```
 Stage 1: base          — ruby:4.0.6-slim + libjemalloc2, libvips (≥ 8.13), postgresql-client
 Stage 2: build         — bundle install, bootsnap, assets:precompile
-Stage 3: final         — COPY gems + app + Cloud SQL Auth Proxy, USER rails:1000, CMD: thrust ./bin/rails server
+Stage 3: final         — COPY gems + app, USER rails:1000, CMD: thrust ./bin/rails server
 ```
 
 > **`libvips ≥ 8.13` — несуча межа, не косметика (2026-07-30).** Active Storage при буті кличе `Vips.block_untrusted(true)`, щоб вимкнути «unfuzzed» лоадери libvips (CVE-2026-66066); на старішій бібліотеці метод відсутній і Rails **не стартує взагалі** — тобто відкат base-образу на давніший Debian ламає не картинки, а весь застосунок. Той самий пакет потрібен CI-джобам, які реально ініціалізують Rails (`.github/actions/setup-rails-test` → `test`/`feature-test`); гем `ruby-vips` стоїть `require: false`, тож `bin/rails`-гейти без `:environment` (docs/i18n-смуги) його не вантажать і libvips їм не потрібна. Trixie дає 8.16.1, ubuntu-24.04 — 8.15.1, ubuntu-26.04 — 8.18.0.
 
-> **Cloud SQL Auth Proxy** вбудовано у фінальний Docker-образ. Proxy запускається автоматично як фоновий процес при наявності ENV `CLOUD_SQL_INSTANCE_CONNECTION_NAME`. Він тунелює PostgreSQL-трафік через Google Cloud API (вихідний HTTPS на порт 443), тому Cloud SQL не потребує публічної IP. **Fail-loud (INF.13):** `bin/docker-entrypoint` чекає готовності proxy до 15 с; якщо не відповідає — `exit 1` (Rails не стартує, замість мовчазного boot без БД). **Post-boot supervisor (INF.22, 2026-07-05):** при активному proxy entrypoint далі НЕ `exec`-ає, а тримає app і proxy siblings-процесами: смерть proxy → TERM аппці + `exit 1` (Akash рестартить контейнер лише на вихід PID 1 — без цього мертвий proxy = вічний зомбі, що віддає DB-помилки); вихід аппки → її exit-код пропагується; TERM/INT форвардяться (graceful drain при `docker stop`). Kamal/VPC-шлях (без proxy) лишається чистим `exec`.
-
 ---
 
-## 🚀 Akash SDL — Технічний Аналіз
+## 🔐 TLS-термінація — Cloudflare [INF.4]
 
-### Файлова структура
+> **Архітектурне рішення ✅ ОБРАНО (founder 2026-07-03): Cloudflare Proxy для HTTPS + direct UDP
+> для CoAP.** Cloudflare НЕ проксює UDP на безкоштовному/Pro тарифах — тож CoAP :5683 іде
+> **окремим шляхом через Ingress Anchor** (статичний GCP IP), який і так є в архітектурі.
+> ⚠️ **Переїхало сюди 2026-08-29 [`OPS.37`](00_07_Action_Plan_Tracker)** з дока про зняту платформу.
+> Перевірено перед переїздом: цей чекліст був **єдиним** його домом у всьому корпусі — ані
+> «Full (strict)», ані SSL Labs, ані `cf-ray` не зустрічались більше ніде, тож видалення без
+> переїзду стерло б єдину 👤-процедуру дня деплою. Альтернатива, що спиралась на hostname-operator
+> зниклої платформи, знята разом із нею — fallback-варіанту TLS більше НЕМАЄ, і це названо, а не
+> замовчано: за недоступності Cloudflare потрібне НОВЕ рішення, не запасне.
 
-| Файл | Призначення |
-|------|------------|
-| `deploy/akash/deploy.yaml` | Статичний SDL — ручний деплой |
-| `deploy/akash/deploy.yaml.tpl` | Шаблон SDL (Terraform рендерить) |
-| `terraform/akash/main.tf` | `local_file` + `null_resource` (CLI wrapper) |
-| `terraform/akash/generated-deploy.yaml` | Генерується Terraform, права `0600` |
+**Архітектура:**
 
-### Процес Akash деплою (через Terraform)
-
-```bash
-cd terraform/akash
-# Створити terraform.tfvars з prefer-fuller екземпляра:
-#   cp terraform.tfvars.example terraform.tfvars
-# Повний набір змінних (мірор .kamal/secrets-common, ~25 sensitive):
-#   akash_key_name, docker_image
-#   rails_master_key, db_password, cloud_sql_instance_connection_name,
-#     gcp_sa_key_base64, redis_url, kredis_redis_url
-#   provisioning_master_key  ← 🛑 BOOT-CRITICAL
-#   sentry_dsn, prometheus_auth_user/password
-#   grafana_remote_write_url/username/token
-#   oracle_minter_private_key, oracle_slasher_private_key,
-#     ethereum_anchor_private_key   (легасі oracle_private_key RETIRED — INF.22)
-#   alchemy_polygon_rpc_url, alchemy_ethereum_rpc_url, solana_rpc_url
-#   solana_wallet_keypair, solana_fee_payer_pubkey,
-#     solana_fee_payer_token_account, solana_usdc_mint_address
-#   chainlink_hmac_secret (dispatch-секрети вилучено — ARCH.53)
-
-terraform init
-terraform apply
-
-akash query market bid list --owner <your-address> --dseq <DSEQ>
-akash tx market lease create --dseq <DSEQ> --provider <provider-address> --from silken-deploy
-
-akash provider send-manifest terraform/akash/generated-deploy.yaml \
-  --dseq <DSEQ> --provider <provider-address> --from silken-deploy
-
-akash provider lease-status --dseq <DSEQ> --provider <provider-address> --from silken-deploy
+```
+Browser / API client                Queen Gateway (LoRa→CoAP)
+        │                                   │
+        ▼ HTTPS :443 (Cloudflare termin.)   ▼ CoAP/UDP :5683 (NO TLS)
+┌───────────────────────────────┐    ┌───────────────────────────────┐
+│ Cloudflare Edge (Proxy ON,    │    │ Ingress Anchor (e2-small,     │
+│ TLS termination, DDoS/WAF)    │    │ статичний IP, CoAP-демон      │
+│                               │    │ PRIMARY тут — INF.17)         │
+└────────┬──────────────────────┘    └──────────┬────────────────────┘
+         │ HTTPS → origin                       │ UDP (прямо, без CF)
+         ▼                                      ▼
+                  ┌─────────────────────────────────┐
+                  │  App host (Kamal web-роль)      │
+                  └─────────────────────────────────┘
 ```
 
----
+**Pre-flight checklist (👤 admin):**
+
+- [ ] **Cloudflare account** з активним Pro/Business планом (proxied CNAME + WAF rules; WebSocket
+      unlimited — на Free плані Hotwire/ActionCable лімітується).
+- [ ] **Домен у Cloudflare** — `silkennet.app` (web) і `silkennet.com` (його піддомен
+      `api.silkennet.com` несе CoAP).
+- [ ] **SSL/TLS режим `Full (strict)`** — Cloudflare→origin вимагає валідного сертифіката на
+      origin. ⚠️ `Flexible` (CF→origin по HTTP) дає grade B-C на SSL Labs і фальшиве відчуття TLS.
+- [ ] **Origin відомий:** публічна адреса app-хоста (або Ingress Anchor, якщо HTTP іде через
+      HAProxy — `app-host-ip`, див. §Розподіл Ресурсів).
+- [ ] **DNS-запис створено:** `silkennet.app` → origin, Proxy status: 🟠 **Proxied**.
+- [ ] **Ingress Anchor running** зі статичним IP (`gcloud compute addresses list`).
+- [ ] 🔴 **Queens бʼють у Ingress Anchor, НЕ в Cloudflare:** firmware резолвить
+      `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c`) → A-запис цього хоста
+      МУСИТЬ бути **DNS-only (сіра хмарка)**, не proxied, і вказувати на статичний Ingress-IP.
+      Fail-triggered re-resolve host-shipped [FW.58]: після N=3 flush-провалів підряд кеш
+      інвалідується → A-запис-фліп підхоплюється без ребута (механізм —
+      [`03_02 §4`](03_02_Queen_Gateway_Firmware); bench-verify → [`00_07` FW.58](00_07_Action_Plan_Tracker)).
+- [ ] **Rails-side ENV не вимикати:** `force_ssl=true`, `assume_ssl=true`, HSTS активні. CF додає
+      `X-Forwarded-Proto: https`, Rails з `assume_ssl` це поважає.
+- [ ] **`DISABLE_SSL` не встановлений** у деплой-конфізі (інакше Rails сам не форсуватиме HTTPS —
+      false sense of security).
+
+**Verification commands (виконати після deploy):**
+
+```bash
+# 1. TLS handshake через Cloudflare → перевірити SNI, ALPN, версію TLS
+openssl s_client -connect silkennet.app:443 -servername silkennet.app -alpn h2,http/1.1 -brief </dev/null
+# Очікуємо: "Protocol  : TLSv1.3", "Cipher    : TLS_AES_256_GCM_SHA384", "ALPN protocol: h2"
+
+# 2. HSTS header + Cloudflare присутній + Rails redirect HTTP→HTTPS
+curl -sI https://silkennet.app/up | head -15
+# Очікуємо: HTTP/2 200, strict-transport-security: max-age=…, server: cloudflare,
+#           cf-ray: <id>, x-frame-options: SAMEORIGIN
+
+# 3. HTTP має бути redirected на HTTPS (Rails force_ssl)
+curl -sI http://silkennet.app/up | head -5
+# Очікуємо: HTTP/1.1 301 Moved Permanently або 308, location: https://silkennet.app/up
+
+# 4. Cloudflare proxy ACTIVE (cf-ray header має бути)
+curl -sI https://silkennet.app/ | grep -i "cf-ray\|server"
+# Очікуємо обидва: server: cloudflare + cf-ray header
+
+# 5. Origin server вже НЕ доступний напряму по HTTP (security perimeter)
+# Знайти origin: dig +short silkennet.app, потім перевірити що direct hit blocked WAF/IP rules
+# або повертає Cloudflare 403
+
+# 6. WebSocket / Turbo Stream підключення (важливо для Hotwire)
+# Браузер DevTools → Network → WS → ws://… → має бути wss://
+# Або через cli:
+curl -sI -H "Upgrade: websocket" -H "Connection: Upgrade" \
+  -H "Sec-WebSocket-Key: $(openssl rand -base64 16)" \
+  -H "Sec-WebSocket-Version: 13" \
+  https://silkennet.app/cable
+# Очікуємо: HTTP/2 101 Switching Protocols (або 426 з deeper handshake)
+
+# 7. CoAP UDP — ОКРЕМИЙ шлях. Cloudflare НЕ задіяний. Тестуємо direct UDP до Ingress Anchor:
+INGRESS_IP=$(gcloud compute addresses describe ingress-anchor-ip --region europe-west1 --format='value(address)')
+nc -u -w2 $INGRESS_IP 5683 < /dev/null && echo "UDP reachable" || echo "UDP blocked"
+# Або через coap-client (libcoap-tools):
+coap-client -m get coap://$INGRESS_IP:5683/health -v 6
+# Очікуємо: 2.05 Content або response від Rails CoAP daemon
+
+# 8. SSL Labs grade (виконати один раз після deploy)
+# https://www.ssllabs.com/ssltest/analyze.html?d=silkennet.app
+# Очікуємо: A або A+ (HSTS + TLS 1.3 + secure ciphers Cloudflare = grade A+)
+```
+
+**Failure modes та діагностика:**
+
+| Симптом | Ймовірна причина | Виправлення |
+|---------|------------------|-------------|
+| `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити, що origin має валідний сертифікат; CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
+| `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
+| WebSocket падає одразу | Hotwire/ActionCable через CF Free плану лімітується | Upgrade до CF Pro (WebSocket unlimited) АБО Cloudflare Tunnel зі sticky origin |
+| CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить сама після N=3 flush-провалів підряд ([FW.58], [`03_02 §4`](03_02_Queen_Gateway_Firmware)) або post-reboot |
+| TLS grade B-C на SSL Labs | CF SSL/TLS режим = `Flexible` (CF→origin по HTTP) | Перемкнути на `Full (strict)`; примусово вимкнути TLS 1.0/1.1 в CF Edge Certificates |
 
 ## 📋 DEPLOY-DAY: перший деплой фазами (Priority Order)
 
 > Переписано 2026-07-04 після операторського red-team: старий 18-крок чеклист мав
 > ordering-інверсії (Upstash після секретів, що його вимагають), фантом-кроки і
 > доменні суперечності. Машинні «☑ виправлено»-пункти прибрано (вони в git/00_07 §🗄️).
-> Два шляхи НЕ плутати: **твій перший деплой = ручний Akash canopy-render** (Фаза 3);
-> CI `Deploy · Canopy` — то Kamal→GCP web-only **fallback**, він оживе сам, щойно
-> GitHub Secrets заповнені (тримай їх незаповненими до готовності; path-gate вже стоїть —
+> ⚠️ **[OPS.37] Шлях тепер ОДИН.** Доти тут стояли два, і перший деплой специфікувався на
+> платформі без акаунта; CI `Deploy · Canopy` звався «fallback». Тепер це і є основний шлях —
+> він оживе сам, щойно GitHub Secrets заповнені (тримай їх незаповненими до готовності; path-gate вже стоїть —
 > деплой стріляє лише на deploy-релевантні зміни, [`06_07 §1`](06_07_CICD_and_Runbook_Index)).
 
 **Фаза −1 — Акаунти й значення (за дні ДО дня X):**
-GCP project + billing (+budget alert — OPS.11) · Akash-гаманець (`akash keys add`) + ≥5 AKT ескроу ·
+GCP project + billing (+budget alert — OPS.11; ⚠️ грант `billing.costsManager` на BILLING-акаунті — див. §IAM) ·
 **Upstash ×2** (production + canopy) → 2× `rediss://` URL · Cloudflare + **два домени:
 `silkennet.app`** (HTTPS, proxied) **та `silkennet.com`** (його піддомен `api.silkennet.com` —
 CoAP DNS-only; firmware Queen хардкодить саме його, `COAP_SERVER_HOST`) · Grafana Cloud
@@ -638,9 +692,9 @@ GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
 `artifact_registry_url` + `workload_identity_provider`/`service_account_email` → repo
 **Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`, після чого CI-деплой keyless). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
 `gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b` —
-порт 22 в інтернет не відкритий, ключі keyless (керує OS Login); Kamal-нога = (б)-клей
-за потребою (`ssh.proxy_command` через `start-iap-tunnel` + SA-ролі); Akash-шлях
-(Фаза 3) від SSH не залежить.
+порт 22 в інтернет не відкритий, ключі keyless (керує OS Login); 🔴 **[OPS.37] Kamal-нога (б)-клею (`ssh.proxy_command` через `start-iap-tunnel` + SA-ролі)
+більше НЕ опційна:** доти перший деплой ішов повз SSH, тепер він іде Kamal'ом, тобто
+SSH-модель стоїть на критичному шляху.
 
 **Фаза 1 — Дротування post-infra:**
 GitHub Secrets **Batch B** — ДВА доми [INF.22]: repo-level = `REDIS_URL`,
@@ -652,7 +706,7 @@ wait-timer + ref-policy — [`06_04 §1`](06_04_Secrets_Checklist)). ⚠️ Па
 покладеш п'ятірку repo-level — деплой лишиться ЗЕЛЕНИМ (environment-jobs бачать
 repo-секрети як fallback), але ізоляція тихо знульована, а реверс = ручне повторне
 введення значень (GitHub секретів назад не віддає) → **verify scope ДО деплою:** `ruby scripts/audit_deploy_secret_scope.rb` (S1.1 — read-only `gh`-preflight: money-квінтет ∈ env `production` ТІЛЬКИ (не repo), WIF-ids = Variables, retired ∉; ловить wrong-home перш ніж деплой його замаскує) → DNS: `api.silkennet.com` **A → ingress_ip
-(DNS-only, сіра хмарка!)** + `silkennet.app` CNAME → Akash ingress (proxied, після Фази 3) →
+(DNS-only, сіра хмарка!)** + `silkennet.app` → app-хост (proxied, після Фази 3) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/
 `REDIS_URL`/`RAILS_MASTER_KEY`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
@@ -664,7 +718,7 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 **Фаза 2 — Контракти (до першого mint; можна паралельно з Фазою 3):**
 fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`MINTER_ORACLE`/`SLASHER_ORACLE`/`ANCHOR_ORACLE`/`DAO_TREASURY_ADDRESS`) + `REQUIRE_SAFE_ADMIN=true` (mainnet-гейти: ADMIN+TREASURY = Safe-контракти, `MINTER != SLASHER` E.2) → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
 (ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
-зібрати 9 адрес → вписати у `config/deploy.yml` env.clear + Akash SDL (INF.12) → redeploy job.
+зібрати 9 адрес → вписати у `config/deploy.yml` env.clear (INF.12) → redeploy job.
 
 **Фаза 3 — ПЕРШИЙ деплой = CANOPY (Kamal/GCP), і лише потім production** (founder 2026-07-04
 про принцип; ціль переспецифіковано [`OPS.37`](00_07_Action_Plan_Tracker) 2026-08-29):
@@ -694,8 +748,8 @@ job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import
 ⏱️ [INF.22] Перший release-run **зависне ~10 хв PENDING ×2** (environment wait-timer,
 per-job: перед `verify-secrets` і перед `deploy`) — це НЕ зависання, НЕ скасовуй run;
 вікно = навмисний solo-approval-substitute ([`06_04 §1`](06_04_Secrets_Checklist)).
-Akash production-render (дефолтні vars) → повтор Фази 4 → `RAILS_ALLOWED_HOSTS=
-silkennet.app,api.silkennet.com` у env.clear/SDL (S6.18 — ОБИДВА легітимні хости:
+`kamal deploy` production → повтор Фази 4 → `RAILS_ALLOWED_HOSTS=
+silkennet.app,api.silkennet.com` у env.clear (S6.18 — ОБИДВА легітимні хости:
 app = Cloudflare-HTTPS, api = анкор-шлях) → [INF.10] фліп `proxy.healthcheck.path: /ready`
 у `config/deploy.yml` ЛИШЕ після `/ready`→200 (на холодному старті /ready 503-ить →
 kamal-proxy довбе до deploy_timeout → rollback; дефолт /up прощає bring-up; повільний
@@ -769,14 +823,14 @@ Series D архітектура (>1M вузлів):
 
 #### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-small` (Series D)
 
-**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-small` (2 vCPU shared, 2 GB RAM, обмежений egress). CoAP-демон приймає UDP/5683 прямо на ньому (PRIMARY, INF.17); HAProxy проксює 80/443 на Akash. При >10M дерев → мільйони Queens → один VM стає вузьким горлом для CoAP/UDP (демонова стеля ~10k вузлів — E.5 — настане раніше за мережеву).
+**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-small` (2 vCPU shared, 2 GB RAM, обмежений egress). CoAP-демон приймає UDP/5683 прямо на ньому (PRIMARY, INF.17); HAProxy проксює 80/443 на app-хост. При >10M дерев → мільйони Queens → один VM стає вузьким горлом для CoAP/UDP (демонова стеля ~10k вузлів — E.5 — настане раніше за мережеву).
 
 **Опції еволюції (упорядковані за зростанням інвазивності):**
 
 | # | Підхід | Що дає | Що потрібно |
 |---|--------|--------|-------------|
 | 1 | **GCP L4 Network Load Balancer + MIG `e2-small`** | Горизонтальний autoscaling, безмежний throughput, та сама статична IP (forwarding rule) | Terraform: `google_compute_forwarding_rule` (L4 UDP) + `google_compute_region_instance_group_manager` з autoscaler; стартап-скрипт ідентичний існуючому (CoAP-демон на кожному інстансі MIG; за стелею демона — ARCH.2 Rust/Go proxy). DNS A не змінюється. |
-| 2 | **Cloudflare Spectrum (UDP forwarding)** | Глобальний anycast → найближча PoP-нода, DDoS-фільтрація, без власної VM-інфраструктури | Cloudflare Enterprise (Spectrum — paid add-on); CNAME `api.silkennet.com` на Spectrum endpoint; whitelist Akash origin IP. GCP Ingress Anchor можна вимкнути. |
+| 2 | **Cloudflare Spectrum (UDP forwarding)** | Глобальний anycast → найближча PoP-нода, DDoS-фільтрація, без власної VM-інфраструктури | Cloudflare Enterprise (Spectrum — paid add-on); CNAME `api.silkennet.com` на Spectrum endpoint; whitelist origin IP app-хоста. GCP Ingress Anchor можна вимкнути. |
 | 3 | **Ingress Proxy (Rust/Go) + Kafka** (нижче) | Stateless дешифрування AES-CBC + батч у Kafka до того, як Rails побачить пакет | Власна розробка (див. наступний підрозділ). Поєднується з #1 або #2 — L4/Spectrum дають мережевий шар, Proxy дає прикладний. |
 
 > **Рекомендований шлях:** #1 (L4 NLB + MIG) як проміжний крок — мінімум коду, лише Terraform. Якщо у вас уже є Cloudflare Enterprise — #2 дешевший за операцію. #3 (Proxy + Kafka, нижче) обов'язковий при пакетних потоках >1M/год незалежно від мережевого шару.
