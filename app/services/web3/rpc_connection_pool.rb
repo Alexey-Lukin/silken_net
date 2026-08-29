@@ -31,6 +31,45 @@ module Web3
   module RpcConnectionPool
     THREAD_KEY_PREFIX = :web3_rpc_client_
 
+    # 🔴 [ARCH.114] ДІМ КАСКАДУ — МЕРЕЖА, а не сайт виклику. Заведено 2026-08-29
+    # після емпіричної проби, і саме проба вирішила форму:
+    #
+    #   client_for("ALCHEMY_POLYGON_RPC_URL")                        # → Eth::Client, кешується
+    #   client_for("ALCHEMY_POLYGON_RPC_URL", fallback_env_keys: […]) # → ТОЙ САМИЙ обʼєкт
+    #
+    # Кеш ключується ЛИШЕ на `rpc_url_env_key` (рядок нижче), тож каскад, оголошений
+    # kwargʼом, мовчки не діяв, якщо в тому ж Sidekiq-потоці раніше побував сайт без
+    # каскаду — а таких для Polygon вісім проти ОДНОГО з каскадом
+    # (`MintingRollbackService`). Потоки живуть довго й перевикористовуються між
+    # джобами, отже єдиний money-каскад Polygon працював лише тоді, коли його джоба
+    # траплялась у потоці першою. Оголошення було, гарантії не було.
+    #
+    # 🔑 Чому реєстр, а не «дротувати kwarg на всіх 13 сайтах»: каскад є властивістю
+    # МЕРЕЖІ (які ще ноди говорять тим самим ланцюгом), а не властивістю того, хто
+    # цієї миті робить виклик. Реєстр робить кеш-ключ знову ЧЕСНИМ — для одного
+    # env-ключа каскад тепер один, хай хто кличе, — і знімає цілий клас «сайт забув
+    # kwarg», якого жоден гейт не бачить.
+    # ⛔ Не додавай сюди ключа, якого немає в `.env.example`: порожній ENV просто
+    # випадає зі списку (`build_client`), тож вигаданий ключ не зламає нічого й саме
+    # тому проживе роками як фальшива обіцянка другого провайдера.
+    # ⊕ Ethereum свідомо відсутній: другого RPC для нього в наборі немає взагалі —
+    # завести його це 👤-дія (акаунт), не рядок тут.
+    #
+    # ⛔ ОГОЛОШЕНА СТЕЛЯ: реєстр судить ПРИСУТНІСТЬ змінної, ніколи придатність URL.
+    # `.env` розробника несе `INFURA_POLYGON_RPC_URL` плейсхолдером `…/YOUR_KEY`, і
+    # каскад його візьме як живий провайдер — тобто «другий RPC є» може означати
+    # «другий RPC оголошений». Це не регресія (`MintingRollbackService` читав ту саму
+    # змінну так само), але тепер поведінка діє на ВСІХ money-сайтах, тож ціна названа
+    # тут: детектора плейсхолдерів свідомо немає — він давав би шум на кожному dev-боксі,
+    # а справжня перевірка живості другого провайдера є 👤-дією при заведенні акаунта.
+    # 🔴 Наслідок для спек: `client_for` тепер чутливий до РЕАЛЬНОГО оточення там, де
+    # раніше вистачало мока на `ENV.fetch` — приклади, що каскаду не судять, мусять
+    # явно занулювати ці ключі (див. `before` у `rpc_connection_pool_spec`).
+    NETWORK_FALLBACK_ENV_KEYS = {
+      "ALCHEMY_POLYGON_RPC_URL" => %w[INFURA_POLYGON_RPC_URL].freeze,
+      "CELO_RPC_URL" => %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2].freeze
+    }.freeze
+
     class << self
       # Повертає кешований клієнт для вказаного RPC URL env key.
       # Підтримує fallback cascade через fallback_env_keys.
@@ -58,9 +97,16 @@ module Web3
       def build_client(rpc_url_env_key, fallback, fallback_env_keys)
         primary_url = fallback ? ENV.fetch(rpc_url_env_key, fallback) : ENV.fetch(rpc_url_env_key)
 
+        # [ARCH.114] Явний kwarg лишається як OVERRIDE (нічого не ламає в наявних
+        # сайтах), а за замовчуванням каскад береться з реєстру мережі — див. шапку
+        # `NETWORK_FALLBACK_ENV_KEYS`. Саме це робить кеш-ключ чесним: для одного
+        # env-ключа каскад один, хай хто кличе першим.
+        cascade_keys = Array(fallback_env_keys).presence ||
+                       NETWORK_FALLBACK_ENV_KEYS.fetch(rpc_url_env_key, [])
+
         # Збираємо всі доступні URLs для cascade
         all_urls = [ primary_url ]
-        Array(fallback_env_keys).each do |key|
+        Array(cascade_keys).each do |key|
           url = ENV[key]
           all_urls << url if url.present?
         end

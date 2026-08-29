@@ -15,7 +15,20 @@ RSpec.describe Web3::RpcConnectionPool do
   # тим, що `Web3::FeePolicy` (накладається на народженні клієнта) читає
   # `<CHAIN>_*_FEE_GWEI` — і чотири приклади цього файлу зачервоніли на коді,
   # який вони не судять. `and_call_original` лишає решту ENV собою.
-  before { allow(ENV).to receive(:fetch).and_call_original }
+  # 🔴 [ARCH.114] Другий `before` тут не косметика: приклади мокають `ENV.fetch`
+  # (primary URL), а fallback-ключі читаються через `ENV[…]` — тобто йшли в РЕАЛЬНЕ
+  # оточення. Локальний `.env` розробника несе `INFURA_POLYGON_RPC_URL` (плейсхолдер
+  # `YOUR_KEY`), тож після заведення реєстру мереж ці приклади почали будувати
+  # `ResilientClient` замість замоканого одиничного — судили НЕ те, про що написані,
+  # і результат залежав від того, чий `.env` лежить на машині. Дефолт — порожній
+  # fallback; приклади, що каскад ПЕРЕВІРЯЮТЬ, вмикають його явно у власному `before`.
+  before do
+    allow(ENV).to receive(:fetch).and_call_original
+    allow(ENV).to receive(:[]).and_call_original
+    described_class::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq.each do |key|
+      allow(ENV).to receive(:[]).with(key).and_return(nil)
+    end
+  end
 
   # Клієнти, повернуті моками, мусять приймати fee-сеттери: політика ARCH.62
   # накладається на КОЖНОГО новонародженого клієнта пулу.
@@ -151,6 +164,58 @@ RSpec.describe Web3::RpcConnectionPool do
       second_client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
       expect(second_client).to equal(client_double2)
       expect(first_client).not_to equal(second_client)
+    end
+  end
+
+  # 🔴 [ARCH.114] Каскад є властивістю МЕРЕЖІ, і ці піни стережуть саме те, що
+  # доти було недетермінованим. Проба (2026-08-29) показала: кеш ключується лише
+  # на env-ключі, тож сайт, який каскад ОГОЛОШУЄ kwargʼом, діставав клієнта без
+  # каскаду, якщо в тому ж потоці раніше побував сайт без нього — а для Polygon
+  # таких вісім проти одного. Money-каскад працював лише за щасливим порядком джоб.
+  describe "network-level fallback cascade (ARCH.114)" do
+    before do
+      allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("https://polygon-primary.example.com")
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("INFURA_POLYGON_RPC_URL").and_return("https://polygon-fallback.example.com")
+    end
+
+    it "builds a ResilientClient WITHOUT any kwarg when the network has a registered fallback" do
+      expect(described_class.client_for("ALCHEMY_POLYGON_RPC_URL")).to be_a(Web3::ResilientClient)
+    end
+
+    # Пін на сам ДЕФЕКТ: доти результат залежав від того, хто в потоці перший.
+    it "yields the same cascaded client regardless of call order" do
+      bare_first = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+      declared_second = described_class.client_for("ALCHEMY_POLYGON_RPC_URL",
+                                                   fallback_env_keys: [ "INFURA_POLYGON_RPC_URL" ])
+
+      expect(bare_first).to be_a(Web3::ResilientClient)
+      expect(declared_second).to equal(bare_first)
+    end
+
+    it "keeps an explicit kwarg working as an override" do
+      allow(ENV).to receive(:[]).with("CELO_RPC_URL_FALLBACK_1").and_return("https://celo-alt.example.com")
+
+      client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL",
+                                          fallback_env_keys: [ "CELO_RPC_URL_FALLBACK_1" ])
+      expect(client).to be_a(Web3::ResilientClient)
+    end
+  end
+
+  # ⛔ Реєстр не сміє обіцяти провайдера, якого немає: порожній ENV просто випадає
+  # зі списку, тож вигаданий ключ нічого не ламає — і саме тому прожив би роками
+  # як фальшива обіцянка другого RPC. Пін тримає реєстр проти `.env.example`.
+  describe "NETWORK_FALLBACK_ENV_KEYS registry honesty" do
+    it "declares only keys that actually exist in .env.example" do
+      declared = File.read(Rails.root.join(".env.example")).scan(/^([A-Z0-9_]+)=/).flatten
+      registered = described_class::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq
+
+      expect(registered - declared).to be_empty,
+                                       "реєстр каскадів обіцяє ENV-ключі, яких немає в .env.example: #{(registered - declared).join(', ')}"
+    end
+
+    it "is non-vacuous (the registry is not empty)" do
+      expect(described_class::NETWORK_FALLBACK_ENV_KEYS).not_to be_empty
     end
   end
 end
