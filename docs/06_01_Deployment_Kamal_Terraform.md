@@ -402,7 +402,7 @@ env:
     - PROVISIONING_MASTER_KEY
     # --- Money/signing-ключі НЕ ТУТ: JOB-ONLY (servers.job.env.secret вище) —
     #     п'ятірка CELO/MINTER/SLASHER + ETHEREUM_ANCHOR + SOLANA_WALLET_KEYPAIR,
-    #     однакова на Kamal і SDL (legacy ORACLE_PRIVATE_KEY RETIRED — INF.22);
+    #     (legacy ORACLE_PRIVATE_KEY RETIRED — INF.22);
     #     web/coap бутяться keyless (Web3NetworkGuard signer_process: Sidekiq.server?) ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---
     - ALCHEMY_POLYGON_RPC_URL
