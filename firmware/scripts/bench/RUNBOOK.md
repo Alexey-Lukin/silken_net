@@ -96,8 +96,12 @@
 | [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · FW.60 · HW.15 |
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
 | [bench:acoustic] | §6 (bullet «Acoustic 16 kHz стенд» ↓) | HW.11 · HW.30 |
+| [bench:mpu-trap] | §6 (bullet «MPU-активація на кремнії» ↓) | SEC.21 |
+| [bench:queen-cadence] | §5 (+ §6 VBAT-droop) | FW.64 |
 
 - **HW-AES-KEY/SEC.6:** SE05x eval-пара (baseline **SE051C2**, companion OM-SE050ARD-E — 03_05 §3.7 / 00_07 SE050-MIGRATION; роль SE ✅ provisioning-only 2026-07-03) + live SE05x I²C: **cold-boot заряд + T1oI2C-латентності provisioning-операцій** (датащит не специфікує — головне питання) + **замір SE sleep-floor за load-switch гейтом** (TPS22860-патерн — SEC.14 cross-check 2026-06-12: always-on 150 нА ≈ 3.6 мДж/год > весь запас Сценарію C, гейт обов'язковий).
+- **MPU-активація на кремнії** (`[bench:mpu-trap]`, SEC.21): реальний MemManage-trap — QEMU mps2 регіони моделює недостовірно, тож host-golden покриває лише RBAR/RASR-математику; на стенді перевіряється сам trap плюс TEX/C/B/S-tuning.
+- **Каденс Королеви під pending-CMD** (`[bench:queen-cadence]`, FW.64): на реальному lease підтвердити, що скорочений каденс не зʼїдає енергобюджет і не ламає CIFO-дедуп — вікно кешу коротшає.
 - **BME280** I2C bring-up — forced-mode read транспорту в коді ще НЕМА (`bme280.h` = лише компенсація+VPD-математика, host-golden `test_bme280.c`): написати I2C-глю → live read + gate-timing (VPD) + точка калібрування `Bme280_Vpd_Index`→kPa (формула+квант канонізовані `02_01 §3.4`).
 - **Flash-KV на кремнії** (ОДНЕ HAL-глю відкриває П'ЯТЬ freeze-contract'ів): `HAL_FLASH_*` glue + ECCD-політика читання + erase-час vs LoRa RX (`03_01 §2.3` bench-residual). Споживачі журналу: `0x10/0x11` Z-пороги (FW.8) · `0x13` key-version (FW.17) · `0x14` FC high-water (FW.2 nonce-якір) · `0x15` OTA version-hiwater (SEC.20 anti-replay — тому §2.5 [bench:ota-day] залежить від цього ж глю) · `0x20` beacon-dedup поколінь (FW.20-S2). Фліпи після верифікації: `FW8_PARSER_ENABLED` · `FW17_RATCHET_ENABLED` (+ §2.6) · `FW20_MESH_RELAY_ENABLED`; persist-roundtrip через power-cycle на кожен ключ.
 - **ARCH.35 W25Q32 sector-ring** (gated board-freeze; BOM Queen поз.16 🟡 — W25Q32JV специфіковано, розводки ще нема): розводка SPI+CS у `.ioc` → bench SPI-глю (драйвер+power-cut host-доведені `flash_ring.c`) → фліп `ARCH35_RING_ENABLED 1`; перевірка drain Flash-first→RAM при переповненні CIFO.
