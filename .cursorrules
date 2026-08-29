@@ -29,7 +29,7 @@
 - **`db/structure.sql`**, ніколи `schema.rb` (Postgres-партиції; dump = pg17 `pg_dump`, стрипати нічого не треба — CI на pg17, OPS.27).
 - **Thin controllers** — логіка лише в `app/services/` / `app/workers/`.
 - **Sidekiq `:strict: true`** — порядок черг незмінний (`§5`); не міняти чергу воркера без обґрунтування.
-- **Партиції — моделей ЧОТИРИ, і One-Home у них РІЗНИЙ** (двоє хелпера не мають узагалі): завжди передавай `created_at_iso`, але метод не вгадуй — бери в `§6`.
+- **Партиції — One-Home у моделей РІЗНИЙ, і одна хелпера не має свідомо**: завжди передавай `created_at_iso`, але метод не вгадуй — бери в `§6`. ⚠️ Числа тут свідомо немає: цей файл сам забороняє тримати лічильники, а попередня редакція тримала («ЧОТИРИ», «двоє») — і обидва були хибні (`PARTITIONED_TABLES` = три таблиці, без хелпера рівно одна).
 - **AES-ключі не покидають Ruby-процес** (`HardwareKey#cached_binary_key`, in-process LRU; без Redis-serialize).
 - **`oracle_status`** має prefix → `oracle_status_fulfilled?` (НЕ `fulfilled?`).
 - **`TelemetryLog` без AR-валідацій** (KENOSIS) — перевірка лише в `TelemetryUnpackerService.valid_sensor_data?`; не додавати назад (`§6`).

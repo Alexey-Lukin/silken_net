@@ -115,7 +115,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   deploy-воркфлоу (`deploy.yml` canopy + `deploy-production.yml`) → кожен Kamal-роль+accessory
   env-блок (`servers.{web,job,coap}` + `accessories.alloy` у `config/deploy.yml`) і його
   `config/deploy.canopy.yml`-оверрайд (B3: `servers:` там лишається МАСИВОМ — інакше
-  deep_merge юнітить job-квінтет у канопі) → terraform `variables.tf` +
+  deep_merge юнітить job-квінтет у канопі) → ⚠️ **terraform `variables.tf` — але вже НЕ як крок того самого воркфлоу**: [INF.22] зняв джобу `terraform` із деплою (apply founder-local), тож `TF_VAR_` у `deploy*.yml` більше не додають — інакше повертаєш рівно те, що коміт зняв, і оживляєш `terraform_workflow_var_parity` на воркфлоу, який terraform не запускає. Ланцюг закінчується Kamal-поверхнями; tf-змінні заводить founder локально +
   `main.tf`/`compute.tf` templatefile-мапа. Ланцюг секретів енфорсить `spec/deploy/env_fetch_declaration_spec.rb`
   — ⚠️ але **лише для `ENV.fetch("X")` БЕЗ дефолту в `app/`+`lib/`**, тож змінна, прочитана в
   `config/environments/*.rb` або з дефолтом, для нього **не існує** (мій випадок: жодного хіта).
