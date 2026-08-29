@@ -162,7 +162,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Шар | Шлях |
 |---|---|
 | Kamal deploy | `config/deploy.yml` · `config/deploy.canopy.yml` · `.kamal/secrets-common` |
-| IaC (GCP) | `terraform/` (`compute.tf` — анкор-демон systemd/env-file + boot-disk CMEK · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM · `wif.tf` — keyless CI→GCP OIDC (INF.22) · `billing.tf` — OPS.11 budget-guard) |
+| IaC (GCP) | `terraform/` (`compute.tf` — **ДВА інстанси**: анкор (systemd/env-file + boot-disk CMEK) і app-хост `google_compute_instance.app` (Kamal web+job+coap; повернений OPS.37 2026-08-30 — приватний IP, Docker передвстановлений, бо наш deploy-SA не має sudo й `kamal server bootstrap` тут RAISE'ить; canopy-VM свідомо НЕМАЄ — відкритий ⚖️) · `database.tf` · `vpc.tf` · `iam.tf` · `main.tf` · `kms.tf` — Cloud KMS keyring/IAM (два disk-ключі: `anchor-boot` · `app-boot`) · `wif.tf` — keyless CI→GCP OIDC (INF.22) · `billing.tf` — OPS.11 budget-guard) |
 | Observability | `config/initializers/prometheus.rb` (`SilkenNet::Metrics`) · `app/middleware/prometheus_collector.rb` · `lib/silken_net/metrics_exporter.rb` (embedded /metrics job/coap) · `deploy/alloy/config.alloy` · Grafana IaC `deploy/grafana/` (`deploy/grafana/alerts/silkennet-alerts.yaml` · `dashboards/` · `import.rb`) |
 | Web-сервер | `config/puma.rb` |
 | Load/throughput | `lib/silken_net/load_test/` + `bin/coap_load` (INF.23 harness: factory·flood·drain·microbench·report). ⚠️ dev-число ≠ capacity — bottleneck-class inversion (prod network-IO-bound, dev завищує 10-50×); реальна стеля лише staging з prod-adapters → `06_08 §2.4` |
