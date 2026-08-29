@@ -29,7 +29,45 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "tags": ["silkennet", "overview"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": "Deployment slot (external_label з Alloy). RAILS_ENV = production для ОБОХ слотів — canopy відрізняється лише POSTGRES_DATABASE, тож slot є ЄДИНИМ, що їх розводить. All = .* і навмисно матчить серії БЕЗ мітки теж (сумісність зі стеком до Alloy).",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "label": "Deployment slot",
+        "name": "slot",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "production",
+            "value": "production"
+          },
+          {
+            "selected": false,
+            "text": "canopy",
+            "value": "canopy"
+          }
+        ],
+        "query": "production,canopy",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
@@ -58,19 +96,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(silkennet_telemetry_processed_total[1m]))",
+          "expr": "sum(rate(silkennet_telemetry_processed_total{slot=~\"$slot\"}[1m]))",
           "legendFormat": "Processed",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(silkennet_telemetry_fraud_detected_total[1m]))",
+          "expr": "sum(rate(silkennet_telemetry_fraud_detected_total{slot=~\"$slot\"}[1m]))",
           "legendFormat": "Fraud detected",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (status) (rate(silkennet_coap_packets_received_total[1m]))",
+          "expr": "sum by (status) (rate(silkennet_coap_packets_received_total{slot=~\"$slot\"}[1m]))",
           "legendFormat": "CoAP received ({{status}})",
           "refId": "C"
         }
@@ -96,7 +134,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(increase(silkennet_panic_replay_rejected_total[5m]))",
+          "expr": "sum(increase(silkennet_panic_replay_rejected_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "Panic replay (5m)",
           "refId": "A"
         }
@@ -121,7 +159,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(increase(silkennet_telemetry_acoustic_overflow_total[5m]))",
+          "expr": "sum(increase(silkennet_telemetry_acoustic_overflow_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "Overflow (5m)",
           "refId": "A"
         }
@@ -155,7 +193,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_cluster_entropy_score",
+          "expr": "silkennet_cluster_entropy_score{slot=~\"$slot\"}",
           "legendFormat": "Cluster {{cluster_id}}",
           "refId": "A"
         }
@@ -180,7 +218,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(increase(silkennet_tinyml_threshold_invalid_reports_total[15m]))",
+          "expr": "sum(increase(silkennet_tinyml_threshold_invalid_reports_total{slot=~\"$slot\"}[15m]))",
           "legendFormat": "Invalid thresholds (15m)",
           "refId": "A"
         }
@@ -220,7 +258,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_sidekiq_queue_size",
+          "expr": "silkennet_sidekiq_queue_size{slot=~\"$slot\"}",
           "legendFormat": "{{queue}}",
           "refId": "A"
         }
@@ -252,7 +290,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_sidekiq_queue_latency_seconds",
+          "expr": "silkennet_sidekiq_queue_latency_seconds{slot=~\"$slot\"}",
           "legendFormat": "{{queue}}",
           "refId": "A"
         }
@@ -281,7 +319,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (network, error_type) (rate(silkennet_rpc_errors_total[5m]))",
+          "expr": "sum by (network, error_type) (rate(silkennet_rpc_errors_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "{{network}} / {{error_type}}",
           "refId": "A"
         }
@@ -309,7 +347,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_rpc_circuit_breaker_open",
+          "expr": "silkennet_rpc_circuit_breaker_open{slot=~\"$slot\"}",
           "legendFormat": "{{provider}}",
           "refId": "A"
         }
@@ -332,13 +370,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (token_type) (rate(silkennet_scc_minted_total[5m]))",
+          "expr": "sum by (token_type) (rate(silkennet_scc_minted_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "Minted ({{token_type}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(silkennet_scc_slashed_total[5m]))",
+          "expr": "sum(rate(silkennet_scc_slashed_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "Slashed",
           "refId": "B"
         }
@@ -359,19 +397,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket{slot=~\"$slot\"}[5m])))",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket{slot=~\"$slot\"}[5m])))",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(silkennet_oracle_dispatch_duration_seconds_bucket{slot=~\"$slot\"}[5m])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -414,7 +452,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_oracle_balance_ratio",
+          "expr": "silkennet_oracle_balance_ratio{slot=~\"$slot\"}",
           "legendFormat": "{{network}}/{{signer}}",
           "refId": "A"
         }
@@ -435,7 +473,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_oracle_balance",
+          "expr": "silkennet_oracle_balance{slot=~\"$slot\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -482,7 +520,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_db_pool_connections / silkennet_db_pool_size",
+          "expr": "silkennet_db_pool_connections{slot=~\"$slot\"} / silkennet_db_pool_size{slot=~\"$slot\"}",
           "legendFormat": "{{database}}",
           "refId": "A"
         }
@@ -510,13 +548,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_db_pool_waiting",
+          "expr": "silkennet_db_pool_waiting{slot=~\"$slot\"}",
           "legendFormat": "Waiting ({{database}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_db_pool_idle",
+          "expr": "silkennet_db_pool_idle{slot=~\"$slot\"}",
           "legendFormat": "Idle ({{database}})",
           "refId": "B"
         }
@@ -544,25 +582,25 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(silkennet_mint_success_total) / sum(silkennet_mint_attempts_total)",
+          "expr": "sum(silkennet_mint_success_total{slot=~\"$slot\"}) / sum(silkennet_mint_attempts_total{slot=~\"$slot\"})",
           "legendFormat": "Mint",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(silkennet_slash_success_total) / sum(silkennet_slash_attempts_total)",
+          "expr": "sum(silkennet_slash_success_total{slot=~\"$slot\"}) / sum(silkennet_slash_attempts_total{slot=~\"$slot\"})",
           "legendFormat": "Slash",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(silkennet_solana_payout_success_total) / sum(silkennet_solana_payout_attempts_total)",
+          "expr": "sum(silkennet_solana_payout_success_total{slot=~\"$slot\"}) / sum(silkennet_solana_payout_attempts_total{slot=~\"$slot\"})",
           "legendFormat": "Solana payout",
           "refId": "C"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(silkennet_insurance_payout_success_total) / sum(silkennet_insurance_payout_attempts_total)",
+          "expr": "sum(silkennet_insurance_payout_success_total{slot=~\"$slot\"}) / sum(silkennet_insurance_payout_attempts_total{slot=~\"$slot\"})",
           "legendFormat": "Insurance payout",
           "refId": "D"
         }
@@ -587,7 +625,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_sidekiq_dead_set_size",
+          "expr": "silkennet_sidekiq_dead_set_size{slot=~\"$slot\"}",
           "legendFormat": "DeadSet size",
           "refId": "A"
         }
@@ -612,7 +650,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "max(silkennet_blockchain_manual_review_depth)",
+          "expr": "max(silkennet_blockchain_manual_review_depth{slot=~\"$slot\"})",
           "legendFormat": "manual_review depth",
           "refId": "A"
         }
@@ -637,7 +675,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "max(silkennet_blockchain_limbo_locked_total)",
+          "expr": "max(silkennet_blockchain_limbo_locked_total{slot=~\"$slot\"})",
           "legendFormat": "limbo locked",
           "refId": "A"
         }
@@ -662,7 +700,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "max(silkennet_chain_audit_delta)",
+          "expr": "max(silkennet_chain_audit_delta{slot=~\"$slot\"})",
           "legendFormat": "chain audit delta",
           "refId": "A"
         }
@@ -691,7 +729,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_process_resident_memory_bytes",
+          "expr": "silkennet_process_resident_memory_bytes{slot=~\"$slot\"}",
           "legendFormat": "{{process}}",
           "refId": "A"
         }
@@ -712,13 +750,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_ruby_gc_count",
+          "expr": "silkennet_ruby_gc_count{slot=~\"$slot\"}",
           "legendFormat": "GC runs ({{process}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_ruby_gc_major_count",
+          "expr": "silkennet_ruby_gc_major_count{slot=~\"$slot\"}",
           "legendFormat": "Major GC ({{process}})",
           "refId": "B"
         }
@@ -739,7 +777,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_ruby_gc_heap_live_slots",
+          "expr": "silkennet_ruby_gc_heap_live_slots{slot=~\"$slot\"}",
           "legendFormat": "{{process}}",
           "refId": "A"
         }
@@ -760,7 +798,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_ruby_threads",
+          "expr": "silkennet_ruby_threads{slot=~\"$slot\"}",
           "legendFormat": "{{process}}",
           "refId": "A"
         }
@@ -781,25 +819,25 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_puma_running_threads",
+          "expr": "silkennet_puma_running_threads{slot=~\"$slot\"}",
           "legendFormat": "Running ({{process}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_puma_max_threads",
+          "expr": "silkennet_puma_max_threads{slot=~\"$slot\"}",
           "legendFormat": "Max ({{process}})",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_puma_pool_capacity",
+          "expr": "silkennet_puma_pool_capacity{slot=~\"$slot\"}",
           "legendFormat": "Free capacity ({{process}})",
           "refId": "C"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_puma_backlog",
+          "expr": "silkennet_puma_backlog{slot=~\"$slot\"}",
           "legendFormat": "Backlog ({{process}})",
           "refId": "D"
         }
@@ -832,7 +870,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "max(silkennet_gateways_faulty)",
+          "expr": "max(silkennet_gateways_faulty{slot=~\"$slot\"})",
           "legendFormat": "Faulty gateways",
           "refId": "A"
         }
@@ -857,7 +895,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "max(silkennet_gateway_attest_lapsed)",
+          "expr": "max(silkennet_gateway_attest_lapsed{slot=~\"$slot\"})",
           "legendFormat": "Attest lapsed",
           "refId": "A"
         }
@@ -878,7 +916,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (outcome) (rate(silkennet_helium_sos_received_total[5m]))",
+          "expr": "sum by (outcome) (rate(silkennet_helium_sos_received_total{slot=~\"$slot\"}[5m]))",
           "legendFormat": "{{outcome}}",
           "refId": "A"
         }

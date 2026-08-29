@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "json"
 require "yaml"
 require_relative "../support/repo_root"
 
@@ -52,6 +53,38 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
     expect(branch).not_to match(/request\(:(post|put|delete|patch)\b/),
       "у гілці `--verify` зʼявився мутуючий виклик — режим оголошений read-only, " \
       "і його ганяють проти живого стека саме на цій підставі."
+  end
+
+  # [S2.4] Дашборд скоуплено по `slot` — і без носія наступна панель приїхала б без нього.
+  # `RAILS_ENV` = production для ОБОХ слотів (canopy різниться лише `POSTGRES_DATABASE`),
+  # тож `slot` є ЄДИНИМ, що їх розводить; панель без матчера мовчки зливає staging із продом.
+  # 🔴 ОГОЛОШЕНА СТЕЛЯ, і вона тут несуча: спека судить ЛИШЕ ДАШБОРД. 57 alert-виразів
+  # `slot` НЕ несуть свідомо — це відкритий ⚖️ (`00_07` S2.4: які правила пінити до
+  # production, а які лишити крос-слотними, бо канопі, що впав, теж варто бачити).
+  # ⛔ Тож зелена цієї спеки НЕ означає «середовища розведені» — вона означає рівно
+  # «розведені на екрані». Цитувати її як доказ ізоляції алертів — помилка.
+  it "every dashboard panel query is scoped by the slot label" do
+    dash = JSON.parse(REPO_ROOT.join("deploy/grafana/dashboards/silkennet-overview.json").read)
+    exprs = []
+    walk = lambda do |node|
+      case node
+      when Hash then node.each { |k, v| k == "expr" && v.is_a?(String) ? exprs << v : walk.call(v) }
+      when Array then node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(dash)
+
+    expect(exprs).not_to be_empty, "у дашборді не знайдено жодного `expr` — змінився формат?"
+    # ⚠️ `scan` з ОДНІЄЮ групою віддає масиви з ОДНОГО елемента — деструктуризація на
+    # дві змінні тихо клала селектор у `_`, і гейт кричав «41 без скоупу» на здоровому
+    # дашборді. Тому тут дві явні групи: імʼя метрики й (опційний) селектор.
+    unscoped = exprs.reject do |expr|
+      expr.scan(/(silkennet_[a-z0-9_]+)(\{[^}]*\})?/).all? { |_name, selector| selector.to_s.include?("slot") }
+    end
+
+    expect(unscoped).to be_empty,
+      "Панелі без `{slot=~\"$slot\"}` (#{unscoped.size}): #{unscoped.first(3).join(' | ')}. " \
+      "Без матчера панель зливає canopy з production в одну лінію — а розводить їх лише ця мітка."
   end
 
   it "every silkennet_ metric referenced in an alert expr exists in the Prometheus registry" do

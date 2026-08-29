@@ -49,6 +49,22 @@ env:
     # every boot; drop this line the day canopy gains a job role.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
 
+# 🔴 SLOT-АТРИБУЦІЯ — БЕЗ ЦЬОГО ДИСКРИМІНАТОР БРЕШЕ, а не мовчить.
+# `config/deploy.yml` задає `accessories.alloy.env.clear.DEPLOYMENT_SLOT: production`
+# ЖОРСТКО, а destination deep_merge є keys-UNION — тож без цього override canopy-Alloy
+# емітив би `slot="production"` і його серії злилися б із продовими під ПРОДОВОЮ міткою.
+# Це гірше за відсутність мітки: порожнє поле видно, хибне — ні.
+# ⚠️ Механізм тут доганяє ОБІЦЯНКУ, що вже стояла в `deploy/alloy/config.alloy`
+# («"canopy" for a canopy deploy») і не мала за собою жодного рядка конфігу —
+# RAILS_ENV для обох слотів `production`, тож `env`-мітка середовища не розводить.
+# ⛔ Перевизначаємо ЛИШЕ `env.clear`: `env.secret` — масив, і його переоголошення
+# замінило б успадкований набір цілком (та сама пастка, що з `servers:` вище).
+accessories:
+  alloy:
+    env:
+      clear:
+        DEPLOYMENT_SLOT: canopy
+
 # Proxy: no SSL on canopy (HTTP only for developer use).
 # proxy:
 #   ssl: true
