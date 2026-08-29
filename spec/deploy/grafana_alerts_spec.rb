@@ -38,6 +38,22 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
     exprs.compact.join(" ").scan(/\bsilkennet_[a-z0-9_]+/).uniq
   end
 
+  # [INF.26/S2.2] `import.rb --verify` ОГОЛОШУЄ себе read-only — і доти це була
+  # обіцянка без носія. Ціна помилки асиметрична: режим існує саме щоб його ганяли
+  # НАОСЛІП проти живого стека, тож випадковий `request(:post …)`, що заїде в цю
+  # гілку, мутуватиме прод у момент, коли оператор упевнений, що лише дивиться.
+  # ⚠️ Стеля: спека судить ФОРМУ виклику в цій гілці, не досяжність — метод,
+  # винесений за межі гілки й покликаний звідти, вона не побачить.
+  it "the --verify branch of import.rb performs no writes" do
+    src = REPO_ROOT.join("deploy/grafana/import.rb").read
+    branch = src[/^if ARGV\.include\?\("--verify"\)$(.*?)^end$/m, 1]
+
+    expect(branch).not_to be_nil, "гілку `--verify` не знайдено — режим перейменували чи зняли?"
+    expect(branch).not_to match(/request\(:(post|put|delete|patch)\b/),
+      "у гілці `--verify` зʼявився мутуючий виклик — режим оголошений read-only, " \
+      "і його ганяють проти живого стека саме на цій підставі."
+  end
+
   it "every silkennet_ metric referenced in an alert expr exists in the Prometheus registry" do
     missing = referenced.reject do |name|
       registered.include?(name) || registered.include?(name.sub(/_(bucket|sum|count)\z/, ""))

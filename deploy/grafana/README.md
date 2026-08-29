@@ -23,7 +23,20 @@ ruby deploy/grafana/import.rb --dry-run
 GRAFANA_URL=https://<stack>.grafana.net \
 GRAFANA_API_TOKEN=<token> \
   ruby deploy/grafana/import.rb
+
+# Звірка живого стека проти IaC — READ-ONLY, жодного запису:
+GRAFANA_URL=https://<stack>.grafana.net \
+GRAFANA_API_TOKEN=<token> \
+  ruby deploy/grafana/import.rb --verify
 ```
+
+`--verify` відповідає на питання, яке доти адресувалось ОКУ: чи всі правила
+справді сіли, чи привʼязався datasource (плейсхолдер, що доїхав живим, дає
+правило, яке не спрацює НІКОЛИ), і чи немає в стеку правил, **створених повз
+репо** — зворотний дрейф, якого наступний імпорт не чіпає, бо upsert іде
+per-uid. Оголошені стелі режиму (він не судить ПРАВИЛЬНІСТЬ порогів, не читає
+silences і не перевіряє contact point) стоять у шапці самої гілки в `import.rb`;
+read-only тримає не обіцянка, а спека `spec/deploy/grafana_alerts_spec.rb`.
 
 Скрипт сам: знаходить UID Prometheus datasource (або `DATASOURCE_UID` env),
 створює folder «SilkenNet» (або `GRAFANA_FOLDER`), імпортує дашборд із

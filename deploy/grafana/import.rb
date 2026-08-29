@@ -20,6 +20,10 @@
 #      X-Disable-Provenance (рулі лишаються редагованими в UI) → інтервал
 #      групи best-effort через rule-groups endpoint.
 #
+# `--verify` — READ-ONLY звірка живого стека проти IaC (потребує credentials, нічого
+#   не пише): чи всі правила сіли, чи привʼязався datasource, чи немає правил,
+#   створених повз репо. Оголошені стелі — у шапці самого режиму.
+#
 # `--dry-run` — без credentials і без HTTP: валідація форми обох артефактів
 # (JSON парситься + DS_PROMETHEUS input; YAML парситься, uid'и унікальні,
 # всі datasourceUid = плейсхолдер) + план дій.
@@ -40,6 +44,20 @@ DASHBOARD_PATH = File.join(ROOT, "dashboards", "silkennet-overview.json")
 ALERTS_PATH    = File.join(ROOT, "alerts", "silkennet-alerts.yaml")
 PLACEHOLDER    = "${DATASOURCE_UID}"
 DS_INPUT_NAME  = "DS_PROMETHEUS"
+RULE_UID_MAX   = 40 # вендорська межа Grafana на uid alert-правила
+
+# Provisioning-API тримає interval групи в СЕКУНДАХ-цілим (`60`), а provisioning-ФАЙЛ —
+# рядком-тривалістю (`1m`). Одна величина, дві шкали, і жодна не видна з імені поля.
+# 🔴 Виміряно 2026-08-29 на живому стеку: код порівнював `60 != "1m"` — тобто ЗАВЖДИ
+# нерівні — і слав рядок, дістаючи 400 на кожному прогоні. Тож warn «інтервал не
+# виставився» був хибною тривогою про ПРАВИЛЬНИЙ стан, і ховав би справжнє розходження,
+# якби воно колись з'явилось: тривога, що звучить завжди, не звучить ніколи.
+def interval_seconds(value)
+  return value if value.is_a?(Integer)
+
+  m = value.to_s.match(/\A(\d+)([smh])\z/) or fail! "interval '#{value}': очікую <N>s|m|h або секунди-цілим"
+  m[1].to_i * { "s" => 1, "m" => 60, "h" => 3600 }.fetch(m[2])
+end
 
 def fail!(msg)
   warn "✗ #{msg}"
@@ -83,6 +101,16 @@ def load_alert_groups
     g["rules"].each do |r|
       %w[uid title condition data].each do |k|
         fail! "#{ALERTS_PATH}: рул без '#{k}' у групі #{g['name']}" unless r[k]
+      end
+      # 🔴 Grafana ріже uid alert-правила на 40 символів, і відмова приходить ЛИШЕ з
+      # живого API (`400: UID is longer than 40 symbols`) — тобто на етапі, де попередні
+      # правила вже записані, а решта черги не поїде. Виміряно 2026-08-29: рул із uid на
+      # 43 символи обірвав імпорт після 41-го з 57. Валідатор доти судив УНІКАЛЬНІСТЬ і
+      # наявність ключів, а довжину — ні, тож `--dry-run` був зелений на явно нездатному
+      # артефакті. ⚠️ Межа ВЕНДОРСЬКА, не наша: міняти її можна лише слідом за Grafana.
+      if r["uid"].to_s.length > RULE_UID_MAX
+        fail! "#{ALERTS_PATH}: uid '#{r['uid']}' — #{r['uid'].length} символів, " \
+              "Grafana приймає щонайбільше #{RULE_UID_MAX} (живий API відмовить 400)"
       end
       r["data"].each do |d|
         next unless d.key?("datasourceUid")
@@ -144,10 +172,99 @@ ds_uid = ENV["DATASOURCE_UID"]
 if ds_uid.nil?
   code, list = request(:get, "/api/datasources")
   fail! "GET /api/datasources → #{code}: #{list}" unless code == 200
-  prom = list.find { |d| d["type"] == "prometheus" }
-  fail! "Prometheus datasource не знайдено — задай DATASOURCE_UID явно" unless prom
+  proms = list.select { |d| d["type"] == "prometheus" }
+  fail! "Prometheus datasource не знайдено — задай DATASOURCE_UID явно" if proms.empty?
+
+  # 🔴 ЧОМУ НЕ `.find` — виміряно на живому стеку 2026-08-29, і промах був би ТИХИЙ.
+  # Grafana Cloud віддає КІЛЬКА prometheus-джерел, і біллінгове `grafanacloud-usage`
+  # стоїть у списку ПЕРШИМ, тоді як метрики стека живуть у `grafanacloud-<org>-prom`
+  # (він же `isDefault`). Перша-ліпша означала б, що всі 57 правил привʼязані до бази,
+  # у якій `silkennet_*` не буде НІКОЛИ: вони резолвляться, виглядають здоровими в UI
+  # і не спрацьовують ніколи — «конфіг повний, шлях мертвий» у чистому вигляді.
+  # ⚠️ Ім'я тут НЕ дискримінатор (денилист на `usage` протух би на першому ж
+  # перейменуванні вендором): беремо `isDefault`, а за неоднозначності ВІДМОВЛЯЄМОСЬ —
+  # мовчазне вгадування на цьому шляху дорожче за зупинку.
+  prom = proms.find { |d| d["isDefault"] } || (proms.one? ? proms.first : nil)
+  unless prom
+    fail! "Prometheus-джерел кілька і жодне не is-default — задай DATASOURCE_UID явно. " \
+          "Кандидати: #{proms.map { |d| "#{d['uid']} (#{d['name']})" }.join(', ')}"
+  end
   ds_uid = prom["uid"]
-  step "datasource: #{prom['name']} (uid #{ds_uid})"
+  step "datasource: #{prom['name']} (uid #{ds_uid})#{proms.size > 1 ? " — обрано is-default із #{proms.size} prometheus-джерел" : ''}"
+end
+
+# ---------------------------------------------------------------------------
+# `--verify` — READ-ONLY звірка живого стека проти IaC. Жодного POST/PUT.
+#
+# 🔑 Навіщо окремий режим, а не «глянути в UI»: імпорт — це ДІЯ, а «чи вона
+# сталась» доти було питанням до ока. Око бачить те, що показує сторінка, і
+# систематично сліпе до ЗВОРОТНОГО дрейфу — правила, створеного руками в UI й
+# відсутнього в репо. Саме воно й переживе наступний імпорт (upsert per-uid
+# чужого uid не чіпає), тобто розходження росте мовчки.
+#
+# 🔴 ОГОЛОШЕНА СТЕЛЯ — читай як перелік того, чого цей режим НЕ доводить:
+#  1. Судиться НАЯВНІСТЬ і ПРИВʼЯЗКА, ніколи ПРАВИЛЬНІСТЬ: поріг може бути
+#     безглуздий, `expr` — про сусідню метрику. Той самий паритет-⊥-законність,
+#     що в реєстрі метрик (§Guard-craft #74).
+#  2. Silences / mute timings НЕ читаються: правило може бути присутнє, звʼязане
+#     й повністю заглушене — тут це виглядає здоровим.
+#  3. Contact point і notification policy НЕ перевіряються: правило може бути
+#     ідеальним і firing-ити В НІКУДИ. Це окрема вісь і окреме питання.
+#  4. Порожній результат тут — НЕ доказ: якщо стек порожній, «жодного зайвого
+#     правила» правдиве й нічого не варте. Дивись на число знайдених.
+# ---------------------------------------------------------------------------
+if ARGV.include?("--verify")
+  code, folders = request(:get, "/api/folders")
+  fail! "GET /api/folders → #{code}" unless code == 200
+  folder = folders.find { |f| f["title"] == FOLDER }
+
+  code, live = request(:get, "/api/v1/provisioning/alert-rules")
+  fail! "GET provisioning/alert-rules → #{code}: #{live}" unless code == 200
+
+  want = groups.flat_map { |g| g["rules"].map { |r| r["uid"] } }
+  live_by_uid = live.to_h { |r| [ r["uid"], r ] }
+  missing = want - live_by_uid.keys
+  extra   = live_by_uid.keys - want
+
+  # Плейсхолдер, що доїхав у стек живим, означає рулі, які НІКОЛИ не спрацюють:
+  # запит іде в неіснуючий datasource. Мовчазний клас — у UI воно виглядає як рул.
+  unbound = want.filter_map do |uid|
+    r = live_by_uid[uid]
+    next unless r
+
+    uid if Array(r["data"]).any? { |d| d["datasourceUid"].to_s == PLACEHOLDER }
+  end
+
+  puts "── Grafana ⟷ IaC (read-only) ──"
+  puts "  folder «#{FOLDER}»: #{folder ? "є (uid #{folder['uid']})" : 'НЕМАЄ'}"
+  puts "  datasource: uid #{ds_uid}"
+  puts "  правил у IaC: #{want.size} · у стеку всього: #{live.size}"
+  puts "  ✓ усі правила IaC присутні" if missing.empty?
+  puts "  ✗ ВІДСУТНІ у стеку (#{missing.size}): #{missing.join(', ')}" unless missing.empty?
+  puts "  ✓ жодного правила поза IaC" if extra.empty?
+  puts "  ⚠ у стеку, але НЕ в IaC (#{extra.size}): #{extra.join(', ')} — створені руками; наступний імпорт їх НЕ чіпатиме" unless extra.empty?
+  # Стеля №1 у дії: «плейсхолдера немає» ще НЕ означає «привʼязано куди треба».
+  # Тому друкуємо ФАКТИЧНИЙ набір джерел живих правил — рішення лишається читачеві.
+  bound = live.flat_map { |r| Array(r["data"]).map { |d| d["datasourceUid"] } }
+              .compact.reject { |u| u == "__expr__" }.tally
+  puts "  джерела живих правил: #{bound.empty? ? '—' : bound.map { |u, n| "#{u}×#{n}" }.join(', ')}"
+  puts "  ⚠ очікуване за автовиявленням: #{ds_uid} — розбіжність означає правила, що не спрацюють НІКОЛИ" \
+    unless bound.empty? || bound.keys == [ ds_uid ]
+  puts "  ✓ плейсхолдер datasource ніде не лишився" if unbound.empty?
+  puts "  ✗ НЕПРИВʼЯЗАНІ (#{unbound.size}): #{unbound.join(', ')} — запит іде в неіснуючий datasource, правило не спрацює НІКОЛИ" unless unbound.empty?
+
+  bad_interval = groups.filter_map do |g|
+    next unless folder
+
+    c, grp = request(:get, "/api/v1/provisioning/folder/#{folder['uid']}/rule-groups/#{g['name']}")
+    want = interval_seconds(g["interval"])
+    "#{g['name']}: у стеку #{grp['interval']}s, IaC каже #{want}s" if c == 200 && grp["interval"] != want
+  end
+  puts(bad_interval.empty? ? "  ✓ інтервали груп збігаються" : "  ✗ інтервали розійшлись: #{bad_interval.join('; ')}")
+
+  drift = !missing.empty? || !unbound.empty? || !bad_interval.empty?
+  puts(drift ? "\n✗ розходження — прожени імпорт без `--verify`" : "\n✅ стек у паритеті з IaC (у межах оголошених стель у шапці режиму)")
+  exit(drift ? 1 : 0)
 end
 
 # 2. Folder
@@ -171,8 +288,24 @@ code, res = request(:post, "/api/dashboards/import", body: {
                       inputs: [ { name: DS_INPUT_NAME, type: "datasource",
                                   pluginId: "prometheus", value: ds_uid } ]
                     })
-fail! "dashboards/import → #{code}: #{res}" unless code == 200
-step "дашборд імпортовано: #{res['importedUrl'] || res['url']}"
+# 🔴 ДАШБОРД І ПРАВИЛА — НЕЗАЛЕЖНІ АРТЕФАКТИ, і зчеплювати їх `fail!` було дефектом
+# звʼязності (виміряно на живому стеку 2026-08-29). Grafana Cloud скоупить RBAC ПО ТЕКАХ:
+# у виміряному випадку service-account мав `alert.rules:*` на `folders:*`, а
+# `dashboards:create` — лише на дві конкретні теки, тож 403 на дашборді ОБРИВАВ імпорт
+# до того, як поїхало бодай одне правило. Тобто часткові права давали НУЛЬ результату
+# замість більшої половини.
+# ⚠️ Деградація тут не пом'якшення: провал лишається гучним І несе ненульовий exit нижче
+# (`dashboard_failed`) — міняється лише ПОРЯДОК, а не суворість.
+dashboard_failed = nil
+if code == 200
+  step "дашборд імпортовано: #{res['importedUrl'] || res['url']}"
+else
+  dashboard_failed = "#{code}: #{res}"
+  warn "⚠ дашборд НЕ імпортовано → #{dashboard_failed}"
+  warn "  403 тут майже завжди = права токена скоуповані по теках: перевір" \
+       " GET /api/access-control/user/permissions → `dashboards:create`."
+  warn "  Правила їдуть далі — вони окремий артефакт і власний скоуп мають."
+end
 
 # 4. Alert rules — per-rule upsert (стабільні uid'и в YAML = ідемпотентність)
 prov_headers = { "X-Disable-Provenance" => "true" }
@@ -192,11 +325,13 @@ groups.each do |g|
 
   # Інтервал групи — best-effort: GET поточну групу → PUT з interval з YAML.
   code, grp = request(:get, "/api/v1/provisioning/folder/#{folder_uid}/rule-groups/#{g['name']}")
-  if code == 200 && grp["interval"] != g["interval"]
-    grp["interval"] = g["interval"]
+  want_interval = interval_seconds(g["interval"])
+  if code == 200 && grp["interval"] != want_interval
+    grp["interval"] = want_interval
     code, = request(:put, "/api/v1/provisioning/folder/#{folder_uid}/rule-groups/#{g['name']}",
                     body: grp, headers: prov_headers)
     warn "⚠ interval групи #{g['name']} не виставився (#{code}) — перевір у UI" unless code == 200
+    step "interval групи #{g['name']} → #{want_interval}s ✓" if code == 200
   end
 end
 
@@ -233,5 +368,10 @@ else
 end
 
 suffix = integrations.empty? ? "" : " + contact point «#{CONTACT_NAME}»"
-puts "✅ імпортовано: дашборд + #{rule_count} alert rules у «#{FOLDER}»#{suffix}."
+dash_part = dashboard_failed ? "дашборд ✗" : "дашборд ✓"
+puts "#{dashboard_failed ? '⚠' : '✅'} імпортовано: #{dash_part} + #{rule_count} alert rules у «#{FOLDER}»#{suffix}."
 puts "   Contact point пропущено — задай ALERT_CONTACT_* і перезапусти (README §Notification channel)." if integrations.empty?
+if dashboard_failed
+  warn "✗ дашборд лишився неімпортованим (#{dashboard_failed}) — exit 1, щоб провал не був тихим."
+  exit 1
+end
