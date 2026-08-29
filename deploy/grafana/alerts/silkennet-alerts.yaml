@@ -1115,6 +1115,47 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # [INF.26] Супутник виніс вердикт `rejected_fraud` — єдина гілка dClimate, що
+      # ставить у чергу НЕЗВОРОТНЕ спалення (`BurnCarbonTokensWorker`). Поріг `gt 0`
+      # не шумить із тієї самої підстави, що в sn-alert-slashing-event вище: поки
+      # флоту немає, таких вердиктів нуль ЗА ПОБУДОВОЮ, отже перший же справжній.
+      # ⛔ Свідомо НЕ алертимо на `inconclusive`: це спроєктований fail-safe HOLD на
+      # хмарність (>48 год орбітального вікна), тобто нормальна погода — алерт на
+      # нього був би шумом. Його видимість дає панель/запит по мітці `result`.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-satellite-fraud-verdict
+        title: "🟠 Супутник виніс вердикт fraud (черга на незворотне спалення)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum(increase(silkennet_dclimate_verification_total{result="rejected_fraud"}[1h]))
+              refId: A
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "dClimate: {{ $values.A.Value | printf \"%.0f\" }} вердикт(ів) rejected_fraud за годину."
+          description: "Ясне небо при заявленій пожежі — алерт визнано фродом і слешинг поставлено в чергу. Звір EwsAlert.satellite_status=rejected_fraud проти вердикту BlockchainBurningService ПЕРШ ніж підтверджувати."
+          runbook_url: "docs/05_05_Slashing_and_Risk_Policy.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P1: Ethereum L1 anchor stalled — weekly state-root не приземлявся >8 днів.
       # detect_missed_anchor_weeks! інкрементить лічильник при gap>MISSED_ANCHOR_THRESHOLD (8д).
       # Finality-сигнал (не runtime). Один із 4 anchor-liveness сигналів (ARCH.66): цей

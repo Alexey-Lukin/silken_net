@@ -435,6 +435,21 @@ module SilkenNet
       labels: [ :reason ]
     )
 
+    # [INF.26] Супутниковий вердикт dClimate за ТЕРМІНАЛЬНИМ результатом. Вісь
+    # грошова обабіч: `verified` веде в `InsurancePayoutWorker`, `rejected_fraud`
+    # ставить у чергу НЕЗВОРОТНЕ спалення (`BurnCarbonTokensWorker`), а
+    # `inconclusive` паркує рішення на людину/DAO. До 2026-08-29 у неї не було
+    # ані метрики, ані алерту, ані панелі.
+    # 🔴 Дім — `EwsAlert.after_update_commit`, НЕ сайт у сервісі: термінальних
+    # писачів `satellite_status` чотири, і один із них (`sidekiq_retries_exhausted`)
+    # живе у воркері, тобто поза сервісом узагалі. Попередня спроба лічити цю вісь
+    # стояла в `DclimateVerificationWorker` і саме тому рахувала ПІДМНОЖИНУ.
+    DCLIMATE_VERIFICATION_TOTAL = REGISTRY.counter(
+      :silkennet_dclimate_verification_total,
+      docstring: "Total dClimate satellite verdicts by terminal result",
+      labels: [ :result ]
+    )
+
     # OTA firmware chunks sent to field devices
     OTA_CHUNKS_SENT_TOTAL = REGISTRY.counter(
       :silkennet_ota_chunks_sent_total,

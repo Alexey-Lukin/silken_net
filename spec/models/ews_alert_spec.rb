@@ -418,6 +418,38 @@ RSpec.describe EwsAlert, type: :model do
       end
     end
 
+    describe "after_update_commit :count_satellite_verdict" do
+      # [INF.26] Дім лічби — модель, а не сайт у `Dclimate::VerificationService`:
+      # термінальних писачів `satellite_status` чотири, і один із них —
+      # `sidekiq_retries_exhausted` у воркері, тобто ПОЗА сервісом. Пін на ПРИРІСТ,
+      # не на `be > before`: другий зелений і при хибній мітці.
+      it "рахує ТЕРМІНАЛЬНИЙ вердикт під його власною міткою" do
+        metric = SilkenNet::Metrics::DCLIMATE_VERIFICATION_TOTAL
+        alert  = create(:ews_alert, :fire)
+        before_val = metric.get(labels: { result: "rejected_fraud" })
+
+        alert.update!(satellite_status: :rejected_fraud)
+
+        expect(metric.get(labels: { result: "rejected_fraud" }) - before_val).to eq(1)
+      end
+
+      # Початковий стан вердиктом не є — інакше лічильник рахував би СТВОРЕННЯ
+      # алертів під виглядом супутникової відповіді.
+      it "НЕ рахує повернення в `unverified` і зміни, що статусу не торкаються" do
+        metric = SilkenNet::Metrics::DCLIMATE_VERIFICATION_TOTAL
+        alert  = create(:ews_alert, :fire)
+        alert.update!(satellite_status: :verified)
+        before_val = metric.get(labels: { result: "unverified" })
+        verified_before = metric.get(labels: { result: "verified" })
+
+        alert.update!(satellite_status: :unverified)
+        alert.update!(message_params: { "probe" => "no-status-change" })
+
+        expect(metric.get(labels: { result: "unverified" })).to eq(before_val)
+        expect(metric.get(labels: { result: "verified" }) - verified_before).to eq(0)
+      end
+    end
+
     describe "after_create_commit :schedule_satellite_verification!" do
       it "enqueues DclimateVerificationWorker for fire_detected" do
         allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))

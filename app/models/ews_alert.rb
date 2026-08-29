@@ -210,6 +210,11 @@ class EwsAlert < ApplicationRecord
   # Real-time broadcast: оновлюємо дашборди всіх операторів при будь-яких змінах алерту
   after_update_commit :broadcast_alert_update
 
+  # [INF.26] Термінальний супутниковий вердикт → лічильник. Окреме імʼя, як і в
+  # сусідів нижче: два `after_*_commit` з одним filter'ом злипаються в один
+  # недосяжний колбек (див. блок вище).
+  after_update_commit :count_satellite_verdict
+
   # 🔴 [UI.11] Бейдж «Threat Alerts» кешується на хвилину, і TTL там був ПРОКСІ
   # для «щось змінилось» — тимчасом момент зміни ми знаємо ТОЧНО: створення
   # алерту й перехід у `resolved`. Присуд власника 2026-08-14 — гасити кеш на
@@ -503,6 +508,17 @@ class EwsAlert < ApplicationRecord
 
   def count_created_alert
     SilkenNet::Metrics::EWS_ALERTS_TOTAL.increment(labels: { alert_type: alert_type.to_s })
+  end
+
+  # [INF.26] Дім лічби супутникового вердикту — ТУТ, а не на сайтах
+  # `Dclimate::VerificationService`: термінальних писачів `satellite_status`
+  # чотири, і `sidekiq_retries_exhausted` у `DclimateVerificationWorker` — поза
+  # сервісом. `unverified` не лічимо: це початковий стан, а не вердикт.
+  def count_satellite_verdict
+    return unless saved_change_to_satellite_status?
+    return if satellite_unverified?
+
+    SilkenNet::Metrics::DCLIMATE_VERIFICATION_TOTAL.increment(labels: { result: satellite_status.to_s })
   end
 
   def dispatch_notifications!

@@ -328,6 +328,7 @@ end
 | `silkennet_anchor_missed_weeks_total` | — | Total missed Ethereum L1 anchor weeks detected (gap > 8 days) |
 | `silkennet_circuit_breaker_rejections_total` | `service` | Web3 requests fast-failed because a provider circuit breaker was open |
 | `silkennet_coap_packets_received_total` | `status` | Total CoAP UDP packets received by the telemetry daemon |
+| `silkennet_dclimate_verification_total` | `result` | Total dClimate satellite verdicts by terminal result — [INF.26] вісь ГРОШОВА обабіч (`verified` → InsurancePayoutWorker, `rejected_fraud` → BurnCarbonTokensWorker, `inconclusive` → людський/DAO-вердикт); дім лічби — `EwsAlert.after_update_commit`, бо термінальних писачів `satellite_status` чотири й один із них у `sidekiq_retries_exhausted` воркера |
 | `silkennet_ethereum_anchor_reverted_total` | — | EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66) |
 | `silkennet_ews_alerts_total` | `alert_type` | Total EWS alerts created — [INF.26] «created», бо інкремент живе в `after_create_commit`; доставка ([`ARCH.60`](00_07_Action_Plan_Tracker)) — окрема подія й власного лічильника не має |
 | `silkennet_fauna_skip_reports_total` | — | FW.42 telemetry packets reporting a fauna session skipped on low Vcap (per-DID attribution in logs) |
