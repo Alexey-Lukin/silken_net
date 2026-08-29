@@ -178,7 +178,7 @@ RSpec.describe Mrv::LineageReportService do
     expect(inherited).to eq([ old_log.id ])
   end
 
-  it "marks leaves unprovable_regrouped when the tree moved cluster after anchoring" do
+  it "marks unprovable_regrouped when the anchor has no subtree entry for the tree's current cluster" do
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)
     mint_confirmed!
     anchor_confirmed!

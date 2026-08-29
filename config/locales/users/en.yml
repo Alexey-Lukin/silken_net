@@ -42,6 +42,7 @@ en:
     roles:
       admin: Administrator
       forester: Forester
+      investor: Client (legacy role)
       subscriber: Client
       super_admin: Platform Administrator
     show_title: Profile // %{name}

@@ -40,10 +40,10 @@
 4. **[`00_07`-прямий]** BIZ.22: «вікно закривається першим mint'ом», гейтить Web3 mainnet → securities-консультація ДО емісії. **[наш висновок]** Тому пошук крипто-юриста — найтерміновіша вакансія, хоч сам mint далекий: присуд дешевший за ретроактивний redesign.
 5. **[`00_07`-прямий]** BIZ.21-CoI = гейт підписання BIZ.2. **[артефакт eo_insurance_spec]** Тригер покупки = перший B2B-signing (купувати раніше = палити премію pre-revenue).
 6. **[`00_07`-прямий]** BIZ.18-exhibit живить BIZ.2. **[артефакт sla_exhibit]** Числа — ТІЛЬКИ з перших live-SLO-вікон → серіалізовано за деплоєм.
-7. **[артефакт msa_skeleton §0]** Products-Contract Consistency Gate: каркас пише securities-safe мову, але КОД досі несе investor/total_funding/yield-механіку (F1–F10) → реальний підпис MSA лише ПІСЛЯ product-redesign за BIZ.22-присудом. **[наш висновок]** Інакше contract-vs-product розбіжність, яку юрист покупця побачить на DD.
+7. **[артефакт msa_skeleton §0]** Products-Contract Consistency Gate: каркас пише securities-safe мову, але КОД частково наздогнав: роль `investor` перейменовано на `subscriber` 2026-08-28, `current_yield_performance` знято 08-14; лишається `total_funding` і сама МЕХАНІку (F1–F10) → реальний підпис MSA лише ПІСЛЯ product-redesign за BIZ.22-присудом. **[наш висновок]** Інакше contract-vs-product розбіжність, яку юрист покупця побачить на DD.
 8. **[`00_07`-прямий]** STK.3 заблоковано на UNI.16 + UNI.14; кандидат-канал = Спрягайло (ННІ права ЧНУ) + Аблязов.
 9. **[`00_07`-прямий]** BIZ.11: ланцюг STK.1 (land-access) + BIZ.20 ✅ + UNI.16-RWA-меморандум; крок «після BIZ.2».
-10. **[`00_07`-прямий]** BIZ.15 (SPV) — вісь усередині entity-matrix; gated BIZ.20-Phase-2 + securities-присуд BIZ.22.
+10. **[`00_07`-прямий]** BIZ.15 (SPV) — вісь усередині entity-matrix; gated BIZ.20-Phase-2 + securities-ВИСНОВОК юриста (⚠️ не присуд BIZ.22 — той ухвалено 2026-08-28).
 
 ---
 
