@@ -1,59 +1,15 @@
 #!/bin/bash -e
 
-# ---------------------------------------------------------------------------
-# Cloud SQL Auth Proxy (for Akash / external deployments outside GCP VPC)
-# ---------------------------------------------------------------------------
-# Akash Network containers lack CAP_NET_ADMIN — no VPN/Tailscale possible.
-# The Cloud SQL Auth Proxy tunnels PostgreSQL traffic through Google Cloud API
-# (outbound HTTPS, which Akash permits). It creates a local TCP socket at
-# 127.0.0.1:5432 for Rails to connect to.
-#
-# Set these ENV vars to activate:
-#   CLOUD_SQL_INSTANCE_CONNECTION_NAME=project:region:instance
-#   GCP_SA_KEY_BASE64=<base64-encoded service account JSON key>
-#
-# When not set (e.g. Kamal deployments inside GCP VPC), this block is skipped.
-# See: docs/06_02_Akash_Network_Integration.md
-# ---------------------------------------------------------------------------
-if [ -n "$CLOUD_SQL_INSTANCE_CONNECTION_NAME" ]; then
-  echo "[entrypoint] Starting Cloud SQL Auth Proxy for ${CLOUD_SQL_INSTANCE_CONNECTION_NAME}..."
-
-  PROXY_ARGS=("$CLOUD_SQL_INSTANCE_CONNECTION_NAME")
-
-  if [ -n "$GCP_SA_KEY_BASE64" ]; then
-    echo "$GCP_SA_KEY_BASE64" | base64 -d > /tmp/gcp-sa-key.json
-    PROXY_ARGS=("--credentials-file" "/tmp/gcp-sa-key.json" "${PROXY_ARGS[@]}")
-  fi
-
-  cloud-sql-proxy "${PROXY_ARGS[@]}" &
-  PROXY_PID=$!
-
-  # Wait for proxy to be ready (up to 15 seconds)
-  proxy_ready=false
-  for i in $(seq 1 15); do
-    if pg_isready -h 127.0.0.1 -p 5432 -q 2>/dev/null; then
-      echo "[entrypoint] Cloud SQL Auth Proxy is ready."
-      proxy_ready=true
-      break
-    fi
-    sleep 1
-  done
-  if [ "$proxy_ready" != "true" ]; then
-    echo "[entrypoint] FATAL: Cloud SQL Auth Proxy not ready after 15s — aborting (would boot without DB)." >&2
-    exit 1
-  fi
-fi
-
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 else
   # Non-server processes (Sidekiq job, CoAP daemon) must not race the web's
-  # db:prepare on a cold FIRST deploy — Akash starts all services in parallel
-  # (no depends_on), and a worker touching a not-yet-migrated table burns
-  # retries / lands money-path jobs in the DeadSet before the schema exists.
-  # Wait for schema_migrations on the primary, fail loud after 60s — the
-  # provider restarts the container and the gate converges once web finishes.
+  # db:prepare on a cold FIRST deploy — Kamal starts every role in parallel
+  # (there is no depends_on), and a worker touching a not-yet-migrated table
+  # burns retries / lands money-path jobs in the DeadSet before the schema
+  # exists. Wait for schema_migrations on the primary, fail loud after 60s —
+  # the container restarts and the gate converges once web finishes.
   if [ -n "$POSTGRES_HOST" ]; then
     schema_ready=false
     for i in $(seq 1 60); do
@@ -70,36 +26,6 @@ else
       exit 1
     fi
   fi
-fi
-
-# ---------------------------------------------------------------------------
-# [INF.22] Proxy supervisor — a proxy that dies AFTER boot must kill the pod.
-# ---------------------------------------------------------------------------
-# Akash restarts a container only when PID 1 exits; there are no readiness
-# restarts. Without this, a crashed Cloud SQL Auth Proxy leaves a zombie app
-# serving DB errors forever. So when the proxy is active, run the app as a
-# sibling and exit loudly the moment EITHER side dies; TERM/INT are forwarded
-# so `docker stop` / lease teardown still drains gracefully (the boot-time
-# readiness gate above stays the first line of defense — this covers post-boot).
-if [ -n "${PROXY_PID:-}" ]; then
-  "${@}" &
-  APP_PID=$!
-  trap 'kill -TERM "$APP_PID" "$PROXY_PID" 2>/dev/null' TERM INT
-  while :; do
-    if ! kill -0 "$PROXY_PID" 2>/dev/null; then
-      echo "[entrypoint] FATAL: Cloud SQL Auth Proxy died — exiting so the provider restarts the container." >&2
-      kill -TERM "$APP_PID" 2>/dev/null
-      wait "$APP_PID" || true
-      exit 1
-    fi
-    if ! kill -0 "$APP_PID" 2>/dev/null; then
-      app_status=0
-      wait "$APP_PID" || app_status=$?
-      kill -TERM "$PROXY_PID" 2>/dev/null
-      exit "$app_status"
-    fi
-    sleep 2
-  done
 fi
 
 exec "${@}"
