@@ -15,7 +15,7 @@ name: Sec · DCO
 # a firmware one. Because nothing path-gates it, the check job itself is the always-on
 # branch-protection status; `if: always()` is kept so the OPS.14 gate-perimeter guard
 # (scripts/workflow_gate_perimeter.rb) recognises `DCO passed` as the required context
-# once branch protection is flipped. Until that flip it is classified :flip_pending.
+# (flipped :flip_pending → :required 2026-07-25, live-verified against the API).
 #
 # Bot commits are exempt, and the reason is verified rather than assumed: Dependabot
 # DOES sign off, but as `support@github.com` while authoring as
