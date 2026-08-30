@@ -84,7 +84,7 @@ namespace :wiki do
           puts "── staged changes ──"
           system("git", "--no-pager", "diff", "--cached", "--stat")
           if push
-            system("git", "-c", "user.name=SilkenNet Docs Bot", "-c", "user.email=docs@silken.net",
+            system("git", "-c", "user.name=SilkenNet Docs Bot", "-c", "user.email=docs@silkennet.com",
                    "commit", "--quiet", "-m", "docs: sync SSOT canon from repo @ #{head}")
             abort "wiki:sync — git push failed." unless system("git", "push", "--quiet", "origin", "HEAD")
             puts "✅ wiki:sync — published #{canon.size} pages."

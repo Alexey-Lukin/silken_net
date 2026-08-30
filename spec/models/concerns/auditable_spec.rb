@@ -13,7 +13,7 @@ RSpec.describe Auditable do
   end
 
   let!(:oracle) do
-    create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+    create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                 first_name: "Oracle", last_name: "Executioner")
   end
 

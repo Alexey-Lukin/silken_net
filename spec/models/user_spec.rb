@@ -278,7 +278,7 @@ RSpec.describe User, type: :model do
 
   describe ".oracle_executioner" do
     it "returns user with oracle email" do
-      oracle = create(:user, email_address: "oracle.executioner@system.silken.net")
+      oracle = create(:user, email_address: "oracle.executioner@system.silkennet.com")
       expect(described_class.oracle_executioner).to eq(oracle)
     end
 
@@ -605,7 +605,7 @@ RSpec.describe User, type: :model do
   # [ARCH.57] Зміна ролі → audit-ланцюг (model-layer ловить і console-шлях).
   describe "role-change audit-trail [ARCH.57]" do
     let!(:oracle) do
-      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                   first_name: "Oracle", last_name: "Executioner")
     end
 

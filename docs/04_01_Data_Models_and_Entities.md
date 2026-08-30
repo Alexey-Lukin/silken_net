@@ -958,7 +958,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `locale` | string | [I18N.1/I18N.3] Persisted мовна вподоба — джерело для ОБОХ контурів: **веб** (третій щабель резолву, [`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind) — те, що переживає зміну пристрою й чистку cookie) та **пошта** (Sidekiq, куди cookie не доїжджає). ⚠️ Рядок доти казав «для НЕ-веб-контекстів», і то було не описом, а МЕЖЕЮ: колонку читала сама лише пошта, тож людина з обраною мовою бачила англійський сайт і діставала лист своєю. Пишеться при явному виборі в перемикачі (`LocalesController`, guard дзеркалить [SEC.16]); `nil` = «не обрано» → наступний щабель |
 | `last_seen_at` | datetime | Оновлюється через Session |
 
-**Системний бот:** `User.oracle_executioner` — `oracle.executioner@system.silken.net` (super_admin без org). Використовується для автоматичних операцій системи.
+**Системний бот:** `User.oracle_executioner` — `oracle.executioner@system.silkennet.com` (super_admin без org). Використовується для автоматичних операцій системи.
 
 **Ключові методи:** `access_level`, `forest_commander?`, `full_name`, `touch_visit!`, `mfa_enabled?`, `consume_recovery_code!`, `generate_recovery_codes!`.
 
@@ -1574,8 +1574,8 @@ Cluster, User, Organization
 **Початкові організації:** `ActiveBridge` + `EcoFuture Fund`
 
 **Початкові ролі:**
-- `oracle.executioner@system.silken.net` — super_admin, системний бот (без org)
-- `admin@silken.net` — super_admin, Архітектор платформи
+- `oracle.executioner@system.silkennet.com` — super_admin, системний бот (без org)
+- `admin@silkennet.com` — super_admin, Архітектор платформи
 - `alexey@activebridge.org` — admin, ActiveBridge (access_level :organization)
 - `forester@activebridge.org` — forester (access_level :field)
 - `subscriber@ecofuture.fund` — subscriber (access_level :read_only)

@@ -391,7 +391,7 @@ RSpec.describe Organization, type: :model do
     # тож ним стає системний `oracle_executioner`. Без цього запису
     # `record_audit_trail!` WARN-скіпає — дію не валить, але й сліду не лишає.
     let!(:oracle) do
-      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                   first_name: "Oracle", last_name: "Executioner")
     end
 

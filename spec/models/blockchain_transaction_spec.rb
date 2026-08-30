@@ -991,7 +991,7 @@ RSpec.describe BlockchainTransaction, type: :model do
 
     context "when the system actor exists" do
       let!(:oracle) do
-        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                     first_name: "Oracle", last_name: "Executioner")
       end
 
@@ -1071,7 +1071,7 @@ RSpec.describe BlockchainTransaction, type: :model do
     # org через cluster — інакше найматеріальніші рухи писали б нуль audit-row (compliance-діра).
     context "when the tx is cluster-sourced (wallet=nil, org via cluster)" do
       let!(:oracle) do
-        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                     first_name: "Oracle", last_name: "Executioner")
       end
       let(:cluster) { create(:cluster) }

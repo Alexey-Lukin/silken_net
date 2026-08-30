@@ -151,7 +151,7 @@ RSpec.describe BlockchainBurningService do
       # [ARCH.57] Freeze-вердикт (кошти утримано без burn) → audit-ланцюг з причиною;
       # chain-only (fraud-attribution + DID не пінити на публічний IPFS).
       it "records the frozen verdict into the audit chain, chain-only" do
-        create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+        create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                     first_name: "Oracle", last_name: "Executioner")
 
         expect { described_class.call(organization.id, naas_contract.id) }

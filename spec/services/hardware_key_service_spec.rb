@@ -48,7 +48,7 @@ RSpec.describe HardwareKeyService, type: :service do
 
     # [ARCH.57] Ротація → chain-only audit; key-матеріал у metadata НЕ потрапляє.
     it "records the rotation into the audit chain without key material" do
-      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                   first_name: "Oracle", last_name: "Executioner")
       open_ratchet_gate!
 

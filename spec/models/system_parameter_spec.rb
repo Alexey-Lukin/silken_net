@@ -310,7 +310,7 @@ RSpec.describe SystemParameter, type: :model do
   # bootstrap-create (seeds) свідомо не аудитується.
   describe "parameter-change audit-trail [ARCH.57]" do
     let!(:oracle) do
-      create(:user, :super_admin, email_address: "oracle.executioner@system.silken.net",
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
                                   first_name: "Oracle", last_name: "Executioner")
     end
 

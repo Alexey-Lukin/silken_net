@@ -21,7 +21,7 @@ module Passwords
           form_with(url: forgot_password_path, method: :post, class: "p-8 border border-gaia-border bg-gaia-surface/80 backdrop-blur-xl space-y-8") do |f|
             div(class: "space-y-6") do
               field_container(f, :email, t(".email_label")) do
-                f.email_field :email, class: input_classes, placeholder: "architect@silken.net", required: true
+                f.email_field :email, class: input_classes, placeholder: "architect@silkennet.com", required: true
               end
             end
 

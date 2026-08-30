@@ -4,7 +4,7 @@
 require "rails_helper"
 
 RSpec.describe AuditLogs::Show do
-  def build_user(full_name: "Ada Lovelace", email_address: "ada@silken.net", role: "admin")
+  def build_user(full_name: "Ada Lovelace", email_address: "ada@silkennet.com", role: "admin")
     # 🔴 [TEST.12] Доти мок оголошував `full_name` І `email_address` як ДВА незалежні
     # поля — а на реальному `User` перше ВИВОДИТЬСЯ з імен і падає на друге
     # (`[first,last].compact_blank.join(" ").presence || email_address`). Тобто зв'язок,
@@ -138,7 +138,7 @@ RSpec.describe AuditLogs::Show do
     end
 
     it "renders actor email" do
-      expect(html).to include("ada@silken.net")
+      expect(html).to include("ada@silkennet.com")
     end
 
     # [I18N.1] Локаль НЕ базова: «admin» є підрядком «Administrator», тож у en пін не
@@ -181,13 +181,13 @@ RSpec.describe AuditLogs::Show do
     # закріпити: той самий фолбек на ЗОВНІШНІХ поверхнях є витоком PII, і межа
     # проходить по тому, хто читає сторінку, а не по зручності методу.
     it "друкує адресу там, де імені немає — і це навмисно, бо екран внутрішній" do
-      nameless = User.new(email_address: "ranger@silken.net", role: :forester)
+      nameless = User.new(email_address: "ranger@silkennet.com", role: :forester)
       html = render_component(log: build_log(user: nameless))
 
       # ⚠️ Пін МУСИТЬ цілити у вузол ІМЕНІ: адреса рендериться ще й окремим рядком
       # нижче, тож `include("ranger@…")` по документу зелений незалежно від фолбеку —
       # мутація «прибрати `|| email_address`» його не червонила (перевірено).
-      expect(html).to include(%(<p class="text-compact text-gaia-text font-mono">ranger@silken.net</p>))
+      expect(html).to include(%(<p class="text-compact text-gaia-text font-mono">ranger@silkennet.com</p>))
     end
   end
 end

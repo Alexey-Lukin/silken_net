@@ -342,7 +342,7 @@ RSpec.describe Governance::ParameterSyncWorker, type: :worker do
       context "when system_bot user exists" do
         let!(:oracle_user) do
           create(:user, :super_admin,
-                 email_address: "oracle.executioner@system.silken.net",
+                 email_address: "oracle.executioner@system.silkennet.com",
                  first_name: "Oracle", last_name: "Executioner")
         end
 

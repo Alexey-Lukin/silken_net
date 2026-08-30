@@ -16,7 +16,7 @@ uk:
       access_code_placeholder: "● ● ● ● ● ● ● ●"
       forgot_link: Забули код доступу?
       identity_label: Ідентифікатор (email)
-      identity_placeholder: operator@silken.net
+      identity_placeholder: operator@silkennet.com
       submit: Автентифікувати
       subtitle: Встановлення нейронного зв'язку
       title: Цитадель

@@ -227,7 +227,7 @@ class User < ApplicationRecord
   # Використовується замість User.find_by(role: :admin) || User.first,
   # щоб у журналах було чітко видно: це рішення системи, а не дія конкретної людини.
   def self.oracle_executioner
-    find_by(email_address: "oracle.executioner@system.silken.net")
+    find_by(email_address: "oracle.executioner@system.silkennet.com")
   end
 
   def full_name

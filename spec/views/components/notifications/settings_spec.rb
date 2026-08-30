@@ -11,7 +11,7 @@ RSpec.describe Notifications::Settings do
   # вирішувала, що поверне ActiveModel. Заразом зникли рукописні
   # `model_name`/`to_key`/`to_param`: компонент їх не читає ЖОДНОГО разу —
   # форма тут рукописна й адресується `notifications_settings_path`.
-  def account(email_address: "ada@silken.net",
+  def account(email_address: "ada@silkennet.com",
               telegram_chat_id: "123456789", push_token: nil)
     User.new(
       email_address: email_address,
@@ -61,7 +61,7 @@ RSpec.describe Notifications::Settings do
     end
 
     it "renders email field as disabled" do
-      expect(html).to include("ada@silken.net")
+      expect(html).to include("ada@silkennet.com")
       expect(html).to include("disabled")
     end
 

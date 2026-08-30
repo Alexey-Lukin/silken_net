@@ -17,7 +17,7 @@ RSpec.describe Users::Index do
       last_name: last_name,
       role: role,
       last_seen_at: last_seen_at,
-      email_address: "ada@silken.net"
+      email_address: "ada@silkennet.com"
     )
   end
 
@@ -77,7 +77,7 @@ RSpec.describe Users::Index do
 
     it "falls back to the email's first character when first_name is nil" do
       user = build_user(id: 5, first_name: nil, last_name: nil)
-      user.email_address = "zed@silken.net"
+      user.email_address = "zed@silkennet.com"
       html = render_component(users: [ user ])
       expect(html).to include(">z<")
     end

@@ -34,7 +34,7 @@ RSpec.describe Passwords::Forgot do
     end
 
     it "renders email placeholder" do
-      expect(html).to include("architect@silken.net")
+      expect(html).to include("architect@silkennet.com")
     end
   end
 

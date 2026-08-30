@@ -156,7 +156,7 @@ puts "👤 Створення Патрульних..."
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
 # Організація не вказана — це глобальний системний агент.
 # [СИНХРОНІЗОВАНО з RBAC]: super_admin → access_level :system (повний доступ до всієї платформи).
-oracle = User.find_or_create_by!(email_address: "oracle.executioner@system.silken.net") do |u|
+oracle = User.find_or_create_by!(email_address: "oracle.executioner@system.silkennet.com") do |u|
   u.first_name = "Oracle"
   u.last_name  = "Executioner"
   u.role       = :super_admin
@@ -166,7 +166,7 @@ end
 # [RBAC: access_level :system] — Архітектор платформи з повним доступом до всіх організацій.
 # super_admin не має прямого доступу до приватних Wallets без явного запрошення (Series D).
 super_admin = User.create!(
-  email_address: "admin@silken.net",
+  email_address: "admin@silkennet.com",
   password: "password123456",
   role: :super_admin,
   first_name: "Artem",

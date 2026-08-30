@@ -28,7 +28,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
     end
 
     it "returns the same success message for non-existing email (anti-enumeration)" do
-      post "/forgot_password", params: { email: "ghost@silken.net" }, as: :json
+      post "/forgot_password", params: { email: "ghost@silkennet.com" }, as: :json
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["message"]).to include("email exists")
     end
@@ -41,7 +41,7 @@ RSpec.describe Api::V1::PasswordsController, type: :request do
 
     it "does not enqueue email for non-existing users" do
       expect {
-        post "/forgot_password", params: { email: "ghost@silken.net" }, as: :json
+        post "/forgot_password", params: { email: "ghost@silkennet.com" }, as: :json
       }.not_to have_enqueued_mail(PasswordMailer, :reset_instructions)
     end
   end
