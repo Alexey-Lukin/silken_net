@@ -1488,7 +1488,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `web3_low` |
 | **Retry** | 5 |
-| **Тригер** | При активації NaasContract |
+| **Тригер** | ⛔ **ЖОДНОГО — воркер має НУЛЬ enqueue-сайтів** (переміряно 2026-08-25, [`00_07`](00_07_Action_Plan_Tracker) BIZ.11; «при активації NaasContract» спростовано — подія `activate` такого enqueue не має, тригер був вигаданий). Пускач = майбутній `Hadron::TokenizeForestPlotService`, свідомо не будується до присудів UNI.16 + BIZ.22 |
 | **Вхід** | `naas_contract_id` (Integer) |
 | **Сервіси** | `Polygon::HadronComplianceService.new.register_asset!(naas_contract)` |
 
