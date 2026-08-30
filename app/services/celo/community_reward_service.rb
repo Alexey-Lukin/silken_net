@@ -35,7 +35,15 @@ module Celo
       }
     ].to_json
 
-    # Celo Alfajores Testnet RPC (перемикається на Mainnet через ENV)
+    # 🔴 МЕРТВИЙ ХОСТ — не «testnet за замовчуванням» [ARCH.118, виміряно 2026-08-30].
+    # `alfajores-forno.celo-testnet.org` віддає **NXDOMAIN** (позитивний контроль
+    # `forno.celo.org` → `0xa4ec` у тому ж прогоні): cLabs депрекейтнули Baklava+Alfajores
+    # разом із сансетом Holesky, живий наступник — `forno.celo-sepolia.celo-testnet.org`
+    # (`0xaa044c`). ⛔ Не міняти мимохідь: ця константа є ПІДСТАВОЮ правила E.49 у
+    # `Security::Web3NetworkGuard#hardcoded_fallback_violations`, тож перецілення чи зняття
+    # фолбека переписує сам гард — відкритий ⚖️ у 00_07 `ARCH.118`/`INF.27`.
+    # ⚠️ Шлях activation-gated (`ORACLE_CELO_PRIVATE_KEY` — lazy aux-ключ), тож сьогодні це
+    # латентна міна дня деплою, а не інцидент.
     DEFAULT_RPC_URL = "https://alfajores-forno.celo-testnet.org"
 
     # [E.49] RPC FALLBACK CASCADE для Celo. Якщо `CELO_RPC_URL` недоступний

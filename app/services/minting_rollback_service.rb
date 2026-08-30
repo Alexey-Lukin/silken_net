@@ -131,6 +131,12 @@ class MintingRollbackService < ApplicationService
       fallback_env_keys = Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS
     else
       rpc_env_key       = "ALCHEMY_POLYGON_RPC_URL"
+      # 🔴 ЦЕЙ ФОЛБЕК БІЛЬШЕ НЕ ФОЛБЕК [ARCH.118, виміряно 2026-08-30]: хост живий і на
+      # JSON-RPC тричі поспіль віддає `403 "API key disabled, tenant disabled"` — тобто
+      # публічний ендпоінт вимкнено на боці провайдера, і каскад мовчки вироджується в
+      # один Alchemy-URL. Це також ПІДСТАВА дзеркального правила гарда («на testnet-слоті
+      # порожній `ALCHEMY_POLYGON_RPC_URL` приземляється на mainnet»), тож заміна переписує
+      # `Web3::NetworkGuard#hardcoded_fallback_violations`, а не лише цей рядок — ⚖️ 00_07 `ARCH.118`.
       fallback_url      = "https://polygon-rpc.com"
       fallback_env_keys = [ "INFURA_POLYGON_RPC_URL" ]
     end

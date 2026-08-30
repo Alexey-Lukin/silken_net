@@ -324,7 +324,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **Тригер** | `ClusterHealthCheckWorker` (щоденно о 02:00 UTC) — для здорових кластерів |
-| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, маркер-скан порожню змінну не бачить; E.49 → на слоті, оголошеному `mainnet`, endpoint обовʼязковий — на testnet-слоті цей самий fallback і є правильним приземленням), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, no fallback — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
+| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на **МЕРТВИЙ хост** ([`ARCH.118`](00_07_Action_Plan_Tracker), виміряно 2026-08-30): `alfajores-forno.celo-testnet.org` віддає **NXDOMAIN** — cLabs депрекейтнули Alfajores разом із сансетом Holesky. 🔴 **Вердикт E.49 стоїть, підстава змінилась:** правило «на слоті, оголошеному `mainnet`, endpoint обовʼязковий» лишається чинним, але вже НЕ тому, що «реальні cUSD пішли б на testnet» — вони нікуди не пішли б; а дзеркальна половина («на testnet-слоті цей fallback і є правильним приземленням») тепер просто ХИБНА. Заміна константи — відкритий ⚖️ у [`ARCH.118`](00_07_Action_Plan_Tracker), бо тягне переписування підстави самого гарда. ⚠️ Маркер-скан порожню змінну не бачить — це не змінилось. **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, no fallback — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**

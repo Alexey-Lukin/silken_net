@@ -187,10 +187,16 @@ module Security
     def hardcoded_fallback_violations(env, testnet:)
       out = []
 
-      # [E.49] Unset CELO_RPC_URL → `Celo::CommunityRewardService::DEFAULT_RPC_URL`, i.e.
-      # Alfajores TESTNET. Correct on a testnet slot; on mainnet real cUSD would pay out on
-      # a throwaway chain. Armed conditionally on the Celo path (its signer key lives only on
-      # the job surface, so web/coap boot clean without either).
+      # [E.49] Unset CELO_RPC_URL → `Celo::CommunityRewardService::DEFAULT_RPC_URL`.
+      # 🔴 THE VERDICT STANDS, ITS GROUND CHANGED [ARCH.118, measured 2026-08-30]: that constant
+      # points at `alfajores-forno.celo-testnet.org`, which now answers **NXDOMAIN** (cLabs
+      # deprecated Alfajores with the Holesky sunset; positive control `forno.celo.org` → 0xa4ec
+      # in the same run). So the hazard is no longer "real cUSD pays out on a throwaway chain" —
+      # it is "the payout path resolves to nothing". Requiring the var on a mainnet slot is still
+      # right; what died is the REASON printed below, and the mirror claim (that this fallback is
+      # the correct landing on a testnet slot) is now simply false. Replacing the constant is an
+      # open ⚖️ — it rewrites this rule's ground, not just a string. Armed conditionally on the
+      # Celo path (its signer key lives only on the job surface, so web/coap boot clean without).
       if !testnet && env["ORACLE_CELO_PRIVATE_KEY"].present? && env["CELO_RPC_URL"].blank?
         out << "[chain] CELO_RPC_URL is not set while ORACLE_CELO_PRIVATE_KEY is present — " \
                "the code falls back to Alfajores TESTNET (E.49): real cUSD would pay out " \
