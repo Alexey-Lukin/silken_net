@@ -69,7 +69,7 @@ interface ICappedVotesToken {
  * [E.35]   Flash Loan defense: getPastVotes + 48h Timelock + votingDelay.
  * [BIZ.4]  DAO Governance Process — SFC voting mechanism.
  *
- * @custom:security-contact security@silkennet.io
+ * @custom:security-contact security@silkennet.com
  */
 contract SilkenGovernor is
     Governor,

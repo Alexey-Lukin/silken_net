@@ -25,6 +25,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  * [B-10] Events: string поля не indexed, додано bytes32 indexed хеші.
  * [B-13] ReentrancyGuard для превентивного захисту.
  * [B-15] String length validation: treeDid/clusterId <= 256 bytes (The Graph safety).
+ * @custom:security-contact security@silkennet.com
  */
 contract SilkenCarbonCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit {
     /// @notice Роль для карбування нових токенів (Proof of Growth oracle).

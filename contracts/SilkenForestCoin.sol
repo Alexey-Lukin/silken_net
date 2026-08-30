@@ -27,6 +27,7 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
  * [B-13] ReentrancyGuard для превентивного захисту.
  * [B-14] Повний NatSpec для аудиту (CertiK/Hacken).
  * [B-15] String length validation: clusterId <= 256 bytes (The Graph safety).
+ * @custom:security-contact security@silkennet.com
  */
 contract SilkenForestCoin is ERC20, AccessControl, Pausable, ReentrancyGuard, ERC20Permit, ERC20Votes {
     /// @notice Роль для карбування нових governance токенів.

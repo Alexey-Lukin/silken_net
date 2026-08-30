@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * [ARCH.4] Governance DAO — protocol constants via on-chain governance.
  * [E.35]   Flash Loan defense — параметри змінюються тільки через Timelock (48h delay).
  *
- * @custom:security-contact security@silkennet.io
+ * @custom:security-contact security@silkennet.com
  */
 contract ProtocolParameters is AccessControl {
     /// @notice Роль для оновлення параметрів. Призначається SilkenTimelock.

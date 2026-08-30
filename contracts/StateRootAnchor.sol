@@ -21,6 +21,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  *      Gas-ефективність: тільки 1 SSTORE (bytes32) на тиждень.
  *
  * [BLOCKER-1] Контракт створено для заміни захардкодженого ABI в Ruby-сервісі.
+ * @custom:security-contact security@silkennet.com
  */
 contract StateRootAnchor is AccessControl {
     /// @notice Роль для запису state root (EthereumAnchorWorker oracle).

@@ -79,9 +79,10 @@ accessories:
 # one side does not carry is not parity; a cross-reference cannot be uncommented.
 # proxy:
 #   ssl: true
-#   # ⛔ [INF.25] `silken.net` is a FIFTH domain spelling and is NOT one of ours
-#   #    (canon: silkennet.app web · silkennet.com mailer/api parent · silkennet.io in
-#   #    contract NatSpec). With `ssl: true` this value becomes the Let's Encrypt
+#   # ⛔ [INF.25] `silken.net` is a FOURTH domain spelling and is NOT one of ours
+#   #    (canon: silkennet.app web · silkennet.com mailer/api parent; the stray `.io`
+#   #    in contract NatSpec was aligned to `.com` 2026-08-30). With `ssl: true` this
+#   #    value becomes the Let's Encrypt
 #   #    certificate name, so uncommenting it as-is asks for a cert on a domain we do not
 #   #    own. The value is gated on the founder's domain decision — do not guess it here.
 #   host: canopy.silken.net

@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
  *
  *      pause() на SCC/SFC НЕ проходить через Timelock — потрібна миттєва реакція при exploits.
  *
- * @custom:security-contact security@silkennet.io
+ * @custom:security-contact security@silkennet.com
  */
 contract SilkenTimelock is TimelockController {
     /// @notice Мінімальна затримка Timelock: 48 годин.
