@@ -649,16 +649,32 @@ end
       expect(result).to eq(0)
     end
 
-    it "returns 0 and logs a warning in production when RPC URL ENV is not set [E.47]" do
+    it "returns 0 and logs a warning on a mainnet slot when RPC URL ENV is not set [E.47]" do
       stub_const("ENV", ENV.to_h.except(solana_config[:env_rpc_key].to_s))
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
 
-      allow(Rails.logger).to receive(:warn).with(/not set in production/)
+      allow(Rails.logger).to receive(:warn).with(/not set on a mainnet slot/)
 
       result = described_class.new.send(:fetch_solana_balance, solana_config)
 
-      expect(Rails.logger).to have_received(:warn).with(/not set in production/)
+      expect(Rails.logger).to have_received(:warn).with(/not set on a mainnet slot/)
       expect(result).to eq(0)
+    end
+
+    # [OPS.37] Discriminator for the split: RAILS_ENV stays production, only the chain
+    # declaration changes — the skip must NOT fire, because Devnet is the correct landing
+    # for a testnet slot. Without this the example above is green against either axis.
+    it "does NOT skip on a slot declared testnet, even under RAILS_ENV=production" do
+      stub_const("ENV", ENV.to_h.except(solana_config[:env_rpc_key].to_s)
+                           .merge("WEB3_CHAIN_ENV" => "testnet"))
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+      allow(Web3::HttpClient).to receive(:post).and_return(
+        instance_double(Web3::HttpClient::Response, parsed_body: { "result" => { "value" => 2_000_000_000 } })
+      )
+
+      # Non-zero is the whole point: the skip branch returns 0, so a raw lamport balance
+      # proves the RPC call actually happened against the Devnet fallback.
+      expect(described_class.new.send(:fetch_solana_balance, solana_config)).to eq(2_000_000_000)
     end
 
     it "handles malformed response (missing result key)" do

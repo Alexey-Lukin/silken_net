@@ -70,7 +70,7 @@ RSpec.describe Solana::MintingService do
         }.to raise_error(RuntimeError, /Chainlink Oracle consensus not fulfilled/)
       end
 
-      it "raises in production when SOLANA_RPC_URL is not set [E.47]" do
+      it "raises on a mainnet slot when SOLANA_RPC_URL is not set [E.47]" do
         log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(solana_public_address: recipient_solana_address)
         ENV.delete("SOLANA_RPC_URL")
@@ -79,9 +79,28 @@ RSpec.describe Solana::MintingService do
 
         expect {
           described_class.new(log).mint_micro_reward!
-        }.to raise_error(RuntimeError, /SOLANA_RPC_URL is required in production/)
+        }.to raise_error(RuntimeError, /SOLANA_RPC_URL is required on a mainnet slot/)
       ensure
         ENV.delete("SOLANA_RPC_URL")
+      end
+
+      # [OPS.37] The discriminating half: RAILS_ENV stays production (canopy runs that way
+      # deliberately), and ONLY the chain declaration moves. Without this example the one
+      # above stays green against either axis and proves nothing about the split.
+      it "does NOT refuse the Devnet fallback on a slot declared testnet, even under RAILS_ENV=production" do
+        create(:telemetry_log, :verified_telemetry, tree: tree)
+        wallet.update!(solana_public_address: recipient_solana_address)
+        ENV.delete("SOLANA_RPC_URL")
+        ENV["WEB3_CHAIN_ENV"] = "testnet"
+
+        allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+
+        expect(described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree))
+                 .send(:solana_rpc_urls))
+          .to include(Solana::MintingService::DEVNET_RPC_URL)
+      ensure
+        ENV.delete("SOLANA_RPC_URL")
+        ENV.delete("WEB3_CHAIN_ENV")
       end
     end
 

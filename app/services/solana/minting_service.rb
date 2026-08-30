@@ -481,8 +481,12 @@ module Solana
     # reconcile signature_status). Мемоізовано — ENV стабільний у межах життя сервісу.
     def solana_rpc_urls
       @solana_rpc_urls ||= begin
-        if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production?
-          raise "🛑 [Solana] SOLANA_RPC_URL is required in production — refusing Devnet fallback"
+        # [OPS.37] The question here is "is this real money", NOT "is this a hardened
+        # runtime" — so it reads the CHAIN axis, never `Rails.env.production?`. Canopy runs
+        # RAILS_ENV=production deliberately, and on a slot declared `testnet` the Devnet
+        # fallback below is the CORRECT landing, not a defect to refuse.
+        if ENV["SOLANA_RPC_URL"].blank? && Security::Web3NetworkGuard.chain_env(ENV) == "mainnet"
+          raise "🛑 [Solana] SOLANA_RPC_URL is required on a mainnet slot — refusing Devnet fallback"
         end
 
         urls = [ ENV.fetch("SOLANA_RPC_URL", DEVNET_RPC_URL) ]

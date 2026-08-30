@@ -299,7 +299,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 | **Воркер** | `SolanaMicroRewardWorker` (per-event) · `SolanaBatchPayoutWorker` (batch payout [E.61]) |
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
-| **ENV** | `SOLANA_RPC_URL` (default: Devnet), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_MINT_AUTHORITY_PUBKEY`, `SOLANA_USDC_MINT_ADDRESS`, `SOLANA_WALLET_KEYPAIR` |
+| **ENV** | `SOLANA_RPC_URL` (⚠️ code-side fallback = **Devnet**, тобто ТРЕТЯ змінна цього класу поряд із Celo/Polygon — судиться не boot-guard'ом, а власним read-сайтом `Solana::MintingService#solana_rpc_urls`, і з [OPS.37] за віссю `WEB3_CHAIN_ENV`, не за `Rails.env`), `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_MINT_AUTHORITY_PUBKEY`, `SOLANA_USDC_MINT_ADDRESS`, `SOLANA_WALLET_KEYPAIR` |
 | **Спека** | `spec/services/solana/minting_service_spec.rb` |
 
 **Trustless Requirements (Guard Clauses):**
@@ -664,7 +664,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 2. **TelemetryLog продовжує збиратись** з `oracle_status: pending` — нічого не втрачається, бо телеметрія партиціонована та зберігається в Postgres.
 3. **`MintCarbonCoinWorker`** retry до 5 разів; на 6+ потрапляє у DeadSet — **операційна задача для адміна**: перезапустити після відновлення RPC.
 4. **Альтернативний RPC**: уже передбачено через `Web3::RpcConnectionPool#fallback_env_keys`. Production checklist: завжди мати **3 незалежні Polygon RPC** (Alchemy + Infura + Ankr/QuickNode/Public).
-5. **Багатогодинний outage (>4h):** ручний switch на Polygon Mumbai/Amoy testnet з replay у production після відновлення (потребує адміністративного рішення; **НЕ автоматично**, бо економіка тестнету ≠ mainnet).
+5. **Багатогодинний outage (>4h):** ручний switch на Polygon Amoy testnet з replay у production після відновлення (потребує адміністративного рішення; **НЕ автоматично**, бо економіка тестнету ≠ mainnet). 🔴 **Механічно це БІЛЬШЕ не просто зміна URL:** `chain_violations` відмовить у буті слоту, оголошеному `mainnet`, з testnet-ендпоінтом — тож перемикання йде ПАРОЮ з `WEB3_CHAIN_ENV: testnet`, і саме це робить процедуру виконуваною замість «гард нам заважає» ([OPS.37], [`04_02 §8`](04_02_Business_Logic_and_Services)). ⚠️ Наслідок, який треба назвати вголос: слот у цьому режимі НЕ мінтить реальної вартості — це пауза емісії, а не деградований mainnet.
 
 **Boundary case — Polygon hard fork / chain split:**
 - Призупинити `MintCarbonCoinWorker` (Sidekiq pause) — **операційна процедура**.

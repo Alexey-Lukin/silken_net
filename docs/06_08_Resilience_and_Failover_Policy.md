@@ -294,7 +294,7 @@ tx.fail!
 
 ### 4.5 Contract-ops one-shot (незворотні операції)
 
-**Deploy-smoke (Amoy → Mainnet, до трансферу ролей):**
+**Deploy-smoke (Amoy → Mainnet, до трансферу ролей):** ⊕ Це **одноразова репетиція перед mainnet**, а НЕ стейджингові контракти: постійні testnet-адреси, що живуть у canopy `env.clear`, ставить [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 2t ([`INF.27`](00_07_Action_Plan_Tracker)). Шість ENV нижче потрібні обом.
 1. `forge script script/Deploy.s.sol --rpc-url $AMOY` → зафіксувати адреси. ⚠️ run() вимагає **всі 6 ENV** (incl. `DAO_TREASURY_ADDRESS` — читається лише для custody-гейта) навіть на dry-run; без `REQUIRE_SAFE_ADMIN` custody/key-split дають warn, не revert.
 2. Роль-матриця: `Deploy.t.sol`-пін виконується і на живому деплої — прогнати `test_*_adminIsTimelock_notSafe`-еквіваленти читанням `hasRole` по кожному контракту.
 3. Smoke: mint 1 SCC → transfer → `pause()` → переконатись mint revert → `slashUpTo(1, ctx)` під паузою ✅ → `unpause()`.

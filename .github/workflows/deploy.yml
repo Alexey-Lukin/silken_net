@@ -285,7 +285,12 @@ jobs:
           #     INHERITED via deep_merge), so kamal never looks these up here; they
           #     are also production-environment-scoped and would interpolate ""
           #     (present-empty → guard raise). ---
-          # --- RPC endpoints (Web3::RpcConnectionPool; testnet-marker boot guard) ---
+          # --- RPC endpoints (Web3::RpcConnectionPool; chain-family boot guard) ---
+          # 🔴 [OPS.37] These are MAINNET values, and this block must mirror the global
+          # env.secret (drift-guard note above). The day canopy becomes a testnet slot
+          # (WEB3_CHAIN_ENV: testnet — the commented block in config/deploy.canopy.yml),
+          # these four must be remapped here too, or the declaration and the wiring
+          # disagree and the guard refuses the boot. That is move (3) of five.
           ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
           ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
           SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}

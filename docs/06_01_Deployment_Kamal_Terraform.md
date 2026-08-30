@@ -788,11 +788,19 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
 🔴 **Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
-той самий `Deploy.s.sol` на Amoy + Sepolia + Devnet (`REQUIRE_SAFE_ADMIN=false` — Safe-гейти
-mainnet-only) → зібрати адреси → вписати у `config/deploy.canopy.yml` `env.clear` разом із
-`WEB3_CHAIN_ENV: testnet` і testnet-RPC-ремапом у `.kamal/secrets.canopy` (**усі чотири одним
-рухом** — блок виписано повністю в самому `deploy.canopy.yml`; оголошення є ТВЕРДЖЕННЯМ про
-проводку, тож три з чотирьох дають гучну відмову буту).
+`forge script contracts/script/Deploy.s.sol --broadcast` на **Amoy + Sepolia** — EVM-ланки; ⚠️
+**Devnet-ланка `forge`-ом НЕ робиться**: Solana-програми в репо немає, це SPL-mint + fee-payer
+ATA руками. `REQUIRE_SAFE_ADMIN` лишається **unset/false** (Safe-гейти mainnet-only — скрипт
+тоді лише WARN'ає замість revert), але **шість ENV `run()` вимагає й на dry-run**:
+`ADMIN_ADDRESS` · `DAO_TREASURY_ADDRESS` · `MINTER_ORACLE` · `SLASHER_ORACLE` · `ANCHOR_ORACLE`
+· `DEPLOYER_PRIVATE_KEY` (на testnet перші дві — операторські EOA, і `DAO_TREASURY_ADDRESS` є
+ВХОДОМ скрипта, не його виходом) → зібрати адреси → **пʼять рухів одним заходом** (повний
+перелік і його пастки — у самому `config/deploy.canopy.yml`, там же й нагадування, що
+`env:`-блок `deploy.yml` мусить дзеркалити глобальний `env.secret`, інакше змінна інжектиться
+ПОРОЖНЬОЮ). Оголошення є ТВЕРДЖЕННЯМ про проводку, тож будь-які чотири з пʼяти дають гучну
+відмову буту. ⊕ Не плутати з deploy-smoke [`06_08 §4.5`](06_08_Resilience_and_Failover_Policy):
+той — одноразова Amoy-репетиція ПЕРЕД mainnet, ця фаза — **постійні** стейджингові контракти,
+чиї адреси живуть у canopy `env.clear`.
 ⚠️ **Чому це окрема фаза, а не примітка:** рядок нижче казав «можна паралельно з Фазою 3», і
 це було неправдою про власний рунбук — формат-гілка `address_violations` не скоуплена процесом,
 тож три плейсхолдери контракт-адрес валять бут **будь-якого** контейнера. Тобто Фаза 3 без

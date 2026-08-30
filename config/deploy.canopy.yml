@@ -59,22 +59,32 @@ env:
     # inverted 00_03 §3.3, which makes a real testnet pipeline (Amoy / Devnet / Sepolia)
     # a precondition of Software TRL 7-8 and mainnet a TRL 9 matter.
     #
-    # ⛔ Uncommenting the ONE line below without the other three makes canopy REFUSE to
-    # boot — by design, not by accident: the declaration is an assertion about the wiring,
-    # so a testnet claim on mainnet endpoints is as loud as the reverse. All four move
-    # together, in one change:
+    # ⛔ Uncommenting the ONE line below alone makes canopy REFUSE to boot — by design, not
+    # by accident: the declaration is an assertion about the wiring, so a testnet claim on
+    # mainnet endpoints is as loud as the reverse. FIVE moves go together, in one change.
+    # (This list said "four" on 2026-08-30 and was wrong by one within the hour — the CI
+    #  mirror below is in a file neither this block nor the tracker leg was looking at.)
     #   (1) this line;
-    #   (2) testnet RPC URLs — same shape as the CANOPY_REDIS_URL remap in
-    #       `.kamal/secrets.canopy` (loud placeholder, never a fall-through to the
-    #       production value): ALCHEMY_POLYGON_RPC_URL ← $CANOPY_ALCHEMY_POLYGON_RPC_URL,
-    #       ALCHEMY_ETHEREUM_RPC_URL, SOLANA_RPC_URL, and CELO_RPC_URL if the Celo path
-    #       is ever armed here;
-    #   (3) testnet contract addresses in this env.clear block — public, so committable:
-    #       CARBON_COIN_CONTRACT_ADDRESS, FOREST_COIN_CONTRACT_ADDRESS, DAO_TREASURY_ADDRESS
-    #       (from a testnet `forge deploy`; the base manifest's placeholders are what stop
-    #       any container booting today);
-    #   (4) the deploy ORDER: testnet contracts BEFORE this slot's first raise — 06_01
-    #       DEPLOY-DAY Фаза 2t.
+    #   (2) testnet RPC URLs in `.kamal/secrets.canopy` — same shape as the CANOPY_REDIS_URL
+    #       remap there (loud placeholder, NEVER a fall-through to the production value):
+    #       ALCHEMY_POLYGON_RPC_URL ← $CANOPY_ALCHEMY_POLYGON_RPC_URL, ALCHEMY_ETHEREUM_RPC_URL,
+    #       SOLANA_RPC_URL, and CELO_RPC_URL if the Celo path is ever armed here;
+    #   (3) 🔴 the SAME names in `.github/workflows/deploy.yml` (Deploy · Canopy) `env:` —
+    #       its own drift-guard comment states the rule: that block MUST mirror the global
+    #       `config/deploy.yml env.secret`, and anything missing is injected EMPTY → boot
+    #       crash. It maps MAINNET values today, so leaving it is not "unchanged", it is the
+    #       staging slot silently keeping production endpoints. Export under BOTH names,
+    #       exactly as REDIS_URL/CANOPY_REDIS_URL already do there;
+    #   (4) testnet contract addresses in this env.clear block — public, so committable:
+    #       CARBON_COIN_CONTRACT_ADDRESS + FOREST_COIN_CONTRACT_ADDRESS (OUTPUTS of a testnet
+    #       `forge script Deploy.s.sol`) and DAO_TREASURY_ADDRESS — ⚠️ that third is an INPUT
+    #       to the script, not an output: on testnet it is an operator-chosen EOA, and the
+    #       script only warns instead of reverting because REQUIRE_SAFE_ADMIN stays false.
+    #       The base manifest's placeholders are what stop any container booting today;
+    #   (5) the deploy ORDER: testnet contracts BEFORE this slot's first raise — 06_01
+    #       DEPLOY-DAY Фаза 2t, which also lists the six ENVs `run()` demands even on a dry-run.
+    # ⚠️ EVM ONLY. Amoy + Sepolia come from `Deploy.s.sol`; there is no Solana program in this
+    # repo, so the Devnet leg is an SPL mint + fee-payer ATA provisioned by hand, not `forge`.
     # Still open: whether canopy also gets its own `job:` role (and therefore its own testnet
     # signer keys) is the still-open ⚖️ in 00_07 OPS.37 — it is NOT settled by this block.
     # WEB3_CHAIN_ENV: testnet

@@ -172,9 +172,18 @@ module Security
     end
 
     # A blank RPC var is skipped above because an absent URL normally just raises at use.
-    # Two do NOT: their read-sites pass an explicit `fallback:` to `RpcConnectionPool`, so a
-    # blank var silently resolves to a HARDCODED endpoint — and the two hardcoded endpoints
-    # sit on OPPOSITE sides of the chain axis, which is why each rule fires on one side only.
+    # THREE do not — their read-sites carry an explicit hardcoded fallback, so a blank var
+    # silently resolves to a fixed endpoint — and those endpoints sit on OPPOSITE sides of
+    # the chain axis, which is why each rule below fires on one side only:
+    #   · CELO_RPC_URL          → Alfajores TESTNET  → judged here, on `mainnet`
+    #   · ALCHEMY_POLYGON_RPC_URL → mainnet polygon-rpc.com → judged here, on `testnet`
+    #   · SOLANA_RPC_URL        → Devnet TESTNET     → judged at its READ-SITE, not here
+    # ⚠️ The third is deliberately absent from this method and that is a bound, not an
+    # oversight: `Solana::MintingService#solana_rpc_urls` already raises on a blank var when
+    # the slot declares `mainnet` (it reads the same `chain_env`), so a boot rule would be a
+    # second home for one decision. Adding a fourth fallback? Put it wherever its sibling
+    # lives — but COUNT them first: this comment was written claiming "two" while the third
+    # already existed one file away.
     def hardcoded_fallback_violations(env, testnet:)
       out = []
 
