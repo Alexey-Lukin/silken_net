@@ -15,6 +15,18 @@
 # An in-process MemoryStore would fragment both — throttle limits inflate ×N and
 # the fail2ban threshold is never reached (scanners never banned); SolidCache's
 # increment is not atomic either. Redis is the only correct store here.
+#
+# 🔴 DECLARED CEILING, so the cost is not rediscovered as a defect [INF.22]. Upstash is
+# NOT same-region, so every throttle check pays a cross-region RTT — on the hot path, on
+# every request. That is a real price and it is accepted deliberately, because the two
+# ways out are worse today:
+#   · an in-process store (MemoryStore / SolidCache) is not a cheaper version of this —
+#     it is INCORRECT, for the reason above. Measured and refused: it does not trade
+#     latency for accuracy, it removes the guarantee entirely.
+#   · a same-region Redis sidecar is the real fix and is real infrastructure — gated on
+#     first public traffic, not on preference.
+# At TRL 3 (zero traffic) the RTT does not hurt, so the honest posture is "accept, and
+# say so". Revisit trigger: first public traffic, together with the sidecar question.
 
 # ---------------------------------------------------------------------------
 # 1. CACHE STORE — distributed counters across all application nodes
