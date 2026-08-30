@@ -116,7 +116,7 @@ end
 `cluster do … end` — DSL Puma 8 — явно фіксує що хуки виконуються **лише** в clustered mode. В single mode (`workers 0`, dev) хуки no-op.
 
 - **`before_fork`:** відключає всі ActiveRecord connection pools та Sidekiq Redis pool у master перед fork. Без цього — stale file descriptors у forked workers → socket hijacking.
-- **`before_worker_boot`:** re-establish ActiveRecord connections + `Kredis.clear_all` у кожному worker після fork.
+- **`before_worker_boot`:** re-establish ActiveRecord connections + `Kredis.connections.clear` у кожному worker після fork. 🔴 **Доти тут стояв `Kredis.clear_all`, і це не синонім, а FLUSHDB** ([INF.22], 2026-08-30): гем гілкується на наявність namespace і без нього спорожняє базу — ту саму, що тримає живі Web3-локи й прапорці circuit-breaker'а. Чистити треба кеш ЗʼЄДНАНЬ (`connections`), а не сховище. ⚠️ **Дефект був ЛАТЕНТНИЙ, і це записано навмисно:** `clear_all` ітерує `connections.each_value`, тобто лише ВЖЕ закешовані зʼєднання, а майстер Puma на буті Kredis не торкається — успадкований хеш порожній, отже викликів до Redis було нуль. Озброївся б у день, коли щось прочитає Kredis-ключ у майстрі або ввімкнуть `fork_worker`. **Перша редакція цього рядка стверджувала, що воно «вимивало» локи на кожному деплої — це домисел, а не вимір** (гілку `flushdb` у гемі прочитали, досяжність не перевірили); поправка лишається тут, бо саме такий вигляд має підстава, вигадана заднім числом під правильний висновок.
 
 ---
 

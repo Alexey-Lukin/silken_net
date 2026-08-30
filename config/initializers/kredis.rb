@@ -33,6 +33,18 @@
 # Sidekiq deliberately gets NO namespace: it cannot have one (Sidekiq 7+ raises
 # ArgumentError on `namespace:`), and it does not need one — its keys (`queue:`,
 # `retry`, `dead`, `stat:`, `processes`) collide with nothing here.
+#
+# ⚠️ NO KEY MIGRATION WAS RUN, and the argument for why that is safe belongs
+# here rather than in a commit message, because it is the thing a reader will
+# doubt: adding a prefix ORPHANS every pre-existing unprefixed Kredis key, and
+# some of those have no TTL (`solana_pending_payouts:*`) or a 30-day one
+# (`qatt_nonce:*`). It is safe in PRODUCTION for exactly one reason — the old
+# config derived `/1`, which Upstash rejects, so no production Kredis key ever
+# existed to orphan. It is NOT automatically safe on a self-hosted Redis (a local
+# stand, or any deploy that predates this change): there the old keys survive,
+# invisible. If that ever applies, `Kredis::Migration` exists in the gem; the
+# blast radius to check first is the pending-payout counters (no TTL), the mint
+# circuit-breaker flag (fail-OPEN when lost) and the QATT replay nonces.
 Kredis.global_namespace = "silken"
 
 module Kredis

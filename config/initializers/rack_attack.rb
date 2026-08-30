@@ -69,10 +69,13 @@ if Rails.env.test?
   Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
 else
   Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
-    # `RACK_ATTACK_REDIS_URL` stays the deploy-time lever for pointing the
-    # counters at a SEPARATE Redis instance (real isolation, no code change);
-    # unset, they share the one database with Sidekiq and Kredis, kept apart by
-    # the namespace below.
+    # `RACK_ATTACK_REDIS_URL` is the lever for pointing the counters at a
+    # SEPARATE Redis instance — the only real isolation from memory pressure.
+    # ⚠️ It is NOT wired end-to-end yet: the var is absent from `config/deploy.yml`
+    # and from both deploy workflows, so using it costs those two surfaces plus a
+    # secret — not "no code change", as this comment claimed. Unset (today), the
+    # counters share the one database with Sidekiq and Kredis, kept apart by the
+    # namespace below.
     url: ENV.fetch("RACK_ATTACK_REDIS_URL") { ENV.fetch("REDIS_URL", "redis://localhost:6379/0") },
     namespace: "rack-attack",
     expires_in: 10.minutes,

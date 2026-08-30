@@ -244,8 +244,9 @@ jobs:
         # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
         # entry missing here is injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt /
         # PROVISIONING_MASTER_KEY guard). The servers.job quintet is deliberately NOT mirrored —
-        # canopy has no job role. KREDIS_REDIS_URL is intentionally omitted (auto-derives from
-        # REDIS_URL). Canon: docs/06_04 §1 + §2.
+        # canopy has no job role. KREDIS_REDIS_URL is intentionally omitted — Kredis reads
+        # REDIS_URL as-is (one logical database, keys separated by prefix [INF.22]);
+        # set it only to point Kredis at a separate instance. Canon: docs/06_04 §1 + §2.
         env:
           # [INF.22] Short-lived WIF access token (username oauth2accesstoken in
           # config/deploy.yml registry), not a JSON key.

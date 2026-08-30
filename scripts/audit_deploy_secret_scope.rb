@@ -32,7 +32,12 @@ SIGNING_QUINTET = %w[
 
 RETIRED    = %w[ORACLE_PRIVATE_KEY].freeze                                # INF.22 retired
 WIF_VARS   = %w[GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT].freeze # repo Variables, not Secrets
-AUTODERIVE = %w[KREDIS_REDIS_URL RACK_ATTACK_REDIS_URL].freeze            # placeholder breaks auto-derive
+# [INF.22] These are INSTANCE overrides, not auto-derive: Upstash exposes one logical
+# database, so both consumers read REDIS_URL and are separated by key prefix. Setting
+# either points that consumer at a SEPARATE Redis instance — the only real isolation
+# from memory pressure. A placeholder/empty value is truthy to ENV.fetch and silences
+# the fallback, which is why presence alone is worth a warning.
+INSTANCE_OVERRIDE = %w[KREDIS_REDIS_URL RACK_ATTACK_REDIS_URL].freeze
 
 # Pure classifier over NAME sets only. Returns [errors, warnings].
 # org_secrets = [] on a personal account (no org scope possible); a list if the repo lives under
@@ -70,9 +75,9 @@ def audit(repo_secrets:, env_secrets:, variables:, org_secrets: [])
                 "(gh variable set #{k} <з terraform output>)" unless variables.include?(k)
   end
 
-  AUTODERIVE.each do |k|
+  INSTANCE_OVERRIDE.each do |k|
     warnings << "#{k} заведений — переконайся, що вказує на ОКРЕМИЙ Redis-інстанс; порожній/placeholder перебив би " \
-                "auto-derive з REDIS_URL (config/redis/shared.yml). Наразі workflow-unmapped = інертний." if repo_secrets.include?(k)
+                "фолбек на REDIS_URL (config/redis/shared.yml). Наразі workflow-unmapped = інертний." if repo_secrets.include?(k)
   end
 
   [ errors, warnings ]

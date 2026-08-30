@@ -187,12 +187,18 @@ cluster do
     #
     # 🔴 This used to call `Kredis.clear_all`, which is NOT what its name says:
     # the gem branches on `Kredis.namespace` and, when unset, issues a plain
-    # **FLUSHDB**. So every worker boot — every deploy, every phased restart,
-    # once per worker — wiped the live Web3 nonce locks and the mint
-    # circuit-breaker flags out of the store they exist to protect. The comment
-    # here said "clear cached connections"; the code emptied the database.
+    # **FLUSHDB** — on the store that holds the live Web3 nonce locks and the
+    # mint circuit-breaker flags. The comment here said "clear cached
+    # connections"; the code was written to empty the database.
+    #
+    # ⚠️ It was LATENT, not live, and the distinction is the honest half: the gem
+    # iterates `connections.each_value`, i.e. only ALREADY-CACHED connections, and
+    # nothing in the Puma master touches `Kredis.redis` during boot — so the
+    # inherited hash was empty and the call issued zero Redis commands. It would
+    # have armed itself the day anything reads a Kredis key in the master, or
+    # `fork_worker` is enabled. Fixed before that day rather than after it.
     # `connections` is the gem's connection cache (a Hash), and clearing THAT is
-    # what this hook was always meant to do.
+    # what this hook always meant to do.
     Kredis.connections.clear if defined?(Kredis)
   end
 end
