@@ -97,7 +97,7 @@ servers:
 #   # /ready (ReadinessController: DB SELECT 1 + Redis PING) holds the cutover until deps are up.
 #   # FLIP path to /ready ONLY AFTER the first deploy confirms /ready→200 — on a cold start /ready
 #   # 503s until DB/Redis are wired and kamal-proxy retries to deploy_timeout → rollback.
-#   # Runbook: docs/06_01 §Чеклист (step 18). Schema verified vs kamal 2.12. Probe: docs/06_05.
+#   # Runbook: docs/06_01 §DEPLOY-DAY, Фаза 5 (фліп ЛИШЕ після /ready→200). Schema verified vs kamal 2.12. Probe: docs/06_05.
 #   healthcheck:
 #     path: /ready
 #     interval: 3

@@ -70,6 +70,9 @@ require "yaml"
 KAMAL_BASE   = "config/deploy.yml"
 KAMAL_CANOPY = "config/deploy.canopy.yml"
 SECRETS_FILE = ".kamal/secrets-common"
+# Destination overlay: Kamal reads secrets-common + secrets.<dest>, dest wins.
+# Carries canopy's Redis isolation (REDIS_URL ← $CANOPY_REDIS_URL) — see B4.
+SECRETS_CANOPY = ".kamal/secrets.canopy"
 ANCHOR_TF    = "terraform/compute.tf" # COAP_ENV heredoc — the anchor daemon's env surface
 
 # Secret-bearing var-name suffixes. `_SECRET` subsumes `_HMAC_SECRET`/`_WEBHOOK_SECRET`;
@@ -162,10 +165,11 @@ unless configs[KAMAL_CANOPY]["servers"].is_a?(Array)
   failures << "#{KAMAL_CANOPY}: `servers:` must stay the ARRAY form — a hash is deep_merged as a keys-UNION, silently inheriting the base `job` role (money quintet) into a leg whose secrets are production-scoped → present-empty inject → Web3NetworkGuard raise"
 end
 
-# --- text surfaces (.kamal/secrets-common + anchor COAP_ENV) ------------------
+# --- text surfaces (.kamal/secrets-common + secrets.canopy + anchor COAP_ENV) --
 
-[ [ SECRETS_FILE, dotenv_pairs(File.read(SECRETS_FILE)), :shell ],
-  [ ANCHOR_TF,    anchor_coap_pairs,                     :interp ] ].each do |file, pairs, form|
+[ [ SECRETS_FILE,   dotenv_pairs(File.read(SECRETS_FILE)),   :shell ],
+  [ SECRETS_CANOPY, dotenv_pairs(File.read(SECRETS_CANOPY)), :shell ],
+  [ ANCHOR_TF,      anchor_coap_pairs,                       :interp ] ].each do |file, pairs, form|
   pairs.each do |var, value|
     # D — present-but-empty (both forms).
     if value.empty?
@@ -185,6 +189,17 @@ end
 
 # Lantern on our own subject set — a broken text parse returns [] and prints ✓ otherwise.
 failures << "subject set collapsed: #{secret_subjects} secret-named vars scanned, floor is #{SUBJECT_FLOOR} — the parser, not the tree, is the likely change" if secret_subjects < SUBJECT_FLOOR
+
+# B4 — canopy Redis isolation is STRUCTURAL, not CI-only. The overlay must remap
+# REDIS_URL from $CANOPY_REDIS_URL (with the loud placeholder fallback, never a
+# silent $REDIS_URL fall-through — that would put staging on production Redis
+# exactly on the local `kamal deploy -d canopy` path DEPLOY-DAY Phase 3 names).
+canopy_redis = dotenv_pairs(File.read(SECRETS_CANOPY)).to_h["REDIS_URL"]
+if canopy_redis.nil?
+  failures << "#{SECRETS_CANOPY}: no REDIS_URL remap — canopy inherits secrets-common's $REDIS_URL (production Redis) on a local destination run"
+elsif canopy_redis !~ /\$\{?CANOPY_REDIS_URL\b/ || canopy_redis =~ /\$\{?REDIS_URL\b/
+  failures << "#{SECRETS_CANOPY}: REDIS_URL must reference $CANOPY_REDIS_URL and never fall back to $REDIS_URL (got '#{canopy_redis[0, 40]}')"
+end
 
 # --- C: .dockerignore --------------------------------------------------------
 

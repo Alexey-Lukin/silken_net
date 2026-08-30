@@ -88,7 +88,7 @@ accessories:
 #   host: canopy.silken.net
 #   # INF.10 readiness cutover — flip on the first canopy deploy AFTER /ready→200
 #   # (on a cold start /ready 503s until DB/Redis are wired, and kamal-proxy retries to
-#   # deploy_timeout → rollback). Runbook: docs/06_01 §Чеклист (step 18).
+#   # deploy_timeout → rollback). Runbook: docs/06_01 §DEPLOY-DAY, Фаза 5.
 #   healthcheck:
 #     path: /ready
 #     interval: 3

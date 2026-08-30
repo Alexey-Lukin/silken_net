@@ -127,7 +127,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║     binary_batch_buffer[2048] → CoAP PUT /telemetry/batch/<QUEEN_UID>║
 ║     via SIM7070G (LTE-M / Starlink Direct-to-Cell)                  ║
 ╚══════════════════════════════════════════════════════════════════════╝
-        │ CoAP/UDP → port 5683 (lib/daemons/coap_listener.rb)
+        │ CoAP/UDP → port 5683 (lib/daemons/coap_listener)
         ▼
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  L5: BACKEND (Rails 8.1 + Sidekiq)                                  ║

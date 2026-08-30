@@ -255,7 +255,12 @@ jobs:
           # Component style: same Cloud SQL user/password as production; Canopy isolates
           # via POSTGRES_DATABASE=silken_net_canopy (config/deploy.canopy.yml). REDIS stays separate.
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Redis isolation is STRUCTURAL now (.kamal/secrets.canopy remaps
+          # REDIS_URL ← $CANOPY_REDIS_URL — deploy_secret_scan invariant B4), so the
+          # canopy value is exported under its OWN name; the REDIS_URL line stays to
+          # feed secrets-common's lookup, and both resolve to the same canopy secret.
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
+          CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           RELEASE_VERSION: ${{ github.sha }}
           # --- Observability ---
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}

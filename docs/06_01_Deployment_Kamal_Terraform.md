@@ -55,7 +55,7 @@
 
 > Доповнення до блокерів Terraform/Kamal — фокус на типових помилках при першому виводі системи в роботу.
 
-П'ять речей, які можуть мовчки зламати перший деплой:
+Перевірки, що можуть мовчки зламати перший деплой (лічильника нема свідомо — таблиця росте, число в прозі бреше):
 
 | # | Перевірка | Деталі |
 |---|-----------|--------|
@@ -245,8 +245,8 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 |---|---|---|---|
 | **GCP-проєкт + білінг** | Google · платник — **особиста картка засновника** (`terraform/billing.tf` — «the solo founder IS the billing admin») | 🔴 **вимкнути все.** У GCP живуть web · job · Alloy · **CoAP-демон PRIMARY** на Ingress Anchor · Cloud SQL (усі бази, вкл. `cache`/`cable`/canopy) · Artifact Registry · статична IP. Поза ним — рівно три сервіси (Upstash · Grafana Cloud · GHCR) | ⛔ **ні, і це ПРИЙНЯТА концентрація, не пропуск** — другої ноги немає й вона свідомо не будується ([`06_08 §1`](06_08_Resilience_and_Failover_Policy); подвійний рахунок одного контролера — [`00_05 §7`](00_05_AI_Native_Operating_Model)). Бюджет-алерти 50/90/100% ловлять ВИТРАТИ, не втрату доступу |
 | **GitHub-акаунт** (репо · Actions · Secrets · GHCR · релізи) | GitHub · особистий акаунт `Alexey-Lukin` | 🔴 **більше, ніж здається, і саме тому він тут ДЕВʼЯТИМ:** через нього йде (1) ЄДИНА ідентичність CI→GCP (WIF довіряє GitHub-OIDC; іншого credential не існує), (2) СХОВИЩЕ всіх deploy-секретів + GH Environment `production`, (3) образ для анкера (GHCR), (4) реліз-ланцюг, (5) merge-gate (branch protection живе на GitHub-стороні, не в дереві), (6) підпис образів (Sigstore-ідентичність = сам workflow) | ⚖️ **подія НАЗВАНА, виконавця немає** — `terraform/wif.tf` дослівно: довіра ключується на **ІМʼЯ** власника (`assertion.repository_owner`), не на незмінний `repository_owner_id`, і стеля оголошена там же: «harden to numeric `*_id` **if the repo ever changes hands**». Тобто зміна власника/організації = обовʼязковий перехід на числовий id |
-| **Реєстратор домену** (`silkennet.com` · `.app`) | ⚠️ **ще НІХТО — домени не куплено** (`INF.25`, domain-purchase-гейт) | 🔴 **єдиний важіль, чия відмова вимагає ФІЗИЧНОЇ експедиції до заліза:** `COAP_SERVER_HOST "api.silkennet.com"` — `#define` у прошивці Королеви (`firmware/queen/main.c`), тож втрата зони = пере-прошити ВЕСЬ флот. Гейт `spec/deploy/coap_host_consistency_spec.rb` стереже firmware↔host | ⚖️ відкрите — купівля ще не відбулась, тож і власника, і реєстратора, і дату продовження **ще можна обрати свідомо**. Це найдешевший момент у всій таблиці |
-| **Cloudflare** (TLS + DNS) | Cloudflare · акаунт ще не заведено | 🔴 знімає HTTPS усього web-ярусу (`proxy.ssl` у Kamal закоментований — TLS існує рівно за рахунок CF) **і** DNS для CoAP-хоста. ⛔ **Fallback НЕ «відкладено» — його НЕМАЄ:** старий спирався на знятий hostname-operator і зник разом із платформою | ⚖️ відкрите → [`00_07`](00_07_Action_Plan_Tracker) `INF.4`. Пом'якшення лише часткове: `[FW.58]` re-resolve рятує від зміни A-запису, не від утрати зони |
+| **Реєстратор домену** (`silkennet.com` · `.app`) | **GoDaddy — `silkennet.com` куплено founder-ом 2026-08-30** (1 рік, автопродовження свідомо ON; незалежний реєстратор — сумісний із TLS-fallback, чужі NS дозволені). ⚠️ **`.app` ще НЕ куплено** — web-домен пари лишається відкритим (`INF.25`) | 🔴 **єдиний важіль, чия відмова вимагає ФІЗИЧНОЇ експедиції до заліза:** `COAP_SERVER_HOST "api.silkennet.com"` — `#define` у прошивці Королеви (`firmware/queen/main.c`), тож втрата зони = пере-прошити ВЕСЬ флот; зона тепер наша, а не гіпотетична. Гейт `spec/deploy/coap_host_consistency_spec.rb` стереже firmware↔host | 👤 половина події настала: реєстратора й власника обрано (особистий акаунт founder-а, GoDaddy 2FA — його рука); лишились `.app` + дата продовження в календарі власника |
+| **Cloudflare** (TLS + DNS) | Cloudflare · акаунт ще не заведено | 🔴 знімає HTTPS усього web-ярусу (`proxy.ssl` у Kamal закоментований — TLS існує рівно за рахунок CF) **і** DNS для CoAP-хоста. ✅ **Fallback РАТИФІКОВАНО ⚖️ 2026-08-30 (§TLS-fallback вище):** прямий A-запис + kamal-proxy `ssl: true` (Let's Encrypt); чесна ціна — NS-пропагація годинами, на час інциденту без CDN/WAF. Передумову виконує Фаза −1: домени купуються в незалежного реєстратора, НЕ CF Registrar | 👤 pre-flight → [`00_07`](00_07_Action_Plan_Tracker) `INF.4`. Пом'якшення додаткове: `[FW.58]` re-resolve рятує від зміни A-запису, не від утрати зони |
 | **Cloud SQL** (стан) | Google (у межах того ж проєкту) | 🔴 БД недосяжна → контейнер `exit 1`, `/ready` 503. ⛔ **Автоматичного експорту даних ЗА МЕЖІ GCP немає:** бекап = PITR + 30 снапшотів у тому ж Cloud SQL. Поза ним відновлювані лише (а) баланси токенів — з ланцюга (БД є проєкцією), (б) `AuditLog` — IPFS/Filecoin | ⛔ ні — це той самий контролер, що рядок 1. `deletion_protection = true`, `REGIONAL`-HA. ⚠️ DR-drill **не проводився жодного разу** ([`06_06`](06_06_Disaster_Recovery_and_Backup), `DR.1`) |
 | **GCS tfstate** | Google · бакет створено поза terraform (`bootstrap.sh`) | контроль над станом інфри; ручне знищення версії CMEK-ключа робить state-версії **назавжди** нечитабельними (recovery = `terraform import` з нуля) | ⛔ ні. ⊕ **Єдиний важіль із МАШИННИМ виконавцем строку** — ротація CMEK `--rotation-period=90d`, налаштована в gcloud. Копії стану поза бакетом немає (лише 10 noncurrent-версій / 30 днів, і короткий ретеншн — свідомий: кожна версія несе секрети) |
 | **GHCR** (образ для анкера) | GitHub (див. рядок 2) | зупиняє оновлення/підйом **CoAP-інтейку**: анкер тягне свій образ звідси systemd-юнітом, поза Kamal/WIF-ланцюгом і без реєстрового credential'а. ⚠️ Kamal тягне з GCP Artifact Registry — це ІНШИЙ реєстр, тож web/job тут не залежать | ⛔ ні — успадковує подію рядка 2. Пом'якшення: `PIN_ME` fail-closed + заборона `:latest` (`INF.21`) — уже завантажений образ переживе відмову, rebuild/reboot ні |
@@ -855,7 +855,7 @@ CSP burn-in 1-2 тижні → `CSP_ENFORCE=true`.
 
 ```
 Поточна архітектура (TRL 5–6):
-  Queen → CoAP/UDP → lib/daemons/coap_listener.rb → Sidekiq → Rails
+  Queen → CoAP/UDP → lib/daemons/coap_listener → Sidekiq → Rails
 
 Series D архітектура (>1M вузлів):
   Queen → CoAP/UDP → [Ingress Proxy Rust/Go] → Kafka / Google Pub-Sub → [Rails Consumers]
@@ -883,7 +883,7 @@ Series D архітектура (>1M вузлів):
 
 | Компонент | Поточний стан | Необхідна дія |
 |-----------|--------------|--------------|
-| CoAP Listener | `lib/daemons/coap_listener` (Ruby) | Достатньо до ~10k вузлів |
+| CoAP Listener | `lib/daemons/coap_listener` (Ruby) | Достатньо до ~10k вузлів (оцінка E.5, гарнес-обґрунтування `lib/silken_net/load_test/README.md`; фактична стеля — лише staging із prod-adapters, INF.23) |
 | Ingress Anchor (`e2-small`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
@@ -892,7 +892,7 @@ Series D архітектура (>1M вузлів):
 
 #### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-small` (Series D)
 
-**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-small` (2 vCPU shared, 2 GB RAM, обмежений egress). CoAP-демон приймає UDP/5683 прямо на ньому (PRIMARY, INF.17); HAProxy проксює 80/443 на app-хост. При >10M дерев → мільйони Queens → один VM стає вузьким горлом для CoAP/UDP (демонова стеля ~10k вузлів — E.5 — настане раніше за мережеву).
+**Проблема.** Ingress Anchor (`compute.tf`, `silken-net-ingress`) — це один `e2-small` (2 vCPU shared, 2 GB RAM, обмежений egress). CoAP-демон приймає UDP/5683 прямо на ньому (PRIMARY, INF.17); HAProxy проксює 80/443 на app-хост. При >10M дерев → мільйони Queens → один VM стає вузьким горлом для CoAP/UDP (демонова стеля ~10k вузлів — E.5, оцінка з гарнеса `load_test`, не вимір — настане раніше за мережеву; фактичне число дасть лише staging-прогін INF.23).
 
 **Опції еволюції (упорядковані за зростанням інвазивності):**
 

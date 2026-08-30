@@ -302,4 +302,6 @@ if printf '%s\n' "$_changed" | grep -qE '\.rb$|^\.rubocop|^Gemfile|^Rakefile'; t
   fi
 fi
 
-echo "pre-push: DCO + i18n parity OK."
+# Success line names NO block roster on purpose: the hook grows, a list rots
+# (this line said "DCO + i18n parity OK." while five blocks ran — 00_06 §3 class).
+echo "pre-push: OK — every block that ran passed (roster = this file's blocks)."
