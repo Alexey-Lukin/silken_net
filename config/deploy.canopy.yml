@@ -49,6 +49,36 @@ env:
     # every boot; drop this line the day canopy gains a job role.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
 
+    # 🔴 [OPS.37 / 00_03 §3.3] TESTNET SLOT — written out IN FULL and commented, for the
+    # same reason as the `proxy.healthcheck` block below: a cross-reference cannot be
+    # uncommented, and whoever uncomments this must get the WHOLE contract, not a pointer.
+    #
+    # Canopy runs `RAILS_ENV=production` deliberately (hardened runtime), and until the
+    # `production` split it inherited "this is real money" with it — so the guard forbade
+    # every testnet endpoint and canopy could only be raised on MAINNET contracts. That
+    # inverted 00_03 §3.3, which makes a real testnet pipeline (Amoy / Devnet / Sepolia)
+    # a precondition of Software TRL 7-8 and mainnet a TRL 9 matter.
+    #
+    # ⛔ Uncommenting the ONE line below without the other three makes canopy REFUSE to
+    # boot — by design, not by accident: the declaration is an assertion about the wiring,
+    # so a testnet claim on mainnet endpoints is as loud as the reverse. All four move
+    # together, in one change:
+    #   (1) this line;
+    #   (2) testnet RPC URLs — same shape as the CANOPY_REDIS_URL remap in
+    #       `.kamal/secrets.canopy` (loud placeholder, never a fall-through to the
+    #       production value): ALCHEMY_POLYGON_RPC_URL ← $CANOPY_ALCHEMY_POLYGON_RPC_URL,
+    #       ALCHEMY_ETHEREUM_RPC_URL, SOLANA_RPC_URL, and CELO_RPC_URL if the Celo path
+    #       is ever armed here;
+    #   (3) testnet contract addresses in this env.clear block — public, so committable:
+    #       CARBON_COIN_CONTRACT_ADDRESS, FOREST_COIN_CONTRACT_ADDRESS, DAO_TREASURY_ADDRESS
+    #       (from a testnet `forge deploy`; the base manifest's placeholders are what stop
+    #       any container booting today);
+    #   (4) the deploy ORDER: testnet contracts BEFORE this slot's first raise — 06_01
+    #       DEPLOY-DAY Фаза 2t.
+    # Still open: whether canopy also gets its own `job:` role (and therefore its own testnet
+    # signer keys) is the still-open ⚖️ in 00_07 OPS.37 — it is NOT settled by this block.
+    # WEB3_CHAIN_ENV: testnet
+
 # 🔴 SLOT-АТРИБУЦІЯ — БЕЗ ЦЬОГО ДИСКРИМІНАТОР БРЕШЕ, а не мовчить.
 # `config/deploy.yml` задає `accessories.alloy.env.clear.DEPLOYMENT_SLOT: production`
 # ЖОРСТКО, а destination deep_merge є keys-UNION — тож без цього override canopy-Alloy

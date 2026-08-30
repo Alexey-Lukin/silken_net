@@ -167,7 +167,9 @@ exact crypto modes and the deployment hardening) in `SECURITY.md` and canon
 
 - **Fail-safe / deny-by-default** — minting and slashing refuse unless every precondition holds (§3 E/F);
   in production `WEB3_STRICT_MODE` turns missing security config into a hard failure rather than a silent
-  fallback; `Security::Web3NetworkGuard` refuses to boot against a testnet/misconfigured RPC.
+  fallback; `Security::Web3NetworkGuard` refuses to boot against an RPC that contradicts the slot's
+  DECLARED chain family (`WEB3_CHAIN_ENV`, absent → `mainnet`) — mainnet refuses a testnet endpoint,
+  a testnet slot refuses a mainnet one, so neither value is a relaxation [OPS.37].
 - **Complete mediation** — tenant isolation is enforced *inside the query*
   (`acting_organization!.trees.find(...)`), so a foreign record never materialises; Pundit policies
   (`app/policies/`) cover the predicate surfaces (funds, PII) and role gates guard the

@@ -787,10 +787,25 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 ×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
-**Фаза 2 — Контракти (до першого mint; можна паралельно з Фазою 3):**
+🔴 **Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
+той самий `Deploy.s.sol` на Amoy + Sepolia + Devnet (`REQUIRE_SAFE_ADMIN=false` — Safe-гейти
+mainnet-only) → зібрати адреси → вписати у `config/deploy.canopy.yml` `env.clear` разом із
+`WEB3_CHAIN_ENV: testnet` і testnet-RPC-ремапом у `.kamal/secrets.canopy` (**усі чотири одним
+рухом** — блок виписано повністю в самому `deploy.canopy.yml`; оголошення є ТВЕРДЖЕННЯМ про
+проводку, тож три з чотирьох дають гучну відмову буту).
+⚠️ **Чому це окрема фаза, а не примітка:** рядок нижче казав «можна паралельно з Фазою 3», і
+це було неправдою про власний рунбук — формат-гілка `address_violations` не скоуплена процесом,
+тож три плейсхолдери контракт-адрес валять бут **будь-якого** контейнера. Тобто Фаза 3 без
+адрес не піднімається взагалі, а з mainnet-адресами вона перестала б бути стейджингом:
+[`00_03 §3.3`](00_03_TRL_Matrix_HIL_and_Beyond) робить реальний testnet-пайплайн умовою
+Software TRL 7-8, а mainnet — питанням TRL 9. Порядок несучий в обидва боки.
+
+**Фаза 2 — MAINNET-контракти (до першого mint; передує production-рендеру Фази 5):**
 fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`MINTER_ORACLE`/`SLASHER_ORACLE`/`ANCHOR_ORACLE`/`DAO_TREASURY_ADDRESS`) + `REQUIRE_SAFE_ADMIN=true` (mainnet-гейти: ADMIN+TREASURY = Safe-контракти, `MINTER != SLASHER` E.2) → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
 (ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
 зібрати 9 адрес → вписати у `config/deploy.yml` env.clear (INF.12) → redeploy job.
+(`WEB3_CHAIN_ENV` у базовому манифесті лишається `mainnet` — це і є та вісь, яку testnet-слот
+перевизначає, і жодна з двох сторін не «вимикає» гард: обидві є твердженнями.)
 
 **Фаза 3 — ПЕРШИЙ деплой = CANOPY (Kamal/GCP), і лише потім production** (founder 2026-07-04
 про принцип; ціль переспецифіковано [`OPS.37`](00_07_Action_Plan_Tracker) 2026-08-29):

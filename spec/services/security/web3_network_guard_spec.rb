@@ -6,7 +6,7 @@ require "rails_helper"
 RSpec.describe Security::Web3NetworkGuard do
   describe ".violations" do
     # Mainnet RPC endpoints, no oracle keys — the chain half of a clean env.
-    let(:chain_env) do
+    let(:mainnet_rpcs) do
       {
         "ALCHEMY_POLYGON_RPC_URL"  => "https://polygon-mainnet.g.alchemy.com/v2/key",
         "ALCHEMY_ETHEREUM_RPC_URL" => "https://eth-mainnet.g.alchemy.com/v2/key",
@@ -21,7 +21,7 @@ RSpec.describe Security::Web3NetworkGuard do
     # clean signer env: their read-sites fail SILENT (rescue umbrellas / no-escalation batch
     # loop), so boot presence is the only loud gate they have.
     let(:clean_env) do
-      chain_env.merge(
+      mainnet_rpcs.merge(
         "ORACLE_MINTER_PRIVATE_KEY"      => "b" * 64,
         "ORACLE_SLASHER_PRIVATE_KEY"     => "c" * 64,
         "DAO_TREASURY_ADDRESS"           => "0x#{'a' * 40}",
@@ -73,6 +73,89 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(env)).to be_empty
     end
 
+    # --- declared chain family [OPS.37 — the `production` split] ----------
+    #
+    # The axis is an ASSERTION, never a bypass: both directions refuse to boot, so a
+    # mis-declared slot is as loud as a mis-wired one. These examples pin BOTH edges,
+    # because pinning only the newly-allowed one would let the old rule rot silently.
+    context "when the slot declares a chain family (WEB3_CHAIN_ENV)" do
+      let(:testnet_rpcs) do
+        {
+          "ALCHEMY_POLYGON_RPC_URL"  => "https://polygon-amoy.g.alchemy.com/v2/key",
+          "ALCHEMY_ETHEREUM_RPC_URL" => "https://eth-sepolia.g.alchemy.com/v2/key",
+          "SOLANA_RPC_URL"           => "https://api.devnet.solana.com"
+        }
+      end
+
+      # The whole point of the split: this env was STRUCTURALLY un-bootable before it.
+      it "passes a testnet slot wired to testnet endpoints" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
+        expect(described_class.violations(env)).to be_empty
+      end
+
+      it "passes a mainnet slot that declares itself explicitly" do
+        expect(described_class.violations(clean_env.merge("WEB3_CHAIN_ENV" => "mainnet"))).to be_empty
+      end
+
+      it "flags a MAINNET endpoint on a slot declared testnet (staging must not sign real value)" do
+        env = clean_env.merge(testnet_rpcs)
+                       .merge("WEB3_CHAIN_ENV" => "testnet",
+                              "ALCHEMY_POLYGON_RPC_URL" => "https://polygon-mainnet.g.alchemy.com/v2/key")
+        expect(described_class.violations(env))
+          .to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL.*MAINNET endpoint/))
+      end
+
+      # Regression edge: the pre-split rule must survive the rewrite unchanged.
+      it "still flags a testnet endpoint when no chain family is declared (fail-closed default)" do
+        env = clean_env.merge("ALCHEMY_POLYGON_RPC_URL" => "https://polygon-amoy.g.alchemy.com/v2/key")
+        expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*TESTNET/))
+      end
+
+      it "normalises case and surrounding whitespace" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "  TestNet ")
+        expect(described_class.violations(env)).to be_empty
+      end
+
+      # An unrecognised value must never resolve to the strict default in silence: the slot
+      # would then be strict for a reason the operator cannot see.
+      it "refuses an unrecognised value instead of guessing" do
+        env = clean_env.merge("WEB3_CHAIN_ENV" => "staging")
+        expect(described_class.violations(env))
+          .to include(a_string_matching(/\[chain\].*WEB3_CHAIN_ENV is "staging".*not one of/))
+      end
+
+      # [E.49] inverted: on a testnet slot the Alfajores fallback is the CORRECT landing.
+      it "does not demand CELO_RPC_URL on a testnet slot (the code fallback IS Alfajores)" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet",
+                                                  "ORACLE_CELO_PRIVATE_KEY" => "d" * 64)
+        expect(described_class.violations(env)).not_to include(a_string_matching(/CELO_RPC_URL/))
+      end
+
+      # The mirror hazard this axis CREATED: the Polygon fallback is hardcoded MAINNET, and
+      # a marker scan cannot see it because the var is blank.
+      it "flags a blank ALCHEMY_POLYGON_RPC_URL on an armed testnet slot (hardcoded mainnet fallback)" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
+                       .except("ALCHEMY_POLYGON_RPC_URL")
+        expect(described_class.violations(env))
+          .to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL.*polygon-rpc\.com/))
+      end
+
+      it "does not demand ALCHEMY_POLYGON_RPC_URL on a testnet slot with no minter key" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
+                       .except("ALCHEMY_POLYGON_RPC_URL", "ORACLE_MINTER_PRIVATE_KEY")
+        expect(described_class.violations(env, signer_process: false))
+          .not_to include(a_string_matching(/ALCHEMY_POLYGON_RPC_URL/))
+      end
+
+      # The axis must not soften the OTHER axes: a testnet contract address is still an
+      # address, and an unfilled one is still the silent-failure class boot exists to catch.
+      it "still flags a malformed contract address on a testnet slot" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet",
+                                                  "CARBON_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+        expect(described_class.violations(env)).to include(a_string_matching(/\[address\].*40-hex/))
+      end
+    end
+
     # --- oracle signer keys: presence + format ----------------------------
 
     it "flags a missing minting oracle key (no dedicated key — the legacy fallback is retired)" do
@@ -113,14 +196,14 @@ RSpec.describe Security::Web3NetworkGuard do
     it "flags a legacy-only env as retired + both signer keys missing (no silent fallback)" do
       # Pre-split deploy config: only the shared base key set. The guard must refuse it
       # loudly on all three counts rather than let the roles silently resolve anywhere.
-      violations = described_class.violations(chain_env.merge("ORACLE_PRIVATE_KEY" => "a" * 64))
+      violations = described_class.violations(mainnet_rpcs.merge("ORACLE_PRIVATE_KEY" => "a" * 64))
       expect(violations).to include(a_string_matching(/RETIRED/))
       expect(violations).to include(a_string_matching(/minting/))
       expect(violations).to include(a_string_matching(/slashing/))
     end
 
     it "flags identical specific minter + slasher keys" do
-      env = chain_env.merge(
+      env = mainnet_rpcs.merge(
         "ORACLE_MINTER_PRIVATE_KEY"  => "e" * 64,
         "ORACLE_SLASHER_PRIVATE_KEY" => "e" * 64
       )
@@ -128,7 +211,7 @@ RSpec.describe Security::Web3NetworkGuard do
     end
 
     it "flags a 0x-vs-bare collision (same secret, different prefix)" do
-      env = chain_env.merge(
+      env = mainnet_rpcs.merge(
         "ORACLE_MINTER_PRIVATE_KEY"  => "0x#{'e' * 64}",
         "ORACLE_SLASHER_PRIVATE_KEY" => "e" * 64
       )
@@ -186,17 +269,17 @@ RSpec.describe Security::Web3NetworkGuard do
 
     context "when signer_process: false (web / coap containers)" do
       it "does not demand key presence — a keyless env is clean" do
-        expect(described_class.violations(chain_env, signer_process: false)).to be_empty
+        expect(described_class.violations(mainnet_rpcs, signer_process: false)).to be_empty
       end
 
       it "still flags a malformed key that IS present" do
-        env = chain_env.merge("ORACLE_MINTER_PRIVATE_KEY" => "not-a-hex-key")
+        env = mainnet_rpcs.merge("ORACLE_MINTER_PRIVATE_KEY" => "not-a-hex-key")
         expect(described_class.violations(env, signer_process: false))
           .to include(a_string_matching(/\[oracle-key\].*hex/))
       end
 
       it "still flags a lock-key collision when both keys are present" do
-        env = chain_env.merge(
+        env = mainnet_rpcs.merge(
           "ORACLE_MINTER_PRIVATE_KEY"  => "e" * 64,
           "ORACLE_SLASHER_PRIVATE_KEY" => "e" * 64
         )
@@ -205,19 +288,19 @@ RSpec.describe Security::Web3NetworkGuard do
       end
 
       it "still flags a testnet RPC" do
-        env = chain_env.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
+        env = mainnet_rpcs.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
         expect(described_class.violations(env, signer_process: false))
           .to include(a_string_matching(/\[chain\].*TESTNET/))
       end
 
       it "does not demand the silent-address or Solana sets (web/coap never mint/audit)" do
-        violations = described_class.violations(chain_env, signer_process: false)
+        violations = described_class.violations(mainnet_rpcs, signer_process: false)
         expect(violations).not_to include(a_string_matching(/\[address\]/))
         expect(violations).not_to include(a_string_matching(/\[solana\]/))
       end
 
       it "still flags a malformed treasury address that IS present" do
-        env = chain_env.merge("DAO_TREASURY_ADDRESS" => "not-an-address")
+        env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS" => "not-an-address")
         expect(described_class.violations(env, signer_process: false))
           .to include(a_string_matching(/\[address\].*40-hex/))
       end

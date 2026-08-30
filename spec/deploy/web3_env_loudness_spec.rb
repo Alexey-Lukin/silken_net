@@ -39,7 +39,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
   let(:guard_sets) do
     g = Security::Web3NetworkGuard
     g::RPC_URL_ENVS + g::ORACLE_KEY_ENVS + g::SIGNER_KEYS.values +
-      g::SILENT_ADDRESS_ENVS.keys + g::SOLANA_SIGNER_ENVS
+      g::SILENT_ADDRESS_ENVS.keys + g::SOLANA_SIGNER_ENVS + [ g::CHAIN_ENV_VAR ]
   end
 
   # Unset raises past every rescue on the real read-site (verified by reading 2026-07-12;
@@ -93,6 +93,11 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
         .to match_array(%w[SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT
                            SOLANA_USDC_MINT_ADDRESS])
       expect(g::SIGNER_KEYS.values).to match_array(%w[ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY])
+      # [OPS.37] The chain-family axis is GUARD-class, not SOFT: unlike WEB3_STRICT_MODE
+      # (whose absence prod compensates for), an unrecognised value here REFUSES the boot.
+      expect(g::CHAIN_ENV_VAR).to eq("WEB3_CHAIN_ENV")
+      expect(g::CHAIN_ENVS).to match_array(%w[mainnet testnet])
+      expect(g::DEFAULT_CHAIN_ENV).to eq("mainnet")
       expect(g::RPC_URL_ENVS).to include("CELO_RPC_URL", "SOLANA_RPC_URL", "ALCHEMY_POLYGON_RPC_URL")
       expect(g::ORACLE_KEY_ENVS)
         .to include("ORACLE_MINTER_PRIVATE_KEY", "ORACLE_SLASHER_PRIVATE_KEY", "ETHEREUM_ANCHOR_PRIVATE_KEY")

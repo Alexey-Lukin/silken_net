@@ -7,13 +7,14 @@
 # (`config/initializers/web3_network_guard.rb`) decides WHEN to enforce
 # (production / WEB3_STRICT_MODE) and raises `SecurityError`.
 #
-# Chain identity. A mainnet/canopy deploy pointed at a TESTNET RPC
-#   (Polygon Amoy, Solana devnet, Sepolia…) mints real economic value on a
-#   throwaway chain. There is NO chain-id constant in the code, so the realistic
-#   misconfiguration — an `*_RPC_URL` left on a testnet host — is caught by a
-#   host/marker scan. A live `eth_chainId` probe is deliberately NOT done at boot:
-#   it would make booting depend on RPC liveness (an availability failure worse
-#   than the config bug it guards). A runtime chain-id assertion can layer on later.
+# Chain identity. The realistic misconfiguration — an `*_RPC_URL` left on the wrong
+#   chain family — is caught by a host/marker scan, since there is NO chain-id constant
+#   in the code. A live `eth_chainId` probe is deliberately NOT done at boot: it would
+#   make booting depend on RPC liveness (an availability failure worse than the config
+#   bug it guards). A runtime chain-id assertion can layer on later.
+#   ⊕ Which direction is "wrong" is declared per slot by `CHAIN_ENV_VAR` (see below) —
+#   on mainnet a testnet endpoint mints real value on a throwaway chain; on a testnet
+#   slot a mainnet endpoint lets staging sign real transactions. Both refuse to boot.
 #
 # Oracle signer keys. Every signer resolves a DEDICATED key (`ENV.fetch` with
 #   no fallback — the legacy shared ORACLE_PRIVATE_KEY is retired, INF.22). A
@@ -58,6 +59,24 @@ module Security
     # match by coincidence (a random API-key token never trips it).
     TESTNET_MARKER =
       /(?<![a-z0-9])(?:amoy|mumbai|sepolia|goerli|holesky|ropsten|rinkeby|kovan|testnet|devnet)(?![a-z0-9])/i
+
+    # Declared chain family of this deploy slot [OPS.37 — the `production` split].
+    # `production` used to carry TWO claims at once — "hardened runtime" and "this is real
+    # money" — and a staging slot needs the FIRST WITHOUT THE SECOND. The runtime half stays
+    # where it was (`Rails.env.production?` ∨ `WEB3_STRICT_MODE`, both read by the companion
+    # initializer, which is why patching only one of them would not work); the money half
+    # moves HERE, as a second axis beside `signer_process:`.
+    #
+    # ⛔ This is NOT a bypass, and the distinction is the whole design. Each value is an
+    # ASSERTION the wiring must satisfy, and the two are mirror images: `mainnet` refuses a
+    # testnet endpoint (real value minted on a throwaway chain), `testnet` refuses a mainnet
+    # one (a staging slot able to sign real transactions — the hazard that keeps canopy
+    # web-only today). So a mis-DECLARED slot fails exactly as loudly as a mis-WIRED one, and
+    # an absent declaration lands on `mainnet`, i.e. the strict side: a forgotten flag can
+    # never downgrade safety, only refuse a boot.
+    CHAIN_ENV_VAR = "WEB3_CHAIN_ENV"
+    CHAIN_ENVS = %w[mainnet testnet].freeze
+    DEFAULT_CHAIN_ENV = "mainnet"
 
     # secp256k1 private key: 32 bytes hex, optional 0x prefix.
     HEX64 = /\A(?:0x)?[0-9a-fA-F]{64}\z/
@@ -112,27 +131,73 @@ module Security
         solana_violations(env, signer_process: signer_process)
     end
 
+    # The declared chain family, normalised. Absent → the fail-closed default.
+    def chain_env(env = ENV)
+      env[CHAIN_ENV_VAR].presence&.strip&.downcase || DEFAULT_CHAIN_ENV
+    end
+
     def chain_violations(env)
+      declared = chain_env(env)
+      unless CHAIN_ENVS.include?(declared)
+        # Never silently fall back to the strict value: a typo would then produce a slot
+        # that is strict for the wrong reason, and the operator would have no way to see it.
+        return [ "[chain] #{CHAIN_ENV_VAR} is #{declared.inspect}, which is not one of " \
+                 "#{CHAIN_ENVS.join('/')} — refusing to guess which chain family this slot " \
+                 "targets. Leave it unset for #{DEFAULT_CHAIN_ENV}." ]
+      end
+
+      testnet = declared == "testnet"
+
       out = RPC_URL_ENVS.filter_map do |var|
         url = env[var]
         next if url.blank?
 
         marker = url[TESTNET_MARKER]
-        next unless marker
 
-        "[chain] #{var} points at a TESTNET (matched #{marker.inspect}) — minting real " \
-          "value on a testnet is unrecoverable. Point it at a mainnet endpoint."
+        if testnet
+          next if marker
+
+          "[chain] #{var} points at a MAINNET endpoint while #{CHAIN_ENV_VAR}=testnet — a " \
+            "staging slot must not be able to sign real transactions. Point it at a testnet " \
+            "endpoint, or drop the #{CHAIN_ENV_VAR} declaration if this slot IS mainnet."
+        else
+          next unless marker
+
+          "[chain] #{var} points at a TESTNET (matched #{marker.inspect}) — minting real " \
+            "value on a testnet is unrecoverable. Point it at a mainnet endpoint."
+        end
       end
 
-      # [E.49] CELO_RPC_URL has a CODE-side testnet fallback (Alfajores): unset does not
-      # raise — real cUSD rewards would silently run against a throwaway chain, so the
-      # blank-skip above misses it. Presence is gated CONDITIONALLY on the Celo path being
-      # armed (its signer key present; the key lives only on the job surface, so web/coap
-      # boot clean without either).
-      if env["ORACLE_CELO_PRIVATE_KEY"].present? && env["CELO_RPC_URL"].blank?
+      out + hardcoded_fallback_violations(env, testnet: testnet)
+    end
+
+    # A blank RPC var is skipped above because an absent URL normally just raises at use.
+    # Two do NOT: their read-sites pass an explicit `fallback:` to `RpcConnectionPool`, so a
+    # blank var silently resolves to a HARDCODED endpoint — and the two hardcoded endpoints
+    # sit on OPPOSITE sides of the chain axis, which is why each rule fires on one side only.
+    def hardcoded_fallback_violations(env, testnet:)
+      out = []
+
+      # [E.49] Unset CELO_RPC_URL → `Celo::CommunityRewardService::DEFAULT_RPC_URL`, i.e.
+      # Alfajores TESTNET. Correct on a testnet slot; on mainnet real cUSD would pay out on
+      # a throwaway chain. Armed conditionally on the Celo path (its signer key lives only on
+      # the job surface, so web/coap boot clean without either).
+      if !testnet && env["ORACLE_CELO_PRIVATE_KEY"].present? && env["CELO_RPC_URL"].blank?
         out << "[chain] CELO_RPC_URL is not set while ORACLE_CELO_PRIVATE_KEY is present — " \
                "the code falls back to Alfajores TESTNET (E.49): real cUSD would pay out " \
                "on a throwaway chain. Set a mainnet Celo RPC."
+      end
+
+      # Mirror of the rule above, and it exists because the testnet axis CREATED the hazard:
+      # the Polygon branch of `MintingRollbackService` falls back to the hardcoded MAINNET
+      # `polygon-rpc.com`, so a testnet slot that forgets the var reads mainnet state in
+      # silence — the one direction the marker scan above cannot see, since it only ever
+      # inspects a url that IS set. Armed on the minter key for the same reason as Celo.
+      if testnet && env["ORACLE_MINTER_PRIVATE_KEY"].present? && env["ALCHEMY_POLYGON_RPC_URL"].blank?
+        out << "[chain] ALCHEMY_POLYGON_RPC_URL is not set while #{CHAIN_ENV_VAR}=testnet and " \
+               "the minter key is present — MintingRollbackService falls back to the hardcoded " \
+               "MAINNET endpoint (polygon-rpc.com), so a staging slot would read mainnet " \
+               "state. Set a testnet Polygon RPC."
       end
 
       out
@@ -200,9 +265,14 @@ module Security
 
           "[address] #{var} is not set — this would NOT crash: #{cost}."
         elsif !value.match?(EthAddressValidatable::ETH_ADDRESS_FORMAT)
+          # The message must separate the two operator actions this one predicate covers:
+          # a mispaste is fixed in the vault, an unfilled placeholder is fixed by deploying
+          # contracts FIRST. Naming the deploy-order (rather than the placeholder literal)
+          # keeps the convention's single home in the manifests, not here.
           "[address] #{var} is set but is not a 0x-prefixed 40-hex address (value not " \
-            "echoed — it could be a mispasted secret; the REQUIRED_SECRET_NOT_SET deploy " \
-            "placeholder trips this too) — #{cost}."
+            "echoed — it could be a mispasted secret, or still the deploy placeholder: " \
+            "these are filled after `forge deploy` ON THE CHAIN THIS SLOT DECLARES via " \
+            "#{CHAIN_ENV_VAR}, canon 06_04 §2.1) — #{cost}."
         elsif !EthAddressValidatable.eip55_valid?(value)
           # [ARCH.56] Well-formed but self-inconsistent: a mixed-case address CARRIES its
           # own EIP-55 checksum, so a mismatch is a mistyped/mispasted character, never a

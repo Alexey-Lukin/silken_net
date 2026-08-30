@@ -100,6 +100,18 @@ jobs:
               # on exactly these paths) while the scan sits skipped.
               - '.dockerignore'
               - 'Dockerfile'
+              # 🔴 [OPS.37] The scan's PRIMARY subjects, missing here until 2026-08-30 —
+              # so a config-only diff (money-quintet placement, canopy `servers:` array
+              # form, the COAP_ENV heredoc) skipped the job entirely and `CI passed` went
+              # green having judged nothing. Note the shape: the block above reasons
+              # carefully about a SECONDARY subject while the four the scan exists for
+              # were never listed — "decorative by INPUT" (guard-craft #1). Widening was
+              # free: the scan is green on the current tree, so this adds a trigger, not
+              # a backlog. Keep this list ≡ the subject set at the top of the script.
+              - 'config/deploy.yml'
+              - 'config/deploy.canopy.yml'
+              - '.kamal/**'
+              - 'terraform/compute.tf'
             terraform:
               - 'terraform/**'
             docker:

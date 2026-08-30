@@ -219,9 +219,22 @@ env:
     # See: config/initializers/sentry.rb → config.release
     RELEASE_VERSION: "${RELEASE_VERSION}"
 
+    # 🔑 TWO AXES, deliberately separate [OPS.37]. `production` used to answer both
+    # questions at once, and a staging slot needs the first WITHOUT the second:
+    #   WEB3_STRICT_MODE — "hardened runtime": no stubs, fail-closed guards. ON everywhere.
+    #   WEB3_CHAIN_ENV   — "which chain may this slot touch": mainnet ⊥ testnet.
+    #
     # Web3 fail-closed: Hadron KYC raises on missing creds + oracle-callback HMAC fail-fast (SEC.5), not silent stub (INF.11).
-    # Gates HadronComplianceService / OracleCallbacksController (they check ONLY this flag, not Rails.env).
+    # ⚠️ This line used to add "they check ONLY this flag, not Rails.env" — false since the
+    # INF.11 hardening (2026-07-10) made both read `flag || Rails.env.production?`; it is the
+    # belt-and-suspenders form, and a forgotten flag is NOT a fake-KYC mint.
     WEB3_STRICT_MODE: "true"
+
+    # Declared chain family of this slot; absent → mainnet (fail-closed default).
+    # NOT a bypass: `Security::Web3NetworkGuard` treats each value as an ASSERTION and
+    # refuses to boot on a mismatch in EITHER direction — a mainnet slot wired to a testnet
+    # endpoint, and equally a testnet slot wired to a mainnet one. Canon 04_02 §Web3NetworkGuard.
+    WEB3_CHAIN_ENV: mainnet
 
     # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
     # Public on-chain addresses (not secrets) but unknown until contracts deploy → placeholder.

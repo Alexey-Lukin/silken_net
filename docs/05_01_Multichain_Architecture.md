@@ -324,7 +324,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 3 |
 | **Тригер** | `ClusterHealthCheckWorker` (щоденно о 02:00 UTC) — для здорових кластерів |
-| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, обходить `web3_network_guard`; E.49 → mainnet endpoint обов'язковий), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, no fallback — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
+| **ENV** | `CELO_RPC_URL` ⚠️ без значення → fallback на Alfajores **TESTNET** (реальні cUSD на testnet, маркер-скан порожню змінну не бачить; E.49 → на слоті, оголошеному `mainnet`, endpoint обовʼязковий — на testnet-слоті цей самий fallback і є правильним приземленням), **[ARCH.50]** `ORACLE_CELO_PRIVATE_KEY` (dedicated Celo-підписант, no fallback — ізолює blast-radius від Polygon-флоту), `CELO_CUSD_CONTRACT_ADDRESS` |
 | **Спека** | `spec/services/celo/community_reward_service_spec.rb` |
 
 **Умови нарахування:**
@@ -593,7 +593,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | `SOLANA_USDC_MINT_ADDRESS` | Solana USDC |
 | `FILECOIN_PINNING_API_URL` | Pinata |
 
-> **Boot guard:** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище несе testnet-маркер (Amoy / devnet / Sepolia…) чи `CELO_RPC_URL` порожній при озброєному Celo-шляху (unset = тихий Alfajores-fallback у коді, E.49 — умовний гейт на присутність `ORACLE_CELO_PRIVATE_KEY`), `ORACLE_*` signer-ключ відсутній/malformed, або silent-address ENV (`DAO_TREASURY_ADDRESS`/SCC/SFC-адреси — use-сайти маскують config-баг під RPC-збій: tax тихо off, chain-audit хибне «clean», fallback-ціна) відсутній/malformed, або Solana signer-четвірка неповна (batch-payout без escalation-шляху) — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
+> **Boot guard:** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище **суперечить ОГОЛОШЕНІЙ чейн-родині слоту** (`WEB3_CHAIN_ENV` ∈ `mainnet`/`testnet`, відсутнє → `mainnet`; на `mainnet` падає testnet-маркер Amoy/devnet/Sepolia…, на `testnet` — навпаки mainnet-ендпоінт: обидва значення є твердженнями, жодне не є послабленням — [OPS.37]) чи порожній RPC із зашитим code-side fallback'ом на ПРОТИЛЕЖНИЙ бік осі (`CELO_RPC_URL` при озброєному Celo-шляху → Alfajores TESTNET, E.49 ⊥ `ALCHEMY_POLYGON_RPC_URL` при озброєному мінтері → mainnet `polygon-rpc.com`), `ORACLE_*` signer-ключ відсутній/malformed, або silent-address ENV (`DAO_TREASURY_ADDRESS`/SCC/SFC-адреси — use-сайти маскують config-баг під RPC-збій: tax тихо off, chain-audit хибне «clean», fallback-ціна) відсутній/malformed, або Solana signer-четвірка неповна (batch-payout без escalation-шляху) — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
 
 ---
 
