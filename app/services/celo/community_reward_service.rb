@@ -44,6 +44,11 @@ module Celo
     # фолбека переписує сам гард — відкритий ⚖️ у 00_07 `ARCH.118`/`INF.27`.
     # ⚠️ Шлях activation-gated (`ORACLE_CELO_PRIVATE_KEY` — lazy aux-ключ), тож сьогодні це
     # латентна міна дня деплою, а не інцидент.
+    # 🔑 СПОЖИВАЧІВ ЧОТИРИ, і греп по хосту бачить лише два — решта беруть цю константу
+    # ІМЕНЕМ: `#award_reward!` тут · `CeloConfirmationWorker` (reconcile) ·
+    # `MintingRollbackService#fetch_evm_transaction_receipt` (відкат мінту) ·
+    # `Treasury::MonitorService` (той несе рядок дослівно). Тобто мертвий хост стоїть на
+    # ТРЬОХ різних Celo-money-шляхах — перелічуй ФОРМИ посилання, не входження однієї з них.
     DEFAULT_RPC_URL = "https://alfajores-forno.celo-testnet.org"
 
     # [E.49] RPC FALLBACK CASCADE для Celo. Якщо `CELO_RPC_URL` недоступний
