@@ -108,9 +108,15 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 - 🔴 **DEFAULT-партиція є єдиною, чия НЕПОРОЖНІСТЬ ламає обслуговування незворотно** (ARCH.70, виміряно експериментом 2026-08-28). Щойно в DEFAULT-лист осів рядок місяця N, `CREATE TABLE IF NOT EXISTS … PARTITION OF` для місяця N падає `PG::CheckViolation` НАЗАВЖДИ, повідомлення НЕ містить `already exists` → `PartitionMaintenanceWorker` re-raise, і **ретраї не лікують**, бо стан сам не змінюється. Каскад: прохід падає на першій таблиці, решта не дістає партицій НАСТУПНОГО місяця, а семпл гейджів стоїть ПІСЛЯ циклу — три ARCH.70-алерти замерзають разом. Прилад-попередження `silkennet_partition_default_occupied` (0/1, `EXISTS` а не `count` — рішення оператора від кількості не залежить, а скан розрослого DEFAULT коштував би саме в інциденті) + `sn-alert-partition-default-occupied`; **рунбук із точними SQL-кроками — [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup), і порядок там несучий** (створити партицію ДО `DETACH` неможливо — це і є сам дефект). ⚠️ Сусідній `silkennet_partitions` лічить ЛИСТИ, а не «місяці історії»: серед них завжди DEFAULT і створений наперед наступний місяць, тож число більше на 1-2 — поправка в [`06_03 §2.8`](06_03_Prometheus_Observability), і саме на цьому числі стоїть ⚖️ ширини вікна ретеншну.
 - **Секрети One-Home:** канонічний дім — `config/deploy.yml env.secret`; повний
   інвентар + checklist — `06_04`. CI-гейт `verify-secrets`.
-- **SSH на Ingress Anchor = IAP-тунель + OS Login, keyless (INF.20 (в)).** Порт 22 в інтернет
+- **SSH на ОБИДВІ машини = IAP-тунель + OS Login, keyless (INF.20 (в)).** Порт 22 в інтернет
   НЕ відкритий; SSH-секретів у deploy-наборі НЕМАЄ; вхід `gcloud compute ssh silken-net-ingress
-  --tunnel-through-iap` (доступ = tf-var `iap_admin_members`). Команда/роль-модель/(б)-клей → `06_01` / 00_07 INF.20.
+  --tunnel-through-iap` (доступ = tf-var `iap_admin_members`). 🔴 **Для app-хоста це не «теж», а
+  ЄДИНИЙ шлях** (post-`OPS.37`): він без зовнішньої IP, і тег `web-nodes` на ньому стоїть рівно
+  заради `allow_iap_ssh`. ⚠️ Саме тут висить Kamal-нога (б)-клею, і залишок названо: Docker
+  передвстановлено startup-скриптом, бо `kamal server bootstrap` без sudo RAISE'ить, а deploy-SA
+  має `osLogin`, не `osAdminLogin` — але друга половина bootstrap'а (`usermod -aG docker`)
+  потребує того самого sudo, і як OS-Login-ідентичність (`sa_<numeric>`, не `deploy` з
+  `config/deploy.yml`) дістає docker-сокет — відкрите питання INF.20 (б). Команда/роль-модель/(б)-клей → `06_01` / 00_07 INF.20.
 - **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
   GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).
   **Keyless БЕЗ винятків** — `GCP_SA_KEY_BASE64` не існує ніде (`OPS.37` зняв єдиний виняток

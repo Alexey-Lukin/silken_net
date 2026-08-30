@@ -346,7 +346,7 @@ bin/rails runner "
 
 ### 5.5. Money-mint-key custody — GCP-KMS remote-signer (SEC.17)
 
-**Рішення (2026-07-06):** приватники `ORACLE_MINTER_PRIVATE_KEY`/`ORACLE_SLASHER_PRIVATE_KEY` (та решта oracle-ключів) живуть **plaintext у deploy-ENV** — у момент mint'у за реальну вартість ENV-ключ мінтера/слешера = найбільша одинична точка катастрофи. Custody-поріг вирішено: **GCP Cloud KMS remote-signer** (asymmetric secp256k1) — ключ ніколи не покидає HSM, backend шле лише digest. Обрано над Fireblocks (enterprise-cost; забирає broadcast/nonce → перетин з `BlockchainConfirmationWorker`/ARCH.47-lock) і Safe-module-mint (on-chain роль + relayer = знову ключ; це admin-вектор SEC.1, не hot-mint): KMS = HSM-grade + дешево (~$0.06/ключ/міс) + автоматизований hot-path + GCP уже в стеку.
+**Рішення (2026-07-06):** приватники `ORACLE_MINTER_PRIVATE_KEY`/`ORACLE_SLASHER_PRIVATE_KEY` (та решта oracle-ключів) живуть **plaintext у deploy-ENV** — у момент mint'у за реальну вартість ENV-ключ мінтера/слешера = найбільша одинична точка катастрофи. 🔴 **Поверхня ШИРША за ENV, і це переміряно 2026-08-30 проти джерела kamal, а не виведено:** `Kamal::Cli::App::Boot#run` вивантажує секрети ролі у файл `.kamal/apps/…/env/roles/job.env` (`mode: "0600"`) **на диск app-хоста**, тож квінтет є at-rest на PD, а не лише в `/proc/environ` живого процесу. Формула «діра = plaintext у deploy-ENV» описувала половину; мітигація at-rest — CMEK `app-boot` (§5.6, shipped), справжній seal лишається цим пунктом. Custody-поріг вирішено: **GCP Cloud KMS remote-signer** (asymmetric secp256k1) — ключ ніколи не покидає HSM, backend шле лише digest. Обрано над Fireblocks (enterprise-cost; забирає broadcast/nonce → перетин з `BlockchainConfirmationWorker`/ARCH.47-lock) і Safe-module-mint (on-chain роль + relayer = знову ключ; це admin-вектор SEC.1, не hot-mint): KMS = HSM-grade + дешево (~$0.06/ключ/міс) + автоматизований hot-path + GCP уже в стеку.
 
 **Impl-план (🤖, pre-mainnet — захищає ключ у момент mint реальної вартості; до prod-mint ENV-ключ теж нічого не мінтить, тож НЕ TRL-3-блокер):**
 
@@ -360,11 +360,14 @@ Cross-ref: [`00_07`](00_07_Action_Plan_Tracker) SEC.17 (стан/тригер), 
 
 **Рішення (2026-07-09):** boot-disk Ingress Anchor'а тримає `coap.env` (`RAILS_MASTER_KEY` + AR-encryption-ключі; **НЕ** `PROVISIONING_MASTER_KEY` — INF.17 2026-07-10 прибрав його з coap, fleet-forge root off анкора) at-rest. Поверх дефолтного GMEK — **CMEK** (`terraform/kms.tf`: keyring `silken-disk-ew1`, key `anchor-boot`, symmetric) для key-lifecycle-контролю (disable/rotate/audit/crypto-shred). Wrap DEK робить **Compute Engine Service Agent** (`service-<num>@compute-system`, key-level encrypter/decrypter — **НЕ** deploy-SA; `google_project_service_identity` compute-excluded → constructed string + `depends_on` compute-API). SHIPPED pre-deploy (timing: `kms_key_self_link`=ForceNew → на живий VM = replacement; до 1-го apply = нуль-cost).
 
+🔴 **ДРУГИЙ boot-диск під CMEK з 2026-08-30, і його підстава ГРОШОВА — тобто вагоміша за анкерну, а не симетрична їй ([OPS.37]).** App-хост (`silken-net-app`, Kamal ролі web+job+coap) дістав власний ключ `app-boot` у тому ж keyring'у. Підстава виміряна проти ДЖЕРЕЛА kamal 2.12, не припущена: `Kamal::Cli::App::Boot#run` виконує `upload! role.secrets_io(host), role.secrets_path, mode: "0600"`, а `role.secrets_path` резолвиться у `.kamal/apps/<service>-<destination>/env/roles/<role>.env` **НА ХОСТІ**. Отже money/signing-квінтет (`ORACLE_MINTER/SLASHER/CELO` + `ETHEREUM_ANCHOR` + `SOLANA_WALLET_KEYPAIR`) лежить на цьому диску **плейнтекстом у файлі 0600** під роллю `job` — рівно той клас at-rest-матеріалу, за який анкер дістав CMEK для `coap.env`. ⚠️ **Це НЕ seal і не заміна `SEC.17`** (див. §5.5): CMEK купує key-lifecycle-контроль — disable/rotate/audit/crypto-shred — над секретом, який інакше просто лежить на PD у відкритому вигляді. Момент безкоштовний рівно зараз: `kms_key_self_link` є ForceNew, тож на живій машині це заміна VM.
+
 **KMS keyring architecture (one-home, всі ключі) — ТРИ isolated keyring'и** (blast-radius-бар'єр: роль на одному не тече на sibling):
 
 | Keyring | Key | Purpose · grantee (key-level IAM) | Стан |
 |---|---|---|---|
 | `silken-disk-ew1` | `anchor-boot` | ENCRYPT_DECRYPT · compute service-agent | ✅ shipped |
+| `silken-disk-ew1` | `app-boot` | ENCRYPT_DECRYPT · compute service-agent | ✅ shipped 2026-08-30 ([OPS.37] app-хост; підстава — §5.6 нижче) |
 | `silken-sign-ew1` | `oracle-minter`/`slasher` | ASYMMETRIC_SIGN secp256k1 · job signer-SA | 🔗 SEC.17 (§5.5), pre-mainnet |
 | `silken-tfstate-ew1` | `tfstate` | ENCRYPT_DECRYPT · **GCS service-agent** | ✅ shipped 2026-07-10 (bootstrap-owned, [SEC.22]) |
 

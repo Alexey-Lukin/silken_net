@@ -22,7 +22,7 @@
 | Ресурс | Зв'язок |
 |---|---|
 | `config/deploy.yml` · `config/deploy.canopy.yml` | Kamal (production / canopy) |
-| `terraform/` | IaC: Cloud SQL, Ingress Anchor, VPC, KMS |
+| `terraform/` | IaC: Cloud SQL, Ingress Anchor, **app-хост** (Kamal web+job+coap), VPC, KMS |
 | `.github/workflows/deploy.yml` · `deploy-production.yml` | Canopy / Production CI/CD (деталі — [`06_07`](06_07_CICD_and_Runbook_Index)) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend (що деплоїться) |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Observability |
@@ -97,14 +97,16 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # Заповнити: project_id, db_password, ssh_source_ranges
 
-# Крок 3: Провізіонувати GCP інфраструктуру (Cloud SQL + Ingress Anchor)
+# Крок 3: Провізіонувати GCP інфраструктуру (Cloud SQL + Ingress Anchor + app-хост)
 terraform init
 terraform plan
 terraform apply
 # → outputs: ingress_ip, database_url
 # GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-small,
 #   статична IP, CoAP-демон PRIMARY, boot-disk CMEK через `silken-disk-ew1` keyring)
-#   + Cloud KMS keyring (`kms.tf` — compute service-agent IAM створюється автоматично)
+#   + app-хост silken-net-app (e2-standard-2, БЕЗ зовнішньої IP — анкер фронтить 80/443
+#     і 5683; Docker передвстановлений, бо deploy-SA не має sudo; власний CMEK app-boot)
+#   + Cloud KMS keyring (`kms.tf` — ДВА disk-ключі, compute service-agent IAM автоматично)
 # ⚠️ Перший apply може РАЗ впасти "kmsPermissionDenied" (compute P4SA / KMS-IAM
 #   propagation ще не поширилась) → просто re-apply (той самий клас, що першу
 #   активацію billing-API; на brownfield-проєкті зазвичай проходить з першого разу)
@@ -482,7 +484,8 @@ kamal logs -f -d canopy
 terraform/
 ├── main.tf       # Provider (google ~> 7.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
-├── compute.tf    # Ingress Anchor (e2-small, silken-net-ingress), Static IP + CoAP-демон (PRIMARY)
+├── compute.tf    # ДВА інстанси: Ingress Anchor (e2-small, silken-net-ingress, Static IP + CoAP-демон PRIMARY)
+│                 #              + app-хост (e2-standard-2, silken-net-app — Kamal web+job+coap, приватний IP) [OPS.37]
 ├── database.tf   # Cloud SQL PostgreSQL 17, 3 databases (primary/cache/cable — Solid Queue pruned INF.18) + canopy-тріо, Private Service Access
 ├── iam.tf        # Service Account silken-net-deploy + IAM roles (deploy-SA + IAP-operator)
 ├── variables.tf  # Всі input variables з валідацією

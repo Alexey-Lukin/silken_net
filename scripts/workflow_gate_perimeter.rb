@@ -8,8 +8,15 @@
 # `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
 # SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
 # `IaC passed` smokes + `DCO passed`. Only `ssot_guard.yml` stays
-# advisory-by-design (path-gated red-X informs, does not block); the flip-pending
-# bucket is EMPTY — `dco.yml` was the last tenant and the founder flipped it.
+# advisory-by-design (path-gated red-X informs, does not block).
+# 🔴 The flip-pending bucket is NOT empty, and this header said it was for three
+# days (2026-08-27 → 08-30): `subgraph.yml` moved in with OPS.34 while the line
+# still read "EMPTY — `dco.yml` was the last tenant". The gate's own `--flip`
+# output printed the tenant on every run, so the file contradicted itself out
+# loud — and check (e), which exists to catch prose that MISNAMES a workflow's
+# class, is blind to the shape "the bucket is empty" because it names no
+# workflow at all. Read the PERIMETER hash below, never this sentence; the live
+# tenant list is what the run prints.
 # Nothing watched the gate PERIMETER itself: a new deterministic PR-gate can be
 # born outside the required
 # set and nobody notices — exactly how the money-path Solidity audit stayed

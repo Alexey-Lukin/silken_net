@@ -60,6 +60,7 @@
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
 | Oracle/anchor private keys, contract addresses | secrets ([`06_04`](06_04_Secrets_Checklist)) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
 | **KMS `anchor-boot` key** (disk-CMEK, [`06_04 §5.6`](06_04_Secrets_Checklist)) | Cloud KMS `silken-disk-ew1` | `prevent_destroy` + 30-day restore-grace; **undeletable** | 🟠 Availability-critical — anchor boot-disk unbootable без key (key-**not**-data → не в backup; сам disk = cattle, rebuild з IaC + operator-injected `coap.env`). ⚠️ snapshot НЕ inherit'ить CMEK → майбутній anchor-snapshot потребує `--kms-key` |
+| **KMS `app-boot` key** (disk-CMEK, [`06_04 §5.6`](06_04_Secrets_Checklist)) | Cloud KMS `silken-disk-ew1` | ідентична постанова: `prevent_destroy` + 30-day restore-grace, 90d rotation; **undeletable** | 🔴 Availability-critical **і ставка ВИЩА за anchor-boot**: без ключа не бутиться машина, що тримає money-квінтет at-rest (kamal вивантажує його в `env/roles/job.env` 0600 — [`06_04 §5.6`](06_04_Secrets_Checklist)). Disk = cattle, rebuild з IaC; але доти вся Kamal-половина платформи стоїть, не лише інтейк. Заведено 2026-08-30 разом з app-хостом [OPS.37] |
 | **KMS `tfstate` key** (state-bucket CMEK, [SEC.22] → [`06_04 §5.6`](06_04_Secrets_Checklist)) | Cloud KMS `silken-tfstate-ew1` (bootstrap-owned, поза terraform) | KMS-версії undeletable без явного destroy; rotation 90d = нова PRIMARY, старі версії decrypt-capable | 🟠 Availability-critical для infra-ops — ручний destroy key-версії робить state-версії під нею назавжди нечитабельними (recovery = `terraform import` живих ресурсів з нуля, болісно але можливо; дані НЕ втрачаються — лише їх infra-проєкція) |
 | **Redis** (Sidekiq queue, Kredis locks, Rack::Attack) | Upstash (managed) | managed durability; **app-tolerant** | 🟢 Низько — jobs re-enqueue, locks re-acquire, rate-limit лічильники не критичні |
 | Schema | `db/structure.sql` (git) | git | 🟢 Низько — у репозиторії |
@@ -132,7 +133,7 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 ```
 
 ### 5.3 Region loss (full rebuild)
-1. `terraform apply` у новому регіоні (`var.region`) — підніме Cloud SQL + Ingress Anchor.
+1. `terraform apply` у новому регіоні (`var.region`) — підніме Cloud SQL + Ingress Anchor + **app-хост** (`silken-net-app`; без нього крок 4 не має куди їхати — [OPS.37] 2026-08-30).
 2. Restore Cloud SQL з backup у новий регіон (`gcloud sql backups restore`).
 3. Відновити секрети ([`06_04`](06_04_Secrets_Checklist)) + master-ключі (§4) у CI та `.kamal/secrets-common`.
 4. `kamal deploy` (production).
