@@ -481,11 +481,16 @@ module Solana
     # reconcile signature_status). Мемоізовано — ENV стабільний у межах життя сервісу.
     def solana_rpc_urls
       @solana_rpc_urls ||= begin
-        # [OPS.37] The question here is "is this real money", NOT "is this a hardened
-        # runtime" — so it reads the CHAIN axis, never `Rails.env.production?`. Canopy runs
-        # RAILS_ENV=production deliberately, and on a slot declared `testnet` the Devnet
-        # fallback below is the CORRECT landing, not a defect to refuse.
-        if ENV["SOLANA_RPC_URL"].blank? && Security::Web3NetworkGuard.chain_env(ENV) == "mainnet"
+        # [OPS.37] BOTH axes, conjoined — and the conjunction is the whole correction.
+        # "Deployed slot" is still `Rails.env.production?` (dev/test legitimately ride the
+        # Devnet fallback below); "real money" is the NEW chain axis, because canopy runs
+        # RAILS_ENV=production deliberately and on a slot declared `testnet` that fallback
+        # is the CORRECT landing. ⚠️ Splitting a conflated token means the site KEEPS the
+        # axis it legitimately needed and GAINS the other — never swaps one for the other:
+        # the first cut here replaced `Rails.env.production?` outright, and since the chain
+        # axis defaults to `mainnet` everywhere, it started raising in test (37 red).
+        if ENV["SOLANA_RPC_URL"].blank? && Rails.env.production? &&
+           Security::Web3NetworkGuard.chain_env(ENV) == "mainnet"
           raise "🛑 [Solana] SOLANA_RPC_URL is required on a mainnet slot — refusing Devnet fallback"
         end
 

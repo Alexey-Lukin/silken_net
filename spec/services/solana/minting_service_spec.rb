@@ -88,18 +88,20 @@ RSpec.describe Solana::MintingService do
       # deliberately), and ONLY the chain declaration moves. Without this example the one
       # above stays green against either axis and proves nothing about the split.
       it "does NOT refuse the Devnet fallback on a slot declared testnet, even under RAILS_ENV=production" do
-        create(:telemetry_log, :verified_telemetry, tree: tree)
+        log = create(:telemetry_log, :verified_telemetry, tree: tree)
         wallet.update!(solana_public_address: recipient_solana_address)
+        previous_rpc = ENV.fetch("SOLANA_RPC_URL", nil)
         ENV.delete("SOLANA_RPC_URL")
         ENV["WEB3_CHAIN_ENV"] = "testnet"
 
         allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
 
-        expect(described_class.new(create(:telemetry_log, :verified_telemetry, tree: tree))
-                 .send(:solana_rpc_urls))
+        expect(described_class.new(log).send(:solana_rpc_urls))
           .to include(Solana::MintingService::DEVNET_RPC_URL)
       ensure
-        ENV.delete("SOLANA_RPC_URL")
+        # RESTORE, never blind-delete: the sibling example above deletes it unconditionally,
+        # and that leak is exactly what let an order-dependent failure hide from a local run.
+        previous_rpc.nil? ? ENV.delete("SOLANA_RPC_URL") : ENV["SOLANA_RPC_URL"] = previous_rpc
         ENV.delete("WEB3_CHAIN_ENV")
       end
     end

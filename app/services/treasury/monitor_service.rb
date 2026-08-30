@@ -450,9 +450,12 @@ module Treasury
 
     # Solana: getBalance через JSON RPC
     def fetch_solana_balance(config)
-      # [OPS.37] Chain axis, not `Rails.env.production?` — the hardcoded fallback below is
-      # Devnet, so refusing it is only right on a slot that declares itself `mainnet`.
-      if ENV[config[:env_rpc_key]].blank? && Security::Web3NetworkGuard.chain_env(ENV) == "mainnet"
+      # [OPS.37] BOTH axes: a deployed slot (`Rails.env.production?`) AND one that declares
+      # itself `mainnet`. The hardcoded fallback below is Devnet, so refusing it is wrong in
+      # dev/test and wrong on canopy-testnet alike — see the sibling note in
+      # `Solana::MintingService#solana_rpc_urls` for why this is a conjunction, not a swap.
+      if ENV[config[:env_rpc_key]].blank? && Rails.env.production? &&
+         Security::Web3NetworkGuard.chain_env(ENV) == "mainnet"
         Rails.logger.warn "[Treasury] #{config[:env_rpc_key]} not set on a mainnet slot — Solana balance check skipped"
         return 0
       end
