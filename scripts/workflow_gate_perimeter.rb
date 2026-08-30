@@ -4,19 +4,17 @@
 
 # Gate-perimeter meta-guard (OPS.14).
 #
-# `main`'s branch protection requires all eight deterministic PR-gates —
+# `main`'s branch protection requires all nine deterministic PR-gates —
 # `CI passed` (ci-ok), `Docs passed` (docs-ok), `Solidity passed` (money-path
-# SCC/SFC/Governor), and the `CAD passed` / `ML passed` / `In-silico passed` /
-# `IaC passed` smokes + `DCO passed`. Only `ssot_guard.yml` stays
-# advisory-by-design (path-gated red-X informs, does not block).
-# 🔴 The flip-pending bucket is NOT empty, and this header said it was for three
-# days (2026-08-27 → 08-30): `subgraph.yml` moved in with OPS.34 while the line
-# still read "EMPTY — `dco.yml` was the last tenant". The gate's own `--flip`
-# output printed the tenant on every run, so the file contradicted itself out
-# loud — and check (e), which exists to catch prose that MISNAMES a workflow's
-# class, is blind to the shape "the bucket is empty" because it names no
-# workflow at all. Read the PERIMETER hash below, never this sentence; the live
-# tenant list is what the run prints.
+# SCC/SFC/Governor), `Subgraph passed`, and the `CAD passed` / `ML passed` /
+# `In-silico passed` / `IaC passed` smokes + `DCO passed`. Only `ssot_guard.yml`
+# stays advisory-by-design (path-gated red-X informs, does not block).
+# 🔴 On the flip-pending bucket, trust only the run's own output, never a prose
+# sentence here: this header once claimed the bucket was EMPTY for three days
+# while `subgraph.yml` sat in it (2026-08-27 → 08-30) — and check (e), which
+# catches prose that MISNAMES a workflow's class, is blind to the shape "the
+# bucket is empty" because that shape names no workflow at all. The PERIMETER
+# hash below is the SSOT; the live tenant list is what the run prints.
 # Nothing watched the gate PERIMETER itself: a new deterministic PR-gate can be
 # born outside the required
 # set and nobody notices — exactly how the money-path Solidity audit stayed
@@ -93,34 +91,17 @@ module WorkflowGatePerimeter
     # gates" drift this guard exists to catch.
     "dco.yml"             => [ :required,           "DCO passed" ],
     # [OPS.34] Компіляція субграфа — поверхні, з якої ЗОВНІШНІЙ читач бере нашу
-    # емісію. `:flip_pending`, а не `:required`, і причина рівно та сама, що
-    # тримала `dco.yml` тут до 2026-07-25: зробити його девʼятим обовʼязковим
-    # контекстом є дією над налаштуваннями репо, якої CI-токен виконати не може,
-    # тож заявити `:required` наперед означало б відтворити дрейф «канон каже
-    # gating, не гейтить ніщо», проти якого цей вартовий і поставлений.
-    # ⊕ Флip тягне за собою `if: always()`-aggregate (перевірка (c)): path-gated
-    # required-чек без нього блокує мердж назавжди на скіпі. Aggregate свідомо НЕ
-    # написано наперед — він їде тим самим рухом, що й зміна branch protection.
-    # 🔴 АЛЕ рецепт вище був НЕПОВНИЙ, і бракувало саме тієї половини, без якої
-    # решта не рятує (переміряно 2026-08-30). `subgraph.yml` — ЄДИНИЙ у цьому
-    # реєстрі, чий фільтр `paths:` висить на самому `pull_request:`; у кожного
-    # `:required` сусіда `pull_request:` голий (у `solidity_audit.yml` `paths:`
-    # стоїть лише під `push:`), і ci.yml пояснює чому просто в шапці свого `on:`.
-    # Наслідок: коли шляхи не збігаються, воркфлоу не СТАРТУЄ взагалі — GitHub не
-    # створює check-run, тож required-контекст ніколи не рапортує й PR висить у
-    # «Expected — waiting for status» НАЗАВЖДИ. Aggregate тут безсилий за
-    # побудовою: він не може відзвітувати з прогону, якого не було.
-    # ⇒ Фліп є ЧОТИРИМА рухами в одному коміті, не двома: (1) зняти `paths:` з
-    # `on.pull_request`; (2) перенести той самий фільтр у джобу `changes`
-    # (`dorny/paths-filter`, як у ci.yml/docs.yml) і згейтити `build` на її
-    # вихід — інакше `npm ci`+codegen+build+test поїдуть на КОЖНОМУ PR;
-    # (3) `if: always()`-aggregate з ОБОМА гардами (провал/скасування + власний
-    # результат `changes`, перевірка (f)); (4) сама branch protection.
-    # ⛔ Порядок (1)+(2) нероздільний: (1) без (2) роздуває кожен PR, (2) без (1)
-    # не має що фільтрувати. Це та сама асиметрія, що робить клас дорогим:
-    # неповний рецепт на 👤-поверхні виконують ДОСЛІВНО, і перший його прогін —
-    # уже в день фліпу.
-    "subgraph.yml"        => [ :flip_pending,       "OPS.34" ]
+    # емісію. Девʼятий required-контекст (фліп 2026-08-30). Форма несуча, не
+    # стилістична: `pull_request:` мусить лишатись ГОЛИМ — path-filtered
+    # required-чек блокує чужі PR назавжди («Expected — waiting for status»:
+    # воркфлоу без збігу шляхів не СТАРТУЄ, check-run не народжується, і
+    # aggregate безсилий за побудовою — він не може відзвітувати з прогону,
+    # якого не було). Фільтр тому живе в джобі `changes` (dorny/paths-filter),
+    # `build` гейтиться на її вихід, а `Subgraph passed` (if: always()) несе
+    # обидва гарди — провал/скасування + власний результат `changes` (перевірка
+    # (f)). Та сама форма, що ci.yml/docs.yml; переносити фільтр назад у
+    # `on.pull_request.paths` = повернути пастку, яку цей фліп знімав.
+    "subgraph.yml"        => [ :required,           "Subgraph passed" ]
   }.freeze
 
   CLASSES = %i[required advisory_by_design flip_pending].freeze

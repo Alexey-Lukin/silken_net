@@ -5,7 +5,7 @@
 
 ## Checklist
 - [ ] **Conventional-commit title** (`feat:` / `fix:` / `chore:` / `docs:` …) — release-please reads it for the next version + CHANGELOG.
-- [ ] **All 8 required aggregates** green (`CI` / `Docs` / `Solidity` / `CAD` / `ML` / `In-silico` / `IaC` / `DCO passed` — the path-gated jobs that actually ran are green).
+- [ ] **All 9 required aggregates** green (`CI` / `Docs` / `Solidity` / `Subgraph` / `CAD` / `ML` / `In-silico` / `IaC` / `DCO passed` — the path-gated jobs that actually ran are green).
 - [ ] **SSOT:** docs updated to match the code — OR a `type:*` label set if the change is non-architectural.
       `type:chore` / `type:deps` / `type:perf` / `type:test` bypass the SSOT guard;
       `type:refactor` / `type:bugfix` still need a `docs/` update — or log the open drift in

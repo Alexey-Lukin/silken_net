@@ -270,7 +270,7 @@ The claims above are backed by enforced, automated evidence — not by assertion
   branch-protection check on `main`** (OPS.15, landed 2026-07-19) — each job also fails on its own
   findings, and a red audit now physically blocks the merge. CodeQL (default setup, 6 languages) and
   OpenSSF Scorecard report findings without being merge-required. The exact required-check surface (all
-  **8** deterministic PR-gates — `CI passed` + `Docs passed` + `Solidity passed` + `DCO passed` + the
+  **9** deterministic PR-gates — `CI passed` + `Docs passed` + `Solidity passed` + `DCO passed` + `Subgraph passed` + the
   CAD/ML/In-silico/IaC smoke aggregates) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per

@@ -228,9 +228,10 @@ jobs:
         # SSOT. A NEW deterministic PR-gate born outside the required set → RED
         # "classify it" (the class that let the money-path Solidity audit stay
         # merge-advisory while canon claimed "all gating"). The required set is
-        # eight PR-gates and the flip-pending bucket is empty. The script now also
-        # cross-checks that claim against every prose home (DOC-T.51) — so this very
-        # comment is gated. Input `.github/**` already in the changes-filter,
+        # nine PR-gates; the flip-pending bucket is whatever the run prints (a
+        # prose "empty" claim rotted here once, 2026-08-27→30). The script also
+        # cross-checks the count against every prose home (DOC-T.51) — so this
+        # very comment is gated. Input `.github/**` already in the changes-filter,
         # so the gate is not decorative.
         run: ruby scripts/workflow_gate_perimeter.rb
 

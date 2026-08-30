@@ -8,7 +8,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status checks = усі **8** детермінованих PR-гейтів: `CI passed` + `Docs passed` + `Solidity passed` + `CAD passed` + `ML passed` + `In-silico passed` + `IaC passed` + `DCO passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
+- **Поточний TRL:** TRL 6 — workflows активні; production+canopy deploy налаштовані; **`main` захищено branch-protection** (required status checks = усі **9** детермінованих PR-гейтів: `CI passed` + `Docs passed` + `Solidity passed` + `CAD passed` + `ML passed` + `In-silico passed` + `IaC passed` + `DCO passed` + `Subgraph passed`, `enforce_admins=false` → owner лишає прямий push, PR-и гейтяться); `coap-smoke` gate заведений, але dormant до host-Variable (INF.6).
 - **Supply-chain (OPS.10):** усі Actions + базовий Docker-образ pinned (SHA / `@sha256:` digest; Dependabot `github-actions`+`docker`) · top-level **token-permissions** least-privilege · `harden-runner` egress-audit (Linux) · **actionlint** workflow-gate · `Sec · Scorecard` weekly · secret-scanning + push-protection + CodeQL ON · CI CLI-тулзи hash-pinned (pip `--require-hashes`: Solidity-audit + in-silico pytest; + sha256-binaries) — ⚠️ **крім Slither**, який ставить не workflow, а сам екшен (тому лише version-pin, слабший за hash → OPS.21). 👤-залишки (signed-commits, опц. toggles) → [`00_07`](00_07_Action_Plan_Tracker) OPS.10.
 - **Відкрите:** активація coap-smoke (repo Variables — INF.6) → [`00_07`](00_07_Action_Plan_Tracker).
 
