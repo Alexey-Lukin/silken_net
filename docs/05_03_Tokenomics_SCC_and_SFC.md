@@ -563,18 +563,9 @@ function nonces(address owner)
 | `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot)` | `investor`, `clusterIdHash` (bytes32 keccak256), `archiveRoot` | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
 | `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleGovernanceSlashed` (пише `contextHash`; ⚠️ contract address placeholder) |
 
-### Subgraph vs Контракт — Повна Матриця
+### Subgraph vs Контракт
 
-| Event у subgraph.yaml | Подія у контракті | Статус |
-|---|---|---|
-| `CarbonMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)` | `CarbonMinted` | ✅ `treeDidHash` + `archiveRoot` (обидва bytes32, обидва indexed) |
-| `TokenSlashed(indexed address,uint256,bytes32)` | `TokenSlashed` | ✅ Синхронізовано (contextHash — CONTRACT.1) |
-| `ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
-| `GovernanceSlashed(indexed address,uint256,bytes32)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5; contextHash — CONTRACT.1) |
-
-> ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
-
-🛡️ **Арність цих сигнатур гейтована** — `ruby scripts/solidity_signature_arity_check.rb` (HARD, `docs.yml`) звіряє КОЖЕН переказ параметричного списку в `docs/**` проти декларації в `contracts/*.sol`. ⛔ Стеля оголошена: гейт судить **лише кількість параметрів** — типи, порядок, імена й `indexed` лишаються на очах ревʼюера. Заведено [DOC-T.89] після того, як `archiveRoot` (E.60 Фаза 1б) прожив у контрактах і `subgraph.yaml`, а канон тримав чотирипараметричну форму у **двадцяти** місцях і ставив ✅ у цій самій матриці навпроти сигнатури, якої не вживає жоден бік.
+> 🏠 **«Повна Матриця» переїхала в оголошений дім субграфної поверхні — [`05_02 §Subgraph`](05_02_Proof_of_Growth_Pipeline) (⚖️ OPS.36, 2026-08-30).** Тут лишається токеномічна половина зв'язку — природа мінта і префікси ідентифікатора (§ нижче), бо їх визначає емісія, а субграф лише споживає.
 
 ### 🏷️ Префікси ідентифікатора мінта — що саме несе `treeDid`/`clusterId`
 
