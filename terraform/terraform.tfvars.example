@@ -40,5 +40,6 @@ ssh_source_ranges = []
 # Redis — REMOVED from GCP (Memorystore has no public IP).
 # Use Upstash (serverless Redis with TLS public endpoints) instead.
 # Set REDIS_URL=rediss://default:password@endpoint.upstash.io:6379 in secrets.
-# Free tier (10k commands/day) is sufficient through TRL 8.
+# Free tier (256 MB, 500K commands/month) is sufficient through TRL 8.
+# Create the instance in GCP europe-west1 — same region as Cloud SQL.
 # See: docs/06_01_Deployment_Kamal_Terraform.md

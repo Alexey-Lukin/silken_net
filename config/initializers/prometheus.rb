@@ -688,6 +688,25 @@ module SilkenNet
       docstring: "Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator)"
     )
 
+    # 🔴 [INF.22] Rate-limit store failures. The two nonce counters above exist
+    # because their fallback is VISIBLE — the request still completes, and the
+    # counter says which path served it. Rack::Attack has no fallback: its store
+    # is `ActiveSupport::Cache::RedisCacheStore`, whose failsafe swallows every
+    # `Redis::BaseError` and returns nil. A nil read is indistinguishable from
+    # "this IP has no strikes", so a broken store does not degrade the shield —
+    # it silently REMOVES it: throttle counters never increment and the fail2ban
+    # threshold is never reached, on a public surface, with an empty log.
+    # Measured 2026-08-30 against our own Upstash instance: write/read/increment
+    # all returned nil with no exception raised.
+    # ⛔ This counter is NOT diagnostic-tier and must never be demoted to one:
+    # rate limiting is a security path, and [INF.26] rules that a declared
+    # diagnostic tier there legalises the hole instead of closing it. Its
+    # consumer is `sn-alert-rate-limit-store-errors`.
+    RATE_LIMIT_STORE_ERRORS_TOTAL = REGISTRY.counter(
+      :silkennet_rate_limit_store_errors_total,
+      docstring: "Rack::Attack cache-store operations that failed and were swallowed by the RedisCacheStore failsafe (rate limiting is silently OFF while this climbs)"
+    )
+
     # [FW.22 / S2.3]: Acoustic events overflow counter.
     # Firmware saturates acoustic_events at uint8 max (255).
     # Value 255 indicates real count may be higher — sensor data loss.

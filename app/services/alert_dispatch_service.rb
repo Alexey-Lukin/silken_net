@@ -158,8 +158,9 @@ class AlertDispatchService
   # у воркері, де локалі глядача не існує, тож фраза мусить збиратись у момент
   # показу (дім механізму — `EwsAlert#message`, ключі — `alerts.messages.*`).
   private_class_method def self.create_and_dispatch_alert!(cluster:, tree:, severity:, alert_type:, message_key:, message_params: {})
-    # --- ⚡ [ОПТИМІЗАЦІЯ]: REDIS SILENCE FILTER ---
-    # Використовуємо Rails.cache (Redis) замість SQL .exists?, щоб не "вбити" Postgres
+    # --- ⚡ [ОПТИМІЗАЦІЯ]: SILENCE FILTER ---
+    # Rails.cache замість SQL .exists?, щоб не "вбити" Postgres на кожній тривозі.
+    # ⚠️ Прод-стор тут Solid Cache (PostgreSQL), НЕ Redis — заголовок казав інакше.
     silence_key = "ews_silence:#{tree.id}:#{alert_type}"
     return if Rails.cache.exist?(silence_key)
 

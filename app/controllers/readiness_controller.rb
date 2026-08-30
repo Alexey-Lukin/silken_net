@@ -37,9 +37,12 @@ class ReadinessController < ActionController::Base
     SilkenNet::HealthProbes.database_reachable?
   end
 
-  # Both Redis DBs: Sidekiq queues (DB 0) and Kredis (DB 1 — Web3 nonce + mint/burn
-  # locks). /ready must 503 if either is unreachable, so the orchestrator stops
-  # routing to a node that cannot safely mint/burn.
+  # Both Redis CLIENTS — Sidekiq queues and Kredis (Web3 nonce + mint/burn locks).
+  # Not two databases: Upstash exposes one, so both share a keyspace [INF.22]; the
+  # probe still checks both because they are separate clients with separate pools,
+  # and a live Sidekiq pool proves nothing about the Kredis one. /ready must 503 if
+  # either is unreachable, so the orchestrator stops routing to a node that cannot
+  # safely mint/burn.
   def redis_ok?
     SilkenNet::HealthProbes.redis_reachable?
   end

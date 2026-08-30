@@ -20,7 +20,12 @@ RSpec.describe "Sidekiq initializer" do # rubocop:disable RSpec/DescribeClass
       expect(SIDEKIQ_REDIS_URL).to include("redis://")
     end
 
-    it "uses Redis DB 0 by default (not DB 1 reserved for Kredis)" do
+    # [INF.22] Доти цей приклад звався «not DB 1 reserved for Kredis» — резерву
+    # більше не існує: Upstash дає рівно ОДНУ логічну базу, тож усі споживачі
+    # ділять keyspace, а розводить їх префікс. Твердження лишається тим самим і
+    # стає СИЛЬНІШИМ: індекс, відмінний від нуля, у проді не резервує нічого, він
+    # RAISE'ить (`ERR Only 0th database is supported!`).
+    it "адресує нульовий індекс — єдиний, що існує на Upstash" do
       expect(SIDEKIQ_REDIS_URL).to match(%r{/0\z}).or match(%r{localhost:6379\z})
     end
 

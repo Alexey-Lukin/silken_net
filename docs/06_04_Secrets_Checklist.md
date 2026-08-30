@@ -51,7 +51,7 @@
 >
 > **[B1] CI Kamal deploy мапить увесь `env.secret` набір.** `deploy.yml`/`deploy-production.yml` у кроці `kamal deploy` передають **весь** `config/deploy.yml env.secret` набір із GitHub Secrets у shell-ENV — `.kamal/secrets-common` читає кожну як `$VAR`. Пропущена тут = порожній інжект → boot-crash (`RAILS_MASTER_KEY` decrypt / `PROVISIONING_MASTER_KEY` guard / oracle KeyError) або web3-strict raise. Тому **і P0-набір (§1.1), і Web3/runtime-набір (§1.4) = GitHub Secrets.** `verify-secrets` гейтить повний boot-critical набір (fail-loud на production, skip-clean на canopy).
 >
-> `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16. `KREDIS_REDIS_URL` виведений — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`, §2.1).
+> `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` виведені — component style, INF.16. `KREDIS_REDIS_URL` виведений — Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`, §2.1).
 
 ### 1.1. P0 — Blocking (без цих secrets CI/CD не запуститься)
 
@@ -62,8 +62,8 @@
 > ~~`GCP_SA_KEY`~~ — **ВИДАЛЕНО як CI-secret 2026-07-09 (INF.22, keyless WIF):** CI автентифікується до GCP через **Workload Identity Federation** (`terraform/wif.tf`) — GitHub карбує короткоживучий OIDC-токен, GCP STS обмінює його на impersonated deploy-SA access-token; JSON-ключ (6-місний, boot-critical, безстроковий credential) з CI зник. Замість нього — два **repo Variables** (не secrets, це публічні ідентифікатори): `GCP_WORKLOAD_IDENTITY_PROVIDER` (з `terraform output workload_identity_provider`) + `GCP_SERVICE_ACCOUNT` (SA email). ⊕ **[OPS.37, 2026-08-29] Останній виняток ЗНИК разом із платформою:** `GCP_SA_KEY_BASE64` існував рівно для автентифікації з-поза VPC, його споживач (cloud-sql-proxy) знято з образу, і довгоживучих SA-ключів у системі більше **немає жодного** — WIF тепер безвинятковий.
 - [ ] `GCP_PROJECT_ID` — ID GCP проєкту (наприклад, `silken-net-prod`)
 - [ ] `POSTGRES_PASSWORD` — пароль Cloud SQL `silken_net` user (≥16 символів, password manager). **Component style** (`config/database.yml`): host/user/database — non-secret (`config/deploy.yml env.clear`), лише пароль = секрет. Один секрет живить Kamal `POSTGRES_PASSWORD` **і** Terraform `TF_VAR_db_password`. Той самий для production + canopy — ізоляція через `POSTGRES_DATABASE` (canopy = `silken_net_canopy`), НЕ окремий URL. (Замінив `DATABASE_URL`/`DATABASE_PASSWORD`/`CANOPY_DATABASE_URL` — INF.16.)
-- [ ] `REDIS_URL` — Production Redis (DB 0, Upstash): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
-- [ ] `CANOPY_REDIS_URL` — Canopy Redis (DB 0): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
+- [ ] `REDIS_URL` — Production Redis (Upstash, `europe-west1`): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`. ⚠️ Суфікс `/0` — ЄДИНИЙ легальний індекс: Upstash має одну логічну базу, будь-який інший віддає `ERR Only 0th database is supported!` ([`06_01 §Redis Isolation Strategy`](06_01_Deployment_Kamal_Terraform))
+- [ ] `CANOPY_REDIS_URL` — Canopy Redis (окремий інстанс Upstash, `europe-west1`): `rediss://default:<password>@<endpoint>.upstash.io:6379/0`
 > ~~`SSH_PRIVATE_KEY` / `SSH_PUBLIC_KEY` / `SSH_KNOWN_HOSTS`~~ — **ЗНЯТО 2026-07-04 (INF.20 (в)):** SSH на анкор = IAP-тунель + OS Login, ключового матеріалу для провіжна НЕМАЄ (ключі керує OS Login; порт 22 в інтернет не відкритий — firewall лише 35.235.240.0/20). Доступ = IAM: tf-var `iap_admin_members` (osAdminLogin + tunnelResourceAccessor). CI-Kamal при потребі — (б)-клей: `ssh.proxy_command` через `gcloud compute start-iap-tunnel` + ті самі ролі для SA. Не заводити ці секрети.
 
 ### 1.2. P1 — Operations (потрібні для конкретних автоматизацій)
@@ -74,8 +74,8 @@
 
 ### 1.3. P2 — Опціонально / Auto-derived
 
-- [ ] `KREDIS_REDIS_URL` — **[B1] виведено з усіх deploy-surface.** Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`: `/0`→`/1`). Не оголошений у Kamal / Terraform. Заводь GitHub Secret лише щоб указати на **окремий** Redis-інстанс (рідко).
-- [ ] `RACK_ATTACK_REDIS_URL` — Production Redis (DB 2) для rate limiting. Опціонально (auto-derive із `REDIS_URL`).
+- [ ] `KREDIS_REDIS_URL` — **[B1] виведено з усіх deploy-surface.** Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`); ключі розведені префіксом `silken:*`, не номером бази. Не оголошений у Kamal / Terraform. Заводь GitHub Secret лише щоб вивести локи на **окремий** Redis-інстанс — це єдиний спосіб дістати ізоляцію від memory pressure (рідко).
+- [ ] `RACK_ATTACK_REDIS_URL` — окремий Redis-інстанс під rate-limit. Опціонально: незаданий — лічильники йдуть у `REDIS_URL` під префіксом `rack-attack:*`.
 - [ ] `SCORECARD_TOKEN` — fine-grained read-only PAT (repo admin: read) для `Sec · Scorecard` (OpenSSF, OPS.10). **Опціонально:** без нього Scorecard працює, але пропускає Branch-Protection/Webhooks-перевірки (`GITHUB_TOKEN` їх не читає). Дім workflow — [`06_07 §1`](06_07_CICD_and_Runbook_Index).
 - _(секрет НЕ потрібен)_ **Build-provenance attestation** (`mirror-ghcr.yml`, OpenSSF `signed_releases`) підписує GHCR-образ **keyless** через GitHub OIDC (`id-token: write`) + вбудований `GITHUB_TOKEN` — Sigstore Fulcio видає ефемерний сертифікат per-build, тож **підписувального ключа провіженити/зберігати не треба**. Політика → [`06_07 §1a`](06_07_CICD_and_Runbook_Index); verify → `SECURITY.md`.
 
@@ -106,7 +106,7 @@
 - [ ] `REDIS_URL` — те саме значення
 - [ ] `SENTRY_DSN` — Sentry project DSN. Без цього Sentry **інертний** — production помилки не репортуються. ✅ **Значення ЗАВЕДЕНО в GitHub repo Secrets 2026-08-30** (Sentry-org `silkennet`, проєкт `silken-net`, EU-інжест `.de` — S1.1); чекбокс лишається про інжекцію в живий Kamal-деплой при першому деплої, як у всього батчу.
 
-> **`KREDIS_REDIS_URL` виведено [B1]** — Kredis auto-derive DB 1 із `REDIS_URL` (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets-common` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би derive → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
+> **`KREDIS_REDIS_URL` виведено [B1]** — Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`). Не оголошуй у `.kamal/secrets-common` / `env.secret`: порожній або placeholder-інжект truthy для `ENV.fetch` і перебив би фолбек → Kredis конектиться до сміття. Override лише вказівкою на окремий Redis-інстанс.
 - [ ] `PROVISIONING_MASTER_KEY` — HKDF master key для per-device AES key derivation. Генерувати: `ruby -e "require 'securerandom'; puts SecureRandom.hex(32)"`. ⚠️ **Production guard:** provisioning endpoint **MUST** raise/refuse при відсутності ENV у production (`Rails.env.production?`) — будь-який fallback на raw AES key є **критичною security regression** і допустимий ТІЛЬКИ у TRL4 lab mode (`RAILS_ENV=development|test`). Recommended controller-level guard: `raise "PROVISIONING_MASTER_KEY required in production" if Rails.env.production? && ENV["PROVISIONING_MASTER_KEY"].blank?`
 - [ ] `CHAINLINK_HMAC_SECRET` — HMAC-SHA256 секрет для верифікації `X-Chainlink-Signature` header у `/api/v1/oracle_callbacks`. Генерувати як `SecureRandom.hex(32)`. (Dispatch-секрети `ROUTER`/`SUBSCRIPTION_ID`/`DON_ID` вилучено — ARCH.53 демоут.)
 - [ ] `HELIUM_WEBHOOK_SECRET` — [ARCH.34] HMAC-SHA256 секрет `X-Helium-Signature` для `/api/v1/telemetry/helium` (SOS Королеви; той самий рецепт `SecureRandom.hex(32)`; вписується і у Helium Console HTTP Integration). `WEB3_STRICT_MODE=true` → відсутність = SecurityError. ✅ 2026-07-04 провід заведено НАСКРІЗНО: Kamal `env.secret` + `.kamal/secrets-common` + обидва deploy-workflows (RUNTIME-warn) — до того секрет був задекларований лише тут, і кожен деплой гарантовано 500-ив Queen-SOS endpoint.

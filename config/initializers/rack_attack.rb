@@ -8,7 +8,7 @@
 #   • Telemetry endpoint spam (burst-tolerant per-gateway throttle)
 #   • Credential stuffing / vulnerability scanning (Fail2Ban on 401/404)
 #
-# Cache store: RedisCacheStore (Upstash DB 2) in dev+prod, MemoryStore in test.
+# Cache store: RedisCacheStore in dev+prod, MemoryStore in test.
 # Redis is REQUIRED, not incidental. Puma runs clustered (WEB_CONCURRENCY=2-4
 # forked workers, even at replica count:1), so both the per-IP throttle counters
 # AND the fail2ban 401/404 `increment` must be shared + ATOMIC across processes.
@@ -16,35 +16,69 @@
 # the fail2ban threshold is never reached (scanners never banned); SolidCache's
 # increment is not atomic either. Redis is the only correct store here.
 #
-# 🔴 DECLARED CEILING, so the cost is not rediscovered as a defect [INF.22]. Upstash is
-# NOT same-region, so every throttle check pays a cross-region RTT — on the hot path, on
-# every request. That is a real price and it is accepted deliberately, because the two
-# ways out are worse today:
-#   · an in-process store (MemoryStore / SolidCache) is not a cheaper version of this —
-#     it is INCORRECT, for the reason above. Measured and refused: it does not trade
-#     latency for accuracy, it removes the guarantee entirely.
-#   · a same-region Redis sidecar is the real fix and is real infrastructure — gated on
-#     first public traffic, not on preference.
-# At TRL 3 (zero traffic) the RTT does not hurt, so the honest posture is "accept, and
-# say so". Revisit trigger: first public traffic, together with the sidecar question.
+# 🔴 ONE LOGICAL DATABASE, separated by a key namespace [INF.22]. This block used
+# to rewrite the URL path to `/2`, on the assumption that numbered Redis
+# databases keep the rate-limit counters away from Sidekiq (/0) and Kredis (/1).
+# Upstash exposes exactly one: `SELECT 2` answers `ERR Only 0th database is
+# supported!` (measured against our own instance 2026-08-30). The isolation was
+# never going to exist in production; the namespace below is what replaces it.
+#
+# 🔴 AND THE FAILURE MODE IS WHY THIS MATTERS MORE THAN THE ADDRESS. Measured the
+# same day: with the `/2` URL, `write`/`read`/`increment` all returned **nil with
+# no exception** — `RedisCacheStore`'s failsafe swallows every `Redis::BaseError`.
+# That is correct for a cache and wrong for a security counter: a nil read is
+# indistinguishable from "this IP has no strikes", so a broken store does not
+# degrade the shield, it silently REMOVES it — throttles never count, scanners
+# are never banned, and the log stays empty. Hence `error_handler:` below: this
+# store is not allowed to fail quietly. ⛔ Do not drop it to keep the block tidy.
+#
+# 🔴 DECLARED CEILING — REVOKED 2026-08-30, and the reason is worth keeping, because
+# the ceiling was not stale, it was WRONG FROM BIRTH. It read: "Upstash is NOT
+# same-region, so every throttle check pays a cross-region RTT… a same-region Redis
+# sidecar is the real fix and is real infrastructure — gated on first public traffic."
+# That verdict was written about a database that did not exist yet. Upstash offers GCP
+# `europe-west1` (Belgium) — the same region as our Cloud SQL — so same-region cost one
+# choice in a dropdown, not a sidecar and not infrastructure. Both databases now live
+# there. ⚠️ This binds terraform: Cloud SQL must STAY in `europe-west1`
+# (`terraform/variables.tf` default), or the property is lost without anything reddening.
+#
+# What survives from that block, because it was measured and is still true: an
+# in-process store (MemoryStore / SolidCache) is not a cheaper version of this —
+# it is INCORRECT for the reason above, and refusing it traded nothing.
 
 # ---------------------------------------------------------------------------
 # 1. CACHE STORE — distributed counters across all application nodes
 # ---------------------------------------------------------------------------
+
+# Named on purpose rather than inlined below: the production branch of this file
+# never executes under RSpec (test uses MemoryStore), so an inline lambda would be
+# unreachable by any behavioural pin — and "no pin" is exactly how the silent
+# failure it exists to announce survived in the first place. Extracting it lets
+# `spec/initializers/rack_attack_store_spec.rb` CALL it.
+RACK_ATTACK_STORE_ERROR_HANDLER = lambda { |method:, returning:, exception:|
+  SilkenNet::Metrics::RATE_LIMIT_STORE_ERRORS_TOTAL.increment
+  Rails.logger.error(
+    "[rack_attack] cache store #{method} failed — RATE LIMITING IS NOT ENFORCED " \
+    "while this persists (returned #{returning.inspect}): " \
+    "#{exception.class}: #{exception.message}"
+  )
+}
+
 if Rails.env.test?
   # Use in-memory store for tests — no Redis dependency required.
   Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
 else
   Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
-    url: ENV.fetch("RACK_ATTACK_REDIS_URL") {
-      # Isolate rate-limit counters on DB 2 to avoid interference with
-      # Sidekiq (DB 0) and Kredis locks (DB 1).
-      base = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
-      uri = URI.parse(base)
-      uri.path = "/2"
-      uri.to_s
-    },
-    expires_in: 10.minutes
+    # `RACK_ATTACK_REDIS_URL` stays the deploy-time lever for pointing the
+    # counters at a SEPARATE Redis instance (real isolation, no code change);
+    # unset, they share the one database with Sidekiq and Kredis, kept apart by
+    # the namespace below.
+    url: ENV.fetch("RACK_ATTACK_REDIS_URL") { ENV.fetch("REDIS_URL", "redis://localhost:6379/0") },
+    namespace: "rack-attack",
+    expires_in: 10.minutes,
+    # Give the silence a voice. Without this the store's failsafe returns nil and
+    # nothing anywhere records that the shield stopped counting.
+    error_handler: RACK_ATTACK_STORE_ERROR_HANDLER
   )
 end
 

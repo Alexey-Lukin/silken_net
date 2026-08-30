@@ -502,7 +502,8 @@ class TelemetryUnpackerService < ApplicationService
   end
 
   # [SEC.10] Panic Frame Counter anti-replay. Atomic SETNX через Rails.cache
-  # (Redis у production). Повертає `true` коли nonce-ключ вже існує (це replay
+  # (Solid Cache / PostgreSQL у production — НЕ Redis; `unless_exist: true` там
+  # атомарний, [ARCH.105]). Повертає `true` коли nonce-ключ вже існує (це replay
   # від уже-баченого counter'а), `false` коли ключ свіжий і ми його щойно
   # встановили. TTL 25h гарантує, що nonce переживає 24-годинне replay-вікно
   # і ще трохи. Cold-boot вузла не зламає цей захист — firmware пересіє
@@ -510,8 +511,9 @@ class TelemetryUnpackerService < ApplicationService
   # зіткнення з живим nonce попереднього втілення ≈ 1/65535.
   def panic_replayed?(hex_did, counter)
     nonce_key = "#{PANIC_NONCE_KEY_PREFIX}:#{hex_did}:#{counter}"
-    # write returns false on Redis if `unless_exist: true` and key already exists.
-    # Rails.cache (RedisCacheStore) supports the `unless_exist:` option for SETNX.
+    # write returns false if `unless_exist: true` and the key already exists.
+    # Rails.cache is Solid Cache (PostgreSQL) in production, and its `unless_exist:`
+    # is a genuine SET NX [ARCH.105] — do not read "Redis" into this path.
     inserted = Rails.cache.write(nonce_key, "1", expires_in: PANIC_NONCE_TTL, unless_exist: true)
     !inserted
   end

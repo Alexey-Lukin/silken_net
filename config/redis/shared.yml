@@ -1,21 +1,36 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Kredis Redis configuration — used for distributed locks (Web3 nonce management).
 #
-# DB ISOLATION STRATEGY:
-#   DB 0 → Sidekiq (job queues) — configured in config/initializers/sidekiq.rb
-#   DB 1 → Kredis (distributed locks) — configured here
+# 🔴 ONE LOGICAL DATABASE. This file used to derive `/1` from REDIS_URL, on the
+# assumption that numbered Redis databases isolate Kredis from the Sidekiq
+# queues. Upstash — our managed Redis — exposes exactly one: `SELECT 1` answers
+# `ERR Only 0th database is supported!` (measured against our own instance
+# 2026-08-30). The derive did not degrade there, it RAISED: every Kredis call is
+# a money-path lock or an anti-replay nonce, so the whole /ready probe 503'd.
 #
-# This separation prevents a telemetry queue flood from evicting Web3 nonce locks,
-# which would cause EVM nonce collisions and double-spend vulnerabilities.
+# What replaced the isolation: a key namespace (`config/initializers/kredis.rb`
+# sets `Kredis.global_namespace`), which also stops `Kredis.clear_all` from
+# FLUSHDB-ing the shared keyspace. Read that file before touching this one.
+#
+# ⚠️ The ORIGINAL ground for separating them stands and is NOT solved by a
+# prefix: a telemetry queue flood can still evict Web3 nonce locks under an
+# eviction policy, which is exactly the EVM nonce-collision / double-spend risk
+# the split was built for. A prefix separates NAMES, never memory pressure. Two
+# live mitigations: the canopy/production databases run with eviction OFF, and
+# `KREDIS_REDIS_URL` below still points Kredis at a SEPARATE instance whenever
+# that is wanted — the override is the deploy-time lever, and it needs no code.
+#
+# dev/test intentionally mirror production (one database, one keyspace): keeping
+# a local /1 would hide this whole class from every run that is not a deploy.
 
 production: &production
-  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "#{(ENV["REDIS_URL"] || "redis://localhost:6379").sub(/\/\d+$/, "")}/1" } %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { ENV.fetch("REDIS_URL", "redis://localhost:6379/0") } %>
   timeout: 3
 
 development:
-  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/1" } %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/0" } %>
   timeout: 1
 
 test:
-  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/1" } %>
+  url: <%= ENV.fetch("KREDIS_REDIS_URL") { "redis://localhost:6379/0" } %>
   timeout: 1

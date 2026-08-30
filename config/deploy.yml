@@ -133,9 +133,12 @@ env:
     # Cloud SQL password (host/user are non-secret → env.clear). Component style: config/database.yml.
     - POSTGRES_PASSWORD
     - REDIS_URL
-    # KREDIS_REDIS_URL intentionally absent — Kredis auto-derives it from REDIS_URL (DB 1)
-    # via config/redis/shared.yml. Declaring it here would inject an empty string that
-    # overrides the derive (see .kamal/secrets-common note). Add back only for a separate instance.
+    # KREDIS_REDIS_URL intentionally absent — Kredis reads REDIS_URL as-is via
+    # config/redis/shared.yml (one logical database on Upstash; keys are separated by
+    # namespace, not by a DB number [INF.22]). Declaring it here would inject an empty
+    # string that overrides that (see .kamal/secrets-common note). Add back ONLY to point
+    # Kredis at a SEPARATE Redis instance — which is the deploy-time lever for real
+    # memory-pressure isolation, and needs no code change.
     # --- Observability ---
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---

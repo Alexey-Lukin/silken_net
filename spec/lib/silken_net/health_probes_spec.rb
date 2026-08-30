@@ -107,7 +107,10 @@ RSpec.describe SilkenNet::HealthProbes do
   end
 
   describe ".redis_reachable?" do
-    it "вимагає PONG від ОБОХ баз — черг Sidekiq і Kredis" do
+    # [INF.22] «Обидва» — про КЛІЄНТІВ, не про бази: нумерованих баз більше немає
+    # (Upstash дає одну), але пули Sidekiq і Kredis лишаються різними, тож живий
+    # один нічого не доводить про другий.
+    it "вимагає PONG від ОБОХ клієнтів — черг Sidekiq і Kredis" do
       allow(Kredis).to receive(:redis).and_raise(StandardError, "kredis down")
 
       expect(described_class.redis_reachable?).to be(false)

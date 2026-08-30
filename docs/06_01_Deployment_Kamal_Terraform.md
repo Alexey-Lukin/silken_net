@@ -39,7 +39,7 @@
 - [Архітектура Деплою (The Big Picture)](#-архітектура-деплою-the-big-picture)
 - [Canopy vs 🌲 Production — Порівняльна Таблиця](#-canopy-vs--production--порівняльна-таблиця)
 - [Розподіл Ресурсів між провайдерами](#-розподіл-ресурсів-між-провайдерами)
-- [Redis DB Isolation Strategy](#-redis-db-isolation-strategy)
+- [Redis Isolation Strategy](#-redis-isolation-strategy)
 - [Kamal — Детальний Аналіз](#-kamal--детальний-аналіз)
 - [Terraform (GCP) — Детальний Аналіз](#-terraform-gcp--детальний-аналіз)
 - [Docker — Multi-stage Build](#-docker--multi-stage-build)
@@ -60,7 +60,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare — рішення `[INF.4]`, повний чекліст і верифікація нижче в §TLS); DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis auto-derive DB 1 з `REDIS_URL` (`config/redis/shared.yml`), порожній інжект перебив би derive [B1]. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
+| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`), а порожній інжект перебив би це значенням «» [B1]; задавати лише щоб вивести локи на ОКРЕМИЙ інстанс. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -125,7 +125,7 @@ terraform apply
 #   Auth Proxy знято з рантайм-шляху разом із платформою, що його вимагала. Ці два рядки
 #   пережили зріз коду на пів дня — 👤-процедура наказувала СТВОРИТИ довгоживучий SA-ключ,
 #   чиє зникнення той самий зріз оголосив закриттям ARCH.114.
-#   (KREDIS_REDIS_URL — НЕ задавати: Kredis auto-derive DB 1 з REDIS_URL, config/redis/shared.yml) [B1]
+#   (KREDIS_REDIS_URL — НЕ задавати: Kredis читає REDIS_URL як є, config/redis/shared.yml) [B1]
 # 🛑 Boot-critical (інакше Puma crash):
 #   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")
 # Observability:
@@ -251,7 +251,7 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 | **GCS tfstate** | Google · бакет створено поза terraform (`bootstrap.sh`) | контроль над станом інфри; ручне знищення версії CMEK-ключа робить state-версії **назавжди** нечитабельними (recovery = `terraform import` з нуля) | ⛔ ні. ⊕ **Єдиний важіль із МАШИННИМ виконавцем строку** — ротація CMEK `--rotation-period=90d`, налаштована в gcloud. Копії стану поза бакетом немає (лише 10 noncurrent-версій / 30 днів, і короткий ретеншн — свідомий: кожна версія несе секрети) |
 | **GHCR** (образ для анкера) | GitHub (див. рядок 2) | зупиняє оновлення/підйом **CoAP-інтейку**: анкер тягне свій образ звідси systemd-юнітом, поза Kamal/WIF-ланцюгом і без реєстрового credential'а. ⚠️ Kamal тягне з GCP Artifact Registry — це ІНШИЙ реєстр, тож web/job тут не залежать | ⛔ ні — успадковує подію рядка 2. Пом'якшення: `PIN_ME` fail-closed + заборона `:latest` (`INF.21`) — уже завантажений образ переживе відмову, rebuild/reboot ні |
 | **Alchemy** (RPC Polygon/Ethereum) | Alchemy · акаунт ще не заведено | зупиняє мінт · слешинг · confirmation · L1-якір · governance-sync · treasury-моніторинг. 🔴 **Каскад формально Є, фактично ПОРОЖНІЙ:** механізм (`Web3::ResilientClient` + `RpcConnectionPool`) живий, але при одному URL він вироджується у звичайного клієнта, а з усіх `client_for`-сайтів каскад передає **один** (`MintingRollbackService`); `INFURA_POLYGON_RPC_URL` живе лише в `.env.example` і в deploy-набір не заведений | ⛔ ні, але 🤖 **вимірна діра**: другий RPC-провайдер для Polygon/Ethereum — конфіг, не архітектура (Celo й Solana свої каскади вже мають) |
-| **Upstash** (Redis ×3 DB) | Upstash · акаунт ще не заведено | `/ready` → **503 для всієї ноди** (Redis у hard-dependencies), бо на ньому Sidekiq (9 черг) · Kredis-локи мінту/бернy/nonce · Rack::Attack. ⊕ Частковий graceful-degrade є лише для nonce (fallback у Solid Cache + власна метрика й алерт) | ⛔ ні. ⚖️ **Тригер названий і вимірний:** повторюваний `m2m_nonce_fallback` день-у-день → перехід на multi-zone Upstash Global DB (рішення за прод-даними) |
+| **Upstash** (Redis ×2 інстанси: production + canopy) | Upstash · акаунт ще не заведено | `/ready` → **503 для всієї ноди** (Redis у hard-dependencies), бо на ньому Sidekiq (9 черг) · Kredis-локи мінту/бернy/nonce · Rack::Attack. ⊕ Частковий graceful-degrade є лише для nonce (fallback у Solid Cache + власна метрика й алерт) | ⛔ ні. ⚖️ **Тригер названий і вимірний:** повторюваний `m2m_nonce_fallback` день-у-день → перехід на multi-zone Upstash Global DB (рішення за прод-даними) |
 
 🔑 **Що цей інвентар змінив у власному пункті — записано, бо клас повториться.** `ARCH.114` спирався на «виміряний інстанс, що доводить потребу»: `GCP_SA_KEY_BASE64` — довгоживучий SA-ключ із приписаною ротацією 90 днів **без виконавця**. **Цей інстанс МЕРТВИЙ**: споживача знято разом із платформою (`OPS.37`), `google_service_account_key` у дереві **нуль**, а `INF.22` і скіл `deploy` уже кажуть «WIF безвинятковий». **Вердикт (реєстр потрібен) вистояв — упала його ПІДСТАВА**, і заміняє її не риторика, а сильніший живий інстанс того самого класу Кафки: **довіра WIF ключується на ІМЕНІ GitHub-власника, стеля оголошена в самому коді, подія названа («if the repo ever changes hands») — і виконавця в неї немає так само.** Різниця в тому, що цей — не гіпотетичний і не знятий.
 
@@ -271,26 +271,35 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 | **Artifact Registry (Docker)** | ✅ | — | — | Kamal пушить у GCP AR |
 | **GHCR (Docker mirror)** | ✅ | — | — | `.github/workflows/mirror-ghcr.yml` — ПУБЛІЧНЕ дзеркало, бо анкер тягне свій образ systemd-юнітом поза Kamal/WIF-ланцюгом і не має реєстрового credential'а |
 
-## 🔴 Redis DB Isolation Strategy
+## 🔴 Redis Isolation Strategy
 
 ### Проблема
 
-Без ізоляції Redis databases IoT телеметрія (мільйони дерев, пакети щогодини від кожної Queen) може витіснити критичні Web3 nonce locks → EVM nonce collision → double-spend на Polygon. При масштабі мільярдів-трильйонів дерев обсяг Sidekiq-черг та rate-limit counters зростає експоненціально, і shared Redis database стає single point of contention.
+IoT-телеметрія (мільйони дерев, пакети щогодини від кожної Queen) може витіснити критичні Web3 nonce locks → EVM nonce collision → double-spend на Polygon. При масштабі мільярдів-трильйонів дерев обсяг Sidekiq-черг та rate-limit counters зростає експоненціально, і спільне Redis-сховище стає single point of contention. **Ця проблема чинна — змінився лише механізм, яким ми на неї відповідаємо.**
 
-### Рішення: 3 Redis DB + 2 PostgreSQL-Backed + 1 In-Process
+### Рішення: один keyspace + префікси, а ізоляція — ОКРЕМИМ ІНСТАНСОМ
 
-Система розділяє всі stateful підсистеми на ізольовані сховища. Кожна підсистема використовує окремий Redis DB number (або зовсім не Redis), що гарантує неможливість взаємного витіснення:
+🔴 **Доти тут стояло «3 Redis DB», і це було нездійсненне за побудовою.** Upstash — наш керований Redis — виставляє **рівно одну логічну базу**: `SELECT 1` віддає `ERR Only 0th database is supported!` (виміряно на власному інстансі `silkennet-canopy` 2026-08-30, командою, не документацією). Тобто нумерована ізоляція не «протухла» — вона не існувала в проді жодного дня, і деривації `/1`/`/2` не деградували, а **падали**: Kredis голосно (`Redis::CommandError` → `/ready` 503), а Rack::Attack **тихо** (`RedisCacheStore` ковтає помилку failsafe'ом і віддає `nil`, що невідрізненне від «нуль страйків»).
+
+Чинна модель — **два яруси**, і їх не можна плутати:
+
+1. **Розділення ІМЕН — за замовчуванням, безкоштовно.** Усі споживачі ділять один keyspace, розведені префіксом ключа: Kredis — `silken:*` (`Kredis.global_namespace`, `config/initializers/kredis.rb`), Rack::Attack — `rack-attack:*` (опція `namespace:`), Sidekiq — власні `queue:`/`retry:`/`dead`/`stat:`/`processes` **без префікса**, бо Sidekiq 7+ кидає `ArgumentError` на `namespace:` і його імена ні з чим не збігаються.
+2. **Розділення ПАМʼЯТІ — deploy-часовий важіль, за потреби.** Префікс розводить імена, **ніколи не memory pressure**: під eviction-політикою флуд однаково вибиває чужі ключі незалежно від префікса. Тому справжню ізоляцію дає **окремий інстанс**, і код для цього вже готовий — `KREDIS_REDIS_URL` / `RACK_ATTACK_REDIS_URL` перекривають адресу без жодної правки. Обидві наші бази наразі створені з **вимкненим eviction**, тож витіснення не відбувається взагалі.
+
+⚠️ **Наслідок для `Kredis.clear_all`, і він несучий:** гем гілкується на наявність namespace — без нього він робить **`FLUSHDB`**. Саме тому namespace обовʼязковий, а не косметичний (той самий виклик стояв у `config/puma.rb` на кожному `before_worker_boot` і вимивав живі локи).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Upstash Serverless Redis (TLS)               │
+│         Upstash Serverless Redis (TLS) — ОДНА логічна база      │
 │  ┌──────────────────────┬──────────────────┬──────────────────┐ │
-│  │  DB 0: Sidekiq       │  DB 1: Kredis    │  DB 2: Rack::Atk │ │
+│  │  (без префікса)      │  silken:*        │  rack-attack:*   │ │
+│  │  Sidekiq             │  Kredis          │  Rack::Attack    │ │
 │  │  Job queues          │  Distributed     │  Rate-limit      │ │
 │  │  Scheduler           │  locks (Web3     │  counters        │ │
 │  │  9 priority queues   │  nonce mgmt,     │  per-IP/DID      │ │
 │  │                      │  M2M nonce)      │  (10 min TTL)    │ │
 │  └──────────────────────┴──────────────────┴──────────────────┘ │
+│   ↳ окремий інстанс на споживача — через ENV-override, без коду │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────┬──────────────────────────────┐
@@ -311,11 +320,11 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 
 ### Детальна таблиця ізоляції
 
-| Підсистема | Сховище | Redis DB | ENV змінна | Конфігурація | TTL / Eviction |
-|-----------|---------|----------|------------|--------------|----------------|
-| **Sidekiq** (9 черг, scheduler) | Upstash Redis | **DB 0** | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
-| **Kredis** (distributed locks) | Upstash Redis | **DB 1** | auto-derive з `REDIS_URL` [B1] | `config/redis/shared.yml` | 1–300 sec (lock TTL) |
-| **Rack::Attack** (rate limiting) | Upstash Redis | **DB 2** | `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
+| Підсистема | Сховище | Префікс ключів | ENV змінна | Конфігурація | TTL / Eviction |
+|-----------|---------|----------------|------------|--------------|----------------|
+| **Sidekiq** (9 черг, scheduler) | Upstash Redis | — (власні імена; namespace неможливий у Sidekiq 7+) | `REDIS_URL` | `config/initializers/sidekiq.rb` | Persistent (no eviction) |
+| **Kredis** (distributed locks) | Upstash Redis | `silken:*` | `REDIS_URL`; override → окремий інстанс `KREDIS_REDIS_URL` [B1] | `config/redis/shared.yml` + `config/initializers/kredis.rb` | 1–300 sec (lock TTL) |
+| **Rack::Attack** (rate limiting) | Upstash Redis | `rack-attack:*` | `REDIS_URL`; override → окремий інстанс `RACK_ATTACK_REDIS_URL` | `config/initializers/rack_attack.rb` | 10 min |
 | **Rails.cache** (Solid Cache) | PostgreSQL | — | — | `config/cache.yml` + `config/environments/production.rb` | ⚠️ **Розмірна стеля, НЕ вікова** — живе лише `max_size` (256 MB, LRU); `max_age` у `cache.yml` закоментований, тож віку запису ніхто не обмежує |
 | **ActionCable** (Solid Cable) | PostgreSQL | — | — | `config/cable.yml` | 1 day message retention |
 | **Hardware Key Cache** | In-Process RAM | — | — | `config/initializers/hardware_key_cache.rb` | Process lifetime |
@@ -323,43 +332,37 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 ### ENV змінні та автоматична деривація
 
 ```bash
-# Обов'язкові:
-REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0       # Sidekiq (DB 0)
+# Обов'язкова — одна на всіх споживачів:
+REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0
 
-# Опціональні (auto-derive з REDIS_URL — НЕ задавати без потреби, інакше перебиває derive):
-# KREDIS_REDIS_URL      — Kredis locks; auto-derive /0 → /1 у config/redis/shared.yml [B1]
-# RACK_ATTACK_REDIS_URL — rate-limit; auto-derive /0 → /2 у config/initializers/rack_attack.rb
+# Опціональні. НЕ «auto-derive» (його більше немає) — це перемикачі на ОКРЕМИЙ інстанс,
+# тобто єдиний спосіб дістати ізоляцію від memory pressure. Незадані — беруть REDIS_URL.
+# ⚠️ Не оголошувати їх порожніми на деплой-поверхні: present-empty truthy для `ENV.fetch`
+# і перебиває фолбек значенням «» [B1].
+# KREDIS_REDIS_URL      — Kredis locks       (config/redis/shared.yml)
+# RACK_ATTACK_REDIS_URL — rate-limit counters (config/initializers/rack_attack.rb)
 ```
 
-Логіка auto-derive у `config/initializers/rack_attack.rb`:
-```ruby
-ENV.fetch("RACK_ATTACK_REDIS_URL") {
-  uri = URI.parse(ENV.fetch("REDIS_URL", "redis://localhost:6379/0"))
-  uri.path = "/2"
-  uri.to_s
-}
-```
-
-Аналогічна логіка для Kredis у `config/redis/shared.yml` та Terraform `main.tf`.
+⚠️ Суфікс `/0` у `REDIS_URL` — єдиний легальний індекс; будь-який інший Upstash відкидає помилкою, і `RedisCacheStore` перетворює її на тихий `nil` (гейт: `spec/initializers/rack_attack_store_spec.rb`).
 
 ### Чому саме ця архітектура
 
-1. **Sidekiq (DB 0)**: Найбільший обсяг даних — мільйони телеметричних job'ів щогодини. Ізоляція на DB 0 запобігає витісненню Web3 locks.
-2. **Kredis (DB 1)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec = **concurrent** guard; **[ARCH.45]** durable money-path idempotency тепер тримає DB intent-marker + `BlockchainTransaction.in_flight` guard (не лише ephemeral lock) для slash/Solana payout — витіснення локу більше не єдина лінія проти double-spend ([`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
-3. **Rack::Attack (DB 2)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq щоб counters не губились при spike-ах.
+1. **Sidekiq**: Найбільший обсяг даних — мільйони телеметричних job'ів щогодини, і саме він є джерелом тиску, від якого решту треба захищати. Захист сьогодні = eviction OFF; за зростання — власний інстанс.
+2. **Kredis (`silken:*`)**: Критичні distributed locks для Web3 nonce management (`BlockchainMintingService`, `BlockchainBurningService`, `CeloRewardService`), M2M nonce anti-replay. Lock TTL 30 sec = **concurrent** guard; **[ARCH.45]** durable money-path idempotency тепер тримає DB intent-marker + `BlockchainTransaction.in_flight` guard (не лише ephemeral lock) для slash/Solana payout — витіснення локу більше не єдина лінія проти double-spend ([`04_02 §4/§10`](04_02_Business_Logic_and_Services)).
+3. **Rack::Attack (`rack-attack:*`)**: Rate-limit counters з TTL 10 min. Менший обсяг, але потребує ізоляції від Sidekiq, щоб counters не губились при spike-ах. 🔴 І це єдиний споживач, чия відмова **не має голосу за замовчуванням**: `RedisCacheStore` ковтає будь-який `Redis::BaseError` і віддає `nil`, тобто щит не деградує, а зникає — throttle не рахує, fail2ban не банить, лог порожній. Тому store несе `error_handler`, а той — лічильник `silkennet_rate_limit_store_errors_total` з алертом `sn-alert-rate-limit-store-errors` ([`06_03 §2.8`](06_03_Prometheus_Observability)).
 4. **Solid Cache (PostgreSQL)**: Rails.cache для Web3 circuit breaker state, dashboard stats, alert silence windows. PostgreSQL гарантує durability — circuit breaker state не зникає при Redis restart.
 5. **Solid Cable (PostgreSQL)**: ActionCable через PostgreSQL — zero Redis dependency, multi-replica safe без sticky sessions. ⚠️ Механізм — **опитування**, не `LISTEN/NOTIFY`: кожен web-процес тримає listener-тред, що `SELECT`-ить нові рядки кожні `polling_interval`. Три наслідки для ємності (дім — `config/cable.yml`): латентність має підлогу ~`polling_interval`; вартість опитування росте з кількістю процесів, не подій; ціна броадкасту платиться НА ЗАПИСІ, навіть за нуля підписників. ⚠️ Метод адаптера НАЗВАНИЙ `listen`, тож греп по «listen» дає хибне підтвердження pub/sub — усередині це `loop { … sleep polling_interval }`.
 6. **In-Process RAM**: AES hardware keys — Zero Network Exposure. Ключі ніколи не серіалізуються і не передаються по мережі.
 
 ### Масштабування (мільйони → мільярди → трильйони дерев)
 
-| Масштаб | Дерев | Queens | Sidekiq jobs/год | Redis DB стратегія |
-|---------|-------|--------|------------------|--------------------|
-| **Pilot** (TRL 6-7) | ~1,000 | ~50 | ~50K | Single Upstash instance, 3 DBs |
-| **Regional** (TRL 8) | ~1M | ~50K | ~50M | Upstash Pro, 3 DBs + dedicated Sidekiq |
-| **Planetary** (TRL 9) | ~1B+ | ~50M | ~50B | Separate Redis clusters per DB: Sidekiq cluster (DB 0), Kredis cluster (DB 1), Rack::Attack cluster (DB 2). Або Upstash multi-region з read replicas. |
+| Масштаб | Дерев | Queens | Sidekiq jobs/год | Redis-стратегія |
+|---------|-------|--------|------------------|-----------------|
+| **Pilot** (TRL 6-7) | ~1,000 | ~50 | ~50K | Один Upstash-інстанс, спільний keyspace, eviction OFF |
+| **Regional** (TRL 8) | ~1M | ~50K | ~50M | Окремий інстанс під Sidekiq; Kredis і Rack::Attack переносяться ENV-override'ом |
+| **Planetary** (TRL 9) | ~1B+ | ~50M | ~50B | Окремий інстанс/кластер **на КОЖНОГО споживача** (Sidekiq ⊥ Kredis ⊥ Rack::Attack). Або Upstash multi-region з read replicas. |
 
-При planetary масштабі кожен DB може потребувати окремий Redis cluster або Upstash instance з окремим endpoint. ENV архітектура вже це підтримує — кожна підсистема має окрему ENV змінну.
+При planetary-масштабі кожен споживач потребує власного інстанса з окремим endpoint. ENV-архітектура вже це підтримує — і саме тому обидва override'и лишаються в дереві, хоча сьогодні незадані: вони і є шлях від першого рядка таблиці до третього, без жодної правки коду.
 
 ---
 
@@ -419,7 +422,7 @@ env:
     - RAILS_MASTER_KEY
     - POSTGRES_PASSWORD
     - REDIS_URL
-    # KREDIS_REDIS_URL omitted — Kredis auto-derives DB 1 from REDIS_URL (config/redis/shared.yml). [B1]
+    # KREDIS_REDIS_URL omitted — Kredis reads REDIS_URL as-is (config/redis/shared.yml). [B1]
     # --- Observability ---
     - SENTRY_DSN
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---

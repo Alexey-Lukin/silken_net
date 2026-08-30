@@ -183,7 +183,7 @@ RSpec.configure do |config|
 
   # Clear Sidekiq queues before each example so jobs don't bleed between tests.
   # Clear Rails cache so rate-limit counters and silence filters don't leak across examples.
-  # Flush Kredis Redis (DB 1) to remove nonce keys (M2M replay, distributed locks) between tests.
+  # Drop Kredis keys (M2M replay nonces, distributed locks) between tests.
   config.before do
     Sidekiq::Job.clear_all
     Rails.cache.clear
@@ -196,14 +196,19 @@ RSpec.configure do |config|
     Web3::RpcConnectionPool.reset!
     begin
       redis = Kredis.redis(config: :shared)
-      redis.flushdb
-      # 🔴 [TEST.8] Одразу ПЕРЕставити мітку власника — інакше гард конкуренції
-      # вимикає сам себе: `flushdb` живе в тій самій DB 1, тож ключ, поставлений
-      # у `before(:suite)`, не переживав НАВІТЬ ПЕРШОГО прикладу, і вікно
-      # детекції стискалось до збігу двох стартів у суб-секунду. Механізм
-      # (`raise`) працював — зламаний був ПУСКАЧ, і мутація цього не показала,
-      # бо ставила ключ рукою. Тут же освіжається TTL, тож довгий прогін не
-      # губить власності, а `after(:suite)` лишається єдиним, хто мітку знімає.
+      # 🔴 [INF.22] `clear_all`, НЕ `flushdb` — і різниця тут несуча в обидва боки.
+      # Доти цей рядок робив `flushdb`, бо Kredis жив у власній DB 1; Upstash дає
+      # рівно ОДНУ логічну базу (виміряно 2026-08-30), тож dev/test зведено на неї
+      # ж — і `flushdb` тепер вимивав би заразом черги Sidekiq. Із заданим
+      # `Kredis.global_namespace` гем видаляє лише `silken:*`.
+      Kredis.clear_all
+      # 🔴 [TEST.8] Освіжити TTL мітки власника. ⚠️ Підстава цього рядка ЗМІНИЛАСЬ:
+      # доти він ВІДНОВЛЮВАВ мітку, бо `flushdb` стирав її разом з усім (ключ,
+      # поставлений у `before(:suite)`, не переживав навіть першого прикладу, і
+      # вікно детекції стискалось до збігу двох стартів у суб-секунду). Тепер
+      # `SUITE_OWNER_KEY` лежить ПОЗА namespace `silken:`, тож зачистка його не
+      # чіпає взагалі — лишається єдина робота, продовження TTL на довгому
+      # прогоні. `after(:suite)` лишається єдиним, хто мітку знімає.
       redis.set(SUITE_OWNER_KEY, Process.pid, ex: 2.hours.to_i)
     rescue RedisClient::CannotConnectError, Redis::CannotConnectError, RedisClient::ConnectionError, Errno::ECONNREFUSED
       # Redis may not be available in CI — safe to skip flush

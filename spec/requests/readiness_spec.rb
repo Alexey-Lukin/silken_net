@@ -37,8 +37,10 @@ RSpec.describe "Readiness probe", type: :request do
     end
 
     it "returns 503 not_ready when Kredis (Web3 locks) does not respond" do
-      # Kredis (Redis DB 1) backs the mint/burn nonce locks — a money-path dependency
-      # distinct from the Sidekiq queue Redis. A node that can't reach it must not serve.
+      # Kredis backs the mint/burn nonce locks — a money-path dependency reached
+      # through a SEPARATE client from the Sidekiq queue one ([INF.22]: they share a
+      # single logical database now, so "distinct" is about the pool, not the DB
+      # number). A node that can't reach it must not serve.
       allow(Kredis).to receive(:redis).and_raise("kredis down")
 
       get "/ready"

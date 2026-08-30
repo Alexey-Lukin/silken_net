@@ -182,10 +182,18 @@ cluster do
     # calling establish_connection ensures the primary pool is ready immediately.
     ActiveRecord::Base.establish_connection
 
-    # Clear cached Kredis Redis connections inherited from the master.
-    # Kredis uses a separate Redis DB (DB 1) for distributed locks.
-    # New connections are lazily established on first use in the worker.
-    Kredis.clear_all if defined?(Kredis)
+    # Drop the cached Kredis connections inherited from the master; each worker
+    # lazily establishes its own on first use.
+    #
+    # 🔴 This used to call `Kredis.clear_all`, which is NOT what its name says:
+    # the gem branches on `Kredis.namespace` and, when unset, issues a plain
+    # **FLUSHDB**. So every worker boot — every deploy, every phased restart,
+    # once per worker — wiped the live Web3 nonce locks and the mint
+    # circuit-breaker flags out of the store they exist to protect. The comment
+    # here said "clear cached connections"; the code emptied the database.
+    # `connections` is the gem's connection cache (a Hash), and clearing THAT is
+    # what this hook was always meant to do.
+    Kredis.connections.clear if defined?(Kredis)
   end
 end
 

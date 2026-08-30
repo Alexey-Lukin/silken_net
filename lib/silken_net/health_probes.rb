@@ -31,8 +31,12 @@ module SilkenNet
       false
     end
 
-    # Обидва Redis: черги Sidekiq (DB 0) і Kredis (DB 1 — Web3-нонси та
-    # mint/burn-локи). Money-шлях залежить від другого не менше, ніж від першого.
+    # ДВА КЛІЄНТИ, не дві бази [INF.22]. Тут доти стояло «обидва Redis: DB 0 і
+    # DB 1» — нумерованих баз у нас більше немає (Upstash дає рівно одну), тож
+    # обидва пінги йдуть в один keyspace. Обидва лишаються несучими саме тому,
+    # що це РІЗНІ клієнти з різними пулами: Kredis тримає Web3-нонси й
+    # mint/burn-локи, і money-шлях залежить від нього не менше, ніж від черг.
+    # Пінг Sidekiq не доводить, що живий пул Kredis, і навпаки.
     def redis_reachable?
       sidekiq_ok = Sidekiq.redis { |conn| conn.call("PING") } == "PONG"
       kredis_ok  = Kredis.redis(config: :shared).ping == "PONG"

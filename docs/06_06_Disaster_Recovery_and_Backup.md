@@ -141,7 +141,7 @@ gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
 6. Оновити DNS A-запис → новий `ingress_ip`.
 
 ### 5.4 Redis (Upstash) loss
-Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL` + redeploy (Kredis DB 1 auto-derive з нього — `config/redis/shared.yml`; `KREDIS_REDIS_URL` окремо **не** задавати, перебило б derive).
+Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL` + redeploy (Kredis читає його як є — `config/redis/shared.yml`; `KREDIS_REDIS_URL` окремо **не** задавати, перебило б фолбек). ⚠️ Новий інстанс заводь у `europe-west1` — same-region із Cloud SQL є чинною властивістю, і втратити її можна мовчки ([`06_01 §Redis Isolation Strategy`](06_01_Deployment_Kamal_Terraform)).
 
 ### 5.5 DEFAULT-партиція заблокувала обслуговування (`PartitionMaintenanceWorker` падає щодня)
 

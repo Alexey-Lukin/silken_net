@@ -1,14 +1,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
-# Enterprise-grade Sidekiq configuration with Redis connection pooling,
-# network timeouts, and DB isolation.
+# Enterprise-grade Sidekiq configuration with Redis connection pooling and
+# network timeouts.
 #
-# DB ISOLATION STRATEGY:
-#   DB 0 → Sidekiq (job queues & scheduler)
-#   DB 1 → Kredis (distributed locks for Web3 nonce management)
-#
-# This prevents a telemetry queue flood from evicting critical Web3 locks.
+# 🔴 KEYSPACE, not numbered databases [INF.22]. This header used to declare a
+# "DB ISOLATION STRATEGY" — Sidekiq on DB 0, Kredis on DB 1, Rack::Attack on
+# DB 2 — and that isolation cannot exist on Upstash, which exposes exactly one
+# logical database (`SELECT 1` → `ERR Only 0th database is supported!`, measured
+# against our own instance 2026-08-30). All three now share one keyspace and are
+# kept apart by key prefixes; Sidekiq is the one that carries none, because
+# Sidekiq 7+ raises on `namespace:` and its keys (`queue:`, `retry`, `dead`,
+# `stat:`, `processes`) collide with nothing. See `config/initializers/kredis.rb`
+# for the namespace, and `config/redis/shared.yml` for what the split protected
+# and how that ground is served now.
 
 SIDEKIQ_REDIS_URL = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
 

@@ -13,6 +13,28 @@
 # Usage:
 #   Kredis.lock("lock:web3:oracle:0xABC", expires_in: 30.seconds) { send_tx }
 
+# 🔴 KEY NAMESPACE — load-bearing on TWO axes, neither of them cosmetic.
+#
+# Upstash (our managed Redis) exposes exactly ONE logical database: `SELECT 1`
+# answers `ERR Only 0th database is supported!` (measured against our own
+# instance 2026-08-30, not read off a doc). So the numbered-DB isolation this
+# stack used to assume — Sidekiq/0, Kredis/1, Rack::Attack/2 — cannot exist in
+# production, and every consumer now shares one keyspace. A prefix is what keeps
+# them apart. Every production Kredis key already routes through
+# `Kredis.namespaced_key` (the lock below, the QATT and M2M nonces), so setting
+# this is sufficient — nothing needs a call-site change.
+#
+# 🔴 The second axis is the one that bites silently: `Kredis.clear_all` branches
+# on this value. With no namespace the gem calls `FLUSHDB`; with one it deletes
+# only `<namespace>:*`. On a shared keyspace an unnamespaced `clear_all` would
+# wipe the Sidekiq queues and the Rack::Attack counters along with our locks.
+# ⛔ Do not "simplify" this away because the keys look readable without it.
+#
+# Sidekiq deliberately gets NO namespace: it cannot have one (Sidekiq 7+ raises
+# ArgumentError on `namespace:`), and it does not need one — its keys (`queue:`,
+# `retry`, `dead`, `stat:`, `processes`) collide with nothing here.
+Kredis.global_namespace = "silken"
+
 module Kredis
   class LockTimeout < StandardError; end
 
