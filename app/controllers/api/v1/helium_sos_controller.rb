@@ -35,6 +35,10 @@ module Api
         payload = params[:payload].presence
 
         if dev_eui.blank? || payload.blank?
+          # [INF.26] Контролерна відмова МУСИТЬ лічитись: до 2026-08-30 обидві
+          # (params + auth) були невидимі метриці, тож misconfig Console'а
+          # вбивав SOS-канал тихо — при нулі кадрів у панелі.
+          SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.increment(labels: { outcome: "rejected_params" })
           return render json: { error: "dev_eui and payload are required" },
                         status: :unprocessable_content
         end
@@ -71,6 +75,11 @@ module Api
         signature = request.headers["X-Helium-Signature"]
 
         if signature.blank?
+          # [INF.26] Відбитий кадр лічиться (rejected_auth): ротація
+          # HELIUM_WEBHOOK_SECRET без синхронізації Console інакше глушила б
+          # SOS-канал НЕВІДРІЗНИМО від «жодна Королева не кричить» — а канал
+          # існує рівно для катастрофи.
+          SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.increment(labels: { outcome: "rejected_auth" })
           render json: { error: "Missing X-Helium-Signature header" }, status: :unauthorized
           return
         end
@@ -79,6 +88,7 @@ module Api
 
         unless ActiveSupport::SecurityUtils.secure_compare(expected, signature.to_s)
           Rails.logger.error "🚨 [Helium Security] Невалідний HMAC-підпис SOS-webhook'а."
+          SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.increment(labels: { outcome: "rejected_auth" })
           render json: { error: "Invalid signature" }, status: :unauthorized
         end
       end

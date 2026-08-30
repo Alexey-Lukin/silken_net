@@ -49,28 +49,44 @@ RSpec.describe "POST /telemetry/helium", type: :request do
       expect(HeliumSosWorker.jobs.size).to eq(1)
     end
 
-    it "rejects a missing signature header" do
-      post "/api/v1/telemetry/helium", params: raw,
-           headers: { "CONTENT_TYPE" => "application/json" }
+    # [INF.26] Контролерні відмови ЛІЧАТЬСЯ (rejected_auth / rejected_params):
+    # доти ротація HELIUM_WEBHOOK_SECRET без синхронізації Console глушила
+    # SOS-канал невідрізнимо від «жодна Королева не кричить». Піни нижче
+    # цілять у ДЕЛЬТУ лічильника — зняття інкременту дає by(0) → RED.
+    it "rejects a missing signature header and counts it as rejected_auth" do
+      expect {
+        post "/api/v1/telemetry/helium", params: raw,
+             headers: { "CONTENT_TYPE" => "application/json" }
+      }.to change {
+        SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.get(labels: { outcome: "rejected_auth" })
+      }.by(1)
 
       expect(response).to have_http_status(:unauthorized)
       expect(HeliumSosWorker.jobs).to be_empty
     end
 
-    it "rejects an invalid signature" do
-      post "/api/v1/telemetry/helium", params: raw,
-           headers: headers.merge("X-Helium-Signature" => "0" * 64)
+    it "rejects an invalid signature and counts it as rejected_auth" do
+      expect {
+        post "/api/v1/telemetry/helium", params: raw,
+             headers: headers.merge("X-Helium-Signature" => "0" * 64)
+      }.to change {
+        SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.get(labels: { outcome: "rejected_auth" })
+      }.by(1)
 
       expect(response).to have_http_status(:unauthorized)
       expect(HeliumSosWorker.jobs).to be_empty
     end
 
-    it "rejects a body without dev_eui/payload (після валідного HMAC)" do
+    it "rejects a body without dev_eui/payload (після валідного HMAC) and counts it as rejected_params" do
       empty = {}.to_json
       empty_sig = OpenSSL::HMAC.hexdigest("SHA256", secret, empty)
 
-      post "/api/v1/telemetry/helium", params: empty,
-           headers: headers.merge("X-Helium-Signature" => empty_sig)
+      expect {
+        post "/api/v1/telemetry/helium", params: empty,
+             headers: headers.merge("X-Helium-Signature" => empty_sig)
+      }.to change {
+        SilkenNet::Metrics::HELIUM_SOS_RECEIVED_TOTAL.get(labels: { outcome: "rejected_params" })
+      }.by(1)
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(HeliumSosWorker.jobs).to be_empty

@@ -332,7 +332,9 @@ module SilkenNet
     TREE_SILENCE_TOTAL = REGISTRY.counter(
       :silkennet_tree_silence_total,
       docstring: "Total tree silence transitions detected by the staleness sweeper (per-tree field_audit escalations) " \
-                 "[SILENCE-1; diagnostic tier: no alert until (a) the INF.26 leg-1 verdict on what this counter means and (b) a fleet gives flapping a baseline — standing silence is already read by sn-alert-trees-silent, and sn-alert-gateway-flapping is the shape to copy]"
+                 "[SILENCE-1; diagnostic tier: no alert until a fleet gives flapping a baseline — the INF.26 verdict (2026-08-30) closed half (a): " \
+                 "this counter means NEW silence escalations (dedup'd by the unresolved-field_audit scope), i.e. the future flapping signal; " \
+                 "standing silence is already read by sn-alert-trees-silent (gauge), and sn-alert-gateway-flapping is the shape to copy]"
     )
 
     TREES_SILENT = REGISTRY.gauge(
@@ -349,7 +351,9 @@ module SilkenNet
     ACTUATOR_STUCK_RECOVERED_TOTAL = REGISTRY.counter(
       :silkennet_actuator_stuck_recovered_total,
       docstring: "Actuators found recorded active past their command window and reset by the safety sweep " \
-                 "[ARCH.58; diagnostic tier: no alert until the INF.26 verdict on what «recovered» counts when deactivate! itself fails — a threshold over a disputed quantity is worse than none]",
+                 "[ARCH.58; diagnostic tier: no alert until a physical actuator layer exists (ARCH.58 residual — no actuator firmware today). " \
+                 "INF.26 verdict 2026-08-30: the «recovered when deactivate! fails» suspicion is CLOSED by code — the increment sits AFTER " \
+                 "the recover! transaction, so a failed deactivate! rolls back and never counts; may_deactivate? is formal on the sweep's active-only scope]",
       labels: [ :device_type ]
     )
 
@@ -357,7 +361,9 @@ module SilkenNet
     # accepted / unknown_dev_eui / did_mismatch / malformed.
     HELIUM_SOS_RECEIVED_TOTAL = REGISTRY.counter(
       :silkennet_helium_sos_received_total,
-      docstring: "Queen SOS frames received via the Helium webhook, by processing outcome",
+      docstring: "Queen SOS frames received via the Helium webhook, by processing outcome " \
+                 "(worker: accepted/unknown_dev_eui/did_mismatch/malformed; controller: rejected_auth/rejected_params — " \
+                 "the controller pair added 2026-08-30 [INF.26]: a rotated HELIUM_WEBHOOK_SECRET otherwise silenced the SOS channel invisibly)",
       labels: [ :outcome ]
     )
 
@@ -478,8 +484,11 @@ module SilkenNet
     # OTA firmware chunks sent to field devices
     OTA_CHUNKS_SENT_TOTAL = REGISTRY.counter(
       :silkennet_ota_chunks_sent_total,
-      docstring: "Total OTA firmware chunks transmitted to field devices " \
-                 "[INF.26; diagnostic tier: no alert until the leg-1 verdict — the name spans two incompatible moments (send vs stateless re-poll) and one of its two write sites is dead since FW.60, so any threshold measures an undefined quantity]",
+      docstring: "OTA firmware chunk DELIVERIES served to polling gateways — re-polled chunks count again by design " \
+                 "(stateless chunk-server), so this measures downlink traffic, never unique-chunk progress " \
+                 "[INF.26 verdict 2026-08-30; diagnostic tier: no alert until the first field OTA campaign — the flow is episodic, " \
+                 "a threshold over an episodic series is noise; failure-side alerting would hang off handle_chunk_failure, not off sends. " \
+                 "The dead push-era write site leaves with OtaTransmissionWorker itself (FW.60 superseded, bench:coap-gated removal)]",
       labels: [ :firmware_version ]
     )
 
@@ -633,7 +642,8 @@ module SilkenNet
     STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(
       :silkennet_streamr_broadcast_failures_total,
       docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery) " \
-                 "[INF.26; diagnostic tier: no alert until the leg-1 verdict — Streamr is a presence stream, not consensus, and «mass failure» has no threshold over a zero baseline]"
+                 "[INF.26 verdict 2026-08-30; diagnostic tier: no alert until the first live fleet gives the failure-rate a nonzero baseline — " \
+                 "Streamr is a presence stream, not consensus, and a threshold over a zero baseline is noise; the counter itself is honest (one increment per rescued BroadcastError)]"
     )
 
     # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
@@ -849,7 +859,12 @@ module SilkenNet
     # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).
     CLUSTER_ENTROPY_SCORE = REGISTRY.gauge(
       :silkennet_cluster_entropy_score,
-      docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0)",
+      docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0). " \
+                 "LAST COMPUTED value [INF.26 verdict 2026-08-30]: the gauge FREEZES when the 24h window " \
+                 "holds <30 samples or the cluster stops reporting (worker skips without touching it) — " \
+                 "freshness is deliberately NOT this gauge's axis; cluster liveness is alerted elsewhere " \
+                 "(sn-alert-gateway-faulty P0, sn-alert-trees-silent). A freshness stamp is fleet-gated: " \
+                 "per-cluster staleness pairs before any live fleet would alert on nothing",
       labels: [ :cluster_id ]
     )
 

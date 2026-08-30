@@ -788,7 +788,7 @@ groups:
         for: 30m
         annotations:
           summary: "Кластер {{ $labels.cluster_id }} — ентропія {{ $values.A.Value | printf \"%.3f\" }} (< 0.65 = передстресовий сигнал)."
-          description: "Shannon entropy Z-розподілу кластера низька. Можливі причини: drought, pest epidemic, synchronized stress event. Ліс потребує перевірки форестером. EwsAlert може бути відправлений незабаром."
+          description: "Shannon entropy Z-розподілу кластера низька. Можливі причини: drought, pest epidemic, synchronized stress event. Ліс потребує перевірки форестером. EwsAlert може бути відправлений незабаром. ⚠️ Значення = ОСТАННЄ ОБЧИСЛЕНЕ [INF.26]: gauge застигає, коли 24h-вікно має <30 семплів або кластер замовк — свіжість тут НЕ вісь; живість кластера читай із sn-alert-gateway-faulty (P0) / sn-alert-trees-silent."
         labels:
           severity: warning
           component: forest
