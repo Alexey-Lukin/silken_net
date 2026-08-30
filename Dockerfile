@@ -23,6 +23,15 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
+# 🔴 BUNDLE_WITHOUT lists BOTH groups on purpose, and "development" alone is not a
+# smaller version of this — it is a no-op for most of what it looks like it excludes.
+# Bundler drops a gem only when EVERY group it belongs to is in the without-list
+# (`Definition#requested_groups`), and eleven of our gems — rspec-rails among them —
+# sit in a SHARED `group :development, :test` block. Measured 2026-08-28: the
+# single-group form shipped fifteen dev/test gems into the public image while
+# reading as if it excluded them. If you ever narrow this list, re-run
+# `docker run --rm <img> ls /usr/local/bundle/ruby/*/gems | grep -c rspec` — the
+# claim is only as good as that count.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \

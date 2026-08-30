@@ -135,6 +135,16 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   five automated ecosystems. The bot is a convenience, not the instrument — **make "read `tag_last_pushed`
   for the pinned base image" a standing step of the sweep**, because a digest bump is pure security patch
   and is invisible in every version-based inventory (`bundle outdated`, `gh api releases`) by construction.
+  🔴 **A hand-pinned vendored BINARY has neither channel, and two lessons from ours outlived the binary
+  itself — kept here because their home died with it** (`cloud-sql-proxy` was removed from the runtime by
+  OPS.37 on 2026-08-29, taking the `Dockerfile` comment that carried them). (a) **Do not assume a
+  `.sha256` sidecar exists.** Ours had none — 404 on every version tried, the GitHub release carried zero
+  assets, and the hash table inside the release BODY was present only for some versions; the single
+  reproducible source was the bucket object itself. **Verify the verification with a POSITIVE CONTROL**:
+  recompute the hash of the version you already trust and check it reproduces the committed pin, before
+  trusting the number you computed for the new one. (b) **Dependabot cannot see an `ADD --checksum` URL at
+  all** — its docker ecosystem watches the base image's tag+digest and nothing else, so such a pin moves
+  by hand or never. Both apply to any future vendored binary; neither is specific to the one that is gone.
   🔴 **And the mirror of that invisibility bites on the VERDICT side: a green `bundler-audit` says nothing
   about the runtime you ship.** Both advisory channels read a LOCK — `bundler-audit` parses `Gemfile.lock`,
   Dependabot reads repo manifests — so gems built into Ruby itself (`specifications/default/*.gemspec`)
