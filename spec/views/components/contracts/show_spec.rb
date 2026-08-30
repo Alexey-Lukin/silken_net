@@ -188,8 +188,9 @@ RSpec.describe Contracts::Show do
       # [ARCH.84] «0%» комісії за дострокове розірвання — ЗАКОННА умова договору,
       # тож `|| 0` робив «умову не задано» невідрізнимим від «розірвання
       # безкоштовне», і саме в панелі LEGAL VAULT. Чесний сусід у тому ж блоці —
-      # `min_days_before_exit || "—"`. ⚖️ Грошовий двійник
-      # (`NaasContract#calculate_early_exit_fee`) лишається відкритим присудом.
+      # `min_days_before_exit || "—"`. Грошовий двійник закрито У-ВЕЙ:
+      # `calculate_early_exit_fee` знято цілком [BIZ.22, ⚖️ 2026-08-30], тож
+      # питання «скільки стягувати за незаданої умови» більше не має предмета.
       context "when the fee term itself is absent" do
         let(:contract) do
           build_contract(cancellation_terms: { "burn_accrued_points" => true })

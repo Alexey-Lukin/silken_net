@@ -167,9 +167,9 @@ module Contracts
             # договору, тож підстановка робила «умови не задано» невідрізнимим
             # від «розірвання безкоштовне», і саме в панелі LEGAL VAULT. Чесний
             # сусід стоїть двома рядками нижче (`min_days_before_exit || "—"`).
-            # ⚖️ Грошовий двійник (`NaasContract#calculate_early_exit_fee` теж
-            # робить `|| 0`) НЕ чіпаємо: скільки платформа стягує за незаданої
-            # умови — присуд власника, не правка (`00_07` ARCH.84).
+            # Грошовий двійник (`NaasContract#calculate_early_exit_fee`) знято
+            # цілком [BIZ.22, ⚖️ 2026-08-30 — Опція 1 MSA]: рендер тут читає
+            # ЗАПИС, тож історичні контракти показують свою умову як дані.
             term_row(t(".legal.early_exit_fee"),
                      if @contract.early_exit_fee_percent
                        t(".legal.early_exit_value", value: @contract.early_exit_fee_percent)

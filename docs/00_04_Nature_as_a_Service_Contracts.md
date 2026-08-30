@@ -142,8 +142,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Частка форестера** | 95% від `total_funding` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |
 | **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
-| **Штраф за дострокове розірвання** | `total_funding × early_exit_fee_percent / 100` | `NaasContract#calculate_early_exit_fee` |
-| **Пропорційне повернення** | `total_funding × (remaining_days / total_days) − fee` | `NaasContract#calculate_prorated_refund` |
+| **Штраф / повернення при достроковому розірванні** | **НЕ існують** — Опція 1 MSA ([`msa_skeleton §B.6.3`](protocols/legal/msa_skeleton.md), ⚖️ founder 2026-08-29): передоплачена послуга не повертається, early-exit-fee немає взагалі; формули `calculate_early_exit_fee`/`calculate_prorated_refund` зняті з коду [BIZ.22, ⚖️ 2026-08-30] — redemption-механіка = securities-сигнал F5/F6 | `ContractTerminationService` (cancel + погоджена форфейтура) |
 | **Поріг слешингу** | >20% дерев, ЩО ЗАСВІДЧИЛИ за добу, з `stress_index >= 0.83` — **поточний дефолт, DAO-керований**: `SystemParameter.current(:stress_threshold, default: 0.83)` ← `ProtocolParameters.sol` (bounds 0.65..1.0, [GOV.1]). ⚠️ Значення змінюється голосуванням, тож у MSA/SLA його НЕ можна подавати як зафіксовану контрактну умову — або цитуй як «поточний дефолт», або фіксуй КОНТРАКТНУ стелю окремо від протокольної | `ContractHealthCheckService` |
 | **1 SCC = X кг CO₂** | ✅ **2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂)** — `SystemParameter.current(:scc_per_tonne_co2, default: 2000)`, `ProtocolParameters.sol#sccPerTonneCo2()`. **Внутрішня облікова конвенція** Proof-of-Growth (Condition-прочитання — [`02_06 §7`](02_06_Unit_Economics_and_BOM)), НЕ registry-визнаний tCO₂e-кредит: продаваний кредит лише через незалежну методологію (BIZ.9); трек = MRV-Data-Provider/permanence-monitor | [BIZ.1] |
 | **1 SCC = $Y (контрактна вартість)** | ⚠️ **Не зафіксовано, і курсу протокол не тримає ВЗАГАЛІ** — ні читача ціни, ні governance-параметра fallback-ціни: система міряє КІЛЬКІСТЬ (SCC), вартість множить сам споживач. Єдине місце, де долар за SCC узагалі фігурує, — sensitivity-крива payback-моделі [`02_06 §7.3`](02_06_Unit_Economics_and_BOM) ($0.15…$5.00), і це **вхід сценарію, а не курс системи**: цитувати її як ціну — помилка жанру. ⛔ Не заводь «тимчасовий» курс у сіди/`ProtocolParameters` заради одного екрана: ключ без читача = ручка, якою нікому крутити (гейт ARCH.104). Ціна повернення механізму названа чесно — це читання DEX-quoter'а (+ кеш і мітка при мовчанні), не архітектура; тригер — перший реальний споживач ціни (Tier A / registry-канал) | — (нема реалізації за призначенням) |
@@ -199,14 +198,14 @@ EthereumAnchorWorker ◄─────────┘
 
 ### Дострокове розірвання (Early Exit)
 
+> **Опція 1 MSA** ([`msa_skeleton §B.6.3`](protocols/legal/msa_skeleton.md), ⚖️ founder 2026-08-29): передоплачена послуга **не повертається**, early-exit-fee **не існує**. Розрахунок refund/fee знято з коду [BIZ.22, ⚖️ 2026-08-30] — термінація це cancel + опційна **погоджена форфейтура** (`burn_accrued_points`, `contractual: true` — поза positive-A gate, [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)).
+
 ```
 Client → terminate_early!
            │
            ▼
 ContractTerminationService
   validate_termination! (min_days_before_exit)
-  calculate_prorated_refund
-  calculate_early_exit_fee
            │
            ├─ burn_accrued_points = true
            │      → BurnCarbonTokensWorker → SCC.slash()

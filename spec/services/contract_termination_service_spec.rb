@@ -49,13 +49,14 @@ RSpec.describe ContractTerminationService do
       expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
     end
 
-    it "returns refund and fee details" do
+    # [BIZ.22, ⚖️ 2026-08-30] Опція 1 MSA: результат несе ЛИШЕ burned — точна
+    # рівність є негативним піном проти тихого повернення refund/fee-ключів.
+    it "returns burned only — no refund/fee keys under MSA Option 1" do
       contract.update!(early_exit_fee_percent: 10, burn_accrued_points: false)
 
       result = described_class.call(contract)
 
-      expect(result).to include(:refund, :fee, :burned)
-      expect(result[:burned]).to be(false)
+      expect(result).to eq({ burned: false })
     end
 
     context "when transaction rolls back (P0 fix)" do

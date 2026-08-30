@@ -127,48 +127,16 @@ class NaasContract < ApplicationRecord
   # EARLY TERMINATION (Дострокове розірвання контракту)
   # =========================================================================
 
-  # ⛔⛔ [BIZ.22, ⚖️ founder 2026-08-29] ЦІ ДВА МЕТОДИ РЕАЛІЗУЮТЬ ФОРМУ, ЯКУ ПРОДУКТ
-  # УЖЕ ВІДКИНУВ. Обрано Опцію 1 MSA (`protocols/legal/msa_skeleton.md §B.6.3`):
-  # передоплачена послуга НЕ повертається, early-exit-fee немає ВЗАГАЛІ. А тут
-  # стоїть третій, найризикованіший варіант — штраф від `total_funding` ПЛЮС
-  # пропорційне повернення «інвестиції» мінус штраф, тобто класична bond/fund
-  # redemption-механіка (securities-review F5/F6 — «найсильніший investment-note-
-  # сигнал», якого в купівлі послуги не буває).
-  #
-  # 🔑 Чому вони ще тут, а не видалені: механіка НЕДОСЯЖНА — `resources :contracts`
-  # має `only: [:index, :show]`, продакшн-викликачів `terminate_early!` нуль,
-  # `NaasContract` створюється лише сідом, а `refund` є числом у хеші, що нікуди
-  # не йде. Тобто сьогодні вона нікому не бреше.
-  #
-  # 🔴 АЛЕ САМЕ ТОМУ носій стоїть ТУТ, а не в трекері: небезпека настає рівно в мить,
-  # коли хтось дротує ПЕРШИЙ write-ендпоінт термінації — він успадкує механіку, що
-  # суперечить підписаному MSA, і розходження «контракт каже одне, платформа робить
-  # інше» є due-diligence red flag, а не косметикою. **Пишеш такий ендпоінт —
-  # спершу зніми обидва методи, а не клич їх.** Порядок зняття — `00_07` BIZ.22.
-
-  # Розрахунок штрафу за дострокове розірвання (Early Exit Fee).
-  # $$ Fee = TotalFunding \times \frac{EarlyExitFeePercent}{100} $$
-  def calculate_early_exit_fee
-    fee_percent = (early_exit_fee_percent || 0).to_d
-    (total_funding * fee_percent / 100).round(2)
-  end
-
-  # Розрахунок пропорційного повернення коштів з урахуванням штрафу.
-  # $$ Refund = TotalFunding \times \frac{RemainingDays}{TotalDays} - EarlyExitFee $$
-  def calculate_prorated_refund
-    return BigDecimal("0") unless status_active?
-
-    total_days = (end_date.to_date - start_date.to_date).to_i
-    return BigDecimal("0") if total_days.zero?
-
-    elapsed_days = (Time.current.utc.to_date - start_date.to_date).to_i
-    remaining_days = [ total_days - elapsed_days, 0 ].max
-
-    prorated = (total_funding * BigDecimal(remaining_days.to_s) / total_days).round(2)
-    fee = calculate_early_exit_fee
-
-    [ prorated - fee, BigDecimal("0") ].max
-  end
+  # ⛔ [BIZ.22, ⚖️ 2026-08-30 — делеговано] `calculate_early_exit_fee` і
+  # `calculate_prorated_refund` ЗНЯТО: Опція 1 MSA (`protocols/legal/msa_skeleton.md
+  # §B.6.3`, ⚖️ founder 2026-08-29) — передоплачена послуга НЕ повертається,
+  # early-exit-fee немає ВЗАГАЛІ. Обидва методи реалізовували bond/fund
+  # redemption-механіку (securities-review F5/F6), яку продукт відкинув; код
+  # знято, бо as-built fact-pattern читається аудитором ПО ДЕРЕВУ, а не по
+  # досяжності. Термінація за Опцією 1 = cancel + опційна погоджена форфейтура
+  # (`burn_accrued_points`) — її несе ContractTerminationService. Ключ
+  # `early_exit_fee_percent` у `cancellation_terms` лишається ДАНИМИ (історичні
+  # записи; вʼю рендерить із запису — ARCH.84). Відновлення форми = git.
 
   # Дострокове розірвання контракту — делегує до ContractTerminationService.
   def terminate_early!

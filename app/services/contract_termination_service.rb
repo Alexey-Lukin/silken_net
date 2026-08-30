@@ -4,16 +4,18 @@
 # = ===================================================================
 # 📜 CONTRACT TERMINATION SERVICE (Дострокове розірвання контракту)
 # = ===================================================================
-# Виконує дострокове розірвання NaasContract з розрахунком штрафу,
-# пропорційного повернення коштів та спалюванням нарахованих балів.
+# Виконує дострокове розірвання NaasContract за Опцією 1 MSA
+# (`protocols/legal/msa_skeleton.md §B.6.3`, ⚖️ founder 2026-08-29):
+# передоплачена послуга НЕ повертається, early-exit-fee не існує — термінація
+# це cancel + опційна ПОГОДЖЕНА форфейтура нарахованих монет
+# (`burn_accrued_points`). Розрахунок refund/fee ЗНЯТО [BIZ.22, ⚖️ 2026-08-30]:
+# redemption-механіка суперечила підписуваному документу (F5/F6).
 #
 # Вилучено з NaasContract#terminate_early! для дотримання
 # принципу "тонка модель" (Thin Model) та Single Responsibility.
 #
 # Використання:
 #   result = ContractTerminationService.call(naas_contract)
-#   result[:refund]  # BigDecimal
-#   result[:fee]     # BigDecimal
 #   result[:burned]  # Boolean
 class ContractTerminationService < ApplicationService
   def initialize(naas_contract)
@@ -23,7 +25,6 @@ class ContractTerminationService < ApplicationService
   def perform
     validate_termination!
 
-    refund = @contract.calculate_prorated_refund
     should_burn = ActiveModel::Type::Boolean.new.cast(@contract.burn_accrued_points)
 
     @contract.transaction do
@@ -33,7 +34,7 @@ class ContractTerminationService < ApplicationService
         Rails.logger.warn "🔥 [NaasContract] Контракт ##{@contract.id} розірвано. Нараховані SCC-МОНЕТИ кластера спалюються (contractual forfeiture)."
       end
 
-      Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково. Повернення: #{refund}, Штраф: #{@contract.calculate_early_exit_fee}."
+      Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково (Опція 1: без повернення коштів)."
     end
 
     # [P0 FIX]: Enqueue burn job ПІСЛЯ успішного commit транзакції.
@@ -45,7 +46,7 @@ class ContractTerminationService < ApplicationService
       BurnCarbonTokensWorker.perform_async(@contract.organization_id, @contract.id, nil, true)
     end
 
-    { refund: refund, fee: @contract.calculate_early_exit_fee, burned: should_burn }
+    { burned: should_burn }
   end
 
   private

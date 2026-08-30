@@ -1154,7 +1154,7 @@ active/draft ──cancel──► cancelled
 | `status` | enum | `draft/active/fulfilled/breached/cancelled` |
 | `total_funding` | decimal | Загальний обсяг фінансування (> 0) |
 | `start_date` / `end_date` | timestamp | Строки контракту |
-| `cancellation_terms` | jsonb | Ключ-сет умов дострокового виходу: `early_exit_fee_percent` · `burn_accrued_points` · `min_days_before_exit`. Читають `calculate_early_exit_fee` / `calculate_prorated_refund` / `ContractTerminationService`; `burn_accrued_points = true` — єдиний шлях, яким `slash()` викликається як **погоджена форфейтура** (`contractual: true`, поза positive-A gate → [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)) |
+| `cancellation_terms` | jsonb | Ключ-сет умов дострокового виходу: `early_exit_fee_percent` · `burn_accrued_points` · `min_days_before_exit`. Читають `ContractTerminationService` (лише `burn_accrued_points`/`min_days_before_exit`) і `contracts/show` (рендер із запису); `burn_accrued_points = true` — єдиний шлях, яким `slash()` викликається як **погоджена форфейтура** (`contractual: true`, поза positive-A gate → [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)). ⚠️ `early_exit_fee_percent` — історичні ДАНІ без обчислювального читача: методи fee/refund зняті [BIZ.22, ⚖️ 2026-08-30 — Опція 1 MSA, без повернень і штрафів] |
 | `cancelled_at` | timestamp | Час відміни контракту |
 | `hadron_asset_id` | string | ID активу на Polygon Hadron |
 
@@ -1163,9 +1163,7 @@ active/draft ──cancel──► cancelled
 | Метод | Опис |
 |-------|------|
 | `check_cluster_health!` | Оцінює здоров'я кластера (Worker); делегує в `ContractHealthCheckService`, повертає verdict `:healthy`/`:degraded`/`:blackout`/`:skipped` (SLASH-1 — breach асинхронний, не тут) |
-| `calculate_early_exit_fee` | Штраф за дострокове розірвання |
-| `calculate_prorated_refund` | Пропорційне повернення |
-| `terminate_early!` | Дострокове розірвання |
+| `terminate_early!` | Дострокове розірвання (Опція 1 MSA: cancel + погоджена форфейтура; fee/refund-методи зняті [BIZ.22, ⚖️ 2026-08-30]) |
 | `insurance_premium_amount` | `total_funding * INSURANCE_PREMIUM_RATE` (5%) — обчислювальний метод |
 | `forester_share_amount` | `total_funding * 0.95` — частка лісника (обчислювальний метод) |
 | `self.total_insurance_premiums` | Σ премій (5%) по активованих (active/fulfilled/breached) контрактах; off-chain USDC-факт, НЕ on-chain подія. 🔴 **Викликається у ДВОХ формах, і вибір форми — рішення про приналежність, не про стиль:** на класі це агрегат **усієї платформи**, на relation (`org.naas_contracts.…`) — внесок однієї організації (`where` чейниться на `current_scope`, як у `BlockchainTransaction.net_minted_supply`). Фінзвіт ([`04_03 §5.14а`](04_03_REST_API_v1_Reference)) бере САМЕ relation-форму: класова клала pooled-агрегат по всіх орендарях у звіт одного, а це ще й securities-фактор F8 ([ARCH.90](00_07_Action_Plan_Tracker)) |

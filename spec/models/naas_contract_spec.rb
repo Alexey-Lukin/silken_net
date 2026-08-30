@@ -240,55 +240,15 @@ RSpec.describe NaasContract, type: :model do
       expect(BurnCarbonTokensWorker.jobs.size).to eq(0)
     end
 
-    it "returns refund and fee details" do
+    # [BIZ.22, ⚖️ 2026-08-30] Опція 1 MSA: refund/fee у результаті НЕ існують —
+    # негативний пін стереже, щоб redemption-механіка не повернулась у контракт
+    # сервісу тихо (offering_lexicon_check перейменовану форму не ловить).
+    it "returns burned only — no refund/fee keys exist under MSA Option 1" do
       contract.update!(early_exit_fee_percent: 10, burn_accrued_points: false)
 
       result = contract.terminate_early!
 
-      expect(result).to include(:refund, :fee, :burned)
-      expect(result[:burned]).to be(false)
-    end
-  end
-
-  describe "#calculate_early_exit_fee" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-
-    it "calculates fee based on early_exit_fee_percent" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 50_000, early_exit_fee_percent: 15)
-
-      expect(contract.calculate_early_exit_fee).to eq(BigDecimal("7500.0"))
-    end
-
-    it "returns 0 when no fee percent is set" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 50_000)
-
-      expect(contract.calculate_early_exit_fee).to eq(BigDecimal("0"))
-    end
-  end
-
-  describe "#calculate_prorated_refund" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-
-    it "calculates prorated refund minus fee" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 50_000, start_date: 6.months.ago, end_date: 6.months.from_now,
-        status: :active, early_exit_fee_percent: 10)
-
-      refund = contract.calculate_prorated_refund
-
-      expect(refund).to be > 0
-      expect(refund).to be < 50_000
-    end
-
-    it "returns 0 when contract is not active" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster,
-        total_funding: 50_000, status: :draft)
-
-      expect(contract.calculate_prorated_refund).to eq(BigDecimal("0"))
+      expect(result).to eq({ burned: false })
     end
   end
 
@@ -380,24 +340,6 @@ RSpec.describe NaasContract, type: :model do
         start_date: 1.month.from_now, end_date: 1.month.ago)
       expect(contract).not_to be_valid
       expect(contract.errors[:end_date]).to be_present
-    end
-  end
-
-  describe "#calculate_prorated_refund when total_days is zero" do
-    let(:organization) { create(:organization) }
-    let(:cluster) { create(:cluster, organization: organization) }
-
-    it "returns 0 when start_date equals end_date" do
-      contract = create(:naas_contract,
-        organization: organization,
-        cluster: cluster,
-        status: :active,
-        start_date: Date.current,
-        end_date: Date.current
-      )
-      contract.update_columns(start_date: Date.current, end_date: Date.current)
-
-      expect(contract.calculate_prorated_refund).to eq(BigDecimal("0"))
     end
   end
 

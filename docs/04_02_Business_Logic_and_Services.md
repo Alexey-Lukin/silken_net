@@ -475,9 +475,9 @@ peaq_node_url: "https://peaq-node.example.com"
 |---|---|
 | **Файл** | `app/services/contract_termination_service.rb` |
 | **Вхід** | `naas_contract` (NaasContract) |
-| **Що робить** | Дострокове розірвання контракту. Валідація: `status_active?` та `min_days_before_exit`. Розраховує `calculate_prorated_refund` та `calculate_early_exit_fee`. |
+| **Що робить** | Дострокове розірвання контракту за **Опцією 1 MSA** ([`msa_skeleton §B.6.3`](protocols/legal/msa_skeleton.md)): валідація `status_active?` та `min_days_before_exit`, cancel, опційна погоджена форфейтура. Розрахунку refund/fee НЕМАЄ — методи зняті [BIZ.22, ⚖️ 2026-08-30], redemption-механіка суперечила підписуваному документу (F5/F6). |
 | **Зовнішні виклики** | `BurnCarbonTokensWorker.perform_async` (якщо `burn_accrued_points == true`) |
-| **Вихід** | `{ refund: BigDecimal, fee: BigDecimal, burned: Boolean }`. |
+| **Вихід** | `{ burned: Boolean }`. |
 
 ---
 

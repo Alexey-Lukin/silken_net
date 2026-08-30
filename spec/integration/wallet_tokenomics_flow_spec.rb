@@ -192,23 +192,12 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
              })
     end
 
-    it "calculates early exit fee correctly" do
-      fee = contract.calculate_early_exit_fee
-      expect(fee).to eq(10_000.0) # 100,000 * 10%
-    end
-
-    it "calculates prorated refund" do
-      refund = contract.calculate_prorated_refund
-      expect(refund).to be > 0
-      expect(refund).to be < contract.total_funding
-    end
-
-    it "terminates early and enqueues burning worker" do
+    # [BIZ.22, ⚖️ 2026-08-30] Опція 1 MSA (§B.6.3): fee/refund зняті — термінація
+    # це cancel + погоджена форфейтура, і результат не сміє нести грошових ключів.
+    it "terminates early and enqueues burning worker without any refund/fee" do
       result = contract.terminate_early!
 
-      expect(result[:refund]).to be > 0
-      expect(result[:fee]).to eq(10_000.0)
-      expect(result[:burned]).to be true
+      expect(result).to eq({ burned: true })
       expect(contract.reload.status).to eq("cancelled")
       expect(BurnCarbonTokensWorker).to have_received(:perform_async)
         .with(organization.id, contract.id, nil, true)
