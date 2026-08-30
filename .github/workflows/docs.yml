@@ -319,6 +319,19 @@ jobs:
         # inside this workflow's `changes` filter, so the gate is not decorative.
         run: ruby scripts/offering_lexicon_check.rb
 
+      - name: Homoglyph check (DOC-T.95 — a mixed-alphabet word answers to no grep)
+        # Pure Ruby, no Rails. A bilingual corpus typed with a layout switch produces
+        # words that LOOK right and are not (`бланкет` carrying a Latin `a`), and the
+        # cost is exact: the word stops answering to its own name, so every grep for
+        # the real spelling returns nothing. It also SPREADS by quotation — one
+        # instance was already sitting in two files. Eleven live corruptions were
+        # fixed the day this landed, one of them in the i18n GLOSSARY, i.e. an entry
+        # unreachable by the lookup the glossary exists for.
+        # Both directions are judged: the Cyrillic-inside-Latin half had zero hits
+        # tree-wide when measured, so the extension was free — and it is the half
+        # that guards identifiers and hostnames rather than prose.
+        run: ruby scripts/homoglyph_check.rb
+
       - name: SPDX per-file licence headers (UNI.3 — every in-scope source file tagged)
         # Pure Ruby, no Rails. The SAME engine that performed the rollout, run in
         # --check mode — so the gate cannot drift from what it guards, which is the

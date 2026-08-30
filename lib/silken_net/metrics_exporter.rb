@@ -23,7 +23,7 @@ module SilkenNet
   module MetricsExporter
     NOT_FOUND = ->(_env) { [ 404, { "content-type" => "text/plain" }, [ "Not Found" ] ] }
 
-    # Scrape раз на 15с — одного тредa досить; без queue-backlog'а.
+    # Scrape раз на 15с — одного треда досить; без queue-backlog'а.
     PUMA_OPTIONS = { min_threads: 0, max_threads: 1 }.freeze
 
     module_function

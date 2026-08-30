@@ -65,7 +65,7 @@ jobs:
           submodules: recursive
 
       - name: Set up .NET 9
-        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому пiну,
+        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому піну,
         # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
         # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
         # збірка з `TreatWarningsAsErrors` їхала на SDK, якого ніхто не називав:
@@ -101,7 +101,7 @@ jobs:
           submodules: recursive
 
       - name: Set up .NET 9
-        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому пiну,
+        # 🔒 [OPS.21] SDK береться з `tools/cad/global.json` — ЄДИНОГО дому піну,
         # який `dotnet build` читає й локально. Літерал `9.0.x` тут був другим
         # домом того самого факту, ще й ШИРШИМ за нього (будь-який 9.0.*), тож
         # збірка з `TreatWarningsAsErrors` їхала на SDK, якого ніхто не називав:
