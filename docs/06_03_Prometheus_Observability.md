@@ -12,14 +12,14 @@
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
 | **Logs** | GCP Cloud Logging + Structured JSON | ✅ GCP/Kamal-шлях (Cloud Logging, WARNING+, JSON+Sentry correlation); ⊕ **[OPS.37] Друга гілка знята разом із платформою:** мотив Rails-push у Loki був саме «ефемерний lease-log»; на GCP-VM stdout тече в Cloud Logging штатно, тож питання Loki звузилось до ретенції й пошуку ([`INF.22`](00_07_Action_Plan_Tracker)) |
 | **Visualization** | Grafana Cloud | ✅ **Імпортовано 2026-08-29** — дашборд `silkennet-overview-v1` у стеку (folder `SilkenNet`) |
-| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29** — усі правила з IaC у стеку; ⚠️ contact point свідомо НЕ дротований → firing-правило доставляється в нікуди ([`00_07`](00_07_Action_Plan_Tracker) S2.4) |
+| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29**; ✅ **contact point (Email) + route `slot=canopy` задротовано 2026-08-30** — firing-правила доставляються founder-у (заміна каналу на `ops@` — після ESP; [`00_07`](00_07_Action_Plan_Tracker) S2.4: лишились переімпорт виправлених правил + post-deploy verify) |
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр — §2.8; парність реєстру з кодом тримає гейт, не лічильник у прозі), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7). ⊕ **Імпорт дашборда й правил ЗРОБЛЕНО 2026-08-29** (`S2.2` → §🗄️); лишається канал доставки й post-deploy verify → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.4).
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7). ⊕ **Імпорт дашборда й правил ЗРОБЛЕНО 2026-08-29; канал доставки задротовано 2026-08-30** (Email founder-а + route `slot=canopy`); лишаються переімпорт виправлених правил і post-deploy verify → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.4).
 
 ---
 
@@ -67,7 +67,7 @@
 | Sentry context у workers | `app/workers/unpack_telemetry_worker.rb`, `app/workers/gateway_telemetry_worker.rb` | ✅ `Sentry.set_tags()` |
 | Prometheus Server | `config/deploy.yml` (accessory `alloy`) | ✅ **Grafana Alloy → Grafana Cloud** |
 | Grafana | Grafana Cloud SaaS | ✅ **Дашборд імпортовано 2026-08-29** (`ruby deploy/grafana/import.rb`) |
-| Alertmanager | Grafana Cloud Alerting | ✅ **Правила імпортовано 2026-08-29**; канал доставки — відкритий ⚖️ ([`00_07`](00_07_Action_Plan_Tracker) S2.4) |
+| Alertmanager | Grafana Cloud Alerting | ✅ **Правила імпортовано 2026-08-29**; ✅ канал доставки задротовано 2026-08-30 (Email; ⚖️ таймінг перевернув сам founder — Grafana Cloud має вбудований sender, ESP не потрібен; [`00_07`](00_07_Action_Plan_Tracker) S2.4) |
 | `SENTRY_DSN` у secrets | `.kamal/secrets-common` | ✅ Додано |
 | Grafana Alloy config | `deploy/alloy/config.alloy` | ✅ Scrape + remote_write |
 | Grafana Alloy accessory | `config/deploy.yml` (`accessories.alloy`) | ✅ монтування `files:`; ⚠️ мережевий доступ до таргетів — ВІДКРИТА нога OPS.37, `network:` у конфізі свідомо НЕМАЄ |
@@ -482,7 +482,7 @@ ruby scripts/metric_registry_table.rb --write    # застосувати
 | 4 | ✅ **Cardinality budget** (2026-06-04) — `prometheus.relabel` `labeldrop` per-identity (`config.alloy`) | `cluster_id` (entropy) лишається (легітимна growth-вісь); per-DID labels (`did`/`tree_id`/`peaq_did`/`wallet_address`/`tx_hash`) дропаються до remote_write, щоб майбутня випадкова мітка не підірвала active-series біллінг (Grafana Cloud біллить за series / DPM) | ✅ DONE |
 | 5 | ✅ **`up` scrape-health alert** (IaC 2026-07-04) — `sn-alert-scrape-target-down`: `min by (process) (up{job="silken_net_scraper"})` per-process називає, КОТРИЙ з трьох таргетів мертвий; `NoData → Alerting` = сам Alloy впав. Лишається 👤 імпорт (S2.4) | ops |
 | 6 | 🟡 **SLO + error-budget** — mint-half ✅ (IaC 2026-07-04): `sn-alert-mint-slo-breach` <80%/1h (єдина канон-ціль — [`06_08 §2.4`](06_08_Resilience_and_Failover_Policy); PromQL-guard `and attempts>0`). Slash/payout/insurance ratios — пороги калібруються з перших live-вікон (00_07 S2.4), не вигадуються. **[ARCH.62]** `sn-alert-mint-volume-anomaly` (agg mint-volume ceiling ~MAX_SUPPLY, operator-калібрований) + per-token inert circuit-break | ops |
-| 7 | Dashboards + alerts + **contact point** import у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (auto-discovery UID + ідемпотентний upsert + contact point/root notification policy з ENV off-by-default `ALERT_CONTACT_EMAIL`/`_TELEGRAM_*`, `--dry-run` без credentials); лишається 👤 запуск із токеном + значення каналу + verify | ops |
+| 7 | Dashboards + alerts + **contact point** import у Grafana Cloud (IaC у `deploy/grafana/`) | S2.2 — IaC готовий; ✅ one-command `deploy/grafana/import.rb` (auto-discovery UID + ідемпотентний upsert + contact point/root notification policy з ENV off-by-default `ALERT_CONTACT_EMAIL`/`_TELEGRAM_*`, `--dry-run` без credentials); ✅ канал задротовано 2026-08-30 через UI (Email; реімпорт його не чіпає — ENV off-by-default); лишається 👤 переімпорт виправлених правил + verify | ops |
 
 **#2 + #4 — імплементовано (2026-06-04) у `deploy/alloy/config.alloy`:** pipeline `prometheus.scrape → prometheus.relabel.cardinality_budget → prometheus.remote_write` (queue_config + явний WAL). Значення живуть у `config.alloy` (SSOT) — тут не дублюються, щоб уникнути drift; rationale — рядки #2/#4 вище. Валідація: CI job `alloy_config_validate` (`grafana/alloy fmt`).
 
@@ -580,7 +580,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 │  │  Grafana Cloud (SaaS)                                   │   │
 │  │  ✅ Prometheus (зберігання метрик)                       │   │
 │  │  ✅ Grafana Dashboards (імпортовано 2026-08-29)         │   │
-│  │  ✅ Grafana Alerting (правила ✅; канал = ⚖️ S2.4)       │   │
+│  │  ✅ Grafana Alerting (правила ✅; канал ✅ 08-30)         │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │

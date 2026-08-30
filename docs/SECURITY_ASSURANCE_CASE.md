@@ -240,6 +240,16 @@ An assurance case is credible because it states what is **not** yet fully closed
   (credentials→ENV shipped, Phase-2 drop deploy-gated — `SEC.22`), and both master keys are effectively
   un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
   (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design.
+  **The Solana Ed25519 payout key sits deliberately in the bounded-blast class, not the KMS class — a
+  ratified won't-do (⚖️ founder 2026-08-29, `SEC.22`), grounded in construction, not deferral:** it is not a
+  mint authority — it authorizes SPL transfers from a pre-funded ATA, so the blast ceiling equals the wallet
+  FLOAT (≈0.01–0.02 USDC per event), not the emission; both named alternatives measured WORSE — Vault-Transit
+  adds a new Art.28 vendor plus a network call on an otherwise offline in-process hot path while the secret
+  merely moves one level (the Vault token lives in the same `/proc/environ`), and pinning the key to the
+  Ingress Anchor would CONCENTRATE a money key next to the master key on a deploy-SA host while reversing a
+  HARD-gated invariant (`anchor_coap_env_spec` forbids it by name). The KMS path ([`06_04 §5.5`](06_04_Secrets_Checklist)) is
+  secp256k1-only by construction and does not reach Ed25519. The float itself is now measured, not assumed:
+  `silkennet_payout_float_balance` (declared diagnostic tier; threshold = a deploy-day decision, `SEC.22`).
   ⚠️ [OPS.37] Retiring the decentralized-compute target did NOT close this residual, and saying so matters:
   the earlier wording blamed one platform's lack of Workload Identity Federation, which reads as if a different
   host would fix it. It would not — on a self-managed VM the same variables sit in the same container environ,
