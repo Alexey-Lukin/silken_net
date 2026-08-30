@@ -30,6 +30,11 @@ class TreeStalenessSweepWorker
   # власну «24», і кожен, хто рухав би поріг, мусив би вгадати, скільки домів у числа.
   DEFAULT_THRESHOLD_HOURS = Tree::SILENCE_THRESHOLD.in_hours.to_i
 
+  # [SILENCE-1] Джерельний ключ ескалацій ЦЬОГО воркера — писач (escalate_silent_trees)
+  # і резолвер (resolve_returned_trees) мусять ділити один дім, інакше звуження резолва
+  # тихо розійдеться з тим, що воркер пише.
+  SILENCE_MESSAGE_KEY = "tree_silent"
+
   def perform
     threshold = silence_threshold
     flagged   = escalate_silent_trees(threshold)
@@ -78,7 +83,7 @@ class TreeStalenessSweepWorker
       silent_for_h = ((Time.current - tree.last_seen_at) / 1.hour).round
       alert = EwsAlert.escalate_field_audit!(
         cluster: tree.cluster, tree: tree,
-        message_key: "tree_silent",
+        message_key: SILENCE_MESSAGE_KEY,
         message_params: { did: tree.did, silent_for_h: silent_for_h,
                           last_seen_at: tree.last_seen_at.utc.iso8601, threshold_h: threshold.in_hours.round }
       )
@@ -119,13 +124,18 @@ class TreeStalenessSweepWorker
   # Дві resolve-гілки: (1) вузол знову в ефірі — спростовуючий факт = сам ефір;
   # (2) вузол покинув active (dormant = людина приспала, removed/deceased =
   # кейс уже веде slashing) — критичний алерт інакше висів би вічно
-  # (last_seen_at такого дерева більше не оновиться). Стеля: сьогодні ВСІ
-  # per-tree field_audit походять звідси (решта виклик-сайтів
-  # escalate_field_audit! — cluster-scoped); з'явиться інший per-tree продюсер →
-  # потрібен дискримінатор джерела, інакше цей resolve закриє чужу ескалацію.
+  # (last_seen_at такого дерева більше не оновиться).
+  #
+  # [SILENCE-1 2026-08-30] Резолв звужено до ВЛАСНИХ ескалацій (SILENCE_MESSAGE_KEY):
+  # «дерево заговорило» спростовує рівно тишу — воно НЕ спростовує чужу per-tree
+  # ескалацію з іншою причиною. Сьогодні множини тотожні (єдиний per-tree продюсер
+  # escalate_field_audit! — цей воркер), тож поведінка не міняється; без звуження
+  # перший же майбутній per-tree продюсер діставав би тихе авто-закриття своїх
+  # алертів першим ефіром дерева, і жоден гейт цього не бачив би.
   def resolve_returned_trees(threshold)
     count = 0
-    base = EwsAlert.unresolved.alert_type_field_audit.joins(:tree)
+    base = EwsAlert.unresolved.alert_type_field_audit
+                   .where(message_key: SILENCE_MESSAGE_KEY).joins(:tree)
     base.where(trees: { last_seen_at: threshold.ago.. })
         .or(base.where.not(trees: { status: :active }))
         .includes(:tree).find_each do |alert|

@@ -185,6 +185,22 @@ RSpec.describe TreeStalenessSweepWorker, type: :worker do
       expect(EwsAlert.alert_type_field_audit.where(tree_id: nil).first.status_active?).to be(true)
     end
 
+    # [SILENCE-1 2026-08-30] Джерельний дискримінатор: «дерево заговорило» спростовує
+    # рівно ТИШУ, а не будь-яку per-tree ескалацію. Майбутній продюсер (тут — його
+    # фікстура через той самий публічний API) інакше діставав би тихе авто-закриття
+    # своїх алертів першим ефіром дерева.
+    it "НЕ резолвить per-tree field_audit ЧУЖОГО джерела, коли дерево знову в ефірі" do
+      tree = create(:tree, cluster: cluster)
+      foreign = EwsAlert.escalate_field_audit!(
+        cluster: cluster, tree: tree, message_key: "tamper_suspected"
+      )
+      tree.mark_seen! # ефір спростовує тишу — не підозру тамперу
+
+      described_class.new.perform
+
+      expect(foreign.reload.status_active?).to be(true)
+    end
+
     it "тримає ескалацію живою, доки вузол мовчить" do
       silent_tree
       sweep
