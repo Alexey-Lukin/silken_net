@@ -444,7 +444,7 @@ env:
     POSTGRES_USER: silken_net
     POSTGRES_DATABASE: silken_net_production  # canopy override → silken_net_canopy (deploy.canopy.yml)
     WEB_CONCURRENCY: 2
-    APP_HOST: silkennet.com                   # Action Mailer host (INF.13)
+    APP_HOST: silkennet.app                   # Action Mailer host = web-host (INF.25 Опція A, 2026-08-30)
     COAP_HOST: api.silkennet.com              # UDP-проба панелі здоров'я (ARCH.81) — той самий хост, що набирає Королева
     WEB3_STRICT_MODE: "true"                  # Web3 fail-closed (INF.11)
     RELEASE_VERSION: "${RELEASE_VERSION}"     # Sentry release tag (CI-set)

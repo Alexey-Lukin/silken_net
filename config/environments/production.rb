@@ -115,7 +115,7 @@ Rails.application.configure do
   # `false` — on this platform that would hide exactly the failure ARCH.60 is about.
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "silkennet.com"), protocol: "https" }
+  config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "silkennet.app"), protocol: "https" }
 
   # [ARCH.60] Outgoing SMTP — ENV-driven, no vendor SDK. Every ESP we would pick
   # (Postmark / SES / Mailgun / SendGrid / Resend) speaks plain SMTP, so the vendor

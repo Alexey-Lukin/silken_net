@@ -85,14 +85,13 @@ servers:
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
 # proxy:
 #   ssl: true
-#   # ⛔ [INF.25] `silken.net` is a FOURTH domain spelling and is NOT one of ours (canon:
-#   #    silkennet.app web · silkennet.com mailer/api parent; the stray `.io` in contract
-#   #    NatSpec was aligned to `.com` 2026-08-30). With `ssl: true` this value becomes
-#   #    the Let's Encrypt certificate name,
-#   #    so uncommenting it as-is asks for a cert on a domain we do not own. This axis is
-#   #    SEPARATE from APP_HOST below (different value, different consumer) and was missing
-#   #    from INF.25's blast inventory until 2026-08-30. Gated on the domain decision.
-#   host: silken.net
+#   # [INF.25/INF.4] `silkennet.app` = the web host — with `ssl: true` this value becomes
+#   #    the Let's Encrypt certificate name, i.e. the TLS-fallback identity (06_01
+#   #    §TLS-fallback). Domain PURCHASED by the founder 2026-08-30 (GoDaddy), value
+#   #    ratified with Option A the same day. This axis is SEPARATE from APP_HOST below
+#   #    (different consumer: cert name vs mailer link host) even though the value now
+#   #    coincides. Uncomment only per the fallback runbook / INF.10 flip — never ad hoc.
+#   host: silkennet.app
 #   # INF.10 — readiness-gated cutover. kamal-proxy default healthcheck = /up (liveness only);
 #   # /ready (ReadinessController: DB SELECT 1 + Redis PING) holds the cutover until deps are up.
 #   # FLIP path to /ready ONLY AFTER the first deploy confirms /ready→200 — on a cold start /ready
@@ -188,7 +187,9 @@ env:
     POSTGRES_DATABASE: silken_net_production
     # Mailer link host (config/environments/production.rb action_mailer.default_url_options).
     # This is the host INSIDE the message body — transport and sender are separate, below.
-    APP_HOST: silkennet.com
+    # = web host (INF.25 Option A, applied 2026-08-30 after both domains were purchased):
+    # links in auth mail must land where the web app answers, or host-authorization 403s them.
+    APP_HOST: silkennet.app
     # 🛑 BOOT-CRITICAL [ARCH.60]: mail_transport_check.rb refuses to boot without these two.
     # Vendor-agnostic plain SMTP — every ESP speaks it, so switching provider is these
     # values and nothing else. SMTP_PORT / SMTP_DOMAIN / SMTP_AUTHENTICATION are omitted
