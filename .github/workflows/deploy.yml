@@ -292,6 +292,25 @@ jobs:
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
 
+      # ⚖️ [OPS.37 2026-08-30] `kamal deploy` never boots accessories (Kamal::Cli::App#boot
+      # walks KAMAL.roles only) — without this step a green deploy leaves Grafana EMPTY: no
+      # series exist, so every P0 alert is silent and the NoData branch cannot save it (it
+      # catches "all `up` vanished", not "Alloy never started"). `accessory boot` is
+      # idempotent in kamal 2.12 ("Skipping … a container already exists"), so this is a
+      # cheap ensure-running on every deploy, NOT a restart; config.alloy changes still need
+      # a deliberate `kamal accessory reboot alloy` (runbook 06_01). Boots here (first
+      # deploy is canopy — DEPLOY-1 Phase 3) so the agent watches production targets from
+      # day zero; until the production roles exist their aliases resolve NXDOMAIN and `up=0`
+      # tells the truth.
+      - name: Ensure Alloy accessory is running
+        run: kamal accessory boot alloy -d canopy
+        env:
+          GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
+          # Accessory env.secret trio (.kamal/secrets-common reads $VAR from this shell).
+          GRAFANA_REMOTE_WRITE_URL: ${{ secrets.GRAFANA_REMOTE_WRITE_URL }}
+          GRAFANA_REMOTE_WRITE_USERNAME: ${{ secrets.GRAFANA_REMOTE_WRITE_USERNAME }}
+          GRAFANA_REMOTE_WRITE_TOKEN: ${{ secrets.GRAFANA_REMOTE_WRITE_TOKEN }}
+
   # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
   # UDP boundary (Ingress Anchor → coap_listener). HTTP health checks
   # cannot see a dead CoAP path — without this the network goes dark silently.

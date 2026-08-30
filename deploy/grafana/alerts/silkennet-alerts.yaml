@@ -313,7 +313,8 @@ groups:
 
       # -----------------------------------------------------------------------
       # P0: Scrape target down — метрики «осліпли» (S2.4 / 06_03 §2.9).
-      # Таргетів ТРИ (127.0.0.1:9393/9394/9395 на loopback хоста) — min by (process) називає
+      # Таргетів ТРИ (silken-web:80 / silken-job:9394 / silken-coap:9395 — DNS-аліаси ролей
+      # у docker-мережі kamal, ⚖️ OPS.37 2026-08-30) — min by (process) називає
       # КОТРИЙ саме впав; job=0 значить money-path SLO-лічильники більше не
       # надходять (алерти нижче тихо гаснуть — це мета-алерт проти сліпоти).
       # coap-таргет = ДОРМАНТНА Kamal-роль `coap` (fallback до systemd-демона на
@@ -345,7 +346,7 @@ groups:
         for: 5m
         annotations:
           summary: "Scrape-таргет {{ $labels.process }} down ≥5m — його метрики в Grafana заморожені."
-          description: "Alloy не може зняти /metrics з процесу {{ $labels.process }}. job=0 → money-path/telemetry-лічильники осліпли (P0-алерти на них тихо гаснуть). Перевір роль (`kamal app details`), embedded-експортер (MetricsExporter), loopback-publish порту в config/deploy.yml. 06_03 §2.9. NoData → Alerting: зникнення УСІХ up-серій = сам Alloy впав."
+          description: "Alloy не може зняти /metrics з процесу {{ $labels.process }}. job=0 → money-path/telemetry-лічильники осліпли (P0-алерти на них тихо гаснуть). Перевір роль (`kamal app details`), embedded-експортер (MetricsExporter), network-alias ролі в config/deploy.yml (silken-web/-job/-coap) і чи біжить accessory (`kamal accessory details alloy`). 06_03 §2.9. NoData → Alerting: зникнення УСІХ up-серій = сам Alloy впав."
         labels:
           severity: critical
           component: observability

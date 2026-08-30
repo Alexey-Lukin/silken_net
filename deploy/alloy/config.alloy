@@ -15,9 +15,6 @@
 //                                 separates the two slots: RAILS_ENV is "production" in both.
 //   RAILS_ENV (optional)        — environment label (default "production"); CONSTANT across
 //                                 slots by design, so it discriminates nothing.
-//   RELEASE_VERSION (optional)  — release label. ⚠️ NOT SUPPLIED TODAY: it is absent from
-//                                 `accessories.alloy.env`, so the label is empty and dropped.
-//                                 The old "matches Sentry" claim had no join behind it (00_07 S2.4).
 //
 // Metric registry SSOT (names, types, count) — docs/06_03 §2.8. Deliberately NOT
 // restated here (avoids doc-drift); this agent scrapes whatever /metrics exposes.
@@ -32,24 +29,27 @@
 prometheus.scrape "silken_net_scraper" {
   // The Prometheus registry is in-process: web never sees worker/daemon
   // increments, so every Ruby process is its own target (06_03 §2.9).
-  // 🔴 [OPS.37] ADDRESSES ARE UNRESOLVED — the three-target CONTRACT is not.
-  // The registry is in-process, so each Ruby process must be its own target; that half is
-  // permanent (06_03 §2.9). HOW Alloy reaches them is an open leg: Kamal 2.12 gives no
-  // stable address for a sibling container (versioned names, no network alias), and the two
-  // honest mechanisms both carry a price — published host ports break the rolling deploy
-  // (start_new_version precedes stop_old_version), docker-socket discovery is a root-
-  // equivalent grant. The loopback form below is the SHAPE of option (a), NOT a decision:
-  // this config is inert until the accessory gets a launcher. Reasoning: config/deploy.yml
-  // `accessories.alloy`; decision home: 00_07 (OPS.37 leg).
-  // NOTE: 9395 is the dormant Kamal `coap` FALLBACK role (idle → honest daemon-level
-  // zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this host's scrape
-  // reach — ceiling documented in 06_03 §2.9(б), unchanged by the platform move.
+  // ⚖️ [OPS.37 2026-08-30] ADDRESSES RESOLVED — stable per-role DNS aliases on the shared
+  // `kamal` docker network (`servers.<role>.options.network-alias`, config/deploy.yml —
+  // rationale and the measured rolling-window behaviour live in the web role's note there).
+  // This accessory sits on the same network (kamal-2.12.0 DEFAULT_NETWORK = "kamal"), so
+  // Docker's embedded DNS resolves each alias at scrape time, across container versions.
+  // Rejected with measurement: published host ports break the rolling deploy (option (a),
+  // reverted 2026-08-29); docker-socket discovery — direct or via socket-proxy — grants
+  // env-read of every container incl. the job role's money quintet (tecnativa haproxy
+  // template gates the whole /containers prefix with ONE regex: list and inspect are
+  // inseparable), 00_07 OPS.37.
+  // NOTE: silken-coap:9395 is the dormant Kamal `coap` FALLBACK role (idle → honest
+  // daemon-level zeros); the PRIMARY daemon lives on the Ingress Anchor, outside this
+  // host's scrape reach — ceiling documented in 06_03 §2.9(б), unchanged by the platform
+  // move. Web is scraped on :80 (PrometheusCollector middleware behind Thruster); job and
+  // coap expose the embedded MetricsExporter on their own ports.
   // The `process` label makes sum/max by (process) queries readable;
   // `instance` (auto-set from __address__) already disambiguates.
   targets = [
-    { "__address__" = "127.0.0.1:9393", "process" = "web" },
-    { "__address__" = "127.0.0.1:9394", "process" = "job" },
-    { "__address__" = "127.0.0.1:9395", "process" = "coap" },
+    { "__address__" = "silken-web:80", "process" = "web" },
+    { "__address__" = "silken-job:9394", "process" = "job" },
+    { "__address__" = "silken-coap:9395", "process" = "coap" },
   ]
   metrics_path    = "/metrics"
   scrape_interval = "15s"
@@ -99,7 +99,14 @@ prometheus.remote_write "grafanacloud" {
     // with production's. DEPLOYMENT_SLOT is set in the accessory env:
     // "production" default, "canopy" for a canopy deploy.
     slot    = coalesce(sys.env("DEPLOYMENT_SLOT"), "production"),
-    release = sys.env("RELEASE_VERSION"),
+    // `release` was removed 2026-08-30 (00_07 S2.4): RELEASE_VERSION was never supplied to
+    // the accessory env, so the label was empty and dropped — a dead external_label whose
+    // "joins with Sentry release" claim had no mechanism. Wiring it here would also drift
+    // BY CONSTRUCTION: the accessory boots separately from `kamal deploy`, so its env
+    // snapshot goes stale between releases. If release attribution is ever needed, the
+    // canonical form is a `silkennet_build_info{version=...}` gauge emitted by each Rails
+    // process itself (always fresh, survives any scrape mechanism, standard join pattern) —
+    // build it when a live incident first asks "which release broke this", not before.
   }
 
   endpoint {

@@ -261,7 +261,7 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 |--------------|-----|---------|---------------|---------|
 | **Rails web (Puma + Thruster)** | ✅ | — | — | Kamal `web`-роль на app-хості |
 | **Sidekiq (job role)** | ✅ | — | — | Kamal `job`-роль, той самий хост |
-| **Grafana Alloy (metrics agent)** | ✅ | — | — | Kamal **accessory** (`files:`-монтування `deploy/alloy/config.alloy`), скрейпить три loopback-таргети |
+| **Grafana Alloy (metrics agent)** | ✅ | — | — | Kamal **accessory** (`files:`-монтування `deploy/alloy/config.alloy`), скрейпить три process-таргети по стабільних DNS-аліасах ролей (`silken-web`/`-job`/`-coap` — ⚖️ [OPS.37 2026-08-30], механіка в ноті web-ролі `config/deploy.yml`); пускач = крок «Ensure Alloy accessory is running» в обох deploy-воркфлоу (boot ідемпотентний; зміна `config.alloy` → свідомий `kamal accessory reboot alloy`) |
 | **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP — founder 2026-07-04); fallback = socat-релей → дормантна Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
 | **Cloud SQL PostgreSQL 17** | ✅ | — | — | Приватна IP, БЕЗ Auth Proxy на рантайм-шляху |
 | **ActionCable (Solid Cable)** | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |

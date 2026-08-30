@@ -48,13 +48,19 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 - **Observability = Alloy → Grafana Cloud SaaS; self-hosted Prometheus НЕ потрібен (OBS.1).**
   Реєстр **in-process** → web:80 НЕ бачить job/coap-інкрементів напряму → Alloy МУСИТЬ
   скрейпити **три таргети, по одному на процес** (web/job/coap, лейбл `process`) — цей
-  КОНТРАКТ незмінний і далі так. ⚠️ **Post-`OPS.37` АДРЕСИ до них — ВІДКРИТЕ питання, не
-  факт**: Kamal 2.12 не дає sibling-контейнеру стабільної адреси (версійовані імена, без
-  network-аліасу), а host-loopback `options.publish` (форма в `config.alloy` сьогодні —
-  ЛИШЕ ШЕЙП, не рішення) ламає роллінг-деплой (виміряно й відкочено 2026-08-29); альтернатива
-  (`discovery.docker` по мітках) вимагає docker-socket = root-еквівалентний грант. Дім
-  рішення → `00_07` (нога `OPS.37`); `spec/deploy/alloy_scrape_topology_spec.rb` пінить
-  сьогодні лише КОНТРАКТ (3 різні адреси, мітки `web`/`job`/`coap`), не самі адреси.
+  КОНТРАКТ незмінний. ⚖️ **Адресацію РАТИФІКОВАНО [OPS.37 2026-08-30]: per-role
+  `network-alias` у спільній docker-мережі `kamal`** (`silken-web:80`/`silken-job:9394`/
+  `silken-coap:9395`; `servers.<role>.options` ідуть дослівно в `docker run`, accessory в
+  тій самій мережі за замовчуванням). Алias — не порт: у роллінг-вікні обидві версії ділять
+  його легально (виміряно), тож клас «publish ламає роллінг» сюди не переноситься; canopy
+  аліасів НЕ має за побудовою (масив-форма `servers:` заміщає хеш — B3), тож у прод-серії
+  не вливається. ⛔ Відхилено з виміром: `options.publish` (зламав роллінг, відкочено
+  08-29) ⊥ docker-socket прямий чи через socket-proxy (haproxy-шаблон гейтить весь
+  `/containers` одним regex → inspect із `Config.Env` нероздільний від list = env-read
+  money-квінтета job-ролі). Обидві половини стереже крос-файловий пін
+  `spec/deploy/alloy_scrape_topology_spec.rb`; пускач accessory = крок «Ensure Alloy
+  accessory is running» в обох deploy-воркфлоу (`kamal accessory boot` ідемпотентний;
+  зміна `config.alloy` → свідомий `kamal accessory reboot alloy`).
   Топологія/стелі → `06_03 §2.9`; реєстр+кількість метрик → `06_03 §2.8` (**не хардкодь**).
 - 🔴 **Що метрика ОЗНАЧАЄ, вирішує її СПОЖИВАЧ, а не докстрінг** (INF.26, 2026-08-13).
   Питання «`by:` чи голий `.increment`» нерозвʼязне з коду й розвʼязне з панелі: `SCC_MINTED_TOTAL`

@@ -237,6 +237,18 @@ jobs:
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
 
+      # ⚖️ [OPS.37 2026-08-30] `kamal deploy` never boots accessories — mirror of the
+      # canopy workflow's step (full rationale there): idempotent ensure-running, so a
+      # green deploy can no longer leave Grafana with zero series and silent P0 alerts.
+      - name: Ensure Alloy accessory is running
+        run: kamal accessory boot alloy
+        env:
+          GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
+          # Accessory env.secret trio (.kamal/secrets-common reads $VAR from this shell).
+          GRAFANA_REMOTE_WRITE_URL: ${{ secrets.GRAFANA_REMOTE_WRITE_URL }}
+          GRAFANA_REMOTE_WRITE_USERNAME: ${{ secrets.GRAFANA_REMOTE_WRITE_USERNAME }}
+          GRAFANA_REMOTE_WRITE_TOKEN: ${{ secrets.GRAFANA_REMOTE_WRITE_TOKEN }}
+
   # [INF.6] Post-deploy gate: FW.56 freeze-contract probes through the real
   # UDP boundary (Ingress Anchor → coap_listener). HTTP health checks
   # cannot see a dead CoAP path — without this the network goes dark silently.

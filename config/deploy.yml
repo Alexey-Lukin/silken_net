@@ -14,11 +14,30 @@ image: <GCP_PROJECT_ID>/silken-net/silken_net
 # `terraform output -raw app_host_ip` (private IP: the Anchor fronts 80/443 and 5683).
 servers:
   web:
-    - 192.168.0.1
+    hosts:
+      - 192.168.0.1
+    # ⚖️ [OPS.37 2026-08-30] Stable scrape address for the alloy accessory: a DNS alias on
+    # the shared `kamal` docker network (user-defined → embedded DNS serves aliases). Kamal
+    # passes role options verbatim into `docker run` AFTER its hardcoded `--network kamal`
+    # (kamal-2.12.0 lib/kamal/commands/app.rb), so every version of this role answers to
+    # one name. Unlike a published port, an alias is NOT exclusive: during the rolling
+    # window start_new_version and stop_old_version legitimately SHARE it (measured live:
+    # DNS returns both IPs, then converges on the survivor) — the mechanism that broke
+    # option (a) structurally cannot break this one. The alias dies with its container, so
+    # a dead role → NXDOMAIN → scrape fail → `up=0` → sn-alert-scrape-target-down fires as
+    # designed. Canopy stays alias-less BY CONSTRUCTION (its array-form `servers:` replaces
+    # this hash wholesale — invariant B3), so canopy series can never leak into the
+    # production scrape. Named ceiling: within the rolling window (seconds) one scrape may
+    # hit either process — counters reset on the flip, which PromQL rate() absorbs.
+    options:
+      network-alias: silken-web
   job:
     hosts:
       - 192.168.0.1
     cmd: bundle exec sidekiq -C config/sidekiq.yml
+    options:
+      # Scrape alias — see the web role note (⚖️ OPS.37 2026-08-30).
+      network-alias: silken-job
     env:
       clear:
         # Sidekiq concurrency=15 (config/sidekiq.yml); DB pool must match + headroom.
@@ -52,6 +71,8 @@ servers:
     options:
       publish:
         - "5683:5683/udp"
+      # Scrape alias — see the web role note (⚖️ OPS.37 2026-08-30).
+      network-alias: silken-coap
     # ⚠️ No env: override → this role inherits the GLOBAL env.secret, incl.
     # PROVISIONING_MASTER_KEY which the coap daemon does NOT need (master_key_strength_check
     # $PROGRAM_NAME-skips coap; SEC.22 wants the HKDF fleet-forge root off coap's plaintext env).
