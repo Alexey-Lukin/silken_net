@@ -55,6 +55,25 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
       "і його ганяють проти живого стека саме на цій підставі."
   end
 
+# [S2.4] Ruler API ЗБЕРІГАЄ правило, чиє data-вікно Mimir потім ВІДМОВИТЬСЯ рахувати:
+# ліміт 11 000 точок/серію при step 15s = стеля ~45 год на relativeTimeRange. Три правила
+# (8d/1w/30d) імпортувались зеленими і падали в DatasourceError на першій оцінці. Довгий
+# lookback — робота PromQL (`increase(x[30d])` — серверний range vector), не вікна
+# запиту: reducer `last` читає одну останню точку. 86400 (24h = 5 760 точок) —
+# найбільше живе вікно, запас ~2× до стелі.
+it "no alert query window exceeds 24h (Mimir 11k-points resolution ceiling)" do
+  yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+  oversized = yaml.fetch("groups").flat_map do |group|
+    group.fetch("rules").filter_map do |rule|
+      from = rule.fetch("data").filter_map { |d| d.dig("relativeTimeRange", "from") }.max
+      "#{rule.fetch("uid")} (from: #{from}s)" if from && from > 86_400
+    end
+  end
+  expect(oversized).to be_empty,
+    "вікно запиту цих правил перевищить Mimir-ліміт точок — lookback має жити " \
+    "в PromQL-виразі, не в relativeTimeRange: #{oversized.join(", ")}"
+end
+
   # [S2.4] Дашборд скоуплено по `slot` — і без носія наступна панель приїхала б без нього.
   # `RAILS_ENV` = production для ОБОХ слотів (canopy різниться лише `POSTGRES_DATABASE`),
   # тож `slot` є ЄДИНИМ, що їх розводить; панель без матчера мовчки зливає staging із продом.

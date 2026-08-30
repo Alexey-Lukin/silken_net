@@ -4,6 +4,7 @@
 require "spec_helper"
 require_relative "../support/repo_root"
 
+# Файл несе ДВІ осі одного класу: brakeman (нижче) і rubocop (друга половина файлу).
 # 🔴 [OPS.28, 2026-08-28] brakeman біжить у ДВОХ стійках — CI-джоба `scan_ruby` і блок
 # `.githooks/pre-push` — і §Guard-craft #43 каже про цю конфігурацію прямо: дві стійки
 # однієї перевірки розходяться МОВЧКИ, обидві зелені у власному режимі, і ніщо їх не
@@ -50,7 +51,7 @@ module BrakemanStanceParity
   end
 end
 
-RSpec.describe BrakemanStanceParity, type: :quality do
+RSpec.describe BrakemanStanceParity, type: :quality do # rubocop:disable RSpec/MultipleDescribes -- дві осі свідомо в одному домі (хедер)
   # 🔴 Анкор куплений ВЛАСНИМ хибним спрацюванням цієї ж спеки, у першому ж її прогоні:
   # перший рядок хука зі збігом `bin/brakeman --` виявився не викликом, а КОМЕНТАРЕМ із
   # виміром ціни (`bin/brakeman --no-pager  3.41 / 3.46 / 4.05 с`), тож «форма виклику»
@@ -104,6 +105,93 @@ RSpec.describe BrakemanStanceParity, type: :quality do
     %w[--ensure-no-obsolete-ignore-entries].each do |flag|
       expect(hook_flags).to include(flag)
       expect(ci_flags).to include(flag)
+    end
+  end
+end
+
+# 🔴 [OPS.28, 2026-08-30] Друга вісь того ж класу — rubocop, і його конфігурація ШИРША за
+# brakeman-ову: ТРИ стійки (`pre-push` · CI-джоба `lint` · локальна смуга `config/ci.rb`)
+# по ДВА вердикт-виклики в кожній — повний прогін + `Lint/UselessAssignment` на периметрі
+# без `spec/` (коп глобально вимкнений СВІДОМО: живі хіти у `spec/` — фікстурні привʼязки,
+# а гейт, народжений червоним, знімає перший, кому він заважає; OPS.19/OPS.33). Доти
+# паритет тримали коментарі, що посилаються один на одного, — рівно та конфігурація, яку
+# brakeman оплатив спекою вище після трьох тихих розходжень (§Guard-craft #43).
+#
+# 🔒 СТЕЛІ понад успадковані від brakeman-осі (форма ≠ поведінка, спрацювання хука — стан
+# машини, path-gate окремо):
+#   · порядок токенів СУДИТЬСЯ: це пін канонічної форми запису, не семантики rubocop
+#     (він до порядку байдужий) — перестановка периметра впаде як розходження, і лік
+#     їй — переписати в канонічному порядку, не послабити гейт;
+#   · echo-рядки виключені РАЗОМ з коментарями: fix-довідка хука легітимно несе `-a`
+#     (автокорект — порада ПІСЛЯ падіння, не вердикт-виклик), тож судити її на рівність
+#     із вердиктом хибно; її власний дрейф цей гейт не стереже;
+#   · availability-проба `bundle exec rubocop --version` не матчиться патерном
+#     `bin/rubocop` — і це правильно: вона вердикту не несе.
+module RubocopStanceParity
+  HOOK_SOURCE  = REPO_ROOT.join(".githooks/pre-push")
+  CI_SOURCE    = REPO_ROOT.join(".github/workflows/ci.yml")
+  LOCAL_SOURCE = REPO_ROOT.join("config/ci.rb")
+  STANCES = { "pre-push" => HOOK_SOURCE, "ci.yml" => CI_SOURCE, "config/ci.rb" => LOCAL_SOURCE }.freeze
+
+  # Подавальні токени (вердикту не міняють) — виключення ПОІМЕННЕ, за нормою `00_06 §3`
+  # («прапорці, що ЗМІНЮЮТЬ ВЕРДИКТ», не побайтово): `-f github` = формат анотацій для
+  # PR-вʼю. Довга форма названа теж, щоб перепис короткої в довгу не зіграв розходженням.
+  FEED_TOKENS = [ %w[-f github], %w[--format github] ].freeze
+
+  def self.invocations(path)
+    path.read.each_line
+        .reject { |l| l.lstrip.start_with?("#") || l.match?(/\becho\b/) }
+        .filter_map { |l| l[%r{bin/rubocop([^"');]*)}, 1]&.split }
+        .map { |tokens| FEED_TOKENS.reduce(tokens) { |t, pair| drop_pair(t, pair) } }
+  end
+
+  def self.drop_pair(tokens, pair)
+    idx = tokens.each_cons(pair.size).to_a.index(pair)
+    idx ? tokens.dup.tap { |t| t.slice!(idx, pair.size) } : tokens
+  end
+end
+
+RSpec.describe RubocopStanceParity, type: :quality do
+  # { назва стійки => [повна інвокація, dead-code інвокація] }
+  let(:stances) do
+    described_class::STANCES.transform_values do |path|
+      invs = described_class.invocations(path)
+      [ invs.reject { |t| t.include?("--only") }, invs.select { |t| t.include?("--only") } ]
+    end
+  end
+
+  it "кожна з трьох стійок несе РІВНО дві вердикт-інвокації: повну + dead-code" do
+    # Ліхтар РОЗМІРУ множини, не лише непорожності: паритет над недобраною вибіркою
+    # (стійка, де парсер побачив один виклик із двох) був би зеленим про півправди.
+    stances.each do |name, (full, dead)|
+      expect(full.size).to eq(1), "#{name}: повних інвокацій #{full.size}, очікувалась 1: #{full.inspect}"
+      expect(dead.size).to eq(1), "#{name}: dead-code інвокацій #{dead.size}, очікувалась 1: #{dead.inspect}"
+    end
+  end
+
+  it "повна інвокація ІДЕНТИЧНА в усіх трьох стійках (по модулю подавальних токенів)" do
+    forms = stances.transform_values { |(full, _)| full.first }
+    expect(forms.values.uniq.size).to eq(1),
+                                      "повний прогін розходиться між стійками: #{forms.inspect}"
+  end
+
+  it "dead-code інвокація (коп + периметр) ІДЕНТИЧНА в усіх трьох стійках" do
+    # Периметр `app lib scripts config` — вердикт-несуча половина цього виклику
+    # (§Guard-craft #44: розходження живе не лише в тому, ЩО біжить, а й над ЧИМ).
+    forms = stances.transform_values { |(_, dead)| dead.first }
+    expect(forms.values.uniq.size).to eq(1),
+                                      "dead-code виклик розходиться між стійками: #{forms.inspect}"
+  end
+
+  it "несуча половина поіменно: коп і периметр без spec/ у кожній стійці" do
+    # Аналог brakeman-піна `--ensure-no-obsolete…`: три стійки можуть бути в ідеальній
+    # згоді й УСІ разом загубити периметр — тоді паритет зелений над вихолощеним викликом.
+    stances.each do |name, (_, dead)|
+      tokens = dead.first
+      expect(tokens).to include("--only", "Lint/UselessAssignment", "app", "lib", "scripts", "config"),
+                        "#{name}: dead-code виклик утратив коп або периметр: #{tokens.inspect}"
+      expect(tokens).not_to include("spec"),
+                            "#{name}: spec/ у периметрі — гейт стане народженим червоним (OPS.19)"
     end
   end
 end

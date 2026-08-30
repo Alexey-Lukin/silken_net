@@ -26,8 +26,13 @@
 #   куплена живим тіком 2026-08-30: --verify НЕ судить, чи ЗБЕРЕЖЕНЕ правило реально
 #   ОБЧИСЛЮЄТЬСЯ Ruler-ом — той приймає й неparsабельний SSE-вираз (валідація запису
 #   слабша за evaluation; 57 правил без `expression:` у threshold-model пройшли POST
-#   і verify зеленими, а перший тік дав [FIRING:57] DatasourceError). Після імпорту
-#   дивись стан правил через хвилину (alerting/list: Normal/Pending, не Error).
+#   і verify зеленими, а перший тік дав [FIRING:57] DatasourceError). Другий інстанс
+#   того ж класу (той самий день): relativeTimeRange > ~45 год пробиває Mimir-ліміт
+#   11 000 точок/серію — теж зберігається мовчки, падає першим тіком (гейт вікон тепер
+#   у grafana_alerts_spec). Після імпорту дивись стан правил через хвилину-дві
+#   (alerting/list чи /api/prometheus/grafana/api/v1/rules): мірка = ВСІ оцінені
+#   (lastEvaluation != 0001-01-01) І нуль error — health свіжозбереженого правила до
+#   першого тіку стоїть «ok» порожнім дефолтом, не вердиктом.
 #
 # `--dry-run` — без credentials і без HTTP: валідація форми обох артефактів
 # (JSON парситься + DS_PROMETHEUS input; YAML парситься, uid'и унікальні,

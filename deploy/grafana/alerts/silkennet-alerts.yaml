@@ -1214,7 +1214,7 @@ groups:
         condition: C
         data:
           - refId: A
-            relativeTimeRange: { from: 691200, to: 0 }
+            relativeTimeRange: { from: 600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
               expr: sum by (slot) (increase(silkennet_anchor_missed_weeks_total[8d]))
@@ -1960,7 +1960,7 @@ groups:
         condition: C
         data:
           - refId: A
-            relativeTimeRange: { from: 604800, to: 0 }
+            relativeTimeRange: { from: 600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
               expr: sum by (slot) (increase(silkennet_ethereum_anchor_reverted_total[1w]))
@@ -2041,7 +2041,7 @@ groups:
         condition: C
         data:
           - refId: A
-            relativeTimeRange: { from: 2592000, to: 0 }
+            relativeTimeRange: { from: 600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
               expr: sum by (slot) (increase(silkennet_telemetry_processed_total[30d]))
