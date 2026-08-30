@@ -66,12 +66,18 @@ Rails.application.configure do
   if ENV["RAILS_LOG_JSON"] != "false"
     json_logger = ActiveSupport::Logger.new(STDOUT)
     current_pid = Process.pid
+    # 🎰 [INF.27] `service` is constant across both deploys and `severity`/`pid` say nothing
+    # about origin — so until this field existed, canopy and production log lines were
+    # INDISTINGUISHABLE in Cloud Logging / Loki. Hoisted out of the proc like `pid`: the slot
+    # cannot change inside a process, and re-reading ENV per log line is a hot-path cost.
+    current_slot = SilkenNet::DeploymentSlot.current
     json_logger.formatter = proc do |severity, timestamp, progname, msg|
       payload = {
         severity: severity,
         timestamp: timestamp.utc.iso8601(3),
         message: msg.is_a?(String) ? msg : msg.inspect,
         service: "silken_net",
+        slot: current_slot,
         pid: current_pid
       }
       # Sentry trace correlation (if available)

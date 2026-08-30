@@ -226,13 +226,31 @@ RSpec.describe BlockchainTransaction, type: :model do
     end
 
     describe "#explorer_url for solana" do
+      # [INF.27] The suite declares no WEB3_CHAIN_ENV, so the fail-closed default applies and
+      # these are MAINNET links — the `?cluster=devnet` that stood here was the shipped defect,
+      # not the expectation. Which chain family a slot may touch is now a declaration, and the
+      # renderer's own contract lives in spec/services/web3/explorer_spec.rb; what this file
+      # judges is the half only the model knows — that it picks the right FAMILY.
       it "returns Solana Explorer URL for solana transactions" do
         tx = build(:blockchain_transaction,
           blockchain_network: "solana",
           to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV",
           tx_hash: "solana:sim:abc123"
         )
+        expect(tx.explorer_url).to eq("https://explorer.solana.com/tx/solana:sim:abc123")
+      end
+
+      it "follows the slot's chain declaration rather than a hardcoded cluster" do
+        tx = build(:blockchain_transaction,
+          blockchain_network: "solana",
+          to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV",
+          tx_hash: "solana:sim:abc123"
+        )
+        previous = ENV.fetch("WEB3_CHAIN_ENV", nil)
+        ENV["WEB3_CHAIN_ENV"] = "testnet"
         expect(tx.explorer_url).to eq("https://explorer.solana.com/tx/solana:sim:abc123?cluster=devnet")
+      ensure
+        previous.nil? ? ENV.delete("WEB3_CHAIN_ENV") : ENV["WEB3_CHAIN_ENV"] = previous
       end
 
       it "returns Polygonscan URL for evm transactions" do
@@ -267,7 +285,10 @@ RSpec.describe BlockchainTransaction, type: :model do
           to_address: "0x" + "a" * 40,
           tx_hash: "0xcelo123"
         )
-        expect(tx.explorer_url).to eq("https://explorer.celo.org/alfajores/tx/0xcelo123")
+        # ⚠️ Not a rename: `alfajores-forno.celo-testnet.org` answers NXDOMAIN (measured
+        # 2026-08-30) — cLabs deprecated Alfajores with the Holesky sunset. The mainnet
+        # Blockscout host below is where `explorer.celo.org` now 301s of its own accord.
+        expect(tx.explorer_url).to eq("https://celo.blockscout.com/tx/0xcelo123")
       end
     end
   end

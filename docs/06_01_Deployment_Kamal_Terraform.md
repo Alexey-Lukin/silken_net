@@ -59,7 +59,7 @@
 
 | # | Перевірка | Деталі |
 |---|-----------|--------|
-| **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. Поточно `proxy.ssl` вимкнено → TLS термінується зовні (Cloudflare — рішення `[INF.4]`, повний чекліст і верифікація нижче в §TLS); DNS усе одно потрібен для маршрутизації трафіку. |
+| **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. 🔴 **Твердження «`proxy.ssl` вимкнено → TLS термінується зовні» стояло тут до 2026-08-30 і було НЕПОВНЕ саме там, де це дорого:** воно правдиве про клієнтське плече й мовчки припускало, що CF→origin іде по HTTP. CF стоїть у `Full (strict)` (виміряно), а той вимагає сертифіката НА ORIGIN — тож із вимкненим `proxy.ssl` origin не має чим відповісти на :443 і web-ярус віддає 521/525. Правильний стан кроку: `proxy.ssl` **увімкнено з Origin CA-парою** (НЕ Let's Encrypt — під `Full (strict)` ACME не доставляється), і саме тому цей крок тепер залежить не лише від DNS, а й від секретів `TLS_ORIGIN_*` (§Сертифікат НА ORIGIN); ACME-передумова вище лишається чинною тільки для TLS-fallback БЕЗ CF. DNS усе одно потрібен для маршрутизації трафіку. |
 | **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`), а порожній інжект перебив би це значенням «» [B1]; задавати лише щоб вивести локи на ОКРЕМИЙ інстанс. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
@@ -246,7 +246,7 @@ kamal deploy -d canopy   # спершу canopy (ізольований DB-set), 
 | **GCP-проєкт + білінг** | Google · платник — **особиста картка засновника** (`terraform/billing.tf` — «the solo founder IS the billing admin») | 🔴 **вимкнути все.** У GCP живуть web · job · Alloy · **CoAP-демон PRIMARY** на Ingress Anchor · Cloud SQL (усі бази, вкл. `cache`/`cable`/canopy) · Artifact Registry · статична IP. Поза ним — рівно три сервіси (Upstash · Grafana Cloud · GHCR) | ⛔ **ні, і це ПРИЙНЯТА концентрація, не пропуск** — другої ноги немає й вона свідомо не будується ([`06_08 §1`](06_08_Resilience_and_Failover_Policy); подвійний рахунок одного контролера — [`00_05 §7`](00_05_AI_Native_Operating_Model)). Бюджет-алерти 50/90/100% ловлять ВИТРАТИ, не втрату доступу |
 | **GitHub-акаунт** (репо · Actions · Secrets · GHCR · релізи) | GitHub · особистий акаунт `Alexey-Lukin` | 🔴 **більше, ніж здається, і саме тому він тут ДЕВʼЯТИМ:** через нього йде (1) ЄДИНА ідентичність CI→GCP (WIF довіряє GitHub-OIDC; іншого credential не існує), (2) СХОВИЩЕ всіх deploy-секретів + GH Environment `production`, (3) образ для анкера (GHCR), (4) реліз-ланцюг, (5) merge-gate (branch protection живе на GitHub-стороні, не в дереві), (6) підпис образів (Sigstore-ідентичність = сам workflow) | ⚖️ **подія НАЗВАНА, виконавця немає** — `terraform/wif.tf` дослівно: довіра ключується на **ІМʼЯ** власника (`assertion.repository_owner`), не на незмінний `repository_owner_id`, і стеля оголошена там же: «harden to numeric `*_id` **if the repo ever changes hands**». Тобто зміна власника/організації = обовʼязковий перехід на числовий id |
 | **Реєстратор домену** (`silkennet.com` · `.app`) | **GoDaddy — ОБИДВА домени куплено founder-ом 2026-08-30** (по 1 року; незалежний реєстратор — сумісний із TLS-fallback, чужі NS дозволені; ⚠️ цей рядок казав «.app ще НЕ куплено» рівно годину — друга купівля відбулась тим самим вечором, і таблиця важелів свіпається після КОЖНОГО заведення) | 🔴 **єдиний важіль, чия відмова вимагає ФІЗИЧНОЇ експедиції до заліза:** `COAP_SERVER_HOST "api.silkennet.com"` — `#define` у прошивці Королеви (`firmware/queen/main.c`), тож втрата зони = пере-прошити ВЕСЬ флот; зона тепер наша, а не гіпотетична. Гейт `spec/deploy/coap_host_consistency_spec.rb` стереже firmware↔host | 👤 подія настала: реєстратора й власника обрано (особистий акаунт founder-а, GoDaddy 2FA — його рука); лишились NS `.app` → CF (зона провіжниться) + дата продовження в календарі власника |
-| **Cloudflare** (TLS + DNS) | Cloudflare · **акаунт живий 2026-08-30** (⚠️ на пошті SHARED-компанії `@active-bridge.com` — рядок «на кого оформлено» підпису ARCH.114 має що записати); обидві зони заведені (Free), SSL = **Full (strict)** на обох, NS `silkennet.com` уже перемкнуто на CF | 🔴 знімає HTTPS усього web-ярусу (`proxy.ssl` у Kamal закоментований — TLS існує рівно за рахунок CF) **і** DNS для CoAP-хоста. ✅ **Fallback РАТИФІКОВАНО ⚖️ 2026-08-30 (§TLS-fallback вище):** прямий A-запис + kamal-proxy `ssl: true` (Let's Encrypt); чесна ціна — NS-пропагація годинами, на час інциденту без CDN/WAF. Передумову ВИКОНАНО: домени куплені в незалежного реєстратора, НЕ CF Registrar | 👤 залишок pre-flight → [`00_07`](00_07_Action_Plan_Tracker) `INF.4` (NS `.app` + A-записи deploy-day). Пом'якшення додаткове: `[FW.58]` re-resolve рятує від зміни A-запису, не від утрати зони |
+| **Cloudflare** (TLS + DNS) | Cloudflare · **акаунт живий 2026-08-30** (⚠️ на пошті SHARED-компанії `@active-bridge.com` — рядок «на кого оформлено» підпису ARCH.114 має що записати); обидві зони заведені (Free), SSL = **Full (strict)** на обох, NS `silkennet.com` уже перемкнуто на CF | 🔴 знімає HTTPS усього web-ярусу **і** DNS для CoAP-хоста. ⚠️ Формулювання «TLS існує рівно за рахунок CF» стояло тут до 2026-08-30 і було правдиве лише про КЛІЄНТСЬКЕ плече: воно тихо припускало, що CF→origin іде по HTTP, тобто режим `Flexible`, який цей самий док забороняє. Вимір показав `Full (strict)` на обох зонах — а він вимагає сертифіката НА ORIGIN, якого стек не має (§Сертифікат НА ORIGIN). ✅ **Fallback РАТИФІКОВАНО ⚖️ 2026-08-30 (§TLS-fallback вище):** прямий A-запис + kamal-proxy `ssl: true` (Let's Encrypt); чесна ціна — NS-пропагація годинами, на час інциденту без CDN/WAF. Передумову ВИКОНАНО: домени куплені в незалежного реєстратора, НЕ CF Registrar | 👤 залишок pre-flight → [`00_07`](00_07_Action_Plan_Tracker) `INF.4` (NS `.app` + A-записи deploy-day). Пом'якшення додаткове: `[FW.58]` re-resolve рятує від зміни A-запису, не від утрати зони |
 | **Cloud SQL** (стан) | Google (у межах того ж проєкту) | 🔴 БД недосяжна → контейнер `exit 1`, `/ready` 503. ⛔ **Автоматичного експорту даних ЗА МЕЖІ GCP немає:** бекап = PITR + 30 снапшотів у тому ж Cloud SQL. Поза ним відновлювані лише (а) баланси токенів — з ланцюга (БД є проєкцією), (б) `AuditLog` — IPFS/Filecoin | ⛔ ні — це той самий контролер, що рядок 1. `deletion_protection = true`, `REGIONAL`-HA. ⚠️ DR-drill **не проводився жодного разу** ([`06_06`](06_06_Disaster_Recovery_and_Backup), `DR.1`) |
 | **GCS tfstate** | Google · бакет створено поза terraform (`bootstrap.sh`) | контроль над станом інфри; ручне знищення версії CMEK-ключа робить state-версії **назавжди** нечитабельними (recovery = `terraform import` з нуля) | ⛔ ні. ⊕ **Єдиний важіль із МАШИННИМ виконавцем строку** — ротація CMEK `--rotation-period=90d`, налаштована в gcloud. Копії стану поза бакетом немає (лише 10 noncurrent-версій / 30 днів, і короткий ретеншн — свідомий: кожна версія несе секрети) |
 | **GHCR** (образ для анкера) | GitHub (див. рядок 2) | зупиняє оновлення/підйом **CoAP-інтейку**: анкер тягне свій образ звідси systemd-юнітом, поза Kamal/WIF-ланцюгом і без реєстрового credential'а. ⚠️ Kamal тягне з GCP Artifact Registry — це ІНШИЙ реєстр, тож web/job тут не залежать | ⛔ ні — успадковує подію рядка 2. Пом'якшення: `PIN_ME` fail-closed + заборона `:latest` (`INF.21`) — уже завантажений образ переживе відмову, rebuild/reboot ні |
@@ -639,14 +639,59 @@ Browser / API client                Queen Gateway (LoRa→CoAP)
                   └─────────────────────────────────┘
 ```
 
+### 🔴 Сертифікат НА ORIGIN — ланка, якої в цьому чеклісті не було [INF.4, виміряно 2026-08-30]
+
+Рядок «SSL/TLS режим `Full (strict)`» нижче правильно каже, що **Cloudflare вимагає валідного
+сертифіката на origin** — і ніде не казав, ЗВІДКИ той сертифікат береться. Вимір показав, що
+взятись йому не було звідки, тобто це не пропуск у прозі, а мертвий шлях:
+
+- CF стоїть у **Full (strict)** на **обох** зонах (прочитано в живому дашборді 2026-08-30, не з
+  цього доку);
+- HAProxy на Ingress Anchor — `mode tcp` на 80 **і** 443 (`terraform/compute.tf`), тобто чистий
+  прохід: він не термінує нічого;
+- `proxy:`-блок закоментований в обох маніфестах → kamal-proxy віддає простий HTTP на :80 і
+  **нічого придатного на :443**.
+
+**Отже перший же запит крізь Cloudflare відповідає 521/525** — рівно той симптом, який
+таблиця траблшутингу нижче вже описує. Клас — «конфіг повний, шлях мертвий»; невидимий доти,
+доки нічого не задеплоєно.
+
+⛔ **Let's Encrypt (`ssl: true`) тут НЕ лік, і причина структурна:** під `Full (strict)`
+Cloudflare ходить на origin **лише по HTTPS**, тож ACME-челендж HTTP-01 на :80 не доставляється
+ніколи. Сірий хмарник на час першої видачі спрацює ОДИН раз, а поновлення тихо впаде через
+90 днів. `ssl: true` лишається рівно там, де він і був, — у **TLS-fallback** без CF (вище).
+
+✅ **Шлях, що працює — Cloudflare Origin CA:** безкоштовний сертифікат на 15 років, який
+`Full (strict)` приймає за визначенням (CF довіряє власному CA). Видати на
+`silkennet.app` + `*.silkennet.app` — **один сертифікат покриває і продакшен, і canopy-піддомен**.
+Kamal 2.12 бере обидві половини як **імена kamal-секретів**, не шляхи
+(`Kamal::Configuration::Proxy#custom_ssl_certificate?`), тож повний контракт із пʼяти ходів
+виписано в самому `config/deploy.yml` над ключем `proxy:` — там дім, тут вказівник. Ходи (2) і
+(3) з тих пʼяти **енфорсить** `spec/deploy/env_fetch_declaration_spec.rb`: щойно блок
+розкоментують, гейт поіменно вимагає `TLS_ORIGIN_CERT_PEM`/`TLS_ORIGIN_KEY_PEM` у
+`.kamal/secrets-common` і в `env:`-блоках обох deploy-воркфлоу.
+
+⚖️ **Canopy теж отримує TLS — присуд founder 2026-08-30** («на canopy https ssl повинен бути»).
+Підстава сильніша за зручність: canopy є ПЕРШИМ рендером основного Kamal-шляху
+(§DEPLOY-DAY Фаза 3), тож HTTP-canopy репетирував би деплой, оминаючи саме ту ланку, яка
+найімовірніше зламається; плюс `secure:`-куки сесії й локалі мовчки не тримаються, і помилки
+не буде ніде. Опція «пустити куку по HTTP» ВІДКЛИКАНА, не просто програла.
+
 **Pre-flight checklist (👤 admin):**
 
+- [ ] 🔐 **Origin CA сертифікат випущено** (CF Dashboard → SSL/TLS → Origin Server → Create
+      Certificate; hostnames `silkennet.app` + `*.silkennet.app`) і обидва PEM-блоби покладено
+      в GitHub Secrets як `TLS_ORIGIN_CERT_PEM` / `TLS_ORIGIN_KEY_PEM`. ⚠️ Приватний ключ
+      показується РІВНО один раз — зберегти в той самий vault, що й master-ключі ([`DR.1`](00_07_Action_Plan_Tracker)).
 - [ ] **Cloudflare account** з активним Pro/Business планом (proxied CNAME + WAF rules; WebSocket
       unlimited — на Free плані Hotwire/ActionCable лімітується).
 - [ ] **Домен у Cloudflare** — `silkennet.app` (web) і `silkennet.com` (його піддомен
       `api.silkennet.com` несе CoAP).
 - [ ] **SSL/TLS режим `Full (strict)`** — Cloudflare→origin вимагає валідного сертифіката на
       origin. ⚠️ `Flexible` (CF→origin по HTTP) дає grade B-C на SSL Labs і фальшиве відчуття TLS.
+      ✅ Виставлено на обох зонах 2026-08-30 (перевірено в дашборді) — тобто цей рядок уже
+      ЗАКРИТО, і саме тому рядок про Origin CA вище є **передумовою**, а не порадою: режим
+      увімкнено, сертифіката на origin ще немає, і в цьому стані web-ярус відповідає 521/525.
 - [ ] **Origin відомий:** публічна адреса app-хоста (або Ingress Anchor, якщо HTTP іде через
       HAProxy — `app-host-ip`, див. §Розподіл Ресурсів).
 - [ ] **DNS-запис створено:** `silkennet.app` → origin, Proxy status: 🟠 **Proxied**.

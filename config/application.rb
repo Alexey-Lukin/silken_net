@@ -34,6 +34,13 @@ require "action_cable/engine"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# [INF.27] Slot label ("production" ⊥ "canopy") — both slots run RAILS_ENV=production,
+# so `Rails.env` cannot discriminate them. Required EXPLICITLY (not autoloaded): its
+# earliest readers are `config/cache.yml` and `config/storage.yml`, whose ERB runs during
+# framework initializers. Outside the load-order block above — pure Ruby, zero railtie
+# interaction — but AFTER Bundler.require, because it uses ActiveSupport's `presence`.
+require_relative "deployment_slot"
+
 module SilkenNet
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.

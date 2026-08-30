@@ -579,17 +579,19 @@ class BlockchainTransaction < ApplicationRecord
     blockchain_network == "celo"
   end
 
-  # Хелпер для посилання на block explorer (Polygonscan, Solana Explorer або Celo Explorer)
+  # Посилання на block explorer. 🔴 [INF.27] Мережу обирає РЯДОК, а сімейство чейну —
+  # СЛОТ (`WEB3_CHAIN_ENV`); доти обидві половини були зашиті разом, і зашиті в TESTNET
+  # (`?cluster=devnet`, `/alfajores/`), тобто лінк був хибний уже сьогодні, на мейннеті.
+  # Шаблони й обидві оголошені стелі — `Web3::Explorer`.
   def explorer_url
-    return nil unless tx_hash
-
-    if solana_network?
-      "https://explorer.solana.com/tx/#{tx_hash}?cluster=devnet"
+    family = if solana_network?
+      :solana
     elsif celo_network?
-      "https://explorer.celo.org/alfajores/tx/#{tx_hash}"
+      :celo
     else
-      "https://polygonscan.com/tx/#{tx_hash}"
+      :evm
     end
+    Web3::Explorer.tx_url(family, tx_hash)
   end
 
   alias_method :polygonscan_url, :explorer_url

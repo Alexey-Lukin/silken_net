@@ -301,6 +301,19 @@ RSpec.describe EthereumAnchor, type: :model do
       anchor.tx_hash = "0x#{"ab" * 32}"
       expect(anchor.etherscan_url).to eq("https://etherscan.io/tx/0x#{"ab" * 32}")
     end
+
+    # [INF.27] This link is the auditor's reference for the L1 anchor in a lineage proof
+    # (`Mrv::LineageReportService`), so a mainnet URL on a testnet slot does not read as
+    # "wrong environment" — it reads as "the anchor does not exist". Mainnet above is the
+    # fail-closed default; this pins that the slot's declaration actually moves it.
+    it "follows the slot's chain declaration" do
+      anchor.tx_hash = "0x#{"ab" * 32}"
+      previous = ENV.fetch("WEB3_CHAIN_ENV", nil)
+      ENV["WEB3_CHAIN_ENV"] = "testnet"
+      expect(anchor.etherscan_url).to eq("https://sepolia.etherscan.io/tx/0x#{"ab" * 32}")
+    ensure
+      previous.nil? ? ENV.delete("WEB3_CHAIN_ENV") : ENV["WEB3_CHAIN_ENV"] = previous
+    end
   end
 
   describe "scopes" do

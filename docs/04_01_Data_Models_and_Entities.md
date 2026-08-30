@@ -1463,7 +1463,7 @@ active/draft ──cancel──► cancelled
 
 **Методи:**
 - `verify_state_root` — незалежно відтворює хеш з `total_growth_points|total_sfc|active_tree_count|chain_hash|anchored_at.iso8601|total_scc_supply` та порівнює з `state_root` (для зовнішнього аудитора; працює на будь-якому статусі — компоненти заповнюються ще при `:pending`)
-- `etherscan_url` — повертає `https://etherscan.io/tx/#{tx_hash}` або `nil`
+- `etherscan_url` — рендерить лінк через `Web3::Explorer` (`:ethereum`-родина) або `nil` без `tx_hash`. 🔴 **Хост залежить від ОГОЛОШЕНОЇ родини чейну слоту** (`WEB3_CHAIN_ENV` — [`04_02 §8`](04_02_Business_Logic_and_Services)): `etherscan.io` на mainnet, `sepolia.etherscan.io` на testnet [INF.27]. Доти був зашитий у mainnet, і ціна цього не косметична — саме цей лінк їде АУДИТОРОВІ як референс якоря в `Mrv::LineageReportService`, тож на testnet-слоті «transaction not found» читалось би як «якоря не існує», а не як «не той чейн»
 - `confirm!(block_number, gas_used)` / `mark_failed!(reason)` / `escalate_to_review!(reason)` [ARCH.66] — гардовані переходи (`with_lock`, idempotent, plain enum): `confirm!`/`mark_failed!` з `:sent` **або** `:manual_review` (останнє = гардований операторський вихід із manual_review після etherscan-звірки, без raw `update_column`); `escalate!` лише з `:sent`
 
 **Використовується:** `Ethereum::StateAnchorService#anchor_to_l1!` (записує до TX), `EthereumAnchorWorker`, `EthereumAnchorConfirmationWorker` (confirm/fail/escalate), `StuckSentAnchorSweeperWorker` (re-arm) [ARCH.66].

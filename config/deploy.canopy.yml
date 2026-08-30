@@ -40,6 +40,11 @@ servers:
 # (Terraform provisioning of the silken_net_canopy* databases is tracked in 00_07.)
 env:
   clear:
+    # 🎰 [INF.27] Slot label for the Rails roles — same override shape as POSTGRES_DATABASE
+    # below, and the same argument the Alloy accessory block already makes further down:
+    # RAILS_ENV is `production` on BOTH slots, so without this line canopy does not merely
+    # go unlabelled — it labels itself `production`, and a wrong label is worse than none.
+    DEPLOYMENT_SLOT: canopy
     POSTGRES_DATABASE: silken_net_canopy
     # [ARCH.60] Canopy declares itself mail-less, and this is a statement of fact rather
     # than a workaround: `deliver_later` only ever runs in Sidekiq, and this leg is
@@ -117,13 +122,28 @@ accessories:
 # `proxy:` WITHOUT a healthcheck and stayed silently on the default `/up` (liveness) while
 # believing they were on `/ready` (readiness: DB + Redis + Kredis). Declared parity that
 # one side does not carry is not parity; a cross-reference cannot be uncommented.
+# 🔴 [INF.4 ⚖️ founder 2026-08-30: «на canopy https ssl повинен бути, не розумію як по іншому»]
+#    CANOPY GETS TLS, and the ruling is stronger than the convenience it looks like. Canopy is
+#    the FIRST render of the main Kamal path (DEPLOY-1 Фаза 3), so an HTTP canopy rehearses the
+#    deploy while SKIPPING the single link most likely to break: origin TLS. It also silently
+#    drops `secure:` session and locale cookies (`session_store.rb` / `locales_controller.rb`
+#    key off `Rails.env.production?` and never read `DISABLE_SSL`), and the price there is not
+#    inconvenience but SILENCE — no error is raised anywhere; login simply does not stick.
+#    ⛔ The alternative that used to sit here as a peer option — "let the cookie ride HTTP" —
+#    is withdrawn by that ruling, not merely outranked.
+#    Mechanism, the measurement behind it and why Let's Encrypt is NOT the answer: the long
+#    block above the same `proxy:` key in `config/deploy.yml` (One-Home — do not restate it
+#    here, but note the cert covers this host too: ONE Origin CA cert issued for
+#    `silkennet.app` + `*.silkennet.app` serves both slots, so move (4) happens ONCE).
 # proxy:
-#   ssl: true
+#   ssl:
+#     certificate_pem: TLS_ORIGIN_CERT_PEM
+#     private_key_pem: TLS_ORIGIN_KEY_PEM
 #   # [INF.25/INF.4] Canopy rides a subdomain of the PURCHASED web host (silkennet.app,
 #   #    founder 2026-08-30; Option A ratified the same day — the tracker leg names the
-#   #    canopy value as "canopy-піддомен" of the web host). With `ssl: true` this value
-#   #    becomes the Let's Encrypt certificate name. Uncomment only per the fallback
-#   #    runbook / INF.10 flip — never ad hoc.
+#   #    canopy value as "canopy-піддомен" of the web host). Routing host, not cert identity
+#   #    (the wildcard Origin CA cert above carries that). A DNS record for it must exist
+#   #    and point at the Ingress Anchor before the first canopy deploy.
 #   host: canopy.silkennet.app
 #   # INF.10 readiness cutover — flip on the first canopy deploy AFTER /ready→200
 #   # (on a cold start /ready 503s until DB/Redis are wired, and kamal-proxy retries to

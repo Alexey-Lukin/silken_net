@@ -18,7 +18,12 @@ Sentry.init do |config|
   # -----------------------------------------------------------------------
   # 🌍 ENVIRONMENT & RELEASE
   # -----------------------------------------------------------------------
-  config.environment = Rails.env
+  # 🎰 [INF.27] SLOT, not `Rails.env`. The DSN is a single shared secret — both slots map the
+  # same `SENTRY_DSN` — so `Rails.env` filed every canopy exception into the production
+  # project under `environment: production`: inflated issue counts, corrupted "new since
+  # release" grouping, and a page for whoever is on prod-call because staging was deployed.
+  # Undeclared falls back to `Rails.env`, so dev/test still report themselves honestly.
+  config.environment = SilkenNet::DeploymentSlot.current
   config.release     = ENV.fetch("RELEASE_VERSION", nil)
 
   # -----------------------------------------------------------------------

@@ -83,14 +83,41 @@ servers:
 
 # Kamal proxy configuration.
 # SSL auto-certification via Let's Encrypt. Requires config.assume_ssl and config.force_ssl in production.rb.
+# 🔴 [INF.4] THE ORIGIN MUST PRESENT A CERTIFICATE, and today it cannot — measured 2026-08-30.
+#    Cloudflare is set to **Full (strict)** on BOTH zones (read from the live dashboard, not from
+#    a doc), and that mode REQUIRES a valid certificate on the origin's :443. Nothing in this
+#    stack can present one while this block stays commented: the Ingress Anchor's HAProxy is
+#    `mode tcp` on 80 AND 443 (pure passthrough — `terraform/compute.tf`), and kamal-proxy with
+#    no `ssl` serves plain HTTP on :80 and nothing usable on :443. Result on the first request
+#    through Cloudflare: 521/525. `06_01 §TLS` even lists that symptom in its troubleshooting
+#    table — the shipped config is what produces it.
+#    ⛔ `ssl: true` (ACME / Let's Encrypt) does NOT fix this here, and the reason is structural:
+#    under Full (strict) Cloudflare reaches the origin over HTTPS ONLY, so an HTTP-01 challenge
+#    on :80 is never delivered. Grey-clouding the record for the first issuance works exactly
+#    ONCE and then renewals fail silently at 90 days — a landmine, not a solution. `ssl: true`
+#    stays where INF.4 put it: the CF-LESS TLS-fallback runbook (`06_01 §TLS-fallback`).
+#    ✅ The path that works is a Cloudflare **Origin CA** certificate — free, 15 years, and
+#    accepted by Full (strict) by definition (CF trusts its own CA). Issue it for
+#    `silkennet.app` + `*.silkennet.app` so ONE certificate covers production AND the canopy
+#    subdomain. Kamal 2.12 takes both halves as KAMAL SECRET NAMES, not paths
+#    (`Kamal::Configuration::Proxy#custom_ssl_certificate?` reads `secrets[...]`).
+#    🔑 FIVE moves go together, like the canopy testnet block — four of five is a dead origin:
+#      (1) uncomment this block; (2) `TLS_ORIGIN_CERT_PEM` + `TLS_ORIGIN_KEY_PEM` in
+#      `.kamal/secrets-common`; (3) the SAME names in the `env:` block of BOTH deploy workflows;
+#      (4) 👤 issue the cert in the CF dashboard (SSL/TLS → Origin Server) and put the two PEM
+#      blobs into GitHub Secrets — multi-line is fine; (5) verify `openssl s_client` against the
+#      origin BEFORE flipping DNS, per `06_01 §TLS`.
 # proxy:
-#   ssl: true
-#   # [INF.25/INF.4] `silkennet.app` = the web host — with `ssl: true` this value becomes
-#   #    the Let's Encrypt certificate name, i.e. the TLS-fallback identity (06_01
-#   #    §TLS-fallback). Domain PURCHASED by the founder 2026-08-30 (GoDaddy), value
-#   #    ratified with Option A the same day. This axis is SEPARATE from APP_HOST below
-#   #    (different consumer: cert name vs mailer link host) even though the value now
-#   #    coincides. Uncomment only per the fallback runbook / INF.10 flip — never ad hoc.
+#   ssl:
+#     certificate_pem: TLS_ORIGIN_CERT_PEM
+#     private_key_pem: TLS_ORIGIN_KEY_PEM
+#   # [INF.25/INF.4] `silkennet.app` = the web host. ⚠️ With a CUSTOM certificate this value is
+#   #    no longer a certificate NAME (that role belonged to `ssl: true`, where it drove the
+#   #    Let's Encrypt identity) — it is the host kamal-proxy routes on. The cert identity now
+#   #    comes from the Origin CA blob above, which is why one wildcard cert serves both slots.
+#   #    Domain PURCHASED by the founder 2026-08-30 (GoDaddy), value ratified with Option A the
+#   #    same day. Still SEPARATE from APP_HOST below (mailer link host), even though the value
+#   #    coincides. Uncomment only per the runbook / INF.10 flip — never ad hoc.
 #   host: silkennet.app
 #   # INF.10 — readiness-gated cutover. kamal-proxy default healthcheck = /up (liveness only);
 #   # /ready (ReadinessController: DB SELECT 1 + Redis PING) holds the cutover until deps are up.
@@ -179,6 +206,15 @@ env:
     - CHAINLINK_HMAC_SECRET
     - HELIUM_WEBHOOK_SECRET
   clear:
+    # 🎰 WHICH DEPLOY IS THIS — the only var that discriminates the two slots, because both
+    # run RAILS_ENV=production (canopy deliberately: it wants the hardened runtime). Canopy
+    # overrides to `canopy` in config/deploy.canopy.yml, exactly like POSTGRES_DATABASE below.
+    # ⚠️ The var is NOT new — it was born for the Alloy accessory (`accessories.alloy` at the
+    # bottom of this file → `slot` label). What is new [INF.27] is that it now reaches the
+    # Rails ROLES too: until it did, Sentry filed canopy exceptions as production, the cache
+    # namespace declared a separator it did not provide, and both slots defaulted to the SAME
+    # Active Storage bucket. Reader One-Home: `config/deployment_slot.rb`.
+    DEPLOYMENT_SLOT: production
     # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
     # (no Auth Proxy needed inside the VPC). Set POSTGRES_HOST to `terraform output

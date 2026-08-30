@@ -32,7 +32,15 @@ amazon:
   access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"].presence || Rails.application.credentials.dig(:aws, :access_key_id) %>
   secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"].presence || Rails.application.credentials.dig(:aws, :secret_access_key) %>
   region: <%= ENV.fetch("AWS_REGION", "eu-central-1") %>
-  bucket: <%= ENV.fetch("AWS_BUCKET", "silken-net-#{Rails.env}") %>
+  # 🎰 [INF.27] SLOT, not `Rails.env`. Both deploy slots run RAILS_ENV=production, so this
+  # default resolved to `silken-net-production` on BOTH — while each slot keeps its OWN
+  # `active_storage_blobs` table (POSTGRES_DATABASE). Two databases each believing they own
+  # the same keys is not mislabelling: a canopy `purge` deletes a PRODUCTION object and the
+  # production row survives pointing at nothing. ⚠️ Latent, not live — AWS_BUCKET is unset on
+  # every deploy surface and the credentials below are still `06_04 §2.2` lazy-tier, so
+  # nothing writes anywhere yet. Fixed now because the moment costs one line and the day it
+  # goes live it costs a restore. One home: `config/deployment_slot.rb`.
+  bucket: <%= ENV.fetch("AWS_BUCKET") { "silken-net-#{SilkenNet::DeploymentSlot.current}" } %>
   # Enable server-side encryption at rest
   upload:
     server_side_encryption: "AES256"
@@ -45,7 +53,10 @@ google:
   service: GCS
   credentials: <%= ENV["GCS_CREDENTIALS_JSON"].presence || Rails.application.credentials.dig(:gcs) %>
   project: <%= ENV.fetch("GCS_PROJECT", "silken-net") %>
-  bucket: <%= ENV.fetch("GCS_BUCKET", "silken-net-#{Rails.env}") %>
+  # 🎰 [INF.27] Same split as the S3 bucket above, and here it matters MORE: `production_mirror`
+  # writes to both services, so an unsplit name lets canopy pollute the one copy that exists to
+  # be trustworthy during a restore.
+  bucket: <%= ENV.fetch("GCS_BUCKET") { "silken-net-#{SilkenNet::DeploymentSlot.current}" } %>
 
 # --- PRODUCTION MIRROR SERVICE (primary S3 + mirror GCS) ---
 # Reads always come from primary (amazon); writes go to both.

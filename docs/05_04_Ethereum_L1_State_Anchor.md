@@ -507,7 +507,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 |------|-------------|
 | validations (presence, uniqueness, format) | state_root, tx_hash, total_growth_points, total_scc_supply, chain_hash |
 | `verify_state_root` | Відтворення хешу з компонентів (незалежна верифікація) |
-| `etherscan_url` | URL генерація для confirmed TX |
+| `etherscan_url` | URL генерація для confirmed TX + **слідування оголошеній родині чейну** (`WEB3_CHAIN_ENV` → `sepolia.etherscan.io` на testnet-слоті) [INF.27] |
 | scopes: `recent`, `successful`, `latest_confirmed`, `stuck_sent` [ARCH.66] | AR scopes |
 | enum status | pending/sent/confirmed/failed/**manual_review** [ARCH.66] |
 | `confirm!` / `mark_failed!` / `escalate_to_review!` [ARCH.66] | guarded lifecycle transitions (`with_lock`, idempotent from `:sent`) |

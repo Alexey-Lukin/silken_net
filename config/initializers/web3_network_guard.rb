@@ -40,11 +40,15 @@ Rails.application.config.after_initialize do
   violations = Security::Web3NetworkGuard.violations(ENV, signer_process: Sidekiq.server?)
   next if violations.empty?
 
-  # All three are echoed because they are the THREE separate questions this boot asks:
-  # which runtime, which enforcement arm armed the guard, and which chain family this slot
-  # claims. A `[chain]` violation is unreadable without the third — it is half the assertion.
+  # All four are echoed because they are the FOUR separate questions this boot asks: which
+  # SLOT, which runtime, which enforcement arm armed the guard, and which chain family this
+  # slot claims. A `[chain]` violation is unreadable without the last — it is half the
+  # assertion. ⚠️ The slot was the one MISSING when this comment said "three" [INF.27]: both
+  # deploys carry RAILS_ENV=production, so a canopy boot-refusal and a production one were
+  # indistinguishable in the log stream — precisely when telling them apart matters most.
   raise SecurityError,
-        "Refusing to boot (RAILS_ENV=#{Rails.env}, " \
+        "Refusing to boot (slot=#{SilkenNet::DeploymentSlot.current}, " \
+        "RAILS_ENV=#{Rails.env}, " \
         "WEB3_STRICT_MODE=#{ENV['WEB3_STRICT_MODE'].inspect}, " \
         "#{Security::Web3NetworkGuard::CHAIN_ENV_VAR}=" \
         "#{Security::Web3NetworkGuard.chain_env(ENV).inspect}):\n  " +

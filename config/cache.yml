@@ -4,7 +4,14 @@ default: &default
     # Cap age of oldest cache entry to fulfill retention policies
     # max_age: <%= 60.days.to_i %>
     max_size: <%= 256.megabytes %>
-    namespace: <%= Rails.env %>
+    # 🎰 [INF.27] SLOT, not `Rails.env` — the two deploy slots share RAILS_ENV=production, so
+    # this separator used to declare a split it did not provide. Today the rows land apart
+    # anyway, but by a DIFFERENT mechanism: `config/database.yml` derives the cache DB from
+    # POSTGRES_DATABASE, which canopy overrides. That is isolation by accident of a neighbour —
+    # unify POSTGRES_DATABASE or move the store back onto shared Redis and both slots collide
+    # with zero signal (a canopy-warmed fragment served to a production user). One home:
+    # `config/deployment_slot.rb`.
+    namespace: <%= SilkenNet::DeploymentSlot.current %>
 
 development:
   <<: *default

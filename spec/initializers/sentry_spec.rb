@@ -7,7 +7,11 @@ RSpec.describe Sentry do
   let(:config) { described_class.configuration }
 
   describe "core settings" do
-    it "sets environment from Rails.env" do
+    # [INF.27] Was "sets environment from Rails.env" — a name that became a lie the day the
+    # slot axis landed, while the assertion stayed green (both resolve to "test" here). The
+    # value below is the FALLBACK half; that the initializer actually reads the slot One-Home
+    # is judged where it can be judged — spec/deploy/deployment_slot_axis_spec.rb, cross-file.
+    it "reports the deployment slot, falling back to Rails.env when undeclared" do
       expect(config.environment).to eq("test")
     end
 

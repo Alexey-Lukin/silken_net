@@ -42,7 +42,10 @@ Rails.application.config.after_initialize do
   next if violations.empty?
 
   raise SecurityError,
-        "[SEC.22] Refusing to boot (RAILS_ENV=#{Rails.env}) — ActiveRecord Encryption:\n  " +
+        # [INF.27] The SLOT, not just RAILS_ENV: both deploys are `production`, so without it a
+        # canopy boot-refusal reads identically to a production one in the aggregator.
+        "[SEC.22] Refusing to boot (slot=#{SilkenNet::DeploymentSlot.current}, " \
+        "RAILS_ENV=#{Rails.env}) — ActiveRecord Encryption:\n  " +
         violations.join("\n  ") +
         "\nGenerate via `bin/rails db:encryption:init` (or SecureRandom.alphanumeric(32)) " \
         "and inject as ENV on web + job. See docs/06_04 §5.7 and docs/00_07 SEC.22. " \

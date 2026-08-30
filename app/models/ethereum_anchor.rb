@@ -94,12 +94,12 @@ class EthereumAnchor < ApplicationRecord
     root_version.to_i >= 1 ? verify_merkle_root : verify_flat_root
   end
 
-  # Etherscan URL для L1 транзакції
-  def etherscan_url
-    return nil unless tx_hash
-
-    "https://etherscan.io/tx/#{tx_hash}"
-  end
+  # Etherscan URL для L1 транзакції. 🔴 [INF.27] Дзеркало `BlockchainTransaction#explorer_url`
+  # з ПРОТИЛЕЖНОГО боку осі: той був зашитий у testnet і хибний уже сьогодні, цей зашитий у
+  # mainnet і стає хибним у мить, коли зʼявляється testnet-слот. Ціна тут вища — цей лінк
+  # їде АУДИТОРОВІ як референс якоря в `Mrv::LineageReportService`, і «transaction not found»
+  # читається не як «не той чейн», а як «якоря не існує».
+  def etherscan_url = Web3::Explorer.tx_url(:ethereum, tx_hash)
 
   # --- [ARCH.66] ГАРДОВАНІ ПЕРЕХОДИ ЖИТТЄВОГО ЦИКЛУ ---
   # Модель = plain enum (не AASM), тож idempotency тримає with_lock + status-гард: рядкове
