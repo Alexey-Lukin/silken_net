@@ -25,6 +25,15 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  # 🔴 Потрібно для [OPS.11]-бюджету, і саме при LOCAL ADC (наша модель: apply
+  # founder-local, INF.22). `billingbudgets.googleapis.com` вимагає quota-project у
+  # заголовку; user-креденшел його не надсилає сам, тож перший apply дав
+  # «403 … requires a quota project, which is not set by default» — при тому що ADC
+  # quota_project_id УЖЕ несе. Тобто ламався не креденшел, а те, що провайдер його не
+  # переслав. Виміряно 2026-08-31.
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 # Enable required GCP APIs

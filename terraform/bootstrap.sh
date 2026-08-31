@@ -74,6 +74,15 @@ gcloud services enable storage.googleapis.com --quiet
 gcloud services enable compute.googleapis.com --quiet
 gcloud services enable sqladmin.googleapis.com --quiet
 gcloud services enable cloudkms.googleapis.com --quiet
+# 🔴 Ці два — передумова САМОГО terraform-провайдера, не якогось ресурсу. Вони стали
+# обовʼязковими разом із `user_project_override = true` (main.tf, потрібним для
+# [OPS.11]-бюджету при local-ADC): з оверрайдом провайдер шле quota-project на КОЖЕН
+# запит, і тоді читання проєкту/SA/IAM вимагає їх увімкненими. Виміряно 2026-08-31 —
+# без них `plan` падає 403 «Cloud Resource Manager API has not been used in project»
+# на ресурсах, які попередній apply створив успішно. Місце саме тут: terraform не може
+# ввімкнути те, без чого не читає власний стан.
+gcloud services enable cloudresourcemanager.googleapis.com --quiet
+gcloud services enable iam.googleapis.com --quiet
 
 # 4. KMS keyring + key for state-bucket CMEK [SEC.22]
 # `create` is NOT idempotent (409 ALREADY_EXISTS kills the script under -e),

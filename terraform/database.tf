@@ -6,6 +6,12 @@ resource "google_sql_database_instance" "silken_db" {
   region           = var.region
 
   settings {
+    # 🔴 ЯВНО, бо дефолт API вбивчий: без цього рядка POSTGRES_17 піднімається як
+    # ENTERPRISE_PLUS, а та едиція відхиляє УСІ `db-custom-*` тири («Use a predefined
+    # Tier like db-perf-optimized-N-*»). Виміряно першим живим apply 2026-08-31 — падав
+    # і наш `db-custom-1-3840`, і комічений дефолт `db-custom-2-7680`, тобто конфіг НЕ МІГ
+    # створити власну БД узагалі. ENTERPRISE — та едиція, під яку писані обидва тири.
+    edition           = "ENTERPRISE"
     tier              = var.db_tier
     availability_type = var.db_availability_type
     # NEVER = зупинено: компʼют не тарифікується, диск і бекапи лишаються (variables.tf)
