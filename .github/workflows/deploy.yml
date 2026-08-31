@@ -246,7 +246,7 @@ jobs:
       # (kamal ssh.proxy_command over start-iap-tunnel + SA osLogin/tunnel roles).
 
       - name: Reboot Kamal Proxy
-        run: kamal proxy reboot -d canopy
+        run: kamal proxy reboot -d canopy -y
 
       - name: Kamal Deploy to Canopy
         run: kamal deploy -d canopy

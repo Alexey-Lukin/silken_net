@@ -187,7 +187,7 @@ jobs:
       # (kamal ssh.proxy_command over start-iap-tunnel + SA osLogin/tunnel roles).
 
       - name: Reboot Kamal Proxy
-        run: kamal proxy reboot
+        run: kamal proxy reboot -y
 
       - name: Kamal Deploy to Production
         run: kamal deploy

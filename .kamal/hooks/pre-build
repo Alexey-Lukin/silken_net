@@ -24,21 +24,34 @@ fi
 
 current_branch=$(git branch --show-current)
 
-if [ -z "$current_branch" ]; then
-  echo "Not on a git branch, aborting..." >&2
-  exit 1
-fi
+if [ -n "$current_branch" ]; then
+  remote_head=$(git ls-remote "$first_remote" "refs/heads/$current_branch" | cut -f1)
 
-remote_head=$(git ls-remote "$first_remote" "refs/heads/$current_branch" | cut -f1)
+  if [ -z "$remote_head" ]; then
+    echo "Branch not pushed to remote, aborting..." >&2
+    exit 1
+  fi
 
-if [ -z "$remote_head" ]; then
-  echo "Branch not pushed to remote, aborting..." >&2
-  exit 1
-fi
-
-if [ "$KAMAL_VERSION" != "$remote_head" ]; then
-  echo "Version ($KAMAL_VERSION) does not match remote HEAD ($remote_head), aborting..." >&2
-  exit 1
+  if [ "$KAMAL_VERSION" != "$remote_head" ]; then
+    echo "Version ($KAMAL_VERSION) does not match remote HEAD ($remote_head), aborting..." >&2
+    exit 1
+  fi
+else
+  # DETACHED HEAD — this is the RELEASE path, not an error. `actions/checkout` on a
+  # `refs/tags/vX.Y.Z` ref leaves HEAD detached, so `git branch --show-current` is EMPTY.
+  # The previous form exited 1 here, which meant every release-triggered production deploy
+  # aborted at kamal step ZERO, before building anything. Found 2026-08-31 by reading the
+  # hook against the workflow trigger; it had never run, because nothing had ever deployed.
+  #
+  # The check's INTENT is "refuse to deploy a commit that is not on the remote" — that is
+  # expressible without a branch. `git ls-remote` lists every remote ref, and for an
+  # ANNOTATED tag it prints BOTH `refs/tags/vX` (the tag object) and `refs/tags/vX^{}` (the
+  # commit), so matching KAMAL_VERSION against the whole sha column covers branches and both
+  # tag flavours. Anchored with `grep -qx` so a partial sha cannot match.
+  if ! git ls-remote "$first_remote" | cut -f1 | grep -qx "$KAMAL_VERSION"; then
+    echo "Detached HEAD and commit $KAMAL_VERSION is not on remote '$first_remote', aborting..." >&2
+    exit 1
+  fi
 fi
 
 exit 0
