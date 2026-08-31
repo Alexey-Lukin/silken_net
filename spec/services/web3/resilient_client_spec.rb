@@ -4,6 +4,12 @@
 require "rails_helper"
 require "eth"
 
+# 🔬 MUTATION-VERIFIED [ARCH.114, 2026-08-29] — evidence grade, not an assertion. The
+# kwarg-forwarding fix was proved by RESTORING the defect: with `method_missing(name, *, &)`
+# back in place, keyword arguments arrive at the receiver as a trailing POSITIONAL HASH, so
+# `sender_key:` (the oracle key), `legacy:` and `nonce:` never reach `Eth::Client#transact` —
+# and the money examples go red by name. 💰 That was the live cost, not a style point.
+# Re-earn this line if the delegation shape changes: a proof is scoped to its subject.
 RSpec.describe Web3::ResilientClient do
   let(:primary_url) { "https://alchemy.example.com" }
   let(:secondary_url) { "https://infura.example.com" }

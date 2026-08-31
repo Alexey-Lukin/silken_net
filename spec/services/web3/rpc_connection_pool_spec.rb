@@ -4,6 +4,12 @@
 require "rails_helper"
 require "eth"
 
+# 🔬 MUTATION-VERIFIED [ARCH.114, 2026-08-29] — evidence grade, not an assertion. The
+# network-level cascade (`NETWORK_FALLBACK_ENV_KEYS`) was proved by RESTORING the defect:
+# with the registry removed, the cache key falls back to the bare env-key name, a site that
+# never declared a cascade poisons the per-thread entry, and the examples below go red by
+# name. Re-earn this line if either half is retargeted — a claim of proof scoped to a
+# subject stops being true when the subject moves.
 RSpec.describe Web3::RpcConnectionPool do
   after do
     described_class.reset!

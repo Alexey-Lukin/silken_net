@@ -18,6 +18,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# 🔒 [OPS.35] ЦЕЙ РЯДОК І Є МІРОЮ РИЗИКУ dev-дерева `graph-cli`, а не слово «critical»
+# в алерті. Дерево виконується НА РАННЕРІ (supply-chain-at-build, ціль — пайплайн, не
+# продукт), тож питання не «яка severity», а «що можна винести звідси». Зміряно:
+# токен тут `read`, репо-дефолт теж `read`, згадок `secrets.` у цьому воркфлоу НУЛЬ —
+# отже максимальний приз від повного RCE в `graph build` це публічний код на тому ж
+# коміті, read-only токен і одноразова VM.
+# ⛔ Наслідок для правок: додавши сюди БУДЬ-ЯКИЙ `secrets.` чи ширші `permissions`, ти
+# скасовуєш підставу, з якою два залишкові алерти (`decompress`, `uuid`) прийнято за
+# НЕДОСЯЖНІСТЮ — і їх треба переоцінювати заново (дім механіки — скіл
+# `dependency-update` §Subgraph).
+# ⚠️ Названо чесно: `harden-runner` тут у `egress-policy: audit`, тобто ексфільтрацію
+# ЗАФІКСУЄ, але не спинить; перехід у `block` — відкритий ⚖️ в `00_07` OPS.36.
 permissions:
   contents: read
 

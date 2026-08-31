@@ -13,7 +13,10 @@ require_relative "../support/repo_root"
 #
 # 🔴 WHAT THE GAP COST, measured 2026-08-31 (this is why the ⚖️ went to widen rather than to
 # accept): twelve specs exist precisely to test `scripts/*.rb` — they `require_relative` or
-# shell out to the script itself — and NONE of them ran when those scripts changed. Two of the
+# shell out to the script itself — and NONE of them ran when those scripts changed.
+# ⊕ Evidence grade of that "twelve", because a bare number reads stronger than it is: the
+# candidate set was SIXTEEN (specs mentioning `scripts/` at all); four were prose mentions
+# only and were discarded by reading each one — precision 75%, counted by name, not by grep. Two of the
 # twelve guard the offline verifiers an EXTERNAL AUDITOR runs against our evidence bundles
 # (`scripts/verify_lineage_bundle.rb` ← spec/services/mrv/lineage_report_service_spec,
 # `scripts/verify_archive_bundle.rb` ← spec/workers/telemetry_archive_batch_worker_spec), and
@@ -25,10 +28,21 @@ require_relative "../support/repo_root"
 # batches commits), at ~6 min wall / 10.4 min runner. This spec itself costs one
 # `--list-target-files` run.
 #
-# 🔒 DECLARED CEILING — read it before trusting a green: this judges COVERAGE of the rubocop
-# target set, never the converse. A filter entry matching files rubocop ignores (`db/**`,
-# `spec/**` fixtures) is not flagged, and that is deliberate: those entries exist for the
-# `test` job, not for `lint`, and demanding a bijection would fight the filter's real purpose.
+# 🔴 THIS SPEC LIVES IN THE `Docs` LANE, NOT IN `test`, AND THE REASON IS SELF-REFERENTIAL:
+# a gate that catches "a file outside the `ruby` filter" cannot be gated BY that filter — it
+# would be silent in exactly the case it exists for. Registered in `.github/workflows/docs.yml`
+# (cross-tree step) + `00_06 §3`. ⛔ Do not "tidy" it into the quality-spec block of the `test`
+# job: that move looks like consolidation and silently re-creates the blindness.
+#
+# 🔒 DECLARED CEILINGS — read both before trusting a green.
+# (A) This judges COVERAGE of the rubocop target set, never the converse. A filter entry
+#     matching files rubocop ignores (`db/**`, `spec/**` fixtures) is not flagged, and that is
+#     deliberate: those entries exist for the `test` job, not for `lint`, and demanding a
+#     bijection would fight the filter's real purpose.
+# (B) A brand-new TOP-LEVEL directory containing `.rb` triggers NEITHER lane — neither filter
+#     has a catch-all — so this gate first speaks on the next diff that touches an already
+#     covered tree. That is a real hole, named rather than papered over: the gate ratchets an
+#     existing perimeter, it does not discover a new root.
 RSpec.describe "the ci.yml `ruby` filter covers every RuboCop target [OPS.28]" do # rubocop:disable RSpec/DescribeClass
   # dorny/paths-filter matches with picomatch, where a TRAILING `/**` is recursive. Ruby's
   # `File.fnmatch?` with FNM_PATHNAME is NOT: it matches exactly one level there, so a naive
