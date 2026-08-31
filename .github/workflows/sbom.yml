@@ -96,8 +96,31 @@ jobs:
       - name: Prepare output dir
         run: mkdir -p sbom
 
-      - name: Trivy → gems · npm · conda names · NuGet (CPM)
+      # [OPS.36] TRIVY_INCLUDE_DEV_DEPS makes this SBOM CONSISTENT, not wider — and the
+      # distinction is the whole reason the flag is here rather than a new fragment script.
+      # Measured 2026-08-31 (trivy 0.72.0 locally; the flag is Trivy-core, read from env):
+      #   · subgraph/package.json declares ZERO `dependencies` — graph-cli, graph-ts and
+      #     matchstick-as are ALL devDependencies, so 503 of the lockfile's 504 entries carry
+      #     `dev: true`. Trivy excludes dev-deps BY DEFAULT ⇒ subgraph contributed exactly 0
+      #     components, and the aggregate was silent about the surface an external reader
+      #     takes our emission from.
+      #   · Meanwhile the Gemfile's `group :development, :test` gems (rubocop, rspec-core,
+      #     brakeman, capybara, simplecov …) were already IN. So the policy actually in force
+      #     was "the full lock of every ecosystem EXCEPT npm dev" — an artefact of a tool
+      #     default that nobody chose, not a decision.
+      #   · Price measured BEFORE enabling (00_05 §5): deduped aggregate 419 → 887 (+468, of
+      #     which 467 npm). conda/gem/nuget counts do not move at all — the flag is npm-scoped
+      #     in effect. `sbom_merge --assert` is clean on both (no dedup-key collisions).
+      # ⛔ Scoped to THIS step on purpose: image_cve_scan.yml and iac_scan.yml keep the default,
+      # because the shipped image contains no subgraph tooling — widening them would add CVE
+      # noise for packages that never reach a runtime.
+      # 🔴 Unrelated tripwire, armed and worth knowing before you bump the action: local trivy
+      # already emits CycloneDX **1.7**, and sbom_merge asserts 1.6 on every input. The next
+      # trivy-action bump that crosses that line reds THIS job loudly — by design, not a defect.
+      - name: Trivy → gems · npm (incl. dev) · conda names · NuGet (CPM)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_INCLUDE_DEV_DEPS: "true"
         with:
           scan-type: fs
           scan-ref: .

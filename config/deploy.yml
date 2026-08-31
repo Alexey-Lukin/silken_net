@@ -388,7 +388,9 @@ builder:
 # ⛔ THE (б) GLUE IS A PRECONDITION OF DEPLOY-DAY Фаза 3, NOT AN OPTION — [OPS.37] made
 # kamal the primary path onto a private host. Written out IN FULL here, not as a pointer,
 # for the same reason as the testnet block in deploy.canopy.yml: a cross-reference cannot
-# be uncommented. FOUR moves, and the fourth was UNNAMED until 2026-08-31:
+# be uncommented. FOUR moves. (3) and (4) are SHIPPED into the drawing (2026-08-31,
+# terraform/); (1) and (2) wait for values `terraform apply` mints and cannot be written
+# before the infra exists:
 #   (1) `user:` ← `gcloud compute os-login describe-profile --format='value(posixAccounts[0].username)'`
 #       run AS the deploy SA (impersonated), i.e. `sa_<numeric>`;
 #   (2) `proxy_command:` — kamal has no IAP notion, so the tunnel is an SSH ProxyCommand:
@@ -398,13 +400,21 @@ builder:
 #   (3) docker-socket access for THAT identity. `kamal server bootstrap` cannot provide it:
 #       it needs `sudo -n usermod -aG docker`, and our deploy SA holds `compute.osLogin`,
 #       NOT `osAdminLogin` — sudo is reserved for the human `iap_admin_members`. Docker
-#       itself is pre-installed by the startup script for exactly this reason; the group
-#       membership is the remaining half (terraform/compute.tf header names it);
-#   (4) 🔴 `roles/iap.tunnelResourceAccessor` ON THE DEPLOY SA. Measured 2026-08-31:
-#       terraform/iam.tf grants that role ONLY through `for_each = toset(var.iap_admin_members)`,
-#       i.e. to humans; the SA has `compute.osLogin` and no tunnel role at all. Without it
-#       move (2) returns 403 no matter how correct the command is — and the error names IAP,
-#       not kamal, so it reads like a gcloud problem. This move was absent from every
-#       description of the glue (00_07 INF.20, terraform/compute.tf header, 06_01 Фаза 0).
+#       itself is pre-installed by the startup script for exactly this reason, and the group
+#       membership is SHIPPED by that same script: terraform/compute.tf appends
+#       `sa_<unique_id>` to the docker line of /etc/group, because the account does not
+#       exist until the first OS Login and both usermod and gpasswd refuse an unknown user.
+#       ⛔ Raising the SA to `osAdminLogin` was REJECTED by measurement, not taste: it hands
+#       CI sudo on the host whose job-role ENV carries the money quintet, and voids the very
+#       reason docker is pre-installed;
+#   (4) `roles/iap.tunnelResourceAccessor` ON THE DEPLOY SA — SHIPPED 2026-08-31 as
+#       `google_project_iam_member.deploy_iap_tunnel` (terraform/iam.tf), the NARROW role:
+#       tunnel without a shell, sudo stays with the human `iap_admin_members`.
+#       🔑 Keep the WHY, because it is what a 403 will look like: until that resource the
+#       role was granted ONLY through `for_each = toset(var.iap_admin_members)`, i.e. to
+#       humans, and the SA held `compute.osLogin` with no tunnel role at all — so move (2)
+#       returned 403 however correct the command was, and the error names IAP, not kamal,
+#       which reads like a gcloud problem. If the tunnel 403s on deploy day, re-check this
+#       binding FIRST; do not go rewriting the proxy_command.
 ssh:
   user: deploy

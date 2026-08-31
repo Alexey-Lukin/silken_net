@@ -33,6 +33,10 @@
 #      in this gate: canopy maps the SAME mainnet RPC secrets as production (repo-level
 #      ALCHEMY_*/SOLANA_RPC_URL), so a job role on today's keys would sign on MAINNET from
 #      staging. Today the web-only form is the only thing standing between the two.
+#   B4. .kamal/secrets.canopy must remap REDIS_URL ← $CANOPY_REDIS_URL with a LOUD placeholder
+#      fallback — NEVER a silent $REDIS_URL fall-through, which is canopy talking to PRODUCTION
+#      Redis. Structural, not CI-only: a local `kamal deploy -d canopy` resolves secrets from
+#      the operator's own shell, so the overlay is the only thing standing in that path.
 #   D. No present-empty env (`VAR=` / `VAR:` with a blank value). Present-but-empty is worse
 #      than absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis,
 #      PROMETHEUS_AUTH→known-value bypass) — the recurring B1 class that cost a 4-month block.
@@ -62,6 +66,15 @@
 #   B3        canopy servers: array → hash                   → RED
 #   D ×2      present-empty in COAP_ENV and in env.clear     → RED
 # All eight reverted byte-identically; the gate was GREEN before and after each.
+#
+# ⊕ B4 entered THIS RECORD on 2026-08-31, and the gap is the instructive part: the check was
+# implemented (below) and cited by name from the tracker, but appeared in neither the roster
+# above nor the table — i.e. what lagged was the gate's own SELF-DESCRIPTION, which no gate
+# can see. A reader following the tracker to "invariant B4" found the label only by luck.
+# Mutated on both branches that day:
+#   B4/fallback  secrets.canopy REDIS_URL → ${REDIS_URL}        → RED naming file + value
+#   B4/absent    the REDIS_URL line deleted outright            → RED naming the inheritance
+# Both reverted byte-identically (`git diff --quiet`); GREEN before and after.
 # SUBJECT_FLOOR proved itself organically the same day: a z-after-(.*) parser bug collapsed the
 # set to 0 and the floor, not a human, caught the would-be green over an empty set.
 

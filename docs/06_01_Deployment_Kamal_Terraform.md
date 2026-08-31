@@ -482,11 +482,15 @@ Service Account: silken-net-deploy@<project>.iam.gserviceaccount.com
   - monitoring.metricWriter   (Cloud Monitoring)
   - cloudsql.client           (Cloud SQL connect)
   - storage.objectAdmin       (GCS Terraform state, scoped до bucket)
+  - iap.tunnelResourceAccessor (відкриття IAP-тунелю для `kamal deploy` — INF.20 хід (4),
+                               `deploy_iap_tunnel`; НАЙВУЖЧА: тунель БЕЗ шелу)
 Роль ПОЗА проєктною ієрархією (разово, руками — див. блок нижче):
   - billing.costsManager      (на BILLING-акаунті, не на проєкті)
-IAP-operator ролі (iam.tf, for_each `iap_admin_members` — люди-адміни, не SA):
+IAP-operator ролі ЛЮДЕЙ (iam.tf, for_each `iap_admin_members`):
   - compute.osAdminLogin       (sudo на анкорі через IAP-тунель, INF.20)
   - iap.tunnelResourceAccessor (відкриття IAP-тунелю)
+⚠️  Ця роль стоїть у ДВОХ НЕЗАЛЕЖНИХ біндингах — людям (тут) і deploy-SA (вище).
+    Розводить їх sudo: шел і sudo лишаються ЗА ЛЮДЬМИ, SA має лише тунель.
 ```
 
 > 🔴 **Грант CI-SA на BILLING-акаунті — ОБОВʼЯЗКОВИЙ перед активацією бюджету, і разовий
@@ -858,8 +862,13 @@ keyless-WIF. Доти тут стояло «перший apply», і слово 
 читач мав право чекати, що далі apply підхопить CI, а він не підхопить ніколи. Локальний
 apply створює WIF-pool, тож CI не потребує ключа з дебюту; у CI лишається `kamal deploy`,
 drift стереже щотижневий `Ops · TF Drift`) → зчитати outputs (`ingress_ip`, `database_private_ip`,
-`artifact_registry_url` + `workload_identity_provider`/`service_account_email` → repo
-**Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`, після чого CI-деплой keyless). **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
+`artifact_registry_url`, **`app_host_ip`** + `workload_identity_provider`/`service_account_email` → repo
+**Variables** `GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT`, після чого CI-деплой keyless).
+🔴 **`app_host_ip` — шостий, і без нього не виконується Фаза 3.** Він заміщує плейсхолдер
+`192.168.0.1` у `config/deploy.yml` `servers:` (і плейсхолдер `<INGRESS_ANCHOR_IP>` у canopy — імʼя
+там вводить в оману, заповнюється саме IP APP-ХОСТА), і його ж бере `add-metadata` Фази 3.
+⚠️ Це **приватна** адреса (`google_compute_instance.app` не має `access_config` за побудовою) —
+А-запис на неї дав би CF `522`; у DNS йде `ingress_ip`, ніколи цей. **SSH на анкор = IAP-тунель + OS Login (INF.20 (в), wired):**
 `gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b` —
 порт 22 в інтернет не відкритий, ключі keyless (керує OS Login); 🔴 **[OPS.37] Kamal-нога (б)-клею (`ssh.proxy_command` через `start-iap-tunnel` + SA-ролі)
 більше НЕ опційна:** доти перший деплой ішов повз SSH, тепер він іде Kamal'ом, тобто
