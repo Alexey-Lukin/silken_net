@@ -5,7 +5,7 @@ service: silken_net
 # Name of the container image. registry.server (below) is prepended, so the final ref is
 # europe-west1-docker.pkg.dev/<GCP_PROJECT_ID>/silken-net/silken_net. Replace <GCP_PROJECT_ID>
 # after `terraform apply` (matches `terraform output artifact_registry_url`). [INF.15]
-image: <GCP_PROJECT_ID>/silken-net/silken_net
+image: silkennet/silken-net/silken_net
 
 # Deploy to these servers (host IP from Terraform). Rails + Sidekiq run here via Kamal on GCP;
 # the Ingress Anchor (e2-small) stays a separate machine carrying the PRIMARY CoAP daemon.
@@ -15,7 +15,7 @@ image: <GCP_PROJECT_ID>/silken-net/silken_net
 servers:
   web:
     hosts:
-      - 192.168.0.1
+      - 10.0.0.3
     # ⚖️ [OPS.37 2026-08-30] Stable scrape address for the alloy accessory: a DNS alias on
     # the shared `kamal` docker network (user-defined → embedded DNS serves aliases). Kamal
     # passes role options verbatim into `docker run` AFTER its hardcoded `--network kamal`
@@ -33,7 +33,7 @@ servers:
       network-alias: silken-web
   job:
     hosts:
-      - 192.168.0.1
+      - 10.0.0.3
     cmd: bundle exec sidekiq -C config/sidekiq.yml
     options:
       # Scrape alias — see the web role note (⚖️ OPS.37 2026-08-30).
@@ -66,7 +66,7 @@ servers:
   # the proxy container with no listener behind it).
   coap:
     hosts:
-      - 192.168.0.1
+      - 10.0.0.3
     cmd: bundle exec ruby lib/daemons/coap_listener
     options:
       publish:
@@ -246,7 +246,7 @@ env:
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
     # (no Auth Proxy needed inside the VPC). Set POSTGRES_HOST to `terraform output
     # database_private_ip` after apply. POSTGRES_PASSWORD is in env.secret above.
-    POSTGRES_HOST: <CLOUD_SQL_PRIVATE_IP>
+    POSTGRES_HOST: 10.160.0.3
     POSTGRES_USER: silken_net
     # Database SET selector (config/database.yml). Production default; Canopy overrides to
     # silken_net_canopy in config/deploy.canopy.yml (same instance, isolated DB names).
@@ -355,7 +355,7 @@ aliases:
 accessories:
   alloy:
     image: grafana/alloy:v1.16.3
-    host: 192.168.0.1
+    host: 10.0.0.3
     files:
       - deploy/alloy/config.alloy:/etc/alloy/config.alloy
     env:
@@ -417,4 +417,16 @@ builder:
 #       which reads like a gcloud problem. If the tunnel 403s on deploy day, re-check this
 #       binding FIRST; do not go rewriting the proxy_command.
 ssh:
-  user: deploy
+  # ✅ Ходи (1)+(2) клею INF.20 ЗАДРОТОВАНО 2026-08-31, одразу після першого
+  # `terraform apply` — доти дротувати не було чим: обидва значення МІНТИТЬ сам apply.
+  # `user` — OS-Login-імʼя deploy-SA. Деривоване як `sa_<unique_id>` (те саме, що робить
+  # startup-скрипт `google_compute_instance.app`), бо `os-login describe-profile` через
+  # імперсонацію віддав PERMISSION_DENIED: власник не має TokenCreator на цьому SA, і
+  # видавати роль заради одного читання дорожче за деривацію. ⚠️ Форма лишається
+  # ТВЕРДЖЕННЯМ про найменування Google — звіряється першим успішним SSH, не раніше.
+  user: sa_100772929234285228842
+  # Тунель: kamal не знає про IAP, тож він приходить SSH-ProxyCommand-ом. `%h`/`%p` —
+  # токени OpenSSH, `--listen-on-stdin` робить із нього stdio-проксі, а не локальний
+  # слухач. Без цього рядка kamal ФІЗИЧНО не досягає app-хоста: у того немає зовнішньої
+  # IP, а :22 відкритий лише діапазону IAP-фронтендів.
+  proxy_command: "gcloud compute start-iap-tunnel %h %p --listen-on-stdin --zone europe-west1-d --project silkennet"
