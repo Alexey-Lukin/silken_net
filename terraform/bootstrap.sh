@@ -90,16 +90,32 @@ if gcloud kms keys describe "${KMS_KEY}" --keyring="${KMS_KEYRING}" --location="
 else
   echo "🔐 Creating KMS key ${KMS_KEY} (90d rotation)..."
   # --purpose takes the gcloud literal "encryption" (Terraform's ENCRYPT_DECRYPT
-  # is a different client's spelling). --next-rotation-time is omitted on
-  # purpose: gcloud then schedules the first rotation one period from creation,
-  # which spares a cross-platform (macOS/Linux) `date` incantation. Rotation
-  # mints a new PRIMARY; old versions stay decrypt-capable, so existing state
-  # versions keep reading.
+  # is a different client's spelling).
+  #
+  # 🔴 --next-rotation-time is REQUIRED whenever --rotation-period is set, and this
+  # block asserted the opposite until the first real run proved it (2026-08-31):
+  # "omitted on purpose: gcloud then schedules the first rotation one period from
+  # creation". The API answers INVALID_ARGUMENT "next_rotation_time is required if
+  # rotation_schedule is set", and `set -e` aborts the whole bootstrap HERE — after
+  # the keyring exists and before the bucket does. Note the shape of the mistake: it
+  # was a DELIBERATE omission carrying its own written justification, so it read as
+  # decided rather than untested, and nothing could red it — this file has no compiler
+  # and had never been executed.
+  #
+  # The stated goal survives: gcloud parses ISO-8601 RELATIVE durations (+P…) in any
+  # datetime flag (`gcloud topic datetimes`), so "+p90d" needs no cross-platform
+  # macOS/Linux `date` incantation. Verified by aiming the same command at a
+  # non-existent keyring: it failed NOT_FOUND server-side, i.e. the datetime had
+  # already parsed.
+  #
+  # Rotation mints a new PRIMARY; old versions stay decrypt-capable, so existing
+  # state versions keep reading.
   gcloud kms keys create "${KMS_KEY}" \
     --keyring="${KMS_KEYRING}" \
     --location="${REGION}" \
     --purpose="encryption" \
-    --rotation-period="90d"
+    --rotation-period="90d" \
+    --next-rotation-time="+p90d"
 fi
 
 # 5. Create GCS bucket for Terraform state (if not exists)
