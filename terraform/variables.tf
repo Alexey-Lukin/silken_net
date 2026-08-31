@@ -79,6 +79,39 @@ variable "db_max_connections" {
   default     = "400"
 }
 
+# 💰 DUTY-CYCLE осі [⚖️ founder 2026-08-31]. Pre-fleet стек не має обовʼязку бути
+# піднятим: Фази 3-5 доводять ШЛЯХ, а не обслуговують трафік. Зупинка знімає компʼют
+# (~$106/міс → ~$20 диски+IP+KMS) і НЕ втрачає нічого — дані, бекапи й
+# deletion_protection лишаються на місці.
+#
+# 🔴 Чому ЗМІННІ, а не клік у консолі: обидва поля в схемі провайдера `optional` і НЕ
+# `computed`, тож позаоблікова зупинка ризикує читатись як ДРЕЙФ — а `Ops · TF Drift`
+# робить weekly `plan` з рефрешем і став би ЩОТИЖНЯ ЧЕРВОНИМ. Рівно цю форму [INF.22]
+# уже відхилив іменно: «гейт, який привчають гортати». Через змінну зупинка є
+# ЗАПИСАНИМ рішенням, дрейфу нема за побудовою, а повернення коштує те саме значення.
+# ⛔ Дефолти тут always-on: забутий прапорець лягає на БЕЗПЕЧНИЙ бік.
+variable "db_activation_policy" {
+  description = "Cloud SQL run state: ALWAYS (running) or NEVER (stopped — compute unbilled, storage kept)"
+  type        = string
+  default     = "ALWAYS"
+
+  validation {
+    condition     = contains(["ALWAYS", "NEVER"], var.db_activation_policy)
+    error_message = "db_activation_policy must be ALWAYS or NEVER."
+  }
+}
+
+variable "compute_desired_status" {
+  description = "VM run state (both instances): RUNNING or TERMINATED (stopped — vCPU/RAM unbilled, disks kept)"
+  type        = string
+  default     = "RUNNING"
+
+  validation {
+    condition     = contains(["RUNNING", "TERMINATED"], var.compute_desired_status)
+    error_message = "compute_desired_status must be RUNNING or TERMINATED."
+  }
+}
+
 variable "db_read_replica_count" {
   description = "Number of Cloud SQL read replicas (0 to disable)"
   type        = number

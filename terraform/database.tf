@@ -8,6 +8,8 @@ resource "google_sql_database_instance" "silken_db" {
   settings {
     tier              = var.db_tier
     availability_type = var.db_availability_type
+    # NEVER = зупинено: компʼют не тарифікується, диск і бекапи лишаються (variables.tf)
+    activation_policy = var.db_activation_policy
     disk_size         = var.db_disk_size_gb
     disk_type         = "PD_SSD"
     disk_autoresize   = true

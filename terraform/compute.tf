@@ -38,7 +38,9 @@ resource "google_compute_instance" "ingress_anchor" {
   # to HAProxy + OS — e2-micro's 1 GB has no headroom (INF.17 anchor-primary).
   machine_type = "e2-small"
   zone         = var.zone
-  tags         = ["web-nodes"]
+  # TERMINATED = зупинено: vCPU/RAM не тарифікуються, диск лишається (variables.tf)
+  desired_status = var.compute_desired_status
+  tags           = ["web-nodes"]
 
   boot_disk {
     initialize_params {
@@ -404,6 +406,8 @@ resource "google_compute_instance" "app" {
   # See SIZE above: sized by the rolling-deploy overlap, not steady state.
   machine_type = "e2-standard-2"
   zone         = var.zone
+  # TERMINATED = зупинено: vCPU/RAM не тарифікуються, диск лишається (variables.tf)
+  desired_status = var.compute_desired_status
   # Only for allow_iap_ssh — see NO PUBLIC IP above.
   tags = ["web-nodes"]
 
