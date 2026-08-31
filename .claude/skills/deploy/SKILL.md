@@ -31,6 +31,25 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 Будь-хто, хто чіпає деплой, МУСИТЬ це знати (суть тут, механіка — за canon-§):
 
+- 🧰 **`gcloud` — передумова ШЕСТИ кроків дня, а не першого; і до 2026-08-31 її не називала
+  ЖОДНА фаза.** Виміряно того дня: SDK на машині власника не було взагалі, а Фаза −1 перелічує
+  **акаунти** (те, що заводять у браузері) — рунбук же говорить із **CLI**, і різницю видно
+  лише коли впираєшся. Залежні кроки: `terraform/bootstrap.sh` · ADC для `terraform apply` ·
+  SSH на анкер для `coap.env` · `add-metadata`+`reset` · AR-токен для `kamal` push
+  (`gcloud auth print-access-token`) · `ssh.proxy_command` IAP-тунелю, без якого `kamal deploy`
+  **фізично не досягає** app-хоста без зовнішньої IP. 🔑 **І логінів ДВА, вони НЕ дубль:**
+  `gcloud auth login` кладе user-credentials (їх уживає сам gcloud), `gcloud auth
+  application-default login` кладе **ADC** — і terraform читає ЛИШЕ другий. Доти `bootstrap.sh`
+  перевіряв ПЕРШИЙ, а радив ДРУГИЙ, тобто його ✅ проходив на креденшелі, який наступний крок
+  не вживає; тепер пінить обидва окремо. Перелік тулчейну (+ ланки з ВЛАСНИМ: `solana`/
+  `spl-token` для Devnet, `arm-none-eabi`/`STM32_Programmer_CLI` для Фази 6) — [`06_01
+  §DEPLOY-DAY`](../../../docs/06_01_Deployment_Kamal_Terraform.md) Фаза −1а.
+- ⛔ **`§Quickstart` у `06_01` БІЛЬШЕ НЕ ІСНУЄ — не шли туди нікого** (⚖️ 2026-08-31). Це була
+  ТРЕТЯ копія процедури, і саме вона протухла, при цьому читалась першою: наказувала класти
+  `POSTGRES_HOST`/`POSTGRES_USER` у `secrets-common`, де їх немає; пропускала девʼять із 32
+  імен (серед них `CANOPY_REDIS_URL`, без якого canopy сідає на невалідний Redis при ЗЕЛЕНОМУ
+  деплої); не мала фаз контрактів узагалі — тобто послідовність гарантовано давала впалий бут.
+  **Єдиний носій — `§DEPLOY-DAY`**; його ж називає `DEPLOY-1` («ОДИН носій верифікацій»).
 - **CoAP-інтейк: PRIMARY = демон на Ingress Anchor** (docker+systemd, приватний IP Cloud SQL
   БЕЗ Auth Proxy; секрети `/etc/silkennet/coap.env`, НЕ metadata). Kamal `coap`-роль
   (`config/deploy.yml`) = дормантний **fallback** (перемикання 2×systemctl); money/web
@@ -179,11 +198,21 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   НЕ відкритий; SSH-секретів у deploy-наборі НЕМАЄ; вхід `gcloud compute ssh silken-net-ingress
   --tunnel-through-iap` (доступ = tf-var `iap_admin_members`). 🔴 **Для app-хоста це не «теж», а
   ЄДИНИЙ шлях** (post-`OPS.37`): він без зовнішньої IP, і тег `web-nodes` на ньому стоїть рівно
-  заради `allow_iap_ssh`. ⚠️ Саме тут висить Kamal-нога (б)-клею, і залишок названо: Docker
-  передвстановлено startup-скриптом, бо `kamal server bootstrap` без sudo RAISE'ить, а deploy-SA
-  має `osLogin`, не `osAdminLogin` — але друга половина bootstrap'а (`usermod -aG docker`)
-  потребує того самого sudo, і як OS-Login-ідентичність (`sa_<numeric>`, не `deploy` з
-  `config/deploy.yml`) дістає docker-сокет — відкрите питання INF.20 (б). Команда/роль-модель/(б)-клей → `06_01` / 00_07 INF.20.
+  заради `allow_iap_ssh`. ⚠️ Тут висить Kamal-нога (б)-клею, і ходів у ній **ЧОТИРИ**, не три —
+  повний контракт виписано БАЙТАМИ над ключем `ssh:` у `config/deploy.yml` (не рефом: крос-реф
+  не можна розкоментувати). ✅ **Два ходи з чотирьох ВІДВАНТАЖЕНО 2026-08-31, обидва в
+  креслення, бо машини ще немає:** (4) `roles/iap.tunnelResourceAccessor` **на deploy-SA**
+  (`google_project_iam_member.deploy_iap_tunnel` — доти роль ішла ЛИШЕ людям через
+  `for_each = toset(var.iap_admin_members)`, тож `proxy_command` віддавав би **403**, і помилка
+  називає IAP, не kamal); (3) docker-група — startup-скрипт `google_compute_instance.app`
+  дописує `sa_<unique_id>` у `/etc/group`, бо акаунта до першого OS Login ще НЕ ІСНУЄ, а
+  `usermod`/`gpasswd` відмовляють невідомому користувачу. ⛔ **Підвищення SA до `osAdminLogin`
+  відхилено виміром, не смаком:** воно дало б CI root на хості, де в ENV job-ролі лежить
+  money-квінтет (`/proc/environ`), і скасувало б підставу, з якою docker передвстановлено.
+  🔑 Лишились (1)+(2) — вони чекають ЗНАЧЕНЬ, яких до `apply` не існує: `ssh.user` = `sa_<numeric>`
+  з `os-login describe-profile`, і `proxy_command` через `start-iap-tunnel`. ⚠️ `user: deploy`
+  у маніфесті — **відомо хибний плейсхолдер**, оголошений таким на місці.
+  Команда/роль-модель → `06_01` / 00_07 INF.20.
 - **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
   GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).
   **Keyless БЕЗ винятків** — `GCP_SA_KEY_BASE64` не існує ніде (`OPS.37` зняв єдиний виняток
@@ -240,7 +269,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | Web-сервер | `config/puma.rb` |
 | Load/throughput | `lib/silken_net/load_test/` + `bin/coap_load` (INF.23 harness: factory·flood·drain·microbench·report). ⚠️ dev-число ≠ capacity — bottleneck-class inversion (prod network-IO-bound, dev завищує 10-50×); реальна стеля лише staging з prod-adapters → `06_08 §2.4` |
 | CI/CD | `.github/workflows/` (`deploy.yml` — path-gated INF.9 · `deploy-production.yml` · `coap_smoke.yml` — post-deploy gate + 30хв liveness-schedule · `iac_scan.yml` — Sec·IaC-Scan (Trivy `config`, SARIF soft-fail; baseline у `.trivyignore`) · `image_cve_scan.yml` — Sec·Image-CVE-Scan (Trivy `image` по ОПУБЛІКОВАНОМУ тегу GHCR, щоденний cron; SOFT за конструкцією — CVE базового шару лікуються бампом образу, тож HARD із народження = вічно червоний воркфлоу; ⚠️ кореневий `.trivyignore` — базлайн IaC-місконфігів і для CVE інертний, свій потрібен лише при переході в HARD) · `terraform_drift.yml` — Ops·TF-Drift (weekly `plan -detailed-exitcode`, skip-clean до 3 secrets) · `ci.yml` `terraform_validate`-job (offline `validate`+`fmt`, path-gated `terraform/**`, pre-deploy config-validity — INF.15) · `mirror-ghcr.yml` · `release-please.yml` · `ci.yml` · `docs.yml` · `ssot_guard.yml` · `subgraph.yml` — **CI · Subgraph** [OPS.34/OPS.36]: `npm ci`→`graph codegen`→`graph build`→`graph test` (matchstick — семантика мапінгу, з 2026-08-28), path-gated через джобу `changes` (НЕ `on.pull_request.paths` — та форма вішала б required-чек «Expected» назавжди); **required-контекст «Subgraph passed» — девʼятий** (фліп 2026-08-30, `:required` у `workflow_gate_perimeter`)) |
-| Deploy drift-guards | ⚠️ **`deploy_secret_scan` до 2026-08-30 був декоративним ЗА ВХОДОМ:** path-фільтр джоби (`alloy` в `ci.yml`) і `pre-push` (`^deploy/`) не містили ані `config/deploy*.yml`, ані `.kamal/**`, ані `terraform/compute.tf` — тобто **чотирьох із пʼяти власних предметів**, і config-only діф проходив із зеленим `CI passed`, не судивши нічого. Обидва носії розширено; **тримай перелік ≡ subject-сету в шапці скрипта**. CI-гейти над deploy-конфігом (offline, no-creds; НЕ дублюй їх логіку — правь дім): `scripts/deploy_secret_scan.rb` (Kamal-ланцюг + anchor `COAP_ENV`-heredoc, post-`OPS.37`: no-literal + signing-quintet job-only-і-поза-ГЛОБАЛЬНИМ `env.secret` + retired-tripwire + B3 canopy `servers:`-array-form + `SUBJECT_FLOOR` проти парсер-колапсу + `.dockerignore`-exclusion + present-empty Invariant D + `_DSN` у `SECRET_NAME`) · `scripts/audit_deploy_secret_scope.rb` (S1.1 — live `gh`-scope preflight: money-quintet env-only · retired-zombie · WIF=Variables · Kredis instance-override footgun — present-empty глушить фолбек на `REDIS_URL`) · `spec/deploy/*_spec.rb` (INF.16 db-config · INF.17 coap.env boot-contract · INF.4 firmware↔host · DR.1 DR-posture · INF.12 ENV.fetch↔deploy declaration + B1-chain · INF.12-behavior web3-env-loudness (кожен web3-ENV ∈ guard-set ∪ LOUD ∪ SOFT — silent-class tripwire) · SEC.22 credentials-ENV-first · S2.4 alloy-scrape-topology · S2.4 grafana-alerts↔REGISTRY-parity (silkennet_-метрика в alert-expr ∈ REGISTRY, typo→dead-alert; ⊕ **slot-ізоляція** — панель несе `{slot=~"$slot"}`, агрегація алерту `by (slot…)`; ⊕ `import.rb --verify` оголошений read-only, і це тримає спека, не обіцянка) · OPS.11 tf-workflow-var-parity) |
+| Deploy drift-guards | ⚠️ **`deploy_secret_scan` до 2026-08-30 був декоративним ЗА ВХОДОМ:** path-фільтр джоби (`alloy` в `ci.yml`) і `pre-push` (`^deploy/`) не містили ані `config/deploy*.yml`, ані `.kamal/**`, ані `terraform/compute.tf` — тобто **чотирьох із пʼяти власних предметів**, і config-only діф проходив із зеленим `CI passed`, не судивши нічого. Обидва носії розширено; **тримай перелік ≡ subject-сету в шапці скрипта**. CI-гейти над deploy-конфігом (offline, no-creds; НЕ дублюй їх логіку — правь дім): `scripts/deploy_secret_scan.rb` (Kamal-ланцюг + anchor `COAP_ENV`-heredoc, post-`OPS.37`: no-literal + signing-quintet job-only-і-поза-ГЛОБАЛЬНИМ `env.secret` + retired-tripwire + B3 canopy `servers:`-array-form + `SUBJECT_FLOOR` проти парсер-колапсу + `.dockerignore`-exclusion + present-empty Invariant D + `_DSN` у `SECRET_NAME`) · `scripts/audit_deploy_secret_scope.rb` (S1.1 — live `gh`-scope preflight: money-quintet env-only · retired-zombie · WIF=Variables · Kredis instance-override footgun — present-empty глушить фолбек на `REDIS_URL`) · `spec/deploy/*_spec.rb` (INF.16 db-config · INF.17 coap.env boot-contract · INF.4 firmware↔host · DR.1 DR-posture · INF.12 ENV.fetch↔deploy declaration + B1-chain · INF.12-behavior web3-env-loudness (кожен web3-ENV ∈ guard-set ∪ LOUD ∪ SOFT — silent-class tripwire) · SEC.22 credentials-ENV-first · S2.4 alloy-scrape-topology · S2.4 grafana-alerts↔REGISTRY-parity (silkennet_-метрика в alert-expr ∈ REGISTRY, typo→dead-alert; ⊕ **slot-ізоляція** — панель несе `{slot=~"$slot"}`, агрегація алерту `by (slot…)`; ⊕ `import.rb --verify` оголошений read-only, і це тримає спека, не обіцянка) · OPS.11 tf-workflow-var-parity) · 🆕 **OPS.28 `scripts/shell_parse_check.rb`** — `bash -n` над КОЖНИМ shell-артефактом дерева, включно з шеллом усередині terraform-heredoc-ів (`terraform validate` бачить тіло як непрозорий рядок, `actionlint` читає лише `run:` у воркфлоу). Субʼєкти ВІДКРИВАЮТЬСЯ (git + shebang), не перелічуються. HARD у `ci.yml` (джоба `shell_parse`) **і** в `.githooks/pre-push`. ⛔ Оголошено РАТЧЕТОМ: улов на момент побудови НУЛЬ, зелене НЕ означає «шелл коректний» — лише «bash його розбирає»; семантика, `sh`-vs-bash і вміст `${…}` поза ним. Несе власну батарею `--selftest`, і вона не оздоба — дві його трансформації не мають свідка в живому корпусі, обидві були зламані при написанні, і корпусний прогін мовчав |
 
 ## Gotchas (верифіковані, не з канону)
 
