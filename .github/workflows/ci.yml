@@ -543,9 +543,11 @@ jobs:
     # блоків так само поза наглядом, — але знімає підозру, що діра вже кровоточить.
     # 🔑 ПУСКАЧ УЗЯТТЯ НАЗВАНО, і саме тому нога не є вічним боргом: побільшає
     # composite-екшенів АБО `shellcheck` заїде в CI з іншої причини — тоді периметр
-    # безкоштовний, і клас закривається сам. ⚠️ Фразу «пускач названо» читає
-    # `scripts/tracker_report.rb` як класифікатор відкладених ніг — не переписуй її
-    # синонімом, інакше нога мовчки повернеться в перелік доступної роботи.
+    # безкоштовний, і клас закривається сам. ⚠️ Лексему «пускач» справді читає
+    # `scripts/tracker_report.rb` як класифікатор свідомо відкладених ніг — але в НОЗІ
+    # ТРЕКЕРА (`Tracker::Dashboard::DEFAULT_PATH` = `docs/00_07`), а цей файл він не
+    # відкриває ЗОВСІМ. Тож перефраз ТУТ на класифікацію не впливає, і норма стосується
+    # формулювання ноги `OPS.28`, не цього коментаря.
     # Pinned-binary + sha256-verify (OPS.10 supply-chain-стандарт; runner вже має
     # shellcheck → shell-блоки лінтяться автоматично).
     runs-on: ubuntu-latest
@@ -577,7 +579,7 @@ jobs:
     # and `actionlint` never sees (it reads `run:` blocks in .github/workflows/** only).
     #
     # 🔒 It is a RATCHET, not a detector, and that is declared rather than discovered:
-    # the live yield at build time was ZERO — all 29 subjects parsed. It is worth a job
+    # the live yield at build time was ZERO — every subject parsed. It is worth a job
     # anyway because false positives are impossible BY CONSTRUCTION (a file parses or it
     # does not), it costs seconds, and its subjects are precisely the artifacts whose
     # FIRST execution is deploy day: `bin/docker-entrypoint` (every container), the
