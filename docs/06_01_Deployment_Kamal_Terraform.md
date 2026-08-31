@@ -805,7 +805,7 @@ openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
 #   Devnet (Фаза 2t) — solana + spl-token CLI (Solana-програми в репо немає, це руками)
 #   Фаза 6           — arm-none-eabi-* + STM32_Programmer_CLI (прошивка Королев)
 # 🔴 Корпоративне TLS-перехоплення ЛАМАЄ саме gcloud, і не ламає сусідів — виміряно
-#    2026-08-31 на машині власника (Zscaler): `gcloud auth login` віддає SSLError
+#    2026-08-31 на машині власника: `gcloud auth login` віддає SSLError
 #    «unable to get local issuer certificate», і ОБИДВА логіни не лягають, попри
 #    сторінку браузера «You are now authenticated» — тобто `gcloud auth list`
 #    лишається порожнім, а помилка приходить з обміну токеном.
