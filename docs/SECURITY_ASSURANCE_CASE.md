@@ -285,6 +285,15 @@ The claims above are backed by enforced, automated evidence — not by assertion
   **9** deterministic PR-gates — `CI passed` + `Docs passed` + `Solidity passed` + `DCO passed` + `Subgraph passed` + the
   CAD/ML/In-silico/IaC smoke aggregates) → [`06_07 §2`](06_07_CICD_and_Runbook_Index).
 - **Composition analysis (SCA).** Dependabot (weekly), bundler-audit (every CI), OpenSSF Scorecard (weekly).
+- **Repository history — audited, and the verdict is CLEAN** [SEC.22]. `config/master.key` was **never
+  committed** (it is gitignored from the initial commit), so no rotation is owed for a historical leak;
+  and `config/credentials.yml.enc` being public in a public repo is **safe by design** — it is the
+  ciphertext, useless without the key that never entered history. ⚠️ Recorded here rather than left as a
+  working note, because this is the kind of verdict a reader will otherwise re-derive under time
+  pressure: "is our git history clean?" is asked exactly once, during an incident. ⊥ Its bound: this is a
+  statement about HISTORY, not about runtime — the runtime exposure it does **not** cover (`/proc/<pid>/environ`
+  readable by anyone with root, hence credentials→ENV rather than a vault-only model) is §6's
+  `at-rest ≠ runtime` entry and the reason the Phase-2 drop of `RAILS_MASTER_KEY` exists at all.
 - **Supply chain.** Sigstore-signed SLSA build-provenance on the released container — verifiable per
   `SECURITY.md` ("Verifying release artifacts").
 - **This badge.** The OpenSSF Best Practices criteria (`crypto_*`, `input_validation`, `hardening`,
