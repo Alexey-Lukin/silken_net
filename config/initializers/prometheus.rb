@@ -517,6 +517,12 @@ module SilkenNet
     # success / decrypt_error / unknown_device / attest_*). The exhaustive
     # list lives at the call sites (coap_listener + UnpackTelemetryWorker);
     # sum by (status) across scrape targets is the honest full picture.
+    # 🔴 `oversized` IS A BOUNDARY COUNTER, AND MISREADING IT COSTS AN INVESTIGATION [INF.17]:
+    # it means the KERNEL truncated an oversized UDP datagram before we ever saw it. Without
+    # this status the same event surfaces one layer up as a MIC verification failure — i.e. it
+    # masquerades as FRAUD, and an operator would hunt an attacker for what is a size limit.
+    # The pair is the point: a rise in `oversized` with flat `attest_*` is a sender/MTU problem;
+    # a rise in `attest_*` with flat `oversized` is the security signal. Never fold them.
     COAP_PACKETS_RECEIVED_TOTAL = REGISTRY.counter(
       :silkennet_coap_packets_received_total,
       docstring: "Total CoAP UDP packets received by the telemetry daemon",
