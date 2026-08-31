@@ -61,6 +61,31 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   `spec/deploy/alloy_scrape_topology_spec.rb`; пускач accessory = крок «Ensure Alloy
   accessory is running» в обох deploy-воркфлоу (`kamal accessory boot` ідемпотентний;
   зміна `config.alloy` → свідомий `kamal accessory reboot alloy`).
+- 🔴 **ALLOY-КОНТЕЙНЕР ОДИН НА ДВА СЛОТИ — тож `accessory boot` НІКОЛИ не беруть із
+  `-d <destination>`** (⚖️ 2026-08-31; звірено з джерелом kamal 2.12, не виведено).
+  `Kamal::Configuration::Accessory#service_name` = `"#{config.service}-#{name}"`, а
+  `config.service` **не несе destination** (`service_and_destination` існує, але вживається
+  лише для каталогу застосунку) ⇒ обидва призначення дають `silken_net-alloy`; canopy
+  перевизначав лише `env.clear`, тож `host` лишався базовим ⇒ той самий контейнер на тому
+  самому хості. А `kamal accessory boot` ідемпотентний **ПРОПУСКОМ** («Skipping … a container
+  already exists», жовтим, exit 0) ⇒ мітку `DEPLOYMENT_SLOT` вигравав слот, що встиг ПЕРШИМ
+  (canopy на кожен push проти релізу), тобто продові серії їхали б із `slot="canopy"`.
+  🔑 І це була чиста втрата: canopy **alias-less за побудовою** (масив-форма `servers:`
+  заміщає хеш — інваріант B3), тож цілей скрейпу не має ЗОВСІМ. ⛔ Не «полагодити» це
+  окремим `service:` для canopy — два агенти скрейпили б ТІ САМІ продові аліаси й дали
+  подвійні серії з різними мітками. ⚠️ Залишок названо: canopy не може «не оголосити»
+  успадкований accessory (deep_merge = keys-UNION), тож `kamal setup -d canopy` підняв би
+  його — Фаза 3 свідомо каже `kamal deploy -d canopy` (той accessories не чіпає,
+  `boot_accessories: false`). Носій — `alloy_scrape_topology_spec` §«the ONE-Alloy invariant».
+- 🔴 **`BOOT_CRITICAL` — це єдине місце, де порожній секрет стає ГУЧНИМ; ланцюг `secrets-common`
+  + workflow-`env:` доводить лише, що ІМʼЯ резолвиться** [INF.4, 2026-08-31]. Виміряний
+  інстанс — пара `TLS_ORIGIN_{CERT,KEY}_PEM`: `secrets-common` її оголошує, тож
+  `Kamal::Secrets#[]` не кидає «Secret not found», а віддає **порожній рядок**;
+  `Kamal::Cli::App::SslCertificates#run` гардить формою `if cert_content = …`, а `""` у Ruby
+  **істинний** ⇒ kamal завантажує ПОРОЖНІ `cert.pem`/`key.pem` (0644), проксі не віддає TLS,
+  CF у `Full (strict)` відповідає 521/525 — **за цілком зеленим деплоєм**. **Рефлекс: додаючи
+  секрет, чия ВІДСУТНІСТЬ ламає рантайм тихо, клади його в `BOOT_CRITICAL`, а не лише в
+  ланцюг** — інакше він не дає навіть `::warning::`.
   Топологія/стелі → `06_03 §2.9`; реєстр+кількість метрик → `06_03 §2.8` (**не хардкодь**).
 - 🔴 **Що метрика ОЗНАЧАЄ, вирішує її СПОЖИВАЧ, а не докстрінг** (INF.26, 2026-08-13).
   Питання «`by:` чи голий `.increment`» нерозвʼязне з коду й розвʼязне з панелі: `SCC_MINTED_TOTAL`
