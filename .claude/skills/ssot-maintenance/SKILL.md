@@ -274,6 +274,7 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 114. A linter suppression keyed by ID+location has no expiry when the condition that justified it gets fixed — so a fix that removes the CAUSE but not the SUPPRESSION converts itself into a silencer for the next regression of the exact same defect — **whenever a fix closes the reason behind a `.trivyignore`- or `config/brakeman.ignore`-style entry, delete the entry in the SAME commit — "fixed, but the suppression is harmless to leave" is never true, because a suppression with nothing left to suppress is a pre-armed blind spot at that exact address, not an inert leftover**
 115. Задокументована РЕГЕНЕРАЦІЯ буває деструктором, а не синхронізатором — і жоден гейт цього не бачить, бо всі вони судять ІМЕНА й ТИПИ, ніколи ПРОЗУ — **перш ніж прогнати будь-який задокументований регенератор, зміряй, чи ЦІЛЬ уже не розійшлась із джерелом у бік ЗБАГАЧЕННЯ — бо синхронізатор і деструктор виглядають однаково, а різницю робить лише напрямок розходження; і питай не «чи вони синхронні», а «ЯКІ ПОЛЯ належать генератору, а які людині»**
 116. Path-фільтр названо за ОДНИМ концерном, а джоба несе ТРИ — тож питання не «чи фільтр логічний за іменем», а «чи він покриває входи КОЖНОГО кроку джоби»
+117. Конфіг, який споживає ЗОВНІШНІЙ інструмент, треба судити ЙОГО парсером — бо всі наші гейти читають такий файл ЯК ТЕКСТ, і бездоганний текст буває відкинутим єдиним споживачем, що має значення
 
 <!-- /GUARD-CRAFT-INDEX -->
 
