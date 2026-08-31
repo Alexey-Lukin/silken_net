@@ -804,6 +804,26 @@ openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
 # Ланки, що мають ВЛАСНИЙ тулчейн і НЕ покриваються нічим вище:
 #   Devnet (Фаза 2t) — solana + spl-token CLI (Solana-програми в репо немає, це руками)
 #   Фаза 6           — arm-none-eabi-* + STM32_Programmer_CLI (прошивка Королев)
+# 🔴 Корпоративне TLS-перехоплення ЛАМАЄ саме gcloud, і не ламає сусідів — виміряно
+#    2026-08-31 на машині власника (Zscaler): `gcloud auth login` віддає SSLError
+#    «unable to get local issuer certificate», і ОБИДВА логіни не лягають, попри
+#    сторінку браузера «You are now authenticated» — тобто `gcloud auth list`
+#    лишається порожнім, а помилка приходить з обміну токеном.
+#    Причина розколу: `gh`/`git`/`terraform` на Go читають СИСТЕМНИЙ trust store
+#    (корінь проксі там є) → працюють; gcloud тягне ВЛАСНИЙ certifi-бандл → падає.
+#    ⛔ Корінь із кейчейна не рятує: у нашому випадку він самопідписаний із
+#    basicConstraints БЕЗ critical, і OpenSSL 3 відхиляє його вже іншою помилкою
+#    («Basic Constraints of CA cert not marked critical») — зміна виглядає як фікс,
+#    а лише переставляє помилку. Робоча форма — заякоритись на ПРОМІЖНОМУ
+#    (у нас critical стоїть): certifi-бандл + проміжний → `custom_ca_certs_file`.
+#      openssl s_client -connect oauth2.googleapis.com:443 -showcerts   # взяти проміжний
+#      cat <sdk>/lib/third_party/certifi/cacert.pem inter.pem > ~/.config/gcloud/ca.pem
+#      gcloud config set core/custom_ca_certs_file ~/.config/gcloud/ca.pem
+#    ⚠️ Проміжний привʼязаний до хмари проксі й РОТУЄТЬСЯ — це обхід зі строком
+#    придатності; довговічний лік = conformant корінь від IT.
+#    🔑 Перевіряй ДИСКРИМІНУЮЧИМ тестом, не `curl --cacert`: системний curl на macOS
+#    бере системний trust store і проходить ОБОМА бандлами, тобто нічого не доводить.
+#    Годиться python-ssl із явним cafile — контроль (гола certifi) МУСИТЬ упасти.
 ```
 ⛔ **`ss` до цього переліку НЕ додавай** — крок Фази 4, що його вимагав, замінено (див. там же).
 
