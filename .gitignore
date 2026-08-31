@@ -52,6 +52,9 @@ terraform/*.tfstate
 terraform/*.tfstate.*
 terraform/*.tfvars
 !terraform/*.tfvars.example
+# ЕФЕКТИВНА постава комічена навмисно — інакше CI-план не бачить оверрайдів і weekly
+# drift стає вічно червоним (підстава — шапка самого файлу). Секретів у ньому немає.
+!terraform/*.auto.tfvars
 terraform/.terraform.lock.hcl
 terraform/tfplan
 
