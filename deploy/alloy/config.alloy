@@ -9,8 +9,17 @@
 //            prometheus.remote_write (queue_config + WAL) ─▶ Grafana Cloud
 //
 // Environment variables (Kamal accessory env — config/deploy.yml `accessories.alloy`):
-//   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics
 //   GRAFANA_REMOTE_WRITE_URL / _USERNAME / _TOKEN   — Grafana Cloud remote_write
+//   PROMETHEUS_AUTH_USER / PROMETHEUS_AUTH_PASSWORD — Basic Auth for /metrics.
+//     🔴 NOT from the accessory env, and this line claimed otherwise until 2026-08-31:
+//     `accessories.alloy.env` declares neither, `.kamal/secrets-common` declares neither,
+//     and 06_03 §2.8 states plainly that their deploy surface VANISHED with the retired
+//     platform [OPS.37]. Unset is the honest state, not a hole — `sys.env` yields "",
+//     and `PrometheusCollector#allowed_ip?` allow-lists RFC1918 BEFORE auth is consulted,
+//     so the scrape works over the private `kamal` docker network either way.
+//     ⛔ Do NOT "fix" this by putting a placeholder in secrets-common: a non-empty
+//     `REQUIRED_SECRET_NOT_SET` is a known-value BYPASS of the auth check (06_03, B6).
+//     Wiring them for real means adding both to the accessory env AND the secrets chain.
 //   DEPLOYMENT_SLOT             — slot label ("production" / "canopy"). The ONLY label that
 //                                 separates the two slots: RAILS_ENV is "production" in both.
 //   RAILS_ENV (optional)        — environment label (default "production"); CONSTANT across

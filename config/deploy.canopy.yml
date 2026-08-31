@@ -16,9 +16,19 @@
 # canopy job role, 311/400 without — and shrinking canopy (WEB_CONCURRENCY=1, DB_POOL=6)
 # brings it to 266/400, which is two lines rather than a machine.
 
-# Canopy server IP — use Ingress Anchor IP from: terraform output ingress_ip
-# (⚠️ today the SAME host as production, and that is the leftover named above — canopy is
-#  differentiated only by POSTGRES_DATABASE, not by IP)
+# Canopy server IP — `terraform output -raw app_host_ip`, the SAME machine as production.
+# 🔴 This line said "use Ingress Anchor IP from: terraform output ingress_ip" until
+# 2026-08-31, and the placeholder token still spells `<INGRESS_ANCHOR_IP>` for that reason.
+# Both date from 2026-04-19, the pivot that DELETED the app host — back then the anchor was
+# the only machine there was. [OPS.37] restored `google_compute_instance.app` on 08-30 and
+# this line was not swept, so the manifest disagreed with its own runbook: DEPLOY-DAY Фаза 3
+# says "`kamal deploy -d canopy` на app-хост". The anchor is an e2-small (2 GB) already
+# carrying the CoAP daemon and HAProxy; it is the DNS address, never the deploy target.
+# ⚠️ The token is left unchanged deliberately — Pre-Flight #9 substitutes it by literal, and
+# renaming it there and here in one pass is a rename with no gate behind it. Read the value,
+# not the name.
+# (⚠️ Sharing production's host is the leftover named above — canopy is differentiated only
+#  by POSTGRES_DATABASE, not by IP)
 #
 # WEB-ONLY, enforced STRUCTURALLY: `servers:` uses the ARRAY form, which Kamal's
 # destination deep_merge REPLACES wholesale (an array is not a hash) → the base
@@ -116,11 +126,21 @@ env:
 # (на відміну від `kamal deploy -d canopy`, який accessories НЕ чіпає — `boot_accessories: false`)
 # підняв би його з міткою бази. Фаза 3 рунбука свідомо каже `kamal deploy -d canopy`.
 
-# Proxy: the block below is COMMENTED, so kamal-proxy boots with its defaults today —
-# HTTP only, healthcheck /up. The `ssl: true` inside is the SHAPE for the day it is
-# enabled, not a statement about now. (This line used to read "no SSL on canopy (HTTP
-# only for developer use)", which described a dev-only slot and was superseded by
-# [OPS.37]: canopy is the FIRST deploy of the main Kamal path, per the file header.)
+# Proxy: the block below is LIVE — canopy routes on its own host and serves TLS from the
+# base manifest's Origin-CA pair (inherited; the certificate is a wildcard). Only the
+# `healthcheck:` sub-block stays commented, and that one IS a shape-for-later ([INF.10]).
+# 🔴 This header read "the block below is COMMENTED, so kamal-proxy boots with its defaults
+# today — HTTP only, healthcheck /up. The `ssl: true` inside is the SHAPE for the day it is
+# enabled" until 2026-08-31. It was written 08-30 01:30 and became false at 09:37 the next
+# morning — by the SAME author, in the SAME file, in the commit that shipped origin TLS
+# (`fc4083c5`). Nothing could have reddened: both halves were internally fine, the defect
+# lived in the RELATION between prose and config. Two things it got wrong once live: canopy
+# is NOT HTTP-only (⚖️ founder 08-30 — it is the first render of the main path, so an HTTP
+# canopy would rehearse the deploy while skipping the link most likely to break), and there
+# is no `ssl: true` anywhere any more — a custom cert pair replaced it, which is a different
+# mechanism, not a different value (ACME is undeliverable under CF Full (strict)).
+# (An older revision read "no SSL on canopy (HTTP only for developer use)", describing a
+# dev-only slot that [OPS.37] had already superseded — same class, one wave earlier.)
 #
 # 🔴 [INF.10] The `healthcheck:` sub-block below is written OUT IN FULL on purpose, and
 # that is the whole point of this edit. Until 2026-08-30 this block carried only the

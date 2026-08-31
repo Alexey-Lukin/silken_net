@@ -59,7 +59,7 @@
 
 | # | Перевірка | Деталі |
 |---|-----------|--------|
-| **1** | **DNS / TLS до `kamal setup`** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <IP>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** запускай `kamal setup`. Причина: при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) **kamal-proxy** (Kamal 2.x — НЕ Traefik 1.x) робить Let's Encrypt ACME-challenge — без живого DNS сертифікат не видасться і проксі не підніметься. 🔴 **Твердження «`proxy.ssl` вимкнено → TLS термінується зовні» стояло тут до 2026-08-30 і було НЕПОВНЕ саме там, де це дорого:** воно правдиве про клієнтське плече й мовчки припускало, що CF→origin іде по HTTP. CF стоїть у `Full (strict)` (виміряно), а той вимагає сертифіката НА ORIGIN — тож із вимкненим `proxy.ssl` origin не має чим відповісти на :443 і web-ярус віддає 521/525. Правильний стан кроку: `proxy.ssl` **увімкнено з Origin CA-парою** (НЕ Let's Encrypt — під `Full (strict)` ACME не доставляється), і саме тому цей крок тепер залежить не лише від DNS, а й від секретів `TLS_ORIGIN_*` (§Сертифікат НА ORIGIN); ACME-передумова вище лишається чинною тільки для TLS-fallback БЕЗ CF. DNS усе одно потрібен для маршрутизації трафіку. |
+| **1** | **DNS / TLS до першого деплою** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <ingress_ip>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** деплой. 🔴 **Ця клітинка до 2026-08-31 суперечила сама собі, і голова читалась першою:** вона казала «при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) kamal-proxy робить Let's Encrypt ACME-challenge», тоді як хвіст тієї ж клітинки вже називав правильний стан — Origin CA, не ACME. Обидві половини писались у різні дні, дужка-стан зайшла 2026-06-23 і померла 08-31 о 09:37 (`fc4083c5` увімкнув блок). **Чинний стан: `proxy.ssl` УВІМКНЕНО з Origin CA-парою в обох маніфестах**, тож ACME тут не відбувається взагалі, а крок залежить від DNS (маршрутизація) **і** від секретів `TLS_ORIGIN_*` — обидва тепер у `BOOT_CRITICAL` обох воркфлоу, бо порожнє значення дає ПОРОЖНІЙ сертифікат мовчки (§Сертифікат НА ORIGIN). ACME-передумова лишається чинною **лише** для TLS-fallback без CF. ⚠️ Підстава, чому саме Origin CA, а не Let's Encrypt (CF у `Full (strict)` вимагає сертифіката НА ORIGIN і ходить туди ЛИШЕ по HTTPS, тож HTTP-01 не доставляється) живе одним домом у §Сертифікат НА ORIGIN — тут не переказується, бо переказ уже двічі протух саме в цій клітинці. DNS усе одно потрібен для маршрутизації трафіку. |
 | **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`), а порожній інжект перебив би це значенням «» [B1]; задавати лише щоб вивести локи на ОКРЕМИЙ інстанс. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
@@ -67,7 +67,7 @@
 | **6** | **CoAP UDP smoke test через Ingress Anchor** | **[INF.6]** Перевір end-to-end UDP-шлях `Queen → Ingress Anchor → CoAP daemon` (PRIMARY: демон бере UDP прямо на анкорі — INF.17 2026-07-04; FALLBACK: socat-релей → дормантна Kamal `coap`-роль) ПЕРЕД першим прошиванням Queen. Без цього silent UDP failure не помітний з HTTP-only health checks. **Автоматизовано:** `.github/workflows/coap_smoke.yml` (`workflow_dispatch` для ad-hoc запуску; `workflow_call` — заведений post-deploy gate'ом у `deploy.yml`/`deploy-production.yml`, job `coap-smoke`, активується repo Variable `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST`); inputs: `host` / `port` (default `5683`) / `timeout_seconds` (default `10`) / `retries` (default `3`). **Ручна команда (з машини за межами VPC, що імітує Queen; stdlib-only Ruby, без libcoap):** <br>`bin/coap_smoke --host api.silkennet.com` <br>Зонди = freeze-contract FW.56 (точні байти: RST на сміття, `4.04` на невідомий маршрут з 0xFF-MID-піном, `2.04` лише після enqueue батча — НЕ generic liveness; семантика — [`03_02 §4`](03_02_Queen_Gateway_Firmware)). Якщо timeout: перевір (a) GCP firewall `allow-coap` UDP 5683 = `0.0.0.0/0`; (b) на анкорі `systemctl status coap-daemon` (PRIMARY; env-file `/etc/silkennet/coap.env` заповнений?) АБО, у fallback-режимі, `coap-relay` (socat → app-хост) + (c) Kamal `coap`-роль публікує `5683/udp`; (d) rescue-логи демона: `docker logs silkennet-coap`. Швидка перевірка «чи взагалі слухає UDP» через `nc`: `echo -ne '\x40\x02\x00\x01' \| nc -u -w2 api.silkennet.com 5683 \| xxd` — повертає бінарний CoAP response якщо daemon приймає UDP. |
 | **7** | **Schema bootstrap від squashed init_consolidated** | **[INF.7 — Phase 7]** На свіжій базі деплой `bin/rails db:setup` (= `db:create` + `db:schema:load` + `db:seed`). Ми **НЕ** використовуємо `db:migrate` в продакшні до першого деплою — всі pre-launch міграції згорнуті в єдиний `db/migrate/*_init_consolidated.rb` (**timestamp свідомо НЕ називається — бери з `ls db/migrate/`**: він міняється при кожному re-squash, і саме цей рядок уже двічі протухав на ньому), а схема живе в `db/structure.sql` (включно з усіма 3 RANGE-партиційними таблицями + початковими партиціями `_default` + поточним вікном). `schema_migrations` містить анкер **плюс кожну інкрементальну, додану після нього** — рівна кількість тут свідомо не називається, бо вона росте між сквошами; джерело істини — INSERT-блок у кінці `db/structure.sql`. Якщо хтось додає incremental міграцію після цього — `StrongMigrations.start_after` (стоїть на живому анкері — звіряй із `config/initializers/strong_migrations.rb`, ніколи з цього рядка) змусить її пройти всі checks. ⊕ **З 2026-08-23 воно ВИВОДИТЬСЯ з імені файлу анкера** [OPS.24], тож re-squash більше не має кроку «bump start_after» — а разом із ним зник і єдиний мовчазний спосіб зіпсувати процедуру (значення нижче за живий анкер знімало перевірки з уже застосованих міграцій, і ніщо не червоніло). **НЕ** робіть squash повторно після першого деплою (втратите history) без zero-downtime плану. |
 | **8** | **PartitionMaintenanceWorker cron у Sidekiq** | `30 0 * * *` UTC, `PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions]`. На день-1 нового місяця партиція повинна вже існувати — інакше `INSERT` падає з `no partition of relation`. Перевір через `psql -c "\d+ telemetry_logs"` що партиція на наступний місяць є. Якщо worker silent-fails — перевір Sentry alert (Phase 7 додав `Sentry.capture_exception` у rescue блок). |
-| **9** | **Kamal IP-плейсхолдери → реальний Ingress-IP** | **[S1.5]** Після `terraform apply`: `terraform output -raw ingress_ip` → підставити замість `192.168.0.1` (`config/deploy.yml` servers web/job/coap) і `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`); також `image:` → повний AR-шлях з `terraform output artifact_registry_url` [INF.15]. Без цього `kamal deploy` б'є в приватний RFC-1918 нікуди. |
+| **9** | **Kamal IP-плейсхолдери → IP APP-ХОСТА (не анкера!)** | **[S1.5]** Після `terraform apply`: **`terraform output -raw app_host_ip`** → підставити замість `192.168.0.1` (`config/deploy.yml` — ролі web/job/coap **і** `accessories.alloy.host`, вони мусять лишитись на ОДНІЙ машині: Alloy дістає таргети через docker-мережу `kamal`) і замість `<INGRESS_ANCHOR_IP>` (`config/deploy.canopy.yml`); також `image:` → повний AR-шлях із `terraform output artifact_registry_url` [INF.15]. 🔴 **Цей рядок до 2026-08-31 казав `ingress_ip`, і це вело б увесь стек на НЕ ТУ МАШИНУ.** Він зайшов 2026-07-04, коли app-хоста не існувало (видалений півотом 04-19), тож анкер справді був єдиною машиною — твердження було правдиве й померло 08-30, коли [`OPS.37`](00_07_Action_Plan_Tracker) повернув `google_compute_instance.app`. Рядок **10** тієї ж таблиці тоді оновили, цей — ні; дві сусідні клітинки одного чек-листа розійшлись про те, на якій машині живе застосунок. Ціна не теоретична: Rails+Sidekiq+coap (~3.5 ГБ у стійкому стані, більше в роллінг-вікні) поїхали б на **e2-small (2 ГБ)**, який уже несе CoAP-демон і HAProxy, а `silken-net-app` не дістав би нічого — при цьому HAProxy анкера проксіював би 80/443 на порожній хост. ⚠️ Анкер лишається адресою для **DNS** (він єдиний має зовнішню IP) — це рядок Фази 1, не цей. Без підстановки `kamal deploy` б'є в приватний RFC-1918 нікуди. |
 | **10** | **`app-host-ip` metadata після провіжну app-хоста** | **[S1.5]** Після того, як app-хост існує: `gcloud compute instances add-metadata silken-net-ingress --metadata app-host-ip=<APP_HOST_IP> --zone <zone>` + `reset`. Живить HAProxy 80/443 → app-хост і socat-**fallback**; PRIMARY CoAP-демон (INF.17) від metadata НЕ залежить. Поки unset — обидва юніти чесно логують skip (sentinel-guard), HAProxy не стартує. ⚠️ [OPS.37] App-хост є в `terraform/` з 2026-08-30 (`google_compute_instance.app`), тож крок гейтований уже не його відсутністю, а самим `apply`; IP беруть командою, не очима: `terraform output -raw app_host_ip`. |
 
 ### Менеджер Секретів (Рекомендація)
@@ -95,7 +95,9 @@ chmod +x bootstrap.sh
 # Крок 2: Налаштувати terraform.tfvars
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
-# Заповнити: project_id, db_password, ssh_source_ranges
+# Заповнити: project_id, db_password, iap_admin_members (твій e-mail)
+# ⛔ ssh_source_ranges ЛИШАЙ `[]` — це break-glass, що відкриває :22 назовні повз
+#    ратифікований IAP-шлях (INF.20 (в)); дефолт у tfvars.example саме `[]`
 
 # Крок 3: Провізіонувати GCP інфраструктуру (Cloud SQL + Ingress Anchor + app-хост)
 terraform init
@@ -129,8 +131,16 @@ terraform apply
 # 🛑 Boot-critical (інакше Puma crash):
 #   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")
 # Observability:
-#   SENTRY_DSN, PROMETHEUS_AUTH_USER, PROMETHEUS_AUTH_PASSWORD
-#   GRAFANA_REMOTE_WRITE_URL/USERNAME/TOKEN (тільки в alloy сервісі)
+#   SENTRY_DSN
+#   GRAFANA_REMOTE_WRITE_URL/USERNAME/TOKEN (тільки в accessory alloy)
+#   ⛔ PROMETHEUS_AUTH_USER / _PASSWORD — НЕ заводити [2026-08-31]. Deploy-поверхні в них
+#      немає: ані accessories.alloy.env, ані .kamal/secrets-common їх не оголошують (06_03
+#      §2.8 каже прямо — поверхня зникла з платформою, OPS.37). Unset — чесний стан, а не
+#      діра: колектор allow-lists RFC1918 ДО перевірки auth, і скрейп іде приватною
+#      docker-мережею. 🔴 Плейсхолдер тут гірший за порожнечу: непорожній
+#      `REQUIRED_SECRET_NOT_SET` є known-value BYPASS'ом самої перевірки (B6).
+# 🔐 TLS (Origin CA, INF.4) — boot-critical з 2026-08-31:
+#   TLS_ORIGIN_CERT_PEM, TLS_ORIGIN_KEY_PEM (порожнє значення = ПОРОЖНІЙ сертифікат мовчки)
 # Web3 oracle keys (інакше Sidekiq DeadSet; legacy ORACLE_PRIVATE_KEY retired повністю — INF.22):
 #   ORACLE_MINTER_PRIVATE_KEY, ORACLE_SLASHER_PRIVATE_KEY,
 #   ETHEREUM_ANCHOR_PRIVATE_KEY
@@ -401,11 +411,15 @@ servers:
     options:
       publish: ["5683:5683/udp"]   # UDP повз kamal-proxy (він HTTP-only)
 
-boot:
-  proxy:
-    publish:                 # HTTP/S only — kamal-proxy НЕ проксіює UDP;
-      - "80:80"              # 5683/udp публікує coap-роль напряму (вище)
-      - "443:443"
+# ⛔ `boot.proxy` ТУТ БІЛЬШЕ НЕМА, і це не скорочення ілюстрації [INF.13, 2026-08-31].
+# Цей рендер показував блок `boot: {proxy: {publish: ["80:80","443:443"]}}` — а
+# `Kamal::Configuration::Boot` приймає РІВНО `limit`/`wait`/`parallel_roles`, тож він робив
+# КОЖНУ команду kamal неможливою (`boot: unknown key: proxy`); знято з живого конфіга
+# `2ee4ecae`. Оголошена стеля цього рендера («ілюстрація структури, повний інвентар — 06_04»)
+# ліцензує ПРОПУСКИ, а не позитивне твердження про ключ: оператор, що звіряв би маніфест із
+# каноном, повернув би чотири рядки й дістав деплой, який не доходить навіть до SSH.
+# Порти проксі взагалі не є ключем `deploy.yml` — це CLI-опції `kamal proxy boot`, чиї
+# дефолти дорівнюють 80/443; легальний конфіг-шлях — `proxy.http_port`/`proxy.https_port`.
 
 registry:
   # [INF.22] Keyless: oauth2accesstoken + short-lived WIF access token (НЕ
@@ -603,17 +617,32 @@ Stage 3: final         — COPY gems + app, USER rails:1000, CMD: thrust ./bin/r
 
 ### TLS-fallback при недоступності Cloudflare [INF.4, ⚖️ 2026-08-30]
 
-**Fallback = прямий A-запис на app-хост + kamal-proxy `ssl: true` (Let's Encrypt)** — механізм
-УЖЕ в стеку (`config/deploy.yml` тримає закоментований `proxy:`-блок із виписаним
-`healthcheck:`-підблоком, [INF.10]), тож нове рішення не потрібне — потрібен названий шлях:
+**Fallback = прямий A-запис на Ingress Anchor + kamal-proxy `ssl: true` (Let's Encrypt)** —
+механізм УЖЕ в стеку (kamal-proxy вміє ACME; `proxy:`-блок живий у `config/deploy.yml`), тож
+нове рішення не потрібне — потрібен названий шлях:
+
+🔴 **Два твердження цього рецепта протухли 2026-08-31, і обидва саме тим боком, що робить його
+НЕВИКОНУВАНИМ у день інциденту** — а це єдиний день, коли його відкривають. (1) «прямий A-запис
+на **app-хост**»: у того немає зовнішньої IP за побудовою, тож запис можливий лише на анкер.
+(2) «`config/deploy.yml` тримає **закоментований** `proxy:`-блок» + крок 3 «**розкоментувати**
+блок»: блок УВІМКНЕНО (`fc4083c5`), і `ssl: true` більше не існує в дереві ніде — його замінила
+пара Origin CA, тобто ІНШИЙ механізм, а не інше значення. **Найдорожче тут не «крок no-op», а
+те, що станеться, якщо зробити лише кроки 1–2:** origin віддаватиме браузерам **Cloudflare
+Origin CA** — CA, якого немає в жодному публічному сховищі довіри, — тож кожен відвідувач
+дістане повносторінкову інтерстиційну помилку замість сайту.
 
 1. **NS-перемикання:** у реєстратора змінити NS із Cloudflare на DNS-провайдера, доступного
    в момент інциденту (реєстраторський дефолт достатній). ⏱ Чесна ціна: NS-пропагація —
    години, це записано, а не приховано.
-2. **A-записи напряму:** `silkennet.app → <app-host IP>` · `api.silkennet.com → <Ingress-IP>`
-   (CoAP і так ішов повз CF — його цей інцидент не чіпає).
-3. **Увімкнути `proxy.ssl`:** розкоментувати блок у `config/deploy.yml` (значення `host:` —
-   з ⚖️ INF.25, не вигадувати) → `kamal deploy` → ACME-челендж видає сертифікат на живому DNS.
+2. **A-записи напряму:** `silkennet.app → <ingress_ip>` · `canopy.silkennet.app → <ingress_ip>`
+   · `api.silkennet.com → <ingress_ip>` (CoAP і так ішов повз CF — його цей інцидент не чіпає).
+   ⚠️ Усі три на анкер: він єдиний має зовнішню адресу, 80/443 доходять його HAProxy (`mode tcp`).
+3. **Замінити Origin CA на ACME:** у `config/deploy.yml` замінити блок
+   `proxy.ssl: {certificate_pem: …, private_key_pem: …}` на `proxy.ssl: true` (значення `host:`
+   не чіпати — воно з ⚖️ INF.25) → `kamal deploy` → HTTP-01 видає публічно довірений сертифікат.
+   🔑 Чому ACME тут раптом працює, хоч під CF не працював: `Full (strict)` ходить на origin
+   ЛИШЕ по HTTPS, тож челендж не доставлявся; **без CF у шляху** :80 доходить напряму крізь
+   HAProxy, і передумова зникає разом із Cloudflare. Саме тому це заміна, а не увімкнення.
 4. Втрачається на час інциденту: CDN/WAF/DDoS-щит Cloudflare — прийнято як ціна fallback'у.
 
 🔴 **Передумова, без якої кроку 1 не існує: реєстратор доменів ≠ Cloudflare Registrar.**
@@ -649,12 +678,17 @@ Browser / API client                Queen Gateway (LoRa→CoAP)
   цього доку);
 - HAProxy на Ingress Anchor — `mode tcp` на 80 **і** 443 (`terraform/compute.tf`), тобто чистий
   прохід: він не термінує нічого;
-- `proxy:`-блок закоментований в обох маніфестах → kamal-proxy віддає простий HTTP на :80 і
-  **нічого придатного на :443**.
+- `proxy:`-блок **був закоментований** в обох маніфестах → kamal-proxy віддавав простий HTTP на
+  :80 і **нічого придатного на :443**.
 
-**Отже перший же запит крізь Cloudflare відповідає 521/525** — рівно той симптом, який
+**Отже перший же запит крізь Cloudflare відповів би 521/525** — рівно той симптом, який
 таблиця траблшутингу нижче вже описує. Клас — «конфіг повний, шлях мертвий»; невидимий доти,
-доки нічого не задеплоєно.
+доки нічого не задеплоєно. ✅ **ЗАКРИТО 2026-08-31 (`fc4083c5`): `proxy:` живий в обох
+маніфестах із парою Origin CA**, тож абзац вище описує стан ДО фіксу — час минулий тут несучий,
+бо доти ці три тире стояли в теперішньому й суперечили ✅-рядку за сорок рядків нижче в цій самій
+секції. Що лишається відкритим — не механізм, а один секрет: `TLS_ORIGIN_KEY_PEM`
+([`00_07`](00_07_Action_Plan_Tracker) INF.4); порожнє значення дає ПОРОЖНІЙ сертифікат мовчки,
+тому обидва імені тепер у `BOOT_CRITICAL` обох воркфлоу.
 
 ⛔ **Let's Encrypt (`ssl: true`) тут НЕ лік, і причина структурна:** під `Full (strict)`
 Cloudflare ходить на origin **лише по HTTPS**, тож ACME-челендж HTTP-01 на :80 не доставляється
@@ -709,9 +743,15 @@ Kamal 2.12 бере обидві половини як **імена kamal-сек
       ✅ Виставлено на обох зонах 2026-08-30 (перевірено в дашборді) — тобто цей рядок уже
       ЗАКРИТО, і саме тому рядок про Origin CA вище є **передумовою**, а не порадою: режим
       увімкнено, сертифіката на origin ще немає, і в цьому стані web-ярус відповідає 521/525.
-- [ ] **Origin відомий:** публічна адреса app-хоста (або Ingress Anchor, якщо HTTP іде через
-      HAProxy — `app-host-ip`, див. §Розподіл Ресурсів).
-- [ ] **DNS-запис створено:** `silkennet.app` → origin, Proxy status: 🟠 **Proxied**.
+- [ ] **Origin відомий:** `terraform output -raw ingress_ip` — **Ingress Anchor, і альтернативи
+      немає**. Рядок доти пропонував «публічну адресу app-хоста (або Ingress Anchor…)», тобто
+      розвилку з неіснуючою першою гілкою: у app-хоста зовнішньої IP немає за побудовою
+      (`terraform/compute.tf` — «NO PUBLIC IP, on purpose»), а 80/443 доходять до нього
+      HAProxy'єм анкера (`mode tcp`). Дивись §Розподіл Ресурсів.
+- [ ] **DNS-записи створено:** `silkennet.app` → `ingress_ip`, Proxy status: 🟠 **Proxied**
+      · **`canopy.silkennet.app` → `ingress_ip`, 🟠 Proxied** — ⚠️ без нього Фаза 3 підіймає
+      canopy зеленим, а `proxy.host` не резолвиться, тобто репетиція основного шляху тихо не
+      відбувається (`config/deploy.canopy.yml` вимагає цього запису, а чек-лист його не мав).
 - [ ] **Ingress Anchor running** зі статичним IP (`gcloud compute addresses list`).
 - [ ] 🔴 **Queens бʼють у Ingress Anchor, НЕ в Cloudflare:** firmware резолвить
       `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c`) → A-запис цього хоста
@@ -810,7 +850,16 @@ Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/s
 **Фаза 0 — Bootstrap інфри:**
 `terraform/bootstrap.sh` (GCS state-bucket + CMEK-латч [SEC.22]: keyring `silken-tfstate-ew1`,
 PAP, retention 10в/30д; має разовий 30s IAM-sleep — не переривай) → `terraform.tfvars` (project_id, db_password,
-`ssh_source_ranges=[<твій реальний CIDR>]` — приклад у tfvars = TEST-NET-3, НЕ лишай!) →
+`iap_admin_members=["user:<твій e-mail>"]`; ⛔ **`ssh_source_ranges` лишається `[]`**) → 🔴 **Цей
+рядок до 2026-08-31 велів `ssh_source_ranges=[<твій реальний CIDR>]` і стверджував «приклад у
+tfvars = TEST-NET-3, НЕ лишай!» — обидві половини хибні, і кожна по-своєму.** У
+`terraform/terraform.tfvars.example` там `[]` із приміткою «Optional break-glass DIRECT ssh
+(bypasses IAP). **Normally keep []**», тобто твердження про ЧУЖИЙ файл було вигадане ([`00_05
+§4`](00_05_AI_Native_Operating_Model) — «реф, що СТВЕРДЖУЄ про чужий документ»); а сама
+інструкція наказувала **відкрити :22 в інтернет** повз ратифіковану IAP-модель INF.20 (в), що
+їй суперечить і таблиця фаєрволу §Firewall («break-glass-only; normally `[]` → правило не
+створюється») двома сторінками вище. Канонічний вхід — `gcloud compute ssh … --tunnel-through-iap`,
+а доступ дає `iap_admin_members`, не CIDR →
 GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
 `RAILS_MASTER_KEY`, `PROVISIONING_MASTER_KEY`, `ACTIVE_RECORD_ENCRYPTION_*`×3
 (`db:encryption:init`; boot-critical [SEC.22] — verify-secrets гейтить) — SA-JSON
@@ -840,7 +889,16 @@ wait-timer + ref-policy — [`06_04 §1`](06_04_Secrets_Checklist)). ⚠️ Па
 покладеш п'ятірку repo-level — деплой лишиться ЗЕЛЕНИМ (environment-jobs бачать
 repo-секрети як fallback), але ізоляція тихо знульована, а реверс = ручне повторне
 введення значень (GitHub секретів назад не віддає) → **verify scope ДО деплою:** `ruby scripts/audit_deploy_secret_scope.rb` (S1.1 — read-only `gh`-preflight: money-квінтет ∈ env `production` ТІЛЬКИ (не repo), WIF-ids = Variables, retired ∉; ловить wrong-home перш ніж деплой його замаскує) → DNS: `api.silkennet.com` **A → ingress_ip
-(DNS-only, сіра хмарка!)** + `silkennet.app` → app-хост (proxied, після Фази 3) →
+(DNS-only, сіра хмарка!)** + `silkennet.app` → **ingress_ip** (proxied, після Фази 3)
++ **`canopy.silkennet.app` → ingress_ip** (proxied — Фаза 3 підіймає canopy першим, а без цього
+запису `proxy.host` не резолвиться й репетиція основного шляху тихо не відбувається). 🔴 **Тут
+до 2026-08-31 стояло «`silkennet.app` → app-хост», і це ФІЗИЧНО неможливо:** у
+`google_compute_instance.app` немає `access_config` за побудовою («NO PUBLIC IP, on purpose» —
+шапка `terraform/compute.tf`), тож `terraform output -raw app_host_ip` віддає **приватну** адресу,
+і A-запис на неї під помаранчевою хмаркою дає CF `522` на кожен запит. Єдина зовнішня адреса —
+анкер; 80/443 доходять до застосунку його HAProxy. ⚠️ Дзеркальна половина цієї ж пари живе в
+Pre-Flight #9 і показувала рівно навпаки (kamal-ролі на анкер) — обидві клітинки успадкували
+світ до повернення app-хоста [`OPS.37`](00_07_Action_Plan_Tracker) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/
 `REDIS_URL`/`RAILS_MASTER_KEY`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
@@ -906,8 +964,18 @@ job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import
 per-job: перед `verify-secrets` і перед `deploy`) — це НЕ зависання, НЕ скасовуй run;
 вікно = навмисний solo-approval-substitute ([`06_04 §1`](06_04_Secrets_Checklist)).
 `kamal deploy` production → повтор Фази 4 → `RAILS_ALLOWED_HOSTS=
-silkennet.app,api.silkennet.com` у env.clear (S6.18 — ОБИДВА легітимні хости:
-app = Cloudflare-HTTPS, api = анкор-шлях) → [INF.10] фліп `proxy.healthcheck.path: /ready`
+silkennet.app,canopy.silkennet.app,api.silkennet.com` у env.clear (S6.18 — ТРИ легітимні
+хости: app = Cloudflare-HTTPS, canopy = стейджинговий рендер того самого шляху,
+api = анкор-шлях). 🔴 **Канон-пара тут була ДВОМА хостами до 2026-08-31, і третій бракував
+саме той, що вже живий:** canopy успадковує `env.clear` бази (destination deep_merge = keys-UNION),
+`config.hosts` матчить рядок БЕЗ провідної крапки як ТОЧНУ рівність
+(`ActionDispatch::HostAuthorization::Permissions#sanitize_string` → `/\A<host>(?::\d+)?\z/i`),
+тож `canopy.silkennet.app` ∉ пари ⇒ **403 «Blocked hosts» на КОЖЕН запит canopy** із
+наступного ж безперервного деплою — і мовчки, бо `/up`/`/ready` виключені з
+`host_authorization`, тож healthcheck лишається зеленим і деплой рапортує успіх.
+⊕ Легальна альтернатива, якщо слотів побільшає: провідна крапка `.silkennet.app` покриває
+І apex, І один рівень піддомену (субдоменна група в тому регексі опційна) — але вона
+ліцензує будь-який майбутній піддомен мовчки, тож поіменний перелік обрано свідомо → [INF.10] фліп `proxy.healthcheck.path: /ready`
 у `config/deploy.yml` ЛИШЕ після `/ready`→200 (на холодному старті /ready 503-ить →
 kamal-proxy довбе до deploy_timeout → rollback; дефолт /up прощає bring-up; повільний
 cold-start → підняти deploy_timeout; проба = ReadinessController, [`06_05`](06_05_Puma_Configuration)) →
