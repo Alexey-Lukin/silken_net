@@ -19,7 +19,7 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| `terraform/database.tf` | Cloud SQL backup + REGIONAL HA + read replica (SSOT) |
+| `terraform/database.tf` | Cloud SQL backup + read replica (SSOT). ⚠️ HA-вісь читається НЕ звідси: `availability_type` оверрайднуто в `terraform.tfvars` (врізка §2) |
 | `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
@@ -82,7 +82,7 @@
 | `read_replica_count` | `0` (default) | Read-репліки вимкнені (увімкнути для read-scaling, не для DR) |
 | `disk_autoresize` | `true` | Запобігає full-disk outage |
 
-> **Наслідок:** на default-конфігу production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
+> **Наслідок (ЦІЛЬ, не чинний деплой — обидві осі оверрайднуті, врізки нижче):** production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. ⚠️ Застереження «на default-конфігу» тут НЕ рятує: `transaction_log_retention_days` зашито в `database.tf`, тож 7 днів є і дефолтом теж. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
 
 > ⚖️ **ЧИННА ЕДИЦІЯ — `ENTERPRISE`, і обіцянка 30 днів НЕ знята, а РОЗВЕДЕНА ЗА ФАЗОЮ** (founder 2026-08-31). Формулювання власника: «на production і canopy якщо буде по-різному, то обіцянку в DR ми не порушимо». ⚠️ Поправка від заліза, без якої це нездійсненне: інстанс Cloud SQL **ОДИН** на обидва слоти (він несе `production` + `canopy` + cache/cable — [`06_01`](06_01_Deployment_Kamal_Terraform)), а `edition`, тир і глибина PITR є властивістю **ІНСТАНСУ**, не бази. Отже «по-різному» досяжне не одночасно, а **в часі**. 🔑 Тому це НЕ пониження планки: `30` лишається ціллю для проду З ДАНИМИ, а `7` є оголошеним pre-fleet-станом при нулі дерев і нулі користувачів. ⛔ **Подія підвищення названа й та сама, що в ZONAL-врізці — перший живий аплінк**: до нього посекундне вікно захищає порожню базу. Хід: `edition = ENTERPRISE_PLUS` + тир `db-perf-optimized-*` (підвищення на місці, з рестартом) → `transaction_log_retention_days = 30` → підняти поріг гейта назад. Стан і виконавець — [`00_07`](00_07_Action_Plan_Tracker) `DR.1`. ⊕ **Що НЕ втрачено вже сьогодні:** `retained_backups = 30` не рухається, тобто 30 днів точок відновлення є; коротшає лише вікно, в якому відновлення посекундне.
 

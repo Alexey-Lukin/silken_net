@@ -200,8 +200,8 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   ЄДИНИЙ шлях** (post-`OPS.37`): він без зовнішньої IP, і тег `web-nodes` на ньому стоїть рівно
   заради `allow_iap_ssh`. ⚠️ Тут висить Kamal-нога (б)-клею, і ходів у ній **ЧОТИРИ**, не три —
   повний контракт виписано БАЙТАМИ над ключем `ssh:` у `config/deploy.yml` (не рефом: крос-реф
-  не можна розкоментувати). ✅ **Два ходи з чотирьох ВІДВАНТАЖЕНО 2026-08-31, обидва в
-  креслення, бо машини ще немає:** (4) `roles/iap.tunnelResourceAccessor` **на deploy-SA**
+  не можна розкоментувати). ✅ **УСІ ЧОТИРИ ХОДИ ЗАДРОТОВАНІ 2026-08-31.** Спершу в креслення, бо
+  машини ще не було:** (4) `roles/iap.tunnelResourceAccessor` **на deploy-SA**
   (`google_project_iam_member.deploy_iap_tunnel` — доти роль ішла ЛИШЕ людям через
   `for_each = toset(var.iap_admin_members)`, тож `proxy_command` віддавав би **403**, і помилка
   називає IAP, не kamal); (3) docker-група — startup-скрипт `google_compute_instance.app`
@@ -209,9 +209,14 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   `usermod`/`gpasswd` відмовляють невідомому користувачу. ⛔ **Підвищення SA до `osAdminLogin`
   відхилено виміром, не смаком:** воно дало б CI root на хості, де в ENV job-ролі лежить
   money-квінтет (`/proc/environ`), і скасувало б підставу, з якою docker передвстановлено.
-  🔑 Лишились (1)+(2) — вони чекають ЗНАЧЕНЬ, яких до `apply` не існує: `ssh.user` = `sa_<numeric>`
-  з `os-login describe-profile`, і `proxy_command` через `start-iap-tunnel`. ⚠️ `user: deploy`
-  у маніфесті — **відомо хибний плейсхолдер**, оголошений таким на місці.
+  ✅ (1)+(2) дописано одразу після першого `apply`, який їхні значення й мінтить:
+  `ssh.user` = `sa_<unique_id>` + `proxy_command` через `start-iap-tunnel`. ⚠️ **Імя ДЕРИВОВАНЕ,
+  не прочитане:** `os-login describe-profile` через імперсонацію віддає PERMISSION_DENIED
+  (власник не має TokenCreator на цьому SA), тож узято ту саму формулу, що й
+  стартап-скрипт. 🔴 **Збіг із `/etc/group` НЕ є незалежним підтвердженням** —
+  обидва боки деривують із `unique_id`; чи OS Login справді ПРИЗНАЧАЄ цей posix-логін,
+  доведе лише перший SSH ПІД САМИМ SA, тобто `kamal deploy`. ⊕ Третя опція ходу (3),
+  ACL на сам сокет, не знадобилась.
   Команда/роль-модель → `06_01` / 00_07 INF.20.
 - **CI→GCP auth = keyless WIF (INF.22)** — без довгоживучого `GCP_SA_KEY` JSON (GitHub OIDC →
   GCP STS → impersonated deploy-SA). Provider+SA email = repo **Variables** (presence = deploy-gate).

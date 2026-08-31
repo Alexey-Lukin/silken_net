@@ -65,8 +65,8 @@ resource "google_compute_instance" "ingress_anchor" {
   # HAProxy + socat forward traffic to the Rails app host. Its IP is read from
   # instance metadata (operator-set, out-of-band) — after provisioning the host:
   #   gcloud compute instances add-metadata silken-net-ingress \
-  #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-b
-  #   gcloud compute instances reset silken-net-ingress --zone europe-west1-b
+  #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-d
+  #   gcloud compute instances reset silken-net-ingress --zone europe-west1-d
   metadata_startup_script = <<-EOF
     #!/bin/bash
     set -e
@@ -306,8 +306,8 @@ SYSTEMD_DAEMON
     block-project-ssh-keys = "TRUE"
     # Set this once the app host exists, to route HTTP/HTTPS through the anchor:
     #   gcloud compute instances add-metadata silken-net-ingress \
-    #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-b
-    #   gcloud compute instances reset silken-net-ingress --zone europe-west1-b
+    #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-d
+    #   gcloud compute instances reset silken-net-ingress --zone europe-west1-d
     app-host-ip = "APP_HOST_IP_NOT_SET"
   }
 

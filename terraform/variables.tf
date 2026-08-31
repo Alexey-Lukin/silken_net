@@ -27,7 +27,11 @@ variable "region" {
 variable "zone" {
   description = "GCP zone for compute instances"
   type        = string
-  default     = "europe-west1-b"
+  # -d, бо -b і -c ОБИДВІ віддали «does not have enough resources» на e2-standard-2 під час
+  # першого живого apply 2026-08-31. ⚠️ Ємність зони ТРАНЗІЄНТНА — це найсвіжіший вимір, а не
+  # інваріант; переїжджаючи в іншу зону, перевір, чи вона тягне e2-standard-2, і памʼятай, що
+  # помилка приходить аж на створенні VM, коли решта ресурсів уже є.
+  default = "europe-west1-d"
 }
 
 # -----------------------------------------------------------------------------

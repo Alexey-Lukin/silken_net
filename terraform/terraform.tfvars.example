@@ -1,7 +1,7 @@
 # GCP Project
 project_id = "your-gcp-project-id"
 region     = "europe-west1"
-zone       = "europe-west1-b"
+zone       = "europe-west1-d"
 
 # Database
 db_password          = "CHANGE_ME_use_a_strong_password_16_chars_minimum"
@@ -15,7 +15,7 @@ db_read_replica_count = 0
 enable_deletion_protection = true
 
 # SSH Access (INF.20 (в)) — canonical path = IAP tunnel + OS Login (no public :22):
-#   gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-b
+#   gcloud compute ssh silken-net-ingress --tunnel-through-iap --zone europe-west1-d
 # Members below get osAdminLogin (sudo for coap.env/systemctl) + IAP tunnel access.
 iap_admin_members = ["user:CHANGE_ME@example.com"]
 

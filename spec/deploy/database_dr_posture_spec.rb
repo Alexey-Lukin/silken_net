@@ -4,8 +4,9 @@
 require "spec_helper"
 require_relative "../support/repo_root"
 
-# DR.1 posture guard. The Cloud SQL DR promise (docs/06_06: PITR + 30-day window +
-# 30 daily backups + REGIONAL HA) is CONFIGURED in terraform/database.tf, but a DR-posture
+# DR.1 posture guard. The Cloud SQL DR promise (docs/06_06: PITR + 30 daily backups; the
+# 30-day window and REGIONAL HA are TARGETS, both phase-scoped and overridden pre-fleet —
+# see the §2 callouts there) is CONFIGURED in terraform/database.tf, but a DR-posture
 # regression is SILENT — it surfaces only post-incident, when a restore is actually needed.
 # terraform_drift catches live-vs-tf drift, not a tf edit that LOWERS the posture (both move
 # together); trivy doesn't know our RTO/RPO targets. This asserts the committed backup config
