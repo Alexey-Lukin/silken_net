@@ -139,6 +139,12 @@ proxy:
   #    TRIGGER, named: flip ONLY after the first deploy confirms `/ready→200` — earlier, a cold
   #    start 503s and kamal-proxy retries to deploy_timeout → rollback.
   #    Runbook: docs/06_01 §DEPLOY-DAY Фаза 5. Schema verified vs kamal 2.12. Probe: docs/06_05.
+  # ⊕ AFTER the flip, `interval: 3` is the BRING-UP value, not the target: `/ready` opens a DB
+  #    round-trip plus a Redis PING every tick, so the standing value is 10-15s [INF.22, tune
+  #    gated on this same flip]. Three seconds is deliberate while the cutover is new — it makes
+  #    a broken readiness path loud within one deploy window — and deliberately wasteful after.
+  #    ⚠️ Recorded HERE from 2026-08-31: the number lived only as a tracker leg, so whoever
+  #    uncommented this block would have shipped the bring-up cadence as if it were the design.
   # healthcheck:
   #   path: /ready
   #   interval: 3

@@ -51,6 +51,22 @@
 # Exit 0 = every subject parses. Exit 1 = at least one does not (named), or the
 # subject set fell below SUBJECT_FLOOR — a pin on an empty set is green forever,
 # so an empty discovery is a FAILURE here, not a pass.
+#
+# ✅ MUTATION-VERIFIED 2026-08-31 on the CORPUS axis (the `--selftest` battery below
+# carries its own, separately). Four mutants, each applied via a cp-backup, each
+# reverted byte-for-byte, each expected-red stated BEFORE the run:
+#   1. syntax error appended to `terraform/bootstrap.sh`  → EXIT 1, names that file
+#   2. `case` opened without `esac` inside the compute.tf heredoc → EXIT 1, names
+#      "compute.tf heredoc <<EOF" (proves heredoc subjects are judged, not skipped)
+#   3. discovery forced to `[]`                            → EXIT 1 via SUBJECT_FLOOR,
+#      i.e. an empty run FAILS instead of reporting "every subject parses"
+#   4. `bin/docker-entrypoint`, `.kamal/hooks/pre-build`, `.githooks/pre-push` broken
+#      one at a time → each named INDIVIDUALLY (these three are the shebang-with-args
+#      and `#!/bin/sh` forms that a naive end-anchored regex misses, so this mutant
+#      pins MEMBERSHIP, not just detection)
+# ⚠️ The marker is scoped to THIS subject set. Widen discovery — a new file class, a
+# second heredoc host — and it is a claim about the old subjects again (§Guard-craft
+# #113); re-earn it in the same commit rather than carrying it forward.
 
 require "open3"
 require "tmpdir"

@@ -1,6 +1,17 @@
 #!/bin/bash -e
 
 # If running the rails server then create or migrate existing database
+#
+# 🔒 IN-ENTRYPOINT IS A RATIFIED CHOICE, NOT AN OVERSIGHT — and the condition under
+# which it stops being correct is `web count >= 2` [INF.22]. With a single web
+# replica exactly one process reaches this line, so migrating here is safe and
+# cheapest. Add a second replica and it becomes a race: N containers boot in
+# parallel and all run `db:prepare` against the same database. THEN the migration
+# step must move OUT of the entrypoint into a separate one-shot (`kamal app exec`
+# pre-deploy, or a dedicated release role) and this branch becomes a no-op.
+# ⚠️ Recorded here rather than in the tracker because this is where the reader
+# stands: until 2026-08-31 the ratification existed ONLY as a tracker leg, so the
+# file itself gave no sign that its shape was chosen rather than defaulted.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 else
