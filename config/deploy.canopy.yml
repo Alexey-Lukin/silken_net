@@ -135,16 +135,22 @@ accessories:
 #    block above the same `proxy:` key in `config/deploy.yml` (One-Home — do not restate it
 #    here, but note the cert covers this host too: ONE Origin CA cert issued for
 #    `silkennet.app` + `*.silkennet.app` serves both slots, so move (4) happens ONCE).
-# proxy:
-#   ssl:
-#     certificate_pem: TLS_ORIGIN_CERT_PEM
-#     private_key_pem: TLS_ORIGIN_KEY_PEM
-#   # [INF.25/INF.4] Canopy rides a subdomain of the PURCHASED web host (silkennet.app,
-#   #    founder 2026-08-30; Option A ratified the same day — the tracker leg names the
-#   #    canopy value as "canopy-піддомен" of the web host). Routing host, not cert identity
-#   #    (the wildcard Origin CA cert above carries that). A DNS record for it must exist
-#   #    and point at the Ingress Anchor before the first canopy deploy.
-#   host: canopy.silkennet.app
+# 🔴 THIS OVERRIDE IS NOW LOAD-BEARING, and it became so the moment the base block went LIVE
+#    (2026-08-31). Destination config DEEP-MERGES over the base for hashes, so with no `proxy:`
+#    here canopy would silently inherit `host: silkennet.app` — the PRODUCTION hostname — and
+#    route staging traffic on it. Only `host:` is overridden: `ssl:` is deliberately inherited,
+#    because the Origin CA certificate is a WILDCARD (`*.silkennet.app`) and therefore covers
+#    this subdomain with the same pair. ⊥ Contrast `servers:` above, which is an ARRAY and
+#    therefore REPLACES rather than merges (invariant B3) — the two keys behave differently and
+#    the difference is exactly what makes one of them easy to forget.
+proxy:
+  # [INF.25/INF.4] Canopy rides a subdomain of the PURCHASED web host (silkennet.app, founder
+  #    2026-08-30; Option A ratified the same day). Routing host, not cert identity — the
+  #    wildcard Origin CA cert carries that. ⚠️ A DNS record for this name must exist and point
+  #    at the Ingress Anchor before the first canopy deploy (06_01 §TLS pre-flight).
+  host: canopy.silkennet.app
+  # ⏸️ `healthcheck:` inherits the base default (`/up`) exactly as intended — the `/ready` flip
+  #    is INF.10 and happens after the first deploy proves `/ready→200`, on BOTH slots.
 #   # INF.10 readiness cutover — flip on the first canopy deploy AFTER /ready→200
 #   # (on a cold start /ready 503s until DB/Redis are wired, and kamal-proxy retries to
 #   # deploy_timeout → rollback). Runbook: docs/06_01 §DEPLOY-DAY, Фаза 5.

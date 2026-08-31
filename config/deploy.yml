@@ -101,33 +101,48 @@ servers:
 #    `silkennet.app` + `*.silkennet.app` so ONE certificate covers production AND the canopy
 #    subdomain. Kamal 2.12 takes both halves as KAMAL SECRET NAMES, not paths
 #    (`Kamal::Configuration::Proxy#custom_ssl_certificate?` reads `secrets[...]`).
-#    🔑 FIVE moves go together, like the canopy testnet block — four of five is a dead origin:
-#      (1) uncomment this block; (2) `TLS_ORIGIN_CERT_PEM` + `TLS_ORIGIN_KEY_PEM` in
-#      `.kamal/secrets-common`; (3) the SAME names in the `env:` block of BOTH deploy workflows;
-#      (4) 👤 issue the cert in the CF dashboard (SSL/TLS → Origin Server) and put the two PEM
-#      blobs into GitHub Secrets — multi-line is fine; (5) verify `openssl s_client` against the
-#      origin BEFORE flipping DNS, per `06_01 §TLS`.
-# proxy:
-#   ssl:
-#     certificate_pem: TLS_ORIGIN_CERT_PEM
-#     private_key_pem: TLS_ORIGIN_KEY_PEM
-#   # [INF.25/INF.4] `silkennet.app` = the web host. ⚠️ With a CUSTOM certificate this value is
-#   #    no longer a certificate NAME (that role belonged to `ssl: true`, where it drove the
-#   #    Let's Encrypt identity) — it is the host kamal-proxy routes on. The cert identity now
-#   #    comes from the Origin CA blob above, which is why one wildcard cert serves both slots.
-#   #    Domain PURCHASED by the founder 2026-08-30 (GoDaddy), value ratified with Option A the
-#   #    same day. Still SEPARATE from APP_HOST below (mailer link host), even though the value
-#   #    coincides. Uncomment only per the runbook / INF.10 flip — never ad hoc.
-#   host: silkennet.app
-#   # INF.10 — readiness-gated cutover. kamal-proxy default healthcheck = /up (liveness only);
-#   # /ready (ReadinessController: DB SELECT 1 + Redis PING) holds the cutover until deps are up.
-#   # FLIP path to /ready ONLY AFTER the first deploy confirms /ready→200 — on a cold start /ready
-#   # 503s until DB/Redis are wired and kamal-proxy retries to deploy_timeout → rollback.
-#   # Runbook: docs/06_01 §DEPLOY-DAY, Фаза 5 (фліп ЛИШЕ після /ready→200). Schema verified vs kamal 2.12. Probe: docs/06_05.
-#   healthcheck:
-#     path: /ready
-#     interval: 3
-#     timeout: 5
+#    ✅ SHIPPED 2026-08-31 — cert issued from a LOCALLY generated key (CF signed only the CSR,
+#    so the private key never reached the vendor; recipe + the modulus-match acceptance check
+#    live in `06_01 §Сертифікат НА ORIGIN`), both halves in GitHub Secrets, and the block below
+#    is LIVE rather than commented.
+#
+# 🔴 SPLIT ON PURPOSE — THIS BLOCK CARRIED TWO DIFFERENT TIMINGS AND THEREFORE COULD NOT BE
+#    UNCOMMENTED AS A WHOLE, in either direction:
+#      · `ssl:` + `host:` are needed from the FIRST deploy — without them Cloudflare's
+#        Full (strict) gets nothing on :443 and every request answers 521/525;
+#      · `healthcheck: /ready` must be flipped only AFTER a deploy proves `/ready→200` — on a
+#        cold start it 503s until DB/Redis are wired, kamal-proxy retries to `deploy_timeout`
+#        and ROLLS BACK (INF.10).
+#    So whoever uncommented "exactly what was written" got the premature readiness flip — the
+#    very trap INF.10 exists to prevent — and whoever, remembering INF.10, left the block
+#    commented got 521/525. **Both careful readings produced a failure**, which is the same
+#    class INF.10 already named ("a cross-reference cannot be uncommented"), one level up:
+#    a block holding two triggers cannot be uncommented as a unit either. Hence: TLS lives,
+#    readiness stays commented WITH ITS OWN trigger.
+proxy:
+  # Origin CA pair — Kamal 2.12 takes SECRET NAMES here, not paths
+  # (`Kamal::Configuration::Proxy#custom_ssl_certificate?` reads `secrets[...]`), so both must
+  # resolve through `.kamal/secrets-common` AND be injected by both deploy workflows. That chain
+  # is enforced, not trusted: `spec/deploy/env_fetch_declaration_spec.rb` reads these two names
+  # straight out of this block and fails by name if either link is missing.
+  ssl:
+    certificate_pem: TLS_ORIGIN_CERT_PEM
+    private_key_pem: TLS_ORIGIN_KEY_PEM
+  # [INF.25/INF.4] `silkennet.app` = the web host. ⚠️ With a CUSTOM certificate this value is
+  #    no longer a certificate NAME (that role belonged to `ssl: true`, where it drove the
+  #    Let's Encrypt identity) — it is the host kamal-proxy routes on. The cert identity comes
+  #    from the Origin CA blob above, which is why one wildcard cert serves both slots.
+  host: silkennet.app
+  # ⏸️ INF.10 — readiness-gated cutover, DELIBERATELY still commented. kamal-proxy's default
+  #    healthcheck is `/up` (liveness), which is what bring-up needs; `/ready`
+  #    (ReadinessController: DB SELECT 1 + Redis PING) holds the cutover until deps are up.
+  #    TRIGGER, named: flip ONLY after the first deploy confirms `/ready→200` — earlier, a cold
+  #    start 503s and kamal-proxy retries to deploy_timeout → rollback.
+  #    Runbook: docs/06_01 §DEPLOY-DAY Фаза 5. Schema verified vs kamal 2.12. Probe: docs/06_05.
+  # healthcheck:
+  #   path: /ready
+  #   interval: 3
+  #   timeout: 5
 
 # Proxy boot configuration (HTTP/HTTPS only — kamal-proxy does not speak UDP;
 # CoAP 5683/udp is published directly by the `coap` role above).

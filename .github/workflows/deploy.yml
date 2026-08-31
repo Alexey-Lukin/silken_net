@@ -265,6 +265,13 @@ jobs:
           RELEASE_VERSION: ${{ github.sha }}
           # --- Observability ---
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # --- Origin TLS [INF.4] — consumed by `config/deploy.yml` proxy.ssl, NOT by Rails ---
+          # Kamal resolves these two by NAME from .kamal/secrets-common; missing here means
+          # kamal-proxy boots with no certificate and Cloudflare's Full (strict) answers 521/525
+          # on every request — a silent-origin failure, not a boot crash. Enforced by
+          # spec/deploy/env_fetch_declaration_spec.rb, which reads the names out of proxy.ssl.
+          TLS_ORIGIN_CERT_PEM: ${{ secrets.TLS_ORIGIN_CERT_PEM }}
+          TLS_ORIGIN_KEY_PEM: ${{ secrets.TLS_ORIGIN_KEY_PEM }}
           # --- Hardware provisioning gate (master_key_strength_check.rb — boot-critical) ---
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
           # --- AR-encryption keys (active_record_encryption_keys_check.rb — boot-critical) [SEC.22] ---

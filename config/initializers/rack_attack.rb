@@ -55,6 +55,19 @@
 # unreachable by any behavioural pin — and "no pin" is exactly how the silent
 # failure it exists to announce survived in the first place. Extracting it lets
 # `spec/initializers/rack_attack_store_spec.rb` CALL it.
+#
+# 🔴 SUPPLYING THIS HANDLER *REPLACED* SENTRY ON THIS CLASS — it did not merely add a
+# counter [INF.22]. `RedisCacheStore::DEFAULT_ERROR_HANDLER` logs AND calls
+# `ActiveSupport.error_reporter.report`, i.e. the failure reached Sentry for free. Ours
+# logs and counts, so ALL visibility for "the rate-limit shield stopped counting" now hangs
+# on ONE Grafana rule (`sn-alert-rate-limit-store-errors` over
+# `silkennet_rate_limit_store_errors_total`). Delete or mis-wire that rule and the class
+# goes fully silent again. **Adding an explicit handler is an OVERRIDE, not an addition —
+# read what the default did before replacing it.**
+# ⚠️ Second fragility, same lambda: the signature is STRICT kwargs. If a future
+# ActiveSupport passes one more keyword, `ArgumentError` escapes the store's own failsafe
+# and every request 500s during a Redis outage — the failure mode inverts from "silent" to
+# "total". Keep the signature permissive-by-review on every Rails upgrade.
 RACK_ATTACK_STORE_ERROR_HANDLER = lambda { |method:, returning:, exception:|
   SilkenNet::Metrics::RATE_LIMIT_STORE_ERRORS_TOTAL.increment
   Rails.logger.error(

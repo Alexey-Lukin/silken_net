@@ -679,10 +679,27 @@ Kamal 2.12 бере обидві половини як **імена kamal-сек
 
 **Pre-flight checklist (👤 admin):**
 
-- [ ] 🔐 **Origin CA сертифікат випущено** (CF Dashboard → SSL/TLS → Origin Server → Create
-      Certificate; hostnames `silkennet.app` + `*.silkennet.app`) і обидва PEM-блоби покладено
-      в GitHub Secrets як `TLS_ORIGIN_CERT_PEM` / `TLS_ORIGIN_KEY_PEM`. ⚠️ Приватний ключ
-      показується РІВНО один раз — зберегти в той самий vault, що й master-ключі ([`DR.1`](00_07_Action_Plan_Tracker)).
+- [x] 🔐 **Origin CA сертифікат випущено 2026-08-31 — і форма важливіша за сам крок.** ⛔ **НЕ
+      «хай CF згенерує пару»:** той шлях родить приватний ключ **на серверах вендора** й показує
+      його один раз у браузері. Канонічна форма — **власний CSR**, ключ не покидає машину:
+      ```
+      openssl req -new -newkey rsa:2048 -nodes -keyout origin.key.pem -out origin.csr.pem \
+        -subj "/CN=silkennet.app" -addext "subjectAltName=DNS:silkennet.app,DNS:*.silkennet.app"
+      chmod 600 origin.key.pem
+      ```
+      → CF Dashboard → SSL/TLS → Origin Server → Create Certificate → **«Use my private key and
+      CSR»** → вставити CSR → 15 років. Вайлдкард покриває `canopy.silkennet.app`, тож
+      сертифікат ОДИН на обидва слоти; `api.silkennet.com` його не потребує взагалі (DNS-only,
+      CoAP/UDP — TLS там немає).
+      🔑 **Приймальна перевірка — не «сертифікат виглядає як сертифікат», а збіг МОДУЛЯ:**
+      `openssl x509 -in origin.crt.pem -noout -modulus | openssl sha256` мусить дорівнювати
+      `openssl rsa -in origin.key.pem -noout -modulus | openssl sha256`. Розбіжність означає, що
+      підписано ЧУЖИЙ CSR, і виявиться це інакше аж на першому TLS-рукостисканні.
+- [ ] 🔐 **`TLS_ORIGIN_KEY_PEM` у GitHub Secrets** — `gh secret set TLS_ORIGIN_KEY_PEM < origin.key.pem`
+      (редирект тримає значення поза екраном і поза історією shell). `TLS_ORIGIN_CERT_PEM` уже
+      заведено; сам сертифікат ПУБЛІЧНИЙ за природою — секретом він є лише формою доставки Kamal'ом.
+      ⚠️ Ключ у vault, але планка НИЖЧА за master-ключі: втрата не незворотна (Origin CA
+      перевидається безкоштовно), витік — дає видати себе за наш origin перед CF ([`DR.1`](00_07_Action_Plan_Tracker)).
 - [ ] **Cloudflare account** з активним Pro/Business планом (proxied CNAME + WAF rules; WebSocket
       unlimited — на Free плані Hotwire/ActionCable лімітується).
 - [ ] **Домен у Cloudflare** — `silkennet.app` (web) і `silkennet.com` (його піддомен
