@@ -88,13 +88,23 @@ jobs:
           GRAFANA_REMOTE_WRITE_URL: ${{ secrets.GRAFANA_REMOTE_WRITE_URL }}
           GRAFANA_REMOTE_WRITE_USERNAME: ${{ secrets.GRAFANA_REMOTE_WRITE_USERNAME }}
           GRAFANA_REMOTE_WRITE_TOKEN: ${{ secrets.GRAFANA_REMOTE_WRITE_TOKEN }}
+          # 🔴 [INF.4 2026-08-31] Origin-TLS pair — boot-critical since `proxy.ssl` went LIVE,
+          # and it is here because the failure is COMPLETELY SILENT. `.kamal/secrets-common`
+          # declares both names, so `Kamal::Secrets#[]` does NOT raise "Secret not found" — it
+          # returns the EMPTY STRING; and `Kamal::Cli::App::SslCertificates#run` guards with
+          # `if cert_content = …`, where "" is truthy in Ruby. So kamal happily uploads an empty
+          # cert.pem/key.pem (mode 0644), kamal-proxy cannot serve TLS, and Cloudflare — Full
+          # (strict) on both zones — answers 521/525 on every request behind a fully GREEN deploy.
+          # Neither list carried them before, so there was not even a ::warning:: (06_04 §1).
+          TLS_ORIGIN_CERT_PEM: ${{ secrets.TLS_ORIGIN_CERT_PEM }}
+          TLS_ORIGIN_KEY_PEM: ${{ secrets.TLS_ORIGIN_KEY_PEM }}
         run: |
           # B1: production gates the FULL boot-critical set fail-loud — a missing secret here
           # would otherwise inject empty → container crashes AFTER a green verify (the exact
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM"
           RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""

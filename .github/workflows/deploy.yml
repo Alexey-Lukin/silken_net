@@ -107,6 +107,16 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
+          # 🔴 [INF.4 2026-08-31] Origin-TLS pair — boot-critical since `proxy.ssl` went LIVE,
+          # and it is here because the failure is COMPLETELY SILENT. `.kamal/secrets-common`
+          # declares both names, so `Kamal::Secrets#[]` does NOT raise "Secret not found" — it
+          # returns the EMPTY STRING; and `Kamal::Cli::App::SslCertificates#run` guards with
+          # `if cert_content = …`, where "" is truthy in Ruby. So kamal happily uploads an empty
+          # cert.pem/key.pem (mode 0644), kamal-proxy cannot serve TLS, and Cloudflare — Full
+          # (strict) on both zones — answers 521/525 on every request behind a fully GREEN deploy.
+          # Neither list carried them before, so there was not even a ::warning:: (06_04 §1).
+          TLS_ORIGIN_CERT_PEM: ${{ secrets.TLS_ORIGIN_CERT_PEM }}
+          TLS_ORIGIN_KEY_PEM: ${{ secrets.TLS_ORIGIN_KEY_PEM }}
           # Money/signing keys deliberately ABSENT (INF.22): environment-scoped to
           # `production` (unreadable from this workflow) AND kamal-unused on canopy —
           # the quintet lives in servers.job.env.secret only, and canopy is
@@ -139,7 +149,7 @@ jobs:
           # Money/signing quintet EXCLUDED from both sets (INF.22): canopy is web-only
           # (keyless boot by design) and the keys are production-environment-scoped —
           # requiring them here would read "" and skip-or-warn canopy forever.
-          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL"
+          BOOT_CRITICAL="RAILS_MASTER_KEY PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM"
           RUNTIME="SENTRY_DSN ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""
@@ -320,8 +330,25 @@ jobs:
       # deploy is canopy — DEPLOY-1 Phase 3) so the agent watches production targets from
       # day zero; until the production roles exist their aliases resolve NXDOMAIN and `up=0`
       # tells the truth.
+      #
+      # 🔴 NO `-d canopy`, and the flag's ABSENCE is the load-bearing part [⚖️ founder
+      # 2026-08-31]. There is exactly ONE Alloy container for both slots, verified against
+      # kamal 2.12 source: `Kamal::Configuration::Accessory#service_name` is
+      # `"#{config.service}-#{name}"`, and `config.service` does NOT carry the destination
+      # (`service_and_destination` exists but is used only for the apps DIRECTORY). So both
+      # destinations resolve to `silken_net-alloy`, and canopy inherits the base
+      # `accessories.alloy.host` because it overrode only `env.clear` — same name, same host.
+      # `accessory boot` then SKIPS the second slot ("a container already exists", yellow,
+      # exit 0), so whichever slot booted first silently owned the `DEPLOYMENT_SLOT` label.
+      # Canopy deploys on every main push and production only on a Release ⇒ canopy would
+      # have won, stamping `slot="canopy"` on PRODUCTION series.
+      # 🔑 And the mislabel was pure loss, because canopy has NO scrape targets at all:
+      # `config.alloy` scrapes the three `network-alias` names, and canopy is alias-less BY
+      # CONSTRUCTION (its array-form `servers:` replaces the base hash — invariant B3). The
+      # comment above already said this agent "watches production targets"; the canopy
+      # override contradicted it. Dropping the flag makes the label match what is scraped.
       - name: Ensure Alloy accessory is running
-        run: kamal accessory boot alloy -d canopy
+        run: kamal accessory boot alloy
         env:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
           # Accessory env.secret trio (.kamal/secrets-common reads $VAR from this shell).

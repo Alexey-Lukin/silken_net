@@ -50,4 +50,49 @@ RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do #
                                   "returns NXDOMAIN and the process scrapes as a dead target: " \
                                   "missing #{(scraped - declared).inspect} (declared: #{declared.inspect})"
   end
+
+  # 🔴 THIRD half, and it is a different AXIS from the two above: they pin WHAT is scraped,
+  # this pins WHO is labelled. There is exactly ONE Alloy container for both slots —
+  # `Kamal::Configuration::Accessory#service_name` is `"#{config.service}-#{name}"` and
+  # `config.service` carries no destination — so a canopy-destination `accessory boot` does
+  # not create a second agent, it renames the label of the ONLY one. `accessory boot` skips
+  # when the container exists (yellow, exit 0), so the winner was whichever slot booted
+  # first: canopy on every main push, production only on a Release ⇒ production series would
+  # have carried `slot="canopy"`. Pure loss, because canopy is alias-less by construction
+  # (array-form `servers:` replaces the base hash — invariant B3), so it has nothing to scrape.
+  # ⚖️ founder 2026-08-31: drop the destination, not the agent.
+  describe "the ONE-Alloy invariant [⚖️ 2026-08-31]" do
+    let(:canopy_config) { YAML.load_file(REPO_ROOT.join("config/deploy.canopy.yml")) }
+
+    let(:deploy_workflows) do
+      %w[.github/workflows/deploy.yml .github/workflows/deploy-production.yml]
+        .to_h { |path| [ path, File.read(REPO_ROOT.join(path)) ] }
+    end
+
+    it "boots the accessory with NO destination flag, so its label matches what it scrapes" do
+      offenders = deploy_workflows.filter_map do |path, text|
+        path if text.match?(/kamal\s+accessory\s+boot\s+\S+\s+-d\s/)
+      end
+      expect(offenders).to be_empty,
+                           "a deploy workflow boots an accessory with `-d <destination>`: #{offenders.inspect}. " \
+                           "Both destinations resolve to the SAME container `silken_net-alloy` on the SAME host, " \
+                           "so this does not create a per-slot agent — it stamps that destination's " \
+                           "DEPLOYMENT_SLOT onto the production targets config.alloy actually scrapes."
+    end
+
+    it "keeps canopy free of an accessory override, so no slot label can diverge from the scrape" do
+      expect(canopy_config).not_to have_key("accessories"),
+                                   "config/deploy.canopy.yml declares an `accessories:` override. Canopy has no " \
+                                   "scrape targets (alias-less by construction — invariant B3), so any accessory " \
+                                   "value it sets can only relabel the single shared agent."
+    end
+
+    # Size pin: both examples above go green loudest on an empty set — a renamed workflow or a
+    # canopy manifest that stopped parsing would look like compliance.
+    it "judges a non-empty set of real workflows and a canopy manifest that parses" do
+      expect(deploy_workflows.size).to eq(2)
+      expect(deploy_workflows.values).to all(include("kamal"))
+      expect(canopy_config).to include("servers")
+    end
+  end
 end

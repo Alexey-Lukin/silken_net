@@ -72,9 +72,11 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
       # NAMES that live OUTSIDE any `env:` block — Kamal still has to resolve each from
       # `.kamal/secrets-common`, and CI still has to inject each as a workflow `env:` key.
       # ⚠️ The proxy pair is what makes the INF.4 origin-certificate contract ENFORCED rather
-      # than commented: the day that block is uncommented, this gate demands moves (2) and (3)
-      # of its five, instead of trusting whoever reads the comment. Until then it contributes
-      # nothing — a commented block is invisible to YAML, which is correct, not a hole.
+      # than commented, and the block went LIVE 2026-08-31 — so this gate now genuinely demands
+      # moves (2) and (3) of its five, instead of trusting whoever reads the comment. (Until
+      # that morning it contributed nothing: a commented block is invisible to YAML, which was
+      # correct, not a hole. Both halves of this sentence were written in the future tense and
+      # became false the moment the cert shipped.)
       extras = kind == :secret ? Array(cfg.dig("registry", "password")) + [ cfg.dig("proxy", "ssl", "certificate_pem"), cfg.dig("proxy", "ssl", "private_key_pem") ].compact : []
     end
     named = blocks.compact.flat_map do |env|
@@ -105,12 +107,36 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
       expect(role_secret.size).to be > 15
       expect(role_clear.size).to be > 10
       # Named, not counted: `:all` must genuinely be WIDER than `:roles`, and naming the members
-      # keeps the pin honest when the set grows (the INF.4 proxy-cert pair is the next addition,
-      # and a frozen size would have RED-ed on it for the wrong reason).
+      # keeps the pin honest when the set grows (a frozen size would have RED-ed on the INF.4
+      # proxy-cert pair for the wrong reason — that pair landed 2026-08-31 and is named below).
       expect(any_secret - role_secret).to include(
         "GCP_ARTIFACT_REGISTRY_KEY", "GRAFANA_REMOTE_WRITE_URL",
-        "GRAFANA_REMOTE_WRITE_USERNAME", "GRAFANA_REMOTE_WRITE_TOKEN"
+        "GRAFANA_REMOTE_WRITE_USERNAME", "GRAFANA_REMOTE_WRITE_TOKEN",
+        "TLS_ORIGIN_CERT_PEM", "TLS_ORIGIN_KEY_PEM"
       )
+    end
+  end
+
+  # 🔴 [INF.4 2026-08-31] The chain above proves each proxy-cert name RESOLVES; this proves the
+  # deploy REFUSES when its value is empty — a different axis, and the one that was missing.
+  # Mechanism: `.kamal/secrets-common` declares both names, so `Kamal::Secrets#[]` never raises
+  # "Secret not found"; it returns "". `Kamal::Cli::App::SslCertificates#run` then guards with
+  # `if cert_content = …`, and "" is truthy in Ruby — kamal uploads an EMPTY cert.pem/key.pem
+  # at mode 0644, kamal-proxy cannot serve TLS, and Cloudflare (Full (strict) on both zones)
+  # answers 521/525 on every request behind a fully GREEN deploy. Before this pin neither
+  # BOOT_CRITICAL nor RUNTIME named them, so there was not even a `::warning::`.
+  it "gates the origin-cert pair as BOOT-CRITICAL in both deploy workflows (empty ⇒ silent 521)" do
+    cfg = YAML.safe_load(File.read(REPO_ROOT.join("config/deploy.yml")), aliases: true)
+    pair = [ cfg.dig("proxy", "ssl", "certificate_pem"), cfg.dig("proxy", "ssl", "private_key_pem") ].compact
+    expect(pair.size).to eq(2), "config/deploy.yml no longer declares a custom proxy.ssl pair — " \
+                                "this pin judges nothing; re-read INF.4 before deleting it"
+
+    %w[.github/workflows/deploy.yml .github/workflows/deploy-production.yml].each do |path|
+      declared = File.read(REPO_ROOT.join(path))[/^\s*BOOT_CRITICAL="([^"]*)"/, 1].to_s.split
+      expect(declared).to include(*pair),
+                          "#{path}: BOOT_CRITICAL omits #{(pair - declared).inspect}. An unset value is " \
+                          "injected as \"\", kamal uploads an EMPTY certificate, and the origin answers " \
+                          "521/525 behind a green deploy — verify-secrets is the only thing that can see it."
     end
   end
 

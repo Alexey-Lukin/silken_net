@@ -56,18 +56,31 @@
 # failure it exists to announce survived in the first place. Extracting it lets
 # `spec/initializers/rack_attack_store_spec.rb` CALL it.
 #
-# 🔴 SUPPLYING THIS HANDLER *REPLACED* SENTRY ON THIS CLASS — it did not merely add a
-# counter [INF.22]. `RedisCacheStore::DEFAULT_ERROR_HANDLER` logs AND calls
-# `ActiveSupport.error_reporter.report`, i.e. the failure reached Sentry for free. Ours
-# logs and counts, so ALL visibility for "the rate-limit shield stopped counting" now hangs
-# on ONE Grafana rule (`sn-alert-rate-limit-store-errors` over
-# `silkennet_rate_limit_store_errors_total`). Delete or mis-wire that rule and the class
-# goes fully silent again. **Adding an explicit handler is an OVERRIDE, not an addition —
-# read what the default did before replacing it.**
-# ⚠️ Second fragility, same lambda: the signature is STRICT kwargs. If a future
-# ActiveSupport passes one more keyword, `ArgumentError` escapes the store's own failsafe
-# and every request 500s during a Redis outage — the failure mode inverts from "silent" to
-# "total". Keep the signature permissive-by-review on every Rails upgrade.
+# **Adding an explicit handler is an OVERRIDE, not an addition — read what the default did
+# before replacing it.** That rule stands; the example this comment used to give for it does
+# NOT, and the correction is worth more than the claim was [INF.22, measured 2026-08-31].
+# 🔴 This paragraph asserted "supplying this handler REPLACED SENTRY on this class, the
+# failure reached Sentry for free". Half true, and the false half was load-bearing.
+# TRUE: `RedisCacheStore::DEFAULT_ERROR_HANDLER` (activesupport 8.1.3.1) logs AND calls
+# `ActiveSupport.error_reporter&.report(..., source: "redis_cache_store.active_support")`.
+# FALSE, in THIS app: that report went nowhere. `sentry-rails` ships
+# `@register_error_subscriber = false` by default — the gem's own rationale is in its
+# configuration.rb ("seemed to cause serious troubles to some users") — and we never flip it,
+# so `ActiveSupport::ErrorReporter#report` fans out to an EMPTY subscriber list, which is a
+# silent no-op with no logger fallback. So before the override this class was log-only and
+# UN-ALERTED; after it, log + counter + one critical Grafana rule
+# (`sn-alert-rate-limit-store-errors`). The override is a net INCREASE in visibility.
+# ⚠️ What survives unchanged: that one rule IS now the whole alerting surface — delete or
+# mis-wire it and the class goes quiet. Routing this to Sentry would need BOTH
+# `config.rails.register_error_subscriber = true` (a GLOBAL change to event volume, against
+# an initializer tuned for 0.1% trace sampling) and an explicit `report` call here, since our
+# lambda replaces the default entirely. A narrower option is a direct `Sentry.capture_exception`.
+# ⚠️ Second note, same lambda, also corrected: the STRICT kwargs are not a deviation — Rails'
+# own default carries the identical `|method:, returning:, exception:|` shape, and the current
+# call site passes exactly those three. The real (latent) risk is that `.call` sits INSIDE the
+# store's `rescue`, so anything it raises escapes `failsafe` and every request 500s during a
+# Redis outage. Re-check the arity on a major ActiveSupport upgrade; a `**` splat would be
+# permissive but would silently swallow whatever new argument Rails began passing.
 RACK_ATTACK_STORE_ERROR_HANDLER = lambda { |method:, returning:, exception:|
   SilkenNet::Metrics::RATE_LIMIT_STORE_ERRORS_TOTAL.increment
   Rails.logger.error(

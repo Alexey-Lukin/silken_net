@@ -47,10 +47,24 @@ RSpec.describe "Deployment-slot axis reaches the Rails roles (INF.27)" do # rubo
 
     # The var was BORN on the accessory; extending it to the roles must not displace the
     # observability half, whose `slot` label the Grafana panels and alert rules split on
-    # (spec/deploy/grafana_alerts_spec.rb). Two homes, one value, both required.
-    it "still reaches the Alloy accessory on both slots" do
+    # (spec/deploy/grafana_alerts_spec.rb).
+    #
+    # 🔴 But "two homes, one value, both required" — what this example asserted until
+    # 2026-08-31 — was TRUE of the ROLES and FALSE of the ACCESSORY, and the difference is
+    # structural, not editorial. There is exactly ONE Alloy container for both slots:
+    # `Kamal::Configuration::Accessory#service_name` is `"#{config.service}-#{name}"` and
+    # `config.service` carries no destination, so both slots resolve to `silken_net-alloy`,
+    # and canopy inherited the base `host` because it overrode only `env.clear`. A canopy
+    # value there was therefore not a second home — it RELABELLED the single shared agent,
+    # and `accessory boot` skips the loser silently, so the winner was whoever booted first
+    # (canopy on every main push, production only on a Release). ⚖️ founder 2026-08-31:
+    # the accessory boots with NO destination, and canopy declares no override at all.
+    # Full mechanism + the one-Alloy pins: spec/deploy/alloy_scrape_topology_spec.rb.
+    it "reaches the Alloy accessory on the base manifest, and ONLY there" do
       expect(base.dig("accessories", "alloy", "env", "clear", "DEPLOYMENT_SLOT")).to eq("production")
-      expect(canopy.dig("accessories", "alloy", "env", "clear", "DEPLOYMENT_SLOT")).to eq("canopy")
+      expect(canopy).not_to have_key("accessories"),
+                            "canopy re-declared an accessory override: with one shared container that " \
+                            "cannot create a per-slot agent, it can only mislabel production's series"
     end
 
     # ⚠️ `present` first, THEN `differs`. Written as a bare `not_to eq` this example survived

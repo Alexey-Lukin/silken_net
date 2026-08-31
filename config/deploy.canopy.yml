@@ -94,21 +94,27 @@ env:
     # signer keys) is the still-open ⚖️ in 00_07 OPS.37 — it is NOT settled by this block.
     # WEB3_CHAIN_ENV: testnet
 
-# 🔴 SLOT-АТРИБУЦІЯ — БЕЗ ЦЬОГО ДИСКРИМІНАТОР БРЕШЕ, а не мовчить.
-# `config/deploy.yml` задає `accessories.alloy.env.clear.DEPLOYMENT_SLOT: production`
-# ЖОРСТКО, а destination deep_merge є keys-UNION — тож без цього override canopy-Alloy
-# емітив би `slot="production"` і його серії злилися б із продовими під ПРОДОВОЮ міткою.
-# Це гірше за відсутність мітки: порожнє поле видно, хибне — ні.
-# ⚠️ Механізм тут доганяє ОБІЦЯНКУ, що вже стояла в `deploy/alloy/config.alloy`
-# («"canopy" for a canopy deploy») і не мала за собою жодного рядка конфігу —
-# RAILS_ENV для обох слотів `production`, тож `env`-мітка середовища не розводить.
-# ⛔ Перевизначаємо ЛИШЕ `env.clear`: `env.secret` — масив, і його переоголошення
-# замінило б успадкований набір цілком (та сама пастка, що з `servers:` вище).
-accessories:
-  alloy:
-    env:
-      clear:
-        DEPLOYMENT_SLOT: canopy
+# 🔴 CANOPY НЕ ПЕРЕВИЗНАЧАЄ ACCESSORY `alloy` — І ЦЕ ПРИСУД, А НЕ ПРОПУСК [⚖️ founder 2026-08-31].
+# Тут стояв override `accessories.alloy.env.clear.DEPLOYMENT_SLOT: canopy`, заведений проти
+# хибної мітки — і він її СТВОРЮВАВ, а не лікував. Механізм, звірений із джерелом kamal 2.12:
+#   • `Kamal::Configuration::Accessory#service_name` = `"#{config.service}-#{name}"`, а
+#     `config.service` НЕ несе destination (`service_and_destination` існує, але вживається
+#     лише для каталогу застосунку) ⇒ обидва призначення дають ОДИН контейнер `silken_net-alloy`;
+#   • цей override чіпав лише `env.clear`, тож `accessories.alloy.host` лишався базовим ⇒
+#     той самий контейнер на тому самому хості;
+#   • `kamal accessory boot` ідемпотентний ПРОПУСКОМ («Skipping … a container already exists»,
+#     жовтим, exit 0) ⇒ мітку вигравав слот, що встиг ПЕРШИМ. Canopy їде на кожен push у main,
+#     production — лише на реліз, тож canopy штампував би `slot="canopy"` на ПРОДОВИХ серіях.
+# 🔑 І це була чиста втрата, бо canopy не має ЖОДНОЇ цілі скрейпу: `config.alloy` скрейпить три
+# `network-alias`-імені, а canopy alias-less ЗА ПОБУДОВОЮ (масив-форма `servers:` заміщає базовий
+# хеш — інваріант B3, той самий, що стереже web-only). Тобто «canopy-Alloy» ніколи не існував як
+# сутність — існував один агент, який дивиться на прод, і питання було лише в тому, як його звуть.
+# ✅ Лік: `.github/workflows/deploy.yml` кличе `kamal accessory boot alloy` БЕЗ `-d canopy`, тож
+# мітка збігається з тим, що скрейпиться. Носій обох половин — `spec/deploy/alloy_scrape_topology_spec.rb`.
+# ⚠️ ЗАЛИШОК, названий, а не знайдений у день деплою: canopy не може «не оголосити» успадкований
+# accessory — deep_merge є keys-UNION, форми видалення в kamal немає. Тож `kamal setup -d canopy`
+# (на відміну від `kamal deploy -d canopy`, який accessories НЕ чіпає — `boot_accessories: false`)
+# підняв би його з міткою бази. Фаза 3 рунбука свідомо каже `kamal deploy -d canopy`.
 
 # Proxy: the block below is COMMENTED, so kamal-proxy boots with its defaults today —
 # HTTP only, healthcheck /up. The `ssl: true` inside is the SHAPE for the day it is
