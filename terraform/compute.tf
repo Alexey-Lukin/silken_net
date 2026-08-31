@@ -42,6 +42,14 @@ resource "google_compute_instance" "ingress_anchor" {
   desired_status = var.compute_desired_status
   tags           = ["web-nodes"]
 
+  # 🔴 API-РІВНЕВИЙ захист від видалення, і на `google_compute_instance` цей аргумент
+  # мапиться ПРЯМО в поле GCP — тобто спиняє і `gcloud compute instances delete`, і
+  # консоль, і `terraform destroy`. Виміряно 2026-08-31: обидві VM стояли на дефолтному
+  # `false`, тобто анкер — єдина зовнішня адреса й дім `coap.env` — знімався однією
+  # командою. ⚠️ Із Фазою ∅ не конфліктує: та ЗУПИНЯЄ (`desired_status = TERMINATED`),
+  # а не видаляє. Вимикати — лише через `enable_deletion_protection = false`, свідомо.
+  deletion_protection = var.enable_deletion_protection
+
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"
@@ -410,6 +418,10 @@ resource "google_compute_instance" "app" {
   desired_status = var.compute_desired_status
   # Only for allow_iap_ssh — see NO PUBLIC IP above.
   tags = ["web-nodes"]
+
+  # Same API-level guard as the anchor above (see its note): the flag maps straight to
+  # GCP, so it blocks `gcloud`/console deletion, not only `terraform destroy`.
+  deletion_protection = var.enable_deletion_protection
 
   boot_disk {
     initialize_params {

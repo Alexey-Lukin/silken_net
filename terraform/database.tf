@@ -14,6 +14,18 @@ resource "google_sql_database_instance" "silken_db" {
     edition           = "ENTERPRISE"
     tier              = var.db_tier
     availability_type = var.db_availability_type
+
+    # 🔴 ДРУГИЙ ЗАХИСТ, І ВІН ІНШИЙ ЗА ТОЙ, ЩО НИЖЧЕ — одне слово, два різні механізми.
+    # `deletion_protection` наприкінці ресурсу є МЕТА-АРГУМЕНТОМ TERRAFORM: він спиняє
+    # лише `terraform destroy` і про GCP не знає нічого. Оцей — API-рівневий прапорець
+    # самого Cloud SQL, тобто єдине, що спиняє `gcloud sql instances delete`, кнопку в
+    # консолі й прямий виклик API. Виміряно на живому інстансі 2026-08-31: був `false`,
+    # тоді як канон описував захист як наявний — бо описував ІНШИЙ із двох.
+    # ⊥ Межа: обидва потрібні, і жоден не замінює другого; вимикати їх треба разом і
+    # свідомо (`enable_deletion_protection = false`), а не тому, що `destroy` не пройшов.
+    # ⚠️ Із задокументованою економією не конфліктує: Фаза ∅ ЗУПИНЯЄ компʼют
+    # (`activation_policy = NEVER`), вона нічого не видаляє.
+    deletion_protection_enabled = var.enable_deletion_protection
     # NEVER = зупинено: компʼют не тарифікується, диск і бекапи лишаються (variables.tf)
     activation_policy = var.db_activation_policy
     disk_size         = var.db_disk_size_gb
@@ -170,6 +182,10 @@ resource "google_sql_database_instance" "read_replica" {
     tier            = var.db_tier
     disk_type       = "PD_SSD"
     disk_autoresize = true
+    # Дзеркало API-рівневого захисту первинного інстанса (див. його ноту): реплік
+    # сьогодні нуль (`db_read_replica_count = 0`), тож рядок конфіг-half — але саме
+    # такі переліки старіють у бік НЕПОВНОТИ, коли ресурс раптом створюють.
+    deletion_protection_enabled = var.enable_deletion_protection
 
     ip_configuration {
       ipv4_enabled    = false

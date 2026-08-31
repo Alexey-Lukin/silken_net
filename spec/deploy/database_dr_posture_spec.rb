@@ -47,4 +47,45 @@ RSpec.describe "Cloud SQL DR posture (terraform/database.tf ↔ 06_06)" do # rub
     default = variables_tf[/variable "db_availability_type".*?default\s*=\s*"(\w+)"/m, 1]
     expect(default).to eq("REGIONAL")
   end
+
+  # 🔴 TWO GUARDS SHARE ONE WORD, and only one of them was ever set [DR.1, measured on the
+  # LIVE instance 2026-08-31]. `deletion_protection` on the resource is a TERRAFORM
+  # meta-argument: it stops `terraform destroy` and knows nothing about GCP.
+  # `settings.deletion_protection_enabled` is Cloud SQL's own API flag — the only thing that
+  # stops `gcloud sql instances delete`, the console button and a direct API call. The live
+  # instance carried the first and not the second, i.e. the database holding all production
+  # data was one command away from gone, behind a config that read as protected.
+  # ⊥ Bound: this asserts the COMMITTED posture, like its siblings above — an operator can
+  # still flip `enable_deletion_protection`, and that is an explicit act, not drift.
+  # ⚠️ COUNTED, not matched — and that correction was bought by mutation, not by review: a
+  # file-wide `match` on either flag is satisfied by the READ REPLICA while the PRIMARY has
+  # none, so the first version of this example stayed GREEN with the production database
+  # unguarded. Every instance must carry both.
+  it "every Cloud SQL instance carries BOTH deletion guards — terraform meta-argument AND API flag" do
+    instances = database_tf.scan(/^resource "google_sql_database_instance"/).size
+    tf_level  = database_tf.scan(/^\s*deletion_protection\s*=\s*var\.enable_deletion_protection/).size
+    api_level = database_tf.scan(/^\s*deletion_protection_enabled\s*=\s*var\.enable_deletion_protection/).size
+
+    expect(instances).to be_positive, "no google_sql_database_instance found — the scan lost its subject"
+    expect(tf_level).to eq(instances),
+                        "#{instances} SQL instance(s), #{tf_level} with the terraform guard — " \
+                        "`terraform destroy` would delete the unguarded one"
+    expect(api_level).to eq(instances),
+                         "#{instances} SQL instance(s), #{api_level} with `deletion_protection_enabled` — " \
+                         "`gcloud sql instances delete` would succeed on the unguarded one even though " \
+                         "the terraform guard reads as protected (DR.1, 06_06)"
+  end
+
+  # Same axis, different mechanism: on `google_compute_instance` the argument maps STRAIGHT to
+  # the GCP field, so one flag covers both paths. Both VMs sat at the provider default (false)
+  # until 2026-08-31 — including the Ingress Anchor, our only external address and the home of
+  # `coap.env`.
+  it "both VMs carry API-level deletion protection" do
+    compute_tf = File.read(REPO_ROOT.join("terraform/compute.tf"))
+    guarded = compute_tf.scan(/^\s*deletion_protection\s*=\s*var\.enable_deletion_protection/).size
+    instances = compute_tf.scan(/^resource "google_compute_instance"/).size
+    expect(guarded).to eq(instances),
+                       "#{instances} compute instance(s) declared, #{guarded} guarded — an unguarded VM " \
+                       "is removable with one `gcloud compute instances delete`"
+  end
 end

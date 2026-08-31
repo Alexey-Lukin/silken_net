@@ -78,7 +78,7 @@
 | daily backup `start_time` | `03:00` | Щоденний snapshot |
 | `retained_backups` | `30` (COUNT) | 30 останніх snapshot'ів |
 | `availability_type` | `REGIONAL` (default) | **HA з автоматичним failover** між зонами |
-| `deletion_protection` | `true` (default) | Захист від випадкового `terraform destroy` |
+| `deletion_protection` | `true` (default) | 🔴 **Захистів ДВА під одним словом, і цей рядок роками описував лише перший.** (1) мета-аргумент Terraform на `google_sql_database_instance` — спиняє **виключно** `terraform destroy`, про GCP не знає нічого; (2) `settings.deletion_protection_enabled` — API-рівневий прапорець Cloud SQL, і **лише він** спиняє `gcloud sql instances delete`, кнопку в консолі та прямий виклик API. Виміряно на живому інстансі 2026-08-31: другий стояв `false`, тобто база з усіма продовими даними знімалась однією командою при бездоганному першому. Обидва тепер на `var.enable_deletion_protection`. ⊥ **На `google_compute_instance` слово те саме, а механізм ІНШИЙ:** там аргумент мапиться прямо в API, тож один прапорець покриває обидва шляхи — обидві VM теж стояли `false` і тепер закриті. ⚠️ Із Фазою ∅ не конфліктує: та ЗУПИНЯЄ компʼют, не видаляє |
 | `read_replica_count` | `0` (default) | Read-репліки вимкнені (увімкнути для read-scaling, не для DR) |
 | `disk_autoresize` | `true` | Запобігає full-disk outage |
 
