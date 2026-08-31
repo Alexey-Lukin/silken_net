@@ -840,6 +840,30 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 > він оживе сам, щойно GitHub Secrets заповнені (тримай їх незаповненими до готовності; path-gate вже стоїть —
 > деплой стріляє лише на deploy-релевантні зміни, [`06_07 §1`](06_07_CICD_and_Runbook_Index)).
 
+🧰 **Фаза −1а — ТУЛЧЕЙН на машині оператора (передумова, спільна для всього дня).**
+Виміряно 2026-08-31: `gcloud` не був установлений, і жодна фаза цього не казала —
+фаза −1 перелічувала АКАУНТИ, тобто те, що заводять у браузері, а рунбук говорить із
+**CLI**. Це різні речі, і різницю видно лише коли впираєшся. 🔴 `gcloud` стоїть не на
+одному кроці, а на **шести**: `bootstrap.sh` · ADC для `terraform apply` · SSH на анкер
+для `coap.env` · `add-metadata`+`reset` · AR-токен для `kamal` push
+(`.kamal/secrets-common` → `gcloud auth print-access-token`) · і `ssh.proxy_command`
+IAP-тунелю, без якого `kamal deploy` **фізично не досягне** app-хоста без зовнішньої IP.
+
+```bash
+# Обовʼязкові — деплой без них не стартує:
+gcloud --version      # + gsutil у комплекті; macOS: brew install --cask google-cloud-sdk
+terraform --version   # ≥1.15
+kamal version
+docker --version      # + buildx з linux/amd64 (builder.arch = amd64, машина arm64 → емуляція)
+gh --version          # авторизований, scope repo
+forge --version       # Фази 2t/2
+openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
+# Ланки, що мають ВЛАСНИЙ тулчейн і НЕ покриваються нічим вище:
+#   Devnet (Фаза 2t) — solana + spl-token CLI (Solana-програми в репо немає, це руками)
+#   Фаза 6           — arm-none-eabi-* + STM32_Programmer_CLI (прошивка Королев)
+```
+⛔ **`ss` до цього переліку НЕ додавай** — крок Фази 4, що його вимагав, замінено (див. там же).
+
 **Фаза −1 — Акаунти й значення (за дні ДО дня X):**
 GCP project + billing (+budget alert — OPS.11; ⚠️ грант `billing.costsManager` на BILLING-акаунті — див. §IAM) ·
 **Upstash ×2** (production + canopy) → 2× `rediss://` URL · **два домени:
@@ -859,6 +883,18 @@ Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/s
 (3) де фізично лежать обидва master-ключі. Доки три рядки порожні — підпис не ставиться.
 
 **Фаза 0 — Bootstrap інфри:**
+🔑 **Спершу ДВА логіни й один export — вони жили тільки в шапці `bootstrap.sh`, а не в цій фазі,
+і різниця між ними несуча:**
+```bash
+gcloud auth login                      # для самого gcloud (bootstrap.sh, ssh, add-metadata)
+gcloud auth application-default login  # ADC — саме це читає TERRAFORM; окремий креденшел
+gcloud config set project <PROJECT_ID>
+export GCP_PROJECT_ID=<PROJECT_ID>     # bootstrap.sh hard-fail'ить без нього (`:?`)
+```
+⚠️ **Два логіни — не дубль:** `gcloud auth login` кладе user-credentials, `application-default`
+кладе ADC-файл, і terraform читає ЛИШЕ другий. Доти `bootstrap.sh` перевіряв ПЕРШИЙ, а радив
+другий — тобто його «✅» проходив на креденшелі, який наступному кроку не годиться (виправлено
+2026-08-31: скрипт тепер пінить обидва). Далі —
 `terraform/bootstrap.sh` (GCS state-bucket + CMEK-латч [SEC.22]: keyring `silken-tfstate-ew1`,
 PAP, retention 10в/30д; має разовий 30s IAM-sleep — не переривай) → `terraform.tfvars` (project_id, db_password,
 `iap_admin_members=["user:<твій e-mail>"]`; ⛔ **`ssh_source_ranges` лишається `[]`**) → 🔴 **Цей
@@ -919,7 +955,20 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
 🔴 **Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
-`forge script contracts/script/Deploy.s.sol --broadcast` на **Amoy + Sepolia** — EVM-ланки; ⚠️
+```bash
+cd contracts && forge script script/Deploy.s.sol --rpc-url "$AMOY_RPC_URL" --broadcast
+# і той самий рядок для Sepolia
+```
+🔴 **Форма команди виміряна прогоном 2026-08-31, бо доти рядок був невиконуваний ОБОМА
+прочитаннями.** Тут стояло `forge script contracts/script/Deploy.s.sol --broadcast`: із
+`contracts/` це віддає `Error: contract source info format must be '<path>:<contractname>'`
+(такого шляху там немає — `foundry.toml` живе В `contracts/` і має `script = "script"`), а з
+кореня репо немає ані `foundry.toml`, ані ремапінгів на `node_modules/@openzeppelin`. Правильна
+форма компілюється й падає рівно там, де має: `vm.envAddress: "ADMIN_ADDRESS" not found`.
+⊕ **`--rpc-url` теж бракувало, і мовчки:** без нього `forge script --broadcast` іде на
+`http://localhost:8545`, а `[rpc_endpoints]` у `contracts/foundry.toml` немає — тобто «на Amoy +
+Sepolia» жило в прозі й не жило в команді. URL беруться з тих самих testnet-RPC, що поїдуть у
+`.kamal/secrets.canopy` ([`INF.27`](00_07_Action_Plan_Tracker)). ⚠️
 **Devnet-ланка `forge`-ом НЕ робиться**: Solana-програми в репо немає, це SPL-mint + fee-payer
 ATA руками. `REQUIRE_SAFE_ADMIN` лишається **unset/false** (Safe-гейти mainnet-only — скрипт
 тоді лише WARN'ає замість revert), але **шість ENV `run()` вимагає й на dry-run**:
@@ -940,7 +989,11 @@ ATA руками. `REQUIRE_SAFE_ADMIN` лишається **unset/false** (Safe-
 Software TRL 7-8, а mainnet — питанням TRL 9. Порядок несучий в обидва боки.
 
 **Фаза 2 — MAINNET-контракти (до першого mint; передує production-рендеру Фази 5):**
-fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`MINTER_ORACLE`/`SLASHER_ORACLE`/`ANCHOR_ORACLE`/`DAO_TREASURY_ADDRESS`) + `REQUIRE_SAFE_ADMIN=true` (mainnet-гейти: ADMIN+TREASURY = Safe-контракти, `MINTER != SLASHER` E.2) → `forge script contracts/script/Deploy.s.sol --broadcast --verify`
+fund deployer wallet → export 6 ENV (`DEPLOYER_PRIVATE_KEY`/`ADMIN_ADDRESS`/`MINTER_ORACLE`/`SLASHER_ORACLE`/`ANCHOR_ORACLE`/`DAO_TREASURY_ADDRESS`) + `REQUIRE_SAFE_ADMIN=true` (mainnet-гейти: ADMIN+TREASURY = Safe-контракти, `MINTER != SLASHER` E.2) →
+`cd contracts && forge script script/Deploy.s.sol --rpc-url "$POLYGON_RPC_URL" --broadcast --verify`
+(**ТА САМА виправлена форма, що у Фазі 2t** — шлях відносно `contracts/`, `--rpc-url` явно;
+`--verify` додатково потребує `ETHERSCAN_API_KEY` у середовищі, бо `[etherscan]`-блоку в
+`contracts/foundry.toml` немає) ·
 (ordered SCC→SFC→Anchor→Timelock→Governor→ProtocolParameters — [`05_03`](05_03_Tokenomics_SCC_and_SFC)) →
 зібрати 9 адрес → вписати у `config/deploy.yml` env.clear (INF.12) → redeploy job.
 (`WEB3_CHAIN_ENV` у базовому манифесті лишається `mainnet` — це і є та вісь, яку testnet-слот
@@ -966,7 +1019,7 @@ production — і це мусить бути сказано вголос, бо �
 job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import.rb` (dashboards+alerts+contact point)
 + contact point (S2.4 — дашборд і правила вже в стеку з 2026-08-29, лишився КАНАЛ) · `/sidekiq` під admin-сесією → 200, під анонімом → 404
 (ARCH.61 route-constraint — ops-інструмент DeadSet-runbook'ів живий і закритий) ·
-`ss -tlnp | grep 3000` IPv6 (PUMA-IPV6-1) · money fail-closed
+Puma dual-stack (PUMA-IPV6-1) — `kamal app exec -i "curl -sf -o /dev/null -w '%{http_code}\n' http://[::1]:3000/up"` → `200`. 🔴 **Тут стояло `ss -tlnp | grep 3000`, і жодне з трьох прочитань кроку не виконується (виміряно 2026-08-31):** на машині оператора `ss` немає (Linux-утиліта), на app-хості порт 3000 не опублікований (ролі мають `network-alias`, не `publish` — див. §Kamal), а в контейнері `ss` не встановлений (`Dockerfile` ставить рівно `curl libjemalloc2 libvips postgresql-client`; `iproute2` немає). ⚠️ ОЧІКУВАНЕ значення при цьому чинне й переміряне проти самого гема: `puma-8.0.2` `Configuration.default_tcp_host` = `ipv6_interface_available? ? '::' : '0.0.0.0'` — тобто `[::]:3000` правдиве, зламана була лише проба. `curl` тут і є доказом: відповідь на **IPv6-loopback** можлива лише при bind на `::`, а `/up` виключений з `force_ssl`-редиректу й з `host_authorization` (`probe_paths`, `production.rb`), тож 200 не маскується ані 301, ані 403. Без будь-яких пакетів той самий факт дає `kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"` · money fail-closed
 (INF.11) · Sentry release (S5.2) · mailer/DB_POOL/entrypoint (INF.13) · гаманці з газом
 (Pre-Flight #3).
 

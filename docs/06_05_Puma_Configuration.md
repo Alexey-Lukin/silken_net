@@ -102,7 +102,16 @@ port ENV.fetch("PORT", 3000)
 
 Thruster слухає на `PORT` (80 у Docker) і reverse-proxy'ть до Puma на 3000. Puma 8.0+ за замовчуванням bind'иться на `tcp://[::]:3000` (dual-stack IPv4+IPv6) якщо доступний non-loopback IPv6 інтерфейс. `IPV6_V6ONLY=0` на Linux = `[::]:3000` приймає і v4, і v6.
 
-Після першого Kamal-деплою на canopy: перевірити `ss -tlnp | grep 3000` (має показати `tcp6 LISTEN [::]:3000`) та виконати health-check через обидві адреси. Якщо потрібно примусово v4: `bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"` — поки не додаємо, dual-stack краще для майбутньої IPv6-only інфраструктури.
+Після першого Kamal-деплою на canopy перевірити **відповіддю, не переліком сокетів**:
+
+```bash
+kamal app exec -i "curl -sf -o /dev/null -w '%{http_code}\n' http://[::1]:3000/up"   # → 200
+kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"                                  # zero-dependency дубль
+```
+
+🔴 **`ss -tlnp | grep 3000` тут НЕ працює, і це не «незручно», а неможливо (виміряно 2026-08-31):** `ss` дає пакет `iproute2`, а образ ставить рівно `curl libjemalloc2 libvips postgresql-client` (`Dockerfile`) — тобто форма `kamal app exec -i 'ss -tlnp | grep 3000'`, що стояла в §8 нижче, віддала б `command not found`. На хості ж 3000 не видно взагалі: Kamal-ролі мають `network-alias`, а не `publish` (`config/deploy.yml` — `publish` несе лише роль `coap`, і то `5683/udp`). ⚠️ Саме твердження, яке крок перевіряє, при цьому чинне — переміряне проти гема: `puma-8.0.2` `Configuration.default_tcp_host` = `ipv6_interface_available? ? '::' : '0.0.0.0'`. Відповідь на **IPv6-loopback** можлива лише при bind на `::`; `/up` виключений із `force_ssl`-редиректу й `host_authorization` (`probe_paths` у `production.rb`), тож 200 не маскується ані 301, ані 403.
+
+Якщо потрібно примусово v4: `bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"` — поки не додаємо, dual-stack краще для майбутньої IPv6-only інфраструктури.
 
 ### 6. Lifecycle hooks (clustered mode)
 
@@ -176,12 +185,16 @@ sudo docker logs silken_net-web-1 --tail 200
 ### IPv6 listen перевірка (після першого Kamal-deploy)
 
 ```bash
-kamal app exec -i 'ss -tlnp | grep 3000'   # очікуємо: tcp6 LISTEN [::]:3000
-curl -fsS http://127.0.0.1:3000/up           # health-check IPv4 loopback
-curl -fsS http://[::1]:3000/up               # health-check IPv6 loopback
+# ⚠️ ВСІ три — УСЕРЕДИНІ контейнера: голий `curl` на 127.0.0.1:3000 з машини оператора
+# б'є в його ВЛАСНИЙ localhost (Kamal-ролі порт не публікують), тобто мовчки міряє не те.
+kamal app exec -i "curl -sf -o /dev/null -w 'v4 %{http_code}\n' http://127.0.0.1:3000/up"
+kamal app exec -i "curl -sf -o /dev/null -w 'v6 %{http_code}\n' http://[::1]:3000/up"
+kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"   # 0x0BB8 = 3000; zero-dependency дубль
 ```
 
-Якщо IPv6 відключено в namespace → Puma автоматично fallback'ає на `0.0.0.0:3000`. Задокументувати результат після першого деплою.
+⛔ **`ss -tlnp` тут НЕ вживати** — `iproute2` в образі немає (підстава й вимір — §5 вище). Ця форма стояла в цьому блоці до 2026-08-31 і віддала б `command not found`, тобто верифікаційний крок повідомляв би про власну відсутність, а не про стан Puma.
+
+Обидві відповіді `200` = dual-stack; `v4 200` при провалі `v6` = Puma сіла на `0.0.0.0:3000`, бо в namespace немає non-loopback IPv6-інтерфейсу (`Configuration.default_tcp_host` — §5). Задокументувати результат після першого деплою.
 
 ### Health-проби: liveness `/up` · readiness `/ready`
 

@@ -39,10 +39,29 @@ echo "Region:   ${REGION}"
 echo "CMEK:     ${KEY_RESOURCE}"
 echo ""
 
-# 1. Verify gcloud authentication
+# 1. Verify BOTH credentials — they are different objects and this script needs one
+# while the very next step (`terraform init/apply`) needs the other.
+#   * `gcloud auth login`                  → user credentials; every gcloud call below.
+#   * `gcloud auth application-default …`  → the ADC file; what TERRAFORM reads.
+# Until 2026-08-31 this block tested the FIRST and advised the SECOND, so a plain
+# `gcloud auth login` passed the check with a ✅ and terraform then died on
+# "could not find default credentials" — the gate said yes about a credential the
+# next step does not use.
 if ! gcloud auth list --format="value(account)" --filter="status:ACTIVE" --limit=1 2>/dev/null | grep -q .; then
-  echo "❌ No active gcloud authentication found."
-  echo "   Run: gcloud auth application-default login"
+  echo "❌ No active gcloud account."
+  echo "   Run: gcloud auth login"
+  exit 1
+fi
+
+# ADC lives at a well-known path (CLOUDSDK_CONFIG overrides the parent dir). Probing
+# the FILE rather than a gcloud subcommand keeps this honest offline and on any SDK
+# version; `gcloud auth application-default print-access-token` would also mint a
+# token, i.e. do work, and would fail for reasons unrelated to "is ADC configured".
+ADC_PATH="${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}/application_default_credentials.json"
+if [ ! -f "${ADC_PATH}" ]; then
+  echo "❌ No Application Default Credentials at ${ADC_PATH}"
+  echo "   terraform (this script's next step) authenticates through ADC, not through"
+  echo "   the account above. Run: gcloud auth application-default login"
   exit 1
 fi
 

@@ -269,11 +269,23 @@ SYSTEMD_DAEMON
     # ------------------------------------------------------------------------
     if ! grep -q REQUIRED_SECRET_NOT_SET /etc/silkennet/coap.env; then
       docker pull ${var.coap_daemon_image} || true
-      systemctl disable coap-relay 2>/dev/null || true
-      systemctl stop coap-relay 2>/dev/null || true
-      systemctl enable coap-daemon
-      systemctl restart coap-daemon
-      logger -t ingress-anchor "CoAP daemon (PRIMARY) started on :5683; socat fallback disabled"
+      # `|| true` above is right — a transient registry failure must not kill the
+      # boot when the image is already cached. But then the question that decides
+      # the log line is PRESENCE, not whether the pull succeeded, and until
+      # 2026-08-31 the script measured neither: a bad tag (the var defaults to the
+      # fail-closed `:PIN_ME` sentinel, and Фаза 0 is where an operator pins it)
+      # made the unit crash-loop under `Restart=always` while the anchor logged
+      # "CoAP daemon (PRIMARY) started on :5683". The pull is the one step here
+      # that fails silently, and its failure wore the success message.
+      if docker image inspect ${var.coap_daemon_image} > /dev/null 2>&1; then
+        systemctl disable coap-relay 2>/dev/null || true
+        systemctl stop coap-relay 2>/dev/null || true
+        systemctl enable coap-daemon
+        systemctl restart coap-daemon
+        logger -t ingress-anchor "CoAP daemon (PRIMARY) started on :5683; socat fallback disabled"
+      else
+        logger -t ingress-anchor "CoAP daemon NOT started: image ${var.coap_daemon_image} ABSENT after pull (unpinned tag, or registry refused) — coap.env is filled, so this is the image, not the secrets; relay state left untouched"
+      fi
     elif [ "$APP_HOST_IP" != "APP_HOST_IP_NOT_SET" ]; then
       systemctl enable coap-relay
       systemctl restart coap-relay
