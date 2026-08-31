@@ -59,7 +59,7 @@ SilkenNet — solo-founder pre-revenue forest-D-MRV платформа, що г�
 
 ## 3. Phase-gate timeline (детально)
 
-### 3.1 ЗАРАЗ — pre-revenue, solo, нічого не задеплоєно
+### 3.1 ЗАРАЗ — pre-revenue, solo; інфра розгорнута 2026-08-31, застосунок ще ні
 
 **Юридично нічого не обов'язкове.** Немає employees крім founder'а → немає Workers' Comp-тригера; немає board/priced-раунду → немає D&O-мандату; немає живого B2B-контракту → немає COI-запиту ще. Дешевий pre-seed D&O ($2.5–6k/рік) іноді береться раніше якщо вже є advisor/board-структура чи investor-tied priced SAFE — **для чистого solo pre-revenue founder'а це відкладається**.
 

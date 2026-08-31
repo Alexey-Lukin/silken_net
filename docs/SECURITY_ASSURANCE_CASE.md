@@ -225,7 +225,7 @@ An assurance case is credible because it states what is **not** yet fully closed
   step-up. The secret is AR-encrypted at rest. Residual honestly out of scope: WebAuthn/hardware-key
   is deferred until the first B2B client demands it — TOTP shares the secret with the phone, so a
   phishing-proof factor remains unclaimed.
-- **Pre-mainnet.** No production deployment has run yet; the deploy-time guards (`verify-secrets`, force_ssl,
+- **Pre-mainnet.** No production deployment of the APPLICATION has run yet (infrastructure was provisioned 2026-08-31; zero `kamal deploy`); the deploy-time guards (`verify-secrets`, force_ssl,
   HSTS) are configured and CI-verified but not yet exercised live.
 - **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
   model, that the chains finalize honestly, and that a hostile host operator cannot defeat container attestation —

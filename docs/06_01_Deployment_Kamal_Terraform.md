@@ -138,10 +138,10 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
 | **Платформа** | Kamal/GCP, web-only (`kamal deploy -d canopy`) | Kamal/GCP (усі ролі) |
-| **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (HA) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
+| **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (⚠️ HA — ЦІЛЬ; чинний деплой `ZONAL`, [`06_06 §2`](06_06_Disaster_Recovery_and_Backup)) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
-| **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (HA) |
+| **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (⚠️ HA — ціль, чинний деплой `ZONAL`) |
 | **Puma workers** | `WEB_CONCURRENCY: 2` (спека app-хоста — `config/deploy.yml`) | `WEB_CONCURRENCY: 2` (те саме; рухається разом із тіром хоста) |
 
 ---
@@ -157,7 +157,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 │  │    — проксює HTTP/HTTPS на app-хост                   │   │
 │  │  App host (Kamal: ролі web + job + coap)              │   │
 │  │    e2-standard-2, приватний IP, CMEK boot-disk        │   │
-│  │  Cloud SQL PostgreSQL 17 (3 бази, HA, ПРИВАТНА IP —   │   │
+│  │  Cloud SQL PG17 (3 бази, ZONAL*, ПРИВАТНА IP —      │   │
 │  │    ipv4_enabled = false з 2026-08-29)                 │   │
 │  │  Artifact Registry (Docker images)                    │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -530,7 +530,7 @@ IAP-operator ролі ЛЮДЕЙ (iam.tf, for_each `iap_admin_members`):
 
 Навіть за одночасного пікового checkout усіх пулів — нижче `400` (≈**185**); запас під read-репліки/canopy тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
 
-> ⚠️ **Друга вісь того самого бюджету — ГОРИЗОНТАЛЬНА, і після [`OPS.37`](00_07_Action_Plan_Tracker) висновок цієї нотатки ПЕРЕВЕРНУВСЯ.** Доти вона рахувала від `WEB_CONCURRENCY=4` і давала 2 × 252 + 51 + 8 = **563 > 400**, тобто «другий web-вузол не влазить». Єдиний таргет тепер пінить `WEB_CONCURRENCY=2` (`config/deploy.yml`), тож реально 2 × 126 + 51 + 8 = **311 < 400** — горизонтальне масштабування web **влазить**, і другий вузол більше не гейтований цим рядком Terraform. 🔴 Числа під цим абзацом не містили слова «Akash» УЗАГАЛІ — вони мовчки успадкували мертву четвірку, і саме тому клас міграційного залишку ([`00_06 §1`](00_06_SSOT_Documentation_Standard)) вимагає **перечитати арифметику навколо**, а не лише замінений множник. Вертикальний тригер лишається: при `WEB_CONCURRENCY > 4` на двох вузлах стеля знову перевищить 400. Важелів рівно два, і обидва вимагають рішення заздалегідь: підняти `db_max_connections` (на `db-custom-2-7680` кожне з'єднання коштує реальну пам'ять — тобто це тягне і зміну tier) **або** завести пулер, якого в репозиторії немає **ніде** (`db_read_replica_count` теж `0`). Наслідок ширший за ємність: цей самий інстанс несе primary + cache + cable + canopy-staging, тож за REGIONAL-HA байти UI-фан-ауту cable реплікуються тим самим WAL, що money-записи — один інстанс вниз = money+cable+cache+staging разом. Ревізит: **або** `WEB_CONCURRENCY > 4`, **або** web-репліка №2 — що настане раніше.
+> ⚠️ **Друга вісь того самого бюджету — ГОРИЗОНТАЛЬНА, і після [`OPS.37`](00_07_Action_Plan_Tracker) висновок цієї нотатки ПЕРЕВЕРНУВСЯ.** Доти вона рахувала від `WEB_CONCURRENCY=4` і давала 2 × 252 + 51 + 8 = **563 > 400**, тобто «другий web-вузол не влазить». Єдиний таргет тепер пінить `WEB_CONCURRENCY=2` (`config/deploy.yml`), тож реально 2 × 126 + 51 + 8 = **311 < 400** — горизонтальне масштабування web **влазить**, і другий вузол більше не гейтований цим рядком Terraform. 🔴 Числа під цим абзацом не містили слова «Akash» УЗАГАЛІ — вони мовчки успадкували мертву четвірку, і саме тому клас міграційного залишку ([`00_06 §1`](00_06_SSOT_Documentation_Standard)) вимагає **перечитати арифметику навколо**, а не лише замінений множник. Вертикальний тригер лишається: при `WEB_CONCURRENCY > 4` на двох вузлах стеля знову перевищить 400. Важелів рівно два, і обидва вимагають рішення заздалегідь: підняти `db_max_connections` (на `db-custom-2-7680` кожне з'єднання коштує реальну пам'ять — тобто це тягне і зміну tier; 🔴 **і вся арифметика цієї секції писана проти 7680 МБ, тоді як pre-fleet деплой стоїть на `db-custom-1-3840` — при поверненні до прод-навантаження переміряти, а не переносити висновок «адекватно»**) **або** завести пулер, якого в репозиторії немає **ніде** (`db_read_replica_count` теж `0`). Наслідок ширший за ємність: цей самий інстанс несе primary + cache + cable + canopy-staging, тож за REGIONAL-HA байти UI-фан-ауту cable реплікуються тим самим WAL, що money-записи — один інстанс вниз = money+cable+cache+staging разом. Ревізит: **або** `WEB_CONCURRENCY > 4`, **або** web-репліка №2 — що настане раніше.
 
 ---
 
