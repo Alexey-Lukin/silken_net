@@ -34,9 +34,12 @@ jobs:
   drift:
     name: Terraform plan (drift detect)
     runs-on: ubuntu-latest
-    # Required (no-default) terraform vars — mirror deploy.yml's TF_VAR env so
-    # `plan` sees exactly what `apply` would (else it flags PHANTOM drift, e.g.
-    # the OPS.11 billing-budget count-guard collapsing to 0). project_id +
+    # Required (no-default) terraform vars — this workflow is the LAST holder of a
+    # TF_VAR block ([INF.22] removed the `terraform` job, and its vars, from both
+    # deploy workflows; ⚠️ "mirror deploy.yml's TF_VAR env" stood here until
+    # 2026-08-31, pointing at a referent that no longer exists). The vars must still
+    # match what the FOUNDER-LOCAL `apply` passes, or `plan` flags PHANTOM drift —
+    # e.g. the OPS.11 billing-budget count-guard collapsing to 0. project_id +
     # db_password are hard-required; billing_account_id keeps the budget in-plan.
     env:
       TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}

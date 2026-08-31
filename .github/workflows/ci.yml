@@ -656,10 +656,13 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.terraform == 'true' || needs.changes.outputs.ci == 'true' }}
     # [INF.15] Offline validate of the terraform root so a config error (bad reference,
-    # type mismatch, missing required arg, undeclared var) is caught HERE, not as a
-    # first-`apply` blocker. The deploy-workflow terraform job only runs once secrets are
-    # configured (if: verify-secrets.configured == 'true') → pre-first-deploy the tf is never
-    # validated in CI, exactly while the config is being polished. `init -backend=false` +
+    # type mismatch, missing required arg, undeclared var) is caught HERE, not as an
+    # `apply` blocker in the founder's terminal. 🔴 This is the ONLY CI surface that reads
+    # the terraform config at all: [INF.22] (⚖️ 2026-08-29) removed the `terraform` job from
+    # both deploy workflows — apply is founder-local forever — and the weekly drift `plan`
+    # needs real creds, so it cannot run on a PR. (This comment justified itself with "the
+    # deploy-workflow terraform job only runs once secrets are configured" until 2026-08-31:
+    # a live gate whose stated reason names a job that no longer exists.) `init -backend=false` +
     # `validate` need the provider schema but NO GCP credentials, so this is
     # environment-independent (mirrors alloy_config_validate's no-secrets discipline).
     runs-on: ubuntu-latest

@@ -32,8 +32,13 @@ ssh_source_ranges = []
 # github_repository = "Alexey-Lukin/silken_net"
 
 # [OPS.11] FinOps: billing budget (50/90/100% + forecasted e-mail thresholds).
-# Find the id: `gcloud billing accounts list`. ⚠️ Set the SAME value as the
-# GitHub secret GCP_BILLING_ACCOUNT_ID, else the next CI apply destroys the budget.
+# Find the id: `gcloud billing accounts list`. ⚠️ Mirror the SAME value into the
+# GitHub secret GCP_BILLING_ACCOUNT_ID — its ONE consumer is the weekly
+# terraform_drift.yml. Divergence costs NOISE (the drift `plan` reports the budget
+# as a resource to remove), not the budget: [INF.22] removed the `terraform` job
+# from both deploy workflows (⚖️ 2026-08-29 — apply stays founder-local), so a
+# CI apply that could destroy it does not exist. This line said the opposite until
+# 2026-08-31 — read at the exact moment you decide whether to fill the value in.
 # billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
 # billing_budget_usd = 100
 

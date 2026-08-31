@@ -10,9 +10,15 @@
 # exception-free, and no service-account key exists anywhere in this tree.
 #
 # Chicken-egg: this pool/provider/binding is created by the FIRST terraform apply,
-# which the founder runs locally on their own ADC (DEPLOY-DAY Phase 0) — CI never
-# runs the debut apply, so it needs no WIF yet. From the second apply on, CI is
-# keyless. After the first apply, feed the two outputs
+# which the founder runs locally on their own ADC (DEPLOY-DAY Phase 0). ⚠️ "First"
+# is not a phase — EVERY apply is founder-local: [INF.22] (⚖️ 2026-08-29) removed the
+# `terraform` job from both deploy workflows, because CI-apply would need four GCP
+# admin roles, i.e. the god-credential keyless WIF exists to abolish. What WIF buys
+# CI is the two things it still does: `kamal deploy` and the weekly drift `plan`.
+# This comment read "From the second apply on, CI is keyless" until 2026-08-31 —
+# the exact narrowing 06_01 §Фаза 0 already names and forbids (a reader has every
+# right to expect apply #2 to run in CI, and it never will). After the first apply,
+# feed the two outputs
 # (`workload_identity_provider` + `service_account_email`) into the GitHub repo
 # VARIABLES GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT (non-secret
 # identifiers — they also become the deploy-gate signal that replaced GCP_SA_KEY).

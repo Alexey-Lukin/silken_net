@@ -8,17 +8,21 @@
 # founder IS the billing admin), no notification-channel plumbing needed.
 #
 # Guarded by billing_account_id (same count-pattern as allow_ssh): while the
-# var is empty the whole block is a no-op, so CI applies stay clean until the
-# founder provisions the value. ⚠️ Once set locally, the SAME value must reach
-# CI (GitHub secret GCP_BILLING_ACCOUNT_ID → TF_VAR_billing_account_id, wired
-# in deploy.yml / deploy-production.yml) — otherwise the next CI apply sees
-# count=0 and DESTROYS the budget.
+# var is empty the whole block is a no-op, so a plan over an unprovisioned repo
+# stays clean. ⚠️ Once set locally, the SAME value must reach CI (GitHub secret
+# GCP_BILLING_ACCOUNT_ID → TF_VAR_billing_account_id) — but the consumer is now
+# exactly ONE workflow, terraform_drift.yml, and it only PLANS. [INF.22] removed
+# the `terraform` job from deploy.yml / deploy-production.yml (⚖️ founder
+# 2026-08-29 — apply stays founder-local), so divergence costs a phantom
+# "budget will be destroyed" line in the weekly drift report, not the budget.
+# Until 2026-08-31 this header said "the next CI apply … DESTROYS the budget" —
+# a warning whose mechanism the same judgment had already deleted.
 #
 # ⚠️ REQUIRED (not optional): the CI service account needs a billing-account role
 # BEFORE activation — terraform refreshes the budget on EVERY plan, and
 # billing.budgets.get lives on the billing account, not the project (a one-off
-# founder-auth apply does NOT help: the next CI plan 403s and, via
-# `needs: terraform`, blocks every deploy). One-time grant:
+# founder-auth apply does NOT help: the next drift plan 403s, and a detector that
+# always 403s is not a detector). One-time grant:
 #   gcloud billing accounts add-iam-policy-binding <ACCT_ID> \
 #     --member="serviceAccount:silken-net-deploy@<project>.iam.gserviceaccount.com" \
 #     --role="roles/billing.costsManager"

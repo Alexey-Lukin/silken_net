@@ -144,8 +144,11 @@ variable "ssh_source_ranges" {
 # -----------------------------------------------------------------------------
 
 # Empty = billing budget not managed here (count-guard, billing.tf). Once set,
-# mirror the value into the GitHub secret GCP_BILLING_ACCOUNT_ID — a CI apply
-# without it destroys the budget (count flips back to 0).
+# mirror the value into the GitHub secret GCP_BILLING_ACCOUNT_ID — its one consumer
+# is the weekly terraform_drift.yml, whose `plan` would otherwise show the budget as
+# a resource to remove (noise in the report, not a teardown). ⚠️ Not "a CI apply
+# destroys the budget", which is what this comment said until 2026-08-31: [INF.22]
+# removed the `terraform` job from both deploy workflows — CI only ever plans now.
 variable "billing_account_id" {
   description = "GCP billing account id (XXXXXX-XXXXXX-XXXXXX) for the [OPS.11] budget guard; empty disables"
   type        = string
