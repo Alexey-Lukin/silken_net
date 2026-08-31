@@ -372,6 +372,33 @@ asset_path: /rails/public/assets
 builder:
   arch: amd64
 
-# SSH user for connecting to servers
+# SSH transport [INF.20]. 🔴 `user: deploy` IS KNOWN-WRONG, and it is left as a loud
+# placeholder rather than a plausible value: the app host runs `enable-oslogin = TRUE`
+# (terraform/compute.tf), and under OS Login the deploy SA's login name is `sa_<numeric>`,
+# minted BY `terraform apply` — there is nothing to write here before the infra exists.
+# The host also has NO external IP and :22 is open only to Google's IAP frontend range
+# (35.235.240.0/20, `allow_iap_ssh`), so a plain TCP connect cannot work either.
+#
+# ⛔ THE (б) GLUE IS A PRECONDITION OF DEPLOY-DAY Фаза 3, NOT AN OPTION — [OPS.37] made
+# kamal the primary path onto a private host. Written out IN FULL here, not as a pointer,
+# for the same reason as the testnet block in deploy.canopy.yml: a cross-reference cannot
+# be uncommented. FOUR moves, and the fourth was UNNAMED until 2026-08-31:
+#   (1) `user:` ← `gcloud compute os-login describe-profile --format='value(posixAccounts[0].username)'`
+#       run AS the deploy SA (impersonated), i.e. `sa_<numeric>`;
+#   (2) `proxy_command:` — kamal has no IAP notion, so the tunnel is an SSH ProxyCommand:
+#         proxy_command: "gcloud compute start-iap-tunnel %h %p --listen-on-stdin --zone <zone> --project <project>"
+#       (`%h`/`%p` are OpenSSH's host/port tokens; `--listen-on-stdin` is what makes it a
+#        stdio proxy rather than a local listener);
+#   (3) docker-socket access for THAT identity. `kamal server bootstrap` cannot provide it:
+#       it needs `sudo -n usermod -aG docker`, and our deploy SA holds `compute.osLogin`,
+#       NOT `osAdminLogin` — sudo is reserved for the human `iap_admin_members`. Docker
+#       itself is pre-installed by the startup script for exactly this reason; the group
+#       membership is the remaining half (terraform/compute.tf header names it);
+#   (4) 🔴 `roles/iap.tunnelResourceAccessor` ON THE DEPLOY SA. Measured 2026-08-31:
+#       terraform/iam.tf grants that role ONLY through `for_each = toset(var.iap_admin_members)`,
+#       i.e. to humans; the SA has `compute.osLogin` and no tunnel role at all. Without it
+#       move (2) returns 403 no matter how correct the command is — and the error names IAP,
+#       not kamal, so it reads like a gcloud problem. This move was absent from every
+#       description of the glue (00_07 INF.20, terraform/compute.tf header, 06_01 Фаза 0).
 ssh:
   user: deploy
