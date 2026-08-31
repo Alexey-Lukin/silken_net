@@ -130,7 +130,7 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 
 | Runbook | Дім (SSOT) |
 |---|---|
-| Перший деплой інфраструктури (GCS state → terraform → secrets → deploy) | [`06_01 §Quickstart`](06_01_Deployment_Kamal_Terraform) |
+| Перший деплой інфраструктури (тулчейн → GCS state → terraform → secrets → контракти → deploy) | [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) — ⚠️ реф вів у `§Quickstart` до 2026-08-31, тобто цей індекс рунбуків посилав оператора в ТРЕТЮ копію процедури, і саме в протухлу |
 | TLS / Cloudflare verification (8-step) | [`06_01 §TLS`](06_01_Deployment_Kamal_Terraform) |
 | Secrets: pre-deploy checklist, rotation, audit | [`06_04 §5.1–5.3`](06_04_Secrets_Checklist) |
 | **Emergency:** `peaq_signing_key` compromise/revocation | [`06_04 §5.4`](06_04_Secrets_Checklist) |

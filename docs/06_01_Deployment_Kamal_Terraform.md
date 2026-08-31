@@ -35,7 +35,7 @@
 
 <!-- TOC:AUTO:START -->
 - [Pre-Flight Checklist (до першого фізичного деплою)](#-pre-flight-checklist-до-першого-фізичного-деплою)
-- [Quickstart: Перший Деплой Інфраструктури](#-quickstart-перший-деплой-інфраструктури)
+- [Перший деплой — один носій](#-перший-деплой--один-носій)
 - [Архітектура Деплою (The Big Picture)](#-архітектура-деплою-the-big-picture)
 - [Canopy vs 🌲 Production — Порівняльна Таблиця](#-canopy-vs--production--порівняльна-таблиця)
 - [Розподіл Ресурсів між провайдерами](#-розподіл-ресурсів-між-провайдерами)
@@ -80,92 +80,30 @@
 
 ---
 
-## 🚀 Quickstart: Перший Деплой Інфраструктури
+## 🚀 Перший деплой — один носій
 
-> Покрокова послідовність першого реального деплою.
+⛔ **Тут була §Quickstart: сім bash-кроків, і вони були ТРЕТЬОЮ копією процедури деплою.
+Знято 2026-08-31 (⚖️ founder), бо копія протухла, а читалась першою — вона стоїть вище за
+§DEPLOY-DAY у цьому ж документі.** Виміряні розходження, кожне з яких оператор виконав би
+дослівно: секрети `POSTGRES_HOST`/`POSTGRES_USER` наказувалось класти в
+`.kamal/secrets-common`, де їх немає й не має бути (Pre-Flight #2 того ж документа казав
+правильно — `env.clear`) · із 32 імен `secrets-common` бракувало девʼяти, серед них
+`CANOPY_REDIS_URL`, без якого локальний `kamal deploy -d canopy` мовчки сідає на невалідний
+Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` називав два значення з пʼяти · крок
+`coap_daemon_image` був відсутній, тож анкер тягнув би `:PIN_ME` · фаз контрактів не було
+ЗОВСІМ, а без адрес бут падає на девʼяти плейсхолдерах. **Тобто послідовність, названа
+«Покрокова послідовність першого реального деплою», гарантовано давала впалий бут.**
 
-```bash
-# Крок 1: Створити GCS bucket для Terraform State (один раз, до terraform init)
-cd terraform
-chmod +x bootstrap.sh
-./bootstrap.sh  # gcloud auth check + bucket + CMEK-латч state-bucket'а [SEC.22]:
-                # keyring silken-tfstate-ew1 → default-CMEK + PAP + retention 10в/30д;
-                # усередині разовий sleep 30s (IAM-propagation) — не переривай
+🔑 **Це рівно той урок, який [`DEPLOY-1`](00_07_Action_Plan_Tracker) записав про себе** —
+«копій виявилось не дві, а ТРИ» — тільки там колапс зробили в трекері, а тут третю копію
+лишили стояти. Носій правила мусить стояти там, де стоїть ВИКОНАВЕЦЬ, і виконавець у день
+деплою читає фази, а не швидкий вхід.
 
-# Крок 2: Налаштувати terraform.tfvars
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Заповнити: project_id, db_password, iap_admin_members (твій e-mail)
-# ⛔ ssh_source_ranges ЛИШАЙ `[]` — це break-glass, що відкриває :22 назовні повз
-#    ратифікований IAP-шлях (INF.20 (в)); дефолт у tfvars.example саме `[]`
-
-# Крок 3: Провізіонувати GCP інфраструктуру (Cloud SQL + Ingress Anchor + app-хост)
-terraform init
-terraform plan
-terraform apply
-# → outputs: ingress_ip, database_url
-# GCP тепер містить: Cloud SQL PostgreSQL (приватна IP) + Ingress Anchor (e2-small,
-#   статична IP, CoAP-демон PRIMARY, boot-disk CMEK через `silken-disk-ew1` keyring)
-#   + app-хост silken-net-app (e2-standard-2, БЕЗ зовнішньої IP — анкер фронтить 80/443
-#     і 5683; Docker передвстановлений, бо deploy-SA не має sudo; власний CMEK app-boot)
-#   + Cloud KMS keyring (`kms.tf` — ДВА disk-ключі, compute service-agent IAM автоматично)
-# ⚠️ Перший apply може РАЗ впасти "kmsPermissionDenied" (compute P4SA / KMS-IAM
-#   propagation ще не поширилась) → просто re-apply (той самий клас, що першу
-#   активацію billing-API; на brownfield-проєкті зазвичай проходить з першого разу)
-
-# Крок 4: Створити DNS A-запис
-# api.silkennet.com → $(terraform output -raw ingress_ip)
-# Дочекатися: dig api.silkennet.com → правильний IP
-
-# Крок 5: Заповнити .kamal/secrets-common — повний список секретів
-# (дзеркало config/deploy.yml env.secret; значення з GitHub Secrets або менеджера)
-#
-# Application core:
-#   RAILS_MASTER_KEY, POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD,
-#   REDIS_URL=rediss://<upstash>:6379, TURBO_SIGNED_STREAM_KEY
-#   ⛔ CLOUD_SQL_INSTANCE_CONNECTION_NAME / GCP_SA_KEY_BASE64 більше НЕ заводити [OPS.37]:
-#   Auth Proxy знято з рантайм-шляху разом із платформою, що його вимагала. Ці два рядки
-#   пережили зріз коду на пів дня — 👤-процедура наказувала СТВОРИТИ довгоживучий SA-ключ,
-#   чиє зникнення той самий зріз оголосив закриттям ARCH.114.
-#   (KREDIS_REDIS_URL — НЕ задавати: Kredis читає REDIS_URL як є, config/redis/shared.yml) [B1]
-# 🛑 Boot-critical (інакше Puma crash):
-#   PROVISIONING_MASTER_KEY=$(ruby -e "require 'securerandom'; puts SecureRandom.hex(32)")
-# Observability:
-#   SENTRY_DSN
-#   GRAFANA_REMOTE_WRITE_URL/USERNAME/TOKEN (тільки в accessory alloy)
-#   ⛔ PROMETHEUS_AUTH_USER / _PASSWORD — НЕ заводити [2026-08-31]. Deploy-поверхні в них
-#      немає: ані accessories.alloy.env, ані .kamal/secrets-common їх не оголошують (06_03
-#      §2.8 каже прямо — поверхня зникла з платформою, OPS.37). Unset — чесний стан, а не
-#      діра: колектор allow-lists RFC1918 ДО перевірки auth, і скрейп іде приватною
-#      docker-мережею. 🔴 Плейсхолдер тут гірший за порожнечу: непорожній
-#      `REQUIRED_SECRET_NOT_SET` є known-value BYPASS'ом самої перевірки (B6).
-# 🔐 TLS (Origin CA, INF.4) — boot-critical з 2026-08-31:
-#   TLS_ORIGIN_CERT_PEM, TLS_ORIGIN_KEY_PEM (порожнє значення = ПОРОЖНІЙ сертифікат мовчки)
-# Web3 oracle keys (інакше Sidekiq DeadSet; legacy ORACLE_PRIVATE_KEY retired повністю — INF.22):
-#   ORACLE_MINTER_PRIVATE_KEY, ORACLE_SLASHER_PRIVATE_KEY,
-#   ETHEREUM_ANCHOR_PRIVATE_KEY
-# RPC endpoints (Web3::RpcConnectionPool):
-#   ALCHEMY_POLYGON_RPC_URL, ALCHEMY_ETHEREUM_RPC_URL, SOLANA_RPC_URL
-# Solana minting:
-#   SOLANA_WALLET_KEYPAIR, SOLANA_FEE_PAYER_PUBKEY,
-#   SOLANA_FEE_PAYER_TOKEN_ACCOUNT, SOLANA_USDC_MINT_ADDRESS
-# Chainlink oracle-callback HMAC (dispatch-секрети вилучено — ARCH.53):
-#   CHAINLINK_HMAC_SECRET
-#
-# ⚠️ SECURITY NOTE: ENV-змінні лежать у контейнері plaintext і читаються будь-ким
-# із root на хості. Ротуй keys кожні 90 днів; ключі деплою — тільки з MINTER_ROLE/
-# SLASHER_ROLE (ніколи з DEFAULT_ADMIN_ROLE). Інвентар — 06_04 §1.
-
-# Крок 6: Деплой застосунку
-kamal deploy -d canopy   # спершу canopy (ізольований DB-set), потім production
-
-# Крок 7: Верифікація
-# Коли в логах: "Listening on coap://0.0.0.0:5683" — ліс може говорити.
-# Ingress Anchor: CoAP приймає демон ПРЯМО на анкорі (PRIMARY — INF.17);
-# HAProxy проксює HTTP/HTTPS зі статичного GCP IP на app-хост (socat = CoAP-fallback).
-```
-
----
+➡️ **Єдиний носій — §DEPLOY-DAY нижче** (Фази −1а → 6), а передумови, що можуть мовчки
+зламати день, — §Pre-Flight вище. Два факти, які жили ЛИШЕ в знятій секції, мігровано ПЕРЕД
+зрізом, не після: заборона `CLOUD_SQL_INSTANCE_CONNECTION_NAME`/`GCP_SA_KEY_BASE64` →
+[`06_04 §2`](06_04_Secrets_Checklist), приймальний рядок `Listening on coap://0.0.0.0:5683`
+→ Фаза 4.
 
 ## 🗺️ Архітектура Деплою (The Big Picture)
 
@@ -1029,6 +967,11 @@ production — і це мусить бути сказано вголос, бо �
 перевірка всієї системи.
 
 **Фаза 4 — Верифікація (єдиний post-deploy список):**
+🌲 **Приймальний рядок інтейку — `Listening on coap://0.0.0.0:5683` у логах демона**
+(`docker logs silkennet-coap` на анкері). Коли він зʼявився — **ліс може говорити.**
+⚠️ Це НЕ дублює `coap_smoke` нижче, а передує йому: рядок каже, що сокет піднято, smoke —
+що байти правильні; демон із неповним `coap.env` мовчить, а `systemctl status` рапортує
+активність через `Restart=always`. Далі —
 `db:prepare` пройшов усі 3 бази (INF.16) · `curl https://silkennet.app/up` → 200 +
 `/ready` → 200 (DB+Redis+Kredis) · `coap_smoke` зелений + задати repo Variables
 `CANOPY_COAP_HOST`/`PRODUCTION_COAP_HOST` (INF.6) · метрики: 3 process-таргети живі,

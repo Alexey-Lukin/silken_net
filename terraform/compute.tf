@@ -446,7 +446,37 @@ resource "google_compute_instance" "app" {
       apt-get update -qq && apt-get install -y -qq docker.io
     fi
     systemctl enable --now docker
-    logger -t silken-app "app host ready: docker $(docker -v 2>/dev/null || echo MISSING)"
+
+    # ---- INF.20 (б) move (3): docker socket for the deploy SA -----------------
+    # kamal runs `docker` over SSH as the deploy SA's OS Login identity, whose posix
+    # name is `sa_<numeric unique_id>`. `kamal server bootstrap` cannot grant it —
+    # its `sudo -n usermod -aG docker` needs root, and the SA deliberately holds
+    # compute.osLogin, NOT osAdminLogin (sudo stays with iap_admin_members). That is
+    # also why docker is pre-installed above rather than curl|sh'd on the boot path
+    # of the machine that holds the money keys.
+    # 🔑 The account does NOT exist yet — the guest agent mints it on FIRST OS Login,
+    # and both usermod and gpasswd refuse an unknown user. /etc/group is keyed by
+    # NAME, so the membership can be written ahead of the account and is honoured
+    # the moment it appears. ⚠️ `sa_<unique_id>` is a claim about GOOGLE's naming,
+    # not about our config: verify once in Фаза 1 with
+    #   gcloud compute os-login describe-profile --format='value(posixAccounts[0].username)'
+    # run AS the impersonated SA — that same value also fills `ssh.user` (move 1).
+    DEPLOY_SA_POSIX="sa_${google_service_account.deploy.unique_id}"
+    DOCKER_MEMBERS="$(getent group docker | cut -d: -f4)"
+    case ",$DOCKER_MEMBERS," in
+      *",$DEPLOY_SA_POSIX,"*)
+        logger -t silken-app "docker group already carries $DEPLOY_SA_POSIX" ;;
+      *)
+        if [ -z "$DOCKER_MEMBERS" ]; then
+          NEW_MEMBERS="$DEPLOY_SA_POSIX"
+        else
+          NEW_MEMBERS="$DOCKER_MEMBERS,$DEPLOY_SA_POSIX"
+        fi
+        sed -i "s|^docker:\([^:]*\):\([^:]*\):.*|docker:\1:\2:$NEW_MEMBERS|" /etc/group
+        logger -t silken-app "docker group: added $DEPLOY_SA_POSIX (deploy SA OS Login identity, INF.20 move 3)" ;;
+    esac
+
+    logger -t silken-app "app host ready: docker $(docker -v 2>/dev/null || echo MISSING); docker group = $(getent group docker | cut -d: -f4)"
   EOF
 
   shielded_instance_config {
