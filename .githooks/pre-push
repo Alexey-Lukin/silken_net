@@ -171,7 +171,9 @@ if printf '%s\n' "$_changed" | grep -q '^\.github/workflows/'; then
   fi
 fi
 
-# [OPS.37] Mirrors the `alloy` path-filter in ci.yml: `^deploy/` alone matched NONE of the
+# [INF.27] Mirrors the `alloy` path-filter in ci.yml: `^deploy/` alone matched NONE of the
+# (⚠️ tag corrected 2026-08-31 — was [OPS.37], which explains why these files became the
+#  scan's subjects, never why the filter missed them; the filter story lives in INF.27.)
 # scan's primary subjects (config/deploy*.yml, .kamal/*, terraform/compute.tf), so the very
 # diffs that move money-secret placement pushed unchecked on both surfaces at once.
 if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/|terraform/compute\.tf|\.dockerignore|Dockerfile)'; then
@@ -273,6 +275,16 @@ fi
 #
 # NOT-RUN ⊥ FAILED — як у сусідів: rubocop є bundle-залежністю, тож свіжий clone без
 # `bundle install` дістає ГУЧНУ ноту й проходить, а не стає непушабельним.
+#
+# ✅ PATH-GATE ПЕРЕВІРЕНО В ОБИДВА БОКИ [OPS.28], бо фільтр, міряний лише позитивами,
+# доводить, що він СПРАЦЬОВУЄ, і мовчить про те, чи він не спрацьовує ЗАВЖДИ:
+#   позитиви (мусять запускати) — шість входів, серед них `spec/**/*_spec.rb`, тобто
+#     рівно та форма файлу, чия поява в середині сесії й дала інцидент, заради якого
+#     блок існує;
+#   негативні контролі (мусять МОВЧАТИ) — `docs/` · `firmware/` · `.github/` ·
+#     `subgraph/`: жоден не піднімає rubocop, тож ціна звичайного docs-пушу нульова.
+# 🔑 Без негативної половини «фільтр працює» означало б лише «він пропускає потрібне» —
+# а блок, що біжить на КОЖНОМУ пуші, зникає з бюджету хука тихо й назавжди.
 if printf '%s\n' "$_changed" | grep -qE '\.rb$|^\.rubocop|^Gemfile|^Rakefile'; then
   if ( cd "$root" && bundle exec rubocop --version ) >/dev/null 2>&1; then
     if ! ( cd "$root" && bin/rubocop ); then

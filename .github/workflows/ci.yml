@@ -63,6 +63,18 @@ jobs:
               - 'tools/firmware/**'
               - 'tools/ml/**'
             ruby:
+              # 🔴 ЦЕЙ ФІЛЬТР ВУЖЧИЙ ЗА ПЕРИМЕТР, ЯКИЙ СТЕРЕЖЕ ЙОГО Ж ДЖОБА [OPS.28,
+              # виміряно 2026-08-30]. `bin/rubocop --list-target-files` дає 1024 файли,
+              # з них **55 поза цим переліком**: `scripts/` 47 · `tools/` 7 · `deploy/` 1.
+              # Наслідок точний: діф, що чіпає ЛИШЕ `scripts/*.rb` — дім УСІХ SSOT-гейтів —
+              # не запускає ані `lint`, ані `test`, тобто **CI не є носієм для власних
+              # інструментів**; сьогодні його ловить лише `pre-push`. ⊕ І це розходиться з
+              # `spec/quality/brakeman_stance_parity_spec.rb`, яка пінить периметр
+              # `app lib scripts config` — два дзеркала не згодні, і обидва «present».
+              # ⚖️ Розширення НЕ безкоштовне: додати `scripts/` сюди означає тягнути повну
+              # сюїту на КОЖЕН scripts-діф — тож це присуд про ціну, а не очевидний фікс,
+              # і він лишається відкритим у `00_07` OPS.28. Клас — §Guard-craft #116
+              # (фільтр названо за ОДНИМ концерном, а джоба несе ТРИ).
               - 'app/**'
               - 'lib/**'
               - 'config/**'
@@ -100,7 +112,13 @@ jobs:
               # on exactly these paths) while the scan sits skipped.
               - '.dockerignore'
               - 'Dockerfile'
-              # 🔴 [OPS.37] The scan's PRIMARY subjects, missing here until 2026-08-30 —
+              # 🔴 [INF.27] The scan's PRIMARY subjects, missing here until 2026-08-30 —
+              # (⚠️ tag corrected 2026-08-31: this read [OPS.37], and that item explains the
+              # SUBJECTS — why config/deploy*.yml, .kamal/** and compute.tf became this
+              # scan's business after the platform cut — but says nothing about the FILTER
+              # or its widening. A reader following it landed on invariants B3/B4 instead.
+              # The finding and the fix live in INF.27; OPS.37 remains the cause of the
+              # subject set, which is a different sentence.)
               # so a config-only diff (money-quintet placement, canopy `servers:` array
               # form, the COAP_ENV heredoc) skipped the job entirely and `CI passed` went
               # green having judged nothing. Note the shape: the block above reasons
@@ -474,6 +492,22 @@ jobs:
     # яких залежать ОБИДВІ джоби `test`/`feature-test`, стоять поза shellcheck.
     # Клас малий (два блоки в одному екшені), тож ставити сюди окремий інструмент
     # непропорційно — але зелене тут не є твердженням про них.
+    #
+    # ✅ ПРЕМІСУ ЦІЄЇ СТЕЛІ ПЕРЕМІРЯНО 2026-08-24, І ВОНА ВИСТОЯЛА. Це не педантизм:
+    # «composite-екшен не парситься ЗА ПОБУДОВОЮ» є твердженням про ІНСТРУМЕНТ, а такі
+    # старіють мовчки — апстрім міг навчитись. Прогін ЗАПІНЕНОЇ версії, якій `action.yml`
+    # подано явно, дав ту саму відмову, тож стеля чинна, а не успадкована на віру.
+    # 🔁 Перемірювати варто РІВНО при бампі `actionlint`, не за календарем.
+    # ✅ І експозицію зміряно ВИЧЕРПНО того ж дня, замість того щоб її припускати:
+    # `shellcheck` прогнано РУКАМИ по всіх `run:`-блоках єдиного composite-екшена —
+    # нуль знахідок, доведений ПОЗИТИВНИМ КОНТРОЛЕМ (підсаджений unquoted-glob дав RED,
+    # тобто інструмент справді дивився). Це не закриває стелю — наступна правка тих
+    # блоків так само поза наглядом, — але знімає підозру, що діра вже кровоточить.
+    # 🔑 ПУСКАЧ УЗЯТТЯ НАЗВАНО, і саме тому нога не є вічним боргом: побільшає
+    # composite-екшенів АБО `shellcheck` заїде в CI з іншої причини — тоді периметр
+    # безкоштовний, і клас закривається сам. ⚠️ Фразу «пускач названо» читає
+    # `scripts/tracker_report.rb` як класифікатор відкладених ніг — не переписуй її
+    # синонімом, інакше нога мовчки повернеться в перелік доступної роботи.
     # Pinned-binary + sha256-verify (OPS.10 supply-chain-стандарт; runner вже має
     # shellcheck → shell-блоки лінтяться автоматично).
     runs-on: ubuntu-latest

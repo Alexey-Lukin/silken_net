@@ -16,7 +16,14 @@
 # prefix: a telemetry queue flood can still evict Web3 nonce locks under an
 # eviction policy, which is exactly the EVM nonce-collision / double-spend risk
 # the split was built for. A prefix separates NAMES, never memory pressure. Two
-# live mitigations: the canopy/production databases run with eviction OFF, and
+# live mitigations: the canopy/production databases run with eviction OFF (🔴 and NOTHING
+# VERIFIES THAT — the property is load-bearing and held by a vendor-console dropdown alone:
+# Upstash sits outside terraform, `terraform.tfvars.example` only mentions it in a comment,
+# no runtime probe reads it, no gate asserts it. So a policy change made in the console, or a
+# database recreated with defaults, silently reopens the exact nonce-collision the split was
+# built for — and the first symptom would be a double-spend, not a red build. Named here
+# because this file is where the reader stands; a detector would need Upstash's API and is
+# not built [INF.22]), and
 # `KREDIS_REDIS_URL` below still points Kredis at a SEPARATE instance whenever
 # that is wanted — the override is the deploy-time lever, and it needs no code.
 #

@@ -67,6 +67,13 @@
 # Sibling of BUNDLE_WITHOUT="development:test" above: that one keeps the test GEMS
 # out, this one keeps the test and non-Rails SOURCE out. Closing only the first
 # leaves the larger half in place while the item reads as done.
+#
+# ⛔ `/scripts` AND `/deploy` WERE DELIBERATELY *NOT* CUT, and the reason is recorded
+# because a future sweep will otherwise re-open it as an oversight: both are versioned
+# and small, so the risk of cutting — a rake task, an entrypoint or an accessory config
+# reaching for a path that is no longer in the image, discovered at runtime rather than
+# at build — exceeds the megabytes saved. The list above is what measurement JUSTIFIED
+# cutting; absence from it is a decision, not a gap.
 /spec
 /docs
 /firmware

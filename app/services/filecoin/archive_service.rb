@@ -58,6 +58,24 @@ module Filecoin
     end
 
     # Головний метод — серіалізує AuditLog і завантажує на IPFS/Filecoin
+    #
+    # 🔴 ЦЕЙ РАННІЙ RETURN РОБИТЬ FORCE-REPIN НЕМОЖЛИВИМ, і разом із сусідом утворює
+    # ЛАНЦЮГ, якого не видно з жодної його ланки окремо [INF.22, Phase-2 deferred]:
+    #   1. `FilecoinVerificationSweepWorker` ВИЯВЛЯЄ недосяжний пін — і кладе цей факт
+    #      у лічильник статистики та `Rails.logger.warn`, тобто НІКУДИ не персистить;
+    #   2. отже `FilecoinReconcileWorker` не має що прочитати — стану «пін зник» у БД
+    #      не існує, а `archive_requested_at` лишається виставленим і виглядає здоровим;
+    #   3. а якби реконсиляція й дізналась — цей `return` мовчки нічого не зробив би,
+    #      бо `ipfs_cid` присутній: сам факт минулого піну блокує повторний.
+    # Тобто архів може бути НЕДОСЯЖНИМ, а тракт — зеленим на всіх трьох ланках. Лік
+    # потребує персистованого стану verification-failure (колонка) + unpin-семантики,
+    # і саме тому він Phase-2, а не однорядкова правка `return`'у.
+    # ⚠️ Phase-1 — це forward-marker для НОВИХ логів, не backfill: рядки, створені до
+    # міграції, мають `ipfs_cid = NULL` І `archive_requested_at = NULL`, тож невидимі
+    # для reconcile взагалі; при launch їх піднімає ОДНОРАЗОВИЙ
+    # `UPDATE audit_logs SET archive_requested_at = created_at
+    #    WHERE ipfs_cid IS NULL AND auditable_type = 'BlockchainTransaction'`
+    # (👤, свідомо повертає auditable_type-евристику рівно на цей один прохід).
     def archive!
       return if @audit_log.ipfs_cid.present?
 

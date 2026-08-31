@@ -135,6 +135,15 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   five automated ecosystems. The bot is a convenience, not the instrument — **make "read `tag_last_pushed`
   for the pinned base image" a standing step of the sweep**, because a digest bump is pure security patch
   and is invisible in every version-based inventory (`bundle outdated`, `gh api releases`) by construction.
+  🔑 **And the release-age quarantine applies WEAKER to a base-image DIGEST bump — that is a
+  difference in KIND of artefact, not an indulgence** [OPS.10]. A digest bump of `ruby:X-slim` is a
+  REBUILD OF THE SAME TAG of the official image with patched OS packages; it introduces no new
+  third-party version, no new maintainer, no new code — which is exactly what the quarantine is for.
+  Contrast the same week's `cloud-sql-proxy` v2.25.4 at zero days of soak, which stayed under the
+  ratified window because it WAS a new version of someone else's software. **So the question the
+  quarantine really asks is not «how old is it» but «is this a new artefact or the same one
+  repaired»** — and only the second reading lets a security rebuild land the day it ships, which is
+  the whole point of pinning by digest rather than by tag.
   🔴 **A hand-pinned vendored BINARY has neither channel, and two lessons from ours outlived the binary
   itself — kept here because their home died with it** (`cloud-sql-proxy` was removed from the runtime by
   OPS.37 on 2026-08-29, taking the `Dockerfile` comment that carried them). (a) **Do not assume a
