@@ -144,13 +144,19 @@ proxy:
   #   interval: 3
   #   timeout: 5
 
-# Proxy boot configuration (HTTP/HTTPS only — kamal-proxy does not speak UDP;
-# CoAP 5683/udp is published directly by the `coap` role above).
-boot:
-  proxy:
-    publish:
-      - "80:80"
-      - "443:443"
+# 🔴 `boot.proxy` ЗНЯТО 2026-08-31 — воно робило КОЖНУ команду kamal неможливою, і жоден
+#    гейт цього не бачив, бо `kamal config` не біжить у CI ніде. Тут стояв блок
+#    `boot: { proxy: { publish: ["80:80","443:443"] } }`; `Kamal::Configuration::Boot`
+#    приймає РІВНО `limit` · `wait` · `parallel_roles`, тож будь-який виклик падав
+#    `ERROR (Kamal::ConfigurationError): boot: unknown key: proxy` — тобто `kamal deploy`
+#    у день деплою не дійшов би навіть до SSH. Відтворено на попередньому коміті, отже
+#    дефект наявний, а не привнесений розщепленням `proxy:` вище.
+#    ⊕ І він був ЗАЙВИЙ навіть у валідній формі: порти проксі взагалі не є ключем
+#    `deploy.yml` — це CLI-опції `kamal proxy boot` (`--http-port`/`--https-port`), чиї
+#    дефолти `DEFAULT_HTTP_PORT = 80` / `DEFAULT_HTTPS_PORT = 443` дорівнюють тому, що
+#    блок задавав. Легальний спосіб змінити їх із конфіга — `proxy.http_port` /
+#    `proxy.https_port` у ТОП-РІВНЕВОМУ `proxy:` вище, а не під `boot:`.
+#    (kamal-proxy не говорить UDP; CoAP 5683/udp публікує роль `coap` окремо.)
 
 # Google Artifact Registry for Docker images.
 # Run `gcloud auth configure-docker <region>-docker.pkg.dev` before first deploy.
