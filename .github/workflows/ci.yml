@@ -40,6 +40,7 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
       terraform: ${{ steps.filter.outputs.terraform }}
       docker: ${{ steps.filter.outputs.docker }}
+      shell: ${{ steps.filter.outputs.shell }}
     steps:
       - name: Harden runner (egress audit)
         uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
@@ -113,6 +114,24 @@ jobs:
               - 'Rakefile'
               - '.rubocop.yml'
               - '.rubocop_todo.yml'
+            shell:
+              # [OPS.28] Subjects of `scripts/shell_parse_check.rb`. 🔴 The filter is
+              # deliberately WIDER than that gate's discovery, and in the safe direction:
+              # discovery finds shell by SHEBANG (a path is a subject the moment someone
+              # adds `#!/bin/bash` to it), so a filter listing only today's known shell
+              # files would silently stop covering tomorrow's — the §Guard-craft #116 class
+              # the `ruby` filter above was just widened for. Hence whole directories where
+              # shell lives, plus the gate and its own workflow block.
+              - '**/*.sh'
+              - 'bin/**'
+              - '.kamal/hooks/**'
+              - '.githooks/**'
+              - '.claude/hooks/**'
+              - 'terraform/**'
+              - 'firmware/scripts/**'
+              - 'tools/**'
+              - 'subgraph/**'
+              - 'scripts/shell_parse_check.rb'
             js:
               - 'config/importmap.rb'
               - 'app/javascript/**'
@@ -550,6 +569,44 @@ jobs:
           tar xzf actionlint.tar.gz actionlint
           ./actionlint -color
 
+  shell_parse:
+    needs: changes
+    if: ${{ needs.changes.outputs.shell == 'true' || needs.changes.outputs.ci == 'true' }}
+    # [OPS.28] `bash -n` over every shell artifact in the tree — including the shell
+    # INSIDE terraform heredocs, which `terraform validate` treats as an opaque string
+    # and `actionlint` never sees (it reads `run:` blocks in .github/workflows/** only).
+    #
+    # 🔒 It is a RATCHET, not a detector, and that is declared rather than discovered:
+    # the live yield at build time was ZERO — all 29 subjects parsed. It is worth a job
+    # anyway because false positives are impossible BY CONSTRUCTION (a file parses or it
+    # does not), it costs seconds, and its subjects are precisely the artifacts whose
+    # FIRST execution is deploy day: `bin/docker-entrypoint` (every container), the
+    # `.kamal/hooks/pre-build` (step ZERO of `kamal deploy`), `terraform/bootstrap.sh`,
+    # and the two GCE startup scripts. ⛔ Do not read its green as "the shell is
+    # correct" — the full ceiling is in the script's own header, and it is the ceiling
+    # that matters here, not the pass.
+    #
+    # No ruby/bundler setup on purpose: the script is pure stdlib (open3 + tmpdir), so
+    # the runner's system ruby suffices and this job stays a checkout plus one command.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The battery runs FIRST and is not optional: two of the gate's transforms
+      # (terraform `$${…}` escaping, the shebang discriminator) have no witness in
+      # the live corpus — no heredoc uses `$${`, and only ONE file carries
+      # `#!/usr/bin/env sh`. Both were silently broken while this gate was written
+      # and both left the corpus run GREEN; the battery is what caught them.
+      - name: Self-test the gate's own transforms
+        run: ruby scripts/shell_parse_check.rb --selftest
+      - name: Parse-check every shell subject (bash -n)
+        run: ruby scripts/shell_parse_check.rb
+
   i18n_check:
     needs: changes
     if: ${{ needs.changes.outputs.ruby == 'true' || needs.changes.outputs.ci == 'true' }}
@@ -943,6 +1000,7 @@ jobs:
       - lint
       - python_lint
       - workflow_lint
+      - shell_parse
       - i18n_check
       - alloy_config_validate
       - terraform_validate

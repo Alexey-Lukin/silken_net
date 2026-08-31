@@ -188,6 +188,42 @@ if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/
   done
 fi
 
+# [OPS.28] shell parse — mirrors the `shell` path-filter in ci.yml (job `shell_parse`).
+#
+#   ЦІНА, ВИМІРЯНА на цьому дереві 2026-08-31 (три прогони): **0.22 с** (29 субʼєктів —
+#   27 файлів + 2 terraform-heredoc-и). Пускач частий (163 коміти за 30 днів торкались
+#   цих шляхів), тож амортизовано ≈36 с/місяць — на порядок дешевше за i18n-трійку, яка
+#   вже їде БЕЗУМОВНО за ~4 с. Саме та асиметрія, з якою в цей файл прийняли brakeman.
+#
+# 🔑 Чому носій потрібен ЛОКАЛЬНО, а не лише в CI: субʼєкти цього гейта — рівно ті
+# артефакти, чий ПЕРШИЙ прогін є день деплою (`bin/docker-entrypoint`, `.kamal/hooks/
+# pre-build`, `terraform/bootstrap.sh`, два GCE-startup-скрипти), і правлять їх саме
+# в день деплою, локально, під тиском. Round-trip через червоний CI там коштує найдорожче.
+#
+# 🔒 Стеля та сама, що в скрипті: `bash -n` судить СИНТАКСИС, ніколи семантику. Зелене
+# тут не є твердженням «шелл коректний» — лише «bash його розбирає».
+if printf '%s\n' "$_changed" | grep -qE '(\.sh$|^bin/|^\.kamal/hooks/|^\.githooks/|^\.claude/hooks/|^terraform/|^firmware/scripts/|^tools/|^subgraph/|^scripts/shell_parse_check\.rb$)'; then
+  if [ -f "$root/scripts/shell_parse_check.rb" ]; then
+    # Battery first — two of the gate's transforms have NO witness in the live
+    # corpus, so a corpus-only run is green while they are broken (measured: both
+    # were, while this gate was being written).
+    if ! ( cd "$root" && "$_rb" scripts/shell_parse_check.rb --selftest ); then
+      echo
+      echo "pre-push BLOCKED — shell_parse_check's own selftest fails (above)."
+      echo "The gate is broken, NOT the tree: fix scripts/shell_parse_check.rb first."
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+    if ! ( cd "$root" && "$_rb" scripts/shell_parse_check.rb ); then
+      echo
+      echo "pre-push BLOCKED — a shell subject does not parse (named above)."
+      echo "Fix:  ruby scripts/shell_parse_check.rb   # then bash -n the named file"
+      echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+      exit 1
+    fi
+  fi
+fi
+
 if printf '%s\n' "$_changed" | grep -qE '^firmware/.*\.(c|h)$'; then
   if [ -x "$root/firmware/scripts/cppcheck.sh" ] && command -v cppcheck >/dev/null 2>&1; then
     if ! ( cd "$root" && sh firmware/scripts/cppcheck.sh ); then
