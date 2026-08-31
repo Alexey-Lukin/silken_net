@@ -9,6 +9,15 @@ variable "project_id" {
   }
 }
 
+# ⚠️ NOT a free default — this value is pinned by something terraform does not manage.
+# Our Upstash Redis lives OUTSIDE this state (one instance per deploy slot), and its region is
+# chosen at CREATION and never again: Upstash offers read-replicas for a live instance but no
+# way to move a PRIMARY. `silkennet-canopy` was therefore created in GCP `europe-west1` to be
+# same-region with Cloud SQL, and the production instance is to be created there for the same
+# reason (it is still pending — Upstash Free allows exactly one instance per account; see
+# `00_07` Фаза −1). Changing this variable does not "move the stack": it silently splits it
+# across regions and puts a cross-region RTT on every Rack::Attack throttle check (the hot
+# path). Nothing goes red — the ceiling is recorded in `config/initializers/rack_attack.rb`.
 variable "region" {
   description = "GCP region for all resources"
   type        = string
