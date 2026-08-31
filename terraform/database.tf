@@ -38,7 +38,14 @@ resource "google_sql_database_instance" "silken_db" {
       enabled                        = true
       point_in_time_recovery_enabled = true
       start_time                     = "03:00"
-      transaction_log_retention_days = 30
+      # 🔴 7, бо це СТЕЛЯ API для edition = ENTERPRISE («must be between 1 and 7»,
+      # виміряно живим apply 2026-08-31). 30 днів посекундного PITR існують ЛИШЕ на
+      # ENTERPRISE_PLUS, а та едиція приймає тільки `db-perf-optimized-*` тири (~$220/міс
+      # проти ~$53). Тобто відвантажений конфіг був СУПЕРЕЧЛИВИЙ САМ ДО СЕБЕ: його тир і
+      # його DR-обіцянка не співіснують у жодній едиції — і побачити це міг лише apply.
+      # ⊕ Покриття 30 днів НЕ втрачено: `retained_backups = 30` нижче лишається. Коротшає
+      # лише вікно, в якому відновлення ПОСЕКУНДНЕ. ⚖️ founder 2026-08-31.
+      transaction_log_retention_days = 7
 
       backup_retention_settings {
         retained_backups = 30

@@ -74,7 +74,7 @@
 | Параметр | Значення | DR-роль |
 |---|---|---|
 | `point_in_time_recovery_enabled` | `true` | Відновлення на будь-яку секунду в межах вікна WAL |
-| `transaction_log_retention_days` | `30` | Глибина PITR — 30 днів |
+| `transaction_log_retention_days` | `7` **(pre-fleet)** · ціль `30` | Глибина ПОСЕКУНДНОГО PITR. ⚠️ Значення привʼязане до **едиції**, а не до нашої планки: `ENTERPRISE` приймає 1–7 (API: «must be between 1 and 7»), 30 днів існують лише на `ENTERPRISE_PLUS`, що приймає виключно `db-perf-optimized-*` тири (~4× ціна). Едиція підвищується **на місці**, тож ціль не скасована — вона gated. Покриття 30 днів дає рядок нижче й воно НЕ рухається |
 | daily backup `start_time` | `03:00` | Щоденний snapshot |
 | `retained_backups` | `30` (COUNT) | 30 останніх snapshot'ів |
 | `availability_type` | `REGIONAL` (default) | **HA з автоматичним failover** між зонами |
@@ -84,9 +84,11 @@
 
 > **Наслідок:** на default-конфігу production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
 
+> ⚖️ **ЧИННА ЕДИЦІЯ — `ENTERPRISE`, і обіцянка 30 днів НЕ знята, а РОЗВЕДЕНА ЗА ФАЗОЮ** (founder 2026-08-31). Формулювання власника: «на production і canopy якщо буде по-різному, то обіцянку в DR ми не порушимо». ⚠️ Поправка від заліза, без якої це нездійсненне: інстанс Cloud SQL **ОДИН** на обидва слоти (він несе `production` + `canopy` + cache/cable — [`06_01`](06_01_Deployment_Kamal_Terraform)), а `edition`, тир і глибина PITR є властивістю **ІНСТАНСУ**, не бази. Отже «по-різному» досяжне не одночасно, а **в часі**. 🔑 Тому це НЕ пониження планки: `30` лишається ціллю для проду З ДАНИМИ, а `7` є оголошеним pre-fleet-станом при нулі дерев і нулі користувачів. ⛔ **Подія підвищення названа й та сама, що в ZONAL-врізці — перший живий аплінк**: до нього посекундне вікно захищає порожню базу. Хід: `edition = ENTERPRISE_PLUS` + тир `db-perf-optimized-*` (підвищення на місці, з рестартом) → `transaction_log_retention_days = 30` → підняти поріг гейта назад. Стан і виконавець — [`00_07`](00_07_Action_Plan_Tracker) `DR.1`. ⊕ **Що НЕ втрачено вже сьогодні:** `retained_backups = 30` не рухається, тобто 30 днів точок відновлення є; коротшає лише вікно, в якому відновлення посекундне.
+
 > ⚖️ **ЧИННИЙ ДЕПЛОЙ — `ZONAL`, оверрайдом у `terraform.tfvars` (founder 2026-08-31).** Дефолт у `variables.tf` лишається `REGIONAL`, тож `database_dr_posture_spec` зелений за побудовою — він судить КОМІЧЕНУ поставу, і сам оголошує оверрайд «an explicit operator act». 🔑 **Розділення, на якому стоїть присуд: `availability_type` купує БЕЗПЕРЕРВНІСТЬ, а не збереження.** Проти ВТРАТИ стоїть `backup_configuration` — PITR, 30-денні транзакційні логи, 30 щоденних бекапів — і жодного з них цей оверрайд не торкається. Підстава: при нулі підключених вузлів і нулі користувачів авто-failover захищає нікого, а коштує ~$115/міс (виміряно проти прайс-листа: REGIONAL подвоює і vCPU/RAM, і диск). ⛔ **Подія повернення названа, і це ПОДІЯ, не дата — перший живий аплінк із реального заліза:** саме тоді простій уперше починає коштувати не нашого часу, а свідчення дерева. Строк тут несучий за тією ж підставою, що й у [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC): право без названого строку повернення перестає бути довіреним ([`00_05 §7`](00_05_AI_Native_Operating_Model), амана). Стан і виконавець — [`00_07`](00_07_Action_Plan_Tracker) `DR.1`.
 
-> **Posture-guard [DR.1]:** `spec/deploy/database_dr_posture_spec.rb` стверджує ці мінімуми (PITR=true · WAL/retained ≥ 30 · `db_availability_type` не-ZONAL) проти `terraform/database.tf` у CI — тихе пониження DR-постури (disable PITR / cut retention / ZONAL) падає до деплою, а не спливає постінцидентно; live-vs-tf дрейф ловить окремий `Ops · TF Drift`.
+> **Posture-guard [DR.1]:** `spec/deploy/database_dr_posture_spec.rb` стверджує ці мінімуми (PITR=true · WAL ≥ 7 [pre-fleet-підлога, ціль 30 — див. врізку] · retained ≥ 30 · дефолт `db_availability_type` не-ZONAL) проти `terraform/database.tf` у CI — тихе пониження DR-постури (disable PITR / cut retention / ZONAL) падає до деплою, а не спливає постінцидентно; live-vs-tf дрейф ловить окремий `Ops · TF Drift`.
 
 ---
 

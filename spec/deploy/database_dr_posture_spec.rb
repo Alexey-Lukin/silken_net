@@ -19,9 +19,19 @@ RSpec.describe "Cloud SQL DR posture (terraform/database.tf ↔ 06_06)" do # rub
     expect(database_tf).to match(/point_in_time_recovery_enabled\s*=\s*true/)
   end
 
-  it "PITR window (transaction log retention) is >= 30 days (06_06 RPO)" do
+  # 🔴 Поріг 7 = PRE-FLEET-ПІДЛОГА, а не нова планка: ціль 30 лишається чинною для проду
+  # З ДАНИМИ і повертається разом із підвищенням едиції (⚖️ founder 2026-08-31 — «на
+  # production і canopy якщо буде по-різному, обіцянку в DR ми не порушимо»; інстанс один
+  # на обидва слоти, тож розведення в ЧАСІ, не одночасне). Механіка межі: `edition = ENTERPRISE`
+  # приймає 1..7 днів транзакційних логів (API: «must be between 1 and 7» — виміряно живим
+  # apply 2026-08-31); 30 днів існують лише на ENTERPRISE_PLUS, який приймає виключно
+  # `db-perf-optimized-*` тири. Доти цей приклад вимагав >= 30 при тирі `db-custom-*`,
+  # тобто стеріг стан, недосяжний ЗА ПОБУДОВОЮ — гейт був зелений на конфізі, який не міг
+  # створити інстанс. ⛔ Не піднімати назад без зміни edition: підніметься гейт, а не PITR.
+  # ⊕ Сусідній приклад (`retained_backups >= 30`) НЕ рухається — 30 днів покриття лишаються.
+  it "PITR window (transaction log retention) is >= 7 days — ENTERPRISE API ceiling (06_06 RPO)" do
     days = database_tf[/transaction_log_retention_days\s*=\s*(\d+)/, 1]&.to_i
-    expect(days).to be >= 30
+    expect(days).to be >= 7
   end
 
   it "retains >= 30 daily backups (06_06)" do
