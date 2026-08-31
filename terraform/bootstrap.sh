@@ -137,6 +137,19 @@ fi
 if gcloud storage buckets describe "gs://${BUCKET_NAME}" --format=json 2>/dev/null | grep -q "${KEY_RESOURCE}"; then
   echo "✅ Default CMEK already set on gs://${BUCKET_NAME}"
 else
+  # 🔴 MATERIALISE the service agent FIRST. It is created LAZILY by GCP, and on a fresh
+  # project it does not exist yet — enabling storage.googleapis.com does not mint it, and
+  # neither does creating a bucket (measured 2026-08-31: the bucket above was created
+  # seconds earlier and the agent still did not exist). The combined
+  # `--authorize-cmek` form then dies INVALID_ARGUMENT "Service account
+  # service-<num>@gs-project-accounts.iam.gserviceaccount.com does not exist", and `set -e`
+  # aborts with the bucket already created but UNENCRYPTED — the worst resting state this
+  # script can leave, because a re-run skips the bucket and the operator must notice the
+  # missing default_kms_key by hand. The bare form is the documented get-or-create, so one
+  # extra call ahead of time removes the whole class. ⚠️ This only ever fires on a FIRST
+  # run against a fresh project, i.e. exactly and only the case bootstrap exists for.
+  echo "🔐 Materialising GCS service agent (lazy — absent on a fresh project)..."
+  gcloud storage service-agent --project="${PROJECT_ID}" >/dev/null
   echo "🔐 Authorizing GCS service agent on ${KMS_KEY} + setting default CMEK..."
   gcloud storage service-agent --project="${PROJECT_ID}" --authorize-cmek="${KEY_RESOURCE}"
   # Documented GCS race: the service-agent IAM grant can take ~30s to propagate;
