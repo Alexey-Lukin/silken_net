@@ -1517,6 +1517,7 @@
 #### DR.1 — Disaster Recovery drill + master-key backup
 - **P1** · 👤 · 🟢 · → `06_06`
 - **Стан:** DR-постуру задокументовано й ГЕЙТОВАНО: цілі+runbook'и — `06_06`, живі значення — `terraform/database.tf` (звірені, нуль дрейфу), а мінімуми (PITR · retention · REGIONAL) стереже `spec/deploy/database_dr_posture_spec.rb` — DR-пониження тихе за природою (спливає лише пост-інцидентно), тепер падає в CI. P1 тримається невідновністю master-ключів; таймінг обох ніг — у самих чекбоксах (S1.1-сусідство для vault-кроку).
+- [ ] 👤 **повернути `db_availability_type` у `REGIONAL`** — тригер названий ПОДІЄЮ: **перший живий аплінк із реального заліза** (доти авто-failover захищає нуль вузлів і нуль користувачів). ⚖️ Оверрайд ухвалено founder-ом 2026-08-31 як `ZONAL` у `terraform.tfvars`; підстава, розділення «безперервність ⊥ збереження» і повний вимір — [`06_06`](06_06_Disaster_Recovery_and_Backup) §врізка. 🔑 Нога існує саме тому, що оверрайд НЕ червонить: гейт судить комічений дефолт і сам зве оверрайд «explicit operator act», тож без цього рядка тимчасове стало б постійним мовчки — рівно той клас, проти якого гейт і писався
 - [ ] 👤 (post-deploy, quarterly) DR-drill (PITR-clone + TF-state rollback на staging, зафіксувати факт. RTO/RPO vs цілі)
 - [ ] 👤 (deploy-time) master-ключі (`RAILS_MASTER_KEY`/`PROVISIONING_MASTER_KEY`) → vault + offline-копія (незамінні, поза backup)
 

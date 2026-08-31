@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + REGIONAL HA + deletion_protection), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
+- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
 - **Відкрите:** DR drill + master-key backup (ще не проганялися) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
 
 ---
@@ -84,6 +84,8 @@
 
 > **Наслідок:** на default-конфігу production має zone-failure resilience (REGIONAL auto-failover, ~хвилини) + 30-денне вікно PITR. Read-репліка (`failover_target = false`) — НЕ для DR, лише read-scaling.
 
+> ⚖️ **ЧИННИЙ ДЕПЛОЙ — `ZONAL`, оверрайдом у `terraform.tfvars` (founder 2026-08-31).** Дефолт у `variables.tf` лишається `REGIONAL`, тож `database_dr_posture_spec` зелений за побудовою — він судить КОМІЧЕНУ поставу, і сам оголошує оверрайд «an explicit operator act». 🔑 **Розділення, на якому стоїть присуд: `availability_type` купує БЕЗПЕРЕРВНІСТЬ, а не збереження.** Проти ВТРАТИ стоїть `backup_configuration` — PITR, 30-денні транзакційні логи, 30 щоденних бекапів — і жодного з них цей оверрайд не торкається. Підстава: при нулі підключених вузлів і нулі користувачів авто-failover захищає нікого, а коштує ~$115/міс (виміряно проти прайс-листа: REGIONAL подвоює і vCPU/RAM, і диск). ⛔ **Подія повернення названа, і це ПОДІЯ, не дата — перший живий аплінк із реального заліза:** саме тоді простій уперше починає коштувати не нашого часу, а свідчення дерева. Строк тут несучий за тією ж підставою, що й у [`05_03` — Admin-Role Split](05_03_Tokenomics_SCC_and_SFC): право без названого строку повернення перестає бути довіреним ([`00_05 §7`](00_05_AI_Native_Operating_Model), амана). Стан і виконавець — [`00_07`](00_07_Action_Plan_Tracker) `DR.1`.
+
 > **Posture-guard [DR.1]:** `spec/deploy/database_dr_posture_spec.rb` стверджує ці мінімуми (PITR=true · WAL/retained ≥ 30 · `db_availability_type` не-ZONAL) проти `terraform/database.tf` у CI — тихе пониження DR-постури (disable PITR / cut retention / ZONAL) падає до деплою, а не спливає постінцидентно; live-vs-tf дрейф ловить окремий `Ops · TF Drift`.
 
 ---
@@ -92,7 +94,7 @@
 
 | Сценарій | RPO (макс. втрата даних) | RTO (час відновлення) |
 |---|---|---|
-| Zone failure (1 зона GCP) | 0 | ~хвилини (REGIONAL auto-failover) |
+| Zone failure (1 зона GCP) | 0 | ~хвилини (REGIONAL auto-failover) — ⚠️ **лише за REGIONAL; чинний деплой ZONAL, тож тут RTO = час ручного відновлення з бекапа**, див. врізку нижче |
 | Data corruption / bad migration | ≤ 5 хв (PITR WAL) | ≤ 1 год (PITR restore + redeploy) |
 | Instance loss | ≤ 5 хв (PITR) | ≤ 1 год |
 | Region loss (вся `europe-west1`) | ≤ 24 год (останній snapshot, якщо WAL у тому ж регіоні) | ≤ 4 год (restore у новий регіон + `terraform apply` + redeploy) |
