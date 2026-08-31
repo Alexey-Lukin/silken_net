@@ -127,7 +127,11 @@ class MintingRollbackService < ApplicationService
     # Раніше для Celo-транзакцій fallback вказував на polygon-rpc.com (баг).
     if tx.celo_network?
       rpc_env_key       = "CELO_RPC_URL"
-      fallback_url      = Celo::CommunityRewardService::DEFAULT_RPC_URL
+      # ⚖️ [2026-08-31] `nil` НЕ пропуск: `DEFAULT_RPC_URL` знято, і falsy-фолбек змушує
+      # `client_for` робити `ENV.fetch` БЕЗ дефолту — тобто fail-loud на money-шляху.
+      # ⚠️ Polygon-гілка нижче лишається зі СВОЇМ фолбеком свідомо: її хост — окремий
+      # відкритий ⚖️ (`polygon-rpc.com` віддає 401), і зняття Celo його не вирішує.
+      fallback_url      = nil
       fallback_env_keys = Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS
     else
       rpc_env_key       = "ALCHEMY_POLYGON_RPC_URL"

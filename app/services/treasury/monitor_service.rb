@@ -57,7 +57,11 @@ module Treasury
         network: "celo", signer: "rewards",
         env_rpc_key: "CELO_RPC_URL",
         env_private_key: "ORACLE_CELO_PRIVATE_KEY",
-        fallback_rpc: "https://alfajores-forno.celo-testnet.org",
+        # ⚖️ [2026-08-31] `fallback_rpc` знято разом із мертвою `DEFAULT_RPC_URL`. Celo був
+        # ЄДИНОЮ мережею цього реєстру з фолбеком; тепер він тотожний шістьом сусідам, і
+        # незадана змінна дає `KeyError` → `check_balance`'s `rescue` → `status: :error`
+        # + `TREASURY_CHECK_ERRORS_TOTAL` + алерт. Тобто помилка стала ВИДИМОЮ замість
+        # тихого запиту в хост, що віддає NXDOMAIN.
         min_balance: 0.05, currency: "CELO", decimals: 18,
         param_key: "oracle_min_balance_celo"
       },
@@ -431,11 +435,10 @@ module Treasury
 
     # EVM-мережі (Polygon, Celo, Ethereum): eth_getBalance через eth gem
     def fetch_evm_balance(config)
-      client = if config[:fallback_rpc]
-        Web3::RpcConnectionPool.client_for(config[:env_rpc_key], fallback: config[:fallback_rpc])
-      else
-        Web3::RpcConnectionPool.client_for(config[:env_rpc_key])
-      end
+      # ⚖️ [2026-08-31] Розвилка `if config[:fallback_rpc]` знята як МЕРТВА: Celo був її
+      # єдиним споживачем, і з його зняттям жодна мережа реєстру ключа не несе. Тепер
+      # форма одна для всіх — `ENV.fetch` без дефолту, тобто fail-loud у rescue нижче.
+      client = Web3::RpcConnectionPool.client_for(config[:env_rpc_key])
 
       # ⛔ [SEC.17] СВІДОМО не через `Web3::OracleSigner.for` — цей прохід світить УСІ
       # сім гаманців, включно з дормантними aux-підписантами (etherisc/puro/klima), чиї

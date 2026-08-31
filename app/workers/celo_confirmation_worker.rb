@@ -31,9 +31,10 @@ class CeloConfirmationWorker
     return Rails.logger.info "🌿 [Celo Confirm] tx ##{tx_id} вже :#{tx.status} — пропускаємо." unless tx.status_sent?
 
     receipt = within_rpc_limit do
+      # ⚖️ [2026-08-31] `DEFAULT_RPC_URL` знято — без `fallback:` це `ENV.fetch`, тобто
+      # fail-loud на незаданій змінній. Підстава — у знятої константи, `CommunityRewardService`.
       client = Web3::RpcConnectionPool.client_for(
         "CELO_RPC_URL",
-        fallback: Celo::CommunityRewardService::DEFAULT_RPC_URL,
         fallback_env_keys: Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS
       )
       client.eth_get_transaction_receipt(tx.tx_hash)

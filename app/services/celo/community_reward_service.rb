@@ -35,21 +35,22 @@ module Celo
       }
     ].to_json
 
-    # 🔴 МЕРТВИЙ ХОСТ — не «testnet за замовчуванням» [ARCH.118, виміряно 2026-08-30].
-    # `alfajores-forno.celo-testnet.org` віддає **NXDOMAIN** (позитивний контроль
-    # `forno.celo.org` → `0xa4ec` у тому ж прогоні): cLabs депрекейтнули Baklava+Alfajores
-    # разом із сансетом Holesky, живий наступник — `forno.celo-sepolia.celo-testnet.org`
-    # (`0xaa044c`). ⛔ Не міняти мимохідь: ця константа є ПІДСТАВОЮ правила E.49 у
-    # `Security::Web3NetworkGuard#hardcoded_fallback_violations`, тож перецілення чи зняття
-    # фолбека переписує сам гард — відкритий ⚖️ у 00_07 `ARCH.118`/`INF.27`.
-    # ⚠️ Шлях activation-gated (`ORACLE_CELO_PRIVATE_KEY` — lazy aux-ключ), тож сьогодні це
-    # латентна міна дня деплою, а не інцидент.
-    # 🔑 СПОЖИВАЧІВ ЧОТИРИ, і греп по хосту бачить лише два — решта беруть цю константу
-    # ІМЕНЕМ: `#award_reward!` тут · `CeloConfirmationWorker` (reconcile) ·
-    # `MintingRollbackService#fetch_evm_transaction_receipt` (відкат мінту) ·
-    # `Treasury::MonitorService` (той несе рядок дослівно). Тобто мертвий хост стоїть на
-    # ТРЬОХ різних Celo-money-шляхах — перелічуй ФОРМИ посилання, не входження однієї з них.
-    DEFAULT_RPC_URL = "https://alfajores-forno.celo-testnet.org"
+    # ⛔ ТУТ БУЛА `DEFAULT_RPC_URL` — hardcoded-фолбек на `alfajores-forno.celo-testnet.org`.
+    # ⚖️ ЗНЯТО 2026-08-31 (founder), і зняття, а не перецілення, обрано з підставою:
+    # фолбек існує рівно щоб пережити брак конфіга, а на ГРОШОВОМУ шляху це і є небезпека,
+    # не зручність — тож правило E.49, збудоване цю небезпеку поліціювати, стає непотрібним,
+    # а не переобґрунтованим. Хост при цьому був іще й МЕРТВИЙ (NXDOMAIN, виміряно 2026-08-30
+    # з позитивним контролем `forno.celo.org` → `0xa4ec`), тобто «фолбек» вів у нікуди.
+    # ⛔ НЕ ПОВЕРТАТИ в жодній формі — ані на `celo-sepolia`, ані на Alchemy: код-сайд-дефолт,
+    # що тихо підставляє ІНШИЙ ЧЕЙН, обходить саме те питання, задля якого існує вісь
+    # `WEB3_CHAIN_ENV` (слот на чужому ендпоінті мусить падати ГУЧНО). Конфігурований каскад
+    # `RPC_FALLBACK_ENV_KEYS` нижче лишається — він перемикає ендпоінти В МЕЖАХ оголошеного
+    # чейну, і це інший клас.
+    # 🔑 Споживачів було ЧОТИРИ, і греп по хосту бачив лише два — решта брали константу
+    # ІМЕНЕМ (`#award_reward!` · `CeloConfirmationWorker` · `MintingRollbackService` ·
+    # `Treasury::MonitorService`). Урок переживає зняття: перелічуй ФОРМИ посилання, не
+    # входження одного літерала. ⚠️ Четвертий споживач вимагав ІНШОГО ліку — він читальний,
+    # і fail-loud там зламав би дормантний свіп; деталь у його власному місці.
 
     # [E.49] RPC FALLBACK CASCADE для Celo. Якщо `CELO_RPC_URL` недоступний
     # (Net::ReadTimeout / HTTP 429 / Errno::ECONNREFUSED), Web3::ResilientClient
@@ -94,9 +95,10 @@ module Celo
       return unless organization&.crypto_public_address.present?
 
       # Підключення до Celo RPC — Thread-cached RPC client з fallback cascade [E.49]
+      # ⚖️ Без `fallback:` — `client_for` робить `ENV.fetch`, тобто `KeyError` на незаданій
+      # змінній. Це навмисно: fail-loud на money-шляху, та сама форма, що в `OracleSigner`.
       client = Web3::RpcConnectionPool.client_for(
         "CELO_RPC_URL",
-        fallback: DEFAULT_RPC_URL,
         fallback_env_keys: RPC_FALLBACK_ENV_KEYS
       )
       # [ARCH.50] Виділений Celo-підписант — ізолює blast-radius від Polygon-флоту (ARCH.49).

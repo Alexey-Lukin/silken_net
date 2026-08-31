@@ -172,35 +172,46 @@ module Security
     end
 
     # A blank RPC var is skipped above because an absent URL normally just raises at use.
-    # THREE do not — their read-sites carry an explicit hardcoded fallback, so a blank var
+    # TWO do not — their read-sites carry an explicit hardcoded fallback, so a blank var
     # silently resolves to a fixed endpoint — and those endpoints sit on OPPOSITE sides of
     # the chain axis, which is why each rule below fires on one side only:
-    #   · CELO_RPC_URL          → Alfajores TESTNET  → judged here, on `mainnet`
     #   · ALCHEMY_POLYGON_RPC_URL → mainnet polygon-rpc.com → judged here, on `testnet`
-    #   · SOLANA_RPC_URL        → Devnet TESTNET     → judged at its READ-SITE, not here
-    # ⚠️ The third is deliberately absent from this method and that is a bound, not an
+    #   · SOLANA_RPC_URL          → Devnet TESTNET          → judged at its READ-SITES
+    # ⚠️ The Solana one is deliberately absent from this method and that is a bound, not an
     # oversight: `Solana::MintingService#solana_rpc_urls` already raises on a blank var when
-    # the slot declares `mainnet` (it reads the same `chain_env`), so a boot rule would be a
-    # second home for one decision. Adding a fourth fallback? Put it wherever its sibling
-    # lives — but COUNT them first: this comment was written claiming "two" while the third
-    # already existed one file away.
+    # the slot declares `mainnet` (it reads the same `chain_env`), and `Treasury::MonitorService`
+    # #fetch_solana_balance skips+warns on the same conjunction — so a boot rule would be a
+    # second home for one decision. ⚠️ COUNT the read-sites, not the constants: Solana has TWO.
+    # ⚖️ CELO_RPC_URL WAS the third and is gone [2026-08-31, founder]: its hardcoded fallback
+    # was REMOVED rather than repointed, so a blank var no longer resolves anywhere — the Celo
+    # path is fail-closed by construction. The rule below survives that, but on a new ground.
+    # ⛔ Adding a fallback back? Ask first whether the path is a MONEY path: there, "works
+    # without config" is the hazard, not the convenience, and every such fallback buys itself
+    # a boot rule to police it. Put it wherever its sibling lives — and COUNT them first: this
+    # comment once claimed "two" while a third already existed one file away.
     def hardcoded_fallback_violations(env, testnet:)
       out = []
 
-      # [E.49] Unset CELO_RPC_URL → `Celo::CommunityRewardService::DEFAULT_RPC_URL`.
-      # 🔴 THE VERDICT STANDS, ITS GROUND CHANGED [ARCH.118, measured 2026-08-30]: that constant
-      # points at `alfajores-forno.celo-testnet.org`, which now answers **NXDOMAIN** (cLabs
-      # deprecated Alfajores with the Holesky sunset; positive control `forno.celo.org` → 0xa4ec
-      # in the same run). So the hazard is no longer "real cUSD pays out on a throwaway chain" —
-      # it is "the payout path resolves to nothing". Requiring the var on a mainnet slot is still
-      # right; what died is the REASON printed below, and the mirror claim (that this fallback is
-      # the correct landing on a testnet slot) is now simply false. Replacing the constant is an
-      # open ⚖️ — it rewrites this rule's ground, not just a string. Armed conditionally on the
-      # Celo path (its signer key lives only on the job surface, so web/coap boot clean without).
+      # [E.49] Unset CELO_RPC_URL while the Celo path is ARMED.
+      # ⚖️ GROUND REWRITTEN 2026-08-31 (founder), and this is the third ground this rule has
+      # had — worth naming, because each replacement was a real change of subject:
+      #   (1) "real cUSD pays out on a throwaway chain"  → died when Alfajores went NXDOMAIN;
+      #   (2) "the payout path resolves to nothing"      → died when the fallback was REMOVED;
+      #   (3) TODAY: there is no fallback at all, so a blank var is a `KeyError` at CALL time —
+      #       on the payout, the confirmation and the mint-rollback alike. This rule buys
+      #       exactly one thing, and it is worth a boot: it moves that failure from the first
+      #       Celo event (rare, event-driven, in production) to `kamal deploy` (immediate).
+      # 🔑 The trigger is ARMING, not usage: `ORACLE_CELO_PRIVATE_KEY` present means the path
+      # is live, and arming a payout path without its RPC must never reach production. Armed
+      # conditionally for that reason (the signer key lives only on the job surface, so
+      # web/coap boot clean without it).
+      # ⛔ Do NOT "fix" this by restoring a default URL — that is the removed hazard, not a
+      # convenience; see the note on the deleted constant in `Celo::CommunityRewardService`.
       if !testnet && env["ORACLE_CELO_PRIVATE_KEY"].present? && env["CELO_RPC_URL"].blank?
         out << "[chain] CELO_RPC_URL is not set while ORACLE_CELO_PRIVATE_KEY is present — " \
-               "the code falls back to Alfajores TESTNET (E.49): real cUSD would pay out " \
-               "on a throwaway chain. Set a mainnet Celo RPC."
+               "the Celo path is fail-closed (E.49, no hardcoded fallback since 2026-08-31), " \
+               "so every reward payout, confirmation and mint-rollback would raise KeyError " \
+               "at call time. Set a mainnet Celo RPC."
       end
 
       # Mirror of the rule above, and it exists because the testnet axis CREATED the hazard:

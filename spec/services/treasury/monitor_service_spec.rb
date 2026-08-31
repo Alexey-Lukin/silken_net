@@ -11,7 +11,9 @@ RSpec.describe Treasury::MonitorService do
     ENV["ORACLE_CELO_PRIVATE_KEY"] ||= "0x" + "c" * 64
     ENV["SOLANA_RPC_URL"] ||= "https://api.devnet.solana.com"
     ENV["SOLANA_FEE_PAYER_PUBKEY"] = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
-    ENV["CELO_RPC_URL"] ||= "https://alfajores-forno.celo-testnet.org"
+    # ⚖️ [2026-08-31] Був мертвий `alfajores-forno` — фікстура моделювала хост, що віддає
+    # NXDOMAIN, як нормальний стан. Тепер приклад-хост, як у сусідів цього ж блоку.
+    ENV["CELO_RPC_URL"] ||= "https://celo-mainnet.example.com"
     ENV["ALCHEMY_ETHEREUM_RPC_URL"] ||= "https://eth-mainnet.example.com"
     ENV["ETHEREUM_ANCHOR_PRIVATE_KEY"] ||= "0x" + "b" * 64
     # aux activation-gated (etherisc/puro/klima) СВІДОМО не сетяться — дормантний default
@@ -189,7 +191,7 @@ RSpec.describe Treasury::MonitorService do
         allow(Web3::RpcConnectionPool).to receive(:client_for)
           .with("ALCHEMY_POLYGON_RPC_URL").and_return(polygon_client)
         allow(Web3::RpcConnectionPool).to receive(:client_for)
-          .with("CELO_RPC_URL", anything).and_return(mock_evm_client)
+          .with("CELO_RPC_URL").and_return(mock_evm_client)
         allow(Web3::RpcConnectionPool).to receive(:client_for)
           .with("ALCHEMY_ETHEREUM_RPC_URL").and_return(mock_evm_client)
       end
@@ -273,7 +275,7 @@ RSpec.describe Treasury::MonitorService do
           allow(Web3::RpcConnectionPool).to receive(:client_for)
             .with("ALCHEMY_POLYGON_RPC_URL").and_return(polygon_client)
           allow(Web3::RpcConnectionPool).to receive(:client_for)
-            .with("CELO_RPC_URL", anything).and_return(mock_evm_client)
+            .with("CELO_RPC_URL").and_return(mock_evm_client)
           allow(Web3::RpcConnectionPool).to receive(:client_for)
             .with("ALCHEMY_ETHEREUM_RPC_URL").and_return(mock_evm_client)
         end
@@ -616,9 +618,14 @@ end
       expect(result).to eq(0)
     end
 
-    it "uses fallback RPC for Celo" do
+    # ⚖️ [2026-08-31] Приклад звався «uses fallback RPC for Celo» — його предмет ЗНИК разом
+    # із hardcoded-фолбеком. Перецілено, а не видалено: тепер він пінить НОВИЙ інваріант —
+    # Celo йде тим самим безфолбековим шляхом, що й шість сусідів, тож повернення `fallback:`
+    # зробить цей `.with` невідповідним і приклад почервоніє. Саме така форма піна тут і
+    # потрібна: він стереже ВІДСУТНІСТЬ дефолту на money-шляху.
+    it "resolves Celo through the plain no-fallback path, like every other EVM network" do
       allow(Web3::RpcConnectionPool).to receive(:client_for)
-        .with("CELO_RPC_URL", fallback: "https://alfajores-forno.celo-testnet.org")
+        .with("CELO_RPC_URL")
         .and_return(mock_evm_client)
       allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
 

@@ -56,12 +56,15 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(env)).to be_empty
     end
 
-    # [E.49] The blank-skip misses CELO_RPC_URL: unset falls back to Alfajores TESTNET in
-    # code (no raise) — so presence is demanded conditionally, only when the Celo path is
-    # armed (its signer key present).
-    it "flags a blank CELO_RPC_URL when the Celo signer key is present (silent Alfajores fallback)" do
+    # [E.49] ⚖️ 2026-08-31: hardcoded-фолбек знято, тож unset більше не «тихо сідає на
+    # Alfajores» — він RAISE'ить на кожному Celo-виклику. Правило вижило, ПІДСТАВА змінилась:
+    # воно переносить той `KeyError` із першої (рідкісної, продової) події на `kamal deploy`.
+    # Пін цілиться в fail-closed, а не в імʼя мертвого хоста — саме тому він і почервонів,
+    # коли підстава змінилась, і це правильна поведінка піна.
+    it "flags a blank CELO_RPC_URL when the Celo signer key is present (path is fail-closed)" do
       env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64)
-      expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*CELO_RPC_URL.*Alfajores/))
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[chain\].*CELO_RPC_URL.*fail-closed.*KeyError/))
     end
 
     it "does not demand CELO_RPC_URL while the Celo path is unarmed (no signer key)" do

@@ -34,9 +34,12 @@ module Web3
   # Sepolia (`0xaa044c`, live). So the Celo testnet row points at Celo Sepolia,
   # and Blockscout is kept on both sides because `explorer.celo.org` — the host
   # our shipped code already used — now redirects there itself.
-  # ⛔ The RPC-side twins of that dead host are NOT fixed here (they are money
-  # path and their replacement is a ⚖️, not a rename): `Celo::CommunityRewardService::DEFAULT_RPC_URL`
-  # and `Treasury::MonitorService`'s `fallback_rpc` → 00_07 INF.27.
+  # ✅ The RPC-side twins of that dead host are GONE since 2026-08-31 — and the ⚖️ resolved
+  # to REMOVAL, not a repoint: `Celo::CommunityRewardService::DEFAULT_RPC_URL` and
+  # `Treasury::MonitorService`'s `fallback_rpc` were deleted, so the Celo RPC path is
+  # fail-closed. ⚠️ Note the asymmetry with THIS file: an explorer URL is a READ-side link,
+  # so a wrong one misleads an auditor and is worth repointing; an RPC fallback is a WRITE
+  # side that moves money, and there the honest fix is to have no default at all.
   #
   # 🔒 DECLARED CEILINGS — both are about what this module CANNOT know:
   #   1. `WEB3_CHAIN_ENV` says "testnet", never WHICH testnet. The rows below

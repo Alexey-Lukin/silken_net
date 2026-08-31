@@ -10,7 +10,16 @@ RSpec.describe Celo::CommunityRewardService do
 
   before do
     allow(ENV).to receive(:fetch).and_call_original
-    allow(ENV).to receive(:fetch).with("CELO_RPC_URL", anything).and_return("https://alfajores-forno.celo-testnet.org")
+    # ⚖️ [2026-08-31] Форма ОДНОАРГУМЕНТНА — після зняття hardcoded-фолбека живий сайт кличе
+    # `ENV.fetch("CELO_RPC_URL")` без дефолту, тож старий `.with(key, anything)` не збігався б
+    # ЖОДНОГО разу й пережив би зміну зеленим (пін на порожній множині).
+    # 🔒 СТЕЛЯ, ВИМІРЯНА, а не припущена: сьогодні цей стаб не несе НІЧОГО — зняття його
+    # цілком лишає 33/33 зеленими, бо `RpcConnectionPool` застабано в кожному прикладі. Він
+    # лишається як ОГОЛОШЕННЯ ПЕРЕДУМОВИ: щойно якийсь приклад перестане стабити пул, шлях
+    # упреться в реальний `ENV.fetch` і впаде `KeyError` — і тоді краще, щоб причина стояла
+    # тут, а не читалась як несподіванка. Хост теж замінено: мертвий `alfajores-forno` у
+    # фікстурі моделював NXDOMAIN як норму.
+    allow(ENV).to receive(:fetch).with("CELO_RPC_URL").and_return("https://celo-mainnet.example.com")
     allow(ENV).to receive(:fetch).with("ORACLE_CELO_PRIVATE_KEY").and_return("0x" + "ab" * 32)
     allow(ENV).to receive(:fetch).with("CELO_CUSD_CONTRACT_ADDRESS").and_return("0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1")
 
@@ -364,8 +373,9 @@ RSpec.describe Celo::CommunityRewardService do
         "CELO_RPC_URL_FALLBACK_1" => "https://rpc.ankr.com/celo",
         "CELO_RPC_URL_FALLBACK_2" => "https://1rpc.io/celo"
       ))
+      # ⚖️ [2026-08-31] Без `fallback:` — `DEFAULT_RPC_URL` знято, і виклик тут дзеркалить
+      # живий сайт: конфігурований каскад лишається, hardcoded-дефолту немає.
       client = Web3::RpcConnectionPool.client_for("CELO_RPC_URL",
-                                                  fallback: described_class::DEFAULT_RPC_URL,
                                                   fallback_env_keys: described_class::RPC_FALLBACK_ENV_KEYS)
       expect(client).to be_a(Web3::ResilientClient)
     ensure
