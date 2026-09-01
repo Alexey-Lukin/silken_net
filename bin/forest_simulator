@@ -20,6 +20,11 @@
 #   - Дані в БД (rails db:seed)
 # = ===================================================================
 
+# ⚠️ Гард Web3 класифікує цей скрипт як **web** (не Sidekiq, не coap_listener), тож він
+# ВИМАГАЄ `CARBON_COIN_CONTRACT_ADDRESS` — хоч money-path тут не торкається жодного разу.
+# Це заявлений over-refuse, і вихід один: `SILKENNET_SKIP_WEB3_NETWORK_GUARD=1 bin/forest_simulator …`
+# [INF.27, 2026-09-01 — виняток за $PROGRAM_NAME свідомо ВІДХИЛЕНО: --drain провіжнить
+#  дерева й ганяє справжніх воркерів, тобто чисто поза периметром не лежить].
 require_relative "../config/environment"
 
 # --- КОНСТАНТИ СИМУЛЯЦІЇ ---

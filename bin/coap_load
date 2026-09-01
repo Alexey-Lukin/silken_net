@@ -7,6 +7,11 @@
 # Кожен режим друкує СПЕРШУ bottleneck-class банер (dev ≠ capacity, red-team #1),
 # тоді JSON-звіт. Проти живого стека: --drain/--arrival потребують РЕАЛЬНОГО
 # Sidekiq-процесу, що дренажить (інакше wait_for_drain впреться в timeout).
+# ⚠️ Гард Web3 класифікує цей скрипт як **web** (не Sidekiq, не coap_listener), тож він
+# ВИМАГАЄ `CARBON_COIN_CONTRACT_ADDRESS` — хоч money-path тут не торкається жодного разу.
+# Це заявлений over-refuse, і вихід один: `SILKENNET_SKIP_WEB3_NETWORK_GUARD=1 bin/coap_load …`
+# [INF.27, 2026-09-01 — виняток за $PROGRAM_NAME свідомо ВІДХИЛЕНО: --drain провіжнить
+#  дерева й ганяє справжніх воркерів, тобто чисто поза периметром не лежить].
 require_relative "../config/environment"
 require "optparse"
 require "json"
