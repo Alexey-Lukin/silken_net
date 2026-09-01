@@ -267,11 +267,14 @@ jobs:
         run: |
           set -euo pipefail
           SA_LOGIN=$(ruby -ryaml -e 'print YAML.load_file("config/deploy.yml").dig("ssh", "user").to_s')
-          case "$SA_LOGIN" in
-            sa_[0-9]*) : ;;
-            *) echo "::error::ssh.user in config/deploy.yml is '${SA_LOGIN}', expected sa_<unique_id> — refusing to guess the OS Login profile."; exit 1 ;;
-          esac
-          SA_UID="${SA_LOGIN#sa_}"
+          [ -n "$SA_LOGIN" ] || { echo "::error::ssh.user missing from config/deploy.yml - nothing to verify the OS Login profile against."; exit 1; }
+          # The API addresses a profile by whatever it CALLS the credential, and for an
+          # impersonated service account that is the EMAIL, not the numeric id. Addressing
+          # users/<unique_id> returns 403 "Request for user [1007...] does not match the
+          # credential for [silken-net-deploy@...]" even though the id is CORRECT - verified
+          # against `gcloud iam service-accounts describe`. Measured run 33498256405.
+          SA_EMAIL="${{ vars.GCP_SERVICE_ACCOUNT }}"
+          [ -n "$SA_EMAIL" ] || { echo "::error::vars.GCP_SERVICE_ACCOUNT is empty - the OS Login profile has no addressee."; exit 1; }
           ssh-keygen -t ed25519 -N '' -C "gha-${{ github.run_id }}" -f "$HOME/.ssh/id_ed25519" -q
           EXPIRY=$(( ($(date +%s) + 1800) * 1000000 ))
           PUBKEY=$(cat "$HOME/.ssh/id_ed25519.pub")
@@ -283,7 +286,7 @@ jobs:
             -H "Authorization: Bearer $(gcloud auth print-access-token)" \
             -H "Content-Type: application/json" \
             --data @/tmp/oslogin-key.json \
-            "https://oslogin.googleapis.com/v1/users/${SA_UID}:importSshPublicKey?projectId=silkennet")
+            "https://oslogin.googleapis.com/v1/users/${SA_EMAIL}:importSshPublicKey?projectId=silkennet")
           echo "OS Login importSshPublicKey -> HTTP ${HTTP}"
           cat /tmp/oslogin-resp.json
           [ "$HTTP" = "200" ] || { echo "::error::OS Login rejected the key (HTTP ${HTTP}) - body above."; exit 1; }
