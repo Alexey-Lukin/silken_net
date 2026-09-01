@@ -951,7 +951,9 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 ×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
 
-🔴 **Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
+🔴 ⚠️ **Стан змінився 2026-09-01: порядок нижче БІЛЬШЕ НЕ ПОРАДА.** Доки canopy-набір секретів був неповний, `Deploy · Canopy` скіпав чисто — і саме той скіп, а не дисципліна, тримав порядок. Набір закрито, тож кожен deploy-релевантний коміт у `main` запускає справжній `kamal deploy -d canopy`, і без адрес Фази 2t він доходить до ЗАПУЩЕНОГО контейнера й гине в `web3_network_guard`. **Порядок став властивістю CI.**
+
+**Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
 ```bash
 cd contracts && forge script script/Deploy.s.sol --rpc-url "$AMOY_RPC_URL" --broadcast
 # і той самий рядок для Sepolia

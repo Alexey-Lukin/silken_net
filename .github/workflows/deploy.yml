@@ -161,6 +161,12 @@ jobs:
           # Absent boot-critical → this repo has no deploy secrets configured. Skip cleanly
           # (configured=false → deploy jobs no-op), no red noise, instead of asserting.
           if [ -n "$missing" ]; then
+            # 🔴 [2026-09-01] THIS NET IS SPENT. The canopy BOOT_CRITICAL set is complete, so
+            # this branch no longer fires and every deploy-relevant commit now runs a REAL
+            # `kamal deploy -d canopy`. Until Фаза 2t supplies testnet contract addresses, that
+            # deploy reaches a started container and dies in `web3_network_guard` on the
+            # placeholders. The runbook's "Фаза 2t передує Фазі 3" stopped being advice and
+            # became a property of CI on the day the last secret landed.
             echo "::notice::Canopy deploy skipped — boot-critical secrets not configured:$missing. See docs/06_04 §1 (SEC.11)."
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0

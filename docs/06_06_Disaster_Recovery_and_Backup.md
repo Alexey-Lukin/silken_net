@@ -43,7 +43,7 @@
 ## 🛑 Gaps (→ 00_07)
 
 - 🔴 **DR-drill не проводився** — restore-runbook'и (§5) не верифіковані на реальному відновленні. `DR.1`.
-- 🟡 **Master-key backup — операційна задача** — `RAILS_MASTER_KEY` / `PROVISIONING_MASTER_KEY` незамінні; процедура зберігання у vault не виконана (§4). `DR.1`.
+- 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`RAILS_MASTER_KEY` — ні, і його стан гірший, ніж читається поруч із закритим сусідом:** він живе в GitHub Secrets (значень не віддають) і в `config/master.key` на ОДНІЙ машині, gitignored — офлайн-копії немає ЖОДНОЇ, тож втрата ноутбука робить `credentials.yml.enc` нечитним назавжди. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
 - 🟡 **GCS state bucket + versioning** — `S5.6` (chicken-and-egg при першому `terraform init`).
 
 ---
@@ -55,7 +55,8 @@
 | **PostgreSQL production** (`trees`, `wallets`, `blockchain_transactions`, `telemetry_logs`-партиції) | Cloud SQL `silken-db` | PITR + 30×daily snapshot (§2) | 🔴 Критично — але **канонічний баланс токенів живе on-chain** (Polygon), БД — проєкція |
 | Solid **Cache/Cable** БД (`*_cache/_cable` — Solid Queue pruned, INF.18) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, cable ephemeral; черги живуть у Redis — рядок нижче) |
 | **Terraform state** | GCS `silken-net-terraform-state` (CMEK `silken-tfstate-ew1`, [SEC.22] → [`06_04 §5.6`](06_04_Secrets_Checklist)) | bucket versioning, 10 версій/30д (`S5.6`) | 🟡 Високо — infra drift/lock; відновлюється з версій (усі noncurrent = plaintext-копії секретів, тому retention свідомо короткий) |
-| **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + vault | ручний (password manager) | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати |
+| **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + GitHub Secrets · ⛔ **vault-копії НЕМАЄ** (станом на 2026-09-01) | ручний (password manager) — **не виконано** | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати, а GitHub значень назад не віддає |
+| **AR-encryption трійка** (`ACTIVE_RECORD_ENCRYPTION_*`) | ENV + vault + offline ✅ 2026-09-01 | ручний (password manager) | 🔴 **Незамінна третім класом** — без неї `hardware_keys` (device AES / Lorenz-seed) і `users.otp_secret` нечитні назавжди; доти інвентар називав незамінними лише два master-ключі |
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
 | Oracle/anchor private keys, contract addresses | secrets ([`06_04`](06_04_Secrets_Checklist)) | ручний | 🟡 Високо — redeployable, але disruptive (revoke+redeploy) |
