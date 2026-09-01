@@ -242,19 +242,51 @@ jobs:
         run: gem install kamal -v '~> 2.12.0'
 
       # [INF.20 move 5] OS Login authenticates by a public key held in the ACCOUNT PROFILE —
-      # not by instance metadata. That distinction is what removing the old SSH-key step got
-      # wrong: dropping the long-lived key was right (keyless — no SSH secret in the deploy
-      # set), dropping the key ENTIRELY was one step too far. `gcloud compute ssh` hides this
-      # by minting and registering a key on the fly; kamal speaks plain ssh through the
-      # ProxyCommand and carries none, so the tunnel opens and authentication then fails as
-      # `Net::SSH::AuthenticationFailed for sa_<id>@silken-net-app` — measured on the first
-      # deploy that ever got far enough to reach authentication (2026-09-01, run 33496873447).
-      # ⚠️ Still keyless in the sense that matters: the key is BORN in the run, never stored,
-      # and expires by itself — `--ttl` is the mechanism, not a nicety.
+      # not by instance metadata (which `enable-oslogin=TRUE` ignores outright). Removing the
+      # old SSH-key step got half of this right: dropping the long-lived key was correct
+      # (keyless — no SSH secret in the deploy set), dropping the key ENTIRELY was one step
+      # too far. `gcloud compute ssh` hides the difference by minting and registering a key
+      # on the fly; kamal speaks plain ssh through the ProxyCommand and carries none, so the
+      # tunnel opens and authentication then fails —
+      # `Net::SSH::AuthenticationFailed for sa_<id>@silken-net-app` (run 33496873447).
+      #
+      # ⛔ `gcloud compute os-login ssh-keys add` CANNOT do this under WIF, and the reason is
+      # not permissions: the CLI derives the target profile from the credential, and a
+      # federated one yields `Request for user [None]` (run 33497377281). The REST endpoint
+      # takes the user EXPLICITLY, so we address the profile by the SA's numeric unique id —
+      # the credential then matches and the call is authorised as itself.
+      #
+      # 🔑 That id is NOT re-declared here: it is read from `ssh.user` in config/deploy.yml,
+      # whose value the same OS Login naming produces (`sa_<unique_id>`). One home, and the
+      # pair cannot drift into a state where kamal logs in as one identity and the key was
+      # registered for another.
+      #
+      # ⚠️ Still keyless where it counts: the key is BORN in the run, never stored, and
+      # expires on its own — the expiry is the mechanism, not a nicety.
       - name: Register an ephemeral SSH key with OS Login [INF.20 move 5]
         run: |
+          set -euo pipefail
+          SA_LOGIN=$(ruby -ryaml -e 'print YAML.load_file("config/deploy.yml").dig("ssh", "user").to_s')
+          case "$SA_LOGIN" in
+            sa_[0-9]*) : ;;
+            *) echo "::error::ssh.user in config/deploy.yml is '${SA_LOGIN}', expected sa_<unique_id> — refusing to guess the OS Login profile."; exit 1 ;;
+          esac
+          SA_UID="${SA_LOGIN#sa_}"
           ssh-keygen -t ed25519 -N '' -C "gha-${{ github.run_id }}" -f "$HOME/.ssh/id_ed25519" -q
-          gcloud compute os-login ssh-keys add --key-file="$HOME/.ssh/id_ed25519.pub" --ttl=30m
+          EXPIRY=$(( ($(date +%s) + 1800) * 1000000 ))
+          PUBKEY=$(cat "$HOME/.ssh/id_ed25519.pub")
+          printf '{"key":"%s","expirationTimeUsec":"%s"}' "$PUBKEY" "$EXPIRY" > /tmp/oslogin-key.json
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/oslogin-key.json \
+            "https://oslogin.googleapis.com/v1/users/${SA_UID}:importSshPublicKey?projectId=silkennet" \
+            > /tmp/oslogin-resp.json
+          # The POST returns 200 with an empty posixAccounts list when the profile exists but
+          # the project grants no login role — green HTTP, dead SSH. Pin the account, not the code.
+          grep -q '"username": *"'"${SA_LOGIN}"'"' /tmp/oslogin-resp.json \
+            || { echo "::error::OS Login accepted the key but reports no posix account named ${SA_LOGIN} — check roles/compute.osLogin on the SA."; cat /tmp/oslogin-resp.json; exit 1; }
+          echo "OS Login: key registered for ${SA_LOGIN} (expires in 30m)"
 
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot -d canopy -y
