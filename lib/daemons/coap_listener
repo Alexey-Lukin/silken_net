@@ -15,8 +15,14 @@ PORT = ENV.fetch("COAP_PORT", CoapSmoke::DEFAULT_PORT).to_i
 socket = UDPSocket.new
 socket.bind("0.0.0.0", PORT)
 
-# [INF.17 / 06_03 §2.9] Третій scrape-таргет: демон віддає власний зріз
-# Prometheus-реєстру (coap:9395 у config.alloy) — web:80 його не бачить.
+# [INF.17 / 06_03 §2.9] Демон віддає власний зріз Prometheus-реєстру — web:80
+# його не бачить (реєстр in-process). ⚠️ Але «третій scrape-таргет», як тут стояло
+# до 2026-09-01, правда лише про ДОРМАНТНУ Kamal `coap`-роль: Alloy живе на
+# app-хості й Ingress Anchor не дістає, тож коли ЦЕЙ файл біжить як PRIMARY на
+# анкері, його :9395 не скрейпить НІХТО. Видимість анкер-демона йде іншими
+# каналами (worker-half `coap_packets`, INF.6 smoke, Sentry, ARCH.81 UDP-проба) —
+# стеля §2.9(б). Тобто рядок нижче піднімає експортер, який на PRIMARY-шляху
+# сьогодні є мертвим портом за призначенням, а не за помилкою.
 SilkenNet::MetricsExporter.start(port: ENV.fetch("METRICS_PORT", 9395).to_i)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
