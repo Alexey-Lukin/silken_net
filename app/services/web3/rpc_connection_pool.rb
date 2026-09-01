@@ -114,10 +114,20 @@ module Web3
         all_urls.compact!
         all_urls.reject!(&:empty?)
 
-        # Якщо тільки один URL — повертаємо звичайний Eth::Client (без overhead)
+        # Якщо тільки один URL — повертаємо звичайний Eth::Client (без overhead).
+        # 🔴 Беремо `all_urls.first`, а НЕ `primary_url`: `reject!(&:empty?)` вище міг
+        # щойно викинути порожній primary, і тоді вцілілим є саме фолбек. Форма
+        # `Eth::Client.create(primary_url)` стояла тут до 2026-09-01 і робила каскад
+        # ARCH.114 недієвим рівно в тому випадку, заради якого він побудований —
+        # «primary порожній, фолбек живий»: розмір падав до 1, гілка брала порожній
+        # рядок і гем валив `ArgumentError: Unable to detect client type!`, тобто
+        # наявний живий ендпоінт не пробувався ЖОДНОГО разу. ⚠️ І це не кутовий
+        # випадок: у `NETWORK_FALLBACK_ENV_KEYS` Polygon має рівно ОДИН фолбек, тож
+        # саме ця конфігурація й дає size==1. Порожній `all_urls` лишає стару гучну
+        # помилку (`.to_s` → ""), і це навмисно — підключатись справді нема до чого.
         client =
           if all_urls.size <= 1
-            Eth::Client.create(primary_url)
+            Eth::Client.create(all_urls.first.to_s)
           else
             Web3::ResilientClient.new(all_urls)
           end

@@ -108,6 +108,34 @@ RSpec.describe Web3::RpcConnectionPool do
         expect(client).to be_a(Web3::ResilientClient)
       end
 
+      # 🔴 Регресія 2026-09-01: `reject!(&:empty?)` викидає порожній primary з
+      # `all_urls`, розмір падає до 1 — і гілка брала САМЕ `primary_url`, тобто
+      # порожній рядок, при живому фолбеку поруч. Каскад ARCH.114 не переживав
+      # рівно того випадку, заради якого існує. ⚠️ Це не кутовий випадок: Polygon
+      # має в реєстрі рівно ОДИН фолбек, тож size==1 і є його штатною формою.
+      # 🔒 Стеля прикладу: він пінить, що клієнт СТВОРЮЄТЬСЯ з вцілілого URL, і
+      # нічого не каже про те, чи той URL відповідає — це інша вісь (ResilientClient).
+      it "uses the surviving fallback when the primary is BLANK (not the empty primary)" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("SECONDARY_RPC_URL").and_return("https://secondary.example.com")
+
+        client = described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "SECONDARY_RPC_URL" ])
+
+        expect(client).to be_a(Eth::Client)
+        expect(client.host).to eq("secondary.example.com")
+      end
+
+      it "still raises loudly when the primary is blank and NO fallback survives" do
+        allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("")
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("SECONDARY_RPC_URL").and_return(nil)
+
+        expect {
+          described_class.client_for("PRIMARY_RPC_URL", fallback_env_keys: [ "SECONDARY_RPC_URL" ])
+        }.to raise_error(ArgumentError, /Unable to detect client type/)
+      end
+
       it "falls back to simple Eth::Client when fallback env keys are not set" do
         allow(ENV).to receive(:fetch).with("PRIMARY_RPC_URL").and_return("https://primary.example.com")
         allow(ENV).to receive(:[]).and_call_original
