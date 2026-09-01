@@ -150,6 +150,13 @@ jobs:
               # on exactly these paths) while the scan sits skipped.
               - '.dockerignore'
               - 'Dockerfile'
+              # ⊕ [S1.1 2026-09-01] `.gitignore` joined invariant C's subjects: it carries the
+              # `gha-creds-*.json` rule, i.e. the LIVE WIF credential the auth action writes
+              # into the workspace. `.dockerignore` stops that file reaching the public IMAGE,
+              # `.gitignore` stops it reaching the public HISTORY — different failures, so
+              # gating one and not the other left half the pair uncarried. Cost measured
+              # before widening: the scan runs in 0.07s and `.gitignore` moved 26× in 3 months.
+              - '.gitignore'
               # 🔴 [INF.27] The scan's PRIMARY subjects, missing here until 2026-08-30 —
               # (⚠️ tag corrected 2026-08-31: this read [OPS.37], and that item explains the
               # SUBJECTS — why config/deploy*.yml, .kamal/** and compute.tf became this

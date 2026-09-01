@@ -379,6 +379,20 @@ jobs:
           # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset
           #     (an unmapped entry injects "", which the format check reads as "off"). ---
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          # --- Turbo signed-stream key [SEC.25 Ф3] ---
+          # 🔴 It was present in `verify-secrets` and in RUNTIME, and ABSENT here, on BOTH
+          # workflows — i.e. the step that CHECKS the secret had it and the step that
+          # DELIVERS it did not. Nothing could redden: `env_fetch_declaration_spec` unions
+          # every `env:` block in both files, so the verify-job mapping satisfied the B1
+          # chain while the container got "" from secrets-common. And the failure is silent
+          # by design — `turbo_stream_verifier.rb` reads `ENV[...].presence` and falls back
+          # to deriving from `secret_key_base`, so the app works and the stream-only
+          # revocation lever simply does not exist. That initializer names this exact cost
+          # ("секрет, який забули завести в проді, дає не падіння, а мовчазну відсутність
+          # важеля") and delegates enforcement HERE and to docs/06_04 — both of which had
+          # the hole. Gate narrowed the same commit: the B1 chain is now judged at the
+          # DEPLOY STEP, per workflow. ---
+          TURBO_SIGNED_STREAM_KEY: ${{ secrets.TURBO_SIGNED_STREAM_KEY }}
           # --- Web3 money/signing keys: NOT mapped (INF.22) — the quintet is
           #     servers.job.env.secret-only and canopy is structurally web-only
           #     (array-form servers: in deploy.canopy.yml; an omitted role would be

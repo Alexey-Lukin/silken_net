@@ -40,11 +40,23 @@
 #   D. No present-empty env (`VAR=` / `VAR:` with a blank value). Present-but-empty is worse
 #      than absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis,
 #      PROMETHEUS_AUTH→known-value bypass) — the recurring B1 class that cost a 4-month block.
-#   C. .dockerignore keeps secret files out of the PUBLIC GHCR image.
+#   C. The two IGNORE files keep secret material out of the two public places it must never
+#      reach: `.dockerignore` → the PUBLIC GHCR image, `.gitignore` → the PUBLIC git history.
+#      The pair is deliberate, not redundant — the docker build context IS the workspace, so
+#      one stops the IMAGE and the other stops the COMMIT, and neither implies the other.
+#      🔴 `.gitignore` joined on 2026-09-01 [S1.1]: its `gha-creds-*.json` rule guards the LIVE
+#      WIF credential that `google-github-actions/auth` writes INTO the workspace, and it had
+#      no carrier at all — the tracker leg named only the .dockerignore half.
 #
 # Surfaces (post-OPS.37 — the Akash SDL is gone; the Kamal chain is the primary runtime):
 #   config/deploy.yml · config/deploy.canopy.yml · .kamal/secrets-common ·
-#   terraform/compute.tf COAP_ENV heredoc. The heredoc's PRESENCE contract lives in
+#   terraform/compute.tf COAP_ENV heredoc · .dockerignore · .gitignore.
+#   ⚠️ Every subject here must appear in BOTH triggers — the `alloy` path-filter in ci.yml and
+#   the pattern in .githooks/pre-push — or the gate does not run on the diff it guards (four of
+#   five sat unwatched until 2026-08-30). 🔴 The relation is ⊆, NOT ≡, and the earlier wording
+#   said ≡: the triggers legitimately carry MORE (`deploy/**`, `Dockerfile`, and — ci only — the
+#   script itself), so a reader dutifully "restoring equality" would delete live trigger paths.
+#   The heredoc's PRESENCE contract lives in
 #   spec/deploy/anchor_coap_env_spec.rb (which names must/mustn't be there); only the FORM OF
 #   VALUES is judged here — deliberately two predicates, one grammar (borrowed byte-for-byte
 #   from that spec so the heredoc never gets a second, divergent parser).
@@ -65,7 +77,23 @@
 #   B2        ORACLE_PRIVATE_KEY as a structural key         → RED
 #   B3        canopy servers: array → hash                   → RED
 #   D ×2      present-empty in COAP_ENV and in env.clear     → RED
-# All eight reverted byte-identically; the gate was GREEN before and after each.
+#   C/docker  gha-creds-*.json removed from .dockerignore  → RED naming file+pattern
+#   C/git     gha-creds-*.json removed from .gitignore     → RED, and with a DIFFERENT cost
+#             sentence ("a live WIF credential becomes committable") — the two halves fail
+#             for different reasons and must not read alike
+#   C/negate  `!gha-creds-run.json` appended to .gitignore → RED naming the negation
+#   C/legacy×3 each ORIGINAL pattern removed in turn from .dockerignore → RED naming that
+#             pattern (credentials.yml.enc · master.key · credentials/*.key)
+# All fourteen reverted byte-identically; the gate was GREEN before and after each.
+# ⚠️ The banner date covers the FIRST EIGHT rows only. 🔴 And this summary stood MID-TABLE
+# saying "eleven" while three more rows sat below it, because the legacy trio was appended
+# after it — head corrected, tail left asserting the old count, in a file whose entire subject
+# is drift. Caught by adversarial review: a mutation table is prose, and nothing counts its rows.
+# ⊕ Every C row is dated 2026-09-01 and they are the FIRST this invariant ever had: C shipped
+# with no mutation proof at all, so its green had never been shown to be discriminating on ANY
+# branch. Adding a member was the occasion, not the reason — the three legacy patterns were
+# proved in the same pass rather than left as a documented gap, which would have been a
+# self-negating note in a file whose whole subject is drift.
 #
 # ⊕ B4 entered THIS RECORD on 2026-08-31, and the gap is the instructive part: the check was
 # implemented (below) and cited by name from the tracker, but appeared in neither the roster
@@ -216,19 +244,36 @@ end
 
 # --- C: .dockerignore --------------------------------------------------------
 
-# Invariant C — .dockerignore keeps secret files out of the PUBLIC GHCR image
-# (a leaked RAILS_MASTER_KEY would decrypt a shipped credentials.yml.enc).
-DOCKERIGNORE_MUST = [ "config/credentials.yml.enc", "config/master.key", "config/credentials/*.key" ].freeze
-if File.exist?(".dockerignore")
-  di = File.read(".dockerignore").lines.map(&:strip)
-  DOCKERIGNORE_MUST.each do |pat|
-    excluded = di.any? { |l| !l.start_with?("!") && l.sub(%r{\A/}, "") == pat }
-    failures << ".dockerignore: no exclusion for #{pat} — would ship into the public image" unless excluded
+# Invariant C — the two IGNORE files keep secret material out of the two places it must never
+# reach: the PUBLIC GHCR image and the PUBLIC git history.
+#   .dockerignore — a leaked RAILS_MASTER_KEY would decrypt a shipped credentials.yml.enc.
+#   .gitignore    — `gha-creds-*.json` is the LIVE WIF credential that
+#                   `google-github-actions/auth` writes INTO the workspace (measured run
+#                   33499357498, where it made the checkout dirty and pre-build aborted).
+# 🔴 BOTH files are judged, and that is the whole point of the pair: the docker build context
+# IS the workspace, so `.gitignore` stops the COMMIT and `.dockerignore` stops the IMAGE, and
+# neither implies the other (the commit that added them says exactly this). Gating only one
+# leaves the other a rule with no carrier — which is what it was until 2026-09-01.
+DOCKERIGNORE_MUST = [
+  "config/credentials.yml.enc", "config/master.key", "config/credentials/*.key",
+  # ⚠️ No leading slash in the live file, and the matcher below strips at most ONE — so this
+  # entry matches `gha-creds-*.json` as written AND a future `/gha-creds-*.json`.
+  "gha-creds-*.json"
+].freeze
+GITIGNORE_MUST = [ "gha-creds-*.json" ].freeze
+{ ".dockerignore" => DOCKERIGNORE_MUST, ".gitignore" => GITIGNORE_MUST }.each do |file, must|
+  unless File.exist?(file)
+    failures << "#{file} is missing entirely"
+    next
   end
-  negated = di.select { |l| l.start_with?("!") && l.match?(/credential|master\.key|\.enc/i) }
-  failures << ".dockerignore: a negation re-includes a secret file: #{negated}" if negated.any?
-else
-  failures << ".dockerignore is missing entirely"
+  lines = File.read(file).lines.map(&:strip)
+  must.each do |pat|
+    excluded = lines.any? { |l| !l.start_with?("!") && l.sub(%r{\A/}, "") == pat }
+    failures << "#{file}: no exclusion for #{pat} — " \
+                "#{file == '.gitignore' ? 'a live WIF credential becomes committable' : 'would ship into the public image'}" unless excluded
+  end
+  negated = lines.select { |l| l.start_with?("!") && l.match?(/credential|master\.key|\.enc|gha-creds/i) }
+  failures << "#{file}: a negation re-includes a secret file: #{negated}" if negated.any?
 end
 
 if failures.empty?

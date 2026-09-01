@@ -288,6 +288,12 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset. ---
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          # --- Turbo signed-stream key [SEC.25 Ф3] ---
+          # Mirror of the canopy fix; the full measurement and why nothing reddened live in
+          # the sibling block of `deploy.yml` (One-Home — not restated). Short form: this
+          # var was in `verify-secrets` and RUNTIME but never in the deploy step, so the
+          # container received "" and silently lost the stream-only revocation lever. ---
+          TURBO_SIGNED_STREAM_KEY: ${{ secrets.TURBO_SIGNED_STREAM_KEY }}
           # --- Web3 oracle keys (dual-key split, B-02) — web3_network_guard fail-closes at boot.
           #     ORACLE_PRIVATE_KEY (legacy shared fallback) is RETIRED (INF.22): no code
           #     reads it and the guard refuses a value under that name. ---

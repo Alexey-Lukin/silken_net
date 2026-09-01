@@ -176,7 +176,11 @@ fi
 #  scan's subjects, never why the filter missed them; the filter story lives in INF.27.)
 # scan's primary subjects (config/deploy*.yml, .kamal/*, terraform/compute.tf), so the very
 # diffs that move money-secret placement pushed unchecked on both surfaces at once.
-if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/|terraform/compute\.tf|\.dockerignore|Dockerfile)'; then
+# ⊕ [S1.1 2026-09-01] `.gitignore` added: invariant C now judges it too (the `gha-creds-*.json`
+# WIF-credential rule). Keep this pattern ≡ the `alloy` filter in ci.yml and the subject set in
+# the script's header — the three drift apart silently, and that is exactly how four of the
+# scan's five subjects went unwatched until 2026-08-30.
+if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/|terraform/compute\.tf|\.dockerignore|\.gitignore|Dockerfile)'; then
   for _script in deploy_secret_scan; do
     [ -f "$root/scripts/$_script.rb" ] || continue
     if ! ( cd "$root" && "$_rb" "scripts/$_script.rb" ); then

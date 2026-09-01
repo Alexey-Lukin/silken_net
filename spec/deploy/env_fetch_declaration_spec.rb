@@ -54,7 +54,11 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   # `ENV.fetch("X")` in app/ or lib/ naming any of them passed this gate GREEN and would
   # KeyError at first use on web/job/coap. Exactly the B1 shape the gate exists to stop.
   #
-  # 🔑 TWO SCOPES, because the three examples below ask DIFFERENT questions of one word:
+  # 🔑 THREE SCOPES, because the examples below ask DIFFERENT questions of one word:
+  #   :global — ONLY the top-level `env`, i.e. what EVERY role on EVERY slot inherits. This is
+  #            the scope the deploy-STEP example needs: `servers.job.env.secret` is correctly
+  #            absent from canopy (web-only by construction), so demanding the union there
+  #            would red a correct file, while every global entry must be mapped on both.
   #   :roles — what an APP PROCESS can see (top-level `env` + `servers.*.env`). Accessories
   #            run in their own containers; their env never reaches Rails code.
   #   :all   — everything KAMAL must resolve (:roles + `accessories.*.env` + `registry.password`).
@@ -64,7 +68,8 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   #            wherever it lands.
   def deploy_env(kind, scope:)
     cfg = YAML.safe_load(File.read(REPO_ROOT.join("config/deploy.yml")), aliases: true)
-    blocks = [ cfg["env"], *(cfg["servers"] || {}).values.grep(Hash).map { |r| r["env"] } ]
+    blocks = [ cfg["env"] ]
+    blocks += (cfg["servers"] || {}).values.grep(Hash).map { |r| r["env"] } unless scope == :global
     extras = []
     if scope == :all
       blocks += (cfg["accessories"] || {}).values.grep(Hash).map { |a| a["env"] }
@@ -87,6 +92,20 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
 
 
   def names(path, regex) = File.read(REPO_ROOT.join(path)).scan(regex).flatten.uniq
+
+  # The `env:` KEYS of the one step that actually ships the container, per workflow.
+  # YAML, not a line regex, for the same reason the declaration reader is YAML [INF.27]: a
+  # regex over `env:` is indentation-blind and cannot tell WHICH job/step a key belongs to —
+  # which is precisely the distinction this example exists to make.
+  def deploy_step_envs
+    %w[.github/workflows/deploy.yml .github/workflows/deploy-production.yml].to_h do |path|
+      wf = YAML.safe_load(File.read(REPO_ROOT.join(path)), aliases: true)
+      step = (wf["jobs"] || {}).values.grep(Hash)
+                               .flat_map { |j| Array(j["steps"]) }.grep(Hash)
+                               .find { |s| s["name"].to_s.start_with?("Kamal Deploy to") }
+      [ File.basename(path), (step&.dig("env") || {}).keys ]
+    end
+  end
 
 
 
@@ -144,15 +163,76 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   # env.secret var must resolve in .kamal/secrets-common ($VAR) AND be mapped as a workflow
   # env: KEY, else CI injects "" → boot crash behind a green verify. workflow_env captures the
   # LHS KEY, so a step-output-injected var (GCP_ARTIFACT_REGISTRY_KEY ← auth token) is covered
-  # too — no exception needed. NOTE: workflow_env unions both workflows, so a var deliberately
-  # absent from canopy vs forgotten there is not distinguished (LOW — deploy verify-secrets is a
-  # second net; per-workflow split if it ever bites).
+  # too — no exception needed. NOTE: workflow_env unions both workflows AND every `env:` block
+  # inside them, so it answers "is this mapped ANYWHERE", never "does it reach the deploy".
+  # 🔴 That second question is the one that bit (2026-09-01) — this note used to end "LOW …
+  # per-workflow split if it ever bites", and the union it excused was not the workflow one
+  # but the STEP one: `TURBO_SIGNED_STREAM_KEY` sat in `verify-secrets` on BOTH files and in
+  # neither `Kamal Deploy to …` step, so the gate that CHECKS the secret had it and the step
+  # that DELIVERS it did not, at a steady green. Kept as-is on purpose (it is the wider net,
+  # and it also judges secrets-common); the narrow question now has its own example below.
   it "every env.secret completes the Kamal chain — secrets-common AND a workflow env: block (B1/INF.19)" do
     missing_common   = any_secret - secrets_common
     missing_workflow = any_secret - workflow_env
     aggregate_failures do
       expect(missing_common).to be_empty, "in env.secret but not .kamal/secrets-common (Kamal $VAR unresolved): #{missing_common.join(', ')}"
       expect(missing_workflow).to be_empty, "in env.secret but not a deploy-workflow env: block (CI injects '' → boot crash, B1): #{missing_workflow.join(', ')}"
+    end
+  end
+
+  # 🔴 The narrow half of B1, and the one the union above cannot ask: a var must reach the
+  # container, and the only step that carries it there is `kamal deploy`. Presence in the
+  # `verify-secrets` job proves the SECRET EXISTS; it says nothing about DELIVERY, and the two
+  # live in different jobs — so a var mapped only in the checker is injected "" by
+  # secrets-common at deploy time. Judged PER WORKFLOW: the union is what hid this.
+  #
+  # Scope is the GLOBAL `env.secret` deliberately — `servers.job.env.secret` (the money
+  # quintet) is correctly absent from canopy, which is structurally web-only (deploy_secret_scan
+  # invariant B3), so demanding it here would red a correct file. Every global entry, by
+  # contrast, is inherited by every role on BOTH slots and must be mapped on both.
+  #
+  # 🔒 Declared ceiling: this judges the step's env KEYS, never their values or their RHS —
+  # `FOO: ${{ secrets.BAR }}` with the wrong secret name passes. That axis belongs to the
+  # existing LHS-capture example above, which is why both stay.
+  it "every secret the slot NEEDS reaches its `kamal deploy` STEP — per workflow (B1, delivery half)" do
+    global_secret = deploy_env(:secret, scope: :global)
+    quintet       = deploy_env(:secret, scope: :roles) - global_secret
+    tls_pair      = %w[TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM]
+    # Expected set is PER SLOT, and that is the whole point of this rewrite. An earlier
+    # version demanded only the GLOBAL set on both, and justified exempting the rest by
+    # saying the parity gate covered it — while the parity gate exempts this very step and
+    # pointed BACK here. Two gates each deferring to the other is the same mutual-deferral
+    # shape this session was fixing, one level up: the quintet's delivery to production and
+    # the TLS pair's delivery to either slot were gated by NOTHING. Caught by adversarial
+    # review of the commit that introduced it, not by any instrument.
+    expected = {
+      "deploy.yml"            => global_secret + tls_pair,           # canopy: web-only, no job role
+      "deploy-production.yml" => global_secret + quintet + tls_pair  # production: carries the signer
+    }
+    steps = deploy_step_envs
+    aggregate_failures do
+      expect(steps.keys.sort).to eq(expected.keys.sort), "deploy-step parser drift: #{steps.keys.inspect}"
+      expect(global_secret.size).to be > 10
+      # Composition pin, not just cardinality: "5 members" is green on five WRONG names.
+      expect(quintet.sort).to eq(%w[ETHEREUM_ANCHOR_PRIVATE_KEY ORACLE_CELO_PRIVATE_KEY
+                                    ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY
+                                    SOLANA_WALLET_KEYPAIR].sort),
+                                 "the job-only signer set moved — re-read config/deploy.yml servers.job"
+      steps.each do |label, keys|
+        expect(keys.size).to be > 15, "#{label}: deploy-step env block looks empty (#{keys.size} keys) — parser drift?"
+        missing = expected.fetch(label) - keys
+        expect(missing).to be_empty,
+                           "#{label}: this slot NEEDS these and the deploy step does not map them: " \
+                           "#{missing.join(', ')} — `.kamal/secrets-common` resolves them from the CI " \
+                           "shell, so they arrive EMPTY in the container (B1)."
+      end
+      # 🔒 The mirror, and it is a SECURITY assertion rather than a delivery one: canopy is
+      # structurally web-only (`deploy_secret_scan` invariant B3), so the money/signing quintet
+      # must never be handed to its deploy step. Absence here is the isolation, not an omission.
+      leaked = quintet & steps.fetch("deploy.yml")
+      expect(leaked).to be_empty,
+                        "canopy's deploy step maps the money/signing quintet: #{leaked.join(', ')} — " \
+                        "staging must not be able to sign (INF.22 environment-scoping)."
     end
   end
 
