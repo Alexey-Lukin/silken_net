@@ -663,7 +663,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 1. **`web3_critical` queue depth growing** → trigger Grafana alert.
 2. **TelemetryLog продовжує збиратись** з `oracle_status: pending` — нічого не втрачається, бо телеметрія партиціонована та зберігається в Postgres.
 3. **`MintCarbonCoinWorker`** retry до 5 разів; на 6+ потрапляє у DeadSet — **операційна задача для адміна**: перезапустити після відновлення RPC.
-4. **Альтернативний RPC**: уже передбачено через `Web3::RpcConnectionPool#fallback_env_keys`. Production checklist: завжди мати **3 незалежні Polygon RPC** (Alchemy + Infura + Ankr/QuickNode/Public).
+4. **Альтернативний RPC**: механізм передбачено через `Web3::RpcConnectionPool` (реєстр `NETWORK_FALLBACK_ENV_KEYS`). 🔴 **Але «передбачено» ≠ «діє», і різниця ярусів тут вирішальна:** переміряно 2026-09-01 ([`ARCH.114`](00_07_Action_Plan_Tracker)) — жодне з імен фолбеку (`INFURA_POLYGON_RPC_URL` · `CELO_RPC_URL_FALLBACK_1/2` · `SOLANA_RPC_URL_FALLBACK_1/2`) не має входжень у `config/deploy*.yml`, `.kamal/**` чи deploy-воркфлоу; заповнені вони лише в `.env.example`, тобто в контейнер не доїжджають. ⛔ А доки живий URL один, `ResilientClient` не інстанціюється взагалі (`all_urls.size <= 1` → голий `Eth::Client`), тож circuit-breaker і failover у проді **відсутні фізично**. Production checklist лишається чинним як ЦІЛЬ: **3 незалежні Polygon RPC** (Alchemy + Infura + Ankr/QuickNode/Public) — і його перший крок є 👤-нога `ARCH.114`.
 5. **Багатогодинний outage (>4h):** ручний switch на Polygon Amoy testnet з replay у production після відновлення (потребує адміністративного рішення; **НЕ автоматично**, бо економіка тестнету ≠ mainnet). 🔴 **Механічно це БІЛЬШЕ не просто зміна URL:** `chain_violations` відмовить у буті слоту, оголошеному `mainnet`, з testnet-ендпоінтом — тож перемикання йде ПАРОЮ з `WEB3_CHAIN_ENV: testnet`, і саме це робить процедуру виконуваною замість «гард нам заважає» ([OPS.37], [`04_02 §8`](04_02_Business_Logic_and_Services)). ⚠️ Наслідок, який треба назвати вголос: слот у цьому режимі НЕ мінтить реальної вартості — це пауза емісії, а не деградований mainnet.
 
 **Boundary case — Polygon hard fork / chain split:**
@@ -728,10 +728,10 @@ Outage цих мереж **не блокує** core flow:
 
 | Мережа | Tier | Single Point of Failure? | Auto-recovery? | Manual escalation |
 |---|---|---|---|---|
-| Polygon | 🔴 Critical | Mitigated by `Web3::ResilientClient` cascade | Yes (RPC fallback + Sidekiq retry) | Multi-day outage → admin investigation |
+| Polygon | 🔴 Critical | ⚠️ Cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01; today the live mitigation is Sidekiq retry alone | Sidekiq retry (RPC fallback НЕ активний) | Multi-day outage → admin investigation |
 | Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 закривати відмовлено (founder 2026-07-19, ARCH.53 §🗄️) |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
-| Solana | 🟠 Important | Mitigated by `SOLANA_RPC_URL_FALLBACK` cascade [INF.22] | Yes (RPC fallback + Sidekiq retry) | Catchup worker after restore |
+| Solana | 🟠 Important | ⚠️ `SOLANA_RPC_URL_FALLBACK` cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01 | Sidekiq retry (RPC fallback НЕ активний) | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
 | peaq | 🟠 Important | No (local DID generation) | Yes | — |
 | Streamr | 🟢 Nice | No | Yes | — |

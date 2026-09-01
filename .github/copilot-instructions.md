@@ -24,7 +24,7 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 - **StatusByte changed post-FW.29** = `[PanicFlag:1 | status:2 | growth_points:5]` (don't assume 6-bit GP) → `§5`. Ruby unpack: `"N n c C n C C a4"`.
 - **`db/structure.sql`**, never `schema.rb`. Thin controllers — logic only in `app/services/` / `app/workers/`.
 - **Sidekiq `:strict: true`** strict queue-drain order → `§5` (don't change a worker's queue without justification).
-- **Partitioned models are FOUR, and their One-Home helper DIFFERS** (two have none at all) → always pass `created_at_iso`, but never guess the method — take it from `§6`.
+- **Partitioned models are THREE, and their One-Home helper DIFFERS** (`TelemetryLog` · `GatewayTelemetryLog` · `BlockchainTransaction`; exactly ONE — `GatewayTelemetryLog` — has no helper, deliberately) → always pass `created_at_iso`, but never guess the method — take it from `§6`. ⚠️ Corrected 2026-09-01: this mirror said FOUR / "two have none", both wrong, while `CLAUDE.md` and `.cursorrules` already carried the right numbers — a mirror drifting alone is exactly what this tier is prone to, so verify against `grep -rl 'self.primary_key = "id"' app/models/`, not against a sibling mirror.
 - **AES keys never leave the Ruby process** (`HardwareKey#cached_binary_key`, in-process LRU; no Redis-serialize).
 - **`oracle_status`** has a prefix → `oracle_status_fulfilled?` (NOT `fulfilled?`).
 - **`TelemetryLog` has no AR validations** (KENOSIS) — checks only in `TelemetryUnpackerService.valid_sensor_data?`; don't add them back → `§6`.

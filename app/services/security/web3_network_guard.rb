@@ -49,8 +49,15 @@
 #   returns `delta: 0, critical: false`, i.e. the false "all clean" named above,
 #   for the life of the deploy. ⚠️ The tempting one-line fix — drop the scoping
 #   entirely — breaks a neighbour: `coap_listener` loads every initializer and its
-#   `/etc/silkennet/coap.env` carries NO contract address by design (canon 06_04
-#   §5.7), so an unconditional demand would refuse the telemetry intake's boot.
+#   `/etc/silkennet/coap.env` carries no contract address — SOURCE: the systemd
+#   env-file heredoc in `terraform/compute.tf`, which is the definition itself.
+#   ⛔ That is an OBSERVATION, not a canonized invariant, and saying otherwise was a
+#   false citation this file carried for hours: `06_04 §5.7` is the secrets-at-rest
+#   latch (SEC.22) and says nothing about contract addresses. Nor is there a gate —
+#   `spec/deploy/anchor_coap_env_spec.rb` denylists only PROVISIONING + the money
+#   quintet. So an unconditional demand would refuse the telemetry intake's boot,
+#   and nothing but this comment stands between a well-meaning "align coap.env with
+#   deploy.yml" sweep and a dead PRIMARY intake.
 #   Hence three process classes, not two. ⛔ Adding a fourth address var? The map
 #   makes you answer `web:` — do not default it by copying a neighbour; grep the
 #   var and see whether any controller-reachable path reads it.
@@ -132,9 +139,15 @@ module Security
       "CARBON_COIN_CONTRACT_ADDRESS" => { web: true,
                                           cost: "ChainAuditService reports a false 'all clean' — the db<->chain " \
                                                 "fraud-detector is masked" },
+      # ⛔ The cost line here USED to say "the SFC half of the chain-audit read-site degrades
+      # silently" — and there is no SFC half: `ChainAuditService` reads the SCC address only
+      # (`grep -n "FOREST\|SFC" app/services/chain_audit_service.rb` → nothing). Inherited prose,
+      # carried unchecked through the very pass that re-measured the consumers, and it reached
+      # the operator inside a boot refusal — naming the price of a mechanism that does not exist.
       "FOREST_COIN_CONTRACT_ADDRESS" => { web: false,
-                                          cost: "the SFC half of the chain-audit read-site degrades silently " \
-                                                "(same umbrella as the SCC address)" }
+                                          cost: "the single SFC mint branch resolves nothing — and that " \
+                                                "branch is currently unreachable behind an earlier return, " \
+                                                "so the miss would surface only when SFC minting is armed" }
     }.freeze
 
     # Solana money-path credentials [E.61] — presence-checked at signer boot

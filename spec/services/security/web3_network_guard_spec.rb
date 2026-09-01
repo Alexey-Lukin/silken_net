@@ -354,11 +354,38 @@ RSpec.describe Security::Web3NetworkGuard do
       end
     end
 
+    # The JOB combination, and it is here because an adversarial pass found it MISSING:
+    # the initializer hands Sidekiq `{signer_process: true, web_process: false}`, and that
+    # exact pair appeared in no example — every other production class had its own context,
+    # and the one holding the money keys did not. The default `(true, true)` does NOT stand
+    # in for it: no real process is ever both.
+    context "when the process is job (signs, serves nothing)" do
+      let(:kwargs) { { signer_process: true, web_process: false } }
+
+      it "demands ALL THREE addresses — the signer reads every one of them" do
+        violations = described_class.violations(mainnet_rpcs, **kwargs)
+        %w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS].each do |var|
+          expect(violations).to include(a_string_matching(/\[address\].*#{var}.*not set/))
+        end
+      end
+    end
+
     # Both axes default to the STRICT side, mirroring `chain_env`'s `mainnet`
     # default: a caller that forgets an axis may over-refuse, never under-protect.
     it "defaults web_process to the strict side" do
       expect(described_class.violations(mainnet_rpcs, signer_process: false))
         .to include(a_string_matching(/\[address\].*CARBON_COIN_CONTRACT_ADDRESS.*not set/))
     end
+
+    # 🔒 DECLARED CEILING of this block, written because an adversarial pass measured it and
+    # the first version of this comment would have overstated the coverage. The two mutations
+    # this block is verified against are NOT caught evenly:
+    #   · revert the fix (`next unless signer_process`) → RED: "demands the SCC address" and
+    #     "defaults web_process to the strict side". TWO examples, not five.
+    #   · demand unconditionally (drop the `next`) → RED: both coap examples plus
+    #     "does NOT demand the job-only addresses" and "is clean once the SCC address is present".
+    # ⛔ So "does not demand signer keys or the Solana set" survives BOTH mutations and the
+    # revert — it pins the pre-existing signer scoping of OTHER axes, which this change never
+    # touched. It is a regression pin, not evidence for this fix; do not count it as such.
   end
 end

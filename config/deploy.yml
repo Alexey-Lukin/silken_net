@@ -46,7 +46,8 @@ servers:
       secret:
         # Money/signing keys are JOB-ONLY: every signing call site is a Sidekiq
         # worker; web/coap boot keyless (Security::Web3NetworkGuard scopes the
-        # presence check via signer_process: Sidekiq.server?). This is the ONLY
+        # presence check via signer_process: Sidekiq.server? for KEYS -- addresses are
+        # scoped PER-VARIABLE across three process classes since 2026-09-01). This is the ONLY
         # home of the quintet — scripts/deploy_secret_scan.rb invariant B fails if a
         # member appears in any other role OR in the global env.secret below (which
         # every role inherits, coap included).
