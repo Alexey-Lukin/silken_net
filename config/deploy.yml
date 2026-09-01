@@ -15,7 +15,7 @@ image: silkennet/silken-net/silken_net
 servers:
   web:
     hosts:
-      - 10.0.0.3
+      - silken-net-app
     # ⚖️ [OPS.37 2026-08-30] Stable scrape address for the alloy accessory: a DNS alias on
     # the shared `kamal` docker network (user-defined → embedded DNS serves aliases). Kamal
     # passes role options verbatim into `docker run` AFTER its hardcoded `--network kamal`
@@ -33,7 +33,7 @@ servers:
       network-alias: silken-web
   job:
     hosts:
-      - 10.0.0.3
+      - silken-net-app
     cmd: bundle exec sidekiq -C config/sidekiq.yml
     options:
       # Scrape alias — see the web role note (⚖️ OPS.37 2026-08-30).
@@ -66,7 +66,7 @@ servers:
   # the proxy container with no listener behind it).
   coap:
     hosts:
-      - 10.0.0.3
+      - silken-net-app
     cmd: bundle exec ruby lib/daemons/coap_listener
     options:
       publish:
@@ -355,7 +355,7 @@ aliases:
 accessories:
   alloy:
     image: grafana/alloy:v1.16.3
-    host: 10.0.0.3
+    host: silken-net-app
     files:
       - deploy/alloy/config.alloy:/etc/alloy/config.alloy
     env:

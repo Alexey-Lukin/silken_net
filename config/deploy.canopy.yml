@@ -42,7 +42,7 @@
 # `job:` role, or keep it deliberately worker-less; until then Sidekiq debuts on
 # production, and "canopy is green" means the web half only.
 servers:
-  - 10.0.0.3
+  - silken-net-app
 
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
 # (+ _cache/_cable — `_queue` зрізано INF.18 2026-07-04, і цей рядок обіцяв її досі). Same host/user/password as production (inherited from
