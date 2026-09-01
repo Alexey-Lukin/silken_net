@@ -276,12 +276,17 @@ jobs:
           EXPIRY=$(( ($(date +%s) + 1800) * 1000000 ))
           PUBKEY=$(cat "$HOME/.ssh/id_ed25519.pub")
           printf '{"key":"%s","expirationTimeUsec":"%s"}' "$PUBKEY" "$EXPIRY" > /tmp/oslogin-key.json
-          curl -sS --fail-with-body -X POST \
+          # ⚠️ Body goes to the LOG, not only to a file: a 4xx here is the only thing that names
+          # the cause, and routing it to a file alone (as the first version did) turns a
+          # diagnosable failure into a bare `curl: (22) … 403`.
+          HTTP=$(curl -sS -o /tmp/oslogin-resp.json -w '%{http_code}' -X POST \
             -H "Authorization: Bearer $(gcloud auth print-access-token)" \
             -H "Content-Type: application/json" \
             --data @/tmp/oslogin-key.json \
-            "https://oslogin.googleapis.com/v1/users/${SA_UID}:importSshPublicKey?projectId=silkennet" \
-            > /tmp/oslogin-resp.json
+            "https://oslogin.googleapis.com/v1/users/${SA_UID}:importSshPublicKey?projectId=silkennet")
+          echo "OS Login importSshPublicKey -> HTTP ${HTTP}"
+          cat /tmp/oslogin-resp.json
+          [ "$HTTP" = "200" ] || { echo "::error::OS Login rejected the key (HTTP ${HTTP}) - body above."; exit 1; }
           # The POST returns 200 with an empty posixAccounts list when the profile exists but
           # the project grants no login role — green HTTP, dead SSH. Pin the account, not the code.
           grep -q '"username": *"'"${SA_LOGIN}"'"' /tmp/oslogin-resp.json \
