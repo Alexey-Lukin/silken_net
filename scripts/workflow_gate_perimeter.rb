@@ -85,7 +85,8 @@ module WorkflowGatePerimeter
     # DCO sign-off on inbound PRs. :flip_pending until 2026-07-25, when the founder
     # added `DCO passed` to the required set — verified live against the API, not
     # assumed (`gh api …/branches/main/protection/required_status_checks` returns it
-    # among 8 contexts). Held at :flip_pending before that on purpose: branch
+    # among the required contexts — the tally is deliberately not written down here,
+    # it moves with the perimeter and `PERIMETER` below is what states it). Held at :flip_pending before that on purpose: branch
     # protection is a founder action this repo's CI token cannot perform, and
     # claiming :required early would be exactly the "canon says gating, nothing
     # gates" drift this guard exists to catch.
