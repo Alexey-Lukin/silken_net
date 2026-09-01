@@ -91,3 +91,10 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# [INF.20] WIF credential file written into the workspace by the auth action. The
+# image is PUBLIC on GHCR, and the build context is the workspace — so once the
+# pre-build hook stops aborting, this is the path by which a live credential would
+# ship. Excluded on both surfaces deliberately: .gitignore stops the commit,
+# .dockerignore stops the image, and neither implies the other.
+gha-creds-*.json

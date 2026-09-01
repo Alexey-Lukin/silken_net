@@ -137,3 +137,11 @@ __pycache__/
 # особисті вкладення, що потрапляють у корінь із чату — НЕ версіонуються
 image-*.jpg
 image-*.png
+
+# [INF.20] `google-github-actions/auth` writes its short-lived WIF credential file
+# INTO the workspace (`/home/runner/work/<repo>/<repo>/gha-creds-*.json`) — measured
+# run 33499357498, where it made the checkout dirty and `.kamal/hooks/pre-build`
+# aborted the deploy. Two costs, and the loud one is not the expensive one: the
+# aborted deploy is visible, a credential file sitting untracked in the working tree
+# is not. `git add -A` would stage it.
+gha-creds-*.json
