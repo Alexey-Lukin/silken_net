@@ -241,9 +241,20 @@ jobs:
       - name: Install Kamal
         run: gem install kamal -v '~> 2.12.0'
 
-      # SSH-key setup removed (INF.20 (в)): the Anchor accepts SSH only through the
-      # IAP tunnel + OS Login. The CI kamal leg stays dormant until the (б) glue
-      # (kamal ssh.proxy_command over start-iap-tunnel + SA osLogin/tunnel roles).
+      # [INF.20 move 5] OS Login authenticates by a public key held in the ACCOUNT PROFILE —
+      # not by instance metadata. That distinction is what removing the old SSH-key step got
+      # wrong: dropping the long-lived key was right (keyless — no SSH secret in the deploy
+      # set), dropping the key ENTIRELY was one step too far. `gcloud compute ssh` hides this
+      # by minting and registering a key on the fly; kamal speaks plain ssh through the
+      # ProxyCommand and carries none, so the tunnel opens and authentication then fails as
+      # `Net::SSH::AuthenticationFailed for sa_<id>@silken-net-app` — measured on the first
+      # deploy that ever got far enough to reach authentication (2026-09-01, run 33496873447).
+      # ⚠️ Still keyless in the sense that matters: the key is BORN in the run, never stored,
+      # and expires by itself — `--ttl` is the mechanism, not a nicety.
+      - name: Register an ephemeral SSH key with OS Login [INF.20 move 5]
+        run: |
+          ssh-keygen -t ed25519 -N '' -C "gha-${{ github.run_id }}" -f "$HOME/.ssh/id_ed25519" -q
+          gcloud compute os-login ssh-keys add --key-file="$HOME/.ssh/id_ed25519.pub" --ttl=30m
 
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot -d canopy -y
