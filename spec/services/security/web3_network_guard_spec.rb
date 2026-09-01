@@ -274,16 +274,29 @@ RSpec.describe Security::Web3NetworkGuard do
         .to include(a_string_matching(/\[solana\].*SOLANA_WALLET_KEYPAIR.*not set/))
     end
 
-    # --- process scoping: web/coap boot keyless by design ------------------
+    # --- process scoping: THREE classes, not two ---------------------------
+    #
+    # 🔴 This block used to be one context named "(web / coap containers)" asserting
+    # that neither demands an address, "because web/coap never mint/audit". Half of
+    # that parenthesis was false and the spec PINNED it: web does not mint, but it
+    # audits — `SystemAuditsController#index` → `ChainAuditService` →
+    # `ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")` under a `rescue StandardError`
+    # that returns `delta: 0, critical: false`. So on a web-only slot an UNSET SCC
+    # address booted clean and reported a permanent false "all clean", while a mere
+    # placeholder refused the boot — opposite verdicts on the same consumer, and the
+    # quiet one was the dangerous one. Splitting the context is the fix: coap and web
+    # are different processes and were never interchangeable.
 
-    context "when signer_process: false (web / coap containers)" do
+    context "when the process is coap (neither signs nor serves)" do
+      let(:kwargs) { { signer_process: false, web_process: false } }
+
       it "does not demand key presence — a keyless env is clean" do
-        expect(described_class.violations(mainnet_rpcs, signer_process: false)).to be_empty
+        expect(described_class.violations(mainnet_rpcs, **kwargs)).to be_empty
       end
 
       it "still flags a malformed key that IS present" do
         env = mainnet_rpcs.merge("ORACLE_MINTER_PRIVATE_KEY" => "not-a-hex-key")
-        expect(described_class.violations(env, signer_process: false))
+        expect(described_class.violations(env, **kwargs))
           .to include(a_string_matching(/\[oracle-key\].*hex/))
       end
 
@@ -292,27 +305,60 @@ RSpec.describe Security::Web3NetworkGuard do
           "ORACLE_MINTER_PRIVATE_KEY"  => "e" * 64,
           "ORACLE_SLASHER_PRIVATE_KEY" => "e" * 64
         )
-        expect(described_class.violations(env, signer_process: false))
+        expect(described_class.violations(env, **kwargs))
           .to include(a_string_matching(/SAME signer key/))
       end
 
       it "still flags a testnet RPC" do
         env = mainnet_rpcs.merge("SOLANA_RPC_URL" => "https://api.devnet.solana.com")
-        expect(described_class.violations(env, signer_process: false))
+        expect(described_class.violations(env, **kwargs))
           .to include(a_string_matching(/\[chain\].*TESTNET/))
       end
 
-      it "does not demand the silent-address or Solana sets (web/coap never mint/audit)" do
-        violations = described_class.violations(mainnet_rpcs, signer_process: false)
+      it "demands NO address — coap.env carries none by design (06_04 §5.7)" do
+        violations = described_class.violations(mainnet_rpcs, **kwargs)
         expect(violations).not_to include(a_string_matching(/\[address\]/))
         expect(violations).not_to include(a_string_matching(/\[solana\]/))
       end
 
       it "still flags a malformed treasury address that IS present" do
         env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS" => "not-an-address")
-        expect(described_class.violations(env, signer_process: false))
+        expect(described_class.violations(env, **kwargs))
           .to include(a_string_matching(/\[address\].*40-hex/))
       end
+    end
+
+    context "when the process is web (serves requests, holds no signer key)" do
+      let(:kwargs) { { signer_process: false, web_process: true } }
+
+      it "demands the SCC address — its read-site is controller-reachable" do
+        expect(described_class.violations(mainnet_rpcs, **kwargs))
+          .to include(a_string_matching(/\[address\].*CARBON_COIN_CONTRACT_ADDRESS.*not set/))
+      end
+
+      it "does NOT demand the job-only addresses (they have no web read-site)" do
+        violations = described_class.violations(mainnet_rpcs, **kwargs)
+        expect(violations).not_to include(a_string_matching(/DAO_TREASURY_ADDRESS.*not set/))
+        expect(violations).not_to include(a_string_matching(/FOREST_COIN_CONTRACT_ADDRESS.*not set/))
+      end
+
+      it "is clean once the SCC address is present — the demand is narrow" do
+        env = mainnet_rpcs.merge("CARBON_COIN_CONTRACT_ADDRESS" => "0x" + ("a" * 40))
+        expect(described_class.violations(env, **kwargs)).to be_empty
+      end
+
+      it "does not demand signer keys or the Solana set" do
+        violations = described_class.violations(mainnet_rpcs, **kwargs)
+        expect(violations).not_to include(a_string_matching(/\[oracle-key\]/))
+        expect(violations).not_to include(a_string_matching(/\[solana\]/))
+      end
+    end
+
+    # Both axes default to the STRICT side, mirroring `chain_env`'s `mainnet`
+    # default: a caller that forgets an axis may over-refuse, never under-protect.
+    it "defaults web_process to the strict side" do
+      expect(described_class.violations(mainnet_rpcs, signer_process: false))
+        .to include(a_string_matching(/\[address\].*CARBON_COIN_CONTRACT_ADDRESS.*not set/))
     end
   end
 end

@@ -38,6 +38,22 @@
 #   the bug as transient RPC. Boot is the only loud moment this class has.
 #   Values are never echoed
 #   into the violation text — a mispasted secret must not leak into logs.
+#   🔴 And "boot is the only loud moment" is a claim about EVERY container that
+#   reads the var, which is why PRESENCE is scoped per-VARIABLE (`web:` in the map
+#   below) and not by `signer_process:` alone. Measured 2026-09-01: the presence
+#   branch was signer-scoped while the FORMAT branch was not, so on a web-only
+#   slot (canopy — no Sidekiq) an UNSET address booted clean while a placeholder
+#   refused. Same var, same consumer, opposite verdicts — and the quiet direction
+#   was the dangerous one: `SystemAuditsController#index` → `ChainAuditService`
+#   → `ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")` under `rescue StandardError`
+#   returns `delta: 0, critical: false`, i.e. the false "all clean" named above,
+#   for the life of the deploy. ⚠️ The tempting one-line fix — drop the scoping
+#   entirely — breaks a neighbour: `coap_listener` loads every initializer and its
+#   `/etc/silkennet/coap.env` carries NO contract address by design (canon 06_04
+#   §5.7), so an unconditional demand would refuse the telemetry intake's boot.
+#   Hence three process classes, not two. ⛔ Adding a fourth address var? The map
+#   makes you answer `web:` — do not default it by copying a neighbour; grep the
+#   var and see whether any controller-reachable path reads it.
 #
 # Solana signer set [E.61]. No stub mode exists; absence self-reveals only
 #   per-event (a DeadSet job), while the batch-payout loop swallows per-wallet
@@ -101,14 +117,24 @@ module Security
 
     # ETH-address ENVs whose read-sites fail SILENT (rescue umbrellas mask the
     # config error as an operational state) → boot is their only loud gate.
-    # ENV → what the silence costs (goes into the violation text).
+    # ENV → `cost:` what the silence costs (goes into the violation text) +
+    #       `web:`  is there a controller-reachable read-site, i.e. must the WEB
+    #               container demand presence too (see the header note).
+    # Measured consumers 2026-09-01 (`grep -rn <VAR> app lib`), and the count is the
+    # whole point — only one of the three leaves the money path:
+    #   · CARBON_COIN  6 sites, ONE of them web-reachable (chain_audit_service.rb)
+    #   · DAO_TREASURY 3 sites, all job (blockchain_minting_service, insurance/reserve_gate)
+    #   · FOREST_COIN  1 site,  job     (blockchain_minting_service)
     SILENT_ADDRESS_ENVS = {
-      "DAO_TREASURY_ADDRESS"         => "the 2% Dynamic Tax silently stays off — the DAO treasury " \
-                                        "leaks revenue and the log lies 'RPC degraded' (E.46 umbrella)",
-      "CARBON_COIN_CONTRACT_ADDRESS" => "ChainAuditService reports a false 'all clean' — the db<->chain " \
-                                        "fraud-detector is masked",
-      "FOREST_COIN_CONTRACT_ADDRESS" => "the SFC half of the chain-audit read-site degrades silently " \
-                                        "(same umbrella as the SCC address)"
+      "DAO_TREASURY_ADDRESS"         => { web: false,
+                                          cost: "the 2% Dynamic Tax silently stays off — the DAO treasury " \
+                                                "leaks revenue and the log lies 'RPC degraded' (E.46 umbrella)" },
+      "CARBON_COIN_CONTRACT_ADDRESS" => { web: true,
+                                          cost: "ChainAuditService reports a false 'all clean' — the db<->chain " \
+                                                "fraud-detector is masked" },
+      "FOREST_COIN_CONTRACT_ADDRESS" => { web: false,
+                                          cost: "the SFC half of the chain-audit read-site degrades silently " \
+                                                "(same umbrella as the SCC address)" }
     }.freeze
 
     # Solana money-path credentials [E.61] — presence-checked at signer boot
@@ -124,10 +150,16 @@ module Security
     # (plaintext-ENV exposure of any container's environ), so demanding
     # presence there would force keys BACK onto the widest attack surface.
     # Format and collision checks still run everywhere a key IS present.
-    def violations(env = ENV, signer_process: true)
+    # `web_process:` is the SECOND scoping axis and it is not a duplicate of the
+    # first: the three process classes are job (Sidekiq) / web (Puma, and any rake
+    # task in that container) / coap (`coap_listener`), and a var can be consumed by
+    # the first two while the third must never be asked for it. Both default to the
+    # STRICT side for the same reason `chain_env` defaults to `mainnet` — a caller
+    # that forgets an axis can only over-refuse a boot, never under-protect one.
+    def violations(env = ENV, signer_process: true, web_process: true)
       chain_violations(env) +
         oracle_violations(env, signer_process: signer_process) +
-        address_violations(env, signer_process: signer_process) +
+        address_violations(env, signer_process: signer_process, web_process: web_process) +
         solana_violations(env, signer_process: signer_process)
     end
 
@@ -280,14 +312,19 @@ module Security
 
     # The silent-address read-sites swallow config errors (their umbrellas mask
     # a misconfig as an operational state), so unset/garbage is only ever loud
-    # HERE. Presence is demanded in the signer process only (web/coap never
-    # mint/audit); format is checked wherever a value IS present. The value
-    # itself is never included in the message.
-    def address_violations(env, signer_process: true)
-      SILENT_ADDRESS_ENVS.filter_map do |var, cost|
+    # HERE. Presence is demanded wherever the var is actually READ — the signer
+    # process always, plus the web container for the `web: true` members; format
+    # is checked wherever a value IS present. The value itself is never included
+    # in the message. ⛔ The predecessor of this line read "the signer process only
+    # (web/coap never mint/audit)" and the parenthesis was HALF false: web does not
+    # mint, but it audits — see the header note for the measurement and for why the
+    # coap half must stay exempt.
+    def address_violations(env, signer_process: true, web_process: true)
+      SILENT_ADDRESS_ENVS.filter_map do |var, spec|
+        cost  = spec.fetch(:cost)
         value = env[var]
         if value.blank?
-          next unless signer_process
+          next unless signer_process || (web_process && spec.fetch(:web))
 
           "[address] #{var} is not set — this would NOT crash: #{cost}."
         elsif !value.match?(EthAddressValidatable::ETH_ADDRESS_FORMAT)

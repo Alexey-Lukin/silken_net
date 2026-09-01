@@ -200,7 +200,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **Cloud SQL** (стан) | Google (у межах того ж проєкту) | 🔴 БД недосяжна → контейнер `exit 1`, `/ready` 503. ⛔ **Автоматичного експорту даних ЗА МЕЖІ GCP немає:** бекап = PITR + 30 снапшотів у тому ж Cloud SQL. Поза ним відновлювані лише (а) баланси токенів — з ланцюга (БД є проєкцією), (б) `AuditLog` — IPFS/Filecoin | ⛔ ні — це той самий контролер, що рядок 1. `deletion_protection = true`; ⚠️ **HA — `REGIONAL` лише в коміченому дефолті, чинний деплой `ZONAL`** ([`06_06 §2`](06_06_Disaster_Recovery_and_Backup) — подія повернення названа). ⚠️ DR-drill **не проводився жодного разу** ([`06_06`](06_06_Disaster_Recovery_and_Backup), `DR.1`) |
 | **GCS tfstate** | Google · бакет створено поза terraform (`bootstrap.sh`) | контроль над станом інфри; ручне знищення версії CMEK-ключа робить state-версії **назавжди** нечитабельними (recovery = `terraform import` з нуля) | ⛔ ні. ⊕ **Єдиний важіль із МАШИННИМ виконавцем строку** — ротація CMEK `--rotation-period=90d`, налаштована в gcloud. Копії стану поза бакетом немає (лише 10 noncurrent-версій / 30 днів, і короткий ретеншн — свідомий: кожна версія несе секрети) |
 | **GHCR** (образ для анкера) | GitHub (див. рядок 2) | зупиняє оновлення/підйом **CoAP-інтейку**: анкер тягне свій образ звідси systemd-юнітом, поза Kamal/WIF-ланцюгом і без реєстрового credential'а. ⚠️ Kamal тягне з GCP Artifact Registry — це ІНШИЙ реєстр, тож web/job тут не залежать | ⛔ ні — успадковує подію рядка 2. Пом'якшення: `PIN_ME` fail-closed + заборона `:latest` (`INF.21`) — уже завантажений образ переживе відмову, rebuild/reboot ні |
-| **Alchemy** (RPC Polygon/Ethereum) | Alchemy · **акаунт заведено 2026-08-31**, free-план, один app на команду. Модель ключа: ОДИН API-key на app, мережі перемикаються ПІДДОМЕНОМ і вмикаються поштучно — увімкнено 16, і вони покривають наш стек цілком: `eth-mainnet` · `polygon-mainnet` (прод) · `polygon-amoy` + `eth-sepolia` (рівно та пара, що потрібна Фазі 2t) · `solana-mainnet`/`solana-devnet` · **`celo-mainnet`/`celo-sepolia`**. Значень у deploy-набір ще НЕ заведено | зупиняє мінт · слешинг · confirmation · L1-якір · governance-sync · treasury-моніторинг. 🔴 **Каскад формально Є, фактично ПОРОЖНІЙ:** механізм (`Web3::ResilientClient` + `RpcConnectionPool`) живий, але при одному URL він вироджується у звичайного клієнта, а з усіх `client_for`-сайтів каскад передає **один** (`MintingRollbackService`); `INFURA_POLYGON_RPC_URL` живе лише в `.env.example` і в deploy-набір не заведений | ⛔ ні, але 🤖 **вимірна діра**: другий RPC-провайдер для Polygon/Ethereum — конфіг, не архітектура (Celo й Solana свої каскади вже мають) |
+| **Alchemy** (RPC Polygon/Ethereum) | Alchemy · **акаунт заведено 2026-08-31**, free-план, один app на команду. Модель ключа: ОДИН API-key на app, мережі перемикаються ПІДДОМЕНОМ і вмикаються поштучно — увімкнено 16, і вони покривають наш стек цілком: `eth-mainnet` · `polygon-mainnet` (прод) · `polygon-amoy` + `eth-sepolia` (рівно та пара, що потрібна Фазі 2t) · `solana-mainnet`/`solana-devnet` · **`celo-mainnet`/`celo-sepolia`**. Значень у deploy-набір ще НЕ заведено | зупиняє мінт · слешинг · confirmation · L1-якір · governance-sync · treasury-моніторинг. 🔴 **Каскад формально Є, фактично ПОРОЖНІЙ:** механізм (`Web3::ResilientClient` + `RpcConnectionPool`) живий, але при одному URL він вироджується у звичайного клієнта, а з усіх `client_for`-сайтів каскад передає **один** (`MintingRollbackService`); `INFURA_POLYGON_RPC_URL` живе лише в `.env.example` і в deploy-набір не заведений | ⛔ ні, але 🤖 **вимірна діра**: другий RPC-провайдер для Polygon/Ethereum — конфіг, не архітектура. 🔴 **Дужка тут доти казала «Celo й Solana свої каскади вже мають», і це хибно на ЯРУСІ, який має значення** (переміряно 2026-09-01): `CELO_RPC_URL_FALLBACK_1/2` і `SOLANA_RPC_URL_FALLBACK_1/2` заповнені в `.env.example` і мають **нуль** входжень у `config/deploy*.yml`, `.kamal/**` та обох воркфлоу — тобто в контейнер не доїжджають, і порожні в проді УСІ ТРИ каскади, не лише Polygon-ів. Клас той самий, що [`S1.1`](00_07_Action_Plan_Tracker) `TURBO_SIGNED_STREAM_KEY`: значення живе на одному ярусі ланцюга й читається як заведене |
 | **Upstash** (Redis ×2 інстанси: production + canopy) | Upstash · акаунт заведено, `silkennet-canopy` живий (виміряно 2026-08-30); **production-інстанс ще ні — упирається в ТАРИФ, не в роботу** (Free = рівно 1 інстанс/акаунт) → [`00_07`](00_07_Action_Plan_Tracker) Фаза −1 | `/ready` → **503 для всієї ноди** (Redis у hard-dependencies), бо на ньому Sidekiq (9 черг) · Kredis-локи мінту/берну/nonce · Rack::Attack. ⊕ Частковий graceful-degrade є лише для nonce (fallback у Solid Cache + власна метрика й алерт) | ⛔ ні. ⚖️ **Тригер названий і вимірний:** повторюваний `m2m_nonce_fallback` день-у-день → перехід на multi-zone Upstash Global DB (рішення за прод-даними) |
 
 🔑 **Що цей інвентар змінив у власному пункті — записано, бо клас повториться.** `ARCH.114` спирався на «виміряний інстанс, що доводить потребу»: `GCP_SA_KEY_BASE64` — довгоживучий SA-ключ із приписаною ротацією 90 днів **без виконавця**. **Цей інстанс МЕРТВИЙ**: споживача знято разом із платформою (`OPS.37`), `google_service_account_key` у дереві **нуль**, а `INF.22` і скіл `deploy` уже кажуть «WIF безвинятковий». **Вердикт (реєстр потрібен) вистояв — упала його ПІДСТАВА**, і заміняє її не риторика, а сильніший живий інстанс того самого класу Кафки: **довіра WIF ключується на ІМЕНІ GitHub-власника, стеля оголошена в самому коді, подія названа («if the repo ever changes hands») — і виконавця в неї немає так само.** Різниця в тому, що цей — не гіпотетичний і не знятий.
@@ -694,13 +694,26 @@ Kamal 2.12 бере обидві половини як **імена kamal-сек
       він є лише формою доставки Kamal'ом; ключ у vault, але планка НИЖЧА за master-ключі: втрата
       не незворотна (Origin CA перевидається безкоштовно), витік — дає видати себе за наш origin
       перед CF ([`DR.1`](00_07_Action_Plan_Tracker)).
-- [ ] **Cloudflare account** — акаунт живий, ⚠️ **але обидві зони на плані `Free`, а цей рядок
-      вимагає Pro/Business** (виміряно в дашборді 2026-08-31). Підстава вимоги — не WAF, а
-      **WebSocket-стеля: на Free плані Hotwire/ActionCable лімітується**, тобто впирається саме
-      той тракт, яким ми показуємо живі оновлення. 🔴 Розходження лишається ВІДКРИТИМ навмисно:
-      воно або гейт деплой-дня (апгрейд плану), або спростована вимога (перемір ліміту й зняти
-      рядок) — але не мовчазна галочка. ⛔ Не «закривати» його тим, що акаунт існує: рядок
-      вимагає ПЛАНУ, а не наявності.
+- [x] **Cloudflare account** — акаунт живий, обидві зони на плані `Free`, і цього ДОСИТЬ.
+      ⚖️ **Вимогу «Pro/Business» ЗНЯТО 2026-09-01 як СПРОСТОВАНУ — не пом'якшено, а спростовано,
+      бо впав сам механізм.** Рядок стояв на «WebSocket-стелі Free плану»; доки Cloudflare
+      ([network/websockets](https://developers.cloudflare.com/network/websockets/), last updated
+      2026-08-14) кажуть дослівно **«WebSockets are supported on all Cloudflare plans»**, а їхній
+      дім per-limit чисел ([fundamentals/reference/connection-limits](https://developers.cloudflare.com/fundamentals/reference/connection-limits/),
+      2026-07-23) не має WebSocket-концюрентності як КАТЕГОРІЇ взагалі — єдина документована
+      WS-стеля це idle timeout, і вона plan-незалежна (кастомізує лише Enterprise).
+      🔴 **Найдорожче тут — не число, а те, що чисел ДВА і вони розходяться втричі на порядок:**
+      циркулюючі «ліміти Free» дають і 100, і 100 000 одночасних. Величина, чиї версії
+      розбігаються в тисячу разів, є фольклором, а не виміром — і саме тому присуд виносить
+      ВІДСУТНІСТЬ механізму, а не порівняння з нашим профілем. ⊕ Профіль усе одно міряли, і він
+      знімає питання вдруге: `turbo-rails` мемоїзує `consumer` на рівні модуля
+      (`app/javascript/turbo/cable.js`), тож усі десять `turbo_stream_from` дерева
+      мультиплексуються в ОДИН сокет на вкладку, а `ApplicationCable::Connection` пускає лише
+      автентифікований браузер (Bearer-шляху немає свідомо) — тобто флот не додає жодного
+      з'єднання: Queen ходить CoAP/UDP повз CF. ⛔ **Дзеркальна пастка, названа вголос: платні
+      фічі тут уміють ЛАМАТИ, а не розблоковувати** — Argo Smart Routing документовано
+      **несумісний** із WebSockets. Реальні ризики тракту plan-незалежні (idle timeout →
+      heartbeat; рестарти CF рвуть сокети → реконект), і жоден із них апгрейдом не лікується.
 - [x] **Домен у Cloudflare** — `silkennet.app` (web) і `silkennet.com` (його піддомен
       `api.silkennet.com` несе CoAP). ✅ Обидві зони `Active` (виміряно в дашборді 2026-08-31).
       ⚠️ Зона активна ≠ трафік ходить, і саме цей рядок довго був носієм: доки записів нуль,
@@ -712,16 +725,28 @@ Kamal 2.12 бере обидві половини як **імена kamal-сек
       `Full (strict)`, мітка «Mode last changed · 1 day ago» збігається). Пара Origin CA до
       нього тепер теж на місці, тож стан «режим увімкнено, сертифіката немає» — за яким web-ярус
       віддавав би 521/525 — **пройдено**, а не чинний.
-- [ ] **Origin відомий:** `terraform output -raw ingress_ip` — **Ingress Anchor, і альтернативи
+- [x] **Origin відомий:** `terraform output -raw ingress_ip` — **Ingress Anchor, і альтернативи
       немає**. Рядок доти пропонував «публічну адресу app-хоста (або Ingress Anchor…)», тобто
       розвилку з неіснуючою першою гілкою: у app-хоста зовнішньої IP немає за побудовою
       (`terraform/compute.tf` — «NO PUBLIC IP, on purpose»), а 80/443 доходять до нього
       HAProxy'єм анкера (`mode tcp`). Дивись §Розподіл Ресурсів.
-- [ ] **DNS-записи створено:** `silkennet.app` → `ingress_ip`, Proxy status: 🟠 **Proxied**
+- [x] **DNS-записи створено:** `silkennet.app` → `ingress_ip`, Proxy status: 🟠 **Proxied**
       · **`canopy.silkennet.app` → `ingress_ip`, 🟠 Proxied** — ⚠️ без нього Фаза 3 підіймає
       canopy зеленим, а `proxy.host` не резолвиться, тобто репетиція основного шляху тихо не
       відбувається (`config/deploy.canopy.yml` вимагає цього запису, а чек-лист його не мав).
-- [ ] **Ingress Anchor running** зі статичним IP (`gcloud compute addresses list`).
+- [x] **Ingress Anchor running** зі статичним IP (`gcloud compute addresses list`).
+- ✅ **Три рядки вище ЗАКРИТО 2026-09-01, і закрито ЖИВИМ виміром, не дашбордом** — вони стояли
+      відкритими на вже зробленій роботі, тобто чек-лист деплой-дня брехав операторові в бік
+      «ще не зроблено» (той самий клас, що вже коштував тут добу на A-записах). Доказ, і саме в
+      цій формі, бо **одна команда дискримінує обидві половини одразу**: `dig +short @1.1.1.1`
+      віддає для `silkennet.app` і `canopy.silkennet.app` **anycast Cloudflare**
+      (`188.114.96.11`/`.97.11` — помаранчева хмарка стоїть, origin схований), а для
+      `api.silkennet.com` — **саму** `34.76.16.254`, тобто сіра хмарка справді сіра; помилка в
+      будь-який бік дала б однаковий набір адрес, і лише розходження цих двох відповідей є
+      твердженням. `gcloud compute addresses list` → `silken-net-ingress-ip` = `34.76.16.254`,
+      `IN_USE`, `europe-west1`; обидві VM `RUNNING`, у `silken-net-app` NAT-IP порожній — як і
+      вимагає конструкція. ⚠️ Перевіряй саме `dig`-ом проти зовнішнього резолвера: дашборд CF
+      показує НАМІР запису, а не те, що віддає світ.
 - [ ] 🔴 **Queens бʼють у Ingress Anchor, НЕ в Cloudflare:** firmware резолвить
       `COAP_SERVER_HOST` (`api.silkennet.com`, `firmware/queen/main.c`) → A-запис цього хоста
       МУСИТЬ бути **DNS-only (сіра хмарка)**, не proxied, і вказувати на статичний Ingress-IP.
@@ -784,7 +809,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 |---------|------------------|-------------|
 | `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити, що origin має валідний сертифікат; CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
 | `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
-| WebSocket падає одразу | Hotwire/ActionCable через CF Free плану лімітується | Upgrade до CF Pro (WebSocket unlimited) АБО Cloudflare Tunnel зі sticky origin |
+| WebSocket падає одразу | ⛔ **НЕ план** — «CF Free лімітує WebSocket» спростовано 2026-09-01 (Pre-Flight #3: доки CF кажуть «supported on all plans»). Дивись на plan-незалежні причини: idle timeout без heartbeat · рестарт CF-серверів рве сокети · увімкнений **Argo Smart Routing** (документовано НЕсумісний із WebSockets) · `/cable` не проходить проксі анкера | Heartbeat/реконект на клієнті; вимкнути Argo, якщо вмикали; перевірити 101 крізь проксі кроком 6 вище. ⛔ Апгрейд плану тут не лік — він не купує нічого з переліченого |
 | CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить сама після N=3 flush-провалів підряд ([FW.58], [`03_02 §4`](03_02_Queen_Gateway_Firmware)) або post-reboot |
 | TLS grade B-C на SSL Labs | CF SSL/TLS режим = `Flexible` (CF→origin по HTTP) | Перемкнути на `Full (strict)`; примусово вимкнути TLS 1.0/1.1 в CF Edge Certificates |
 
@@ -958,9 +983,26 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 
 **Фаза 2t — TESTNET-контракти (передує Фазі 3; це НЕ опція) [OPS.37 / `INF.27`]:**
 ```bash
-cd contracts && forge script script/Deploy.s.sol --rpc-url "$AMOY_RPC_URL" --broadcast
-# і той самий рядок для Sepolia
+cd contracts && forge script script/Deploy.s.sol --rpc-url "$AMOY_RPC_URL" \
+  --broadcast --with-gas-price 30gwei          # ⚠️ пін НЕ оптимізація — див. нижче
+cd contracts && forge script script/Deploy.s.sol --rpc-url "$SEPOLIA_RPC_URL" --broadcast
 ```
+🔴 **Пін газу на Amoy є УМОВОЮ ЗДІЙСНЕННОСТІ, а не економією — виміряно 2026-09-01 трьома
+прогонами.** Витрата газу фіксована байткодом (**16 663 812**, збігається до цифри в обох
+замірах), тож усе вирішує ціна, а вона рухається: `forge` того дня оцінював **48.24 gwei →
+0.8039 POL**, тоді як пін `30gwei` дає **0.49991436 POL**. Стеля добування при цьому ЖОРСТКА
+(кран Chainlink — 0.5 POL за захід, офіційний Polygon — 0.1/добу), отже **без піна бюджет крана
+не покриває фазу взагалі, а з піном покриває із запасом ~0.1**. ⚠️ І не бери одну цифру ціни:
+того ж дня `eth_maxPriorityFeePerGas` віддавав **200 gwei**, а `cast gas-price` напередодні —
+30.00 і 44.10. 🔑 **Чому пін при цьому безпечний, і це вимір, а не оптимізм:** вісім блоків Amoy
+поспіль заповнені на **0.00–0.19%** (максимум 266 850 газу при ліміті 140 000 000), тобто
+priority fee тут є перевіркою ПОЛИЦІ, а не аукціоном — 200–300 gwei платять боти в порожні
+блоки, за місце ніхто не конкурує. ⛔ Пін робить вартість детермінованою, не транзакцію
+гарантованою: якщо мережа підніме саму полицю вище за пін, кадри просто не змайняться.
+⊕ **Sepolia-нога дешева й у бюджет влазить із запасом ×15** (`0.0330 ETH` проти 0.5 з крана),
+але вона деплоїть УСІ ШІСТЬ контрактів, тоді як бекенд читає звідти РІВНО ОДИН
+(`ETHEREUM_ANCHOR_CONTRACT` ← `Ethereum::StateAnchorService`): `Deploy.s.sol` гілок по чейнах не
+має. Сьогодні це не блокер, а надлишок; ставатиме питанням, якщо Sepolia-газ подорожчає.
 🔴 **Форма команди виміряна прогоном 2026-08-31, бо доти рядок був невиконуваний ОБОМА
 прочитаннями.** Тут стояло `forge script contracts/script/Deploy.s.sol --broadcast`: із
 `contracts/` це віддає `Error: contract source info format must be '<path>:<contractname>'`

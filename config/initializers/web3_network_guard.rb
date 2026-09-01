@@ -37,17 +37,49 @@ Rails.application.config.after_initialize do
   # Key-PRESENCE is demanded only where keys are consumed: the Sidekiq signer
   # process. The web/coap containers boot keyless by design (plaintext-ENV
   # exposure) — a missing key still fails loudly, at job-boot, before any DeadSet.
-  violations = Security::Web3NetworkGuard.violations(ENV, signer_process: Sidekiq.server?)
+  #
+  # 🔑 But "where it is consumed" has THREE answers, not two, and only the guard can
+  # hold that per-variable: job (Sidekiq) · web (Puma, and any rake task in that
+  # container — `db:prepare` boots this same code) · coap. The `coap_listener`
+  # exemption uses the $PROGRAM_NAME idiom `master_key_strength_check.rb` already
+  # relies on, and it is load-bearing: that process loads every initializer while its
+  # `/etc/silkennet/coap.env` carries no contract address by design (06_04 §5.7).
+  # ⚠️ VERIFIED, not assumed (2026-09-01) — INF.17 records that the coap daemon's boot was
+  # never proven by a live run, so the idiom it depends on was an inherited assumption, and
+  # getting it wrong here refuses the telemetry intake's boot. Measured: both launch sites
+  # (`config/deploy.yml` role cmd + the anchor systemd unit in `terraform/compute.tf`) are
+  # `bundle exec ruby lib/daemons/coap_listener`, that form yields
+  # `$PROGRAM_NAME == "lib/daemons/coap_listener"`, and the daemon reassigns neither `$0`
+  # nor the proctitle — while its line 5 IS `require_relative "../../config/environment"`.
+  # ⛔ Change either launch form and re-measure: the failure would be a silent non-boot of
+  # the one process the forest speaks through.
+  signer_process = Sidekiq.server?
+  coap_process   = $PROGRAM_NAME.include?("coap_listener")
+  web_process    = !signer_process && !coap_process
+
+  violations = Security::Web3NetworkGuard.violations(
+    ENV, signer_process: signer_process, web_process: web_process
+  )
   next if violations.empty?
 
-  # All four are echoed because they are the FOUR separate questions this boot asks: which
-  # SLOT, which runtime, which enforcement arm armed the guard, and which chain family this
-  # slot claims. A `[chain]` violation is unreadable without the last — it is half the
-  # assertion. ⚠️ The slot was the one MISSING when this comment said "three" [INF.27]: both
-  # deploys carry RAILS_ENV=production, so a canopy boot-refusal and a production one were
-  # indistinguishable in the log stream — precisely when telling them apart matters most.
+  # All five are echoed because they are the FIVE separate questions this boot asks: which
+  # SLOT, which runtime, which enforcement arm armed the guard, which chain family this
+  # slot claims, and which PROCESS CLASS refused. A `[chain]` violation is unreadable
+  # without the fourth — it is half the assertion. ⚠️ The slot was the one MISSING when
+  # this comment said "three" [INF.27]: both deploys carry RAILS_ENV=production, so a
+  # canopy boot-refusal and a production one were indistinguishable in the log stream —
+  # precisely when telling them apart matters most. ⊕ The process class joined for the
+  # same reason on 2026-09-01: presence is now scoped per-variable across three process
+  # classes, so `[address] … is not set` cannot be acted on without knowing which
+  # container said it — the operator's next move differs per class.
+  process_class = if signer_process then "job"
+  elsif coap_process then "coap"
+  else "web"
+  end
+
   raise SecurityError,
         "Refusing to boot (slot=#{SilkenNet::DeploymentSlot.current}, " \
+        "process=#{process_class}, " \
         "RAILS_ENV=#{Rails.env}, " \
         "WEB3_STRICT_MODE=#{ENV['WEB3_STRICT_MODE'].inspect}, " \
         "#{Security::Web3NetworkGuard::CHAIN_ENV_VAR}=" \
