@@ -127,8 +127,14 @@ RSpec.describe Security::Web3NetworkGuard do
           .to include(a_string_matching(/\[chain\].*WEB3_CHAIN_ENV is "staging".*not one of/))
       end
 
-      # [E.49] inverted: on a testnet slot the Alfajores fallback is the CORRECT landing.
-      it "does not demand CELO_RPC_URL on a testnet slot (the code fallback IS Alfajores)" do
+      # [E.49] ⚖️ 2026-08-31: the rule is one-sided, and its GROUND changed while the verdict
+      # stood. It used to read "on a testnet slot the Alfajores fallback is the CORRECT
+      # landing" — that premise died twice over: the host went NXDOMAIN, then the fallback was
+      # REMOVED entirely. What survives is narrower and still right: the boot rule is armed on
+      # the MAINNET side only, so a testnet slot is not asked for the var here. ⚠️ It is asked
+      # at CALL time now (`ENV.fetch` → KeyError), which is a different surface, not an
+      # exemption — see the mainnet sibling above for the rule's live ground.
+      it "does not demand CELO_RPC_URL on a testnet slot (the boot rule is mainnet-only)" do
         env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet",
                                                   "ORACLE_CELO_PRIVATE_KEY" => "d" * 64)
         expect(described_class.violations(env)).not_to include(a_string_matching(/CELO_RPC_URL/))
