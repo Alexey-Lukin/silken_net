@@ -295,6 +295,14 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   жити лише за `RAILS_MASTER_KEY`-vault у runtime. credentials→ENV (8 сервісів + `storage.yml`);
   AR-encryption ключі = ENV (boot-guard fail-closed, були DEAD-in-prod). Механіка/Phase-2-drop →
   `06_04 §5.7` / 00_07 SEC.22.
+  🔴 **І `storage.yml` тут не деталь переліку, а ПАСТКА з незворотною ціною — беручи Phase-2, читай
+  `06_04 §2.1`, НЕ лише §5.7 (перелік є в обох, зуби лише в §2.1).** Виконаний ДОСЛІВНО як «drop
+  RAILS_MASTER_KEY, вісім сервісів переведено» крок лишає Active Storage без креденшелів і тихо
+  вбиває фотодокази `MaintenanceRecord` — ЄДИНУ людську доказову поверхню в системі. І момент має
+  напрямок: робити це треба ДО першого блоба, бо після нього крок незворотний для вже завантажених.
+  ⚠️ Рядок дописано 2026-09-01: доти скіл називав `storage.yml` без жодного застереження й посилав
+  саме в §5.7 — тобто на deploy-day читач із самим скілом у руках проходив повз пастку, маючи
+  формально правдивий текст.
 - **Secrets-at-rest = три ISOLATED KMS-keyring'и** (`silken-disk-ew1` boot-disk CMEK ·
   `silken-sign-ew1` money-signing SEC.17 pre-mainnet · `silken-tfstate-ew1` bootstrap-owned) —
   key-level IAM бар'єр, **НЕ** generic keyring (merge-trap). ⚠️ Money-квінтет лишається plaintext
