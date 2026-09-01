@@ -296,6 +296,20 @@ jobs:
             || { echo "::error::OS Login accepted the key but reports no posix account named ${SA_LOGIN} — check roles/compute.osLogin on the SA."; cat /tmp/oslogin-resp.json; exit 1; }
           echo "OS Login: key registered for ${SA_LOGIN} (expires in 30m)"
 
+      # [INF.20] The `kamal` docker network is created by `kamal setup` — which this project
+      # deliberately never runs (`server bootstrap` raises here: the deploy SA has no sudo,
+      # so docker is pre-installed by the startup script instead, see terraform/compute.tf).
+      # `proxy reboot` runs BEFORE any app boot and therefore meets a host with no network:
+      # `docker: Error response from daemon: network kamal not found` (run 33498998910).
+      # ⚠️ Idempotent on purpose — the create fails harmlessly once the network exists, and
+      # a hard failure here would make every subsequent deploy red for a first-run condition.
+      - name: Ensure the kamal docker network exists [INF.20]
+        run: |
+          kamal server exec -d canopy --roles web "docker network create kamal" \
+            || echo "network create returned non-zero — it already exists, or the next step will name the real cause"
+        env:
+          GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
+
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot -d canopy -y
         # ⚠️ This step needs the REGISTRY password even though it deploys nothing: `proxy
