@@ -174,6 +174,18 @@ RSpec.configure do |config|
     end
   end
 
+  # 🗂️ Партиції поточного місяця — інакше сюїта червоніє САМА, від календаря.
+  # Анкер `db/structure.sql` несе ЗАСТИГЛИЙ набір місяців (дамп фіксує ті, що
+  # існували на момент дампу), тож у будь-якому місяці, новішому за дамп, рядок із
+  # `created_at = Time.current` осідає в `_default`-лист — а після цього
+  # `CREATE … PARTITION OF` для того ж місяця падає `PG::CheckViolation` вже
+  # НАЗАВЖДИ (`00_07` ARCH.70 · рунбук `06_06 §5.5`). DDL усередині прикладу
+  # відкочується разом із транзакцією, тож жоден приклад цього за собою не лишає.
+  # ⚠️ Ганяємо ВЛАСНЕ прохід воркера, а не свою копію DDL: імена партицій — його
+  # одно-дім (`partition_name_for`), і друга копія розійшлася б із ним тихо.
+  # Стан, який це дає, = рівно той, що прод має після першого ж cron-проходу.
+  config.before(:suite) { PartitionMaintenanceWorker.new.perform }
+
   # Infer spec type from file location (e.g. spec/models → type: :model).
   config.infer_spec_type_from_file_location!
 

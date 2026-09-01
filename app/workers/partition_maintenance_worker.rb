@@ -30,9 +30,15 @@ class PartitionMaintenanceWorker
 
     sample_growth_gauges!
   rescue StandardError => e
-    # CRITICAL: silent partition-creation failure is catastrophic — the very next
-    # INSERT against the affected table on day-1 of the new month crashes with
-    # `no partition of relation "<table>" found for row`. We re-raise so Sidekiq
+    # CRITICAL: a silent partition-creation failure is catastrophic — but NOT in the
+    # way this comment asserted for a long time. The INSERT does NOT crash: all three
+    # tables carry a `_default` leaf, so a row of the uncovered month silently lands
+    # THERE (measured 2026-08-28, `00_07` ARCH.70). The real cost is worse than a
+    # crash — from that moment `CREATE … PARTITION OF` for that same month fails with
+    # `PG::CheckViolation` FOREVER: the new partition would narrow the DEFAULT leaf's
+    # constraint, and that leaf already holds a row which would not fit. The state
+    # never changes by itself, so retries do not heal it (runbook `06_06 §5.5`).
+    # We re-raise so Sidekiq
     # picks it up for the configured `retry: 3`, increment a Prometheus counter
     # (Grafana P0 alert, 06_03 §2.8 / 00_07 S2.5) AND report to Sentry so the operator
     # gets paged BEFORE the partition window expires.
