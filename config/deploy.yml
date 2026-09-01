@@ -184,6 +184,7 @@ env:
   secret:
     # --- Application core ---
     - RAILS_MASTER_KEY
+    - SECRET_KEY_BASE
     # Cloud SQL password (host/user are non-secret → env.clear). Component style: config/database.yml.
     - POSTGRES_PASSWORD
     - REDIS_URL
