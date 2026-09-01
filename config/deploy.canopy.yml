@@ -41,6 +41,19 @@
 # separate `job` service on the retired platform. Open decision — give canopy its own
 # `job:` role, or keep it deliberately worker-less; until then Sidekiq debuts on
 # production, and "canopy is green" means the web half only.
+#
+# 🔴 IF YOU ADD THAT `job:` ROLE, DO NOT COPY production's env.secret WHOLESALE — measured
+# 2026-09-01 [00_07 INF.27]. The array form above is currently the ONLY thing keeping a
+# whole class of outward third-party calls off this slot: all three callers of
+# `Polygon::HadronComplianceService` are Sidekiq workers, so a worker-less canopy cannot
+# reach Hadron at all. Give it a job role the natural way — copying the quintet's sibling
+# keys across — and `HADRON_API_KEY` rides along; `HADRON_API_URL` then defaults to
+# `https://api.hadron.polygon.technology`, i.e. a STAGING slot submitting test personas to a
+# third party's PRODUCTION compliance system. There is no testnet endpoint to point it at.
+# ⛔ Note which way the safety currently runs: today a blank key makes the service RAISE
+# (`Rails.env.production?` is true here), so the failure is loud. Supplying the key is what
+# converts a loud refusal into a silent real call — the opposite of the usual direction, and
+# the reason this warning sits at the moment of the edit rather than in a runbook.
 servers:
   - silken-net-app
 
