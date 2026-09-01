@@ -174,6 +174,14 @@ proxy:
   #    2026-08-30; Option A ratified the same day). Routing host, not cert identity — the
   #    wildcard Origin CA cert carries that. ⚠️ A DNS record for this name must exist and point
   #    at the Ingress Anchor before the first canopy deploy (06_01 §TLS pre-flight).
+  #    ✅ That record EXISTS since 2026-09-01 (A → 34.76.16.254, proxied; verified with dig:
+  #    it resolves to Cloudflare anycast, i.e. the proxy is really in front).
+  # 🔴 THERE IS NO `ssl:` KEY HERE, AND ITS ABSENCE IS THE DESIGN — do not "fix" it.
+  #    The Origin CA pair lives in the BASE manifest and canopy inherits it by deep_merge;
+  #    the certificate is a wildcard (`silkennet.app` + `*.silkennet.app`), so it already
+  #    covers this subdomain. Someone who greps this file for `ssl:` finds nothing and can
+  #    conclude TLS is missing on canopy — it is not. Adding a second `ssl:` here would
+  #    create a divergent cert declaration for one wildcard, which is worse than silence.
   host: canopy.silkennet.app
   # ⏸️ `healthcheck:` inherits the base default (`/up`) exactly as intended — the `/ready` flip
   #    is INF.10 and happens after the first deploy proves `/ready→200`, on BOTH slots.
