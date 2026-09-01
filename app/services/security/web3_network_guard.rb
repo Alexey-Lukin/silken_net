@@ -49,15 +49,19 @@
 #   returns `delta: 0, critical: false`, i.e. the false "all clean" named above,
 #   for the life of the deploy. ⚠️ The tempting one-line fix — drop the scoping
 #   entirely — breaks a neighbour: `coap_listener` loads every initializer and its
-#   `/etc/silkennet/coap.env` carries no contract address — SOURCE: the systemd
-#   env-file heredoc in `terraform/compute.tf`, which is the definition itself.
-#   ⛔ That is an OBSERVATION, not a canonized invariant, and saying otherwise was a
-#   false citation this file carried for hours: `06_04 §5.7` is the secrets-at-rest
-#   latch (SEC.22) and says nothing about contract addresses. Nor is there a gate —
-#   `spec/deploy/anchor_coap_env_spec.rb` denylists only PROVISIONING + the money
-#   quintet. So an unconditional demand would refuse the telemetry intake's boot,
-#   and nothing but this comment stands between a well-meaning "align coap.env with
-#   deploy.yml" sweep and a dead PRIMARY intake.
+#   `/etc/silkennet/coap.env` carries no contract address. ⛔ That is an OBSERVATION,
+#   not a canonized invariant: `06_04 §5.7` is the secrets-at-rest latch (SEC.22) and
+#   says nothing about contract addresses — a false citation that stood on FIVE surfaces
+#   until 2026-09-01, and whose first correction fixed one and scoped itself "this file",
+#   i.e. reproduced the selective-addressing defect it was correcting.
+#   🔴 And the file has TWO drift channels, not one, because `terraform/compute.tf` is a
+#   one-time SEED, not the definition: its heredoc is guarded by `if [ ! -f …]` and its own
+#   comment says "0600 placeholder — the operator fills real values". So (a) a repo sweep
+#   that "aligns coap.env with deploy.yml" and (b) an operator editing the live file by hand
+#   on the anchor both reach it — and only (a) is visible to anything in this repository.
+#   Nor is there a gate: `spec/deploy/anchor_coap_env_spec.rb` denylists PROVISIONING plus
+#   the money quintet and judges the HEREDOC, never the live file. An unconditional demand
+#   here would refuse the telemetry intake's boot.
 #   Hence three process classes, not two. ⛔ Adding a fourth address var? The map
 #   makes you answer `web:` — do not default it by copying a neighbour; grep the
 #   var and see whether any controller-reachable path reads it.
@@ -145,9 +149,12 @@ module Security
       # carried unchecked through the very pass that re-measured the consumers, and it reached
       # the operator inside a boot refusal — naming the price of a mechanism that does not exist.
       "FOREST_COIN_CONTRACT_ADDRESS" => { web: false,
-                                          cost: "the single SFC mint branch resolves nothing — and that " \
-                                                "branch is currently unreachable behind an earlier return, " \
-                                                "so the miss would surface only when SFC minting is armed" }
+                                          cost: "the one branch that reads it is unreachable behind an " \
+                                                "earlier return, so nothing evaluates it today — and the " \
+                                                "moment SFC minting is armed this stops being silent: the " \
+                                                "read is a bare ENV.fetch with no rescue, i.e. a LOUD " \
+                                                "KeyError, and this variable's membership in the silent " \
+                                                "set expires with it [INF.27]" }
     }.freeze
 
     # Solana money-path credentials [E.61] — presence-checked at signer boot

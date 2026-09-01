@@ -315,7 +315,7 @@ RSpec.describe Security::Web3NetworkGuard do
           .to include(a_string_matching(/\[chain\].*TESTNET/))
       end
 
-      it "demands NO address — coap.env carries none by design (06_04 §5.7)" do
+      it "demands NO address — coap.env carries none (observation, not a gated invariant)" do
         violations = described_class.violations(mainnet_rpcs, **kwargs)
         expect(violations).not_to include(a_string_matching(/\[address\]/))
         expect(violations).not_to include(a_string_matching(/\[solana\]/))
@@ -384,8 +384,16 @@ RSpec.describe Security::Web3NetworkGuard do
     #     "defaults web_process to the strict side". TWO examples, not five.
     #   · demand unconditionally (drop the `next`) → RED: both coap examples plus
     #     "does NOT demand the job-only addresses" and "is clean once the SCC address is present".
-    # ⛔ So "does not demand signer keys or the Solana set" survives BOTH mutations and the
-    # revert — it pins the pre-existing signer scoping of OTHER axes, which this change never
-    # touched. It is a regression pin, not evidence for this fix; do not count it as such.
+    # ⛔ So TWO examples survive BOTH mutations and the revert, and both are regression pins
+    # rather than evidence for this fix — do not count either as such:
+    #   · "does not demand signer keys or the Solana set" — pins the pre-existing signer
+    #     scoping of OTHER axes (`[oracle-key]`, `[solana]`), which this change never touched;
+    #   · "demands ALL THREE addresses" (the job context) — its result is decided purely by
+    #     `signer_process`, so it is green under the current code, the revert AND the
+    #     unconditional demand alike. ⚠️ It was still worth adding: it is the only example
+    #     covering the production job combination, and it IS load-bearing against a different
+    #     mutation — requiring BOTH axes at once (`signer_process && web_process`) reds it and
+    #     nothing else. Naming that here because the first version of this ceiling listed one
+    #     survivor and read as a complete audit of the block, which it was not.
   end
 end

@@ -737,7 +737,7 @@ Outage цих мереж **не блокує** core flow:
 | Streamr | 🟢 Nice | No | Yes | — |
 | Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
 | The Graph | 🟢 Nice | No (read-only) | Yes | — |
-| Celo | 🟢 Nice | RPC fallback | Yes | — |
+| Celo | 🟢 Nice | ⚠️ Cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01 | Sidekiq retry (RPC fallback НЕ активний) | — |
 | KlimaDAO | 🟢 Nice | No | Yes | — |
 | Ethereum L1 | 🟢 Nice | No | Yes (cron retry) | — |
 

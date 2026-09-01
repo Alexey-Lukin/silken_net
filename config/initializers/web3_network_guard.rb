@@ -43,15 +43,22 @@ Rails.application.config.after_initialize do
   # container — `db:prepare` boots this same code) · coap. The `coap_listener`
   # exemption uses the $PROGRAM_NAME idiom `master_key_strength_check.rb` already
   # relies on, and it is load-bearing: that process loads every initializer while its
-  # `/etc/silkennet/coap.env` carries no contract address by design (06_04 §5.7).
+  # `/etc/silkennet/coap.env` carries no contract address — an OBSERVATION about the
+  # seed heredoc in `terraform/compute.tf`, NOT a canonized invariant and NOT gated.
+  # ⛔ `06_04 §5.7` is the secrets-at-rest latch and says nothing about addresses; that
+  # false citation stood on five surfaces until 2026-09-01. Full note: the guard's header.
   # ⚠️ VERIFIED, not assumed (2026-09-01) — INF.17 records that the coap daemon's boot was
   # never proven by a live run, so the idiom it depends on was an inherited assumption, and
-  # getting it wrong here refuses the telemetry intake's boot. Measured: both launch sites
-  # (`config/deploy.yml` role cmd + the anchor systemd unit in `terraform/compute.tf`) are
-  # `bundle exec ruby lib/daemons/coap_listener`, that form yields
+  # getting it wrong here refuses the telemetry intake's boot. Measured: ALL THREE launch
+  # sites — `config/deploy.yml` role cmd · the anchor systemd unit in `terraform/compute.tf` ·
+  # `Procfile.dev` — are `bundle exec ruby lib/daemons/coap_listener`, that form yields
   # `$PROGRAM_NAME == "lib/daemons/coap_listener"`, and the daemon reassigns neither `$0`
   # nor the proctitle — while its line 5 IS `require_relative "../../config/environment"`.
-  # ⛔ Change either launch form and re-measure: the failure would be a silent non-boot of
+  # ⚠️ This said "both launch sites" for hours and missed `Procfile.dev` — an inventory
+  # presented as a MEASUREMENT while short by a third, in the very comment whose stated
+  # ground is that the measurement was done. No consequence (dev has the guard off), but
+  # the shape is the one this whole pass was hunting.
+  # ⛔ Change ANY launch form and re-measure: the failure would be a silent non-boot of
   # the one process the forest speaks through.
   signer_process = Sidekiq.server?
   coap_process   = $PROGRAM_NAME.include?("coap_listener")
