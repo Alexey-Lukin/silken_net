@@ -13,9 +13,31 @@ class PartitionMaintenanceWorker
   # `spec/workers/partition_maintenance_worker_spec.rb` (очікуване число логів).
   PARTITIONED_TABLES = %w[telemetry_logs gateway_telemetry_logs blockchain_transactions].freeze
 
+  # Вікно накриває ПОПЕРЕДНІЙ місяць, а не лише поточний+наступний, і це не запас
+  # «про всяк випадок» — це діапазон, у який система РЕАЛЬНО пише. Записи бувають
+  # датовані минулим: `db/seeds.rb` датує «мовчунку» моментом останнього почутого
+  # пакета (`73.hours.ago` — свідомо за порогом `Tree::SILENCE_THRESHOLD`), а
+  # `SilkenNet::LoadTest::Provisioning#seed_history!` розтягує історію на 12-год
+  # кроках. Першого-третього числа будь-якого місяця обидва цілять у ПОПЕРЕДНІЙ.
+  #
+  # 🔴 Ціна вужчого вікна — деплой-денна й незворотна, і доти її МАСКУВАВ застиглий
+  # календар `db/structure.sql` (той ніс минулі місяці від дампу, тож рядок 29-го
+  # числа завжди знаходив свою партицію). Щойно дамп перестав нести минуле, діра
+  # оголилась: `06_01` крок 7 виконує `db:setup` = `schema:load` + **`db:seed`**, тож
+  # рядок «73 години тому» осідає в `_default` — тихо, без краху, — а після цього
+  # `CREATE … PARTITION OF` для того ж місяця падає `PG::CheckViolation` НАЗАВЖДИ
+  # (рунбук `06_06 §5.5`). Крок 8 ганяє цей воркер ПІСЛЯ кроку 7, тобто вже після
+  # заселення, і врятувати не встигає за побудовою.
+  #
+  # ⚠️ Ретеншну це не додає: створення партицій ⊥ їх дроп. Механізм дропу лишається
+  # гейтованим ⚖️ (`00_07` ARCH.70 — доки ширини вікна немає, писати нічого).
   def perform
     today = Time.current.utc.to_date
-    months = [ today.beginning_of_month, (today + 1.month).beginning_of_month ]
+    months = [
+      (today - 1.month).beginning_of_month,
+      today.beginning_of_month,
+      (today + 1.month).beginning_of_month
+    ]
     created = 0  # initialised early so the Sentry rescue payload is always defined
 
     Rails.logger.info "🗂️ [Partition Maintenance] Перевірка партицій для #{months.map { _1.strftime('%Y-%m') }.join(', ')}..."

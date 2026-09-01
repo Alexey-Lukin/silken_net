@@ -773,12 +773,15 @@ module SilkenNet
     )
 
     # [06_03 §2.8 / 00_07 S2.5]: PartitionMaintenanceWorker run failures.
-    # Each failure = a monthly partition may be missing → the first INSERT against
-    # the affected RANGE table on day-1 of the new month crashes with
-    # `no partition of relation`. Alert (silkennet-alerts.yaml, P0): increase>0 → page.
+    # Each failure = a monthly partition may be missing. ⚠️ The rationale here was
+    # DISPROVED 2026-08-28 (00_07 ARCH.70): day-1 INSERT does NOT crash — every RANGE
+    # table carries a `_default` leaf, so the row lands there silently. The cost is
+    # worse: from that moment `CREATE ... PARTITION OF` for that month fails
+    # `PG::CheckViolation` FOREVER and retries cannot heal it (runbook 06_06 §5.5).
+    # Alert (silkennet-alerts.yaml, P0): increase>0 → page.
     PARTITION_MAINTENANCE_FAILURES_TOTAL = REGISTRY.counter(
       :silkennet_partition_maintenance_failures_total,
-      docstring: "PartitionMaintenanceWorker run failures (missing partition → day-1 INSERT crash risk)"
+      docstring: "PartitionMaintenanceWorker run failures (missing partition → rows silently land in the _default leaf, which then blocks CREATE PARTITION for that month permanently)"
     )
 
     # [00_07 ARCH.70]: прилад РОСТУ партиційних таблиць. Сусід згори стереже

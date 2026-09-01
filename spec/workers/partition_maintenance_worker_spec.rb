@@ -13,7 +13,7 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
       end
 
-      it "creates partitions for current and next month" do
+      it "creates partitions for previous, current and next month" do
         travel_to Time.utc(2026, 3, 15) do
           described_class.new.perform
 
@@ -131,8 +131,8 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
         described_class.new.perform
 
         expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*Перевірка партицій/).ordered
-        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*OK/).exactly(6).times.ordered
-        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 6/).ordered
+        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*OK/).exactly(9).times.ordered
+        expect(Rails.logger).to have_received(:info).with(/Partition Maintenance.*Завершено.*Створено нових партицій: 9/).ordered
       end
     end
   end

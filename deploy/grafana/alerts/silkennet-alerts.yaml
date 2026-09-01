@@ -97,9 +97,13 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
-      # P0: PartitionMaintenanceWorker failure — silent monthly PG-crash guard
-      # (06_03 §2.8 / S2.5). Without a new-month partition, the first INSERT on
-      # day-1 crashes with `no partition of relation` for all 3 RANGE tables.
+      # P0: PartitionMaintenanceWorker failure (06_03 §2.8 / S2.5).
+      # ⚠️ NOT a "monthly PG-crash guard" — that rationale was disproved 2026-08-28
+      # (00_07 ARCH.70). The first INSERT does NOT crash: all 3 RANGE tables carry a
+      # `_default` leaf, so the row of an uncovered month lands there SILENTLY. The
+      # irreversible cost arrives on the NEXT pass — `CREATE ... PARTITION OF` for
+      # that month then fails `PG::CheckViolation` FOREVER, and retries cannot heal
+      # it. Runbook: 06_06 §5.5 (DETACH default -> refill -> ATTACH).
       # -----------------------------------------------------------------------
       - uid: sn-alert-partition-maintenance-failed
         title: "🔴 Partition maintenance failed (day-1 INSERT crash risk)"
@@ -127,7 +131,7 @@ groups:
         for: 0m
         annotations:
           summary: "PartitionMaintenanceWorker провалився ({{ $values.A.Value }}× за 24h) — партиція наступного місяця може бути відсутня."
-          description: "Без партиції на новий місяць перший INSERT 1-го числа впаде з `no partition of relation` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions). Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron. 06_03 §2.8 (S2.5)."
+          description: "Без партиції на новий місяць INSERT НЕ падає — рядок тихо осідає в `_default` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions), і аж наступний прохід воркера падає `PG::CheckViolation` НАЗАВЖДИ для того місяця; ретраї не лікують. Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron; якщо `_default` уже заселено — рунбук 06_06 §5.5. 06_03 §2.8 (S2.5)."
         labels:
           severity: critical
           component: database

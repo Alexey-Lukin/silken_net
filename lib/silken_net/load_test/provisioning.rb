@@ -43,7 +43,10 @@ module SilkenNet
           result.organization.destroy
         end
 
-        # Поточна+наступна партиція (worker) — попередній місяць уже в structure.sql.
+        # Попередня+поточна+наступна партиція — усі три дає worker (його вікно й
+        # накриває діапазон, у який пише `seed_history!` нижче). Спиратись на
+        # календар `db/structure.sql` тут БІЛЬШЕ НЕ МОЖНА: дамп несе лише те, що
+        # існувало на його момент, і разова прибирачка 2026-09-01 це показала.
         def ensure_partitions!
           PartitionMaintenanceWorker.new.perform
         end
@@ -116,8 +119,11 @@ module SilkenNet
         def seed_history!(tree, count)
           x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(tree.hardware_key.binary_lorenz_seed)
           now = Time.current
-          # Не заходимо за найранішу ГАРАНТОВАНУ партицію (prev-month у structure.sql;
-          # worker створює лише current+next) — інакше INSERT падає «no partition».
+          # Не заходимо за найранішу ГАРАНТОВАНУ партицію — prev-month, який створює
+          # `ensure_partitions!` вище. ⚠️ Ціна виходу за неї НЕ «INSERT падає»: усі три
+          # таблиці мають `_default`-лист, тож рядок тихо осідає ТУДИ, а після цього
+          # `CREATE … PARTITION OF` того місяця падає `PG::CheckViolation` НАЗАВЖДИ
+          # (переміряно 2026-08-28, `00_07` ARCH.70; рунбук `06_06 §5.5`).
           earliest = now.beginning_of_month - 1.month
           count.times do |k|
             ts = now - (k * 43_200) # 12-год кроки

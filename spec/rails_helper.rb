@@ -148,7 +148,10 @@ RSpec.configure do |config|
   config.before(:suite) do
     conn = ActiveRecord::Base.connection
     # Партиції-нащадки пропускаємо: `EXISTS` на батьківській таблиці вже накриває їх,
-    # а перелічувати 269 дітей означало б платити за той самий факт двічі.
+    # а перелічувати кожну дитину означало б платити за той самий факт двічі.
+    # ⚠️ Число тут свідомо НЕ називається: воно рухається з вікном
+    # `PartitionMaintenanceWorker` і з будь-якою прибирачкою партицій (записане
+    # колись «269» стояло при реальних 227).
     children = conn.select_values("SELECT inhrelid::regclass::text FROM pg_inherits")
     # `spatial_ref_sys` наповнює саме розширення PostGIS — це довідник, не наші дані.
     scannable = conn.tables - children - %w[spatial_ref_sys ar_internal_metadata schema_migrations]
