@@ -298,6 +298,16 @@ jobs:
 
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot -d canopy -y
+        # ⚠️ This step needs the REGISTRY password even though it deploys nothing: `proxy
+        # reboot` pulls the kamal-proxy image, and our registry is private, so kamal runs
+        # `docker login` on the host first. Without it the login goes out as `-u … -p` with
+        # an EMPTY argument and docker exits 125 with `flag needs an argument: 'p' in -p`
+        # — measured run 33498607595, the first run that ever authenticated over SSH.
+        # 🔑 The env: block below belongs to the NEXT step; a reader scanning for "is the
+        # registry key wired" finds it and answers yes for the wrong step. Steps do not
+        # inherit each other's env — the gap between two correct steps is where this lived.
+        env:
+          GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
 
       - name: Kamal Deploy to Canopy
         run: kamal deploy -d canopy
