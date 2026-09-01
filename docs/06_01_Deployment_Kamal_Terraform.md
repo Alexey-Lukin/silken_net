@@ -909,6 +909,18 @@ drift стереже щотижневий `Ops · TF Drift`) → зчитати 
 SSH-модель стоїть на критичному шляху.
 
 **Фаза 1 — Дротування post-infra:**
+🔑 **Звідки беруться ДВА Redis-URL, бо консоль Upstash за замовчуванням показує НЕ ТЕ**
+(виміряно 2026-09-01 на живій `silkennet-canopy`): у картці бази секція **Connect** має дві
+вкладки, і відкрита першою — **REST**, яка віддає `UPSTASH_REDIS_REST_URL` плюс окремий токен,
+тобто HTTP-API, якого наш Rails не вживає ЗОВСІМ. Потрібна сусідня **TCP**, і рівно вона дає
+`rediss://default:<пароль>@<endpoint>:6379`. ⛔ Третій рядок на тій же сторінці —
+`redis-cli --tls -u redis://…` — несе `redis://` з ОДНИМ `s`: скопійований дослівно, він дає
+з'єднання без TLS до бази, у якій лежать сесії й nonce-и. **Три схожі рядки, з них правильний
+один, і дефолтна вкладка не він.** ⊕ Заразом перевір `Settings → Eviction = OFF` — властивість
+без ЖОДНОГО детектора ([`00_07`](00_07_Action_Plan_Tracker) `INF.22`), і питати її треба ПРИ
+СТВОРЕННІ кожної бази, бо живе вона в дропдауні вендора. ✅ На `silkennet-canopy` перевірено
+2026-09-01: eviction OFF, primary `europe-west1` (same-region із Cloud SQL).
+
 GitHub Secrets **Batch B** — ДВА доми [INF.22]: repo-level = `REDIS_URL`,
 `CANOPY_REDIS_URL`, RPC×5, Solana-public×3, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
 `HELIUM_WEBHOOK_SECRET`; **money-п'ятірка (`ORACLE_MINTER/SLASHER/CELO` +
