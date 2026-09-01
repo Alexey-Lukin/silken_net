@@ -116,9 +116,17 @@ bin/dev   # Rails + Sidekiq + Tailwind CSS + CoAP listener
 ### 4. Simulate telemetry (no physical hardware)
 
 ```bash
+bin/rails runner "PartitionMaintenanceWorker.new.perform"   # partitions FIRST — see note
 bin/rails db:seed      # Gateway, Tree, HardwareKey, TreeFamily
 bin/forest_simulator   # CoAP packets from 5–15 Soldiers every 3–8 s
 ```
+
+> **Why the worker runs first.** `db/seeds.rb` back-dates the "silent tree" to
+> `73.hours.ago`, so on the 1st–3rd of a month that row targets the PREVIOUS month.
+> `db/structure.sql` only carries the calendar frozen at dump time — if that month is
+> missing, the row lands in the `_default` leaf silently and then blocks
+> `CREATE … PARTITION OF` for it permanently (runbook `docs/06_06` §5.5). On
+> `production` the seed refuses to run at all (slot guard; `00_07` OPS.38).
 
 Watch the pipeline:
 

@@ -133,6 +133,11 @@ SELF=${BASH_SOURCE[0]:-$0}
 # був) — новий дім увійшов ХАБ-ІНЛАЙНОМ у рядок У-ВЕЙ, а не власним рядком, тобто важіль
 # «displace one» відпрацював. Виросли лише байти інлайн-хука. Це той випадок, де ratchet на
 # БАЙТАХ і правило про ENTRIES розходяться, і чесно бампати саме байти.
+# 2026-09-01: 24727 → 24802 (+75) — новий дім [[feedback_mutually_masking_defects]]:
+# два незалежні дефекти, де перший випадково КОМПЕНСУЄ другий, тож поки живі обидва,
+# жоден не спостережний. Куплено інцидентом (замовлений зріз партицій оголив вужче
+# вікно воркера → живий PG::CheckViolation). Хук написано одразу як ТРИГЕР, без опису
+# механізму — саме тому бамп 75 B, а не 145, як була перша редакція.
 # 2026-08-31: 24527 → 24727 (+200) — і разом із бампом записано ДЕФЕКТ ПОРАДИ, який цей
 # прохід виявив, бо виконував її буквально. Повідомлення каже «a new entry earns its line
 # only by displacing one», і я спробував ВИТІСНИТИ два найслабші рядки (tool-trial +
@@ -147,7 +152,7 @@ SELF=${BASH_SOURCE[0]:-$0}
 # Що зроблено ПЕРШ ніж бампати (важіль (1), не пропущений): чотири гачки стиснуто, стан
 # дня деплою відправлено у `log_deploy_hole_hunt` замість індексу, індекс упав із +352 до
 # +200 ПОПРИ дописаний сьогодні зміст. Тобто бамп фіксує досягнуте, а не створює запас.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24727}
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24802}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -288,7 +293,7 @@ rb_dark() {
 # `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
 # 2026-08-29: 153 → 154 — `project_month_of_cuts_taxonomy`. Підняття робить новий дім
 # захищеним підлогою так само, як решту: без нього його тихе зникнення було б невидиме.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-155}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-156}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -389,7 +394,7 @@ index_reach_expected() {
 # стиснуто до ~270 ПЕРЕД бампом (прецедент вище: спершу компресія власного, ніколи підрізка
 # чужого — це і є manufactured-cleanup, який корпус забороняє). Залишок = те, що новий дім
 # структурно коштує.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44057}
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44128}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link

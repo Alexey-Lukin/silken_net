@@ -12,6 +12,15 @@
 # ⚠️ Recorded here rather than in the tracker because this is where the reader
 # stands: until 2026-08-31 the ratification existed ONLY as a tracker leg, so the
 # file itself gave no sign that its shape was chosen rather than defaulted.
+# 🔴 [2026-09-01] `db:prepare` на НЕІСНУЮЧІЙ базі = create + schema:load + load_seed,
+# тобто той самий `db:setup` під іншим імʼям. Два наслідки, обидва названі явно:
+#  (а) на `production` `db/seeds.rb` тепер fail-closed за слотом і робить `abort` —
+#      під `set -e` це crash-loop контейнера ЗАМІСТЬ `delete_all` по 27 моделях.
+#      Тобто гучна відмова тут КОРЕКТНА, і прод-база піднімається bootstrap-таскою
+#      (склад — `00_07` OPS.38), а не цією гілкою;
+#  (б) на dev/canopy сід проходить — але `db:prepare` не лишає місця прогнати
+#      `PartitionMaintenanceWorker` МІЖ schema:load і seed, а сід датує записи
+#      минулим (73.hours.ago). Порядок і ціна — `06_01` крок 7 + `06_06 §5.5`.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 else

@@ -12,8 +12,17 @@
 # it stands. Hence no claim about the population is made here at all: count with
 # `ls db/migrate/`, and read the live anchor timestamp off the filename.
 #
-# Workflow for new clones:
-#   bin/rails db:create db:schema:load db:seed
+# Workflow for new clones (dev/test):
+#   bin/rails db:create db:schema:load
+#   bin/rails runner 'PartitionMaintenanceWorker.new.perform'   # ← МІЖ, не після
+#   bin/rails db:seed
+# 🔴 Порядок несучий, і `db:setup`/`db:prepare` його порушують ЗА ПОБУДОВОЮ: вони
+# склеюють schema:load із seed, не лишаючи місця прогнати воркер між ними. `db/seeds.rb`
+# датує «мовчунку» 73.hours.ago, тож 1-3 числа рядок цілить у ПОПЕРЕДНІЙ місяць — а
+# `db/structure.sql` несе лише той календар, що існував на момент дампу. Якщо місяця в
+# ньому немає, рядок тихо осідає в `_default` і НАЗАВЖДИ блокує партицію того місяця
+# (`PG::CheckViolation`; рунбук `06_06 §5.5`). На `production` сід узагалі не їде —
+# `db/seeds.rb` fail-closed за слотом (`00_07` OPS.38 веде склад bootstrap).
 #
 # Workflow for *adding* new migrations later:
 #   bin/rails g migration AddXxx ...
@@ -55,9 +64,8 @@
 class InitConsolidated < ActiveRecord::Migration[8.1]
   def up
     # Schema loaded from db/structure.sql via `bin/rails db:schema:load`.
-    # `db:setup` runs schema:load then seed automatically; nothing to do
-    # in code-form — this migration exists only as the schema_migrations
-    # version anchor.
+    # ⚠️ `db:setup` НЕ використовувати — воно склеює schema:load із seed (див. шапку).
+    # Ця міграція існує лише як version-анкер schema_migrations; коду тут немає.
   end
 
   def down

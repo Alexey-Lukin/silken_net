@@ -18,6 +18,15 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
           described_class.new.perform
 
           expect(connection).to have_received(:execute).with(
+            a_string_matching(/"telemetry_logs_y2026m02"/)
+          )
+          expect(connection).to have_received(:execute).with(
+            a_string_matching(/"gateway_telemetry_logs_y2026m02"/)
+          )
+          expect(connection).to have_received(:execute).with(
+            a_string_matching(/"blockchain_transactions_y2026m02"/)
+          )
+          expect(connection).to have_received(:execute).with(
             a_string_matching(/"telemetry_logs_y2026m03"/)
           )
           expect(connection).to have_received(:execute).with(
@@ -124,7 +133,7 @@ RSpec.describe PartitionMaintenanceWorker, type: :worker do
 
       it "logs partition creation summary with correct count" do
         # PARTITIONED_TABLES has 3 entries (telemetry_logs, gateway_telemetry_logs,
-        # blockchain_transactions) × 2 months = 6 ensure_partition invocations,
+        # blockchain_transactions) × 3 months (prev/current/next) = 9 ensure_partition invocations,
         # each emitting one "OK" line.
         allow(Rails.logger).to receive(:info)
 

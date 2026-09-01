@@ -106,7 +106,7 @@ groups:
       # it. Runbook: 06_06 §5.5 (DETACH default -> refill -> ATTACH).
       # -----------------------------------------------------------------------
       - uid: sn-alert-partition-maintenance-failed
-        title: "🔴 Partition maintenance failed (day-1 INSERT crash risk)"
+        title: "🔴 Partition maintenance failed (rows silently landing in _default; that month blocked permanently)"
         condition: C
         data:
           - refId: A
