@@ -13,7 +13,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 4 — інфраструктура РОЗГОРНУТА (перший `terraform apply` 56/56, 2026-08-31), а **`kamal deploy` ПРОВОДИВСЯ й провів увесь ланцюг до запущеного контейнера** (2026-09-01: WIF → AR → OS Login → IAP → SSH-під-SA → мережа → proxy → build/push/pull → старт → Rails-бут). 🔑 **Точне формулювання несуче в обидва боки, і доти цей рядок брехав у бік бідності — а цитували його як «дім факту» щонайменше чотири інші сторінки:** «деплою не було» БІЛЬШЕ НЕ ПРАВДА, «застосунок працює» — ЩЕ НЕ ПРАВДА. Бут не завершується (`web3_network_guard` на незаведених адресах слоту), тож **трафіку не обслуговувано жодного разу**, і саме це, а не відсутність деплою, робить інертними всі console-рецепти репо.
-- **Відкрите:** deploy-readiness (акаунт GCP, Ingress IP, GitHub Secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.4/6, S5.6).
+- **Відкрите:** deploy-readiness (акаунт GCP, Ingress IP, GitHub Secrets) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, INF.4; INF.6 і S5.6 — у §🗄️).
 
 ---
 
@@ -29,7 +29,7 @@
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | секрети — SSOT |
 | [`06_06` — Disaster Recovery and Backup](06_06_Disaster_Recovery_and_Backup) | backup / restore / RTO·RPO |
 | [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) | CI/CD pipeline + runbook index |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.4/6, S5.6 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S1.5, INF.4 (INF.6 · S5.6 → §🗄️) |
 
 ## 📑 Зміст
 
@@ -841,6 +841,7 @@ coap-client -m get coap://$INGRESS_IP:5683/health -v 6
 | Симптом | Ймовірна причина | Виправлення |
 |---------|------------------|-------------|
 | `curl https://… → 525 SSL handshake failed` | Cloudflare→origin не може встановити TLS | Перевірити, що origin має валідний сертифікат; CF SSL/TLS режим знизити до `Full` (без strict) на час діагностики |
+| `curl https://… → 521 Web server is down` (без 525) | Cloudflare не дістає origin ВЗАГАЛІ — не сертифікат: анкер без HAProxy (startup-script помер — Pre-Flight крок 10) або мертвий бекенд `10.0.0.3:443`; виміряно 2026-09-02 при заведеній парі Origin CA | `gcloud compute ssh silken-net-ingress --tunnel-through-iap …` → `systemctl is-active haproxy` + `journalctl -u google-startup-scripts -b`; origin з ноутбука не пробити (Zscaler/CF) — міряти з VM або CI |
 | `301 → http://...` нескінченний loop | Rails бачить `X-Forwarded-Proto: http`, hot-redirect-loop | CF Page Rules — має бути `Always Use HTTPS`. У Rails — `config.force_ssl = true`, `config.ssl_options = { redirect: { exclude: ->(req) { req.path == "/up" } } }` для health-check |
 | WebSocket падає одразу | ⛔ **НЕ план** — «CF Free лімітує WebSocket» спростовано 2026-09-01 (Pre-Flight #3: доки CF кажуть «supported on all plans»). Дивись на plan-незалежні причини: idle timeout без heartbeat · рестарт CF-серверів рве сокети · увімкнений **Argo Smart Routing** (документовано НЕсумісний із WebSockets) · `/cable` не проходить проксі анкера | Heartbeat/реконект на клієнті; вимкнути Argo, якщо вмикали; перевірити 101 крізь проксі кроком 6 вище. ⛔ Апгрейд плану тут не лік — він не купує нічого з переліченого |
 | CoAP запити від Queen не доходять | A-запис `api.silkennet.com` став CF-proxied (UDP крізь CF не проходить) АБО Королева тримає застарілий DNS-пін | Повернути запис у DNS-only → Ingress-IP; Королева підхопить сама після N=3 flush-провалів підряд ([FW.58], [`03_02 §4`](03_02_Queen_Gateway_Firmware)) або post-reboot |

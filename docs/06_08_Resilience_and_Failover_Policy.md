@@ -28,7 +28,7 @@
 | [`05_02` — Proof of Growth Pipeline](05_02_Proof_of_Growth_Pipeline) | Proof-of-Growth pipeline; §Dynamic Tax — `insurance_pool` fallback economics |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | `Web3CircuitBreaker` concern; Celo multi-RPC fallback (E.49 — `RPC_FALLBACK_ENV_KEYS`) |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Метрики Resilience SLO |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4/INF.6 Ingress, ARCH.1 Conductor L2 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): ARCH.26 TDMA/CAD, ARCH.34 Helium, ARCH.35 Flash, INF.4 TLS/Cloudflare (INF.6 → §🗄️), ARCH.1 Conductor L2 |
 
 ## 📑 Зміст
 
