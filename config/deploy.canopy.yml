@@ -216,16 +216,18 @@ proxy:
   #    own first deploy proves the same (config/deploy.yml, still commented there on purpose).
   #    Why it was commented until then: on a cold start /ready 503s until DB/Redis are wired,
   #    and kamal-proxy retries to deploy_timeout → rollback (runbook: docs/06_01 §DEPLOY-DAY
-  #    Фаза 5). ⊕ `interval: 3` below is the BRING-UP value, not the target: every tick of
-  #    `/ready` opens a DB round-trip plus a Redis PING, so the standing value is 10-15s
-  #    [INF.22 — the canopy half of that tune is unblocked by this flip; it is a separate,
-  #    deploy-relevant commit]. Three seconds was deliberate while the cutover was new — it
-  #    makes a broken readiness path loud within one deploy window — and is wasteful after.
+  #    Фаза 5). ⊕ `interval: 10` below is the STANDING value [INF.22, canopy half tuned
+  #    2026-09-02 once the flip had proved `/ready→200` through Cloudflare]: every tick of
+  #    `/ready` opens a DB round-trip plus a Redis PING, so the bring-up ran at 3 s (loud
+  #    within one deploy window, wasteful after) and the standing tick sits at the low end of
+  #    the 10-15 s band — six readiness probes a minute stop, and a broken readiness path
+  #    still surfaces well inside one `deploy_timeout`. Production keeps `interval: 3` as its
+  #    bring-up value until ITS own flip (config/deploy.yml, [INF.22] production half).
   #    ⚠️ The block was written out HERE, byte-for-byte, never as a pointer to the base
   #    manifest: a cross-reference cannot be uncommented (that is INF.10 itself), and THIS
   #    file was uncommented FIRST — canopy is the first deploy of the main Kamal path
   #    (06_01 §DEPLOY-DAY Фаза 3), so the base manifest's copy arrives one slot too late.
   healthcheck:
     path: /ready
-    interval: 3
+    interval: 10
     timeout: 5
