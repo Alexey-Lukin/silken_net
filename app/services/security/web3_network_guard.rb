@@ -128,6 +128,10 @@ module Security
     # web-only today). So a mis-DECLARED slot fails exactly as loudly as a mis-WIRED one, and
     # an absent declaration lands on `mainnet`, i.e. the strict side: a forgotten flag can
     # never downgrade safety, only refuse a boot.
+    # ⚠️ What this axis deliberately does NOT cover: the KYC surface. «Hadron stub on testnet ⊥
+    # a separate Hadron sandbox» is a verdict about the KYC provider, not about the chain —
+    # its home is `00_07` OPS.37 (and the job-role comment in config/deploy.canopy.yml), so
+    # do not read `testnet` here as «KYC is stubbed».
     CHAIN_ENV_VAR = "WEB3_CHAIN_ENV"
     CHAIN_ENVS = %w[mainnet testnet].freeze
     DEFAULT_CHAIN_ENV = "mainnet"
