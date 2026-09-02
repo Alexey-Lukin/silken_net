@@ -144,6 +144,16 @@ ANCHOR_TF    = "terraform/compute.tf" # COAP_ENV heredoc — the anchor daemon's
 # passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens.
 SECRET_NAME = /(_KEY|_KEYPAIR|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_DSN|_RPC_URL|REDIS_URL|_DERIVATION_SALT)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
+# F — keyless-literal shape [ARCH.114, 2026-09-02]. The RPC fallback slots are `env.clear`
+# LITERALS by design (keyless PublicNode/dRPC), and their names end in `_FALLBACK_N`, which
+# SECRET_NAME's `_RPC_URL\z` anchor does not see — so a KEYED URL committed under one of them
+# is a leaked secret that invariant A cannot flag. F judges the SHAPE of those values: a
+# `/vN/` path segment, a 32+-hex run, or an api-key query param reads as keyed → RED. A keyed
+# fallback belongs in env.secret under a `_RPC_URL`-suffixed name. 🔒 Ceiling: shape only —
+# a vendor that keys by hostname (`<key>.provider.com`) passes; the guard's chain axis and
+# the pool's ⛔ «not the same vendor twice» are the other two legs, not this one.
+FALLBACK_NAME = /_RPC_URL_FALLBACK_\d+\z/
+KEYED_URL     = %r{/v\d+/|[0-9a-fA-F]{32}|[?&](?:api_?key|token|key)=}
 SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} — NOT bare ${VAR:-default}, see B5
 # The ONLY command-substitution form invariant A accepts: a real-shell evaluation of a bash
 # default whose fallback is a loud marker or the gitignored master.key file — never a literal.
@@ -159,6 +169,8 @@ INTERP      = /\A\$\{[^}]+\}\z/         # ${terraform.interpolation} / "${RELEAS
 # positives on the live tree — a var named `*_KEY` on an env surface is a secret by name.
 # A parse that breaks returns [] and the gate prints ✓ — so assert the set is still there.
 SUBJECT_FLOOR = 20
+# F's own lantern: 5 fallback slots in the base manifest + 5 canopy overrides on 2026-09-02.
+FALLBACK_FLOOR = 8
 
 SIGNING_QUINTET = %w[
   ORACLE_CELO_PRIVATE_KEY ORACLE_MINTER_PRIVATE_KEY
@@ -169,6 +181,7 @@ RETIRED_NAME = "ORACLE_PRIVATE_KEY"
 
 failures = []
 secret_subjects = 0
+fallback_subjects = 0
 
 # --- readers -----------------------------------------------------------------
 
@@ -211,6 +224,11 @@ configs.each do |file, cfg|
       end
       # D — present-but-empty.
       failures << "#{file}: #{scope}.clear.#{var} is present-but-empty — B1 silences autodetect/derive; omit the key or give it a value" if value.nil? || str.strip.empty?
+# F — a keyed URL under a keyless fallback name is a committed secret A cannot see.
+if var.to_s =~ FALLBACK_NAME
+  fallback_subjects += 1
+  failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — *_RPC_URL_FALLBACK_N carries keyless literals only; a keyed fallback goes through env.secret under a _RPC_URL-suffixed name (ARCH.114)" if str =~ KEYED_URL
+end
     end
 
     # B2 — retired name as a structural key.
@@ -260,6 +278,7 @@ end
 end
 
 # Lantern on our own subject set — a broken text parse returns [] and prints ✓ otherwise.
+failures << "fallback subject set collapsed: #{fallback_subjects} *_RPC_URL_FALLBACK_N vars scanned across both manifests, floor is #{FALLBACK_FLOOR} — invariant F judged nothing" if fallback_subjects < FALLBACK_FLOOR
 failures << "subject set collapsed: #{secret_subjects} secret-named vars scanned, floor is #{SUBJECT_FLOOR} — the parser, not the tree, is the likely change" if secret_subjects < SUBJECT_FLOOR
 
 # B4 — canopy isolation is STRUCTURAL, not CI-only. Every shared external resource the base

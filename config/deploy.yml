@@ -317,7 +317,9 @@ env:
     # not see the `_FALLBACK_N` suffix, so a key here would be a committed secret nobody
     # flags — keyed fallbacks go through env.secret under a `_RPC_URL`-suffixed name.
     # Presence is optional by design (pool: one URL → bare Eth::Client, two+ → ResilientClient
-    # with circuit breaker). Ethereum has no second bird deliberately (06_01 Alchemy row).
+    # with circuit breaker). Ethereum has no second bird deliberately: the L1 anchor is weekly
+    # and low-volume, Sidekiq retry covers it; keyless PublicNode for Ethereum measured alive
+    # from the app VM on 2026-09-02, so adding one is a registry row, not an account.
     # Public endpoints carry no SLA: a rate-limit in the logs is the named trigger for an
     # account vendor (Infura/QuickNode) — 00_07 ARCH.114.
     POLYGON_RPC_URL_FALLBACK_1: "https://polygon-bor-rpc.publicnode.com"

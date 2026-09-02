@@ -17,7 +17,7 @@ RSpec.describe Security::Web3NetworkGuard do
     # [E.2 / ARCH.47] A clean strict env uses PHYSICALLY SEPARATE minter + slasher keys.
     # A bare-ORACLE_PRIVATE_KEY-only env is NOT clean — both roles would resolve to one
     # address and collide on a single oracle lock (the canon 00_04 §B-02 rule, now boot-enforced).
-    # The silent-address set (treasury + SCC/SFC) and the Solana signer set are part of a
+    # The silent-address set (treasury + SCC/SFC + the L1 anchor) and the Solana signer set are part of a
     # clean signer env: their read-sites fail SILENT (rescue umbrellas / no-escalation batch
     # loop), so boot presence is the only loud gate they have.
     let(:clean_env) do
@@ -122,10 +122,21 @@ RSpec.describe Security::Web3NetworkGuard do
           .to include(a_string_matching(/\[chain\].*POLYGON_RPC_URL_FALLBACK_1.*MAINNET endpoint/))
       end
 
-      it "flags a TESTNET fallback on a mainnet slot, and skips a blank one (presence is optional)" do
+      it "flags a TESTNET fallback on a mainnet slot" do
         expect(described_class.violations(clean_env.merge("CELO_RPC_URL_FALLBACK_2" => "https://celo-sepolia.drpc.org")))
           .to include(a_string_matching(/\[chain\].*CELO_RPC_URL_FALLBACK_2.*TESTNET/))
-        expect(described_class.violations(clean_env.merge("CELO_RPC_URL_FALLBACK_2" => ""))).to be_empty
+      end
+
+      # The blank-skip is load-bearing only on a TESTNET slot: a mainnet slot skips a blank
+      # value whether or not the branch exists ("" carries no marker either way), whereas on
+      # testnet a blank judged as an endpoint reads as MAINNET. Dropping `next if url.blank?`
+      # reddens THIS example, not its mainnet twin — canopy deliberately leaves
+      # SOLANA_RPC_URL_FALLBACK_2 absent (PublicNode/dRPC answer 403 for Solana).
+      it "skips a blank fallback slot on a testnet slot (presence is optional, the canopy shape)" do
+        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet",
+                                                 "SOLANA_RPC_URL_FALLBACK_1" => "https://api.devnet.solana.com",
+                                                 "SOLANA_RPC_URL_FALLBACK_2" => "")
+        expect(described_class.violations(env).grep(/SOLANA_RPC_URL_FALLBACK_2/)).to be_empty
       end
 
       it "passes a testnet slot whose fallbacks are testnet twins (the canopy shape)" do
@@ -138,11 +149,14 @@ RSpec.describe Security::Web3NetworkGuard do
         expect(described_class.violations(env)).to be_empty
       end
 
-      # Registry parity: every EVM cascade key the pool can land on is chain-judged here —
-      # a fallback registered in one file and not the other would be judged by nobody.
-      it "chain-judges every fallback key the RPC pool registry can land on" do
-        pool_keys = Web3::RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq
-        expect(described_class::RPC_FALLBACK_URL_ENVS).to include(*pool_keys)
+      # Registry parity: every cascade key EITHER reader can land on is chain-judged here —
+      # a fallback registered in one file and not the other would be judged by nobody. Two
+      # readers, not one: the EVM pool registry and Solana's own list (its cascade is read by
+      # `Solana::MintingService#execute_rpc_call`, not by the pool).
+      it "chain-judges every fallback key the RPC pool registry and the Solana cascade can land on" do
+        pool_keys   = Web3::RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq
+        solana_keys = Solana::MintingService::RPC_FALLBACK_ENV_KEYS
+        expect(described_class::RPC_FALLBACK_URL_ENVS).to include(*(pool_keys + solana_keys).uniq)
       end
 
       it "still flags a testnet endpoint when no chain family is declared (fail-closed default)" do
@@ -448,9 +462,9 @@ RSpec.describe Security::Web3NetworkGuard do
     context "when the process is job (signs, serves nothing)" do
       let(:kwargs) { { signer_process: true, web_process: false } }
 
-      it "demands ALL THREE addresses — the signer reads every one of them" do
+      it "demands ALL FOUR addresses — the signer reads every one of them" do
         violations = described_class.violations(mainnet_rpcs, **kwargs)
-        %w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS].each do |var|
+        %w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS ETHEREUM_ANCHOR_CONTRACT].each do |var|
           expect(violations).to include(a_string_matching(/\[address\].*#{var}.*not set/))
         end
       end
@@ -496,7 +510,7 @@ RSpec.describe Security::Web3NetworkGuard do
     #     means anything.
     # ⛔ Still not evidence for this block, and kept for other reasons: "does not demand
     # signer keys or the Solana set" (pins the older signer scoping of OTHER axes) and
-    # "demands ALL THREE addresses" (green under every mutant here; it is the only example
+    # "demands ALL FOUR addresses" (green under every mutant here; it is the only example
     # covering the production job combination and reds only when BOTH kwargs are required
     # at once). Two examples surviving all four mutants is the honest count.
   end

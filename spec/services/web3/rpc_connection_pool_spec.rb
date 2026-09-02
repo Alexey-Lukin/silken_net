@@ -4,12 +4,15 @@
 require "rails_helper"
 require "eth"
 
-# 🔬 MUTATION-VERIFIED [ARCH.114, 2026-08-29] — evidence grade, not an assertion. The
-# network-level cascade (`NETWORK_FALLBACK_ENV_KEYS`) was proved by RESTORING the defect:
+# 🔬 MUTATION-VERIFIED [ARCH.114, 2026-08-29; RE-EARNED 2026-09-02 after the slot rename
+# INFURA_POLYGON_RPC_URL → POLYGON_RPC_URL_FALLBACK_1/2] — evidence grade, not an assertion.
+# The network-level cascade (`NETWORK_FALLBACK_ENV_KEYS`) was proved by RESTORING the defect:
 # with the registry removed, the cache key falls back to the bare env-key name, a site that
 # never declared a cascade poisons the per-thread entry, and the examples below go red by
-# name. Re-earn this line if either half is retargeted — a claim of proof scoped to a
-# subject stops being true when the subject moves.
+# name. On 2026-09-02 the retargeted subject was mutated again (one registry key renamed
+# to a phantom): the honesty pin here and the guard registry-parity pin went red together.
+# Re-earn this line if either half is retargeted — a claim of proof scoped to a subject
+# stops being true when the subject moves.
 RSpec.describe Web3::RpcConnectionPool do
   after do
     described_class.reset!

@@ -13,11 +13,15 @@ module Web3
   # - Розпізнавання HTTP 429 (Rate Limit), Net::ReadTimeout, Errno::ECONNREFUSED
   # - Thread-safe операції через Mutex
   #
-  # Каскад: Primary (Alchemy) → Secondary (Infura) → Public (polygon-rpc.com)
-  # ВАЖЛИВО: Public RPC використовується ТІЛЬКИ для read-операцій.
+  # Каскад: Primary (Alchemy, keyed) → keyless-публічні фолбеки ІНШИХ операторів
+  #   (PublicNode · dRPC — реєстр `RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS`, [ARCH.114]).
+  # ⛔ Розділення read/write тут НЕМАЄ: `method_missing` проксює й `transact`, тож при
+  #   відкритому breaker'і primary ЗАПИС піде на публічний ендпоінт без SLA. Це прийнято
+  #   свідомо (⚖️ founder 2026-09-02: keyless як фолбек, акаунтний вендор — якщо вкусять
+  #   rate-limit-и); стеля названа тут, а не в каноні, бо саме цей клас її і несе.
   #
   # Використання:
-  #   client = Web3::ResilientClient.new(["https://alchemy.io/...", "https://infura.io/..."])
+  #   client = Web3::ResilientClient.new(["https://alchemy.io/...", "https://polygon-bor-rpc.publicnode.com"])
   #   client.call("eth_getTransactionReceipt", [tx_hash])
   class ResilientClient
     # Кількість послідовних збоїв перед відкриттям circuit breaker

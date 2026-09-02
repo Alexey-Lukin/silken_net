@@ -176,13 +176,19 @@ end
 exit 0 if list_only
 
 # [TEST.15] Звіт покриття мусить бути НЕЗАЙМАНИЙ після смуги.
+# ⚠️ Стеля дискримінатора: last-write-wins — власна регресія у вікні rspec-кроку, перекрита
+# пізнішим стороннім записом поза вікном, читається як «сторонній» (warning). Зате поява
+# ФАЙЛУ там, де його не було (свіжий клон, `rm -rf coverage`), — теж запис, і судиться так само:
+# `coverage_before == nil` не є пропуском. CI цю перевірку не ганяє (docs.yml не викликає
+# смугу) — носій TEST.15 локальний за побудовою, і це записано в шапці.
 coverage_after = coverage_fingerprint.call
 written_at = coverage_after && File.mtime(RESULTSET)
-if coverage_before && coverage_after != coverage_before && written_at && rspec_windows.none? { |w| w.cover?(written_at) }
+resultset_changed = coverage_after && coverage_after != coverage_before
+if resultset_changed && rspec_windows.none? { |w| w.cover?(written_at) }
   warn "\n::warning::docs_band: `coverage/.resultset.json` змінив СТОРОННІЙ процес (#{written_at.strftime('%H:%M:%S')},"
   warn "  поза вікнами rspec-кроків смуги) — паралельна повна сюїта на цьому ж дереві. Вердикт смуги"
   warn "  чинний, тій сюїті смуга не зашкодила (`COVERAGE=0` не пише); наступного разу — не поруч."
-elsif coverage_before && coverage_after != coverage_before
+elsif resultset_changed
   warn "\n::error::docs_band: rspec-крок смуги ПЕРЕЗАПИСАВ `coverage/.resultset.json`"
   warn "  (або паралельна сюїта завершилась саме у вікні цього кроку — прожени смугу наодинці)."
   warn "  Це регресія TEST.15: `COVERAGE=0` мусить вимикати ЗАПИС, не лише поріг."

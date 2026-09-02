@@ -141,11 +141,9 @@ env:
     # (`REQUIRE_SAFE_ADMIN` stays false, so the script warned instead of reverting).
     DAO_TREASURY_ADDRESS: "0x6FEa1cAFd4371e159cFF9c1232368339166C365b"
     PROTOCOL_PARAMETERS_CONTRACT_ADDRESS: "0x1F20032142C98BBcfD3DcB115f62Ae1230802Be2"
-    # ⏸️ ETHEREUM_ANCHOR_CONTRACT stays the inherited placeholder ON PURPOSE: the anchor is an
-    # Ethereum L1 contract, so its testnet twin is the SEPOLIA deploy (Фаза 2t second half —
-    # faucet cooldown on 2026-09-02). ⛔ Do not "fill" it with the Amoy StateRootAnchor: a
-    # well-formed address on the WRONG chain is the silent class INF.27 Q2 names, and it would
-    # ride straight into an MRV lineage report. Nothing web-side reads it today.
+    # ⛔ Never "fill" ETHEREUM_ANCHOR_CONTRACT with the Amoy StateRootAnchor: a well-formed
+    # address on the WRONG chain is the silent class INF.27 Q2 names, and it would ride straight
+    # into an MRV lineage report (Mrv::LineageReportService reads it from the web container).
 
 # 🔴 CANOPY НЕ ПЕРЕВИЗНАЧАЄ ACCESSORY `alloy` — І ЦЕ ПРИСУД, А НЕ ПРОПУСК [⚖️ founder 2026-08-31].
 # Тут стояв override `accessories.alloy.env.clear.DEPLOYMENT_SLOT: canopy`, заведений проти

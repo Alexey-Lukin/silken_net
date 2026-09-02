@@ -3,10 +3,13 @@
 # Puma Configuration — SilkenNet IoT/Web3 Production Server
 # =============================================================================
 #
-# Architecture: Thruster (HTTP/2) → Puma (clustered) → Rails 8.1
+# Architecture: Cloudflare (TLS, HTTP/2) → kamal-proxy (origin TLS) → Thruster → Puma (clustered) → Rails 8.1
 #
-# Thruster handles TLS termination, HTTP/2, gzip, and slow-client buffering,
-# so Puma focuses purely on fast request execution with forked workers.
+# Thruster handles gzip, static assets and slow-client buffering, so Puma focuses
+# purely on fast request execution with forked workers. It does NOT terminate TLS
+# here and therefore serves no HTTP/2: TLS is Cloudflare's on the client leg and
+# kamal-proxy's on the origin leg (06_01 §TLS) — Thruster only speaks h2 when it
+# terminates TLS itself, which this topology never asks of it.
 #
 # Memory strategy: preload_app! + jemalloc (LD_PRELOAD in Dockerfile) enables
 # Copy-on-Write (CoW) across forked workers, cutting per-worker RSS by ~30-40%.

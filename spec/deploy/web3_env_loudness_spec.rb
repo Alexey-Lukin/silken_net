@@ -121,9 +121,11 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
   # a verdict; the secret half (`env.secret`) is deliberately NOT resolved here — its values
   # live in CI shell/GitHub Secrets and are judged by `env_fetch_declaration_spec`.
   #
-  # 🔒 Declared ceiling: `env.clear` only — a testnet slot on a MAINNET RPC is invisible to
-  # these examples (the `[chain]` axis needs the secret values), and so is a wrong-but-
-  # well-formed address (EIP-55 sees a typo, never a wrong chain). The canopy example is the
+  # 🔒 Declared ceiling: `env.clear` only — a testnet slot on a MAINNET PRIMARY RPC is invisible
+  # to these examples (the primary URLs are secrets), and so is a wrong-but-well-formed address
+  # (EIP-55 sees a typo, never a wrong chain). The FALLBACK URLs are `env.clear` literals
+  # since 2026-09-02 [ARCH.114], so their chain IS judged here — the manifest is the only
+  # place a mainnet fallback could slip into the canopy slot before `Deploy · Canopy` refuses it. The canopy example is the
   # machine witness of the runbook order "Фаза 2t before Фаза 3": it was RED on 2026-09-01.
   describe "the guard against the live manifests, per process class [INF.27]" do
     def role_clear(destination, role)
@@ -159,6 +161,19 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
                      .grep(/\[address\]/).map { |m| m[/\[address\] ([A-Z0-9_]+)/, 1] }
       expected = guard::SILENT_ADDRESS_ENVS.select { |var, spec| spec[:web] && clear[var] == "REQUIRED_SECRET_NOT_SET" }.keys
       expect(refused).to match_array(expected)
+    end
+
+    # [ARCH.114] Chain axis over the resolved `env.clear`: every keyless fallback literal in the
+    # canopy manifest must carry the testnet marker, and every base (mainnet) one must not.
+    # Deleting one canopy override (so the mainnet fallback is inherited) reddens the first.
+    it "judges the chain of every fallback literal in both manifests (canopy testnet, base mainnet)" do
+      canopy = role_clear("canopy", "web")
+      base   = role_clear(nil, "web")
+      aggregate_failures do
+        expect(guard.violations(canopy, signer_process: false, web_process: true).grep(/\[chain\]/)).to be_empty
+        expect(guard.violations(base, signer_process: false, web_process: true).grep(/\[chain\]/)).to be_empty
+        expect(guard::RPC_FALLBACK_URL_ENVS.count { |k| canopy[k].present? }).to be >= 3
+      end
     end
 
     it "resolves non-empty role envs (the parser is not judging an empty hash)" do

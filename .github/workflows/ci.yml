@@ -167,7 +167,8 @@ jobs:
               # SUBJECTS — why config/deploy*.yml, .kamal/** and compute.tf became this
               # scan's business after the platform cut — but says nothing about the FILTER
               # or its widening. A reader following it landed on invariants B3/B4 instead.
-              # The finding and the fix live in INF.27; OPS.37 remains the cause of the
+              # The finding and the fix live in INF.27 (archived 2026-09-02 — read its
+              # §🗄️ row); OPS.37 remains the cause of the
               # subject set, which is a different sentence.)
               # so a config-only diff (money-quintet placement, canopy `servers:` array
               # form, the COAP_ENV heredoc) skipped the job entirely and `CI passed` went
