@@ -53,6 +53,15 @@ RSpec.describe "db/seeds.rb production guard" do # rubocop:disable RSpec/Describ
     expect(source.index("DeploymentSlot")).to be < first_destructive
   end
 
+# 🔴 Демо-пароль — ЛИШЕ локальний. Виміряно на живому canopy 2026-09-02: сід дійшов до кінця,
+# і `admin@silkennet.com` (super_admin) приймав літерал із публічного репо крізь Cloudflare.
+# Пін судить ФОРМУ джерела (жодного літерального `password:` у сіді, константа з
+# `Rails.env.local?`-розвилкою); мутація «повернути літерал одному користувачу» → RED.
+it "не сіє літерального пароля — поза local-середовищем демо-акаунти дістають випадковий" do
+  expect(source).not_to match(/password:\s*["']/)
+  expect(source).to match(/DEMO_PASSWORD\s*=\s*Rails\.env\.local\?\s*\?/)
+end
+
   # Повідомлення — частина механізму, не ввічливість: гард без названої альтернативи
   # закінчується тим, що перший же оператор дописує собі обхід (`DISABLE_*`).
   it "називає, що робити НАТОМІСТЬ" do

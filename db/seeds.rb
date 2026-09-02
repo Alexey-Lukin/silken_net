@@ -184,6 +184,16 @@ eco_future_fund = Organization.create!(
   hadron_kyc_status: "approved"
 )
 
+# 🔴 Демо-пароль відомий ЛИШЕ локально. Слот `canopy` біжить із `RAILS_ENV=production`
+# й публічно доступний крізь Cloudflare, а цей файл лежить у публічному репо — тож
+# літеральний пароль на будь-якому не-local середовищі є super_admin-логіном для
+# кожного, хто вміє читати git (виміряно на живому canopy 2026-09-02: сід дійшов до
+# кінця, `admin@silkennet.com` приймав `password123456`). На canopy демо-користувачі
+# лишаються (дані, ролі, орг-скоуп), але з невідомим паролем; вхід власника — ЙОГО
+# super_admin, а пароль будь-якому демо-акаунту видає reset-лінк із `rails runner`
+# (`generate_token_for(:password_reset)`), бо пошта на canopy свідомо скіпана.
+DEMO_PASSWORD = Rails.env.local? ? "password123456" : SecureRandom.hex(24)
+
 puts "👤 Створення Патрульних..."
 
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
@@ -200,7 +210,7 @@ end
 # super_admin не має прямого доступу до приватних Wallets без явного запрошення (Series D).
 super_admin = User.create!(
   email_address: "admin@silkennet.com",
-  password: "password123456",
+  password: DEMO_PASSWORD,
   role: :super_admin,
   first_name: "Artem",
   last_name: "Volkov"
@@ -209,7 +219,7 @@ super_admin = User.create!(
 # [RBAC: access_level :organization] — Адміністратор ActiveBridge з повним доступом в межах організації.
 alexey = User.create!(
   email_address: "alexey@activebridge.org",
-  password: "password123456",
+  password: DEMO_PASSWORD,
   role: :admin,
   organization: active_bridge,
   first_name: "Alexey",
@@ -219,7 +229,7 @@ alexey = User.create!(
 # [RBAC: access_level :field] — Лісничий з польовим доступом в межах організації.
 forester = User.create!(
   email_address: "forester@activebridge.org",
-  password: "password123456",
+  password: DEMO_PASSWORD,
   role: :forester,
   organization: active_bridge,
   first_name: "Ivan",
@@ -229,7 +239,7 @@ forester = User.create!(
 # [RBAC: access_level :read_only] — Замовник з доступом лише до власних ресурсів.
 subscriber = User.create!(
   email_address: "subscriber@ecofuture.fund",
-  password: "password123456",
+  password: DEMO_PASSWORD,
   role: :subscriber,
   organization: eco_future_fund,
   first_name: "Maria",
