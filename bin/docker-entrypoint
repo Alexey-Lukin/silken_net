@@ -21,6 +21,17 @@
 #  (б) на dev/canopy сід проходить — але `db:prepare` не лишає місця прогнати
 #      `PartitionMaintenanceWorker` МІЖ schema:load і seed, а сід датує записи
 #      минулим (73.hours.ago). Порядок і ціна — `06_01` крок 7 + `06_06 §5.5`.
+#  (в) 🔴 [2026-09-02, перший бут canopy] `db:prepare` НЕ атомарний: create → schema:load →
+#      seed — і впалий сід лишає базу «існуючою», тож ПІСЛЯ рестарту (Docker
+#      `unless-stopped`, RestartCount=1) друга спроба лише мігрує: без сіду, без
+#      schema:load, і контейнер стає healthy на `/up` з напівзасіяним слотом
+#      (`SystemParameter`=1, `User`=0). Ліки: staging — `db:drop` трьох баз і
+#      редеплой (чесний холодний шлях); прод — bootstrap-таска (OPS.38), не ця гілка.
+#      Того ж дня виміряно й ПРИЧИНУ падіння сіду: `schema_format = :sql`, тож для
+#      конфігів `cache`/`cable` Rails шукає `db/{cache,cable}_structure.sql` (деривація
+#      `HashConfig#schema_dump`), а в репо лежали лише `*_schema.rb` від інсталерів —
+#      обидві бази створювались ПОРОЖНІМИ, і `Rails.cache` у сіді падав на
+#      `solid_cache_entries`. Носій — spec/db/solid_structure_files_spec.rb.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 else

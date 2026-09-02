@@ -40,9 +40,12 @@
 #     as clever-over-boring (CLAUDE.md §4). Founder call, 2026-07-26.
 #   · schema dumps — db/structure.sql (pg_dump on every migration: the header is wiped and
 #     shows up as a phantom minus-line in every future dump review) and
-#     db/{cable,cache}_schema.rb (ActiveRecord::SchemaDumper rewrites them from scratch on
-#     the next solid-cable/solid-cache migration). A tag here is not durable, and a tag
-#     that silently disappears later is worse than no tag: it makes the gate lie.
+#     db/{cable,cache}_structure.sql (the same pg_dump output for the Solid Cable / Solid
+#     Cache databases — `schema_format = :sql` makes Rails derive THESE names, and they are
+#     regenerated from the gems' schema on the next solid-* upgrade; the installers'
+#     `*_schema.rb` twins were removed 2026-09-02 because the SQL format never read them).
+#     A tag here is not durable, and a tag that silently disappears later is worse than no
+#     tag: it makes the gate lie.
 #   · GENERATED headers are NOT excluded — their generators were TAUGHT to emit the tag
 #     (emit_c.py `_banner`, gen_bytecode.sh heredoc, export/__init__.py). They are our own
 #     output and must carry the licence; excluding them would leave them unlicensed for
@@ -223,7 +226,7 @@ module SpdxHeaders
     %r{\Adocs/},                               # CC-BY-SA via LICENSE-DOCS; no per-file tag by convention
     %r{\A\.github/}, %r{\A\.claude/}, %r{\A\.kamal/},
     %r{\Apublic/}, %r{\Avendor/},
-    %r{\Adb/(?:structure\.sql|c(?:able|ache)_schema\.rb)\z}, # schema dumps: regenerated, tag not durable
+    %r{\Adb/(?:structure|c(?:able|ache)_structure)\.sql\z}, # schema dumps: regenerated, tag not durable
     %r{\Aconfig/locales/},                     # i18n-tasks re-renders these — see below
     %r{\Atools/in_silico/conda-lock\.yml\z},   # third-party lock output; cannot teach conda-lock
     # Vendor-derived headers, adjudicated 2026-07-26: no tag rather than an inexact one.

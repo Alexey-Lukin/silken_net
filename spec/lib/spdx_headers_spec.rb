@@ -85,8 +85,8 @@ RSpec.describe SpdxHeaders do
         "config/credentials.yml.enc",                # encrypted blob
         "config/credentials/production.key",         # key material
         "db/structure.sql",                          # pg_dump regenerates it
-        "db/cable_schema.rb",                        # SchemaDumper rewrites it — tag not durable
-        "db/cache_schema.rb",                        # ditto
+        "db/cable_structure.sql",                    # pg_dump output (Solid Cable), regenerated on gem upgrade
+        "db/cache_structure.sql",                    # ditto (Solid Cache)
         "config/locales/en.yml",                     # i18n-tasks re-renders byte-for-byte
         "config/locales/navigation/uk.yml",          # ditto, at any depth
         "tools/in_silico/conda-lock.yml",            # third-party lock output

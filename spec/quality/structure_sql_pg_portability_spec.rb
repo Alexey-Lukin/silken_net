@@ -44,6 +44,11 @@ require_relative "../support/repo_root"
 #     Сьогодні обидва оголошення — `POSTGRES_17`, тож випадок гіпотетичний.
 module StructureSqlPortability
   ROOT = REPO_ROOT
+  # Every file `db:prepare` loads with `schema_format = :sql` — one per database config
+  # (2026-09-02: the Solid Cache / Solid Cable dumps joined; they carry the same pg17 GUC
+  # header and were outside this gate). Floors are line counts: a dump that shrank below
+  # its floor is a truncated dump, not a small schema.
+  STRUCTURES = { "db/structure.sql" => 1_000, "db/cache_structure.sql" => 50, "db/cable_structure.sql" => 50 }.freeze
   STRUCTURE = ROOT.join("db/structure.sql")
   CI_WORKFLOW = ROOT.join(".github/workflows/ci.yml")
   TERRAFORM_DB = ROOT.join("terraform/database.tf")
@@ -69,7 +74,9 @@ RSpec.describe "Postgres major: CI ⟷ prod parity, and structure.sql against it
   it "actually extracts a major from BOTH sides" do
     expect(ci).not_to be_empty, "не знайдено `image: postgis/postgis:NN-` у ci.yml — regex осліп"
     expect(prod).not_to be_empty, "не знайдено `database_version = \"POSTGRES_NN\"` у terraform/database.tf"
-    expect(StructureSqlPortability::STRUCTURE.read.lines.size).to be > 1_000
+    StructureSqlPortability::STRUCTURES.each do |rel, floor|
+      expect(StructureSqlPortability::ROOT.join(rel).read.lines.size).to be > floor
+    end
   end
 
   it "runs every CI service on the SAME major as production" do
@@ -91,13 +98,14 @@ RSpec.describe "Postgres major: CI ⟷ prod parity, and structure.sql against it
 
   it "carries no GUC newer than the major CI actually runs" do
     major = ci.min or raise "немає CI-мажора"
-    sql = StructureSqlPortability::STRUCTURE.read
+    offenders = StructureSqlPortability::STRUCTURES.keys.flat_map do |rel|
+      sql = StructureSqlPortability::ROOT.join(rel).read
+      StructureSqlPortability::VERSION_GATED_GUC.flat_map do |guc, since|
+        next [] if major >= since
 
-    offenders = StructureSqlPortability::VERSION_GATED_GUC.flat_map do |guc, since|
-      next [] if major >= since
-
-      sql.lines.each_with_index.filter_map do |line, idx|
-        "db/structure.sql:#{idx + 1}: #{line.strip}  (потребує pg#{since}, CI має pg#{major})" if line.include?(guc)
+        sql.lines.each_with_index.filter_map do |line, idx|
+          "#{rel}:#{idx + 1}: #{line.strip}  (потребує pg#{since}, CI має pg#{major})" if line.include?(guc)
+        end
       end
     end
 
