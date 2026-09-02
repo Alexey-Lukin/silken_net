@@ -136,9 +136,15 @@ end
 # (SimpleCov не стартує при `COVERAGE=0`); ця перевірка стереже, щоб він не
 # повернувся мовчки — регресія тут не має ВЛАСНОГО симптому, вона лише робить
 # НАСТУПНИЙ прогін сюїти хибно-червоним.
+# ⊕ Дискримінатор (2026-09-02, після другого рецидиву «сюїта у фоні + смуга»):
+# запис у ВІКНІ rspec-кроку смуги = регресія (exit 1); поза ним = сторонній
+# писач — паралельна повна сюїта на цьому ж дереві, якій смуга не шкодить
+# (`COVERAGE=0` не пише) — тож попередження, не вирок. Доти чужий запис
+# читався як регресія TEST.15 і посилав шукати лік у `spec_helper`.
 RESULTSET = File.join(__dir__, "..", "coverage", ".resultset.json")
 coverage_fingerprint = -> { File.exist?(RESULTSET) ? [ File.size(RESULTSET), File.mtime(RESULTSET) ] : nil }
 coverage_before = coverage_fingerprint.call
+rspec_windows = []
 
 results = []
 steps.each_with_index do |s, i|
@@ -159,7 +165,9 @@ steps.each_with_index do |s, i|
   end
 
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  wall0 = Time.now
   ok = system(cmd, chdir: ROOT, out: File::NULL, err: File::NULL)
+  rspec_windows << (wall0..Time.now) if cmd.include?("rspec")
   ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round
   printf("%2d. %-64s %-7s %6dms\n", i + 1, name, ok ? "PASS" : "FAIL", ms)
   results << [ ok ? :pass : :fail, name, cmd ]
@@ -169,8 +177,14 @@ exit 0 if list_only
 
 # [TEST.15] Звіт покриття мусить бути НЕЗАЙМАНИЙ після смуги.
 coverage_after = coverage_fingerprint.call
-if coverage_before && coverage_after != coverage_before
+written_at = coverage_after && File.mtime(RESULTSET)
+if coverage_before && coverage_after != coverage_before && written_at && rspec_windows.none? { |w| w.cover?(written_at) }
+  warn "\n::warning::docs_band: `coverage/.resultset.json` змінив СТОРОННІЙ процес (#{written_at.strftime('%H:%M:%S')},"
+  warn "  поза вікнами rspec-кроків смуги) — паралельна повна сюїта на цьому ж дереві. Вердикт смуги"
+  warn "  чинний, тій сюїті смуга не зашкодила (`COVERAGE=0` не пише); наступного разу — не поруч."
+elsif coverage_before && coverage_after != coverage_before
   warn "\n::error::docs_band: rspec-крок смуги ПЕРЕЗАПИСАВ `coverage/.resultset.json`"
+  warn "  (або паралельна сюїта завершилась саме у вікні цього кроку — прожени смугу наодинці)."
   warn "  Це регресія TEST.15: `COVERAGE=0` мусить вимикати ЗАПИС, не лише поріг."
   warn "  Наслідок не тут, а в НАСТУПНОМУ прогоні повної сюїти — вона впаде з"
   warn "  `0 failures` + EXIT=2 і всіма групами по 0.0 %, і це читається як зламане"
