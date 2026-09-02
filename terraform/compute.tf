@@ -78,6 +78,13 @@ resource "google_compute_instance" "ingress_anchor" {
   metadata_startup_script = <<-EOF
     #!/bin/bash
     set -e
+    # 🔴 Every apt-get below runs with NO terminal: without this, the first package that asks
+    # a debconf question (iptables-persistent: "Save current IPv4 rules?") opens a whiptail
+    # dialog on a non-existent tty and the script hangs there FOREVER — measured on the live
+    # anchor 2026-09-02 (pid tree: apt-get → dpkg --configure → iptables-persistent.config →
+    # whiptail, startup unit `activating` for 10+ minutes, HAProxy never reached). The
+    # `|| true` on that line cannot help: nothing exits. Non-interactive takes the defaults.
+    export DEBIAN_FRONTEND=noninteractive
 
     # =========================================================================
     # 1. Kernel tuning for planetary-scale CoAP/UDP (conntrack + rate limiting)
