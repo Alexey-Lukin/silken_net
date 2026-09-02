@@ -12,7 +12,7 @@
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
 | **Logs** | GCP Cloud Logging + Structured JSON | ✅ GCP/Kamal-шлях (Cloud Logging, WARNING+, JSON+Sentry correlation); ⊕ **[OPS.37] Друга гілка знята разом із платформою:** мотив Rails-push у Loki був саме «ефемерний lease-log»; на GCP-VM stdout тече в Cloud Logging штатно, тож питання Loki звузилось до ретенції й пошуку ([`INF.22`](00_07_Action_Plan_Tracker)) |
 | **Visualization** | Grafana Cloud | ✅ **Імпортовано 2026-08-29** — дашборд `silkennet-overview-v1` у стеку (folder `SilkenNet`) |
-| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29**; ✅ **contact point (Email) + route `slot=canopy` задротовано 2026-08-30** — firing-правила доставляються founder-у (заміна каналу на `ops@` — після ESP; [`00_07`](00_07_Action_Plan_Tracker) S2.4: лишились переімпорт виправлених правил + post-deploy verify) |
+| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29** (⚠️ стек `violetmamba3330.grafana.net` — free trial 14 днів від 2026-08-30, далі ліміти free-тарифу: єдиний годинник, що цокає БЕЗ нашого коміту; ліміт правил проти імпортованого ще не звірено — [`00_07`](00_07_Action_Plan_Tracker) DEPLOY-1 Фаза −1); ✅ **contact point (Email) + route `slot=canopy` задротовано 2026-08-30** — firing-правила доставляються founder-у (заміна каналу на `ops@` — після ESP; [`00_07`](00_07_Action_Plan_Tracker) S2.4: лишились переімпорт виправлених правил + post-deploy verify) |
 
 ---
 

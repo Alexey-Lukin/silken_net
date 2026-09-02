@@ -90,7 +90,8 @@ servers:
 #    stack can present one while this block stays commented: the Ingress Anchor's HAProxy is
 #    `mode tcp` on 80 AND 443 (pure passthrough — `terraform/compute.tf`), and kamal-proxy with
 #    no `ssl` serves plain HTTP on :80 and nothing usable on :443. Result on the first request
-#    through Cloudflare: 521/525. `06_01 §TLS` even lists that symptom in its troubleshooting
+#    through Cloudflare: 521/525 (521 ALONE also means «no origin at all» — the anchor's HAProxy,
+#    measured 2026-09-02). `06_01 §TLS` even lists that symptom in its troubleshooting
 #    table — the shipped config is what produces it.
 #    ⛔ `ssl: true` (ACME / Let's Encrypt) does NOT fix this here, and the reason is structural:
 #    under Full (strict) Cloudflare reaches the origin over HTTPS ONLY, so an HTTP-01 challenge

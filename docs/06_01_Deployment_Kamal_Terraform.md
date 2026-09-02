@@ -218,7 +218,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **ActionCable (Solid Cable)** | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |
 | **Redis** | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
 | **Prometheus + Grafana + Alerting** | — | — | ✅ | SaaS, Alloy → remote_write |
-| **Ingress Anchor** | ✅ | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443 → app-хост + socat (fallback) — ⚠️ HAProxy на живому анкері ще НЕ встановлений станом на 2026-09-02 (§DEPLOY-DAY Фаза 1, крок 10) |
+| **Ingress Anchor** | ✅ | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443 → app-хост + socat (fallback) — ✅ HAProxy живий з 2026-09-02 після трьох фіксів startup-скрипта (крок 10) |
 | **Artifact Registry (Docker)** | ✅ | — | — | Kamal пушить у GCP AR |
 | **GHCR (Docker mirror)** | ✅ | — | — | `.github/workflows/mirror-ghcr.yml` — ПУБЛІЧНЕ дзеркало, бо анкер тягне свій образ systemd-юнітом поза Kamal/WIF-ланцюгом і не має реєстрового credential'а |
 
@@ -1024,6 +1024,8 @@ cd contracts && forge script script/Deploy.s.sol --rpc-url "$SEPOLIA_RPC_URL" --
 🔴 **Пін газу на Amoy купує ЗДІЙСНЕННІСТЬ у межах крана — але величин тут ДВІ, і плутати їх
 коштувало хибного канону в перший же день.** Σ **ЛІМІТІВ** = скільки треба МАТИ на балансі
 (перевіряється при сабміті кожного кадру); Σ **ВИТРАЧЕНОГО** = скільки насправді списано.
+⛔ **Адреси Amoy живуть ТУТ, бо `contracts/broadcast/` у `.gitignore`** — інакше єдиний їх слід поза ланцюгом зник би з деревом: Timelock `0xC2E8d2120aD3576b03d32211c918b6D434b91c8f` · **`CARBON_COIN_CONTRACT_ADDRESS` `0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22`** · **`FOREST_COIN_CONTRACT_ADDRESS` `0x9366a4CbA0461E150A3409CD2767Ff7b8db6d4b7`** · StateRootAnchor `0x9F70c79786130b2861ccd0947F0b7f482E3CE02C` · Governor `0x503C216A33f9A9f2bd2967d11Ae2D3159dc9902F` · ProtocolParameters `0x1F20032142C98BBcfD3DcB115f62Ae1230802Be2`; `DAO_TREASURY_ADDRESS` = операторська EOA (ВХІД скрипта, не вихід), чотири ENV-адреси продубльовані в `config/deploy.canopy.yml`. ⛔ Amoy-`StateRootAnchor` НЕ є `ETHEREUM_ANCHOR_CONTRACT` (той — Sepolia, [`00_07`](00_07_Action_Plan_Tracker) INF.27). Усі пройшли boot-предикат `EthAddressValidatable.eip55_valid?`.
+
 Живі квитанції broadcast'у 2026-09-01 (`contracts/broadcast/Deploy.s.sol/80002/run-latest.json`,
 12 квитанцій, усі `status: 0x1`, `effectiveGasPrice` рівно `0x6fc23ac00` = 30 gwei):
 
@@ -1049,6 +1051,8 @@ EVM (`gasLimit × gasPrice + value ≤ balance`) дала б лише ПІК о�
 Σ лімітів стає вимогою тому, що `forge` без `--slow` кладе всі 12 кадрів у мемпул ОДРАЗУ, а txpool
 перевіряє **сукупну** вартість pending-черги акаунта. ⊕ **Отже `--slow` є важелем: він знижує вимогу
 до балансу з 0.4999 до ≈0.389 POL** ціною послідовного майнінгу.
+🔑 Кран Chainlink: **Дискримінатор не «який кран», а «чи тримаємо ми будь-що на будь-якому мейннеті»: одна купівля відчиняє кілька каналів одразу й назавжди. ⚠️ І кулдаун крана Chainlink **ГЛОБАЛЬНИЙ на акаунт, не per-network** (виміряно: після POL той самий акаунт дістав `rate limit 24 hours` на Sepolia) — тобто нативний дрип там один на добу, попри те що UI показує мережі окремо. 🔑 **Форма запиту: перевірка LINK іде проти ПІДКЛЮЧЕНОГО гаманця, а адреса призначення — окреме поле**, тож наступні дрипи цілити ОДРАЗУ в деплоєра, і переказ із гаманця не потрібен узагалі.
+
 🔴 **ЗАПАС НАЗВАТИ ОБОВʼЯЗКОВО, бо його практично немає, і мовчання тут коштує дорожче за
 перебільшення.** Стеля одного заходу крана Chainlink — `0.50000000`; вимога Σ лімітів @30 gwei —
 `0.49991436`; **запас = `0.00008564` POL, тобто 0.017%.** Тобто «одного заходу крана вистачає» —

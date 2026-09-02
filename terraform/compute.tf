@@ -70,6 +70,10 @@ resource "google_compute_instance" "ingress_anchor" {
     access_config { nat_ip = google_compute_address.ingress_ip.address }
   }
 
+  # ⚠️ The startup script below is `set -e` and SERIAL: a script that never reached line N
+  #    says NOTHING about N+1. Its three 2026-09-02 fixes (modprobe · DEBIAN_FRONTEND ·
+  #    dpkg repair) were three LINKS found one per boot, not three oversights — after any
+  #    fix, measure to the END of the script, never to the first green line.
   # HAProxy + socat forward traffic to the Rails app host. Its IP is read from
   # instance metadata (operator-set, out-of-band) — after provisioning the host:
   #   gcloud compute instances add-metadata silken-net-ingress \

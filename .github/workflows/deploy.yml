@@ -145,7 +145,8 @@ jobs:
           # returns the EMPTY STRING; and `Kamal::Cli::App::SslCertificates#run` guards with
           # `if cert_content = …`, where "" is truthy in Ruby. So kamal happily uploads an empty
           # cert.pem/key.pem (mode 0644), kamal-proxy cannot serve TLS, and Cloudflare — Full
-          # (strict) on both zones — answers 521/525 on every request behind a fully GREEN deploy.
+          # (strict) on both zones — answers 521/525 on every request behind a fully GREEN deploy
+          # (and a bare 521 also means the anchor has no HAProxy — measured 2026-09-02).
           # Neither list carried them before, so there was not even a ::warning:: (06_04 §1).
           TLS_ORIGIN_CERT_PEM: ${{ secrets.TLS_ORIGIN_CERT_PEM }}
           TLS_ORIGIN_KEY_PEM: ${{ secrets.TLS_ORIGIN_KEY_PEM }}
