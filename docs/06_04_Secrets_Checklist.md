@@ -17,7 +17,7 @@
 
 - **Поточний TRL:** TRL 5 — механізм секретів (AR-encryption non-deterministic, HKDF per-device, `.kamal/secrets-common`, `verify-secrets` CI gate) реалізований, і **CI-гейт `verify-secrets` його стереже** — але ⚠️ **у Canopy він НЕ перевірявся до кінця — але з 2026-09-01 уже НЕ через відсутність деплою:** `verify-secrets` проходить, `Kamal Deploy (Canopy)` виконується й доводить ланцюг до запущеного контейнера, а бут гине пізніше (`web3_network_guard`), тож ін'єкція секретів у РАНТАЙМ лишається недоведеною — доти скіпав сам крок (крок `Kamal Deploy (Canopy)` skipped у всіх перевірених прогонах; deploy-секретів у репо — один, і той не деплойний; [`06_01`](06_01_Deployment_Kamal_Terraform) каже це прямо). Доти цей рядок стверджував «перевірений у Canopy» — виправлено 2026-08-22 виміром. Production-значення не провіжені (операційна задача, [`00_07`](00_07_Action_Plan_Tracker) S1.1). Канон модульного TRL — [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond).
 - **Поточний стан:** Backend код підтримує всі секрети, але production значення **не встановлені** в GitHub repository та `.kamal/secrets-common`. Це блокує весь CI/CD pipeline.
-- **Відкрите:** production secret values не провіжені (блокує CI/CD) → [`00_07`](00_07_Action_Plan_Tracker) (S1.1, S4.3, S5.6).
+- **Відкрите:** production secret values не провіжені → [`00_07`](00_07_Action_Plan_Tracker) S1.1 (S4.3 · S5.6 — у §🗄️, заповнення значень = S1.1).
 
 ---
 
@@ -27,7 +27,7 @@
 |---|---|
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Деплой (Kamal/Terraform secrets) |
 | [`06_03` — Prometheus Observability](06_03_Prometheus_Observability) | Grafana Cloud + Sentry DSN |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.6 |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | S1.1 (S4.3 · S5.6 → §🗄️) |
 
 ## 📑 Зміст
 
@@ -96,7 +96,7 @@
 - [ ] `TLS_ORIGIN_CERT_PEM` · `TLS_ORIGIN_KEY_PEM` — **[INF.4]** пара Cloudflare Origin CA. 🔴 **Boot-critical в ОБОХ воркфлоу, але їде не через `env.secret`, а через `proxy.ssl.{certificate_pem,private_key_pem}`** — і саме ця інакшість поверхні тримала їх поза §1 до 2026-09-01, тобто оператор, що провіжить за цим розділом, їх не заводив. ⚠️ Це ТА САМА пастка, яку сусідній рядок описує для `TURBO_SIGNED_STREAM_KEY`, відтворена для іншої пари тим самим переписуванням §2.1 — спіймано адверсарним ревʼю. Семантика, форма випуску (ключ генерується ЛОКАЛЬНО) і приймальна перевірка збігом МОДУЛЯ — §2.1
 - [ ] Webhook HMACs: `CHAINLINK_HMAC_SECRET` (callback-endpoint; dispatch вилучено — ARCH.53) · `HELIUM_WEBHOOK_SECRET` (Queen SOS — під `WEB3_STRICT_MODE` контролер raise'ить per-request без нього)
 
-> **🔴 Drift guard:** набір **§1.1 ∪ §1.4** = `config/deploy.yml env.secret` = `.kamal/secrets-common` = `env:` блок **кроку `kamal deploy`** обох воркфлоу. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT).
+> **🔴 Drift guard:** набір **§1.1 ∪ §1.4** = `config/deploy.yml env.secret` = `.kamal/secrets-common` = `env:` блок **кроку `kamal deploy`** обох воркфлоу. Розбіжність у будь-яку сторону → порожній інжект → boot-crash. Канонічний список — `config/deploy.yml env.secret` (SSOT). ⊕ Для СПІЛЬНОГО зовнішнього ресурсу (Redis · чотири RPC) ланцюг має ще ТРИ ланки, яких рівність вище не називає: `CANOPY_*`-двійник у repo Secrets · ремап у `.kamal/secrets.canopy` (інваріант B4) · імʼя двійника в рядку `BOOT_CRITICAL` (2026-09-02).
 >
 > ⚠️ **Речення вище двічі уточнено 2026-09-01, і обидва уточнення купила та сама діра.** (1) Суб'єкт «цей набір» читався як §1.4 наодинці, а §1.4 свідомо не несе P0-половини — тож твердження було хибним за побудовою; тепер названо ПАРУ секцій. ⚠️ **І сама рівність — ОДНОСТОРОННЯ, це важливо:** доведено `env.secret ⊆ §1.1 ∪ §1.4` (set-diff порожній у ЦЬОМУ напрямку). Зворотний напрямок НЕ порожній і не має бути: §1 законно несе інфра-передумови (`GCP_PROJECT_ID`, WIF-пара), `env.clear`-змінні й надгробки ретирнутих імен. **Перша редакція цього абзацу стверджувала «порожньо в обидва боки» — я зміряв один напрямок і написав про два; спіймано адверсарним ревʼю того ж дня.** Доти бракувало пʼяти імен — `SECRET_KEY_BASE`, пари SMTP, `TELEGRAM_BOT_TOKEN`, `TURBO_SIGNED_STREAM_KEY`. ⚠️ **І «всі пʼять жили в §2.1» було б неточно — це правда про ЧОТИРИ:** у `SECRET_KEY_BASE` не було рядка й там (звірено `git show HEAD~`), його єдиними домами лишались §5.2/§5.7/§5.8-проза, тобто він випав і з чек-листа, і з семантичної секції одночасно. Для тих чотирьох механізм саме такий: заголовок §2.1 стверджував про них протилежне — доки його не перелицювали цим самим проходом (тому тут минулий час). (2) «deploy-workflow `env:` блок» не розрізняв ДЖОБ: змінна, змаплена в `verify-secrets` і НЕ в кроці `kamal deploy`, задовольняла цю фразу й гейт за нею — тобто крок, який СУДИТЬ секрет, мав його, а крок, який його ДОСТАВЛЯЄ, ні. Тому тут тепер названо саме крок.
 
@@ -216,12 +216,14 @@
 - **`RAILS_MASTER_KEY`** / **`secret_key_base`**: планової ротації немає; on-compromise **entangled** — ротація master-key re-encrypt'ить `credentials.yml.enc`, але той самий `secret_key_base` лишається → атакер зберігає session/cookie-forge; щоб revoke, треба ротувати й `secret_key_base`, що invalidate'ить УСІ сесії + `generates_token_for`-токени (найдовший хвіст — `api_access` 30 днів) + CSRF/ActiveStorage signed IDs. **Порядок дій → §5.8-B** (`SECRET_KEY_BASE`-env-detach механіка — §5.7 Phase-2).
 - **Database password**: змінити Cloud SQL → оновити `POSTGRES_PASSWORD` GitHub Secret (живить Kamal `POSTGRES_PASSWORD` + Terraform `TF_VAR_db_password`) → `kamal redeploy`.
 - **Sentry DSN**: rotate у Sentry UI → оновити `SENTRY_DSN` → redeploy.
-- **Redis (Upstash) URL/token**: rotate в Upstash Console → оновити `REDIS_URL` / `CANOPY_REDIS_URL` → redeploy. ⚠️ Canopy-токен ПІДЛЯГАЄ ротації після 2026-09-02: Puma `before_fork` надрукував повний `REDIS_URL` у stdout контейнера (виняток на скаліченому URL, [`06_05`](06_05_Puma_Configuration)), а `docker logs` живуть довше за контейнер (👤 — [`S1.1`](00_07_Action_Plan_Tracker)).
+- **Redis (Upstash) URL/token**: rotate в Upstash Console → оновити `REDIS_URL` / `CANOPY_REDIS_URL` → redeploy. ✅ Canopy-токен РОТОВАНО 2026-09-02 після витоку в stdout (Puma `before_fork` надрукував повний `REDIS_URL` на скаліченому значенні, [`06_05`](06_05_Puma_Configuration); `docker logs` живуть довше за контейнер) — `CANOPY_REDIS_URL` перезаведено, редеплой перевірено `/ready` → `redis:true`.
 - **Chainlink HMAC**: координовано з backend deploy (зміна на льоту викличе rejected callbacks).
 - **Oracle/Anchor private keys**: deploy новий гаманець → revoke старий → перевести залишок газу → redeploy.
 - **peaq_signing_key** (Ed25519 DID signing): планова ротація кожні 90 днів або при зміні персоналу. Dual-Key Grace Period 72 години (див. §5.4 нижче та [`04_02 §S6.14`](04_02_Business_Logic_and_Services)).
 
 ### 5.3. Аудит виконання
+
+> ⚠️ Залишок рахуй проти обʼєднання `gh secret list` ∪ `gh variable list` — WIF-пара є repo **Variables** ([`06_07 §1a`](06_07_CICD_and_Runbook_Index)), тож диф лише по секретах завищує залишок на два й називає відсутнім заведене; перелік бери з `BOOT_CRITICAL` воркфлоу, не з памʼяті — він росте (S1.1, 2026-09-01). Носій — шапка `scripts/audit_deploy_secret_scope.rb`.
 
 **Live GitHub-scope preflight (S1.1 verify-half)** — `scripts/audit_deploy_secret_scope.rb`
 запусти ПІСЛЯ заведення секретів, ДО першого деплою. Read-only через `gh` (віддає лише
@@ -494,4 +496,4 @@ bin/rails runner 'puts SecureRandom.hex(32)'
 | [`06_01`](06_01_Deployment_Kamal_Terraform) | Kamal/Terraform secrets (00_07 S1.1) |
 | [`06_03`](06_03_Prometheus_Observability) | `SENTRY_DSN`, Grafana Cloud tokens |
 | [`05_01`](05_01_Multichain_Architecture) | Web3 ENV variables (§5) |
-| [`00_07`](00_07_Action_Plan_Tracker) | S1.1, S4.3, S5.2, S5.6 |
+| [`00_07`](00_07_Action_Plan_Tracker) | S1.1 (S4.3 · S5.2 · S5.6 → §🗄️) |

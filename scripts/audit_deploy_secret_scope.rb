@@ -2,6 +2,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # frozen_string_literal: true
 
+# 🔴 Count the remainder against the UNION of `gh secret list` ∪ `gh variable list` [S1.1,
+# 2026-09-01]: the WIF pair (GCP_WORKLOAD_IDENTITY_PROVIDER · GCP_SERVICE_ACCOUNT) lives in
+# repo VARIABLES by design (06_07 §1a), so a diff of BOOT_CRITICAL against secrets alone
+# overstates the remainder by two and calls provisioned names missing. Portable rule:
+# enumerate the STORAGE FORMS, never the occurrences of one of them — and take the list
+# from the workflow, not from memory: it grows.
+
 # GitHub deploy-secret SCOPE auditor (S1.1 verify-half). Read-only preflight over
 # the LIVE GitHub secret surface via `gh` — asserts the scope invariants that
 # `verify-secrets` (CI, presence-only) structurally CANNOT:

@@ -264,7 +264,7 @@ env:
     # values and nothing else. SMTP_PORT / SMTP_DOMAIN / SMTP_AUTHENTICATION are omitted
     # deliberately: their defaults (587 / none / plain) cover the mainstream ESPs, and a
     # declared var with a sane default is one more surface to keep in sync for nothing.
-    # Placeholders fail the guard loudly until a real ESP is provisioned (👤 S1.1).
+    # Placeholders fail the guard loudly until a real ESP is provisioned (👤 ARCH.60).
     MAIL_FROM: REQUIRED_SECRET_NOT_SET
     SMTP_ADDRESS: REQUIRED_SECRET_NOT_SET
     # [ARCH.81] CoAP intake address the admin health panel probes over UDP — the
