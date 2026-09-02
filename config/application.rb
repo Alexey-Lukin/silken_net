@@ -125,6 +125,39 @@ module SilkenNet
       g.fixture_replacement :factory_bot, dir: "spec/factories"
     end
 
+    # 🛡️ SECURITY HEADERS (HDR audit category; 00_07 SEC.35) — HERE, not in an initializer.
+    # ActionDispatch copies `config.action_dispatch.default_headers` into
+    # `ActionDispatch::Response.default_headers` inside `on_load(:action_dispatch_response)`,
+    # which fires before `config/initializers/*` run — so an initializer that ASSIGNS a new
+    # hash changes the config and never the responses. Measured 2026-09-02: the live canopy
+    # answered `X-Frame-Options: SAMEORIGIN` and no `Permissions-Policy` while the initializer
+    # said DENY (`same_object=false` between config and Response). application.rb is read
+    # before that hook, and spec/requests/security_headers_spec.rb pins the LIVE response.
+    #   • X-Frame-Options: DENY — the dashboard is never embedded in an <iframe>; CSP
+    #     frame-ancestors 'none' is the modern equivalent, this one is for older browsers.
+    #   • Permissions-Policy — disable powerful browser features the dashboard does not use.
+    #   • Cross-Origin-Opener-Policy / -Resource-Policy: same-origin — window.opener isolation
+    #     (Spectre) and no cross-origin embedding of our JSON/HTML.
+    #   • X-XSS-Protection: 0 — legacy IE/Edge filter off (modern guidance).
+    #   • X-Permitted-Cross-Domain-Policies: none — a Rails default we must keep when replacing
+    #     the whole hash (the old initializer silently dropped it).
+    config.action_dispatch.default_headers = {
+      "X-Frame-Options"                   => "DENY",
+      "X-Content-Type-Options"            => "nosniff",
+      "X-XSS-Protection"                  => "0",
+      "X-Permitted-Cross-Domain-Policies" => "none",
+      "Referrer-Policy"                   => "strict-origin-when-cross-origin",
+      "Cross-Origin-Opener-Policy"        => "same-origin",
+      "Cross-Origin-Resource-Policy"      => "same-origin",
+      "Permissions-Policy"                => %w[
+        accelerometer=() ambient-light-sensor=() autoplay=() battery=() camera=()
+        display-capture=() document-domain=() encrypted-media=() fullscreen=(self)
+        geolocation=() gyroscope=() magnetometer=() microphone=() midi=() payment=()
+        picture-in-picture=() publickey-credentials-get=(self) screen-wake-lock=()
+        sync-xhr=() usb=() xr-spatial-tracking=() interest-cohort=() browsing-topics=()
+      ].join(", ")
+    }
+
     # Prepend a custom PostgreSQL bin path to PATH if configured via POSTGRES_BIN_PATH.
     # Useful when multiple PG versions are installed and the server version differs from
     # the default pg_dump/psql binaries in PATH (e.g. PG17 server, PG16 client in PATH).

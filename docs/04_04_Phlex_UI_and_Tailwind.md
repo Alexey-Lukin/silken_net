@@ -2467,7 +2467,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **Open-redirect guard:** `LocalesController#sanitized_referer` валідує `request.host == referer.host`.
 - **Cookie flags:** `httponly: true`, `same_site: :lax`, `secure: production?`.
 - **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
-- **HSTS / X-Frame-Options:** Rails defaults.
+- **HSTS / X-Frame-Options:** HSTS — `force_ssl` (`production.rb`); `X-Frame-Options: DENY` + Permissions-Policy/COOP/CORP — `config/application.rb` (SEC.35: до 2026-09-02 лежали в ініціалізаторі й НЕ діяли — Rails копіює дефолти раніше; носій — `spec/requests/security_headers_spec.rb`).
 - **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD § 18.9).
 - **Secret scanning:** GitHub native secret-scanning + push-protection (у CI).
 
