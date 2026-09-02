@@ -109,6 +109,27 @@ module Security
       SOLANA_RPC_URL
     ].freeze
 
+    # Keyless PUBLIC fallbacks behind the primaries above [ARCH.114, ⚖️ founder 2026-09-02:
+    # PublicNode/dRPC as the second bird; an account vendor only if rate-limits bite].
+    # They ride `env.clear` as literals — no provider key, so `deploy_secret_scan`'s
+    # `_RPC_URL\z` anchor deliberately does not see them — and THAT is why the chain axis
+    # must: a fallback is the endpoint the cascade lands on when the primary dies, so a
+    # mainnet fallback on a testnet slot is «staging able to sign real value», one outage
+    # later. Judged by `chain_violations` exactly like the primaries (blank → skipped;
+    # presence is never demanded — the cascade is optional by design). EVM names must match
+    # `Web3::RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS` (pinned in the guard spec);
+    # Solana's pair is read by `Solana::MintingService#execute_rpc_call`.
+    # ⛔ A KEYED URL does not belong under these names: it would be a committed secret the
+    # scan cannot see — keyed fallbacks go through `env.secret` under a `_RPC_URL`-suffixed name.
+    RPC_FALLBACK_URL_ENVS = %w[
+      POLYGON_RPC_URL_FALLBACK_1
+      POLYGON_RPC_URL_FALLBACK_2
+      CELO_RPC_URL_FALLBACK_1
+      CELO_RPC_URL_FALLBACK_2
+      SOLANA_RPC_URL_FALLBACK_1
+      SOLANA_RPC_URL_FALLBACK_2
+    ].freeze
+
     # Testnet host/path markers, alnum-boundary-anchored so a mainnet URL can't
     # match by coincidence (a random API-key token never trips it).
     TESTNET_MARKER =
@@ -240,7 +261,7 @@ module Security
 
       testnet = declared == "testnet"
 
-      out = RPC_URL_ENVS.filter_map do |var|
+      out = (RPC_URL_ENVS + RPC_FALLBACK_URL_ENVS).filter_map do |var|
         url = env[var]
         next if url.blank?
 

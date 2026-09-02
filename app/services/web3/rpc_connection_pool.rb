@@ -26,7 +26,7 @@ module Web3
   #   # З fallback cascade:
   #   client = Web3::RpcConnectionPool.client_for(
   #     "ALCHEMY_POLYGON_RPC_URL",
-  #     fallback_env_keys: ["INFURA_POLYGON_RPC_URL"]
+  #     fallback_env_keys: ["POLYGON_RPC_URL_FALLBACK_1"]
   #   )
   module RpcConnectionPool
     THREAD_KEY_PREFIX = :web3_rpc_client_
@@ -56,14 +56,16 @@ module Web3
     # завести його це 👤-дія (акаунт), не рядок тут.
     # ⛔ Другий слот НЕ заповнювати тим самим вендором, що й перший (Alchemy ×2): той
     # самий контролер двічі не додає незалежності, а лише рахує одного птаха двічі
-    # (00_05 §7; ARCH.114). ⚠️ Конвенцій імен тут ДВІ — вендорна (`INFURA_*`) вижила рівно
-    # там, де значення досі плейсхолдер, тобто імʼя стверджує вендора, якого немає;
-    # перейменувати законно, але це СИНХРОННА правка з `.env.example` (honesty-гейт
-    # `rpc_connection_pool_spec` вимагає, щоб кожен ключ реєстру існував у прикладі) і з
-    # усіма поверхнями заведення (06_04 §1.4 — порядок: секрет ПЕРШ ніж імʼя).
+    # (00_05 §7; ARCH.114). ⚠️ Конвенція імен ОДНА — мережева (`<NETWORK>_RPC_URL_FALLBACK_N`): вендорну
+    # `INFURA_*` знято 2026-09-02 разом із заведенням keyless-фолбеків ([ARCH.114] ⚖️ founder:
+    # PublicNode/dRPC як другий птах). Перейменування слота — СИНХРОННА правка з
+    # `.env.example` (honesty-гейт `rpc_connection_pool_spec`) і з
+    # `Security::Web3NetworkGuard::RPC_FALLBACK_URL_ENVS` (chain-вісь; пін у спеці гарда).
+    # Keyless-URL живе в `env.clear` літералом — це не секрет, тож суддею його ЧЕЙНУ є
+    # гард, а не `deploy_secret_scan` (той бачить лише суфікс `_RPC_URL`).
     #
     # ⛔ ОГОЛОШЕНА СТЕЛЯ: реєстр судить ПРИСУТНІСТЬ змінної, ніколи придатність URL.
-    # `.env` розробника несе `INFURA_POLYGON_RPC_URL` плейсхолдером `…/YOUR_KEY`, і
+    # `.env` розробника міг нести фолбек плейсхолдером (доти — `…infura.io/v3/YOUR_KEY`), і
     # каскад його візьме як живий провайдер — тобто «другий RPC є» може означати
     # «другий RPC оголошений». Це не регресія (`MintingRollbackService` читав ту саму
     # змінну так само), але тепер поведінка діє на ВСІХ money-сайтах, тож ціна названа
@@ -73,7 +75,7 @@ module Web3
     # раніше вистачало мока на `ENV.fetch` — приклади, що каскаду не судять, мусять
     # явно занулювати ці ключі (див. `before` у `rpc_connection_pool_spec`).
     NETWORK_FALLBACK_ENV_KEYS = {
-      "ALCHEMY_POLYGON_RPC_URL" => %w[INFURA_POLYGON_RPC_URL].freeze,
+      "ALCHEMY_POLYGON_RPC_URL" => %w[POLYGON_RPC_URL_FALLBACK_1 POLYGON_RPC_URL_FALLBACK_2].freeze,
       "CELO_RPC_URL" => %w[CELO_RPC_URL_FALLBACK_1 CELO_RPC_URL_FALLBACK_2].freeze
     }.freeze
 
@@ -129,8 +131,8 @@ module Web3
         # «primary порожній, фолбек живий»: розмір падав до 1, гілка брала порожній
         # рядок і гем валив `ArgumentError: Unable to detect client type!`, тобто
         # наявний живий ендпоінт не пробувався ЖОДНОГО разу. ⚠️ І це не кутовий
-        # випадок: у `NETWORK_FALLBACK_ENV_KEYS` Polygon має рівно ОДИН фолбек, тож
-        # саме ця конфігурація й дає size==1. Порожній `all_urls` лишає стару гучну
+        # випадок: до 2026-09-02 Polygon мав у `NETWORK_FALLBACK_ENV_KEYS` рівно ОДИН фолбек,
+        # і саме та конфігурація давала size==1; з двома гілка досяжна, коли порожні ОБИДВА. Порожній `all_urls` лишає стару гучну
         # помилку (`.to_s` → ""), і це навмисно — підключатись справді нема до чого.
         client =
           if all_urls.size <= 1

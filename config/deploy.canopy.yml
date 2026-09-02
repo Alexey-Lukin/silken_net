@@ -114,6 +114,17 @@ env:
     # whether canopy also gets its own `job:` role (and therefore testnet SIGNER keys) —
     # ⚖️ 00_07 OPS.37, ordered: keys first (this shape), role second. NOT settled by this block.
     WEB3_CHAIN_ENV: testnet
+    # [ARCH.114] Testnet twins of the base manifest's keyless fallbacks — EVERY name the base
+    # declares must be overridden here (deep_merge = keys-UNION), or canopy inherits a MAINNET
+    # fallback and the cascade lands staging on real value one outage later; the boot guard's
+    # chain axis (`RPC_FALLBACK_URL_ENVS`) refuses that boot, which is the machine witness.
+    # Measured live from the app VM 2026-09-02. Solana: one twin only — no second keyless
+    # devnet endpoint answered (dRPC 403, PublicNode 403), so FALLBACK_2 stays ABSENT, never empty.
+    POLYGON_RPC_URL_FALLBACK_1: "https://polygon-amoy-bor-rpc.publicnode.com"
+    POLYGON_RPC_URL_FALLBACK_2: "https://polygon-amoy.drpc.org"
+    CELO_RPC_URL_FALLBACK_1: "https://forno.celo-sepolia.celo-testnet.org"
+    CELO_RPC_URL_FALLBACK_2: "https://celo-sepolia.drpc.org"
+    SOLANA_RPC_URL_FALLBACK_1: "https://api.devnet.solana.com"
     # [INF.27 move (4)] Polygon Amoy (chainId 80002) — outputs of the `Deploy.s.sol` broadcast
     # of 2026-09-01 (DEPLOY-1 Фаза 2t), verified by bytecode + live calls + the SEC.1 role
     # matrix; EIP-55 exactly as printed, which is what the boot guard checks. Public on-chain

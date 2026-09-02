@@ -304,6 +304,28 @@ env:
     # endpoint, and equally a testnet slot wired to a mainnet one. Canon 04_02 §Web3NetworkGuard.
     WEB3_CHAIN_ENV: mainnet
 
+    # --- Second RPC bird per network [ARCH.114, ⚖️ founder 2026-09-02] ---
+    # Keyless PUBLIC endpoints, measured live from the app VM on 2026-09-02 (eth_chainId with
+    # positive+negative controls; laptop probes under Zscaler lie). Different operators from
+    # Alchemy on purpose — the same vendor twice counts one bird twice (00_05 §7). NOT secrets:
+    # no provider key, so they ride env.clear as literals; the boot guard judges their CHAIN
+    # (`Security::Web3NetworkGuard::RPC_FALLBACK_URL_ENVS`) so a mainnet fallback cannot leak
+    # into the testnet slot — config/deploy.canopy.yml overrides EVERY name below with a
+    # testnet twin, because destination deep_merge is a keys-UNION and an un-overridden
+    # mainnet fallback would be the endpoint staging lands on one outage later.
+    # ⛔ Never a KEYED URL under these names: deploy_secret_scan's `_RPC_URL\z` anchor does
+    # not see the `_FALLBACK_N` suffix, so a key here would be a committed secret nobody
+    # flags — keyed fallbacks go through env.secret under a `_RPC_URL`-suffixed name.
+    # Presence is optional by design (pool: one URL → bare Eth::Client, two+ → ResilientClient
+    # with circuit breaker). Ethereum has no second bird deliberately (06_01 Alchemy row).
+    # Public endpoints carry no SLA: a rate-limit in the logs is the named trigger for an
+    # account vendor (Infura/QuickNode) — 00_07 ARCH.114.
+    POLYGON_RPC_URL_FALLBACK_1: "https://polygon-bor-rpc.publicnode.com"
+    POLYGON_RPC_URL_FALLBACK_2: "https://polygon.drpc.org"
+    CELO_RPC_URL_FALLBACK_1: "https://celo-rpc.publicnode.com"
+    CELO_RPC_URL_FALLBACK_2: "https://celo.drpc.org"
+    SOLANA_RPC_URL_FALLBACK_1: "https://api.mainnet-beta.solana.com"
+
     # --- Web3 contract addresses (post-`forge deploy`; fill before first mint) ---
     # Public on-chain addresses (not secrets) but unknown until contracts deploy → placeholder.
     # Fail-loud on use until provisioned. Canon docs/06_04 §2.1.

@@ -148,7 +148,7 @@ class MintingRollbackService < ApplicationService
       # порожній `ALCHEMY_POLYGON_RPC_URL` приземляється на mainnet»), тож заміна переписує
       # `Web3::NetworkGuard#hardcoded_fallback_violations`, а не лише цей рядок — ⚖️ 00_07 `ARCH.118`.
       fallback_url      = "https://polygon-rpc.com"
-      fallback_env_keys = [ "INFURA_POLYGON_RPC_URL" ]
+      fallback_env_keys = [ "POLYGON_RPC_URL_FALLBACK_1", "POLYGON_RPC_URL_FALLBACK_2" ]
     end
 
     client = Web3::RpcConnectionPool.client_for(

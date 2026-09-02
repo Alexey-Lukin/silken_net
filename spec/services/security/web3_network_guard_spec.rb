@@ -109,6 +109,41 @@ RSpec.describe Security::Web3NetworkGuard do
       end
 
       # Regression edge: the pre-split rule must survive the rewrite unchanged.
+      # [ARCH.114] The keyless fallbacks are judged on the SAME axis as the primaries: a
+      # fallback is where the cascade lands when the primary dies, so a mainnet fallback on a
+      # testnet slot is «staging able to sign real value» one outage later. Mutation-verified:
+      # dropping RPC_FALLBACK_URL_ENVS from `chain_violations` reddens the first two examples.
+      it "flags a MAINNET fallback on a slot declared testnet (the cascade would land on real value)" do
+        env = clean_env.merge(testnet_rpcs)
+                       .merge("WEB3_CHAIN_ENV" => "testnet",
+                              "POLYGON_RPC_URL_FALLBACK_1" => "https://polygon-bor-rpc.publicnode.com")
+        expect(described_class.violations(env))
+          .to include(a_string_matching(/\[chain\].*POLYGON_RPC_URL_FALLBACK_1.*MAINNET endpoint/))
+      end
+
+      it "flags a TESTNET fallback on a mainnet slot, and skips a blank one (presence is optional)" do
+        expect(described_class.violations(clean_env.merge("CELO_RPC_URL_FALLBACK_2" => "https://celo-sepolia.drpc.org")))
+          .to include(a_string_matching(/\[chain\].*CELO_RPC_URL_FALLBACK_2.*TESTNET/))
+        expect(described_class.violations(clean_env.merge("CELO_RPC_URL_FALLBACK_2" => ""))).to be_empty
+      end
+
+      it "passes a testnet slot whose fallbacks are testnet twins (the canopy shape)" do
+        env = clean_env.merge(testnet_rpcs).merge(
+          "WEB3_CHAIN_ENV" => "testnet",
+          "POLYGON_RPC_URL_FALLBACK_1" => "https://polygon-amoy-bor-rpc.publicnode.com",
+          "CELO_RPC_URL_FALLBACK_1" => "https://forno.celo-sepolia.celo-testnet.org",
+          "SOLANA_RPC_URL_FALLBACK_1" => "https://api.devnet.solana.com"
+        )
+        expect(described_class.violations(env)).to be_empty
+      end
+
+      # Registry parity: every EVM cascade key the pool can land on is chain-judged here —
+      # a fallback registered in one file and not the other would be judged by nobody.
+      it "chain-judges every fallback key the RPC pool registry can land on" do
+        pool_keys = Web3::RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq
+        expect(described_class::RPC_FALLBACK_URL_ENVS).to include(*pool_keys)
+      end
+
       it "still flags a testnet endpoint when no chain family is declared (fail-closed default)" do
         env = clean_env.merge("ALCHEMY_POLYGON_RPC_URL" => "https://polygon-amoy.g.alchemy.com/v2/key")
         expect(described_class.violations(env)).to include(a_string_matching(/\[chain\].*TESTNET/))

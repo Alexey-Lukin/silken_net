@@ -39,7 +39,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
 
   let(:guard_sets) do
     g = Security::Web3NetworkGuard
-    g::RPC_URL_ENVS + g::ORACLE_KEY_ENVS + g::SIGNER_KEYS.values +
+    g::RPC_URL_ENVS + g::RPC_FALLBACK_URL_ENVS + g::ORACLE_KEY_ENVS + g::SIGNER_KEYS.values +
       g::SILENT_ADDRESS_ENVS.keys + g::SILENT_RPC_ENVS.keys + g::SOLANA_SIGNER_ENVS + [ g::CHAIN_ENV_VAR ]
   end
 

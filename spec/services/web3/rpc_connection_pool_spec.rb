@@ -23,8 +23,8 @@ RSpec.describe Web3::RpcConnectionPool do
   # який вони не судять. `and_call_original` лишає решту ENV собою.
   # 🔴 [ARCH.114] Другий `before` тут не косметика: приклади мокають `ENV.fetch`
   # (primary URL), а fallback-ключі читаються через `ENV[…]` — тобто йшли в РЕАЛЬНЕ
-  # оточення. Локальний `.env` розробника несе `INFURA_POLYGON_RPC_URL` (плейсхолдер
-  # `YOUR_KEY`), тож після заведення реєстру мереж ці приклади почали будувати
+  # оточення. Локальний `.env` розробника несе `POLYGON_RPC_URL_FALLBACK_1` (keyless
+  # PublicNode), тож після заведення реєстру мереж ці приклади почали будувати
   # `ResilientClient` замість замоканого одиничного — судили НЕ те, про що написані,
   # і результат залежав від того, чий `.env` лежить на машині. Дефолт — порожній
   # fallback; приклади, що каскад ПЕРЕВІРЯЮТЬ, вмикають його явно у власному `before`.
@@ -210,7 +210,7 @@ RSpec.describe Web3::RpcConnectionPool do
     before do
       allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("https://polygon-primary.example.com")
       allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with("INFURA_POLYGON_RPC_URL").and_return("https://polygon-fallback.example.com")
+      allow(ENV).to receive(:[]).with("POLYGON_RPC_URL_FALLBACK_1").and_return("https://polygon-fallback.example.com")
     end
 
     it "builds a ResilientClient WITHOUT any kwarg when the network has a registered fallback" do
@@ -221,7 +221,7 @@ RSpec.describe Web3::RpcConnectionPool do
     it "yields the same cascaded client regardless of call order" do
       bare_first = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
       declared_second = described_class.client_for("ALCHEMY_POLYGON_RPC_URL",
-                                                   fallback_env_keys: [ "INFURA_POLYGON_RPC_URL" ])
+                                                   fallback_env_keys: [ "POLYGON_RPC_URL_FALLBACK_1" ])
 
       expect(bare_first).to be_a(Web3::ResilientClient)
       expect(declared_second).to equal(bare_first)
