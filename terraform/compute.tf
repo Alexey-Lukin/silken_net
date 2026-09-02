@@ -392,7 +392,8 @@ SYSTEMD_DAEMON
 #
 # ⛔ THIS RESOURCE DOES NOT ANSWER THE CANOPY QUESTION, and that silence is
 # deliberate. Whether canopy gets its OWN host (and its own keys) is an OPEN ⚖️
-# in OPS.37 — canopy today maps the SAME mainnet RPC secrets as production, so a
+# in OPS.37 — canopy mapped the SAME mainnet RPC secrets as production until 2026-09-02 (B4 now
+# remaps the quartet from CANOPY_* twins; testnet SIGNER keys are still missing), so a
 # `job` role there would sign on mainnet from staging. Provisioning ONE host is
 # not a vote for "canopy shares this one": production needs a host under either
 # answer. Do not read the absence of a second instance as the decision — that is

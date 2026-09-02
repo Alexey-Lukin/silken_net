@@ -75,6 +75,11 @@ env:
     # jobs at all. Demanding SMTP here would block the deploy for a
     # capability the container could not exercise anyway. The bypass logs a loud WARN on
     # every boot; drop this line the day canopy gains a job role.
+    # ⚠️ Price named [00_07 OPS.37]: on the slot that is the FIRST render of the main path this
+    #    normalises a PERMANENT boot-guard bypass — a WARN nobody reads. It is a cost of the
+    #    web-only shape, not a free line; and the ground «choosing the shape is cheapest now,
+    #    no machines exist yet» DIED 2026-08-31 (both VMs RUNNING, Cloud SQL live): the shape
+    #    decision now costs a real `terraform apply`.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
     # ⚖️ [founder 2026-09-02] Committed HERE, unlike production (operator-set — 06_01 §Kamal):
     # the value IS `proxy.host` below, which is already committed, so a second copy of the

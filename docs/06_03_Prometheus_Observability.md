@@ -70,7 +70,7 @@
 | Alertmanager | Grafana Cloud Alerting | ✅ **Правила імпортовано 2026-08-29**; ✅ канал доставки задротовано 2026-08-30 (Email; ⚖️ таймінг перевернув сам founder — Grafana Cloud має вбудований sender, ESP не потрібен; [`00_07`](00_07_Action_Plan_Tracker) S2.4) |
 | `SENTRY_DSN` у secrets | `.kamal/secrets-common` | ✅ Додано |
 | Grafana Alloy config | `deploy/alloy/config.alloy` | ✅ Scrape + remote_write |
-| Grafana Alloy accessory | `config/deploy.yml` (`accessories.alloy`) | ✅ монтування `files:`; ⚠️ мережевий доступ до таргетів — ВІДКРИТА нога OPS.37, `network:` у конфізі свідомо НЕМАЄ |
+| Grafana Alloy accessory | `config/deploy.yml` (`accessories.alloy`) | ✅ монтування `files:`; ✅ мережевий доступ до таргетів ратифіковано 2026-08-30 (⚖️ OPS.37: адресація per-role `network-alias`, носій `spec/deploy/alloy_scrape_topology_spec.rb`); `network:` у конфізі свідомо НЕМАЄ |
 | Grafana Cloud secrets | `.kamal/secrets-common` + обидва deploy-workflow (RUNTIME-тір) | ✅ 3 змінні |
 | Prometheus scrape config | `deploy/alloy/config.alloy` | ✅ 3 таргети `silken-web:80`/`silken-job:9394`/`silken-coap:9395` (лейбл `process`; реєстр in-process — §2.9; ⚖️ [OPS.37 2026-08-30] адресація = per-role `network-alias` у спільній docker-мережі `kamal` — механіка й виміряна rolling-поведінка в ноті web-ролі `config/deploy.yml`; `coap` = дормантна Kamal-**fallback**-роль — PRIMARY-демон на Ingress Anchor поза scrape, стеля §2.9(б); 15s, Basic Auth опційний обабіч) |
 | Grafana dashboards | `deploy/grafana/` IaC → `import.rb` | ✅ 2026-08-29 (звірка — `import.rb --verify`) |
