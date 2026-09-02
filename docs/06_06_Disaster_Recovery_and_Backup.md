@@ -10,8 +10,8 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), але restore-runbook'и не проганялися в drill, master-key backup — операційна задача.
-- **Відкрите:** DR drill + master-key backup (ще не проганялися) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
+- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), master-key backup — операційна задача.
+- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup (копій поза машиною нуль) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
 
 ---
 
@@ -42,7 +42,7 @@
 
 ## 🛑 Gaps (→ 00_07)
 
-- 🔴 **DR-drill не проводився** — restore-runbook'и (§5) не верифіковані на реальному відновленні. `DR.1`.
+- 🟡 **DR-drill прогнано ОДИН раз** (2026-09-02, staging — §6): §5.1 верифіковано реальним PITR-клоном, §5.2 — лише половиною «витягти версію» (без `terraform apply` з неї), §5.3–5.6 не проганялися. Ритм квартальний. `DR.1`.
 - 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`RAILS_MASTER_KEY` — ні, і його стан гірший, ніж читається поруч із закритим сусідом:** він живе в GitHub Secrets (значень не віддають) і в `config/master.key` на ОДНІЙ машині, gitignored — офлайн-копії немає ЖОДНОЇ, тож втрата ноутбука робить `credentials.yml.enc` нечитним назавжди. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
 - 🟡 **GCS state bucket + versioning** — `S5.6` (chicken-and-egg при першому `terraform init`).
 
@@ -205,3 +205,8 @@ gh workflow run deploy.yml        # entrypoint: create → structure.sql ×3 →
 ## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
 
 Щоквартально проганяти §5.1 (PITR clone у throwaway-інстанс) + §5.2 (state-version rollback) на staging. Фіксувати фактичні RTO/RPO vs цілі §3. Неперевірений backup = відсутній backup.
+
+**Drill #1 — 2026-09-02, staging (canopy-дані у тому ж `silken-db`):**
+- §5.1: `gcloud sql instances clone silken-db silken-db-drill --point-in-time=<now−10 хв>` → операція `CLONE` 15:57:44Z → 16:08:44Z, тобто **RTO 11:00 до `RUNNABLE`** (тир `db-custom-1-3840`, ZONAL) проти цілі §3 «≤ 1 год»; у клоні всі шість баз, парність рядків із живим інстансом точна (`users`/`trees`/`system_parameters` і той самий `max(created_at)`), тобто **RPO на обраній точці = 0**. Клон успадковує `deletionProtectionEnabled=true` — зняття = `patch --no-deletion-protection`, потім `delete`.
+- ⚠️ `gcloud sql instances clone` після ~10 хв друкує «**failed** … taking longer than expected» — це клієнтський таймаут, операція живе; вердикт і RTO читай із `gcloud sql operations describe <op>` (`status`/`startTime`/`endTime`), не з CLI.
+- §5.2 — половина: versioning увімкнено фактично (десять версій `terraform/state/default.tfstate`), передостання витягується `gcloud storage cp 'gs://…/default.tfstate#<generation>'` і парситься валідним стейтом (`serial`, той самі 58 ресурсів). **Витягти ≠ відкотити:** `terraform apply` із витягнутої версії не проганявся — наступний drill робить його на throwaway-стеку. `gsutil` під корпоративним TLS-проксі зависає (не читає CA-конфіг gcloud) — бери `gcloud storage`.
