@@ -185,6 +185,21 @@ ALTER TABLE telemetry_logs ATTACH PARTITION telemetry_logs_default DEFAULT;
 
 **Профілактика — прилад, а не пильність:** `silkennet_partition_default_occupied` світиться ще ДО того, як настане місяць заблокованої партиції, тобто дає вікно на реакцію. Дім гейджа — [`06_03 §2.8`](06_03_Prometheus_Observability), причина існування — [`00_07`](00_07_Action_Plan_Tracker) ARCH.70.
 
+### 5.6 Напівзасіяний слот після впалого `db:prepare` (create → schema:load → seed НЕ атомарні)
+
+Виміряно на першому буті canopy 2026-09-02: сід упав (порожня cache-база — [`06_01`](06_01_Deployment_Kamal_Terraform) Pre-Flight крок 7), контейнер під `set -e` вийшов, Docker (`unless-stopped`) перезапустив його, і друга спроба застала базу «існуючою» — лише міграції, без сіду й без schema:load: `SystemParameter`=1, `User`=0, kamal-proxy healthy на `/up`. Такий слот ЗАВЖДИ здоровий для healthcheck'а і ніколи не досіється сам.
+
+**Відновлення (staging — canopy):** чесний холодний шлях — скинути ТРИ бази й редеплоїти:
+
+```bash
+gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --project silkennet \
+  --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); \
+             sudo docker exec -e DISABLE_DATABASE_ENVIRONMENT_CHECK=1 "$C" bin/rails db:drop'
+gh workflow run deploy.yml        # entrypoint: create → structure.sql ×3 → seed
+```
+
+Альтернатива без дропу — `db:schema:load:cache db:schema:load:cable db:seed` у тому ж контейнері (сід починається з Кенозису, тож дані однаково перезаписуються). **Production:** рецепт НЕ застосовний — `db/seeds.rb` там fail-closed, bootstrap = [`OPS.38`](00_07_Action_Plan_Tracker).
+
 ---
 
 ## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
