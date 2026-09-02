@@ -76,6 +76,15 @@ env:
     # capability the container could not exercise anyway. The bypass logs a loud WARN on
     # every boot; drop this line the day canopy gains a job role.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
+    # ⚖️ [founder 2026-09-02] Committed HERE, unlike production (operator-set — 06_01 §Kamal):
+    # the value IS `proxy.host` below, which is already committed, so a second copy of the
+    # same fact is not a leak; and without it the first boot ran with DNS-rebinding
+    # protection DISABLED (measured WARN in the 2026-09-02 boot log).
+    RAILS_ALLOWED_HOSTS: canopy.silkennet.app
+    # ⚖️ [founder 2026-09-02] Staging carries no storage credentials; `production_mirror`
+    # (S3 primary) made the AWS SDK fall through to EC2-IMDS on a GCP VM every boot.
+    # `local` = Disk inside the container (ephemeral) — config/storage.yml, 06_04 §2.1.
+    ACTIVE_STORAGE_SERVICE: local
 
     # 🔴 [OPS.37 / 00_03 §3.3 / INF.27] TESTNET SLOT — LIVE since 2026-09-02. Canopy runs
     # `RAILS_ENV=production` deliberately (hardened runtime), and until the `production` split

@@ -24,7 +24,12 @@ Rails.application.configure do
 
   # Active Storage: S3 primary + GCS mirror for disaster recovery at scale.
   # Writes go to both services simultaneously; reads come from S3.
-  config.active_storage.service = :production_mirror
+  # ⚖️ [2026-09-02] Overridable per slot: canopy runs `local` (Disk inside the container,
+  # ephemeral — staging carries no storage credentials at all, and with `production_mirror`
+  # the AWS SDK fell through to EC2 instance-profile lookup on a GCP VM and printed an
+  # `Error retrieving instance profile credentials: HTTP 404` on every boot). Default keeps
+  # production on the mirror; the name must exist in config/storage.yml (06_04 §2.1).
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "production_mirror").to_sym
 
   # VIPS is 10-20x faster than MiniMagick for variant generation (critical at scale).
   # Requires libvips system library (already in Dockerfile base image).
