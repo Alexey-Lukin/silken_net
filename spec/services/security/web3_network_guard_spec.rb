@@ -27,6 +27,7 @@ RSpec.describe Security::Web3NetworkGuard do
         "DAO_TREASURY_ADDRESS"           => "0x#{'a' * 40}",
         "CARBON_COIN_CONTRACT_ADDRESS"   => "0x#{'b' * 40}",
         "FOREST_COIN_CONTRACT_ADDRESS"   => "0x#{'c' * 40}",
+        "ETHEREUM_ANCHOR_CONTRACT"       => "0x#{'d' * 40}",
         "SOLANA_WALLET_KEYPAIR"          => "keypair",
         "SOLANA_FEE_PAYER_PUBKEY"        => "pubkey",
         "SOLANA_FEE_PAYER_TOKEN_ACCOUNT" => "token-account",
@@ -390,8 +391,15 @@ RSpec.describe Security::Web3NetworkGuard do
         expect(violations).not_to include(a_string_matching(/FOREST_COIN_CONTRACT_ADDRESS.*not set/))
       end
 
-      it "is clean once the SCC address is present — the demand is narrow" do
-        env = mainnet_rpcs.merge("CARBON_COIN_CONTRACT_ADDRESS" => "0x" + ("a" * 40))
+      # [INF.27] Since 2026-09-02 the web class reads TWO addresses: SCC (ChainAuditService) and the
+      # StateRootAnchor (Mrv::LineageReportService via a rake in the web container).
+      it "demands the anchor address — its read-site is an MRV rake inside the web container" do
+        expect(described_class.violations(mainnet_rpcs, **kwargs))
+          .to include(a_string_matching(/\[address\].*ETHEREUM_ANCHOR_CONTRACT.*not set/))
+      end
+
+      it "is clean once the two web-read addresses (SCC + anchor) are present — the demand is narrow" do
+        env = mainnet_rpcs.merge("CARBON_COIN_CONTRACT_ADDRESS" => "0x" + ("a" * 40), "ETHEREUM_ANCHOR_CONTRACT" => "0x" + ("d" * 40))
         expect(described_class.violations(env, **kwargs)).to be_empty
       end
 
@@ -407,7 +415,8 @@ RSpec.describe Security::Web3NetworkGuard do
       it "judges the format only of the address it reads — placeholder treasury passes, placeholder SCC refuses" do
         env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS"         => "REQUIRED_SECRET_NOT_SET",
                                  "FOREST_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET",
-                                 "CARBON_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+                                 "CARBON_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET",
+                                 "ETHEREUM_ANCHOR_CONTRACT" => "0x" + ("d" * 40))
         violations = described_class.violations(env, **kwargs).grep(/\[address\]/)
         expect(violations.size).to eq(1)
         expect(violations.first).to match(/CARBON_COIN_CONTRACT_ADDRESS.*40-hex/)

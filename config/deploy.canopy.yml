@@ -132,6 +132,11 @@ env:
     # lives in 00_07 DEPLOY-1 because `contracts/broadcast/` is gitignored.
     CARBON_COIN_CONTRACT_ADDRESS: "0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22"
     FOREST_COIN_CONTRACT_ADDRESS: "0x9366a4CbA0461E150A3409CD2767Ff7b8db6d4b7"
+    # StateRootAnchor on Sepolia (chain 11155111), Deploy.s.sol broadcast 2026-09-02 — receipts and
+    # the other five addresses live in 06_01 Фаза 2t (contracts/broadcast/ is gitignored). Member of
+    # SILENT_ADDRESS_ENVS with `web: true` [INF.27]: the base manifest's placeholder would refuse
+    # the web container here, so canopy MUST carry the real address.
+    ETHEREUM_ANCHOR_CONTRACT: "0x584906C1Ef7A60b203bEFD743fA55b6bb55A9c36"
     # INPUT of the script, not an output: on testnet the treasury is the operator EOA
     # (`REQUIRE_SAFE_ADMIN` stays false, so the script warned instead of reverting).
     DAO_TREASURY_ADDRESS: "0x6FEa1cAFd4371e159cFF9c1232368339166C365b"

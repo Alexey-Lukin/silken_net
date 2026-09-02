@@ -188,6 +188,10 @@ module Security
     #   · CARBON_COIN  6 sites, ONE of them web-reachable (chain_audit_service.rb)
     #   · DAO_TREASURY 3 sites, all job (blockchain_minting_service, insurance/reserve_gate)
     #   · FOREST_COIN  1 site,  job     (blockchain_minting_service)
+    #   · ANCHOR       2 sites, ONE web-reachable — Mrv::LineageReportService via lib/tasks/mrv.rake
+    #                 (a rake in the web container writes ENV[] straight into the MRV-lineage
+    #                 bundle's `anchor_contract`; the weekly StateAnchorService read is LOUD).
+    #                 Added 2026-09-02 together with the Sepolia address [INF.27].
     SILENT_ADDRESS_ENVS = {
       "DAO_TREASURY_ADDRESS"         => { web: false,
                                           cost: "the 2% Dynamic Tax silently stays off — the DAO treasury " \
@@ -206,7 +210,12 @@ module Security
                                                 "moment SFC minting is armed this stops being silent: the " \
                                                 "read is a bare ENV.fetch with no rescue, i.e. a LOUD " \
                                                 "KeyError, and this variable's membership in the silent " \
-                                                "set expires with it [INF.27]" }
+                                                "set expires with it [INF.27]" },
+      "ETHEREUM_ANCHOR_CONTRACT"     => { web: true,
+                                          cost: "the MRV-lineage bundle (ISO 14064/Verra evidence surface) " \
+                                                "carries a null or FALSE anchor_contract silently — " \
+                                                "Mrv::LineageReportService reads ENV[] with no default; " \
+                                                "the weekly anchor worker is loud, this read-site is not" }
     }.freeze
 
     # RPC ENVs whose read-site swallows ABSENCE (header: "Silent-RPC ENVs"). Same

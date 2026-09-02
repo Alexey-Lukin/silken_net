@@ -49,13 +49,6 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
     {
       "CELO_CUSD_CONTRACT_ADDRESS"           => "Celo::CommunityRewardService ENV.fetch outside rescue; CeloRewardWorker re-raises",
       "KLIMA_RETIREMENT_CONTRACT"            => "KlimaDao::RetirementService ENV.fetch outside rescue; worker re-raises",
-      # ⚠️ [INF.27 Q2] HALF-TRUE, kept only until the Sepolia StateRootAnchor address exists:
-      # the fetch does raise, but what makes a WRONG value loud is `Eth::Address::CheckSumError`
-      # (EthAddressValidatable), while the guard's own header calls this Sidekiq path SILENT —
-      # one variable, two read-sites of opposite loudness, which this one-story model cannot
-      # express. It moves to SILENT_ADDRESS_ENVS (`web: true`) the day the address is real;
-      # do NOT "fix" the disjointness example that will red then — drop this line in that commit.
-      "ETHEREUM_ANCHOR_CONTRACT"             => "Ethereum::StateAnchorService ENV.fetch outside rescue → anchor worker retry",
       "ETHERISC_DIP_CONTRACT_ADDRESS"        => "Etherisc::ClaimService ENV.fetch outside rescue; InsurancePayoutWorker re-raises",
       "PURO_EARTH_REGISTRY_CONTRACT_ADDRESS" => "PuroEarth::PassportService ENV.fetch outside rescue (registry metadata read is separately nil-safe by design)"
     }
@@ -95,7 +88,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
     g = Security::Web3NetworkGuard
     aggregate_failures do
       expect(g::SILENT_ADDRESS_ENVS.keys)
-        .to match_array(%w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS])
+        .to match_array(%w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS ETHEREUM_ANCHOR_CONTRACT])
       # [INF.27 Q1] The silent-RPC sister set. A second member is a real decision (which
       # read-site swallows its absence?), so the membership is pinned by NAME, not by count.
       expect(g::SILENT_RPC_ENVS.keys).to eq(%w[ALCHEMY_POLYGON_RPC_URL])
