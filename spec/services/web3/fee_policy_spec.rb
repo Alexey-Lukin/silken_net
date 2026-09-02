@@ -18,7 +18,7 @@ RSpec.describe Web3::FeePolicy do
     it "впізнає мережу з імені ENV-ключа" do
       aggregate_failures do
         expect(described_class.network_for("ALCHEMY_POLYGON_RPC_URL")).to eq(:polygon)
-        expect(described_class.network_for("INFURA_POLYGON_RPC_URL")).to eq(:polygon)
+        expect(described_class.network_for("POLYGON_RPC_URL_FALLBACK_1")).to eq(:polygon)
         expect(described_class.network_for("CELO_RPC_URL")).to eq(:celo)
         expect(described_class.network_for("CELO_RPC_URL_FALLBACK_1")).to eq(:celo)
         expect(described_class.network_for("ALCHEMY_ETHEREUM_RPC_URL")).to eq(:ethereum)
