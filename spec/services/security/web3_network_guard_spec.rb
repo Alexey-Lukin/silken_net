@@ -149,11 +149,14 @@ RSpec.describe Security::Web3NetworkGuard do
           .to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL.*polygon-rpc\.com/))
       end
 
-      it "does not demand ALCHEMY_POLYGON_RPC_URL on a testnet slot with no minter key" do
+      # The fallback rule is armed on the MINTER key, so it stays silent without one. Asked
+      # from the coap class on purpose: the `[rpc]` PRESENCE rule [INF.27 Q1] is a different
+      # axis with its own examples below, and it WOULD fire here from web or job.
+      it "does not arm the hardcoded-fallback rule on a testnet slot with no minter key" do
         env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
                        .except("ALCHEMY_POLYGON_RPC_URL", "ORACLE_MINTER_PRIVATE_KEY")
-        expect(described_class.violations(env, signer_process: false))
-          .not_to include(a_string_matching(/ALCHEMY_POLYGON_RPC_URL/))
+        expect(described_class.violations(env, signer_process: false, web_process: false))
+          .not_to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL/))
       end
 
       # The axis must not soften the OTHER axes: a testnet contract address is still an
@@ -321,10 +324,20 @@ RSpec.describe Security::Web3NetworkGuard do
         expect(violations).not_to include(a_string_matching(/\[solana\]/))
       end
 
-      it "still flags a malformed treasury address that IS present" do
-        env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS" => "not-an-address")
-        expect(described_class.violations(env, **kwargs))
-          .to include(a_string_matching(/\[address\].*40-hex/))
+      # [INF.27 Q3 ⚖️ 2026-09-01] Format is scoped like presence: a class that reads no
+      # address judges none. The Kamal `coap` role inherits the base env.clear placeholders
+      # and used to refuse its boot on three `[address]` violations it could never act on —
+      # measured by resolving the role through Kamal::Configuration (see the manifest
+      # examples in spec/deploy/web3_env_loudness_spec.rb).
+      it "ignores a malformed address that IS present — coap reads none, so it judges none" do
+        env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS" => "REQUIRED_SECRET_NOT_SET",
+                                 "CARBON_COIN_CONTRACT_ADDRESS" => "not-an-address")
+        expect(described_class.violations(env, **kwargs)).not_to include(a_string_matching(/\[address\]/))
+      end
+
+      it "does not demand the Polygon RPC — there is no audit read-site in this process" do
+        env = mainnet_rpcs.except("ALCHEMY_POLYGON_RPC_URL")
+        expect(described_class.violations(env, **kwargs)).not_to include(a_string_matching(/\[rpc\]/))
       end
     end
 
@@ -352,6 +365,35 @@ RSpec.describe Security::Web3NetworkGuard do
         expect(violations).not_to include(a_string_matching(/\[oracle-key\]/))
         expect(violations).not_to include(a_string_matching(/\[solana\]/))
       end
+
+      # [INF.27 Q3] Format follows the same per-variable scope as presence, so on a web-only
+      # slot the two job-only placeholders are not this container's problem — only the one
+      # address web actually reads is judged, whatever value it carries.
+      it "judges the format only of the address it reads — placeholder treasury passes, placeholder SCC refuses" do
+        env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS"         => "REQUIRED_SECRET_NOT_SET",
+                                 "FOREST_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET",
+                                 "CARBON_COIN_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+        violations = described_class.violations(env, **kwargs).grep(/\[address\]/)
+        expect(violations.size).to eq(1)
+        expect(violations.first).to match(/CARBON_COIN_CONTRACT_ADDRESS.*40-hex/)
+      end
+
+      # [INF.27 Q1] ChainAuditService swallows a MISSING RPC exactly as it swallows a missing
+      # address — KeyError and `Eth::Client.create("")` land in the same `rescue StandardError`
+      # and return `delta: 0, critical: false`, so boot is this var's only loud moment on web.
+      it "demands the Polygon RPC — its absence is swallowed into a false 'all clean'" do
+        env = mainnet_rpcs.merge("CARBON_COIN_CONTRACT_ADDRESS" => "0x#{'a' * 40}")
+                          .except("ALCHEMY_POLYGON_RPC_URL")
+        expect(described_class.violations(env, **kwargs))
+          .to include(a_string_matching(/\[rpc\].*ALCHEMY_POLYGON_RPC_URL.*not set/))
+      end
+
+      it "treats a present-but-empty Polygon RPC as absent (the Kamal empty-inject shape)" do
+        env = mainnet_rpcs.merge("CARBON_COIN_CONTRACT_ADDRESS" => "0x#{'a' * 40}",
+                                 "ALCHEMY_POLYGON_RPC_URL"      => "")
+        expect(described_class.violations(env, **kwargs))
+          .to include(a_string_matching(/\[rpc\].*ALCHEMY_POLYGON_RPC_URL/))
+      end
     end
 
     # The JOB combination, and it is here because an adversarial pass found it MISSING:
@@ -368,6 +410,20 @@ RSpec.describe Security::Web3NetworkGuard do
           expect(violations).to include(a_string_matching(/\[address\].*#{var}.*not set/))
         end
       end
+
+      it "judges the FORMAT of every address too — a placeholder treasury refuses the signer" do
+        env = mainnet_rpcs.merge("DAO_TREASURY_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+        expect(described_class.violations(env, **kwargs))
+          .to include(a_string_matching(/\[address\].*DAO_TREASURY_ADDRESS.*40-hex/))
+      end
+
+      # Every minting/rollback site is a bare `ENV.fetch` → KeyError deep in a worker → the
+      # DeadSet, silently. Same class as the boot-critical oracle keys, same loud moment.
+      it "demands the Polygon RPC (every minting site is a bare ENV.fetch → silent DeadSet)" do
+        env = mainnet_rpcs.except("ALCHEMY_POLYGON_RPC_URL")
+        expect(described_class.violations(env, **kwargs))
+          .to include(a_string_matching(/\[rpc\].*ALCHEMY_POLYGON_RPC_URL.*not set/))
+      end
     end
 
     # Both axes default to the STRICT side, mirroring `chain_env`'s `mainnet`
@@ -377,23 +433,27 @@ RSpec.describe Security::Web3NetworkGuard do
         .to include(a_string_matching(/\[address\].*CARBON_COIN_CONTRACT_ADDRESS.*not set/))
     end
 
-    # 🔒 DECLARED CEILING of this block, written because an adversarial pass measured it and
-    # the first version of this comment would have overstated the coverage. The two mutations
-    # this block is verified against are NOT caught evenly:
-    #   · revert the fix (`next unless signer_process`) → RED: "demands the SCC address" and
-    #     "defaults web_process to the strict side". TWO examples, not five.
-    #   · demand unconditionally (drop the `next`) → RED: both coap examples plus
-    #     "does NOT demand the job-only addresses" and "is clean once the SCC address is present".
-    # ⛔ So TWO examples survive BOTH mutations and the revert, and both are regression pins
-    # rather than evidence for this fix — do not count either as such:
-    #   · "does not demand signer keys or the Solana set" — pins the pre-existing signer
-    #     scoping of OTHER axes (`[oracle-key]`, `[solana]`), which this change never touched;
-    #   · "demands ALL THREE addresses" (the job context) — its result is decided purely by
-    #     `signer_process`, so it is green under the current code, the revert AND the
-    #     unconditional demand alike. ⚠️ It was still worth adding: it is the only example
-    #     covering the production job combination, and it IS load-bearing against a different
-    #     mutation — requiring BOTH axes at once (`signer_process && web_process`) reds it and
-    #     nothing else. Naming that here because the first version of this ceiling listed one
-    #     survivor and read as a complete audit of the block, which it was not.
+    # 🔒 DECLARED CEILING of the process-scoping block — rewritten 2026-09-02 from a fresh
+    # mutation run (four mutants, each planted alone, the file restored byte-identically
+    # between them, `cmp`-checked; the earlier ceiling described the 09-01 fix and no longer
+    # named what the block proves). Read the red SETS, not the green bar:
+    #   · revert Q3 (scope only the blank branch, format runs wherever a value is present)
+    #     → RED ×4: "ignores a malformed address…" (coap), "judges the format only…" (web),
+    #       plus BOTH manifest examples in spec/deploy/web3_env_loudness_spec.rb;
+    #   · drop the scope line entirely (unconditional verdict) → RED ×8 — every coap example,
+    #     both web negatives and both manifest examples;
+    #   · unwire `rpc_violations` from `.violations` → RED ×3, exactly the `[rpc]` examples
+    #     (web ×2, job ×1) and nothing else;
+    #   · make the rpc rule blind to present-but-empty (`present?` → `key?`) → RED ×1, the
+    #     "present-but-empty Polygon RPC" example — ⚠️ the FIRST planting of this mutant was a
+    #     no-op that landed green: `String#sub` hit the first `next if env[var].present?` in
+    #     the file, which belongs to `oracle_violations`, so the run measured the wrong
+    #     subject (§Guard-craft #65). A mutant must be checked IN PLACE before its colour
+    #     means anything.
+    # ⛔ Still not evidence for this block, and kept for other reasons: "does not demand
+    # signer keys or the Solana set" (pins the older signer scoping of OTHER axes) and
+    # "demands ALL THREE addresses" (green under every mutant here; it is the only example
+    # covering the production job combination and reds only when BOTH kwargs are required
+    # at once). Two examples surviving all four mutants is the honest count.
   end
 end

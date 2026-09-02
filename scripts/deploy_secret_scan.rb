@@ -29,14 +29,19 @@
 #      arrays, the very mechanism this invariant already leans on. So do not read a red
 #      B3 as "canopy may never have a job role": read it as "canopy must not inherit one
 #      silently". Narrowing it is gated on the canopy-shape decision (00_07, OPS.37 ⚖️ leg),
-#      not on this file. ⚠️ And the sharper reason the current shape holds at all is NOT
-#      in this gate: canopy maps the SAME mainnet RPC secrets as production (repo-level
-#      ALCHEMY_*/SOLANA_RPC_URL), so a job role on today's keys would sign on MAINNET from
-#      staging. Today the web-only form is the only thing standing between the two.
-#   B4. .kamal/secrets.canopy must remap REDIS_URL ← $CANOPY_REDIS_URL with a LOUD placeholder
-#      fallback — NEVER a silent $REDIS_URL fall-through, which is canopy talking to PRODUCTION
-#      Redis. Structural, not CI-only: a local `kamal deploy -d canopy` resolves secrets from
-#      the operator's own shell, so the overlay is the only thing standing in that path.
+#      not on this file. ⚠️ Until 2026-09-02 the sharper reason the shape held was NOT in
+#      this gate: canopy mapped the SAME mainnet RPC secrets as production, so a job role on
+#      those keys would have signed on MAINNET from staging. B4 now remaps the RPC quartet,
+#      so what a `job:` role still lacks is a TESTNET signer set of its own — the order the
+#      founder ratified (keys first, role second; 00_07 OPS.37) is what this ceiling waits on.
+#   B4. .kamal/secrets.canopy must remap EVERY shared external resource from its CANOPY_* twin
+#      with a LOUD placeholder fallback — NEVER a silent fall-through to the production name.
+#      REDIS_URL first (2026-08-31: canopy talking to PRODUCTION Redis); the RPC quartet
+#      ALCHEMY_POLYGON / ALCHEMY_ETHEREUM / SOLANA / CELO joined 2026-09-02 [INF.27 move (2)]:
+#      a testnet slot handed a mainnet endpoint is what the chain axis REFUSES, and a refusal
+#      is a detector, not an isolation — this overlay is the isolation. Structural, not
+#      CI-only: a local `kamal deploy -d canopy` resolves secrets from the operator's own
+#      shell, so the overlay is the only thing standing in that path.
 #   D. No present-empty env (`VAR=` / `VAR:` with a blank value). Present-but-empty is worse
 #      than absent: it silences autodetect/derive (RELEASE_VERSION→Sentry, REDIS_URL→Kredis,
 #      PROMETHEUS_AUTH→known-value bypass) — the recurring B1 class that cost a 4-month block.
@@ -103,6 +108,12 @@
 #   B4/fallback  secrets.canopy REDIS_URL → ${REDIS_URL}        → RED naming file + value
 #   B4/absent    the REDIS_URL line deleted outright            → RED naming the inheritance
 # Both reverted byte-identically (`git diff --quiet`); GREEN before and after.
+# ⊕ B4 widened to the RPC quartet 2026-09-02 [INF.27 move (2)] and mutated the same day, on
+# the NEW members rather than on Redis again (a proof on the old member says nothing about
+# the loop that now judges five):
+#   B4/rpc-absent   the SOLANA_RPC_URL remap deleted outright        → RED naming the inheritance
+#   B4/rpc-fallback CELO_RPC_URL rewritten to ${CELO_RPC_URL}       → RED naming file + value
+# Both restored byte-identically (`cmp`); GREEN before and after.
 # SUBJECT_FLOOR proved itself organically the same day: a z-after-(.*) parser bug collapsed the
 # set to 0 and the floor, not a human, caught the would-be green over an empty set.
 
@@ -231,15 +242,22 @@ end
 # Lantern on our own subject set — a broken text parse returns [] and prints ✓ otherwise.
 failures << "subject set collapsed: #{secret_subjects} secret-named vars scanned, floor is #{SUBJECT_FLOOR} — the parser, not the tree, is the likely change" if secret_subjects < SUBJECT_FLOOR
 
-# B4 — canopy Redis isolation is STRUCTURAL, not CI-only. The overlay must remap
-# REDIS_URL from $CANOPY_REDIS_URL (with the loud placeholder fallback, never a
-# silent $REDIS_URL fall-through — that would put staging on production Redis
-# exactly on the local `kamal deploy -d canopy` path DEPLOY-DAY Phase 3 names).
-canopy_redis = dotenv_pairs(File.read(SECRETS_CANOPY)).to_h["REDIS_URL"]
-if canopy_redis.nil?
-  failures << "#{SECRETS_CANOPY}: no REDIS_URL remap — canopy inherits secrets-common's $REDIS_URL (production Redis) on a local destination run"
-elsif canopy_redis !~ /\$\{?CANOPY_REDIS_URL\b/ || canopy_redis =~ /\$\{?REDIS_URL\b/
-  failures << "#{SECRETS_CANOPY}: REDIS_URL must reference $CANOPY_REDIS_URL and never fall back to $REDIS_URL (got '#{canopy_redis[0, 40]}')"
+# B4 — canopy isolation is STRUCTURAL, not CI-only. Every shared external resource the base
+# secrets-common names (production Redis; the four mainnet RPCs) must be remapped here from its
+# CANOPY_* twin with the loud placeholder fallback — never a silent fall-through to the base
+# name, which would put staging on production Redis / a mainnet endpoint exactly on the local
+# `kamal deploy -d canopy` path DEPLOY-DAY Phase 3 names. The four RPC names are the guard's
+# `RPC_URL_ENVS` [INF.27 move (2)]; the list is spelled out rather than read from the guard so
+# this stdlib script stays Rails-free — a divergence reds `web3_env_loudness_spec`, not here.
+CANOPY_REMAPS = %w[REDIS_URL ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL].freeze
+canopy_pairs = dotenv_pairs(File.read(SECRETS_CANOPY)).to_h
+CANOPY_REMAPS.each do |name|
+  value = canopy_pairs[name]
+  if value.nil?
+    failures << "#{SECRETS_CANOPY}: no #{name} remap — canopy inherits secrets-common's $#{name} (the PRODUCTION value) on a local destination run"
+  elsif value !~ /\$\{?CANOPY_#{name}\b/ || value =~ /\$\{?#{name}\b/
+    failures << "#{SECRETS_CANOPY}: #{name} must reference $CANOPY_#{name} and never fall back to $#{name} (got '#{value[0, 40]}')"
+  end
 end
 
 # --- C: .dockerignore --------------------------------------------------------
@@ -277,7 +295,7 @@ GITIGNORE_MUST = [ "gha-creds-*.json" ].freeze
 end
 
 if failures.empty?
-  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only; quintet job-only (global env.secret clean); canopy array-form intact"
+  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only; quintet job-only (global env.secret clean); canopy array-form intact; canopy overlay remaps all #{CANOPY_REMAPS.size} shared resources"
 else
   puts "DEPLOY-SECRET SCAN FAILED:"
   failures.each { |f| puts "  ✗ #{f}" }

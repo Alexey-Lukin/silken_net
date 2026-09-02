@@ -129,10 +129,16 @@ jobs:
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
-          ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
-          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
-          CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
+          # 🔴 [INF.27 move (3), 2026-09-02] Canopy is a TESTNET slot: the four RPCs it boots on
+          # are the CANOPY_* twins, and they are BOOT-CRITICAL here, not RUNTIME. An unset twin
+          # resolves to the overlay's loud placeholder (`.kamal/secrets.canopy`), which the chain
+          # guard reads as a non-testnet endpoint and REFUSES — so "skip clean" here is the honest
+          # form of "not provisioned yet", and the mainnet names are deliberately NOT read on
+          # this slot any more (they would only warn about secrets canopy never uses).
+          CANOPY_ALCHEMY_POLYGON_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_POLYGON_RPC_URL }}
+          CANOPY_ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_ETHEREUM_RPC_URL }}
+          CANOPY_SOLANA_RPC_URL: ${{ secrets.CANOPY_SOLANA_RPC_URL }}
+          CANOPY_CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
           SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
@@ -150,8 +156,8 @@ jobs:
           # Money/signing quintet EXCLUDED from both sets (INF.22): canopy is web-only
           # (keyless boot by design) and the keys are production-environment-scoped —
           # requiring them here would read "" and skip-or-warn canopy forever.
-          BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM"
-          RUNTIME="SENTRY_DSN ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
+          BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM CANOPY_ALCHEMY_POLYGON_RPC_URL CANOPY_ALCHEMY_ETHEREUM_RPC_URL CANOPY_SOLANA_RPC_URL CANOPY_CELO_RPC_URL"
+          RUNTIME="SENTRY_DSN SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -161,12 +167,13 @@ jobs:
           # Absent boot-critical → this repo has no deploy secrets configured. Skip cleanly
           # (configured=false → deploy jobs no-op), no red noise, instead of asserting.
           if [ -n "$missing" ]; then
-            # 🔴 [2026-09-01] THIS NET IS SPENT. The canopy BOOT_CRITICAL set is complete, so
-            # this branch no longer fires and every deploy-relevant commit now runs a REAL
-            # `kamal deploy -d canopy`. Until Фаза 2t supplies testnet contract addresses, that
-            # deploy reaches a started container and dies in `web3_network_guard` on the
-            # placeholders. The runbook's "Фаза 2t передує Фазі 3" stopped being advice and
-            # became a property of CI on the day the last secret landed.
+            # 🔴 This branch is the fail-SAFE of the slot, and it fires exactly when a NEW
+            # boot-critical name joins the set before its value does — measured twice: on
+            # 2026-09-01 the set completed and every deploy-relevant commit began running a
+            # REAL `kamal deploy -d canopy` (the runbook's "Фаза 2t передує Фазі 3" became a
+            # property of CI that day); on 2026-09-02 the four CANOPY_* RPC twins joined
+            # [INF.27 move (3)], so until they are provisioned canopy skips here again instead
+            # of booting on the overlay's placeholder and dying in `web3_network_guard`.
             echo "::notice::Canopy deploy skipped — boot-critical secrets not configured:$missing. See docs/06_04 §1 (SEC.11)."
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -399,16 +406,23 @@ jobs:
           #     INHERITED via deep_merge), so kamal never looks these up here; they
           #     are also production-environment-scoped and would interpolate ""
           #     (present-empty → guard raise). ---
-          # --- RPC endpoints (Web3::RpcConnectionPool; chain-family boot guard) ---
-          # 🔴 [OPS.37] These are MAINNET values, and this block must mirror the global
-          # env.secret (drift-guard note above). The day canopy becomes a testnet slot
-          # (WEB3_CHAIN_ENV: testnet — the commented block in config/deploy.canopy.yml),
-          # these four must be remapped here too, or the declaration and the wiring
-          # disagree and the guard refuses the boot. That is move (3) of five.
-          ALCHEMY_POLYGON_RPC_URL: ${{ secrets.ALCHEMY_POLYGON_RPC_URL }}
-          ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.ALCHEMY_ETHEREUM_RPC_URL }}
-          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
-          CELO_RPC_URL: ${{ secrets.CELO_RPC_URL }}
+          # --- RPC endpoints (Web3::RpcConnectionPool; chain-family boot guard) — TESTNET ---
+          # 🔴 [INF.27 move (3), 2026-09-02] Canopy declares `WEB3_CHAIN_ENV: testnet`
+          # (config/deploy.canopy.yml), so these four resolve to the CANOPY_* twins — under
+          # BOTH names, exactly as REDIS_URL/CANOPY_REDIS_URL above: `.kamal/secrets.canopy`
+          # remaps the bare name FROM the twin (so the twin must exist in this shell), and the
+          # bare name is exported under the SAME canopy value so that even a run that somehow
+          # bypassed the overlay could not hand staging a mainnet endpoint. The guard would
+          # refuse such a boot anyway — this keeps the refusal from being the only thing
+          # between staging and real money. The mainnet secrets are NOT read on this slot.
+          ALCHEMY_POLYGON_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_POLYGON_RPC_URL }}
+          CANOPY_ALCHEMY_POLYGON_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_POLYGON_RPC_URL }}
+          ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_ETHEREUM_RPC_URL }}
+          CANOPY_ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_ETHEREUM_RPC_URL }}
+          SOLANA_RPC_URL: ${{ secrets.CANOPY_SOLANA_RPC_URL }}
+          CANOPY_SOLANA_RPC_URL: ${{ secrets.CANOPY_SOLANA_RPC_URL }}
+          CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
+          CANOPY_CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
           # --- Solana public identifiers (signing keypair = job-only quintet, not mapped) ---
           SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
           SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}

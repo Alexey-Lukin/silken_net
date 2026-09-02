@@ -77,45 +77,45 @@ env:
     # every boot; drop this line the day canopy gains a job role.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
 
-    # 🔴 [OPS.37 / 00_03 §3.3] TESTNET SLOT — written out IN FULL and commented, for the
-    # same reason as the `proxy.healthcheck` block below: a cross-reference cannot be
-    # uncommented, and whoever uncomments this must get the WHOLE contract, not a pointer.
+    # 🔴 [OPS.37 / 00_03 §3.3 / INF.27] TESTNET SLOT — LIVE since 2026-09-02. Canopy runs
+    # `RAILS_ENV=production` deliberately (hardened runtime), and until the `production` split
+    # it inherited "this is real money" with it — so the guard forbade every testnet endpoint
+    # and canopy could only be raised on MAINNET contracts, inverting 00_03 §3.3 (a real
+    # testnet pipeline is a precondition of Software TRL 7-8; mainnet is a TRL 9 matter).
     #
-    # Canopy runs `RAILS_ENV=production` deliberately (hardened runtime), and until the
-    # `production` split it inherited "this is real money" with it — so the guard forbade
-    # every testnet endpoint and canopy could only be raised on MAINNET contracts. That
-    # inverted 00_03 §3.3, which makes a real testnet pipeline (Amoy / Devnet / Sepolia)
-    # a precondition of Software TRL 7-8 and mainnet a TRL 9 matter.
-    #
-    # ⛔ Uncommenting the ONE line below alone makes canopy REFUSE to boot — by design, not
-    # by accident: the declaration is an assertion about the wiring, so a testnet claim on
-    # mainnet endpoints is as loud as the reverse. FIVE moves go together, in one change.
-    # (This list said "four" on 2026-08-30 and was wrong by one within the hour — the CI
-    #  mirror below is in a file neither this block nor the tracker leg was looking at.)
-    #   (1) this line;
-    #   (2) testnet RPC URLs in `.kamal/secrets.canopy` — same shape as the CANOPY_REDIS_URL
-    #       remap there (loud placeholder, NEVER a fall-through to the production value):
-    #       ALCHEMY_POLYGON_RPC_URL ← $CANOPY_ALCHEMY_POLYGON_RPC_URL, ALCHEMY_ETHEREUM_RPC_URL,
-    #       SOLANA_RPC_URL, and CELO_RPC_URL if the Celo path is ever armed here;
-    #   (3) 🔴 the SAME names in `.github/workflows/deploy.yml` (Deploy · Canopy) `env:` —
-    #       its own drift-guard comment states the rule: that block MUST mirror the global
-    #       `config/deploy.yml env.secret`, and anything missing is injected EMPTY → boot
-    #       crash. It maps MAINNET values today, so leaving it is not "unchanged", it is the
-    #       staging slot silently keeping production endpoints. Export under BOTH names,
-    #       exactly as REDIS_URL/CANOPY_REDIS_URL already do there;
-    #   (4) testnet contract addresses in this env.clear block — public, so committable:
-    #       CARBON_COIN_CONTRACT_ADDRESS + FOREST_COIN_CONTRACT_ADDRESS (OUTPUTS of a testnet
-    #       `forge script Deploy.s.sol`) and DAO_TREASURY_ADDRESS — ⚠️ that third is an INPUT
-    #       to the script, not an output: on testnet it is an operator-chosen EOA, and the
-    #       script only warns instead of reverting because REQUIRE_SAFE_ADMIN stays false.
-    #       The base manifest's placeholders are what stop any container booting today;
-    #   (5) the deploy ORDER: testnet contracts BEFORE this slot's first raise — 06_01
-    #       DEPLOY-DAY Фаза 2t, which also lists the six ENVs `run()` demands even on a dry-run.
-    # ⚠️ EVM ONLY. Amoy + Sepolia come from `Deploy.s.sol`; there is no Solana program in this
-    # repo, so the Devnet leg is an SPL mint + fee-payer ATA provisioned by hand, not `forge`.
-    # Still open: whether canopy also gets its own `job:` role (and therefore its own testnet
-    # signer keys) is the still-open ⚖️ in 00_07 OPS.37 — it is NOT settled by this block.
-    # WEB3_CHAIN_ENV: testnet
+    # ⛔ The line below is an ASSERTION about the wiring, not a switch: a testnet claim on a
+    # mainnet endpoint refuses the boot as loudly as the reverse. It is TRUE only because four
+    # other moves hold it up, and each has a CARRIER — read the carriers, not this comment:
+    #   (2) testnet RPC URLs in `.kamal/secrets.canopy` (CANOPY_* twins, loud placeholder,
+    #       never a fall-through) — `deploy_secret_scan` invariant B4 judges all four names;
+    #   (3) the SAME names exported under BOTH spellings in the `Kamal Deploy to Canopy` step
+    #       of `.github/workflows/deploy.yml`, and the four `CANOPY_*` secrets in its
+    #       BOOT_CRITICAL set (unset → canopy skips clean, never boots on a placeholder);
+    #   (4) the testnet contract addresses right below;
+    #   (5) deploy ORDER — contracts BEFORE the slot's first raise (06_01 DEPLOY-DAY Фаза 2t).
+    #       Machine witness that it held: `spec/deploy/web3_env_loudness_spec.rb` resolves this
+    #       role through Kamal and asserts the web container carries no address placeholder.
+    # ⚠️ EVM ONLY. Amoy from `Deploy.s.sol`; there is no Solana program in this repo, so the
+    # Devnet leg is an SPL mint + fee-payer ATA by hand (job-only, absent on web). Still open:
+    # whether canopy also gets its own `job:` role (and therefore testnet SIGNER keys) —
+    # ⚖️ 00_07 OPS.37, ordered: keys first (this shape), role second. NOT settled by this block.
+    WEB3_CHAIN_ENV: testnet
+    # [INF.27 move (4)] Polygon Amoy (chainId 80002) — outputs of the `Deploy.s.sol` broadcast
+    # of 2026-09-01 (DEPLOY-1 Фаза 2t), verified by bytecode + live calls + the SEC.1 role
+    # matrix; EIP-55 exactly as printed, which is what the boot guard checks. Public on-chain
+    # addresses, so committable; the full six-address set (Timelock · Governor · Anchor too)
+    # lives in 00_07 DEPLOY-1 because `contracts/broadcast/` is gitignored.
+    CARBON_COIN_CONTRACT_ADDRESS: "0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22"
+    FOREST_COIN_CONTRACT_ADDRESS: "0x9366a4CbA0461E150A3409CD2767Ff7b8db6d4b7"
+    # INPUT of the script, not an output: on testnet the treasury is the operator EOA
+    # (`REQUIRE_SAFE_ADMIN` stays false, so the script warned instead of reverting).
+    DAO_TREASURY_ADDRESS: "0x6FEa1cAFd4371e159cFF9c1232368339166C365b"
+    PROTOCOL_PARAMETERS_CONTRACT_ADDRESS: "0x1F20032142C98BBcfD3DcB115f62Ae1230802Be2"
+    # ⏸️ ETHEREUM_ANCHOR_CONTRACT stays the inherited placeholder ON PURPOSE: the anchor is an
+    # Ethereum L1 contract, so its testnet twin is the SEPOLIA deploy (Фаза 2t second half —
+    # faucet cooldown on 2026-09-02). ⛔ Do not "fill" it with the Amoy StateRootAnchor: a
+    # well-formed address on the WRONG chain is the silent class INF.27 Q2 names, and it would
+    # ride straight into an MRV lineage report. Nothing web-side reads it today.
 
 # 🔴 CANOPY НЕ ПЕРЕВИЗНАЧАЄ ACCESSORY `alloy` — І ЦЕ ПРИСУД, А НЕ ПРОПУСК [⚖️ founder 2026-08-31].
 # Тут стояв override `accessories.alloy.env.clear.DEPLOYMENT_SLOT: canopy`, заведений проти

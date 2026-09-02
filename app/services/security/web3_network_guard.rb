@@ -39,8 +39,9 @@
 #   Values are never echoed
 #   into the violation text — a mispasted secret must not leak into logs.
 #   🔴 And "boot is the only loud moment" is a claim about EVERY container that
-#   reads the var, which is why PRESENCE is scoped per-VARIABLE (`web:` in the map
-#   below) and not by `signer_process:` alone. Measured 2026-09-01: the presence
+#   reads the var, which is why the verdict — presence AND format alike — is scoped
+#   per-VARIABLE (`web:` in the map below) and not by `signer_process:` alone.
+#   Measured 2026-09-01: the presence
 #   branch was signer-scoped while the FORMAT branch was not, so on a web-only
 #   slot (canopy — no Sidekiq) an UNSET address booted clean while a placeholder
 #   refused. Same var, same consumer, opposite verdicts — and the quiet direction
@@ -64,7 +65,33 @@
 #   here would refuse the telemetry intake's boot.
 #   Hence three process classes, not two. ⛔ Adding a fourth address var? The map
 #   makes you answer `web:` — do not default it by copying a neighbour; grep the
-#   var and see whether any controller-reachable path reads it.
+#   var and see whether ANY process of that class reads it — a controller, or a rake
+#   task that runs inside the web container (`kamal app exec`). ⚖️ [INF.27 Q2/Q3,
+#   2026-09-01] The criterion is "read by the class", not "controller-reachable":
+#   the narrower wording would hand `web: false` to an address whose only web reader
+#   is an MRV rake task, and — now that FORMAT is scoped by the same flag — would
+#   silently drop the EIP-55 check from the one surface (ISO 14064/Verra lineage)
+#   where a well-formed WRONG address is irreversible.
+#   🔴 FORMAT IS SCOPED LIKE PRESENCE since 2026-09-02 [INF.27 Q3]: a class that never
+#   reads a var judges neither its presence nor its value. Measured by resolving the
+#   Kamal `coap` role through Kamal::Configuration 2.12: it inherits the global
+#   env.clear placeholders it never reads, and the unscoped format branch refused its
+#   boot on three `[address]` violations no operator could act on — the same
+#   presence⊥format asymmetry that bit the web class, from the other side.
+#
+# Silent-RPC ENVs [INF.27 Q1, ⚖️ 2026-09-01]. The sister of the address set: an RPC
+#   var whose read-site swallows its ABSENCE. `chain_violations` skips a blank URL on
+#   purpose ("an absent URL normally just raises at use"), and ONE read-site disproves
+#   that ground by execution: `ChainAuditService#fetch_chain_total_supply` calls
+#   `RpcConnectionPool.client_for` (a bare `ENV.fetch`) under `rescue StandardError`,
+#   so an absent var (KeyError), a present-but-empty one (`Eth::Client.create("")` →
+#   ArgumentError) and a dead host (Net::*/Timeout) all return the same
+#   `delta: 0, critical: false` — the fraud-detector answers "all clean" for the life
+#   of the deploy. Presence is judged where the var is READ (job: every mint/rollback
+#   site; web: the audit read-site), format is not (a URL carries no checksum), and
+#   the dead-host shape is out of scope by design: that is availability, not config.
+#   CI classifies the var RUNTIME (warn-only), so before this row canopy deployed
+#   GREEN with no Polygon RPC at all.
 #
 # Solana signer set [E.61]. No stub mode exists; absence self-reveals only
 #   per-event (a DeadSet job), while the batch-payout loop swallows per-wallet
@@ -157,6 +184,14 @@ module Security
                                                 "set expires with it [INF.27]" }
     }.freeze
 
+    # RPC ENVs whose read-site swallows ABSENCE (header: "Silent-RPC ENVs"). Same
+    # process-class predicate as the address map, no format branch. [INF.27 Q1]
+    SILENT_RPC_ENVS = {
+      "ALCHEMY_POLYGON_RPC_URL" => { web: true,
+                                     cost: "ChainAuditService reports a false 'all clean' — KeyError and " \
+                                           "Eth::Client.create(\"\") land in the same rescue as an RPC outage" }
+    }.freeze
+
     # Solana money-path credentials [E.61] — presence-checked at signer boot
     # (no stub mode; the batch-payout loop has no escalation path).
     SOLANA_SIGNER_ENVS = %w[
@@ -180,6 +215,7 @@ module Security
       chain_violations(env) +
         oracle_violations(env, signer_process: signer_process) +
         address_violations(env, signer_process: signer_process, web_process: web_process) +
+        rpc_violations(env, signer_process: signer_process, web_process: web_process) +
         solana_violations(env, signer_process: signer_process)
     end
 
@@ -332,20 +368,22 @@ module Security
 
     # The silent-address read-sites swallow config errors (their umbrellas mask
     # a misconfig as an operational state), so unset/garbage is only ever loud
-    # HERE. Presence is demanded wherever the var is actually READ — the signer
-    # process always, plus the web container for the `web: true` members; format
-    # is checked wherever a value IS present. The value itself is never included
-    # in the message. ⛔ The predecessor of this line read "the signer process only
-    # (web/coap never mint/audit)" and the parenthesis was HALF false: web does not
-    # mint, but it audits — see the header note for the measurement and for why the
-    # coap half must stay exempt.
+    # HERE. The verdict is asked wherever the var is actually READ — the signer
+    # process always, plus the web container for the `web: true` members — and it
+    # is ONE verdict at two moments: presence when the value is blank, format when
+    # it is not. A class that reads nothing judges nothing [INF.27 Q3]: format used
+    # to run wherever a value was merely PRESENT, which refused the dormant Kamal
+    # `coap` role on placeholders it inherits and never reads. The value itself is
+    # never included in the message. ⛔ The predecessor of this line read "the signer
+    # process only (web/coap never mint/audit)" and the parenthesis was HALF false:
+    # web does not mint, but it audits — see the header note for the measurement.
     def address_violations(env, signer_process: true, web_process: true)
       SILENT_ADDRESS_ENVS.filter_map do |var, spec|
+        next unless signer_process || (web_process && spec.fetch(:web))
+
         cost  = spec.fetch(:cost)
         value = env[var]
         if value.blank?
-          next unless signer_process || (web_process && spec.fetch(:web))
-
           "[address] #{var} is not set — this would NOT crash: #{cost}."
         elsif !value.match?(EthAddressValidatable::ETH_ADDRESS_FORMAT)
           # The message must separate the two operator actions this one predicate covers:
@@ -363,6 +401,20 @@ module Security
           "[address] #{var} is a well-formed address whose EIP-55 checksum does not match, " \
             "i.e. a mistyped or truncated-and-repadded value (value not echoed) — #{cost}."
         end
+      end
+    end
+
+    # Silent-RPC presence [INF.27 Q1] — same predicate as the addresses, no format
+    # branch (a URL carries no checksum; a WRONG chain is `chain_violations`' axis).
+    # Present-but-empty counts as absent: that is the Kamal empty-inject shape, and
+    # `Eth::Client.create("")` lands in the same rescue as a KeyError.
+    def rpc_violations(env, signer_process: true, web_process: true)
+      SILENT_RPC_ENVS.filter_map do |var, spec|
+        next unless signer_process || (web_process && spec.fetch(:web))
+        next if env[var].present?
+
+        "[rpc] #{var} is not set — this would NOT crash: #{spec.fetch(:cost)}. Set the " \
+          "endpoint for the chain family this slot declares via #{CHAIN_ENV_VAR}."
       end
     end
 

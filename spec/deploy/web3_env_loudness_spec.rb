@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "kamal"
 
 # INF.12 behavior-half (canon-promise). The declaration spec (env_fetch_declaration_spec)
 # proves a code-fetched var REACHES runtime on every deploy surface; THIS spec proves the
@@ -39,7 +40,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
   let(:guard_sets) do
     g = Security::Web3NetworkGuard
     g::RPC_URL_ENVS + g::ORACLE_KEY_ENVS + g::SIGNER_KEYS.values +
-      g::SILENT_ADDRESS_ENVS.keys + g::SOLANA_SIGNER_ENVS + [ g::CHAIN_ENV_VAR ]
+      g::SILENT_ADDRESS_ENVS.keys + g::SILENT_RPC_ENVS.keys + g::SOLANA_SIGNER_ENVS + [ g::CHAIN_ENV_VAR ]
   end
 
   # Unset raises past every rescue on the real read-site (verified by reading 2026-07-12;
@@ -89,6 +90,14 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
     aggregate_failures do
       expect(g::SILENT_ADDRESS_ENVS.keys)
         .to match_array(%w[DAO_TREASURY_ADDRESS CARBON_COIN_CONTRACT_ADDRESS FOREST_COIN_CONTRACT_ADDRESS])
+      # [INF.27 Q1] The silent-RPC sister set. A second member is a real decision (which
+      # read-site swallows its absence?), so the membership is pinned by NAME, not by count.
+      expect(g::SILENT_RPC_ENVS.keys).to eq(%w[ALCHEMY_POLYGON_RPC_URL])
+      # [INF.27 move (2)] The overlay `.kamal/secrets.canopy` remaps exactly the guard's RPC
+      # set from CANOPY_* twins; `deploy_secret_scan` judges the FORM of each remap, this
+      # pins that the two lists are the SAME list (the script is stdlib and cannot read here).
+      expect(g::RPC_URL_ENVS)
+        .to match_array(%w[ALCHEMY_ETHEREUM_RPC_URL ALCHEMY_POLYGON_RPC_URL CELO_RPC_URL SOLANA_RPC_URL])
       expect(g::SOLANA_SIGNER_ENVS)
         .to match_array(%w[SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT
                            SOLANA_USDC_MINT_ADDRESS])
@@ -101,6 +110,64 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
       expect(g::RPC_URL_ENVS).to include("CELO_RPC_URL", "SOLANA_RPC_URL", "ALCHEMY_POLYGON_RPC_URL")
       expect(g::ORACLE_KEY_ENVS)
         .to include("ORACLE_MINTER_PRIVATE_KEY", "ORACLE_SLASHER_PRIVATE_KEY", "ETHEREUM_ANCHOR_PRIVATE_KEY")
+    end
+  end
+
+  # [INF.27] The guard against the LIVE manifests, resolved the way Kamal resolves them, per
+  # process class. Every example above judges the guard's SETS; none judged what the guard
+  # would SAY about the container we actually ship — and the two disagreed twice in one day
+  # (2026-09-01): the dormant `coap` role refused its boot on inherited address placeholders
+  # it never reads, and canopy could not be raised until its addresses were real. Resolving
+  # `role.env(host).clear` through `Kamal::Configuration` is what turned both from prose into
+  # a verdict; the secret half (`env.secret`) is deliberately NOT resolved here — its values
+  # live in CI shell/GitHub Secrets and are judged by `env_fetch_declaration_spec`.
+  #
+  # 🔒 Declared ceiling: `env.clear` only — a testnet slot on a MAINNET RPC is invisible to
+  # these examples (the `[chain]` axis needs the secret values), and so is a wrong-but-
+  # well-formed address (EIP-55 sees a typo, never a wrong chain). The canopy example is the
+  # machine witness of the runbook order "Фаза 2t before Фаза 3": it was RED on 2026-09-01.
+  describe "the guard against the live manifests, per process class [INF.27]" do
+    def role_clear(destination, role)
+      cfg = Kamal::Configuration.create_from(config_file: Rails.root.join("config/deploy.yml"),
+                                             destination: destination)
+      r = cfg.role(role)
+      r.env(r.primary_host).clear
+    ensure
+      ENV.delete("KAMAL_DESTINATION") # `create_from` sets it as a side effect
+    end
+
+    def guard = Security::Web3NetworkGuard
+
+    it "lets the dormant coap role boot past the address placeholders it inherits (format scoped like presence, Q3)" do
+      violations = guard.violations(role_clear(nil, "coap"), signer_process: false, web_process: false)
+      expect(violations.grep(/\[address\]/)).to be_empty
+    end
+
+    it "declares canopy a TESTNET slot whose web container carries no address placeholder (Фаза 2t before Фаза 3)" do
+      clear = role_clear("canopy", "web")
+      expect(guard.chain_env(clear)).to eq("testnet")
+      expect(guard.violations(clear, signer_process: false, web_process: true).grep(/\[address\]/)).to be_empty
+    end
+
+    # Era-stable by construction: the expectation is derived from the manifest's VALUES, so
+    # it reads "only still-placeholder vars are refused, and every web-scoped placeholder IS
+    # refused" — true today with SCC still a placeholder on production, true the day Фаза 2
+    # fills it (both sides become empty), and RED the day a mispasted real address slips in.
+    it "keeps production declared MAINNET, and its web verdict names exactly the web-scoped placeholders" do
+      clear = role_clear(nil, "web")
+      expect(guard.chain_env(clear)).to eq("mainnet")
+      refused = guard.violations(clear, signer_process: false, web_process: true)
+                     .grep(/\[address\]/).map { |m| m[/\[address\] ([A-Z0-9_]+)/, 1] }
+      expected = guard::SILENT_ADDRESS_ENVS.select { |var, spec| spec[:web] && clear[var] == "REQUIRED_SECRET_NOT_SET" }.keys
+      expect(refused).to match_array(expected)
+    end
+
+    it "resolves non-empty role envs (the parser is not judging an empty hash)" do
+      aggregate_failures do
+        expect(role_clear(nil, "coap").size).to be > 10
+        expect(role_clear("canopy", "web")["DEPLOYMENT_SLOT"]).to eq("canopy")
+        expect(role_clear(nil, "web")["DEPLOYMENT_SLOT"]).to eq("production")
+      end
     end
   end
 end
