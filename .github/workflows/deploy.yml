@@ -38,10 +38,17 @@ jobs:
     outputs:
       deploy: ${{ steps.decide.outputs.deploy }}
     steps:
-      - name: Harden runner (egress audit)
+      # [OPS.36] BLOCK, not audit: the allowlist below is the StepSecurity baseline of this job
+      # (1 292 job runs, unchanged over the last 1 248 — recommended policy read 2026-09-02 from
+      # runs 33597709126 · 33612548198). The job talks to the GitHub API and nothing else.
+      # Production keeps `audit` until ITS first real deploy has produced ITS baseline (06_07 §1a).
+      - name: Harden runner (egress block)
         uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            cafe.github.com:443
       - name: Decide whether the canopy deploy is needed
         id: decide
         env:
@@ -108,10 +115,14 @@ jobs:
     outputs:
       configured: ${{ steps.check.outputs.configured }}
     steps:
-      - name: Harden runner (egress audit)
+      # [OPS.36] BLOCK with an EMPTY allowlist: this job is pure shell over `${{ secrets }}`, and
+      # the StepSecurity baseline recorded zero outbound destinations — the one job in the tree
+      # where "no egress at all" is the honest policy, and where an exfiltration would be loudest.
+      - name: Harden runner (egress block)
         uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: ""
       - name: Verify deploy secrets [B1]
         id: check
         env:
@@ -256,10 +267,33 @@ jobs:
       id-token: write
 
     steps:
-      - name: Harden runner (egress audit)
+      # [OPS.36] BLOCK: the allowlist is the StepSecurity baseline of THIS job across its 16 real
+      # runs (unchanged over the last 9; recommended policy read 2026-09-02 from runs
+      # 33597709126 · 33612548198). Every name is accounted for: checkout + pre-build
+      # `git ls-remote` (github), base-image pull (docker.io + its cloudfront), `apt-get` inside
+      # the image build (deb.debian.org — plain HTTP, the slim image's sources.list),
+      # `bundle install` (rubygems), the WIF exchange (sts + iamcredentials), the OS Login key
+      # import (oslogin), the IAP tunnel `kamal` rides (tunnel.cloudproxy.app) and the Artifact
+      # Registry push/pull (europe-west1-docker.pkg.dev). A NEW endpoint fails the step that
+      # needed it — LOUD by design; the fix is a line here, never a fallback to `audit`.
+      # Production stays `audit` until its own first real deploy has produced its baseline.
+      - name: Harden runner (egress block)
         uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            auth.docker.io:443
+            deb.debian.org:80
+            europe-west1-docker.pkg.dev:443
+            github.com:443
+            iamcredentials.googleapis.com:443
+            index.rubygems.org:443
+            oslogin.googleapis.com:443
+            production.cloudfront.docker.com:443
+            registry-1.docker.io:443
+            rubygems.org:443
+            sts.googleapis.com:443
+            tunnel.cloudproxy.app:443
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -394,7 +428,6 @@ jobs:
           # feed secrets-common's lookup, and both resolve to the same canopy secret.
           REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
-          RELEASE_VERSION: ${{ github.sha }}
           # --- Observability ---
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           # --- Origin TLS [INF.4] — consumed by `config/deploy.yml` proxy.ssl, NOT by Rails ---

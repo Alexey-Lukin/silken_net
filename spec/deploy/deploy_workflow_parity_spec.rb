@@ -26,7 +26,9 @@ require_relative "../support/repo_root"
 #   · destination flags (`-d canopy`) inside `run:` bodies;
 #   · the step-name suffix `to Canopy` ⊥ `to Production` (normalised below);
 #   · `environment: production`, the `changes`/path-filter job, the release-vs-workflow_run
-#     trigger, concurrency group, `RELEASE_VERSION`, the COAP host Variable;
+#     trigger, concurrency group, the COAP host Variable;
+#   · the harden-runner egress POLICY (canopy `block` + measured allowlist ⊥ production `audit`
+#     until ITS first real deploy — OPS.36); the step name carries the policy and is normalised;
 #   · verify-secrets SEVERITY — canopy skips clean, production hard-fails. That asymmetry is
 #     ratified, not drift;
 #   · the money/signing quintet, which is production-only because canopy is structurally
@@ -69,7 +71,14 @@ RSpec.describe "deploy workflow mechanism parity [S1.1]" do # rubocop:disable RS
   def env_divergent_step = "Kamal Deploy"
 
   # `deploy.yml` names the slot in this one step; normalise so the SEQUENCE can be compared.
-  def normalise(name) = name.sub(/\A(Kamal Deploy) to (Canopy|Production)\z/, '\1')
+  # [OPS.36] The harden-runner step names its POLICY, and the policy legitimately differs per
+  # slot (canopy `block` with a measured allowlist ⊥ production `audit` until its own first
+  # deploy) — same mechanism, so the name is normalised to its policy-free form. Mutation
+  # 2026-09-02: renaming production's step to anything else → RED naming the sequence.
+  def normalise(name)
+    name.sub(/\A(Kamal Deploy) to (Canopy|Production)\z/, '\1')
+        .sub(/\AHarden runner \(egress (?:audit|block)\)\z/, "Harden runner (egress policy)")
+  end
 
 
   it "reads two real deploy jobs with a non-trivial step list (non-vacuity)" do
