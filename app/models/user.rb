@@ -226,8 +226,13 @@ class User < ApplicationRecord
   # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій.
   # Використовується замість User.find_by(role: :admin) || User.first,
   # щоб у журналах було чітко видно: це рішення системи, а не дія конкретної людини.
+  # [OPS.38] ONE home for the money-audit actor's address: `db/seeds.rb` (demo slots) and
+  # `governance:bootstrap` (production composition) both create the row by this constant,
+  # and `Auditable#record_money_audit_trail` writes NOTHING without the row (silent exit).
+  ORACLE_EXECUTIONER_EMAIL = "oracle.executioner@system.silkennet.com"
+
   def self.oracle_executioner
-    find_by(email_address: "oracle.executioner@system.silkennet.com")
+    find_by(email_address: ORACLE_EXECUTIONER_EMAIL)
   end
 
   def full_name

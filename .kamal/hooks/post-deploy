@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Post-deploy hook — the production bootstrap COMPOSITION (00_07 OPS.38; docs/04_01
+# §Governance-параметри). Runs where `kamal deploy` runs (CI runner / operator shell), AFTER
+# the new containers are up, and executes the idempotent task INSIDE a one-off container of
+# the `web` role on the target host:
+#   * `web` is the role EVERY deploy carries (canopy deploys web-only until its Solana twins
+#     exist), it holds the DB credentials, and it carries none of the signing quintet — so a
+#     runner started here never boots as a signer process (Web3NetworkGuard class axis).
+#   * Idempotent by construction (find_or_create / UPSERT): a re-run after a half-failed
+#     deploy converges instead of duplicating. `db:prepare` is NOT atomic (06_06 §5.6) — a
+#     failed seed leaves the database «existing»; this hook is the half that still converges.
+#   * A non-zero exit here fails the `kamal deploy` command LOUDLY after the rollout (the
+#     containers are already up) — that is the intent: a deploy without the money-audit actor
+#     is a deploy whose every money transition runs without a tamper-evident trail.
+# Parsed by scripts/shell_parse_check.rb (shebang-discovered); no SPDX tag on purpose —
+# `.kamal/hooks/*` is out of the licence-header scope (spec/lib/spdx_headers_spec.rb).
+
+set -eu
+
+if [ -n "${KAMAL_DESTINATION:-}" ]; then
+  exec kamal app exec -d "$KAMAL_DESTINATION" --roles web "bin/rails governance:bootstrap"
+else
+  exec kamal app exec --roles web "bin/rails governance:bootstrap"
+fi

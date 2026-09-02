@@ -65,6 +65,6 @@ end
   # Повідомлення — частина механізму, не ввічливість: гард без названої альтернативи
   # закінчується тим, що перший же оператор дописує собі обхід (`DISABLE_*`).
   it "називає, що робити НАТОМІСТЬ" do
-    expect(head).to include("governance:seed_parameters")
+    expect(head).to include("governance:bootstrap")
   end
 end

@@ -14,11 +14,12 @@
 # converges to the desired state without touching unrelated rows or any
 # parameter the DAO has subsequently overwritten via on-chain governance.
 #
-# Wiring — ⚠️ THE HOOK DOES NOT EXIST YET (measured 2026-09-01: `.kamal/hooks/` has a
-# live `pre-build` and only `post-deploy.sample`), so today NOTHING calls this task on any
-# slot; wiring it is an open leg of `00_07` OPS.38 (the production bootstrap composition).
-#   * Intended: Kamal post-deploy hook → `bin/rails governance:seed_parameters`
-#   * Manual recovery:            `bundle exec rake governance:seed_parameters`
+# Wiring (2026-09-03, OPS.38): `.kamal/hooks/post-deploy` runs `governance:bootstrap` in a
+# one-off `web`-role container after EVERY `kamal deploy` (both slots); `bootstrap` composes
+# the money-audit actor + this task. Until that day the header here said «the hook does not
+# exist yet» — and it was right: nothing called this task on any slot.
+#   * Automatic: `.kamal/hooks/post-deploy` → `bin/rails governance:bootstrap`
+#   * Manual recovery:            `bundle exec rake governance:bootstrap` (or `seed_parameters` alone)
 #
 # 🔴 МЕЖІ ТУТ НЕ ЖИВУТЬ, і це не стиль. Дім `min`/`max`/`value_type`/`category` — один,
 # `Governance::ParameterSyncWorker::PARAMETER_MAP` (канон `05_06 §7`: «One-Home меж =
@@ -85,5 +86,38 @@ namespace :governance do
     end
 
     puts "[governance:seed_parameters] upserted=#{upserted} skipped_dao_owned=#{skipped}"
+  end
+
+  # [OPS.38] The production bootstrap COMPOSITION — everything an empty database needs before
+  # the money pipelines run, minus what is a founder decision. Slot-agnostic and idempotent by
+  # construction (find_or_create / UPSERT), so the post-deploy hook may re-run it after every
+  # deploy and after a half-failed `db:prepare` (NOT atomic — 06_06 §5.6) without duplicating.
+  #   1. `oracle_executioner` — the money-audit actor. This row is the loudest SILENT dependency
+  #      in the tree: `Auditable#record_money_audit_trail` returns early (WARN) when it is
+  #      absent, so every money transition would run without a tamper-evident trail. Never
+  #      updated once present (a rotated password or role is an operator act, not ours).
+  #   2. `governance:seed_parameters` — the DAO-aware UPSERT above.
+  #   3. `TreeFamily` — ⚠️ deliberately NOT seeded: the species list of a real deployment is a
+  #      ⚖️ founder decision (00_07 OPS.38), and `Tree belongs_to :tree_family` is not optional,
+  #      so an empty table is named LOUDLY here instead of being filled with the demo pair.
+  desc "Production bootstrap composition (OPS.38): oracle_executioner + governance parameters; idempotent"
+  task bootstrap: :environment do
+    oracle = User.find_or_create_by!(email_address: User::ORACLE_EXECUTIONER_EMAIL) do |u|
+      u.first_name = "Oracle"
+      u.last_name  = "Executioner"
+      u.role       = :super_admin
+      u.password   = SecureRandom.hex(32)
+    end
+    actor_state = oracle.previously_new_record? ? "created" : "present"
+
+    Rake::Task["governance:seed_parameters"].invoke
+
+    families = TreeFamily.count
+    if families.zero?
+      warn "[governance:bootstrap] ⚠️ TreeFamily порожня — жодне реальне дерево не провіжиться " \
+           "(`Tree belongs_to :tree_family`); склад видів = ⚖️ founder, 00_07 OPS.38. Не сіється автоматично."
+    end
+
+    puts "[governance:bootstrap] oracle_executioner=#{actor_state} tree_families=#{families} slot=#{SilkenNet::DeploymentSlot.current}"
   end
 end

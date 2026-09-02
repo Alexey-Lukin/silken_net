@@ -1584,13 +1584,16 @@ Cluster, User, Organization
 
 **Governance-параметри:**
 
-Мусять сідатись **окремою idempotent rake-таскою** (НЕ через `db/seeds.rb`, бо той на слоті `production` fail-closed) — ⚠️ носія виклику ще немає: `.kamal/hooks/post-deploy` не заведено, тож на сьогодні таску не кличе НІЩО ([`00_07`](00_07_Action_Plan_Tracker) OPS.38):
+Мусять сідатись **окремою idempotent rake-таскою** (НЕ через `db/seeds.rb`, бо той на слоті `production` fail-closed). Носій виклику з 2026-09-03 — `.kamal/hooks/post-deploy`: після КОЖНОГО `kamal deploy` (обидва слоти) він запускає в одноразовому контейнері `web`-ролі композицію продового bootstrap ([`00_07`](00_07_Action_Plan_Tracker) OPS.38):
 
 ```bash
-bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool_threshold
+bin/rails governance:bootstrap        # oracle_executioner (money-audit актор; без нього record_money_audit_trail
+                                      # мовчки не пише НІЧОГО) + governance:seed_parameters; TreeFamily НЕ сіє —
+                                      # порожню таблицю називає гучно (склад видів = ⚖️ founder)
+bin/rails governance:seed_parameters  # лише UPSERT dynamic_tax_rate + insurance_pool_threshold
 ```
 
-Таска ідемпотентна (повторний запуск не дублює та зберігає DAO-промотовані поля).
+Обидві таски ідемпотентні (повторний запуск не дублює, актора не чіпає, DAO-промотовані поля зберігає); `web`-роль обрано, бо її несе кожен деплой і вона не несе жодного підписного ключа — одноразовий runner ніколи не бутиться підписантом.
 
 ---
 

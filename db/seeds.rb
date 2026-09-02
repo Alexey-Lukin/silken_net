@@ -27,9 +27,9 @@ if SilkenNet::DeploymentSlot.current == "production"
     користувачів із відомим паролем, живі сесії, ланки в SHA-256 аудит-ланцюгу).
 
     Що робити натомість:
-      · продовий bootstrap параметрів → `bin/rails governance:seed_parameters`
-      · склад решти продового bootstrap (oracle_executioner, TreeFamily)
-        лишається відкритим — `00_07`, і саме там його ухвалювати, а не тут
+      · продовий bootstrap → `bin/rails governance:bootstrap` (oracle_executioner +
+        `governance:seed_parameters`; ідемпотентно; його ж кличе `.kamal/hooks/post-deploy`)
+      · склад TreeFamily реального розгортання — ⚖️ `00_07` OPS.38, не тут
       · демо-сівба доречна на `canopy` — вона проходить цей гард
   MSG
 end
@@ -209,7 +209,7 @@ puts "👤 Створення Патрульних..."
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
 # Організація не вказана — це глобальний системний агент.
 # [СИНХРОНІЗОВАНО з RBAC]: super_admin → access_level :system (повний доступ до всієї платформи).
-oracle = User.find_or_create_by!(email_address: "oracle.executioner@system.silkennet.com") do |u|
+oracle = User.find_or_create_by!(email_address: User::ORACLE_EXECUTIONER_EMAIL) do |u|
   u.first_name = "Oracle"
   u.last_name  = "Executioner"
   u.role       = :super_admin
