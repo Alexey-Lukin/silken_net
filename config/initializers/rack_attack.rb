@@ -38,8 +38,11 @@
 # sidecar is the real fix and is real infrastructure — gated on first public traffic."
 # That verdict was written about a database that did not exist yet. Upstash offers GCP
 # `europe-west1` (Belgium) — the same region as our Cloud SQL — so same-region cost one
-# choice in a dropdown, not a sidecar and not infrastructure. Both databases now live
-# there. ⚠️ This binds terraform: Cloud SQL must STAY in `europe-west1`
+# choice in a dropdown, not a sidecar and not infrastructure. `silkennet-canopy` lives
+# there (verified 2026-09-01); the PRODUCTION instance does not exist yet — it is pending
+# on the Upstash Free tier (one instance per account) and MUST be created in
+# `europe-west1` too, because the region is chosen at creation and never again.
+# ⚠️ This binds terraform: Cloud SQL must STAY in `europe-west1`
 # (`terraform/variables.tf` default), or the property is lost without anything reddening.
 #
 # What survives from that block, because it was measured and is still true: an

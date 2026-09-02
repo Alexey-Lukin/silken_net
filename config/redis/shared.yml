@@ -16,7 +16,9 @@
 # prefix: a telemetry queue flood can still evict Web3 nonce locks under an
 # eviction policy, which is exactly the EVM nonce-collision / double-spend risk
 # the split was built for. A prefix separates NAMES, never memory pressure. Two
-# live mitigations: the canopy/production databases run with eviction OFF (🔴 and NOTHING
+# live mitigations: the canopy database runs with eviction OFF (verified in the console
+# 2026-09-01; the production database does not exist yet — the check belongs to its
+# CREATION, one instance at a time, never one sweep) (🔴 and NOTHING
 # VERIFIES THAT — the property is load-bearing and held by a vendor-console dropdown alone:
 # Upstash sits outside terraform, `terraform.tfvars.example` only mentions it in a comment,
 # no runtime probe reads it, no gate asserts it. So a policy change made in the console, or a
