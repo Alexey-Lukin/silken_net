@@ -60,7 +60,7 @@
 | # | Перевірка | Деталі |
 |---|-----------|--------|
 | **1** | **DNS / TLS до першого деплою** | Після `terraform apply` скопіюй IP та створи A-запис (`api.silkennet.com → <ingress_ip>`). Дочекайся: `dig api.silkennet.com` → правильний IP. **Тільки тоді** деплой. 🔴 **Ця клітинка до 2026-08-31 суперечила сама собі, і голова читалась першою:** вона казала «при ввімкненому `proxy.ssl` (зараз **закоментований** у `config/deploy.yml`) kamal-proxy робить Let's Encrypt ACME-challenge», тоді як хвіст тієї ж клітинки вже називав правильний стан — Origin CA, не ACME. Обидві половини писались у різні дні, дужка-стан зайшла 2026-06-23 і померла 08-31 о 09:37 (`fc4083c5` увімкнув блок). **Чинний стан: `proxy.ssl` УВІМКНЕНО з Origin CA-парою в обох маніфестах**, тож ACME тут не відбувається взагалі, а крок залежить від DNS (маршрутизація) **і** від секретів `TLS_ORIGIN_*` — обидва тепер у `BOOT_CRITICAL` обох воркфлоу, бо порожнє значення дає ПОРОЖНІЙ сертифікат мовчки (§Сертифікат НА ORIGIN). ACME-передумова лишається чинною **лише** для TLS-fallback без CF. ⚠️ Підстава, чому саме Origin CA, а не Let's Encrypt (CF у `Full (strict)` вимагає сертифіката НА ORIGIN і ходить туди ЛИШЕ по HTTPS, тож HTTP-01 не доставляється) живе одним домом у §Сертифікат НА ORIGIN — тут не переказується, бо переказ уже двічі протух саме в цій клітинці. DNS усе одно потрібен для маршрутизації трафіку. |
-| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `RAILS_MASTER_KEY`, `SECRET_KEY_BASE` (boot-critical — [`06_04 §1.1`](06_04_Secrets_Checklist)), `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`), а порожній інжект перебив би це значенням «» [B1]; задавати лише щоб вивести локи на ОКРЕМИЙ інстанс. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
+| **2** | **`.kamal/secrets-common` файл існує + повний** | Kamal читає секрети з `.kamal/secrets-common` (не з environment). Заповни **усі** змінні з `config/deploy.yml env.secret` (drift = boot crash або silent Web3 failure): **(a) Application core:** `SECRET_KEY_BASE` (boot-critical — [`06_04 §1.1`](06_04_Secrets_Checklist); `RAILS_MASTER_KEY` знято 2026-09-02 — SEC.22 Phase-2, образ не несе `credentials.yml.enc`), `POSTGRES_PASSWORD` (host/user/database — non-secret `env.clear`, component style `config/database.yml`), `REDIS_URL`, `GCP_ARTIFACT_REGISTRY_KEY` (registry pull). `KREDIS_REDIS_URL` — **не** додавати: Kredis читає `REDIS_URL` як є (`config/redis/shared.yml`), а порожній інжект перебив би це значенням «» [B1]; задавати лише щоб вивести локи на ОКРЕМИЙ інстанс. **(b) 🛑 Boot-critical:** `PROVISIONING_MASTER_KEY` (`master_key_strength_check.rb` raises `SecurityError` без неї) + `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/`_KEY_DERIVATION_SALT` ([SEC.22] `active_record_encryption_keys_check.rb` fail-closed; `db:encryption:init`). **(c) Observability:** `SENTRY_DSN`. **(d) Web3 oracle keys:** `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY`, `ETHEREUM_ANCHOR_PRIVATE_KEY` — legacy `ORACLE_PRIVATE_KEY` **RETIRED повністю** (INF.22: жоден код не читає, guard-tripwire відмовляє значенню під цим ім'ям); CI-джерело money-п'ятірки (ці три + `SOLANA_WALLET_KEYPAIR`, `ORACLE_CELO_PRIVATE_KEY`) = GH Environment `production`, НЕ repo-secrets (INF.22 → [`06_04 §1`](06_04_Secrets_Checklist)). **(e) RPC endpoints:** `ALCHEMY_POLYGON_RPC_URL`, `ALCHEMY_ETHEREUM_RPC_URL`, `SOLANA_RPC_URL`. **(f) Solana minting:** `SOLANA_WALLET_KEYPAIR`, `SOLANA_FEE_PAYER_PUBKEY`, `SOLANA_FEE_PAYER_TOKEN_ACCOUNT`, `SOLANA_USDC_MINT_ADDRESS`. **(g) Chainlink:** `CHAINLINK_HMAC_SECRET` (лише callback-endpoint; dispatch-секрети вилучено — ARCH.53). |
 | **3** | **Gas на Web3-гаманцях** | Воркери потребують нативної крипто: **MATIC** (Polygon), **ETH** (L1), **SOL** (Solana), **CELO** (Celo). Без газу → "Insufficient Funds" на кожній транзакції → Sidekiq потоне у ретраях. |
 | **4** | **LoRa-антена підключена** | **КРИТИЧНО.** Ніколи не подавай живлення без антени на SMA/U.FL порту. SX1262 відбиває RF назад у чип (high VSWR) — радіотракт згоряє за мілісекунди. Незворотно. Правило: антена → живлення. |
 | **5** | **HKDF AES-ключів (post-FW.1 + ARCH.42 + FW.2 (в))** | Кожен Soldier має **per-device session AES-128 LoRa ключ** (`aes_key[4]`, 16 bytes) + **cluster control-plane KEYB** (`bcast_key[4]`, 16 bytes — двоключова модель [`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); Queen — той самий KEYB як єдиний LoRa-ключ + окремий **AES-256 CoAP ключ** (`coap_key[8]`, 32 bytes). Усі деривуються з `PROVISIONING_MASTER_KEY` через HKDF з domain-separated info-strings (`"silken-aes-128-lora-key"` / `"silken-aes-128-broadcast-key"` / `"silken-aes-256-device-key"`). Перевіряй на factory bench, що backend і firmware повертають той самий байтовий ключ за тим самим salt. Симптом mismatch: сміття після декрипту (телеметрія на Rails / downlink на Солдаті). Детальніше: [`03_06 §2`](03_06_Factory_Flashing_and_Key_Provisioning). |
@@ -377,8 +377,7 @@ registry:
 env:
   secret:
     # --- Application core (host/user/database → env.clear, component style) ---
-    - RAILS_MASTER_KEY
-    - SECRET_KEY_BASE
+    - SECRET_KEY_BASE   # RAILS_MASTER_KEY знято 2026-09-02 (SEC.22 Phase-2)
     - POSTGRES_PASSWORD
     - REDIS_URL
     # KREDIS_REDIS_URL omitted — Kredis reads REDIS_URL as-is (config/redis/shared.yml). [B1]
@@ -925,7 +924,7 @@ DNS/proxy поверх · Grafana Cloud
 stack (remote_write URL/user/token) · Sentry project (DSN) · Alchemy (Polygon+ETH) +
 Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/slasher/anchor
 + опц. celo) + газ MATIC/ETH/SOL/CELO · SSH ed25519 keypair · згенерувати
-`RAILS_MASTER_KEY`-бекап + `PROVISIONING_MASTER_KEY` → **vault + offline-копія (DR.1)** ·
+`SECRET_KEY_BASE`-бекап + `PROVISIONING_MASTER_KEY` → **vault + offline-копія (DR.1; `RAILS_MASTER_KEY` з 09-02 незамінним не є — SEC.22 Phase-2)** ·
 🔏 **підпис концентрації [ARCH.114]** (⚖️ момент ратифіковано founder 2026-08-30 — САМЕ тут,
 бо три його рядки народжуються цією фазою): прийняти концентрацію GCP явно, текстом, разом
 із трьома рядками — (1) на кого оформлені девʼять важелів §«Хто може вимкнути НАС» і хто
@@ -958,7 +957,7 @@ tfvars = TEST-NET-3, НЕ лишай!» — обидві половини хиб
 створюється») двома сторінками вище. Канонічний вхід — `gcloud compute ssh … --tunnel-through-iap`,
 а доступ дає `iap_admin_members`, не CIDR →
 GitHub Secrets **Batch A** (pre-infra: `GCP_PROJECT_ID`, `POSTGRES_PASSWORD`,
-`RAILS_MASTER_KEY`, `SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`; boot-critical,
+`SECRET_KEY_BASE` (= поточне `credentials.secret_key_base`; boot-critical, `RAILS_MASTER_KEY` знято 09-02 — SEC.22 Phase-2,
 причина — [`06_04 §1.1`](06_04_Secrets_Checklist); існує до `apply`, тому Batch A),
 `PROVISIONING_MASTER_KEY`, `ACTIVE_RECORD_ENCRYPTION_*`×3
 (`db:encryption:init`; boot-critical [SEC.22] — verify-secrets гейтить) — SA-JSON
@@ -1020,7 +1019,7 @@ Pre-Flight #9 і показувала рівно навпаки (kamal-ролі 
 світ до повернення app-хоста [`OPS.37`](00_07_Action_Plan_Tracker) →
 Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST` (S1.5/INF.15) →
 **заповнити `/etc/silkennet/coap.env` на анкорі** (7 значень: `POSTGRES_PASSWORD`/
-`REDIS_URL`/`RAILS_MASTER_KEY`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
+`REDIS_URL`/`SECRET_KEY_BASE`/`ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`/`_DETERMINISTIC_KEY`/
 `_KEY_DERIVATION_SALT`/`SENTRY_DSN`; **НЕ** `PROVISIONING_MASTER_KEY` — coap лише
 enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [SEC.22]; AR-encryption
 ×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
@@ -1031,8 +1030,8 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 решта значень слот-інваріантна (той самий Cloud SQL-користувач, та сама AR-трійка).
 **До першого production-деплою демон годує canopy — і це виконуване СЬОГОДНІ**, бо кожне
 значення canopy вже існує (AR-трійка · `POSTGRES_PASSWORD` · `SENTRY_DSN` = ті самі, що
-їдуть у `Deploy · Canopy`; `REDIS_URL` = значення `CANOPY_REDIS_URL`; `RAILS_MASTER_KEY` —
-доки рядок у шаблоні, [`SEC.22`](00_07_Action_Plan_Tracker) Phase-2 його знімає):
+їдуть у `Deploy · Canopy`; `REDIS_URL` = значення `CANOPY_REDIS_URL`; `SECRET_KEY_BASE` — той самий
+GitHub Secret; `RAILS_MASTER_KEY` тут НЕ потрібен і не приймається — [`SEC.22`](00_07_Action_Plan_Tracker) Phase-2):
 ```bash
 # 1) образ демона = КОРОТКИЙ sha коміту, що ЖИВЕ на canopy (mirror-ghcr тегує `sha-<7>`; образ
 #    публічний — pull без логіна); tfvars не має цього ключа взагалі → анкер їде на `:PIN_ME`
@@ -1042,7 +1041,7 @@ echo 'coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<7-hex>"' >> terr
 #    (значення не мають лягати в shell-history)
 gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudoedit /etc/silkennet/coap.env
 #      DEPLOYMENT_SLOT=canopy · POSTGRES_DATABASE=silken_net_canopy · REDIS_URL=<CANOPY_REDIS_URL>
-#      + POSTGRES_PASSWORD / AR-трійка / SENTRY_DSN / RAILS_MASTER_KEY
+#      + POSTGRES_PASSWORD / AR-трійка / SENTRY_DSN / SECRET_KEY_BASE
 # 3) перезапуск startup-скрипта (перетягує образ, вмикає unit; coap.env НЕ перезаписується —
 #    створюється раз) → приймальний рядок
 gcloud compute instances reset silken-net-ingress

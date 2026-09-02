@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), master-key backup — операційна задача.
-- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `RAILS_MASTER_KEY` — нуль копій поза GitHub Secrets і однією машиною (§Gaps) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
+- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `SECRET_KEY_BASE` — нуль копій поза GitHub Secrets (§Gaps; `RAILS_MASTER_KEY` з 2026-09-02 не є незамінним — vault тримає лише `secret_key_base`, а в деплой ключ не їде) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
 
 ---
 
@@ -43,7 +43,7 @@
 ## 🛑 Gaps (→ 00_07)
 
 - 🟡 **DR-drill прогнано ОДИН раз** (2026-09-02, staging — §6): §5.1 верифіковано реальним PITR-клоном, §5.2 — лише половиною «витягти версію» (без `terraform apply` з неї), §5.3–5.6 не проганялися. Ритм квартальний. `DR.1`.
-- 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`RAILS_MASTER_KEY` — ні, і його стан гірший, ніж читається поруч із закритим сусідом:** він живе в GitHub Secrets (значень не віддають) і в `config/master.key` на ОДНІЙ машині, gitignored — офлайн-копії немає ЖОДНОЇ, тож втрата ноутбука робить `credentials.yml.enc` нечитним назавжди. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
+- 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`SECRET_KEY_BASE` — ні, і з 2026-09-02 незамінний саме він:** SEC.22 Phase-2 зняв `RAILS_MASTER_KEY` з усіх deploy-поверхонь, а vault репо тримає ЄДИНИЙ ключ — `secret_key_base`, що їде окремим секретом; тож втрата `RAILS_MASTER_KEY` = регенерація порожнього vault (нічого незворотного), а втрата `SECRET_KEY_BASE` = усі сесії й кожен `generates_token_for`-токен (password-reset, invite) недійсні — GitHub значень назад не віддає, і офлайн-копії немає ЖОДНОЇ. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
 - 🟡 **GCS state bucket + versioning** — `S5.6` (chicken-and-egg при першому `terraform init`).
 
 ---
@@ -55,7 +55,7 @@
 | **PostgreSQL production** (`trees`, `wallets`, `blockchain_transactions`, `telemetry_logs`-партиції) | Cloud SQL `silken-db` | PITR + 30×daily snapshot (§2) | 🔴 Критично — але **канонічний баланс токенів живе on-chain** (Polygon), БД — проєкція |
 | Solid **Cache/Cable** БД (`*_cache/_cable` — Solid Queue pruned, INF.18) | Cloud SQL (той самий інстанс) | той самий backup | 🟢 Низько — регенеровні (cache transient, cable ephemeral; черги живуть у Redis — рядок нижче) |
 | **Terraform state** | GCS `silken-net-terraform-state` (CMEK `silken-tfstate-ew1`, [SEC.22] → [`06_04 §5.6`](06_04_Secrets_Checklist)) | bucket versioning, 10 версій/30д (`S5.6`) | 🟡 Високо — infra drift/lock; відновлюється з версій (усі noncurrent = plaintext-копії секретів, тому retention свідомо короткий) |
-| **`RAILS_MASTER_KEY`** (`config/master.key`) | git-ignored + GitHub Secrets · ⛔ **vault-копії НЕМАЄ** (станом на 2026-09-01) | ручний (password manager) — **не виконано** | 🔴 **Незамінний** — `credentials.yml.enc` без нього не розшифрувати, а GitHub значень назад не віддає |
+| **`SECRET_KEY_BASE`** (GitHub Secret; = `credentials.secret_key_base`) | GitHub Secrets · ⛔ **vault-копії НЕМАЄ** (станом на 2026-09-02) | ручний (password manager) — **не виконано** | 🔴 **Незамінний** — сесії та всі `generates_token_for`-токени; GitHub значень назад не віддає. `RAILS_MASTER_KEY` (`config/master.key`) з 2026-09-02 незамінним НЕ є: vault тримає лише `secret_key_base`, у деплой ключ не їде (SEC.22 Phase-2) |
 | **AR-encryption трійка** (`ACTIVE_RECORD_ENCRYPTION_*`) | ENV + vault + offline ✅ 2026-09-01 | ручний (password manager) | 🔴 **Незамінна третім класом** — без неї `hardware_keys` (device AES / Lorenz-seed) і `users.otp_secret` нечитні назавжди; доти інвентар називав незамінними лише два master-ключі |
 | **`PROVISIONING_MASTER_KEY`** | secrets store | ручний | 🔴 **Незамінний** — без нього не деривувати нові per-device ключі (вже прошиті пристрої працюють; нове provisioning — ні) |
 | **On-chain state** (SCC/SFC баланси, slashing, anchors) | Polygon / Ethereum L1 | сам блокчейн = immutable backup | 🟢 N/A — мережа є джерелом правди |
@@ -109,9 +109,9 @@
 
 ## 4. Незамінні master-ключі (НЕ в Cloud SQL backup!)
 
-`RAILS_MASTER_KEY` та `PROVISIONING_MASTER_KEY` **не зберігаються** у жодному автоматичному backup (git-ignored, не в БД). Їх втрата незворотна:
+`SECRET_KEY_BASE` та `PROVISIONING_MASTER_KEY` **не зберігаються** у жодному автоматичному backup (GitHub Secrets значень не віддає, не в БД). Їх втрата незворотна:
 
-- **`RAILS_MASTER_KEY`** → `config/credentials.yml.enc` (усі Web3-ключі, HMAC-секрети) стає нечитабельним. Recovery: НЕМАЄ — лише повна ротація всіх credentials + re-encrypt.
+- **`SECRET_KEY_BASE`** → усі сесії й кожен `generates_token_for`-токен недійсні. Recovery: нова випадкова value = примусовий вихід усіх користувачів і мертві reset-лінки, не втрата даних. ⚠️ Доти тут стояв `RAILS_MASTER_KEY` з присудом «усі Web3-ключі, HMAC-секрети стають нечитабельними» — vault ніколи їх не тримав (єдиний ключ у ньому — `secret_key_base`), а з 2026-09-02 master-key і в деплой не їде (SEC.22 Phase-2): втрата `config/master.key` = регенерація порожнього vault.
 - **`PROVISIONING_MASTER_KEY`** → HKDF-корінь per-device AES. Втрата: вже прошиті Soldier/Queen працюють (ключі у Flash), але **нове provisioning неможливе** і backend не деривує ключі для replay-перевірки нових пристроїв.
 
 **Процедура (👤, DR.1):** обидва ключі — у password manager / Vault (offline-копія в сейфі для founder-level). Ротація — [`06_04 §5.2`](06_04_Secrets_Checklist).

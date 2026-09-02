@@ -317,13 +317,19 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   Mitigation/aux-gated → `06_04 §1.1`.
 - **SEC.22 latch: at-rest ≠ runtime** — провайдер читає `/proc/environ`, тож жоден секрет не сміє
   жити лише за `RAILS_MASTER_KEY`-vault у runtime. credentials→ENV (8 сервісів + `storage.yml`);
-  AR-encryption ключі = ENV (boot-guard fail-closed, були DEAD-in-prod). Механіка/Phase-2-drop →
-  `06_04 §5.7` / 00_07 SEC.22.
-  🔴 **І `storage.yml` тут не деталь переліку, а ПАСТКА з незворотною ціною — беручи Phase-2, читай
-  `06_04 §2.1`, НЕ лише §5.7 (перелік є в обох, зуби лише в §2.1).** Виконаний ДОСЛІВНО як «drop
-  RAILS_MASTER_KEY, вісім сервісів переведено» крок лишає Active Storage без креденшелів і тихо
-  вбиває фотодокази `MaintenanceRecord` — ЄДИНУ людську доказову поверхню в системі. І момент має
-  напрямок: робити це треба ДО першого блоба, бо після нього крок незворотний для вже завантажених.
+  AR-encryption ключі = ENV (boot-guard fail-closed, були DEAD-in-prod). ✅ Phase-2 drop
+  ВІДВАНТАЖЕНО 09-02: master-key не їде в ЖОДЕН процес (образ без `credentials.yml.enc`, vault =
+  лише `secret_key_base`, який їде окремим `SECRET_KEY_BASE`); ратчет — `kamal_secrets_parse_spec` +
+  `anchor_coap_env_spec`. 🔴 Той самий вимір: heredoc `coap.env` ніс master-key і НЕ ніс
+  `SECRET_KEY_BASE` — `active_storage.verifier` кличе `message_verifier` при буті будь-якого
+  Rails-процесу, тож демон помер би «Missing secret_key_base» на першому старті. Незамінний
+  DR-ключ тепер `SECRET_KEY_BASE` (DR.1). Механіка → `06_04 §5.7` / 00_07 SEC.22.
+  🔴 **І `storage.yml` тут не деталь переліку, а ПАСТКА з незворотною ціною — читай `06_04 §2.1`,
+  НЕ лише §5.7 (перелік є в обох, зуби лише в §2.1).** Механізм після 09-02 названо чесно: у
+  контейнері credentials-фолбек `storage.yml` був `nil` ЗАВЖДИ (образ без vault), тож Phase-2 нічого
+  не «зламав» — але вимога та сама й живе в S1.1: AWS/GCS-пара в ENV production ДО першого блоба,
+  інакше фотодокази `MaintenanceRecord` — ЄДИНА людська доказова поверхня — тихо мертві, і після
+  першого блоба крок незворотний для вже завантажених.
   ⚠️ Рядок дописано 2026-09-01: доти скіл називав `storage.yml` без жодного застереження й посилав
   саме в §5.7 — тобто на deploy-day читач із самим скілом у руках проходив повз пастку, маючи
   формально правдивий текст.

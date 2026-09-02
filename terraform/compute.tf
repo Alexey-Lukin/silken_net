@@ -268,7 +268,12 @@ POSTGRES_DATABASE=silken_net_production
 # canopy: the CANOPY_REDIS_URL instance. ⛔ Never the other slot's instance: two Sidekiq
 # servers on one Redis = cross-drain mainnet⟷testnet (deploy_workflow_parity_spec).
 REDIS_URL=REQUIRED_SECRET_NOT_SET
-RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
+# [SEC.22 Phase-2, 2026-09-02] SECRET_KEY_BASE, not RAILS_MASTER_KEY: the image ships no
+# credentials.yml.enc, so a master key here decrypted nothing, while `active_storage.verifier`
+# calls `message_verifier` at the boot of EVERY Rails process — with the old line this daemon
+# would have died «Missing secret_key_base» exactly like the first canopy container did.
+# Same value as the SECRET_KEY_BASE GitHub Secret (slot-invariant).
+SECRET_KEY_BASE=REQUIRED_SECRET_NOT_SET
 # No PROVISIONING_MASTER_KEY — coap_listener is pure UDP glue (enqueue only); key
 # derivation lives in the workers, master_key_strength_check skips this process, so
 # provisioning the fleet-wide-forge crown-jewel here would expose it for nothing (SEC.22). Do not re-add.

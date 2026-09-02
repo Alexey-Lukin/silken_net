@@ -136,7 +136,6 @@ jobs:
           # IAP tunnel + OS Login, no key material to provision.
           # KAMAL_MASTER_KEY removed — phantom: Kamal 2.x has no such mechanism and
           # nothing in .kamal/ consumes it (plain $VAR secrets file, not encrypted).
-          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
           PROVISIONING_MASTER_KEY: ${{ secrets.PROVISIONING_MASTER_KEY }}
           # [SEC.22] AR-encryption keys — boot-critical (fail-closed initializer);
@@ -219,7 +218,7 @@ jobs:
           # container" — the exact class BOOT_CRITICAL exists to kill. Membership of all three
           # lists is compared with production's modulo the CANOPY_ prefix by
           # spec/deploy/deploy_workflow_parity_spec.rb.
-          BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM CANOPY_ALCHEMY_POLYGON_RPC_URL CANOPY_ALCHEMY_ETHEREUM_RPC_URL CANOPY_SOLANA_RPC_URL CANOPY_CELO_RPC_URL"
+          BOOT_CRITICAL="SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM CANOPY_ALCHEMY_POLYGON_RPC_URL CANOPY_ALCHEMY_ETHEREUM_RPC_URL CANOPY_SOLANA_RPC_URL CANOPY_CELO_RPC_URL"
           JOB_CRITICAL="CANOPY_ORACLE_MINTER_PRIVATE_KEY CANOPY_ORACLE_SLASHER_PRIVATE_KEY CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY CANOPY_ORACLE_CELO_PRIVATE_KEY CANOPY_SOLANA_WALLET_KEYPAIR CANOPY_SOLANA_FEE_PAYER_PUBKEY CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT CANOPY_SOLANA_USDC_MINT_ADDRESS"
           RUNTIME="SENTRY_DSN CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
@@ -444,7 +443,7 @@ jobs:
         run: kamal deploy -d canopy --roles "${{ needs.verify-secrets.outputs.roles }}"
         # ⚠️ Drift guard: this env: block MUST mirror the GLOBAL config/deploy.yml env.secret
         # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
-        # entry missing here is injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt /
+        # entry missing here is injected EMPTY → boot crash (SECRET_KEY_BASE /
         # PROVISIONING_MASTER_KEY guard). The servers.job quintet IS mirrored since 2026-09-02 —
         # canopy has its own job role, fed by CANOPY_* twins [OPS.37]. KREDIS_REDIS_URL is intentionally omitted — Kredis reads
         # REDIS_URL as-is (one logical database, keys separated by prefix [INF.22]);
@@ -454,7 +453,9 @@ jobs:
           # config/deploy.yml registry), not a JSON key.
           GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
           # --- Application core ---
-          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          # RAILS_MASTER_KEY dropped 2026-09-02 (SEC.22 Phase-2): the image ships no
+          # credentials.yml.enc, so it decrypted nothing in any container; SECRET_KEY_BASE
+          # is the boot-critical one (docs/06_04 §5.7).
           SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
           # Component style: same Cloud SQL user/password as production; Canopy isolates
           # via POSTGRES_DATABASE=silken_net_canopy (config/deploy.canopy.yml). REDIS stays separate.

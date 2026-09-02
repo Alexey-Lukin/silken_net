@@ -186,7 +186,12 @@ registry:
 env:
   secret:
     # --- Application core ---
-    - RAILS_MASTER_KEY
+    # RAILS_MASTER_KEY is NOT here — dropped 2026-09-02 (SEC.22 Phase-2), by measurement:
+    # `.dockerignore` keeps credentials.yml.enc out of the image, so the key decrypted
+    # NOTHING in any container since the first boot, and the repo vault holds only
+    # `secret_key_base`, which travels as its own secret below. Re-adding it = a runtime
+    # vault dependency the latch exists to dissolve (docs/06_04 §5.7); the ratchet is
+    # spec/deploy/kamal_secrets_parse_spec.rb («ships no RAILS_MASTER_KEY on either leg»).
     - SECRET_KEY_BASE
     # Cloud SQL password (host/user are non-secret → env.clear). Component style: config/database.yml.
     - POSTGRES_PASSWORD

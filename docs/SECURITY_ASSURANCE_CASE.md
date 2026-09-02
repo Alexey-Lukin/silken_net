@@ -238,7 +238,7 @@ An assurance case is credible because it states what is **not** yet fully closed
   anti-fraud invariant for the whole flashed fleet until an SWD re-flash) → GCP-KMS-MAC + an Expand-only KDF
   (pre-mainnet, firmware-coordinated). **`RAILS_MASTER_KEY` belongs in the same sentence:** it unlocks the
   credentials vault and — via the entangled `secret_key_base` ([`06_04 §5.2`](06_04_Secrets_Checklist)) —
-  forges sessions and every `generates_token_for` token; its *runtime* need is being dissolved
+  forges sessions and every `generates_token_for` token; its *runtime* need was dissolved on 2026-09-02 (Phase-2 shipped: no process carries it; the vault holds only `secret_key_base`, which travels as its own secret — so the irreplaceable key is now `SECRET_KEY_BASE`)
   (credentials→ENV shipped, Phase-2 drop deploy-gated — `SEC.22`), and both master keys are effectively
   un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
   (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design.

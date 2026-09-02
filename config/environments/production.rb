@@ -172,8 +172,8 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # [SEC.22] ActiveRecord Encryption keys come from ENV, NEVER credentials.yml.enc.
-  # Storing them in the vault would deepen the runtime RAILS_MASTER_KEY dependency
-  # SEC.22 is dissolving (anyone with host access reads /proc/<pid>/environ). dev/test pin
+  # Storing them in the vault would rebuild the runtime RAILS_MASTER_KEY dependency
+  # SEC.22 dissolved on 2026-09-02 — Phase-2 shipped, no process carries the key (anyone with host access reads /proc/<pid>/environ). dev/test pin
   # fixtures in their own env files; production reads real >=32-byte values injected
   # per process (web + Sidekiq workers decrypt hardware_keys + identities; the coap
   # daemon only enqueues). ENV[...] not fetch: a nil is caught loudly at boot by
