@@ -19,7 +19,9 @@ deploy/grafana/
 # Перевірка артефактів без credentials (нічого не шле):
 ruby deploy/grafana/import.rb --dry-run
 
-# Імпорт (service-account token із роллю Editor+):
+# Імпорт (service-account token із роллю Editor+). Живий SA — `silkennet-import-rb`,
+# Editor, expiry 2026-11-28 (заведено 2026-08-30): годинник, що цокає без нашого коміту —
+# після строку --verify і імпорт мовчки віддадуть 401; перевидати токен ДО того.
 GRAFANA_URL=https://<stack>.grafana.net \
 GRAFANA_API_TOKEN=<token> \
   ruby deploy/grafana/import.rb
