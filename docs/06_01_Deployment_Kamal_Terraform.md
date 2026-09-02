@@ -1145,7 +1145,8 @@ export GCP_ARTIFACT_REGISTRY_KEY=$(gcloud auth print-access-token)   # ~60 хв 
 ⚠️ **`CANOPY_REDIS_URL` — не оздоба:** без нього overlay віддає гучний плейсхолдер, тобто
 canopy сідає на невалідний Redis. Гучним він є для КОНТЕЙНЕРА (Redis-клієнт падає, `/ready`
 503-ить), але дефолтний `proxy.healthcheck` — це `/up`, який Redis не чіпає, тож **сам деплой
-лишається зеленим** — рівно доти, доки INF.10-фліп не переведе пробу на `/ready`.
+лишається зеленим** — рівно доти, доки слот не фліпнуто на `/ready`: canopy фліпнуто 2026-09-02 (Фаза 5),
+тож там плейсхолдер тепер валить і сам деплой; production — після ВЛАСНОГО першого деплою.
 ⚠️ **AR-токен живе ~годину, а `builder.arch: amd64` на arm64-машині означає ЕМУЛЯЦІЮ** — на
 довгій збірці токен може протухнути ВСЕРЕДИНІ одного `kamal deploy`; тоді перевидати й
 повторити (це не збій конфігу).
@@ -1182,7 +1183,7 @@ job-серії ≠ 0 (S2.4/INF.14) · Grafana-сесія: `deploy/grafana/import
 + contact point (S2.4 — дашборд і правила вже в стеку з 2026-08-29, лишився КАНАЛ). 🔑 **`import.rb` бере ІНШИЙ креденшел, ніж Alloy, і Фаза −1 називала лише Alloyʼвий:** `GRAFANA_REMOTE_WRITE_{URL,USERNAME,TOKEN}` — це push метрик, а скрипт ходить в **адмін-API** й hard-fail'ить без `GRAFANA_URL` + `GRAFANA_API_TOKEN` (service-account, роль Editor+). ⚠️ І дзеркально: `ALERT_CONTACT_EMAIL` / `ALERT_CONTACT_TELEGRAM_{TOKEN,CHATID}` — **off-by-default**, тож без них скрипт contact point просто ПРОПУСКАЄ, лишаючись зеленим. Верифікаційний крок, який не може провалитись, верифікацією не є: якщо канал уже задротований (08-30), пінь його ЧИТАННЯМ (`--verify`), а не мовчазним успіхом імпорту · `/sidekiq` під admin-сесією → 200, під анонімом → 404
 (ARCH.61 route-constraint — ops-інструмент DeadSet-runbook'ів живий і закритий) ·
 Puma dual-stack (PUMA-IPV6-1) — `kamal app exec -i "curl -sf -o /dev/null -w '%{http_code}\n' http://[::1]:3000/up"` → `200`. 🔴 **Тут стояло `ss -tlnp | grep 3000`, і жодне з трьох прочитань кроку не виконується (виміряно 2026-08-31):** на машині оператора `ss` немає (Linux-утиліта), на app-хості порт 3000 не опублікований (ролі мають `network-alias`, не `publish` — див. §Kamal), а в контейнері `ss` не встановлений (`Dockerfile` ставить рівно `curl libjemalloc2 libvips postgresql-client`; `iproute2` немає). ⚠️ ОЧІКУВАНЕ значення при цьому чинне й переміряне проти самого гема: `puma-8.0.2` `Configuration.default_tcp_host` = `ipv6_interface_available? ? '::' : '0.0.0.0'` — тобто `[::]:3000` правдиве, зламана була лише проба. `curl` тут і є доказом: відповідь на **IPv6-loopback** можлива лише при bind на `::`, а `/up` виключений з `force_ssl`-редиректу й з `host_authorization` (`probe_paths`, `production.rb`), тож 200 не маскується ані 301, ані 403. Без будь-яких пакетів той самий факт дає `kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"` · money fail-closed
-(INF.11) · Sentry release (S5.2) · mailer/DB_POOL/entrypoint (INF.13) · гаманці з газом
+(INF.11) · Sentry release (S5.2) · **mailer = reset-лінк реально долітає й не 403-иться** (хост у тілі листа = `APP_HOST` → web-хост, домен резолвиться, `RAILS_ALLOWED_HOSTS` пропускає — ex-INF.25/INF.13 §🗄️; ⚠️ canopy пошту скіпає свідомо, `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1`, тож ця перевірка = PRODUCTION) · `DB_POOL` job-ролі (лише там, на canopy job-ролі нема) · entrypoint fail-loud (✅ canopy 2026-09-02: контейнер вийшов під `-e` на впалому сіді — так і знайдено неатомарність `db:prepare`, [`06_06 §5.6`](06_06_Disaster_Recovery_and_Backup)) · гаманці з газом
 (Pre-Flight #3).
 
 **Фаза 5 — Production-render + hardening:**
