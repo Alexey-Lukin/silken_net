@@ -1233,9 +1233,10 @@ dead-man switch Королев, sweep застряглих коштів, treasur
 адресу анкера (`terraform output -raw ingress_private_ip`; firewall `allow_internal` пускає UDP
 всередині VPC; ціль — `SIMULATOR_COAP_URL`, бо `COAP_HOST` зайнятий пробою адмін-панелі):
 ```bash
-# на app-хості (IAP-ssh): усередині ЖИВОГО job-контейнера canopy (ключі шлюзів читаються з БД слоту)
-JOB=$(sudo docker ps --format '{{.Names}}' | grep -- '-job-' | grep canopy | head -1)
-sudo docker exec -e SIMULATOR_COAP_URL=coap://<ingress_private_ip>:5683 -it "$JOB" bin/forest_simulator
+# на app-хості (IAP-ssh): усередині живого контейнера canopy — web, доки job-роль не піднята
+# (Devnet-двійники); симулятору потрібні лише БД слоту (ключі шлюзів) і UDP-вихід, роль байдужа
+C=$(sudo docker ps --format '{{.Names}}' | grep canopy | grep -E -- '-(web|job)-' | head -1)
+sudo docker exec -e SIMULATOR_COAP_URL=coap://<ingress_private_ip>:5683 -it "$C" bin/forest_simulator
 # доказ — рядки в БД canopy, не лог демона: TelemetryLog.count росте (runner-форма Фази 4 нижче)
 ```
 ⚠️ Симулятор — foreground-процес, живе доки відкритий термінал (Ctrl-C = стоп; тумблера в UI
