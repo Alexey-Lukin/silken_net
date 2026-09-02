@@ -24,7 +24,16 @@ Sentry.init do |config|
   # release" grouping, and a page for whoever is on prod-call because staging was deployed.
   # Undeclared falls back to `Rails.env`, so dev/test still report themselves honestly.
   config.environment = SilkenNet::DeploymentSlot.current
-  config.release     = ENV.fetch("RELEASE_VERSION", nil)
+  # 🔴 RELEASE: read what Kamal INJECTS, never what a manifest promises. Measured on live canopy
+  # 2026-09-02: `env.clear` carried `RELEASE_VERSION: "${RELEASE_VERSION}"`, and Kamal passes
+  # `env.clear` as `--env KEY=VALUE` inside the `docker run` it executes over SSH — so the
+  # REMOTE shell on the app host expanded `${RELEASE_VERSION}` (unset there) to "", Sentry
+  # discarded it ("release: expected a non-empty string") and every event shipped release-less
+  # while the manifest, both workflows and the canon all said "set by CI". `KAMAL_VERSION` is
+  # the git sha Kamal itself puts on every container (`Kamal::Commands::App#run`); `.presence`
+  # keeps the present-but-EMPTY class (INF.22/S2.4) from ever reaching the SDK again.
+  # `RELEASE_VERSION` remains as the explicit override for non-Kamal processes (anchor daemon).
+  config.release     = ENV["RELEASE_VERSION"].presence || ENV["KAMAL_VERSION"].presence
 
   # -----------------------------------------------------------------------
   # 🔒 DATA SANITIZATION (Zero-Trust Security)

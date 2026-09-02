@@ -853,7 +853,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 - [ ] Provisioning HKDF flow завершено (§Hardcoded AES Key mitigation): унікальний `aes_key` записано в protected sector, master_key генерується HRNG (не FIPS-197 test vector).
 - [ ] FW.2 (CCM) integrated: інакше після RDP-2 вже не можна «полагодити» AES-ECB вразливість через SWD reflash.
 - [ ] Watchdog (IWDG) тестовано: якщо firmware зависає, IWDG перезавантажує MCU без SWD (SEC.8 §ECB Restoration Race у цьому доку ✅).
-- [ ] Final firmware version task-snapshot задокументовано у `RELEASE_VERSION` ENV (Sentry release tracking) та git tag `vX.Y.Z`.
+- [ ] Final firmware version task-snapshot задокументовано git tag `vX.Y.Z` (backend-release у Sentry Kamal несе сам — `KAMAL_VERSION`, [`06_03 §1.2`](06_03_Prometheus_Observability); `RELEASE_VERSION` — лише оверрайд для не-Kamal процесів, не носій прошивки).
 - [ ] Spare batch (≥10 одиниць) залишено на RDP Level 1 для in-field troubleshooting (RDP-1 дозволяє стирати+перепрошивати, але не зчитувати → ключ безпечний).
 
 **Послідовність активації (per device, factory line):**

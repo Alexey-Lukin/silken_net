@@ -408,7 +408,7 @@ env:
     APP_HOST: silkennet.app                   # Action Mailer host = web-host (INF.25 Опція A, 2026-08-30)
     COAP_HOST: api.silkennet.com              # UDP-проба панелі здоров'я (ARCH.81) — той самий хост, що набирає Королева
     WEB3_STRICT_MODE: "true"                  # Web3 fail-closed (INF.11)
-    RELEASE_VERSION: "${RELEASE_VERSION}"     # Sentry release tag (CI-set)
+    # RELEASE_VERSION — НЕ env.clear: Sentry-release читає `KAMAL_VERSION`, який Kamal інжектить сам (06_03 §1.2)
     # RAILS_ALLOWED_HOSTS: …  # ⚠️ operator-set, НЕ комітити (хибне значення = 403 block-all; S6.18 + INF.4); ⚖️ 2026-09-02: для CANOPY закомічено `canopy.silkennet.app` в `deploy.canopy.yml` — значення = `proxy.host`, що й так у маніфесті; production лишається операторським
     # DISABLE_SSL / CSP_ENFORCE — операторські тогли
 ```

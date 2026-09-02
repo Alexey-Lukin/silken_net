@@ -47,6 +47,26 @@ RSpec.describe "config/deploy.yml is accepted by Kamal itself" do # rubocop:disa
     end
   end
 
+  # 🔴 `${VAR}` inside env.clear is NOT interpolated by Kamal — it is emitted verbatim as
+  # `--env VAR="${VAR}"` in the `docker run` Kamal executes OVER SSH, so the REMOTE shell
+  # expands it against the host's environment, where the variable is unset → "". Measured on
+  # live canopy 2026-09-02 (`RELEASE_VERSION` arrived empty; Sentry discarded the release on
+  # every event while manifest, workflows and canon all said "set by CI"). The manifest is
+  # ERB-rendered (`<%= ENV[...] %>`) if a value must come from the deploying shell; a bash
+  # form here is a promise the container never receives.
+  describe "env.clear never carries a shell interpolation [S2.4]" do
+    KAMAL_DESTINATIONS.each do |slot, destination|
+      it "has no ${...} in any env.clear value on #{slot}" do
+        config = config_for(destination)
+        roles  = config.roles.to_h { |r| [ r.name, r.env(r.primary_host).clear ] }
+        roles["<global>"] = config.env.clear
+        offenders = roles.flat_map { |role, env| env.filter_map { |k, v| "#{role}:#{k}=#{v}" if v.to_s.include?("${") } }
+
+        expect(offenders).to be_empty
+      end
+    end
+  end
+
   describe "the origin-TLS contract [INF.4]" do
     # Both slots must present a certificate: Cloudflare is Full (strict) on both zones, and an
     # origin with no cert answers 521/525 on every request — a silent-origin failure, not a

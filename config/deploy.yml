@@ -280,10 +280,12 @@ env:
     # Combined with preload_app! + jemalloc, CoW sharing cuts memory ~30-40%.
     WEB_CONCURRENCY: 2
 
-    # Sentry release tracking — set by CI/CD pipeline (git SHA or release tag).
-    # Enables Sentry to group errors by deploy and track regressions.
-    # See: config/initializers/sentry.rb → config.release
-    RELEASE_VERSION: "${RELEASE_VERSION}"
+    # Sentry release tracking — NOT an env.clear value: Kamal injects `KAMAL_VERSION` (git sha)
+    # into every container it runs, and `config/initializers/sentry.rb` reads it. ⛔ Never put
+    # `${VAR}` into env.clear — Kamal emits it as `--env VAR="${VAR}"` inside the `docker run`
+    # it executes OVER SSH, so the REMOTE shell expands it, and on the host the variable is
+    # unset → the container gets "" (measured on canopy 2026-09-02: Sentry discarded the empty
+    # release for every event). Pinned by `spec/deploy/kamal_config_validity_spec.rb`.
 
     # 🔑 TWO AXES, deliberately separate [OPS.37]. `production` used to answer both
     # questions at once, and a staging slot needs the first WITHOUT the second:

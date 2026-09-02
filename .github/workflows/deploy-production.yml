@@ -264,7 +264,6 @@ jobs:
           # database are non-secret env.clear in config/deploy.yml.
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
-          RELEASE_VERSION: ${{ github.event.release.tag_name || github.sha }}
           # --- Observability ---
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           # --- Origin TLS [INF.4] — consumed by `config/deploy.yml` proxy.ssl, NOT by Rails ---

@@ -36,6 +36,15 @@ RSpec.describe "Deployment-slot axis reaches the Rails roles (INF.27)" do # rubo
   let(:base)   { yaml_at("config/deploy.yml") }
   let(:canopy) { yaml_at("config/deploy.canopy.yml") }
 
+  # [S2.4] Sibling facet: the release. Kamal injects `KAMAL_VERSION` (git sha) into every
+  # container; `RELEASE_VERSION` is an explicit override only. Both go through `.presence`
+  # because the present-but-EMPTY form is the one Sentry silently discards (measured 2026-09-02).
+  it "reads the Sentry release from Kamal's injected KAMAL_VERSION, RELEASE_VERSION as override, both via presence" do
+    line = source("config/initializers/sentry.rb")[/^\s*config\.release\s*=\s*(.+)$/, 1]
+
+    expect(line).to eq('ENV["RELEASE_VERSION"].presence || ENV["KAMAL_VERSION"].presence')
+  end
+
   describe "the declaration itself" do
     it "is set for the Rails roles in the base manifest" do
       expect(base.dig("env", "clear", "DEPLOYMENT_SLOT")).to eq("production")
