@@ -23,6 +23,14 @@ class IotexVerificationWorker
   end
 
   def perform(telemetry_log_id, created_at_iso)
+    # [OPS.37 / ARCH.118] Activation gate — jobs already sitting in Redis from before the leg
+    # was gated (or re-armed by an older backfill) exit here instead of raising into the
+    # retry ladder. One home for the predicate: `Iotex::W3bstreamVerificationService.configured?`.
+    unless Iotex::W3bstreamVerificationService.configured?
+      return Rails.logger.warn "⏸️ [IoTeX] W3bstream не сконфігуровано (IOTEX_W3BSTREAM_URL/IOTEX_API_KEY) — " \
+                               "TelemetryLog ##{telemetry_log_id} лишається неверифікованим до активації (06_04 §2.2)."
+    end
+
     log = find_telemetry_log_with_pruning(telemetry_log_id, created_at_iso, log_prefix: "[IoTeX]")
     return unless log
 

@@ -32,6 +32,8 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       .and_return([ 0.5, 0.1, 0.2, 0.3 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
     allow(StreamrBroadcastWorker).to receive(:perform_async)
+    # [OPS.37] The IoTeX leg is activation-gated; the enqueue pins below assume a LIVE leg.
+    allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(true)
   end
 
 # 🔴 [ARCH.41] Доба cold-start деривації мусить іти з моменту ПРИЙОМУ, а не
@@ -181,6 +183,19 @@ end
     described_class.call(chunk)
 
     expect(IotexVerificationWorker).to have_received(:perform_async).with(an_instance_of(Integer), an_instance_of(String))
+  end
+
+  # [OPS.37 / ARCH.118] An UNCONFIGURED W3bstream leg enqueues nothing — measured shape before
+  # the gate: every record bought 6 failing executions and ~30 Redis commands, none visible to
+  # Sentry. The record still commits and Streamr still broadcasts.
+  it "does not enqueue IotexVerificationWorker when W3bstream is not configured (activation gate)" do
+    allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(false)
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+    expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+
+    expect(IotexVerificationWorker).not_to have_received(:perform_async)
+    expect(StreamrBroadcastWorker).to have_received(:perform_async)
   end
 
   it "triggers StreamrBroadcastWorker after telemetry commit" do

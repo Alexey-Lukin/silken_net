@@ -10,9 +10,29 @@ RSpec.describe IotexVerificationWorker, type: :worker do
 
   before do
     silence_broadcasts!(:tree_map)
+    # [OPS.37] Activation gate — the examples below exercise a LIVE leg.
+    allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(true)
   end
 
   describe "#perform" do
+    # [OPS.37 / ARCH.118] A job that reaches a worker whose leg is NOT configured must exit
+    # without raising: a raise here is the retry ladder (6 executions → Dead Set) that the
+    # gate exists to remove. The log stays honestly unverified.
+    it "returns without raising and leaves the log unverified when W3bstream is not configured" do
+      allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(false)
+      allow(Iotex::W3bstreamVerificationService).to receive(:new)
+      allow(Rails.logger).to receive(:warn)
+
+      expect do
+        described_class.new.perform(telemetry_log.id_value, telemetry_log.created_at.iso8601(6))
+      end.not_to raise_error
+
+      expect(Iotex::W3bstreamVerificationService).not_to have_received(:new)
+      expect(Rails.logger).to have_received(:warn).with(/W3bstream не сконфігуровано/)
+      expect(telemetry_log.reload.verified_by_iotex).to be false
+      expect(ChainlinkDispatchWorker.jobs).to be_empty
+    end
+
     it "calls Iotex::W3bstreamVerificationService and updates telemetry_log" do
       zk_proof_ref = "zk-proof-abc123"
       service = instance_double(Iotex::W3bstreamVerificationService)

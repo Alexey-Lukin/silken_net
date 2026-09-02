@@ -347,6 +347,26 @@ module Security
                "at call time. Set a mainnet Celo RPC."
       end
 
+      # [OPS.37 review 2026-09-02] The SECOND value the ARMED Celo path needs — and the guard
+      # judged only the first. `CELO_CUSD_CONTRACT_ADDRESS` is a bare `ENV.fetch` in
+      # `Celo::CommunityRewardService` (LOUD, hence not in SILENT_ADDRESS_ENVS) — but loud only
+      # on the first healthy cluster of the day: a slot that inherits the base manifest's deploy
+      # placeholder (canopy did, for two days) raises `Eth::Address::CheckSumError` ×4 attempts
+      # into Sentry per cluster per day, and the guard stayed green. Same trigger as E.49
+      # (arming), same one thing bought: the failure moves from the first reward event to
+      # `kamal deploy`. Chain-blind on purpose — an address carries no chain marker; the
+      # address's CHAIN is judged by the `cast call symbol()` acceptance recorded beside the
+      # value in the manifest, not here.
+      if env["ORACLE_CELO_PRIVATE_KEY"].present?
+        cusd = env["CELO_CUSD_CONTRACT_ADDRESS"]
+        if cusd.blank? || !cusd.match?(EthAddressValidatable::ETH_ADDRESS_FORMAT) || !EthAddressValidatable.eip55_valid?(cusd)
+          out << "[address] CELO_CUSD_CONTRACT_ADDRESS is unset, still the deploy placeholder or not a " \
+                 "checksummed 0x-address while ORACLE_CELO_PRIVATE_KEY is present (value not echoed) — " \
+                 "every reward payout would raise Eth::Address::CheckSumError at call time; fill the cUSD " \
+                 "address of the chain family this slot declares via #{CHAIN_ENV_VAR} (06_04 §2.1)."
+        end
+      end
+
       # Mirror of the rule above, and it exists because the testnet axis CREATED the hazard:
       # the Polygon branch of `MintingRollbackService` falls back to the hardcoded MAINNET
       # `polygon-rpc.com`, so a testnet slot that forgets the var reads mainnet state in

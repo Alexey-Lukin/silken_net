@@ -198,6 +198,12 @@ env:
     # (`REQUIRE_SAFE_ADMIN` stays false, so the script warned instead of reverting).
     DAO_TREASURY_ADDRESS: "0x6FEa1cAFd4371e159cFF9c1232368339166C365b"
     PROTOCOL_PARAMETERS_CONTRACT_ADDRESS: "0x1F20032142C98BBcfD3DcB115f62Ae1230802Be2"
+    # cUSD on Celo Sepolia (chain 11142220) — docs.celo.org/contract-addresses, and accepted
+    # on-chain 2026-09-02: `cast call <addr> "symbol()(string)"` via forno.celo-sepolia → "cUSD".
+    # Without this line canopy inherited the base placeholder (deep_merge = keys-UNION) and
+    # `CeloRewardWorker` raised CheckSumError ×4 into Sentry per healthy cluster per day; the
+    # boot guard now refuses an ARMED Celo path with a placeholder here (E.49's sibling).
+    CELO_CUSD_CONTRACT_ADDRESS: "0xEF4d55D6dE8e8d73232827Cd1e9b2F2dBb45bC80"
     # ⛔ Never "fill" ETHEREUM_ANCHOR_CONTRACT with the Amoy StateRootAnchor: a well-formed
     # address on the WRONG chain is the silent class INF.27 Q2 names, and it would ride straight
     # into an MRV lineage report (Mrv::LineageReportService reads it from the web container).

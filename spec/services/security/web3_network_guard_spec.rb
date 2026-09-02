@@ -96,9 +96,24 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(clean_env)).not_to include(a_string_matching(/CELO_RPC_URL/))
     end
 
-    it "accepts an armed Celo path with a mainnet RPC" do
-      env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64, "CELO_RPC_URL" => "https://forno.celo.org")
+    it "accepts an armed Celo path with a mainnet RPC and a checksummed cUSD address" do
+      env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64, "CELO_RPC_URL" => "https://forno.celo.org",
+                            "CELO_CUSD_CONTRACT_ADDRESS" => "0x765DE816845861e75A25fCA122bb6898B8B1282a")
       expect(described_class.violations(env)).to be_empty
+    end
+
+    # [OPS.37 review 2026-09-02] E.49's sibling: the armed path needs TWO values, and the second
+    # was judged by nobody — canopy inherited the base placeholder for two days and paid with a
+    # daily CheckSumError ×4 per healthy cluster into Sentry while the guard stayed green.
+    it "refuses the deploy placeholder in CELO_CUSD_CONTRACT_ADDRESS when the Celo path is armed" do
+      env = clean_env.merge("ORACLE_CELO_PRIVATE_KEY" => "d" * 64, "CELO_RPC_URL" => "https://forno.celo.org",
+                            "CELO_CUSD_CONTRACT_ADDRESS" => "REQUIRED_SECRET_NOT_SET")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[address\] CELO_CUSD_CONTRACT_ADDRESS.*CheckSumError/))
+    end
+
+    it "does not demand CELO_CUSD_CONTRACT_ADDRESS while the Celo path is unarmed" do
+      expect(described_class.violations(clean_env)).not_to include(a_string_matching(/CELO_CUSD_CONTRACT_ADDRESS/))
     end
 
     # --- declared chain family [OPS.37 — the `production` split] ----------

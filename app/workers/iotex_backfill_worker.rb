@@ -40,6 +40,16 @@ class IotexBackfillWorker
   BATCH_LIMIT = 200
 
   def perform
+    # [OPS.37 / ARCH.118] Activation gate with a VOICE: re-arming into an unconfigured leg is
+    # not recovery, it is 200 × 6 failing executions an hour forever. The hourly line names the
+    # window's unverified count so the state is visible in logs, not merely absent from them.
+    unless Iotex::W3bstreamVerificationService.configured?
+      pending = TelemetryLog.where(verified_by_iotex: false).where(created_at: LOOKBACK_WINDOW.ago..).count
+      Rails.logger.warn "⏸️ [IoTeX Backfill] W3bstream не сконфігуровано — #{pending} логів за " \
+                        "#{LOOKBACK_WINDOW.inspect} лишаються неверифікованими; ре-арм відкладено до активації (06_04 §2.2)."
+      return
+    end
+
     stale = TelemetryLog
               .where(verified_by_iotex: false)
               .where(created_at: LOOKBACK_WINDOW.ago..)

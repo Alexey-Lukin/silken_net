@@ -11,6 +11,8 @@ RSpec.describe IotexBackfillWorker, type: :worker do
 
   before do
     allow(IotexVerificationWorker).to receive(:perform_async)
+    # [OPS.37] Activation gate — re-arming assumes a LIVE leg.
+    allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(true)
   end
 
   def unverified_log(created_at:)
@@ -18,6 +20,19 @@ RSpec.describe IotexBackfillWorker, type: :worker do
   end
 
   describe "#perform" do
+    # [OPS.37 / ARCH.118] Unconfigured leg ⇒ NO re-arm (that would be 200 × 6 failing executions
+    # an hour, forever), and a voice that names the count instead of a silent no-op.
+    it "does not re-arm when W3bstream is not configured, and names the unverified count" do
+      allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(false)
+      allow(Rails.logger).to receive(:warn)
+      unverified_log(created_at: 2.hours.ago)
+
+      described_class.new.perform
+
+      expect(IotexVerificationWorker).not_to have_received(:perform_async)
+      expect(Rails.logger).to have_received(:warn).with(/не сконфігуровано — 1 логів/)
+    end
+
     it "re-arms an unverified log inside the window" do
       log = unverified_log(created_at: 2.hours.ago)
 

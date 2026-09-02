@@ -935,7 +935,10 @@ class TelemetryUnpackerService < ApplicationService
     # Раніше: jobs ставились у чергу всередині transaction — при rollback TelemetryLog
     # запис не існував, але IotexVerificationWorker вже був у Redis (5 марних ретраїв
     # на web3_critical чергу).
-    IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6))
+    # [OPS.37 / ARCH.118] The IoTeX leg is ACTIVATION-GATED (`configured?` — its one home):
+    # unconfigured ⇒ no job at all, because a job that can only raise buys 6 executions and
+    # ~30 Redis commands per record for nothing. Streamr keeps its own rescue-shaped gate.
+    IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6)) if Iotex::W3bstreamVerificationService.configured?
     StreamrBroadcastWorker.perform_async(log.id_value, log.created_at.iso8601(6))
 
     # [BLOCKER FIX: Database Locking — Wiki 04_01]

@@ -12,6 +12,34 @@ RSpec.describe Iotex::W3bstreamVerificationService, type: :service do
     silence_broadcasts!(:tree_map)
   end
 
+  # [OPS.37 / ARCH.118] One home for «is the leg live»: both values, ENV-first with the
+  # credentials fallback (SEC.22). The pins below use the ENV half because the credentials
+  # half is nil in test (no master key) — a stub there would prove the stub, not the read.
+  describe ".configured?" do
+    before { allow(Rails.application.credentials).to receive_messages(iotex_w3bstream_url: nil, iotex_api_key: nil) }
+
+    it "is false when both values are absent (the state of every deploy surface today)" do
+      stub_const("ENV", ENV.to_h.except("IOTEX_W3BSTREAM_URL", "IOTEX_API_KEY"))
+      expect(described_class.configured?).to be false
+    end
+
+    it "is false when only the URL is set — a key-less leg would still raise per record" do
+      stub_const("ENV", ENV.to_h.except("IOTEX_API_KEY").merge("IOTEX_W3BSTREAM_URL" => "https://w3bstream.example.com"))
+      expect(described_class.configured?).to be false
+    end
+
+    it "is true when both values are present in ENV" do
+      stub_const("ENV", ENV.to_h.merge("IOTEX_W3BSTREAM_URL" => "https://w3bstream.example.com", "IOTEX_API_KEY" => "k"))
+      expect(described_class.configured?).to be true
+    end
+
+    it "is true when both values come from credentials (the SEC.22 fallback)" do
+      allow(Rails.application.credentials).to receive_messages(iotex_w3bstream_url: "https://w3bstream.example.com", iotex_api_key: "k")
+      stub_const("ENV", ENV.to_h.except("IOTEX_W3BSTREAM_URL", "IOTEX_API_KEY"))
+      expect(described_class.configured?).to be true
+    end
+  end
+
   describe "#verify!" do
     context "when W3bstream credentials are configured" do
       before do

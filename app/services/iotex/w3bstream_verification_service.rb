@@ -8,6 +8,23 @@ module Iotex
 
     class VerificationError < StandardError; end
 
+    # [OPS.37 / ARCH.118] ACTIVATION GATE — one home for «is the W3bstream leg live at all».
+    # Both values are ENV-first with a credentials fallback (SEC.22); neither sits on any deploy
+    # surface today, and the URL that `.env.example` used to carry (`w3bstream-api.iotex.io`)
+    # has no DNS record (measured 2026-09-02) — so on canopy AND on a first production deploy
+    # the leg is unconfigured, not broken. Unconfigured ⇒ nothing enqueues, nothing re-arms:
+    # the previous shape raised `VerificationError` inside the retry ladder for EVERY telemetry
+    # record (6 attempts → Dead Set, hourly backfill re-arming 200 more), i.e. ~85% of all job
+    # executions and Redis commands of a slot were failure work invisible to Sentry (the
+    # exception is in `excluded_exceptions`). ⚠️ Not a mint gate and never was: PATH 2 mints
+    # optimistically (05_02 «Чесна рамка»); `verified_by_iotex` stays honestly false until the
+    # leg is activated by provisioning both values — the same shape as the aux signers.
+    def self.configured?
+      url = ENV["IOTEX_W3BSTREAM_URL"].presence || Rails.application.credentials.iotex_w3bstream_url
+      key = ENV["IOTEX_API_KEY"].presence || Rails.application.credentials.iotex_api_key
+      url.present? && key.present?
+    end
+
     def initialize(telemetry_log)
       @telemetry_log = telemetry_log
       @tree = telemetry_log.tree
