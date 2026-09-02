@@ -25,7 +25,17 @@ RSpec.describe "Kamal secrets files through Kamal's own parser [B4 / INF.27]" do
       "ALCHEMY_POLYGON_RPC_URL"  => "CANOPY_ALCHEMY_POLYGON_RPC_URL",
       "ALCHEMY_ETHEREUM_RPC_URL" => "CANOPY_ALCHEMY_ETHEREUM_RPC_URL",
       "SOLANA_RPC_URL"           => "CANOPY_SOLANA_RPC_URL",
-      "CELO_RPC_URL"             => "CANOPY_CELO_RPC_URL"
+      "CELO_RPC_URL"             => "CANOPY_CELO_RPC_URL",
+      # [OPS.37 ⚖️ 2026-09-02] the testnet signer set behind canopy's own job role, plus the
+      # Devnet fee-payer's public identifiers — same overlay, same parser, same two verdicts.
+      "ORACLE_MINTER_PRIVATE_KEY"      => "CANOPY_ORACLE_MINTER_PRIVATE_KEY",
+      "ORACLE_SLASHER_PRIVATE_KEY"     => "CANOPY_ORACLE_SLASHER_PRIVATE_KEY",
+      "ORACLE_CELO_PRIVATE_KEY"        => "CANOPY_ORACLE_CELO_PRIVATE_KEY",
+      "ETHEREUM_ANCHOR_PRIVATE_KEY"    => "CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY",
+      "SOLANA_WALLET_KEYPAIR"          => "CANOPY_SOLANA_WALLET_KEYPAIR",
+      "SOLANA_FEE_PAYER_PUBKEY"        => "CANOPY_SOLANA_FEE_PAYER_PUBKEY",
+      "SOLANA_FEE_PAYER_TOKEN_ACCOUNT" => "CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT",
+      "SOLANA_USDC_MINT_ADDRESS"       => "CANOPY_SOLANA_USDC_MINT_ADDRESS"
     }
   end
 

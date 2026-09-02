@@ -25,8 +25,9 @@ servers:
     # DNS returns both IPs, then converges on the survivor) — the mechanism that broke
     # option (a) structurally cannot break this one. The alias dies with its container, so
     # a dead role → NXDOMAIN → scrape fail → `up=0` → sn-alert-scrape-target-down fires as
-    # designed. Canopy stays alias-less BY CONSTRUCTION (its array-form `servers:` replaces
-    # this hash wholesale — invariant B3), so canopy series can never leak into the
+    # designed. Canopy's roles carry their OWN aliases (`canopy-web`/`canopy-job` in
+    # config/deploy.canopy.yml — since 2026-09-02, OPS.37), DISJOINT from these by
+    # `spec/deploy/alloy_scrape_topology_spec.rb`, so canopy series can never leak into the
     # production scrape. Named ceiling: within the rolling window (seconds) one scrape may
     # hit either process — counters reset on the flip, which PromQL rate() absorbs.
     options:

@@ -19,7 +19,8 @@ require_relative "../support/repo_root"
 # A shared surface with no shared home diverges silently and is discovered by EXECUTION.
 #
 # 🔒 DECLARED CEILING — this judges the step SEQUENCE and the env: KEYS of shared steps, never
-# byte-equality and never `run:` BODIES. ⚠️ That second half is the sharp one: gut the body of
+# byte-equality and never `run:` BODIES (one declared exception since 2026-09-02: the membership example at
+# the bottom reads the verify-secrets ASSIGNMENT lines, nothing else). ⚠️ That second half is the sharp one: gut the body of
 # `docker network create kamal` while keeping the step name and this gate stays green — it sees
 # LABELS, and most of what nine runs bought lives in the bodies. Calling it "mechanism parity"
 # without this sentence overclaims, and it did until adversarial review of its own commit. Legitimately divergent, and deliberately NOT flagged:
@@ -31,8 +32,9 @@ require_relative "../support/repo_root"
 #     until ITS first real deploy — OPS.36); the step name carries the policy and is normalised;
 #   · verify-secrets SEVERITY — canopy skips clean, production hard-fails. That asymmetry is
 #     ratified, not drift;
-#   · the money/signing quintet, which is production-only because canopy is structurally
-#     web-only (`deploy_secret_scan` invariant B3);
+#   · the money/signing quintet's SOURCE: both slots map the same KEYS since 2026-09-02 (canopy
+#     has its own job role, OPS.37), but production reads Environment secrets and canopy reads
+#     the `CANOPY_*` testnet twins — RHS, which `env_fetch_declaration_spec` judges per slot;
 #   · comment prose — canopy carries the long measured rationale, production an abridged
 #     pointer at it. A parity gate that read comments would fire on One-Home itself.
 # ⚠️ It also cannot see anything that is NOT in the files: the GitHub Environment wait-timer is
@@ -118,5 +120,49 @@ RSpec.describe "deploy workflow mechanism parity [S1.1]" do # rubocop:disable RS
                           "shared deploy steps carry different env: keys — a step that works on one " \
                           "slot and not the other (the `GCP_ARTIFACT_REGISTRY_KEY`-on-`proxy reboot` " \
                           "shape, which cost five runs):\n  " + mismatched.join("\n  ")
+  end
+
+  # [OPS.37 review 2026-09-02] The verify-secrets CLASSIFICATION is the other shared surface,
+  # and the one the ceiling above excluded. Measured that day: the canopy list re-derived what
+  # `Web3NetworkGuard` demands of a signer at boot and applied it to canopy alone — production
+  # still WARNED on the Solana quartet and the silent Polygon RPC the same guard refuses at job
+  # boot. So this reads exactly the assignment lines and compares MEMBERSHIP modulo the
+  # `CANOPY_` prefix. The declared remainder, `overlay_fatal`, is the set production may leave
+  # unset (lazy read-sites) but the canopy overlay turns into a PRESENT placeholder the guard
+  # refuses (key format · testnet chain scan) — boot-critical on canopy by construction of
+  # `.kamal/secrets.canopy`, not by drift. Anything else that differs is drift.
+  describe "verify-secrets membership modulo the CANOPY_ prefix" do
+    let(:overlay_fatal) do
+      %w[ETHEREUM_ANCHOR_PRIVATE_KEY ORACLE_CELO_PRIVATE_KEY ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL]
+    end
+    let(:lists) do
+      workflows.to_h do |path|
+        wf  = YAML.safe_load(File.read(REPO_ROOT.join(path)), aliases: true)
+        run = Array(wf.dig("jobs", "verify-secrets", "steps")).grep(Hash).map { |st| st["run"].to_s }
+                                                            .find { |r| r.include?("BOOT_CRITICAL=") }
+        [ File.basename(path), run.to_s.scan(/^\s*(BOOT_CRITICAL|JOB_CRITICAL|RUNTIME)="([^"]*)"/).to_h { |k, v| [ k, v.split ] } ]
+      end
+    end
+
+    def strip(names) = names.map { |n| n.delete_prefix("CANOPY_") }
+
+    it "gates on canopy (slot + job role) exactly what production gates, plus the overlay-fatal names" do
+      canopy, production = lists.values_at("deploy.yml", "deploy-production.yml")
+      aggregate_failures do
+        expect(strip(canopy.fetch("BOOT_CRITICAL") + canopy.fetch("JOB_CRITICAL")).sort)
+          .to eq((production.fetch("BOOT_CRITICAL") + overlay_fatal).sort)
+        expect(strip(canopy.fetch("RUNTIME")).sort).to eq((production.fetch("RUNTIME") - overlay_fatal).sort)
+      end
+    end
+
+    it "reads non-trivial lists from both workflows (non-vacuity)" do
+      aggregate_failures do
+        expect(lists.keys).to contain_exactly("deploy.yml", "deploy-production.yml")
+        lists.each do |file, sets|
+          expect(sets.fetch("BOOT_CRITICAL").size).to be > 10, "#{file}: BOOT_CRITICAL parsed to #{sets['BOOT_CRITICAL'].inspect}"
+          expect(sets.fetch("RUNTIME").size).to be > 3, "#{file}: RUNTIME parsed to #{sets['RUNTIME'].inspect}"
+        end
+      end
+    end
   end
 end

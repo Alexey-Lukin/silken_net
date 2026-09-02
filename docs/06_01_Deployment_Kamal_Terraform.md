@@ -137,7 +137,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 |---------|-----------|--------------|
 | **Тригер деплою** | Push в `main` після успішного CI (continuous) | GitHub Release (`v*.*.*`) — створюється **release-please** (`Ops · Release`) з conventional commits → канон [`06_07 §1`](06_07_CICD_and_Runbook_Index) |
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
-| **Платформа** | Kamal/GCP, web-only (`kamal deploy -d canopy`) | Kamal/GCP (усі ролі) |
+| **Платформа** | Kamal/GCP, `web` + власна `job` (Sidekiq `-c 4`, testnet-підписанти), `coap` нейтралізовано (`kamal deploy -d canopy`; з 2026-09-02, [`00_07`](00_07_Action_Plan_Tracker) OPS.37) | Kamal/GCP (усі ролі) |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (⚠️ HA — ЦІЛЬ; чинний деплой `ZONAL`, [`06_06 §2`](06_06_Disaster_Recovery_and_Backup)) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
 | **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
@@ -324,7 +324,7 @@ REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0
 | Файл | Опис |
 |------|------|
 | `config/deploy.yml` | Production-конфіг (основний) |
-| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Web-only СТРУКТУРНО** — `servers:` = array-форма, яку deep_merge замінює цілком (омітнута `job:`-секція НЕ прибирає роль: destination-merge = keys-union, роль успадкувалась би з base разом із money-`env.secret` → present-empty guard-crash; INF.22). ⚠️ [OPS.37] Sidekiq для Canopy тепер не їде НІДЕ — доти його ніс окремий job-сервіс знятої платформи. Відкрите рішення: дати canopy власну `job:`-роль ⊥ свідомо тримати canopy без воркерів; доти Sidekiq дебютує на production. |
+| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Hash-форма `servers:` з ВЛАСНОЮ `job:`-роллю** (⚖️ founder 2026-09-02, [`OPS.37`](00_07_Action_Plan_Tracker)): deep_merge = keys-union, тож роль, омітнута в overlay, успадкувалась би з base РАЗОМ із money-`env.secret` (production-scoped → present-empty → guard-crash, INF.22) — тому canopy декларує ті самі пʼять ІМЕН сам, а `.kamal/secrets.canopy` ремапить кожне з `CANOPY_*`-двійника (B4); `coap:` нейтралізовано `hosts: []` + `allow_empty_roles: true` (deep_merge не вміє видаляти роль; другий `5683/udp`-publisher на спільному хості зіткнувся б із продовим дормантним fallback-ом); аліаси `canopy-*` дизʼюнктні зі скрейпленими — ціна: слот не скрейпиться взагалі. Носії: `deploy_secret_scan` B3/B4 · `kamal_config_validity_spec` (merged `-c`⟷`DB_POOL`) · `alloy_scrape_topology_spec` (merged-конфіг). Доти (08-29 → 09-02) був web-only array-формою, і Sidekiq для canopy не їхав ніде. |
 | `.kamal/secrets-common` | Runtime секрети (читаються при деплої) |
 | `.kamal/hooks/` | Хуки ЖЦ (тільки sample-файли) |
 
@@ -541,8 +541,10 @@ IAP-operator ролі ЛЮДЕЙ (iam.tf, for_each `iap_admin_members`):
 | Kamal web | `WEB_CONCURRENCY` (2) × pool (21) × 3 бази = **126 стеля** (факт ≪: io-burst рідкісний, idle реляться) |
 | Kamal job (Sidekiq) | `:concurrency` (15) → `DB_POOL=17` (встановлено в job env, INF.13) = **~51** (17 × 3 бази) |
 | admin/console (break-glass Auth Proxy з робочої станції) | **~8** |
+| Canopy web (`WEB_CONCURRENCY=1`, спільний хост — [`OPS.37`](00_07_Action_Plan_Tracker)) | 1 × 21 × 3 = **63 стеля** |
+| Canopy job (`-c 4` → `DB_POOL=6`, `config/deploy.canopy.yml`) | 6 × 3 = **18** |
 
-Навіть за одночасного пікового checkout усіх пулів — нижче `400` (≈**185**); запас під read-репліки/canopy тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
+Навіть за одночасного пікового checkout усіх пулів — нижче `400`: production ≈**185**, разом із canopy на спільному хості ≈**266** (2026-09-02; без `-c 4` canopy-job брав би 51 → 362, тому пара `-c`⟷`DB_POOL` гейтована через merged-конфіг у `kamal_config_validity_spec`); запас під read-репліки тримається на тому, що web-стеля досяжна лише при повному io-burst усіх воркерів одночасно (не steady-state). Адекватно; ревізит при `WEB_CONCURRENCY` > 4.
 
 > ⚠️ **Друга вісь того самого бюджету — ГОРИЗОНТАЛЬНА, і після [`OPS.37`](00_07_Action_Plan_Tracker) висновок цієї нотатки ПЕРЕВЕРНУВСЯ.** Доти вона рахувала від `WEB_CONCURRENCY=4` і давала 2 × 252 + 51 + 8 = **563 > 400**, тобто «другий web-вузол не влазить». Єдиний таргет тепер пінить `WEB_CONCURRENCY=2` (`config/deploy.yml`), тож реально 2 × 126 + 51 + 8 = **311 < 400** — горизонтальне масштабування web **влазить**, і другий вузол більше не гейтований цим рядком Terraform. 🔴 Числа під цим абзацом не містили слова «Akash» УЗАГАЛІ — вони мовчки успадкували мертву четвірку, і саме тому клас міграційного залишку ([`00_06 §1`](00_06_SSOT_Documentation_Standard)) вимагає **перечитати арифметику навколо**, а не лише замінений множник. Вертикальний тригер лишається: при `WEB_CONCURRENCY > 4` на двох вузлах стеля знову перевищить 400. Важелів рівно два, і обидва вимагають рішення заздалегідь: підняти `db_max_connections` (на `db-custom-2-7680` кожне з'єднання коштує реальну пам'ять — тобто це тягне і зміну tier; 🔴 **і вся арифметика цієї секції писана проти 7680 МБ, тоді як pre-fleet деплой стоїть на `db-custom-1-3840` — при поверненні до прод-навантаження переміряти, а не переносити висновок «адекватно»**) **або** завести пулер, якого в репозиторії немає **ніде** (`db_read_replica_count` теж `0`). Наслідок ширший за ємність: цей самий інстанс несе primary + cache + cable + canopy-staging, тож за REGIONAL-HA байти UI-фан-ауту cable реплікуються тим самим WAL, що money-записи — один інстанс вниз = money+cable+cache+staging разом. Ревізит: **або** `WEB_CONCURRENCY > 4`, **або** web-репліка №2 — що настане раніше.
 
@@ -1164,19 +1166,28 @@ canopy сідає на невалідний Redis. Гучним він є для
 `kamal deploy -d canopy` на app-хост → ізольований DB-set `silken_net_canopy` (INF.16) →
 `gcloud compute instances add-metadata silken-net-ingress --metadata app-host-ip=<APP_HOST_IP>`
 + `reset` (Pre-Flight #10). Принцип лишається: найризикованіший шлях не дебютує на production.
-⚠️ **Але canopy web-only СТРУКТУРНО** (масив-форма `servers:` у `config/deploy.canopy.yml`,
-яку стереже `deploy_secret_scan` інваріант B3), тож фонових джоб у ньому немає — доти їх ніс
-окремий `job`-сервіс зовнішньої платформи, і після зрізу воркерів у canopy-леґа немає ніде.
-Це не дефект рендера, а **відкрите рішення** — але ⚠️ **вже НЕ симетрична пара, і ПОРЯДОК
-зняття ухвалено** (⚖️ founder 2026-09-01, [`00_07`](00_07_Action_Plan_Tracker) OPS.37): спершу
-testnet-ключі формою B4, і аж тоді роль `job`; зворотний порядок дав би стейджингу підпис на
-mainnet сьогоднішніми спільними ключами. Ціна теперішньої форми виміряна й вона не «половина»:
-мертві **60 воркерів і 22 cron-задачі**, серед них dead-man switch Королев, sweep застряглих
-коштів, actuator-safety і treasury-monitor. ⛔ Найнезворотніше — `PartitionMaintenanceWorker`:
-без нього canopy МОВЧКИ накопичує заселений `_default`, який назавжди блокує партицію свого
-місяця ([`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup)), і побачити це нікому — гейджів у
-job-процесі там немає. Доти canopy перевіряє web-половину, а Sidekiq дебютує на production —
-і це мусить бути сказано вголос, бо «canopy зелений» інакше читається як перевірка всієї системи.
+✅ **Canopy має ВЛАСНУ роль `job` з 2026-09-02** (⚖️ founder; порядок «спершу testnet-ключі
+формою B4, потім роль» — ратифікований 09-01 — виконано того ж дня, бо приватники трьох
+оракулів Amoy знайшлись у робочому каталозі сесії 09-01, а не в руках власника): hash-форма
+`servers:` у `config/deploy.canopy.yml` з ВЛАСНИМ `env.secret`-масивом квінтету — ті самі пʼять
+ІМЕН, кожне ремаплено overlay-ем `.kamal/secrets.canopy` з `CANOPY_*`-двійника (testnet-підписанти,
+що тримають ролі MINTER/SLASHER/ANCHOR з деплоїв Фази 2t, Celo-Sepolia-підписант, Devnet
+fee-payer; repo-level, бо throwaway — [`06_04 §1`](06_04_Secrets_Checklist)); Sidekiq `-c 4` при
+`DB_POOL=6` і `WEB_CONCURRENCY=1` під бюджет спільного хоста (§Розрахунок `max_connections`:
+266/400); аліаси `canopy-web`/`canopy-job`, **дизʼюнктні** зі скрейпленими Alloy — серії canopy
+не потрапляють на продові панелі (ONE-Alloy інваріант); `coap` нейтралізовано `hosts: []` +
+`allow_empty_roles: true` (deep_merge ролі не видаляє, а другий publisher `5683/udp` на спільному
+хості зіткнувся б із продовим дормантним fallback-ом у день деплою production). Носії:
+`deploy_secret_scan` B3 (hash-форма легальна ЛИШЕ з власним квінтет-масивом точного складу й
+безхостовим `coap`) · B4 (13 ремапів) · `env_fetch_declaration_spec` (RHS кроку деплою canopy =
+`secrets.CANOPY_*`, production без двійників) · `alloy_scrape_topology_spec` (аліаси дизʼюнктні) ·
+`web3_env_loudness_spec` (job-роль canopy як SIGNER на testnet) · `kamal_config_validity_spec`
+(парсер приймає безхостову роль — саме він і назвав `allow_empty_roles`). Тож «canopy зелений» відтепер означає і Sidekiq-половину — і в слова «зелений» тут є названий детектор, бо власний бут-вердикт Kamal для non-proxy ролі = 7-секундний poll `.State.Status` без HEALTHCHECK в образі: job, що падає в `after_initialize` після ~10-с буту Rails, пройшов би зеленим у crash-loop. Носій — пост-деплойна 45-с uptime-проба job-ролі в ОБОХ воркфлоу (ревʼю 2026-09-02), і на canopy вона ЄДИНА, бо слот не скрейпиться (ціна ONE-Alloy: `up`/DeadSet-gauge для canopy не існують; альтернатива — четвертий scrape-таргет `canopy-job:9394` із relabel — відкрита нога [`OPS.37`](00_07_Action_Plan_Tracker)). Сама половина: 60 воркерів і 22 cron-задачі — `PartitionMaintenanceWorker`
+(без нього canopy мовчки накопичував би `_default`, [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup)),
+dead-man switch Королев, sweep застряглих коштів, treasury-monitor — репетирують на стейджингу
+ДО production. ⚠️ Що лишається чужим canopy: **пошта** (ESP не заведено — bypass
+`SILKENNET_SKIP_MAIL_TRANSPORT_CHECK` тримається з НОВОЮ підставою, і той самий токен вимикає `perform_deliveries` — `deliver_later` рендерить і повертається замість 25 ретраїв у DeadSet, якого на canopy ніхто не бачить; ревʼю 2026-09-02) і **Hadron** (`HADRON_API_KEY` не є deploy-поверхнею за побудовою — B3 пінить точний
+склад масиву; сам піддомен вендора мертвий — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118).
 
 **Фаза 4 — Верифікація (єдиний post-deploy список):**
 🌲 **Приймальний рядок інтейку — `Listening on coap://0.0.0.0:5683` у логах демона**

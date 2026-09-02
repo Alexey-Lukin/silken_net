@@ -128,6 +128,14 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "silkennet.app"), protocol: "https" }
 
+  # [ARCH.60 / OPS.37 review 2026-09-02] A slot that declares "no mail transport" (the same
+  # token `mail_transport_check.rb` honours as its bypass) must not enqueue deliveries that can
+  # only die: with SMTP_ADDRESS still a placeholder, every `deliver_later` would fail DNS, retry
+  # 25 times and land in a DeadSet nothing scrapes on canopy. One token, one meaning — the flag
+  # says the channel is OFF, so deliveries become no-ops (mail still renders, the boot log still
+  # carries the bypass warning). Production never sets it: `raise_delivery_errors` stays loud.
+  config.action_mailer.perform_deliveries = ENV["SILKENNET_SKIP_MAIL_TRANSPORT_CHECK"] != "1"
+
   # [ARCH.60] Outgoing SMTP — ENV-driven, no vendor SDK. Every ESP we would pick
   # (Postmark / SES / Mailgun / SendGrid / Resend) speaks plain SMTP, so the vendor
   # stays swappable by changing three variables and nothing else. `delivery_method`

@@ -58,7 +58,9 @@ RSpec.describe "config/deploy.yml is accepted by Kamal itself" do # rubocop:disa
     KAMAL_DESTINATIONS.each do |slot, destination|
       it "has no ${...} in any env.clear value on #{slot}" do
         config = config_for(destination)
-        roles  = config.roles.to_h { |r| [ r.name, r.env(r.primary_host).clear ] }
+        # [OPS.37] A hostless role (canopy's neutralised `coap`, `allow_empty_roles: true`) has no
+        # primary host and no container — nothing to inject into, nothing to judge.
+        roles  = config.roles.select { |r| r.hosts.any? }.to_h { |r| [ r.name, r.env(r.primary_host).clear ] }
         roles["<global>"] = config.env.clear
         offenders = roles.flat_map { |role, env| env.filter_map { |k, v| "#{role}:#{k}=#{v}" if v.to_s.include?("${") } }
 
@@ -88,6 +90,23 @@ RSpec.describe "config/deploy.yml is accepted by Kamal itself" do # rubocop:disa
       expect(hosts.values).to all(be_a(String))
       expect(hosts.values.uniq.size).to eq(2), "both slots route on the same host: #{hosts.inspect}"
       expect(hosts.fetch("canopy")).to start_with("canopy.")
+    end
+  end
+
+  # [OPS.37 review 2026-09-02] `-c N` on the job `cmd:` and `DB_POOL` in its env are ONE
+  # decision — the pool must exceed Sidekiq concurrency (06_05) — and it lived in a comment:
+  # drop canopy's `cmd:` override and deep_merge inherits the base command, i.e. concurrency
+  # 15 (config/sidekiq.yml) against `DB_POOL: 6` → ConnectionTimeoutError on every job, on a
+  # slot nothing scrapes. Resolved through Kamal so the INHERITED value is what gets judged.
+  describe "the Sidekiq concurrency ⟷ DB_POOL pair on the job role [OPS.37]" do
+    KAMAL_DESTINATIONS.each do |slot, destination|
+      it "keeps DB_POOL above Sidekiq concurrency on #{slot}" do
+        job  = config_for(destination).role("job")
+        conc = job.cmd.to_s[/\s-c\s+(\d+)/, 1]&.to_i ||
+               YAML.safe_load_file(REPO_ROOT.join("config/sidekiq.yml"), permitted_classes: [ Symbol ]).fetch(:concurrency)
+        pool = job.env(job.primary_host).clear.fetch("DB_POOL").to_i
+        expect(pool).to be > conc, "#{slot}: DB_POOL=#{pool} does not exceed Sidekiq concurrency #{conc} — pool starvation"
+      end
     end
   end
 

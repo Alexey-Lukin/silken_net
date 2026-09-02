@@ -3,6 +3,7 @@
 
 require "spec_helper"
 require "yaml"
+require "kamal"
 require_relative "../support/repo_root"
 
 # S2.4 / INF.14 drift guard. The Prometheus registry is in-process, so a job/daemon-incremented
@@ -58,8 +59,8 @@ RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do #
   # not create a second agent, it renames the label of the ONLY one. `accessory boot` skips
   # when the container exists (yellow, exit 0), so the winner was whichever slot booted
   # first: canopy on every main push, production only on a Release ⇒ production series would
-  # have carried `slot="canopy"`. Pure loss, because canopy is alias-less by construction
-  # (array-form `servers:` replaces the base hash — invariant B3), so it has nothing to scrape.
+  # have carried `slot="canopy"`. Pure loss, because canopy is never scraped: its roles carry
+  # `canopy-*` aliases disjoint from the scraped set (OPS.37; alias-less before 2026-09-02).
   # ⚖️ founder 2026-08-31: drop the destination, not the agent.
   describe "the ONE-Alloy invariant [⚖️ 2026-08-31]" do
     let(:canopy_config) { YAML.load_file(REPO_ROOT.join("config/deploy.canopy.yml")) }
@@ -82,9 +83,40 @@ RSpec.describe "config.alloy declares the 3-process scrape topology (S2.4)" do #
 
     it "keeps canopy free of an accessory override, so no slot label can diverge from the scrape" do
       expect(canopy_config).not_to have_key("accessories"),
-                                   "config/deploy.canopy.yml declares an `accessories:` override. Canopy has no " \
-                                   "scrape targets (alias-less by construction — invariant B3), so any accessory " \
-                                   "value it sets can only relabel the single shared agent."
+                                   "config/deploy.canopy.yml declares an `accessories:` override. Canopy is not " \
+                                   "scraped (its aliases are disjoint from config.alloy's — example below), so any " \
+                                   "accessory value it sets can only relabel the single shared agent."
+    end
+
+    # [OPS.37 ⚖️ founder 2026-09-02] Canopy is no longer alias-less: its `servers:` is the HASH
+    # form (own job role), and a hash role INHERITS the base `options.network-alias` unless it
+    # overrides it — so a canopy web container answering to `silken-web` on the shared `kamal`
+    # network would be scraped as PRODUCTION. The invariant therefore moved from "canopy has no
+    # aliases" to "canopy's aliases are DISJOINT from the scraped set", and every hosted canopy
+    # role must declare its own (an omitted alias is the inherited one, not no alias).
+    # ⚠️ Review 2026-09-02: judged on the MERGED config, not the raw canopy YAML — a canopy role
+    # that omits `hosts:` inherits the base hosts AND the base alias, and the raw file shows
+    # neither; the raw filter `Array(role["hosts"]).any?` skipped exactly that case.
+    it "gives every hosted canopy role an alias DISJOINT from what config.alloy scrapes" do
+      servers = Kamal::Configuration.create_from(config_file: REPO_ROOT.join("config/deploy.yml"),
+                                                 destination: "canopy").raw_config["servers"]
+      scraped = targets.keys.map { |address| address.split(":").first }
+      if servers.is_a?(Hash)
+        hosted = servers.select { |_, role| role.is_a?(Hash) && Array(role["hosts"]).any? }
+        expect(hosted.size).to be >= 2, "canopy resolves #{hosted.size} hosted roles — parser drift?"
+        aliases = hosted.transform_values { |role| role.dig("options", "network-alias") }
+        missing = aliases.select { |_, a| a.nil? }.keys
+        expect(missing).to be_empty,
+                           "canopy roles #{missing.inspect} declare no network-alias — they INHERIT the base " \
+                           "alias via deep_merge and get scraped as production"
+        expect(aliases.values & scraped).to be_empty,
+                                            "canopy aliases collide with scraped production aliases: " \
+                                            "#{(aliases.values & scraped).inspect}"
+      else
+        expect(servers).to be_a(Array) # the alias-less array form — nothing to scrape, nothing to collide
+      end
+    ensure
+      ENV.delete("KAMAL_DESTINATION") # `create_from` sets it as a side effect
     end
 
     # Size pin: both examples above go green loudest on an empty set — a renamed workflow or a

@@ -145,8 +145,9 @@ module Security
     # ⛔ This is NOT a bypass, and the distinction is the whole design. Each value is an
     # ASSERTION the wiring must satisfy, and the two are mirror images: `mainnet` refuses a
     # testnet endpoint (real value minted on a throwaway chain), `testnet` refuses a mainnet
-    # one (a staging slot able to sign real transactions — the hazard that keeps canopy
-    # web-only today). So a mis-DECLARED slot fails exactly as loudly as a mis-WIRED one, and
+    # one (a staging slot able to sign real transactions — the hazard canopy's own testnet-keyed
+    # job role exists to avoid [OPS.37]). So a mis-DECLARED slot fails exactly as loudly as a
+    # mis-WIRED one, and
     # an absent declaration lands on `mainnet`, i.e. the strict side: a forgotten flag can
     # never downgrade safety, only refuse a boot.
     # ⚠️ What this axis deliberately does NOT cover: the KYC surface. «Hadron stub on testnet ⊥
@@ -159,6 +160,16 @@ module Security
 
     # secp256k1 private key: 32 bytes hex, optional 0x prefix.
     HEX64 = /\A(?:0x)?[0-9a-fA-F]{64}\z/
+
+    # [OPS.37 review 2026-09-02] The loud placeholder the manifests and the canopy overlay put
+    # where a value is ABSENT (`REQUIRED_SECRET_NOT_SET`; `CANOPY_<NAME>_NOT_SET` — B4 in
+    # scripts/deploy_secret_scan.rb owns the form). It exists to make absence loud, and a
+    # PRESENCE check is the one reader it cannot reach: `"…_NOT_SET".present?` is true. So every
+    # presence branch below also refuses this suffix — scoped exactly like the presence rule it
+    # sits in, never wider (guard-craft #58; Q3 keeps the dormant coap role booting past the
+    # address placeholders it inherits). The format branches need no tripwire: a placeholder
+    # is neither 64 hex nor an EIP-55 address.
+    PLACEHOLDER_SUFFIX = "_NOT_SET"
 
     # Every dedicated secp256k1 signer key (format-checked when present).
     ORACLE_KEY_ENVS = %w[
@@ -445,6 +456,7 @@ module Security
     def rpc_violations(env, signer_process: true, web_process: true)
       SILENT_RPC_ENVS.filter_map do |var, spec|
         next unless signer_process || (web_process && spec.fetch(:web))
+        next placeholder_violation("rpc", var, env[var]) if placeholder?(env[var])
         next if env[var].present?
 
         "[rpc] #{var} is not set — this would NOT crash: #{spec.fetch(:cost)}. Set the " \
@@ -458,11 +470,20 @@ module Security
       return [] unless signer_process
 
       SOLANA_SIGNER_ENVS.filter_map do |var|
+        next placeholder_violation("solana", var, env[var]) if placeholder?(env[var])
         next if env[var].present?
 
         "[solana] #{var} is not set — per-event rewards would DeadSet and batch " \
           "payouts would silently skip every wallet (no escalation path, E.61)."
       end
+    end
+
+    def placeholder?(value) = value.to_s.end_with?(PLACEHOLDER_SUFFIX)
+
+    def placeholder_violation(family, var, value)
+      "[#{family}] #{var} carries the deploy placeholder #{value} — the value was never " \
+        "provisioned (a GitHub secret or CANOPY_* twin is missing) and the overlay made that " \
+        "absence look PRESENT; refusing the boot the placeholder exists to make loud."
     end
 
     # Normalize a hex private key for equality: drop an optional 0x prefix, downcase.

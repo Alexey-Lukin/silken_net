@@ -16,24 +16,20 @@
 #      So retargeting this gate off the SDL made it judge MORE, not less [OPS.37].
 #   B2. The retired ORACLE_PRIVATE_KEY [INF.22] must not resurface as a STRUCTURAL key
 #      (a key/name, never a grep — the name legitimately appears in prose comments).
-#   B3. config/deploy.canopy.yml `servers:` must stay the ARRAY form. Kamal's destination
-#      deep_merge REPLACES an array but UNIONS hash keys, so a hash here would silently inherit
-#      the base `job` role — quintet included — into a leg whose secrets are production-scoped
-#      → present-empty inject → Web3NetworkGuard raise on boot. This is the one live Kamal
-#      instance of the "role declared but not where you think" class that the retired
-#      sdl_consistency_check carried [OPS.37].
-#      🔒 DECLARED CEILING (2026-08-29): this rule is WIDER than its own ground, and the gap
-#      matters because it forbids a legitimate fix. The ground is "canopy must not INHERIT
-#      the money quintet"; the rule bans the HASH FORM. A canopy `job:` role carrying its
-#      OWN `env.secret:` array would satisfy the ground — Rails `deep_merge!` REPLACES
-#      arrays, the very mechanism this invariant already leans on. So do not read a red
-#      B3 as "canopy may never have a job role": read it as "canopy must not inherit one
-#      silently". Narrowing it is gated on the canopy-shape decision (00_07, OPS.37 ⚖️ leg),
-#      not on this file. ⚠️ Until 2026-09-02 the sharper reason the shape held was NOT in
-#      this gate: canopy mapped the SAME mainnet RPC secrets as production, so a job role on
-#      those keys would have signed on MAINNET from staging. B4 now remaps the RPC quartet,
-#      so what a `job:` role still lacks is a TESTNET signer set of its own — the order the
-#      founder ratified (keys first, role second; 00_07 OPS.37) is what this ceiling waits on.
+#   B3. config/deploy.canopy.yml must not INHERIT the base `job` role's quintet. Kamal's
+#      destination deep_merge REPLACES an array but UNIONS hash keys, so a bare hash `servers:`
+#      would silently inherit the base `job` role — quintet included — into a leg whose secrets
+#      are production-scoped → present-empty inject → Web3NetworkGuard raise on boot. This is
+#      the one live Kamal instance of the "role declared but not where you think" class that
+#      the retired sdl_consistency_check carried [OPS.37].
+#      ✅ NARROWED TO ITS OWN GROUND 2026-09-02 (⚖️ founder, 00_07 OPS.37 — keys first, then the
+#      role): until then the rule banned the HASH FORM outright, and declared that ceiling
+#      itself. Two shapes are legal now — the ARRAY form (web-only canopy), or a HASH whose
+#      `servers.job.env.secret` is an OWN array EXACTLY equal to the quintet (an own array
+#      replaces the inherited one, and those five names are what B4 remaps from the CANOPY_*
+#      twins) with the inherited `coap` role neutralised (`hosts: []`, never a second 5683/udp
+#      publisher on the shared host). Exactness doubles as the Hadron carrier: an extra name in
+#      that array is a deploy surface the slot must never carry.
 #   B4. .kamal/secrets.canopy must remap EVERY shared external resource from its CANOPY_* twin
 #      with a LOUD placeholder fallback — NEVER a silent fall-through to the production name.
 #      🔴 The fallback's FORM is `$(printf '%s' "\${TWIN:-MARKER}")`, not `${TWIN:-MARKER}`: this
@@ -118,6 +114,13 @@
 # the NEW members rather than on Redis again (a proof on the old member says nothing about
 # the loop that now judges five):
 #   B4/rpc-absent   the SOLANA_RPC_URL remap deleted outright        → RED naming the inheritance
+# ⊕ B3 NARROWED 2026-09-02 [OPS.37] to admit canopy's own job role, and re-proved on the new
+# shape (one battery, each mutation restored byte-identically — md5 of all three files equal
+# before and after; the old "array → hash" row above is superseded by these):
+#   B3/coap-hosts   canopy `coap.hosts: []` → `[silken-net-app]`             → RED naming the second 5683/udp publisher
+#   B3/extra-name   `HADRON_API_KEY` appended to canopy job.env.secret        → RED naming EXACTLY the quintet
+#   B3/no-own-array canopy job `env.secret` key renamed (inherits the base)   → RED naming "without an OWN"
+#   B4/signer       the ORACLE_MINTER_PRIVATE_KEY remap deleted from overlay  → RED naming the inheritance
 #   B4/rpc-fallback CELO_RPC_URL rewritten to ${CELO_RPC_URL}       → RED naming file + value
 # Both restored byte-identically (`cmp`); GREEN before and after.
 # ⊕ 2026-09-02 (second pass, after the first canopy boot): B4's accepted FORM changed and B5 was
@@ -163,14 +166,17 @@ LOUD_REF    = /\A\$\(printf '%s' "\\\$\{[A-Z][A-Z0-9_]*:-(?:[A-Z][A-Z0-9_]*_NOT_
 DOTENV_MANGLED = /(?<!\\)\$\{[A-Z][A-Z0-9_]*:[-=+?]/
 INTERP      = /\A\$\{[^}]+\}\z/         # ${terraform.interpolation} / "${RELEASE_VERSION}"
 
-# Measured 2026-08-29: 25 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 31.
+# Measured 2026-08-29: 25 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 31; 2026-09-02
+# (review): 42 with .kamal/secrets.canopy's remaps — so the floor sits ABOVE what one lost file
+# leaves (31), which the old 20 did not: a total parse failure of secrets.canopy passed it.
 # ⊕ Pattern broadened the same day (15 suffixes → 11): the generic `_KEY` subsumes four
 # narrower ones and caught TURBO_SIGNED_STREAM_KEY, which none of them matched. Zero false
 # positives on the live tree — a var named `*_KEY` on an env surface is a secret by name.
 # A parse that breaks returns [] and the gate prints ✓ — so assert the set is still there.
-SUBJECT_FLOOR = 20
-# F's own lantern: 5 fallback slots in the base manifest + 5 canopy overrides on 2026-09-02.
-FALLBACK_FLOOR = 8
+SUBJECT_FLOOR = 35
+# F's own lantern: 5 fallback slots in the base manifest + 5 canopy overrides on 2026-09-02 = 10,
+# and the floor IS that count — losing one override reddens it (it sat at 8 until review).
+FALLBACK_FLOOR = 10
 
 SIGNING_QUINTET = %w[
   ORACLE_CELO_PRIVATE_KEY ORACLE_MINTER_PRIVATE_KEY
@@ -188,7 +194,7 @@ fallback_subjects = 0
 # → [[scope_label, clear_hash, secret_names], ...] for every env block a Kamal config declares.
 def env_blocks(cfg)
   blocks = [ [ "env", cfg.dig("env", "clear") || {}, Array(cfg.dig("env", "secret")) ] ]
-  # servers.web is the ARRAY form (bare host list, no env); job/coap are hashes.
+  # A hash-form role may carry its own env block; the array form (bare host list) carries none.
   servers = cfg["servers"]
   servers.each { |role, spec| blocks << [ "servers.#{role}", spec.dig("env", "clear") || {}, Array(spec.dig("env", "secret")) ] if spec.is_a?(Hash) } if servers.is_a?(Hash)
   (cfg["accessories"] || {}).each { |name, spec| blocks << [ "accessories.#{name}", spec.dig("env", "clear") || {}, Array(spec.dig("env", "secret")) ] if spec.is_a?(Hash) }
@@ -243,14 +249,44 @@ end
   end
 end
 
-# B — the completeness half, base config only (canopy is web-only by B3).
+# B — the completeness half, base config only (canopy's own job role is judged by B3).
 job_secrets = Array(configs[KAMAL_BASE].dig("servers", "job", "env", "secret"))
 missing = SIGNING_QUINTET - job_secrets
 failures << "#{KAMAL_BASE}: signing quintet missing from servers.job env.secret: #{missing}" if missing.any?
 
-# B3 — canopy stays the array form (deep_merge REPLACES arrays, UNIONS hash keys).
-unless configs[KAMAL_CANOPY]["servers"].is_a?(Array)
-  failures << "#{KAMAL_CANOPY}: `servers:` must stay the ARRAY form — a hash is deep_merged as a keys-UNION, silently inheriting the base `job` role (money quintet) into a leg whose secrets are production-scoped → present-empty inject → Web3NetworkGuard raise"
+# B3 — canopy must not INHERIT the base job role's quintet. Two legal shapes:
+#   · the ARRAY form (web-only canopy): replaces the base hash wholesale;
+#   · the HASH form (canopy with its OWN job role — ⚖️ founder 2026-09-02, 00_07 OPS.37): legal
+#     ONLY when `servers.job.env.secret` is declared THERE as an array EQUAL to the quintet (an
+#     own array REPLACES the inherited one, and those five names are exactly what
+#     `.kamal/secrets.canopy` remaps from the CANOPY_* twins — B4), AND a declared `coap` role
+#     carries NO hosts (deep_merge cannot delete the base coap role, and a second `5683/udp`
+#     publisher on the shared host would collide with production's dormant fallback the day
+#     production deploys). Exactness is the Hadron carrier too: an extra name in that array
+#     (`HADRON_API_KEY`) is a deploy surface this slot must never have.
+canopy_servers = configs[KAMAL_CANOPY]["servers"]
+if canopy_servers.is_a?(Hash)
+  canopy_job = canopy_servers["job"]
+  own = canopy_job.is_a?(Hash) && canopy_job.dig("env", "secret").is_a?(Array) ? canopy_job.dig("env", "secret") : nil
+  if own.nil?
+    failures << "#{KAMAL_CANOPY}: hash-form `servers:` without an OWN `job.env.secret` array — deep_merge is a keys-UNION, so the base job role's quintet (production-scoped secrets) is inherited silently → present-empty inject → Web3NetworkGuard raise (B3)"
+  elsif own.sort != SIGNING_QUINTET.sort
+    failures << "#{KAMAL_CANOPY}: canopy job.env.secret must be EXACTLY the signing quintet (got #{own.inspect}) — each name is remapped from its CANOPY_* twin by secrets.canopy (B4); an extra name is a deploy surface the slot must not carry (B3)"
+  end
+  coap = canopy_servers["coap"]
+  if !coap.is_a?(Hash) || !coap.key?("hosts")
+    failures << "#{KAMAL_CANOPY}: hash-form `servers:` must neutralise `coap:` explicitly (`hosts: []`) — an omitted coap role is INHERITED from the base together with its 5683/udp publish (B3)"
+  elsif Array(coap["hosts"]).any?
+    failures << "#{KAMAL_CANOPY}: canopy declares a coap role WITH hosts — a second 5683/udp publisher on the shared host, colliding with production's dormant fallback; neutralise it with `hosts: []` (B3)"
+  end
+  # `allow_empty_roles: true` is destination-WIDE (Kamal 2.12 has no per-role form), so the same
+  # flag that neutralises coap would let an emptied job role deploy web-only in silence. An
+  # OMITTED `hosts:` is inherited (fine); a DECLARED-empty one is the typo this catches.
+  if canopy_job.is_a?(Hash) && canopy_job.key?("hosts") && Array(canopy_job["hosts"]).empty?
+    failures << "#{KAMAL_CANOPY}: canopy job role declares `hosts:` EMPTY — allow_empty_roles is destination-wide, so the job role would silently not deploy (B3)"
+  end
+elsif !canopy_servers.is_a?(Array)
+  failures << "#{KAMAL_CANOPY}: `servers:` must be the ARRAY form or a hash with an OWN job.env.secret (B3)"
 end
 
 # --- text surfaces (.kamal/secrets-common + secrets.canopy + anchor COAP_ENV) --
@@ -288,7 +324,16 @@ failures << "subject set collapsed: #{secret_subjects} secret-named vars scanned
 # `kamal deploy -d canopy` path DEPLOY-DAY Phase 3 names. The four RPC names are the guard's
 # `RPC_URL_ENVS` [INF.27 move (2)]; the list is spelled out rather than read from the guard so
 # this stdlib script stays Rails-free — a divergence reds `web3_env_loudness_spec`, not here.
-CANOPY_REMAPS = %w[REDIS_URL ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL].freeze
+# [OPS.37 ⚖️ 2026-09-02] + the testnet signer set behind canopy's own job role and the Devnet
+# fee-payer's public trio: the base names resolve to the PRODUCTION quintet (Environment-scoped,
+# "" on this slot) — a missing remap here is either a refused boot or, on a local run with
+# production keys in the shell, staging signing real value.
+CANOPY_REMAPS = %w[
+  REDIS_URL ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL
+  ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY ORACLE_CELO_PRIVATE_KEY
+  ETHEREUM_ANCHOR_PRIVATE_KEY SOLANA_WALLET_KEYPAIR
+  SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS
+].freeze
 canopy_pairs = dotenv_pairs(File.read(SECRETS_CANOPY)).to_h
 CANOPY_REMAPS.each do |name|
   value = canopy_pairs[name]
@@ -334,7 +379,7 @@ GITIGNORE_MUST = [ "gha-creds-*.json" ].freeze
 end
 
 if failures.empty?
-  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only; quintet job-only (global env.secret clean); canopy array-form intact; canopy overlay remaps all #{CANOPY_REMAPS.size} shared resources"
+  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only (#{fallback_subjects} keyless fallback slots); quintet job-only (global env.secret clean); canopy job role inherits nothing (B3); canopy overlay remaps all #{CANOPY_REMAPS.size} shared resources"
 else
   puts "DEPLOY-SECRET SCAN FAILED:"
   failures.each { |f| puts "  ✗ #{f}" }

@@ -11,10 +11,11 @@
 # server (e2-medium); the 2026-04-19 platform pivot deleted BOTH VMs because the real
 # separation was meant to live on a platform that was itself cut on 2026-08-29 [OPS.37].
 # So the cut should have RESTORED two hosts and instead cemented the leftover.
-# ⛔ Do not read the shared host as a decision: it is an OPEN ⚖️ (00_07, OPS.37 leg), and
-# so is whether canopy gets its own keys. Shared-host connection budget: 362/400 with a
-# canopy job role, 311/400 without — and shrinking canopy (WEB_CONCURRENCY=1, DB_POOL=6)
-# brings it to 266/400, which is two lines rather than a machine.
+# ⛔ Do not read the shared host as a decision: it is an OPEN ⚖️ (00_07, OPS.37 leg).
+# Whether canopy gets its own keys and a job role is SETTLED (⚖️ founder 2026-09-02 — the
+# `servers:` block below): it does, with testnet signers. Shared-host connection budget:
+# 362/400 with an unshrunk canopy job role, 311/400 without — the shrunk form below
+# (WEB_CONCURRENCY=1, `-c 4`, DB_POOL=6) lands at 266/400, two lines rather than a machine.
 
 # Canopy server IP — `terraform output -raw app_host_ip`, the SAME machine as production.
 # 🔴 This line said "use Ingress Anchor IP from: terraform output ingress_ip" until
@@ -30,32 +31,87 @@
 # (⚠️ Sharing production's host is the leftover named above — canopy is differentiated only
 #  by POSTGRES_DATABASE, not by IP)
 #
-# WEB-ONLY, enforced STRUCTURALLY: `servers:` uses the ARRAY form, which Kamal's
-# destination deep_merge REPLACES wholesale (an array is not a hash) → the base
-# `job:`/`coap:` roles do NOT leak in. Merely omitting a `job:` section would NOT
-# be enough — deep_merge is a keys-UNION, so an omitted role is INHERITED from
-# config/deploy.yml, bringing the money quintet in its env.secret; those secrets
-# are production-environment-scoped (INF.22) → they would interpolate present-empty
-# "" → Web3NetworkGuard raise on the job container's boot.
-# ⚠️ [OPS.37] Canopy therefore has NO background jobs anywhere: they used to ride a
-# separate `job` service on the retired platform. Open decision — give canopy its own
-# `job:` role, or keep it deliberately worker-less; until then Sidekiq debuts on
-# production, and "canopy is green" means the web half only.
+# 🌿 [OPS.37 ⚖️ founder 2026-09-02] CANOPY HAS ITS OWN `job:` ROLE — the HASH form, and the
+# hash is SAFE only because of three things written out below, each with a carrier:
+#   (1) `job.env.secret` is DECLARED HERE as its own array. Kamal's destination deep_merge
+#       REPLACES arrays and UNIONS hash keys, so an omitted `job:` (or a `job:` without its own
+#       `env.secret`) would INHERIT the base role's quintet — whose values are production-
+#       environment-scoped (INF.22) and arrive present-empty "" on this slot. Declaring the
+#       same five NAMES here makes `.kamal/secrets.canopy` remap each from its `CANOPY_*`
+#       twin (invariant B4), so the job container signs with TESTNET keys and nothing else.
+#       Carrier: `scripts/deploy_secret_scan.rb` invariant B3 (hash form ⇒ own quintet array).
+#   (2) The aliases are DISJOINT from what Alloy scrapes: `config.alloy` targets
+#       `silken-web`/`silken-job`/`silken-coap`, and a canopy role that inherited the base
+#       alias would answer to the same name on the shared `kamal` docker network — its series
+#       would land on the PRODUCTION dashboards labelled production. `canopy-*` names keep
+#       canopy unscraped (the ONE-Alloy invariant); carrier:
+#       `spec/deploy/alloy_scrape_topology_spec.rb` (judged on the MERGED config — an omitted
+#       `hosts:`/`options:` inherits the base value, the raw file shows neither).
+#       ⚠️ The price, named (review 2026-09-02): NO `up`, NO DeadSet gauge, NO dashboard for
+#       this slot — a crash-looping canopy job is invisible to Grafana, and Kamal's own boot
+#       verdict for a non-proxy role is a 7-s `.State.Status` poll. The post-deploy uptime probe
+#       in `.github/workflows/deploy.yml` is the job role's ONLY detector; a fourth scrape target
+#       (`canopy-job:9394` relabelled slot=canopy) is the open alternative — 00_07 OPS.37.
+#   (3) `coap:` is NEUTRALISED with `hosts: []`. deep_merge cannot delete a role, and the base
+#       coap role publishes `5683/udp` on the host — a second publisher on the shared machine
+#       would collide with production's dormant fallback the day production deploys. Kamal
+#       boots roles per host, so a role with no hosts never runs; carrier: B3 again (a canopy
+#       coap WITH hosts is red).
 #
-# 🔴 IF YOU ADD THAT `job:` ROLE, DO NOT COPY production's env.secret WHOLESALE — measured
-# 2026-09-01 [00_07 INF.27]. The array form above is currently the ONLY thing keeping a
-# whole class of outward third-party calls off this slot: all three callers of
-# `Polygon::HadronComplianceService` are Sidekiq workers, so a worker-less canopy cannot
-# reach Hadron at all. Give it a job role the natural way — copying the quintet's sibling
-# keys across — and `HADRON_API_KEY` rides along; `HADRON_API_URL` then defaults to
-# `https://api.hadron.polygon.technology`, i.e. a STAGING slot submitting test personas to a
-# third party's PRODUCTION compliance system. There is no testnet endpoint to point it at.
-# ⛔ Note which way the safety currently runs: today a blank key makes the service RAISE
-# (`Rails.env.production?` is true here), so the failure is loud. Supplying the key is what
-# converts a loud refusal into a silent real call — the opposite of the usual direction, and
-# the reason this warning sits at the moment of the edit rather than in a runbook.
+# 🔴 HADRON: this role carries NO `HADRON_API_KEY` by construction — the quintet array IS the
+# whole of `job.env.secret` (B3 pins the exact set), and that key is Console-injected at
+# activation (06_04 §5.7), never a deploy-surface name. Measured 2026-09-02:
+# `api.hadron.polygon.technology` has NO DNS record and NO archived snapshot ever (00_07
+# ARCH.118), so the hazard this comment used to name — staging submitting personas to a
+# vendor's PRODUCTION KYC — has no vendor to reach. A blank key still makes
+# `Polygon::HadronComplianceService` RAISE under `Rails.env.production?`: loud. Keep it so.
+#
+# Connection budget: the two canopy rows and the 266/400 total live in ONE home, 06_01
+# §Розрахунок max_connections — not here. `-c 4` and `DB_POOL: 6` are ONE decision (the pool
+# must exceed Sidekiq concurrency, 06_05); carrier: `spec/deploy/kamal_config_validity_spec.rb`
+# judges the MERGED pair, so dropping the `cmd:` override (→ inherited concurrency 15) goes RED.
 servers:
-  - silken-net-app
+  web:
+    hosts:
+      - silken-net-app
+    options:
+      # Disjoint from the scraped `silken-web` — see (2) above.
+      network-alias: canopy-web
+  job:
+    hosts:
+      - silken-net-app
+    # Concurrency 4 (base: 15) — the shared-host connection budget above.
+    cmd: bundle exec sidekiq -C config/sidekiq.yml -c 4
+    options:
+      # Disjoint from the scraped `silken-job` — see (2) above.
+      network-alias: canopy-job
+    env:
+      clear:
+        # pool > concurrency (4) — one decision with the `-c 4` above.
+        DB_POOL: 6
+      secret:
+        # The same five NAMES as the base job role — each resolved by `.kamal/secrets.canopy`
+        # from its CANOPY_* twin (testnet keys, repo-level secrets), never from the
+        # production-scoped originals. Own array ⇒ nothing inherited (see (1) above).
+        - ORACLE_CELO_PRIVATE_KEY
+        - ORACLE_MINTER_PRIVATE_KEY
+        - ORACLE_SLASHER_PRIVATE_KEY
+        - ETHEREUM_ANCHOR_PRIVATE_KEY
+        - SOLANA_WALLET_KEYPAIR
+  coap:
+    # No hosts ⇒ Kamal never boots it on this destination — see (3) above.
+    hosts: []
+
+# Kamal 2.12 REFUSES a hostless role by default («No servers specified for the coap role.
+# You can ignore this with allow_empty_roles: true» — measured with `kamal config -d canopy`
+# 2026-09-02, the parser-executed proof `spec/deploy/kamal_config_validity_spec.rb` runs).
+# This flag is scoped to THIS destination by the deep_merge (the base manifest never sets
+# it), and it is the whole mechanism behind (3) above: deep_merge cannot delete the base
+# `coap` role, so the only way to keep a second 5683/udp publisher off the shared host is
+# a role Kamal knows about and boots nowhere. ⚠️ Within the destination it is role-WIDE —
+# Kamal 2.12 has no per-role form — so an emptied `job.hosts` would also deploy in silence;
+# `scripts/deploy_secret_scan.rb` B3 pins the job role's `hosts:` non-empty for that reason.
+allow_empty_roles: true
 
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
 # (+ _cache/_cable — `_queue` зрізано INF.18 2026-07-04, і цей рядок обіцяв її досі). Same host/user/password as production (inherited from
@@ -69,17 +125,17 @@ env:
     # go unlabelled — it labels itself `production`, and a wrong label is worse than none.
     DEPLOYMENT_SLOT: canopy
     POSTGRES_DATABASE: silken_net_canopy
-    # [ARCH.60] Canopy declares itself mail-less, and this is a statement of fact rather
-    # than a workaround: `deliver_later` only ever runs in Sidekiq, and this leg is
-    # structurally web-only (see the `servers:` array note above) — it has no background
-    # jobs at all. Demanding SMTP here would block the deploy for a
-    # capability the container could not exercise anyway. The bypass logs a loud WARN on
-    # every boot; drop this line the day canopy gains a job role.
-    # ⚠️ Price named [00_07 OPS.37]: on the slot that is the FIRST render of the main path this
-    #    normalises a PERMANENT boot-guard bypass — a WARN nobody reads. It is a cost of the
-    #    web-only shape, not a free line; and the ground «choosing the shape is cheapest now,
-    #    no machines exist yet» DIED 2026-08-31 (both VMs RUNNING, Cloud SQL live): the shape
-    #    decision now costs a real `terraform apply`.
+    # [OPS.37] One Puma worker on the shared host — the connection budget in the header
+    # (production 185 + canopy web 63 + canopy job 18 = 266/400); base pins 2 for production.
+    WEB_CONCURRENCY: 1
+    # [ARCH.60] Mail bypass — its GROUND CHANGED 2026-09-02 with the job role. It used to say
+    # "canopy has no Sidekiq, so it could not deliver anyway"; now it CAN, and the only thing
+    # standing is that no ESP exists yet (00_07 ARCH.60 👤 — MAIL_FROM/SMTP_ADDRESS are still
+    # placeholders in the base manifest, and `mail_transport_check.rb` refuses a boot on them).
+    # The same token also switches `perform_deliveries` OFF (config/environments/production.rb):
+    # a `deliver_later` on this slot renders and returns instead of failing DNS 25 times into a
+    # DeadSet nothing scrapes here (review 2026-09-02 — "loud" needs a listener; canopy has none).
+    # ⛔ Drop this line the day the ESP lands — for BOTH slots, in the same commit.
     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK: "1"
     # ⚖️ [founder 2026-09-02] Committed HERE, unlike production (operator-set — 06_01 §Kamal):
     # the value IS `proxy.host` below, which is already committed, so a second copy of the
@@ -109,10 +165,11 @@ env:
     #   (5) deploy ORDER — contracts BEFORE the slot's first raise (06_01 DEPLOY-DAY Фаза 2t).
     #       Machine witness that it held: `spec/deploy/web3_env_loudness_spec.rb` resolves this
     #       role through Kamal and asserts the web container carries no address placeholder.
-    # ⚠️ EVM ONLY. Amoy from `Deploy.s.sol`; there is no Solana program in this repo, so the
-    # Devnet leg is an SPL mint + fee-payer ATA by hand (job-only, absent on web). Still open:
-    # whether canopy also gets its own `job:` role (and therefore testnet SIGNER keys) —
-    # ⚖️ 00_07 OPS.37, ordered: keys first (this shape), role second. NOT settled by this block.
+    # ⚠️ EVM from `Deploy.s.sol` (Amoy + Sepolia); there is no Solana program in this repo, so
+    # the Devnet leg is an SPL mint + fee-payer ATA by hand — its four identifiers ride the
+    # `CANOPY_SOLANA_*` twins through `.kamal/secrets.canopy`, job-only. ✅ Canopy's own `job:`
+    # role and testnet SIGNER keys are settled (⚖️ founder 2026-09-02, keys first, role second
+    # — see the `servers:` block above); this line is what makes those keys legal here.
     WEB3_CHAIN_ENV: testnet
     # [ARCH.114] Testnet twins of the base manifest's keyless fallbacks — EVERY name the base
     # declares must be overridden here (deep_merge = keys-UNION), or canopy inherits a MAINNET
@@ -157,8 +214,9 @@ env:
 #     жовтим, exit 0) ⇒ мітку вигравав слот, що встиг ПЕРШИМ. Canopy їде на кожен push у main,
 #     production — лише на реліз, тож canopy штампував би `slot="canopy"` на ПРОДОВИХ серіях.
 # 🔑 І це була чиста втрата, бо canopy не має ЖОДНОЇ цілі скрейпу: `config.alloy` скрейпить три
-# `network-alias`-імені, а canopy alias-less ЗА ПОБУДОВОЮ (масив-форма `servers:` заміщає базовий
-# хеш — інваріант B3, той самий, що стереже web-only). Тобто «canopy-Alloy» ніколи не існував як
+# `silken-*` `network-alias`-імені, а ролі canopy несуть ВЛАСНІ `canopy-*` аліаси, дизʼюнктні з
+# ними (OPS.37 2026-09-02; доти canopy був alias-less через масив-форму `servers:`) — носій
+# `alloy_scrape_topology_spec`. Тобто «canopy-Alloy» ніколи не існував як
 # сутність — існував один агент, який дивиться на прод, і питання було лише в тому, як його звуть.
 # ✅ Лік: `.github/workflows/deploy.yml` кличе `kamal accessory boot alloy` БЕЗ `-d canopy`, тож
 # мітка збігається з тим, що скрейпиться. Носій обох половин — `spec/deploy/alloy_scrape_topology_spec.rb`.

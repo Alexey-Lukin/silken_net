@@ -176,6 +176,21 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
       end
     end
 
+    # [OPS.37 ⚖️ founder 2026-09-02] Canopy carries its own `job:` role — a SIGNER process on
+    # the testnet slot. The four silent addresses it reads (all four are `signer`-scoped) must be
+    # real Amoy/Sepolia values, and every fallback literal it inherits must sit on the testnet
+    # side of the chain axis. Key PRESENCE is deliberately not resolved here (secrets); the
+    # overlay that supplies the testnet twins is judged by `kamal_secrets_parse_spec`.
+    # ⚠️ Declared ceiling, sharpened by review 2026-09-02: because `env.clear` carries no
+    # secret, the `[oracle-key]`/`[solana]`/`[rpc]` families are OUTSIDE this grep by
+    # construction — the placeholder tripwire on those families is proven in the guard's own
+    # spec. `web_process: false` mirrors the initializer (`!signer && !coap`).
+    it "raises canopy's job role as a testnet SIGNER with no address or chain violation (OPS.37)" do
+      clear = role_clear("canopy", "job")
+      expect(guard.chain_env(clear)).to eq("testnet")
+      expect(guard.violations(clear, signer_process: true, web_process: false).grep(/\[address\]|\[chain\]/)).to be_empty
+    end
+
     it "resolves non-empty role envs (the parser is not judging an empty hash)" do
       aggregate_failures do
         expect(role_clear(nil, "coap").size).to be > 10

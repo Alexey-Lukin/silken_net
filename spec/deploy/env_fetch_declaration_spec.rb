@@ -25,7 +25,10 @@ require_relative "../support/repo_root"
 # then (never on any deploy surface — SEC.22/INF.22); ENV.fetch-without-default so activating
 # without the key fails LOUD.
 RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.12)" do # rubocop:disable RSpec/DescribeClass
-  let(:activation_gated) { %w[ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY] }
+  # `HADRON_API_KEY` joined 2026-09-02 [OPS.37]: Console-injected like the aux signers (06_04
+  # §5.7), and the one name whose arrival on a deploy surface would convert the KYC service's
+  # loud refusal into a real outward call — from staging, now that canopy has a job role.
+  let(:activation_gated) { %w[ORACLE_ETHERISC_PRIVATE_KEY ORACLE_PURO_PRIVATE_KEY ORACLE_KLIMA_PRIVATE_KEY HADRON_API_KEY] }
   # ENV.fetch("X") NOT followed by "{" (block default); positional-default form never matches.
   let(:code_fetches) do
     Dir[REPO_ROOT.join("app/**/*.rb"), REPO_ROOT.join("lib/**/*.rb")]
@@ -55,10 +58,10 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   # KeyError at first use on web/job/coap. Exactly the B1 shape the gate exists to stop.
   #
   # 🔑 THREE SCOPES, because the examples below ask DIFFERENT questions of one word:
-  #   :global — ONLY the top-level `env`, i.e. what EVERY role on EVERY slot inherits. This is
-  #            the scope the deploy-STEP example needs: `servers.job.env.secret` is correctly
-  #            absent from canopy (web-only by construction), so demanding the union there
-  #            would red a correct file, while every global entry must be mapped on both.
+  #   :global — ONLY the top-level `env`, i.e. what EVERY role on EVERY slot inherits. The
+  #            deploy-STEP example adds the job quintet on top of it PER SLOT (both slots carry
+  #            a job role since 2026-09-02 — canopy's reads CANOPY_* twins, OPS.37), while every
+  #            global entry must be mapped on both.
   #   :roles — what an APP PROCESS can see (top-level `env` + `servers.*.env`). Accessories
   #            run in their own containers; their env never reaches Rails code.
   #   :all   — everything KAMAL must resolve (:roles + `accessories.*.env` + `registry.password`).
@@ -104,6 +107,17 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
                                .flat_map { |j| Array(j["steps"]) }.grep(Hash)
                                .find { |s| s["name"].to_s.start_with?("Kamal Deploy to") }
       [ File.basename(path), (step&.dig("env") || {}).keys ]
+    end
+  end
+
+  # Same step, KEY => RHS string — the one place the RHS matters: WHICH secret a slot reads.
+  def deploy_step_env_values
+    %w[.github/workflows/deploy.yml .github/workflows/deploy-production.yml].to_h do |path|
+      wf = YAML.safe_load(File.read(REPO_ROOT.join(path)), aliases: true)
+      step = (wf["jobs"] || {}).values.grep(Hash)
+                               .flat_map { |j| Array(j["steps"]) }.grep(Hash)
+                               .find { |s| s["name"].to_s.start_with?("Kamal Deploy to") }
+      [ File.basename(path), (step&.dig("env") || {}).transform_values(&:to_s) ]
     end
   end
 
@@ -186,10 +200,10 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
   # live in different jobs — so a var mapped only in the checker is injected "" by
   # secrets-common at deploy time. Judged PER WORKFLOW: the union is what hid this.
   #
-  # Scope is the GLOBAL `env.secret` deliberately — `servers.job.env.secret` (the money
-  # quintet) is correctly absent from canopy, which is structurally web-only (deploy_secret_scan
-  # invariant B3), so demanding it here would red a correct file. Every global entry, by
-  # contrast, is inherited by every role on BOTH slots and must be mapped on both.
+  # Scope is the GLOBAL `env.secret` plus the job quintet PER SLOT — since 2026-09-02 both
+  # slots carry a job role (canopy's own, fed by CANOPY_* twins — OPS.37), so the quintet is
+  # demanded on both, and the RHS example below is what keeps the two sources apart. Every
+  # global entry is inherited by every role on BOTH slots and must be mapped on both.
   #
   # 🔒 Declared ceiling: this judges the step's env KEYS, never their values or their RHS —
   # `FOO: ${{ secrets.BAR }}` with the wrong secret name passes. That axis belongs to the
@@ -205,9 +219,12 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
     # shape this session was fixing, one level up: the quintet's delivery to production and
     # the TLS pair's delivery to either slot were gated by NOTHING. Caught by adversarial
     # review of the commit that introduced it, not by any instrument.
+    # [OPS.37 ⚖️ founder 2026-09-02] Canopy has its OWN job role, so BOTH slots now need the
+    # quintet delivered — the isolation moved from "canopy maps none of it" to "canopy maps ALL
+    # of it from the CANOPY_* testnet twins" (the RHS example below).
     expected = {
-      "deploy.yml"            => global_secret + tls_pair,           # canopy: web-only, no job role
-      "deploy-production.yml" => global_secret + quintet + tls_pair  # production: carries the signer
+      "deploy.yml"            => global_secret + quintet + tls_pair,  # canopy: own job role, testnet twins
+      "deploy-production.yml" => global_secret + quintet + tls_pair   # production: carries the signer
     }
     steps = deploy_step_envs
     aggregate_failures do
@@ -226,13 +243,31 @@ RSpec.describe "ENV.fetch-without-default reaches runtime on every surface (INF.
                            "#{missing.join(', ')} — `.kamal/secrets-common` resolves them from the CI " \
                            "shell, so they arrive EMPTY in the container (B1)."
       end
-      # 🔒 The mirror, and it is a SECURITY assertion rather than a delivery one: canopy is
-      # structurally web-only (`deploy_secret_scan` invariant B3), so the money/signing quintet
-      # must never be handed to its deploy step. Absence here is the isolation, not an omission.
-      leaked = quintet & steps.fetch("deploy.yml")
-      expect(leaked).to be_empty,
-                        "canopy's deploy step maps the money/signing quintet: #{leaked.join(', ')} — " \
-                        "staging must not be able to sign (INF.22 environment-scoping)."
+    end
+  end
+
+  # 🔒 The SECURITY half of the delivery example, and the one axis the KEY-based examples
+  # cannot see: every shared external resource canopy maps (Redis · the RPC quartet · the
+  # signing quintet · the Solana public trio) must be read FROM ITS `CANOPY_*` TWIN — and
+  # production must never reference a twin. A canopy step whose `ORACLE_MINTER_PRIVATE_KEY`
+  # reads `secrets.ORACLE_MINTER_PRIVATE_KEY` is staging signing with a production key (the
+  # Environment scope hides it as "" only for as long as nobody widens that scope). This is
+  # the workflow surface of the overlay's isolation (`.kamal/secrets.canopy`, B4) — the two
+  # are judged separately because a local `kamal deploy -d canopy` never sees this file.
+  it "canopy's deploy step reads every twinned resource from its CANOPY_* twin, production from the bare name" do
+    twinned = deploy_env(:secret, scope: :roles) - deploy_env(:secret, scope: :global) # the quintet
+    twinned += %w[REDIS_URL ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL
+                  SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS]
+    values = deploy_step_env_values
+    aggregate_failures do
+      expect(twinned.size).to be >= 13, "twinned set collapsed (#{twinned.size}) — parser drift?"
+      wrong = twinned.reject { |k| values.fetch("deploy.yml")[k].to_s.match?(/\A\$\{\{\s*secrets\.CANOPY_#{k}\s*\}\}\z/) }
+      expect(wrong).to be_empty,
+                       "canopy's deploy step does not read these from `secrets.CANOPY_<NAME>`: #{wrong.join(', ')} — " \
+                       "a bare production name here hands staging a production value (OPS.37 / INF.22)."
+      twins_on_production = values.fetch("deploy-production.yml").values.grep(/CANOPY_/)
+      expect(twins_on_production).to be_empty,
+                                     "production's deploy step references canopy twins: #{twins_on_production.inspect}"
     end
   end
 

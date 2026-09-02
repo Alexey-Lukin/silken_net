@@ -111,8 +111,8 @@ end
   # 🔴 ДРУГА підстава цього ⛔ ПОМЕРЛА 2026-08-31, і вердикт від того не змінився — пару
   # тримаємо розведеною ([`00_05 §5`]). Тут стояло ще й «фільтр зробив би смерть canopy-Alloy
   # невидимою»; canopy-Alloy НЕ ІСНУЄ. Alloy-контейнер один на два слоти
-  # (`Kamal::Configuration::Accessory#service_name` не несе destination), а canopy alias-less
-  # за побудовою (масив-форма `servers:`, інваріант B3), тож цілей скрейпу не має взагалі —
+  # (`Kamal::Configuration::Accessory#service_name` не несе destination), а canopy з аліасами, дизʼюнктними від скрейплених (OPS.37; доти alias-less)
+  # за побудовою (`canopy-*` ∉ скрейплених — `alloy_scrape_topology_spec`), тож цілей скрейпу не має взагалі —
   # `-d canopy` не створював другого агента, а перемарковував єдиного. Механізм і носій —
   # `spec/deploy/alloy_scrape_topology_spec.rb` §«the ONE-Alloy invariant».
   #

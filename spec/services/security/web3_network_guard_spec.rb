@@ -39,6 +39,30 @@ RSpec.describe Security::Web3NetworkGuard do
       expect(described_class.violations(clean_env)).to be_empty
     end
 
+    # [OPS.37 review 2026-09-02] The canopy overlay (`.kamal/secrets.canopy`, B4) turns an
+    # ABSENT twin into a PRESENT `…_NOT_SET` placeholder, and presence is exactly what the
+    # Solana branch tests — measured blind: `"CANOPY_SOLANA_WALLET_KEYPAIR_NOT_SET".present?`
+    # is true, so a job role booted on eight placeholders passed the guard and would have
+    # surfaced per-event as `Invalid Base58 character '_'` in a DeadSet nothing scrapes.
+    # The tripwire is scoped like the presence rule it sits in (a non-signer never sees it).
+    it "refuses the deploy placeholder on the Solana signer set — presence alone is blind to it" do
+      env = clean_env.merge("SOLANA_WALLET_KEYPAIR" => "CANOPY_SOLANA_WALLET_KEYPAIR_NOT_SET")
+      aggregate_failures do
+        expect(described_class.violations(env))
+          .to include(a_string_matching(/\[solana\] SOLANA_WALLET_KEYPAIR carries the deploy placeholder/))
+        expect(described_class.violations(env, signer_process: false)).to be_empty
+      end
+    end
+
+    # A URL placeholder is the same shape one family over: present, not a testnet marker,
+    # so on a mainnet slot it passed both the presence and the chain scan and would have
+    # failed silently inside ChainAuditService's RPC rescue.
+    it "refuses the deploy placeholder on the silent Polygon RPC" do
+      env = clean_env.merge("ALCHEMY_POLYGON_RPC_URL" => "REQUIRED_SECRET_NOT_SET")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[rpc\] ALCHEMY_POLYGON_RPC_URL carries the deploy placeholder/))
+    end
+
     # --- chain identity ---------------------------------------------------
 
     it "flags a Polygon Amoy testnet RPC" do

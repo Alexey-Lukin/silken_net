@@ -69,6 +69,12 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
+          # [OPS.37 review 2026-09-02] Read ONLY to refuse a shared instance: canopy runs a
+          # Sidekiq SERVER now, Sidekiq keys carry no namespace by decision (config/initializers/
+          # sidekiq.rb), and the second Upstash instance is blocked on the tariff — so the day
+          # someone unblocks production by reusing the canopy endpoint, a testnet-keyed worker
+          # starts draining the mainnet money queue. Not a deploy input; never mapped below.
+          CANOPY_REDIS_URL: ${{ secrets.CANOPY_REDIS_URL }}
           ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.ORACLE_MINTER_PRIVATE_KEY }}
           ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.ORACLE_SLASHER_PRIVATE_KEY }}
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
@@ -105,8 +111,14 @@ jobs:
           # false-safety that hid the 4-month deploy block). Boot-critical = crashes boot
           # (master-key decrypt / PROVISIONING guard / oracle KeyError per web3_network_guard)
           # or blocks kamal. Runtime = lazy-fail on use (warn, don't block). Canon: docs/06_04 §1+§2.
-          BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM"
-          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_POLYGON_RPC_URL ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
+          # 🔴 [OPS.37 review 2026-09-02] Membership is what `Web3NetworkGuard` refuses at the
+          # JOB boot, not what a read-site raises on first use: the Solana quartet (presence,
+          # `solana_violations`) and the silent Polygon RPC (`SILENT_RPC_ENVS`, web+job) were
+          # RUNTIME here while the same guard already demanded them — a green verify, then a
+          # job container that refuses to boot on a tagged release. Canopy's lists and these are
+          # compared modulo the CANOPY_ prefix by spec/deploy/deploy_workflow_parity_spec.rb.
+          BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD REDIS_URL ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM ALCHEMY_POLYGON_RPC_URL SOLANA_WALLET_KEYPAIR SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS"
+          RUNTIME="SENTRY_DSN ETHEREUM_ANCHOR_PRIVATE_KEY ALCHEMY_ETHEREUM_RPC_URL SOLANA_RPC_URL CELO_RPC_URL ORACLE_CELO_PRIVATE_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -119,6 +131,20 @@ jobs:
 
           if [ "${#PROVISIONING_MASTER_KEY}" -lt 64 ]; then
             echo "::error::PROVISIONING_MASTER_KEY too short (${#PROVISIONING_MASTER_KEY} chars; expected >=64 hex). See SEC.11 + SEC.9."
+            exit 1
+          fi
+
+          # [OPS.37 review 2026-09-02] Two slots, two Sidekiq servers, no key namespace: the
+          # Redis instances MUST differ, or the testnet worker drains the mainnet money queue.
+          if [ -n "$CANOPY_REDIS_URL" ] && [ "$REDIS_URL" = "$CANOPY_REDIS_URL" ]; then
+            echo "::error::REDIS_URL is the canopy instance — two Sidekiq servers on one un-namespaced Redis would cross-dequeue mainnet and testnet jobs. Provision a production instance (docs/06_01 §Upstash, OPS.37)."
+            exit 1
+          fi
+
+          # [E.49] The guard's CONDITIONAL boot rule: an armed Celo path (key present) with no
+          # mainnet RPC refuses the job boot — mirror it here so it never reaches the container.
+          if [ -n "$ORACLE_CELO_PRIVATE_KEY" ] && [ -z "$CELO_RPC_URL" ]; then
+            echo "::error::ORACLE_CELO_PRIVATE_KEY is set but CELO_RPC_URL is not — Web3NetworkGuard refuses that boot (E.49, no hardcoded fallback). Set a mainnet Celo RPC or unset the key."
             exit 1
           fi
 
@@ -318,6 +344,23 @@ jobs:
       # ⚖️ [OPS.37 2026-08-30] `kamal deploy` never boots accessories — mirror of the
       # canopy workflow's step (full rationale there): idempotent ensure-running, so a
       # green deploy can no longer leave Grafana with zero series and silent P0 alerts.
+      # [OPS.37 review 2026-09-02] Mirror of the canopy probe — same poller ceiling (a non-proxy
+      # role is "healthy" after a 7-s `.State.Status` poll, no image HEALTHCHECK), and this is
+      # the MONEY process: a job container that raises in `after_initialize` after Rails' ~10-s
+      # boot would leave a green release with no minter. Production IS scraped (`silken-job`),
+      # so `sn-alert-scrape-target-down` is the second detector; this is the first, at deploy.
+      - name: Verify the job role survived its boot [OPS.37]
+        run: |
+          sleep 45
+          out=$(kamal app details -r job 2>&1) || true
+          printf '%s\n' "$out"
+          if printf '%s\n' "$out" | grep -Eq 'Restarting|Exited'; then
+            echo "::error::production job container restarted or exited after a green boot poll — read its logs (kamal app logs -r job)."
+            exit 1
+          fi
+          printf '%s\n' "$out" | grep -Eq 'Up (About a minute|[5-9][0-9] seconds|[0-9]+ minutes?)' \
+            || { echo "::error::production job container has not been up for the whole 45-s window (crash-loop, or no container) — see output above."; exit 1; }
+
       - name: Ensure Alloy accessory is running
         run: kamal accessory boot alloy
         env:

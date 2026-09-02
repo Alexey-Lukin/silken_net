@@ -114,6 +114,9 @@ jobs:
     if: ${{ needs.changes.outputs.deploy == 'true' }}
     outputs:
       configured: ${{ steps.check.outputs.configured }}
+      # [OPS.37 review 2026-09-02] Which Kamal roles this deploy may boot: `web` always, `job`
+      # only when its eight testnet signer twins exist — the gate is per ROLE, not per slot.
+      roles: ${{ steps.check.outputs.roles }}
     steps:
       # [OPS.36] BLOCK with an EMPTY allowlist: this job is pure shell over `${{ secrets }}`, and
       # the StepSecurity baseline recorded zero outbound destinations — the one job in the tree
@@ -161,14 +164,9 @@ jobs:
           # Neither list carried them before, so there was not even a ::warning:: (06_04 §1).
           TLS_ORIGIN_CERT_PEM: ${{ secrets.TLS_ORIGIN_CERT_PEM }}
           TLS_ORIGIN_KEY_PEM: ${{ secrets.TLS_ORIGIN_KEY_PEM }}
-          # Money/signing keys deliberately ABSENT (INF.22): environment-scoped to
-          # `production` (unreadable from this workflow) AND kamal-unused on canopy —
-          # the quintet lives in servers.job.env.secret only, and canopy is
-          # STRUCTURALLY web-only (array-form `servers:` in deploy.canopy.yml
-          # replaces the base hash; an omitted section would be INHERITED via
-          # deep_merge), so `kamal deploy -d canopy` never injects them; web boots
-          # keyless (Web3NetworkGuard signer_process scope). Gating on them here
-          # would skip canopy forever.
+          # The PRODUCTION money/signing quintet stays ABSENT (INF.22): environment-scoped
+          # to `production`, unreadable here, and never read on this slot. What canopy
+          # boots its own `job:` role on is the TESTNET twin set further down [OPS.37].
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -182,9 +180,24 @@ jobs:
           CANOPY_ALCHEMY_ETHEREUM_RPC_URL: ${{ secrets.CANOPY_ALCHEMY_ETHEREUM_RPC_URL }}
           CANOPY_SOLANA_RPC_URL: ${{ secrets.CANOPY_SOLANA_RPC_URL }}
           CANOPY_CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
-          SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
-          SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
-          SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
+          # 🔴 [OPS.37 ⚖️ founder 2026-09-02] Canopy carries its own `job:` role, so it needs a
+          # TESTNET signer set of its own — the `CANOPY_*` twins below (repo-level; the
+          # production quintet stays Environment-scoped and unreadable here). ALL EIGHT are
+          # JOB-critical and none is "lazy" — adversarial review 2026-09-02: every twinned name
+          # passes through `.kamal/secrets.canopy`, which turns an ABSENT twin into a PRESENT
+          # `…_NOT_SET` placeholder, and the guard refuses that at boot even for the anchor/Celo
+          # keys production may leave unset (key FORMAT for the EVM four, the `_NOT_SET`
+          # tripwire for the Solana set). A missing twin therefore drops the JOB ROLE ONLY
+          # (`roles=web`, below) — the web half has no signer and no Solana dependency and keeps
+          # deploying — never a boot on the placeholder, never a slot-wide skip for a role's need.
+          CANOPY_ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_MINTER_PRIVATE_KEY }}
+          CANOPY_ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_SLASHER_PRIVATE_KEY }}
+          CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          CANOPY_ORACLE_CELO_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_CELO_PRIVATE_KEY }}
+          CANOPY_SOLANA_WALLET_KEYPAIR: ${{ secrets.CANOPY_SOLANA_WALLET_KEYPAIR }}
+          CANOPY_SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_PUBKEY }}
+          CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
+          CANOPY_SOLANA_USDC_MINT_ADDRESS: ${{ secrets.CANOPY_SOLANA_USDC_MINT_ADDRESS }}
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
           TURBO_SIGNED_STREAM_KEY: ${{ secrets.TURBO_SIGNED_STREAM_KEY }}
           GRAFANA_REMOTE_WRITE_URL: ${{ secrets.GRAFANA_REMOTE_WRITE_URL }}
@@ -196,11 +209,19 @@ jobs:
           # verify (false safety). Boot-critical = crashes boot (master-key decrypt /
           # PROVISIONING guard / oracle KeyError per web3_network_guard) or blocks kamal.
           # Runtime = lazy-fail on first use (warn, don't block). Canon: docs/06_04 §1+§2.
-          # Money/signing quintet EXCLUDED from both sets (INF.22): canopy is web-only
-          # (keyless boot by design) and the keys are production-environment-scoped —
-          # requiring them here would read "" and skip-or-warn canopy forever.
+          # The PRODUCTION quintet is EXCLUDED from every set (INF.22 — Environment-scoped,
+          # unreadable here). The job role boots on the TESTNET twin set [OPS.37], and that set
+          # is a list of its OWN because it gates the ROLE, not the slot: web has no signer and
+          # no Solana dependency, so a missing twin must not stop the web deploy (as first
+          # shipped it did — the whole slot skipped until a Devnet SPL mint; review 2026-09-02).
+          # ⛔ No twinned name is ever RUNTIME here: the overlay turns absence into a present
+          # placeholder the guard refuses, so "lazy" would mean "green verify, dead job
+          # container" — the exact class BOOT_CRITICAL exists to kill. Membership of all three
+          # lists is compared with production's modulo the CANOPY_ prefix by
+          # spec/deploy/deploy_workflow_parity_spec.rb.
           BOOT_CRITICAL="RAILS_MASTER_KEY SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM CANOPY_ALCHEMY_POLYGON_RPC_URL CANOPY_ALCHEMY_ETHEREUM_RPC_URL CANOPY_SOLANA_RPC_URL CANOPY_CELO_RPC_URL"
-          RUNTIME="SENTRY_DSN SOLANA_FEE_PAYER_PUBKEY SOLANA_FEE_PAYER_TOKEN_ACCOUNT SOLANA_USDC_MINT_ADDRESS CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
+          JOB_CRITICAL="CANOPY_ORACLE_MINTER_PRIVATE_KEY CANOPY_ORACLE_SLASHER_PRIVATE_KEY CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY CANOPY_ORACLE_CELO_PRIVATE_KEY CANOPY_SOLANA_WALLET_KEYPAIR CANOPY_SOLANA_FEE_PAYER_PUBKEY CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT CANOPY_SOLANA_USDC_MINT_ADDRESS"
+          RUNTIME="SENTRY_DSN CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -232,6 +253,19 @@ jobs:
           for v in $RUNTIME; do
             [ -z "${!v}" ] && echo "::warning::$v not set — its Web3/observability feature is degraded until provisioned (docs/06_04 §2.1)."
           done
+
+          # Per-ROLE gate [OPS.37 review 2026-09-02]: a missing signer twin drops the job role
+          # from `kamal deploy --roles` and says so; the web role deploys regardless.
+          job_missing=""
+          for v in $JOB_CRITICAL; do
+            [ -z "${!v}" ] && job_missing="$job_missing $v"
+          done
+          if [ -n "$job_missing" ]; then
+            echo "::warning::Canopy JOB role skipped — its testnet signer twins are not configured:$job_missing. The web role still deploys (docs/06_04 §1, OPS.37)."
+            echo "roles=web" >> "$GITHUB_OUTPUT"
+          else
+            echo "roles=web,job" >> "$GITHUB_OUTPUT"
+          fi
 
           echo "All boot-critical deploy secrets present. Proceeding."
           echo "configured=true" >> "$GITHUB_OUTPUT"
@@ -404,12 +438,15 @@ jobs:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
 
       - name: Kamal Deploy to Canopy
-        run: kamal deploy -d canopy
+        # `--roles` comes from verify-secrets: `web,job` when the eight testnet signer twins
+        # exist, `web` alone otherwise [OPS.37 review 2026-09-02] — the job role's prerequisite
+        # must never block the web deploy.
+        run: kamal deploy -d canopy --roles "${{ needs.verify-secrets.outputs.roles }}"
         # ⚠️ Drift guard: this env: block MUST mirror the GLOBAL config/deploy.yml env.secret
         # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
         # entry missing here is injected EMPTY → boot crash (RAILS_MASTER_KEY decrypt /
-        # PROVISIONING_MASTER_KEY guard). The servers.job quintet is deliberately NOT mirrored —
-        # canopy has no job role. KREDIS_REDIS_URL is intentionally omitted — Kredis reads
+        # PROVISIONING_MASTER_KEY guard). The servers.job quintet IS mirrored since 2026-09-02 —
+        # canopy has its own job role, fed by CANOPY_* twins [OPS.37]. KREDIS_REDIS_URL is intentionally omitted — Kredis reads
         # REDIS_URL as-is (one logical database, keys separated by prefix [INF.22]);
         # set it only to point Kredis at a separate instance. Canon: docs/06_04 §1 + §2.
         env:
@@ -445,7 +482,8 @@ jobs:
           ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${{ secrets.ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT }}
           # --- SMTP credentials [ARCH.60] — global env.secret, so kamal looks them up on
           #     this leg too and an unmapped entry injects "" (B1). Canopy itself declares
-          #     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1 (web-only, no Sidekiq → no delivery). ---
+          #     SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1 (no ESP provisioned yet — ARCH.60; a
+          #     deliver_later now reaches its Sidekiq and fails there loudly). ---
           SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset
@@ -465,12 +503,24 @@ jobs:
           # the hole. Gate narrowed the same commit: the B1 chain is now judged at the
           # DEPLOY STEP, per workflow. ---
           TURBO_SIGNED_STREAM_KEY: ${{ secrets.TURBO_SIGNED_STREAM_KEY }}
-          # --- Web3 money/signing keys: NOT mapped (INF.22) — the quintet is
-          #     servers.job.env.secret-only and canopy is structurally web-only
-          #     (array-form servers: in deploy.canopy.yml; an omitted role would be
-          #     INHERITED via deep_merge), so kamal never looks these up here; they
-          #     are also production-environment-scoped and would interpolate ""
-          #     (present-empty → guard raise). ---
+          # --- Web3 money/signing keys: TESTNET twins [OPS.37 ⚖️ founder 2026-09-02] ---
+          # Canopy's `job:` role declares the five quintet NAMES (config/deploy.canopy.yml) and
+          # `.kamal/secrets.canopy` remaps each FROM its CANOPY_* twin (B4). Exported under BOTH
+          # spellings, exactly like REDIS_URL and the RPC quartet: the twin feeds the overlay,
+          # the bare name feeds secrets-common's lookup with the SAME canopy value — so even a
+          # run that bypassed the overlay could not hand staging a production key. The
+          # production quintet is Environment-scoped and is NOT read on this slot; the RHS of
+          # every line below is pinned to `secrets.CANOPY_*` by env_fetch_declaration_spec.
+          ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_MINTER_PRIVATE_KEY }}
+          CANOPY_ORACLE_MINTER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_MINTER_PRIVATE_KEY }}
+          ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_SLASHER_PRIVATE_KEY }}
+          CANOPY_ORACLE_SLASHER_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_SLASHER_PRIVATE_KEY }}
+          ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY: ${{ secrets.CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY }}
+          ORACLE_CELO_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_CELO_PRIVATE_KEY }}
+          CANOPY_ORACLE_CELO_PRIVATE_KEY: ${{ secrets.CANOPY_ORACLE_CELO_PRIVATE_KEY }}
+          SOLANA_WALLET_KEYPAIR: ${{ secrets.CANOPY_SOLANA_WALLET_KEYPAIR }}
+          CANOPY_SOLANA_WALLET_KEYPAIR: ${{ secrets.CANOPY_SOLANA_WALLET_KEYPAIR }}
           # --- RPC endpoints (Web3::RpcConnectionPool; chain-family boot guard) — TESTNET ---
           # 🔴 [INF.27 move (3), 2026-09-02] Canopy declares `WEB3_CHAIN_ENV: testnet`
           # (config/deploy.canopy.yml), so these four resolve to the CANOPY_* twins — under
@@ -488,10 +538,13 @@ jobs:
           CANOPY_SOLANA_RPC_URL: ${{ secrets.CANOPY_SOLANA_RPC_URL }}
           CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
           CANOPY_CELO_RPC_URL: ${{ secrets.CANOPY_CELO_RPC_URL }}
-          # --- Solana public identifiers (signing keypair = job-only quintet, not mapped) ---
-          SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.SOLANA_FEE_PAYER_PUBKEY }}
-          SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
-          SOLANA_USDC_MINT_ADDRESS: ${{ secrets.SOLANA_USDC_MINT_ADDRESS }}
+          # --- Solana public identifiers of the DEVNET fee-payer — twins, both spellings [OPS.37] ---
+          SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_PUBKEY }}
+          CANOPY_SOLANA_FEE_PAYER_PUBKEY: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_PUBKEY }}
+          SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
+          CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT: ${{ secrets.CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT }}
+          SOLANA_USDC_MINT_ADDRESS: ${{ secrets.CANOPY_SOLANA_USDC_MINT_ADDRESS }}
+          CANOPY_SOLANA_USDC_MINT_ADDRESS: ${{ secrets.CANOPY_SOLANA_USDC_MINT_ADDRESS }}
           # --- Webhook HMACs (Chainlink callback — dispatch removed ARCH.53; Helium SOS ARCH.34) ---
           CHAINLINK_HMAC_SECRET: ${{ secrets.CHAINLINK_HMAC_SECRET }}
           HELIUM_WEBHOOK_SECRET: ${{ secrets.HELIUM_WEBHOOK_SECRET }}
@@ -518,11 +571,34 @@ jobs:
       # exit 0), so whichever slot booted first silently owned the `DEPLOYMENT_SLOT` label.
       # Canopy deploys on every main push and production only on a Release ⇒ canopy would
       # have won, stamping `slot="canopy"` on PRODUCTION series.
-      # 🔑 And the mislabel was pure loss, because canopy has NO scrape targets at all:
-      # `config.alloy` scrapes the three `network-alias` names, and canopy is alias-less BY
-      # CONSTRUCTION (its array-form `servers:` replaces the base hash — invariant B3). The
-      # comment above already said this agent "watches production targets"; the canopy
-      # override contradicted it. Dropping the flag makes the label match what is scraped.
+      # 🔑 And the mislabel was pure loss, because canopy has NO scrape targets:
+      # `config.alloy` scrapes the three `silken-*` network-alias names, and canopy's roles
+      # carry `canopy-*` aliases that are DISJOINT from them (config/deploy.canopy.yml since
+      # 2026-09-02 [OPS.37] — before that, alias-less by the array form; either way unscraped,
+      # pinned by alloy_scrape_topology_spec). The comment above already said this agent
+      # "watches production targets"; the canopy override contradicted it. Dropping the flag
+      # makes the label match what is scraped.
+      # [OPS.37 review 2026-09-02] Kamal's boot verdict for a NON-proxy role is a 7-second
+      # `.State.Status` poll (`Kamal::Cli::Healthcheck::Poller`, `readiness_delay` default) and
+      # the image declares no HEALTHCHECK — so a container that raises in `after_initialize`
+      # after Rails' ~10-s boot reports "running" twice, the deploy goes GREEN and the role
+      # crash-loops under `--restart unless-stopped`. On canopy nothing scrapes the job role
+      # (aliases disjoint from config.alloy by decision), so this probe is its ONLY detector.
+      # ⚠️ Ceiling: it judges one 45-s uptime window, not correctness; and it watches the job
+      # role only — `coap` shares the poller ceiling and is covered by nothing.
+      - name: Verify the job role survived its boot [OPS.37]
+        if: ${{ contains(needs.verify-secrets.outputs.roles, 'job') }}
+        run: |
+          sleep 45
+          out=$(kamal app details -d canopy -r job 2>&1) || true
+          printf '%s\n' "$out"
+          if printf '%s\n' "$out" | grep -Eq 'Restarting|Exited'; then
+            echo "::error::canopy job container restarted or exited after a green boot poll — read its logs (kamal app logs -d canopy -r job)."
+            exit 1
+          fi
+          printf '%s\n' "$out" | grep -Eq 'Up (About a minute|[5-9][0-9] seconds|[0-9]+ minutes?)' \
+            || { echo "::error::canopy job container has not been up for the whole 45-s window (crash-loop, or no container) — see output above."; exit 1; }
+
       - name: Ensure Alloy accessory is running
         run: kamal accessory boot alloy
         env:
