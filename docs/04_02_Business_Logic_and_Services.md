@@ -274,7 +274,7 @@
 | **Файл** | `app/services/puro_earth/registry_api_service.rb` |
 | **Вхід** | `payload` (Hash: той самий D-MRV passport payload), `tx_hash:` (String: on-chain anchoring TX hash) |
 | **Що робить** | **[MAINNET READY]** Submits Biomass Passport data to the Puro.earth REST API for CORC (CO₂ Removal Certificate) issuance. Constructs D-MRV submission body including passport data, on-chain proof (`tx_hash`, `network: "polygon"`, `contract` address), and source metadata (`source: "silkennet"`, `methodology: "biochar-corc"`). Uses `Web3::HttpClient` (HTTPX) for HTTP POST to `/v1/dmrv/submissions`. Bearer token auth from Rails credentials (`credentials.puro_earth.api_key`) or ENV fallback (`PURO_EARTH_API_KEY`). Parses response for `corc_ref` or `submission_id`. |
-| **Зовнішні виклики** | Puro.earth REST API (`PURO_EARTH_API_URL`, default: `https://api.puro.earth`), `PURO_EARTH_API_KEY` або `Rails.credentials.puro_earth.api_key` |
+| **Зовнішні виклики** | Puro.earth REST API (`PURO_EARTH_API_URL`, default: `https://registry.api.puro.earth/registry/api` — перецілено ARCH.118 2026-09-02, `api.puro.earth` не має A-запису), `PURO_EARTH_API_KEY` або `Rails.credentials.puro_earth.api_key` |
 | **Вихід** | `corc_ref` (String, e.g., `"CORC-2026-XXXXXXXX"`). Raises `PuroEarth::RegistryApiService::SubmissionError` on API failure, auth error, or missing CORC reference. |
 
 ### `Etherisc::ClaimService`
@@ -1788,7 +1788,7 @@ Privileged action (money-tx / contract / actuator / role / param / rotate / verd
 | **The Graph** | GraphQL | `the_graph_api_url` | TheGraph::QueryService |
 | **Polygon Hadron** | HTTPS REST | `hadron_api_key` / `HADRON_API_URL` | Polygon::HadronComplianceService |
 | **Etherisc DIP** | On-chain (Polygon) | `ETHERISC_DIP_CONTRACT_ADDRESS` | Etherisc::ClaimService |
-| **Puro.earth D-MRV Registry** | On-chain (Polygon) + HTTPS REST | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PURO_PRIVATE_KEY` (on-chain, activation-gated — INF.22); `PURO_EARTH_API_URL` (default: `https://api.puro.earth`), `Rails.credentials.puro_earth.api_key` або `PURO_EARTH_API_KEY` (REST) | PuroEarth::PassportService, PuroEarth::RegistryApiService |
+| **Puro.earth D-MRV Registry** | On-chain (Polygon) + HTTPS REST | `PURO_EARTH_REGISTRY_CONTRACT_ADDRESS`, `ORACLE_PURO_PRIVATE_KEY` (on-chain, activation-gated — INF.22); `PURO_EARTH_API_URL` (default: `https://registry.api.puro.earth/registry/api`, ARCH.118), `Rails.credentials.puro_earth.api_key` або `PURO_EARTH_API_KEY` (REST) | PuroEarth::PassportService, PuroEarth::RegistryApiService |
 | **KlimaDAO** | On-chain (Polygon) | `KLIMA_RETIREMENT_CONTRACT` | KlimaDao::RetirementService |
 | **CoAP Gateway** | CoAP/UDP | `gateway.ip_address` (dynamic) | `Downlink::PendingQueueService` (poll-тракт). ⚠️ Доти тут стояли `ActuatorCommandWorker, OtaTransmissionWorker` — обидва push-ерні й БЕЗ жодного enqueue-виклику з часів [FW.60](00_07_Action_Plan_Tracker); знімаються post-bench |
 

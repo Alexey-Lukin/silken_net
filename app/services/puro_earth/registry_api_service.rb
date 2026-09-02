@@ -25,8 +25,15 @@ module PuroEarth
   class RegistryApiService
     class SubmissionError < StandardError; end
 
-    # Base URL for Puro.earth REST API. Override via ENV for staging/sandbox.
-    PURO_EARTH_API_URL = ENV.fetch("PURO_EARTH_API_URL", "https://api.puro.earth")
+    # Base URL for the Puro.earth Registry API. Override via ENV for UAT
+    # (`https://registry.api.purouat.com/registry/api` — access requested separately).
+    # [ARCH.118, 2026-09-02] Retargeted from `https://api.puro.earth`: that host has NO A record
+    # (measured with a positive control in the same run), while the documented production base
+    # below answers 200 — docs.api.puro.earth/registry/overview. ⚠️ The PATH below the base is
+    # still unproven without a key (the OpenAPI spec is served at `<base>-json`); a hardcoded
+    # third-party host is a claim about someone else's infrastructure and ages without any
+    # commit of ours — re-probe it, never trust the changelog (00_07 ARCH.118).
+    PURO_EARTH_API_URL = ENV.fetch("PURO_EARTH_API_URL", "https://registry.api.puro.earth/registry/api")
 
     # D-MRV submission endpoint for Biochar CORC applications.
     SUBMISSIONS_ENDPOINT = "/v1/dmrv/submissions"

@@ -34,7 +34,11 @@ RSpec.describe PuroEarth::RegistryApiService do
     allow(Web3::HttpClient).to receive(:post).and_return(mock_response)
     allow(Rails.application.credentials).to receive(:dig).with(:puro_earth, :api_key).and_return("test-api-key")
     allow(ENV).to receive(:fetch).and_call_original
-    allow(ENV).to receive(:fetch).with("PURO_EARTH_API_URL", "https://api.puro.earth").and_return("https://api.puro.earth")
+    # [ARCH.118] The base URL is a load-time CONSTANT, so an `ENV.fetch` stub here would be
+    # vacuous — the class read ENV long before this `before` ran, and the developer's ambient
+    # `.env` decided the value (the old host kept this spec green by coincidence). Pin the
+    # constant itself, as the UAT example below already does.
+    stub_const("PuroEarth::RegistryApiService::PURO_EARTH_API_URL", "https://registry.api.puro.earth/registry/api")
     allow(ENV).to receive(:fetch).with("PURO_EARTH_REGISTRY_CONTRACT_ADDRESS", nil).and_return("0x#{"ee" * 20}")
     # SEC.22: api_key resolves ENV-primary via ENV[]; neutralize ambient .env so the
     # credentials path is deterministic (per-test override re-adds ENV where needed).
@@ -52,7 +56,7 @@ RSpec.describe PuroEarth::RegistryApiService do
       described_class.new(payload, tx_hash: tx_hash).submit!
 
       expect(Web3::HttpClient).to have_received(:post).with(
-        "https://api.puro.earth/v1/dmrv/submissions",
+        "https://registry.api.puro.earth/registry/api/v1/dmrv/submissions",
         hash_including(
           body: hash_including(
             source: "silkennet",
