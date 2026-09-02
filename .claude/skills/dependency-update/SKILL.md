@@ -246,6 +246,7 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   or a rebase that forces CI to run again — never re-reading the tick. ⚠️ And the same asymmetry that
   makes rebase expensive applies: re-running CI restarts the quarantine clock, while the local run
   does not, so prefer the local run when the diff is small enough to apply by hand.
+- 🔴 **Judge the checks on the NEW head by STATE, never by colour — `SKIPPED` wears the same green as `SUCCESS`** (2026-08-28, `#523` buildx; migrated from OPS.22 2026-09-02). After a rebase the honest read of `gh pr checks` is the state histogram: SUCCESS · SKIPPED · NEUTRAL · FAILURE · PENDING, and merge only when FAILURE and PENDING are both ZERO — a path-gated job that did not run is `skipped`, which the summary line renders as a green tick, so «all green» can mean «half of it never ran». The measurement that bought this: the PR's pre-rebase green stood on a base 435 commits behind `main`; after `@dependabot rebase` the head changed, status went `BLOCKED`→`CLEAN`, and the histogram on the NEW head read 30 SUCCESS · 12 SKIPPED · 1 NEUTRAL · 0 FAILURE · 0 PENDING.
 - 🔴 **The RED check has a date too — and a green neighbour does not disprove it** (2026-08-16). The row
   above says a stale green attests to a world before the CVE; the mirror is that a stale **red** attests
   to a base that has since been fixed, and it is harder to spot because red reads as "this PR is broken".

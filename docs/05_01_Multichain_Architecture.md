@@ -728,16 +728,16 @@ Outage цих мереж **не блокує** core flow:
 
 | Мережа | Tier | Single Point of Failure? | Auto-recovery? | Manual escalation |
 |---|---|---|---|---|
-| Polygon | 🔴 Critical | ⚠️ Cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01; today the live mitigation is Sidekiq retry alone | Sidekiq retry (RPC fallback НЕ активний) | Multi-day outage → admin investigation |
+| Polygon | 🔴 Critical | ✅ RPC-каскад ЖИВИЙ з 2026-09-02 (Alchemy → PublicNode → dRPC, `Web3::ResilientClient` на живому canopy; `ARCH.114` §🗄️) | Sidekiq retry + RPC-каскад | Multi-day outage → admin investigation |
 | Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 закривати відмовлено (founder 2026-07-19, ARCH.53 §🗄️) |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
-| Solana | 🟠 Important | ⚠️ `SOLANA_RPC_URL_FALLBACK` cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01 | Sidekiq retry (RPC fallback НЕ активний) | Catchup worker after restore |
+| Solana | 🟠 Important | ✅ `SOLANA_RPC_URL_FALLBACK_1` заведено 2026-09-02 (офіційний mainnet-beta ⊥ devnet на canopy; `ARCH.114` §🗄️) | Sidekiq retry + RPC-фолбек | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
 | peaq | 🟠 Important | No (local DID generation) | Yes | — |
 | Streamr | 🟢 Nice | No | Yes | — |
 | Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
 | The Graph | 🟢 Nice | No (read-only) | Yes | — |
-| Celo | 🟢 Nice | ⚠️ Cascade exists in CODE, **empty in the deploy chain** — `ARCH.114` 2026-09-01 | Sidekiq retry (RPC fallback НЕ активний) | — |
+| Celo | 🟢 Nice | ✅ RPC-каскад ЖИВИЙ з 2026-09-02 (Forno → PublicNode → dRPC; `ARCH.114` §🗄️) | Sidekiq retry + RPC-каскад | — |
 | KlimaDAO | 🟢 Nice | No | Yes | — |
 | Ethereum L1 | 🟢 Nice | No | Yes (cron retry) | — |
 

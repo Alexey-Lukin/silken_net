@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), master-key backup — операційна задача.
-- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup (копій поза машиною нуль) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
+- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `RAILS_MASTER_KEY` — нуль копій поза GitHub Secrets і однією машиною (§Gaps) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
 
 ---
 
@@ -131,9 +131,10 @@ gcloud sql instances clone silken-db silken-db-restored \
 ### 5.2 Terraform state recovery
 ```bash
 # State у GCS з versioning (S5.6). Відкат до попередньої версії:
-gsutil ls -a gs://silken-net-terraform-state/   # знайти попередній generation
-gsutil cp gs://silken-net-terraform-state/default.tfstate#<GEN> \
-          gs://silken-net-terraform-state/default.tfstate
+# ⚠️ `gcloud storage`, не `gsutil`: під корпоративним TLS-проксі gsutil зависає мовчки (свій CA-стор, drill 2026-09-02)
+gcloud storage ls -a 'gs://silken-net-terraform-state/**'   # знайти попередній generation (стан лежить під prefix terraform/state/)
+gcloud storage cp 'gs://silken-net-terraform-state/terraform/state/default.tfstate#<GEN>' \
+          gs://silken-net-terraform-state/terraform/state/default.tfstate
 # Або terraform state pull/push. Lock: terraform force-unlock <LOCK_ID> при stuck lock.
 ```
 
