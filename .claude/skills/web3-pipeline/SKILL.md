@@ -30,7 +30,7 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 
 <!-- WEB3-GOTCHAS-INDEX:AUTO — generated from gotchas.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
-1. `WEB3_STRICT_MODE` is belt-and-suspenders, not the switch — the Hadron stub, the callback HMAC and the IoTeX fallback all fail-closed in prod REGARDLESS of the flag
+1. `WEB3_STRICT_MODE` is belt-and-suspenders, not the switch — the Hadron stub, the callback HMAC and the IoTeX fallback all fail-closed in prod REGARDLESS of the flag. ⚠️ IoTeX/W3bstream з 09-02 НЕ «raise at call», а ACTIVATION-GATED: `Iotex::W3bstreamVerificationService.configured?` (ENV-first, credentials-фолбек) — без обох значень нога не enqueue-иться і не ре-армиться (`verified_by_iotex` чесно false; не mint-гейт — PATH 2 оптимістичний); raise лишається лише сконфігурованій нозі з мережевим збоєм. Підстава — трейс canopy: ~85 % джоб і Redis-команд слоту були падаючими IoTeX-виконаннями, невидимими Sentry (`VerificationError` в `excluded_exceptions`); хост `w3bstream-api.iotex.io` — NXDOMAIN (ARCH.118, форма ШАБЛОНУ конфігу, не літерал коду)
 1a. A monitoring read that MUTATES what it reports is not a probe — and both circuit breakers in this tree had exactly that — **Reflex for any «probe / status / health» method: read what it CALLS, not what it is named — and ask whether the call writes**
 1b. `WEB3_STRICT_MODE` is not the switch — but a switch now EXISTS, for the other half of what `production` used to mean
 2. manual_review state — **before reading a depth gauge as an incident signal, list every writer that parks a row in that state**

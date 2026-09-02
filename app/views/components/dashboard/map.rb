@@ -41,7 +41,10 @@ module Dashboard
         # [ARCH.84] Підпис стану «не виміряно» їде ОДНИМ value на контейнер, а не
         # атрибутом на кожному вузлі: попап його читає, коли `data-stress` відсутній.
         div(id: "geospatial_map_canvas",
-            data: { controller: "map", map_unmeasured_label_value: t(".unmeasured") },
+            # [UI.19] CARTO-ключ — публічний за природою (їде в URL тайла), тож ENV/env.clear, не
+            # секрет; `nil` Phlex не рендерить → без ключа контролер лишається на keyless URL.
+            data: { controller: "map", map_unmeasured_label_value: t(".unmeasured"),
+                    map_api_key_value: ENV["CARTO_API_KEY"].presence },
             class: "w-full h-full z-0") do
           # Прихований блок даних. Stimulus "зчитує" звідси.
           div(id: "map_data_nodes", class: "hidden") do

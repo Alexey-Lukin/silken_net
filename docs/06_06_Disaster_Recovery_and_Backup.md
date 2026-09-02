@@ -199,7 +199,29 @@ gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --p
 gh workflow run deploy.yml        # entrypoint: create → structure.sql ×3 → seed
 ```
 
-Альтернатива без дропу — `db:schema:load:cache db:schema:load:cable db:seed` у тому ж контейнері (сід починається з Кенозису, тож дані однаково перезаписуються). **Production:** рецепт НЕ застосовний — `db/seeds.rb` там fail-closed, bootstrap = [`OPS.38`](00_07_Action_Plan_Tracker).
+Альтернатива без дропу — `db:schema:load:cache db:schema:load:cable db:seed` у тому ж контейнері (сід починається з Кенозису, тож дані однаково перезаписуються). **Production:** рецепт НЕ застосовний — `db/seeds.rb` там fail-closed, bootstrap = [`OPS.38`](00_07_Action_Plan_Tracker) (`governance:bootstrap`, його кличе `.kamal/hooks/post-deploy` після кожного деплою).
+
+### 5.7 Логічний бекап ОДНОГО слоту: export → drop → import (staging drill, DR.1)
+
+⚠️ PITR/клон (§5.1) відновлює ІНСТАНС, а слоти ділять один `silken-db` — «відкотити canopy» клоном означало б відкотити й production. Одиниця відновлення слоту — БАЗА, і для неї Cloud SQL має лише логічний шлях: `gcloud sql export sql … --database=<db>` у GCS-бакет → `import sql`. Це не PITR (RPO = момент експорту) і не покриває `_cache`/`_cable` — ті відтворює `db:prepare` зі `structure.sql` на редеплої.
+
+```bash
+# 0) бакет для дампів (раз; створення ресурсу = 👤) + право ІНСТАНСУ писати в нього
+gcloud storage buckets create gs://silkennet-sql-dumps --location=europe-west1 --uniform-bucket-level-access
+SA=$(gcloud sql instances describe silken-db --format='value(serviceAccountEmailAddress)')
+gcloud storage buckets add-iam-policy-binding gs://silkennet-sql-dumps --member="serviceAccount:$SA" --role=roles/storage.objectAdmin
+# 1) експорт ОДНОГО слоту (--offload = serverless-експорт, без навантаження на інстанс)
+gcloud sql export sql silken-db "gs://silkennet-sql-dumps/canopy-$(date -u +%Y%m%dT%H%M).sql" --database=silken_net_canopy --offload
+# 2) парність ДО дропу (runner-форма 06_01 Фаза 4): users/trees/system_parameters + max(created_at)
+# 3) дроп трьох баз слоту — §5.6 (db:drop у web-контейнері canopy з DISABLE_DATABASE_ENVIRONMENT_CHECK=1)
+# 4) порожня база з тим самим імʼям → імпорт (дамп несе і схему, і дані)
+gcloud sql databases create silken_net_canopy --instance=silken-db
+gcloud sql import sql silken-db gs://silkennet-sql-dumps/canopy-<stamp>.sql --database=silken_net_canopy
+# 5) redeploy (gh workflow run deploy.yml): entrypoint досіє _cache/_cable зі structure.sql; сід НЕ біжить (база існує)
+# 6) парність із кроком 2 → drill зараховано; далі — другий дроп і свіжий сід (склад — 00_07 DR.1)
+```
+
+🔒 Стелі: (а) власник обʼєктів після імпорту — контекст імпортера, звір `\dt` owner проти `silken_net`, інакше перша міграція впаде на правах; (б) експорт — знімок ОДНОГО моменту без WAL: усе, що прийшло між кроками 1 і 3, втрачено свідомо (staging); (в) `gcloud sql export` після ~10 хв так само друкує клієнтський таймаут, як `clone` у §6 — вердикт із `gcloud sql operations describe`.
 
 ---
 

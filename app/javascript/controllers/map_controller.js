@@ -7,7 +7,7 @@ export default class extends Controller {
   // [ARCH.84] Підпис стану «не виміряно» приходить із i18n через контейнер, а не
   // зашитим рядком: попап уже несе два англійські літерали (DID/Stress) — це борг
   // I18N.1, і збільшувати його новим станом не можна.
-  static values = { unmeasuredLabel: String }
+  static values = { unmeasuredLabel: String, apiKey: String }
 
   // 🔴 [UI.11] Полотно оголошує себе НЕПРОЗОРИМ для морфу — і це лік КОРЕНЯ, а не
   // обхід. Виміряно браузером: під `turbo-refresh-method: morph` (глобальний
@@ -81,9 +81,14 @@ export default class extends Controller {
   }
 
   // Обидві теми — CARTO basemaps (та сама ліцензія/атрибуція, той самий CDN).
+  // [UI.19] CARTO basemaps вимагають (безкоштовний) API-ключ — `?key=` на кожному URL тайла.
+  // Ключ публічний за природою (їде в запитах браузера; CARTO обмежує його за referrer) і
+  // приходить Stimulus-значенням `map-api-key` з ENV["CARTO_API_KEY"] (Dashboard::Map).
+  // Без ключа — теперішній keyless URL (grace-шлях), ніколи не зламана карта.
   tileUrl(dark) {
     const style = dark ? "dark_all" : "light_all"
-    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`
+    const key = this.hasApiKeyValue && this.apiKeyValue ? `?key=${encodeURIComponent(this.apiKeyValue)}` : ""
+    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png${key}`
   }
 
   disconnect() {

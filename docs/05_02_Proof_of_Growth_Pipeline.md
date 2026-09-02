@@ -501,6 +501,8 @@ Body:
 
 **Статус (Wiki 05_01):** ✅ Real — HTTP POST через W3bstream API
 
+🔑 **ACTIVATION-GATED з 2026-09-02 [OPS.37/ARCH.118]:** тригер вище стоїть під `if Iotex::W3bstreamVerificationService.configured?` (обидва значення `IOTEX_W3BSTREAM_URL`/`IOTEX_API_KEY`, ENV-first + credentials-фолбек — один дім «чи нога жива»); обидва воркери (`IotexVerificationWorker`, `IotexBackfillWorker`) виходять WARN-ом без raise, коли нога не сконфігурована (backfill називає лічбу неверифікованих у вікні). Підстава — трейс canopy з симулятором: кожен `TelemetryLog` купував 6 падаючих виконань + щогодинний ре-арм 200 — ~85 % джоб і Redis-команд слоту, невидимих Sentry (`VerificationError` в `excluded_exceptions`); жодна deploy-поверхня значень не несе, а хост із `.env.example` (`w3bstream-api.iotex.io`) не має DNS-запису (ARCH.118). ⚠️ «✅ Real» вище — про КОД (HTTP POST існує), не про живу ногу: у проді вона активується лише провіжном обох значень, і `verified_by_iotex` доти чесно `false` — це не mint-гейт (PATH 2 оптимістичний, «Чесна рамка»).
+
 **Payload до W3bstream:**
 ```json
 {
