@@ -33,8 +33,10 @@
 #
 # ⛔ Read it through here, never as `ENV.fetch("DEPLOYMENT_SLOT")` without a
 # default. Two reasons, and the second is the one that bites: (1) the CoAP anchor
-# runs from a systemd env-file (`terraform/compute.tf`) that does not carry it, so
-# a bare fetch is a KeyError at boot; (2) the INF.12 declaration gate
+# runs from a systemd env-file (`terraform/compute.tf`) that carries it only since
+# 2026-09-02 (OPS.37 — line 1 of the intake slot switch) and is created ONCE, so an
+# anchor filled before that lives without the line and a bare fetch is a KeyError
+# at boot there; (2) the INF.12 declaration gate
 # (`spec/deploy/env_fetch_declaration_spec.rb`) reads `config/deploy.yml` and —
 # until it was hardened alongside this change — could not tell a var declared for
 # a Rails ROLE from one declared for an ACCESSORY, so a bare fetch would have

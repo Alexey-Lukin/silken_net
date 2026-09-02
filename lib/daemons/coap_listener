@@ -26,7 +26,14 @@ socket.bind("0.0.0.0", PORT)
 SilkenNet::MetricsExporter.start(port: ENV.fetch("METRICS_PORT", 9395).to_i)
 
 Rails.logger.info "🌳 [Sanctum] UDP/CoAP Брама відкрита на порту #{PORT}. Слухаємо дихання лісу..."
-puts "🛰️  Система моніторингу ефіру активована. Очікування пакетів..."
+# The ASCII half of this line is the runbook's ACCEPTANCE line (06_01 Фаза 4): grep-stable in
+# `docker logs silkennet-coap` whatever the locale. Until 2026-09-02 the runbook cited
+# «Listening on coap://…» while the daemon printed only the Ukrainian line — the operator's
+# first grep on deploy day would have found nothing. `slot=` names which deploy the intake
+# feeds (OPS.37: one anchor daemon, switched by three coap.env lines); the row in that
+# slot's DB is the proof, this line only says what the daemon BELIEVES.
+puts "🛰️  Listening on coap://0.0.0.0:#{PORT} slot=#{SilkenNet::DeploymentSlot.current} — " \
+     "система моніторингу ефіру активована. Очікування пакетів..."
 
 # Граматика RFC 7252 живе у pure CoapServerPdu (дзеркало firmware
 # coap_pdu.h, e2e golden-parity у spec/lib/coap_server_pdu_spec.rb).

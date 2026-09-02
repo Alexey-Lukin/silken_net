@@ -31,7 +31,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 
 Будь-хто, хто чіпає деплой, МУСИТЬ це знати (суть тут, механіка — за canon-§):
 
-- 🔴 **Redis = Upstash, ОДИН інстанс на слот, регіон обирається ПРИ СТВОРЕННІ й ніколи потім** (`silkennet-canopy` у `europe-west1`; production-інстанс ще не існує — упирається в тариф, Free = один інстанс/акаунт). Multi-zone Global DB — НЕ план, а ескалація з названим тригером: повторюваний день-у-день `sn-alert-m2m-nonce-fallback`/`-qatt-` на production (разовий blip = ні). Дім тригера й критерію — [`06_01`](../../../docs/06_01_Deployment_Kamal_Terraform.md) рядок Upstash у §«Хто може вимкнути НАС» + [`04_03 §5.15`](../../../docs/04_03_REST_API_v1_Reference.md); провенанс — `00_07` S6.1 §🗄️. Той, хто його закриє, читає ЦЕЙ скіл, а не §04 — тому вказівник стоїть тут.
+- 🔴 **Redis = Upstash, ОДИН інстанс на слот, регіон обирається ПРИ СТВОРЕННІ й ніколи потім** (`silkennet-canopy` у `europe-west1`; production-інстанс ще не існує — упирається в тариф, і межа Free — за КОМАНДАМИ, не інстансами: 500 k/міс проти ≈12.7 M/міс ПОРОЖНЬОГО Sidekiq `-c 4` — brpop/heartbeat/poll самого Sidekiq, виміряно 09-02, 00_07 `INF.28`; job-роль на Free вмирає за ~1.2 доби з `ERR max daily request limit exceeded`, і `/ready` → 503 для ноди). Multi-zone Global DB — НЕ план, а ескалація з названим тригером: повторюваний день-у-день `sn-alert-m2m-nonce-fallback`/`-qatt-` на production (разовий blip = ні). Дім тригера й критерію — [`06_01`](../../../docs/06_01_Deployment_Kamal_Terraform.md) рядок Upstash у §«Хто може вимкнути НАС» + [`04_03 §5.15`](../../../docs/04_03_REST_API_v1_Reference.md); провенанс — `00_07` S6.1 §🗄️. Той, хто його закриє, читає ЦЕЙ скіл, а не §04 — тому вказівник стоїть тут.
 - 🧰 **`gcloud` — передумова ШЕСТИ кроків дня, а не першого; і до 2026-08-31 її не називала
   ЖОДНА фаза.** Виміряно того дня: SDK на машині власника не було взагалі, а Фаза −1 перелічує
   **акаунти** (те, що заводять у браузері) — рунбук же говорить із **CLI**, і різницю видно
@@ -224,8 +224,20 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   вона й у глобальному `env.clear`, читач One-Home — `config/deployment_slot.rb` (фолбек
   `Rails.env`, тож dev/test чесні). Споживачі: Sentry-`environment` · namespace кешу · обидва
   бакети ActiveStorage · поле `slot` JSON-логу · два boot-гарди. ⛔ Ніколи голим
-  `ENV.fetch("DEPLOYMENT_SLOT")` — `coap.env` анкера її не несе. Носій —
+  `ENV.fetch("DEPLOYMENT_SLOT")` — шаблон `coap.env` анкера несе її лише з 09-02, а файл
+  створюється РАЗ (заповнений раніше анкер = фолбек `production` мовчки). Носій —
   `spec/deploy/deployment_slot_axis_spec.rb`. → `06_04 §2.1` / `06_03 §2.9`.
+- 🎰 **Інтейк: анкер ОДИН, демон ОДИН, слот = три рядки `coap.env` + `systemctl restart coap-daemon`
+  [OPS.37 ⚖️ founder 2026-09-02].** `DEPLOYMENT_SLOT` · `POSTGRES_DATABASE` · `REDIS_URL`; решта
+  значень слот-інваріантна. До першого production-деплою демон годує canopy — і це виконуване
+  сьогодні, бо кожне canopy-значення вже існує. ⛔ Другого publisher-а UDP 5683 (canopy `coap`-роль
+  на спільному хості) НЕ підіймати; ⚫ тумблери super_admin для CoAP/симулятора — won't-do роду
+  КОНСТРУКЦІЯ: обидва — процеси на ІНШИХ машинах (systemd-unit анкера · foreground-скрипт у
+  job-контейнері), web-процес актуатора над ними не має, а прапор без актуатора = самосвідчення.
+  Приймальний рядок демона — `Listening on coap://0.0.0.0:5683 slot=<слот>` (до 09-02 рунбук
+  цитував рядок, якого код не друкував); доказ слоту — рядок у БД ТОГО слоту, не лог. Симулятор
+  (`bin/forest_simulator` = емулятор Королеви, ключі з БД слоту) — з job-контейнера canopy на
+  `ingress_private_ip` через `SIMULATOR_COAP_URL`. → `06_01 §DEPLOY-DAY` Фаза 1/4 · 00_07 `INF.17`.
 - 🔴 **`${VAR}` в `env.clear` = ПОРОЖНІЙ рядок у контейнері, не значення** [S2.4/DEPLOY-1 Ф4, виміряно на canopy 2026-09-02]. Kamal не інтерполює `env.clear` — він емітить `--env VAR="${VAR}"` усередині `docker run`, який виконує ЧЕРЕЗ SSH, тож розгортає ВІДДАЛЕНИЙ shell на хості, де змінної нема. Так `RELEASE_VERSION` приїжджав `""`, Sentry відкидав release на кожній події, а маніфест, обидва воркфлоу й канон казали «CI-set». Значення з shell, що деплоїть, іде лише ERB-ом (`<%= ENV[...] %>`); версію контейнера Kamal дає сам (`KAMAL_VERSION`, `KAMAL_CONTAINER_NAME`, `KAMAL_HOST`) — читай її, не обіцяй свою. Носій — `spec/deploy/kamal_config_validity_spec.rb` («жодного `${` в env.clear»). ⊕ Той самий рід, що present-but-empty вище: `.presence` на читачі обовʼязковий, бо порожнє «є» істинне.
 - 🔴 **`egress-policy: block` живе ЛИШЕ на трьох джобах `deploy.yml`, і allowlist там ВИМІРЯНА, не написана** [OPS.36, 2026-09-02]: StepSecurity дає рекомендовану політику per-job із baseline реальних прогонів (сторінка insights прогону → Recommendations), і саме вона стоїть у воркфлоу з поясненням кожного імені. Новий endpoint валить крок ГУЧНО — лік = рядок в allowlist, ніколи відкат в `audit`. Production фліпає після ВЛАСНОГО першого деплою (правило INF.10). ⚠️ Агент harden-runner уміє не дописати baseline (`TimeoutError` до `agent.api.stepsecurity.io`) — «Insights not generated» на сторінці прогону означає рівно це, не «ще рахує». → `06_07 §1a`.
 - **Секрети One-Home:** канонічний дім — `config/deploy.yml env.secret`; повний

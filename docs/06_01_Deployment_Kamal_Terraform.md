@@ -201,7 +201,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **GCS tfstate** | Google · бакет створено поза terraform (`bootstrap.sh`) | контроль над станом інфри; ручне знищення версії CMEK-ключа робить state-версії **назавжди** нечитабельними (recovery = `terraform import` з нуля) | ⛔ ні. ⊕ **Єдиний важіль із МАШИННИМ виконавцем строку** — ротація CMEK `--rotation-period=90d`, налаштована в gcloud. Копії стану поза бакетом немає (лише 10 noncurrent-версій / 30 днів, і короткий ретеншн — свідомий: кожна версія несе секрети) |
 | **GHCR** (образ для анкера) | GitHub (див. рядок 2) | зупиняє оновлення/підйом **CoAP-інтейку**: анкер тягне свій образ звідси systemd-юнітом, поза Kamal/WIF-ланцюгом і без реєстрового credential'а. ⚠️ Kamal тягне з GCP Artifact Registry — це ІНШИЙ реєстр, тож web/job тут не залежать | ⛔ ні — успадковує подію рядка 2. Пом'якшення: `PIN_ME` fail-closed + заборона `:latest` (`INF.21`) — уже завантажений образ переживе відмову, rebuild/reboot ні |
 | **Alchemy** (RPC Polygon/Ethereum) | Alchemy · **акаунт заведено 2026-08-31**, free-план, один app на команду. Модель ключа: ОДИН API-key на app, мережі перемикаються ПІДДОМЕНОМ і вмикаються поштучно — увімкнено 16, і вони покривають наш стек цілком: `eth-mainnet` · `polygon-mainnet` (прод) · `polygon-amoy` + `eth-sepolia` (рівно та пара, що потрібна Фазі 2t) · `solana-mainnet`/`solana-devnet` · **`celo-mainnet`/`celo-sepolia`**. Canopy-двійники `CANOPY_ALCHEMY_*`/`CANOPY_SOLANA_RPC_URL`/`CANOPY_CELO_RPC_URL` заведені й `BOOT_CRITICAL` з 2026-09-02 (без них гард `SILENT_RPC_ENVS` не дав би canopy бутнутись); production-значення — крок Фази −1 | зупиняє мінт · слешинг · confirmation · L1-якір · governance-sync · treasury-моніторинг. ✅ **Каскад ЖИВИЙ з 2026-09-02:** механізм (`Web3::ResilientClient` + `RpcConnectionPool`) дістав другий URL на кожній мережі — keyless публічні PublicNode/dRPC/офіційний Solana в `env.clear` обох маніфестів (canopy — testnet-двійники), тож при двох URL він більше не вироджується у звичайного клієнта; реєстр каскаду читає кожен `client_for`-сайт, не лише `MintingRollbackService`. Доти каскад був формально Є, фактично ПОРОЖНІЙ: `INFURA_POLYGON_RPC_URL` жив лише в `.env.example` і в deploy-набір не був заведений | ⚖️ **закрито 2026-09-02 (founder): другий птах = keyless-публічний ендпоінт ІНШОГО оператора, акаунтний вендор лише якщо вкусять rate-limit-и** — тож це конфіг, не архітектура, і він заведений (гард судить чейн фолбеків, `web3_env_loudness_spec` — живий маніфест); Ethereum другого птаха не має свідомо. 🔴 Урок, що переживає закриття: дужка тут доти казала «Celo й Solana свої каскади вже мають», і це було хибно на ЯРУСІ, який має значення (переміряно 2026-09-01) — значення жили в `.env.example` і в контейнер не доїжджали; клас той самий, що [`S1.1`](00_07_Action_Plan_Tracker) `TURBO_SIGNED_STREAM_KEY`: значення живе на одному ярусі ланцюга й читається як заведене |
-| **Upstash** (Redis ×2 інстанси: production + canopy) | Upstash · акаунт заведено, `silkennet-canopy` живий (виміряно 2026-08-30); **production-інстанс ще ні — упирається в ТАРИФ, не в роботу** (Free = рівно 1 інстанс/акаунт) → [`00_07`](00_07_Action_Plan_Tracker) Фаза −1 | `/ready` → **503 для всієї ноди** (Redis у hard-dependencies), бо на ньому Sidekiq (9 черг) · Kredis-локи мінту/берну/nonce · Rack::Attack. ⊕ Частковий graceful-degrade є лише для nonce (fallback у Solid Cache + власна метрика й алерт) | ⛔ ні. ⚖️ **Тригер названий і вимірний:** повторюваний `m2m_nonce_fallback` день-у-день → перехід на multi-zone Upstash Global DB (рішення за прод-даними) |
+| **Upstash** (Redis ×2 інстанси: production + canopy) | Upstash · акаунт заведено, `silkennet-canopy` живий (виміряно 2026-08-30); **production-інстанс ще ні — упирається в ТАРИФ, не в роботу** (межа Free — за КОМАНДАМИ, не за інстансами: 500 k/міс проти ≈12.7 M/міс ПОРОЖНЬОГО Sidekiq, а безкоштовних баз до 10; виміряно 2026-09-02 — [`00_07`](00_07_Action_Plan_Tracker) INF.28) → [`00_07`](00_07_Action_Plan_Tracker) Фаза −1 | `/ready` → **503 для всієї ноди** (Redis у hard-dependencies), бо на ньому Sidekiq (9 черг) · Kredis-локи мінту/берну/nonce · Rack::Attack. ⊕ Частковий graceful-degrade є лише для nonce (fallback у Solid Cache + власна метрика й алерт) | ⛔ ні. ⚖️ **Тригер названий і вимірний:** повторюваний `m2m_nonce_fallback` день-у-день → перехід на multi-zone Upstash Global DB (рішення за прод-даними) |
 
 🔑 **Що цей інвентар змінив у власному пункті — записано, бо клас повториться.** `ARCH.114` спирався на «виміряний інстанс, що доводить потребу»: `GCP_SA_KEY_BASE64` — довгоживучий SA-ключ із приписаною ротацією 90 днів **без виконавця**. **Цей інстанс МЕРТВИЙ**: споживача знято разом із платформою (`OPS.37`), `google_service_account_key` у дереві **нуль**, а `INF.22` і скіл `deploy` уже кажуть «WIF безвинятковий». **Вердикт (реєстр потрібен) вистояв — упала його ПІДСТАВА**, і заміняє її не риторика, а сильніший живий інстанс того самого класу Кафки: **довіра WIF ключується на ІМЕНІ GitHub-власника, стеля оголошена в самому коді, подія названа («if the repo ever changes hands») — і виконавця в неї немає так само.** Різниця в тому, що цей — не гіпотетичний і не знятий.
 
@@ -236,6 +236,8 @@ IoT-телеметрія (мільйони дерев, пакети щогоди
 
 1. **Розділення ІМЕН — за замовчуванням, безкоштовно.** Усі споживачі ділять один keyspace, розведені префіксом ключа: Kredis — `silken:*` (`Kredis.global_namespace`, `config/initializers/kredis.rb`), Rack::Attack — `rack-attack:*` (опція `namespace:`), Sidekiq — власні `queue:`/`retry:`/`dead`/`stat:`/`processes` **без префікса**, бо Sidekiq 7+ кидає `ArgumentError` на `namespace:` і його імена ні з чим не збігаються.
 2. **Розділення ПАМʼЯТІ — deploy-часовий важіль, за потреби.** Префікс розводить імена, **ніколи не memory pressure**: під eviction-політикою флуд однаково вибиває чужі ключі незалежно від префікса. Тому справжню ізоляцію дає **окремий інстанс**, і код для цього вже готовий — `KREDIS_REDIS_URL` / `RACK_ATTACK_REDIS_URL` перекривають адресу без жодної правки. Обидві наші бази наразі створені з **вимкненим eviction**, тож витіснення не відбувається взагалі.
+
+🔴 **Третій ярус — КВОТА, і вона бʼє раніше за памʼять (виміряно 2026-09-02).** Порожній Sidekiq 8.1.7 із `-c 4` робить ≈4.9 Redis-команди/с без жодної джоби (`brpop` з `BasicFetch::TIMEOUT = 2` на кожен потік · heartbeat 10 с · poll планувальника ~5 с) — 588 за 120 с ≈ **12.7 M/місяць**; production `-c 15` ≈ 27 M. Upstash Free = 500 k команд/місяць — межа за КОМАНДАМИ, не за інстансами (безкоштовних баз до 10), тож job-роль на Free-інстансі вичерпує квоту за ~1.2 доби, після чого клієнт бачить `ERR max daily request limit exceeded`, а `/ready` → 503 для всієї ноди. Тариф обирається ДО першого буту job-ролі, не після — [`00_07`](00_07_Action_Plan_Tracker) INF.28.
 
 ⚠️ **Наслідок для `Kredis.clear_all`, і він несучий:** гем гілкується на наявність namespace — без нього він робить **`FLUSHDB`**. Саме тому namespace обовʼязковий, а не косметичний: без нього зачистка між прикладами сюїти й будь-який інший `clear_all` спорожняють СПІЛЬНУ базу — з чергами Sidekiq включно. ⚠️ Той самий виклик стояв і в `config/puma.rb` на кожному `before_worker_boot`, але там він був **латентним**, не живим ([`06_05`](06_05_Puma_Configuration) — гем чистить лише ВЖЕ закешовані зʼєднання, а майстер Kredis на буті не торкається); знято до того, як озброїться.
 
@@ -914,7 +916,7 @@ openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
 
 **Фаза −1 — Акаунти й значення (за дні ДО дня X):**
 GCP project + billing (+budget alert — OPS.11; ⚠️ грант `billing.costsManager` на BILLING-акаунті — див. §IAM) ·
-**Upstash ×2** (production + canopy) → 2× `rediss://` URL · **два домени:
+**Upstash ×2** (production + canopy; тариф — за КОМАНДАМИ, не за інстансами: [`00_07`](00_07_Action_Plan_Tracker) INF.28) → 2× `rediss://` URL · **два домени:
 `silkennet.app`** (HTTPS, proxied) **та `silkennet.com`** (його піддомен `api.silkennet.com` —
 CoAP DNS-only; firmware Queen хардкодить саме його, `COAP_SERVER_HOST`) — купувати в
 **незалежного реєстратора, НЕ Cloudflare Registrar** (⚖️ INF.4 2026-08-30: CF Registrar не
@@ -1023,6 +1025,36 @@ Kamal-плейсхолдери: `image:` AR-шлях, servers-IP, `POSTGRES_HOST
 enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [SEC.22]; AR-encryption
 ×3 = boot-critical, guard fail-closed без них; Postgres-host уже впечатаний terraform'ом) →
 `systemctl restart coap-daemon` → `bin/coap_smoke --host <ingress_ip>`.
+
+🎰 **Анкер ОДИН, демон ОДИН, а СЛОТ інтейку — три рядки того ж файлу (⚖️ founder 2026-09-02,
+[`OPS.37`](00_07_Action_Plan_Tracker)):** `DEPLOYMENT_SLOT` · `POSTGRES_DATABASE` · `REDIS_URL`;
+решта значень слот-інваріантна (той самий Cloud SQL-користувач, та сама AR-трійка).
+**До першого production-деплою демон годує canopy — і це виконуване СЬОГОДНІ**, бо кожне
+значення canopy вже існує (AR-трійка · `POSTGRES_PASSWORD` · `SENTRY_DSN` = ті самі, що
+їдуть у `Deploy · Canopy`; `REDIS_URL` = значення `CANOPY_REDIS_URL`; `RAILS_MASTER_KEY` —
+доки рядок у шаблоні, [`SEC.22`](00_07_Action_Plan_Tracker) Phase-2 його знімає):
+```bash
+# 1) образ демона = КОРОТКИЙ sha коміту, що ЖИВЕ на canopy (mirror-ghcr тегує `sha-<7>`; образ
+#    публічний — pull без логіна); tfvars не має цього ключа взагалі → анкер їде на `:PIN_ME`
+echo 'coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<7-hex>"' >> terraform/terraform.tfvars
+(cd terraform && terraform apply)                       # оновлює startup-script у metadata
+# 2) на анкорі (IAP-ssh, руки власника): три рядки слоту + значення — РЕДАКТОРОМ, не echo/sed
+#    (значення не мають лягати в shell-history)
+gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudoedit /etc/silkennet/coap.env
+#      DEPLOYMENT_SLOT=canopy · POSTGRES_DATABASE=silken_net_canopy · REDIS_URL=<CANOPY_REDIS_URL>
+#      + POSTGRES_PASSWORD / AR-трійка / SENTRY_DSN / RAILS_MASTER_KEY
+# 3) перезапуск startup-скрипта (перетягує образ, вмикає unit; coap.env НЕ перезаписується —
+#    створюється раз) → приймальний рядок
+gcloud compute instances reset silken-net-ingress
+gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudo docker logs --tail 5 silkennet-coap
+#      → «Listening on coap://0.0.0.0:5683 slot=canopy»
+```
+⚠️ Анкер, заповнений ДО 2026-09-02, рядка `DEPLOYMENT_SLOT` не має — **допиши** його: без рядка
+фолбек = `production`, і демон мовчки писатиме в продову базу (`config/deployment_slot.rb`).
+Перемикання на production у Фазі 5 = ті самі три рядки назад + `systemctl restart coap-daemon`;
+другого publisher-а UDP 5683 (canopy `coap`-роль на спільному хості) НЕ підіймати — підстава в
+[`OPS.37`](00_07_Action_Plan_Tracker). Доказ слоту — рядок телеметрії в БД ТОГО слоту (Фаза 4),
+не лог: `slot=` каже лише, у що демон ВІРИТЬ.
 
 🔴 ⚠️ **Стан змінився 2026-09-01: порядок нижче БІЛЬШЕ НЕ ПОРАДА.** Доки canopy-набір секретів був неповний, `Deploy · Canopy` скіпав чисто — і саме той скіп, а не дисципліна, тримав порядок. Набір закрито, тож кожен deploy-релевантний коміт у `main` запускає справжній `kamal deploy -d canopy`, і без адрес Фази 2t він доходить до ЗАПУЩЕНОГО контейнера й гине в `web3_network_guard`. **Порядок став властивістю CI.**
 
@@ -1190,11 +1222,29 @@ dead-man switch Королев, sweep застряглих коштів, treasur
 склад масиву; сам піддомен вендора мертвий — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118).
 
 **Фаза 4 — Верифікація (єдиний post-deploy список):**
-🌲 **Приймальний рядок інтейку — `Listening on coap://0.0.0.0:5683` у логах демона**
+🌲 **Приймальний рядок інтейку — `Listening on coap://0.0.0.0:5683 slot=<слот>` у логах демона**
 (`docker logs silkennet-coap` на анкері). Коли він зʼявився — **ліс може говорити.**
 ⚠️ Це НЕ дублює `coap_smoke` нижче, а передує йому: рядок каже, що сокет піднято, smoke —
 що байти правильні; демон із неповним `coap.env` мовчить, а `systemctl status` рапортує
-активність через `Restart=always`. Далі —
+активність через `Restart=always`. 🔴 До 2026-09-02 цей рядок був ФАНТОМОМ: рунбук цитував
+його, а демон друкував лише український рядок — перший grep оператора в день деплою не знайшов
+би нічого (клас «файл ⊥ сам собі»); тепер ASCII-половину друкує сам `lib/daemons/coap_listener`.
+🌲 **На canopy Королеви нема — ліс говорить СИМУЛЯТОРОМ** (`bin/forest_simulator` = емулятор
+Королеви: бере шлюзи й ключі з БД слоту, шле CoAP-UDP), з job-контейнера canopy на ПРИВАТНУ
+адресу анкера (`terraform output -raw ingress_private_ip`; firewall `allow_internal` пускає UDP
+всередині VPC; ціль — `SIMULATOR_COAP_URL`, бо `COAP_HOST` зайнятий пробою адмін-панелі):
+```bash
+# на app-хості (IAP-ssh): усередині ЖИВОГО job-контейнера canopy (ключі шлюзів читаються з БД слоту)
+JOB=$(sudo docker ps --format '{{.Names}}' | grep -- '-job-' | grep canopy | head -1)
+sudo docker exec -e SIMULATOR_COAP_URL=coap://<ingress_private_ip>:5683 -it "$JOB" bin/forest_simulator
+# доказ — рядки в БД canopy, не лог демона: TelemetryLog.count росте (runner-форма Фази 4 нижче)
+```
+⚠️ Симулятор — foreground-процес, живе доки відкритий термінал (Ctrl-C = стоп; тумблера в UI
+свідомо немає — [`OPS.37`](00_07_Action_Plan_Tracker)). Він ВИТРАЧАЄ: гаманці сідів із
+≥10 000 балів доходять до справжнього `batchMint` на Amoy (мінтер несе 0.05 POL; коли газ
+скінчиться, мінти стануть `failed`, не сюрпризом у рахунку — газ testnet безкоштовний, кран
+лімітований), і кожен пакет = ~30 Redis-команд на джоб-ланцюг (квота Upstash Free —
+[`00_07`](00_07_Action_Plan_Tracker) `INF.28`). Далі —
 `db:prepare` пройшов усі 3 бази І три схеми — `SolidCache::Entry.table_exists?` + `SolidCable::Message.table_exists?`
 через runner (INF.16; ⚠️ 2026-09-02 `db:prepare` був «зелений» на ПОРОЖНІХ cache/cable: у `:sql`-форматі він вантажить
 `db/{cache,cable}_structure.sql`, яких у репо не було; ✅ 2026-09-02 після дропу трьох баз холодний шлях пройшов повністю — `Created database` ×3, сід до кінця, кеш-таблиця жива) · `curl https://silkennet.app/up` → 200 +

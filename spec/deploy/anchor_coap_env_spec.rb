@@ -11,7 +11,9 @@ require_relative "../support/repo_root"
 # (active_record_encryption_keys_check is production-wide, no coap skip). This asserts the
 # anchor coap.env carries exactly the coap boot contract:
 #   • present: AR-encryption ×3 (production-wide guard), RAILS_MASTER_KEY (secret_key_base
-#     via credentials), POSTGRES_PASSWORD + REDIS_URL (DB/enqueue);
+#     via credentials), POSTGRES_PASSWORD + REDIS_URL (DB/enqueue), and the three-line slot
+#     switch DEPLOYMENT_SLOT · POSTGRES_DATABASE · REDIS_URL (OPS.37 — one daemon, one slot
+#     at a time; a template without all three lines leaves the switch without a home);
 #   • absent:  PROVISIONING_MASTER_KEY (master_key_strength_check skips coap_listener) and
 #     the signing quintet (job-only) — a re-added crown-jewel would sit in the anchor's
 #     plaintext /proc/environ for nothing.
@@ -30,6 +32,14 @@ RSpec.describe "Ingress Anchor coap.env (compute.tf)" do # rubocop:disable RSpec
       "ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY",
       "ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"
     )
+  end
+
+  # [OPS.37 ⚖️ 2026-09-02] ONE anchor daemon feeds ONE slot at a time (canopy until the first
+  # production deploy); the slot is a three-line edit of coap.env + restart, never a second
+  # publisher of UDP 5683. A missing line here = a switch with no home, and DEPLOYMENT_SLOT
+  # absent falls back to `production` SILENTLY (config/deployment_slot.rb).
+  it "carries the three-line intake slot switch (DEPLOYMENT_SLOT · POSTGRES_DATABASE · REDIS_URL — OPS.37)" do
+    expect(coap_env_vars).to include("DEPLOYMENT_SLOT", "POSTGRES_DATABASE", "REDIS_URL")
   end
 
   it "omits PROVISIONING (coap-guard skips it) and the signing quintet (job-only)" do

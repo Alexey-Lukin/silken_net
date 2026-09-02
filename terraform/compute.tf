@@ -249,12 +249,24 @@ SYSTEMD_UNIT
     if [ ! -f /etc/silkennet/coap.env ]; then
       cat > /etc/silkennet/coap.env << 'COAP_ENV'
 RAILS_ENV=production
+# [OPS.37 ⚖️ founder 2026-09-02] Which DEPLOY this daemon feeds: `production` ⊥ `canopy`.
+# ONE anchor, ONE daemon, ONE publisher of UDP 5683 — the slot is the THREE-LINE SWITCH
+# (DEPLOYMENT_SLOT · POSTGRES_DATABASE · REDIS_URL) + `systemctl restart coap-daemon`; every
+# other value is slot-invariant (same Cloud SQL user, same AR-encryption triple). Until the
+# first production deploy the daemon feeds canopy. Read via config/deployment_slot.rb:
+# absent → Rails.env = production, so a coap.env written before this line existed keeps
+# feeding production SILENTLY. ⚠️ This file is created ONCE (`if [ ! -f … ]` below) — a
+# template change never reaches a filled anchor; edit the file on the host (06_01 Фаза 1).
+DEPLOYMENT_SLOT=production
 # Cloud SQL over the VPC private IP — no Auth Proxy on the Anchor.
 POSTGRES_HOST=${google_sql_database_instance.silken_db.private_ip_address}
 POSTGRES_USER=silken_net
 POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
+# Slot switch, line 2 — canopy: silken_net_canopy (database.yml derives _cache/_cable from it).
 POSTGRES_DATABASE=silken_net_production
-# Upstash Redis (TLS) — Sidekiq enqueue target (UnpackTelemetryWorker).
+# Upstash Redis (TLS) — Sidekiq enqueue target (UnpackTelemetryWorker). Slot switch, line 3 —
+# canopy: the CANOPY_REDIS_URL instance. ⛔ Never the other slot's instance: two Sidekiq
+# servers on one Redis = cross-drain mainnet⟷testnet (deploy_workflow_parity_spec).
 REDIS_URL=REQUIRED_SECRET_NOT_SET
 RAILS_MASTER_KEY=REQUIRED_SECRET_NOT_SET
 # No PROVISIONING_MASTER_KEY — coap_listener is pure UDP glue (enqueue only); key
