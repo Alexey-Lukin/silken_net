@@ -435,7 +435,9 @@ kamal app exec --interactive --reuse "bin/rails console" -d canopy
 # ⚠️ [OPS.20, виміряно 2026-09-02] З НОУТБУКА ОПЕРАТОРА `kamal app exec` НЕ ПРАЦЮЄ:
 #   `Net::SSH::AuthenticationFailed for user sa_…` — `ssh.user` у deploy.yml = posix-акаунт
 #   SA (OS Login), ключ під який реєструє лише CI; локальна gcloud-ідентичність мапиться на
-#   ВЛАСНИЙ posix-акаунт. Робоча дорога з ноутбука (read-only `rails runner` виконано так):
+#   ВЛАСНИЙ posix-акаунт. `kamal app exec` лишається ЧИННИМ рецептом для CI-half — там ключ під
+#   SA реєструє сам воркфлоу (INF.20 хід 5). Робоча дорога з ноутбука (read-only `rails runner`
+#   і `db:drop` виконано так 2026-09-02):
 gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --project silkennet \
   --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); sudo docker exec -it "$C" bin/rails console'
 kamal logs -f -d canopy
