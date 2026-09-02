@@ -69,3 +69,13 @@ output "app_host_ip" {
   description = "Private IP of the Kamal app host (web+job+coap) — feeds the Anchor's app-host-ip metadata and config/deploy.yml servers"
   value       = google_compute_instance.app.network_interface[0].network_ip
 }
+
+# [OPS.37 / INF.17] The Ingress Anchor's PRIVATE IP — the CoAP intake as seen from INSIDE
+# the VPC. `ingress_ip` above is the public address Queens dial; a simulator running in a
+# canopy container on the app host has no external IP and must not hairpin through NAT,
+# so it targets this one (`SIMULATOR_COAP_URL=coap://<this>:5683`, bin/forest_simulator;
+# reachable under `allow_internal`, terraform/vpc.tf).
+output "ingress_private_ip" {
+  description = "Private IP of the Ingress Anchor — CoAP intake target for in-VPC clients (forest_simulator on canopy)"
+  value       = google_compute_instance.ingress_anchor.network_interface[0].network_ip
+}

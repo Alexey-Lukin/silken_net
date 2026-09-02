@@ -274,7 +274,12 @@ cherkasy_forest = Cluster.create!(
   # `temperature_c` — там число мусить триматись під цим порогом, інакше кадр
   # класифікується пожежею незалежно від того, що каже його власний коментар.
   environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
-  geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.9, 49.4 ], [ 32.0, 49.4 ], [ 32.0, 49.5 ], [ 31.9, 49.5 ], [ 31.9, 49.4 ] ] ] }
+  # 🗺️ Полігон лежить УСЕРЕДИНІ лісу, не на річці. OSM relation 3779329 «Черкаський бір»
+  # (natural=wood): bbox lat 49.2326..49.5531, lon 31.4616..31.9417. Доти тут стояв квадрат
+  # 31.9..32.0 — східніше східної межі бору, тобто Дніпро й місто: мапа дашборда садила
+  # сто Солдатів у воду (виміряно на живому canopy 2026-09-02, скріншот власника).
+  # Координати шлюзів (§5) і дерев (§7) деривуються від цього ж прямокутника — один дім.
+  geojson_polygon: { type: "Polygon", coordinates: [ [ [ 31.74, 49.35 ], [ 31.86, 49.35 ], [ 31.86, 49.46 ], [ 31.74, 49.46 ], [ 31.74, 49.35 ] ] ] }
 )
 
 amazon_sector = Cluster.create!(
@@ -391,8 +396,9 @@ gateways = []
   gw = Gateway.create!(
     uid: uid,
     ip_address: "10.0.0.#{5 + i}",
-    latitude: 49.4678 + (i * 0.01),
-    longitude: 31.9753 + (i * 0.01),
+    # Усередині полігону кластера (§2, OSM-межі бору) — крок ~1 км по NE у сосновому масиві.
+    latitude: 49.395 + (i * 0.01),
+    longitude: 31.80 + (i * 0.01),
     cluster: cherkasy_forest,
     config_sleep_interval_s: 3600,
     last_seen_at: Time.current,
@@ -720,6 +726,18 @@ puts "⛓️ Реєстрація блокчейн-транзакцій..."
 # грошовий тракт витратив місяць.
 sample_wallet = cherkasy_trees.first.wallet
 
+# 🔴 Фейковий реєстр §9 — ЛИШЕ на локальних середовищах (`Rails.env.local?`), і межа несуча:
+# на canopy (`RAILS_ENV=production`, testnet-слот) ці рядки не демо, а ХИБНЕ СВІДЧЕННЯ.
+# `ChainAuditService` рахує `net_minted_supply` (Σ confirmed mint − Σ confirmed burn) і звіряє
+# з `totalSupply()` живого SCC на Amoy: сід дав би 10 − 4 = 6 SCC у базі проти 0 у ланцюгу →
+# `critical: true` назавжди, і `SystemAuditsController` показував би «фрод» на стейджингу,
+# який нікого не мінтив; той самий 6 SCC поїхав би в payload L1-якоря на Sepolia. Реальні
+# рядки на canopy пише сам тракт (`TokenomicsEvaluatorWorker` → `lock_and_mint!`), коли
+# бігає симулятор [OPS.37 / DR.1 drill]. ⚠️ Дискримінатор — `Rails.env.local?`, як у
+# `DEMO_PASSWORD` вище, НЕ слот: обидва деплой-слоти біжать `production`, а dev/test —
+# єдині середовища, де вигадана грошова історія доречна.
+if Rails.env.local?
+
 # Скільки МОНЕТ цей гаманець уже погасив у KlimaDAO (див. ESG-рядок нижче).
 esg_retired_scc = 4
 
@@ -817,6 +835,8 @@ BlockchainTransaction.create!(
   notes: "🌿 ESG Retirement via KlimaDAO: #{esg_retired_scc} SCC погашено для вуглецевої нейтральності."
 )
 
+end # Rails.env.local? — фейковий реєстр §9 (див. підставу над `if`)
+
 # =========================================================================
 # 10. ОБСЛУГОВУВАННЯ (MaintenanceRecord)
 # =========================================================================
@@ -850,8 +870,9 @@ MaintenanceRecord.create!(
   performed_at: 1.week.ago,
   notes: "Первинний огляд після встановлення сенсорного модуля STM32. DID зареєстровано.",
   hardware_verified: true,
-  latitude: 49.4285,
-  longitude: 32.0620
+  # GPS огляду = координати самого дерева (форестер стояв біля вузла), не центр міста.
+  latitude: cherkasy_trees[10].latitude,
+  longitude: cherkasy_trees[10].longitude
 )
 
 # =========================================================================

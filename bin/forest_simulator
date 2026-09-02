@@ -30,7 +30,12 @@ require_relative "../config/environment"
 # --- КОНСТАНТИ СИМУЛЯЦІЇ ---
 BATCH_SIZE_RANGE = (5..15)
 SLEEP_RANGE = (3..8)
-COAP_HOST = "coap://127.0.0.1:5683"
+# [OPS.37] Ціль — параметр, не літерал: на canopy симулятор біжить у job-контейнері app-хоста,
+# а демон-інтейк живе на анкері (INF.17), тож loopback там мовчить. Імʼя навмисно НЕ
+# `COAP_HOST` — та змінна вже зайнята UDP-пробою адмін-панелі (`api.silkennet.com`, env.clear);
+# усередині VPC ціль = ПРИВАТНА IP анкера (`terraform output -raw ingress_private_ip`,
+# firewall `allow_internal`), а не публічне імʼя. Дефолт лишає локальний сценарій незмінним.
+COAP_HOST = ENV.fetch("SIMULATOR_COAP_URL", "coap://127.0.0.1:5683")
 COAP_TIMEOUT = 2
 
 $stdout.sync = true
