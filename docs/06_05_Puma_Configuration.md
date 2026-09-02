@@ -194,7 +194,7 @@ kamal app exec -i "grep -i ':0BB8 ' /proc/net/tcp6"   # 0x0BB8 = 3000; zero-depe
 
 ⛔ **`ss -tlnp` тут НЕ вживати** — `iproute2` в образі немає (підстава й вимір — §5 вище). Ця форма стояла в цьому блоці до 2026-08-31 і віддала б `command not found`, тобто верифікаційний крок повідомляв би про власну відсутність, а не про стан Puma.
 
-Обидві відповіді `200` = dual-stack; `v4 200` при провалі `v6` = Puma сіла на `0.0.0.0:3000`, бо в namespace немає non-loopback IPv6-інтерфейсу (`Configuration.default_tcp_host` — §5). Задокументувати результат після першого деплою.
+Обидві відповіді `200` = dual-stack; `v4 200` при провалі `v6` = Puma сіла на `0.0.0.0:3000`, бо в namespace немає non-loopback IPv6-інтерфейсу (`Configuration.default_tcp_host` — §5). ✅ **Результат першого деплою (canopy, 2026-09-02): `v4 200` · `v6 000` · `/proc/net/tcp6` порожній, `/proc/net/tcp` несе `00000000:0BB8` — v4-only, і причину назвав прилад, не здогад: `docker network inspect kamal` → `EnableIPv6=false`, `/proc/net/if_inet6` у контейнері порожній.** Dual-stack є властивістю Docker-мережі `kamal` (її створює крок `docker network create kamal` у deploy-воркфлоу, без `--ipv6`), а не Puma; вмикати IPv6 у тій мережі сьогодні нема для кого — kamal-proxy ↔ контейнер ідуть v4-мостом, зовнішній IPv6 термінує Cloudflare — тож стан ПРИЙНЯТИЙ, а тригер перегляду той самий, що §5 називає для примусового v4: IPv6-only інфраструктура. ⚠️ Отже крок Фази 4 рунбука ([`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)) читай як «`v4 200` + записаний `v6`», а не як очікування `200` на `[::1]`.
 
 ### Health-проби: liveness `/up` · readiness `/ready`
 
