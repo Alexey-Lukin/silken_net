@@ -36,6 +36,12 @@
 #      founder ratified (keys first, role second; 00_07 OPS.37) is what this ceiling waits on.
 #   B4. .kamal/secrets.canopy must remap EVERY shared external resource from its CANOPY_* twin
 #      with a LOUD placeholder fallback — NEVER a silent fall-through to the production name.
+#      🔴 The fallback's FORM is `$(printf '%s' "\${TWIN:-MARKER}")`, not `${TWIN:-MARKER}`: this
+#      gate blessed the bare form twice (08-31, 09-02) reading it as TEXT, and Kamal's Dotenv
+#      parser shipped `<value>:-MARKER}` on the first boot. B5 below forbids the bare form; the
+#      parser-executed proof is spec/deploy/kamal_secrets_parse_spec.rb — a text gate cannot be it.
+#   B5. No bare `${VAR:-…}` / `${VAR:=…}` in either shell-form secrets file (the anchor heredoc is
+#      terraform-interpolated and exempt). The same defect delivered RAILS_MASTER_KEY as `<key>:-}`.
 #      REDIS_URL first (2026-08-31: canopy talking to PRODUCTION Redis); the RPC quartet
 #      ALCHEMY_POLYGON / ALCHEMY_ETHEREUM / SOLANA / CELO joined 2026-09-02 [INF.27 move (2)]:
 #      a testnet slot handed a mainnet endpoint is what the chain axis REFUSES, and a refusal
@@ -114,6 +120,12 @@
 #   B4/rpc-absent   the SOLANA_RPC_URL remap deleted outright        → RED naming the inheritance
 #   B4/rpc-fallback CELO_RPC_URL rewritten to ${CELO_RPC_URL}       → RED naming file + value
 # Both restored byte-identically (`cmp`); GREEN before and after.
+# ⊕ 2026-09-02 (second pass, after the first canopy boot): B4's accepted FORM changed and B5 was
+# born, both mutated on the live files:
+#   B5/bare-default  REDIS_URL restored to ${CANOPY_REDIS_URL:-…}          → RED naming B5
+#   A/literal-printf RAILS_MASTER_KEY → $(printf '%s' "deadbeef")           → RED naming A (LOUD_REF admits markers and master.key only)
+#   B4/rpc-absent    SOLANA_RPC_URL remap deleted (re-run on the new form) → RED naming the inheritance
+# All restored byte-identically (`cmp`); GREEN before and after.
 # SUBJECT_FLOOR proved itself organically the same day: a z-after-(.*) parser bug collapsed the
 # set to 0 and the floor, not a human, caught the would-be green over an empty set.
 
@@ -132,7 +144,13 @@ ANCHOR_TF    = "terraform/compute.tf" # COAP_ENV heredoc — the anchor daemon's
 # passwords in the URL; `_TOKEN`/`_API_KEY` cover Grafana/service tokens.
 SECRET_NAME = /(_KEY|_KEYPAIR|SECRET_KEY_BASE|_SECRET|_PASSWORD|_TOKEN|_BASE64|_DSN|_RPC_URL|REDIS_URL|_DERIVATION_SALT)\z/
 PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
-SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} / ${VAR:-default}
+SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} — NOT bare ${VAR:-default}, see B5
+# The ONLY command-substitution form invariant A accepts: a real-shell evaluation of a bash
+# default whose fallback is a loud marker or the gitignored master.key file — never a literal.
+LOUD_REF    = /\A\$\(printf '%s' "\\\$\{[A-Z][A-Z0-9_]*:-(?:[A-Z][A-Z0-9_]*_NOT_SET|\$\(cat config\/master\.key 2>\/dev\/null\))\}"\)\z/
+# B5 — bash default/alternate syntax outside a `$( )`: Dotenv reads `${NAME` and leaves the
+# rest as literal text, so the container gets `<value>:-…}` (measured on the first canopy boot).
+DOTENV_MANGLED = /(?<!\\)\$\{[A-Z][A-Z0-9_]*:[-=+?]/
 INTERP      = /\A\$\{[^}]+\}\z/         # ${terraform.interpolation} / "${RELEASE_VERSION}"
 
 # Measured 2026-08-29: 25 in .kamal/secrets-common + 6 in the COAP_ENV heredoc = 31.
@@ -228,13 +246,15 @@ end
       failures << "#{file}: #{var}= is present-but-empty — B1 silences autodetect/derive; omit the line or give it a value"
       next
     end
+    # B5 — bare bash default syntax is not Dotenv (both shell-form files are parsed by Kamal::Secrets).
+    failures << "#{file}: #{var} uses bare ${…:-…} — Kamal's Dotenv parser delivers '<value>:-…}'; write $(printf '%s' \"\\${VAR:-MARKER}\") (spec/deploy/kamal_secrets_parse_spec.rb)" if form == :shell && value =~ DOTENV_MANGLED
     # B2 — retired name as a structural key (never a grep: the name appears in prose here).
     failures << "#{file}: retired #{RETIRED_NAME} declared — INF.22 retired it; use the dedicated keys" if var == RETIRED_NAME
     next unless var =~ SECRET_NAME
 
     secret_subjects += 1
-    ok = form == :shell ? value =~ SHELL_REF : (value == PLACEHOLDER || value =~ INTERP)
-    expected = form == :shell ? "a shell reference ($VAR / ${VAR:-…})" : "#{PLACEHOLDER} / ${terraform interpolation}"
+    ok = form == :shell ? (value =~ SHELL_REF || value =~ LOUD_REF) : (value == PLACEHOLDER || value =~ INTERP)
+    expected = form == :shell ? "a shell reference ($VAR) or the loud form $(printf '%s' \"\\${VAR:-MARKER_NOT_SET}\")" : "#{PLACEHOLDER} / ${terraform interpolation}"
     failures << "#{file}: #{var} carries a non-reference literal '#{value[0, 12]}…' — must be #{expected}" unless ok
   end
 end

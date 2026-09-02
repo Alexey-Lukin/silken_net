@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# frozen_string_literal: true
+
+require "rails_helper"
+require "kamal"
+
+# The two committed secrets files, read by the parser that actually reads them in a deploy:
+# `Kamal::Secrets` (Dotenv + Kamal's inline command substitution). Until 2026-09-02 every
+# gate over these files judged their TEXT — `deploy_secret_scan` blessed the "loud
+# placeholder" form `${TWIN:-MARKER}` on 2026-08-31 and again on 2026-09-02 — and the first
+# canopy boot showed what the parser made of it: Dotenv's variable regex accepts `${NAME`
+# and stops at the `:`, so the container received `<value>:-MARKER}` (Puma's before_fork
+# raised URI::InvalidURIError on the real Upstash URL) and, through the same shape in
+# secrets-common, a RAILS_MASTER_KEY of `<key>:-}` — present, non-empty, wrong, invisible
+# to every presence check. A file another program parses is judged by THAT program or not
+# at all (`ssot-maintenance` guard-craft #117); this spec is that judgement.
+#
+# 🔒 Declared ceiling: values are resolved with a controlled ENV, so this proves the FORM
+# of every line, not the operator's values. `$(cat config/master.key)` runs in the fallback
+# example when the file exists locally; the value is compared, never printed.
+RSpec.describe "Kamal secrets files through Kamal's own parser [B4 / INF.27]" do # rubocop:disable RSpec/DescribeClass
+  let(:remaps) do
+    {
+      "REDIS_URL"                => "CANOPY_REDIS_URL",
+      "ALCHEMY_POLYGON_RPC_URL"  => "CANOPY_ALCHEMY_POLYGON_RPC_URL",
+      "ALCHEMY_ETHEREUM_RPC_URL" => "CANOPY_ALCHEMY_ETHEREUM_RPC_URL",
+      "SOLANA_RPC_URL"           => "CANOPY_SOLANA_RPC_URL",
+      "CELO_RPC_URL"             => "CANOPY_CELO_RPC_URL"
+    }
+  end
+
+  # Every ENV name the two files reference, so "unset" is unset and not "whatever the
+  # developer's shell happens to carry".
+  let(:referenced) { remaps.values + %w[RAILS_MASTER_KEY SECRET_KEY_BASE GCP_ARTIFACT_REGISTRY_KEY] }
+
+  def with_env(overrides)
+    saved = ENV.to_h
+    referenced.each { |k| ENV.delete(k) }
+    overrides.each { |k, v| ENV[k] = v }
+    Dir.chdir(Rails.root) { yield }
+  ensure
+    ENV.replace(saved)
+  end
+
+  def canopy = Kamal::Secrets.new(destination: "canopy")
+  def production = Kamal::Secrets.new
+
+  it "resolves every canopy remap to its CANOPY_* twin when the twin is set" do
+    set = remaps.values.to_h { |twin| [ twin, "sentinel://#{twin.downcase}" ] }
+    with_env(set.merge("RAILS_MASTER_KEY" => "0123456789abcdef0123456789abcdef")) do
+      s = canopy
+      aggregate_failures do
+        remaps.each { |name, twin| expect(s[name]).to eq("sentinel://#{twin.downcase}") }
+      end
+    end
+  end
+
+  it "resolves every canopy remap to its LOUD marker when the twin is unset (never a production value)" do
+    with_env("RAILS_MASTER_KEY" => "0123456789abcdef0123456789abcdef") do
+      s = canopy
+      aggregate_failures do
+        remaps.each { |name, twin| expect(s[name]).to eq("#{twin}_NOT_SET") }
+      end
+    end
+  end
+
+  it "delivers RAILS_MASTER_KEY byte-for-byte from ENV on both legs (the `<key>:-}` corruption is gone)" do
+    with_env("RAILS_MASTER_KEY" => "0123456789abcdef0123456789abcdef") do
+      aggregate_failures do
+        expect(canopy["RAILS_MASTER_KEY"]).to eq("0123456789abcdef0123456789abcdef")
+        expect(production["RAILS_MASTER_KEY"]).to eq("0123456789abcdef0123456789abcdef")
+      end
+    end
+  end
+
+  it "falls back to config/master.key for RAILS_MASTER_KEY only when ENV is unset (local operator run)" do
+    with_env({}) do
+      expected = File.exist?("config/master.key") ? File.read("config/master.key").strip : ""
+      expect(production["RAILS_MASTER_KEY"]).to eq(expected)
+    end
+  end
+
+  # The corruption tell, over EVERY value both legs would ship: no bash-default residue.
+  it "ships no value carrying Dotenv's `:-` residue on either leg" do
+    set = remaps.values.to_h { |twin| [ twin, "sentinel://#{twin.downcase}" ] }
+    with_env(set.merge("RAILS_MASTER_KEY" => "0123456789abcdef0123456789abcdef",
+                       "SECRET_KEY_BASE" => "skb", "GCP_ARTIFACT_REGISTRY_KEY" => "tok")) do
+      aggregate_failures do
+        { canopy: canopy.to_h, production: production.to_h }.each do |leg, values|
+          bad = values.select { |_, v| v.include?(":-") || v.end_with?("}") }
+          expect(bad).to be_empty, "#{leg}: Dotenv-mangled value(s): #{bad.keys.join(', ')}"
+          expect(values.size).to be > 3, "#{leg}: parsed only #{values.size} secrets — the files did not load"
+        end
+      end
+    end
+  end
+end
