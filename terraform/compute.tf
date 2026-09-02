@@ -87,6 +87,15 @@ resource "google_compute_instance" "ingress_anchor" {
     # shorten UDP timeout to 30s (from default 180s).
     # See: docs/06_01 Risk-1 (Conntrack Table Overflow)
 
+    # 🔴 nf_conntrack is a MODULE, and on a fresh boot nothing has loaded it yet (the first
+    # conntrack iptables rule below is what would) — so the sysctl key does not exist, the
+    # write exits 1, and under `set -e` the whole script dies right here. Measured on the
+    # live anchor 2026-08-31 16:44: `sysctl: cannot stat /proc/sys/net/netfilter/
+    # nf_conntrack_max`, exit status 1, HAProxy never installed, Cloudflare answered 521
+    # for two days behind a GREEN startup-script unit. Load it first and persist the load
+    # so the /etc/sysctl.conf lines below apply on every reboot, not only on this run.
+    modprobe nf_conntrack
+    echo "nf_conntrack" > /etc/modules-load.d/nf_conntrack.conf
     sysctl -w net.netfilter.nf_conntrack_max=2000000
     sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
     grep -q "nf_conntrack_max" /etc/sysctl.conf || \
