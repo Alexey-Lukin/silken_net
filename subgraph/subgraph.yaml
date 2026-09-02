@@ -34,9 +34,9 @@
 # 🔇 [OPS.36, ⚖️ 2026-08-30] ЩО ОЗНАЧАЄ МОВЧАННЯ ЦЬОГО ІНДЕКСУ — оголошено, бо
 # читача власного мовчання в субграфа немає за побудовою, і кожна з тиш нижче
 # інакше читається як «події не було»:
-#   (а) ДО mainnet-деплою порожній ВЕСЬ індекс — три dataSource стоять на
-#       0x0000…/startBlock 0 (BLOCKER-коментарі нижче), тож задеплоєний як є він
-#       віддає синтаксично здоровий нуль про систему, якої ще не існує on-chain;
+#   (а) ДО першої емісії індекс порожній: три dataSource стоять на Amoy-адресах
+#       броадкасту 2026-09-01 (S3.5; доти — 0x0000…/startBlock 0), тож задеплоєний
+#       як є він віддає синтаксично здоровий нуль, доки жоден mint/slash не пройшов;
 #   (в) порожній ParameterChangeEvent ≠ нульова ставка: до першого governance-сету
 #       діє off-chain дефолт бекенда — genesis-ера має ЧИННУ ставку, якої в
 #       індексі немає, і саме тому TAX-звірка працює лише від першого сету;
@@ -78,20 +78,16 @@ dataSources:
     name: SilkenCarbonCoin
     network: polygon-amoy
     source:
-      # ⚠️ BLOCKER [1.7]: Replace with real SilkenCarbonCoin contract address after deployment.
-      # After deploying via Foundry:
-      #   1. Get address from deployment receipt: `forge script ... --broadcast`
-      #   2. Replace this placeholder: `address: "0x<REAL_CONTRACT_ADDRESS>"`
-      #   3. Set startBlock to deployment block number from receipt.blockNumber
-      #   4. Run: `graph codegen && graph build && graph deploy`
-      # Without this change, The Graph will attempt to index from genesis block
-      # (extremely slow) and won't find any contract events.
-      address: "0x0000000000000000000000000000000000000000"
+      # ✅ [S3.5] Polygon Amoy (chainId 80002) — output of the `Deploy.s.sol` broadcast of
+      # 2026-09-01 (00_07 DEPLOY-1 Фаза 2t; the receipts live in gitignored `contracts/broadcast/`,
+      # the six-address set in 06_01 §DEPLOY-DAY). `startBlock` = the deploy block (0x2c50d8b).
+      # ⛔ MAINNET cutover is a separate act (00_07 S3.5): `network: polygon` + the mainnet
+      # addresses of DEPLOY-1 Фаза 2 + their deploy block — never "bump" these testnet values.
+      # `validate_addresses.sh` refuses the zero address; it does NOT check the chain.
+      address: "0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22"
       abi: SilkenCarbonCoin
-      # Set to the block number where SilkenCarbonCoin was deployed.
-      # startBlock: 0 indexes from genesis — wastes hours of indexing time.
-      # After deployment: startBlock: <receipt.blockNumber>
-      startBlock: 0
+      # Deploy block of the Amoy broadcast — indexing from genesis would waste hours.
+      startBlock: 46468491
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -116,10 +112,10 @@ dataSources:
     name: SilkenForestCoin
     network: polygon-amoy
     source:
-      # ⚠️ BLOCKER: Replace with real SilkenForestCoin contract address after deployment.
-      address: "0x0000000000000000000000000000000000000000"
+      # ✅ [S3.5] Amoy SFC — same broadcast as SCC above; mainnet cutover pending.
+      address: "0x9366a4CbA0461E150A3409CD2767Ff7b8db6d4b7"
       abi: SilkenForestCoin
-      startBlock: 0
+      startBlock: 46468491
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -148,10 +144,10 @@ dataSources:
     name: ProtocolParameters
     network: polygon-amoy
     source:
-      # ⚠️ BLOCKER [S3.5]: замінити на реальну адресу після деплою (як SCC/SFC вище).
-      address: "0x0000000000000000000000000000000000000000"
+      # ✅ [S3.5] Amoy ProtocolParameters — same broadcast; mainnet cutover pending.
+      address: "0x1F20032142C98BBcfD3DcB115f62Ae1230802Be2"
       abi: ProtocolParameters
-      startBlock: 0
+      startBlock: 46468491
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
