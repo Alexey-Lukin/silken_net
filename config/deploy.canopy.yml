@@ -214,18 +214,17 @@ proxy:
   #    deploy answered `/ready→200` (database + redis) through Cloudflare, after a cold
   #    `db:prepare` and after the Redis credential rotation. Production keeps `/up` until ITS
   #    own first deploy proves the same (config/deploy.yml, still commented there on purpose).
-#   # INF.10 readiness cutover — flip on the first canopy deploy AFTER /ready→200
-#   # (on a cold start /ready 503s until DB/Redis are wired, and kamal-proxy retries to
-#   # deploy_timeout → rollback). Runbook: docs/06_01 §DEPLOY-DAY, Фаза 5.
-#   # ⊕ `interval: 3` below is the BRING-UP value, not the target: every tick of `/ready`
-#   # opens a DB round-trip plus a Redis PING, so the standing value is 10-15s [INF.22,
-#   # tune gated on this same flip]. Three seconds is deliberate while the cutover is new
-#   # — it makes a broken readiness path loud within one deploy window — and deliberately
-#   # wasteful after. ⚠️ Written out HERE, byte-for-byte, and not as a pointer to the
-#   # base manifest: a cross-reference cannot be uncommented (that is INF.10 itself), and
-#   # THIS file is the one uncommented FIRST — canopy is the first deploy of the main
-#   # Kamal path (06_01 §DEPLOY-DAY Фаза 3), so the base manifest's copy of this note
-#   # arrives one slot too late to stop the mistake.
+  #    Why it was commented until then: on a cold start /ready 503s until DB/Redis are wired,
+  #    and kamal-proxy retries to deploy_timeout → rollback (runbook: docs/06_01 §DEPLOY-DAY
+  #    Фаза 5). ⊕ `interval: 3` below is the BRING-UP value, not the target: every tick of
+  #    `/ready` opens a DB round-trip plus a Redis PING, so the standing value is 10-15s
+  #    [INF.22 — the canopy half of that tune is unblocked by this flip; it is a separate,
+  #    deploy-relevant commit]. Three seconds was deliberate while the cutover was new — it
+  #    makes a broken readiness path loud within one deploy window — and is wasteful after.
+  #    ⚠️ The block was written out HERE, byte-for-byte, never as a pointer to the base
+  #    manifest: a cross-reference cannot be uncommented (that is INF.10 itself), and THIS
+  #    file was uncommented FIRST — canopy is the first deploy of the main Kamal path
+  #    (06_01 §DEPLOY-DAY Фаза 3), so the base manifest's copy arrives one slot too late.
   healthcheck:
     path: /ready
     interval: 3
