@@ -85,6 +85,12 @@ resource "google_compute_instance" "ingress_anchor" {
     # whiptail, startup unit `activating` for 10+ minutes, HAProxy never reached). The
     # `|| true` on that line cannot help: nothing exits. Non-interactive takes the defaults.
     export DEBIAN_FRONTEND=noninteractive
+    # A VM reset in the middle of a package configure (a normal cloud event — and exactly how
+    # the 2026-09-02 whiptail hang above was cleared) leaves dpkg "interrupted", after which
+    # EVERY apt-get refuses with exit 100 (`E: dpkg was interrupted, you must manually run
+    # 'dpkg --configure -a'`) and `set -e` kills the script on its first unguarded install.
+    # Measured on the anchor's third boot that day. Repair first, always; harmless when clean.
+    dpkg --configure -a || true
 
     # =========================================================================
     # 1. Kernel tuning for planetary-scale CoAP/UDP (conntrack + rate limiting)
