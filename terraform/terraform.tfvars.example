@@ -4,6 +4,11 @@ region     = "europe-west1"
 zone       = "europe-west1-d"
 
 # Database
+# ⚠️ POSTURE keys (db_tier · db_availability_type · db_disk_size_gb · db_max_connections ·
+# db_read_replica_count · enable_deletion_protection · iap_admin_members · ssh_source_ranges)
+# are OWNED by the committed terraform/posture.auto.tfvars — `*.auto.tfvars` wins on load, so
+# copying them here creates a silent second home (DR.1). Keep this file to the three
+# gitignored values: project_id · billing_account_id · db_password.
 db_password          = "CHANGE_ME_use_a_strong_password_16_chars_minimum"
 db_tier              = "db-custom-2-7680"
 db_availability_type = "REGIONAL"

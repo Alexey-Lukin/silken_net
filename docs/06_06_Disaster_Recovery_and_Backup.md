@@ -19,7 +19,7 @@
 
 | Ресурс | Зв'язок |
 |---|---|
-| `terraform/database.tf` | Cloud SQL backup + read replica (SSOT). ⚠️ HA-вісь читається НЕ звідси: `availability_type` оверрайднуто в `terraform.tfvars` (врізка §2) |
+| `terraform/database.tf` | Cloud SQL backup + read replica (SSOT). ⚠️ HA-вісь читається НЕ звідси: `availability_type` оверрайднуто в **коміченому** `terraform/posture.auto.tfvars` (⚠️ НЕ в gitignored `terraform.tfvars` — той несе рівно три ключі: `project_id`·`billing_account_id`·`db_password`; врізка §2) |
 | `terraform/main.tf` | GCS state backend (`silken-net-terraform-state`) |
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | `terraform apply`, Ingress Anchor, deploy-flow |
 | [`06_04` — Secrets Checklist](06_04_Secrets_Checklist) | master-ключі, ротація (§5.2), revocation (§5.4) |
