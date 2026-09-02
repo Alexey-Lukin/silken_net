@@ -34,6 +34,13 @@ if SilkenNet::DeploymentSlot.current == "production"
   MSG
 end
 
+# ⛔ Файловий спліт `db/seeds/*.rb` («системне ⊥ демо») ВІДХИЛЕНО виміром 2026-09-01:
+# пʼять гейтів прибиті до шляху `db/seeds.rb` і парсять його як ТЕКСТ
+# (`seeds_production_guard_spec` · `system_parameter_delivery_spec` ·
+# `governance_bounds_sync.rb` · `spdx_headers_spec` · `offering_lexicon_check.rb`), тож
+# спліт перетворює просту задачу на мас-кампанію при нульовому виграші — склад
+# продового bootstrap вирішує rake-таска (`00_07` OPS.38), не другий сід-файл.
+
 puts "🔥 Очищення старого світу (Кенозис)..."
 # Порядок враховує залежності (Foreign Keys) — від листя до кореня.
 # ⛔ Перелік мусить накривати УСІ AR-моделі дерева, а не лише ті, що сід сіє:
@@ -192,6 +199,9 @@ eco_future_fund = Organization.create!(
 # лишаються (дані, ролі, орг-скоуп), але з невідомим паролем; вхід власника — ЙОГО
 # super_admin, а пароль будь-якому демо-акаунту видає reset-лінк із `rails runner`
 # (`generate_token_for(:password_reset)`), бо пошта на canopy свідомо скіпана.
+# ⛔ Демо-користувачів на canopy НЕ видаляти, а РОТУВАТИ: `maintenance_records`/`audit_logs`
+# тримають `restrict_with_error`, а `oracle.executioner` — системний актор money-аудиту;
+# ротація на випадкові паролі дає той самий ефект без зносу демо-даних (2026-09-02).
 DEMO_PASSWORD = Rails.env.local? ? "password123456" : SecureRandom.hex(24)
 
 puts "👤 Створення Патрульних..."

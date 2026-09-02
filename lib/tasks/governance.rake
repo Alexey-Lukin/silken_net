@@ -14,9 +14,11 @@
 # converges to the desired state without touching unrelated rows or any
 # parameter the DAO has subsequently overwritten via on-chain governance.
 #
-# Wiring:
-#   * Kamal post-deploy hook: `bin/rails governance:seed_parameters`
-#   * Manual recovery:        `bundle exec rake governance:seed_parameters`
+# Wiring — ⚠️ THE HOOK DOES NOT EXIST YET (measured 2026-09-01: `.kamal/hooks/` has a
+# live `pre-build` and only `post-deploy.sample`), so today NOTHING calls this task on any
+# slot; wiring it is an open leg of `00_07` OPS.38 (the production bootstrap composition).
+#   * Intended: Kamal post-deploy hook → `bin/rails governance:seed_parameters`
+#   * Manual recovery:            `bundle exec rake governance:seed_parameters`
 #
 # 🔴 МЕЖІ ТУТ НЕ ЖИВУТЬ, і це не стиль. Дім `min`/`max`/`value_type`/`category` — один,
 # `Governance::ParameterSyncWorker::PARAMETER_MAP` (канон `05_06 §7`: «One-Home меж =

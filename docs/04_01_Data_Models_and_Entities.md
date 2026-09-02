@@ -1584,7 +1584,7 @@ Cluster, User, Organization
 
 **Governance-параметри:**
 
-Сидяться **окремою idempotent rake-таскою** (НЕ через `db:seeds.rb`, бо `seeds.rb` не виконується на проді):
+Мусять сідатись **окремою idempotent rake-таскою** (НЕ через `db/seeds.rb`, бо той на слоті `production` fail-closed) — ⚠️ носія виклику ще немає: `.kamal/hooks/post-deploy` не заведено, тож на сьогодні таску не кличе НІЩО ([`00_07`](00_07_Action_Plan_Tracker) OPS.38):
 
 ```bash
 bin/rails governance:seed_parameters  # UPSERT dynamic_tax_rate + insurance_pool_threshold
