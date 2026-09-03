@@ -106,7 +106,7 @@ BlockchainMintingService (dynamic_tax_rate / insurance_pool_threshold)
 | Аспект | Деталі |
 |--------|--------|
 | **Пріоритет** | ✅ Реалізовано (ARCH.4 / BIZ.4 / E.35). Governance DAO pipeline повністю функціональний |
-| **Залежить від** | `SilkenForestCoin.sol` (SFC) — ⚠️ **НЕ задеплоєний** (виправлено 2026-08-26: доти стояло «✅ є» і суперечило [`05_03`](05_03_Tokenomics_SCC_and_SFC), де адреса — placeholder до mainnet). Контракт написаний і CI-audited; гейт деплою — [`SEC.1`](00_07_Action_Plan_Tracker) |
+| **Залежить від** | `SilkenForestCoin.sol` (SFC) — ✅ задеплоєний на Polygon Amoy 2026-09-01 і Sepolia 2026-09-02 (testnet, адреси — [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 2t); ⚠️ на MAINNET — ні, гейт деплою [`SEC.1`](00_07_Action_Plan_Tracker) (DEPLOY-1 Фаза 2). Рядок правився двічі (08-26 «не задеплоєний», 09-03 «testnet живий») — стан контракту читай із трекера, не звідси |
 | **Блокує** | Планетарне масштабування з різними кліматичними зонами — far-horizon гейт: **кожен новий біом потребує community vote (SFC) + слот лабораторної валідації ПЕРШ ніж із нього можуть мінтитись SCC**. Це не бюрократія, а пряме продовження «правдиво» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)): мінтити з породи, чиї Lorenz-константи ніхто не калібрував, означає видавати вгадане за виміряне (hardware-бік 5 SKU → [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) |
 | **Ризики DAO** | ✅ Захисти реалізовано: quorum 4% від стелі SFC (4 000 000 SFC) + timelock 48h + snapshot voting + votingDelay 43200 blocks |
 

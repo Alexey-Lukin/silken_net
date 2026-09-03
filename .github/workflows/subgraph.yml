@@ -99,6 +99,14 @@ jobs:
       # полагодженому дереві. Клас — §Guard-craft #69 (локально згенерований артефакт
       # ЗАТІНЮЄ файл під тестом). `generated/` і `build/` у `.gitignore`, тож у CI
       # вони завжди свіжі — саме тому крок чесний.
+      # [S3.5 → DEPLOY-1 Фаза 2, 2026-09-03] Zero-address fail-fast BEFORE codegen. The script
+      # existed since E.45 and its header asked to be wired here — nothing ever called it, so a
+      # placeholder address in subgraph.yaml would have compiled green all the way to `graph deploy`.
+      # It reads the manifest as text (no toolchain), so it runs first and cheapest.
+      - name: validate_addresses.sh (no zero-address dataSource)
+        working-directory: subgraph
+        run: sh ./validate_addresses.sh
+
       - name: graph codegen (schema.graphql + ABI → generated/)
         working-directory: subgraph
         run: npx graph codegen

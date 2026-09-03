@@ -106,7 +106,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Участь у верифікованій екосистемі (SCC-адреса на Polygon).
 - Gasless approvals через EIP-2612 (`ERC20Permit`).
 
-**Поточний стан:** SFC смарт-контракт code-complete + CI-audited, **ще НЕ задеплоєно** (placeholder-адреса до mainnet, [`05_03`](05_03_Tokenomics_SCC_and_SFC)). DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
+**Поточний стан:** SFC смарт-контракт code-complete + CI-audited, на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform); mainnet гейтований SEC.1). DAO Governance процес (Snapshot / Governor) — не визначений → механіка [`05_06`](05_06_Governance_and_DAO); юр-оформлення DAO → [`00_07`](00_07_Action_Plan_Tracker) BIZ.*.
 
 ---
 
@@ -346,7 +346,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Аспект | Поточний стан |
 |---|---|
 | **Бізнес-логіка (код)** | ✅ Реалізована: lifecycle, slashing, early exit. Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів |
-| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але **ще НЕ задеплоєно** — placeholder-адреси ([`05_03`](05_03_Tokenomics_SCC_and_SFC)); deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-присуд) |
+| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-присуд) |
 | **D-MRV підкріплення** | peaq DID + IoTeX ZK + The Graph (живі); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |

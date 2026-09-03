@@ -14,8 +14,8 @@
 - **Аудит-зміцнення:** ✅ Явна перевірка балансу в `slash()`, валідація нульових значень у `mint()`/`slash()`, перевірка порожнього батчу у `batchMint()`, NatSpec, захист від The Graph DoS (`treeDid`/`clusterId` length ≤256 bytes), per-element string validation у `batchMint()` для обох контрактів
 - **Внутрішній аудит-розбір (self-review — НЕ платний зовнішній; Hacken/Hashlock ще 👤 TODO ↓):** ✅ знахідки самоаудиту опрацьовано — частину виправлено on-chain (slash-bypass-pause, admin-protection, auto-delegate, batch-size, anchor-interval, locked-pragma, mint-dedup, rootHistory, timestamp-NatSpec), решту задокументовано як operational/by-design (деталі → §Smart Contract Audit Roadmap)
 - **Backend інтеграція:** ✅ `BlockchainMintingService` + `BlockchainBurningService`
-- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ⚠️ SFC contract address — placeholder до Mainnet deploy.
-- **Відкрите:** SFC contract address placeholder до Mainnet deploy; зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
+- **The Graph subgraph:** ✅ `TokenSlashed` виправлено, `treeDidHash` (bytes32) додано. ✅ SFC: `ForestMintEvent` + `GovernanceSlashEvent` + handlers додано (S3.5). ✅ Три dataSource (SCC · SFC · ProtocolParameters) стоять на живих Amoy-адресах броадкасту 2026-09-01 зі `startBlock` = блок деплою; mainnet-cutover (`network: polygon` + адреси Фази 2 + `graph deploy` у Studio) — [`00_07`](00_07_Action_Plan_Tracker) DEPLOY-1 Фаза 2 (ex-S3.5).
+- **Відкрите:** mainnet-cutover субграфа й контрактів (DEPLOY-1 Фаза 2, гейт SEC.1); зовнішній аудит execution → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -67,7 +67,7 @@
 | **Slash / Burn** | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` | ✅ `slash()` + `slashUpTo()` [SLASH.2] через `SLASHER_ROLE` (B-06 виправлено) |
 | **Gasless approvals** | ✅ EIP-2612 / EIP-712 (PR #253) | ✅ EIP-2612 / EIP-712 |
 | **DAO голосування** | ❌ | ✅ `ERC20Votes` |
-| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed` | ✅ `ForestMintEvent`, ✅ `GovernanceSlashEvent` (⚠️ contract address placeholder) |
+| **Subgraph індексація** | ✅ `CarbonMinted`, ✅ `TokenSlashed` | ✅ `ForestMintEvent`, ✅ `GovernanceSlashEvent` (Amoy-адреса з 2026-09-01; mainnet — DEPLOY-1 Фаза 2) |
 
 ---
 
@@ -560,8 +560,8 @@ function nonces(address owner)
 
 | Подія | Сигнатура | Indexed поля | Subgraph |
 |---|---|---|---|
-| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot)` | `investor`, `clusterIdHash` (bytes32 keccak256), `archiveRoot` | ✅ `handleForestMinted` (⚠️ contract address placeholder `0x0000...`) |
-| `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleGovernanceSlashed` (пише `contextHash`; ⚠️ contract address placeholder) |
+| `ForestMinted` | `ForestMinted(address indexed investor, uint256 amount, bytes32 indexed clusterIdHash, string clusterId, bytes32 indexed archiveRoot)` | `investor`, `clusterIdHash` (bytes32 keccak256), `archiveRoot` | ✅ `handleForestMinted` (Amoy-адреса з 2026-09-01; mainnet — DEPLOY-1 Фаза 2) |
+| `GovernanceSlashed` | `GovernanceSlashed(address indexed investor, uint256 amount, bytes32 contextHash)` | `investor` | ✅ `handleGovernanceSlashed` (пише `contextHash`; Amoy-адреса з 2026-09-01) |
 
 ### Subgraph vs Контракт
 
@@ -738,51 +738,11 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 ## 🌐 Subgraph (The Graph)
 
-**Файли:** `subgraph/schema.graphql`, `subgraph/subgraph.yaml`, `subgraph/src/mapping.ts`
-**Мережа:** `polygon-amoy`
-**Адреса контракту:** `0x0000000000000000000000000000000000000000` (TODO: замінити після деплою)
+**Файли (ОДИН дім — самі файли, канон їх не копіює):** `subgraph/subgraph.yaml` (три dataSource — `SilkenCarbonCoin` · `SilkenForestCoin` · `ProtocolParameters` — на живих Amoy-адресах броадкасту 2026-09-01, `startBlock` = блок деплою; адреси також у [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform) Фаза 2t) · `subgraph/schema.graphql` (сутності) · `subgraph/src/mapping.ts` (обробники). **Мережа:** `polygon-amoy` до mainnet-cutover ([`00_07`](00_07_Action_Plan_Tracker) DEPLOY-1 Фаза 2 — `network: polygon` + три MAINNET-адреси з їхнім блоком деплою; ⛔ Amoy-значення замінити, не «бампати»). Гейти: `subgraph/validate_addresses.sh` (нульова адреса = fail, крок `CI · Subgraph` з 2026-09-03) · `graph codegen` + `build` + matchstick-тести · `spec/quality/subgraph_{entity_completeness,abi_parity}_spec.rb`.
 
-> **⚠️ The Graph = off-chain analytics, НЕ realtime (нот.2).** Subgraph має **eventual consistency** (indexing-lag секунди–хвилини, більше при reorg на Polygon). UI-баланс гаманця читається з **Rails DB** (`Wallets::BalanceFrame` Phlex Turbo Frame — [`04_03 §5`](04_03_REST_API_v1_Reference)), а **не** з subgraph — тому indexing-lag НЕ спричиняє «застарілий баланс → повторний mint». Subgraph живить лише протокольну статистику (`ProtocolFinancials`), не user-facing баланс.
+🔴 **Доти тут стояла ВБУДОВАНА копія маніфесту й схеми, і вона брехала тричі** (знято 2026-09-03): адреса `0x0000…` «TODO після деплою» через два дні після живого деплою; `CarbonMintEvent` без полів `treeDidHash`/`kind`/`subjectDid`/`archiveRoot`, які реальна схема має; `ProtocolFinancials` із вигаданими `totalForestMinted`/`totalGovernanceSlashed` замість реальних `totalMintedGrowth`/`totalMintedInsurance`/`totalMintedTax`/`totalBurned`. Копія коду в каноні є drift-поверхнею ЗА ПОБУДОВОЮ — читай файли.
 
-```yaml
-# subgraph/subgraph.yaml — поточний стан eventHandlers:
-
-# SCC data source
-- event: CarbonMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
-  handler: handleCarbonMinted           # ✅ treeDidHash + archiveRoot [E.60], обидва bytes32
-
-- event: TokenSlashed(indexed address,uint256,bytes32)
-  handler: handleTokenSlashed           # ✅ Синхронізовано (contextHash — CONTRACT.1)
-
-# SFC data source (додано S3.5)
-- event: ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)
-  handler: handleForestMinted           # ✅ clusterIdHash + archiveRoot [E.60]
-
-- event: GovernanceSlashed(indexed address,uint256,bytes32)
-  handler: handleGovernanceSlashed      # ✅ Governance slashing tracking (contextHash)
-```
-
-**GraphQL Entities:**
-
-```graphql
-type CarbonMintEvent @entity {
-  id: ID!
-  to: Bytes!
-  amount: BigInt!
-  treeDid: String!
-  timestamp: BigInt!
-  blockNumber: BigInt!
-  transactionHash: Bytes!
-}
-
-type ProtocolFinancials @entity {
-  id: ID!
-  totalMinted: BigInt!
-  totalBurned: BigInt!           # ✅ Індексується через TokenSlashed (SCC)
-  totalForestMinted: BigInt!     # ✅ Індексується через ForestMinted (SFC)
-  totalGovernanceSlashed: BigInt! # ✅ Індексується через GovernanceSlashed (SFC)
-}
-```
+> **⚠️ The Graph = off-chain analytics, НЕ realtime (нот.2).** Subgraph має **eventual consistency** (indexing-lag секунди–хвилини, більше при reorg на Polygon). UI-баланс гаманця читається з **Rails DB** (`wallets.balance`, One-Home), субграф — для історії/аналітики; індекс порожній до ПЕРШОЇ емісії, а не «до mainnet» (шапка `subgraph.yaml`).
 
 ---
 
@@ -795,7 +755,7 @@ type ProtocolFinancials @entity {
 | **OpenZeppelin** | 5.7.x (`pragma solidity 0.8.36` — locked) |
 | **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
 | **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі (E.2; custody-поріг = GCP-KMS remote-signer → [`06_04 §5.5`](06_04_Secrets_Checklist)) |
-| **The Graph** | `subgraph/` — SCC та SFC events індексуються (⚠️ SFC: contract address placeholder) |
+| **The Graph** | `subgraph/` — SCC та SFC events індексуються (Amoy-адреси з 2026-09-01; індекс порожній до ПЕРШОЇ емісії, не «до mainnet»; Studio-деплою ще не було) |
 | **Chainlink** | Oracle dispatch для Proof of Growth pipeline (⚠️ Hybrid mode) |
 | **peaq DID** | Верифікація `did:peaq:0x...` перед мінтингом |
 | **IoTeX W3bstream** | ZK-доказ цілісності pipeline + DID-binding (апаратне *походження* = true-DePIN roadmap — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)) |

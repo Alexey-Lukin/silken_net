@@ -975,7 +975,7 @@ telemetry_log.update!(
 | `ForestMinted(indexed address,uint256,indexed bytes32,string,indexed bytes32)` | `ForestMinted` (SFC) | ✅ Handler додано (S3.5) |
 | `GovernanceSlashed(indexed address,uint256,bytes32)` | `GovernanceSlashed` (SFC) | ✅ Handler додано (S3.5; contextHash — CONTRACT.1) |
 
-> ⚠️ SFC data source в `subgraph.yaml` використовує placeholder `0x0000000000000000000000000000000000000000` — блокує deploy subgraph до Mainnet. Замінити після деплою SFC контракту.
+> ✅ SFC data source в `subgraph.yaml` стоїть на живій Amoy-адресі з 2026-09-01 (`startBlock` = блок деплою; нульова адреса = fail у `CI · Subgraph` з 2026-09-03). Mainnet-cutover — [`00_07`](00_07_Action_Plan_Tracker) DEPLOY-1 Фаза 2 (ex-S3.5): `network: polygon` + адреси Фази 2 + `graph deploy` у Studio.
 
 🛡️ **Арність цих сигнатур гейтована** — `ruby scripts/solidity_signature_arity_check.rb` (HARD, `docs.yml`) звіряє КОЖЕН переказ параметричного списку в `docs/**` проти декларації в `contracts/*.sol`. ⛔ Стеля оголошена: гейт судить **лише кількість параметрів** — типи, порядок, імена й `indexed` лишаються на очах ревʼюера. Заведено [DOC-T.89] після того, як `archiveRoot` (E.60 Фаза 1б) прожив у контрактах і `subgraph.yaml`, а канон тримав чотирипараметричну форму у **двадцяти** місцях і ставив ✅ у цій самій матриці навпроти сигнатури, якої не вживає жоден бік — таблиця, що засвідчує згоду двох артефактів, є найвищим за довірою і найнижчим за доказовістю жанром канону (guard-craft #97), тож кожен її ✅ тримається гейтом, не собою.
 
