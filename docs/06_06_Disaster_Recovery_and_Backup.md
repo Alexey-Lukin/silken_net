@@ -210,6 +210,8 @@ gh workflow run deploy.yml        # entrypoint: create → structure.sql ×3 →
 gcloud storage buckets create gs://silkennet-sql-dumps --location=europe-west1 --uniform-bucket-level-access
 SA=$(gcloud sql instances describe silken-db --format='value(serviceAccountEmailAddress)')
 gcloud storage buckets add-iam-policy-binding gs://silkennet-sql-dumps --member="serviceAccount:$SA" --role=roles/storage.objectAdmin
+#    ✅ крок 0 виконано 2026-09-03 (бакет у europe-west1, uniform access; бінд SA інстансу) — не перевиконувати:
+#    `create` на зайняте імʼя падає, а другий бінд лише дублює запис політики
 # 1) експорт ОДНОГО слоту (--offload = serverless-експорт, без навантаження на інстанс)
 gcloud sql export sql silken-db "gs://silkennet-sql-dumps/canopy-$(date -u +%Y%m%dT%H%M).sql" --database=silken_net_canopy --offload
 # 2) парність ДО дропу (runner-форма 06_01 Фаза 4): users/trees/system_parameters + max(created_at)
