@@ -117,8 +117,10 @@ RSpec.describe "Blockchain minting and burning pipeline" do
     end
 
     # [DOC-T.89, ⚖️ 2026-08-26] Перевернуто разом із присудом: SFC-мінт заблоковано до
-    # активації governance (SEC.1). Підстава — quorum рахується від `totalSupply` при
-    # нульовому genesis-supply, тож перші 10k SFC = 100% голосів.
+    # активації governance (SEC.1). ⚠️ Підстава ПЕРЕМІРЯНА: quorum рахується від immutable
+    # `QUORUM_BASE` = SFC `MAX_SUPPLY` (той самий DOC-T.89), тож «перші 10k = 100% голосів»
+    # спростовано; вціліла вужча небезпека — `proposalThreshold` = абсолютні `10_000e18`,
+    # тобто перші 10k дають ОДНООСІБНЕ ПРАВО ПОДАВАТИ пропозиції.
     it "НЕ мінтить forest_coin до активації governance" do
       tx.update!(token_type: :forest_coin)
       allow(ENV).to receive(:fetch).and_call_original
