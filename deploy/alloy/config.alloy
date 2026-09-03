@@ -66,6 +66,11 @@ prometheus.scrape "silken_net_scraper" {
     { "__address__" = "canopy-web:80", "process" = "web", "slot" = "canopy" },
     { "__address__" = "canopy-job:9394", "process" = "job", "slot" = "canopy" },
   ]
+  // [OPS.37, measured 2026-09-03] Without this, Alloy labels every series with its component id —
+  // job="prometheus.scrape.silken_net_scraper" — while every alert rule and dashboard selects
+  // job="silken_net_scraper" (deploy/grafana/**). The first series that ever reached Grafana Cloud
+  // (10:43Z, after the remote-write trio landed) matched NO rule for exactly that reason.
+  job_name        = "silken_net_scraper"
   metrics_path    = "/metrics"
   scrape_interval = "15s"
   scrape_timeout  = "10s"
