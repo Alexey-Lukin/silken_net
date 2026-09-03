@@ -470,13 +470,12 @@ genre_count() {
 # the end of a session, so the cheap move needs a legal home instead of a fifth
 # losing fight against it.
 check_file() {
-  local fp=$1 f sz g sum shape
+  local fp=$1 f sz
   f=$(basename "$fp")
   [ "$f" = "MEMORY.md" ] && return 0
   case $f in log_*) return 0 ;; esac
   [ -f "$fp" ] || return 0
   sz=$(wc -c <"$fp" | tr -d ' ')
-  g=$(genre_count "$fp"); sum=${g%% *}; shape=${g##* }
   if [ "$sz" -ge "$FILE_CAP" ]; then
     echo "CAP   $f = ${sz}B over ${FILE_CAP} — the rule stays, its instances move to log_*"
   elif [ "$sz" -ge "$FILE_WARN" ]; then
@@ -498,6 +497,28 @@ check_file() {
   # or narrowing the regex cannot separate them — a router is a dated bold span
   # exactly like a report — so the cure is on the WRITING side, and it belongs in
   # this message because that is where the router's author is standing.
+  return 0
+}
+
+# GENRE lives HERE, outside check_file, and that split is the whole point.
+# Its own message says «a TRIGGER to read them, not a verdict» — but it used to
+# be emitted INSIDE the --audit battery, whose closing `[ -z "$out" ]` turns any
+# line into a verdict. When every dated block is legitimate (class + reflex with
+# a provenance ID — the honest-negative case this gate already knows from
+# `computational_honesty_engine`, 8 hits and never once cut), READING them
+# cannot clear the red: there is nothing to fix and the exit stays 1 forever.
+# That is precisely the failure this file warns about two hundred lines up —
+# a permanent EXIT 1 trains the reader to skim the one stance that must stay
+# loud, so the WARN that DOES need action arrives beside a red they've learned
+# to ignore. The signal is not weakened: --audit still PRINTS it (both selftest
+# cases read the OUTPUT, not the code), and `--genre` still reports it alone.
+genre_report() {
+  local fp=$1 f g sum shape
+  f=$(basename "$fp")
+  [ "$f" = "MEMORY.md" ] && return 0
+  case $f in log_*) return 0 ;; esac
+  [ -f "$fp" ] || return 0
+  g=$(genre_count "$fp"); sum=${g%% *}; shape=${g##* }
   if [ "$sum" -ge "$GENRE_MIN" ]; then
     echo "GENRE $f carries $sum dated blocks (h/l/b = $shape) — a TRIGGER to read them, not a verdict:"
     echo "      keep a block carrying CLASS + reflex (strip its date wrapper only), evict one that REPORTS a run;"
@@ -2447,7 +2468,9 @@ case "${1:-}" in
              privacy_check; overlap_check; section_ref_check; canon_section_check
              skill_item_check
              for f in "$MEM_DIR"/*.md; do check_file "$f"; path_check "$f"; mojibake_check "$f"; done; } )
-    printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no chronicle in a rule file}"
+    printf '%s\n' "${out:-OK — index within ratchet, corpus intact, no size or integrity finding (any trigger lines below are to READ, not to fix)}"
+    # Triggers, printed but NOT counted: see genre_report for why the split exists.
+    for f in "$MEM_DIR"/*.md; do genre_report "$f"; done
     [ -z "$out" ]
     ;;
   --routes)
