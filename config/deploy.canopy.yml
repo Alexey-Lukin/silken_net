@@ -126,6 +126,9 @@ allow_empty_roles: true
 # instruction would run a `curl` every 5 s in every container forever to buy a boot window that is
 # already bought. Named trigger: activation of the coap FALLBACK role — until then its Kamal
 # verdict is `.State.Status` alone, and that ceiling is declared, not hidden.
+# Measured form for the day it IS built: `--interval=5s --start-period=20s --retries=3` in the image
+# + `deploy_timeout ≥ 60` in BOTH manifests (Docker defaults — interval 30 s, start-period 0 — would
+# let the first probe land after a 30-s deploy_timeout).
 deploy_timeout: 360
 
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
