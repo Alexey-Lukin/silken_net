@@ -133,6 +133,27 @@ body with `01_02:177` inside"'
     'rg -n "pattern" app/'
   t "smoke: unsplit scalar loop (rule C)" deny \
     $'pair="a b"\nfor x in $pair; do echo "$x"; done'
+  # ── unquoted `--flag=glob` · both arms ──
+  # The negatives matter more than the positives here. Two legal spellings of
+  # the SAME fix exist — `--include="*.rb"` and `'--include=*.rb'` — and an
+  # anchor written as "dash followed by letters" matches the second one from its
+  # inner dash, denying the very form it prescribes. That false positive is what
+  # the measurement found by reading top hits, so it is pinned, not assumed.
+  # `--audit=$?` is a house idiom (every gate run in this repo ends with one)
+  # and must stay silent: `$` is excluded from the value class for that reason.
+  t "glob: unquoted --include=*.rb" deny \
+    'grep -rn "credit!" app/ --include=*.rb | head -30'
+  t "glob: unquoted --include=*.md (the SILENT half — repo root has *.md)" deny \
+    'grep -rn "Machine-half" docs/ --include=*.md'
+  t "glob: double-quoted value stays silent" silent \
+    'grep -rn "x" app/ --include="*.rb"'
+  t "glob: whole flag single-quoted stays silent" silent \
+    "grep -rn 'dark_cluster_ids' app/ '--include=*.rb' | head"
+  t "glob: --audit=\$? is a house idiom, never a glob" silent \
+    'bash .claude/hooks/memory_gate.sh --audit; echo "--audit=$?"'
+  t "glob: a bare shell glob is legitimate expansion" silent \
+    'ls docs/*.md | head'
+
   t "smoke: gate into tail warns (rule A)" warn \
     'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
   t "smoke: \$? after pipe warns (rule B)" warn \
@@ -239,6 +260,45 @@ fi
 # ship something other than what was measured.
 if printf '%s' "$cmd" | grep -qE '(^|[;&|])[[:space:]]*rg[[:space:]]+([^;&|]*[[:space:]]+)?-[a-zA-Z]*r[a-zA-Z]+([[:space:]]|$)'; then
   jq -nc --arg r 'In `rg`, `-r` is --replace, and in a clustered flag token it eats the remaining letters as the replacement string: `rg -rn "pat"` means --replace=n, so every match prints as the literal "n" and the real text is never shown. Nothing fails and the exit code is 0 — the corruption is in the OUTPUT you are about to read. ripgrep is recursive by default, so `-r` is never what you want here: drop it (`rg -n`), or pass a real replacement with a space (`rg -r "text" -n`).' \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
+fi
+
+# ── BLOCK · `--flag=<glob>` left UNQUOTED ────────────────────────────────────
+# zsh expands a glob in an argument BEFORE the program sees it, and — unlike
+# bash — a glob that matches nothing is FATAL: the whole command dies without
+# running. `grep -rn "x" app/ --include=*.rb` never reaches grep.
+#
+# Both outcomes are wrong, and the second is the dangerous one:
+#   · cwd holds no matching file → `no matches found: *.rb`, nothing runs;
+#   · cwd DOES hold one → the glob expands, so grep receives
+#     `--include=CLAUDE.md` plus the remaining .md files as extra SEARCH
+#     TARGETS. Exit 0, plausible output, silently wrong scope.
+# The repo root is exactly this trap: no *.rb or *.yml (loud), nine *.md
+# (silent). So the same typo is noisy or invisible depending on the extension.
+#
+# Measured over 40,231 recorded Bash calls: 131 carry an unquoted `--flag=glob`
+# and 121 of them (92.4%) died with «no matches found»; the other 10 are the
+# silent half, not survivors. The quoted form — the fix — appears 722 times, so
+# the house idiom is already correct and this denies only the slips. For scale,
+# the rg rule above shipped at 9 findings in 22,064 and the backtick rule at 2
+# in 17,206; this is the single largest shell-failure class in the corpus, at
+# 118 of 227 «no matches found» incidents.
+#
+# It is a BLOCK, not a warn, for the reason the whole corpus keeps re-learning:
+# prose does not fire at the moment of typing. `--include=*.rb` alone accounts
+# for 132 occurrences while the memory file on zsh gotchas — 40 kB, fourteen
+# items — never named this class at all, because each single instance was cheap
+# and got retyped instead of recorded.
+#
+# Quoting is stripped FIRST rather than matched around: both `--include="*.rb"`
+# and `'--include=*.rb'` are legal, and an anchor that reads "a dash followed by
+# letters" matches the second one starting at its inner dash — the same defect
+# class the rule measures, which is why the negative controls carry both forms.
+# `$` is excluded from the value so `--audit=$?` (a house idiom) stays silent.
+_unq=$(printf '%s' "$cmd" | sed -e "s/'[^']*'//g" -e 's/"[^"]*"//g')
+if printf '%s' "$_unq" | grep -qE '(^|[[:space:]])--?[a-zA-Z][a-zA-Z0-9_-]*=[^[:space:];&|`$()]*[*?[][^[:space:];&|`$()]*'; then
+  jq -nc --arg r 'An unquoted glob inside `--flag=…` (e.g. `--include=*.rb`) is expanded by zsh before the program runs, and a glob that matches nothing is FATAL here — unlike bash, the command dies with «no matches found» and nothing executes. When it DOES match (the repo root has nine *.md files), it is worse: grep receives `--include=CLAUDE.md` and the rest as extra search targets, so you get exit 0 and a silently wrong scope. Quote it: --include="*.rb". Measured: 131 such calls in this corpus, 121 killed outright.' \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
   exit 0
 fi
