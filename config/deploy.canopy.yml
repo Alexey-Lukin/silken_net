@@ -113,6 +113,16 @@ servers:
 # `scripts/deploy_secret_scan.rb` B3 pins the job role's `hosts:` non-empty for that reason.
 allow_empty_roles: true
 
+# 🔴 [OPS.37 ⚖️ HEALTHCHECK, measured 2026-09-03] Kamal waits `deploy_timeout` (default 30 s) for
+# kamal-proxy to see the new web container healthy. The canopy entrypoint on an EMPTY slot runs
+# create → structure.sql ×3 → the demo seed BEFORE Puma listens — 4.5 min on 2026-09-03 — so the
+# proxy killed a container whose seed had already finished (run 33740036520: seed summary printed,
+# Puma booted, «target failed to become healthy within configured timeout (30s)»). The old container
+# kept serving the freshly seeded DB, i.e. the failure was the VERDICT, not the work. Six minutes
+# covers the measured cold path with margin; a genuinely broken container now fails in 6 min
+# instead of 30 s — the 45-s uptime probe and /ready remain the judges of what boots.
+deploy_timeout: 360
+
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
 # (+ _cache/_cable — `_queue` зрізано INF.18 2026-07-04, і цей рядок обіцяв її досі). Same host/user/password as production (inherited from
 # config/deploy.yml env); only POSTGRES_DATABASE differs. See config/database.yml.
