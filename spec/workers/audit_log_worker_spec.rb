@@ -4,6 +4,11 @@
 require "rails_helper"
 
 RSpec.describe AuditLogWorker, type: :worker do
+  # [ARCH.118-клас] Нога Filecoin ACTIVATION-GATED: без ключа enqueue не робиться ЗОВСІМ.
+  # Ці приклади про ПОВЕДІНКУ enqueue, не про гейт, тож нога тут оголошено жива;
+  # сам гейт пінить негативний приклад нижче.
+  before { allow(Filecoin::ArchiveService).to receive(:configured?).and_return(true) }
+
   describe "sidekiq_options" do
     it "uses the low queue" do
       expect(described_class.sidekiq_options["queue"]).to eq("low")
@@ -126,6 +131,25 @@ RSpec.describe AuditLogWorker, type: :worker do
 
         expect { described_class.new.perform(attrs) }.to change(AuditLog, :count).by(1)
       end
+    end
+  end
+
+
+  # [ARCH.118-клас, 2026-09-03] Пін САМОГО гейта. Без нього гейт зелений на порожній
+  # множині: стаб на початку файлу робить ногу живою в КОЖНОМУ іншому прикладі.
+  describe "activation gate (ARCH.118-клас)" do
+    it "НЕ ставить FilecoinArchiveWorker у чергу без ключа — але outbox-маркер лишає" do
+      user = create(:user)
+      allow(Filecoin::ArchiveService).to receive(:configured?).and_return(false)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
+
+      described_class.new.perform({
+        "user_id" => user.id, "organization_id" => user.organization_id,
+        "action" => "login", "ip_address" => "203.0.113.42", "user_agent" => "Mozilla/5.0"
+      }, true)
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
+      expect(AuditLog.last.archive_requested_at).to be_present
     end
   end
 end

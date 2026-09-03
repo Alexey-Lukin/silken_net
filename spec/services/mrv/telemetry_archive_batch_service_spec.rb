@@ -7,6 +7,15 @@ require "rails_helper"
 # create_or_find_by-конвергенція · батч-завжди (size-1 ≡ telemetry_merkle_root) ·
 # windowless → zero32 БЕЗ рядка · build_failed NULL-root слід без біндингу.
 RSpec.describe Mrv::TelemetryArchiveBatchService do
+  # [ARCH.118-клас] Нога Filecoin ACTIVATION-GATED: без ключа enqueue не робиться ЗОВСІМ.
+  # Ці приклади про ПОВЕДІНКУ enqueue, не про гейт, тож нога тут оголошено жива;
+  # сам гейт пінить негативний приклад нижче.
+  before { allow(Filecoin::ArchiveService).to receive(:configured?).and_return(true)
+allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    silence_broadcasts!(:wallet_balance, :tree_map)
+    TelemetryArchiveBatchWorker.clear
+   }
+
   let(:organization) { create(:organization) }
   let(:cluster) { create(:cluster, organization: organization) }
   let(:tree) { create(:tree, cluster: cluster) }
@@ -17,11 +26,6 @@ RSpec.describe Mrv::TelemetryArchiveBatchService do
     w
   end
 
-  before do
-    allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    silence_broadcasts!(:wallet_balance, :tree_map)
-    TelemetryArchiveBatchWorker.clear
-  end
 
   def windowed_tx!(points = 500)
     create(:telemetry_log, tree: tree, created_at: 2.hours.ago)

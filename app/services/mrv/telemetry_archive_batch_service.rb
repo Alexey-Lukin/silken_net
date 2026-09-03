@@ -102,7 +102,7 @@ module Mrv
 
       # Первинний enqueue ПІСЛЯ commit (reconcile = backstop, не первинний шлях);
       # знайдений-існуючий рядок уже enqueue'нув свій творець.
-      TelemetryArchiveBatchWorker.perform_async(batch.id) if batch.previously_new_record?
+      TelemetryArchiveBatchWorker.perform_async(batch.id) if Filecoin::ArchiveService.configured? && batch.previously_new_record?
       Group.new(root: batch.archive_root, txs: txs, batch: batch)
     rescue StandardError => e
       record_build_failure(txs, e)

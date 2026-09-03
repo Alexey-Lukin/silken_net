@@ -4,6 +4,11 @@
 require "rails_helper"
 
 RSpec.describe FilecoinReconcileWorker, type: :worker do
+  # [ARCH.118-клас] Нога Filecoin ACTIVATION-GATED: без ключа enqueue не робиться ЗОВСІМ.
+  # Ці приклади про ПОВЕДІНКУ enqueue, не про гейт, тож нога тут оголошено жива;
+  # сам гейт пінить негативний приклад нижче.
+  before { allow(Filecoin::ArchiveService).to receive(:configured?).and_return(true) }
+
   def archive_intent(archive_requested_at:, ipfs_cid: nil)
     create(:audit_log, archive_requested_at: archive_requested_at, ipfs_cid: ipfs_cid)
   end
@@ -103,6 +108,21 @@ RSpec.describe FilecoinReconcileWorker, type: :worker do
 
       expect(TelemetryArchiveBatchWorker).to have_received(:perform_async).with(stale.id)
       expect(TelemetryArchiveBatchWorker).to have_received(:perform_async).with(trace.id)
+    end
+  end
+
+  # [ARCH.118-клас, 2026-09-03] Пін САМОГО гейта: ре-арм без ключа лише палив би слоти.
+  # [ARCH.118-клас, 2026-09-03] Пін САМОГО гейта: ре-арм без ключа лише палив би слоти,
+  # а стаб на початку файлу робить ногу живою в кожному іншому прикладі.
+  describe "activation gate (ARCH.118-клас)" do
+    it "не ре-армить нічого, коли нога не сконфігурована" do
+      allow(Filecoin::ArchiveService).to receive(:configured?).and_return(false)
+      allow(FilecoinArchiveWorker).to receive(:perform_async)
+      archive_intent(archive_requested_at: 3.hours.ago)
+
+      described_class.new.perform
+
+      expect(FilecoinArchiveWorker).not_to have_received(:perform_async)
     end
   end
 end

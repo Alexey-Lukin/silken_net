@@ -195,6 +195,22 @@ module Filecoin
       }
     end
 
+    # [ARCH.118-клас, 2026-09-03] ОДИН дім питання «чи ця нога жива». Дзеркало
+    # `Iotex::W3bstreamVerificationService.configured?` — і заведене тим самим виміром:
+    # на canopy ключа немає, тож перший же живий трафік (симулятор INF.17) дав 97 подій
+    # Sentry за чотири хвилини — `FilecoinArchiveWorker` × retry:5 на КОЖЕН AuditLog.
+    # ⛔ Fail-closed raise НИЖЧЕ не є гардом для несконфігурованої ноги — він є
+    # retry-драбиною: джоба не може ані виконатись, ані здатись. Гард мусить стояти на
+    # ENQUEUE, а не на виклику.
+    # 🔑 Пропуск нічого НЕ губить, і це властивість дизайну, не вдача: outbox-маркер
+    # `archive_requested_at` ставиться АТОМАРНО з `create!` (`AuditLogWorker`), окремо
+    # від enqueue, тож `FilecoinReconcileWorker` підбере лог, щойно ключ заведуть.
+    # ⚠️ Оголошена стеля: вікно ре-арму = `FilecoinReconcileWorker::LOOKBACK` (30 діб).
+    # Заведення пізніше вимагає разового re-arm ([`00_07`] INF.22 Phase-2-нога).
+    def self.configured?
+      (ENV["FILECOIN_API_KEY"].presence || Rails.application.credentials.filecoin_api_key).present?
+    end
+
     # [E.60 Фаза 1б] One-Home Pinata-виклик: юзають audit-шлях (цей сервіс) і
     # телеметрія-батч-пін (TelemetryArchiveBatchWorker). Повертає CID.
     def self.pin_json!(content, name:, keyvalues: {})

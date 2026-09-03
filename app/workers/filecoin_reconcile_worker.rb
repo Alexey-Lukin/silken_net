@@ -51,6 +51,14 @@ class FilecoinReconcileWorker
   BATCH_LIMIT = 500
 
   def perform
+    # [ARCH.118-клас] Несконфігурована нога: ре-арм без ключа лише спалює слоти й Sentry.
+    # Рядки лишаються видимими в `silkennet_filecoin_unarchived_depth` — тиша тут ГОЛОСУ не
+    # забирає, бо гейдж і є каналом «скільки чекає».
+    unless Filecoin::ArchiveService.configured?
+      Rails.logger.info "📦 [Filecoin] Re-arm пропущено — нога не сконфігурована (FILECOIN_API_KEY)."
+      return
+    end
+
     ids = AuditLog.pending_archive
                   .where(archive_requested_at: LOOKBACK.ago..STALE_THRESHOLD.ago)
                   .order(:archive_requested_at)
