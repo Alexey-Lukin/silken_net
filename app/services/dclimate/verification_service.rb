@@ -28,7 +28,7 @@ module Dclimate
     # Base URL для dClimate REST API (перевизначається через ENV для staging/test).
     # ⚠️ [ARCH.118, виміряно 2026-09-02] Дефолтний хост — dangling (CNAME у Vercel, TLS не
     # встановлюється); старий free-API розчинився в dClimate Marketplace, де база й ключ
-    # ПЕР-ПРОВАЙДЕРНІ. Чинну базу дає лише канал вендора (00_07 ARCH.118 / S3.2) — літерал
+    # ПЕР-ПРОВАЙДЕРНІ. Чинну базу дає лише канал вендора (00_07 S3.2; клас — ARCH.118 §🗄️) — літерал
     # лишається fail-closed заявкою, не робочим фолбеком.
     DCLIMATE_BASE_URL = ENV.fetch("DCLIMATE_BASE_URL", "https://api.dclimate.net")
 
