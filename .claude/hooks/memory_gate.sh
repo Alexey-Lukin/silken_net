@@ -152,7 +152,7 @@ SELF=${BASH_SOURCE[0]:-$0}
 # Що зроблено ПЕРШ ніж бампати (важіль (1), не пропущений): чотири гачки стиснуто, стан
 # дня деплою відправлено у `log_deploy_hole_hunt` замість індексу, індекс упав із +352 до
 # +200 ПОПРИ дописаний сьогодні зміст. Тобто бамп фіксує досягнуте, а не створює запас.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24802}
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24880}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
