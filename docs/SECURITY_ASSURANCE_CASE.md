@@ -225,8 +225,8 @@ An assurance case is credible because it states what is **not** yet fully closed
   step-up. The secret is AR-encrypted at rest. Residual honestly out of scope: WebAuthn/hardware-key
   is deferred until the first B2B client demands it — TOTP shares the secret with the phone, so a
   phishing-proof factor remains unclaimed.
-- **Pre-mainnet.** No production deployment of the APPLICATION has run yet (infrastructure was provisioned 2026-08-31; zero `kamal deploy`); the deploy-time guards (`verify-secrets`, force_ssl,
-  HSTS) are configured and CI-verified but not yet exercised live.
+- **Pre-mainnet.** No PRODUCTION deployment of the application has run yet (infrastructure provisioned 2026-08-31); the staging slot `canopy` has deployed through `kamal deploy` since 2026-09-02 on testnet twins, so the deploy-time guards (`verify-secrets`, force_ssl,
+  HSTS) are CI-verified AND exercised live there — not yet on production.
 - **External-trust assumptions.** The argument assumes the Chainlink DON behaves per its own fraud-proof
   model, that the chains finalize honestly, and that a hostile host operator cannot defeat container attestation —
   defended where code can (HMAC on callbacks, signed images, multi-RPC fallback) but not eliminated.
@@ -239,7 +239,7 @@ An assurance case is credible because it states what is **not** yet fully closed
   (pre-mainnet, firmware-coordinated). **`RAILS_MASTER_KEY` belongs in the same sentence:** it unlocks the
   credentials vault and — via the entangled `secret_key_base` ([`06_04 §5.2`](06_04_Secrets_Checklist)) —
   forges sessions and every `generates_token_for` token; its *runtime* need was dissolved on 2026-09-02 (Phase-2 shipped: no process carries it; the vault holds only `secret_key_base`, which travels as its own secret — so the irreplaceable key is now `SECRET_KEY_BASE`)
-  (credentials→ENV shipped, Phase-2 drop deploy-gated — `SEC.22`), and both master keys are effectively
+  (credentials→ENV shipped 2026-07; the Phase-2 drop shipped 2026-09-02 — `SEC.22`), and both master keys are effectively
   un-rotatable today. Until those land they are provider-visible; bounded-blast operational credentials
   (`REDIS_URL`, the DB-access credential, per-vendor API keys, webhook HMACs) stay resident by design.
   **The Solana Ed25519 payout key sits deliberately in the bounded-blast class, not the KMS class — a
