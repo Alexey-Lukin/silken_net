@@ -6,6 +6,16 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      alloy:
+        # [OPS.37, 2026-09-03] `config.alloy` is mounted at accessory BOOT and `boot` skips an
+        # existing container, so a scrape-topology change needs a deliberate `reboot`. The
+        # laptop path (`kamal accessory reboot alloy`) dies on the deploy-SA posix account
+        # (deploy skill gotcha 10); this input runs the same act where the secrets already are.
+        description: "Alloy accessory action: boot (idempotent, default) or reboot (re-reads config.alloy)"
+        type: choice
+        options: [boot, reboot]
+        default: boot
 
 concurrency:
   group: deploy-canopy
@@ -601,7 +611,8 @@ jobs:
             || { echo "::error::canopy job container has not been up for the whole 45-s window (crash-loop, or no container) — see output above."; exit 1; }
 
       - name: Ensure Alloy accessory is running
-        run: kamal accessory boot alloy
+        # `inputs.alloy` is empty on workflow_run → boot (the idempotent default); reboot only by dispatch.
+        run: kamal accessory ${{ inputs.alloy || 'boot' }} alloy
         env:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
           # Accessory env.secret trio (.kamal/secrets-common reads $VAR from this shell).
