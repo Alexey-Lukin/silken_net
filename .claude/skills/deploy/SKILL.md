@@ -333,7 +333,11 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   ⚠️ Рядок дописано 2026-09-01: доти скіл називав `storage.yml` без жодного застереження й посилав
   саме в §5.7 — тобто на deploy-day читач із самим скілом у руках проходив повз пастку, маючи
   формально правдивий текст.
-- **Secrets-at-rest = три ISOLATED KMS-keyring'и** (`silken-disk-ew1` boot-disk CMEK ·
+- **Secrets-at-rest = три ЖИВІ ISOLATED KMS-keyring'и — і ЧЕТВЕРТИЙ спроєктований** (`silken-mac-ew1`,
+  MAC-ключ `provisioning-mac` для crown-jewel `PROVISIONING`: 🔗 pre-mainnet `SEC.22`, тір 2 у `03_06 §5`,
+  рядок таблиці — `06_04 §5.6`. ⚠️ Названий тут навмисно: доти скіл давав «три» як абсолют, тож читач
+  deploy-дня не бачив, що четвертий узагалі планується — а `06_04` зве його «четвертий keyring поряд
+  трьох наявних»). Живі: (`silken-disk-ew1` boot-disk CMEK ·
   `silken-sign-ew1` money-signing SEC.17 pre-mainnet · `silken-tfstate-ew1` bootstrap-owned) —
   key-level IAM бар'єр, **НЕ** generic keyring (merge-trap). ⚠️ Money-квінтет лишається plaintext у deploy-ENV до АКТИВАЦІЇ `SEC.17` (`KmsSigner` ✅ код 09-03; provision KMS + `ORACLE_*_KMS_KEY_VERSION` — 👤 pre-mainnet, `06_04 §5.5` крок 3) — поточний масштаб цієї
   діри пост-`OPS.37` переоцінює сам `SEC.17`, тут не вгадуємо. Grantee/purpose/boot-dep → `06_04 §5.6`.
