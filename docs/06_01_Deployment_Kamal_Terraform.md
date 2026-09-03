@@ -1053,10 +1053,10 @@ GitHub Secret; `RAILS_MASTER_KEY` тут НЕ потрібен і не прий�
 #    ⚠️ Тег бери ПРОГОНОМ, не з памʼяті: живий коміт canopy деякий час не мав `sha-`тега, бо mirror-ghcr
 #    судив ОДИН коміт пушу (виправлено 09-03, та сама вісь, що INF.9).
 echo 'coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<7-hex>"' >> terraform/terraform.tfvars
-(cd terraform && terraform plan  -var=anchor_replace_window=true)   # очікувано РІВНО: ingress_anchor «must be replaced»; Cloud SQL не згадано
-(cd terraform && terraform apply -var=anchor_replace_window=true)   # replace; прапор лише через -var — у tfvars НІКОЛИ (знімає захист ЛИШЕ з анкера)
-gcloud compute instances add-metadata silken-net-ingress --zone europe-west1-d --metadata app-host-ip=<output app_host_ip>   # нова VM стартує із сентинелом
-(cd terraform && terraform apply)   # без прапора: повертає deletion_protection in-place; наступний plan = No changes
+gcloud compute instances update silken-net-ingress --zone europe-west1-d --no-deletion-protection   # explicit operator act: replace видаляє СТАРУ VM, і захист стоїть саме на ній — Terraform зняти його в тому ж apply не може (виміряно 09-03: окремий прапор-вікно дав «Deletion Protection is enabled»)
+(cd terraform && terraform plan)    # очікувано РІВНО: ingress_anchor «must be replaced»; Cloud SQL не згадано
+(cd terraform && terraform apply)   # replace (~1.5 хв); нова VM народжується вже з deletion_protection=true; наступний plan = No changes
+gcloud compute instances add-metadata silken-net-ingress --zone europe-west1-d --metadata app-host-ip=<output app_host_ip>   # нова VM стартує із сентинелом; HAProxy підніметься на reset нижче
 # 2) на анкорі (IAP-ssh, руки власника): три рядки слоту + значення — РЕДАКТОРОМ, не echo/sed
 #    (значення не мають лягати в shell-history)
 gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudoedit /etc/silkennet/coap.env

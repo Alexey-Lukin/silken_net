@@ -48,9 +48,12 @@ resource "google_compute_instance" "ingress_anchor" {
   # `false`, тобто анкер — єдина зовнішня адреса й дім `coap.env` — знімався однією
   # командою. ⚠️ Із Фазою ∅ не конфліктує: та ЗУПИНЯЄ (`desired_status = TERMINATED`),
   # а не видаляє. Вимикати — лише через `enable_deletion_protection = false`, свідомо.
-  # [INF.17] `anchor_replace_window` lifts protection on THIS instance only — the shared
-  # flag also guards Cloud SQL, and a replace of the anchor must never touch that.
-  deletion_protection = var.enable_deletion_protection && !var.anchor_replace_window
+  # ⚠️ [INF.17, measured 2026-09-03] A replace cannot lift its own protection: Terraform deletes
+  # the OLD instance first, and that one still carries the live flag — so the window is an
+  # out-of-band `gcloud compute instances update … --no-deletion-protection` (the explicit
+  # operator act the posture spec names) followed by ONE apply; the new instance is born
+  # protected. A Terraform variable for the window was tried and refuted the same day.
+  deletion_protection = var.enable_deletion_protection
 
   boot_disk {
     initialize_params {
@@ -87,9 +90,10 @@ resource "google_compute_instance" "ingress_anchor" {
   # is why the 09-02 script fixes never reached the VM — `terraform plan` said «1 add / 1 destroy»
   # and deletion_protection stopped it. The metadata form updates in place; GCE runs the new
   # script on the next boot, i.e. the runbook's `gcloud compute instances reset` (06_01 Фаза 1).
-  # Moving the attribute costs ONE last replace — the runbook names that window; after it,
-  # image pins and script edits are in-place + reset. (The app host keeps the ForceNew form on
-  # purpose: its script never carries a pin, and a replace there is a kamal re-setup.)
+  # Moving the attribute costs ONE last replace — the runbook names that window (an out-of-band
+  # protection flip + one apply); after it, image pins and script edits are in-place + reset.
+  # (The app host keeps the ForceNew form on purpose: its script never carries a pin, and a
+  # replace there is a kamal re-setup.)
   metadata = {
     startup-script = <<-EOF
     #!/bin/bash

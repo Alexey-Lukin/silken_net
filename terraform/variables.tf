@@ -225,12 +225,3 @@ variable "enable_oracle_signing_keys" {
   type        = bool
   default     = false
 }
-
-# [INF.17] One-shot window for a DELIBERATE replace of the ingress anchor (06_01 Фаза 1):
-# `terraform apply -var=anchor_replace_window=true` lifts deletion protection on the anchor
-# instance only, leaving Cloud SQL's protection untouched. Never set it in a tfvars file.
-variable "anchor_replace_window" {
-  description = "Lift deletion protection on the ingress anchor for one deliberate replace (INF.17); pass via -var, never persist"
-  type        = bool
-  default     = false
-}
