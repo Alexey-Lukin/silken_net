@@ -59,6 +59,12 @@ prometheus.scrape "silken_net_scraper" {
     { "__address__" = "silken-web:80", "process" = "web" },
     { "__address__" = "silken-job:9394", "process" = "job" },
     { "__address__" = "silken-coap:9395", "process" = "coap" },
+    // [OPS.37 ⚖️ 2026-09-03] canopy targets carry their slot ON THE TARGET: a target label wins
+    // over `external_labels` (Prometheus remote-write merges external labels only where the
+    // series lacks them), so these series land as slot="canopy" while every silken-* series
+    // keeps the accessory's slot=production. No coap target: canopy neutralises that role.
+    { "__address__" = "canopy-web:80", "process" = "web", "slot" = "canopy" },
+    { "__address__" = "canopy-job:9394", "process" = "job", "slot" = "canopy" },
   ]
   metrics_path    = "/metrics"
   scrape_interval = "15s"

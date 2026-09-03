@@ -40,18 +40,18 @@
 #       same five NAMES here makes `.kamal/secrets.canopy` remap each from its `CANOPY_*`
 #       twin (invariant B4), so the job container signs with TESTNET keys and nothing else.
 #       Carrier: `scripts/deploy_secret_scan.rb` invariant B3 (hash form ⇒ own quintet array).
-#   (2) The aliases are DISJOINT from what Alloy scrapes: `config.alloy` targets
-#       `silken-web`/`silken-job`/`silken-coap`, and a canopy role that inherited the base
-#       alias would answer to the same name on the shared `kamal` docker network — its series
-#       would land on the PRODUCTION dashboards labelled production. `canopy-*` names keep
-#       canopy unscraped (the ONE-Alloy invariant); carrier:
-#       `spec/deploy/alloy_scrape_topology_spec.rb` (judged on the MERGED config — an omitted
-#       `hosts:`/`options:` inherits the base value, the raw file shows neither).
-#       ⚠️ The price, named (review 2026-09-02): NO `up`, NO DeadSet gauge, NO dashboard for
-#       this slot — a crash-looping canopy job is invisible to Grafana, and Kamal's own boot
-#       verdict for a non-proxy role is a 7-s `.State.Status` poll. The post-deploy uptime probe
-#       in `.github/workflows/deploy.yml` is the job role's ONLY detector; a fourth scrape target
-#       (`canopy-job:9394` relabelled slot=canopy) is the open alternative — 00_07 OPS.37.
+#   (2) The aliases are DISJOINT from the production ones (`silken-*`) — and since 2026-09-03
+#       they are SCRAPED under their own names: `config.alloy` targets `canopy-web:80` and
+#       `canopy-job:9394` with `slot = "canopy"` carried ON THE TARGET (a target label wins over
+#       the accessory's `external_labels`, so these series land as slot=canopy while every
+#       `silken-*` series keeps the accessory's production label — ⚖️ founder 2026-09-03,
+#       00_07 OPS.37). The invariant therefore reads: a canopy role never answers to a
+#       production alias, and a canopy alias is scraped ONLY with an explicit slot label;
+#       carrier: `spec/deploy/alloy_scrape_topology_spec.rb` (judged on the MERGED config — an
+#       omitted `hosts:`/`options:` inherits the base value, the raw file shows neither).
+#       Before 2026-09-03 canopy was deliberately unscraped (the price was named: no `up`, no
+#       DeadSet gauge, no dashboard for the slot) — the canopy dashboard reading «No data»
+#       everywhere was what bought the fourth and fifth targets.
 #   (3) `coap:` is NEUTRALISED with `hosts: []`. deep_merge cannot delete a role, and the base
 #       coap role publishes `5683/udp` on the host — a second publisher on the shared machine
 #       would collide with production's dormant fallback the day production deploys. Kamal
