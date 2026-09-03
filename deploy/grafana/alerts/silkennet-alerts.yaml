@@ -73,22 +73,29 @@ groups:
             model:
               expr: "rate(silkennet_telemetry_ccm_mic_fail_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "CCM MIC не проходить перевірку ({{ $values.A.Value }}/s) — можливий tamper або розʼїхані ключі."
+          summary: "CCM MIC не проходить перевірку ({{ $values.B.Value }}/s) — можливий tamper або розʼїхані ключі."
           description: "FW.2 CCM-кадр не пройшов MIC: чужий ключ, підмінений ciphertext, покалічений AAD або хибна пара DID/FrameCounter. Retry не лікує ЖОДНОЇ з причин. Звір ротацію session KEYL (FW.17) і Dual-Key Grace на пристрої; сплеск по одному DID = кандидат на tamper, по багатьох = розʼїхана ротація. 03_05 §3.1 / FW.2."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
         labels:
@@ -115,22 +122,29 @@ groups:
             model:
               expr: "increase(silkennet_partition_maintenance_failures_total[24h])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "PartitionMaintenanceWorker провалився ({{ $values.A.Value }}× за 24h) — партиція наступного місяця може бути відсутня."
+          summary: "PartitionMaintenanceWorker провалився ({{ $values.B.Value }}× за 24h) — партиція наступного місяця може бути відсутня."
           description: "Без партиції на новий місяць INSERT НЕ падає — рядок тихо осідає в `_default` (telemetry_logs / gateway_telemetry_logs / blockchain_transactions), і аж наступний прохід воркера падає `PG::CheckViolation` НАЗАВЖДИ для того місяця; ретраї не лікують. Sidekiq retry:3 + Sentry активні. Перевірити DDL-права оракула / disk / cron; якщо `_default` уже заселено — рунбук 06_06 §5.5. 06_03 §2.8 (S2.5)."
         labels:
           severity: critical
@@ -154,22 +168,29 @@ groups:
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [100], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: NoData
         execErrState: Error
         for: 5m
         annotations:
-          summary: "web3_critical queue = {{ $values.A.Value }} jobs (>100). SCC minting pipeline заблокований."
+          summary: "web3_critical queue = {{ $values.B.Value }} jobs (>100). SCC minting pipeline заблокований."
           description: "Черга web3_critical переповнена. Chainlink/IoTeX workers не встигають дренувати. Перевір: Sidekiq workers running, Web3 RPC healthy, no poison pill job."
           runbook_url: "docs/04_02_Business_Logic_and_Services.md#blockchainmintingservice"
         labels:
@@ -190,22 +211,29 @@ groups:
             model:
               expr: "rate(silkennet_telemetry_fraud_detected_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 2m
         annotations:
-          summary: "Fraud rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
+          summary: "Fraud rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можлива атака або hardware tamper."
           description: "TelemetryUnpackerService відхилив пакети: sensor noise, unknown DID, DCI mismatch (Lorenz Z divergence) або invalid AES decrypt. Перевір: чи це відомий новий Soldier (треба provisioning), чи mass replay attack."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -226,22 +254,29 @@ groups:
             model:
               expr: silkennet_oracle_balance_ratio
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0.2], type: lt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: NoData
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (поріг: 1.0, критично: < 0.2)."
+          summary: "Oracle balance ratio = {{ $values.B.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (поріг: 1.0, критично: < 0.2)."
           description: "Oracle-підписант ({{ $labels.signer }}) вичерпує кошти. Його web3-шлях заблокується при 0. Поповни wallet через multisig: docs/05_03_Tokenomics_SCC_and_SFC.md"
           runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md#-потік-мінтингу-поточний-стан"
         labels:
@@ -275,22 +310,29 @@ groups:
             model:
               expr: increase(silkennet_insurance_reserve_hold_total[1h])
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} страхових виплат зупинено reserve-gate за годину (причина: {{ $labels.reason }})."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} страхових виплат зупинено reserve-gate за годину (причина: {{ $labels.reason }})."
           description: "Internal-mode виплата мінтить НОВИЙ SCC, тож gate спинив емісію: aggregate 24h correlated stop-loss або reserve-adequacy проти DAO_TREASURY. Заявки лежать у manual_review — звір подію ПЕРЕД ручним резолвом; це не збій, а спрацювання політики. Поріг transient-RPC (:eval_error) сюди НЕ потрапляє — той шлях іде в Sidekiq-retry."
           runbook_url: "docs/00_04_Nature_as_a_Service_Contracts.md#-7-параметричне-страхування-insurance-layer"
         labels:
@@ -311,22 +353,29 @@ groups:
             model:
               expr: "rate(silkennet_panic_replay_rejected_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0.1], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 2m
         annotations:
-          summary: "Panic replay rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
+          summary: "Panic replay rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Можливий forged panic packet injection."
           description: "SEC.10 Frame Counter SETNX nonce відхиляє дублікати. Різкий стрибок означає або attacker (replay forged panic = false fire alert) або LoRa mesh duplicate storm. Перевір DID pattern."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md#21-soldier--queen-lora-uplink-aes-128-ecb-transitional--aes-128-ccm-target"
         labels:
@@ -355,16 +404,23 @@ groups:
             model:
               expr: 'min by (slot, process) (up{job="silken_net_scraper"})'
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [1], type: lt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: Alerting
         execErrState: Error
@@ -393,22 +449,29 @@ groups:
             model:
               expr: silkennet_gateways_faulty
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value }} Королев(а) у faulty — кластер(и) без uplink."
+          summary: "{{ $values.B.Value }} Королев(а) у faulty — кластер(и) без uplink."
           description: "GatewayStalenessSweepWorker перевів шлюз(и) у faulty (last_seen_at прострочив sleep-інтервал ×1.2) і створив EwsAlert(queen_offline). Деталі — стрічка EWS кластера; відновлення автоматичне (recover) при поверненні в ефір. 06_08 §1.3 / ARCH.54."
         labels:
           severity: critical
@@ -429,22 +492,29 @@ groups:
             model:
               expr: max by (slot) (silkennet_chain_audit_delta)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0.0001], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 15m
         annotations:
-          summary: "SCC drift = {{ $values.A.Value | printf \"%.4f\" }} (DB mints−burns vs on-chain totalSupply)."
+          summary: "SCC drift = {{ $values.B.Value | printf \"%.4f\" }} (DB mints−burns vs on-chain totalSupply)."
           description: "ChainAuditService виявив розбіжність DB-обліку SCC і on-chain totalSupply понад поріг. Можливий ledger-баг, пропущений confirm/fail, або несанкціонований on-chain mint/burn. Звір ChainAuditService.call, останні confirmed mint/slash tx. 05_02 / 05_03."
           runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md"
         labels:
@@ -480,22 +550,29 @@ groups:
             model:
               expr: "rate(silkennet_telemetry_log_unpruned_lookups_total{caller=~\"oracle.*|.*Worker\"}[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Гарячий викликач читає TelemetryLog без партиційного прунінгу ({{ $values.A.Value }}/s)."
+          summary: "Гарячий викликач читає TelemetryLog без партиційного прунінгу ({{ $values.B.Value }}/s)."
           description: "Викликач із oracle-/Worker-класу звертається до партиційованої `telemetry_logs` без `created_at_iso` (або з невалідним ISO8601) → повний скан замість однієї партиції. Знайди викликача за міткою `caller` і передай ключ через One-Home `TelemetryLog.partition_pruned(iso, metric_caller:)`. CLAUDE.md §6 / 04_01 §0."
           runbook_url: "docs/04_01_Data_Models_and_Entities.md"
         labels:
@@ -513,22 +590,29 @@ groups:
             model:
               expr: "rate(silkennet_blockchain_transaction_unpruned_lookups_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 15m
         annotations:
-          summary: "Гроші читаються без партиційного прунінгу ({{ $values.A.Value }}/s стійко за 15 хв)."
+          summary: "Гроші читаються без партиційного прунінгу ({{ $values.B.Value }}/s стійко за 15 хв)."
           description: "Звертання до партиційованої `blockchain_transactions` без `created_at` → повний скан на найдорожчій таблиці money-path. Два викликачі (`wallets#transaction_status`, `blockchain_transactions#show`) беруть ключ з URL, тож одиничний хіт може бути кривим рядком клієнта — стійкий rate означає системного викликача. One-Home: `find_with_partition_pruning` (один рядок) / `where_ids_pruned` (набір). CLAUDE.md §6."
           runbook_url: "docs/04_01_Data_Models_and_Entities.md"
         labels:
@@ -553,22 +637,29 @@ groups:
             model:
               expr: silkennet_trees_silent
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 30m
         annotations:
-          summary: "{{ $values.A.Value }} дерев(о) мовчить довше порога тиші."
+          summary: "{{ $values.B.Value }} дерев(о) мовчить довше порога тиші."
           description: "TreeStalenessSweepWorker зафіксував аномальну тишу active-дерев (поріг SystemParameter tree_silence_threshold_hours, 24h transitional) і ескалював per-tree EwsAlert(field_audit). Тиша НІКОЛИ не slash — виїхати слухати (пеньки/крадіжка/розряд). 06_08 §1.3 / SILENCE-1."
         labels:
           severity: warning
@@ -588,22 +679,29 @@ groups:
             model:
               expr: "rate(silkennet_rpc_errors_total[5m]) * 60"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [10], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 2m
         annotations:
-          summary: "RPC errors = {{ $values.A.Value | printf \"%.1f\" }}/хв на {{ $labels.network }} / {{ $labels.error_type }}."
+          summary: "RPC errors = {{ $values.B.Value | printf \"%.1f\" }}/хв на {{ $labels.network }} / {{ $labels.error_type }}."
           description: "RPC провайдер деградує. Перевір: Alchemy status page, circuit breaker state (silkennet_rpc_circuit_breaker_open). При відкритому circuit breaker — fallback RPC може бути також нестабільний."
         labels:
           severity: warning
@@ -624,22 +722,29 @@ groups:
               # max by (queue): Redis-global gauge — duplicate-series guard (06_03 §2.9).
               expr: max by (slot, queue) (silkennet_sidekiq_queue_latency_seconds)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [300], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Sidekiq queue {{ $labels.queue }} latency = {{ $values.A.Value | printf \"%.0f\" }}s (> 5 хв)."
+          summary: "Sidekiq queue {{ $labels.queue }} latency = {{ $values.B.Value | printf \"%.0f\" }}s (> 5 хв)."
           description: "Найстаріша задача в черзі {{ $labels.queue }} не виконується > 5 хвилин. Можливі причини: Sidekiq worker crashed, poison pill job, RPC timeout loop."
         labels:
           severity: warning
@@ -663,22 +768,29 @@ groups:
               # max: Redis-global gauge — duplicate-series guard (06_03 §2.9).
               expr: max by (slot) (silkennet_sidekiq_dead_set_size)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Sidekiq DeadSet = {{ $values.A.Value | printf \"%.0f\" }} job(s) вичерпали retry."
+          summary: "Sidekiq DeadSet = {{ $values.B.Value | printf \"%.0f\" }} job(s) вичерпали retry."
           description: "Job(и) вичерпали всі retry і осіли в DeadSet. Money-path (mint/slash/Solana payout/insurance) тут = можливі stranded funds/tx без авто-відновлення (in-flight guard не діє — job не в черзі). Перевір Sidekiq Web UI → Dead, звір money-path tx у :pending/:sent. ARCH.45 / 06_03 §2.8."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -701,22 +813,29 @@ groups:
             model:
               expr: max by (slot) (silkennet_blockchain_manual_review_depth)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 15m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} tx у :manual_review (кошти заблоковані)."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} tx у :manual_review (кошти заблоковані)."
           description: "BlockchainTransaction у :manual_review = double-spend guard: on-chain-стан невідомий, кошти в locked_balance до ручної звірки. Звір tx на Polygonscan/Solana Explorer, реконсайл вручну (немає авто-резолву — це навмисно). ARCH.45 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -738,22 +857,29 @@ groups:
             model:
               expr: max by (slot) (silkennet_blockchain_limbo_locked_total)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 30m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} growth_points у limbo (locked >1h на незавершених tx)."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} growth_points у limbo (locked >1h на незавершених tx)."
           description: "locked_points на :sent/:manual_review tx старше 1h — кошти форестера застрягли (ні витрачені, ні звільнені). Звір застряглі tx (BlockchainConfirmationWorker / StuckSentTransactionSweeperWorker мали б їх дорезолвити); тривалий limbo = зламаний reconcile. ARCH.45/ARCH.55 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -774,17 +900,24 @@ groups:
             model:
               expr: silkennet_rpc_circuit_breaker_open
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 # gauge = 1.0 when breaker open (resilient_client set_circuit_breaker_gauge); gt 0 fires, gt 1 never would
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -810,22 +943,29 @@ groups:
             model:
               expr: silkennet_cluster_entropy_score
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0.65], type: lt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 30m
         annotations:
-          summary: "Кластер {{ $labels.cluster_id }} — ентропія {{ $values.A.Value | printf \"%.3f\" }} (< 0.65 = передстресовий сигнал)."
+          summary: "Кластер {{ $labels.cluster_id }} — ентропія {{ $values.B.Value | printf \"%.3f\" }} (< 0.65 = передстресовий сигнал)."
           description: "Shannon entropy Z-розподілу кластера низька. Можливі причини: drought, pest epidemic, synchronized stress event. Ліс потребує перевірки форестером. EwsAlert може бути відправлений незабаром. ⚠️ Значення = ОСТАННЄ ОБЧИСЛЕНЕ [INF.26]: gauge застигає, коли 24h-вікно має <30 семплів або кластер замовк — свіжість тут НЕ вісь; живість кластера читай із sn-alert-gateway-faulty (P0) / sn-alert-trees-silent."
         labels:
           severity: warning
@@ -845,22 +985,29 @@ groups:
             model:
               expr: abs(silkennet_cluster_tree_count_drift)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "Кластер {{ $labels.cluster_id }} — active_trees_count розійшовся з живим COUNT на {{ $values.A.Value }}."
+          summary: "Кластер {{ $labels.cluster_id }} — active_trees_count розійшовся з живим COUNT на {{ $values.B.Value }}."
           description: "[SLASH-1] Денормалізований лічильник годує ЗНАМЕННИК тригера слешингу (поріг > N × slash_fraction і межу виродження N < 1/slash_fraction), тож розходження означає, що вирок міряє вигадану популяцію. Нуль тут — стан ЗА ПОБУДОВОЮ: писачів статусу/кластера в обхід Tree-колбеків не існує, отже будь-яке відхилення є ПОДІЄЮ, а не шумом, і поріг gt 0 не гуде. Причина завжди одна — новий update_all/update_columns/insert_all по trees.status або trees.cluster_id."
         labels:
           severity: warning
@@ -880,22 +1027,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_iotex_backfill_rearmed_total[6h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "IoTeX backfill ре-армував {{ $values.A.Value }} логів за 6 год — верифікація походження відстає."
+          summary: "IoTeX backfill ре-армував {{ $values.B.Value }} логів за 6 год — верифікація походження відстає."
           description: "[INF.22] У здоровому тракті цей лічильник стоїть на нулі ЗА ПОБУДОВОЮ: per-uplink enqueue верифікує лог одразу, і backfill-проходу нема що підбирати. Ненульове означає, що джоби вичерпують retry — тобто IoTeX-API недоступний довше за retry-горизонт. ⚠️ НЕ money-блокер: PATH 2-мінт IoTeX не гейтить (ARCH.53), тож емісія триває — відстає ДОКАЗ походження, і саме тому severity warning, а не critical. Дій: перевірити IOTEX_W3BSTREAM_URL і стан circuit-breaker'а iotex_w3bstream."
         labels:
           severity: warning
@@ -915,22 +1069,29 @@ groups:
             model:
               expr: sum by (slot, network, signer) (increase(silkennet_treasury_check_errors_total[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [2], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 15m
         annotations:
-          summary: "{{ $labels.network }}/{{ $labels.signer }} — проба балансу впала {{ $values.A.Value }} разів за годину."
+          summary: "{{ $labels.network }}/{{ $labels.signer }} — проба балансу впала {{ $values.B.Value }} разів за годину."
           description: "[INF.26] «НЕ ЗМОГЛИ ПРОЧИТАТИ» — окремий стан від «оракул порожній», і саме тому має власний канал. Доти RPC-збій писав ratio=0.0 у silkennet_oracle_balance_ratio, тобто один таймаут пейджив ДВОМА balance-правилами на гаманці, який міг бути повний (підміна виміру: показник хибний через ПРИЛАД). Тепер ratio при збої не оновлюється взагалі — а щоб та тиша не була сліпою, гучним є цей лічильник. ⚠️ Наслідок для читача: якщо горить ЦЕЙ алерт, balance-gauge показує ОСТАННЄ ВІДОМЕ значення, не поточне. Дії: перевірити RPC-ендпоінт мережі та ліміти провайдера."
         labels:
           severity: critical
@@ -950,22 +1111,29 @@ groups:
             model:
               expr: "rate(silkennet_telemetry_acoustic_overflow_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Acoustic overflow rate = {{ $values.A.Value | printf \"%.4f\" }}/s. Firmware uint8 saturated at 255."
+          summary: "Acoustic overflow rate = {{ $values.B.Value | printf \"%.4f\" }}/s. Firmware uint8 saturated at 255."
           description: "Дерева фіксують > 255 акустичних подій між TX-циклами (uint8 cap). Реальна кількість chainsaw/cavitation подій вища — дані втрачені. Можлива chainsaw activity. FW.22 saturating counter активний."
         labels:
           severity: warning
@@ -985,22 +1153,29 @@ groups:
             model:
               expr: "rate(silkennet_tinyml_threshold_invalid_reports_total[15m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Soldier(и) звітують відкинуті OTA-пороги TinyML (rate = {{ $values.A.Value | printf \"%.4f\" }}/s)."
+          summary: "Soldier(и) звітують відкинуті OTA-пороги TinyML (rate = {{ $values.B.Value | printf \"%.4f\" }}/s)."
           description: "TinyML_Validate_Threshold відкинув OTA-пороги (NaN / out-of-range / інверсія WARNING≥CRITICAL) → застосовано default, інваріант SILENCE<WARNING<CRITICAL збережено. Ненульовий лічильник = десь у лісі корумпований RTC або зловмисний OTA-payload. Конкретний DID і значення лічильника — у warn-лозі бекенда (TelemetryUnpackerService, патерн FW.22)."
           runbook_url: "docs/03_03_TinyML_Acoustic_Inference.md"
         labels:
@@ -1026,22 +1201,29 @@ groups:
             model:
               expr: '(sum by (slot) (increase(silkennet_mint_success_total[1h])) / sum by (slot) (increase(silkennet_mint_attempts_total[1h]))) and (sum by (slot) (increase(silkennet_mint_attempts_total[1h])) > 0)'
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0.8], type: lt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 10m
         annotations:
-          summary: "Mint success-rate за 1h = {{ $values.A.Value | printf \"%.0f%%\" }} (<80% SLO)."
+          summary: "Mint success-rate за 1h = {{ $values.B.Value | printf \"%.0f%%\" }} (<80% SLO)."
           description: "SLO 06_08 §2.4: ≥80% mint-спроб мають broadcast'итись навіть при відмові одного чейна (Per-Chain Fallback Matrix). Нижче — перевір RPC-здоровʼя (circuit breakers), web3_critical чергу, DeadSet, газ на Oracle-гаманцях."
         labels:
           severity: warning
@@ -1068,22 +1250,29 @@ groups:
             model:
               expr: max by (slot, token_type) (silkennet_mint_volume_window_scc)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [1000000000], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 10m
         annotations:
-          summary: "Заминчено {{ $values.A.Value | printf \"%.0f\" }} {{ $labels.token_type }} за 1h — можливий агрегатний mint-сплеск."
+          summary: "Заминчено {{ $values.B.Value | printf \"%.0f\" }} {{ $labels.token_type }} за 1h — можливий агрегатний mint-сплеск."
           description: "silkennet_mint_volume_window_scc перевищив operator-ceiling. per-tx guards + MAX_SUPPLY не ловлять агрегатну аномалію — можливий firmware/pipeline-баг або зловжитий MINTER-ключ (SEC.17 ENV-plaintext). Звір останні confirmed mint tx на Polygonscan + ChainAuditService. Якщо активний mint_circuit_breaker_enabled — нові батчі того токена тримаються :pending (re-runnable, авто-release за TTL ≤1h, НЕ manual_review). ARCH.62 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1113,22 +1302,29 @@ groups:
             model:
               expr: max by (slot) (silkennet_mint_eligible_unminted_depth)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: NoData
         execErrState: Error
         for: 3h
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} гаманців стоять над порогом емісії три зрізи поспіль."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} гаманців стоять над порогом емісії три зрізи поспіль."
           description: "Здоровий годинний цикл спорожнює eligible-множину за побудовою. Непорожня три зрізи = емісія не доходить. Перевір: чи біжить cron tokenomics_evaluation (:00), чи не падають EvaluateTreeBatchWorker (DeadSet + MINT_CHUNK_ERRORS_TOTAL), чи не відсікає всіх KYC-/SEC.13-фільтр, чи не активний mint circuit-breaker. ⚠️ noDataState=NoData свідомо: мовчання приладу тут — теж інцидент, бо метрика має єдиного писача. ARCH.94 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1154,22 +1350,29 @@ groups:
             model:
               expr: sum by (slot, reason) (increase(silkennet_slashing_events_total[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "Slash виконано ({{ $labels.reason }}): {{ $values.A.Value | printf \"%.0f\" }} за годину."
+          summary: "Slash виконано ({{ $labels.reason }}): {{ $values.B.Value | printf \"%.0f\" }} за годину."
           description: "Незворотний burn пройшов positive-A gate (Кат-A, прямий доказ) — freeze сюди не рахується. Звір вердикт: BlockchainTransaction зі sourceable NaasContract, MaintenanceRecord-надгробок, contextHash on-chain. reason=tree_death — загибель конкретного дерева; cluster_degradation — частка стресованих понад поріг. 05_05 §3.2."
           runbook_url: "docs/05_05_Slashing_and_Risk_Policy.md"
         labels:
@@ -1196,22 +1399,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_dclimate_verification_total{result="rejected_fraud"}[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "dClimate: {{ $values.A.Value | printf \"%.0f\" }} вердикт(ів) rejected_fraud за годину."
+          summary: "dClimate: {{ $values.B.Value | printf \"%.0f\" }} вердикт(ів) rejected_fraud за годину."
           description: "Ясне небо при заявленій пожежі — алерт визнано фродом і слешинг поставлено в чергу. Звір EwsAlert.satellite_status=rejected_fraud проти вердикту BlockchainBurningService ПЕРШ ніж підтверджувати."
           runbook_url: "docs/05_05_Slashing_and_Risk_Policy.md"
         labels:
@@ -1236,22 +1446,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_anchor_missed_weeks_total[8d]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Ethereum L1 anchor пропустив {{ $values.A.Value }} тижн(і) — weekly state-root не приземлявся >8 днів."
+          summary: "Ethereum L1 anchor пропустив {{ $values.B.Value }} тижн(і) — weekly state-root не приземлявся >8 днів."
           description: "detect_missed_anchor_weeks! зафіксував gap>8днів між CONFIRMED anchor'ами (ARCH.66 звузив підрахунок на :confirmed). State-root тижня не запечатано на L1 (finality-деградація, не runtime-збій). Причини: RPC down / порожній ETH-баланс anchor-гаманця / контракт не задеплоєно / поллер не доводить до :confirmed. Один із 4 anchor-liveness сигналів (+ stuck-sent / manual-review / reverted). Звір EthereumAnchorWorker + EthereumAnchorConfirmationWorker логи + anchor-wallet баланс. 05_04 §5.1 / 06_08 §2.2."
           runbook_url: "docs/05_04_Ethereum_L1_State_Anchor.md"
         labels:
@@ -1276,16 +1493,23 @@ groups:
             model:
               expr: max by (slot) (min_over_time(silkennet_ethereum_anchor_stuck_sent_depth[2h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -1315,16 +1539,23 @@ groups:
             model:
               expr: max by (slot) (silkennet_ethereum_anchor_manual_review_depth)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -1352,22 +1583,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_filecoin_verification_failures_total[24h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} Filecoin archive-верифікацій провалилось за 24h (можлива ex-post підміна)."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} Filecoin archive-верифікацій провалилось за 24h (можлива ex-post підміна)."
           description: "FilecoinVerificationSweepWorker (E.60) виявив cid_mismatch або chain_hash-розбіжність між IPFS-архівом і локальним AuditLog — ознака ex-post підміни вмісту вічної памʼяті. Integrity-fail НЕ лікується retry. Звір AuditLog на IPFS-gateway проти БД; ескалюй як security-інцидент. 05_02 §E.60 / 06_08 §2.2."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1399,22 +1637,29 @@ groups:
             model:
               expr: "rate(silkennet_telemetry_ccm_fc_replay_rejected_total[15m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "CCM Frame Counter не строго зростає ({{ $values.A.Value | printf \"%.4f\" }}/s) — replay або скинутий годинник."
+          summary: "CCM Frame Counter не строго зростає ({{ $values.B.Value | printf \"%.4f\" }}/s) — replay або скинутий годинник."
           description: "Per-DID Frame Counter повторився або приїхав поза порядком глибше, ніж дає mesh-буферизація. ДВІ причини, і вони протилежні за знаком: (1) інʼєкція записаних кадрів зловмисником — тоді сплеск сконцентрований на ОДНОМУ DID і йде разом із ccm_mic_fail; (2) скидання RTC пристрою після брауноуту (FW.50) — тоді DID один, mic_fail нуль, і лік = переініціалізація FC, не безпековий інцидент. Розводить їх саме сусідство з sn-alert-ccm-mic-fail. 03_05 §3.1 / FW.2."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
         labels:
@@ -1443,22 +1688,29 @@ groups:
             model:
               expr: "increase(silkennet_mint_chunk_errors_total[1h])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} per-wallet мінт-помилок за 1h — джоба звітує успіх."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} per-wallet мінт-помилок за 1h — джоба звітує успіх."
           description: "EvaluateTreeBatchWorker проковтнув виняток на рівні гаманця: джоба зелена, retry не буде, DeadSet порожній. Ненульове = емісія частково стала, і жоден інший канал про це не скаже. Читай лог-рядок воркера (stats[:errors] + per-wallet контекст), звір із sn-alert-mint-stall-depth: обидва ненульові = систематичний дефект тракту; лише цей = точкові збої RPC/KYC. ARCH.94 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1492,22 +1744,29 @@ groups:
             model:
               expr: "sum by (slot) (increase(silkennet_telemetry_archive_batch_failures_total{reason=~\"mismatch|leaf_stamp_drift\"}[24h]))"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів із розбіжним коренем за 24h (integrity)."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} архів-батчів із розбіжним коренем за 24h (integrity)."
           description: "Перерахований Merkle-корінь батча ≠ збережений при ЖИВИХ telemetry-логах (mismatch), або перерахований CID ≠ стемп merkle_leaf (leaf_stamp_drift, sweeper-семпл). Жодна з двох не є ретеншном і жодна не лікується retry: обидві означають, що дані під уже виданим MRV-доказом змінились — raw-SQL мутація або ex-post підміна. Рунбук 06_08 §4.7; ескалюй як security-інцидент, НЕ як збій пайплайна. E.60 Фаза 1б."
           runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
         labels:
@@ -1533,22 +1792,29 @@ groups:
             model:
               expr: "rate(silkennet_fauna_skip_reports_total[15m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 30m
         annotations:
-          summary: "Soldier(и) пропускають fauna-сесії через низький Vcap (rate = {{ $values.A.Value | printf \"%.4f\" }}/s)."
+          summary: "Soldier(и) пропускають fauna-сесії через низький Vcap (rate = {{ $values.B.Value | printf \"%.4f\" }}/s)."
           description: "Брауноут-захист прошивки пропустив fauna-сесію: EBFC не дотягнув Vcap до порога сесії (03_03 §10.4). Поодинокі пропуски взимку штатні — СТІЙКИЙ ненульовий rate означає енергодефіцит кластера: деградація EDLC, затінення, обрив pogo-контакту. Конкретний DID — у warn-лозі бекенда (патерн FW.22). Лік польовий, не софтовий. FW.42 / 02_03 §12."
           runbook_url: "docs/03_03_TinyML_Acoustic_Inference.md"
         labels:
@@ -1578,22 +1844,29 @@ groups:
             model:
               expr: "increase(silkennet_lineage_root_failures_total[24h])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} мінт(ів) за 24h пройшли з порожнім lineage-коренем."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} мінт(ів) за 24h пройшли з порожнім lineage-коренем."
           description: "Обчислення Merkle-кореня mint-lineage кинуло виняток; мінт НЕ зачеплено (fail-open за дизайном), але `blockchain_transactions.telemetry_merkle_root` лишився NULL — тобто виданий кредит не має машинного трейсу до вимірів, на яких виріс. Це не збій грошей, це діра в ДОКАЗІ. Причина — у warn-лозі `[MRV.1] Lineage-root failed для tx #<id>`; після ліку корінь доводиться доклеювати ретроспективно, бо `Mrv::LineageWindow` вікно рухається. MRV.1 / ARCH.12 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1622,22 +1895,29 @@ groups:
             model:
               expr: "increase(silkennet_fw2_fc_degraded_reports_total[1h])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} звітів про втрачений FC high-water за 1h — nonce-гарантія деградована."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} звітів про втрачений FC high-water за 1h — nonce-гарантія деградована."
           description: "Soldier звітує, що Flash відмовляє писати high-water Frame Counter: після перезавантаження пристрій не знає, на якому FC зупинився, тож монотонність — а з нею anti-replay — більше не гарантована апаратно. Це ПРИЧИНА, а sn-alert-ccm-fc-replay побачить лише наслідок, і то пізніше. Конкретний DID — у warn-лозі (патерн FW.22). Деградована Flash не лікується софтом: вузол на заміну. FW.2 I-HW / 03_05 §3.1."
           runbook_url: "docs/03_05_Hardware_Symmetric_Crypto_and_Security.md"
         labels:
@@ -1666,22 +1946,29 @@ groups:
             model:
               expr: "sum by (slot) (increase(silkennet_telemetry_archive_batch_failures_total{reason=\"build\"}[6h]))"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів не зібрались за 6h — мінт поїхав із zero32-коренем."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} архів-батчів не зібрались за 6h — мінт поїхав із zero32-коренем."
           description: "Побудова Merkle-кореня батча впала при НЕПОРОЖНІХ персистованих вікнах: мінт пройшов із zero32 (fail-open за дизайном — witness ніколи не блокує гроші), тобто кредит виданий без witness-клейму. Припис канону однозначний: лагодити ТРАКТ, НЕ зупиняти мінт. Вікна персистовані, тож пізній `repair!` ще може відновити доказ; якщо repair неможливий (`abandon_repair!` → `superseded`), доказ невиправний назавжди. Рунбук 06_08 §4.7."
           runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
         labels:
@@ -1711,22 +1998,29 @@ groups:
             model:
               expr: max by (slot) (min_over_time(silkennet_telemetry_archive_unpinned_depth[6h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 10m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} архів-батчів незапінені щонайменше 6h поспіль."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} архів-батчів незапінені щонайменше 6h поспіль."
           description: "Батчі в `pending`/`build_failed` не доїжджають до піна. Годинник тут НЕЗВОРОТНИЙ: коли вік незапіненого батча перевищить горизонт ретеншну партицій, telemetry-листя поїдуть разом із дропнутими партиціями, rebuild втратить вхід, і MRV-доказ не відновиться нічим. `min_over_time` бере ПЛАТО, не сплеск: транзієнтний батч осідає за хвилини. Звір Pinata-креденшли й чергу TelemetryArchiveBatchWorker. E.60 Фаза 1б / 06_08 §4.7."
           runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
         labels:
@@ -1754,22 +2048,29 @@ groups:
             model:
               expr: silkennet_oracle_balance_ratio
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [1.0], type: lt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 15m
         annotations:
-          summary: "Oracle balance ratio = {{ $values.A.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (нижче мінімального порогу)."
+          summary: "Oracle balance ratio = {{ $values.B.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (нижче мінімального порогу)."
           description: "Баланс oracle wallet нижче мінімуму. Ще не критично, але потребує поповнення до виснаження."
         labels:
           severity: info
@@ -1789,22 +2090,29 @@ groups:
             model:
               expr: silkennet_db_pool_waiting
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [5], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 2m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} threads чекають на DB connection ({{ $labels.database }})."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} threads чекають на DB connection ({{ $labels.database }})."
           description: "Connection pool вичерпаний. Sidekiq concurrency=15 + pessimistic locks можуть спричинити деадлок. Розгляни збільшення pool size або зменшення Sidekiq concurrency для web3_critical."
         labels:
           severity: info
@@ -1824,16 +2132,23 @@ groups:
             model:
               expr: "rate(silkennet_w3bstream_signature_fallback_total[5m])"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -1865,22 +2180,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_gateways_offline_total[30m]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [2], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} офлайн-переходів шлюзів за 30 хв (> 2) — можливий flapping."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} офлайн-переходів шлюзів за 30 хв (> 2) — можливий flapping."
           description: "GatewayStalenessSweepWorker зафіксував ≥3 online→faulty переходи за 30 хв — це bounce (recover! + report_fault! наново), не один стабільний збій (той уже покриває sn-alert-gateway-faulty, P0). Ознака нестабільного LoRa/backhaul-зв'язку конкретного кластера. Перевір last_seen_at історію шлюзу, живлення/антену на майданчику. ARCH.54 / 06_08 §1.3."
         labels:
           severity: info
@@ -1903,22 +2225,29 @@ groups:
             model:
               expr: max by (slot) (min_over_time(silkennet_filecoin_unarchived_depth[6h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [50], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Filecoin archive backlog = {{ $values.A.Value | printf \"%.0f\" }} логів без ipfs_cid (sustained ≥6h)."
+          summary: "Filecoin archive backlog = {{ $values.B.Value | printf \"%.0f\" }} логів без ipfs_cid (sustained ≥6h)."
           description: "FilecoinArchiveWorker не встигає пінити money/MRV AuditLog'и (Pinata down / quota / rate-limit). Джерело-правди в durable Postgres — НЕ втрата, лише «ще не на IPFS»; FilecoinReconcileWorker (:48 щодня) авто-дренажить, коли Pinata оживе. Перевір Pinata API status + filecoin_api_key. Поріг калібрується з перших live-вікон (placeholder). 06_08 §2.2 крок 11."
           runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
         labels:
@@ -1942,22 +2271,29 @@ groups:
             model:
               expr: max by (slot) (min_over_time(silkennet_hadron_kyc_pending_depth[6h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [10], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 30m
         annotations:
-          summary: "Hadron KYC backlog = {{ $values.A.Value | printf \"%.0f\" }} гаманців/орг застрягли pending ≥6h."
+          summary: "Hadron KYC backlog = {{ $values.B.Value | printf \"%.0f\" }} гаманців/орг застрягли pending ≥6h."
           description: "Hadron KYC-verify не дренажить pending-статуси (API down/slow). Кошти НЕ заблоковані — mint цих бенефіціарів SKIP'иться щоцикл (Wallet#kyc_approved_for_minting?), auto-heal через HadronKycReverifyWorker (:50) коли Hadron оживе — РУЧНА дія НЕ потрібна, лише перевір Hadron API status. Sustained ≥6h = API стійко лежить. Поріг калібрується live (нуль KYC-трафіку на TRL-3). ARCH.65 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
@@ -1982,22 +2318,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_ethereum_anchor_reverted_total[1w]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Ethereum L1 anchor storeStateRoot revert'нув on-chain ({{ $values.A.Value | printf \"%.0f\" }} за тиждень)."
+          summary: "Ethereum L1 anchor storeStateRoot revert'нув on-chain ({{ $values.B.Value | printf \"%.0f\" }} за тиждень)."
           description: "storeStateRoot tx приземлився зі статусом revert. Причини: той самий root уже anchored (rootTimestamps[root]≠0) / <6-денний MIN_ANCHOR_INTERVAL / bad-ABI / недостатній gas_limit. Детермінований revert повторюватиметься щотижня з тим самим root — звір StateRootAnchor контракт + останній EthereumAnchor.error_message. Кошти НЕ в небезпеці (chain_hash кумулятивний → наступний тиждень покриє). ARCH.66 / 05_04."
           runbook_url: "docs/05_04_Ethereum_L1_State_Anchor.md"
         labels:
@@ -2023,22 +2366,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_m2m_nonce_fallback_total[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "M2M auth впав на DB-nonce fallback ({{ $values.A.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний."
+          summary: "M2M auth впав на DB-nonce fallback ({{ $values.B.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний."
           description: "Graceful degradation ПРАЦЮЄ (шлюзи автентифікуються через Solid Cache nonce) — це фіксація Redis-outage, не інцидент. Дія: разова подія = звірити Upstash status; повторюваність день-у-день → escalate до multi-zone Upstash (Global DB). 04_03 §5.15 (S6.1)."
           runbook_url: "docs/04_03_REST_API_v1_Reference.md"
         labels:
@@ -2063,22 +2413,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_telemetry_processed_total[30d]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [30000000], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Телеметрія: {{ $values.A.Value | printf \"%.0f\" }} рядків за 30 днів (>30M) — RANGE-партиції ще тримають, час планувати scale-двигун."
+          summary: "Телеметрія: {{ $values.B.Value | printf \"%.0f\" }} рядків за 30 днів (>30M) — RANGE-партиції ще тримають, час планувати scale-двигун."
           description: "Поріг E.37 (~100M/міс) наближається. Native RANGE + pruning покривають і більше (blockchain_transactions ≈12B/рік) — реальний driver рішення = compression/OLAP-latency. Дія: відкрити ⚖️ E.37 (ClickHouse vs Timescale Cloud vs pg_partman; Cloud SQL extension-шлях закритий). 04_01 §0."
           runbook_url: "docs/04_01_Data_Models_and_Entities.md"
         labels:
@@ -2109,22 +2466,29 @@ groups:
             model:
               expr: max by (slot) (silkennet_partitions)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [24], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Найбільша RANGE-таблиця тримає {{ $values.A.Value | printf \"%.0f\" }} листових партицій (>24), і жодна ще не дропалась. ⚠️ Це НЕ число місяців історії: серед листів завжди DEFAULT і створений наперед наступний місяць, тобто місяців на 1-2 менше."
+          summary: "Найбільша RANGE-таблиця тримає {{ $values.B.Value | printf \"%.0f\" }} листових партицій (>24), і жодна ще не дропалась. ⚠️ Це НЕ число місяців історії: серед листів завжди DEFAULT і створений наперед наступний місяць, тобто місяців на 1-2 менше."
           description: "Автоматичного дропу партицій у коді немає (`app/`/`lib/` — нуль; рунбук 06_06 §5.5 виконує DETACH вручну), тож ретеншн сирої телеметрії фактично нескінченний. Дія: ухвалити ⚖️ ширини вікна — РАЗОМ із двома сусідніми осями, бо жодна з трьох не бачить інших: retention-періоди PII (SEC.18) і комерційна обіцянка SLA §3.3. ⛔ Перед першим дропом закрити три передумови ARCH.70 (lineage-діагноз · глибина черги `low` під архівний пін · незакритий `oracle_status: dispatched`). 04_01 §3 картка TelemetryLog, дім DOC.8."
           runbook_url: "docs/00_07_Action_Plan_Tracker.md"
         labels:
@@ -2149,22 +2513,29 @@ groups:
             model:
               expr: sum by (slot) (silkennet_partitioned_table_bytes)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [32212254720], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Три RANGE-таблиці займають {{ $values.A.Value | printf \"%.0f\" }} Б (>30 ГБ) — 60% початкового сайзингу диска йде на саму лише сиру телеметрію."
+          summary: "Три RANGE-таблиці займають {{ $values.B.Value | printf \"%.0f\" }} Б (>30 ГБ) — 60% початкового сайзингу диска йде на саму лише сиру телеметрію."
           description: "Crash тут НЕ загрожує: `disk_autoresize = true`. Ціна тиха — PD_SSD за ГБ, розмір 30 утримуваних бекапів і час DR-відновлення (06_06). Дія: звірити з ⚖️ ширини вікна дропу (ARCH.70) і з ⚖️ двигуна E.37 — осі різні (cold-history vs hot-OLAP), але ClickHouse потенційно закриває обидві. terraform/variables.tf `db_disk_size_gb`."
           runbook_url: "docs/00_07_Action_Plan_Tracker.md"
         labels:
@@ -2191,22 +2562,29 @@ groups:
             model:
               expr: time() - max by (slot) (silkennet_partition_sample_timestamp_seconds)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [172800], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 1h
         annotations:
-          summary: "Семпл росту партицій не оновлювався {{ $values.A.Value | printf \"%.0f\" }} с (>48 год) — обидва ARCH.70-алерти зараз читають ЗАМЕРЗЛЕ значення."
+          summary: "Семпл росту партицій не оновлювався {{ $values.B.Value | printf \"%.0f\" }} с (>48 год) — обидва ARCH.70-алерти зараз читають ЗАМЕРЗЛЕ значення."
           description: "PartitionMaintenanceWorker (cron `30 0 * * *`, config/sidekiq.yml) або не запускається, або падає до кроку вимірювання. Наслідок тихий: партиції накопичуються далі, а `silkennet_partitions` показує старе число — тобто `sn-alert-partition-count-unbounded` не спрацює. Перевірити cron-планувальник (особливо після зміни платформи деплою) і `sn-alert-partition-maintenance-failed`. 00_07 ARCH.70."
           runbook_url: "docs/00_07_Action_Plan_Tracker.md"
         labels:
@@ -2236,16 +2614,23 @@ groups:
             model:
               expr: max by (slot) (silkennet_partition_default_occupied)
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -2275,22 +2660,29 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_qatt_nonce_fallback_total[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "QATT batch-nonce впав на DB fallback ({{ $values.A.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний під час unpack."
+          summary: "QATT batch-nonce впав на DB fallback ({{ $values.B.Value | printf \"%.0f\" }}× за 1h) — Redis був недоступний під час unpack."
           description: "Replay-захист Queen-attestation батчів працює через Solid Cache (degraded). Той самий Redis-outage клас, що sn-alert-m2m-nonce-fallback, але окремий сигнал: батчі щогодинні, тож тут видно ТРИВАЛІСТЬ outage. Повторюваність → multi-zone Upstash. 03_02 §7 / 04_03 §5.15."
         labels:
           severity: info
@@ -2310,16 +2702,23 @@ groups:
             model:
               expr: sum by (slot) (increase(silkennet_rate_limit_store_errors_total[1h]))
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
@@ -2353,22 +2752,29 @@ groups:
             model:
               expr: "sum by (slot) (increase(silkennet_governance_param_rejected_total[24h]))"
               refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
           - refId: C
             datasourceUid: "__expr__"
             model:
               type: threshold
               refId: C
-              expression: A
+              expression: B
               conditions:
                 - evaluator: { params: [0], type: gt }
                   operator: { type: and }
-                  query: { params: [A] }
+                  query: { params: [B] }
                   reducer: { params: [], type: last }
         noDataState: OK
         execErrState: Error
         for: 0m
         annotations:
-          summary: "{{ $values.A.Value | printf \"%.0f\" }} governance-параметр(ів) відхилено bounds-валідацією за 24h."
+          summary: "{{ $values.B.Value | printf \"%.0f\" }} governance-параметр(ів) відхилено bounds-валідацією за 24h."
           description: "Governance::ParameterSyncWorker відкинув проголосоване значення як позамежне (мис-скейл, нонсенс-голос) — чинним лишилось попереднє. Голос відбувся, стан НЕ змінився: без цього сигналу DAO вважає рішення застосованим. Лік — коригувальний голос у межах, або перегляд самих меж, якщо межа неправильна. Мітка `parameter` називає, який саме. GOV.1 / 05_06 §4."
           runbook_url: "docs/05_06_Governance_and_DAO.md"
         labels:

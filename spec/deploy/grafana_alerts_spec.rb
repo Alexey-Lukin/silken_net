@@ -59,7 +59,7 @@ RSpec.describe "Grafana alert rules ↔ Prometheus registry consistency" do # ru
 # ліміт 11 000 точок/серію при step 15s = стеля ~45 год на relativeTimeRange. Три правила
 # (8d/1w/30d) імпортувались зеленими і падали в DatasourceError на першій оцінці. Довгий
 # lookback — робота PromQL (`increase(x[30d])` — серверний range vector), не вікна
-# запиту: reducer `last` читає одну останню точку. 86400 (24h = 5 760 точок) —
+# запиту: вузол `reduce` (гейт нижче) читає одну останню точку. 86400 (24h = 5 760 точок) —
 # найбільше живе вікно, запас ~2× до стелі.
 it "no alert query window exceeds 24h (Mimir 11k-points resolution ceiling)" do
   yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
@@ -72,6 +72,45 @@ it "no alert query window exceeds 24h (Mimir 11k-points resolution ceiling)" do
   expect(oversized).to be_empty,
     "вікно запиту цих правил перевищить Mimir-ліміт точок — lookback має жити " \
     "в PromQL-виразі, не в relativeTimeRange: #{oversized.join(", ")}"
+end
+
+# [S2.4 · ТРЕТІЙ клас «stored ≠ evaluates», виміряно на живому canopy 2026-09-03]
+# Вираз `threshold` приймає ЛИШЕ зведене число. Датасорс-запит віддає ЧАСОВИЙ РЯД, тож
+# правило, чия alert-condition читає його напряму, падає в evaluation — і лік приписує
+# сама Grafana: «You cannot use time series data as an alert condition, consider adding
+# a reduce expression».
+# 🔴 Чому цього не спіймали двічі: дефект ЛАТЕНТНИЙ, доки метрика порожня — без даних
+# правило звітує `nodata` й читається як здорове. Вердикт «57/57 evaluated, 0 error»
+# (клас 2) був ПРАВДИВИЙ у мить виміру і впав від першого живого job-контейнера: 29 із
+# 42 перевірених правил стали Error, серед них 9 із 10 P0 — включно з тим, що стереже
+# сам скрейп. Упала не форма фікса, а ПІДСТАВА вердикту ([`00_05 §5`] — пін на порожній
+# множині зелений завжди). Тому гейт СТРУКТУРНИЙ: він не залежить від наявності даних.
+# ⛔ `instant: true` замість `reduce` ВІДХИЛЕНО виміром: редактор Grafana малює
+# `Type: Instant` там, де бекенд усе одно біжить range — тобто прапорець спирається на
+# дефолт, який у цього імпортера вже двічі розійшовся зі збереженою моделлю.
+# ⚠️ ОГОЛОШЕНА СТЕЛЯ: гейт судить ФОРМУ ланцюга, ніколи доречність редьюсера —
+# `reduce` з хибним `reducer` (напр. `sum` там, де треба `last`) пройде зеленим.
+it "no expression reads a raw datasource query — only a reduce may" do
+  yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+  rules = yaml.fetch("groups").flat_map { |g| g.fetch("rules") }
+  expect(rules.size).to be > 50, "правил #{rules.size} — множина зіщулилась, гейт судив би порожнечу"
+
+  offenders = rules.filter_map do |rule|
+    data = rule.fetch("data")
+    queries = data.reject { |d| d["datasourceUid"] == "__expr__" }.map { |d| d.fetch("refId") }
+    raw = data.select do |d|
+      d["datasourceUid"] == "__expr__" &&
+        d.dig("model", "type") != "reduce" &&
+        queries.include?(d.dig("model", "expression"))
+    end
+    next if raw.empty?
+
+    "#{rule.fetch("uid")} → #{raw.map { |d| "#{d.dig('model', 'type')}(#{d.dig('model', 'expression')})" }.join(', ')}"
+  end
+
+  expect(offenders).to be_empty,
+    "ці вирази читають сирий датасорс-запит замість зведеного значення — на живих даних " \
+    "вони НЕ спрацюють, а на порожніх виглядатимуть здоровими: #{offenders.join('; ')}"
 end
 
   # [S2.4] Дашборд скоуплено по `slot` — і без носія наступна панель приїхала б без нього.
