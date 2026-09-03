@@ -258,6 +258,22 @@ jobs:
             exit 1
           fi
 
+          # Present-but-of-the-wrong-KIND is the misconfig presence cannot see [SEC.11, measured
+          # 2026-09-03]: a Grafana token pasted into CANOPY_REDIS_URL passed the presence check,
+          # boarded every new container as REDIS_URL and died at /ready (redis: false) for three
+          # deploys while the old container kept serving on the previous value. A `*_URL` slot
+          # must hold a URL; the check is on the shape, never on the value.
+          for v in $BOOT_CRITICAL $JOB_CRITICAL; do
+            case "$v" in
+              *_URL)
+                if [ -n "${!v}" ] && ! printf "%s" "${!v}" | grep -Eq "^[a-z][a-z0-9+.-]*://"; then
+                  echo "::error::$v is set but does not look like a URL (scheme://…) — a value of the wrong KIND passed the presence check. See docs/06_04 §1 (SEC.11)."
+                  exit 1
+                fi
+                ;;
+            esac
+          done
+
           # Runtime secrets: feature-degraded if absent, but not a boot crash → warn, don't block.
           for v in $RUNTIME; do
             [ -z "${!v}" ] && echo "::warning::$v not set — its Web3/observability feature is degraded until provisioned (docs/06_04 §2.1)."
