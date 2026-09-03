@@ -1041,10 +1041,16 @@ enqueue-ить, `master_key_strength_check` його `$PROGRAM_NAME`-skip-ає [
 їдуть у `Deploy · Canopy`; `REDIS_URL` = значення `CANOPY_REDIS_URL`; `SECRET_KEY_BASE` — той самий
 GitHub Secret; `RAILS_MASTER_KEY` тут НЕ потрібен і не приймається — [`SEC.22`](00_07_Action_Plan_Tracker) Phase-2):
 ```bash
-# 1) образ демона = КОРОТКИЙ sha коміту, що ЖИВЕ на canopy (mirror-ghcr тегує `sha-<7>`; образ
-#    публічний — pull без логіна); tfvars не має цього ключа взагалі → анкер їде на `:PIN_ME`
+# 1) ВІКНО REPLACE — один раз (⚖️ founder 2026-09-03, INF.17): скрипт переїхав у `metadata.startup-script`
+#    (`compute.tf`), а state ще тримає ForceNew-атрибут, тож ЦЕЙ apply = replace анкера (static IP і DNS
+#    переживають; boot-диск, coap.env і `app-host-ip` — ні). Після нього зміна образу/скрипта = in-place + reset.
+#    Образ = КОРОТКИЙ sha коміту, що ЖИВЕ на canopy (`gh run list --workflow=deploy.yml`; mirror-ghcr тегує
+#    `sha-<7>`; образ публічний — pull без логіна); без цього ключа анкер їде на `:PIN_ME`.
 echo 'coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<7-hex>"' >> terraform/terraform.tfvars
-(cd terraform && terraform apply)   # ⚠️ 2026-09-03: НЕ in-place — `metadata_startup_script` = ForceNew → replace анкера; ⚖️ і повний ланцюг — 00_07 INF.17
+(cd terraform && terraform plan  -var=anchor_replace_window=true)   # очікувано РІВНО: ingress_anchor «must be replaced»; Cloud SQL не згадано
+(cd terraform && terraform apply -var=anchor_replace_window=true)   # replace; прапор лише через -var — у tfvars НІКОЛИ (знімає захист ЛИШЕ з анкера)
+gcloud compute instances add-metadata silken-net-ingress --zone europe-west1-d --metadata app-host-ip=<output app_host_ip>   # нова VM стартує із сентинелом
+(cd terraform && terraform apply)   # без прапора: повертає deletion_protection in-place; наступний plan = No changes
 # 2) на анкорі (IAP-ssh, руки власника): три рядки слоту + значення — РЕДАКТОРОМ, не echo/sed
 #    (значення не мають лягати в shell-history)
 gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudoedit /etc/silkennet/coap.env

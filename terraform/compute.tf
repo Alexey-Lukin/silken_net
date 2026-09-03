@@ -48,7 +48,9 @@ resource "google_compute_instance" "ingress_anchor" {
   # `false`, тобто анкер — єдина зовнішня адреса й дім `coap.env` — знімався однією
   # командою. ⚠️ Із Фазою ∅ не конфліктує: та ЗУПИНЯЄ (`desired_status = TERMINATED`),
   # а не видаляє. Вимикати — лише через `enable_deletion_protection = false`, свідомо.
-  deletion_protection = var.enable_deletion_protection
+  # [INF.17] `anchor_replace_window` lifts protection on THIS instance only — the shared
+  # flag also guards Cloud SQL, and a replace of the anchor must never touch that.
+  deletion_protection = var.enable_deletion_protection && !var.anchor_replace_window
 
   boot_disk {
     initialize_params {
@@ -79,7 +81,17 @@ resource "google_compute_instance" "ingress_anchor" {
   #   gcloud compute instances add-metadata silken-net-ingress \
   #     --metadata app-host-ip=<APP_HOST_IP> --zone europe-west1-d
   #   gcloud compute instances reset silken-net-ingress --zone europe-west1-d
-  metadata_startup_script = <<-EOF
+  # ⚖️ [INF.17, founder 2026-09-03] The startup script lives in `metadata["startup-script"]`, NOT
+  # in `metadata_startup_script`: the latter is ForceNew in the google provider, so every script
+  # edit or image pin was a REPLACE of the anchor (boot disk + hand-filled coap.env gone), which
+  # is why the 09-02 script fixes never reached the VM — `terraform plan` said «1 add / 1 destroy»
+  # and deletion_protection stopped it. The metadata form updates in place; GCE runs the new
+  # script on the next boot, i.e. the runbook's `gcloud compute instances reset` (06_01 Фаза 1).
+  # Moving the attribute costs ONE last replace — the runbook names that window; after it,
+  # image pins and script edits are in-place + reset. (The app host keeps the ForceNew form on
+  # purpose: its script never carries a pin, and a replace there is a kamal re-setup.)
+  metadata = {
+    startup-script = <<-EOF
     #!/bin/bash
     set -e
     # 🔴 Every apt-get below runs with NO terminal: without this, the first package that asks
@@ -350,7 +362,6 @@ SYSTEMD_DAEMON
     logger -t ingress-anchor "Anchor configured: HTTP/HTTPS → $APP_HOST_IP; CoAP per bring-up priority above"
   EOF
 
-  metadata = {
     enable-oslogin = "TRUE"
     # OS Login already ignores project-wide SSH keys; block them explicitly too
     # (defense-in-depth, satisfies AVD-GCP-0030 — no metadata-key SSH path at all).
