@@ -235,7 +235,7 @@ normalize_identifier :device_uid  # HardwareKey
 >
 > ⚖️ **[ARCH.84] `carbon_sequestration_coefficient DEFAULT 1.0 NOT NULL` ЛИШАЄТЬСЯ — присуд founder 2026-08-19, і підстава в тому, що шкала ВІДНОСНА.** Дуб 1.5, сосна 0.8, тож `1.0` означає «рівно середній вид» — це законне значення, а не підстановка на місце невиміряного, і саме цим колонка відрізняється від решти класу. ⚠️ **Механізм не той, що здається:** порожнє поле форма ВІДХИЛЯЄ (`numericality` без `allow_nil` → 422), тобто дефолт спрацьовує не «коли забули», а показується людині вже підставленим у `number_field` — значення АВТОРСЬКЕ, підтверджене збереженням. ⛔ Не робити nullable: колонка годує `weighted_growth_points` → `Wallet#credit!` → мінт, тож нульабельність купила б fail-closed-гілку на грошовому тракті заради величини, яка визначена. ⊥ Дзеркало з ПРОТИЛЕЖНИМ вердиктом — `device_calibrations.vcap_coefficient` (той самий `DEFAULT 1.0`, але писача немає взагалі): картка `DeviceCalibration` нижче. **Однакова форма дефолту не означає однакового вердикту — вирішує наявність писача, не число.**
 
-**Callbacks:** `after_update :invalidate_thresholds_cache` — при зміні порогів Атрактора або `biological_properties` (включає `optimal_z_target`).
+**Callbacks:** немає — пороги читаються ЖИВО (`Tree#effective_lorenz_thresholds`: `Cluster#lorenz_overrides_for` → `TreeFamily` → глобальні константи), кешу порогів не існує, тож і колбека-інвалідатора немає. ⛔ Не дописувати сюди `invalidate_thresholds_cache`: такого методу в моделі нема (виміряно 2026-09-03, OPS.38).
 
 ---
 
