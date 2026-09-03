@@ -328,7 +328,7 @@ REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0
 | `config/deploy.yml` | Production-конфіг (основний) |
 | `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Hash-форма `servers:` з ВЛАСНОЮ `job:`-роллю** (⚖️ founder 2026-09-02, [`OPS.37`](00_07_Action_Plan_Tracker)): deep_merge = keys-union, тож роль, омітнута в overlay, успадкувалась би з base РАЗОМ із money-`env.secret` (production-scoped → present-empty → guard-crash, INF.22) — тому canopy декларує ті самі пʼять ІМЕН сам, а `.kamal/secrets.canopy` ремапить кожне з `CANOPY_*`-двійника (B4); `coap:` нейтралізовано `hosts: []` + `allow_empty_roles: true` (deep_merge не вміє видаляти роль; другий `5683/udp`-publisher на спільному хості зіткнувся б із продовим дормантним fallback-ом); аліаси `canopy-*` дизʼюнктні зі скрейпленими — ціна: слот не скрейпиться взагалі. Носії: `deploy_secret_scan` B3/B4 · `kamal_config_validity_spec` (merged `-c`⟷`DB_POOL`) · `alloy_scrape_topology_spec` (merged-конфіг). Доти (08-29 → 09-02) був web-only array-формою, і Sidekiq для canopy не їхав ніде. |
 | `.kamal/secrets-common` | Runtime секрети (читаються при деплої) |
-| `.kamal/hooks/` | Хуки ЖЦ (тільки sample-файли) |
+| `.kamal/hooks/` | Хуки ЖЦ: живі `pre-build` (крок ЗЕРО — чистий checkout + коміт на remote) і `post-deploy` (з 2026-09-03 кличе `governance:bootstrap` у одноразовому `web`-контейнері — OPS.38); решта `*.sample` |
 
 ### `config/deploy.yml` — Production
 
@@ -442,6 +442,14 @@ kamal app exec --interactive --reuse "bin/rails console" -d canopy
 gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --project silkennet \
   --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); sudo docker exec -it "$C" bin/rails console'
 kamal logs -f -d canopy
+# 👤 super_admin ВЛАСНИКА заводиться цим же шляхом, не сідом (OPS.38; сід на production fail-closed, а демо-пароль
+#    local-only): runner створює користувача з випадковим паролем і друкує reset-лінк (`generate_token_for(:password_reset)`,
+#    15 хв — пошта на canopy свідомо скіпана); після входу QUARANTINE → «choose an organization» = штатний вхід
+#    super_admin без домашньої орг ([SEC.25] Ф2, не дефект). Той самий рецепт видає пароль будь-якому демо-акаунту.
+gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --project silkennet \
+  --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); sudo docker exec -i "$C" bin/rails runner \
+  "u = User.find_or_create_by!(email_address: ENV.fetch(\"OWNER_EMAIL\")) { |x| x.role = :super_admin; x.password = SecureRandom.hex(24) }; \
+   puts Rails.application.routes.url_helpers.edit_password_url(token: u.generate_token_for(:password_reset))"'
 ```
 
 ---
