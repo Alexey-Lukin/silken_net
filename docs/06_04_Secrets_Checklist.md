@@ -179,7 +179,7 @@
 - [ ] `gcs` — GCS keyfile JSON-hash (Active Storage mirror, `config/storage.yml` `google`; `credentials.dig(:gcs)`)
 - [ ] `peaq_signing_key` / `peaq_node_url` — Ed25519 ключ + RPC для peaq DID (ротація 90д → §5.4)
 - [ ] `iotex_w3bstream_url` / `iotex_api_key` — IoTeX W3bStream верифікація
-- [ ] `hadron_api_key` — Hadron KYC compliance
+- [x] ⚫ ~~`hadron_api_key` — Hadron KYC compliance~~ — **НЕ провіжнити** (`ARCH.118` §🗄️, виміряно 2026-09-02): `api.hadron.polygon.technology` не має A-запису на двох незалежних DoH-резолверах і НЕ МАВ жодного Wayback-знімка за всю історію, тобто продукту не існує. ⚠️ Рядок лишається як **щеплення**, не як робота: чеклист провіжну читає людина, і незакреслений `[ ]` тут наказував би заводити ключ до фантома. Живий шлях — `HADRON_API_KEY` інжектиться Console-ом ПРИ АКТИВАЦІЇ провайдера ([`config/deploy.canopy.yml`](../config/deploy.canopy.yml) · `env_fetch_declaration_spec`), а вибір самого провайдера — [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`
 - [ ] `filecoin_api_key` — Pinata/Filecoin архівація
 - [ ] `puro_earth.api_key` — Puro.earth registry · `dclimate.api_key` — dClimate верифікація
 - [ ] `the_graph_api_url` — The Graph query endpoint

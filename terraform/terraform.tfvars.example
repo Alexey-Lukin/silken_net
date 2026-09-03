@@ -45,7 +45,10 @@ ssh_source_ranges = []
 # CI apply that could destroy it does not exist. This line said the opposite until
 # 2026-08-31 — read at the exact moment you decide whether to fill the value in.
 # billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
-# billing_budget_usd = 100
+# billing_budget_usd = 300   # ⚖️ ратифіковано 2026-09-03 (OPS.37): $100 був НИЖЧИЙ за виміряний
+#                            # run-rate ($4.37/добу ≈ $133/міс), тож усі ЧОТИРИ пороги горіли
+#                            # щомісяця = знешкоджений детектор. Підстава — `posture.auto.tfvars`.
+#                            # ⛔ Бюджет GCP нічого не ЗУПИНЯЄ — він шле пошту.
 
 # Redis — REMOVED from GCP (Memorystore has no public IP).
 # Use Upstash (serverless Redis with TLS public endpoints) instead.

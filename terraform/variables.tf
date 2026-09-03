@@ -193,7 +193,7 @@ variable "billing_account_id" {
 }
 
 variable "billing_budget_usd" {
-  description = "Monthly budget ceiling in USD — thresholds alert at 50/90/100% + forecasted-100% (operator-tuned; default sized for e2-small + Cloud SQL dev-tier)"
+  description = "Monthly budget ceiling in USD — thresholds alert at 50/90/100% + forecasted-100% (operator-tuned). ⚠️ The default below is a FLOOR for an empty project, not a sizing for this fleet: the live estate (e2-standard-2 + e2-small + Cloud SQL) was measured at ~$133/mo on 2026-09-03, so 100 would burn all four thresholds monthly. The effective value is ratified in posture.auto.tfvars (300, OPS.37) and auto-loads over this."
   type        = number
   default     = 100
 }

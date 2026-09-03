@@ -140,5 +140,5 @@ release-PR merge ─→ GitHub Release vX.Y.Z ─→ Deploy · Production (verif
 | **DB:** DEFAULT-партиція заблокувала створення партицій (воркер падає щодня, ретраї не лікують) | [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup) |
 | Runtime failover (circuit breakers, comms-loss) | [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | `config.alloy` validation (local) | [`06_03 §2.9`](06_03_Prometheus_Observability) + `alloy_config_validate` CI |
-| Grafana Cloud dashboards + alerts import ✅ 2026-08-29 (`S2.2` → §🗄️; звірка — `import.rb --verify`); contact point ✅ задротовано 2026-08-30; лишаються переімпорт виправлених правил + post-deploy metrics verify (S2.4) | `deploy/grafana/README.md` (`import.rb` — datasource UID + contact point/notification policy з ENV) + [`06_03 §2.9`](06_03_Prometheus_Observability) |
+| Grafana Cloud dashboards + alerts import ✅ 2026-08-29 (`S2.2` → §🗄️; звірка — `import.rb --verify`); contact point ✅ задротовано 2026-08-30; ✅ переімпорт + post-deploy metrics verify закрито 2026-09-03 — `58/58 evaluated, 0 error`, і мірка знята НАД метриками з даними (S2.4) | `deploy/grafana/README.md` (`import.rb` — datasource UID + contact point/notification policy з ENV) + [`06_03 §2.9`](06_03_Prometheus_Observability) |
 | **Bench-gated §06** (CoAP boundary smoke INF.6 · W25Q32 flash-ring ARCH.35) | `firmware/scripts/bench/RUNBOOK.md §5.3/§6` |
