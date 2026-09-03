@@ -136,4 +136,28 @@ RSpec.describe Streamr::BroadcasterService, type: :service do
       end
     end
   end
+
+  # [ARCH.118] The activation gate is the ONE home of «is this leg live» — TelemetryUnpackerService
+  # enqueues nothing when it says false (its own example pins that side).
+  describe ".configured?" do
+    it "is true when both values come from credentials" do
+      allow(Rails.application.credentials).to receive_messages(streamr_stream_id: "0xabc/telemetry", streamr_api_key: "k")
+
+      expect(described_class.configured?).to be(true)
+    end
+
+    it "is true when ENV supplies both values (ENV-first, SEC.22)" do
+      allow(ENV).to receive(:[]).with("STREAMR_STREAM_ID").and_return("0xabc/telemetry")
+      allow(ENV).to receive(:[]).with("STREAMR_API_KEY").and_return("k")
+      allow(Rails.application.credentials).to receive_messages(streamr_stream_id: nil, streamr_api_key: nil)
+
+      expect(described_class.configured?).to be(true)
+    end
+
+    it "is false when either value is missing — an unconfigured leg enqueues nothing" do
+      allow(Rails.application.credentials).to receive_messages(streamr_stream_id: "0xabc/telemetry", streamr_api_key: nil)
+
+      expect(described_class.configured?).to be(false)
+    end
+  end
 end

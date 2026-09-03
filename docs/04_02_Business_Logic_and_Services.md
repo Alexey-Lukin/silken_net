@@ -782,7 +782,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |---|---|
 | **Файл** | `app/services/streamr/broadcaster_service.rb` |
 | **Вхід** | `telemetry_log` (TelemetryLog AR instance) |
-| **Що робить** | Real-time broadcast телеметрії у Streamr P2P мережу. Payload: `tree_id`, `peaq_did`, `z_value`, `bio_status`, `alerts` (температура, акустика). Non-blocking, non-financial. |
+| **Що робить** | Real-time broadcast телеметрії у Streamr P2P мережу. Payload: `tree_id`, `peaq_did`, `z_value`, `bio_status`, `alerts` (температура, акустика). Non-blocking, non-financial. 🔑 **ACTIVATION-GATED з 2026-09-03 [ARCH.118]:** `configured?` (обидва значення `STREAMR_STREAM_ID`/`STREAMR_API_KEY`, ENV-first + credentials-фолбек — той самий резолвер `credential_pair`, що й у публікатора) — без обох `TelemetryUnpackerService` джобу не ставить узагалі; доти кожен рядок телеметрії купував одну падаючу джобу в мертвий хост (`brubeck` — TLS не встановлюється) при ~30 Redis-командах на ланцюг. Не присуд про Streamr: keep-vs-drop лишається відкритим ⚖️ в ARCH.118. |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `brubeck.streamr.network/api/v1/streams/{stream_id}/data` |
 | **Вихід** | `nil`. Raises `BroadcastError` (не критично — ловиться у воркері). |
 
@@ -1610,7 +1610,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `low` |
 | **Retry** | 3 |
-| **Тригер** | `TelemetryUnpackerService` (паралельно) |
+| **Тригер** | `TelemetryUnpackerService` (паралельно) — **лише коли `Streamr::BroadcasterService.configured?`** [ARCH.118, 2026-09-03]; незаведений лег → жодної джоби |
 | **Вхід** | `telemetry_log_id`, `created_at_iso` |
 | **Сервіси** | `Streamr::BroadcasterService.new(log).broadcast!` |
 | **Side Effects** | Non-critical: при `BroadcastError` лише логує, не reraise. |

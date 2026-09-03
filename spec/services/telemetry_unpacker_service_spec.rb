@@ -32,8 +32,10 @@ RSpec.describe TelemetryUnpackerService, type: :service do
       .and_return([ 0.5, 0.1, 0.2, 0.3 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
     allow(StreamrBroadcastWorker).to receive(:perform_async)
-    # [OPS.37] The IoTeX leg is activation-gated; the enqueue pins below assume a LIVE leg.
+    # [OPS.37 / ARCH.118] Both external legs are activation-gated; the enqueue pins below assume
+    # LIVE legs. Each gate has its own negative example further down.
     allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(true)
+    allow(Streamr::BroadcasterService).to receive(:configured?).and_return(true)
   end
 
 # 🔴 [ARCH.41] Доба cold-start деривації мусить іти з моменту ПРИЙОМУ, а не
@@ -196,6 +198,18 @@ end
 
     expect(IotexVerificationWorker).not_to have_received(:perform_async)
     expect(StreamrBroadcastWorker).to have_received(:perform_async)
+  end
+
+  # [ARCH.118, 2026-09-03] Same gate, same shape, for the Streamr leg — one execution per record
+  # into a dead host was quiet (worker rescue), never free (Upstash bills per command, INF.28).
+  it "does not enqueue StreamrBroadcastWorker when Streamr is not configured (activation gate)" do
+    allow(Streamr::BroadcasterService).to receive(:configured?).and_return(false)
+    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
+
+    expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+
+    expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
+    expect(IotexVerificationWorker).to have_received(:perform_async)
   end
 
   it "triggers StreamrBroadcastWorker after telemetry commit" do
