@@ -1044,7 +1044,7 @@ GitHub Secret; `RAILS_MASTER_KEY` тут НЕ потрібен і не прий�
 # 1) образ демона = КОРОТКИЙ sha коміту, що ЖИВЕ на canopy (mirror-ghcr тегує `sha-<7>`; образ
 #    публічний — pull без логіна); tfvars не має цього ключа взагалі → анкер їде на `:PIN_ME`
 echo 'coap_daemon_image = "ghcr.io/alexey-lukin/silken_net:sha-<7-hex>"' >> terraform/terraform.tfvars
-(cd terraform && terraform apply)                       # оновлює startup-script у metadata
+(cd terraform && terraform apply)   # ⚠️ 2026-09-03: НЕ in-place — `metadata_startup_script` = ForceNew → replace анкера; ⚖️ і повний ланцюг — 00_07 INF.17
 # 2) на анкорі (IAP-ssh, руки власника): три рядки слоту + значення — РЕДАКТОРОМ, не echo/sed
 #    (значення не мають лягати в shell-history)
 gcloud compute ssh silken-net-ingress --tunnel-through-iap -- sudoedit /etc/silkennet/coap.env
