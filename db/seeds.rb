@@ -23,7 +23,7 @@ if SilkenNet::DeploymentSlot.current == "production"
     ⛔ `db:seed` заблоковано на слоті `production`.
 
     Цей файл починається з `delete_all` по 27 моделях і сіє ДЕМО-дані
-    (120 дерев, фальшиві :confirmed мінти, що годують `net_minted_supply`,
+    (~150 дерев, фальшиві :confirmed мінти, що годують `net_minted_supply`,
     користувачів із відомим паролем, живі сесії, ланки в SHA-256 аудит-ланцюгу).
 
     Що робити натомість:
@@ -679,6 +679,76 @@ end
 # =========================================================================
 # 8. ТРИВОГИ ТА ІНЦИДЕНТИ (EwsAlert)
 # =========================================================================
+puts "📜 Кодекс Черкащини: реальні ліси з db/seeds/codex (координати з OSM)..."
+# [UI.19, 2026-09-03] Перший читач кодексу (`db/seeds/codex/README.md`). Береться лише те, що
+# кодекс має по-справжньому: назва й координати з OSM-провенансом (коментар біля кожної пари в
+# самому YAML). Пороги родин НЕ вигадуються — та сама сосна/дуб, що вище (⚖️ OPS.38); квадрат
+# ±0.02° навколо центроїда = ДЕМО-екстент, не межа обʼєкта. Кожен ліс: одна Королева, вісім
+# Солдатів з одним кадром гомеостазу — щоб мапа показувала ГЕОГРАФІЮ, а не вигаданий сигнал.
+codex_ecosystems = YAML.safe_load_file(Rails.root.join("db/seeds/codex/nodes/ecosystems.yml")).index_by { |node| node["slug"] }
+codex_forests = [
+  [ "kholodnyi-yar",  oak ],  # дубрава Холодного Яру
+  [ "kaniv-reserve",  oak ],  # грабово-дубові ліси Канівських круч
+  [ "irdynske-bog",   pine ], # болотні соснові ліси Ірдиня
+  [ "tyasmyn-canyon", oak ]   # дубово-грабові схили каньйону
+]
+codex_trees = []
+codex_forests.each_with_index do |(slug, family), idx|
+  node = codex_ecosystems.fetch(slug)
+  lat = node.fetch("latitude").to_f
+  lon = node.fetch("longitude").to_f
+  d = 0.02
+  cluster = Cluster.create!(
+    name: node.fetch("title_uk"),
+    region: "Центральна Україна",
+    organization: active_bridge,
+    environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
+    geojson_polygon: { type: "Polygon", coordinates: [ [ [ lon - d, lat - d ], [ lon + d, lat - d ], [ lon + d, lat + d ], [ lon - d, lat + d ], [ lon - d, lat - d ] ] ] }
+  )
+  gw_uid = "SNET-Q-#{format("%08X", 0x10 + idx)}"
+  gw = Gateway.create!(
+    uid: gw_uid,
+    ip_address: "10.0.1.#{5 + idx}",
+    latitude: lat,
+    longitude: lon,
+    cluster: cluster,
+    config_sleep_interval_s: 3600,
+    last_seen_at: Time.current,
+    state: :active
+  )
+  HardwareKey.create!(device_uid: gw_uid, aes_key_hex: SecureRandom.hex(32).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+
+  8.times do |i|
+    did = "SNET-#{format("%08X", 300 + (idx * 8) + i)}"
+    tree = Tree.create!(
+      did: did,
+      latitude: lat + rand(-0.008..0.008),
+      longitude: lon + rand(-0.008..0.008),
+      cluster: cluster,
+      tree_family: family,
+      tiny_ml_model: family == pine ? pine_acoustic_model : nil
+    )
+    HardwareKey.create!(device_uid: did, aes_key_hex: SecureRandom.hex(16).upcase, lorenz_seed_hex: SecureRandom.hex(32).upcase)
+    tree.wallet.update!(balance: rand(2000..8000))
+    TelemetryLog.create!(
+      tree: tree,
+      queen_uid: gw_uid,
+      voltage_mv: 3800,
+      temperature_c: 18.0,
+      acoustic_events: 2,
+      metabolism_s: 20,
+      growth_points: 4,
+      mesh_ttl: 5,
+      bio_status: :homeostasis,
+      z_value: family == pine ? 29.0 : 24.0,
+      rssi: -rand(55..80)
+    )
+    tree.mark_seen!(3800)
+    codex_trees << tree
+  end
+end
+puts "   📜 Кодекс-ліси: #{codex_forests.size} кластери · #{codex_trees.size} дерев"
+
 puts "🚨 Створення тестових тривог..."
 anomaly_tree = cherkasy_trees.last
 

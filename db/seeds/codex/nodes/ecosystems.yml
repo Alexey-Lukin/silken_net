@@ -95,8 +95,11 @@
   archetype_key: ip68_stress_test
   lifecycle_status: 3
   geo_region: cherkasy
-  latitude: 49.3833
-  longitude: 31.8500
+  # 🗺️ Центроїд OSM relation 8396509 (natural=wetland «Ірдинське болото», Ірдинь, Мліївська громада;
+  # bbox lat 49.2617..49.4438, lon 31.6276..31.8771). Попередня пара 49.3833/31.8500 лежала на східному
+  # краї бору, ~16 км від центру болота (Nominatim, 2026-09-03).
+  latitude: 49.3526
+  longitude: 31.6356
   context_md: |
     Велике низинне болото Черкащини, гідрологічна пам'ятка природи з
     кислотним та постійно вологим середовищем.
@@ -114,8 +117,11 @@
   archetype_key: erosion_alert
   lifecycle_status: 3
   geo_region: cherkasy
-  latitude: 49.7167
-  longitude: 31.5167
+  # 🗺️ Центроїд OSM relation 8878125 (boundary=protected_area «Канівський природний заповідник»;
+  # bbox lat 49.6988..49.8696, lon 31.4438..31.5981). Попередня пара 49.7167/31.5167 стояла на ~2 км
+  # південно-східніше (Nominatim, 2026-09-03).
+  latitude: 49.7225
+  longitude: 31.4910
   context_md: |
     Один з найстаріших природних заповідників України, лесові кручі над
     Дніпром із активними зсувними процесами.
