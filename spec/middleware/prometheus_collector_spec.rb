@@ -184,6 +184,28 @@ RSpec.describe PrometheusCollector, type: :request do
       end
     end
 
+    # 🔴 [S2.4, виміряно з ЖИВОГО стека 2026-09-03] Ці чотири ґейджі не мали жодної серії
+    # НІКОЛИ: `sample_connection_pool!` кликав `all_connection_pools`, якого на Rails 8.1
+    # немає, а власний `rescue StandardError` ловив `NoMethodError` у `logger.warn`. Сусід
+    # `sample_process_runtime!` (наступний рядок колектора) віддавав свої серії, тож
+    # «метрики рендеряться» було правдою — і саме тому симптом не читався. Покриття теж
+    # лишалось зеленим: request-спека виконувала і тіло, і `rescue`.
+    # ⚠️ Форма піна несуча — рівно ЗНАЧЕННЯ в тілі відповіді. Пін на «не кинуло» вакуумний
+    # (rescue), а пін на самé імʼя метрики — теж: prometheus-client друкує `# HELP`/`# TYPE`
+    # і для ґейджа, якому ніхто нічого не `set`. Дім класу — 06_03 §2.9.
+    describe "DB-pool gauge refresh (all scrape targets)" do
+      it "populates the four connection-pool gauges with real values on scrape" do
+        get "/metrics", headers: { "REMOTE_ADDR" => "127.0.0.1" }
+
+        expect(response).to have_http_status(:ok)
+        %w[silkennet_db_pool_size silkennet_db_pool_connections
+           silkennet_db_pool_idle silkennet_db_pool_waiting].each do |gauge|
+          expect(response.body).to match(/^#{Regexp.escape(gauge)}\{database="[^"]+"\} \d/),
+            "#{gauge} не має ЖОДНОГО значення — семплер пулу мовчить (його rescue ковтає збій)"
+        end
+      end
+    end
+
     describe "on-scrape gauges without a Sidekiq server (web/coap targets)" do
       it "renders metrics but skips the Sidekiq refresh when not a server process" do
         allow(Sidekiq::Queue).to receive(:new) # §2.9: тільки job-процес семплить черги

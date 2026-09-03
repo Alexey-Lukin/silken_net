@@ -952,8 +952,19 @@ module SilkenNet
 
     # Snapshot connection pool stats for Prometheus scraping.
     # Called from PrometheusCollector middleware or a periodic job.
+    #
+    # 🔴 `each_connection_pool`, НЕ `all_connection_pools` — останнього на Rails 8.1 не
+    # існує, і виміряно це лише 2026-09-03, з ЖИВОГО стека: чотири ґейджі пулу не мали
+    # жодної серії НІКОЛИ, тоді як сусід `sample_process_runtime!` (рядком нижче в тому
+    # самому колекторі) віддавав свої. Причина тиші — `rescue` внизу: `NoMethodError`
+    # є `StandardError`, тож кожен скрейп ловив його у `logger.warn`. Покриття лишалось
+    # зеленим, бо request-спека на `/metrics` ці рядки ВИКОНУВАЛА — включно з `rescue`.
+    # ⚠️ Оголошена ціна `rescue`: він тримає ендпоінт живим (це його призначення) і тим
+    # самим робить зламаний семплер НІМИМ. Носій проти рецидиву — не він, а спека
+    # `spec/middleware/prometheus_collector_spec.rb` §«DB-pool gauge refresh», що пінить
+    # ЗНАЧЕННЯ в тілі відповіді: пін на «не кинуло» тут вакуумний за побудовою.
     def self.sample_connection_pool!
-      ActiveRecord::Base.connection_handler.all_connection_pools.each do |pool|
+      ActiveRecord::Base.connection_handler.each_connection_pool do |pool|
         db_name = pool.db_config.name.to_s
 
         conns = pool.connections
