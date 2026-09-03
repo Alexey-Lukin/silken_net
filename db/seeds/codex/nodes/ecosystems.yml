@@ -13,8 +13,11 @@
   archetype_key: ecosystem_genesis_cluster
   lifecycle_status: 3
   geo_region: cherkasy-bir
-  latitude: 49.4444
-  longitude: 31.9889
+  # 🗺️ Центроїд OSM relation 3779329 (natural=wood «Черкаський бір», bbox lat 49.2326..49.5531,
+  # lon 31.4616..31.9417). Попередня пара 49.4444/31.9889 лежала в садових ділянках Соснівського
+  # району ЧЕРКАС — на 5 км східніше східної межі бору (Nominatim reverse, 2026-09-03).
+  latitude: 49.3869
+  longitude: 31.7564
   context_md: |
     Реліктовий сосновий масив на лівому березі Дніпра. Ключовий полігон
     Silken Net — місце розгортання Genesis Cluster.
@@ -32,8 +35,11 @@
   archetype_key: nlos_routing
   lifecycle_status: 3
   geo_region: cherkasy
-  latitude: 49.0000
-  longitude: 31.9667
+  # 🗺️ Центроїд OSM relation 4136117 (natural=wood «Холодний Яр», Грушківка/Медведівка; bbox lat
+  # 49.0555..49.1996, lon 32.1661..32.3077). Попередня пара 49.0000/31.9667 давала с. Вербівка,
+  # на 20 км західніше масиву (Nominatim reverse, 2026-09-03).
+  latitude: 49.1276
+  longitude: 32.2272
   context_md: |
     Лісовий масив у Чигиринському районі Черкащини, історичне ядро
     козацького руху; глибокі яри та різкі перепади висот.
@@ -127,8 +133,11 @@
   archetype_key: acoustic_multipath
   lifecycle_status: 3
   geo_region: cherkasy
-  latitude: 49.0667
-  longitude: 32.4500
+  # 🗺️ Центроїд OSM way 997018334 (boundary=protected_area «Тясминський каньйон», м. Камʼянка).
+  # Попередня пара 49.0667/32.4500 давала с. Матвіївка Чигиринської громади, на 25 км східніше
+  # каньйону (Nominatim reverse, 2026-09-03).
+  latitude: 49.0398
+  longitude: 32.0873
   context_md: |
     Гранітний каньйон річки Тясмин на Черкащині, з різкими стінами, що
     створюють потужне акустичне відлуння.
