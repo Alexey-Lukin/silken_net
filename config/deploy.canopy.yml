@@ -11,7 +11,22 @@
 # server (e2-medium); the 2026-04-19 platform pivot deleted BOTH VMs because the real
 # separation was meant to live on a platform that was itself cut on 2026-08-29 [OPS.37].
 # So the cut should have RESTORED two hosts and instead cemented the leftover.
-# ⛔ Do not read the shared host as a decision: it is an OPEN ⚖️ (00_07, OPS.37 leg).
+# ✅ [OPS.37 ⚖️ founder 2026-09-03] THE SHARED HOST IS NOW A DECISION, and it is: KEEP IT
+# until the first production deploy, then give the NEW machine to PRODUCTION — canopy stays
+# where it is. Trigger is named: DEPLOY-1 Фаза 2/5 (first production render), not a date.
+# 🔑 Ground, and it is a MEASUREMENT (live billing 2026-09-03, per-SKU): a second
+# e2-standard-2 + 30 GiB pd-ssd costs ≈$59/mo — $0.024031/vCPU-h and $0.003224/GiB-h taken
+# off the Sep 1–2 invoice, whose SKU split reproduced `compute.tf` INDEPENDENTLY
+# (119.43 vCPU-h / 48 h ≈ 2.49 = e2-standard-2 + e2-small; 477.73 GiB-h / 48 ≈ 9.95 = 8+2).
+# The want the split serves — "stop canopy without stopping production" — has NOTHING to
+# lever against while production does not exist on this host: Фаза ∅ already stops canopy
+# alone, because canopy is all that runs here. So splitting now would burn ≈$59/mo for a
+# lever with no load, across a stretch the owner expects to be long.
+# ⚠️ Price of deferring, said out loud because deferral has no red: production-deploy day
+# gains one `terraform apply` plus a re-point of this manifest's host — on the day that is
+# already the densest. That cost was accepted knowingly.
+# ⛔ Do NOT re-open this as "should canopy get its own VM" — it was measured and answered.
+# The live question is the MIRROR: when production arrives, the new machine is PRODUCTION's.
 # Whether canopy gets its own keys and a job role is SETTLED (⚖️ founder 2026-09-02 — the
 # `servers:` block below): it does, with testnet signers. Shared-host connection budget:
 # 362/400 with an unshrunk canopy job role, 311/400 without — the shrunk form below
