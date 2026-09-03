@@ -81,7 +81,7 @@ dataSources:
       # ✅ [S3.5] Polygon Amoy (chainId 80002) — output of the `Deploy.s.sol` broadcast of
       # 2026-09-01 (00_07 DEPLOY-1 Фаза 2t; the receipts live in gitignored `contracts/broadcast/`,
       # the six-address set in 06_01 §DEPLOY-DAY). `startBlock` = the deploy block (0x2c50d8b).
-      # ⛔ MAINNET cutover is a separate act (00_07 S3.5): `network: polygon` + the mainnet
+      # ⛔ MAINNET cutover is a separate act (00_07 DEPLOY-1 Фаза 2, ex-S3.5): `network: polygon` + the mainnet
       # addresses of DEPLOY-1 Фаза 2 + their deploy block — never "bump" these testnet values.
       # `validate_addresses.sh` refuses the zero address; it does NOT check the chain.
       address: "0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22"

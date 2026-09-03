@@ -326,7 +326,7 @@ REDIS_URL=rediss://default:password@endpoint.upstash.io:6379/0
 | Файл | Опис |
 |------|------|
 | `config/deploy.yml` | Production-конфіг (основний) |
-| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Hash-форма `servers:` з ВЛАСНОЮ `job:`-роллю** (⚖️ founder 2026-09-02, [`OPS.37`](00_07_Action_Plan_Tracker)): deep_merge = keys-union, тож роль, омітнута в overlay, успадкувалась би з base РАЗОМ із money-`env.secret` (production-scoped → present-empty → guard-crash, INF.22) — тому canopy декларує ті самі пʼять ІМЕН сам, а `.kamal/secrets.canopy` ремапить кожне з `CANOPY_*`-двійника (B4); `coap:` нейтралізовано `hosts: []` + `allow_empty_roles: true` (deep_merge не вміє видаляти роль; другий `5683/udp`-publisher на спільному хості зіткнувся б із продовим дормантним fallback-ом); аліаси `canopy-*` дизʼюнктні зі скрейпленими — ціна: слот не скрейпиться взагалі. Носії: `deploy_secret_scan` B3/B4 · `kamal_config_validity_spec` (merged `-c`⟷`DB_POOL`) · `alloy_scrape_topology_spec` (merged-конфіг). Доти (08-29 → 09-02) був web-only array-формою, і Sidekiq для canopy не їхав ніде. |
+| `config/deploy.canopy.yml` | Canopy-перевизначення (`-d canopy`). **Hash-форма `servers:` з ВЛАСНОЮ `job:`-роллю** (⚖️ founder 2026-09-02, [`OPS.37`](00_07_Action_Plan_Tracker)): deep_merge = keys-union, тож роль, омітнута в overlay, успадкувалась би з base РАЗОМ із money-`env.secret` (production-scoped → present-empty → guard-crash, INF.22) — тому canopy декларує ті самі пʼять ІМЕН сам, а `.kamal/secrets.canopy` ремапить кожне з `CANOPY_*`-двійника (B4); `coap:` нейтралізовано `hosts: []` + `allow_empty_roles: true` (deep_merge не вміє видаляти роль; другий `5683/udp`-publisher на спільному хості зіткнувся б із продовим дормантним fallback-ом); аліаси `canopy-*` дизʼюнктні з production-аліасами — з 2026-09-03 слот скрейпиться під ВЛАСНИМИ іменами зі `slot` на таргеті ([`OPS.37`](00_07_Action_Plan_Tracker)). Носії: `deploy_secret_scan` B3/B4 · `kamal_config_validity_spec` (merged `-c`⟷`DB_POOL`) · `alloy_scrape_topology_spec` (merged-конфіг). Доти (08-29 → 09-02) був web-only array-формою, і Sidekiq для canopy не їхав ніде. |
 | `.kamal/secrets-common` | Runtime секрети (читаються при деплої) |
 | `.kamal/hooks/` | Хуки ЖЦ: живі `pre-build` (крок ЗЕРО — чистий checkout + коміт на remote) і `post-deploy` (з 2026-09-03 кличе `governance:bootstrap` у одноразовому `web`-контейнері — OPS.38); решта `*.sample` |
 
@@ -897,6 +897,10 @@ forge --version       # Фази 2t/2
 openssl version; dig -v; jq --version; ruby --version   # ≥4.0.6
 # Ланки, що мають ВЛАСНИЙ тулчейн і НЕ покриваються нічим вище:
 #   Devnet (Фаза 2t) — solana + spl-token CLI (Solana-програми в репо немає, це руками)
+#   ⚠️ Devnet-кран не є 🤖-ногою з цієї машини (виміряно 2026-09-02/03): `solana airdrop` віддає
+#   rate-limit на КОЖНУ спробу і з корпоративної, і з домашньої мережі власника; `faucet.solana.com`
+#   стоїть за Cloudflare-капчею з написом «AI agents should not use this faucet»; PoW-кран `devnet-pow`
+#   потребує стартового airdrop'у на комісію. Найдешевший хід — Connect GitHub на веб-крані.
 #   Фаза 6           — arm-none-eabi-* + STM32_Programmer_CLI (прошивка Королев)
 # 🔴 Корпоративне TLS-перехоплення ЛАМАЄ саме gcloud, і не ламає сусідів — виміряно
 #    2026-08-31 на машині власника: `gcloud auth login` віддає SSLError
@@ -1004,7 +1008,7 @@ SSH-модель стоїть на критичному шляху.
 один, і дефолтна вкладка не він.** ⊕ Заразом перевір `Settings → Eviction = OFF` — властивість
 без ЖОДНОГО детектора ([`00_07`](00_07_Action_Plan_Tracker) `INF.22`), і питати її треба ПРИ
 СТВОРЕННІ кожної бази, бо живе вона в дропдауні вендора. ✅ На `silkennet-canopy` перевірено
-2026-09-01: eviction OFF, primary `europe-west1` (same-region із Cloud SQL).
+2026-09-01: eviction OFF, primary `europe-west1` (same-region із Cloud SQL). ⛔ Регіон бази обирається ПРИ СТВОРЕННІ й потім не міняється — заводь обидві в `europe-west1`; властивість губиться мовчки, бо про неї питають один раз.
 
 GitHub Secrets **Batch B** — ДВА доми [INF.22]: repo-level = `REDIS_URL`,
 `CANOPY_REDIS_URL`, RPC×5, Solana-public×3, `SENTRY_DSN`, `CHAINLINK_HMAC_SECRET`,
@@ -1229,7 +1233,7 @@ fee-payer; repo-level, бо throwaway — [`06_04 §1`](06_04_Secrets_Checklist)
 безхостовим `coap`) · B4 (13 ремапів) · `env_fetch_declaration_spec` (RHS кроку деплою canopy =
 `secrets.CANOPY_*`, production без двійників) · `alloy_scrape_topology_spec` (аліаси дизʼюнктні) ·
 `web3_env_loudness_spec` (job-роль canopy як SIGNER на testnet) · `kamal_config_validity_spec`
-(парсер приймає безхостову роль — саме він і назвав `allow_empty_roles`). Тож «canopy зелений» відтепер означає і Sidekiq-половину — і в слова «зелений» тут є названий детектор, бо власний бут-вердикт Kamal для non-proxy ролі = 7-секундний poll `.State.Status` без HEALTHCHECK в образі: job, що падає в `after_initialize` після ~10-с буту Rails, пройшов би зеленим у crash-loop. Носій — пост-деплойна 45-с uptime-проба job-ролі в ОБОХ воркфлоу (ревʼю 2026-09-02), і на canopy вона ЄДИНА, бо слот не скрейпиться (ціна ONE-Alloy: `up`/DeadSet-gauge для canopy до 2026-09-03 не існували; відтоді два canopy-таргети зі `slot` на таргеті ратифіковано ([`06_03 §2.9`](06_03_Prometheus_Observability)), відкрита лишилась розкатка accessory — [`OPS.37`](00_07_Action_Plan_Tracker)). Вердикт першого буту job-ролі читай не із зеленого воркфлоу, а з трьох показань разом: uptime-проба · `docker ps` на хості (контейнер живе довше за `RestartSec`, без рестартів) · `/ready` → 200. Сама половина: 60 воркерів і 22 cron-задачі — `PartitionMaintenanceWorker`
+(парсер приймає безхостову роль — саме він і назвав `allow_empty_roles`). Тож «canopy зелений» відтепер означає і Sidekiq-половину — і в слова «зелений» тут є названий детектор, бо власний бут-вердикт Kamal для non-proxy ролі = 7-секундний poll `.State.Status` без HEALTHCHECK в образі: job, що падає в `after_initialize` після ~10-с буту Rails, пройшов би зеленим у crash-loop. Носій — пост-деплойна 45-с uptime-проба job-ролі в ОБОХ воркфлоу (ревʼю 2026-09-02), і на canopy вона була ЄДИНОЮ до 2026-09-03, поки слот не скрейпився (ціна ONE-Alloy: `up`/DeadSet-gauge для canopy до 2026-09-03 не існували; відтоді два canopy-таргети зі `slot` на таргеті ратифіковано ([`06_03 §2.9`](06_03_Prometheus_Observability)), відкрита лишилась розкатка accessory — [`OPS.37`](00_07_Action_Plan_Tracker)). Вердикт першого буту job-ролі читай не із зеленого воркфлоу, а з трьох показань разом: uptime-проба · `docker ps` на хості (контейнер живе довше за `RestartSec`, без рестартів) · `/ready` → 200. Сама половина: 60 воркерів і 22 cron-задачі — `PartitionMaintenanceWorker`
 (без нього canopy мовчки накопичував би `_default`, [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup)),
 dead-man switch Королев, sweep застряглих коштів, treasury-monitor — репетирують на стейджингу
 ДО production. ⚠️ Що лишається чужим canopy: **пошта** (ESP не заведено — bypass
