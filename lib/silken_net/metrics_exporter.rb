@@ -7,9 +7,10 @@ module SilkenNet
   # Embedded /metrics-експортер для процесів без власного HTTP-сервера
   # (Sidekiq job-контейнер, CoAP-демон). Реєстр Prometheus — in-process:
   # інкременти воркерів web:80 фізично не бачить, тож кожен процес віддає
-  # свій зріз сам, а Alloy скрейпить три process-таргети по стабільних
-  # DNS-аліасах ролей у спільній docker-мережі `kamal` (silken-web:80 /
-  # silken-job:9394 / silken-coap:9395 — deploy/alloy/config.alloy,
+  # свій зріз сам, а Alloy скрейпить process-таргети по стабільних
+  # DNS-аліасах ролей у спільній docker-мережі `kamal` (production silken-web:80 /
+  # silken-job:9394 / silken-coap:9395 + canopy-web:80 / canopy-job:9394 зі `slot`
+  # на таргеті — реєстр = deploy/alloy/config.alloy,
   # канон 06_03 §2.9; ⚖️ OPS.37 2026-08-30).
   #
   # Реюзає PrometheusCollector (IP-allowlist + Basic Auth + gauge-refresh)

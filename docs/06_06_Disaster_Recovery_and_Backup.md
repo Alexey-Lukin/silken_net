@@ -10,7 +10,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), master-key backup — операційна задача.
+- **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), §5.7 — повним циклом у другому 2026-09-03 (RPO 0, RTO ≈ 16 хв), master-key backup — операційна задача.
 - **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `SECRET_KEY_BASE` — нуль копій поза GitHub Secrets (§Gaps; `RAILS_MASTER_KEY` з 2026-09-02 не є незамінним — vault тримає лише `secret_key_base`, а в деплой ключ не їде) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1; `S5.6` поглинув DEPLOY-1 2026-08-29, §🗄️).
 
 ---
@@ -42,7 +42,7 @@
 
 ## 🛑 Gaps (→ 00_07)
 
-- 🟡 **DR-drill прогнано ОДИН раз** (2026-09-02, staging — §6): §5.1 верифіковано реальним PITR-клоном, §5.2 — лише половиною «витягти версію» (без `terraform apply` з неї), §5.3–5.6 не проганялися. Ритм квартальний. `DR.1`.
+- 🟡 **DR-drill прогнано ДВІЧІ** (staging — §6): 2026-09-02 §5.1 верифіковано реальним PITR-клоном, §5.2 — лише половиною «витягти версію» (без `terraform apply` з неї); 2026-09-03 §5.7 (логічний бекап слоту) — повним циклом, RPO 0 / RTO ≈ 16 хв. §5.3–5.6 не проганялися. Ритм квартальний. `DR.1`.
 - 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`SECRET_KEY_BASE` — ні, і з 2026-09-02 незамінний саме він:** SEC.22 Phase-2 зняв `RAILS_MASTER_KEY` з усіх deploy-поверхонь, а vault репо тримає ЄДИНИЙ ключ — `secret_key_base`, що їде окремим секретом; тож втрата `RAILS_MASTER_KEY` = регенерація порожнього vault (нічого незворотного), а втрата `SECRET_KEY_BASE` = усі сесії й кожен `generates_token_for`-токен (password-reset, invite) недійсні — GitHub значень назад не віддає, і офлайн-копії немає ЖОДНОЇ. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
 - ✅ **GCS state bucket + versioning** — живе: десять версій стану виміряно 2026-09-02, передостання витягується валідною (§6); chicken-and-egg першого `terraform init` розвʼязано `bootstrap.sh` (ex-`S5.6`, поглинув DEPLOY-1 2026-08-29, §🗄️).
 
@@ -230,7 +230,7 @@ gcloud sql import sql silken-db gs://silkennet-sql-dumps/canopy-<stamp>.sql --da
 
 ## 6. DR Drill (👤, DR.1 — обов'язково перед mainnet)
 
-Щоквартально проганяти §5.1 (PITR clone у throwaway-інстанс) + §5.2 (state-version rollback) на staging. Фіксувати фактичні RTO/RPO vs цілі §3. Неперевірений backup = відсутній backup.
+Щоквартально проганяти §5.1 (PITR clone у throwaway-інстанс) + §5.2 (state-version rollback) + §5.7 (логічний бекап слоту, повний цикл) на staging. Фіксувати фактичні RTO/RPO vs цілі §3. Неперевірений backup = відсутній backup.
 
 **Drill #1 — 2026-09-02, staging (canopy-дані у тому ж `silken-db`):**
 - §5.1: `gcloud sql instances clone silken-db silken-db-drill --point-in-time=<now−10 хв>` → операція `CLONE` 15:57:44Z → 16:08:44Z, тобто **RTO 11:00 до `RUNNABLE`** (тир `db-custom-1-3840`, ZONAL) проти цілі §3 «≤ 1 год»; у клоні всі шість баз, парність рядків із живим інстансом точна (`users`/`trees`/`system_parameters` і той самий `max(created_at)`), тобто **RPO на обраній точці = 0**. Клон успадковує `deletionProtectionEnabled=true` — зняття = `patch --no-deletion-protection`, потім `delete` (зроблено того ж вечора; сумарний слід у білінгу ≈ 2 год тиру `db-custom-1-3840`).

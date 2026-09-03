@@ -590,7 +590,8 @@ jobs:
       # catches "all `up` vanished", not "Alloy never started"). `accessory boot` is
       # idempotent in kamal 2.12 ("Skipping … a container already exists"), so this is a
       # cheap ensure-running on every deploy, NOT a restart; config.alloy changes still need
-      # a deliberate `kamal accessory reboot alloy` (runbook 06_01). Boots here (first
+      # a deliberate reboot — `gh workflow run deploy.yml -f alloy=reboot` (the input above; the
+      # laptop `kamal accessory reboot alloy` dies on the deploy-SA posix account). Boots here (first
       # deploy is canopy — DEPLOY-1 Phase 3) so the agent watches production targets from
       # day zero; until the production roles exist their aliases resolve NXDOMAIN and `up=0`
       # tells the truth.
@@ -606,10 +607,11 @@ jobs:
       # exit 0), so whichever slot booted first silently owned the `DEPLOYMENT_SLOT` label.
       # Canopy deploys on every main push and production only on a Release ⇒ canopy would
       # have won, stamping `slot="canopy"` on PRODUCTION series.
-      # 🔑 And the mislabel was pure loss, because canopy has NO scrape targets:
-      # `config.alloy` scrapes the three `silken-*` network-alias names, and canopy's roles
+      # 🔑 And the mislabel was pure loss, because until 2026-09-03 canopy had NO scrape targets:
+      # `config.alloy` scraped the three `silken-*` network-alias names, and canopy's roles
       # carry `canopy-*` aliases that are DISJOINT from them (config/deploy.canopy.yml since
-      # 2026-09-02 [OPS.37] — before that, alias-less by the array form; either way unscraped,
+      # 2026-09-02 [OPS.37] — before that, alias-less by the array form; unscraped until 09-03,
+      # since then scraped under their own names with `slot` on the target; either way
       # pinned by alloy_scrape_topology_spec). The comment above already said this agent
       # "watches production targets"; the canopy override contradicted it. Dropping the flag
       # makes the label match what is scraped.
@@ -617,8 +619,9 @@ jobs:
       # `.State.Status` poll (`Kamal::Cli::Healthcheck::Poller`, `readiness_delay` default) and
       # the image declares no HEALTHCHECK — so a container that raises in `after_initialize`
       # after Rails' ~10-s boot reports "running" twice, the deploy goes GREEN and the role
-      # crash-loops under `--restart unless-stopped`. On canopy nothing scrapes the job role
-      # (aliases disjoint from config.alloy by decision), so this probe is its ONLY detector.
+      # crash-loops under `--restart unless-stopped`. On canopy the job role is scraped since
+      # 2026-09-03 (`canopy-job:9394`), but `up` only says «not booted» minutes later — this probe
+      # is the boot-window detector, the only one inside the deploy itself.
       # ⚠️ Ceiling: it judges one 45-s uptime window, not correctness; and it watches the job
       # role only — `coap` shares the poller ceiling and is covered by nothing.
       - name: Verify the job role survived its boot [OPS.37]

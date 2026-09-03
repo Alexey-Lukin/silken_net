@@ -336,8 +336,9 @@ groups:
 
       # -----------------------------------------------------------------------
       # P0: Scrape target down — метрики «осліпли» (S2.4 / 06_03 §2.9).
-      # Таргетів ТРИ (silken-web:80 / silken-job:9394 / silken-coap:9395 — DNS-аліаси ролей
-      # у docker-мережі kamal, ⚖️ OPS.37 2026-08-30) — min by (process) називає
+      # Таргетів ПʼЯТЬ (production silken-web:80 / silken-job:9394 / silken-coap:9395 + canopy-web:80 /
+      # canopy-job:9394 зі `slot` на таргеті — DNS-аліаси ролей у docker-мережі kamal, ⚖️ OPS.37
+      # 2026-08-30 + 2026-09-03) — min by (slot, process) називає
       # КОТРИЙ саме впав; job=0 значить money-path SLO-лічильники більше не
       # надходять (алерти нижче тихо гаснуть — це мета-алерт проти сліпоти).
       # coap-таргет = ДОРМАНТНА Kamal-роль `coap` (fallback до systemd-демона на

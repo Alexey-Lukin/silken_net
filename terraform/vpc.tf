@@ -144,7 +144,7 @@ resource "google_compute_firewall" "allow_coap" {
 # while blocking amplification attacks.
 #
 # Applied via instance metadata `startup-script` in compute.tf.
-# See: google_compute_instance.ingress_anchor.metadata_startup_script
+# See: google_compute_instance.ingress_anchor.metadata["startup-script"] (in metadata since 2026-09-03, INF.17)
 
 # Firewall: Allow internal communication — restricted to subnet CIDR
 resource "google_compute_firewall" "allow_internal" {

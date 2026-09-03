@@ -229,12 +229,12 @@ env:
 #   • `kamal accessory boot` ідемпотентний ПРОПУСКОМ («Skipping … a container already exists»,
 #     жовтим, exit 0) ⇒ мітку вигравав слот, що встиг ПЕРШИМ. Canopy їде на кожен push у main,
 #     production — лише на реліз, тож canopy штампував би `slot="canopy"` на ПРОДОВИХ серіях.
-# 🔑 І це була чиста втрата, бо canopy не має ЖОДНОЇ цілі скрейпу: `config.alloy` скрейпить три
+# 🔑 І це була чиста втрата, бо ДО 2026-09-03 canopy не мав жодної цілі скрейпу: `config.alloy` скрейпив три
 # `silken-*` `network-alias`-імені, а ролі canopy несуть ВЛАСНІ `canopy-*` аліаси, дизʼюнктні з
 # ними (OPS.37 2026-09-02; доти canopy був alias-less через масив-форму `servers:`) — носій
 # `alloy_scrape_topology_spec`. Тобто «canopy-Alloy» ніколи не існував як
 # сутність — існував один агент, який дивиться на прод, і питання було лише в тому, як його звуть.
-# ✅ Лік: `.github/workflows/deploy.yml` кличе `kamal accessory boot alloy` БЕЗ `-d canopy`, тож
+# ✅ Лік: `.github/workflows/deploy.yml` кличе `kamal accessory ${{ inputs.alloy || 'boot' }} alloy` БЕЗ `-d canopy`, тож
 # мітка збігається з тим, що скрейпиться. Носій обох половин — `spec/deploy/alloy_scrape_topology_spec.rb`.
 # ⚠️ ЗАЛИШОК, названий, а не знайдений у день деплою: canopy не може «не оголосити» успадкований
 # accessory — deep_merge є keys-UNION, форми видалення в kamal немає. Тож `kamal setup -d canopy`

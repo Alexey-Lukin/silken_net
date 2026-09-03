@@ -31,7 +31,7 @@ require_relative "../support/repo_root"
 # actually serves the alias was measured once (2026-08-30, two containers sharing an alias
 # through a rolling window) and is re-proven by `up` / sn-alert-scrape-target-down at runtime;
 # whether the target label really outranks `external_labels` is proven by the first canopy
-# series in Grafana Cloud (00_07 OPS.37 rollout leg), not here.
+# series in Grafana Cloud (measured 2026-09-03: up{instance="canopy-web:80",slot="canopy"} = 1 — 00_07 OPS.37), not here.
 RSpec.describe "config.alloy declares the scrape topology (S2.4: 3 production + 2 canopy targets)" do # rubocop:disable RSpec/DescribeClass
   # __address__ → [process, slot] — the load-bearing map (06_03 §2.9): web never sees worker
   # increments; the slot label is the third field, present only on canopy targets.

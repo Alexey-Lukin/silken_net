@@ -77,7 +77,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-oracle-balance-critical | oracle_balance_ratio < 0.2 | critical | 5m |
 | sn-alert-insurance-reserve-hold | insurance_reserve_hold increase[1h] > 0 (INS.2 gate спинив емісію; ЄДИНИЙ канал — алерт безкластерний) | critical | 0m |
 | sn-alert-panic-replay | panic replay > 0.1/s | critical | 2m |
-| sn-alert-scrape-target-down | min by(process) up{job="silken_net_scraper"} < 1 (3 таргети; NoData→Alerting = Alloy впав) | critical | 5m |
+| sn-alert-scrape-target-down | min by (slot, process) up{job="silken_net_scraper"} < 1 (5 таргетів: 3 production + 2 canopy; NoData→Alerting = Alloy впав) | critical | 5m |
 | sn-alert-gateway-faulty | gateways_faulty > 0 (dead-man switch ARCH.54) | critical | 5m |
 | sn-alert-chain-audit-drift | chain_audit_delta > 0.0001 (DB vs on-chain SCC drift [G2]) | critical | 15m |
 | sn-alert-trees-silent | trees_silent > 0 (дерево замовкло — per-tree field_audit) | warning | 30m |
