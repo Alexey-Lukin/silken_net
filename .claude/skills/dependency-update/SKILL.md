@@ -196,7 +196,7 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   "ripe" PR smuggles fresh transitives past the gate. Seen: `pagy 43.5.6→43.6.0` (age 7d ✅) carried
   `json 2.20.0→2.21.1` (age **3d**) as a passenger. Read `gh pr diff <n>` and age **every changed
   line**, then weigh against the target's actual value (that pagy release only touched
-  searchkick/elasticsearch paginators — `grep` said 0 uses → no-op, so zero cost to let it ripen).
+  searchkick/elasticsearch paginators — `grep` said 0 uses → no-op, so zero cost to let it ripen). ⊕ **A version pair `X → Y` ages on BOTH sides** (2026-09-03): the target is the queue entry, the source is a measurement of whatever environment you happened to read — OPS.22 named PySCF 2.11.0 as «current» while `conda-lock.yml` resolved 2.13.1 (and RDKit differs per platform in the same lock). Point the queue at the lock; never restate the from-version.
 - **`@dependabot rebase` changes the TARGET, not just the base** (2026-07-29) — so the quarantine
   clock **restarts**, and a PR that was ripe by its title is not. Seen the same session: `#477`
   simplecov 1.0.2 (11d ✅) came back as **1.0.3 (3d ❌)**; `#472` carried rbs 4.0.3 (41d ✅) and came
