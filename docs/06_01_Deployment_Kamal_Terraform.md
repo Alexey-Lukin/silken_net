@@ -447,9 +447,12 @@ kamal logs -f -d canopy
 #    15 хв — пошта на canopy свідомо скіпана); після входу QUARANTINE → «choose an organization» = штатний вхід
 #    super_admin без домашньої орг ([SEC.25] Ф2, не дефект). Той самий рецепт видає пароль будь-якому демо-акаунту.
 gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --project silkennet \
-  --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); sudo docker exec -i "$C" bin/rails runner \
+  --command 'C=$(sudo docker ps --format "{{.Names}}" | grep web-canopy | head -1); sudo docker exec -e OWNER_EMAIL=<email> -i "$C" bin/rails runner \
   "u = User.find_or_create_by!(email_address: ENV.fetch(\"OWNER_EMAIL\")) { |x| x.role = :super_admin; x.password = SecureRandom.hex(24) }; \
-   puts Rails.application.routes.url_helpers.edit_password_url(token: u.generate_token_for(:password_reset))"'
+   puts Rails.application.routes.url_helpers.edit_password_url(token: u.generate_token_for(:password_reset), host: \"canopy.silkennet.app\", protocol: \"https\")"'
+#    ⚠️ Обидва хвости виміряні 2026-09-03: `OWNER_EMAIL=` перед `gcloud` НЕ доходить у контейнер (KeyError) — лише `docker exec -e`;
+#    а `edit_password_url` без `host:` падає «Missing host to link to» — runner не має `default_url_options`. Після кожного
+#    re-seed (drill §5.7 крок 6, 06_06) рецепт повторюється: сід починається з Кенозису й стирає цього користувача.
 ```
 
 ---
