@@ -124,3 +124,63 @@ resource "google_kms_crypto_key_iam_member" "anchor_boot_agent" {
 
   depends_on = [google_project_service.compute]
 }
+
+# --- Oracle signing keyring (SEC.17, flag-gated) ---------------------------
+# ASYMMETRIC_SIGN secp256k1 for the Polygon oracle-minter / oracle-slasher
+# custody move (docs/06_04 §5.5; 00_07 SEC.17). Every resource is COUNT-gated
+# on `enable_oracle_signing_keys` so `plan` without the flag is a no-op and the
+# keys are created only by a deliberate founder-local `apply` (INF.22).
+#
+# Grantee = the VM service account (`silken-net-deploy`) at KEY level only:
+# `signerVerifier` (asymmetricSign) + `viewer` (getPublicKey → address
+# derivation). ⚠️ IAM alone is NOT enough: compute.tf pins the VM OAuth scopes
+# to logging/monitoring, and Cloud KMS answers 403 without the `cloud-platform`
+# scope regardless of IAM — that scope change is part of the same ⚖️, not this
+# block (measured by reading 2026-09-03, SEC.17).
+#
+# Rotation: asymmetric keys have NO automatic rotation. A new version = a new
+# public key = a NEW on-chain address, so rotation is re-funding + re-pointing
+# `ORACLE_*_KMS_KEY` (the resource name carries `cryptoKeyVersions/1`).
+# Protection level HSM is the only level Cloud KMS offers for EC_SIGN_SECP256K1.
+resource "google_kms_key_ring" "sign" {
+  count      = var.enable_oracle_signing_keys ? 1 : 0
+  name       = "silken-sign-ew1"
+  location   = var.region
+  depends_on = [google_project_service.cloudkms]
+}
+
+resource "google_kms_crypto_key" "oracle_signer" {
+  for_each = var.enable_oracle_signing_keys ? toset(["oracle-minter", "oracle-slasher"]) : toset([])
+
+  name     = each.key
+  key_ring = google_kms_key_ring.sign[0].id
+  purpose  = "ASYMMETRIC_SIGN"
+
+  version_template {
+    algorithm        = "EC_SIGN_SECP256K1_SHA256"
+    protection_level = "HSM"
+  }
+
+  # A destroyed signing key = an on-chain role holder that can never act again
+  # (MINTER_ROLE / SLASHER_ROLE are granted to its address); Timelock re-grant
+  # is the only recovery, so the key is never a casual `apply` casualty.
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_kms_crypto_key_iam_member" "oracle_signer_sign" {
+  for_each = google_kms_crypto_key.oracle_signer
+
+  crypto_key_id = each.value.id
+  role          = "roles/cloudkms.signerVerifier"
+  member        = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+resource "google_kms_crypto_key_iam_member" "oracle_signer_view" {
+  for_each = google_kms_crypto_key.oracle_signer
+
+  crypto_key_id = each.value.id
+  role          = "roles/cloudkms.viewer"
+  member        = "serviceAccount:${google_service_account.deploy.email}"
+}

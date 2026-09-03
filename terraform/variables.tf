@@ -216,3 +216,12 @@ variable "github_repository" {
     error_message = "Must be in owner/repo form (e.g. Alexey-Lukin/silken_net)."
   }
 }
+
+# [SEC.17] Oracle signing keys (silken-sign-ew1) are created only when this is
+# true — the custody move to Cloud KMS is a founder-local, pre-mainnet act
+# (00_07 SEC.17; docs/06_04 §5.5). Default false = `plan` no-op.
+variable "enable_oracle_signing_keys" {
+  description = "Create the silken-sign-ew1 keyring with the oracle-minter/oracle-slasher HSM secp256k1 keys (SEC.17)"
+  type        = bool
+  default     = false
+}
