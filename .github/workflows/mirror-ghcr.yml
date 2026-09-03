@@ -73,7 +73,8 @@ jobs:
           # Manual dispatch + release always (re)build. A post-CI workflow_run only
           # rebuilds when files that actually affect the image changed — otherwise
           # the cached layers would just be re-pushed under a new sha tag for nothing.
-          # The changed-file list comes from the GitHub API (commits/{sha}), NOT a
+          # The changed-file list comes from the GitHub API (compare, base = last successful
+          # mirror — the single-commit `commits/{sha}` read was retired 2026-09-03), NOT a
           # checkout of the event head_sha: a workflow_run runs with a write token, so
           # checking out the (possibly fork-authored) head commit is an untrusted-code
           # vector (Scorecard DangerousWorkflow). On any ambiguity we build — a needless
@@ -81,8 +82,35 @@ jobs:
           if [ "${{ github.event_name }}" != "workflow_run" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if ! changed=$(gh api "repos/${{ github.repository }}/commits/${HEAD_SHA}" -q '.files[].filename' 2>/dev/null); then
-            echo "::warning::Could not list changed files via API — building to be safe."
+          # 🔴 [2026-09-03, INF.17] The base of the diff is NOT one commit. `commits/${HEAD_SHA}`
+          # lists the files of the push's LAST commit only, so a multi-commit push ending in a
+          # docs commit reported "No image-relevant files changed" and the commit canopy went
+          # live on (6dd6f6e) never got its `sha-` tag — the anchor daemon pin had nothing to
+          # point at. Same axis as deploy.yml [INF.9]: the honest base is the head of the newest
+          # run whose `Build & Push to GHCR` job succeeded, i.e. what the registry actually holds.
+          # Pinned by spec/deploy/mirror_relevance_base_spec.rb.
+          BASE=""
+          for run in $(gh api "repos/${{ github.repository }}/actions/workflows/mirror-ghcr.yml/runs?status=completed&per_page=30" -q '.workflow_runs[] | "\(.id):\(.head_sha)"' 2>/dev/null); do
+            id="${run%%:*}"; sha="${run##*:}"
+            if gh api "repos/${{ github.repository }}/actions/runs/${id}/jobs" -q '.jobs[] | select(.name == "Build & Push to GHCR" and .conclusion == "success") | .name' 2>/dev/null | grep -q .; then
+              BASE="$sha"; break
+            fi
+          done
+          if [ -z "$BASE" ]; then
+            echo "::notice::No previous successful GHCR mirror found — building."
+            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$BASE" = "$HEAD_SHA" ]; then
+            echo "::notice::HEAD ${HEAD_SHA} is already mirrored — skipping."
+            echo "build=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! changed=$(gh api "repos/${{ github.repository }}/compare/${BASE}...${HEAD_SHA}" -q '.files[].filename' 2>/dev/null); then
+            echo "::warning::Could not diff ${BASE}...${HEAD_SHA} via API — building to be safe."
+            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # The compare API caps `.files` at 300; a capped list is an ambiguity, and ambiguity builds.
+          if [ "$(printf '%s\n' "$changed" | grep -c .)" -ge 300 ]; then
+            echo "::warning::compare returned 300+ files (API cap) — building to be safe."
             echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           if echo "$changed" | grep -qE '^(Dockerfile|\.dockerignore|Gemfile|Gemfile\.lock|\.ruby-version|Procfile|Rakefile|config\.ru|app/|lib/|config/|bin/|db/|public/|vendor/)'; then
