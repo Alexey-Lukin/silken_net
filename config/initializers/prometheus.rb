@@ -643,15 +643,6 @@ module SilkenNet
       docstring: "Count of telemetry archive batches not yet pinned (pending/build_failed)"
     )
 
-    # [E.50]: Streamr broadcast failures counter — раніше помилки мовчки логувались без метрик.
-    # Streamr — потік присутності (не фінансовий консенсус), але масові збої потребують alerting.
-    STREAMR_BROADCAST_FAILURES_TOTAL = REGISTRY.counter(
-      :silkennet_streamr_broadcast_failures_total,
-      docstring: "Total Streamr broadcast failures (P2P real-time telemetry delivery) " \
-                 "[INF.26 verdict 2026-08-30; diagnostic tier: no alert until the first live fleet gives the failure-rate a nonzero baseline — " \
-                 "Streamr is a presence stream, not consensus, and a threshold over a zero baseline is noise; the counter itself is honest (one increment per rescued BroadcastError)]"
-    )
-
     # [S6.13]: W3bstream Ed25519 → SHA256 hardware-signature fallback counter.
     # `Iotex::W3bstreamVerificationService#hardware_signature` падає з Ed25519
     # (provisioned hardware key) на SHA256 fallback коли HardwareKey відсутній.

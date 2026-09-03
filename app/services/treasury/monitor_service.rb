@@ -35,14 +35,14 @@ module Treasury
       polygon_minter: {
         network: "polygon", signer: "minter",
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_MINTER_PRIVATE_KEY",
+        role: :minter,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic"
       },
       polygon_slasher: {
         network: "polygon", signer: "slasher",
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_SLASHER_PRIVATE_KEY",
+        role: :slasher,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic_slasher"
       },
@@ -56,7 +56,7 @@ module Treasury
       celo_rewards: {
         network: "celo", signer: "rewards",
         env_rpc_key: "CELO_RPC_URL",
-        env_private_key: "ORACLE_CELO_PRIVATE_KEY",
+        role: :celo,
         # ⚖️ [2026-08-31] `fallback_rpc` знято разом із мертвою `DEFAULT_RPC_URL`. Celo був
         # ЄДИНОЮ мережею цього реєстру з фолбеком; тепер він тотожний шістьом сусідам, і
         # незадана змінна дає `KeyError` → `check_balance`'s `rescue` → `status: :error`
@@ -68,28 +68,28 @@ module Treasury
       ethereum_anchor: {
         network: "ethereum", signer: "anchor",
         env_rpc_key: "ALCHEMY_ETHEREUM_RPC_URL",
-        env_private_key: "ETHEREUM_ANCHOR_PRIVATE_KEY",
+        role: :anchor,
         min_balance: 0.01, currency: "ETH", decimals: 18,
         param_key: "oracle_min_balance_eth"
       },
       polygon_etherisc: {
         network: "polygon", signer: "etherisc", activation_gated: true,
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_ETHERISC_PRIVATE_KEY",
+        role: :etherisc,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic_etherisc"
       },
       polygon_puro: {
         network: "polygon", signer: "puro", activation_gated: true,
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_PURO_PRIVATE_KEY",
+        role: :puro,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic_puro"
       },
       polygon_klima: {
         network: "polygon", signer: "klima", activation_gated: true,
         env_rpc_key: "ALCHEMY_POLYGON_RPC_URL",
-        env_private_key: "ORACLE_KLIMA_PRIVATE_KEY",
+        role: :klima,
         min_balance: 0.05, currency: "MATIC", decimals: 18,
         param_key: "oracle_min_balance_matic_klima"
       }
@@ -115,8 +115,8 @@ module Treasury
 
     def perform
       results = WALLETS.filter_map do |wallet_key, wallet|
-        if wallet[:activation_gated] && ENV[wallet[:env_private_key]].blank?
-          Rails.logger.debug { "[Treasury] #{wallet_key} dormant (activation-gated, ключ відсутній) — skip" }
+        if wallet[:activation_gated] && !Web3::OracleSigner.resolvable?(wallet[:role])
+          Rails.logger.debug { "[Treasury] #{wallet_key} dormant (activation-gated, жоден бекенд підпису не заведено) — skip" }
           next
         end
 
@@ -440,15 +440,17 @@ module Treasury
       # форма одна для всіх — `ENV.fetch` без дефолту, тобто fail-loud у rescue нижче.
       client = Web3::RpcConnectionPool.client_for(config[:env_rpc_key])
 
-      # ⛔ [SEC.17] СВІДОМО не через `Web3::OracleSigner.for` — цей прохід світить УСІ
-      # сім гаманців, включно з дормантними aux-підписантами (etherisc/puro/klima), чиї
-      # ключі на деплой-поверхні відсутні за побудовою. `OracleSigner` б'є `KeyError`
-      # (fail-loud — правильно на money-шляху), а тут відсутній ключ = «гаманець не
-      # активований», не збій: `ENV[..]` + blank-гард лишають 0 і свіп триває.
-      private_key = ENV[config[:env_private_key]]
-      return 0 if private_key.blank?
+      # [SEC.17] «Signer resolvable», not «key present»: the address comes from the seam
+      # (`address_for`), so a role sealed into Cloud KMS (`ORACLE_*_KMS_KEY`) is read from the
+      # HSM's PUBLIC key and this stays the read-only consumer it is — never the last plaintext
+      # reader in the tree. `nil` means the role has NEITHER backend, and here that is «wallet
+      # not activated», not a failure (the dormant aux signers etherisc/puro/klima are absent on
+      # the deploy surface by construction): the sweep continues with 0 instead of the
+      # fail-loud `KeyError` that `OracleSigner.for` rightly raises on the money path.
+      address = Web3::OracleSigner.address_for(config[:role])
+      return 0 if address.nil?
 
-      client.get_balance(Web3::LocalEnvSigner.new(private_key).address)
+      client.get_balance(address)
     end
 
     # Solana: getBalance через JSON RPC

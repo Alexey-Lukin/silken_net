@@ -29,7 +29,8 @@ if SilkenNet::DeploymentSlot.current == "production"
     Що робити натомість:
       · продовий bootstrap → `bin/rails governance:bootstrap` (oracle_executioner +
         `governance:seed_parameters`; ідемпотентно; його ж кличе `.kamal/hooks/post-deploy`)
-      · склад TreeFamily реального розгортання — ⚖️ `00_07` OPS.38, не тут
+      · склад TreeFamily реального розгортання — `governance:bootstrap` сіє ОДНУ родину
+        (*Pinus sylvestris*, числа оголошено провізорними; ⚖️ `00_07` OPS.38 2026-09-03), не тут
       · демо-сівба доречна на `canopy` — вона проходить цей гард
   MSG
 end

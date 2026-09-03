@@ -227,7 +227,7 @@ RSpec.describe Web3::HttpClient do
     it "does not affect other services" do
       allow(configured_session).to receive(:post).and_return(error_response)
 
-      Web3::HttpClient::MAX_FAILURES.times { make_failing_post(service_name: "Streamr") }
+      Web3::HttpClient::MAX_FAILURES.times { make_failing_post(service_name: "TheGraph") }
 
       # Filecoin should still work
       expect {
@@ -331,7 +331,7 @@ RSpec.describe Web3::HttpClient do
       Web3::HttpClient::MAX_FAILURES.times do
         described_class.post("https://api.example.com/data",
           body: { key: "value" },
-          service_name: "Streamr"
+          service_name: "TheGraph"
         )
       rescue Web3::HttpClient::RequestError
         # expected
@@ -339,7 +339,7 @@ RSpec.describe Web3::HttpClient do
 
       described_class.reset_circuit_breakers!
 
-      status = Web3::HttpClient.circuit_status("Streamr") # rubocop:disable RSpec/DescribedClass
+      status = Web3::HttpClient.circuit_status("TheGraph") # rubocop:disable RSpec/DescribedClass
       expect(status[:failures]).to eq(0)
       expect(status[:available]).to be true
     end

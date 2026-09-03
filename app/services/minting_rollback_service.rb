@@ -123,39 +123,24 @@ class MintingRollbackService < ApplicationService
   # mint had already landed on-chain. That is the exact double-spend window
   # the service was supposed to close.
   def fetch_evm_transaction_receipt(tx)
-    # [E.49]: для Celo використовуємо Celo-specific cascade, не Polygon.
-    # Раніше для Celo-транзакцій fallback вказував на polygon-rpc.com (баг).
-    if tx.celo_network?
-      rpc_env_key       = "CELO_RPC_URL"
-      # ⚖️ [2026-08-31] `nil` НЕ пропуск: `DEFAULT_RPC_URL` знято, і falsy-фолбек змушує
-      # `client_for` робити `ENV.fetch` БЕЗ дефолту — тобто fail-loud на money-шляху.
-      # ⚠️ Polygon-гілка нижче лишається зі СВОЇМ фолбеком свідомо: її хост — окремий
-      # відкритий ⚖️ (`polygon-rpc.com` віддає 401), і зняття Celo його не вирішує.
-      fallback_url      = nil
-      fallback_env_keys = Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS
-    else
-      rpc_env_key       = "ALCHEMY_POLYGON_RPC_URL"
-      # 🔴 ЦЕЙ ФОЛБЕК БІЛЬШЕ НЕ ФОЛБЕК [ARCH.118, виміряно 2026-08-30]: хост живий і на
-      # JSON-RPC тричі поспіль відмовляє `"API key disabled, tenant disabled"` — тобто
-      # публічний ендпоінт вимкнено на боці провайдера, і каскад мовчки вироджується в
-      # один Alchemy-URL.
-      # 🔴 ДВА ЧИСЛА, І ПЛУТАТИ ЇХ КОШТУЄ ГЕЙТА (перемір 2026-08-31): HTTP-СТАТУС тут `401`,
-      # а `403` стоїть ЛИШЕ в ТІЛІ відповіді (`"rest code: 403"`). Перший запис зафіксував
-      # тіло як статус, тож гард, ключований на `403`, не спрацював би ЖОДНОГО разу.
-      # ⛔ Не «виправляти» `401` назад на `403` за більшістю згадок — більшість тут старіша
-      # за перемір; ключувати майбутній детектор ТІЛЬКИ на статус `401` або на рядок тіла,
-      # і ніколи на «403» як на статус. Це також ПІДСТАВА дзеркального правила гарда («на testnet-слоті
-      # порожній `ALCHEMY_POLYGON_RPC_URL` приземляється на mainnet»), тож заміна переписує
-      # `Web3::NetworkGuard#hardcoded_fallback_violations`, а не лише цей рядок — ⚖️ 00_07 `ARCH.118`.
-      fallback_url      = "https://polygon-rpc.com"
-      fallback_env_keys = [ "POLYGON_RPC_URL_FALLBACK_1", "POLYGON_RPC_URL_FALLBACK_2" ]
-    end
+    # [E.49] Celo has its OWN cascade, never Polygon's (the pre-2026 bug pointed Celo receipts at
+    # polygon-rpc.com). In BOTH branches a blank primary var is a `KeyError` on the money path:
+    # ⚖️ 2026-08-31 Celo (`DEFAULT_RPC_URL` removed, not repointed) · ⚖️ 2026-09-03 Polygon.
+    # 🔑 The Polygon literal (`https://polygon-rpc.com`, 401 «API key disabled» on JSON-RPC since
+    # 2026-08-30 — ARCH.118) was UNREACHABLE by construction before it was deleted: since
+    # 2026-09-02 `Security::Web3NetworkGuard` demands `ALCHEMY_POLYGON_RPC_URL` PRESENT on every
+    # process class that reads it (A5 `[rpc]` — job AND web), so no process this method runs in
+    # could ever fall through to it. Deleting it removed dead code plus the guard's mirror rule
+    # that policed it; the KEYLESS cascade below (`POLYGON_RPC_URL_FALLBACK_1/2`, ARCH.114) stays —
+    # it switches endpoints WITHIN the declared chain, never across it (web3-pipeline skill #32).
+    rpc_env_key, fallback_env_keys =
+      if tx.celo_network?
+        [ "CELO_RPC_URL", Celo::CommunityRewardService::RPC_FALLBACK_ENV_KEYS ]
+      else
+        [ "ALCHEMY_POLYGON_RPC_URL", %w[POLYGON_RPC_URL_FALLBACK_1 POLYGON_RPC_URL_FALLBACK_2] ]
+      end
 
-    client = Web3::RpcConnectionPool.client_for(
-      rpc_env_key,
-      fallback: fallback_url,
-      fallback_env_keys: fallback_env_keys
-    )
+    client = Web3::RpcConnectionPool.client_for(rpc_env_key, fallback_env_keys: fallback_env_keys)
     envelope = client.eth_get_transaction_receipt(tx.tx_hash)
     # [ARCH.50] tri-state classification extracted to the shared One-Home classifier.
     Web3::EvmReceiptClassifier.classify(envelope)

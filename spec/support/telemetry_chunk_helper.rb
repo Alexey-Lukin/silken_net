@@ -16,7 +16,7 @@
 #     this is the canonical implementation.
 #   * `build_ccm_chunk` was inlined inside one describe-block, blocking
 #     reuse from `unpack_telemetry_worker_spec` and any future CCM
-#     consumer (Streamr broadcaster spec, dual-write integration spec).
+#     consumer (dual-write integration spec).
 #   * Centralising the wire-format keeps changes in lockstep with
 #     `TelemetryUnpackerService::PAYLOAD_FORMAT` / `CCM_SENSOR_PAYLOAD_FORMAT`
 #     and the firmware specs in `docs/03_04` / `03_05`.

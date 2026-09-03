@@ -97,22 +97,45 @@ RSpec.describe "config.alloy declares the scrape topology (S2.4: 3 production + 
         .to_h { |path| [ path, File.read(REPO_ROOT.join(path)) ] }
     end
 
-    it "boots the accessory with NO destination flag, so its label matches the production targets" do
+    # ⚠️ Scoped to `alloy` (and `all`, which contains it) since 2026-09-03 [INF.28]: canopy now owns a
+    # Redis ACCESSORY that exists in no other manifest, and an accessory known only to the canopy
+    # destination can ONLY be booted with `-d canopy` — the bare form would not even find it.
+    # The invariant was always about the SHARED agent, never about the flag as such.
+    it "boots the Alloy accessory with NO destination flag, so its label matches the production targets" do
       offenders = deploy_workflows.filter_map do |path, text|
-        path if text.match?(/kamal\s+accessory\s+boot\s+\S+\s+-d\s/)
+        path if text.match?(/kamal\s+accessory\s+\S+\s+(?:alloy|all)\s+-d\s/)
       end
       expect(offenders).to be_empty,
-                           "a deploy workflow boots an accessory with `-d <destination>`: #{offenders.inspect}. " \
+                           "a deploy workflow boots Alloy with `-d <destination>`: #{offenders.inspect}. " \
                            "Both destinations resolve to the SAME container `silken_net-alloy` on the SAME host, " \
                            "so this does not create a per-slot agent — it stamps that destination's " \
                            "DEPLOYMENT_SLOT onto the production targets config.alloy scrapes unlabelled."
     end
 
-    it "keeps canopy free of an accessory override, so the agent's label cannot diverge from its production targets" do
-      expect(canopy_config).not_to have_key("accessories"),
-                                   "config/deploy.canopy.yml declares an `accessories:` override. Canopy's slot " \
-                                   "rides on its TARGETS (config.alloy), so any accessory value it sets can only " \
-                                   "relabel the single shared agent — and with it every production series."
+    it "keeps canopy free of an ALLOY override, so the agent's label cannot diverge from its production targets" do
+      expect(canopy_config.dig("accessories", "alloy")).to be_nil,
+                                                          "config/deploy.canopy.yml overrides `accessories.alloy`. Canopy's slot " \
+                                                          "rides on its TARGETS (config.alloy), so any Alloy value it sets can only " \
+                                                          "relabel the single shared agent — and with it every production series."
+    end
+
+    # [INF.28 ⚖️ 2026-09-03] The mirror of the two pins above: an accessory declared ONLY in the
+    # canopy manifest is invisible to a bare `kamal accessory boot`, so it must be booted WITH
+    # `-d canopy` — and by the canopy workflow, whose deploy step is the only place the
+    # `CANOPY_REDIS_URL` it resolves from is in scope. Judged on the raw manifests: an accessory
+    # is "canopy-only" when the base manifest has no key of that name.
+    it "boots every canopy-only accessory WITH -d canopy in the canopy workflow" do
+      base_names   = (YAML.load_file(REPO_ROOT.join("config/deploy.yml"))["accessories"] || {}).keys
+      canopy_only  = (canopy_config["accessories"] || {}).keys - base_names
+      expect(canopy_only).not_to be_empty, "no canopy-only accessory declared — the Redis accessory [INF.28] moved or vanished"
+      workflow = deploy_workflows.fetch(".github/workflows/deploy.yml")
+      canopy_only.each do |name|
+        # `boot` by default, `reboot` by dispatch (a rotated REDIS_URL is read only at boot): the
+        # action is an expression, the accessory name and the destination flag are the pin.
+        expect(workflow).to match(/kamal\s+accessory\s+\S.*?\s#{Regexp.escape(name)}\s+-d\s+canopy\b/),
+                            ".github/workflows/deploy.yml never boots the canopy-only accessory `#{name}` with " \
+                            "`-d canopy` — the roles that depend on it would boot against nothing."
+      end
     end
 
     # [OPS.37 ⚖️ founder 2026-09-02 → 2026-09-03] Canopy is no longer alias-less: its `servers:` is

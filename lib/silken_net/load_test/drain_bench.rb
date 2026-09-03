@@ -22,7 +22,7 @@ module SilkenNet
     # ⚠️ Обидва режими РЕАЛЬНО дренажать → потрібен ЖИВИЙ Sidekiq-процес
     # (bin/coap_load проти dev/staging-стека). Done-signal — КОМПОЗИТНИЙ по
     # всьому каскаду (red-team #2): uplink==0 — це лише stage-1 із 12, бо
-    # verified-пакет фанаутить у web3_critical (Iotex+Chainlink) і low (Streamr).
+    # verified-пакет фанаутить у web3_critical (Iotex+Chainlink).
     # DB-pool скрейпиться по ТРЬОХ Postgres-DB (drain-cost TOP-1: primary +
     # Solid Cache + Solid Cable — «Rails.cache»/broadcast НЕ Redis).
     class DrainBench

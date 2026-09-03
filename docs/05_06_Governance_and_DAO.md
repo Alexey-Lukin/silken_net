@@ -18,7 +18,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Де governance-контракти живуть у 12-chain стеку |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Де governance-контракти живуть у 11-chain стеку |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | SFC `ERC20Votes`/`ERC20Permit` база; SCC/SFC контракти |
 | [`05_04` — Ethereum L1 State Anchor](05_04_Ethereum_L1_State_Anchor) | Timelock керує `ANCHOR_ROLE`-ротацією (admin=Timelock) |
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing DAO peer-review (категорія C) користується цим governance |
@@ -187,9 +187,9 @@ contract SilkenGovernor is Governor, GovernorSettings, GovernorCountingSimple,
 >
 > **Майбутній напрям (Beyond TRL 9 / SRL roadmap) — Proactive AI Sentinel:**
 > - **Cluster-level statistical fingerprints:** замість per-tree fraud detection — federated anomaly detection. Якщо 100 дерев кластера раптом видають «too perfect» Z-curves (lower variance than physically possible) → suspicious activity flag.
-> - **Decoy DID Tripwire (backend, НЕ on-chain honeypot):** набір decoy DID у серверному watchlist (не on-chain — публічний стейт контракту видав би «заблоковане» дерево відсутністю mint-подій, і атакер обійшов би). Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка → instant slashing + 12-chain rotation. Канон — тут.
+> - **Decoy DID Tripwire (backend, НЕ on-chain honeypot):** набір decoy DID у серверному watchlist (не on-chain — публічний стейт контракту видав би «заблоковане» дерево відсутністю mint-подій, і атакер обійшов би). Будь-яка телеметрія/mint-спроба від decoy DID = доведена підробка → instant slashing + 11-chain rotation. Канон — тут.
 > - **Red Team Adversarial Telemetry Generators:** GAN-вироблені синтетичні patterns як частина CI/CD ([`04_06`](04_06_Testing_Guide_and_Coverage)) — знаходимо вразливості до того, як їх знайде зовнішній attacker.
-> - **Quantum-Resistant Oracle Migration:** перехід Chainlink + 12-chain stack (асиметричні підписи ECDSA/Ed25519) на NIST PQC до 2030+; симетричний LoRa/CoAP-трафік (AES) уже PQ-стійкий. Канон — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security).
+> - **Quantum-Resistant Oracle Migration:** перехід Chainlink + 11-chain stack (асиметричні підписи ECDSA/Ed25519) на NIST PQC до 2030+; симетричний LoRa/CoAP-трафік (AES) уже PQ-стійкий. Канон — [`03_05 §10`](03_05_Hardware_Symmetric_Crypto_and_Security).
 > - **AI Sentinel Service:** окремий ML-сервіс 24/7 у режимі "hunting for hunters" — корелює trading volume на SCC DEXs з telemetry-аномаліями та oracle response patterns.
 >
 > **Філософська позиція:** SCC — це **критична інфраструктура планетарного клімату**. Стандарт безпеки має бути **на рівні national-grid SCADA**, а не «не гірше за DeFi 2020–2024».

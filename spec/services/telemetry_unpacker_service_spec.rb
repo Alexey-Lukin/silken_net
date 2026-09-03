@@ -31,11 +31,9 @@ RSpec.describe TelemetryUnpackerService, type: :service do
     allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
       .and_return([ 0.5, 0.1, 0.2, 0.3 ])
     allow(IotexVerificationWorker).to receive(:perform_async)
-    allow(StreamrBroadcastWorker).to receive(:perform_async)
-    # [OPS.37 / ARCH.118] Both external legs are activation-gated; the enqueue pins below assume
-    # LIVE legs. Each gate has its own negative example further down.
+    # [OPS.37 / ARCH.118] The W3bstream leg is activation-gated; the enqueue pins below assume a
+    # LIVE leg. The gate has its own negative example further down.
     allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(true)
-    allow(Streamr::BroadcasterService).to receive(:configured?).and_return(true)
   end
 
 # 🔴 [ARCH.41] Доба cold-start деривації мусить іти з моменту ПРИЙОМУ, а не
@@ -189,7 +187,7 @@ end
 
   # [OPS.37 / ARCH.118] An UNCONFIGURED W3bstream leg enqueues nothing — measured shape before
   # the gate: every record bought 6 failing executions and ~30 Redis commands, none visible to
-  # Sentry. The record still commits and Streamr still broadcasts.
+  # Sentry. The record still commits.
   it "does not enqueue IotexVerificationWorker when W3bstream is not configured (activation gate)" do
     allow(Iotex::W3bstreamVerificationService).to receive(:configured?).and_return(false)
     chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
@@ -197,31 +195,10 @@ end
     expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
 
     expect(IotexVerificationWorker).not_to have_received(:perform_async)
-    expect(StreamrBroadcastWorker).to have_received(:perform_async)
-  end
-
-  # [ARCH.118, 2026-09-03] Same gate, same shape, for the Streamr leg — one execution per record
-  # into a dead host was quiet (worker rescue), never free (Upstash bills per command, INF.28).
-  it "does not enqueue StreamrBroadcastWorker when Streamr is not configured (activation gate)" do
-    allow(Streamr::BroadcasterService).to receive(:configured?).and_return(false)
-    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
-
-    expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
-
-    expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
-    expect(IotexVerificationWorker).to have_received(:perform_async)
-  end
-
-  it "triggers StreamrBroadcastWorker after telemetry commit" do
-    chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
-
-    described_class.call(chunk)
-
-    expect(StreamrBroadcastWorker).to have_received(:perform_async).with(an_instance_of(Integer), an_instance_of(String))
   end
 
   context "when transaction rolls back (P1-7 phantom job prevention)" do
-    it "does not enqueue IotexVerificationWorker or StreamrBroadcastWorker" do
+    it "does not enqueue IotexVerificationWorker" do
       chunk = build_chunk(did_hex, -70, 3500, 25, 5, 100, 0, 3)
 
       # [ARCH.84] Seam перецілено: доти збій ін'єктувався через
@@ -237,7 +214,6 @@ end
       expect(Rails.logger).to have_received(:error).with(/Telemetry Error/)
       # The key assertion: workers must NOT be enqueued when transaction rolls back
       expect(IotexVerificationWorker).not_to have_received(:perform_async)
-      expect(StreamrBroadcastWorker).not_to have_received(:perform_async)
     end
 
     # [INF.26] Та сама межа, лише для лічильника: Prometheus-реєстр не транзакційний,

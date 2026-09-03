@@ -121,6 +121,11 @@ allow_empty_roles: true
 # kept serving the freshly seeded DB, i.e. the failure was the VERDICT, not the work. Six minutes
 # covers the measured cold path with margin; a genuinely broken container now fails in 6 min
 # instead of 30 s — the 45-s uptime probe and /ready remain the judges of what boots.
+# ⚖️ 2026-09-03 (delegated, 00_07 OPS.37): a HEALTHCHECK in the image is NOT built. The 45-s uptime
+# probe already closes the job window on both workflows and the coap role is dormant, so the
+# instruction would run a `curl` every 5 s in every container forever to buy a boot window that is
+# already bought. Named trigger: activation of the coap FALLBACK role — until then its Kamal
+# verdict is `.State.Status` alone, and that ceiling is declared, not hidden.
 deploy_timeout: 360
 
 # Canopy uses an ISOLATED database set on the same Cloud SQL instance: silken_net_canopy
@@ -240,6 +245,44 @@ env:
 # accessory — deep_merge є keys-UNION, форми видалення в kamal немає. Тож `kamal setup -d canopy`
 # (на відміну від `kamal deploy -d canopy`, який accessories НЕ чіпає — `boot_accessories: false`)
 # підняв би його з міткою бази. Фаза 3 рунбука свідомо каже `kamal deploy -d canopy`.
+
+# 🟢 [INF.28 ⚖️ founder 2026-09-03] CANOPY'S OWN REDIS — a Kamal accessory on the app host, and the
+# ground is a QUOTA, not a preference: Upstash Free = 500 k commands/month, while an EMPTY Sidekiq
+# at `-c 4` burns ≈12.7 M (`brpop` / heartbeat / scheduler poll — Sidekiq's own pulse, 06_01
+# §Redis Isolation), so the job role above would exhaust the slot's Redis ~1.2 days after its FIRST
+# boot and `/ready` would 503 with it. Weighed: (а) this accessory, $0 ⊥ (б) Upstash Fixed $20/mo ⊥
+# (в) PAYG ≈$25/mo idle. Production stays Upstash BY CONSTRUCTION (paid tier — S1.1 `REDIS_URL`):
+# this block lives ONLY in the canopy destination, the base manifest never grows a Redis, and
+# `deploy_workflow_parity_spec` keeps `REDIS_URL ≠ CANOPY_REDIS_URL`.
+#   • ONE secret, ONE home: the accessory reads the SAME `REDIS_URL` the overlay remaps from
+#     `CANOPY_REDIS_URL` (.kamal/secrets.canopy) and takes its `requirepass` FROM THAT URL in `cmd`,
+#     so there is no second secret to rotate out of step. Form: `redis://:<hex>@<app_host_ip>:6379/0`;
+#     the password is HEX on purpose (`openssl rand -hex 24`) — a URL-escaped character would reach
+#     Redis encoded and the shell extraction raw.
+#   • `port: 6379` publishes on the host's ONLY interface (VPC-internal, no external IP exists —
+#     06_01 §VPC; the ingress rule admits the subnet CIDR alone), so the anchor's CoAP daemon reaches
+#     it across the VPC with the same URL in `coap.env` (canopy slot). The Alloy `options.publish`
+#     refusal (06_03 §2.9) was about a ROLLING app role; an accessory never rolls, so that ground
+#     does not carry here. `redis://` without TLS is deliberate: the traffic never leaves the VPC.
+#   • `directories: data` = AOF on the host disk (CMEK `app-boot`): a staging SPOF accepted with its
+#     price named — a host loss loses queued canopy jobs and testnet nonces, nothing of value
+#     (06_06 §5.4). The image tag is pinned like Alloy's; no Dependabot lane covers Kamal
+#     accessories, so it is bumped by hand.
+#   • Booted by the `Kamal Deploy to Canopy` step BEFORE `kamal deploy -d canopy` (idempotent —
+#     kamal 2.12 skips an existing container), never by `kamal setup`. Service name is
+#     `silken_net-redis`: accessory names carry no destination (the fact that keeps Alloy single),
+#     and production has no accessory of that name by construction.
+accessories:
+  redis:
+    image: redis:7.4-alpine
+    host: silken-net-app
+    port: "6379:6379"
+    directories:
+      - data:/data
+    env:
+      secret:
+        - REDIS_URL
+    cmd: sh -c 'p="${REDIS_URL#redis://:}"; exec redis-server --appendonly yes --requirepass "${p%%@*}"'
 
 # Proxy: the block below is LIVE — canopy routes on its own host and serves TLS from the
 # base manifest's Origin-CA pair (inherited; the certificate is a wildcard). Only the

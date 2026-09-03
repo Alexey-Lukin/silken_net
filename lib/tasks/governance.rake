@@ -97,9 +97,16 @@ namespace :governance do
   #      absent, so every money transition would run without a tamper-evident trail. Never
   #      updated once present (a rotated password or role is an operator act, not ours).
   #   2. `governance:seed_parameters` — the DAO-aware UPSERT above.
-  #   3. `TreeFamily` — ⚠️ deliberately NOT seeded: the species list of a real deployment is a
-  #      ⚖️ founder decision (00_07 OPS.38), and `Tree belongs_to :tree_family` is not optional,
-  #      so an empty table is named LOUDLY here instead of being filled with the demo pair.
+  #   3. `TreeFamily` — the species of the FIRST real deployment (⚖️ 2026-09-03, delegated; the
+  #      ground was already canon): 01_01 §6 Stage 4 = Черкаський бір, the anchor is tuned to
+  #      *Pinus sylvestris* and oak is a separate SKU, so the first roster is ONE family. Its
+  #      NUMBERS are declared PROVISIONAL in the row itself (`biological_properties.provenance`),
+  #      because the calibration protocol (05_05 §8) has not run: the Z-window is the engineering
+  #      estimate the demo seed carries, `optimal_z_target` mirrors the firmware constant (29.0,
+  #      BioContract::OPTIMAL_Z_TARGET) and `fire_resistance_rating` the platform fire threshold
+  #      (60 °C, AlertDispatchService#fire_limit); the sequestration coefficient is the RATIFIED
+  #      default 1.0 (ARCH.84) — not the demo's uncited 0.8. Never updated once present: numbers
+  #      the operator calibrated are theirs (same rule as the actor above).
   desc "Production bootstrap composition (OPS.38): oracle_executioner + governance parameters; idempotent"
   task bootstrap: :environment do
     oracle = User.find_or_create_by!(email_address: User::ORACLE_EXECUTIONER_EMAIL) do |u|
@@ -112,12 +119,22 @@ namespace :governance do
 
     Rake::Task["governance:seed_parameters"].invoke
 
-    families = TreeFamily.count
-    if families.zero?
-      warn "[governance:bootstrap] ⚠️ TreeFamily порожня — жодне реальне дерево не провіжиться " \
-           "(`Tree belongs_to :tree_family`); склад видів = ⚖️ founder, 00_07 OPS.38. Не сіється автоматично."
+    first_family = {
+      name: "Сосна звичайна", scientific_name: "Pinus sylvestris",
+      critical_z_min: 5.0, critical_z_max: 45.0, carbon_sequestration_coefficient: 1.0,
+      biological_properties: {
+        "optimal_z_target" => 29.0, "fire_resistance_rating" => 60,
+        "provenance" => "provisional — 00_07 OPS.38 ⚖️ 2026-09-03: Z-window is an engineering estimate, " \
+                        "calibration protocol 05_05 §8 not yet run; optimal_z_target = firmware constant, " \
+                        "fire_resistance_rating = platform fire threshold"
+      }
+    }
+    family = TreeFamily.find_or_create_by!(scientific_name: first_family[:scientific_name]) do |f|
+      f.assign_attributes(first_family)
     end
+    family_state = family.previously_new_record? ? "created" : "present"
 
-    puts "[governance:bootstrap] oracle_executioner=#{actor_state} tree_families=#{families} slot=#{SilkenNet::DeploymentSlot.current}"
+    puts "[governance:bootstrap] oracle_executioner=#{actor_state} first_family=#{family_state} " \
+         "tree_families=#{TreeFamily.count} slot=#{SilkenNet::DeploymentSlot.current}"
   end
 end

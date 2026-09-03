@@ -38,7 +38,6 @@ RSpec.describe SilkenNet::LoadTest::DrainBench do
       result = SilkenNet::LoadTest::Provisioning.provision(trees: 3)
       # web3-downstream (real HTTPX) поза скоупом intake→commit виміру
       allow(IotexVerificationWorker).to receive(:perform_async)
-      allow(StreamrBroadcastWorker).to receive(:perform_async)
       allow(TimeSyncDownlinkWorker).to receive(:perform_async)
 
       key     = result.gateway.hardware_key.binary_key

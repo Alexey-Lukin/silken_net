@@ -19,7 +19,7 @@ module Web3
   #   · `EthereumAnchor#etherscan_url` was hardcoded to MAINNET — correct today,
   #     wrong the moment a testnet slot exists (which is what INF.27 builds).
   # Same geometry the RPC guard already documents for hardcoded fallbacks
-  # (`Web3NetworkGuard#hardcoded_fallback_violations`); this is that geometry on
+  # (`Web3NetworkGuard#armed_path_violations`); this is that geometry on
   # the read path instead of the write path.
   #
   # 🏠 The axis is NOT new — `WEB3_CHAIN_ENV` is read through the same One-Home

@@ -571,7 +571,7 @@ Web3::RpcConnectionPool.client_for("ALCHEMY_ETHEREUM_RPC_URL")
 ```
 L8  Ethereum L1    ← ТИЖНЕВА ФІНАЛІЗАЦІЯ (цей модуль)
 L7  Polygon + DeFi ← SCC/SFC minting (05_03)
-L6  Verification   ← peaq, IoTeX, Streamr, Filecoin (05_02)
+L6  Verification   ← peaq, IoTeX, Filecoin (05_02)
 L5  Rails Backend  ← Telemetry, Services, Workers (04_xx)
 ```
 

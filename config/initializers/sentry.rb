@@ -150,7 +150,6 @@ Sentry.init do |config|
     "KlimaDao::RetirementService::InvalidTokenTypeError",
     "Peaq::DidRegistryService::RegistrationError",
     "Chainlink::OracleDispatchService::DispatchError",
-    "Streamr::BroadcasterService::BroadcastError",
     "Iotex::W3bstreamVerificationService::VerificationError",
     "TheGraph::QueryService::QueryError",
     "Ed25519Crypto::SigningService::SigningError"

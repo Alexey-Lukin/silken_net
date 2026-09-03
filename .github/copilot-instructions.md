@@ -3,7 +3,7 @@
 > **SSOT = `CLAUDE.md` + `docs/` (`00_00`→`06_08`) + [Wiki](https://github.com/Alexey-Lukin/silken_net/wiki). Read those first.**
 > This file is a thin pointer + a short trap cheat-sheet. **If anything here conflicts with `CLAUDE.md`, `CLAUDE.md` WINS** (it is the single maintained home; this file is kept thin on purpose so it cannot drift).
 
-**SilkenNet** — planetary Bio-IoT D-MRV platform for forest monitoring (Ti-6Al-4V gyroid anchor + EBFC → STM32 Soldier → LoRa → Queen gateway → Rails 8.1 / Ruby 4.0.6 / PostgreSQL / Sidekiq → 12-chain Web3 Proof-of-Growth → SCC mint).
+**SilkenNet** — planetary Bio-IoT D-MRV platform for forest monitoring (Ti-6Al-4V gyroid anchor + EBFC → STM32 Soldier → LoRa → Queen gateway → Rails 8.1 / Ruby 4.0.6 / PostgreSQL / Sidekiq → 11-chain Web3 Proof-of-Growth → SCC mint).
 
 `CLAUDE.md` is short (orientation + routing): what-it-is §1 · **skill-routing table §2** (domain→skill→doc-home) · commands §3 · style/YAGNI §4 · critical invariants §5 (queues, AES, Lorenz/StatusByte) · gotchas §6 · repo-map §7 · Solidity/Foundry §8. Depth lives in the numbered `docs/NN_NN` (the skill routes you) + `docs/00_07` (open work / blockers).
 
@@ -37,7 +37,7 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 ## Pointers (don't duplicate — read the home)
 
 - Sidekiq 9-queue strict order → `CLAUDE.md §5`.
-- 12-chain Web3 topology + roles → `docs/05_01` + `web3-pipeline` skill.
+- 11-chain Web3 topology + roles → `docs/05_01` + `web3-pipeline` skill.
 - Where business logic lives (services/workers map) → `docs/04_02`.
 - Solidity/Foundry conventions + invariant-gates (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`) → `CLAUDE.md §8`; contract spec → `docs/05_03`; test methodology → `docs/04_06 §B`.
 - Open work / active blockers → `docs/00_07`.

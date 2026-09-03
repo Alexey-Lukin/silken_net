@@ -560,6 +560,25 @@ RSpec.describe MintingRollbackService do
     end
   end
 
+  describe "Polygon network routing [ARCH.118 ⚖️ 2026-09-03]" do
+    # No hardcoded fallback: a blank ALCHEMY_POLYGON_RPC_URL must reach `ENV.fetch` without a
+    # default (KeyError on the money path), and the cascade is the KEYLESS registry pair only.
+    it "uses ALCHEMY_POLYGON_RPC_URL with the keyless cascade and no `fallback:` literal" do
+      wallet.update!(balance: 20_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :sent,
+                  tx_hash: "0x" + SecureRandom.hex(32), locked_points: 10_000)
+
+      mock_client = instance_double(Eth::Client)
+      allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+      allow(mock_client).to receive(:eth_get_transaction_receipt).and_return(nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(Web3::RpcConnectionPool).to have_received(:client_for)
+        .with("ALCHEMY_POLYGON_RPC_URL", fallback_env_keys: %w[POLYGON_RPC_URL_FALLBACK_1 POLYGON_RPC_URL_FALLBACK_2])
+    end
+  end
+
   describe "resolve_transactions guards" do
     it "returns nil when telemetry_log's tree has no wallet" do
       orphan_tree = create(:tree)

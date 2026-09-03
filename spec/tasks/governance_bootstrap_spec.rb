@@ -63,14 +63,35 @@ RSpec.describe "governance:bootstrap" do # rubocop:disable RSpec/DescribeClass
     expect(SystemParameter.where(key: %w[dynamic_tax_rate insurance_pool_threshold]).count).to eq(2)
   end
 
-  it "names an empty TreeFamily loudly instead of seeding species (⚖️ founder) and reports the actor state" do
+  # ⚖️ [OPS.38, 2026-09-03] The first deployment's species is FIXED by canon (01_01 §6 Stage 4 —
+  # the anchor is tuned to Pinus sylvestris), so the roster is one family; its numbers are
+  # declared provisional IN THE ROW, because the calibration protocol (05_05 §8) has not run.
+  it "seeds Pinus sylvestris exactly once with declared-provisional numbers and converges on a second run" do
     TreeFamily.delete_all
     result = run_task
+    family = TreeFamily.find_by!(scientific_name: "Pinus sylvestris")
 
-    expect(result[:err]).to include('TreeFamily порожня')
-    expect(result[:out]).to include('oracle_executioner=created tree_families=0')
+    aggregate_failures do
+      expect(TreeFamily.count).to eq(1)
+      expect(family.carbon_sequestration_coefficient).to eq(1.0)  # ratified default (ARCH.84), not the demo's 0.8
+      expect(family.effective_optimal_z_target).to eq(29.0)        # firmware BioContract::OPTIMAL_Z_TARGET
+      expect(family.fire_resistance_rating).to eq(60)              # platform fire threshold
+      expect(family.biological_properties["provenance"]).to include("provisional")
+      expect(result[:out]).to include("first_family=created tree_families=1")
+    end
 
-    create(:tree_family)
-    expect(run_task[:err]).not_to include('TreeFamily порожня')
+    expect { run_task }.not_to change(TreeFamily, :count)
+    expect(run_task[:out]).to include("first_family=present")
+  end
+
+  it "never touches a family that already exists (operator-calibrated numbers stay)" do
+    existing = create(:tree_family, scientific_name: "Pinus sylvestris",
+                                    critical_z_min: 7.5, critical_z_max: 42.0)
+    stamp = existing.updated_at
+
+    run_task
+
+    expect(existing.reload.updated_at).to eq(stamp)
+    expect(existing.critical_z_min).to eq(7.5)
   end
 end

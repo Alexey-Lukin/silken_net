@@ -28,7 +28,7 @@ _Top-down конституція системи: дані течуть зниз�
 | **3. Прошивка / Edge AI (The Brain)** | STM32WLE5JC, STOP2 RTC-only (🟡 **300 nA — таргет, не вимір**; bench-гейт [`00_07`](00_07_Action_Plan_Tracker) FW.54), DMA-мікрофон, TinyML (тиша/вітер/пилка), mruby Lorenz-атрактор, апаратний AES-128 (LoRa-payload), factory provisioning ключів | [`03_01`](03_01_Firmware_Lifecycle_and_DMA) · [`03_03`](03_03_TinyML_Acoustic_Inference) · [`03_04`](03_04_mruby_Lorenz_Attractor) · [`03_05`](03_05_Hardware_Symmetric_Crypto_and_Security) · [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) |
 | **4. Мережа (The Veins)** | LoRa 868 МГц, **star-only** (ухвала FW.2 (а) — TTL-flood mesh гейтовано в CCM-ері; повернення = wire-rev3, [`00_07`](00_07_Action_Plan_Tracker) ARCH.43); Queen-шлюз агрегує пакети → CoAP-батч (**AES-256-CBC**) у хмару (опц. Starlink D2C); 🟡 Helium-fallback + Q2Q backhaul — **target, не в польоті** (ARCH.34 / ARCH.10) | [`02_05`](02_05_Queen_Hardware_and_Starlink) · [`03_02`](03_02_Queen_Gateway_Firmware) · failover [`06_08`](06_08_Resilience_and_Failover_Policy) |
 | **5. Серверне ядро (The Engine)** | Rails 8.1 Omakase + PostgreSQL + Sidekiq: декодування L3, REST API, бізнес-логіка NaaS-контрактів | Модуль 04 ([`04_01`](04_01_Data_Models_and_Entities) · [`04_02`](04_02_Business_Logic_and_Services)) |
-| **6. Верифікація (The Truth)** | peaq Machine DID (паспорт дерева) + IoTeX W3bstream ZK-proofs (pipeline-integrity + peaq-DID binding — hardware-origin = North-Star, не доведено; + гомеостаз Лоренца) + Streamr/Filecoin | [`05_01`](05_01_Multichain_Architecture) · [`05_02`](05_02_Proof_of_Growth_Pipeline) |
+| **6. Верифікація (The Truth)** | peaq Machine DID (паспорт дерева) + IoTeX W3bstream ZK-proofs (pipeline-integrity + peaq-DID binding — hardware-origin = North-Star, не доведено; + гомеостаз Лоренца) + Filecoin | [`05_01`](05_01_Multichain_Architecture) · [`05_02`](05_02_Proof_of_Growth_Pipeline) |
 | **7. Фінанси (The Ledger)** | Polygon EVM — mint SCC/SFC; Chainlink DON oracle; Solana/Celo мікро-рейки; KlimaDAO ESG retirement; Polygon Hadron KYC (ERC-3643) | [`05_01`](05_01_Multichain_Architecture) · [`05_03`](05_03_Tokenomics_SCC_and_SFC) |
 | **7.5 Governance (The Parliament)** | On-chain: `SilkenGovernor` + `SilkenTimelock` (48h) + `ProtocolParameters` (registry параметрів), Flash-Loan-захист | [`05_06`](05_06_Governance_and_DAO) |
 | **8. Фіналізація (The Anchor)** | Ethereum L1 — щотижневий SHA-256 state root усієї економіки (rollup-стиль гарантія від збоїв сайдчейнів) | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
@@ -48,10 +48,6 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
    │                                                │
    │  ┌── Verification ─────────────────────────┐  │
    │  │ peaq DID → IoTeX ZK-proof → Chainlink   │  │
-   │  └─────────────────────────────────────────┘  │
-   │                                                │
-   │  ┌── Data Streams ─────────────────────────┐  │
-   │  │ Streamr (P2P real-time forest pulse)     │  │
    │  └─────────────────────────────────────────┘  │
    └──────────────────┬───────────────────────────┘
                       │ Multi-RPC

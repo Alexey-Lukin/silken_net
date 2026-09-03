@@ -238,7 +238,6 @@ end
 | `silkennet_ews_alerts_total` | Counter | `EwsAlert` (`after_create_commit`) — [INF.26] дім переїхав із `DclimateVerificationWorker`, який лічив лише супутниково верифіковану підмножину | `alert_type` |
 | `silkennet_oracle_dispatch_duration_seconds` | Histogram | `ChainlinkDispatchWorker` | — |
 | `silkennet_coap_packets_received_total` | Counter | `UnpackTelemetryWorker` | `status` |
-| `silkennet_streamr_broadcast_failures_total` | Counter | `StreamrBroadcastWorker` | — |
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -381,7 +380,6 @@ end
 | `silkennet_slashing_events_total` | алертна | `reason` | Total slashing (burn) events by reason |
 | `silkennet_solana_payout_attempts_total` | алертна | — | Solana batch payouts attempted by BatchPayoutService (SLO denominator) |
 | `silkennet_solana_payout_success_total` | алертна | — | Solana batch payouts successfully broadcast — status→sent (SLO numerator) |
-| `silkennet_streamr_broadcast_failures_total` | діагностична | — | Total Streamr broadcast failures (P2P real-time telemetry delivery) |
 | `silkennet_telemetry_acoustic_overflow_total` | алертна | — | Total telemetry packets with acoustic_events=255 (uint8 saturation) |
 | `silkennet_telemetry_archive_batch_failures_total` | алертна | `reason` | [E.60 Фаза 1б] збої архів-тракту по фазах: `build` (fail-open → zero32-мінт; при непорожніх вікнах = кандидат-інцидент) · `pin` (exhausted-hook) · `mismatch` (rebuild ≠ root при живих логах — integrity, runbook 06_08 §4.7) · `retention_expired` · `dispatch_drift` · `leaf_stamp_drift` (sweeper-семпл) |
 | `silkennet_telemetry_ccm_decrypt_ok_total` | діагностична | — | FW.2 CCM packets successfully decrypted with valid MIC |

@@ -102,7 +102,7 @@ module ApplicationWeb3Worker
   end
 
   # [COMPOSITE PK]: Уніфікований пошук TelemetryLog з partition pruning.
-  # Використовується воркерами, що обробляють телеметрію (Solana, Chainlink, IoTeX, Streamr, Mint).
+  # Використовується воркерами, що обробляють телеметрію (Solana, Chainlink, IoTeX, Mint).
   #
   # @param telemetry_log_id [Integer] ID запису телеметрії
   # @param created_at_iso [String, nil] ISO 8601 timestamp для partition pruning

@@ -16,6 +16,15 @@ on:
         type: choice
         options: [boot, reboot]
         default: boot
+      redis:
+        # [INF.28, 2026-09-03] The canopy Redis accessory takes its `requirepass` from REDIS_URL at
+        # BOOT, and `boot` skips an existing container — so a rotated CANOPY_REDIS_URL needs a
+        # deliberate `reboot` here (same reason as Alloy: the laptop `kamal accessory reboot` path
+        # dies on the deploy-SA posix account). AOF data survives — it lives in a host directory.
+        description: "Canopy Redis accessory action: boot (idempotent, default) or reboot (re-reads REDIS_URL)"
+        type: choice
+        options: [boot, reboot]
+        default: boot
 
 concurrency:
   group: deploy-canopy
@@ -474,7 +483,12 @@ jobs:
         # `--roles` comes from verify-secrets: `web,job` when the eight testnet signer twins
         # exist, `web` alone otherwise [OPS.37 review 2026-09-02] — the job role's prerequisite
         # must never block the web deploy.
-        run: kamal deploy -d canopy --roles "${{ needs.verify-secrets.outputs.roles }}"
+        run: |
+          # [INF.28 ⚖️ 2026-09-03] Canopy's own Redis accessory (config/deploy.canopy.yml) — idempotent
+          # (kamal 2.12 skips an existing container) and BEFORE the roles, which /ready-probe it at boot.
+          # It resolves REDIS_URL through .kamal/secrets.canopy from CANOPY_REDIS_URL in this env.
+          kamal accessory ${{ inputs.redis || 'boot' }} redis -d canopy
+          kamal deploy -d canopy --roles "${{ needs.verify-secrets.outputs.roles }}"
         # ⚠️ Drift guard: this env: block MUST mirror the GLOBAL config/deploy.yml env.secret
         # (which .kamal/secrets-common reads as $VAR from THIS shell). Any global env.secret
         # entry missing here is injected EMPTY → boot crash (SECRET_KEY_BASE /

@@ -9,7 +9,7 @@ module Web3
   # 🌐 HTTP CLIENT (Shared HTTP Utility for External API Services)
   # = ===================================================================
   # Централізована утиліта для всіх HTTP-запитів до зовнішніх API:
-  # IPFS/Filecoin, IoTeX W3bstream, Streamr, Polygon Hadron, The Graph,
+  # IPFS/Filecoin, IoTeX W3bstream, Polygon Hadron, The Graph,
   # peaq DID, Solana JSON RPC.
   #
   # Використовує HTTPX замість Net::HTTP для:
@@ -148,7 +148,7 @@ module Web3
 
       # Thread-safe persistent HTTPX session.
       # Кожен Sidekiq thread отримує власну сесію з persistent connections.
-      # З'єднання перевикористовуються для всіх origins (Pinata, Streamr, Solana тощо).
+      # З'єднання перевикористовуються для всіх origins (Pinata, Solana тощо).
       def session
         Thread.current[THREAD_KEY] ||= HTTPX.plugin(:persistent)
       end

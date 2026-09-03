@@ -57,9 +57,8 @@ slashing_curve:
   - DEFAULT_PENALTY_FACTOR_MAX
   - DEFAULT_PENALTY_FACTOR
   - PF_NO_ACK
-  - PF_STREAMR_GAP
   - PF_NO_MAINTENANCE
-  sha256: '0495170f9bccdd60b3b99d29a8675aab88e241148b4f9f1b7452f53ad08a1c41'
+  sha256: 8cdd73e541e0427db44ca5013a6d208628b3d4c6b3f0554464ba52fe4af29700
   mirrors:
   - docs/05_05_Slashing_and_Risk_Policy.md §3 — slash_ratio formula block (GAMMA /
     PENALTY_FACTOR_MAX / per-cause uplift weights)
@@ -68,7 +67,7 @@ slashing_curve:
     the pin makes the declaration binding. GAMMA/PF_MAX are DAO-promotable to SystemParameter
     — a promotion must reconcile 05_05 §3 in the same commit. On drift: reconcile
     the mirror + bin/rspec, then `rake docs:repin`.'
-  repinned: '2026-07-16'
+  repinned: '2026-09-03'
 metabolic_gp_core:
   source: firmware/bio_contracts/bio_contract.rb
   consts:

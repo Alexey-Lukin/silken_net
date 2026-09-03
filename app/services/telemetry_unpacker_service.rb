@@ -935,12 +935,12 @@ class TelemetryUnpackerService < ApplicationService
     # Раніше: jobs ставились у чергу всередині transaction — при rollback TelemetryLog
     # запис не існував, але IotexVerificationWorker вже був у Redis (5 марних ретраїв
     # на web3_critical чергу).
-    # [OPS.37 / ARCH.118] BOTH external legs are ACTIVATION-GATED (`configured?` — one home each):
-    # unconfigured ⇒ no job at all, because a job that can only raise buys executions (IoTeX: 6,
-    # Streamr: 1) and ~30 Redis commands per record for nothing. Streamr joined 2026-09-03 —
-    # its worker-side `rescue` was a QUIET failure, never a free one (Upstash bills per command).
+    # [OPS.37 / ARCH.118] The external leg is ACTIVATION-GATED (`configured?` — one home):
+    # unconfigured ⇒ no job at all, because a job that can only raise buys executions (6) and
+    # ~30 Redis commands per record for nothing (Upstash bills per command, INF.28). Streamr's
+    # twin leg stood here until ⚖️ 2026-09-03 — REMOVED, not gated (05_01 §1): an observer that
+    # gates nothing and needs its own broker node in the stack duplicates our witness, adds none.
     IotexVerificationWorker.perform_async(log.id_value, log.created_at.iso8601(6)) if Iotex::W3bstreamVerificationService.configured?
-    StreamrBroadcastWorker.perform_async(log.id_value, log.created_at.iso8601(6)) if Streamr::BroadcasterService.configured?
 
     # [BLOCKER FIX: Database Locking — Wiki 04_01]
     # Нарахування балів у гаманець Солдата ПОЗА основною транзакцією.

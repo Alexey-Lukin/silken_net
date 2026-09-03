@@ -52,12 +52,14 @@ class BlockchainBurningService < ApplicationService
   DEFAULT_PENALTY_FACTOR = 1.0       # negligence baseline (no cause-driven uplift)
 
   # [SLASH-1 §3/§6] Ваги cause-driven penalty_factor uplift (дзеркало канону 05_05 §3 —
-  # правити ТАМ). Comms-correlated сигнали (no-ack, Streamr gap) мають ОДИН root-cause
-  # «вузол/шлюз offline» → комбінуються через max(), НЕ суму (SLASH-SAFETY §6, як sap+acoustic
-  # max() у §7); фізична халатність — незалежна → additive. Promotable до SystemParameter коли
-  # DAO калібрує (як GAMMA/PF_MAX). Комбінатор — #calculate_penalty_factor.
+  # правити ТАМ). Comms-correlated сигнали мають ОДИН root-cause «вузол/шлюз offline» →
+  # комбінуються через max(), НЕ суму (SLASH-SAFETY §6, як sap+acoustic max() у §7); фізична
+  # халатність — незалежна → additive. Promotable до SystemParameter коли DAO калібрує (як
+  # GAMMA/PF_MAX). Комбінатор — #calculate_penalty_factor.
+  # ⚫ Другий comms-член (`PF_STREAMR_GAP` 0.25, guarded hook, що завжди віддавав 0) знято разом із
+  # Streamr ⚖️ 2026-09-03 (ARCH.118); клас лишається одночленним, доки не зʼявиться нове
+  # comms-correlated джерело з ground-truth (00_07 SLASH-1).
   PF_NO_ACK         = 0.5   # comms-correlated: непідтверджений critical EwsAlert (no ack)
-  PF_STREAMR_GAP    = 0.25  # comms-correlated: tree-side Streamr gap (guarded hook)
   PF_NO_MAINTENANCE = 0.5   # independent: critical EwsAlert без MaintenanceRecord
 
   # @param contractual [Boolean] true — це погоджена контрактна форфейтура (early-exit
@@ -694,17 +696,18 @@ class BlockchainBurningService < ApplicationService
 
     combine_penalty_factor(
       no_ack:         comms_no_ack?,
-      streamr_gap:    streamr_gap?,
       no_maintenance: critical_unmaintained?
     )
   end
 
-  # Pure de-correlation combiner (SLASH-SAFETY §6). no-ack і Streamr gap корельовані (спільний
-  # root-cause «вузол offline») → max(), НЕ сума (інакше один outage карається багаторазово —
-  # збитий/вкрадений шлюз); фізична халатність незалежна → additive. Виокремлено від сорсингу,
-  # щоб інваріант був явним і тестувався прямо. Cluster-wide blackout відведено раніше (ContractHealthCheckService).
-  def combine_penalty_factor(no_ack:, streamr_gap:, no_maintenance:)
-    comms_loss  = [ no_ack ? PF_NO_ACK : 0.0, streamr_gap ? PF_STREAMR_GAP : 0.0 ].max
+  # Pure de-correlation combiner (SLASH-SAFETY §6): comms-correlated сигнали (спільний root-cause
+  # «вузол offline») комбінуються через max(), НЕ суму (інакше один outage карається
+  # багаторазово — збитий/вкрадений шлюз); фізична халатність незалежна → additive. Виокремлено
+  # від сорсингу, щоб інваріант був явним. ⚠️ Із 2026-09-03 comms-клас має ОДИН член (no-ack), тож
+  # `max()` тут вироджений до нього — носій де-кореляції повертається разом із другим членом.
+  # Cluster-wide blackout відведено раніше (ContractHealthCheckService).
+  def combine_penalty_factor(no_ack:, no_maintenance:)
+    comms_loss  = no_ack ? PF_NO_ACK : 0.0
     independent = no_maintenance ? PF_NO_MAINTENANCE : 0.0
 
     DEFAULT_PENALTY_FACTOR + comms_loss + independent
@@ -731,13 +734,6 @@ class BlockchainBurningService < ApplicationService
     @cluster.ews_alerts.critical
             .where(alert_type: [ :queen_offline, :queen_uplink_lost, :system_fault ])
             .exists?
-  end
-
-  # [comms-correlated] Tree-side Streamr broadcast gap (05_05 §6 нот.12 — ЛИШЕ tree-side;
-  # backend-side збій Streamr-API не штрафується: доступність публічного спостерігача ≠ здоров'я
-  # дерева). Guarded hook: сигнал ще не реалізовано → contributes 0; max()-структура вже коректна.
-  def streamr_gap?
-    false
   end
 
   # [independent] Фізична халатність: критичний EwsAlert без жодного MaintenanceRecord по спливу

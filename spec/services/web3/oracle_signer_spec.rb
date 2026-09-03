@@ -69,4 +69,44 @@ RSpec.describe Web3::OracleSigner do
       expect(Eth::Key).not_to have_received(:new)
     end
   end
+
+  # [SEC.17] The backend fork lives HERE and nowhere else: a key-version name seals the role.
+  # The KMS names are read with `ENV[]` on purpose — absence means «ENV-keyed», not «broken» —
+  # so these examples swap the ENV object rather than stubbing `fetch`.
+  describe ".for with a Cloud KMS key version" do
+    let(:kms_name) { "projects/p/locations/l/keyRings/r/cryptoKeys/oracle-minter/cryptoKeyVersions/1" }
+
+    it "resolves :minter through KmsSigner when ORACLE_MINTER_KMS_KEY is set, never deriving an Eth::Key" do
+      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => kms_name))
+
+      expect(described_class.for(:minter)).to be_a(Web3::KmsSigner)
+      expect(Eth::Key).not_to have_received(:new)
+    end
+
+    it "falls back to LocalEnvSigner when the KMS name is blank (present-empty is «ENV-keyed», not «sealed»)" do
+      stub_const("ENV", ENV.to_h.merge("ORACLE_MINTER_KMS_KEY" => "", "ORACLE_MINTER_PRIVATE_KEY" => private_key))
+
+      expect(described_class.for(:minter)).to be_a(Web3::LocalEnvSigner)
+    end
+
+    it "has a KMS axis for the two roles the keyring provisions and no other" do
+      expect(described_class::KMS_KEY_ENVS.keys).to match_array(%i[minter slasher])
+    end
+  end
+
+  describe ".address_for (the read-only consumer's form)" do
+    it "returns nil when a role has NEITHER backend — «not activated», not a KeyError" do
+      stub_const("ENV", ENV.to_h.except("ORACLE_ETHERISC_PRIVATE_KEY"))
+
+      expect(described_class.address_for(:etherisc)).to be_nil
+    end
+
+    it "returns the ENV-keyed signer's address verbatim when the key is present" do
+      address = Eth::Address.new("0x#{'d' * 40}")
+      allow(key_double).to receive(:address).and_return(address)
+      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_KMS_KEY").merge("ORACLE_MINTER_PRIVATE_KEY" => private_key))
+
+      expect(described_class.address_for(:minter)).to equal(address)
+    end
+  end
 end

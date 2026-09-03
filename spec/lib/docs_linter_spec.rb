@@ -105,7 +105,7 @@ RSpec.describe DocsLinter do
     # are targets rather than assertions.
     let(:manifest) do
       <<~MD
-        - **Backend (Rails 8.1, 12-chain):** TRL 8. External audit is the TRL-9 gate.
+        - **Backend (Rails 8.1, 11-chain):** TRL 8. External audit is the TRL-9 gate.
         - **Firmware (STM32WLE5JC Soldier):** TRL 6. Running on hardware.
         - **Hardware capsule:** TRL 6 — prototyped. **BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard.
         - **Tri-zone coaxial anchor and Gen-2.0 EBFC stack:** TRL 3. Next (physical TRL 4): in-vitro.

@@ -1,6 +1,6 @@
 ---
 name: web3-pipeline
-description: "Use when working on the silken_net Web3 / on-chain surface — the 12-chain Proof-of-Growth pipeline (app/services/ + workers): SCC/SFC Solidity contracts, batchMint + Binary-Search poisoned-record isolation, the BlockchainTransaction AASM (incl. manual_review double-spend guard), minting guard-clauses (IoTeX / Chainlink / Hadron KYC), Dynamic Tax, slashing / penalty-factor de-correlation, Solana micro-rewards (Ed25519, batch payouts), DAO / Governor / Timelock, WEB3_STRICT_MODE. The gotchas — WEB3_STRICT_MODE is belt-and-suspenders not the switch, `:manual_review` is age-unbounded by design, the KYC-gate reads the BENEFICIARY, a money row carries two units in adjacent columns — are indexed here one line each and written in full in this skill's gotchas.md, which loads on demand: open it before touching anything that moves a balance. Routes to CLAUDE.md §1 (12-chain overview) + §5–§6 (the invariants that must be in EVERY prompt, deliberately not demoted into the companion) + the 05_01..05_06 canon (solc One-Home = 05_03), does not restate. Examples: \"add a chain integration\", \"change the minting threshold\", \"why is a tx stuck in manual_review\", \"batchMint reverts on dry-run\", \"edit the slashing penalty\", \"Solana reward formula / batch payout\"."
+description: "Use when working on the silken_net Web3 / on-chain surface — the 11-chain Proof-of-Growth pipeline (app/services/ + workers): SCC/SFC Solidity contracts, batchMint + Binary-Search poisoned-record isolation, the BlockchainTransaction AASM (incl. manual_review double-spend guard), minting guard-clauses (IoTeX / Chainlink / Hadron KYC), Dynamic Tax, slashing / penalty-factor de-correlation, Solana micro-rewards (Ed25519, batch payouts), DAO / Governor / Timelock, WEB3_STRICT_MODE. The gotchas — WEB3_STRICT_MODE is belt-and-suspenders not the switch, `:manual_review` is age-unbounded by design, the KYC-gate reads the BENEFICIARY, a money row carries two units in adjacent columns — are indexed here one line each and written in full in this skill's gotchas.md, which loads on demand: open it before touching anything that moves a balance. Routes to CLAUDE.md §1 (11-chain overview) + §5–§6 (the invariants that must be in EVERY prompt, deliberately not demoted into the companion) + the 05_01..05_06 canon (solc One-Home = 05_03), does not restate. Examples: \"add a chain integration\", \"change the minting threshold\", \"why is a tx stuck in manual_review\", \"batchMint reverts on dry-run\", \"edit the slashing penalty\", \"Solana reward formula / batch payout\"."
 ---
 
 # Web3 Pipeline
@@ -9,7 +9,7 @@ description: "Use when working on the silken_net Web3 / on-chain surface — the
 
 | Document | What it covers |
 |----------|---------------|
-| `CLAUDE.md §1` + `§6` | 12-chain overview (§1); web3 gotchas (§6: manual_review, mint guards, partition-pruning) |
+| `CLAUDE.md §1` + `§6` | 11-chain overview (§1); web3 gotchas (§6: manual_review, mint guards, partition-pruning) |
 | `docs/05_01_Multichain_Architecture.md` | DePIN core/expansion stack, multichain rails, Solana, WEB3_STRICT_MODE (§5 boot-guard + per-service cards) |
 | `docs/05_02_Proof_of_Growth_Pipeline.md` | Minting sequence, oracle callbacks, `[DOC.7]` guard inventory, trust-origin ladder L0/L1/L2 |
 | `docs/05_03_Tokenomics_SCC_and_SFC.md` | Solidity contracts (SCC ERC-20, SFC), roles, batchMint, **Dynamic Tax** (S6.17 governance-aware — home) |
@@ -65,7 +65,6 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 30. Природу емісії субграф деривує з ПРЕФІКСА `identifier`, а `GROWTH` є ВІДСУТНІСТЮ мітки — тож розходження двох боків завищує саме те число, яке читає ESG-покупець — **додаєш нову ПРИРОДУ емісії — заводь її префікс константою в обох мовах ТИМ САМИМ комітом, інакше вона мовчки порахується ростом**
 31. Fee на EVM-клієнті вже СТОЇТЬ, і поставив його гем — тож новий money-сайт fee не задає, а нова МЕРЕЖА мусить дістати політику, інакше народиться з чужою стелею
 32. Hardcoded-фолбек на ГРОШОВОМУ шляху існує рівно щоб пережити брак конфіга — і це небезпека, не зручність; тож чесний лік ЗНЯТТЯ, а не перецілення
-32a. Знімаючи фолбек, перелічи споживачів за ФОРМОЮ посилання — і не лікуй їх однаково: серед них майже завжди є ЧИТАЛЬНИЙ, якому fail-loud шкідливий
 
 <!-- /WEB3-GOTCHAS-INDEX -->
 

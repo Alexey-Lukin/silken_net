@@ -19,7 +19,7 @@
 
 | Ресурс | Опис |
 |--------|------|
-| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (12-chain топологія) |
+| [`05_01` — Multichain Architecture](05_01_Multichain_Architecture) | Мультичейн (11-chain топологія) |
 | [`05_03` — Tokenomics SCC and SFC](05_03_Tokenomics_SCC_and_SFC) | Токеноміка (мінтинг SCC/SFC) |
 | [`04_01` — Data Models and Entities](04_01_Data_Models_and_Entities) | Моделі (TelemetryLog, Wallet, BlockchainTransaction) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Сервіси (Unpacker, Verification, Minting) |
@@ -156,8 +156,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║    bio_status = (status_byte >> 5) & 0x03 (bits 6..5, FW.29-PACK)   ║
 ║    AlertDispatchService.analyze_and_trigger!(log)                    ║
 ║    tree.wallet.credit!(log.growth_points)                           ║
-║    ├──► IotexVerificationWorker.perform_async(id, created_at_iso)   ║
-║    └──► StreamrBroadcastWorker.perform_async(id, created_at_iso)    ║
+║    └──► IotexVerificationWorker.perform_async(id, created_at_iso)   ║
 ║                                                                      ║
 ║  ─────────── КРОК A: peaq DID (одноразово при Provisioning) ─────── ║
 ║  [ProvisioningController#register] POST /provisioning                ║
@@ -214,8 +213,6 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ```
 
 ---
-
-> **⚠️ Позиція Streamr (нот.3): broadcast РАНО, але вже після crypto-perimeter.** `StreamrBroadcastWorker` (вище, перед Крок A/B) транслює пакет **до** oracle-фіналізації (IoTeX ZK / Chainlink), але **після** per-packet integrity perimeter — AES-256-CBC decrypt CoAP-батч + AES-128-ECB decrypt per-record + `valid_sensor_data?` (§«TokenomicsEvaluatorWorker bypass»). Тобто Streamr = **live forest pulse** (crypto-authentic, не oracle-final), а не фінансова істина. Inject сміття у публічний feed потребує валідного **per-device LoRa-ключа** (raw CoAP без ключа відсікається на decrypt) → amplification-ризик = підмножина AES-key-compromise (mitigated FW.1/FW.2/FW.17). Streamr — спостерігач, не gate.
 
 ## Детальний Опис Кожного Кроку
 

@@ -71,9 +71,11 @@ RSpec.describe "Deployment-slot axis reaches the Rails roles (INF.27)" do # rubo
     # Full mechanism + the one-Alloy pins: spec/deploy/alloy_scrape_topology_spec.rb.
     it "reaches the Alloy accessory on the base manifest, and ONLY there" do
       expect(base.dig("accessories", "alloy", "env", "clear", "DEPLOYMENT_SLOT")).to eq("production")
-      expect(canopy).not_to have_key("accessories"),
-                            "canopy re-declared an accessory override: with one shared container that " \
-                            "cannot create a per-slot agent, it can only mislabel production's series"
+      # Scoped to `alloy` since 2026-09-03: canopy legitimately declares its OWN Redis accessory
+      # [INF.28], which the base manifest never names — that is a second container, not a relabel.
+      expect(canopy.dig("accessories", "alloy")).to be_nil,
+                                                   "canopy re-declared the Alloy accessory: with one shared container that " \
+                                                   "cannot create a per-slot agent, it can only mislabel production's series"
     end
 
     # ⚠️ `present` first, THEN `differs`. Written as a bare `not_to eq` this example survived

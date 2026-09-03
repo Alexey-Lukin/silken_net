@@ -1,4 +1,4 @@
-# 05_01: Мультичейн Архітектура (12-Chain Ecosystem)
+# 05_01: Мультичейн Архітектура (11-Chain Ecosystem)
 
 ## 🎯 Мета
 
@@ -29,7 +29,7 @@
 
 <!-- TOC:AUTO:START -->
 - [0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)](#-0-модульний-depin-стек-рольова-карта-the-protocol-symphony)
-- [1. Топологія 12 Мереж (The 12-Network Stack)](#-1-топологія-12-мереж-the-12-network-stack)
+- [1. Топологія 11 Мереж (The 11-Network Stack)](#-1-топологія-11-мереж-the-11-network-stack)
 - [2. Консенсус "Proof of Growth" (Трубопровід Верифікації)](#-2-консенсус-proof-of-growth-трубопровід-верифікації)
 - [3. Смарт-Контракти та Взаємодія (Polygon)](#-3-смарт-контракти-та-взаємодія-polygon)
 - [4. Абсолютна Фіналізація (Ethereum State Root Anchoring)](#-4-абсолютна-фіналізація-ethereum-state-root-anchoring)
@@ -96,60 +96,31 @@ SilkenNet не обирає один блокчейн. Система викор
 
 | # | Мережа | Сервіс | Статус | Примітка |
 |---|--------|--------|--------|----------|
-| 1 | Streamr | `Streamr::BroadcasterService` | ⚠️ Activation-gated | HTTP POST (Brubeck-ера; хост мертвий — keep-vs-drop ⚖️ [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
-| 2 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ✅ Real | Pinata IPFS gateway |
-| 3 | peaq | `Peaq::DidRegistryService` | ✅ Real | Ed25519-підписані DID через Substrate HTTP |
-| 4 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ⚠️ Activation-gated | HTTP POST до W3bstream (хост із `.env.example` не має DNS-запису — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
-| 5 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
-| 6 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
-| 7 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚠️ Hybrid | Реальне KYC API + симуляція коли credentials відсутні |
-| 8 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
-| 9 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
-| 10 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
-| 11 | Chainlink | `Chainlink::OracleDispatchService` | ⚪ Demoted | **[ARCH.53]** On-chain `sendRequest` ВИЛУЧЕНО (LINK-cost за callback, що не прилетить: DON-нога unwired — нема Functions JS-source / consumer / relayer, tx_hash≠requestId). `dispatch!` = internal correlation-marker (`chainlink_request_id` живе dedup-ключем Solana + idempotency-guard'ом); мінт іде PATH 2 tokenomics. Callback-endpoint (`/oracle_callbacks`, HMAC) лишається live для майбутнього PATH 1 / manual-fulfillment |
-| 12 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
+| 1 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ✅ Real | Pinata IPFS gateway |
+| 2 | peaq | `Peaq::DidRegistryService` | ✅ Real | Ed25519-підписані DID через Substrate HTTP |
+| 3 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ⚠️ Activation-gated | HTTP POST до W3bstream (хост із `.env.example` не має DNS-запису — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
+| 4 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
+| 5 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
+| 6 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚠️ Hybrid | Реальне KYC API + симуляція коли credentials відсутні |
+| 7 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
+| 8 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
+| 9 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
+| 10 | Chainlink | `Chainlink::OracleDispatchService` | ⚪ Demoted | **[ARCH.53]** On-chain `sendRequest` ВИЛУЧЕНО (LINK-cost за callback, що не прилетить: DON-нога unwired — нема Functions JS-source / consumer / relayer, tx_hash≠requestId). `dispatch!` = internal correlation-marker (`chainlink_request_id` живе dedup-ключем Solana + idempotency-guard'ом); мінт іде PATH 2 tokenomics. Callback-endpoint (`/oracle_callbacks`, HMAC) лишається live для майбутнього PATH 1 / manual-fulfillment |
+| 11 | Ethereum L1 | `Ethereum::StateAnchorService` | ✅ Real | `storeStateRoot(bytes32)` через Alchemy Ethereum RPC |
 
 **Легенда:** ✅ Real = Бойова імплементація з реальними RPC-викликами · ⚠️ Hybrid = Працює в реальному режимі з credentials, fallback до симуляції без них · ⚠️ Devnet = Бойова логіка, але транзакції йдуть на Devnet (simulateTransaction)
 
 ---
 
-## 🌐 1. Топологія 12 Мереж (The 12-Network Stack)
+## 🌐 1. Топологія 11 Мереж (The 11-Network Stack)
 
 SilkenNet не покладається на один блокчейн. Для забезпечення максимальної безпеки, масштабованості та compliance, система розподіляє функції (Зберігання, Верифікація, Економіка, Фіналізація) між спеціалізованими протоколами.
 
 ### Рівень 1: Дані та Зберігання (Data & Storage)
 
-#### 1. Streamr (P2P Real-time)
+> ⚫ **Streamr знято 2026-09-03** (⚖️ founder, [`00_07`](00_07_Action_Plan_Tracker) ARCH.118 — won't-do роду КОНСТРУКЦІЯ, не дефект): у Streamr 1.0 центрального REST-хоста немає (`brubeck` data-api мертвий з 2026-08-30), публікація лише через ВЛАСНИЙ broker-вузол або SDK — тобто ціна утримання = ще один вузол у стеку заради спостерігача, що нічого не гейтить, а під критерієм місії ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)) він дублював наше ж свідчення (Postgres + Turbo-стрічка + Prometheus) і не додавав незалежного. Знято тим самим комітом: сервіс, воркер, метрика `silkennet_streamr_broadcast_failures_total`, `PF_STREAMR_GAP` (guarded hook, що завжди віддавав 0 — [`05_05 §6`](05_05_Slashing_and_Risk_Policy)), креденшели й ENV; §7-матриця та цей перелік перенумеровано. Стек відтоді **11-ланковий**.
 
-Використовується для децентралізованої трансляції "пульсу" лісу в реальному часі. Дані з шлюзів (Королев) потрапляють сюди до того, як вони будуть записані в базу.
-
-| Параметр | Значення |
-|----------|----------|
-| **Сервіс** | `Streamr::BroadcasterService` |
-| **Воркер** | `StreamrBroadcastWorker` |
-| **Черга** | `low` (пріоритет 9) |
-| **Retry** | 3 |
-| **Тригер** | `TelemetryUnpackerService` — лише коли `Streamr::BroadcasterService.configured?` [ARCH.118, 2026-09-03]; незаведена пара = жодної джоби |
-| **Credentials** | `STREAMR_STREAM_ID`/`STREAMR_API_KEY` (ENV-first, credentials-фолбек — SEC.22) |
-| **API** | `https://brubeck.streamr.network/api/v1/streams/{stream_id}/data` — ⚠️ **хост мертвий** (TLS не встановлюється, виміряно 2026-08-30): це `data-api` ери Corea/Brubeck; **у Streamr 1.0 центрального REST-хоста НЕМАЄ** — публікація лише через ВЛАСНИЙ broker (`POST http://<node>:7171/streams/<id>`) або SDK, тож це не заміна константи, а рішення про інфраструктуру: keep-vs-drop — ⚖️ [`00_07`](00_07_Action_Plan_Tracker) ARCH.118 |
-| **Спека** | `spec/services/streamr/broadcaster_service_spec.rb` |
-
-**Payload:**
-```ruby
-{
-  tree_id: tree.id,
-  peaq_did: tree.peaq_did,
-  z_value: telemetry.lorenz_z,
-  bio_status: telemetry.bio_status,
-  temperature: telemetry.temperature,
-  voltage: telemetry.voltage,
-  alerts: active_alerts
-}
-```
-
-> ⚡ Broadcast є non-blocking — невдача Streamr ніколи не зупиняє фінансовий пайплайн.
-
-#### 2. Filecoin / IPFS (Immutable Archive)
+#### 1. Filecoin / IPFS (Immutable Archive)
 
 Вічне, незмінне сховище (Immutable Archive). Сюди записуються аудит-логи разом з їхніми CID (Content Identifiers), щоб будь-який аудитор міг перевірити історію дерева за 10 років.
 
@@ -172,7 +143,7 @@ SilkenNet не покладається на один блокчейн. Для �
 
 ### Рівень 2: Довіра та Верифікація (Verification)
 
-#### 3. peaq network (Machine DID)
+#### 2. peaq network (Machine DID)
 
 Кожен "Солдат" (дерево) отримує тут свій суверенний цифровий паспорт (наприклад, `did:peaq:0x...`). Це гарантує, що пристрій є автентичним.
 
@@ -192,7 +163,7 @@ SilkenNet не покладається на один блокчейн. Для �
 did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 ```
 
-#### 4. IoTeX W3bstream (ZK-Proofs)
+#### 3. IoTeX W3bstream (ZK-Proofs)
 
 Генерація Zero-Knowledge доказів цілісності pipeline + прив'язки до peaq DID (W3bstream — **НЕ** TEE). ⚠️ **Чесно про trust:** поточний рівень = L0 custodial (`hardware_signature` = backend-HKDF-derived — підтверджує цілісність шляху, але **не** доводить кремнієве походження); hardware-origin — true-DePIN North-Star (L2 trust-ladder → [`05_02`](05_02_Proof_of_Growth_Pipeline)). ZK ускладнює підробку скриптом, але origin-гарантію дає лише L2.
 
@@ -208,7 +179,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 **Guard Clause:** Chainlink dispatch ЗАБОРОНЕНО без підтвердження від IoTeX (`verified_by_iotex? == true`).
 
-#### 5. The Graph (Decentralized Indexing)
+#### 4. The Graph (Decentralized Indexing)
 
 Децентралізований індексатор. Спеціальний сабграф (Subgraph) слухає події `CarbonMinted` і будує GraphQL API для глобальних дашбордів екологічних організацій.
 
@@ -235,7 +206,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 ### Рівень 3: Фінанси та Економіка (Primary Chain & Parallel Rails)
 
-#### 6. Polygon (Primary EVM)
+#### 5. Polygon (Primary EVM)
 
 Головна артерія системи. Тут розгорнуті наші ключові смарт-контракти (`SilkenCarbonCoin.sol`, `SilkenForestCoin.sol`, `SilkenGovernor.sol`, `SilkenTimelock.sol`, `ProtocolParameters.sol`). Вибраний через низьку вартість транзакцій та сумісність з EVM.
 
@@ -269,7 +240,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 **HYBRID PROTOCOL GAIA:** 2% Dynamic Tax на carbon\_coin мінтинг, коли insurance pool потребує поповнення: бенефіціар отримує `amount − tax`, а податок їде ОДНИМ агрегованим `DAO_TREASURY`-записом на підбатч (`TAX_BATCH_*`), не по одному запису на транзакцію. ⚠️ Окремого отримувача-форестера в цьому тракті НЕМАЄ — `forester_share_amount` живе на `NaasContract` і диспенс-шляху не має ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).
 
-#### 7. Polygon Hadron (Identity & Compliance)
+#### 6. Polygon Hadron (Identity & Compliance)
 
 Модуль Identity & Compliance. Перевіряє `hadron_kyc_status`. Інституційні інвестори можуть мінтити або купувати токени SCC тільки після проходження KYC (стандарт ERC-3643).
 
@@ -289,7 +260,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 > **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `ComplianceError` при відсутності credentials (Production). Без strict mode — simulation fallback для dev/test.
 
-#### 8. Solana (Micro-Rewards)
+#### 7. Solana (Micro-Rewards)
 
 Використовується для мікро-транзакцій. Забезпечує миттєві виплати USDC у якості винагород власникам дерев (або арбористам) за підтримання гомеостазу.
 
@@ -313,7 +284,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 Solana `Solana::MintingService` використовує `sendTransaction` з Ed25519-підписом. ATA отримувача резолюється динамічно через `getTokenAccountsByOwner`.
 
-#### 9. Celo (ReFi Community Rewards)
+#### 8. Celo (ReFi Community Rewards)
 
 Мережа регенеративних фінансів. Інтеграція стейблкоїна cUSD для грантів та підтримки локальних громад, які доглядають за лісом.
 
@@ -336,7 +307,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Особливості:** **[ARCH.50]** Money-path-hardened — durable `:pending` intent ПЕРЕД broadcast + dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ chain-prefix Kredis-lock (`lock:web3:celo:oracle:`) + Celo-aware reconcile (`CeloConfirmationWorker`, бо `BlockchainConfirmationWorker` хардкоднутий на Polygon) + deterministic-vs-transient rescue split (dedicated `ORACLE_CELO_PRIVATE_KEY`). Закрив детермінований daily double-pay (логічний ключ ≠ `created_at`-партиція). **[ARCH.64]** Той reconcile покриває лише `:sent`; застрягле `:pending` без tx_hash (transient-timeout → dedup-skip, self-masking retry) підбирає `CeloRewardReconcileWorker` cron (:25/:55) → `:manual_review` (money-safe, не blind re-pay; раніше — тиха недоплата cUSD, дім [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy)).
 
-#### 10. KlimaDAO (ESG Carbon Retirement)
+#### 9. KlimaDAO (ESG Carbon Retirement)
 
 Шлюз для корпорацій. Дозволяє миттєво списувати (Retire) токени SCC для покриття корпоративного ESG-боргу (Carbon Offsetting) безпосередньо через смарт-контракти.
 
@@ -360,7 +331,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 ### Рівень 4: Мости та Фіналізація (Bridging & Finality)
 
-#### 11. Chainlink (DON) — ⚪ demoted до internal correlation-marker [ARCH.53]
+#### 10. Chainlink (DON) — ⚪ demoted до internal correlation-marker [ARCH.53]
 
 **Чесна модель довіри:** on-chain `sendRequest` **вилучено** — DON-нога (Functions JS-source / consumer `fulfillRequest` / relayer) ніколи не існувала, тож кожен on-chain запит платив би LINK за callback, що не прилетить (ба більше, повертався `tx_hash`, а callback-lookup шукає `requestId` — вони б не збіглись). Мінт іде **PATH 2 tokenomics** (оптимістичний, L0-custodial + ex-post clawback — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). Замикання PATH 1 справжньою DON-інженерією = свідомо відкинуто при TRL-3; on-chain гілка (Router ABI registry + bytecode probe) воскресає з git.
 
@@ -380,7 +351,7 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 **Callback-endpoint** (`POST /api/v1/oracle_callbacks`, HMAC-SHA256) лишається live — це двері для майбутнього PATH 1 або manual-fulfillment (§8.3).
 
-#### 12. Ethereum L1 (State Root Anchoring)
+#### 11. Ethereum L1 (State Root Anchoring)
 
 Абсолютна істина. Раз на тиждень весь стан лісу та економіки хешується (SHA-256) і записується в Mainnet Ethereum.
 
@@ -503,7 +474,6 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 ```
 ├──▶ SolanaMicroRewardWorker → Solana::MintingService (instant USDC micro-reward)
 ├──▶ CeloRewardWorker → Celo::CommunityRewardService (5 cUSD community reward)
-├──▶ StreamrBroadcastWorker → Streamr::BroadcasterService (P2P real-time)
 ├──▶ TheGraph::QueryService (автоматична індексація CarbonMintEvent)
 ├──▶ KlimaRetirementWorker → KlimaDao::RetirementService (ESG retirement, on-demand)
 ├──▶ FilecoinArchiveWorker → Filecoin::ArchiveService (immutable CID archive)
@@ -570,7 +540,6 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 | Credential | Сервіс |
 |------------|--------|
-| `streamr_stream_id`, `streamr_api_key` | Streamr |
 | `filecoin_api_key` | Filecoin/Pinata |
 | `peaq_node_url`, `peaq_signing_key` | peaq |
 | `iotex_w3bstream_url`, `iotex_api_key` | IoTeX |
@@ -593,7 +562,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | `SOLANA_USDC_MINT_ADDRESS` | Solana USDC |
 | `FILECOIN_PINNING_API_URL` | Pinata |
 
-> **Boot guard:** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище **суперечить ОГОЛОШЕНІЙ чейн-родині слоту** (`WEB3_CHAIN_ENV` ∈ `mainnet`/`testnet`, відсутнє → `mainnet`; на `mainnet` падає testnet-маркер Amoy/devnet/Sepolia…, на `testnet` — навпаки mainnet-ендпоінт: обидва значення є твердженнями, жодне не є послабленням — [OPS.37]) чи порожній RPC із зашитим code-side fallback'ом на ПРОТИЛЕЖНИЙ бік осі (`CELO_RPC_URL` при озброєному Celo-шляху — ⚠️ фолбека тут БІЛЬШЕ НЕМА з 2026-08-31, тож правило E.49 вижило на новій підставі: переносить `KeyError` із першої продової події на деплой (§9) ⊥ `ALCHEMY_POLYGON_RPC_URL` при озброєному мінтері → mainnet `polygon-rpc.com`), `ORACLE_*` signer-ключ відсутній/malformed, або silent-address ENV (`DAO_TREASURY_ADDRESS`/SCC/SFC-адреси — use-сайти маскують config-баг під RPC-збій: tax тихо off, chain-audit хибне «clean», fallback-ціна) відсутній/malformed, або Solana signer-четвірка неповна (batch-payout без escalation-шляху) — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
+> **Boot guard:** `Security::Web3NetworkGuard` ([`04_02 §8`](04_02_Business_Logic_and_Services)) fail-closes at boot у production / `WEB3_STRICT_MODE`, якщо будь-який `*_RPC_URL` вище **суперечить ОГОЛОШЕНІЙ чейн-родині слоту** (`WEB3_CHAIN_ENV` ∈ `mainnet`/`testnet`, відсутнє → `mainnet`; на `mainnet` падає testnet-маркер Amoy/devnet/Sepolia…, на `testnet` — навпаки mainnet-ендпоінт: обидва значення є твердженнями, жодне не є послабленням — [OPS.37]) чи порожній `CELO_RPC_URL` при ОЗБРОЄНОМУ Celo-шляху (`armed_path_violations`; зашитих code-side фолбеків у дереві **нуль** з 2026-09-03 — Celo знято ⚖️ 08-31, Polygon `polygon-rpc.com` ⚖️ 09-03 як недосяжний за побудовою після presence-правила `[rpc]`; правило E.49 живе на новій підставі: переносить `KeyError` із першої продової події на деплой (§9)), `ORACLE_*` signer-ключ відсутній/malformed, або silent-address ENV (`DAO_TREASURY_ADDRESS`/SCC/SFC-адреси — use-сайти маскують config-баг під RPC-збій: tax тихо off, chain-audit хибне «clean», fallback-ціна) відсутній/malformed, або Solana signer-четвірка неповна (batch-payout без escalation-шляху) — розширює runtime E.47 Solana-guard (`SOLANA_RPC_URL` за замовчуванням = Devnet) на EVM + boot-time. Live `eth_chainId`-probe свідомо не робиться (нуль RPC-залежності на boot).
 
 ---
 
@@ -612,22 +581,21 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 | # | Мережа | Рівень | Воркер | Черга | Retry | Cron |
 |---|--------|--------|--------|-------|-------|------|
-| 1 | Streamr | Data | `StreamrBroadcastWorker` | `low` | 3 | — |
-| 2 | Filecoin | Data | `FilecoinArchiveWorker` | `low` | 5 | — |
-| 3 | peaq | Verification | `PeaqRegistrationWorker` | `web3` | 5 | — |
-| 4 | IoTeX | Verification | `IotexVerificationWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
-| 5 | The Graph | Verification | — (read-only) | — | — | — |
-| 6 | Polygon | Finance | `MintCarbonCoinWorker` | `web3_critical` | 5 | — |
-| 6b | Polygon | Finance | `BurnCarbonTokensWorker` | `critical` | 5 | — |
-| 7 | Hadron | Finance | `HadronAssetRegistrationWorker` | `web3_low` | 5 | — |
-| 8 | Solana | Finance | `SolanaMicroRewardWorker` | `web3` | 3 | — |
-| 9 | Celo | Finance | `CeloRewardWorker` | `web3` | 3 | — |
-| 10 | KlimaDAO | Finance | `KlimaRetirementWorker` | `web3_low` | 3 | — |
-| 11 | Chainlink ⚪ | Marker (demoted ARCH.53) | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
-| 12 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
-| 13 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
-| 14 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
-| 14b | Solana | Gas Optimization | `SolanaBatchPayoutWorker` [E.61] | `web3` | 3 | `20 * * * *` |
+| 1 | Filecoin | Data | `FilecoinArchiveWorker` | `low` | 5 | — |
+| 2 | peaq | Verification | `PeaqRegistrationWorker` | `web3` | 5 | — |
+| 3 | IoTeX | Verification | `IotexVerificationWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
+| 4 | The Graph | Verification | — (read-only) | — | — | — |
+| 5 | Polygon | Finance | `MintCarbonCoinWorker` | `web3_critical` | 5 | — |
+| 5b | Polygon | Finance | `BurnCarbonTokensWorker` | `critical` | 5 | — |
+| 6 | Hadron | Finance | `HadronAssetRegistrationWorker` | `web3_low` | 5 | — |
+| 7 | Solana | Finance | `SolanaMicroRewardWorker` | `web3` | 3 | — |
+| 8 | Celo | Finance | `CeloRewardWorker` | `web3` | 3 | — |
+| 9 | KlimaDAO | Finance | `KlimaRetirementWorker` | `web3_low` | 3 | — |
+| 10 | Chainlink ⚪ | Marker (demoted ARCH.53) | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
+| 11 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
+| 12 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
+| 13 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
+| 13b | Solana | Gas Optimization | `SolanaBatchPayoutWorker` [E.61] | `web3` | 3 | `20 * * * *` |
 
 > **Тести.** Spec-шлях кожного сервісу — у його картці §1 (One-Home: інвентар біля підсистеми). Конвенції написання / coverage-гейт / тріаж прогалин — [`04_06`](04_06_Testing_Guide_and_Coverage).
 
@@ -644,7 +612,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | **🔴 Critical Path** | Якщо мережа `down` — Proof of Growth pipeline зупиняється, нові SCC не мінтяться, користувачі не отримують винагороду | **Polygon, IoTeX** |
 | **⚪ Unwired** | Не на critical path: dispatch = local marker, DON-callback не прилітає; мінт іде PATH 2 tokenomics | **Chainlink** [ARCH.53] |
 | **🟠 Important** | Outage блокує конкретний use case (винагороди, KYC), але core economics працює | **Solana, Hadron, peaq** |
-| **🟢 Nice-to-have** | Outage не впливає на користувацький досвід; дані зберігаються в backend та відправляються після відновлення | **Streamr, Filecoin, The Graph, Celo, KlimaDAO, Ethereum L1** |
+| **🟢 Nice-to-have** | Outage не впливає на користувацький досвід; дані зберігаються в backend та відправляються після відновлення | **Filecoin, The Graph, Celo, KlimaDAO, Ethereum L1** |
 
 ### 8.2. Critical Path: Polygon
 
@@ -706,10 +674,9 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | **Hadron (KYC)** | Нові KYC submissions не верифікуються | `wallet.hadron_kyc_status: pending` → mint blocked для нового користувача, але існуючі approved wallets не зачеплено. Hot-fix: `WEB3_STRICT_MODE=false` (тимчасово, з аудиторським логом) для unblock в emergency |
 | **peaq** | Нові provisioning DID не реєструються | `PeaqRegistrationWorker` retry 5; нові Soldiers/Queens отримують локальний DID `did:peaq:0x...` (deterministic SHA256(uid+created_at)), реєстрація push-up при відновленні |
 
-### 8.6. Nice-to-have Tier (Streamr, Filecoin, The Graph, Celo, Klima, L1)
+### 8.6. Nice-to-have Tier (Filecoin, The Graph, Celo, Klima, L1)
 
 Outage цих мереж **не блокує** core flow:
-- **Streamr** — broadcast retry на `low` queue; підписники downstream втратять live feed, але дані зберігаються в Postgres.
 - **Filecoin/IPFS** — IPFS pinning через Pinata fallback; outage означає затримку довготривалого архіву на дні.
 - **The Graph** — read-only; UI показує `cached_data` або `stale` indicator.
 - **Celo** — community rewards (cUSD) затримуються; `CeloRewardWorker` retry 3.
@@ -734,7 +701,6 @@ Outage цих мереж **не блокує** core flow:
 | Solana | 🟠 Important | ✅ `SOLANA_RPC_URL_FALLBACK_1` заведено 2026-09-02 (офіційний mainnet-beta ⊥ devnet на canopy; `ARCH.114` §🗄️) | Sidekiq retry + RPC-фолбек | Catchup worker after restore |
 | Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
 | peaq | 🟠 Important | No (local DID generation) | Yes | — |
-| Streamr | 🟢 Nice | No | Yes | — |
 | Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
 | The Graph | 🟢 Nice | No (read-only) | Yes | — |
 | Celo | 🟢 Nice | ✅ RPC-каскад ЖИВИЙ з 2026-09-02 (Forno → PublicNode → dRPC; `ARCH.114` §🗄️) | Sidekiq retry + RPC-каскад | — |

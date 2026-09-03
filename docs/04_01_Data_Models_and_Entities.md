@@ -685,7 +685,6 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 > |-------|------|--------------|---------------------|
 > | `IotexVerificationWorker` | `app/workers/iotex_verification_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
 > | `ChainlinkDispatchWorker` | `app/workers/chainlink_dispatch_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
-> | `StreamrBroadcastWorker` | `app/workers/streamr_broadcast_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg `created_at_iso` |
 > | `MintCarbonCoinWorker#find_telemetry_log` | `app/workers/mint_carbon_coin_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
 > | `SolanaMicroRewardWorker` | `app/workers/solana_micro_reward_worker.rb` | ✅ через `ApplicationWeb3Worker#find_telemetry_log_with_pruning` | sidekiq arg |
 > | `Api::V1::OracleCallbacksController#find_telemetry_log` | `app/controllers/api/v1/oracle_callbacks_controller.rb` | ⚠️ pruning якщо `params[:created_at]` присутній; інакше degraded scan | Chainlink DON callback param |
@@ -1588,8 +1587,8 @@ Cluster, User, Organization
 
 ```bash
 bin/rails governance:bootstrap        # oracle_executioner (money-audit актор; без нього record_money_audit_trail
-                                      # мовчки не пише НІЧОГО) + governance:seed_parameters; TreeFamily НЕ сіє —
-                                      # порожню таблицю називає гучно (склад видів = ⚖️ founder)
+                                      # мовчки не пише НІЧОГО) + governance:seed_parameters + ОДНА TreeFamily
+                                      # (*Pinus sylvestris*; числа оголошено провізорними в самому рядку — ⚖️ 2026-09-03 OPS.38)
 bin/rails governance:seed_parameters  # лише UPSERT dynamic_tax_rate + insurance_pool_threshold
 ```
 

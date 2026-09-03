@@ -943,9 +943,8 @@ end
   describe "#combine_penalty_factor (SLASH-1 de-correlation §6, pure)" do
     subject(:service) { described_class.new(organization.id, naas_contract.id) }
 
-    def combine(no_ack: false, streamr_gap: false, no_maintenance: false)
-      service.send(:combine_penalty_factor,
-                   no_ack: no_ack, streamr_gap: streamr_gap, no_maintenance: no_maintenance)
+    def combine(no_ack: false, no_maintenance: false)
+      service.send(:combine_penalty_factor, no_ack: no_ack, no_maintenance: no_maintenance)
     end
 
     it "is the negligence baseline when no signal fires" do
@@ -956,22 +955,10 @@ end
       expect(combine(no_ack: true)).to eq(1.5)
     end
 
-    it "applies the Streamr-gap uplift" do
-      expect(combine(streamr_gap: true)).to eq(1.25)
-    end
-
-    # ── THE SLASH-SAFETY invariant (§6): correlated comms-loss MUST NOT sum ──
-    it "DE-CORRELATES correlated comms-loss: no-ack + Streamr gap → max (1.5), NOT sum (1.75)" do
-      penalty_factor = combine(no_ack: true, streamr_gap: true)
-      expect(penalty_factor).to eq(1.5)      # 1.0 + max(0.5, 0.25)
-      expect(penalty_factor).not_to eq(1.75) # the double-count we are preventing
-    end
-
-    it "stacks INDEPENDENT physical negligence on top of the comms-loss max" do
-      # 1.0 + max(0.5, 0.25) + 0.5 = 2.0
-      expect(combine(no_ack: true, streamr_gap: true, no_maintenance: true)).to eq(2.0)
-    end
-
+    # ⚫ [ARCH.118 ⚖️ 2026-09-03] The comms-correlated class has ONE member since Streamr left
+    # (`PF_STREAMR_GAP` was a guarded hook that always contributed 0), so the SLASH-SAFETY §6
+    # de-correlation example (no-ack + gap → max, NOT sum) has no second operand to pin. It
+    # returns with the next comms-correlated signal that has ground truth (00_07 SLASH-1).
     it "feeds the multiplier into the slash curve, capped at PENALTY_FACTOR_MAX" do
       penalty_factor = combine(no_ack: true, no_maintenance: true) # 2.0 = PENALTY_FACTOR_MAX
       expect(service.send(:calculate_slash_ratio, 0.5, penalty_factor))

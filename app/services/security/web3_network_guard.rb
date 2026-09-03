@@ -189,6 +189,17 @@ module Security
       "slashing" => "ORACLE_SLASHER_PRIVATE_KEY"
     }.freeze
 
+    # [SEC.17] The Cloud-KMS twin of each boot-critical role: a key-VERSION resource name
+    # here switches the role to `Web3::KmsSigner` and RETIRES its plaintext twin — one
+    # signer, one home, so both present is a zombie (judged in the signer process below).
+    # The keyring provisions minter and slasher only (`terraform/kms.tf`), hence two.
+    SIGNER_KMS_KEYS = {
+      "minting"  => "ORACLE_MINTER_KMS_KEY",
+      "slashing" => "ORACLE_SLASHER_KMS_KEY"
+    }.freeze
+    # A key VERSION, never a bare key id: `asymmetricSign` is addressed per version.
+    KMS_KEY_VERSION = %r{\Aprojects/[^/\s]+/locations/[^/\s]+/keyRings/[^/\s]+/cryptoKeys/[^/\s]+/cryptoKeyVersions/\d+\z}
+
     # ETH-address ENVs whose read-sites fail SILENT (rescue umbrellas mask the
     # config error as an operational state) → boot is their only loud gate.
     # ENV → `cost:` what the silence costs (goes into the violation text) +
@@ -301,28 +312,25 @@ module Security
         end
       end
 
-      out + hardcoded_fallback_violations(env, testnet: testnet)
+      out + armed_path_violations(env, testnet: testnet)
     end
 
-    # A blank RPC var is skipped above because an absent URL normally just raises at use.
-    # TWO do not — their read-sites carry an explicit hardcoded fallback, so a blank var
-    # silently resolves to a fixed endpoint — and those endpoints sit on OPPOSITE sides of
-    # the chain axis, which is why each rule below fires on one side only:
-    #   · ALCHEMY_POLYGON_RPC_URL → mainnet polygon-rpc.com → judged here, on `testnet`
-    #   · SOLANA_RPC_URL          → Devnet TESTNET          → judged at its READ-SITES
-    # ⚠️ The Solana one is deliberately absent from this method and that is a bound, not an
-    # oversight: `Solana::MintingService#solana_rpc_urls` already raises on a blank var when
-    # the slot declares `mainnet` (it reads the same `chain_env`), and `Treasury::MonitorService`
-    # #fetch_solana_balance skips+warns on the same conjunction — so a boot rule would be a
-    # second home for one decision. ⚠️ COUNT the read-sites, not the constants: Solana has TWO.
-    # ⚖️ CELO_RPC_URL WAS the third and is gone [2026-08-31, founder]: its hardcoded fallback
-    # was REMOVED rather than repointed, so a blank var no longer resolves anywhere — the Celo
-    # path is fail-closed by construction. The rule below survives that, but on a new ground.
+    # A blank RPC var is skipped above: an absent URL raises `KeyError` at use, on every money
+    # path, because NO read-site carries a hardcoded fallback any more — Celo's was removed
+    # 2026-08-31 (⚖️ founder) and Polygon's `polygon-rpc.com` 2026-09-03 (⚖️ delegated, ARCH.118).
+    # The Polygon one had been UNREACHABLE since A5 `[rpc]` (2026-09-02) demanded
+    # `ALCHEMY_POLYGON_RPC_URL` present on every process class that reads it, so the testnet
+    # mirror rule that policed it guarded an event that could no longer happen — both the literal
+    # and its rule are gone. What survives below is a rule of a different KIND: the values an
+    # ARMED path needs, judged at boot instead of at its first production event.
+    # ⚠️ Solana is the one read-site with a code-side default (Devnet), and it is deliberately
+    # absent here — `Solana::MintingService#solana_rpc_urls` raises on a blank var when the slot
+    # declares `mainnet` and `Treasury::MonitorService#fetch_solana_balance` skips+warns on the
+    # same conjunction; a boot rule would be a second home for one decision.
     # ⛔ Adding a fallback back? Ask first whether the path is a MONEY path: there, "works
-    # without config" is the hazard, not the convenience, and every such fallback buys itself
-    # a boot rule to police it. Put it wherever its sibling lives — and COUNT them first: this
-    # comment once claimed "two" while a third already existed one file away.
-    def hardcoded_fallback_violations(env, testnet:)
+    # without config" is the hazard, not the convenience — each removed literal had bought
+    # itself a boot rule to police it, and each rule died with its literal.
+    def armed_path_violations(env, testnet:)
       out = []
 
       # [E.49] Unset CELO_RPC_URL while the Celo path is ARMED.
@@ -367,18 +375,6 @@ module Security
         end
       end
 
-      # Mirror of the rule above, and it exists because the testnet axis CREATED the hazard:
-      # the Polygon branch of `MintingRollbackService` falls back to the hardcoded MAINNET
-      # `polygon-rpc.com`, so a testnet slot that forgets the var reads mainnet state in
-      # silence — the one direction the marker scan above cannot see, since it only ever
-      # inspects a url that IS set. Armed on the minter key for the same reason as Celo.
-      if testnet && env["ORACLE_MINTER_PRIVATE_KEY"].present? && env["ALCHEMY_POLYGON_RPC_URL"].blank?
-        out << "[chain] ALCHEMY_POLYGON_RPC_URL is not set while #{CHAIN_ENV_VAR}=testnet and " \
-               "the minter key is present — MintingRollbackService falls back to the hardcoded " \
-               "MAINNET endpoint (polygon-rpc.com), so a staging slot would read mainnet " \
-               "state. Set a testnet Polygon RPC."
-      end
-
       out
     end
 
@@ -405,9 +401,23 @@ module Security
 
       if signer_process
         SIGNER_KEYS.each do |role, var|
-          next if env[var].present?
+          kms_var = SIGNER_KMS_KEYS.fetch(role)
+          kms = env[kms_var]
+          # [SEC.17] Judged HERE only: a process class that never signs never reads the name
+          # (INF.27 Q3 — a class that reads nothing judges nothing), and the value is a
+          # resource PATH, not a secret, so it may be echoed.
+          if kms.present? && !kms.match?(KMS_KEY_VERSION)
+            out << "[oracle-key] #{kms_var} is set but is not a Cloud KMS key-version resource name " \
+                   "(#{kms}) — expected projects/…/locations/…/keyRings/…/cryptoKeys/…/cryptoKeyVersions/N; " \
+                   "KmsSigner would 404 on its first digest."
+          end
+          if kms.present? && env[var].present?
+            out << "[oracle-key] #{var} is still set while #{kms_var} names an HSM key — the plaintext " \
+                   "key is a zombie once KMS signs (SEC.17): remove it from the deploy env."
+          end
+          next if kms.present? || env[var].present?
 
-          out << "[oracle-key] No #{role} oracle key: #{var} is not set — " \
+          out << "[oracle-key] No #{role} oracle key: neither #{var} nor #{kms_var} is set — " \
                  "#{role} jobs would KeyError into the Sidekiq DeadSet."
         end
       end
@@ -419,8 +429,10 @@ module Security
       # needed at boot. Scope = the mint↔slash pair (the time-sensitive collision); an
       # aux-vs-mint collision (e.g. Etherisc key == minter) is a deploy-checklist concern
       # (distinct keys — INF.19/S1.1), not flagged here.
-      minter  = env["ORACLE_MINTER_PRIVATE_KEY"]
-      slasher = env["ORACLE_SLASHER_PRIVATE_KEY"]
+      # [SEC.17] The KMS name stands in for the key it seals: two roles on ONE key version
+      # are one address — the same lock — exactly like two identical plaintext keys.
+      minter  = env["ORACLE_MINTER_KMS_KEY"].presence  || env["ORACLE_MINTER_PRIVATE_KEY"]
+      slasher = env["ORACLE_SLASHER_KMS_KEY"].presence || env["ORACLE_SLASHER_PRIVATE_KEY"]
       if minter.present? && slasher.present? && normalized_key(minter) == normalized_key(slasher)
         out << "[oracle-key] minting and slashing resolve to the SAME signer key — identical " \
                "MINTER/SLASHER keys collide on one Kredis lock 'lock:web3:oracle:<addr>', " \

@@ -280,9 +280,11 @@ POSTGRES_USER=silken_net
 POSTGRES_PASSWORD=REQUIRED_SECRET_NOT_SET
 # Slot switch, line 2 — canopy: silken_net_canopy (database.yml derives _cache/_cable from it).
 POSTGRES_DATABASE=silken_net_production
-# Upstash Redis (TLS) — Sidekiq enqueue target (UnpackTelemetryWorker). Slot switch, line 3 —
-# canopy: the CANOPY_REDIS_URL instance. ⛔ Never the other slot's instance: two Sidekiq
-# servers on one Redis = cross-drain mainnet⟷testnet (deploy_workflow_parity_spec).
+# Redis — Sidekiq enqueue target (UnpackTelemetryWorker). Production: Upstash (TLS). Slot switch,
+# line 3 — canopy: the self-hosted accessory on the app host, reached across the VPC as
+# `redis://:<hex>@<app_host_ip>:6379/0` = the CANOPY_REDIS_URL value (INF.28 ⚖️ 2026-09-03).
+# ⛔ Never the other slot's instance: two Sidekiq servers on one Redis = cross-drain
+# mainnet⟷testnet (deploy_workflow_parity_spec).
 REDIS_URL=REQUIRED_SECRET_NOT_SET
 # [SEC.22 Phase-2, 2026-09-02] SECRET_KEY_BASE, not RAILS_MASTER_KEY: the image ships no
 # credentials.yml.enc, so a master key here decrypted nothing, while `active_storage.verifier`

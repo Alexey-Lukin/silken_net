@@ -94,7 +94,7 @@ This is what we mean by *cyber-physical symbiosis*: the forest is not merely mea
 
 ---
 
-### 3. Cryptographic Integrity: Decentralized MRV as a 12-Chain DePIN Stack
+### 3. Cryptographic Integrity: Decentralized MRV as a 11-Chain DePIN Stack
 
 To eliminate double-counting, replay attacks, and oracle manipulation, Silken Net implements a **zero-trust** pipeline that runs from the silicon at the trunk to the smart contract on Polygon. The architecture is deliberately modular: no single network is asked to do more than it does well.
 
@@ -140,7 +140,7 @@ This matters. A protocol that burns its clients' tokens because lightning struck
 
 We are not announcing a finished product. We are announcing an architecture in which each layer is honestly readable on the NASA Technology Readiness Level scale:
 
-- **Backend (Rails 8.1, Sidekiq, 12-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered; the Solidity contracts are code-complete and pass a CI audit-stack (Slither, Aderyn, Halmos, Medusa), Polygon-targeted and pre-mainnet (external audit + mainnet deployment are the TRL-9 gate).
+- **Backend (Rails 8.1, Sidekiq, 11-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered; the Solidity contracts are code-complete and pass a CI audit-stack (Slither, Aderyn, Halmos, Medusa), Polygon-targeted and pre-mainnet (external audit + mainnet deployment are the TRL-9 gate).
 - **Firmware (STM32WLE5JC Soldier, mruby Lorenz Bio-Contract, star-topology LoRa, Queen gateway):** TRL 6. Running on hardware, parity-verified server-side, with named open blockers — AES-CCM migration and an OTA-deployable acoustic model. (The TinyML inference call-site was one of these until a self-owned baseline landed; we cross it off rather than keep it as decoration.)
 - **Hardware capsule:** TRL 6 — specified, prototyped, pre-flight checklists drafted. **BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard-tested on a CJMCU-2557, not yet in the capsule. The capsule's architecture is ahead of the power chain that must feed it, and the module reads at the lower number, not the higher one.
 - **Tri-zone coaxial anchor and Gen-2.0 EBFC enzymatic stack:** TRL 3. Zero-Lab in-silico pipeline (L1-L4) PASSED 2026-05-25 — validated protein architecture, matrix stability (6 tree species), electron cascade, and kinetics entirely in silico (analytical PoC; per NASA/ISO 16290 in-silico = TRL 3). Next (physical TRL 4): in-vitro titanium-coin biochemistry in synthetic xylem sap, then full SLM-printed anchors.
@@ -165,4 +165,4 @@ The trees, as it turns out, have a great deal to say. We have simply not, until 
 
 ---
 
-*Silken Net is an open research and engineering program. Hardware specifications, firmware, smart contracts, and the full 12-chain backend live in the project repository. We invite collaboration from the ReFi, DePIN, climate-tech, and dynamical-systems communities — and pointed questions from everyone else.*
+*Silken Net is an open research and engineering program. Hardware specifications, firmware, smart contracts, and the full 11-chain backend live in the project repository. We invite collaboration from the ReFi, DePIN, climate-tech, and dynamical-systems communities — and pointed questions from everyone else.*

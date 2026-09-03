@@ -35,6 +35,12 @@ RSpec.describe Security::Web3NetworkGuard do
       )
     end
 
+    # --- Cloud-KMS backend [SEC.17]: a key-version name seals the role -----
+
+    let(:kms_name) do
+      "projects/p/locations/europe-west1/keyRings/silken-sign-ew1/cryptoKeys/oracle-minter/cryptoKeyVersions/1"
+    end
+
     it "passes a clean mainnet env (separate minter + slasher)" do
       expect(described_class.violations(clean_env)).to be_empty
     end
@@ -229,23 +235,19 @@ RSpec.describe Security::Web3NetworkGuard do
         expect(described_class.violations(env)).not_to include(a_string_matching(/CELO_RPC_URL/))
       end
 
-      # The mirror hazard this axis CREATED: the Polygon fallback is hardcoded MAINNET, and
-      # a marker scan cannot see it because the var is blank.
-      it "flags a blank ALCHEMY_POLYGON_RPC_URL on an armed testnet slot (hardcoded mainnet fallback)" do
+      # ⚖️ [ARCH.118, 2026-09-03] The Polygon mirror rule is GONE with the literal it policed:
+      # `MintingRollbackService` no longer carries `polygon-rpc.com`, so a blank
+      # `ALCHEMY_POLYGON_RPC_URL` on a testnet slot resolves NOWHERE, and the verdict comes from
+      # the `[rpc]` PRESENCE rule (A5), which fires from job and web regardless of the chain
+      # axis. Pinned both ways: the presence verdict is there, the fallback vocabulary is not.
+      it "judges a blank ALCHEMY_POLYGON_RPC_URL on a testnet slot by PRESENCE, never by a fallback rule" do
         env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
                        .except("ALCHEMY_POLYGON_RPC_URL")
-        expect(described_class.violations(env))
-          .to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL.*polygon-rpc\.com/))
-      end
-
-      # The fallback rule is armed on the MINTER key, so it stays silent without one. Asked
-      # from the coap class on purpose: the `[rpc]` PRESENCE rule [INF.27 Q1] is a different
-      # axis with its own examples below, and it WOULD fire here from web or job.
-      it "does not arm the hardcoded-fallback rule on a testnet slot with no minter key" do
-        env = clean_env.merge(testnet_rpcs).merge("WEB3_CHAIN_ENV" => "testnet")
-                       .except("ALCHEMY_POLYGON_RPC_URL", "ORACLE_MINTER_PRIVATE_KEY")
-        expect(described_class.violations(env, signer_process: false, web_process: false))
-          .not_to include(a_string_matching(/\[chain\].*ALCHEMY_POLYGON_RPC_URL/))
+        violations = described_class.violations(env)
+        aggregate_failures do
+          expect(violations).to include(a_string_matching(/\[rpc\].*ALCHEMY_POLYGON_RPC_URL/))
+          expect(violations).not_to include(a_string_matching(/polygon-rpc\.com|fallback/i))
+        end
       end
 
       # The axis must not soften the OTHER axes: a testnet contract address is still an
@@ -290,6 +292,35 @@ RSpec.describe Security::Web3NetworkGuard do
       # ENV.fetch returns "" when the key exists-but-blank → Eth::Key raises. The guard must catch it.
       env = clean_env.merge("ORACLE_MINTER_PRIVATE_KEY" => "")
       expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_PRIVATE_KEY.*hex/))
+    end
+
+
+    it "accepts a minter sealed into a Cloud KMS key version with NO plaintext key" do
+      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => kms_name)
+      expect(described_class.violations(env)).to be_empty
+    end
+
+    it "flags a plaintext minter key lingering beside the KMS name (a zombie after the seal)" do
+      env = clean_env.merge("ORACLE_MINTER_KMS_KEY" => kms_name)
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_PRIVATE_KEY.*zombie/))
+    end
+
+    it "flags a KMS name that is not a key-VERSION resource path (asymmetricSign is per version)" do
+      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => "oracle-minter")
+      expect(described_class.violations(env))
+        .to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_KMS_KEY.*resource name/))
+    end
+
+    it "flags minter and slasher sealed into the SAME key version (one address, one lock — ARCH.47)" do
+      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY", "ORACLE_SLASHER_PRIVATE_KEY")
+                     .merge("ORACLE_MINTER_KMS_KEY" => kms_name, "ORACLE_SLASHER_KMS_KEY" => kms_name)
+      expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*SAME signer key/))
+    end
+
+    it "does not judge KMS names outside the signer process (a class that reads nothing judges nothing)" do
+      env = clean_env.merge("ORACLE_MINTER_KMS_KEY" => "garbage")
+      expect(described_class.violations(env, signer_process: false)).not_to include(a_string_matching(/KMS/))
     end
 
     # --- oracle lock-key collision (ARCH.47) ------------------------------

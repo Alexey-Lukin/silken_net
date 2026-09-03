@@ -146,7 +146,9 @@ gcloud storage cp 'gs://silken-net-terraform-state/terraform/state/default.tfsta
 5. Backend re-індексує on-chain стан (баланси самовідновлюються з Polygon).
 6. Оновити DNS A-запис → новий `ingress_ip`.
 
-### 5.4 Redis (Upstash) loss
+### 5.4 Redis loss (Upstash production · self-hosted canopy)
+⊕ **Canopy** (self-hosted Kamal-accessory на app-хості, ⚖️ 2026-09-03 [`00_07`](00_07_Action_Plan_Tracker) INF.28): AOF на диску хоста, керованої durability немає — втрата хоста = втрата черги canopy й testnet-nonce-ів, і це прийнято як staging-ціна; відновлення = `kamal accessory reboot redis -d canopy` (порожній стан) + redeploy; пароль живе в `CANOPY_REDIS_URL` і в `coap.env` анкера — ротація = обидва + `kamal accessory reboot`. Production ↓ без змін.
+
 Не потребує restore: Sidekiq jobs re-enqueue з БД-стану, Kredis locks re-acquire, Rack::Attack лічильники скидаються. Достатньо вказати новий `REDIS_URL` + redeploy (Kredis читає його як є — `config/redis/shared.yml`; `KREDIS_REDIS_URL` окремо **не** задавати, перебило б фолбек). ⚠️ Новий інстанс заводь у `europe-west1` — same-region із Cloud SQL є чинною властивістю, і втратити її можна мовчки ([`06_01 §Redis Isolation Strategy`](06_01_Deployment_Kamal_Terraform)).
 
 ### 5.5 DEFAULT-партиція заблокувала обслуговування (`PartitionMaintenanceWorker` падає щодня)
