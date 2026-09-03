@@ -194,8 +194,8 @@ module Security
     # signer, one home, so both present is a zombie (judged in the signer process below).
     # The keyring provisions minter and slasher only (`terraform/kms.tf`), hence two.
     SIGNER_KMS_KEYS = {
-      "minting"  => "ORACLE_MINTER_KMS_KEY",
-      "slashing" => "ORACLE_SLASHER_KMS_KEY"
+      "minting"  => "ORACLE_MINTER_KMS_KEY_VERSION",
+      "slashing" => "ORACLE_SLASHER_KMS_KEY_VERSION"
     }.freeze
     # A key VERSION, never a bare key id: `asymmetricSign` is addressed per version.
     KMS_KEY_VERSION = %r{\Aprojects/[^/\s]+/locations/[^/\s]+/keyRings/[^/\s]+/cryptoKeys/[^/\s]+/cryptoKeyVersions/\d+\z}
@@ -431,8 +431,8 @@ module Security
       # (distinct keys — INF.19/S1.1), not flagged here.
       # [SEC.17] The KMS name stands in for the key it seals: two roles on ONE key version
       # are one address — the same lock — exactly like two identical plaintext keys.
-      minter  = env["ORACLE_MINTER_KMS_KEY"].presence  || env["ORACLE_MINTER_PRIVATE_KEY"]
-      slasher = env["ORACLE_SLASHER_KMS_KEY"].presence || env["ORACLE_SLASHER_PRIVATE_KEY"]
+      minter  = env["ORACLE_MINTER_KMS_KEY_VERSION"].presence  || env["ORACLE_MINTER_PRIVATE_KEY"]
+      slasher = env["ORACLE_SLASHER_KMS_KEY_VERSION"].presence || env["ORACLE_SLASHER_PRIVATE_KEY"]
       if minter.present? && slasher.present? && normalized_key(minter) == normalized_key(slasher)
         out << "[oracle-key] minting and slashing resolve to the SAME signer key — identical " \
                "MINTER/SLASHER keys collide on one Kredis lock 'lock:web3:oracle:<addr>', " \

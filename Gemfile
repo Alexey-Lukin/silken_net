@@ -12,6 +12,7 @@ gem "bootsnap", require: false
 gem "csv"
 gem "ed25519"
 gem "eth"
+gem "googleauth", "~> 1.17", require: false     # [SEC.17] Web3::KmsKey::RestTransport — ADC bearer token for Cloud KMS (REST, no grpc)
 gem "google-cloud-storage", require: false   # Active Storage: Google Cloud Storage (mirror / disaster recovery)
 gem "httpx"
 gem "image_processing"

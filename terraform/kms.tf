@@ -135,8 +135,8 @@ resource "google_kms_crypto_key_iam_member" "anchor_boot_agent" {
 # `signerVerifier` (asymmetricSign) + `viewer` (getPublicKey → address
 # derivation). ⚠️ IAM alone is NOT enough: compute.tf pins the VM OAuth scopes
 # to logging/monitoring, and Cloud KMS answers 403 without the `cloud-platform`
-# scope regardless of IAM — that scope change is part of the same ⚖️, not this
-# block (measured by reading 2026-09-03, SEC.17).
+# scope regardless of IAM — the app VM's `service_account.scopes` in compute.tf
+# widens under THE SAME flag (measured by reading 2026-09-03, SEC.17; wired 09-03).
 #
 # Rotation: asymmetric keys have NO automatic rotation. A new version = a new
 # public key = a NEW on-chain address, so rotation is re-funding + re-pointing

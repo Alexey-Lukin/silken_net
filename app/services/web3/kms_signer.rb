@@ -7,7 +7,7 @@ module Web3
   # =========================================================================
   # Same surface as `LocalEnvSigner`; the key object is a `Web3::KmsKey`, whose
   # private half never leaves the HSM — only 32-byte digests travel. Selected by
-  # `OracleSigner.for` when the role's `ORACLE_*_KMS_KEY` names a key VERSION
+  # `OracleSigner.for` when the role's `ORACLE_*_KMS_KEY_VERSION` names a key VERSION
   # (`projects/…/cryptoKeyVersions/N`); minter and slasher only, because those
   # are the roles the keyring provisions (`terraform/kms.tf`, 06_04 §5.5 step 3).
   # Job-only by construction: the names live on the job surface, and the guard

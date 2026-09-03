@@ -6,7 +6,7 @@ description: "Use when deploying or operating silken_net infrastructure — Kama
 # Deploy & Infrastructure (Module 06 — The Matrix)
 
 DevOps/Infra шар: Rails на **GCP** (Kamal-деплой УСЕРЕДИНІ VPC; Cloud SQL
-private-only, Redis — зовнішній **Upstash** Serverless TLS). IaC через
+private-only, Redis — production: зовнішній **Upstash** Serverless TLS, canopy: self-hosted Kamal-accessory на app-хості з 09-03). IaC через
 **Terraform**, спостережуваність через **Grafana Alloy → Grafana Cloud**.
 ⚠️ **Akash-платформу зрізано 2026-08-29 (`OPS.37`) з усіх поверхонь — акаунта
 не існувало, деплою на неї не було НІКОЛИ.**
@@ -335,8 +335,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
   формально правдивий текст.
 - **Secrets-at-rest = три ISOLATED KMS-keyring'и** (`silken-disk-ew1` boot-disk CMEK ·
   `silken-sign-ew1` money-signing SEC.17 pre-mainnet · `silken-tfstate-ew1` bootstrap-owned) —
-  key-level IAM бар'єр, **НЕ** generic keyring (merge-trap). ⚠️ Money-квінтет лишається plaintext
-  у deploy-ENV до `SEC.17` (`KmsSigner` HSM-custody, pre-mainnet-gated) — поточний масштаб цієї
+  key-level IAM бар'єр, **НЕ** generic keyring (merge-trap). ⚠️ Money-квінтет лишається plaintext у deploy-ENV до АКТИВАЦІЇ `SEC.17` (`KmsSigner` ✅ код 09-03; provision KMS + `ORACLE_*_KMS_KEY_VERSION` — 👤 pre-mainnet, `06_04 §5.5` крок 3) — поточний масштаб цієї
   діри пост-`OPS.37` переоцінює сам `SEC.17`, тут не вгадуємо. Grantee/purpose/boot-dep → `06_04 §5.6`.
 - **Deploy/release ланцюг:** Canopy = continuous push у `main` після CI; Production = GitHub Release
   (release-please: semver+CHANGELOG); GHCR-mirror пушить SLSA provenance+SBOM. `main` branch-protected

@@ -11,7 +11,7 @@ module Web3
   # підпису вимагала б 7 правок у money-path.
   #
   # Два бекенди, розвилка живе ТУТ і ніде більше (`06_04 §5.5`):
-  #   `KmsSigner`      — коли `ORACLE_<ROLE>_KMS_KEY` ролі називає key-version у
+  #   `KmsSigner`      — коли `ORACLE_<ROLE>_KMS_KEY_VERSION` ролі називає key-version у
   #                      Cloud KMS (minter/slasher — ролі, що їх провіжить keyring);
   #   `LocalEnvSigner` — інакше: `Eth::Key` із plaintext deploy-ENV (поточна поведінка).
   # KMS-імена читаються `ENV[]`, а не `ENV.fetch`, СВІДОМО: відсутнє імʼя = «цю роль
@@ -36,7 +36,7 @@ module Web3
   module OracleSigner
     # Roles with an HSM key in the keyring (`terraform/kms.tf`): the KMS axis exists for
     # these two only; the aux/anchor roles stay ENV-keyed by construction.
-    KMS_KEY_ENVS = { minter: "ORACLE_MINTER_KMS_KEY", slasher: "ORACLE_SLASHER_KMS_KEY" }.freeze
+    KMS_KEY_ENVS = { minter: "ORACLE_MINTER_KMS_KEY_VERSION", slasher: "ORACLE_SLASHER_KMS_KEY_VERSION" }.freeze
 
     class << self
       # @param role [Symbol] one of :minter, :slasher, :celo, :puro, :klima, :etherisc, :anchor

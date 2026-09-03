@@ -42,7 +42,7 @@ db_max_connections    = "400"
 db_read_replica_count = 0
 
 # ── Duty-cycle: репетиція є ПОДІЄЮ, не станом ──────────────────────────────
-# Зупинка між сесіями верифікації: ~$106/міс → ~$20. Ставиш NEVER/TERMINATED —
+# Зупинка між сесіями верифікації: виміряних $145/міс → ~$20. Ставиш NEVER/TERMINATED —
 # це записане рішення, і CI бачить його разом із тобою (в цьому й був сенс файлу).
 db_activation_policy   = "ALWAYS"
 compute_desired_status = "RUNNING"
@@ -54,5 +54,5 @@ iap_admin_members          = ["user:realvirtuozzz@gmail.com"]
 ssh_source_ranges = []
 
 # ── FinOps (OPS.11) ─────────────────────────────────────────────────────────
-# Стеля під pre-fleet-форму (~$106 always-on). `billing_account_id` — TF_VAR із секрета.
+# Стеля під pre-fleet-форму (виміряно $145/міс always-on 2026-09-01 — $100 НИЖЧЕ run-rate, алерт бюджету горітиме щомісяця: підняти або даунгрейдити тир — ⚖️ 00_07 OPS.37). `billing_account_id` — TF_VAR із секрета.
 billing_budget_usd = 100

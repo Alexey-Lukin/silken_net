@@ -813,6 +813,7 @@ DEPENDENCIES
   eth
   factory_bot_rails
   google-cloud-storage
+  googleauth (~> 1.17)
   httpx
   i18n-tasks
   image_processing

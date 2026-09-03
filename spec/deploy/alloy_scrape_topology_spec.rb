@@ -103,7 +103,8 @@ RSpec.describe "config.alloy declares the scrape topology (S2.4: 3 production + 
     # The invariant was always about the SHARED agent, never about the flag as such.
     it "boots the Alloy accessory with NO destination flag, so its label matches the production targets" do
       offenders = deploy_workflows.filter_map do |path, text|
-        path if text.match?(/kamal\s+accessory\s+\S+\s+(?:alloy|all)\s+-d\s/)
+        # `.+?` (not `\S+`): the action slot is a `${{ … }}` expression WITH spaces in deploy.yml.
+        path if text.match?(/kamal\s+accessory\s+.+?\s(?:alloy|all)\s+-d\s/)
       end
       expect(offenders).to be_empty,
                            "a deploy workflow boots Alloy with `-d <destination>`: #{offenders.inspect}. " \
@@ -132,7 +133,7 @@ RSpec.describe "config.alloy declares the scrape topology (S2.4: 3 production + 
       canopy_only.each do |name|
         # `boot` by default, `reboot` by dispatch (a rotated REDIS_URL is read only at boot): the
         # action is an expression, the accessory name and the destination flag are the pin.
-        expect(workflow).to match(/kamal\s+accessory\s+\S.*?\s#{Regexp.escape(name)}\s+-d\s+canopy\b/),
+        expect(workflow).to match(/^\s*kamal\s+accessory\s+[^\n]+?\s#{Regexp.escape(name)}\s+-d\s+canopy\b/),
                             ".github/workflows/deploy.yml never boots the canopy-only accessory `#{name}` with " \
                             "`-d canopy` — the roles that depend on it would boot against nothing."
       end

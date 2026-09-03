@@ -103,7 +103,7 @@ RSpec.describe "Web3 ENV loudness classification (INF.12 behavior-half)" do # ru
       expect(g::SIGNER_KEYS.values).to match_array(%w[ORACLE_MINTER_PRIVATE_KEY ORACLE_SLASHER_PRIVATE_KEY])
       # [SEC.17] The KMS twins are GUARD-class (key-version format + zombie rule in the signer
       # process), so their arrival on the job surface at activation needs no LOUD/SOFT entry.
-      expect(g::SIGNER_KMS_KEYS.values).to match_array(%w[ORACLE_MINTER_KMS_KEY ORACLE_SLASHER_KMS_KEY])
+      expect(g::SIGNER_KMS_KEYS.values).to match_array(%w[ORACLE_MINTER_KMS_KEY_VERSION ORACLE_SLASHER_KMS_KEY_VERSION])
       # [OPS.37] The chain-family axis is GUARD-class, not SOFT: unlike WEB3_STRICT_MODE
       # (whose absence prod compensates for), an unrecognised value here REFUSES the boot.
       expect(g::CHAIN_ENV_VAR).to eq("WEB3_CHAIN_ENV")

@@ -76,15 +76,15 @@ RSpec.describe Web3::OracleSigner do
   describe ".for with a Cloud KMS key version" do
     let(:kms_name) { "projects/p/locations/l/keyRings/r/cryptoKeys/oracle-minter/cryptoKeyVersions/1" }
 
-    it "resolves :minter through KmsSigner when ORACLE_MINTER_KMS_KEY is set, never deriving an Eth::Key" do
-      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => kms_name))
+    it "resolves :minter through KmsSigner when ORACLE_MINTER_KMS_KEY_VERSION is set, never deriving an Eth::Key" do
+      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY_VERSION" => kms_name))
 
       expect(described_class.for(:minter)).to be_a(Web3::KmsSigner)
       expect(Eth::Key).not_to have_received(:new)
     end
 
     it "falls back to LocalEnvSigner when the KMS name is blank (present-empty is «ENV-keyed», not «sealed»)" do
-      stub_const("ENV", ENV.to_h.merge("ORACLE_MINTER_KMS_KEY" => "", "ORACLE_MINTER_PRIVATE_KEY" => private_key))
+      stub_const("ENV", ENV.to_h.merge("ORACLE_MINTER_KMS_KEY_VERSION" => "", "ORACLE_MINTER_PRIVATE_KEY" => private_key))
 
       expect(described_class.for(:minter)).to be_a(Web3::LocalEnvSigner)
     end
@@ -104,7 +104,7 @@ RSpec.describe Web3::OracleSigner do
     it "returns the ENV-keyed signer's address verbatim when the key is present" do
       address = Eth::Address.new("0x#{'d' * 40}")
       allow(key_double).to receive(:address).and_return(address)
-      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_KMS_KEY").merge("ORACLE_MINTER_PRIVATE_KEY" => private_key))
+      stub_const("ENV", ENV.to_h.except("ORACLE_MINTER_KMS_KEY_VERSION").merge("ORACLE_MINTER_PRIVATE_KEY" => private_key))
 
       expect(described_class.address_for(:minter)).to equal(address)
     end

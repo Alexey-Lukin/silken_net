@@ -296,30 +296,30 @@ RSpec.describe Security::Web3NetworkGuard do
 
 
     it "accepts a minter sealed into a Cloud KMS key version with NO plaintext key" do
-      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => kms_name)
+      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY_VERSION" => kms_name)
       expect(described_class.violations(env)).to be_empty
     end
 
     it "flags a plaintext minter key lingering beside the KMS name (a zombie after the seal)" do
-      env = clean_env.merge("ORACLE_MINTER_KMS_KEY" => kms_name)
+      env = clean_env.merge("ORACLE_MINTER_KMS_KEY_VERSION" => kms_name)
       expect(described_class.violations(env))
         .to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_PRIVATE_KEY.*zombie/))
     end
 
     it "flags a KMS name that is not a key-VERSION resource path (asymmetricSign is per version)" do
-      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY" => "oracle-minter")
+      env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY").merge("ORACLE_MINTER_KMS_KEY_VERSION" => "oracle-minter")
       expect(described_class.violations(env))
-        .to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_KMS_KEY.*resource name/))
+        .to include(a_string_matching(/\[oracle-key\].*ORACLE_MINTER_KMS_KEY_VERSION.*resource name/))
     end
 
     it "flags minter and slasher sealed into the SAME key version (one address, one lock — ARCH.47)" do
       env = clean_env.except("ORACLE_MINTER_PRIVATE_KEY", "ORACLE_SLASHER_PRIVATE_KEY")
-                     .merge("ORACLE_MINTER_KMS_KEY" => kms_name, "ORACLE_SLASHER_KMS_KEY" => kms_name)
+                     .merge("ORACLE_MINTER_KMS_KEY_VERSION" => kms_name, "ORACLE_SLASHER_KMS_KEY_VERSION" => kms_name)
       expect(described_class.violations(env)).to include(a_string_matching(/\[oracle-key\].*SAME signer key/))
     end
 
     it "does not judge KMS names outside the signer process (a class that reads nothing judges nothing)" do
-      env = clean_env.merge("ORACLE_MINTER_KMS_KEY" => "garbage")
+      env = clean_env.merge("ORACLE_MINTER_KMS_KEY_VERSION" => "garbage")
       expect(described_class.violations(env, signer_process: false)).not_to include(a_string_matching(/KMS/))
     end
 

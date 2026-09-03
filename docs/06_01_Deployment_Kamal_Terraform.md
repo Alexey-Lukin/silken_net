@@ -72,7 +72,7 @@
 
 ### Менеджер Секретів (Рекомендація)
 
-З десятками API-ключів (12 блокчейнів, GCP, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
+З десятками API-ключів (11 блокчейнів, GCP, Starlink, DB, Redis, GitHub) критично мати єдине захищене сховище:
 
 - **Bitwarden** (open-source, self-hostable) або **1Password** — один vault per середовище (canopy / production)
 - Зберігай кожен токен, приватний ключ та credential там **до** заповнення shell-ENV перед `kamal deploy`
@@ -139,10 +139,10 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **Workflow** | `.github/workflows/deploy.yml` (`Deploy · Canopy`) | `.github/workflows/deploy-production.yml` (`Deploy · Production`) |
 | **Платформа** | Kamal/GCP, `web` + власна `job` (Sidekiq `-c 4`, testnet-підписанти), `coap` нейтралізовано (`kamal deploy -d canopy`; з 2026-09-02, [`00_07`](00_07_Action_Plan_Tracker) OPS.37) | Kamal/GCP (усі ролі) |
 | **GCP ресурси** | Cloud SQL (спільна або окрема БД) + Ingress Anchor (`e2-small`) | Cloud SQL (⚠️ HA — ЦІЛЬ; чинний деплой `ZONAL`, [`06_06 §2`](06_06_Disaster_Recovery_and_Backup)) + Ingress Anchor (`e2-small`, CoAP-демон PRIMARY — INF.17) |
-| **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | Upstash Serverless Redis (TLS, `rediss://`) |
+| **Redis** | Upstash Serverless Redis (TLS, `rediss://`) | self-hosted Kamal-accessory на app-хості (`redis://:<hex>@<app_host_ip>:6379/0`, AOF — [`00_07`](00_07_Action_Plan_Tracker) INF.28 ⚖️ 2026-09-03) |
 | **SSL/HTTPS** | ✅ `force_ssl` + HSTS (1рік, subdomains, preload). `DISABLE_SSL=true` для override | ✅ `force_ssl` + HSTS (1рік, subdomains, preload) |
 | **DB** | `silken_net_canopy*` — ізольований набір на тому ж Cloud SQL інстансі (`POSTGRES_DATABASE` override; INF.16) | `silken_net_production` (⚠️ HA — ціль, чинний деплой `ZONAL`) |
-| **Puma workers** | `WEB_CONCURRENCY: 2` (спека app-хоста — `config/deploy.yml`) | `WEB_CONCURRENCY: 2` (те саме; рухається разом із тіром хоста) |
+| **Puma workers** | `WEB_CONCURRENCY: 2` (спека app-хоста — `config/deploy.yml`) | `WEB_CONCURRENCY: 1` (спільний хост — бюджет зʼєднань, `config/deploy.canopy.yml`) |
 
 ---
 
@@ -189,7 +189,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 
 🔑 **Формулювання, яким власник розвʼязав це питання, і воно тут не як цитата, а як ФОРМА присуду:** таблиця виникла з питання «чи потрібен нам взагалі другий хмарний провайдер», і те питання було **нерозвʼязне, доки концентрацію не названо**. Чесний присуд формулюється не «який вендор безпечніший», **а «назвати концентрацію, яку ми ПРИЙНЯЛИ, а не ту, від якої втекли»**. ⊕ Наслідок несучий: втеча до другого вендора дає ДВІ концентрації замість однієї й жодного розподіленого права, тоді як названа концентрація дає рівно те, чого вимагає амана — предмет, на який можна поставити строк.
 
-⚠️ **Читай таблицю разом із цим рядком, і саме він змінився 2026-08-31: більшість важелів уже ДІЮЧІ.** Живі — GCP+білінг · GitHub · реєстратор · Cloudflare · Cloud SQL · GCS tfstate (перший `terraform apply` пройшов того дня); Alchemy (заведено того ж дня); напів-живі — GHCR (образу ще нема) і Upstash (`silkennet-canopy` є, production упирається в тариф). **Суто проєктних не лишилось ЖОДНОГО** — усі девʼять важелів або діють, або мають заведений акаунт. ⛔ **Три підстави, на яких стояв попередній рядок, мертві всі:** «акаунтів не створено» — створено сім із девʼяти · «деплою не було» — інфра-`apply` БУВ (⚠️ **і з 2026-09-01 деплой ЗАСТОСУНКУ теж був** — див. §Статус на початку файлу; подій тут ТРИ, які легко склеїти: `terraform apply` ⊥ `kamal deploy` ⊥ ЗАВЕРШЕНИЙ бут, і сьогодні не сталась лише третя) · «жоден важіль ще нікому не відданий» — `iap_admin_members` у `posture.auto.tfvars` уже роздає `osAdminLogin` + IAP-тунель. 🔑 **Отже підпис ставиться не «поки дешево», а тому, що концентрація вже РЕАЛЬНА** — і це посилює привід, а не послаблює: реєстр тепер описує стан, а не намір. 🔏 Підпис прийняття цієї концентрації ставиться у **Фазі −1** рунбука нижче, разом із трьома рядками, які знає лише людина (момент ратифіковано ⚖️ founder 2026-08-30 — `ARCH.114`).
+⚠️ **Читай таблицю разом із цим рядком, і саме він змінився 2026-08-31: більшість важелів уже ДІЮЧІ.** Живі — GCP+білінг · GitHub · реєстратор · Cloudflare · Cloud SQL · GCS tfstate (перший `terraform apply` пройшов того дня); Alchemy (заведено того ж дня); напів-живі — GHCR (образу ще нема) і Upstash (production — упирається в тариф; canopy з 09-03 на self-hosted accessory, `silkennet-canopy` більше не споживається — на видалення). **Суто проєктних не лишилось ЖОДНОГО** — усі девʼять важелів або діють, або мають заведений акаунт. ⛔ **Три підстави, на яких стояв попередній рядок, мертві всі:** «акаунтів не створено» — створено сім із девʼяти · «деплою не було» — інфра-`apply` БУВ (⚠️ **і з 2026-09-01 деплой ЗАСТОСУНКУ теж був** — див. §Статус на початку файлу; подій тут ТРИ, які легко склеїти: `terraform apply` ⊥ `kamal deploy` ⊥ ЗАВЕРШЕНИЙ бут, і сьогодні не сталась лише третя) · «жоден важіль ще нікому не відданий» — `iap_admin_members` у `posture.auto.tfvars` уже роздає `osAdminLogin` + IAP-тунель. 🔑 **Отже підпис ставиться не «поки дешево», а тому, що концентрація вже РЕАЛЬНА** — і це посилює привід, а не послаблює: реєстр тепер описує стан, а не намір. 🔏 Підпис прийняття цієї концентрації ставиться у **Фазі −1** рунбука нижче, разом із трьома рядками, які знає лише людина (момент ратифіковано ⚖️ founder 2026-08-30 — `ARCH.114`).
 
 | Важіль | Тримач | Що дає ОДНООСІБНО | Розподіляється на події? |
 |---|---|---|---|
@@ -216,7 +216,7 @@ Redis при ЗЕЛЕНОМУ деплої · перелік `terraform output` 
 | **CoAP UDP daemon (:5683)** | ✅ **PRIMARY** | — | — | **PRIMARY = демон на Ingress Anchor** (docker + systemd `coap-daemon`, VPC → Cloud SQL приватним IP — founder 2026-07-04); fallback = socat-релей → дормантна Kamal `coap`-роль. Свідомо НЕ puma-thread — UDP у web-процесі сплітає lifecycle (INF.17) |
 | **Cloud SQL PostgreSQL 17** | ✅ | — | — | Приватна IP, БЕЗ Auth Proxy на рантайм-шляху |
 | **ActionCable (Solid Cable)** | ✅ | — | — | Спільна Cloud SQL БД `cable`, **POLLING** (`polling_interval`), НЕ LISTEN/NOTIFY — механіка й наслідки для ємності в `config/cable.yml` (без sticky sessions) |
-| **Redis** | — | ✅ | — | Upstash Serverless, TLS (`rediss://`) |
+| **Redis** | ✅ (canopy — accessory на app-хості) | ✅ (production) | — | Upstash Serverless, TLS (`rediss://`) для production; canopy self-hosted з 2026-09-03 |
 | **Prometheus + Grafana + Alerting** | — | — | ✅ | SaaS, Alloy → remote_write |
 | **Ingress Anchor** | ✅ | — | — | `e2-small`, статична IP: CoAP-демон (PRIMARY) + HAProxy 80/443 → app-хост + socat (fallback) — ✅ HAProxy живий з 2026-09-02 після трьох фіксів startup-скрипта (крок 10) |
 | **Artifact Registry (Docker)** | ✅ | — | — | Kamal пушить у GCP AR |
@@ -1248,7 +1248,7 @@ dead-man switch Королев, sweep застряглих коштів, treasur
 
 **Фаза 4 — Верифікація (єдиний post-deploy список):**
 🌲 **Приймальний рядок інтейку — `Listening on coap://0.0.0.0:5683 slot=<слот>` у логах демона**
-(`docker logs silkennet-coap` на анкері). Коли він зʼявився — **ліс може говорити.**
+(`docker logs silkennet-coap` на анкері). Коли він зʼявився — **ліс може говорити.** ⚠️ Виміряно 2026-09-03 (перший живий прогін canopy-слоту): під attached `docker run` у systemd-юніті stdout-рядки демона доїжджають у `docker logs` із затримкою (тут ~10 хв; stderr — одразу), тож порожній перший grep ≠ мертвий демон — свідки: `sudo ss -lunp | grep 5683` (сокет тримає `ruby`) і сирий `/var/lib/docker/containers/<id>/<id>-json.log`; демон того прогону сидів у recv-loop із перших секунд (`/proc/<pid>/syscall` = `select`).
 ⚠️ Це НЕ дублює `coap_smoke` нижче, а передує йому: рядок каже, що сокет піднято, smoke —
 що байти правильні; демон із неповним `coap.env` мовчить, а `systemctl status` рапортує
 активність через `Restart=always`. 🔴 До 2026-09-02 цей рядок був ФАНТОМОМ: рунбук цитував

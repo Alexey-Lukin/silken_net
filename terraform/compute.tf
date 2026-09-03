@@ -302,6 +302,11 @@ ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=REQUIRED_SECRET_NOT_SET
 ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=REQUIRED_SECRET_NOT_SET
 ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=REQUIRED_SECRET_NOT_SET
 SENTRY_DSN=REQUIRED_SECRET_NOT_SET
+# [INF.17 2026-09-03] The daemon stores no files, but Rails resolves the storage service at boot:
+# without this line the production `production_mirror` (S3) service makes the AWS SDK probe EC2-IMDS
+# on a GCP VM at every boot (HTTP 404 noise in `docker logs`). Same fix canopy carries in
+# config/deploy.canopy.yml. Slot-invariant.
+ACTIVE_STORAGE_SERVICE=local
 WEB3_STRICT_MODE=true
 COAP_ENV
       chmod 600 /etc/silkennet/coap.env
@@ -564,10 +569,14 @@ resource "google_compute_instance" "app" {
 
   service_account {
     email = google_service_account.deploy.email
-    # Same two scopes as the Anchor. Artifact Registry pulls authenticate with
-    # the registry password in config/deploy.yml (a short-lived WIF token), not
-    # with instance scopes, so `storage-ro` earns nothing here.
-    scopes = ["logging-write", "monitoring-write"]
+    # Same two scopes as the Anchor by default. Artifact Registry pulls authenticate with
+    # the registry password in config/deploy.yml (a short-lived WIF token), not with
+    # instance scopes, so `storage-ro` earns nothing here.
+    # [SEC.17] Under `enable_oracle_signing_keys` THIS host (the job role signs here) needs
+    # `cloud-platform`: Cloud KMS answers 403 to a metadata token without it, IAM or not
+    # (kms.tf). Flag-gated so `plan` without the flag stays a no-op; the flip is a stop/start
+    # of this VM (`allow_stopping_for_update`). The Anchor never signs and keeps the narrow pair.
+    scopes = var.enable_oracle_signing_keys ? ["cloud-platform"] : ["logging-write", "monitoring-write"]
   }
 
   allow_stopping_for_update = true

@@ -282,7 +282,12 @@ accessories:
     env:
       secret:
         - REDIS_URL
-    cmd: sh -c 'p="${REDIS_URL#redis://:}"; exec redis-server --appendonly yes --requirepass "${p%%@*}"'
+    # The password is extracted from REDIS_URL and MUST be hex — any other shape (the old
+    # Upstash `rediss://default:…`, an unset twin's `…_NOT_SET` marker, an empty value) exits 78
+    # and the container restart-loops VISIBLY instead of running with a guessable password on a
+    # VPC-reachable port. ⚠️ Runs as root (the `sh -c` wrapper bypasses the image's su-exec drop);
+    # accepted for a staging accessory whose data dir is a host mount — named here, not hidden.
+    cmd: sh -c 'p="${REDIS_URL#redis://:}"; p="${p%%@*}"; case "$p" in ""|*[!0-9a-f]*) echo "REDIS_URL must be redis://:<hex>@host:port/db (INF.28)" >&2; exit 78;; esac; exec redis-server --appendonly yes --requirepass "$p"'
 
 # Proxy: the block below is LIVE — canopy routes on its own host and serves TLS from the
 # base manifest's Origin-CA pair (inherited; the certificate is a wildcard). Only the
