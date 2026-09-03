@@ -11,7 +11,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 5 — backup-конфіг IaC присутній і ввімкнений (Cloud SQL PITR + deletion_protection; **HA — `REGIONAL` у дефолті, але чинний деплой `ZONAL` оверрайдом**, §нижче), §5.1 + половина §5.2 прогнані в першому drill 2026-09-02 (RTO 11:00 на staging — §6), master-key backup — операційна задача.
-- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `SECRET_KEY_BASE` — нуль копій поза GitHub Secrets (§Gaps; `RAILS_MASTER_KEY` з 2026-09-02 не є незамінним — vault тримає лише `secret_key_base`, а в деплой ключ не їде) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1, S5.6).
+- **Відкрите:** квартальний ритм drill (наступний — з §5.2 у повній формі) + master-key backup **половинчастий**: `PROVISIONING_MASTER_KEY` + AR-трійка у vault + offline з 2026-09-01, `SECRET_KEY_BASE` — нуль копій поза GitHub Secrets (§Gaps; `RAILS_MASTER_KEY` з 2026-09-02 не є незамінним — vault тримає лише `secret_key_base`, а в деплой ключ не їде) → [`00_07`](00_07_Action_Plan_Tracker) (DR.1; `S5.6` поглинув DEPLOY-1 2026-08-29, §🗄️).
 
 ---
 
@@ -44,7 +44,7 @@
 
 - 🟡 **DR-drill прогнано ОДИН раз** (2026-09-02, staging — §6): §5.1 верифіковано реальним PITR-клоном, §5.2 — лише половиною «витягти версію» (без `terraform apply` з неї), §5.3–5.6 не проганялися. Ритм квартальний. `DR.1`.
 - 🟡 **Master-key backup — операційна задача, і вона ПОЛОВИНЧАСТА з 2026-09-01.** ✅ `PROVISIONING_MASTER_KEY` **та AR-encryption трійка** — у vault + offline (згенеровані того дня; кожен пройшов `EncryptionKeyGuard`+`WeakKeyDetector` ДО заведення, тобто перевірку зроблено НА ГЕНЕРАЦІЇ, а не на першому буті). 🔴 **`SECRET_KEY_BASE` — ні, і з 2026-09-02 незамінний саме він:** SEC.22 Phase-2 зняв `RAILS_MASTER_KEY` з усіх deploy-поверхонь, а vault репо тримає ЄДИНИЙ ключ — `secret_key_base`, що їде окремим секретом; тож втрата `RAILS_MASTER_KEY` = регенерація порожнього vault (нічого незворотного), а втрата `SECRET_KEY_BASE` = усі сесії й кожен `generates_token_for`-токен (password-reset, invite) недійсні — GitHub значень назад не віддає, і офлайн-копії немає ЖОДНОЇ. ⚠️ Два ключі різного походження (один згенеровано 09-01, другий живе з першого дня репо), тому «master-ключі збережено» правдиве рівно наполовину — і саме тому вони РОЗВЕДЕНІ. `DR.1`.
-- 🟡 **GCS state bucket + versioning** — `S5.6` (chicken-and-egg при першому `terraform init`).
+- ✅ **GCS state bucket + versioning** — живе: десять версій стану виміряно 2026-09-02, передостання витягується валідною (§6); chicken-and-egg першого `terraform init` розвʼязано `bootstrap.sh` (ex-`S5.6`, поглинув DEPLOY-1 2026-08-29, §🗄️).
 
 ---
 
