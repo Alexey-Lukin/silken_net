@@ -272,6 +272,14 @@ jobs:
         env:
           GCP_ARTIFACT_REGISTRY_KEY: ${{ steps.auth.outputs.access_token }}
 
+      - name: Release a stale deploy lock [OPS.37]
+        # Deploys are serialised by this workflow's concurrency group, so a lock found at the START
+        # of a run can only be the corpse of a run that died mid-deploy — measured 2026-09-03: three
+        # kamal-proxy health timeouts in a row left one behind, and the next run failed at
+        # `proxy reboot` with «Deploy lock found» before deploying anything. Releasing it here is
+        # safe by construction; a genuinely concurrent deploy cannot exist on this group.
+        run: kamal lock release
+
       - name: Reboot Kamal Proxy
         run: kamal proxy reboot -y
         # ⚠️ Needs the REGISTRY password though it deploys nothing: `proxy reboot` pulls the
