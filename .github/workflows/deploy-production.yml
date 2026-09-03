@@ -133,6 +133,21 @@ jobs:
             exit 1
           fi
 
+          # Present-but-of-the-wrong-KIND is the misconfig presence cannot see [SEC.11, measured
+          # 2026-09-03 on canopy]: a Grafana token pasted into CANOPY_REDIS_URL passed the presence
+          # check, boarded every new container as REDIS_URL and died at /ready (redis: false) for
+          # three deploys. A `*_URL` slot must hold a URL; the check is on the shape, never the value.
+          for v in $BOOT_CRITICAL; do
+            case "$v" in
+              *_URL)
+                if [ -n "${!v}" ] && ! printf "%s" "${!v}" | grep -Eq "^[a-z][a-z0-9+.-]*://"; then
+                  echo "::error::$v is set but does not look like a URL (scheme://…) — a value of the wrong KIND passed the presence check. See docs/06_04 §1 (SEC.11)."
+                  exit 1
+                fi
+                ;;
+            esac
+          done
+
           # [OPS.37 review 2026-09-02] Two slots, two Sidekiq servers, no key namespace: the
           # Redis instances MUST differ, or the testnet worker drains the mainnet money queue.
           if [ -n "$CANOPY_REDIS_URL" ] && [ "$REDIS_URL" = "$CANOPY_REDIS_URL" ]; then
