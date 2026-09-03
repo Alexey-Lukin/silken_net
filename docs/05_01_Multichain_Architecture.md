@@ -96,10 +96,10 @@ SilkenNet не обирає один блокчейн. Система викор
 
 | # | Мережа | Сервіс | Статус | Примітка |
 |---|--------|--------|--------|----------|
-| 1 | Streamr | `Streamr::BroadcasterService` | ✅ Real | HTTP POST через Brubeck API |
+| 1 | Streamr | `Streamr::BroadcasterService` | ⚠️ Activation-gated | HTTP POST (Brubeck-ера; хост мертвий — keep-vs-drop ⚖️ [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
 | 2 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ✅ Real | Pinata IPFS gateway |
 | 3 | peaq | `Peaq::DidRegistryService` | ✅ Real | Ed25519-підписані DID через Substrate HTTP |
-| 4 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ✅ Real | ZK-proof через W3bstream HTTP API |
+| 4 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ⚠️ Activation-gated | HTTP POST до W3bstream (хост із `.env.example` не має DNS-запису — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
 | 5 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
 | 6 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
 | 7 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚠️ Hybrid | Реальне KYC API + симуляція коли credentials відсутні |
@@ -129,9 +129,9 @@ SilkenNet не покладається на один блокчейн. Для �
 | **Воркер** | `StreamrBroadcastWorker` |
 | **Черга** | `low` (пріоритет 9) |
 | **Retry** | 3 |
-| **Тригер** | `TelemetryUnpackerService` (після розпакування кожного пакета) |
-| **Credentials** | `streamr_stream_id`, `streamr_api_key` (Rails encrypted credentials) |
-| **API** | `https://brubeck.streamr.network/api/v1/streams/{stream_id}/data` |
+| **Тригер** | `TelemetryUnpackerService` — лише коли `Streamr::BroadcasterService.configured?` [ARCH.118, 2026-09-03]; незаведена пара = жодної джоби |
+| **Credentials** | `STREAMR_STREAM_ID`/`STREAMR_API_KEY` (ENV-first, credentials-фолбек — SEC.22) |
+| **API** | `https://brubeck.streamr.network/api/v1/streams/{stream_id}/data` — ⚠️ **хост мертвий** (TLS не встановлюється, виміряно 2026-08-30): це `data-api` ери Corea/Brubeck; **у Streamr 1.0 центрального REST-хоста НЕМАЄ** — публікація лише через ВЛАСНИЙ broker (`POST http://<node>:7171/streams/<id>`) або SDK, тож це не заміна константи, а рішення про інфраструктуру: keep-vs-drop — ⚖️ [`00_07`](00_07_Action_Plan_Tracker) ARCH.118 |
 | **Спека** | `spec/services/streamr/broadcaster_service_spec.rb` |
 
 **Payload:**
@@ -202,8 +202,8 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 | **Воркер** | `IotexVerificationWorker` |
 | **Черга** | `web3_critical` (пріоритет 6) |
 | **Retry** | 5 |
-| **Тригер** | `TelemetryUnpackerService` (одразу після розпакування телеметрії) |
-| **Credentials** | `iotex_w3bstream_url`, `iotex_api_key` (Rails encrypted credentials) |
+| **Тригер** | `TelemetryUnpackerService` — лише коли `Iotex::W3bstreamVerificationService.configured?` [ARCH.118/OPS.37, 2026-09-02]; незаведена пара = жодної джоби й жодного ре-арму |
+| **Credentials** | `IOTEX_W3BSTREAM_URL`/`IOTEX_API_KEY` (ENV-first, credentials-фолбек — SEC.22); хост `w3bstream-api.iotex.io` з `.env.example` не має DNS-запису (2026-09-02) |
 | **Спека** | `spec/services/iotex/w3bstream_verification_service_spec.rb` |
 
 **Guard Clause:** Chainlink dispatch ЗАБОРОНЕНО без підтвердження від IoTeX (`verified_by_iotex? == true`).

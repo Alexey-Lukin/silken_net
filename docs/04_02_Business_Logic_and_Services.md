@@ -1782,7 +1782,7 @@ Privileged action (money-tx / contract / actuator / role / param / rotate / verd
 | **IoTeX W3bstream** | HTTPS REST | `iotex_w3bstream_url`, `iotex_api_key` | Iotex::W3bstreamVerificationService |
 | **peaq Network** | HTTPS REST | `peaq_node_url`, `peaq_signing_key` | Peaq::DidRegistryService |
 | **Chainlink callback** | Webhook (HMAC-SHA256) | `CHAINLINK_HMAC_SECRET` (dispatch-секрети вилучено — ARCH.53) | Api::V1::OracleCallbacksController |
-| **dClimate API** | HTTPS REST | `DCLIMATE_BASE_URL` (default: `https://api.dclimate.net`), `DCLIMATE_FIRMS_DATASET` (default: `firms_nrt_global-area_v2`), `Rails.credentials.dclimate.api_key` (Bearer) | Dclimate::VerificationService |
+| **dClimate API** | HTTPS REST | `DCLIMATE_BASE_URL` (default: `https://api.dclimate.net` — ⚠️ [ARCH.118, виміряно 2026-09-02] dangling hostname: CNAME у Vercel, A-записи резолвляться, TLS НЕ встановлюється, перевимір з другого мережевого шляху дав те саме; CNAME-сусід `alpha.marketplace.dclimate.net` на тих самих IP віддає 200. Компанія жива (Aegis + Marketplace), але «одна dClimate-wide база» більше не існує — база й ключ ПЕР-ПРОВАЙДЕРНІ; чинну базу дає лише канал вендора — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118 / S3.2), `DCLIMATE_FIRMS_DATASET` (default: `firms_nrt_global-area_v2`), `Rails.credentials.dclimate.api_key` (Bearer) | Dclimate::VerificationService |
 | **Streamr Network** | HTTPS REST | `streamr_stream_id`, `streamr_api_key` | Streamr::BroadcasterService |
 | **Filecoin/IPFS** (Pinata) | HTTPS REST | `filecoin_api_key` / `FILECOIN_PINNING_API_URL` | Filecoin::ArchiveService, VerificationService |
 | **The Graph** | GraphQL | `the_graph_api_url` | TheGraph::QueryService |
