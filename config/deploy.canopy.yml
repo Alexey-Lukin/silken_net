@@ -186,7 +186,7 @@ env:
     # of 2026-09-01 (DEPLOY-1 Фаза 2t), verified by bytecode + live calls + the SEC.1 role
     # matrix; EIP-55 exactly as printed, which is what the boot guard checks. Public on-chain
     # addresses, so committable; the full six-address set (Timelock · Governor · Anchor too)
-    # lives in 00_07 DEPLOY-1 because `contracts/broadcast/` is gitignored.
+    # lives in docs/06_01 §DEPLOY-DAY Фаза 2t because `contracts/broadcast/` is gitignored.
     CARBON_COIN_CONTRACT_ADDRESS: "0x18a8A50e0DC0103aA94de51b78f352E2d26E1b22"
     FOREST_COIN_CONTRACT_ADDRESS: "0x9366a4CbA0461E150A3409CD2767Ff7b8db6d4b7"
     # StateRootAnchor on Sepolia (chain 11155111), Deploy.s.sol broadcast 2026-09-02 — receipts and
