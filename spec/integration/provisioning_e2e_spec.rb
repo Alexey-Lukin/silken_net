@@ -68,6 +68,14 @@ RSpec.describe "FW.1 — Provisioning End-to-End Flow", type: :request do
     # `perform_async` calls instead of actually executing the worker
     # (which would hit the peaq RPC mock layer and is covered separately).
     allow(PeaqRegistrationWorker).to receive(:perform_async)
+
+    # [ARCH.119] The peaq leg is ACTIVATION-GATED: unconfigured, the controller enqueues
+    # NOTHING. Declaring it live here is load-bearing in BOTH directions — without it the
+    # positive pins fail (dotenv is dev-only and CI ships no RAILS_MASTER_KEY, so
+    # `configured?` is false in test), and the NEGATIVE pins below would go green while
+    # proving the gate instead of the device-type / rollback behaviour they name.
+    # The gate itself is pinned in spec/requests/api/v1/provisioning_controller_spec.rb.
+    allow(Peaq::DidRegistryService).to receive(:configured?).and_return(true)
   end
 
   # ---------------------------------------------------------------------------

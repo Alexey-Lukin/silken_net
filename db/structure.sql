@@ -3487,6 +3487,13 @@ CREATE INDEX index_trees_on_tree_family_id ON public.trees USING btree (tree_fam
 
 
 --
+-- Name: index_trees_pending_peaq_did; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_trees_pending_peaq_did ON public.trees USING btree (id) WHERE (peaq_did IS NULL);
+
+
+--
 -- Name: index_users_on_email_address; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4730,5 +4737,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260904064532'),
 ('20260901071349');
 

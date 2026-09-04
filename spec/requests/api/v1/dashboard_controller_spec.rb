@@ -11,6 +11,12 @@ RSpec.describe Api::V1::DashboardController, type: :request do
 
   let!(:cluster) { create(:cluster, organization: organization) }
 
+  # [ARCH.119] Нога The Graph оголошено ЖИВА для всього файлу. Без цього activation-гейт
+  # короткозамикає ДО інстанціювання сервісу, тож `allow_any_instance_of` не досягається
+  # ніколи — і приклади нижче, включно з «The Graph лежить», мовчки доводили б гейт
+  # замість того, що названо в їхніх `it`. Сам гейт має власний контекст у кінці файлу.
+  before { allow(TheGraph::QueryService).to receive(:configured?).and_return(true) }
+
   describe "GET /dashboard" do
     context "when as JSON" do
       before do
@@ -233,6 +239,24 @@ RSpec.describe Api::V1::DashboardController, type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key("global_onchain_carbon")
         expect(response.parsed_body["global_onchain_carbon"]).to be_nil
+      end
+
+      # [ARCH.119] Сусід приклада вище на ІНШІЙ осі: там нога жива й ВІДМОВИЛА, тут її
+      # не заведено взагалі. Назовні обидва дають «не виміряно» — і саме тому вони мусять
+      # розрізнятись у ЛОГАХ, інакше оператор не знає, чи чекати на вендора, чи заводити
+      # ключ. ⚠️ Пін на `not_to receive(:new)` несе другу половину: гейт стоїть ДО
+      # інстанціювання, тож марного винятку на кожен запит більше немає.
+      it "reports the figure as unmeasured and NAMES the unconfigured leg when the subgraph has no URL" do
+        allow(TheGraph::QueryService).to receive(:configured?).and_return(false)
+        allow(TheGraph::QueryService).to receive(:new)
+        allow(Rails.logger).to receive(:warn)
+
+        get "/dashboard", headers: headers, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["global_onchain_carbon"]).to be_nil
+        expect(TheGraph::QueryService).not_to have_received(:new)
+        expect(Rails.logger).to have_received(:warn).with(/не сконфігуровано/)
       end
     end
 

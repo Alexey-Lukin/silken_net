@@ -61,6 +61,9 @@ RSpec.describe FactoryFlashing::TreeResolver do
 
     it "не enqueue'ить peaq-реєстрацію (offline-фабрика, transitional)" do
       allow(PeaqRegistrationWorker).to receive(:perform_async)
+      # [ARCH.119] Нога оголошено ЖИВА — інакше пін доводив би activation-гейт замість
+      # того, що названо в його `it`: фабричний шлях не реєструє DID НАВІТЬ при живій нозі.
+      allow(Peaq::DidRegistryService).to receive(:configured?).and_return(true)
       described_class.resolve!(uid_hex: uid, cluster_id: cluster.id, tree_family_id: family.id)
       expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
     end

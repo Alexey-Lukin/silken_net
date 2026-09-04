@@ -187,8 +187,8 @@
 |---|---|
 | **Файл** | `app/services/silken_net/lorenz_validation_service.rb` |
 | **Вхід** | парні `(telemetry, ground_truth)`-спостереження (передаються аргументом — **pure / read-only**, без DB-доступу й slashing-side-effects) |
-| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) — ⚠️ парний реф на медакадемію тут стояв помилково: харнес про Z↔health, а не про токсикологію; партнер аналізу — ЧНУ, [`00_02 §1.1`](00_02_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад + `z_incremental_over_sap` (чи Z додає predictive value **понад** прямі sap-сигнали). Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). |
-| **Вихід** | `report` (Hash кореляцій/інкрементів). Чиста функція. |
+| **Що робить** | Ground-truth validation harness для гіпотези «Lorenz Z ↔ здоров'я дерева» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy) — ⚠️ парний реф на медакадемію тут стояв помилково: харнес про Z↔health, а не про токсикологію; партнер аналізу — ЧНУ, [`00_02 §1.1`](00_02_Academic_Integration_and_IP)): Spearman-кореляція `stress_index` ↔ занепад, плюс МАРГІНАЛЬНІ ρ для `z_value` і `sap_flow` окремо. Push-button аналіз для ЧНУ після збору парних даних — поки гіпотеза недоведена (сигнал, не вердикт). ⛔ **Інкрементальної величини харнес більше не рахує [E.64, 2026-09-04]:** `z_incremental_over_sap` знято, бо міряв різницю МАРГІНАЛЬНИХ ρ (не incremental value) і обслуговував критерій, який сам скасовано присудом «Z = DCI-only» ([`05_05 §8.1`](05_05_Slashing_and_Risk_Policy)). ⚠️ Ненульова `spearman_z_vs_decline` є очікуваним підписом того, що Z несе ПОГОДУ (`ρ = 28 + 0.2·temp`), а не доказом предиктивності — читати її як друге означає відтворити рівно ту пастку, яку присуд зняв. |
+| **Вихід** | `report` (Hash кореляцій). Чиста функція. |
 
 ### `TreeChronicleService`
 
@@ -786,7 +786,8 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Вхід** | — (no args, class instance methods) |
 | **Що робить** | GraphQL запити до The Graph subgraph (Polygon). `fetch_total_carbon_minted` — сума `carbonMintEvents.amount`. `fetch_protocol_financials` — `totalMinted`, `totalBurned` (премії — off-chain USDC з БД, `NaasContract.total_insurance_premiums`, не subgraph). |
 | **Зовнішні виклики** | `Web3::HttpClient.post` → `the_graph_api_url` |
-| **Вихід** | `fetch_total_carbon_minted → Integer`. `fetch_protocol_financials → { total_minted:, total_burned: }`. |
+| **Активація** | **ACTIVATION-GATED [ARCH.119]** — `configured?` (`THE_GRAPH_API_URL`, ENV-first) є одним домом «чи нога жива»; гейт стоїть у ОБОХ контролерних сайтах, **усередині** `Rails.cache.fetch`. ⚠️ Підстава розміщення виміряна: виняток у блоці `fetch` **не кешується взагалі**, тож несконфігурована нога рейзила на КОЖЕН запит — гейт, що повертає значення, дає деградації ту саму 5-хв стелю, що й успіху. ⛔ Outbox/ре-арм сюди не переносити (⊥ peaq/Filecoin): read-only шлях відновлювати нема чого |
+| **Вихід** | `fetch_total_carbon_minted → Integer`. `fetch_protocol_financials → { total_minted:, total_burned: }`. ⚠️ Форми фолбеку в двох споживачів РІЗНІ й «симетричним ліком» не є: дашборд — скаляр `nil` (`global_onchain_carbon`), звіт — три ключі `NETWORK_EMISSION_DEFAULTS`. |
 
 ### `Dclimate::VerificationService`
 
@@ -1358,10 +1359,22 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 |----------|----------|
 | **Черга** | `web3` |
 | **Retry** | 5 |
-| **Тригер** | При реєстрації нового дерева (API або скрипт) |
+| **Тригер** | При реєстрації нового дерева — **ОДИН** enqueue-сайт (`ProvisioningController#register`, після коміту [ARCH.59]). Фабричний шлях (`FactoryFlashing::TreeResolver`) enqueue СВІДОМО не робить (offline-хост) |
 | **Вхід** | `tree_id` (Integer) |
 | **Сервіси** | `Peaq::DidRegistryService.new(tree).register!` |
-| **Side Effects** | `tree.update!(peaq_did:)`. Ідемпотентний guard. |
+| **Активація** | **ACTIVATION-GATED [ARCH.119]** — `Peaq::DidRegistryService.configured?` гейтить і enqueue-сайт, і сам `perform`. Два гейти не дубль: перший стереже майбутні джоби, другий дренажить ті, що вже лежать у Redis із доби до гейта; воркер виходить WARN'ом, ніколи raise'ом |
+| **Side Effects** | `tree.update!(peaq_did:)` під `with_lock` + повторна перевірка всередині. Ідемпотентний guard. ⚠️ На провалі НЕ пишеться нічого — `peaq_did` лишається `nil`, і саме він є outbox-маркером для `PeaqBackfillWorker` |
+
+#### `PeaqBackfillWorker`
+
+| Параметр | Значення |
+|----------|----------|
+| **Черга** | `low` · cron `56 4 * * *` (`peaq_backfill`) |
+| **Retry** | 1 — пропущений прохід не втрачає даних (наступний завтра); наполегливий ретрай купував би шум на тлі того самого зовнішнього збою |
+| **Чому окремий воркер** | **[ARCH.119]** У `PeaqRegistrationWorker` рівно ОДИН enqueue-сайт, тож вичерпані 5 ретраїв означали `peaq_did = nil` **назавжди** — другої нагоди не наставало, бо провіжн трапляється один раз. Клас «механізм ⟷ пускач»: реєстрація справна, ідемпотентність справна, пускача не існувало. Канон [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) крок 4 доти обіцяв «реєстрація йде наступними retry/enqueue» — механізм без носія |
+| **Вхід** | — (свіп) |
+| **Стелі** | `BATCH_LIMIT` 500 — стеля проходу тримає чергу `web3` від заливання після пізньої активації. ⚠️ **Вікна ре-арму НЕМА свідомо** (⊥ `IotexBackfillWorker::LOOKBACK_WINDOW`): DID є ПОСТІЙНОЮ ідентичністю, а не предметом ретеншену, тож дерево без нього лишається кандидатом скільки б не минуло. Скан тримає партіальний індекс `index_trees_pending_peaq_did` — виміряно, що без нього планувальник іде по всьому `trees_pkey` із фільтром, тобто O(флоту) щоночі |
+| **Side Effects** | `PeaqRegistrationWorker.perform_async(id)` на кожне `trees.peaq_did IS NULL`. Метрика `PEAQ_BACKFILL_REARMED_TOTAL` рахує ДЕРЕВА (`by:`), не проходи; у здоровому тракті нуль за побудовою (реєстрація стається раз на провіжн) |
 
 #### `CeloRewardWorker`
 

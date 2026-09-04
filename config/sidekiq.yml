@@ -160,6 +160,16 @@
       cron: '48 4 * * *' # Щодня о 04:48 UTC, після sweep; :48 вільна (не колізить)
       class: FilecoinReconcileWorker
 
+    # --- РЕ-АРМ peaq-реєстрації [ARCH.119] ---
+    # `PeaqRegistrationWorker` має ОДИН enqueue-сайт (провіжн, після коміту), тож дерево,
+    # чиї 5 ретраїв вичерпались або чия нога була несконфігурована на мить провіжну,
+    # лишалось без DID НАЗАВЖДИ — другої нагоди не наставало. Щодоби, бо реєстрація не
+    # money-шлях і не гейтить мінт (ARCH.53): це відновлення доказу ідентичності.
+    # ⚠️ :56 вільна; нічне вікно спільне з filecoin-парою, після неї.
+    peaq_backfill:
+      cron: '56 4 * * *' # Щодня о 04:56 UTC, після filecoin_reconcile; :56 вільна
+      class: PeaqBackfillWorker
+
     # --- ЦИКЛ ЕНТРОПІЇ (The Pre-Stress Sentinel) [S6.20] ---
     # Погодинний fan-out ClusterEntropyAnalyzerWorker на кожен кластер. Без нього
     # gauge silkennet_cluster_entropy_score мертвий і entropy_anomaly EWS-тривоги

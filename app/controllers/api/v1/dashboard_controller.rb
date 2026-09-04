@@ -144,8 +144,18 @@ module Api
       # щоб не блокувати кожен запит дашборду на 2-10 секунд.
       def fetch_global_onchain_carbon
         Rails.cache.fetch("global_onchain_carbon", expires_in: 5.minutes) do
-          Timeout.timeout(10) do
-            TheGraph::QueryService.new.fetch_total_carbon_minted
+          # [ARCH.119] Гейт СТОЇТЬ УСЕРЕДИНІ блоку свідомо: повернуте значення кешується,
+          # тож і рядок логу, і сама перевірка дістають ту саму 5-хвилинну стелю, що й
+          # успіх. Виняток натомість не кешується взагалі — доти несконфігурована нога
+          # рейзила на кожен запит, а беззвучний `rescue` нижче не лишав про це сліду.
+          if TheGraph::QueryService.configured?
+            Timeout.timeout(10) do
+              TheGraph::QueryService.new.fetch_total_carbon_minted
+            end
+          else
+            Rails.logger.warn("[The Graph] subgraph не сконфігуровано (THE_GRAPH_API_URL) — " \
+                              "global_onchain_carbon лишається «не виміряно» до активації (06_04 §2.2).")
+            nil
           end
         end
       # 🔴 [ARCH.103] `nil`, а не `0`: недоступний subgraph — це «не виміряно», і

@@ -7,6 +7,36 @@ module Peaq
 
     class RegistrationError < StandardError; end
 
+    # [ARCH.119] ОДИН дім питання «чи нога жива» — ENV-first із credentials-фолбеком
+    # (SEC.22). Обидва значення обовʼязкові: node_url без ключа однаково рейзить нижче.
+    #
+    # ⛔ Fail-closed raise у `register_on_peaq` НЕ є гардом для несконфігурованої ноги —
+    # він є retry-драбиною: джоба не може ані виконатись, ані здатись, тож кожне
+    # провіжнене дерево купує 6 гарантовано провальних виконань у черзі `web3`.
+    # Гард мусить стояти на ENQUEUE, а не на виклику (прецеденти — `Filecoin::ArchiveService`,
+    # `Iotex::W3bstreamVerificationService`). Sentry тиші не порушить: `RegistrationError`
+    # стоїть в `excluded_exceptions`, тобто ціна — слоти Sidekiq і Redis-команди.
+    #
+    # 🔑 Пропуск нічого НЕ губить, і це ДИЗАЙН, а не щастя: `generate_did` детермінований
+    # від (`tree.did`, `tree.id`, `tree.created_at`), тож ре-арм через місяці дає ТОЙ САМИЙ
+    # DID. Маркером служить сама доменна колонка `trees.peaq_did IS NULL` — форма IoTeX,
+    # окремої outbox-колонки не потрібно.
+    #
+    # ⚠️ Оголошена стеля ре-арму: вікна НЕМАЄ свідомо. DID є постійною ідентичністю, а не
+    # предметом ретеншену (⊥ `IotexBackfillWorker::LOOKBACK_WINDOW`), тож дерево без DID
+    # лишається кандидатом скільки б не минуло; стелю проходу тримає `BATCH_LIMIT`.
+    def self.node_url
+      ENV["PEAQ_NODE_URL"].presence || Rails.application.credentials.peaq_node_url
+    end
+
+    def self.signing_key
+      ENV["PEAQ_SIGNING_KEY"].presence || Rails.application.credentials.peaq_signing_key
+    end
+
+    def self.configured?
+      node_url.present? && signing_key.present?
+    end
+
     def initialize(tree)
       @tree = tree
     end
@@ -28,7 +58,7 @@ module Peaq
     end
 
     def register_on_peaq(did_string)
-      node_url = ENV["PEAQ_NODE_URL"].presence || Rails.application.credentials.peaq_node_url
+      node_url = self.class.node_url
       raise RegistrationError, "peaq_node_url не налаштовано в credentials" unless node_url.present?
 
       metadata = {
@@ -46,7 +76,7 @@ module Peaq
 
       # [BLOCKER-08 FIX]: peaq_signing_key обов'язковий для W3C DID Core compliance.
       # Без Ed25519-підпису DID-документ не має криптографічного доказу автентичності.
-      peaq_signing_key = ENV["PEAQ_SIGNING_KEY"].presence || Rails.application.credentials.peaq_signing_key
+      peaq_signing_key = self.class.signing_key
       raise RegistrationError, "peaq_signing_key обов'язковий у credentials для реєстрації DID (W3C DID Core spec)" if peaq_signing_key.blank?
 
       begin

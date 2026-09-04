@@ -192,6 +192,16 @@ module Api
       # HTTP-запит GraphQL-раундтрипом. Премії тут НЕ беруться (DB-джерело — див. вище).
       def cached_subgraph_network_emission
         Rails.cache.fetch("reports_real_yield", expires_in: 5.minutes) do
+          # [ARCH.119] Гейт усередині блоку — щоб деградація кешувалась (виняток не
+          # кешується, тож доти несконфігурована нога рейзила на кожен запит). Форма
+          # фолбеку тут ВЛАСНА (три ключі), а не спільна з дашбордом: сусідній сайт
+          # повертає скаляр, тож «симетричний лік» на обидва був би хибним.
+          unless TheGraph::QueryService.configured?
+            Rails.logger.warn("[The Graph] subgraph не сконфігуровано (THE_GRAPH_API_URL) — " \
+                              "network-emission блок лишається «не виміряно» до активації (06_04 §2.2).")
+            next NETWORK_EMISSION_DEFAULTS
+          end
+
           financials = Timeout.timeout(10) do
             TheGraph::QueryService.new.fetch_protocol_financials
           end

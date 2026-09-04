@@ -152,10 +152,11 @@ SilkenNet не покладається на один блокчейн. Для �
 | Параметр | Значення |
 |----------|----------|
 | **Сервіс** | `Peaq::DidRegistryService` |
-| **Воркер** | `PeaqRegistrationWorker` |
+| **Воркер** | `PeaqRegistrationWorker` + ре-арм `PeaqBackfillWorker` (черга `low`, cron `56 4 * * *`, `BATCH_LIMIT` 500) |
 | **Черга** | `web3` (пріоритет 7) |
 | **Retry** | 5 |
-| **Тригер** | При реєстрації нового дерева в системі |
+| **Активація** | **ACTIVATION-GATED [ARCH.119]** — `Peaq::DidRegistryService.configured?` (обидва: `PEAQ_NODE_URL` + `PEAQ_SIGNING_KEY`, ENV-first із credentials-фолбеком). Без них ані enqueue, ані виконання; `peaq_did` чесно лишається `nil`, і саме він є маркером ре-арму (окремої outbox-колонки не заведено — форма IoTeX) |
+| **Тригер** | При реєстрації нового дерева в системі (ОДИН enqueue-сайт: провіжн-контролер, після коміту) |
 | **Credentials** | `peaq_node_url`, `peaq_signing_key` (Rails encrypted credentials) |
 | **Криптографія** | Ed25519 (через `Ed25519Crypto::SigningService`) — peaq використовує Substrate |
 | **Спека** | `spec/services/peaq/did_registry_service_spec.rb` |
@@ -588,7 +589,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | # | Мережа | Рівень | Воркер | Черга | Retry | Cron |
 |---|--------|--------|--------|-------|-------|------|
 | 1 | Filecoin | Data | `FilecoinArchiveWorker` | `low` | 5 | — |
-| 2 | peaq | Verification | `PeaqRegistrationWorker` | `web3` | 5 | — |
+| 2 | peaq | Verification | `PeaqRegistrationWorker` (+ре-арм `PeaqBackfillWorker`, `low`) | `web3` | 5 | — |
 | 3 | IoTeX | Verification | `IotexVerificationWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
 | 4 | The Graph | Verification | — (read-only) | — | — | — |
 | 5 | Polygon | Finance | `MintCarbonCoinWorker` | `web3_critical` | 5 | — |
@@ -678,7 +679,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 |---|---|---|
 | **Solana** | USDC мікро-винагороди не нараховуються | `SolanaMicroRewardWorker` retry 3 → DeadSet. Користувацький досвід зберігається — winnings накопичуються в Polygon SCC, USDC друкується retroactively через `Solana::CatchupWorker` (запланувати). **[ARCH.45]** batch payout idempotent (intent-marker + in-flight reconcile) — повторний цикл не передплачує. |
 | **Hadron (KYC)** | ⚫ **Не «outage» — вендора не існує** [ARCH.118] | `hadron_kyc_status` не виходить із `pending` **ніколи** (§6), тож у проді approved-гаманців не буває взагалі, і «існуючі approved не зачеплено» тут порожнє. 🔴 **Hot-fix `WEB3_STRICT_MODE=false` НЕ ПРАЦЮЄ, і це не протухання, а свідоме загартування [INF.11 2026-07-10]:** умова в коді — `ENV["WEB3_STRICT_MODE"] == "true" \|\| Rails.env.production?`, тож у проді другий диз'юнкт істинний **завжди** і `raise` лишається; заглушку не вмикає ніщо (інакше забутий прапор = fake-KYC mint). ⛔ Не «полагодити», давши прапорцю силу. Шлях розблокування один — реальний провайдер ([`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`); будь-яке ручне проставляння статусу є **актом L0-довіри** і потребує власного присуду й аудит-сліду, а не рядка в таблиці деградації |
-| **peaq** | Нові provisioning DID не реєструються | `PeaqRegistrationWorker` retry 5; нові Soldiers/Queens отримують локальний DID `did:peaq:0x...` (deterministic SHA256(uid+created_at)), реєстрація push-up при відновленні |
+| **peaq** | Нові provisioning DID не реєструються | `PeaqRegistrationWorker` retry 5; на провалі `trees.peaq_did` лишається **`nil`** — жодного локального DID не пишеться. 🔴 **Цей рядок доти казав протилежне** («отримують локальний DID … реєстрація push-up при відновленні»): `did:local:fallback` знято, а «push-up при відновленні» був механізмом без носія — enqueue-сайт один (провіжн), тож вичерпані ретраї означали `nil` назавжди. Носій існує з [ARCH.119]: `PeaqBackfillWorker` (cron, черга `low`) дренажить `peaq_did IS NULL`; нога ACTIVATION-GATED через `Peaq::DidRegistryService.configured?` — деталі [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy) крок 4 |
 
 ### 8.6. Nice-to-have Tier (Filecoin, The Graph, Celo, Klima, L1)
 

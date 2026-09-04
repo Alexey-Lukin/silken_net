@@ -55,6 +55,10 @@ RSpec.describe Api::V1::ReportsController, type: :request do
 
   describe "GET /reports/financial_summary" do
     before do
+      # [ARCH.119] Нога оголошено ЖИВА — інакше activation-гейт короткозамикає ДО
+      # інстанціювання, `allow_any_instance_of` не досягається, і три «TheGraph лежить»-
+      # контексти нижче доводили б гейт замість вендорського збою, який вони називають.
+      allow(TheGraph::QueryService).to receive(:configured?).and_return(true)
       allow_any_instance_of(TheGraph::QueryService).to receive(:fetch_protocol_financials)
         .and_return(total_minted: 500_000, total_burned: 150_000)
     end
@@ -178,6 +182,28 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         ry = response.parsed_body.dig("data", "network_emission")
         expect(ry).to include("total_minted_scc", "total_burned_scc", "net_deflation")
         expect(ry.values_at("total_minted_scc", "total_burned_scc", "net_deflation")).to all(be_nil)
+      end
+    end
+
+    # [ARCH.119] Третя вісь поруч із двома «вендор відмовив» контекстами: ноги немає
+    # взагалі. Форма фолбеку тут ВЛАСНА (три ключі) і не збігається з дашбордним скаляром —
+    # «симетричний лік» на обидва сайти був би хибним.
+    context "when the subgraph is not configured at all" do
+      before do
+        allow(TheGraph::QueryService).to receive(:configured?).and_return(false)
+        allow(TheGraph::QueryService).to receive(:new)
+      end
+
+      it "reports all three as unmeasured without ever building the client" do
+        allow(Rails.logger).to receive(:warn)
+
+        get "/reports/financial_summary", headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        ry = response.parsed_body.dig("data", "network_emission")
+        expect(ry.values_at("total_minted_scc", "total_burned_scc", "net_deflation")).to all(be_nil)
+        expect(TheGraph::QueryService).not_to have_received(:new)
+        expect(Rails.logger).to have_received(:warn).with(/не сконфігуровано/)
       end
     end
 

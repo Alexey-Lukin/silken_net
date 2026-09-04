@@ -6,6 +6,14 @@ class PeaqRegistrationWorker
   sidekiq_options queue: "web3", retry: 5
 
   def perform(tree_id)
+    # [ARCH.119] Другий гейт тієї самої ноги, і він не дубль: enqueue-гард стереже
+    # МАЙБУТНІ джоби, а цей дренажить ті, що вже лежать у Redis (retry-set/queue) з
+    # доби до гейта. Форма — `Iotex::VerificationWorker`: WARN і вихід, ніколи raise.
+    unless Peaq::DidRegistryService.configured?
+      return Rails.logger.warn "⏸️ [peaq DID] Нога не сконфігурована (PEAQ_NODE_URL/PEAQ_SIGNING_KEY) — " \
+                               "Tree ##{tree_id} лишається без DID до активації; ре-арм — PeaqBackfillWorker (06_08 §2.2)."
+    end
+
     tree = Tree.find_by(id: tree_id)
     return Rails.logger.error "🛑 [peaq DID] Дерево ##{tree_id} не знайдено." unless tree
     return Rails.logger.info "✅ [peaq DID] Дерево #{tree.did} вже має peaq DID: #{tree.peaq_did}" if tree.peaq_did.present?

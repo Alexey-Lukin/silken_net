@@ -16,6 +16,40 @@ RSpec.describe Peaq::DidRegistryService, type: :service do
     allow(ENV).to receive(:[]).with("PEAQ_SIGNING_KEY").and_return(nil)
   end
 
+  # [ARCH.119] One home for «is the leg live»: BOTH values, ENV-first with the credentials
+  # fallback (SEC.22). The `before` above already neutralises ambient ENV, so these pins
+  # exercise the credentials half — which is the half that is nil in test (no master key),
+  # hence each example states its own expectation explicitly rather than trusting silence.
+  describe ".configured?" do
+    it "is false when both values are absent (the state of every deploy surface today)" do
+      allow(Rails.application.credentials).to receive_messages(peaq_node_url: nil, peaq_signing_key: nil)
+      expect(described_class.configured?).to be false
+    end
+
+    it "is false when only the node URL is set — a key-less leg would still raise per tree" do
+      allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: nil)
+      expect(described_class.configured?).to be false
+    end
+
+    it "is false when only the signing key is set" do
+      allow(Rails.application.credentials).to receive_messages(peaq_node_url: nil, peaq_signing_key: "a" * 64)
+      expect(described_class.configured?).to be false
+    end
+
+    it "is true when both values are present" do
+      allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://peaq-node.example.com", peaq_signing_key: "a" * 64)
+      expect(described_class.configured?).to be true
+    end
+
+    it "reads the SAME expression the raise-path reads (one home, no drift)" do
+      allow(ENV).to receive(:[]).with("PEAQ_NODE_URL").and_return("https://from-env.example.com")
+      allow(Rails.application.credentials).to receive_messages(peaq_node_url: "https://from-creds.example.com", peaq_signing_key: "a" * 64)
+
+      expect(described_class.node_url).to eq("https://from-env.example.com")
+      expect(described_class.configured?).to be true
+    end
+  end
+
   describe "#register!" do
     context "when peaq_node_url is configured" do
       before do

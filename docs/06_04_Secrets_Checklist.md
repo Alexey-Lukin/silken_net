@@ -177,12 +177,12 @@
 
 - [ ] `aws.access_key_id` / `aws.secret_access_key` — S3 Active Storage (`config/storage.yml` `amazon`; `credentials.dig(:aws, …)`)
 - [ ] `gcs` — GCS keyfile JSON-hash (Active Storage mirror, `config/storage.yml` `google`; `credentials.dig(:gcs)`)
-- [ ] `peaq_signing_key` / `peaq_node_url` — Ed25519 ключ + RPC для peaq DID (ротація 90д → §5.4)
+- [ ] `peaq_signing_key` / `peaq_node_url` — Ed25519 ключ + RPC для peaq DID (ротація 90д → §5.4). **ACTIVATION-GATED [ARCH.119]:** відсутність БУДЬ-ЯКОГО з двох = нога чесно вимкнена (`Peaq::DidRegistryService.configured?`), а не збій: enqueue не робиться, воркер виходить WARN'ом, `trees.peaq_did` лишається `nil`. Заведення ключів **самé по собі нічого не наздоганяє** — дренаж робить `PeaqBackfillWorker` (cron `56 4 * * *`), вікна ре-арму немає, тож backlog будь-якого віку підбирається
 - [ ] `iotex_w3bstream_url` / `iotex_api_key` — IoTeX W3bStream верифікація
 - [x] ⚫ ~~`hadron_api_key` — Hadron KYC compliance~~ — **НЕ провіжнити** (`ARCH.118` §🗄️, виміряно 2026-09-02): `api.hadron.polygon.technology` не має A-запису на двох незалежних DoH-резолверах і НЕ МАВ жодного Wayback-знімка за всю історію, тобто продукту не існує. ⚠️ Рядок лишається як **щеплення**, не як робота: чеклист провіжну читає людина, і незакреслений `[ ]` тут наказував би заводити ключ до фантома. Живий шлях — `HADRON_API_KEY` інжектиться Console-ом ПРИ АКТИВАЦІЇ провайдера ([`config/deploy.canopy.yml`](../config/deploy.canopy.yml) · `env_fetch_declaration_spec`), а вибір самого провайдера — [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`
 - [ ] `filecoin_api_key` — Pinata/Filecoin архівація
 - [ ] `puro_earth.api_key` — Puro.earth registry · `dclimate.api_key` — dClimate верифікація
-- [ ] `the_graph_api_url` — The Graph query endpoint
+- [ ] `the_graph_api_url` — The Graph query endpoint. **ACTIVATION-GATED [ARCH.119]:** відсутність = обидва дашбордні блоки чесно кажуть «не виміряно» (`nil`, ніколи `0` — ARCH.103) і НАЗИВАЮТЬ ногу в логах, відрізняючись від «вендор лежить». ⚠️ Read-only: ре-арму немає й не потрібно — наступний cache-miss спитає заново, тож заведення ключа лікує саме́ по собі (≤5 хв, TTL кеша)
 > 🗄️ **`smtp.user_name` / `smtp.password` виведено звідси 2026-08-14 (ARCH.60):** транспорт пошти ENV-керований, імена — `SMTP_USER_NAME` / `SMTP_PASSWORD` у §2.1. Рядок стояв тут, поки `production.rb` ніс закоментований credentials-скаффолд; він ніколи не був живим — `smtp_settings` не задавались узагалі.
 
 ---

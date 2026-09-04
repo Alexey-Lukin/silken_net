@@ -90,9 +90,10 @@ RSpec.describe SilkenNet::LorenzValidationService do
       expect(r[:spearman_stress_vs_decline]).to be_within(1e-6).of(1.0)
     end
 
-    it "flags Z as adding ~nothing over sap_flow (the demote-to-DCI signal)" do
-      # ground-truth decline tracks sap_flow; Z is constant noise → Z's incremental
-      # predictive value over sap_flow is <= 0 (would justify demoting Z to DCI-only).
+    it "reports each signal's own marginal rho against decline" do
+      # sap_flow falls as decline rises (perfect inverse monotonic) → -1.0;
+      # Z is constant noise → zero variance → 0.0. Both are DESCRIPTIVE: the
+      # harness derives no incremental figure from the pair (05_05 §8.1).
       samples = [
         { stress_index: 0.1, ground_truth_decline: 1, z_value: 5, sap_flow: 9 },
         { stress_index: 0.5, ground_truth_decline: 5, z_value: 5, sap_flow: 5 },
@@ -100,8 +101,8 @@ RSpec.describe SilkenNet::LorenzValidationService do
       ]
       r = described_class.report(samples)
 
-      expect(r).to have_key(:z_incremental_over_sap)
-      expect(r[:z_incremental_over_sap]).to be <= 0.0
+      expect(r[:spearman_sap_vs_decline]).to be_within(1e-6).of(-1.0)
+      expect(r[:spearman_z_vs_decline]).to eq(0.0)
     end
 
     it "omits the z_vs_sap block for samples that carry only stress_index" do
@@ -109,7 +110,7 @@ RSpec.describe SilkenNet::LorenzValidationService do
       r = described_class.report(samples)
 
       expect(r).not_to have_key(:spearman_z_vs_decline)
-      expect(r).not_to have_key(:z_incremental_over_sap)
+      expect(r).not_to have_key(:spearman_sap_vs_decline)
     end
 
     it "omits the z_vs_sap block for empty samples (safe-navigation on first)" do

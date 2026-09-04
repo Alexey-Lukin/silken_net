@@ -18,11 +18,16 @@ module SilkenNet
   # no DB reads/writes, no slashing side-effects, no global state. Safe to run
   # anywhere (rake task, console, CI) without touching production records.
   #
-  # Primary questions it answers (05_05 §8):
-  #   1. Does `stress_index` track ground-truth decline?         → spearman
-  #   2. Does Z add predictive value OVER direct signals (sap)?   → report[:z_incremental_over_sap]
-  #   3. Does device bio_status agree with expert labels?         → cohens_kappa
-  #   4. Is the slashing detector safe (low false positives)?     → binary_metrics[:fpr]
+  # Primary questions it answers (the live list is 05_05 §8.4 — read it there):
+  #   • Does `stress_index` track ground-truth decline?        → spearman
+  #   • Does device bio_status agree with expert labels?       → cohens_kappa
+  #   • Is the slashing detector safe (low false positives)?   → binary_metrics[:fpr]
+  #
+  # ⛔ "Does Z add predictive value over the direct signals" is NOT among them and
+  # must not be re-added: Z = DCI-only was settled by the data-processing
+  # inequality, not by a field season, and the acceptance criterion that would
+  # have measured it was itself a false-positive trap — its baseline omitted
+  # `temp`, which Z carries via ρ = 28 + 0.2·temp (05_05 §8.1).
   module LorenzValidationService
     module_function
 
@@ -97,9 +102,11 @@ module SilkenNet
 
     # Top-level report over paired samples. Each sample is a Hash with at least
     # :stress_index and :ground_truth_decline (higher = sicker). If :z_value and
-    # :sap_flow are present, also reports the *incremental* predictive value of Z
-    # over the direct physiological signal — the core de-risk question: if Z adds
-    # ~nothing over sap_flow, demote Z to DCI-only (05_05 §8).
+    # :sap_flow are present, each also gets its own MARGINAL Spearman ρ against
+    # decline — the sap one feeds the VPD-confounder question (05_05 §8.4).
+    # ⚠️ Marginal ρ is DESCRIPTIVE, never a verdict on Z: a non-zero
+    # spearman_z_vs_decline is the expected signature of Z carrying weather, not
+    # evidence that Z is predictive. No incremental figure is derived here.
     def report(samples)
       stress = samples.map { |s| s[:stress_index].to_f }
       decline = samples.map { |s| s[:ground_truth_decline].to_f }
@@ -113,7 +120,6 @@ module SilkenNet
         sap_rho = spearman(sap, decline)
         out[:spearman_z_vs_decline] = round(z_rho)
         out[:spearman_sap_vs_decline] = round(sap_rho)
-        out[:z_incremental_over_sap] = round(z_rho.abs - sap_rho.abs)
       end
 
       out

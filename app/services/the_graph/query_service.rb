@@ -8,6 +8,32 @@ module TheGraph
 
     class QueryError < StandardError; end
 
+    # [ARCH.119] ОДИН дім питання «чи нога жива» — ENV-first із credentials-фолбеком (SEC.22).
+    #
+    # ⚠️ Тут гейт купує НЕ те, що в сусідів по класу, і плутати ці дві вигоди шкідливо.
+    # Ретрай-драбини на цьому шляху немає взагалі (синхронний read-only виклик усередині
+    # `rescue`), тож слотів Sidekiq він не рятує. Купує він ДВІ інші речі, обидві виміряні:
+    #
+    #   1. РОЗРІЗНЮВАНІСТЬ. Без гейта «ключ не заведено» і «The Graph лежить» дають той
+    #      самий деградований екран, а на дашборді — ще й той самий беззвучний `rescue`.
+    #      Жодна змінна The Graph не стоїть на жодній деплой-поверхні, тож сьогодні це
+    #      НЕ гіпотетичний стан, а єдиний наявний.
+    #   2. ПРИГЛУШЕННЯ. `Rails.cache.fetch` не пише НІЧОГО, коли блок кинув, — виміряно:
+    #      `exist?` після raise = false. Тобто несконфігурована нога рейзить на КОЖЕН
+    #      запит, а не «раз на 5 хв», як читається з наявності TTL. Гейт, що повертає
+    #      значення замість винятку, кешується (виміряно: блок біжить раз на TTL) і
+    #      повертає деградації ту саму 5-хвилинну стелю, яку має успіх.
+    #
+    # ⛔ Outbox/ре-арм сюди НЕ копіювати (⊥ peaq/Filecoin): read-only шлях відновлювати
+    # нема чого — наступний cache-miss спитає заново.
+    def self.api_url
+      ENV["THE_GRAPH_API_URL"].presence || Rails.application.credentials.the_graph_api_url
+    end
+
+    def self.configured?
+      api_url.present?
+    end
+
     # Повертає загальну суму замінченого вуглецю (SCC) з The Graph subgraph.
     # Запитує останні 100 подій CarbonMinted та сумує amount.
     def fetch_total_carbon_minted
@@ -72,7 +98,7 @@ module TheGraph
     private
 
     def validated_api_url
-      url = ENV["THE_GRAPH_API_URL"].presence || Rails.application.credentials.the_graph_api_url
+      url = self.class.api_url
       raise QueryError, "the_graph_api_url не налаштовано в credentials" if url.blank?
 
       url

@@ -22,6 +22,9 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
     )
     allow(HardwareKeyService).to receive(:provision).and_return(SecureRandom.hex(32).upcase)
     allow(PeaqRegistrationWorker).to receive(:perform_async)
+    # [ARCH.119] Leg declared live: these examples are about device-type routing, not
+    # about the activation gate — the gate has its own example below.
+    allow(Peaq::DidRegistryService).to receive(:configured?).and_return(true)
     silence_broadcasts!(:tree_map)
   end
 
@@ -163,6 +166,22 @@ RSpec.describe Api::V1::ProvisioningController, type: :request do
 
         expect(response).to have_http_status(:created)
         expect(PeaqRegistrationWorker).to have_received(:perform_async).with(Tree.last.id)
+      end
+
+      # [ARCH.119] Activation gate. Несконфігурована нога дала б 6 гарантовано провальних
+      # виконань на КОЖНЕ дерево, і Sentry цього не показав би (`RegistrationError` в
+      # `excluded_exceptions`). Пропуск нічого не губить — `peaq_did IS NULL` і є маркером,
+      # який дренажить `PeaqBackfillWorker`; саме тому пін тримає ОБИДВА твердження.
+      it "provisions the tree but enqueues NOTHING when the peaq leg is unconfigured" do
+        allow(Peaq::DidRegistryService).to receive(:configured?).and_return(false)
+
+        expect {
+          post "/provisioning/register", params: tree_params, headers: headers, as: :json
+        }.to change(Tree, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+        expect(PeaqRegistrationWorker).not_to have_received(:perform_async)
+        expect(Tree.last.peaq_did).to be_nil # маркер лишається — ре-арм має що знайти
       end
 
       # [ARCH.59] Єдиний носій межі транзакції на цьому сайті: enqueue стоїть

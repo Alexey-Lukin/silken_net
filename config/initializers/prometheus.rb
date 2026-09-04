@@ -624,6 +624,17 @@ module SilkenNet
       docstring: "TelemetryLogs re-armed for IoTeX verification by the backfill sweep (sustained-outage recovery; a healthy tract leaves this at zero)"
     )
 
+    # [ARCH.119] Скільки дерев ре-армовано peaq-backfill'ом. Рахує ДЕРЕВА (`by:`),
+    # не проходи — прецедент `FILECOIN_REPIN_TOTAL`. ⚠️ Стійке ненульове тут читається
+    # ІНАКШЕ, ніж у сусідів: у здоровому тракті реєстрація стається раз на провіжн, тож
+    # ненульове = або пізня активація ноги (одноразовий сплеск), або peaq стійко лежить.
+    # Порогу немає свідомо — на TRL-3 (нуль вузлів у лісі) він калібрувався б на порожнечі.
+    PEAQ_BACKFILL_REARMED_TOTAL = REGISTRY.counter(
+      :silkennet_peaq_backfill_rearmed_total,
+      docstring: "Trees re-armed for peaq DID registration by the backfill sweep (a healthy tract registers at provisioning and leaves this at zero) " \
+                 "[ARCH.119; diagnostic tier: споживача дротуємо, коли `PEAQ_NODE_URL`+`PEAQ_SIGNING_KEY` стануть на деплой-поверхню — доти лічильник нуль ЗА ПОБУДОВОЮ (нога activation-gated, ре-арм не робиться), тож поріг калібрувався б на порожнечі]"
+    )
+
     # [E.60 Фаза 1б] Mint-anchored телеметрія-батч-архівація: збої тракту по фазах.
     # reason: build (fail-open → мінт із zero32 при непорожніх вікнах = кандидат-інцидент) ·
     # pin (Pinata-вичерпання, retries_exhausted-hook) · mismatch (rebuild ≠ stored root при

@@ -9,6 +9,10 @@ RSpec.describe PeaqRegistrationWorker, type: :worker do
 
   before do
     silence_broadcasts!(:tree_map)
+    # [ARCH.119] Нога оголошено ЖИВА: приклади нижче про РЕЄСТРАЦІЮ, не про гейт.
+    # Гейт має власний приклад у кінці — і він про ІНШУ половину, ніж enqueue-гард:
+    # цей дренажить джоби, що вже лежать у Redis із доби до гейта.
+    allow(Peaq::DidRegistryService).to receive(:configured?).and_return(true)
   end
 
   describe "#perform" do
@@ -88,6 +92,23 @@ RSpec.describe PeaqRegistrationWorker, type: :worker do
         tree.reload
         # The concurrent write wins — the worker guard returns early inside the lock
         expect(tree.peaq_did).to eq("did:peaq:0x#{"d" * 40}")
+      end
+    end
+
+    # [ARCH.119] Друга половина гейта, і вона не дубль enqueue-гарда: цей стереже джоби,
+    # що ВЖЕ лежать у Redis (queue/retry-set) із доби до активаційного гейта. Без нього
+    # вони й далі рейзили б крізь `retry: 5` у чергу `web3`.
+    describe "activation gate" do
+      it "exits with a WARN instead of raising when the leg is unconfigured" do
+        allow(Peaq::DidRegistryService).to receive(:configured?).and_return(false)
+        allow(Peaq::DidRegistryService).to receive(:new)
+        allow(Rails.logger).to receive(:warn)
+
+        expect { described_class.new.perform(tree.id) }.not_to raise_error
+
+        expect(Peaq::DidRegistryService).not_to have_received(:new)
+        expect(Rails.logger).to have_received(:warn).with(/не сконфігурована/)
+        expect(tree.reload.peaq_did).to be_nil
       end
     end
   end

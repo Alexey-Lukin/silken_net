@@ -155,8 +155,13 @@ module Api
           end
         end
 
-        # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity) — ПІСЛЯ коміту [ARCH.59]
-        PeaqRegistrationWorker.perform_async(@device.id) if @device.is_a?(Tree)
+        # РЕЄСТРАЦІЯ PEAQ DID (Machine Identity) — ПІСЛЯ коміту [ARCH.59].
+        # [ARCH.119] Activation-gated: несконфігурована нога дала б 6 гарантовано
+        # провальних виконань на кожне дерево. Пропуск нічого не губить — `peaq_did IS NULL`
+        # і є маркером, а `PeaqBackfillWorker` дренажить його після активації.
+        if @device.is_a?(Tree) && Peaq::DidRegistryService.configured?
+          PeaqRegistrationWorker.perform_async(@device.id)
+        end
 
         respond_to do |format|
           format.json do
