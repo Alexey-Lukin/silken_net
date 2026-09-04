@@ -521,17 +521,17 @@ static void MX_CRYP_Init(void)
 
 **Легенда:**
 - `DID` (bytes 0-3): 4-байтний Decentralized Identity (Device ID), big-endian
-- `Vcap` (bytes 4-5): напруга суперконденсатора в mV, big-endian
+- `Vcap` (bytes 4-5): **[ARCH.99] напруга шини VDDA у мВ**, big-endian (`Adc_Vdda_Mv()`, VREFINT-cal, FW.50). ⛔ **Імʼя поля історичне — це НЕ напруга іоністора:** BQ25570 тримає цю шину на 3.3 В, тож про запас енергії вона не каже нічого, і каналу Vcap іоністора на вузлі НЕМАЄ. Енергія дерева читається з ТИШІ (`Tree.silent`)
 - `Temp°C` (byte 6): температура (int8_t), підписана (від -128 до +127 °C)
 - `Acoustic` (byte 7): кількість TinyML-відфільтрованих акустичних подій (кавітація/пилка)
 - `ΔT` (bytes 8-9): `delta_t_seconds` — час між пробудженнями (швидкість метаболізму EBFC)
-- `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
+- `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; логіка й пакування — дім [`03_04`](03_04_mruby_Lorenz_Attractor); значення `status`: `0`=homeostasis · `1`=stress · `2`=anomaly · `3`=**`vm_error`** — mruby VM-збій, ⛔ **НЕ** tamper [SLASH-1 P0]; фізичний tamper їде PanicFlag-каналом. panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
 - `TTL byte` (byte 11): [FW.18b] бітфілд `[thr_invalid:5|TTL:3]` — нижні 3 біти Time to Live (початково 3, panic 5; −1 на hop), верхні 5 — лічильник відкинутих OTA-порогів (wire-дім [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA))
 - `FwRep` (bytes 12-13): **[SEC.20] Wire-звіт contract-стану**, BE uint16 — `[semantic:1 | reverted:1 | hiwater & 0x3FFF]` (`firmware/common/fw_report.h`, компонує `Fw_Report_Compose`). ⛔ **НЕ «Firmware Version ID»** — та константа лишається лише як `semantic=0`-легасі-гілка. Побайтова розкладка з провенансом — [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA)
 - `Gossip` (byte 14): **[FW.20-S2 §5]** у non-panic кадрі — `soldier_unix_ts & 0xFF` (час-gossip піггібек); у panic-кадрі той самий байт належить SEC.10 frame-counter'у, тобто **значення залежить від ТИПУ кадру** — розкладка обох у [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA). ⛔ Не описувати як «резерв, не використовується».
-- `PAD` (byte 15): нульовий padding.
+- `PAD` (byte 15): нульовий padding у non-panic кадрі; у **panic**-кадрі байти 14-15 разом несуть SEC.10 frame counter (BE).
 
-> ⚖️ **Кільце дому — ВІДКРИТЕ, і поки воно є, обидві копії читаються як авторитетні.** Реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard) називає домом байт-позицій цю секцію, а вона сама віддає байт 11 у [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA) — тож напрямок стрілки не визначений, і саме тому байти 12/13/14 тут розійшлись із прошивкою (вирівняно за кодом 2026-09-04, DOC-T.98). Присуд про напрямок — [`00_07`](00_07_Action_Plan_Tracker) `DOC-T.98`; **до нього — звіряй із прошивкою, не з сусіднім доком.**
+> ⚖️ **Кільце дому РОЗВʼЯЗАНО 2026-09-04 (DOC-T.98): ця секція є домом байтової розкладки uplink-пакета, обидві ери.** Підстава — оголошений периметр: Мета цього документа дослівно називає «структуру зашифрованих пакетів», а Мета [`03_01`](03_01_Firmware_Lifecycle_and_DMA) — «життєвий цикл · переходи сну · ISR», де байтової мапи немає; реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard) призначає байт-позиції сюди. [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA) тримає САМУ ФАЗУ пакування (коли біжить, яка критична секція) і реферить сюди. ⛔ **Не заводити другої мапи — поки їх було дві, вони розійшлись на трьох байтах, і кожна сторона мала свою половину правди:** точна семантика `FwContractReport`/`gossip_ts_lsb` була в копії, а тут стояло хибне «`Vcap` = напруга суперконденсатора», тобто порушення [ARCH.99], який `CLAUDE.md §6` тримає інлайн.
 
 **Emergency TX (EwsAlert / Panic) — `Trigger_Emergency_LoRa_TX()`:**
 ```

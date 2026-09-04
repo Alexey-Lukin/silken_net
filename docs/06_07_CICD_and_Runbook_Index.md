@@ -94,6 +94,23 @@
 | `release-please.yml` → **Ops · Release** | push `main` | Тримає release-PR (semver bump + CHANGELOG з conventional commits); merge → tag `vX.Y.Z` + GitHub Release → годує **Deploy · Production** + **Deploy · GHCR Mirror**. ⚠️ **Не в required-8**, тож його червоне мерджу не блокує. 🔴 Відомий режим відмови: падає з ПОРОЖНІМ `release-please failed:` (жодного стеку, жодного коду) — при довгій дистанції від останнього тегу дія бекфілить file-list покомітно (`release search depth: 400`), і на тій серії API-викликів зривається; `gh run rerun --failed` проходить. **Перш ніж діагностувати свій коміт, перевір саме це** — і не приймай гіпотезу «переповнене тіло PR» без виміру (`gh pr view <n> --json body \| wc -c` проти ліміту 65536: одного разу вона виглядала бездоганно й була хибною вдвічі) |
 | `labels_sync.yml` → **Ops · Labels Sync** | push `.github/labels.yml` + dispatch | Labels-as-IaC sync. ⚠️ Самі лейбли ставляться **вручну** — авто-лейблера в репо немає; єдина машинно-читана родина — `type:*` ([`00_06 §3`](00_06_SSOT_Documentation_Standard)). 🔴 **Sync ОДНОБІЧНИЙ: `delete-other-labels: false`, а `EndBug/label-sync` уміє лише create/update** — тож зняття родини з YAML **не** прибирає її з GitHub, і мертві імена живуть там, доки їх не знесуть руками (`gh label delete`). Так і сталось після У-ВЕЙ-зрізу; борг розібрано вручну 2026-08-23 (архівний пункт [`00_07`](00_07_Action_Plan_Tracker) OPS.29), тож живий стан бери `gh label list`, а не звідси — ніщо в репо його не віддзеркалює. ⛔ Вмикати `delete-other-labels: true` НЕ МОЖНА: чужі боти (release-please `autorelease: *`, Dependabot `ruby`/`docker`/`github_actions`/`javascript`/`dependencies`) створюють свої лейбли поза цим YAML, тож прапорець зносив би й їх |
 
+### 1b. Конвенція комітів і DORA-вісь — канонічний дім
+
+> 🏠 **One-Home.** Обидва предмети є крос-доменними (CI/CD-процес), тож інші доки їх **реферять, не перелічують**.
+
+**Conventional Commits** — `docs:` · `feat:` · `fix:` · `refactor:` · `test:` · `chore:`. Це не стиль: `release-please.yml` (§1 вище) деривує з них semver-bump і CHANGELOG, тож коміт поза конвенцією тихо випадає з релізних нот. Супутня практика — малі атомарні PR-и («small batch size»), і `parallel_validation` (Code Review + CodeQL) перед merge.
+
+**DORA-вісь — ЦІЛІ, не виміряний стан** (⚖️ 2026-09-04). Жодна з чотирьох метрик не має живого джерела, бо production ще не запускався ([`00_07`](00_07_Action_Plan_Tracker) `DEPLOY-1`):
+
+| Метрика | Наша форма роботи | Чому числа НЕМА |
+|---|---|---|
+| Deployment frequency | фази → окремі PR-и, ≥1 на фазу | нуль production-деплоїв |
+| Lead time for changes | малий surface → швидкий review | немає бази для заміру |
+| Change failure rate | `parallel_validation` + CodeQL + повний RSpec перед merge | немає деплоїв, отже й невдалих |
+| MTTR | Sentry DSN у `.kamal/secrets-common` → стек-трейси в production | **передумова** виміру, не сам MTTR: production-інцидентів не було |
+
+⛔ **Не писати тут «досягнуто» біля жодного рядка, доки метрика не має живого джерела** — саме це формулювання й було знято як самозасвідчення без вимірювача ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap), зворотний тест «а звідки ти це знаєш?»).
+
 ## 2. Pipeline flow
 
 ```

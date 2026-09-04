@@ -2492,19 +2492,13 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 ### 18.6 Code quality — Google Style Guide + GitHub Engineering
 
 - **Convention over configuration:** Phlex namespacing віддзеркалює routes (Rails-way).
-- **Small PRs / atomic commits:** Conventional Commits (`docs:`, `feat:`, `fix:`, `refactor:`, `test:`, `chore:`) — DORA "small batch size".
-- **Code review:** `parallel_validation` (Code Review + CodeQL) перед merge.
+- **Small PRs / atomic commits** і **code review** (`parallel_validation` + CodeQL перед merge) — процесний шар, дім [`06_07 §1b`](06_07_CICD_and_Runbook_Index); там же конвенція комітів і чому вона несуча (`release-please` деривує з неї semver і CHANGELOG).
 - **Comments:** "explain why, not what" (Google C++ Style Guide §3.5). Уникаємо tautological comments.
 - **Naming:** Ruby — `snake_case`, Phlex class — `CamelCase` з namespace, Stimulus controller — `kebab-case` файл + `camelCase` target/values.
 
-### 18.7 DORA metrics — DevOps Research & Assessment
+### 18.7 DORA metrics — дім [`06_07 §1b`](06_07_CICD_and_Runbook_Index)
 
-> ⚠️ **Уся підсекція — ЦІЛІ, не виміряний стан** (⚖️ 2026-09-04): жодна з чотирьох метрик не має живого джерела, бо production ще не запускався. ⊕ І це **єдиний дім** DORA-осі та Conventional Commits у корпусі — тобто вони тут не дубль, а безпритульний матеріал у чужому домі; переселення в [`06_07`](06_07_CICD_and_Runbook_Index) відкрито в [`00_07`](00_07_Action_Plan_Tracker) `DOC-T.98`.
-
-- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу). ⛔ **«Досягнуто» знято 2026-09-04 (DOC-T.98) як самозасвідчення без вимірювача:** DORA-частота міряє деплої, а production **не деплоївся жодного разу** ([`00_07`](00_07_Action_Plan_Tracker) `DEPLOY-1`). Тут — ЦІЛЬ і форма роботи, не досягнутий показник.
-- **Lead time for changes:** малий surface → швидкий review.
-- **Change failure rate:** `parallel_validation` + CodeQL + повний RSpec прогін перед merge.
-- **MTTR:** Sentry DSN підключено через `.kamal/secrets-common` → стек-трейси в production. ⚠️ Це **передумова** вимірювання MTTR, а не сам MTTR: жодного production-інциденту ще не було, тож числа не існує.
+DORA-вісь є CI/CD-предметом, а не фронтендовим, і живе в [`06_07 §1b`](06_07_CICD_and_Runbook_Index) разом із конвенцією комітів. ⚠️ Читай там і другу половину присуду: **усі чотири метрики є ЦІЛЯМИ, не виміряним станом** — production ще не запускався.
 
 ### 18.8 Rails-specific — Rails Doctrine + The Rails Way
 

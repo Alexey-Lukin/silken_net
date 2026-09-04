@@ -384,31 +384,11 @@ if (ml_confidence ≥ critical_threshold):   # FW.18 dual-zone (warn 0.60 / crit
 
 ### 1.6 Phase 2: Bit-Pack (lora_payload[16])
 
-Формує 16-байтний payload для AES-128 шифрування (LoRa, post-ARCH.42):
+Фаза формує 16-байтний payload для AES-128 (LoRa, post-ARCH.42) і віддає його Фазі 3. **Тут — сама фаза: коли вона біжить і яка критична секція її захищає.**
 
-```
-Offset | Size | Field            | Значення
--------|------|------------------|---------------------------
-0-3    | 4    | DID              | Tree ID (big-endian uint32)
-4-5    | 2    | Vcap             | [ARCH.99] Напруга шини VDDA (mV, BE) — `Adc_Vdda_Mv()`, FW.50. Ім'я поля історичне: каналу іоністора на вузлі НЕМА
-6      | 1    | Temp             | Температура кристала (°C, int8)
-7      | 1    | Acoustic         | TinyML acoustic events (uint8, насичення: >255→255)
-8-9    | 2    | Metabolism       | delta_t_seconds (BE uint16)
-10     | 1    | BioContract      | [PanicFlag:1 bit | Status:2 bits | GrowthPoints:5 bits]
-11     | 1    | TTL byte         | [FW.18b] Бітфілд [thr_invalid:5 | TTL:3] (ttl_byte.h). TTL initial=3 (panic 5); верхні 5 біт — saturating лічильник відкинутих OTA-порогів (wire-кап 31; 03_03 §5.4)
-12-13  | 2    | FwContractReport | [SEC.20] Wire-звіт contract-стану (BE uint16, common/fw_report.h): [semantic:1 | reverted:1 | hiwater&0x3FFF]. semantic=0 → legacy C-image константа (стара прошивка / KV недоступний); reverted=1 = auto-fallback стався (біжить baseline, версія id14 СПАЛЕНА — re-issue лише строго вищою). ⚠️ FIRMWARE_VERSION_ID = compile-const C-образу, bytecode-OTA її НЕ міняє — тут її більше нема
-14     | 1    | Gossip ts_lsb    | [FW.20-S2 §5] non-panic: soldier_unix_ts & 0xFF (час-gossip піггібек; дім — примітка [HW.32] нижче + 03_02). Panic-пакет: байт належить SEC.10 frame counter
-15     | 1    | Reserved         | Зарезервовано (0). Panic-пакет: SEC.10 frame counter (14-15 BE)
-```
-
-**Байт 10 (BioContract) — результат mruby Атрактора:**
-- Біт `[7]`: PanicFlag → `0`=звичайний пакет, `1`=panic (Emergency TX). Нормальні пакети завжди маскуються `& ~PANIC_FLAG_BIT`.
-- Біти `[6:5]`: Status → `0`=homeostasis, `1`=stress, `2`=anomaly, `3`=vm_error (mruby VM-збій, **НЕ** tamper — SLASH-1 P0; фізичний tamper їде PanicFlag-каналом, див. §11.3)
-- Біти `[4:0]`: Growth Points → `0-31` (Proof of Growth; wire-гомеостаз 5–31, stored ×2 = 10–62)
-
-> **[FW.29] Disambiguація panic vs насичений acoustic_events:** до FW.29 `acoustic_events == 0xFF` вказував і на реальне насичення кавітаційних подій, і на panic. Тепер `PANIC_FLAG_BIT` (bit 7 байта 10) однозначно маркує паніку: `panic_payload[10] = 0x80`, а `panic_payload[7] = 0xFF` (acoustic). Нормальні пакети завжди виконують `lora_payload[10] &= ~PANIC_FLAG_BIT`.
-
-> **[HW.32] Дім VPD-байта — ✅ ПЕРЕВИРІШЕНО (wire-rev2, 2026-06-12):** стара претензія «non-panic байт 14 = VPD» мовчки колідувала з FW.20-S2 #5 gossip-freeze (обидва канони бронювали байт 14 non-panic кадрів — double-booking зловив wire-budget ledger). Вердикт: VPD-індекс живе у **CCM wire-rev2 byte 19 `vpd_index`** ([`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)), транзитний 21B байт 14 лишається gossip'у; у CCM gossip переїхав у AAD byte 4. SEC.10-співіснування зняте самим CCM (panic-counter замінено FC+MIC). Сирі RH/тиск чекають окремого climate frame (ledger, «відкриті спостереження»).
+> 🏠 **One-Home: побайтова розкладка й бітова семантика — НЕ тут.** Wire-структура шифрованого пакета (усі 16 байтів, обидві ери — 16B ECB і 30B CCM rev2.1) — [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security), і саме туди реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard) призначає байт-позиції. Логіка й пакування самого StatusByte (байт 10) — [`03_04`](03_04_mruby_Lorenz_Attractor). ⚖️ **Присуд про напрямок 2026-09-04 (DOC-T.98):** кільце «дім віддає байт 11 сюди ⊥ реєстр віддає байт-позиції туди» розвʼязано на користь [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) — його Мета дослівно оголошує «структуру зашифрованих пакетів», тоді як Мета цієї сторінки є «життєвий цикл · переходи сну · ISR», і байтової мапи в ній немає.
+>
+> ⛔ **Не відновлювати таблицю тут — виміряно й відкинуто.** Поки копій було дві, вони розійшлися на трьох байтах (12/13/14), і **кожна сторона мала свою половину правди**: тут була точна семантика `FwContractReport` і `gossip_ts_lsb`, а в домі — хибне «`Vcap` = напруга суперконденсатора», тобто порушення інваріанта [ARCH.99], який `CLAUDE.md §6` тримає інлайн. Обидві половини зведено в дім тим самим проходом.
 
 Після пакування:
 
