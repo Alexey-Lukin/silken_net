@@ -99,9 +99,9 @@ SilkenNet не обирає один блокчейн. Система викор
 | # | Мережа | Сервіс | Статус | Примітка |
 |---|--------|--------|--------|----------|
 | 1 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ⚠️ Activation-gated | Pinata IPFS gateway. **[ARCH.118] З 2026-09-03 без ключа `configured?` = false і enqueue не робиться зовсім** — доти кожен `AuditLog` палив retry:5 у нікуди (97 подій Sentry за 4 хв). Дім механіки — [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy), запис Filecoin/IPFS; ⚠️ тут стояло `✅ Real`, що прямо суперечило тому запису |
-| 2 | peaq | `Peaq::DidRegistryService` | ✅ Real | Ed25519-підписані DID через Substrate HTTP |
+| 2 | peaq | `Peaq::DidRegistryService` | ⚠️ Activation-gated | Ed25519-підписані DID через Substrate HTTP. **[ARCH.119] З 2026-09-04 без обох значень (`PEAQ_NODE_URL`+`PEAQ_SIGNING_KEY`) `configured?` = false: enqueue не робиться, воркер виходить WARN'ом; ре-арм — `PeaqBackfillWorker`** |
 | 3 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ⚠️ Activation-gated | HTTP POST до W3bstream (хост із `.env.example` не має DNS-запису — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
-| 4 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
+| 4 | The Graph | `TheGraph::QueryService` | ⚠️ Activation-gated | GraphQL-запити до subgraph. **[ARCH.119] Без `THE_GRAPH_API_URL` обидва контролерні сайти віддають «не виміряно» й НАЗИВАЮТЬ ногу в логах; гейт стоїть усередині `Rails.cache.fetch`, бо виняток у блоці не кешується взагалі.** ⛔ Ре-арму немає й не треба — read-only |
 | 5 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
 | 6 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚫ Без адресата | **[ARCH.118]** Продукту «Polygon Hadron» публічно НЕ ІСНУЄ — `api.hadron.polygon.technology` без `A`/`CNAME` при живому `polygon.technology` (перевимір 2026-09-04); клас той самий, що в рядка 3, але тут упала не досяжність, а **сам вендор**. Сервіс лишається fail-closed заявкою без адресата (порожній ключ RAISE-ить у проді — свідомо); KYC-провайдера **не обрано** → [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20` (Sumsub/Veriff/Onfido/Persona — ⛔ НЕ «Hadron»), і той самий присуд відкриває перейменування `hadron_*` у схемі й коді |
 | 7 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
@@ -685,7 +685,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 Outage цих мереж **не блокує** core flow:
 - **Filecoin/IPFS** — IPFS pinning через Pinata fallback; outage означає затримку довготривалого архіву на дні.
-- **The Graph** — read-only; UI показує `cached_data` або `stale` indicator.
+- **The Graph** — read-only; UI показує **«не виміряно»**, і форма фолбеку в двох споживачів РІЗНА (дашборд — скаляр `nil`, звіт — три ключі `NETWORK_EMISSION_DEFAULTS`). ⛔ Тут доти стояло «`cached_data` або `stale` indicator» — жодного з двох у коді немає: `stale`-індикатора не існує взагалі, а кешу на відмові теж, бо виняток усередині `Rails.cache.fetch` не записується ([ARCH.119]; після гейта кешується вже сам вердикт «не сконфігуровано»).
 - **Celo** — community rewards (cUSD) затримуються; `CeloRewardWorker` retry 3.
 - **KlimaDAO** — ESG retirement затримується; non-blocking для основного pipeline.
 - **Ethereum L1 anchoring** — щотижневий, толерантний до 3-5 днів затримки; `EthereumAnchorWorker` cron `0 3 * * 1` спрацює наступного тижня.
@@ -707,9 +707,9 @@ Outage цих мереж **не блокує** core flow:
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
 | Solana | 🟠 Important | ✅ `SOLANA_RPC_URL_FALLBACK_1` заведено 2026-09-02 (офіційний mainnet-beta ⊥ devnet на canopy; `ARCH.114` §🗄️) | Sidekiq retry + RPC-фолбек | Catchup worker after restore |
 | Hadron | ⚫ Без адресата [ARCH.118] | Вендора не існує (не SPOF, а відсутність) | No — сітка [ARCH.65] чекає на «оживе», чого не буде | ⛔ **Strict-mode override НЕ існує** (`Rails.env.production?` тримає raise, INF.11) — єдиний шлях `BIZ.20` |
-| peaq | 🟠 Important | No (local DID generation) | Yes | — |
+| peaq | 🟠 Important | No — але **НЕ з тієї причини, яку тут писали доти** [ARCH.119] | Yes — носій названо: `PeaqBackfillWorker` | ⛔ Тут стояло «No (local DID generation)», тобто знятий `did:local:fallback` як ЖИВА підстава не-SPOF. На провалі не пишеться жодного DID — `peaq_did` лишається `nil`, і не-SPOF тримається на тому, що PATH 2-мінт peaq не гейтить (ARCH.53) |
 | Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
-| The Graph | 🟢 Nice | No (read-only) | Yes | — |
+| The Graph | 🟢 Nice | No (read-only) | **Не «recovery», а самолікування шляху** | ⛔ Тут стояло `Yes` в одній колонці з peaq/Filecoin, чиє `Yes` несе ВОРКЕР. Тут носія немає й не треба: наступний cache-miss спитає заново (≤5 хв), ре-арм заборонено [ARCH.119] |
 | Celo | 🟢 Nice | ✅ RPC-каскад ЖИВИЙ з 2026-09-02 (Forno → PublicNode → dRPC; `ARCH.114` §🗄️) | Sidekiq retry + RPC-каскад | — |
 | KlimaDAO | 🟢 Nice | No | Yes | — |
 | Ethereum L1 | 🟢 Nice | No | Yes (cron retry) | — |

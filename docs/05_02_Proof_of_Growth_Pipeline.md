@@ -673,6 +673,8 @@ raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless teleme
 # застряглі pending (auto-heal, дім 06_08 §2.2).
 ```
 
+⛔ **Преміса цього блоку СПРОСТОВАНА [ARCH.118 · ARCH.119, 2026-09-04], і механіка від того не змінилась — змінилось, що вона ЗНАЧИТЬ.** Модель була «Hadron-простій», вимір дав **неіснування вендора**: `Polygon::HadronComplianceService` є єдиним рантайм-писачем `hadron_kyc_status = "approved"`, а адресата в нього немає. Отже «auto-heal» щогодини переозброює драбину, якій нема куди дійти, і «тихий mint-skip» є не рідкісним крайовим випадком, а **постійним станом кожного custodial-бенефіціара**. Присуд про лік — [`00_07`](00_07_Action_Plan_Tracker) `ARCH.119` (⚖️ founder).
+
 **Oracle Balance Check:**
 ```ruby
 balance = client.get_balance(oracle_key.address)
