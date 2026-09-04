@@ -515,7 +515,7 @@ static void MX_CRYP_Init(void)
 |       DID (Device ID, 4 байти, big-endian)        | Vcap MSB|Vcap LSB| Temp°C |Acoustic|
 +--------+--------+--------+--------+--------+--------+--------+--------+
 | Byte 8 | Byte 9 |Byte 10 |Byte 11 |Byte 12 |Byte 13 |Byte 14 |Byte 15 |
-|ΔT MSB  |ΔT LSB  |GrowthPt|  TTL   |FW MSB  |FW LSB  | PAD    | PAD    |
+|ΔT MSB  |ΔT LSB  |GrowthPt|  TTL   |FwRep MSB|FwRep LSB|Gossip  | PAD    |
 +--------+--------+--------+--------+--------+--------+--------+--------+
 ```
 
@@ -527,8 +527,11 @@ static void MX_CRYP_Init(void)
 - `ΔT` (bytes 8-9): `delta_t_seconds` — час між пробудженнями (швидкість метаболізму EBFC)
 - `GrowthPoints` (byte 10): упакований StatusByte `[PanicFlag:1|Status:2|GrowthPoints:5]` (FW.29-PACK; panic=0 у normal-frame, bits 6..5 status, bits 4..0 growth 0..31)
 - `TTL byte` (byte 11): [FW.18b] бітфілд `[thr_invalid:5|TTL:3]` — нижні 3 біти Time to Live (початково 3, panic 5; −1 на hop), верхні 5 — лічильник відкинутих OTA-порогів (wire-дім [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA))
-- `FW` (bytes 12-13): Firmware Version ID, big-endian (для OTA targeting)
-- `PAD` (bytes 14-15): нульовий padding (резерв, не використовується)
+- `FwRep` (bytes 12-13): **[SEC.20] Wire-звіт contract-стану**, BE uint16 — `[semantic:1 | reverted:1 | hiwater & 0x3FFF]` (`firmware/common/fw_report.h`, компонує `Fw_Report_Compose`). ⛔ **НЕ «Firmware Version ID»** — та константа лишається лише як `semantic=0`-легасі-гілка. Побайтова розкладка з провенансом — [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA)
+- `Gossip` (byte 14): **[FW.20-S2 §5]** у non-panic кадрі — `soldier_unix_ts & 0xFF` (час-gossip піггібек); у panic-кадрі той самий байт належить SEC.10 frame-counter'у, тобто **значення залежить від ТИПУ кадру** — розкладка обох у [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA). ⛔ Не описувати як «резерв, не використовується».
+- `PAD` (byte 15): нульовий padding.
+
+> ⚖️ **Кільце дому — ВІДКРИТЕ, і поки воно є, обидві копії читаються як авторитетні.** Реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard) називає домом байт-позицій цю секцію, а вона сама віддає байт 11 у [`03_01 §1.6`](03_01_Firmware_Lifecycle_and_DMA) — тож напрямок стрілки не визначений, і саме тому байти 12/13/14 тут розійшлись із прошивкою (вирівняно за кодом 2026-09-04, DOC-T.98). Присуд про напрямок — [`00_07`](00_07_Action_Plan_Tracker) `DOC-T.98`; **до нього — звіряй із прошивкою, не з сусіднім доком.**
 
 **Emergency TX (EwsAlert / Panic) — `Trigger_Emergency_LoRa_TX()`:**
 ```

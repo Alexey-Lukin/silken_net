@@ -901,19 +901,9 @@ RTC Backup Domain не скидається при STOP2 та більшості
 
 ## 👑 4. Queen — Архітектура Шлюзу-Агрегатора
 
-### 4.1 Апаратна Платформа
+### 4.1 Апаратна Платформа — дім [`03_02 §10`](03_02_Queen_Gateway_Firmware)
 
-Queen **ніколи не спить** (continuous operation). Живиться від сонячної панелі та акумулятора.
-
-| HAL Handle | Периферія | Призначення |
-|------------|-----------|-------------|
-| `huart1` | USART1 | SIM7070G модем (LTE-M / NB-IoT, 115200 baud) |
-| `hsubghz` | SUBGHZ | LoRa трансивер SX1262 (868 МГц) |
-| `hcryp` | AES | ECB (LoRa), CBC (CoAP batches), CBC (downlink commands) |
-| `hrng` | RNG | HRNG для генерації IV (CBC) та flush jitter |
-| `hiwdg` | IWDG | Апаратний Watchdog (~26.6 с timeout) |
-
-**Queen НЕ має:** ADC, TIM2, RTC — на відміну від Soldier. **Queen має IWDG.**
+Повна HAL-периферія Королеви (включно з `hspi1` → W25Q32JV NOR Flash, ARCH.35 Overflow Tier) — [`03_02 §10`](03_02_Queen_Gateway_Firmware). Тут лишається лише те, що Queen ділить із Soldier ту саму MCU-платформу STM32WLE5JC, а отже й той самий ISR-каркас (§6 нижче).
 
 ### 4.2 Загальний Lifecycle
 
@@ -935,59 +925,13 @@ Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
 └─────────────────────────────────────────────────────────┘
 ```
 
-### 4.3 CIFO Cache Algorithm
+### 4.3–4.5 CIFO-кеш · Flush до Rails · OTA Reflex Shot — дім [`03_02`](03_02_Queen_Gateway_Firmware)
 
-```c
-typedef struct {
-    uint32_t uid;       // Tree DID
-    uint8_t payload[16]; // Останній decrypted payload
-    int8_t rssi;        // Signal quality
-    uint8_t is_active;  // 1 = зайнятий слот
-} EdgeCache;
+Три ланки Queen-конвеєра описані в її власному домі, і кожна там **повніша**: `struct EdgeCache` + алгоритм евікції — [`03_02 §2`](03_02_Queen_Gateway_Firmware) · flush до Rails і повний цикл AT-взаємодії з модемом — [`03_02 §3`](03_02_Queen_Gateway_Firmware) + [`03_02 §4`](03_02_Queen_Gateway_Firmware) · OTA-бродкаст — [`03_02 §5`](03_02_Queen_Gateway_Firmware).
 
-EdgeCache forest_cache[50]; // 50 слотів = 1150 байт RAM
-```
-
-**Логіка `Process_And_Cache_Data(uid, payload, rssi)`:**
-1. **Dedup:** Знайти uid → оновити payload + RSSI → повернути
-2. **Insert:** Знайти вільний слот → вставити → `cache_count++`
-3. **CIFO Priority Eviction** (кеш повний):
-   - Шукати `bio_status == 0` (homeostasis) з найгіршим RSSI → витісняємо
-   - Якщо ВСІ записи критичні → fallback: найгірший RSSI незалежно від статусу
-
-### 4.4 Cache Flush до Rails (CoAP)
-
-**Тригери:**
-- `cache_count >= 45` (50 - 5 headroom)
-- `HAL_GetTick() - last_flush_time > 3,600,000 + jitter` (1 година + random jitter 0-60s)
-
-**Flush Jitter:** При одночасному ребуті кількох Queens (blackout) — без jitter всі Queens відправлять батч одночасно → DDoS на backend. Jitter (0-60s, HRNG) розмазує трафік.
-
-**Послідовність:**
-1. Health Королеви → підписаний **QATT-v2 header** конверта (ARCH.54); окремий DID=0x00000000 pseudo-record **retired 2026-07-03** ([`03_02 §7`](03_02_Queen_Gateway_Firmware))
-2. Pack cache → `binary_batch_buffer` (21 байт/запис: 4 DID + 1 RSSI + 16 payload)
-3. **MX_CRYP re-init** → `CRYP_KEYSIZE_256B` + `coap_key[8]` (CoAP AES-256-CBC ключ Queen, окремий HKDF info `"silken-aes-256-device-key"`)
-4. AES-256-CBC encrypt з HRNG IV (prepend IV як перші 16 байт)
-5. `AT+CCOAPNEW` → `AT+CCOAPSEND` (hex-кодований) → `HAL_Delay(2000)` → `AT+CCOAPDEL`
-6. **Restore ECB+128B mode** → `CRYP_KEYSIZE_128B` + `aes_key[4]` (LoRa) для трафіку від Soldiers (критично — SEC.8 ECB Restoration)
-
-**Queen Health — QATT-v2 конверт-header (ARCH.54):** пульс Королеви їде **підписаним health-блоком QATT-v2 конверта** (uptime · cache-load · lora_rx_drops · coap_fail · csq · flags). Стара DID=0x00000000 16-байтна sentinel-розкладка **retired 2026-07-03** — мертва обабіч (дропається), masking-атака закрита by construction (без валідного Ed25519-підпису → без health). Механізм + byte-map + server-routing (`enqueue_envelope_health`) — канон [`03_02 §7`](03_02_Queen_Gateway_Firmware).
-
-### 4.5 OTA Reflex Shot (Broadcast до Soldiers)
-
-**Механізм:** Soldier слухає ефір 500ms після власного TX. Queen, отримавши пакет від Soldier, **миттєво** відповідає OTA-чанком.
-
-```
-Queen OnRxDone ISR → LoRa_Rx_Ring_Push (FIFO 15-slot, FW.3)
-       ↓
-Main loop: while pop → decrypt → if ota_is_active:
-  Build OTA chunk (16 bytes):
-    [0x99][chunk_idx_hi][chunk_idx_lo][total_hi][total_lo][bytecode:11]
-  AES-128-ECB Encrypt → Radio.Send [post-ARCH.42](16)
-  HAL_Delay(60) → next_chunk_idx++
-```
-
-Chunk-розмір для LoRa OTA: **11 байт** корисного коду (з 16-байтного AES-блоку вираховуємо 5 байт заголовку).
+> ⛔ **Не відтворювати їх тут — виміряно й відкинуто 2026-09-04 (DOC-T.98), і копія була НЕБЕЗПЕЧНА, а не просто зайва.** Оголошений периметр цієї сторінки — «життєвий цикл, переходи сну, ISR»; евікційна політика кешу, AT-послідовність модема й парсер OTA-чанка не є жодним із трьох. Три виміряні розходження: `struct EdgeCache` стояв **без поля `int8_t snr`** [E.8], але з підсумком дому (`50 слотів = 1150 байт` — при чотирьох полях це 22 Б × 50 = 1100, тобто арифметика ламалась на власному рядку) · крок flush вчив граматики `AT+CCOAPNEW`/`AT+CCOAPSEND`, яку дім називає **неіснуючою в сімействі SIMCom** (FW.56 додав обовʼязковий `AT+CDNSGIP`, FW.3 замінив блокувальний `HAL_Delay` на response-driven токенайзер) — тобто на кремнії ця послідовність не виконається · HAL-таблиця не знала `hspi1` → W25Q32JV (ARCH.35 Overflow Tier).
+>
+> 🔑 **Прецедент у цьому ж файлі:** §5 нижче зведено до рефа з дослівно тим самим діагнозом — «Queen-таблиця тут раніше тихо розійшлась із домом». Той прохід зупинився на межі §4; цей його доробив.
 
 ### 4.5а Downlink Opcode Map — Canonical SSOT [DOC.4]
 
@@ -1009,58 +953,13 @@ Chunk-розмір для LoRa OTA: **11 байт** корисного коду 
 >
 > **Ключ LoRa-шару (CCM-ера, FW.2 (в)):** усі опкоди цієї карти — і downlink-broadcast (`0x99..0x9E`), і uplink-запити (`0x55`/`0x56`) — їдуть 16B ECB на **cluster control-plane KEYB** ([`03_05 §3.1`](03_05_Hardware_Symmetric_Crypto_and_Security) двоключова модель); session KEYL носить лише телеметрію/panic (30B CCM rev2.1). ECB-ера — єдиний спільний ключ, як і було.
 
-### 4.6 CoAP Downlink → OTA RAM Assembly
+### 4.6 CoAP Downlink → OTA RAM Assembly — дім [`03_02 §5`](03_02_Queen_Gateway_Firmware)
 
-> **[FW.60] Транспорт = poll-після-флашу** ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)):
-> Queen сама тягне чанки `GET ota/<uid>?v=&ch=` після `send_success` (push із
-> Rails у CGNAT-egress не долітає; кампанію анонсує hint `[0x9F]` у
-> poll-відповіді). Нижче — незмінна guard-логіка приймання.
+Збірка OTA-образу в RAM із CoAP-downlink (шість guard'ів парсера чанка, явний `len`, CRC16, поведінка при дірі в бітмапі) — [`03_02 §5`](03_02_Queen_Gateway_Firmware). Карта опкодів, якими цей тракт керується, лишається тут — §4.5а вище (`[DOC.4]`, канонічний дім).
 
-Queen отримує великі OTA-пакети від Rails через CoAP (`Handle_CoAP_Command`):
+### 4.7 Actuator Command Dedup — дім [`03_02 §6`](03_02_Queen_Gateway_Firmware)
 
-```
-Rail CoAP PUT: [IV:16][CBC_encrypted: [0x99][chunk_idx:2 BE][total:2 BE][len:2 BE][bytecode:len][crc16:2 BE]]
-       ↓
-Handle_CoAP_Command():
-  AES-256-CBC Decrypt (з IV з перших 16 байт; CRYP_KEYSIZE_256B + coap_key)
-  Restore ECB+128B mode (CRYP_KEYSIZE_128B + LoRa aes_key) — SEC.8
-  OTA_MARKER detected (0x99):
-    chunk_index, total_chunks, len (big-endian)
-    CRC16-CCITT verify над header+bytecode (common/silken_crc.h ↔ OtaPackagerService.crc16_ccitt)
-    Bitmap dedup: ota_chunk_bitmap (+ idle-стан → pending_ota_size = 0: нова кампанія)
-    memcpy → pending_ota_bytecode[chunk_index * 512]
-    ota_chunks_received++
-    if all received → ota_is_active = 1 → LoRa broadcast starts
-```
-
-> **[FW.53] Явний `len` + CRC16-перевірка.** Стара схема вгадувала
-> довжину чанка з CBC zero-padding (формула `aligned−16−7`) і при паддінгу 0..15
-> байт **систематично обрізала 1..16 байт кожного чанка** (повний 512B → 500B);
-> CRC16 від бекенду не перевірявся взагалі. Деталі парсера — [`03_02 §5`](03_02_Queen_Gateway_Firmware).
-> Сам потік, що його чанкують CoAP/LoRa-шари, тепер **wire-потік**: `bytecode +
-> zero-pad + CRC32(4B BE)`, вирівняний на LoRa MTU 11 — щоб CRC32 лягав рівно в
-> кінець останнього LoRa-чанка (Soldier рахує отримане як `11 × chunks`).
-> Будує `OtaPackagerService` (дзеркальні специфікації — `spec/services/ota_packager_service_spec.rb`).
-
-### 4.7 Actuator Command Dedup (Idempotency)
-
-> **[FW.60]** `CMD:*` прибуває у відповіді на Королевин `poll/<uid>`
-> ([`03_02 §4а`](03_02_Queen_Gateway_Firmware)), не push'ем.
-
-```
-CoAP Downlink: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<UUID>
-       ↓
-djb2_hash(UUID) → 32-bit hash
-       ↓
-Cmd_Dedup_Check(hash):
-  Scan cmd_dedup_ring[16]
-  Found → return 1 (duplicate, ignore)
-  Not found → store → return 0 (execute)
-```
-
-**DJB2 hash:** `h = h * 33 + c` (швидкий, 0 алокацій, достатній простір для 16-слотного ring buffer).
-
----
+Ідемпотентність actuator-наказів на Королеві (MID-вікно, евікція, поведінка при повторі) описана в її власному домі — [`03_02 §6`](03_02_Queen_Gateway_Firmware). Тут лишається лише те, що ця дедуплікація є частиною Queen-lifecycle (§4.2 вище).
 
 ## 💾 5. Queen RAM Budget
 
