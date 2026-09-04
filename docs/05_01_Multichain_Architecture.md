@@ -96,12 +96,12 @@ SilkenNet не обирає один блокчейн. Система викор
 
 | # | Мережа | Сервіс | Статус | Примітка |
 |---|--------|--------|--------|----------|
-| 1 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ✅ Real | Pinata IPFS gateway |
+| 1 | Filecoin/IPFS | `Filecoin::ArchiveService` + `VerificationService` | ⚠️ Activation-gated | Pinata IPFS gateway. **[ARCH.118] З 2026-09-03 без ключа `configured?` = false і enqueue не робиться зовсім** — доти кожен `AuditLog` палив retry:5 у нікуди (97 подій Sentry за 4 хв). Дім механіки — [`06_08 §2.2`](06_08_Resilience_and_Failover_Policy), запис Filecoin/IPFS; ⚠️ тут стояло `✅ Real`, що прямо суперечило тому запису |
 | 2 | peaq | `Peaq::DidRegistryService` | ✅ Real | Ed25519-підписані DID через Substrate HTTP |
 | 3 | IoTeX W3bstream | `Iotex::W3bstreamVerificationService` | ⚠️ Activation-gated | HTTP POST до W3bstream (хост із `.env.example` не має DNS-запису — [`00_07`](00_07_Action_Plan_Tracker) ARCH.118) |
 | 4 | The Graph | `TheGraph::QueryService` | ✅ Real | GraphQL-запити до subgraph |
 | 5 | Polygon | `BlockchainMintingService` + `BlockchainBurningService` | ✅ Real | Eth::Client → Alchemy RPC |
-| 6 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚠️ Hybrid | Реальне KYC API + симуляція коли credentials відсутні |
+| 6 | Polygon Hadron | `Polygon::HadronComplianceService` | ⚫ Без адресата | **[ARCH.118]** Продукту «Polygon Hadron» публічно НЕ ІСНУЄ — `api.hadron.polygon.technology` без `A`/`CNAME` при живому `polygon.technology` (перевимір 2026-09-04); клас той самий, що в рядка 3, але тут упала не досяжність, а **сам вендор**. Сервіс лишається fail-closed заявкою без адресата (порожній ключ RAISE-ить у проді — свідомо); KYC-провайдера **не обрано** → [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20` (Sumsub/Veriff/Onfido/Persona — ⛔ НЕ «Hadron»), і той самий присуд відкриває перейменування `hadron_*` у схемі й коді |
 | 7 | Solana | `Solana::MintingService` | ✅ Real | Ed25519-signed `sendTransaction` (base64). Balance guard: 0.05 SOL |
 | 8 | Celo | `Celo::CommunityRewardService` | ✅ Real | ERC-20 transfer cUSD через Celo RPC |
 | 9 | KlimaDAO | `KlimaDao::RetirementService` | ✅ Real | Approve + Retire (два ERC-20 виклики) |
@@ -244,14 +244,16 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 
 Модуль Identity & Compliance. Перевіряє `hadron_kyc_status`. Інституційні інвестори можуть мінтити або купувати токени SCC тільки після проходження KYC (стандарт ERC-3643).
 
+🔴 **Гейт живий, вимірювача немає — і наслідок операційний, не риторичний [ARCH.118].** Єдиний рантайм-писач `hadron_kyc_status = "approved"` — цей самий сервіс (решта входжень: сіди й load-test). Адресата в нього не існує, тож у production/`WEB3_STRICT_MODE` статус **не може вийти з `pending` жодного разу**, а `Wallet#kyc_approved_for_minting?` через це вічно `false` → `MintBatchCollectorWorker` кожні 5 хв **мовчки** скіпає per-tx кожного custodial-бенефіціара. ⚠️ І сітка відновлення `HadronKycReverifyWorker` [ARCH.65] стоїть на спростованій передумові: її шапка каже «коли Hadron **оживе**», тобто модель була **даунтайм**, а вимір дав **неіснування** — щогодини вона переозброює ту саму мертву драбину (`BATCH_LIMIT` 500 на модель). Похідне: gauge `silkennet_hadron_kyc_pending_depth` росте монотонно й **не є сигналом інциденту** — дно в нього структурне. Присуд про провайдера й форму гейта → [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`.
+
 | Параметр | Значення |
 |----------|----------|
 | **Сервіс** | `Polygon::HadronComplianceService` |
 | **Воркер** | `HadronAssetRegistrationWorker` |
 | **Черга** | `web3_low` (пріоритет 8) |
 | **Retry** | 5 |
-| **Credentials** | `hadron_api_key` (Rails encrypted credentials) |
-| **ENV** | `HADRON_API_URL` (default: `https://api.hadron.polygon.technology`) |
+| **Credentials** | `hadron_api_key` — ⛔ **НЕ провіжнити** ([`06_04 §3`](06_04_Secrets_Checklist)); живий шлях ENV, не vault (§5) |
+| **ENV** | `HADRON_API_URL` (default: `https://api.hadron.polygon.technology` — 🔴 **хост не існує**, `A`/`CNAME` відсутні на 2026-09-04; літерал лишається fail-closed заявкою, не робочим фолбеком) |
 | **Спека** | `spec/services/polygon/hadron_compliance_service_spec.rb` |
 
 **Два потоки:**
@@ -536,15 +538,17 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 ## 🔌 5. Конфігурація Credentials та ENV
 
-### Rails Encrypted Credentials
+### Секрети сервісів — живий дім ENV, vault лише запасний
 
-| Credential | Сервіс |
+🔴 **Заголовок цієї таблиці казав «Rails Encrypted Credentials», і це СПРОСТОВАНО виміром** ([`06_04 §5`](06_04_Secrets_Checklist), SEC.22 Phase-2 ✅ 2026-09-02): образ не несе `credentials.yml.enc` (`.dockerignore`, інваріант C `deploy_secret_scan`), тож credentials-половина в контейнері була `nil` **із першого буту**, а `RAILS_MASTER_KEY` знято з усіх пʼяти deploy-поверхонь. Живий шлях КОЖНОГО рядка нижче — `ENV["X"].presence || credentials.x`; імена ENV — `.env.example` + [`06_04 §2.1`](06_04_Secrets_Checklist), гейт парності — `spec/deploy/credentials_env_fallback_spec.rb`. **Читати колонку як «де лежить секрет» означає шукати його там, де його не буває.** ⚠️ Одиниця тут не «сервіс»: `iotex` і `peaq` несуть по дві змінні, тож інжект іде за ПЕРЕЛІКОМ, не за числом ([`S1.1`](00_07_Action_Plan_Tracker)).
+
+| Ключ (vault-імʼя) | Сервіс |
 |------------|--------|
 | `filecoin_api_key` | Filecoin/Pinata |
 | `peaq_node_url`, `peaq_signing_key` | peaq |
 | `iotex_w3bstream_url`, `iotex_api_key` | IoTeX |
 | `the_graph_api_url` | The Graph |
-| `hadron_api_key` | Polygon Hadron |
+| `hadron_api_key` | ⚫ **Polygon Hadron — адресата НЕ ІСНУЄ**, не провіжнити ([`06_04 §3`](06_04_Secrets_Checklist) · [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`) |
 
 ### Environment Variables
 
@@ -663,7 +667,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 1. **TelemetryLog `verified_by_iotex: false`** залишається unverified.
 2. **ChainlinkDispatchWorker не запускається** (dispatch-guard `verified_by_iotex?`) — oracle-маркування (latent Path 1 [DOC.7], ARCH.53) зупиняється на початку pipeline. Це **бажана поведінка**: unverified лог не отримує навіть correlation-marker.
-3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02` — BlockchainMintingService](04_02_Business_Logic_and_Services).
+3. **Tokenomics-flow Path 2 продовжує працювати** (`TokenomicsEvaluatorWorker` → `EvaluateTreeBatchWorker` → `Wallet#lock_and_mint!` → `BlockchainMintingService.call(batch, telemetry_log: nil)`) — для цього шляху guards `verified_by_iotex?` / `oracle_status_fulfilled?` **свідомо пропускаються** (per-packet integrity perimeter забезпечується AES-256-CBC decrypt + `valid_sensor_data?` у `TelemetryUnpackerService`, а **єдиний обов'язковий guard** — `hadron_kyc_status == "approved"`). 🔴 **І саме тому «Path 2 продовжує працювати» сьогодні хибне для custodial-бенефіціара:** єдиний обовʼязковий guard стоїть на статусі, чий єдиний писач не має адресата (§6), тож у проді Path 2 мінтить лише для гаманця з ВЛАСНОЮ адресою й власним approved-статусом, якого теж ніхто не проставить. Це не деградація тракту, а **відсутність вимірювача під живим гейтом** — [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`. Cross-ref: [`05_02 §Усі Шляхи до lock_and_mint! [DOC.7]`](05_02_Proof_of_Growth_Pipeline) + [`04_02` — BlockchainMintingService](04_02_Business_Logic_and_Services).
 4. **Multi-day outage policy:** для збереження user trust розглянути **temporary reduced minting** через альтернативну верифікацію — кандидатом тепер є вже відвантажений рунг **L1 Queen-attestation** (crypto-доказ, що дані пройшли крізь РЕАЛЬНУ Королеву; незалежний від IoTeX — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)). ⚫ Колишній кандидат «Forester Guild Proof-of-Physical-Work» відкликано ⚖️ 2026-08-24 разом із гільдією-маркетплейсом ([`04_02 §Forester Guild`](04_02_Business_Logic_and_Services)). Реалізація — post-TRL 7.
 
 ### 8.5. Important Tier: Solana, Hadron, peaq
@@ -671,7 +675,7 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 | Мережа | Outage Impact | Graceful Degradation |
 |---|---|---|
 | **Solana** | USDC мікро-винагороди не нараховуються | `SolanaMicroRewardWorker` retry 3 → DeadSet. Користувацький досвід зберігається — winnings накопичуються в Polygon SCC, USDC друкується retroactively через `Solana::CatchupWorker` (запланувати). **[ARCH.45]** batch payout idempotent (intent-marker + in-flight reconcile) — повторний цикл не передплачує. |
-| **Hadron (KYC)** | Нові KYC submissions не верифікуються | `wallet.hadron_kyc_status: pending` → mint blocked для нового користувача, але існуючі approved wallets не зачеплено. Hot-fix: `WEB3_STRICT_MODE=false` (тимчасово, з аудиторським логом) для unblock в emergency |
+| **Hadron (KYC)** | ⚫ **Не «outage» — вендора не існує** [ARCH.118] | `hadron_kyc_status` не виходить із `pending` **ніколи** (§6), тож у проді approved-гаманців не буває взагалі, і «існуючі approved не зачеплено» тут порожнє. 🔴 **Hot-fix `WEB3_STRICT_MODE=false` НЕ ПРАЦЮЄ, і це не протухання, а свідоме загартування [INF.11 2026-07-10]:** умова в коді — `ENV["WEB3_STRICT_MODE"] == "true" \|\| Rails.env.production?`, тож у проді другий диз'юнкт істинний **завжди** і `raise` лишається; заглушку не вмикає ніщо (інакше забутий прапор = fake-KYC mint). ⛔ Не «полагодити», давши прапорцю силу. Шлях розблокування один — реальний провайдер ([`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`); будь-яке ручне проставляння статусу є **актом L0-довіри** і потребує власного присуду й аудит-сліду, а не рядка в таблиці деградації |
 | **peaq** | Нові provisioning DID не реєструються | `PeaqRegistrationWorker` retry 5; нові Soldiers/Queens отримують локальний DID `did:peaq:0x...` (deterministic SHA256(uid+created_at)), реєстрація push-up при відновленні |
 
 ### 8.6. Nice-to-have Tier (Filecoin, The Graph, Celo, Klima, L1)
@@ -699,7 +703,7 @@ Outage цих мереж **не блокує** core flow:
 | Chainlink | ⚪ Unwired [ARCH.53] | — (local marker, без зовнішньої залежності) | — | PATH 1 закривати відмовлено (founder 2026-07-19, ARCH.53 §🗄️) |
 | IoTeX | 🔴 Critical | Yes | Sidekiq retry | Multi-day → temporary minting freeze |
 | Solana | 🟠 Important | ✅ `SOLANA_RPC_URL_FALLBACK_1` заведено 2026-09-02 (офіційний mainnet-beta ⊥ devnet на canopy; `ARCH.114` §🗄️) | Sidekiq retry + RPC-фолбек | Catchup worker after restore |
-| Hadron | 🟠 Important | Yes | No | Strict-mode override (emergency) |
+| Hadron | ⚫ Без адресата [ARCH.118] | Вендора не існує (не SPOF, а відсутність) | No — сітка [ARCH.65] чекає на «оживе», чого не буде | ⛔ **Strict-mode override НЕ існує** (`Rails.env.production?` тримає raise, INF.11) — єдиний шлях `BIZ.20` |
 | peaq | 🟠 Important | No (local DID generation) | Yes | — |
 | Filecoin | 🟢 Nice | Pinata fallback | Yes | — |
 | The Graph | 🟢 Nice | No (read-only) | Yes | — |
