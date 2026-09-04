@@ -18,8 +18,11 @@ require "rails_helper"
 # 🔒 Стеля, названа чесно:
 #   · Перелік символів ДЕРИВУЄТЬСЯ з файлів `contracts/*.sol`, а не з рукописної
 #     мапи: скопійований перелік членів — дзеркало, і гниє на першій же зміні.
-#   · `cUSD` контракту в цьому репо не має (зовнішній Celo-токен), тож його символ
-#     не стереже ніщо і стерегти нічим — carve-out за ПОБУДОВОЮ, не недогляд.
+#   · Зовнішні токени чужих мереж — `cUSD` (Celo) і `USDC` (Solana, [ARCH.120]) —
+#     контракту в цьому репо не мають, тож їхні символи не стереже ніщо і стерегти
+#     нічим: carve-out за ПОБУДОВОЮ, не недогляд, і він постійний, а не тимчасовий.
+#   · Carve-out'ів ДВА РІЗНИХ — на символ і на НАЗВУ, у різних `it`; заводячи
+#     зовнішній токен, оновлюй обидва (на [ARCH.120] правка одного лишила другий RED).
 #   · Гейт судить РІВНІСТЬ рядків, не правильність символу: два однаково хибні
 #     написання він пропустить.
 RSpec.describe "token ticker parity: Ruby map ⟷ Solidity ERC20 symbol" do # rubocop:disable RSpec/DescribeClass
@@ -53,8 +56,14 @@ RSpec.describe "token ticker parity: Ruby map ⟷ Solidity ERC20 symbol" do # ru
   # Shrink-list: тікери без контракту в репо. Тільки скорочується — щойно токен
   # дістає власний `.sol`, рядок мусить зникнути звідси сам, інакше carve-out
   # тихо ріс би, а гейт вироджувався б у нуль перевірок.
-  it "не має тікера без контракту, окрім зовнішнього cUSD" do
-    expect(BlockchainTransaction::TOKEN_TICKERS.values - declared_symbols).to eq([ "cUSD" ])
+  # ⚠️ Список ВИРІС один раз, і підстава протилежна до послаблення: [ARCH.120] завів
+  # `usdc`, бо Solana-мікровинагороди писались у USDC під `:carbon_coin` і
+  # підсумовувались у `net_minted_supply`. Обидва carve-out'и — ЗОВНІШНІ токени
+  # чужих мереж (Celo cUSD, Solana USDC); власного `.sol` вони не матимуть ніколи,
+  # тож рядок тут постійний за побудовою, а не тимчасовий.
+  it "не має тікера без контракту, окрім зовнішніх cUSD і USDC" do
+    expect(BlockchainTransaction::TOKEN_TICKERS.values - declared_symbols)
+      .to contain_exactly("cUSD", "USDC")
   end
 
   it "покриває КОЖНЕ значення enum'а — і не тримає запису для неіснуючого типу" do
@@ -93,8 +102,12 @@ RSpec.describe "token ticker parity: Ruby map ⟷ Solidity ERC20 symbol" do # ru
 
     # Shrink-list, дзеркало символьного вище: мітка без контракту. Щойно токен
     # дістає власний `.sol`, рядок мусить зникнути звідси сам.
-    it "не має мітки без контракту, окрім зовнішнього Celo Dollar" do
-      expect(base_labels.values.compact - declared_names).to eq([ "Celo Dollar" ])
+    # ⚠️ Обидві осі цього гейта — символ і назва — мають ВЛАСНИЙ carve-out, і на
+    # [ARCH.120] це коштувало другого проходу: правка символьного списку лишила
+    # цей червоним. Заводячи зовнішній токен, оновлюй ОБИДВА, не один.
+    it "не має мітки без контракту, окрім зовнішніх Celo Dollar і USD Coin" do
+      expect(base_labels.values.compact - declared_names)
+        .to contain_exactly("Celo Dollar", "USD Coin")
     end
   end
 

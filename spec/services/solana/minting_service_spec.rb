@@ -409,6 +409,18 @@ RSpec.describe Solana::MintingService do
         described_class.new(log).mint_micro_reward!
       end
 
+      # [ARCH.120] Пін на ВАЛЮТУ рядка, а не на мережу: `blockchain_network` — це
+      # транспорт, і жоден грошовий агрегат його не читає. `net_minted_supply`
+      # питає `token_type`, тож саме він вирішує, чи USDC-виплата підсумується
+      # намінтованим SCC. Дзеркальний пін у точці дії — `blockchain_burning_service_spec`.
+      it "пише виплату як USDC, і вона не входить у намінтований SCC" do
+        described_class.new(log).mint_micro_reward!
+
+        tx = BlockchainTransaction.where(blockchain_network: "solana").last
+        expect(tx.token_type).to eq("usdc")
+        expect(BlockchainTransaction.net_minted_supply(:carbon_coin)).to eq(0)
+      end
+
       it "reconciles on retry instead of re-broadcasting (no double-pay)" do
         described_class.new(log).mint_micro_reward!
         expect(BlockchainTransaction.where(blockchain_network: "solana").count).to eq(1)
@@ -424,8 +436,10 @@ RSpec.describe Solana::MintingService do
       it "confirms a :pending intent stranded by a pre-mark_as_sent crash (review-fix: no stuck :pending → no eventual double-pay)" do
         # Крах ПІСЛЯ broadcast, ДО mark_as_sent! → intent лишився :pending. reconcile :confirmed
         # МУСИТЬ спершу mark_as_sent!, інакше confirm! (з [:sent,:processing]) пропуститься → stuck.
+        # [ARCH.120] Тип ТОЙ САМИЙ, що пише продакшн-писач: фікстура з `:carbon_coin`
+        # пінила б стан, недосяжний за побудовою (клас TEST.12 — пін на проксі).
         intent = wallet.blockchain_transactions.create!(
-          amount: 0.015, token_type: :carbon_coin, status: :pending, blockchain_network: "solana",
+          amount: 0.015, token_type: :usdc, status: :pending, blockchain_network: "solana",
           to_address: recipient_solana_address, tx_hash: "stuck-sig",
           chainlink_request_id: log.chainlink_request_id
         )

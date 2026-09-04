@@ -1284,6 +1284,59 @@ end
 
       expect(slash_intent_amount).to eq(70)
     end
+
+    # [ARCH.120] ТРЕТЯ вісь бази — ВАЛЮТА, і вона не є віссю транспорту. Сусід вище
+    # стереже SFC (наш токен, чужа монета); тут — USDC (чужа мережа, чужа монета),
+    # яку Solana-мікровинагороди писали під `:carbon_coin`. Агрегат питає
+    # `token_type` і `blockchain_network` не бачить за побудовою, тож рядок
+    # додавався до намінтованого SCC — причому фантом ПЕРЕВАЖАВ справжній заробіток
+    # того самого аплінка на порядок (винагорода має ненульову БАЗУ, а SCC за той
+    # самий пакет — це лише `growth_points / 10_000`; формула-дім [`04_02`]).
+    it "не рахує Solana-мікровинагороду в USDC як зароблений SCC" do
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 100,
+                                      token_type: :carbon_coin, status: :confirmed)
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 0.0131,
+                                      token_type: :usdc, status: :confirmed,
+                                      blockchain_network: "solana",
+                                      to_address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV")
+
+      expect(slash_intent_amount).to eq(100)
+    end
+
+    # [SLASH-1 ⚖️ 2026-09-04] Вікно форфейтури = термін ЦЬОГО договору. Пін цілиться в
+    # РЕАЛЬНУ несправедливість, а не в механіку: емісія, зароблена ДО того, як цей
+    # договір почався (тобто під попереднім — повністю виконаним і оплаченим), спаленню
+    # не підлягає. ⚠️ Фікстура свідомо тримає ОБИДВІ половини: якби вона мала лише рядок
+    # поза вікном, пін був би зелений і на порожній базі (`<= 0` → early return, інтенту
+    # нема, `amount` = nil), тобто міряв би відсутність предмета, а не межу.
+    it "не палить емісію, зароблену ДО початку цього договору (попередній — виконаний)" do
+      naas_contract.update!(start_date: 30.days.ago, end_date: 30.days.from_now)
+
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 900,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      created_at: 1.year.ago)
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 40,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      created_at: 5.days.ago)
+
+      expect(slash_intent_amount).to eq(40)
+    end
+
+    # ⛔ Дзеркало межі: вікно накриває ЛИШЕ контрактну форфейтуру. Слешинг-за-провину
+    # питає про шкоду ЛІСУ, а не про обсяг угоди, і цю вісь присуд 09-04 не міряв —
+    # тож база там лишається безвіконною, і це ОГОЛОШЕНО, а не недогляд.
+    it "на слешинг-за-провину вікно НЕ поширюється — база лишається безвіконною" do
+      naas_contract.update!(start_date: 30.days.ago, end_date: 30.days.from_now)
+      create(:blockchain_transaction, wallet: wallet_burn, amount: 900,
+                                      token_type: :carbon_coin, status: :confirmed,
+                                      created_at: 1.year.ago)
+
+      described_class.call(organization.id, naas_contract.id, source_tree: tree_burn)
+      intent = BlockchainTransaction.where(sourceable: naas_contract).order(created_at: :desc).first
+
+      expect(intent).to be_present
+      expect(intent.amount).to be > 0
+    end
   end
 
   describe "total_minted_amount zero" do

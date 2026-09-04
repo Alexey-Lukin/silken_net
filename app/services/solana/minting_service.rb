@@ -559,7 +559,9 @@ module Solana
     def record_event_intent!(recipient, amount_lamports, signature)
       @wallet.blockchain_transactions.create!(
         amount: format_usdc(amount_lamports).to_f,
-        token_type: :carbon_coin,
+        # [ARCH.120] ВАЛЮТА, не транспорт: сума виражена в USDC, тож `:carbon_coin`
+        # тут був фактично хибний і підсумовувався в `net_minted_supply(:carbon_coin)`.
+        token_type: :usdc,
         status: :pending,
         to_address: recipient,
         tx_hash: signature,
@@ -690,7 +692,8 @@ module Solana
     def record_batch_intent!(recipient, amount_lamports, event_count, signature)
       @wallet.blockchain_transactions.create!(
         amount: format_usdc(amount_lamports).to_f,
-        token_type: :carbon_coin,
+        # [ARCH.120] Дзеркало `record_event_intent!` — валюта рядка є USDC.
+        token_type: :usdc,
         status: :pending,
         to_address: recipient,
         tx_hash: signature,

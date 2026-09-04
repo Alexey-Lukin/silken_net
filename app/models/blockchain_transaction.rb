@@ -154,7 +154,14 @@ class BlockchainTransaction < ApplicationRecord
   # ---------------------------------------------------------------------------
 
   # --- ТИПИ ТА СТАТУСИ (The Web3 State Machine) ---
-  enum :token_type, { carbon_coin: 0, forest_coin: 1, cusd: 2 }, prefix: true
+  # 🔴 `token_type` називає ВАЛЮТУ рядка, і це третя вісь грошового рядка поруч із
+  # одиницею (бали ⊥ монети) та напрямком (`direction`, [ARCH.95]). Вона не є віссю
+  # ТРАНСПОРТУ — ту несе `blockchain_network`, і плутати їх дорого: агрегат
+  # `net_minted_supply` питає валюту й мережі не бачить за побудовою, тож рядок,
+  # чия сума виражена в чужій валюті, доданий сюди під `:carbon_coin`, підсумується
+  # намінтованим SCC. Саме так і сталося: Solana-мікровинагороди писались у USDC
+  # під `:carbon_coin` ([ARCH.120]) — див. `Solana::MintingService`.
+  enum :token_type, { carbon_coin: 0, forest_coin: 1, cusd: 2, usdc: 3 }, prefix: true
 
   # Тікер, яким сума транзакції підписується в UI. Дім — заморожена Ruby-мапа, а
   # НЕ локаль-файл: символ однаковий в усіх мовах, тож YAML змусив би тримати по
@@ -168,7 +175,8 @@ class BlockchainTransaction < ApplicationRecord
   TOKEN_TICKERS = {
     "carbon_coin" => "SCC",
     "forest_coin" => "SFC",
-    "cusd" => "cUSD"
+    "cusd" => "cUSD",
+    "usdc" => "USDC"
   }.freeze
 
   # Fail-open на сирому значенні — дзеркало `StatusBadge.label`: новий тип токена
