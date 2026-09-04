@@ -38,7 +38,7 @@
 - [7. Параметричне Страхування (Insurance Layer)](#-7-параметричне-страхування-insurance-layer)
 - [8. Юридичні та бізнес-передумови (дім стану — трекер BIZ.*)](#-8-юридичні-та-бізнес-передумови-дім-стану--трекер-biz)
 - [9. Міжланцюгові Залежності (Cross-Module Dependencies)](#-9-міжланцюгові-залежності-cross-module-dependencies)
-- [10. API Endpoints (Contracts Registry)](#-10-api-endpoints-contracts-registry)
+- [10. API-поверхня NaaS-контрактів — дім (04_03_REST_API_v1_Reference)](#-10-api-поверхня-naas-контрактів--дім-04_0304_03_rest_api_v1_reference)
 - [Висновки (Summary)](#-висновки-summary)
 <!-- TOC:AUTO:END -->
 
@@ -239,7 +239,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Поле | Тип | Опис |
 |---|---|---|
 | `tree_id` | bigint FK | Прив'язка до конкретного дерева |
-| `balance` | numeric | Накопичені `growth_points` (поточні) |
+| `balance` | numeric | **GROSS**-лічильник `growth_points`: усе, що дерево заробило за життя — він **НЕ спадає при мінті** [ARCH.94]. ⛔ Не читати як «доступні»: скільки ще конвертовно, каже `available_balance` |
 | `locked_balance` | numeric (default: 0.0) | Заблоковані бали під час мінтингу (pessimistic lock) |
 | `crypto_public_address` | varchar | Polygon-адреса для SCC |
 | `organization_id` | bigint FK | Організація-власник (для агрегованого гаманця) |
@@ -327,15 +327,11 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ---
 
-## 📊 10. API Endpoints (Contracts Registry)
+## 🔌 10. API-поверхня NaaS-контрактів — дім [`04_03`](04_03_REST_API_v1_Reference)
 
-| Метод | URL | Авт. | Опис |
-|---|---|---|---|
-| `GET` | `/contracts` | Required | Перелік NaaS контрактів клієнта (Pagy) |
-| `GET` | `/contracts/:id` | Required | Деталі контракту |
-| `GET` | `/contracts/stats` | Required | `total_contracted`, `total_tokens_minted` (**чиста емісія орендаря**, Σmints − Σburns — ⚖️ [ARCH.103] зняв контрактну семантику; ніколи не `null`), `cluster_health` (шкала **0..1**, не відсоток — `health_index` = `1.0 - stress_index`; **nullable з [ARCH.84]**: `null` = не виміряно, і це НЕ те саме, що виміряний `0.0`), `clusters_measured` + `clusters_total` (покриття — без них середнє по одному кластеру читалось би як твердження про весь фонд), `attested_value_usd` |
-
----
+> 🏠 **One-Home:** повний контракт REST API v1 — маршрути, формати відповідей, RBAC — живе в [`04_03`](04_03_REST_API_v1_Reference), і кожен рядок там стоїть під гейтом `route_doc_parity_spec`. Портфельна аналітика NaaS-контрактів описана в [`04_03 §5.14б`](04_03_REST_API_v1_Reference).
+>
+> ⛔ **Не вести тут другого переліку ендпоінтів — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів, стояла поза Метою цієї сторінки («за яким договором», не «яким HTTP»), і подавала `attested_value_usd` звичайним полем — тоді як [`04_03 §5.14б`](04_03_REST_API_v1_Reference) несе присуд «**`null` НАЗАВЖДИ**» (⚖️ founder 2026-08-20). Ціна саме тут була найвища: аудиторія цієї сторінки комерційна, і вона прочитала б поле як живу фіат-оцінку активу.
 
 ## 📌 Висновки (Summary)
 

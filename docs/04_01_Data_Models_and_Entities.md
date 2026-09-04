@@ -701,6 +701,12 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 > 🔴 **Дзеркало на грошовій моделі з'явилось лише 2026-08-07** (PERF.1): `silkennet_blockchain_transaction_unpruned_lookups_total{caller}` — доти `BlockchainTransaction` деградувала так само, але **МОВЧКИ**, тобто рівно та подія, заради якої лічильник заводили, була невидима там, де скан коштує найдорожче. Мітки: `<caller>:missing_created_at` · `:invalid_created_at` · `:missing_span` · `undeclared:*`, коли викликач себе не назвав. Два викликачі годують її прямо з URL-параметра (`wallets#transaction_status`, `blockchain_transactions#show`), тож битий клієнтський рядок — реальний пускач, не лише забутий аргумент воркера.
 >
 > Grafana alert rule: **`sn-alert-telemetry-unpruned-lookups`** — живе правило в IaC (`deploy/grafana/alerts/silkennet-alerts.yaml`), не приклад у прозі [INF.26, 2026-08-26]. Money-двійник — `sn-alert-blockchain-tx-unpruned-lookups`.
+>
+> 🔴 **Три факти, мігровані сюди 2026-09-04 із [`06_08 §2.6`](06_08_Resilience_and_Failover_Policy) (DOC-T.98) — вони жили ПОЗА цим домом, тож читач інваріанту їх не бачив:**
+>
+> - **Форма вікна залежить від того, що ти шукаєш.** Known-row lookup за відомим `id`/`tx_hash` бере СИМЕТРИЧНЕ вікно довкола `created_at`; батчевий шлях (`batchMint` через `.where_ids_pruned`) бере **span**, тобто lower-bound від найстарішого відомого рядка. Плутати їх дорого в обидва боки: симетричне вікно на батчі губить хвіст, span на одиничному звертанні знімає прунинг майже повністю.
+> - **`created_at_iso` прокидають НЕ всі enqueue-сайти `BlockchainConfirmationWorker` — шість із семи.** Сьомий, `PuroEarthPassportWorker`, стоїть на іншому тракті (біомас-паспорт), і його виняток свідомий. ⚠️ Число тут — не інвентар, а **застереження**: додаючи сайт, звіряй, чи він мітку несе, бо промах ТИХИЙ.
+> - ⛔ **Свідомо НЕ прунимо (design, не борг):** slash `total_minted` sum (`BlockchainBurningService`) і anchor SFC-supply sum (`Ethereum::StateAnchorService`) є **all-time агрегатами** — вони семантично unprunable, бо питання звучить «скільки за ВЕСЬ час». Гейт на них був би хибним позитивом назавжди.
 
 ---
 

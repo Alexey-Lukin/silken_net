@@ -29,7 +29,7 @@
 | [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) | Прошивка Королеви (CIFO, OTA, AT) |
 | [`03_05` — Hardware Symmetric Crypto and Security](03_05_Hardware_Symmetric_Crypto_and_Security) | Аудит безпеки (ECB/CBC, ключі) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (gateway telemetry) |
-| [`00_04` — Unit Economics and BOM](00_04_Nature_as_a_Service_Contracts) | Вартість розгортання |
+| [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Вартість розгортання |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | HW.14/15/16/18 (energy, BMS, thermal) |
 
 ## 📑 Зміст
@@ -156,7 +156,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 **Висновок (зима, Phase 3 Hard OFF):** 15.0 Вт·год vs ~75.6 Вт·год → дефіцит ~60.6 Вт·год → автономність **3.2 дні** на LiFePO4 12V/20Ah.
 
-> Блокує лише **Phase 3** (Unit Economics — [`00_04`](00_04_Nature_as_a_Service_Contracts)). ⚠️ Мітигації **не взаємозамінні** (навіть 100W сама = 30 Вт·год < 75.6 спожив; лише duty-cycle+комбо закриває баланс) → [`00_07` — HW.14](00_07_Action_Plan_Tracker).
+> Блокує лише **Phase 3** (Unit Economics — [`02_06`](02_06_Unit_Economics_and_BOM)). ⚠️ Мітигації **не взаємозамінні** (навіть 100W сама = 30 Вт·год < 75.6 спожив; лише duty-cycle+комбо закриває баланс) → [`00_07` — HW.14](00_07_Action_Plan_Tracker).
 
 ---
 

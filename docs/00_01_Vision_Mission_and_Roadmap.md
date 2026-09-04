@@ -26,7 +26,7 @@
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Повний канон політики slashing |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Резервування, failover, Web3 fallback (Slashing/Insurance при недоступності мостів) |
 | [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) | NaaS-контракти; §Insurance Pool & Etherisc — параметри страхування |
-| [`00_04` — Unit Economics and BOM](00_04_Nature_as_a_Service_Contracts) | Юніт-економіка та BOM |
+| [`02_06` — Unit Economics and BOM](02_06_Unit_Economics_and_BOM) | Юніт-економіка та BOM |
 | [`00_02` — Academic Integration and IP](00_02_Academic_Integration_and_IP) | Академічні партнери + план публікацій + **§4 IP-інструменти** (TISC · ™-заявка · UA-юр-review) — виконавчий шар постави §8 |
 | [`NOTICE`](../NOTICE) | Мапа ліцензійних зон + third-party винятки (AF3 non-commercial) + inbound-обовʼязки перед чужими ліцензіями (UNI.3) + non-assertion pledge — **SSOT самих значень**, §8 їх дзеркалить |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті бізнес-блокери** (SSOT): `SLASH-1` · `BIZ.*` (юр/бізнес) · `SEC.1` — DAO-активація, що поглинула BIZ.4 2026-07-04, тож грепом по `BIZ.` governance-беклогу вже не знайти |

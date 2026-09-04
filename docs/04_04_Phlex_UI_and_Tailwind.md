@@ -2469,7 +2469,7 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 - **Open-redirect guard:** `LocalesController#sanitized_referer` валідує `request.host == referer.host`.
 - **Cookie flags:** `httponly: true`, `same_site: :lax`, `secure: production?`.
 - **CSP:** дотримуємося існуючої політики (`csp_meta_tag`); inline-стилі заборонені.
-- **HSTS / X-Frame-Options:** HSTS — `force_ssl` (`production.rb`); `X-Frame-Options: DENY` + Permissions-Policy/COOP/CORP — `config/application.rb` (SEC.35: до 2026-09-02 лежали в ініціалізаторі й НЕ діяли — Rails копіює дефолти раніше; носій — `spec/requests/security_headers_spec.rb`).
+- **HSTS / X-Frame-Options** *(інфра-шар — дім [`06_01`](06_01_Deployment_Kamal_Terraform) + `SECURITY_ASSURANCE_CASE.md`; тут лише те, що фронт на них спирається)*: HSTS — `force_ssl` (`production.rb`); `X-Frame-Options: DENY` + Permissions-Policy/COOP/CORP — `config/application.rb` (SEC.35: до 2026-09-02 лежали в ініціалізаторі й НЕ діяли — Rails копіює дефолти раніше; носій — `spec/requests/security_headers_spec.rb`).
 - **Dependency scanning:** GitHub Dependabot + `bundle audit` + `gh-advisory-database` на кожен PR (DoD § 18.9).
 - **Secret scanning:** GitHub native secret-scanning + push-protection (у CI).
 
@@ -2499,10 +2499,12 @@ The mobile labels come from `data-label`, which itself is i18n'd through the sta
 
 ### 18.7 DORA metrics — DevOps Research & Assessment
 
-- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу) — досягнуто.
+> ⚠️ **Уся підсекція — ЦІЛІ, не виміряний стан** (⚖️ 2026-09-04): жодна з чотирьох метрик не має живого джерела, бо production ще не запускався. ⊕ І це **єдиний дім** DORA-осі та Conventional Commits у корпусі — тобто вони тут не дубль, а безпритульний матеріал у чужому домі; переселення в [`06_07`](06_07_CICD_and_Runbook_Index) відкрито в [`00_07`](00_07_Action_Plan_Tracker) `DOC-T.98`.
+
+- **Deployment frequency:** фази → окремі PR-и (≥ 1 на фазу). ⛔ **«Досягнуто» знято 2026-09-04 (DOC-T.98) як самозасвідчення без вимірювача:** DORA-частота міряє деплої, а production **не деплоївся жодного разу** ([`00_07`](00_07_Action_Plan_Tracker) `DEPLOY-1`). Тут — ЦІЛЬ і форма роботи, не досягнутий показник.
 - **Lead time for changes:** малий surface → швидкий review.
 - **Change failure rate:** `parallel_validation` + CodeQL + повний RSpec прогін перед merge.
-- **MTTR:** Sentry DSN підключено через `.kamal/secrets-common` → стек-трейси в production.
+- **MTTR:** Sentry DSN підключено через `.kamal/secrets-common` → стек-трейси в production. ⚠️ Це **передумова** вимірювання MTTR, а не сам MTTR: жодного production-інциденту ще не було, тож числа не існує.
 
 ### 18.8 Rails-specific — Rails Doctrine + The Rails Way
 

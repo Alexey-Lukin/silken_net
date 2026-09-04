@@ -644,6 +644,8 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 ## 🔗 Зовнішні Залежності та ENV змінні
 
+> 🏠 **Значення й наслідки відсутності КОЖНОЇ змінної — дзеркало [`06_04 §2.1`](06_04_Secrets_Checklist), правити ТАМ.** Тут — лише те, який компонент спостережуваності її споживає. ⊕ Пʼять рядків цієї таблиці (`PROMETHEUS_AUTH_*` · `PROMETHEUS_ALLOWED_IPS` · `SENTRY_TRACES_SAMPLE_RATE` · `SENTRY_WORKER_THREADS`) до 2026-09-04 не мали рядка в домі ВЗАГАЛІ — тобто тут була не копія, а **єдина адреса**; дірку закрито (DOC-T.98).
+
 | ENV змінна | Обов'язкова | Де використовується | Статус |
 |-----------|-------------|---------------------|--------|
 | `SENTRY_DSN` | ✅ Для production | `config/initializers/sentry.rb` | ✅ Додано у `.kamal/secrets-common` |
