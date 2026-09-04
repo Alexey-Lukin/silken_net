@@ -46,7 +46,7 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 9. Slashing uplift combines CORRELATED signals with `max()`, never a sum — and its two predicates have OPPOSITE defaults (whitelist ⊥ blacklist)
 10. Persist the `:pending` intent BEFORE the on-chain call, and treat `:manual_review` as age-UNBOUNDED — a windowed re-fire is a calendar bug, not a race
 11. The whole economic parameter set is DAO-live through `SystemParameter` — a hardcoded constant on that path is already wrong
-12. The mint KYC-gate reads the BENEFICIARY, not the caller — custodial inherits the org status, and rebinding an address resets it to pending
+12. The mint KYC-gate reads the BENEFICIARY — and TODAY it is a closed door, not a filter: the vendor does not exist, so `pending` never lifts and every custodial beneficiary is dropped each cycle
 13. Every `BlockchainTransaction` status change enqueues `AuditLogWorker` [MRV.1 2026-07-04; hook re-based ARCH.57 2026-07-13]
 14. `slashUpTo` clamps to the live balance instead of reverting, and its `contextHash` is the only thing tying an on-chain burn back to the backend intent
 15. Two systemic stop-losses sit inert at zero by default and HOLD a batch rather than fail it — per-tx guards do not cover aggregate runaway

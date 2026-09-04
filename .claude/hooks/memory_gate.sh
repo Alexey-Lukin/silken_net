@@ -301,7 +301,7 @@ rb_dark() {
 # `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
 # 2026-08-29: 153 → 154 — `project_month_of_cuts_taxonomy`. Підняття робить новий дім
 # захищеним підлогою так само, як решту: без нього його тихе зникнення було б невидиме.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-158}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-159}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
