@@ -157,6 +157,9 @@ system_params = [
   # дефолтам — поведінка не змінюється, змінюється ДОСЯЖНІСТЬ важеля.
   # ⚠️ Гейт `system_parameter_delivery_spec` цю вісь не бачить за оголошеною стелею:
   # він судить «засіяне → читається», ніколи «читане → засіяне».
+  { key: "slash_alert_max_age_hours", value: "0", value_type: "integer", category: "alerts",
+    min_value: 0, max_value: 8760,
+    description: "[SLASH-1] Нижня межа віку алерту для critical_unmaintained? (0=без межі). Без неї алерт довільної давнини садить penalty_factor на КОЖНОМУ майбутньому вироку — латч, чий один із трьох маршрутів зняв gap-E. Число калібрується разом із вагою repeat-offence." },
   { key: "slash_cause_uplift_enabled", value: "false", value_type: "boolean", category: "alerts",
     description: "[SLASH-1] DAO-активація penalty_factor-uplift; false → комбінатор причин інертний" },
   { key: "solana_batch_threshold_usdc", value: "0", value_type: "decimal", category: "minting",

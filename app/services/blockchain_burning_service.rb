@@ -59,6 +59,7 @@ class BlockchainBurningService < ApplicationService
   # ⚫ Другий comms-член (`PF_STREAMR_GAP` 0.25, guarded hook, що завжди віддавав 0) знято разом із
   # Streamr ⚖️ 2026-09-03 (ARCH.118); клас лишається одночленним, доки не зʼявиться нове
   # comms-correlated джерело з ground-truth (00_07 SLASH-1).
+  ALERT_REACTION_WINDOW = 30.minutes # вікно реакції: раніше «не виїхав» ще не недбалість
   PF_NO_ACK         = 0.5   # comms-correlated: непідтверджений critical EwsAlert (no ack)
   PF_NO_MAINTENANCE = 0.5   # independent: critical EwsAlert без MaintenanceRecord
 
@@ -824,19 +825,44 @@ class BlockchainBurningService < ApplicationService
                                                       :actuator_stuck, :emergency_response_undeliverable,
                                                       :slash_dispatch_failed,
                                                       :gateway_uplink_degraded,
-                                                      :hardware_fault ])
+                                                      :hardware_fault,
+                                                      :telemetry_divergence ])
                              # rubocop:disable Rails/WhereNotWithMultipleConditions -- заперечення
                              # КОНʼЮНКЦІЇ тут і є наміром [SLASH-1 gap-E]: викидаємо рівно
                              # машинно-закриті (`resolved` І `resolved_by` NULL), лишаючи
                              # і відкриті, і закриті людиною.
                              .where.not(status: :resolved, resolved_by: nil)
                              # rubocop:enable Rails/WhereNotWithMultipleConditions
-                             .where(created_at: ..30.minutes.ago)
+                             .where(created_at: alert_age_window)
     return false unless stale_critical.exists?
 
     stale_critical.where.not(
       id: MaintenanceRecord.where.not(ews_alert_id: nil).select(:ews_alert_id)
     ).exists?
+  end
+
+  # [SLASH-1 ⚖️ 2026-09-04] Вікно віку алерту для `critical_unmaintained?`.
+  #
+  # ВЕРХНЯ межа (30 хв) — вікно реакції: раніше за нього «не виїхав» ще не є
+  # недбалістю. НИЖНЯ — присуд про ЛАТЧ: без неї алерт довільної давнини важить
+  # рівно як 31-хвилинний і садить множник на КОЖНОМУ майбутньому вироку.
+  # 🔴 Підстава стояла тут-таки як мотив СУСІДНЬОГО фікса (gap-E нижче: «`created_at`
+  # рахується в момент слешу, тож транзієнтна тиша латчила б PF_NO_MAINTENANCE
+  # назавжди»), але зняли рівно один маршрут латча з ТРЬОХ: лишались (а) алерт,
+  # якого не закрив НІХТО, і (б) закритий ЛЮДИНОЮ без повʼязаного запису — причому
+  # (б) є ПРОЄКТНИМ шляхом («resolve ≡ ack»). Межа накриває обидва вцілілі.
+  #
+  # ⚠️ ДЕФОЛТ `0` = БЕЗ нижньої межі, тобто поведінка не змінюється — форма
+  # прецедентна для цього репо (`mint_volume_hourly_max_scc`, `slash_cause_uplift_enabled`):
+  # носій ставиться інертним, ЧИСЛО калібрується окремо й разом із вагою
+  # repeat-offence, бо обидва є decay-семантикою однієї шкали. Ключ свідомо НЕ в
+  # `PARAMETER_MAP`: це local money-path safety, як і сусідні (db/seeds.rb).
+  def alert_age_window
+    max_age_h = SystemParameter.current(:slash_alert_max_age_hours, default: 0).to_i
+    upper = ALERT_REACTION_WINDOW.ago
+    return ..upper unless max_age_h.positive?
+
+    max_age_h.hours.ago..upper
   end
 
   # [SLASH-1 §7] Мінімальна вибірка свідків, нижче якої статистичний вирок не

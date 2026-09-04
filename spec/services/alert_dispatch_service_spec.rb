@@ -566,7 +566,10 @@ RSpec.describe AlertDispatchService, type: :service do
 
       alert = EwsAlert.last
       expect(alert.severity).to eq("critical")
-      expect(alert.alert_type).to eq("system_fault")
+      # [SLASH-1 2026-09-04] Тип описує СПОСТЕРЕЖЕННЯ (розбіжність), не вердикт:
+      # канон 05_05 §6 відмовляє самостійній divergence у статусі доведеного
+      # шахрайства й виносить її в Кат-C. `message_key` лишається як є.
+      expect(alert.alert_type).to eq("telemetry_divergence")
       expect(alert.message_key).to eq("fraud_telemetry_detected")
       I18n.with_locale(:uk) { expect(alert.message).to include("ФРОД").and include("2026-03-14") }
       expect(alert.tree).to eq(tree)

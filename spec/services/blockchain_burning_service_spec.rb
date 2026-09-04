@@ -996,6 +996,41 @@ end
       expect(service.send(:comms_no_ack?)).to be(false)
       expect(service.send(:critical_unmaintained?)).to be(false)
     end
+
+    # 🔴 [SLASH-1 2026-09-04] DCI-розбіжність — підставу дав САМ канон (05_05 §6):
+    # дві причини (replay атакера ⊥ розбіжність версій після НАШОГО OTA) і вердикт
+    # «самостійна divergence → категорія C, а НЕ автоматичний burn». Сигнал,
+    # оголошений недостатнім для СПАЛЕННЯ, не сміє роздувати МНОЖНИК того самого
+    # спалення — тим паче через терм зв'язку, яким він не є зовсім.
+    it "DCI-розбіжність не годує ЖОДЕН терм — канон уже виніс її в Кат-C" do
+      stale_alert!(:telemetry_divergence)
+      expect(service.send(:comms_no_ack?)).to be(false)
+      expect(service.send(:critical_unmaintained?)).to be(false)
+    end
+
+    # [SLASH-1 ⚖️ 2026-09-04] Нижня межа віку — носій ІНЕРТНИЙ (дефолт 0 = без межі),
+    # тож перший приклад доводить, що поведінка НЕ змінилась, а другий — що межа
+    # справді ріже, коли її виставили. Без пари перший був би вакуумним.
+    it "за замовчуванням межі НЕМА — старий алерт і далі рахується (поведінка незмінна)" do
+      create(:ews_alert, cluster: cluster, tree: nil, alert_type: :system_fault,
+                         severity: :critical, message_key: "gateway_weak_signal",
+                         message_params: { uid: "SNET-Q-1", csq: 2 })
+        .update_column(:created_at, 400.days.ago)
+
+      expect(service.send(:critical_unmaintained?)).to be(true)
+    end
+
+    it "виставлена межа ВІДСІКАЄ архівний алерт — латч знято" do
+      create(:ews_alert, cluster: cluster, tree: nil, alert_type: :system_fault,
+                         severity: :critical, message_key: "gateway_weak_signal",
+                         message_params: { uid: "SNET-Q-1", csq: 2 })
+        .update_column(:created_at, 400.days.ago)
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with(:slash_alert_max_age_hours, default: 0).and_return(72)
+
+      expect(service.send(:critical_unmaintained?)).to be(false)
+    end
   end
 
   describe "#combine_penalty_factor (SLASH-1 de-correlation §6, pure)" do

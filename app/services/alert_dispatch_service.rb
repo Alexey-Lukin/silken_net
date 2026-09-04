@@ -137,7 +137,7 @@ class AlertDispatchService
 
     alert = EwsAlert.create!(
       cluster: cluster, tree: tree, severity: :critical,
-      alert_type: :system_fault,
+      alert_type: :telemetry_divergence,
       message_key: "fraud_telemetry_detected", message_params: { target_date: target_date.to_s }
     )
 
