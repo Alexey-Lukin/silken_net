@@ -84,6 +84,14 @@ class TreeChronicleService < ApplicationService
         icon: "△",
         title: TreeChronicle::TextFormatter.stress_title,
         description: TreeChronicle::TextFormatter.stress_description(insight),
+        # ⛔ [SLASH-1] `0.8` тут — UI/страхова шкала, і дротувати її на DAO-поріг
+        # (`AiInsight.slash_stress_threshold`, дефолт 0.83) ВИМІРЯНО Й ВІДКИНУТО.
+        # Підстава не «майже те саме число»: DAO-поріг є голосом про РОЗМІР СПАЛЕННЯ,
+        # тож привʼязка перефарбовувала б картку дерева при кожному governance-голосі —
+        # тобто грошовий важіль керував би тим, що бачить власник. Розходження 0.8↔0.83
+        # є свідомим per-consumer дизайном, не дрейфом. ⚠️ Позначку додано 2026-09-04:
+        # доти won't-do жив ЛИШЕ в трекері, а літерал стояв тут голим — і читався як
+        # недротований дубль `stress_threshold`, тобто запрошував «полагодити».
         severity: insight.stress_index >= BigDecimal("0.8") ? :critical : :warning,
         source_type: "AiInsight",
         source_id: insight.id
