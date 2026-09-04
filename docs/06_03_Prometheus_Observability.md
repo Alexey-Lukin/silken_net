@@ -248,7 +248,7 @@ end
 | Spec файл | Метрика | Що перевіряється |
 |-----------|---------|------------------|
 | `spec/initializers/prometheus_spec.rb` | нові метрики | Реєстрація, інкрементування, доступність констант, label validation |
-| `spec/workers/burn_carbon_tokens_worker_spec.rb` | `SLASHING_EVENTS_TOTAL` | Інкремент по reason (tree_death / cluster_degradation), не інкрементується при breached |
+| `spec/workers/burn_carbon_tokens_worker_spec.rb` | `SLASHING_EVENTS_TOTAL` | Інкремент по reason — міток **ТРИ**: `contractual_forfeiture` ⊥ `tree_death` ⊥ `cluster_degradation` ([SLASH-1] 2026-08-29: доти добровільний вихід замовника йшов на панель як `cluster_degradation`, тобто як провина оператора — дискримінатор існував у сервісі й сюди не доїжджав). ⚠️ Клауза «не інкрементується при breached» знята 2026-09-04 як спростована: вона описувала гард `return if status_breached?`, який той самий фікс замінив на перевірку settled burn-інтенту |
 | `spec/workers/ota_transmission_worker_spec.rb` | `OTA_CHUNKS_SENT_TOTAL` | Інкремент при успішній передачі, не інкрементується при failure, послідовна передача |
 | `spec/workers/dclimate_verification_worker_spec.rb` | `EWS_ALERTS_TOTAL` | Інкремент при успішній верифікації, не інкрементується при falsey/verified/not found |
 | `spec/workers/chainlink_dispatch_worker_spec.rb` | `ORACLE_DISPATCH_DURATION` | Histogram observation, не observe при skip/not found |
