@@ -121,6 +121,7 @@ en:
     types:
       actuator_stuck: Actuator Stuck
       chainsaw_detected: Chainsaw Detected
+      comms_fault: Comms Fault
       emergency_response_undeliverable: Emergency Response Undeliverable
       entropy_anomaly: Entropy Anomaly
       field_audit: Field Audit
@@ -128,7 +129,6 @@ en:
       firmware_canary_trip: Firmware Canary Trip
       firmware_fault: Firmware Fault
       firmware_reverted: Firmware Reverted
-      gateway_uplink_degraded: Gateway Uplink Degraded
       hardware_fault: Hardware Fault
       queen_offline: Queen Offline
       queen_uplink_lost: Queen Uplink Lost

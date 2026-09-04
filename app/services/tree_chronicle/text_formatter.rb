@@ -113,7 +113,7 @@ module TreeChronicle
       "firmware_canary_trip" => "\u{1F424}",
       "actuator_stuck"       => "\u{1F527}",
       "emergency_response_undeliverable" => "\u{1F6AB}",
-      "gateway_uplink_degraded" => "\u{1F4E1}",
+      "comms_fault" => "\u{1F4E1}",
       "hardware_fault" => "\u{1F527}",
       "telemetry_divergence" => "\u{1F500}",
       "slash_dispatch_failed" => "\u{1F4B8}"

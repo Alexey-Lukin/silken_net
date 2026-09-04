@@ -115,7 +115,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         }.to change(EwsAlert, :count).by(1)
 
         alert = EwsAlert.last
-        expect(alert.alert_type).to eq("gateway_uplink_degraded")
+        expect(alert.alert_type).to eq("comms_fault")
         expect(alert.message_key).to eq("gateway_uplink_degraded")
 
         # ⛔ Другу половину (невидимість для `critical_unmaintained?`) пінить
@@ -127,6 +127,20 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
       # ⛔ Дедуп ПО ТИПУ, не по кошику: спільний глушник ховав би новий тип за
       # стоячим `system_fault` іншого предмета — тобто рівно ту подію, задля
       # видимості якої тип і вирізали.
+      # [SLASH-1 2026-09-04] ДРУГИЙ канальний ключ у тому самому класі: канон
+      # `00_04 §2` уже ратифікував, що «карати лісника за збитий шлюз = false
+      # slash», тож слабкий CSQ теж не є недбалістю оператора — і саме тому тип
+      # названо КЛАСОМ, а не подією.
+      it "слабкий CSQ їде тим самим класом каналу [SLASH-1]" do
+        expect {
+          described_class.new.perform(gateway.uid, valid_stats.merge("cellular_signal_csq" => 2))
+        }.to change(EwsAlert, :count).by(1)
+
+        alert = EwsAlert.last
+        expect(alert.alert_type).to eq("comms_fault")
+        expect(alert.message_key).to eq("gateway_weak_signal")
+      end
+
       it "стоячий system_fault НЕ глушить алерт нового типу [SLASH-1]" do
         create(:ews_alert, cluster: cluster, tree: nil,
                            alert_type: :system_fault, severity: :critical,
@@ -136,7 +150,7 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
           described_class.new.perform(gateway.uid, valid_stats.merge("coap_fail_count" => 99))
         }.to change(EwsAlert, :count).by(1)
 
-        expect(EwsAlert.last.alert_type).to eq("gateway_uplink_degraded")
+        expect(EwsAlert.last.alert_type).to eq("comms_fault")
       end
 
       it "не плодить дублікат при активному system_fault кластера (анти-спам)" do

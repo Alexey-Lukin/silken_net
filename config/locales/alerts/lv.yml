@@ -121,6 +121,7 @@ lv:
     types:
       actuator_stuck: Izpildmehānisms iestrēdzis
       chainsaw_detected: Konstatēts motorzāģis
+      comms_fault: Sakaru kļūme
       emergency_response_undeliverable: Ārkārtas reakcija nav piegādājama
       entropy_anomaly: Entropijas anomālija
       field_audit: Lauka audits
@@ -128,7 +129,6 @@ lv:
       firmware_canary_trip: Programmaparatūras kanārijsignāls
       firmware_fault: Programmaparatūras kļūme
       firmware_reverted: Programmaparatūra atgriezta
-      gateway_uplink_degraded: Vārtejas augšupsaite pasliktinājusies
       hardware_fault: Aparatūras kļūme
       queen_offline: Queen bezsaistē
       queen_uplink_lost: Zaudēta Queen augšupsaite

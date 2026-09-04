@@ -25,7 +25,8 @@ class GatewayTelemetryWorker
   # `system_fault` СВІДОМО — розкол кошика йде за атрибуцією й поштучно
   # (05_05 §6), а не гуртом.
   ALERT_TYPE_BY_MESSAGE_KEY = {
-    "gateway_uplink_degraded" => :gateway_uplink_degraded,
+    "gateway_uplink_degraded" => :comms_fault,
+    "gateway_weak_signal"     => :comms_fault,
     "gateway_overheat"        => :hardware_fault,
     "gateway_freezing"        => :hardware_fault,
     "gateway_hardware_fault"  => :hardware_fault
@@ -111,7 +112,7 @@ class GatewayTelemetryWorker
     # [SLASH-1 2026-09-04] Тип ВИВОДИТЬСЯ з ключа, а не хардкодиться: предикати
     # penalty_factor читають `alert_type` і до `message_key` сліпі за побудовою,
     # тож поки всі гілки їхали одним типом, атрибуційно-неоднозначний
-    # `gateway_uplink_degraded` (лічильник провалених flush-розмов до НАШОГО CoAP —
+    # канальні ключі (лічильник провалених flush-розмов до НАШОГО CoAP —
     # не розрізняє, чий бік упав) годував ОБИДВА предикати. Класифікація типу —
     # `EwsAlert` enum. ⛔ Дедуп теж мусить бути ПО ТИПУ: спільний глушник по
     # `system_fault` ховав би новий тип за старим алертом іншого предмета.

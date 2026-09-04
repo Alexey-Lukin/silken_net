@@ -246,7 +246,7 @@ module Treasury
     end
 
     # [ARCH.62] Агрегатний mint-volume detector — комплемент, не заміна ex-post-clawback
-    # (ARCH.53/SLASH-1 §3.3): обмежує blast-radius over-мінту у вікні детекції, поки clawback
+    # (ARCH.53 · `05_05 §3.3` — секція КАНОНУ, не пункту трекера): обмежує blast-radius over-мінту у вікні детекції, поки clawback
     # (SE050 L2) не збудований. Gauge живий завжди (видимість обсягу); alert+circuit-break
     # активні ЛИШЕ коли SystemParameter-пороги увімкнено (inert-default — числа калібруються
     # з перших live-вікон, 👤). 05_02 §Модель довіри.

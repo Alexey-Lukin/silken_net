@@ -47,7 +47,9 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       alert = EwsAlert.last
       expect(alert).to be_present
       expect(alert.severity).to eq("critical")
-      expect(alert.alert_type).to eq("system_fault")
+      # [SLASH-1 2026-09-04] Слабкий CSQ = клас каналу, не спільний кошик:
+      # канон `00_04 §2` ратифікував «карати лісника за збитий шлюз = false slash».
+      expect(alert.alert_type).to eq("comms_fault")
       I18n.with_locale(:uk) { expect(alert.message).to include("Слабкий сигнал") }
     end
 

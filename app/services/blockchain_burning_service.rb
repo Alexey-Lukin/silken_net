@@ -765,7 +765,7 @@ class BlockchainBurningService < ApplicationService
   # сідав на стелю). tamper/fire/chainsaw = не comms-loss (свій root-cause), сюди не рахуємо.
   def comms_no_ack?
     @cluster.ews_alerts.critical
-            # [SLASH-1 2026-09-04] `gateway_uplink_degraded` ЛИШАЄТЬСЯ тут після розколу
+            # [SLASH-1 2026-09-04] `comms_fault` ЛИШАЄТЬСЯ тут після розколу
             # кошика — і це поправка до першої редакції присуду, яка вивела його
             # мовчки. Цей предикат цінує НЕПІДТВЕРДЖЕНІСТЬ сигналу зв'язку, а не
             # провину: підстава «атрибуція невизначена» до нього не застосовна, бо
@@ -776,7 +776,7 @@ class BlockchainBurningService < ApplicationService
             # `critical_unmaintained?`. ⛔ `hardware_fault` сюди НЕ входить — залізо
             # не є сигналом каналу, тож він не належить жодному з двох.
             .where(alert_type: [ :queen_offline, :queen_uplink_lost, :system_fault,
-                                 :gateway_uplink_degraded ])
+                                 :comms_fault ])
             .exists?
   end
 
@@ -812,7 +812,7 @@ class BlockchainBurningService < ApplicationService
     # видати аварійну команду, бо стеля пристрою чи каденс шлюза її не пропускають.
     # Це наша конфігурація, а не операторська недбалість: виїзд лісника не полагодить
     # число, яке ми ж і задали. Той самий vendor-attributable клас, що actuator_stuck.
-    # [SLASH-1 2026-09-04] І :gateway_uplink_degraded — але підстава ТУТ ІНША, і
+    # [SLASH-1 2026-09-04] І :comms_fault — але підстава ТУТ ІНША, і
     # плутати її з рештою переліку дорого. Решта виключені тому, що винуватцем
     # була ПЛАТФОРМА; цей — тому, що винуватця встановити НЕМОЖЛИВО: пускач є
     # лічильник провалених flush-розмов Королеви, а він не розрізняє, чий бік
@@ -824,7 +824,7 @@ class BlockchainBurningService < ApplicationService
                                                       :firmware_reverted, :firmware_canary_trip,
                                                       :actuator_stuck, :emergency_response_undeliverable,
                                                       :slash_dispatch_failed,
-                                                      :gateway_uplink_degraded,
+                                                      :comms_fault,
                                                       :hardware_fault,
                                                       :telemetry_divergence ])
                              # rubocop:disable Rails/WhereNotWithMultipleConditions -- заперечення

@@ -121,6 +121,7 @@ lt:
     types:
       actuator_stuck: Vykdiklis įstrigo
       chainsaw_detected: Aptiktas grandininis pjūklas
+      comms_fault: Ryšio gedimas
       emergency_response_undeliverable: Avarinis atsakas nepristatomas
       entropy_anomaly: Entropijos anomalija
       field_audit: Lauko auditas
@@ -128,7 +129,6 @@ lt:
       firmware_canary_trip: Programinės įrangos kanarėlės signalas
       firmware_fault: Programinės įrangos gedimas
       firmware_reverted: Programinė įranga atstatyta
-      gateway_uplink_degraded: Vartų siunčiamasis ryšys pablogėjo
       hardware_fault: Aparatūros gedimas
       queen_offline: Queen neprisijungęs
       queen_uplink_lost: Prarastas Queen ryšys

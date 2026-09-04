@@ -121,6 +121,7 @@ uk:
     types:
       actuator_stuck: Актуатор залип
       chainsaw_detected: Виявлено бензопилу
+      comms_fault: Збій каналу зв'язку
       emergency_response_undeliverable: Аварійна відповідь недоставна
       entropy_anomaly: Аномалія ентропії
       field_audit: Польовий аудит
@@ -128,7 +129,6 @@ uk:
       firmware_canary_trip: Спрацювала канарка прошивки
       firmware_fault: Збій прошивки
       firmware_reverted: Відкат прошивки
-      gateway_uplink_degraded: Uplink шлюза деградував
       hardware_fault: Апаратна відмова
       queen_offline: Королева офлайн
       queen_uplink_lost: Втрачено зв'язок Королеви

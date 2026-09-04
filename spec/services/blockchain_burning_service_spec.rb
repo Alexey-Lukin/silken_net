@@ -957,8 +957,8 @@ end
         .update_column(:created_at, 2.hours.ago)
     end
 
-    it "НЕ рахує `gateway_uplink_degraded` недбалістю оператора" do
-      stale_alert!(:gateway_uplink_degraded)
+    it "НЕ рахує `comms_fault` недбалістю оператора" do
+      stale_alert!(:comms_fault)
       expect(service.send(:critical_unmaintained?)).to be(false)
     end
 
@@ -984,7 +984,7 @@ end
     # `queen_uplink_lost`, який так само не каже, Starlink упав чи наш бекхол.
     # Канон називає дефектом саме ПОДВІЙНИЙ заряд, тож пін тримає ОБИДВІ половини.
     it "але лишається сигналом зв'язку — рівно ОДИН терм, не подвійний" do
-      stale_alert!(:gateway_uplink_degraded)
+      stale_alert!(:comms_fault)
       expect(service.send(:comms_no_ack?)).to be(true)
       expect(service.send(:critical_unmaintained?)).to be(false)
       expect(service.send(:combine_penalty_factor, no_ack: true, no_maintenance: false))
