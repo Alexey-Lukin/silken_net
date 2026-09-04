@@ -142,13 +142,21 @@ SELF=${BASH_SOURCE[0]:-$0}
 # прохід виявив, бо виконував її буквально. Повідомлення каже «a new entry earns its line
 # only by displacing one», і я спробував ВИТІСНИТИ два найслабші рядки (tool-trial +
 # bio-plugin), обидва з живими `[[strings]]`. Гейт відповів `ORPHAN ×3`: інша його ж
-# перевірка вимагає рядок індексу для КОЖНОГО не-`log_*` файлу. **Отже «displace a row»
-# нездійсненне як таке — витіснити рядок можна лише ВИДАЛИВШИ або ЗЛИВШИ файл, а це вже
-# інша, дорожча дія.** Реальні важелі рівно три: (1) стиснути гачки, (2) видалити/злити
-# ФАЙЛ, (3) бампнути. Порада називає лише (2), і то формою, яка звучить як (1).
-# ⚠️ Пара «порада ⊥ сусідня перевірка» — саме той клас, який корпус зве самозаперечним
-# документом: обидві половини окремо правильні, несумісні лише разом, і жоден формалізм
-# цього не бачить. Формулювання не правлю тут — це рішення про текст гейта, не про число.
+# перевірка вимагає, щоб КОЖЕН не-`log_*` файл був названий у MEMORY.md.
+# 🔴 **Але вимагає вона ЛІНКА, не РЯДКА — і на цьому діагноз вище був хибний.** ORPHAN є
+# `grep -q "($fn)"`, тобто підрядок будь-де у файлі; `index_links()` рахує УНІКАЛЬНІ цілі
+# (`sort -u`), тож hub-inline згортає рядок під сусіда, зберігаючи вказівник, — це
+# справжнє витіснення РЯДКА з нульовою знахідкою, і воно документоване тридцятьма
+# рядками нижче та вже відпрацьоване 08-29. Провалилось не «витіснення», а ВИДАЛЕННЯ
+# ЛІНКА: обидва зрізані рядки були єдиними входженнями своїх файлів.
+# Отже важелів ЧОТИРИ, за ціною: (1) стиснути гачок, (2) hub-inline рядка, (3) видалити/
+# злити ФАЙЛ (гейтить FLOOR), (4) бампнути. Порада називала лише (3), і то формою, яка
+# звучить як (1) — тому текст переписано (DOC-T.97): він тепер називає одиницю (БАЙТИ)
+# і порядок важелів, а сусідній ORPHAN-вердикт більше не описує себе суворішим, ніж є.
+# ⚠️ Клас, який тут спрацював, лишається несучим і ширшим за помилку: самозаперечним був
+# не гейт, а ЦЕЙ коментар проти власного тіла скрипта — обидві половини читались правдиво,
+# несумісні лише разом. І друга його половина — що гілка «над ратчетом», єдина, під якою
+# людина стоїть ЗАБЛОКОВАНОЮ, не мала жодного selftest-кейса, поки протилежні мали пʼять.
 # Що зроблено ПЕРШ ніж бампати (важіль (1), не пропущений): чотири гачки стиснуто, стан
 # дня деплою відправлено у `log_deploy_hole_hunt` замість індексу, індекс упав із +352 до
 # +200 ПОПРИ дописаний сьогодні зміст. Тобто бамп фіксує досягнуте, а не створює запас.
@@ -811,8 +819,10 @@ index_check() {
   n=$(grep -cE "^[[:space:]]*- .*$IDX_LINK_RE" "$IDX")
   links=$(index_links)
   if [ "$sz" -gt "$IDX_BASELINE" ]; then
-    echo "INDEX MEMORY.md = ${sz}B, past its ${IDX_BASELINE}B ratchet (+$((sz - IDX_BASELINE)), ${n} entries)"
-    echo "      a new entry earns its line only by displacing one; detail belongs in the file"
+    echo "INDEX MEMORY.md = ${sz}B, past its ${IDX_BASELINE}B ratchet (+$((sz - IDX_BASELINE))B; ${n} rows, ${links} targets)"
+    echo "      it gates BYTES, not entries — cheapest lever FIRST: compress a hook (detail belongs in the file),"
+    echo "      then hub-inline a row under a neighbour (ORPHAN wants a LINK, not a row — the pointer survives);"
+    echo "      deleting or merging a FILE is the LAST lever and FLOOR gates it"
   elif [ "$sz" -lt $((IDX_BASELINE - 400)) ]; then
     # "Smaller" is not "better" until you know WHICH of the three events it was.
     # Reach is the discriminator the old wording never asked for: compression and
@@ -1550,7 +1560,12 @@ integrity_check() {
       log_*) ;;
       # ORPHAN stays audit-only ON PURPOSE and that exemption is unchanged: it is
       # EXPECTED on a brand-new file, and route_check owns that moment instead.
-      *)     grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is in no index row" ;;
+      # The verdict names a LINK, not a row, because that is what the test is: a
+      # top-level row is one way to carry it, a continuation under a neighbour is
+      # another. Saying "row" described the check as STRICTER than it is, and that
+      # misdescription is what made hub-inlining look illegal — the cheap lever the
+      # over-ratchet branch now names first.
+      *)     grep -q "($fn)" "$IDX" || echo "ORPHAN  $fn is named by no index LINK — a continuation under another row counts; a top-level row is not required" ;;
     esac
     format_check_one "$f"
   done
@@ -2131,6 +2146,30 @@ selftest() {
   #      branch makes the discriminator load-bearing in both directions.
   _st_build "$d"
   _st_check "compression with reach intact IS offered as a gain" expect 'lock the gain in' \
+            MEMORY_GATE_IDX_BASELINE=9000
+
+  # 17c-17e. THE OVER-RATCHET BRANCH, which had ZERO cases while the two branches
+  #          BELOW the ratchet had five — i.e. the gate was tested everywhere
+  #          except where a curator actually stands BLOCKED, which is the one
+  #          place its wording is read as instruction. That gap shipped a false
+  #          claim for weeks: the advice named only "displace one", the ORPHAN
+  #          verdict called itself a row requirement, and a real pass concluded
+  #          displacement was impossible and opened DOC-T.97 against the gate.
+  #          17e is the load-bearing one — it pins that hub-inlining a row (the
+  #          cheap lever the message now names second) keeps ORPHAN silent, so
+  #          the "impossible" reading cannot come back green. Its mutation twin
+  #          already exists as case 4: strip the link entirely and ORPHAN fires.
+  _st_build "$d"
+  _st_check "over-ratchet advice names the CHEAP lever, not only deletion" expect 'hub-inline a row' \
+            MEMORY_GATE_IDX_BASELINE=10
+
+  _st_build "$d"
+  _st_check "that advice stays silent while the index is under its ratchet" reject 'hub-inline a row' \
+            MEMORY_GATE_IDX_BASELINE=9000
+
+  _st_build "$d"
+  printf -- '- [Alpha](feedback_alpha.md) — the naming rule · ↳ [Beta](feedback_beta.md)\n' >"$d/MEMORY.md"
+  _st_check "hub-inlining a row keeps its file OUT of ORPHAN" reject 'ORPHAN' \
             MEMORY_GATE_IDX_BASELINE=9000
 
   # 18-19. THE WRITE STANCE. Fifteen cases and three mutations all rode --audit,
