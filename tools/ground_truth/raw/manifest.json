@@ -1,0 +1,77 @@
+{
+  "dataset_id": "8ce0f975-8962-410f-a905-d90539e2f014",
+  "resources": [
+    {
+      "resource_id": "3811633d-1a8d-48ed-8cde-66d1a395277e",
+      "name": "perelik_2024-1kv.csv",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/3811633d-1a8d-48ed-8cde-66d1a395277e/download/perelik_2024-1kv.csv",
+      "bytes": 10441861,
+      "sha256": "8fa474a3a11ba79c9dc32c21a111e92a5942fbccd96ae1bccf4e50bd8c1a9e87",
+      "last_modified": "2024-11-20T08:30:07.762476"
+    },
+    {
+      "resource_id": "cc512839-e133-4c3f-bdb1-3f3a1b8fcfe4",
+      "name": "strukture_perelik.csv",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/cc512839-e133-4c3f-bdb1-3f3a1b8fcfe4/download/strukture_perelik.csv",
+      "bytes": 11630,
+      "sha256": "88f945c26f3cbfec2f4ee37f481c6a439734d3fc2ac11f23f1fc692889c3b35a",
+      "last_modified": "2024-11-21T10:13:00.035903"
+    },
+    {
+      "resource_id": "965fbe87-69ec-418a-b21f-f3e28509bd35",
+      "name": "perelik_2024-2kv.csv",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/965fbe87-69ec-418a-b21f-f3e28509bd35/download/perelik_2024-2kv.csv",
+      "bytes": 6935401,
+      "sha256": "f57389045dce1cd7efceeaff925e461a1363a4d0f19d18e8a5c9c8ef55e0d549",
+      "last_modified": "2024-11-21T10:14:19.995064"
+    },
+    {
+      "resource_id": "18466bfb-dca7-46d7-b46d-3c2031cb0264",
+      "name": "perelik_2024-3kv.csv",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/18466bfb-dca7-46d7-b46d-3c2031cb0264/download/perelik_2024-3kv.csv",
+      "bytes": 10441861,
+      "sha256": "8fa474a3a11ba79c9dc32c21a111e92a5942fbccd96ae1bccf4e50bd8c1a9e87",
+      "last_modified": "2024-11-19T08:22:18.882657"
+    },
+    {
+      "resource_id": "2f6ba00d-cf77-4c87-aae1-3ad317a0f8e7",
+      "name": "perelik_2024-4kv.json",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/2f6ba00d-cf77-4c87-aae1-3ad317a0f8e7/download/perelik_2024-4kv.json",
+      "bytes": 8405867,
+      "sha256": "1f9086e47cdc06dcd6e716355e02399924a8bf29326209be65be22bc72c65c09",
+      "last_modified": "2025-01-30T11:40:46.650357"
+    },
+    {
+      "resource_id": "81801cb5-9954-417a-bfb9-465526979a65",
+      "name": "perelik_2025-1kv.json",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/81801cb5-9954-417a-bfb9-465526979a65/download/perelik_2025-1kv.json",
+      "bytes": 846303,
+      "sha256": "24dd6ec144c255d5edeaa6b04affab93dbbd673058cd79c40ea8720ba1bf4e08",
+      "last_modified": "2025-07-03T12:12:22.412396"
+    },
+    {
+      "resource_id": "edffa8ab-72a1-4a19-a799-eae5d53ae9b1",
+      "name": "perelik_2025-2kv.json",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/edffa8ab-72a1-4a19-a799-eae5d53ae9b1/download/perelik_2025-2kv.json",
+      "bytes": 9244629,
+      "sha256": "d264a941d78ff36afd64b50fd661c0c5fbb50fd840c338d1bcfc1013f41ba735",
+      "last_modified": "2025-10-13T12:11:06.930973"
+    },
+    {
+      "resource_id": "f851f9c1-eabe-4602-a207-0c3239bed6e3",
+      "name": "perelik_2025-3kv-json.json",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/f851f9c1-eabe-4602-a207-0c3239bed6e3/download/perelik_2025-3kv-json.json",
+      "bytes": 11312211,
+      "sha256": "0a73b75b5fa8ad8f8bff503a9597a10cb81f063d4098b3630282d024adecf3ab",
+      "last_modified": "2025-10-13T12:23:20.853646"
+    },
+    {
+      "resource_id": "3771467a-2824-4a20-9fe5-c5ab8ee241d3",
+      "name": "perelik_2026-1kv.json",
+      "url": "https://data.gov.ua/dataset/8ce0f975-8962-410f-a905-d90539e2f014/resource/3771467a-2824-4a20-9fe5-c5ab8ee241d3/download/perelik_2026-1kv.json",
+      "bytes": 9766168,
+      "sha256": "6740bb15f125d0e57794a6586758ca17c6e5c0fcb719915c0e6b6705d5943a55",
+      "last_modified": "2026-04-16T06:23:45.963190"
+    }
+  ]
+}
