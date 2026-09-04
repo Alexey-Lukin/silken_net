@@ -665,7 +665,7 @@ module Solana
     # [E.61] BATCH ACCUMULATION (Gas Optimizer)
     # =========================================================================
     # Поріг батчингу у lamports; governance-aware через SystemParameter.
-    # 0 → batch вимкнено (per-event). Значення/обґрунтування — канон 05_01 §8.
+    # 0 → batch вимкнено (per-event). Значення/обґрунтування — канон 05_01 §1, врізка «Scale (нот.4)».
     def batch_threshold_lamports
       usdc = SystemParameter.current(:solana_batch_threshold_usdc, default: 0).to_f
       (usdc * 1_000_000).to_i

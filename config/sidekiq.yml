@@ -131,7 +131,7 @@
     # --- ЦИКЛ SOLANA BATCH (The Micro-Reward Aggregator) [E.61] ---
     # Виплачує акумульовані Solana мікро-винагороди одним TransferChecked на
     # гаманець (коли поріг > 0; інакше воркер — no-op). Зміщено від :00-піку
-    # (tokenomics + mint_batch). Обґрунтування + поріг — канон 05_01 §8.
+    # (tokenomics + mint_batch). Обґрунтування + поріг — канон 05_01 §1, врізка «Scale (нот.4)».
     solana_batch_payout:
       cron: '20 * * * *' # Щогодини о :20
       class: SolanaBatchPayoutWorker
