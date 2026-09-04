@@ -195,4 +195,30 @@ RSpec.describe DeviceEventWorker do
     payload.setbyte(0, 0x99)
     expect { perform(payload) }.not_to change(EwsAlert, :count)
   end
+
+  # ⛔ [SILENCE-1 / ARCH.109] НОСІЙ присуду «канал живості пише лише той, хто почув
+  # САМЕ ЦЕЙ вузол». Доти заборона жила ЛИШЕ коментарем над `dispatch_one`, тобто
+  # дописаний `tree.mark_seen!` проходив би зеленим — а він ховає дерево від
+  # `Tree.silent`, робить `fresh_signal?` істинним і гасить dead-man switch, тобто
+  # відтворює ARCH.109 машинною рукою замість людської (`06_08 §1.3`).
+  # 🔴 Пін навмисно доводить ОБИДВІ половини одним прикладом: що тракт ДІЙШОВ до
+  # дерева (алерт створено) і що канал живості при цьому не торкнутий. Без першої
+  # половини він був би зелений на порожній множині — на будь-якому дропі теж.
+  describe "канал живості дерева [ARCH.109]" do
+    it "обробляє подію ДО кінця, але last_seen_at не штампує" do
+      tree.update_columns(last_seen_at: nil)
+
+      expect { perform(valid_payload) }.to change(EwsAlert, :count).by(1)
+
+      expect(tree.reload.last_seen_at).to be_nil
+    end
+
+    it "не оживляє мовчазне дерево — воно лишається в Tree.silent" do
+      tree.update_columns(last_seen_at: 30.hours.ago)
+
+      perform(valid_payload)
+
+      expect(Tree.silent(24.hours)).to include(tree.reload)
+    end
+  end
 end

@@ -1488,6 +1488,30 @@ end
       expect(TelemetryLog.last.panic).to be(true)
     end
 
+    # 🔴 [SILENCE-1] Бекенд-половина pulse'у. Кадр «я тут, але нічого не міряв» —
+    # це НЕ новий формат: той самий 30B CCM-кадр із `delta_t = DELTA_T_UNKNOWN_S`
+    # (ARCH.102), тож регістр оголошений парою `status = 0, GP = 0`, якої в
+    # виміряного гомеостазу не буває (той починається з `GP_HOMEO_MIN`).
+    # Пін тримає ОБИДВІ половини одразу, бо порізно кожна проходить хибно:
+    #   (а) живість штампується — інакше pulse не розвʼязує конфаунд «мовчазне
+    #       здоровʼя ↔ мертвий вузол», задля якого існує (`06_08 §1.3`);
+    #   (б) балів НЕ нараховує — інакше вузол отримував би гроші за відмову
+    #       міряти, тобто рівно те, що вже коштувало нам `BASELINE_DELTA_T_S`.
+    it "pulse (метаболізм не виміряно) штампує живість і НЕ дає балів [SILENCE-1]" do
+      tree.update_columns(last_seen_at: 30.hours.ago)
+      balance_before = tree.wallet.balance
+
+      chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
+                              dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)
+
+      expect { described_class.call(chunk) }.to change(TelemetryLog, :count).by(1)
+
+      expect(TelemetryLog.last.growth_points).to eq(0)
+      expect(tree.reload.last_seen_at).to be > 1.minute.ago
+      expect(Tree.silent(24.hours)).not_to include(tree)
+      expect(tree.wallet.reload.balance).to eq(balance_before)
+    end
+
     it "rejects a chunk with a tampered ciphertext byte" do
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 5,
                               dt: 100, status: 0, ttl: 3, fc: 43)
