@@ -122,7 +122,8 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 ║   HAL_CRYP_Decrypt → decrypted_payload[16]                          ║
 ║   Process_And_Cache_Data → forest_cache[50] (CIFO EdgeCache)        ║
 ║   OTA Broadcast: рефлекторний постріл в ефір після кожного RX       ║
-║   Queen health (DID=0): sentinel packet → GatewayTelemetryWorker    ║
+║   Queen health: ПІДПИСАНИЙ QATT-v2 header конверта [ARCH.54]        ║
+║     → enqueue_envelope_health (⛔ DID=0-запис МЕРТВИЙ обабіч)       ║
 ║   Flush_Cache_To_Rails (кожну ~1 год + jitter):                     ║
 ║     binary_batch_buffer[2048] → CoAP PUT /telemetry/batch/<QUEEN_UID>║
 ║     via SIM7070G (LTE-M / Starlink Direct-to-Cell)                  ║
@@ -840,22 +841,13 @@ blockchain_transactions
 
 ## Змінні Середовища та Credentials
 
-| Змінна | Сервіс | Обов'язкова |
-|--------|--------|-------------|
-| `credentials.peaq_node_url` | `Peaq::DidRegistryService` | ✅ Так |
-| `credentials.peaq_signing_key` | `Peaq::DidRegistryService` (Ed25519) | ✅ Так (raises `RegistrationError` при відсутності) |
-| `credentials.iotex_w3bstream_url` | `Iotex::W3bstreamVerificationService` | ✅ Так |
-| `credentials.iotex_api_key` | `Iotex::W3bstreamVerificationService` | ✅ Так |
-| `ENV["CHAINLINK_HMAC_SECRET"]` | `OracleCallbacksController` (callback-endpoint; dispatch-секрети вилучено — ARCH.53) | ⚠️ PROD only |
-| `ENV["ORACLE_MINTER_PRIVATE_KEY"]` | `BlockchainMintingService` (MINTER_ROLE, [E.2]) | ✅ Так (dedicated-only — legacy fallback retired, INF.22) |
-| `ENV["ORACLE_SLASHER_PRIVATE_KEY"]` | `BlockchainBurningService` (SLASHER_ROLE, [E.2] — окремий ключ, blast-radius) | ✅ Так (dedicated-only) |
-| `ENV["ORACLE_ETHERISC/PURO/KLIMA_PRIVATE_KEY"]` | Activation-gated aux-підписанти (PuroEarth/Etherisc/Klima) — легасі спільний `ORACLE_PRIVATE_KEY` RETIRED [INF.22]: guard-tripwire відмовляє значенню під старим ім'ям | При активації шляху ([`06_04 §2.1`](06_04_Secrets_Checklist)) |
-| `ENV["ALCHEMY_POLYGON_RPC_URL"]` | `Web3::RpcConnectionPool` | ✅ Так |
-| `ENV["CARBON_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
-| `ENV["FOREST_COIN_CONTRACT_ADDRESS"]` | `BlockchainMintingService` | ✅ Так |
-| `ENV["DAO_TREASURY_ADDRESS"]` | `BlockchainMintingService` (Dynamic Tax) + `Insurance::ReserveGate` (INS.2) | ✅ Так — але use-сайти fail-SILENT (E.46 rescue → tax тихо off); гучність = boot-guard `Web3NetworkGuard.address_violations` |
-| `ENV["SOLANA_RPC_URL"]` | `Solana::MintingService` | ✅ Так |
-| `ENV["PROVISIONING_MASTER_KEY"]` [SEC.11] | `SilkenNet::SeedDerivation`, `HardwareKeyService`, `OtaHmacKeyService` (runtime-fallback; фабрична `Session` передає ключ параметром від `MasterKeySource` — SEC.3 DI, [`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)) | ✅ Так — без неї `SecurityError` (no SecureRandom fallback ANYWHERE; pre-prod hard cutover) |
+> 🏠 **One-Home — [`06_04 §2.1`](06_04_Secrets_Checklist)** (семантика кожної runtime-змінної й чим коштує її відсутність) + [`06_04 §1`](06_04_Secrets_Checklist) (чек-лист заведення). Поіменного інвентаря тут не ведемо.
+>
+> ⛔ **Виміряно й відкинуто 2026-09-04 (DOC-T.98) — копія була хибна на ДВОХ осях одразу, і обидві ведуть у той самий бік «є запобіжник, якого нема».**
+> (а) Вона іменувала ключі як `credentials.<x>`, тобто подавала vault **живим домом**. Це спростовано [SEC.22 Phase-2, 2026-09-02]: живий шлях кожного рядка є `ENV["X"].presence || credentials.x`, а `credentials.yml.enc` образ узагалі не несе — перелік у [`06_04`](06_04_Secrets_Checklist) є **локальним фолбеком, не продовим домом**.
+> (б) Колонка «Обовʼязкова» стверджувала `✅ Так` для peaq/IoTeX, а рядок peaq додавав «raises при відсутності». Після [ARCH.118 · ARCH.119] обидві ноги **activation-gated**: без обох значень не робиться ані enqueue, ані виконання — воркер виходить WARN-ом, `peaq_did` чесно лишається `nil`, `verified_by_iotex` чесно `false`. **Несконфігурована зовнішня нога тут не гард, а вимкнений канал** — і сам цей файл документує гейт IoTeX за 340 рядків вище, тобто копія розходилась із власним доком.
+>
+> Що лишається несучим ТУТ і живе в кроках конвеєра вище: **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитись у РІЗНІ адреси ([E.2] — фізичний розділ blast-radius; мінтер не палить, слешер не емітує).
 
 > **[ARCH.47]** `ORACLE_MINTER_PRIVATE_KEY` і `ORACLE_SLASHER_PRIVATE_KEY` мусять резолвитися в РІЗНІ адреси: однакові ключі дали б їм один Kredis-lock `lock:web3:oracle:<addr>` → mint стопорив би time-sensitive slash (а `LockTimeout` там тихо обриває burn). Під `WEB3_STRICT_MODE` `Security::Web3NetworkGuard` boot-енфорсить розділення + відмовляє значенню під retired-ім'ям `ORACLE_PRIVATE_KEY` (canon B-02 — [`00_04`](00_04_Nature_as_a_Service_Contracts); INF.22).
 

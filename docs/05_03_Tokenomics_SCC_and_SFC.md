@@ -37,15 +37,15 @@
 - [Функції Контрактів](#-функції-контрактів)
 - [Події (Events)](#-події-events)
 - [Dynamic Tax — HYBRID PROTOCOL GAIA](#-dynamic-tax--hybrid-protocol-gaia)
-- [Потік Мінтингу (Поточний Стан)](#-потік-мінтингу-поточний-стан)
+- [Потік Мінтингу — контрактний ВХІД (backend-гейти → (05_02_Proof_of_Growth_Pipeline))](#-потік-мінтингу--контрактний-вхід-backend-гейти--05_02-doc705_02_proof_of_growth_pipeline)
 - [Потік Slashing (Поточний Стан)](#-потік-slashing-поточний-стан)
 - [Зв'язок з Rails Backend](#-звязок-з-rails-backend)
 - [Subgraph (The Graph)](#-subgraph-the-graph)
-- [Зовнішні Залежності](#-зовнішні-залежності)
+- [Зовнішні Залежності — токеномічні (ростер мереж → (05_01_Multichain_Architecture))](#-зовнішні-залежності--токеномічні-ростер-мереж--05_01-105_01_multichain_architecture)
 - [Структура Файлів (File Map)](#-структура-файлів-file-map)
 - [Governance DAO (Законодавча Гілка Влади) → 05_06](#-governance-dao-законодавча-гілка-влади--05_06)
 - [Smart Contract Audit Roadmap](#-smart-contract-audit-roadmap)
-- [Посмертна Економіка — Інтеграція Puro.earth Biochar](#-посмертна-економіка--інтеграція-puroearth-biochar)
+- [Посмертна Економіка (Puro.earth Biochar) — дім (04_02_Business_Logic_and_Services), тут НЕ описується](#-посмертна-економіка-puroearth-biochar--дім-04_0204_02_business_logic_and_services-тут-не-описується)
 <!-- TOC:AUTO:END -->
 
 ---
@@ -637,54 +637,23 @@ end
 
 ---
 
-## 🔄 Потік Мінтингу (Поточний Стан)
+## 🔄 Потік Мінтингу — контрактний ВХІД (backend-гейти → [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline))
 
-> **⚠️ [Lorenz de-risk]** Перший крок потоку (`Lorenz Z-value → growth_points`) спирається на **недоведену гіпотезу** «Z = здоров'я» ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)). Slashing/мінтинг-рішення вимагають ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
+Обидва шляхи мінту закінчуються тим самим викликом на Polygon:
 
 ```
-Telemetry → Lorenz Z-value → growth_points++
-                                    ↓
-                    TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
-                                    ↓
-                    Wallet.available_balance >= 10,000? → lock_and_mint!
-                    (NET, не gross — [ARCH.94]: сконвертоване лишається в
-                     locked_balance назавжди, тож фільтр по balance вічно
-                     переобирав гаманці, які змінтувати вже нічого не можуть)
-                                    ↓
-                    MintCarbonCoinWorker [queue: web3_critical]
-                                    ↓
-                    Oracle-guards (лише якщо telemetry_log переданий, Path 1):
-                    ├── verified_by_iotex? == true
-                    └── oracle_status_fulfilled? (enum method)
-                    (TokenomicsEvaluatorWorker без log → oracle-guard НЕ діє: оптимістичний мінт,
-                     anti-fraud = ex-post clawback, не цей gate — 05_02 §Модель довіри / 00_07 ARCH.53)
-                    KYC-guard (УСІ шляхи, поза telemetry_log-гілкою — KYC.1):
-                    └── wallet.kyc_approved_for_minting? (бенефіціар; non-approved → per-tx SKIP, :pending)
-                                    ↓
-                    BlockchainMintingService#perform
-                    ├── Oracle balance ≥ 0.05 MATIC
-                    ├── Kredis lock (120s) — запобігає подвійному мінтингу
-                    ├── Dynamic Tax: 2% до DAO_TREASURY (якщо batchMint + insurance_pool_requires_funding?)
-                    └── [batchMint] eth_call dry-run (batch_dry_run_reverts?)
-                         ├── ok  → batchMint() — атомарна пакетна емісія
-                         └── revert → 🔍 Binary Search Isolation (Divide & Conquer)
-                                       ├── split batch in half → eth_call dry-run per half
-                                       ├── clean half → batchMint() (gas-efficient)
-                                       ├── poisoned half → recurse (depth < 6, size ≥ 4)
-                                       ├── >30% poisoned → fallback to individual mints
-                                       └── isolated poisoned → mint_individual() (fails gracefully)
-                                    ↓
-                    SCC: mint(to, amount, treeDid, archiveRoot)          ← MINTER_ROLE
-                    SFC: mint(to, amount, "CLUSTER_{id}", archiveRoot)   ← MINTER_ROLE
-                                    ↓
-                    BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
-                                    ↓
-                    The Graph: CarbonMintEvent indexed (SCC тільки)
+SCC: mint(to, amount, treeDid, archiveRoot)   ← MINTER_ROLE (`ORACLE_MINTER_PRIVATE_KEY`)
+     ↓  emit CarbonMinted / ForestMinted
+     ↓  BlockchainConfirmationWorker (+30 c) → confirm!(tx_hash)
 ```
 
-**Конверсія:** 10,000 growth_points = 1 SCC (= 1 × 10^18 wei)
+**Конверсія (One-Home):** 10,000 growth_points = 1 SCC (= 1 × 10^18 wei). DAO-live через `TokenomicsEvaluatorWorker.emission_threshold` ← `ProtocolParameters` [GOV.1].
 
----
+**Dynamic Tax** застосовується ЛИШЕ до `batchMint`; одиничний `mint()` не оподатковується ніколи (§Dynamic Tax нижче — дім).
+
+> 🏠 **One-Home:** повний інвентар гардів обох шляхів (курс емісії · KYC бенефіціара · oracle-баланс · Kredis-lock · dry-run · Binary-Search isolation) живе в [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline) — секція сама оголошує себе «єдиною точкою істини» по цьому питанню.
+>
+> ⛔ **Не відтворювати тут backend-ланцюг — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала нуль вхідних рефів і протухла на факті, який **цей самий документ уже виправив в іншому місці**: вона казала «The Graph: `CarbonMintEvent` indexed (**SCC тільки**)», тоді як §Події за ~120 рядків вище несе `ForestMinted` → `handleForestMinted` (S3.5). Тобто розходились не два доки, а дві секції одного файла.
 
 ## 🔥 Потік Slashing (Поточний Стан)
 
@@ -704,7 +673,8 @@ BurnCarbonTokensWorker [queue: critical]
 BlockchainBurningService#call → positive-A gate (SLASH-1, 05_05 §3.2):
    доказ Кат-A є → slash + status = :breached  |  нема → :frozen + Field Audit (no burn)
         ↓
-SCC: slash(investor, amount)   ← SLASHER_ROLE (`ORACLE_SLASHER_PRIVATE_KEY`)
+SCC: slashUpTo(investor, maxAmount, contextHash)  ← SLASHER_ROLE (`ORACLE_SLASHER_PRIVATE_KEY`)
+     # ⛔ НЕ `slash()` — той є виключно ручним DAO/Timelock-шляхом (§Функції Контрактів).
         ↓
 emit TokenSlashed(...)
         ↓
@@ -746,24 +716,16 @@ FilecoinArchiveWorker → IPFS/Filecoin permanent record
 
 ---
 
-## 🌍 Зовнішні Залежності
+## 🌍 Зовнішні Залежності — токеномічні (ростер мереж → [`05_01 §1`](05_01_Multichain_Architecture))
 
-| Параметр | Значення |
+| Залежність | Роль для ЦЬОГО документа |
 |---|---|
-| **Мережа** | Polygon PoS (Amoy testnet → Mainnet) |
-| **Toolchain** | Foundry (forge, cast, anvil) |
-| **OpenZeppelin** | 5.7.x (`pragma solidity 0.8.36` — locked) |
-| **RPC** | `ALCHEMY_POLYGON_RPC_URL` (через `Web3::RpcConnectionPool`) |
-| **Oracle wallet** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER_ROLE) + `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER_ROLE) — окремі ключі (E.2; custody-поріг = GCP-KMS remote-signer → [`06_04 §5.5`](06_04_Secrets_Checklist)) |
-| **The Graph** | `subgraph/` — SCC та SFC events індексуються (Amoy-адреси з 2026-09-01; індекс порожній до ПЕРШОЇ емісії, не «до mainnet»; Studio-деплою ще не було) |
-| **Chainlink** | Oracle dispatch для Proof of Growth pipeline (⚠️ Hybrid mode) |
-| **peaq DID** | Верифікація `did:peaq:0x...` перед мінтингом |
-| **IoTeX W3bstream** | ZK-доказ цілісності pipeline + DID-binding (апаратне *походження* = true-DePIN roadmap — [`05_02` — Trust-origin ladder](05_02_Proof_of_Growth_Pipeline)) |
-| **Polygon Hadron** | KYC/KYB (ERC-3643) — `hadron_kyc_status == "approved"` |
-| **KlimaDAO** | ESG carbon retirement (approve + retire) |
-| **Ethereum L1** | Weekly state root anchoring (SHA-256) |
+| **Polygon PoS** | мережа, де живуть SCC/SFC; RPC через `ALCHEMY_POLYGON_RPC_URL` |
+| **OpenZeppelin Contracts** | база `ERC20` · `AccessControl` · `Pausable` · `ERC20Votes` (версія й pragma — §Dual Token System) |
+| **Foundry** | toolchain збірки/тестів; конвенції — `CLAUDE.md §8` |
+| **Oracle-ключі** | `ORACLE_MINTER_PRIVATE_KEY` (MINTER) ⊥ `ORACLE_SLASHER_PRIVATE_KEY` (SLASHER) — фізично розділені [E.2] |
 
----
+> 🏠 **One-Home:** роль КОЖНОЇ з 11 мереж, її статус і активаційний гейт — картки [`05_01 §1`](05_01_Multichain_Architecture). ⛔ Стиснутого ростера мереж тут більше немає (знято 2026-09-04, DOC-T.98): він мав нуль вхідних рефів і ніс два протухлі рядки — Chainlink під знятою номенклатурою «Hybrid mode» (після [ARCH.53] він `⚪ Demoted`, `sendRequest` вилучено) і «Polygon Hadron — KYC/KYB» як робочу залежність, тоді як [ARCH.118] виміряв, що продукту не існує.
 
 ## 📂 Структура Файлів (File Map)
 
@@ -894,48 +856,8 @@ medusa fuzz --config medusa-scc.json && medusa fuzz --config medusa-sfc.json
 
 ---
 
-## ♻️ Посмертна Економіка — Інтеграція Puro.earth Biochar
+## ♻️ Посмертна Економіка (Puro.earth Biochar) — дім [`04_02`](04_02_Business_Logic_and_Services), тут НЕ описується
 
-Коли дерево помирає (природна смерть або катастрофічна подія), його біомаса зберігає економічну цінність через Biochar carbon removal credits (CORCs) на реєстрі [Puro.earth](https://puro.earth).
-
-### Потік
-
-```
-Дерево помирає → Лісник видобуває мертву деревину → MaintenanceRecord (biomass_extraction)
-         ↓
-EcosystemHealingWorker → статус дерева → :deceased
-         ↓
-PuroEarthPassportWorker → генерація D-MRV "Паспорт Біомаси"
-         ↓
-Payload: { tree_did, biomass_yield_kg, extraction_date, gps_coordinates, lifetime_telemetry_hash }
-         ↓
-Phase 1: blockchain anchoring → biomass_passport_tx_hash + status :sent у MaintenanceRecord
-         ↓
-Phase 2: PuroEarthConfirmationWorker → receipt-полл → :confirmed / :failed / :manual_review
-         ↓
-Phase 3 (лише після :confirmed): REST API submission → Puro.earth → puro_earth_corc_ref
-         ↓
-Реєстр Puro.earth → видача Biochar CORC (автоматична інтеграція через RegistryApiService)
-```
-
-### D-MRV Паспорт Біомаси
-
-D-MRV (Digital Measurement, Reporting and Verification) паспорт забезпечує захищений від підробки провенанс для видобутої біомаси:
-
-| Поле | Джерело | Призначення |
-|------|---------|-------------|
-| `tree_did` | Tree.did (SNET-XXXXXXXX) | Унікальна апаратна ідентичність дерева-джерела |
-| `biomass_yield_kg` | MaintenanceRecord | Вага видобутої мертвої деревини |
-| `extraction_date` | MaintenanceRecord.performed_at | Timestamp фізичного видобутку |
-| `gps_coordinates` | MaintenanceRecord або Tree | Географічне підтвердження походження |
-| `lifetime_telemetry_hash` | SHA-256 від telemetry history | Tamper-proof зв'язок з сенсорними даними дерева |
-| `puro_earth_corc_ref` | Puro.earth REST API response | CORC reference ID для відстеження сертифікації |
-
-### Економічний Вплив
-
-- Мертві дерева продовжують генерувати цінність через Biochar CORCs замість того, щоб бути відходами
-- Кожен CORC представляє верифіковане видалення вуглецю (методологія Puro Standard)
-- Lifetime telemetry hash гарантує, що біомаса походить з моніторованого, верифікованого дерева
-- GPS-координати запобігають подвійному підрахунку між лісовими ділянками
-
-> **Статус:** `PuroEarthPassportWorker` — у черзі `web3` (пріоритет 7). ✅ Трифазний pipeline [PERF.1(д), 2026-08-20]: Phase 1 зберігає `biomass_passport_tx_hash` + `:sent`; Phase 2 — власний receipt-полл (`PuroEarthConfirmationWorker`, `web3_low`) з lifecycle на `biomass_passport_status` (прецедент `EthereumAnchor`); Phase 3 зберігає `puro_earth_corc_ref` — гейтована на `:confirmed`, тож on_chain_proof не віддається в зовнішній реєстр, доки receipt не доведено. Доти конфірмейшн-нога вела в `blockchain_transactions`, куди паспортний хеш не потрапляє ніколи.
+> 🏠 **One-Home.** Тракт біомас-паспорта не робить ЖОДНОГО виклику SCC/SFC — він іде `MaintenanceRecord` → `PuroEarthPassportWorker` → `PuroEarth::PassportService` → окремий D-MRV Registry контракт, тобто поза периметром цієї сторінки («стандарти токенів, ієрархія ролей, ключові функції, Dynamic Tax, звʼязок з бекендом»). Картки сервісів і воркерів — [`04_02`](04_02_Business_Logic_and_Services); колонки й деривації (`biomass_passport_*`, `biomass_yield_kg`, `puro_earth_corc_ref`) — [`04_01`](04_01_Data_Models_and_Entities); юридична подія «смерть дерева» — [`00_04 §2`](00_04_Nature_as_a_Service_Contracts).
+>
+> ⛔ **Не відтворювати тут ланцюг — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала нуль вхідних рефів і несла **скасовану стрілку**: вона казала «`EcosystemHealingWorker` → статус `:deceased` → `PuroEarthPassportWorker`», тоді як присуд [E.20] (⚖️ founder 2026-08-24) переніс тригер на **`MaintenanceRecord#attest!`** — заявку подає незалежний ПІДПИС, не зцілення. Читач, що діяв би з копії, ставив би в чергу воркер, який тепер кидає `MissingEvidence` (без фото) або `MissingAttestation` (без другої пари очей) ще ДО Phase 1 — і про ці ворота копія мовчала взагалі.

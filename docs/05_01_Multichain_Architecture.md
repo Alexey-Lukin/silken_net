@@ -30,8 +30,8 @@
 <!-- TOC:AUTO:START -->
 - [0. Модульний DePIN Стек: Рольова Карта (The Protocol Symphony)](#-0-модульний-depin-стек-рольова-карта-the-protocol-symphony)
 - [1. Топологія 11 Мереж (The 11-Network Stack)](#-1-топологія-11-мереж-the-11-network-stack)
-- [2. Консенсус "Proof of Growth" (Трубопровід Верифікації)](#-2-консенсус-proof-of-growth-трубопровід-верифікації)
-- [3. Смарт-Контракти та Взаємодія (Polygon)](#-3-смарт-контракти-та-взаємодія-polygon)
+- [2. Консенсус "Proof of Growth" — РОЛЬОВА карта мереж (кроки → (05_02_Proof_of_Growth_Pipeline))](#-2-консенсус-proof-of-growth--рольова-карта-мереж-кроки--05_0205_02_proof_of_growth_pipeline)
+- [3. Смарт-Контракти на Polygon — де вони живуть (поверхня → (05_03_Tokenomics_SCC_and_SFC))](#-3-смарт-контракти-на-polygon--де-вони-живуть-поверхня--05_0305_03_tokenomics_scc_and_sfc)
 - [4. Абсолютна Фіналізація (Ethereum State Root Anchoring)](#-4-абсолютна-фіналізація-ethereum-state-root-anchoring)
 - [5. Конфігурація Credentials та ENV](#-5-конфігурація-credentials-та-env)
 - [6. Shared Infrastructure Layer](#-6-shared-infrastructure-layer)
@@ -162,7 +162,7 @@ SilkenNet не покладається на один блокчейн. Для �
 
 **Формат DID:**
 ```
-did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
+did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}   # роздільник `:` несучий
 ```
 
 #### 3. IoTeX W3bstream (ZK-Proofs)
@@ -191,6 +191,7 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 | **Воркер** | — (read-only, немає окремого воркера) |
 | **Черга** | — |
 | **Тригер** | Викликається on-demand з контролерів та дашбордів |
+| **Активація** | **ACTIVATION-GATED [ARCH.119]** — `TheGraph::QueryService.configured?` на ОБОХ контролерних сайтах, усередині `Rails.cache.fetch`. Без `THE_GRAPH_API_URL` виклику не робиться взагалі, і кожен сайт НАЗИВАЄ несконфігуровану ногу в логах, відрізняючи її від «вендор лежить». ⚠️ Фолбеки РІЗНІ за типом: скаляр `nil` (дашборд) ⊥ три ключі `NETWORK_EMISSION_DEFAULTS` (звіт) |
 | **Credentials** | `the_graph_api_url` (Rails encrypted credentials) |
 | **Subgraph** | `subgraph/schema.graphql`, `subgraph/subgraph.yaml`, `subgraph/src/mapping.ts` |
 | **Мережа Subgraph** | `polygon-amoy` (Polygon testnet) |
@@ -220,17 +221,10 @@ did:peaq:0x{SHA256(hardware_identifier + tree_id + created_at)[0:40]}
 | **ENV** | `ALCHEMY_POLYGON_RPC_URL`, `ORACLE_MINTER_PRIVATE_KEY`, `ORACLE_SLASHER_PRIVATE_KEY` (dedicated-only — legacy `ORACLE_PRIVATE_KEY` retired [INF.22]; [E.2] розділені ключі mint/slash, blast-radius), `CARBON_COIN_CONTRACT_ADDRESS`, `PROTOCOL_PARAMETERS_CONTRACT_ADDRESS` |
 | **Спеки** | `spec/services/blockchain_minting_service_spec.rb`, `spec/services/blockchain_burning_service_spec.rb`, `spec/services/chain_audit_service_spec.rb`, `spec/services/minting_rollback_service_spec.rb`, `spec/workers/governance/parameter_sync_worker_spec.rb` |
 
-**Governance DAO (✅ ARCH.4):**
+**Governance DAO (✅ ARCH.4) — дім [`05_06`](05_06_Governance_and_DAO), тут лише факт розгортання.**
 
-Повний governance pipeline для зміни протокольних параметрів через SFC voting:
+На Polygon поруч із токенами розгорнуті `SilkenGovernor`, `SilkenTimelock` (48 год) і `ProtocolParameters` (on-chain registry параметрів). ⛔ **Параметри голосування, quorum-база, перелік well-known keys і пʼять захистів від flash-loan тут НЕ дублюються — виміряно й відкинуто 2026-09-04 (DOC-T.98):** оголошений скоуп картки §1 (реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard)) є `роль · сервіс-клас · воркер · черга · retry · activation-стан`, і governance-параметрів у ньому немає; а сама пара `ProtocolParameters.sol` ⟷ `ParameterSyncWorker` стоїть під HARD-гейтом (`scripts/governance_key_sync.rb`), який цю копію не бачить.
 
-| Контракт | Файл | Роль |
-|----------|------|------|
-| `SilkenGovernor` | `contracts/SilkenGovernor.sol` | OZ Governor + GovernorVotes + GovernorTimelockControl + GovernorCountingSimple + GovernorVotesQuorumFraction (4% — ЧИСЕЛЬНИК; БАЗА = `QUORUM_BASE` = SFC `MAX_SUPPLY`, не `totalSupply` [DOC-T.89]). votingDelay=43200 blocks (~1 day), votingPeriod=302400 blocks (~7 days), proposalThreshold=10 000 SFC (0.01% MAX_SUPPLY, anti-spam — CONTRACT.1) |
-| `SilkenTimelock` | `contracts/SilkenTimelock.sol` | TimelockController з 48h мінімальною затримкою. Proposer: Governor, Executor: address(0) (permissionless після delay) |
-| `ProtocolParameters` | `contracts/ProtocolParameters.sol` | On-chain registry з GOVERNANCE_ROLE. Well-known keys: 8 Lorenz (σ/ρ/β/dt/iterations/z_min/z_max/z_target — **DCI-locked**, backend свідомо не синхронізує; FW.7) + 8 економічних (emission_threshold, dynamic_tax_rate, insurance_pool_threshold, scc_per_tonne_co2, slash_threshold, stress_threshold, slash_gamma, slash_penalty_factor_max — GOV.1 read-path у [`05_06 §7`](05_06_Governance_and_DAO)). Fixed-point 18 decimals |
-
-**Flash Loan Defense:** snapshot voting (`getPastVotes`), 1-day voting delay, 4% quorum **від `MAX_SUPPLY`** (= 4 000 000 SFC — база не росте разом із емісією [DOC-T.89]), 48h timelock.
 
 **Guard Clauses (BlockchainMintingService):**
 1. `verified_by_iotex? == true` — ZK-proof з IoTeX (**лише Path 1**, oracle-driven з `telemetry_log`)
@@ -376,149 +370,31 @@ Solana `Solana::MintingService` використовує `sendTransaction` з Ed
 
 ---
 
-## ⚙️ 2. Консенсус "Proof of Growth" (Трубопровід Верифікації)
+## ⚙️ 2. Консенсус "Proof of Growth" — РОЛЬОВА карта мереж (кроки → [`05_02`](05_02_Proof_of_Growth_Pipeline))
 
-Процес перетворення фізичного життя дерева на токен (SCC) — багатоетапний, спроектований як trustless oracle-pipeline. ⚠️ **Точніше:** основний (oracle-driven) шлях мінімізує довіру, але існують **свідомі відступи** — адмінські обходи (PATH 2 tokenomics-конвертація / PATH 5 manual mint → [`05_02`](05_02_Proof_of_Growth_Pipeline)) і поточний L0-custodial trust-origin (§ IoTeX вище). Кроки основного шляху:
+> 🏠 **One-Home:** покроковий опис конвеєра (Фази 1–4, Кроки A–F), інвентар гардів обох шляхів мінту та їхні розходження живуть у [`05_02`](05_02_Proof_of_Growth_Pipeline) — це його оголошена Мета. Тут відповідь на інше питання, за яке цю сторінку й цитує [`00_00`](00_00_SSOT_Index): **яка з 11 мереж на якому кроці стоїть і в якій ролі.** Повні картки кожної — §1 вище.
 
-### Крок 1: Збір (Hardware → Backend)
+| Крок конвеєра | Мережа / протокол | Роль тут | Дім кроку |
+|---|---|---|---|
+| Збір і обчислення на краю | — (LoRa · STM32 · mruby) | поза ланцюгами: сенсор, Lorenz, пакування | [`05_02`](05_02_Proof_of_Growth_Pipeline) Фази 1–3 |
+| Паспорт вузла | **peaq** | машинна ідентичність дерева (DID) | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок A |
+| Крипто-доказ | **IoTeX** W3bstream | ZK-верифікація телеметрії (activation-gated) | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок B |
+| Oracle-маркування | **Chainlink** ⚪ demoted | latent-шлях; DON unwired [ARCH.53] | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок C |
+| Аудит особи | Polygon **Hadron** ⚫ | KYC-гейт бенефіціара — ⛔ вендора не існує [ARCH.118], статус не виходить із `pending` (картка №6 §1) | [`05_02 §Крок E`](05_02_Proof_of_Growth_Pipeline) |
+| Емісія | **Polygon** | mint SCC — два шляхи, гарди РІЗНІ | [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline) |
+| Паралельні рейки (post-mint) | **Solana** · **Celo** · **The Graph** · **KlimaDAO** · **Filecoin** | мікро-винагорода · community-винагорода · індексація · ESG-ретайрмент · CID-архів | [`05_02`](05_02_Proof_of_Growth_Pipeline) Крок F |
+| Фіналізація | **Ethereum L1** | щотижневий state-root якір | [`05_04`](05_04_Ethereum_L1_State_Anchor) |
 
-Сенсор зчитує час заряду іоністора (`delta_t`) і напругу шини живлення (`vcap` — мВ VDDA, [ARCH.99]; не заряд самого іоністора), пакує у 16 байт і шифрує **AES-128** (LoRa-канал Soldier→Queen; режими — [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security)). AES-256-CBC застосовується далі, на магістралі Queen→Rails (CoAP-батч).
-
-```
-firmware/soldier/main.c → LoRa TX → Queen → CoAP PUT → UnpackTelemetryWorker → TelemetryUnpackerService
-```
-
-| Компонент | Файл |
-|-----------|------|
-| Прошивка Солдата | `firmware/soldier/main.c` |
-| Прошивка Королеви | `firmware/queen/main.c` |
-| mruby Lorenz (on-device) | `firmware/bio_contracts/bio_contract.rb` |
-| Воркер розпакування | `UnpackTelemetryWorker` (черга: `uplink`, пріоритет 1) |
-| Сервіс розпакування | `TelemetryUnpackerService` (binary decoding: 21B ECB / 31B CCM за `TELEMETRY_CCM_ENABLED`) |
-
-### Крок 2: Обчислення (Lorenz Attractor)
-
-Внутрішня математика (Атрактор Лоренца) рахує значення осі Z. `Z-value` порівнюється з константами `TreeFamily` (напр. 20.0). Якщо дерево в гомеостазі — нараховуються `growth_points`.
-
-> **⚠️ [Lorenz de-risk]** «Z = здоров'я» — недоведена гіпотеза ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)); slashing вимагає ≥1 прямого сигналу (sap_flow / VPD / acoustic), не лише Z ([`05_05 §7`](05_05_Slashing_and_Risk_Policy)). Lorenz-DCI (anti-fraud) валідний незалежно.
-
-> Lorenz-константи (σ/ρ/β, clamps, dt, iterations) — **SSOT [`03_04 §1.2`](03_04_mruby_Lorenz_Attractor)** (firmware↔backend дзеркало, не дублюється тут). Серверний `SilkenNet::Attractor` — Float64 IEEE 754, бітово ідентично firmware mruby [FW.7].
-
-| Компонент | Файл |
-|-----------|------|
-| Серверний Lorenz | `app/services/silken_net/attractor.rb` (Float, IEEE 754 — ідентично firmware mruby) |
-| Dual Computation Integrity | Device Z vs Server Z — categorical comparison (homeostasis vs stress/anomaly mismatch) → fraud flag |
-| Fraud Guard | `InsightGeneratorService` (flagging) |
-
-### Крок 3: Паспорт (peaq DID)
-
-Перевірка DID-ідентифікатора (чи це дерево досі зареєстроване і живе).
-
-```
-PeaqRegistrationWorker → Peaq::DidRegistryService → did:peaq:0x{40-char-hex}
-```
-
-### Крок 4: Крипто-доказ (IoTeX W3bstream)
-
-W3bstream формує ZK-proof того, що дані не були підроблені під час передачі від "Королеви" до сервера.
-
-```
-TelemetryUnpackerService → IotexVerificationWorker → Iotex::W3bstreamVerificationService → zk_proof_ref
-```
-
-### Крок 5: Oracle-маркування (Chainlink demoted — ARCH.53)
-
-Після IoTeX-верифікації лог маркується `dispatched` (internal correlation-marker; on-chain Router-запит вилучено — LINK-cost без DON-callback'а). PATH 1 далі latent; мінт реально йде PATH 2 tokenomics (Крок 7, Шлях Б).
-
-```
-ChainlinkDispatchWorker → Chainlink::OracleDispatchService → chainlink-req-<hex> (local marker)
-```
-
-**Guard:** `validate_iotex_verification!` — No ZK-proof, no oracle-marker.
-
-### Крок 6: Аудит особи (Polygon Hadron)
-
-Контракт перевіряє статус KYC кінцевого отримувача токенів.
-
-```
-HadronAssetRegistrationWorker → Polygon::HadronComplianceService → hadron_kyc_status == "approved"
-```
-
-### Крок 7: Емісія (Polygon Mint)
-
-SCC мінтинг ініціюється двома незалежними шляхами — в обох випадках за фіксованим курсом емісії ([`05_03`](05_03_Tokenomics_SCC_and_SFC)). Детально: [`05_02 §DOC.7`](05_02_Proof_of_Growth_Pipeline).
-
-**Шлях A — Oracle-driven (ініціюється `OracleCallbacksController`) — ⚪ latent [ARCH.53]:** callback сьогодні не прилітає (DON unwired, dispatch = local marker); шлях лишається збудованим і guard'ованим для майбутнього PATH 1 / manual-fulfillment.
-
-```
-OracleCallbacksController → oracle_status = "fulfilled"
-  → MintCarbonCoinWorker → BlockchainMintingService
-  → Guard: verified_by_iotex? + oracle_status_fulfilled? + wallet.kyc_approved_for_minting?
-  → Polygon: mint(to_address, amount, tree_did, archive_root)
-  → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
-```
-
-**Шлях Б — Tokenomics-driven (ініціюється cron-воркером):**
-
-```
-TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
-  → EvaluateTreeBatchWorker → Wallet.available_balance >= 10,000? → lock_and_mint!  (NET — ARCH.94)
-  → BlockchainMintingService.call(batch, telemetry_log: nil)
-  → Guard: wallet.kyc_approved_for_minting? (тільки; бенефіціар — KYC.1)
-         (verified_by_iotex? + oracle_status свідомо пропускаються —
-          per-packet integrity вже забезпечена AES-CBC decrypt + valid_sensor_data?)
-  → Polygon: mint(to_address, amount, tree_did, archive_root)
-  → BlockchainConfirmationWorker (+30s) → confirm!(tx_hash)
-```
-
-### Паралельні Рейки (Post-Mint)
-
-Після успішного мінту на Polygon, паралельно запускаються:
-
-```
-├──▶ SolanaMicroRewardWorker → Solana::MintingService (instant USDC micro-reward)
-├──▶ CeloRewardWorker → Celo::CommunityRewardService (5 cUSD community reward)
-├──▶ TheGraph::QueryService (автоматична індексація CarbonMintEvent)
-├──▶ KlimaRetirementWorker → KlimaDao::RetirementService (ESG retirement, on-demand)
-├──▶ FilecoinArchiveWorker → Filecoin::ArchiveService (immutable CID archive)
-└──▶ EthereumAnchorWorker → Ethereum::StateAnchorService (weekly state root)
-```
-
+⛔ **Не відтворювати тут покрокову механіку — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів і розійшлася з домом на чотирьох осях одразу, з них дві грошові: вигаданий поріг «`TreeFamily` (напр. 20.0)», якого немає ані в моделі, ані в каноні · до-[E.63] модель «гомеостаз → нараховуються `growth_points`» (магнітуда GP є метаболічною `m(delta_t)`, [`03_04 §4.3`](03_04_mruby_Lorenz_Attractor)) · названий не той воркер у KYC-кроці · і сам KYC-гейт поданий прохідним, тоді як картка №6 за 190 рядків вище вже казала протилежне. **Кроки конвеєра нарощують у [`05_02`](05_02_Proof_of_Growth_Pipeline); ця таблиця нарощується лише коли зʼявляється НОВА МЕРЕЖА.**
 ---
 
-## 📜 3. Смарт-Контракти та Взаємодія (Polygon)
+## 📜 3. Смарт-Контракти на Polygon — де вони живуть (поверхня → [`05_03`](05_03_Tokenomics_SCC_and_SFC))
 
-### SilkenCarbonCoin.sol (SCC)
+На Polygon розгорнуто **`SilkenCarbonCoin` (SCC)** — utility-токен емісії, і **`SilkenForestCoin` (SFC)** — governance-токен; поруч із ними `SilkenTimelock`, `SilkenGovernor`, `ProtocolParameters` (дім — [`05_06`](05_06_Governance_and_DAO)) і `StateRootAnchor` на Ethereum L1 (дім — [`05_04`](05_04_Ethereum_L1_State_Anchor)).
 
-| Параметр | Значення |
-|----------|----------|
-| **Файл** | `contracts/SilkenCarbonCoin.sol` |
-| **Стандарт** | ERC-20 + `AccessControl` + `Pausable` + `ERC20Permit` |
-| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
-
-**Ключові функції:**
-- `mint(address to, uint256 amount, string memory treeDid, bytes32 archiveRoot)` — Базовий мінтинг. Емітує `CarbonMinted`.
-- `batchMint(address[] recipients, uint256[] amounts, string[] treeDids, bytes32 archiveRoot)` — До 100 дерев за один виклик (`MAX_BATCH_SIZE`, дім [`05_03`](05_03_Tokenomics_SCC_and_SFC)); `archiveRoot` ОДИН на батч [E.60].
-- `slash(address investor, uint256 amount)` — Спалює токени при порушенні. Емітує `TokenSlashed`.
-- `pause() / unpause()` — Екстрене заморожування.
-- `nonces(address)` — Override для ERC20Permit/Nonces MRO сумісності.
-- Gasless approvals через EIP-2612 (`ERC20Permit`) — дозволяє DEX/P2P marketplace інтеграцію без газу для власників SCC.
-
-### SilkenForestCoin.sol (SFC)
-
-| Параметр | Значення |
-|----------|----------|
-| **Файл** | `contracts/SilkenForestCoin.sol` |
-| **Стандарт** | ERC-20 + `AccessControl` + `Pausable` + `ERC20Permit` + `ERC20Votes` |
-| **Ролі** | `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `SLASHER_ROLE`, `PAUSER_ROLE` (SEC.1 — повна таблиця [`05_03`](05_03_Tokenomics_SCC_and_SFC)) |
-
-**Ключові функції:**
-- `mint(address to, uint256 amount, string memory clusterId, bytes32 archiveRoot)` — Мінтинг з прив'язкою до кластера.
-- `batchMint(...)` — Batch варіант.
-- Gasless approvals через EIP-712 (`ERC20Permit`).
-- Governance voting power (`ERC20Votes`).
-
----
+> 🏠 **One-Home: сигнатури функцій, події, ієрархія ролей і матриця дозволів — [`05_03`](05_03_Tokenomics_SCC_and_SFC), і тільки там.** Там вони стоять **під arity-гейтом** (`scripts/solidity_signature_arity_check.rb`, HARD у `docs.yml`), який червонить розходження з `contracts/*.sol`; будь-яка копія поза цим гейтом старіє мовчки — саме те, що тут і сталося.
+>
+> ⛔ **Не відтворювати тут перелік функцій — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Копія мала НУЛЬ вхідних рефів і розійшлася на грошовій осі: вона подавала `slash(address, uint256)` **єдиним живим трактом спалення**, тоді як бекенд його не кличе взагалі — живий шлях є `slashUpTo(address, uint256 maxAmount, bytes32 contextHash)` (атомарний кламп до `balanceOf` замість приреченого реверту), а `slash()` лишається **виключно ручним DAO/Timelock-шляхом** ([`05_03`](05_03_Tokenomics_SCC_and_SFC) · [`05_05`](05_05_Slashing_and_Risk_Policy) SLASH.2). Заразом вона тримала `string memory` там, де контракт має `calldata`.
 
 ## ⚓ 4. Абсолютна Фіналізація (Ethereum State Root Anchoring)
 
@@ -530,7 +406,7 @@ TokenomicsEvaluatorWorker (щогодини, cron: 0 * * * *)
 
 ```ruby
 # Формула — дзеркало SSOT (owner [`05_04`](05_04_Ethereum_L1_State_Anchor)), правити ТАМ.
-# Роздільник `|` (pipe), не `:`. [E.53/E.54] 5 полів: + total_sfc, active_tree_count.
+# Роздільник `|` (pipe), не `:`. [E.53/E.54] + total_sfc, active_tree_count; [ARCH.97] + total_scc_supply — разом ШІСТЬ полів (дім і гейт — [`05_04 §3`](05_04_Ethereum_L1_State_Anchor)).
 state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{active_tree_count}|#{chain_hash}|#{timestamp.iso8601}|#{total_scc_supply}")
 ```
 
@@ -574,33 +450,31 @@ state_root = Digest::SHA256.hexdigest("#{total_growth_points}|#{total_sfc}|#{act
 
 ## 🏗️ 6. Shared Infrastructure Layer
 
-| Утиліта | Призначення |
-|---------|-------------|
-| `Web3::HttpClient` | Централізований HTTP клієнт (HTTPX), thread-safe |
-| `Web3::RpcConnectionPool` | Thread-cached `Eth::Client` / `Web3::ResilientClient` per Sidekiq thread. Підтримує fallback cascade через `fallback_env_keys`. При одному URL повертає plain `Eth::Client` (без overhead); при кількох — `Web3::ResilientClient`. |
-| `Web3::ResilientClient` | Circuit Breaker + RPC fallback cascade: Primary→Secondary→Public. `MAX_FAILURES=3` → `CIRCUIT_OPEN_DURATION=60s`. Розпізнає `Net::ReadTimeout`, `Errno::ECONNREFUSED`, HTTP 429. Thread-safe (Mutex). `provider_health` → Prometheus. |
-| `Web3::WeiConverter` | BigDecimal конверсія human-readable ↔ wei |
+> 🏠 **One-Home — [`04_02 §1`](04_02_Business_Logic_and_Services) «Web3 Utility Layer»; поіменного переліку тут НЕ вести.** ⛔ Виміряно й відкинуто 2026-09-04 (DOC-T.98): копія несла чотири утиліти, тоді як шар мав більше, і бракувало саме **щойно відвантаженої родини підписантів [SEC.17]** (`OracleSigner` · `KeySigner` · `KmsKey` · `LocalEnvSigner`) — тобто перелік старів **лише в бік неповноти** й мовчав саме про money-path-ланку. Перелік росте комітами, а копію пишуть один раз.
+>
+> Що з цього шару несуче ТУТ (мультичейн-специфіка, і живе воно в картках §1): **fallback-каскад RPC** Primary→Secondary→Public через `fallback_env_keys` і **circuit breaker** `Web3::ResilientClient`. ⚠️ Порогів двоє й вони РІЗНІ — воркерний ⊥ провайдерний; при цитуванні називай, про який ідеться, а дім обох — [`06_08 §2.1`](06_08_Resilience_and_Failover_Policy).
 
 ---
 
 ## 📊 7. Повна Матриця Сервісів та Черг
 
-| # | Мережа | Рівень | Воркер | Черга | Retry | Cron |
-|---|--------|--------|--------|-------|-------|------|
-| 1 | Filecoin | Data | `FilecoinArchiveWorker` | `low` | 5 | — |
-| 2 | peaq | Verification | `PeaqRegistrationWorker` (+ре-арм `PeaqBackfillWorker`, `low`) | `web3` | 5 | — |
-| 3 | IoTeX | Verification | `IotexVerificationWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
-| 4 | The Graph | Verification | — (read-only) | — | — | — |
-| 5 | Polygon | Finance | `MintCarbonCoinWorker` | `web3_critical` | 5 | — |
-| 5b | Polygon | Finance | `BurnCarbonTokensWorker` | `critical` | 5 | — |
-| 6 | Hadron | Finance | `HadronAssetRegistrationWorker` | `web3_low` | 5 | — |
-| 7 | Solana | Finance | `SolanaMicroRewardWorker` | `web3` | 3 | — |
-| 8 | Celo | Finance | `CeloRewardWorker` | `web3` | 3 | — |
-| 9 | KlimaDAO | Finance | `KlimaRetirementWorker` | `web3_low` | 3 | — |
-| 10 | Chainlink ⚪ | Marker (demoted ARCH.53) | `ChainlinkDispatchWorker` + `Web3CircuitBreaker` | `web3_critical` | 5 | — |
-| 11 | Ethereum L1 | Finality | `EthereumAnchorWorker` | `web3_low` | 3 | `0 3 * * 1` |
-| 12 | Cross-chain | Treasury | `TreasuryMonitorWorker` | `web3_low` | 3 | `*/15 * * * *` |
-| 13 | Polygon | Gas Optimization | `MintBatchCollectorWorker` | `web3` | 3 | `*/5 * * * *` |
-| 13b | Solana | Gas Optimization | `SolanaBatchPayoutWorker` [E.61] | `web3` | 3 | `20 * * * *` |
+> 🏠 **One-Home:** `Черга` · `Retry` · `Cron` · `Активація` кожної ланки живуть у **її картці §1** (реєстр [`00_06 §2`](00_06_SSOT_Documentation_Standard)), а пріоритетна топологія черг — у [`04_02 §11`](04_02_Business_Logic_and_Services). Нижче — лише **індекс «мережа → воркери»**, щоб бачити всі одинадцять одразу.
+>
+> ⛔ **Колонки `Черга`/`Retry`/`Cron` тут НЕ відновлювати — виміряно й відкинуто 2026-09-04 (DOC-T.98).** Саме вони й протухли: `EthereumAnchorWorker` стояв із `Retry 3` при `retry: 5` у коді, а колонка `Cron` показувала «—» для **всіх** reconcile/backfill-воркерів, чиї крони живі в `config/sidekiq.yml` — тобто таблиця систематично не бачила цілого КЛАСУ ланок, а не помилялась у рядку.
+
+| # | Мережа | Воркер(и) | Картка |
+|---|--------|-----------|--------|
+| 1 | Filecoin | `FilecoinArchiveWorker` + ре-арм `FilecoinReconcileWorker` | §1 Рівень 1 |
+| 2 | peaq | `PeaqRegistrationWorker` + ре-арм `PeaqBackfillWorker` | §1 Рівень 2 |
+| 3 | IoTeX | `IotexVerificationWorker` + ре-арм `IotexBackfillWorker` | §1 Рівень 2 |
+| 4 | The Graph | — (синхронне читання з контролерів, воркера немає) | §1 Рівень 2 |
+| 5 | Polygon | `MintCarbonCoinWorker` · `BurnCarbonTokensWorker` · `MintBatchCollectorWorker` | §1 Рівень 3 |
+| 6 | Hadron ⚫ | `HadronKycVerificationWorker` + ре-арм `HadronKycReverifyWorker`; `HadronAssetRegistrationWorker` — воркер-сирота (нуль enqueue, [BIZ.11]) | §1 Рівень 3 |
+| 7 | Solana | `SolanaMicroRewardWorker` · `SolanaBatchPayoutWorker` [E.61] | §1 Рівень 3 |
+| 8 | Celo | `CeloRewardWorker` + ре-арм `CeloRewardReconcileWorker` | §1 Рівень 3 |
+| 9 | KlimaDAO | `KlimaRetirementWorker` (нуль enqueue — активація за подією) | §1 Рівень 3 |
+| 10 | Chainlink ⚪ | `ChainlinkDispatchWorker` (demoted [ARCH.53]) | §1 Рівень 2 |
+| 11 | Ethereum L1 | `EthereumAnchorWorker` + `EthereumAnchorConfirmationWorker` + `StuckSentAnchorSweeperWorker` | §1 Рівень 4 |
+| — | Cross-chain | `TreasuryMonitorWorker` | [`04_02 §11`](04_02_Business_Logic_and_Services) |
 
 > **Тести.** Spec-шлях кожного сервісу — у його картці §1 (One-Home: інвентар біля підсистеми). Конвенції написання / coverage-гейт / тріаж прогалин — [`04_06`](04_06_Testing_Guide_and_Coverage).

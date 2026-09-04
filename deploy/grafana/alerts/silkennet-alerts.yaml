@@ -278,7 +278,7 @@ groups:
         annotations:
           summary: "Oracle balance ratio = {{ $values.B.Value | printf \"%.2f\" }} на {{ $labels.network }}/{{ $labels.signer }} (поріг: 1.0, критично: < 0.2)."
           description: "Oracle-підписант ({{ $labels.signer }}) вичерпує кошти. Його web3-шлях заблокується при 0. Поповни wallet через multisig: docs/05_03_Tokenomics_SCC_and_SFC.md"
-          runbook_url: "docs/05_03_Tokenomics_SCC_and_SFC.md#-потік-мінтингу-поточний-стан"
+          runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md#усі-шляхи-до-walletlock_and_mint-guard-inventory-doc7"
         labels:
           severity: critical
           component: web3
