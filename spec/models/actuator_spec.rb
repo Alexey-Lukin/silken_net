@@ -204,7 +204,7 @@ RSpec.describe Actuator, type: :model do
 
       alert = EwsAlert.last
       expect(alert.cluster).to eq(cluster)
-      expect(alert).to be_alert_type_system_fault
+      expect(alert).to be_alert_type_hardware_fault # [SLASH-1] відмова актуатора = клас заліза
       expect(alert).to be_severity_critical
       expect(alert.message).to include(actuator.name)
       expect(alert.message).to include("Test fault")

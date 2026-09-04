@@ -764,7 +764,18 @@ class BlockchainBurningService < ApplicationService
   # сідав на стелю). tamper/fire/chainsaw = не comms-loss (свій root-cause), сюди не рахуємо.
   def comms_no_ack?
     @cluster.ews_alerts.critical
-            .where(alert_type: [ :queen_offline, :queen_uplink_lost, :system_fault ])
+            # [SLASH-1 2026-09-04] `gateway_uplink_degraded` ЛИШАЄТЬСЯ тут після розколу
+            # кошика — і це поправка до першої редакції присуду, яка вивела його
+            # мовчки. Цей предикат цінує НЕПІДТВЕРДЖЕНІСТЬ сигналу зв'язку, а не
+            # провину: підстава «атрибуція невизначена» до нього не застосовна, бо
+            # доводить забагато — сусід `queen_uplink_lost` так само не розрізняє,
+            # Starlink упав чи наш бекхол, і в whitelist стоїть. Канон називає
+            # дефектом саме ПОДВІЙНИЙ заряд (§6), тож лік — зняти РІВНО ОДИН терм:
+            # подія лишається сигналом зв'язку тут і перестає бути «недбалістю» у
+            # `critical_unmaintained?`. ⛔ `hardware_fault` сюди НЕ входить — залізо
+            # не є сигналом каналу, тож він не належить жодному з двох.
+            .where(alert_type: [ :queen_offline, :queen_uplink_lost, :system_fault,
+                                 :gateway_uplink_degraded ])
             .exists?
   end
 
@@ -800,11 +811,20 @@ class BlockchainBurningService < ApplicationService
     # видати аварійну команду, бо стеля пристрою чи каденс шлюза її не пропускають.
     # Це наша конфігурація, а не операторська недбалість: виїзд лісника не полагодить
     # число, яке ми ж і задали. Той самий vendor-attributable клас, що actuator_stuck.
+    # [SLASH-1 2026-09-04] І :gateway_uplink_degraded — але підстава ТУТ ІНША, і
+    # плутати її з рештою переліку дорого. Решта виключені тому, що винуватцем
+    # була ПЛАТФОРМА; цей — тому, що винуватця встановити НЕМОЖЛИВО: пускач є
+    # лічильник провалених flush-розмов Королеви, а він не розрізняє, чий бік
+    # упав — наш CoAP чи бекхол оператора. Дискримінатор «ХТО ПОРОДИВ» має третю
+    # відповідь (НЕВІДОМО), і при незворотному burn вона падає на той самий бік,
+    # що й «ми» — асиметрія §3.2 забороняє карати за невизначеність.
     stale_critical = @cluster.ews_alerts.severity_critical
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip,
                                                       :actuator_stuck, :emergency_response_undeliverable,
-                                                  :slash_dispatch_failed ])
+                                                      :slash_dispatch_failed,
+                                                      :gateway_uplink_degraded,
+                                                      :hardware_fault ])
                              # rubocop:disable Rails/WhereNotWithMultipleConditions -- заперечення
                              # КОНʼЮНКЦІЇ тут і є наміром [SLASH-1 gap-E]: викидаємо рівно
                              # машинно-закриті (`resolved` І `resolved_by` NULL), лишаючи

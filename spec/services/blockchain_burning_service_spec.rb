@@ -942,6 +942,62 @@ end
     end
   end
 
+  # [SLASH-1 ⚖️ 2026-09-04] Розкол кошика `system_fault` за АТРИБУЦІЄЮ. Предикати
+  # читають `alert_type` і до `message_key` сліпі за побудовою, тож поки
+  # деградований uplink їхав спільним типом, він годував ОБИДВА терми — за подію,
+  # чийого винуватця встановити НЕМОЖЛИВО (лічильник провалених flush-розмов не
+  # розрізняє, чий бік упав). Пін кличе САМ предикат, не повторює його список.
+  describe "#critical_unmaintained? — атрибуційно-неоднозначний тип поза периметром" do
+    let(:service) { described_class.new(organization.id, naas_contract.id) }
+
+    def stale_alert!(alert_type)
+      create(:ews_alert, cluster: cluster, tree: nil, alert_type: alert_type,
+                         severity: :critical, message_key: "gateway_uplink_degraded",
+                         message_params: { uid: "SNET-Q-1", fail_count: 99 })
+        .update_column(:created_at, 2.hours.ago)
+    end
+
+    it "НЕ рахує `gateway_uplink_degraded` недбалістю оператора" do
+      stale_alert!(:gateway_uplink_degraded)
+      expect(service.send(:critical_unmaintained?)).to be(false)
+    end
+
+    # Позитивний контроль: та сама фікстура під СТАРИМ типом предикат вмикає —
+    # тобто приклад вище доводить роботу ТИПУ, а не порожню множину.
+    it "але рахує ТУ САМУ подію, якщо вона лишилась у спільному кошику" do
+      stale_alert!(:system_fault)
+      expect(service.send(:critical_unmaintained?)).to be(true)
+    end
+
+    # [SLASH-1 ⚖️ 2026-09-04] Друга родина того ж розколу: `hardware_fault` несе
+    # КЛАС АТРИБУЦІЇ (залізо — наше або невизначене), а подію далі розрізняє
+    # `message_key`. Обидва боки — «наше» й «невідомо» — за асиметрією §3.2
+    # падають однаково: не карати.
+    it "НЕ рахує родину `hardware_fault` (залізо: наше або невизначене)" do
+      stale_alert!(:hardware_fault)
+      expect(service.send(:critical_unmaintained?)).to be(false)
+    end
+
+    # 🔴 [SLASH-1 2026-09-04] Поправка до першої редакції присуду: розкол мусив зняти
+    # РІВНО ОДИН терм, не обидва. `comms_no_ack?` цінує НЕПІДТВЕРДЖЕНІСТЬ сигналу
+    # зв'язку, а не провину — інакше підстава «атрибуція невизначена» викинула б і
+    # `queen_uplink_lost`, який так само не каже, Starlink упав чи наш бекхол.
+    # Канон називає дефектом саме ПОДВІЙНИЙ заряд, тож пін тримає ОБИДВІ половини.
+    it "але лишається сигналом зв'язку — рівно ОДИН терм, не подвійний" do
+      stale_alert!(:gateway_uplink_degraded)
+      expect(service.send(:comms_no_ack?)).to be(true)
+      expect(service.send(:critical_unmaintained?)).to be(false)
+      expect(service.send(:combine_penalty_factor, no_ack: true, no_maintenance: false))
+        .to eq(described_class::DEFAULT_PENALTY_FACTOR + described_class::PF_NO_ACK)
+    end
+
+    it "залізна родина не є сигналом каналу — не входить у ЖОДЕН терм" do
+      stale_alert!(:hardware_fault)
+      expect(service.send(:comms_no_ack?)).to be(false)
+      expect(service.send(:critical_unmaintained?)).to be(false)
+    end
+  end
+
   describe "#combine_penalty_factor (SLASH-1 de-correlation §6, pure)" do
     subject(:service) { described_class.new(organization.id, naas_contract.id) }
 

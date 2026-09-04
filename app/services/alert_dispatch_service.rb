@@ -59,7 +59,7 @@ class AlertDispatchService
     if telemetry_log.voltage_mv < 100 && !telemetry_log.panic?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
-        alert_type: :system_fault,
+        alert_type: :hardware_fault,
         message_key: "power_loss", message_params: { did: tree.did, voltage_mv: telemetry_log.voltage_mv }
       )
       # НЕ робимо return — продовжуємо аналіз пожежі/сейсміки,

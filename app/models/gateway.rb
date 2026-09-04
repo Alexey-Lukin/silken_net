@@ -213,7 +213,10 @@ class Gateway < ApplicationRecord
 
   # Чи потребує Королева уваги патрульного?
   def system_fault?
-    cluster&.ews_alerts&.unresolved&.alert_type_system_fault&.exists? || battery_critical?
+    # [SLASH-1 2026-09-04] Родина, не один тип: кошик `system_fault` розколюється
+    # за атрибуцією, а це питання про ВИДИМІСТЬ — див. `EwsAlert::GATEWAY_FAULT_TYPES`.
+    cluster&.ews_alerts&.unresolved&.where(alert_type: EwsAlert::GATEWAY_FAULT_TYPES)&.exists? ||
+      battery_critical?
   end
 
   # [ВИПРАВЛЕНО]: Блискавична перевірка без SQL запитів до логів.

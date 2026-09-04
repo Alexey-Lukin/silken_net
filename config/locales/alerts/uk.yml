@@ -128,6 +128,8 @@ uk:
       firmware_canary_trip: Спрацювала канарка прошивки
       firmware_fault: Збій прошивки
       firmware_reverted: Відкат прошивки
+      gateway_uplink_degraded: Uplink шлюза деградував
+      hardware_fault: Апаратна відмова
       queen_offline: Королева офлайн
       queen_uplink_lost: Втрачено зв'язок Королеви
       severe_drought: Сильна посуха

@@ -101,6 +101,44 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         I18n.with_locale(:uk) { expect(EwsAlert.last.message).to include("провалених") }
       end
 
+      # [SLASH-1 2026-09-04] Тип виводиться з ключа, і це НЕ косметика: предикати
+      # `penalty_factor` читають `alert_type` і до `message_key` сліпі за побудовою,
+      # тож поки деградований uplink їхав як `system_fault`, він годував ОБИДВА
+      # предикати (1.0 + 0.5 + 0.5 = стеля) — за подію, чийого винуватця встановити
+      # неможливо. Пін тримає ОБИДВІ половини: тип рядка І його невидимість для
+      # `critical_unmaintained?`.
+      it "деградований uplink дістає ВЛАСНИЙ тип і не годує critical_unmaintained? [SLASH-1]" do
+        stats = valid_stats.merge("coap_fail_count" => 99)
+
+        expect {
+          described_class.new.perform(gateway.uid, stats)
+        }.to change(EwsAlert, :count).by(1)
+
+        alert = EwsAlert.last
+        expect(alert.alert_type).to eq("gateway_uplink_degraded")
+        expect(alert.message_key).to eq("gateway_uplink_degraded")
+
+        # ⛔ Другу половину (невидимість для `critical_unmaintained?`) пінить
+        # `blockchain_burning_service_spec` ВИКЛИКОМ справжнього предиката —
+        # повторити тут список виключень означало б пінити ПРОКСІ, який
+        # переживе будь-яку зміну самого предиката (guard-craft #133).
+      end
+
+      # ⛔ Дедуп ПО ТИПУ, не по кошику: спільний глушник ховав би новий тип за
+      # стоячим `system_fault` іншого предмета — тобто рівно ту подію, задля
+      # видимості якої тип і вирізали.
+      it "стоячий system_fault НЕ глушить алерт нового типу [SLASH-1]" do
+        create(:ews_alert, cluster: cluster, tree: nil,
+                           alert_type: :system_fault, severity: :critical,
+                           message_key: "gateway_overheat", message_params: { uid: gateway.uid, temperature_c: 71 })
+
+        expect {
+          described_class.new.perform(gateway.uid, valid_stats.merge("coap_fail_count" => 99))
+        }.to change(EwsAlert, :count).by(1)
+
+        expect(EwsAlert.last.alert_type).to eq("gateway_uplink_degraded")
+      end
+
       it "не плодить дублікат при активному system_fault кластера (анти-спам)" do
         stats = valid_stats.merge("cellular_signal_csq" => 2)
         described_class.new.perform(gateway.uid, stats)

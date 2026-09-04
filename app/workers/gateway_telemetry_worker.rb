@@ -19,6 +19,18 @@ class GatewayTelemetryWorker
   # не суперечність, а різна ціна дропу.
   sidekiq_options queue: "uplink", retry: 2, expires_in: 5.minutes
 
+  # [SLASH-1 2026-09-04] One-Home мапи ключ→тип. Дім саме тут, а не в моделі:
+  # `message_key` є словником ЦЬОГО воркера (гілки `health_message_key`), тож
+  # модель про них не знає й знати не мусить. Ключі поза мапою лишаються
+  # `system_fault` СВІДОМО — розкол кошика йде за атрибуцією й поштучно
+  # (05_05 §6), а не гуртом.
+  ALERT_TYPE_BY_MESSAGE_KEY = {
+    "gateway_uplink_degraded" => :gateway_uplink_degraded,
+    "gateway_overheat"        => :hardware_fault,
+    "gateway_freezing"        => :hardware_fault,
+    "gateway_hardware_fault"  => :hardware_fault
+  }.freeze
+
   # CSQ 0-31 — нормальний діапазон (3GPP 27.007); 99 — невизначений/відсутній сигнал
   VALID_CSQ_VALUES = (0..31).freeze
 
@@ -96,13 +108,22 @@ class GatewayTelemetryWorker
     # звуження один стоячий tree-алерт безстроково глушив НОВИЙ gateway-fault.
     # Стеля: залишковий конфлат з іншими cluster-level писарями (Actuator,
     # slashing-failure) розкладе типова декомпозиція кошика → 00_07 SLASH-1.
-    return if EwsAlert.unresolved.alert_type_system_fault
+    # [SLASH-1 2026-09-04] Тип ВИВОДИТЬСЯ з ключа, а не хардкодиться: предикати
+    # penalty_factor читають `alert_type` і до `message_key` сліпі за побудовою,
+    # тож поки всі гілки їхали одним типом, атрибуційно-неоднозначний
+    # `gateway_uplink_degraded` (лічильник провалених flush-розмов до НАШОГО CoAP —
+    # не розрізняє, чий бік упав) годував ОБИДВА предикати. Класифікація типу —
+    # `EwsAlert` enum. ⛔ Дедуп теж мусить бути ПО ТИПУ: спільний глушник по
+    # `system_fault` ховав би новий тип за старим алертом іншого предмета.
+    alert_type = ALERT_TYPE_BY_MESSAGE_KEY.fetch(message_key, :system_fault)
+
+    return if EwsAlert.unresolved.where(alert_type: alert_type)
                       .exists?(cluster_id: gateway.cluster_id, tree_id: nil)
 
     EwsAlert.create!(
       cluster_id: gateway.cluster_id,
       severity: :critical,
-      alert_type: :system_fault,
+      alert_type: alert_type,
       message_key: message_key, message_params: message_params
     )
 

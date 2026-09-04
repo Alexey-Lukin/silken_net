@@ -128,6 +128,8 @@ lt:
       firmware_canary_trip: Programinės įrangos kanarėlės signalas
       firmware_fault: Programinės įrangos gedimas
       firmware_reverted: Programinė įranga atstatyta
+      gateway_uplink_degraded: Vartų siunčiamasis ryšys pablogėjo
+      hardware_fault: Aparatūros gedimas
       queen_offline: Queen neprisijungęs
       queen_uplink_lost: Prarastas Queen ryšys
       severe_drought: Didelė sausra

@@ -142,7 +142,7 @@ RSpec.describe AlertDispatchService, type: :service do
       }.to change(EwsAlert, :count).by(2)
 
       alert_types = EwsAlert.last(2).map(&:alert_type)
-      expect(alert_types).to include("system_fault")
+      expect(alert_types).to include("hardware_fault")   # [SLASH-1] power_loss → клас атрибуції
       expect(alert_types).to include("fire_detected")
     end
 
@@ -164,7 +164,7 @@ RSpec.describe AlertDispatchService, type: :service do
       }.to change(EwsAlert, :count).by(1)
 
       alert = EwsAlert.last
-      expect(alert.alert_type).to eq("system_fault")
+      expect(alert.alert_type).to eq("hardware_fault")   # [SLASH-1] power_loss → клас атрибуції
     end
   end
 
@@ -250,7 +250,10 @@ RSpec.describe AlertDispatchService, type: :service do
       expect(alert.alert_type).to eq("chainsaw_detected")
       expect(alert.message_key).to eq("chainsaw_detected_panic")
       I18n.with_locale(:uk) { expect(alert.message).to include("PANIC-TX") }
-      expect(EwsAlert.alert_type_system_fault).to be_empty # vcap=0 panic ≠ «втрата живлення»
+      # 🔴 [SLASH-1 2026-09-04] Пін цілиться в ОБИДВА типи: після розколу кошика
+      # `power_loss` їде як `hardware_fault`, тож перевірка лише на `system_fault`
+      # стала б ВАКУУМНОЮ — зеленою навіть якби алерт створився (backend #56).
+      expect(EwsAlert.where(alert_type: [ :system_fault, :hardware_fault ])).to be_empty # vcap=0 panic ≠ «втрата живлення»
       # [ARCH.102] Колишній ліхтар «not seismic» узагальнено: panic-кадр не сміє
       # лишити ЖОДНОГО другого алерту — пилка їде рівно одним типом.
       expect(EwsAlert.where.not(alert_type: :chainsaw_detected)).to be_empty
@@ -468,7 +471,7 @@ RSpec.describe AlertDispatchService, type: :service do
       )
 
       described_class.analyze_and_trigger!(log)
-      expect(EwsAlert.last.alert_type).to eq("system_fault")
+      expect(EwsAlert.last.alert_type).to eq("hardware_fault") # [SLASH-1] power_loss → клас атрибуції
     end
 
     it "does not trigger system_fault at exactly 100mV" do

@@ -120,7 +120,7 @@ class Actuator < ApplicationRecord
         if gateway.cluster_id.present?
           EwsAlert.create!(
             cluster: gateway.cluster,
-            alert_type: :system_fault,
+            alert_type: :hardware_fault,
             severity: :critical,
             # Дефолт `reason` — теж проза, тож окремий ключ замість українського
             # літерала «Невідома помилка CoAP», що їхав би в будь-яку локаль.

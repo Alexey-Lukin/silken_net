@@ -205,6 +205,25 @@ RSpec.describe Gateway, type: :model do
       expect(gateway).to be_system_fault
     end
 
+    # [SLASH-1 2026-09-04] Розкол кошика `system_fault` за атрибуцією не сміє
+    # звужувати ОПЕРАЦІЙНУ вісь: питання «чи їхати патрульному» ⊥ питання «хто
+    # породив подію». Пін цілиться в НОВИЙ тип — саме він зник би, якби читач
+    # лишився на одному `alert_type_system_fault`.
+    it "returns true for a type SPLIT OUT of the system_fault basket (ops axis ⊥ penalty axis)" do
+      gateway = create(:gateway)
+      create(:ews_alert,
+        cluster: gateway.cluster,
+        # ⛔ ЛІТЕРАЛ, не `GATEWAY_FAULT_TYPES.last`: пін на саму константу рухається
+        # РАЗОМ із нею, тобто вакуумний рівно для тієї регресії, яку має ловити
+        # (доведено мутацією 2026-09-04 — зняття типу з родини лишало пін зеленим).
+        alert_type: :hardware_fault,
+        severity: :critical,
+        status: :active
+      )
+
+      expect(gateway).to be_system_fault
+    end
+
     it "returns true when battery is critical" do
       gateway = build(:gateway, latest_voltage_mv: Gateway::LOW_POWER_MV - 100, cluster: nil)
       expect(gateway).to be_system_fault

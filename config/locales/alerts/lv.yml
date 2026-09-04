@@ -128,6 +128,8 @@ lv:
       firmware_canary_trip: Programmaparatūras kanārijsignāls
       firmware_fault: Programmaparatūras kļūme
       firmware_reverted: Programmaparatūra atgriezta
+      gateway_uplink_degraded: Vārtejas augšupsaite pasliktinājusies
+      hardware_fault: Aparatūras kļūme
       queen_offline: Queen bezsaistē
       queen_uplink_lost: Zaudēta Queen augšupsaite
       severe_drought: Smags sausums

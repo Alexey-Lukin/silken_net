@@ -218,6 +218,18 @@ RSpec.describe Treasury::MonitorService do
         expect(alert.message).to include("polygon")
         expect(alert.message).to match(/minter|slasher/)
         expect(alert.message_key).to eq("oracle_balance_low")
+
+        # 🔴 [SLASH-1 2026-09-04] БЕЗКЛАСТЕРНІСТЬ ТУТ НЕСУЧА — і це ДРУГА її причина,
+        # незалежна від ARCH.82 нижче (там: людського шляху до рядка немає, тож він
+        # закривається машинно). Друга: обидва предикати `penalty_factor` скоуплені
+        # `@cluster.ews_alerts`, тож платформна подія без кластера вироку НЕ годує.
+        # ⚠️ Але це ЗБІГ координати, не класифікація: `alert_type` тут спільний
+        # `system_fault`, тобто варто комусь дописати `cluster:` «щоб було видно на
+        # дашборді» — і наш власний казначейський збій почне садити множник оператора,
+        # мовчки й без жодного червоного. Той самий стан у `mint_volume_anomaly` і
+        # `insurance_reserve_hold_*`. Клас — 00_05 §7 (обмеження без обмежувача:
+        # «поза периметром ВИПАДКОВО» не є захистом); розкол кошика — 05_05 §6.
+        expect(alert.cluster_id).to be_nil
       end
     end
 

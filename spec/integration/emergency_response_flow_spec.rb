@@ -143,7 +143,9 @@ RSpec.describe "Emergency response and actuator command flow" do
 
       expect(actuator.reload.state).to eq("maintenance_needed")
       alert = EwsAlert.last
-      expect(alert.alert_type).to eq("system_fault")
+      # [SLASH-1 2026-09-04] Клас атрибуції: відмова актуатора є ЗАЛІЗНОЮ, тож
+      # їде `hardware_fault`, а подію далі несе `message_key`.
+      expect(alert.alert_type).to eq("hardware_fault")
       expect(alert.message).to include("CoAP timeout")
     end
 

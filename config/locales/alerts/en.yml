@@ -128,6 +128,8 @@ en:
       firmware_canary_trip: Firmware Canary Trip
       firmware_fault: Firmware Fault
       firmware_reverted: Firmware Reverted
+      gateway_uplink_degraded: Gateway Uplink Degraded
+      hardware_fault: Hardware Fault
       queen_offline: Queen Offline
       queen_uplink_lost: Queen Uplink Lost
       severe_drought: Severe Drought
