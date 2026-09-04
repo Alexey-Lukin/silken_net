@@ -131,5 +131,6 @@ en:
       queen_offline: Queen Offline
       queen_uplink_lost: Queen Uplink Lost
       severe_drought: Severe Drought
+      slash_dispatch_failed: Slash Dispatch Failed
       system_fault: System Fault
       vandalism_breach: Vandalism Breach

@@ -43,7 +43,7 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 6. The partition helper depends on CARDINALITY — one known row versus a SET — and a `status`-scan deliberately stays unbounded
 7. Solana payouts flip from per-event to hourly batching the moment `solana_batch_threshold_usdc` rises above zero
 8. Slashing fires ONLY on positive Cat-A [SLASH-1 §3.2]
-9. Slashing uplift combines CORRELATED signals with `max()`, never a sum — and its two predicates have OPPOSITE defaults (whitelist ⊥ blacklist)
+9. Slashing uplift combines CORRELATED signals with `max()`, never a sum — and its two predicates have OPPOSITE defaults (whitelist ⊥ blacklist) — **ратифікувавши «новий тип, бо старий отруєний», спитай не «куди покласти нову подію», а «хто вже лежить у старому» — і міряй периметр за ДОСЯЖНІСТЮ предиката (severity + scope), не за списком писачів**
 10. Persist the `:pending` intent BEFORE the on-chain call, and treat `:manual_review` as age-UNBOUNDED — a windowed re-fire is a calendar bug, not a race
 11. The whole economic parameter set is DAO-live through `SystemParameter` — a hardcoded constant on that path is already wrong
 12. The mint KYC-gate reads the BENEFICIARY — and TODAY it is a closed door, not a filter: the vendor does not exist, so `pending` never lifts and every custodial beneficiary is dropped each cycle

@@ -771,7 +771,8 @@ class BlockchainBurningService < ApplicationService
     stale_critical = @cluster.ews_alerts.severity_critical
                              .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip,
-                                                      :actuator_stuck, :emergency_response_undeliverable ])
+                                                      :actuator_stuck, :emergency_response_undeliverable,
+                                                  :slash_dispatch_failed ])
                              # rubocop:disable Rails/WhereNotWithMultipleConditions -- заперечення
                              # КОНʼЮНКЦІЇ тут і є наміром [SLASH-1 gap-E]: викидаємо рівно
                              # машинно-закриті (`resolved` І `resolved_by` NULL), лишаючи
@@ -813,7 +814,7 @@ class BlockchainBurningService < ApplicationService
     EwsAlert.create!(
       cluster: @cluster,
       severity: :critical,
-      alert_type: :system_fault,
+      alert_type: :slash_dispatch_failed,
       # `ambiguous` — окремий КЛЮЧ, а не префікс у рядку: «можливо-landed, НЕ
       # авто-повтор» — це проза, і раніше вона приклеювалась українською до
       # тексту виключення просто на місці виклику. `error` лишається сирим

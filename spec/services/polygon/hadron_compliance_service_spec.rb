@@ -4,6 +4,40 @@
 require "rails_helper"
 
 RSpec.describe Polygon::HadronComplianceService do
+  # [ARCH.119] Дім двох осей. `configured?` каже про ПРОВАЙДЕРА,
+  # `verification_reachable?` — чи виклик здатен завершитись; гейт enqueue
+  # читає ДРУГИЙ, і саме тому dev-заглушка лишається живою.
+  describe "activation predicates" do
+    before do
+      allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("HADRON_API_KEY").and_return(nil)
+    end
+
+    it "is unconfigured without a key, yet reachable while simulation is legal" do
+      allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return(nil)
+
+      expect(described_class.configured?).to be false
+      expect(described_class.simulation_allowed?).to be true
+      expect(described_class.verification_reachable?).to be true
+    end
+
+    it "becomes unreachable once the fail-closed flag shuts the simulator" do
+      allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+
+      expect(described_class.simulation_allowed?).to be false
+      expect(described_class.verification_reachable?).to be false
+    end
+
+    it "is reachable whenever a real key exists, flag or not" do
+      allow(ENV).to receive(:[]).with("HADRON_API_KEY").and_return("live-key")
+      allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+
+      expect(described_class.configured?).to be true
+      expect(described_class.verification_reachable?).to be true
+    end
+  end
+
   describe "#verify_investor!" do
     let(:tree) { create(:tree) }
     let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending") } }

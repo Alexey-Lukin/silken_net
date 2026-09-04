@@ -111,7 +111,21 @@ class EwsAlert < ApplicationRecord
     # (радіо живе), виключений з `critical_unmaintained?`. Машинного resolve НЕМА:
     # закрити може лише зміна конфігурації (стеля пристрою / каденс шлюза) або
     # присуд, що така відповідь на цьому залізі неможлива.
-    emergency_response_undeliverable: 15
+    emergency_response_undeliverable: 15,
+    # [SLASH-1 ⚖️ 2026-09-04] НАШ slash не доїхав on-chain (RPC-збій; `ambiguous`
+    # = міг піти в мемпул). Носій СВІДОМО новий, і підстава тут ГОСТРІША, ніж в
+    # actuator_stuck/emergency_response_undeliverable вище: доти ця подія їхала
+    # `system_fault`, тобто типом, що сидить у whitelist `comms_no_ack?` І поза
+    # виключеннями `critical_unmaintained?` — отже провал НАШОГО спалення
+    # створював алерт, який на наступному проході садив `penalty_factor`
+    # оператора рівно на стелю (1.0 + 0.5 + 0.5 = PENALTY_FACTOR_MAX). Це той
+    # самий self-ref, який уже лікували для `vandalism_breach` [P1-3], тільки
+    # винуватцем була платформа. Класифікація — дзеркало `actuator_stuck`:
+    # vendor-attributable (збій НАШ), не A-сет, не `comms_no_ack?` (whitelist —
+    # новий тип не входить сам), виключений з `critical_unmaintained?`.
+    # Машинного resolve НЕМА: закрити може лише людина, що звірила експлорер
+    # (для `ambiguous` це прямий припис — 06_08 §4).
+    slash_dispatch_failed: 16
   }, prefix: true
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.

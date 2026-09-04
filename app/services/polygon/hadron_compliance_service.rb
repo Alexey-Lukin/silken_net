@@ -20,6 +20,30 @@ module Polygon
 
     class ComplianceError < StandardError; end
 
+    # [ARCH.119 ⚖️ 2026-09-04] ДВІ ОСІ, доти дубльовані умовою у двох приватних
+    # методах. `configured?` — чи є РЕАЛЬНИЙ провайдер; `simulation_allowed?` — чи
+    # легальна заглушка; `verification_reachable?` — чи виклик здатен ЗАВЕРШИТИСЬ
+    # хоч якось. Гейт enqueue стоїть на ТРЕТЬОМУ: без провайдера (ARCH.118 —
+    # продукту не існує, статус не вийде з "pending" НІКОЛИ) кожна поставлена
+    # джоба лише проходить `retry: 5` у Dead Set, тобто це retry-драбина, не гард.
+    # ⛔ НЕ гейтуй на `configured?`: у dev/test заглушка легальна й мінт-демо
+    # тримається саме на ній — це купило б гейт ціною непрацездатного dev-тракту.
+    def self.api_key
+      ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
+    end
+
+    def self.configured?
+      api_key.present?
+    end
+
+    def self.simulation_allowed?
+      !(ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?)
+    end
+
+    def self.verification_reachable?
+      configured? || simulation_allowed?
+    end
+
     # Перевіряє KYC статус гаманця через Polygon Hadron Identity.
     # Оновлює wallet.hadron_kyc_status на 'approved' або 'rejected'.
     def verify_investor!(wallet)
@@ -73,14 +97,14 @@ module Polygon
     # дзеркало oracle_callbacks/helium_sos — прапор може дрейфнути з deploy-поверхні, production — ні;
     # інакше забутий прапор → simulate = fake-KYC approve → фродовий mint через kyc_approved_for_minting?).
     def check_kyc_status(crypto_address)
-      api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
+      key = self.class.api_key
 
-      if api_key.present?
-        perform_kyc_request(crypto_address, api_key)
-      elsif ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
-        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
-      else
+      if key.present?
+        perform_kyc_request(crypto_address, key)
+      elsif self.class.simulation_allowed?
         simulate_kyc_check(crypto_address)
+      else
+        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
       end
     end
 
@@ -88,14 +112,14 @@ module Polygon
     # дзеркало oracle_callbacks/helium_sos — прапор може дрейфнути з deploy-поверхні, production — ні;
     # інакше забутий прапор → simulate = fake-KYC approve → фродовий mint через kyc_approved_for_minting?).
     def register_rwa_asset(naas_contract)
-      api_key = ENV["HADRON_API_KEY"].presence || Rails.application.credentials.hadron_api_key
+      key = self.class.api_key
 
-      if api_key.present?
-        perform_asset_registration(naas_contract, api_key)
-      elsif ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?
-        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
-      else
+      if key.present?
+        perform_asset_registration(naas_contract, key)
+      elsif self.class.simulation_allowed?
         simulate_asset_registration(naas_contract)
+      else
+        raise ComplianceError, "hadron_api_key обов'язковий у production / WEB3_STRICT_MODE."
       end
     end
 

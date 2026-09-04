@@ -131,5 +131,6 @@ lv:
       queen_offline: Queen bezsaistē
       queen_uplink_lost: Zaudēta Queen augšupsaite
       severe_drought: Smags sausums
+      slash_dispatch_failed: Slash nosūtīšana neizdevās
       system_fault: Sistēmas kļūme
       vandalism_breach: Vandālisma ielaušanās

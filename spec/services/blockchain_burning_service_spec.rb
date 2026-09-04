@@ -558,7 +558,9 @@ end
 
         audit = BlockchainTransaction.where(sourceable: naas_contract).last
         expect(audit.status).to eq("manual_review")
-        expect(EwsAlert.last.alert_type).to eq("system_fault")
+        # [SLASH-1 ⚖️ 2026-09-04] Власний тип, не спільний кошик: наш RPC-збій
+        # більше не годує `comms_no_ack?`/`critical_unmaintained?` (self-ref → стеля pf).
+        expect(EwsAlert.last.alert_type).to eq("slash_dispatch_failed")
       end
 
       # [ARCH.48] Anti-double-burn invariant: once an ambiguous slash sits in :manual_review, a later
@@ -1039,6 +1041,36 @@ end
       it "keeps actuator_stuck out of the comms_no_ack? whitelist too (no double penalty)" do
         create(:ews_alert, cluster: cluster, severity: :critical,
                            alert_type: :actuator_stuck, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
+      # [SLASH-1 ⚖️ 2026-09-04] Провал НАШОГО спалення доти їхав `system_fault`,
+      # тобто типом, що сидить у whitelist `comms_no_ack?` І поза виключеннями
+      # `critical_unmaintained?` — отже наш RPC-збій садив множник оператора рівно
+      # на стелю (1.0 + 0.5 + 0.5 = PENALTY_FACTOR_MAX). Три приклади, бо регресія
+      # можлива трьома шляхами: повернути тип, зняти виключення, додати тип у
+      # whitelist — і кожен із них мовчазний.
+      it "excludes slash_dispatch_failed: our own failed burn is not operator negligence" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :slash_dispatch_failed, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:critical_unmaintained?)).to be(false)
+      end
+
+      it "keeps slash_dispatch_failed out of comms_no_ack? too (no self-referential uplift)" do
+        create(:ews_alert, cluster: cluster, severity: :critical,
+                           alert_type: :slash_dispatch_failed, status: :active, created_at: 1.hour.ago)
+        expect(service.send(:comms_no_ack?)).to be(false)
+      end
+
+      it "raises the failed-burn alert under its OWN type, never the shared system_fault basket" do
+        expect {
+          service.send(:handle_slashing_failure, "RPC timeout", 42.0)
+        }.to change(EwsAlert, :count).by(1)
+
+        alert = EwsAlert.order(:created_at).last
+        expect(alert.alert_type).to eq("slash_dispatch_failed")
+        expect(alert.message_key).to eq("burn_failure")
+        expect(service.send(:critical_unmaintained?)).to be(false)
         expect(service.send(:comms_no_ack?)).to be(false)
       end
 

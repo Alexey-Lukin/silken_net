@@ -332,7 +332,11 @@ class Wallet < ApplicationRecord
     self.hadron_kyc_status = "pending"
   end
 
+  # [ARCH.119 ⚖️ 2026-09-04] Дім гейта — `verification_reachable?` (сервіс);
+  # несконфігурована нога є retry-драбиною, не гардом.
   def enqueue_hadron_kyc_verification
+    return unless Polygon::HadronComplianceService.verification_reachable?
+
     HadronKycVerificationWorker.perform_async("Wallet", id)
   end
 end

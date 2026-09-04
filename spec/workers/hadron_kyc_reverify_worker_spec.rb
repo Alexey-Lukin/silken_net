@@ -105,5 +105,37 @@ RSpec.describe HadronKycReverifyWorker, type: :worker do
 
       expect(SilkenNet::Metrics::HADRON_KYC_PENDING_DEPTH).to have_received(:set).with(an_instance_of(Integer))
     end
+
+    # [ARCH.119] Гейт стоїть на РЕ-АРМІ, і його дві половини пінить пара нижче:
+    # драбина мовчить, лічильник беклогу — ні. Одного приклада замало саме тому,
+    # що наївний гейт на всьому `perform` пройшов би перший і завалив другий.
+    context "when the Hadron leg is unreachable (no provider, fail-closed env)" do
+      before do
+        allow(Rails.application.credentials).to receive(:hadron_api_key).and_return(nil)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("HADRON_API_KEY").and_return(nil)
+        allow(ENV).to receive(:[]).with("WEB3_STRICT_MODE").and_return("true")
+      end
+
+      it "re-arms nothing — an unconfigured leg is a retry ladder, not a guard" do
+        stale_pending(:wallet)
+        stale_pending(:organization)
+        allow(HadronKycVerificationWorker).to receive(:perform_async)
+
+        described_class.new.perform
+
+        expect(HadronKycVerificationWorker).not_to have_received(:perform_async)
+      end
+
+      it "still samples the depth gauge — the backlog alert must not go silent" do
+        stale_pending(:wallet)
+        allow(HadronKycVerificationWorker).to receive(:perform_async)
+        allow(SilkenNet::Metrics::HADRON_KYC_PENDING_DEPTH).to receive(:set)
+
+        described_class.new.perform
+
+        expect(SilkenNet::Metrics::HADRON_KYC_PENDING_DEPTH).to have_received(:set).with(an_instance_of(Integer))
+      end
+    end
   end
 end

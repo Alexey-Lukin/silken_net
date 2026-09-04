@@ -131,5 +131,6 @@ lt:
       queen_offline: Queen neprisijungęs
       queen_uplink_lost: Prarastas Queen ryšys
       severe_drought: Didelė sausra
+      slash_dispatch_failed: Slash siuntimas nepavyko
       system_fault: Sistemos gedimas
       vandalism_breach: Vandalizmo įsilaužimas

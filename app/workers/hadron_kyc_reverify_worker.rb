@@ -44,8 +44,21 @@ class HadronKycReverifyWorker
   def perform
     cutoff = STALE_THRESHOLD.ago
 
-    reenqueued = reenqueue_stale(Wallet, "Wallet", cutoff) +
-                 reenqueue_stale(Organization, "Organization", cutoff)
+    # [ARCH.119 ⚖️ 2026-09-04] Ре-арм гейтований ДОСЯЖНІСТЮ ноги; метрика — НІ.
+    # Без провайдера кожна переозброєна джоба лише проходить `retry: 5` у Dead Set
+    # (ARCH.118: адресата не існує), тобто прохід палить слот `web3_low` і не
+    # дренажить нічого. ⛔ Гейт НЕ сміє накрити `sample_pending_depth!`: це ЄДИНИЙ
+    # писач `silkennet_hadron_kyc_pending_depth`, а на ній стоїть алерт
+    # `sn-alert-hadron-kyc-backlog` із `noDataState: OK` — загейтований прохід
+    # замовкнув би рівно тоді, коли беклог росте.
+    reachable = Polygon::HadronComplianceService.verification_reachable?
+    reenqueued =
+      if reachable
+        reenqueue_stale(Wallet, "Wallet", cutoff) +
+          reenqueue_stale(Organization, "Organization", cutoff)
+      else
+        0
+      end
 
     sample_pending_depth!
 

@@ -112,7 +112,8 @@ module TreeChronicle
       "firmware_reverted"    => "\u23EE",
       "firmware_canary_trip" => "\u{1F424}",
       "actuator_stuck"       => "\u{1F527}",
-      "emergency_response_undeliverable" => "\u{1F6AB}"
+      "emergency_response_undeliverable" => "\u{1F6AB}",
+      "slash_dispatch_failed" => "\u{1F4B8}"
     }.freeze
 
     # Fail-open: невідомий тип малює generic-попередження, а не валить сторінку.
