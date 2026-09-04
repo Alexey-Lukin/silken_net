@@ -242,9 +242,10 @@
 
     # --- ЦИКЛ HADRON-KYC ВІДНОВЛЕННЯ (The Stuck-KYC Net) [ARCH.65] ---
     # HadronKycVerificationWorker enqueue'иться разово (after_commit на адресі) без
-    # exhausted-hook — API-простій усі 5 retry → KYC "pending" назавжди → mint-скіп
-    # тихо (WEB3_STRICT_MODE-гейт живий). Ця сітка періодично доверифіковує застряглі
-    # pending — auto-heal, коли Hadron оживе.
+    # exhausted-hook — вичерпані 5 retry → KYC "pending" → тихий mint-скіп.
+    # 🔴 [ARCH.118] модель «вендор лежить» СПРОСТОВАНО: продукту Polygon Hadron не
+    # існує, писач approved не має адресата, тож auto-heal неможливий за побудовою —
+    # сітка переозброює драбину в нікуди. Доля цього крону — ⚖️ 00_07 ARCH.119.
     hadron_kyc_reverify:
       cron: '50 * * * *' # Щогодини о :50
       class: HadronKycReverifyWorker

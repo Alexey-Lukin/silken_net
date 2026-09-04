@@ -102,7 +102,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-w3bstream-fallback | w3bstream SHA256 fallback > 0 | info | 5m |
 | sn-alert-gateway-flapping | gateways_offline_total increase > 2 за 30хв (нестабільний зв'язок, ARCH.54) | info | 5m |
 | sn-alert-filecoin-unarchived-backlog | filecoin_unarchived_depth sustained (Pinata-exhaustion backlog; INF.22 крок 11) | info | 1h |
-| sn-alert-hadron-kyc-backlog | hadron_kyc_pending_depth sustained[6h] (KYC backlog; ARCH.65, auto-heal) | info | 30m |
+| sn-alert-hadron-kyc-backlog | hadron_kyc_pending_depth sustained[6h] (бенефіціари, яких мінт скіпає щоцикл — KYC-провайдера не обрано; ARCH.118 / BIZ.20 — auto-heal НЕМОЖЛИВИЙ) | warning | 30m |
 | sn-alert-m2m-nonce-fallback | m2m_nonce_fallback increase[1h] > 0 (Redis→DB, S6.1) | info | 0m |
 | sn-alert-qatt-nonce-fallback | qatt_nonce_fallback increase[1h] > 0 (Redis→DB на батч-стрімі, S6.1) | info | 0m |
 | sn-alert-telemetry-volume-approaching | telemetry_processed increase[30d] > 30M (scale-двигун ⚖️ E.37) | info | 1h |

@@ -668,9 +668,9 @@ raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless teleme
 # (Organization АБО Wallet) → after_commit → HadronKycVerificationWorker →
 # HadronComplianceService (dev/no-key = simulate-approve; prod strict = реальний API);
 # зміна адреси скидає статус у pending (KYC чіпляється до адреси, ре-верифікація).
-# [ARCH.65] after_commit-enqueue разовий + retry:5 без exhausted-hook → Hadron-простій усі
-# 5 = pending НАЗАВЖДИ (тихий mint-skip); HadronKycReverifyWorker cron (:50) доверифіковує
-# застряглі pending (auto-heal, дім 06_08 §2.2).
+# [ARCH.65] after_commit-enqueue разовий + retry:5 без exhausted-hook → вичерпані 5 =
+# pending (тихий mint-skip); HadronKycReverifyWorker cron (:50) переозброює verify.
+# ⚠️ [ARCH.118] це НЕ auto-heal: писач approved адресата не має, дренаж неможливий.
 ```
 
 ⛔ **Преміса цього блоку СПРОСТОВАНА [ARCH.118 · ARCH.119, 2026-09-04], і механіка від того не змінилась — змінилось, що вона ЗНАЧИТЬ.** Модель була «Hadron-простій», вимір дав **неіснування вендора**: `Polygon::HadronComplianceService` є єдиним рантайм-писачем `hadron_kyc_status = "approved"`, а адресата в нього немає. Отже «auto-heal» щогодини переозброює драбину, якій нема куди дійти, і «тихий mint-skip» є не рідкісним крайовим випадком, а **постійним станом кожного custodial-бенефіціара**. Присуд про лік — [`00_07`](00_07_Action_Plan_Tracker) `ARCH.119` (⚖️ founder).

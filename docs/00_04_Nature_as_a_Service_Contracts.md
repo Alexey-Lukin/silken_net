@@ -268,15 +268,11 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 Застосункові ролі та їхній скоуп даних — дім [`04_03 §3`](04_03_REST_API_v1_Reference) (RBAC) + [`04_03 §3.1`](04_03_REST_API_v1_Reference) (acting-organization). Тут лише те, що несуче для NaaS: **скоуп даних відв'язано від ролі** — у контексті ОДНІЄЇ організації за раз працюють усі, включно з `super_admin`, який її лише перемикає. `NaasContractPolicy` не має super_admin-гілки взагалі: і `show?`, і `Scope` стоять на одній умові приналежності організації.
 
-**Права на смарт-контракт (Polygon):**
+**Права на смарт-контракт (Polygon) — дім [`05_03`](05_03_Tokenomics_SCC_and_SFC), тут НЕ дублюються.**
 
-| Роль | SCC `MINTER_ROLE` | SCC `SLASHER_ROLE` | SCC `DEFAULT_ADMIN_ROLE` | SFC `MINTER_ROLE` | SFC `SLASHER_ROLE` |
-|---|---|---|---|---|---|
-| Minter Oracle (`ORACLE_MINTER_PRIVATE_KEY`) | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Slasher Oracle (`ORACLE_SLASHER_PRIVATE_KEY`) | ❌ | ✅ | ❌ | ❌ | ✅ |
-| Platform Admin (`ADMIN_ADDRESS`) | ❌ | ❌ | ✅ | ❌ (окремий admin) | ❌ |
-
-> ✅ **B-02 ВИРІШЕНО (2026):** SCC та SFC контракти приймають `minterOracle` і `slasherOracle` як **окремі параметри конструктора** ([`05_03 §SCC Constructor`](05_03_Tokenomics_SCC_and_SFC), рядки 108-111). Backend використовує два фізично розділені приватні ключі — `ORACLE_MINTER_PRIVATE_KEY` у `BlockchainMintingService` (`app/services/blockchain_minting_service.rb`) та `ORACLE_SLASHER_PRIVATE_KEY` у `BlockchainBurningService` (`app/services/blockchain_burning_service.rb`). Компрометація одного гаманця не дає повного контролю над токеноекономікою — мінтер не може спалити, слешер не може емітувати. Легасі спільний `ORACLE_PRIVATE_KEY` **retired повністю [INF.22, 2026-07-10]**: кожен aux-підписант (Celo/Etherisc/PuroEarth/Klima) має власний dedicated-ключ, а `Security::Web3NetworkGuard` відмовляє значенню під старим ім'ям.
+> 🏠 **One-Home:** матриця дозволів, ієрархія ролей SCC/SFC, розподіл ключів і **реєстр стоячих повноважень після деплою** живуть у [`05_03`](05_03_Tokenomics_SCC_and_SFC) (§Ієрархія Ролей · §Матриця Дозволів · §Admin-Role Split · §Стоячі повноваження [ARCH.112]) — реєстр домів [`00_06 §2`](00_06_SSOT_Documentation_Standard). Несуче для NaaS лишається одне: **`mint()` і `slash()` підписують ФІЗИЧНО РІЗНІ ключі** (`ORACLE_MINTER_PRIVATE_KEY` ⊥ `ORACLE_SLASHER_PRIVATE_KEY`, E.2) — компрометація одного не дає повного контролю над токеноекономікою; легасі спільний `ORACLE_PRIVATE_KEY` retired повністю [INF.22].
+>
+> ⛔ **Не заводити тут другу матрицю on-chain ролей — виміряно й відкинуто.** Копія старіє **лише в бік «менше ролей, ніж насправді»**: ролі роздають окремими комітами, а перелік пишуть один раз. Конкретно: `ADMIN_ADDRESS` (Gnosis Safe) тримає **`PAUSER_ROLE`**, а `DEFAULT_ADMIN_ROLE` на токенах — **Timelock** (`contracts/script/Deploy.s.sol`); зворотне твердження описує рівно ту конфігурацію, яку [`05_03 §Admin-Role Split`](05_03_Tokenomics_SCC_and_SFC) називає ЗАГРОЗОЮ («ключ у Safe без затримки → миттєвий катастрофічний mint»).
 
 ---
 

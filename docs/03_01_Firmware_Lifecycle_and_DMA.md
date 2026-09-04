@@ -1209,26 +1209,11 @@ HAL_CRYP_Init(&hcryp);
 
 Без цього відновлення всі наступні LoRa-пакети від Soldiers будуть розшифровані неправильно до наступного ребуту Queen.
 
-**HRNG IV Generation — "Wu-Wei" паттерн:**
+**CoAP batch-IV — дім [`03_05 §4`](03_05_Hardware_Symmetric_Crypto_and_Security) (механіка) + [`03_05 §HRNG Fallback`](03_05_Hardware_Symmetric_Crypto_and_Security) (присуд), тут НЕ дублюється.**
 
-```c
-// [FIX: R-16] Стара вразливість: IV = HAL_GetTick() (детермінований, передбачуваний).
-// Нова версія: апаратний TRNG, з fallback XOR-маскою при відмові HRNG.
-uint32_t batch_iv[4];
+Нормальний шлях — апаратний HRNG (CSPRNG): `HAL_RNG_Init` безпосередньо перед використанням, `HAL_RNG_DeInit` одразу після (нульовий струм сну) — це firmware-специфічна частина, і вона лишається тут. **Сам fallback при відмові HRNG — не тут:** чинна конструкція є **key-derived PRF** `coap_fallback_iv()` (HMAC-SHA256 над `label ‖ uid_hash ‖ unix_ts ‖ flush_seq ‖ tick`, `firmware/queen/coap_iv.h`).
 
-hrng.Instance = RNG;
-HAL_RNG_Init(&hrng);                                    // Init безпосередньо перед використанням
-
-for (uint8_t i = 0U; i < 4U; i++) {
-    if (HAL_RNG_GenerateRandomNumber(&hrng, &batch_iv[i]) != HAL_OK) {
-        batch_iv[i] = HAL_GetTick() ^ (i * 0x5A5A5A5AUL); // Fallback: tick XOR index mask
-    }
-}
-
-HAL_RNG_DeInit(&hrng);                                  // DeInit одразу після — нульовий струм сну
-```
-
-**Чому XOR-маска, а не просто tick?** При відмові HRNG кожен з 4 IV-слів отримує різну маску (`0x00000000`, `0x5A5A5A5A`, `0xB4B4B4B4`, `0x0F0F0F0F`). Це запобігає ситуації де всі 4 слова IV ідентичні навіть при однаковому tick.
+> ⛔ **Не відтворювати тут XOR-маску `tick ^ (i * 0x5A5A5A5A)` — виміряно й відкинуто [SEC.12, 2026-06-15].** Вона давала IV **унікальність**, але не **непередбачуваність**: `HAL_GetTick` спостережуваний, маски константні, тож зловмисник без ключа вгадував IV. Ключ-деривована форма дає обидві властивості в чистому софті (`silken_sha256.h`, FW.30) — без AES-engine, без SEC.8 ECB-restore-танцю і без bench-гейта. **Опис із розділом «чому саме так» тут коштує найдорожче: він читається як чинна рекомендація на грошовому CoAP-каналі.**
 
 ---
 

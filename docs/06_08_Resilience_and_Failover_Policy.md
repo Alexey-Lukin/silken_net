@@ -200,7 +200,7 @@ Soldier'и **не знають**, що "їх" Queen впала. Вони про�
 **PATH 1 закривати відмовлено (founder-присуд 2026-07-19, ARCH.53 §🗄️):** superseded by Merkle-lineage (ARCH.12/MRV.1 — аудитор верифікує кредит проти якорених вимірів офлайн; DON засвідчував би *обчислення*, не *походження даних*). Технічний шлях (Functions JS-source + consumer `fulfillRequest` + relayer + git-воскресіння on-chain гілки з Router ABI registry + bytecode probe + ARCH.49 nonce-lock) — історична нотатка. Manual bypass (`OracleManualFulfillmentService`, super_admin, реліз-тег для аудиту) — так само майбутнє, не реалізовано.
 
 **Hadron — чому «просто вимкнути суворий режим» НЕ є ліком.**
-`hadron_kyc_status` не виходить із `pending` **ніколи** (§6), тож у проді approved-гаманців не буває взагалі, і «існуючі approved не зачеплено» тут порожнє. 🔴 **Hot-fix `WEB3_STRICT_MODE=false` НЕ ПРАЦЮЄ, і це не протухання, а свідоме загартування [INF.11 2026-07-10]:** умова в коді — `ENV["WEB3_STRICT_MODE"] == "true" \
+`hadron_kyc_status` не виходить із `pending` **ніколи** ([`05_02 §Крок E`](05_02_Proof_of_Growth_Pipeline)), тож у проді approved-гаманців не буває взагалі, і «існуючі approved не зачеплено» тут порожнє. 🔴 **Hot-fix `WEB3_STRICT_MODE=false` НЕ ПРАЦЮЄ, і це не протухання, а свідоме загартування [INF.11 2026-07-10]:** умова в коді — `ENV["WEB3_STRICT_MODE"] == "true" || Rails.env.production?`, тож у проді другий диз'юнкт істинний **завжди** і `raise` лишається; заглушку не вмикає ніщо (інакше забутий прапор = fake-KYC mint). ⛔ Не «полагодити», давши прапорцю силу. Шлях розблокування один — реальний провайдер ([`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`); будь-яке **ручне проставляння статусу є актом L0-довіри** і потребує власного присуду й аудит-сліду, а не рядка в таблиці деградації.
 
 ⚠️ **Solana, компенсаційна нога:** при простої рейки user-experience тримається тим, що **winnings накопичуються в Polygon SCC** — USDC доганяє потім. ⛔ Мігруючи цей факт, СВІДОМО не перенесено «`Solana::CatchupWorker` (запланувати)»: класу з таким іменем у дереві **не існує жодного разу**, а DR-таблиця подавала його як чинний escalation-шлях. Реальний durable-механізм — intent-marker + hourly reconcile (`BatchPayoutService`), і він уже описаний рядком Solana у §2.2.
 
@@ -292,9 +292,9 @@ end
 2. **Per-chain RPC redundancy:** мінімум **3 провайдери** на кожен `Web3::ResilientClient` (Primary/Secondary/Public) — саме ця трійка дає сенс порогу `MAX_FAILURES = 3` у §2.1.
 3. **Status page** (публічний Grafana-дашборд або Statuspage.io) — індикатор для community + B2B; оновлюється з метрики `silkennet_rpc_circuit_breaker_open`.
 4. **Chaos Engineering** [E.27] — post-TRL 7: періодично симулювати chain-outage на canopy (`SOLANA_RPC_URL=invalid`), фіксувати поведінку, тримати рунбук чинним.
-5. **Runbook per chain:** для кожної ланки задокументовано detection signal · Grafana-алерт · immediate action (≤15 хв) · escalation (>1 год) · recovery. ⚠️ Ця частина **операційна (адмін)**, не код — рунбуки живуть у §4.
+5. **Runbook per chain:** задум — на кожну ланку detection signal · Grafana-алерт · immediate action (≤15 хв) · escalation (>1 год) · recovery. Ця частина **операційна (адмін)**, не код. ⚠️ **Такої матриці сьогодні НЕМА, і §4 нею не є:** там сім рунбуків за **класом ПОДІЇ** (reorg · double-mint · компрометація ключа · `manual_review` · contract-ops · field-audit · archive-batch), вони покривають ≤2 ланки з 11 і пʼятипольної структури не несуть.
 
-⚠️ **Пункти 1–4 є ЦІЛЯМИ, не станом:** жоден із них не має носія в CI, і §2.4а («свідомі НЕ-цілі») їх не покриває, бо вони не відкинуті — просто ще не збудовані.
+⚠️ **Усі пʼять є ЦІЛЯМИ, не станом:** жоден із них не має носія в CI, і §2.4а («свідомі НЕ-цілі») їх не покриває, бо вони не відкинуті — просто ще не збудовані.
 
 ---
 

@@ -578,7 +578,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | **Phase 1** | LTE-M (наземні вишки) | ❌ | Там де є 4G | ~370 мВт | ~$10–30 (SIM) |
 | **Phase 2.5** | Starlink DTC (Київстар) | ❌ | Розширене (DTC footprint) | ~370 мВт | ~$10–30 (SIM) |
 | **Phase 3** | Starlink Mini | ✅ ($599 одноразово) | Глобальне | 20–40 Вт | ~$50/міс |
-| **Phase 4 (Backup)** | Helium Network (HNT) — **Queen-side LoRaWAN** | ❌ | Там де є hotspot-и Helium (~15 км) | ~37 мВт (SF9, агрегат-frame) | частки цента/frame |
+| **Phase 4 (Backup)** | Helium Network (HNT) — **Queen-side LoRaWAN** | ❌ | Там де є hotspot-и Helium (~15 км) | **не виміряно** — ⛔ не підставляти число з моделі «агрегат-frame»: її відкинуто 2026-07-03, канал є SOS-only 12 B про саму Королеву ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)); і `SF9` тут неможливий — 15 км у колонці зліва потребує **SF12** (§6.1) | частки цента/frame |
 
 **Рекомендація:** Розпочати з Phase 1, перейти на Phase 2.5 (без апаратних змін!) для лісів поза 4G-покриттям. Phase 3 — лише для Амазонії, Тайги, Африки де DTC недоступний.
 
@@ -631,7 +631,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 Queen переходить у Helium режим автоматично коли:
 1. Власний Starlink/LTE-M uplink fail після N retry (`L1 → L2` exhausted)
 2. Queen-to-Queen LoRa backhaul (SF12) не знаходить online-сусіда у радіусі 5–15 км
-3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink)
+3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink). ⚠️ **Ця третя умова у Trigger дому ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)) ВІДСУТНЯ, і розходження несуче в обидва боки:** читач [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) чекає спрацювання L3 від самих лише «Starlink/LTE down + Q2Q недоступний», а тут воно ще й гейтоване заповненням. ⊕ Арифметика гейта має власну стелю: `fill_pct = cache_count * 100 / CACHE_MAX_ENTRIES` при `CACHE_MAX_ENTRIES = 50`, а CIFO дедуплікує за UID — отже **при менш ніж 26 РІЗНИХ Солдатах у кеші поріг 50 % недосяжний за побудовою**, і SOS не стрельне ніколи. Для пілотних кластерів це означає, що умова 3 не є запобіжником, а глушником.
 
 ```c
 // firmware/queen/main.c + queen/helium_sos.h — SHIPPED (owned-обв'язка, 2026-07-04).
@@ -695,7 +695,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |
 | Soldier-side `helium_compat_emit()` (попередній план) | ❌ **Відкинуто** — фундаментально несумісно з flash/RAM/topology constraints STM32WLE5JC у Soldier |
 
-> **Стратегічна цінність:** Helium перетворює систему на фізично невбивану мережу. Навіть якщо всі власні Starlink-канали Queen упадуть одночасно з Q2Q backhaul — Queen продовжуватиме кричати SOS через чужі Helium hotspot-и, а телеметрія чекатиме у Flash-ринзі. Для pitch deck: _"The forest cannot go dark — even when our own sky falls, the Helium hotspots of strangers keep the canopy alive."_
+> ⚖️ **Цінність каналу — ратифіковано founder 2026-08-30, і присуд ЗВУЖУЄ те, що тут стояло раніше** (дім — [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) рівень L3). **Цінність L3 — не гарантія доставки, а дискримінація двох РІЗНИХ виїздів:** dead-man switch бачить лише ТИШУ, а SOS розрізняє її причину («ремонтуй модем» ⊥ «шукай вкрадену Королеву»); для лотерейного каналу навіть 20 % шансу докричатись > 0 %. **Helium = перший LNS, а не архітектура:** стек (`lorawan_glue` + повний MAC) працює з будь-якою LoRaWAN-мережею (TTN · приватний ChirpStack · роумінг-оператори) — помре Helium, перечіпляємо LNS, прошивку не переписуємо. ⛔ **Не описувати цей канал як гарантію доставки** («фізично невбивана мережа», «the forest cannot go dark») — твердження хибне за побудовою: телеметрія Солдатів у Flash-ринзі має рівно один вихід — L4 (виїзд лісника), — а каналу L4 сьогодні не існує, тож алерт летить, а дренаж не відбувається ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)). 👤 Перед Phase 1 — Helium Explorer по зоні Черкаського бору: якщо хотспотів нуль, канал є **географічною лотереєю**, активною лише в кластерах із покриттям.
 
 ---
 

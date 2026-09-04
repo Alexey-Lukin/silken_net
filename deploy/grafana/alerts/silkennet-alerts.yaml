@@ -2257,12 +2257,15 @@ groups:
 
       # -----------------------------------------------------------------------
       # P2: Hadron KYC backlog застряг — pending KYC не дренажиться ≥6h (Hadron API
-      # down). Кошти НЕ заблоковані (mint-SKIP бенефіціара, auto-heal через ARCH.65
-      # HadronKycReverifyWorker) → info, не warning. min_over_time[6h] відрізняє
+      # 🔴 [ARCH.118] МОДЕЛЬ «вендор лежить» СПРОСТОВАНО: продукту Polygon Hadron не існує,
+      # єдиний писач `approved` не має адресата, тож auto-heal через ARCH.65 НЕМОЖЛИВИЙ за
+      # побудовою. Наслідок для severity: кожен бенефіціар у цьому лічильнику випадає з
+      # мінт-батча ЩОЦИКЛ (5 хв) і не повернеться сам → warning, не info. Розблокування —
+      # вибір реального KYC-провайдера (00_07 BIZ.20). min_over_time[6h] відрізняє
       # sustained-backlog від нормального in-flight KYC. Поріг = placeholder, калібрується live.
       # -----------------------------------------------------------------------
       - uid: sn-alert-hadron-kyc-backlog
-        title: "ℹ️ Hadron KYC backlog stuck (sustained ≥6h)"
+        title: "⚠️ KYC backlog: бенефіціари випадають з мінту (провайдера не обрано, ≥6h)"
         condition: C
         data:
           - refId: A
@@ -2293,11 +2296,11 @@ groups:
         execErrState: Error
         for: 30m
         annotations:
-          summary: "Hadron KYC backlog = {{ $values.B.Value | printf \"%.0f\" }} гаманців/орг застрягли pending ≥6h."
-          description: "Hadron KYC-verify не дренажить pending-статуси (API down/slow). Кошти НЕ заблоковані — mint цих бенефіціарів SKIP'иться щоцикл (Wallet#kyc_approved_for_minting?), auto-heal через HadronKycReverifyWorker (:50) коли Hadron оживе — РУЧНА дія НЕ потрібна, лише перевір Hadron API status. Sustained ≥6h = API стійко лежить. Поріг калібрується live (нуль KYC-трафіку на TRL-3). ARCH.65 / 05_02."
+          summary: "KYC pending = {{ $values.B.Value | printf \"%.0f\" }} гаманців/орг ≥6h — стільки бенефіціарів мінт скіпає щоцикл."
+          description: "KYC-провайдера НЕ ОБРАНО [ARCH.118]: продукту Polygon Hadron не існує, єдиний писач hadron_kyc_status=approved не має адресата. Отже статус не вийде з pending сам, і mint цих бенефіціарів SKIP'иться щоцикл (Wallet#kyc_approved_for_minting?) — auto-heal через HadronKycReverifyWorker (:50) НЕМОЖЛИВИЙ. ⛔ НЕ перевіряй Hadron API status (адреси не існує) і ⛔ НЕ проставляй статус руками: це акт L0-довіри, що потребує власного присуду й аудит-сліду (06_08 §2.2б). Єдине розблокування — вибір реального провайдера, 00_07 BIZ.20. Поріг калібрується live (нуль KYC-трафіку на TRL-3). ARCH.119 / 05_02."
           runbook_url: "docs/05_02_Proof_of_Growth_Pipeline.md"
         labels:
-          severity: info
+          severity: warning
           component: web3
           team: ops
 

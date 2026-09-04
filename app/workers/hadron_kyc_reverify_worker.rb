@@ -6,15 +6,22 @@
 # = ===================================================================
 # `HadronKycVerificationWorker` (retry:5) НЕ має `sidekiq_retries_exhausted` і
 # enqueue'иться ЛИШЕ разово — `after_commit` на біндингу/зміні crypto_public_address
-# (Wallet / Organization). Якщо Hadron API лежить усі 5 спроб → job осідає в
-# Dead Set → `hadron_kyc_status` лишається "pending" НАЗАВЖДИ (cron re-verify не
-# було), а mint-гейт `Wallet#kyc_approved_for_minting?` щоцикл (MintBatchCollectorWorker,
-# 5хв) мовчки скіпає pending-tx цього бенефіціара — без escalation/alert. У prod
-# (WEB3_STRICT_MODE) гейт живий (не simulate-approve), тож застрягання РЕАЛЬНО
-# блокує mint коштів на невизначений час.
+# (Wallet / Organization). Вичерпані 5 спроб → job осідає в Dead Set →
+# `hadron_kyc_status` лишається "pending", а mint-гейт `Wallet#kyc_approved_for_minting?`
+# щоцикл (MintBatchCollectorWorker, 5хв) мовчки скіпає pending-tx цього бенефіціара —
+# без escalation/alert і без власного лічильника скіпів.
 #
-# Ця сітка дає періодичний auto-heal: коли Hadron оживе, застряглі "pending"
-# доверифіковуються наступним прогоном. Re-enqueue ідемпотентний
+# 🔴 МОДЕЛЬ ЦІЄЇ СІТКИ БУЛА «ВЕНДОР ЛЕЖИТЬ» — ВИМІР ДАВ «ВЕНДОРА НЕ ІСНУЄ» [ARCH.118,
+# 2026-09-02]. Продукту «Polygon Hadron» публічно немає (нуль A-записів у авторитетній
+# зоні на двох незалежних DoH-резолверах, нуль знімків Wayback, compliance-доки Polygon
+# Labs називають Sumsub/Onfido/Persona). `Polygon::HadronComplianceService` є ЄДИНИМ
+# рантайм-писачем `hadron_kyc_status = "approved"`, і адресата в нього немає — отже
+# статус не виходить із "pending" НІКОЛИ, а не «поки вендор лежить». Тобто сітка
+# щогодини переозброює драбину, якій нема куди дійти, а тихий mint-skip є не рідкісним
+# крайовим випадком, а ПОСТІЙНИМ станом кожного custodial-бенефіціара.
+# Шлях розблокування один — реальний провайдер (00_07 BIZ.20); присуд про долю самої
+# сітки (зняти / перецілити / гейтувати `configured?`) — 00_07 ARCH.119 (⚖️ founder).
+# Re-enqueue лишається ідемпотентним
 # (`HadronComplianceService` повторний виклик безпечний; скоуп лише "pending" —
 # approved/rejected не чіпаємо). Backlog-видимість = gauge `silkennet_hadron_kyc_pending_depth`.
 class HadronKycReverifyWorker
@@ -28,9 +35,10 @@ class HadronKycReverifyWorker
   # (не свіжо-створені, ще в первинному verify-циклі).
   STALE_THRESHOLD = 1.hour
 
-  # Стеля re-enqueue за прогін (на модель) — тривалий Hadron-даунтайм міг накопичити
-  # великий backlog; oldest-first дренаж послідовними cron'ами замість flood проти
-  # щойно-оживаючого API (дзеркало `CeloRewardReconcileWorker`).
+  # Стеля re-enqueue за прогін (на модель) — oldest-first дренаж послідовними cron'ами
+  # замість flood (дзеркало `CeloRewardReconcileWorker`). ⚠️ Підставою був «тривалий
+  # Hadron-даунтайм»; після ARCH.118 підстава інша — стеля обмежує ціну прогону,
+  # який за побудовою нічого не дренажить, доки провайдера не обрано.
   BATCH_LIMIT = 500
 
   def perform
@@ -44,7 +52,7 @@ class HadronKycReverifyWorker
     return unless reenqueued.positive?
 
     Rails.logger.warn "🛡️ [ARCH.65] Re-verify #{reenqueued} застряглих pending Hadron-KYC " \
-                      "(auto-heal після відновлення API)."
+                      "(KYC-провайдера не обрано — 00_07 BIZ.20; дренажу не буде)."
   end
 
   private
@@ -64,8 +72,9 @@ class HadronKycReverifyWorker
   end
 
   # Backlog-видимість (симетрія з Celo `manual_review_depth`): ВЕСЬ pending-пул,
-  # не лише stale — показує, скільки KYC чекає, поки Hadron лежить. Семплиться раз
-  # на прогін (:50 щогодини); тренд достатній для операторського сигналу.
+  # не лише stale. ⚠️ Сьогодні це не «черга, що чекає вендора», а лічильник
+  # бенефіціарів, яких мінт скіпає ЩОЦИКЛ — KYC-провайдера не обрано (00_07 BIZ.20).
+  # Семплиться раз на прогін (:50 щогодини).
   def sample_pending_depth!
     depth = Wallet.where(hadron_kyc_status: "pending").count +
             Organization.where(hadron_kyc_status: "pending").count

@@ -775,10 +775,10 @@ Factory Flashing (поточна Гілка A, TRL 6/7 — pilot ≤ 10k):
   STM32 ← HKDF(PROVISIONING_MASTER_KEY, device_uid, "silken-aes-128-lora-key") → aes_key[4]
   ST-Link/SWD → Flash aes_key до Protected Sector → RDP Level 2 Lock
 
-Цільова Гілка B (post-bench, mass production > 10k — ARCH.42 enabler):
-  ATECC608B Slot 0 (AES-128) → ключ ніколи не покидає кремній SE
-  STM32WLE5JC ↔ ATECC608B через I²C (PB6/PB7) → atcab_aes_encrypt() для LoRa CCM
-  Defense-in-depth: ATECC data zone lock + STM32 RDP Level 2 → DPA/EM/glitch resilient
+Цільова Гілка B (post-bench, mass production > 10k) — SE05x, baseline SE051C2:
+  ⚠️ SE = ІДЕНТИЧНІСТЬ (Ed25519 attestation, SEC.6), НЕ носій LoRa-ключа:
+  SLOT 0 (AES LoRa) пост-SEC.14 у SE НЕ пишеться — ключ лишається у protected Flash.
+  Повна послідовність обох гілок — дім 03_06 §1; рядок нижче = legacy ATECC-патерн.
 ```
 
 ---
@@ -1079,26 +1079,11 @@ atca_status_t status = atcab_aes_encrypt(
 
 **Open-for-eval (папери НЕ закрили):** cold-boot час+заряд (обидва чипи — платформа спільна) · латентності Ed25519-sign / AES-APDU через T1oI2C · applet-3.x EdDSA erratum (Errata sheet недоступний онлайн) · **ціна/сток SE051C2** (DigiKey — звірити при замовленні; SE050C2 = $2.50/1k відомий) · AN12973 конфіг-деталі SE051 A-vs-C · наявність офіційного OM-SE051ARD (fallback = Mikroe SE051 Click) · pin-звірка SE050↔SE051 при KiCad footprint · точний nano-package footprint на Cortex-M.
 
-**Factory Flashing impact (cross-ref 03_06 §1):**
+**Factory Flashing impact — дім [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning), тут НЕ дублюється.**
 
-При інтеграції ATECC608B пайплайн виглядає так:
-
-```
-[Завод]
-  1. Reflow PCBA (ATECC608B запаяний, але config zone не locked)
-  2. Power-up → STM32 talks to ATECC608B over I²C
-  3. STM32 → backend: POST /provisioning/register {device_uid}
-  4. Backend → returns: {aes_key, ecc_keypair, cert_chain}
-  5. STM32 → ATECC608B: write Slot 0 (AES), Slot 1 (ECC), Slot 2 (cert)
-  6. STM32 → ATECC608B: LOCK config zone + data zone (irreversible на ASIC рівні)
-  7. STM32CubeProgrammer → RDP Level 1 (на самому MCU)
-  8. Final: пакування, лак (shipping-mode ✂️ не потрібен — §3.5)
-```
-
-**Подвійний lock (defense in depth):**
-- ATECC608B: data zone locked → ключі неможливо ні прочитати, ні переписати
-- STM32 RDP Level 1/2: SWD заблоковано → firmware не можна змінити
-
+> 🏠 **One-Home:** послідовність провіжну (обидві гілки), запис слотів, порядок lock-ів і подвійний lock живуть у [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning). Тут лишаються **latency / power / cost** ATECC-патерну — [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) явно називає їх дзеркалом із домом ТУТ.
+>
+> ⛔ **Не відтворювати тут крокову послідовність провіжну — виміряно й відкинуто.** Дві копії розійшлись на найдорожчій осі, яку тільки має цей тракт: **чи AES-ключ їде мережею**. Дім відповідає ні («Жоден ключ не летить мережею»; провіжн — **host-side one-pass [FW.54]**, без network round-trip; `SLOT 0 (AES LoRa)` пост-SEC.14 не пишеться взагалі), і §3.2 цього ж файла каже те саме `(Zero-Trust: aes_key НЕ повертається у відповіді)`. **Копія крокового опису тут не має чим лишатись правдивою, тож її місце — у [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning), і лише там.**
 **Дорожня карта:**
 
 - [ ] 👤 SE050 footprint + I²C placement у KiCad floorplan (soft-freeze DNP — ADR угорі §3.7) — дім роботи [`00_07` — HW.9](00_07_Action_Plan_Tracker) (PCB layout)
