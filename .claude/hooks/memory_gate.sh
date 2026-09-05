@@ -160,7 +160,14 @@ SELF=${BASH_SOURCE[0]:-$0}
 # Що зроблено ПЕРШ ніж бампати (важіль (1), не пропущений): чотири гачки стиснуто, стан
 # дня деплою відправлено у `log_deploy_hole_hunt` замість індексу, індекс упав із +352 до
 # +200 ПОПРИ дописаний сьогодні зміст. Тобто бамп фіксує досягнуте, а не створює запас.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-24880}
+# 2026-09-05: 24880 → 25194 (+314) — новий дім `user_omega_point_vector` (hub-inline під
+# 👤-рядком, ВЛАСНОГО рядка не діставши — дешевший важіль спрацював) ⊕ закритий
+# роутинг-розрив: рядок `project_mission_criterion` тепер називає таксономію
+# `СЛОВО ⊥ КОЛОНКА ⊥ ФОЛБЕК`, яка лежала в тому файлі невидимою для сканера індексу
+# (аудит 09-05: два накладені розриви на одну цінну таксономію). Заплачено ДО бампу —
+# 10 стискань мета-шуму («durable-класи у файлі», «in-file») на −68 B; решта = те, що
+# новий дім і новий роутер структурно коштують.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25194}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -402,7 +409,12 @@ index_reach_expected() {
 # стиснуто до ~270 ПЕРЕД бампом (прецедент вище: спершу компресія власного, ніколи підрізка
 # чужого — це і є manufactured-cleanup, який корпус забороняє). Залишок = те, що новий дім
 # структурно коштує.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44128}
+# 2026-09-05: 44128 → 44178 (+50) — той самий новий дім. Опис написано на ~440 B і
+# стиснуто до ~210 ПЕРЕД бампом; ⊕ два чужі описи скорочено НЕ підрізкою, а виселенням
+# переліку в тіло (`feedback_one_token_two_domains` — таксономія двох ніг;
+# `feedback_rule_needs_a_carrier` лишився недоторканим). Прецедент вище тримає: спершу
+# компресія власного, і лише залишок іде в базу.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44178}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
