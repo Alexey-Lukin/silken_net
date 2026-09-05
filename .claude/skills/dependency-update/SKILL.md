@@ -314,7 +314,8 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
 - **Transitive caps block "latest" — and that's not our drift.** A bump can be held back by a
   depending gem's constraint; document the blocker, don't force it (forcing breaks the holder):
   seen this session — `eth` caps openssl `~>3.3` + bigdecimal `~>3.1`; `rbsecp256k1` caps
-  rubyzip `~>2.3`; `lookbook` caps rouge `<5.0` + htmlentities `~>4.3.4`; `rspec` caps
+  rubyzip `~>2.3`; ~~`lookbook` caps rouge `<5.0` + htmlentities `~>4.3.4`~~ — 🔴 **RELAXED BY THE HOLDER'S OWN 2.3.15 RELEASE (2026-09-05): `rouge (<6.0)`, `htmlentities (~> 4.3)`, `marcel (>= 1.0)`.** The lesson outlives this row: **a transitive cap is SOMEBODY ELSE'S constraint line — it loosens silently on THEIR release, while we keep it recorded as state and never re-measure.** So re-check every cap the moment its HOLDER is bumped, not when you happen to remember; here one routine patch quietly unblocked two majors. ⛔ And «the cap fell» is not «take it»: `rouge` 5.x / `marcel` 2.x stayed unbumped that day precisely because the founder bar wants each major's changelog read first — taking them because they became reachable is the «newer = better» this skill forbids.
+  `rspec` caps `rspec` caps
   diff-lcs `<2.0`; **TF** caps h5py `<3.15`; `conda-lock` caps dulwich `<0.25` while the
   PYSEC-2026-2462..66 fix lives only in 1.2.5 (documented blocker in requirements-conda-lock.in;
   Scorecard alert → owner dismiss-with-reason — re-check on every conda-lock bump). Detect with
