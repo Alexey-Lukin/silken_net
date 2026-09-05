@@ -216,6 +216,19 @@ jobs:
         # no assert anywhere). §01a vilize 2026-07-14.
         run: ruby scripts/cem_canon_sync.rb
 
+      - name: 00_07 volatile counter in prose (DOC-T.99 — HARD ⚖️ founder 2026-09-05)
+        # Pure Ruby, no Rails — a number + a MOVING-SET noun (ніг · носіїв · ланок ·
+        # сайтів · поверхонь) inside `**Стан:**` or a WATCH line. Judges FORM, never
+        # truth: a counter that is right today lies tomorrow, and the reader has no
+        # reason to re-check. The rule sat in 00_06 §3 for a year and never fired —
+        # it named only «тестів»/«рядків коду» while the drift arrives as «три ноги».
+        # ⚖️ HARD from day one of the green set, deliberately: the sibling advisory
+        # row in §3 already carries the measured verdict «advisory = ніхто не читає».
+        # Exceptions are the corpus's own language (ISO date = report · «quotes» =
+        # citation · «стал*»/«вендорськ*» = declared constant), so nobody is forced
+        # to annotate what is genuinely frozen.
+        run: ruby scripts/tracker_volatile_counter_check.rb --strict
+
       - name: Guard-registry ⟷ code sync (DOC-T.40 — 00_06 §3 rots one-way)
         # Pure Ruby, no Rails — every docs_check run-step / docs.rake failed-label /
         # tracker.rake guard maps to a 00_06 §3 row; files cited in §3 exist;
