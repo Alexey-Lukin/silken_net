@@ -237,6 +237,22 @@ env:
     # `CeloRewardWorker` raised CheckSumError ×4 into Sentry per healthy cluster per day; the
     # boot guard now refuses an ARMED Celo path with a placeholder here (E.49's sibling).
     CELO_CUSD_CONTRACT_ADDRESS: "0xEF4d55D6dE8e8d73232827Cd1e9b2F2dBb45bC80"
+    # 🕸️ [DEPLOY-1 Фаза 2t] Studio-endpoint субграфа `silkennet-amoy`, задеплоєного
+    # 2026-09-05 (три data-source на Amoy-адресах броадкасту 09-01, `_meta` віддає
+    # `hasIndexingErrors: false`). Доти `TheGraph::QueryService.configured?` був false,
+    # і обидва контролерні сайти чесно віддавали «не виміряно» [ARCH.119] — тобто це
+    # не фікс порожнечі, а її наповнення; порожнеча була чесна.
+    # 🔴 `version/latest`, а НЕ `/v0.0.1` — і це не стиль: пін на версію робить кожен
+    # майбутній `graph deploy` ТИХО НЕДІЄВИМ (стара версія лишається живою й відповідає
+    # 200, тож ніщо не червоніє). Перевірено обидві форми: гола, без `/version/…`,
+    # віддає `{"message":"Not found"}`.
+    # ⚠️ Дім = `env.clear` СВІДОМО: Studio-dev endpoint keyless (запитаний без
+    # авторизації), а `deploy_secret_scan` SECRET_NAME ловить `_RPC_URL`/`REDIS_URL`,
+    # не голий `_URL`. ⛔ І це ТРЕТІЙ екземпляр сліпої зони, під яку писався інваріант F:
+    # публікація в децентралізовану мережу дасть URL З КЛЮЧЕМ під ЦИМ САМИМ іменем, і
+    # гейт його не побачить — тоді змінна мусить переїхати в `env.secret` під
+    # `_TOKEN`/`_API_KEY`-суфіксом, а не лишитись тут «бо вже стояла».
+    THE_GRAPH_API_URL: "https://api.studio.thegraph.com/query/1758737/silkennet-amoy/version/latest"
     # ⛔ Never "fill" ETHEREUM_ANCHOR_CONTRACT with the Amoy StateRootAnchor: a well-formed
     # address on the WRONG chain is the silent class INF.27 Q2 names, and it would ride straight
     # into an MRV lineage report (Mrv::LineageReportService reads it from the web container).
