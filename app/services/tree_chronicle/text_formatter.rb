@@ -103,6 +103,8 @@ module TreeChronicle
       "vandalism_breach"     => "\u{1F6A8}",
       "fire_detected"        => "\u{1F525}",
       "system_fault"         => "\u26A0",
+      # ⛔ ІСТОРИЧНИЙ (писача знято 2026-09-05, дім присуду — enum `EwsAlert`): гліф
+      # лишається, бо мапа мусить покривати ВЕСЬ enum, а архівні рядки рендеряться.
       "entropy_anomaly"      => "\u{1F4C9}",
       "field_audit"          => "\u{1F50D}",
       "queen_offline"        => "\u{1F4F4}",

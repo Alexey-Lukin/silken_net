@@ -169,40 +169,6 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Cluster Shannon entropy (0–1). < 0.65 = передстресовий сигнал лісу.",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 0.65 },
-              { "color": "green", "value": 0.75 }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 5 },
-      "id": 4,
-      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": false, "showThresholdMarkers": true },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "silkennet_cluster_entropy_score{slot=~\"$slot\"}",
-          "legendFormat": "Cluster {{cluster_id}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Cluster Entropy Score (pre-stress detector)",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "description": "FW.18b: Солдати звітують відкинуті OTA-пороги (NaN/out-of-range/інверсія → default). Ненульовий = корумпований RTC або зловмисний OTA-payload десь у лісі; конкретний DID і значення лічильника — у warn-лозі бекенда (патерн FW.22).",
       "fieldConfig": {
         "defaults": {

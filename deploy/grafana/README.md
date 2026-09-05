@@ -57,7 +57,7 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 
 | Секція | Метрики | S2.2 item |
 |--------|---------|-----------|
-| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, cluster_entropy, tinyml_threshold_invalid_reports (FW.18b), coap_packets by status | Telemetry ingest rate + fraud detection |
+| Telemetry Ingest + Fraud | processed_total, fraud_total, acoustic_overflow, panic_replay, tinyml_threshold_invalid_reports (FW.18b), coap_packets by status | Telemetry ingest rate + fraud detection |
 | Sidekiq Queues | queue_size × 9, queue_latency × 9 | Sidekiq queues (9 черг, size + latency) |
 | Web3 RPC | rpc_errors by network/type, circuit_breaker_open, scc_minted, oracle_dispatch latency | Web3 RPC errors by network |
 | Treasury / Oracle | oracle_balance_ratio, oracle_balance by network+signer (INF.22 per-signer: Polygon minter/slasher + activation-gated aux) | Treasury / Oracle balance monitoring |
@@ -87,7 +87,6 @@ Alerting → Alert rules → Import → paste `alerts/silkennet-alerts.yaml`
 | sn-alert-manual-review-depth | manual_review_depth > 0 (funds locked, double-spend guard [G1]) | warning | 15m |
 | sn-alert-blockchain-limbo | limbo_locked_total > 0 за >1h unsettled tx [G1] | warning | 30m |
 | sn-alert-circuit-breaker | circuit_breaker_open == 1 | warning | 2m |
-| sn-alert-cluster-entropy | cluster_entropy < 0.65 | warning | 30m |
 | sn-alert-acoustic-overflow | acoustic_overflow rate > 0 | warning | 5m |
 | sn-alert-tinyml-threshold-invalid | tinyml_threshold_invalid_reports rate(15m) > 0 (FW.18b) | warning | 5m |
 | sn-alert-mint-slo-breach | mint success/attempts < 0.8 за 1h (guard attempts>0) | warning | 10m |

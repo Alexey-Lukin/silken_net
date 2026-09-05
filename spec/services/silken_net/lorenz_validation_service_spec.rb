@@ -82,6 +82,28 @@ RSpec.describe SilkenNet::LorenzValidationService do
   end
 
   describe ".report" do
+    # ⛔ [E.64] Носій заборони «не підставляй 0.0 на відсутній вимір». Без цих
+    # двох прикладів правка виглядає як коментар: `nil.to_f` мовчазний, а
+    # продових викликачів у сервісу нуль, тож першим його запустить ЛЮДИНА в полі.
+    context "when a sample lacks a mandatory key" do
+      it "ВІДМОВЛЯЄ замість того, щоб віддати 0.0 з виглядом виміру" do
+        samples = [
+          { stress_index: 0.1, ground_truth_decline: 1.0 },
+          { stress_index: 0.5 } # ground_truth_decline відсутній — інша назва колонки
+        ]
+
+        expect { described_class.report(samples) }
+          .to raise_error(described_class::MissingSampleKeyError)
+      end
+
+      it "називає САМЕ той ключ і індекс — інакше в полі не знайти причини" do
+        samples = [ { ground_truth_decline: 1.0 } ]
+
+        expect { described_class.report(samples) }
+          .to raise_error(described_class::MissingSampleKeyError, /sample\[0\].*stress_index/m)
+      end
+    end
+
     it "reports strong correlation when stress_index tracks ground-truth decline" do
       samples = (1..10).map { |i| { stress_index: i / 10.0, ground_truth_decline: i.to_f } }
       r = described_class.report(samples)

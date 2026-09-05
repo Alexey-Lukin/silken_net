@@ -39,7 +39,7 @@
 <!-- TOC:AUTO:START -->
 - [1. Архітектурні Засади](#-1-архітектурні-засади) — базові класи, Web3 utility layer
 - [2. Домен: Телеметрія (Telemetry)](#-2-домен-телеметрія-telemetry) — `TelemetryUnpackerService`, `AlertDispatchService`
-- [3. Домен: AI та Аналітика (AI & Analytics)](#-3-домен-ai-та-аналітика-ai--analytics) — Insights, Attractor, SeedDerivation, GeoUtils, Entropy, Chronicle
+- [3. Домен: AI та Аналітика (AI & Analytics)](#-3-домен-ai-та-аналітика-ai--analytics) — Insights, Attractor, SeedDerivation, GeoUtils, Chronicle
 - [4. Домен: Блокчейн — Polygon (Primary Chain)](#-4-домен-блокчейн--polygon-primary-chain) — Minting, Burning, Audit, Rollback, Puro.earth, Etherisc
 - [5. Домен: Верифікація та Ідентичність (Verification & Identity)](#-5-домен-верифікація-та-ідентичність-verification--identity) — IoTeX, peaq, Chainlink, Ed25519
 - [6. Домен: NaaS Контракти (Contract Management)](#-6-домен-naas-контракти-contract-management) — Contract health/termination
@@ -168,16 +168,9 @@
 | **Що робить** | Haversine distance calculation між двома GPS-точками. |
 | **Вихід** | `haversine_distance_m → Float` (метри). |
 
-### `SilkenNet::EntropyCalculatorService`
+### `SilkenNet::EntropyCalculatorService` — ⛔ ВИДАЛЕНО 2026-09-05
 
-| | |
-|---|---|
-| **Файл** | `app/services/silken_net/entropy_calculator_service.rb` |
-| **Вхід** | `z_values` (Array\<Float>) — масив Z-значень атрактора Лоренца з кластера |
-| **Що робить** | Обчислює нормалізовану ентропію Шеннона для розподілу Z-значень. Фіксоване бінування по діапазону [2.0, 45.0] (homeostasis zone Лоренца). 20 бінів, ширина ~2.15. Мінімум 30 точок даних для статистичної значущості. Здоровий ліс: diverse Z → entropy ≈ 0.75-0.95. Стрес: homogeneous Z → entropy < 0.5. **[Lorenz de-risk]** інтерпретація Z-розподіл → здоров'я лісу — недоведена гіпотеза ([`05_05 §7–8`](05_05_Slashing_and_Risk_Policy)); сигнал, не вердикт. |
-| **Чому Z-value, а не HRNG seed** | `chaos_seed` (HRNG) НЕ передається у 21-байтному LoRa-пакеті (03_01, Phase 2). Backend використовує z_value як проксі. Див. ЧДТУ task #12 (00_02 §1.2). |
-| **Математика** | `H = -Σ p(x) × log₂(p(x))`, `H_norm = H / log₂(NUM_BINS)` ∈ [0.0, 1.0] |
-| **Вихід** | `Float` (0.0-1.0) або `nil` (недостатньо даних). |
+⛔ Сервіс, обидва воркери (`ClusterEntropyAnalyzerWorker` · `ClusterEntropySweepWorker`), cron, метрика й Grafana-поверхня знято ОДНИМ комітом. Тут доти стояла таблиця з рядком «інтерпретація Z-розподіл → здоровʼя лісу — недоведена гіпотеза; сигнал, не вердикт» — і саме ця обережність виявилась недостатньою: **гіпотезу зміряли, і вона хибна не в силі, а в предметі.** Прогін продовими класами (N=200, R=500) показав, що ліс із НУЛЬОВОЮ біологічною різницею дає H = 0.9077 ± 0.0106 — «здорова смуга» була криптошумом зерен `K_seed`, а не властивістю лісу; на власному сценарії синхронізованого стресу детектор промахувався у 94 %. Повний вимір, ціна й заборона на відродження — у МІСЦІ ДІЇ (над enum `entropy_anomaly: 6` в `app/models/ews_alert.rb`) + [`06_03 §2.6`](06_03_Prometheus_Observability); відкрите — [`00_07`](00_07_Action_Plan_Tracker) E.64.
 
 ### `SilkenNet::LorenzValidationService` [Lorenz de-risk]
 
@@ -1024,30 +1017,11 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 
 ---
 
-#### `ClusterEntropyAnalyzerWorker`
+#### `ClusterEntropyAnalyzerWorker` · `ClusterEntropySweepWorker` — ⛔ ВИДАЛЕНО 2026-09-05
 
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `alerts` |
-| **Retry** | 3 |
-| **Тригер** | `ClusterEntropySweepWorker` — погодинний оркестратор (`Cluster.find_each` → fan-out; cron `10 * * * *`) |
-| **Вхід** | `cluster_id` (Integer) |
-| **Сервіси** | `SilkenNet::EntropyCalculatorService.call(z_values)` |
-| **Side Effects** | Оновлює `cluster.entropy_score` (денормалізація). При entropy < `CRITICAL_ENTROPY_THRESHOLD` (0.65) створює `EwsAlert` (type: `entropy_anomaly`, severity: `medium`). Redis silence filter: 1 год per cluster. Prometheus gauge: `silkennet_cluster_entropy_score`. Інвалідація кешу `oracle_expected_yield_24h`. |
-| **Примітка** | Аналізує Z-значення за останні 24 години (partition-aware query). Мінімум 30 точок даних для статистичної значущості. Alignment: ЧДТУ task #12 (00_02 §1.2). Чому Z-value, а не HRNG seed: `chaos_seed` НЕ передається у 21-байтному пакеті (03_01, Phase 2). |
+⛔ Обидва воркери, їхній cron `cluster_entropy_sweep`, gauge `silkennet_cluster_entropy_score`, Grafana-правило `sn-alert-cluster-entropy` і панель дашборда знято ОДНИМ комітом (⚖️ founder). Аналізатор піднімав `EwsAlert(entropy_anomaly)` при H < 0.65, стверджуючи «здоровий ліс дає різноманітні Z, стрес їх гомогенізує» — ВИМІРЯНО продовими класами (N=200, R=500): ліс із нульовою біологічною різницею дає H = 0.9077 ± 0.0106 (0/500 нижче порога), тобто смуга була криптошумом зерен; на канонічному сценарії стресу детектор промахувався у 94 %, а залишкове падіння йшло через ρ(temp), тобто через `temperature_c`, вже наявну прямим стовпцем. Ціна названа вголос і заборона на відродження — у МІСЦІ ДІЇ (enum `entropy_anomaly: 6` в `app/models/ews_alert.rb`) + [`06_03 §2.6`](06_03_Prometheus_Observability).
 
----
-
-#### `ClusterEntropySweepWorker`
-
-| Параметр | Значення |
-|----------|----------|
-| **Черга** | `alerts` |
-| **Retry** | 3 |
-| **Тригер** | Sidekiq cron `10 * * * *` (`cluster_entropy_sweep`, щогодини) |
-| **Вхід** | — |
-| **Side Effects** | Fan-out: `Cluster.in_batches(of: BATCH_SIZE)` → `ClusterEntropyAnalyzerWorker.perform_bulk`. Замикає doc-ahead-of-code розрив [S6.20] — без оркестратора EWS-детектор ентропії ніколи не виконувався. |
-| **[ARCH.59] Bulk** | **Один Redis round-trip на БАТЧ, не на кластер** (2026-08-16): доти `find_each` + `perform_async` давав RTT на кожен рядок. Стеля памʼяті лишилась там само, де її тримав `find_each` — розмір батчу той самий. ⚠️ Носій — пін із ДВОМА половинами (`spec/workers/cluster_entropy_sweep_worker_spec.rb`), бо самої лише `.with(повний набір)` замало: `.once` стереже саме кількість звертань, і кожну половину доведено власною мутацією. ⊕ Заразом негативний приклад перецілено на `perform_bulk` — лишившись на `perform_async`, він став би **вакуумним**: код більше не кличе той метод НІКОЛИ, тож пін був би зелений незалежно від поведінки. |
+⊕ **Що з цього ПЕРЕЖИЛО зняття** (урок форми, не тракту): [ARCH.59] «один Redis round-trip на БАТЧ, не на кластер» — `in_batches` + `perform_bulk` замість `find_each` + `perform_async`. Живий носій зразка — `InsurancePayoutRecoveryWorker` та решта fan-out-оркестраторів у цьому реєстрі.
 
 ---
 
@@ -1211,7 +1185,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Тригер** | (1) `InsightBatchCallbacks#on_success` — після успішного завершення всіх `GenerateClusterInsightWorker` чанків (real-time після ≈01:00 UTC batch); (2) Sidekiq cron `0 2 * * *` (`cluster_health_arbitration` у `config/sidekiq.yml`) — захисний fallback, відпрацьовує навіть коли denний batch мав нуль кластерів з даними і callback не спрацював. |
 | **Вхід** | `date_string` (String ISO8601, опціонально). Якщо `nil` — **уся ітерація бере ОДНУ добу**, `AiInsight.reporting_date` [ARCH.100]. ⚠️ Доти кожен кластер брав власну `local_yesterday`, і для поясів західніше UTC−2 нічний крон читав добу, якої агрегатор не писав: `health_index` затирався фальшивою 1.0, вердикт ставав `:blackout` (Field Audit + невиплачена Celo-винагорода) на здоровому лісі. |
 | **Сервіси** | `contract.check_cluster_health!(target_date)` → `ContractHealthCheckService` (повертає verdict `:healthy`/`:degraded`/`:blackout`/`:insufficient_sample`/`:skipped`) |
-| **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index` — і [ARCH.84] **без інсайту за добу пише явний `NULL`** («не виміряно»), а не вигадану 1.0. ⛔ Форма сусіда `ClusterEntropyAnalyzerWorker` (`return if score.nil?` — ПРОПУСТИТИ запис) сюди НЕ переноситься: цю колонку переписує щонічний `Cluster.find_each`, тож пропуск лишав би вчорашнє число на сьогоднішній темряві. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів. Захист — на рівні `Celo::CommunityRewardService`: **[ARCH.50]** dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ Kredis-lock (раніше dedup будувався по `created_at` ≠ audit-день → запит НЕ знаходив свій рядок → детермінований 10 cUSD/день double-pay; виправлено), див. §10. ⊕ **[INS.1 / ARCH.59, 2026-08-25] Останнім кроком — `enqueue_insurance_oracle(target_date)`:** per-cluster fan-out `InsuranceOracleWorker` по кластерах з активними страховками, за прапором `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op). Дім переїхав сюди з `InsightBatchCallbacks`, бо там він був єдиним enqueue-сайтом воркера, а той колбек у проді не виконується (DOC-R.10). Ланка нічого не додала до розкладу — вона успадкувала cron-дублера цього воркера, і ту саму добу, якою вище судився контракт (розходження дат тут дало б оракулові порожню вибірку, невідрізненну від «даних немає» [ARCH.100]). |
+| **Side Effects** | [SLASH-1] Гілкує за **verdict** (не за `status_breached?` — breach тепер асинхронний, лише на реальному positive-A слешингу): `:healthy` → `CeloRewardWorker.perform_async`; `:degraded`/`:blackout` → лог, **без винагороди** (деградований/blackout кластер на адъюдикації cause-gate). Enqueue burn на `:degraded` робить сам `ContractHealthCheckService`. Оновлює `cluster.health_index` — і [ARCH.84] **без інсайту за добу пише явний `NULL`** («не виміряно»), а не вигадану 1.0. ⛔ Форма, яку тримав сусід `ClusterEntropyAnalyzerWorker` (`return if score.nil?` — ПРОПУСТИТИ запис), сюди НЕ переноситься (⚠️ той воркер знято 2026-09-05 — приклад лишається як ІСТОРІЯ ФОРМИ, живої адреси не має): цю колонку переписує щонічний `Cluster.find_each`, тож пропуск лишав би вчорашнє число на сьогоднішній темряві. **⚠️ Double-trigger caveat:** callback + cron можуть викликати worker двічі на день для тих самих кластерів. Захист — на рівні `Celo::CommunityRewardService`: **[ARCH.50]** dedup на ЛОГІЧНИЙ `reward_date` ВСЕРЕДИНІ Kredis-lock (раніше dedup будувався по `created_at` ≠ audit-день → запит НЕ знаходив свій рядок → детермінований 10 cUSD/день double-pay; виправлено), див. §10. ⊕ **[INS.1 / ARCH.59, 2026-08-25] Останнім кроком — `enqueue_insurance_oracle(target_date)`:** per-cluster fan-out `InsuranceOracleWorker` по кластерах з активними страховками, за прапором `:parametric_insurance_oracle_enabled` (kill-switch, default off → no-op). Дім переїхав сюди з `InsightBatchCallbacks`, бо там він був єдиним enqueue-сайтом воркера, а той колбек у проді не виконується (DOC-R.10). Ланка нічого не додала до розкладу — вона успадкувала cron-дублера цього воркера, і ту саму добу, якою вище судився контракт (розходження дат тут дало б оракулові порожню вибірку, невідрізненну від «даних немає» [ARCH.100]). |
 
 #### `InsuranceOracleWorker`
 

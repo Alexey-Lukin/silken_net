@@ -886,19 +886,11 @@ module SilkenNet
       labels: [ :table ]
     )
 
-    # [ENTROPY MONITOR]: Shannon entropy of Z-value distribution per cluster.
-    # Healthy forest: ≈ 0.75-0.95 (diverse Z-values). Pre-stress: < 0.65.
-    # Updated by ClusterEntropyAnalyzerWorker (queue: alerts, hourly).
-    CLUSTER_ENTROPY_SCORE = REGISTRY.gauge(
-      :silkennet_cluster_entropy_score,
-      docstring: "Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0). " \
-                 "LAST COMPUTED value [INF.26 verdict 2026-08-30]: the gauge FREEZES when the 24h window " \
-                 "holds <30 samples or the cluster stops reporting (worker skips without touching it) — " \
-                 "freshness is deliberately NOT this gauge's axis; cluster liveness is alerted elsewhere " \
-                 "(sn-alert-gateway-faulty P0, sn-alert-trees-silent). A freshness stamp is fleet-gated: " \
-                 "per-cluster staleness pairs before any live fleet would alert on nothing",
-      labels: [ :cluster_id ]
-    )
+    # ⛔ [E.64-сиблінг, ⚖️ founder 2026-09-05] `silkennet_cluster_entropy_score` ЗНЯТО
+    # разом з усім трактом `entropy_anomaly` — gauge міряв криптошум зерен `K_seed`,
+    # не ліс (вимір і заборона на відродження — над enum-значенням `entropy_anomaly`
+    # у `app/models/ews_alert.rb`, канон — 06_03 §2.6). ⛔ Не заводити назад під
+    # іншим ім'ям: кластерний передстресовий сигнал будується на ПРЯМОМУ вимірі.
 
     # [SLASH-1] Розходження денормалізованого active_trees_count із живим COUNT
     # (live − cached). Ненульове означає, що ЗНАМЕННИК тригера слешингу хибний:

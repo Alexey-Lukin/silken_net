@@ -107,7 +107,30 @@ module SilkenNet
     # ⚠️ Marginal ρ is DESCRIPTIVE, never a verdict on Z: a non-zero
     # spearman_z_vs_decline is the expected signature of Z carrying weather, not
     # evidence that Z is predictive. No incremental figure is derived here.
+    # ⛔ [E.64] Обовʼязкову пару перевіряємо ЯВНО, і це не педантизм: `nil.to_f`
+    # дає `0.0`, тож зразки без ключа (інша назва колонки в чужому датасеті —
+    # найімовірніший перший ужиток) віддавали б `spearman_stress_vs_decline: 0.0`
+    # З ВИГЛЯДОМ ВИМІРУ. Тобто прилад, який має судити, чи працюють ПРЯМІ сигнали,
+    # рапортував би «кореляції немає» саме тоді, коли не зміг її прочитати —
+    # клас `ФОЛБЕК` (гілка є, виміру немає) на найдорожчому можливому місці.
+    # 🔴 Асиметрія була в самому методі: опційні `z_value`/`sap_flow` нижче
+    # захищені `key?`, а обовʼязкові — ні. Носія тут не було, бо ПРОДОВИХ
+    # ВИКЛИКАЧІВ У СЕРВІСУ НУЛЬ: перший запуск буде людським, у полі, з CSV.
+    MANDATORY_KEYS = %i[stress_index ground_truth_decline].freeze
+
+    class MissingSampleKeyError < ArgumentError; end
+
     def report(samples)
+      samples.each_with_index do |s, i|
+        missing = MANDATORY_KEYS.reject { |k| s.key?(k) }
+        next if missing.empty?
+
+        raise MissingSampleKeyError,
+              "sample[#{i}] не має ключів #{missing.inspect} — вимір НЕ зроблено. " \
+              "Присутні: #{s.keys.inspect}. ⛔ Не підставляй 0.0: порожнє означає " \
+              "«не виміряно», ніколи «кореляції немає» (05_05 §8.4)."
+      end
+
       stress = samples.map { |s| s[:stress_index].to_f }
       decline = samples.map { |s| s[:ground_truth_decline].to_f }
       out = { n: samples.size, spearman_stress_vs_decline: round(spearman(stress, decline)) }

@@ -89,7 +89,7 @@ prometheus.relabel "cardinality_budget" {
   // "no per-identity labels" design at the write boundary. The registry
   // (06_03 §2.8) is intentionally bounded: every label is low-cardinality
   // (network / queue / reason / status / database …) except `cluster_id`
-  // (per-forest entropy) — the single legitimate growth axis, kept as-is.
+  // (per-forest) — the single legitimate growth axis, kept as-is.
   //
   // Grafana Cloud bills by active series / DPM, so a per-device or per-tx
   // label would explode cost the moment it shipped. `labeldrop` strips any

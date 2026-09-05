@@ -931,48 +931,6 @@ groups:
           team: backend
 
       # -----------------------------------------------------------------------
-      # P1: Cluster entropy pre-stress signal
-      # -----------------------------------------------------------------------
-      - uid: sn-alert-cluster-entropy
-        title: "⚠️ Forest cluster pre-stress (low entropy)"
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 1800, to: 0 }
-            datasourceUid: ${DATASOURCE_UID}
-            model:
-              expr: silkennet_cluster_entropy_score
-              refId: A
-          - refId: B
-            datasourceUid: "__expr__"
-            model:
-              type: reduce
-              refId: B
-              expression: A
-              reducer: last
-          - refId: C
-            datasourceUid: "__expr__"
-            model:
-              type: threshold
-              refId: C
-              expression: B
-              conditions:
-                - evaluator: { params: [0.65], type: lt }
-                  operator: { type: and }
-                  query: { params: [B] }
-                  reducer: { params: [], type: last }
-        noDataState: OK
-        execErrState: Error
-        for: 30m
-        annotations:
-          summary: "Кластер {{ $labels.cluster_id }} — ентропія {{ $values.B.Value | printf \"%.3f\" }} (< 0.65 = передстресовий сигнал)."
-          description: "Shannon entropy Z-розподілу кластера низька. Можливі причини: drought, pest epidemic, synchronized stress event. Ліс потребує перевірки форестером. EwsAlert може бути відправлений незабаром. ⚠️ Значення = ОСТАННЄ ОБЧИСЛЕНЕ [INF.26]: gauge застигає, коли 24h-вікно має <30 семплів або кластер замовк — свіжість тут НЕ вісь; живість кластера читай із sn-alert-gateway-faulty (P0) / sn-alert-trees-silent."
-        labels:
-          severity: warning
-          component: forest
-          team: ops
-
-      # -----------------------------------------------------------------------
       # P2: Slashing-trigger denominator drift [SLASH-1]
       # -----------------------------------------------------------------------
       - uid: sn-alert-cluster-tree-count-drift

@@ -265,15 +265,13 @@ end
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
-### 2.6 Entropy Monitor Metric (Quantum Pre-Stress Detector)
+### 2.6 Entropy Monitor Metric — ⛔ ЗНЯТО 2026-09-05 (історична секція)
 
-| Metric Name | Тип | Файл | Labels |
-|-------------|-----|------|--------|
-| `silkennet_cluster_entropy_score` | Gauge | `ClusterEntropyAnalyzerWorker` | `cluster_id` |
+⛔ **`silkennet_cluster_entropy_score` більше не існує.** Одним комітом знято ВЕСЬ тракт: gauge, обидва воркери (`ClusterEntropyAnalyzerWorker` · `ClusterEntropySweepWorker`), сервіс `SilkenNet::EntropyCalculatorService`, cron `cluster_entropy_sweep`, Grafana-правило `sn-alert-cluster-entropy` і панель дашборда. Номер секції лишено, щоб §2.7/§2.8 не пере'їхали, а адреса присуду не осиротіла.
 
-Нормалізована ентропія Шеннона Z-розподілу кластера (0.0–1.0). Оновлюється `ClusterEntropyAnalyzerWorker` (queue: `alerts`, рекомендовано: щогодинний cron). Здоровий ліс: ≈ 0.75-0.95. Критичний поріг: < 0.65 → `EwsAlert(entropy_anomaly)`.
+**Підстава — ВИМІР, не смак.** Прогін продовими класами (`SeedDerivation.initial_state` → `Attractor.calculate_z_from_state` → `EntropyCalculatorService`; N=200 дерев, R=500 повторів): ліс із НУЛЬОВОЮ біологічною різницею (ідентичні temp/acoustic, різні `K_seed`) дає **H = 0.9077 ± 0.0106** і **0/500** перетинів порога 0.65 — тобто канонічна «здорова смуга 0.75–0.95» відтворювалась самим лише криптошумом зерен, які ми ж і призначили. Канонічний синхронізований стрес (38 °C на всіх) перетинав поріг лише у **5.8 %** — промах у 94 % НА ВЛАСНОМУ сценарії; а те падіння, що було, ішло через ρ(temp), тобто через `temperature_c`, вже наявну ПРЯМИМ стовпцем (data-processing inequality — той самий присуд, що [`05_05 §8.1`](05_05_Slashing_and_Risk_Policy)). Звичайна мікрокліматична різниця фальш-тригерила у 1.8 %; саме лише тепле продовження траєкторії зсувало базову лінію на −0.033 без жодної зміни світу.
 
-**Grafana Alert Rule:** `sn-alert-cluster-entropy` (`< 0.65`, for 30m) — IaC-дім `deploy/grafana/alerts/silkennet-alerts.yaml`, ✅ імпортовано 2026-08-29.
+🔑 **ЦІНА НАЗВАНА ВГОЛОС:** кластерного передстресового сигналу тепер НЕМАЄ — ні метрики, ні алерту, ні панелі. Порожньо тут означає «ніхто не міряв», НІКОЛИ «стресу немає» ([`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)). Повний вимір і заборона на відродження живуть у МІСЦІ ДІЇ — над enum-значенням `entropy_anomaly: 6` у `app/models/ews_alert.rb` (саме значення лишене ІСТОРИЧНИМ, бо `EwsAlert#message` є РЕНДЕРОМ архівних рядків); відкрите — [`00_07`](00_07_Action_Plan_Tracker) E.64 (real-signal activation).
 
 > Проміжний підсумок видалено — див. фінальну цифру у §2.8 (SSOT).
 
@@ -400,7 +398,6 @@ end
 | `silkennet_blockchain_limbo_locked_total` | алертна | — | Sum of locked_points on unsettled (:sent/:manual_review) tx older than 1h (funds in limbo) |
 | `silkennet_blockchain_manual_review_depth` | алертна | — | Count of BlockchainTransaction rows stuck in :manual_review (double-spend guard queue) |
 | `silkennet_chain_audit_delta` | алертна | — | Absolute delta between DB SCC total (mints−burns) and on-chain totalSupply |
-| `silkennet_cluster_entropy_score` | алертна | `cluster_id` | Normalized Shannon entropy of Z-value distribution per cluster (0.0-1.0) |
 | `silkennet_cluster_tree_count_drift` | алертна | `cluster_id` | Live active-tree COUNT minus the denormalized active_trees_count (0 = in sync; nonzero means the slashing trigger measures a fabricated denominator) |
 | `silkennet_db_pool_connections` | алертна | `database` | Number of active (checked out) database connections |
 | `silkennet_db_pool_idle` | алертна | `database` | Number of idle database connections in the pool |
