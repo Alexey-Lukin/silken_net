@@ -75,6 +75,29 @@ RSpec.describe Tracker::Dashboard do
   # [HW light-touch items] `.parse` also picks up executors from unchecked
   # checkbox bullets (`- [ ] 🤖 …`), not just the `**P?**` meta-line.
   describe ".parse — checkbox-bullet executor pickup" do
+    # 🔴 [2026-09-05] НАЙВАЖЛИВІШИЙ ПРИКЛАД ЦЬОГО БЛОКУ, і він регресійний:
+    # доти підбір читав `line.include?(emoji)` по ВСЬОМУ рядку ноги, тож `⚖️`,
+    # ЦИТОВАНИЙ у прозі («⚖️ founder 2026-08-24»), робив пункт таким, що нібито
+    # «потребує присуду» — 36 ніг у 13 пунктах діставали фантомний `:decider`.
+    # Клас — `⚖️` несе ДВА домени (відкритий присуд ⊥ цитата ухваленого), і
+    # розводить їх ПОЗИЦІЯ, а не окремий гліф (розкол виміряно й відмовлено).
+    # ⚠️ Ціна дефекту була нульова, і саме тому він дожив: єдиний споживач —
+    # `issues` (`executors.empty?`), а порожньою множина не буває ніколи. Тобто
+    # цей пін стереже не симптом, а ЧЕСНІСТЬ поля: «виконавці» мусять означати
+    # виконавців, не згадки. Дзеркало обох WHO-гейтів, що вже читали лід.
+    it "НЕ рахує виконавцем гліф, ЦИТОВАНИЙ у прозі ноги — лише лід" do
+      md = <<~MD
+        ## §03 · Firmware
+        #### FW.99 — цитата присуду в тілі машинної ноги
+        - **P2** · 🤖 · 🟡 · → `03_01`
+        - [ ] 🤖 добудувати гілку — форму ратифіковано ⚖️ founder 2026-08-24, лишилась реалізація
+      MD
+
+      item = described_class.parse(md).first
+
+      expect(item.executors).to contain_exactly(:machine)
+    end
+
     it "picks up an executor emoji from an unchecked checkbox bullet" do
       md = <<~MD
         ## §03 · Firmware

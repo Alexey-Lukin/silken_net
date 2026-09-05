@@ -109,9 +109,24 @@ module Tracker
             # Measured free: zero items relied on the body fallback when it was removed.
             current.canon ||= line[/`(\d{2}_\d{2}[^`]*)`/, 1]
           end
-          # also pick up executors from unchecked checkbox bullets (HW light-touch items)
+          # Executors from unchecked checkbox bullets — LEAD token only.
+          #
+          # 🔴 [2026-09-05] Доти тут стояв `line.include?(emoji)` по ВСЬОМУ рядку, і це
+          # був єдиний живий інстанс класу, який founder назвав того ж дня: `⚖️` несе
+          # ДВА домени — ВІДКРИТИЙ присуд (лід ноги) і ЦИТАТУ вже ухваленого («⚖️ founder
+          # 2026-08-24» у прозі). Виміряно: 36 відкритих ніг у 13 пунктах діставали
+          # фантомний `:decider` ВИКЛЮЧНО з цитати (BIZ.2 · HW.8 · HW.13 · HW.17 · ARCH.8 ·
+          # SEC.33 · SEC.1 · DEPLOY-1 · S1.1 · ARCH.60 · DR.1 та ін.).
+          #
+          # ⚠️ Ціна була НУЛЬОВА і саме тому дефект дожив: єдиний споживач — `issues`
+          # (`if it.executors.empty?`), а `meta_form_violations` HARD-вимагає WHO на
+          # кожному meta-рядку, тож множина ніколи не порожня. Клас — «під-реалізація
+          # ОГОЛОШЕНОГО контракту»: поле зветься «виконавці пункту», а несло «виконавці
+          # + цитовані присуди». Обидва WHO-гейти вже читали ЛІД (`WHO_LEAD`) — цей
+          # рядок був єдиним, що читав інакше, тобто дім осі був розколотий.
           if line.match?(/^\s*-\s*\[ \]/)
-            EXECUTORS.each { |emoji, role| current.executors << role if line.include?(emoji) }
+            lead = line.sub(/^\s*-\s*\[ \]\s*/, "")[WHO_LEAD].to_s
+            EXECUTORS.each { |emoji, role| current.executors << role if lead.include?(emoji) }
           end
         end
       end
