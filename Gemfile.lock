@@ -439,7 +439,7 @@ GEM
       prawn (>= 1.3.0, < 3.0.0)
     prettyprint (0.2.0)
     prism (1.9.0)
-    prometheus-client (4.2.5)
+    prometheus-client (5.0.0)
       base64
     propshaft (1.3.2)
       actionpack (>= 7.0.0)
@@ -529,7 +529,8 @@ GEM
       uber (< 0.2.0)
     retriable (4.2.0)
     rotp (6.3.0)
-    rouge (4.7.0)
+    rouge (5.1.0)
+      strscan (~> 3.1)
     rqrcode (3.2.0)
       chunky_png (~> 1.0)
       rqrcode_core (~> 2.0)
@@ -729,6 +730,7 @@ GEM
       railties (>= 6.0.0)
     strong_migrations (2.8.0)
       activerecord (>= 7.2)
+    strscan (3.1.8)
     tailwind_merge (1.5.5)
       sin_lru_redux (~> 2.5)
     tailwindcss-rails (4.6.0)
@@ -866,4 +868,4 @@ RUBY VERSION
   ruby 4.0.6
 
 BUNDLED WITH
-  4.0.19
+  4.0.20

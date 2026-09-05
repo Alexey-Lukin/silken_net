@@ -54,7 +54,7 @@
 | `sentry-ruby` gem | `Gemfile` | ✅ 6.5.0 |
 | `sentry-rails` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Rails) |
 | `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
-| `prometheus-client` gem | `Gemfile` | ✅ 4.2.5 |
+| `prometheus-client` gem | `Gemfile` | ✅ 5.0.0 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
 | Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (перелік — §2.8) |
 | `/metrics` endpoint | `app/middleware/prometheus_collector.rb` | ✅ Реалізований (IP allowlist + Basic Auth) |
@@ -155,7 +155,7 @@ Gem `sentry-sidekiq` автоматично додає Sentry middleware до Si
 
 ```ruby
 # Gemfile
-gem "prometheus-client"  # 4.2.5 — офіційний Prometheus Ruby client
+gem "prometheus-client"  # 5.0.0 — офіційний Prometheus Ruby client
 
 # config/initializers/prometheus.rb
 require "prometheus/client"
@@ -620,7 +620,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 | Файл | Роль | Статус |
 |------|------|--------|
-| `Gemfile` | `prometheus-client` 4.2.5, `sentry-ruby/rails/sidekiq` 6.5.0 | ✅ |
+| `Gemfile` | `prometheus-client` 5.0.0, `sentry-ruby/rails/sidekiq` 6.7.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
 | `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (реєстр + кількість — §2.8) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |
