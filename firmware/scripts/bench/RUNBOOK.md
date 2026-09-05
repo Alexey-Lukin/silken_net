@@ -92,7 +92,7 @@
 |---|---|---|
 | [bench:flash-kv] | §6 (bullet «Flash-KV на кремнії» ↓) | FW.2 · FW.8 · FW.17 · FW.20 · FW.54 |
 | [bench:parity-dump] | §2.3 | FW.55 |
-| [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 |
+| [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 · SILENCE-1 |
 | [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · FW.60 · HW.15 |
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
 | [bench:acoustic] | §6 (bullet «Acoustic 16 kHz стенд» ↓) | HW.11 · HW.30 |
