@@ -630,10 +630,29 @@ class BlockchainMintingService < ApplicationService
   # [P2-4] `nonce too low` / `already known` / `replacement underpriced` НЕ pre-broadcast — вони
   # означають, що tx (наша попередня чи ця) ВЖЕ у мемпулі/блоці → сліпий individual re-mint =
   # DOUBLE-MINT → їх лишаємо ambiguous (escalate). Дзеркало burn ARCH.48.
+  # 🔴 [ARCH.62, виміряно 2026-09-05] ТРЕТЯ родина, якої тут бракувало — ВАЛІДАЦІЙНА
+  # відмова вузла за газ-лімітом. Amoy відповідав дослівно `Transaction gas limit is
+  # too low, try 74494!`; це не збігалося з жодним патерном вище, тож детермінована
+  # відмова ДО броадкасту їхала як `ambiguous` → `escalate_to_review!`.
+  # ⛔ **І це порушує власний контракт стану:** `manual_review` визначено як «tx_hash Є,
+  # стан невідомий, кошти заблоковані» (`CLAUDE.md §6`, `04_01`), а тут `tx_hash = nil`
+  # і в мемпулі нема нічого. Виміряна ціна — 44 мінти в лімбі з порожнім хешем.
+  # ⚠️ Сесія 09-05 полагодила ПРИЧИНУ (оцінка `gas_limit` на шві `KeySigner#transact`),
+  # і саме тому цей рядок лишався непоміченим: симптом зник, а класифікатор так само
+  # не вміє назвати цю родину — наступний `exceeds block gas limit` дав би той самий toil.
+  # ✅ Безпечно вважати pre-broadcast: вузол відкидає такий кадр на ВАЛІДАЦІЇ, до
+  # прийняття в мемпул, тож re-mint не може бути double-mint. Це та сама межа, що
+  # відділяє їх від `nonce too low`/`already known` вище.
+  GAS_LIMIT_REJECTIONS = [ "gas limit is too low", "intrinsic gas too low", "exceeds block gas limit",
+                          "gas required exceeds allowance" ].freeze
+
   def transact_error_pre_broadcast?(error)
     return true if evm_revert?(error)
 
-    error.message.to_s.downcase.include?("insufficient funds")
+    message = error.message.to_s.downcase
+    return true if GAS_LIMIT_REJECTIONS.any? { |m| message.include?(m) }
+
+    message.include?("insufficient funds")
   end
 
   # Мінтить одну транзакцію індивідуально з обробкою помилок.

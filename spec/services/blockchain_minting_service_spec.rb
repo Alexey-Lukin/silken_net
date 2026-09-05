@@ -1412,6 +1412,29 @@ end
         transactions.each { |tx| expect(tx.reload.status).to eq("manual_review") }
       end
 
+      # 🔴 [ARCH.62, 2026-09-05] A gas-limit VALIDATION rejection IS pre-broadcast — the node
+      # refuses the frame before it ever enters the mempool, so an individual re-mint cannot
+      # double-mint. Measured on Amoy verbatim: "Transaction gas limit is too low, try 74494!".
+      # It matched NEITHER `evm_revert?` NOR `insufficient funds`, so 44 mints landed in
+      # `manual_review` with `tx_hash = nil` — which violates that state's own contract
+      # ("tx_hash EXISTS, chain state unknown, funds locked", CLAUDE.md §6 / 04_01).
+      # ⚠️ The session fixed the CAUSE (gas estimation on the KeySigner seam); this pin guards
+      # the CLASSIFIER, which is a separate axis — the next `exceeds block gas limit` would
+      # otherwise repeat the same manual toil.
+      it "falls back to individual mints on a gas-limit validation rejection (pre-broadcast)" do
+        individual_calls = 0
+        allow(mock_client).to receive(:transact) do |_c, method, *_args, **_opts|
+          raise StandardError, "Transaction gas limit is too low, try 74494!" if method == "batchMint"
+          individual_calls += 1
+          "0x" + "f" * 64
+        end
+
+        described_class.call_batch(transactions.map(&:id))
+
+        expect(individual_calls).to eq(transactions.size)
+        transactions.each { |tx| expect(tx.reload.status).not_to eq("manual_review") }
+      end
+
       # [M6] Ambiguous batchMint broadcast (may have landed) → escalate the whole sub-batch to
       # manual_review, NOT a blind individual re-mint (which would double-mint if it landed).
       it "escalates the sub-batch to manual_review on an ambiguous batchMint broadcast" do
