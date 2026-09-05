@@ -308,7 +308,12 @@ rb_dark() {
 # `feedback_verdict_vs_its_grounds` once it crossed the 36000 working ceiling.
 # 2026-08-29: 153 → 154 — `project_month_of_cuts_taxonomy`. Підняття робить новий дім
 # захищеним підлогою так само, як решту: без нього його тихе зникнення було б невидиме.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-160}
+# 2026-09-05: 160 → 161 — `feedback_mass_spec_failures_name_the_home`. Клас елевовано
+# з буліта `feedback_philosophy_first_design` у власний дім після ДРУГОГО інстансу на
+# тій самій осі (78 падінь 08-28 → 175 падінь 09-05, обидва `Web3::FeePolicy`): правило
+# «масові падіння називають ДІМ зміни» переросло свого носія. Підняття робить новий дім
+# захищеним підлогою так само, як решту.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-161}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -414,7 +419,11 @@ index_reach_expected() {
 # переліку в тіло (`feedback_one_token_two_domains` — таксономія двох ніг;
 # `feedback_rule_needs_a_carrier` лишився недоторканим). Прецедент вище тримає: спершу
 # компресія власного, і лише залишок іде в базу.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44178}
+# 2026-09-05: 44178 → 44540 (+362) — вартість опису нового дому
+# `feedback_mass_spec_failures_name_the_home`. Прецедент дотримано: власний опис
+# стиснуто (513 → 360 B) ПЕРЕД бампом, і в базу пішов лише залишок; чужих описів
+# не підрізано. Це не «дозволити росту», а оплатити один новий тригер відкликання.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44540}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link

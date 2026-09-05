@@ -204,6 +204,14 @@ env:
     # memory-pressure isolation, and needs no code change.
     # --- Observability ---
     - SENTRY_DSN
+    # 🔴 [S2.4, 2026-09-05] Pinata-JWT для IPFS-піну аудит-логів. Runtime-lazy як
+    # `SENTRY_DSN` — бут без нього чистий. ⚠️ Але «lazy» тут НЕ означає «тихо»:
+    # `Filecoin::ArchiveService` РЕЙЗИТЬ без ключа (`Missing filecoin_api_key`), і
+    # саме це дало 114 із 121 у DeadSet canopy. Тобто відсутність деградує не
+    # фічу, а ЧЕРГУ — доки ключа немає, чесніший хід — не планувати джобу на слоті.
+    # ⛔ Це JWT (заголовок `Authorization: Bearer`), а НЕ стара пара
+    # `pinata_api_key`+`pinata_secret_api_key`: та дасть 401 на тому ж ендпоінті.
+    - FILECOIN_API_KEY
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
     # --- AR-Encryption keys gate (active_record_encryption_keys_check.rb) — hardware_keys + identities [SEC.22] ---
