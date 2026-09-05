@@ -171,5 +171,21 @@ RSpec.describe Telemetry::LiveStream do
     it "uses backdrop-blur for sticky header" do
       expect(html).to include("backdrop-blur-md")
     end
+
+    # 🔴 [UI.16] НОСІЙ ПРОТИ ТИХОГО ДЕФЕКТУ, а не стильова причіпка. `display:flex`
+    # на `td` знімає з елемента `display:table-cell`, а `colspan` діє ВИКЛЮЧНО на
+    # table-cell — тож клітинка мовчки перестає розтягуватись на таблицю й падає
+    # в ширину однієї колонки. Симптому немає: сторінка рендериться, заглушка
+    # видима, просто стиснена — саме тому дефект дожив до скріншота з живого
+    # canopy (2026-09-05), а не до жодного гейта.
+    # ⛔ Периметр класу в дереві — НУЛЬ інстансів після фіксу, тож окремий гейт
+    # стеріг би порожню множину; носій свідомо локальний, у спеці компонента,
+    # який цей клас уже переживав (UI.3 — віньєтка, мертва 5,5 місяця).
+    it "заглушка НЕ робить `td` флекс-контейнером — інакше `colspan` мовчки мертвий" do
+      placeholder_cell = html[/<td[^>]*colspan="4"[^>]*>/]
+
+      expect(placeholder_cell).to be_present, "клітинка-заглушка з colspan зникла — пін став вакуумним"
+      expect(placeholder_cell).not_to match(/class="[^"]*\b(flex|grid|inline-flex)\b/)
+    end
   end
 end

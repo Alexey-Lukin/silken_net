@@ -83,9 +83,22 @@ module Telemetry
 
               tbody(id: FEED_TARGET, class: "md:divide-y md:divide-gaia-border") do
                 tr(id: PLACEHOLDER_TARGET) do
-                  td(colspan: 4, class: "p-12 text-center text-gaia-text-subtle flex flex-col items-center justify-center") do
-                    div(class: "w-8 h-8 rounded-full border-b-2 border-gaia-border-strong animate-spin mb-4", aria_hidden: "true")
-                    p(class: "italic tracking-widest text-mini") { t(".awaiting") }
+                  # 🔴 [UI.16] `flex` СТОЯВ ТУТ, НА `td` — і мовчки вимикав `colspan`.
+                  # Tailwind-клас `flex` дає `display:flex`, що знімає з елемента
+                  # `display:table-cell`; а `colspan` діє ВИКЛЮЧНО на table-cell.
+                  # Браузер тоді загортає клітинку в анонімну шириною ОДНІЄЇ колонки,
+                  # і заглушка стискається в ліву чверть замість того, щоб лягти на
+                  # всю таблицю (виміряно на живому canopy 2026-09-05, скріншот founder-а).
+                  # ⛔ Не повертати `flex` на `td`/`th`: тут потрібен ВНУТРІШНІЙ
+                  # контейнер. Клас той самий, що [UI.3] у ЦЬОМУ Ж файлі (віньєтка,
+                  # мертва 5,5 місяця) — CSS написаний, CSS не діє, симптому немає:
+                  # обидва рази поверхня виглядала «майже правильно», тож ніхто не
+                  # питав. Це ДРУГИЙ інстанс класу в одному компоненті.
+                  td(colspan: 4, class: "p-12 text-center text-gaia-text-subtle") do
+                    div(class: "flex flex-col items-center justify-center") do
+                      div(class: "w-8 h-8 rounded-full border-b-2 border-gaia-border-strong animate-spin mb-4", aria_hidden: "true")
+                      p(class: "italic tracking-widest text-mini") { t(".awaiting") }
+                    end
                   end
                 end
               end

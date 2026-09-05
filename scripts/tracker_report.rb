@@ -23,6 +23,7 @@
 #
 # Pure Ruby, без Rails. Ростер режимів — `case` нижче; читати його, а не цю шапку.
 #   ruby scripts/tracker_report.rb --takeable
+#   ruby scripts/tracker_report.rb --desk
 #   ruby scripts/tracker_report.rb --critical-path
 # Exit 0 ЗАВЖДИ (окрім помилки аргументів): це звіт, а не вердикт.
 
@@ -75,6 +76,32 @@ DEFERRAL_FORMS = {
 # ⛔ І ГОЛИЙ `⚖️` — 57 хітів, тобто форма сховала б 57 ніг заради двох справжніх: гліф
 # у тілі найчастіше ЦИТУЄ вже ухвалений присуд, а не оголошує очікування на новий.
 # Дискримінує саме ДЕКЛАРАТИВНА зв'язка («спершу присуд»), не наявність гліфа.
+
+# ── РУКИ: чим САМЕ зайняті `👤`-ноги [2026-09-05, ⚖️ founder] ───────────────────────
+#
+# 🔑 Питання founder-а було «`👤` відповідає за занадто багато», і вимір відповів
+# НЕ так, як очікувалось. Розкол на три (термінал ⊥ стенд ⊥ люди) покриває лише
+# **70%** із 277 `👤`-ніг: 15% — мокра лаба (ICP-MS, SEM/µCT, синтези, ферменти,
+# 12-тижневі тести), яку жоден із трьох не тримає, а 14% лягають у ДВА одразу.
+# Тобто гліфовий розкол викинув би підклас, що його легенда `00_07` уже називає
+# окремо («hardware, **лабораторія**, секрети, …»).
+#
+# 🔴 І головне: `bench` уже має носія (тег `[bench:slug]` + гейт), люди — секцію
+# `§00b`. Носія не має РІВНО ОДИН клас — desk, і саме він розмазаний по 12 секціях
+# (max 27% в одній). Тобто «перевантажений гліф» був симптомом, а хворобою —
+# НЕВИДИМІСТЬ тієї єдиної черги, яку founder може взяти сьогодні, не встаючи.
+# Тому лік — цей ЧИТАЧ, а не новий токен (`WHO_CANON` лишається шести-значним,
+# гейти не чіпаються; ⛔ не «полагоджувати» це гліфом, вимір відмовлено).
+#
+# ⛔ **`desk` НЕ детектується позитивно — він ЗАЛИШОК**, і це не лінощі, а чесність:
+# спільного словника в «сісти й зробити» немає (KiCad ⊥ ENV-змінна ⊥ RFQ-лист ⊥ абзац
+# канону), тож будь-який позитивний перелік був би вужчим за клас і ховав би роботу.
+# Ціна форми названа: у залишок падає й те, що просто не має ключових слів сусідів.
+HANDS_BUCKETS = {
+  "стенд" => /\[bench:|\bbench\b|кремні|стенд[ уі]|осцилограф|PPK2|запая|спая|термокамер|припо/i,
+  "лаба" => /ICP-MS|\bSEM\b|µCT|\bEIS\b|\bCV\b|синтез|фермент|Nafion|PTFE|електрод|W[oö]hler|LECO|біореактор|\bгамма\b|стерил/i,
+  "люди" => /зустріч|cold contact|first-contact|workshop|воркшоп|sit-down|юрист|повірен|\bNDA\b|\bMoU\b|консультац|методолог|через декана|співрозмов/i
+}.freeze
 
 def sections(markdown)
   current = nil
@@ -194,6 +221,71 @@ def takeable_report(markdown)
   end
 end
 
+def hands_buckets(body) = HANDS_BUCKETS.select { |_, re| body.match?(re) }.keys
+
+def desk_report(markdown)
+  legs = open_legs(markdown).select { |l| l[:lead].include?("👤") }
+  classified = legs.map { |l| l.merge(buckets: hands_buckets(l[:body])) }
+  desk = classified.select { |l| l[:buckets].empty? }
+  multi = classified.select { |l| l[:buckets].size > 1 }
+  lab = classified.select { |l| l[:buckets] == [ "лаба" ] }
+  # 🔴 `🟢` СЮДИ НЕ ВХОДИТЬ, і це не та сама межа, що в `--takeable`. Легенда:
+  # `🟢` = «host/код done, чекає bench-фліпу або активації ЗА ГЕЙТОМ» — тобто пункт
+  # САМ стверджує, що робота зроблена, а лишилась подія. Пустити його в «зараз»
+  # означало б завищити чергу вдвічі (виміряно на першому прогоні: 127 проти 58
+  # ручного відліку) — і завищена черга гірша за відсутню, бо її перестають читати.
+  not_now = NOT_NOW_STAGES + [ :done_inert ]
+  now = desk.reject { |l| deferred?(l[:body]) || not_now.include?(l[:stage]) }
+
+  puts "tracker:desk — ЗВІТ, не гейт. Кандидати «за ноутбуком», НЕ вердикт."
+  puts
+  puts "⚠️  СПЕРШУ ПРО ВЛАСНУ СЛІПОТУ — читати ДО результату:"
+  puts "  · `desk` тут — ЗАЛИШОК, а не знахідка: нога, що не впізналась ані стендом,"
+  puts "    ані лабою, ані людьми. Спільного словника в «сісти й зробити» не існує,"
+  puts "    тож позитивний перелік був би вужчим за клас і ХОВАВ би роботу."
+  puts "    Ціна: у залишок падає й те, що просто не має ключових слів сусідів."
+  puts "  · три кошики покривають ~70% корпусу `👤`-ніг (вимір 2026-09-05). Ноги, що"
+  puts "    лягають у ДВА одразу, виводяться окремо — гліф двох значень не тримає."
+  puts "  · мокра ЛАБА — власний клас, не підвид стенда: #{lab.size} ніг. Легенда `00_07`"
+  puts "    називає «лабораторія» окремо від «hardware», тож трійка її б викинула."
+  puts "  · проза-вісь та сама, що в `--takeable` (#{DEFERRAL_FORMS.size} форм відкладення),"
+  puts "    тож «доступно зараз» — ВЕРХНЯ межа, ніколи точне число."
+  puts "  · STAGE пункта ТУТ фільтрує ШИРШЕ, ніж у `--takeable`: окрім `🔗`/`🌿`/`⚫`"
+  puts "    відсікається ще й `🟢` — пункт САМ каже, що код готовий і чекає ГЕЙТА."
+  puts "    не «де вся робота», а «що взяти НЕ ВСТАЮЧИ». Ціна названа: нога під"
+  puts "    протухлим `🔗`/`🌿` звідси зникне — саме тому `--takeable` її НЕ ховає."
+  puts
+
+  puts format("%-8s %8s %8s %8s %8s %8s", "секція", "👤", "стенд", "лаба", "люди", "🖥 зараз")
+  totals = Hash.new(0)
+  classified.group_by { |l| l[:section] }.sort_by { |s, _| s.to_s }.each do |section, ls|
+    row = {
+      all: ls.size,
+      bench: ls.count { |l| l[:buckets].include?("стенд") },
+      lab: ls.count { |l| l[:buckets].include?("лаба") },
+      people: ls.count { |l| l[:buckets].include?("люди") },
+      now: ls.count { |l| now.include?(l) }
+    }
+    row.each { |k, v| totals[k] += v }
+    puts format("%-8s %8d %8d %8d %8d %8d", section, *row.values_at(:all, :bench, :lab, :people, :now))
+  end
+  puts format("%-8s %8d %8d %8d %8d %8d", "УСЬОГО", *totals.values_at(:all, :bench, :lab, :people, :now))
+  puts
+
+  puts "🖥  ЗА НОУТБУКОМ — #{now.size} ніг у #{now.map { |l| l[:id] }.uniq.size} пунктах:"
+  now.group_by { |l| l[:section] }.sort_by { |s, _| s.to_s }.each do |section, ls|
+    ls.each { |l| puts format("  %-6s %-12s %s", section, l[:id], l[:body].gsub(/\s+/, " ")[0, 96]) }
+  end
+  puts
+
+  if multi.any?
+    puts "⊥ Ноги у ДВОХ кошиках одразу (#{multi.size}) — гліф їх не закодує, тег закодує:"
+    multi.group_by { |l| l[:id] }.sort_by { |id, _| id }.each do |id, ls|
+      puts format("  · %-12s %s", id, ls.map { |l| l[:buckets].join("+") }.tally.map { |k, v| v > 1 ? "#{k}×#{v}" : k }.join(" · "))
+    end
+  end
+end
+
 def critical_path_report(markdown)
   live = D.parse(markdown).map(&:id).to_set
   all  = D.all_item_ids(markdown).to_set
@@ -241,8 +333,9 @@ md = File.read(D::DEFAULT_PATH)
 
 case MODE
 when "--takeable"      then takeable_report(md)
+when "--desk"          then desk_report(md)
 when "--critical-path" then critical_path_report(md)
 else
-  warn "невідомий режим #{MODE}. Ростер: --takeable · --critical-path"
+  warn "невідомий режим #{MODE}. Ростер: --takeable · --desk · --critical-path"
   exit 2
 end
