@@ -681,7 +681,8 @@ raise "Security Breach: Chainlink Oracle consensus not fulfilled"  unless teleme
 **Oracle Balance Check:**
 ```ruby
 balance = client.get_balance(oracle_key.address)
-raise "🚨 Критично низький баланс Оракула" if balance < 0.05 * (10**18)  # 0.05 MATIC
+raise "🚨 Оракул НЕ ПРОВІЖИНЕНО (баланс 0)" if balance.zero?            # ⛔ нуль ≠ вичерпання
+raise "🚨 Баланс Оракула НИЖЧИЙ ЗА МІНІМУМ" if balance < 0.05 * (10**18)  # 0.05 MATIC
 ```
 
 **Rate Limiting:**

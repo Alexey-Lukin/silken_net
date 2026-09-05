@@ -371,7 +371,11 @@ end
   end
 
   describe "oracle balance check" do
-    it "raises when oracle balance is critically low" do
+    it "розрізняє НЕ ПРОВІЖИНЕНО (нуль) від вичерпання" do
+      # ⛔ [2026-09-05] Пін тримає РОЗРІЗНЕННЯ, не факт помилки: нуль означає
+      # «не провіжинено» (стан налаштування), а не «вичерпано». Доти обидві гілки
+      # давали текст «критично НИЗЬКИЙ», тобто алерт посилав шукати витік, якого
+      # немає — виміряно on-chain: `nonce = 0`, з адреси не йшло нічого.
       allow(mock_client).to receive(:get_balance).and_return(0)
 
       tree = create(:tree)
@@ -386,7 +390,7 @@ end
         locked_points: 1000
       )
 
-      expect { described_class.call(tx.id) }.to raise_error(RuntimeError, /Критично низький баланс/)
+      expect { described_class.call(tx.id) }.to raise_error(RuntimeError, /НЕ ПРОВІЖИНЕНО/)
     end
   end
 

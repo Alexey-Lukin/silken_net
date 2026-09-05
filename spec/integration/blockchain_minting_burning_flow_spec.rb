@@ -111,9 +111,14 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect(tx.reload.status).to eq("manual_review")
     end
 
-    it "raises when oracle balance is critically low" do
+    it "розрізняє НЕ ПРОВІЖИНЕНО (нуль) від вичерпання" do
+      # ⛔ [2026-09-05] Пін тримає РОЗРІЗНЕННЯ, не факт помилки: нуль означає
+      # «не провіжинено» (стан налаштування), а не «вичерпано». Доти обидві гілки
+      # давали текст «критично НИЗЬКИЙ», тобто алерт посилав шукати витік, якого
+      # немає — виміряно on-chain: `nonce = 0`, з адреси не йшло нічого.
       allow(mock_client).to receive(:get_balance).and_return(0)
-      expect { BlockchainMintingService.call(tx.id) }.to raise_error(RuntimeError, /Критично низький баланс/)
+      expect { BlockchainMintingService.call(tx.id) }
+        .to raise_error(RuntimeError, /НЕ ПРОВІЖИНЕНО/)
     end
 
     # [DOC-T.89, ⚖️ 2026-08-26] Перевернуто разом із присудом: SFC-мінт заблоковано до

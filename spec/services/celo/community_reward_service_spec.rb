@@ -357,7 +357,12 @@ RSpec.describe Celo::CommunityRewardService do
       allow(mock_client).to receive(:get_balance).and_return((0.01 * 10**18).to_i)
       allow(Kredis).to receive(:lock).and_yield
 
-      expect { described_class.new(cluster, target_date).reward_community! }.to raise_error(/Критично низький баланс/)
+      # ⛔ [2026-09-05] ДРУГА гілка того самого розрізнення: тут баланс НЕНУЛЬОВИЙ,
+      # але нижчий за мінімум — це справді вичерпання, і текст мусить казати саме це.
+      # Пара «нуль ⊥ нижче мінімуму» і є предметом; поодинці кожна половина зелена
+      # при зламаному розрізненні.
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to raise_error(/НИЖЧИЙ ЗА МІНІМУМ/)
     end
   end
 

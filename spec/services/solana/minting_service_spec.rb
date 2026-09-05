@@ -626,16 +626,26 @@ RSpec.describe Solana::MintingService do
         .to raise_error(RuntimeError, /Unknown Solana RPC error/)
     end
 
-    it "treats a nil getBalance response as zero and raises low-balance" do
+    # ⛔ [2026-09-05] ТРИ гілки, і кожна мусить казати СВОЄ. Доти всі три давали
+    # «критично низький баланс» — тобто мовчазний RPC і непоповнений гаманець
+    # доповідали про ВИЧЕРПАННЯ. Пін тримає саме розрізнення: поодинці кожен
+    # приклад лишався б зеленим при схлопнутих гілках.
+    it "НЕ ПРОЧИТАНО: nil-відповідь RPC — це збій зчитування, не нульовий баланс" do
       allow(service).to receive(:execute_rpc_call).and_return(nil)
       expect { service.send(:verify_oracle_balance!, "pubkey") }
-        .to raise_error(RuntimeError, /низький баланс/)
+        .to raise_error(RuntimeError, /НЕ ПРОЧИТАНО/)
     end
 
-    it "raises when the oracle balance is below the configured minimum" do
+    it "НЕ ПРОВІЖИНЕНО: рівно нуль — стан налаштування, не вичерпання" do
+      allow(service).to receive(:execute_rpc_call).and_return({ "result" => { "value" => 0 } })
+      expect { service.send(:verify_oracle_balance!, "pubkey") }
+        .to raise_error(RuntimeError, /НЕ ПРОВІЖИНЕНО/)
+    end
+
+    it "НИЖЧИЙ ЗА МІНІМУМ: ненульовий, але замалий — справжнє вичерпання" do
       allow(service).to receive(:execute_rpc_call).and_return({ "result" => { "value" => 1_000 } })
       expect { service.send(:verify_oracle_balance!, "pubkey") }
-        .to raise_error(RuntimeError, /низький баланс/)
+        .to raise_error(RuntimeError, /НИЖЧИЙ ЗА МІНІМУМ/)
     end
   end
 

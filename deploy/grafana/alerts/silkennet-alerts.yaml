@@ -713,7 +713,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: time() - max by (slot) (silkennet_tree_sweep_timestamp_seconds)
+              expr: time() - max by (slot) (silkennet_tree_sweep_timestamp_seconds > 0)
               refId: A
           - refId: B
             datasourceUid: "__expr__"
@@ -2591,6 +2591,16 @@ groups:
       # ⚠️ ВІДСУТНЯ серія (свіжий процес до найближчих 00:30 UTC) тут свідомо не
       # ловиться — мертвий таргет має власний дім `sn-alert-scrape-target-down`.
       # -----------------------------------------------------------------------
+      # 🔴 [S2.4, ВИМІРЯНО 2026-09-05] `> 0` у виразі — НЕ косметика, а лік ЖИВОГО
+      # хибного спрацювання. Gauge ініціалізується НУЛЕМ у свіжому процесі, тож до
+      # першого запису `time() - 0` завжди більше за будь-який поріг. Для ДОБОВОГО
+      # воркера (`30 0 * * *`) це означає, що правило горить до 24 год ПІСЛЯ КОЖНОГО
+      # деплою — виміряно на canopy: контейнер піднято об 11:35, метрика показувала
+      # рівно `0.0`, і алерт стояв Firing при повністю справному воркері.
+      # ⛔ Клас — «тихий дефолт»: рішення ухвалює НЕ вимір, а нуль-ініціалізація.
+      # Фільтр `> 0` викидає нульову серію, вираз стає порожнім, і `noDataState: OK`
+      # відпрацьовує ПРАВИЛЬНО — «ще не міряли» мовчить, «давно не міряли» кричить.
+      # ⚠️ Той самий фільтр обовʼязковий для КОЖНОГО правила цієї форми.
       - uid: sn-alert-partition-sampler-stale
         title: "ℹ️ Partition growth sampler has not run for 48h (ARCH.70 instrument dead)"
         condition: C
@@ -2599,7 +2609,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: time() - max by (slot) (silkennet_partition_sample_timestamp_seconds)
+              expr: time() - max by (slot) (silkennet_partition_sample_timestamp_seconds > 0)
               refId: A
           - refId: B
             datasourceUid: "__expr__"
