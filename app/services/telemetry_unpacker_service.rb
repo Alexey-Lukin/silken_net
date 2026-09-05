@@ -725,15 +725,12 @@ class TelemetryUnpackerService < ApplicationService
   # numeric check is a forward-looking hook — kept here behind a metric
   # that surfaces the magnitude even when it is within tolerance.
   # [FW.8] Судимо за `Tree#device_lorenz_thresholds` — порогами, ЧИННИМИ НА
-  # ПРИСТРОЇ, а не за бажаними per-species. 🔴 Доти тут стояло
-  # `effective_lorenz_thresholds` із підставою «so divergence stays consistent
-  # with the thresholds firmware was provisioned with» — і саме ця підстава була
-  # хибною: прошивку ними НЕ провіженять (`calculate_state` порогів не приймає,
-  # `FW8_PARSER_ENABLED = 0`, mruby Flash-KV не читає), тож для родини з
-  # `critical_z_min > 2.0` чесний пакет із Z у вікні [2.0, min) давав
-  # категоричний mismatch → `TELEMETRY_FRAUD_DETECTED_TOTAL` і P0-алерт на
-  # НЕВИННОМУ дереві. Механізм і подія повернення per-species — докстрінг
-  # `Tree#device_lorenz_thresholds`.
+  # ПРИСТРОЇ, а не за бажаними per-species.
+  # ⛔ Не повертати сюди `effective_lorenz_thresholds` під підставою «щоб
+  # розходження лишалось консистентним із порогами, якими провіженили прошивку»:
+  # прошивку ними НЕ провіженять, тож для родини з `critical_z_min > 2.0` чесний
+  # пакет дає категоричний mismatch і P0-алерт на НЕВИННОМУ дереві.
+  # Механізм, виміри й подія повернення per-species — `03_04 §5.3`.
   # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
   # disabled by default to preserve current categorical behaviour:
   #   - `GAIA_DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.

@@ -559,8 +559,11 @@ volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; чит
 // Альтернативи відкинуто:
 //   • Flash sector — 2 KB на 8 байт, wear ~10k erase × at-most-daily re-send
 //     дає 27 років, але erase ~30 мс блокує LoRa RX → конфлікт з anti-pingpong
-//     RX-вікном після TX. Не виправдано для feature, що на TRL-6 нічого не
-//     змінює (всі 5 видів зараз використовують ті самі firmware-defaults).
+//     RX-вікном після TX. Механічна підстава лишається чинною.
+//     ⛔ Друга підстава — «на TRL-6 нічого не змінює, всі види на однакових
+//     firmware-defaults» — СПРОСТОВАНА власними сідами (`db/seeds.rb`: сосна
+//     `critical_z_min` 5.0, дуб 8.0/40.0 проти firmware-дефолтів 2.0/45.0).
+//     Не відроджувати її як аргумент відкладення: види РОЗХОДЯТЬСЯ вже сьогодні.
 //   • RAM-only з re-send щодня × 100k дерев = ~5% всього NB-IoT downlink
 //     заради no-op feature. Чесніше відкласти.
 //
@@ -2692,8 +2695,9 @@ int main(void)
                 // Деталі — у блоці-преамбулі біля визначення макроса.
                 // Бекенд `OtaPackagerService.build_threshold_config_block` —
                 // лише class method, у downlink pipeline не передається
-                // (свідомий defer: на TRL-6 усі види на дефолтах — re-send
-                // щодня був би no-op за ~5% downlink-бюджету).
+                // (свідомий defer: ціна каналу — re-send щодня ≈5% downlink-
+                // бюджету. ⛔ «Бо всі види на дефолтах» більше НЕ підстава —
+                // спростовано сідами, див. блок-преамбулу біля макроса).
                 // Boot-restore і КЕНОЗИС-write написані за цим же гейтом —
                 // активація = лише фліп `FW8_PARSER_ENABLED 1` (bench).
 #if FW8_PARSER_ENABLED
