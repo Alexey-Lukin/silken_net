@@ -4,8 +4,13 @@
 require "rails_helper"
 
 # [FW.8] End-to-end coverage of cluster-configurable Lorenz thresholds via governance.
-# Verifies the full chain: Cluster overrides → TreeFamily defaults → Tree.effective_lorenz_thresholds
-# → TelemetryUnpackerService divergence check → OtaPackagerService.build_threshold_config_block.
+# Chain: Cluster overrides → TreeFamily defaults → Tree#effective_lorenz_thresholds
+# → OtaPackagerService.build_threshold_config_block («ЩО СЛАТИ на пристрій»).
+# 🔴 [2026-09-05] Заголовок доти називав ланкою ще й `TelemetryUnpackerService
+# divergence check` — знято: DCI цей ланцюг БІЛЬШЕ НЕ читає, він судить за
+# `Tree#device_lorenz_thresholds` (смуга, чинна на пристрої). Обидві половини
+# розведення запінені: governance — нижче, DCI — у
+# `spec/services/telemetry_unpacker_service_spec.rb` («[FW.8]»).
 RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integration do
   describe "TreeFamily#effective_optimal_z_target" do
     it "returns 29.0 (global default) when optimal_z_target is unset" do
@@ -259,16 +264,23 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
     end
   end
 
-  describe "TelemetryUnpackerService Z divergence with cluster per-species override" do
+  describe "governance-ланцюг порогів (cluster override > family > global)" do
     let(:org) { create(:organization) }
     let(:family) do
       create(:tree_family, scientific_name: "Pinus sylvestris",
                            critical_z_min: 5.0, critical_z_max: 40.0)
     end
 
-    # ⚠️ Назва свідомо НЕ згадує `TreeFamily#healthy_z?` — цей приклад його не
-    # кличе й кликати не може: предикат родини кластерних override-ів не бачить.
-    # Судить тут `Tree#effective_lorenz_thresholds`, і саме його споживає сервіс.
+    # 🔴 [FW.8, перецілено 2026-09-05] Доти цей приклад ішов через
+    # `TelemetryUnpackerService#check_z_divergence!` і був підписаний «саме його
+    # споживає сервіс». Сервіс його БІЛЬШЕ НЕ споживає — DCI судить за
+    # `Tree#device_lorenz_thresholds` (смуга, чинна на пристрої), бо порівнювати
+    # треба два обчислення, а не дві конфігурації.
+    # ⚠️ Через сервіс приклад став би ВАКУУМНИМ, не червоним: глобальна стеля 45
+    # пропускає Z=42 і без жодного override, тож він зеленів би й зі знятою
+    # родиною, і зі знятим кластером — тобто перевіряв би власну фікстуру.
+    # Тому предмет узято НАПРЯМУ: governance-ланцюг є твердженням про те, ЩО
+    # СЛАТИ на пристрій, і живе рівно тут.
     it "honours the cluster per-species override over the family band" do
       cluster = create(:cluster, organization: org,
                                  environmental_settings: {
@@ -277,15 +289,27 @@ RSpec.describe "[FW.8] Cluster-configurable Lorenz thresholds", type: :integrati
                                    }
                                  })
       tree = create(:tree, cluster: cluster, tree_family: family)
-      service = TelemetryUnpackerService.new("")
 
-      # Z=42 would be unhealthy under family bounds (5..40) but healthy under cluster bounds (1..50)
-      attrs = { z_value: 42.0, bio_status: :homeostasis }
-      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      # Ліхтар проти повторної вакуумності: смуги мусять РОЗРІЗНЯТИСЬ, інакше
+      # приклад нічого не судить.
+      expect(family.critical_z_max).to eq(40.0)
+      expect(tree.effective_lorenz_thresholds).to include(min: 1.0, max: 50.0)
+    end
 
-      service.send(:check_z_divergence!, tree, attrs)
+    it "DCI цей ланцюг НЕ читає — судить за смугою пристрою [FW.8]" do
+      cluster = create(:cluster, organization: org,
+                                 environmental_settings: {
+                                   "lorenz_overrides_by_species" => {
+                                     "Pinus sylvestris" => { "min" => 1.0, "max" => 50.0 }
+                                   }
+                                 })
+      tree = create(:tree, cluster: cluster, tree_family: family)
 
-      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      expect(tree.device_lorenz_thresholds).to eq(
+        min: Tree::GLOBAL_LORENZ_Z_MIN, max: Tree::GLOBAL_LORENZ_Z_MAX,
+        optimal: Tree::GLOBAL_LORENZ_Z_OPTIMAL
+      )
+      expect(tree.device_lorenz_thresholds).not_to eq(tree.effective_lorenz_thresholds)
     end
   end
 end

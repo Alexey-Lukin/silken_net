@@ -522,20 +522,22 @@ firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
                                                    device_bio_status vs server_healthy_z?
                                                    (КАТЕГОРИЧНЕ за замовчанням; numeric
                                                     tolerance band під feature-flag, SEC.11)
-                                                   tree.effective_lorenz_thresholds (FW.8 3-tier)
+                                                   tree.device_lorenz_thresholds (FW.8 — смуга ПРИСТРОЮ)
 ```
 
 ### 5.3 Метод `homeostatic?` (Backend-Only)
 
 ```ruby
-# [FW.8] Використовує three-tier thresholds: cluster override > tree_family > global default
-# tree.effective_lorenz_thresholds → { min:, max:, optimal: }
+# [FW.8] Судить за смугою, ЧИННОЮ НА ПРИСТРОЇ (глобальні константи — дзеркало
+# firmware `BioContract::CRITICAL_Z_MIN/MAX`). 3-tier governance-ланцюг тут НЕ
+# вживається: він відповідає на «що слати», а DCI — на «чи збіглись обчислення».
+# tree.device_lorenz_thresholds → { min:, max:, optimal: }
 def check_z_divergence!(tree, attributes)
   server_z = attributes[:z_value]
   device_bio_status = attributes[:bio_status]
   return if server_z.nil? || device_bio_status.nil?
 
-  thresholds = tree.effective_lorenz_thresholds
+  thresholds = tree.device_lorenz_thresholds
   # [E.64] ρ-відносна стеля аномалії (дзеркало firmware): ambient-temp не дає хибний mismatch
   ceiling = SilkenNet::Attractor.anomaly_ceiling(attributes[:temperature_c], thresholds[:max])
   server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
@@ -544,7 +546,7 @@ def check_z_divergence!(tree, attributes)
 end
 ```
 
-> **[FW.8] Важлива зміна:** `check_z_divergence!` тепер використовує `tree.effective_lorenz_thresholds` замість прямого `tree_family.critical_z_min|max`. Це 3-рівневий пріоритет: Cluster override > TreeFamily per-species > Global default (2.0/45.0). Firmware може отримати оновлені пороги через `CMD_SET_THRESHOLDS` (0x9A) OTA config block.
+> 🔴 **[FW.8, ПЕРЕГЛЯНУТО 2026-09-05] `check_z_divergence!` судить за `tree.device_lorenz_thresholds` — смугою, ЧИННОЮ НА ПРИСТРОЇ (глобальні 2.0/45.0), а НЕ за 3-рівневим governance-ланцюгом.** Попередня редакція цього абзацу («тепер використовує `effective_lorenz_thresholds`») описувала намір, а не механізм: per-species значення не доходять до `bio_status` ЖОДНИМ шляхом — `calculate_state` порогів не приймає в сигнатурі, а C-шар `lorenz_thresholds.h` є write-only round-trip Flash→RAM→Flash (`FW8_PARSER_ENABLED = 0` гейтить ще й сам парсер). Отже сервер порівнював не два обчислення, а дві КОНФІГУРАЦІЇ, і на чесному дереві це давало категоричний mismatch. 📏 Виміряно на реальному cold-start (5 000 прогонів): MIN-бік `z ∈ [2, family_min)` — 0.14 %, **MAX-бік `z ∈ (стеля_родини, стеля_пристрою]` — 1.4 %** (тепла погода штовхає Z саме туди); `z < 2` не трапився жодного разу, тобто пристроєвий stress недосяжний. ⚖️ **Ціна названа:** у MAX-смузі підроблений `status_byte = homeostasis` більше не ловиться цим чеком — обмін свідомий, бо те покриття ловило чесні пакети РАЗОМ із підробленими й розрізнити їх не могло. Governance-ланцюг лишається домом питання «**що слати**» (`OtaPackagerService`, сплячий до FW.8-bench), а біо-питання «дерево поза своєю нормою» живе в `AlertDispatchService`. Стан → [`00_07`](00_07_Action_Plan_Tracker) FW.8.
 
 ---
 

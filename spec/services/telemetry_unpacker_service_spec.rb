@@ -707,25 +707,67 @@ end
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
       end
 
-      # [FW.8] Дискримінуючий пін родинної смуги НА РІВНІ СЕРВІСУ — шов, якого
-      # доти не тримав ніхто. Сусіди вище доводять лише fallback (родини нема →
-      # глобальні межі), а ланцюг `Tree#effective_lorenz_thresholds` пінить
-      # `spec/integration/fw8_threshold_governance_spec.rb`. Між ними лишалось
-      # питання, чи `check_z_divergence!` ту межу СПОЖИВАЄ, чи мовчки їде на
-      # глобальній — і жодне z, ужите поруч (25.0 · 50.0), відповісти не може,
-      # бо лежить по один бік ОБОХ смуг.
-      # z=3.0 і є той дискримінатор: здорове глобально (≥ 2.0), хворе для
-      # родини (< critical_z_min 5.0).
-      it "[FW.8] uses the tree_family band, not the global floor, when a family is present" do
+      # 🔴 [FW.8, ПЕРЕВЕРНУТО 2026-09-05] Дискримінатор смуг лишається той самий
+      # (z=3.0: здорове глобально ≥ 2.0, «хворе» для родини < 5.0), а ОЧІКУВАННЯ
+      # протилежне — і це не зміна смаку, а виправлення дефекту, який цей приклад
+      # доти ЦЕМЕНТУВАВ.
+      #
+      # Попередня редакція пінила, що `check_z_divergence!` споживає РОДИННУ
+      # смугу, і питання ставила як «споживає чи мовчки їде на глобальній».
+      # Обидві відповіді неповні, бо питання було не те: судити треба за смугою,
+      # ЧИННОЮ НА ПРИСТРОЇ. Пристрій рахує `bio_status` у mruby за ЗАШИТИМИ
+      # `BioContract::CRITICAL_Z_MIN/MAX` — `calculate_state` порогів не приймає
+      # в сигнатурі, mruby Flash-KV не читає, `FW8_PARSER_ENABLED = 0`. Тобто
+      # per-species значення до пристрою НЕ ДОХОДЯТЬ ЖОДНИМ ШЛЯХОМ, і сервер,
+      # який судив за ними, оголошував ФРОДОМ чесний пакет у вікні [2.0, 5.0) —
+      # з інкрементом `TELEMETRY_FRAUD_DETECTED_TOTAL`, на якому висить P0.
+      # ⚠️ Ціна старої форми була не теоретична: фабрика родини несе
+      # `critical_z_min = 5.0`, тож вікно розриву існувало на КОЖНОМУ фабричному
+      # дереві — сюїта не просто пропускала дефект, вона його тримала зеленим.
+      it "[FW.8] судить за ПРИСТРОЄВОЮ смугою, а не за родинною — чесний пакет не є фродом" do
         service = described_class.new("", nil)
-        # Ліхтар: якщо фікстура з'їде так, що 3.0 перестане розрізняти смуги,
+        # Ліхтарі: якщо фікстура з'їде так, що 3.0 перестане розрізняти смуги,
         # приклад мусить сказати це прямо, а не тихо стати вакуумним.
         expect(tree_with_family.effective_lorenz_thresholds[:min]).to eq(5.0)
+        expect(tree_with_family.device_lorenz_thresholds[:min]).to eq(Tree::GLOBAL_LORENZ_Z_MIN)
         expect(Tree::GLOBAL_LORENZ_Z_MIN).to be < 3.0
         attributes = { z_value: 3.0, bio_status: :homeostasis }
 
         # Spy-форма свідомо: `RSpec/MessageSpies` вмикається, і новий приклад
         # не має права дописувати в чергу міграції те, що сам же й зрізає.
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree_with_family, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      end
+
+      # 🔴 [FW.8] MAX-бік — ДОСЯЖНА половина розриву, і саме її бракувало.
+      # Виміряно на реальному cold-start (5 000 прогонів): MIN-вікно [2, family_min)
+      # трапляється 0.14 %, а це — 1.4 %, удесятеро частіше, бо тепла погода
+      # штовхає Z угору: для родини з `critical_z_max = 40` стеля ρ+12, тоді як
+      # пристрій має ρ+17. Без цього приклада фікс лишався б обґрунтованим
+      # рідкісним боком, а перевіреним — лише ним.
+      it "[FW.8] не виписує фрод на теплому Z під стелею ПРИСТРОЮ, але над стелею родини" do
+        service = described_class.new("", nil)
+        narrow  = create(:tree_family, critical_z_min: 5.0, critical_z_max: 40.0)
+        tree    = create(:tree, tree_family: narrow)
+
+        # temp = 0 → ρ = 28: стеля родини 40, стеля пристрою 45. Z=42 лежить МІЖ.
+        expect(SilkenNet::Attractor.anomaly_ceiling(0.0, 40.0)).to eq(40.0)
+        expect(SilkenNet::Attractor.anomaly_ceiling(0.0, Tree::GLOBAL_LORENZ_Z_MAX)).to eq(45.0)
+        attributes = { z_value: 42.0, bio_status: :homeostasis, temperature_c: 0.0 }
+
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        service.send(:check_z_divergence!, tree, attributes)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      end
+
+      # Дзеркало попереднього: смуга ПРИСТРОЮ лишається дієвою, тож справжня
+      # розбіжність (device каже homeostasis нижче ЙОГО ЖЕ порога) і далі ловиться.
+      # Без цього приклада фікс не відрізнити від «DCI просто вимкнули».
+      it "[FW.8] і далі ловить розбіжність нижче ПРИСТРОЄВОГО порога" do
+        service = described_class.new("", nil)
+        attributes = { z_value: 1.0, bio_status: :homeostasis, cold_start_flag: true }
+
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_z_divergence!, tree_with_family, attributes)
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)

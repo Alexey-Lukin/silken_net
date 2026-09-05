@@ -724,9 +724,16 @@ class TelemetryUnpackerService < ApplicationService
   # only categorically (the 21-byte packet does not carry raw Z), so the
   # numeric check is a forward-looking hook — kept here behind a metric
   # that surfaces the magnitude even when it is within tolerance.
-  # [FW.8] Use Tree#effective_lorenz_thresholds (cluster override >
-  # tree_family > global default) so divergence stays consistent with
-  # the thresholds firmware was provisioned with.
+  # [FW.8] Судимо за `Tree#device_lorenz_thresholds` — порогами, ЧИННИМИ НА
+  # ПРИСТРОЇ, а не за бажаними per-species. 🔴 Доти тут стояло
+  # `effective_lorenz_thresholds` із підставою «so divergence stays consistent
+  # with the thresholds firmware was provisioned with» — і саме ця підстава була
+  # хибною: прошивку ними НЕ провіженять (`calculate_state` порогів не приймає,
+  # `FW8_PARSER_ENABLED = 0`, mruby Flash-KV не читає), тож для родини з
+  # `critical_z_min > 2.0` чесний пакет із Z у вікні [2.0, min) давав
+  # категоричний mismatch → `TELEMETRY_FRAUD_DETECTED_TOTAL` і P0-алерт на
+  # НЕВИННОМУ дереві. Механізм і подія повернення per-species — докстрінг
+  # `Tree#device_lorenz_thresholds`.
   # [FW.31] Numeric tolerance band lives behind two ENV feature flags —
   # disabled by default to preserve current categorical behaviour:
   #   - `GAIA_DCI_NUMERIC_TOLERANCE=true` — enables the numeric branch.
@@ -745,7 +752,7 @@ class TelemetryUnpackerService < ApplicationService
     device_bio_status = attributes[:bio_status]
     return if server_z.nil? || device_bio_status.nil?
 
-    thresholds = tree.effective_lorenz_thresholds
+    thresholds = tree.device_lorenz_thresholds
     # [E.64] ρ-відносна стеля аномалії (дзеркало firmware bio_contract.rb): ambient-temp
     # не дає хибний DCI-mismatch. homeostasis = z ≥ min (absolute) і ≤ ρ-relative ceiling.
     ceiling = SilkenNet::Attractor.anomaly_ceiling(lorenz_temperature(attributes), thresholds[:max])

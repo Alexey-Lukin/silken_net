@@ -294,9 +294,24 @@ class Tree < ApplicationRecord
   #   3. Global default (BioContract::CRITICAL_Z_MIN/MAX/OPTIMAL_Z_TARGET)
   #
   # Returns Hash{ min:, max:, optimal: } of Float values.
+  #
+  # 🔴 РОЛЬ ЦЬОГО МЕТОДУ — «ЩО СЛАТИ на пристрій», і саме тому DCI його НЕ вживає
+  # (див. `#device_lorenz_thresholds`). Доти докстрінг називав другим споживачем
+  # `TelemetryUnpackerService`, тобто судження про ЦІЛІСНІСТЬ обчислення бралось
+  # за БАЖАНИМИ порогами, яких пристрій не має.
+  #
+  # ⚠️ «Роль одна» — про ЦЕЙ метод, не про родинну смугу взагалі: судити за
+  # `tree_family.critical_z_*` лишається легітимним у БІО-питанні, і там це живе
+  # (`AlertDispatchService` → `Attractor.homeostatic?` → `severe_drought`). Розвели
+  # не «сервер проти родини», а два РІЗНІ питання: «чи збіглись обчислення» ⊥ «чи
+  # дерево поза своєю нормою».
+  #
   # SSOT consumed by:
-  #   - TelemetryUnpackerService for Z divergence checks
-  #   - OtaPackagerService when emitting CMD_SET_THRESHOLDS (0x9A) to Soldier
+  #   - OtaPackagerService#build_threshold_config_block (CMD_SET_THRESHOLDS 0x9A)
+  #     ⚠️ Споживач СПЛЯЧИЙ: у `app/`/`lib/` викликача в нього нема, тракт
+  #     доставки не дротований (`03_01`: «у downlink pipeline не передається»).
+  #     Тобто сьогодні цей ланцюг (cluster override → family → global) не має
+  #     жодного ЖИВОГО продового читача — його вмикає bench-нога FW.8, не код.
   def effective_lorenz_thresholds
     family    = tree_family
     overrides = cluster && family&.scientific_name ? cluster.lorenz_overrides_for(family.scientific_name) : {}
@@ -306,6 +321,47 @@ class Tree < ApplicationRecord
       max:     overrides[:max]     || family&.critical_z_max&.to_f || GLOBAL_LORENZ_Z_MAX,
       optimal: overrides[:optimal] || family&.effective_optimal_z_target || GLOBAL_LORENZ_Z_OPTIMAL
     }
+  end
+
+  # [FW.8] Пороги, за якими судить САМ ПРИСТРІЙ — друга роль, свідомо розведена з
+  # `#effective_lorenz_thresholds` («що слати»). Єдиний споживач — категоричний
+  # DCI (`TelemetryUnpackerService#check_z_divergence!`).
+  #
+  # 🔴 Чому це не те саме: пристрій рахує `bio_status` у mruby `bio_contract.rb`
+  # за ЗАШИТИМИ `BioContract::CRITICAL_Z_MIN/MAX` — `calculate_state` порогів не
+  # приймає в сигнатурі, а C-шар (`lorenz_thresholds.h`) є write-only round-trip
+  # Flash→RAM→Flash: жодна гілка рішення його не читає, і `FW8_PARSER_ENABLED = 0`
+  # додатково гейтить сам парсер. Тобто per-species значення не доходять до
+  # вердикту ЖОДНИМ шляхом, і сервер, який судив за ними, порівнював не два
+  # обчислення, а дві КОНФІГУРАЦІЇ.
+  #
+  # 📏 Обидві половини розриву виміряні на РЕАЛЬНОМУ cold-start (x₀,y₀,z₀ ∈ [-1,1]
+  # з `SeedDerivation.initial_state`, 5 000 прогонів) — і несуча саме друга:
+  #   • MIN-бік, `z ∈ [2.0, family_min)` — 0.14 % (родина 5.0) / 0.24 % (8.0);
+  #     `z < 2.0` не трапився ЖОДНОГО разу, тобто пристроєвий stress недосяжний,
+  #     як і каже `03_04` (ρ-clamp);
+  #   • MAX-бік, `z ∈ (стеля_родини, стеля_пристрою]` — **1.4 %**, удесятеро
+  #     частіше: для родини з `critical_z_max = 40` стеля ρ+12 проти пристроєвої
+  #     ρ+17, і тепла погода штовхає Z саме туди.
+  # Наслідок був симетричний до напрямку: на cold-start пакеті — прямий
+  # `TELEMETRY_FRAUD_DETECTED_TOTAL` (P0-правило) на ЧЕСНОМУ дереві, бо
+  # `try_time_sync_recovery` там гейтований `!cold_start_flag`; на теплому — той
+  # самий recovery «знаходив» збіг на ЧУЖІЙ добі й слав зайвий `CMD_TIME_SYNC`.
+  #
+  # ⚖️ ЦІНА цього фіксу названа вголос: у смузі `(стеля_родини, стеля_пристрою]`
+  # підроблений `status_byte = homeostasis` більше НЕ ловиться категоричним DCI
+  # (`05_02` тримає цю гілку і як anti-fraud-сітку). Обмін свідомий: те покриття
+  # було ілюзорним — воно ловило чесні пакети РАЗОМ із підробленими й не вміло їх
+  # розрізнити, бо міряло розбіжність конфігурацій. Біо-питання «дерево поза
+  # своєю нормою» лишається покритим у власному домі (`AlertDispatchService`).
+  #
+  # Значення — дзеркало firmware-констант (`GLOBAL_LORENZ_Z_*`, той самий блок
+  # угорі файлу). ⛔ Не «покращувати» його до per-species, доки прошивка їх
+  # справді не читатиме: сьогодні це зробить DCI знову неправдивим.
+  # Подія перегляду — bench-нога FW.8 (`FW8_PARSER_ENABLED 1` + HAL-глю) І
+  # доставка порогів у сам mruby-контракт; доти тут чесна константа.
+  def device_lorenz_thresholds
+    { min: GLOBAL_LORENZ_Z_MIN, max: GLOBAL_LORENZ_Z_MAX, optimal: GLOBAL_LORENZ_Z_OPTIMAL }
   end
 
   private
