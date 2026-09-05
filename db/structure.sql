@@ -614,7 +614,6 @@ CREATE TABLE public.clusters (
     environmental_settings jsonb,
     health_index double precision,
     active_trees_count bigint DEFAULT 0 NOT NULL,
-    entropy_score double precision,
     ota_version_hiwater bigint DEFAULT 0 NOT NULL,
     geo_boundary public.geometry(Geometry,4326) GENERATED ALWAYS AS (
 CASE
@@ -4737,6 +4736,5 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260904064532'),
-('20260901071349');
+('20260905133000');
 

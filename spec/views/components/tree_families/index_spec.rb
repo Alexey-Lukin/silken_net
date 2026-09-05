@@ -79,8 +79,14 @@ RSpec.describe TreeFamilies::Index do
       expect(html).to include("Species Name")
     end
 
-    it "renders Safe Range column" do
-      expect(html).to include("Safe Range")
+    # ⛔ [E.64 ⚖️ 2026-09-05] Заголовок був «Safe Range», і пін тримав саме ту
+    # брехню: після зняття Z-похідних вердиктів родинна смуга не судить нічого,
+    # тож напис «безпечний» стверджував, що поза нею НЕБЕЗПЕЧНО. Ім'я тепер
+    # ОПИСОВЕ. Негативна половина несуча — без неї перейменування можна відкотити,
+    # і жоден приклад не почервоніє.
+    it "renders the Z-band column DESCRIPTIVELY, never as a safety verdict" do
+      expect(html).to include("Species Z Band")
+      expect(html).not_to include("Safe Range")
     end
 
     it "renders Population column" do

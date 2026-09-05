@@ -29,7 +29,7 @@ lv:
           description: 'AI sargs konstatēja anomāliju: sap_flow novirze no bāzlīnijas > %{deviation}%'
           title: AI sarga anomālija
         homeostasis:
-          description: 'Koks iegāja dziļā homeostāzē. Z vērtība stabila: %{z_value} σ'
+          description: 'Koks iegāja dziļā homeostāzē. Vidējā Z dienā: %{z_value}'
           title: Dziļa homeostāze
         maintenance:
           description: 'Tehniķis %{technician}: %{notes}'

@@ -19,8 +19,8 @@ lv:
       audit_aria: Auditēt %{name} sugu
       columns:
         command: Komanda
+        family_z_band: Sugas Z josla
         population: Populācija
-        safe_range: Drošais diapazons
         species_name: Sugas nosaukums
       define_aria: Definēt jaunu koku sugu
       define_dna: "+ Definēt DNS"

@@ -29,7 +29,7 @@ en:
           description: 'AI Guard detected anomaly: sap_flow deviation from baseline > %{deviation}%'
           title: AI Guard Anomaly
         homeostasis:
-          description: 'Tree entered deep homeostasis. Z-value stable: %{z_value} σ'
+          description: 'Tree entered deep homeostasis. Mean Z for the day: %{z_value}'
           title: Deep Homeostasis
         maintenance:
           description: 'Technician %{technician}: %{notes}'

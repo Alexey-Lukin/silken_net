@@ -30,7 +30,7 @@ lt:
           description: 'DI sargybinis aptiko anomaliją: sap_flow nuokrypis nuo bazinės linijos > %{deviation}%'
           title: DI sargybinio anomalija
         homeostasis:
-          description: 'Medis pasiekė gilią homeostazę. Z reikšmė stabili: %{z_value} σ'
+          description: 'Medis pasiekė gilią homeostazę. Vidutinė Z per parą: %{z_value}'
           title: Gili homeostazė
         maintenance:
           description: 'Technikas %{technician}: %{notes}'

@@ -2,15 +2,11 @@
 # frozen_string_literal: true
 
 class InsightGeneratorService < ApplicationService
-  MODEL_PATH = Rails.root.join("lib/assets/silken_forest.marshal").freeze
-  MODEL_DIGEST_PATH = Rails.root.join("lib/assets/silken_forest.marshal.sha256").freeze
-
   def initialize(date = AiInsight.reporting_date)
     @date = date
     @start_time = date.beginning_of_day
     @end_time = date.end_of_day
     @processed_count = 0
-    @ai_model = load_ai_model
   end
 
   # Синхронний режим: обробляє ВСІ кластери в одному процесі.
@@ -352,21 +348,22 @@ class InsightGeneratorService < ApplicationService
 
   # ⚠️ Порядок фіч — КОНТРАКТ із тренером (`lib/tasks/ai_train.rake`): міняючи його,
   # міняй обидва боки одним ходом, інакше модель дістане чужу вісь під своїм іменем.
+  # ⚖️ [E.64 · У-ВЕЙ, ⚖️ founder 2026-09-05] ML-гілку ЗНЯТО, а не обгороджено.
+  # Гігієна фіч лишила вектор із двох, і вимір показав, що легітимних входів
+  # сьогодні НУЛЬ: `max_acoustic` не має апаратного джерела (DMA-аудіотракт на
+  # кремнії не збудований — `MX_DMA_Init` нуль хітів, ARCH.102), а `avg_temp`
+  # евристика вже відкинула як погодний конфаунд. Модель, натренована зараз,
+  # вивчала б шум під іменем здоровʼя — і, на відміну від евристики, БЕЗ стелі
+  # 0.6 < 0.83, тобто здатна перетнути поріг слешингу.
+  # ⛔ Гейт (`kill-switch` / відмова при малій арності) розглянуто й ВІДХИЛЕНО:
+  # це процесний шар навколо механізму, який не має підстави існувати —
+  # `00_05 §5` / [У-ВЕЙ, ⚖️ 08-09]. Прибрати дешевше, ніж стерегти.
+  # ⏳ **ПОДІЯ ПОВЕРНЕННЯ названа (амана — відкладення без строку стає відмовою):**
+  # перший польовий кадр, що несе ПРЯМИЙ сигнал (`sap_flow` або `vpd_index`);
+  # оголошує її той, хто закриває bench-ногу HW.32/ARCH.102. Доти вердикт про
+  # стрес виносить ЛИШЕ евристика — і робить це з оголошеною стелею.
   def calculate_stress_index(max_status, avg_temp, max_acoustic, avg_z, avg_vcap = 0)
-    if @ai_model
-      features = Numo::DFloat.cast([ [ avg_temp.to_f, avg_vcap.to_f, avg_z.to_f, max_acoustic.to_f ] ])
-      proba = @ai_model.predict_proba(features)
-      stress_class_index = @ai_model.classes.to_a.index(1)
-
-      unless stress_class_index
-        Rails.logger.error "🛑 [Insight] ML-модель не містить клас 1 (stress). Fallback на евристику."
-        return calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
-      end
-
-      proba[0, stress_class_index].round(3)
-    else
-      calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
-    end
+    calculate_stress_index_heuristic(max_status, avg_temp, max_acoustic, avg_z)
   end
 
   # [E.64] Conformance with 05_05 §7 "Z alone never slashes" (audit #3).
@@ -524,31 +521,6 @@ class InsightGeneratorService < ApplicationService
     # виносила з того самого Z вердикт «стан ідеальний». Атрактор свідчить про
     # ПОЛОЖЕННЯ Z, і мовчання про аномалію не є твердженням про здоровʼя.
     else "ГОМЕОСТАЗ: Z у межах обвідної; про здоровʼя дерева цей сигнал не свідчить."
-    end
-  end
-
-  def load_ai_model
-    return nil unless File.exist?(MODEL_PATH)
-
-    model_data = File.binread(MODEL_PATH)
-    verify_model_integrity!(model_data)
-
-    Marshal.load(model_data) # rubocop:disable Security/MarshalLoad
-  rescue StandardError => e
-    Rails.logger.warn "⚠️ [Insight] Не вдалося завантажити ML-модель: #{e.message}. Використовуємо евристику."
-    nil
-  end
-
-  def verify_model_integrity!(model_data)
-    unless File.exist?(MODEL_DIGEST_PATH)
-      raise "SHA256-дайджест моделі не знайдено: #{MODEL_DIGEST_PATH}"
-    end
-
-    expected_digest = File.read(MODEL_DIGEST_PATH).strip
-    actual_digest = OpenSSL::Digest::SHA256.hexdigest(model_data)
-
-    unless ActiveSupport::SecurityUtils.secure_compare(actual_digest, expected_digest)
-      raise "SHA256-дайджест моделі не збігається (можлива підміна файлу)"
     end
   end
 end

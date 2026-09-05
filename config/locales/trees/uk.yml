@@ -31,7 +31,7 @@ uk:
           description: 'AI-вартовий виявив аномалію: відхилення sap_flow від базової лінії > %{deviation}%'
           title: Аномалія AI-вартового
         homeostasis:
-          description: 'Дерево увійшло в глибокий гомеостаз. Z-значення стабільне: %{z_value} σ'
+          description: 'Дерево увійшло в глибокий гомеостаз. Середнє Z за добу: %{z_value}'
           title: Глибокий гомеостаз
         maintenance:
           description: 'Технік %{technician}: %{notes}'

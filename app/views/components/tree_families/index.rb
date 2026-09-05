@@ -23,7 +23,13 @@ module TreeFamilies
             thead(class: "bg-gaia-surface-sunken text-gaia-text-subtle uppercase text-mini tracking-widest") do
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.species_name") }
-                th(scope: "col", class: "p-4") { t(".columns.safe_range") }
+                # ⛔ [E.64 ⚖️ 2026-09-05] Заголовок був «Безпечний діапазон», і це
+                # твердження, а не назва: після зняття Z-похідних вердиктів родинна
+                # смуга `critical_z_min..max` НЕ судить нічого — ні алерту, ні DCI
+                # (той бере `Tree#device_lorenz_thresholds`), ні мінту. Напис
+                # стверджував, що поза нею НЕБЕЗПЕЧНО, тобто ніс знятий вердикт у
+                # єдиному місці, де його ще читала людина. Ім'я тепер ОПИСОВЕ.
+                th(scope: "col", class: "p-4") { t(".columns.family_z_band") }
                 th(scope: "col", class: "p-4") { t(".columns.population") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.command") }
               end

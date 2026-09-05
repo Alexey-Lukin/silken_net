@@ -60,10 +60,16 @@ RSpec.describe TreeChronicle::TextFormatter do
     context "when avg_z is present" do
       let(:insight) { OpenStruct.new(avg_z: 29.4) }
 
-      it "includes the Z-value" do
+      # ⛔ [E.64 ⚖️ 2026-09-05] Рядок ніс ДВІ хиби, і обидві пінились тут як норма:
+      # «σ» як одиницю для БЕЗРОЗМІРНОГО Z (σ — параметр Прандтля, інша величина;
+      # клас ARCH.86 «unit: kOhm») і слово «stable» — твердження про поведінку,
+      # виведене з ОДНОГО добового середнього. Вердикт «гомеостаз» лишається (він
+      # зі `stress_index`, багатосигнального); Z тепер подано як те, чим є — число.
+      it "shows Z as a plain number, with no fabricated unit and no stability claim" do
         result = described_class.homeostasis_description(insight)
         expect(result).to include("29.4")
-        expect(result).to include("Z-value stable")
+        expect(result).not_to include("σ")
+        expect(result).not_to include("stable")
       end
     end
 
@@ -73,7 +79,7 @@ RSpec.describe TreeChronicle::TextFormatter do
       it "falls back to N/A" do
         result = described_class.homeostasis_description(insight)
         expect(result).to include("N/A")
-        expect(result).to include("Z-value stable")
+        expect(result).not_to include("σ")
       end
     end
   end

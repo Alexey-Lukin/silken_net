@@ -19,8 +19,8 @@ lt:
       audit_aria: Audituoti %{name} rūšį
       columns:
         command: Komanda
+        family_z_band: Rūšies Z juosta
         population: Populiacija
-        safe_range: Saugus diapazonas
         species_name: Rūšies pavadinimas
       define_aria: Apibrėžti naują medžių rūšį
       define_dna: "+ Apibrėžti DNR"

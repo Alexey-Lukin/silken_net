@@ -12,6 +12,18 @@
 # it stands. Hence no claim about the population is made here at all: count with
 # `ls db/migrate/`, and read the live anchor timestamp off the filename.
 #
+# 🔴 СКВОШ 2026-09-05 склав У СЕБЕ одну річ, якої немає в жодній міграції, і це
+# записано ТУТ, бо `structure.sql` не пояснює власних мінус-рядків: у складеній
+# схемі БІЛЬШЕ НЕМАЄ `clusters.entropy_score`. Колонку знято разом із трактом
+# `entropy_anomaly` (E.64, `05_05 §8.1`): детектор тлумачив розкид Z по кластеру як
+# «гомогенізація = лісовий стрес», а розкид породжений per-device `K_seed`, які ми
+# ПРИЗНАЧИЛИ, — виміряно N=200/R=500, H = 0.9077 на лісі БЕЗ біологічної різниці.
+# ⚠️ Знято не міграцією, а ALTER-ом у dev перед дампом — і сам гейт дампу правий,
+# що це виглядає як дрейф: двокроковий `ignored_columns`-танець мав СЕНС лише проти
+# rolling-деплою з даними, а сквош базу зносить і сіє наново, тож підстава відпала.
+# ⛔ Наступний, хто побачить у git-історії зникнення колонки без міграції, читає ЦЕЙ
+# абзац: провенанс тут, не в `git log -S`.
+#
 # Workflow for new clones (dev/test):
 #   bin/rails db:create db:schema:load
 #   bin/rails runner 'PartitionMaintenanceWorker.new.perform'   # ← МІЖ, не після

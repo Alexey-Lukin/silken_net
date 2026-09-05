@@ -19,8 +19,8 @@ uk:
       audit_aria: Аудит виду %{name}
       columns:
         command: Команда
+        family_z_band: Z-смуга породи
         population: Популяція
-        safe_range: Безпечний діапазон
         species_name: Назва виду
       define_aria: Визначити новий вид дерева
       define_dna: "+ Визначити ДНК"

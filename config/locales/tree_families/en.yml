@@ -19,8 +19,8 @@ en:
       audit_aria: Audit %{name} species
       columns:
         command: Command
+        family_z_band: Species Z Band
         population: Population
-        safe_range: Safe Range
         species_name: Species Name
       define_aria: Define new tree species
       define_dna: "+ Define DNA"

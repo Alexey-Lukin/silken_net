@@ -387,7 +387,6 @@ dormant ──reactivate──► active
 | `geo_boundary` | geometry (PostGIS) | Полігон сектора для ST_Contains |
 | `geojson_polygon` | jsonb | GeoJSON-представлення (синхронізується тригером → див. примітку нижче) |
 | `health_index` | **double precision, nullable** | Денормалізований індекс `1.0 - stress_index` (0..1). ⚡ **`NULL` = «не виміряно» — окремий СТАН, не нуль і не порожнеча** [ARCH.84], див. нижче. ⚠️ Тут доти стояло `decimal`, а схема каже `double precision` — і в цьому дереві різниця не косметична: `decimal` приходить у Ruby BigDecimal'ом, а `CLAUDE.md §6` окремо вимагає Float (IEEE 754) на Lorenz-шляху, бо він бітово дзеркалить mruby |
-| `entropy_score` | float | ⛔ **ПИСАЧА НЕМАЄ з 2026-09-05** — весь тракт `entropy_anomaly` знято (детектор міряв криптошум зерен `K_seed`, не ліс; вимір — `EwsAlert#alert_type` + [`06_03 §2.6`](06_03_Prometheus_Observability)). Колонка лишена як ІСТОРИЧНА і **читачів теж не має**: значення в ній заморожені на моменті зняття, тож будь-яке нове прочитання = вчорашнє число на сьогоднішній темряві. Дроп — окремою міграцією поверх анкера |
 | `active_trees_count` | bigint | Counter cache (оновлюється Tree callbacks) |
 | `climate_type` | string | Кліматичний тип зони (напр. "temperate_continental") |
 | `environmental_settings` | jsonb | `custom_fire_threshold`, `seismic_sensitivity_threshold`, `timezone`, `lorenz_overrides_by_species` |
@@ -1695,7 +1694,7 @@ Polymorphic:
 | Принцип | Реалізація |
 |---------|-----------|
 | **Hot Path без валідацій** | `TelemetryLog`, `GatewayTelemetryLog` — валідації в сервісі, не в AR |
-| **Денормалізація для N+1 Kill** | `latest_stress_index`, `latest_voltage_mv`, `active_trees_count`, `health_index` (⛔ `entropy_score` вибув 2026-09-05 — писача знято разом із трактом `entropy_anomaly`; колонка є, денормалізацією більше не служить) |
+| **Денормалізація для N+1 Kill** | `latest_stress_index`, `latest_voltage_mv`, `active_trees_count`, `health_index` (⛔ `entropy_score` вибув 2026-09-05 — знято писача, тракт `entropy_anomaly` І саму колонку: у схемі її вже немає, провенанс мінус-рядка — шапка `db/migrate/*_init_consolidated.rb`) |
 | **GREATEST для race conditions** | `mark_seen!` в Tree та Gateway — атомарне оновлення без дублів |
 | **delete_all для масових таблиць** | Телеметрія, тривоги, логи, ActuatorCommands — уникнення OOM при DELETE |
 | **restrict_with_error для фінансів** | NaasContract, ParametricInsurance, Users — захист аудит-слідів |

@@ -29,7 +29,7 @@
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Ti-довговічність/Kirkendall — Гусак + ЧМА токсикологія (Суховий) |
 | [`03_03` — TinyML Acoustic Inference](03_03_TinyML_Acoustic_Inference) | §10 Soundscape — ПМКТ (датасет) + наш NDVI-адаптер (Sentinel-2) |
 | [`03_04` — mruby Lorenz Attractor](03_04_mruby_Lorenz_Attractor) | Lorenz = status-гейт + DCI-anti-fraud; ground-truth-протокол → [`05_05 §8`](05_05_Slashing_and_Risk_Policy) |
-| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth Z↔health протокол (партнерський ростер); Карапетян Z-калібрація |
+| [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | §8 Ground-Truth протокол (партнерський ростер) — ⚠️ **більше НЕ «Z↔health»**: 2026-09-05 (E.64) Z присуджено печаткою DCI, тож калібрується `stress_index` на ПРЯМИХ сигналах, не Z-пороги; предмет Карапетян переїхав відповідно (§1.2) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Backend ML/DS = наш (`InsightGeneratorService`); ЧІПБ EWS/AlertDispatch |
 | [`06_08` — Resilience and Failover Policy](06_08_Resilience_and_Failover_Policy) | Mesh Markov/percolation — Open Research, двері ЧНУ-ФОТІУС (§1.1) |
 | [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | UNI.* / STK.* outreach-трекер |
@@ -104,7 +104,7 @@
 
 | Партнер | Кафедра / роль | Що валідує → канон-дім | Публ. |
 |---|---|---|---|
-| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика: CUSUM/EWMA research-шар ПОВЕРХ нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + ground-truth Z-калібрація ([`05_05 §8`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13/24a |
+| доц. **Карапетян А.Р.** (зав.) | статистика та прикл. математика (R/Data Science) | Anomaly/fraud-статистика: CUSUM/EWMA research-шар ПОВЕРХ нашого порога `FRAUD_DEVIATION_THRESHOLD` (Ст.13) + biodiversity fusion-статистика (ANOVA/permutation, Ст.24a) + 🔴 **ground-truth калібрація ПРЯМИХ сигналів** — предмет переїхав 2026-09-05 (E.64): калібрувати Z-пороги здоровʼя більше НЕМА ЧОГО, бо Z присуджено печаткою DCI, а не мірою стану; та сама статистична робота лишається чинною над `stress_index`-вагами на прямих вимірах (sap/VPD/акустика) проти польових міток. ⚠️ Обʼєкт інший, фах той самий — переказувати цей рядок як «калібрування Z» більше не можна ([`05_05 §8.2/§8.3`](05_05_Slashing_and_Risk_Policy)) → [`04_02`](04_02_Business_Logic_and_Services) | Ст. 13/24a |
 | **перший проректор Гончаров А.В.** | каф. РТРС (радіотехніка / signal-processing) | **Інституційний якір ЧДТУ** (MoU-підписант) + експериментальна RF-верифікація (VNA S11, EMC pre-scan, натурний Link Budget) розрахунків Косенюка → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM) | Ст. 23 |
 | проф. **Базіло К.В.** + проф. **Бондаренко М.О.** | ПМКТ, акустична мехатроніка | Валідація фононної лінзи гіроїда (EIS + AE) + **калібрувальний TinyML-датасет** (польова валідність 5-class моделі — [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference)); резонанс п'єзо у діапазоні фауни 0.5–12 кГц (Ст.24a) | Ст. 24/24a |
 
