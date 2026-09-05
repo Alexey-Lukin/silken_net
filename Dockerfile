@@ -18,7 +18,22 @@ FROM docker.io/library/ruby:4.0.6-slim@sha256:58479f164d5947f852da27a4436c89bb98
 WORKDIR /rails
 
 # Install base packages
+# 🔒 `apt-get upgrade` тут НЕ зайвий і НЕ суперечить digest-піну образу [OPS.10-клас,
+# заведено 2026-09-06]. Офіційний `ruby:*-slim` перезбирається за власним графіком, тож
+# між його збіркою і нашою в базовому шарі накопичуються ВЖЕ ВИПРАВЛЕНІ Debian-CVE, яких
+# не рухає ЖОДЕН наш канал: `bundler-audit` і Dependabot читають ЛОК, а digest-бамп чекає
+# на чужу перезбірку. Виміряно 2026-09-06: тридцять відкритих алертів на трійці
+# openssl/libssl3t64/openssl-provider-legacy, тоді як `apt-cache policy` у ТОМУ САМОМУ
+# образі вже віддавав виправлену версію кандидатом.
+# ⚖️ Форма обрана ШИРОКОЮ (не іменований `--only-upgrade` списком пакетів), і підстава
+# виміряна, а не смакова: `apt-get -s upgrade` показав, що обидві форми рухають РІВНО ті
+# самі три пакети з 82 — тобто компроміс порожній, а широка форма полагодить наступний
+# Debian-CVE без правки цього файлу. Іменований список довелося б редагувати щоразу.
+# ⚠️ Ціна названа: вміст цього шару залежить від ДАТИ збірки, не лише від піна. Але той
+# самий рядок уже ставить `curl`/`libvips`/`postgresql-client` без пінів, тож НОВОГО
+# класу недетермінізму це не додає — воно розширює наявний. Повне обґрунтування → 06_07 §1a.
 RUN apt-get update -qq && \
+    apt-get upgrade --no-install-recommends -y && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
