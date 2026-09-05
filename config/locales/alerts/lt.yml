@@ -15,8 +15,6 @@ lt:
       actuator_fault_unknown: Vykdiklio „%{name}“ gedimas (%{endpoint}). Priežastis nežinoma (nėra CoAP atsakymo). Reikalingas patrulio išvykimas.
       actuator_stuck: 'Vykdiklis „%{name}“ (%{endpoint}) laikomas aktyviu %{stuck_for_min} min po komandos #%{command_id} lango pabaigos. Rails prarado jo pėdsaką ir grąžino įrašą į ramybės būseną. Fizinė būsena nežinoma — patikrinkite įrenginį vietoje.'
       actuator_stuck_stop_queued: 'Vykdiklis „%{name}“ (%{endpoint}) laikomas aktyviu %{stuck_for_min} min po komandos #%{command_id} lango pabaigos. Rails prarado jo pėdsaką, įtraukė STOP į eilę iki kito šliuzo užklausimo ir grąžino įrašą į ramybės būseną. Fizinė būsena nežinoma — patikrinkite įrenginį vietoje.'
-      # [E.64 2026-09-05] ІСТОРИЧНИЙ ключ: писача знято (Z-похідний вердикт про здоровʼя).
-      # Лишається, бо `EwsAlert#message` є РЕНДЕРОМ — архівні алерти з цим ключем інакше втратили б текст.
       attractor_destabilised: "🌀 ATRAKTORIUS: Destabilizacija (Z: %{z_value})."
       burn_failure: 'Kritinis %{amount} SCC sudeginimo gedimas. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'
       burn_failure_ambiguous: 'Kritinis %{amount} SCC sudeginimo gedimas — operacija galėjo įvykti; NEKARTOTI automatiškai, pirma patikrink naršyklėje. Galimas sutartinio likučio kontrolės praradimas. Error: %{error}'

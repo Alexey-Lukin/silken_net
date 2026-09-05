@@ -15,8 +15,6 @@ lv:
       actuator_fault_unknown: Izpildmehānisma “%{name}” kļūme (%{endpoint}). Iemesls nezināms (nav CoAP atbildes). Nepieciešams patruļas izbraukums.
       actuator_stuck: 'Izpildmehānisms “%{name}” (%{endpoint}) ir reģistrēts kā aktīvs %{stuck_for_min} min pēc komandas #%{command_id} loga beigām. Rails zaudēja tā pēdas un atgrieza ierakstu miera stāvoklī. Fiziskais stāvoklis nav zināms — pārbaudiet ierīci uz vietas.'
       actuator_stuck_stop_queued: 'Izpildmehānisms “%{name}” (%{endpoint}) ir reģistrēts kā aktīvs %{stuck_for_min} min pēc komandas #%{command_id} loga beigām. Rails zaudēja tā pēdas, ierindoja STOP uz nākamo vārtejas aptauju un atgrieza ierakstu miera stāvoklī. Fiziskais stāvoklis nav zināms — pārbaudiet ierīci uz vietas.'
-      # [E.64 2026-09-05] ІСТОРИЧНИЙ ключ: писача знято (Z-похідний вердикт про здоровʼя).
-      # Лишається, бо `EwsAlert#message` є РЕНДЕРОМ — архівні алерти з цим ключем інакше втратили б текст.
       attractor_destabilised: "🌀 ATRAKTORS: Destabilizācija (Z: %{z_value})."
       burn_failure: 'Kritiska %{amount} SCC sadedzināšanas kļūme. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
       burn_failure_ambiguous: 'Kritiska %{amount} SCC sadedzināšanas kļūme — transakcija varēja tikt izpildīta; NEATKĀRTOT automātiski, vispirms pārbaudi pārlūkā. Iespējams kontroles zudums pār līgumā noteikto atlikumu. Error: %{error}'
