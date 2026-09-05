@@ -189,6 +189,7 @@ jobs:
           # Runtime (lazy): feature degraded until provisioned, not a boot crash. Warn only.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           FILECOIN_API_KEY: ${{ secrets.FILECOIN_API_KEY }}
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
           # 🔴 [INF.27 move (3), 2026-09-02] Canopy is a TESTNET slot: the four RPCs it boots on
           # are the CANOPY_* twins, and they are BOOT-CRITICAL here, not RUNTIME. An unset twin
           # resolves to the overlay's loud placeholder (`.kamal/secrets.canopy`), which the chain
@@ -240,7 +241,7 @@ jobs:
           # spec/deploy/deploy_workflow_parity_spec.rb.
           BOOT_CRITICAL="SECRET_KEY_BASE PROVISIONING_MASTER_KEY ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT GCP_PROJECT_ID POSTGRES_PASSWORD CANOPY_REDIS_URL TLS_ORIGIN_CERT_PEM TLS_ORIGIN_KEY_PEM CANOPY_ALCHEMY_POLYGON_RPC_URL CANOPY_ALCHEMY_ETHEREUM_RPC_URL CANOPY_SOLANA_RPC_URL CANOPY_CELO_RPC_URL"
           JOB_CRITICAL="CANOPY_ORACLE_MINTER_PRIVATE_KEY CANOPY_ORACLE_SLASHER_PRIVATE_KEY CANOPY_ETHEREUM_ANCHOR_PRIVATE_KEY CANOPY_ORACLE_CELO_PRIVATE_KEY CANOPY_SOLANA_WALLET_KEYPAIR CANOPY_SOLANA_FEE_PAYER_PUBKEY CANOPY_SOLANA_FEE_PAYER_TOKEN_ACCOUNT CANOPY_SOLANA_USDC_MINT_ADDRESS"
-          RUNTIME="SENTRY_DSN FILECOIN_API_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
+          RUNTIME="SENTRY_DSN FILECOIN_API_KEY CARTO_API_KEY CHAINLINK_HMAC_SECRET HELIUM_WEBHOOK_SECRET TURBO_SIGNED_STREAM_KEY GRAFANA_REMOTE_WRITE_URL GRAFANA_REMOTE_WRITE_USERNAME GRAFANA_REMOTE_WRITE_TOKEN"
 
           missing=""
           for v in $BOOT_CRITICAL; do
@@ -518,6 +519,7 @@ jobs:
           # --- Observability ---
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           FILECOIN_API_KEY: ${{ secrets.FILECOIN_API_KEY }}
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
           # --- Origin TLS [INF.4] — consumed by `config/deploy.yml` proxy.ssl, NOT by Rails ---
           # Kamal resolves these two by NAME from .kamal/secrets-common; missing here means
           # kamal-proxy boots with no certificate and Cloudflare's Full (strict) answers 521/525

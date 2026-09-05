@@ -212,6 +212,16 @@ env:
     # ⛔ Це JWT (заголовок `Authorization: Bearer`), а НЕ стара пара
     # `pinata_api_key`+`pinata_secret_api_key`: та дасть 401 на тому ж ендпоінті.
     - FILECOIN_API_KEY
+    # 🗺️ [UI.19 · DEPLOY-1 Фаза 4] CARTO basemap-ключ. ⚖️ **Механізм — секрет, природа — НІ,
+    # і розводити це обовʼязково.** Ключ їде в URL КОЖНОГО тайла всередині браузера, тож
+    # таємницею він не є; захищає referrer-обмеження на `silkennet.app`+`canopy.silkennet.app`.
+    # 🔴 Але канон `04_04 §7.2` називав домом `env.clear`, і це ВИПРАВЛЕНО 2026-09-05: репозиторій
+    # ПУБЛІЧНИЙ, а `deploy_secret_scan` (інваріант «`*_KEY` не несе літерала в clear») спіймав
+    # спробу закомітити значення. Присуд про `env.clear` ухвалювався ДО звірки з цим гейтом —
+    # тобто носій виявився правішим за канон, і канон пішов за ним, а не навпаки.
+    # ⛔ Не читати це як «ключ секретний»: сюди він кладеться, щоб не осісти в публічному git,
+    # а не тому, що його не видно. Ротація = нова форма-заявка на carto.com/basemaps/apikey.
+    - CARTO_API_KEY
     # --- Hardware provisioning gate (config/initializers/master_key_strength_check.rb) ---
     - PROVISIONING_MASTER_KEY
     # --- AR-Encryption keys gate (active_record_encryption_keys_check.rb) — hardware_keys + identities [SEC.22] ---
