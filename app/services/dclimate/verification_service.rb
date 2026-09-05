@@ -32,6 +32,24 @@ module Dclimate
     # лишається fail-closed заявкою, не робочим фолбеком.
     DCLIMATE_BASE_URL = ENV.fetch("DCLIMATE_BASE_URL", "https://api.dclimate.net")
 
+    # 🛰️ ONE HOME «ЧИ НОГА ЖИВА» — дзеркало `Iotex::W3bstreamVerificationService.configured?`
+    # [ARCH.118-клас, застосовано до dClimate 2026-09-05].
+    #
+    # 🔴 **Урок був ратифікований для СЕСТРИ й не свіпнутий сюди — і ціна виміряна:**
+    # один прогін симулятора на canopy лишив **304** заплановані `DclimateVerificationWorker`,
+    # кожен приречений, бо `api.dclimate.net` виміряно мертвим (TLS не встановлюється,
+    # 2026-09-02, перевимір 09-04). Це рівно та форма, яку ARCH.118 закрив для W3bstream:
+    # несконфігурована нога рейзить у retry-драбині на КОЖНУ подію і зʼїдає слот.
+    #
+    # ⛔ **`DCLIMATE_BASE_URL` НЕ можна питати через `.presence` — у нього є ДЕФОЛТ**, і той
+    # дефолт указує на мертвий хост. Наївний предикат віддавав би вічне «сконфігуровано»,
+    # тобто був би гіршим за його відсутність: він СТВЕРДЖУВАВ би готовність. Тому обидва
+    # значення мусять бути задані ЯВНО — саме цього й бракує (`00_07` S3.2: доки вендор не
+    # дасть чинну пер-провайдерну базу, у verify немає предмета).
+    def self.configured?
+      ENV["DCLIMATE_API_KEY"].presence.present? && ENV["DCLIMATE_BASE_URL"].presence.present?
+    end
+
     # Датасет NASA FIRMS (Near Real-Time Global Active Fire) через dClimate.
     # VIIRS (Visible Infrared Imaging Radiometer Suite) на Suomi NPP — роздільна
     # здатність 375 м, проліт кожні ~12 годин, затримка даних ~3 години.

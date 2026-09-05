@@ -664,6 +664,11 @@ class EwsAlert < ApplicationRecord
   # для всіх 3 страхових перилів. Сервіс маршрутизує: fire → FIRMS-вердикт; не-пожежа → Field Audit.
   def schedule_satellite_verification!
     return unless requires_satellite_consensus?
+    # 🛰️ [ARCH.118-клас, 2026-09-05] БЕЗ КОНФІГУРАЦІЇ — ЖОДНОГО enqueue, і гейт стоїть
+    # саме ТУТ, а не лише в `perform`: приречена джоба, що потрапила в чергу, все одно
+    # проходить retry-драбину й осідає в DeadSet. Виміряно на canopy — один прогін
+    # симулятора лишив 304 заплановані верифікації в мертвий ендпоінт.
+    return unless Dclimate::VerificationService.configured?
 
     DclimateVerificationWorker.perform_in(1.hour, self.id)
   end

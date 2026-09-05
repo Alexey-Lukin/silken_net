@@ -451,6 +451,20 @@ RSpec.describe EwsAlert, type: :model do
     end
 
     describe "after_create_commit :schedule_satellite_verification!" do
+      # 🛰️ [ARCH.118-клас] Нога гейтована на конфігурацію — активуємо, бо предмет цих
+      # прикладів МАРШРУТИЗАЦІЯ (які перили планують верифікацію), а не сам гейт.
+      before { allow(Dclimate::VerificationService).to receive(:configured?).and_return(true) }
+
+      it "НЕ ставить у чергу, коли нога не сконфігурована — приречена джоба не мусить існувати" do
+        allow(Dclimate::VerificationService).to receive(:configured?).and_return(false)
+
+        allow(DclimateVerificationWorker).to receive(:perform_in)
+
+        create(:ews_alert, :drought)
+
+        expect(DclimateVerificationWorker).not_to have_received(:perform_in)
+      end
+
       it "enqueues DclimateVerificationWorker for fire_detected" do
         allow(DclimateVerificationWorker).to receive(:perform_in).with(1.hour, kind_of(Integer))
         create(:ews_alert, :fire)

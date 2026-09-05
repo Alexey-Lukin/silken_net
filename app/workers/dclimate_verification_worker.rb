@@ -36,6 +36,16 @@ class DclimateVerificationWorker
     # Пропускаємо, якщо алерт вже верифіковано або відхилено
     return unless alert.satellite_unverified?
 
+    # 🛰️ [ARCH.118-клас, 2026-09-05] Другий бік того самого гейта: `EwsAlert` більше не
+    # ставить у чергу без конфігурації, але джоба, ЗАПЛАНОВАНА ДО фіксу (у нас їх було
+    # 304 з одного прогону симулятора), прийшла б сюди й пішла в retry-драбину до DeadSet.
+    # ⛔ Тихо, не `raise`: нога не зламана, вона НЕ АКТИВОВАНА — а помилка тут стверджувала б
+    # дефект там, де його немає (той самий розділ, що ARCH.118 провів для W3bstream).
+    unless Dclimate::VerificationService.configured?
+      Rails.logger.info "🛰️ [S3.2] dClimate не сконфігуровано — верифікацію алерту ##{alert_id} пропущено"
+      return
+    end
+
     Dclimate::VerificationService.new(alert).perform
     # [INF.26] Інкремент `EWS_ALERTS_TOTAL` знято звідси: метрика зветься «total EWS
     # alerts», а цей сайт лічив лише ті, що дійшли до супутникової верифікації Й

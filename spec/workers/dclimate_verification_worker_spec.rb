@@ -8,6 +8,9 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
   let(:tree) { create(:tree, cluster: cluster) }
 
   before do
+    # 🛰️ [ARCH.118-клас] Activation gate — приклади нижче вправляють ЖИВУ ногу.
+
+    allow(Dclimate::VerificationService).to receive(:configured?).and_return(true)
     allow(AlertNotificationWorker).to receive(:perform_async)
     silence_broadcasts!(:alert_notify, :alert_update, :alert_new)
     silence_side_effects!(:satellite_verification)
@@ -26,6 +29,17 @@ RSpec.describe DclimateVerificationWorker, type: :worker do
   end
 
   describe "#perform" do
+    # 🛰️ [ARCH.118-клас, 2026-09-05] Джоба, що дійшла до воркера з НЕактивованою ногою,
+    # мусить вийти БЕЗ винятку: raise тут — це retry-драбина до DeadSet, заради зняття
+    # якої гейт і існує. Виміряно на canopy: один прогін симулятора лишив 304 таких.
+    it "не рейзить і не кличе сервіс, коли dClimate не сконфігуровано" do
+      allow(Dclimate::VerificationService).to receive_messages(configured?: false, new: nil)
+      doomed = create(:ews_alert, :fire, cluster: cluster, tree: tree)
+
+      expect { described_class.new.perform(doomed.id) }.not_to raise_error
+      expect(Dclimate::VerificationService).not_to have_received(:new)
+    end
+
     context "when alert exists and is unverified" do
       let(:alert) { create(:ews_alert, :fire, cluster: cluster, tree: tree) }
 
