@@ -753,8 +753,14 @@ class TelemetryUnpackerService < ApplicationService
     # [E.64] ρ-відносна стеля аномалії (дзеркало firmware bio_contract.rb): ambient-temp
     # не дає хибний DCI-mismatch. homeostasis = z ≥ min (absolute) і ≤ ρ-relative ceiling.
     ceiling = SilkenNet::Attractor.anomaly_ceiling(lorenz_temperature(attributes), thresholds[:max])
-    server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
-    device_healthy = device_bio_status == :homeostasis
+    # ⛔ [E.64 2026-09-05] Імена БУЛИ `server_healthy`/`device_healthy` — і саме
+    # цей епітет є насінням класу, що коштував трьох механізмів за один день
+    # (per-tree алерт · per-cluster ентропія · ML-фіча). Тут не «здоровʼя», а
+    # ЧЛЕНСТВО У СМУЗІ: обидві сторони кажуть лише «моє Z впало в очікуваний
+    # інтервал», і збіг цих двох тверджень є печаткою DCI, не діагнозом.
+    # ⛔ Не повертати «healthy» у жодну змінну на цьому шляху.
+    server_in_band = server_z >= thresholds[:min] && server_z <= ceiling
+    device_in_band = device_bio_status == :homeostasis
 
     # [FW.31] Optional numeric drift check (feature-flagged, default off).
     # Runs IN ADDITION to the categorical check below — never replaces it.
@@ -773,7 +779,7 @@ class TelemetryUnpackerService < ApplicationService
       end
     end
 
-    if device_healthy != server_healthy
+    if device_in_band != server_in_band
       # [ARCH.41] Before flagging fraud on a warm-start packet, attempt
       # cold-start re-derivation with three epoch_day candidates. A VBAT-loss
       # cold-boot uses firmware's RTC default (≈day 10951) as epoch_day instead
@@ -782,7 +788,7 @@ class TelemetryUnpackerService < ApplicationService
       # the packet is legitimate — mark time_unsynced_fallback and request RTC
       # correction via TimeSyncDownlinkWorker instead of counting fraud.
       if !attributes[:cold_start_flag] &&
-          try_time_sync_recovery(tree, attributes, thresholds, device_healthy)
+          try_time_sync_recovery(tree, attributes, thresholds, device_in_band)
         return
       end
 
@@ -804,7 +810,7 @@ class TelemetryUnpackerService < ApplicationService
   # Side effects on match:
   #   * sets attributes[:time_unsynced_fallback] = true
   #   * enqueues TimeSyncDownlinkWorker for the tree's cluster
-  def try_time_sync_recovery(tree, attributes, thresholds, device_healthy)
+  def try_time_sync_recovery(tree, attributes, thresholds, device_in_band)
     seed_bytes = tree.hardware_key&.binary_lorenz_seed
     return false if seed_bytes.nil?
 
@@ -823,10 +829,10 @@ class TelemetryUnpackerService < ApplicationService
       x0, y0, z0 = SilkenNet::SeedDerivation.initial_state(seed_bytes, epoch_day)
       z_candidate, = SilkenNet::Attractor.calculate_z_from_state(x0, y0, z0, temp, acoustic, delta_t, vcap)
       # [E.64] ρ-відносна стеля (як у check_z_divergence!) — temp вже визначено вище.
-      candidate_healthy = z_candidate >= thresholds[:min] &&
+      candidate_in_band = z_candidate >= thresholds[:min] &&
         z_candidate <= SilkenNet::Attractor.anomaly_ceiling(temp, thresholds[:max])
 
-      next unless candidate_healthy == device_healthy
+      next unless candidate_in_band == device_in_band
 
       attributes[:time_unsynced_fallback] = true
       Rails.logger.info(

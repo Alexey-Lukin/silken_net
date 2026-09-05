@@ -643,7 +643,7 @@ end
         allow(tree_no_family).to receive(:tree_family).and_return(nil)
         service = described_class.new("", nil)
         # z=50 is ABOVE global default Tree::GLOBAL_LORENZ_Z_MAX (45.0)
-        # device says "homeostasis" → divergence MUST be detected (server_healthy=false)
+        # device says "homeostasis" → divergence MUST be detected (server_in_band=false)
         attributes = { z_value: 50.0, bio_status: :homeostasis }
 
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)

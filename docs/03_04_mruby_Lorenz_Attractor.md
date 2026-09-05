@@ -103,7 +103,7 @@ C₁ = (+√(β(ρ-1)), +√(β(ρ-1)), ρ-1) = (+8.485, +8.485, 27.0)
 C₂ = (-√(β(ρ-1)), -√(β(ρ-1)), ρ-1) = (-8.485, -8.485, 27.0)
 ```
 
-Значення Z-осі на атракторі знаходиться у приблизному діапазоні **z ∈ [0, 50]**, з тривалим перебуванням у районі z ≈ 25-35 (зона "здорового метелика").
+Значення Z-осі на атракторі знаходиться у приблизному діапазоні **z ∈ [0, 50]**, з тривалим перебуванням у районі z ≈ 25-35. ⛔ **Цю зону НЕ називати «здоровою»** (формулювання виправлено 2026-09-05, E.64): вона є властивістю АТРАКТОРА при ρ≈28, а не станом дерева. Z присуджено печаткою DCI, і жодного вердикту про здоровʼя з нього не виводять — три такі вердикти знято того ж дня (per-tree · per-cluster · ML-фіча). Епітет «здоровий» тут коштував трьох механізмів, бо читався як опис предмета.
 
 ---
 
@@ -519,7 +519,7 @@ firmware/bio_contracts/bio_contract.rb    app/services/silken_net/attractor.rb
                                                ├── persist log.lorenz_state_x/y/z = (x_f, y_f, z_f)
                                                │   + cold_start_flag = (prev tail missing)
                                                └── check_z_divergence!:
-                                                   device_bio_status vs server_healthy_z?
+                                                   device_bio_status vs server_in_band?
                                                    (КАТЕГОРИЧНЕ за замовчанням; numeric
                                                     tolerance band під feature-flag, SEC.11)
                                                    tree.device_lorenz_thresholds (FW.8 — смуга ПРИСТРОЮ)
@@ -540,8 +540,8 @@ def check_z_divergence!(tree, attributes)
   thresholds = tree.device_lorenz_thresholds
   # [E.64] ρ-відносна стеля аномалії (дзеркало firmware): ambient-temp не дає хибний mismatch
   ceiling = SilkenNet::Attractor.anomaly_ceiling(attributes[:temperature_c], thresholds[:max])
-  server_healthy = server_z >= thresholds[:min] && server_z <= ceiling
-  device_healthy = device_bio_status == :homeostasis
+  server_in_band = server_z >= thresholds[:min] && server_z <= ceiling
+  device_in_band = device_bio_status == :homeostasis
   # ...
 end
 ```
