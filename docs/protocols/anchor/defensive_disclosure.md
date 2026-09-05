@@ -1,7 +1,7 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-07-25
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-09-05
 > **Status:** disclosure-ready for submission to Technical Disclosure Commons.
 >
 > **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
@@ -41,6 +41,17 @@ placed here into the public record:
 - **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
   **simultaneously** (a) admits xylem sap into its porous volume, (b) provides isoelastic stress matching
   to living wood, and (c) forms the metal↔xylem interface electrode of that same EBFC.
+- **SYNERGY C — the chaotic transform as an INTEGRITY SEAL, not a sensor.** The same non-linear
+  (Lorenz) transform is evaluated **twice and independently**: once on the constrained node, from a
+  per-device secret seed provisioned at manufacture, and once on the verifying server from that same
+  seed — and the two results must agree **categorically**. Because a chaotic map amplifies any
+  divergence in inputs or initial state exponentially, a party not holding the seed cannot fabricate a
+  telemetry frame whose reported measurements and reported transform result are mutually consistent.
+  The measurement is thereby rendered **self-authenticating without a separate secure element or
+  per-frame signature**: forgery is defeated by the sensitivity of the dynamics themselves.
+  Conventional engineering *signs* the message; here the message **cannot be constructed at all**
+  without the secret. ⚠️ This synergy — not the health interpretation below — is the non-obvious
+  teaching of the chaotic layer, and it is placed on the public record here for the first time.
 
 ---
 
@@ -65,9 +76,16 @@ comprising:
   separate measurement transducer;
 
 wherein the **time `delta_t`** required by the EBFC to charge the energy store across a defined voltage
-window is treated as the **primary physiological indicator**, and health state is classified from the
-**non-linear (chaotic) temporal dynamics** of a series of such intervals — a deterministic Lorenz
-attractor parameterised by `delta_t`, temperature and acoustic emission
+window is treated as the **primary physiological indicator**, from which physiological state is derived by a
+**direct monotonic mapping** of that interval; and wherein a series of such intervals, together with
+temperature and acoustic emission, parameterises a **deterministic Lorenz attractor** whose role in the
+reference implementation is the **integrity seal of SYNERGY C** (dual independent recomputation), and
+not the health classifier. ⚠️ **Truthfulness note, added 2026-09-05:** an earlier revision stated that
+health state is *classified from* those chaotic dynamics. The implementation was measured and that
+interpretation withdrawn — the transform is a deterministic function of inputs the verifier already
+holds, so by the data-processing inequality it adds no predictive information about physiology beyond
+them. The chaotic-classification variant **remains disclosed** here, so that it stays unpatentable by
+others; it is simply **not asserted as validated, and not practised**
 ([`03_04`](../../03_04_mruby_Lorenz_Attractor.md)).
 
 **Extensions.** A LoRa mesh in which every node is powered **solely by its own EBFC**; classifications
