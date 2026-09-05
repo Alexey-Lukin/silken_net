@@ -19,10 +19,6 @@
     {
       "fingerprint": "6e90929d0f2b6bd0e77546601121fb893de2f10d903e1c375edef0e544dc6a89",
       "note": "Kredis.lock is a Redis distributed lock, not SQL. String interpolation is the Redis key name in PuroEarth passport service (ARCH.49 nonce-serialization; INF.22: dedicated ORACLE_PURO_PRIVATE_KEY replaced the shared base-EOA; the key derives from Eth::Key.address, never user input). [SEC.17] The fingerprint moved because the address now comes through the Web3::OracleSigner seam instead of a direct Eth::Key call — the expression changed, the grounds for the ignore did not."
-    },
-    {
-      "fingerprint": "e20e6bdeb0ca4f73c441c913ba78b013155d0e5a5b0cf7c3499f255f5219941e",
-      "note": "Marshal.load is guarded by SHA256 integrity verification (verify_model_integrity!). The .marshal file is generated exclusively by the internal ai:train rake task, never from external input."
     }
   ],
   "updated": "2026-08-26 21:00:00 +0000",
