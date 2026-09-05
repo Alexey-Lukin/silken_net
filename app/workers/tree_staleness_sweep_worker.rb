@@ -41,6 +41,10 @@ class TreeStalenessSweepWorker
     resolved  = resolve_returned_trees(threshold)
 
     SilkenNet::Metrics::TREES_SILENT.set(Tree.silent(threshold).count)
+    # [S2.4] Штамп ПІСЛЯ обох операцій: він свідчить не «воркер стартував», а
+    # «прохід дійшов до кінця» — інакше падіння на середині лишало б свіжий
+    # штамп над застиглим числом, тобто брехало б переконливіше за відсутність.
+    SilkenNet::Metrics::TREE_SWEEP_TIMESTAMP.set(Time.current.to_i)
 
     Rails.logger.info(
       "🌳 [SILENCE-1] Tree staleness sweep: flagged=#{flagged} resolved=#{resolved} " \

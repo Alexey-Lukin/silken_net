@@ -344,6 +344,22 @@ module SilkenNet
       docstring: "Current number of active trees silent beyond the silence threshold (set on each staleness sweep)"
     )
 
+    # 🔴 [SILENCE-1 · S2.4, 2026-09-05] Свідок СВІЖОСТІ для gauge вище — і без нього
+    # dead-man switch не мав ВЛАСНОГО dead-man'а. Форма скопійована з
+    # `PARTITION_SAMPLE_TIMESTAMP` свідомо: вона вже ратифікована в репо
+    # (`sn-alert-partition-sampler-stale`) і каже ПОЗИТИВНЕ «прилад не бігав N»,
+    # а не похідне «даних немає».
+    # ⛔ Чому саме так, а не `noDataState: NoData` на самому `trees_silent`:
+    # перевертання читало б кожну скрейп-гикавку як тривогу й стверджувало б не
+    # те (⚖️ У-ВЕЙ 09-05 — `noDataState` на 53 правилах НЕ чіпаємо). ⚠️ Наслідок,
+    # який робить цей штамп несучим: помер `TreeStalenessSweepWorker` — `trees_silent`
+    # ЗАСТИГАЄ на останньому значенні, і алерт про тишу дерев мовчить у зелене,
+    # тобто механізм, що ловить тишу, сам стає тихим.
+    TREE_SWEEP_TIMESTAMP = REGISTRY.gauge(
+      :silkennet_tree_sweep_timestamp_seconds,
+      docstring: "Unix time of the last completed tree staleness sweep (freshness witness for silkennet_trees_silent)"
+    )
+
     # [ARCH.58] Safety-sweep актуаторів (ActuatorSafetySweepWorker). СВІДОМО
     # лише counter, без gauge-двійника сусідів вище: цей sweep стан УСУВАЄ
     # (повертає актуатор у `idle` тим самим проходом), тож «скільки зараз

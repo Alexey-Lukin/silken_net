@@ -17,13 +17,23 @@ Rails.application.routes.draw do
 
   # [ARCH.61] Sidekiq Web UI — ops-інструмент DeadSet-runbook'ів (06_03 §2.8).
   # Sidekiq::Web = Rack-app поза BaseController-auth → route-constraint =
-  # ЄДИНИЙ шлюз (HAProxy path-ACL нема): дзеркало admin_or_above? + SEC.16
-  # salt-bound cookie. Unmatched → 404 (шлях не розкривається, rack_attack
-  # fail2ban банить проби). CSRF вбудований у Sidekiq 8.
+  # ЄДИНИЙ шлюз (HAProxy path-ACL нема) + SEC.16 salt-bound cookie.
+  # Unmatched → 404 (шлях не розкривається, rack_attack fail2ban банить проби).
+  # CSRF вбудований у Sidekiq 8.
+  #
+  # 🔴 ⚖️ founder 2026-09-05: **ЛИШЕ `super_admin`; `admin` сюди НЕ ХОДИТЬ.**
+  # Доти стояло `role_admin? || role_super_admin?` (дзеркало `admin_or_above?`,
+  # ратифіковане ARCH.61 07-11) — і це була НЕПЕРЕВІРЕНА посилка: `admin` у нас
+  # роль ОРГАНІЗАЦІЙНА (`access_level: :organization`, потребує `organization_id`;
+  # у сідах це клієнтський адміністратор), а `Sidekiq::Web` — платформенний і
+  # показує АРГУМЕНТИ ДЖОБ: вкладки Retries/Dead несуть `tree_id`, `wallet_id`,
+  # DID і суми ВСІХ орендарів. Тобто адмін однієї організації отримував вікно в
+  # дані решти — просто повз `acting_organization!`, на якому тримається вся
+  # решта ізоляції (`04_03 §3`). ⛔ Не повертати `admin_or_above?` сюди: тут
+  # потрібен САМЕ платформенний периметр, і збіг формул був би випадковим.
   mount Sidekiq::Web => "/sidekiq", :constraints => lambda { |req|
     user = User.find_by(id: req.session[:user_id])
-    user&.session_salt_matches?(req.session[:ps]) &&
-      (user.role_admin? || user.role_super_admin?)
+    user&.session_salt_matches?(req.session[:ps]) && user.super_admin?
   }
 
   # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
