@@ -31,7 +31,8 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
 
     # [SLASH-1 P0] status=3 = софт-збій прошивки → firmware_fault, НЕ vandalism_breach.
     # z_value у межах породи: vm_error більше не обриває аналіз, тож фабричний
-    # z=0.35 (поза 5..45) додав би ще й severe_drought.
+    # z=0.35 (поза 5..45) сам собою вже НІЧОГО не додає — з 2026-09-05
+    # severe_drought судить лише ПРИСТРІЙНИЙ bio_status (E.64).
     it "creates firmware_fault alert for a vm_error frame" do
       log = create(:telemetry_log, tree: tree, bio_status: :vm_error,
                                    temperature_c: 25, voltage_mv: 3500, acoustic_events: 5,

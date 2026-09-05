@@ -10,11 +10,15 @@ FactoryBot.define do
     status { :active }
     message_key { "hydrological_stress" }
 
+    # [E.64 ⚖️ 2026-09-05] Ключ живого писача — `hydrological_stress` (пристрійний
+    # status-гейт). ⛔ Не повертати сюди `attractor_destabilised`: його серверну
+    # гілку знято як Z-похідний вердикт про здоровʼя, тож фабрика з ним будувала б
+    # стан, якого продакшн більше не породжує (клас «фікстура пінить недосяжне»).
     trait :drought do
       severity { :medium }
       alert_type { :severe_drought }
-      message_key { "attractor_destabilised" }
-      message_params { { z_value: 3.1 } }
+      message_key { "hydrological_stress" }
+      message_params { {} }
     end
 
     trait :fire do

@@ -97,15 +97,30 @@ RSpec.describe "Telemetry ingestion pipeline end-to-end" do
       expect(alert.cluster).to eq(cluster)
     end
 
-    it "creates drought alert for out-of-homeostasis z_value" do
+    # ⛔ [E.64 ⚖️ 2026-09-05] Наскрізне дзеркало юніт-піна: НИЗЬКИЙ Z сам собою
+    # алерту БІЛЬШЕ НЕ дає — серверну Z-гілку знято як Z-похідний вердикт про
+    # здоровʼя (роль Z = DCI-only, `05_05 §8.1`), тож судить лише ПРИСТРІЙНИЙ
+    # `bio_status`. Приклад свідомо лишає `z_value: 0.1` — значення, що доти
+    # гарантовано підіймало алерт, — інакше пін не відрізнити від «взяли інші дані».
+    it "НЕ створює алерт на низькому z_value, якщо пристрій каже homeostasis" do
       log = create(:telemetry_log, tree: tree, temperature_c: 20,
                                    bio_status: :homeostasis, voltage_mv: 3500,
-                                   acoustic_events: 5, z_value: 0.1) # below critical_z_min (5.0)
+                                   acoustic_events: 5, z_value: 0.1)
+
+      expect { AlertDispatchService.analyze_and_trigger!(log) }
+        .not_to change(EwsAlert, :count)
+    end
+
+    it "створює drought-алерт, коли ПРИСТРІЙ повідомив stress" do
+      log = create(:telemetry_log, tree: tree, temperature_c: 20,
+                                   bio_status: :stress, voltage_mv: 3500,
+                                   acoustic_events: 5, z_value: 0.1)
 
       expect { AlertDispatchService.analyze_and_trigger!(log) }
         .to change(EwsAlert, :count).by(1)
 
       expect(EwsAlert.last.alert_type).to eq("severe_drought")
+      expect(EwsAlert.last.message_key).to eq("hydrological_stress")
     end
 
     it "respects silence filter — does not duplicate alerts within window" do

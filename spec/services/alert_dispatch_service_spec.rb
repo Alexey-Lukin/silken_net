@@ -313,32 +313,56 @@ RSpec.describe AlertDispatchService, type: :service do
     end
   end
 
-  describe "attractor homeostasis check" do
-    it "creates drought alert when attractor says NOT homeostatic" do
-      allow(SilkenNet::Attractor).to receive(:homeostatic?).and_return(false)
+# ⛔ [E.64 ⚖️ 2026-09-05, варіант A] Серверна Z-гілка ЗНЯТА, і цей приклад —
+# її НОСІЙ: він доводить, що недосяжність тепер у КОДІ, а не лише в присуді.
+# Доти тут стояв дзеркальний приклад, який вимагав `attractor_destabilised` на
+# `homeostatic? == false` — тобто пінив саме той Z-похідний вердикт про
+# здоровʼя, який заперечує «Z = DCI-only» (`05_05 §8.1`).
+describe "attractor homeostasis check [E.64: Z більше НЕ судить здоровʼя]" do
+  it "не піднімає алерт, навіть коли Z поза родинною смугою" do
+    allow(SilkenNet::Attractor).to receive(:homeostatic?).and_return(false)
 
-      log = instance_double(TelemetryLog,
-        tree: tree,
-        bio_status_vm_error?: false,
-        firmware_report_reverted?: false,
-        voltage_mv: 3500,
-        temperature_c: 25,
-        bio_status_anomaly?: false,
-        panic?: false,
-        bio_status_stress?: false,
-        z_value: 99.0
-      )
+    log = instance_double(TelemetryLog,
+      tree: tree,
+      bio_status_vm_error?: false,
+      firmware_report_reverted?: false,
+      voltage_mv: 3500,
+      temperature_c: 25,
+      bio_status_anomaly?: false,
+      panic?: false,
+      bio_status_stress?: false,
+      z_value: 99.0
+    )
 
-      expect {
-        described_class.analyze_and_trigger!(log)
-      }.to change(EwsAlert, :count).by(1)
-
-      alert = EwsAlert.last
-      expect(alert.alert_type).to eq("severe_drought")
-      expect(alert.message_key).to eq("attractor_destabilised")
-      I18n.with_locale(:uk) { expect(alert.message).to include("АТРАКТОР") }
-    end
+    expect {
+      described_class.analyze_and_trigger!(log)
+    }.not_to change(EwsAlert, :count)
   end
+
+  # Дзеркало: пристрійний status-гейт лишається дієвим, інакше фікс не
+  # відрізнити від «посуху вимкнули цілком».
+  it "піднімає `hydrological_stress`, коли ПРИСТРІЙ каже stress" do
+    log = instance_double(TelemetryLog,
+      tree: tree,
+      bio_status_vm_error?: false,
+      firmware_report_reverted?: false,
+      voltage_mv: 3500,
+      temperature_c: 25,
+      bio_status_anomaly?: false,
+      panic?: false,
+      bio_status_stress?: true,
+      z_value: 1.0
+    )
+
+    expect {
+      described_class.analyze_and_trigger!(log)
+    }.to change(EwsAlert, :count).by(1)
+
+    alert = EwsAlert.last
+    expect(alert.alert_type).to eq("severe_drought")
+    expect(alert.message_key).to eq("hydrological_stress")
+  end
+end
 
   describe "adaptive thresholds" do
     let(:family_custom) { create(:tree_family, fire_resistance_rating: 80) }

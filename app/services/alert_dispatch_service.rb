@@ -100,24 +100,32 @@ class AlertDispatchService
       return
     end
 
-    # 4. ПОСУХА ТА АТРАКТОР (Mathematical Homeostasis)
-    # [FW.57 F2] anomaly_ceiling uses the device's RAW temp (DCI anchor), not the
-    # drift-corrected temperature_c — recover raw = temperature_c − offset (exact
-    # while offset == 0; alert is near-real-time so it hasn't moved). Fire/display
-    # above intentionally keep the calibrated physical value.
-    raw_temp = telemetry_log.temperature_c - (tree.device_calibration&.temperature_offset_c || 0.0)
-    is_out_of_homeostasis = !SilkenNet::Attractor.homeostatic?(telemetry_log.z_value, family, raw_temp)
-
-    if telemetry_log.bio_status_stress? || is_out_of_homeostasis
-      key, params = if is_out_of_homeostasis
-        [ "attractor_destabilised", { z_value: telemetry_log.z_value } ]
-      else
-        [ "hydrological_stress", {} ]
-      end
-
+    # 4. ПОСУХА — лише ПРИСТРІЙНИЙ status-гейт [E.64 ⚖️ 2026-09-05, варіант A]
+    #
+    # ⛔ Серверна Z-гілка ЗНЯТА, і повертати її не можна. Вона піднімала
+    # `attractor_destabilised` за `!Attractor.homeostatic?(z, family, temp)` —
+    # тобто друкувала ВЕРДИКТ ПРО ЗДОРОВʼЯ, виведений із Z, тоді як присуд E.64
+    # каже протилежне: Лоренц-оракул здоровʼя декоративний, роль Z = DCI-only
+    # (`05_05 §8.1`). Обидва входи предиката були недостовірні: Z↔здоровʼя —
+    # недоведена гіпотеза (`05_05 §7`), а `critical_z_min/max` у сідах —
+    # заповнювач, не вимір (⚖️ founder). Клас — `СЛОВО` (`05_05 §3.2`): мітка є,
+    # вимірювача немає, і лік для нього названий один — ЗНЯТИ поверхню, ніколи
+    # не «дописати джерело, щоб напис став правдивим».
+    # 🔑 Свідчення при цьому не втрачено: `z_value`/`bio_status` лежать у
+    # Merkle-листі, тож класифікацію можна перерахувати по історії будь-коли.
+    #
+    # ⚠️ ЦІНА НАЗВАНА ВГОЛОС: цей сервіс був ЄДИНИМ авто-писачем `severe_drought`,
+    # а гілка нижче (`bio_status_stress?` = пристрійний `z < 2.0`) недосяжна за
+    # конструкцією — ρ-clamp тримає `z_eq ≥ 9` (`03_04 §4`; виміряно нуль
+    # випадків на 5 000 прогонів). Отже перил посухи БІЛЬШЕ НЕ МАЄ живого
+    # машинного голосу — так само, як `vandalism_breach` не має авто-writer'а, і
+    # це чесний стан, а не діра. ⛔ Порожній екран тут означає «ніхто не міряв»,
+    # НІКОЛИ «посухи немає» (`00_01 §1.1` — тиша, оголошена процвітанням).
+    # Повернення голосу = прямі сигнали (sap/VPD), `00_07` E.64.
+    if telemetry_log.bio_status_stress?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :medium,
-        alert_type: :severe_drought, message_key: key, message_params: params
+        alert_type: :severe_drought, message_key: "hydrological_stress", message_params: {}
       )
     end
   end
