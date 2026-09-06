@@ -129,6 +129,21 @@
 #   A/literal-printf RAILS_MASTER_KEY → $(printf '%s' "deadbeef")           → RED naming A (LOUD_REF admits markers and master.key only)
 #   B4/rpc-absent    SOLANA_RPC_URL remap deleted (re-run on the new form) → RED naming the inheritance
 # All restored byte-identically (`cmp`); GREEN before and after.
+# ⊕ F and F2 got their FIRST mutation rows on 2026-09-06 [DEPLOY-1] — F had shipped 09-02 and
+# F2 earlier the same day, so the two invariants standing between a provider key and a PUBLIC repo
+# had never been shown to discriminate on ANY branch. Same shape as the C row above, and found
+# by asking the closing-sweep question of 00_05 §4 about a gate we had just built.
+# The battery also RE-AIMED F2: it had inherited F's KEYED_URL, whose `/vN/` branch is earned
+# over bare-hostname RPC slots (all ten measured) and fires FALSELY over an ordinary versioned
+# API — telling the author to move a NON-secret into env.secret.
+#   F2/keyed-hex     THE_GRAPH_API_URL → gateway.thegraph.com/api/<32-hex>/…  → RED naming file+var
+#   F2/keyed-path    → alchemy.com/v2/<22-char key>                           → RED
+#   F2/keyed-param   → …/graphql?api_key=…                                    → RED
+#   F2/keyless-vN    → api.example/v1/subgraphs/name/silkennet                → GREEN — the narrowing
+#                      itself, A/B'd on the ARTEFACT: the pre-09-06 script exits 1 here, this one 0
+#   F2/keyless-host  → silkennet-amoy-gateway-prod.example.com/query/latest   → GREEN (long HOST)
+#   F/fallback-keyed POLYGON_RPC_URL_FALLBACK_1 → alchemy.com/v2/<key>        → RED naming ARCH.114
+# All restored byte-identically (`cmp`); the gate was GREEN before and after each.
 # SUBJECT_FLOOR proved itself organically the same day: a z-after-(.*) parser bug collapsed the
 # set to 0 and the floor, not a human, caught the would-be green over an empty set.
 
@@ -157,6 +172,31 @@ PLACEHOLDER = "REQUIRED_SECRET_NOT_SET"
 # the pool's ⛔ «not the same vendor twice» are the other two legs, not this one.
 FALLBACK_NAME = /_RPC_URL_FALLBACK_\d+\z/
 KEYED_URL     = %r{/v\d+/|[0-9a-fA-F]{32}|[?&](?:api_?key|token|key)=}
+# F2's own shape test — deliberately NOT F's, because the same regex answers OPPOSITELY on
+# the two populations [DEPLOY-1, measured 2026-09-06]. F ranges over *_RPC_URL_FALLBACK_N,
+# whose ten live values are BARE HOSTNAMES with no path at all, so any `/vN/` there is
+# anomalous and KEYED_URL's breadth is earned. F2 ranges over ANY bare *_URL, where `/v1/`
+# is an ordinary API-version segment: `https://api.example.com/v1/status` is keyless and
+# correct, and RED under the inherited form — with a message telling the author to move a
+# NON-secret into env.secret. A gate whose first correct use is a false accusation gets
+# weakened, not obeyed. So F2 asks what actually marks a KEY: an api-key query param, or a
+# long opaque token in the PATH — the host is stripped first, because a long hostname
+# (`silkennet-amoy-gateway-prod.example.com`) is legitimate and would otherwise red.
+# 🔒 Declared ceiling, both directions measured before shipping: a key SHORTER than
+# KEY_MIN_LEN passes, and a long opaque NON-secret (an IPFS CID in a path) reds. Against the
+# four real leak shapes — Graph decentralised (32-hex), Alchemy /v2/<key>, Infura /v3/<key>,
+# ?api_key= — all four RED; against five keyless shapes — versioned API, keyless graph /v1/,
+# long hostname, public RPC, CARTO tile template — all five green.
+KEY_MIN_LEN   = 20
+KEYED_PARAM   = /[?&](?:api_?key|token|key)=/i
+OPAQUE_TOKEN  = /\A[A-Za-z0-9_-]+\z/
+
+def keyed_url_value?(value)
+  tail = value.to_s.sub(%r{\A[a-z][a-z0-9+.-]*://[^/]+}i, "")
+  return true if tail =~ KEYED_PARAM
+
+  tail.split(%r{[/?&=.]}).any? { |seg| seg.length >= KEY_MIN_LEN && seg.match?(OPAQUE_TOKEN) }
+end
 SHELL_REF   = /\A\$\{?[A-Z][A-Z0-9_]*/  # $VAR / ${VAR} — NOT bare ${VAR:-default}, see B5
 # The ONLY command-substitution form invariant A accepts: a real-shell evaluation of a bash
 # default whose fallback is a loud marker or the gitignored master.key file — never a literal.
@@ -188,6 +228,7 @@ RETIRED_NAME = "ORACLE_PRIVATE_KEY"
 failures = []
 secret_subjects = 0
 fallback_subjects = 0
+bare_url_subjects = 0
 
 # --- readers -----------------------------------------------------------------
 
@@ -235,7 +276,7 @@ if var.to_s =~ FALLBACK_NAME
   fallback_subjects += 1
   failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — *_RPC_URL_FALLBACK_N carries keyless literals only; a keyed fallback goes through env.secret under a _RPC_URL-suffixed name (ARCH.114)" if str =~ KEYED_URL
 end
-# F2 — the SAME shape test on ANY bare `*_URL` literal in clear [DEPLOY-1, 2026-09-06].
+# F2 — a shape test on ANY bare `*_URL` literal in clear [DEPLOY-1, 2026-09-06].
 # 🔑 Why shape and not NAME: widening SECRET_NAME to a bare `_URL` was MEASURED first
 # (the order 00_05 §5 demands) — 15 `*_URL` names on the deploy surface, 11 already
 # covered, and of the 4 new hits three are out of scope (two CI-only, one already in
@@ -243,10 +284,15 @@ end
 # order as two gates already refused. The shape rule instead costs NOTHING today
 # (exactly one `*_URL` literal lives in clear, `THE_GRAPH_API_URL`, and it is keyless)
 # and closes the named future hole: publishing the subgraph to the decentralised
-# network yields `gateway.thegraph.com/api/<32-hex key>/…`, which `KEYED_URL` matches.
-# ⚠️ Ceiling inherited from F: SHAPE only — a vendor that keys by hostname passes.
-if var.to_s.end_with?("_URL") && var.to_s !~ FALLBACK_NAME && str =~ KEYED_URL
-  failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — a keyed URL in a PUBLIC repo is a leaked secret; move it to env.secret (DEPLOY-1)"
+# network yields `gateway.thegraph.com/api/<32-hex key>/…`, which `keyed_url_value?` matches.
+# ⚠️ Ceiling: SHAPE only — a vendor that keys by hostname passes. The predicate is F2's own
+# (`keyed_url_value?`), NOT F's KEYED_URL: see the measurement at its definition.
+# ⛔ No subject FLOOR here, and that is a decision, not an omission: the prescribed fix for a
+# keyed value IS to move it into env.secret, which empties this set legitimately. A floor
+# would red on the correct remediation — the one shape a gate must never punish.
+if var.to_s.end_with?("_URL") && var.to_s !~ FALLBACK_NAME
+  bare_url_subjects += 1
+  failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — a keyed URL in a PUBLIC repo is a leaked secret; move it to env.secret (DEPLOY-1)" if keyed_url_value?(str)
 end
     end
 
@@ -392,7 +438,7 @@ GITIGNORE_MUST = [ "gha-creds-*.json" ].freeze
 end
 
 if failures.empty?
-  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only (#{fallback_subjects} keyless fallback slots); quintet job-only (global env.secret clean); canopy job role inherits nothing (B3); canopy overlay remaps all #{CANOPY_REMAPS.size} shared resources"
+  puts "✓ Deploy-secret scan: #{secret_subjects} secret-named vars carry references only (#{fallback_subjects} keyless fallback slots, #{bare_url_subjects} bare *_URL literals); quintet job-only (global env.secret clean); canopy job role inherits nothing (B3); canopy overlay remaps all #{CANOPY_REMAPS.size} shared resources"
 else
   puts "DEPLOY-SECRET SCAN FAILED:"
   failures.each { |f| puts "  ✗ #{f}" }
