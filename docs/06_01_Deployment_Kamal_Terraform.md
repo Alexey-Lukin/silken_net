@@ -465,14 +465,17 @@ gcloud compute ssh silken-net-app --tunnel-through-iap --zone europe-west1-d --p
 
 ```
 terraform/
-├── main.tf       # Provider (google ~> 7.0), GCP APIs, Artifact Registry
+├── main.tf       # Provider (google ~> 8.0), GCP APIs, Artifact Registry
 ├── vpc.tf        # VPC, subnet (10.0.0.0/20), Cloud Router, Cloud NAT, Firewall
 ├── compute.tf    # ДВА інстанси: Ingress Anchor (e2-small, silken-net-ingress, Static IP + CoAP-демон PRIMARY)
 │                 #              + app-хост (e2-standard-2, silken-net-app — Kamal web+job+coap, приватний IP) [OPS.37]
 ├── database.tf   # Cloud SQL PostgreSQL 17, 3 databases (primary/cache/cable — Solid Queue pruned INF.18) + canopy-тріо, Private Service Access
 ├── iam.tf        # Service Account silken-net-deploy + IAM roles (deploy-SA + IAP-operator)
 ├── variables.tf  # Всі input variables з валідацією
-└── outputs.tf    # ingress_ip, DB URL тощо
+├── outputs.tf    # ingress_ip, DB URL тощо
+└── .terraform.lock.hcl  # КОМІЧЕНИЙ з 2026-09-06: точна версія провайдера + per-platform хеші
+                  # ⛔ оновлювати ЛИШЕ `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`;
+                  #    простий `init -upgrade` пише хеші однієї платформи й кладе обидва CI-шні `init` (06_07 §1a)
 ```
 
 > **Примітка:** `redis.tf` видалено — Redis тепер обслуговується Upstash (serverless, зовнішній сервіс, не GCP). `compute.tf` містить ДВА інстанси — Ingress Anchor (`e2-small`) і app-хост (`e2-standard-2`, `google_compute_instance.app`, повернений [OPS.37] 2026-08-30; canopy-VM свідомо НЕМАЄ — це відкритий ⚖️, а не пропуск). Анкер: CoAP-демон (PRIMARY інтейк, docker + systemd, секрети в `/etc/silkennet/coap.env` 0600 — НЕ в metadata) + HAProxy 80/443 → app-хост + socat-fallback. Grafana Alloy `config.alloy` живе в `deploy/alloy/config.alloy` і монтується у контейнер accessory нативно (`files:` у `config/deploy.yml`) — base64-канал зник разом із платформою, що не вміла монтувати файли.
