@@ -52,6 +52,17 @@ registry = [
     values: -> { ActuatorCommand.statuses.keys }
   },
   {
+    # [UI.16 / I18N.1, 2026-09-06] Дім заведено, коли рядок живої стрічки перестав
+    # друкувати `ANOMALY` англійським токеном лісгоспові. ⚠️ Скоуп належить МОДЕЛІ,
+    # а не хроніці: слова «Стрес»/«Гомеостаз» уже жили під
+    # `trees.chronicle.event_types`, але той скоуп прямо задокументований як НЕ enum
+    # моделі (синтетичний рід події), тож позичити його означало б повторити помилку
+    # `alerts.badge.severities` — шлях, що бреше про власника (`04_04 §12.14`).
+    name:   "TelemetryLog#bio_status",
+    scope:  TelemetryLog::BIO_STATUS_LABEL_SCOPE,
+    values: -> { TelemetryLog.bio_statuses.keys }
+  },
+  {
     name:   "BlockchainTransaction#token_type",
     scope:  BlockchainTransaction::TOKEN_TYPE_LABEL_SCOPE,
     values: -> { BlockchainTransaction.token_types.keys }

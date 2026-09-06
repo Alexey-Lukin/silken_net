@@ -221,9 +221,16 @@ end
 # чужого uid не чіпає), тобто розходження росте мовчки.
 #
 # 🔴 ОГОЛОШЕНА СТЕЛЯ — читай як перелік того, чого цей режим НЕ доводить:
-#  1. Судиться НАЯВНІСТЬ і ПРИВʼЯЗКА, ніколи ПРАВИЛЬНІСТЬ: поріг може бути
-#     безглуздий, `expr` — про сусідню метрику. Той самий паритет-⊥-законність,
-#     що в реєстрі метрик (§Guard-craft #74).
+#  1. Судиться НАЯВНІСТЬ, ПРИВʼЯЗКА і ЗБІГ ІЗ РЕПО, ніколи ПРАВИЛЬНІСТЬ: поріг
+#     може бути безглуздий, `expr` — про сусідню метрику, `description` — точно
+#     як у репо й водночас хибний по суті. Той самий паритет-⊥-законність, що в
+#     реєстрі метрик (§Guard-craft #74).
+#     🔴 [2026-09-06] Ця стеля ЗВУЗИЛАСЬ, і колишнє формулювання коштувало нам
+#     двох поколінь тихого дрейфу: доти режим не порівнював АНОТАЦІЙ узагалі, а
+#     ратифікована звірка (`spec.expressions…expr` побайтово) давала «✅ паритет»
+#     при `description`, старшому за фікс 09-05 — тобто оператор читав «вичерпує
+#     кошти» на гаманці, куди ніколи не клали монет, і його слали шукати витік.
+#     ⚠️ Вираз ламає СПРАЦЮВАННЯ й помітний; речення ламає ДІЮ ЛЮДИНИ і мовчить.
 #  2. Silences / mute timings НЕ читаються: правило може бути присутнє, звʼязане
 #     й повністю заглушене — тут це виглядає здоровим.
 #  3. Contact point і notification policy НЕ перевіряються: правило може бути
@@ -286,6 +293,51 @@ if ARGV.include?("--verify")
   puts "  ✓ плейсхолдер datasource ніде не лишився" if unbound.empty?
   puts "  ✗ НЕПРИВʼЯЗАНІ (#{unbound.size}): #{unbound.join(', ')} — запит іде в неіснуючий datasource, правило не спрацює НІКОЛИ" unless unbound.empty?
 
+  # 🔴 [S2.4, 2026-09-06] ЧЕТВЕРТА вісь — ТЕКСТ, ЯКИЙ ЧИТАЄ ОПЕРАТОР, і вона додана
+  # тому, що її відсутність ВИМІРЯНА, а не уявлена. Ратифікована форма звірки
+  # порівнювала `spec.expressions.{refId}.model.expr` побайтово й давала «✅ паритет»,
+  # тоді як живий стек ніс `description` ДВОХ ПОКОЛІНЬ давнини: правку 09-05
+  # («нуль ≠ вичерпання» — текст казав «вичерпує кошти» на непоповненій адресі й слав
+  # оператора шукати витік, якого немає) не імпортували НІКОЛИ, і зелений verify це
+  # покривав. Тобто найдорожчий дрейф тут не в виразі, а в реченні: вираз ламає
+  # спрацювання й помітний, речення ламає ДІЮ ЛЮДИНИ і мовчить.
+  #
+  # ⚖️ Порівнюємо лише ключі, ОГОЛОШЕНІ в IaC: Grafana доливає власні анотації
+  # (`__dashboardUid__`, `__panelId__`), і рівність повних мап дала б вічно-червоне
+  # на порожній підставі — рівно та форма, що привчає скіпати вердикт.
+  # ⚠️ `for` порівнюється ЧЕРЕЗ `interval_seconds`, не рядком — Grafana НОРМАЛІЗУЄ
+  # тривалість (`0m` у IaC приїжджає назад як `0s`), тож наївна рівність рядків
+  # червонила б на ЧЕСНОМУ дереві. Спіймано першим же прогоном цієї осі: 9 правил
+  # «розійшлись по `for`» при побайтово однаковій семантиці — класика гейта, що
+  # падає на КОРЕКТНОМУ вжитку ([`00_05 §4`](../../docs/00_05_AI_Native_Operating_Model.md)).
+  # Решта полів — енуми (`OK`/`NoData`/`Error`), там нормалізації немає.
+  ANNOTATION_KEYS = %w[summary description runbook_url].freeze
+  ENUM_KEYS       = %w[noDataState execErrState].freeze
+
+  iac_by_uid = groups.flat_map { |g| g["rules"] }.to_h { |r| [ r["uid"], r ] }
+  text_drift = want.filter_map do |uid|
+    live_rule = live_by_uid[uid]
+    iac_rule  = iac_by_uid[uid]
+    next unless live_rule && iac_rule
+
+    diff = ANNOTATION_KEYS.select do |k|
+      iac_rule.dig("annotations", k) && iac_rule.dig("annotations", k) != live_rule.dig("annotations", k)
+    end
+    diff += (iac_rule["labels"] || {}).keys.select { |k| iac_rule["labels"][k] != live_rule.dig("labels", k) }.map { |k| "label:#{k}" }
+    diff += ENUM_KEYS.select { |k| iac_rule.key?(k) && iac_rule[k].to_s != live_rule[k].to_s }
+    if iac_rule.key?("for") && interval_seconds(iac_rule["for"]) != interval_seconds(live_rule["for"])
+      diff << "for (#{iac_rule['for']} ⟷ #{live_rule['for']})"
+    end
+
+    "#{uid} → #{diff.join(', ')}" unless diff.empty?
+  end
+  if text_drift.empty?
+    puts "  ✓ анотації · мітки · поведінка збігаються (текст, який побачить оператор)"
+  else
+    puts "  ✗ ТЕКСТ/ПОВЕДІНКА розійшлись (#{text_drift.size}) — оператор прочитає НЕ ТЕ, що каже репо:"
+    text_drift.each { |d| puts "     · #{d}" }
+  end
+
   bad_interval = groups.filter_map do |g|
     next unless folder
 
@@ -295,7 +347,7 @@ if ARGV.include?("--verify")
   end
   puts(bad_interval.empty? ? "  ✓ інтервали груп збігаються" : "  ✗ інтервали розійшлись: #{bad_interval.join('; ')}")
 
-  drift = !missing.empty? || !unbound.empty? || !bad_interval.empty?
+  drift = !missing.empty? || !unbound.empty? || !bad_interval.empty? || !text_drift.empty?
   puts(drift ? "\n✗ розходження — прожени імпорт без `--verify`" : "\n✅ стек у паритеті з IaC (у межах оголошених стель у шапці режиму)")
   exit(drift ? 1 : 0)
 end

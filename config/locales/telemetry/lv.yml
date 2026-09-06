@@ -1,6 +1,16 @@
 ---
 lv:
   telemetry:
+    batch_states:
+      attention: Uzmanību
+      ok: Labi
+      panic: Panika
+      partial: Daļējs
+    bio_statuses:
+      anomaly: Anomālija
+      homeostasis: Homeostāze
+      stress: Stress
+      vm_error: PN kļūme
     live_stream:
       awaiting: Gaida Starlink augšupsaiti... CoAP:5683 klausās...
       carrier_label: 'Operators: Direct-to-Cell'

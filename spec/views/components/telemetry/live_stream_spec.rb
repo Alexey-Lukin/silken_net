@@ -145,6 +145,46 @@ RSpec.describe Telemetry::LiveStream do
     end
   end
 
+  # 🔴 [UI.16 / I18N.1] Другий бік механізму міток: рядок стрічки НЕ несе слів узагалі
+  # (він рендериться з Sidekiq, де локалі немає), тож текст статусів дає СТОРІНКА через
+  # ті самі CSS-властивості, що й підписи колонок. Без цього піна механізм тримався б
+  # лише на CSS — рівно той клас, що вже двічі жалив цей компонент («CSS написаний і
+  # не діє»): компонентна спека рядка бачить `data-*` і мовчить про те, чи є ЧИМ їх
+  # розкрити.
+  describe "публікація міток ЗНАЧЕНЬ [UI.16 / I18N.1]" do
+    it "віддає мітки bio_status і стану батчу в локалі глядача" do
+      markup = I18n.with_locale(:uk) { render_component(organization: organization) }
+
+      expect(markup).to include("--gaia-bio-anomaly: 'Аномалія'")
+      expect(markup).to include("--gaia-bio-stress: 'Стрес'")
+      expect(markup).to include("--gaia-bstate-attention: 'Увага'")
+      expect(markup).to include("--gaia-bstate-ok: 'Норма'")
+    end
+
+    # ⊥ Ліхтар: без нього приклад вище зелений і на компоненті, що публікує ЗАМОРОЖЕНУ
+    # англійську — тобто на тому самому дефекті, який фікс і знімав.
+    it "справді перемикає мову, а не публікує заморожений рядок" do
+      uk = I18n.with_locale(:uk) { render_component(organization: organization) }
+      en = I18n.with_locale(:en) { render_component(organization: organization) }
+
+      expect(uk).to include("--gaia-bio-anomaly: 'Аномалія'")
+      expect(en).to include("--gaia-bio-anomaly: 'Anomaly'")
+    end
+
+    # ⊥ Периметр: кожне значення enum'а мусить дістати властивість, інакше рядок із
+    # новим статусом покаже CSS-фолбек англійською й ніхто не почервоніє.
+    it "покриває ВЕСЬ enum, а не перелічені руками значення" do
+      markup = render_component(organization: organization)
+
+      TelemetryLog.bio_statuses.keys.each do |status|
+        expect(markup).to include("--gaia-bio-#{status.tr('_', '-')}:")
+      end
+      TelemetryUnpackerService::BATCH_STATES.each do |state|
+        expect(markup).to include("--gaia-bstate-#{state}:")
+      end
+    end
+  end
+
   # 🔴 [UI.16] Плейсхолдер казав «Awaiting Starlink Uplink…» ЗАВЖДИ — і над порожньою
   # базою, і над лісом, що передавав годину тому. Друга половина була брехнею
   # мовчанням: стрічка жива лише під час події, а backfill'у зведень не існує (флаш

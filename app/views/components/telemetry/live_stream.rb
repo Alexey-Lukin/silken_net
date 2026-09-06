@@ -156,10 +156,36 @@ module Telemetry
     # (`sgml/attributes.rb` — `gsub('"', "&quot;")`), тож наша копія була б
     # другим домом того самого правила.
     def published_column_labels
+      (column_label_properties + value_label_properties).join("; ")
+    end
+
+    def column_label_properties
       COLUMNS.each_with_index.map do |key, index|
-        value = css_string_literal(t(key).to_s)
-        "--gaia-col-#{index + 1}: '#{value}'"
-      end.join("; ")
+        "--gaia-col-#{index + 1}: '#{css_string_literal(t(key).to_s)}'"
+      end
+    end
+
+    # 🔴 [UI.16 / I18N.1, 2026-09-06] ТОЙ САМИЙ механізм, розширений із підписів на
+    # ЗНАЧЕННЯ — і це не винахід, а виконання канону. `§8.1а` велить обирати клас
+    # ЧИТАННЯМ значень: транслітерація (`ЧАНК`) робить клас 1 чесним, а ЖИВІ слова
+    # роблять його «чистою втратою, яка лягає лише на не-англійців». «Стрес» ·
+    # «Аномалія» · «Гомеостаз» — живі слова, тож рядок, що друкує `ANOMALY·1`
+    # лісгоспові, і був тією втратою: хроніка ТОГО Ж дерева вже казала «Стрес».
+    #
+    # ⛔ Лік НЕ «додати `t()` у рядок»: він рендериться з Sidekiq, де локалі немає,
+    # тож переклад був би МЕРТВИМ за побудовою. Мітку питає СТОРІНКА (у запиті),
+    # рядок лишається порожнім і бере текст із `::before`. Payload стає навіть
+    # ЧИСТІШИМ, ніж був: тепер у ньому немає й англійських слів.
+    #
+    # ⚠️ ОГОЛОШЕНА СТЕЛЯ: текст із `::before` невидимий для `innerText`-пінів, тож
+    # компонентна спека мусить пінити ОПУБЛІКОВАНУ властивість і `data-*`-маркер, а
+    # не вміст комірки; сам рендер тримає `:js`-приклад. Дім механізму — `04_04 §8.1а`.
+    def value_label_properties
+      TelemetryLog.bio_statuses.keys.map { |status|
+        "--gaia-bio-#{status.tr('_', '-')}: '#{css_string_literal(TelemetryLog.bio_status_label(status))}'"
+      } + TelemetryUnpackerService::BATCH_STATES.map do |state|
+        "--gaia-bstate-#{state}: '#{css_string_literal(TelemetryUnpackerService.batch_state_label(state))}'"
+      end
     end
 
     # Один дім екранування, щоб ланцюг не читався як випадковий набір `gsub`.

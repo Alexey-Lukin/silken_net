@@ -538,6 +538,25 @@ dialog[open]::backdrop {
   .gaia-responsive-table td:nth-child(3):not([colspan])::before { content: var(--gaia-col-3, attr(data-label)); }
   .gaia-responsive-table td:nth-child(4):not([colspan])::before { content: var(--gaia-col-4, attr(data-label)); }
 
+  /* 🔴 [UI.16 / I18N.1, 2026-09-06] ТОЙ САМИЙ механізм, розширений із підписів
+   * КОЛОНОК на ЗНАЧЕННЯ enum'а — і це виконання канону, не винахід.
+   *
+   * `04_04 §8.1а` вимагає для firehose клас 1 (locale-invariant payload), бо
+   * рядок рендерить Sidekiq, де локалі немає: будь-який `t()` там був би МЕРТВИМ
+   * перекладом. Той самий канон дає критерій вибору ЧИТАННЯМ значень — і «Стрес»
+   * · «Аномалія» · «Гомеостаз» є ЖИВИМИ словами, тож англійський токен у рядку
+   * був «чистою втратою, яка лягає лише на не-англійців». Лік: текст публікує
+   * СТОРІНКА (рендер у запиті, локаль відома), рядок несе лише `data-*`.
+   *
+   * ⚠️ Фолбек тут НЕ декоративний: якщо сторінка перестане публікувати, бейдж
+   * покаже англійське слово, ніколи порожнечу — та сама форма, що
+   * `var(--gaia-col-N, attr(data-label))` вище. Дім міток — `TelemetryLog::
+   * BIO_STATUS_LABEL_SCOPE` (модель) і `TelemetryUnpackerService::
+   * BATCH_STATE_LABEL_SCOPE` (виробник стану), за `04_04 §12.14`.
+   *
+   * ⚠️ І ці правила СВІДОМО поза мобільним media-блоком: підпис колонки потрібен
+   * лише в картці, а мітка статусу — на ОБОХ ширинах, бо вона є самим значенням. */
+
   /* An opted-in table carries no `data-label` at all, so the "no label →
    * centre" rule above would otherwise collapse every cell. Higher
    * specificity restores the label/value split — but NOT for a spanning
@@ -572,6 +591,19 @@ dialog[open]::backdrop {
  * сильнішим. ⚠️ `@layer base` НЕСУЧИЙ: un-layered правило перемагає
  * layered-утиліти НЕЗАЛЕЖНО від специфічності (виміряно — глобал без шару
  * зʼїв явний клас auth-полів і поклав 4.39 на sunken). */
+/* [UI.16 / I18N.1] Мітки ЗНАЧЕНЬ, опубліковані сторінкою (див. врізку вище).
+ * Поза мобільним media-блоком свідомо: підпис колонки потрібен лише в картці, а
+ * мітка статусу є САМИМ значенням і потрібна на обох ширинах. */
+[data-bio-label="homeostasis"]::before { content: var(--gaia-bio-homeostasis, "HOMEOSTASIS"); }
+[data-bio-label="stress"]::before      { content: var(--gaia-bio-stress, "STRESS"); }
+[data-bio-label="anomaly"]::before     { content: var(--gaia-bio-anomaly, "ANOMALY"); }
+[data-bio-label="vm-error"]::before    { content: var(--gaia-bio-vm-error, "VM_ERR"); }
+
+[data-batch-state="ok"]::before        { content: var(--gaia-bstate-ok, "OK"); }
+[data-batch-state="attention"]::before { content: var(--gaia-bstate-attention, "ATTENTION"); }
+[data-batch-state="partial"]::before   { content: var(--gaia-bstate-partial, "PARTIAL"); }
+[data-batch-state="panic"]::before     { content: var(--gaia-bstate-panic, "PANIC"); }
+
 @layer base {
   ::placeholder {
     color: var(--gaia-input-placeholder);

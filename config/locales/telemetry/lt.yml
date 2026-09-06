@@ -1,6 +1,16 @@
 ---
 lt:
   telemetry:
+    batch_states:
+      attention: Dėmesio
+      ok: Gerai
+      panic: Panika
+      partial: Dalinis
+    bio_statuses:
+      anomaly: Anomalija
+      homeostasis: Homeostazė
+      stress: Stresas
+      vm_error: PĮ triktis
     live_stream:
       awaiting: Laukiama Starlink ryšio aukštyn... CoAP:5683 klauso...
       carrier_label: 'Operatorius: Direct-to-Cell'

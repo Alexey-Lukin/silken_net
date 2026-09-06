@@ -1,6 +1,16 @@
 ---
 uk:
   telemetry:
+    batch_states:
+      attention: Увага
+      ok: Норма
+      panic: Паніка
+      partial: Частково
+    bio_statuses:
+      anomaly: Аномалія
+      homeostasis: Гомеостаз
+      stress: Стрес
+      vm_error: Збій ПЗ
     live_stream:
       awaiting: Очікування Starlink Uplink... CoAP:5683 слухає...
       carrier_label: 'Канал: Direct-to-Cell'

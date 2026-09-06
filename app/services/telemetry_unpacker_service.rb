@@ -114,6 +114,24 @@ class TelemetryUnpackerService < ApplicationService
   # старів би тільки в бік ЗАНИЖЕННЯ — тобто зведення тихо казало б «усе гаразд».
   # Тому інкремент стоїть в ОДНОМУ місці — `commit_telemetry`, поруч із
   # `TELEMETRY_PROCESSED_TOTAL`, який має рівно ту саму семантику.
+  # [UI.16 / I18N.1] Дім мітки СТАНУ конверта. Значення виробляє цей сервіс (не enum
+  # моделі), тож за формою вибору `04_04 §12.14` скоуп живе поруч із виробником, а не
+  # в компоненті-рендерері. Мітку питає СТОРІНКА і публікує CSS-властивістю; payload
+  # лишається locale-free (`§8.1а`, клас 1 обовʼязковий для firehose).
+  BATCH_STATE_LABEL_SCOPE = "telemetry.batch_states"
+
+  def self.batch_state_label(value)
+    key = value.to_s
+    I18n.t("#{BATCH_STATE_LABEL_SCOPE}.#{key}", default: key)
+  end
+
+  # Закритий перелік станів — дім для публікації міток сторінкою.
+  # ⚠️ Порядок тут НЕ пріоритет (той живе в `Summary#state`), а просто множина.
+  # ⚠️ І константа стоїть НА СЕРВІСІ свідомо: присвоєння всередині
+  # `Data.define … do` лягає в ЛЕКСИЧНУ область, тобто сюди ж, а не на `Summary` —
+  # тож `Summary::STATES` було б `NameError` (спіймано спекою, не читанням).
+  BATCH_STATES = %i[ok attention partial panic].freeze
+
   Summary = Data.define(:records, :committed, :statuses, :panics) do
     def dropped = records - committed
 

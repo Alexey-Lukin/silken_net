@@ -49,7 +49,10 @@ RSpec.describe Telemetry::BatchSummary do
         render_component(gateway: nil, summary: summary, timestamp: stamp)
       end
 
-      expect(html).to include(described_class::UNKNOWN_RELAY, described_class::UNKNOWN_IP, "OK")
+      expect(html).to include(described_class::UNKNOWN_RELAY, described_class::UNKNOWN_IP)
+      # ⚠️ Стан пінимо МАРКЕРОМ, не текстом: слово дає `::before` з опублікованої
+      # сторінкою властивості, тож `innerText`-пін тут був би вакуумним за побудовою.
+      expect(html).to include('data-batch-state="ok"')
     end
   end
 
@@ -68,7 +71,7 @@ RSpec.describe Telemetry::BatchSummary do
       html = render_component(gateway: relay, summary: summary(records: 12, committed: 9), timestamp: stamp)
 
       expect(html).to include("−3")
-      expect(html).to include("PARTIAL")
+      expect(html).to include('data-batch-state="partial"')
     end
 
     it "виводить лічильники НЕ-гомеостазних статусів поіменно" do
@@ -78,10 +81,12 @@ RSpec.describe Telemetry::BatchSummary do
         timestamp: stamp
       )
 
-      expect(html).to include("STRESS·1", "ANOMALY·1", "ATTENTION")
+      expect(html).to include('data-bio-label="stress"', 'data-bio-label="anomaly"')
+      expect(html).to include("·1")
+      expect(html).to include('data-batch-state="attention"')
       # ⊥ Гомеостаз СВІДОМО не має власного числа: він = `records − решта`, і другий
       # вивід тієї самої величини рано чи пізно розійшовся б із першим.
-      expect(html).not_to include("HOMEOSTASIS")
+      expect(html).not_to include('data-bio-label="homeostasis"')
     end
 
     it "паніка перебиває решту станів" do
@@ -91,8 +96,8 @@ RSpec.describe Telemetry::BatchSummary do
         timestamp: stamp
       )
 
-      expect(html).to include("PANIC")
-      expect(html).not_to include("PARTIAL")
+      expect(html).to include('data-batch-state="panic"')
+      expect(html).not_to include('data-batch-state="partial"')
     end
   end
 end

@@ -28,16 +28,30 @@ module Telemetry
     UNKNOWN_RELAY = "UNKNOWN_RELAY"
     UNKNOWN_IP    = "?.?.?.?"
 
-    # Токени стану конверта. Порядок і зміст — дзеркало
-    # `TelemetryUnpackerService::Summary#state`; тут лише подання.
-    # ⚠️ `PARTIAL` каже «частину записів НЕ ПРИЙНЯТО», а не «дереву погано» —
-    # злиття цих двох приписало б вузлові нашу ваду.
-    STATE_TOKENS = {
-      ok: "OK",
-      attention: "ATTENTION",
-      partial: "PARTIAL",
-      panic: "PANIC"
-    }.freeze
+    # 🔴 [UI.16 / I18N.1, 2026-09-06] ТЕКСТУ ТУТ БІЛЬШЕ НЕМАЄ — і це виконання канону,
+    # а не оптимізація. Доти рядок друкував `ANOMALY·1` / `ATTENTION` англійськими
+    # токенами, тоді як хроніка ТОГО Ж дерева вже казала «Стрес»/«Гомеостаз»
+    # українською. Присуд I18N.2 (⚖️ 2026-08-14) дав цьому компонентові
+    # locale-інваріантність, коли єдиним його словом було `BATCH_RECEIVED` — машинна
+    # КВИТАНЦІЯ; я розширив словник до ВЕРДИКТУ ПРО ДЕРЕВО і заклику до дії оператора,
+    # не спитавши, чи дозвіл ще накриває нову мову.
+    #
+    # ⛔ Лік НЕ «додати `t()`»: компонент рендериться з Sidekiq, де локалі немає, тож
+    # переклад був би МЕРТВИМ за побудовою (`04_04 §8.1а`). Критерій вибору класу той
+    # самий канон дає ЧИТАННЯМ значень: транслітерація робить клас 1 чесним, ЖИВІ слова
+    # роблять його «чистою втратою, яка лягає лише на не-англійців» — а «Стрес» ·
+    # «Аномалія» · «Гомеостаз» саме такі.
+    #
+    # ✅ Тому текст дає СТОРІНКА (рендериться в запиті, локаль відома) через ті самі
+    # CSS-властивості, якими вже їдуть підписи колонок; рядок несе лише `data-*`-маркер
+    # і числа. Payload став ЧИСТІШИМ, ніж був: у ньому немає навіть англійських слів.
+    # Дім мітки — `TelemetryLog::BIO_STATUS_LABEL_SCOPE` (модель) і
+    # `TelemetryUnpackerService::BATCH_STATE_LABEL_SCOPE` (виробник стану), за §12.14.
+    #
+    # ⚠️ ОГОЛОШЕНА СТЕЛЯ: текст із `::before` невидимий для `innerText`-пінів, тож
+    # компонентна спека пінить `data-*` і ОПУБЛІКОВАНУ властивість, а рендер тримає
+    # `:js`-приклад. Англійський фолбек лишається В CSS (`var(--gaia-…, "OK")`) — тобто
+    # відмова публікації дає англійське слово, ніколи порожнечу.
 
     STATE_STYLES = {
       ok: "border-gaia-border text-gaia-text-muted group-hover:text-gaia-text group-hover:border-gaia-primary",
@@ -50,7 +64,6 @@ module Telemetry
     # дублюється числом: він і є `records − сума решти`, а другий вивід тієї самої
     # величини рано чи пізно розійшовся б із першим.
     COUNTED_STATUSES = %i[stress anomaly vm_error].freeze
-    STATUS_TOKENS = { stress: "STRESS", anomaly: "ANOMALY", vm_error: "VM_ERR" }.freeze
 
     def initialize(gateway:, summary:, timestamp:)
       @gateway = gateway
@@ -88,17 +101,19 @@ module Telemetry
         count = @summary.statuses[status].to_i
         next unless count.positive?
 
-        span(class: "ml-3 text-micro text-status-warning-text tracking-widest") do
-          "#{STATUS_TOKENS.fetch(status)}·#{count}"
-        end
+        # Мітка ПОРОЖНЯ за задумом: текст дає `::before` з опублікованої сторінкою
+        # властивості (`--gaia-bio-*`), тож payload лишається locale-free. Число —
+        # окремим вузлом, бо воно locale-інваріантне й мусить бути в DOM.
+        span(class: "ml-3 text-micro text-status-warning-text tracking-widest",
+             data: { bio_label: status.to_s.tr("_", "-") })
+        span(class: "text-micro text-status-warning-text tabular-nums") { "·#{count}" }
       end
     end
 
     def state_badge
       state = @summary.state
-      span(class: tokens("px-2 py-0.5 border transition-colors", STATE_STYLES.fetch(state))) do
-        STATE_TOKENS.fetch(state)
-      end
+      span(class: tokens("px-2 py-0.5 border transition-colors", STATE_STYLES.fetch(state)),
+           data: { batch_state: state.to_s })
     end
   end
 end

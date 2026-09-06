@@ -1,6 +1,16 @@
 ---
 en:
   telemetry:
+    batch_states:
+      attention: Attention
+      ok: OK
+      panic: Panic
+      partial: Partial
+    bio_statuses:
+      anomaly: Anomaly
+      homeostasis: Homeostasis
+      stress: Stress
+      vm_error: VM fault
     live_stream:
       awaiting: Awaiting Starlink Uplink... CoAP:5683 Listening...
       carrier_label: 'Carrier: Direct-to-Cell'

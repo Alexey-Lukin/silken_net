@@ -235,6 +235,19 @@ if var.to_s =~ FALLBACK_NAME
   fallback_subjects += 1
   failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — *_RPC_URL_FALLBACK_N carries keyless literals only; a keyed fallback goes through env.secret under a _RPC_URL-suffixed name (ARCH.114)" if str =~ KEYED_URL
 end
+# F2 — the SAME shape test on ANY bare `*_URL` literal in clear [DEPLOY-1, 2026-09-06].
+# 🔑 Why shape and not NAME: widening SECRET_NAME to a bare `_URL` was MEASURED first
+# (the order 00_05 §5 demands) — 15 `*_URL` names on the deploy surface, 11 already
+# covered, and of the 4 new hits three are out of scope (two CI-only, one already in
+# env.secret). So a name rule would buy ONE real subject at 25 % precision — the same
+# order as two gates already refused. The shape rule instead costs NOTHING today
+# (exactly one `*_URL` literal lives in clear, `THE_GRAPH_API_URL`, and it is keyless)
+# and closes the named future hole: publishing the subgraph to the decentralised
+# network yields `gateway.thegraph.com/api/<32-hex key>/…`, which `KEYED_URL` matches.
+# ⚠️ Ceiling inherited from F: SHAPE only — a vendor that keys by hostname passes.
+if var.to_s.end_with?("_URL") && var.to_s !~ FALLBACK_NAME && str =~ KEYED_URL
+  failures << "#{file}: #{scope}.clear.#{var} looks KEYED ('#{str[0, 28]}…') — a keyed URL in a PUBLIC repo is a leaked secret; move it to env.secret (DEPLOY-1)"
+end
     end
 
     # B2 — retired name as a structural key.

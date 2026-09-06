@@ -57,6 +57,27 @@ class TelemetryLog < ApplicationRecord
     vm_error: 3          # Софт-збій прошивки (mruby VM / unprovisioned) — НЕ tamper
   }, prefix: true
 
+  # [UI.16 / I18N.1, 2026-09-06] Дім МІТКИ `bio_status` — локаль-файл, за контрактом
+  # `04_04 §12.14`. Скоуп належить домену МОДЕЛІ, а не компонента, який першим його
+  # показав: слова «Стрес»/«Гомеостаз» уже жили в корпусі під
+  # `trees.chronicle.event_types`, але той скоуп ПРЯМО задокументований як НЕ enum
+  # моделі («синтетичний рід події, який виробляє САМ сервіс»), тож позичити його
+  # означало б повторити помилку `alerts.badge.severities` — шлях, що бреше про власника.
+  #
+  # ⚠️ Споживач тут незвичний і саме він диктує форму: живу стрічку телеметрії
+  # рендерить SIDEKIQ, де локалі немає, тож `t()` у payload'і був би МЕРТВИМ
+  # перекладом (`04_04 §8.1а`). Тому мітку питає СТОРІНКА (у запиті, локаль відома)
+  # і публікує її як CSS-властивість — той самий ратифікований механізм, яким уже
+  # їдуть підписи колонок (`gaia-labels-published`). Payload лишається locale-free.
+  BIO_STATUS_LABEL_SCOPE = "telemetry.bio_statuses"
+
+  # ОДНА деривація ключа на застосунок; fail-open — новий член enum'а рендериться
+  # сирим значенням, доки мітка не доїде в локалі.
+  def self.bio_status_label(value)
+    key = value.to_s
+    I18n.t("#{BIO_STATUS_LABEL_SCOPE}.#{key}", default: key)
+  end
+
   # [BLOCKER-12 FIX]: Enum для oracle_status замість plain string.
   # Забезпечує type safety, Rails-level валідацію та автоматичні scope-методи.
   enum :oracle_status, {
