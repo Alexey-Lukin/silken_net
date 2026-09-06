@@ -44,7 +44,6 @@ uk:
     scientific_name: Наукова назва
     silicon_uid_hex: Кремнієвий UID
     target_hardware_type: Цільове обладнання
-    telegram_chat_id: Telegram Chat ID
     tree_family: Вид
     uid: UID
     version: Версія

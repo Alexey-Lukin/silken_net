@@ -538,18 +538,6 @@ RSpec.describe "Controller coverage — uncovered paths" do
   # ==========================================================================
   describe "NotificationsController" do
     describe "PATCH /notifications/settings — validation error" do
-      it "returns errors when telegram_chat_id is invalid" do
-        # Bot API chat_id — ціле (регекс /\A-?\d{1,20}\z/); нецифровий рядок
-        # переживає strip-нормалізацію і падає на форматі.
-        patch "/notifications/settings",
-              params: { telegram_chat_id: "not-a-chat" },
-              headers: auth_headers
-
-        expect(response).to have_http_status(:unprocessable_content)
-        json = response.parsed_body
-        expect(json["errors"]).to be_an(Array)
-        expect(json["errors"].length).to be > 0
-      end
     end
 
     describe "GET /notifications/settings" do
@@ -560,7 +548,7 @@ RSpec.describe "Controller coverage — uncovered paths" do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json["user_id"]).to eq(user.id)
-        expect(json["channels"]).to include("email", "telegram_chat_id", "push_token")
+        expect(json["channels"]).to include("email", "push_token")
       end
     end
   end

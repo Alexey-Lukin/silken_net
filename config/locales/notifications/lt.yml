@@ -8,7 +8,6 @@ lt:
         heading: Aktyvūs kanalai
         not_configured: Nesukonfigūruota
         push: "🔔 Push"
-        telegram: "✈️ Telegram"
         unavailable: Kanalas nepasiekiamas
       channels:
         email_address: El. pašto adresas
@@ -16,7 +15,6 @@ lt:
         push_placeholder: FCM arba APNs žetonas
         push_token: Push žetonas
         save: Išsaugoti kanalus →
-        telegram_chat_id: Telegram pokalbio ID
       email_hint: El. paštas gali būti keičiamas profilyje.
       heading: "🔔 Neuralinis tinklas — Pranešimų kanalai"
       subtitle: Konfigūruoti pranešimų kanalus — kur pristatyti įspėjimus ir įvykius.

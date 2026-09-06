@@ -8,7 +8,6 @@ lv:
         heading: Aktīvie kanāli
         not_configured: Nav konfigurēts
         push: "🔔 Push"
-        telegram: "✈️ Telegram"
         unavailable: Kanāls nav pieejams
       channels:
         email_address: E-pasta adrese
@@ -16,7 +15,6 @@ lv:
         push_placeholder: FCM vai APNs žetons
         push_token: Push žetons
         save: Saglabāt kanālus →
-        telegram_chat_id: Telegram čata ID
       email_hint: E-pastu var mainīt profilā.
       heading: "🔔 Neirālais tīkls — Paziņojumu kanāli"
       subtitle: Konfigurēt paziņojumu kanālus — kur piegādāt brīdinājumus un notikumus.

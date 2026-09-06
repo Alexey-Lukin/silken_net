@@ -8,7 +8,6 @@ en:
         heading: Active Channels
         not_configured: Not configured
         push: "🔔 Push"
-        telegram: "✈️ Telegram"
         unavailable: Channel unavailable
       channels:
         email_address: Email Address
@@ -16,7 +15,6 @@ en:
         push_placeholder: FCM or APNs token
         push_token: Push Token
         save: Save Channels →
-        telegram_chat_id: Telegram Chat ID
       email_hint: Email can be changed in your profile.
       heading: "🔔 Neural Web — Notification Channels"
       subtitle: Configure notification channels — where to deliver alerts and events.

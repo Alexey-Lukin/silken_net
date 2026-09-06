@@ -539,9 +539,6 @@ jobs:
           #     deliver_later now reaches its Sidekiq and fails there loudly). ---
           SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset
-          #     (an unmapped entry injects "", which the format check reads as "off"). ---
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # --- Turbo signed-stream key [SEC.25 Ф3] ---
           # 🔴 It was present in `verify-secrets` and in RUNTIME, and ABSENT here, on BOTH
           # workflows — i.e. the step that CHECKS the secret had it and the step that

@@ -9,7 +9,6 @@ RSpec.describe Gdpr::DataExportService do
     create(:user, :forester,
            organization: organization,
            first_name: "Оксана", last_name: "Вернидуб",
-           telegram_chat_id: "777777",
            locale: "uk")
   end
 
@@ -21,7 +20,6 @@ RSpec.describe Gdpr::DataExportService do
         email_address: user.email_address,
         first_name: "Оксана",
         last_name: "Вернидуб",
-        telegram_chat_id: "777777",
         locale: "uk",
         organization_name: organization.name
       )

@@ -44,7 +44,6 @@ lv:
     scientific_name: Zinātniskais nosaukums
     silicon_uid_hex: Silīcija UID
     target_hardware_type: Mērķa aparatūra
-    telegram_chat_id: Telegram tērzēšanas ID
     tree_family: Suga
     uid: UID
     version: Versija

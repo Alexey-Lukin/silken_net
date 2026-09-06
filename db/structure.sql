@@ -1678,7 +1678,6 @@ CREATE TABLE public.users (
     last_seen_at timestamp(6) without time zone,
     first_name character varying,
     last_name character varying,
-    telegram_chat_id character varying,
     push_token character varying,
     otp_required_for_login boolean DEFAULT false NOT NULL,
     recovery_codes text,

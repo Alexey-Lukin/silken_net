@@ -42,63 +42,6 @@ RSpec.describe SingleNotificationWorker, type: :worker do
       end
     end
 
-    # [ARCH.60] Telegram — перший живий не-поштовий канал. Транспорт стабиться
-    # на юніт-межі (HTTP-половина має власну спеку) — тут пінується диспетчер:
-    # кому, що і в якій мові він передає.
-    context "with telegram channel" do
-      it "delivers through the transport in the recipient's locale" do
-        user = create(:user, :forester, organization: organization,
-                      telegram_chat_id: "123456789", locale: "uk")
-        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
-        delivered = nil
-        allow(Notifications::TelegramTransport).to receive(:send_message) do |chat_id:, text:|
-          delivered = { chat_id: chat_id, text: text }
-        end
-
-        described_class.new.perform(user.id, alert.id, "telegram")
-
-        uk_text = I18n.with_locale(:uk) { alert.message }
-        # Ліхтар: якби uk-рендер збігався з базовим, пін локалі був би вакуумним.
-        expect(uk_text).not_to eq(I18n.with_locale(I18n.default_locale) { alert.message })
-        expect(delivered).to eq({ chat_id: "123456789", text: uk_text })
-      end
-
-      it "stays silent for users who did not opt in with a chat id" do
-        user = create(:user, :forester, organization: organization, telegram_chat_id: nil)
-        allow(Notifications::TelegramTransport).to receive(:send_message)
-        allow(Rails.logger).to receive(:warn)
-
-        described_class.new.perform(user.id, alert.id, "telegram")
-
-        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
-        expect(Rails.logger).not_to have_received(:warn).with(/\[Telegram\]/)
-      end
-
-      it "reports the channel as unconfigured instead of claiming delivery" do
-        user = create(:user, :forester, organization: organization, telegram_chat_id: "123456789")
-        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
-
-        allow(Notifications::TelegramTransport).to receive(:send_message)
-        allow(Rails.logger).to receive(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
-
-        described_class.new.perform(user.id, alert.id, "telegram")
-
-        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
-        expect(Rails.logger).to have_received(:warn).with(/\[Telegram\].*не сконфігуровано.*НЕ доставлено/)
-      end
-
-      it "lets transport errors escape so Sidekiq retries the delivery" do
-        user = create(:user, :forester, organization: organization, telegram_chat_id: "123456789")
-        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
-        allow(Notifications::TelegramTransport).to receive(:send_message)
-          .and_raise(Web3::HttpClient::RequestError, "Telegram API returned 502")
-
-        expect {
-          described_class.new.perform(user.id, alert.id, "telegram")
-        }.to raise_error(Web3::HttpClient::RequestError)
-      end
-    end
-
     it "returns nil when user not found" do
       expect(described_class.new.perform(-1, alert.id, "push")).to be_nil
     end
@@ -135,26 +78,29 @@ RSpec.describe SingleNotificationWorker, type: :worker do
     # реальний. Пін цілиться в ТРАНСПОРТ, а не в лог — інакше він був би зелений і
     # тоді, коли доставка сталася, а рядок просто не надрукувався.
     context "when the alert was resolved before this job ran" do
-      it "does not touch the transport" do
-        user = create(:user, :admin, organization: organization, telegram_chat_id: "123")
-        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
-        allow(Notifications::TelegramTransport).to receive(:send_message)
-        alert.update!(status: :resolved)
+# ⚫ Пін ПЕРЕНЕСЕНО з telegram на push 2026-09-06 разом зі зняттям каналу
+# [ARCH.60]: предмет тут — ARCH.59 (стан судиться В МИТЬ ДОСТАВКИ), а не
+# конкретний транспорт, тож доказ не має гинути разом із каналом.
+# ⚠️ Носій слабший за стаб транспорту: пінує ДОСЯЖНІСТЬ гілки каналу, а не
+# факт відправки; посилиться в день дротування FCM [ARCH.108].
+it "does not reach the channel branch" do
+  user = create(:user, :admin, organization: organization)
+  alert.update!(status: :resolved)
+  allow(Rails.logger).to receive(:warn)
 
-        described_class.new.perform(user.id, alert.id, "telegram")
+  described_class.new.perform(user.id, alert.id, "push")
 
-        expect(Notifications::TelegramTransport).not_to have_received(:send_message)
-      end
+  expect(Rails.logger).not_to have_received(:warn).with(/\[Push\]/)
+end
 
-      it "does touch the transport while the alert is active" do
-        user = create(:user, :admin, organization: organization, telegram_chat_id: "123")
-        allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
-        allow(Notifications::TelegramTransport).to receive(:send_message)
+it "does reach the channel branch while the alert is active" do
+  user = create(:user, :admin, organization: organization)
+  allow(Rails.logger).to receive(:warn)
 
-        described_class.new.perform(user.id, alert.id, "telegram")
+  described_class.new.perform(user.id, alert.id, "push")
 
-        expect(Notifications::TelegramTransport).to have_received(:send_message)
-      end
+  expect(Rails.logger).to have_received(:warn).with(/\[Push\]/)
+end
     end
   end
 end

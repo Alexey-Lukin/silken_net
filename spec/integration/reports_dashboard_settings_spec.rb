@@ -141,17 +141,9 @@ RSpec.describe "Reports, dashboard, and settings API" do
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
-      expect(json["channels"]).to include("email", "telegram_chat_id")
+      expect(json["channels"]).to include("email", "push_token")
     end
 
-    it "PATCH /notifications/settings updates telegram_chat_id" do
-      patch "/notifications/settings",
-            params: { telegram_chat_id: "123456789" },
-            headers: { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
-
-      expect(response).to have_http_status(:ok)
-      expect(admin.reload.telegram_chat_id).to eq("123456789")
-    end
   end
 
   # ---------------------------------------------------------------------------

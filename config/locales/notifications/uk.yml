@@ -8,7 +8,6 @@ uk:
         heading: Активні канали
         not_configured: Не налаштовано
         push: "🔔 Push"
-        telegram: "✈️ Telegram"
         unavailable: Канал недоступний
       channels:
         email_address: Email адреса
@@ -16,7 +15,6 @@ uk:
         push_placeholder: FCM або APNs токен
         push_token: Push-токен
         save: Зберегти канали →
-        telegram_chat_id: Telegram Chat ID
       email_hint: Змінити email можна в профілі.
       heading: "🔔 Нейронна мережа — Канали сповіщень"
       subtitle: 'Налаштування каналів зв''язку: куди надсилати сповіщення про тривоги та події.'

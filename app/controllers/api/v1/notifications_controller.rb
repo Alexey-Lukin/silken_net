@@ -13,7 +13,6 @@ module Api
               user_id: current_user.id,
               channels: {
                 email: current_user.email_address,
-                telegram_chat_id: current_user.telegram_chat_id,
                 push_token: current_user.push_token
               }
             }
@@ -31,7 +30,7 @@ module Api
       end
 
       # PATCH /notifications/settings
-      # Оновлення каналів зв'язку (Telegram, Push, Email)
+      # Оновлення каналів зв'язку (Push, Email) — ⚫ Telegram знято [ARCH.60] 2026-09-06.
       def update_settings
         if current_user.update(notification_params)
           respond_to do |format|
@@ -40,7 +39,6 @@ module Api
                 message: I18n.t("flash.notifications.updated"),
                 channels: {
                   email: current_user.email_address,
-                  telegram_chat_id: current_user.telegram_chat_id,
                   push_token: current_user.push_token
                 }
               }
@@ -73,7 +71,7 @@ module Api
       private
 
       def notification_params
-        params.permit(:telegram_chat_id, :push_token)
+        params.permit(:push_token)
       end
     end
   end

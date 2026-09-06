@@ -959,7 +959,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `otp_secret` | string | **[S6.21]** TOTP-секрет (RFC 6238) — AR-encrypted (прецедент `hardware_keys`, SEC.22); ротується кожним стартом setup-флоу до активації |
 | `otp_last_used_at` | datetime | **[S6.21]** Мітка останнього успішного TOTP — ROTP `after:` відкидає replay того самого коду всередині 30-с вікна |
 | `recovery_codes` | text | JSON масив 10 одноразових кодів |
-| `telegram_chat_id` | string | Для Telegram сповіщень — формат Bot API (`/\A-?\d{1,20}\z/`, strip-нормалізація): сміттєвий chat_id коштував би RequestError × 5 Sidekiq-ретраїв на кожну тривогу. `phone_number` знято разом зі SMS-каналом (⚖️ ARCH.78 2026-08-20: email покриває сценарій — телефон був PII без цілі processing) |
+| `push_token` | string | Токен пристрою для FCM-доставки. ⚠️ Транспорту НЕ МАЄ: `DeliveryChannels.available?(:push)` віддає жорсткий `false`, адаптера в дереві немає — поле збирається під канал, який ще не збудовано ([`ARCH.108`](00_07_Action_Plan_Tracker)). ⚫ Сусідні поля каналів знято разом із самими каналами: `phone_number` (⚖️ ARCH.78 2026-08-20, SMS) і `telegram_chat_id` (⚖️ [`ARCH.60`](00_07_Action_Plan_Tracker) 2026-09-06) — обидва за одним критерієм «поле без каналу є PII без цілі processing», і те, що `push_token` йому теж відповідає, стоїть відкритим ⚖️-питанням у `ARCH.60` |
 | `locale` | string | [I18N.1/I18N.3] Persisted мовна вподоба — джерело для ОБОХ контурів: **веб** (третій щабель резолву, [`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind) — те, що переживає зміну пристрою й чистку cookie) та **пошта** (Sidekiq, куди cookie не доїжджає). ⚠️ Рядок доти казав «для НЕ-веб-контекстів», і то було не описом, а МЕЖЕЮ: колонку читала сама лише пошта, тож людина з обраною мовою бачила англійський сайт і діставала лист своєю. Пишеться при явному виборі в перемикачі (`LocalesController`, guard дзеркалить [SEC.16]); `nil` = «не обрано» → наступний щабель |
 | `last_seen_at` | datetime | Оновлюється через Session |
 
@@ -1308,7 +1308,7 @@ active/draft ──cancel──► cancelled
 | `coordinates` | `[lat, lng]` через `tree` або `cluster.geo_center` — інакше **`nil`** [ARCH.82]. 🔴 Доти віддавав `[0.0, 0.0]` «щоб не ламати Leaflet.js», але це не відсутність, а **вигадана географія** (Гвінейська затока), і стан досяжний: `trees.latitude/longitude` nullable (тому й існує скоуп `geolocated`), а `geo_center` деривується з опційного полігона. Ціна була доказова, не косметична — єдиний споживач (`Dclimate::VerificationService`) годує координати в запит про пожежу, і його вердикт лягає на алерт як `satellite_status`. ⚠️ Споживач мусить розрізняти ЗАТРИМКУ і ВИРОК: `nil` дає **термінальний** `inconclusive` (без orbital-ретраю, бо координати чеканням не зʼявляться), для критичних — той самий негайний Field Audit, що при затемненні |
 | `actionable?` | Чи можна автоматично відреагувати |
 | `requires_satellite_consensus?` | fire або drought → IoTeX ZK-верифікація |
-| `dispatch_notifications!` | Надіслати Telegram/Push (email — critical) |
+| `dispatch_notifications!` | Поставити тривогу в чергу (`AlertNotificationWorker`); оперативний канал сьогодні лише `:push`, email — на critical |
 | `schedule_satellite_verification!` | Поставити в чергу Worker |
 | `broadcast_new_alert` | Turbo Stream |
 
@@ -1580,10 +1580,12 @@ Cluster, User, Organization
 
 **Початкові ролі:**
 - `oracle.executioner@system.silkennet.com` — super_admin, системний бот (без org)
-- `admin@silkennet.com` — super_admin, Архітектор платформи
-- `alexey@activebridge.org` — admin, ActiveBridge (access_level :organization)
-- `forester@activebridge.org` — forester (access_level :field)
-- `subscriber@ecofuture.fund` — subscriber (access_level :read_only)
+- `<база>+superadmin@…` — super_admin, **Григорій Сковорода** — єдиний актор БЕЗ організації
+- `<база>+admin@…` — admin, ActiveBridge (access_level :organization), **Алішер Навої**
+- `<база>+forester@…` — forester (access_level :field), **Тарас Шевченко**
+- `<база>+subscriber@…` — subscriber (access_level :read_only), **Фарід Аттар**
+
+> 📬 **Адреси демо-акторів більше не літерали — це plus-адресація від `SEED_EMAIL_BASE`** (2026-09-06). Доти вони стояли на доменах, яких не існує, тож жоден із двох поштових трактів — password-reset і critical-alert — не був перевірний на демо-даних: лист не мав куди долетіти. Тепер чотири РІЗНІ облікові записи (уніфікація `email_address` їх розрізняє) кладуть пошту в ОДНУ живу скриньку. ⛔ Сама база живе в ENV, не в дереві: особиста адреса в публічному AGPL-репозиторії дому не має; без змінної сід падає в навмисне недоставний сентинел (та сама форма, що `DeliveryChannels::SCAFFOLD_SENDER`). ⚠️ Стеля: доставними ці адреси стають лише після дротування ESP — сьогодні canopy біжить із `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1`. Імена акторів добрано за ФОРМОЮ ролі, а не за рангом: підстава кожного стоїть коментарем у `db/seeds.rb`.
 
 **Початковий Cluster:** "Черкаський бір" — `region: "Центральна Україна"`, timezone: `Europe/Kyiv`, fire threshold: 60°C.
 
@@ -1725,7 +1727,7 @@ Polymorphic:
 
 | Таблиця · колонки | Клас | Підстава й наслідок |
 |---|---|---|
-| `users` — `email_address` · `first_name` · `last_name` · `telegram_chat_id` · `push_token` | **PII (ядро)** | Прямі ідентифікатори живої людини. Усі скрабляться з логів (`filter_parameters`); `recovery_codes` і `password_digest` — креденшели, не PII, але видаляються тим самим ходом |
+| `users` — `email_address` · `first_name` · `last_name` · `push_token` | **PII (ядро)** | Прямі ідентифікатори живої людини. Усі скрабляться з логів (`filter_parameters`); `recovery_codes` і `password_digest` — креденшели, не PII, але видаляються тим самим ходом |
 | `sessions` — `ip_address` · `user_agent` | **PII (слід входу)** | Обидва `validates presence`, тобто заповнені ЗАВЖДИ. Стирання сесій — найдешевша половина erasure: таблиця не append-only |
 | `audit_logs` — `ip_address` · `user_agent` · `user_id` | 🔴 **PII в APPEND-ONLY** | Ядро напруги з [`ARCH.57`](00_07_Action_Plan_Tracker): ланцюг tamper-evident, тож рядок не видаляють — erasure тут можлива лише ПСЕВДОНІМІЗАЦІЄЮ поля при збереженні хеш-ланцюга. Це ⚖️-половина erasure ([`00_07`](00_07_Action_Plan_Tracker) SEC.18): `Gdpr::AnonymizeUserService` (безсуперечна половина — users-tombstone + sessions destroy, слід у ланцюг ДО мутацій) ці рядки свідомо НЕ чіпає, і його спека пінить, що ланцюг переживає анонімізацію цілим |
 | `organizations` — `billing_email` | **PII (умовно)** | Для ФОП/одноосібного власника платіжна адреса Є персональними даними; для ТОВ — ні. Клас залежить від контрагента, тож поле трактується як PII за замовчуванням |

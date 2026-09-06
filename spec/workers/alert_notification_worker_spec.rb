@@ -11,34 +11,39 @@ RSpec.describe AlertNotificationWorker, type: :worker do
 
   before do
     allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
-    # 🔴 [E.33] Без цього рядка КОЖЕН приклад нижче вимірює світ, у якому живих
-    # оперативних каналів НЕМА: `TELEGRAM_BOT_TOKEN` у тест-середовищі не заданий,
-    # а `available?(:push)` — жорсткий `false`. Доти піни стверджували «2 push +
-    # 2 telegram» саме в такому світі, тобто цементували енкʼю каналів, яких
-    # платформа не має. Стабимо ТРАНСПОРТ, а не предикат: тоді приклад іде через
-    # реальну диспетчеризацію `DeliveryChannels.available?`, і її зняття почервонить.
-    allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+# 🔴 [E.33 · ARCH.60] Доти тут стояв стаб `TelegramTransport.configured?` — єдиний
+# спосіб дати воркерові ЖИВИЙ канал, не стабуючи предикат. ⚫ Канал зрізано
+# ⚖️ 2026-09-06, і з ним пішла ця можливість: `available?(:push)` — жорсткий
+# `false`, `:email` має власний шлях повз фан-аут. **Оголошена деградація:**
+# відтепер КОЖЕН приклад, якому потрібен живий канал, стабить сам предикат
+# `DeliveryChannels.available?`, тобто реальну диспетчеризацію end-to-end уже
+# не проганяє НІХТО. Носій повернеться в день дротування FCM [ARCH.108] —
+# тоді стаб транспорту стане можливим знову, і цей коментар має піти.
   end
 
   describe "#perform" do
-    it "enqueues SingleNotificationWorker for each admin/forester" do
-      admin = create(:user, :admin, organization: organization)
-      forester = create(:user, :forester, organization: organization)
-      _subscriber = create(:user, :subscriber, organization: organization)
+it "enqueues SingleNotificationWorker for each admin/forester" do
+  admin = create(:user, :admin, organization: organization)
+  forester = create(:user, :forester, organization: organization)
+  _subscriber = create(:user, :subscriber, organization: organization)
+  # ⚫ Живий канал доводиться СТАБИТИ предикатом — див. `before`: після зняття
+  # Telegram транспорту, який можна застабити, у платформи не лишилось.
+  allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+  allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
 
-      described_class.new.perform(alert.id)
+  described_class.new.perform(alert.id)
 
-      # [ARCH.78] SMS-джоб немає навіть для critical — канал відкинуто присудом.
-      # [E.33] Push-джоб немає, бо транспорту НЕМА: канал відсівається на вході
-      # в чергу, а не після того, як джоба доїде до `logger.warn`.
-      sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
-      push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
-      telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
+  # [ARCH.78] SMS-джоб немає навіть для critical — канал відкинуто присудом.
+  # [ARCH.60] Telegram-джоб немає — канал зрізано ⚖️ 2026-09-06.
+  sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
+  telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
+  push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
 
-      expect(sms_jobs).to be_empty
-      expect(push_jobs).to be_empty
-      expect(telegram_jobs.size).to eq(2)
-    end
+  expect(sms_jobs).to be_empty
+  expect(telegram_jobs).to be_empty
+  expect(push_jobs.size).to eq(2)
+  expect(push_jobs.map { |j| j["args"][0] }).to contain_exactly(admin.id, forester.id)
+end
 
     # [E.33] Дзеркальна половина: гейт читає ПРЕДИКАТ, а не зашитий перелік —
     # тож дротування FCM вмикає канал без правки воркера. Без цього прикладу
@@ -59,6 +64,8 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       create(:user, :forester, organization: organization)
 
       # Один живий канал × два стейкхолдери = 2 записи в ОДНОМУ push_bulk.
+      allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+      allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
       allow(Sidekiq::Client).to receive(:push_bulk).and_call_original
 
       described_class.new.perform(alert.id)
@@ -67,8 +74,8 @@ RSpec.describe AlertNotificationWorker, type: :worker do
         hash_including(
           "class" => SingleNotificationWorker,
           "args" => a_collection_containing_exactly(
-            [ anything, alert.id, "telegram" ],
-            [ anything, alert.id, "telegram" ]
+            [ anything, alert.id, "push" ],
+            [ anything, alert.id, "push" ]
           )
         )
       )
@@ -88,17 +95,18 @@ RSpec.describe AlertNotificationWorker, type: :worker do
     # світи, і мовчання злило б їх в один. Перший означає, що тривогу побачить
     # лише той, хто саме дивиться на дашборд.
     it "reports the silent world when no operational channel is live" do
-      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
+      # ⚫ Стабити нічого не треба: після зняття Telegram [ARCH.60] набір
+      # оперативних каналів порожній ЗА ЗАДУМОМ — саме тому й рівень `info`.
       create(:user, :admin, organization: organization)
       create(:user, :forester, organization: organization)
-      allow(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:info)
 
       allow(Sidekiq::Client).to receive(:push_bulk)
 
       described_class.new.perform(alert.id)
 
       expect(Sidekiq::Client).not_to have_received(:push_bulk)
-      expect(Rails.logger).to have_received(:warn).with(/Жодного оперативного каналу.*2 стейкхолдерів/)
+      expect(Rails.logger).to have_received(:info).with(/Оперативних каналів немає ЗА ЗАДУМОМ.*2 стейкхолдерів/)
     end
 
     it "sends email for critical alerts with billing email" do
@@ -157,6 +165,8 @@ RSpec.describe AlertNotificationWorker, type: :worker do
       it "still enqueues while the alert is active" do
         create(:user, :admin, organization: organization)
         create(:user, :forester, organization: organization)
+        allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+        allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
 
         described_class.new.perform(alert.id)
 

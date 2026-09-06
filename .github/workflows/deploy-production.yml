@@ -339,8 +339,6 @@ jobs:
           #     Sidekiq job, which is loud now that a transport exists at all. ---
           SMTP_USER_NAME: ${{ secrets.SMTP_USER_NAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          # --- Telegram bot token [ARCH.60] — optional: transport no-ops when unset. ---
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           # --- Turbo signed-stream key [SEC.25 Ф3] ---
           # Mirror of the canopy fix; the full measurement and why nothing reddened live in
           # the sibling block of `deploy.yml` (One-Home — not restated). Short form: this

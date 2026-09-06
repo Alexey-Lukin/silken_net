@@ -13,7 +13,10 @@ class AlertNotificationWorker
   # [E.33] Канали, що доставляються ЧЕРЕЗ `SingleNotificationWorker`. Пошта сюди
   # не входить свідомо: вона має власний шлях (mailer → `billing_email`), одна
   # відправка на алерт незалежно від числа стейкхолдерів.
-  OPERATIONAL_CHANNELS = %i[push telegram].freeze
+  # ⚫ `:telegram` знято ⚖️ founder 2026-09-06 [ARCH.60] — лишився сам `:push`, який
+  # ратифіковано недоступним до появи мобільного клієнта [ARCH.108]. Отже набір
+  # сьогодні порожній ЗА ОГОЛОШЕНИМ ЗАДУМОМ, і саме тому нижче стоїть `info`.
+  OPERATIONAL_CHANNELS = %i[push].freeze
 
   def perform(ews_alert_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
@@ -89,12 +92,17 @@ class AlertNotificationWorker
     live_channels = OPERATIONAL_CHANNELS.select { |channel| Notifications::DeliveryChannels.available?(channel) }
 
     if live_channels.empty?
-      # Голос НУЛЮ: «оперативних каналів немає» ⊥ «стейкхолдерів немає» — два
-      # різні світи, і мовчання злило б їх у один. Перший з них означає, що
-      # тривогу побачить лише той, хто дивиться на дашборд.
-      Rails.logger.warn(
-        "[Notification] Жодного оперативного каналу (#{OPERATIONAL_CHANNELS.join('/')}) — " \
-        "#{stakeholders.count} стейкхолдерів НЕ отримають тривогу ##{alert.id} поза дашбордом"
+      # Голос НУЛЮ лишається — «оперативних каналів немає» ⊥ «стейкхолдерів
+      # немає» досі два різні світи, і мовчання злило б їх у один.
+      # 🔴 Але РІВЕНЬ знижено `warn` → `info` ⚖️ 2026-09-06 разом зі зняттям
+      # Telegram: доти порожній набір був АНОМАЛІЄЮ (канал жив, зник токен),
+      # тепер це ОГОЛОШЕНИЙ СТАН — у наборі сам `:push`, ратифіковано недоступний.
+      # Warn на кожен алерт зробив би з сигналу шум, а тривога, що звучить
+      # завжди, не звучить ніколи. Носій стану — не цей рядок, а нога дротування
+      # FCM/пошти в `00_07` ARCH.60.
+      Rails.logger.info(
+        "[Notification] Оперативних каналів немає ЗА ЗАДУМОМ (#{OPERATIONAL_CHANNELS.join('/')}; push — до мобільного клієнта, Telegram знято 09-06) — " \
+        "#{stakeholders.count} стейкхолдерів бачать тривогу #{'#'}#{alert.id} лише на дашборді; critical — поштою"
       )
       return 0
     end
@@ -103,7 +111,8 @@ class AlertNotificationWorker
     stakeholders.find_each(batch_size: 500) do |user|
       # [ARCH.60] Канал opt-in через chat_id/token, тож адресну вибірку робить
       # сам SingleNotificationWorker. SMS-каналу немає: відкинуто присудом
-      # [ARCH.78, 2026-08-20] — email (critical ↑) + Telegram покривають сценарій.
+      # [ARCH.78, 2026-08-20]; ⚫ Telegram знято ⚖️ 2026-09-06 — сценарій покриває
+      # пошта (critical ↑) плюс дашборд, доки не задротовано FCM [ARCH.108].
       live_channels.each { |channel| bulk_args << [ user.id, alert.id, channel.to_s ] }
     end
 

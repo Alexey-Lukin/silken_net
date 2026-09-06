@@ -48,23 +48,6 @@ RSpec.describe User, type: :model do
       expect(user).not_to be_valid
       expect(user.errors[:role]).to be_present
     end
-
-    # [ARCH.78] Telegram Bot API chat_id — ціле, відʼємне для груп/каналів.
-    it "validates telegram_chat_id format when present" do
-      user = build(:user, telegram_chat_id: "not-a-chat")
-      expect(user).not_to be_valid
-      expect(user.errors[:telegram_chat_id]).to be_present
-    end
-
-    it "allows a numeric telegram_chat_id, including negative group ids" do
-      expect(build(:user, telegram_chat_id: "123456789")).to be_valid
-      expect(build(:user, telegram_chat_id: "-1001234567890")).to be_valid
-    end
-
-    it "allows blank telegram_chat_id" do
-      user = build(:user, telegram_chat_id: "")
-      expect(user).to be_valid
-    end
   end
 
   # --- НОРМАЛІЗАЦІЯ ---
@@ -74,14 +57,6 @@ RSpec.describe User, type: :model do
       user = described_class.new(email_address: "  ADMIN@EXAMPLE.COM  ", password: "password12345", role: :admin)
       user.valid?
       expect(user.email_address).to eq("admin@example.com")
-    end
-  end
-
-  describe "telegram_chat_id normalization" do
-    it "strips surrounding whitespace before validating" do
-      user = build(:user, telegram_chat_id: "  123456789  ")
-      user.valid?
-      expect(user.telegram_chat_id).to eq("123456789")
     end
   end
 

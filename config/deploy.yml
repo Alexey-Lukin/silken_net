@@ -240,9 +240,6 @@ env:
     #     важіль і будували (⚖️ 2026-07-30). ⚠️ Заведено сюди 2026-08-29: єдина його
     #     deploy-поверхня жила в SDL знятої платформи й зникла разом із нею [OPS.37].
     - TURBO_SIGNED_STREAM_KEY
-    # --- Telegram bot token [ARCH.60] — optional channel: transport no-ops when unset,
-    #     and TelegramTransport.configured? rejects the placeholder by token format. ---
-    - TELEGRAM_BOT_TOKEN
     # --- Web3 money/signing keys: JOB-ONLY (servers.job env.secret above) —
     #     deliberately NOT global so web/coap containers never carry them ---
     # --- RPC endpoints (SSOT names expected by Web3::RpcConnectionPool) ---

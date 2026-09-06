@@ -98,10 +98,6 @@ RSpec.describe "User authentication and session lifecycle" do
       expect(user.email_address).to eq("test@example.com")
     end
 
-    it "validates telegram_chat_id format (Bot API integer)" do
-      user = build(:user, telegram_chat_id: "not-a-chat", organization: organization)
-      expect(user).not_to be_valid
-    end
   end
 
   describe "API authentication flow via requests" do

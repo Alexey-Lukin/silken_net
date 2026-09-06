@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Api::V1::NotificationsController, type: :request do
   let(:organization) { create(:organization) }
-  let(:user) { create(:user, organization: organization, telegram_chat_id: "12345") }
+  let(:user) { create(:user, organization: organization) }
   let(:api_token) { user.generate_token_for(:api_access) }
   let(:headers) { { "Authorization" => "Bearer #{api_token}" } }
 
@@ -16,7 +16,6 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
 
       body = response.parsed_body
       expect(body["channels"]["email"]).to eq(user.email_address)
-      expect(body["channels"]["telegram_chat_id"]).to eq("12345")
       expect(body["channels"]).to have_key("push_token")
       # [ARCH.78] SMS відкинуто присудом — API не сміє рекламувати канал.
       expect(body["channels"]).not_to have_key("phone")
@@ -27,12 +26,12 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     it "updates notification channel settings" do
       patch "/notifications/settings",
             headers: headers,
-            params: { telegram_chat_id: "99999" },
+            params: { push_token: "fcm_abc" },
             as: :json
 
       expect(response).to have_http_status(:ok)
       user.reload
-      expect(user.telegram_chat_id).to eq("99999")
+      expect(user.reload.push_token).to eq("fcm_abc")
     end
 
     it "updates push_token" do
@@ -47,10 +46,17 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       expect(response.parsed_body["channels"]["push_token"]).to eq("fcm_token_abc123")
     end
 
+    # ⚫ Носій ПЕРЕЇХАВ 2026-09-06 [ARCH.60]: доти невалідність давав формат
+    # `telegram_chat_id`, але канал зрізано, а `push_token` валідації не має —
+    # тобто через `permit` запис зіпсувати вже не можна. Предмет піна не в полі,
+    # а в ДЗЕРКАЛІ статусу (SEC.25), тож ламаємо запис іншим атрибутом повз
+    # валідацію: `update` перевіряє ВЕСЬ рядок, і гілка 422 лишається досяжною.
     it "returns unprocessable_content when update fails with invalid params" do
+      user.update_column(:locale, "zz")
+
       patch "/notifications/settings",
             headers: headers,
-            params: { telegram_chat_id: "not-a-chat" },
+            params: { push_token: "fcm_abc" },
             as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
@@ -70,12 +76,14 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
 
     it "renders HTML for update_settings error" do
+      user.update_column(:locale, "zz")
+
       patch "/notifications/settings",
             headers: html_headers,
-            params: { telegram_chat_id: "not-a-chat" }
+            params: { push_token: "fcm_abc" }
 
       # [SEC.25] 422 — дзеркало JSON-гілки; на 200 Turbo відповідь викидає, тож
-      # невалідний chat_id не показував користувачеві нічого.
+      # невалідний вхід не показував користувачеві нічого.
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.content_type).to include("text/html")
 
@@ -83,7 +91,7 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       # фіксу статусу сторінка все одно мовчала — компонент не мав куди покласти
       # причину. Пін на статус цього не бачив за побудовою.
       expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
-      expect(response.body).to include("Telegram chat ID is invalid")
+      expect(response.body).to include("Language is not included in the list")
     end
   end
 end

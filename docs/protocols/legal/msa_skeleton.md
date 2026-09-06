@@ -400,7 +400,7 @@ C.3.3. **НІКОЛИ:** «Клієнт купує SCC-токен як carbon-к
 
 **Founder-рішення (entity-присуд, [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** SilkenNet розміщується як R&D-продукт-лінія під **ActiveBridge** — наявною UA-компанією, Дія.City-резидентом, співзасновником якої є founder. Це **operational-vehicle**, не власник IP (IP/™ лишається на фізособі founder'а — окремий трек, той самий канон); нової інкорпорації не потрібно.
 
-**⚠️ Колізія, знайдена при read-only перевірці репозиторію:** «ActiveBridge» **вже існує в кодовій базі** — не як юр-особа-оператор, а як **demo/seed B2B-organization** (приклад Клієнта, не Провайдера): seed-блок `Organization.create!(name: "ActiveBridge", …)` у `db/seeds.rb` + дзеркало в [`04_01 §8`](../../04_01_Data_Models_and_Entities.md) (Seeds) — «Початкові організації: ActiveBridge + EcoFuture Fund»; `alexey@activebridge.org` — admin, ActiveBridge.
+**⚠️ Колізія, знайдена при read-only перевірці репозиторію:** «ActiveBridge» **вже існує в кодовій базі** — не як юр-особа-оператор, а як **demo/seed B2B-organization** (приклад Клієнта, не Провайдера): seed-блок `Organization.create!(name: "ActiveBridge", …)` у `db/seeds.rb` + дзеркало в [`04_01 §8`](../../04_01_Data_Models_and_Entities.md) (Seeds) — «Початкові організації: ActiveBridge + EcoFuture Fund»; admin-актор ActiveBridge (адресу відв'язано від літерала 2026-09-06 — plus-адресація від `SEED_EMAIL_BASE`, [`04_01 §8`](../../04_01_Data_Models_and_Entities.md); колізія імені ОРГАНІЗАЦІЇ від цього не зникає).
 
 Тобто в поточній системі ActiveBridge грає роль **Клієнта** (demo-приклад), а не **Провайдера** за цим MSA. **⚖️ Явний вибір — НЕ вирішую сама/сам, обидві опції з наслідками:**
 

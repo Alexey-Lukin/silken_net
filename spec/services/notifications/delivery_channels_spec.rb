@@ -11,7 +11,8 @@ RSpec.describe Notifications::DeliveryChannels do
     it "сьогодні не має ЖОДНОГО живого каналу" do
       # Ліхтар: без нього приклад був би зелений і на порожньому переліку.
       # [ARCH.78] :sms у переліку немає — канал відкинуто присудом 2026-08-20.
-      expect(described_class::ALL).to contain_exactly(:email, :telegram, :push)
+      # [ARCH.60] :telegram теж — зрізано ⚖️ 2026-09-06 при нулі споживачів.
+      expect(described_class::ALL).to contain_exactly(:email, :push)
 
       described_class::ALL.each do |channel|
         expect(described_class.available?(channel)).to be(false), "#{channel} оголошено живим"
@@ -109,27 +110,10 @@ RSpec.describe Notifications::DeliveryChannels do
     it "не тягне за собою решту каналів — у них власне оголошення" do
       configure(from: "alerts@silkennet.com", smtp_address: "smtp.postmarkapp.com")
 
-      expect(described_class.available?(:telegram)).to be(false)
       expect(described_class.available?(:push)).to be(false)
-    end
-  end
-
-  # [ARCH.60] Другий машинно-спостережуваний транспорт. Предикат живе в самому
-  # `TelegramTransport` (там же ENV-ім'я і формат — власна спека); тут пінується
-  # лише диспетчеризація: екран і `available` мусять читати саме його.
-  describe ".available?(:telegram)" do
-    it "оживає рівно тоді, коли транспорт каже «сконфігуровано»" do
-      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
-
-      expect(described_class.available?(:telegram)).to be(true)
-      expect(described_class.available).to include(:telegram)
-    end
-
-    it "мертвий, коли транспорт не сконфігуровано, і не тягне сусідів" do
-      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(false)
-
+      # ⚫ Гілки `:telegram` більше немає — канал зрізано ⚖️ 2026-09-06 [ARCH.60];
+      # невідомий символ падає в `else → false`, що й пінує приклад нижче.
       expect(described_class.available?(:telegram)).to be(false)
-      expect(described_class.available?(:push)).to be(false)
     end
   end
 end

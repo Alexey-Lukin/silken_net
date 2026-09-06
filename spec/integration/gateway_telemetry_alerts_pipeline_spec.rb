@@ -119,10 +119,19 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
     # 🔴 [E.33] ДРУГИЙ сайт того самого класу: приклад пінив енкʼю ОБОХ каналів у
     # тест-середовищі, де `TELEGRAM_BOT_TOKEN` не заданий, а `available?(:push)` —
     # жорсткий `false`. Тобто інтеграційний пін стверджував доставку транспортами,
-    # яких платформа не має. Стабимо ТРАНСПОРТ (не предикат), щоб приклад ішов
-    # через реальну диспетчеризацію `DeliveryChannels.available?`.
+    # яких платформа не має. Лік був — стабити ТРАНСПОРТ, не предикат.
+    #
+    # ⚫ [ARCH.60] Той транспорт зрізано ⚖️ founder 2026-09-06, і з ним пішла сама
+    # можливість такого стабу: у `OPERATIONAL_CHANNELS` лишився самий `:push`,
+    # ратифіковано недоступний [ARCH.108], тож без втручання набір порожній і
+    # воркер повертає 0 ще до `push_bulk`.
+    # 🔒 ОГОЛОШЕНА ДЕГРАДАЦІЯ: стаб тепер стоїть на самому предикаті, отже приклад
+    # більше НЕ свідчить, що предикат правдиво читає платформу — він свідчить лише
+    # про маршрут ПІСЛЯ нього: кого саме воркер кладе в чергу і яким каналом.
+    # Правдивість предиката несе `spec/services/notifications/delivery_channels_spec.rb`.
     it "enqueues notifications for critical alerts to admin/forester — only via LIVE channels" do
-      allow(Notifications::TelegramTransport).to receive(:configured?).and_return(true)
+      allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+      allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
 
       AlertNotificationWorker.new.perform(alert.id)
 
@@ -130,13 +139,10 @@ RSpec.describe "Gateway telemetry relay and alert notification pipeline" do
       jobs = SingleNotificationWorker.jobs
       sms_args = jobs.select { |j| j["args"][2] == "sms" }.map { |j| j["args"][0] }
       push_args = jobs.select { |j| j["args"][2] == "push" }.map { |j| j["args"][0] }
-      telegram_args = jobs.select { |j| j["args"][2] == "telegram" }.map { |j| j["args"][0] }
 
       # [ARCH.78] SMS відкинуто присудом 2026-08-20 — джоб немає навіть для critical.
       expect(sms_args).to be_empty
-      # [E.33] Push відсіяно на вході в чергу — транспорту немає, тож і джоби нема.
-      expect(push_args).to be_empty
-      expect(telegram_args).to contain_exactly(admin.id, forester.id)
+      expect(push_args).to contain_exactly(admin.id, forester.id)
     end
 
     it "does not crash for non-existent alert" do

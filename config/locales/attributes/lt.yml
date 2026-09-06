@@ -44,7 +44,6 @@ lt:
     scientific_name: Mokslinis pavadinimas
     silicon_uid_hex: Silicio UID
     target_hardware_type: Tikslinė aparatūra
-    telegram_chat_id: Telegram pokalbio ID
     tree_family: Rūšis
     uid: UID
     version: Versija

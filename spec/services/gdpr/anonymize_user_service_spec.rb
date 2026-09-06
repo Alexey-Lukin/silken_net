@@ -9,7 +9,6 @@ RSpec.describe Gdpr::AnonymizeUserService do
     create(:user, :forester,
            organization: organization,
            first_name: "Тарас", last_name: "Мельник",
-           telegram_chat_id: "420042",
            password: "Sup3r!Passw0rd12", password_confirmation: "Sup3r!Passw0rd12")
   end
 
@@ -21,7 +20,6 @@ RSpec.describe Gdpr::AnonymizeUserService do
       expect(user.email_address).to eq("erased-#{user.id}@anonymized.invalid")
       expect(user.first_name).to be_nil
       expect(user.last_name).to be_nil
-      expect(user.telegram_chat_id).to be_nil
       expect(user.push_token).to be_nil
       expect(user.organization_id).to be_nil
     end

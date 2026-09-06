@@ -82,16 +82,29 @@ RSpec.describe AuditLogBlueprint, type: :model do
       expect(parsed).to have_key("created_at")
     end
 
-    it "includes user association in :profile view" do
+    # 🔴 [SEC.36 2026-09-06] Пін ПЕРЕВЕРНУТО, і в цьому вся його суть. Доти він
+    # ВИМАГАВ `mfa_enabled` і `has_password` у чужому записі журналу — тобто
+    # зелений колір стеріг рівно ту переекспозицію, яку пункт і знайшов. Носій
+    # не був хибним: він чесно фіксував намір, який виявився неправильним.
+    # Тепер він стереже зворотний бік — щоб `:profile` (вигляд «про СЕБЕ»,
+    # `GET /users/me`) не повернувся сюди мовчки.
+    it "gives the actor the :crew view — never the self-facing :profile" do
       user_data = parsed["user"]
       expect(user_data).to be_a(Hash)
-      expect(user_data["email_address"]).to eq(user.email_address)
       expect(user_data["first_name"]).to eq("Olena")
       expect(user_data["last_name"]).to eq("Kovalenko")
-      expect(user_data["role"]).to eq("admin")
       expect(user_data["full_name"]).to eq("Olena Kovalenko")
-      expect(user_data).to have_key("mfa_enabled")
-      expect(user_data).to have_key("has_password")
+      expect(user_data["role"]).to eq("admin")
+
+      # Ідентифікатор лишається — саме він робить звуження оборотним для
+      # законного споживача (адреса резолвиться окремим запитом).
+      expect(user_data["id"]).to eq(user.id)
+
+      # Три поля, що не мають дому в чужому записі: два — безпекова постава
+      # колеги, третє — його пошта, яку HTML-панель показує, а JSON більше ні.
+      expect(user_data).not_to have_key("mfa_enabled")
+      expect(user_data).not_to have_key("has_password")
+      expect(user_data).not_to have_key("email_address")
     end
   end
 

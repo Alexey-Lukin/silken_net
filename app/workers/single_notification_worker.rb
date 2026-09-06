@@ -15,7 +15,8 @@ class SingleNotificationWorker
   sidekiq_options queue: "alerts", retry: 5, expires_in: 10.minutes
 
   # [ARCH.78, присуд 2026-08-20] SMS-гілки більше немає: канал відкинуто разом
-  # із `users.phone_number` (email покриває сценарій, Telegram — другий живий).
+  # із `users.phone_number`. ⚫ Telegram знято ⚖️ 2026-09-06 [ARCH.60] — з не-поштових
+  # каналів лишився сам `:push`, який чекає на FCM-адаптер [ARCH.108].
   def perform(user_id, ews_alert_id, channel)
     user = User.find_by(id: user_id)
     alert = EwsAlert.find_by(id: ews_alert_id)
@@ -34,8 +35,6 @@ class SingleNotificationWorker
     end
 
     case channel.to_sym
-    when :telegram
-      send_telegram(user, alert)
     when :push
       send_push_notification(user, alert)
     else
@@ -58,25 +57,5 @@ class SingleNotificationWorker
     Rails.logger.warn(
       "[Push] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
     )
-  end
-
-  # [ARCH.60] Перший живий не-поштовий канал. Без chat_id — тихо (канал
-  # адресований лише тим, хто його дав, як push із token); без токена —
-  # гучний warn у формі ARCH.78 (стан КАНАЛУ, не результат). Помилку HTTP
-  # свідомо не ковтаємо: RequestError = Sidekiq-retry (5 спроб цього ж user+channel).
-  # Текст рендериться в локалі ОТРИМУВАЧА — у Sidekiq `I18n.locale` завжди
-  # базова, тож без обгортки україномовний лісник діставав би англійську тривогу.
-  def send_telegram(user, alert)
-    return unless user.telegram_chat_id.present?
-
-    unless Notifications::TelegramTransport.configured?
-      Rails.logger.warn(
-        "[Telegram] Канал не сконфігуровано — користувачу #{user.email_address} НЕ доставлено (алерт ##{alert.id})"
-      )
-      return
-    end
-
-    text = I18n.with_locale(Notifications::RecipientLocale.for(user)) { alert.message }
-    Notifications::TelegramTransport.send_message(chat_id: user.telegram_chat_id, text: text)
   end
 end

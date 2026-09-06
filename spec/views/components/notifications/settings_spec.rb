@@ -11,11 +11,9 @@ RSpec.describe Notifications::Settings do
   # вирішувала, що поверне ActiveModel. Заразом зникли рукописні
   # `model_name`/`to_key`/`to_param`: компонент їх не читає ЖОДНОГО разу —
   # форма тут рукописна й адресується `notifications_settings_path`.
-  def account(email_address: "ada@silkennet.com",
-              telegram_chat_id: "123456789", push_token: nil)
+  def account(email_address: "ada@silkennet.com", push_token: nil)
     User.new(
       email_address: email_address,
-      telegram_chat_id: telegram_chat_id,
       push_token: push_token
     )
   end
@@ -25,7 +23,7 @@ RSpec.describe Notifications::Settings do
   # `Notifications::DeliveryChannels`). Тут його оголошено живим для всіх
   # трьох, бо решта прикладів файлу говорить про адреси користувача; окремі
   # контексти нижче міряють саме вісь транспорту.
-  let(:available_channels) { %i[email telegram push] }
+  let(:available_channels) { %i[email push] }
   let(:html) { render_component(user: user, available_channels: available_channels) }
 
   describe "header section" do
@@ -71,11 +69,6 @@ RSpec.describe Notifications::Settings do
       expect(html).not_to include("phone_number")
     end
 
-    it "renders telegram_chat_id field" do
-      expect(html).to include("telegram_chat_id")
-      expect(html).to include("123456789")
-    end
-
     it "renders push_token field" do
       expect(html).to include("push_token")
     end
@@ -94,8 +87,9 @@ RSpec.describe Notifications::Settings do
       expect(html).not_to include("SMS")
     end
 
-    it "renders Telegram channel status" do
-      expect(html).to include("Telegram")
+    # ⚫ Рядка статусу Telegram більше немає — канал зрізано ⚖️ 2026-09-06.
+    it "does not render a status row for the retired Telegram channel" do
+      expect(html).not_to include("Telegram")
     end
 
     it "renders Push channel status" do
@@ -108,7 +102,9 @@ RSpec.describe Notifications::Settings do
     # вузлі, тож підміна предиката рядка (`push_token` на будь-який заповнений)
     # червонить поіменно.
     it "binds a configured channel to its own Connected marker" do
-      expect(html).to include('Telegram</span><div class="flex items-center gap-2">')
+      # ⚫ Носій переїхав із Telegram на email 2026-09-06 [ARCH.60]: предмет —
+      # ПАРА «мітка ↔ маркер» в одному вузлі, а не конкретний канал.
+      expect(html).to include('Email</span><div class="flex items-center gap-2">')
     end
 
     it "binds the empty push_token to its own Not-configured marker" do
@@ -122,12 +118,15 @@ RSpec.describe Notifications::Settings do
   # (`error_messages:`), але жоден приклад їх не подавав, тож єдиний шлях, яким
   # людина бачить причину 422, у сюїті не проходився ніколи.
   describe "validation errors from a rejected update" do
-    let(:user) { account.tap { |u| u.errors.add(:telegram_chat_id, :invalid) } }
+    # ⚫ Носій переїхав із `telegram_chat_id` на `locale` 2026-09-06 [ARCH.60]:
+    # предмет піна — що імʼя поля береться з `attributes.*`, а не з `humanize`,
+    # і він не залежить від того, ЯКЕ саме поле помилкове.
+    let(:user) { account.tap { |u| u.errors.add(:locale, :inclusion) } }
 
     it "renders the reason the update was refused" do
-      # [I18N.1] Імʼя поля приходить із `attributes.telegram_chat_id`, а не з
+      # [I18N.1] Імʼя поля приходить із `attributes.locale`, а не з
       # `String#humanize` — доти воно було англійським у ВСІХ локалях.
-      expect(html).to include("Telegram chat ID is invalid")
+      expect(html).to include("Language is not included in the list")
     end
   end
 
@@ -139,10 +138,10 @@ RSpec.describe Notifications::Settings do
       let(:available_channels) { [] }
 
       it "називає це станом КАНАЛУ, а не недоліком налаштувань користувача" do
-        # Telegram у фікстурі заповнений — тобто «не налаштовано» тут було б
-        # звинуваченням людини в тому, що зробила платформа.
+        # ⚫ Носій переїхав із Telegram на Push 2026-09-06 [ARCH.60]: предмет —
+        # що порожній транспорт називається станом КАНАЛУ, не недоліком людини.
         expect(html).to include(
-          %(<span class="text-tiny text-gaia-text-subtle font-mono">✈️ Telegram</span><span class="text-mini text-gaia-text-subtle uppercase">Channel unavailable</span>)
+          %(<span class="text-tiny text-gaia-text-subtle font-mono">🔔 Push</span><span class="text-mini text-gaia-text-subtle uppercase">Channel unavailable</span>)
         )
         expect(html).not_to include("Connected")
       end
@@ -163,9 +162,6 @@ RSpec.describe Notifications::Settings do
 
       expect(partial).to include(
         %(<span class="text-tiny text-gaia-text-subtle font-mono">🔔 Push</span><span class="text-mini text-gaia-text-subtle uppercase">Not configured</span>)
-      )
-      expect(partial).to include(
-        %(<span class="text-tiny text-gaia-text-subtle font-mono">✈️ Telegram</span><span class="text-mini text-gaia-text-subtle uppercase">Channel unavailable</span>)
       )
     end
   end

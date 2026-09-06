@@ -22,8 +22,10 @@ class ApplicationMailer < ActionMailer::Base
     I18n.with_locale(supported_locale_for(record), &block)
   end
 
-  # Резолв виїхав у спільний дім, коли Telegram став другим каналом із тією
-  # самою потребою (fail-safe-семантика — у коментарі модуля).
+  # Резолв виїхав у спільний дім, коли другим каналом із тією самою потребою став
+  # Telegram (fail-safe-семантика — у коментарі модуля). ⚫ Той канал знято
+  # 2026-09-06 [ARCH.60]; дім лишається спільним свідомо — він відповідав на ПОЯВУ
+  # другого каналу, а не на те, що їх двоє.
   def supported_locale_for(record)
     Notifications::RecipientLocale.for(record)
   end

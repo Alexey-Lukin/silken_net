@@ -44,7 +44,6 @@ en:
     scientific_name: Scientific name
     silicon_uid_hex: Silicon UID
     target_hardware_type: Target hardware
-    telegram_chat_id: Telegram chat ID
     tree_family: Species
     uid: UID
     version: Version

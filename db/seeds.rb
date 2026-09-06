@@ -208,6 +208,32 @@ eco_future_fund = Organization.create!(
 # ротація на випадкові паролі дає той самий ефект без зносу демо-даних (2026-09-02).
 DEMO_PASSWORD = Rails.env.local? ? "password123456" : SecureRandom.hex(24)
 
+# 📬 АДРЕСИ ДЕМО-КОРИСТУВАЧІВ — plus-адресація на ОДНУ живу скриньку.
+#
+# 🔴 Підстава не косметична. Доти сід роздавав адреси на доменах, яких не існує
+# (`silkennet.com` · `activebridge.org` · `ecofuture.fund`), тож ЖОДЕН із двох
+# живих поштових трактів не був перевірний на демо-даних: ані password-reset,
+# ані critical-alert не мали куди долетіти. Plus-адресація дає чотири РІЗНІ
+# адреси (уніфікація `email_address` їх розрізняє), які всі падають в одну
+# скриньку — тобто перевірка стає можливою, не заводячи чотирьох скриньок.
+#
+# ⛔ Базу тримає ENV, а не файл: особиста адреса власника в публічному
+# AGPL-дереві не має дому. Сентинел-фолбек НАВМИСНЕ недоставний — та сама форма,
+# що `Notifications::DeliveryChannels::SCAFFOLD_SENDER`: він чесно означає
+# «не налаштовано», а не прикидається робочою адресою.
+# Локально: рядок `SEED_EMAIL_BASE=…` у `.env`. На canopy: змінна деплою.
+#
+# ⚠️ Стеля названа: адреси стають ДОСТАВНИМИ лише коли задротують ESP.
+# Сьогодні canopy біжить із `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK=1`, тобто
+# `deliver_later` енкʼюїться і гучно падає в Sidekiq ([`00_07`] ARCH.60,
+# 👤-нога ESP-акаунта). Цей сід прибирає ОДНУ з двох перешкод, не обидві.
+SEED_EMAIL_BASE = ENV.fetch("SEED_EMAIL_BASE", "seeds@example.com")
+
+seed_email = lambda do |tag|
+  local, domain = SEED_EMAIL_BASE.split("@", 2)
+  "#{local}+#{tag}@#{domain}"
+end
+
 puts "👤 Створення Патрульних..."
 
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
@@ -222,42 +248,58 @@ end
 
 # [RBAC: access_level :system] — Архітектор платформи з повним доступом до всіх організацій.
 # super_admin не має прямого доступу до приватних Wallets без явного запрошення (Series D).
+# 🕊 Сковорода — бо super_admin ЄДИНИЙ актор без організації (`organization` не
+# вказано): він бачить усі, не належачи жодній. «Світ ловив мене, та не спіймав».
 super_admin = User.create!(
-  email_address: "admin@silkennet.com",
+  email_address: seed_email.call("superadmin"),
   password: DEMO_PASSWORD,
   role: :super_admin,
-  first_name: "Artem",
-  last_name: "Volkov"
+  first_name: "Григорій",
+  last_name: "Сковорода"
 )
 
 # [RBAC: access_level :organization] — Адміністратор ActiveBridge з повним доступом в межах організації.
+# 🏛 Навої — роль `admin` є ОБМЕЖЕНОЮ владою, витраченою на будівництво, і саме
+# цим він у нашому родоводі й записаний: не аскет-утікач, а візир, що витратив
+# владу на 370 будівель — медресе, лікарні, канали, караван-сараї. Важіль не
+# зрікаються, його витрачають. Повний доступ У МЕЖАХ організації — це воно.
 alexey = User.create!(
-  email_address: "alexey@activebridge.org",
+  email_address: seed_email.call("admin"),
   password: DEMO_PASSWORD,
   role: :admin,
   organization: active_bridge,
-  first_name: "Alexey",
-  last_name: "Architect"
+  first_name: "Алішер",
+  last_name: "Навої"
 )
 
 # [RBAC: access_level :field] — Лісничий з польовим доступом в межах організації.
+# 👣 Шевченко — польовий доступ несе той, хто САМ ходив і записував побачене
+# (Аральська експедиція, малюнки з натури). І глибше: «невідбирано» з критерію
+# місії (`00_01 §1.1`) — його слово, і в нього воно про ЛЮДЕЙ. Кріпак, викуплений
+# з неволі, свідчить про те, що бачив, — рівно роль польового актора.
 forester = User.create!(
-  email_address: "forester@activebridge.org",
+  email_address: seed_email.call("forester"),
   password: DEMO_PASSWORD,
   role: :forester,
   organization: active_bridge,
-  first_name: "Ivan",
-  last_name: "Lisovyk"
+  first_name: "Тарас",
+  last_name: "Шевченко"
 )
 
 # [RBAC: access_level :read_only] — Замовник з доступом лише до власних ресурсів.
+# 🐦 Аттар — `subscriber` дивиться на власне дерево й нічим не розпоряджається:
+# роль читача, не діяча. «Мова птахів» — тридцять птахів шукають Сімурга й
+# бачать, що Сімург це вони самі (*сі мург*, тридцять птахів). Той, хто стежить
+# за своїм деревом і бачить у ньому ліс, стоїть рівно в цій фігурі.
+# ⊕ І пара з `admin` не випадкова: Навої писав «Мову птахів» слідом за Аттаром —
+# дві організації, один родовід.
 subscriber = User.create!(
-  email_address: "subscriber@ecofuture.fund",
+  email_address: seed_email.call("subscriber"),
   password: DEMO_PASSWORD,
   role: :subscriber,
   organization: eco_future_fund,
-  first_name: "Maria",
-  last_name: "Subscriber"
+  first_name: "Фарід",
+  last_name: "Аттар"
 )
 
 # =========================================================================

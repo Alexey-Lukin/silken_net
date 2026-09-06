@@ -3,7 +3,10 @@
 
 require "rails_helper"
 
-# [I18N.1] Один дім локалі отримувача для всіх Sidekiq-каналів (пошта, Telegram).
+# [I18N.1] Один дім локалі отримувача для всіх Sidekiq-каналів, що рендерять текст.
+# ⚫ Мешканець сьогодні ОДИН — сама пошта: Telegram знято ⚖️ 2026-09-06 [ARCH.60].
+# Дім лишається спільним свідомо: він був відповіддю на «канал другий зʼявиться»,
+# а не наслідком того, що їх стало два.
 RSpec.describe Notifications::RecipientLocale do
   it "returns the persisted locale when it is in the catalogue" do
     expect(described_class.for(User.new(locale: "uk"))).to eq(:uk)
