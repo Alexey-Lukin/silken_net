@@ -182,6 +182,46 @@ end
       "Гола агрегація ЗНИЩУЄ мітку — і тоді злиття слотів міняє САМЕ ЧИСЛО, не додає серію."
   end
 
+  # 🔴 [S2.4, 2026-09-06] РАТЧЕТ ПРОТИ ФІЛЬТРА, ЩО ЗАСЛІПЛЮЄ ВЛАСНЕ ПРАВИЛО.
+  #
+  # Правило застою приладу має форму `time() - max(<...>_timestamp_seconds) > N`. Спокуса —
+  # дописати `> 0`, «щоб не рахувати від нуля». Ціна виміряна: безлейблову серію
+  # `prometheus-client` реєструє зі ЗНАЧЕННЯМ 0.0 від старту процесу (`init_label_set({})`),
+  # тож фільтр викидає її, інстант-вектор стає ПОРОЖНІМ, `reduce` віддає NoData — і при
+  # `noDataState: OK` правило ЗЕЛЕНЕ. Тобто фільтр робить дед-мена сліпим рівно до того
+  # випадку, заради якого він написаний: рестарт контейнера обнулив штамп, а писач не
+  # піднявся ЖОДНОГО разу.
+  #
+  # ⚖️ Фільтр ЛЕГІТИМНИЙ рівно тоді, коли каденс писача ДОВШИЙ за вікно `for` — тоді без
+  # нього здоровий рестарт червонить, бо наступний прогін просто ще не настав. Це
+  # `partition-sampler` (крон `30 0 * * *` ≫ `for`). Для `*/5` і `*/15` навпаки: `for: 30m`
+  # довший за каденс, тож Pending резолвиться сам, і фільтр коштує все, не купуючи нічого.
+  #
+  # ⛔ Тому це РАТЧЕТ, а не заборона: щоб додати `> 0` до нового правила, треба вписати
+  # його сюди — тобто НАЗВАТИ каденс, що це виправдовує. Скопіювати токен мовчки не вийде.
+  # Стеля оголошена: спека судить НАЯВНІСТЬ фільтра, а не те, чи каденс справді довший —
+  # cron у цьому файлі не живе.
+  it "no staleness rule silently filters `> 0` off its own freshness stamp" do
+    yaml = YAML.safe_load(File.read(alerts_file), aliases: true)
+    rules = yaml.fetch("groups").flat_map { |g| g.fetch("rules") }
+
+    # Каденс писача ДОВШИЙ за `for` → без фільтра здоровий рестарт червонив би.
+    justified = %w[sn-alert-partition-sampler-stale].to_set
+
+    blinded = rules.filter_map do |rule|
+      exprs = rule.fetch("data").filter_map { |d| d.dig("model", "expr") }
+      next if exprs.none? { |e| e =~ /_timestamp_seconds\s*>\s*0/ }
+
+      rule["uid"] unless justified.include?(rule["uid"])
+    end
+
+    expect(blinded).to be_empty,
+      "Правила застою з `> 0` поза оголошеним списком (#{blinded.size}): #{blinded.join(', ')}. " \
+      "Безлейблова серія існує зі значенням 0.0 від старту процесу, тож фільтр робить правило " \
+      "СЛІПИМ до «писач не біг жодного разу після рестарту» — саме до того, що воно й ловить. " \
+      "Легітимно лише коли каденс писача довший за вікно `for` — тоді впиши uid у `justified` разом із каденсом."
+  end
+
   it "every silkennet_ metric referenced in an alert expr exists in the Prometheus registry" do
     missing = referenced.reject do |name|
       registered.include?(name) || registered.include?(name.sub(/_(bucket|sum|count)\z/, ""))

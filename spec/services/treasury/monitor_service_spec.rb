@@ -877,4 +877,86 @@ end
       expect(gauge.get(labels: ata_labels)).to eq(before_value)
     end
   end
+
+  # 🔴 [S2.4, 2026-09-06] ШТАМП СВІЖОСТІ — і піни тут стережуть не наявність запису, а
+  # його ПРАВДИВІСТЬ. Prometheus-ґейдж замерзає, а не зникає, тож вісім алертованих
+  # money-path ґейджів, які пише цей прохід, після смерті писача читаються своїми
+  # правилами як здорові. Штамп це знімає — але ЛИШЕ якщо він свідчить про «прохід
+  # дійшов до кінця», а не про «воркер стартував»: підпроходи мають власний ковтальний
+  # `rescue`, тож безумовний `set` у кінці `perform` брехав би переконливіше за
+  # відсутність (та сама підстава, що в tree-sweep і partition-sampler).
+  #
+  # ⚠️ Піни міряють РЕАЛЬНИЙ прилад, не мок: гейдж скидається в 0 і перевіряється його
+  # власне значення. Мок на `.set` пінив би моє рішення про виклик, а не те, що величина
+  # справді лишилась старою.
+  describe "свідок свіжості проходу [S2.4]" do
+    let(:stamp) { SilkenNet::Metrics::TREASURY_MONITOR_TIMESTAMP }
+
+    before do
+      allow(mock_evm_client).to receive(:get_balance).and_return(healthy_balance)
+      # Гейдж процес-глобальний — стартуємо з ВІДОМОГО нуля, інакше негативні піни
+      # зелені від значення, покладеного сусіднім прикладом.
+      stamp.set(0)
+    end
+
+    it "штампує завершений прохід поточним часом" do
+      described_class.call
+
+      expect(stamp.get).to be_within(60).of(Time.current.to_i)
+    end
+
+    # ⊥ Обидва плеча гарду, по піну на кожне: фікс, що завів лише одне, лишився б
+    # зеленим на другому.
+    #
+    # 🔴 Тригер тут — БД, і це не деталь. Перша редакція піна стабала
+    # `ChainAuditService.call` на `raise`, а той метод несе БЛОКЕТНИЙ `rescue`, який
+    # віддає нульовий `Result` — тобто пін доводив проводку через збій, який у проді
+    # СТАТИСЬ НЕ МОЖЕ. Реальна причина падіння цієї ноги — читання БД (три `.count`
+    # по партиційованих таблицях), тож звідти й ламаємо.
+    it "НЕ штампує, коли money-path підпрохід проковтнув збій БД" do
+      allow(BlockchainTransaction).to receive(:status_manual_review)
+        .and_raise(ActiveRecord::StatementInvalid.new("PG::QueryCanceled: statement timeout"))
+
+      described_class.call
+
+      expect(stamp.get).to eq(0), "штамп просунувся попри проковтнутий збій — ґейджі виглядають свіжими"
+    end
+
+    it "НЕ штампує, коли mint-volume детектор проковтнув збій" do
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current)
+        .with(:mint_volume_hourly_max_scc, any_args).and_raise(StandardError, "param store down")
+
+      described_class.call
+
+      expect(stamp.get).to eq(0)
+    end
+
+    # 🔴 ЛІХТАР ПРОТИ ХИБНОЇ ЗАСТОЙНОСТІ — і він стереже МЕЖУ гарду, а не його наявність.
+    # `update_payout_float_metrics` пише рівно `PAYOUT_FLOAT_BALANCE`, у якого алерт-правила
+    # НЕМА (діагностичний ярус). Втягни цю ногу в кон'юнкцію «щоб було повніше» — і збій
+    # читання ґейджа, на який ніхто не дивиться, заморозить свідка ВОСЬМИ ґейджів, на які
+    # дивляться, тобто вироблятиме рівно те подвійне свідчення, яке оголошена стеля
+    # обіцяє не робити. ⛔ Решта пінів цього блоку негативні — цю регресію бачить лише цей.
+    it "штампує попри збій читання payout-флоату — у того каналу власний голос" do
+      ENV["SOLANA_FEE_PAYER_TOKEN_ACCOUNT"] = "AtaAddress1111111111111111111111111111111"
+      allow(Web3::HttpClient).to receive(:post) do |_url, **kwargs|
+        raise StandardError, "ATA read failed" if kwargs[:body].to_s.include?("getTokenAccountBalance")
+
+        mock_solana_response
+      end
+
+      described_class.call
+
+      expect(stamp.get).to be_within(60).of(Time.current.to_i)
+      # ⊥ І та сама подія мусить бути ЧУТНОЮ — інакше ми просто оглухли на неї.
+      expect(
+        SilkenNet::Metrics::TREASURY_CHECK_ERRORS_TOTAL.get(
+          labels: { network: "solana", signer: "fee_payer_ata", error_type: "StandardError" }
+        )
+      ).to be_positive
+    ensure
+      ENV.delete("SOLANA_FEE_PAYER_TOKEN_ACCOUNT")
+    end
+  end
 end

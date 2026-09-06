@@ -738,7 +738,7 @@ groups:
             relativeTimeRange: { from: 3600, to: 0 }
             datasourceUid: ${DATASOURCE_UID}
             model:
-              expr: time() - max by (slot) (silkennet_tree_sweep_timestamp_seconds > 0)
+              expr: time() - max by (slot) (silkennet_tree_sweep_timestamp_seconds)
               refId: A
           - refId: B
             datasourceUid: "__expr__"
@@ -1156,6 +1156,83 @@ groups:
           description: "[INF.26] «НЕ ЗМОГЛИ ПРОЧИТАТИ» — окремий стан від «оракул порожній», і саме тому має власний канал. Доти RPC-збій писав ratio=0.0 у silkennet_oracle_balance_ratio, тобто один таймаут пейджив ДВОМА balance-правилами на гаманці, який міг бути повний (підміна виміру: показник хибний через ПРИЛАД). Тепер ratio при збої не оновлюється взагалі — а щоб та тиша не була сліпою, гучним є цей лічильник. ⚠️ Наслідок для читача: якщо горить ЦЕЙ алерт, balance-gauge показує ОСТАННЄ ВІДОМЕ значення, не поточне. Дії: перевірити RPC-ендпоінт мережі та ліміти провайдера."
         labels:
           severity: critical
+          component: treasury
+          team: ops
+
+      # -----------------------------------------------------------------------
+      # P1: Treasury monitor pass has not COMPLETED — свідок свіжості девʼяти ґейджів
+      # -----------------------------------------------------------------------
+      # 🔴 Правило-сусід вище ловить «не змогли ПРОЧИТАТИ баланс» — тобто смерть
+      # ОДНОГО каналу, і лише того, що йде через `check_balance`. Воно СЛІПЕ до другої
+      # половини: `Treasury::MonitorService` пише девʼять алертованих ґейджів
+      # (7× money-path + mint-volume + oracle-ratio), і три його підпроходи мають
+      # ВЛАСНИЙ ковтальний `rescue`, який свідомо не валить monitor-цикл. Проковтнув —
+      # ґейджі застигають на останньому значенні, а їхні правила читають ЗАМЕРЗЛЕ
+      # число як здорове. Плюс друга смерть: воркер не біг узагалі (черга `web3_low`
+      # = 8-ма з девʼяти у strict-priority), і тоді жоден `rescue` не спрацює, бо коду
+      # не було.
+      # ⛔ `noDataState: NoData` цих двох не розводить У ПРИНЦИПІ: він приходить, лише
+      # коли ряд ЗНИКНЕ (рестарт процесу), а голодування черги лишає ряд ЗАМЕРЗЛИМ.
+      # ✅ Форма — та сама, що вже ратифікована двічі (`sn-alert-partition-sampler-stale`
+      # ARCH.70 · `sn-alert-tree-sweep-stale` SILENCE-1): ПОЗИТИВНЕ твердження про
+      # застій приладу. Штамп ставиться в `perform` лише коли ОБИДВА підпроходи, що пишуть
+      # алертовані ґейджі, доповіли завершення, тож він накриває обидві смерті однією величиною.
+      # 🔴 **`> 0` ТУТ НЕМА, І ЦЕ ВИВЕДЕНО, А НЕ СКОПІЙОВАНО** (2026-09-06). Безлейбловий
+      # ґейдж `prometheus-client` реєструє з ЗНАЧЕННЯМ 0.0 від старту процесу (виміряно:
+      # `values={{}=>0.0}`), тож `> 0` викидає серію, вектор стає порожнім, `reduce` віддає
+      # NoData — і при `noDataState: OK` правило ЗЕЛЕНЕ. Тобто фільтр робить його сліпим
+      # рівно до смерті (Б): рестарт job-контейнера обнуляє штамп, sidekiq-cron не піднявся
+      # — і ніхто не дізнається НІКОЛИ. ⛔ А купує фільтр нуль: `for: 30m` довший за крон
+      # `*/15`, тож здоровий рестарт резолвиться в Pending, не дійшовши до Firing.
+      # ⚠️ У `sn-alert-partition-sampler-stale` фільтр ЛЕГІТИМНИЙ і лишається — там крон
+      # ДОБОВИЙ (`30 0 * * *`), тобто `for` 24-годинну діру накрити не може за побудовою.
+      # Правило: `> 0` виправданий рівно тоді, коли каденс писача ДОВШИЙ за вікно `for`.
+      # 📏 Поріг 2 год виведено з ПРЕДМЕТА, не з каденсу (×2 = 30 хв червоніло б на
+      # деплоях і на затримці `web3_low`): `silkennet_blockchain_limbo_locked_total`
+      # рахує кошти, застряглі ПОНАД ГОДИНУ, тож стела 2 год = найдовше вікно, за яке
+      # реальне лімбо ще не встигає стати невидимим. Це 8 пропущених прогонів — гикавкою
+      # не пояснити.
+      # ⚠️ ОГОЛОШЕНА СТЕЛЯ й подія її перегляду: щойно ARCH.62-детектор увімкнуть
+      # (`mint_max_scc_per_window > 0`), поріг мусить упасти до 1 год — `MINT_CIRCUIT_TTL`
+      # рівно годину, і мертвий монітор ТИХО роззброює mint-circuit-breaker, бо нікому
+      # його ре-тріпнути. Сьогодні детектор вимкнено, тож наслідок латентний.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-treasury-monitor-stale
+        title: "⚠️ Treasury monitor pass has not completed for 2h (8 money-path gauges are frozen)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: time() - max by (slot) (silkennet_treasury_monitor_timestamp_seconds)
+              refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator: { params: [7200], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        annotations:
+          summary: "Прохід treasury-monitor не ЗАВЕРШУВАВСЯ {{ $values.B.Value | printf \"%.0f\" }} с (>2 год) — вісім money-path ґейджів показують ОСТАННЄ ВІДОМЕ, не поточне."
+          description: "TreasuryMonitorWorker (cron */15, config/sidekiq.yml, черга web3_low) не доходить до штампа: або не запускається, або один із трьох підпроходів падає в свій ковтальний rescue. Наслідок ТИХИЙ і саме тому дорогий — замерзають silkennet_blockchain_manual_review_depth · _limbo_locked_total · chain_audit_delta · filecoin_unarchived_depth · telemetry_archive_unpinned_depth · ethereum_anchor_stuck_sent_depth · _manual_review_depth · mint_volume_window_scc, а їхні власні правила лишаються зеленими над старим числом. ⚠️ ДЕВʼЯТИЙ ґейдж проходу — oracle_balance_ratio — сюди СВІДОМО не входить: його тишу вже озвучує sn-alert-treasury-check-errors (INF.26), і подвійне свідчення зробило б із кожного провайдер-аутеджу ще й stale-тривогу. Дії: sidekiq-cron, глибина черги web3_low, потім лог '🛑 [Treasury]' — він називає, який саме підпрохід проковтнув. 00_07 S2.4 / 06_03 §2.9."
+        labels:
+          severity: warning
           component: treasury
           team: ops
 

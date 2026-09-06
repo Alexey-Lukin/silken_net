@@ -127,15 +127,21 @@ module Treasury
       update_metrics(results)
 
       # [G1/G2] Money-path limbo + drift видимість (той самий 15-хв прохід).
-      update_money_path_metrics
+      money_path_ok = update_money_path_metrics
 
       # [SEC.22] Флоат виплат — те, що СПРАВДІ обмежує вибух скомпрометованого
       # payout-ключа. Той самий прохід, бо предмет той самий (гарячі гаманці), а
       # окремий воркер додав би розклад без жодної нової відповіді.
+      # ⛔ [S2.4] СВІДОМО ПОЗА штампом свіжості нижче, і це не недогляд: ця нога пише
+      # рівно `PAYOUT_FLOAT_BALANCE`, у якого алерт-правила НЕМА (діагностичний ярус —
+      # поріг ще не ратифіковано). Тримати її в гарді означало б морозити свідка ВОСЬМИ
+      # алертованих ґейджів через збій читання ґейджа, на який ніхто не дивиться — і це
+      # рівно те подвійне свідчення, яке оголошена стеля обіцяє не робити (у цього каналу
+      # вже є власний голос: `TREASURY_CHECK_ERRORS_TOTAL{signer:"fee_payer_ata"}`).
       update_payout_float_metrics
 
       # [ARCH.62] Агрегатна mint-volume аномалія (той самий money-path прохід).
-      detect_mint_volume_anomaly!
+      mint_volume_ok = detect_mint_volume_anomaly!
 
       # Генеруємо алерти для критичних балансів
       generate_alerts(results)
@@ -144,6 +150,23 @@ module Treasury
       # нові, тоді зняти одужалі — інакше гаманець, що впав і піднявся в межах одного
       # проходу, лишив би по собі закритий рядок замість жодного.
       resolve_recovered_balance_alerts!(results)
+
+      # 🔴 [S2.4, 2026-09-06] ШТАМП СВІЖОСТІ — ставиться ЛИШЕ тут і ЛИШЕ коли обидва
+      # ковтальні підпроходи, що пишуть АЛЕРТОВАНІ ґейджі, доповіли завершення. Без цього
+      # гарду він свідчив би «воркер СТАРТУВАВ», а не «прохід ДІЙШОВ ДО КІНЦЯ» — а саме
+      # друге тримає ВІСІМ ґейджів (7 money-path + `mint_volume_window_scc`), які інакше
+      # замерзають на останньому значенні й читаються своїми правилами як здорові
+      # (`06_03 §2.9`; взірці — tree-sweep, partition-sampler).
+      # ⚠️ Гард свідомо ВУЖЧИЙ за прохід, і межа проведена по одному питанню: «чи ця нога
+      # пише ґейдж, на який дивиться правило». Тому поза ним лишились ДВІ:
+      #   · `update_payout_float_metrics` — її ґейдж алерту не має (див. вище);
+      #   · `update_metrics` — оракульний `oracle_balance_ratio` ДЕВʼЯТИЙ і теж може
+      #     замерзнути, але його тишу вже озвучує `TREASURY_CHECK_ERRORS_TOTAL` +
+      #     `sn-alert-treasury-check-errors` (INF.26). Втягнути його сюди означало б
+      #     морозити штамп на кожному провайдер-аутеджі — тобто платити другим свідченням
+      #     за те, що вже засвідчено.
+      pass_complete = money_path_ok && mint_volume_ok
+      SilkenNet::Metrics::TREASURY_MONITOR_TIMESTAMP.set(Time.current.to_i) if pass_complete
 
       results
     end
@@ -240,9 +263,14 @@ module Treasury
       # тож 0 у нормі, >0 лише реально-завислий (рахувати весь :sent пейджив би щотижня).
       SilkenNet::Metrics::ETHEREUM_ANCHOR_STUCK_SENT_DEPTH.set(EthereumAnchor.stuck_sent.count)
       SilkenNet::Metrics::ETHEREUM_ANCHOR_MANUAL_REVIEW_DEPTH.set(EthereumAnchor.status_manual_review.count)
+      true
     rescue StandardError => e
-      # Спостережуваність не сміє валити monitor-цикл (баланси важливіші).
+      # Спостережуваність не сміє валити monitor-цикл (баланси важливіші). ⚠️ Але
+      # проковтнутий збій ТЕПЕР МАЄ НАСЛІДОК: `false` не дає поставити штамп свіжості,
+      # тож сім ґейджів вище перестають виглядати свіжими [S2.4]. Доти цей `rescue` був
+      # німим — сусідній `check_balance` голосив лічильником, а цей лише логував.
       Rails.logger.error "🛑 [Treasury] update_money_path_metrics: #{e.message}"
+      false
     end
 
     # [ARCH.62] Агрегатний mint-volume detector — комплемент, не заміна ex-post-clawback
@@ -313,9 +341,12 @@ module Treasury
         # Inert circuit-break: per-token HOLD нових mint-батчів, поки людина не звірить причину.
         trip_mint_circuit!(token_type, volume, max_scc) if breaker_on
       end
+      true
     rescue StandardError => e
       # Детектор — спостережуваність; не валимо monitor-цикл (баланси важливіші).
+      # ⚠️ Той самий наслідок, що в сусіда: `false` знімає штамп свіжості [S2.4].
       Rails.logger.error "🛑 [Treasury] detect_mint_volume_anomaly!: #{e.message}"
+      false
     end
 
     # Активний mint-volume-алерт для цього token_type уже висить? (dedup — див. detector).
