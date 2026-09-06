@@ -108,7 +108,21 @@ module Api
               # Дзеркало HTML-героя (`Contracts::Show#cluster_emission`); точність —
               # прецедент `#stats`.
               cluster_emission: cluster_emission_for(@contract).to_f.round(4),
-              emission_history: @emission_history,
+              # [SEC.36 2026-09-06] Доти тут їхала СИРА реляція — усі 34 колонки
+              # `blockchain_transactions` × до десяти рядків, включно з шістьма
+              # MRV/lineage-полями, `chainlink_request_id`, `zk_proof_ref`,
+              # `archive_batch_id` і газовою трійкою. HTML-леджер того ж екшена
+              # друкує ТРИ (`tx_hash` · `amount` · `created_at`) плюс похідний
+              # `burn?`, тобто розрив був тридцять колонок при нулі споживачів.
+              # 🔑 Рішення НЕ ухвалювалось тут заново: `view :index` цього блупринта
+              # вже обслуговує обидва сусідні списки транзакцій (`wallets#show`,
+              # `blockchain_transactions#index`) і свідомо не несе жодного з тих
+              # полів. Дефектом було не «немає рішення», а те, що цей ключ його не
+              # взяв — при тому, що сусідній ключ ТОГО САМОГО виклику вже курований
+              # явним `only:` з тією ж підставою [ARCH.103].
+              emission_history: BlockchainTransactionBlueprint.render_as_hash(
+                @emission_history, view: :index
+              ),
               # [ARCH.103] Три голі деференси `@contract.cluster.*` зведено в один дім,
               # спільний із HTML-панеллю застави. ⚠️ Гарда на «немає кластера» тут НЕМА
               # і не треба: `cluster_id` це `NOT NULL` у схемі ⊕ `belongs_to` без

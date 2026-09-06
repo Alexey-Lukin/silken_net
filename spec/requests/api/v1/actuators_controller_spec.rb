@@ -43,6 +43,22 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       get "/actuators/#{other_actuator.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    # [SEC.36 2026-09-06] Ключ `history` доти віддавав СИРІ моделі — усі 17 колонок
+    # `actuator_commands`, включно з `idempotency_token`, який сусідній екшен
+    # `command_status` того ж контролера свідомо НЕ пускає. Пін тримає рівно цю
+    # асиметрію: контракт для моделі вже був ратифікований, а `show` його не взяв.
+    # ⚠️ Позитивна половина обовʼязкова — інакше приклад зелений на порожній історії.
+    it "omits the idempotency token from the command history it serves" do
+      command = create(:actuator_command, actuator: own_actuator)
+
+      get "/actuators/#{own_actuator.id}", headers: headers, as: :json
+
+      row = response.parsed_body["history"].first
+      expect(row["id"]).to eq(command.id)
+      expect(row).to include("status", "command_payload", "expires_at")
+      expect(row.keys).not_to include("idempotency_token", "ews_alert_id", "organization_id")
+    end
   end
 
   describe "POST /actuators/:id/execute" do

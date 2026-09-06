@@ -48,7 +48,37 @@ module Api
         @commands = @actuator.commands.includes(:user).order(created_at: :desc).limit(20).to_a
 
         respond_to do |format|
-          format.json { render json: { actuator: @actuator, history: @commands } }
+          # [SEC.36 2026-09-06] `history` доти віддавав СИРІ моделі — усі 17 колонок
+          # `actuator_commands`, включно з `idempotency_token`. 🔑 Рішення про форму
+          # цієї моделі вже ухвалене В ЦЬОМУ Ж ФАЙЛІ: `command_status` (документований
+          # ендпоінт #48) перелічує одинадцять полів ЯВНО і токен свідомо не пускає —
+          # тож дефектом було не «немає контракту», а те, що `show` його не взяв.
+          # Беремо той самий перелік ⊕ `completed_at`: його друкує HTML-таблиця того ж
+          # екшена, а звужувати JSON нижче за показане — дзеркальна помилка того ж класу.
+          # ⚠️ Ключ `actuator:` лишається сирим СВІДОМО: ратифікованого переліку полів
+          # для `Actuator` у дереві немає (блупринта не існує), тож його звуження є
+          # присудом, не застосуванням — воно живе відкритою ногою SEC.36.
+          format.json do
+            render json: {
+              actuator: @actuator,
+              history: @commands.map do |cmd|
+                {
+                  id: cmd.id,
+                  actuator_id: cmd.actuator_id,
+                  status: cmd.status,
+                  priority: cmd.priority,
+                  command_payload: cmd.command_payload,
+                  duration_seconds: cmd.duration_seconds,
+                  issued_at: cmd.created_at,
+                  sent_at: cmd.sent_at,
+                  executed_at: cmd.executed_at,
+                  completed_at: cmd.completed_at,
+                  error_message: cmd.error_message,
+                  expires_at: cmd.expires_at
+                }
+              end
+            }
+          end
           format.html do
             render_dashboard(
               title: I18n.t("actuators.show_title", device_type: @actuator.device_type_label.upcase),

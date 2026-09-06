@@ -286,6 +286,30 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         expect(ids).not_to include(foreign_row.id)
       end
 
+      # [SEC.36 2026-09-06] Пін на ФОРМУ рядка, і він потрібен саме тому, що сусідній
+      # приклад вище його не дає: той судить МНОЖИНУ рядків (скоуп) і лишається зеленим
+      # на сирій моделі з усіма 34 колонками. Доти гілка віддавала реляцію без
+      # серіалізатора, тож MRV/lineage-поля, `zk_proof_ref`, `chainlink_request_id`
+      # і газова трійка їхали клієнтові при трьох колонках на сторінці.
+      # ⚠️ Позитивна половина обовʼязкова: без неї пін зелений і на порожньому рядку.
+      it "serialises the emission ledger through the blueprint, not as a raw record" do
+        create(:blockchain_transaction, wallet: nil, cluster: own_cluster, amount: 3,
+                                        token_type: :carbon_coin, status: :confirmed,
+                                        sourceable: own_contract, direction: :burn,
+                                        telemetry_merkle_root: "a" * 64,
+                                        chainlink_request_id: "req-sec36")
+
+        get "/contracts/#{own_contract.id}", headers: headers, as: :json
+
+        row = response.parsed_body["emission_history"].first
+        expect(row).to include("tx_hash", "amount", "created_at", "burn")
+        expect(row.keys).not_to include(
+          "telemetry_merkle_root", "telemetry_lineage_version", "telemetry_window_from_at",
+          "chainlink_request_id", "zk_proof_ref", "archive_batch_id",
+          "gas_price", "gas_used", "cumulative_gas_cost", "nonce", "block_number"
+        )
+      end
+
       # [UI.8] Пін на ЗМІСТ, а не на присутність ключа: `backing_asset` є JSON-дзеркалом
       # живої панелі `Contracts::Show#render_backing_asset_panel`, і саме поле загрози
       # роками розходилось із нею порогом (JSON — будь-яка severity, панель — лише
