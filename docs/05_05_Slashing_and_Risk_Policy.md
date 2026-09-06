@@ -291,7 +291,7 @@ ForceMajeure event → InsurancePayoutWorker
 
 ## 7. Multi-signal slashing — Лоренц ≠ єдина правда [Lorenz de-risk]
 
-**Принцип:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца. Роль Лоренца подвійна й обмежена: (1) **DCI / anti-fraud** (`check_z_divergence!` — device-Z vs server-Z, §6); (2) **один із кількох** stress-features. Мапінг «Z → здоров'я дерева» сам по собі — **недоведена гіпотеза** (потребує ground-truth — протокол **§8** нижче).
+**Принцип:** фінансовий slashing **ніколи** не спирається лише на Z-Лоренца. Роль Лоренца **ОДНА** (⚖️ E.64, 2026-09-05): **DCI / anti-fraud** (`check_z_divergence!` — device-Z vs server-Z, §6). 🔴 **Тут доти стояла «подвійна» роль із Z як «одним із кількох stress-features», і обидві половини СПРОСТОВАНО НИЖЧЕ В ЦЬОМУ Ж ФАЙЛІ** — лід пережив свіп 09-05 і суперечив власній секції: (а) `stress_index` мав `[temp, vcap, Z, acoustic]`, і Z ВИЛУЧЕНО (§7 нижче) — вердикту про здоровʼя з печатки DCI не виводять ні предикатом, ні через ML-шар; (б) мапінг «Z → здоровʼя дерева» — не «недоведена гіпотеза», а **СПРОСТОВАНА**: емпірично degenerate + temp-confounded ([`04_02`](04_02_Business_Logic_and_Services) картка · [`05_02`](05_02_Proof_of_Growth_Pipeline)), тобто прилад читав наші власні `K_seed`, не ліс; (в) і він **НЕ потребує** ground-truth — §8.1 нижче вирішив роль Z БЕЗ поля, а критерій, що мав її «зміряти», сам виявився пасткою. Ground-truth-протокол **§8** нижче).
 
 **Стан (verified):**
 - Драйвер slashing — `stress_index` (`ContractHealthCheckService`: tree ≥0.83 / cluster >20% дерев ≥0.83; обидва пороги DAO-live — GOV.1). Той самий поріг (`AiInsight.slash_stress_threshold`) сайзить і damage у `BlockchainBurningService` (ARCH.46 — тригер ≡ розмір).
