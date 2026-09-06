@@ -157,6 +157,32 @@ current_claim_lines = doc_lines.reject { |l| l.lstrip.start_with?(">") }.join("\
   end
 end
 
+# ── 5. `EwsAlert` alert_type enum ⟷ 04_01 ──────────────────────────────────
+# [SLASH-1, 2026-09-06] Народився з ВИМІРЯНОГО промаху, не з ідеї: розкол кошика
+# `system_fault` за атрибуцією відвантажив `telemetry_divergence(19)` у код, а
+# реєстр 04_01 обірвався на `hardware_fault(18)` — і сюїта лишалась зеленою, бо
+# єдиний наявний гейт над цим enum'ом (`alert_type_family_parity_spec`) судить
+# ops-вісь `GATEWAY_FAULT_TYPES`, а не парність із каноном. Ціна промаху не
+# косметична: значення цього enum'а годують ОБИДВА предикати `penalty_factor`,
+# тож незадокументований тип є незадокументованим впливом на незворотний `slash()`.
+# NAMED CEILING: гейт судить ЗГАДАНІСТЬ ключа в 04_01, ніколи ПРАВИЛЬНІСТЬ його
+# опису — тип, вписаний у реєстр із хибною підставою, лишається на ревʼю.
+alert_model = File.join(ROOT, "app/models/ews_alert.rb")
+enum_body   = File.read(alert_model)[/enum :alert_type, \{(.*?)^  \}/m, 1].to_s
+enum_keys   = enum_body.scan(/^\s{4}([a-z_]+):\s*\d+/).flatten
+if enum_keys.empty?
+  # Liveness: без цього промах ПАРСЕРА читався б як «розбіжностей нема».
+  errors << "cannot parse `enum :alert_type` from app/models/ews_alert.rb — parser drifted, " \
+            "this check would be vacuously green"
+else
+  doc_text = doc_lines.join("\n")
+  undocumented = enum_keys.reject { |k| doc_text.include?(k) }
+  unless undocumented.empty?
+    errors << "04_01 never mentions alert_type value(s): #{undocumented.join(', ')} — " \
+              "an undocumented type still feeds both `penalty_factor` predicates"
+  end
+end
+
 # ── report ─────────────────────────────────────────────────────────────────
 svc_count = Dir.glob(File.join(SERVICES_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size
 wrk_count = Dir.glob(File.join(WORKERS_DIR, "**/*.rb")).reject { |p| NON_SERVICE_BASENAMES.include?(File.basename(p)) }.size
