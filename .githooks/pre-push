@@ -192,6 +192,48 @@ if printf '%s\n' "$_changed" | grep -qE '^(deploy/|config/deploy.*\.yml|\.kamal/
   done
 fi
 
+# IaC misconfig pre-flight — дзеркало HARD-джоби `Sec · IaC Scan` (`iac_scan.yml`),
+# заведено 2026-09-06.
+#
+# 🔑 ЧОМУ ЛОКАЛЬНО: `IaC passed` — required status check, але жодна ЛОКАЛЬНА смуга його
+#   не покривала: `docs_band` це не його джоба, а `pre-push` до сьогодні судив ці шляхи
+#   лише `deploy_secret_scan`-ом (інша вісь — розміщення секретів, не місконфіги).
+#   Тобто єдиним способом дізнатись вердикт було ШТОВХНУТИ. Спіймано на собі того ж
+#   дня: `apt-get upgrade` у Dockerfile поїхав у main без жодної локальної перевірки
+#   проти цього гейта — обійшлось, і саме тому носій ставиться зараз, а не після інциденту.
+#
+#   ЦІНА, ВИМІРЯНА тричі на цьому дереві: повний скан репо (форма CI) — ~12 с, але
+#   ЦІЛЬОВИЙ по двох субʼєктах — **0.43 с + 0.45 с**. Пускач рідкий: 42 з 1546 комітів
+#   за 30 днів торкались цих шляхів (2.7%), тобто ≈38 с/місяць — рівень `shell_parse`.
+#   Саме ця асиметрія й вирішила форму: не здешевити важке, а не сканувати зайве.
+#
+# 🔒 ОГОЛОШЕНА СТЕЛЯ, і без неї цей блок обіцяв би більше, ніж робить: він судить
+#   ПІДМНОЖИНУ гейта — рівно `Dockerfile` і `terraform/`, тоді як CI сканує все дерево
+#   з `--skip-dirs`. Місконфіг у будь-якому іншому файлі тут невидимий ЗА ПОБУДОВОЮ,
+#   тож зелене тут не є вердиктом про `IaC passed`. ⛔ Не розширювати периметр без
+#   переміру ціни: повна форма коштує в 27 разів більше.
+#
+# ⚠️ `trivy` необовʼязковий: без нього блок мовчки пропускається (ідіома cppcheck нижче) —
+#   хук не має падати через відсутню в когось тулу.
+# ⛔ ДВА виклики, не один: `trivy config` приймає РІВНО ОДИН DIR/файл — двоаргументна
+#   форма падає з usage і exit 1, тобто блокувала б КОЖНУ правку цих шляхів. Спіймано
+#   прогоном при написанні цього блоку, не читанням довідки.
+if printf '%s\n' "$_changed" | grep -qE '^(Dockerfile|terraform/.*\.tf)$'; then
+  if command -v trivy >/dev/null 2>&1; then
+    for _iac_subject in Dockerfile terraform; do
+      [ -e "$root/$_iac_subject" ] || continue
+      if ! ( cd "$root" && trivy config --quiet --exit-code 1 "$_iac_subject" ); then
+        echo
+        echo "pre-push BLOCKED — Trivy IaC misconfig у \`$_iac_subject\` (названо вище);"
+        echo "  це дзеркало HARD-джоби \`Sec · IaC Scan\`, а \`IaC passed\` — required check."
+        echo "Fix:  trivy config $_iac_subject   # або додай AVD-ID у .trivyignore З ПІДСТАВОЮ"
+        echo "Then re-push.  (Emergency bypass: git push --no-verify)"
+        exit 1
+      fi
+    done
+  fi
+fi
+
 # [OPS.28] shell parse — mirrors the `shell` path-filter in ci.yml (job `shell_parse`).
 #
 #   ЦІНА, ВИМІРЯНА на цьому дереві 2026-08-31 (три прогони): **0.22 с**. ⛔ Лічильник

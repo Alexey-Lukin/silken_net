@@ -55,7 +55,16 @@ terraform/*.tfvars
 # ЕФЕКТИВНА постава комічена навмисно — інакше CI-план не бачить оверрайдів і weekly
 # drift стає вічно червоним (підстава — шапка самого файлу). Секретів у ньому немає.
 !terraform/*.auto.tfvars
-terraform/.terraform.lock.hcl
+# 🔒 `.terraform.lock.hcl` КОМІТИТЬСЯ з 2026-09-06 — рядок його ігнорування знято.
+# Підстава: без нього єдиним піном провайдера лишалась константа `~> 8.0` у main.tf,
+# тобто свіжий `init` брав будь-який 8.x і БЕЗ звірки хешів — вужче, ніж наша постава
+# деінде (`pip --require-hashes`, sha256 бінарів, SHA-піни екшенів). Лок дає і точну
+# версію, і checksum-верифікацію при кожному `init`. Дім обґрунтування — 06_07 §1a.
+# ⛔ Оновлюючи його, ЗАВЖДИ через `terraform providers lock -platform=linux_amd64
+# -platform=darwin_arm64`: простий `init -upgrade` запише хеші ЛИШЕ для платформи,
+# на якій біг, і `terraform init` у CI (ubuntu = linux_amd64 — `ci.yml` і
+# `terraform_drift.yml`, обидва) впаде на відсутньому пакеті. Перелік платформ = ті,
+# що реально роблять `init`, не «про запас».
 terraform/tfplan
 
 # ML model artifacts (trained binary, not committed)
