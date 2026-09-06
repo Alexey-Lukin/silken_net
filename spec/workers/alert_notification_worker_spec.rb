@@ -22,28 +22,28 @@ RSpec.describe AlertNotificationWorker, type: :worker do
   end
 
   describe "#perform" do
-it "enqueues SingleNotificationWorker for each admin/forester" do
-  admin = create(:user, :admin, organization: organization)
-  forester = create(:user, :forester, organization: organization)
-  _subscriber = create(:user, :subscriber, organization: organization)
-  # ⚫ Живий канал доводиться СТАБИТИ предикатом — див. `before`: після зняття
-  # Telegram транспорту, який можна застабити, у платформи не лишилось.
-  allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
-  allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
+    it "enqueues SingleNotificationWorker for each admin/forester" do
+      admin = create(:user, :admin, organization: organization)
+      forester = create(:user, :forester, organization: organization)
+      _subscriber = create(:user, :subscriber, organization: organization)
+      # ⚫ Живий канал доводиться СТАБИТИ предикатом — див. `before`: після зняття
+      # Telegram транспорту, який можна застабити, у платформи не лишилось.
+      allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+      allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
 
-  described_class.new.perform(alert.id)
+      described_class.new.perform(alert.id)
 
-  # [ARCH.78] SMS-джоб немає навіть для critical — канал відкинуто присудом.
-  # [ARCH.60] Telegram-джоб немає — канал зрізано ⚖️ 2026-09-06.
-  sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
-  telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
-  push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
+      # [ARCH.78] SMS-джоб немає навіть для critical — канал відкинуто присудом.
+      # [ARCH.60] Telegram-джоб немає — канал зрізано ⚖️ 2026-09-06.
+      sms_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "sms" }
+      telegram_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "telegram" }
+      push_jobs = SingleNotificationWorker.jobs.select { |j| j["args"][2] == "push" }
 
-  expect(sms_jobs).to be_empty
-  expect(telegram_jobs).to be_empty
-  expect(push_jobs.size).to eq(2)
-  expect(push_jobs.map { |j| j["args"][0] }).to contain_exactly(admin.id, forester.id)
-end
+      expect(sms_jobs).to be_empty
+      expect(telegram_jobs).to be_empty
+      expect(push_jobs.size).to eq(2)
+      expect(push_jobs.map { |j| j["args"][0] }).to contain_exactly(admin.id, forester.id)
+    end
 
     # [E.33] Дзеркальна половина: гейт читає ПРЕДИКАТ, а не зашитий перелік —
     # тож дротування FCM вмикає канал без правки воркера. Без цього прикладу
@@ -82,8 +82,17 @@ end
     end
 
     it "does not call push_bulk when no stakeholders exist" do
-      # ⚠️ Канал ЖИВИЙ (див. `before`) — інакше приклад проходив би з другої
-      # причини й не розрізняв би «нема кому слати» від «нема чим слати».
+      # ⚠️ Канал мусить бути ЖИВИЙ — інакше приклад проходить із ДРУГОЇ причини
+      # й перестає розрізняти «нема кому слати» від «нема чим слати», тобто рівно
+      # те, заради чого існує.
+      # 🔴 Саме це й сталося 2026-09-06: зняття Telegram [ARCH.60] забрало стаб
+      # транспорту з `before`, приклад лишився ЗЕЛЕНИМ і почав доводити інше.
+      # Мовчазно — бо зелений колір однаковий в обох світах. Спіймала не сюїта,
+      # а ПІДЛОГА ПОКРИТТЯ: гілка `push_bulk … if bulk_args.any?` перестала
+      # виконуватись, і група Workers просіла нижче 99%. Тепер передумова стоїть
+      # У ПРИКЛАДІ, а не в успадкованому `before`, який може змінитись під ним.
+      allow(Notifications::DeliveryChannels).to receive(:available?).and_call_original
+      allow(Notifications::DeliveryChannels).to receive(:available?).with(:push).and_return(true)
       allow(Sidekiq::Client).to receive(:push_bulk)
 
       described_class.new.perform(alert.id)
