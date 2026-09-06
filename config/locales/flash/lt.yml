@@ -41,8 +41,6 @@ lt:
       record_created: Gydymo įrašas išsaugotas. Ekosistema atnaujinta.
       record_updated: Įrašas atnaujintas.
       self_attestation: Negalima patvirtinti savo įrašo — esmė būtent antroji akių pora.
-    notifications:
-      updated: Pranešimų nustatymai atnaujinti.
     organizations:
       context_switched: 'Darbo kontekstas perjungtas: %{name}.'
     provisioning:

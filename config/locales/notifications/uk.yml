@@ -9,13 +9,6 @@ uk:
         not_configured: Не налаштовано
         push: "🔔 Push"
         unavailable: Канал недоступний
-      channels:
-        email_address: Email адреса
-        heading: Конфігурація каналів
-        push_placeholder: FCM або APNs токен
-        push_token: Push-токен
-        save: Зберегти канали →
-      email_hint: Змінити email можна в профілі.
       heading: "🔔 Нейронна мережа — Канали сповіщень"
       subtitle: 'Налаштування каналів зв''язку: куди надсилати сповіщення про тривоги та події.'
     settings_title: Канали сповіщень

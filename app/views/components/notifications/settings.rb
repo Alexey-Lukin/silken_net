@@ -17,9 +17,6 @@ module Notifications
         header_section
         div(class: "grid grid-cols-1 xl:grid-cols-3 gap-8") do
           div(class: "xl:col-span-2 space-y-6") do
-            render_channels_form
-          end
-          div(class: "space-y-6") do
             render_channels_status
           end
         end
@@ -37,66 +34,28 @@ module Notifications
       end
     end
 
-    def render_channels_form
-      div(class: "p-6 border border-gaia-border bg-gaia-surface") do
-        h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".channels.heading") }
+    # ⛔ `render_channels_form` ВИДАЛЕНО 2026-09-06 [ARCH.60, ⚖️ founder].
+    #
+    # Форма мала рівно ОДНЕ редаговане поле — `push_token`, — і транспорту для
+    # нього не існує (`DeliveryChannels.available?(:push)` = жорсткий `false`).
+    # Зняти саме поле означало б лишити форму з одним `disabled`-полем і кнопкою
+    # «зберегти», що не зберігає нічого; зняти лише `permit` — дати тихий
+    # `update({})` = true. Тому знято ПОВЕРХНЮ цілком: форма, екшен
+    # `update_settings`, маршрут `PATCH`.
+    #
+    # ⊕ Що ЛИШИЛОСЬ і чому: `render_channels_status` читає стан і чесно друкує
+    # «канал недоступний» — це свідчення, не збір. Колонка `users.push_token`
+    # теж лишається: канал не відкинуто, а ⚖️-відкладено до мобільного клієнта
+    # (ARCH.108). Підстава з боку GDPR — Art.5(1)(c) + Recital 39 («purposes
+    # determined at the time of the collection»); повний розбір — шапка над
+    # видаленим екшеном у `api/v1/notifications_controller.rb`.
+    #
+    # ⚠️ Урок UI.7, який тут стояв і який варто ПЕРЕНЕСТИ, а не втратити: цей
+    # сайт був найнебезпечнішим кандидатом на `form_with(model:)` — поле є
+    # колонкою `User`, тож скоуп виглядав би природно, а контролер читав params
+    # ПЛОСКО. Під `user[...]` `permit` віддав би `{}`, `update({})` → **true**, і
+    # людина побачила б «збережено» при нулі збережень. Дім правила — `04_04`.
 
-        # [UI.7] `form_with` БЕЗ скоупу — і це найнебезпечніший сайт конверсії:
-        # поле (`push_token`) є колонкою `User`,
-        # тож `model: current_user` виглядав би природно — а контролер читає їх
-        # ПЛОСКО (`params.permit(:push_token)`). Під `user[...]` permit віддав би
-        # `{}`, `update({})` повернув би **true**, і людина побачила б «збережено»
-        # при нулі збережень. Компонентні піни цього не бачать (голий `include`).
-        form_with(url: notifications_settings_path, method: :patch, class: "space-y-6") do
-          # [SEC.25] Дзеркало `settings#update`: chat_id не в формі Bot API дає
-          # 422, і доти сторінка просто перемальовувалась із тим самим значенням.
-          render Views::Shared::UI::ErrorSummary.new(messages: @user.errors.full_messages)
-
-          render_field(t(".channels.email_address"), "email", @user.email_address, disabled: true, hint: t(".email_hint"))
-          render_field(t(".channels.push_token"), "push_token", @user.push_token, placeholder: t(".channels.push_placeholder"))
-
-          div(class: "pt-4 border-t border-gaia-border") do
-            button(type: "submit", class: "px-6 py-2 border border-gaia-primary-strong text-tiny uppercase tracking-widest text-gaia-primary-strong hover:bg-gaia-primary hover:text-gaia-primary-text transition-all") { t(".channels.save") }
-          end
-        end
-      end
-    end
-
-    # [UI.3] Дві осі звʼязку, і друга тут не косметична. `for` ⟷ `id` (WCAG 1.3.1 —
-    # без нього скрінрідер поля НЕ НАЗИВАЄ), плюс `aria-describedby` на підказку: вона
-    # пояснює, ЧОМУ поле вимкнене або якого формату чекає, а лежачи окремим `<p>`
-    # читається як не повʼязаний текст десь після поля — тобто саме тоді, коли вже
-    # пізно. Обидва id з одного дому (`field_id_for`), щоб рукописних копій не було.
-    def render_field(label_text, name, value, placeholder: nil, disabled: false, hint: nil)
-      field_id = field_id_for(name)
-      hint_id  = hint ? "#{field_id}_hint" : nil
-
-      div(class: "space-y-2") do
-        label(for: field_id, class: "text-mini text-gaia-text-muted uppercase tracking-widest block") { label_text }
-        input(
-          id: field_id,
-          type: "text",
-          name: name,
-          value: value,
-          placeholder: placeholder,
-          disabled: disabled,
-          aria_describedby: hint_id,
-          class: tokens(
-            "w-full bg-gaia-input-bg border border-gaia-input-border text-compact font-mono text-gaia-input-text px-4 py-3 focus-visible:border-gaia-primary-strong focus-visible:outline-none transition-colors",
-            "opacity-50 cursor-not-allowed": disabled
-          )
-        )
-        if hint
-          p(id: hint_id, class: "text-mini text-gaia-text italic") { hint }
-        end
-      end
-    end
-
-    # [UI.10] Блок «типів сповіщень» знято (присуд власника 2026-08-14): пʼять
-    # рядків малювались статичним переліком із безумовним «активно», тоді як
-    # моделі преференцій не існує — ні таблиці, ні колонки, ні контролера.
-    # Перемикач, якого не можна перемкнути, — не налаштування, а декорація, і
-    # повернеться він разом із `NotificationPreference`, не раніше.
     def render_channels_status
       div(class: "p-6 border border-gaia-border bg-gaia-surface") do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".active_channels.heading") }

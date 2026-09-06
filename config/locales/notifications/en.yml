@@ -9,13 +9,6 @@ en:
         not_configured: Not configured
         push: "🔔 Push"
         unavailable: Channel unavailable
-      channels:
-        email_address: Email Address
-        heading: Channel Configuration
-        push_placeholder: FCM or APNs token
-        push_token: Push Token
-        save: Save Channels →
-      email_hint: Email can be changed in your profile.
       heading: "🔔 Neural Web — Notification Channels"
       subtitle: Configure notification channels — where to deliver alerts and events.
     settings_title: Notification Channels

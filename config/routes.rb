@@ -258,8 +258,10 @@ Rails.application.routes.draw do
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # 🔔 НЕЙРОННА ПАВУТИНА (The Neural Web — Notifications)
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    # ⛔ PATCH знято 2026-09-06 [ARCH.60]: єдине приймане поле (`push_token`) не має
+    # транспорту, а `permit` з одним ключем при знятті дав би тихий `update({})`=true.
+    # Підстава й межі — шапка над видаленим екшеном у `notifications_controller.rb`.
     get "notifications/settings",  to: "notifications#settings",        as: :notifications_settings
-    patch "notifications/settings", to: "notifications#update_settings"
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # 📊 АРХІВ (The Archive — Reports)

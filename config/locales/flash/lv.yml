@@ -41,8 +41,6 @@ lv:
       record_created: Dziedināšanas ieraksts saglabāts. Ekosistēma atjaunināta.
       record_updated: Ieraksts atjaunināts.
       self_attestation: Nevar apstiprināt savu ierakstu — otrs acu pāris ir visa jēga.
-    notifications:
-      updated: Paziņojumu iestatījumi atjaunināti.
     organizations:
       context_switched: 'Darba konteksts pārslēgts: %{name}.'
     provisioning:

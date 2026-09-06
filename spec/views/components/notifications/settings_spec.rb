@@ -36,47 +36,15 @@ RSpec.describe Notifications::Settings do
     end
   end
 
-  describe "form fields" do
-    # 🔴 [UI.3] Дві осі звʼязку, і друга специфічна саме для цієї форми: підказка
-    # (`hint`) пояснює, ЧОМУ поле вимкнене, а лежачи окремим `<p>` читалась як
-    # непов'язаний текст після поля. Пін вимагає обох: `for` ⟷ `id` і
-    # `aria-describedby` ⟷ id підказки.
-    # ⚠️ Дві осі — ДВА приклади (§Guard-craft #46): у злитому вигляді падіння не
-    # каже, яка з них зламалась, а перша ж червона половина ховає другу.
-    it "associates every label with a real form control" do
-      doc = Nokogiri::HTML5.fragment(html)
+  # ⛔ `describe "form fields"` ВИДАЛЕНО 2026-09-06 [ARCH.60]: форму знято разом
+  # із каналом `push_token` (єдине редаговане поле, транспорту немає). Приклади
+  # стерегли саме її, тож без форми вони були б вакуумні, а не червоні.
+  # ⚠️ Перевірено ПЕРЕД зняттям, за ПРЕДИКАТОМ, не за назвою прикладу: обидві
+  # a11y-осі мають носіїв поза цим файлом — `LabelAssociation.orphan_labels` у
+  # тринадцятьох спеках, `.dangling_descriptions` у `maintenance/form`,
+  # `tree_families/form`, `firmwares/form` + власна `label_association_predicate`.
+  # Тобто правило не осиротіло; осиротів би пін, якби шукати за іменем.
 
-      expect(doc.css("label")).not_to be_empty, "no labels rendered — the pin would be vacuous"
-      expect(LabelAssociation.orphan_labels(doc).map { |l| l.text.strip }).to be_empty
-    end
-
-    it "points every hint reference at a description that exists" do
-      doc = Nokogiri::HTML5.fragment(html)
-
-      expect(doc.css("[aria-describedby]")).not_to be_empty,
-                                                  "no hints rendered — the aria half would be vacuous"
-      expect(LabelAssociation.dangling_descriptions(doc)).to be_empty
-    end
-
-    it "renders email field as disabled" do
-      expect(html).to include("ada@silkennet.com")
-      expect(html).to include("disabled")
-    end
-
-    # [ARCH.78, присуд 2026-08-20] SMS відкинуто разом із phone_number — форма
-    # не сміє пропонувати поле каналу, якого не існує.
-    it "does not render the retired phone field" do
-      expect(html).not_to include("phone_number")
-    end
-
-    it "renders push_token field" do
-      expect(html).to include("push_token")
-    end
-
-    it "renders submit button" do
-      expect(html).to include("Save Channels")
-    end
-  end
 
   describe "channel status indicators" do
     it "renders Email channel status" do
@@ -114,21 +82,21 @@ RSpec.describe Notifications::Settings do
     end
   end
 
-  # Гілку підсумку помилок не виконував ЖОДЕН приклад: фікстура вміла їх приймати
-  # (`error_messages:`), але жоден приклад їх не подавав, тож єдиний шлях, яким
-  # людина бачить причину 422, у сюїті не проходився ніколи.
-  describe "validation errors from a rejected update" do
-    # ⚫ Носій переїхав із `telegram_chat_id` на `locale` 2026-09-06 [ARCH.60]:
-    # предмет піна — що імʼя поля береться з `attributes.*`, а не з `humanize`,
-    # і він не залежить від того, ЯКЕ саме поле помилкове.
-    let(:user) { account.tap { |u| u.errors.add(:locale, :inclusion) } }
-
-    it "renders the reason the update was refused" do
-      # [I18N.1] Імʼя поля приходить із `attributes.locale`, а не з
-      # `String#humanize` — доти воно було англійським у ВСІХ локалях.
-      expect(html).to include("Language is not included in the list")
-    end
-  end
+  # ⛔ `describe "validation errors from a rejected update"` ВИДАЛЕНО 2026-09-06
+  # [ARCH.60]: `ErrorSummary` рендерився ВСЕРЕДИНІ знятої форми, тож без неї
+  # компонент помилок не показує взагалі — приклад став би вакуумним.
+  #
+  # 🔴 **ЦІНА НАЗВАНА ВГОЛОС, бо вона реальна:** цей приклад був ЄДИНИМ носієм
+  # [I18N.1]-осі «імʼя поля у `full_messages` приходить із `activerecord.
+  # attributes.*`, а не з `String#humanize`» (доти воно було англійським у всіх
+  # локалях). Перевірено за ПРЕДИКАТОМ, не за назвою: `error_summary_spec`
+  # судить лише РЕНДЕР переданих рядків, `settings/show_spec` додає помилки
+  # через `:base` (тобто без імені атрибута), а `maintenance/form_spec` несе
+  # [I18N.1] про ІНШУ вісь — мітки `select`. **Отже після цього зняття вісь
+  # лишається без піна, і це втрата, а не прибирання.**
+  # ⊕ Дім, куди носій мусить переїхати, коли до нього дійдуть руки: спека, що
+  # рендерить `ErrorSummary` з помилкою на КОНКРЕТНОМУ атрибуті (не `:base`) —
+  # найближчі кандидати `tree_families/form_spec` і `firmwares/form_spec`.
 
   # [UI.10] Вісь ТРАНСПОРТУ — окрема від адреси, і саме її злиття було дефектом:
   # екран рахував «активним» будь-який канал із заповненим полем, тоді як

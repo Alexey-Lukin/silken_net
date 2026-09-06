@@ -29,50 +29,27 @@ module Api
         end
       end
 
-      # PATCH /notifications/settings
-      # Оновлення каналів зв'язку (Push, Email) — ⚫ Telegram знято [ARCH.60] 2026-09-06.
-      def update_settings
-        if current_user.update(notification_params)
-          respond_to do |format|
-            format.json do
-              render json: {
-                message: I18n.t("flash.notifications.updated"),
-                channels: {
-                  email: current_user.email_address,
-                  push_token: current_user.push_token
-                }
-              }
-            end
-            # [SEC.25 Ф3] Той самий ключ, що й у JSON-гілці вище. Доти HTML брав
-            # загальний ключ сусіднього settings-домену, тобто браузерний
-            # користувач — єдиний, хто повідомлення взагалі БАЧИТЬ, — діставав
-            # текст РОЗМИТІШИЙ за той, що йшов API-клієнтові.
-            format.html { redirect_to notifications_settings_path, success: I18n.t("flash.notifications.updated") }
-          end
-        else
-          respond_to do |format|
-            format.json { render json: { errors: current_user.errors.full_messages }, status: :unprocessable_content }
-            # [SEC.25] Дзеркалить статус JSON-гілки — на `200` без редиректу Turbo
-            # відповідь викидає, і сабміт виглядає як no-op.
-            format.html do
-              render_dashboard(
-                title: I18n.t("notifications.settings_title"),
-                component: Notifications::Settings.new(
-                user: current_user,
-                available_channels: Notifications::DeliveryChannels.available
-              ),
-                status: :unprocessable_content
-              )
-            end
-          end
-        end
-      end
-
-      private
-
-      def notification_params
-        params.permit(:push_token)
-      end
+      # ⛔ PATCH /notifications/settings — ВИДАЛЕНО 2026-09-06 [ARCH.60, ⚖️ founder].
+      #
+      # Екшен приймав РІВНО ОДНЕ поле — `push_token`, — а транспорту для нього не
+      # існує: `DeliveryChannels.available?(:push)` віддає жорсткий `false`, FCM-
+      # адаптера в дереві нуль. Збирати ідентифікатор пристрою під канал, якого
+      # немає, не проходить Art.5(1)(c) GDPR: Recital 39 вимагає, щоб цілі були
+      # «determined at the time of the collection», а WP29 (WP203) прямо каже, що
+      # загальне «future use» критерію «specific» не проходить. Той самий критерій
+      # уже зрізав `phone_number` (ARCH.78) і `telegram_chat_id` (ARCH.60) — цей
+      # третій.
+      #
+      # 🔴 Чому знято ЕКШЕН, а не лише поле з `permit`: `notification_params` ніс
+      # один ключ, тож зняття лишило б `permit()` порожнім, а `update({})` повертає
+      # **true** — користувач бачив би «збережено» там, де не збережено нічого
+      # (інваріант CLAUDE.md §6). Тихий успіх гірший за відсутню дію.
+      #
+      # ⊕ Колонка `users.push_token` ЛИШАЄТЬСЯ свідомо: канал не відкинуто, а
+      # ⚖️-відкладено до появи мобільного клієнта (ARCH.108), тож майбутня нога
+      # нічого не втрачає — припиняється саме ЗБІР. Читання стану лишається в
+      # `#settings`; `Gdpr::DataExportService` і `AnonymizeUserService` колонку
+      # далі бачать, бо історичні значення нікуди не діваються.
     end
   end
 end

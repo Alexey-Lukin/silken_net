@@ -119,7 +119,11 @@ module ModelMessageLocalization
   # тож нова форма червонить гейт, доки її модель не оголошено.
   HUMAN_SURFACES = {
     "app/views/components/firmwares/form.rb"        => "app/models/bio_contract_firmware.rb",
-    "app/views/components/notifications/settings.rb" => "app/models/user.rb",
+    # ⛔ `notifications/settings.rb` знято з переліку 2026-09-06 [ARCH.60]: разом із
+    # формою `push_token` зник і `ErrorSummary`, тож поверхня більше не показує
+    # повідомлень моделі. Гейт спіймав це САМ, зворотною віссю декларації —
+    # «оголошена поверхня більше не рендерить ErrorSummary», — і це той рідкісний
+    # випадок, коли декларація виявилась живішою за дериваційний скан.
     "app/views/components/settings/show.rb"         => "app/models/organization.rb",
     "app/views/components/maintenance/form.rb"      => "app/models/maintenance_record.rb",
     "app/views/components/provisioning/new.rb"      => "app/models/tree.rb",

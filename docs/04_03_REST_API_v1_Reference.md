@@ -512,8 +512,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | **🔐 Автентифікація** | | | | | |
 | 1 | GET | `/login` | `sessions#new` | 🌐 Public | Форма входу (HTML) |
 | 2 | POST | `/login` | `sessions#create` | 🌐 Public | Вхід (JSON: повертає Bearer token) |
-| 113 | GET | `/login/mfa` | `mfa_challenges#new` | 🔓 Public* | [S6.21] Форма другого фактора; живе лише під pending-міткою (пароль пройдено), без неї → redirect `/login` |
-| 114 | POST | `/login/mfa` | `mfa_challenges#create` | 🔓 Public* | [S6.21] Verify TOTP/recovery → `establish_session`; rate-limit 5/хв (дзеркало пароля); TTL pending 5 хв |
+| 112 | GET | `/login/mfa` | `mfa_challenges#new` | 🔓 Public* | [S6.21] Форма другого фактора; живе лише під pending-міткою (пароль пройдено), без неї → redirect `/login` |
+| 113 | POST | `/login/mfa` | `mfa_challenges#create` | 🔓 Public* | [S6.21] Verify TOTP/recovery → `establish_session`; rate-limit 5/хв (дзеркало пароля); TTL pending 5 хв |
 | 3 | DELETE | `/logout` | `sessions#destroy` | 🔑 Auth | Вихід |
 | 4 | GET | `/forgot_password` | `passwords#new` | 🌐 Public | Форма скидання пароля (HTML) |
 | 5 | POST | `/forgot_password` | `passwords#create` | 🌐 Public | Запит email скидання |
@@ -524,15 +524,15 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 9а | GET | `/account_security/data_export` | `account_security#data_export` | 🔑 Auth | [SEC.18] DSAR self-service (Art.15/20): JSON-attachment із User-owned даними за PII-реєстром [`04_01 §11`](04_01_Data_Models_and_Entities); креденшели свідомо поза віддачею — `Gdpr::DataExportService` |
 | 9б | DELETE | `/account_security/erase` | `account_security#erase_account` | 🔑 Auth + **step-up** | [SEC.18] Erasure self-service (Art.17, ⚖️ founder 2026-08-21) → `Gdpr::AnonymizeUserService`, далі `reset_session`. Гард **fail-CLOSED**: без `password_digest` — 422, а НЕ пропуск (розходження з `toggle_mfa` навмисне: там дія оборотна, тут незворотна). Невірний пароль → 422 у ту саму форму; успіх → 303 на `/login` |
 | 10 | PATCH | `/account_security/mfa` | `account_security#toggle_mfa` | 🔑 Auth | **Асиметричний за [S6.21], і асиметрія пережила білд:** *вимкнути* — працює, вимагає `current_password` (step-up auth); *увімкнути* — **409 `code: "mfa_setup_required"`** з редиректом у setup-флоу (row 115-117): сліпого підняття прапорця не існує — увімкнення вимагає доведеного володіння автентифікатором (verify свіжого коду). Історія: до 2026-08-20 напрямок тримав 501-гейт `mfa_not_implemented` (verify-on-login ще не існувало) — знявся рівно за власним контрактом |
-| 115 | GET | `/account_security/mfa_setup` | `mfa_setups#show` | 🔑 Auth | [S6.21] QR (інлайн-SVG) + секрет + форма verify; без провижну → redirect назад |
-| 116 | POST | `/account_security/mfa_setup` | `mfa_setups#create` | 🔑 Auth | [S6.21] Провижн/ротація секрета (до активації) → 303 на show; при enabled → 409 |
-| 117 | PATCH | `/account_security/mfa_setup` | `mfa_setups#update` | 🔑 Auth | [S6.21] Активація: verify свіжого коду → прапорець + rotation recovery-набору → 303 на row 118 (session-маркер одноразового показу; JSON-гілка віддає набір у самій відповіді) |
-| 118 | GET | `/account_security/mfa_recovery_codes` | `mfa_setups#recovery_codes` | 🔑 Auth | [S6.21] Одноразовий показ recovery-набору: `session.delete`-маркер — повторний GET (закладка, Back) → 303 на екран безпеки; коди в cookie не їдуть (маркер булевий, набір читається з БД) |
-| 119 | POST | `/account_security/mfa_recovery_codes` | `mfa_setups#rotate_recovery_codes` | 🔑 Auth | [S6.21] Ротація набору («загубив аркуш, телефон живий» — TOTP-секрет недоторканий): step-up `current_password` (дзеркало disable-гілки row 10) → новий набір → 303 на row 118 |
+| 114 | GET | `/account_security/mfa_setup` | `mfa_setups#show` | 🔑 Auth | [S6.21] QR (інлайн-SVG) + секрет + форма verify; без провижну → redirect назад |
+| 115 | POST | `/account_security/mfa_setup` | `mfa_setups#create` | 🔑 Auth | [S6.21] Провижн/ротація секрета (до активації) → 303 на show; при enabled → 409 |
+| 116 | PATCH | `/account_security/mfa_setup` | `mfa_setups#update` | 🔑 Auth | [S6.21] Активація: verify свіжого коду → прапорець + rotation recovery-набору → 303 на row 118 (session-маркер одноразового показу; JSON-гілка віддає набір у самій відповіді) |
+| 117 | GET | `/account_security/mfa_recovery_codes` | `mfa_setups#recovery_codes` | 🔑 Auth | [S6.21] Одноразовий показ recovery-набору: `session.delete`-маркер — повторний GET (закладка, Back) → 303 на екран безпеки; коди в cookie не їдуть (маркер булевий, набір читається з БД) |
+| 118 | POST | `/account_security/mfa_recovery_codes` | `mfa_setups#rotate_recovery_codes` | 🔑 Auth | [S6.21] Ротація набору («загубив аркуш, телефон живий» — TOTP-секрет недоторканий): step-up `current_password` (дзеркало disable-гілки row 10) → новий набір → 303 на row 118 |
 | 11 | PATCH | `/account_security/password` | `account_security#change_password` | 🔑 Auth | Змінити пароль. **Усі інші Session-row відкликаються**, поточний request session виживає (IP+UA match → fallback на newest). **[SEC.16]** усі інші cookie-сесії гаснуть миттєво (salt-stamp §1); ініціаторова оновлює stamp і живе. |
 | **🏰 Dashboard** | | | | | |
 | 15 | GET | `/dashboard` | `dashboard#index` | 🔑 Auth | Зведена статистика організації (кеш 2 хв per-org). **[ARCH.77]** Той самий `dashboard#index` віддає й корінь застосунку — `root_path` існує. **[ARCH.88]** Блок `economy` несе ДВІ РІЗНІ величини: `growth_points` — офчейн-бали, що ростуть від телеметрії, і `minted_scc` — чинний monetary supply організації (Σmints − Σburns через One-Home `BlockchainTransaction.net_minted_supply`, скоуплений парою `wallet&.organization_id \|\| cluster&.organization_id`). ⚠️ `total_scc` лишається **депрекованим аліасом** `growth_points` — ім’я успадковане від колонкового аліаса й БРЕШЕ (колонка тримає бали); тихий ренейм заборонено, бо ключ уже читають клієнти. |
-| 121 | GET | `/` | `dashboard#index` | 🔑 Auth | **Корінь застосунку** (ARCH.77). Той самий екшен, що рядок 15 — окремий рядок тут не дубль, а вимога реєстру: людина, що шукає `GET /`, мусить його ЗНАЙТИ. **[DOC-T.87]** доти корінь жив лише ПРОЗОЮ всередині опису рядка 15, тобто був невидимий і для читача, і для будь-якого гейта |
+| 120 | GET | `/` | `dashboard#index` | 🔑 Auth | **Корінь застосунку** (ARCH.77). Той самий екшен, що рядок 15 — окремий рядок тут не дубль, а вимога реєстру: людина, що шукає `GET /`, мусить його ЗНАЙТИ. **[DOC-T.87]** доти корінь жив лише ПРОЗОЮ всередині опису рядка 15, тобто був невидимий і для читача, і для будь-якого гейта |
 | **👤 Користувачі та Організації** | | | | | |
 | 16 | GET | `/users/me` | `users#me` | 🔑 Auth | Профіль поточного користувача |
 | 17 | GET | `/users` | `users#index` | 👑 Admin | Список користувачів організації |
@@ -565,8 +565,8 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 41 | GET | `/wallets/:id` | `wallets#show` | 🔑 Auth | Деталі гаманця + транзакції |
 | 42 | GET | `/wallets/:id/balance` | `wallets#balance` | 🔑 Auth | Баланс гаманця (JSON + Turbo Frame) |
 | 43 | GET | `/wallets/:id/metadata` | `wallets#metadata` | 🔑 Auth | Блокчейн-метадані (JSON + Turbo Frame) |
-| 120 | GET | `/wallets/:wallet_id/transactions/:id/status` | `wallets#transaction_status` | 🔑 Auth | Turbo Frame статусу однієї транзакції. ⚠️ Несе **`?created_at=`** — `blockchain_transactions` партиційована RANGE, тож без ключа резолв сканує всі партиції, а промах ТИХИЙ (скіл `backend` #59). Право переспитує `WalletPolicy#transaction_status? = show?`. **[DOC-T.87]** Рядка тут не було 17 діб при зеленому CI — саме цей випадок купив гейт парності роутер⟷таблиця |
-| 112 | GET | `/wallets/:id/ledger` | `wallets#ledger` | 🔑 Auth | CSV-вивантаження леджера гаманця (UI.7). Напрямок кожного рядка — деривація `#burn?` (знак `amount` напрямку не видає), одиниці стоять у заголовках колонок (`amount` = монети, `locked` = бали); стрімиться `CsvStreamable` |
+| 119 | GET | `/wallets/:wallet_id/transactions/:id/status` | `wallets#transaction_status` | 🔑 Auth | Turbo Frame статусу однієї транзакції. ⚠️ Несе **`?created_at=`** — `blockchain_transactions` партиційована RANGE, тож без ключа резолв сканує всі партиції, а промах ТИХИЙ (скіл `backend` #59). Право переспитує `WalletPolicy#transaction_status? = show?`. **[DOC-T.87]** Рядка тут не було 17 діб при зеленому CI — саме цей випадок купив гейт парності роутер⟷таблиця |
+| 111 | GET | `/wallets/:id/ledger` | `wallets#ledger` | 🔑 Auth | CSV-вивантаження леджера гаманця (UI.7). Напрямок кожного рядка — деривація `#burn?` (знак `amount` напрямку не видає), одиниці стоять у заголовках колонок (`amount` = монети, `locked` = бали); стрімиться `CsvStreamable` |
 | 44 | GET | `/contracts` | `contracts#index` | 🔑 Auth | Список NaaS-контрактів |
 | 45 | GET | `/contracts/:id` | `contracts#show` | 🔑 Auth | Деталі NaaS-контракту |
 | 46 | GET | `/contracts/stats` | `contracts#stats` | 🔑 Auth | Фінансова аналітика |
@@ -604,25 +604,24 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 | 74 | GET | `/blockchain_transactions/:id/on_chain` | `blockchain_transactions#on_chain` | 🔑 Auth | On-chain верифікація (Turbo Frame) |
 | **🔔 Сповіщення** | | | | | |
 | 76 | GET | `/notifications/settings` | `notifications#settings` | 🔑 Auth | Поточні канали сповіщень |
-| 77 | PATCH | `/notifications/settings` | `notifications#update_settings` | 🔑 Auth | Оновити канали сповіщень |
 | **📊 Звіти** | | | | | |
-| 78 | GET | `/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
-| 79 | GET | `/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
-| 80 | GET | `/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
+| 77 | GET | `/reports` | `reports#index` | 🔑 Auth | Зведена аналітика організації |
+| 78 | GET | `/reports/carbon_absorption` | `reports#carbon_absorption` | 🔑 Auth | Звіт CO₂-поглинання (JSON/CSV/PDF) |
+| 79 | GET | `/reports/financial_summary` | `reports#financial_summary` | 🔑 Auth | Фінансовий звіт (JSON/CSV/PDF) |
 | **🧠 Налаштування** | | | | | |
-| 81 | GET | `/settings` | `settings#show` | 👑 Admin | Налаштування організації |
-| 82 | PATCH | `/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
+| 80 | GET | `/settings` | `settings#show` | 👑 Admin | Налаштування організації |
+| 81 | PATCH | `/settings` | `settings#update` | 👑 Admin | Оновити налаштування |
 | **👁️ Аудит** | | | | | |
-| 83 | GET | `/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
-| 84 | GET | `/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
+| 82 | GET | `/audit_logs` | `audit_logs#index` | 👑 Admin | Журнал дій (AuditLog). Query: `?user_id=`, `?action_type=`, `?limit=` (1..100, default 50). ⚠️ HTML-гілка мусить **проводити активні фільтри у в'ю** (`filters:`): інакше пагінація губить їх на сторінці 2, тихо повертаючи повний журнал, а відфільтрована видача візуально невідрізнима від повної — порожній результат читається як «журнал порожній» ([UI.7]). Вхід із UI — «View logs» у [`Users::Index`](04_04_Phlex_UI_and_Tailwind); аудиторії збігаються (обидві сторони `admin_or_above?`), тож роле-гейт на лінку не потрібен. |
+| 83 | GET | `/audit_logs/:id` | `audit_logs#show` | 👑 Admin | Деталі події аудиту |
 | **⚡ Ініціація Пристроїв** | | | | | |
-| 85 | GET | `/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
-| 86 | POST | `/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation.** ⚠️ **[ARCH.77]** Браузерний попри назву — `authorize_forester!` + `format.html`; машинного клієнта нема (фабричний тракт [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) ходить rake-задачами у власному процесі, не HTTP). |
+| 84 | GET | `/provisioning/new` | `provisioning#new` | 🌿 Forester | Форма реєстрації пристрою |
+| 85 | POST | `/provisioning/register` | `provisioning#register` | 🌿 Forester | **Реєстрація нового вузла (Tree/Gateway) — HKDF key derivation.** ⚠️ **[ARCH.77]** Браузерний попри назву — `authorize_forester!` + `format.html`; машинного клієнта нема (фабричний тракт [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning) ходить rake-задачами у власному процесі, не HTTP). |
 | **⚙️ Системний Моніторинг** | | | | | |
-| 87 | GET | `/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
-| 88 | GET | `/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
+| 86 | GET | `/system_health` | `system_health#show` | 👑 Admin | Стан CoAP/Sidekiq/DB |
+| 87 | GET | `/system_audits` | `system_audits#index` | 🔑 Auth | Аудит синхронізації DB↔Blockchain |
 | **🌐 Локалізація** | | | | | |
-| 111 | POST | `/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (**рік**, `expires:` ЯВНО — `cookies.permanent` дало б 20 років, тобто retention обирав би дефолт фреймворку проти заявленого в `b2c_tos_privacy`) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp) — і причин ДВІ: пошта рендериться в Sidekiq, куди cookie не доїжджає, а від [I18N.3] колонка ще й є третім щаблем веб-резолву ([`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind)), тобто переживає зміну пристрою. Редірект `back` |
+| 110 | POST | `/locale` | `locales#update` | 🌐 Public | Переключення локалі: cookie (**рік**, `expires:` ЯВНО — `cookies.permanent` дало б 20 років, тобто retention обирав би дефолт фреймворку проти заявленого в `b2c_tos_privacy`) + `I18n.locale` на поточний запит; значення валідується проти `available_locales` — перелік НЕ дублюється тут (він росте, [`04_04 §12.2`](04_04_Phlex_UI_and_Tailwind)). Залогіненому ще й **персиститься** в `users.locale` (guard дзеркалить [SEC.16] salt-stamp) — і причин ДВІ: пошта рендериться в Sidekiq, куди cookie не доїжджає, а від [I18N.3] колонка ще й є третім щаблем веб-резолву ([`04_04 §12.4`](04_04_Phlex_UI_and_Tailwind)), тобто переживає зміну пристрою. Редірект `back` |
 | **🩺 Health-проби (без автентифікації)** | | | | | |
 | — | GET | `/up` | `rails/health#show` | 🌐 Public | **Liveness** — процес живий (без перевірки залежностей). Виключено з `force_ssl`/host-auth redirect + Rack::Attack throttle. |
 | — | GET | `/ready` | `readiness#show` | 🌐 Public | **Readiness** — DB + Redis (Sidekiq + Kredis) round-trip → 200 `ready` / 503 `not_ready` (ops: [`06_05`](06_05_Puma_Configuration)). Ті самі виключення, що `/up`. |

@@ -41,8 +41,6 @@ en:
       record_created: Healing record committed. Ecosystem updated.
       record_updated: Record updated.
       self_attestation: You cannot attest your own record — a second pair of eyes is the whole point.
-    notifications:
-      updated: Notification settings updated.
     organizations:
       context_switched: 'Working context switched: %{name}.'
     provisioning:

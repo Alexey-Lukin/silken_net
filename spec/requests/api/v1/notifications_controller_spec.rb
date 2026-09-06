@@ -22,47 +22,11 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
     end
   end
 
-  describe "PATCH /notifications/settings" do
-    it "updates notification channel settings" do
-      patch "/notifications/settings",
-            headers: headers,
-            params: { push_token: "fcm_abc" },
-            as: :json
-
-      expect(response).to have_http_status(:ok)
-      user.reload
-      expect(user.reload.push_token).to eq("fcm_abc")
-    end
-
-    it "updates push_token" do
-      patch "/notifications/settings",
-            headers: headers,
-            params: { push_token: "fcm_token_abc123" },
-            as: :json
-
-      expect(response).to have_http_status(:ok)
-      user.reload
-      expect(user.push_token).to eq("fcm_token_abc123")
-      expect(response.parsed_body["channels"]["push_token"]).to eq("fcm_token_abc123")
-    end
-
-    # ⚫ Носій ПЕРЕЇХАВ 2026-09-06 [ARCH.60]: доти невалідність давав формат
-    # `telegram_chat_id`, але канал зрізано, а `push_token` валідації не має —
-    # тобто через `permit` запис зіпсувати вже не можна. Предмет піна не в полі,
-    # а в ДЗЕРКАЛІ статусу (SEC.25), тож ламаємо запис іншим атрибутом повз
-    # валідацію: `update` перевіряє ВЕСЬ рядок, і гілка 422 лишається досяжною.
-    it "returns unprocessable_content when update fails with invalid params" do
-      user.update_column(:locale, "zz")
-
-      patch "/notifications/settings",
-            headers: headers,
-            params: { push_token: "fcm_abc" },
-            as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body["errors"]).to be_present
-    end
-  end
+  # ⛔ `describe "PATCH /notifications/settings"` ВИДАЛЕНО 2026-09-06 [ARCH.60]:
+  # екшен і маршрут знято разом із поверхнею збору `push_token`. Приклади стерегли
+  # саме їх; лишити їх означало б тримати спеку, що звертається до неіснуючого
+  # маршруту (404), тобто червону за побудовою, а не доказову.
+  # ⊕ GET-гілка нижче лишається — читання стану не є збором.
 
   context "with format.html responses" do
     let(:html_headers) do
@@ -75,23 +39,11 @@ RSpec.describe Api::V1::NotificationsController, type: :request do
       expect(response.content_type).to include("text/html")
     end
 
-    it "renders HTML for update_settings error" do
-      user.update_column(:locale, "zz")
-
-      patch "/notifications/settings",
-            headers: html_headers,
-            params: { push_token: "fcm_abc" }
-
-      # [SEC.25] 422 — дзеркало JSON-гілки; на 200 Turbo відповідь викидає, тож
-      # невалідний вхід не показував користувачеві нічого.
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.content_type).to include("text/html")
-
-      # 🔴 І друга половина: коментар вище казав «не показував нічого», але після
-      # фіксу статусу сторінка все одно мовчала — компонент не мав куди покласти
-      # причину. Пін на статус цього не бачив за побудовою.
-      expect(response.body).to include(I18n.t("errors.api.validation_failed_title"))
-      expect(response.body).to include("Language is not included in the list")
-    end
+    # ⛔ `it "renders HTML for update_settings error"` ВИДАЛЕНО 2026-09-06 [ARCH.60]
+    # разом з екшеном. ⚠️ Приклад ніс ДВІ осі, і обидві названі тут, щоб зникнення
+    # було видимим: [SEC.25] «422 — дзеркало JSON-гілки, бо на 200 Turbo відповідь
+    # викидає» і [I18N.1] «причину видно, і імʼя поля приходить з `attributes.*`».
+    # Перша вісь має носіїв на інших мультиформатних екшенах; друга лишається без
+    # піна — ціна названа в `spec/views/components/notifications/settings_spec.rb`.
   end
 end

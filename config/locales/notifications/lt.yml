@@ -9,13 +9,6 @@ lt:
         not_configured: Nesukonfigūruota
         push: "🔔 Push"
         unavailable: Kanalas nepasiekiamas
-      channels:
-        email_address: El. pašto adresas
-        heading: Kanalų konfigūracija
-        push_placeholder: FCM arba APNs žetonas
-        push_token: Push žetonas
-        save: Išsaugoti kanalus →
-      email_hint: El. paštas gali būti keičiamas profilyje.
       heading: "🔔 Neuralinis tinklas — Pranešimų kanalai"
       subtitle: Konfigūruoti pranešimų kanalus — kur pristatyti įspėjimus ir įvykius.
     settings_title: Pranešimų kanalai

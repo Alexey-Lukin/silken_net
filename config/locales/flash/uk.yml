@@ -41,8 +41,6 @@ uk:
       record_created: Запис про зцілення зафіксовано. Екосистема оновлена.
       record_updated: Запис оновлено.
       self_attestation: Не можна засвідчити власний запис — сенс саме в другій парі очей.
-    notifications:
-      updated: Налаштування сповіщень оновлено.
     organizations:
       context_switched: 'Робочий контекст перемкнуто: %{name}.'
     provisioning:
