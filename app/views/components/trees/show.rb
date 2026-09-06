@@ -241,7 +241,7 @@ module Trees
 
           a(
             href: "https://www.google.com/maps?q=#{@tree.latitude},#{@tree.longitude}",
-            target: "_blank",
+            target: "_blank", rel: "noopener noreferrer",
             class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
             aria_label: t(".locate_aria")
           ) { t(".actions.locate_node") }

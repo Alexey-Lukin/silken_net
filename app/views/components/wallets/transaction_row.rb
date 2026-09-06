@@ -53,7 +53,7 @@ module Wallets
         end
         td(class: "p-4 text-gaia-text-muted truncate max-w-[150px] font-mono text-tiny") do
           if @tx.tx_hash.present?
-            a(href: @tx.explorer_url, target: "_blank", class: "hover:text-gaia-primary-strong underline decoration-gaia-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
+            a(href: @tx.explorer_url, target: "_blank", rel: "noopener noreferrer", class: "hover:text-gaia-primary-strong underline decoration-gaia-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong") do
               @tx.tx_hash.length > 16 ? "#{@tx.tx_hash.first(16)}…" : @tx.tx_hash
             end
           else

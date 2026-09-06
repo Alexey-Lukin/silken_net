@@ -167,12 +167,17 @@ files = TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.#{EXTS}")] } +
 files = files.select { |p| File.file?(p) }
              .map { |f| f.sub("#{ROOT}/", "") }.uniq.reject { |rel| rel =~ EXEMPT }.sort
 
+# 🔴 [2026-09-06] Тут стояв `rescue ArgumentError` довкола `File.read` із коментарем
+# «non-UTF-8 / binary» — і МУТАЦІЯ показала, що він був МЕРТВИЙ: `File.read` на
+# невалідному UTF-8 не кидає, кидає вже `each_line`/`scan` нижче. Тобто гейт падав
+# стек-трейсом (fail-closed, але без імені файлу), а rescue не ловив нічого й
+# створював враження обробленого випадку. ⚠️ Класична пара: мій діагноз «тихий пропуск»
+# теж був хибний — розсудила мутація, не читання. Тепер обгортка накриває САМЕ скан,
+# і файл називається поіменно.
+unreadable = []
 phantoms = files.flat_map do |rel|
-  text = begin
-    File.read(File.join(ROOT, rel))
-  rescue ArgumentError
-    next [] # non-UTF-8 / binary
-  end
+  text = File.read(File.join(ROOT, rel))
+  begin
   text.each_line.with_index(1).flat_map do |line, n|
     line.scan(TOKEN_RE).flat_map do |tok|
       tok = tok.sub(/[.\-]+\z/, "") # sentence punctuation / dangling hyphen
@@ -215,6 +220,10 @@ phantoms = files.flat_map do |rel|
       end
     end
   end
+  rescue ArgumentError
+    unreadable << rel
+    []
+  end
 end.uniq
 
 gating, advisory = phantoms.partition { |p| !p.match?(ADVISORY_ONLY) }
@@ -226,6 +235,13 @@ unless advisory.empty?
 end
 
 if gating.empty?
+unless unreadable.empty?
+  warn "code_tracker_id_check ✗ — #{unreadable.size} file(s) unreadable as UTF-8, тобто ВИКИНУТІ з популяції " \
+       "при тому, що підсумок їх лічить: #{unreadable.join(', ')}. Гейт не має права звітувати покриття, " \
+       "якого не досяг — полагодь кодування або додай шлях в EXEMPT свідомо."
+  exit 1
+end
+
   puts "code_tracker_id_check ✓ — #{files.size} files scanned; every cited tracker-ID " \
        "resolves against 00_07 (#{ids.size} IDs, #{families.size} families)"
   exit 0

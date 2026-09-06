@@ -336,7 +336,7 @@ module Maintenance
 
           a(
             href: "https://www.google.com/maps?q=#{@record.latitude},#{@record.longitude}",
-            target: "_blank",
+            target: "_blank", rel: "noopener noreferrer",
             class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong " \
                    "hover:bg-gaia-primary hover:text-gaia-primary-text transition-all uppercase text-mini " \
                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong"

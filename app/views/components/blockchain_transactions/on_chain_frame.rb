@@ -29,7 +29,7 @@ module BlockchainTransactions
             # виняток [UI.3] чекліста доступності (04_04 §9).
             a(
               href: @tx.explorer_url,
-              target: "_blank",
+              target: "_blank", rel: "noopener noreferrer",
               class: explorer_link_classes
             ) { t(".view_on", explorer: explorer_name) }
           end

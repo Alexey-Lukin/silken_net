@@ -248,7 +248,7 @@ module Clusters
             geo_row(t(".geography.centroid"), "#{center[:lat].round(4)}, #{center[:lng].round(4)}")
             a(
               href: "https://www.google.com/maps?q=#{center[:lat]},#{center[:lng]}",
-              target: "_blank",
+              target: "_blank", rel: "noopener noreferrer",
               class: "block mt-4 text-center p-2 border border-gaia-border-strong text-gaia-primary-strong hover:bg-gaia-surface-sunken hover:text-gaia-text-strong transition-all uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gaia-primary-strong",
               aria_label: t(".map_link_aria")
             ) { t(".geography.view_on_map") }
