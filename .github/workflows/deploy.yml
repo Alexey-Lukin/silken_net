@@ -62,7 +62,7 @@ jobs:
       # runs 33597709126 · 33612548198). The job talks to the GitHub API and nothing else.
       # Production keeps `audit` until ITS first real deploy has produced ITS baseline (06_07 §1a).
       - name: Harden runner (egress block)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -141,7 +141,7 @@ jobs:
       # the StepSecurity baseline recorded zero outbound destinations — the one job in the tree
       # where "no egress at all" is the honest policy, and where an exfiltration would be loudest.
       - name: Harden runner (egress block)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: block
           allowed-endpoints: ""
@@ -348,7 +348,7 @@ jobs:
       # needed it — LOUD by design; the fix is a line here, never a fallback to `audit`.
       # Production stays `audit` until its own first real deploy has produced its baseline.
       - name: Harden runner (egress block)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: block
           allowed-endpoints: >
