@@ -362,12 +362,55 @@ if ARGV.include?("--verify")
     next unless folder
 
     c, grp = request(:get, "/api/v1/provisioning/folder/#{folder['uid']}/rule-groups/#{g['name']}")
-    want = interval_seconds(g["interval"])
-    "#{g['name']}: у стеку #{grp['interval']}s, IaC каже #{want}s" if c == 200 && grp["interval"] != want
+    # ⚠️ НЕ `want`: так звався набір uid у зовнішньому скоупі, а блок Ruby його НЕ
+    # локалізує — присвоєння тут затирало його на Integer, і кожен, хто читав `want`
+    # ПІСЛЯ цього циклу, діставав `NoMethodError` замість множини (виміряно 2026-09-06,
+    # коли пʼята вісь стала першим таким читачем).
+    want_interval = interval_seconds(g["interval"])
+    "#{g['name']}: у стеку #{grp['interval']}s, IaC каже #{want_interval}s" if c == 200 && grp["interval"] != want_interval
   end
   puts(bad_interval.empty? ? "  ✓ інтервали груп збігаються" : "  ✗ інтервали розійшлись: #{bad_interval.join('; ')}")
 
-  drift = !missing.empty? || !unbound.empty? || !bad_interval.empty? || !text_drift.empty? || !extra.empty?
+  # 🔴 [S2.4, 2026-09-06] ПʼЯТА вісь — ВИРАЗ, і вона додана тому, що її відсутність
+  # ВИМІРЯНА на власній правці, а не уявлена.
+  #
+  # Історія тут дзеркальна й повчальна. Четверту вісь (текст) завели 09-05 саме тому,
+  # що ратифікована доти звірка порівнювала ЛИШЕ `model.expr` і давала «паритет» над
+  # двопоколінно-застарілим `description`. Висновок був правильний — але при переїзді
+  # звірки в `--verify` вираз-половину не перенесли ВЗАГАЛІ. Тобто лік від однобокості
+  # відтворив однобокість, просто на другому боці.
+  #
+  # Ціна виміряна 2026-09-06: зняття `> 0` з `sn-alert-tree-sweep-stale` (правка, що
+  # РОЗСЛІПЛЮЄ дед-мена) пройшла `--verify` ЗЕЛЕНОЮ, і підтверджувати її довелось
+  # руками через `/api/v1/provisioning/alert-rules/<uid>`. Вираз ламає СПРАЦЮВАННЯ —
+  # тобто мовчить голосніше за речення.
+  #
+  # ⚖️ Порівнюємо побайтово й лише вузли з `expr` (datasource-запити): `__expr__`-вузли
+  # несуть `expression` — посилання на refId, і воно є ФОРМОЮ ланцюга, яку вже стереже
+  # `grafana_alerts_spec` статично. Нормалізації Grafana тут не робить (на відміну від
+  # `for`), тож рівність рядків — чесний дискримінатор, а не джерело хибних червоних.
+  expr_drift = iac_by_uid.keys.filter_map do |uid|
+    live_rule = live_by_uid[uid]
+    iac_rule  = iac_by_uid[uid]
+    next unless live_rule && iac_rule
+
+    exprs = lambda do |rule|
+      (rule["data"] || []).filter_map { |d| [ d["refId"], d.dig("model", "expr") ] if d.dig("model", "expr") }.to_h
+    end
+    want_e = exprs.call(iac_rule)
+    live_e = exprs.call(live_rule)
+    diff = want_e.keys.union(live_e.keys).reject { |r| want_e[r] == live_e[r] }
+
+    "#{uid} → #{diff.map { |r| "#{r}: IaC «#{want_e[r]}» ⟷ стек «#{live_e[r]}»" }.join('; ')}" unless diff.empty?
+  end
+  if expr_drift.empty?
+    puts "  ✓ вирази запитів збігаються (те, що правило РЕАЛЬНО обчислює)"
+  else
+    puts "  ✗ ВИРАЗИ розійшлись (#{expr_drift.size}) — правило обчислює НЕ ТЕ, що каже репо:"
+    expr_drift.each { |d| puts "     · #{d}" }
+  end
+
+  drift = !missing.empty? || !unbound.empty? || !bad_interval.empty? || !text_drift.empty? || !extra.empty? || !expr_drift.empty?
   puts(drift ? "\n✗ розходження — прожени імпорт без `--verify`" : "\n✅ стек у паритеті з IaC (у межах оголошених стель у шапці режиму)")
   exit(drift ? 1 : 0)
 end
