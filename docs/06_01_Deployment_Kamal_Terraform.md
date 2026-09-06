@@ -1391,6 +1391,7 @@ Series D архітектура (>1M вузлів):
 - **Правило:** Лише Primary DB пише. Усі аналітичні запити, Oracle-виклики, Grafana-дашборди, The Graph indexer — читають з Read-Only Replicas
 - **GCP конфігурація:** Cloud SQL → Add Read Replica (Terraform: `google_sql_database_instance` з `master_instance_name`)
 - **Rails конфігурація:** `connects_to(database: { writing: :primary, reading: :replica })`
+- 🔴 **ТРИГЕР, і він НЕ «хочемо швидше читати»** (мігровано сюди 2026-09-06 із трекера, де жило єдиним носієм). RO-репліка Cloud SQL є **ДРУГОЮ оплачуваною інстанцією того самого тіру**, тож рішення лежить на осі ЦІНИ — і на тій самій осі, що DR-постава ([`00_07` DR.1](00_07_Action_Plan_Tracker) `edition`/тір): **рішення ОДНЕ, не два**. Активує його вимір, у якому читання ВИМІРЯНО конкурує з записом; сьогодні база обслуговує нуль продового трафіку, тож конкуренції немає за побудовою. ⏳ Прилад — 👤-нога [`00_07` INF.23](00_07_Action_Plan_Tracker) (staging із prod-adapters). ⛔ **Не активувати з відчуття «повільно»: спершу назвати, ЩО саме конкурує** — сам конфіг тут дрібний (multi-DB component-style уже стоїть, [`00_07` INF.16](00_07_Action_Plan_Tracker)), дорогою є стояча інстанція, і саме тому рецепт вище без цього абзацу читався як запрошення.
 
 #### Статус
 
@@ -1400,7 +1401,7 @@ Series D архітектура (>1M вузлів):
 | Ingress Anchor (`e2-small`) | ✅ Виправлено (`terraform/compute.tf`) | Bottleneck при >10M дерев — див. нижче |
 | Ingress Proxy (Rust/Go) | 🔴 Не реалізовано | Series D milestone |
 | Kafka / Pub-Sub | 🔴 Не реалізовано | Series D milestone |
-| Read-Only Replicas | 🔴 Не налаштовано | Terraform: `google_sql_database_instance` replica |
+| Read-Only Replicas | 🔴 Не налаштовано — **свідомо, не забуто** | Активує ВИМІР read-contention (INF.23), не відчуття «повільно»: репліка = друга оплачувана інстанція того ж тіру, вісь спільна з DR-тіром (DR.1). Конфіг тривіальний — див. тригер вище |
 | conntrack + UDP rate limit | ✅ Виправлено | `terraform/compute.tf` `metadata["startup-script"]` анкера |
 
 #### 🌍 Front-Door Bottleneck — Ingress Anchor на `e2-small` (Series D)
