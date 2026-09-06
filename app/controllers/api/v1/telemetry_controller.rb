@@ -18,6 +18,14 @@ module Api
       MAX_HISTORY_DAYS = 365
       DEFAULT_HISTORY_DAYS = 7
 
+      # [UI.16] Вікно пошуку останнього запису для плейсхолдера стрічки.
+      # ⚠️ Це НЕ `partition_pruned`: той хелпер прунить звертання за ВІДОМИМ рядком
+      # (секундне вікно навколо `created_at`), а тут множина невідомого розміру —
+      # її прунить ІНДЕКС плюс явна межа (`CLAUDE.md §6`). Межа скінченна свідомо:
+      # безмежний `ORDER BY created_at DESC LIMIT 1` сканував би всі партиції на
+      # сторінці, яку відкривають щодня. Порожньо за вікном → чесне «очікуємо».
+      IDLE_NOTICE_WINDOW = 7.days
+
       # --- ЖИВИЙ ПОТІК ІСТИНИ (The Pulse) ---
       # GET /telemetry/live
       def live
@@ -25,7 +33,10 @@ module Api
           format.html do
             render_dashboard(
               title: I18n.t("telemetry.live_title"),
-              component: Telemetry::LiveStream.new(organization: acting_organization!)
+              component: Telemetry::LiveStream.new(
+                organization: acting_organization!,
+                last_record: last_telemetry_record
+              )
             )
           end
         end
@@ -127,6 +138,18 @@ module Api
       end
 
       private
+
+      # [UI.16] Найсвіжіший ПРИЙНЯТИЙ запис організації — вимір для плейсхолдера, а
+      # не відтворення стрічки. Скоуп асоціативний (`acting_organization!`), тобто
+      # чужий рядок не матеріалізується взагалі — та сама постава, що в решті
+      # контролерів [SEC.25 Ф2].
+      def last_telemetry_record
+        TelemetryLog
+          .where(tree_id: acting_organization!.trees.select(:id))
+          .where(created_at: IDLE_NOTICE_WINDOW.ago..)
+          .order(created_at: :desc)
+          .first
+      end
 
       # `to_i` swallows non-numeric input as 0 (silently returning an empty
       # window). Clamp into [1, MAX_HISTORY_DAYS] so that bogus or unbounded

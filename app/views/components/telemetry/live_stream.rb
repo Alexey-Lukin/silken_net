@@ -20,15 +20,26 @@ module Telemetry
     # [I18N.2] Дім ПОРЯДКУ колонок: ті самі ключі живлять і `<thead>`, і
     # `--gaia-col-N`, тож заголовок і мобільна мітка не можуть розійтись.
     # Порядок несучий — CSS адресує колонки через `nth-child`.
+    # 🔴 [UI.16, 2026-09-06] Третя колонка була `telemetry.table.payload` — «Сирий
+    # вміст CoAP (HEX-потік)», — і заголовок чесно називав те, що показував: лісгосп
+    # бачив шістнадцятковий дамп конверта. Одиниця стрічки стала ЗВЕДЕННЯМ БАТЧУ
+    # (`Telemetry::BatchSummary`), тож колонка тепер про кількість записів.
+    # ⚠️ Ключ ПЕРЕЙМЕНОВАНО, а не переписано значення: `payload` описував сирий дамп
+    # правдиво, і лишити його з новим змістом означало б зробити чотири локалі
+    # хибними мовчки.
     COLUMNS = %w[
       telemetry.table.timestamp
       telemetry.table.gateway
-      telemetry.table.payload
+      telemetry.table.records
       telemetry.table.status
     ].freeze
 
-    def initialize(organization:)
+    # `last_record` — НЕОБОВʼЯЗКОВИЙ, і дефолт `nil` тут не недбалість: компонент
+    # рендериться і з контролера (де запит легальний), і зі спек. ⛔ Запиту в
+    # `initialize` немає й бути не може — `04_04` забороняє БД у Phlex-конструкторі.
+    def initialize(organization:, last_record: nil)
       @organization = organization
+      @last_record = last_record
     end
 
     def view_template
@@ -97,7 +108,7 @@ module Telemetry
                   td(colspan: 4, class: "p-12 text-center text-gaia-text-subtle") do
                     div(class: "flex flex-col items-center justify-center") do
                       div(class: "w-8 h-8 rounded-full border-b-2 border-gaia-border-strong animate-spin mb-4", aria_hidden: "true")
-                      p(class: "italic tracking-widest text-mini") { t(".awaiting") }
+                      idle_notice
                     end
                   end
                 end
@@ -109,6 +120,27 @@ module Telemetry
     end
 
     private
+
+    # 🔴 [UI.16] Плейсхолдер казав «Очікування Starlink Uplink…» ЗАВЖДИ — і на
+    # порожній базі, і над лісом, що передавав годину тому. Друга половина була
+    # брехнею мовчанням: сторінка ЖИВА лише під час події, а backfill'у стрічки не
+    # існує (флаш не є сутністю в БД — розбір у `UnpackTelemetryWorker#broadcast_to_matrix`).
+    # При нашому реальному каденсі (≈48 хв між флашами на сотні дерев) глядач бачив
+    # вічний спінер і читав його як «нічого немає».
+    #
+    # ⚠️ Лік — НЕ вигаданий backfill, а ВИМІР: коли історія є, показуємо, коли саме
+    # був останній прийнятий запис і від якої Королеви. Це не стрічка, і воно себе
+    # стрічкою не видає. Порожнеча лишається порожнечею рівно тоді, коли вона правдива.
+    # 🔑 `t()` тут ЛЕГАЛЬНИЙ, на відміну від `Telemetry::BatchSummary`: цей компонент
+    # рендериться в ЗАПИТІ, де `LocaleSettable` уже відпрацював (`04_04 §8.1а`).
+    def idle_notice
+      return p(class: "italic tracking-widest text-mini") { t(".awaiting") } if @last_record.nil?
+
+      p(class: "italic tracking-widest text-mini") do
+        plain t(".idle_since", gateway: @last_record.queen_uid.presence || Telemetry::BatchSummary::UNKNOWN_RELAY)
+      end
+      render Views::Shared::UI::RelativeTime.new(datetime: @last_record.created_at)
+    end
 
     # [I18N.2] Публікує мітки колонок як CSS custom properties, щоб рядок,
     # який приїде броадкастом, не мусив нести власну копію (він рендериться в

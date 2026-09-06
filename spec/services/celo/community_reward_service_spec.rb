@@ -364,6 +364,46 @@ RSpec.describe Celo::CommunityRewardService do
       expect { described_class.new(cluster, target_date).reward_community! }
         .to raise_error(/НИЖЧИЙ ЗА МІНІМУМ/)
     end
+
+    # ⊥ Перша половина пари «нуль ⊥ нижче мінімуму»: без неї сусідній приклад
+    # («НИЖЧИЙ ЗА МІНІМУМ») зелений і на гарді, який розрізняти перестав.
+    it "розрізняє НЕ ПРОВІЖИНЕНО — баланс РІВНО нуль" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.05, fraud_detected: false)
+      mock_client = instance_double(Eth::Client)
+      allow(Eth::Client).to receive(:create).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
+      allow(mock_client).to receive(:get_balance).and_return(0)
+      allow(Kredis).to receive(:lock).and_yield
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to raise_error(/НЕ ПРОВІЖИНЕНО/)
+    end
+
+    # 🔴 [DEPLOY-1, 2026-09-06] ТРЕТЯ вісь того самого гарда — ШКАЛА, а не текст.
+    # Поріг тут був захардкоджений літералом, тоді як обидва сусіди на money-path
+    # (`BlockchainMintingService`, `Ethereum::StateAnchorService`) читають
+    # `SystemParameter`. Розходження було тихе й однобічне: `Treasury::MonitorService`
+    # рахує `ratio` ВІД governance-значення, тож зміна параметра рухала АЛЕРТ і не
+    # рухала ГАРД — дашборд і money-path міряли б різними лінійками.
+    # ⊥ Фікстура навмисно ВИЩА за старий літерал (0.05): при захардкодженому порозі
+    # цей приклад не впав би взагалі, тобто він червоніє САМЕ на регресії шкали.
+    it "бере поріг із governance, а не з константи [INF.22]" do
+      create(:ai_insight, analyzable: cluster, insight_type: :daily_health_summary,
+                          target_date: target_date, stress_index: 0.05, fraud_detected: false)
+      mock_client = instance_double(Eth::Client)
+      allow(Eth::Client).to receive(:create).and_return(mock_client)
+      allow(Eth::Key).to receive(:new).and_return(instance_double(Eth::Key, address: "0x" + "aa" * 20))
+      allow(Eth::Contract).to receive(:from_abi).and_return(instance_double(Eth::Contract))
+      allow(mock_client).to receive(:get_balance).and_return((0.2 * 10**18).to_i)
+      allow(Kredis).to receive(:lock).and_yield
+      allow(SystemParameter).to receive(:current).and_call_original
+      allow(SystemParameter).to receive(:current).with(:oracle_min_balance_celo, any_args).and_return(0.5)
+
+      expect { described_class.new(cluster, target_date).reward_community! }
+        .to raise_error(/НИЖЧИЙ ЗА МІНІМУМ/)
+    end
   end
 
   describe "RPC fallback cascade [E.49]" do

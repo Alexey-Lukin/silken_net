@@ -30,6 +30,15 @@ require_relative "../config/environment"
 # --- КОНСТАНТИ СИМУЛЯЦІЇ ---
 BATCH_SIZE_RANGE = (5..15)
 SLEEP_RANGE = (3..8)
+
+# [E.64] Вікно перезаряду EBFC, з якого береться `delta_t`. Доти стояло `rand(5..120)`,
+# і воно вироджувало метаболічний канал: `metabolic_health` насичується вже на 600 с,
+# тож КОЖЕН пакет ніс `growth_points = 31` — демо показувало вічний максимум емісії.
+# Межі — ті самі placeholder-пороги, що чекають bench-кривої (`03_04 §4.3`), тож смуга
+# балів виходить повна 5..31. ⛔ Сентинел `DELTA_T_UNKNOWN_S = 0` симулятор НЕ шле
+# свідомо: його віддає вузол, у якого ще не піднявся RTC (FW.49), а тут провіжинений
+# флот із теплим ланцюгом — вигадувати йому відмову міряти означало б фабрикувати стан.
+RECHARGE_RANGE = (SilkenNet::Attractor::DELTA_T_FAST_S..SilkenNet::Attractor::DELTA_T_SLOW_S)
 # [OPS.37] Ціль — параметр, не літерал: на canopy симулятор біжить у job-контейнері app-хоста,
 # а демон-інтейк живе на анкері (INF.17), тож loopback там мовчить. Імʼя навмисно НЕ
 # `COAP_HOST` — та змінна вже зайнята UDP-пробою адмін-панелі (`api.silkennet.com`, env.clear);
@@ -58,6 +67,12 @@ latest_firmware_id = BioContractFirmware.active
 puts "🔧 Актуальна прошивка: #{latest_firmware_id.zero? ? 'не знайдено' : "##{latest_firmware_id}"}"
 puts ""
 
+# [E.64] Модель Солдата — ОДИН дім, `lib/hil/soldier_node.rb` (там і повна врізка про
+# те, чому `rand` тут був не «спрощенням», а спростуванням DCI за побудовою, і три
+# оголошені стелі емуляції). Тут — лише виклик: скрипт тонкий, бо інакше правило
+# лишається без носія, а спеки в `bin/` не буває.
+soldier = Hil::SoldierNode.new
+
 loop do
   # 1. ВИБІР КОРОЛЕВИ (Gateway з HardwareKey)
   gateway = Gateway.joins(:hardware_key).order("RANDOM()").first
@@ -71,10 +86,12 @@ loop do
   hw_key = gateway.hardware_key
 
   # 2. ВИБІР СОЛДАТІВ (Активні дерева з кластеру Королеви)
+  # [E.64] `includes(:hardware_key)` — не оптимізація «про запас»: кожне дерево тепер
+  # читає власний `K_seed` для Lorenz-ланцюга, тож без preload'у це N+1 на КОЖЕН батч.
   trees = if gateway.cluster
-            gateway.cluster.trees.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
+            gateway.cluster.trees.active.includes(:hardware_key).order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
   else
-            Tree.active.order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
+            Tree.active.includes(:hardware_key).order("RANDOM()").limit(rand(BATCH_SIZE_RANGE))
   end
 
   if trees.empty?
@@ -92,23 +109,38 @@ loop do
 
   trees.each do |tree|
     did_int     = tree.did.delete_prefix("SNET-").to_i(16)
-    voltage     = rand(3200..4800)   # мВ (іоністор)
-    temperature = rand(-10..45)      # °C
-    acoustic    = rand(0..200)       # акустичні події
-    metabolism  = rand(5..120)       # метаболізм
-    rssi        = rand(50..90)       # інвертований RSSI (wire-значення)
-    ttl         = rand(1..7)        # mesh hops
-    bio_status  = rand(0..3)        # 0=homeostasis 1=stress 2=anomaly 3=vm_error
-    growth_pts  = rand(0..31)       # 5 біт (FW.29 StatusByte)
+    voltage     = rand(3200..4800)          # мВ (VDDA — на Z не впливає, E.63/FW.50)
+    temperature = rand(-10..45)             # °C (сире wire-значення = DCI-якір, FW.57 F2)
+    acoustic    = rand(0..200)              # кваліфіковані події від останнього TX
+    metabolism  = rand(RECHARGE_RANGE)      # delta_t перезаряду EBFC, сек
+    rssi        = rand(50..90)              # інвертований RSSI (wire-значення)
+    ttl         = rand(1..7)                # mesh hops
+
+    # [E.64] СТАТУС І БАЛИ ОБЧИСЛЮЮТЬСЯ, НЕ ГЕНЕРУЮТЬСЯ. `strict: false` — щоб одне
+    # непровіжинене дерево не вбивало батч; але воно НЕ ховається (рядок нижче).
+    reading = soldier.read(tree, temperature_c: temperature, acoustic: acoustic,
+                                 metabolism_s: metabolism, voltage_mv: voltage,
+                                 strict: false)
+    if reading.nil?
+      puts "   ⛔ #{tree.did}: немає провіженого K_seed — вузол не може обчислити Z. Пропуск (SEC.11)."
+      next
+    end
 
     batch_data << SilkenNet::LoadTest::TelemetryBatchFactory.chunk(
       did_int: did_int, rssi: rssi, voltage_mv: voltage, temperature_c: temperature,
-      acoustic: acoustic, metabolism_s: metabolism, growth_points: growth_pts,
-      ttl: ttl, bio_status: bio_status, firmware_id: latest_firmware_id
+      acoustic: acoustic, metabolism_s: metabolism, growth_points: reading.growth_points,
+      ttl: ttl, bio_status: reading.bio_status, firmware_id: latest_firmware_id
     )
 
     puts "   🌳 #{tree.did} | #{voltage}mV #{temperature}°C 🎙️#{acoustic} | " \
-         "bio:#{bio_status} grow:#{growth_pts} TTL:#{ttl} RSSI:-#{rssi}"
+         "Z=#{reading.z.round(2)}#{reading.cold_start ? ' ❄️cold' : ''} " \
+         "bio:#{reading.bio_status} grow:#{reading.growth_points} TTL:#{ttl} RSSI:-#{rssi}"
+  end
+
+  if batch_data.empty?
+    puts "   ⚠️  Батч порожній — жодне дерево не має K_seed. Пропуск."
+    sleep rand(SLEEP_RANGE)
+    next
   end
 
   final_payload = SilkenNet::LoadTest::TelemetryBatchFactory.encrypt(batch_data, hw_key.binary_key)

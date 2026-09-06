@@ -609,6 +609,22 @@ end
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to have_received(:increment)
       end
 
+      # 🔴 [ARCH.102 / SILENCE-1] Пара `status = 0, GP = 0` — ОГОЛОШЕНИЙ регістр «я тут,
+      # але метаболізм не виміряно», який прошивка пакує окремою гілкою. Доти цей гард
+      # читав її як порушення смуги, тобто оголошував чесну відмову ШАХРАЙСТВОМ — а на
+      # кремнії вона йде щоцикла до LSE/RTC bring-up (FW.49), тож fraud-канал ставав
+      # вічно-червоним, тобто безмовним.
+      #
+      # ⊥ Ліхтар (без нього фікс не відрізнити від «просто розширили смугу»): сусідній
+      # приклад вище лишається ЧЕРВОНИМ на `GP = 3`. Приймається рівно нуль — оголошене
+      # значення, — а не «все, що менше за GP_HOMEO_MIN».
+      it "stays silent for the DECLARED 'metabolism not measured' pulse (status 0, GP 0) [ARCH.102]" do
+        allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+        sentinel = status_byte_for(0, SilkenNet::Attractor::GP_UNMEASURED)
+        service.send(:check_metabolic_divergence!, tree, { bio_status: :homeostasis }, sentinel)
+        expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      end
+
       it "stays silent for a conformant stress packet (GP == 1)" do
         allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
         service.send(:check_metabolic_divergence!, tree, { bio_status: :stress }, status_byte_for(1, 1))
@@ -626,6 +642,40 @@ end
         service.send(:check_metabolic_divergence!, tree, { bio_status: :anomaly }, status_byte_for(2, 9))
         service.send(:check_metabolic_divergence!, tree, { bio_status: :vm_error }, status_byte_for(3, 31))
         expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
+      end
+    end
+
+    # 🔴 [UI.16] `Summary` — одиниця живої стрічки. Пінимо ДВІ речі, які легко
+    # зламати нарізно: (а) `dropped` ВИВОДИТЬСЯ, а не лічиться на місцях відкидання —
+    # тих шість, вони ростуть, і будь-який перелік старів би лише в бік ЗАНИЖЕННЯ,
+    # тобто зведення тихо казало б «усе гаразд»; (б) пріоритет станів.
+    describe "Summary [UI.16 — одиниця броадкасту]" do
+      def summary(records:, committed:, statuses: {}, panics: 0)
+        described_class::Summary.new(records: records, committed: committed,
+                                     statuses: statuses, panics: panics)
+      end
+
+      it "виводить `dropped` із різниці, а не з окремого лічильника" do
+        expect(summary(records: 12, committed: 9).dropped).to eq(3)
+      end
+
+      it "мовчить `:ok` лише коли ВСЕ прийнято і все в гомеостазі" do
+        expect(summary(records: 5, committed: 5, statuses: { homeostasis: 5 }).state).to eq(:ok)
+      end
+
+      it "кличе `:attention` на будь-якому не-гомеостазному статусі" do
+        expect(summary(records: 5, committed: 5, statuses: { homeostasis: 4, stress: 1 }).state).to eq(:attention)
+      end
+
+      # ⚠️ `:partial` — про НАШУ втрату, не про стан дерева, тож він мусить бути
+      # відрізнюваним від `:attention`, а не зливатись із ним.
+      it "кличе `:partial`, коли частина записів не долетіла" do
+        expect(summary(records: 5, committed: 4, statuses: { homeostasis: 4 }).state).to eq(:partial)
+      end
+
+      it "паніка перебиває і втрату, і статуси" do
+        expect(summary(records: 5, committed: 4, statuses: { homeostasis: 3, stress: 1 }, panics: 1).state)
+          .to eq(:panic)
       end
     end
 
@@ -1528,9 +1578,23 @@ end
     #       здоровʼя ↔ мертвий вузол», задля якого існує (`06_08 §1.3`);
     #   (б) балів НЕ нараховує — інакше вузол отримував би гроші за відмову
     #       міряти, тобто рівно те, що вже коштувало нам `BASELINE_DELTA_T_S`.
-    it "pulse (метаболізм не виміряно) штампує живість і НЕ дає балів [SILENCE-1]" do
+    # 🔴 ТРЕТЯ половина, додана 2026-09-06 після прямого виміру: пін тримав ЖИВІСТЬ і
+    # БАЛИ, а мовчання fraud-каналу не міряв — і саме там сидів дефект. Структурний
+    # `check_metabolic_divergence!` читав оголошену пару `status = 0, GP = 0` як
+    # порушення смуги, тобто цей самий кадр щоразу інкрементував
+    # `TELEMETRY_FRAUD_DETECTED_TOTAL`. Пін був зелений на прикладі, який його описує —
+    # рівно клас «гейт, що НЕ БІГ по своїй третій осі».
+    it "pulse (метаболізм не виміряно) штампує живість, НЕ дає балів і НЕ кричить fraud [SILENCE-1 / ARCH.102]" do
       tree.update_columns(last_seen_at: 30.hours.ago)
       balance_before = tree.wallet.balance
+      allow(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).to receive(:increment)
+      # ⚠️ Файловий `before` пінить `calculate_z_from_state` у `[0.5, …]`, тобто
+      # server_z = 0.5 < 2.0 — поза смугою. Під ним Z-канал кричить ЗАКОННО на
+      # будь-якому кадрі, що заявляє гомеостаз, і пін мовчання нижче міряв би МОК,
+      # а не систему. Тож саме тут z повертається в смугу: предмет прикладу —
+      # МЕТАБОЛІЧНИЙ канал, і решта звірок мусить мовчати чесно.
+      allow(SilkenNet::Attractor).to receive(:calculate_z_from_state)
+        .and_return([ 32.0, 0.1, 0.2, 0.3 ])
 
       chunk = build_ccm_chunk(rssi: -70, vcap: 3500, temp: 25, acoustic: 0,
                               dt: 0, ema: 0, status: 0, ttl: 3, fc: 77)
@@ -1541,6 +1605,7 @@ end
       expect(tree.reload.last_seen_at).to be > 1.minute.ago
       expect(Tree.silent(24.hours)).not_to include(tree)
       expect(tree.wallet.reload.balance).to eq(balance_before)
+      expect(SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL).not_to have_received(:increment)
     end
 
     it "rejects a chunk with a tampered ciphertext byte" do

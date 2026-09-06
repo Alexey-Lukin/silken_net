@@ -205,10 +205,24 @@ module Ethereum
       min_eth = (SystemParameter.current(:oracle_min_balance_eth, default: DEFAULT_MIN_ANCHOR_BALANCE_ETH) || DEFAULT_MIN_ANCHOR_BALANCE_ETH).to_f
       min_balance_wei = (min_eth * (10**18)).to_i
       balance = client.get_balance(signer.address)
-      if balance < min_balance_wei
+      # 🔴 [ВИМІРЯНО 2026-09-06] НУЛЬ ≠ ВИЧЕРПАННЯ — четверта нога вже ратифікованого
+      # присуду. 09-05 цей розкол відвантажили на Polygon, Celo й Solana, а L1-якір
+      # свіп не дістав, тож ЄДИНА гілка тут стверджувала ВИТРАТУ («Insufficient»)
+      # там, де адресу просто не поповнювали, і посилала оператора шукати витік,
+      # якого не існує. Знайшов не аудит форми, а перелік того, ХТО ЩЕ належить до
+      # класу ([`00_05 §3`](00_05_AI_Native_Operating_Model): ратифікувавши фікс,
+      # свіпай не «де я його застосував», а «хто робить інакше»).
+      # ⚠️ Тут це дорожче, ніж у сусідів: рядок ще й ПЕРСИСТИТЬСЯ в
+      # `anchor.error_message`, тобто хибний діагноз переживає інцидент і читається
+      # пізніше як факт.
+      if balance.zero?
+        anchor.update!(status: :failed, error_message: "Anchor wallet NOT PROVISIONED: balance is exactly 0")
+        raise "🚨 [Ethereum L1] Якір НЕ ПРОВІЖИНЕНО: баланс рівно 0 — стан НАЛАШТУВАННЯ, не вичерпання. " \
+              "⛔ Не шукати витік: звір `nonce` (0 = з адреси не йшло нічого)."
+      elsif balance < min_balance_wei
         anchor.update!(status: :failed, error_message: "Insufficient ETH balance: #{balance}")
-        raise "🚨 [Ethereum L1] Insufficient anchor wallet balance: #{balance} wei " \
-              "(minimum: #{min_balance_wei} wei)"
+        raise "🚨 [Ethereum L1] Баланс якоря НИЖЧИЙ ЗА МІНІМУМ: #{balance} wei " \
+              "(поріг #{min_balance_wei} wei) — витрачено більше, ніж поповнено."
       end
 
       contract_address = ENV.fetch("ETHEREUM_ANCHOR_CONTRACT")

@@ -141,16 +141,24 @@ class UnpackTelemetryWorker
       return
     end
 
-    # ⚡ [СИНХРОНІЗАЦІЯ]: Трансляція розшифрованої істини в Матрицю (UI)
-    broadcast_to_matrix(gateway, decrypted_data)
-
     # 4. ПЕРЕДАЧА В СЕРВІС РОЗПАКОВКИ
     # Конвеєр: [DID:4][RSSI:1][Payload:16] x N
     # [L1 QATT] gateway_attested протягується до кожного TelemetryLog-рядка.
     # [ARCH.41] received_at — стабільний між ретраями якір доби для cold-derive.
-    TelemetryUnpackerService.call(decrypted_data, gateway.id,
-                                  gateway_attested: gateway_attested,
-                                  received_at: parse_received_at(received_at_iso))
+    summary = TelemetryUnpackerService.call(decrypted_data, gateway.id,
+                                            gateway_attested: gateway_attested,
+                                            received_at: parse_received_at(received_at_iso))
+
+    # ⚡ [СИНХРОНІЗАЦІЯ]: Трансляція ЗВЕДЕННЯ конверта в Матрицю (UI).
+    # 🔴 [UI.16] Виклик СТОЯВ ТУТ ВИЩЕ — перед розпакуванням, — і саме тому [UI.4]
+    # мусив рятувати його `rescue`-ізоляцією: зовнішній `rescue` у `perform` виняток
+    # не ковтає, а ПЕРЕКИДАЄ заради Sidekiq-retry, тож стабільно падаюча ПРИКРАСА
+    # робила батч таким, що ніколи не розпакується (ретраї вичерпуються → dead set,
+    # черга №1, найдорожчі дані платформи). Перенесення знімає цей hazard
+    # СТРУКТУРНО, а не гардом: після цього рядка збій рендера фізично не має чого
+    # завадити — записи вже в БД. `rescue` всередині лишається, але його предмет
+    # інший і скромніший: не втратити конверт через кабель, а не врятувати тракт.
+    broadcast_to_matrix(gateway, summary)
 
     # [L1 QATT] Фаза 2: батч розпаковано — nonce стає незворотним ("done").
     finalize_qatt_nonce! if @qatt_nonce_digest
@@ -399,50 +407,57 @@ class UnpackTelemetryWorker
     nil
   end
 
-  def broadcast_to_matrix(gateway, binary_data)
-    # Стрім скоуплений організацією ВЛАСНИКА шлюзу — інакше кожен глядач
-    # діставав би сирий payload і IP чужих Королев. Ціна в firehose — SELECT
-    # кластера й організації на КОНВЕРТ (метод кличеться раз на `perform`, не на
-    # запис). Організацію вантажимо цілком, а не беремо `organization_id` з FK,
-    # бо імʼя стріму несе ще й `stream_epoch` [SEC.25 Ф3], а дім імен лишається
-    # чистою функцією: резолв епохи в двох різних місцях дав би дві гілки, що
-    # читають її в різні моменти, тобто розкол тракту рівно у вікні ротації.
+  def broadcast_to_matrix(gateway, summary)
+    # Стрім скоуплений організацією ВЛАСНИКА шлюзу — інакше кожен глядач бачив би
+    # активність і IP чужих Королев. Ціна в firehose — SELECT кластера й організації
+    # на КОНВЕРТ (метод кличеться раз на `perform`, не на запис). Організацію
+    # вантажимо цілком, а не беремо `organization_id` з FK, бо імʼя стріму несе ще й
+    # `stream_epoch` [SEC.25 Ф3], а дім імен лишається чистою функцією: резолв епохи
+    # в двох різних місцях дав би дві гілки, що читають її в різні моменти, тобто
+    # розкол тракту рівно у вікні ротації.
     organization = gateway.cluster.organization
     return unless organization # осиротілий кластер: краще без live-стрічки, ніж у глобальний ефір
 
-    stream = TurboStreams::Name.org(:telemetry, organization)
-    hex_payload = binary_data.unpack1("H*").upcase
+    # ⛔ [UI.16] Порожній конверт (empty-flush heartbeat) стрічку НЕ смикає: рядок
+    # «0 записів» не є свідченням про ліс, а heartbeat Королеви має власний дім —
+    # `enqueue_envelope_health` → `GatewayTelemetryLog` [ARCH.54]. Малювати його тут
+    # означало б двічі відповісти на питання «чи жива Королева», з різних джерел.
+    return if summary.records.zero?
 
-    # Turbo Stream трансляція для "живого" дашборду телеметрії
+    stream = TurboStreams::Name.org(:telemetry, organization)
+
     Turbo::StreamsChannel.broadcast_prepend_to(
       stream,
       target: Telemetry::LiveStream::FEED_TARGET,
-      html: Telemetry::LogEntry.new(
+      html: Telemetry::BatchSummary.new(
         gateway: gateway,
-        hex_payload: hex_payload,
+        summary: summary,
         timestamp: Time.current
       ).call
     )
 
     Turbo::StreamsChannel.broadcast_remove_to(stream, target: Telemetry::LiveStream::PLACEHOLDER_TARGET)
   rescue StandardError => e
-    # [UI.4] Прикраса екрана НЕ сміє вбити КОНВЕРТ — і ціна тут інша, ніж у
-    # money-path-дзеркала (`BlockchainTransaction#broadcast_new_transaction`,
-    # звідки взято форму). Там втрачається пульс UI; тут виклик стоїть у
-    # `perform` **перед** `TelemetryUnpackerService.call`, а зовнішній
-    # `rescue StandardError` виняток не ковтає, а **перекидає** його (`raise e`)
-    # заради Sidekiq-retry. Тобто броадкаст, що падає стабільно (Solid Cable,
-    # рендер компонента, кабель), робить батч таким, що **ніколи не
-    # розпакується**: ретраї вичерпуються, і найдорожчі дані платформи лягають
-    # у dead set — на черзі №1.
+    # [UI.4] Прикраса екрана не сміє вбити конверт. 🔴 **Предмет цього `rescue`
+    # ЗВУЗИВСЯ 2026-09-06 [UI.16], і різницю треба тримати, бо вона несуча.** Доти
+    # виклик стояв у `perform` ПЕРЕД `TelemetryUnpackerService.call`, а зовнішній
+    # `rescue StandardError` виняток не ковтає, а ПЕРЕКИДАЄ його (`raise e`) заради
+    # Sidekiq-retry — тобто стабільно падаючий броадкаст робив батч таким, що
+    # НІКОЛИ не розпакується (ретраї вичерпуються → dead set, черга №1). Тепер
+    # трансляція стоїть ПІСЛЯ розпакування, тож той hazard знято СТРУКТУРНО, і
+    # цей `rescue` більше не є останнім рубежем — він лише не дає збою кабелю
+    # зіпсувати `COAP_PACKETS_RECEIVED_TOTAL{status="success"}` і nonce-фіналізацію.
+    # ⛔ Не читай його зняття як безпечне: без нього виняток з кабелю знову поїде
+    # в Sidekiq-retry й пере-обробить УЖЕ закомічений конверт.
     #
-    # ⚠️ Асиметрію створив той самий прохід, що роздавав ізоляцію: він узяв
-    # `prepend`+плейсхолдер САМЕ звідси, а `rescue` дав лише двом продюсерам
-    # `BlockchainTransaction`. Тобто зразок скопіювали, а захист — ні.
-    #
-    # Стеля названа: втрачений кадр стрічки не повторюється — глядач побачить
-    # телеметрію після перезавантаження, бо самі рядки в БД уже є (їх пише
-    # `TelemetryUnpackerService`, який тепер виконується незалежно від UI).
+    # ⚠️ СТЕЛЯ, названа чесно й ЗВУЖЕНА проти того, що обіцяв пункт: втрачений кадр
+    # стрічки не повторюється, і backfill'у зведень НЕ ІСНУЄ — «флаш» не є сутністю
+    # в БД (у `telemetry_logs` немає ознаки конверта), а реконструкція по
+    # `queen_uid` + секунді розриває частину батчів навпіл, тобто брехала б про
+    # кількість флашів. ⛔ Не будувати її: правильний носій — персистована сутність
+    # флашу, якої ми свідомо не заводимо. Порожнеча натомість лікується не
+    # відтворенням стрічки, а ЧЕСНИМ виміром у плейсхолдері (`Telemetry::LiveStream`
+    # ← `last_record`), тож сторінка більше не показує вічний спінер над живим лісом.
     Rails.logger.warn "📡 [UI.4] broadcast_to_matrix #{gateway.uid}: #{e.class}: #{e.message}"
   end
 end

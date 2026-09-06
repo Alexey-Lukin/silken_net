@@ -6,9 +6,10 @@ en:
       carrier_label: 'Carrier: Direct-to-Cell'
       header_eyebrow: Neural Link Output
       header_title: Global Telemetry Stream
+      idle_since: Last record from %{gateway}
     live_title: Live Telemetry // The Pulse
     table:
       gateway: Queen / Gateway
-      payload: Raw CoAP Payload (Hex Stream)
+      records: Records
       status: Status
       timestamp: Timestamp

@@ -100,8 +100,39 @@ class TelemetryUnpackerService < ApplicationService
     @latest_firmware_id = nil
   end
 
+  # [UI.16] ЗВЕДЕННЯ КОНВЕРТА — одиниця живої стрічки й повернення `perform`.
+  #
+  # 🔴 Чому воно родиться ТУТ, а не в воркері. Доти `UnpackTelemetryWorker` транслював
+  # `binary_data.unpack1("H*")` — сирий hex конверта, — бо на момент трансляції він
+  # єдине про батч і знав. Лісгосп бачив на клієнт-фейсній сторінці шістнадцятковий
+  # потік, і це не ставало читабельнішим при жодній каденції: дефект СЕМАНТИЧНИЙ.
+  # Розпакувальник — єдиний, хто знає, скільки записів справді ЛЯГЛО і що вони кажуть.
+  #
+  # 🔑 `dropped` ВИВОДИТЬСЯ (`records − committed`), а не лічиться на місцях відкидання,
+  # і це не економія: шляхів відкидання тут шість (DID=0 · сенсорний шум · невідомий
+  # DID · MIC-fail · replay · `rescue`), вони додаються з часом, і будь-який перелік
+  # старів би тільки в бік ЗАНИЖЕННЯ — тобто зведення тихо казало б «усе гаразд».
+  # Тому інкремент стоїть в ОДНОМУ місці — `commit_telemetry`, поруч із
+  # `TELEMETRY_PROCESSED_TOTAL`, який має рівно ту саму семантику.
+  Summary = Data.define(:records, :committed, :statuses, :panics) do
+    def dropped = records - committed
+
+    # Один токен на конверт. Порядок несучий: паніка гучніша за втрату, втрата —
+    # за нездоровий статус. ⚠️ `:partial` каже «частину записів не прийнято», а НЕ
+    # «щось зламалось у дереві»; змішувати їх означало б приписати вузлові нашу ваду.
+    def state
+      return :panic     if panics.positive?
+      return :partial   if dropped.positive?
+      return :attention if statuses.any? { |status, count| status != :homeostasis && count.positive? }
+
+      :ok
+    end
+  end
+
+  EMPTY_SUMMARY = Summary.new(records: 0, committed: 0, statuses: {}, panics: 0).freeze
+
   def perform
-    return if @binary_batch.blank?
+    return EMPTY_SUMMARY if @binary_batch.blank?
 
     chunk_size = active_chunk_size
     chunks = @binary_batch.b.scan(/.{1,#{chunk_size}}/m)
@@ -109,14 +140,23 @@ class TelemetryUnpackerService < ApplicationService
     # ⚡ [ОПТИМІЗАЦІЯ N+1]: Спершу витягуємо всі DID з батчу
     preload_trees(chunks, chunk_size)
 
+    @committed = 0
+    @statuses  = Hash.new(0)
+    @panics    = 0
+    records    = 0
+
     chunks.each do |chunk|
       next if chunk.bytesize < chunk_size
+
+      records += 1
       if ccm_enabled?
         process_ccm_chunk(chunk)
       else
         process_chunk(chunk)
       end
     end
+
+    Summary.new(records: records, committed: @committed, statuses: @statuses.dup, panics: @panics)
   end
 
   private
@@ -626,6 +666,16 @@ class TelemetryUnpackerService < ApplicationService
          .first
   end
 
+  # [UI.16] Накопичувач зведення. Викликається РІВНО з `commit_telemetry`, тобто
+  # рахує те, що справді лягло в БД. ⚠️ Ініціалізація стоїть у `perform`, а не
+  # ліниво тут: сервіс кличуть і покроково зі спек, і тихий `nil` дав би зведення,
+  # що бреше нулем замість падати.
+  def tally_for_summary(attributes)
+    @committed += 1
+    @statuses[attributes[:bio_status]] += 1
+    @panics += 1 if attributes[:panic]
+  end
+
   def interpret_status(code)
     # Відповідає enum :bio_status у моделі TelemetryLog.
     # [SLASH-1] Код 3 = BIO_STATUS_VM_ERROR (софт-збій прошивки), НЕ tamper:
@@ -671,7 +721,20 @@ class TelemetryUnpackerService < ApplicationService
     conformant =
       case attributes[:bio_status]
       when :homeostasis
-        wire_gp.between?(SilkenNet::Attractor::GP_HOMEO_MIN, SilkenNet::Attractor::GP_HOMEO_MAX)
+        # 🔴 [ARCH.102 / SILENCE-1, виправлено 2026-09-06] Пара `status = 0, GP = 0` —
+        # ОГОЛОШЕНИЙ регістр «я тут, але метаболізм не виміряно», а не порушення смуги.
+        # Прошивка віддає її окремою гілкою `pack_status_byte` і власним коментарем
+        # каже, що бекенд розрізняє «зрив» від «не міряли» за СТАТУСОМ, не за балами —
+        # а цей гард робив рівно протилежне й інкрементував fraud-лічильник на ЧЕСНІЙ
+        # відмові пристрою (виміряно прямо; `expected_homeostasis_gp` уже повертала 0,
+        # тобто дві половини одного присуду розійшлись — точна гілка знала сентинел,
+        # структурна ні). Ціна мовчання була б щоденною: `Wall_Seconds_Now()` віддає 0
+        # до LSE/RTC bring-up (FW.49), тож на кремнії сентинел іде щоцикла.
+        # ⛔ Смуга НЕ розширена: `GP ∈ 1..4` при гомеостазі лишається порушенням —
+        # прошивка таких значень не пакує, тож дискримінатор збережено. Емісії пара
+        # не дає (`emission_eligible_growth_points` множить нуль), money-path закритий.
+        wire_gp == SilkenNet::Attractor::GP_UNMEASURED ||
+          wire_gp.between?(SilkenNet::Attractor::GP_HOMEO_MIN, SilkenNet::Attractor::GP_HOMEO_MAX)
       when :stress
         wire_gp == SilkenNet::Attractor::GP_STRESS
       else
@@ -928,6 +991,11 @@ class TelemetryUnpackerService < ApplicationService
     # би й ті чанки, яких у БД не існує. Це та сама межа, за якою вище винесено credit,
     # Sidekiq-джоби й alert-dispatch — метрика просто не була в тому переліку.
     SilkenNet::Metrics::TELEMETRY_PROCESSED_TOTAL.increment
+
+    # [UI.16] ЄДИНА точка накопичення зведення конверта — свідомо тут, впритул до
+    # лічильника вище, бо в них тотожна семантика «чанк справді ліг у БД». Розводити
+    # їх означало б завести другу відповідь на одне питання.
+    tally_for_summary(attributes)
 
     # [BUG FIX: Phantom Sidekiq Jobs via EmergencyResponseService]:
     # AlertDispatchService.analyze_and_trigger! виноситься ЗА межі транзакції.

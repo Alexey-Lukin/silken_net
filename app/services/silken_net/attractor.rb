@@ -55,6 +55,22 @@ module SilkenNet
     GP_HOMEO_MAX = 31
     GP_STRESS    = 1
 
+    # [ARCH.102 / SILENCE-1] ВИХІДНА половина сентинела «метаболізм не виміряно».
+    # `DELTA_T_UNKNOWN_S` нижче називає ВХІД; на дроті та сама відмова виглядає як
+    # пара `status = 0, GP = 0`, і саме вона є оголошеним РЕГІСТРОМ «я тут, але
+    # нічого не міряв» (00_05 §7 — регістр оголошують синтаксисом, не приміткою).
+    #
+    # 🔴 Чому окремою константою, а не літералом у гарді: доти виходу цієї пари не
+    # мав імені ЖОДЕН бік, і `check_metabolic_divergence!` читав її як порушення
+    # смуги — тобто оголошував чесну відмову ШАХРАЙСТВОМ (виміряно 2026-09-06:
+    # `TELEMETRY_FRAUD_DETECTED_TOTAL` інкрементувався на кадрі `status_byte = 0`).
+    # Ціна не гіпотетична: `Wall_Seconds_Now()` віддає 0 до LSE/RTC bring-up
+    # (FW.49), тож на кремнії сентинел іде щоцикла — fraud-канал ставав би
+    # вічно-червоним, тобто безмовним. Емісії пара не дає за побудовою
+    # (`emission_eligible_growth_points` множить нуль), тож приймання її гарду
+    # money-path не відкриває.
+    GP_UNMEASURED = 0
+
     # [E.63 (г)] Byte-identical mirror of firmware BioContract.metabolic_health →
     # growth_points quantization (bio_contract.rb §4.3 — the One-Home of the
     # formula and the calibration-pending thresholds; edit THERE first).
@@ -69,7 +85,7 @@ module SilkenNet
     DELTA_T_UNKNOWN_S = 0
 
     def self.expected_homeostasis_gp(ema_delta_t_s)
-      return 0 if ema_delta_t_s == DELTA_T_UNKNOWN_S
+      return GP_UNMEASURED if ema_delta_t_s == DELTA_T_UNKNOWN_S
 
       m  = (DELTA_T_SLOW_S - ema_delta_t_s).to_f / (DELTA_T_SLOW_S - DELTA_T_FAST_S)
       m  = m.clamp(0.0, 1.0)
@@ -116,6 +132,40 @@ module SilkenNet
     def self.homeostatic?(z_value, tree_family, temp)
       z_value >= tree_family.critical_z_min &&
         z_value <= anomaly_ceiling(temp, tree_family.critical_z_max)
+    end
+
+    # [E.64] Дзеркало firmware `BioContract.pack_status_byte` — (Z, temp, delta_t) →
+    # wire-байт `[PanicFlag:1 | Status:2 | GrowthPoints:5]`. Дім ФОРМУЛИ лишається
+    # прошивкою (`firmware/bio_contracts/bio_contract.rb` §4.2/§4.3); тут — той самий
+    # присуд, зібраний із уже наявних половин (`anomaly_ceiling` · `expected_homeostasis_gp`
+    # · `GP_STRESS` · `GP_UNMEASURED`), тож ЖОДНОЇ нової копії порогів не заводиться.
+    #
+    # 🔴 Чому мірило належить бекендному дзеркалу, а не симуляторові. Дзеркало вже
+    # володіло КОЖНИМ інгредієнтом цього присуду й не володіло лише його СКЛАДАННЯМ —
+    # і саме через цю дірку `bin/forest_simulator` брав `bio_status = rand(0..3)`,
+    # тобто сторону, яка не зійдеться з сервером НІКОЛИ (00_07 E.64). Емуляція
+    # Солдата мусить рахувати, а не вгадувати; прямий `require` справжнього контракту
+    # для цього непридатний двічі — він перевизначає `SilkenNet::Attractor` у тому ж
+    # процесі, а `/firmware` і `/tools` свідомо не їдуть у Docker-образ (.dockerignore,
+    # OPS.10), тобто на canopy, де симулятор і біжить, мосту `contract_runner.rb`
+    # фізично немає.
+    #
+    # ⚠️ ОГОЛОШЕНА СТЕЛЯ: це дзеркало, тож воно доводить не незалежність обчислень, а
+    # лише те, що ТРАКТ (пакування → шифр → транспорт → розпакування → продовження
+    # стану → DCI-звірка) сходиться. Незалежність доводить інший гейт — 200-кейсовий
+    # sweep проти СПРАВЖНЬОГО контракту в `spec/services/silken_net/attractor_spec.rb`
+    # (`tools/firmware/contract_runner.rb`, підпроцес) + FW.55 QEMU byte-parity.
+    # Тримати обидва: без sweep'а це дзеркало є твердженням про себе.
+    def self.pack_status_byte(z_val, temp, delta_t_s, critical_z_min:, critical_z_max:)
+      if z_val < critical_z_min
+        status, growth_points = 1, GP_STRESS
+      elsif z_val > anomaly_ceiling(temp, critical_z_max)
+        status, growth_points = 2, 0
+      else
+        status, growth_points = 0, expected_homeostasis_gp(delta_t_s)
+      end
+
+      (status << 5) | (growth_points & 0x1F)
     end
 
     # = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

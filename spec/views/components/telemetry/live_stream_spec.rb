@@ -132,12 +132,39 @@ RSpec.describe Telemetry::LiveStream do
       expect(html).to include("Queen / Gateway")
     end
 
-    it "renders Raw CoAP Payload column header" do
-      expect(html).to include("Raw CoAP Payload")
+    # [UI.16] Колонка була «Raw CoAP Payload (Hex Stream)» — і заголовок чесно
+    # називав те, що показувалось лісгоспові: шістнадцятковий дамп конверта.
+    # Одиниця стрічки стала ЗВЕДЕННЯМ БАТЧУ, тож колонка тепер про кількість записів.
+    it "renders the Records column header instead of the raw-hex one [UI.16]" do
+      expect(html).to include("Records")
+      expect(html).not_to include("Raw CoAP Payload")
     end
 
     it "renders Status column header" do
       expect(html).to include("Status")
+    end
+  end
+
+  # 🔴 [UI.16] Плейсхолдер казав «Awaiting Starlink Uplink…» ЗАВЖДИ — і над порожньою
+  # базою, і над лісом, що передавав годину тому. Друга половина була брехнею
+  # мовчанням: стрічка жива лише під час події, а backfill'у зведень не існує (флаш
+  # не є сутністю в БД). При каденсі ≈48 хв між флашами глядач читав вічний спінер
+  # як «нічого немає».
+  describe "порожній стан говорить ВИМІРОМ, а не спінером [UI.16]" do
+    it "каже «очікуємо» лише тоді, коли історії справді немає" do
+      html = render_component(organization: organization, last_record: nil)
+
+      expect(html).to include("Awaiting Starlink Uplink")
+      expect(html).not_to include("Last record from")
+    end
+
+    it "називає останній прийнятий запис і його шлюз, коли історія є" do
+      record = mock_model(TelemetryLog, queen_uid: "SNET-Q-AABB0011", created_at: 90.minutes.ago)
+      html = render_component(organization: organization, last_record: record)
+
+      expect(html).to include("Last record from", "SNET-Q-AABB0011")
+      # ⊥ Ліхтар: «очікуємо» мусить ЗНИКНУТИ, інакше екран каже дві протилежні речі.
+      expect(html).not_to include("Awaiting Starlink Uplink")
     end
   end
 

@@ -144,14 +144,64 @@ RSpec.describe SilkenNet::Attractor do
     end
   end
 
+  # [E.64] Дзеркало пакування — три гілки прямо, бо 200-кейсовий fuzz нижче їх НЕ
+  # покриває рівномірно за побудовою: `stress` (z < 2) на реальному cold-start не
+  # трапляється практично ніколи (ρ-clamp тримає z_eq ≥ 9 — 03_04 §4), а anomaly
+  # рідкісна за дизайном [E.64]. Тобто fuzz доводить ЗБІГ із прошивкою там, куди
+  # долітає, а ці приклади доводять, що решта гілок узагалі жива.
+  describe ".pack_status_byte" do
+    def unpack(byte) = [ (byte >> 5) & 0x03, byte & 0x1F ]
+
+    it "stress: нижче абсолютної підлоги → status 1, GP рівно 1" do
+      byte = described_class.pack_status_byte(1.5, 20, 1800, critical_z_min: 2.0, critical_z_max: 45.0)
+      expect(unpack(byte)).to eq([ 1, described_class::GP_STRESS ])
+    end
+
+    it "anomaly: вище ρ-ВІДНОСНОЇ стелі → status 2, емісія нуль" do
+      # ceiling(20 °C) = ρ(32) + (45 − 28) = 49 → 60 поза нею.
+      byte = described_class.pack_status_byte(60.0, 20, 1800, critical_z_min: 2.0, critical_z_max: 45.0)
+      expect(unpack(byte)).to eq([ 2, 0 ])
+    end
+
+    it "homeostasis: GP бере метаболізм, а не Z" do
+      byte = described_class.pack_status_byte(31.0, 20, described_class::DELTA_T_SLOW_S,
+                                              critical_z_min: 2.0, critical_z_max: 45.0)
+      expect(unpack(byte)).to eq([ 0, described_class::GP_HOMEO_MIN ])
+    end
+
+    # 🔴 [ARCH.102] Оголошений регістр «я тут, але не міряв»: гомеостаз ВИМІРЯНО
+    # (Лоренц-гейт відпрацював), метаболізм — ні. Пара `status 0 / GP 0` мусить
+    # пережити дзеркало, інакше DCI оголосила б розходженням чесну відмову вузла.
+    it "сентинел: метаболізм не виміряно → status 0, GP 0 (а НЕ гомеостаз-мінімум)" do
+      byte = described_class.pack_status_byte(31.0, 20, described_class::DELTA_T_UNKNOWN_S,
+                                              critical_z_min: 2.0, critical_z_max: 45.0)
+      expect(unpack(byte)).to eq([ 0, described_class::GP_UNMEASURED ])
+    end
+
+    # ⊥ Ліхтар: ρ-відносність не є декорацією. На теплому дні та сама Z лишається
+    # гомеостазом — саме цей фікс [E.64] прибрав хибну аномалію від ambient-temp.
+    it "та сама Z на теплому дні лишається гомеостазом (ρ-відносна стеля)" do
+      cold = described_class.pack_status_byte(47.0, -10, 1800, critical_z_min: 2.0, critical_z_max: 45.0)
+      warm = described_class.pack_status_byte(47.0, 40, 1800, critical_z_min: 2.0, critical_z_max: 45.0)
+
+      expect(unpack(cold).first).to eq(2)
+      expect(unpack(warm).first).to eq(0)
+    end
+  end
+
   describe "Dual Computation Integrity (REAL firmware contract — subprocess)" do
     # [FW.57 F4] The firmware contract (firmware/bio_contracts/bio_contract.rb)
     # defines its OWN SilkenNet::Attractor, so it can't be co-loaded with the
     # backend in one process. We run it in an isolated subprocess and compare its
     # output DIRECTLY to the backend mirror — replacing the old hand-copied
     # `firmware_z` (a 3rd kernel copy that could silently drift while both
-    # "parity" sides still agreed). Z + bio_status are compared; GP parity needs
-    # a backend metabolic_health mirror (= B, deferred to FW.2 — 00_07 E.63).
+    # "parity" sides still agreed). Z + the FULL StatusByte are compared.
+    # 🔴 [2026-09-06] Доти тут стояло «GP parity needs a backend metabolic_health
+    # mirror (= B, deferred to FW.2)» — і ця підстава ВЖЕ БУЛА МЕРТВА: дзеркало
+    # `expected_homeostasis_gp` приїхало з E.63 (г) wire-rev2.1, тобто відкладення
+    # пережило власний мотив. Тепер порівнюється весь байт (status ⊕ GP), а не
+    # самі лише біти 6..5 — сама причина, з якої `bin/forest_simulator` роками
+    # вгадував `bio_status` замість рахувати (00_07 E.64).
     # NB: anomaly (z > ρ-relative ceiling) is rare by design (E.64) → the sweep
     # mostly exercises the homeostasis branch + the kernel Z parity.
     def run_firmware_contract(cases)
@@ -165,6 +215,17 @@ RSpec.describe SilkenNet::Attractor do
       JSON.parse(out)
     end
 
+    # [E.64] ПОВНИЙ байт — status ⊕ growth_points разом. Класифікацію прошивка робить
+    # із СИРОГО z (`calculate_z_axis` → `[z, x, y, z]`, без round), тож дзеркало
+    # годується `[3]`, а не `[0]`.
+    def mirrored_status_byte(be_z, temp, delta_t, fw_family)
+      SilkenNet::Attractor.pack_status_byte(
+        be_z, temp, delta_t,
+        critical_z_min: fw_family.critical_z_min,
+        critical_z_max: fw_family.critical_z_max
+      )
+    end
+
     it "matches the backend Z + bio_status on a 200-case fuzz sweep (real contract, not a mirror)" do
       fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
       rng = Random.new(20_260_502)
@@ -176,6 +237,7 @@ RSpec.describe SilkenNet::Attractor do
       fw = run_firmware_contract(cases)
       z_div = []
       status_div = []
+      byte_div = []
 
       cases.each_with_index do |(x, y, z, temp, ac, dt), i|
         fw_payload, fw_z = fw[i]
@@ -194,10 +256,15 @@ RSpec.describe SilkenNet::Attractor do
           else true # tamper/VM-error not produced by evaluate_and_pack
           end
         status_div << [ i, fw_status, be_z.round(4), temp.round(1) ] unless agree
+
+        be_payload = mirrored_status_byte(be_z, temp, dt, fw_family)
+        byte_div << [ i, fw_payload, be_payload, be_z.round(4), temp.round(1), dt ] unless be_payload == fw_payload
       end
 
       expect(z_div).to be_empty, "Z divergence (real fw ↔ backend): #{z_div.first(3)}"
       expect(status_div).to be_empty, "bio_status divergence (real fw ↔ backend): #{status_div.first(3)}"
+      expect(byte_div).to be_empty,
+                          "StatusByte divergence (real fw ↔ backend mirror) [i, fw, be, z, temp, dt]: #{byte_div.first(3)}"
     end
   end
 

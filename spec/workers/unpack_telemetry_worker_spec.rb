@@ -10,7 +10,15 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
   before do
     key_record # Ensure key exists
-    allow(TelemetryUnpackerService).to receive(:call)
+    # 🔴 [UI.16] Стаб мусить віддавати ЗВЕДЕННЯ, і це не церемонія: з 2026-09-06
+    # `broadcast_to_matrix` кличеться ПІСЛЯ розпакування й годується його поверненням.
+    # Голий `receive(:call)` віддавав би `nil`, броадкаст падав би в `rescue`, і
+    # приклади про скоуп стріму були б зелені на порожній множині — тобто вимірювали б
+    # мок замість тракту (той самий клас, що вже коштував нам TEST.12).
+    allow(TelemetryUnpackerService).to receive(:call).and_return(
+      TelemetryUnpackerService::Summary.new(records: 1, committed: 1,
+                                            statuses: { homeostasis: 1 }, panics: 0)
+    )
     allow(Turbo::StreamsChannel).to receive(:broadcast_prepend_to)
     allow(Turbo::StreamsChannel).to receive(:broadcast_remove_to)
     allow(ActionCable.server).to receive(:broadcast)
@@ -111,12 +119,15 @@ RSpec.describe UnpackTelemetryWorker, type: :worker do
 
     # 🔴 [UI.4] Найдорожча вісь цього воркера, і доти вона не мала піна взагалі.
     #
-    # `broadcast_to_matrix` стоїть у `perform` ПЕРЕД `TelemetryUnpackerService`,
-    # а зовнішній `rescue StandardError` виняток не ковтає — він ПЕРЕКИДАЄ його
-    # заради Sidekiq-retry. Тобто броадкаст, що падає стабільно (Solid Cable,
-    # рендер компонента, кабель), робив батч таким, що НІКОЛИ не розпакується:
-    # ретраї вичерпувались, і найдорожчі дані платформи лягали в dead set — на
-    # черзі №1. Ізоляція тепер є, і ці два приклади її тримають.
+    # ⚠️ **ПІДСТАВА ЗМІНИЛАСЬ 2026-09-06 [UI.16], а приклади лишились — і це присуд,
+    # не інерція.** Доти `broadcast_to_matrix` стояв у `perform` ПЕРЕД
+    # `TelemetryUnpackerService`, а зовнішній `rescue StandardError` виняток не ковтає —
+    # він ПЕРЕКИДАЄ його заради Sidekiq-retry; тобто стабільно падаючий броадкаст робив
+    # батч таким, що НІКОЛИ не розпакується (dead set, черга №1). Тепер трансляція йде
+    # ПІСЛЯ розпакування, тож той hazard знято СТРУКТУРНО й перший приклад нижче більше
+    # не про «дані вціліли» — вони вціліли за побудовою. Він тепер про те, що збій
+    # кабелю не перекидається в Sidekiq-retry й не пере-обробляє УЖЕ закомічений
+    # конверт. ⛔ Тому `rescue` не знімати: без нього повертається пере-обробка.
     context "when the live-feed broadcast fails [UI.4]" do
       before do
         allow(Turbo::StreamsChannel)

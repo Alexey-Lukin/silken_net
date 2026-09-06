@@ -6,9 +6,10 @@ lv:
       carrier_label: 'Operators: Direct-to-Cell'
       header_eyebrow: Neirālā saites izeja
       header_title: Globālā telemetrijas plūsma
+      idle_since: Pēdējais ieraksts no %{gateway}
     live_title: Tiešraides telemetrija // Pulss
     table:
       gateway: Queen / Vārteja
-      payload: Neapstrādāts CoAP saturs (Hex plūsma)
+      records: Ieraksti
       status: Statuss
       timestamp: Laika zīmogs

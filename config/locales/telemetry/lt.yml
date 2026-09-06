@@ -6,9 +6,10 @@ lt:
       carrier_label: 'Operatorius: Direct-to-Cell'
       header_eyebrow: Neuralinio ryšio išvestis
       header_title: Globalus telemetrijos srautas
+      idle_since: Paskutinis įrašas iš %{gateway}
     live_title: Tiesioginė telemetrija // Pulsas
     table:
       gateway: Queen / Šliuzas
-      payload: Neapdorotas CoAP turinys (Hex srautas)
+      records: Įrašai
       status: Būsena
       timestamp: Laiko žyma

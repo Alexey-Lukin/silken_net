@@ -6,9 +6,10 @@ uk:
       carrier_label: 'Канал: Direct-to-Cell'
       header_eyebrow: Вихідний нейроканал
       header_title: Глобальний потік телеметрії
+      idle_since: Останній запис від %{gateway}
     live_title: Жива телеметрія // Пульс
     table:
       gateway: Королева / Шлюз
-      payload: Сирий вміст CoAP (HEX-потік)
+      records: Записів
       status: Статус
       timestamp: Час

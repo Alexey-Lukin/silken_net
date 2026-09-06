@@ -69,8 +69,15 @@ module Celo
     # Максимальний stress_index для отримання винагороди
     MAX_STRESS_INDEX = 0.2
 
-    # Мінімальний баланс оракула (CELO) для оплати газу транзакцій.
-    MIN_ORACLE_BALANCE_WEI = 0.05 * (10**18)
+    # Мінімальний баланс оракула (CELO) для оплати газу транзакцій — ДЕФОЛТ, не поріг.
+    # 🔴 [ВИМІРЯНО 2026-09-06] Доти це був літерал, і поріг читався ЛИШЕ з нього, тоді
+    # як обидва сусіди на тому самому шляху (`BlockchainMintingService` →
+    # `oracle_min_balance_matic`, `Ethereum::StateAnchorService` → `oracle_min_balance_eth`)
+    # беруть його з `SystemParameter`. Наслідок був тихий і однобічний: `Treasury::MonitorService`
+    # рахує `ratio` ВІД governance-значення (`param_key: oracle_min_balance_celo`), тож зміна
+    # параметра рухала АЛЕРТ і не рухала ГАРД — дашборд і money-path міряли б різними лінійками.
+    # Клас — `web3-pipeline` #11: захардкоджена константа на DAO-керованому шляху вже хибна.
+    DEFAULT_MIN_ORACLE_BALANCE_CELO = 0.05
 
     # [ARCH.50] eth-gem error messages that mean the node DEFINITELY rejected the tx —
     # it never entered the mempool → safe to fail the intent and re-pay next cycle.
@@ -120,8 +127,8 @@ module Celo
       # зайвого RPC: рівно нуль = стан НАЛАШТУВАННЯ, менше мінімуму = вичерпання.
       if balance.zero?
         raise "🚨 [Celo] Оракул НЕ ПРОВІЖИНЕНО: баланс рівно 0 — стан НАЛАШТУВАННЯ, не вичерпання. ⛔ Не шукати витік: звір `nonce`."
-      elsif balance < MIN_ORACLE_BALANCE_WEI
-        raise "🚨 [Celo] Баланс Оракула НИЖЧИЙ ЗА МІНІМУМ: #{balance} (поріг #{MIN_ORACLE_BALANCE_WEI}) — витрачено більше, ніж поповнено."
+      elsif balance < min_oracle_balance_wei
+        raise "🚨 [Celo] Баланс Оракула НИЖЧИЙ ЗА МІНІМУМ: #{balance} (поріг #{min_oracle_balance_wei}) — витрачено більше, ніж поповнено."
       end
 
       cusd_contract_address = ENV.fetch("CELO_CUSD_CONTRACT_ADDRESS")
@@ -172,6 +179,15 @@ module Celo
     end
 
     private
+
+    # [INF.22] Governance-aware поріг — той самий ключ, який читає
+    # `Treasury::MonitorService` для `silkennet_oracle_balance_ratio`. Один дім на
+    # алерт і на гард: інакше поріг існує у двох екземплярах, і розходяться вони тихо.
+    def min_oracle_balance_wei
+      celo = (SystemParameter.current(:oracle_min_balance_celo, default: DEFAULT_MIN_ORACLE_BALANCE_CELO) ||
+              DEFAULT_MIN_ORACLE_BALANCE_CELO).to_f
+      (BigDecimal(celo.to_s) * (10**18)).to_i
+    end
 
     # 🔴 [SLASH-1] ПРАВИЛО КОНСЕНСУСУ — «найгірше джерело», а не «яке записалось першим».
     #

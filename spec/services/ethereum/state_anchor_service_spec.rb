@@ -273,16 +273,36 @@ RSpec.describe Ethereum::StateAnchorService do
       end
     end
 
-    it "raises when ETH balance is insufficient (BLOCKER-4)" do
+    # 🔴 [DEPLOY-1, 2026-09-06] Приклад БУВ один і пінив рівно ХИБНУ половину:
+    # фікстура давала `balance = 0`, а очікуваний текст казав «Insufficient», тобто
+    # стверджував ВИТРАТУ на адресі, з якої не пішло жодної транзакції. Присуд
+    # «нуль ≠ вичерпання» ратифікували 09-05 і роздали Polygon/Celo/Solana — L1-якір
+    # свіп не дістав, і саме цей зелений пін цементував пропуск.
+    # ⚠️ Тут ціна вища, ніж у сусідів: рядок ще й ПЕРСИСТИТЬСЯ в `error_message`,
+    # тобто хибний діагноз переживає інцидент і читається пізніше як факт.
+    it "розрізняє НЕ ПРОВІЖИНЕНО (рівно нуль) — і каже це в БД, не лише в помилці" do
       allow(mock_client).to receive(:get_balance).and_return(0)
 
       expect {
         described_class.new.anchor_to_l1!
-      }.to raise_error(RuntimeError, /Insufficient anchor wallet balance/)
+      }.to raise_error(RuntimeError, /НЕ ПРОВІЖИНЕНО/)
 
       anchor = EthereumAnchor.last
       expect(anchor).to be_status_failed
-      expect(anchor.error_message).to include("Insufficient ETH balance")
+      expect(anchor.error_message).to include("NOT PROVISIONED")
+      expect(anchor.error_message).not_to include("Insufficient")
+    end
+
+    # ⊥ Друга половина пари: без неї перший приклад зелений і на гарді, що просто
+    # перейменував повідомлення й перестав розрізняти взагалі.
+    it "розрізняє НИЖЧИЙ ЗА МІНІМУМ (ненульовий, але замалий)" do
+      allow(mock_client).to receive(:get_balance).and_return((0.001 * (10**18)).to_i)
+
+      expect {
+        described_class.new.anchor_to_l1!
+      }.to raise_error(RuntimeError, /НИЖЧИЙ ЗА МІНІМУМ/)
+
+      expect(EthereumAnchor.last.error_message).to include("Insufficient ETH balance")
     end
 
     it "connects to Alchemy Ethereum RPC" do
