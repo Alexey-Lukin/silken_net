@@ -243,6 +243,10 @@ namespace :docs do
     # list-joined — Tracker::Dashboard.file_section_dangling_refs). That resolver was
     # 00_07-only (tracker:check) + protocols-only; the canon docs cross-reference each
     # other's §-sections by the dozen and got only the weaker substring `section_label_drift`
+    # ⛔ Три адреси в наступному рядку МЕРТВІ НАВМИСНО — це перелік того, що гнило
+    # ДО цього гейта, тобто ціна колишньої сліпоти. `08_02` розчинено, `05_03 §749`
+    # це номер РЯДКА, поданий як секція, `02_03 §4.А` — літера-лейбл поза digit-led
+    # формою. Перенаведення на живі адреси зітре єдиний запис про цю ціну.
     # ADVISORY — the blind spot that let 08_02 §1.x, 05_03 §749 (a LINE number!), 02_03 §4.А
     # rot. Exempt: 00_06 (the standard doc cites stale refs as drift EXAMPLES) + 00_07
     # (tracker:check owns its §-resolution, One-Home). Named (`§SLA`) refs stay with

@@ -293,6 +293,10 @@ RSpec.describe Tracker::Dashboard do
         .to contain_exactly(a_string_matching(%r{99_99 §1.*no docs/}))
     end
 
+    # ⛔ `08_02` тут МЕРТВИЙ НАВМИСНО (модуль розчинено 2026-07-24) — і саме тому
+    # приклад щось доводить: під живим doc-id обидва члени коми резолвились би, і
+    # пін став би вакуумним. Не оновлювати адресу; виняток на неї стоїть у
+    # `scripts/code_doc_section_refs.rb`.
     it "flags EVERY member of a comma-run under a dead doc-id, not just the first" do
       expect(described_class.file_section_dangling_refs("`08_02 §1.1`, §1.8"))
         .to contain_exactly(a_string_matching(/§1\.1/), a_string_matching(/§1\.8/))

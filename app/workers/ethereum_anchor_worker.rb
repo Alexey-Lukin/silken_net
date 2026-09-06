@@ -6,8 +6,16 @@ class EthereumAnchorWorker
 
   # Web3 Low черга — повільні L1 Ethereum транзакції (1 раз на тиждень).
   # Retry: 5 спроб з автоматичним backoff (вирівняно з іншими Web3 воркерами: IoTeX, peaq, Filecoin).
-  # [UNIQUE_FOR]: Запобігає перетину тижневих anchoring циклів.
-  # Якщо попередній анкорінг ще виконується — новий не запуститься.
+  # ⚠️ [UNIQUE_FOR] — НА OSS-SIDEKIQ ЦЕ NO-OP, і рядок лишено СВІДОМО як точку
+  # озброєння при купівлі Enterprise (`04_02 §11` DOC-R.10). `unique_for` є
+  # КЛЮЧЕМ `sidekiq_options`, а не класом, тож шима для нього не існує й
+  # існувати не може — OSS кладе його в job-hash і ніколи не читає
+  # (`config/initializers/sidekiq_pro.rb`). ⛔ Не читай наступний рядок як
+  # чинний механізм і не прибирай ключ як «мертвий».
+  # ✅ Дедуплікація тут ПРАВДА, але живе не тут: `Ethereum::StateAnchorService`
+  # несе власний DOUBLE-ANCHOR GUARD (шукає `:pending`/`:sent` анкер за останній
+  # тиждень і виходить), плюс персистований nonce проти double-send [ARCH.66].
+  # Тобто перетин циклів справді не створює другого анкера — але завдяки сервісу.
   sidekiq_options queue: "web3_low", retry: 5, unique_for: 7.days
 
   # [S6.6] Maximum gap between anchors before alerting (8 days = 1 week + 1 day buffer).

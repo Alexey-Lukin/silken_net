@@ -80,7 +80,7 @@ FIX      Reworded the 3 stale lines → "зайнято FW.2"; gate flipped HARD
 
 A z-divergence wording fix in 00_04 §6.5 snowballed into extracting two
 oversized, scattered topics into their own canon pages: slashing (00_01 §6,
-~half the vision page) → `05_05`, governance (05_03 §749, ~156 lines) → `05_06`.
+~half the vision page) → `05_05`, governance (05_03 §749, ~156 lines) → `05_06`. ⛔ **`05_03 §749` тут — номер РЯДКА, а не секції, і він лишений НАВМИСНО:** цитата описує реальний прохід, а сам цей різновид хибної адреси є предметом уроку #29/#33. Не «нормалізувати» — виняток стоїть у `scripts/code_doc_section_refs.rb`, і акуратна адреса тут знищила б приклад. ⚠️ Скіл читають ЗАМІСТЬ коду, тож виправлена адреса поширюється як авторитет — саме цим механізмом уже одного разу народився фантомний канон-реф.
 Repeatable shape (method → `.claude/prompts/module_restructure.md`; the NORM stays canon in `00_06 §4`):
 
 ```

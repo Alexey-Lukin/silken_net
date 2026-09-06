@@ -18,8 +18,12 @@
 class InsightGeneratorOrchestratorWorker
   include Sidekiq::Job
 
-  # [UNIQUE_FOR]: Запобігає перетину щоденних циклів.
-  # Якщо попередній цикл ще виконується, новий буде відхилено.
+  # ⚠️ [UNIQUE_FOR] — НА OSS-SIDEKIQ ЦЕ NO-OP (ключ, не клас — див.
+  # `config/initializers/sidekiq_pro.rb`); рядок лишено як точку озброєння
+  # Enterprise (`04_02 §11` DOC-R.10), не прибирати як мертвий.
+  # ⊕ Ціна перетину тут найнижча з трьох: запис іде за ключем
+  # `AiInsight.reporting_date` (One-Home доби, ARCH.100), тож повторний прохід
+  # переписує ту саму добу, а не створює другу.
   sidekiq_options queue: "low", retry: 3, unique_for: 24.hours
 
   # [МАСШТАБ]: Кількість кластерів в одному GenerateClusterInsightWorker.
