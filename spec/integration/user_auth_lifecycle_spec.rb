@@ -97,7 +97,6 @@ RSpec.describe "User authentication and session lifecycle" do
       user = create(:user, email_address: "Test@Example.COM", organization: organization)
       expect(user.email_address).to eq("test@example.com")
     end
-
   end
 
   describe "API authentication flow via requests" do

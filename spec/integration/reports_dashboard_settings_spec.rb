@@ -143,7 +143,6 @@ RSpec.describe "Reports, dashboard, and settings API" do
       json = response.parsed_body
       expect(json["channels"]).to include("email", "push_token")
     end
-
   end
 
   # ---------------------------------------------------------------------------

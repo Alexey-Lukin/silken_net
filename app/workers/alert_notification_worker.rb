@@ -102,7 +102,7 @@ class AlertNotificationWorker
       # FCM/пошти в `00_07` ARCH.60.
       Rails.logger.info(
         "[Notification] Оперативних каналів немає ЗА ЗАДУМОМ (#{OPERATIONAL_CHANNELS.join('/')}; push — до мобільного клієнта, Telegram знято 09-06) — " \
-        "#{stakeholders.count} стейкхолдерів бачать тривогу #{'#'}#{alert.id} лише на дашборді; critical — поштою"
+        "#{stakeholders.count} стейкхолдерів бачать тривогу ##{alert.id} лише на дашборді; critical — поштою"
       )
       return 0
     end

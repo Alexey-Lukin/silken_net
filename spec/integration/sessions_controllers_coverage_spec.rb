@@ -537,8 +537,12 @@ RSpec.describe "Controller coverage — uncovered paths" do
   # 7. NOTIFICATIONS CONTROLLER
   # ==========================================================================
   describe "NotificationsController" do
-    describe "PATCH /notifications/settings — validation error" do
-    end
+    # ⚫ Блок «PATCH /settings — validation error» знято 2026-09-06 [ARCH.60]:
+    # він спирався на `telegram_chat_id` як на єдине поле з валідацією, а після
+    # зняття каналу `permit` пускає сам `push_token`, у якого валідації немає.
+    # Пін 422 має ОДИН дім — `spec/requests/api/v1/notifications_controller_spec.rb`,
+    # де його перенесено на `locale`. Порожня оболонка тут була б твердженням
+    # про покриття, якого немає.
 
     describe "GET /notifications/settings" do
       it "returns current notification channel settings" do
