@@ -175,6 +175,19 @@ env:
     # same fact is not a leak; and without it the first boot ran with DNS-rebinding
     # protection DISABLED (measured WARN in the 2026-09-02 boot log).
     RAILS_ALLOWED_HOSTS: canopy.silkennet.app
+    # 🔴 [ARCH.60 · INF.25] ТОЙ САМИЙ факт має ДРУГИЙ дім, і доти оновлювався лише
+    # перший. `APP_HOST` годує `action_mailer.default_url_options`, тобто хост
+    # УСЕРЕДИНІ тіла листа; без цього рядка canopy успадковував продовий
+    # `silkennet.app` із `deploy.yml` і будував reset-лінки на домен, якого сам
+    # не обслуговує. Виміряно 2026-09-06: `canopy.silkennet.app` → 200,
+    # `silkennet.app` → 525, а токен там не звалідується взагалі (інша база,
+    # інший `password_salt`). ⚠️ Дефект ЛАТЕНТНИЙ рівно доти, доки пошта
+    # вимкнена `SILKENNET_SKIP_MAIL_TRANSPORT_CHECK` ↓ — тобто прокинеться в той
+    # самий день, коли задротують ESP, і симптом («reset не працює») стоятиме
+    # за два кроки від причини. ⛔ Припис, який це порушувало, стоїть у
+    # `deploy.yml` РЯДКОМ ВИЩЕ самого значення: «links in auth mail must land
+    # where the web app answers, or host-authorization 403s them».
+    APP_HOST: canopy.silkennet.app
     # ⚖️ [founder 2026-09-02] Staging carries no storage credentials; `production_mirror`
     # (S3 primary) made the AWS SDK fall through to EC2-IMDS on a GCP VM every boot.
     # `local` = Disk inside the container (ephemeral) — config/storage.yml, 06_04 §2.1.
