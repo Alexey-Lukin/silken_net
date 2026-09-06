@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.8.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.7.0...v0.8.0) (2026-09-06)
+
+
+### Features
+
+* **DEPLOY-1 · SEC.36:** зонд розсудив ногу, що стояла на припущенні — і порожній гаманець один, не три ([03a4560](https://github.com/Alexey-Lukin/silken_net/commit/03a456097dd6043e8e8d1bd89ddf57e629d6d2cd))
+* **DEPLOY-1:** субграф на Amoy задеплоєно — репетиція Фази 2, не фікс порожнечі ([7327e0e](https://github.com/Alexey-Lukin/silken_net/commit/7327e0eb441bcf392fda97777820903fd893c4aa))
+* **DOC-T.99:** гейт на волатильні лічильники — HARD ⚖️, і свіп виправив ДІАГНОЗ пункту ([726fd10](https://github.com/Alexey-Lukin/silken_net/commit/726fd10dc0c167d56fd2b8475ef08b7106a597f7))
+* **E.64 · UI.16 · DEPLOY-1:** симулятор рахує, стрічка каже зміст, і прилад для вироку нарешті існує ([9de31d2](https://github.com/Alexey-Lukin/silken_net/commit/9de31d23de98066bca9239dbad1011607d59bfdf))
+* **S2.4 · UI.16 · E.64 · DEPLOY-1:** доводимо на ЖИВОМУ слоті — і слот знаходить те, чого аналіз не бачив ([4b7b22d](https://github.com/Alexey-Lukin/silken_net/commit/4b7b22d59a51aac17fac629a5df1049fcc5f99dc))
+* **S2.4:** grafanactl — адресу стеку ДОВЕДЕНО, лишився 👤-токен ([cb9fb74](https://github.com/Alexey-Lukin/silken_net/commit/cb9fb74a36d73425be869b85de41427f562a717e))
+* **S2.4:** машинне читання стеку відкрито — імпорт закрито ВИМІРОМ, Postgres MCP ⚫ ([f521c74](https://github.com/Alexey-Lukin/silken_net/commit/f521c749029860bf0cca5d0d253f52e50b0e09a3))
+* **S2.4:** свідок свіжості money-path проходу — і фільтр, що засліплював власне правило ([d7fabae](https://github.com/Alexey-Lukin/silken_net/commit/d7fabae25cf8f4a2c8c86d71b60a32559530d658))
+
+
+### Bug Fixes
+
+* **ARCH.60 · INF.25:** canopy будував reset-лінки на чужий домен — і припис стояв рядком вище ([30d53f6](https://github.com/Alexey-Lukin/silken_net/commit/30d53f6d738e0e26cd96a2b6b06e6a20b00c9152))
+* **ARCH.60 · SEC.36:** зріз каналу лишив твердження, що пережили свої предмети ([60764ad](https://github.com/Alexey-Lukin/silken_net/commit/60764ad8b5ec99990e244a22c78b52a23699b974))
+* **ARCH.60:** підлога покриття зловила мертву передумову, якої сюїта не бачить ([7345208](https://github.com/Alexey-Lukin/silken_net/commit/7345208af2d7ac91947a4bb367e5e7be52247348))
+* **ARCH.60:** хук зловив шість — і одне з них спростувало мій же вимір ([4b647dc](https://github.com/Alexey-Lukin/silken_net/commit/4b647dc592da346a79418ed64dc1906479036560))
+* **ARCH.62/S3.2:** 8-агентний аудит перед тримом — знайшов ЖИВИЙ дефект, який наш власний фікс сховав ([2a03e2c](https://github.com/Alexey-Lukin/silken_net/commit/2a03e2c36dfa1c741837ae08bcb66961fb8c906a))
+* **DEPLOY-1 · SEC.23:** гейт судив версію замість ключа, а вимір перевернув вісь ризику ([537018b](https://github.com/Alexey-Lukin/silken_net/commit/537018bd5ff16165d413e12401036d9ad24e69ff))
+* **DEPLOY-1:** Celo-оракул не поповнено — знайшов не аудит, а перший погляд у Sentry ([07600d6](https://github.com/Alexey-Lukin/silken_net/commit/07600d6bb62d35716f137ab6202026f5ed6101dc))
+* **DOC-T.101 · SEC.23:** сталу фразу ніс САМ канон — і публічний текст казав субʼєкту неправду про його ж дані ([3ec97f4](https://github.com/Alexey-Lukin/silken_net/commit/3ec97f4deff9649f3bdc547056803e3a2067b5d4))
+* **image:** OS-шар патчимо САМІ — фікс лежав за один прапорець, а ми чекали на чужу перезбірку ([b99da74](https://github.com/Alexey-Lukin/silken_net/commit/b99da74fe5520e5047837e3c397d0901e5034861))
+* **S2.4/DEPLOY-1:** живий стек виправив МІЙ периметр — оракулів три, не один ([b3fe354](https://github.com/Alexey-Lukin/silken_net/commit/b3fe3546471075bc80218cee96ee25b594189788))
+* **S2.4:** пʼята вісь звірки — вирази; і тіньова змінна, що жила в цьому файлі латентно ([0ff16fd](https://github.com/Alexey-Lukin/silken_net/commit/0ff16fdf889231fcc605bbf30f0e302bc51c2444))
+* **S2.4:** сирота червонить звірку — і «ряд є» перестало означати «прилад живий» ([fd020ce](https://github.com/Alexey-Lukin/silken_net/commit/fd020ce55651c7df595656a82e1eb0f79da86894))
+* **supply-chain:** провайдер-лок під git + локальний пре-фрайт IaC — обидва зазори виміряні, не вгадані ([c39d25f](https://github.com/Alexey-Lukin/silken_net/commit/c39d25f18d3a7ac2a3f3e45d4be354b428d51c6c))
+
 ## [0.7.0](https://github.com/Alexey-Lukin/silken_net/compare/v0.6.0...v0.7.0) (2026-09-05)
 
 
