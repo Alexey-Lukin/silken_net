@@ -393,10 +393,18 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Oracle balance ratio до мінімального порогу. < 1.0 = критично. < 0.2 = alert.",
+      "description": "Oracle balance ratio до governance-порогу (oracle_min_balance_*). ⚠️ НУЛЬ ⊥ ВИЧЕРПАННЯ — два різні вироки, і колір їх НЕ розводить: рівно 0 = гаманець НЕ ПРОВІЖИНЕНО (стан налаштування, підпис нижче; звір nonce — з адреси не пішло нічого → у кран, НЕ шукати витік), а 0 < ratio < 1 = витрачено більше, ніж поповнено. Пороги правил: critical < 0.2, info < 1.0 (сама панель фарбує від 0, тому й потрібне це застереження). ⛔ Ratio >= 1 НЕ означає працездатність: поріг є круглим числом, не похідною ціни транзакції — виміряно 2026-09-07, batchMint коштував 0.0635 MATIC при порозі 0.05, тож ratio=1.00 світив зеленим над непрацездатним money-шляхом (00_07 S2.4, відкрита ⚖️). Точний вирок дає rake treasury:balances.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "НЕ ПРОВІЖИНЕНО", "color": "purple", "index": 0 }
+              }
+            }
+          ],
           "max": 2,
           "min": 0,
           "thresholds": {

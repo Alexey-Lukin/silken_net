@@ -25,8 +25,9 @@
 # Toggle:
 #   CSP_ENFORCE=true  → policy is enforced (production recommended once
 #                       observed for a release).
-#   CSP_ENFORCE!=true → report-only (default), so violations are reported
-#                       but the page still renders.
+#   CSP_ENFORCE!=true → report-only (default): the page still renders. ⚠️ NOT
+#                       "violations are reported" — without a `report-uri` they
+#                       reach only the visitor's own console (see the ⚖️ below).
 
 Rails.application.configure do
   config.content_security_policy do |policy|
@@ -65,6 +66,24 @@ Rails.application.configure do
   config.content_security_policy_nonce_directives = %w[script-src]
 
   # Default to report-only so a misconfigured CSP doesn't take down the
-  # dashboard during rollout. Flip CSP_ENFORCE=true after observing reports.
+  # dashboard during rollout.
+  #
+  # 🔴 [2026-09-07] "Flip CSP_ENFORCE=true after observing reports" USED to stand
+  # here, and it named a precondition that CANNOT BE MET as configured: there is
+  # no `report-uri` / `report-to` directive anywhere in this policy, so a
+  # violation is written to the console of whichever browser happened to hit it
+  # and reaches nobody. `report_only` degrades the page-break, not the silence —
+  # so "burn in for 1-2 weeks and then flip" describes a wait with no observer at
+  # the end of it. The same impossible precondition also stood in `06_01
+  # §DEPLOY-DAY` and `06_04`; all three said it for months.
+  #
+  # Two honest exits, and the choice is a ⚖️ (`00_07` SEC.23), not a TODO:
+  #   (a) wire a collector — Sentry already has our DSN and accepts CSP reports at
+  #       its Security-Header endpoint, so this is small, but it adds an external
+  #       recipient and belongs in the vendor register (`ropa_art30`);
+  #   (b) drop the "observe reports" language and flip after a DELIBERATE manual
+  #       smoke with devtools open on every rendered route — cheap, honest, and it
+  #       is what the current config actually supports.
+  # ⛔ Do not restore the old sentence: it reads as a plan while being a no-op.
   config.content_security_policy_report_only = ENV["CSP_ENFORCE"] != "true"
 end
