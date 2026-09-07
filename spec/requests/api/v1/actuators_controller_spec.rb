@@ -59,6 +59,28 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(row).to include("status", "command_payload", "expires_at")
       expect(row.keys).not_to include("idempotency_token", "ews_alert_id", "organization_id")
     end
+
+    # [SEC.36 ⚖️ founder 2026-09-07] Сестра піна вище на ДРУГОМУ ключі того ж
+    # `render json:`. Доти `actuator:` віддавав СИРУ модель — усі одинадцять
+    # колонок, — і власний коментар екшена це оголошував: контракту для `Actuator`
+    # не існувало ніде, тож звуження було ПРИСУДОМ, не застосуванням. Присуд
+    # ухвалено: стеля = рівно те, що друкує `Actuators::Card` HTML-гілки.
+    # ⚠️ Обидві половини несучі: позитивна доводить, що екран не збіднів,
+    # негативна — що поверхня звузилась. Поодинці кожна зелена при зламаній парі.
+    it "віддає рівно той перелік полів, який друкує сторінка — і нічого понад" do
+      get "/actuators/#{own_actuator.id}", headers: headers, as: :json
+
+      actuator = response.parsed_body["actuator"]
+      aggregate_failures do
+        expect(actuator).to include(
+          "id", "name", "device_type", "state", "endpoint",
+          "max_active_duration_s", "estimated_mj_per_action", "last_activated_at"
+        )
+        # ⊕ Сторінка показує `uid` шлюзу, не його FK — дзеркалимо екран.
+        expect(actuator["gateway_uid"]).to eq(own_gateway.uid)
+        expect(actuator.keys).not_to include("created_at", "updated_at", "gateway_id")
+      end
+    end
   end
 
   describe "POST /actuators/:id/execute" do

@@ -122,6 +122,34 @@ RSpec.describe Api::V1::TreesController, type: :request do
       get "/trees/#{other_tree.id}", headers: headers, as: :json
       expect(response).to have_http_status(:not_found)
     end
+
+    # [SEC.36 ⚖️ founder 2026-09-07] Ключ `insights` доти віддавав СИРУ реляцію —
+    # сім рядків × девʼятнадцять колонок, тобто 133 значення, з яких сторінка не
+    # показує жодного напряму. Найдорожче серед них — `fraud_detected`: HTML не
+    # має його ВЗАГАЛІ (у хроніці він живе лише як гілка тексту й `severity`),
+    # тобто антифрод-присуд про дерево їхав клієнтові прапорцем.
+    # ⚠️ Обидві половини несучі, і саме тому вони в ОДНОМУ прикладі: позитивна
+    # доводить, що екран не збіднів; негативна — що поверхня звузилась. ⛔ Окремо
+    # пінується ВІДСУТНІСТЬ обох JSONB-блобів: реєстр PII класифікує колонки й до
+    # вмісту JSONB сліпий за побудовою, тож блоб віддав би те, чого ніхто не
+    # перелічував — рівно клас, проти якого стоїть блупринт.
+    it "віддає інсайти РІВНО тим переліком, який друкує сторінка — без сирих блобів" do
+      create(:ai_insight, analyzable: own_tree, probability_score: 0.7,
+                          prediction_data: { "yield_impact" => -0.04, "internal_note" => "не для клієнта" },
+                          reasoning: { "avg_z" => 2.4 }, fraud_detected: true)
+
+      get "/trees/#{own_tree.id}", headers: headers, as: :json
+
+      row = response.parsed_body["insights"].first
+      aggregate_failures do
+        expect(row).to include("id", "insight_type", "target_date", "summary",
+                               "probability_score", "stress_index")
+        expect(row["yield_impact"].to_f).to eq(-0.04)
+        expect(row.keys).not_to include("fraud_detected", "source_log_ids", "model_source",
+                                        "recommendation", "prediction_data", "reasoning",
+                                        "analyzable_id", "analyzable_type")
+      end
+    end
   end
 
   describe "GET /trees/:id/chronicle" do

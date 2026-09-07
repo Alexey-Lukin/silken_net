@@ -60,7 +60,10 @@ module Api
                 voltage: @latest_log&.voltage_mv,
                 last_sync: @latest_log&.created_at
               },
-              insights: @insights
+              # [SEC.36 ⚖️ 2026-09-07] Доти йшла СИРА реляція — сім рядків × 19 колонок,
+              # включно з `fraud_detected`, якого HTML не має взагалі. Стеля переліку
+              # оголошена в шапці блупринта; ⛔ не повертати сюди `@insights` голими.
+              insights: AiInsightBlueprint.render_as_hash(@insights)
             }
           end
           format.html do

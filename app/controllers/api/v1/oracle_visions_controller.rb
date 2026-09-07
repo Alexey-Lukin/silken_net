@@ -27,7 +27,11 @@ module Api
           # прогнозом. Число без покриття є твердженням про весь ліс.
           format.json do
             render json: {
-              visions: @visions,
+              # [SEC.36 ⚖️ 2026-09-07] Знайдено СВІПОМ ЗА ФОРМОЮ, не за іменем: ключ
+              # віддавав сирі `AiInsight`, а стеля переліку виведена рівно з
+              # `OracleVisions::ForecastCard` — тобто з компонента ЦЬОГО Ж екшена.
+              # Дефектом було не «немає контракту», а те, що сайт його не взяв.
+              visions: AiInsightBlueprint.render_as_hash(@visions),
               emission_forecast: @scc_yield[:value],
               emission_forecast_coverage: {
                 measured: @scc_yield[:measured],

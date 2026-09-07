@@ -18,7 +18,10 @@ module Api
         respond_to do |format|
           format.json do
             render json: {
-              data: @actuators,
+              # [SEC.36 ⚖️ 2026-09-07] Сиблінг `show` у ЦЬОМУ Ж файлі — і саме тому
+              # він вижив: свіп «де я застосував» його не бачить, бачить лише свіп
+              # «хто ще належить до класу» ([`00_05 §4`]).
+              data: ActuatorBlueprint.render_as_hash(@actuators),
               pagy: pagy_metadata(@pagy)
             }
           end
@@ -55,12 +58,12 @@ module Api
           # тож дефектом було не «немає контракту», а те, що `show` його не взяв.
           # Беремо той самий перелік ⊕ `completed_at`: його друкує HTML-таблиця того ж
           # екшена, а звужувати JSON нижче за показане — дзеркальна помилка того ж класу.
-          # ⚠️ Ключ `actuator:` лишається сирим СВІДОМО: ратифікованого переліку полів
-          # для `Actuator` у дереві немає (блупринта не існує), тож його звуження є
-          # присудом, не застосуванням — воно живе відкритою ногою SEC.36.
+          # ✅ [SEC.36 ⚖️ founder 2026-09-07] Ключ `actuator:` БІЛЬШЕ НЕ СИРИЙ — присуд
+          # ухвалено, і `ActuatorBlueprint` узяв рівно той перелік, який друкує
+          # `Actuators::Card` HTML-гілки цього ж екшена. Стеля — у шапці блупринта.
           format.json do
             render json: {
-              actuator: @actuator,
+              actuator: ActuatorBlueprint.render_as_hash(@actuator),
               history: @commands.map do |cmd|
                 {
                   id: cmd.id,
