@@ -213,7 +213,7 @@ end
 # ("", col1, col2, col3, ""). Екранований `\|` нейтралізується — він легітимний
 # усередині комірки; неекранований ламає і рендер, і `cols[-2]`.
 registry_rows.each do |row|
-  cols = row.chomp.gsub('\\|', " ").split("|", -1)
+  cols = row.chomp.gsub('\|', "\x00").split("|", -1)
   next if cols.size == 5
 
   name = cols[1].to_s.strip[0, 60]
