@@ -157,6 +157,12 @@ env:
     # RAILS_ENV is `production` on BOTH slots, so without this line canopy does not merely
     # go unlabelled — it labels itself `production`, and a wrong label is worse than none.
     DEPLOYMENT_SLOT: canopy
+    # 🛡️ CSP — оголошено ЯВНО, хоч значення й збігається з базовим, і це не шум:
+    # canopy є РЕПЕТИЦІЄЮ production-рендера, тож саме тут фліп має статись ПЕРШИМ
+    # і саме тут ручний смоук devtools-ом коштує найдешевше. Успадковане значення
+    # читалось би як «питання ще не ставили»; оголошене каже «ставили, і поки ні».
+    # ⚖️ 2026-09-07 (`00_07` DEPLOY-1, Фаза 5).
+    CSP_ENFORCE: "false"
     POSTGRES_DATABASE: silken_net_canopy
     # [OPS.37] One Puma worker on the shared host — the connection budget in the header
     # (production 185 + canopy web 63 + canopy job 18 = 266/400); base pins 2 for production.

@@ -283,6 +283,16 @@ env:
     # namespace declared a separator it did not provide, and both slots defaulted to the SAME
     # Active Storage bucket. Reader One-Home: `config/deployment_slot.rb`.
     DEPLOYMENT_SLOT: production
+    # 🛡️ CSP — report-only ⊥ enforce. Delivered here (NOT a secret) so Фаза 5 is ONE
+    # token, not «wire the chain PLUS flip» under time pressure: before 2026-09-07 this
+    # var was wired on ZERO of the five delivery surfaces while three docs described the
+    # flip as a single step. Reader: config/initializers/content_security_policy.rb.
+    # ⚖️ 2026-09-07 — flipping is followed by a MANUAL smoke with devtools on every
+    # rendered route; there is no report collector and there will not be one (the price
+    # of that refusal is named at the reader). ⛔ Do not flip here and on canopy in the
+    # same commit: canopy is the rehearsal, and a rehearsal that shares its verdict with
+    # production is not one.
+    CSP_ENFORCE: "false"
     # PostgreSQL connection (component style — config/database.yml; port defaults to 5432).
     # Kamal deploys inside the GCP VPC → connect to the Cloud SQL PRIVATE IP directly
     # (no Auth Proxy needed inside the VPC). Set POSTGRES_HOST to `terraform output

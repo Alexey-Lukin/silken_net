@@ -77,18 +77,37 @@ Rails.application.configure do
   # the end of it. The same impossible precondition also stood in `06_01
   # §DEPLOY-DAY` and `06_04`; all three said it for months.
   #
-  # Two honest exits, and the choice is a ⚖️ (`00_07` DEPLOY-1, Фаза 5 leg)
+  # ✅ **⚖️ RATIFIED by the founder 2026-09-07 — exit (b): no collector, no
+  # "observe reports" language. The flip is followed by a DELIBERATE MANUAL SMOKE
+  # with devtools open on every rendered route.** The rejected exit (a) — wiring
+  # Sentry's Security-Header endpoint — was cheap in code but adds an EXTERNAL
+  # RECIPIENT of page data, i.e. a row in `ropa_art30` and in the subprocessor
+  # register (`SEC.23` axis). We refused to buy an observer at that price for a
+  # one-off rollout check a human can do in ten minutes.
+  # ⛔ Do not restore the old sentence: it reads as a plan while being a no-op.
   # ⛔ Do NOT re-point this at SEC.23: that item carries CSP only as an example of a
   # high-precision allowlist for a different gate — it has never held this verdict.
   # (The runbook step in 06_01 §DEPLOY-DAY Фаза 5 points HERE for the choice, so a
   # second wrong address closes a ring and leaves the ⚖️ homeless.)
-  # It is a VERDICT, not a TODO:
-  #   (a) wire a collector — Sentry already has our DSN and accepts CSP reports at
-  #       its Security-Header endpoint, so this is small, but it adds an external
-  #       recipient and belongs in the vendor register (`ropa_art30`);
-  #   (b) drop the "observe reports" language and flip after a DELIBERATE manual
-  #       smoke with devtools open on every rendered route — cheap, honest, and it
-  #       is what the current config actually supports.
-  # ⛔ Do not restore the old sentence: it reads as a plan while being a no-op.
+  #
+  # ⚠️ **The price of exit (b), named aloud so nobody re-opens it as an oversight:**
+  # after the flip we learn about a violation only from a HUMAN walking the routes,
+  # or from a user reporting a broken page. There is no channel and there will not
+  # be one. That is acceptable for a rollout gate and NOT acceptable as a standing
+  # security control — so if CSP ever becomes evidence rather than hygiene, exit (a)
+  # is the reopening, and its cost is the vendor row, not the code.
+  #
+  # 🔑 **`CSP_ENFORCE` is now DELIVERED, explicitly `"false"`, in BOTH manifests'
+  # `env.clear` — and that is the WHOLE chain, not part of it.** Before 2026-09-07
+  # it was wired nowhere, so Фаза 5 would have been «wire the chain PLUS flip»:
+  # two things under time pressure instead of one.
+  # ⚠️ **The «five delivery surfaces» figure belongs to a SECRET and does not apply
+  # here — measured, not assumed:** `POSTGRES_HOST` and `APP_HOST`, both `env.clear`,
+  # have ZERO hits in `.kamal/secrets-common` and in either deploy workflow, because
+  # Kamal emits a clear value from the manifest literally. Counting five for a
+  # non-secret overstates the remaining work and invites someone to «finish» the
+  # chain by putting a non-secret into the secrets path, which `deploy_secret_scan`
+  # exists to prevent. Flipping is a one-token manifest edit plus a deploy — and it
+  # is reviewable in git precisely BECAUSE the value is clear rather than secret.
   config.content_security_policy_report_only = ENV["CSP_ENFORCE"] != "true"
 end
