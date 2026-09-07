@@ -943,7 +943,7 @@ MaintenanceRecord.create!(
 **Tamper-evident retention policy:**
 - `AuditLog` — заборонено видаляти (Rails guard: `before_destroy { raise "AuditLog is immutable" }`).
 - Chain hash перевіряється при кожному audit export (`AuditLog.verify_chain_integrity`).
-- Мінімальний retention: 7 років (GDPR Article 17(3)(b) — legal obligation exception).
+- Мінімальний retention: ⚖️ **строк НЕ ухвалено** — дім рішення [`00_07`](00_07_Action_Plan_Tracker) SEC.18, і RoPA свідомо тримає `[TBD]`. 🔴 Тут стояло «7 років (GDPR Article 17(3)(b) — legal obligation exception)», і обидві половини не тримаються: число не було ухвалене ніде (а сусідня нога SEC.18 прямо забороняє ВИГАДУВАТИ строки), а літера **(b)** до нас текстуально не тягнеться — [`dpia_art35`](protocols/legal/dpia_art35.md) R3 (2026-09-06) прочитав первинку: (b) вимагає обовʼязку «*by Union or Member State law*», якій ПКУ/ЗУ про бухоблік не відповідають, тож кандидати — **(e)** або Art.6(1)(f), і вибір належить юристу.
 
 **2-Person Rule (рекомендовано для > 100 unit batch):** supervisor має підтвердити сесію через окремий Rails UI перед тим як інструмент отримає session token. Реалізується через `ProvisioningSession` AASM: `pending → supervisor_approved → active → completed/failed`.
 
