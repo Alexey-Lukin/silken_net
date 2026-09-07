@@ -39,9 +39,9 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 
 **Best-practice-висновок для BIZ.22 (integration, не нове рішення):** 2025-26 стандарт індустрії — **redesign до першого live-mint** — саме те вікно, в якому ми зараз (контракти code-complete, не задеплоєні, UNI.16). Мінімальний securities-safe пакет за best-practices, який має оцінити юрист ([`securities_review`](../legal/securities_review.md) Блок 1.5, питання 9–15):
 - перейменування F1/F3/F4 — потрібне, але **недостатнє** (label-фікс без механіки = Kik-пастка);
-- **прибрати refund/exit-fee (F5/F6/F10)** — найдешевший високоефективний хід (purchase не має refund);
+- ~~**прибрати refund/exit-fee (F5/F6)**~~ ✅ **ЗРОБЛЕНО 2026-08-30** (обидва методи знято з коду, ⚖️ Опція 1 MSA); лишається `F10` — форфейтура нарахованого при достроковому виході, і вона є свідомою умовою, не залишком;
 - **розв'язати money-in↔token-out** (SCC = оплата за D-MRV-сервіс, не «інвестиція в токен») і **SCC↔SFC bundling** (F13);
-- yield-метод (F7) → нейтральна назва/семантика («emission_progress», прогрес постачання сервісу);
+- ~~yield-метод (F7) → нейтральна назва~~ ✅ **безпредметно з 2026-08-14**: `current_yield_performance` видалено ЦІЛКОМ (з коду, публічного JSON і UI) — перейменовувати нічого;
 - **«no-price-talk» — настанова для нас уже зараз:** уникати інвест-мови в будь-яких публічних доках і комунікаціях (Kik-урок стосується і doc-сторінок, не лише твітів).
 
 🟢 **Зараз:** BIZ.22-redesign (мова + механіка) — трекається; ця секція дає йому industry-обґрунтування. 🟡 **Gate:** фінальний call redesign-vs-compliance = UNI.16-консультація (наш research не замінює її).
@@ -144,7 +144,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 
 | # | Best-practice (джерело) | Наш стан | Gap-дія | Фаза | Трекер |
 |---|---|---|---|---|---|
-| 1 | Consumptive-use design, no-refund/no-yield механіка, no-investment-мова (SEC/CFTC 2025-26, Kik) | 🔴 інверсія патернів у самій механіці коду — повна мапа One-Home: BIZ.22 + [`securities_review`](../legal/securities_review.md) | Product-redesign ДО live-mint; фінал = юрист | 🟢 (вікно найдешевше зараз) | **BIZ.22**/UNI.16 |
+| 1 | Consumptive-use design, no-refund/no-yield механіка, no-investment-мова (SEC/CFTC 2025-26, Kik) | 🟡 **розрив ЗВУЗИВСЯ до ОДНІЄЇ осі з чотирьох** (звірено 2026-09-07): `investor`-роль, yield і refund/exit-fee знято з коду; живим лишається `total_funding` (+ `alias_attribute :total_value` + 5% похідна премія) — перша ланка Howey-ланцюга — повна мапа One-Home: BIZ.22 + [`securities_review`](../legal/securities_review.md) | Product-redesign ДО live-mint; фінал = юрист | 🟢 (вікно найдешевше зараз) | **BIZ.22**/UNI.16 |
 | 2 | Записаний Howey-аналіз + legal opinion у файлах | Fact-pattern dossier готовий ([`securities_review`](../legal/securities_review.md)) | Провести платну консультацію → opinion on file | 🟢→🟡 (гейт усього token-контуру) | UNI.16 |
 | 3 | MiCA Art. 6 whitepaper (machine-readable) / Art. 4 exemptions | Немає (і не треба ще) | Лише при EU-офері; DEX-vs-admission — питання юристу | 🟡 | UNI.16 Блок 3 |
 | 4 | SAFE+token-warrant замість SAFT | Не фандрейзимо | Не тягнутись до SAFT за звичкою | 🟡/⚪ | BIZ.20 |
@@ -162,7 +162,7 @@ Enterprise-credible **та** securities-safe одночасно — це не к
 ## 7. Пріоритети
 
 **🟢 ЗАРАЗ (Phase-1, усе дешеве, нічого не гейтиться токеном):**
-1. **BIZ.22-redesign** — найвищий пріоритет усього списку: інверсувати мову + refund/exit-fee/yield-механіку поки контракти не задеплоєні (мапа → [`securities_review`](../legal/securities_review.md)); «no-price-talk» у публічних доках — настанова вже зараз.
+1. **BIZ.22-redesign** — лишається найвищим пріоритетом, але ПРЕДМЕТ звузився (звірено 2026-09-07): мову інверсовано, refund/exit-fee й yield знято з коду серпнем 2026, тож відкритою є **одна вісь — `total_funding`**, поки контракти не задеплоєні (мапа → [`securities_review`](../legal/securities_review.md)); «no-price-talk» у публічних доках — настанова вже зараз.
 2. ✅ **DOC-T.47 — закрито 2026-07-24** (contracts = MIT ратифіковано; `/NOTICE` + [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) вирівняні) — знято зі списку.
 3. ✅ **DCO — зроблено 2026-07-25:** `CONTRIBUTING.md` §DCO + власний гейт `dco.yml` (не `dcoapp`, причина — §4). Флип branch-protection ✅ зроблено 2026-07-25; лишається ВНЗ-MoU IP-пункт (= UNI.20).
 4. **Multi-lock SBOM-CI-job** (CycloneDX/SPDX з lock-файлів; BIZ.24 🤖-half — image-SBOM уже є, OPS.10). Scorecard-action ✅ уже live — дій не потребує.

@@ -169,6 +169,6 @@
 | [`00_04 §8`](../../00_04_Nature_as_a_Service_Contracts.md) | юридичні/бізнес-передумови NaaS (RWA, MSA, SPV, KYC) — канон |
 | [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md) | SCC/SFC контракт-спека, ролі, MAX_SUPPLY, потік мінтингу |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) | IP-постава (defensive-publication, ліцензійна матриця, тришар «хто оперує ≠ хто володіє ≠ хто емітує») |
-| [`ip_carve_out_draft.md`](ip_carve_out_draft.md) | **дім питань Блоку 4 п.5** — форма carve-out'у, пастка майбутніх творів, корпоративний шар, десять питань із нормами поіменно. Цей файл їх НЕ дублює (⚖️ 2026-09-07, `DOC-T.101` клас 11); на воркшоп нести обидва |
+| [`ip_carve_out_draft.md`](ip_carve_out_draft.md) | **дім питань Блоку 4 п.5** — форма carve-out'у, пастка майбутніх творів, корпоративний шар, питання з нормами поіменно (⚠️ число свідомо не наводиться: ціль дорощують, і 2026-09-07 її вже доростили двома питаннями). Цей файл їх НЕ дублює (⚖️ 2026-09-07, `DOC-T.101` клас 11); на воркшоп нести обидва |
 | [`entity_structure`](entity_structure.md) | фазована драбина юр-структури (Phase-1/2/3, SPV-вісь) — паралельний артефакт BIZ.20 |
 | [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) · [`R5_trademark_ip.md`](../research/R5_trademark_ip.md) | орієнтаційний research, на який спираються [R2 §X] / [R5 §X] |
