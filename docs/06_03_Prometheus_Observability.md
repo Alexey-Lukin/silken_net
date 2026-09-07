@@ -368,7 +368,7 @@ end
 | `silkennet_mint_attempts_total` | алертна | `token_type` | Mint transactions attempted by BlockchainMintingService (SLO denominator) |
 | `silkennet_mint_chunk_errors_total` | алертна | — | Per-wallet mint failures swallowed by EvaluateTreeBatchWorker (job still reports success) |
 | `silkennet_mint_success_total` | алертна | `token_type` | Mint transactions successfully broadcast to mempool — status→sent (SLO numerator) |
-| `silkennet_ota_chunks_sent_total` | діагностична | `firmware_version` | Total OTA firmware chunks transmitted to field devices |
+| `silkennet_ota_chunks_sent_total` | діагностична | `firmware_version` | OTA chunk **DELIVERIES** served to polling gateways — re-poll лічиться ПОВТОРНО за дизайном (stateless chunk-server), тобто це downlink-ТРАФІК, ніколи не прогрес унікальних чанків [INF.26]. ⚠️ Тут стояло «chunks transmitted», і саме це формулювання присуд спростував: регенератор колонку `Призначення` не чіпає ЗА ПОБУДОВОЮ, тож вирок жив у докстрінгу коду й не доїжджав у реєстр, який трекер називає його домом |
 | `silkennet_panic_replay_rejected_total` | алертна | — | Panic packets rejected as replay via SEC.10 Frame Counter SETNX nonce |
 | `silkennet_partition_maintenance_failures_total` | алертна | — | PartitionMaintenanceWorker run failures (missing partition → rows silently land in the _default leaf, which then blocks CREATE PARTITION for that month permanently) |
 | `silkennet_qatt_nonce_fallback_total` | алертна | — | Total Queen-attestation batch nonce checks falling back from Redis to DB-backed cache (Redis outage indicator) |
