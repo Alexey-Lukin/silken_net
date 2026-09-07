@@ -321,7 +321,7 @@ jobs:
       # раннері, не всередині контейнера дії, звідки FileNotFoundError: 'forge'.
       # 0.11.5 капає crytic-compile <0.4.0 і повертає відомий-добрий шлях.
       # Стеля: пін відстає від апстріму. Знімати, коли ignore-compile полагодять
-      # (перевірити на свіжому slither) → 00_07 OPS.21.
+      # (перевірити на свіжому slither) → 00_07 OPS.22 📊 WATCH (OPS.21 заархівовано 2026-09-07; механізм відмови від hash-піну — 06_07 §1a).
       - name: Run Slither
         uses: crytic/slither-action@b52cc1cbfee9ca3e8722dd5224299d16c9a6b80f # v0.4.2
         with:
