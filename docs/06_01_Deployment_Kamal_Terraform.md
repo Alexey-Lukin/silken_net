@@ -1242,7 +1242,7 @@ fee-payer; repo-level, бо throwaway — [`06_04 §1`](06_04_Secrets_Checklist)
 безхостовим `coap`) · B4 (13 ремапів) · `env_fetch_declaration_spec` (RHS кроку деплою canopy =
 `secrets.CANOPY_*`, production без двійників) · `alloy_scrape_topology_spec` (аліаси дизʼюнктні) ·
 `web3_env_loudness_spec` (job-роль canopy як SIGNER на testnet) · `kamal_config_validity_spec`
-(парсер приймає безхостову роль — саме він і назвав `allow_empty_roles`). Тож «canopy зелений» відтепер означає і Sidekiq-половину — і в слова «зелений» тут є названий детектор, бо власний бут-вердикт Kamal для non-proxy ролі = 7-секундний poll `.State.Status` без HEALTHCHECK в образі: job, що падає в `after_initialize` після ~10-с буту Rails, пройшов би зеленим у crash-loop. Носій — пост-деплойна 45-с uptime-проба job-ролі в ОБОХ воркфлоу (ревʼю 2026-09-02), і на canopy вона була ЄДИНОЮ до 2026-09-03, поки слот не скрейпився (ціна ONE-Alloy: `up`/DeadSet-gauge для canopy до 2026-09-03 не існували; відтоді два canopy-таргети зі `slot` на таргеті ратифіковано ([`06_03 §2.9`](06_03_Prometheus_Observability)), відкрита лишилась розкатка accessory — [`OPS.37`](00_07_Action_Plan_Tracker)). Вердикт першого буту job-ролі читай не із зеленого воркфлоу, а з трьох показань разом: uptime-проба · `docker ps` на хості (контейнер живе довше за `RestartSec`, без рестартів) · `/ready` → 200. Сама половина: 60 воркерів і 22 cron-задачі — `PartitionMaintenanceWorker`
+(парсер приймає безхостову роль — саме він і назвав `allow_empty_roles`). Тож «canopy зелений» відтепер означає і Sidekiq-половину — і в слова «зелений» тут є названий детектор, бо власний бут-вердикт Kamal для non-proxy ролі = 7-секундний poll `.State.Status` без HEALTHCHECK в образі: job, що падає в `after_initialize` після ~10-с буту Rails, пройшов би зеленим у crash-loop. Носій — пост-деплойна 45-с uptime-проба job-ролі в ОБОХ воркфлоу (ревʼю 2026-09-02), і на canopy вона була ЄДИНОЮ до 2026-09-03, поки слот не скрейпився (ціна ONE-Alloy: `up`/DeadSet-gauge для canopy до 2026-09-03 не існували; відтоді два canopy-таргети зі `slot` на таргеті ратифіковано ([`06_03 §2.9`](06_03_Prometheus_Observability)), а розкатку accessory ЗАКРИТО тим самим днем — `kamal accessory reboot alloy` через dispatch-вхід `deploy.yml`, доказ = живі серії обох canopy-таргетів). Вердикт першого буту job-ролі читай не із зеленого воркфлоу, а з трьох показань разом: uptime-проба · `docker ps` на хості (контейнер живе довше за `RestartSec`, без рестартів) · `/ready` → 200. Сама половина: 60 воркерів і 22 cron-задачі — `PartitionMaintenanceWorker`
 (без нього canopy мовчки накопичував би `_default`, [`06_06 §5.5`](06_06_Disaster_Recovery_and_Backup)),
 dead-man switch Королев, sweep застряглих коштів, treasury-monitor — репетирують на стейджингу
 ДО production. ⚠️ Що лишається чужим canopy: **пошта** (ESP не заведено — bypass
@@ -1287,6 +1287,7 @@ Puma dual-stack (PUMA-IPV6-1) — `kamal app exec -i "curl -sf -o /dev/null -w '
 (Pre-Flight #3).
 
 **Фаза 5 — Production-render + hardening:**
+🖥️ **ПЕРЕД усім нижче — ХОСТ: нову машину дістає PRODUCTION, canopy лишається на старій** (⚖️ founder 2026-09-03, [`00_07`](00_07_Action_Plan_Tracker) `OPS.37`). Спільний хост був ЗАЛИШКОМ пивоту, а не рішенням, і тримати його ратифіковано рівно доти, доки production на ньому не існує. Тож цей день коштує на **два кроки більше, ніж написано нижче**: один `terraform apply` на другу `e2-standard-2` (+30 GiB pd-ssd ≈ $59/міс — розклад по SKU у шапці `config/deploy.canopy.yml`) і **перецілення хоста в `config/deploy.canopy.yml`** на стару машину. ⚠️ Ціну відкладення прийнято свідомо й названо вголос саме тому, що у відкладення немає червоного: обидва кроки падають на день, і без того найщільніший.
 ⏱️ [INF.22] Перший release-run **зависне ~10 хв PENDING ×2** (environment wait-timer,
 per-job: перед `verify-secrets` і перед `deploy`) — це НЕ зависання, НЕ скасовуй run;
 вікно = навмисний solo-approval-substitute ([`06_04 §1`](06_04_Secrets_Checklist)).
@@ -1323,7 +1324,7 @@ Pre-fleet стек не має обовʼязку бути піднятим: Ф�
 дані, бекапи й `deletion_protection` лишаються (~$106/міс → ~$20: диски, IP, KMS, AR).
 ⊕ Виміряно білінгом 2026-09-01 (обидві VM + Cloud SQL живі): **$4.80/добу ≈ $145/міс** —
 Compute $2.72 · Cloud SQL $1.88 · мережа $0.20 · KMS $0.01; «~$106» вище був розрахунком, не
-рахунком. «Прикрутити гайки» для canopy = ЦЯ фаза між сесіями, не менший тир —
+рахунком. ⚠️ **Чисел про run-rate ДВА, обидва живі й обидва правдиві — про РІЗНІ вікна, тож цитувати їх як одне не можна:** точковий вимір 09-01 дав **$4.80/добу ≈ $145/міс**, а SKU-розклад самого рахунку за 1–2 вересня — $8.74 за дві доби, тобто **$4.37/добу ≈ $133/міс** (це число несуть `terraform/variables.tf` і `terraform.tfvars.example` як підставу стелі $300). Присуд від різниці не залежить: обидва нижчі за найнижчий поріг $150. «Прикрутити гайки» для canopy = ЦЯ фаза між сесіями, не менший тир —
 тир судиться першим live-аплінком ([`00_07`](00_07_Action_Plan_Tracker) INF.28 / DR.1).
 
 ```bash

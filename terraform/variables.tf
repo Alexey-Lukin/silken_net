@@ -193,7 +193,7 @@ variable "billing_account_id" {
 }
 
 variable "billing_budget_usd" {
-  description = "Monthly budget ceiling in USD — thresholds alert at 50/90/100% + forecasted-100% (operator-tuned). ⚠️ The default below is a FLOOR for an empty project, not a sizing for this fleet: the live estate (e2-standard-2 + e2-small + Cloud SQL) was measured at ~$133/mo on 2026-09-03, so 100 would burn all four thresholds monthly. The effective value is ratified in posture.auto.tfvars (300, OPS.37) and auto-loads over this."
+  description = "Monthly budget ceiling in USD — thresholds alert at 50/90/100% + forecasted-100% (operator-tuned). ⚠️ The default below is a FLOOR for an empty project, not a sizing for this fleet: the live estate (e2-standard-2 + e2-small + Cloud SQL) was measured at ~$133/mo on 2026-09-03, so 100 would burn all four thresholds monthly. (TWO run-rate figures are live and BOTH are true of different windows — $4.37/day from the Sep 1-2 invoice SKU split vs $4.80/day point-measured 2026-09-01; reconciled in docs/06_01 §DEPLOY-DAY Фаза ∅, do not quote them as one number.) The effective value is ratified in posture.auto.tfvars (300, OPS.37) and auto-loads over this."
   type        = number
   default     = 100
 }
