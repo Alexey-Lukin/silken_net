@@ -92,8 +92,13 @@ class EwsAlert < ApplicationRecord
     # → StatusByte anomaly при нормальній температурі) — вирубка, не вогонь. До спліту
     # жила у fire_detected → FIRMS бачив «ясне небо» → жертву вирубки таврував
     # rejected_fraud; тепер non-fire маршрут → Field-Audit (перевірити пеньки).
-    # ⚠️ НЕ в A-сет slash'а до field-validation TinyML (клас = synthetic placeholder,
-    # 03_03 §4.2) — DAO-ратифікація, Slashing::CauseEvidence лишається tamper-only.
+    # ⚠️ НЕ в A-сет slash'а до field-validation TinyML — DAO-ратифікація,
+    # Slashing::CauseEvidence лишається tamper-only. 🔴 Вердикт той самий, ПІДСТАВА
+    # виправлена 2026-09-07: доти тут стояло «клас = synthetic placeholder, 03_03 §4.2»,
+    # а канон у тій самій секції каже протилежне — wind/chainsaw РЕАЛЬНІ (ESC-50),
+    # synthetic placeholder'и це silence + cavitation. Справжня підстава вужча й
+    # сильніша: жоден клас не field-валідовано, а baseline-точність є метрикою
+    # ЦІЛІСНОСТІ ПАЙПЛАЙНУ, не польової детекції (03_03, TinyML на TRL 6).
     chainsaw_detected: 10,
     # [SLASH-1] Софт-збій прошивки пристрою: wire status=3 (BIO_STATUS_VM_ERROR —
     # mruby-crash / VM-OOM / unprovisioned). Vendor-attributable, ops-тріаж (re-flash /
