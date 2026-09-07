@@ -131,7 +131,8 @@ SilkenNet не покладається на один блокчейн. Для �
 | **Воркер** | `FilecoinArchiveWorker` |
 | **Черга** | `low` (пріоритет 9) |
 | **Retry** | 5 |
-| **Тригер** | `AuditLogWorker` (після створення AuditLog запису) |
+| **Активація** | **ACTIVATION-GATED [ARCH.118-клас]** — `Filecoin::ArchiveService.configured?` (`FILECOIN_API_KEY`, ENV-first із credentials-фолбеком) стоїть на ТРЬОХ enqueue-сайтах: `AuditLogWorker` · `Mrv::TelemetryArchiveBatchService` · `FilecoinReconcileWorker` (ре-арм). ⛔ `raise` всередині `pin_json!` гардом НЕ є — він retry-драбина: джоба не може ані виконатись, ані здатись. ⚫ **Ключ ЗНЯТО 2026-09-07 (⚖️ founder — activation-gate, не демонтаж):** нога інертна, маркер `archive_requested_at` і далі ставиться атомарно з `create!`, тож ніщо не губиться; тригер повернення й ціни — [`00_07`](00_07_Action_Plan_Tracker) INF.22 |
+| **Тригер** | `AuditLogWorker` (після створення AuditLog запису) — **лише** за `configured?`; інакше жодного enqueue |
 | **Credentials** | `filecoin_api_key` (Rails encrypted credentials) |
 | **ENV** | `FILECOIN_GATEWAY_URL` (default: `https://gateway.pinata.cloud/ipfs`), `FILECOIN_PINNING_API_URL` (default: `https://api.pinata.cloud/pinning/pinJSONToIPFS`) |
 | **Спеки** | `spec/services/filecoin/archive_service_spec.rb`, `spec/services/filecoin/verification_service_spec.rb` |
