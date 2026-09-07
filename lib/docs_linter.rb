@@ -566,7 +566,11 @@ module DocsLinter
 
   # [SSOT anti-drift] AI-vendor name re-stated outside owner (HARD, owner-only vocabulary).
   # The AI tool roster is VOLATILE (vendors come and go); canon must describe stable ROLES
-  # (frontier-LLM / coding-agent) with concrete instances snapshotted ONCE in 00_06 §5.1
+  # (frontier-LLM / coding-agent) and names NO concrete instances anywhere — the roster
+  # snapshot that used to live in a dedicated subsection of 00_06 was removed 2026-09-07
+  # (⚖️ founder): a vendor list drifts by
+  # construction, so canon keeps no surface that must be refreshed from outside. The role
+  # definitions live in the 00_06 §3 registry row for this very gate.
   # A vendor token re-stated elsewhere drifts the moment the roster shifts. Same shape as
   # solc/tokenomics. Case-sensitive on purpose (lowercase "cursor"/"grok" = UI/verb, не вендор).
   # EXCLUDES overloaded/generic tokens that would false-positive: "Codex" (OpenAI's coding

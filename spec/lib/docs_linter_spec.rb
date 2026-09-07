@@ -617,7 +617,7 @@ end
     end
 
     # [DOC-T.68 фаза 3] Owner переїхав: ростер жив у власному доку модуля 00, який
-    # розчинено, і тепер стоїть у 00_06 §5.1 — разом із гейтом, що його стереже.
+    # розчинено; ростер-знімок знято 2026-09-07 — канон інстансів не веде взагалі, дім РОЛЕЙ = рядок цього гейта в реєстрі 00_06.
     # Негативна половина тут НЕСУЧА: звичайний док мусить червоніти, інакше
     # exempt-множина тихо стала б універсальною і гейт перестав би щось значити.
     it "exempts the roster owner 00_06 and the tracker 00_07, but not an ordinary doc" do
@@ -629,7 +629,7 @@ end
 
     it "does not flag a labelled mirror or a line referencing the roster home" do
       expect(described_class.ai_vendor_name_drift(
-        "01_02_Ti", "ростер — дзеркало, правити в 00_06 §5.1 (Cursor/Copilot)\n")).to be_empty
+        "01_02_Ti", "ростер — дзеркало, правити в домі (Cursor/Copilot)\n")).to be_empty
     end
 
     it "skips fenced code and does not false-positive on lowercase cursor/grok or excluded tokens" do

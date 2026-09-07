@@ -14,7 +14,7 @@ These are the canonical homes. Read them before acting; never copy their content
 | Source | Owns |
 |---|---|
 | `docs/00_03_TRL_Matrix_HIL_and_Beyond.md` | **Readiness**: the NASA/ISO scale (1-9, never 10-12) and its `SRL`/`MRL` siblings (§1), TRL-Layered-Independence (§2), HIL + in-silico-as-HIL (§3), and the task-closure criterion + TRL Gate Events (§4). |
-| `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 **Validation Gate** — the admission criterion for a fact entering canon (an LLM proposes a *hypothesis*; it does NOT compute physics) + the AI-vendor roster (§5.1). Moved here 2026-08-10 when the method page dissolved (DOC-T.68 фаза 3); the golden rule *no code/solder until the spec is approved* survives as this gate, the rest of the old AI-pipeline prose did not. |
+| `docs/00_06_SSOT_Documentation_Standard.md §5` | 🚦 **Validation Gate** — the admission criterion for a fact entering canon (an LLM proposes a *hypothesis*; it does NOT compute physics) ; ⛔ the AI-vendor roster subsection was REMOVED 2026-09-07 — canon names roles only (`frontier-LLM` / `coding-agent`), never instances, and their definition lives in the §3 registry row for the `AI-vendor name One-Home` gate. Moved here 2026-08-10 when the method page dissolved (DOC-T.68 фаза 3); the golden rule *no code/solder until the spec is approved* survives as this gate, the rest of the old AI-pipeline prose did not. |
 | `docs/00_06_SSOT_Documentation_Standard.md §1` | **Canonical doc skeleton** (🎯 Мета / ✅ Статус / 🔗 Cross-references / 📑 auto-ToC / Content; blockers→00_07; no volatile counts). |
 | `docs/00_06_SSOT_Documentation_Standard.md §2` | **Canonical-home registry** — *одна річ, один дім*. The table of which fact lives where (TRL matrix→00_03 §1, AES modes→03_05 §3.7, Lorenz→03_04 §1.2, …). |
 | `docs/00_06_SSOT_Documentation_Standard.md §3` | **Drift-prevention tooling** — the CI-enforced guard table. Add new guards here. |
@@ -309,6 +309,8 @@ Mutation-verify proves it catches the INTENDED — nothing about what it cannot 
 145. КІЛЬЦЕ: два доми шлють один в одного ПРОТИЛЕЖНИМИ стрілками, обидва рефи зелені — і рішення не має дому взагалі
 146. ВИПРАВЛЕННЯ В БІК БІДНОСТІ: реф перецілили СВІДОМО й дбайливо — у дім, що не несе нічого, — а підстава переносу сама хибна — **правлячи вказівник, прочитай і СТАРУ ціль — інакше «поправка» рухає в бік бідності, а її підстава лишається новим фактом, який ніхто не переміряє**
 147. МІТКА ШИРША ЗА НУМЕРОВАНУ СЕКЦІЮ: «реф не влучає» буває ХИБНИМ ПОЗИТИВОМ, і природний хід тут ламає корпус — **Рефлекс перед будь-яким «реф не влучає»: спитай, чи цю адресу не оголошує `00_06 §2` — якщо оголошує, дефект у ЗАГОЛОВКУ цілі, не в цитувальниках**
+148. ДЕТЕКТОР ЗБІГУ НА КЛАС СТРУКТУРНОГО ДУБЛЯ НЕ БУДУЄТЬСЯ — вони антикорельовані за побудовою
+149. ПРАВКА ОДНОГО ЧИСЛА СТВОРЮЄ СУПЕРЕЧНІСТЬ ІЗ СУСІДНІМ ПІДСУМКОМ, ЩО З НЬОГО РАХУВАВСЯ — тобто сам фікс є джерелом свого ж класу — **виправивши число, перечитай АРИФМЕТИКУ навколо нього, а не лише сам рядок**
 
 <!-- /GUARD-CRAFT-INDEX -->
 
