@@ -77,7 +77,12 @@ Rails.application.configure do
   # the end of it. The same impossible precondition also stood in `06_01
   # §DEPLOY-DAY` and `06_04`; all three said it for months.
   #
-  # Two honest exits, and the choice is a ⚖️ (`00_07` SEC.23), not a TODO:
+  # Two honest exits, and the choice is a ⚖️ (`00_07` DEPLOY-1, Фаза 5 leg)
+  # ⛔ Do NOT re-point this at SEC.23: that item carries CSP only as an example of a
+  # high-precision allowlist for a different gate — it has never held this verdict.
+  # (The runbook step in 06_01 §DEPLOY-DAY Фаза 5 points HERE for the choice, so a
+  # second wrong address closes a ring and leaves the ⚖️ homeless.)
+  # It is a VERDICT, not a TODO:
   #   (a) wire a collector — Sentry already has our DSN and accepts CSP reports at
   #       its Security-Header endpoint, so this is small, but it adds an external
   #       recipient and belongs in the vendor register (`ropa_art30`);
