@@ -344,7 +344,7 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   silently.** So the failure is loud but *late*: in a batch it kills the alerts after the long
   one, leaving the sweep half-applied and looking finished. Write the reason as a tweet with an
   ID to follow (`SEC.30 / canon 04_03 §2.2б`), never as an essay, and length-check **before**
-  sending. Instances → memory `project_dependabot_sweep_2026_07`.
+  sending. 🔴 **І міряй БАЙТИ, не символи — одиницю ми так і не перевірили, а кирилиця важить удвічі** (2026-09-07): чернетковий коментар мав 266 символів при **368 байтах**, тобто був би за капом, якби той виявився байтовим. Двозначність знімається запасом, а не вірою: тримай ≤280 БАЙТІВ і питання не виникає. ⊕ І шли ПООДИНЦІ з перевіркою кожної відповіді — саме батч перетворює одну 422 на напівзастосований свіп, що має вигляд закінченого. ⊕ `dismissed_reason` теж не один на всіх: `not_used` = адвізорі про API, якого наш споживач НЕ КЛИЧЕ (доказ grep-ом, постійний) ⊥ `tolerable_risk` = код присутній і був би живий, просто ми не запускаємо той шлях (це ПОЛІТИКА, не факт про код). Злиття їх в одну причину робить слабшу підставу спільною для всіх. Instances → memory `project_dependabot_sweep_2026_07`.
 - **Conda `>=` env vs lock.** ML env is a `>=` spec (raise floors to tested-current — esp. the
   DSP floor that protects the parity contract; read the current literal in
   `tools/ml/environment.yml`, never from here). 🔴 **And a `>=` floor plus a CACHED,
