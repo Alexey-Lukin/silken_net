@@ -9,7 +9,7 @@
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 8 — Мультичейн архітектура повністю спроєктована. Структурний скелет усіх 11 мереж присутній у кодбейсі. Всі сервіси мають RSpec-покриття.
-- **Відкрите:** dClimate real API + Production credentials (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker).
+- **Відкрите:** живе ДЖЕРЕЛО супутникового свідка (S3.2), chain-outage DR (§8) → [`00_07`](00_07_Action_Plan_Tracker). 🔴 **Тут доти стояло «dClimate real API + Production credentials» — і це протухло присудом ⚖️ founder 2026-09-05: вендора ЗРІЗАНО, ногу лишено.** Підстава роздільна: (а) `api.dclimate.net` виміряно мертвим (TLS не встановлюється; маркетплейс віддає `No Data Found`, бо його каталог висить на hosted-сервісі The Graph, вимкненому 2024); (б) дорожче — **нотаризації ми не отримували НІКОЛИ**: `dclimate_ref` генерується цілком у нас (`generate_dclimate_ref` = наш таймстемп + `SecureRandom.hex(8)`), тобто рядка з іменем вендора у вендора ніхто не бачив — клас **СЛОВО** (мітка без вимірювача, [`00_01 §1.1`](00_01_Vision_Mission_and_Roadmap)); (в) джерело під вендором живе й пряме — `firms.modaps.eosdis.nasa.gov` віддає 200 + `Invalid MAP_KEY` на РІВНО той датасет, що вже стоїть у нашому коді (VIIRS/Suomi NPP), тобто dClimate його перепродавав. ⚖️ Замінника сьогодні свідомо НЕ будуємо (У-ВЕЙ): живого споживача вироку немає, тож дротування заморозило б дизайн раніше за споживача; подія повернення названа — перший предмет, якому потрібен ЖИВИЙ погодний оракул. ⚠️ Ціна названа вголос: імена `Dclimate::*` / `dclimate_ref` / `DCLIMATE_*` у коді вже є БОРГОМ і в день підключення джерела міняються ОДНИМ комітом разом із дротуванням; а `firms.modaps…` — служба ОДНОГО іноземного уряду, тобто канал, який можна відібрати, і наше слово «невідбирано» тут працює буквально. ⛔ Нога НЕ спить: `schedule_satellite_verification!` висить на `after_create_commit` кожного алерта — її приспав `configured?`-гейт [ARCH.118], і один прогін симулятора до нього дав 304 приречені джоби.
 
 ---
 
@@ -23,7 +23,7 @@
 | [`05_05` — Slashing and Risk Policy](05_05_Slashing_and_Risk_Policy) | Slashing/burn-політика (що тригерить вилучення SCC) |
 | [`05_06` — Governance and DAO](05_06_Governance_and_DAO) | DAO governance (Governor/Timelock у стеку контрактів) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Chain-сервіси (`Blockchain::Orchestrator`) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (S3.2 dClimate real-API, DR §8) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | Open backlog (S3.2 — живе ДЖЕРЕЛО супутникового свідка; вендора dClimate зрізано ⚖️ 2026-09-05, деталі вище; DR §8) |
 
 ## 📑 Зміст
 
