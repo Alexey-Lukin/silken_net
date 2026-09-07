@@ -29,9 +29,15 @@ RSpec.describe Web3::KeySigner, "#transact" do
   # і саме тому решта сюїти не мусить стабити цінові RPC (урок 175 падінь того ж дня;
   # `rescue StandardError` тут не рятує — `MockExpectationError` є `Exception`).
   # `Eth::Client.create` мережі не чіпає: перший мережевий виклик — `chain_id`.
+  # ⚠️ Баланс і ціна стабляться ТУТ, бо шов тепер несе ще й reserve-перевірку
+  # (`assert_gas_reserve!`): без стабу вона пішла б у мережу на кожному прикладі
+  # й тихо деградувала через fail-open — тобто приклади лишились би зеленими,
+  # а нова гілка не виконувалась би ЖОДНОГО разу. Щедрий баланс = гейт проходить,
+  # тож усі піни нижче судять рівно те, що судили до нього.
   let(:real_client) do
     Eth::Client.create("http://127.0.0.1:8545").tap do |c|
-      allow(c).to receive(:transact).and_return("0x#{'f' * 64}")
+      allow(c).to receive_messages(transact: "0x#{'f' * 64}", get_balance: 10**18)
+      c.max_fee_per_gas = 1_000_000
     end
   end
 
@@ -101,5 +107,94 @@ RSpec.describe Web3::KeySigner, "#transact" do
     expect { signer.transact(real_client, contract, "mint", nonce: 7) }.not_to raise_error
     expect(real_client).to have_received(:transact)
       .with(contract, "mint", sender_key: key, nonce: 7)
+  end
+
+  # =======================================================================
+  # ⛽💰 RESERVE-GATE — «чи проїде ЦЯ транзакція»
+  # =======================================================================
+  # 🔴 Куплено живим інцидентом 2026-09-06: `MintBatchCollectorWorker` упав
+  # `insufficient funds for gas * price + value` при балансі РІВНО `0.05` MATIC,
+  # тобто рівно на порозі `oracle_min_balance_matic` — операторська шкала була
+  # зелена (`ratio = 1.00`), money-шлях непрацездатний. Гард міряв «скільки Є»
+  # там, де питання було «скільки ТРЕБА на одну операцію» (геометрія ARCH.95).
+  describe "резерв газу (`assert_gas_reserve!`)" do
+    let(:estimated_limit) { (74_494 * described_class::HEADROOM).ceil }
+    let(:reserve)         { estimated_limit * 1_000_000 }
+
+    before do
+      allow(real_client).to receive(:eth_estimate_gas)
+        .and_return({ "jsonrpc" => "2.0", "id" => 1, "result" => "0x122fe" })
+    end
+
+    it "відмовляє ДО відправки, коли балансу не вистачає на gasLimit × maxFeePerGas" do
+      allow(real_client).to receive(:get_balance).and_return(reserve - 1)
+
+      expect { signer.transact(real_client, contract, "mint") }
+        .to raise_error(described_class::InsufficientGasReserve, /insufficient funds/)
+      expect(real_client).not_to have_received(:transact)
+    end
+
+    # ⛔ Межа несуча: EVM резервує за ЛІМІТОМ і пропускає рівність, тож гейт, що
+    # відхиляв би `balance == reserve`, був би СУВОРІШИМ за сам ланцюг — тобто
+    # блокував би транзакцію, яка проїде.
+    it "рівність балансу й резерву ПРОПУСКАЄ — ланцюг її пропускає теж" do
+      allow(real_client).to receive(:get_balance).and_return(reserve)
+
+      expect { signer.transact(real_client, contract, "mint") }.not_to raise_error
+      expect(real_client).to have_received(:transact)
+    end
+
+    it "`value:` входить у резерв — EVM рахує `gasLimit × maxFeePerGas + value`" do
+      allow(real_client).to receive(:get_balance).and_return(reserve)
+
+      expect { signer.transact(real_client, contract, "mint", value: 1) }
+        .to raise_error(described_class::InsufficientGasReserve, /\+ value 1/)
+    end
+
+    # 🔑 НЕСУЧИЙ ПІН УСЬОГО ГЕЙТА, і він не про гард, а про його ЧИТАЧІВ.
+    # Наш вирок мусить читатись рівно так само, як вирок ноди, — інакше ми самі
+    # почнемо виробляти `manual_review`, тобто лімб, з якого виходу немає.
+    # ⚠️ Три доми звірено ПОІМЕННО: докстрінг, що НАЗИВАЄ споживачів, гниє тихіше
+    # за код, тож звʼязок доводиться прогоном, а не абзацом.
+    it "текст вироку читається як PRE-BROADCAST усіма ТРЬОМА класифікаторами" do
+      allow(real_client).to receive(:get_balance).and_return(0)
+
+      message = begin
+        signer.transact(real_client, contract, "mint")
+        nil
+      rescue described_class::InsufficientGasReserve => e
+        e.message
+      end
+
+      aggregate_failures do
+        expect(message).to be_present
+        # (1) Polygon: `fail!` + retry, НЕ escalate у manual_review
+        expect(
+          BlockchainMintingService.new([]).send(:transact_error_pre_broadcast?, StandardError.new(message))
+        ).to be true
+        # (2) Celo: нода ВІДХИЛИЛА — інтент безпечно перевиплатити наступним циклом
+        expect(Celo::CommunityRewardService::REJECTED_PATTERNS).to match(message)
+        # (3) Код, що їде в НЕЗВОРОТНИЙ IPFS-пін: названий клас, ніколи `:unknown`
+        expect(Web3::TransactionErrorClassifier.classify(message)).to eq(:insufficient_funds)
+      end
+    end
+
+    # ⚠️ Оголошена стеля гейта, перевірена обома напрямками: він судить лише те,
+    # що ЗМІГ ПРОЧИТАТИ. Мовчазна деградація тут свідома — блокувати money-path
+    # через RPC-гикавку дорожче за дефект, який гейт стереже.
+    it "збій читання балансу вирок НЕ виносить — транзакція йде" do
+      allow(real_client).to receive(:get_balance).and_raise(Net::ReadTimeout)
+
+      expect { signer.transact(real_client, contract, "mint") }.not_to raise_error
+      expect(real_client).to have_received(:transact)
+    end
+
+    it "без оцінки ліміту балансу навіть НЕ ПИТАЄ — множника немає, вироку немає" do
+      allow(real_client).to receive(:eth_estimate_gas).and_return({ "result" => "не-число" })
+
+      signer.transact(real_client, contract, "mint")
+
+      expect(real_client).not_to have_received(:get_balance)
+    end
   end
 end
