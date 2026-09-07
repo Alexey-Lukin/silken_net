@@ -147,6 +147,21 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
         expect(transaction.status).to eq("failed")
         expect(transaction.error_message).to include("EVM Revert")
       end
+
+      # 🔴 [2026-09-07] Друга половина ліку, і вона НЕ дзеркало першої: у гілці успіху
+      # вже-`confirmed` рядок є ПОВТОРНИМ ПРОГОНОМ і мовчки пропускається, а тут той
+      # самий рядок є РОЗБІЖНІСТЮ між нашим станом і ланцюгом (reorg або наша помилка).
+      # Пін стереже обидві властивості одразу: що ми КРИЧИМО і що рядок НЕ ЧІПАЄМО —
+      # автоматичний `fail!` тут спалив би єдиний слід того, заради чого воркер існує.
+      it "logs a loud discrepancy and leaves an already-confirmed row untouched" do
+        transaction.confirm!(16, 21_000)
+        allow(Rails.logger).to receive(:error).and_call_original
+
+        described_class.new.perform(tx_hash)
+
+        expect(Rails.logger).to have_received(:error).with(/РОЗБІЖНІСТЬ.*id: #{transaction.id}/)
+        expect(transaction.reload).to be_status_confirmed
+      end
     end
 
     context "when receipt is not yet available" do
