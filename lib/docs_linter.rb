@@ -859,7 +859,8 @@ module DocsLinter
     nil
   end
 
-  # [SSOT anti-drift] §-section label drift (ADVISORY). Extracted from the inline
+  # [SSOT anti-drift] §-section label drift. A pure function carries NO severity —
+  # that is the caller's `failed <<` line (docs.rake). Extracted from the inline
   # docs.rake scan (2026-05-30) so it is unit-tested like every other guard. A
   # cross-ref `[`NN_NN §Ref`](NN_NN_Name)` whose visible label cites a section
   # §Ref must have a matching heading in the TARGET doc — catches a section that

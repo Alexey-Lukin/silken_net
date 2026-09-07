@@ -38,7 +38,8 @@
 # always required and does NOT separate the genres, since prose-shorthand named refs
 # (`05_02 §Модель`, `05_04 §Merkle`), placeholders (`03_04 §X.Y`, `00_07 §NN`) and
 # non-section IDs (`00_04 §B-02`, `03_05 §FW.2`) all carry one. Those 74 refs stay on the
-# weaker `section_label_drift` ADVISORY by design (00_06 §3). Measured before the flip
+# weaker `section_label_drift` (substring, not digit-led) by design — its severity is the
+# `failed <<` line in docs.rake, never restated here. Measured before the flip
 # across all four corpora sharing this resolver: 46 refs newly in scope, 3 dead.
 #
 # ⚠️ Live ceiling: 04_06 addresses its 30 best practices as `§A.16` too (BP number, not a

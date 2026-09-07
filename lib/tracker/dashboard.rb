@@ -435,7 +435,10 @@ module Tracker
     # NAMED refs (`05_02 §Модель`, `05_04 §Merkle`, `06_02 §Security`), placeholders
     # (`03_04 §X.Y`, `00_07 §NN`), and non-section IDs (`00_04 §B-02`, `03_05 §FW.2`) — all
     # of which DO carry the NN_NN prefix and stay on the weaker `section_label_drift`
-    # ADVISORY by design (00_06 §3). Widening to any letter would sweep in 74 such refs.
+    # (substring, not digit-led) by design. ⚠️ Do not restate that check's SEVERITY here —
+    # this sentence said "ADVISORY" for weeks after it went HARD (2026-07-25, DOC-T.48);
+    # severity is the `failed <<` line in docs.rake, and only there.
+    # Widening to any letter would sweep in 74 such refs.
     DOC_SECTION_TOKEN = /(?:\p{L}\.)?[0-9][\p{L}0-9.]*/
     DOC_SECTION_REF   = %r{(\d\d_\d\d)`?\s*((?:§\s*#{DOC_SECTION_TOKEN}[\s,;`+/–—-]*)+)}
 

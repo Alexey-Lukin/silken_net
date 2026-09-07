@@ -4,7 +4,7 @@
 # [SSOT anti-drift] `rake docs:check_refs` — lints cross-references in docs/*.md:
 #   HARD  (gates CI): every markdown link to a local doc `](NN_NN_Name)` resolves
 #                     to an existing docs/NN_NN_Name.md (catches renamed/typo'd docs).
-#   SOFT  (advisory): every inline `NN_NN §Ref` whose §Ref names a section must
+#   HARD  (gates CI): every inline `NN_NN §Ref` whose §Ref names a section must
 #                     have a matching heading in the target doc (catches the
 #                     "label cites a section that isn't there" drift, e.g. the
 #                     06_02 §Workload-Identity / 07_05 §SLA refs found 2026-05-29).
@@ -29,8 +29,8 @@
 #                     heading-anchor in the target (boundary-aware, bare+linked, comma-
 #                     joined — Tracker::Dashboard.file_section_dangling_refs, the same
 #                     resolver tracker:check runs on 00_07). Closed the canon blind spot
-#                     where cross-doc §-refs had only the substring `section_label_drift`
-#                     advisory (let 08_02 §1.x / 05_03 §749 / 02_03 §4.А rot). Exempt
+#                     where cross-doc §-refs had only the weaker substring
+#                     `section_label_drift` (let 08_02 §1.x / 05_03 §749 / 02_03 §4.А rot). Exempt
 #                     00_06 (cites stale refs as drift examples) + 00_07 (tracker:check).
 # Pure file I/O, no Rails boot needed. Engines: lib/docs_linter.rb + lib/docs_toc.rb
 # + lib/docs_graph.rb (anchor resolution) + lib/tracker/dashboard.rb (canon §-resolution)
@@ -77,7 +77,7 @@ namespace :docs do
     "04_06" => "методологія тестування й карта покриття — практика, не технологія"
   }.freeze
 
-  desc "Lint docs/*.md cross-references (doc-existence hard, §-section advisory)"
+  desc "Lint docs/*.md cross-references (SSOT anti-drift — all categories HARD)"
   task :check_refs do
     files = Dir[File.join(DOCS_DIR, "*.md")]
     existing = files.map { |f| File.basename(f, ".md") }.to_set
@@ -151,8 +151,10 @@ namespace :docs do
         dangling << "#{base} → `#{target}` (doc not found)" unless existing.include?(target)
       end
 
-      # [§-label drift] advisory — a label's `§Ref` must name a real heading in the
-      # target (tested pure fn; canonical ref format → 00_06 §1, kept strict).
+      # [§-label drift] a label's `§Ref` must name a real heading in the target
+      # (tested pure fn; canonical ref format → 00_06 §1, kept strict). ⚠️ Severity
+      # is NOT a property of the check — it is the `failed <<` line at the bottom of
+      # this file; restating it beside the call is exactly what rotted here.
       suspect.concat(DocsLinter.section_label_drift(text, headings).map { |h| "#{base}: #{h}" })
 
       # [TRL presence] a doc with a ✅ Статус section must declare its TRL there —
@@ -247,8 +249,8 @@ namespace :docs do
     # ДО цього гейта, тобто ціна колишньої сліпоти. `08_02` розчинено, `05_03 §749`
     # це номер РЯДКА, поданий як секція, `02_03 §4.А` — літера-лейбл поза digit-led
     # формою. Перенаведення на живі адреси зітре єдиний запис про цю ціну.
-    # ADVISORY — the blind spot that let 08_02 §1.x, 05_03 §749 (a LINE number!), 02_03 §4.А
-    # rot. Exempt: 00_06 (the standard doc cites stale refs as drift EXAMPLES) + 00_07
+    # That weaker fallback is the blind spot that let 08_02 §1.x, 05_03 §749 (a LINE
+    # number!), 02_03 §4.А rot. Exempt: 00_06 (the standard cites stale refs as EXAMPLES) + 00_07
     # (tracker:check owns its §-resolution, One-Home). Named (`§SLA`) refs stay with
     # section_label_drift — this resolver is digit-led only. (00_06 §3 recipe.)
     canon_section_exempt = /\A00_0[67]_/

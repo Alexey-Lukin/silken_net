@@ -13,8 +13,9 @@
 #
 # Trailing section: when the code-span is immediately followed by ` §X`, the §X is
 # FOLDED into the label — `[`NN_NN §X`](Doc)` — but ONLY when §X resolves to a real
-# heading in the target (mirrors DocsLinter.section_label_drift, so no advisory drift
-# is introduced). A §X that is a sub-point / descriptive word (e.g. §1a.2, §"Фізична",
+# heading in the target (mirrors DocsLinter.section_label_drift, so this script cannot
+# introduce a §-label hit — that check is HARD, so a hit here would red the lane, not
+# whisper). A §X that is a sub-point / descriptive word (e.g. §1a.2, §"Фізична",
 # §S6.14, §DOC.11) is left as prose AFTER the link (00_06 §1: descriptive context in
 # prose, not the §-slot).
 #
