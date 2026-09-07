@@ -51,7 +51,7 @@ module Api
           # [SEC.36 2026-09-06] `history` доти віддавав СИРІ моделі — усі 17 колонок
           # `actuator_commands`, включно з `idempotency_token`. 🔑 Рішення про форму
           # цієї моделі вже ухвалене В ЦЬОМУ Ж ФАЙЛІ: `command_status` (документований
-          # ендпоінт #48) перелічує одинадцять полів ЯВНО і токен свідомо не пускає —
+          # ендпоінт #49) перелічує одинадцять полів ЯВНО і токен свідомо не пускає —
           # тож дефектом було не «немає контракту», а те, що `show` його не взяв.
           # Беремо той самий перелік ⊕ `completed_at`: його друкує HTML-таблиця того ж
           # екшена, а звужувати JSON нижче за показане — дзеркальна помилка того ж класу.
@@ -186,12 +186,12 @@ module Api
 
       # --- СТАТУС КОМАНДИ (Audit Trail) ---
       # GET /actuator_commands/:id
-      # Documented as endpoint #48 in 04_03 §4 but was missing from the controller
+      # Documented as endpoint #49 in 04_03 §4 but was missing from the controller
       # before this fix. The route resolved to NoMethodError at runtime.
       def command_status
         # ⚠️ Порядок гілок НЕ косметика: на `Accept: */*` (дефолт curl і багатьох
         # SDK) Rails віддає ПЕРШИЙ оголошений формат. JSON тут первинний — це
-        # документований API-ендпоінт (#48 у `04_03 §4`), і `index`/`show` цього
+        # документований API-ендпоінт (#49 у `04_03 §4`), і `index`/`show` цього
         # ж контролера теж ведуть з json. Turbo-frame шле явний `Accept: text/html`,
         # тож від порядку не залежить.
         respond_to do |format|
