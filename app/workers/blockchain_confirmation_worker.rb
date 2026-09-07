@@ -98,16 +98,41 @@ class BlockchainConfirmationWorker
         return
       end
 
+      # 🔴 [2026-09-07] ТЕРМІНАЛЬНІ РЯДКИ ВІДСІЮЮТЬСЯ ТУТ, І ЦЕ НЕ КОСМЕТИКА.
+      # `confirmation_scope` свідомо виключає лише `manual_review` [ARCH.115], тож
+      # повторний прогін на тому самому хеші (retry · sweeper · дубль-enqueue) бачив
+      # і вже-`confirmed` рядки. Подія `fail` ідемпотентна за побудовою
+      # (`from:` містить `:failed`), а `confirm` — НІ (`from: [:sent, :processing,
+      # :manual_review]`), і саме ця асиметрія давала `AASM::InvalidTransition`
+      # на живому canopy 2026-09-07.
+      # ⚠️ Ціна була не «шумний Sentry»: виклик обгорнутий у `transaction`, тож у
+      # батчі зі ЗМІШАНИМИ станами виняток на вже-підтвердженому рядку відкочував
+      # підтвердження СУСІДІВ — і кожен retry повторював те саме, тобто такий батч
+      # не досягав повного підтвердження ніколи.
+      # ⛔ Гард НЕ через `may_confirm?`: з ARCH.115 подія приймає `:manual_review`,
+      # тож предикат віддав би `true` там, де скоуп навмисно відсікає лімб.
+      settled, actionable = txs.partition(&:status_confirmed?)
+
       if status == "0x1" # Success (Успіх)
         block_num = receipt["result"]["blockNumber"]&.then { |v| v.to_i(16) }
         gas_used  = receipt["result"]["gasUsed"]&.then { |v| v.to_i(16) }
         ActiveRecord::Base.transaction do
-          txs.each { |tx| tx.confirm!(block_num, gas_used) }
+          actionable.each { |tx| tx.confirm!(block_num, gas_used) }
         end
         Rails.logger.info "💎 [Web3] Блокчейн підтвердив емісію: #{tx_hash}. Капітал легалізовано."
       else # Reverted (Провал на рівні смарт-контракту)
+        # 🔴 Тут пропуск НЕ мовчазний, і це друга половина ліку: рядок, позначений
+        # `confirmed`, при revert-квитанції є РОЗБІЖНІСТЮ між нашим станом і
+        # ланцюгом (reorg або наша помилка), а не повторним прогоном. Ковтати його
+        # означало б ховати саме той клас, заради якого воркер існує.
+        if settled.any?
+          Rails.logger.error "🚨 [Web3 Critical] РОЗБІЖНІСТЬ: квитанція #{tx_hash} каже revert, " \
+                             "а #{settled.size} рядків уже позначені `confirmed` (id: #{settled.map(&:id).join(', ')}). " \
+                             "Ланцюг ⊥ наш стан — потрібен ручний розбір, автоматично НЕ чіпаємо."
+        end
+
         reason = "EVM Revert: Транзакція відхилена мережею (можливо, Gas Limit або логіка контракту)."
-        txs.each { |tx| tx.fail!(reason) }
+        actionable.each { |tx| tx.fail!(reason) }
 
         # [КРИТИЧНО]: Якщо батч впав, це потребує негайного аудиту
         Rails.logger.error "🚨 [Web3 Critical] Провал транзакції в Polygon: #{tx_hash}"

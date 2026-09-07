@@ -99,6 +99,40 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
       end
     end
 
+    # 🔴 [2026-09-07] Реальний інцидент canopy: `AASM::InvalidTransition: Event
+    # 'confirm' cannot transition from 'confirmed'` у цьому воркері. Причина —
+    # `confirmation_scope` виключає лише `manual_review`, тож повторний прогін
+    # бачив термінальні рядки, а подія `confirm` (на відміну від `fail`) з
+    # `:confirmed` не переходить. Обидва приклади нижче пінять ІДЕМПОТЕНТНІСТЬ,
+    # і другий — саме те, що робило дефект дорогим: rollback сусідів у батчі.
+    context "when the same hash is processed twice (retry · sweeper · duplicate enqueue)" do
+      before do
+        allow(client_double).to receive(:eth_get_transaction_receipt).and_return(
+          { "result" => { "status" => "0x1", "blockNumber" => "0x10", "gasUsed" => "0x5208" } }
+        )
+      end
+
+      it "is idempotent on an already-confirmed row instead of raising" do
+        described_class.new.perform(tx_hash)
+        expect(transaction.reload).to be_status_confirmed
+
+        expect { described_class.new.perform(tx_hash) }.not_to raise_error
+        expect(transaction.reload).to be_status_confirmed
+      end
+
+      # ⚠️ Половина, що коштувала найдорожче: до фіксу виняток на вже-підтвердженому
+      # рядку відкочував `transaction do` разом із підтвердженням СУСІДА, тож батч
+      # зі змішаними станами не сходився ніколи — кожен retry повторював rollback.
+      it "confirms the still-pending sibling of an already-confirmed row in the same batch" do
+        sibling = create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent)
+        transaction.confirm!(16, 21_000)
+
+        described_class.new.perform(tx_hash)
+
+        expect(sibling.reload).to be_status_confirmed
+      end
+    end
+
     context "when receipt shows revert" do
       before do
         allow(client_double).to receive(:eth_get_transaction_receipt).and_return(
