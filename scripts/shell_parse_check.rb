@@ -161,6 +161,11 @@ end
 # both stayed green over the live tree: no heredoc uses `$${`, and every heredoc
 # happens to be indented uniformly. A transform tested only by "the corpus still
 # passes" is untested exactly where the corpus is silent.
+#
+# ✅ The battery itself is mutation-verified BOTH WAYS: breaking either transform
+# reds it with the case named, and breaking a case's EXPECTATION reds it too — so
+# a case that passes in both directions (i.e. tests nothing) cannot hide here. The
+# count is deliberately not written down; `--selftest` prints `n/n` itself.
 def selftest
   cases = [
     [ "escape survives as shell", -> { neutralise_interpolations('echo "$${HOME}/x"') },

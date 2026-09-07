@@ -111,6 +111,12 @@ jobs:
         working-directory: subgraph
         run: npx graph codegen
 
+      # [OPS.34] Mutation-verified ×2 з відкотом між: зняте поле зі `schema.graphql`
+      # червонить build із НАЗВАНИМ полем і рядком мапінгу; type-error у `mapping.ts` —
+      # так само. ⛔ Окремого схема-лінтера для The Graph індустрія не має ВЗАГАЛІ:
+      # перевіркою є сама компіляція, тож його відсутність тут описує стан екосистеми,
+      # а не наш компроміс (виміряно 2026-08-28). Дім цього запису — тут, бо спеки в
+      # кроку немає, а сусідня OPS.36-батарея мутувалась окремо й доводить ІНШЕ.
       - name: graph build (AssemblyScript mapping → wasm)
         working-directory: subgraph
         run: npx graph build

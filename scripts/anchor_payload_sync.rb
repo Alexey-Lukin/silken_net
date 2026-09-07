@@ -51,7 +51,7 @@
 #   tripwire, never passes vacuously (§Guard-craft #10 — announcing failure and
 #   exiting 0 is worse than silence, because it asserts health).
 #
-# Mutation-verified ×5, each class in isolation with a revert between: a field
+# Mutation-verified ×5 (2026-08-23), each class in isolation with a revert between: a field
 # dropped from the NatSpec (the literal E.53/E.54 defect) · two fields swapped in
 # the canon home · a column scale lowered to `(30,4)` · a kwarg accepted without
 # an interpolation slot · a mirror's form erased entirely (must ABORT, not pass).

@@ -304,6 +304,11 @@ module SpdxHeaders
   #    machine-readable half, NOTICE is its narrative, and pairing prose would be a second home.
   #  · a manifest in a tree NO rule covers is REPORTED, never guessed — same stance as
   #    `unclassified`: the gate refuses to invent a licence for a tree nobody has decided.
+  #
+  # Baseline when this axis landed: 1 of the 2 declaring manifests was wrong, and it was
+  # excised in the same commit. That number is the only record that the axis had a LIVE
+  # catch rather than being decorative — a gate whose first run is green over a clean tree
+  # cannot tell you which of the two it was.
   MANIFEST_LICENCE_RE = { "package.json" => /"license"\s*:\s*"([^"]+)"/ }.freeze
 
   def manifest_licences(root, paths = [])

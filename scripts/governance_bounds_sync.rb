@@ -37,6 +37,14 @@
 #      PARAMETER_MAP — is by design: the LOCAL/inert keys are deliberately not
 #      synced, per the seeds comments, so the check is directional.)
 #
+# Mutation-verified ×4, each class in isolation with a revert between: a bounds
+# divergence · a `value_type` divergence · a PARAMETER_MAP key with no seed · a
+# broken extraction form (must ABORT, not pass empty). Proved 2026-08-23 on the
+# bounds axis: changing `max_value` in `db/seeds.rb` reds with the key NAMED and
+# BOTH values printed; the revert is green. There is no spec for this script; this
+# header is the only record that the proof was done. ⚠️ Re-anchor the date to the
+# current subject if PARAMETER_MAP grows — it has since.
+#
 # Pure Ruby (stdlib only — the worker pulls in `eth` + ApplicationWeb3Worker, and
 # seeds.rb runs AR `.create!`, so BOTH sides are regex-scanned, not required). A
 # pattern that stops matching aborts as a dead-mirror tripwire rather than

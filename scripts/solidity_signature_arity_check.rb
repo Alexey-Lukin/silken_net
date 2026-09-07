@@ -6,8 +6,9 @@
 #
 # `contracts/*.sol` is the code-SSOT of every on-chain function and event; the
 # canon RESTATES those signatures — in `05_03` (the declared home: §Функції,
-# §Події, the «Повна Матриця», the mint-flow diagram and a copy of the
-# subgraph.yaml event block) and, as a short «Ключові функції» summary for a
+# §Події, the mint-flow diagram and a copy of the subgraph.yaml event block),
+# in `05_02 §Subgraph`, where the «Повна Матриця» moved 2026-08-30 [OPS.36] and
+# where that section now declares this gate, and, as a short «Ключові функції» summary for a
 # different module's reader, in `05_01`. Both mirrors are WANTED — the same
 # judgement the canonical-pin engine records for the Lorenz block — so the
 # answer is not to delete them but to pin them.
