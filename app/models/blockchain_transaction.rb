@@ -529,6 +529,19 @@ class BlockchainTransaction < ApplicationRecord
     # в базу руками.
     # ⛔ Не давати авто-поллеру бачити `:manual_review`: гард тримається саме там, і
     # розширення його скоупу поверне дефект, проти якого ескалація й існує.
+    # ⛔ [2026-09-07] НЕ ДОДАВАЙ `:confirmed` у `from:` — і причина НЕ в чистоті машини.
+    # Спокуса приходить рівно з логів: `AASM::InvalidTransition: Event 'confirm' cannot
+    # transition from 'confirmed'` виглядає як недогляд, а сусідня подія `fail` таки
+    # самолупна — тож «узагальнити» здається очевидним. Але самолуп `fail` ОПЛАЧЕНО
+    # явним гардом усередині її хука (`release_locked_points_on_fail! if
+    # aasm.from_state != :failed`), а тут заплатити нічим:
+    # 🔴 `before` штампує `confirmed_at`, і це НЕ технічна мітка — `TreeChronicleService`
+    #    сортує нею хроніку дерева (`order(confirmed_at: :desc)`) і віддає її як `date:`
+    #    самого запису. Самолуп переставляв би дату on-chain події на час RETRY, тобто
+    #    свідчення дерева тихо ставало б неправдивим (`00_01 §1.1` — відтворюваність).
+    # 🔑 Ідемпотентність повторного прогону несе СПОЖИВАЧ, не подія:
+    #    `BlockchainConfirmationWorker` розділяє `txs.partition(&:status_confirmed?)`
+    #    перед транзакцією. Дім розбору — `04_01` картка цієї моделі (ARCH.115-блок).
     event :confirm do
       before do |block_num, gas_cost|
         self.block_number = block_num if block_num.present?

@@ -29,10 +29,25 @@
 # created_at window would MISS a genuinely-stuck tx whose pending wait was long.
 # created_at is still passed to ConfirmationWorker for partition-pruning.
 #
-# [Idempotent re-arm] A concurrent live poller is harmless: AASM `confirm` fires
-# once, a duplicate hits AASM::InvalidTransition → Sidekiq retry → retries_exhausted
-# finds no :sent row → no-op (wasteful, not unsafe). With Sidekiq Enterprise the
-# ConfirmationWorker `unique_for` dedups the duplicate outright.
+# [Idempotent re-arm] A concurrent live poller is harmless — but the REASON changed
+# on 2026-09-07, and the old reason was half wrong, so it is worth keeping both.
+# It USED to read: "AASM `confirm` fires once, a duplicate hits
+# AASM::InvalidTransition → Sidekiq retry → retries_exhausted finds no :sent row →
+# no-op (wasteful, not unsafe)". Canopy paid for both halves:
+#   · "wasteful" materialised at scale — 441 Sentry events and 47 DeadSet jobs on a
+#     SINGLE tx_hash, plus a red herring at triage time;
+#   · "not unsafe" was LOAD-BEARING AND FALSE. It reasons about one row; the poller
+#     calls `confirm!` inside `ActiveRecord::Base.transaction` over a BATCH, so on a
+#     mixed-state batch the exception rolled back the SIBLINGS' confirmations — such
+#     a batch never converged. Nobody noticed only because the mixed case had not
+#     occurred yet.
+# Today the duplicate is a REAL no-op and the carrier moved: `BlockchainConfirmationWorker`
+# partitions `status_confirmed?` rows out before the transaction, so no exception is
+# raised at all. ⛔ Do not restore the exception-path reasoning here — idempotency is a
+# property of the CONSUMER now, not of the event (the event is still one-shot by design:
+# `confirm`'s before-hook stamps `confirmed_at`, which `TreeChronicleService` orders the
+# tree's chronicle by, so a self-loop would move an on-chain timestamp to retry time).
+# With Sidekiq Enterprise the ConfirmationWorker `unique_for` dedups the duplicate outright.
 class StuckSentTransactionSweeperWorker
   include Sidekiq::Job
 

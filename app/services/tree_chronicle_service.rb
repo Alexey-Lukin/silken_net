@@ -175,6 +175,13 @@ class TreeChronicleService < ApplicationService
     wallet = @tree.wallet
     return [] unless wallet
 
+    # 🔑 [2026-09-07] `confirmed_at` тут несе БІЛЬШЕ, ніж сортування: нижче він іде в
+    # `date:` самого запису хроніки, тобто це заявлена дата on-chain події у свідченні
+    # дерева. Саме тому подія `confirm` у `BlockchainTransaction` навмисно НЕ
+    # ідемпотентна (див. ⛔-ноту над `event :confirm`): самолуп `confirmed → confirmed`
+    # переставив би цю дату на час retry поллера й тихо зробив би хроніку неправдивою.
+    # Читач цього рядка — той, хто прийде «полагодити машину станів»; напис стоїть тут,
+    # бо звідти видно ЦІНУ, а з машини — ні.
     wallet.blockchain_transactions
           .where(status: :confirmed)
           .order(confirmed_at: :desc)
