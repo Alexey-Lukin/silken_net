@@ -960,23 +960,20 @@ Soldier — gossip-uplift (3-hop reach)
 - **Стеля точності (позначена):** маяк несе цілі секунди → фазова похибка вузла ≈ ±1 с (округлення + encrypt/airtime); слоти коротші за ~2 с розкидають популяцію **статистично** (фазові групи + FW.10 jitter), не ізолюють детерміновано. Шлях апгрейду: `ts_frac` (1/256 с) у **байті 11** (перший PAD) → ±4 мс → 100-мс слоти; байт зарезервовано, не реалізовано. **Sync-бюджет WUT-влучання = ±10 мс** (ціль детермінованих слотів; gossip-fallback ±128 с придатний лише для `epoch_day`, не TDMA): типовий LSE ±20 ppm набігає ~±18 мс за 15-хв такт маяка → чи вкладається реальний кварц у бюджет, вирішує bench `04_lse_drift.py` ([`00_07` — ARCH.26](00_07_Action_Plan_Tracker) — коротший такт / кращий кварц / ширший guard-інтервал).
 - **Queen-константи** (`queen/main.c`): `TDMA_PERIOD_MIN 15` (= такт маяка) · `TDMA_WINDOW_100MS 20` · `TDMA_SLOT_COUNT 4` · `TDMA_PHASE_4S 0`.
 
-### 5а.3 Опкод-карта (SSOT)
+### 5а.3 Магія RX-класифікації (карта опкодів — не тут)
 
-> **Канонічна таблиця опкодів LoRa/CoAP** живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4). Узагальнено для Time Sync контексту:
+> **Карта опкодів LoRa/CoAP живе в [`03_01 §4.5а`](03_01_Firmware_Lifecycle_and_DMA#45а-downlink-opcode-map--canonical-ssot-doc4) [DOC.4] і сюди НЕ копіюється.** Тут — предмет САМЕ Королеви: за чим вона розрізняє кадри після того, як перший байт прочитано. 🔴 Копія карти стояла тут і розійшлася з домом двома способами — бракувало живого `0x57`, а `0x9A` мав імʼя, якого немає більше НІДЕ в дереві. `CLAUDE.md §7` саме тому й називає будь-який другий список опкодів підозрою на дубль.
 
-| Опкод | Призначення | Канал | Магія | Статус |
-|-------|------------|-------|-------|--------|
-| `0x55` | OTA_REQ_MARKER (FW.27-B Magic Re-Request) | Soldier→Queen LoRa | byte 10 не визначений | ✅ |
-| `0x56` | SYNC_REQ_MARKER (FW.20-S2 panic sync) | Soldier→Queen LoRa | byte 10 = `'S'` (0x53) | ✅ |
-| `0x99` | OTA_MARKER (bytecode chunk) | bidirectional | — | ✅ (Rails→Queen лег = poll-fetch §4а [FW.60]) |
-| `0x9A` | CMD_SET_LORENZ_THRESHOLDS (FW.8) | Rails→Queen→Soldier | freeze-contract | 🟡 deferred TRL-7 |
-| `0x9B` | HMAC_TRAILER_MARKER (FW.23 OTA dual-gate) | Rails→Queen→Soldier | seg_idx 1..3 печатка + 4 version | ✅ |
-| `0x9C` | CMD_TIME_SYNC envelope / Time Beacon (FW.20) | Rails→Queen / Queen→Soldier | byte 10 = `'B'` (0x42) для LoRa beacon'а | ✅ (Rails-лег = кожна poll-відповідь §4а) |
-| `0x9F` | OTA_FETCH_HINT (FW.60 — анонс кампанії у poll-відповіді) | Rails→Queen | `[0x9F][fw_id:4 BE][total:2 BE]` | ✅ |
-| `0x9D` | CMD_SET_AUDIO_THRESHOLDS (FW.18) | Rails→Queen→Soldier | CRC16 | ✅ |
-| `0x9E` | CMD_ROTATE_KEY (FW.17, реле — §5б) | Rails→Queen→Soldier | CRC16 | 🟡 gated (FW.2 CCM) |
+| Опкод | Чим Королева розрізняє | Примітка |
+|-------|------------------------|----------|
+| `0x56` | byte 10 = `'S'` (0x53) | `SYNC_REQ_MAGIC_BYTE`, panic sync |
+| `0x57` | byte 10 = `'E'` (0x45) | device-event; магія — анти-DID-колізія (`firmware/common/device_event.h`) |
+| `0x55` | **магії НЕМА** | OTA re-request: у коді немає ані `#define`, ані перевірки — розрізнення тримається на тому, що магія є в СУСІДІВ |
+| `0x9B` | seg_idx 1..3 печатка + 4 version | OTA dual-gate trailer |
+| `0x9C` | byte 10 = `'B'` (0x42) на LoRa-беконі | CoAP-лег конверта магії не несе |
+| `0x9D` · `0x9E` | CRC16 | Soldier-bound CMD-каркас (§5б) |
 
-> **Розмежування 0x55 vs 0x56:** оба uplink-маркери, їх дезамбігвує magic-byte у позиції 10 (`'R'` для re-request vs `'S'` для sync) — захищає від ложної маршрутизації при випадковому bit-flip першого байта.
+> ⚠️ **Дезамбігвація uplink-трійки `0x55`/`0x56`/`0x57` асиметрична, і це не оздоба.** Магію мають лише двоє; `0x55` розпізнається як «маркер збігся, магії сусідів немає». Той самий клас колізії названо в коді: старший байт DID може випадково дорівнювати маркеру (`StatusByte 0x45 × DID-старший 0x57 = 1/256`), і знімає його не магія, а майбутня wire-rev3-адресація разом з рештою control-опкодів.
 
 ### 5а.4 Константи Soldier-сторони
 
