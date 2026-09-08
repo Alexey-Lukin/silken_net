@@ -156,7 +156,7 @@
 
 ## B. ESG Vendor-Screening Checklist (репутаційний скрін)
 
-> **Навіщо:** SilkenNet = climate-D-MRV → grant-фонди / кліматичні інвестори роблять **supply-chain ESG due-diligence** (Horizon Europe, EU-Taxonomy, green-bond умови). Постачальник, що сам «брудний», = репутаційний/eligibility-ризик для проєкту. Скрін = **захист eligibility**, не бюрократія.
+> **Навіщо:** ⚠️ **Підстава ПЕРЕПИСАНА 2026-09-08 — доти тут стояв grant-mandate, і він мертвий:** грант-вектор знято ⚖️ founder 2026-07-23 (Horizon прибрано з проєкту; трек opportunistic-passive, дім негативний — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.12/BIZ.20). Чинна підстава вужча й наша власна: SilkenNet = climate-D-MRV, тож постачальник, що сам «брудний», є репутаційним ризиком для свідчення, яке ми продаємо. ⛔ Не називати вендорові жодного фонду й жодного «reporting obligation» — їх немає. Постачальник, що сам «брудний», = репутаційний/eligibility-ризик для проєкту. Скрін = **захист eligibility**, не бюрократія.
 > **Формат:** **Pass / Flag / Fail** per рядок. **Pass** = доказ є. **Flag** = часткова / self-declared без audit / потребує follow-up. **Fail** = невідповідність або red-line.
 > **Evidence-first:** кожен рядок вимагає **документ**, не заяву (сертифікат-№, звіт, policy-URL). Self-declaration без доказу = максимум **Flag**.
 
@@ -229,7 +229,7 @@
 
 **Не є Конфіденційною інформацією** (жодне зобов'язання §C.3 не застосовується), зокрема:
 
-- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later** (per-file SPDX), смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також **defensive-published** інвентивне ядро (Synergy A/B — TDCommons + публічний repo + Стаття 1). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art, не secret**. Ліцензійна мапа зон — дім [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (дзеркало кореневих LICENSE-файлів; правити там);
+- (1) 🔓 **Вже-публічне ядро SilkenNet:** код backend/firmware/tooling під **AGPL-3.0-or-later** (per-file SPDX), смарт-контракти `contracts/*.sol` під **MIT** (per-file SPDX; ратифіковано DOC-T.47), hardware-специфікації під **CERN-OHL-S-2.0**, документація під **CC-BY-SA-4.0**, а також те інвентивне ядро, що **вже опубліковане публічним repo**. 🔴 **⛔ TDCommons-якір і Стаття 1 сюди НЕ входять — вони постинг-готові, але НЕ виконані** ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) прямим текстом: «дата prior art має юридичну вагу, тож не цитуй їх як наявні»; стан — [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.3 і HW.5.IS, обидві ноги відкриті). Оголошувати їх у carve-out означало б віддати конфіденційність авансом за prior art, дати якого ще не існує. ⚠️ І перелік Synergy тут не вичерпний: `00_01 §8` несе ще **Synergy C** (хаотичне перетворення як печатка цілісності, додано 2026-09-05). Формат пакета, lightweight-crypto-інтеграція, RFQ-specs, креслення — **prior art лише в тій частині, що вже в публічному repo**. Ліцензійна мапа зон — дім [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) (дзеркало кореневих LICENSE-файлів; правити там);
 - (2) інформація, що стала публічною **не з вини** Одержувача;
 - (3) вже правомірно відома Одержувачу до розкриття (з доказом);
 - (4) незалежно розроблена Одержувачем без використання Конфіденційної інформації;
@@ -276,7 +276,7 @@
 - [ ] 👤 Підтвердити §C.2(1) carve-out проти актуальних кореневих ліцензій (`/LICENSE` AGPL + per-file SPDX по source-дереву · SPDX-MIT у `contracts/*.sol` · `/LICENSE-HARDWARE.txt` · `/LICENSE-DOCS.txt` · `/NOTICE`) — щоб NDA не суперечив open-license.
 - [ ] 👤 Заповнити всі `PLACEHOLDER`: сторони, тема MoU, строки (N/M), forum спорів, поріг need-to-know.
 - [ ] 👤 Узгодити з **co-authorship**-частиною MoU (§C.5(d)) — щоб конфіденційність не блокувала спільну публікацію.
-- [ ] 👤 Зафіксувати підписанта per-engagement: operational-vehicle (наявна UA-компанія, Дія.City-резидент) або founder як фізична особа — юр-звірити правочинність та відповідність тришару «оперує / володіє / емітує» ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md); residual — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).
+- [ ] 👤 Зафіксувати підписанта per-engagement. ⚠️ **Це НЕ вибір юр-форми — її обрано ⚖️ 2026-07-24 і вона більше не гейтить** ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20: тришар operational-vehicle ⊥ IP/™ на фізособі ⊥ token-контур Phase-2; сусідній `msa_skeleton` уже пише counterparty поіменно). ⛔ **Не нести цю розвилку юристові як відкриту** — DOC-T.101 щойно зняв рівно таку в `msa_skeleton`, бо вона продавала оплачену годину за вирішене. 🔴 **Живий гейт тут ІНШИЙ і його треба назвати:** предмет цієї NDA — криптоключі, польові дані й ML-ваги, тобто **SilkenNet-IP**, а канон ставить будь-який дотик IP до ActiveBridge-контуру **ПІСЛЯ co-founder IP-carve-out** (BIZ.20, двошаровий: ЦК 1113 ч.1 + розкриття конфлікту інтересів ст. 42 ч.6 ЗУ «Про ТОВ»). Юр-звірити треба саме це — правочинність обраного шару й проходження carve-out-гейта, а не відповідність тришару «оперує / володіє / емітує» ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md); residual — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20).
 
 ### §C.8 IP-режим ВНЗ-контрибуцій — каркас пункту для MoU (DRAFT, **UNI.20**)
 
@@ -326,7 +326,7 @@ Vendor pre-qualification — implant-grade titanium laser-PBF, thin-wall lattice
 
 ### Scope of request
 
-Before we issue detailed part RFQs we ask candidate suppliers for a short pre-qualification covering two things: manufacturing capability with the quality and material documentation you can supply, and a supply-chain sustainability questionnaire that our funding and reporting obligations require us to keep on file. Answering commits neither side to anything. If it is easier for you, answer inline in this email — attachments only where a document is asked for.
+Before we issue detailed part RFQs we ask candidate suppliers for a short pre-qualification covering two things: manufacturing capability with the quality and material documentation you can supply, and a short supply-chain sustainability questionnaire we keep on file as part of our own due-diligence. Answering commits neither side to anything. If it is easier for you, answer inline in this email — attachments only where a document is asked for.
 
 ### Item specification
 

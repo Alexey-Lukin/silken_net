@@ -180,7 +180,9 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 > Можна зупинитись на будь-якому блоці (деталі приходять поступово).
 
 ### 3.0 Інструменти
-1. LoRa-E5 mini: Type-C → комп'ютер; прошити baseline-образ (STM32CubeProgrammer / `factory:flash` — [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning)).
+1. LoRa-E5 mini: Type-C → комп'ютер; прошити baseline-образ **STM32CubeProgrammer**, або `firmware/scripts/bench/RUNBOOK.md` §1.1 (`00_flash.sh --elf <path> --execute`).
+   🔴 **ПЕРШИЙ FLASH НЕЗВОРОТНИЙ:** Seeed виходить з RDP-L1, тож перше програмування = **mass-erase**, і заводську **AT-прошивку вже не повернути** ([`00_07`](00_07_Action_Plan_Tracker) FW.46). Тримай **третій mini недоторканим резервом** і не спалюй обидва, доки не знаєш, що саме на них ганятимеш.
+   ⛔ **`factory:flash` тут НЕ підходить і образу не пише** — його `desc` каже прямо: «Create a Factory-Flashing session (status=pending)». Це запис у БД, за яким іде `factory:approve` (обов'язковий `SUPERVISOR_PASSWORD`, 2-Person Rule SEC.3) і `factory:execute`; дотиснувши його соло на dev-модулі, ти або впрешся в UID-guard [FW.54], або запишеш РЕАЛЬНІ ключові блоки в плату, яка для цього не призначена ([`03_06 §5`](03_06_Factory_Flashing_and_Key_Provisioning)).
 2. FT232RL: **джампер рівня → 3.3 В**; TX/RX cross до LoRa-E5 UART → serial-консоль / mruby REPL.
 3. ST-LINK-V3MINIE: SWD (SWCLK/SWDIO/GND) до LoRa-E5 для дебагу.
 4. **⚠️ Не живити одночасно** через Type-C (крок 1) І harvester 3V3-пін (§3.3): 3V3-пін mini back-feed-ить onboard-LDO. Спершу Type-C flash → від'єднати → потім harvester.
@@ -193,9 +195,9 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 
 ### 3.2 Power management (BQ25570)
 1. LTC3108 VOUT → BQ25570 `VIN_DC`; спільний GND.
-2. Накопичувач: `(+)`→`VBAT`, `(−)`→GND. **⚠️ полярність за типом** (§1 Блок 2).
+2. Накопичувач: `(+)`→**`VSTOR`**, `(−)`→GND. **⚠️ полярність за типом** (§1 Блок 2). ⚠️ **Тут стояв `VBAT`, і це суперечило §2 цього ж файлу** («BQ25570 (VSTOR)», «при VSTOR≥3.4 В Buck дає 3V3») — дім піна [`02_03 §2`](02_03_BQ25570_MPPT_Nano_Power) знає рівно три (VSTOR / VOUT / VBAT_OK) і вішає накопичувач на **VSTOR**. На CJMCU-2557 це різні пади, тож помилка не текстова.
 3. `VOUT` BQ25570 → перемичка на Блок 3.
-4. **Checkpoint:** VBAT росте 0→3.4 В; при 3.4 В Buck відкривається → VOUT=3.3 В.
+4. **Checkpoint:** **VSTOR** росте 0→3.4 В; при 3.4 В Buck відкривається → VOUT=3.3 В (поріг = `VBAT_OK`, це окремий сигнальний пін, не вузол накопичувача).
 
 ### 3.3 Compute
 1. BQ25570 `VOUT` (3V3) → LoRa-E5 `3V3`; GND спільний.
@@ -215,12 +217,12 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 ### 3.6 Acoustic wake (п'єзо → EXTI)
 1. П'єзо ЗП-3: один вивід→GND, інший→сигнальний tap. **BAT54S** = dual-diode rail-clamp: верхній катод→3.3 В, нижній анод→GND, tap між діодами→EXTI GPIO (обмежує сплеск у 0-3.3 В). **⚠️ на energy-стенді 1N5819 глушить ультразвук — свап на BAT54S для acoustic.**
 2. Bias: слабкий pull-down (~1 МΩ tap→GND) тримає EXTI-пін не-плаваючим між сплесками.
-3. **Checkpoint:** постукати/подати 16 кГц tone → сплеск на GPIO → wake зі STOP2 (EXTI-IRQ у логах).
+3. **Checkpoint:** постукати/подати тон → сплеск на GPIO → wake зі STOP2 (EXTI-IRQ у логах). ⚠️ **Частоту стимулу НЕ брати 16 кГц не подумавши — розбіжність відкрита на чотирьох сайтах** ([`00_07`](00_07_Action_Plan_Tracker) HW.30 несе присуд): 16 000 Гц є частотою ДИСКРЕТИЗАЦІЇ тракту ([`03_03`](03_03_TinyML_Acoustic_Inference): fs = 16 кГц, fmax = 8 кГц за Найквістом), тоді як живі SMD-кандидати резонують на **4.0–4.1 кГц** ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)) і саме туди лягає смуга класу «пилка» 2–8 кГц. Для EXTI-пробудження слабка відповідь на 16 кГц спишеться на биту схему clamp'а; для attenuation-вимірів (HW.11/HW.30) на резонансі сигнал максимальний.
 4. Патерн Zero-Touch (SMD-piezo + Sil-Pad) → [`02_01 §6`](02_01_Hardware_Architecture_and_BOM); поріг → HW.30.
 
 ### 3.7 Radio (антена ПЕРША)
 1. 🔴 **Прикрутити антену 868 до LoRa-E5 ПЕРЕД будь-яким живленням радіо.**
-2. **Checkpoint:** LoRa TX (+14 dBm SF9) → приймач/інший LoRa-E5 бачить пакет.
+2. **Checkpoint:** LoRa TX (+14 dBm SF9) → приймач/інший LoRa-E5 бачить пакет. 🔴 **Цей чекпойнт НЕ досяжний власним образом до board-freeze:** [`00_07`](00_07_Action_Plan_Tracker) FW.46 оголошує LoRa-E5 mini носієм **radio-free** зрізів, а [`03_01 §12.4`](03_01_Firmware_Lifecycle_and_DMA) називає причину — `radio.c` middleware не компілюється без `radio_conf.h` з `.ioc`. Тобто або лишаєш заводську AT-прошивку (`AT+TEST=TXLRPKT`) і НЕ виконуєш крок 1 §3.0 на цьому екземплярі, або чекаєш board-freeze. ⚠️ Порядок несучий: спаливши AT-прошивку заради цього тесту, ти позбавляєш себе єдиного способу його зробити.
 3. Zero-Touch RF, SWR-фізика → [`02_01 §5`](02_01_Hardware_Architecture_and_BOM).
 
 ---
@@ -230,7 +232,7 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 > **Два рівні.** (A) **Breadboard-рівень** — «блок ожив?» (мультиметр/LED/I2C-scan/serial),
 > §3-checkpoint'и вище. (B) **Silicon-атестація** — «кремній відповідає специфікації?»
 > (µА-профілі, crypto-KAT, timing) — **дім `firmware/scripts/bench/RUNBOOK.md`**, НЕ дублюється тут.
-> Оскільки LoRa-E5 = готовий STM32WLE5, RUNBOOK-сеанси §1-4 (crypto/RTC/power/I2C) досяжні
+> Оскільки LoRa-E5 = готовий STM32WLE5, RUNBOOK-сеанси §1-4 (прошивка+option-bytes · crypto · живлення · час/RTC) досяжні
 > вже на макетці; §5 (модем SIM7070G) — Queen-only, тут недосяжний.
 
 **Мапа breadboard-блок → RUNBOOK-сеанс (silicon-half):**

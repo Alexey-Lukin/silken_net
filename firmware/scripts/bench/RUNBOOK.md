@@ -112,7 +112,7 @@
 - **HW.15 VBAT-droop @ 2A burst** (acceptance `02_05 §2.2.1`): осцилограф на VBAT-піні SIM7070G під час LTE-M TX burst → просадка **< 20 мВ** (5-cap tank bank поз.17–20 тримає; brownout-поріг 3.0 В, margin >35×). Без цього замір — brownout-лотерея першого деплою.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
 - **П'єзо interrupt-storm поріг** (`03_03 §1.2`, HW.30 cb-4/5) — ⚖️ hardware comparator/RC **vs** software amplitude-gate; якщо SW → поріг калібрується на [bench:acoustic]-ризі (cb-5, post-coupling).
-- **Acoustic 16 kHz стенд** (спільний день HW.11 + HW.30, той самий Ti-coin + 16 kHz tone на тому самому п'єзо): HW.11 coating-attenuation з/без (`02_02 §3.4`) + HW.30 SMD-piezo+Sil-Pad voltage-spike vs стара ∅27мм через-отв. (`02_01 §6`) — один стенд-день, спільний rig.
+- **Acoustic-стенд** ⚠️ (частота стимулу — ВІДКРИТА, присуд `00_07` HW.30: «16 kHz» тут є частотою дискретизації тракту `03_03`, а не резонансом п'єзо ~4 кГц; узгодити ПЕРЕД днем) (спільний день HW.11 + HW.30, той самий Ti-coin + 16 kHz tone на тому самому п'єзо): HW.11 coating-attenuation з/без (`02_02 §3.4`) + HW.30 SMD-piezo+Sil-Pad voltage-spike vs стара ∅27мм через-отв. (`02_01 §6`) — один стенд-день, спільний rig.
 
 ## Вихідний критерій дня
 
