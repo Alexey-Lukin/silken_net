@@ -6,7 +6,7 @@
 
 ## Summary
 
-Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). The honest
+Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). 🔴 **This verdict is ALLOY-SPECIFIC and does NOT transfer** (noted 2026-09-08): every number below is Gr5's (α 8.6×10⁻⁶, E 110 GPa), Gr5 is the **baseline, not the chosen alloy** (`01_02 §2.5` six-alloy bake-off, `00_07` HW.24), and the candidates differ by exactly the properties this report divides by — Ta ≈ 6.3×10⁻⁶ / 186 GPa, Ti-13Nb-13Zr ≈ 79 GPa. **The SF 5.6× is not portable; re-run `56_unified_press_fit_lame.py` per alloy before quoting it for anything but Gr5.** (The sibling artifact already went per-alloy: `protocols/ebfc/in_silico/SUMMARY.md` §Per bake-off alloy.) The honest
 **combined** worst-case stress (−30 °C + s6-max, unified thick-wall Lamé) stays well below PEEK yield
 (**SF 5.6×**, von Mises 4.7×; thermal-only 14.6×) — the 2 mm wall is a **robust default, not stress-limited**
 (the former "CTE-limited / SF 3.4×" was an over-stated-denominator artifact, Correction C). The press-fit contact pressure is far

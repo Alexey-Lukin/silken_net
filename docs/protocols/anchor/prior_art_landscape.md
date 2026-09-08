@@ -26,8 +26,11 @@
 > ⏳ **СТАТУС: query-set написано, пошуки ще НЕ прогнані.** Таблиці hit-логу порожні, а висновок нижче сформульований **умовно** («очікуваний результат… якщо нема чинного блокуючого патенту»). Це **план FTO-перевірки**, а не її результат — не цитувати як «новизну підтверджено». Прогін + hit-лог = residual у [`00_07`](../../00_07_Action_Plan_Tracker.md) UNI.3. ⚠️ **Присудом UNI.3 прогін РОЗЧЕПЛЕНО з публікацією:** він є freedom-to-operate (чи не наступаємо на чуже), а не передумовою disclosure — режими незалежні, і захисна публікація на прогін НЕ чекає. Ця клауза доти вимагала протилежного.
 
 ## Query Set 1 — Coaxial Gyroid Anchor (геометрія + матеріал)
+> 🔴 **Матеріальну вісь РОЗШИРЕНО 2026-09-08, і підстава не косметична: до того запити звужувались до титану, тоді як bake-off (`01_02 §2.5`, [`HW.24`](../../00_07_Action_Plan_Tracker.md)) містить ТАНТАЛ, Nb/Zr-родину й золочені варіанти.** Блокуючий патент на ту саму гіроїд-синергію в танталі просто не витягнувся б — а порожній hit-лог прочитався б як «чисте поле», тобто як ДОКАЗ свободи дії. Файл застерігає про статус прогону («пошуки ще НЕ прогнані»), але не застерігав про ПОКРИТТЯ самого запиту, і саме друге тихіше. ⛔ Розширюючи матеріальну вісь тут, розшир її й у [`defensive_disclosure.md`](defensive_disclosure.md) — щит і розвідка мусять описувати ОДИН рід.
+
+
 ```
-("gyroid" OR "TPMS" OR "triply periodic minimal surface") NEAR15 ("titanium" OR "Ti-6Al-4V" OR "Ti alloy") AND (implant* OR anchor* OR scaffold*)
+("gyroid" OR "TPMS" OR "triply periodic minimal surface") NEAR15 ("titanium" OR "Ti-6Al-4V" OR "Ti alloy" OR "tantalum" OR "niobium" OR "zirconium" OR "biocompatible metal" OR "porous metal") AND (implant* OR anchor* OR scaffold*)
 ```
 ```
 ("gyroid" OR "TPMS" OR lattice*) NEAR15 (tree* OR plant* OR wood* OR xylem OR trunk*) AND (sensor* OR monitor* OR implant* OR IoT)
@@ -69,7 +72,7 @@
 
 ## Query Set 4 — Self-healing coating + Query Set 5 — anti-biofouling zwitterionic membrane
 ```
-("self-healing" OR "self-repair*") NEAR15 (coating* OR microcapsule*) AND (titanium OR "Ti-6Al-4V")
+("self-healing" OR "self-repair*") NEAR15 (coating* OR microcapsule*) AND (titanium OR "Ti-6Al-4V" OR tantalum OR niobium OR "biocompatible metal")
 ```
 ```
 (zwitterion* OR sulfobetaine OR SBMA OR PSBMA) NEAR15 (Nafion OR "proton exchange membrane" OR PEM)

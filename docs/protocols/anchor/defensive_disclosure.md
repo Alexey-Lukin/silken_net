@@ -60,7 +60,9 @@ placed here into the public record:
 A self-powered device for *in-situ* monitoring of the physiological state of living woody tissue,
 comprising:
 
-- **(a) a porous metal anchor** of additively manufactured titanium alloy (Ti-6Al-4V) with a **gyroid**
+- **(a) a porous metal anchor** of an additively manufactured biocompatible metal — baseline Ti-6Al-4V
+  (ASTM F2924), and equally Ti-6Al-7Nb, commercially pure titanium, tantalum, other niobium- or
+  zirconium-bearing biocompatible alloys, and noble-metal-coated variants of any of these — with a **gyroid**
   (TPMS) architecture, for implantation into the xylem of a living tree, wherein the gyroid
   **simultaneously** (i) admits xylem sap into the porous volume, (ii) provides a stiffness gradient
   isoelastic with living wood, and (iii) constitutes the metal↔xylem interface electrode (≈65% porosity;
@@ -97,8 +99,8 @@ as not to passivate the EBFC interface.
 
 ## 3. Disclosed method (description)
 
-A method of monitoring the health of a living tree: implanting into its xylem a porous gyroid titanium
-alloy anchor that **simultaneously** integrates with sap flow, matches the elastic response of the wood,
+A method of monitoring the health of a living tree: implanting into its xylem a porous gyroid anchor of a
+biocompatible metal (as in §2(a) — not limited to titanium alloys) that **simultaneously** integrates with sap flow, matches the elastic response of the wood,
 and forms the metal↔xylem electrode of an enzymatic biofuel cell; generating electrical energy from xylem
 glucose at that cell; storing that energy in an energy store; and deriving a health signal **from the
 charge-time dynamics of that same cell** — such that a single enzymatic biofuel cell both powers the
