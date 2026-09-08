@@ -36,58 +36,58 @@ summary. The view layer is **Phlex** (Ruby components, NOT ERB) on Rails 8.1, st
 
 <!-- FRONTEND-GOTCHAS-INDEX:AUTO — generated from gotchas.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
-1. NO `tailwind.config.js` — **Reflex when you meet an UNMEASURABLE bucket in any of our instruments: that is a list of places to inspect by hand, not a list of things that passed**
-2. Raw Tailwind forbidden across the component tree, not just `shared/` — **its ceiling belongs in ONE home — the script header — and a registry row that restates the dialect list beside its own router is the copy that rots**
+1. NO `tailwind.config.js` (Tailwind v4) — SSOT це `@theme`-блок, а невідомий клас падає ТИХО, без жодної помилки збірки
+2. Raw Tailwind forbidden across the component tree, not just `shared/`
 2a. The theme rides exactly ONE shaft, and since 2026-08-08 that shaft is the ENVIRONMENT — `@media screen and (prefers-color-scheme: dark)`
 2b. Phlex формалізує в текст ЛИШЕ `Float` та `Integer` — усе інше його `format_object` віддає `nil`, і вузол виходить порожнім БЕЗ помилки
 2c. A hand-written `autoload_paths` line does NOT put the component layer into `eager_load_paths` — and the gap is invisible until production
 2d. `@theme` оголошує стек, а не ДОСТАВКУ — і два сусідні токени можуть хворіти в ПРОТИЛЕЖНІ боки
 3. A new font-size → register it in `CUSTOM_TEXT_SCALE`
 4. Ніяких DB-запитів у Phlex `initialize` — компонент приймає лише вже завантажені дані
-5. `t('.key')` autoscopes by class-name — **Рефлекс перед будь-яким One-Home над i18n-ключем: спитай, на ЧОМУ ключується сканер, і залиш йому літерал**
+5. `t('.key')` autoscopes by class-name — ключ будується з імені класу, тож рефакторинг імені мовчки перецілює переклад
 6. Спеки за замовчуванням рендерять АНГЛІЙСЬКУ — свідок іншої локалі мусить її оголосити
-7. Turbo `broadcast_*` runs in MODEL context — **Рефлекс перед тим, як покласти `*_path` у компонент: грепни, чи його НЕ рендерять через `.call` — і якщо рендерять, питання не «чи додати хелпер», а «хто будує адресу»**
+7. Turbo `broadcast_*` runs in MODEL context — компонент рендериться поза запитом, тож ані `current_user`, ані сесії, ані route-хелперів там немає
 8. Класи будуй через `tokens()`, не склеюванням рядка — інакше TailwindMerge не розвʼяже конфлікт утиліт
-9. For live updates use `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to` (§8), NOT raw `ActionCable.server.broadcast` — **any broadcast reachable from a model commit-hook on a money path needs the same isolation as the device-reply path — ask what the CALLER does when the hook raises, not whether the broadcast matters**
-9a. The tract has a FIFTH link the registry sweep above cannot see, and it is upstream of all four: the CONDITION under which the producer fires at all — **Reflex when a live update looks dead despite a healthy tract: diff the trigger set against the columns the component actually RENDERS, then check whether the writer bypasses callbacks**
-10a. PLURAL-категорії МІРЯЮТЬ рантаймом, ніколи не пригадують — і промах тут коштує роботи БЕЗ ЕФЕКТУ, не червоного гейта — **перш ніж шукати форму слова для числа, спитай, чи це число взагалі ДОСЯЖНЕ — і чи не бреше сама ШКАЛА поруч; питання про відмінок часто зникає разом із предметом**
-10. A user-visible enum value's home is the locale file, not `.humanize` — **Reflex for any behaviour change that touches user-visible prose: grep the key and edit every locale BY HAND, and treat a category/severity change as half a fix until you have re-read the sentence**
+9. For live updates use `turbo_stream_from` + `Turbo::StreamsChannel.broadcast_*_to` (§8), NOT raw `ActionCable.server.broadcast`
+9a. The tract has a FIFTH link the registry sweep above cannot see, and it is upstream of all four: the CONDITION under which the producer fires at all
+10a. PLURAL-категорії МІРЯЮТЬ рантаймом, ніколи не пригадують — і промах тут коштує роботи БЕЗ ЕФЕКТУ, не червоного гейта
+10. A user-visible enum value's home is the locale file, not `.humanize`
 10c. Перш ніж АВТОРИТИ мітку, грепни її ЗНАЧЕННЯ по каталогах, не лише ключ — сусідній домен міг уже її перекласти
-10b. Число з іменником після нього заводить плюральний борг — часто його можна ОБІЙТИ, назвавши межу замість тривалості — **побачив `%{count}`/`%{n}` перед іменником — спитай, чи взагалі потрібне ЧИСЛО, чи потрібен ФАКТ, який воно кодує (дата · діапазон · назва періоду)**
+10b. Число з іменником після нього заводить плюральний борг — часто його можна ОБІЙТИ, назвавши межу замість тривалості
 11. A broadcast payload must carry NO locale-dependent prose
-12. A component that renders a GATED action must TAKE the actor — and its default must fail CLOSED — **Reflex for any cell-level migration: enumerate which cells change on the event you are re-targeting, not just the one you are fixing**
+12. A component that renders a GATED action must TAKE the actor — and its default must fail CLOSED
 12b. `data-turbo-frame` мусить указувати на `<turbo-frame>`, а не на елемент із таким id — і провал ТИХИЙ
-12a. A stream+target pair has exactly ONE owner — the page that renders the target — and the payload's shape belongs to that owner, not to the producer — **Reflex before any migration to a signal: list the `turbo_frame`s with `src` on the owner page — the layout meta-tags know nothing about them**
+12a. A stream+target pair has exactly ONE owner — the page that renders the target — and the payload's shape belongs to that owner, not to the producer
 13. A gated action needs the right ACTOR (#12) — but it also needs a right TARGET, and that is a separate axis no gate and no component spec can see
-14. A component spec's own fixture is an unproven contract with the CALLER, and it lies in two ways — **before trusting a fixture whose names are right, ask whether the component reads THAT name or something derived from it**
+14. A component spec's own fixture is an unproven contract with the CALLER, and it lies in two ways
 15. Flash-поверхня існує з 2026-08-01, і має рівно один спосіб вживання
 16. `data-turbo-permanent` у цьому дереві не стоїть НІДЕ — і це стан, а не випадковість
-17. `*TargetConnected` спрацьовує РАНІШЕ за `connect()` — тож стан, ініціалізований у `connect()`, для серверної розмітки ще не існує — **Рефлекс при написанні будь-якого контролера з `*TargetConnected`: спитай, чи він виживе, якщо target прийде ПЕРШИМ — і перевір це прикладом, у якому дані Є**
+17. `*TargetConnected` спрацьовує РАНІШЕ за `connect()` — тож стан, ініціалізований у `connect()`, для серверної розмітки ще не існує
 18. «Не виміряно» — окремий СТАН, і в UI він має ІМʼЯ, не тире
-19. Твердження «HTML цього не дозволяє» майже завжди про ПАРСЕР — а Turbo ходить повз нього, тож обмеження може бути реальним і водночас не діяти на твоєму шляху доставки — **перш ніж будувати вибір на «розмітка так не вміє», спитай, ЯКИМ шляхом їде твій фрагмент**
+19. Твердження «HTML цього не дозволяє» майже завжди про ПАРСЕР — а Turbo ходить повз нього, тож обмеження може бути реальним і водночас не діяти на твоєму шляху доставки
 20. Закривши сайт класу, перечитай ФАЙЛ цілком — а не околицю правки
-21. Глобальне правило `td:nth-child(N)` бачить і комірку, що ОХОПЛЮЄ колонки — і саме вона є найпоширенішим винятком у наших таблицях — **пишучи позиційний селектор по клітинках, спитай, чи є в цій таблиці комірка з `colspan` — вона позиції не має за визначенням**
+21. Глобальне правило `td:nth-child(N)` бачить і комірку, що ОХОПЛЮЄ колонки — і саме вона є найпоширенішим винятком у наших таблицях
 22. Клас, який ставить лише JS, у білд ПОТРАПЛЯЄ — але перевірити це грепом важче, ніж здається
 23. `aria-label` на кнопці ПЕРЕКРИВАЄ її вміст — тож підміна тексту всередині кнопки не озвучується взагалі
-24. i18n-скоуп, названий як компонент, часто називає РОЛЬ розмітки — і тоді зняття компонента не вимагає чіпати ключі взагалі — **перш ніж переносити скоуп разом із компонентом, прочитай, що називає останній сегмент — сутність (`row`, `item`, `card`) чи клас; для першого зняття безкоштовне, для другого потрібен `i18n-tasks normalize` після перейменування**
-25. КОЛІР бреше окремо від ЗНАЧЕННЯ — і це найтонша форма «вигаданого виміру», бо текст поруч буває чесний — **полагодивши значення, ОДРАЗУ грепни його ж у методах кольору/класу того самого компонента (`*_color`, `*_class`, `tokens(...)`) — вони беруть те саме поле окремим шляхом і мають власний дефолт**
-26. `limit(N)` у контролері — це ТВЕРДЖЕННЯ, яке екран мусить оголосити; інакше стеля видима лише тому, хто читає контролер — **побачив `limit(` на шляху рендеру — спитай не «чи достатня стеля», а «де на екрані про неї сказано»**
+24. i18n-скоуп, названий як компонент, часто називає РОЛЬ розмітки — і тоді зняття компонента не вимагає чіпати ключі взагалі
+25. КОЛІР бреше окремо від ЗНАЧЕННЯ — і це найтонша форма «вигаданого виміру», бо текст поруч буває чесний
+26. `limit(N)` у контролері — це ТВЕРДЖЕННЯ, яке екран мусить оголосити; інакше стеля видима лише тому, хто читає контролер
 27. Морф має ДВА незалежні вимикачі, і той, що адресніший, — на ФОРМІ, не в лейауті
 28. Морф зносить дітей вузла, який САМ вижив — тож Stimulus не переграється, і зовнішній віджет помирає мовчки; лік у платформі, не в обході
 29. Морф знімає й АТРИБУТ — суто клієнтський стан зникає БЕЗ власної події елемента, тож прибирання не відпрацьовує
 30. Клієнтський стан, що ставиться ОДИН раз і не вміє поставитись удруге, несумісний із морфом ЗА ПОБУДОВОЮ — і саме одноразовість перетворює косметичний відкат на ПОСТІЙНУ втрату
-31. Предикат, що фільтрує асоціацію, у циклі коштує лінійно — і `includes(:та_сама_асоціація)` цього НЕ лікує — **Рефлекс при рев'ю компонента-циклу: на кожен виклик усередині `.each` спитай не «чи це асоціація», а «чи будує він relation» — предикат, скоуп і `.count`/`sum(:колонка)` будують, `.size` і блокова `sum` ні**
-32. РУХ не сміє бути носієм сенсу — і клас має ДВІ шкоди, з яких дискримінація дорожча за контраст — **рух легітимний лише на чистій декорації БЕЗ тексту (LED-крапка, скелетон, SVG-штрих); сенс несе статичний дискримінатор**
-33. Tailwind v4: `bg-[radial-gradient(…var(--tw-gradient-stops))]` без утиліти `bg-radial`/`bg-linear-*` не малює НІЧОГО — **побачив arbitrary-градієнт із `var(--tw-*)` усередині — відкрий `getComputedStyle(el).backgroundImage` у браузері, а не читай класи**
+31. Предикат, що фільтрує асоціацію, у циклі коштує лінійно — і `includes(:та_сама_асоціація)` цього НЕ лікує
+32. РУХ не сміє бути носієм сенсу — і клас має ДВІ шкоди, з яких дискримінація дорожча за контраст
+33. Tailwind v4: `bg-[radial-gradient(…var(--tw-gradient-stops))]` без утиліти `bg-radial`/`bg-linear-*` не малює НІЧОГО
 34. Lookbook: ДВА реєстри шляхів, і другий легко лишити недротованим
 35. ТОКЕН, непридатний до РОЛІ, дорожчий за сиру палітру — бо виглядає ЗРОБЛЕНИМ
-36. Перевір ІНСТРУМЕНТ міграції перш ніж гнати ним хвилю — `bin/migrate-tailwind-tokens` виробляв той самий дефект, який знімає — **Рефлекс перед будь-яким codemod'ом: візьми його MAPPING як СПИСОК ЗАЯВ і зміряй КОЖНУ ЦІЛЬ проти реальних поверхонь у ДВОХ темах; окремо грепни, яких родин у мапі немає взагалі**
+36. Перевір ІНСТРУМЕНТ міграції перш ніж гнати ним хвилю — `bin/migrate-tailwind-tokens` виробляв той самий дефект, який знімає
 37. Un-layered CSS перемагає layered-утиліти НЕЗАЛЕЖНО від специфічності — тож «глобальний дефолт» поза `@layer` тихо зʼїдає явні Tailwind-класи
 38. Перш ніж писати Stimulus controller — пройди список нативних шляхів; якщо хоч один підходить, контролер не потрібен
-39. У YAML незакавичене значення, що містить ` #`, МОВЧКИ стає коментарем — тож скриптова вставка локалей ОБРІЗАЄ рядки, і три з чотирьох наших i18n-гейтів це пропускають — **після БУДЬ-ЯКОГО скриптового запису в структурований файл — перепарсь і роздрукуй ЗНАЧЕННЯ, а не рядки**
-40. `display:flex` на `<td>`/`<th>` знімає `display:table-cell` — і мовчки вимикає `colspan`, БЕЗ жодного симптому — **побачив `flex`/`grid`/`inline-flex` на елементі, що одночасно несе `colspan`/`rowspan`, — перевір `getComputedStyle(td).display` в браузері й перенеси клас на контейнер ВСЕРЕДИНІ клітинки, ніколи на саму клітинку**
-41. ОДИНИЦЯ броадкасту є ПРОЕКТНИМ рішенням, і міняти її можна лише разом із її МІСЦЕМ у продюсері — **побачив `rescue` довкола броадкасту — спитай не «чи він там є», а ЧОМУ він там потрібен; якщо відповідь «бо продюсер стоїть перед несучою роботою», справжній лік — пересунути виклик, не зміцнити гард**
-42. Дозвіл на locale-інваріантність видається не КОМПОНЕНТУ, а СЛОВНИКУ, яким він тоді говорив — розширив словник, вийшов за дозвіл, і жоден гейт цього не бачить — **успадковуючи чужий присуд разом із компонентом, спитай не «чи він ще чинний», а «на ЯКОМУ обсязі він виносився» — і чи твоя зміна той обсяг не розсунула**
+39. У YAML незакавичене значення, що містить ` #`, МОВЧКИ стає коментарем — тож скриптова вставка локалей ОБРІЗАЄ рядки, і три з чотирьох наших i18n-гейтів це пропускають
+40. `display:flex` на `<td>`/`<th>` знімає `display:table-cell` — і мовчки вимикає `colspan`, БЕЗ жодного симптому
+41. ОДИНИЦЯ броадкасту є ПРОЕКТНИМ рішенням, і міняти її можна лише разом із її МІСЦЕМ у продюсері
+42. Дозвіл на locale-інваріантність видається не КОМПОНЕНТУ, а СЛОВНИКУ, яким він тоді говорив — розширив словник, вийшов за дозвіл, і жоден гейт цього не бачить
 
 <!-- /FRONTEND-GOTCHAS-INDEX -->
 

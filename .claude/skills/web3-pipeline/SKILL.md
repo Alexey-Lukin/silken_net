@@ -31,19 +31,19 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 <!-- WEB3-GOTCHAS-INDEX:AUTO — generated from gotchas.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
 1. `WEB3_STRICT_MODE` is belt-and-suspenders, not the switch — the Hadron stub, the callback HMAC and the IoTeX fallback all fail-closed in prod REGARDLESS of the flag
-1a. A monitoring read that MUTATES what it reports is not a probe — and both circuit breakers in this tree had exactly that — **Reflex for any «probe / status / health» method: read what it CALLS, not what it is named — and ask whether the call writes**
+1a. A monitoring read that MUTATES what it reports is not a probe — and both circuit breakers in this tree had exactly that
 1b. `WEB3_STRICT_MODE` is not the switch — but a switch now EXISTS, for the other half of what `production` used to mean
-1c. IoTeX/W3bstream is ACTIVATION-GATED since 2026-09-02 — an unconfigured leg enqueues NOTHING, and the «fail-closed raise at call» that gotcha 1 still describes was the shape that burned ~85 % of a slot's jobs — **before writing «fail-closed» for an external leg, ask whether the leg is CONFIGURED anywhere — an unconfigured fail-closed path is a retry ladder, not a guard**
-1d. The reflex of 1c had a SIBLING it never reached, and the sibling was found by the first live traffic rather than by the sweep that ratified the rule — **when you gate one external leg on `configured?`, inventory its SIBLINGS by SHAPE — `ENV[…].presence || credentials.…` followed by a raise — never by name; the class has no shared vocabulary, which is exactly why the sweep that ratified the rule did not carry it across**
-1e. Правило 1d ПРОГНАНО по всьому дереву 2026-09-04, і воно недорахувало себе: негейтованих ніг лишалось ТРИ, а не одна — але лік у них РІЗНИЙ, бо різнить не форма виразу, а ТРАНСПОРТ — **прогнавши 1d, не зупиняйся на «форма та сама» — спитай, ЯКИМ транспортом летить raise, бо skip, outbox+ре-арм і синхронна деградація є трьома різними ліками, і однаковий лік на всі три хибний**
-2. manual_review state — **before reading a depth gauge as an incident signal, list every writer that parks a row in that state**
+1c. IoTeX/W3bstream is ACTIVATION-GATED since 2026-09-02 — an unconfigured leg enqueues NOTHING, and the «fail-closed raise at call» that gotcha 1 still describes was the shape that burned ~85 % of a slot's jobs
+1d. The reflex of 1c had a SIBLING it never reached, and the sibling was found by the first live traffic rather than by the sweep that ratified the rule
+1e. Правило 1d ПРОГНАНО по всьому дереву 2026-09-04, і воно недорахувало себе: негейтованих ніг лишалось ТРИ, а не одна — але лік у них РІЗНИЙ, бо різнить не форма виразу, а ТРАНСПОРТ
+2. `manual_review` — не черга на розгляд, а DOUBLE-SPEND GUARD: tx_hash є, результат невідомий, кошти заблоковані до ручної перевірки
 3. `batchMint` bisects a reverting batch to isolate the poisoned record — never bypass the dry-run, and bisect only WITHIN one archive-root subgroup
-4. Dynamic tax is governance-read, applies to `batchMint` ONLY, and is on from genesis — a single `mint()` never taxes, and an RPC failure fails to `false` — **умову «чи оподатковується» питай ЛИШЕ через One-Home `taxing?(token_type)` — половин ДВІ (тип І стан пулу), а споживачів теж два: сама ДІЯ і ЗАПИС ПРО ДІЮ, і розходження між ними тихе за побудовою, бо запис ніхто не звіряє з дією**
+4. Dynamic tax is governance-read, applies to `batchMint` ONLY, and is on from genesis — a single `mint()` never taxes, and an RPC failure fails to `false`
 5. Solana reward is `10,000 + growth_points * 100` lamports, signed Ed25519 — not secp256k1 — with the ATA resolved by owner
 6. The partition helper depends on CARDINALITY — one known row versus a SET — and a `status`-scan deliberately stays unbounded
 7. Solana payouts flip from per-event to hourly batching the moment `solana_batch_threshold_usdc` rises above zero
 8. Slashing fires ONLY on positive Cat-A [SLASH-1 §3.2]
-9. Slashing uplift combines CORRELATED signals with `max()`, never a sum — and its two predicates have OPPOSITE defaults (whitelist ⊥ blacklist) — **ратифікувавши «новий тип, бо старий отруєний», спитай не «куди покласти нову подію», а «хто вже лежить у старому» — і міряй периметр за ДОСЯЖНІСТЮ предиката (severity + scope), не за списком писачів**
+9. Slashing uplift combines CORRELATED signals with `max()`, never a sum — and its two predicates have OPPOSITE defaults (whitelist ⊥ blacklist)
 10. Persist the `:pending` intent BEFORE the on-chain call, and treat `:manual_review` as age-UNBOUNDED — a windowed re-fire is a calendar bug, not a race
 11. The whole economic parameter set is DAO-live through `SystemParameter` — a hardcoded constant on that path is already wrong
 12. The mint KYC-gate reads the BENEFICIARY — and TODAY it is a closed door, not a filter: the vendor does not exist, so `pending` never lifts and every custodial beneficiary is dropped each cycle
@@ -52,19 +52,19 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 15. Two systemic stop-losses sit inert at zero by default and HOLD a batch rather than fail it — per-tx guards do not cover aggregate runaway
 16. The L1 anchor is no longer fire-and-forget, and its poller gates on FINALITY (64 confirmations), not on first receipt like the money path
 17. An insurance payout needs TWO independent triggers — our own AI alone once produced a simultaneous slash and payout
-18. `wallets.balance` is a GROSS lifetime counter — the mint never debits it, and anything deciding "how much can be minted" must read `available_balance` — **any new consumer of "how much can this wallet mint" gets `available_balance`; the ratified precedent one file away is `KlimaDao::RetirementService` ([ARCH.56], whose fixing commit says "CHECK зловив латентний money-burn") — and that fix was never swept to its sibling, which is exactly how this shipped**
+18. `wallets.balance` is a GROSS lifetime counter — the mint never debits it, and anything deciding "how much can be minted" must read `available_balance`
 19. «Скільки SCC існує» has exactly ONE home — `BlockchainTransaction.net_minted_supply` — and it is NOT `sum(:amount)`
-20. A money row carries TWO units in adjacent columns; the DIRECTION gap is CLOSED — the unit one is not — **Reflex when you touch any money row: name the UNIT of every scalar you pass, ask what marks its DIRECTION — and ask the same of every GUARD on that path, because a guard is a scalar comparison too, and a fix that moves it within one scale looks exactly like a fix that corrects the scale**
-21. A device-side "neutral" fallback constant landed on the MAXIMUM of the money output — a shipped latent defect (no fleet, no incident), and the fix leaves a NEW wire pair every money consumer must know — **when you choose a fallback constant, substitute it through the WHOLE chain and look at what it lands on — a "neutral" input is routinely an extremum of the output**
-22. «Скільки намінтовано» рахують ТРИ незалежні поверхні, вони НЕ взаємозамінні, і дві з них подаються на одному екрані — **перш ніж підставити «живе джерело» замість мертвого, спитай не «чи воно правдиве», а «чи про ТУ САМУ множину»**
+20. A money row carries TWO units in adjacent columns; the DIRECTION gap is CLOSED — the unit one is not
+21. A device-side "neutral" fallback constant landed on the MAXIMUM of the money output — a shipped latent defect (no fleet, no incident), and the fix leaves a NEW wire pair every money consumer must know
+22. «Скільки намінтовано» рахують ТРИ незалежні поверхні, вони НЕ взаємозамінні, і дві з них подаються на одному екрані
 23. SFC не мінтиться взагалі — заборона стоїть у ДВОХ місцях, і друге з них ПЕРЕЇХАЛО з гарда в ЕНУМ
-24. Третя вісь грошового рядка — не одиниця й не напрямок, а ВИБІРКА: хто обирає, які дані оракул узагалі побачить — **Рефлекс перед будь-яким оракулом, агрегатом або вікном: спитай не «чи можна підробити показник», а «ХТО КОНТРОЛЮЄ ВИБІРКУ» — відповідь на перше не каже про друге нічого**
-25. Приватний ключ оракула береться ЛИШЕ через seam `Web3::OracleSigner` — інлайновий `Eth::Key.new(priv: ENV[...])` є дефектом, навіть якщо поведінка тотожна — **рефакторячи вираз, що стоїть під придушенням, перепризначай фінгерпринт ТИМ САМИМ комітом**
+24. Третя вісь грошового рядка — не одиниця й не напрямок, а ВИБІРКА: хто обирає, які дані оракул узагалі побачить
+25. Приватний ключ оракула береться ЛИШЕ через seam `Web3::OracleSigner` — інлайновий `Eth::Key.new(priv: ENV[...])` є дефектом, навіть якщо поведінка тотожна
 26. Вирок судиться правом ПОДІЇ, а не правом ВИКОНАННЯ — і знаменник шкоди рахує тих, хто СВІДЧИВ
-27. Реалістичне захоплення протоколу — АДМІНІСТРАТИВНЕ, тож рахуй не експлойти, а СТОЯЧІ ПОВНОВАЖЕННЯ після деплою — **перелік того, що складається, пишуть ОДИН раз, а ролі додають окремими комітами — тож він старіє тільки в бік НЕПОВНОТИ. Роздаючи нову роль, допиши її в renounce-перелік ТИМ САМИМ комітом, або вона переживе подію, задля якої перелік існує**
-28. Kwarg, якого ПРИЙМАЧ не читає, — оголошення без механізму, і на money-path обидва наші такі kwargʼи були латентні при ЗЕЛЕНИХ спеках — **Рефлекс перед тим, як довіритись kwargʼу третьої сторони на грошовому шляху: прочитай ТІЛО методу-приймача, не докстрінг — докстрінг є заявою про НАМІР, тіло є контрактом; і пінь те, що доходить до ДРОТУ, а не форму виклику**
+27. Реалістичне захоплення протоколу — АДМІНІСТРАТИВНЕ, тож рахуй не експлойти, а СТОЯЧІ ПОВНОВАЖЕННЯ після деплою
+28. Kwarg, якого ПРИЙМАЧ не читає, — оголошення без механізму, і на money-path обидва наші такі kwargʼи були латентні при ЗЕЛЕНИХ спеках
 29. СТЕЛІ ГОЛОСІВ НА АКТОРА НЕМАЄ — і це ⚫ won't-do з підставою роду КОНСТРУКЦІЯ, а не пропуск
-30. Природу емісії субграф деривує з ПРЕФІКСА `identifier`, а `GROWTH` є ВІДСУТНІСТЮ мітки — тож розходження двох боків завищує саме те число, яке читає ESG-покупець — **додаєш нову ПРИРОДУ емісії — заводь її префікс константою в обох мовах ТИМ САМИМ комітом, інакше вона мовчки порахується ростом**
+30. Природу емісії субграф деривує з ПРЕФІКСА `identifier`, а `GROWTH` є ВІДСУТНІСТЮ мітки — тож розходження двох боків завищує саме те число, яке читає ESG-покупець
 31. Fee на EVM-клієнті вже СТОЇТЬ, і поставив його гем — тож новий money-сайт fee не задає, а нова МЕРЕЖА мусить дістати політику, інакше народиться з чужою стелею
 31a. `eth_fee_history` — стандартний спосіб читати percentile-чайові — НЕПРИДАТНИЙ через `eth 0.5.17`, і це виміряно, не припущено
 31b. ЛІМІТ газу — ДРУГИЙ параметр того самого виклику, і гем обрав його теж. Полагодивши ОДИН параметр, який за нас обрала третя сторона, спитай, які ще параметри ТОГО САМОГО виклику вона обрала
@@ -72,9 +72,9 @@ unit/direction trap, the minting guard-clauses, SLASH-1 positive-A — are inlin
 32. Hardcoded-фолбек на ГРОШОВОМУ шляху існує рівно щоб пережити брак конфіга — і це небезпека, не зручність; тож чесний лік ЗНЯТТЯ, а не перецілення
 32a. Знімаючи фолбек, перелічи споживачів за ФОРМОЮ посилання — і не лікуй їх однаково: серед них майже завжди є ЧИТАЛЬНИЙ, якому fail-loud шкідливий
 33. HSM-підпис відрізняється від `Eth::Key#sign` ТРЬОМА речами, і кожну з них робить бекенд, а не HSM
-34. Третя вісь грошового рядка — ВАЛЮТА (`token_type`), і вона ⊥ ТРАНСПОРТУ (`blockchain_network`); агрегат читає лише першу — **додаєш рядок у `blockchain_transactions` — назви ВАЛЮТУ його `amount` вголос і звір із `token_type`; а зустрівши гроші-агрегат, спитай не «чи правильний фільтр», а «яку вісь він НЕ читає»**
+34. Третя вісь грошового рядка — ВАЛЮТА (`token_type`), і вона ⊥ ТРАНСПОРТУ (`blockchain_network`); агрегат читає лише першу
 35. База контрактної форфейтури несе ВІКНО терміну договору; база слешингу-за-провину — НІ, і це присуд, а не асиметрія-недогляд
-36. Балансовий гард має ЧОТИРИ осі, і кожна ламається окремо: ТЕКСТ (нуль ⊥ вичерпання) · ШКАЛА (літерал ⊥ governance) · ЧИТАБЕЛЬНІСТЬ (чи є чим виміряти) · ВЕЛИЧИНА (операторська підлога ⊥ ціна ЦІЄЇ операції) — **Рефлекс, торкаючись будь-якого балансового гарда: спитай ЧОТИРИ речі підряд — (1) чи розрізняє він нуль від вичерпання, (2) чи бере поріг звідти ж, звідки його бере АЛЕРТ, (3) чи існує операторський прилад, здатний цей вирок відтворити, (4) 🔴 чи він міряє ТУ САМУ величину, що предмет — «скільки Є» ⊥ «скільки ТРЕБА на одну операцію»; і перш ніж вважати клас закритим, перелічи його ноги ПОІМЕННО, бо свіп «де я застосував» систематично коротший за «хто робить інакше»**
+36. Балансовий гард має ЧОТИРИ осі, і кожна ламається окремо: ТЕКСТ (нуль ⊥ вичерпання) · ШКАЛА (літерал ⊥ governance) · ЧИТАБЕЛЬНІСТЬ (чи є чим виміряти) · ВЕЛИЧИНА (операторська підлога ⊥ ціна ЦІЄЇ операції)
 37. Батч усередині `ActiveRecord::Base.transaction`: виняток на ОДНОМУ елементі відкочує роботу СУСІДІВ — і природний лік («пом'якшити виклик») лишає дефект живим
 
 <!-- /WEB3-GOTCHAS-INDEX -->
