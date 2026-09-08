@@ -127,7 +127,7 @@ NaaS — це модель підписки, де клієнти (Організ
 | **ESG Ретайрмент** | `KlimaRetirementWorker` | `KlimaRetirementWorker` → `KlimaDao::RetirementService` | KlimaDAO (Polygon) | `approve()` + `retire()` | SCC перено до `esg_retired_balance` (незворотно) |
 | **Щотижнева фіналізація** | Cron (понеділок 03:00 UTC) | `EthereumAnchorWorker` | Ethereum L1 | `anchorStateRoot(bytes32)` | State Root → Ethereum Mainnet |
 
-> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). Реальний Trigger-2 існує ЛИШЕ для **пожежі** (dClimate FIRMS-супутник); **посуха супутникового оракула НЕ має** ⊕ з 2026-09-05 не має й Trigger-1 (рядок вище — писача знято), тобто перил стоїть БЕЗ ОБОХ ніг → `Dclimate::VerificationService` ескалює її у `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), доки не з'явиться реальне drought-джерело (👤 [`00_07` INS.1/S3.2/UNI.12](00_07_Action_Plan_Tracker)).
+> **[INS.1] Insurance-перили потребують НЕЗАЛЕЖНОГО Trigger-2 — не платяться напряму.** Рядки «Дерево згоріло / Посуха» — це ЛЕГАЛЬНИЙ наслідок; механічно виплата йде лише за **dual-trigger** (Trigger-1 AI-кандидат + Trigger-2 незалежне підтвердження, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)). 🔴 **Реального Trigger-2 сьогодні НЕМАЄ для ЖОДНОГО перилу.** Доти цей рядок казав «існує ЛИШЕ для пожежі (dClimate FIRMS)» — вендора зрізано ⚖️ 2026-09-05, і пожежна нога не підключена так само, як посушна; **посуха супутникового оракула не має** й поготів ⊕ з 2026-09-05 не має й Trigger-1 (рядок вище — писача знято), тобто перил стоїть БЕЗ ОБОХ ніг → `Dclimate::VerificationService` ескалює її у `:inconclusive`/**Field-Audit** (Кат-C, ніколи `rejected_fraud`/slash), доки не з'явиться реальне drought-джерело (👤 [`00_07` INS.1/S3.2/UNI.12](00_07_Action_Plan_Tracker)).
 
 ---
 
@@ -280,7 +280,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 
 ## 🛡️ 7. Параметричне Страхування (Insurance Layer)
 
-Страхування надається паралельно з NaaS контрактом. **[INS.1] Dual-trigger:** денний AI-оракул (`ParametricInsurance#evaluate_daily_health!` через `InsuranceOracleWorker`, за прапором `:parametric_insurance_oracle_enabled`) лише ОЗБРОЮЄ кандидата (`:triggered`); виплата йде ЛИШЕ за НЕЗАЛЕЖНИМ підтвердженням (dClimate satellite / Field-Audit) — політика-дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
+Страхування надається паралельно з NaaS контрактом. **[INS.1] Dual-trigger:** денний AI-оракул (`ParametricInsurance#evaluate_daily_health!` через `InsuranceOracleWorker`, за прапором `:parametric_insurance_oracle_enabled`) лише ОЗБРОЮЄ кандидата (`:triggered`); виплата йде ЛИШЕ за НЕЗАЛЕЖНИМ підтвердженням (супутниковий канал — сьогодні НЕ підключений, ⚖️ 2026-09-05 / Field-Audit) — політика-дім [`05_05 §4`](05_05_Slashing_and_Risk_Policy).
 
 **Два режими виплати:**
 
@@ -290,7 +290,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 **Guard clauses перед виплатою:**
 - `required_confirmations` (default: 3) незалежних D-MRV підтверджень (Trigger-1 oracle-consensus).
 - `ParametricInsurance.status = :active` (ще не тригернуто раніше).
-- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 **власного перилу поліса** (fire — dClimate FIRMS-супутник; посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard). ⚠️ Практичний наслідок для клієнта, який варто називати в умовах: поліс від посухи сьогодні **не має шляху до авто-виплати** — його рухає лише людський Field-Audit, доки не приземлиться реальне drought-джерело.
+- **[INS.1] Незалежне підтвердження (Trigger-2):** `InsurancePayoutWorker#awaiting_independent_confirmation?` — payout лише за verified Trigger-2 **власного перилу поліса** (fire — супутниковий канал НЕ ПІДКЛЮЧЕНО (вендора зрізано ⚖️ 2026-09-05; джерело назване, дротування — ні); посуха — Field-Audit/DAO, супутникового drought-оракула немає → `:inconclusive`, ніколи `rejected_fraud`, [`05_05 §4`](05_05_Slashing_and_Risk_Policy)); без нього → hold (basis-risk guard). ⚠️ Практичний наслідок для клієнта, який варто називати в умовах: поліс від посухи сьогодні **не має шляху до авто-виплати** — його рухає лише людський Field-Audit, доки не приземлиться реальне drought-джерело.
 - **[INS.1] No-data guard:** активні дерева Є, нуль AiInsight (катастрофа знищила сенсори) → `escalate_no_data_field_audit!` (Field Audit), а НЕ тихий `damage_ratio = 0` («не карати жертву», [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
 - Майстер-прапор `:parametric_insurance_oracle_enabled` (kill-switch, default off → інертно до DAO/founder-активації).
 

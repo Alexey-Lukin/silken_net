@@ -187,7 +187,8 @@
 - [ ] `iotex_w3bstream_url` / `iotex_api_key` — IoTeX W3bStream верифікація
 - [x] ⚫ ~~`hadron_api_key` — Hadron KYC compliance~~ — **НЕ провіжнити** (`ARCH.118` §🗄️, виміряно 2026-09-02): `api.hadron.polygon.technology` не має A-запису на двох незалежних DoH-резолверах і НЕ МАВ жодного Wayback-знімка за всю історію, тобто продукту не існує. ⚠️ Рядок лишається як **щеплення**, не як робота: чеклист провіжну читає людина, і незакреслений `[ ]` тут наказував би заводити ключ до фантома. Живий шлях — `HADRON_API_KEY` інжектиться Console-ом ПРИ АКТИВАЦІЇ провайдера ([`config/deploy.canopy.yml`](../config/deploy.canopy.yml) · `env_fetch_declaration_spec`), а вибір самого провайдера — [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`
 - [ ] `filecoin_api_key` — Pinata/Filecoin архівація
-- [ ] `puro_earth.api_key` — Puro.earth registry · `dclimate.api_key` — dClimate верифікація
+- [ ] `puro_earth.api_key` — Puro.earth registry
+- [x] ⚫ ~~`dclimate.api_key` — dClimate верифікація~~ — **НЕ провіжнити** (⚖️ founder 2026-09-05 зрізав вендора; альфа знята з експлуатації трьома незалежними ногами, `configured?` fail-closed). Ключ знадобиться лише під ЖИВЕ джерело, і воно буде вже не dClimate — дім присуду [`00_07`](00_07_Action_Plan_Tracker) `S3.2`
 > 🗄️ **`smtp.user_name` / `smtp.password` виведено звідси 2026-08-14 (ARCH.60):** транспорт пошти ENV-керований, імена — `SMTP_USER_NAME` / `SMTP_PASSWORD` у §2.1. Рядок стояв тут, поки `production.rb` ніс закоментований credentials-скаффолд; він ніколи не був живим — `smtp_settings` не задавались узагалі.
 
 ---

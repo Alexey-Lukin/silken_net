@@ -154,7 +154,7 @@ the guard that enforces it.
 *Guards* (canon [`05_05`](05_05_Slashing_and_Risk_Policy), `app/services/slashing/`):
 - **Positive-A-evidence gate (SLASH-1)** — a burn requires proven operator-fault evidence (a critical,
   unresolved tamper alert); absent that, the default-safe action is **freeze** (Field Audit), never burn.
-- **Force-majeure separation** — confirmed natural disasters (dClimate/FIRMS) route to insurance, not
+- **Force-majeure separation** — confirmed natural disasters route to insurance, not
   slashing.
 
 ---
