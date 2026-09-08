@@ -133,7 +133,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     - **Silent drop:** `Drawing.NotesLines` → `void Add(label, v) { if (!string.IsNullOrWhiteSpace(v)) … }`
       — a null CEM field removes the whole line. There is no empty `Post-process: ___` for the shop to
       query; the drawing looks COMPLETE. Same for `ToleranceLines`: `Feature` renders only if Plus **or**
-      Minus exists (`cathode_flange.json`'s `shank_dia` is absent from BOTH svg and dxf **today**), and
+      Minus exists (`cathode_flange.json`'s `shank_dia` was absent from BOTH svg and dxf **at the time of this diagnosis** — the 2026-08-28 fix that dropped fabrication from the drawing put it back in both), and
       `InterferenceMin/Max` need BOTH or both vanish.
     - **Silent invention (worse):** the fallbacks are unmarked defaults, so a missing field becomes a
       FABRICATED factory instruction — `?? "Ti-6Al-4V"` / `?? "SLM/DMLS"` (title-block) stamp the 4V

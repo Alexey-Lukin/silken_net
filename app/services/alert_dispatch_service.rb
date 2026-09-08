@@ -29,7 +29,10 @@ class AlertDispatchService
     # positive_a? → необоротний slash жертви OTA-бага). Насправді 0b11 пише лише
     # mruby-crash/OOM/unprovisioned; фізичний tamper їде PANIC_FLAG-каналом (гейт 2б).
     # Сенсорна половина кадру (temp/acoustic/vcap) виміряна ДО mruby і жива —
-    # аналіз пожежі/сейсміки продовжуємо, зламаний лише Лоренц-статус.
+    # термо/акустичний аналіз продовжуємо, зламаний лише Лоренц-статус.
+    # ⛔ Сейсмічної гілки тут НЕМАЄ і не було: вердикт `seismic_anomaly`
+    # демонтовано [ARCH.102] разом із вимірювачем — сейсмічного каналу
+    # на дроті не існує (див. actuator.rb / cluster.rb).
     if telemetry_log.bio_status_vm_error?
       create_and_dispatch_alert!(
         cluster: cluster, tree: tree, severity: :critical,
@@ -62,7 +65,7 @@ class AlertDispatchService
         alert_type: :hardware_fault,
         message_key: "power_loss", message_params: { did: tree.did, voltage_mv: telemetry_log.voltage_mv }
       )
-      # НЕ робимо return — продовжуємо аналіз пожежі/сейсміки,
+      # НЕ робимо return — продовжуємо термо/акустичний аналіз,
       # бо низький вольтаж може бути розрядом батареї, а не вандалізмом.
     end
 

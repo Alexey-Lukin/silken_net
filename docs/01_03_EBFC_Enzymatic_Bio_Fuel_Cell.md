@@ -261,7 +261,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 
 | Шлях | Опис | Рівень |
 |---|---|---|
-| `docs/protocols/ebfc/in_silico/deglycosylate.rb` | Ruby sliding-window імітація PNGase F (N-X-S/T sequons) | L1 |
+| `docs/protocols/ebfc/in_silico/deglycosylate.rb` | Ruby sliding-window детектор N-X-S/T sequons → **N→Q дизайн аглікозильованого мутанта**; ⛔ це НЕ модель PNGase F (той деамідує Asn→**Asp**, інший заряд і pI — [`L1 §2`](protocols/ebfc/in_silico/L1_protein_architecture.md)). Імʼя скрипта історичне | L1 |
 | `docs/protocols/ebfc/in_silico/L1_protein_architecture.md` | SSOT-запис L1 рівня + валідаційні метрики | L1 |
 | `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | Канонічний PDB деглікозильованого GcGDH з FAD | L1 |
 | `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries) | L1 |

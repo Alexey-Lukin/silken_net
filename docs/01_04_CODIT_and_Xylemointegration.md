@@ -7,7 +7,7 @@
 
 ## ✅ Статус
 
-- **Поточний TRL:** TRL 3 — in-silico pipeline L1-L4 ✅ (аналітичний PoC); xylem sap sweep: enzyme stable across 6 species (pH 4.2-6.0). Фізичний **TRL 4 = in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: resin-barrier + Flush Mount drilling (HW.6), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
+- **Поточний TRL:** TRL 3 — in-silico pipeline L1-L4 ✅ (аналітичний PoC); xylem sap sweep: enzyme stable across 6 species (pH 4.2-6.0). Фізичний **TRL 4 = in-vitro Ti-coin** (Stage 2, pending) — канон [`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond). Відкриті: resin-barrier + Flush Mount drilling (HW.6), біоміметичні анти-CODIT покриття (HW.40 — відколото від HW.6 2026-07-16), No-EtO sterilization (HW.22), польові випробування → [`00_07`](00_07_Action_Plan_Tracker).
 
 ---
 
@@ -18,7 +18,7 @@
 | [`01_01` — Coaxial Gyroid Topology and PEEK](01_01_Coaxial_Gyroid_Topology_and_PEEK) | Геометрія пор + тризонна архітектура |
 | [`01_02` — Ti 6Al 4V Metallurgy and DMLS](01_02_Ti_6Al_4V_Metallurgy_and_DMLS) | Металургія та покриття (self-healing zone-restriction) |
 | [`01_03` — EBFC Enzymatic Bio Fuel Cell](01_03_EBFC_Enzymatic_Bio_Fuel_Cell) | EBFC ферменти (катод anti-flooding → §5 PTFE-GDL) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.22 No-EtO sterilization |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | **Відкриті блокери** (SSOT): HW.6 resin/Flush-Mount drilling, HW.40 біоміметичні покриття (Zn-HAp · PEDOT:PSS · лігнін), HW.22 No-EtO sterilization |
 
 ## 📑 Зміст
 

@@ -38,7 +38,7 @@
 | C3 | **Price-per-unit** (за coupon / за анкер, вкл. setup-amortization) | `___%` | R&D-фаза → cost-driver = к-сть сплавів, не монет · [заповнити] |
 | C4 | **Capacity / scale** (репліки/тиждень · runway до 100-партії) | `___%` | Stage-2 малий, але Production-шар потребує scale · [заповнити] |
 | C5 | **Geo-risk** (UA war-zone continuity vs EU-backup) | `___%` | supply-resilience · dual-source політика · [заповнити] |
-| C6 | **Material-cert** (Ti-6Al-4V **Grade 23 ELI**, powder-traceability) | `___%` | несуче: implant + fatigue · [заповнити] |
+| C6 | **Material-cert + СПРОМОЖНІСТЬ ПО СПЛАВАХ** (Gr5 baseline **І** V-free імплант-сплави, powder-traceability) | `___%` | несуче: implant + fatigue · [заповнити] |
 |   | **СУМА** | **100%** | — |
 
 > ⚠️ **Ваги — навмисний `PLACEHOLDER`.** Не вигадувати — це рішення founder/architect (trade-off lead-time↔quality↔price під поточний runway та procurement-authority). Типовий R&D-нахил: quality+material-cert домінують над price (implant-критичність), але це **не** захардкоджено тут.
@@ -96,16 +96,18 @@
 
 > **Політика dual-source:** тримати ≥1 UA-хаб (напр. 3D Metal Tech Київ) + ≥1 EU-backup (Protolabs / 3D Lab PL) qualified паралельно — [`rfq_registry §1`](rfq_registry.md) Анкер-рядок · BIZ.6.
 
-**C6 — Material-cert** (Ti-6Al-4V Grade 23 ELI + powder-traceability):
+**C6 — Material-cert + спроможність по сплавах** (powder-traceability):
+
+> ⛔ **Вимогу НЕ звужувати до Ti-6Al-4V ELI** ([`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) — дім порогів C2/C6): канон називає ELI поіменно як ПАСТКУ (Grade 23 зберігає ~4 % ванадію, [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — V-free напрям для Zone 1 уже обрано), а фінальний сплав ще не обрано: його визначить 6-сплавний coin bake-off (HW.24). Тому вендора оцінюємо не за ELI-сертифікатом, а за тим, чи вміє він надрукувати ТЕ, ЩО МИ ОБЕРЕМО.
 | Бал | Умова |
 |---|---|
-| 5 | **Grade 23 ELI** до **ASTM F3001** (AM PBF ELI) АБО **F136** (implant ELI) · повна powder-traceability (lot/heat, O/N/H-хімія, virgin/reuse-mix declared) · CoC на кожну партію |
-| 4 | Grade 23 ELI cert · traceability є, reuse-mix документований |
-| 3 | Ti-6Al-4V cert, але **Grade 5** (не-ELI, F2924) — прийнятно coupon-only, не implant-final |
-| 2 | Ti-cert без ELI-розрізнення / часткова traceability |
+| 5 | Gr5 (F2924) baseline **І** підтверджена спроможність по **V-free імплант-сплавах** (Nb/Fe/Zr-родина) · повна powder-traceability (lot/heat, O/N/H-хімія, virgin/reuse-mix declared) · CoC на кожну партію |
+| 4 | Gr5 cert + готовність кваліфікувати V-free сплав під замовлення · traceability є, reuse-mix документований |
+| 3 | лише Ti-6Al-4V (Gr5 або Gr23) без V-free спроможності — покриває bake-off-купони, але не фінальний анкер |
+| 2 | Ti-cert без розрізнення марок / часткова traceability |
 | 1 | без матеріал-сертифіката або без powder-traceability |
 
-> **ELI = Grade 23** (Extra-Low-Interstitial, знижений O/Fe → fatigue+в'язкість для implant); **Grade 5** (F2924) — стандартний, вища міцність але нижча в'язкість. Замовлення final-анкера → **Grade 23 ELI**; bake-off-coupon Gr5-друк-еталон допустимий (пор. [`anchor_alloy_rfq §1`](anchor_alloy_rfq.md)).
+> **ELI = Grade 23** (Extra-Low-Interstitial, знижений O/Fe → fatigue+в'язкість для implant); **Grade 5** (F2924) — стандартний, вища міцність але нижча в'язкість. ⛔ **Але замовлення final-анкера НЕ «Grade 23 ELI»:** ELI лишає ~4 % ванадію, а V-free напрям для Zone 1 обрано — сплав визначить bake-off (HW.24); bake-off-coupon Gr5-друк-еталон допустимий (пор. [`anchor_alloy_rfq §1`](anchor_alloy_rfq.md)).
 
 ### A.3 Зважений підсумок
 
@@ -332,7 +334,7 @@ What we will be asking you to quote:
 
 - **(a) Thin-wall TPMS (gyroid) lattice structural parts in titanium**, and **(b) flat coupons** of the same alloys for surface and electrochemical characterisation.
 - **Geometry is always supplied by us as STL plus a dimensioned DXF** drawing with title block, and the supplied geometry is the **dimensional authority** — we do not ask you to re-model or re-interpret it.
-- **Material for the structural part: Ti-6Al-4V Grade 23 ELI** to **ASTM F3001** (AM powder-bed-fusion ELI) or **ASTM F136**, with full powder traceability. **Grade 5 is acceptable for coupons only**, not for the final structural part.
+- **Materials.** Coupons and the current baseline structural prints are **Ti-6Al-4V Grade 5 (ASTM F2924)**, with full powder traceability (lot/heat, O/N/H chemistry, virgin/reuse mix declared, CoC per lot). ⚠️ **The final structural alloy is not yet chosen** — it will be decided by a six-alloy coupon bake-off, and the leading direction is **vanadium-free** (Nb / Fe / Zr implant families), because the anchor sits in living tissue for twenty years. **Please tell us which V-free titanium implant alloys you can print and certify, and what it takes to qualify one** — that capability, not an ELI certificate, is what we are scoring.
 
 ### Processing / QC requirements
 
@@ -399,7 +401,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`anchor_alloy_rfq`](anchor_alloy_rfq.md) | парний Ti-coupon RFQ (Grade-cert контекст — критерій C6 §A.2) · стиль-еталон |
 | [`01_02 §1.6/§1.7/§3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | SLM≠EBM · HIP · dehydrogenation bake · ZnO-Ta-заборона (§A.4 дім) |
 | [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + ізоеластичність/пористість як CEM-параметр (C2 геометрія-дім) |
-| [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Grade 23 ELI · ≥60% пористості · ISO 13485) — дім порогів C2/C6 |
+| [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Gr5 baseline **І** V-free імплант-сплави · ≥60% пористості · ISO 13485) — дім порогів C2/C6, і він ⛔ забороняє звужувати вимогу до ELI |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
 | [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 |
