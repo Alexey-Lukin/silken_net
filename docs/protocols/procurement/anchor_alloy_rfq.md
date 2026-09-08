@@ -23,7 +23,7 @@
 
 | # | Сплав | ASTM | V/Al wt% | E (ГПа) | Вісь bake-off | Tier |
 |---|---|---|---|---|---|---|
-| 1 | **Ti-6Al-4V** Gr5 | F136 | 4 / 6 | 110 | control + друк-еталон (V+Al токсичні = нижня межа) | 1 |
+| 1 | **Ti-6Al-4V** Gr5 | ⚠️ F136 — **невідповідність марки** ↓ | 4 / 6 | 110 | control + друк-еталон (V+Al токсичні = нижня межа) | 1 |
 | 2 | **Ti-6Al-7Nb** | F1295 | 0 / 6 | 103 | V-free (Al лишається) | 1 |
 | 3 | **CP-Ti Gr4** | F1581 | 0 / 0 | 104 | zero-tox, α-Ti (міцність ↓ ~480) | 1 |
 | 4 | **β-Ti-13Nb-13Zr** | F1713 | 0 / 0 | 80 | low-E dual-win (ізоеластичність, HW.33) | 2 |
@@ -105,11 +105,13 @@ We are an R&D group and need a small batch of flat metal coupons produced by las
 
 - **Geometry:** flat disc, **Ø16 mm × 1 mm** thick, with a small tab or edge through-hole for a potentiostat clip. The tab must not encroach on the active face. Per-alloy STL and dimensioned DXF are attached and are the **dimensional authority**.
 - **Quantity: 3 replicates per alloy.** Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
+> ⚠️ **Рядок 1 несе невідповідність марки, і вона не косметична: ASTM F136 є специфікацією ELI (= Grade 23), а не Gr5.** Купон №1 задуманий саме як Gr5-контроль і друк-еталон, тож цитувати для нього implant-ELI-спеку означає замовити в вендора інший порошок. Кандидати заміни — **F2924** (AM powder-bed-fusion Gr5) або **F1472** (wrought Gr5); вибір і решта ASTM-хвостів по сплавах є відкритою ⚖️-ногою [`00_07`](../../00_07_Action_Plan_Tracker.md) (CEM ⟷ RFQ хвости), тож ТУТ його не ухвалюємо. ⛔ **Не відправляти §Dispatch-таблицю нижче, доки цей рядок не закритий** — вона написана під вставку в лист вендору. Дзеркальна межа з того ж дня: [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) ⛔ забороняє звужувати вимогу до ELI взагалі, бо V-free напрям для Zone 1 уже обрано.
+
 - **Powder specification:** for each alloy, state the powder specification you would actually use (designation, ASTM/ISO spec, grade, particle size distribution, lot traceability). If your available powder differs from the standard cited below, quote your equivalent and tell us what it is — do not substitute silently.
 
 | # | Alloy | Standard cited | Qty |
 |---|---|---|---|
-| 1 | Ti-6Al-4V | ASTM F136 | 3 |
+| 1 | Ti-6Al-4V | ⚠️ ASTM F136 — див. застереження §1 (F136 = ELI/Gr23, не Gr5) | 3 |
 | 2 | Ti-6Al-7Nb | ASTM F1295 | 3 |
 | 3 | CP-Ti Grade 4 | ASTM F1581 | 3 |
 | 4 | Ti-13Nb-13Zr (β-Ti) | ASTM F1713 | 3 |
