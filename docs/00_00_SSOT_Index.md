@@ -78,7 +78,7 @@ Soldier (Tree)         Soldier (Tree)         Soldier (Tree)
 - [`00_04` — Nature as a Service Contracts](00_04_Nature_as_a_Service_Contracts) (NaaS контракти · параметричне страхування · фінансові константи · юридичні події → on-chain)
 - [`00_05` — AI-Native Operating Model](00_05_AI_Native_Operating_Model) (Як ми працюємо: яруси інструкцій · хребет задачі · закриваючий свіп · дисципліна перевірки · агенти)
 - [`06_07` — CICD and Runbook Index](06_07_CICD_and_Runbook_Index) (CI/IaC-політика: SSOT-Guard · Solidity audit · Labels-as-Code · supply-chain hardening)
-- [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод; 🚦 Validation Gate — §5)
+- [`00_06` — SSOT Documentation Standard](00_06_SSOT_Documentation_Standard) (Стандарт канон-доків: skeleton + home-registry + drift-tooling + restructure-метод; 🚦 Validation Gate — §0)
 - [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) (🔴 Живий документ — аудит блокерів, план дій, Sprint tracking)
 
 ---
