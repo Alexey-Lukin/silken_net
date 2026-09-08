@@ -84,7 +84,14 @@ CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (
 
 # ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
 # Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)
-# + bus thermal bridge (script 54) comparative. Literature/ASTM implant specs. The oxide-diffusion
+# + bus thermal bridge (script 54) comparative. ⚠️ The `spec` field is DOCUMENTATION-ONLY — no script
+# reads it — and it is LITERATURE, never primary-verified by us: do NOT quote it to a vendor as
+# authoritative without checking the standard itself (00_06 §0 Validation Gate applies to us too).
+# The 4V row was `ASTM F136` until 2026-09-08. F136 is the ELI (Grade 23) spec, while this row IS the
+# Grade-5 control and 01_02 §2.5 chose V-free explicitly NOT ELI — the GRADE axis alone settles it.
+# Corrected to F2924, the pairing our own vendor_templates already used for Grade 5 before that fix.
+# (Whether F136 is also non-AM is our inference from the F3001 contrast, not a checked claim.)
+# The oxide-diffusion
 # D_V/D_Al stays a SHARED constant in script 51 (per-alloy oxide-diffusion is rarely published → the
 # COMPOSITION effect dominates: 4% V → V release, 0% V → none). Tree-first (01_04 §4.2): V + Al are
 # phytotoxic in acidic sap; Nb/Zr/Ta are bioinert (their release is informational, not a pass/fail
@@ -96,7 +103,7 @@ CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (
 ALLOY_BASELINE = "Ti-6Al-4V"
 ALLOY_PROPERTIES = {
     "Ti-6Al-4V": {
-        "spec": "ASTM F136 (control / print reference)",
+        "spec": "ASTM F2924 (AM PBF, Grade 5 — control / print reference)",
         "V_wt": 4.0, "Al_wt": 6.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
         "E_GPa": 110.0, "nu": 0.33, "alpha_1K": 8.6e-6, "yield_MPa": 880.0, "rho_kg_m3": 4430.0,
         "lambda_W_mK": 6.7,
