@@ -1,7 +1,9 @@
 # SSOT for repository labels — Labels-as-Code.
 # Synced by .github/workflows/labels_sync.yml (EndBug/label-sync@v2,
 # delete-other-labels: false — bot labels stay).
-# Doc reference: docs/06_07_CICD_and_Runbook_Index.md §1 Label Conventions.
+# Doc reference: docs/06_07_CICD_and_Runbook_Index.md §1 (рядок `labels_sync.yml`).
+# ⚠️ Секції «Label Conventions» там немає й ніколи не було — номер резолвився, назва ні,
+# і жоден гейт цього не бачить: вони судять адресу, ніколи твердження про ціль.
 #
 # Labels are applied BY HAND. `type:*` is the only family a machine reads
 # (ssot_guard.yml bypass); the rest is navigation for human eyes.

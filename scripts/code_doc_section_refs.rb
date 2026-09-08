@@ -56,6 +56,14 @@ TREES = %w[app spec lib].freeze
 # too, and a canon renumber rots those refs just as silently (DOC-T.44 TREES-extension).
 # Scanned as *.md alongside the Ruby trees; report-only all the same.
 CLAUDE_TREE = ".claude"
+# `.github/**` — the CI layer, and it references canon by `NN_NN §X` as densely as the
+# routing layer does: workflow step comments justify a gate by pointing at the section it
+# enforces, and `labels.yml`/`pull_request_template.md`/`copilot-instructions.md` point at
+# the conventions they implement. A canon renumber rots those exactly as silently, and
+# nothing else reached them: `external_doc_path_drift` judges `docs/NN_NN_Name` PATHS, never
+# bare `§`-refs. Ціна периметра зміряна ДО вмикання (2026-09-08): 27 файлів, **нуль**
+# нерезолвних рефів — тобто розширення безкоштовне, борг не заводиться.
+GITHUB_TREE = ".github"
 
 # The §-resolution engine + its unit tests legitimately cite stale-LOOKING example refs
 # (fixtures that exercise the resolver) — exempt them, same idea as protocols_ref_check
@@ -148,7 +156,8 @@ EXEMPT_REFS = {
 files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
          Dir[File.join(ROOT, "firmware", "**", "*.{c,h}")].reject { |f| f.include?("/extern/") } +
          Dir[File.join(ROOT, "tools", "**", "*.{py,rb}")] +
-         Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")])
+         Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")] +
+         Dir[File.join(ROOT, GITHUB_TREE, "**", "*.{yml,yaml,md}")])
         .map { |f| f.sub("#{ROOT}/", "") }
         .reject { |rel| rel =~ EXEMPT }
         .sort
@@ -182,7 +191,9 @@ unless stale_exempts.empty?
 end
 
 if violations.empty?
-  puts "code_doc_section_refs — #{files.size} source + .claude routing files scanned; every `NN_NN §X` ref resolves ✓"
+  # Перелік дерев тут НЕ переказується: він росте, а рядок успіху друкується на
+  # КОЖНОМУ зеленому прогоні, тобто протухає найгучніше. Склад бере `files` вище.
+  puts "code_doc_section_refs — #{files.size} файлів (код · routing `.claude` · CI `.github`) проскановано; кожен `NN_NN §X` резолвиться ✓"
 else
   puts "code_doc_section_refs — #{violations.size} stale code→doc §-refs:"
   violations.uniq.sort.each { |v| puts "  ✗ #{v}" }
