@@ -1,6 +1,6 @@
 ---
 name: ml-engineering
-description: "Use when working on the silken_net ML surface — the TinyML acoustic model + log-mel DSP front-end (firmware/common/logmel*, tools/ml/), model training / dataset / INT8 export, golden-vector parity, or the backend Rumale stress-index ML. Operational playbook for the tools/ml `silken_ml` package, the three-impl parity model, and the local-verify recipes; routes to the 03_03 canon, does not restate the contract. Examples: \"edit the log-mel contract\", \"regenerate the firmware mel tables\", \"add a TinyML training step\", \"why does Compute_LogMel diverge\", \"set up the ML env\"."
+description: "Use when working on the silken_net ML surface — the TinyML acoustic model + log-mel DSP front-end (firmware/common/logmel*, tools/ml/), model training / dataset / INT8 export, or golden-vector parity. ⛔ The backend Rumale stress-index ML was REMOVED 2026-09-05 (У-ВЕЙ) — the skill records where it went and why; do not hunt for it in the tree. Operational playbook for the tools/ml `silken_ml` package, the three-impl parity model, and the local-verify recipes; routes to the 03_03 canon, does not restate the contract. Examples: \"edit the log-mel contract\", \"regenerate the firmware mel tables\", \"add a TinyML training step\", \"why does Compute_LogMel diverge\", \"set up the ML env\"."
 ---
 
 # ML Engineering (`silken_ml` + edge TinyML)

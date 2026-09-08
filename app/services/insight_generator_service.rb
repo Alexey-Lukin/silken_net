@@ -328,8 +328,12 @@ class InsightGeneratorService < ApplicationService
   #   • VPD not low        → normal/high VPD = no weather excuse for low sap
   #   • sap near baseline  → nothing weather could account for
   #
-  # ⚠️ Activate ONLY after all three land: firmware VPD + ML-retrain (vpd feature
-  # in silken_forest.marshal) + ground-truth calibration. Until then a wired,
+  # ⚠️ Activate ONLY after firmware VPD + ground-truth calibration land.
+  # ⛔ A third dependency stood here — "ML-retrain (vpd feature in
+  # silken_forest.marshal)" — and its SUBJECT is gone: the backend ML layer was
+  # removed 2026-09-05 (00_07 E.52). The heuristic is the only path; the model's
+  # return is gated by the event named in that verdict, not by this comment.
+  # Until then a wired,
   # tested no-op. NB: the heuristic still ignores sap entirely (GAP, 05_05 §7) —
   # a signed low-sap (not |dev|) test is part of that calibration follow-up.
 
@@ -370,8 +374,10 @@ class InsightGeneratorService < ApplicationService
   end
 
   # [E.64] Conformance with 05_05 §7 "Z alone never slashes" (audit #3).
-  # `_avg_temp`/`_avg_z` accepted for signature symmetry with the ML path but
-  # NO LONGER used by the heuristic — both were confounds (see below).
+  # `_avg_temp`/`_avg_z` are accepted but NO LONGER used — both were confounds
+  # (see below). ⛔ They are NOT "symmetry with the ML path": that path was
+  # removed 2026-09-05 (00_07 E.52), so the only reason they still stand is the
+  # call-site contract. Whether to drop them is a live question, not a design.
   def calculate_stress_index_heuristic(max_status, _avg_temp, _max_acoustic, _avg_z)
     # [SLASH-1] vm_error (status 3) = софт-збій прошивки (mruby crash / unprovisioned),
     # NOT bio-stress and NOT tamper: the old `>= 3 → 1.0` short-circuit put a firmware
