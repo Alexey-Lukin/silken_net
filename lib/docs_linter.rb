@@ -355,8 +355,13 @@ module DocsLinter
   # [ARCH.11] REJECTED VOCABULARY — `bio_potential` as a ROUTING metric (HARD).
   # The ADR rejected it on a MECHANISM, not on taste: routing traffic through the
   # healthiest tree loads it with ~90% of relaying → drains its ionistor → it fails to
-  # send its OWN telemetry → its Z-attractor "falls" → the system classifies a HEALTHY
-  # tree as sick. Two distinct faults ride together: an observer-effect (the network
+  # send its OWN telemetry → it GOES SILENT → and silence is the tree's ONLY energy
+  # channel, so `Tree.silent` reads a HEALTHY tree as dead.
+  # ⛔ Do NOT restore the link "its Z-attractor falls → classifies a healthy tree as
+  # sick" that stood here: our own work killed it (00_07 E.64 — Z is a DCI seal and
+  # classifies no health state at all). The verdict held, its GROUND did not — and the
+  # dead ground re-enters by re-derivation, exactly like the term this guard forbids.
+  # Two distinct faults ride together: an observer-effect (the network
   # load distorts the very signal being measured — `bio_potential` is the MEASURAND,
   # never a routing resource) and a positive feedback loop that systematically kills
   # the best nodes.
