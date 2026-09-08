@@ -558,8 +558,11 @@ RSpec.describe User, type: :model do
     # без `password_digest` згортала ОБИДВА боки в `""`, тобто повертала true —
     # fail-OPEN, синхронно в усіх чотирьох звіряльниках. Сьогодні такого
     # користувача створити не можна (`password can't be blank`), тому пін іде
-    # через стаб: він стереже не наявний шлях, а ФОРМУ, яка чекає свого тригера —
-    # першого passwordless/OAuth-входу, що не проставить пароля.
+    # через стаб: він стереже не наявний шлях, а ФОРМУ. ⚠️ Тригером тут доти
+    # звався «перший passwordless/OAuth-вхід» — той тригер НЕ НАСТАНЕ (ARCH.69:
+    # OAuth як спосіб входу ⚫ won't-do, шар знято під корінь). Живий писач
+    # стану рівно один — `Gdpr::AnonymizeUserService` (той самий запис ставить
+    # tombstone-пошту й нищить сесії), і саме проти нього ця форма й стереже.
     context "when the account has no password at all (fail-CLOSED)" do
       before { allow(user).to receive(:password_salt).and_return(nil) }
 

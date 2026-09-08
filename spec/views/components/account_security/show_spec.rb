@@ -43,9 +43,10 @@ RSpec.describe AccountSecurity::Show do
       expect(html_enabled).not_to include("Enable MFA")
     end
 
-    # Дзеркало контролера: OAuth-only власник не має спільного секрета для
+    # Дзеркало контролера: власник без `password_digest` (ARCH.69 ⚫ — це НЕ
+    # «OAuth-only»; пише його `Gdpr::AnonymizeUserService`) не має секрета для
     # step-up, тож поле пароля в disable-формі для нього НЕ рендериться.
-    it "omits the step-up field for an OAuth-only MFA user" do
+    it "omits the step-up field for an MFA user with no password_digest" do
       oauth_only = User.new(password_digest: nil, otp_required_for_login: true,
                             recovery_codes: %w[a].to_json)
       html_enabled = render_component(user: oauth_only)
@@ -163,7 +164,7 @@ RSpec.describe AccountSecurity::Show do
     # акаунта без спільного секрета step-up неможливий, і кнопка вела б у
     # гарантовану відмову. Негативний контроль — дефолтний `user` без пароля.
     # ⚠️ Цей гард має ДРУГОГО свідка, і він точніший за цей приклад: MFA-секція
-    # пінить `not_to include('name="current_password"')` для OAuth-only власника,
+    # пінить `not_to include('name="current_password"')` для власника без digest,
     # а форма стирання несе поле з тим самим імʼям. Тож зняття гарда червонить
     # ОБИДВА приклади — сусідній не зламався, він спрацював. Записано, щоб
     # наступний читач не шукав колізії там, де є подвійне покриття.

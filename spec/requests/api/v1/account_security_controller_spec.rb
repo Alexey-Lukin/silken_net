@@ -87,7 +87,10 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(user.reload.otp_required_for_login).to be true
     end
 
-    it "allows MFA disable without password challenge when user is OAuth-only (no password_digest)" do
+    # Стан `password_digest: nil` НЕ є «OAuth-only» (ARCH.69 ⚫): його пише
+    # рівно `Gdpr::AnonymizeUserService`. Гілка лишається fail-OPEN свідомо —
+    # дзеркало fail-CLOSED в `erase_account`, дискримінатор = оборотність дії.
+    it "allows MFA disable without password challenge when the account has no password_digest" do
       user.update!(otp_required_for_login: true, recovery_codes: %w[a b c].to_json)
       user.update_columns(password_digest: nil)
 
@@ -179,8 +182,9 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
       expect(response.body).to include("account_security/password")
     end
 
-    it "allows setting password without current_password when user has no password (OAuth-only)" do
-      # Simulate OAuth-only user (no password digest)
+    it "allows setting password without current_password when the account has no password_digest" do
+      # Єдиний прод-писач цього стану — `Gdpr::AnonymizeUserService`; тут він
+      # відтворюється точково (без tombstone-пошти), бо гілка читає лише digest.
       user.update_columns(password_digest: nil)
 
       patch "/account_security/password", headers: headers, params: {
