@@ -109,7 +109,10 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **Lattice spec callout** (not geometry): porosity 65 %±2, pore period, topology (sheet/network
   open, HW.33), "inspect by Archimedes + µCT" — per ISO/ASTM 52900 lattice-as-spec.
 - **Surface finish**: dual-scale roughness Sa (`01_02 §1.2`, HW.2).
-- **Title block**: part name + Деталь №, material **Ti-6Al-4V** (PEEK for Zone 2), scale, units
+- **Title block**: part name + Деталь №, material **from the part's own spec** (PEEK for Zone 2), scale, units.
+  🔴 **Ti-6Al-4V is the BASELINE, not the chosen alloy** — a hard-coded `"Ti-6Al-4V"` here stamps Gr5 onto a
+  Ta / Au / Ti-6Al-7Nb / CP-Ti coupon of the bake-off (`01_02 §2.5`, `00_07` HW.24), and the V-free direction
+  for Zone 1 is already ratified (founder 2026-06-21). Read the material off the part, never off a default.
   (mm), revision = git SHA, "geometry SSOT = `cem/<x>.json` + STL", license (CERN-OHL-S for hw).
 
 ## 7. Roadmap (phased)

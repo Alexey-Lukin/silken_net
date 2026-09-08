@@ -326,8 +326,11 @@ RSpec.describe Api::V1::AccountSecurityController, type: :request do
     it "refuses an account with no password instead of skipping the step-up" do
       # 🔴 Розходження з `toggle_mfa` НАВМИСНЕ й тут пінується: там акаунт без
       # пароля step-up МИНАЄ (дія оборотна, спільного секрета немає), тут —
-      # ВІДМОВА, бо акт незворотний. Форма «чекає свого тригера»: сьогодні таких
-      # акаунтів нема, перший passwordless-вхід зробив би пропуск дірою мовчки.
+      # ВІДМОВА, бо акт незворотний. ⛔ Це НЕ «форма, що чекає першого
+      # passwordless/OAuth-входу» — той тригер НЕ НАСТАНЕ (ARCH.69 ⚫): `user.rb`
+      # не народжує акаунта без `password_digest`, а єдиний писач цього стану —
+      # `Gdpr::AnonymizeUserService`. Отже пін стереже не гіпотетичне майбутнє,
+      # а живий шлях: анонімізований акаунт із валідним токеном.
       passwordless = create(:user, organization: organization, password: "password12345")
       passwordless.update_columns(password_digest: nil)
       passwordless_headers = { "Authorization" => "Bearer #{passwordless.generate_token_for(:api_access)}" }

@@ -4230,9 +4230,14 @@ TEST(test_fw18_arch21_brownout_loses_freshly_received_thresholds) {
 
 TEST(test_fw18_arch21_dr13_dr14_survive_brownout_when_already_persisted) {
     /* Inverse-сценарій: пороги вже пройшли Phase 5 writeback ДО PVD IRQ.
-     * Brownout НЕ повинен їх зіпсувати — RTC Backup Domain живиться окремою
-     * VBAT шиною. ARCH.21 callback не торкається DR13/DR14, тож записані
-     * раніше значення лежать недоторканими. */
+     * Brownout НЕ повинен їх зіпсувати, і підстава саме в ARCH.21 callback:
+     * він не торкається DR13/DR14, тож записані раніше значення лежать
+     * недоторканими, доки МК не перезавантажився.
+     * ⛔ НЕ "бо RTC Backup живиться окремою VBAT шиною" — окремого джерела
+     * в нас НЕМАЄ (coin cell у BOM Солдата відсутній, докладно 02_03 §7):
+     * PVD-brownout є ПОПЕРЕДЖЕННЯМ при живому МК, а справжня втрата живлення
+     * чистить backup-домен → ema_valid != 0x45 → cold-start (03_01 §13.3).
+     * Мок _rtc_bkp_reset_all() симулює лише перший сценарій. */
     _rtc_bkp_reset_all();
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR13, test_float_to_uint32(0.42f));
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR14, test_float_to_uint32(0.91f));

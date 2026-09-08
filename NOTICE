@@ -67,8 +67,14 @@ AlphaFold 3 Server outputs - NON-COMMERCIAL, under their own Terms:
     Beyond mere presence, the in-silico pipeline also USES the predicted structure
     as an MD/DFT input (an R&D step). Our position: (a) restriction #1's exception
     for use "indirectly via a scientific publication [or] open source release"
-    covers this — the whole pipeline, its inputs, and its results are AGPL-open and
-    published (docs/protocols/ebfc/in_silico/paper, "Стаття 1"); (b) our MD is
+    covers this — the exception is DISJUNCTIVE, and we stand on the second limb
+    alone: the whole pipeline, its inputs and its results are AGPL-open and
+    released in this repository. The manuscript ("Стаття 1",
+    docs/protocols/ebfc/in_silico/paper) is submission-ready but NOT yet
+    published — do not read it as an accrued fact here (00_01 §8; its own cover
+    letter states "has not been published previously"; status in docs/00_07,
+    UNI.3). It will strengthen this position when it lands; it does not carry
+    it today; (b) our MD is
     stability simulation (RMSD / Rg / D_eff), NOT a protein-ligand binding-or-
     interaction predictor of the Glide/AutoDock class named in restriction #2.
     Residual interpretive risk is accepted at this pre-commercial stage. Mitigation

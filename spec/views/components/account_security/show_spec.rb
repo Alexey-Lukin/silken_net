@@ -47,9 +47,9 @@ RSpec.describe AccountSecurity::Show do
     # «OAuth-only»; пише його `Gdpr::AnonymizeUserService`) не має секрета для
     # step-up, тож поле пароля в disable-формі для нього НЕ рендериться.
     it "omits the step-up field for an MFA user with no password_digest" do
-      oauth_only = User.new(password_digest: nil, otp_required_for_login: true,
+      anonymized = User.new(password_digest: nil, otp_required_for_login: true,
                             recovery_codes: %w[a].to_json)
-      html_enabled = render_component(user: oauth_only)
+      html_enabled = render_component(user: anonymized)
 
       expect(html_enabled).to include("Disable MFA")
       expect(html_enabled).not_to include('name="current_password"')

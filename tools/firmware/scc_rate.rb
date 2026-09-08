@@ -31,6 +31,9 @@ BACKEND_UPSCALE = 2       # backend ×2 (03_04 growth_points = (status_byte & 0x
 EMISSION_THRESHOLD = 10_000 # 05_03: 10k GP = 1 SCC
 
 # Робоча точка delta_t: Variant C = 1.77 год, рекомендований energy-positive (02_03 §9.6).
+# ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → 1.77 зсувається до ≈2.19 год,
+#    тобто SCC/дерево/рік падає ~на чверть. ⛔ Не правити число тут поодинці — перерахунок
+#    їде РАЗОМ із uncertainty_budget.rb і supply_stress.rb (00_07 ARCH.8).
 # (1 TX/год = Δt=3600s = energy-NEGATIVE без мітигацій, 02_03 §9.5 — НЕ baseline.)
 VARIANT_C_S = 6372
 

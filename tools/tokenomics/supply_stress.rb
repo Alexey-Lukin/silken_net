@@ -204,7 +204,7 @@ def report(prm)
 
   rows = [
     [ "канон-арбітр (50 SCC/дерево/рік)", { scc_per_tree_year: 50.0 } ],
-    [ "realistic Δt=1.77h (7.92)",        { scc_per_tree_year: 7.92 } ],
+    [ "realistic Δt=1.77h (7.92)",        { scc_per_tree_year: 7.92 } ], # ECB-ера; CCM → ≈2.19h (ARCH.8)
     [ "фізична стеля Δt=600s (326)",      { scc_per_tree_year: 326.0 } ],
     [ "realistic + активований slash",    { scc_per_tree_year: 7.92, degradation_rate: 0.05 } ],
     [ "realistic + страхові виплати",     { scc_per_tree_year: 7.92, payout_rate: 0.5 } ]

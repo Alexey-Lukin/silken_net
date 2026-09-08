@@ -18,8 +18,9 @@ This script tests whether explicit micro-solvation moves the Os energetics in th
 gap-closing direction, on TWO systems:
 
   • aquo   — [Os(H₂O)₆]³⁺/²⁺ benchmark. n=0 (bare ion) → n=6 (inner shell). Same
-             metal + basis as the real mediator, so the recovered PCM error
-             transfers directly. Validates the protocol vs a known group-8 case.
+             metal + basis as the Os mediator complexes below, so the recovered
+             PCM error transfers directly. (⛔ 'the real mediator' is NOT a name
+             for anything computed in this file — see the mediator bullet.) Validates the protocol vs a known group-8 case.
   • mediator — the plain-bpy PARENT cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ (≡ ① reference / 21b). ⛔ NOT the device mediator: that is Zafar's 4,4'-dimethyl-bpy complex (21f, os_complex.json canon) — 'the real mediator' stood here and was superseded by the OS-RECOMPUTE with
              k=0..3 explicit waters H-bonded to the Cl⁻ ligand (the dominant
              directional H-bond site PCM gets wrong). k=0 reuses ① from cache.

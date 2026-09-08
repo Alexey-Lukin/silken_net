@@ -35,7 +35,7 @@ Each node in the network is an **Autonomous Metabolic Oracle** — a sensor surg
 
 The node is **powered by the tree itself**. No batteries, no solar harvesters, no grid — and no scheduled maintenance for the operational lifetime of the host organism (20–25 years).
 
-The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V via DMLS (Direct Metal Laser Sintering) with HIP post-processing. The geometry is not arbitrary:
+The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V (the BASELINE alloy — the final one is decided by the six-alloy coin bake-off, `docs/01_02 §2.5`; a V-free Zone 1 is already the ratified direction) via DMLS (Direct Metal Laser Sintering) with HIP post-processing. The geometry is not arbitrary:
 
 - **Zone 1 (anode, gyroid lattice in the sapwood):** an open triply-periodic minimal surface (~65% porosity) implanted in the xylem-conducting layer. Its catalytic surface carries **deglycosylated FAD-dependent glucose dehydrogenase (dgrFAD-GDH)** expressed recombinantly in *Pichia pastoris* and post-translationally deglycosylated to shorten the electron-transfer distance to an osmium-bipyridyl redox polymer mediator. We deliberately do *not* use GOx — its H₂O₂ byproduct triggers the tree's CODIT defense cascade and shortens lifetime to 3–5 years. FAD-GDH produces **no peroxide, no oxygen dependence, no immunological signal**.
 - **Zone 2 (PEEK thermal break):** an insulating polymer interlayer that prevents short-circuiting between anode and cathode and breaks the bulk thermal bridge that would otherwise carry boundary-layer condensation deep into the trunk (a thin residual remains via the central bus — minimized by a monolithic low-λ conductor; spec 01_01 §1.4).

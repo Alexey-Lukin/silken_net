@@ -140,7 +140,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 |---|---|---|---|
 | П'єзо (bench) | ЗП-3 диск ×5 (THT) | ✅ | bench-legit; production = SMD Mallory/Murata (HW.30) |
 | Clamp (acoustic) | **BAT54S** (dual Schottky, Cj ~5-10 пФ) | 🛒 | потрібен для acoustic-тракту |
-| Clamp (energy-only) | 1N5819 ×2 | ✅ | **Cj ~150 пФ = low-pass**, глушить ультразвук → лише energy-стенд; свап на BAT54S перед acoustic |
+| Clamp (energy-only) | 1N5819 ×2 | ✅ | **Cj ~150 пФ = low-pass**, зрізає верх робочої смуги (не «ультразвук» — його тут і немає, Nyquist-8) → лише energy-стенд; свап на BAT54S перед acoustic |
 | _(production)_ | Bergquist Sil-Pad 1500ST coupling | — | acoustic coupling Ti↔п'єзо |
 
 ### Блок 7 — Radio
@@ -215,7 +215,7 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 3. Роль (provisioning-only, Ed25519 голос дерева), eval-номенклатура, cold-boot → [`03_05 §3.7`](03_05_Hardware_Symmetric_Crypto_and_Security). LoRa KEYL лишається в Protected Flash.
 
 ### 3.6 Acoustic wake (п'єзо → EXTI)
-1. П'єзо ЗП-3: один вивід→GND, інший→сигнальний tap. **BAT54S** = dual-diode rail-clamp: верхній катод→3.3 В, нижній анод→GND, tap між діодами→EXTI GPIO (обмежує сплеск у 0-3.3 В). **⚠️ на energy-стенді 1N5819 глушить ультразвук — свап на BAT54S для acoustic.**
+1. П'єзо ЗП-3: один вивід→GND, інший→сигнальний tap. **BAT54S** = dual-diode rail-clamp: верхній катод→3.3 В, нижній анод→GND, tap між діодами→EXTI GPIO (обмежує сплеск у 0-3.3 В). **⚠️ на energy-стенді 1N5819 (Cj ~150 пФ) працює як low-pass і зрізає верх смуги — свап на BAT54S для acoustic.** ⛔ Слово «ультразвук» тут було б хибним: тракт оцифровує 16 kHz, тобто бачить лише до 8 кГц (Nyquist), а справжня AE кавітації 25–150 кГц у нього не входить узагалі ([`03_03 §4.2`](03_03_TinyML_Acoustic_Inference)).
 2. Bias: слабкий pull-down (~1 МΩ tap→GND) тримає EXTI-пін не-плаваючим між сплесками.
 3. **Checkpoint:** постукати/подати тон → сплеск на GPIO → wake зі STOP2 (EXTI-IRQ у логах). ⚠️ **Стимул — РОЗГОРТКА 2–8 кГц, не одиничні 16 кГц** (⚖️ 2026-09-08, дім присуду — [`00_07`](00_07_Action_Plan_Tracker) HW.30): 16 000 Гц є частотою ДИСКРЕТИЗАЦІЇ тракту ([`03_03`](03_03_TinyML_Acoustic_Inference): fs = 16 кГц, fmax = 8 кГц за Найквістом), тоді як живі SMD-кандидати резонують на **4.0–4.1 кГц** ([`02_01 §3`](02_01_Hardware_Architecture_and_BOM)) і саме туди лягає смуга класу «пилка» 2–8 кГц. Для EXTI-пробудження слабка відповідь на 16 кГц спишеться на биту схему clamp'а; для attenuation-вимірів (HW.11/HW.30) на резонансі сигнал максимальний.
 4. Патерн Zero-Touch (SMD-piezo + Sil-Pad) → [`02_01 §6`](02_01_Hardware_Architecture_and_BOM); поріг → HW.30.

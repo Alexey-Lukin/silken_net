@@ -79,8 +79,12 @@ def main(argv) -> int:
     payload = {
         "method": "ωB97X/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF ΔE_red; cross-check of the "
                   "B3LYP ② speciation trend (script 34). Same programmatic geometries.",
-        "note": "ΔSCF total-energy difference (ωB97X Koopmans LUMOs are unreliable); tests whether "
-                "the aqua > bis-Im > chloro speciation trend is functional-robust.",
+        "note": "ΔSCF total-energy difference (ωB97X Koopmans LUMOs are unreliable); tests which "
+                "part of the B3LYP ② speciation trend is functional-robust. VERDICT: the "
+                "chloro <-> {aqua, bis-Im} BRACKET is robust; the internal aqua <-> bis-Im order "
+                "is functional-SENSITIVE (this run: aqua > bis-Im; B3LYP-dimethyl: bis-Im > aqua, "
+                "gap < 0.15 eV). Do NOT quote 'aqua > bis-Im > chloro' as a settled order - that "
+                "is plain-bpy legacy.",
         "forms": results,
         "wall_seconds": round(time.time() - t0, 1),
     }

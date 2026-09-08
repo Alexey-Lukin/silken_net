@@ -35,7 +35,7 @@
 
 PARAMS = {
   # ── робоча точка (02_03 §9.6 Variant C = energy-positive) ───────────────────
-  delta_t_s: 6372.0,      # 1.77 год
+  delta_t_s: 6372.0,      # 1.77 год — ECB-ера (16 Б); CCM 30 Б → ≈2.19 год, разом з ARCH.8
   # ── межі метаболічного відображення (bio_contract.rb, placeholder [E.63]) ───
   delta_t_fast_s: 600.0,  # m = 1.0
   delta_t_slow_s: 7200.0, # m = 0.0
