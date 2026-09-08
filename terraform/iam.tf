@@ -136,22 +136,71 @@ resource "google_project_iam_member" "deploy_drift_browser" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
-# No predefined READ-only role carries servicenetworking.services.get — verified
-# 2026-09-08: roles/servicenetworking.networksViewer DOES NOT EXIST, and networksAdmin
-# is write-capable. Hence a custom role holding that single permission (confirmed
-# custom-role-grantable via `gcloud iam list-testable-permissions`).
+# Permissions with no predefined read-only home. Two distinct reasons, and the second is
+# the one that cost a round:
+#   · servicenetworking.services.get — roles/servicenetworking.networksViewer DOES NOT
+#     EXIST, and networksAdmin is write-capable (verified 2026-09-08).
+#   · the three `getIamPolicy` verbs — 🔴 **predefined *.viewer roles EXCLUDE getIamPolicy
+#     BY DESIGN.** Reading a resource and reading WHO MAY READ IT are separate grants in
+#     GCP, so cloudkms.viewer covers `cryptoKeys.get` and never `cryptoKeys.getIamPolicy`.
+#     Every `google_*_iam_member` resource in this root therefore needs its own explicit
+#     getIamPolicy, and no amount of service-viewer breadth supplies it. The only
+#     predefined role that would is iam.securityReviewer — 2535 permissions for three.
+# ⛔ Do not "simplify" this away when the viewers above look like they should cover it.
 resource "google_project_iam_custom_role" "drift_servicenetworking_read" {
   project     = var.project_id
   role_id     = "driftSvcNetRead"
-  title       = "Drift detector — Service Networking read"
-  description = "Single-permission read role so the scheduled terraform plan can refresh google_service_networking_connection. No write, no data access. [INF.22]"
-  permissions = ["servicenetworking.services.get"]
+  title       = "Drift detector — reads with no predefined home"
+  description = "Permissions the scheduled terraform plan needs that no predefined read-only role supplies: one service read, three getIamPolicy verbs. No write, no data access. [INF.22]"
   stage       = "GA"
+  permissions = [
+    "cloudkms.cryptoKeys.getIamPolicy",
+    "iam.roles.get",
+    "servicenetworking.services.get",
+    "storage.buckets.getIamPolicy",
+  ]
 }
 
 resource "google_project_iam_member" "deploy_drift_servicenetworking" {
   project = var.project_id
   role    = google_project_iam_custom_role.drift_servicenetworking_read.id
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+# Per-SERVICE viewer roles — one per Google service the root module actually manages.
+#
+# 🔴 THE SHAPE OF THIS LIST IS THE LESSON, and it was bought with four failed runs
+# (2026-09-08). Enumerating permissions verb-by-verb from observed 403s LOOKS minimal and
+# is a treadmill by construction: `terraform plan` aborts a resource's refresh on its FIRST
+# denial, so each grant only reveals the next layer. Four rounds went 2 → 7 → 1 → 3 missing
+# permissions, each round a different set, with no way to know the depth — and the pattern
+# was structural, not accidental: every `*_iam_member` wants its own `getIamPolicy`, every
+# service its own `get`. Whole-service viewers END it, because Google maintains them as
+# services gain read verbs.
+#
+# ⚖️ Measured before choosing, because the founder's 2026-09-08 ruling was explicitly about
+# SURFACE SIZE: the union of these nine roles is 157 permissions, of which exactly ONE is
+# not a plain read verb — `serviceusage.services.use`, the "bill this request to this
+# project" grant that the Storage API requires, not a mutation. roles/viewer would be 6083.
+# ⛔ storage.legacyBucketReader is ABSENT because it is a BUCKET-level role: binding it to
+# a PROJECT returns `400 Role ... is not supported for this resource` (measured 2026-09-08).
+# The bucket read this root needs is `storage.buckets.getIamPolicy`, carried by the custom
+# role below, which as a project custom role does reach buckets in the project.
+# ⛔ compute.viewer (421) and billing.viewer (62) are deliberately ABSENT: those resources
+# already refresh clean under the SA's existing roles, so adding them would buy nothing and
+# cost the largest block in the candidate set. Add a role here only when a run proves need.
+resource "google_project_iam_member" "deploy_drift_viewers" {
+  for_each = toset([
+    "roles/cloudkms.viewer",
+    "roles/cloudsql.viewer",
+    "roles/iam.serviceAccountViewer",
+    "roles/iam.workloadIdentityPoolViewer",
+    "roles/logging.viewer",
+    "roles/serviceusage.serviceUsageConsumer",
+    "roles/serviceusage.serviceUsageViewer",
+  ])
+  project = var.project_id
+  role    = each.value
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
