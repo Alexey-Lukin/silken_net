@@ -6,7 +6,10 @@ Same two-state Mulliken–Hush diabatisation as 24b (FO-DFT for Cu–Co), applie
 Co→Ru-swapped cluster (`cu_ru_zif.xyz`, identical geometry). 24c's crude ΔSCF
 energy-splitting gave a LARGE Cu–Ru splitting (ΔE ≈ 0.21 eV) whose magnitude the crude
 method cannot be trusted on — exactly the reason 24b was needed for Cu–Co (there the
-crude 0.00128 → FO-DFT 0.00546). This firms t_ij(Cu–Ru) by the rigorous route and reads
+crude 0.00128 → FO-DFT 0.00546). ⚠️ RESULT: it did NOT firm anything — the rigorous route came out non-physical too (t_ij 0.105 eV,
+frontier MOs all-Ru with no Cu-d partner), i.e. a SECOND negative rather than a closure. The Ru
+'double-whammy' t_ij boost stays an unconfirmed hypothesis, moved to a CDFT capstone (00_07 CHEM.32).
+This script attempts to firm t_ij(Cu–Ru) by the rigorous route and reads
 24c's crude value from cache for comparison.
 
   1. one UKS dimer SCF on cu_ru_zif (charge +1, spin 1 — Cu-Ru cluster, 253 e⁻);

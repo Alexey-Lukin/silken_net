@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-L3 step 3 — aggregate frontier orbital energies from scripts 20 and 21.
+L3 step 3 — aggregate frontier orbital energies from script 20 (FAD) and the canonical Os owner.
+
+⛔ The Os source is 21f (dimethyl → os_complex.json), NOT 21 (NH₃ surrogate, terminated) and NOT 21b
+(plain-bpy reference → os_complex_plain.json). The identity guard below enforces exactly that; this
+line said 'scripts 20 and 21' long after 21f took sole ownership.
 
 Renders the energy ladder diagram that visualises the cascade
     FADH₂  -e⁻-→  Os(II)   (with empty Os(III) accepting orbital below

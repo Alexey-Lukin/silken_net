@@ -24,7 +24,8 @@ For each redox form (oxidized FAD and 2e-/2H+-reduced FADH₂):
 Report the electronic ΔE between oxidized and reduced forms (sign sanity-check
 only). The actual redox potential vs NHE is computed in script 32 (thermodynamic
 proton reference) and compared to the experimental free-flavin value (−208 mV vs
-NHE). NB: protein-bound GcGDH FAD = −266 mV vs SHE (verified) — NOT the +60 mV
+NHE). NB: protein-bound GcGDH FAD = −265 mV vs SHE (canon; ⛔ NOT −266 — the 2026-06-18 sweep froze −265
+and declared «no −266 anywhere», but its perimeter was docs/ and this line in tools/ survived it) — NOT the +60 mV
 once cited in the canon (that was conflated with the Os mediator potential).
 
 Why B3LYP/6-31G(d) and not ωB97X-D/def2-TZVP

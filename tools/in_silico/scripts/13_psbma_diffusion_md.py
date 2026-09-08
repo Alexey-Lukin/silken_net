@@ -7,7 +7,8 @@ Purpose (per docs/01_03 §2.1 Layer 5 + §3.4 L4)
 -------------------------------------------------
 Compute the effective diffusion coefficient D_eff of glucose through a
 simplified Nafion-g-PSBMA anti-biofouling layer from first-principles MD,
-replacing the literature estimate D=2×10⁻⁶ cm²/s used in L4 kinetics.
+intended to replace the literature estimate D=2×10⁻⁶ cm²/s used in L4 kinetics — ⚠️ that replacement
+has NOT happened and is deliberately deferred (00_07 HW.5.IS): L4 (30/31) still runs on the lit 2e-6.
 
 The PSBMA membrane is modeled as a slab of SBMA monomers (zwitterionic
 units) packed in water. Glucose molecules are placed on one side and their

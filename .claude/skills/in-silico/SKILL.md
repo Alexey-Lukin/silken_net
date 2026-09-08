@@ -58,6 +58,8 @@ Bridge:
 
 ## Critical Rules
 
+0. 🔴 **`conda env list` in a non-interactive shell answers about ITSELF, not about the machine — ask the FILESYSTEM.** The `conda` shell function is only defined by an interactive init, so a tool-driven Bash gets a stub that reports just `base`; reading that as «the env is not installed here» is a measurement substitution, and it cost a wrong verdict once (2026-09-08: `silken_md` was present all along). **Roster:** `ls ~/miniforge3/envs/`. **Run a script without activation:** `~/miniforge3/envs/silken_md/bin/python scripts/NN_*.py` (same for `silken_lint`, `silken_ml`, `pymol_tmp`). ⚠️ Regenerating a cache is safe ONLY if you prove it: back the JSON up, re-run, then diff FIELD-BY-FIELD against the backup — a run that changes a number you did not intend is otherwise indistinguishable from one that changes only the text you edited.
+
 1. **Shared lib is SSOT** — all constants, paths, banner() from `lib/`. Never redefine locally (19 local banners eliminated in refactoring).
 2. **SMILES fixes cascade** — fixing a SMILES in 02-08 → rerun ALL downstream MD using that ligand. Check GAFF cache too.
 3. **DFT: NEVER two heavy jobs on same CPU** — cache thrashing makes both 2× slower (observed: a 92-min solo job took 190+ min alongside another). Small molecules (H₂O, lumiflavin) OK to parallelize; MD-on-GPU alongside a CPU DFT job is fine (different hardware) — the hazard is two CPU-bound DFT jobs sharing cache.

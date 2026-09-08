@@ -4,8 +4,10 @@
 L3 — ωB97X ΔSCF cross-check of the ② mediator speciation (chloro → aqua → bis-Im).
 
 The ② result (script 34, B3LYP) is that replacing the chloro ligand by the active
-6th ligand shifts the Os(III/II) redox energy by ~0.3–0.5 eV (aqua > bis-Im > chloro
-as acceptors). A reviewer will ask: is that SPECIATION trend an artifact of B3LYP, or
+6th ligand shifts the Os(III/II) redox energy by ~0.3–0.5 eV (chloro is the low
+anchor; ⚠️ the internal aqua↔bis-Im order is functional-SENSITIVE — which is what THIS script
+measured: on the dimethyl mediator B3LYP gives bis-Im > aqua, ωB97X keeps aqua > bis-Im.
+'aqua > bis-Im > chloro' as a settled order is the plain-bpy legacy). A reviewer will ask: is that SPECIATION trend an artifact of B3LYP, or
 functional-robust? This re-runs the three forms' vertical **ΔSCF ΔE_red = E(Os II) −
 E(Os III)** at the range-separated **ωB97X** functional (same 6-31G(d)+LANL2DZ basis +
 C-PCM, same programmatic geometries) and compares the speciation shifts to B3LYP.

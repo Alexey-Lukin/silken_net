@@ -18,7 +18,10 @@ Protocol (all at consistent B3LYP/def2-SVP + C-PCM):
   5. λ_inner = [E(n@Rc) - E(n@Rn)] + [E(c@Rn) - E(c@Rc)]
 
 Lumiflavin is used as the FAD redox-core surrogate (isoalloxazine ring).
-Replaces hardcoded λ=0.7 eV in Marcus rate calculations.
+⛔ TERMINATED — DO NOT RUN AS A SOURCE OF λ. The FADH₂•⁺ radical-cation geometry is pathological in
+implicit solvent (both routes give E(n@R_cation) ≈ +160 eV). The hardcoded λ=0.7 eV was replaced NOT
+by this script but by 29b (FADH⁻/FADH• couple → anode inner-sphere λ_i 0.39 eV) + 29c (λ_o), and by
+35 for the metals. Kept as the record of the failed route; see PIPELINE_STATUS 'Terminated / Closed'.
 """
 from __future__ import annotations
 

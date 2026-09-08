@@ -3,8 +3,10 @@
 """L3 task ② — cluster-continuum micro-solvation of the Os(III/II) couple.
 
 WHY. The raw FADH₂→Os cascade is uphill in *every* implicit-solvent method
-(B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV) while experiment is
-−0.14 eV. Script 32 already shows the *flavin* PCET potential is reproduced to
+(B3LYP-Koopmans −0.91 eV; ΔSCF ωB97X adiabatic +0.88 eV) while the verified experimental
+driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
+Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
+GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to
 ~50 mV, so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
 the charge-changing **Os(III)²⁺/Os(II)⁺** couple. This is the textbook failure of
 implicit (PCM) solvation for group-8 octahedral M(III/II): the ~1 V error is
@@ -18,7 +20,7 @@ gap-closing direction, on TWO systems:
   • aquo   — [Os(H₂O)₆]³⁺/²⁺ benchmark. n=0 (bare ion) → n=6 (inner shell). Same
              metal + basis as the real mediator, so the recovered PCM error
              transfers directly. Validates the protocol vs a known group-8 case.
-  • mediator — the real cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ (≡ ① parent / 21b) with
+  • mediator — the plain-bpy PARENT cis-[Os(bpy)₂(1-MeIm)Cl]⁺/²⁺ (≡ ① reference / 21b). ⛔ NOT the device mediator: that is Zafar's 4,4'-dimethyl-bpy complex (21f, os_complex.json canon) — 'the real mediator' stood here and was superseded by the OS-RECOMPUTE with
              k=0..3 explicit waters H-bonded to the Cl⁻ ligand (the dominant
              directional H-bond site PCM gets wrong). k=0 reuses ① from cache.
 
@@ -32,7 +34,7 @@ absent in silken_md → would relax with pyscf.geomopt; deferred to final number
 
 HONEST LIMITS (for §3.5): (a) a single shell does NOT converge the absolute
 potential — n=6 over-, n=18 under-estimates (literature); the real complex is a
-*bounded* estimate, full closure needs QM/MM (Минаєв capstone). (b) scalar-ECP
+*bounded* estimate, full closure needs explicit-water QM/MM — ⛔ NOT Minaev's school (their angle is spin-orbit / O₂ activation, 00_02 §2.1): own follow-up or a specialist computational-electrochemistry collaboration, TBD. (b) scalar-ECP
 LANL2DZ omits Os spin-orbit coupling, which shifts Os(II/III) potentials
 (JACS 10.1021/ja800616s). Both stated as method limits, not hidden.
 

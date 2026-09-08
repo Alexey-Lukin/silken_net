@@ -13,7 +13,7 @@ hydration barrier that blocks resin biofouling.
 
 Parameterizing SBMA enables future diffusion MD (script 13): build an
 explicit PSBMA membrane layer, place glucose on one side, and measure
-D_eff from MSD — replacing the literature estimate D=2×10⁻⁶ cm²/s.
+D_eff from MSD — intended to replace the literature estimate D=2×10⁻⁶ cm²/s — ⚠️ deferred, L4 still uses the lit value (00_07 HW.5.IS).
 
 The monomer is net-neutral (internal charge compensation +/−).
 

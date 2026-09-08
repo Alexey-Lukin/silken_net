@@ -107,6 +107,6 @@
       "sf_sup_4v": 14.24
     }
   ],
-  "verdict": "Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF 29x); the liner doubles as lateral support \u2192 fatigue SF 9-26x (infinite life, all alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal \u2192 leading HW.24 candidates win on both.",
+  "verdict": "Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF 29x); the liner doubles as lateral support \u2192 fatigue SF 9-26x (infinite life, all alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti AT THE \u00d81.3 CHANNEL DIAMETER USED HERE; at the canon rod \u00d81.0 (01_01 \u00a71.4) that branch instead FAILS for both (Ta 0.71, CP-Ti 0.98) \u2014 see the diameter caveat in the module docstring, re-run tracked as 00_07 HW.34. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal \u2192 leading HW.24 candidates win on both.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust."
 }

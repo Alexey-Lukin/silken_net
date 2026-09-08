@@ -386,7 +386,7 @@ Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as lat
 **9–26×** (infinite life, all alloys); bare cantilever marginal for soft Ta/CP-Ti. Per-alloy margin
 tracks yield = SAME ranking as the thermal side → leading HW.24 candidates win on both.
 (`mechanical/bus_mechanical.json`)
-> ⚠️ **SF caveat:** the bending SF is computed on `D_BUS=1.3` mm (the cathode **channel**), NOT the canon rod **Ø1.0** mm (`01_01 §1.4`) → it is overstated ~2.2× (σ∝1/d³: real ~4–12×, not the 9–26× above; soft Ta/CP-Ti sit near the fail-margin). Re-run @ Ø1.0 is a separate compute session → `00_07` HW.34.
+> ⚠️ **SF caveat:** the bending SF is computed on `D_BUS=1.3` mm (the cathode **channel**), NOT the canon rod **Ø1.0** mm (`01_01 §1.4`) → it is overstated ~2.2× (σ∝1/d³: real ~4–12×, not the 9–26× above). 🔴 **The unsupported branch does not merely thin out — it CROSSES the line for the soft alloys: Ta 1.55 → 0.71, CP-Ti 2.16 → 0.98, i.e. predicted fatigue failure, and the cached `unsupported_infinite_life: true` for CP-Ti becomes false at Ø1.0.** «near the fail-margin» stood here and was softer than the arithmetic it summarised. Re-run @ Ø1.0 is a separate compute session → `00_07` HW.34.
 
 **Verdict** — 🟢 Monolithic bus (= anode alloy, HW.24-gated) resolves the Cu/Ti dichotomy: thermal
 bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with the bore liner**.

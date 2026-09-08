@@ -59,7 +59,7 @@
 | 52 | `z_stack_tolerance` | HW.8.7 3-spring blind-mate Z-stack: holds at spacer + bayonet hard-stop (incl. 20yr pad creep) | `mechanical/z_stack_tolerance.json` |
 | 53 | `oxide_det_per_alloy` | HW.24 bake-off: per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin) | `kinetics/oxide_det_per_alloy.json` |
 | 54 | `anchor_thermal_bridge` | **HW.34** bus thermal bridge: Cu bus dominates the PEEK break (G_anchor ~10× Ti-bus → anode pocket ~15°C below core, freeze-risk); Ti monolithic invisible; ALL bake-off alloys ≪ Cu | `mechanical/anchor_thermal_bridge.json` |
-| 55 | `bus_mechanical` | **HW.34** bus rod: buckling SF 29× (pogo); sway-fatigue SF 9-26× WITH liner (= insulation + support); marginal for soft Ta/CP-Ti unsupported | `mechanical/bus_mechanical.json` |
+| 55 | `bus_mechanical` | **HW.34** bus rod: buckling SF 29× (pogo); sway-fatigue SF 9-26× WITH liner (= insulation + support); ⚠️ unsupported: «marginal» лише на `D_BUS=1.3` (канал); на канон-роді Ø1.0 Ta/CP-Ti ПАДАЮТЬ (0.71 / 0.98 < 1.0) — caveat і re-run `00_07` HW.34 | `mechanical/bus_mechanical.json` |
 | 56 | `unified_press_fit_lame` | **HW.3.IS 2026-06-22** combined thick-wall Lamé (press-fit + thermal in ONE model): worst-case −30°C+s6-max SF **5.6×** (von Mises 4.7×); retired the naïve 1.4× artifact + drove the 50/51 source-fix | `kinetics/unified_press_fit_lame.json` |
 | 60 | `paper_figures` | Стаття 1 figures Fig 2 (structure+path, DRAFT 2D-proj) / 3 (cascade+LFER) / 4 (cathode DET) / 5 (solvation) + S1 (β·d) — cache+PDB renderer, headline numbers asserted vs SUMMARY at build | `paper/figures/*.png` |
 | 61 | `paper_tables` | Стаття 1 Tables T1–T4 (levels of theory / cascade all-methods / DET hops+λ / mediator series) — cache→markdown, canon-asserted | `paper/06_tables.md` |

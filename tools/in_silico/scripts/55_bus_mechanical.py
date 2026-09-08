@@ -4,8 +4,16 @@
 HW.34 — Mechanical check of the central bus rod (buckling + sway fatigue), the second-half de-risk of
 the monolithic-bus idea after the thermal bridge (script 54).
 
-A monolithic Ti bus is a thin Ø1.3 rod rising from the anode shank, through the PEEK gap and the cathode
-bore, to the pogo pad. Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
+A monolithic Ti bus rises from the anode shank, through the PEEK gap and the cathode bore, to the pogo pad.
+
+!! DIAMETER CAVEAT — READ BEFORE QUOTING ANY NUMBER FROM THIS SCRIPT (00_07 HW.34, open re-run leg):
+   D_BUS below is 1.3 mm, which is the cathode CHANNEL, not the rod. Canon 01_01 §1.4 freezes the ROD
+   at Ø1.0 mm. Because sigma scales as 1/d^3, every fatigue SF printed here is overstated by ~2.2x, and
+   the direction of the error is not uniform: the SUPPORTED branch stays safe (9.3-25.6 -> 4.2-11.7), but
+   the UNSUPPORTED branch crosses the failure line for the soft alloys — Ta 1.55 -> 0.71, CP-Ti 2.16 ->
+   0.98, i.e. predicted fatigue FAILURE, not 'marginal'. The cached `unsupported_infinite_life: true` for
+   CP-Ti becomes false at Ø1.0. Do NOT silently edit D_BUS here: the re-run is a tracked compute session
+   that must move script + cache + SUMMARY.md §HW.34 together, otherwise the three disagree. Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
   1. Buckling — the pogo pin presses the rod tip axially (~1 N, 02_02 §2.2). Does a slender rod buckle?
   2. Sway fatigue — over 20-25 yr (~10^8-10^9 sway cycles) a CYCLIC lateral load bends the rod. The
      defensible driver is pogo-contact friction drag (µ·F_pogo) as the capsule sways and the pin slides
@@ -37,6 +45,8 @@ OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Bus geometry (mm) — mirrors script 54 / CEM (bus threads the Ø1.3 cathode bottleneck) ──
+# !! 1.3 is the CHANNEL; canon rod is Ø1.0 (01_01 §1.4). See the diameter caveat in the module
+#    docstring — this value overstates every fatigue SF by ~2.2x. Re-run is tracked: 00_07 HW.34.
 D_BUS = 1.3
 # Free (laterally UNSUPPORTED) cantilever length in each case:
 L_FREE_UNSUP = 36.0   # mm — no liner: gap 6 + cathode bore ~14 + flange/pad standoff ~16 = full protrusion
@@ -163,7 +173,10 @@ def main() -> int:
         "friction_sweep": mu_rows,
         "verdict": ("Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF "
                     f"{p_cr_unsup / F_POGO_N:.0f}x); the liner doubles as lateral support → fatigue SF 9-26x (infinite life, all "
-                    "alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti. Liner = insulation + support + "
+                    "alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti AT THE Ø1.3 CHANNEL DIAMETER USED "
+                    "HERE; at the canon rod Ø1.0 (01_01 §1.4) that branch instead FAILS for "
+                    "both (Ta 0.71, CP-Ti 0.98) — see the diameter caveat in the module "
+                    "docstring, re-run tracked as 00_07 HW.34. Liner = insulation + support + "
                     "fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
                     "thermal → leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
