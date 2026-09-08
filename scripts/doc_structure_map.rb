@@ -6,10 +6,10 @@
 # scripts/doc_structure_map.rb — структурна мапа канону SilkenNet.
 #
 # Для кожної сторінки `docs/NN_NN_*.md` витягує "голову" (title + 🎯 Мета +
-# ✅ Статус/TRL + 🔗 cross-refs count + 📏 line-count) і список контент-секцій
+# ✅ Статус/TRL + 🔗 cross-refs count + 📏 рядки ТА БАЙТИ) і список контент-секцій
 # (## ...) — тобто все до кінця змісту-ToC, БЕЗ тіла. Дає компактну мапу всього
 # проєкту, щоб орієнтуватися не перечитуючи кожен файл. Per-module heft-підсумок
-# (стор · рядків) — для size-rebalance лінзи (small→merge / large→split).
+# (стор · рядків · kB) — для size-rebalance лінзи (small→merge / large→split).
 #
 # Read-only. Нічого не змінює.
 #
@@ -45,6 +45,8 @@ total_secs = 0
 total_lines = 0
 mod_pages = Hash.new(0)
 mod_lines = Hash.new(0)
+total_bytes = 0
+mod_bytes = Hash.new(0)
 
 files.each do |path|
   base   = File.basename(path)
@@ -84,6 +86,8 @@ files.each do |path|
   # і хибний: 00_07 малювався з «TRL 4→6» із тіла пункту HW.1.
   total_secs += content_secs.size
   total_lines += lines.size
+  total_bytes += File.size(path)
+  mod_bytes[mod] += File.size(path)
   mod_pages[mod] += 1
   mod_lines[mod] += lines.size
 
@@ -104,12 +108,19 @@ files.each do |path|
   puts "  🎯 #{meta}"              if meta
   puts "  ✅ #{status}"            if status
   puts "  🔗 ~#{crossrefs} doc-links"
-  puts "  📏 #{lines.size} рядків"
+# 🔴 БАЙТИ, не лише рядки: лічильник рядків — доведено поганий проксі ціни
+# відкриття, бо густина розходиться майже на порядок (00_07 ≈ 777 B/рядок,
+# 03_01 ≈ 113 B/рядок при майже однаковому числі рядків; 00_06 виглядає
+# 32-м із 42 за рядками й 6-м за байтами). Мапа існує, щоб орієнтуватись
+# НЕ перечитуючи файл, тож поле, яке бреше про ціну читання, працює проти
+# власної мети. Обидва числа лишаються: рядки корисні для size-rebalance
+# лінзи нижче, байти — для рішення «відкривати чи ні».
+puts format("  📏 %d рядків · %.0f kB", lines.size, File.size(path) / 1024.0)
   puts "  §  #{content_secs.size} секцій: " + content_secs.join(" · ") if SHOW_SECS && !content_secs.empty?
   puts "  §  #{content_secs.size} секцій"                              if !SHOW_SECS && !content_secs.empty?
 end
 
 puts "\n──────────"
 puts "Heft по модулях (стор · рядків) — лінза size-rebalance (small→merge / large→split):"
-mod_pages.keys.sort.each { |m| puts "  M#{m}: #{mod_pages[m]} стор · #{mod_lines[m]} рядків" }
-puts "Разом: #{files.size} сторінок, #{total_secs} контент-секцій, #{total_lines} рядків (діапазон #{FROM}..#{TO})."
+mod_pages.keys.sort.each { |m| puts format("  M%s: %d стор · %d рядків · %.0f kB", m, mod_pages[m], mod_lines[m], mod_bytes[m] / 1024.0) }
+puts format("Разом: %d сторінок, %d контент-секцій, %d рядків, %.1f MB (діапазон %s..%s).", files.size, total_secs, total_lines, total_bytes / 1_048_576.0, FROM, TO)
