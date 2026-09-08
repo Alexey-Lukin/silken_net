@@ -1,0 +1,171 @@
+{
+  "method": "Closed-form Young-Laplace liquid-entry pressure for a cylindrical pore plus a Bosanquet (bulk+Knudsen) steady-diffusion O2 budget. No fitted parameters.",
+  "inputs": {
+    "gamma_water_N_m": 0.0728,
+    "rho_water_kg_m3": 998.2,
+    "g_m_s2": 9.80665,
+    "temperature_K": 298.15,
+    "pore_spec_um": [
+      0.2,
+      0.5,
+      1.0
+    ],
+    "thickness_spec_um": [
+      20.0,
+      50.0,
+      100.0
+    ],
+    "contact_angle_deg": [
+      110.0,
+      115.0,
+      120.0
+    ],
+    "porosity": 0.5,
+    "tortuosity": 2.0,
+    "D_O2_air_m2_s": 2e-05,
+    "j_max_A_cm2": 0.000494,
+    "electrons_per_O2": 4
+  },
+  "liquid_entry_pressure": {
+    "0.2um": {
+      "CA_110": {
+        "pressure_Pa": 497981.3286821737,
+        "head_m_H2O": 50.87153221974585
+      },
+      "CA_115": {
+        "pressure_Pa": 615332.1890944582,
+        "head_m_H2O": 62.85956818140847
+      },
+      "CA_120": {
+        "pressure_Pa": 727999.9999999998,
+        "head_m_H2O": 74.36920487356556
+      }
+    },
+    "0.5um": {
+      "CA_110": {
+        "pressure_Pa": 199192.53147286948,
+        "head_m_H2O": 20.34861288789834
+      },
+      "CA_115": {
+        "pressure_Pa": 246132.87563778332,
+        "head_m_H2O": 25.143827272563392
+      },
+      "CA_120": {
+        "pressure_Pa": 291199.99999999994,
+        "head_m_H2O": 29.74768194942623
+      }
+    },
+    "1.0um": {
+      "CA_110": {
+        "pressure_Pa": 99596.26573643474,
+        "head_m_H2O": 10.17430644394917
+      },
+      "CA_115": {
+        "pressure_Pa": 123066.43781889166,
+        "head_m_H2O": 12.571913636281696
+      },
+      "CA_120": {
+        "pressure_Pa": 145599.99999999997,
+        "head_m_H2O": 14.873840974713115
+      }
+    }
+  },
+  "worst_case_spec": {
+    "pore_um": 1.0,
+    "contact_angle_deg": 110.0,
+    "pressure_Pa": 99596.26573643474,
+    "head_m_H2O": 10.17430644394917,
+    "margin_vs_acceptance_x": 10.17430644394917
+  },
+  "bench_inversion": {
+    "apparatus_column_m": 0.3,
+    "acceptance_column_m": 1.0,
+    "pore_failed_by_apparatus_um": 33.914354813163904,
+    "pore_demanded_by_acceptance_um": 10.17430644394917,
+    "canon_prose_upper_pore_um": 15.0,
+    "canon_prose_optimism_x": 1.4743019666879358,
+    "column_height_to_challenge_widest_spec_pore_m": 10.17430644394917,
+    "bubble_point_kPa": {
+      "0.2um": {
+        "pressure_kPa": 497.9813286821737
+      },
+      "0.5um": {
+        "pressure_kPa": 199.1925314728695
+      },
+      "1.0um": {
+        "pressure_kPa": 99.59626573643475
+      }
+    }
+  },
+  "field_pressures_Pa": {
+    "dew_film_1mm": 9.78899803,
+    "standing_droplet_5mm": 48.94499015,
+    "driven_rain_wind_20ms_stagnation": 240.0,
+    "submersion_50mm": 489.4499015
+  },
+  "field_pressure_note": "hand-set scenarios, not site data; the upper bound is submersion_50mm, not the wind-driven rain; droplet impact (water hammer) is not modelled",
+  "theta_inversion": {
+    "CA_110": {
+      "pore_demanded_um": 10.17430644394917,
+      "vs_canon_prose_x": 1.4743019666879358
+    },
+    "CA_115": {
+      "pore_demanded_um": 12.571913636281694,
+      "vs_canon_prose_x": 1.193135781390592
+    },
+    "CA_120": {
+      "pore_demanded_um": 14.873840974713112,
+      "vs_canon_prose_x": 1.0084819399038467
+    }
+  },
+  "theta_at_which_worst_field_load_breaks_through_deg": {
+    "0.2um": 90.0192605866533,
+    "0.5um": 90.0481514713944,
+    "1.0um": 90.09630297679705
+  },
+  "o2_budget": {
+    "demand_mol_m2_s": 1.2799872923773666e-05,
+    "air_c_O2_mol_m3": 8.563112327689195,
+    "per_pore": {
+      "0.02um": {
+        "D_knudsen": 2.960999324453456e-06,
+        "D_bosanquet": 2.5791554475592815e-06,
+        "D_eff": 6.447888618898204e-07,
+        "flux_mol_m2_s": 0.11042798904010814,
+        "margin_x": 8627.272293852719
+      },
+      "0.2um": {
+        "D_knudsen": 2.9609993244534556e-05,
+        "D_bosanquet": 1.1937108355803553e-05,
+        "D_eff": 2.9842770889508884e-06,
+        "flux_mol_m2_s": 0.5110939985927156,
+        "margin_x": 39929.61505449342
+      },
+      "0.5um": {
+        "D_knudsen": 7.402498311133638e-05,
+        "D_bosanquet": 1.5745811519834532e-05,
+        "D_eff": 3.936452879958633e-06,
+        "flux_mol_m2_s": 0.6741657636748282,
+        "margin_x": 52669.72318316346
+      },
+      "1.0um": {
+        "D_knudsen": 0.00014804996622267276,
+        "D_bosanquet": 1.7619755546573665e-05,
+        "D_eff": 4.404938886643416e-06,
+        "flux_mol_m2_s": 0.7543997296586752,
+        "margin_x": 58938.06400667474
+      },
+      "15.0um": {
+        "D_knudsen": 0.0022207494933400916,
+        "D_bosanquet": 1.9821488300593677e-05,
+        "D_eff": 4.955372075148419e-06,
+        "flux_mol_m2_s": 0.8486681540998045,
+        "margin_x": 66302.85778255989
+      }
+    },
+    "margin_thickest_membrane_smallest_SPEC_pore_x": 19964.80752724671,
+    "j_max_provenance": "lib.constants J_MAX_25C is the ANODE pair's literature current density; used here as the cathode demand only because the cell is in series"
+  },
+  "verdict": "1. The specified pore window holds 10-74 m of water head against hand-set field loads of 10-489 Pa. Against THOSE loads the nominal pore is not the limit; what remains \u2014 a web/seam defect, and loss of hydrophobicity \u2014 this formula does not compute. 2. The prescribed 30 cm column only fails pores wider than 34 um, so it is a gross-defect detector. Keep it as such, and verify the pore spec with the bubble-point rig the sterilisation QC already needs (100 kPa for the widest spec pore). 3. The \u00a75.3 prose bound 'no pores > 15 um' is NOT an arithmetic error: it is this same inversion at 120 deg (14.87 um). What is missing is the slice \u2014 the \u00a75.3 TABLE guarantees only 110 deg, which demands <= 10.2 um. State theta with the number or neither means anything. 4. The design's real exposure is theta, not pore size: the worst hand-set field load breaks through only once the contact angle falls to 90.02-90.10 deg. That is the acceptance number the 12-week rain/dew test has been missing. 5. O2 transport exceeds the cathode's peak demand by 8,627x at the worst pore in the whole 0.02-15 um range, so if the cathode is O2-limited the bottleneck is the catalytic layer, not the GDL. (The demand uses the anode pair's literature current density \u2014 legitimate only because the cell is in series.)",
+  "ceilings": "Nominal cylindrical pores \u2014 a real web is a distribution with a tail, and the largest as-made pore governs; no Cassie/Wenzel roughness correction; contact angle is the spec claim, not our measurement; the O2 half assumes a dry, open membrane (wetting, condensation and dust blinding are the real failure mode and are not modelled)."
+}

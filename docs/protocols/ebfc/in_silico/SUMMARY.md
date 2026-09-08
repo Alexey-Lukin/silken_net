@@ -393,6 +393,93 @@ bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with
 
 ---
 
+## HW.6 — Thermal install: the radial field the 1D estimate could not see (script 58)
+
+Canon home → [`01_04 §3.5.1/§3.5.2`](../../../01_04_CODIT_and_Xylemointegration.md); decision → `00_07` HW.6.
+
+2D axisymmetric transient FVM over the real three-zone anchor plus bark / phloem / cambium /
+sapwood, with an **effective** gyroid λ (connected-skeleton estimator, 0.80 W/m·K vs 6.7 bulk Ti).
+
+🔴 **Direction of the bound, first, because it decides what the model may claim.** Conduction only,
+zero contact resistance — every omission pushes tissue temperature UP, so these are UPPER bounds.
+An upper bound establishes "not shown to be safe", never "the tissue dies". The verdict holds on
+the **margin**: the cambium sits 68 °C above the 50 °C gate and stays above it on all 15 sweep
+points (107.8–146.7 °C). Damage is scored as an ISOTHERM, not a time-temperature dose (we have no
+Arrhenius parameters for pine cambium and will not invent them), and carrying the 4 % CODIT wound
+rule from a drilled wound to a thermal ring is an assumption, not a measurement.
+
+**Solver verified on four independent axes** — the first two do not touch what carries the wound
+diameter: closed-box enthalpy drift `0.0` · independent 1D march `0.001 °C` · **steady radial
+annulus vs the analytic log law `0.071 °C`** · **two-layer slab vs series resistance `0.000 °C`**.
+
+| Heating variant | cambium peak | >50 °C at | killed LIVING tissue | min DBH | wall >150 °C | heater |
+|---|---|---|---|---|---|---|
+| **Canon as written** — uniform induction of all Ti to 200 °C | **117.9 °C** | 111 s | **Ø47.5 mm** | **111 cm** | 5 s | 20 W |
+| Low end of the same window — 150 °C | 90.7 °C | 162 s | Ø41.5 mm | 94 cm | never | 15 W |
+| Only the accessible metal (flange + Zone-3 shank) | 98.5 °C | 113 s | Ø38.5 mm | 91 cm | never | 4 W |
+| Selective deep heating of Zone 1, flange at ambient | **48.1 °C** | never | **Ø47.5 mm** | — | 5 s | 17 W |
+| Canon + a 2 mm still-air isolator under the flange | 109.1 °C | 134 s | Ø47.5 mm | 101 cm | 5 s | 20 W |
+| Pre-heated outside the tree, then inserted | 44.1 °C | never | Ø17.5 mm | — | never | — |
+
+> 🔴 The killed-LIVING column replaced a cambium-plane-only metric that had scored the selective
+> variant a clean "—". It kills the same Ø47.5 mm, just not in the plane the metric watched.
+
+| Hold, then release | cambium peak | killed living | wall coagulation |
+|---|---|---|---|
+| 5 s | 47.5 °C | Ø19.5 mm | 1.3 s |
+| **10 s** | **49.3 °C** | Ø20.5 mm | **8.0 s** |
+| 30 s | 54.2 °C | Ø22.5 mm | 33.9 s |
+| 120 s | 67.8 °C | Ø27.5 mm | 138.4 s |
+
+**Verdict** — 🔴 As written the procedure kills living tissue out to **Ø47.5 mm** (cambial ring
+Ø44.5 mm), so the same 4 % CODIT rule that turns the mechanical Ø15 wound into "DBH ≥ 38 cm" would
+demand **DBH ≥ 111 cm**. Heating the only reachable metal never reaches the anode — the 50 mm PEEK
+break does exactly what [`01_01 §4.1`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) designed
+it to do, which the 1D estimate could not see **by construction** because it modelled a solid Ti rod
+— and not because it predated the pivot: the three-zone anchor was canon 12 days BEFORE that cache
+([`01_01`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) 2026-05-15 vs 2026-05-27).
+✅ **The constructive half: the error is DURATION, not temperature.** The wall passes 150 °C at 5 s
+and the cambium 50 °C at 111 s; a 10 s pulse coagulates for 8 s and leaves the cambium at 49.3 °C —
+0.7 °C of margin, i.e. a pointer for the bench, not a finished protocol. ⚖️ Founder call →
+`00_07` HW.6. (`mechanical/thermal_install_field.json`)
+
+⊕ **The 1D orphan cache now has a generator.** Script 58 reproduces `kinetics/thermal_penetration.json`
+inside its pinned tolerance (Δt 0.014 s, Δα 0, max milestone error 0.009 °C). Its grid puts the last
+node at 79.6 mm rather than 80.0, so the record solved a 79.6 mm rod; the **+1.008 %** is now
+computed rather than asserted, and the record is not rewritten
+([`00_05 §7`](../../../00_05_AI_Native_Operating_Model.md)).
+
+## HW.25 — PTFE-GDL: breakthrough pressure and the O₂ budget (script 57)
+
+Canon home → [`01_04 §5.3/§5.6`](../../../01_04_CODIT_and_Xylemointegration.md); decision → `00_07` HW.25.
+
+Closed form, no fitted parameters: Young–Laplace liquid entry `ΔP = −4γcosθ/d` (γ 0.0728 N/m at 20 °C)
+plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25C` at 4 e⁻/O₂.
+
+| Question | Answer |
+|---|---|
+| Head the spec window holds (0.2–1.0 µm, θ 110–120°) | **10.2 – 74.4 m H₂O** |
+| Hand-set field loads (dew film · droplet · 20 m/s air stagnation · 50 mm submersion) | 10 – 489 Pa |
+| Pore the prescribed 30 cm column can fail | **33.9 µm** |
+| Pore the "≥ 1 m" criterion demands at θ 110° / 115° / 120° | **10.2 / 12.6 / 14.9 µm** |
+| Bubble-point pressure to challenge the spec at θ 110° | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
+| θ at which the worst field load breaks through | **90.02 – 90.10°** |
+| O₂ transport margin at the canon's own lower bound (0.02 µm) | **8627×** |
+
+**Verdict** — 🟢 Spec sound and over-specified at both ends; ⚠️ the BENCH was aimed at the wrong
+target, and so was my first reading of the canon. The prose bound "no pores > 15 µm" is **not an
+arithmetic error** — it is this same inversion at 120°, the top of the document's own θ range, while
+the §5.3 table guarantees only 110° (→ 10.2 µm). The defect is an unstated θ slice, not a wrong
+number. Against the four hand-set loads the nominal pore is not the limit by 2–3 orders, but that is
+an ELIMINATION: neither a web/seam defect nor loss of hydrophobicity is computed by this formula.
+🔑 The design's real exposure is θ — and this document is about RESIN, whose acids are surfactants —
+so the useful output is the degradation threshold (θ ≈ 90°), which gives the 12-week rain/dew test a
+number to accept against instead of a pass/fail with no criterion. The 0.02 µm lower bound survives
+as a wetting/manufacturing caution, **not** as the transport limit the canon claimed.
+(`kinetics/gdl_breakthrough.json`)
+
+---
+
 ## Infrastructure
 
 | Component | Location |

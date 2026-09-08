@@ -208,6 +208,77 @@ def test_oxide_det_per_alloy():
     assert d["Ta"]["det_vs_tio2"] > d["beta-Ti-13Nb-13Zr"]["det_vs_tio2"]  # Ta worst-case
 
 
+def test_gdl_breakthrough():
+    """Script 57: PTFE-GDL liquid-entry pressure + O2 budget (01_04 §5.3/§5.6, HW.25).
+
+    Sanity is DIRECTIONAL, not numeric — the exact values are pinned by test_doc_cache_sync:
+    the spec must clear its own acceptance bar; the prescribed water column must be unable to
+    challenge the widest specified pore (that is the finding, not an accident); and O2 transport
+    must not be the bottleneck anywhere in the canon pore window.
+    """
+    path = KINETICS / "gdl_breakthrough.json"
+    if not path.exists():
+        pytest.skip("gdl_breakthrough.json not computed")
+    d = json.loads(path.read_text())
+    bench = d["bench_inversion"]
+    assert d["worst_case_spec"]["margin_vs_acceptance_x"] > 1.0        # spec clears its own bar
+    assert bench["pore_failed_by_apparatus_um"] > max(d["inputs"]["pore_spec_um"])
+    assert bench["canon_prose_optimism_x"] > 1.0                       # ">15 um" was optimistic
+    assert bench["pore_demanded_by_acceptance_um"] < bench["canon_prose_upper_pore_um"]
+    assert min(v["margin_x"] for v in d["o2_budget"]["per_pore"].values()) > 100.0
+    # a hydrophobic pore must get HARDER to wet as it narrows and as the contact angle grows
+    lep = d["liquid_entry_pressure"]
+    assert lep["0.2um"]["CA_110"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
+    assert lep["1.0um"]["CA_120"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
+
+
+def test_thermal_install_field():
+    """Script 58: 2D axisymmetric thermal-install field + the orphan-cache generator (HW.6).
+
+    Three things must hold, and each fails loudly if the model regresses:
+      1. the committed thermal_penetration.json is still reproduced inside its pinned tolerance;
+      2. the solver still conserves enthalpy in a closed box and still matches the independent
+         1D march — an unverified solver is a claim, not a measurement;
+      3. the DISCRIMINATING pair survives: the canon procedure cooks the cambium, selective deep
+         heating does not. A model where both pass (or both fail) is measuring nothing.
+    """
+    path = REPO / "tools/in_silico/cache/mechanical/thermal_install_field.json"
+    if not path.exists():
+        pytest.skip("thermal_install_field.json not computed")
+    d = json.loads(path.read_text())
+    leg = d["legacy_cache_regeneration"]
+    assert leg["reproduced"] is True
+    assert abs(leg["delta_time_s"]) / 60.0 < 0.1       # the tolerance test_doc_cache_sync pins
+    assert abs(leg["delta_alpha_m2s"]) * 1e6 < 0.01
+    ver = d["numerical_controls"]["solver_verification"]
+    assert ver["passed"] is True
+    assert ver["closed_box_enthalpy_drift"] < 1e-9
+    for axis in ("closed_box_enthalpy_drift", "column_2d_vs_1d_delta_C",
+                 "radial_annulus_max_err_C", "two_layer_interface_max_err_C"):
+        assert axis in ver, f"solver verification lost the {axis} axis"
+    canon = d["scenarios"]["S1a_uniform_Ti_200C"]
+    selective = d["scenarios"]["S2_anode_only_200C"]
+    gate = d["thresholds_C"]["cambium_gate"]
+    assert canon["cambium_peak_C"] > gate               # the finding
+    assert selective["cambium_peak_C"] < gate           # ... and its control
+    assert canon["thermal_wound_dia_50C_mm"] > d["geometry_mm"]["sleeve_od_wound"]
+    # the PEEK break must still block the axial path it was designed to block
+    assert d["scenarios"]["S1b_flange_only_200C"]["cauterisation_dwell_s"] == 0.0
+    # 🔴 The whole-domain metric exists because a cambium-only one let the "surviving" variant
+    # score a clean zero while cooking a wider ring. Pin BOTH halves of that lesson.
+    assert canon["killed_living_dia_anywhere_mm"] >= canon["thermal_wound_dia_50C_mm"]
+    assert selective["thermal_wound_dia_50C_mm"] == 0.0
+    assert selective["killed_living_dia_anywhere_mm"] > 0.0
+    # duration is the axis the canon inherited from the model this script supersedes: damage must
+    # rise monotonically with the hold, and a short hold must exist that stays under the gate.
+    holds = d["duration_sweep"]
+    assert [h["hold_s"] for h in holds] == sorted(h["hold_s"] for h in holds)
+    peaks = [h["cambium_peak_C"] for h in holds]
+    assert peaks == sorted(peaks), "cambium damage must grow with hold length"
+    assert any(h["cambium_peak_C"] < gate and h["cauterisation_dwell_s"] > 0 for h in holds), \
+        "the constructive half of the finding — a hold that coagulates and spares — is gone"
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():
@@ -461,9 +532,17 @@ EXPECTED_SCRIPTS = [
     "28_electron_tunneling_pathway.py",
     "29_dft_reorganization_energy.py",
     "32_pcet_redox_potential.py",
+    # The anchor-mechanics block, complete: this list looked full while 52/54/55/56 had never
+    # been added, so it grew selectively and read as an inventory.
     "50_thermal_stress_lame.py",
     "51_gusak_degradation_model.py",
+    "52_z_stack_tolerance.py",
     "53_oxide_det_per_alloy.py",
+    "54_anchor_thermal_bridge.py",
+    "55_bus_mechanical.py",
+    "56_unified_press_fit_lame.py",
+    "57_gdl_breakthrough.py",
+    "58_thermal_install_field.py",
 ]
 
 

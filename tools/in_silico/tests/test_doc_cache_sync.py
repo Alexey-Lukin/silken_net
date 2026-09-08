@@ -243,6 +243,68 @@ CHECKS = [
         CODIT, r"α=([\d.]+)×10⁻⁶ m²/s",
         "kinetics/thermal_penetration.json", lambda d: d["thermal_diffusivity_m2s"] * 1e6, 0.01,
     ),
+    # ── Thermal-install radial field (01_04 §3.5.1) — the measurement that closed the ceiling ──
+    # These three carry a SAFETY verdict about a living tree, so they are pinned to their owner
+    # cache rather than left as prose: the cambium temperature, the thermal wound it opens, and
+    # the stem class that wound would demand under the same 4 % CODIT rule.
+    (
+        "cambium peak, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
+        CODIT, r"рівномірний індукційний прогрів усього Ti до 200 °C \| \*\*([\d.]+) °C\*\*",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["cambium_peak_C"], 0.1,
+    ),
+    (
+        "killed living tissue, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
+        CODIT, r"Убито живої тканини Ø([\d.]+) мм проти механічної рани",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["killed_living_dia_anywhere_mm"], 0.1,
+    ),
+    (
+        "cambial ring, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
+        CODIT, r"а саме камбіальне кільце — Ø([\d.]+) мм",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["thermal_wound_dia_50C_mm"], 0.1,
+    ),
+    # 🔴 The CONSTRUCTIVE half of the finding is what a future reader is most likely to lose,
+    # because it lives one section further down than the alarming half. Pin it too.
+    (
+        "10 s pulse cambium peak → thermal_install_field.json (01_04 §3.5.2)",
+        CODIT, r"лишає камбій на ([\d.]+) °C, під порогом",
+        "mechanical/thermal_install_field.json",
+        lambda d: next(h["cambium_peak_C"] for h in d["duration_sweep"] if h["hold_s"] == 10.0),
+        0.1,
+    ),
+    (
+        "minimum DBH implied by the thermal wound → thermal_install_field.json (01_04 §3.5.1)",
+        CODIT, r"вимагало б \*\*DBH ≥ ([\d.]+) см\*\*",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["min_dbh_for_thermal_wound_cm"], 1.0,
+    ),
+    # ── PTFE-GDL breakthrough (01_04 §5.3/§5.6) ──
+    (
+        "pore demanded at the spec-floor theta → gdl_breakthrough.json (01_04 §5.3)",
+        CODIT, r"вимагає \*\*не ширших за ([\d.]+) µm\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["theta_inversion"]["CA_110"]["pore_demanded_um"], 0.1,
+    ),
+    (
+        "pore demanded at the prose-top theta → gdl_breakthrough.json (01_04 §5.3)",
+        CODIT, r"не ширших за \*\*([\d.]+) µm при θ = 120°\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["theta_inversion"]["CA_120"]["pore_demanded_um"], 0.1,
+    ),
+    (
+        "pore the 30 cm column can actually fail → gdl_breakthrough.json (01_04 §5.6)",
+        CODIT, r"30 см валить лише пори ширші за \*\*([\d.]+) µm\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["bench_inversion"]["pore_failed_by_apparatus_um"], 0.1,
+    ),
+    (
+        "O₂ transport margin at the canon lower bound → gdl_breakthrough.json (01_04 §5.3)",
+        CODIT, r"запас \*\*([\d]+)×\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["o2_budget"]["per_pore"]["0.02um"]["margin_x"], 1.0,
+    ),
 ]
 
 

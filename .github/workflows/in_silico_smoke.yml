@@ -23,7 +23,7 @@ on:
     paths:
       - 'tools/in_silico/**'
       - 'docs/protocols/ebfc/in_silico/**'
-      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # thermal_penetration.json cache↔doc (test_doc_cache_sync)
+      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # non-SUMMARY cache↔doc target (test_doc_cache_sync)
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
