@@ -32,7 +32,7 @@
 | | **R&D-RFQ** (TRL 3→5, Stage 1-3) | **Production-procurement** (TRL 6+, Stage 4 100-партія) |
 |---|---|---|
 | **Дім** | `protocols/procurement/` (цей шар) | [`02_06 §8`](../../02_06_Unit_Economics_and_BOM.md) (BOM/хаби) + §8.1.1 Frame Agreement |
-| **Вендор-зв'язок** | spot-quote (CRO / academ-co-pub) | Frame Agreement (+20% premium, 30-day activation, SLA) |
+| **Вендор-зв'язок** | spot-quote (CRO / academ-co-pub) | Frame Agreement — умови в [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md), крок 2 рунбука |
 | **Авторитет** | architect + ЧНУ-PI | CEO/Partnerships (контракт) |
 | **00_07** | HW.5/HW.24/HW.3 | **BIZ.6** (EU-backup) |
 

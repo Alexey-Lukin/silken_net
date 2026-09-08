@@ -173,6 +173,13 @@ jobs:
         # drift ~7× the real one, which is how this gate's own item was mis-sized.
         run: ruby scripts/component_doc_sync.rb
 
+      - name: 06_07 §1 ⟷ .github/workflows parity (DOC-T.103 — інвентар без сторожа)
+        # Pure Ruby, no Rails — реєстр воркфлоу в 06_07 §1 гнив однонаправлено:
+        # новий yml рядка не діставав, і виміряно 21 із 22 (бракувало dco.yml,
+        # який САМ заявляв §1 своїм інвентарним домом). Вісь окрема від
+        # workflow_gate_perimeter: та судить required-множину, ця — описаність.
+        run: ruby scripts/workflow_doc_sync.rb
+
       - name: docs/protocols/ canon-ref resolution (DOC-T.26 — relative-href blind spot)
         # Pure Ruby, no Rails — the protocols/ subtree refs canon by relative path,
         # which the top-level gates never see; verifies every such ref resolves.
