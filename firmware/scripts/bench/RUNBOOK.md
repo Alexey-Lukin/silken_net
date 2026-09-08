@@ -95,7 +95,7 @@
 | [bench:lse-rtc-wut] | §4 | FW.49 · FW.20 · ARCH.41 · ARCH.26 · SEC.15 · SILENCE-1 |
 | [bench:coap] | §5 (+ §6 VBAT-droop) | FW.3 · FW.56 · FW.58 · FW.60 · HW.15 |
 | [bench:ota-day] | §2.5 (+ §6 `Write_OTA_Contract_To_Flash`) | FW.23 · FW.52 · SEC.20 |
-| [bench:acoustic] | §6 (bullet «Acoustic 16 kHz стенд» ↓) | HW.11 · HW.30 |
+| [bench:acoustic] | §6 (bullet «Acoustic-стенд» ↓) | HW.11 · HW.30 |
 | [bench:mpu-trap] | §6 (bullet «MPU-активація на кремнії» ↓) | SEC.21 |
 | [bench:queen-cadence] | §5 (+ §6 VBAT-droop) | FW.64 |
 | [bench:reset-cause] | §6 (bullet «Reset-cause на кремнії» ↓) | FW.59 |
@@ -112,7 +112,7 @@
 - **HW.15 VBAT-droop @ 2A burst** (acceptance `02_05 §2.2.1`): осцилограф на VBAT-піні SIM7070G під час LTE-M TX burst → просадка **< 20 мВ** (5-cap tank bank поз.17–20 тримає; brownout-поріг 3.0 В, margin >35×). Без цього замір — brownout-лотерея першого деплою.
 - **RF:** діаграма/дальність 868 МГц (HW.31 антени), mesh TTL у полі.
 - **П'єзо interrupt-storm поріг** (`03_03 §1.2`, HW.30 cb-4/5) — ⚖️ hardware comparator/RC **vs** software amplitude-gate; якщо SW → поріг калібрується на [bench:acoustic]-ризі (cb-5, post-coupling).
-- **Acoustic-стенд** ⚠️ (частота стимулу — ВІДКРИТА, присуд `00_07` HW.30: «16 kHz» тут є частотою дискретизації тракту `03_03`, а не резонансом п'єзо ~4 кГц; узгодити ПЕРЕД днем) (спільний день HW.11 + HW.30, той самий Ti-coin + 16 kHz tone на тому самому п'єзо): HW.11 coating-attenuation з/без (`02_02 §3.4`) + HW.30 SMD-piezo+Sil-Pad voltage-spike vs стара ∅27мм через-отв. (`02_01 §6`) — один стенд-день, спільний rig.
+- **Acoustic-стенд** ⚠️ (стимул = **розгортка 2–8 кГц**, ⚖️ 2026-09-08 — дім присуду `00_07` HW.30; «16 kHz» було частотою ДИСКРЕТИЗАЦІЇ тракту `03_03`, не резонансом. ⛔ **Прилади стенда ще НЕ названо** — генератор/збудник/вимірювач/геометрія rig відсутні, тож це поки не процедура; нога стоїть там же) (спільний день HW.11 + HW.30, той самий Ti-coin і той самий п'єзо — ⚠️ записати ЯКИЙ: bench-ЗП-3 ≠ production-Mallory): HW.11 coating-attenuation з/без (`02_02 §3.4`) + HW.30 SMD-piezo+Sil-Pad voltage-spike vs стара ∅27мм через-отв. (`02_01 §6`) — один стенд-день, спільний rig.
 
 ## Вихідний критерій дня
 
