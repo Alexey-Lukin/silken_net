@@ -1348,6 +1348,30 @@ end
       expect(described_class.source_line_ref_drift("00_07_Action_Plan_Tracker", live_trk))
         .to include(a_string_matching(/TelemetryUnpackerService:946/))
     end
+
+    # Narrowed again 2026-09-08 (§Guard-craft #151): the exemption is a property of
+    # the SECTION, so only a heading of level <= 2 may end it. Any `#`-line used to
+    # reset the state — a hidden demand that the illustration section stay FLAT —
+    # so the first `###` inside §3 switched the gate back on for the whole tail.
+    # Both halves are pinned: it survives a subsection, and a real defect after the
+    # next `##` still turns red.
+    it "keeps the exemption alive across `###` subsections of the illustration section" do
+      txt = "## 🛡️ 3. Drift-prevention tooling\n" \
+            "### 3.1 Форма самого канон-доку\n" \
+            "приклад поганої форми: `BlockchainMintingService:107`\n"
+      expect(described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", txt)).to be_empty
+    end
+
+    it "ends the exemption at the next level-2 heading, never at a subsection" do
+      txt = "## 🛡️ 3. Drift-prevention tooling\n" \
+            "### 3.1 Форма самого канон-доку\n" \
+            "приклад: `BlockchainMintingService:107`\n" \
+            "## 🏠 2. Canonical-home registry\n" \
+            "живе твердження про `TelemetryUnpackerService:946`\n"
+      hits = described_class.source_line_ref_drift("00_06_SSOT_Documentation_Standard", txt)
+      expect(hits).to include(a_string_matching(/TelemetryUnpackerService:946/))
+      expect(hits).not_to include(a_string_matching(/BlockchainMintingService:107/))
+    end
   end
 
   describe ".canonical_block_sha / .canonical_block_drift" do

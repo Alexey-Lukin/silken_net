@@ -248,6 +248,22 @@ RSpec.describe Tracker::Dashboard do
       expect(described_class.file_section_dangling_refs("| E.99 | x | `00_02` §1.1 | y |")).to be_empty
     end
 
+    # DOC-T.103: the citation form that spells the FULL filename between the doc-id and
+    # the `§` is the same address, and the routing/CI layers write it that way. Until
+    # 2026-09-08 the resolver required `§` immediately after `NN_NN`, so every such ref
+    # was outside supervision — ten of them lived in `.claude/**` and `.github/**`, and
+    # widening the pattern turned two long-dead refs red on the first run.
+    it "resolves a ref that spells the full filename between the doc-id and the §" do
+      expect(described_class.file_section_dangling_refs("docs/00_03_TRL_Matrix_HIL_and_Beyond.md §4.2\n"))
+        .to include(a_string_matching(/00_03 §4\.2/))
+      expect(described_class.file_section_dangling_refs("docs/00_03_TRL_Matrix_HIL_and_Beyond.md §4.1\n")).to be_empty
+    end
+
+    it "keeps the § bound to ITS OWN doc-id — a filename tail may not carry a space" do
+      expect(described_class.file_section_dangling_refs("`04_01` та окремо `05_02 §9.9`\n"))
+        .to include(a_string_matching(/05_02 §9\.9/))
+    end
+
     it "is boundary-aware: §3.1 does NOT resolve against a 1.3.1 heading" do
       # 03_01 has §1.3.1 but no §3.1 — the retired substring `include?` would false-pass.
       expect(described_class.file_section_dangling_refs("ref `03_01 §3.1` here"))
@@ -320,7 +336,8 @@ RSpec.describe Tracker::Dashboard do
 
     # The discriminator is the LABEL SHAPE (one letter + `.` + digit), NOT the `NN_NN`
     # prefix: these all carry the prefix and must stay OUT of scope — prose-shorthand named
-    # refs and placeholders live on the weaker `section_label_drift` ADVISORY (00_06 §3).
+    # refs and placeholders are judged by `section_label_drift` instead — its severity is
+    # declared in `00_06 §3.1` and deliberately not restated here.
     it "still ignores NAMED / placeholder / non-section §-refs that DO carry a doc-id" do
       named = "`05_02 §Модель` `05_04 §Merkle` `03_04 §X.Y` `00_07 §NN` `00_04 §B-02` `03_05 §FW.2`"
       expect(described_class.file_section_dangling_refs(named)).to be_empty

@@ -99,7 +99,12 @@ EXEMPT_REFS = {
   # the worked example that cites them (that prose left the auto-loaded half).
   # An exemption follows its SUBJECT — it does not stay where the subject used to
   # be, or it stops guarding and starts blessing the next phantom at that address.
-  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "00_02 §7", "08_01 §2", "05_03 §749", "00_04 §6.5" ],
+  # ⊕ `00_03 §4.2` приєднався 2026-09-08 (DOC-T.103) — і приєднався САМЕ ТОМУ, що
+  # сліпоту, яку він ілюструє, закрито: форма #50 наводить повне імʼя доку між id
+  # і `§` як приклад «така цитата виводить реф з-під нагляду», і щойно резолвер
+  # навчився цю форму бачити, шейп почервонів на власному прикладі. Це не привід
+  # переписувати приклад — приклад і є доказом; це привід записати виняток.
+  ".claude/skills/ssot-maintenance/guard-craft.md" => [ "04_06 §A.10а", "04_06 §A.999", "00_02 §7", "08_01 §2", "05_03 §749", "00_04 §6.5", "00_03 §4.2" ],
   "lib/tasks/docs.rake"                            => [ "05_03 §749" ],
   # Trap (14) цитує компаунд-реф БЕЗ пробілу як приклад того, що детектор
   # хибно емітував із нього ще й голий числовий якір. Цитата і є доказом:
@@ -127,11 +132,13 @@ EXEMPT_REFS = {
   # для кожного: щойно будь-який почне резолвитись, гейт червоніє.
   "spec/lib/docs_linter_spec.rb" => [
     "00_02 §1A", "00_07 §03.",                                  # живі доки, вигадані секції
+    "00_07 §2.6",                                               # ВИГАДАНИЙ повний шлях (DOC-T.103): фікстура судить ФОРМУ, не адресу
     "08_02 §1.3", "08_02 §1A", "08_02 §2",                      # модуль 08 розчинено 2026-07-24
     "99_99 §1.3"                                                # doc-id синтетичний за побудовою
   ],
   "spec/lib/tracker/dashboard_spec.rb" => [
     "99_99 §1.1", "03_01 §3.1", "03_05 §9.9", "05_05 §9.9", "05_05 §9", "06_07 §9",
+    "00_03 §4.2", "05_02 §9.9", "05_02 §9",                       # DOC-T.103: фікстури форми «повне імʼя між id і §»
     "04_06 §A.999",                                             # підсаджений доказ мутації
     "08_02 §1.1", "08_02 §1.8",
     "99_99 §1.", "99_99 §1", "99_99 §3"
@@ -153,9 +160,16 @@ EXEMPT_REFS = {
 # ⛔ `scripts/` СВІДОМО лишається поза периметром і це не недогляд: там 44 реф-и, з
 # них не резолвляться сім — і всі сім у ЦЬОМУ файлі, це його ж декларовані фікстури
 # мертвих адрес. Скан себе почервонив би на власній таблиці винятків.
+# 🔴 Кореневі інструкц-файли (2026-09-08, DOC-T.103): вони мали path-гейт і не мали
+# §-гейта — `docs.rake` ганяє на них чотири перевірки, і жодна не кличе резолвер, а
+# цей скан кореневих `*.md` у периметрі не мав. `CLAUDE.md` при цьому prepend-иться
+# в КОЖЕН промпт, тобто мертва адреса там веде кожного нового агента, поки CI зелений.
+ROOT_INSTRUCTION_FILES = %w[CLAUDE.md AGENTS.md .cursorrules].freeze
+
 files = (TREES.flat_map { |t| Dir[File.join(ROOT, t, "**", "*.{rb,rake}")] } +
          Dir[File.join(ROOT, "firmware", "**", "*.{c,h}")].reject { |f| f.include?("/extern/") } +
-         Dir[File.join(ROOT, "tools", "**", "*.{py,rb}")] +
+         Dir[File.join(ROOT, "tools", "**", "*.{py,rb,md}")] +
+         ROOT_INSTRUCTION_FILES.map { |n| File.join(ROOT, n) }.select { |p| File.file?(p) } +
          Dir[File.join(ROOT, CLAUDE_TREE, "**", "*.md")] +
          Dir[File.join(ROOT, GITHUB_TREE, "**", "*.{yml,yaml,md}")])
         .map { |f| f.sub("#{ROOT}/", "") }
@@ -193,7 +207,7 @@ end
 if violations.empty?
   # Перелік дерев тут НЕ переказується: він росте, а рядок успіху друкується на
   # КОЖНОМУ зеленому прогоні, тобто протухає найгучніше. Склад бере `files` вище.
-  puts "code_doc_section_refs — #{files.size} файлів (код · routing `.claude` · CI `.github`) проскановано; кожен `NN_NN §X` резолвиться ✓"
+  puts "code_doc_section_refs — #{files.size} файлів проскановано (периметр — у списку `files` нижче, не в цьому рядку); кожен `NN_NN §X` резолвиться ✓"
 else
   puts "code_doc_section_refs — #{violations.size} stale code→doc §-refs:"
   violations.uniq.sort.each { |v| puts "  ✗ #{v}" }

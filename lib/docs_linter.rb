@@ -582,7 +582,7 @@ module DocsLinter
   # а не коментар поруч. Skips fenced code (a script may legitimately name a tool).
   AI_VENDOR_OWNER_DOC = /\A00_06_|\A00_07_/
   AI_VENDOR_RE        = /(?<![A-Za-z])(Gemini|Cursor|Copilot|Windsurf|ChatGPT|Grok|DeepSeek|Claude Code)(?![A-Za-z])/
-  AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_06 §5/i
+  AI_VENDOR_MIRROR_RE = /дзеркал|mirror|00_06 §0/i
 
   def ai_vendor_name_drift(basename, text)
     return [] if basename.match?(AI_VENDOR_OWNER_DOC)
@@ -594,7 +594,7 @@ module DocsLinter
       next if line.match?(AI_VENDOR_MIRROR_RE)
       next unless (m = line.match(AI_VENDOR_RE))
 
-      "AI-vendor name `#{m[1]}` outside owner (00_06 §5 roster = ROLES frontier-LLM/coding-agent; reference the role) → #{line.strip[0, 90]}"
+      "AI-vendor name `#{m[1]}` outside owner (00_06 §0 roster = ROLES frontier-LLM/coding-agent; reference the role) → #{line.strip[0, 90]}"
     end
   end
 

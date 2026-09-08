@@ -12,6 +12,23 @@
 #
 #   A. every `run:` step of the docs.yml `docs_check` job appears VERBATIM in
 #      the §3 command column (a wired gate must be registered);
+#      ⛔ ДВІ ОЧЕВИДНІ «ПОКРАЩЕННЯ» ЦІЄЇ ОСІ ВИМІРЯНО Й ВІДМОВЛЕНО [DOC-T.102,
+#      2026-09-07] — не перевідкривати:
+#      · «згенерувати колонку команд із `docs.yml`» робить CHECK A **тавтологією**:
+#        він порівнював би док із тим самим файлом, з якого док і згенеровано, тож
+#        зеленів би завжди. Прецедент того ж роду вже оплачено — DOC-T.88: канон
+#        називав реєстр генерованим, а генератора не існувало;
+#      · «перенести ЧОМУ з клітинок у шапки рушіїв» — це не ПЕРЕНОС, а РОБОТА:
+#        десятки скриптів мають шапку коротшу за абзац, тобто дому, куди нібито
+#        переносити, ще немає. Переносити можна лише туди, де дім уже стоїть —
+#        інакше зріз клітинки є втратою, замаскованою під впорядкування.
+#   A2. a CURATED allow-list of canon↔code/config-mirror gates that run OUTSIDE
+#      docs.yml — axis A cannot see them by construction. Membership lives in
+#      CANON_CODE_GATES_OUTSIDE_DOCS below; each entry needs a §3 row AND must
+#      still run in its own workflow (a retired one leaves a dead map entry that
+#      fails too). ⛔ DECLARED CEILING: curated on purpose, never an auto-scan of
+#      every workflow — most ci.yml / solidity_audit steps are build/test/lint/
+#      fuzz, and no machine tells a registry step from a non-registry one.
 #   B. every `failed <<` label in docs.rake and every Tracker::Dashboard guard
 #      called by tracker.rake maps to a §3 row — via the curated maps below
 #      (deliberate tripwire, like DEPRECATED_TERMS: a NEW label/guard fails
@@ -42,6 +59,19 @@
 #      one-liner. A check that narrows its own subject BY SHAPE always keeps a
 #      genre it cannot see; name that genre here, or the green run reads as full
 #      coverage of the column.
+#
+#   F. an anti-claim axis over the ROUTING layer: any `.claude/**` file (plus
+#      this registry and docs.yml) that invokes `docs_check.rb` without naming
+#      `docs_band.rb` within ±6 lines is selling two steps as the whole lane
+#      (OPS.25). Anchored on the CALL form and derived from the file on disk,
+#      never written as a second literal.
+#
+#   Beyond the lettered axes the run enforces three PERIMETER FLOORS
+#   (ROW_FLOOR · CLAIM_FLOOR · PATH_FLOOR — a pin on an empty set is a false
+#   green, so a collapse of the parsed set fails instead of printing ✓) and one
+#   CEILING, CELL_CEILING: a §3 description cell over 3000 B. ⛔ The ceiling
+#   judges SIZE, never CONTENT — CHECK B demands a row for every new label, so
+#   the pressure that inflates these cells is this registry's own.
 #
 # Pure Ruby (yaml stdlib only, no Rails). Run: ruby scripts/guard_registry_sync.rb
 # Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.
@@ -90,7 +120,7 @@ DOCS_RAKE_LABELS = {
   "customer-facing поріг без маркера DAO-мутабельності (SLASH-1)"                            => "customer-facing поріг",
   "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)"             => "solc/pragma version One-Home",
   "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" => "canonical source-block pin",
-  "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)"                  => "AI-vendor name One-Home",
+  "AI-vendor name restated outside One-Home (00_06 §0 roster; use roles)"                  => "AI-vendor name One-Home",
   "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)"                          => "bare §-ref → link",
   "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)"                          => "bare doc-id → link",
   "link label↔href mismatches"                                                             => "link label↔href mismatch",

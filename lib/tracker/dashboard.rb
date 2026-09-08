@@ -440,7 +440,14 @@ module Tracker
     # severity is the `failed <<` line in docs.rake, and only there.
     # Widening to any letter would sweep in 74 such refs.
     DOC_SECTION_TOKEN = /(?:\p{L}\.)?[0-9][\p{L}0-9.]*/
-    DOC_SECTION_REF   = %r{(\d\d_\d\d)`?\s*((?:§\s*#{DOC_SECTION_TOKEN}[\s,;`+/–—-]*)+)}
+# 🔴 Хвіст імені доку між `NN_NN` і `§` НАВМИСНО дозволено (2026-09-08, DOC-T.103):
+# форма `docs/00_06_SSOT_Documentation_Standard.md §2` — та сама адреса, і саме нею
+# пишуть рефи routing-шар (`.claude/skills/**`) і CI-шар (`.github/**`), де повний
+# шлях зручніший за голий id. Доти будь-який текст між id і `§` ламав матч, тож
+# десять живих рефів були коректні НЕ ТОМУ, що їх хтось перевіряв. Хвіст мусить
+# починатись із `_` і не містити пробілу, тож `§` лишається прив'язаним до СВОГО
+# id: «`04_01` … `05_02 §3`» так і далі дає лише другу пару.
+DOC_SECTION_REF   = %r{(\d\d_\d\d)(?:_[A-Za-z][A-Za-z0-9_]*)?(?:\.md)?`?\s*((?:§\s*#{DOC_SECTION_TOKEN}[\s,;`+/–—-]*)+)}
 
     # The §-anchor token of a heading = its leading number ("## 🎓 1B. ФОТІУС" → "1b";
     # "### 2.1.3. …" → "2.1.3"; "### Стаття 1: …" → none, word-led) or its leading
