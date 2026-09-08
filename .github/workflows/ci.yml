@@ -330,6 +330,11 @@ jobs:
         # інструментує лише функції з addressable-locals, тож nm-на-.o дає
         # false-fail; видалення прапора з toolchain-файлу → нема в build-config →
         # gate падає (guard-lens тримається).
+        # ⛔ І НЕ будувати тут «size-delta gate» (мовляв, канарка мусить додати
+        # байтів): такого гейта ніколи не існувало — CMake-таргет `size` лише
+        # ДРУКУЄ розміри, порогу не має й нічим не червоніє. Альтернативу
+        # виміряно й відкинуто; вона повертається тим, що звучить строгіше за
+        # grep по build-config.
         run: |
           grep -rq 'fstack-protector-strong' firmware/build \
             || { echo "❌ SEC.21: -fstack-protector-strong не в ARM build-config"; exit 1; }

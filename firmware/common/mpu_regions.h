@@ -26,6 +26,14 @@
  * MemManage-trap доводиться лише на кремнії (00_07 SEC.21). TEX/C/B/S
  * консервативні (normal memory, WT) — фінальні атрибути = bench-tuning.
  *
+ * ⚠️ ТІЛО `MemManage_Handler` у цьому репо НЕ ЖИВЕ — воно приходить із
+ * board-freeze `.ioc` (CubeMX, 00_07 FW.46), як і тіла MX_-ініціалізаторів і
+ * SystemClock_Config.
+ * Тобто вмикати SEC21_MPU_ENABLED ДО board-freeze означає озброїти пастку, чий
+ * обробник є weak-дефолтом CMSIS (вічна петля) — trap спрацює й вузол мовчки
+ * зависне замість того, щоб лишити слід. Порядок несучий: board-freeze → тіло
+ * обробника → аж тоді активація.
+ *
  * Канон: 03_05 §9 + 03_01 §2.3 (Flash-хвіст) + 00_07 SEC.21.
  */
 #ifndef SILKEN_MPU_REGIONS_H
