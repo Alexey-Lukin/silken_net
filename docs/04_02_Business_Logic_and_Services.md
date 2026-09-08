@@ -804,7 +804,7 @@ Internal-admin сервіси конвеєра прошивки/провіжин
 | **Зовнішні виклики** | `Web3::HttpClient.get` → dClimate FIRMS API (`DCLIMATE_BASE_URL`). `InsurancePayoutWorker.perform_async` або `BurnCarbonTokensWorker.perform_async`. |
 | **Вихід** | `nil`. Side effects: оновлює `alert.satellite_status` та `alert.dclimate_ref`, тригерує воркери. |
 
-> **[E.66] Toucan-prune:** `Toucan::BridgeService` + `ToucanBridgeWorker` + `Wallet#lock_for_toucan_bridge!`/`finalize_spend!`/`toucan_bridged_balance` видалено — flow був DEAD (0 enqueue-callerів), failure-path мав money-integrity діру (без `sidekiq_retries_exhausted`, несиметричний rollback, in-flight `locked > balance` вікно). SCC→TCO2 expansion воскресає з git при E.20-go — тоді ж обов'язкові симетричний rollback + інваріант `locked ≤ balance` (гейт зафіксовано в git-історії E.66).
+> **[E.66] Toucan-prune:** `Toucan::BridgeService` + `ToucanBridgeWorker` + `Wallet#lock_for_toucan_bridge!`/`finalize_spend!`/`toucan_bridged_balance` видалено — flow був DEAD (0 enqueue-callerів), failure-path мав money-integrity діру (без `sidekiq_retries_exhausted`, несиметричний rollback, in-flight `locked > balance` вікно). SCC→TCO2 expansion воскресає з git ЛИШЕ під нову підставу — ⛔ **не «при E.20-go»: та подія ⚫ won't-do ⚖️ 2026-08-24 і не настане** (виправлено 2026-09-08) — і тоді ж обов'язкові симетричний rollback + інваріант `locked ≤ balance` (гейт зафіксовано в git-історії E.66).
 
 ---
 
