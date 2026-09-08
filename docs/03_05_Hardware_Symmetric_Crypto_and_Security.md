@@ -976,7 +976,7 @@ STM32_Programmer_CLI -c port=SWD -ob RDP=0xCC
 
 | Slot | Тип | Призначення | Read | Write |
 |------|-----|-------------|------|-------|
-| 0 | AES-128 key | LoRa Soldier↔Queen sym key | ❌ never | One-time (factory) |
+| 0 | AES-128 key | ⚫ **RESERVED, НЕ пишеться** — post-SEC.14 (provisioning-only, 2026-07-03) KEYL лишається у Protected Flash в **обох** фабричних гілках; slot тримається під urban-варіант | ❌ never | ⛔ не пишеться (дзеркало з ✂️ — [`03_06 §1`](03_06_Factory_Flashing_and_Key_Provisioning) крок 4) |
 | 1 | **Ed25519 private (SE050)** | **Голос дерева** — device-held non-extractable ключ, що підписує власну телеметрію (L2, Merkle-корінь — E.60); та сама крива покриває peaq/Solana DID-підпис. SE050 генерує keypair **на чипі**, експортує лише pubkey (backend не знає private → непідробно). Раніше P-256 (ATECC) — не міг (інша крива) | ❌ never | On-chip keygen (factory) |
 | 2 | Public key cert | X.509 device cert | ✅ open | Factory |
 | 3 | HMAC-SHA256 key | OTA image HMAC verification (FW.23) | ❌ never | One-time |
@@ -1325,7 +1325,7 @@ HAL_CRYP_Init(&hcryp);
 | **Розмір ключа CoAP** | ✅ 256 біт | Без змін |
 | **Апаратне прискорення** | ✅ STM32 AES Block | Без програмної крипто-бібліотеки; підтримує і 128B, і 256B через runtime re-init |
 | **CBC IV для CoAP** | ✅ HRNG (тепловий шум) | Унікальний IV на кожен батч |
-| **Зберігання ключа** | ✅ Protected Flash Sector (session `"KEYL"`, cluster control-plane `"KEYB"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) для mass production >10k |
+| **Зберігання ключа** | ✅ Protected Flash Sector (session `"KEYL"`, cluster control-plane `"KEYB"`, CoAP `"KEYC"`, L1-сім'я `"EDSK"`), RDP Level 1/2 protected. SE050 Slot 0 (Гілка B, §3.7) ⚫ **RESERVED і НЕ використовується** — post-SEC.14 ключ лишається у Protected Flash в обох гілках |
 | **Унікальність ключа** | ✅ Двоключова модель (FW.2 (в), §3.1) | Session per-device: `HKDF(MASTER, uid, "silken-aes-128-lora-key")` — money-path ізольований (злам 1 вузла ≠ підробка мінта сусідів); control-plane per-cluster: `HKDF(MASTER, "cluster:<id>", "silken-aes-128-broadcast-key")` — свідомий broadcast-структурний секрет класу K_ota; CoAP per-gateway. Domain separation 03_06 §2 |
 | **ECB для LoRa** | 🟡 Transitional після ARCH.42 | AES-128-ECB → AES-128-CCM (target FW.2, 30B wire-rev2.1 packet + Frame Counter + 8B MIC) |
 | **MAC/MIC (LoRa)** | 🟡 OPEN — закривається з FW.2 CCM | 8-byte MIC (64-bit, forge probability $5.4×10^{-20}$) |
