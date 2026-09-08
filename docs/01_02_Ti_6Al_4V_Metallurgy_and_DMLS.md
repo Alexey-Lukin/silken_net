@@ -546,7 +546,7 @@ nTop — провідний інструмент для генерації мі�
 
 **Наступний крок:** Передати STL з **PicoGK** (`tools/cad` — primary трек; nTop = опційний reference) на завод разом із специфікацією дворівневої шорсткості (розділ 1) — повний перелік заводських документів тримає §5.
 
-**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_06 §5`](00_06_SSOT_Documentation_Standard)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) потрібна Code-as-CAD парадигма.
+**🟡 Архітектурне обмеження nTop:** GUI-only workflow → **AI-агенти сліпі у візуальних інтерфейсах** (coding-agents не можуть "клікати" по нодах). Це блокер для AI-Native Engineering принципу ([`00_06 §0`](00_06_SSOT_Documentation_Standard)). Параметричні моделі зберігаються у бінарних `.ntop` файлах — **не Git-friendly**, без зрозумілого diff'у, без code review. Для масової вибірки per-species геометрій (5 SKU: pine/oak/broadleaf/mangrove/tropical — [`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) потрібна Code-as-CAD парадигма.
 
 ### PicoGK + C# — Code-as-CAD (primary code-CAD трек)
 

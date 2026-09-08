@@ -176,7 +176,7 @@ Hardware Stream історично був «повільним» (друк ме�
 
 > **⚠️ Корекція: для Hardware/Chemistry (Atoms) самих CI-перевірок НЕДОСТАТНЬО.** Зелений CI доводить, що **код виконується**, а не що **фізика коректна** — PySCF-скрипт може відпрацювати без помилок і видати термодинамічно абсурдний результат. Тому:
 > - **Logic / Verification (Bytes / Proofs):** CI + HIL-симуляції + рев'ю діфу — достатньо (критерій (c)).
-> - **Hardware / Chemistry (Atoms):** CI необхідний, але НЕ достатній. Вимагаються **згенеровані ТА валідовані фізичні метрики** (напр., ΔG < 0, RMSD < поріг, k_ET у літературному діапазоні), підтверджені домен-експертом або крос-перевіркою (cross-validated In-Silico report, [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)) — тобто пройдений **🚦 Validation Gate** ([`00_06 §5`](00_06_SSOT_Documentation_Standard)).
+> - **Hardware / Chemistry (Atoms):** CI необхідний, але НЕ достатній. Вимагаються **згенеровані ТА валідовані фізичні метрики** (напр., ΔG < 0, RMSD < поріг, k_ET у літературному діапазоні), підтверджені домен-експертом або крос-перевіркою (cross-validated In-Silico report, [`PIPELINE_STATUS.md`](protocols/ebfc/in_silico/PIPELINE_STATUS.md)) — тобто пройдений **🚦 Validation Gate** ([`00_06 §0`](00_06_SSOT_Documentation_Standard)).
 
 ### 4.1 TRL Gate Events — де підняття рівня НЕ автоматичне
 
@@ -187,6 +187,6 @@ Hardware Stream історично був «повільним» (друк ме�
 - **6 → 7** — вихід у canopy environment: реальний LoRa-лінк і реальний CoAP-інтейк, не симулятор.
 - **8 → 9** — **зняття «тренувальних коліс»:** передача повного управління контрактами від Multi-sig (`Gnosis Safe`) до децентралізованого DAO (`SilkenGovernor` + Timelock) + зняття штучних лімітів емісії, за **доведеної стабільної безперебійної роботи повноцінного комерційного кластера** (Operational Canopy, 1000+ дерев) без втручання. Масштаб до мільйонів вузлів — це SRL/виробнича зрілість **поза** TRL ([`00_01 §4`](00_01_Vision_Mission_and_Roadmap)).
 
-Для **Atoms** гейт **3 → 4** замикає підписаний фізичний лаб-звіт (in-vitro): in-silico сам по собі дає лише TRL 3 (🚦 Validation Gate → [`00_06 §5`](00_06_SSOT_Documentation_Standard)). Академічний «апрув» тут — це підписаний лабораторний протокол (PDF/Markdown), а не Git-approve: науковці-партнери не оперують GitHub.
+Для **Atoms** гейт **3 → 4** замикає підписаний фізичний лаб-звіт (in-vitro): in-silico сам по собі дає лише TRL 3 (🚦 Validation Gate → [`00_06 §0`](00_06_SSOT_Documentation_Standard)). Академічний «апрув» тут — це підписаний лабораторний протокол (PDF/Markdown), а не Git-approve: науковці-партнери не оперують GitHub.
 
 > **⚠️ Корекція:** мінтинг SCC — **НЕ перемикач**, який вмикають на TRL 9. Він керується Guard Clauses: живий периметр = KYC (`hadron_kyc`); oracle-гілка (`verified_by_iotex` + `oracle_status_fulfilled`) = latent PATH 1, замикання відмовлено (ARCH.53 §🗄️ — superseded by Merkle-lineage) ([`05_02`](05_02_Proof_of_Growth_Pipeline) / [`00_01 §5`](00_01_Vision_Mission_and_Roadmap)). На TRL 7-8 система **вже** в mainnet — з малим лімітом емісії та multi-sig на DAO-скарбниці. TRL 9 = доведена стабільна комерційна робота + децентралізація, а не «deploy» і не «мільйони вузлів».

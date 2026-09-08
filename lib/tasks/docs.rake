@@ -124,7 +124,7 @@ namespace :docs do
     # джерело = RED зі словом «did NOT run», ніколи тихий зелений.
     rate_anchor_seen = []
     solc_drift  = []  # hard: solc/pragma version re-stated outside 05_03 owner (code SSOT = foundry.toml)
-    ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_06 §5 roster (use roles)
+    ai_vendor   = []  # hard: AI-vendor name (Gemini/Cursor/…) re-stated outside 00_06 §0 roster (use roles)
     bare_doc    = []  # hard: bare code-span `NN_NN` doc-id (no §) that should be a full link
     xref_form   = []  # hard: doc-id link label not in the single code-span form (00_06 §1)
     sec_after_link = [] # hard: bare §X dangling after a whole-doc link — fold into label (DOC-T.16)
@@ -507,9 +507,9 @@ end
       block_drift.sort.each { |d| puts "    ✗ #{d}" }
     end
     if ai_vendor.empty?
-      puts "  AI-roster One-Home: no AI-vendor name restated outside 00_06 §5 (roles) ✓"
+      puts "  AI-roster One-Home: no AI-vendor name restated outside 00_06 §0 (roles) ✓"
     else
-      puts "  AI-VENDOR DRIFT (#{ai_vendor.size}) — vendor belongs only in 00_06 §5 roster (use frontier-LLM/coding-agent):"
+      puts "  AI-VENDOR DRIFT (#{ai_vendor.size}) — vendor belongs only in 00_06 §0 roster (use frontier-LLM/coding-agent):"
       ai_vendor.sort.each { |d| puts "    ✗ #{d}" }
     end
     if anchor_dim.empty?
@@ -718,7 +718,7 @@ end
     failed << "rate-guard home DECLARED but never met in the scan — guard did not run (DOC-T.40/84)" if rate_homes_missing.any?
     failed << "solc/pragma version restated outside One-Home (05_03; code = foundry.toml)" unless solc_drift.empty?
     failed << "canonical source-block drift (pinned code block changed → reconcile mirrors + `rake docs:repin`)" unless block_drift.empty?
-    failed << "AI-vendor name restated outside One-Home (00_06 §5 roster; use roles)" unless ai_vendor.empty?
+    failed << "AI-vendor name restated outside One-Home (00_06 §0 roster; use roles)" unless ai_vendor.empty?
     failed << "bare code-span `NN_NN §X` refs (should be `[`…`](Doc)` links)" unless bare_refs.empty?
     failed << "bare code-span `NN_NN` doc-ids (should be `[`…`](Doc)` links)" unless bare_doc.empty?
     failed << "link label↔href mismatches" unless label_drift.empty?
