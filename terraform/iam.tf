@@ -112,3 +112,46 @@ resource "google_service_account_iam_member" "deploy_act_as" {
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.deploy.email}"
 }
+# ---------------------------------------------------------------------------
+# READ-ONLY grants for the scheduled drift detector (`Ops · TF Drift`, INF.22).
+#
+# Measured 2026-09-08: the weekly `terraform plan` died with exit 1 on 403s, so it
+# could not report drift AT ALL — a detector that is always red equals a disabled
+# one. Exactly two permissions were missing, and NEITHER is a write:
+#   · resourcemanager.projects.getIamPolicy — refresh the 11 google_project_iam_member
+#     resources above (without it, every one of them errors);
+#   · servicenetworking.services.get        — refresh google_service_networking_connection
+#     (database.tf), the Cloud SQL private-peering link.
+#
+# ⚖️ Role chosen by SURFACE SIZE, not by name (founder 2026-09-08): roles/browser is
+# SIX permissions of pure hierarchy read, against 2535 in roles/iam.securityReviewer
+# and 6083 in roles/viewer — both of which would have worked and both of which hand
+# the CI identity a project-wide read it has no use for. This keeps the [INF.22]
+# posture ("every apply is founder-local, CI is narrow") intact while letting the
+# detector actually see. Same justification shape as deploy_act_as above: the live
+# reason is a `plan` REFRESH, not a capability the pipeline exercises.
+resource "google_project_iam_member" "deploy_drift_browser" {
+  project = var.project_id
+  role    = "roles/browser"
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+# No predefined READ-only role carries servicenetworking.services.get — verified
+# 2026-09-08: roles/servicenetworking.networksViewer DOES NOT EXIST, and networksAdmin
+# is write-capable. Hence a custom role holding that single permission (confirmed
+# custom-role-grantable via `gcloud iam list-testable-permissions`).
+resource "google_project_iam_custom_role" "drift_servicenetworking_read" {
+  project     = var.project_id
+  role_id     = "driftSvcNetRead"
+  title       = "Drift detector — Service Networking read"
+  description = "Single-permission read role so the scheduled terraform plan can refresh google_service_networking_connection. No write, no data access. [INF.22]"
+  permissions = ["servicenetworking.services.get"]
+  stage       = "GA"
+}
+
+resource "google_project_iam_member" "deploy_drift_servicenetworking" {
+  project = var.project_id
+  role    = google_project_iam_custom_role.drift_servicenetworking_read.id
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
+
