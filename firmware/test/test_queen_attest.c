@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "../common/queen_attest.h"
+#include "../common/reset_cause.h"
 #include "monocypher.h"
 #include "monocypher-ed25519.h"
 
@@ -265,6 +266,102 @@ TEST(test_prefix_rejects_empty_and_oversized_uid)
  * 2. CRYPTO-PARITY: Monocypher ↔ OpenSSL
  * ════════════════════════════════════════════════════════════════════ */
 
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.59] RESET-CAUSE — розкладка в health-flags + присуд по RCC_CSR.
+ * Той САМИЙ заголовок компілює прошивка Королеви (queen/main.c), тож
+ * дзеркала логіки тут не існує за побудовою. Маски RCC_CSR пиняться до
+ * CMSIS `_Static_assert`-ом у main.c — це ARM-лейн, не ця сюїта.
+ * ════════════════════════════════════════════════════════════════════ */
+
+TEST(test_reset_slot_roundtrips_without_touching_neighbours)
+{
+    /* Пакувальник ⊥ розпакувальник по ВСІХ восьми кодах, і жоден із них не
+     * сміє зачепити ані чотири живі прапорці, ані заброньований bit4. */
+    uint8_t neighbours = (uint8_t)(QATT_HFLAG_CCM_ERA | QATT_HFLAG_RING |
+                                   QATT_HFLAG_LEGACY_DROPS | QATT_HFLAG_CCM_SPOOF |
+                                   QATT_HFLAG_RESERVED_BIT);
+    for (uint8_t cause = 0; cause <= SILKEN_RESET_CAUSE_MAX; cause++) {
+        uint8_t flags = (uint8_t)(neighbours | Qatt_Health_Reset_Bits(cause));
+        ASSERT_EQ(Qatt_Health_Reset_Cause(flags), cause);
+        ASSERT_EQ(flags & neighbours, neighbours);   /* сусіди цілі */
+    }
+    /* Дзеркально: старий пульс без reset-поля читається як «не повідомлено». */
+    ASSERT_EQ(Qatt_Health_Reset_Cause(neighbours), SILKEN_RESET_UNKNOWN);
+}
+
+TEST(test_reset_cause_zero_csr_is_unknown_not_power_on)
+{
+    /* Несучий сентинел: КОЖЕН історичний рядок пульсу несе нулі в цьому
+     * полі, тож нуль мусить означати «ніхто не міряв», ніколи «холодний
+     * старт» — інакше ми заднім числом припишемо причину всій історії. */
+    ASSERT_EQ(Silken_Reset_Cause_Decode(0u, 0u), SILKEN_RESET_UNKNOWN);
+}
+
+TEST(test_reset_cause_watchdog_wins_over_pin)
+{
+    /* Внутрішній ресет на цьому сімействі підтягує ще й PINRSTF. Перевірка
+     * PIN раніше за IWDG перетворила б КОЖЕН укус пса на «хтось натиснув
+     * кнопку» — підміна, що робить діагностику гіршою за її відсутність. */
+    uint32_t csr = SILKEN_RCC_CSR_IWDGRSTF | SILKEN_RCC_CSR_PINRSTF;
+    ASSERT_EQ(Silken_Reset_Cause_Decode(csr, 0u), SILKEN_RESET_IWDG);
+
+    /* Так само холодний старт: BOR приходить у парі з PIN. */
+    csr = SILKEN_RCC_CSR_BORRSTF | SILKEN_RCC_CSR_PINRSTF;
+    ASSERT_EQ(Silken_Reset_Cause_Decode(csr, 0u), SILKEN_RESET_POWER_ON);
+
+    /* Чистий NRST — і лише він — лишається PIN'ом. */
+    ASSERT_EQ(Silken_Reset_Cause_Decode(SILKEN_RCC_CSR_PINRSTF, 0u), SILKEN_RESET_PIN);
+}
+
+TEST(test_reset_cause_hardfault_needs_marker_AND_sft)
+{
+    /* HardFault виходить через NVIC_SystemReset, тобто лишає РІВНО той самий
+     * SFTRSTF, що й штатний ребут — розрізняє їх лише маркер. */
+    ASSERT_EQ(Silken_Reset_Cause_Decode(SILKEN_RCC_CSR_SFTRSTF, 1u), SILKEN_RESET_HARDFAULT);
+    ASSERT_EQ(Silken_Reset_Cause_Decode(SILKEN_RCC_CSR_SFTRSTF, 0u), SILKEN_RESET_SOFTWARE);
+
+    /* 🔴 Несуча половина: маркер БЕЗ SFTRSTF (несвіжа RAM після холодного
+     * старту) не сміє підняти хибний HardFault — саме тому кон'юнкція. */
+    ASSERT_EQ(Silken_Reset_Cause_Decode(SILKEN_RCC_CSR_BORRSTF, 1u), SILKEN_RESET_POWER_ON);
+    ASSERT_EQ(Silken_Reset_Cause_Decode(0u, 1u), SILKEN_RESET_UNKNOWN);
+}
+
+TEST(test_reset_cause_obl_shares_the_software_bucket)
+{
+    /* Перезавантаження option-байтів = свідома переконфігурація (прошивання,
+     * зміна RDP), тож ділить кошик із SOFTWARE: вісім кодів зайнято повністю. */
+    ASSERT_EQ(Silken_Reset_Cause_Decode(SILKEN_RCC_CSR_OBLRSTF, 0u), SILKEN_RESET_SOFTWARE);
+    /* Але справжній SFT має пріоритет — він конкретніший. */
+    uint32_t csr = SILKEN_RCC_CSR_OBLRSTF | SILKEN_RCC_CSR_SFTRSTF;
+    ASSERT_EQ(Silken_Reset_Cause_Decode(csr, 0u), SILKEN_RESET_SOFTWARE);
+}
+
+TEST(test_reset_cause_low_power_and_wwdg_outrank_the_rest)
+{
+    /* LPWR — нелегальний вхід у low-power; найспецифічніший апаратний присуд. */
+    uint32_t csr = SILKEN_RCC_CSR_LPWRRSTF | SILKEN_RCC_CSR_IWDGRSTF |
+                   SILKEN_RCC_CSR_PINRSTF;
+    ASSERT_EQ(Silken_Reset_Cause_Decode(csr, 0u), SILKEN_RESET_LOW_POWER);
+
+    csr = SILKEN_RCC_CSR_WWDGRSTF | SILKEN_RCC_CSR_IWDGRSTF;
+    ASSERT_EQ(Silken_Reset_Cause_Decode(csr, 0u), SILKEN_RESET_WWDG);
+}
+
+TEST(test_reset_cause_fault_classification_matches_backend)
+{
+    /* Vendor-attributable кошик: завис або впав НАШ код. Дзеркало —
+     * GatewayTelemetryLog#reset_fault?; розходження двох боків тут і падає. */
+    ASSERT_TRUE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_IWDG));
+    ASSERT_TRUE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_WWDG));
+    ASSERT_TRUE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_HARDFAULT));
+    ASSERT_TRUE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_LOW_POWER));
+
+    ASSERT_FALSE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_UNKNOWN));
+    ASSERT_FALSE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_POWER_ON));
+    ASSERT_FALSE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_PIN));
+    ASSERT_FALSE(Silken_Reset_Cause_Is_Fault(SILKEN_RESET_SOFTWARE));
+}
+
 TEST(test_monocypher_pubkey_matches_openssl)
 {
     uint8_t secret[64], pub_mc[32], pub_ssl[32], seed_copy[32];
@@ -382,6 +479,15 @@ int main(void)
     RUN(test_header_uptime_clamps_at_u24);
     RUN(test_prefix_right_aligned_with_len_byte);
     RUN(test_prefix_rejects_empty_and_oversized_uid);
+
+    printf("\n— [FW.59] Reset-cause (health-flags bits5..7) —\n");
+    RUN(test_reset_slot_roundtrips_without_touching_neighbours);
+    RUN(test_reset_cause_zero_csr_is_unknown_not_power_on);
+    RUN(test_reset_cause_watchdog_wins_over_pin);
+    RUN(test_reset_cause_hardfault_needs_marker_AND_sft);
+    RUN(test_reset_cause_obl_shares_the_software_bucket);
+    RUN(test_reset_cause_low_power_and_wwdg_outrank_the_rest);
+    RUN(test_reset_cause_fault_classification_matches_backend);
 
     printf("\n— Crypto parity (Monocypher ↔ OpenSSL) —\n");
     RUN(test_monocypher_pubkey_matches_openssl);

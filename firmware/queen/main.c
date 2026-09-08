@@ -44,6 +44,8 @@
 #include "rx_route.h"
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
+// [FW.59] Декодер RCC_CSR → 3-бітна причина ребута (pure, host-tested) — 03_02 §7
+#include "../common/reset_cause.h"
 // [ARCH.26 L2] TDMA слот-розкладка маяка (байти 5..8) — One-Home математика
 #include "../common/tdma_schedule.h"
 // [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
@@ -913,6 +915,54 @@ __attribute__((noreturn)) void __stack_chk_fail(void)
     NVIC_SystemReset();
     for (;;) { } // недосяжно: заспокоює noreturn-аналіз
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// [FW.59] RESET-CAUSE: чому Королева перевтілилась
+// ════════════════════════════════════════════════════════════════════════
+// Пінимо власне дзеркало RCC_CSR (common/reset_cause.h) до CMSIS-констант
+// кремнію. Це єдине місце, де присутні обидва набори, тож розсинхрон
+// падає тут — у ARM-джобі, компіляцією, ще до стенда.
+_Static_assert(SILKEN_RCC_CSR_OBLRSTF  == RCC_CSR_OBLRSTF_Msk,  "OBLRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_PINRSTF  == RCC_CSR_PINRSTF_Msk,  "PINRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_BORRSTF  == RCC_CSR_BORRSTF_Msk,  "BORRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_SFTRSTF  == RCC_CSR_SFTRSTF_Msk,  "SFTRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_IWDGRSTF == RCC_CSR_IWDGRSTF_Msk, "IWDGRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_WWDGRSTF == RCC_CSR_WWDGRSTF_Msk, "WWDGRSTF mask drift");
+_Static_assert(SILKEN_RCC_CSR_LPWRRSTF == RCC_CSR_LPWRRSTF_Msk, "LPWRRSTF mask drift");
+
+// Маркер HardFault'а. Backup-домену Королева не тримає (див. варту канарки
+// вище), тож єдиний носій, що переживає ТЕПЛИЙ ресет, — RAM поза зоною
+// обнулення. ⚠️ Секцію мусить винести лінкер-скрипт (👤 board-freeze .ioc);
+// без цього магія читається як несвіжа й HardFault чесно деградує у
+// SOFTWARE — розкладку й ціну цієї деградації несе common/reset_cause.h.
+SILKEN_NOINIT static volatile uint32_t g_fault_marker;
+
+// Причина ЦЬОГО boot'а. Стала на весь аптайм — конверт її повторює щофлешу,
+// бо перший флеш після ребута цілком може не доїхати.
+static uint8_t g_reset_cause = SILKEN_RESET_UNKNOWN;
+
+// Справжній HardFault замість CMSIS-weak-заглушки (та крутить нескінченний
+// цикл — нуль forensic'у, і 26 секунд глухоти до укусу пса). Тіло навмисно
+// мінімальне: у fault-контексті стек уже може бути зіпсований, тож
+// дозволяємо собі рівно один запис у RAM і ресет.
+__attribute__((noreturn)) void HardFault_Handler(void)
+{
+    g_fault_marker = SILKEN_RESET_FAULT_MAGIC;
+    NVIC_SystemReset();
+    for (;;) { } // недосяжно: заспокоює noreturn-аналіз
+}
+
+// Прочитати причину й ПОГАСИТИ обидва джерела. Гасіння несуче: прапорці
+// RCC_CSR накопичуються до RMVF, тож незгашені вони перетворили б будь-який
+// наступний ребут на вічний «IWDG». Викликається першою дією main().
+static void Capture_Reset_Cause(void)
+{
+    uint8_t marker = (g_fault_marker == SILKEN_RESET_FAULT_MAGIC) ? 1u : 0u;
+    g_fault_marker = 0u;
+
+    g_reset_cause = Silken_Reset_Cause_Decode(RCC->CSR, marker);
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+}
 /* USER CODE END 0 */
 
 /**
@@ -922,6 +972,9 @@ __attribute__((noreturn)) void __stack_chk_fail(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  // [FW.59] ПЕРШОЮ дією: RCC_CSR несе причину ребута й накопичується до RMVF,
+  // а .noinit-маркер живий лише доти, доки його ніхто не переписав.
+  Capture_Reset_Cause();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -1961,6 +2014,11 @@ void Flush_Cache_To_Rails(void)
 #if ARCH35_RING_ENABLED
         if (queen_ring_mounted) health_flags |= QATT_HFLAG_RING;
 #endif
+        // [FW.59] Причина ребута — стала на весь аптайм, тож їде КОЖНИМ
+        // конвертом, а не лише першим: перший флеш після перевтілення цілком
+        // може не доїхати (CGNAT-діра, DNS, глухий модем), і тоді єдине
+        // свідчення «чому» загинуло б разом із ним.
+        health_flags |= Qatt_Health_Reset_Bits(g_reset_cause);
         Qatt_Write_Header(batch_attest_buffer + QATT_HDR_OFFSET,
                           Get_Current_Unix_Ts(), coap_flush_seq,
                           g_uptime_minutes,

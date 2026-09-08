@@ -1354,6 +1354,20 @@ sources.each do |label, path|
         # A 40-char window: a citation puts the number right after the name,
         # while a PR/issue number that merely shares the line does not.
         w = line[(pos + nm.length), 40].to_s
+        # 🔴 …but 40 chars is wide enough to swallow the NEXT citation on the
+        # same line, and then its number is charged to THIS skill. Measured
+        # 2026-09-08 on `CLAUDE.md`, where a single line cites one skill's item
+        # and then a SECOND skill's item after a middot: both numbers landed on
+        # the first name, and the second one is far out of its range — a
+        # confident false positive on the one file that loads in every prompt,
+        # i.e. exactly where a permanently-red advisory teaches skimming.
+        # ⚠️ Do NOT spell that pair out here: the scanner reads its own source,
+        # so a verbatim illustration becomes a live phantom citation. It caught
+        # the author of this very comment doing it.
+        # Cut the window at the next skill construction; the FIRST citation
+        # after a name is the only one that name owns.
+        nxt = names.filter_map { |o| w.index(o) unless o == nm }.min
+        w = w[0...nxt].to_s if nxt
         next if w =~ /\b(PR|issue|pull|commit)\b/i
         # Суфікс ловимо разом із числом (`#10a`), інакше цитата на нього
         # зрізалась би до `#10` і резолвилась у сусідній пункт — тихо й хибно.
@@ -1742,6 +1756,17 @@ EOF
 3. **Third item** — body, lives only in the companion.
 4. **Fourth item** — body, lives only in the companion.
 EOF
+  # A SECOND, distinct skill — required to observe the window class at all.
+  # The companion above is an ALIAS of the first skill, so two names drawn from
+  # it resolve to one item set and a misattribution between them is invisible.
+  # Only a skill with its OWN range makes «the number was charged to the
+  # neighbouring name» a difference a case can see.
+  mkdir -p "$d.repo/.claude/skills/secondskill"
+  cat >"$d.repo/.claude/skills/secondskill/SKILL.md" <<'EOF'
+# Second fixture skill
+
+7. **Seventh item** — body; its range does not overlap the first skill's.
+EOF
   cat >"$d/MEMORY.md" <<'EOF'
 - [Alpha](feedback_alpha.md) — the naming rule
 - [Beta](feedback_beta.md) — the gateway note
@@ -1960,6 +1985,21 @@ selftest() {
   #      that proves it discriminates rather than shouts.
   _st_build "$d"; printf '\nOperational pair → `fixtureskill` #2.\n' >>"$d/feedback_beta.md"
   _st_check "NUMREF silent on a live skill item" reject 'NUMREF'
+
+  # 10f. TWO citations on ONE line [2026-09-08]. The 40-char window after a name
+  #      is wide enough to reach past a middot into the NEXT skill's citation,
+  #      and then that number is judged against the FIRST skill's range. Both
+  #      items here are live, so any hit is the window class and nothing else.
+  #      Found in the field, not by review: it fired on the file that loads in
+  #      every prompt, where a standing false positive is most expensive.
+  _st_build "$d"; printf '\nMechanism → `fixtureskill` #2 · `secondskill` #7.\n' >>"$d/feedback_beta.md"
+  _st_check "NUMREF silent when a second skill cites its own live item on the same line" reject 'NUMREF'
+
+  # 10g. …and its mirror, without which 10f could be satisfied by a detector that
+  #      simply stopped looking after the first name: the SECOND citation must
+  #      still be judged, against its OWN skill's range.
+  _st_build "$d"; printf '\nMechanism → `fixtureskill` #2 · `secondskill` #66.\n' >>"$d/feedback_beta.md"
+  _st_check "NUMREF still fires on the SECOND skill's out-of-range item" expect 'NUMREF'
 
   # 10f. HOMOGLYPH, MARKER side [DOC-T.62]. A Cyrillic-suffixed item is not a
   #      near-miss — it is absent: the collector's `[a-z]` cannot take U+0430, so

@@ -36,6 +36,7 @@ en:
       gateway_freezing: "❄️ FREEZING: Queen %{uid} (%{temperature_c}°C). LiFePO4 offline risk — charging below 0°C is unsafe."
       gateway_hardware_fault: "🛠️ Hardware fault on Queen %{uid}. Inspection required."
       gateway_overheat: "🔥 OVERHEAT: Queen %{uid} (%{temperature_c}°C). Risk of SIM7070G degradation."
+      gateway_reset_fault: "⚙️ GATEWAY FIRMWARE FAULT: Queen %{uid} rebooted via %{cause} — our own code hung or crashed. Re-flash/OTA required; NOT the operator's fault."
       gateway_uplink_degraded: "📵 UPLINK: Queen %{uid} accumulated %{fail_count} failed flush conversations — LTE/Starlink is degrading, telemetry is holding on retry."
       gateway_weak_signal: "📡 LINK: Weak signal on %{uid} (CSQ: %{csq}). Risk of batch loss."
       global_blackout: "🛰️ GLOBAL BLACKOUT: no telemetry arrived for %{target_date}. Possible Starlink outage or mass gateway failure — Field Audit (Cat-C), slashing NOT applied."

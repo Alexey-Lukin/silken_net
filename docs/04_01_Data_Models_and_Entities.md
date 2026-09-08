@@ -519,7 +519,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `online?` | `last_seen_at >= (sleep_interval * 1.2).seconds.ago` |
 | `next_wakeup_expected_at` | `last_seen_at + sleep_interval` |
 | `battery_critical?` | `latest_voltage_mv < 3300`. ⚠️ **[ARCH.99]** Гілка сьогодні НЕ виконується: писача колонки не існує (пульс QATT-v2 напруги не несе — у Королеви нема ADC), тож `.present?` завжди хибний. Fail-closed у безпечний бік, свідомо — предикат чекає залізного тракту. ⊥ НЕ те саме, що зняте в `Tree`: там величину міряли, і вона не могла відповісти на питання; тут її ще не міряють |
-| `system_fault?` | EwsAlert `system_fault` або `battery_critical?` — доки другий операнд мертвий, зводиться до першого. Живий сигнал стану доти — тиша (`Gateway.offline` + `GatewayStalenessSweepWorker`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
+| `system_fault?` | Нерозвʼязані **cluster-level** алерти РОДИНИ `EwsAlert::GATEWAY_FAULT_TYPES` або `battery_critical?` — доки другий операнд мертвий, зводиться до першого. ⚠️ Тут стояв ОДИН тип `system_fault`, тоді як кошик розколото ще [SLASH-1]: вісь «чи їхати патрульному» ⊥ вісь «хто породив подію», і родина є домом першої. **[FW.59]** до неї дописано `firmware_fault` (ребут Королеви через пса/HardFault), і тим самим комітом читач звужено до `tree_id: nil` — інакше Солдатські per-tree `vm_error` оголошували б Королеву несправною. Живий сигнал стану доти — тиша (`Gateway.offline` + `GatewayStalenessSweepWorker`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) |
 
 **Scopes:** `online`, `offline`, `ready_for_commands` (idle + online).
 
@@ -725,6 +725,8 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `voltage_mv` | numeric | Напруга батареї/сонячної панелі (мВ) |
 | `temperature_c` | decimal | Температура корпусу (°C) |
 | `cellular_signal_csq` | integer | Сила сигналу LTE (0-31, 99=unknown) |
+| `uptime_min` · `cifo_fill` · `lora_rx_drops` · `coap_fail_count` | integer | **[ARCH.54]** Пульс із підписаного health-блоку QATT-v2 ([`03_02 §7`](03_02_Queen_Gateway_Firmware)) |
+| `health_flags` | integer | **[ARCH.54]** Бітфілд того ж пульсу. НЕ однорідний: `HFLAG_CCM_ERA`/`RING`/`LEGACY_DROPS`/`CCM_SPOOF` — молодші чотири; bit4 заброньовано [SEC.21]; старші три — **reset-cause** [FW.59]. Розкладка-дім — `firmware/common/queen_attest.h` |
 
 **Константи:** `LOW_BATTERY_THRESHOLD=3300` мВ, `OVERHEAT_THRESHOLD=65` °C, `LOW_TEMPERATURE_THRESHOLD=-20` °C (LiFePO4 cut-off), `LOW_SIGNAL_THRESHOLD=5` CSQ.
 
@@ -735,7 +737,9 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 | `signal_quality_percentage` | `(csq / 31.0) * 100` |
 | `signal_dbm` | `2 * csq - 113` (формула 3GPP) |
 | `latest_per_gateway(uids)` | **[PERF.1 (а)]** «Останній пульс на КОЖЕН шлюз набору» — хеш `queen_uid → лог`, **LATERAL + `LIMIT 1`**. 🔴 **Форма ІНША, ніж у дзеркального `TelemetryLog.latest_per_tree`, попри дослівно те саме питання — і різницю дав вимір, не аналогія:** `DISTINCT ON` тут віддає `Unique` над ТИМ САМИМ `Sort` над `Append` по всіх партиціях, тобто скану не скорочує; його виграш там був у **кількості запитів** (N→1), а сторінка шлюзів уже робила один — преload `has_one`. LATERAL дає `Limit` → `Merge Append` → `Index Scan Backward` на індексі `(queen_uid, created_at)`, тобто **ранню зупинку**. ⚠️ Часової межі немає свідомо: питання звучить «останній, хоч би коли він був», тож будь-яке вікно змінило б ВІДПОВІДЬ (пастка `2.months`, [`00_07`](00_07_Action_Plan_Tracker) PERF.1). ⊥ Асоціація `Gateway#latest_gateway_telemetry_log` ЛИШАЄТЬСЯ для `gateways#show`: на ОДНОМУ шлюзі вона вже дістає той самий добрий план — дефект жив у кардинальності **списку**, не в асоціації |
-| `critical_fault?` | Будь-яка з **чотирьох** констант перевищена (battery low, overheat, freeze, weak signal). Nil-safe: повертає `false` коли voltage/temperature/csq ще не зафіксовано (insert_all hot path). |
+| `reset_cause` | **[FW.59]** Причина ребута Королеви зі старших трьох бітів `health_flags`: `unknown · power_on · pin · software · iwdg · wwdg · hardfault · low_power`. 🔴 `unknown` — сентинел «не повідомлено» (кожен рядок, старший за FW.59, несе тут нуль), НІКОЛИ «холодний старт». Коди й порядок декоду — [`03_02 §7.1`](03_02_Queen_Gateway_Firmware) |
+| `reset_fault?` | Причина є збоєм ПРОШИВКИ (`iwdg`/`wwdg`/`hardfault`/`low_power`) — vendor-attributable. ⛔ `power_on` сюди не входить: brownout це залізо й майданчик, а не наш код, і саме атрибуція вирішує, кому колись виставить рахунок slashing |
+| `critical_fault?` | Диз'юнкція названих умов: battery low · overheat · freeze · weak signal · `coap_fail_count ≥ COAP_FAIL_ALERT_THRESHOLD` · `reset_fault?`. ⚠️ Тут стояло «будь-яка з **чотирьох** констант» при пʼятьох живих гілках — лічильник у прозі старіє окремо від переліку, тому названо члени ([`00_06 §1`](00_06_SSOT_Documentation_Standard)). Nil-safe: `false` коли voltage/temperature/csq ще не зафіксовано (insert_all hot path). |
 
 ---
 

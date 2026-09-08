@@ -39,5 +39,14 @@ FactoryBot.define do
     trait :unknown_signal do
       cellular_signal_csq { 99 }
     end
+
+    # [FW.59] Причина ребута — старші ТРИ біти health_flags (wire-дім:
+    # firmware/common/reset_cause.h). Значення тут ЛІТЕРАЛЬНІ навмисно: узяти
+    # їх з `RESET_CAUSES.index(…) << HFLAG_RESET_SHIFT` означало б рахувати
+    # фікстуру тим самим перетворенням, що й код, — і пін перестав би судити
+    # саме те, заради чого існує.
+    trait :watchdog_reset  do health_flags { 0x80 } end  # iwdg      (4 << 5)
+    trait :hardfault_reset do health_flags { 0xC0 } end  # hardfault (6 << 5)
+    trait :clean_reboot    do health_flags { 0x20 } end  # power_on  (1 << 5)
   end
 end

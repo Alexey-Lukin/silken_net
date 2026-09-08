@@ -182,6 +182,7 @@ $(BINDIR)/test_flash_ota: test_flash_ota.c ../common/flash_ota.c ../common/flash
 # parity + end-to-end збірка/розбір; golden-KAT дзеркалиться у RSpec.
 MONOCYPHER_SRC = ../extern/monocypher/src
 $(BINDIR)/test_queen_attest: test_queen_attest.c ../common/queen_attest.h \
+                             ../common/reset_cause.h \
                              $(MONOCYPHER_SRC)/monocypher.c \
                              $(MONOCYPHER_SRC)/optional/monocypher-ed25519.c
 	$(CC) $(CFLAGS) $(OPENSSL_CFLAGS) -I$(MONOCYPHER_SRC) -I$(MONOCYPHER_SRC)/optional \

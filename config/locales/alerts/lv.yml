@@ -36,6 +36,7 @@ lv:
       gateway_freezing: "❄️ SASALŠANA: Queen %{uid} (%{temperature_c}°C). LiFePO4 bezsaistes risks — uzlāde zem 0°C ir bīstama."
       gateway_hardware_fault: "🛠️ Queen %{uid} aparatūras kļūme. Nepieciešama apskate."
       gateway_overheat: "🔥 PĀRKARŠANA: Queen %{uid} (%{temperature_c}°C). SIM7070G degradācijas risks."
+      gateway_reset_fault: "⚙️ VĀRTEJAS PROGRAMMAPARATŪRAS KĻŪME: Queen %{uid} pārstartējās %{cause} dēļ — mūsu pašu kods pakārās vai avarēja. Nepieciešams re-flash/OTA; tā NAV operatora vaina."
       gateway_uplink_degraded: "📵 AUGŠUPSAITE: Queen %{uid} uzkrāja %{fail_count} neizdevušās flush sarunas — LTE/Starlink degradē, telemetrija turas uz atkārtotiem mēģinājumiem."
       gateway_weak_signal: "📡 SAKARI: Vājš signāls uz %{uid} (CSQ: %{csq}). Partiju zuduma risks."
       global_blackout: "🛰️ GLOBĀLS PĀRTRAUKUMS: par %{target_date} nav saņemti nekādi telemetrijas dati. Iespējama Starlink avārija vai masveida vārteju atteice — Field Audit (C kat.), slashing NAV piemērots."

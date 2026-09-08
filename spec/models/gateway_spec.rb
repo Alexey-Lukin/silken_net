@@ -193,10 +193,16 @@ RSpec.describe Gateway, type: :model do
   end
 
   describe "#system_fault?" do
-    it "returns true when cluster has unresolved system_fault alerts" do
+    # ⚠️ [FW.59 2026-09-08] `tree: nil` тут ЯВНО, і це не оздоба: фабрика
+    # `ews_alert` асоціює дерево за замовчуванням, тож обидва приклади нижче
+    # роками будували TREE-scoped алерт, звучись «cluster has unresolved…» —
+    # предикат про Королеву не перевірявся на тому, про що питає. Виявлено
+    # звуженням читача до cluster-level (`tree_id: nil`).
+    it "returns true when cluster has unresolved cluster-level system_fault alerts" do
       gateway = create(:gateway)
       create(:ews_alert,
         cluster: gateway.cluster,
+        tree: nil,
         alert_type: :system_fault,
         severity: :critical,
         status: :active
@@ -217,11 +223,31 @@ RSpec.describe Gateway, type: :model do
         # РАЗОМ із нею, тобто вакуумний рівно для тієї регресії, яку має ловити
         # (доведено мутацією 2026-09-04 — зняття типу з родини лишало пін зеленим).
         alert_type: :hardware_fault,
+        tree: nil,
         severity: :critical,
         status: :active
       )
 
       expect(gateway).to be_system_fault
+    end
+
+    # 🔴 [FW.59 2026-09-08] Зворотний бік розширення родини: `firmware_fault`
+    # масово пише СОЛДАТСЬКИЙ тракт (`vm_error` per-tree), тож без звуження до
+    # cluster-level один зламаний mruby оголошував би Королеву несправною.
+    # ⛔ Літерал `:firmware_fault`, не `GATEWAY_FAULT_TYPES.last` — пін на саму
+    # константу рухався б разом із нею (той самий присуд, що на прикладі вище).
+    it "returns false for a TREE-scoped alert of a family type (ops axis is about the QUEEN)" do
+      gateway = create(:gateway)
+      tree = create(:tree, cluster: gateway.cluster)
+      create(:ews_alert,
+        cluster: gateway.cluster,
+        tree: tree,
+        alert_type: :firmware_fault,
+        severity: :critical,
+        status: :active
+      )
+
+      expect(gateway).not_to be_system_fault
     end
 
     it "returns true when battery is critical" do

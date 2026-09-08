@@ -1070,6 +1070,19 @@ push-воркер superseded — CGNAT). Якщо команда прилеті�
 > `CoapGate` лишається корисним (мережеве дублювання датаграми), але діру
 > «втрачена 2.05 → наказ зник назавжди, а слід каже `confirmed`» він НЕ
 > закриває → [`00_07` FW.63](00_07_Action_Plan_Tracker).
+>
+> ⊕ **Наслідок для самого кеша, закритий 2026-09-08.** Якщо ретрансміту немає,
+> то same-MID приходить рівно двома шляхами з ПРОТИЛЕЖНОЮ ціною: дубльована
+> датаграма (безневинна — кеш і є правильна відповідь) і **пост-ребутна
+> колізія MID** (`coap_mid` живе в RAM Королеви, слот кешу TTL не має → той
+> самий номер несе ІНШЕ питання, і віддати кеш означає відповісти на чуже,
+> мовчки проковтнувши поточний pending). Доти обидва рахувались одним
+> лічильником `poll_retransmit`, тобто небезпечний носив імʼя безневинного.
+> Тепер кеш тримає **відбиток запиту** (маршрут + query): збіг → `poll_duplicate`
+> і кеш; розбіжність → `poll_mid_collision` і свіжа деривація. ⚠️ Стеля: колізія
+> з ідентичним відбитком лишається невідрізнимою від дубля (питання те саме,
+> відповідь виправляється наступним poll'ом) — повний лік = TTL на слот, і це
+> присуд, не борг.
 
 ### Механізм
 
@@ -1120,11 +1133,23 @@ DID=0-псевдодерево у батчі: 16B-пакет маскував he
 
 Пульс живе у **header'і підписаного QATT-v2 конверта** (кожен flush; wire-дім — [`03_05 §2.2`](03_05_Hardware_Symmetric_Crypto_and_Security), бітова розкладка One-Home `firmware/common/queen_attest.h`):
 
-- **Джерела в `main.c`:** `g_uptime_minutes` (sw-extended лічильник — `HAL_GetTick` вмирає на 49.7-й добі), `cache_count`, `lora_rx_drops` (сатурація u8), `g_coap_fail_count` (всі-retry-впали + DNS-fail), `g_last_csq` (`Sim7070_Read_Csq` перед flush-розмовою; 0xFF до першого успіху → бекенд пише NULL), `flags` (CCM-ера / ARCH.35-ринг).
+- **Джерела в `main.c`:** `g_uptime_minutes` (sw-extended лічильник — `HAL_GetTick` вмирає на 49.7-й добі), `cache_count`, `lora_rx_drops` (сатурація u8), `g_coap_fail_count` (всі-retry-впали + DNS-fail), `g_last_csq` (`Sim7070_Read_Csq` перед flush-розмовою; 0xFF до першого успіху → бекенд пише NULL), `flags` (CCM-ера / ARCH.35-ринг / **reset-cause**, §7.1).
 - **Empty-flush heartbeat:** порожній CIFO при таймерному тику → конверт без записів (`header+IV+sig`, ~97 Б LTE) — пульс за тихої години; гейт `ed25519_ready` (legacy-плата без сім'ї не палить DC даремно). Backend legально скипає unpack (ct=0 — лише під конвертом).
 - **Masking-attack закритий конструкцією:** health без валідного Ed25519 не існує (`UnpackTelemetryWorker` енкʼює пульс ЛИШЕ з `:attested`-гілки).
 - **Маршрутизація на сервері:** `enqueue_envelope_health` → `GatewayTelemetryWorker` (черга uplink) → `GatewayTelemetryLog` (нові колонки `uptime_min/cifo_fill/lora_rx_drops/coap_fail_count/health_flags`; `voltage_mv`/`temperature_c` — nullable до ADC-тракту, не брешемо нулями). `health_flags` біт-розкладка — One-Home `queen_attest.h` (bit0 CCM-ера · bit1 ring · **bit2/bit3 = legacy-drops/ccm-spoof — wire-видимість cutover-вікна FW.2 (а)**; модель-хелпери `legacy_drops_seen?`/`ccm_spoof_seen?`). Dead-man switch і алерти — [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy).
 - **Golden-парність чотирьох реалізацій:** Monocypher (`test_queen_attest.c`) ↔ OpenSSL ↔ RSpec (`unpack_telemetry_worker_attest_spec.rb`) ↔ HIL-симулятор (`lib/hil/queen_simulator.rb`) — байт-у-байт (клас mirror-drift, що вбив DID=0, закритий назавжди).
+
+### 7.1 Reset-cause — чому Королева перевтілилась [FW.59]
+
+RDP замикає SWD за дизайном ([`00_07`](00_07_Action_Plan_Tracker) SEC.2), а флот planetary-remote — тож **дріт є єдиним діагностичним каналом**, і доти він ніс нуль сигналу «чому вузол ребутнув»: тихий crash-loop (битий OTA · HAL-edge · brownout-storm) лишався невидимим, поки дерево не згасне. Recovery в нас був (IWDG/PVD, ARCH.21), reporting — ні.
+
+- **Слот:** старші **три** біти health-flags (bits5..7). ⚠️ Не чотири: bit4 несе ратифіковану бронь `QATT_HFLAG_CANARY` [SEC.21], і `_Static_assert` у `queen_attest.h` тепер робить наїзд на неї помилкою компіляції, а не питанням уважності.
+- **Коди (One-Home — `firmware/common/reset_cause.h`, той самий заголовок компілюють прошивка й host-тести):** `0 unknown · 1 power_on · 2 pin · 3 software · 4 iwdg · 5 wwdg · 6 hardfault · 7 low_power`. Вісім кодів вичерпують поле; `OBL` ділить кошик із `software` (свідома переконфігурація). 🔴 **Нуль є сентинелом «не повідомлено», ніколи «холодний старт»** — кожен рядок пульсу, старший за FW.59, несе тут нуль, і будь-яке інше прочитання приписало б усій історії причину, якої ніхто не міряв.
+- **Порядок декоду несучий:** внутрішній ресет підтягує ще й `PINRSTF`, тож перевірка PIN раніше за IWDG перетворила б кожен укус пса на «хтось натиснув кнопку». Пінить `test_queen_attest.c`.
+- **HardFault не виводиться з `RCC_CSR`:** наш handler виходить через `NVIC_SystemReset`, лишаючи той самий `SFTRSTF`, що й штатний ребут. Розрізняє їх маркер у `.noinit`, узятий **кон'юнктивно** з `SFTRSTF` — несвіжа RAM після холодного старту не може підняти хибний HardFault.
+- **Дзеркало масок:** `reset_cause.h` тримає власну копію бітів `RCC_CSR`, щоб лишатись HAL-free; кожна маса пінеться `_Static_assert`-ом проти CMSIS у `queen/main.c`, тобто розсинхрон із кремнієм падає в ARM-джобі, а не на стенді.
+- **Споживач:** `GatewayTelemetryLog#reset_cause`/`#reset_fault?` → `GatewayTelemetryWorker` → `EwsAlert` типу `firmware_fault` (vendor-attributable: не A-сет, не `comms_no_ack?`, поза `critical_unmaintained?` — оператор не платить за наш баг). Гілка стоїть **першою** в ланцюзі вердиктів: `coap_fail_count` насичується за аптайм і далі не спадає, тож нижче за нього вона не спрацювала б жодного разу.
+- ⚠️ **Дві оголошені стелі.** (1) Consec-лічильник на дріт **не їде** — поле вичерпано кодами; повторюваність читається бекендом із власної історії пульсу (`uptime_min` малий у низці флешів), а швидкий crash-loop, що не встигає флешнути, ловить dead-man switch (`queen_offline`, [`06_08 §1.3`](06_08_Resilience_and_Failover_Policy)) — **ціною того, що ПРИЧИНА такого циклу не доїжджає, доки вузол не стабілізується на один флеш**. (2) Винесення `.noinit` за зону обнулення робить лінкер-скрипт (👤 board-freeze `.ioc`); без нього HardFault чесно деградує у `software`. Деградація не бреше, але вона мовчазна: ARM-джоба збирає glue OBJECT-бібліотекою (compile-only), host-сюїта лінкера не має — **верифікація приладом на стенді, ніколи зеленим CI** (той самий присуд, що для тіла `MX_RTC_Init`, [`00_07`](00_07_Action_Plan_Tracker) FW.49).
 
 ---
 

@@ -27,13 +27,25 @@
 //   [7]    flags      u8       — bit0: CCM-ера (FW2), bit1: ring (ARCH.35),
 //                                 bit2: були 16B-легасі-дропи цей аптайм
 //                                 (atomic-cutover видимість, FW.2 гейт (а)),
-//                                 bit3: були DID=0 CCM-спуф-дропи;
-//                                 bit4..7 rsv=0
+//                                 bit3: були DID=0 CCM-спуф-дропи,
+//                                 bit4 rsv (бронь ↓),
+//                                 bit5..7: reset-cause [FW.59]
 //   ⚖️ bit4 має ЗАБРОНЬОВАНЕ призначення (YAGNI до першої реальної
 //   польової втрати PUT): QATT_HFLAG_CANARY [SEC.21] — прапорець
 //   canary-trip, доставлений ГАРАНТОВАНО heartbeat'ом, як кластерний
 //   early-warning ПОВЕРХ best-effort uplink 0x57. Тобто це не «вільний
 //   резерв»: перш ніж зайняти bit4 чимось іншим, зніми цю бронь свідомо.
+//   🔴 [FW.59] Reset-cause узяв РІВНО bits5..7, бронь не чіпаючи — і саме
+//   тому на дроті його ТРИ біти, а не чотири. Пункт трекера приписував
+//   «nibble bits4..7» (07-20), тобто ще ДО того, як бронь канонізували
+//   (08-29): приписана стеля була гіпотезою, спростованою присудом в
+//   іншому файлі. Наслідок для розкладки: consec-лічильник на дріт НЕ
+//   їде — вісім кодів причини вичерпують поле. Повторюваність ребутів
+//   читається бекендом із власної історії пульсу (`uptime_min` малий у
+//   низці послідовних флешів), а швидкий crash-loop, що не встигає
+//   флешнути, ловить dead-man switch (`queen_offline`). ⚠️ Ціна вголос:
+//   ПРИЧИНА такого швидкого циклу не доїжджає доти, доки вузол не
+//   стабілізується настільки, щоб зробити бодай один флеш.
 //   Поля vcap_mv / temp — СВІДОМО відсутні: Королева без ADC-тракту, брехати
 //   нулями не будемо (чесність до заліза; резерв → wire-ревізія при HW).
 //
@@ -83,6 +95,16 @@
 #define QATT_HFLAG_LEGACY_DROPS 0x04u
 #define QATT_HFLAG_CCM_SPOOF    0x08u
 
+/* [FW.59] Reset-cause у старших трьох бітах health-flags. Дім САМОГО коду —
+ * common/reset_cause.h (декодер RCC_CSR); тут живе лише розкладка ДРОТУ,
+ * бо flags-байт належить цьому конвертові. Дзеркало бекенда —
+ * GatewayTelemetryLog::HFLAG_RESET_{SHIFT,MASK}. */
+#define QATT_HFLAG_RESET_SHIFT  5u
+#define QATT_HFLAG_RESET_MASK   0xE0u
+/* Бронь bit4 (SEC.21 canary) — тримається ЯВНОЮ константою, щоб наступний
+ * _Static_assert падав, коли хтось розширить reset-поле на неї мовчки. */
+#define QATT_HFLAG_RESERVED_BIT 0x10u
+
 /* csq-сентинелі (byte 6) */
 #define QATT_CSQ_NO_SIGNAL   99u
 #define QATT_CSQ_NOT_READ    0xFFu
@@ -101,7 +123,27 @@ _Static_assert(QATT_HDR_OFFSET >= QATT_PREFIX_MAX,
                "prefix area must fit the longest domain+UID prefix");
 _Static_assert(QATT_RESIDUE == 1u, "signed-vs-legacy length residue contract");
 _Static_assert((QATT_CT_OFFSET % 16u) == 0u, "ct must stay 16-aligned for HAL_CRYP");
+/* [FW.59] Reset-поле не сміє наїхати ані на чотири живі прапорці, ані на
+ * заброньований bit4 — інакше причина ребута мовчки перепише чужий сигнал. */
+_Static_assert((QATT_HFLAG_RESET_MASK & (QATT_HFLAG_CCM_ERA | QATT_HFLAG_RING |
+                                         QATT_HFLAG_LEGACY_DROPS | QATT_HFLAG_CCM_SPOOF |
+                                         QATT_HFLAG_RESERVED_BIT)) == 0u,
+               "reset-cause field must not collide with health flags or the SEC.21 booking");
+_Static_assert((QATT_HFLAG_RESET_MASK >> QATT_HFLAG_RESET_SHIFT) == 0x07u,
+               "reset-cause field is exactly three bits wide");
 #endif
+
+/* Розпакувати причину ребута з health-flags. Дзеркальний пакувальник —
+ * `Qatt_Health_Reset_Bits`; обидва тут, щоб зсув не жив у двох головах. */
+static inline uint8_t Qatt_Health_Reset_Cause(uint8_t flags)
+{
+    return (uint8_t)((flags & QATT_HFLAG_RESET_MASK) >> QATT_HFLAG_RESET_SHIFT);
+}
+
+static inline uint8_t Qatt_Health_Reset_Bits(uint8_t cause)
+{
+    return (uint8_t)((cause << QATT_HFLAG_RESET_SHIFT) & QATT_HFLAG_RESET_MASK);
+}
 
 /* Пише 17-байтний header [ver|unix_ts BE|flush_seq BE|health:8]. ts == 0
    легітимний стан «Королева ще не бачила серверного часу» (Queen без RTC —

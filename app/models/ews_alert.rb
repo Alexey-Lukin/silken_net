@@ -100,11 +100,17 @@ class EwsAlert < ApplicationRecord
     # сильніша: жоден клас не field-валідовано, а baseline-точність є метрикою
     # ЦІЛІСНОСТІ ПАЙПЛАЙНУ, не польової детекції (03_03, TinyML на TRL 6).
     chainsaw_detected: 10,
-    # [SLASH-1] Софт-збій прошивки пристрою: wire status=3 (BIO_STATUS_VM_ERROR —
-    # mruby-crash / VM-OOM / unprovisioned). Vendor-attributable, ops-тріаж (re-flash /
+    # [SLASH-1] Софт-збій прошивки пристрою. Vendor-attributable, ops-тріаж (re-flash /
     # OTA), НЕ біо-сигнал і НЕ вина оператора: не в A-сеті (vandalism_breach ↑), не в
-    # comms_no_ack? whitelist (вузол ЖИВИЙ — радіо працює, зламаний лише mruby) і
-    # виключений з critical_unmaintained? — не карати оператора за наш баг.
+    # comms_no_ack? whitelist (вузол ЖИВИЙ — радіо працює) і виключений з
+    # critical_unmaintained? — не карати оператора за наш баг.
+    # ПИСАЧІВ ДВА, і в них різне залізо під однаковою атрибуцією:
+    #   · Soldier — wire status=3 (BIO_STATUS_VM_ERROR: mruby-crash / VM-OOM /
+    #     unprovisioned; зламаний лише mruby, радіо працює);
+    #   · [FW.59] Queen — причина ребута в health-flags пульсу є збоєм прошивки
+    #     (IWDG / WWDG / HardFault / нелегальний low-power), тобто завис або впав
+    #     наш C-код. Свідомо СЮДИ, а не в `hardware_fault`/`system_fault`: обидва
+    #     ті кошики отруєні для нашого ж багу (див. actuator_stuck нижче).
     firmware_fault: 11,
     # [SEC.20] Auto-fallback стався: вузол стер биту OTA-версію і біжить embedded
     # baseline (wire fw-report: reverted-біт). ОКРЕМИЙ від firmware_fault —
@@ -236,7 +242,15 @@ class EwsAlert < ApplicationRecord
   # ⚠️ Виміряно того ж дня: у `Gateway#system_fault?` нуль викликачів поза власною
   # спекою, тож звуження живого ефекту не мало — доля самого предиката (зняти чи
   # дротувати) лишається окремим питанням, і ця константа її не вирішує.
-  GATEWAY_FAULT_TYPES = %i[system_fault comms_fault hardware_fault].freeze
+  # [FW.59 2026-09-08] `firmware_fault` дописано, бо шлюзовий писач тепер його
+  # виробляє (ребут Королеви через пса / HardFault) — гейт другого дому
+  # (`alert_type_family_parity_spec`) упіймав розходження тим самим проходом.
+  # ⚠️ Разом із ним читач звужено до **cluster-level** (`tree_id: nil`): без
+  # цього тип, який масово пише СОЛДАТСЬКИЙ тракт (`vm_error` per-tree), почав би
+  # оголошувати Королеву несправною за чужий збій. Конфлат існував і доти
+  # (tree-scoped `system_fault`), але цей крок зробив би його дорожчим на
+  # порядок — тож межа стоїть тим самим комітом, що й розширення.
+  GATEWAY_FAULT_TYPES = %i[system_fault comms_fault hardware_fault firmware_fault].freeze
 
   # [COSMIC EYE]: Статус супутникової верифікації через dClimate.
   # Подвійний консенсус для запобігання страховому шахрайству.

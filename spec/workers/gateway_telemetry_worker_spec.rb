@@ -198,6 +198,42 @@ RSpec.describe GatewayTelemetryWorker, type: :worker do
         expect(key).to eq("gateway_overheat")
       end
 
+      # [FW.59] Пес/HardFault поклали Королеву — це збій НАШОГО коду, тож
+      # кошик той самий, що в Солдатського `vm_error`.
+      it "ребут через сторожового пса дістає firmware_fault, а не кошик оператора" do
+        stats = valid_stats.merge("flags" => 0x80) # iwdg (4 << 5)
+
+        expect {
+          described_class.new.perform(gateway.uid, stats)
+        }.to change(EwsAlert, :count).by(1)
+
+        alert = EwsAlert.last
+        expect(alert.alert_type).to eq("firmware_fault")
+        expect(alert.message_key).to eq("gateway_reset_fault")
+        expect(alert.message_params["cause"]).to eq("iwdg")
+      end
+
+      it "штатний power-on алерту НЕ піднімає (ребут ≠ збій)" do
+        expect {
+          described_class.new.perform(gateway.uid, valid_stats.merge("flags" => 0x20))
+        }.not_to change(EwsAlert, :count)
+      end
+
+      # 🔴 ПОРЯДОК гілок є присудом, і цей приклад — його єдиний сторож.
+      # `coap_fail_count` насичується за аптайм і далі не спадає, тож нижче за
+      # нього reset-гілка не спрацювала б ЖОДНОГО разу на кволому лінку —
+      # тобто перестановка ланцюга не зламала б нічого видимого, лише мовчки
+      # осліпила б новий сигнал.
+      it "збій прошивки перебиває залиплий uplink-лічильник (інакше він ховає причину)" do
+        stats = valid_stats.merge("flags" => 0xC0, "coap_fail_count" => 99) # hardfault + залиплий uplink
+
+        described_class.new.perform(gateway.uid, stats)
+
+        alert = EwsAlert.last
+        expect(alert.message_key).to eq("gateway_reset_fault")
+        expect(alert.message_params["cause"]).to eq("hardfault")
+      end
+
       it "no_signal (csq 99) не тригерить алерт (за специфікацією 3GPP)" do
         stats = valid_stats.merge("cellular_signal_csq" => 99)
 

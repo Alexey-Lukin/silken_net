@@ -36,6 +36,7 @@ uk:
       gateway_freezing: "❄️ ЗАМЕРЗАННЯ: Королева %{uid} (%{temperature_c}°C). LiFePO4 offline-ризик — заряд <0°C небезпечний."
       gateway_hardware_fault: "🛠️ Апаратний збій Королеви %{uid}. Потрібен огляд."
       gateway_overheat: "🔥 ПЕРЕГРІВ: Королева %{uid} (%{temperature_c}°C). Ризик деградації SIM7070G."
+      gateway_reset_fault: "⚙️ ЗБІЙ ПРОШИВКИ ШЛЮЗУ: Королева %{uid} перезавантажилась через %{cause} — завис або впав наш код. Потрібен re-flash/OTA; вина НЕ операторська."
       gateway_uplink_degraded: "📵 UPLINK: Королева %{uid} накопичила %{fail_count} провалених flush-розмов — LTE/Starlink деградує, телеметрія тримається на retry."
       gateway_weak_signal: "📡 ЗВ’ЯЗОК: Слабкий сигнал на %{uid} (CSQ: %{csq}). Ризик втрати батчів."
       global_blackout: "🛰️ ГЛОБАЛЬНИЙ БЛЕКАУТ: За %{target_date} не надійшло жодних даних телеметрії. Можлива аварія Starlink або масовий відказ шлюзів — Field Audit (Кат-C), slashing НЕ застосовано."

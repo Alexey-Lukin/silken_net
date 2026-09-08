@@ -215,7 +215,12 @@ class Gateway < ApplicationRecord
   def system_fault?
     # [SLASH-1 2026-09-04] Родина, не один тип: кошик `system_fault` розколюється
     # за атрибуцією, а це питання про ВИДИМІСТЬ — див. `EwsAlert::GATEWAY_FAULT_TYPES`.
-    cluster&.ews_alerts&.unresolved&.where(alert_type: EwsAlert::GATEWAY_FAULT_TYPES)&.exists? ||
+    # ⚠️ [FW.59] `tree_id: nil` — предикат про КОРОЛЕВУ, тож читає лише
+    # cluster-level події. Дзеркало вже наявного звуження в `GatewayTelemetryWorker`
+    # («стоячий tree-scoped алерт — чужий сигнал»); тут його бракувало, і родина
+    # з `firmware_fault` імпортувала б у нього Солдатські `vm_error`.
+    cluster&.ews_alerts&.unresolved
+           &.where(alert_type: EwsAlert::GATEWAY_FAULT_TYPES, tree_id: nil)&.exists? ||
       battery_critical?
   end
 

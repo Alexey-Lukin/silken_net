@@ -257,6 +257,62 @@ RSpec.describe GatewayTelemetryLog, type: :model do
     end
   end
 
+  # [FW.59] Причина ребута Королеви — старші ТРИ біти health_flags
+  # (wire-дім: firmware/common/reset_cause.h; розкладка: queen_attest.h
+  # QATT_HFLAG_RESET_{SHIFT,MASK}). Host-сюїта прошивки пінить ту саму
+  # арифметику з боку C — тут пінимо бекендний бік того ж контракту.
+  describe "#reset_cause / #reset_fault?" do
+    it "reads 0 as the NOT-REPORTED sentinel, never as a cold start" do
+      # 🔴 Несуче: КОЖЕН рядок пульсу, старший за FW.59, несе тут нуль. Якби
+      # нуль означав power_on, ми заднім числом приписали б усій історії
+      # причину, якої ніхто не міряв.
+      expect(build(:gateway_telemetry_log, health_flags: 0x00).reset_cause).to eq(:unknown)
+      expect(build(:gateway_telemetry_log, health_flags: nil).reset_cause).to eq(:unknown)
+      expect(build(:gateway_telemetry_log, health_flags: 0x00).reset_fault?).to be false
+    end
+
+    it "decodes every wire code independently of the four live flags and the SEC.21 booking" do
+      # Молодші п'ять бітів (0x1F) = чотири прапорці + заброньований bit4:
+      # причина мусить читатись однаково з ними й без них.
+      { 0x00 => :unknown, 0x20 => :power_on, 0x40 => :pin,       0x60 => :software,
+        0x80 => :iwdg,    0xA0 => :wwdg,     0xC0 => :hardfault, 0xE0 => :low_power
+      }.each do |bits, cause|
+        expect(build(:gateway_telemetry_log, health_flags: bits).reset_cause).to eq(cause)
+        expect(build(:gateway_telemetry_log, health_flags: bits | 0x1F).reset_cause).to eq(cause)
+      end
+    end
+
+    it "keeps the neighbouring flags readable while a cause is present" do
+      log = build(:gateway_telemetry_log, health_flags: 0x80 | 0x01 | 0x04)
+      expect(log.reset_cause).to eq(:iwdg)
+      expect(log.ccm_era?).to be true
+      expect(log.legacy_drops_seen?).to be true
+    end
+
+    it "classifies only vendor-attributable causes as a firmware fault" do
+      # power_on = brownout/сонце — це залізо й майданчик, НЕ наш код; а
+      # атрибуція тут вирішує, кому колись виставить рахунок slashing.
+      expect(build(:gateway_telemetry_log, :watchdog_reset).reset_fault?).to be true
+      expect(build(:gateway_telemetry_log, :hardfault_reset).reset_fault?).to be true
+      expect(build(:gateway_telemetry_log, health_flags: 0xA0).reset_fault?).to be true
+      expect(build(:gateway_telemetry_log, health_flags: 0xE0).reset_fault?).to be true
+
+      expect(build(:gateway_telemetry_log, :clean_reboot).reset_fault?).to be false
+      expect(build(:gateway_telemetry_log, health_flags: 0x40).reset_fault?).to be false
+      expect(build(:gateway_telemetry_log, health_flags: 0x60).reset_fault?).to be false
+    end
+
+    it "raises critical_fault? on a firmware reset even when every other metric is clean" do
+      log = build(:gateway_telemetry_log, :watchdog_reset,
+                  voltage_mv: 4200, temperature_c: 25.0, cellular_signal_csq: 20,
+                  coap_fail_count: 0)
+      expect(log.critical_fault?).to be true
+
+      log.health_flags = 0x20 # штатний power-on — тривоги не піднімає
+      expect(log.critical_fault?).to be false
+    end
+  end
+
   describe ".latest_per_gateway" do
     let(:gateway) { create(:gateway) }
 

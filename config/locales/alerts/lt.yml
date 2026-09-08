@@ -36,6 +36,7 @@ lt:
       gateway_freezing: "❄️ UŽŠALIMAS: Queen %{uid} (%{temperature_c}°C). LiFePO4 neprisijungimo rizika — įkrovimas žemiau 0°C pavojingas."
       gateway_hardware_fault: "🛠️ Queen %{uid} aparatinės įrangos gedimas. Reikalinga apžiūra."
       gateway_overheat: "🔥 PERKAITIMAS: Queen %{uid} (%{temperature_c}°C). SIM7070G degradacijos rizika."
+      gateway_reset_fault: "⚙️ ŠLIUZO PROGRAMINĖS ĮRANGOS GEDIMAS: Queen %{uid} persikrovė dėl %{cause} — pakibo arba lūžo mūsų kodas. Reikalingas re-flash/OTA; tai NE operatoriaus kaltė."
       gateway_uplink_degraded: "📵 RYŠYS AUKŠTYN: Queen %{uid} sukaupė %{fail_count} nepavykusių flush pokalbių — LTE/Starlink degraduoja, telemetrija laikosi ant pakartojimų."
       gateway_weak_signal: "📡 RYŠYS: Silpnas signalas ties %{uid} (CSQ: %{csq}). Partijų praradimo rizika."
       global_blackout: "🛰️ GLOBALUS PERTRŪKIS: už %{target_date} negauta jokių telemetrijos duomenų. Galima Starlink avarija arba masinis šliuzų gedimas — Field Audit (C kat.), slashing NETAIKYTAS."

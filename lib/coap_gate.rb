@@ -27,7 +27,22 @@ module CoapGate
   # `coap_mid`), і саме звідти твердження про «CON-ретрансміт poll'а» помилково
   # перенесли сюди. Тож загублена 2.05 з CMD губить наказ назавжди: він уже
   # `acknowledged`, поза `.pending`, і жоден наступний poll його не перевидасть.
-  REPLY_CACHE = {} # uid => [message_id, reply_bytes]
+  #
+  # 🔴 [FW.63] Тому same-MID сюди приходить ЛИШЕ двома шляхами, і вони мають
+  # ПРОТИЛЕЖНУ ціну — доти обидва рахувались одним лічильником `poll_retransmit`,
+  # тобто небезпечний маркувався іменем безневинного:
+  #   · **дубльована датаграма** — той САМИЙ запит удвічі (мережеве дублювання
+  #     UDP). Безневинний: віддати кеш і є правильна відповідь;
+  #   · **пост-ребутна колізія MID** — `coap_mid` живе в RAM і обнуляється на
+  #     ребуті, а слот кешу TTL не має. Тоді той самий номер несе ІНШЕ питання,
+  #     і віддати кеш означає відповісти на чуже: поточний pending мовчки не
+  #     доїде, а Королева візьме прострочений конверт.
+  # Розрізняє їх ВІДБИТОК запиту (маршрут + query), тож кеш тримає три поля.
+  # ⚠️ Оголошена стеля: колізія з ІДЕНТИЧНИМ відбитком (ребут, той самий
+  # порожній poll) лишається невідрізнимою від дубля — і це свідомо, бо
+  # питання те саме, а відповідь виправляється наступним poll'ом (MID росте).
+  # Повний лік = TTL на слот; його ціна й потреба — присуд у `00_07` FW.63.
+  REPLY_CACHE = {} # uid => [message_id, request_fingerprint, reply_bytes]
 
   # Обробляє одну датаграму. Повертає CoAP-reply (String) для відправки, або
   # nil = мовчазний дроп (oversized/truncate — FW.51 Королева тримає кеш і
@@ -97,10 +112,18 @@ module CoapGate
     # тож мовчазний дроп чесніший за неретрансльовану відповідь).
     return nil unless request.type == CoapServerPdu::TYPE_CON
 
-    cached_mid, cached_reply = REPLY_CACHE[result.gateway_uid]
+    # [FW.63] Відбиток запиту = маршрут + query: він і розводить дубль від
+    # пост-ребутної колізії MID (розкладка — біля REPLY_CACHE вище).
+    fingerprint = [ result.status, result.query ]
+    cached_mid, cached_fingerprint, cached_reply = REPLY_CACHE[result.gateway_uid]
     if cached_mid == request.message_id
-      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "poll_retransmit" })
-      return cached_reply
+      if cached_fingerprint == fingerprint
+        SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "poll_duplicate" })
+        return cached_reply
+      end
+      # Той самий номер, інше питання → кеш віддавати НЕ можна: він відповів би
+      # на чуже й тихо проковтнув поточний pending. Падаємо у свіжу деривацію.
+      SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(labels: { status: "poll_mid_collision" })
     end
 
     gateway = Gateway.find_by(uid: result.gateway_uid)
@@ -126,7 +149,7 @@ module CoapGate
         CoapServerPdu.build_ack(request, code: CoapServerPdu::CODE_NOT_FOUND)
       end
 
-    REPLY_CACHE[result.gateway_uid] = [ request.message_id, reply ]
+    REPLY_CACHE[result.gateway_uid] = [ request.message_id, fingerprint, reply ]
     SilkenNet::Metrics::COAP_PACKETS_RECEIVED_TOTAL.increment(
       labels: { status: result.status == :downlink_poll ? "downlink_poll" : "ota_chunk" }
     )

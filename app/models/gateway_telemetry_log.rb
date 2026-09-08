@@ -27,6 +27,20 @@ class GatewayTelemetryLog < ApplicationRecord
   # 16B-легасі-телеметрію (непрошиті Солдати поруч) / DID=0 CCM-спуфи.
   HFLAG_LEGACY_DROPS = 0x04
   HFLAG_CCM_SPOOF    = 0x08
+  # bit4 (0x10) — бронь SEC.21 (canary-trip), НЕ читається тут свідомо.
+  # [FW.59] Причина ребута Королеви — старші ТРИ біти того ж байта.
+  HFLAG_RESET_SHIFT  = 5
+  HFLAG_RESET_MASK   = 0xE0
+  # Індекс = 3-бітний код на дроті (wire-дім: firmware/common/reset_cause.h).
+  # 🔴 `:unknown` на нулі — сентинел «не повідомлено», НІКОЛИ «холодний старт»:
+  # кожен рядок пульсу, старший за FW.59, несе в цьому полі нуль, тож будь-яке
+  # інше прочитання приписало б усій історії причину, якої ніхто не міряв.
+  RESET_CAUSES = %i[unknown power_on pin software iwdg wwdg hardfault low_power].freeze
+  # Vendor-attributable кошик: завис або впав НАШ код. Дзеркало —
+  # `Silken_Reset_Cause_Is_Fault` у тому ж заголовку (host-тест пінить обидва
+  # боки визначення). ⚠️ `power_on` сюди НЕ входить: brownout — це залізо/сонце,
+  # не прошивка, і атрибуція вирішує, кому потім виставить рахунок slashing.
+  RESET_FAULT_CAUSES = %i[iwdg wwdg hardfault low_power].freeze
 
   # --- ЗВ'ЯЗКИ ---
   # Зв'язок через UID дозволяє зберігати логіку ідентифікації заліза
@@ -112,6 +126,16 @@ class GatewayTelemetryLog < ApplicationRecord
   def legacy_drops_seen? = health_flags.to_i.anybits?(HFLAG_LEGACY_DROPS)
   def ccm_spoof_seen?    = health_flags.to_i.anybits?(HFLAG_CCM_SPOOF)
 
+  # [FW.59] Чому Королева перевтілилась цього аптайму. Причина стала на весь
+  # boot, тож повторюється КОЖНИМ пульсом — читач бере останній рядок, а не
+  # полює за першим після ребута (той цілком міг не доїхати).
+  def reset_cause
+    RESET_CAUSES.fetch((health_flags.to_i & HFLAG_RESET_MASK) >> HFLAG_RESET_SHIFT, :unknown)
+  end
+
+  # Збій ПРОШИВКИ, а не штатний/зовнішній ребут — vendor-attributable.
+  def reset_fault? = RESET_FAULT_CAUSES.include?(reset_cause)
+
   # [НОВЕ]: Швидка перевірка на критичний стан заліза
   # Використовується GatewayTelemetryWorker для ініціації EwsAlert.
   # Nil-safe: пульс v2 не несе напруги/температури (nil = «не виміряно»,
@@ -122,6 +146,10 @@ class GatewayTelemetryLog < ApplicationRecord
       (temperature_c.present? && temperature_c < LOW_TEMPERATURE_THRESHOLD) ||
       (cellular_signal_csq.present? && cellular_signal_csq != 99 &&
         cellular_signal_csq < LOW_SIGNAL_THRESHOLD) ||
-      coap_fail_count.to_i >= COAP_FAIL_ALERT_THRESHOLD
+      coap_fail_count.to_i >= COAP_FAIL_ALERT_THRESHOLD ||
+      # [FW.59] Пес чи HardFault поклали вузол. Причина стала на весь boot, тож
+      # предикат «липкий» до наступного штатного ребута — рівно як сусідній
+      # насичений `coap_fail_count`; дедуп по ТИПУ не дає повторів.
+      reset_fault?
   end
 end

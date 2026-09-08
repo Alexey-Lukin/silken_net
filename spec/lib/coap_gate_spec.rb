@@ -110,7 +110,11 @@ RSpec.describe CoapGate do
       expect(described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)).to be_nil
     end
 
-    it "CON-ретрансміт (той самий MID) → закешована відповідь без re-derivation" do
+    # ⚠️ [FW.63] Приклад доти звався «CON-ретрансміт» — назва успадкована з
+    # хибного твердження канону: poll-тракт Королеви ретрансміту НЕ має
+    # (`coap_mid++` на кожну спробу). Те, що кеш реально закриває, — фізично
+    # ДУБЛЬОВАНА датаграма: той самий MID І той самий запит.
+    it "дубльована датаграма (той самий MID І той самий запит) → кеш без re-derivation" do
       gateway = create(:gateway)
       allow(Downlink::PendingQueueService).to receive(:poll_reply).once.and_return("ENVELOPE".b)
       allow(CoapServerPdu).to receive_messages(handle_telemetry_datagram: poll_result(uid: gateway.uid), build_content: "REPLY205".b)
@@ -120,6 +124,31 @@ RSpec.describe CoapGate do
 
       expect(replay).to eq(first)
       expect(Downlink::PendingQueueService).to have_received(:poll_reply).once
+    end
+
+    # 🔴 [FW.63] Протилежний бік того самого MID, і ціна в нього протилежна:
+    # `coap_mid` живе в RAM Королеви й обнуляється ребутом, а слот кешу TTL не
+    # має — тож той самий номер приносить ІНШЕ питання. Віддати кеш тут означає
+    # відповісти на чуже: поточний pending мовчки не доїде.
+    it "пост-ребутна колізія MID (той самий MID, ІНШЕ питання) → свіжа деривація, не кеш" do
+      gateway = create(:gateway)
+      allow(CoapServerPdu).to receive(:build_content) { |_req, payload:| "REPLY:#{payload}".b }
+      allow(Downlink::PendingQueueService).to receive_messages(ota_chunk_reply: "CHUNK".b,
+                                                               poll_reply: "ENVELOPE".b)
+
+      allow(CoapServerPdu).to receive(:handle_telemetry_datagram)
+        .and_return(poll_result(uid: gateway.uid, query: { "ch" => "1" }))
+      first = described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)
+
+      # Той самий MID (той самий `request`), але інший маршрут+query.
+      other = result(status: :ota_chunk_fetch, gateway_uid: gateway.uid)
+      allow(other).to receive_messages(request: request, query: { "ch" => "2" })
+      allow(CoapServerPdu).to receive(:handle_telemetry_datagram).and_return(other)
+      second = described_class.handle_datagram(data: "x", gateway_ip: gateway_ip)
+
+      expect(second).not_to eq(first)
+      expect(second).to eq("REPLY:CHUNK".b)
+      expect(Downlink::PendingQueueService).to have_received(:ota_chunk_reply).once
     end
 
     it "порожня derivation (нема KEYC) → 4.04" do

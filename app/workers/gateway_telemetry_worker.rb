@@ -29,6 +29,13 @@ class GatewayTelemetryWorker
     "gateway_weak_signal"     => :comms_fault,
     "gateway_overheat"        => :hardware_fault,
     "gateway_freezing"        => :hardware_fault,
+    # [FW.59] Пес чи HardFault поклали Королеву — завис або впав НАШ код.
+    # Атрибуція та сама, що в Солдатського `vm_error`: vendor-attributable,
+    # ops-тріаж (re-flash / OTA), не A-сет, не `comms_no_ack?` (радіо живе),
+    # виключений з `critical_unmaintained?`. ⛔ Свідомо НЕ `hardware_fault` і
+    # НЕ дефолтний `system_fault`: обидва сидять там, де на день активації
+    # cause-uplift оператор дістав би штраф за НАШ баг.
+    "gateway_reset_fault"     => :firmware_fault,
     "gateway_hardware_fault"  => :hardware_fault
   }.freeze
 
@@ -133,8 +140,21 @@ class GatewayTelemetryWorker
 
   # Повертає пару [ключ, параметри] замість готового рядка: гілка обирає, ЩО
   # сталося, а не якими словами це сказати (дім фраз — `alerts.messages.*`).
+  #
+  # 🔴 Ланцюг ОДНОВЕРДИКТНИЙ за побудовою (так було завжди — перша гілка, що
+  # збіглась, глушить решту), тож ПОРЯДОК тут є присудом, а не смаком.
+  # [FW.59] стоїть ПЕРШИМ, і підстава вимірювана: `coap_fail_count` — насичений
+  # лічильник за аптайм, який на кволому лінку доходить до 10 і далі не спадає
+  # ніколи, тож нижче за нього нова гілка не спрацювала б ЖОДНОГО разу.
+  # ⊕ Друга половина підстави: збій прошивки правдоподібно ПОРОДЖУЄ провали
+  # флешу, тож ставити симптом над причиною = та сама інверсія, за яку ми вже
+  # платили. ⚠️ Ціна вголос: доки причина ребута тримається (а вона стала на
+  # весь boot), живий сигнал кволої антени цього шлюзу окремим алертом не
+  # приїде — його видно в самому рядку пульсу (`cellular_signal_csq`).
   def health_message_key(gateway, log)
-    if log.cellular_signal_csq.present? &&
+    if log.reset_fault?
+      [ "gateway_reset_fault", { uid: gateway.uid, cause: log.reset_cause } ]
+    elsif log.cellular_signal_csq.present? &&
        log.cellular_signal_csq < GatewayTelemetryLog::LOW_SIGNAL_THRESHOLD
       [ "gateway_weak_signal", { uid: gateway.uid, csq: log.cellular_signal_csq } ]
     elsif log.coap_fail_count.to_i >= GatewayTelemetryLog::COAP_FAIL_ALERT_THRESHOLD
