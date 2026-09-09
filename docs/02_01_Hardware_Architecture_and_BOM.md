@@ -171,7 +171,7 @@ STM32WLE5JC
 |---|---|---|---|---|
 | 1 | **MCU + LoRa SoC** | Seeed LoRa-E5 (STM32WLE5JC + SX1262) | Обчислення (mruby, TinyML, AES-128 LoRa post-ARCH.42) + LoRa TX/RX | ~$5.50 |
 | 2 | **PMIC** | Texas Instruments BQ25570RGRR | MPPT + Boost + Buck; живлення від EBFC | ~$2.80 |
-| 3 | **Supercapacitor** | Eaton HV0H474AEJ-R або KEMET FG0H474ZF (0.47 F / 5.5 В, Radial) | Енергетичний буфер | ~$1.10 |
+| 3 | **Supercapacitor** | Eaton KR-5R5H474-R або KEMET FG0H474ZF (0.47 F / 5.5 В, Radial) | Енергетичний буфер | ~$1.10 |
 | 4 | **Ceramic SMD Antenna** | Yageo ANT1608LLC00R2400A, Taoglas FXP73 або Ignion NN02-310 (868 МГц, SMD) | RF-випромінювання | ~$0.35 |
 | 5 | **П'єзоелемент (SMD)** | Живі кандидати: Mallory AST1240MLTRQ / AST1109MLTRQ (reflow-SMD, 4.0–4.1 кГц) АБО Murata PKMCS0909E4000-R1 (SMD, 4.0 кГц; ⚠️ LTB 03-2027) — фінальний вибір = HW.30 bench (§6, receive-чутливість не в датащитах). Раніше згаданий ∅27 мм через-отворний п'єзодиск — **виключено** (несумісно з Zero-Touch §5.2). Монтується на **нижню сторону Power Deck** + Bergquist Sil-Pad 1500ST (0.5–1.0 мм) як acoustic coupling до Ti Zone 3. | Пасивний акустичний тригер (пилка · вогонь · low-freq water-stress proxy — ⚠️ **не** сама кавітація: її AE 25–150 кГц лежить поза Nyquist-8 цього тракту, [`03_03 §4.2`](03_03_TinyML_Acoustic_Inference)) | ~$0.20 (piezo) + ~$0.10 (pad) |
 | 6 | **Schottky Clamp** | BAT54S (Dual Schottky, SOT-23) | Захист GPIO від п'єзо-сплесків (0–3.3 В) | ~$0.05 |
