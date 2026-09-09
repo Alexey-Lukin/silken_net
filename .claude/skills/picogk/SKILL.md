@@ -30,7 +30,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | `tools/cad/cem/*.json` | CEM manifests — the Git-SSOT parameter inputs (`kind` discriminator: `ti_coin`, `anchor_zone1`, `mechanical_lock`, `cathode_flange`, `radome`, `zone2_sleeve`, `anchor_assembly`, `anchor_axial_stack`) |
 | `tools/cad/src/SilkenCad/Program.cs` | CLI dispatch (`smoke`/`build`/`verify`/`scan`/`draw`/`render`/`section`) + `RunHeadless` (the `Library.Go` wrapper); `draw` is pure-managed (no Library.Go), `render`/`section` drive the native viewer |
 | `tools/cad/src/SilkenCad/Cem.cs` | CEM records + JSON parse (snake_case). Engineering-drawing PMI lives here: optional `ToleranceSpec` (fits / Lamé-µm / GD&T datums) + `NotesSpec` (material/process/**post-process**/surface/coating-restriction/lattice-spec/inspection) on each part record — Noyron-native SSOT, fed to `draw` |
-| `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)** — no PDF (never built; `drawings_program §3`). Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). Shipped kinds = `ti_coin` + `cathode_flange` (§7 rest deferred — `tools/cad/docs/drawings_program.md`). ⚠️ gotcha #11 |
+| `tools/cad/src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw <cem>`): **SVG (human) + DXF via netDxf (CAD-native factory deliverable, opens in AutoCAD/Fusion)** — no PDF (never built; `drawings_program §3`). Pure-managed string/entity build, no Library.Go. Consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text); `DrawingStandard` param (ISO 1st-angle default / ASME). Shipped kinds = `ti_coin` + `cathode_flange` + `mechanical_lock` (HW.26, 2026-09-09 — Zone-1 anchor end + Zone-3 flange end, one generator/CEM `kind` shared by both manifests; §7 rest deferred — `tools/cad/docs/drawings_program.md`). ⚠️ gotcha #11 |
 | `tools/cad/src/SilkenCad/TiCoin.cs` | Ti-coin coupon — `BaseCylinder` disc + `BaseRing` eyelet, `BoolAdd` |
 | `tools/cad/src/SilkenCad/Zone1Anode.cs` | Zone-1 anode + `CartesianGyroid:IImplicit` (the from-scratch SDF) + `Anode()` render path |
 | `tools/cad/src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity needs an envelope ref) + reuses LEAP `Measure.fGetSurfaceArea` |
@@ -215,7 +215,9 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
   post-process + coating-restriction notes, lattice-spec. Shipped kinds = **`ti_coin` (Phase 1) +
-  `cathode_flange` (Phase 2, rode the Ø25 freeze)**, both with the mirror xUnit set incl. the shipped-CEM
+  `cathode_flange` (Phase 2, rode the Ø25 freeze) + `mechanical_lock`** (HW.26, 2026-09-09 — one
+  generator/CEM `kind` shared by `mechanical_lock.zone1.json` and `mechanical_lock.zone3.json`, SIDE view cuts a real DIN-471
+  groove at the CEM's own z-offset), all three with the mirror xUnit set incl. the shipped-CEM
   round-trip (⛔ test COUNTS are not quoted anywhere — the roster is `DrawingTests.cs`).
   Still deferred: Zone-2 sleeve, radome, **`draw anchor_zone1`** (gyroid inspection-card — does NOT exist,
   so the Zone-1 coating-restriction map has no carrier yet), assemblies. NORM (why a drawing is derived
