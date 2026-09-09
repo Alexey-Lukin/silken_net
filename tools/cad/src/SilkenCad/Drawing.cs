@@ -93,8 +93,74 @@ internal static class Drawing
     // mid-word by the viewport). Neither told anyone that something was missing.
     // Cure: cut at the budget and SAY SO. The full value is not lost — `Process` is already a NOTES line,
     // so the title block is a pointer, and now an honest one.
-    private static string Cell(string v, int budget = 28)
-        => v.Length <= budget ? v : $"{v[..(budget - 9)]}… → NOTES";
+    // 🔴 `budget` defaults to 28 because that is what the column MEASURES — a caller passing a bigger
+    // number does not widen the column, it walks the text out of the block (and, for the right-hand
+    // block, off the canvas). `REV` did exactly that with `budget: 34`: 34 glyphs need 188 px in a 155 px
+    // column, so the placeholder ran 33 px past the BLOCK — and, on the narrower coin frame, off the canvas
+    // too. And `ptr` exists because the pointer must be TRUE — the full PROCESS
+    // really is a NOTES line, the full revision is not; it is in the footer.
+    private static string Cell(string v, int budget = 28, string ptr = "→ NOTES")
+        => v.Length <= budget ? v : $"{v[..(budget - ptr.Length - 2)]}… {ptr}";
+
+    // Monospace glyph advance at font-size 9, taken from the SAME measurement the `Cell` budget above
+    // is derived from (155 px value column ÷ 28 glyphs). One constant so the two budgets cannot drift.
+    private const double Glyph9 = 155.0 / 28.0;
+
+    // Word-wrap a NOTES / TOLERANCES line to the drawable width.
+    //
+    // 🔴 The third symptom of gotcha #11's class, and the one the 2026-08-28 pass did not reach: the
+    // title block was cured of BOTH truncation and clipping, while the notes block kept overflowing.
+    // An SVG `viewBox` CLIPS — so a 420-char note laid out as one unwrapped `<text>` at x=20 runs to
+    // ~2290 px on a 900-wide canvas and roughly three-fifths of it does not exist for the reviewer,
+    // while the DXF (no viewport, no clipping) ships it whole to the shop. That is the INVERTED-risk
+    // half again: the human sees LESS than the factory, so the note nobody can read is exactly the
+    // note nobody can review. Measured on `cem/cathode_flange.json`: `Coating` 243 chars, then
+    // `Surface` 420 (HW.2) — both past the frame.
+    //
+    // Wrapping, not truncating, is the only cure that stays inside this file's own rule: the value is
+    // never shortened and never hidden. The DXF stays UNWRAPPED on purpose — it has no viewport, so a
+    // long line there loses nothing, and re-flowing it would make the two readers disagree on shape
+    // for no gain.
+    private static List<string> Wrap(string s, int budget, string indent = "   ")
+    {
+        var outp = new List<string>();
+        if (budget < indent.Length + 8) { outp.Add(s); return outp; }   // degenerate canvas — never lose text
+        while (s.Length > budget)
+        {
+            int cut = s.LastIndexOf(' ', Math.Min(budget, s.Length - 1));
+            if (cut <= indent.Length) cut = budget;    // one unbreakable token: hard-cut, never drop
+            outp.Add(s[..cut].TrimEnd());
+            s = indent + s[cut..].TrimStart();
+        }
+        outp.Add(s);
+        return outp;
+    }
+
+    // Emit the NOTES + TOLERANCES blocks, wrapped, and return the Y of the last line drawn so the
+    // caller can place the title block UNDER the content instead of at a hand-tuned constant.
+    //
+    // 🔴 Shared by both drawings on purpose. The 2026-08-28 diagnosis found ONE defect wearing two
+    // faces because the coin and the flange each laid out their own notes block — so a fix landed on
+    // one and missed the other, and neither file could see the other's symptom. A single emitter makes
+    // that particular asymmetry impossible rather than merely unlikely.
+    private static double NotesAndTolerances(StringBuilder b, double x, double y, int budget,
+                                             List<string> notes, List<string> tol)
+    {
+        b.AppendLine(Text(x, y, "NOTES:", 10, "start", Stroke, "bold"));
+        double ly = y + 2;
+        for (int i = 0; i < notes.Count; i++)
+            foreach (string w in Wrap($"{i + 1}. {notes[i]}", budget))
+                b.AppendLine(Text(x, ly += 14, w, 9, "start", "#333"));
+        if (tol.Count > 0)
+        {
+            b.AppendLine(Text(x, ly += 26, "TOLERANCES / GD&T:", 10, "start", Stroke, "bold"));
+            ly += 2;
+            foreach (string t in tol)
+                foreach (string w in Wrap(t, budget))
+                    b.AppendLine(Text(x, ly += 14, w, 9, "start", "#333"));
+        }
+        return ly;
+    }
 
     // Title block (bottom-right grid) — part / material / scale / units / rev / notes pointer.
     private static void TitleBlock(StringBuilder sb, double x, double y, (string, string)[] rows)
@@ -225,40 +291,33 @@ internal static class Drawing
         double a = Math.PI * Math.Pow(winMm / 2.0, 2) / 100.0;
         string lead = $"Active electrode area ≈ {N(a)} cm² (1 face; j = I/A projected, 01_03 §3.5)"
             + (cem.ActiveWindowDiameterMm > 0f ? $"; defined-area window Ø{N(cem.ActiveWindowDiameterMm)} (dashed)" : "");
-        double ny = 300;
-        b.AppendLine(Text(20, ny, "NOTES:", 10, "start", Stroke, "bold"));
-        var notes = NotesLines(cem.Notes, lead);
-        for (int i = 0; i < notes.Count; i++) b.AppendLine(Text(20, ny + 16 + (i * 14), $"{i + 1}. {notes[i]}", 9, "start", "#333"));
-
-        var tol = ToleranceLines(cem.Tolerances);
-        if (tol.Count > 0)
-        {
-            double ty = ny + 16 + (notes.Count * 14) + 10;
-            b.AppendLine(Text(20, ty, "TOLERANCES / GD&T:", 10, "start", Stroke, "bold"));
-            for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
-        }
+        const double w = 820;
+        double bottom = NotesAndTolerances(b, 20, 300, (int)((w - 40) / Glyph9),
+                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
 
         // TITLE BLOCK — material/process/SSOT come from the CEM (the alloy-bake-off SKU), not hard-coded:
         // each ti_coin.<alloy>.json carries its own Notes.Material (01_02 §2.5).
         // 🔴 A null here used to print the 4V baseline — on a bake-off part whose whole purpose is that
         // the alloy is the VARIABLE (Ta / Au / 7Nb / CP-Ti), that default is the single most expensive
         // string in the drawing: it names the wrong metal in the box the shop reads first.
-        TitleBlock(b, 540, 470, new[]
+        var rows = new[]
         {
             ("PART", "Ti-coin"),
             ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
             ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
-            ("REV", Cell(sha, 34)),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", $"cem/{cem.Name}.json"),
-        });
+        };
 
-        // 🔴 Canvas 560 → 620. The title block runs 470..566 (6 rows × 16), so on a 560-tall frame its
-        // LAST row — SSOT, the pointer back to the manifest — was drawn outside the viewport and simply
-        // did not exist for the reviewer, while the DXF carried it. That is the inverted-risk half of
-        // gotcha #11: the human sees LESS than the factory, so a bad line rides through self-review
-        // precisely because it is invisible on screen.
-        return Frame(820, 620, b, sha, std);
+        // 🔴 Canvas height and title-block Y are COMPUTED from the content, not tuned. The constant
+        // they replace had already been retuned once (560 → 620) because the title block's last row —
+        // SSOT, the pointer back to the manifest — fell outside the viewport and did not exist for the
+        // reviewer while the DXF carried it. A constant re-tuned once will need re-tuning again the
+        // moment a CEM note grows; a computed height cannot fall behind the notes it has to contain.
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
     }
 
     // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
@@ -358,33 +417,27 @@ internal static class Drawing
         // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean), same as the coin
         double ny = cy + rFlange + 82;
         string lead = "Cathode catalytic = side/perimeter (O₂ under radome); pogo = top face (02_02 §1.2)";
-        b.AppendLine(Text(20, ny, "NOTES:", 10, "start", Stroke, "bold"));
-        var notes = NotesLines(cem.Notes, lead);
-        for (int i = 0; i < notes.Count; i++) b.AppendLine(Text(20, ny + 16 + (i * 14), $"{i + 1}. {notes[i]}", 9, "start", "#333"));
-        var tol = ToleranceLines(cem.Tolerances);
-        if (tol.Count > 0)
-        {
-            double ty = ny + 16 + (notes.Count * 14) + 10;
-            b.AppendLine(Text(20, ty, "TOLERANCES / GD&T:", 10, "start", Stroke, "bold"));
-            for (int i = 0; i < tol.Count; i++) b.AppendLine(Text(20, ty + 16 + (i * 14), tol[i], 9, "start", "#333"));
-        }
+        const double w = 900;
+        double bottom = NotesAndTolerances(b, 20, ny, (int)((w - 40) / Glyph9),
+                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
 
         // 🔴 PROCESS was truncated to 22 chars HERE and nowhere else — so the reviewer read a half word
-        // while the DXF shipped the full string. Truncation is now gone: the value either fits or the
-        // drawing looks wrong, and "looks wrong" is the correct outcome for an over-long factory note.
+        // while the DXF shipped the full string. The SILENT truncation is gone — `Cell` still cuts, but it
+        // says so and names where the full value went, which is the whole difference between a cut and a lie.
         // (The Ti-coin block never truncated, which is why the same overflow surfaced there as clipping
         // instead — one class, two symptoms, and neither visible from the other file.)
-        TitleBlock(b, 620, 470, new[]
+        var rows = new[]
         {
             ("PART", "Cathode flange (Деталь 3)"),
             ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
             ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
-            ("REV", sha),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", $"cem/{cem.Name}.json"),
-        });
-
-        return Frame(900, 700, b, sha, std);
+        };
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
     }
 
     // ── Cathode-flange DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. ──

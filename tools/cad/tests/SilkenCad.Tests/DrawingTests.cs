@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+
 namespace SilkenCad.Tests;
 
 // Pure-logic tests for the CEM-native drawing generator (tools/cad/docs/drawings_program.md). String-
@@ -128,10 +132,21 @@ public class DrawingTests
         return Path.Combine(dir!.FullName, "cem");
     }
 
+    // 🔴 The InlineData roster that stood here named THREE of the seven shipped `ti_coin.*` manifests,
+    // so four alloys of the bake-off — the very SKUs whose whole point is that the metal is the
+    // variable — rode unpinned. A hand-written roster beside a growing directory is the volatile
+    // counter in test form: it is right the day it is written and silently narrower every day after.
+    // Enumerating the directory makes a new SKU pinned by existing, not by remembering.
+    public static TheoryData<string> ShippedCoinCems()
+    {
+        var data = new TheoryData<string>();
+        foreach (string p in Directory.GetFiles(CemDir(), "ti_coin*.json").OrderBy(p => p))
+            data.Add(Path.GetFileName(p));
+        return data;
+    }
+
     [Theory]
-    [InlineData("ti_coin.json")]
-    [InlineData("ti_coin.7nb.json")]
-    [InlineData("ti_coin.au.json")]
+    [MemberData(nameof(ShippedCoinCems))]
     public void Shipped_Cem_Notes_Reach_The_Dxf_Verbatim(string strFile)
     {
         string strJson = File.ReadAllText(Path.Combine(CemDir(), strFile));
@@ -167,5 +182,198 @@ public class DrawingTests
         string svg = Drawing.TiCoin(cem, "t");
         Assert.Contains("Ti-6Al-7Nb", svg);              // title-block reflects the alloy SKU, not 4V
         Assert.Contains("cem/ti_coin_7nb.json", svg);    // SSOT row is the per-alloy CEM name
+    }
+
+    // ── Cathode flange (Деталь 3) — the mirror set ───────────────────────────────────────────────
+    // 🔴 `draw cathode_flange` shipped as a LIVE factory deliverable with zero tests, while the Ti-coin
+    // beside it carried the whole guard set. That asymmetry is the danger, not the absence: every
+    // defect the coin tests pin (invented alloy, dropped note line, fabricated zero limit, unread
+    // truncation) lives in the SHARED emitters, so the flange inherited the fixes without inheriting
+    // the proof — and a drawing is an acceptance contract, where a silent regress is a scrapped batch.
+
+    [Fact]
+    public void CathodeFlange_Svg_Is_Wellformed_And_Carries_The_Cem_Dims()
+    {
+        string svg = Drawing.CathodeFlange(new CathodeFlangeCem(), "test");
+        Assert.StartsWith("<svg", svg);
+        Assert.Contains("</svg>", svg);
+        Assert.Contains("Ø25", svg);                 // frozen flange Ø (01_01 §1, HW.8 axial freeze)
+        Assert.Contains("Ø4.5 GND pad", svg);        // Hard-Gold ENIG pad (02_02 §1.2)
+        Assert.Contains("3× bayonet lug", svg);      // lug count straight from the CEM
+        Assert.Contains("rev test", svg);
+        Assert.DoesNotContain("NaN", svg);
+        Assert.DoesNotContain("Infinity", svg);
+    }
+
+    [Fact]
+    public void CathodeFlange_Empty_Cem_Prints_NOT_SPECIFIED_And_Never_Invents_The_Baseline_Alloy()
+    {
+        string svg = Drawing.CathodeFlange(new CathodeFlangeCem(), "test");
+        Assert.Contains(Drawing.NotSpecified, svg);
+        Assert.DoesNotContain("Ti-6Al-4V", svg);
+        Assert.DoesNotContain("SLM/DMLS", svg);
+        foreach (string label in new[] { "Material", "Process", "Surface", "Post-process", "Coating", "Lattice", "Inspect" })
+            Assert.Contains($"{label}: {Drawing.NotSpecified}", svg);
+    }
+
+    [Fact]
+    public void CathodeFlange_Dxf_Saves_A_Valid_File_Carrying_Cem_Dims_And_Notes()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"flange_test_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            var cem = new CathodeFlangeCem { Notes = new NotesSpec { SurfaceFinish = "EAAE on the catalytic face only" } };
+            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("netDxf", dxf);
+            Assert.Contains("AcDbText", dxf);
+            Assert.Contains("%%c25", dxf);                             // Ø25 in the DXF diameter code
+            Assert.Contains("EAAE on the catalytic face only", dxf);   // CEM note consumed
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // The round-trip gotcha #11 prescribes for EVERY `draw` kind, not only the coin: read the REAL
+    // manifest and prove each non-empty note reaches the DXF through `DxfSafe`.
+    [Fact]
+    public void Shipped_Cathode_Flange_Notes_Reach_The_Dxf_Verbatim()
+    {
+        var cem = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        string path = Path.Combine(Path.GetTempPath(), $"flange_roundtrip_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
+            string dxf = File.ReadAllText(path);
+            var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish,
+                                 cem.Notes?.PostProcess, cem.Notes?.CoatingRestriction,
+                                 cem.Notes?.Inspection }
+                         .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            Assert.NotEmpty(fields);
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // 🔴 HW.2: the flange goes to acceptance with a Sa/Sv row, not an empty one. The shipped manifest
+    // must state the finish PER SURFACE — the catalytic face keeps the EAAE roughness that makes the
+    // ECSA, the outer jacket alone gets the PEP smoothing (01_02 §1.3 Крок 7). One blanket finish on
+    // this part polishes away the very surface the laccase needs.
+    [Fact]
+    public void Shipped_Cathode_Flange_States_A_Per_Surface_Finish_Not_A_Blanket_One()
+    {
+        var cem = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        string? sf = cem.Notes?.SurfaceFinish;
+        Assert.False(string.IsNullOrWhiteSpace(sf));
+        Assert.Contains("Sa 0.5-5 um", sf);        // EAAE micro scale (01_02 §1.2)
+        Assert.Contains("Sv 50-500 nm", sf);       // EAAE nano scale
+        Assert.Contains("outer jacket", sf!);      // the PEP surface is NAMED, not implied
+        Assert.Contains("NO PEP", sf!);            // …and the catalytic face is fenced off from it
+    }
+
+    // ── The wrap/height guard: the reviewer must see what the factory sees ───────────────────────
+    // 🔴 An SVG `viewBox` CLIPS. A 420-char note laid out as one `<text>` at x=20 runs past a 900-wide
+    // frame and simply does not exist on screen, while the DXF ships it whole — gotcha #11's inverted
+    // risk, still live in the NOTES block after the 2026-08-28 title-block fix. This asserts the cure
+    // on both drawings at once: every line fits, and the canvas is tall enough to hold what was drawn.
+    private static void AssertEveryLineIsInsideTheFrame(string svg)
+    {
+        var head = Regex.Match(svg, @"<svg[^>]*width='([\d.]+)' height='([\d.]+)'");
+        Assert.True(head.Success);
+        double w = double.Parse(head.Groups[1].Value, CultureInfo.InvariantCulture);
+        double h = double.Parse(head.Groups[2].Value, CultureInfo.InvariantCulture);
+        const double advancePerPt = 155.0 / 28.0 / 9.0;   // the same measurement Drawing.Glyph9 uses
+        foreach (Match m in Regex.Matches(svg,
+            @"<text x='([\d.]+)' y='([\d.]+)' font-family='monospace' font-size='([\d.]+)' text-anchor='(\w+)'[^>]*>(.*?)</text>"))
+        {
+            double x = double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+            double y = double.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+            double size = double.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture);
+            string anchor = m.Groups[4].Value;
+            string text = m.Groups[5].Value.Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">");
+            double width = text.Length * size * advancePerPt;
+            double left = anchor == "start" ? x : anchor == "end" ? x - width : x - (width / 2);
+            Assert.True(left >= 0 && left + width <= w, $"runs off the {w}-wide frame: {text}");
+            Assert.True(y <= h, $"drawn below the {h}-tall frame: {text}");
+        }
+    }
+
+    [Fact]
+    public void Shipped_Cems_Draw_No_Text_Outside_The_Frame()
+    {
+        var coin = Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), "ti_coin.json")));
+        var flange = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        AssertEveryLineIsInsideTheFrame(Drawing.TiCoin(coin, "test"));
+        AssertEveryLineIsInsideTheFrame(Drawing.CathodeFlange(flange, "test"));
+    }
+
+    // The canvas must be COMPUTED, not tuned: a note long enough to wrap has to push the frame down,
+    // never off it. The constant this replaced had already been retuned once for the same reason.
+    // ── The PUBLISHED snapshot, which is a different artefact from the generator ─────────────────
+    // 🔴 `docs/images/cad/*.drawing.svg` is committed, rendered inline on GitHub and carried by
+    // `wiki:sync` — i.e. it is the drawing an outsider actually sees — and NOTHING re-runs
+    // `render_gallery.sh` when the generator changes. Measured: the committed flange drawing was still
+    // the pre-2026-08-28 one — no `Surface` / `Lattice` / `Inspect` lines at all (the silent-drop bug),
+    // no `shank_dia` row, a `PROCESS` cut mid-word at 22 chars and a `rev local` stamp — so every
+    // defect that pass removed from the code was still on public display weeks later. A fix with no
+    // trigger reaches the tree and not the audience.
+    //
+    // ⛔ Declared ceiling, because green here is narrower than it looks: this pins CONTENT and FIT, not
+    // byte-currency — a pure layout change will not red it, and the `rev` stamp is deliberately not
+    // compared (it varies with the generating environment). It says nothing whatever about the PNG
+    // renders in the same directory: those need a display and are not checked by anything.
+    private static string GalleryDir()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "docs", "images", "cad"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        return Path.Combine(dir!.FullName, "docs", "images", "cad");
+    }
+
+    // Flatten every <text> back into one whitespace-normalised string: the notes block WRAPS, so a long
+    // CEM field is split across lines and cannot be found verbatim in the raw markup.
+    private static string FlattenSvgText(string svg)
+    {
+        var sb = new StringBuilder();
+        foreach (Match m in Regex.Matches(svg, @"<text[^>]*>(.*?)</text>"))
+            sb.Append(m.Groups[1].Value.Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">")).Append(' ');
+        return Regex.Replace(sb.ToString(), @"\s+", " ");
+    }
+
+    [Theory]
+    [InlineData("ti_coin")]
+    [InlineData("cathode_flange")]
+    public void Published_Gallery_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame(string strPart)
+    {
+        string svg = File.ReadAllText(Path.Combine(GalleryDir(), $"{strPart}.drawing.svg"));
+        string strJson = File.ReadAllText(Path.Combine(CemDir(), $"{strPart}.json"));
+        NotesSpec? notes = strPart == "ti_coin"
+            ? Cem.Parse<TiCoinCem>(strJson).Notes
+            : Cem.Parse<CathodeFlangeCem>(strJson).Notes;
+
+        var fields = new[] { notes?.Material, notes?.Process, notes?.SurfaceFinish, notes?.PostProcess,
+                             notes?.CoatingRestriction, notes?.LatticeSpec, notes?.Inspection }
+                     .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+        Assert.NotEmpty(fields);   // counter-lamp: an empty NotesSpec would make the loop vacuous
+
+        string flat = FlattenSvgText(svg);
+        foreach (string? v in fields)
+            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+
+        AssertEveryLineIsInsideTheFrame(svg);
+    }
+
+    [Fact]
+    public void A_Long_Note_Grows_The_Canvas_Instead_Of_Falling_Off_It()
+    {
+        var plain = new TiCoinCem { Notes = new NotesSpec { Material = "Ta" } };
+        var wordy = new TiCoinCem { Notes = new NotesSpec { Material = "Ta", Inspection = string.Join(" ", Enumerable.Repeat("verify", 90)) } };
+        string tall = Drawing.TiCoin(wordy, "t");
+        double hPlain = double.Parse(Regex.Match(Drawing.TiCoin(plain, "t"), @"height='([\d.]+)'").Groups[1].Value, CultureInfo.InvariantCulture);
+        double hWordy = double.Parse(Regex.Match(tall, @"height='([\d.]+)'").Groups[1].Value, CultureInfo.InvariantCulture);
+        Assert.True(hWordy > hPlain, "a wrapped note must grow the canvas");
+        AssertEveryLineIsInsideTheFrame(tall);
+        Assert.Contains("verify verify", tall);   // and the text is wrapped, never truncated away
     }
 }

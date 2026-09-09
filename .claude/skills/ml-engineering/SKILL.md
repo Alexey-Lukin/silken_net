@@ -110,6 +110,8 @@ real-log-mel representative set) → extract per-channel params → **QUANTIZATI
 | **banner/golden-only re-emit, ZERO weight churn** | `extract_params(<run>/model_int8.tflite) + emit_header(p, prov)` / `emit_golden(p, X)` — the committed `.tflite` is the deterministic anchor; `git diff` the `.h` must show banner-only |
 | C model ≡ int-ref + §8 #6/#7 decision smoke | `make -C firmware/test audio_model` (gcc) |
 
+🔴 **`git diff` the `.h` is the ONLY thing standing between a stale header and the firmware — there is no `--check` gate here, unlike the log-mel tables.** The pieces for one exist (committed `.tflite` anchor + `extract_params`/`emit_header`), and the sibling pattern is already HARD in CI (`emit_c --check`), yet nothing verifies the committed `silken_net_audio_model.h` still matches its committed `.tflite`: `test_export_arithmetic.py` tests the requantize helpers, and the host `test_audio_model` compares the runtime against goldens emitted in the SAME commit. So «retrained → exported → forgot to commit the header» reds nothing. **Until a gate exists, re-emitting is a two-file act: the `.h` and its goldens go in the same commit as the run they came from.** Tracked → `00_07` FW.4.
+
 `emit_golden` auto-selects **per-predicted-class** coverage (round-robin so the n_golden cap never
 drops a class → ≥1 cavitation/chainsaw frame for the `03_03 §8` #6/#7 smoke).
 

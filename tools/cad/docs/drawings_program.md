@@ -1,5 +1,11 @@
 # Engineering Drawings from the CEM — Research & Program (anchor + Ti-coin)
 
+> ⛔ **Scope of this file, and it is narrower than it looks:** the NORM of the drawing tract — why it is
+> derived from the CEM, what the acceptance contract carries, the loud-absence rule, the two readers —
+> is **canon `01_02 §6`**. What lives here is the RESEARCH behind it (ranked paths, sources, measured
+> caveats), the per-part strategy and the phased roadmap. Sections 2, 6 and 8 restate parts of the norm
+> for readability; canon wins on any disagreement.
+>
 > **Status:** research + program (2026-06-20 analysis; **2026-06-21 decided + web-grounded**). The
 > recommended path, why, and a **phased** roadmap (§7). Founder decisions (§8) are **resolved** —
 > DXF (netDxf) + SVG · ISO 1st-angle + ISO 1101 · CEM-`tolerances` SSOT; Phase 0+1 active, Phase 2
@@ -26,7 +32,7 @@ title-blocked document a human or a shop reads. We need one as a deliverable in 
 4. **Self-review** — a dimensioned 2D view is a different error-surface than a 3D render; it
    catches drift the renderer hides (this is exactly how `AxialStack` found F1).
 
-## 2. Why mesh → STEP → drawing is the WRONG default
+## 2. Why mesh → STEP → drawing is the WRONG default (research grounding; NORM = canon `01_02 §6`)
 
 The obvious path (STL → STEP → FreeCAD/CAD → 2D drawing) is **lossy and manual** for us:
 
@@ -91,7 +97,13 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 **Decided: A** (DXF via netDxf + SVG) for the maintained drawings — regenerate on every dim change,
 like `metrics.json`. **B** (FreeCAD STEP) deferred until a factory contractually requires STEP.
 
-## 6. What an AM drawing must carry (grounded in our canon)
+## 6. What an AM drawing must carry — NORM lives in canon `01_02 §6`
+
+⛔ **The rule is canon, not this file.** `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §6` («Інженерні
+креслення з CEM») is the home of *what a drawing must carry, why it is derived from the CEM and not the
+mesh, the loud-absence rule, and the two readers*. Read it there; this section keeps only the **research
+grounding** behind those bullets (the sources and the measured caveats), which canon deliberately does not
+restate. If the two ever disagree, canon wins and this section is the one to fix.
 
 A useful drawing here is **not** a full geometric dump — it's the **acceptance contract**:
 
@@ -126,8 +138,10 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
    `Drawing.cs` + `draw` verb + **DXF (netDxf)** + title block + dimension primitives, consuming the
    CEM `tolerances`/`notes` block (zero hardcoded). xUnit (DXF well-formed, dim values = CEM, no NaN).
 2. **Simple anchor parts** (**Phase 2**) — Деталь 3 flange **✅ landed** (`Drawing.CathodeFlange` +
-   `CathodeFlangeDxf`; **closes the central-pad Ø4-5 / PEEK-ring gap → HW.8**) — residual: it has no
-   xUnit yet, while Ti-coin carries five. Still open: Zone-2 sleeve, Деталь 4 radome (analytic sections).
+   `CathodeFlangeDxf`; **closes the central-pad Ø4-5 / PEEK-ring gap → HW.8**), and it now carries the
+   mirror xUnit set the Ti-coin has, including the shipped-CEM round-trip gotcha #11 prescribes for
+   every `draw` kind. ⛔ Test counts are deliberately not quoted here — the roster is `DrawingTests.cs`.
+   Still open: Zone-2 sleeve, Деталь 4 radome (analytic sections).
 3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
 4. **Zone-1 envelope + lattice spec** (**Phase 2**) — the gyroid is an **inspection-card** (envelope +

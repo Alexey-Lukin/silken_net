@@ -18,12 +18,22 @@ cd "$(dirname "$0")/.."                                  # → tools/cad
 GAL="../../docs/images/cad"; mkdir -p "$GAL"
 run() { dotnet run --project src/SilkenCad -- "$@" >/dev/null; }
 
+# Stamp the provenance the drawing itself asks for. Without this the script — which is the PRESCRIBED
+# way to republish the gallery — guarantees every published sheet carries `UNTRACKED (set CAD_REV=…)`,
+# i.e. the one artefact an outsider reads is the one with no revision on it. `--dirty` is not decoration:
+# a gallery built from an uncommitted tree must say so rather than name a commit it does not match.
+export CAD_REV="${CAD_REV:-$(git rev-parse --short HEAD 2>/dev/null || echo UNTRACKED)$(git diff --quiet 2>/dev/null || echo -dirty)}"
+
 echo "▸ drawings (SVG)…"
 for c in ti_coin cathode_flange; do
   run draw "cem/$c.json"
   cp "out/$c.drawing.svg" "$GAL/$c.drawing.svg"
 done
 
+# ⚠️ The renders are NOT byte-deterministic (a viewer screenshot), so this step churns PNGs even when no
+# geometry moved. The drawings above are pure string/entity build and ARE deterministic. If you only
+# changed `Drawing.cs` or a CEM's notes, run just the drawings loop and `git checkout` any PNG noise —
+# committing a re-render that means nothing costs review attention on the one diff that does mean something.
 echo "▸ 3D renders (PicoGK → TGA)…"
 for c in ti_coin cathode_flange anchor_zone1.pine anchor_assembly; do
   run render "cem/$c.json"

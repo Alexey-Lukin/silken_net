@@ -2,7 +2,16 @@
 
 Published snapshots from the `tools/cad` Code-as-CAD generators (PicoGK / CEM-native). **NOT SSOT** —
 the source of truth is `tools/cad/cem/*.json` + the `.cs` generators; these are regenerable visuals for
-fundraising / README / wiki. Rebuild any time: **`tools/cad/scripts/render_gallery.sh`**.
+fundraising / README / presentations. Rebuild with **`tools/cad/scripts/render_gallery.sh`**.
+
+🔴 **«NOT SSOT» means «do not EDIT here», not «free to lag».** These files are committed and open straight
+from GitHub, so they are the drawings an outsider actually reads — and nothing re-runs the script for you.
+Measured 2026-09-09: the flange drawing here sat on its pre-2026-08-28 output for weeks, publishing the
+invented alloy default and the dropped note lines that the fix had already removed from the generator.
+**Change `Drawing.cs` or a CEM ⇒ re-run the script and commit the results in the SAME commit.**
+The two `*.drawing.svg` files have a pin behind them (`DrawingTests.Published_Gallery_Drawing_…`, content
++ frame-fit only, never byte-currency); ⛔ **the PNG renders have none** — they need a display, so a stale
+render here is invisible to every gate we own.
 
 | Visual | What | Generator command |
 |---|---|---|

@@ -1,6 +1,6 @@
 ---
 name: picogk
-description: "Use when working on the silken_net Code-as-CAD surface — PicoGK voxel/SDF geometry generation in tools/cad/ (the Ti-coin in-vitro coupon, the Zone-1 gyroid anode, the CartesianGyroid SDF, the PEEK Radome — shipped, `dotnet run -- build cem/radome.json`) and the CEM (Computational Engineering Model) manifests that drive them. Knows the non-obvious gotchas — render lattices via `new Voxels(IImplicit, BBox3)` + BoolIntersect NOT voxBounding.voxIntersectImplicit (uncatchable native OpenVDB abort at fine voxel on thin bored parts), headless `Library.Go(voxel, task, bEndAppWithTask:true)` not the stale v1.6 `new Library()`, ImplicitRadialGyroid axis-singularity → cartesian gyroid, dimensionless gyroid wallParam + voxel-dependent porosity (MEASURE it), the voxel-resolution floor, ImplicitUsings-ENABLED for vendored LEAP source — and the local-verify discipline (`dotnet run -- verify` → metrics.json, exit 0/1). Routes to 01_02 §6 (PicoGK stack + Noyron methodology) + 01_01 §5 (anchor geometry) + tools/cad/README, does not restate. Examples: \"generate the gyroid anchor\", \"add a CEM part / per-species SKU\", \"change anchor Ø / porosity / pore period\", \"why does the anchor crash with 'outside value 0'\", \"add the radial pore gradient\", \"build the Ti-coin STL\", \"set up the .NET CAD project\"."
+description: "Use when working on the silken_net Code-as-CAD surface — PicoGK voxel/SDF geometry generation in tools/cad/ (the Ti-coin in-vitro coupon, the Zone-1 gyroid anode, the CartesianGyroid SDF, the PEEK Radome — shipped, `dotnet run -- build cem/radome.json`) and the CEM (Computational Engineering Model) manifests that drive them. Knows the non-obvious gotchas — render lattices via `new Voxels(IImplicit, BBox3)` + BoolIntersect NOT voxBounding.voxIntersectImplicit (uncatchable native OpenVDB abort at fine voxel on thin bored parts), headless `Library.Go(voxel, task, bEndAppWithTask:true)` not the stale v1.6 `new Library()`, ImplicitRadialGyroid axis-singularity → cartesian gyroid, dimensionless gyroid wallParam + voxel-dependent porosity (MEASURE it), the voxel-resolution floor, ImplicitUsings-ENABLED for vendored LEAP source — and the local-verify discipline (`dotnet run -- verify` → metrics.json, exit 0/1). ALSO the engineering-drawing tract: `draw <cem>` → SVG (human) + DXF (factory, GD&T/CMM acceptance) built from the CEM `tolerances`/`notes` blocks, the rule that an absent field prints `NOT SPECIFIED IN CEM` rather than a plausible default, the two readers (SVG clips, DXF does not), and the committed gallery under docs/images/cad that lags its generator unless you re-run it. Routes to 01_02 §6 (PicoGK stack + Noyron methodology + the drawing NORM) + 01_01 §5 (anchor geometry) + tools/cad/README, does not restate. Examples: \"generate the gyroid anchor\", \"add a CEM part / per-species SKU\", \"change anchor Ø / porosity / pore period\", \"why does the anchor crash with 'outside value 0'\", \"add the radial pore gradient\", \"build the Ti-coin STL\", \"make a factory drawing / DXF\", \"add a surface-finish or coating note to a CEM\", \"set up the .NET CAD project\"."
 ---
 
 # PicoGK Code-as-CAD (`tools/cad`)
@@ -15,7 +15,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 | Document | What it covers |
 |----------|----------------|
 | `tools/cad/README.md` | Operational home: layout, local-verify recipe, the FULL gotcha list, license |
-| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §6` | PicoGK stack (.NET 9, PicoGK 2.2 NuGet + ShapeKernel/LatticeLibrary submodules), Noyron methodology, real API, honest caveats |
+| `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §6` | PicoGK stack (.NET 9, PicoGK 2.2 NuGet + ShapeKernel/LatticeLibrary submodules), Noyron methodology, real API, honest caveats — **and the engineering-drawing NORM**: why a drawing is derived from the CEM and not the mesh, the two readers (SVG clips, DXF does not), the loud-absence rule, what the acceptance contract must carry. The tools-local file below stays the RESEARCH + phase roster |
 | `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §5/§6` | Anchor geometry: gyroid 65% porosity, pore gradient 300→100µm, Gibson-Ashby isoelasticity, Ti-coin Stage-2 coupon (A=2cm²+eyelet) |
 | `docs/00_07_Action_Plan_Tracker.md` HW.1 / **HW.33** | Build state + the anchor geometry audit (founder decisions: radial gyroid (б), Ø11; open gaps: PEEK/hole chain, FEA) |
 | `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §6` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
@@ -215,13 +215,28 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   consuming the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text; `DrawingStandard` ISO/ASME
   param). Drawing carries fits (Lamé-µm, NOT a blind ISO-286 metal `H7/s6` on a PEEK bore), GD&T datums,
   post-process + coating-restriction notes, lattice-spec. Shipped kinds = **`ti_coin` (Phase 1) +
-  `cathode_flange` (Phase 2, rode the Ø25 freeze)** — flange has NO xUnit yet while Ti-coin carries five.
+  `cathode_flange` (Phase 2, rode the Ø25 freeze)**, both with the mirror xUnit set incl. the shipped-CEM
+  round-trip (⛔ test COUNTS are not quoted anywhere — the roster is `DrawingTests.cs`).
   Still deferred: Zone-2 sleeve, radome, **`draw anchor_zone1`** (gyroid inspection-card — does NOT exist,
-  so the Zone-1 coating-restriction map has no carrier yet), assemblies. Home: `tools/cad/docs/drawings_program.md`.
+  so the Zone-1 coating-restriction map has no carrier yet), assemblies. NORM (why a drawing is derived
+  from the CEM, what it must carry, the loud-absence rule) = canon [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md);
+  research + phase roster = `tools/cad/docs/drawings_program.md`.
+  🔴 **`docs/images/cad/*.drawing.svg` is a SECOND artefact and nothing re-runs the gallery for you.** It
+  is committed and opens straight from GitHub (a blob-rendered SVG) — i.e. the drawing outsiders see —
+  and it sat on the pre-2026-08-28 output for weeks after that fix landed in code, publishing exactly the
+  dropped/invented lines the fix removed. ⚠️ **`wiki:sync` does NOT carry it, and writing that it does was
+  a FABRICATED mechanism** (measured 2026-09-09): `lib/tasks/wiki.rake` syncs only the canon `NN_NN_*.md`
+  and copies an image only where a doc EMBEDS it as `![…](…)`; no canon doc embeds these, so that set is
+  empty. Want them on the wiki — embed them in a canon doc first. Change `Drawing.cs` or a CEM ⇒ re-run
+  `tools/cad/scripts/render_gallery.sh` (or at least its two `draw` lines) and commit the SVGs. A pin now reds on the CONTENT drifting apart
+  (`Published_Gallery_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame`) — ⛔ but its declared
+  ceiling is content + frame-fit, NOT byte-currency, and the PNG renders beside it are pinned by nothing.
 - **Render / section for presentation (`render`/`section`, SHIPPED)**: `render <cem>` = a PicoGK native-viewer
   screenshot (gold Ti-metallic material); `section <cem>` = a −X cutaway (shows the bus rod through a dense gyroid
   where `ColorFloat` alpha can't). Display-gated (gotcha #10); output → `out/*.png` (native TGA → `sips`). The
-  presentation gallery `docs/images/cad/` is NOT SSOT (`tools/cad/scripts/render_gallery.sh` rebuilds it).
+  presentation gallery `docs/images/cad/` is NOT SSOT (`tools/cad/scripts/render_gallery.sh` rebuilds it)
+  — ⚠️ but see the drawing bullet above: **not-SSOT is not a licence to lag**, and the PNGs there have no
+  pin at all, so a stale render is invisible to everything.
 - **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet run -- draw cem/<x>.json` (SVG+DXF → out/)
   → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml` (logic = Linux pure-xUnit hard [incl. draw/DXF]

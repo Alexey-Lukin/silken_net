@@ -33,7 +33,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 |---|---|
 | `cem/*.json` | CEM manifests (Git-SSOT inputs) — e.g. `ti_coin`, `anchor_zone1.pine` |
 | `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) · `draw <cem>` (engineering drawing SVG+DXF, pure-managed) · `render` / `section <cem>` (PicoGK native-viewer screenshot / cutaway → `out/*.png`) |
-| `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text). ⚠️ The SVG title-block TRUNCATES (flange PROCESS → 22 chars) and overflows the canvas; the DXF does NOT — so the reviewer sees LESS than the factory |
+| `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text). ⚠️ The SVG has a `viewBox` and therefore CLIPS; the DXF has no viewport and clips nothing — so a layout defect here always reads «reviewer sees LESS than the factory». The three symptoms of that (silent 22-char title-block truncation · title block drawn past the canvas · unwrapped notes running off the frame) are FIXED: truncation is announced (`… → NOTES` / `… → FOOTER`), notes word-WRAP, and the canvas height is COMPUTED from content. The rule survives the fix — check any notes/title-block change in BOTH readers |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
 | `src/SilkenCad/Validation.cs` | golden-metrics via `Voxels.CalculateProperties` (porosity/bbox/tris) + LEAP `Measure.fGetSurfaceArea` |
@@ -162,7 +162,7 @@ radial j, no corner edge-effects (01_01 §6.1).
 
 **wallParam scan (shipped)** — `scan <anchor-cem>` sweeps the gyroid wall band → the CEM working window
 (the wallParam range that stays printable + open-pore + percolating; pine: [0.80, 1.30], default 1.0 →
-67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` + 3 xUnit; feeds HW.33 + the FEA
+67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` under xUnit; feeds HW.33 + the FEA
 sheet-vs-network envelope.
 
 **Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
@@ -201,9 +201,16 @@ fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.Bu
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits as Lamé-µm, NOT a blind ISO-286
 metal `H7/s6` on a PEEK bore; GD&T datums; coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle /
 CEM-tolerances. Shipped `draw` kinds: `ti_coin` + `cathode_flange` (both = live factory deliverables). Phase 2 (sleeve/
-radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory contract (`docs/drawings_program.md`). `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery
-`docs/images/cad/`, rebuilt by `scripts/render_gallery.sh`, NOT SSOT). LEAP 71 ships metal engines WITHOUT 2D drawings —
-code is the engineering intent.
+radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory contract (`docs/drawings_program.md`).
+The NORM — why the drawing comes from the CEM and not the mesh, the two readers, the loud-absence rule, what the
+acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.md` stays the research + phase roster.
+`render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery `docs/images/cad/`, rebuilt by
+`scripts/render_gallery.sh`, NOT SSOT). ⚠️ **Not SSOT ≠ free to lag:** those SVGs are committed and open straight
+from GitHub (blob-rendered), so they are the drawings an outsider actually reads — and nothing re-runs the script
+for you. (⛔ `wiki:sync` does NOT carry them: it syncs canon `NN_NN_*.md` and copies an image only where a doc
+EMBEDS it as `![…](…)`, and none does.) Touch `Drawing.cs` or a CEM ⇒ re-run it and commit the SVGs; `DrawingTests` reds if their CONTENT drifts
+from the shipped manifests (ceiling: content + frame-fit, not byte-currency; the PNGs are pinned by nothing).
+LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
 **Deferred:** the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8.8) · the shank-Ø
 press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/

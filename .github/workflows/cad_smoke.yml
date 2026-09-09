@@ -47,6 +47,9 @@ jobs:
             cad:
               - 'tools/cad/**'
               - '.github/workflows/cad_smoke.yml'
+              # The committed gallery is an OUTPUT of tools/cad and is pinned by DrawingTests,
+              # so a PR that only reverts or edits a published drawing must still run `logic`.
+              - 'docs/images/cad/*.drawing.svg'
 
   logic:
     needs: changes
