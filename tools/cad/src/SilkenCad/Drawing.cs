@@ -492,6 +492,142 @@ internal static class Drawing
         return doc.Save(path);
     }
 
+    // ── Mechanical lock (§4.3 shank — ratchet barbs + DIN-471 retaining groove, HW.26) — the CNC
+    // acceptance drawing for the feature Zone-1 anchor end and Zone-3 flange end SHARE (same CEM `kind`,
+    // same generator, opposite ratchet lean, `mechanical_lock.zone1/.zone3.json`). FRONT (shank Ø, + the
+    // bus/cathode-channel bore when this end is hollow) + SIDE (shank silhouette + the barb-zone envelope
+    // + the DIN-471 groove notch, dimensioned straight off the CEM — never tooth-by-tooth, same "spec,
+    // not point-by-point" logic §6 uses for the gyroid lattice). Same CEM-native pipeline as the coin/flange.
+    //
+    // 🔴 One deliberate deviation from the coin/flange SSOT-row pattern: those print `cem/{cem.Name}.json`,
+    // which is only correct because their `Name` equals their manifest's filename stem. Here it does NOT —
+    // `mechanical_lock.zone1.json` carries `name: "mechanical_lock_zone1"` (no dot/zone split), so
+    // `cem/{cem.Name}.json` would print a path that does not exist on disk. A false SSOT pointer is exactly
+    // the class of fabricated instruction gotcha #11 exists to prevent, so the caller (`Program.Draw`,
+    // which already holds the real invoked path) passes the actual file name in explicitly.
+    public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
+    {
+        double rShank = cem.ShankDiameterMm / 2.0 * Px;
+        double rBore = cem.BoreDiameterMm / 2.0 * Px;
+        double frontCx = 150, cy = 150;
+        double sideX = 280;
+        double shL = cem.ShankLengthMm * Px, shD = cem.ShankDiameterMm * Px;
+        double sideTop = cy - (shD / 2.0), sideBot = cy + (shD / 2.0);
+        var b = new StringBuilder();
+
+        b.AppendLine(Text(20, 30, "MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)", 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, $"Anchor retention (BLOCKER-3, HW.26) · {cem.Name} · 01_01 §4.3", 10, "start", "#555"));
+
+        // FRONT — shank Ø (+ the Zone-3 bus/cathode channel bore, if this end is hollow; Zone-1 bore=0 ⇒ solid)
+        b.AppendLine(Circle(frontCx, cy, rShank, Stroke, 1.2));
+        if (cem.BoreDiameterMm > 0f) b.AppendLine(Circle(frontCx, cy, rBore, Stroke, 0.8));
+        b.AppendLine(Centre(frontCx, cy, rShank, b));
+        b.AppendLine(Text(frontCx, cy + rShank + 40, "FRONT", 10, "middle", "#555"));
+        HDim(b, frontCx - rShank, frontCx + rShank, cy + rShank + 22, $"Ø{N(cem.ShankDiameterMm)}", cy + rShank);
+        if (cem.BoreDiameterMm > 0f)
+            b.AppendLine(Text(frontCx + rBore + 5, cy - 3, $"Ø{N(cem.BoreDiameterMm)} bus channel", 9, "start", Dim));
+
+        // SIDE — shank silhouette + the two §4.3 features, each a spec callout at its own CEM z-offset
+        b.AppendLine(Rect(sideX, sideTop, shL, shD, Stroke, 1.2));
+
+        // A. Barb contact zone — an ENVELOPE callout, not tooth-by-tooth (the ratchet is a manufacturing
+        // process detail; GD&T of PBF micro-features is not a 2D-dimensioned profile, drawings_program §3).
+        double bz0 = sideX + (cem.ContactStartMm * Px), bzLen = cem.ContactLengthMm * Px;
+        b.AppendLine(Rect(bz0, sideTop, bzLen, shD, Dim, 0.8));
+        b.AppendLine(Line(bz0, sideTop, bz0 + bzLen, sideBot, Dim, 0.4, "3 2"));
+        b.AppendLine(Text(bz0 + (bzLen / 2), sideTop - 8, $"{cem.BarbRows}× barb (ratchet, lean {(cem.BarbDirection >= 0 ? "+" : "−")})", 9, "middle", Dim));
+
+        // B. DIN-471 groove — THE feature this drawing exists for (HW.26): a real notch cut at the CEM's
+        // own offset/width/depth. This is the number `cem_canon_sync` pins against canon §4.3 B, so the
+        // number a human reviewer reads here is the same one a drift would show up on.
+        double gz0 = sideX + (cem.GrooveOffsetMm * Px), gzW = cem.GrooveWidthMm * Px, gzD = cem.GrooveDepthMm * Px;
+        b.AppendLine(Rect(gz0, sideTop, gzW, gzD, Stroke, 1.0));
+        b.AppendLine(Rect(gz0, sideBot - gzD, gzW, gzD, Stroke, 1.0));
+        b.AppendLine(Text(gz0, sideBot + 14, $"groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} DIN-471 (§4.3 B)", 9, "start", Dim));
+
+        b.AppendLine(Text(sideX + (shL / 2), sideBot + 58, "SIDE", 10, "middle", "#555"));
+        HDim(b, sideX, sideX + shL, sideBot + 36, $"{N(cem.ShankLengthMm)}", sideBot);
+        VDim(b, sideTop, sideBot, sideX + shL + 26, $"Ø{N(cem.ShankDiameterMm)}", sideX + shL);
+
+        // NOTES + TOLERANCES — consumed from the CEM (Noyron-clean), same as the coin/flange. Lead states
+        // the two numbers §4.3 over-specifies: the groove (nominal, straight off the CEM) and the barb
+        // base (DERIVED = h·(cotα+cotβ), §4.3 A — a triangle has 2 free params, not 4; `Cem.cs`/`Validation.
+        // MeasureLock` carry the same formula).
+        double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
+        string lead = $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (§4.3 B); " +
+                      $"barb base≈{N(baseMm)} mm (derived h·(cotα+cotβ), §4.3 A)";
+        const double w = 820;
+        double bottom = NotesAndTolerances(b, 20, sideBot + 82, (int)((w - 40) / Glyph9),
+                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
+
+        var rows = new[]
+        {
+            ("PART", "Mechanical lock (§4.3 shank)"),
+            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
+            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
+            ("UNITS / SCALE", "mm / 6:1"),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
+            ("SSOT", $"cem/{strCemFile}"),
+        };
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
+    }
+
+    // ── Mechanical-lock DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. Mirrors
+    // the flange's own SVG⊥DXF asymmetry: secondary-feature TEXT labels (barb count, groove callout) stay
+    // SVG-only polish; the DXF carries the same facts as NOTES-block prose (via the shared `lead` line
+    // below) plus the GEOMETRY itself (the groove notch is a real cut, not a label, so it IS drawn here). ──
+    public static bool MechanicalLockDxf(MechanicalLockCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double rS = cem.ShankDiameterMm / 2.0, rB = cem.BoreDiameterMm / 2.0, cx = 0, cy = 0;
+
+        // FRONT — shank Ø (+ bore, if hollow) + centre cross
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rS) { Layer = geo });
+        if (cem.BoreDiameterMm > 0f) doc.Entities.Add(new Circle(new Vector2(cx, cy), rB) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rS - 2, cy), new Vector2(cx + rS + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rS - 2), new Vector2(cx, cy + rS + 2)) { Layer = geo });
+        DxfHDim(doc, dmn, cx - rS, cx + rS, cy - rS - 5, $"%%c{N(cem.ShankDiameterMm)}");
+        doc.Entities.Add(new Text("FRONT", new Vector2(cx - (rS / 2), cy - rS - 11), 2.0) { Layer = nte });
+
+        // SIDE — shank rectangle + barb-zone boundary lines + the DIN-471 groove notch (real geometry),
+        // all positioned at the CEM's own real-mm z-offsets.
+        double sx = rS + 16, top = cy - rS, bot = cy + rS;
+        var sh = new[] { new Vector2(sx, top), new Vector2(sx + cem.ShankLengthMm, top), new Vector2(sx + cem.ShankLengthMm, bot), new Vector2(sx, bot) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(sh[i], sh[(i + 1) % 4]) { Layer = geo });
+
+        double bz0 = sx + cem.ContactStartMm, bz1 = bz0 + cem.ContactLengthMm;
+        doc.Entities.Add(new Line(new Vector2(bz0, top), new Vector2(bz0, bot)) { Layer = dmn });
+        doc.Entities.Add(new Line(new Vector2(bz1, top), new Vector2(bz1, bot)) { Layer = dmn });
+
+        double gz0 = sx + cem.GrooveOffsetMm, gz1 = gz0 + cem.GrooveWidthMm;
+        var grooveTop = new[] { new Vector2(gz0, top), new Vector2(gz0, top - cem.GrooveDepthMm), new Vector2(gz1, top - cem.GrooveDepthMm), new Vector2(gz1, top) };
+        for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveTop[i], grooveTop[i + 1]) { Layer = geo });
+        var grooveBot = new[] { new Vector2(gz0, bot), new Vector2(gz0, bot + cem.GrooveDepthMm), new Vector2(gz1, bot + cem.GrooveDepthMm), new Vector2(gz1, bot) };
+        for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveBot[i], grooveBot[i + 1]) { Layer = geo });
+
+        DxfHDim(doc, dmn, sx, sx + cem.ShankLengthMm, bot + 5, N(cem.ShankLengthMm));
+        doc.Entities.Add(new Text("SIDE", new Vector2(sx, top - 11), 2.0) { Layer = nte });
+
+        // NOTES + TOLERANCES stacked below — same lead line as the SVG (the groove w×d + derived barb base)
+        double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
+        var lines = new List<string> { "NOTES:" };
+        var nl = NotesLines(cem.Notes, $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (sec. 4.3 B); barb base~{N(baseMm)} mm (derived, sec. 4.3 A)");
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet mechanical lock | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        double yy = top - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rS, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
     // Manual horizontal linear dimension in DXF: two short extension ticks + a dimension line + a value.
     private static void DxfHDim(DxfDocument doc, Layer layer, double x1, double x2, double y, string label)
     {

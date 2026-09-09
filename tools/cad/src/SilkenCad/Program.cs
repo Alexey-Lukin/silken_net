@@ -274,8 +274,18 @@ internal static class Program
                 strName = cem.Name; strSvg = Drawing.CathodeFlange(cem, strRev); fnDxf = p => Drawing.CathodeFlangeDxf(cem, strRev, p);
                 break;
             }
+            case "mechanical_lock":
+            {
+                // strFile (not cem.Name) feeds the drawing's SSOT row: mechanical_lock.zone1/.zone3.json's
+                // `name` field ("mechanical_lock_zone1"/"_zone3") does not equal its filename stem, unlike
+                // ti_coin/cathode_flange — see the comment on Drawing.MechanicalLock.
+                MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
+                string strFile = Path.GetFileName(strCemPath);
+                strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p);
+                break;
+            }
             default:
-                return Fail($"draw: supports ti_coin | cathode_flange (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
+                return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
         string strSvgPath = Path.Combine("out", $"{strName}.drawing.svg");
@@ -775,7 +785,7 @@ internal static class Program
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
-            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange)");
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock)");
         return 0;
     }
 

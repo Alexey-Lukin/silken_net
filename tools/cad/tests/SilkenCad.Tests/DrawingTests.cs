@@ -272,6 +272,119 @@ public class DrawingTests
         Assert.Contains("NO PEP", sf!);            // …and the catalytic face is fenced off from it
     }
 
+    // ── Mechanical lock (§4.3 shank) — the CNC groove acceptance drawing (HW.26) ─────────────────
+    // 🔴 The whole point of this pair: `cem_canon_sync` pins the CEM's groove_width/depth against
+    // canon §4.3 B by regex, but a machinist reads the DRAWING, not the guard's stdout — this is the
+    // artefact where a human catches the same drift the guard catches by text-match. Zone-1 anchor end
+    // and Zone-3 flange end share one CEM `kind`/generator (opposite ratchet lean) → both manifests
+    // must draw, not just one.
+
+    [Fact]
+    public void MechanicalLock_Svg_Is_Wellformed_And_Carries_The_Cem_Dims()
+    {
+        string svg = Drawing.MechanicalLock(new MechanicalLockCem(), "test", "mechanical_lock.json");
+        Assert.StartsWith("<svg", svg);
+        Assert.Contains("</svg>", svg);
+        Assert.Contains("Ø11", svg);           // shank Ø straight from the CEM default
+        Assert.Contains("4× barb", svg);       // barb rows straight from the CEM
+        Assert.Contains("groove 1.1×0.25 DIN-471", svg);   // the DIN-471 groove — THE feature HW.26 is about
+        Assert.Contains("rev test", svg);
+        Assert.DoesNotContain("NaN", svg);
+        Assert.DoesNotContain("Infinity", svg);
+    }
+
+    [Fact]
+    public void MechanicalLock_Empty_Cem_Prints_NOT_SPECIFIED_And_Never_Invents_The_Baseline_Alloy()
+    {
+        string svg = Drawing.MechanicalLock(new MechanicalLockCem(), "test", "mechanical_lock.json");
+        Assert.Contains(Drawing.NotSpecified, svg);
+        Assert.DoesNotContain("Ti-6Al-4V", svg);
+        Assert.DoesNotContain("SLM/DMLS", svg);
+        foreach (string label in new[] { "Material", "Process", "Surface", "Post-process", "Coating", "Lattice", "Inspect" })
+            Assert.Contains($"{label}: {Drawing.NotSpecified}", svg);
+    }
+
+    [Fact]
+    public void MechanicalLock_Dxf_Saves_A_Valid_File_Carrying_Cem_Dims_And_Notes()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"lock_test_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            var cem = new MechanicalLockCem { Notes = new NotesSpec { PostProcess = "CNC groove post-DMLS" } };
+            Assert.True(Drawing.MechanicalLockDxf(cem, "test", "mechanical_lock.json", path));
+            Assert.True(File.Exists(path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("netDxf", dxf);
+            Assert.Contains("AcDbText", dxf);
+            Assert.Contains("%%c11", dxf);                        // Ø11 as the DXF diameter code
+            Assert.Contains("CNC groove post-DMLS", dxf);         // CEM note consumed into the DXF too
+            Assert.Contains("1.1x0.25", dxf);                     // groove nominal reaches the DXF (DxfSafe ×→x)
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // A NAMED feature with no limits — the same class `Named_Feature_Without_Limits_Still_Reaches_The_
+    // Drawing` pins for the coin — but here it is the LIVE state of both shipped manifests today: neither
+    // cites a DIN-471 tolerance BAND (no source for one yet), so a ToleranceSpec would either fabricate a
+    // number or print a named-but-unlimited feature. Absent entirely is the honest third option this file's
+    // own doc-comment on `ToleranceLines` draws: "a part with no ToleranceSpec at all declares no PMI."
+    [Fact]
+    public void MechanicalLock_With_No_ToleranceSpec_Declares_No_Pmi_Rather_Than_A_Fabricated_Band()
+    {
+        string svg = Drawing.MechanicalLock(new MechanicalLockCem(), "test", "mechanical_lock.json");
+        Assert.DoesNotContain("TOLERANCES / GD&T", svg);
+    }
+
+    [Theory]
+    [InlineData("mechanical_lock.zone1.json", 11f, "1.1×0.25", "4× barb")]
+    [InlineData("mechanical_lock.zone3.json", 9f, "1×0.3", "3× barb")]
+    public void MechanicalLock_Drawing_Carries_The_Shipped_Cem_Groove_Width_And_Depth(
+        string strFile, float fExpectShankDia, string strExpectGroove, string strExpectBarb)
+    {
+        var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemDir(), strFile)));
+        Assert.Equal(fExpectShankDia, cem.ShankDiameterMm);
+        string svg = Drawing.MechanicalLock(cem, "test", strFile);
+        Assert.Contains($"groove {strExpectGroove} DIN-471", svg);
+        Assert.Contains(strExpectBarb, svg);
+    }
+
+    // 🔴 The InlineData roster from the coin's own comment: a hand-written list beside a growing
+    // directory silently narrows. Zone-1 and Zone-3 are the two shipped manifests TODAY, but the
+    // guarantee this test carries is "every mechanical_lock*.json round-trips," not "these two do."
+    public static TheoryData<string> ShippedMechanicalLockCems()
+    {
+        var data = new TheoryData<string>();
+        foreach (string p in Directory.GetFiles(CemDir(), "mechanical_lock*.json").OrderBy(p => p))
+            data.Add(Path.GetFileName(p));
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(ShippedMechanicalLockCems))]
+    public void Shipped_Mechanical_Lock_Notes_Reach_The_Dxf_Verbatim(string strFile)
+    {
+        var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemDir(), strFile)));
+        string path = Path.Combine(Path.GetTempPath(), $"lock_roundtrip_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.MechanicalLockDxf(cem, "test", strFile, path));
+            string dxf = File.ReadAllText(path);
+
+            var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish,
+                                 cem.Notes?.PostProcess, cem.Notes?.CoatingRestriction, cem.Notes?.Inspection }
+                         .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            Assert.NotEmpty(fields);   // counter-lamp — an empty NotesSpec would make this vacuous
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+
+            if (cem.Notes?.Extra is { } extra)
+                foreach (string ex in extra) Assert.Contains(Drawing.DxfSafe(ex), dxf);
+
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     // ── The wrap/height guard: the reviewer must see what the factory sees ───────────────────────
     // 🔴 An SVG `viewBox` CLIPS. A 420-char note laid out as one `<text>` at x=20 runs past a 900-wide
     // frame and simply does not exist on screen, while the DXF ships it whole — gotcha #11's inverted
@@ -306,6 +419,11 @@ public class DrawingTests
         var flange = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
         AssertEveryLineIsInsideTheFrame(Drawing.TiCoin(coin, "test"));
         AssertEveryLineIsInsideTheFrame(Drawing.CathodeFlange(flange, "test"));
+        foreach (string strFile in new[] { "mechanical_lock.zone1.json", "mechanical_lock.zone3.json" })
+        {
+            var lock_ = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemDir(), strFile)));
+            AssertEveryLineIsInsideTheFrame(Drawing.MechanicalLock(lock_, "test", strFile));
+        }
     }
 
     // The canvas must be COMPUTED, not tuned: a note long enough to wrap has to push the frame down,
@@ -356,6 +474,30 @@ public class DrawingTests
                              notes?.CoatingRestriction, notes?.LatticeSpec, notes?.Inspection }
                      .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
         Assert.NotEmpty(fields);   // counter-lamp: an empty NotesSpec would make the loop vacuous
+
+        string flat = FlattenSvgText(svg);
+        foreach (string? v in fields)
+            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+
+        AssertEveryLineIsInsideTheFrame(svg);
+    }
+
+    // A separate Theory, not another InlineData row on the one above: that helper assumes the CEM
+    // filename stem equals both the output-artefact stem AND the internal `Name` field (true for
+    // ti_coin/cathode_flange, NOT for mechanical_lock — see the comment on Drawing.MechanicalLock), so
+    // it needs the cem-file/gallery-file pair spelled out rather than one shared `strPart` token.
+    [Theory]
+    [InlineData("mechanical_lock.zone1.json", "mechanical_lock_zone1")]
+    [InlineData("mechanical_lock.zone3.json", "mechanical_lock_zone3")]
+    public void Published_Gallery_MechanicalLock_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame(string strCemFile, string strOutName)
+    {
+        string svg = File.ReadAllText(Path.Combine(GalleryDir(), $"{strOutName}.drawing.svg"));
+        var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemDir(), strCemFile)));
+
+        var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish, cem.Notes?.PostProcess,
+                             cem.Notes?.CoatingRestriction, cem.Notes?.LatticeSpec, cem.Notes?.Inspection }
+                     .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+        Assert.NotEmpty(fields);
 
         string flat = FlattenSvgText(svg);
         foreach (string? v in fields)

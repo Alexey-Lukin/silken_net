@@ -15,5 +15,14 @@
   "barb_direction": 1,
   "groove_offset_mm": 15.0,
   "groove_width_mm": 1.1,
-  "groove_depth_mm": 0.25
+  "groove_depth_mm": 0.25,
+  "notes": {
+    "material": "Ti-6Al-4V (Grade 5)",
+    "process": "SLM/DMLS, same build cycle as the Zone-1 gyroid anode (01_01 §3 step 1); build tip-down, leading-ramp-down (01_02 §1.6) — barb downface ≈60° from horizontal self-supports (Ti64 LPBF, Sa≈15 µm)",
+    "post_process": "HIP (01_02 §1.7); DIN-471 retaining-ring groove — CNC post-DMLS (§4.3 B, +15 min/anchor)",
+    "extra": [
+      "Self-contained demo shank (Zone-1 Ø11 real, HW.33) — not yet integrated into the gyroid rod (separate session, 00_07 HW.26)",
+      "Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator"
+    ]
+  }
 }

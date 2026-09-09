@@ -200,8 +200,9 @@ fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.Bu
 **Engineering drawings + render (shipped)** — `draw <cem>` → SVG (human) + **DXF via netDxf** (factory-native, opens
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits as Lamé-µm, NOT a blind ISO-286
 metal `H7/s6` on a PEEK bore; GD&T datums; coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle /
-CEM-tolerances. Shipped `draw` kinds: `ti_coin` + `cathode_flange` (both = live factory deliverables). Phase 2 (sleeve/
-radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory contract (`docs/drawings_program.md`).
+CEM-tolerances. Shipped `draw` kinds: `ti_coin` + `cathode_flange` + `mechanical_lock` (all = live factory
+deliverables; the last is the §4.3 groove/HW.26 CNC drawing, one generator drawing both `mechanical_lock.zone1/
+.zone3.json`). Phase 2 (sleeve/radome DXF, gyroid inspection-card, assembly drawing) deferred to a real factory contract (`docs/drawings_program.md`).
 The NORM — why the drawing comes from the CEM and not the mesh, the two readers, the loud-absence rule, what the
 acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.md` stays the research + phase roster.
 `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery `docs/images/cad/`, rebuilt by

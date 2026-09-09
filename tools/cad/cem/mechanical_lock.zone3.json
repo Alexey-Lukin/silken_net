@@ -15,5 +15,14 @@
   "barb_direction": -1,
   "groove_offset_mm": 12.0,
   "groove_width_mm": 1.0,
-  "groove_depth_mm": 0.3
+  "groove_depth_mm": 0.3,
+  "notes": {
+    "material": "Ti-6Al-4V (Grade 5)",
+    "process": "SLM/DMLS or CNC (01_01 §3 step 3 — flat/simple shank, roughness less critical here than the catalytic face); build tip-down, leading-ramp-down (01_02 §1.6) if SLM",
+    "post_process": "DIN-471 retaining-ring groove — CNC post-DMLS (§4.3 B, +15 min/anchor)",
+    "extra": [
+      "Self-contained demo shank (Zone-3 Ø9 = HW.8 placeholder, opposite ratchet lean dir −1, §4.3 figure) — not yet integrated into cathode_flange.json (separate session, 00_07 HW.26)",
+      "Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator"
+    ]
+  }
 }

@@ -160,6 +160,9 @@ internal sealed record MechanicalLockCem
     public float GrooveOffsetMm { get; init; } = 15f;
     public float GrooveWidthMm { get; init; } = 1.1f;   // DIN-471 для Ø11 shank (§4.3 B; «0.8×0.6» = off-spec, не штатне кільце)
     public float GrooveDepthMm { get; init; } = 0.25f;
+
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (null ⇒ no callout — no DIN-471 band cited without a source)
+    public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ NOT SPECIFIED IN CEM per field)
 }
 
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end: a SOLID Ti

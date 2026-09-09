@@ -69,6 +69,7 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 | Part | View strategy | Notes |
 |------|---------------|-------|
 | **Ti-coin** (Деталь, Stage 2) | Front (Ø16 circle) + side (16×1 rect) + eyelet detail | Trivial analytic; **do FIRST** (most urgent physical part). Active-area Ø + "1 face ≈ 2 cm²" callout (`01_03 §3.5`). |
+| **Mechanical lock shank** (§4.3, HW.26 — Zone-1 anchor end + Zone-3 flange end) | Front (shank Ø, + bus/cathode-channel bore when hollow) + side (silhouette + barb-zone envelope + DIN-471 groove notch) | Analytic; the groove width/depth dimension is the acceptance-drift catch (`cem_canon_sync` pins the same numbers by regex). Ratchet drawn as a spec-callout envelope, not tooth-by-tooth (same "spec, not point-by-point" logic §3/§6 use for the gyroid). |
 | **Zone-2 sleeve** (Деталь 2) | Side section (bore Ø11 / OD Ø15 / 50 mm) + end view | Plain tube — fully analytic from CEM. Note hex + flange-shoulder are deferred (`01_01 §Zone 2`). |
 | **Деталь 3 flange** | Front (Ø25 + 3 lugs) + side section (shank, bore, O-ring groove) | Analytic; lugs at 120° (asymmetric bbox, as in `verify`). |
 | **Деталь 4 radome** | Side section (dome + bell + cavity + socket) + bottom (socket) | Analytic revolved + bell radius callout (≥3/R≥5, `01_04 §5.5`). |
@@ -131,8 +132,10 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 
 > **Phase 0** (canon honesty + CEM `tolerances`/`notes` block) + **Phase 1** (Ti-coin DXF deliverable)
 > are active. **Phase 2** (steps 2/4/5) is deferred until a factory contract — full §7 risks being
-> "packaging for an imagined factory" (no contract yet). **One Phase-2 part already landed**: Деталь 3
-> flange (step 2) ships as `draw cathode_flange` — it rode the Ø25 freeze, not a contract.
+> "packaging for an imagined factory" (no contract yet). **Two Phase-2 parts already landed**: Деталь 3
+> flange (step 2) ships as `draw cathode_flange` — it rode the Ø25 freeze, not a contract — and the §4.3
+> mechanical-lock shank ships as `draw mechanical_lock` (HW.26) — it rode the `cem_canon_sync` DIN-471
+> groove pin, not a contract either.
 
 1. **Ti-coin drawing** (**Phase 1**) — the simplest + most urgent part (Stage 2, ~15 pcs). Proves
    `Drawing.cs` + `draw` verb + **DXF (netDxf)** + title block + dimension primitives, consuming the
@@ -140,7 +143,10 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 2. **Simple anchor parts** (**Phase 2**) — Деталь 3 flange **✅ landed** (`Drawing.CathodeFlange` +
    `CathodeFlangeDxf`; **closes the central-pad Ø4-5 / PEEK-ring gap → HW.8**), and it now carries the
    mirror xUnit set the Ti-coin has, including the shipped-CEM round-trip gotcha #11 prescribes for
-   every `draw` kind. ⛔ Test counts are deliberately not quoted here — the roster is `DrawingTests.cs`.
+   every `draw` kind. **§4.3 mechanical-lock shank ✅ landed** (`Drawing.MechanicalLock` +
+   `MechanicalLockDxf`, HW.26 — Zone-1 anchor end + Zone-3 flange end, one CEM `kind`/generator shared
+   by both `mechanical_lock.zone1/.zone3.json`), same mirror xUnit set + round-trip. ⛔ Test counts are
+   deliberately not quoted here — the roster is `DrawingTests.cs`.
    Still open: Zone-2 sleeve, Деталь 4 radome (analytic sections).
 3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.

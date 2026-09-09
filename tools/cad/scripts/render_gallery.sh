@@ -29,6 +29,13 @@ for c in ti_coin cathode_flange; do
   run draw "cem/$c.json"
   cp "out/$c.drawing.svg" "$GAL/$c.drawing.svg"
 done
+# mechanical_lock.zone1/.zone3.json carry `name: mechanical_lock_zone1/_zone3` (no dot/zone split), so the
+# output-artefact stem (out/<name>.*) does not equal the manifest filename stem — unlike the loop above.
+for c in mechanical_lock.zone1 mechanical_lock.zone3; do
+  run draw "cem/$c.json"
+done
+cp out/mechanical_lock_zone1.drawing.svg "$GAL/mechanical_lock_zone1.drawing.svg"
+cp out/mechanical_lock_zone3.drawing.svg "$GAL/mechanical_lock_zone3.drawing.svg"
 
 # ⚠️ The renders are NOT byte-deterministic (a viewer screenshot), so this step churns PNGs even when no
 # geometry moved. The drawings above are pure string/entity build and ARE deterministic. If you only
