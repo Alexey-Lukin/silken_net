@@ -19,8 +19,12 @@ typedef int HAL_StatusTypeDef;
 #define HAL_ERROR 1
 #define HAL_TIMEOUT 3
 
-typedef struct { int dummy; } ADC_HandleTypeDef;
-typedef struct { int dummy; } TIM_HandleTypeDef;
+/* [ARCH.102] `Instance` тут не декор: гейт Фази 1.5 питає саме його, бо
+ * незаповнений хендл (порожні MX_ADC_Init/MX_TIM2_Init до board-freeze) —
+ * це стан, який мусить бути ВИРАЗНИЙ і в мірору host-сюїти. */
+typedef struct { void* Instance; int dummy; } ADC_HandleTypeDef;
+typedef struct { void* Instance; int dummy; } TIM_HandleTypeDef;
+typedef struct { void* Instance; int dummy; } DMA_HandleTypeDef;
 typedef struct { int dummy; } IWDG_HandleTypeDef;
 typedef struct {
     void* Instance;
@@ -159,7 +163,12 @@ static inline int HAL_ADC_Stop(ADC_HandleTypeDef *h) { (void)h; return HAL_OK; }
 static inline int HAL_ADC_PollForConversion(ADC_HandleTypeDef *h, uint32_t t) { (void)h; (void)t; return HAL_OK; }
 static inline uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef *h) { (void)h; return 3000; }
 static inline void HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef *h) { (void)h; }
-static inline int HAL_ADC_Start_DMA(ADC_HandleTypeDef *h, uint32_t *b, uint32_t l) { (void)h; (void)b; (void)l; return HAL_OK; }
+/* [ARCH.102] Старт DMA мусить уміти ВІДМОВИТИ: доти мок повертав HAL_OK
+ * беззастережно, тож гілка «конвеєр не поїхав» була недосяжна з host'а —
+ * рівно та, що на кремнії лишала вузол чекати до сторожового пса. */
+static int _mock_adc_dma_start_status = HAL_OK;
+static inline void _mock_adc_dma_start_reset(void) { _mock_adc_dma_start_status = HAL_OK; }
+static inline int HAL_ADC_Start_DMA(ADC_HandleTypeDef *h, uint32_t *b, uint32_t l) { (void)h; (void)b; (void)l; return _mock_adc_dma_start_status; }
 static inline int HAL_ADC_Stop_DMA(ADC_HandleTypeDef *h) { (void)h; return HAL_OK; }
 
 static inline int HAL_TIM_Base_Start(TIM_HandleTypeDef *h) { (void)h; return HAL_OK; }
@@ -343,7 +352,7 @@ static RadioDriver_t Radio = {
 };
 
 /* NVIC interrupt control stubs (for FW.11 race condition fix) */
-typedef enum { EXTI0_IRQn = 6 } IRQn_Type;
+typedef enum { EXTI0_IRQn = 6, DMA1_Channel1_IRQn = 11 } IRQn_Type;
 static inline void HAL_NVIC_DisableIRQ(IRQn_Type n) { (void)n; }
 static inline void HAL_NVIC_EnableIRQ(IRQn_Type n) { (void)n; }
 

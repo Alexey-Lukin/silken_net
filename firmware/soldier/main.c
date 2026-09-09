@@ -45,6 +45,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
+#include "../common/audio_dma.h"     // [ARCH.102] гейт периферій аудіо-вікна + дедлайн (One-Home)
 
 // Підключаємо скомпільовану нейромережу TinyML.
 // Якщо реальної моделі ще немає (модель ще не #include'нута → fallback; docs/03_03 §4) на
@@ -248,6 +249,7 @@ _Static_assert(
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc;
 TIM_HandleTypeDef htim2;  // Додано: Таймер-метроном для керування швидкістю DMA (напр. 16 кГц)
+DMA_HandleTypeDef hdma_adc; // [ARCH.102] ADC → raw_audio_buffer; лінк у MX_DMA_Init
 IWDG_HandleTypeDef hiwdg; // Апаратний сторожовий пес
 RNG_HandleTypeDef hrng;
 RTC_HandleTypeDef hrtc;
@@ -1633,6 +1635,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
 static void MX_TIM2_Init(void); // Ініціалізація таймера для DMA
+// [ARCH.102] Єдиний MX_* поруч із MX_CRYP_Init, чиє тіло живе ТУТ, а не
+// чекає .ioc: розкладка DMA-каналу й DMAMUX-запит визначені самим
+// перенесенням ADC→RAM, а не пін-мапою чи клок-деревом (межа FW.46).
+static void MX_DMA_Init(void);
 static void MX_IWDG_Init(void); // Ініціалізація IWDG
 static void MX_RNG_Init(void);
 static void MX_RTC_Init(void);
@@ -1788,6 +1794,10 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC_Init();
   MX_TIM2_Init(); // Ініціалізуємо метроном для DMA
+  // [ARCH.102] ПІСЛЯ ADC/TIM свідомо: __HAL_LINKDMA лише зшиває хендли, і
+  // майбутній .ioc-івський MX_ADC_Init, що перезаписав би hadc цілком, не
+  // має шансу знести лінк, якщо той ставиться останнім.
+  MX_DMA_Init();
   MX_IWDG_Init(); // Ініціалізуємо Сторожового Пса
   MX_RNG_Init();
   MX_RTC_Init();
@@ -2154,33 +2164,48 @@ int main(void)
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
     if (vib) {
-        audio_ready = 0;
+        audio_ready = AUDIO_DMA_IDLE;
 
-        // 1. Запускаємо Таймер-метроном і АЦП у режимі DMA
-        HAL_TIM_Base_Start(&htim2);
-        HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512);
+        // [ARCH.102] Гейт ПЕРЕД HAL'ом: HAL_ADC_Start_DMA розіменовує
+        // hadc.DMA_Handle без перевірки, тож незалінкований DMA дав би
+        // HardFault, а не помилку. Доки MX_ADC_Init/MX_TIM2_Init порожні
+        // (board-freeze, FW.46), гілка чесно не міряє — і саме це вона
+        // мусить робити, замість класти вузол на кожній п'єзо-події.
+        if (Audio_Dma_Peripherals_Ready(hadc.Instance, htim2.Instance, hdma_adc.Instance)) {
+            // 1. Запускаємо Таймер-метроном і АЦП у режимі DMA
+            HAL_TIM_Base_Start(&htim2);
+            if (HAL_ADC_Start_DMA(&hadc, (uint32_t*)raw_audio_buffer, 512) == HAL_OK) {
+                // 2. ВІДМИКАЄМО ЯДРО ПРОЦЕСОРА (Падаємо в Легкий Сон)
+                // Поки CPU спить, DMA перекидає байти з АЦП у raw_audio_buffer без участі ядра.
+                // [ARCH.102] SysTick тут НЕ зупиняємо (був HAL_SuspendTick):
+                // із замороженим HAL_GetTick дедлайн не було б із чого
+                // зробити, а бюджет 32 мс проти ~26 с IWDG-вікна робить
+                // ~32 зайвих пробудження на порядки дешевшими за ребут,
+                // який ця межа й відвертає.
+                uint32_t audio_wait_start = HAL_GetTick();
+                while (audio_ready == AUDIO_DMA_IDLE &&
+                       !Audio_Dma_Wait_Expired(audio_wait_start, HAL_GetTick())) {
+                    __disable_irq(); // Вимикаємо глобальні переривання, щоб уникнути Race Condition
+                    if (audio_ready == AUDIO_DMA_IDLE) {
+                        HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+                    }
+                    __enable_irq(); // Вмикаємо переривання назад
+                }
 
-        // 2. ВІДМИКАЄМО ЯДРО ПРОЦЕСОРА (Падаємо в Легкий Сон)
-        // Поки CPU спить, DMA перекидає байти з АЦП у raw_audio_buffer без участі ядра.
-        HAL_SuspendTick();
-        while (!audio_ready) {
-            __disable_irq(); // Вимикаємо глобальні переривання, щоб уникнути Race Condition
-            if (!audio_ready) {
-                HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+                __DMB(); // Бар'єр пам'яті. Гарантуємо, що процесор бачить свіжі дані від DMA, а не старий кеш
             }
-            __enable_irq(); // Вмикаємо переривання назад
+
+            // --- ТУТ ПРОЦЕСОР ПРОКИНУВСЯ: DMA заповнив буфер, віддав
+            //     помилку, або збіг дедлайн ---
+
+            // [ARCH.102] Конвеєр зупиняємо НЕЗАЛЕЖНО від результату: озброєний
+            // DMA дописував би у raw_audio_buffer посеред наступних фаз.
+            HAL_ADC_Stop_DMA(&hadc);
+            HAL_TIM_Base_Stop(&htim2);
         }
-        HAL_ResumeTick();
-
-        __DMB(); // Бар'єр пам'яті. Гарантуємо, що процесор бачить свіжі дані від DMA, а не старий кеш
-
-        // --- ТУТ ПРОЦЕСОР ПРОКИНЕТЬСЯ, КОЛИ DMA ЗАПОВНИТЬ БУФЕР ---
 
         // 3. Якщо буфер зібрано успішно
-        if (audio_ready == 1) {
-            HAL_ADC_Stop_DMA(&hadc); // Зупиняємо конвеєр
-            HAL_TIM_Base_Stop(&htim2);
-
+        if (audio_ready == AUDIO_DMA_DONE) {
             // 4. Швидко переводимо 12-бітні RAW-дані у Float для TinyML
             for(int i = 0; i < 512; i++) {
                 audio_buffer[i] = (float)raw_audio_buffer[i] / 4095.0f; // Нормалізація 0.0 - 1.0
@@ -3370,6 +3395,62 @@ void Trigger_Emergency_LoRa_TX(void)
 }
 
 // =========================================================================
+// [ARCH.102] DMA-ШАР АУДІО-ТРАКТУ (ADC → raw_audio_buffer)
+// =========================================================================
+// Конфіг цілком визначений самим перенесенням, а не платою: джерело —
+// DMAMUX-запит ADC, приймач — півслівний масив із інкрементом, режим —
+// одноразовий (вікно 512 семплів, не кільце). Тому тіло живе тут, поруч
+// з MX_CRYP_Init, а не серед .ioc-заглушок (межа FW.46 називає пін-мапу,
+// клок-дерево, ADC-канали та LSE — DMA-канал у тому переліку не стоїть).
+// Вибір саме DMA1_Channel1 — єдине ревізоване .ioc'ом місце: під DMAMUX
+// будь-який канал ніс би цей запит, конфлікту з чинними споживачами немає.
+static void MX_DMA_Init(void)
+{
+    __HAL_RCC_DMA1_CLK_ENABLE();
+    __HAL_RCC_DMAMUX1_CLK_ENABLE();
+
+    hdma_adc.Instance                 = DMA1_Channel1;
+    hdma_adc.Init.Request             = DMA_REQUEST_ADC;
+    hdma_adc.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+    hdma_adc.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_adc.Init.MemInc              = DMA_MINC_ENABLE;
+    hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_adc.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+    hdma_adc.Init.Mode                = DMA_NORMAL;
+    hdma_adc.Init.Priority            = DMA_PRIORITY_HIGH;
+
+    if (HAL_DMA_Init(&hdma_adc) != HAL_OK) {
+        // Свідома асиметрія з Королевою (queen/main.c той самий блок кличе
+        // Error_Handler): її UART-DMA — єдина ланка до Rails, тож без нього
+        // шлюзу немає; акустика ж не несуча, і ребут-петля через неї коштувала
+        // б телеметрії дерева. Знімаємо Instance — гейт Фази 1.5 закривається
+        // сам, решта циклу живе.
+        hdma_adc.Instance = NULL;
+        return;
+    }
+
+    __HAL_LINKDMA(&hadc, DMA_Handle, hdma_adc);
+
+    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 1, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+}
+
+// [ARCH.102] Вектори, яких у дереві не було взагалі: без них обидва
+// колбеки нижче — мертвий код (п'єзо не будить, DMA не рапортує), тобто
+// вікно гарантовано впиралось би в дедлайн. Живуть тут, бо власного
+// stm32wlxx_it.c репо не має; board-freeze зведе їх із .ioc-івським —
+// зіткнення буде гучним на лінку, а не тихим.
+void DMA1_Channel1_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_adc);
+}
+
+void EXTI0_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+}
+
+// =========================================================================
 // АПАРАТНИЙ РЕФЛЕКС DMA (Буфер звуку заповнено)
 // =========================================================================
 // Перекриття слабкого символа HAL: тип сигнатури фіксований прототипом
@@ -3382,7 +3463,19 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     // Ця функція викликається апаратно, коли DMA запише 512-й байт.
     // Вона миттєво виводить процесор зі стану SLEEP для аналізу.
     (void)hadc;
-    audio_ready = 1;
+    audio_ready = AUDIO_DMA_DONE;
+}
+
+// [ARCH.102] Дзеркало для збійного боку: ADC overrun або transfer-error
+// інакше лишали б прапорець в IDLE до кінця дедлайну, тобто вузол спав би
+// чверть секунди, знаючи, що вікно вже мертве. Окремий стан, а не DONE:
+// буфер напівзаписаний, і інференс по ньому був би виміром шуму.
+// cppcheck-suppress constParameterPointer
+// cppcheck-suppress shadowVariable
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef* hadc)
+{
+    (void)hadc;
+    audio_ready = AUDIO_DMA_ERROR;
 }
 
 // =========================================================================

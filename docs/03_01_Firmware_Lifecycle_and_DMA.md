@@ -958,7 +958,10 @@ Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
 | `OnRxDone(payload, size, rssi, snr)` | LoRa RX complete (SX1262) | `memcpy` → volatile buffer, RSSI clamp [-128,127], `lora_rx_flag = 1` | Апаратний |
 | `HAL_GPIO_EXTI_Callback(GPIO_PIN_0)` | Piezo EXTI (п'єзодиск) | `vibration_detected = 1` | EXTI Line 0 |
 | `HAL_PWR_PVDCallback()` | Vcap < 2.2V | **[ARCH.21]** BKUPWrite packed DR0 (`panic_counter` + `acoustic`) + DR1 (`last_wakeup`) + DR16-DR19 (Lorenz state + magic), Radio.Sleep, Enter STOP2 | NMI-рівень |
-| `HAL_ADC_ConvCpltCallback()` | DMA buffer повний (512 семплів) | `audio_ready = 1` | DMA IRQ |
+| `HAL_ADC_ConvCpltCallback()` | DMA buffer повний (512 семплів) | `audio_ready = AUDIO_DMA_DONE` (≡ 1) | DMA IRQ |
+| `HAL_ADC_ErrorCallback()` | ADC overrun / DMA transfer-error | **[ARCH.102]** `audio_ready = AUDIO_DMA_ERROR` — вихід із вікна негайний, інференс по напівзаписаному буферу НЕ біжить | DMA IRQ |
+
+> **[ARCH.102] Вектори двох цих рефлексів з'явились 2026-09-09** — `DMA1_Channel1_IRQHandler` і `EXTI0_IRQHandler` (`soldier/main.c`, поруч із колбеками; власного `stm32wlxx_it.c` репо не має). Доти обидва колбеки й `HAL_GPIO_EXTI_Callback` були **мертвим кодом**: п'єзо не будило, DMA не рапортувало. Board-freeze ([`FW.46`](00_07_Action_Plan_Tracker)) зведе їх із `.ioc`-івським `_it.c` — зіткнення буде на лінку, тобто гучним.
 
 **PVD — аварійний рефлекс смерті [ARCH.21]:**
 ```c

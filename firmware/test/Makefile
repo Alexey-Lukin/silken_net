@@ -140,7 +140,7 @@ $(BINDIR)/test_cad_sniff: test_cad_sniff.c ../common/cad_sniff.h ../common/wall_
 $(BINDIR)/test_bio_contract: test_bio_contract.c
 	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm
 
-$(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h
+$(BINDIR)/test_tinyml: test_tinyml_pipeline.c hal_mock.h ../common/audio_dma.h
 	$(CC) $(CFLAGS) -o $@ test_tinyml_pipeline.c -lm
 
 # [FW.25] Compute_LogMel parity vs silken_ml golden vectors (docs/03_03 §3.4).

@@ -27,6 +27,9 @@
 #include <math.h>
 
 #include "hal_mock.h"
+/* [ARCH.102] Справжній заголовок прошивки, не копія: гейт периферій і
+ * дедлайн вікна тестуються тим самим кодом, що компілює Soldier. */
+#include "../common/audio_dma.h"
 
 /* ══════════════════════════════════════════════════════════════════
  * CONSTANTS (from soldier/main.c)
@@ -917,6 +920,176 @@ TEST(test_invalid_count_saturates_at_255)
 }
 
 /* ══════════════════════════════════════════════════════════════════
+ * 10. [ARCH.102] МЕЖІ АУДІО-ВІКНА — гейт периферій · дедлайн · збій DMA
+ *
+ *   Доти конвеєр стартував беззастережно й чекав прапорця без стелі, тож
+ *   на кремнії кожна п'єзо-подія кінчалась IWDG-ресетом (а при
+ *   незалінкованому DMA — HardFault'ом усередині HAL_ADC_Start_DMA).
+ *   Секція доводить три речі: жоден із трьох способів НЕ виміряти не
+ *   веде до інференсу, цикл завершується без зовнішньої події, і дедлайн
+ *   переживає переворот HAL_GetTick.
+ * ══════════════════════════════════════════════════════════════════ */
+
+/* Колбек, який не прийде ніколи: мертвий метроном або незалінкований DMA. */
+#define SIM_CALLBACK_NEVER   0u
+/* Захисток САМОГО харнесу: зламаний предикат дедлайну мусить ВАЛИТИ тест,
+ * а не вішати CI, тож стеля свідомо вище за очікуваний бюджет. */
+#define SIM_RUNAWAY_CAP      (AUDIO_DMA_TIMEOUT_MS * 4u)
+
+static uint8_t  sim_audio_ready;
+static uint32_t sim_wait_iterations;
+
+/* Дзеркало ФОРМИ циклу Фази 1.5 (main.c): під контролем тесту лише тік і
+ * момент колбека, обидва предикати — справжні. Повертає 1, якщо буфер
+ * придатний для інференсу. */
+static int Simulate_Audio_Window(ADC_HandleTypeDef *adc, TIM_HandleTypeDef *tim,
+                                 DMA_HandleTypeDef *dma, uint32_t start_tick,
+                                 uint32_t callback_after_ms, uint8_t callback_status)
+{
+    sim_audio_ready = AUDIO_DMA_IDLE;
+    sim_wait_iterations = 0;
+
+    if (!Audio_Dma_Peripherals_Ready(adc->Instance, tim->Instance, dma->Instance)) {
+        return 0;
+    }
+    if (HAL_ADC_Start_DMA(adc, NULL, 512) != HAL_OK) {
+        return 0;
+    }
+
+    uint32_t now = start_tick;
+    while (sim_audio_ready == AUDIO_DMA_IDLE &&
+           !Audio_Dma_Wait_Expired(start_tick, now) &&
+           sim_wait_iterations < SIM_RUNAWAY_CAP) {
+        sim_wait_iterations++;
+        if (callback_after_ms != SIM_CALLBACK_NEVER &&
+            sim_wait_iterations == callback_after_ms) {
+            sim_audio_ready = callback_status;
+        }
+        now++;   /* 1 мс на пробудження — SysTick лишається живим (main.c) */
+    }
+    return (sim_audio_ready == AUDIO_DMA_DONE);
+}
+
+/* Три сконфігуровані периферії: адреси фіктивні, важлива лише не-NULL'ність. */
+static void sim_peripherals_up(ADC_HandleTypeDef *adc, TIM_HandleTypeDef *tim,
+                               DMA_HandleTypeDef *dma)
+{
+    static int adc_reg, tim_reg, dma_reg;
+    _mock_adc_dma_start_reset();
+    adc->Instance = &adc_reg;
+    tim->Instance = &tim_reg;
+    dma->Instance = &dma_reg;
+}
+
+TEST(test_audio_window_happy_path)
+{
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    /* 512 семплів / 16 кГц = 32 мс номіналу (03_03 §2.1). */
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 32, AUDIO_DMA_DONE), 1);
+    ASSERT_EQ(sim_wait_iterations, 32);
+}
+
+TEST(test_audio_window_adc_not_configured)
+{
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    adc.Instance = NULL;   /* порожній MX_ADC_Init — стан до board-freeze */
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 32, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, 0);   /* HAL не торкнулись узагалі */
+}
+
+TEST(test_audio_window_tim_not_configured)
+{
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    tim.Instance = NULL;   /* метроном мовчить → DMA ніколи б не дотикав */
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 32, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, 0);
+}
+
+TEST(test_audio_window_dma_not_linked)
+{
+    /* Найдорожчий із трьох: на кремнії HAL_ADC_Start_DMA розіменовує
+     * hadc.DMA_Handle без перевірки → HardFault, а не HAL_ERROR. */
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    dma.Instance = NULL;
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 32, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, 0);
+}
+
+TEST(test_audio_window_dma_start_failure)
+{
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    _mock_adc_dma_start_status = HAL_ERROR;   /* конвеєр не поїхав */
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 32, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, 0);        /* у сон НЕ лягаємо */
+    _mock_adc_dma_start_reset();
+}
+
+TEST(test_audio_window_bounded_when_callback_never)
+{
+    /* Ядро ARCH.102: без дедлайну цей сценарій крутився б до сторожового
+     * пса. Тепер він завершується РІВНО на бюджеті вікна. */
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0,
+                                    SIM_CALLBACK_NEVER, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, AUDIO_DMA_TIMEOUT_MS);
+    ASSERT_TRUE(sim_wait_iterations < SIM_RUNAWAY_CAP);   /* не харнес зупинив */
+}
+
+TEST(test_audio_window_dma_error_stops_early)
+{
+    /* Overrun/transfer-error: буфер напівзаписаний, інференс по ньому був
+     * би виміром шуму — тож вихід негайний і БЕЗ інференсу. */
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0, 5, AUDIO_DMA_ERROR), 0);
+    ASSERT_EQ(sim_wait_iterations, 5);
+    ASSERT_EQ(sim_audio_ready, AUDIO_DMA_ERROR);
+}
+
+TEST(test_audio_window_deadline_survives_tick_wrap)
+{
+    /* HAL_GetTick перевертається кожні ~49 діб. Наївне `now >= start+T`
+     * дало б там вічне очікування — саме те, що дедлайн мав прибрати. */
+    ADC_HandleTypeDef adc; TIM_HandleTypeDef tim; DMA_HandleTypeDef dma;
+    sim_peripherals_up(&adc, &tim, &dma);
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0xFFFFFF00u,
+                                    SIM_CALLBACK_NEVER, AUDIO_DMA_DONE), 0);
+    ASSERT_EQ(sim_wait_iterations, AUDIO_DMA_TIMEOUT_MS);
+
+    /* І вікно, що перетинає межу, все одно ЗАКРИВАЄТЬСЯ успішно. */
+    ASSERT_EQ(Simulate_Audio_Window(&adc, &tim, &dma, 0xFFFFFFF0u, 32,
+                                    AUDIO_DMA_DONE), 1);
+    ASSERT_EQ(sim_wait_iterations, 32);
+}
+
+TEST(test_wait_expired_boundaries)
+{
+    ASSERT_EQ(Audio_Dma_Wait_Expired(1000u, 1000u), 0);
+    ASSERT_EQ(Audio_Dma_Wait_Expired(1000u, 1000u + AUDIO_DMA_TIMEOUT_MS - 1u), 0);
+    ASSERT_EQ(Audio_Dma_Wait_Expired(1000u, 1000u + AUDIO_DMA_TIMEOUT_MS), 1);
+    ASSERT_EQ(Audio_Dma_Wait_Expired(1000u, 1000u + AUDIO_DMA_TIMEOUT_MS + 1u), 1);
+    /* Через переворот: різниця 16 мс, не 4 мільярди. */
+    ASSERT_EQ(Audio_Dma_Wait_Expired(0xFFFFFFF0u, 0x00000000u), 0);
+    ASSERT_EQ(Audio_Dma_Wait_Expired(0xFFFFFFF0u, AUDIO_DMA_TIMEOUT_MS - 16u), 1);
+}
+
+TEST(test_peripherals_ready_requires_all_three)
+{
+    int a, t, d;
+    ASSERT_EQ(Audio_Dma_Peripherals_Ready(&a, &t, &d), 1);
+    ASSERT_EQ(Audio_Dma_Peripherals_Ready(NULL, &t, &d), 0);
+    ASSERT_EQ(Audio_Dma_Peripherals_Ready(&a, NULL, &d), 0);
+    ASSERT_EQ(Audio_Dma_Peripherals_Ready(&a, &t, NULL), 0);
+    ASSERT_EQ(Audio_Dma_Peripherals_Ready(NULL, NULL, NULL), 0);
+}
+
+/* ══════════════════════════════════════════════════════════════════
  * MAIN
  * ══════════════════════════════════════════════════════════════════ */
 int main(void)
@@ -995,6 +1168,18 @@ int main(void)
     RUN(test_invalid_count_increments_on_cold_boot_zeros);
     RUN(test_invalid_count_accumulates_across_calls);
     RUN(test_invalid_count_saturates_at_255);
+
+    printf("\n  [ARCH.102] Межі аудіо-вікна (гейт периферій · дедлайн · збій DMA):\n");
+    RUN(test_audio_window_happy_path);
+    RUN(test_audio_window_adc_not_configured);
+    RUN(test_audio_window_tim_not_configured);
+    RUN(test_audio_window_dma_not_linked);
+    RUN(test_audio_window_dma_start_failure);
+    RUN(test_audio_window_bounded_when_callback_never);
+    RUN(test_audio_window_dma_error_stops_early);
+    RUN(test_audio_window_deadline_survives_tick_wrap);
+    RUN(test_wait_expired_boundaries);
+    RUN(test_peripherals_ready_requires_all_three);
 
     (void)_prev;
 
