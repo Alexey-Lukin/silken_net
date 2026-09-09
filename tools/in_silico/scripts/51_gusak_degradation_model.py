@@ -2,12 +2,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 HW.3 — Гусак degradation models: Arrhenius aging + Kirkendall diffusion + H7/s6 press-fit.
+HW.37 — EDLC endurance-hours (Eaton KR / KEMET FG0H474ZF) reuses the generalized Arrhenius
+kernel below + a sibling vendor voltage-doubling model (4th analytical model, added 2026-09-09).
 
-Three analytical models for 20-year anchor integrity (школа Гусака):
+Four analytical models for 20-year anchor/component integrity (школа Гусака):
 
-1. Arrhenius accelerated aging: lab weeks → field years equivalence
+1. Arrhenius accelerated aging: lab weeks → field years equivalence (Ti corrosion, HW.3)
 2. Kirkendall ion diffusion: V³⁺/Al³⁺ release through TiO₂ passive layer
 3. H7/s6 press-fit interference window: min/max натяг vs ΔCTE
+4. EDLC endurance-hours: vendor temperature+voltage life-doubling rule (HW.37)
 
 All pure analytical (numpy), no FEA needed.
 """
@@ -24,6 +27,13 @@ from lib.constants import (
     ALLOY_PROPERTIES,
     ALPHA_PEEK_1K,
     E_PEEK_PA,
+    EATON_KR_RATED_HOURS,
+    EATON_KR_RATED_TEMP_C,
+    EATON_KR_RATED_VOLTAGE_V,
+    FIELD_TEMPS_C,
+    KEMET_FG_RATED_HOURS,
+    KEMET_FG_RATED_TEMP_C,
+    KEMET_FG_RATED_VOLTAGE_V,
     KINETICS_DIR,
     NU_PEEK,
     R_INTERFACE_M,
@@ -31,6 +41,9 @@ from lib.constants import (
     REPO_ROOT,
     SIGMA_YIELD_PEEK_PA,
     T_ASSEMBLY_C,
+    THERMAL_DOUBLING_INTERVAL_K,
+    VOLTAGE_DOUBLING_CONSERVATIVE_V,
+    VOLTAGE_DOUBLING_OPTIMISTIC_V,
 )
 from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
@@ -38,32 +51,178 @@ from lib.utils import banner
 OUT_JSON = KINETICS_DIR / "gusak_degradation.json"
 
 
-def arrhenius_aging():
-    """Arrhenius acceleration: lab weeks at T_lab → field years at T_field."""
-    banner("1. Arrhenius Accelerated Aging")
+def arrhenius_aging(
+    t_field_k: float = 288.15,
+    t_lab_k: float = 313.15,
+    ea_range_ev=(0.7, 0.85, 1.0),
+    lab_weeks=(4, 8, 12),
+    weeks_per_year: float = 52.0,
+    label: str = "Ti corrosion",
+):
+    """Arrhenius acceleration: lab weeks at T_lab -> field years at T_field.
 
-    KB_EV = 8.617e-5  # eV/K
-    T_FIELD = 288.15   # K (15°C average forest temp)
-    T_LAB = 313.15     # K (40°C accelerated test)
-    EA_RANGE = [0.7, 0.85, 1.0]  # eV (activation energy range for Ti corrosion)
+    Generalized 2026-09-09 (HW.37): was hardcoded to the Ti-corrosion T_field/T_lab/Ea
+    triple with no parameters at all — this signature now accepts them, so the SAME
+    continuous exp(Ea/kB*(1/T_field-1/T_lab)) kernel is reusable for any fixed-Ea
+    Arrhenius problem. Defaults reproduce the ORIGINAL Ti-corrosion call exactly
+    (HW.3/HW.3.IS numbers unchanged — main() below still calls this with no args).
 
-    print(f"  T_field = {T_FIELD-273.15:.0f}°C ({T_FIELD:.0f} K)")
-    print(f"  T_lab   = {T_LAB-273.15:.0f}°C ({T_LAB:.0f} K)")
+    NOTE this is NOT the model HW.37's EDLC capacitor endurance-hours needs (see
+    capacitor_life_hours() below): vendor capacitor datasheets use a discrete "life
+    doubles every dT/dV" step-rule, which is a DIFFERENT functional form from this
+    continuous exp() kernel (a fixed Ea integrated continuously over a 60 degree span
+    does not reproduce a flat "2x per 10 degrees" applied uniformly — verified while
+    generalizing this function, not a bug in either model).
+    """
+    banner(f"1. Arrhenius Accelerated Aging — {label}")
+
+    kb_ev = 8.617e-5  # eV/K
+
+    print(f"  T_field = {t_field_k - 273.15:.0f}°C ({t_field_k:.0f} K)")
+    print(f"  T_lab   = {t_lab_k - 273.15:.0f}°C ({t_lab_k:.0f} K)")
     print()
-    print(f"  {'Ea (eV)':>8s}  {'4 wks':>8s}  {'8 wks':>8s}  {'12 wks':>8s}")
-    print(f"  {'-'*36}")
+    header = "  ".join(f"{w} wks" for w in lab_weeks)
+    print(f"  {'Ea (eV)':>8s}  {header}")
+    print(f"  {'-' * 36}")
 
     results = {}
-    for ea in EA_RANGE:
-        accel = np.exp(ea / KB_EV * (1/T_FIELD - 1/T_LAB))
+    for ea in ea_range_ev:
+        accel = np.exp(ea / kb_ev * (1 / t_field_k - 1 / t_lab_k))
         equiv = {}
-        for weeks in [4, 8, 12]:
-            years = weeks / 52 * accel
+        for weeks in lab_weeks:
+            years = weeks / weeks_per_year * accel
             equiv[weeks] = round(years, 1)
-            print(f"  {ea:>8.2f}  {equiv[4] if weeks==4 else '':>8}  "
-                  f"{equiv[8] if weeks==8 else '':>8}  "
-                  f"{equiv[12] if weeks==12 else '':>8}  years")
+        row = "  ".join(f"{equiv[w]:>6}" for w in lab_weeks)
+        print(f"  {ea:>8.2f}  {row}  years")
         results[str(ea)] = equiv
+
+    return results
+
+
+def capacitor_life_hours(
+    rated_hours: float,
+    t_rated_c: float,
+    v_rated_v: float,
+    t_field_c: float,
+    v_field_v: float,
+    dt_double_c: float = THERMAL_DOUBLING_INTERVAL_K,
+    dv_double_v: float = VOLTAGE_DOUBLING_CONSERVATIVE_V,
+) -> float:
+    """HW.37 — vendor EDLC/electrolytic-capacitor endurance-hours doubling rule:
+
+        life(T, V) = rated_hours * 2^((T_rated-T)/dt_double) * 2^((V_rated-V)/dv_double)
+
+    This is the industry "N-rule" vendor app notes cite as an Arrhenius-derived
+    approximation (e.g. "life doubles for every dt_double °C drop"), applied as a
+    discrete step factor — NOT the continuous fixed-Ea exp() kernel in
+    arrhenius_aging() above (see that function's docstring: a fixed-Ea continuous
+    Arrhenius over the same 70->10°C span gives a materially different, MORE
+    conservative acceleration than a flat "2x per 10°C" applied uniformly — a
+    known model-choice distinction, not an error in either model).
+    """
+    accel_t = 2.0 ** ((t_rated_c - t_field_c) / dt_double_c)
+    accel_v = 2.0 ** ((v_rated_v - v_field_v) / dv_double_v)
+    return rated_hours * accel_t * accel_v
+
+
+def edlc_endurance_hours():
+    """HW.37 — EDLC calendar-life via temperature+voltage endurance-hours doubling,
+    for the two canon-cited SKUs (`02_01 §3` поз.3): Eaton KR-5R5H474-R and KEMET
+    FG0H474ZF, both rated 1000 h @ 70°C @ 5.5 V (00_07 HW.37). Confirms the
+    2026-09-09 hand-calc through the ACTUAL pipeline (it was hand-computed once,
+    not previously reused as code) and extends it to KEMET, whose OWN voltage
+    coefficient is not published — reported as a sensitivity bracket across the
+    ~2x vendor disagreement (Abracon/CDE 0.2 V vs Vishay/Eaton 0.4 V per doubling)
+    rather than a false-precise single number.
+    """
+    banner("4. EDLC Endurance-Hours — Temperature + Voltage Doubling (HW.37)")
+
+    hours_per_year = 365.25 * 24.0  # consistent with kirkendall_diffusion()'s 365.25 d/yr above
+
+    skus = {
+        "Eaton_KR-5R5H474-R": {
+            "rated_hours": EATON_KR_RATED_HOURS,
+            "t_rated_c": EATON_KR_RATED_TEMP_C,
+            "v_rated_v": EATON_KR_RATED_VOLTAGE_V,
+        },
+        "KEMET_FG0H474ZF": {
+            "rated_hours": KEMET_FG_RATED_HOURS,
+            "t_rated_c": KEMET_FG_RATED_TEMP_C,
+            "v_rated_v": KEMET_FG_RATED_VOLTAGE_V,
+        },
+    }
+
+    print(f"  Doubling rule: life ∝ 2^(ΔT/{THERMAL_DOUBLING_INTERVAL_K:.0f}°C) · 2^(ΔV/dV_double)")
+    print(
+        f"  Voltage-coefficient bracket: optimistic {VOLTAGE_DOUBLING_OPTIMISTIC_V}V "
+        f"vs conservative {VOLTAGE_DOUBLING_CONSERVATIVE_V}V per 2×"
+    )
+
+    results = {}
+    for name, sku in skus.items():
+        print(f"\n  {name}: rated {sku['rated_hours']:.0f} h @ {sku['t_rated_c']:.0f}°C @ {sku['v_rated_v']:.2f} V")
+        sku_result = {"rated": dict(sku), "at_rated_voltage": {}, "voltage_derating": {}}
+
+        # (a) At full rated voltage — temperature-only, matches the 2026-09-09 hand-calc.
+        print(f"    {'T_field(°C)':>12s}  {'life (h)':>12s}  {'life (yr)':>10s}")
+        for t_field in FIELD_TEMPS_C:
+            life_h = capacitor_life_hours(
+                sku["rated_hours"],
+                sku["t_rated_c"],
+                sku["v_rated_v"],
+                t_field,
+                sku["v_rated_v"],  # v_field == v_rated -> the voltage term is a no-op
+                dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
+                dv_double_v=VOLTAGE_DOUBLING_CONSERVATIVE_V,
+            )
+            life_yr = life_h / hours_per_year
+            print(f"    {t_field:>12.0f}  {life_h:>12.0f}  {life_yr:>10.2f}")
+            sku_result["at_rated_voltage"][str(t_field)] = {
+                "life_hours": round(life_h, 0),
+                "life_years": round(life_yr, 2),
+            }
+
+        # (b) Voltage-derating bracket at the coldest field point (10°C, HW.7's own working
+        # point) — optimistic vs conservative coefficient, at the three candidate VBAT_OV
+        # targets already live in the HW.7/HW.12 discussion.
+        t_field = FIELD_TEMPS_C[-1]
+        print(f"    Voltage derating @ {t_field:.0f}°C:")
+        print(f"    {'V_target':>8s}  {'optimistic (yr)':>16s}  {'conservative (yr)':>18s}")
+        for v_target in (5.37, 5.29, 5.20):
+            life_opt_yr = (
+                capacitor_life_hours(
+                    sku["rated_hours"],
+                    sku["t_rated_c"],
+                    sku["v_rated_v"],
+                    t_field,
+                    v_target,
+                    dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
+                    dv_double_v=VOLTAGE_DOUBLING_OPTIMISTIC_V,
+                )
+                / hours_per_year
+            )
+            life_cons_yr = (
+                capacitor_life_hours(
+                    sku["rated_hours"],
+                    sku["t_rated_c"],
+                    sku["v_rated_v"],
+                    t_field,
+                    v_target,
+                    dt_double_c=THERMAL_DOUBLING_INTERVAL_K,
+                    dv_double_v=VOLTAGE_DOUBLING_CONSERVATIVE_V,
+                )
+                / hours_per_year
+            )
+            print(f"    {v_target:>8.2f}  {life_opt_yr:>16.1f}  {life_cons_yr:>18.1f}")
+            sku_result["voltage_derating"][str(v_target)] = {
+                "optimistic_yr": round(life_opt_yr, 1),
+                "conservative_yr": round(life_cons_yr, 1),
+            }
+        results[name] = sku_result
+
+    print()
+    print("  ⚖️  post-Arrhenius derate/oversize/SKU-freeze decision is LIVE (00_07 HW.37) —")
+    print("      NOT made here; this reports the life numbers the decision needs.")
 
     return results
 
@@ -187,11 +346,13 @@ def main() -> int:
     arrhenius = arrhenius_aging()
     kirkendall = kirkendall_diffusion()
     press_fit = press_fit_window()
+    edlc_endurance = edlc_endurance_hours()
 
     output = {
         "arrhenius_aging": arrhenius,
         "kirkendall_diffusion": kirkendall,
         "press_fit_H7s6": press_fit,
+        "edlc_endurance_hours": edlc_endurance,
     }
 
     OUT_JSON.write_text(json.dumps(output, indent=2))

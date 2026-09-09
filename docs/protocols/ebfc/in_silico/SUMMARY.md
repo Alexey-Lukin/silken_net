@@ -508,6 +508,61 @@ own S-N framing — the durability question that actually matters for it lives i
 
 ---
 
+## HW.37 — EDLC Endurance-Hours: Temperature + Voltage (script 51, generalized)
+
+Canon home → [`02_03 §12.1`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.37.
+
+`02_03 §12.1` justified a 20-year EDLC claim via >500,000 cycles (vendor marketing), but the
+node only does ~99k cycles/20yr — cycle-count is not the binding constraint. Real end-of-life is
+temperature+voltage **endurance-hours** (electrolyte dry-out / ESR-rise). `arrhenius_aging()`
+(HW.3's Ti-corrosion kernel) was hardcoded to Ti constants; generalized 2026-09-09 to accept
+T_field/T_lab/Ea as parameters (Ti numbers verified byte-identical after the refactor), and a
+sibling `capacitor_life_hours()` added for the vendor temperature+voltage doubling rule.
+
+| SKU (`02_01 §3` поз.3) | Rated point | Life @ 25°C | Life @ 10°C | 20-yr voltage-derating bracket @10°C |
+|---|---|---|---|---|
+| Eaton KR-5R5H474-R | 1000 h @ 70°C @ 5.5V | 2.58 yr | 7.30 yr | optimistic (0.2V/2×): 5.20V→20.7yr · conservative (0.4V/2×): needs ≤4.92V |
+| KEMET FG0H474ZF | 1000 h @ 70°C @ 5.5V (same rated point) | 2.58 yr | 7.30 yr | **same bracket as Eaton** — KEMET's own voltage coefficient not found in a public datasheet; reported as sensitivity, not a false-precise number |
+
+**Verdict** — 🔴 Confirmed via the actual pipeline (not hand-math): the 20-year claim at full
+rated voltage does **not** hold for either SKU (2.6-7.3 yr, a 3-8× shortfall). Whether 20 years is
+reachable depends entirely on the still-open `VBAT_OV` target (`00_07` HW.7) — at 10°C, the
+conservative vendor coefficient needs ≤4.92V, the optimistic one only ≤5.20V. This is a **derate /
+oversize / SKU-freeze ⚖️ now live and blocking** (`00_07` HW.37) — not decided here. The
+cycle-count argument in `02_03 §12.1` is not wrong, only insufficient on its own; both axes now
+stand side by side there. (`kinetics/gusak_degradation.json` → `edlc_endurance_hours`)
+
+---
+
+## HW.42 — Does a Second Power Source Contaminate `delta_t`? (script 63)
+
+Canon home → [`02_03 §9`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decision → `00_07` HW.42.
+
+Since [E.63], the EDLC recharge interval `delta_t` drives `growth_points` directly — a
+money-minting signal. `HW.21` carries a checkbox to put a TEG on the SAME BQ25570 charging rail
+as the EBFC; `01_03 §4`'s instrumental-noise list is exhaustively chemical and has no axis for "a
+second power source on the shared rail". Closed form: `delta_t = E_window / (P·η_boost)`,
+swept over auxiliary power P_aux = 10-200 µW (spanning HW.21's own 50-200 µW TEG estimate),
+reported as a 3-way bracket (shared-boost floor / direct-injection ceiling / BQ25570's own
+measured η(P) curve as a cross-check) since the multi-input topology itself is still open
+(`FW.50`).
+
+| P_aux | Summer (15 µW) shift | Winter (3-5 µW) shift |
+|---|---|---|
+| 10 µW (range floor) | 40-50% | 67-84% |
+| 50 µW | 77-83% | 90-96% |
+| 200 µW | 93-95% | 98-99% |
+
+**Verdict** — 🔴 Even at the BOTTOM of the plausible TEG range, `delta_t` is already dominated by
+the auxiliary source rather than tree metabolism, in every season. The percentage result is
+algebraically independent of which of this codebase's several non-interchangeable `delta_t`
+definitions is used (E_window cancels in every bracket model) — this is not an artifact of scale
+choice. Whether this forces a physical rail split or blocks `HW.21`'s multi-input checkbox is an
+explicit ⚖️ reserved for the founder (`00_07` HW.42) — not decided here.
+(`kinetics/delta_t_aux_power_sensitivity.json`)
+
+---
+
 ## Infrastructure
 
 | Component | Location |

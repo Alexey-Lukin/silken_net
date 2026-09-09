@@ -216,5 +216,69 @@
       "sigma_hoop_MPa": 8.29,
       "safe": true
     }
+  },
+  "edlc_endurance_hours": {
+    "Eaton_KR-5R5H474-R": {
+      "rated": {
+        "rated_hours": 1000.0,
+        "t_rated_c": 70.0,
+        "v_rated_v": 5.5
+      },
+      "at_rated_voltage": {
+        "25.0": {
+          "life_hours": 22627.0,
+          "life_years": 2.58
+        },
+        "10.0": {
+          "life_hours": 64000.0,
+          "life_years": 7.3
+        }
+      },
+      "voltage_derating": {
+        "5.37": {
+          "optimistic_yr": 11.5,
+          "conservative_yr": 9.1
+        },
+        "5.29": {
+          "optimistic_yr": 15.1,
+          "conservative_yr": 10.5
+        },
+        "5.2": {
+          "optimistic_yr": 20.7,
+          "conservative_yr": 12.3
+        }
+      }
+    },
+    "KEMET_FG0H474ZF": {
+      "rated": {
+        "rated_hours": 1000.0,
+        "t_rated_c": 70.0,
+        "v_rated_v": 5.5
+      },
+      "at_rated_voltage": {
+        "25.0": {
+          "life_hours": 22627.0,
+          "life_years": 2.58
+        },
+        "10.0": {
+          "life_hours": 64000.0,
+          "life_years": 7.3
+        }
+      },
+      "voltage_derating": {
+        "5.37": {
+          "optimistic_yr": 11.5,
+          "conservative_yr": 9.1
+        },
+        "5.29": {
+          "optimistic_yr": 15.1,
+          "conservative_yr": 10.5
+        },
+        "5.2": {
+          "optimistic_yr": 20.7,
+          "conservative_yr": 12.3
+        }
+      }
+    }
   }
 }

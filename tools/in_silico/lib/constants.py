@@ -170,3 +170,39 @@ T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for sealing)
 # → 5-34 µm DIAMETRAL). The Lamé contact pressure takes RADIAL interference = diametral / 2.
 H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs sealing)
 H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs hoop stress)
+
+# ── EDLC energy budget (HW.42, script 63; 02_03 §9/§12) — delta_t sensitivity to a
+# second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
+# edit `02_03`, not here (same discipline as ETA_BQ above). ──
+C_EDLC_F = 0.47                  # F — EDLC capacitance (02_03 §12.1)
+VSTOR_MAX_V = 5.5                # V — EDLC absolute max voltage (02_03 §12.1)
+VBAT_OK_ON_V = 3.40              # V — buck re-enable threshold, window floor (02_03 §4.Г)
+ETA_BUCK_ACTIVE = 0.88           # — buck efficiency, active load (02_03 §9.1 buck table)
+EDLC_WINDOW_USABLE_J = 3.87      # J — usable window energy post-buck (02_03 §12.1):
+# ½·C_EDLC_F·(VSTOR_MAX_V²−VBAT_OK_ON_V²)·ETA_BUCK_ACTIVE ≈ 3.865 J — reconstructed as a
+# sanity check in script 63, not re-derived from C/V/eta as the primary path.
+P_GEN_SUMMER_UW = 15.0           # µW — typical Gen 2.0 EBFC, summer (02_03 §9.2)
+P_GEN_WINTER_RANGE_UW = (3.0, 5.0)   # µW — winter range (02_03 §9.8 prose)
+ETA_BOOST_WINTER = 0.65          # — boost eta at P_gen≈5µW winter (02_03 §9.8: "eta_boost
+# lower at lower I_IN"); summer counterpart is ETA_BQ above — do not re-hardcode 0.68.
+# 3-point MEASURED eta_boost(P_IN) curve (02_03 §9.1 table, TI SLUSBH2G Fig.4-7 read).
+# First pair mirrors ETA_BQ (HW.47 One-Home) — do not re-hardcode 0.68.
+ETA_BOOST_TABLE_UW = ((15.0, ETA_BQ), (30.0, 0.75), (100.0, 0.82))
+
+# ── EDLC endurance-hours (HW.37, script 51; 02_03 §12.1/§6) — vendor SKUs
+# (`02_01 §3` поз.3), Arrhenius-style temperature+voltage life-doubling model
+# (generalized capacitor_life_hours(), NOT the same functional form as the
+# continuous fixed-Ea arrhenius_aging() above — see that function's docstring). ──
+EATON_KR_RATED_HOURS = 1000.0      # h — Eaton KR-5R5H474-R endurance rating (00_07 HW.37)
+EATON_KR_RATED_TEMP_C = 70.0       # °C — rated-life test temperature
+EATON_KR_RATED_VOLTAGE_V = 5.5     # V — rated-life test voltage
+KEMET_FG_RATED_HOURS = 1000.0      # h — KEMET FG0H474ZF endurance rating (00_07 HW.37)
+KEMET_FG_RATED_TEMP_C = 70.0       # °C — rated-life test temperature (same as Eaton KR)
+KEMET_FG_RATED_VOLTAGE_V = 5.5     # V — rated voltage (0.47F/5.5V SKU, 00_07 HW.37)
+THERMAL_DOUBLING_INTERVAL_K = 10.0     # K — consensus "life doubles per 10°C" rule (lit., 00_07 HW.37/HW.7)
+VOLTAGE_DOUBLING_OPTIMISTIC_V = 0.2    # V — Abracon/CDE-style: life doubles per 0.2V derating
+VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles per 0.4V derating
+# KEMET's OWN voltage-doubling coefficient was not confirmed from a public datasheet
+# (00_07 HW.37) — report the sensitivity across the Eaton-derived bracket above rather
+# than a false-precise single number.
+FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7

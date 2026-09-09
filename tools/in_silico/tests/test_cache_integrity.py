@@ -180,6 +180,28 @@ def test_gusak_degradation_multi_alloy():
     assert kd["CP-Ti-Gr4"]["20"]["Al_ug_cm2"] == 0.0     # zero-Al alloy doesn't
 
 
+def test_edlc_endurance_hours_hw37():
+    """Script 51 (HW.37) outputs EDLC endurance-hours life for both canon-cited SKUs
+    (Eaton KR-5R5H474-R, KEMET FG0H474ZF — `02_01 §3` поз.3). Sanity: confirms the
+    2026-09-09 hand-calc (00_07 HW.37) — life@25°C ≈ 2.6 yr / life@10°C ≈ 7.3 yr at
+    full 5.5V — and that the voltage-derating bracket's optimistic coefficient always
+    yields MORE years than the conservative one (smaller dV-per-doubling accelerates
+    life faster as voltage drops below rated)."""
+    path = KINETICS / "gusak_degradation.json"
+    if not path.exists():
+        pytest.skip("gusak_degradation.json not computed")
+    edlc = json.loads(path.read_text())["edlc_endurance_hours"]
+    for sku in ("Eaton_KR-5R5H474-R", "KEMET_FG0H474ZF"):
+        assert sku in edlc, f"missing SKU {sku}"
+        at_rated = edlc[sku]["at_rated_voltage"]
+        assert abs(at_rated["25.0"]["life_years"] - 2.6) < 0.1
+        assert abs(at_rated["10.0"]["life_years"] - 7.3) < 0.1
+        for v_target, row in edlc[sku]["voltage_derating"].items():
+            assert row["optimistic_yr"] > row["conservative_yr"], (
+                f"{sku}@{v_target}V: optimistic coefficient should out-live conservative"
+            )
+
+
 def test_lame_alloy_comparative():
     """Script 50 outputs a per-alloy comparative (E + CTE-mismatch stress, 01_02 §2.5).
     Sanity: all 6 present; β-Ti lower-E than 4V; press-fit alloy-robust (PEEK SF ≥ 3)."""
