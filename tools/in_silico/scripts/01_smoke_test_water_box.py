@@ -6,13 +6,33 @@ L2 smoke test — physical engine sanity check.
 Purpose
 -------
 Verify that the MD engine (OpenMM + AMBER ff14SB) can:
-  1. Load the deglycosylated GcGDH structure from AlphaFold 3.
+  1. Load the deglycosylated GcGDH structure from AlphaFold 3, dropping the
+     N-terminal disordered tail (see "N-terminal truncation" below).
   2. Strip non-standard residues (FAD cofactor, etc.) that have no force-field
      parameters yet — ligand parameterization (GAFF / OpenFF) is a separate L2
      milestone, see docs/01_03 §3.4 and scripts 02-05 for ligand parameterization.
   3. Protonate the protein at pH 4.5 (xylem-like).
   4. Wrap it in a TIP3P-FB water box with NaCl at xylem-relevant ionic strength.
   5. Energy-minimise and run 1000 MD steps (≈ 2 ps at 2 fs timestep).
+
+N-terminal truncation
+----------------------
+Residues 1-26 carry AF3 pLDDT < 50 (AF3's own "very low confidence, often
+disordered" bucket — matches the model's reported fraction_disordered=0.04,
+`L1_protein_architecture.md`) and form an extended, floppy arm reaching ~87 Å
+from the folded core's center of mass. That single tail forces the water box
+from ~69K atoms to ~310K atoms at the same CI padding (0.5 nm) — measured
+2026-09-09 (`00_07` HW.5.IS): the oversized box left a capped 500-iteration
+minimisation 2/3 of the way through the 40-min CI budget (1617 s, PE still at
+−5.34M kJ/mol) before the 10 K pre-relax exploded into "Particle coordinate is
+NaN". A full (uncapped) minimisation on the truncated model converges in
+~1.8-3 min and the complete pipeline (minimise + 10 K pre-relax + production)
+finishes in 2.2-3.8 min wall-clock, no NaN — 10x+ margin under the 40-min
+budget even throttled to 4 CPU threads. This is scoped to the SMOKE TEST only
+(engine/force-field/topology sanity, per "Success criterion" below) — it does
+NOT touch the full-length model scripts 10/11/12/14/15/16 use for the real L2
+science, and since AF3 itself has low confidence in this tail's position,
+truncating it loses nothing the smoke test is meant to catch.
 
 Success criterion
 -----------------
@@ -29,6 +49,7 @@ Run
 """
 from __future__ import annotations
 
+import io
 import os
 import sys
 import time
@@ -58,6 +79,29 @@ RANDOM_SEED = int(os.environ.get("SILKEN_RANDOM_SEED", "42"))
 # (scripts 12-14): a cold thermostat bleeds off residual steric strain the
 # (CI-truncated) minimisation leaves, instead of exploding on the first kick.
 PRE_RELAX_STEPS = int(os.environ.get("SILKEN_PRE_RELAX_STEPS", "1000"))
+# N-terminal disordered tail (AF3 pLDDT < 50, residues 1-26) — see the
+# "N-terminal truncation" docstring section above for the measurement this is
+# based on (00_07 HW.5.IS, 2026-09-09). Smoke-test scope only.
+N_TERM_TRUNCATE_RESIDUES = 26
+
+
+def _drop_n_term_residues(pdb_path: Path, n: int) -> io.StringIO:
+    """Return `pdb_path`'s ATOM records with the first `n` residues dropped.
+
+    Must filter the raw text BEFORE PDBFixer/Modeller ever build a Topology:
+    deleting residues from an already-built Topology leaves the new chain
+    start looking like an INTERNAL residue (missing its N-terminal H's) to
+    ForceField template matching ("No template found ... missing 1 N atom
+    ... Is the chain missing a terminal capping group?"). Filtering the text
+    first lets PDBFixer/addMissingHydrogens recognize the new first residue
+    as a proper chain terminus and add the right N-cap hydrogens.
+    """
+    kept = [
+        line
+        for line in pdb_path.read_text().splitlines(keepends=True)
+        if not (line.startswith("ATOM") and int(line[22:26]) <= n)
+    ]
+    return io.StringIO("".join(kept))
 
 
 def main() -> int:
@@ -69,7 +113,8 @@ def main() -> int:
 
     # ---------- 1. Fix structure, strip non-standard residues ----------
     banner("Cleaning structure (pdbfixer)")
-    fixer = PDBFixer(filename=str(INPUT_PDB))
+    print(f"  Dropping N-terminal disordered tail (residues 1-{N_TERM_TRUNCATE_RESIDUES}, AF3 pLDDT < 50)")
+    fixer = PDBFixer(pdbfile=_drop_n_term_residues(INPUT_PDB, N_TERM_TRUNCATE_RESIDUES))
     # Drop FAD, any ions, any waters — they have no ff14SB templates.
     # Real L2 will re-add FAD via GAFF/OpenFF parameterisation.
     fixer.removeHeterogens(keepWater=False)
@@ -79,7 +124,7 @@ def main() -> int:
     fixer.addMissingHydrogens(pH=PH)
     n_atoms_protein = fixer.topology.getNumAtoms()
     n_residues = fixer.topology.getNumResidues()
-    print(f"After cleanup: {n_residues} residues, {n_atoms_protein} atoms (FAD stripped)")
+    print(f"After cleanup: {n_residues} residues, {n_atoms_protein} atoms (FAD + N-term tail stripped)")
 
     # ---------- 2. Solvate ----------
     banner("Building water box")

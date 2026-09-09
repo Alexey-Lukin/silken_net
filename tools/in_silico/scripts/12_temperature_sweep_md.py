@@ -66,7 +66,6 @@ from openmm.unit import (
     picosecond,
 )
 from openmmforcefields.generators import GAFFTemplateGenerator
-from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
@@ -89,6 +88,7 @@ from lib.constants import (
     WATER_PADDING_NM,
 )
 from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.md_utils import prepare_protein
 from lib.utils import banner, pick_platform, ps_to_steps
 
 FAD_SDF = LIGANDS_DIR / "FAD.sdf"
@@ -112,13 +112,8 @@ def run_single_temperature(temp_k: int, platform: Platform) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # Protein
-    fixer = PDBFixer(filename=str(AF3_PDB))
-    fixer.removeHeterogens(keepWater=False)
-    fixer.findMissingResidues()
-    fixer.findMissingAtoms()
-    fixer.addMissingAtoms()
-    fixer.addMissingHydrogens(pH=PH)
-    modeller = Modeller(fixer.topology, fixer.positions)
+    topology, positions = prepare_protein(AF3_PDB, ph=PH)
+    modeller = Modeller(topology, positions)
 
     # FAD
     fad = Molecule.from_file(str(FAD_SDF))

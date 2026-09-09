@@ -63,7 +63,6 @@ from openmm.unit import (
     picosecond,
 )
 from openmmforcefields.generators import GAFFTemplateGenerator
-from pdbfixer import PDBFixer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
@@ -85,6 +84,7 @@ from lib.constants import (
     WATER_PADDING_NM,
 )
 from lib.geometry import place_on_sphere, positions_to_nm_array, restraint_protein_heavy_atoms
+from lib.md_utils import prepare_protein
 from lib.utils import banner, pick_platform, ps_to_steps
 from lib.xylem_sap import get_sap_profile
 
@@ -123,13 +123,8 @@ def run_single_sap(species: str, platform) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # Protein at species-specific pH
-    fixer = PDBFixer(filename=str(AF3_PDB))
-    fixer.removeHeterogens(keepWater=False)
-    fixer.findMissingResidues()
-    fixer.findMissingAtoms()
-    fixer.addMissingAtoms()
-    fixer.addMissingHydrogens(pH=ph)
-    modeller = Modeller(fixer.topology, fixer.positions)
+    topology, positions = prepare_protein(AF3_PDB, ph=ph)
+    modeller = Modeller(topology, positions)
 
     # FAD
     fad = Molecule.from_file(str(FAD_SDF))

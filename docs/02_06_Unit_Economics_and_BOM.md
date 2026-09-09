@@ -127,6 +127,8 @@
 | 5 | **Корпус & Монтаж** | ABS/PC IP67 корпус + кріплення на стовбур. | $12.50 |
 | — | **Разом за 1 Queen (Phase 1/2.5):** | **LTE-M / Starlink DTC; місткість — дім [`02_05 §2.1`](02_05_Queen_Hardware_and_Starlink) (baseline ~100, стеля roadmap ~200)** | **~$185.00** |
 
+> ⚠️ Рядок «eSIM (глобальний тариф)» — вартісна модель, ринково-агностична; Phase-1/2.5-специфіка оператора (Kyivstar, UA, обраний через партнерство Starlink DTC) — → [`02_05` — Стратегія Підключення](02_05_Queen_Hardware_and_Starlink).
+
 #### 🤖 4а. Queen BOM — Phase 3 (Starlink Mini) — HW.14
 
 > **Cross-ref:** [`00_07` — HW.14](00_07_Action_Plan_Tracker) — оновлення Unit Economics ✅
