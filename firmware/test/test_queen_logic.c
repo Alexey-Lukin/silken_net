@@ -2185,14 +2185,54 @@ TEST(test_fw20s2_queen_beacon_byte9_exact_value) {
  *   - Dedups (DID, missing_bitmap) via existing cmd_dedup_ring (5-min replay)
  *   - Targeted re-broadcast: only chunks where bitmap bit is set (missing)
  *   - Does NOT enter CIFO cache, does NOT go to CoAP — pure service packet
+ *   - [FW.52] window closed (ota_active=0) → served ONLY if the buffer's
+ *     current SHA-256 still matches what was persisted on receipt
  * ════════════════════════════════════════════════════════════════════ */
 #define Q_OTA_REQ_MARKER             0x55
 #define Q_OTA_REQ_HEADER_SIZE        7
 #define Q_OTA_REQ_BITMAP_MAX_BYTES   9
 
+/* [FW.52] Pure header — same code firmware/queen/main.c compiles against
+ * (Ota_Sha_Persist/Verify). RAM-mock FlashKvOps mirrors test_flash_ota.c's
+ * pattern: erase = memset 0xFF (erased-flash semantics), program/read are
+ * direct dw-indexed RAM access — no fault-injection needed here, that
+ * discipline is already proven standalone in test_ota_sha_guard.c. */
+#include "../queen/ota_sha_guard.h"
+
+#define Q_SHA_FLASH_DWS 8u
+static uint64_t g_sha_flash_mem[Q_SHA_FLASH_DWS];
+
+static uint64_t q_sha_read(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return g_sha_flash_mem[byte_off / 8u];
+}
+static int q_sha_program(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    g_sha_flash_mem[byte_off / 8u] = v;
+    return 1;
+}
+static int q_sha_erase(void *io, uint8_t page)
+{
+    (void)io; (void)page;
+    memset(g_sha_flash_mem, 0xFF, sizeof g_sha_flash_mem);
+    return 1;
+}
+static const FlashKvOps q_sha_ops = { q_sha_read, q_sha_program, q_sha_erase };
+
+static void reset_sha_flash(void)
+{
+    memset(g_sha_flash_mem, 0xFF, sizeof g_sha_flash_mem);  /* erased-flash state */
+}
+
 /* Pure-logic decision: should Queen re-broadcast in response to this packet?
- * Returns: 1 = re-broadcast, 0 = drop (non-rerequest, dedup, or invalid). */
+ * Returns: 1 = re-broadcast, 0 = drop (non-rerequest, dedup, or invalid).
+ * `pending_bytecode` is what main.c's `pending_ota_bytecode` would hold —
+ * needed (only on the ota_active=0 path) to recompute the FW.52 SHA-256
+ * cross-check against what q_sha_ops has persisted. */
 static uint8_t Test_Should_Handle_Rerequest(const uint8_t* decrypted,
+                                              const uint8_t* pending_bytecode,
                                               uint16_t pending_size,
                                               uint8_t  ota_active)
 {
@@ -2201,7 +2241,16 @@ static uint8_t Test_Should_Handle_Rerequest(const uint8_t* decrypted,
     uint32_t hash = djb2_hash_bytes(decrypted, 16);
     if (Cmd_Dedup_Check(hash) == 1) return 0;  /* duplicate */
 
-    if (pending_size == 0 || !ota_active) return 0;
+    if (pending_size == 0) return 0;
+
+    // [FW.52] Вікно живе → буфер напевно свіжий, обслуговуємо без питань.
+    // Вікно згасло → буфер МІГ бути перезаписаний наступним CoAP-push'ем —
+    // обслуговуємо лише якщо поточний вміст досі хешується в те, що
+    // персистували при прийомі (Ota_Sha_Persist, main.c).
+    if (!ota_active &&
+        !Ota_Sha_Verify(&q_sha_ops, NULL, pending_bytecode, pending_size)) {
+        return 0;
+    }
 
     uint16_t total_chunks  = (pending_size + 10) / 11;
     uint16_t soldier_total = ((uint16_t)decrypted[5] << 8) | decrypted[6];
@@ -2248,7 +2297,7 @@ TEST(test_rereq_queen_accepts_valid_packet) {
     uint8_t pkt[16];
     /* pending_size=88 → total=8 chunks; soldier_total=8 matches. */
     compose_rereq_packet(0xDEADBEEFu, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 1);
 }
 
 TEST(test_rereq_queen_dedups_replay) {
@@ -2256,9 +2305,9 @@ TEST(test_rereq_queen_dedups_replay) {
     uint8_t bm[1] = {0xFF};
     uint8_t pkt[16];
     compose_rereq_packet(0xCAFEBABEu, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 1);
     /* Replay — dedup */
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 0);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 0);
 }
 
 TEST(test_rereq_queen_different_bitmaps_not_deduped) {
@@ -2267,16 +2316,21 @@ TEST(test_rereq_queen_different_bitmaps_not_deduped) {
     uint8_t pkt1[16], pkt2[16];
     compose_rereq_packet(0xAAAAAAAAu, 8, bm1, 1, pkt1);
     compose_rereq_packet(0xAAAAAAAAu, 8, bm2, 1, pkt2);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt1, 88, 1), 1);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt2, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt1, pending_ota_bytecode, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt2, pending_ota_bytecode, 88, 1), 1);
 }
 
-TEST(test_rereq_queen_drops_when_no_active_ota) {
+TEST(test_rereq_queen_drops_when_no_active_ota_and_nothing_persisted) {
+    /* [FW.52] Вікно закрите (ota_active=0) І нічого не персистовано (fresh
+     * boot / ще не було жодного OTA) — той самий "чекай CoAP-push" фолбек,
+     * що й до FW.52, лише тепер з ІНШОЮ підставою (hash-verify fail-closed,
+     * не сам ota_active). */
     reset_dedup();
+    reset_sha_flash();
     uint8_t bm[1] = {0xFF};
     uint8_t pkt[16];
     compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 0), 0);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 0), 0);
 }
 
 TEST(test_rereq_queen_drops_when_pending_empty) {
@@ -2284,7 +2338,7 @@ TEST(test_rereq_queen_drops_when_pending_empty) {
     uint8_t bm[1] = {0xFF};
     uint8_t pkt[16];
     compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 0, 1), 0);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 0, 1), 0);
 }
 
 TEST(test_rereq_queen_drops_when_total_mismatch) {
@@ -2293,19 +2347,86 @@ TEST(test_rereq_queen_drops_when_total_mismatch) {
     uint8_t pkt[16];
     /* Soldier reports total=8, but Queen pending_size=11 ⇒ total=1 */
     compose_rereq_packet(0x1u, 8, bm, 1, pkt);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 11, 1), 0);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 11, 1), 0);
 }
 
 TEST(test_rereq_queen_drops_non_rerequest_marker) {
     reset_dedup();
     uint8_t pkt[16] = {0};
     pkt[0] = 0x99;
-    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, 88, 1), 0);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, 88, 1), 0);
     /* Critical: must NOT consume a dedup slot */
     uint8_t bm[1] = {0xFF};
     uint8_t valid[16];
     compose_rereq_packet(0x1u, 8, bm, 1, valid);
-    ASSERT_EQ(Test_Should_Handle_Rerequest(valid, 88, 1), 1);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(valid, pending_ota_bytecode, 88, 1), 1);
+}
+
+/* ── [FW.52] SHA-256 cross-check on a re-request after the window closed ──
+ * Canon (03_02 §5.1.3, 00_07 FW.52): "після ota_is_active=0 буфер
+ * pending_ota_bytecode може бути перезаписаний наступним CoAP-push'ем,
+ * тоді re-request не обслуговується" — a persisted SHA-256 lets Queen tell
+ * the SAFE case (buffer untouched since receipt) from the DANGEROUS one
+ * (buffer already mid-overwrite by a newer, different OTA) apart, instead
+ * of refusing both alike. */
+TEST(test_fw52_sha_persist_then_verify_roundtrip) {
+    /* (a) hash gets persisted on a successful OTA receipt. */
+    reset_sha_flash();
+    memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
+    uint16_t size = (uint16_t)sizeof(ota_test_data);
+    ASSERT_TRUE(Ota_Sha_Persist(&q_sha_ops, NULL, pending_ota_bytecode, size));
+    ASSERT_TRUE(Ota_Sha_Verify(&q_sha_ops, NULL, pending_ota_bytecode, size));
+}
+
+TEST(test_fw52_rerequest_served_after_window_closed_same_ota) {
+    /* (b) re-request for the SAME OTA after ota_is_active=0 succeeds
+     * against the persisted hash — buffer untouched since receipt. */
+    reset_dedup();
+    reset_sha_flash();
+    memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
+    uint16_t size = (uint16_t)sizeof(ota_test_data);
+    ASSERT_TRUE(Ota_Sha_Persist(&q_sha_ops, NULL, pending_ota_bytecode, size));
+
+    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
+    /* ota_active=0: window already closed, but hash still matches. */
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 0), 1);
+}
+
+TEST(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten) {
+    /* (c) re-request for a DIFFERENT OTA (hash mismatch) is correctly
+     * rejected rather than silently serving stale/wrong bytecode — a new
+     * CoAP-push has started overwriting the buffer since the persist. */
+    reset_dedup();
+    reset_sha_flash();
+    memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
+    uint16_t size = (uint16_t)sizeof(ota_test_data);
+    ASSERT_TRUE(Ota_Sha_Persist(&q_sha_ops, NULL, pending_ota_bytecode, size));
+
+    /* Буфер уже наполовину чужий — новий CoAP-push пише зверху. */
+    pending_ota_bytecode[0] ^= 0xFFu;
+
+    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 0), 0);
+}
+
+TEST(test_fw52_rerequest_served_immediately_while_window_still_open) {
+    /* ota_active=1 short-circuits the hash-verify entirely (cheap common
+     * path) — must still succeed even with NOTHING persisted yet. */
+    reset_dedup();
+    reset_sha_flash();
+    memcpy(pending_ota_bytecode, ota_test_data, sizeof(ota_test_data));
+    uint16_t size = (uint16_t)sizeof(ota_test_data);
+    uint16_t total_chunks = (uint16_t)((size + 10) / 11);
+    uint8_t bm[1] = {0xFF};
+    uint8_t pkt[16];
+    compose_rereq_packet(0xABCDEFu, total_chunks, bm, 1, pkt);
+    ASSERT_EQ(Test_Should_Handle_Rerequest(pkt, pending_ota_bytecode, size, 1), 1);
 }
 
 TEST(test_rereq_queen_count_missing_full_bitmap) {
@@ -2653,6 +2774,97 @@ TEST(test_lora_rx_ring_count_zero_after_full_drain) {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+ * 13. [HW.41] SIM7070G Init — APN/PDP Sequence (CGDCONT + CNACT)
+ * ════════════════════════════════════════════════════════════════════
+ * main.c sends the modem-init AT sequence as literal SIM7070_Transact(...)
+ * calls inside main() — not a data table main.c/tests can share, since
+ * main.c is ARM-HAL-bound and never compiled by this x86 suite (same
+ * reason §4b/§8/§9/§11 mirror main.c logic by hand instead of #include-ing
+ * it). kQueenInitSequence below is that mirror: keep it byte-identical to
+ * firmware/queen/main.c's SIM7070_Transact(...) call order — a manual
+ * sync point, same discipline as the other main.c mirrors in this file.
+ * Regression bank against a future reorder/typo (silent bench-only PDP
+ * bring-up failure, no host-visible symptom otherwise), not an algorithm
+ * proof — there is no algorithm here beyond string-literal concatenation.
+ * ════════════════════════════════════════════════════════════════════ */
+
+/* [HW.41] Same technique main.c uses for QUEEN_APN: adjacent string-literal
+ * concatenation via macro. Proves the quoting is correct for both the
+ * unconfigured (empty — 3GPP "network picks APN", TS 27.007 §10.1.1) and a
+ * configured build, independent of main.c's own copy. */
+#define TEST_BUILD_CGDCONT(apn) ("AT+CGDCONT=1,\"IP\",\"" apn "\"\r\n")
+
+TEST(test_hw41_cgdcont_empty_apn_wire_form) {
+    /* Default build (QUEEN_APN unset → ""): behavior-identical intent to
+     * pre-HW.41 auto-APN — not a guess at any one carrier. */
+    ASSERT_EQ(strcmp(TEST_BUILD_CGDCONT(""), "AT+CGDCONT=1,\"IP\",\"\"\r\n"), 0);
+}
+
+TEST(test_hw41_cgdcont_configured_apn_wire_form) {
+    /* -DQUEEN_APN='"kyivstar.internet"' build. */
+    ASSERT_EQ(strcmp(TEST_BUILD_CGDCONT("kyivstar.internet"),
+                      "AT+CGDCONT=1,\"IP\",\"kyivstar.internet\"\r\n"), 0);
+}
+
+/* Mirror of firmware/queen/main.c's init-time SIM7070_Transact(...) calls,
+ * in order (default/unconfigured QUEEN_APN build). */
+static const char* const kQueenInitSequence[] = {
+    "ATE0\r\n",
+    "AT\r\n",
+    "AT+CNMP=38\r\n",
+    "AT+CGDCONT=1,\"IP\",\"\"\r\n",                       /* [HW.41] */
+    "AT+CPSMS=1,,,\"00100001\",\"00000000\"\r\n",
+    "AT+CEDRXS=1,5,\"0010\"\r\n",
+    "AT+CNACT=1,1\r\n",                                    /* [HW.41] */
+};
+#define QUEEN_INIT_SEQUENCE_LEN (sizeof(kQueenInitSequence) / sizeof(kQueenInitSequence[0]))
+
+TEST(test_hw41_cgdcont_immediately_follows_cnmp) {
+    /* Network mode picked (CNMP) → now say which APN, before anything
+     * else. */
+    int cnmp_idx = -1, cgdcont_idx = -1;
+    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
+        if (strncmp(kQueenInitSequence[i], "AT+CNMP=", 8) == 0)    cnmp_idx    = (int)i;
+        if (strncmp(kQueenInitSequence[i], "AT+CGDCONT=", 11) == 0) cgdcont_idx = (int)i;
+    }
+    ASSERT_TRUE(cnmp_idx >= 0);
+    ASSERT_TRUE(cgdcont_idx >= 0);
+    ASSERT_EQ(cgdcont_idx, cnmp_idx + 1);
+}
+
+TEST(test_hw41_cnact_is_last_init_command) {
+    /* Activate only once every other init param (incl. PSM/eDRX) is on
+     * the wire. */
+    ASSERT_EQ(strncmp(kQueenInitSequence[QUEEN_INIT_SEQUENCE_LEN - 1],
+                       "AT+CNACT=", 9), 0);
+}
+
+TEST(test_hw41_cnact_follows_cedrxs) {
+    int cedrxs_idx = -1, cnact_idx = -1;
+    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
+        if (strncmp(kQueenInitSequence[i], "AT+CEDRXS=", 10) == 0) cedrxs_idx = (int)i;
+        if (strncmp(kQueenInitSequence[i], "AT+CNACT=", 9) == 0)   cnact_idx  = (int)i;
+    }
+    ASSERT_TRUE(cedrxs_idx >= 0);
+    ASSERT_TRUE(cnact_idx >= 0);
+    ASSERT_TRUE(cnact_idx > cedrxs_idx);
+}
+
+TEST(test_hw41_pdp_context_defined_before_activated) {
+    /* CGDCONT (define) must precede CNACT (activate) — activating an
+     * undefined PDP context index is a modem-reported error, not a silent
+     * no-op. */
+    int cgdcont_idx = -1, cnact_idx = -1;
+    for (size_t i = 0; i < QUEEN_INIT_SEQUENCE_LEN; i++) {
+        if (strncmp(kQueenInitSequence[i], "AT+CGDCONT=", 11) == 0) cgdcont_idx = (int)i;
+        if (strncmp(kQueenInitSequence[i], "AT+CNACT=", 9) == 0)    cnact_idx   = (int)i;
+    }
+    ASSERT_TRUE(cgdcont_idx >= 0);
+    ASSERT_TRUE(cnact_idx >= 0);
+    ASSERT_TRUE(cgdcont_idx < cnact_idx);
+}
+
+/* ════════════════════════════════════════════════════════════════════
  * ENTRY POINT
  * ════════════════════════════════════════════════════════════════════ */
 
@@ -2815,13 +3027,19 @@ int main(void)
     RUN(test_rereq_queen_accepts_valid_packet);
     RUN(test_rereq_queen_dedups_replay);
     RUN(test_rereq_queen_different_bitmaps_not_deduped);
-    RUN(test_rereq_queen_drops_when_no_active_ota);
+    RUN(test_rereq_queen_drops_when_no_active_ota_and_nothing_persisted);
     RUN(test_rereq_queen_drops_when_pending_empty);
     RUN(test_rereq_queen_drops_when_total_mismatch);
     RUN(test_rereq_queen_drops_non_rerequest_marker);
     RUN(test_rereq_queen_count_missing_full_bitmap);
     RUN(test_rereq_queen_count_missing_partial);
     RUN(test_rereq_queen_count_zero_when_all_received);
+
+    printf("\n  OTA SHA-256 Cross-Check (FW.52):\n");
+    RUN(test_fw52_sha_persist_then_verify_roundtrip);
+    RUN(test_fw52_rerequest_served_after_window_closed_same_ota);
+    RUN(test_fw52_rerequest_rejected_after_window_closed_buffer_overwritten);
+    RUN(test_fw52_rerequest_served_immediately_while_window_still_open);
 
     printf("\n  HMAC Trailer Relay (FW.23):\n");
     RUN(test_queen_relay_stores_4_trailer_chunks);
@@ -2849,6 +3067,14 @@ int main(void)
     RUN(test_lora_rx_ring_isr_simulator_clamps_rssi_above_127);
     RUN(test_lora_rx_ring_25sec_flush_scenario_no_overwrites);
     RUN(test_lora_rx_ring_count_zero_after_full_drain);
+
+    printf("\n  SIM7070G Init — APN/PDP Sequence (HW.41):\n");
+    RUN(test_hw41_cgdcont_empty_apn_wire_form);
+    RUN(test_hw41_cgdcont_configured_apn_wire_form);
+    RUN(test_hw41_cgdcont_immediately_follows_cnmp);
+    RUN(test_hw41_cnact_is_last_init_command);
+    RUN(test_hw41_cnact_follows_cedrxs);
+    RUN(test_hw41_pdp_context_defined_before_activated);
 
     printf("\n══════════════════════════════════════════════════════════════\n");
     printf("  Results: %d passed, %d failed\n\n", tests_passed, tests_failed);

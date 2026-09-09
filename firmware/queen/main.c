@@ -39,6 +39,9 @@
 
 #include "uart_rx_ring.h"
 #include "ota_window.h"   // [FW.52б] воскресіння OTA-вікна запізнілою печаткою
+// [FW.52] Персистований SHA-256 останньої прийнятої OTA — cross-check на
+// Magic Re-Request, коли ota_is_active=0 і буфер МІГ бути перезаписаний.
+#include "ota_sha_guard.h"
 // [FW.2] Маршрутизація RX (16B ECB / 30B CCM rev2.1 / шум) + 31B CoAP-запис —
 // pure-контракт blind-forward'а (Королева CCM не розшифровує; rx_route.h).
 #include "rx_route.h"
@@ -143,6 +146,19 @@
 #define COAP_MAX_RETRIES         3       // [FW.9] Maximum CoAP send retry attempts
 #define COAP_SERVER_HOST  "api.silkennet.com"  // [FW.56] CCOAPNEW хоче IP → CDNSGIP цього хоста
 #define COAP_SERVER_PORT  5683
+
+// [HW.41] APN/PDP-контекст. Раніше Queen-init мовчки покладався на авто-APN
+// сімки (жодного AT+CGDCONT/AT+CNACT) — для надійності треба явний,
+// config-керований APN, а не здогадка одного оператора: `#ifndef`-гейт (не
+// голий #define — інакше bare #define клобберить `-D`, той самий клас, що й
+// FW2_CCM_ENABLED/ARCH34_HELIUM_ENABLED вище) override'иться при білді:
+// `-DQUEEN_APN='"<carrier-apn>"'`. Дефолт `""` — НЕ здогадка «internet» чи
+// будь-якого конкретного carrier'а, а 3GPP-порожній APN (TS 27.007 §10.1.1:
+// мережа сама добирає профіль SIM'и) — неконфігурований білд лишається
+// behavior-identical з «до HW.41» (auto-APN), не шле у ефір вигадану строку.
+#ifndef QUEEN_APN
+#define QUEEN_APN  ""
+#endif
 
 // [FW.20] Конверт CMD_TIME_SYNC (UTC-секунди від сервера як єдиного джерела істини).
 // Бекенд CoapEncryption.coap_encrypt обгортає КОЖЕН downlink у цей конверт,
@@ -834,6 +850,46 @@ static FlashKv queen_kv;
 void Helium_Mac_Bind_Nvm(FlashKv *kv);
 #endif // ARCH34_HELIUM_ENABLED
 
+// [FW.52] Queen-side OTA SHA-256 mirror — page 125 (0x0803E800), Queen's
+// OWN free page (не Helium-KV 122-123, не keys-сторінка 124, не UID 127 —
+// main.c коментар вище). UNGATED (на відміну від queen_kv/ARCH34_HELIUM):
+// Magic Re-Request (§5.1.3) живий незалежно від Helium/LoRaWAN-фліпу, тож
+// цей cross-check мусить бути живим завжди теж. Дзеркало Ota_Hal_Erase/
+// Program/Read у firmware/soldier/main.c (той самий FlashKvOps seam, той
+// самий "erase → тіло-перше → magic-останнім" виклик через ota_sha_guard.h).
+#define QUEEN_OTA_SHA_BASE_ADDR 0x0803E800UL
+
+static int Queen_OtaSha_Hal_Erase(void *io, uint8_t page)
+{
+    (void)io;
+    FLASH_EraseInitTypeDef erase = { .TypeErase = FLASH_TYPEERASE_PAGES, .Page = page, .NbPages = 1 };
+    uint32_t page_error = 0;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASHEx_Erase(&erase, &page_error);
+    HAL_FLASH_Lock();
+    return (st == HAL_OK && page_error == 0xFFFFFFFFu) ? 1 : 0;
+}
+
+static int Queen_OtaSha_Hal_Program(void *io, uint32_t byte_off, uint64_t v)
+{
+    (void)io;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                             QUEEN_OTA_SHA_BASE_ADDR + byte_off, v);
+    HAL_FLASH_Lock();
+    return (st == HAL_OK) ? 1 : 0;
+}
+
+static uint64_t Queen_OtaSha_Hal_Read(void *io, uint32_t byte_off)
+{
+    (void)io;
+    return *(const volatile uint64_t *)(QUEEN_OTA_SHA_BASE_ADDR + byte_off);
+}
+
+static const FlashKvOps queen_ota_sha_ops = {
+    Queen_OtaSha_Hal_Read, Queen_OtaSha_Hal_Program, Queen_OtaSha_Hal_Erase
+};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -1059,6 +1115,17 @@ int main(void)
   (void)SIM7070_Transact("AT\r\n", AT_INIT_BUDGET_MS);
   (void)SIM7070_Transact("AT+CNMP=38\r\n", AT_INIT_BUDGET_MS);
 
+  // [HW.41] Явний PDP-контекст — БЕЗ цього Королева мовчки покладалась на
+  // авто-APN сімки (працює на деяких мережах, ненадійно на інших). cid=1
+  // (той самий, що бенч-чеклист 02_04 §10.2 п.4 типує вручну); APN-рядок —
+  // QUEEN_APN (вище) — build-time config, НЕ хардкод одного оператора.
+  // ⚠️ AT+CGDCONT-граматика взята з 3GPP TS 27.007 §10.1.1 (спільна для
+  // всього кола модемів, у т.ч. SIM7070G) — verbatim-звірка з SIM7070 AT
+  // Command Manual ще НЕ зроблена (той самий "pre-bench" застереження клас,
+  // що й FW.56 для CoAP-граматики: канон цього репо не містить AT-мануала
+  // модема — bench-residual, RUNBOOK).
+  (void)SIM7070_Transact("AT+CGDCONT=1,\"IP\",\"" QUEEN_APN "\"\r\n", AT_INIT_BUDGET_MS);
+
   // [HW.10] Power Saving Mode (PSM) + Extended DRX (eDRX) для NB-IoT/LTE-M.
   // Знижує idle-споживання з ~10 мкА (SIM7000G baseline) до ~3 мкА (SIM7070G PSM)
   // між hourly CoAP flush-циклами. Налаштування узгоджене з 02_05.
@@ -1079,6 +1146,13 @@ int main(void)
   //   mode=1 → enable eDRX, AcT=5 → LTE Cat M1
   //   eDRX="0010" → 20.48 sec (paging window — короткий для downlink-сприйнятливості)
   (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
+
+  // [HW.41] Активуємо PDP-контекст, щойно решта init-параметрів на місці —
+  // AT+CNACT=<pdpidx>,<action>: pdpidx=1 (той самий cid, що CGDCONT вище),
+  // action=1 (Active). Той самий verbatim-caveat, що й CGDCONT вище: syntax
+  // із SIMCom TCP/IP AT-набору (SIM7070/7080/7090 спільний), не з canon чи
+  // vendored ноти в цьому репо.
+  (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
 
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
   Radio.Rx(LORA_RX_INFINITE);
@@ -1288,10 +1362,21 @@ int main(void)
             // простіший за окремий (DID, bitmap) tuple, бо блок уже містить обидва.
             uint32_t req_hash = djb2_hash_bytes((const uint8_t*)decrypted_payload, 16);
             if (Cmd_Dedup_Check(req_hash) == 0) {
-                // Свіжий голос — повторюємо лише пропущене. Перевіряємо, що
-                // OTA-вікно живе (pending_ota_size > 0 та ota_is_active=1) —
-                // якщо ні, Солдат має воскреснути через CoAP-push з Rails.
-                if (pending_ota_size > 0 && ota_is_active) {
+                // Свіжий голос — повторюємо лише пропущене. OTA-вікно живе
+                // (ota_is_active=1) → буфер напевно свіжий, обслуговуємо
+                // без питань. Вікно ЗГАСЛО (ota_is_active=0) — буфер МІГ
+                // бути перезаписаний наступним CoAP-push'ем (03_02 §5.1.3,
+                // FW.52): звіряємо SHA-256 поточного вмісту проти того, що
+                // персистували при прийомі. Збіглося → та сама прошивка,
+                // мовчання broadcast-циклу не зіпсувало байти — обслуговуємо
+                // й тут. Розійшлося / нічого не персистовано → буфер уже
+                // чужий, мовчимо (Солдат воскресне через CoAP-push з Rails —
+                // та сама стеля, що й до FW.52, лише тепер РІЗНИТЬ безпечний
+                // випадок від небезпечного замість забороняти обидва).
+                if (pending_ota_size > 0 &&
+                    (ota_is_active ||
+                     Ota_Sha_Verify(&queen_ota_sha_ops, NULL,
+                                     pending_ota_bytecode, pending_ota_size))) {
                     uint16_t total_chunks = (pending_ota_size + 10) / 11;
                     uint16_t soldier_total = ((uint16_t)decrypted_payload[5] << 8) |
                                               decrypted_payload[6];
@@ -2477,6 +2562,16 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
             ota_chunk_bitmap = 0;
             current_ota_chunk_idx = 0;
             ota_is_active = 1;  // 🚀 Запускаємо бродкаст на ліс!
+
+            // [FW.52] Успішний прийом — персистуємо SHA-256 зібраного
+            // байткоду НЕГАЙНО, поки він точно свіжий. Дає Magic Re-Request
+            // (нижче) спосіб звірити "це та сама прошивка" навіть після
+            // ota_is_active згасне і буфер стане кандидатом на перезапис
+            // наступним CoAP-push'ем (03_02 §5.1.3). Best-effort: відмова
+            // HAL не валить приймання — просто наступний re-request після
+            // закриття вікна не обслужиться (стара поведінка, не регрес).
+            (void)Ota_Sha_Persist(&queen_ota_sha_ops, NULL,
+                                   pending_ota_bytecode, pending_ota_size);
         }
     }
     // [FW.23] HMAC-печатка OTA (0x9B) — Королева приймає її як гонець:

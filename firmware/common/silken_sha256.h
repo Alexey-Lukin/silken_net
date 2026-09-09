@@ -176,10 +176,14 @@ static void Silken_Sha256(const uint8_t *data, size_t len,
 
 /* HMAC-SHA256 (RFC 2104): H((K' ^ opad) || H((K' ^ ipad) || msg)).
  * K_seed = 32 байти < block, але довгі ключі теж обробляються коректно
- * (хешуються до 32) — повна відповідність OpenSSL::HMAC. */
-static void Silken_Hmac_Sha256(const uint8_t *key, size_t key_len,
-                               const uint8_t *msg, size_t msg_len,
-                               uint8_t digest[SILKEN_SHA256_DIGEST_LEN])
+ * (хешуються до 32) — повна відповідність OpenSSL::HMAC.
+ * [FW.52] `inline` (не голий `static`) — дзеркало сусіднього
+ * `Silken_Hmac_Sha256_Concat`: TU, що включає цей header лише заради
+ * `Silken_Sha256` (напр. test_ota_sha_guard.c), інакше ловить
+ * -Wunused-function на HMAC-половину, якою не користується. */
+static inline void Silken_Hmac_Sha256(const uint8_t *key, size_t key_len,
+                                      const uint8_t *msg, size_t msg_len,
+                                      uint8_t digest[SILKEN_SHA256_DIGEST_LEN])
 {
     uint8_t key_block[SILKEN_SHA256_BLOCK_LEN];
     uint8_t pad[SILKEN_SHA256_BLOCK_LEN];
