@@ -19,7 +19,9 @@ Key literature parameters
   j_max(25°C) = 494 µA/cm²    — dgrGcGDH + Os-polymer (Zafar 2012, PMC3275720)
   Km ≈ 20 mM                  — estimate for GcGDH (between Asp 87 mM, Mucor 28 mM)
   V_op = 0.5 V                — EBFC under load (OCV 0.6-0.8 V, 01_03 §1)
-  η_bq = 0.85                 — BQ25570 boost efficiency (TI SLUSBH2G)
+  η_bq = 0.68                 — BQ25570 boost efficiency @ P_EBFC≈15µW (docs/02_03 §9.1
+                                 table is source of truth; TI SLUSBH2G gives no closed-form
+                                 η(P_IN) — see constants.py ETA_BQ comment, [HW.47] 2026-09-09)
   E_cycle = 5 mJ              — STM32WLE5JC per wake cycle (sense + LoRa TX)
   Ea = 40 kJ/mol              — Arrhenius activation energy (FAD enzyme typical)
   D_eff = 2e-6 cm²/s          — glucose through chitosan hydrogel matrix
