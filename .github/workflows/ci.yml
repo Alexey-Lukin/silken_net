@@ -285,8 +285,8 @@ jobs:
         # (ships y.tab.c + bundles lrama → no bison). Toolchain version is apt's
         # (unpinned) — bytecode determinism rides on the pinned mruby submodule.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
             gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
             cmake ninja-build ruby rake qemu-system-arm
 
@@ -405,7 +405,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install cppcheck (apt — version fixed by the ubuntu-24.04 image)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cppcheck
+        run: sudo apt-get -o Acquire::Retries=3 update && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 cppcheck
 
       - name: cppcheck firmware (soldier + queen + common)
         run: firmware/scripts/cppcheck.sh

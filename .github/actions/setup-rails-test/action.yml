@@ -28,7 +28,7 @@ runs:
       # Стеля 300 с = ×7.5 норми; вона падає ГУЧНО й ПОІМЕНОВАНО, доки бюджет
       # найтіснішої з двох джоб (`feature-test`, 10 хв) іще лишається.
       run: |
-        if ! sudo timeout 300 bash -c 'apt-get update -qq && apt-get install --no-install-recommends -y -o Acquire::Retries=3 libpq-dev libvips'; then
+        if ! sudo timeout 300 bash -c 'apt-get -o Acquire::Retries=3 update -qq && apt-get install --no-install-recommends -y -o Acquire::Retries=3 libpq-dev libvips'; then
           echo "::error title=apt не вклався у 300 с::Встановлення libpq-dev+libvips перевищило власну стелю кроку. Це затримка (або збій) apt-дзеркала — НЕ дефект коду й НЕ падіння тестів: жоден приклад не виконувався. Перезапусти прогін. [OPS.30]"
           exit 1
         fi
