@@ -12,8 +12,18 @@
 #
 # Why it exists (what already bit, §01a vilize 2026-07-14):
 #   • the C# golden xUnit validates the C#-record DEFAULTS, not the shipped json (RadomeTests parses a
-#     minimal {kind,name}); worse, MechanicalLockTests.MkCem pins the OFF-SPEC groove 0.8×0.6 while the
-#     shipped json carries the corrected DIN-471 1.1×0.25 — the golden test LOCKS THE WRONG number.
+#     minimal {kind,name}) — that half is STRUCTURAL and still true: a shipped json can drift with the
+#     xUnit staying green. ⚠️ Its illustration is HISTORICAL and must not be read as a live finding:
+#     MechanicalLockTests.MkCem once pinned the OFF-SPEC groove 0.8×0.6 against the shipped DIN-471
+#     1.1×0.25, and THIS COMMIT (c52b03b7) repaired it — the test now pins 1.1/0.25, as does canon
+#     §4.3. Re-measured 2026-09-09 (HW.45): the motive died, the ground did not (00_05 §5).
+#   • the same axis has a THIRD home this guard does NOT reach: where a manifest omits a field, the
+#     EFFECTIVE geometry is the C#-record default in Cem.cs, bound to canon by nothing. Measured
+#     2026-09-09: 14 such fields, all in the assembly-level manifests, and the sharpest are the ones
+#     that cross machine halves — o_ring_gap_mm 1.424f is DERIVED from in-silico script 52
+#     (ORING_CS 1.78 × 0.80), rf_clearance_min_mm 12f mirrors 02_01 §5.3, and zone1_insertion_mm 30
+#     carries no provenance comment at all. All correct today → a pin would have an empty true set,
+#     so it is NOT built; the carrier is the picogk skill. State → 00_07 HW.45.
 #   • DocsLinter.anchor_dimension_drift only catches prose RANGES (20-30 flange / 40-60 Zone-2), never a
 #     cem value.  • bell_radius_mm=5.0 had NO assert anywhere.
 # So a shipped cem number could drift from canon with zero gate. This closes that.

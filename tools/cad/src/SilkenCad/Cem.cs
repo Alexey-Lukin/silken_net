@@ -308,6 +308,9 @@ internal sealed record AnchorAxialStackCem
 
     // How deep the Zone-1 anode shaft inserts into the Zone-2 bore (press-fit overlap). The Zone-3 shank
     // enters the OTHER end by its own shank length → InsertionBudget guards the two shanks don't collide.
+    // 30 is an HW.8 PLACEHOLDER, not a frozen dim — and it is the same number as `L_A_INSERT` in the
+    // in-silico scripts 54/58 (F2 budget 50−30−14 = 6 mm gap). No gate binds the two halves: they share
+    // no identifier, so a change here must be swept across `tools/in_silico/scripts/5*.py` BY VALUE.
     public float Zone1InsertionMm { get; init; } = 30f;
 
     // Components — reuse the per-part records (nested); defaults = the frozen Zone-1 / Zone-2 dims + the
