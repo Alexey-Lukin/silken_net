@@ -1,0 +1,75 @@
+{
+  "method": "literature-cited endurance/fatigue-limit review, no FEA \u2014 matches HW.43's own request for an acceptance UNIT per part, not a single pass/fail number.",
+  "budget_cycles": 630000000.0,
+  "parts": {
+    "pogo_spring": {
+      "part": "pogo spring (Mill-Max 0906, BeCu C17200)",
+      "framing_A_full_stroke_actuation": {
+        "mfr_rated_life_cycles": [
+          100000.0,
+          1000000.0
+        ],
+        "budget_cycles": 630000000.0,
+        "overrun_x": [
+          630.0,
+          6300.0
+        ],
+        "verdict": "FAILS by this framing (budget is 630-6300x the manufacturer's rated full-stroke actuation life) \u2014 but this framing is almost certainly WRONG for our load case: the mfr spec is for full 1.5mm-travel plunge/mate cycles, and canon (01_01 \u00a72) already asserts the travel margin exists precisely so sway is absorbed as small residual contact micro-motion, not full-stroke actuation."
+      },
+      "framing_B_low_amplitude_stress_fatigue": {
+        "anchor_points_MPa_cycles": [
+          [
+            400.0,
+            3050000.0
+          ],
+          [
+            240.0,
+            10000000000.0
+          ]
+        ],
+        "vhcf_caveat": "C17200 shows NO strict flat endurance limit in VHCF (>1e7) \u2014 stress continues to matter at very-high-cycle counts, unlike a classic steel fatigue limit.",
+        "verdict": "PARTIAL \u2014 physically the right model (micro-motion, not full-stroke), and the 240 MPa -> 1e10-cycle anchor comfortably covers our 6.3e8 budget IF the true working stress stays near or below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip is not computed anywhere in canon \u2014 missing datum: spring wire diameter / rate + measured (or bench-derived) micro-deflection amplitude during sway, not the full 1.5mm design travel."
+      },
+      "closed": false,
+      "verdict": "TWO mismatched framings, neither closed \u2014 see framing_A (fails, likely wrong model) and framing_B (physically right, needs one missing datum) above.",
+      "missing_datum": "spring wire diameter/rate (Mill-Max 0906 full mechanical dwg) + actual sway-induced micro-deflection amplitude at the pogo contact (bench/field, not the 1.5mm design travel) \u2014 without it, framing B cannot be closed to a number."
+    },
+    "peek_barb_cyclic": {
+      "part": "PEEK mechanical-lock barb (HW.26) \u2014 CYCLIC fatigue axis, distinct from HW.26's already-tracked STATIC cold-flow creep (time-based, not cycle-based \u2014 orthogonal failure mode, both need checking separately)",
+      "endurance_limit_MPa": [
+        30.0,
+        48.0
+      ],
+      "tested_range_cycles": [
+        1000000.0,
+        10000000.0
+      ],
+      "budget_cycles": 630000000.0,
+      "extrapolation_note": "budget is 1-2 orders beyond the tested range, but PEEK's endurance limit is reported as a genuine flat fatigue limit (self-heating/crack-arrest mechanism, not VHCF-style continued degradation like metals) \u2014 Pastukhov et al. 2020 title is literally 'Physical background of the ENDURANCE LIMIT in PEEK'. Treat 30 MPa as a defensible lower-bound acceptance threshold, not a precisely-validated number at 6.3e8.",
+      "closed": false,
+      "verdict": "Reference endurance limit established (30-48 MPa @ 1e6-1e7 cycles) \u2014 see missing_datum for what still closes it.",
+      "missing_datum": "actual contact-stress amplitude at the mechanical-lock barb under sway-induced cyclic load \u2014 this is exactly what HW.26's own pending ANSYS LS-DYNA FEA leg computes; this script hands that FEA a numeric acceptance criterion (30-48 MPa) to compare against instead of running blind."
+    },
+    "sil_pad": {
+      "part": "Sil-Pad (Bergquist Sil-Pad 1500ST, HW.30) \u2014 3rd spring in the Z-stack, 30-40% sustained compression per HW.30",
+      "closed": false,
+      "verdict": "NOT closeable by S-N literature review \u2014 this is a genuinely different failure mechanism from spring/metal fatigue. Silicone elastomer degradation under sustained compression is COMPRESSION-SET / STRESS-RELAXATION (creep), which is formulation-specific (filler loading, cure system) and has no generic closed-form S-N curve in the open literature the way BeCu or PEEK do. HW.30 already schedules the only correct instrument for this axis: a bench Arrhenius-accelerated creep test ('Lifecycle test: Sil-Pad creep \u043f\u0456\u0434 30-40% compression \u00d7 20 \u0440\u043e\u043a\u0456\u0432'). This item does not duplicate that leg \u2014 it confirms literature review cannot substitute for it."
+    },
+    "genipin_matrix": {
+      "part": "genipin-chitosan-CNC matrix (Zone-1 anode enzyme-immobilization layer, 01_03 \u00a72.1 Layer 4)",
+      "closed": false,
+      "category_mismatch": true,
+      "verdict": "CORRECTION TO HW.43's OWN LIST, not a finding about the matrix. Canon (01_03 \u00a72.1) describes this as a ~10-20 um hydrogel COATING for enzyme immobilization on the Zone-1 gyroid surface \u2014 it is not a load-bearing spring/structural element under the 0.5-5 N axial mechanical-stress table (01_02 \u00a72.2), so the 'endurance limit / S-N' method this checkbox prescribes does not apply to it the way it does to a metal spring or a PEEK barb. Its own cyclic-strain durability HAS already been probed twice, and neither probe is an S-N measurement: (a) script 16_strain_cycling_md.py ran N=10 MD cycles at +/-5% strain and returned a QUALITATIVE verdict ('pseudoplastic, PE drift 1.0%' \u2014 PIPELINE_STATUS.md row 16), not a fatigue-life number, and MD cannot be extrapolated 8 orders of magnitude to 6.3e8 cycles by any known method; (b) the wet-lab bench spec (01_03 \u00a73.4, 10 000 cycles @ 0.1 Hz, ~28h) is the SAME 5-orders-short comparison HW.43's own head paragraph already names as the open gap. No published S-N/endurance-limit data exists for a crosslinked genipin-chitosan hydrogel coating (searched; none found). The matrix's durability axis that actually matters is CHEMICAL/ENZYMATIC \u2014 does the immobilized enzyme retain activity and does the crosslink network stay intact under repeated sap exposure \u2014 and that axis is already tracked separately (HW.5 30-day stability test, 01_03 MD stability checks), not by this checkbox."
+    }
+  },
+  "sources": [
+    "Mill-Max 0906 series product page (mill-max.com) \u2014 mechanical life 1e5-1e6 cycles at mid-stroke",
+    "ScienceDirect \u2014 'Specific very high cycle fatigue fracture mechanism in C17200 beryllium copper alloy caused by grain boundary precipitates and persistent slip bands' \u2014 VHCF anchor points (400 MPa/3.05e6 cyc, 240 MPa/1e10 cyc), no strict VHCF flat limit",
+    "PMC/NCBI \u2014 'Rotating Bending Fatigue Behaviors of C17200 Beryllium Copper Alloy at High Temperatures' \u2014 corroborating BeCu fatigue behaviour",
+    "peekchina.com \u2014 'Fatigue Strength of PEEK: A Guide for Gear Engineers' \u2014 unfilled PEEK endurance limit 30-40 MPa @ 1e6-1e7 cycles",
+    "Pastukhov et al. 2020, J. Polym. Sci., 'Physical background of the endurance limit in poly(ether ether ketone)' (Wiley) \u2014 corroborating ~41-48 MPa @ 1e7 cycles, true flat limit",
+    "docs/protocols/ebfc/in_silico/PIPELINE_STATUS.md row 16 (script 16_strain_cycling_md.py, N=10 MD cycles, qualitative pseudoplastic verdict) \u2014 genipin-matrix existing cyclic probe"
+  ],
+  "verdict": "No part fully closed; each gets a named acceptance threshold or a named reason the method does not apply, per-part detail in `parts`. Genipin-matrix removed from the S-N framing as a category-mismatch correction to HW.43's own checkbox list.",
+  "caveats": "All numeric thresholds are cited literature values, not computed physical facts for OUR exact parts/geometry (00_06 \u00a70 Validation Gate) \u2014 each 'missing_datum' field names exactly what closes the remaining gap."
+}

@@ -1,0 +1,38 @@
+{
+  "method": "exceedance-fraction of real 10-year daily-mean open/10m wind speed (NASA POWER) against WMO Beaufort-scale tree-motion anchors, used as a citable proxy for a sway-onset threshold that the peer-reviewed literature reports as poorly constrained.",
+  "budget_cycles_upper_bound": 630000000.0,
+  "n_days": 3653,
+  "daily_ws10m_ms": {
+    "min": 0.79,
+    "mean": 4.44,
+    "max": 11.18
+  },
+  "beaufort_exceedance": [
+    {
+      "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+      "threshold_ms": 3.4,
+      "exceedance_fraction": 0.7041,
+      "n_eff_cycles_upper_bound": 443570000.0
+    },
+    {
+      "anchor": "Beaufort 4 (small branches move)",
+      "threshold_ms": 5.5,
+      "exceedance_fraction": 0.2483,
+      "n_eff_cycles_upper_bound": 156420000.0
+    },
+    {
+      "anchor": "Beaufort 5 (small trees begin to sway)",
+      "threshold_ms": 8.0,
+      "exceedance_fraction": 0.0348,
+      "n_eff_cycles_upper_bound": 21900000.0
+    }
+  ],
+  "gaps": {
+    "sway_onset_threshold": "poorly constrained in peer-reviewed literature (Umlauft et al. 2025) \u2014 Beaufort anchors are a standard PROXY, not a validated criterion.",
+    "canopy_attenuation": "sub-canopy wind reduction factor varies >4x by forest type/height/open-wind-speed (ScienceDirect/Wiley/USFS Treesearch, no single constant is defensible) \u2014 this computation uses OPEN/10m wind, which OVER-states in-canopy duty cycle, so the printed N_eff values are themselves upper bounds, not the true budget."
+  },
+  "verdict": "Duty cycle NOT closed to a single number (two named open literature gaps). Confirmed: even the most generous bracket bounds N_eff well under the 6.3e8 upper bound \u2014 exact closure needs an in-stand anemometer at trunk height (bench/field) or a species-specific sway-onset study, neither of which exists in open literature today.",
+  "source_file": "tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json",
+  "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=WS10M&community=RE&longitude=32.06&latitude=49.44&start=20150101&end=20241231&format=JSON",
+  "fetched": "2026-09-09"
+}

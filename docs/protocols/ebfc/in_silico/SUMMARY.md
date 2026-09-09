@@ -483,6 +483,31 @@ as a wetting/manufacturing caution, **not** as the transport limit the canon cla
 
 ---
 
+## HW.43 — Cyclic Budget Acceptance Units (scripts 59 + 62)
+
+Canon home → [`01_02 §2.2`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) / [`01_01 §1.4`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); decision → `00_07` HW.43.
+
+The item asked for an ACCEPTANCE UNIT per part, not a rubber-stamped pass — literature-cited
+endurance/fatigue-limit review (script 59) plus a real-data wind-climatology bound (script 62),
+no FEA, no fabricated numbers where the open literature genuinely does not have one.
+
+| Part | Reference found | Verdict |
+|---|---|---|
+| Pogo spring (Mill-Max 0906, BeCu C17200) | mfr full-stroke life 1e5–1e6 cyc · S-N anchors 240 MPa→1e10 cyc / 400 MPa→3.05e6 cyc, no strict VHCF flat limit | Two mismatched framings — full-stroke actuation FAILS (likely wrong model); low-amplitude stress framing is physically right but missing the real sway micro-deflection datum |
+| PEEK mechanical-lock barb (cyclic, ⊥ HW.26's tracked static creep) | endurance limit 30–48 MPa @ 1e6–1e7 cyc (2 converging sources) | Reference established for HW.26's pending FEA to check against; not itself closed |
+| Sil-Pad (HW.30, 3rd Z-stack spring) | — | Not S-N-closeable by construction (compression-set/creep, formulation-specific); correctly routes to HW.30's already-scheduled bench test |
+| Genipin-chitosan-CNC matrix (01_03 §2.1 Layer 4) | script 16 (N=10 MD cycles, qualitative pseudoplastic) | Category mismatch — a ~10-20 µm enzyme-immobilization coating, not a load-bearing spring; removed from the S-N framing, its durability axis is chemical (HW.5), not cyclic-mechanical |
+| Wind duty-cycle (Cherkasy pine forest) | NASA POWER WS10M, 10y daily, Beaufort-anchored exceedance | Confirms 6.3e8 is an overcount (Beaufort-3 bracket bounds N_eff ≤ 4.4e8 even on open/10m wind) but not closed to one number — sway-onset threshold is "poorly constrained" in peer-reviewed lit and canopy attenuation varies >4× (both named, neither fabricated) |
+
+**Verdict** — 🟡 Genuinely partial. No part is fully closed, and that is the honest result: each
+gets a named numeric threshold or a named reason the closed-form method does not apply, plus the
+exact missing datum that would close it (bench sway-deflection measurement, HW.26's FEA output, or
+an in-canopy anemometer). The one clean correction is the genipin-matrix removal from the checkbox's
+own S-N framing — the durability question that actually matters for it lives in HW.5.
+(`mechanical/contact_endurance_check.json`, `mechanical/wind_duty_cycle.json`)
+
+---
+
 ## Infrastructure
 
 | Component | Location |
