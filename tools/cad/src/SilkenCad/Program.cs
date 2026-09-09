@@ -264,8 +264,13 @@ internal static class Program
         {
             case "ti_coin":
             {
+                // strFile (not cem.Name) feeds the drawing's SSOT row: ti_coin.<alloy>.json's `name` field
+                // ("ti_coin_7nb" etc.) does not equal its filename stem ("ti_coin.7nb") for any alloy variant
+                // — see the comment on Drawing.TiCoin. Same class/fix as mechanical_lock below (HW.1, found
+                // 2026-09-09: the base ti_coin.json coincidentally matched, so it went unnoticed).
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
-                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, p);
+                string strFile = Path.GetFileName(strCemPath);
+                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p);
                 break;
             }
             case "cathode_flange":
@@ -277,8 +282,9 @@ internal static class Program
             case "mechanical_lock":
             {
                 // strFile (not cem.Name) feeds the drawing's SSOT row: mechanical_lock.zone1/.zone3.json's
-                // `name` field ("mechanical_lock_zone1"/"_zone3") does not equal its filename stem, unlike
-                // ti_coin/cathode_flange — see the comment on Drawing.MechanicalLock.
+                // `name` field ("mechanical_lock_zone1"/"_zone3") does not equal its filename stem — same
+                // class as ti_coin above (HW.1); cathode_flange is the one kind left where cem.Name still
+                // happens to equal the filename stem — see the comment on Drawing.MechanicalLock.
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
                 strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p);

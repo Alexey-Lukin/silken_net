@@ -251,7 +251,7 @@ internal static class Drawing
     }
 
     // ── Ti-coin (Stage-2 coupon, 01_01 §6.1) — front (Ø disc) + side (thickness) + eyelet + A_electrode ──
-    public static string TiCoin(TiCoinCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
+    public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
     {
         double r = cem.DiscDiameterMm / 2.0 * Px;
         double t = cem.DiscThicknessMm * Px;
@@ -307,7 +307,13 @@ internal static class Drawing
             ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
-            ("SSOT", $"cem/{cem.Name}.json"),
+            // 🔴 strCemFile (not cem.Name) — same reasoning as Drawing.MechanicalLock below: every
+            // ti_coin.<alloy>.json's `name` field uses an underscore (`ti_coin_7nb`) where the real
+            // filename uses a dot (`ti_coin.7nb.json`), so `cem/{cem.Name}.json` printed an SSOT path
+            // that does not exist on disk for every alloy variant (HW.1, found 2026-09-09). The base
+            // `ti_coin.json` coincidentally matched, which is exactly why this went unnoticed. The
+            // caller (`Program.Draw`, which already holds the real invoked path) passes it in explicitly.
+            ("SSOT", $"cem/{strCemFile}"),
         };
 
         // 🔴 Canvas height and title-block Y are COMPUTED from the content, not tuned. The constant
@@ -324,7 +330,7 @@ internal static class Drawing
     // writes a file the shop opens in AutoCAD/Fusion. Dimension geometry is laid out manually (witness +
     // arrow Lines + a value Text) so the API surface stays Circle/Line/Text/Layer — robust, every CAD
     // reads it. `%%c` is the DXF single-line code for Ø; DxfSafe maps the few Unicode glyphs to ASCII. ──
-    public static bool TiCoinDxf(TiCoinCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool TiCoinDxf(TiCoinCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -358,7 +364,7 @@ internal static class Drawing
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
-        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
+        lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
         double yy = cy - rr - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rr, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
@@ -499,12 +505,13 @@ internal static class Drawing
     // + the DIN-471 groove notch, dimensioned straight off the CEM — never tooth-by-tooth, same "spec,
     // not point-by-point" logic §6 uses for the gyroid lattice). Same CEM-native pipeline as the coin/flange.
     //
-    // 🔴 One deliberate deviation from the coin/flange SSOT-row pattern: those print `cem/{cem.Name}.json`,
-    // which is only correct because their `Name` equals their manifest's filename stem. Here it does NOT —
-    // `mechanical_lock.zone1.json` carries `name: "mechanical_lock_zone1"` (no dot/zone split), so
-    // `cem/{cem.Name}.json` would print a path that does not exist on disk. A false SSOT pointer is exactly
-    // the class of fabricated instruction gotcha #11 exists to prevent, so the caller (`Program.Draw`,
-    // which already holds the real invoked path) passes the actual file name in explicitly.
+    // 🔴 One remaining deviation from the flange's SSOT-row pattern: that one still prints `cem/{cem.Name}.json`,
+    // which is only correct because ITS `Name` happens to equal its manifest's filename stem. Here (and for
+    // ti_coin's alloy variants, HW.1) it does NOT — `mechanical_lock.zone1.json` carries
+    // `name: "mechanical_lock_zone1"` (no dot/zone split), so `cem/{cem.Name}.json` would print a path that
+    // does not exist on disk. A false SSOT pointer is exactly the class of fabricated instruction gotcha #11
+    // exists to prevent, so the caller (`Program.Draw`, which already holds the real invoked path) passes
+    // the actual file name in explicitly.
     public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
     {
         double rShank = cem.ShankDiameterMm / 2.0 * Px;

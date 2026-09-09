@@ -13,7 +13,7 @@ public class DrawingTests
     [Fact]
     public void TiCoin_Svg_Is_Wellformed_And_Carries_The_Cem_Dims()
     {
-        string svg = Drawing.TiCoin(new TiCoinCem(), "test");
+        string svg = Drawing.TiCoin(new TiCoinCem(), "test", "ti_coin.json");
         Assert.StartsWith("<svg", svg);
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø16", svg);          // disc Ø straight from the CEM
@@ -30,7 +30,7 @@ public class DrawingTests
     [Fact]
     public void Empty_Cem_Prints_NOT_SPECIFIED_And_Never_Invents_The_Baseline_Alloy()
     {
-        string svg = Drawing.TiCoin(new TiCoinCem(), "test");
+        string svg = Drawing.TiCoin(new TiCoinCem(), "test", "ti_coin.json");
         Assert.Contains(Drawing.NotSpecified, svg);
         Assert.DoesNotContain("Ti-6Al-4V", svg);   // the defect this file exists to prevent
         Assert.DoesNotContain("SLM/DMLS", svg);    // process fallback — same class
@@ -41,7 +41,7 @@ public class DrawingTests
     [Fact]
     public void Absent_Note_Fields_Print_As_Lines_Rather_Than_Vanishing()
     {
-        string svg = Drawing.TiCoin(new TiCoinCem { Notes = new NotesSpec { Material = "Ta (R05200)" } }, "t");
+        string svg = Drawing.TiCoin(new TiCoinCem { Notes = new NotesSpec { Material = "Ta (R05200)" } }, "t", "ti_coin.json");
         Assert.Contains("Ta (R05200)", svg);
         foreach (string label in new[] { "Process", "Surface", "Post-process", "Coating", "Lattice", "Inspect" })
             Assert.Contains($"{label}: {Drawing.NotSpecified}", svg);
@@ -54,7 +54,7 @@ public class DrawingTests
     public void One_Sided_Tolerance_Never_Fabricates_A_Zero_Limit()
     {
         var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "bore", PlusMm = 0.1f } };
-        string svg = Drawing.TiCoin(cem, "t");
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
         Assert.Contains($"bore: +0.1 / {Drawing.NotSpecified} mm", svg);
         Assert.DoesNotContain("0.1/0 mm", svg);
     }
@@ -65,13 +65,13 @@ public class DrawingTests
     public void Named_Feature_Without_Limits_Still_Reaches_The_Drawing()
     {
         var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "shank_dia" } };
-        Assert.Contains("shank_dia", Drawing.TiCoin(cem, "t"));
+        Assert.Contains("shank_dia", Drawing.TiCoin(cem, "t", "ti_coin.json"));
     }
 
     [Fact]
     public void TiCoin_Active_Window_Renders_A_Dashed_Defined_Area()
     {
-        string svg = Drawing.TiCoin(new TiCoinCem { ActiveWindowDiameterMm = 8f }, "t");
+        string svg = Drawing.TiCoin(new TiCoinCem { ActiveWindowDiameterMm = 8f }, "t", "ti_coin.json");
         Assert.Contains("window Ø8", svg);    // defined-area note (O-ring / lacquer cell)
         Assert.Contains("stroke-dasharray", svg);
     }
@@ -86,14 +86,14 @@ public class DrawingTests
             Notes = new NotesSpec { CoatingRestriction = "no ZnO-Ta on gyroid", Inspection = "SEM x500" },
             Tolerances = new ToleranceSpec { Fit = "H7/s6 nominal", ConcentricityMm = "0.05" },
         };
-        string iso = Drawing.TiCoin(cem, "t");
+        string iso = Drawing.TiCoin(cem, "t", "ti_coin.json");
         Assert.Contains("no ZnO-Ta on gyroid", iso);   // note consumed from the CEM, not hard-coded
         Assert.Contains("SEM x500", iso);
         Assert.Contains("Fit: H7/s6 nominal", iso);    // tolerances block rendered
         Assert.Contains("Concentricity", iso);
         Assert.Contains("first-angle", iso);           // ISO is the default footer
 
-        string asme = Drawing.TiCoin(cem, "t", DrawingStandard.Asme);
+        string asme = Drawing.TiCoin(cem, "t", "ti_coin.json", DrawingStandard.Asme);
         Assert.Contains("third-angle", asme);          // standard is a real parameter now
         Assert.Contains("Y14.5", asme);
     }
@@ -105,7 +105,7 @@ public class DrawingTests
         try
         {
             var cem = new TiCoinCem { Notes = new NotesSpec { CoatingRestriction = "ZnO-Ta forbidden on gyroid" } };
-            Assert.True(Drawing.TiCoinDxf(cem, "test", path));
+            Assert.True(Drawing.TiCoinDxf(cem, "test", "ti_coin.json", path));
             Assert.True(File.Exists(path));
             string dxf = File.ReadAllText(path);
             Assert.Contains("netDxf", dxf);                 // valid netDxf header
@@ -154,7 +154,7 @@ public class DrawingTests
         string path = Path.Combine(Path.GetTempPath(), $"cem_roundtrip_{Guid.NewGuid():N}.dxf");
         try
         {
-            Assert.True(Drawing.TiCoinDxf(cem, "test", path));
+            Assert.True(Drawing.TiCoinDxf(cem, "test", strFile, path));
             string dxf = File.ReadAllText(path);
 
             // Лічильник-ліхтар: без нього порожній NotesSpec зробив би цикл вакуумним.
@@ -169,19 +169,31 @@ public class DrawingTests
             // Той самий маніфест не сміє нести й вигаданого: якщо поле є, маркер відсутності не
             // з'являється замість нього (і навпаки — це ловить попередній цикл).
             Assert.DoesNotContain("NaN", dxf);
+
+            // HW.1 (found 2026-09-09): the SSOT line must name the REAL manifest filename, not cem.Name —
+            // every ti_coin.<alloy>.json's `name` uses an underscore (ti_coin_7nb) where the file uses a
+            // dot (ti_coin.7nb.json), so asserting cem.Name here would pass on the exact bug this pin exists
+            // to catch. This loop already runs over all seven shipped ti_coin*.json (ShippedCoinCems), so one
+            // assertion closes the SSOT-filename gap for the whole family, not just one variant.
+            Assert.Contains($"SSOT cem/{strFile}", dxf);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
-    // Alloy bake-off (01_02 §2.5): the title-block MATERIAL + SSOT row are read from the CEM
-    // (Notes.Material + Name), not hard-coded "Ti-6Al-4V" / "cem/ti_coin.json".
+    // Alloy bake-off (01_02 §2.5): the title-block MATERIAL is read from the CEM (Notes.Material), not
+    // hard-coded "Ti-6Al-4V". The SSOT row is the REAL manifest filename (HW.1, found 2026-09-09) — NOT
+    // cem.Name, which uses an underscore ("ti_coin_7nb") where every real ti_coin.<alloy>.json filename
+    // uses a dot ("ti_coin.7nb.json"). This CEM deliberately sets Name to the underscore form so the
+    // asserts can tell the two apart: a regression back to `cem/{cem.Name}.json` would print the
+    // underscore path instead — exactly the false SSOT pointer this test exists to catch.
     [Fact]
     public void TiCoin_Title_Block_And_Ssot_Are_Per_Alloy_From_The_Cem()
     {
         var cem = new TiCoinCem { Name = "ti_coin_7nb", Notes = new NotesSpec { Material = "Ti-6Al-7Nb (ASTM F1295, V-free)" } };
-        string svg = Drawing.TiCoin(cem, "t");
-        Assert.Contains("Ti-6Al-7Nb", svg);              // title-block reflects the alloy SKU, not 4V
-        Assert.Contains("cem/ti_coin_7nb.json", svg);    // SSOT row is the per-alloy CEM name
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.7nb.json");
+        Assert.Contains("Ti-6Al-7Nb", svg);                 // title-block reflects the alloy SKU, not 4V
+        Assert.Contains("cem/ti_coin.7nb.json", svg);       // SSOT row is the REAL filename (dot)…
+        Assert.DoesNotContain("cem/ti_coin_7nb.json", svg); // …never cem.Name (underscore) — HW.1
     }
 
     // ── Cathode flange (Деталь 3) — the mirror set ───────────────────────────────────────────────
@@ -417,7 +429,7 @@ public class DrawingTests
     {
         var coin = Cem.Parse<TiCoinCem>(File.ReadAllText(Path.Combine(CemDir(), "ti_coin.json")));
         var flange = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
-        AssertEveryLineIsInsideTheFrame(Drawing.TiCoin(coin, "test"));
+        AssertEveryLineIsInsideTheFrame(Drawing.TiCoin(coin, "test", "ti_coin.json"));
         AssertEveryLineIsInsideTheFrame(Drawing.CathodeFlange(flange, "test"));
         foreach (string strFile in new[] { "mechanical_lock.zone1.json", "mechanical_lock.zone3.json" })
         {
@@ -511,8 +523,8 @@ public class DrawingTests
     {
         var plain = new TiCoinCem { Notes = new NotesSpec { Material = "Ta" } };
         var wordy = new TiCoinCem { Notes = new NotesSpec { Material = "Ta", Inspection = string.Join(" ", Enumerable.Repeat("verify", 90)) } };
-        string tall = Drawing.TiCoin(wordy, "t");
-        double hPlain = double.Parse(Regex.Match(Drawing.TiCoin(plain, "t"), @"height='([\d.]+)'").Groups[1].Value, CultureInfo.InvariantCulture);
+        string tall = Drawing.TiCoin(wordy, "t", "ti_coin.json");
+        double hPlain = double.Parse(Regex.Match(Drawing.TiCoin(plain, "t", "ti_coin.json"), @"height='([\d.]+)'").Groups[1].Value, CultureInfo.InvariantCulture);
         double hWordy = double.Parse(Regex.Match(tall, @"height='([\d.]+)'").Groups[1].Value, CultureInfo.InvariantCulture);
         Assert.True(hWordy > hPlain, "a wrapped note must grow the canvas");
         AssertEveryLineIsInsideTheFrame(tall);
