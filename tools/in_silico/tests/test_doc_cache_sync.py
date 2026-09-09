@@ -243,42 +243,45 @@ CHECKS = [
         CODIT, r"α=([\d.]+)×10⁻⁶ m²/s",
         "kinetics/thermal_penetration.json", lambda d: d["thermal_diffusivity_m2s"] * 1e6, 0.01,
     ),
-    # ── Thermal-install radial field (01_04 §3.5.1) — the measurement that closed the ceiling ──
+    # ── Thermal-install radial field (01_04 §3.5 ban + SUMMARY §HW.6 evidence) ──
     # These three carry a SAFETY verdict about a living tree, so they are pinned to their owner
     # cache rather than left as prose: the cambium temperature, the thermal wound it opens, and
     # the stem class that wound would demand under the same 4 % CODIT rule.
+    # ⚖️ The procedure was RETIRED 2026-09-09. Canon keeps the ban plus the two numbers that
+    # carry it (a ban without a number is empty); the measurement detail lives in SUMMARY, which
+    # 00_06 §3 already declares this guard's home — until now every thermal pin targeted 01_04.
     (
-        "cambium peak, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
-        CODIT, r"рівномірний індукційний прогрів усього Ti до 200 °C \| \*\*([\d.]+) °C\*\*",
-        "mechanical/thermal_install_field.json",
-        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["cambium_peak_C"], 0.1,
-    ),
-    (
-        "killed living tissue, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
-        CODIT, r"Убито живої тканини Ø([\d.]+) мм проти механічної рани",
+        "killed living tissue, retired procedure → thermal_install_field.json (01_04 §3.5)",
+        CODIT, r"убито живої тканини Ø([\d.]+) мм\*\*",
         "mechanical/thermal_install_field.json",
         lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["killed_living_dia_anywhere_mm"], 0.1,
     ),
     (
-        "cambial ring, canon procedure → thermal_install_field.json (01_04 §3.5.1)",
-        CODIT, r"а саме камбіальне кільце — Ø([\d.]+) мм",
-        "mechanical/thermal_install_field.json",
-        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["thermal_wound_dia_50C_mm"], 0.1,
-    ),
-    # 🔴 The CONSTRUCTIVE half of the finding is what a future reader is most likely to lose,
-    # because it lives one section further down than the alarming half. Pin it too.
-    (
-        "10 s pulse cambium peak → thermal_install_field.json (01_04 §3.5.2)",
-        CODIT, r"лишає камбій на ([\d.]+) °C, під порогом",
-        "mechanical/thermal_install_field.json",
-        lambda d: next(h["cambium_peak_C"] for h in d["duration_sweep"] if h["hold_s"] == 10.0),
-        0.1,
-    ),
-    (
-        "minimum DBH implied by the thermal wound → thermal_install_field.json (01_04 §3.5.1)",
+        "minimum DBH the retired procedure would demand → thermal_install_field.json (01_04 §3.5)",
         CODIT, r"вимагало б \*\*DBH ≥ ([\d.]+) см\*\*",
         "mechanical/thermal_install_field.json",
         lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["min_dbh_for_thermal_wound_cm"], 1.0,
+    ),
+    (
+        "cambium peak → thermal_install_field.json (SUMMARY §HW.6)",
+        SUMMARY, r"uniform induction of all Ti to 200 °C \| \*\*([\d.]+) °C\*\*",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["cambium_peak_C"], 0.1,
+    ),
+    (
+        "cambial ring → thermal_install_field.json (SUMMARY §HW.6)",
+        SUMMARY, r"cambial ring\n\*\*Ø([\d.]+) mm\*\*",
+        "mechanical/thermal_install_field.json",
+        lambda d: d["scenarios"]["S1a_uniform_Ti_200C"]["thermal_wound_dia_50C_mm"], 0.1,
+    ),
+    # 🔴 The CONSTRUCTIVE half is what a future reader is most likely to lose — it is the reason
+    # a successor is gated rather than forbidden. Pin it too.
+    (
+        "10 s pulse cambium peak → thermal_install_field.json (SUMMARY §HW.6)",
+        SUMMARY, r"\| \*\*10 s\*\* \| \*\*([\d.]+) °C\*\*",
+        "mechanical/thermal_install_field.json",
+        lambda d: next(h["cambium_peak_C"] for h in d["duration_sweep"] if h["hold_s"] == 10.0),
+        0.1,
     ),
     # ── PTFE-GDL breakthrough (01_04 §5.3/§5.6) ──
     (

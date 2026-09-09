@@ -395,7 +395,9 @@ bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with
 
 ## HW.6 — Thermal install: the radial field the 1D estimate could not see (script 58)
 
-Canon home → [`01_04 §3.5.1/§3.5.2`](../../../01_04_CODIT_and_Xylemointegration.md); decision → `00_07` HW.6.
+⚖️ **Процедуру ЗНЯТО founder'ом 2026-09-09** — канон [`01_04 §3.5`](../../../01_04_CODIT_and_Xylemointegration.md)
+несе саму заборону з підставою, а ця секція є її ДОКАЗОМ і One-Home числами; стан → `00_07` HW.6.
+⛔ Не читати як опис доступної процедури.
 
 2D axisymmetric transient FVM over the real three-zone anchor plus bark / phloem / cambium /
 sapwood, with an **effective** gyroid λ (connected-skeleton estimator, 0.80 W/m·K vs 6.7 bulk Ti).
@@ -431,8 +433,8 @@ annulus vs the analytic log law `0.071 °C`** · **two-layer slab vs series resi
 | 30 s | 54.2 °C | Ø22.5 mm | 33.9 s |
 | 120 s | 67.8 °C | Ø27.5 mm | 138.4 s |
 
-**Verdict** — 🔴 As written the procedure kills living tissue out to **Ø47.5 mm** (cambial ring
-Ø44.5 mm), so the same 4 % CODIT rule that turns the mechanical Ø15 wound into "DBH ≥ 38 cm" would
+**Verdict** — 🔴 As written the procedure kills living tissue out to Ø47.5 mm, cambial ring
+**Ø44.5 mm**, so the same 4 % CODIT rule that turns the mechanical Ø15 wound into "DBH ≥ 38 cm" would
 demand **DBH ≥ 111 cm**. Heating the only reachable metal never reaches the anode — the 50 mm PEEK
 break does exactly what [`01_01 §4.1`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) designed
 it to do, which the 1D estimate could not see **by construction** because it modelled a solid Ti rod
