@@ -119,6 +119,47 @@ RSpec.describe Downlink::PendingQueueService do
       expect(decrypt_inner(poll).bytes).to all(eq(0))
     end
 
+    # 🔴 [00_07 FW.60 case 3, §B.4-тріаж] Гіпотеза: `pending_commands.first` без
+    # `FOR UPDATE` дає гонку двох одночасних poll'ів на ОДИН `:issued`-рядок.
+    # **Недосяжно СЬОГОДНІ, і не з причини «Rails request-per-thread» (тут
+    # узагалі нема Puma/контролера).** Єдиний прод call-site цього сервісу —
+    # `CoapGate.handle_queen_pull` (lib/coap_gate.rb), викликаний ЛИШЕ зсередини
+    # `lib/daemons/coap_listener`: однопроцесний однопотоковий `while` з
+    # блокуючим `IO.select`, що обробляє один датаграм ЦІЛКОМ (уключно з
+    # комітом транзакції нижче) до читання наступного з сокета. Паралельних
+    # викликів `poll_reply` не існує СТРУКТУРНО, доки інтейк лишається цим
+    # одним процесом — той самий факт несе сусідній коментар над
+    # `CoapGate::REPLY_CACHE` («демон однопроцесний і однопотоковий → без
+    # mutex»). Стеля названа тут-таки в класі («масштаб-відповідь — коли
+    # Королев стане багато, не зараз») — це і є день, коли гарди нижче
+    # прокинуться.
+    #
+    # Тому справжнього другого OS-потоку тут НЕМА — і не буде: `04_06 §B.1.3`
+    # вже відмовився від такого файла для симетричного випадку Wallet (тестував
+    # би серіалізацію Postgres, не нашу логіку; без `lock_version` на
+    # `actuator_commands` гонка AASM vacuous — кожен writer бачить свій ЛОКАЛЬНО
+    # валідний from-state, last-write-wins, нуль raise; був би перший
+    # non-transactional thread-DB файл, TEST.2-клас флак-ризику). Замість
+    # другого потоку — друга Ruby-змінна на ТОМУ САМОМУ рядку: вона відтворює
+    # рівно те, що побачив би потік, який устиг прочитати рядок ДО коміту
+    # першого.
+    it "застаріла копія команди проходить ОБИДВА гарди без raise — гонка мовчить, а не кричить (LEAVE)" do
+      stale_copy = ActuatorCommand.find(command.id)
+
+      decrypt_inner(poll)
+      expect(command.reload.status).to eq("acknowledged")
+
+      # «Другий poll» діє на копії, завантаженій ДО коміту першого: локально
+      # вона й досі :issued, тож обидва гарди мовчки кажуть «так».
+      expect(stale_copy.may_dispatch?).to be(true)
+      stale_copy.dispatch!
+      expect(command.reload.status).to eq("sent") # регрес acknowledged→sent, БЕЗ винятку
+
+      expect(stale_copy.may_acknowledge?).to be(true)
+      expect { stale_copy.acknowledge! }.not_to raise_error
+      expect(command.reload.status).to eq("acknowledged")
+    end
+
     # 🔴 [ARCH.75] Найгостріший клас, знайдений виміром: `EmergencyResponseService`
     # пише `insert_all` (валідації обходить) і ріже тривалість за власною
     # константою 3600, не за `actuator.max_active_duration_s` — а сіди везуть
@@ -325,6 +366,66 @@ RSpec.describe Downlink::PendingQueueService do
       2.times { expect(decrypt_inner(poll({ "fw" => "0" })).getbyte(0)).to eq(0x9F) }
 
       expect(gateway.reload.pending_firmware_id).to eq(firmware.id)
+    end
+
+    # [00_07 FW.60 case 5, §B.4-тріаж] Точна пара, яку `GatewayStalenessSweepWorker`
+    # називає «unannounced» [ARCH.59]: `pending_firmware_id` присутній, а СТАН
+    # НЕ `:updating`. Тест вище доводить ІНШУ половину пари — `fw=` приходить,
+    # поки шлюз УЖЕ `:updating` (нормальний, анонсований шлях). Тут — інверсія:
+    # шлюз лишається в СТОРОННЬОМУ стані, а `fw=` тим не менш підтверджує
+    # доставку. `observe_delivered_firmware!` не питає СТАН у своєму гарді
+    # (`return unless pending_id && delivered_id >= pending_id`), тож завершує
+    # бухгалтерію незалежно від нього — а ternary `@gateway.updating? ? :idle :
+    # @gateway.state` МУСИТЬ зберегти чужий стан, не силоміць повернути шлюз в
+    # :idle (той стан йому не належить — це не ВІН поставив :updating).
+    it "на межі 'unannounced' (pending присутній, стан НЕ updating) не форсує :idle" do
+      gateway.update!(state: :active, ota_started_at: 2.hours.ago)
+
+      poll({ "fw" => firmware.id.to_s })
+
+      gateway.reload
+      expect(gateway.pending_firmware_id).to be_nil
+      expect(gateway.firmware_version).to eq(firmware.version)
+      expect(gateway.state).to eq("active") # НЕ форсовано :idle — шлюз не був НАШИМ updating
+    end
+  end
+
+  # [00_07 FW.60 case 4, §B.4-тріаж] `gateways.pending_firmware_id` — голий
+  # bigint без FK (structure.sql). Виміряно: `app/`+`lib/` не мають ЖОДНОГО
+  # `destroy`/`delete`/`delete_all` на BioContractFirmware, а `resources
+  # :firmwares` не оголошує `:destroy` — застосунок сьогодні НЕ ВМІЄ видалити
+  # прошивку кодовим шляхом. Але це НЕ той самий клас, що дві мертві гілки з
+  # цього ж тріажу (мертві ЗА ПОБУДОВОЮ, незалежно від дій людини): модель не
+  # несе `before_destroy`-guard, тож оператор у `rails console` може стерти
+  # рядок будь-якої миті — «нема кодового шляху сьогодні» ⊥ «неможливо
+  # структурно». LEAVE (financial-safety-defensive, `04_06 §B.4`): фолбеки
+  # лишаються, а dangling-стан тут пінюється прямим записом ID, що не
+  # резолвиться, — наслідок для ORM той самий, що після реального видалення.
+  describe "dangling pending_firmware_id (прошивку видалено/id ніколи не існував)" do
+    let(:dangling_id) { 999_999_999 }
+
+    before { gateway.update!(pending_firmware_id: dangling_id, ota_started_at: 1.hour.ago) }
+
+    it "hint мовчить (packages nil) — драбина віддає нижчу сходинку, не падає" do
+      expect { poll }.not_to raise_error
+      expect(decrypt_inner(poll).bytes).to all(eq(0))
+      expect(gateway.reload.state).to eq("idle")
+    end
+
+    it "observe_delivered_firmware! на dangling id падає на ІСНУЮЧУ версію шлюза, не крашиться" do
+      gateway.update!(firmware_version: "1.2.3-existing")
+
+      expect { poll({ "fw" => dangling_id.to_s }) }.not_to raise_error
+
+      gateway.reload
+      expect(gateway.pending_firmware_id).to be_nil
+      expect(gateway.firmware_version).to eq("1.2.3-existing")
+    end
+
+    it "chunk-сервер на dangling id віддає 4.04 (nil), не крашиться" do
+      expect(described_class.ota_chunk_reply(
+        gateway: gateway, query: { "v" => dangling_id.to_s, "ch" => "0" }
+      )).to be_nil
     end
   end
 

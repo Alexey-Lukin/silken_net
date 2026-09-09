@@ -129,6 +129,19 @@ module Downlink
           next
         end
 
+        # [00_07 FW.60 case 3, §B.4-тріаж] `pending_commands.first` — без `FOR
+        # UPDATE`. Гарди нижче НЕДОСЯЖНІ сьогодні: єдиний прод call-site цього
+        # сервісу — однопроцесний однопотоковий `lib/daemons/coap_listener`
+        # (наступний датаграм читається лише ПІСЛЯ повного коміту цієї
+        # транзакції), тож двох одночасних `pending_commands.first` не існує
+        # СТРУКТУРНО — не Rails request-per-thread (тут нема Puma/контролера
+        # взагалі), а серіалізація самим демоном. Стеля названа при класі
+        # (`WORST_CASE_POLL_INTERVAL_S`-сусід): «одна Королева, коли їх стане
+        # багато — не зараз» — це день, коли ці гарди прокинуться. LEAVE, не
+        # `FOR UPDATE`: без `lock_version` на `actuator_commands` вони й тоді
+        # не захистять (AASM `save!` пише без WHERE на старий стан) — повний
+        # доказ і причина не чіпати замок без founder-рішення — spec
+        # «застаріла копія команди…» в pending_queue_service_spec.rb.
         ActiveRecord::Base.transaction do
           command.dispatch! if command.may_dispatch?
           # may_activate?-guard: друга команда на ВЖЕ активний актуатор
@@ -240,6 +253,13 @@ module Downlink
       pending_id = @gateway.pending_firmware_id
       return unless pending_id && delivered_id >= pending_id
 
+      # [00_07 FW.60 case 4, §B.4-тріаж] `pending_id` — голий bigint без FK:
+      # застосунок сьогодні не має ЖОДНОГО кодового шляху видалення
+      # BioContractFirmware (виміряно — нуль destroy/delete у app/+lib/,
+      # `resources :firmwares` без :destroy), але оператор у `rails console`
+      # може стерти рядок будь-якої миті (нема `before_destroy`-guard) — тож
+      # `find_by` НЕ на `find`, а фолбек нижче лишається LEAVE, не dead code.
+      # Пін — spec «dangling pending_firmware_id…».
       firmware = BioContractFirmware.find_by(id: pending_id)
       # [ARCH.59] `ota_started_at: nil` — якір ЗНІМАЄТЬСЯ на завершенні, і доти
       # його не чистив ніхто (нуль call-sites). Без цього поле пережило б власну
@@ -274,6 +294,8 @@ module Downlink
     def ota_packages(firmware_id)
       Rails.cache.fetch("fw60/ota_packages/#{firmware_id}/#{@gateway.cluster_id}",
                         expires_in: 1.hour) do
+        # [00_07 FW.60 case 4] Dangling id (видалено/ніколи не існував) — той
+        # самий фолбек-клас, що `observe_delivered_firmware!` вище; LEAVE.
         firmware = BioContractFirmware.find_by(id: firmware_id)
         next nil unless firmware
 
