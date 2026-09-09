@@ -44,7 +44,7 @@
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
 | 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
-| 30 | `kinetics_delta_t` | delta_t = 36s healthy / 190s stressed | `kinetics/delta_t_lookup.json` |
+| 30 | `kinetics_delta_t` | delta_t = 45s healthy / 238s stressed (η_BQ 0.68 post-[HW.47]) | `kinetics/delta_t_lookup.json` |
 | 30b | `kinetics_monte_carlo` | 90% CI: 14–120s | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=130Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
@@ -100,7 +100,7 @@ DFT (CPU, done):
   24 (hopping ΔSCF) ───┘── L3b verdict (geom-fixed t_ij; k_DET borderline, λ-sensitive — scripts 25/35)
 
 Kinetics (CPU, done):
-  30 (delta_t) ──→ 36s healthy / 190s stressed (E.63-revised; field-derated higher)
+  30 (delta_t) ──→ 45s healthy / 238s stressed (η_BQ 0.68 post-HW.47; E.63-revised; field-derated higher)
   30b (Monte Carlo) ──→ 90% CI
   31 (EIS) ──→ Nyquist predictions
 

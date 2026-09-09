@@ -314,18 +314,18 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | Ea | 40 kJ/mol | Typical FAD enzyme |
 | V_op | 0.5 V | EBFC under load |
 | A_electrode | 2 cm² | Conservative gyroid area |
-| η_BQ | 0.85 | BQ25570 datasheet |
+| η_BQ | 0.68 | BQ25570 datasheet (SLUSBH2G Fig.6-7, low-I_IN; [HW.47]) |
 | E_cycle | 5 mJ | STM32 sense+LoRa TX |
 
 ### delta_t Predictions
 
 | Scenario | [glucose] | T(°C) | delta_t (s) | vs 60s baseline |
 |----------|-----------|-------|-------------|-----------------|
-| Healthy summer | 10 mM | 25°C | **35.7** | < 60s → GP↑ [E.63] |
-| Active growth | 20 mM | 30°C | **18.3** | < 60s → GP↑ [E.63] |
-| Moderate spring | 15 mM | 20°C | **36.6** | < 60s → GP↑ [E.63] |
-| Cold winter | 5 mM | 5°C | **190.0** | > 60s → GP↓ [E.63] |
-| Severe stress | 3 mM | 0°C | **399.8** | > 60s → GP↓ [E.63] |
+| Healthy summer | 10 mM | 25°C | **44.7** | < 60s → GP↑ [E.63] |
+| Active growth | 20 mM | 30°C | **22.8** | < 60s → GP↑ [E.63] |
+| Moderate spring | 15 mM | 20°C | **45.7** | < 60s → GP↑ [E.63] |
+| Cold winter | 5 mM | 5°C | **237.5** | > 60s → GP↓ [E.63] |
+| Severe stress | 3 mM | 0°C | **499.7** | > 60s → GP↓ [E.63] |
 
 **Conclusion:** BASELINE_DELTA_T_S = 60s is physically justified. EBFC discriminates healthy vs stressed trees. Diffusion NOT rate-limiting (j_kinetic ≪ j_diffusion).
 

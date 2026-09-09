@@ -62,7 +62,15 @@ KM_GLUCOSE = 20.0            # mM — estimated for GcGDH
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — effective electroactive area
-ETA_BQ = 0.85                # BQ25570 boost efficiency (TI SLUSBH2G)
+ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — mirror of
+# docs/02_03 §9.1 table (source of truth; edit there, not here). [HW.47, 2026-09-09]
+# 0.85 was an unvalidated orphan value with no table/citation; SLUSBH2G Figures 6-7
+# (Charger Efficiency vs Input Current, VIN=0.5V/0.2V) put I_IN≈15-46µA solidly on the
+# steep low-current rise of the curve — eyeball range ~45-80% across the plotted VSTOR
+# curves, i.e. clearly below 0.85 and roughly consistent with 0.68. Precision residual:
+# the 15µW/325mV "typical" anchor itself may be mis-copied from BQ25570's OWN cold-start
+# threshold spec (P_IN(CS) TYP=15µW, old VIN(CS)=330mV) rather than derived from real
+# EBFC output — see HW.47/HW.46 in the tracker before treating 0.68 as final-precision.
 E_CYCLE = 5e-3               # J — energy per MCU wake cycle
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
