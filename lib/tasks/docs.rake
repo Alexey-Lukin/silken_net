@@ -281,6 +281,16 @@ namespace :docs do
                       Dir[File.join(root_dir, "deploy", "**", "*")].select { |p| File.file?(p) } +
                       Dir[source_glob].select { |p| File.file?(p) })
                      .reject { |f| ext_exempt.include?(f.delete_prefix("#{root_dir}/")) }
+                     # `.claude/**` walks the raw filesystem, not `git ls-files` — an isolated
+                     # agent worktree (`git worktree add .claude/worktrees/agent-*`) is a full
+                     # nested checkout, so its OWN copy of e.g. `00_06`'s illustrative dead-path
+                     # examples reads as a foreign restatement outside the owner doc's exemption
+                     # (that exemption is keyed on the file's real path, `docs/00_06_…md`, which
+                     # a nested copy at `.claude/worktrees/*/docs/00_06_…md` never matches).
+                     # Exempt by CLASS (the worktree directory convention), not by file: any
+                     # future glob branch that starts recursing under `.claude/` inherits this
+                     # for free, instead of rotting the same way a second time.
+                     .reject { |f| f.include?("/.claude/worktrees/") }
     # Heading-slug sets, computed once and shared by BOTH anchor dialects: the in-docs
     # `](DocName#frag)` form below (DocsGraph.dangling_anchors) and the path form
     # `docs/NN_NN_Name.md#frag` used OUTSIDE docs/ [OPS.32]. One engine, two readers —
