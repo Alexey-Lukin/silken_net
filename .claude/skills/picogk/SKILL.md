@@ -127,6 +127,20 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     ⛔ Still OPEN in this class: `topology: "sheet"` silently defaulting (below) — that one is an unmade
     founder verdict (HW.33 ⚖️), not a coding defect, so it is NOT covered by the fix above.
 
+    🔴 **A FIFTH member found and closed 2026-09-09 (HW.1): the SSOT line printed `cem.Name`, not the
+    real filename.** `mechanical_lock.zone1.json`'s `name` field ("mechanical_lock_zone1") already didn't
+    equal its filename stem, and that one call site was fixed by threading the caller's real `strFile`
+    through — but `ti_coin.<alloy>.json` has the SAME mismatch (`name: "ti_coin_7nb"` vs the real
+    `ti_coin.7nb.json`) and nobody had generalized the fix. **6 of 7 shipped `ti_coin.*.json` were
+    printing a factory drawing whose own SSOT pointer resolves to a file that does not exist** — only
+    the base `ti_coin.json` coincidentally matched, which is exactly why it went unnoticed this long.
+    Worse: the existing test suite didn't just miss this, it *pinned* the bug (`cem.Name` manually set,
+    asserted the underscore form printed). Fixed the same way the class prescribes: the round-trip pin
+    now also asserts the real dotted filename appears in the SSOT line for the whole `ti_coin.*` family,
+    not a new test file. **When threading a manifest through a new `draw` kind, grep for `cem.Name` in
+    the SSOT-line context specifically — `Name == filename stem` is a per-CEM coincidence, never a
+    guarantee.**
+
     <details><summary>The original diagnosis (kept — it is what the reflex is calibrated on)</summary>
 
     🔴 **The drawing tract SILENTLY invents and silently drops — and the reviewer sees LESS than the

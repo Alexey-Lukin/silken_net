@@ -191,6 +191,17 @@ and returns non-zero, so it breaks an `&&` chain (the real command never runs). 
   paths are unreachable on Cortex-M4; and the one shared file changed a single table by adding `f`
   suffixes to literals already narrowed to `float32_t` — a table we never touch (log-mel calls libm
   `logf()`). A submodule hands you an exact diff — use it *before* deciding to be afraid.
+- 🔴 **A «bump needed» verdict on a git-pinned dependency is unverified until `git ls-remote` shows a
+  newer ref — a dormant upstream means STUCK, not BEHIND** (LatticeLibrary, HW.33, 2026-09-09). The
+  vendored submodule sat in the tracker as pending staleness; `git ls-remote` against the pinned URL
+  showed our pin (`81c3c7b`, tag `PicoGK-v1.7.5`) **is** `HEAD main` — no newer tag or commit exists
+  upstream (not archived, just dormant since 2025-07-27). Re-filing "needs bump" without this one
+  command reports a false direction of drift. 🔑 **The same leg produced the mirror error on a
+  NEIGHBOUR:** it had waved off `LEAP71_ShapeKernel` as "fresh 2026-06" on inherited say-so — re-measured
+  itself, it is 7 commits behind (`166a459` → `7b90978`, 2026-08-10). A sibling's staleness label is a
+  claim, not a fact, until you run the same command on it yourself. Generalises past PicoGK's vendored
+  C# libs to any git-pinned dependency this skill routes through tags/commits rather than a registry
+  (the firmware-C row above).
 - **Age the DIFF, not the PR title** (2026-07-16). A Dependabot PR is named for its *target* dep,
   but bundler re-resolves the target's own dependencies to latest in the same lock-diff — so a
   "ripe" PR smuggles fresh transitives past the gate. Seen: `pagy 43.5.6→43.6.0` (age 7d ✅) carried
