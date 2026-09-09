@@ -64,7 +64,12 @@ module ClaudeProsePathRefs
   module_function
 
   def candidates
-    Dir.glob(ROOT.join(SCAN_GLOB)).sort.flat_map do |file|
+    # Виняток по КЛАСУ, не по файлу — той самий фікс, що `external_doc_path_drift`
+    # (`lib/tasks/docs.rake`, guard-craft #157): `.claude/**` йде файловою системою,
+    # тож `git worktree add .claude/worktrees/agent-*` кладе туди повну вкладену
+    # копію кожного скіла/канон-доку, і власні owner-винятки нижче ніколи не
+    # матчать вкладений шлях (вони скоуплені на РЕАЛЬНУ адресу файла).
+    Dir.glob(ROOT.join(SCAN_GLOB)).sort.reject { |f| f.include?("/.claude/worktrees/") }.flat_map do |file|
       rel = Pathname(file).relative_path_from(ROOT).to_s
       File.readlines(file).each_with_index.flat_map do |line, idx|
         line.scan(PATH_RE).flatten.filter_map do |raw|

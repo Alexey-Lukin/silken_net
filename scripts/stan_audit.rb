@@ -156,7 +156,10 @@ def repo_file_exists?(basename)
   @repo_files.fetch(basename) do
     hits = Dir.glob(File.join(REPO_ROOT, "**", basename)) +
            Dir.glob(File.join(REPO_ROOT, "{.github,.claude}", "**", basename))
-    @repo_files[basename] = hits.reject { |p| p.include?("node_modules") }.any?
+    # guard-craft #157, дзеркальний напрямок: тут файлова система здатна довести,
+    # що ВИДАЛЕНИЙ файл ще «існує» — вкладена worktree-копія старішого коміту
+    # лишається на диску, доки її не приберуть. Виняток по КЛАСУ, не по файлу.
+    @repo_files[basename] = hits.reject { |p| p.include?("node_modules") || p.include?("/.claude/worktrees/") }.any?
   end
 end
 

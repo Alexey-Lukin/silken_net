@@ -472,7 +472,9 @@ CLAIM_WINDOW = 6
 if FAST_ALIAS.empty? || BAND_ALIAS.empty?
   errors << "CHECK F: не знайдено scripts/docs_check.rb або scripts/docs_band.rb — якір сліпий, не мовчазний"
 else
-  claim_files = Dir[File.join(ROOT, ".claude/**/*.{md,sh}")] +
+  # guard-craft #157: `.claude/**` йде файловою системою, тож нею матчить і
+  # вкладена копія в `.claude/worktrees/agent-*` — виняток по КЛАСУ, не по файлу.
+  claim_files = Dir[File.join(ROOT, ".claude/**/*.{md,sh}")].reject { |f| f.include?("/.claude/worktrees/") } +
                 [ REGISTRY_DOC, DOCS_WORKFLOW ]
   claim_files.each do |path|
     next unless File.file?(path)
