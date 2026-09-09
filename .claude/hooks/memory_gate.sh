@@ -167,7 +167,15 @@ SELF=${BASH_SOURCE[0]:-$0}
 # (аудит 09-05: два накладені розриви на одну цінну таксономію). Заплачено ДО бампу —
 # 10 стискань мета-шуму («durable-класи у файлі», «in-file») на −68 B; решта = те, що
 # новий дім і новий роутер структурно коштують.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25194}
+# 2026-09-09: 25194 → 25423 (+229) — ДВА нові доми осі помилки, `feedback_note_as_frozen_snapshot`
+# (впевненість фрази нотатки ⊥ правда змісту, обидва напрямки хиби зловлено в ОДНІЙ
+# сесії — HW.12 фізична нотатка, 00_02/00_01 dead-ref нотатки, 16-п. 00_04 дамп) і
+# `feedback_worktree_branch_content_verify` (git ancestor-негатив ⊥ вміст — 9 «unmerged»
+# worktree-агент-гілок виявились уже інтегровані іншим шляхом). Обидва hub-inline в
+# існуючий рядок «Вісь помилки» — жодного нового рядка, найдешевший важіль. Обидва
+# доми взаємно лінкують один одного в `Related`, тож ORPHAN/UNSTRUNG не потребують
+# третього файлу-донора.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25423}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -313,7 +321,10 @@ rb_dark() {
 # тій самій осі (78 падінь 08-28 → 175 падінь 09-05, обидва `Web3::FeePolicy`): правило
 # «масові падіння називають ДІМ зміни» переросло свого носія. Підняття робить новий дім
 # захищеним підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-162}
+# 2026-09-09: 162 → 164 — два нові файли, `feedback_note_as_frozen_snapshot` +
+# `feedback_worktree_branch_content_verify` (обидва hub-inline в «Вісь помилки», IDX
+# бамп поруч). Підняття робить обидва нові доми захищеними підлогою так само, як решту.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-164}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -423,7 +434,12 @@ index_reach_expected() {
 # `feedback_mass_spec_failures_name_the_home`. Прецедент дотримано: власний опис
 # стиснуто (513 → 360 B) ПЕРЕД бампом, і в базу пішов лише залишок; чужих описів
 # не підрізано. Це не «дозволити росту», а оплатити один новий тригер відкликання.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44540}
+# 2026-09-09: 44540 → 44801 (+261) — вартість ДВОХ нових тригерів,
+# `feedback_note_as_frozen_snapshot` + `feedback_worktree_branch_content_verify`.
+# Перший опис написано ~240 B і стиснуто до ~150 B ПЕРЕД цим бампом (окрема правка,
+# видима в diff); другий написано вже коротким. Чужих описів не підрізано — 261 B
+# для двох нових класів-домів дешевше за більшість одиничних бампів вище.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44801}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
