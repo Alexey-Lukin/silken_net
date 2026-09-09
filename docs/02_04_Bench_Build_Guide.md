@@ -338,7 +338,7 @@ E(0.47Ф до 3.4В)=½·0.47·3.4²=2.71 Дж → t=2.71/1µВт≈31 доба
 | Компонент | Модель | ⚠️ Кусає |
 |---|---|---|
 | Модем | **SIM7070G** (LTE-M/NB-IoT, UART AT, 3.7 В) + **breakout** (Waveshare/DFRobot — канон дає голий LCC68) | **НЕ SIM7000G** (firmware = 7070G); маркування звірити (RUNBOOK §5.6) |
-| SIM-карта | **Kyivstar фізична** (UA: наземні вишки + Starlink DTC) · eSIM 1NCE/Twilio для інших країн | 🔴 APN + D2C-transport = фазована стратегія [`00_07`](00_07_Action_Plan_Tracker) HW.41 (firmware init БЕЗ `AT+CGDCONT`; D2C Carrier-NAT → CoAP/UDP ненадійний → CoAP-over-TCP) |
+| SIM-карта | **Kyivstar фізична** (UA: наземні вишки + Starlink DTC) · eSIM 1NCE/Twilio для інших країн | 🔴 D2C-transport = ⚖️ відкрита розвилка [`00_07`](00_07_Action_Plan_Tracker) HW.41 (D2C Carrier-NAT → CoAP/UDP ненадійний → CoAP-over-TCP vs MQTT-SN, не вирішено). ✅ APN закрито — `AT+CGDCONT`/`AT+CNACT` у Queen-init ([`03_02 §4`](03_02_Queen_Gateway_Firmware)), `QUEEN_APN` build-time-конфігурований |
 | Cellular антена | Wideband **700–2700 МГц** SMA (Kyivstar B1/3/7/8/20) | окрема від LoRa (не dual-band) |
 
 ### LoRa-антена

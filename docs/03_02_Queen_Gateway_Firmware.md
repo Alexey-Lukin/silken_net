@@ -415,7 +415,9 @@ CPU — байти й URC поза вікном читання (запізніл
 | `ATE0` | `AT_INIT_BUDGET_MS` | Вимкнути ехо (токенайзер його переживає, але ефір чистіший) |
 | `AT` | `AT_INIT_BUDGET_MS` | Перевірка зв'язку з модемом |
 | `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим LTE-M only (відключає NB-IoT) |
+| `AT+CGDCONT=1,"IP","<QUEEN_APN>"` | `AT_INIT_BUDGET_MS` | [HW.41] Явний PDP-контекст — `QUEEN_APN` build-time `#ifndef`-override (дефолт `""`, 3GPP-порожній APN, behavior-identical з до-HW.41 auto-APN); граматика зі стандарту (3GPP TS 27.007 §10.1.1) |
 | `AT+CPSMS=…` / `AT+CEDRXS=…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`) |
+| `AT+CNACT=1,1` | `AT_INIT_BUDGET_MS` | [HW.41] Активація PDP-контексту (той самий `cid=1`, що CGDCONT). ⚠️ Синтаксис із загального SIMCom TCP/IP AT-набору, verbatim НЕ звірено з SIM7070G AT Command Manual (репо не тримає вендорського мануала) — bench-residual, [`00_07`](00_07_Action_Plan_Tracker) HW.41 |
 
 Провал init не фатальний: модем міг ще прокидатись — flush-розмова повторить
 усе зі свіжим бюджетом.
@@ -757,7 +759,7 @@ Soldier мав би передбачити закінчення broadcast (на�
 
 #### 5.1.3 Дизайн B: Magic Re-Request (Soldier-initiated vector OTA) — ✅ Реалізовано (2026-05-02)
 
-**Статус:** ✅ Реалізовано у `firmware/soldier/main.c` (`Build_OTA_ReRequest_Payload`, OTA_REQ_MARKER 0x55; тиша = `OTA_REREQUEST_SILENT_WAKEUPS=10` **тихих пробуджень з відкритим вухом** ≈ 5 хв wall при циклі 26-32 с — стара tick-різниця була мертва у STOP2 і запізнювала зойк у ~6-15×; виправлено 2026-06-11, семантика навіть чесніша за wall-clock: лічиться тиша лише коли вухо справді слухало) + `firmware/queen/main.c` (`Process_LoRa_RX` REREQUEST handler перед CIFO/CoAP, `djb2_hash_bytes` length-strict NUL-safe replay-protection через `cmd_dedup_ring`). Host-тести (Soldier bitmap + silence-counter + Queen) у `firmware/test/test_soldier_logic.c` + `test_queen_logic.c`. Опціонально (поза цим циклом): зберегти останній OTA SHA-256 у Queen Flash для cross-check на re-request — поки не реалізовано, після `ota_is_active=0` буфер `pending_ota_bytecode` може бути перезаписаний наступним CoAP-push'ем, тоді re-request не обслуговується (Solider має чекати наступного Rails-driven OTA cycle).
+**Статус:** ✅ Реалізовано у `firmware/soldier/main.c` (`Build_OTA_ReRequest_Payload`, OTA_REQ_MARKER 0x55; тиша = `OTA_REREQUEST_SILENT_WAKEUPS=10` **тихих пробуджень з відкритим вухом** ≈ 5 хв wall при циклі 26-32 с — стара tick-різниця була мертва у STOP2 і запізнювала зойк у ~6-15×; виправлено 2026-06-11, семантика навіть чесніша за wall-clock: лічиться тиша лише коли вухо справді слухало) + `firmware/queen/main.c` (`Process_LoRa_RX` REREQUEST handler перед CIFO/CoAP, `djb2_hash_bytes` length-strict NUL-safe replay-protection через `cmd_dedup_ring`). Host-тести (Soldier bitmap + silence-counter + Queen) у `firmware/test/test_soldier_logic.c` + `test_queen_logic.c`. ✅ **Queen-side SHA-256 cross-check реалізовано** (FW.52, `firmware/queen/ota_sha_guard.h`) — деталі §«Обмеження / залишкові ризики» п.1 нижче.
 
 **Ідея:** Soldier при `ota_chunks_received < ota_total_chunks` після таймауту (наприклад, **5 хвилин без нових chunks**) ініціює uplink-запит конкретних missing chunks через звичайний LoRa TX → Queen приймає, ретранслює лише ці chunks.
 
@@ -846,7 +848,7 @@ if (decrypted_lora_buffer[0] == REREQUEST_MARKER) {
 
 **Обмеження / залишкові ризики:**
 
-1. **Queen `pending_ota_bytecode` lifetime:** Якщо Queen вже відкинула буфер (наприклад, після повного `ota_is_active=0` cycle), re-request неможливо обслужити — потрібен повторний CoAP push з Rails. Можливе рішення: Queen зберігає останній OTA SHA-256 у Flash і перевіряє при re-request чи це той самий контракт.
+1. ✅ **Queen `pending_ota_bytecode` lifetime — закрито (FW.52).** Раніше: якщо Queen вже відкинула буфер (після повного `ota_is_active=0` cycle), re-request не обслуговувався — потрібен був повторний CoAP push з Rails. Тепер `firmware/queen/ota_sha_guard.h` персистує SHA-256 зібраного байткоду на Queen's власну Flash-сторінку 125 (magic-last power-cut-safe, дзеркало дизайну `firmware/common/flash_ota.c` — Soldier-івський сиблінг на іншій сторінці, інший чіп) одразу по завершенні прийому; re-request по закритому вікну звіряє поточний буфер проти персистованого хеша — збіг обслуговує (буфер підтверджено той самий), розбіжність/нічого-не-персистовано лишає стару поведінку (мовчання, Soldier чекає наступного Rails-driven циклу).
 2. **REREQUEST_MARKER (0x55) collision:** Маркер 0x55 вибраний так, щоб не конфліктувати з `OTA_MARKER (0x99)` та telemetry (DID byte 0 рідко 0x55, але можливо). Альтернатива — окреме AES-key namespace, що потребує SEC.3 (per-device HKDF).
 3. **Replay window:** Зловмисник може resend REREQUEST → Queen знов ретранслює → battery drain. Mitigation: Queen дедуплікує REREQUEST за `(DID, missing_bitmap)` на 5 хв (cmd_dedup_ring already існує в queen-firmware §6).
 

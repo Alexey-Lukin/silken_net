@@ -6,8 +6,10 @@
 # Дзеркало queen_energy_budget.rb (HW.39).
 #
 # Pure Ruby (no Rails). Виклик:
-#   ruby tools/firmware/scc_rate.rb            # звіт (realistic + ceiling + арбітр)
-#   ruby tools/firmware/scc_rate.rb --assert   # гейт: self-consistency + anti-over-mint + арбітр
+#   ruby tools/firmware/scc_rate.rb                        # звіт (realistic + ceiling + арбітр)
+#   ruby tools/firmware/scc_rate.rb --assert               # гейт на дефолтній Variant C (6372с)
+#   ruby tools/firmware/scc_rate.rb variant_c_s=7884 --assert  # гейт на іншій робочій точці
+#     (override, НЕ зміна дефолту — дзеркало uncertainty_budget.rb delta_t_s=; ARCH.8)
 #
 # ЧОМУ guard (adversarial-урок 2026-07-14): попередня канон-проза брала
 # packets/day=24 і stored-GP/packet=50 як НЕЗАЛЕЖНІ числа — фізично несумісні
@@ -32,8 +34,10 @@ EMISSION_THRESHOLD = 10_000 # 05_03: 10k GP = 1 SCC
 
 # Робоча точка delta_t: Variant C = 1.77 год, рекомендований energy-positive (02_03 §9.6).
 # ⚠️ ECB-ЕРА (payload 16 Б, FW2_CCM_ENABLED 0). CCM-кадр 30 Б → 1.77 зсувається до ≈2.19 год,
-#    тобто SCC/дерево/рік падає ~на чверть. ⛔ Не правити число тут поодинці — перерахунок
-#    їде РАЗОМ із uncertainty_budget.rb і supply_stress.rb (00_07 ARCH.8).
+#    тобто SCC/дерево/рік падає ~НАПОЛОВИНУ (7.92→4.00, не ~чверть — переміряно 00_07 ARCH.8,
+#    2026-09-09). ⛔ Не правити ДЕФОЛТ тут поодинці — перерахунок канону їде РАЗОМ із
+#    uncertainty_budget.rb і supply_stress.rb; `variant_c_s=` override нижче — лише
+#    для гейта на гіпотетичній точці, дефолту не чіпає.
 # (1 TX/год = Δt=3600s = energy-NEGATIVE без мітигацій, 02_03 §9.5 — НЕ baseline.)
 VARIANT_C_S = 6372
 
@@ -59,7 +63,17 @@ end
 # (ProtocolParameters.sol#sccPerTonneCo2() default + SystemParameter + doc 00_04 §3 · 02_06 §7.1).
 SCC_PER_TONNE_CO2 = 2000
 
-realistic = scc_per_tree_year(VARIANT_C_S)     # Variant C 1.77h
+variant_c_s = VARIANT_C_S
+ARGV.each do |arg|
+  next unless arg.include?("=")
+
+  key, val = arg.split("=", 2)
+  abort("невідомий параметр: #{key} (є: variant_c_s)") unless key == "variant_c_s"
+  variant_c_s = Float(val)
+end
+variant_c_h = (variant_c_s / 3600.0).round(2)
+
+realistic = scc_per_tree_year(variant_c_s)     # робоча точка (дефолт: Variant C 1.77h)
 ceiling   = scc_per_tree_year(DELTA_T_FAST_S)  # фізична стеля recharge (Δt=600s)
 co2_kg_year = realistic * 1000.0 / SCC_PER_TONNE_CO2  # kg CO₂ / tree / year (realistic)
 
@@ -79,7 +93,7 @@ if ARGV.include?("--assert")
   errors << "SCC_PER_TONNE_CO2=#{SCC_PER_TONNE_CO2} ≠ 2000 (BIZ.1 on-chain divergence)" \
     unless SCC_PER_TONNE_CO2 == 2000
   if errors.empty?
-    puts "✅ scc_rate: realistic(Δt=1.77h)=#{realistic.round(1)} · ceiling(Δt=600s)=#{ceiling.round} · " \
+    puts "✅ scc_rate: realistic(Δt=#{variant_c_h}h)=#{realistic.round(1)} · ceiling(Δt=600s)=#{ceiling.round} · " \
          "арбітр(05_03)=#{ARBITER_SCC_YEAR.to_i} SCC/tree/year (magnitude calibration-pending, E.63)"
     exit 0
   end
@@ -87,8 +101,8 @@ if ARGV.include?("--assert")
   errors.each { |e| warn "  - #{e}" }
   exit 1
 else
-  puts "SCC/tree/year — realistic(Δt=1.77h)=#{realistic.round(2)}, ceiling(Δt=600s)=#{ceiling.round}"
-  puts "stored GP/packet — Variant-C=#{stored_gp_per_packet(VARIANT_C_S)}, FAST=#{stored_gp_per_packet(DELTA_T_FAST_S)}"
+  puts "SCC/tree/year — realistic(Δt=#{variant_c_h}h)=#{realistic.round(2)}, ceiling(Δt=600s)=#{ceiling.round}"
+  puts "stored GP/packet — Variant-C=#{stored_gp_per_packet(variant_c_s)}, FAST=#{stored_gp_per_packet(DELTA_T_FAST_S)}"
   puts "арбітр 05_03 MAX_SUPPLY → #{ARBITER_SCC_YEAR.to_i} SCC/tree/year (у діапазоні)"
   puts "CO₂ kg/tree/year (realistic) — #{co2_kg_year.round(1)} (2000 SCC = 1 tCO₂, BIZ.1)"
 end
