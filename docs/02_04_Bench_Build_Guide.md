@@ -297,7 +297,7 @@ E(0.47Ф до 3.4В)=½·0.47·3.4²=2.71 Дж → t=2.71/1µВт≈31 доба
 1. Прибрати Блок 1 (harvester: AA, дільник, LTC3108, trafo, обв'язка).
 2. `VIN_DC` BQ25570 ← напряму вихід EBFC Gen 2.0 (>500 мВ, [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)).
 3. Навчальний 1 мФ cap → виробничий **0.47 Ф EDLC** (безпечно лише бо EBFC дає ~15-30 µВт).
-4. Перевірити cold-start: R_int EBFC ([`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power)); якщо >12 кΩ → LTC3108 як DNP-preboost.
+4. 🔴 **Перевірити cold-start — ДВА виміри, не один (модель `>12 кΩ` спростована 2026-09-09, [`00_07`](00_07_Action_Plan_Tracker) HW.46):** спершу `V_OC` EBFC (без навантаження) — якщо < 700 мВ (worst-case `VIN(CS)`), cold-start НЕ гарантований жодним `R_int`; тоді `R_int` методом двох точок і критерій `R_int ≤ (V_OC−VIN(CS))×VIN(CS)/PIN(CS)` — [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power) (таблиця стель + `ruby tools/firmware/bq25570_dividers.rb`). Якщо старт не гарантований → LTC3108 як DNP-preboost.
 5. Перепрограмувати резистори BQ25570 Li-Po→supercap ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power); R_OC1=VOC_SAMP→GND, інакше 35% замість 65%).
 6. Розвести PCB (Power Deck + RF Deck, B2B-конектор) → production breadboard-валідація [`02_03 §10`](02_03_BQ25570_MPPT_Nano_Power).
 

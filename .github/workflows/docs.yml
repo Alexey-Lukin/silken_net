@@ -204,6 +204,19 @@ jobs:
         # (курс 10 000:1) і burn повз positive-A гейт [SLASH-1].
         run: ruby tools/tokenomics/supply_stress.rb --assert
 
+      - name: BQ25570 equations ⟷ SLUSBH2G worked examples (HW.7)
+        # ЗОВНІШНІЙ якір усієї пари: сім worked-прикладів datasheet проганяються
+        # через ті самі функції + негативний контроль, що спростована generic-форма
+        # НЕ відтворює жодного OV-прикладу. ⛔ Знімати не можна: без цього кроку
+        # наступний вироджується у звірку двох НАШИХ домів (guard-craft #67) —
+        # сліпу саме до випадку «обидва хибні однаково», який тут і стояв.
+        run: ruby tools/firmware/bq25570_dividers.rb --assert
+
+      - name: BQ25570 canon §5 ⟷ equations (HW.13)
+        # Зведена таблиця 02_03 §5 перераховується тими ж рівняннями: ловить swap
+        # плечей (65↔35 %, 3.3↔1.9 В) і дрейф §4 ⟷ §5. Розмір множини запінено.
+        run: ruby tools/firmware/bq25570_dividers.rb --check-canon
+
       - name: GUM uncertainty-budget (STK.5)
         # Pure Ruby — бюджет невизначеності тракту delta_t→GP→SCC. Пінить, що
         # EMA-редукція відтворює канон-цифри 03_01 з ТОГО САМОГО α, що прошитий

@@ -288,7 +288,7 @@ dormant ──reactivate──► active
 
 **Константи:**
 - ⛔ **`VCAP_MIN_MV` / `VCAP_MAX_MV` / `LOW_POWER_MV` ЗНЯТО** — [ARCH.99], присуд founder 2026-08-13. Вони описували шкалу іоністора, а прикладались до `latest_voltage_mv` = мВ VDDA; BQ25570 стабілізує ту шину на 3.3 В від VSTOR ≥ 3.4 В аж до 5.5 на іоністорі ([`02_03 §7`](02_03_BQ25570_MPPT_Nano_Power)), тож вона **за конструкцією не несе інформації про запас енергії** — buck існує рівно щоб сховати напругу сховища від MCU. Разом із константами знято `charge_percentage` і `low_power?`. **Повертати шкалу можна ЛИШЕ разом із живим Vcap-каналом** ([`00_07` — FW.50](00_07_Action_Plan_Tracker)); носій заборони — `spec/models/tree_spec.rb` «energy semantics [ARCH.99]»
-- `SILENCE_THRESHOLD = 24.hours` — [transitional] дефолт порога тиші, ОДИН дім на `scope :silent` і `#fresh_signal?`; рантайм веде `TreeStalenessSweepWorker` через `SystemParameter`. **Дім сигналу «мало енергії»**: нижче `VBAT_UV` BQ25570 просто знеструмлює MCU, тож низький запас спостережуваний ЛИШЕ як тиша, ніколи як низьке число
+- `SILENCE_THRESHOLD = 24.hours` — [transitional] дефолт порога тиші, ОДИН дім на `scope :silent` і `#fresh_signal?`; рантайм веде `TreeStalenessSweepWorker` через `SystemParameter`. **Дім сигналу «мало енергії»**: нижче `VBAT_OK` (≈3.31 В) BQ25570 закриває buck і знеструмлює MCU, тож низький запас спостережуваний ЛИШЕ як тиша, ніколи як низьке число. ⚠️ Поріг саме `VBAT_OK`, НЕ `VBAT_UV` — останній внутрішній (1.95 В) і є аварійним стопом кремнію, до якого шлях не доходить ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power))
 - `DID_FORMAT = /\ASNET-[0-9A-F]{8}\z/`
 - `GLOBAL_LORENZ_Z_MIN = 2.0` — [FW.8] global fallback (дзеркало `BioContract::CRITICAL_Z_MIN`)
 - `GLOBAL_LORENZ_Z_MAX = 45.0` — [FW.8] global fallback

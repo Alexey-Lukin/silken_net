@@ -33,7 +33,7 @@ Each node in the network is an **Autonomous Metabolic Oracle** — a sensor surg
 
 #### 2.1. Energetic Autonomy via Enzymatic Bio-Fuel Cells (EBFC, Gen 2.0)
 
-The node is **powered by the tree itself**. No batteries, no solar harvesters, no grid — and no scheduled maintenance for the operational lifetime of the host organism (20–25 years).
+The node is **powered by the tree itself**. No batteries, no solar harvesters, no grid — and the design target is no scheduled maintenance for the operational lifetime of the host organism (20–25 years). The energy buffer's own service life at that horizon is an open engineering question, not yet settled (`docs/02_03 §12.1`, `00_07` HW.37) — first-order vendor extrapolation puts it well short of 20 years at full charge voltage, and the fix is a lower operating setpoint, priced against stored energy.
 
 The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V (the BASELINE alloy — the final one is decided by the six-alloy coin bake-off, `docs/01_02 §2.5`; a V-free Zone 1 is already the ratified direction) via DMLS (Direct Metal Laser Sintering) with HIP post-processing. The geometry is not arbitrary:
 
@@ -43,7 +43,7 @@ The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V (t
 
 The enzymatic stack is immobilized in a **Genipin-crosslinked chitosan-CNC matrix** — genipin being a natural aglycone from *Gardenia jasminoides* that replaces glutaraldehyde, whose trace leachate induces local parenchyma necrosis and triggers the very immune cascade the geometry is engineered to avoid. The whole assembly is protected by a **Nafion-g-PSBMA zwitterionic anti-fouling membrane** synthesized via surface-initiated ATRP grafting.
 
-Result: a sustained open-circuit voltage above 500 mV, sufficient to feed a TI BQ25570 nano-power MPPT harvester (cold-start threshold 330 mV) buffering into a 0.47 F supercapacitor — which in turn drives an STM32WLE5JC microcontroller running an mruby virtual machine in STOP2 mode at single-digit microamps.
+Result: a sustained open-circuit voltage above 500 mV, feeding a TI BQ25570 nano-power MPPT harvester (cold-start threshold 600 mV typ / 700 mV max, SLUSBH2G Rev F onward — the margin here is under measurement, not settled) buffering into a 0.47 F supercapacitor — which in turn drives an STM32WLE5JC microcontroller running an mruby virtual machine in STOP2 mode at single-digit microamps.
 
 The forest powers its own observation.
 
