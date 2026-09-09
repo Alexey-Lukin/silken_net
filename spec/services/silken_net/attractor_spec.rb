@@ -231,7 +231,7 @@ RSpec.describe SilkenNet::Attractor do
       rng = Random.new(20_260_502)
       cases = Array.new(200) do
         [ rng.rand(-1.0..1.0), rng.rand(-1.0..1.0), rng.rand(-1.0..1.0),
-          rng.rand(-40.0..60.0), rng.rand(0..255), rng.rand(0..7200) ]
+          rng.rand(-40.0..60.0), rng.rand(0..255), rng.rand(0..described_class::DELTA_T_SLOW_S) ]
       end
 
       fw = run_firmware_contract(cases)

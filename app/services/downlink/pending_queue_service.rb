@@ -108,24 +108,24 @@ module Downlink
         return nil unless command
 
         if command.expired?
-          if command.may_fail?
-            command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})")
-            # [UI.4] Fail теж мусить доїхати до UI. Поки бейдж був статичним, німий
-            # fail-шлях не мав симптому; з живою підпискою він застигав би на
-            # «виконується» до перезавантаження — живість, що бреше, гірша за
-            # чесну статику.
-            ActuatorCommandWorker.broadcast_command_state_static(command)
-          end
+          # [FW.60] `pending_commands` віддає лише `.pending` = [:issued, :sent],
+          # а подія `fail` приймає їх НАДмножину `from:` — тут `may_fail?`
+          # завжди true. Гард знято як мертву гілку (00_07 FW.60 §B.4-тріаж).
+          command.fail!("⏱️ Команда протермінована (TTL: #{command.expires_at})")
+          # [UI.4] Fail теж мусить доїхати до UI. Поки бейдж був статичним, німий
+          # fail-шлях не мав симптому; з живою підпискою він застигав би на
+          # «виконується» до перезавантаження — живість, що бреше, гірша за
+          # чесну статику.
+          ActuatorCommandWorker.broadcast_command_state_static(command)
           next
         end
 
         inner = "CMD:#{command.command_payload}:#{command.duration_seconds}:" \
                 "#{command.actuator_id}:#{command.idempotency_token}"
         if oversized?(inner)
-          if command.may_fail?
-            command.fail!("Конверт понад стелю Queen (#{MAX_ENVELOPE_BYTES} Б)")
-            ActuatorCommandWorker.broadcast_command_state_static(command)
-          end
+          # [FW.60] Той самий доказ, що вище — `may_fail?` тут завжди true.
+          command.fail!("Конверт понад стелю Queen (#{MAX_ENVELOPE_BYTES} Б)")
+          ActuatorCommandWorker.broadcast_command_state_static(command)
           next
         end
 
@@ -299,7 +299,13 @@ module Downlink
         if total.positive?
           ((current.to_f / total) * 100).to_i
         else
-          status == "COMPLETE" ? 100 : 0
+          # [FW.60] Єдиний виклик з не-позитивним `total` — жорстко
+          # `(0, 0, "COMPLETE")` з `observe_delivered_firmware!` нижче: хінт і
+          # чанк-фетч завжди несуть `packages.size`, а той має структурну
+          # підлогу > 0 (`gateways.cluster_id` NOT NULL → OTA HMAC-трейлер
+          # (`OtaPackagerService#hmac_enabled?`) додається завжди). «Хінт з
+          # НУЛЬ чанків» — мертва гілка (00_07 FW.60 §B.4-тріаж).
+          100
         end
 
       Turbo::StreamsChannel.broadcast_replace_to(
