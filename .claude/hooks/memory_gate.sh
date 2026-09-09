@@ -313,7 +313,7 @@ rb_dark() {
 # тій самій осі (78 падінь 08-28 → 175 падінь 09-05, обидва `Web3::FeePolicy`): правило
 # «масові падіння називають ДІМ зміни» переросло свого носія. Підняття робить новий дім
 # захищеним підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-161}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-162}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
