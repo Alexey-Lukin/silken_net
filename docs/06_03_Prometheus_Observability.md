@@ -497,7 +497,7 @@ ruby scripts/metric_registry_table.rb --write    # застосувати
 
 ## 🪵 Частина III: Logs — GCP Cloud Logging
 
-> ⚠️ **Scope: GCP/Kamal-шлях.** Ця частина описує Cloud Logging, куди тече stdout при деплої на GCP VM (Kamal). ⊕ **[OPS.37] Друга половина цього застереження знята разом із платформою** — доти вона казала, що на ній stdout інших сервісів недосяжний (окремі контейнери, без kubelet/docker-сокета, поза lease-ізоляцією) → lease-логи ефемерні (виживають лише Sentry-exceptions). Закриття = Rails-HTTP-push у Grafana Cloud Loki (backend **§04**, НЕ Alloy-scrape) — tracked [`INF.22`](00_07_Action_Plan_Tracker), робити з першим деплоєм (TRL-3 = нуль логів для тюну).
+> ⚠️ **Scope: GCP/Kamal-шлях.** Ця частина описує Cloud Logging, куди тече stdout при деплої на GCP VM (Kamal). ⊕ **[OPS.37] Друга половина цього застереження знята разом із платформою** — доти вона казала, що на ній stdout інших сервісів недосяжний (окремі контейнери, без kubelet/docker-сокета, поза lease-ізоляцією) → lease-логи ефемерні (виживають лише Sentry-exceptions). Закриття = Rails-HTTP-push у Grafana Cloud Loki (backend **§04**, НЕ Alloy-scrape) — tracked [`INF.22`](00_07_Action_Plan_Tracker). 🔴 **Тригер перекваліфіковано: «перший деплой» НАСТАВ** (canopy 2026-09-02), тож чинна подія — **перший PRODUCTION-деплой**; заразом помер і кваліфікатор «TRL-3 = нуль логів для тюну» — логи вже течуть. ⚠️ На чинному шляху діра звелась до РЕТЕНЦІЇ й пошуку, а не до відсутності логів: Rails пише JSON-stdout, Cloud Logging його приймає.
 
 ### 3.1 Поточна конфігурація
 

@@ -23,7 +23,9 @@
 #     that cross machine halves — o_ring_gap_mm 1.424f is DERIVED from in-silico script 52
 #     (ORING_CS 1.78 × 0.80), rf_clearance_min_mm 12f mirrors 02_01 §5.3, and zone1_insertion_mm 30
 #     carries no provenance comment at all. All correct today → a pin would have an empty true set,
-#     so it is NOT built; the carrier is the picogk skill. State → 00_07 HW.45.
+#     so it is NOT built — ⚖️ founder RATIFIED the refusal 2026-09-09 (00_07 §🗄️ HW.45); the
+#     carriers are the picogk and in-silico skills, and the declared price is that the next
+#     copy taken from a foreign referent will red NOTHING. ⛔ Do not rebuild this pin.
 #   • DocsLinter.anchor_dimension_drift only catches prose RANGES (20-30 flange / 40-60 Zone-2), never a
 #     cem value.  • bell_radius_mm=5.0 had NO assert anywhere.
 # So a shipped cem number could drift from canon with zero gate. This closes that.

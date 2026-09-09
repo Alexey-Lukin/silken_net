@@ -28,6 +28,17 @@
 #     --role="roles/billing.costsManager"
 # Also note: billingbudgets API enablement is eventually-consistent — the very
 # first activation apply may fail once; re-apply succeeds.
+#
+# ✅ GRANT EVIDENCED 2026-09-08, and the evidence is INDIRECT because nothing
+# observes this grant directly (it lives on the billing account, outside this
+# root and outside every gate). The weekly drift run of 2026-09-08 20:36 logged
+# `google_billing_budget.monthly[0]: Refreshing state...` followed by "No changes",
+# i.e. the SA really can read a billing-account-scoped resource. ⚠️ Read that as a
+# WITNESS, not a guarantee: revoking the grant would surface as a red drift run,
+# never as a red build, and nothing else in the tree would notice.
+# ⊥ Do not confuse scopes: `roles/billing.viewer` is deliberately ABSENT at the
+# PROJECT level (terraform/iam.tf) — that is a different role at a different scope
+# and its absence does not touch this one. State → 00_07 INF.22.
 # =============================================================================
 
 resource "google_project_service" "billingbudgets" {

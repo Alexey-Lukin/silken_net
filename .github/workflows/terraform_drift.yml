@@ -6,11 +6,16 @@ name: Ops · TF Drift
 # a half-applied config). A red scheduled run → GitHub notification to the owner
 # — honester than a calendar reminder (same pattern as Sec · Image CVE Scan).
 #
-# Config-half now, value post-deploy: on TRL-3 no `apply` has run yet, so there
-# is no state to drift from. The job SKIPS CLEANLY (green) until the WIF provider
-# Variable is set (mirrors deploy.yml verify-secrets skip-clean) — it activates the
-# moment the first apply lands. Read-only: `plan -lock=false` never takes the
-# state lock, so it can never block a real apply.
+# The skip-clean MECHANISM stands: the job SKIPS CLEANLY (green) while the WIF
+# provider Variable is unset (mirrors deploy.yml verify-secrets skip-clean).
+# ⚠️ Its ORIGINAL GROUND is dead and must not be re-read as current: this said
+# "on TRL-3 no `apply` has run yet, so there is no state to drift from", and the
+# first apply landed 2026-08-31 (docs/06_01). The detector is LIVE — it ran, went
+# red on missing read-permissions, and after the 2026-09-08 grant chain its first
+# healthy run caught real drift (7 IAM bindings applied but not committed).
+# So: mechanism kept, epoch corrected. State → 00_07 INF.22.
+# Read-only: `plan -lock=false` never takes the state lock, so it can never block
+# a real apply.
 #
 # ⚠️ After setting the WIF Variables + GCP_PROJECT_ID / POSTGRES_PASSWORD secrets,
 # VALIDATE immediately via `workflow_dispatch` — do NOT wait for the weekly cron. That's
