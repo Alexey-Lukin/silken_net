@@ -225,7 +225,9 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   Cathode keeps its channel (`mechanical_lock.zone3`/flange bore); anode shank `bore→0` (solid). F3 audit =
   `AxialStack.BusRodClears` (rod + 2·liner ≤ channel).
 - **Graded gyroid (v2, SHIPPED)**: own SDF, **NOT** LEAP `ImplicitModular` (`FunctionalScaleTrafo`
-  is a hard-coded Z-demo, not radial; LatticeLibrary submodule ~1 yr stale). Three CEM-driven axes
+  is a hard-coded Z-demo, not radial; LatticeLibrary upstream is DORMANT — our pin IS `HEAD main`, so
+  re-check it by `git ls-remote`, never by age; the one that IS behind is `LEAP71_ShapeKernel` — skill
+  `dependency-update`). Three CEM-driven axes
   in `Zone1Anode`: `GradedCartesianGyroid` (continuous period+wall taper) + `ZonedGyroid` (stepped
   zones). Pick by goal — continuous-gentle (smooth, ≤~0.8× period ratio), `GyroidWallParamRim`
   porosity gradient, or `topology: stepped` for a STRONG ~2× pore contrast. **MEASURE** porosity.
