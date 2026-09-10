@@ -23,6 +23,10 @@
       "window_pct": [
         0.15,
         0.3
+      ],
+      "window_pct_parker_face": [
+        0.19,
+        0.32
       ]
     }
   },
@@ -186,6 +190,29 @@
     }
   ],
   "min_mitigation_pass": "L2 spacer + bayonet hard-stop",
+  "parker_face_reconciliation": {
+    "residual_half_width_pct_points": 3.97,
+    "band_at_current_nominal_pct": [
+      16.0,
+      24.0
+    ],
+    "current_nominal_holds_industry": true,
+    "current_nominal_holds_parker_face": false,
+    "intersection_window_pct": [
+      19.0,
+      30.0
+    ],
+    "recommended_nominal_pct": 24.5,
+    "band_at_recommended_pct": [
+      20.5,
+      28.5
+    ],
+    "recommended_holds_both": true,
+    "oring_gap_mm_current": 1.424,
+    "oring_gap_mm_recommended": 1.344,
+    "radome_rim_shift_um": 80.0,
+    "note": "The open HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. Re-run says the fork is removable: the two windows intersect at 19-30 %, the residual band is +/-3.97 pp, so centring the nominal in the intersection puts the whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a judgement."
+  },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"

@@ -41,7 +41,11 @@ ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
 # ── Working windows (fraction) ──
 POGO_WIN = (0.50, 0.70)   # Mill-Max mid-stroke (02_02 §3.5)
-ORING_WIN = (0.15, 0.30)  # Parker static squeeze — reconciles the §3.2(20-25) / §3.5(15-25) drift
+ORING_WIN = (0.15, 0.30)  # industry practice for static seals, centre 20 % (02_02 §3.5).
+# ⚠️ NOT Parker: that attribution was withdrawn 2026-09-10. The applicable Parker table is settled now —
+# ⚖️ founder 2026-09-11 put the single O-ring on the flange TOP face against the radome rim, i.e. a FACE
+# seal, so Parker ORD 5700 Chart 4-3 for W .070" applies and its window is TIGHTER at the bottom.
+ORING_WIN_PARKER_FACE = (0.19, 0.32)  # Parker ORD 5700 Chart 4-3, face seal, W .070" (00_07 HW.33)
 PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max (Sil-Pad tolerates wide squeeze)
 PAD_CREEP_RETAIN = 0.85   # compression fraction retained after 20 yr (HW.30 lifecycle estimate)
 PAD_ACOUSTIC_MIN = 0.20   # post-creep floor for acoustic contact (pad_pct·creep must stay ≥ this)
@@ -155,6 +159,38 @@ def main() -> int:
             final_label = label
     mit_ok = final_label is not None
 
+    # ── Parker face-seal reconciliation (00_07 HW.33) ──
+    # The mitigation above centres the O-ring at 20 %, which sits BELOW the Parker face-seal floor once
+    # the residual band is applied. The question the open ⚖️ asks is whether that forces a documented
+    # deviation from Parker — so instead of judging the current nominal, derive the nominal that would
+    # satisfy BOTH windows and report what it costs. The O-ring gap has its own tolerance chain
+    # (TOL_OR), so moving it does not touch pogo or pad at all.
+    banner("Parker face-seal reconciliation — does the mitigation need a deviation?")
+    _, res_or_final = residual(True, True)
+    half_pct = res_or_final / ORING_CS
+    now_lo, now_hi = 0.20 - half_pct, 0.20 + half_pct
+    lo_both = max(ORING_WIN[0], ORING_WIN_PARKER_FACE[0])
+    hi_both = min(ORING_WIN[1], ORING_WIN_PARKER_FACE[1])
+    nominal_both = (lo_both + hi_both) / 2.0
+    band_lo, band_hi = nominal_both - half_pct, nominal_both + half_pct
+    fits_both = band_lo >= lo_both and band_hi <= hi_both
+    gap_or_new = ORING_CS * (1.0 - nominal_both)
+    print(f"  Residual O-ring band after spacer + hard-stop: ±{half_pct*100:.2f} pp of squeeze")
+    print(f"  At the CURRENT 20 % nominal:  {now_lo*100:.1f}-{now_hi*100:.1f} %  → "
+          f"industry {'OK' if now_lo >= ORING_WIN[0] and now_hi <= ORING_WIN[1] else 'FAIL'}, "
+          f"Parker face {'OK' if now_lo >= ORING_WIN_PARKER_FACE[0] and now_hi <= ORING_WIN_PARKER_FACE[1] else 'FAIL'}")
+    print(f"  Windows intersect at {lo_both*100:.0f}-{hi_both*100:.0f} % → "
+          f"centring the band there means a {nominal_both*100:.1f} % nominal")
+    print(f"  At that nominal:              {band_lo*100:.1f}-{band_hi*100:.1f} %  → "
+          f"{'BOTH windows hold' if fits_both else 'still outside — a deviation IS required'}")
+    print(f"  Cost of the move: O-ring gap {GAP_OR:.3f} → {gap_or_new:.3f} mm, i.e. the radome rim comes")
+    print(f"  down {abs(GAP_OR - gap_or_new)*1000:.0f} µm. Pogo and pad ride a DIFFERENT tolerance chain "
+          "(TOL_PZ) and do not move.")
+    if fits_both:
+        print("  → The open ⚖️ «accept a deviation from Parker OR re-run 52» does not need a choice:")
+        print("    a ~0.1 mm nominal change satisfies Parker face-seal AND industry practice at once,")
+        print("    with symmetric margin. What remains is a design edit, not a judgement.")
+
     banner("Verdict")
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
@@ -168,7 +204,8 @@ def main() -> int:
             "pogo": {"travel_mm": POGO_TRAVEL, "free_mm": round(POGO_FREE, 3), "window_pct": POGO_WIN},
             "pad": {"free_mm": PAD_FREE, "window_pct": PAD_WIN,
                     "creep_retain_20yr": PAD_CREEP_RETAIN, "acoustic_min_pct": PAD_ACOUSTIC_MIN},
-            "oring": {"cs_mm": ORING_CS, "window_pct": ORING_WIN},
+            "oring": {"cs_mm": ORING_CS, "window_pct": ORING_WIN,
+                      "window_pct_parker_face": ORING_WIN_PARKER_FACE},
         },
         "shared_gap_note": "pogo + pad are parallel springs on the Power↔Zone3 gap; O-ring on Radome-rim↔Zone3",
         "nominal_gaps_mm": {"power_zone3": GAP_PZ, "oring": round(GAP_OR, 3)},
@@ -179,6 +216,25 @@ def main() -> int:
         "unmitigated": {"cases": unmit, "pass": raw_ok},
         "mitigation_escalation": escalation,
         "min_mitigation_pass": final_label,
+        "parker_face_reconciliation": {
+            "residual_half_width_pct_points": round(half_pct * 100, 2),
+            "band_at_current_nominal_pct": [round(now_lo * 100, 1), round(now_hi * 100, 1)],
+            "current_nominal_holds_industry": bool(now_lo >= ORING_WIN[0] and now_hi <= ORING_WIN[1]),
+            "current_nominal_holds_parker_face": bool(now_lo >= ORING_WIN_PARKER_FACE[0]
+                                                      and now_hi <= ORING_WIN_PARKER_FACE[1]),
+            "intersection_window_pct": [round(lo_both * 100, 1), round(hi_both * 100, 1)],
+            "recommended_nominal_pct": round(nominal_both * 100, 1),
+            "band_at_recommended_pct": [round(band_lo * 100, 1), round(band_hi * 100, 1)],
+            "recommended_holds_both": bool(fits_both),
+            "oring_gap_mm_current": round(GAP_OR, 3),
+            "oring_gap_mm_recommended": round(gap_or_new, 3),
+            "radome_rim_shift_um": round(abs(GAP_OR - gap_or_new) * 1000, 0),
+            "note": "The open HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. "
+                    "Re-run says the fork is removable: the two windows intersect at 19-30 %, the "
+                    "residual band is +/-3.97 pp, so centring the nominal in the intersection puts the "
+                    "whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance "
+                    "chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a "
+                    "judgement."},
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
                           "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 00_02 §1.2, unresponsive"},
         "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"
