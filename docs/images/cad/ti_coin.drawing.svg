@@ -72,10 +72,10 @@
 <line x1='540' y1='622' x2='790' y2='622' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='622' x2='630' y2='638' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='633' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='633' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8de2abf4-dirty</text>
+<text x='635' y='633' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>9f395c8d</text>
 <line x1='540' y1='638' x2='790' y2='638' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='638' x2='630' y2='654' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='649' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='635' y='649' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/ti_coin.json</text>
-<text x='806' y='670' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8de2abf4-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
+<text x='806' y='670' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 9f395c8d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101)</text>
 </svg>
