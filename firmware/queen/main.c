@@ -792,7 +792,12 @@ static SoldierCmdQueue soldier_cmd_queue;
 // §6.1. За гейтом — ЛИШЕ MAC-шов (Helium_Mac_SendSos: OTAA + uplink поверх
 // vendored LoRaMac-node); уся обв'язка компілюється завжди, щоб компілятор
 // бачив її кожною збіркою (урок неіснуючого HAL_CRYPEx_AESCCM).
+// [ARCH.34 ⚖️ 2026-09-10] Поріг тиші SOS виводиться з каденсу флашу (хв, вгору),
+// а не з фіксованих «30 хв», що були МЕНШІ за каденс і кричали на здоровій Королеві.
+#define HELIUM_FLUSH_CADENCE_MIN ((FLUSH_INTERVAL_MS + FLUSH_JITTER_MAX_MS + 59999u) / 60000u)
 #include "helium_sos.h"
+_Static_assert(HELIUM_FALLBACK_THRESHOLD_MIN * 60000u > FLUSH_INTERVAL_MS + FLUSH_JITTER_MAX_MS,
+               "ARCH.34: SOS silence threshold must exceed the flush cadence + jitter");
 
 #ifndef ARCH34_HELIUM_ENABLED
 #define ARCH34_HELIUM_ENABLED  0   // 🟡 фліп після bench OTAA (compile-lane = hal_check_ccm)

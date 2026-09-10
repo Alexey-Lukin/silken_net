@@ -77,13 +77,21 @@ static int test_pack_uptime_saturates_u24(void) {
 
 static int test_should_fire_canon_gates(void) {
     /* Усі три умови канону + пауза ретрансміту — кожна поодинці глушить. */
-    ASSERT_EQ(Helium_Sos_Should_Fire(30, 30, 50, 1), 1); /* усе дозріло   */
-    ASSERT_EQ(Helium_Sos_Should_Fire(29, 30, 50, 1), 0); /* uplink < 30хв */
-    ASSERT_EQ(Helium_Sos_Should_Fire(30, 29, 50, 1), 0); /* ретрансміт-пауза */
-    ASSERT_EQ(Helium_Sos_Should_Fire(30, 30, 49, 1), 0); /* буфер < 50%   */
-    ASSERT_EQ(Helium_Sos_Should_Fire(30, 30, 50, 0), 0); /* Q2Q ще дихає  */
+    const uint32_t T = HELIUM_FALLBACK_THRESHOLD_MIN;
+    const uint32_t R = HELIUM_SOS_REPEAT_MIN;
+    ASSERT_EQ(Helium_Sos_Should_Fire(T, R, 50, 1), 1);     /* усе дозріло   */
+    ASSERT_EQ(Helium_Sos_Should_Fire(T - 1, R, 50, 1), 0); /* тиша < порога */
+    ASSERT_EQ(Helium_Sos_Should_Fire(T, R - 1, 50, 1), 0); /* ретрансміт-пауза */
+    ASSERT_EQ(Helium_Sos_Should_Fire(T, R, 49, 1), 0);     /* буфер < 50%   */
+    ASSERT_EQ(Helium_Sos_Should_Fire(T, R, 50, 0), 0);     /* Q2Q ще дихає  */
     ASSERT_EQ(Helium_Sos_Should_Fire(0, 0, 0, 0), 0);
     ASSERT_EQ(Helium_Sos_Should_Fire(1000, 1000, 100, 1), 1);
+    /* ⚖️ ARCH.34 2026-09-10: здорова Королева мовчить рівно один каденс флашу
+     * (+jitter) між двома успішними флашами — з ПОВНИМ буфером це ще не SOS.
+     * Доти поріг 30 < 60 хв кричав на живому модемі при N ≈ 45–160 Солдатів. */
+    ASSERT_EQ(Helium_Sos_Should_Fire(HELIUM_FLUSH_CADENCE_MIN, R, 100, 1), 0);
+    ASSERT_EQ(Helium_Sos_Should_Fire(HELIUM_FLUSH_CADENCE_MIN + 1, R, 100, 1), 0);
+    ASSERT_EQ(T > HELIUM_FLUSH_CADENCE_MIN, 1);
     printf("  test_should_fire_canon_gates                               ✅\n");
     return 0;
 }

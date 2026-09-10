@@ -18,15 +18,25 @@
  * unpack "N n C C3 C" — big-endian, суворо ≥12):
  *   [queen_did:4 BE][vcap_mv:2 BE][error_code:1][uptime_min:u24 BE][flags:1][rsv:1]
  *
- * Тригер (02_05 §6.1): uplink мертвий ≥30 хв + Q2Q недоступний + буфер ≥50%.
- * Ретрансміт — не частіше того ж порогу: SOS і так ідемпотентний на бекенді,
- * а EU868 duty-cycle і Helium DC не люблять базікання.
+ * Тригер (02_05 §6.1): жодного підтвердженого uplink ≥ 2× каденс флашу
+ * + Q2Q недоступний + буфер ≥50%. Ретрансміт — не частіше 30 хв: SOS і так
+ * ідемпотентний на бекенді, а EU868 duty-cycle і Helium DC не люблять базікання.
  */
 
 #define HELIUM_SOS_WIRE_LEN            12u
 
-/* Пороги активації — числа канону 02_05 §6.1 (не міняй без каноном). */
-#define HELIUM_FALLBACK_THRESHOLD_MIN  30u    /* хв без підтвердженого uplink */
+/* Пороги активації — числа канону 02_05 §6.1 (не міняй без канону).
+ * ⚖️ 2026-09-10 (00_07 ARCH.34): поріг тиші МУСИТЬ перевищувати каденс флашу
+ * + jitter (FLUSH_INTERVAL_MS + FLUSH_JITTER_MAX_MS, queen/main.c). Доти тут
+ * стояло 30 хв < 60 хв — «тиша» була штатним станом другої половини кожної
+ * години, і SOS летів би на здоровій Королеві при N ≈ 45–160 Солдатів.
+ * 2× каденс = одна пропущена спроба флашу ще не є смертю модема. main.c
+ * підставляє справжній каденс і _Static_assert'ить нерівність; дефолт нижче —
+ * дзеркало для host-тестів. */
+#ifndef HELIUM_FLUSH_CADENCE_MIN
+#define HELIUM_FLUSH_CADENCE_MIN       61u    /* хв: 60 + jitter ≤ 1 (main.c)  */
+#endif
+#define HELIUM_FALLBACK_THRESHOLD_MIN  (2u * HELIUM_FLUSH_CADENCE_MIN) /* хв тиші */
 #define HELIUM_SOS_REPEAT_MIN          30u    /* мін. пауза між SOS-кадрами   */
 #define HELIUM_BUFFER_FILL_MIN_PCT     50u    /* заповнення CIFO/ринга        */
 #define HELIUM_BLIND_WINDOW_MAX_MS     20000u /* стеля radio-сліпоти < IWDG   */
