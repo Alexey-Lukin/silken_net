@@ -385,7 +385,7 @@ Run артефакти — `tools/in_silico/cache/runs/<timestamp>/` (gitignored
 - **Genipin-chitosan-CNC матриця** → mechanical testing на циклічне навантаження (тигмоморфогенез simulation, ±5% strain @ 0.1 Гц, 10,000 циклів).
 - **Nafion-g-PSBMA мембрана** → protein adsorption assay з суспензією абієтинової кислоти (10 мг/мл у симульованому ксилемному соку), 7 днів експозиції. UCST behavior — тест при -10°C → +25°C цикл.
 - **EIS** — імпедансна спектроскопія для опору границі фермент↔метал.
-- **ICP-MS** після тривалої експозиції — перевірка вимивання Os, металів ZIF.
+- **ICP-MS** після тривалої експозиції — перевірка вимивання Os, металів ZIF. Non-target екологічна доля (ґрунт/ґрунтові води/безхребетні) — окремий scope-extension screening-протокол, не цей device-гейт: [`non_target_ecoscreen.md`](protocols/ebfc/non_target_ecoscreen.md) ([`00_07`](00_07_Action_Plan_Tracker) HW.38).
 
 > 🎯 **Квантитативні acceptance-пороги (Stage-2 gates — дім тут; RFQ реферить):**
 > - **30-day stability:** ≥ **80% retention** j_max (potentiostatic hold @ V_op, 20–25°C); нижче → fail.
