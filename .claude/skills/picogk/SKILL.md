@@ -287,7 +287,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   presentation gallery `docs/images/cad/` is NOT SSOT (`tools/cad/scripts/render_gallery.sh` rebuilds it)
   — ⚠️ but see the drawing bullet above: **not-SSOT is not a licence to lag**, and the PNGs there have no
   pin at all, so a stale render is invisible to everything.
-- **Local-verify**: `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
+- **Local-verify** (`export PATH="$HOME/.dotnet:$PATH"` first — the SDK is NOT on PATH, and «dotnet is not installed here» has already been asserted falsely once, 2026-09-10): `dotnet build SilkenCad.sln` (0W/0E) → `dotnet run --project src/SilkenCad
   -- verify cem/<x>.json` (metrics.json + exit 0/1) → `dotnet run -- draw cem/<x>.json` (SVG+DXF → out/)
   → `dotnet test`. CI = enterprise 2-job `cad_smoke.yml` (logic = Linux pure-xUnit hard [incl. draw/DXF]
   + render = macOS build-hard + verify best-effort, Library.Go 139 headless).
