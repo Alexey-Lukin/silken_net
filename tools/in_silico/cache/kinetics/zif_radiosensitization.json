@@ -1,0 +1,109 @@
+{
+  "method": "closed-form photon transport: Klein-Nishina energy-transfer fraction + Katz-Penfold CSDA range + <Z/A> mass energy-absorption ratio. Literature constants only; no DFT.",
+  "gamma_source": {
+    "energy_MeV": 1.25,
+    "alpha": 2.4462,
+    "kn_energy_transfer_fraction": 0.4706,
+    "mean_compton_electron_keV": 588.2,
+    "csda_range_g_cm2": 0.205,
+    "csda_range_mm_unit_density": 2.05
+  },
+  "cavity_classification": [
+    {
+      "layer": "single ZIF nanocrystal (80 nm)",
+      "thickness_cm": 8e-06,
+      "thickness_over_csda_range": 3.902923530812247e-05,
+      "cavity_regime": "Bragg-Gray cavity"
+    },
+    {
+      "layer": "aggregated nanozyme film (1 \u00b5m)",
+      "thickness_cm": 0.0001,
+      "thickness_over_csda_range": 0.00048786544135153093,
+      "cavity_regime": "Bragg-Gray cavity"
+    },
+    {
+      "layer": "whole cathode membrane stack",
+      "thickness_cm": 0.002,
+      "thickness_over_csda_range": 0.009757308827030619,
+      "cavity_regime": "Bragg-Gray cavity"
+    }
+  ],
+  "mass_absorption_ratio": [
+    {
+      "material": "water (dose reference)",
+      "z_over_a": 0.5551,
+      "mean_z": 7.2,
+      "def_compton_vs_water": 1.0,
+      "enhances": false
+    },
+    {
+      "material": "protein (laccase, avg. residue)",
+      "z_over_a": 0.5344,
+      "mean_z": 6.4,
+      "def_compton_vs_water": 0.9628,
+      "enhances": false
+    },
+    {
+      "material": "MWCNT support",
+      "z_over_a": 0.4995,
+      "mean_z": 6.0,
+      "def_compton_vs_water": 0.8999,
+      "enhances": false
+    },
+    {
+      "material": "ZIF-8 (Zn node, parent framework)",
+      "z_over_a": 0.5097,
+      "mean_z": 12.9,
+      "def_compton_vs_water": 0.9183,
+      "enhances": false
+    },
+    {
+      "material": "ZIF (Co node)",
+      "z_over_a": 0.511,
+      "mean_z": 11.6,
+      "def_compton_vs_water": 0.9206,
+      "enhances": false
+    },
+    {
+      "material": "ZIF (Cu node)",
+      "z_over_a": 0.5094,
+      "mean_z": 12.5,
+      "def_compton_vs_water": 0.9177,
+      "enhances": false
+    },
+    {
+      "material": "nCoCuCeZIF (equimolar Co/Cu/Ce nodes)",
+      "z_over_a": 0.4965,
+      "mean_z": 19.4,
+      "def_compton_vs_water": 0.8945,
+      "enhances": false
+    },
+    {
+      "material": "ZIF (all-Ce node \u2014 UPPER BOUND)",
+      "z_over_a": 0.4763,
+      "mean_z": 30.1,
+      "def_compton_vs_water": 0.8581,
+      "enhances": false
+    },
+    {
+      "material": "Ti-6Al-4V substrate (context)",
+      "z_over_a": 0.4596,
+      "mean_z": 22.0,
+      "def_compton_vs_water": 0.828,
+      "enhances": false
+    }
+  ],
+  "falsification_margin": {
+    "def_upper_bound_all_ce_node": 0.8581,
+    "non_compton_share_required_for_def_1p0_pct": 14.19,
+    "note": "The photoelectric and pair channels are not computed. This is the share of total mass energy absorption they would have to supply in the ZIF (and ~none in water) for DEF to reach unity \u2014 the number a lab check would have to beat."
+  },
+  "kv_contrast": {
+    "reference_photon_keV": 50.0,
+    "photoelectron_csda_range_um": 39.561,
+    "range_ratio_mev_over_kev": 51.8,
+    "volume_dilution_ratio": 139088.8
+  },
+  "verdict": "Physical radiosensitisation by the ZIF nanozyme is REJECTED at Co-60 1.25 MeV on two independent grounds. (1) Non-locality: the mean Compton electron is 588 keV with a 2.05 mm CSDA range, so every layer of the stack is a Bragg-Gray cavity (1e-02 of the range at most) whose dose is imposed by the surrounding medium; a local excess of interactions cannot raise it. (2) Coefficient direction: per unit mass Compton absorption tracks <Z/A>, which FALLS with Z, so even the all-Ce upper-bound node absorbs 0.858x water, not more. A non-Compton channel would have to supply 14.2% of the ZIF's total absorption to reach DEF 1.0, and would still have to beat (1). CONSEQUENCE: 01_04 6.3 Branch A stands as written - gamma on the LOADED anchor; aseptic loading after sterilisation is NOT required by this risk. RESIDUAL is chemical, not dosimetric (Fenton-like radiolysis on redox-active Ce/Cu/Co, sign open because the same nanozyme is SOD/catalase-like) and is measured by the Branch A activity assay already planned - run it with AND without the ZIF.",
+  "caveats": "Hypothesis, not measurement (00_06 0). Closed-form transport with literature constants; ZIF node stoichiometry is NOT fixed by canon, so the sweep brackets it and quotes the all-Ce upper bound rather than inventing a formula. Structurally blind to: the chemical radiolysis channel, dose-rate effects, and the packaging environment (blister, N2) that sets how much water is present to radiolyse."
+}

@@ -637,6 +637,64 @@ things that can turn any of this into a measurement. (`mechanical/teg_across_pee
 
 ---
 
+## HW.22 — Does the ZIF Nanozyme Radiosensitise the Enzymes under Co-60? (script 65)
+
+Spec home → [`01_04 §6.2`/`§6.3`](../../../01_04_CODIT_and_Xylemointegration.md); decision → `00_07` HW.22.
+
+The low-dose gamma row of the sterilisation matrix carried an open blocker: heavy metals (Ce/Co/Cu) are
+radiosensitisers, so the ZIF nanozyme might make radiation damage **worse**, and if so the enzymes must
+be loaded aseptically **after** the Co-60 pass. That is a factory-flow decision, not a parameter — Гілка
+A currently sterilises the **loaded** anchor. Closed-form transport answers it without a lab slot.
+
+**Q1 — the deposition is not local.** At 1.25 MeV the interaction is Compton; integrating the
+Klein–Nishina differential cross-section gives a mean energy-transfer fraction
+0.471, i.e. a **588 keV** secondary electron whose CSDA range
+(Katz–Penfold) is **2.05 mm** at unit density. Every layer in the stack — an 80 nm ZIF
+nanocrystal, a 1 µm aggregated film, the whole 20 µm membrane — is at most **1 %** of that range, i.e. a
+Bragg–Gray cavity whose dose is imposed by the electron fluence arriving from the surrounding medium. A
+local excess of photon interactions inside the film **cannot** raise the dose there.
+
+**Q2 — and the coefficient moves the wrong way anyway.** Per unit *mass*, Compton absorption tracks the
+electron density `<Z/A>·N_A`, and `<Z/A>` **falls** with atomic number. Canon does not fix the node
+stoichiometry of `nCoCuCeZIF`, so the sweep brackets it rather than inventing one — the all-Ce node is
+the physical upper bound on `<Z>` for anything the name can mean.
+
+| material | `<Z/A>` | `<Z>` | DEF vs water | verdict |
+|---|---|---|---|---|
+| water (dose reference) | 0.5551 | 7.2 | **1.000×** | no enhancement |
+| protein (laccase, avg. residue) | 0.5344 | 6.4 | **0.963×** | no enhancement |
+| MWCNT support | 0.4995 | 6.0 | **0.900×** | no enhancement |
+| ZIF-8 (Zn node, parent framework) | 0.5097 | 12.9 | **0.918×** | no enhancement |
+| ZIF (Co node) | 0.5110 | 11.6 | **0.921×** | no enhancement |
+| ZIF (Cu node) | 0.5094 | 12.5 | **0.918×** | no enhancement |
+| nCoCuCeZIF (equimolar Co/Cu/Ce nodes) | 0.4965 | 19.4 | **0.894×** | no enhancement |
+| ZIF (all-Ce node — UPPER BOUND) | 0.4763 | 30.1 | **0.858×** | no enhancement |
+| Ti-6Al-4V substrate (context) | 0.4596 | 22.0 | **0.828×** | no enhancement |
+
+**Q3 — the falsification margin.** The photoelectric and pair channels are Z-dependent and are *not*
+computed. Rather than assert they are negligible, invert: at the 0.858× upper bound a
+non-Compton channel would have to supply **14.2 %** of the ZIF's total mass energy absorption
+(and ~0 % in water) merely to reach DEF 1.0 — and would then still have to beat Q1, which is geometric
+and indifferent to any coefficient. That percentage is the number a lab check of this caveat must exceed.
+
+**Q4 — why the kV literature does not transfer.** A 50 keV photoelectron ranges **40 µm** —
+the scale of the structure being protected, so energy released at the metal centre is deposited on it.
+At 1.25 MeV the range is **×52** larger, smearing the same energy over ×1e+05 the volume.
+Dose enhancement is a **locality** phenomenon and Co-60 destroys the locality.
+
+**Verdict** — 🟢 **Physical radiosensitisation rejected; `01_04 §6.3` Гілка A stands as written** (gamma on
+the loaded anchor). ⚠️ **The residual is chemical, not dosimetric:** redox-active Ce/Cu/Co can turn
+radiolytic H₂O₂ into hydroxyl radicals by a Fenton-like route, no photon-transport argument touches it,
+and its **sign is open** — the same nanozyme is chosen for SOD/catalase-like activity (`01_03 §2.2`), so
+it may scavenge as readily as amplify. It is measured directly by the Гілка A activity assay already in
+the plan, which `§6.5` now requires to be run **with and without the ZIF**. (`kinetics/zif_radiosensitization.json`)
+
+⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Structurally
+blind to: the chemical channel above, dose-rate effects, and the packaging environment (blister, N₂) that
+sets how much water is there to radiolyse.
+
+---
+
 ## Infrastructure
 
 | Component | Location |
