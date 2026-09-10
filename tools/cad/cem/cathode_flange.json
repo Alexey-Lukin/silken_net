@@ -36,7 +36,7 @@
   "notes": {
     "material": "Ti-6Al-4V (Grade 5)",
     "process": "SLM/DMLS or EBM (flat flange — precision less critical, roughness = ECSA advantage, 01_02 1.7)",
-    "post_process": "selective Hard-Gold ENIG on central GND pad + outer pogo ring (02_02 1.2, Ti-Au galvanic-trap fix); build tip-down (01_02 1.6)",
+    "post_process": "selective Hard-Gold ENIG on central GND pad + outer pogo ring (02_02 1.2, Ti-Au galvanic-trap fix); build tip-down (01_02 1.6) | bus channel O1.3: MACHINE after printing to the tolerance block (primary datum, 0.05 concentricity/runout) - NOT as-printed; nominal dia unchanged; must accept the 0.15 mm structural liner (01_01 1.4)",
     "surface_finish": "PER-SURFACE, not one finish for the whole part (01_02 1.3): catalytic side/perimeter = EAAE dual-scale micro Sa 0.5-5 um + nano Sv 50-500 nm (Step 4, Laccase/ZIF ECSA) - NO PEP and NO H2O2 passivation on that face (Steps 6-7); outer jacket = PEP smoothing to Ra 0.4 um max (Step 7) before ZnO-Ta PEO; pogo top face = MASKED during EAAE, then SELECTIVE Hard-Gold ENIG on the central GND pad + outer pogo ring only, PEEK isolation ring between them left bare (02_02 1.2). Sand-blasting is admissible on THIS part (Zone 3, line-of-sight geometry, Step 3), unlike the Zone-1 gyroid.",
     "coating_restriction": "Catalytic face (Laccase + ZIF-nanozyme + PTFE-GDL): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ti only, any dielectric blocks DET. Outer jacket: ZnO-Ta + 8-HQ allowed. NOT on PEEK. (01_02 3.6)",
     "extra": [
