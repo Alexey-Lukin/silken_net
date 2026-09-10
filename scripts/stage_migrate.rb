@@ -33,7 +33,7 @@ OVERRIDES = {
   "FW.4"=>[ "👤", "🟢" ],     "FW.8"=>[ "👤", "🟢" ],     "FW.17"=>[ "👤", "🟢" ],
   "FW.27"=>[ "🤖", "🟢" ],    "FW.42"=>[ "🤖", "🟢" ],    "ARCH.40"=>[ "🤖", "🟢" ],
   "ARCH.41"=>[ "👤", "🟢" ],  "SEC.12"=>[ "👤", "🟢" ],   "ARCH.35"=>[ "👤", "🟢" ],
-  "BIZ.14"=>[ "🤖", "🟢" ],   "ARCH.34"=>[ "🤖", "⚪" ],   # ARCH.34 = named-next AI task, NOT blocked
+  "BIZ.14"=>[ "🤖", "🟢" ],   "ARCH.34"=>[ "🤖", "⚪" ],   # ARCH.34: false-🔗 — no blocker, AI-owned
   "S6.10"=>[ "🤖", "🔗" ],    "UNI.15"=>[ "👤+🤖", "🔗" ], "UNI.16"=>[ "👤", "🔗" ], "STK.3"=>[ "👤", "🔗" ],
   "HW.1"=>[ "👤", "⚪" ],      "UNI.9"=>[ "👤", "⚪" ],     # HW.1: license=precondition; UNI.9: false-🌿
   "SE050-MIGRATION"=>[ "🤖+👤", "🟡" ],                # real SE05x mechanics rewrite (not activation)

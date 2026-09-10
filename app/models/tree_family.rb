@@ -148,7 +148,7 @@ class TreeFamily < ApplicationRecord
       next if value.blank?
 
       # ⚠️ `to_f` тут був би НАЙГІРШИМ можливим ліком: «abc» стало б `0.0`, тобто
-      # `numericality` перестала б скаржитись, а поріг шкідників став би нулем.
+      # `numericality` перестала б скаржитись, а поріг пожежі став би нулем.
       # `Integer`/`Float` з `exception: false` лишають нечисловий рядок як є —
       # і валідація доповідає про нього, як і мусить.
       [ key, Integer(value, exception: false) || Float(value, exception: false) || value ]
