@@ -398,7 +398,7 @@ naas_contract = NaasContract.create!(
   start_date: Time.current,
   end_date: 1.year.from_now,
   status: :active,
-  cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => true, "min_days_before_exit" => 30 }
+  cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => false, "min_days_before_exit" => 30 }
 )
 
 NaasContract.create!(
