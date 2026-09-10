@@ -509,13 +509,20 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
 
 ```
 1. Дренаж черги (≤ QUEEN_POLL_MAX_PER_FLUSH = 3 повідомлень):
-   GET poll/<uid>?fw=<delivered_id>  → Sim7070_Udp_Fetch (сирий CA*-тракт)
+   GET poll/<uid>?fw=<delivered_id>&cmd=<last_acked_cmd_token>
+     → Sim7070_Udp_Fetch (сирий CA*-тракт)
      → Coap_Reply_Extract_Payload (2.05 + наш MID) → конверт
      → Handle_CoAP_Command: 0 = time-only «черга порожня» → стоп;
        1 = контент (CMD / 0x9E-каркас / 0x9F OTA-hint) → наступний poll.
    ?fw= несе повністю зібраний contract-id (0 після ребуту) — Rails
    звіряє з gateways.pending_firmware_id = спостережене підтвердження
    доставки (Downlink::PendingQueueService, 04_02).
+   ?cmd= [FW.63] несе токен ОСТАННЬОЇ успішно обробленої CMD (порожньо
+   після ребуту, нове виконання АБО дедуп-збіг повтору — обидва означають
+   «конверт доїхав») — Rails звіряє зі `.status_sent` і робить
+   `mark_active!`→`acknowledge!`→Reset-план ЛИШЕ на цьому echo
+   (`observe_delivered_command!`); build-час (видача CMD у кроці 1 вище)
+   робить лише `dispatch!`.
 
 2. OTA-фетч за hint'ом [0x9F][fw_id:4 BE][total:2 BE]
    (≤ QUEEN_OTA_FETCH_PER_FLUSH = 4 чанків/флаш — IWDG-бюджет):
@@ -532,9 +539,21 @@ call-site** усього inbound-тракту — доти `Handle_CoAP_Command`
 Королеви**, навіть порожній (time-only, 32 Б). Дубль-MID (мережеве дублювання
 датаграми) Rails віддає байт-ідентично (MID-кеш `CoapGate`) — ⚠️ **не** плутати
 з CON-ретрансмітом: його в poll-тракті немає ([`00_07` FW.63](00_07_Action_Plan_Tracker)).
-Bench-residual: жива
+
+**[FW.63] Чому `?cmd=`-echo, а не альтернативи (закрито 2026-09-09, ⚖️ ратифіковано
+founder 2026-09-10).** Доти CMD-lifecycle просувався до `acknowledge!` при **побудові**
+відповіді (build-time, до відправки байтів) — загублена 2.05 губила команду назавжди,
+а слід («executed_at», Reset→`confirmed`) форензично брехав, що вона виконана. Мисленно
+розглядались три виходи: **(а) `?cmd=`-echo** (обрано) — пряме дзеркало вже наявного
+`?fw=`-патерну; Rails тримає команду в `.pending`, доки Королева не підтвердить її ЖИВИМ
+echo на пізнішому poll'і; `Cmd_Dedup_Check` на Королеві вже унеможливлює подвійне
+виконання при повторній видачі, тож re-serve безпечний. **(б) re-delivery без echo** —
+простіше, але Rails ніколи не отримує позитивного підтвердження: команда мусила б
+re-serve'итись до TTL НАСЛІПО, і UI показував би timeout навіть для вже виконаних
+Королевою команд. **(в) свідомо лишити open-loop** із названою стелею — відкинуто: P1
+safety-critical (сирена/клапан), ціна залишити як є перевищує ціну фіксу. Bench-residual: жива
 poll-розмова обома маршрутами + verbatim `+CADATAIND`/`CARECV`-поведінка —
-[`00_07` FW.60](00_07_Action_Plan_Tracker).
+[`00_07` FW.60](00_07_Action_Plan_Tracker) / [`00_07` FW.63](00_07_Action_Plan_Tracker).
 
 ---
 
