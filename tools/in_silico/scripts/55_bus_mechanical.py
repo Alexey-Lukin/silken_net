@@ -6,14 +6,14 @@ the monolithic-bus idea after the thermal bridge (script 54).
 
 A monolithic Ti bus rises from the anode shank, through the PEEK gap and the cathode bore, to the pogo pad.
 
-!! DIAMETER CAVEAT — READ BEFORE QUOTING ANY NUMBER FROM THIS SCRIPT (00_07 HW.34, open re-run leg):
-   D_BUS below is 1.3 mm, which is the cathode CHANNEL, not the rod. Canon 01_01 §1.4 freezes the ROD
-   at Ø1.0 mm. Because sigma scales as 1/d^3, every fatigue SF printed here is overstated by ~2.2x, and
-   the direction of the error is not uniform: the SUPPORTED branch stays safe (9.3-25.6 -> 4.2-11.7), but
-   the UNSUPPORTED branch crosses the failure line for the soft alloys — Ta 1.55 -> 0.71, CP-Ti 2.16 ->
-   0.98, i.e. predicted fatigue FAILURE, not 'marginal'. The cached `unsupported_infinite_life: true` for
-   CP-Ti becomes false at Ø1.0. Do NOT silently edit D_BUS here: the re-run is a tracked compute session
-   that must move script + cache + SUMMARY.md §HW.34 together, otherwise the three disagree. Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
+⛔ DIAMETER — THE ROD, NEVER THE CHANNEL. Canon 01_01 §1.4 freezes three dimensions and only one of
+   them is metal: rod Ø1.0 · cathode channel Ø1.3 · liner 0.15. D_BUS here is the ROD, imported from
+   lib.constants (one home). Substituting the channel inflates every fatigue SF ×2.2 (σ ∝ 1/d³) and
+   flips the load-bearing conclusion: at Ø1.3 the unsupported branch reads 'marginal for the soft
+   alloys', at Ø1.0 it is a predicted FAILURE for Ta and CP-Ti and infinite life for NOBODY. That is
+   the whole reason the liner's support role is not optional — see the verdict.
+
+Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
   1. Buckling — the pogo pin presses the rod tip axially (~1 N, 02_02 §2.2). Does a slender rod buckle?
   2. Sway fatigue — over 20-25 yr (~10^8-10^9 sway cycles) a CYCLIC lateral load bends the rod. The
      defensible driver is pogo-contact friction drag (µ·F_pogo) as the capsule sways and the pin slides
@@ -38,16 +38,16 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Bus geometry (mm) — mirrors script 54 / CEM (bus threads the Ø1.3 cathode bottleneck) ──
-# !! 1.3 is the CHANNEL; canon rod is Ø1.0 (01_01 §1.4). See the diameter caveat in the module
-#    docstring — this value overstates every fatigue SF by ~2.2x. Re-run is tracked: 00_07 HW.34.
-D_BUS = 1.3
+# ── Bus geometry (mm) — the ROD, not the Ø1.3 cathode channel it threads ──
+# ⛔ Do not substitute the channel here: σ ∝ 1/d³, so Ø1.3 inflates every fatigue SF ×2.2 and turns a
+#    predicted failure into a comfortable margin. One home for the value: lib.constants (01_01 §1.4).
+D_BUS = D_BUS_ROD_MM
 # Free (laterally UNSUPPORTED) cantilever length in each case:
 L_FREE_UNSUP = 36.0   # mm — no liner: gap 6 + cathode bore ~14 + flange/pad standoff ~16 = full protrusion
 L_FREE_SUP = 6.0      # mm — liner supports the bore run → only the PEEK gap is unsupported
@@ -119,14 +119,28 @@ def main() -> int:
         se = endurance_MPa(sy)
         sf_unsup = se / sig_unsup
         sf_sup = se / sig_sup
-        life = "∞ (>SF 2)" if sf_unsup >= 2.0 else "⚠ marginal"
+        # THREE tiers, not two: below SF 1.0 the rod is not "marginal", it is predicted to fail.
+        # A two-tier label printed "marginal" for SF 0.71 — a word with no measurer behind it.
+        life = "∞ (>SF 2)" if sf_unsup >= 2.0 else ("⚠ marginal" if sf_unsup >= 1.0 else "✗ FAILS")
         print(f"  {name:<24s} {sy:>5.0f} {se:>5.0f} {sf_unsup:>8.1f}× {sf_sup:>7.1f}× {life:>11s}")
         alloy_rows.append({"alloy": name, "yield_MPa": sy, "endurance_MPa": round(se, 1),
                            "sf_unsupported": round(sf_unsup, 2), "sf_supported": round(sf_sup, 2),
-                           "unsupported_infinite_life": bool(sf_unsup >= 2.0)})
-    print("\n  → SUPPORTED (liner): comfortable infinite life for EVERY alloy (SF 9-26×). UNSUPPORTED:")
-    print("    fine for the strong alloyed Ti (4V/7Nb/β/15Zr, SF ~4×) but MARGINAL for soft Ta/CP-Ti")
-    print("    (SF <2.5×). Same ranking as the thermal side → the leading bake-off candidates win on both.")
+                           "unsupported_infinite_life": bool(sf_unsup >= 2.0),
+                           "unsupported_predicted_failure": bool(sf_unsup < 1.0)})
+    # Everything below is DERIVED from alloy_rows. A hardcoded range here mirrored the numbers above and
+    # drifted the moment the diameter moved — the table said one thing and its own summary another.
+    sup_lo, sup_hi = min(r["sf_supported"] for r in alloy_rows), max(r["sf_supported"] for r in alloy_rows)
+    uns_lo, uns_hi = min(r["sf_unsupported"] for r in alloy_rows), max(r["sf_unsupported"] for r in alloy_rows)
+    failing = [r["alloy"] for r in alloy_rows if r["unsupported_predicted_failure"]]
+    marginal = [r["alloy"] for r in alloy_rows if not r["unsupported_predicted_failure"]
+                and not r["unsupported_infinite_life"]]
+    sup_all_ok = all(r["sf_supported"] >= 2.0 for r in alloy_rows)
+    print(f"\n  → SUPPORTED (liner): SF {sup_lo:.1f}-{sup_hi:.1f}× — "
+          f"{'infinite life for EVERY alloy' if sup_all_ok else 'NOT infinite life for every alloy'}.")
+    print(f"    UNSUPPORTED: SF {uns_lo:.1f}-{uns_hi:.1f}× — predicted FAILURE for "
+          f"{', '.join(failing) if failing else 'none'}; marginal for "
+          f"{', '.join(marginal) if marginal else 'none'}.")
+    print("    Same ranking as the thermal side → the leading bake-off candidates win on both.")
 
     # ── 3. Robustness: sweep the friction coefficient (the cyclic-load assumption) ──
     banner("Robustness — friction-coefficient sweep (the cyclic-drag assumption)")
@@ -143,15 +157,19 @@ def main() -> int:
         mu_rows.append({"mu": mu, "f_lat_N": round(fl, 3), "sigma_unsup_MPa": round(su, 1),
                         "sigma_sup_MPa": round(ss, 1), "sf_unsup_4v": round(se_4v / su, 2),
                         "sf_sup_4v": round(se_4v / ss, 2)})
-    print("  → Even at µ=0.5 the SUPPORTED rod stays SF ≫ 2 (4V). The liner is the robust mitigation;")
-    print("    bare-cantilever margin erodes with µ → don't run the bus unsupported.")
+    worst_sup_4v = min(r["sf_sup_4v"] for r in mu_rows)
+    worst_mu = max(MU_SWEEP)
+    print(f"  → Even at µ={worst_mu:.1f} the SUPPORTED rod stays SF {worst_sup_4v:.1f}× (4V) — "
+          f"{'above' if worst_sup_4v >= 2.0 else 'BELOW'} the SF-2 line. The liner is the robust")
+    print("    mitigation; bare-cantilever margin erodes with µ → don't run the bus unsupported.")
 
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
     print(f"  1. Buckling: non-issue (P_cr {p_cr_unsup:.0f} N ≫ 1 N pogo, SF {p_cr_unsup / F_POGO_N:.0f}× even unsupported).")
     print("  2. Sway fatigue: the LINER (= the insulation, HW.34 sub-2) is load-bearing — supported gives")
-    print("     SF 9-26× (infinite life, all alloys); unsupported is marginal for soft Ta/CP-Ti.")
+    print(f"     SF {sup_lo:.1f}-{sup_hi:.1f}× (infinite life, all alloys); unsupported FAILS for "
+          f"{', '.join(failing) if failing else 'no alloy'}.")
     print("  3. So the SAME part fixes three things at once — short-circuit isolation, lateral support,")
     print("     and fatigue. Monolithic is mechanically sound WITH the bore liner; do NOT run it bare.")
     print("  4. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
@@ -171,13 +189,15 @@ def main() -> int:
         "bending_stress_MPa": {"unsupported": round(sig_unsup, 1), "supported": round(sig_sup, 1)},
         "per_alloy_fatigue": alloy_rows,
         "friction_sweep": mu_rows,
-        "verdict": ("Monolithic bus is mechanically sound WITH the bore liner: buckling non-issue (SF "
-                    f"{p_cr_unsup / F_POGO_N:.0f}x); the liner doubles as lateral support → fatigue SF 9-26x (infinite life, all "
-                    "alloys). UNSUPPORTED is marginal for soft Ta/CP-Ti AT THE Ø1.3 CHANNEL DIAMETER USED "
-                    "HERE; at the canon rod Ø1.0 (01_01 §1.4) that branch instead FAILS for "
-                    "both (Ta 0.71, CP-Ti 0.98) — see the diameter caveat in the module "
-                    "docstring, re-run tracked as 00_07 HW.34. Liner = insulation + support + "
-                    "fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
+        "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4): buckling non-issue (SF "
+                    f"{p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> fatigue SF "
+                    f"{sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys). UNSUPPORTED, NOT ONE of the six "
+                    f"alloys reaches infinite life: SF {uns_lo:.1f}-{uns_hi:.1f}x, predicted FAILURE for "
+                    f"{', '.join(failing)} and marginal for the rest. So lateral support is not a "
+                    "soft-alloy mitigation, it is a REQUIREMENT for every candidate — which prices the open "
+                    "HW.34 lining verdict: a film that does not touch the rod insulates without supporting. "
+                    "Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). "
+                    "Per-alloy margin tracks yield = same ranking as "
                     "thermal → leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
                    "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust.",

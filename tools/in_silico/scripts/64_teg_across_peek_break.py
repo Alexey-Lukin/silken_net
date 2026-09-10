@@ -116,7 +116,10 @@ ZT_BRACKET = (0.5, 1.0)
 S_LEG_V_K = 200e-6                 # V/K per leg
 COUPLE_DENSITY_MM2 = 0.08          # couples per mm² (127-couple / 40×40 mm form factor) — ASSUMPTION
 VIN_CS_MV = 600.0                  # BQ25570 cold-start VIN(CS) typ., `02_03 §1.5` / HW.46
-D_BUS_CANON_MM = 1.0               # canon rod Ø (01_01 §1.4) — sensitivity only; 54's D_BUS untouched
+# Bus-Ø robustness bound. Script 54 now carries the canon rod (lib.constants D_BUS_ROD_MM, 01_01 §1.4);
+# the Ø1.3 cathode CHANNEL is the physical upper bound on how fat that rod could ever be, so sweeping to
+# it answers "could the bus diameter move this verdict at all?" — the check the old caveat performed.
+D_BUS_UPPER_BOUND_MM = 1.3         # cathode channel Ø (01_01 §1.4) — the fattest a bus rod could be
 
 MM2_M2 = 1e-6
 MM_M = 1e-3
@@ -390,10 +393,17 @@ def main() -> int:
           f"{len(ti_fail)}, and the")
     print(f"    discriminating axis is the CORE, not the wood: {len(fail_cold_core)} of them sit at "
           f"T_deep 0 °C (a nearly cold-soaked")
-    print(f"    trunk), the remaining {len(fail_warm_core)} at T_deep +2 with the lowest-λ wood "
-          f"(λ_wood {min(p['lambda_wood'] for p in fail_warm_core):.2f}). λ_wood spans all four")
-    print("    values in the failing set, so it discriminates nothing. There a TEG is not marginal — the")
-    print("    residual Ti bridge has already spent the whole allowance.")
+    if fail_warm_core:
+        print(f"    trunk), the remaining {len(fail_warm_core)} at T_deep +2 with the lowest-λ wood "
+              f"(λ_wood {min(p['lambda_wood'] for p in fail_warm_core):.2f}) — so λ_wood does not")
+        print("    discriminate on its own.")
+    else:
+        # Not a formatting edge case: at the canon rod Ø1.0 the warm-core set is EMPTY, i.e. the residual
+        # Ti bridge no longer removes the whole allowance anywhere the trunk is still above the gate.
+        print("    trunk) and — at the canon rod Ø1.0 — that is ALL of them: not one warm-core point")
+        print("    (T_deep +2) fails on the Ti bus alone. The baseline failure is a property of a")
+        print("    cold-soaked trunk, no longer of the bus.")
+    print("    There a TEG is not marginal — the residual Ti bridge has already spent the allowance.")
     print(f"  Smallest catalogue module (8×8×4, gap mount) passes the gate in {len(teg_pass)} of "
           f"{len(live)} live points")
     print(f"  G_TEG budget over the live grid: {min(budget_grid):.2e} … {max(budget_grid):.2e} W/K "
@@ -410,18 +420,18 @@ def main() -> int:
           f"8×8×4 → G={gm_fill:.3e} W/K,")
     print(f"      T_anode={t_fill:+.2f} °C → "
           f"{'still ❄FAIL' if t_fill < t54.CELL_FREEZE_C else 'PASSES (verdict would change!)'}")
-    a_bus_canon = np.pi / 4.0 * D_BUS_CANON_MM ** 2
-    ti_10 = anchor(t54.LAMBDA_TI, a_bus=a_bus_canon)["g_total"]
+    a_bus_fat = np.pi / 4.0 * D_BUS_UPPER_BOUND_MM ** 2
+    ti_fat = anchor(t54.LAMBDA_TI, a_bus=a_bus_fat)["g_total"]
     gm_ref = g_teg(KAPPA_BASE, 8.0, 4.0)
-    t_10 = t54.t_anode(anchor(t54.LAMBDA_TI, g_mod=gm_ref, mount="gap", a_bus=a_bus_canon)["g_total"],
-                       r_wood, t_air, t_deep)
-    t_13 = t54.t_anode(anchor(t54.LAMBDA_TI, g_mod=gm_ref, mount="gap")["g_total"], r_wood, t_air, t_deep)
-    print("  (b) THE HW.34 DIAMETER CAVEAT is IMMATERIAL here, and that is worth stating rather than")
-    print(f"      inheriting: 54's D_BUS={t54.D_BUS} mm is the cathode CHANNEL, canon rod is "
-          f"Ø{D_BUS_CANON_MM:.1f} (01_01 §1.4).")
-    print(f"      Bus alone: G {base_ti['g_total']:.3e} → {ti_10:.3e} W/K "
-          f"(a real {100 * (1 - ti_10 / base_ti['g_total']):.0f} % shift).")
-    print(f"      With the smallest module on top: T_anode {t_13:+.2f} → {t_10:+.2f} °C — the module")
+    t_fat = t54.t_anode(anchor(t54.LAMBDA_TI, g_mod=gm_ref, mount="gap", a_bus=a_bus_fat)["g_total"],
+                        r_wood, t_air, t_deep)
+    t_rod = t54.t_anode(anchor(t54.LAMBDA_TI, g_mod=gm_ref, mount="gap")["g_total"], r_wood, t_air, t_deep)
+    print("  (b) BUS DIAMETER cannot move this verdict, and that is worth measuring rather than assuming.")
+    print(f"      Baseline is the canon rod Ø{t54.D_BUS:.1f}; the fattest physically possible bus is the "
+          f"Ø{D_BUS_UPPER_BOUND_MM:.1f} channel it threads (01_01 §1.4).")
+    print(f"      Bus alone: G {base_ti['g_total']:.3e} → {ti_fat:.3e} W/K "
+          f"(a real {100 * (ti_fat / base_ti['g_total'] - 1):.0f} % shift).")
+    print(f"      With the smallest module on top: T_anode {t_rod:+.2f} → {t_fat:+.2f} °C — the module")
     print(f"      conductance is ×{gm_ref / base_ti['g_total']:.0f} the whole anchor, so the bus Ø cannot "
           "move this verdict.")
 
@@ -563,15 +573,17 @@ def main() -> int:
             "fill_factor_lower_bound": {"kappa_W_mK": KAPPA_FILL_LOWER, "module": "8x8x4 mm",
                                         "g_teg_W_K": gm_fill, "t_anode_C": round(t_fill, 2),
                                         "gate_pass": bool(t_fill >= t54.CELL_FREEZE_C)},
-            "hw34_bus_diameter_caveat_immaterial": {
-                "d_bus_script54_mm": t54.D_BUS, "d_bus_canon_mm": D_BUS_CANON_MM,
-                "ti_bus_g_anchor_at_1p3_W_K": base_ti["g_total"], "ti_bus_g_anchor_at_1p0_W_K": ti_10,
-                "t_anode_with_8x8x4_at_1p3_C": round(t_13, 2), "t_anode_with_8x8x4_at_1p0_C": round(t_10, 2),
+            "bus_diameter_immaterial": {
+                "d_bus_baseline_mm": t54.D_BUS, "d_bus_upper_bound_mm": D_BUS_UPPER_BOUND_MM,
+                "ti_bus_g_anchor_baseline_W_K": base_ti["g_total"], "ti_bus_g_anchor_upper_W_K": ti_fat,
+                "t_anode_with_8x8x4_baseline_C": round(t_rod, 2),
+                "t_anode_with_8x8x4_upper_C": round(t_fat, 2),
                 "g_teg_over_anchor_x": gm_ref / base_ti["g_total"],
-                "note": "Script 54's D_BUS = 1.3 mm is the cathode CHANNEL, canon rod is O1.0 (01_01 1.4). "
-                        "It shifts the bare-anchor conductance materially but CANNOT move this verdict, "
-                        "because the smallest swept module conducts orders of magnitude more than the whole "
-                        "anchor either way. Script 54 and its cache are untouched by this run."},
+                "note": "Baseline is the canon rod O1.0 (01_01 1.4, lib D_BUS_ROD_MM); the O1.3 cathode "
+                        "channel is the fattest a bus could physically be. Widening to it shifts the "
+                        "bare-anchor conductance materially but CANNOT move this verdict, because the "
+                        "smallest swept module conducts orders of magnitude more than the whole anchor "
+                        "either way. Script 54 and its cache are not modified by this run."},
         },
         "verdict": ("REJECT as posed. No catalogue Bi2Te3 geometry passes ({}/{} footprint x thickness x "
                     "kappa x mount combinations fail) the -2.0 C cambium gate: the smallest part swept "

@@ -55,7 +55,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -97,10 +97,10 @@ L_SLEEVE = 50.0        # PEEK break axial length (01_01 §4.1, frozen)
 L_A_INSERT = 30.0      # Zone-1 anode shank insertion into the sleeve
 L_C_INSERT = 14.0      # Zone-3 cathode shank insertion
 
-# !! The bus is modelled as FILLING the cathode channel — canon 01_01 §1.4 freezes the ROD at Ø1.0 and
-#    spends the rest of the Ø1.3 channel on the 2×0.15 liner. See the diameter caveat in the module
-#    docstring: this overstates the bus area ×1.69, which is conservative here. Re-run: 00_07 HW.34.
-D_BUS = D_BORE_CATHODE
+# The conducting cross-section is the ROD, not the channel it threads: the remaining Ø1.3 − Ø1.0 is the
+# insulating liner (01_01 §1.4). Modelling the bus as FILLING the channel overstated its area ×1.69 —
+# conservative for the bridge, anti-conservative for IR drop. Re-run landed 2026-09-10, 00_07 HW.34.
+D_BUS = D_BUS_ROD_MM
 # Anode-pocket geometry for the wood spreading resistance + transient capacitance
 # 30 is the LOWER end of the canon 30-50 range, chosen deliberately: R_wood ∝ 1/L, so the short gyroid
 # gives the highest spreading resistance = the coldest anode = the bus looking worst. The CEM machine
@@ -139,7 +139,7 @@ def parallel_G(gs: list[float]) -> float:
 A_PEEK_WALL = area_annulus_mm2(D_SLEEVE_OUT, D_SLEEVE_BORE)        # continuous sleeve wall
 A_TI_Z1 = area_annulus_mm2(D_Z1_SHANK, D_BORE_ANODE)              # anode shank metal (bored)
 A_TI_Z3 = area_annulus_mm2(D_Z3_SHANK, D_BORE_CATHODE)           # cathode shank metal (bored)
-A_BUS = area_circle_mm2(D_BUS)                                    # bus conductor (Ø1.3 bottleneck)
+A_BUS = area_circle_mm2(D_BUS)                                    # bus conductor (canon rod Ø1.0)
 A_GAP_VOID = area_circle_mm2(D_SLEEVE_BORE)                       # open bore in the gap (air)
 
 BUS_MATERIALS = {

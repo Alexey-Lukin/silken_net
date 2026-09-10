@@ -173,6 +173,14 @@ T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for sealing)
 H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs sealing)
 H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs hoop stress)
 
+# Central bus rod (HW.34) — the monolithic conductor that threads the PEEK break to the pogo pad.
+# Canon 01_01 §1.4 freezes THREE diameters and only ONE of them is metal: rod Ø1.0 · cathode channel
+# Ø1.3 · liner 0.15 mm (rod + 2×liner ≤ channel, CAD gate `AxialStack.BusRodClears`).
+# ⛔ Mechanics (σ ∝ 1/d³) and conduction (A ∝ d²) take the ROD — the rest of the channel is the
+# insulating liner, not metal. Substituting the channel here overstates every bending SF ×2.2 and the
+# bus cross-section ×1.69, and the two errors point in OPPOSITE safety directions.
+D_BUS_ROD_MM = 1.0              # mm — 01_01 §1.4 frozen dims (mirror: cem/anchor_zone1.*.json)
+
 # ── EDLC energy budget (HW.42, script 63; 02_03 §9/§12) — delta_t sensitivity to a
 # second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
 # edit `02_03`, not here (same discipline as ETA_BQ above). ──

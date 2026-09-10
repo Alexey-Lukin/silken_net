@@ -374,20 +374,25 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 
 Spec home → [`01_01 §1.4`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); decision → `00_07` HW.34.
 
-**Thermal bridge (script 54)** — 1D resistor ladder + 2-node steady state. A **Cu** bus dominates the
-Zone-2 PEEK break (G_anchor ~10× a Ti bus; ~98% of cross-break heat; λ_Cu ~1600× PEEK) → drags the
-Zone-1 anode pocket to ~**−15 °C** (17° below core → living-sapwood freeze-risk) at −30 °C air / +2 °C
-core. A bus **monolithic with the anode** (= the anode alloy) is thermally near-invisible (−1.4 °C ≈
-bare). Per bake-off alloy: alloyed α+β Ti (4V/7Nb/β/15Zr, λ≈7) −1.4…−1.7 °C; CP-Ti (λ17) −3.5; Ta (λ57,
-benchmark) −7.4 — **all ≪ Cu**. Electrically free at µA. (`mechanical/anchor_thermal_bridge.json`)
-> ⚠️ **Diameter caveat (script 54) — same wrong Ø as script 55 below, OPPOSITE direction, so do not read one caveat as covering both.** These numbers are computed on `D_BUS=1.3` mm (the cathode **channel**), not the canon rod **Ø1.0** mm (`01_01 §1.4`, rod 1.0 + 2×0.15 liner). Thermally A ∝ d², so the bus area is overstated ×1.69 and a fatter bus makes the break look WORSE — i.e. **conservative**, and both load-bearing verdicts survive at Ø1.0: Cu still ×18.2 vs no-bus (Cu/Ti ratio 9.31 vs 9.57), monolithic Ti still near-invisible (×1.95, anode **−0.70 °C** instead of −1.4). Exactly **one** cached boolean flips — `cell_freeze_risk["316SS"]` true → false (−3.16 → −1.94 °C against the −2.0 gate) — and 316SS is the superseded pre-monolithic alternative, not a bake-off candidate; all six HW.24 alloys keep their verdicts (CP-Ti −3.50 → −2.21, Ta −7.44 → −5.63 still freeze). The one **anti-conservative** axis is electrical (R ∝ 1/A → IR drop understated ×1.69, Ti 6.7 → 11.3 µV at 100 µA), still 4×10⁴ below the 500 mV EBFC reference. Re-run @ Ø1.0 is the same compute session as script 55 → `00_07` HW.34.
+**Thermal bridge (script 54)** — 1D resistor ladder + 2-node steady state, at the canon rod **Ø1.0**
+(`01_01 §1.4`). A **Cu** bus dominates the Zone-2 PEEK break (G_anchor 9.3× a Ti bus, ×18.2 vs no bus;
+λ_Cu ~1600× PEEK) → drags the Zone-1 anode pocket to **−12.8 °C** (13° below core → living-sapwood
+freeze-risk) at −30 °C air / +2 °C core. A bus **monolithic with the anode** (= the anode alloy) is
+thermally near-invisible (**−0.70 °C**, ×1.95 vs no bus). Per bake-off alloy: alloyed α+β Ti
+(4V/7Nb/β/15Zr, λ≈7) −0.70…−0.91 °C; CP-Ti (λ17) −2.21; Ta (λ57, benchmark) −5.63 — **all ≪ Cu**, and
+the −2 °C freeze gate still separates the four α+β Ti (safe) from CP-Ti and Ta (freeze). Electrically
+free at µA (Ti 11.3 µV at 100 µA, 4×10⁴ below the 500 mV reference).
+(`mechanical/anchor_thermal_bridge.json`)
+> ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — the numbers above are the new ones. What the diameter move cost on THIS side: the bus area shrinks ×1.69 (A ∝ d²), so the bridge looks *better*, i.e. the old figures were conservative and both load-bearing verdicts survived (Cu ×24.3 → ×18.2 vs no-bus, Cu/Ti ratio 9.57 → 9.31; monolithic Ti −1.43 → −0.70 °C). Exactly **one** cached boolean flipped — `cell_freeze_risk["316SS"]` true → false (−3.16 → −1.94 °C against the −2.0 gate) — and 316SS is the superseded pre-monolithic alternative, not a bake-off candidate; all six HW.24 alloys kept their verdicts. The one **anti-conservative** axis was electrical (R ∝ 1/A → IR drop was understated ×1.69, Ti 6.7 → 11.3 µV at 100 µA). ⛔ The direction here is OPPOSITE to script 55 below — never read one diameter caveat as covering both.
 
-**Mechanical (script 55)** — slender-beam closed form. Buckling SF **29×** (1 N pogo) even unsupported.
-Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as lateral support → SF
-**9–26×** (infinite life, all alloys); bare cantilever marginal for soft Ta/CP-Ti. Per-alloy margin
-tracks yield = SAME ranking as the thermal side → leading HW.24 candidates win on both.
-(`mechanical/bus_mechanical.json`)
-> ⚠️ **SF caveat (script 55):** the bending SF is computed on `D_BUS=1.3` mm (the cathode **channel**), NOT the canon rod **Ø1.0** mm (`01_01 §1.4`) → it is overstated ~2.2× (σ∝1/d³: real ~4–12×, not the 9–26× above). 🔴 **The unsupported branch does not merely thin out — it CROSSES the line for the soft alloys: Ta 1.55 → 0.71, CP-Ti 2.16 → 0.98, i.e. predicted fatigue failure, and the cached `unsupported_infinite_life: true` for CP-Ti becomes false at Ø1.0.** «near the fail-margin» stood here and was softer than the arithmetic it summarised. Re-run @ Ø1.0 is a separate compute session → `00_07` HW.34.
+**Mechanical (script 55)** — slender-beam closed form, at the canon rod **Ø1.0**. Buckling SF **10×**
+(1 N pogo) even unsupported → still a non-issue. Sway fatigue: the bore **liner** (= the short-circuit
+insulation) doubles as lateral support → SF **4.2–11.7×** (infinite life, all alloys). 🔴 **Bare
+cantilever: NOT ONE of the six alloys reaches infinite life** — SF 0.71–1.94×, a predicted fatigue
+**failure** for Ta (0.71) and CP-Ti (0.98) and merely marginal for the four alloyed Ti (1.74–1.94, all
+below the SF-2 line). Per-alloy margin tracks yield = SAME ranking as the thermal side → leading HW.24
+candidates win on both. (`mechanical/bus_mechanical.json`)
+> ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — and here the diameter move changed the CONCLUSION, not just the digits (σ ∝ 1/d³, SFs fall ×2.2). The unsupported branch did not thin out, it crossed the line: Ta 1.55 → **0.71**, CP-Ti 2.16 → **0.98**, and the four alloyed Ti dropped 3.8–4.3 → **1.74–1.94**, i.e. `unsupported_infinite_life` went **true → false for all six**. 🔑 **So lateral support is not a soft-alloy mitigation, it is a requirement for every candidate** — which is the input the open HW.34 lining verdict was missing: a film that does not touch the rod (Parylene ~10 µm, anodised TiO₂ ≤10 µm in a Ø1.3 channel) insulates without supporting, and the model has no liner stiffness to give it credit for.
 
 **Verdict** — 🟢 Monolithic bus (= anode alloy, HW.24-gated) resolves the Cu/Ti dichotomy: thermal
 bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with the bore liner**.
@@ -588,30 +593,31 @@ Output is taken at the ΔT that *survives the module's own installation*:
 
 | Case (κ_eff 1.4, `gap` mount) | G_TEG | × whole anchor | T_anode | gate | P at surviving ΔT | V_oc |
 |---|---|---|---|---|---|---|
-| *no TEG — the residual monolithic-Ti bus we already accept* | — | 1× | **−1.43 °C** | ok | — | — |
-| 8×8×4 mm — smallest geometry swept | 2.24e−2 W/K | 11× | −8.74 °C | ❄ FAIL | 806 µW | 14.8 mV |
-| 15×15×3 mm | 1.05e−1 W/K | 51× | −10.91 °C | ❄ FAIL | 290 µW | 14.3 mV |
-| 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 364× | −11.61 °C | ❄ FAIL | 47 µW | 15.4 mV |
-| *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.73 °C | ❄ FAIL | — | — |
+| *no TEG — the residual monolithic-Ti bus we already accept* | — | 1× | **−0.70 °C** | ok | — | — |
+| 8×8×4 mm — smallest geometry swept | 2.24e−2 W/K | 14× | −8.65 °C | ❄ FAIL | 832 µW | 15.0 mV |
+| 15×15×3 mm | 1.05e−1 W/K | 67× | −10.86 °C | ❄ FAIL | 291 µW | 14.4 mV |
+| 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 474× | −11.56 °C | ❄ FAIL | 47 µW | 15.4 mV |
+| *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.68 °C | ❄ FAIL | — | — |
 | *reference:* **solid Ti, NO PEEK break at all** | 1.25e−2 W/K | 6× | **−11.49 °C** | ❄ FAIL | — | — |
 
 **Verdict** — 🔴 **Reject as posed, and not because the part is badly chosen.** `0 of 90` swept
 combinations (5 footprints × 3 thicknesses × 3 κ × 2 mounts) pass the gate: the *smallest* geometry
-swept already conducts **11× the entire anchor**. It is not a partial defeat — a gap-spanning module
-saturates at −11.73 °C, **0.24 °C from a solid Ti anchor with no PEEK break at all** (−11.49 °C), i.e.
+swept already conducts **14× the entire anchor**. It is not a partial defeat — a gap-spanning module
+saturates at −11.68 °C, **0.19 °C from a solid Ti anchor with no PEEK break at all** (−11.49 °C), i.e.
 it reverts the design to precisely the pre-PEEK condition Zone 2 exists to prevent. Inverted, the number
-worth keeping is the **budget**: anything crossing the break must stay under **5.4e−4 W/K ≈ 1.2 mm² at
-3 mm** — ×55 smaller than the smallest module — and across the 32 live wood-grid points that budget goes
-**negative** (min −1.5e−3 W/K), because the residual Ti bus has already spent the whole allowance there.
+worth keeping is the **budget**: anything crossing the break must stay under **1.1e−3 W/K ≈ 2.5 mm² at
+3 mm** — ×26 smaller than the smallest module — and across the 32 live wood-grid points that budget goes
+**negative** (min −8.7e−4 W/K), because the residual Ti bus has already spent the whole allowance there.
 Two objections were tested and neither rescues it: at the leg-only fill-factor lower bound (κ_eff 0.4)
-the 8×8×4 still fails at −5.66 °C, and the HW.34 Ø1.3-vs-Ø1.0 bus caveat is **immaterial here** (−8.74 →
-−8.65 °C) because the module out-conducts the whole anchor either way.
+the 8×8×4 still fails at −5.40 °C, and the bus diameter cannot move it either — widening the canon rod
+Ø1.0 to the fattest it could physically be (the Ø1.3 channel) moves the 8×8×4 case −8.65 → −8.74 °C,
+because the module out-conducts the whole anchor either way.
 ⚖️ **The honest residual, stated rather than buried:** at exactly the budget a bespoke sub-mm² micro-TEG
-still yields ~202 µW — *inside* HW.21's own 50–200 µW winter target — but at zero gate margin, and its
-V_oc is ~9 mV, **×64 below BQ25570's VIN(CS) 600 mV** (HW.46), so it would need a mV-class transformer
+still yields ~428 µW — *above* HW.21's own 50–200 µW winter target — but at zero gate margin, and its
+V_oc is ~9.4 mV, **×64 below BQ25570's VIN(CS) 600 mV** (HW.46), so it would need a mV-class transformer
 harvester, not a BQ25570-class part. That is a different project, not a module choice. Note also the
-thermal impedance match: power peaks at G_TEG 9.2e−3 W/K (≈4.4×4.4×3 mm, 972 µW) and **falls** for larger
-modules — 40×40×3 gives 17× *less* than 8×8×4 — so "buy a bigger TEG" loses on both axes at once.
+thermal impedance match: power peaks at G_TEG 8.6e−3 W/K (≈4.3×4.3×3 mm, 1035 µW) and **falls** for larger
+modules — 40×40×3 gives 18× *less* than 8×8×4 — so "buy a bigger TEG" loses on both axes at once.
 This is the same structural shape as the already-ratified `HW.42`: there the power that helps is the
 power that poisons `delta_t`; here **the conductance that harvests is the conductance that kills the
 break**. Neither is a budget problem, so no number moves either.

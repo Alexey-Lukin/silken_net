@@ -115,7 +115,7 @@
 - **Термінус:** Hard-Gold ENIG на торці (центральна площадка — запобігає Ti↔Au гальванопарі), [`02_02 §1.2`](02_02_Blind_Mate_Pogo_Pin_Interface).
 - **Нижній стик — усунуто** монолітністю (один метал; колишній гальванічний Ti↔Cu ризик зник).
 - **Термоміст:** шина — залишковий тепловий міст крізь PEEK-розрив; монолітна низько-λ Ti його мінімізує (мідна **домінувала** б розрив → freeze-risk заболоні). Фізика/числа — §4.1 + in-silico `54_anchor_thermal_bridge` ([`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §HW.34).
-- **Механіка:** buckling (1 Н pogo) — non-issue; sway-fatigue — нескінченний ресурс **за наявності lining'а** (= ізоляція = опора). In-silico `55_bus_mechanical` ([`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §HW.34).
+- **Механіка:** buckling (1 Н pogo) — non-issue; sway-fatigue — нескінченний ресурс **за наявності lining'а** (= ізоляція = опора). 🔴 **Бічна опора не є пом'якшенням для м'яких сплавів — вона вимога до КОЖНОГО:** на канонному Ø1.0 без опори нескінченного ресурсу не має жоден із шести кандидатів bake-off (SF 0.71–1.94), а Ta й CP-Ti дають прогнозовану втомну відмову (< 1.0). Отже покриття, що не торкається стрижня, ізолює, але не підпирає → [`00_07` HW.34](00_07_Action_Plan_Tracker). In-silico `55_bus_mechanical` ([`SUMMARY.md`](protocols/ebfc/in_silico/SUMMARY.md) §HW.34).
 
 ---
 

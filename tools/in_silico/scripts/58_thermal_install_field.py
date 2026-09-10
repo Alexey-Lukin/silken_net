@@ -82,7 +82,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, KINETICS_DIR, REPO_ROOT
+from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, KINETICS_DIR, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -124,7 +124,7 @@ T_FLANGE = 3.0           # flange thickness — cem/cathode_flange.json (PLACEHO
 D_SLEEVE_OUT = 15.0      # PEEK sleeve OD = wound Ø (frozen)
 D_SLEEVE_BORE = 11.0     # sleeve bore = Zone-1 shank Ø (frozen)
 D_Z3_SHANK = 9.0         # Zone-3 cathode shank OD (cem placeholder, HW.8)
-D_BUS = 1.0              # monolithic bus rod Ø (01_01 §1.4 frozen)
+D_BUS = D_BUS_ROD_MM     # monolithic bus rod Ø — one home: lib.constants (01_01 §1.4 frozen)
 L_SLEEVE = 50.0          # PEEK thermal-break length (frozen)
 L_A_INSERT = 30.0        # Zone-1 shank insertion into the sleeve (HW.8 placeholder, script 54)
 L_C_INSERT = 14.0        # Zone-3 shank insertion (HW.8 placeholder, script 54)
