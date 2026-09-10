@@ -213,6 +213,118 @@
     "radome_rim_shift_um": 80.0,
     "note": "The open HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. Re-run says the fork is removable: the two windows intersect at 19-30 %, the residual band is +/-3.97 pp, so centring the nominal in the intersection puts the whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a judgement."
   },
+  "gland_geometry": {
+    "depth_mm": 1.3439,
+    "ring_area_mm2": 2.4885,
+    "required_width_mm": {
+      "80%": 2.315,
+      "85%": 2.178,
+      "90%": 2.057
+    },
+    "faces": {
+      "flange_top_face_outer_r_mm": 12.5,
+      "asis": {
+        "rim_r_mm": [
+          10.5,
+          12.5
+        ],
+        "land_mm": 2.0,
+        "note": "dome wall bottom butts the flange top face; land = wall thickness"
+      },
+      "inboard": {
+        "rim_r_mm": [
+          10.5,
+          12.5
+        ],
+        "land_mm": 2.0,
+        "note": "only the lug protrusion is clamped \u2014 the rim is the asis rim, unchanged"
+      },
+      "skirt": {
+        "rim_r_mm": null,
+        "land_mm": 0.0,
+        "radial_clearance_mm": 0.3000000000000007,
+        "skirt_ring_r_mm": [
+          12.8,
+          15.0
+        ],
+        "note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
+      }
+    },
+    "candidates": {
+      "asis": {
+        "land_mm": 2.0,
+        "residual_after_groove_mm": -0.057,
+        "face_seal_possible": false
+      },
+      "inboard": {
+        "land_mm": 2.0,
+        "residual_after_groove_mm": -0.057,
+        "face_seal_possible": false
+      },
+      "skirt": {
+        "land_mm": 0.0,
+        "residual_after_groove_mm": -2.057,
+        "face_seal_possible": false
+      }
+    },
+    "smaller_cord_options": {
+      "CS 1.42": {
+        "depth_mm": 1.072,
+        "width_at_85pct_mm": 1.738,
+        "land_left_on_asis_rim_mm": 0.262
+      },
+      "CS 1.27": {
+        "depth_mm": 0.959,
+        "width_at_85pct_mm": 1.554,
+        "land_left_on_asis_rim_mm": 0.446
+      },
+      "CS 1.02": {
+        "depth_mm": 0.77,
+        "width_at_85pct_mm": 1.248,
+        "land_left_on_asis_rim_mm": 0.752
+      }
+    }
+  },
+  "shipped_groove_alignment": {
+    "flange_groove_r_mm": [
+      9.0,
+      11.0
+    ],
+    "radome_groove_r_mm": [
+      10.5,
+      11.5
+    ],
+    "radome_rim_r_mm": [
+      10.5,
+      12.5
+    ],
+    "radial_overlap_mm": 0.5,
+    "flange_groove_share_under_dome_cavity": 0.75,
+    "combined_depth_mm": 1.8,
+    "combined_squeeze_pct": -1.1
+  },
+  "depth_tolerance_budget": {
+    "intersection_window_pct": [
+      19.0,
+      30.0
+    ],
+    "nominal_pct": 24.5,
+    "half_band_pct_points": 5.5,
+    "total_gap_budget_half_width_mm": 0.0979,
+    "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. It is not a tight number \u2014 a routine \u00b10.05 mm on the depth leaves the rest of the budget for flatness."
+  },
+  "rim_datum_creep": {
+    "rim_contact_area_mm2": 144.5,
+    "force_to_reach_relax_regime_N": 1445.0,
+    "relax_regime_floor_MPa": 10.0,
+    "pogo_pair_force_N_upper_bound": 1.92,
+    "stress_at_pogo_alone_MPa": 0.0133,
+    "stress_at_100N_assumed_total_MPa": 0.692,
+    "margin_x_at_100N": 14.5,
+    "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
+    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 1445 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 14x margin. No creep member is warranted in the Z-chain for the rim.",
+    "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
+  },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"

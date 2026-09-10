@@ -73,6 +73,7 @@ def _to_float(s: str) -> float:
 SUMMARY = "docs/protocols/ebfc/in_silico/SUMMARY.md"
 L3 = "docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md"
 CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"  # thermal-penetration cache (§3.5) — a non-SUMMARY doc-target
+BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland geometry (§3.5), owner = script 52
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -359,6 +360,33 @@ CHECKS = [
         SUMMARY, rf"the 8×8×4 still fails at {N} °C",
         "mechanical/teg_across_peek_break.json",
         lambda d: d["sensitivities"]["fill_factor_lower_bound"]["t_anode_C"], 0.005,
+    ),
+    # ── HW.33 gland geometry: the O-ring numbers 02_02 §3.5 quotes from script 52 ──
+    # Their owner is the Z-stack cache, and every one of them moves the moment an INPUT moves
+    # (cord section, ratified squeeze, dome wall) — which is exactly the drift a re-read of the
+    # canon prose cannot see, because the prose stays internally consistent on the old value.
+    (
+        "O-ring section area → z_stack_tolerance.json §gland_geometry (02_02 §3.5)",
+        BLIND_MATE, rf"витісняє сталу площу перерізу \*\*{N} мм²\*\*",
+        "mechanical/z_stack_tolerance.json", lambda d: d["gland_geometry"]["ring_area_mm2"], 0.001,
+    ),
+    (
+        "groove width required at the 90 % fill ceiling → z_stack_tolerance.json",
+        BLIND_MATE, rf"паз мусить мати ширину \*\*≥ {N} мм\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: min(d["gland_geometry"]["required_width_mm"].values()), 0.005,
+    ),
+    (
+        "force that would put the PEEK rim into the relaxation regime → z_stack_tolerance.json",
+        BLIND_MATE, rf"до 10 МПа .{{0,120}}?треба \*\*{N} Н\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["rim_datum_creep"]["force_to_reach_relax_regime_N"], 1.0,
+    ),
+    (
+        "depth-tolerance budget in µm → z_stack_tolerance.json §depth_tolerance_budget",
+        BLIND_MATE, rf"мусить лишитись у \*\*±{N} мкм\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["depth_tolerance_budget"]["total_gap_budget_half_width_mm"] * 1000.0, 1.0,
     ),
 ]
 

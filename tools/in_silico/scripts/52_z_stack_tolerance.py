@@ -18,6 +18,15 @@ spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearan
 (Гончаров, 00_02 §1.2 — currently unresponsive, so the geometry is self-owned, not blocked on him).
 
 1D linear tolerance chain — closed-form RSS + worst-case, no FEA / numpy.
+
+A second question rides the same axis and is answered in the gland section: the ⚖️ of 2026-09-11 fixed
+the O-ring squeeze and therefore the groove DEPTH, but an O-ring displaces a fixed cross-section area,
+so the depth implies a WIDTH — and the width has to live inside the flat face that closes on it. That
+face is the bottom annulus of the PEEK dome wall, i.e. its width IS the wall thickness, and the three
+MATE-Ø candidates disagree on whether it exists at all. The section also derives the depth-tolerance
+BUDGET (the input the open ⚖️ lacks) and settles, by inversion, whether a PEEK rim may be treated as a
+rigid datum for twenty years. Geometry is read from `tools/cad/cem/*.json` at RUNTIME — the two machine
+halves share no identifier vocabulary, so a mirrored dimension is findable only by grepping its value.
 """
 from __future__ import annotations
 
@@ -57,6 +66,33 @@ GAP_OR = ORING_CS * (1.0 - 0.20)           # Radome rim ↔ Zone 3 so O-ring sit
 
 # ── RF constraint (02_01 §5.3) — geometric, self-owned (Гончаров VNA pending) ──
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna ↔ Ti flange min Z-clearance for VSWR
+
+# ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-11) ──
+# The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
+# fixed cross-section area, so the WIDTH follows from the depth, and the width has to live inside the
+# flat face that closes on it. That third question is what this block asks.
+ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-11 — centre of the 19-30 % intersection
+# Gland fill = O-ring section area / groove section area. A gland filled to 100 % has nowhere to put the
+# elastomer it displaces, so the ring extrudes or the faces are held apart. ⚠️ 00_06 §0: the ceiling
+# below is CITED industry practice (Parker's own design rule is a groove ~25 % larger than the ring,
+# i.e. ~80 % fill), NOT a computed physical fact — the verdict here is deliberately reported against all
+# three so it does not rest on the choice.
+GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
+# The stress level below which 20-yr PEEK stress-relaxation is not worth a model. Anchored INSIDE our
+# own canon rather than on an outside datasheet: 01_01 §4.3 tabulates PEEK relaxation on the press-fit
+# joint at 25-30 MPa contact pressure, so a tenth of that is a conservative floor for "negligible".
+PEEK_RELAX_REGIME_MPA = 10.0
+POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
+POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
+
+# CEM manifests are the parameter SSOT of the shipped geometry (canon-gated by scripts/cem_canon_sync.rb).
+# Read at RUNTIME, never mirrored as literals here: the CAD and in-silico halves share no identifier
+# vocabulary, so a hand-copied dimension can only ever be found by grepping the VALUE.
+CEM_DIR = REPO_ROOT / "tools" / "cad" / "cem"
+
+
+def cem(stem: str) -> dict:
+    return json.loads((CEM_DIR / f"{stem}.json").read_text(encoding="utf-8"))
 
 # ── Tolerance contributors (± half-width, mm) ──
 # Shared Power↔Zone3 gap: DMLS Ti flange + both FR4 decks + B2B stack + CNC radome engagement.
@@ -98,6 +134,153 @@ def assess(label: str, d_pz: float, d_or: float) -> dict:
     return {"label": label, "d_pz": d_pz, "d_or": d_or,
             "pogo_pct": w["pogo"], "pad_pct": w["pad"], "pad_pct_20yr": pad_creep,
             "oring_pct": w["oring"], "pass": ok}
+
+
+def ring_area_mm2(cs: float) -> float:
+    """Cross-section area an O-ring of cord diameter `cs` must be given room for."""
+    return math.pi / 4.0 * cs * cs
+
+
+def gland_width_required(cs: float, depth: float, fill: float) -> float:
+    """Groove width whose section area holds the ring at no more than `fill` of the gland."""
+    return ring_area_mm2(cs) / (fill * depth)
+
+
+def seal_faces() -> dict:
+    """Where a FACE seal can physically live, per MATE-Ø candidate — read off the shipped geometry.
+
+    ⚖️ 2026-09-11 put one O-ring on the flange TOP face, closed by the radome rim. That rim is the
+    bottom annulus of the dome wall, so its width IS the wall thickness — and the three MATE-Ø
+    candidates do not merely resize it, they disagree on whether it exists at all.
+    """
+    flange, radome = cem("cathode_flange"), cem("radome")
+    flange_r = flange["flange_diameter_mm"] / 2.0
+    dome_r = radome["dome_diameter_mm"] / 2.0
+    rim_in = dome_r - radome["wall_thickness_mm"]
+
+    # `skirt` opens the lower cavity out to flange_r + 0.3 and wraps a ring to (lug tip + clearance).
+    # Both offsets are bare literals in Assembly.ApplyEnclosingSkirt / Cem.SkirtClearanceMm — no CEM
+    # field owns them, so they are mirrored here with that provenance named rather than silently.
+    skirt_bore_r = flange_r + 0.3
+    skirt_outer_r = flange_r + flange["lug_protrusion_mm"] + 0.5
+
+    return {
+        "flange_top_face_outer_r_mm": flange_r,
+        "asis": {"rim_r_mm": [rim_in, dome_r], "land_mm": dome_r - rim_in,
+                 "note": "dome wall bottom butts the flange top face; land = wall thickness"},
+        "inboard": {"rim_r_mm": [rim_in, dome_r], "land_mm": dome_r - rim_in,
+                    "note": "only the lug protrusion is clamped — the rim is the asis rim, unchanged"},
+        "skirt": {"rim_r_mm": None, "land_mm": 0.0,
+                  "radial_clearance_mm": skirt_bore_r - flange_r,
+                  "skirt_ring_r_mm": [skirt_bore_r, skirt_outer_r],
+                  "note": f"the lower cavity is CUT AWAY to r={skirt_bore_r:.1f} to admit the "
+                          f"Ø{flange['flange_diameter_mm']:.0f} disc, so no radome material stands over "
+                          f"the flange top face — a FACE seal has no mating face here at all, and the "
+                          f"surviving interface is the {skirt_bore_r - flange_r:.1f} mm RADIAL clearance "
+                          f"between the skirt bore and the flange rim"},
+    }
+
+
+def gland_verdict() -> dict:
+    """Does the ratified single-groove face seal FIT the face that has to close on it?"""
+    depth = ORING_CS * (1.0 - ORING_SQUEEZE_RATIFIED)
+    faces = seal_faces()
+    required = {f"{int(f * 100)}%": gland_width_required(ORING_CS, depth, f) for f in GLAND_FILL_CEILINGS}
+    widest_ok = min(required.values())          # the most permissive fill ceiling
+    candidates = {}
+    for name in ("asis", "inboard", "skirt"):
+        land = faces[name]["land_mm"]
+        candidates[name] = {
+            "land_mm": round(land, 3),
+            "residual_after_groove_mm": round(land - widest_ok, 3),
+            "face_seal_possible": bool(land - widest_ok > 0.0),
+        }
+    # Smaller standard cords, in case the verdict is "the cord is too fat for this wall".
+    alt = {}
+    for cs in (1.42, 1.27, 1.02):
+        d = cs * (1.0 - ORING_SQUEEZE_RATIFIED)
+        w = gland_width_required(cs, d, 0.85)
+        alt[f"CS {cs}"] = {"depth_mm": round(d, 3), "width_at_85pct_mm": round(w, 3),
+                           "land_left_on_asis_rim_mm": round(faces["asis"]["land_mm"] - w, 3)}
+    return {"depth_mm": round(depth, 4), "ring_area_mm2": round(ring_area_mm2(ORING_CS), 4),
+            "required_width_mm": {k: round(v, 3) for k, v in required.items()},
+            "faces": faces, "candidates": candidates, "smaller_cord_options": alt}
+
+
+def shipped_groove_alignment() -> dict:
+    """The two counter-grooves the shipped CAD still cuts — do they even face each other?"""
+    flange, radome = cem("cathode_flange"), cem("radome")
+    flange_r = flange["flange_diameter_mm"] / 2.0
+    dome_r = radome["dome_diameter_mm"] / 2.0
+    rim_in = dome_r - radome["wall_thickness_mm"]
+    # CathodeFlange.Build: outer edge = flangeR − 1.5 (a bare literal in the generator, no CEM field).
+    f_out = flange_r - 1.5
+    f_in = f_out - flange["o_ring_groove_width_mm"]
+    r_in, r_out = rim_in, rim_in + radome["o_ring_groove_width_mm"]
+    overlap = max(0.0, min(f_out, r_out) - max(f_in, r_in))
+    under_cavity = max(0.0, min(rim_in, f_out) - f_in)
+    return {
+        "flange_groove_r_mm": [round(f_in, 2), round(f_out, 2)],
+        "radome_groove_r_mm": [round(r_in, 2), round(r_out, 2)],
+        "radome_rim_r_mm": [round(rim_in, 2), round(dome_r, 2)],
+        "radial_overlap_mm": round(overlap, 3),
+        "flange_groove_share_under_dome_cavity": round(under_cavity / (f_out - f_in), 3),
+        "combined_depth_mm": round(flange["o_ring_groove_depth_mm"] + radome["o_ring_groove_depth_mm"], 3),
+        "combined_squeeze_pct": round((ORING_CS - (flange["o_ring_groove_depth_mm"]
+                                                   + radome["o_ring_groove_depth_mm"])) / ORING_CS * 100, 1),
+    }
+
+
+def depth_tolerance_budget() -> dict:
+    """After branch (а) ONE machined depth sets the squeeze — so how tight must it be?
+
+    This does not invent the tolerance the CEM lacks (that number belongs to whoever machines the
+    part). It derives the BUDGET the tolerance has to fit inside, which is the input the open ⚖️ is
+    actually missing: a requirement, not a guess.
+    """
+    lo = max(ORING_WIN[0], ORING_WIN_PARKER_FACE[0])
+    hi = min(ORING_WIN[1], ORING_WIN_PARKER_FACE[1])
+    half_pct = min(ORING_SQUEEZE_RATIFIED - lo, hi - ORING_SQUEEZE_RATIFIED)
+    return {"intersection_window_pct": [round(lo * 100, 1), round(hi * 100, 1)],
+            "nominal_pct": round(ORING_SQUEEZE_RATIFIED * 100, 1),
+            "half_band_pct_points": round(half_pct * 100, 2),
+            "total_gap_budget_half_width_mm": round(half_pct * ORING_CS, 4),
+            "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus "
+                    "the flatness of both mating faces, RSS. It is not a tight number — a routine "
+                    "±0.05 mm on the depth leaves the rest of the budget for flatness."}
+
+
+def rim_datum_creep() -> dict:
+    """⊂ correction (1) of the ⚖️: the rim is PEEK, so may it be treated as a rigid datum for 20 yr?
+
+    Asked by INVERSION, because two of the three springs in the stack have no force datum anywhere in
+    canon: instead of summing forces we do not have, compute the force that WOULD push the rim into the
+    stress regime where relaxation is worth modelling, and compare it with the one spring canon does
+    specify. A bound that holds by three orders of magnitude does not need the missing numbers.
+    """
+    faces = seal_faces()
+    dome_r = cem("radome")["dome_diameter_mm"] / 2.0
+    rim_in = dome_r - cem("radome")["wall_thickness_mm"]
+    area = math.pi * (dome_r ** 2 - rim_in ** 2)
+    f_star = PEEK_RELAX_REGIME_MPA * area                     # N (MPa·mm² = N)
+    pogo = POGO_SPRING_FORCE_N * POGO_PIN_COUNT
+    return {
+        "rim_contact_area_mm2": round(area, 1),
+        "force_to_reach_relax_regime_N": round(f_star, 0),
+        "relax_regime_floor_MPa": PEEK_RELAX_REGIME_MPA,
+        "pogo_pair_force_N_upper_bound": round(pogo, 2),
+        "stress_at_pogo_alone_MPa": round(pogo / area, 4),
+        "stress_at_100N_assumed_total_MPa": round(100.0 / area, 3),
+        "margin_x_at_100N": round(f_star / 100.0, 1),
+        "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit "
+                         "of seal length — neither has a home in canon, so the total stack force is not "
+                         "computable today. The bound above is why that does not block the verdict.",
+        "verdict": f"NEGLIGIBLE — reaching the relaxation regime needs {f_star:.0f} N on the rim, while "
+                   f"the only spring canon specifies contributes {pogo:.2f} N; even a deliberately "
+                   f"generous 100 N for the two unmeasured springs leaves a {f_star / 100.0:.0f}x "
+                   f"margin. No creep member is warranted in the Z-chain for the rim.",
+        "skirt_note": faces["skirt"]["note"],
+    }
 
 
 def report_row(a: dict) -> str:
@@ -191,6 +374,49 @@ def main() -> int:
         print("    a ~0.1 mm nominal change satisfies Parker face-seal AND industry practice at once,")
         print("    with symmetric margin. What remains is a design edit, not a judgement.")
 
+    # ── Gland geometry: does the ratified seal FIT the face that closes on it? (00_07 HW.33) ──
+    # ⚠️ Declared ceiling: this section judges the PROPOSED branch (а), not the shipped stack, so it
+    # deliberately does NOT move the exit code — that stays the 3-spring assessment above. Reading a
+    # green run as "the gland is fine" is exactly the mis-read this note exists to stop.
+    banner("Gland geometry — the ratified depth needs a WIDTH, and the width needs a FACE")
+    gland = gland_verdict()
+    align = shipped_groove_alignment()
+    budget = depth_tolerance_budget()
+    rim = rim_datum_creep()
+
+    print(f"  O-ring CS {ORING_CS} mm → section area {gland['ring_area_mm2']:.3f} mm²; "
+          f"ratified squeeze {ORING_SQUEEZE_RATIFIED*100:.1f} % → groove depth {gland['depth_mm']:.3f} mm")
+    for k, v in gland["required_width_mm"].items():
+        print(f"    gland fill ≤ {k:<4s} → groove width ≥ {v:.3f} mm")
+    print("  Face available to close on that groove, per MATE-Ø candidate:")
+    for name, c in gland["candidates"].items():
+        verdict = "fits" if c["face_seal_possible"] else "DOES NOT FIT"
+        print(f"    {name:<8s} land {c['land_mm']:.2f} mm → residual {c['residual_after_groove_mm']:+.2f} mm  {verdict}")
+    print(f"    ⚠️ skirt: {gland['faces']['skirt']['note']}")
+    print("  If the cord is the problem rather than the wall, the smaller standard cords:")
+    for k, v in gland["smaller_cord_options"].items():
+        print(f"    {k}: depth {v['depth_mm']:.3f}  width@85% {v['width_at_85pct_mm']:.3f}  "
+              f"land left on the asis rim {v['land_left_on_asis_rim_mm']:+.3f} mm")
+
+    print(f"\n  Shipped counter-grooves — flange r {align['flange_groove_r_mm']} vs radome r {align['radome_groove_r_mm']}:")
+    print(f"    radial overlap {align['radial_overlap_mm']:.2f} mm; "
+          f"{align['flange_groove_share_under_dome_cavity']*100:.0f} % of the flange groove lies under the "
+          f"dome CAVITY (nothing presses it)")
+    print(f"    combined depth {align['combined_depth_mm']:.2f} mm ⇒ squeeze {align['combined_squeeze_pct']:+.1f} % "
+          "— the ring is not compressed at all")
+
+    print(f"\n  Depth-tolerance BUDGET (the input the open ⚖️ lacks): the whole O-ring chain must stay "
+          f"within ±{budget['total_gap_budget_half_width_mm']*1000:.0f} µm")
+    print(f"    ({budget['half_band_pct_points']:.2f} pp of squeeze either side of the "
+          f"{budget['nominal_pct']:.1f} % nominal, inside the {budget['intersection_window_pct']} % window)")
+
+    print(f"\n  PEEK rim as a rigid datum (⊂ correction (1)): contact area {rim['rim_contact_area_mm2']:.0f} mm²; "
+          f"reaching {rim['relax_regime_floor_MPa']:.0f} MPa needs {rim['force_to_reach_relax_regime_N']:.0f} N")
+    print(f"    pogo pair (the only spring canon specifies) = {rim['pogo_pair_force_N_upper_bound']:.2f} N "
+          f"→ {rim['stress_at_pogo_alone_MPa']:.4f} MPa; at a generous 100 N total the margin is still "
+          f"{rim['margin_x_at_100N']:.0f}×")
+    print("    → creep member NOT warranted for the rim; missing datum named in the JSON, not guessed")
+
     banner("Verdict")
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
@@ -235,6 +461,10 @@ def main() -> int:
                     "whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance "
                     "chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a "
                     "judgement."},
+        "gland_geometry": gland,
+        "shipped_groove_alignment": align,
+        "depth_tolerance_budget": budget,
+        "rim_datum_creep": rim,
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
                           "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 00_02 §1.2, unresponsive"},
         "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"
