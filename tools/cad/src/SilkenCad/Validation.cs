@@ -38,6 +38,19 @@ internal sealed record GeometryMetrics
     public double? SpecificSurfaceMm2PerMm3 { get; init; }  // wetted area / bbox volume — EBFC-area proxy (sheet ~2× network), HW.33 trade-off
     public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
 
+    // ARCH.25 nice-to-have residual (TopologyCrossChecks.cs, null for non-anchor parts): Euler-χ
+    // cross-check against the flood-fill's own b0/b2 (a negative EulerHandles proves one of the two
+    // independent checks has a bug, not a new physical finding), random-walk tortuosity through the
+    // percolated pore network (HW.33 electrolyte-transport input), and whether topology survives
+    // resampling at the real SLM print floor (~200 µm) rather than just the SDF-intent resolution.
+    public long? EulerCharacteristic { get; init; }
+    public long? EulerHandles { get; init; }                 // b1 = b0 + b2 − χ; must be ≥0
+    public bool? EulerSound { get; init; }
+    public double? TortuosityMean { get; init; }             // path/displacement, percolated-pore random walk
+    public int? TortuositySuccesses { get; init; }
+    public int? TortuosityAttempts { get; init; }
+    public bool? PrintFidelityMatches { get; init; }         // pore-cluster count + percolation agree, SDF-intent vs as-printed resample
+
     // Mechanical-lock shank measurements (01_01 §4.3, null for non-lock parts). See Validation.MeasureLock.
     public int? BarbCount { get; init; }                    // ratchet teeth counted along R(z) — must == BarbRows
     public double? MaxBarbHeightMm { get; init; }           // peak ridge height h (§4.3 A: 0.25–0.40)
@@ -164,6 +177,13 @@ internal static class Validation
         float fSurfaceMm2 = Leap71.ShapeKernel.Measure.fGetSurfaceArea(voxAnode);
         double dBboxVol = oBase.BboxSizeMm[0] * oBase.BboxSizeMm[1] * oBase.BboxSizeMm[2];
 
+        // ARCH.25 nice-to-have: Euler-χ cross-check (reuses this SAME grid+conn, no resample) + random-
+        // walk tortuosity (reuses this SAME grid) + as-printed voxel cross-check (its own coarser resample,
+        // deliberately independent — that IS the manufacturability question).
+        TopologyCrossChecks.EulerCrossCheckResult euler = TopologyCrossChecks.EulerCrossCheck(grid, conn);
+        TopologyCrossChecks.TortuosityResult tort = TopologyCrossChecks.EstimateAxialTortuosity(grid);
+        TopologyCrossChecks.PrintFidelityResult fidelity = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
+
         return oBase with
         {
             RadialPorosityByShell = aShellPorosity,
@@ -175,6 +195,13 @@ internal static class Validation
             PoreClusterCount = conn.PoreClusterCount,
             SpecificSurfaceMm2PerMm3 = dBboxVol > 0 ? fSurfaceMm2 / dBboxVol : 0.0,
             AxialPorosityProfile = aAxial,
+            EulerCharacteristic = euler.EulerCharacteristic,
+            EulerHandles = euler.Handles,
+            EulerSound = euler.Sound,
+            TortuosityMean = tort.MeanTortuosity,
+            TortuositySuccesses = tort.Successes,
+            TortuosityAttempts = tort.Attempts,
+            PrintFidelityMatches = fidelity.TopologyMatches,
         };
     }
 

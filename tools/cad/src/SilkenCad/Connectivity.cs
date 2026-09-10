@@ -29,6 +29,10 @@ internal sealed record ConnectivityMetrics
     public required double SolidDisconnectedFraction { get; init; } // metal NOT in the largest solid body (floating islands; print + electrical defect)
     public required bool[] PorePercolates { get; init; }            // [X, Y, Z] — a single pore cluster spanning the part (X,Y = rim-to-rim radial; Z = end-to-end axial)
     public required int PoreClusterCount { get; init; }             // big pore clusters (>2% vol): network→1, sheet→2 (tricontinuous)
+    // Betti-number inputs for the Euler-χ cross-check (TopologyCrossChecks.EulerCrossCheck) — reuses
+    // the SAME flood-fill lists Analyse already builds (aSolid/aPore), no second traversal elsewhere.
+    public required int SolidClusterCount { get; init; }            // b0 — ALL solid components, not just "big" ones
+    public required int ClosedPoreClusterCount { get; init; }       // b2 — pore clusters that never touch a domain surface (enclosed cavities of the solid)
 }
 
 internal static class Connectivity
@@ -136,6 +140,8 @@ internal static class Connectivity
             SolidDisconnectedFraction = dSolidDisc,
             PorePercolates = aPerc,
             PoreClusterCount = nBigPore,
+            SolidClusterCount = aSolid.Count,
+            ClosedPoreClusterCount = aPore.Count(c => !c.TouchesSurface),
         };
     }
 

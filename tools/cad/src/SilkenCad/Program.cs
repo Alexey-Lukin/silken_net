@@ -484,6 +484,18 @@ internal static class Program
             $"solid-disc={oM.SolidDisconnectedFraction:P1} pore-clusters={oM.PoreClusterCount} " +
             $"percolate=[{strPerc}] surface={oM.SpecificSurfaceMm2PerMm3:F2} mm2/mm3");
 
+        // ARCH.25 nice-to-have residual — informational only (NOT part of VERIFY OK/FAILED below; the
+        // tracker item itself scopes these as "deferred (nice-to-have)", not a shipped gate).
+        Console.WriteLine(
+            $"  [nice-to-have] Euler-χ={oM.EulerCharacteristic} handles(b1)={oM.EulerHandles} " +
+            $"{(oM.EulerSound == true ? "✓ sound" : "⚠ NEGATIVE — flood-fill/Euler-χ disagree, one of the two has a bug")}");
+        Console.WriteLine(
+            $"  [nice-to-have] tortuosity(path/displacement) mean={oM.TortuosityMean:F2} " +
+            $"({oM.TortuositySuccesses}/{oM.TortuosityAttempts} walks converged)");
+        Console.WriteLine(
+            $"  [nice-to-have] as-printed (SLM ~{TopologyCrossChecks.SlmMinWallMm * 1000:F0} µm wall floor) vs SDF-intent topology: " +
+            (oM.PrintFidelityMatches == true ? "✓ matches" : "⚠ DIVERGES — design may not survive print at this wall thickness"));
+
         // Monolithic bus rod (01_01 §1.4) — MEASURE that the solid rod actually fused into the part
         // (gotcha #4 — don't assume the BoolAdd landed). voxAnode (the gyroid) is done being measured, so
         // fuse the rod onto it and re-measure: the rendered rod volume must be ≳ π(rod/2)²·L.
