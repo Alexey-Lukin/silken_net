@@ -64,7 +64,7 @@
 - **Це найсильніший чесний value-prop.** Continuous permanence-monitoring — рівно те, чого remote-sensing НЕ дає: супутникові прольоти періодичні; подія бензопили між прольотами невидима до наступного знімка. Наш real-time acoustic-тригер закриває саме цю сліпу пляму.
 - Реальна, вже-shipped спроможність: `chainsaw_detected` живе у firmware/telemetry (SLASH-1, [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) — справжня пилка = panic→`chainsaw_detected`), не гіпотеза.
 
-**Технічний registry-integration-surface уже доведений:** `PuroEarth::PassportService`/`PuroEarth::RegistryApiService` (`[MAINNET READY]`, ARCH.5) — transform → canonical JSON → SHA-256 → on-chain anchor → IPFS → REST submit. Тобто плагін у ЧУЖИЙ реєстр = **format-адаптери × N поверх доведеного патерну**, не greenfield. Твердий гейт — не код, а BIZ.9-методолог (methodology-ID) + institutional buyer.
+**Технічний registry-integration-surface написаний і покритий** (⚠️ «доведений» тут = про КОД; наскрізного прогону в живий реєстр не було): `PuroEarth::PassportService`/`PuroEarth::RegistryApiService` (`[MAINNET READY]` — мітка про наш код, не про досяжність каналу; ARCH.5) — transform → canonical JSON → SHA-256 → on-chain anchor → IPFS → REST submit. Тобто плагін у ЧУЖИЙ реєстр = **format-адаптери × N поверх доведеного патерну**, не greenfield. Твердий гейт — не код, а BIZ.9-методолог (methodology-ID) + institutional buyer.
 
 ### 1.4 🔴 Що це означає для SCC-наративу (пряма відповідь)
 
@@ -111,7 +111,7 @@
 
 Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/durable-CDR стандарт. **АЛЕ** у SilkenNet Puro вже живе на ІНШОМУ треку: коли дерево вмирає біологічно (`Tree.status = :deceased`), `PuroEarthPassportWorker` генерує **biochar CORC** на Puro.earth ([`00_04 §2`](../../00_04_Nature_as_a_Service_Contracts.md), рядок «Смерть дерева»). Тобто:
 - Живий ліс (carbon-sink, поглинання) → Verra/GS/Isometric-клас (§2, з metrology-gap §1).
-- Мертве дерево → biochar → Puro CORC (durable removal, вже `[MAINNET READY]`).
+- Мертве дерево → biochar → Puro CORC (durable removal; **КОД** під це написаний і позначений `[MAINNET READY]` — ⚠️ мітка про наш код, не про канал: акаунта Puro немає, `ORACLE_PURO_PRIVATE_KEY` activation-gated, наскрізного прогону не було жодного).
 Це **не конфлікт, а два різні продукти** з одного лісу. Puro-експорт — уже доведений патерн (ARCH.5), що обслуговує лише death-path.
 
 ---
@@ -211,7 +211,7 @@ PAM (passive acoustic monitoring) дав ~70× детекцій за найни�
 | Anchor-buyer готовий комітитись наперед | **Isometric** | buyer-pays, ~1 міс, continuous, CCP-eligible, reforestation-протокол+Pachama baseline готові |
 | Малий пілот (<10k tCO₂e/рік), buyer ще нема | **GS Microscale** | спрощена self-verification, менший cash-burn |
 | Є зовнішнє фінансування/партнер, треба max recognition | **Verra** (ARR/IFM, НЕ REDD+) | 98% ринку, CCP; ціною $100k+ / 2–3 роки |
-| Death-path (мертве дерево → biochar) | **Puro.earth** | вже `[MAINNET READY]`, окремий продукт |
+| Death-path (мертве дерево → biochar) | **Puro.earth** | окремий продукт; КОД написаний (`[MAINNET READY]` = про наш код), канал ще не відкривали |
 | — | ❌ Rainbow (no forestry) · ⚠️ Cercarbono/BioCarbon (no CCP → низька інституц-довіра) | тримати на радарі, не primary |
 
 ### 6.3 Що це означає для SCC-наративу (стисло)
