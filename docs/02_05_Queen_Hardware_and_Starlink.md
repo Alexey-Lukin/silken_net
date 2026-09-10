@@ -633,7 +633,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 Queen переходить у Helium режим автоматично коли:
 1. Власний Starlink/LTE-M uplink мовчить — жодного підтвердженого флашу — **≥ 2× каденс флашу** (`L1 → L2` exhausted): константа `HELIUM_FALLBACK_THRESHOLD_MIN` виводиться з `FLUSH_INTERVAL_MS` + jitter у `queen/main.c` (122 хв при 60 хв + 1), не задається числом. ⚖️ founder 2026-09-10 ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)): доти в коді стояло 30 хв < каденс, тобто «тиша» була штатним станом другої половини кожної години, і SOS летів би на здоровій Королеві при N ≈ 45–160 Солдатів
 2. Queen-to-Queen LoRa backhaul (SF12) не знаходить online-сусіда у радіусі 5–15 км
-3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink). ⚠️ **Ця третя умова у Trigger дому ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)) ВІДСУТНЯ, і розходження несуче в обидва боки:** читач [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) чекає спрацювання L3 від самих лише «Starlink/LTE down + Q2Q недоступний», а тут воно ще й гейтоване заповненням. ⊕ Арифметика гейта має власну стелю: `fill_pct = cache_count * 100 / CACHE_MAX_ENTRIES` при `CACHE_MAX_ENTRIES = 50`, а CIFO дедуплікує за UID — отже **при менш ніж 26 РІЗНИХ Солдатах у кеші поріг 50 % недосяжний за побудовою**, і SOS не стрельне ніколи. Для пілотних кластерів це означає, що умова 3 не є запобіжником, а глушником.
+3. CIFO + Flash Ring Buffer fill > 50% (загроза втрати даних, якщо все ще нема uplink). ⚠️ **Ця третя умова у Trigger дому ([`06_08 §1.2`](06_08_Resilience_and_Failover_Policy)) ВІДСУТНЯ, і розходження несуче в обидва боки:** читач [`06_08 §1.2`](06_08_Resilience_and_Failover_Policy) чекає спрацювання L3 від самих лише «Starlink/LTE down + Q2Q недоступний», а тут воно ще й гейтоване заповненням. ⊕ Арифметика гейта має власну стелю: `fill_pct = cache_count * 100 / CACHE_MAX_ENTRIES` при `CACHE_MAX_ENTRIES = 50`, а CIFO дедуплікує за UID — отже **при менш ніж 25 РІЗНИХ Солдатах у кеші поріг 50 % недосяжний за побудовою (25 × 100 / 50 = 50 % уже стріляє — виправлено 2026-09-10, доти тут стояло «26»)**, і SOS не стрельне ніколи. Для пілотних кластерів це означає, що умова 3 не є запобіжником, а глушником.
 
 ```c
 // firmware/queen/main.c + queen/helium_sos.h — SHIPPED (owned-обв'язка, 2026-07-04).
@@ -655,7 +655,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 }
 ```
 
-> **[transitional] fill-стеля:** джерело `fill_pct` сьогодні — дедуплікований CIFO (запис/DID), тож кластер < 25 Солдатів фізично не набере 50% і SOS не стрельне; чесний append-fill дасть ARCH.35-ринг (гейтований). Відкрите питання формули — [`00_07` ARCH.34](00_07_Action_Plan_Tracker).
+> **[transitional] fill-стеля:** джерело `fill_pct` сьогодні — дедуплікований CIFO (запис/DID), тож кластер < 25 Солдатів фізично не набере 50% і SOS не стрельне; чесний append-fill дасть ARCH.35-ринг (гейтований) — але з рингом fill-вісь у формулі помирає сама: append-only буфер набирає 50 % за десятки діб (місткість ринга ÷ каденс Сценарію C при MVFC), тож тригер стає time-only за побудовою. Відкрите питання ФОРМИ (time-only ⊥ fill відносно N) — [`00_07` ARCH.34](00_07_Action_Plan_Tracker).
 
 > **🔴 Hard Rule (Radio-blindness mitigation, ARCH.34):**
 > Будь-який виклик `queen_helium_lorawan_uplink()` ОБОВ'ЯЗКОВО супроводжується:
@@ -678,7 +678,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | Крок | Дія | Де |
 |------|-----|----|
 | Owned-обв'язка + wire + тригер | ✅ 2026-07-04: `helium_sos.h` (pure, host-tested) + `queen_helium_lorawan_uplink()` hard-rule скелет | `firmware/queen/` |
-| LoRaWAN MAC-stack | Завендорити ST-форк LoRaMac-node submodule@v2.6.2 (⚠️ `subghz-phy/lorawan/` — то LBM radio-шар, НЕ MAC; команда — [`00_07` ARCH.34](00_07_Action_Plan_Tracker)) + adapter-TU `Helium_Mac_SendSos` | `firmware/extern/stm32-mw-lorawan` |
+| LoRaWAN MAC-stack | ✅ Завендорено (наш форк `v2.6.2-silken.1`, [`03_01 §12.5`](03_01_Firmware_Lifecycle_and_DMA)) — ST-форк LoRaMac-node submodule@v2.6.2 (⚠️ `subghz-phy/lorawan/` — то LBM radio-шар, НЕ MAC; команда — [`00_07` ARCH.34](00_07_Action_Plan_Tracker)) + adapter-TU `Helium_Mac_SendSos` | `firmware/extern/stm32-mw-lorawan` |
 | DevEUI / AppEUI / AppKey | Зареєструвати **кожну Queen** (не Soldier!) у [Helium Console](https://console.helium.com/) | Helium |
 | HTTP Integration | Налаштувати webhook → `https://api.silkennet.com/api/v1/telemetry/helium` | Helium Console |
 | Rails endpoint | `POST /api/v1/telemetry/helium` → `HeliumSosWorker` (HMAC `X-Helium-Signature`, патерн oracle_callbacks) | ✅ Rails API (ARCH.34 backend-half, 2026-07-03) |
@@ -691,7 +691,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 |-----------|------|
 | Концепт і архітектура (Queen-side LoRaWAN) | ✅ Визначено |
 | Owned-обв'язка: wire-pack (парність з бекендом) + тригер + hard-rule скелет `queen_helium_lorawan_uplink()` | ✅ 2026-07-04 (host-тести `test_helium_sos.c`; гейт `ARCH34_HELIUM_ENABLED 0`) |
-| LoRaWAN MAC-stack у Queen firmware | 🟡 vendored @v2.6.2 + adapter ✅ 2026-07-05 (`queen/lorawan_glue/`: owned-конфіги + soft_timer/systime + `helium_mac.c`; host-smoke: ПОВНИЙ OTAA join+uplink цикл проти мок-LNS — криптовалідний JoinAccept на нуль-ключах, MIC/FRM-звірка server-side сесійними ключами, дедлайн = бойовий 20-с бюджет при SF12-TOA; DevNonce-монотонність + KV-reboot; main.c KV-mount за гейтом; ARM compile-lane) — ефір/OTAA = bench; vendored-UB SF11/12 знято форком v2.6.2-silken.1 ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)) |
+| LoRaWAN MAC-stack у Queen firmware | 🟢 (готово-інертно за гейтом `ARCH34_HELIUM_ENABLED 0`; ефір = bench) vendored @v2.6.2 + adapter ✅ 2026-07-05 (`queen/lorawan_glue/`: owned-конфіги + soft_timer/systime + `helium_mac.c`; host-smoke: ПОВНИЙ OTAA join+uplink цикл проти мок-LNS — криптовалідний JoinAccept на нуль-ключах, MIC/FRM-звірка server-side сесійними ключами, дедлайн = бойовий 20-с бюджет при SF12-TOA; DevNonce-монотонність + KV-reboot; main.c KV-mount за гейтом; ARM compile-lane) — ефір/OTAA = bench; vendored-UB SF11/12 знято форком v2.6.2-silken.1 ([`00_07` ARCH.34](00_07_Action_Plan_Tracker)) |
 | Rails endpoint `/api/v1/telemetry/helium` | ✅ Реалізовано (2026-07-03: `HeliumSosController` + `HeliumSosWorker` + `EwsAlert(queen_uplink_lost)`) |
 | Реєстрація Queen у Helium Console + заповнення `gateways.helium_dev_eui` | 🔴 Не виконано (👤) |
 | GatewayLoraWanCredentials model | 🟡 Відкладено до живої Console-інтеграції (зараз досить `helium_dev_eui`) |

@@ -1176,7 +1176,7 @@ int main(void)
   uint32_t last_flush_time = HAL_GetTick();
   uint32_t last_beacon_time = HAL_GetTick();  // [FW.20-Q2] позначка для періодичного маяка
 
-  // [ARCH.34] SOS-годинники: uplink «щойно був ok» (30-хв відлік від boot —
+  // [ARCH.34] SOS-годинники: uplink «щойно був ok» (відлік порога тиші від boot —
   // Королева, що ні разу не доповілась, теж має право кричати), а от штучної
   // паузи ретрансміту на старті нема (wrap-safe віднімання дає рівно поріг).
   g_last_uplink_ok_tick  = HAL_GetTick();
