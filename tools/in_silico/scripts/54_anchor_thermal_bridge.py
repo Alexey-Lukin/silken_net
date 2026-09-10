@@ -11,21 +11,13 @@ pogo pad (01_01 §2/§4.1, 02_02 §1.2). 01_01 §4.1 specs it "~1–2 mm², mini
 material ambiguously ("анодний вал / Cu-провідник"). This script closes that: how much does the bus
 defeat the PEEK break, and does the MATERIAL (Cu vs Ti-monolithic vs steel) matter?
 
-!! DIAMETER CAVEAT — READ BEFORE QUOTING ANY NUMBER FROM THIS SCRIPT (00_07 HW.34, open re-run leg):
-   D_BUS below is 1.3 mm, which is the cathode CHANNEL, not the rod. Canon 01_01 §1.4 freezes the ROD
-   at Ø1.0 mm (rod 1.0 + 2×0.15 liner = the Ø1.3 channel). Same wrong diameter as script 55 — but the
-   DIRECTION of the error is opposite there, so do not carry that caveat over verbatim. Here the bus
-   AREA is overstated ×1.69 (A ∝ d²: 1.327 vs 0.785 mm²), which makes the bridge look WORSE, so both
-   load-bearing verdicts are conservative and survive at Ø1.0: Cu still dominates the break (×18.2 vs
-   no-bus, Cu/Ti ratio 9.31 vs 9.57) and a monolithic Ti bus is still near-invisible (×1.95 vs no-bus,
-   T_anode −0.70 °C vs −1.43). Exactly ONE cached boolean flips: `cell_freeze_risk["316SS"]` true →
-   false (−3.16 → −1.94 °C against the −2.0 gate) — and 316SS is the superseded pre-monolithic
-   alternative, not a bake-off candidate. All six HW.24 alloys keep their verdicts (CP-Ti −3.50 →
-   −2.21 and Ta −7.44 → −5.63 still freeze; the four α+β Ti still do not). The one ANTI-conservative
-   axis is electrical: R_elec ∝ 1/A, so the IR drop is understated ×1.69 (Ti 6.7 → 11.3 µV at 100 µA)
-   — still 4×10⁴ below the 500 mV EBFC reference, so "electrically free at µA" is untouched.
-   Do NOT silently edit D_BUS here: the re-run is a tracked compute session that must move script +
-   cache + SUMMARY.md §HW.34 together, otherwise the three disagree.
+⛔ DIAMETER — THE ROD, NEVER THE CHANNEL. `D_BUS` here is the canon rod Ø1.0, imported from
+   lib.constants (one home; `01_01 §1.4` freezes rod 1.0 + 2×0.15 liner = the Ø1.3 channel). Substituting
+   the channel overstates the conducting AREA ×1.69 (A ∝ d²: 1.327 vs 0.785 mm²), which makes the bridge
+   look WORSE — conservative for the two load-bearing verdicts, but ANTI-conservative for the electrical
+   axis (R ∝ 1/A, so the IR drop would be understated by the same factor). Note the direction is OPPOSITE
+   to script 55's, where σ ∝ 1/d³ inflates every fatigue SF: never read one diameter caveat as covering
+   both scripts.
 
 KEY GEOMETRY INSIGHT (why a naïve "λA/L through 50 mm PEEK" is wrong): the Ti shanks of Zone 1 (anode,
 Ø11) and Zone 3 (cathode, Ø9) press IN from both ends and bridge most of the 50 mm sleeve; the only
@@ -422,20 +414,18 @@ def main() -> int:
         "transient_tau_min": {"Cu": round(tau_cu, 1), "Ti": round(tau_ti, 1), "none": round(tau_none, 1),
                               "pocket_C_J_K": round(c_pocket, 1)},
         "verdict": ("Cu bus dominates the axial cold path (~{:.0f}x the Ti-bus anchor) and drives the "
-                    "Zone-1 anode pocket ~{:.0f}C colder (into a freeze) than a Ti bus, which is thermally "
-                    "invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus monolithic with "
-                    "the anode (also kills the Ti-Cu galvanic joint). Material = founder call, 00_07 HW.34."
-                    ).format(cu_vs_ti, t_base["none"] - t_base["Cu"]),
+                    "Zone-1 anode pocket ~{:.0f}C colder than a Ti bus (into a freeze), which is itself "
+                    "thermally invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus "
+                    "monolithic with the anode (also kills the Ti-Cu galvanic joint). Material = founder "
+                    "call, 00_07 HW.34."
+                    ).format(cu_vs_ti, t_base["Ti"] - t_base["Cu"]),
         "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir "
                    "(lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. "
                    "Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers. "
-                   "DIAMETER: bus_dia_bottleneck 1.3 is the cathode CHANNEL, not the canon rod O1.0 "
-                   "(01_01 1.4) -> bus area overstated x1.69, which is CONSERVATIVE here (A ~ d^2, a "
-                   "fatter bus = a worse break). At O1.0 both load-bearing verdicts survive (Cu x18.2 "
-                   "vs no-bus, Ti x1.95, T_anode Ti -0.70C) and exactly one boolean flips: "
-                   "cell_freeze_risk[316SS] true -> false; all six HW.24 alloys keep theirs. IR drop is "
-                   "the one anti-conservative axis (understated x1.69, Ti 11.3 uV at 100 uA vs the "
-                   "500000 uV reference). Re-run at O1.0 = tracked compute session, 00_07 HW.34.",
+                   "DIAMETER: bus_dia_bottleneck is the canon ROD O1.0 (01_01 1.4, lib D_BUS_ROD_MM), "
+                   "not the O1.3 cathode channel it threads. Substituting the channel would overstate "
+                   "the bus area x1.69 (A ~ d^2) - conservative for the thermal verdicts, ANTI-"
+                   "conservative for the electrical one (R ~ 1/A). Opposite direction to script 55.",
     }
     json_path = OUT_DIR / "anchor_thermal_bridge.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))

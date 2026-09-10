@@ -214,15 +214,23 @@ def main() -> int:
 
     # ── Q3. Invert it: how large would the neglected channels have to be ──
     banner("Q3 — falsification margin: how wrong would Q2 have to be")
+    # TWO margins, because the BINDING one is not the bound. The all-Ce node is the upper bound on <Z>,
+    # so its deficit is the LOOSEST requirement; the material canon actually names (`nCoCuCeZIF`) sits
+    # closer to water and therefore needs LESS of a non-Compton channel to reach DEF 1.0. A lab check
+    # measures the real nanozyme, so the number it must beat is the named material's, not the bound's.
     deficit = 1.0 - upper["def_compton_vs_water"]
     required_share = deficit / 1.0
+    named = next((r for r in mat_rows if r["material"].startswith("nCoCuCeZIF")), upper)
+    named_share = 1.0 - named["def_compton_vs_water"]
     print("  Photoelectric and pair production are Z-dependent and are NOT computed here. Rather than")
     print(f"  assert they are negligible, invert: at the {upper['def_compton_vs_water']:.3f}× upper bound the")
     print(f"  Compton channel leaves a {deficit * 100:.1f} % deficit. For DEF to reach 1.0 a non-Compton")
     print(f"  channel would have to supply ≥ {required_share * 100:.1f} % of the ZIF's total mass energy")
-    print("  absorption at 1.25 MeV while supplying ~0 % in water — and to matter it would then have to")
-    print("  beat Q1 as well, which is geometric and indifferent to the coefficient. That percentage is")
-    print("  the single number any lab check of this caveat would have to exceed.")
+    print("  absorption at 1.25 MeV while supplying ~0 % in water. 🔑 For the material canon actually")
+    print(f"  names ({named['material']}) the bar is TIGHTER — {named_share * 100:.1f} % — and that is the")
+    print("  binding one, because a lab measures the real nanozyme. To matter it would then have to")
+    print("  beat Q1 as well, which is geometric and indifferent to the coefficient. That tighter")
+    print("  percentage is the number any lab check of this caveat would have to exceed.")
 
     # ── Q4. Why the kV literature does not transfer ──
     banner("Q4 — why the kV nanoparticle result does not transfer to Co-60")
@@ -268,9 +276,13 @@ def main() -> int:
         "falsification_margin": {
             "def_upper_bound_all_ce_node": upper["def_compton_vs_water"],
             "non_compton_share_required_for_def_1p0_pct": round(required_share * 100, 2),
-            "note": "The photoelectric and pair channels are not computed. This is the share of total "
+            "def_named_material": named["def_compton_vs_water"],
+            "named_material": named["material"],
+            "non_compton_share_required_named_material_pct": round(named_share * 100, 2),
+            "note": "The photoelectric and pair channels are not computed. These are the shares of total "
                     "mass energy absorption they would have to supply in the ZIF (and ~none in water) "
-                    "for DEF to reach unity — the number a lab check would have to beat."},
+                    "for DEF to reach unity. The BINDING figure is the named material's, not the "
+                    "all-Ce bound's: a lab measures the real nanozyme."},
         "kv_contrast": {"reference_photon_keV": E_KV_REF_KEV,
                         "photoelectron_csda_range_um": round(range_kv_g_cm2 * 1e4, 3),
                         "range_ratio_mev_over_kev": round(range_ratio, 1),

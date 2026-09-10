@@ -333,9 +333,20 @@ CHECKS = [
     ),
     (
         "solid-Ti no-break reference → teg_across_peek_break.json (SUMMARY §HW.21 table)",
-        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| 6× \| \*\*{N} °C",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| 8× \| \*\*{N} °C",
         "mechanical/teg_across_peek_break.json",
         lambda d: d["baseline_from_script_54"]["solid_ti_no_break_t_anode_C"], 0.005,
+    ),
+    # 🔴 The `8×` in the anchor above is itself a DERIVED number, and until 2026-09-10 it read `6×` —
+    # stale since the HW.34 bus re-run moved the denominator. The pin was green throughout, because a
+    # value in an ANCHOR is context to match on, never something the pin verifies. So the multiplier
+    # gets its own row: the anchor cannot carry an unchecked number twice.
+    (
+        "solid-Ti no-break MULTIPLIER → teg_across_peek_break.json (SUMMARY §HW.21 table)",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| {N}× \|",
+        "mechanical/teg_across_peek_break.json",
+        lambda d: (d["baseline_from_script_54"]["solid_ti_no_break_g_W_K"]
+                   / d["baseline_from_script_54"]["ti_bus_g_anchor_W_K"]), 0.5,
     ),
     (
         "micro-TEG yield at the thermal budget → teg_across_peek_break.json (SUMMARY §HW.21)",

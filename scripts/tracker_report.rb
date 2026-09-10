@@ -261,8 +261,14 @@ def takeable_report(markdown)
     hidden_by_one.group_by { |_, forms| forms.first }
                  .sort_by { |_, v| -v.size }
                  .each do |form, pairs|
-      puts "  · форма «#{form}» → #{pairs.size}: " +
-           pairs.map { |l, _| "#{l[:section]}/#{l[:id]}" }.uniq.join(" · ")
+      # ⛔ Ніякого `.uniq` над іменами при лічильнику НІГ: перша редакція друкувала
+      # «→ 11» поруч із десятьма іменами, бо один пункт ховав дві ноги — тобто список
+      # переставав бути тим ПОВНИМ периметром, заради якого його й заводили. Пункт із
+      # кількома ногами несе `×N`, і тоді число в голові сходиться з тим, що видно.
+      by_item = pairs.group_by { |l, _| "#{l[:section]}/#{l[:id]}" }
+      word = pairs.size == 1 ? "нога" : "ніг"
+      puts "  · форма «#{form}» → #{pairs.size} #{word}: " +
+           by_item.map { |name, ls| ls.size > 1 ? "#{name} ×#{ls.size}" : name }.join(" · ")
     end
   end
 end

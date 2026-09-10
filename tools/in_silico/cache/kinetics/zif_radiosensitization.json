@@ -96,7 +96,10 @@
   "falsification_margin": {
     "def_upper_bound_all_ce_node": 0.8581,
     "non_compton_share_required_for_def_1p0_pct": 14.19,
-    "note": "The photoelectric and pair channels are not computed. This is the share of total mass energy absorption they would have to supply in the ZIF (and ~none in water) for DEF to reach unity \u2014 the number a lab check would have to beat."
+    "def_named_material": 0.8945,
+    "named_material": "nCoCuCeZIF (equimolar Co/Cu/Ce nodes)",
+    "non_compton_share_required_named_material_pct": 10.55,
+    "note": "The photoelectric and pair channels are not computed. These are the shares of total mass energy absorption they would have to supply in the ZIF (and ~none in water) for DEF to reach unity. The BINDING figure is the named material's, not the all-Ce bound's: a lab measures the real nanozyme."
   },
   "kv_contrast": {
     "reference_photon_keV": 50.0,

@@ -376,7 +376,7 @@ Spec home → [`01_01 §1.4`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md
 
 **Thermal bridge (script 54)** — 1D resistor ladder + 2-node steady state, at the canon rod **Ø1.0**
 (`01_01 §1.4`). A **Cu** bus dominates the Zone-2 PEEK break (G_anchor 9.3× a Ti bus, ×18.2 vs no bus;
-λ_Cu ~1600× PEEK) → drags the Zone-1 anode pocket to **−12.8 °C** (13° below core → living-sapwood
+λ_Cu ~1600× PEEK) → drags the Zone-1 anode pocket to **−12.8 °C** (14.8° below the +2 °C core → living-sapwood
 freeze-risk) at −30 °C air / +2 °C core. A bus **monolithic with the anode** (= the anode alloy) is
 thermally near-invisible (**−0.70 °C**, ×1.95 vs no bus). Per bake-off alloy: alloyed α+β Ti
 (4V/7Nb/β/15Zr, λ≈7) −0.70…−0.91 °C; CP-Ti (λ17) −2.21; Ta (λ57, benchmark) −5.63 — **all ≪ Cu**, and
@@ -598,7 +598,7 @@ Output is taken at the ΔT that *survives the module's own installation*:
 | 15×15×3 mm | 1.05e−1 W/K | 67× | −10.86 °C | ❄ FAIL | 291 µW | 14.4 mV |
 | 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 474× | −11.56 °C | ❄ FAIL | 47 µW | 15.4 mV |
 | *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.68 °C | ❄ FAIL | — | — |
-| *reference:* **solid Ti, NO PEEK break at all** | 1.25e−2 W/K | 6× | **−11.49 °C** | ❄ FAIL | — | — |
+| *reference:* **solid Ti, NO PEEK break at all** | 1.25e−2 W/K | 8× | **−11.49 °C** | ❄ FAIL | — | — |
 
 **Verdict** — 🔴 **Reject as posed, and not because the part is badly chosen.** `0 of 90` swept
 combinations (5 footprints × 3 thicknesses × 3 κ × 2 mounts) pass the gate: the *smallest* geometry
@@ -675,7 +675,9 @@ the physical upper bound on `<Z>` for anything the name can mean.
 computed. Rather than assert they are negligible, invert: at the 0.858× upper bound a
 non-Compton channel would have to supply **14.2 %** of the ZIF's total mass energy absorption
 (and ~0 % in water) merely to reach DEF 1.0 — and would then still have to beat Q1, which is geometric
-and indifferent to any coefficient. That percentage is the number a lab check of this caveat must exceed.
+and indifferent to any coefficient. 🔑 **The BINDING figure is tighter than the bound, because a lab
+measures the real nanozyme:** for the material canon actually names (`nCoCuCeZIF`, DEF 0.895) the bar
+is **10.6 %**, and that is the number a lab check of this caveat must exceed.
 
 **Q4 — why the kV literature does not transfer.** A 50 keV photoelectron ranges **40 µm** —
 the scale of the structure being protected, so energy released at the metal centre is deposited on it.

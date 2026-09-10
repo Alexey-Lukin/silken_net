@@ -116,6 +116,7 @@ ZT_BRACKET = (0.5, 1.0)
 S_LEG_V_K = 200e-6                 # V/K per leg
 COUPLE_DENSITY_MM2 = 0.08          # couples per mm² (127-couple / 40×40 mm form factor) — ASSUMPTION
 VIN_CS_MV = 600.0                  # BQ25570 cold-start VIN(CS) typ., `02_03 §1.5` / HW.46
+TARGET_UW = (50.0, 200.0)          # HW.21's own winter harvest target (µW) — the band the residual is judged against
 # Bus-Ø robustness bound. Script 54 now carries the canon rod (lib.constants D_BUS_ROD_MM, 01_01 §1.4);
 # the Ø1.3 cathode CHANNEL is the physical upper bound on how fat that rod could ever be, so sweeping to
 # it answers "could the bus diameter move this verdict at all?" — the check the old caveat performed.
@@ -321,7 +322,7 @@ def main() -> int:
     v_oc_1couple_mv = 2.0 * S_LEG_V_K * dt_b * 1e3     # <1 couple fits there: price it as ONE couple
     print(f"  At exactly that budget: T_anode={ta_b:+.2f} °C (= the gate, ZERO margin), "
           f"ΔT_module={dt_b:.1f} K, P={out_b['p_uW']:.0f} µW")
-    print("    → energetically NOT pointless (HW.21's own TEG target is 50–200 µW winter) — but V_oc is "
+    print(f"    → energetically NOT pointless (HW.21's own TEG target is {TARGET_UW[0]:.0f}–{TARGET_UW[1]:.0f} µW winter) — but V_oc is "
           f"{v_oc_1couple_mv:.1f} mV as a single couple,")
     print(f"      i.e. ×{VIN_CS_MV / v_oc_1couple_mv:.0f} below BQ25570's VIN(CS) {VIN_CS_MV:.0f} mV (HW.46).")
 
@@ -452,8 +453,12 @@ def main() -> int:
           f"{budgets['gap']['footprint_mm2_at_kappa1p4_t3mm']:.1f} mm² at 3 mm —")
     print(f"     ×{ratio_gap:.0f} smaller than the smallest module swept, and over 54's live wood grid the "
           f"budget goes NEGATIVE (min {min(budget_grid):.1e} W/K).")
-    print(f"  4. ⚖️ The honest residual: at the budget the part still yields ~{out_b['p_uW']:.0f} µW — inside "
-          "HW.21's own 50–200 µW")
+    # The RELATION to the target is derived, not asserted: the yield is computed a few lines up, so a
+    # hardcoded "inside" becomes a lie the moment the budget moves — it already had (428 µW vs 50-200).
+    p_res = out_b["p_uW"]
+    rel = "inside" if TARGET_UW[0] <= p_res <= TARGET_UW[1] else ("above" if p_res > TARGET_UW[1] else "below")
+    print(f"  4. ⚖️ The honest residual: at the budget the part still yields ~{p_res:.0f} µW — {rel} "
+          f"HW.21's own {TARGET_UW[0]:.0f}–{TARGET_UW[1]:.0f} µW")
     print(f"     target — but at ZERO gate margin, at V_oc ≈ {v_oc_1couple_mv:.0f} mV "
           f"(×{VIN_CS_MV / v_oc_1couple_mv:.0f} under VIN(CS) {VIN_CS_MV:.0f} mV, HW.46), as a")
     print("     bespoke sub-mm² micro-TEG. That is a different project, not a module choice.")
@@ -488,7 +493,8 @@ def main() -> int:
     ax2.axvline(g_opt, color="tab:orange", linestyle=":", label=f"thermal match ({g_opt:.1e} W/K)")
     ax2.axvspan(g_axis[0], max(budgets["gap"]["g_teg_max_W_K"], g_axis[0]), color="tab:green", alpha=0.15,
                 label="gate-admissible G_TEG")
-    ax2.axhspan(50, 200, color="tab:blue", alpha=0.12, label="HW.21 target 50–200 µW")
+    ax2.axhspan(*TARGET_UW, color="tab:blue", alpha=0.12,
+                label=f"HW.21 target {TARGET_UW[0]:.0f}–{TARGET_UW[1]:.0f} µW")
     ax2.set_xlabel("TEG module thermal conductance G_TEG (W/K, log)")
     ax2.set_ylabel("Module electrical output P_max (µW, log)")
     ax2.set_title("What it gives — and where the gate lets it live")
@@ -594,7 +600,7 @@ def main() -> int:
                     "(01_01 4.1). The budget for anything crossing the break is <= {:.1e} W/K (~{:.1f} mm2 "
                     "at 3 mm, x{:.0f} smaller than the smallest module), and over the live wood grid that "
                     "budget goes NEGATIVE. Honest residual: at the budget a bespoke sub-mm2 micro-TEG still "
-                    "yields ~{:.0f} uW - inside HW.21's own 50-200 uW target - but at zero gate margin and "
+                    "yields ~{:.0f} uW - {} HW.21's own 50-200 uW target - but at zero gate margin and "
                     "V_oc ~{:.0f} mV, x{:.0f} below BQ25570 VIN(CS) 600 mV (HW.46). Same structural shape as "
                     "the ratified HW.42: the conductance that harvests IS the conductance that kills the "
                     "break."
@@ -602,7 +608,7 @@ def main() -> int:
                              small["gap"]["t_anode_C"], t_gap_inf, abs(t_gap_inf - t_solid), t_solid,
                              budgets["gap"]["g_teg_max_W_K"],
                              budgets["gap"]["footprint_mm2_at_kappa1p4_t3mm"], ratio_gap,
-                             out_b["p_uW"], v_oc_1couple_mv, VIN_CS_MV / v_oc_1couple_mv),
+                             out_b["p_uW"], rel, v_oc_1couple_mv, VIN_CS_MV / v_oc_1couple_mv),
         "caveats": "HYPOTHESIS, not measurement (00_06 0). WHAT THE 1D LADDER CANNOT SEE: "
                    "(1) 3-D SPREADING - a real module is a flat PLATE bolted onto a O11-15 mm cylinder, so "
                    "heat converges into and diverges out of its footprint in 3-D. The 1D ladder cannot "
