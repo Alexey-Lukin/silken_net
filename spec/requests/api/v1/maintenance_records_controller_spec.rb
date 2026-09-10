@@ -835,6 +835,53 @@ describe "PATCH /maintenance_records/:id — переведення типу в 
   end
 end
 
+# [SEC.36-B] `update` пермітить ті самі `maintainable_id`/`ews_alert_id`, що й
+# `create`, а IDOR-гард доти стояв лише в `create`: `set_record` скоупить ЗАПИС,
+# не нову ціль, тож власний запис можна було переприв'язати до чужого дерева
+# (→ EcosystemHealingWorker/slashing на чужому) або до чужої тривоги.
+describe "PATCH /maintenance_records/:id — переприв'язка до чужого (IDOR)" do
+  let!(:plain) do
+    MaintenanceRecord.create!(maintainable: own_tree, user: forester, action_type: :inspection,
+                              performed_at: 1.hour.ago, notes: "Plain inspection filed without any photo.")
+  end
+
+  it "rejects re-pointing the record at another organization's tree" do
+    patch "/maintenance_records/#{plain.id}",
+          params: { maintenance_record: { maintainable_type: "Tree", maintainable_id: other_tree.id } },
+          headers: headers, as: :json
+
+    expect(response).to have_http_status(:not_found)
+    expect(plain.reload.maintainable).to eq(own_tree)
+  end
+
+  it "rejects attaching another organization's ews alert" do
+    foreign_alert = create(:ews_alert, cluster: other_cluster, tree: other_tree)
+
+    patch "/maintenance_records/#{plain.id}",
+          params: { maintenance_record: { ews_alert_id: foreign_alert.id } },
+          headers: headers, as: :json
+
+    expect(response).to have_http_status(:not_found)
+    expect(plain.reload.ews_alert_id).to be_nil
+  end
+
+  # Тип поза {Tree, Gateway} відсікається ДО БД: доти неіснуючий id під чужим
+  # типом давав 422, існуючий — 404, тобто відповідь була оракулом існування
+  # рядка в чужій таблиці. Сусідній пін у `create` (існуючий User) тримає 404 —
+  # цей тримає 404 на НЕІСНУЮЧОМУ, і лише разом вони доводять, що різниці немає.
+  it "answers 404 for a foreign type whether or not the row exists (no existence oracle)" do
+    expect {
+      post "/maintenance_records", headers: idempotent(headers), as: :json, params: {
+        maintenance_record: {
+          maintainable_type: "User", maintainable_id: User.maximum(:id).to_i + 1_000_000,
+          action_type: :inspection, performed_at: Time.current
+        }
+      }
+    }.not_to change(MaintenanceRecord, :count)
+    expect(response).to have_http_status(:not_found)
+  end
+end
+
 # [E.20] Черга «чекає засвідчення» — поверхня, з якої лісник бачить заявки, що ЩЕ
 # можна врятувати підписом. Доти такої вибірки не існувало ніде, і провал тракту
 # адресував лише ops-а числом у DeadSet.

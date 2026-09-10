@@ -4,6 +4,11 @@
 module Api
   module V1
     class MaintenanceRecordsController < BaseController
+      # [SEC.36-B] Типи, що взагалі можуть бути ціллю запису (канон `04_03`: Tree
+      # або Gateway). Перевіряється ДО звернення в БД — дзеркало SQL-рядків
+      # `organization_scoped_records`.
+      MAINTAINABLE_TYPES = %w[Tree Gateway].freeze
+
       include IdempotentRequest
 
       before_action :authorize_forester!
@@ -191,7 +196,14 @@ module Api
 
       # --- РЕДАГУВАННЯ ЗАПИСУ ---
       def update
-        if @record.update(maintenance_params)
+        # [SEC.36-B] Той самий IDOR-гард, що й у `create`: `maintainable_id`/
+        # `ews_alert_id` пермітяться і тут, а `set_record` скоупить ЗАПИС, не нову
+        # ціль — без гарда власний запис можна було переприв'язати до чужого
+        # дерева (→ EcosystemHealingWorker/slashing на чужому) або чужої тривоги.
+        @record.assign_attributes(maintenance_params)
+        verify_maintainable_within_organization!(@record)
+
+        if @record.save
           respond_to do |format|
             format.json do
               render json: {
@@ -353,20 +365,20 @@ module Api
       # ретайрить/оголошує мертвим чуже дерево + каскад slashing) або гасив би
       # чужу ews-тривогу. Дзеркало organization_scoped_records, застосоване ДО save.
       def verify_maintainable_within_organization!(record)
+        # [SEC.36-B] Чужий тип відсікається ДО `record.maintainable`: коли allowlist
+        # стояв ПІСЛЯ нього, пара «422 на неіснуючий id ⊥ 404 на існуючий» була
+        # оракулом існування рядка в будь-якій таблиці, чий клас назвав клієнт.
+        if record.maintainable_type.present? && MAINTAINABLE_TYPES.exclude?(record.maintainable_type)
+          raise ActiveRecord::RecordNotFound
+        end
+
         target = record.maintainable
         # Відсутній/неіснуючий maintainable — НЕ security-кейс: хай модельна
         # валідація (`belongs_to :maintainable` required) поверне 422, не 404.
         # Гард ловить лише ІСНУЮЧИЙ-але-чужий maintainable (cross-tenant IDOR).
         return if target.nil?
 
-        owned =
-          case target
-          when Tree, Gateway
-            acting_organization!.clusters.exists?(id: target.cluster_id)
-          else
-            false
-          end
-        raise ActiveRecord::RecordNotFound unless owned
+        raise ActiveRecord::RecordNotFound unless acting_organization!.clusters.exists?(id: target.cluster_id)
 
         if record.ews_alert_id.present? &&
            !acting_organization!.ews_alerts.exists?(id: record.ews_alert_id)
