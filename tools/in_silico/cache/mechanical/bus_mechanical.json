@@ -12,7 +12,11 @@
   },
   "fatigue_model": {
     "endurance_over_yield": 0.45,
-    "as_printed_derate": 0.5
+    "as_printed_derate": 0.5,
+    "wrought_derate": 1.0,
+    "shipped_branch": "welded",
+    "infinite_life_sf": 2.0,
+    "weld_seam_modelled": false
   },
   "buckling": {
     "p_cr_unsupported_N": 10.3,
@@ -27,92 +31,178 @@
     {
       "alloy": "Ti-15Zr",
       "yield_MPa": 950.0,
-      "endurance_MPa": 213.8,
-      "sf_unsupported": 1.94,
-      "sf_supported": 11.66,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": false
+      "endurance_MPa_printed": 213.8,
+      "sf_unsupported_printed": 1.94,
+      "sf_supported_printed": 11.66,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": false,
+      "endurance_MPa_welded": 427.5,
+      "sf_unsupported_welded": 3.89,
+      "sf_supported_welded": 23.32,
+      "unsupported_infinite_life_welded": true,
+      "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "beta-Ti-13Nb-13Zr",
       "yield_MPa": 900.0,
-      "endurance_MPa": 202.5,
-      "sf_unsupported": 1.84,
-      "sf_supported": 11.04,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": false
+      "endurance_MPa_printed": 202.5,
+      "sf_unsupported_printed": 1.84,
+      "sf_supported_printed": 11.04,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": false,
+      "endurance_MPa_welded": 405.0,
+      "sf_unsupported_welded": 3.68,
+      "sf_supported_welded": 22.09,
+      "unsupported_infinite_life_welded": true,
+      "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "Ti-6Al-4V",
       "yield_MPa": 880.0,
-      "endurance_MPa": 198.0,
-      "sf_unsupported": 1.8,
-      "sf_supported": 10.8,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": false
+      "endurance_MPa_printed": 198.0,
+      "sf_unsupported_printed": 1.8,
+      "sf_supported_printed": 10.8,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": false,
+      "endurance_MPa_welded": 396.0,
+      "sf_unsupported_welded": 3.6,
+      "sf_supported_welded": 21.6,
+      "unsupported_infinite_life_welded": true,
+      "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "Ti-6Al-7Nb",
       "yield_MPa": 850.0,
-      "endurance_MPa": 191.2,
-      "sf_unsupported": 1.74,
-      "sf_supported": 10.43,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": false
+      "endurance_MPa_printed": 191.2,
+      "sf_unsupported_printed": 1.74,
+      "sf_supported_printed": 10.43,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": false,
+      "endurance_MPa_welded": 382.5,
+      "sf_unsupported_welded": 3.48,
+      "sf_supported_welded": 20.86,
+      "unsupported_infinite_life_welded": true,
+      "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "CP-Ti-Gr4",
       "yield_MPa": 480.0,
-      "endurance_MPa": 108.0,
-      "sf_unsupported": 0.98,
-      "sf_supported": 5.89,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": true
+      "endurance_MPa_printed": 108.0,
+      "sf_unsupported_printed": 0.98,
+      "sf_supported_printed": 5.89,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": true,
+      "endurance_MPa_welded": 216.0,
+      "sf_unsupported_welded": 1.96,
+      "sf_supported_welded": 11.78,
+      "unsupported_infinite_life_welded": false,
+      "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "Ta",
       "yield_MPa": 345.0,
-      "endurance_MPa": 77.6,
-      "sf_unsupported": 0.71,
-      "sf_supported": 4.23,
-      "unsupported_infinite_life": false,
-      "unsupported_predicted_failure": true
+      "endurance_MPa_printed": 77.6,
+      "sf_unsupported_printed": 0.71,
+      "sf_supported_printed": 4.23,
+      "unsupported_infinite_life_printed": false,
+      "unsupported_predicted_failure_printed": true,
+      "endurance_MPa_welded": 155.2,
+      "sf_unsupported_welded": 1.41,
+      "sf_supported_welded": 8.47,
+      "unsupported_infinite_life_welded": false,
+      "unsupported_predicted_failure_welded": false
     }
   ],
+  "fabrication_branches": {
+    "printed": {
+      "sf_unsupported_range": [
+        0.71,
+        1.94
+      ],
+      "sf_supported_range": [
+        4.23,
+        11.66
+      ],
+      "unsupported_predicted_failure": [
+        "CP-Ti-Gr4",
+        "Ta"
+      ],
+      "unsupported_marginal": [
+        "Ti-15Zr",
+        "beta-Ti-13Nb-13Zr",
+        "Ti-6Al-4V",
+        "Ti-6Al-7Nb"
+      ],
+      "unsupported_infinite_life": [],
+      "unsupported_infinite_life_for_all": false,
+      "supported_infinite_life_for_all": true
+    },
+    "welded": {
+      "sf_unsupported_range": [
+        1.41,
+        3.89
+      ],
+      "sf_supported_range": [
+        8.47,
+        23.32
+      ],
+      "unsupported_predicted_failure": [],
+      "unsupported_marginal": [
+        "CP-Ti-Gr4",
+        "Ta"
+      ],
+      "unsupported_infinite_life": [
+        "Ti-15Zr",
+        "beta-Ti-13Nb-13Zr",
+        "Ti-6Al-4V",
+        "Ti-6Al-7Nb"
+      ],
+      "unsupported_infinite_life_for_all": false,
+      "supported_infinite_life_for_all": true
+    }
+  },
   "friction_sweep": [
     {
       "mu": 0.2,
       "f_lat_N": 0.2,
       "sigma_unsup_MPa": 73.3,
       "sigma_sup_MPa": 12.2,
-      "sf_unsup_4v": 2.7,
-      "sf_sup_4v": 16.2
+      "sf_unsup_4v_printed": 2.7,
+      "sf_sup_4v_printed": 16.2,
+      "sf_unsup_4v_welded": 5.4,
+      "sf_sup_4v_welded": 32.4
     },
     {
       "mu": 0.3,
       "f_lat_N": 0.3,
       "sigma_unsup_MPa": 110.0,
       "sigma_sup_MPa": 18.3,
-      "sf_unsup_4v": 1.8,
-      "sf_sup_4v": 10.8
+      "sf_unsup_4v_printed": 1.8,
+      "sf_sup_4v_printed": 10.8,
+      "sf_unsup_4v_welded": 3.6,
+      "sf_sup_4v_welded": 21.6
     },
     {
       "mu": 0.4,
       "f_lat_N": 0.4,
       "sigma_unsup_MPa": 146.7,
       "sigma_sup_MPa": 24.4,
-      "sf_unsup_4v": 1.35,
-      "sf_sup_4v": 8.1
+      "sf_unsup_4v_printed": 1.35,
+      "sf_sup_4v_printed": 8.1,
+      "sf_unsup_4v_welded": 2.7,
+      "sf_sup_4v_welded": 16.2
     },
     {
       "mu": 0.5,
       "f_lat_N": 0.5,
       "sigma_unsup_MPa": 183.3,
       "sigma_sup_MPa": 30.6,
-      "sf_unsup_4v": 1.08,
-      "sf_sup_4v": 6.48
+      "sf_unsup_4v_printed": 1.08,
+      "sf_sup_4v_printed": 6.48,
+      "sf_unsup_4v_welded": 2.16,
+      "sf_sup_4v_welded": 12.96
     }
   ],
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4): buckling non-issue (SF 10x); the bore liner doubles as lateral support -> fatigue SF 4.2-11.7x (infinite life, all alloys). UNSUPPORTED, NOT ONE of the six alloys reaches infinite life: SF 0.7-1.9x, predicted FAILURE for CP-Ti-Gr4, Ta and marginal for the rest. So lateral support is not a soft-alloy mitigation, it is a REQUIREMENT for every candidate \u2014 which prices the open HW.34 lining verdict: a film that does not touch the rod insulates without supporting. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal \u2192 leading HW.24 candidates win on both.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust."
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 10x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.4-3.9x): dropping the as-printed derate lifted CP-Ti-Gr4, Ta OUT of predicted failure but NOT over the SF-2 line. So the liner's SUPPORT role is NARROWED by the fabrication verdict, not retired - which is the measurement the open HW.34 lining verdict was missing. On the superseded PRINTED branch not one of the six cleared it. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. NO WELD SEAM is modelled: this is a homogeneous cantilever, while the ratified welded rod puts a heat-affected zone at the root, i.e. at peak bending moment. The wrought derate describes the WIRE and says nothing about the JOINT."
 }

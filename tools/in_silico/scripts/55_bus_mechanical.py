@@ -26,6 +26,18 @@ fatigue-fix are ONE design item. This script quantifies "supported vs unsupporte
 is what makes fatigue comfortable for every alloy (and that the weaker bake-off alloys — Ta, CP-Ti —
 have the least margin, the same ranking as the thermal side).
 
+FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT, not a parameter.
+  ⚖️ 2026-09-10 (00_07 HW.34) ratified the rod as a WELDED cold-drawn wire, so the as-built knockdown
+  `AS_PRINTED_DERATE` no longer applies to the shipped part. Both columns are printed side by side —
+  `printed` (superseded) and `welded` (shipped) — because the fabrication choice is what moves the
+  still-open LINING verdict, and a reader handed one column cannot see that it moved.
+  ⛔ THE MODEL HAS NO WELD SEAM. It is a homogeneous cantilever, while the ratified rod carries a
+  heat-affected zone in the ROOT — exactly where the bending moment peaks. So the doubled SF describes
+  the WIRE and says NOTHING about the JOINT; the seam is a separate open question (00_07 HW.34), and
+  quoting a welded-column SF as if it covered the weld is the error this note exists to prevent.
+  ⚠️ Likewise absent from canon: as-printed `Sa` and the printed diameter tolerance — `DMLS Ti ±0.3`
+  is an AXIAL Z-stack contribution, not a diametral one.
+
 Per-alloy endurance is keyed to yield (σ_e ≈ k·σ_y) from lib ALLOY_PROPERTIES — ties HW.34 ↔ HW.24.
 No FEA — slender-beam closed form (Euler buckling + cantilever bending + S-N endurance ratio).
 """
@@ -63,6 +75,14 @@ E_TI = 110e9          # Pa — Ti-6Al-4V Young's modulus (β-Ti lower, but E bar
 # (HIP + machining recovers most of it — the bus tip is gold-plated/finished anyway). Conservative.
 ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio (σ_e/σ_y ≈ 0.4-0.5)
 AS_PRINTED_DERATE = 0.5       # SLM as-built knockdown (rough surface + sub-surface porosity)
+WROUGHT_DERATE = 1.0          # cold-drawn wire carries no as-built knockdown at all
+# ⚖️ HW.34 ratified 2026-09-10: the rod is a WELDED cold-drawn wire, so `welded` is the SHIPPED
+# branch and `printed` is kept only to show what the fabrication choice bought. Both columns are
+# emitted on purpose — the fabrication choice moves the LINER verdict, and a reader given one
+# column cannot see that. [00_07 HW.34]
+FAB_BRANCHES = (("printed", AS_PRINTED_DERATE), ("welded", WROUGHT_DERATE))
+SHIPPED_BRANCH = "welded"
+INFINITE_LIFE_SF = 2.0        # the SF line this script calls "infinite life"
 
 MM_M = 1e-3
 
@@ -86,16 +106,22 @@ def bending_stress_MPa(force_lat_N: float, length_mm: float) -> float:
     return force_lat_N * (length_mm * MM_M) * c / i_area / 1e6
 
 
-def endurance_MPa(yield_MPa: float) -> float:
-    return ENDURANCE_OVER_YIELD * AS_PRINTED_DERATE * yield_MPa
+def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
+    """σ_e ≈ fatigue-ratio × yield, knocked down only if the rod is AS-PRINTED.
+
+    `derate` is the fabrication branch, not a tuning knob: 0.5 for an SLM as-built surface,
+    1.0 for cold-drawn wire. ⛔ It describes the WIRE and says nothing about the WELD.
+    """
+    return ENDURANCE_OVER_YIELD * derate * yield_MPa
 
 
 def main() -> int:
     banner("HW.34 — Bus rod mechanical check (buckling + sway fatigue)")
     print(f"  Rod Ø{D_BUS:.1f} mm; free length unsupported {L_FREE_UNSUP:.0f} mm (no liner) vs "
           f"supported {L_FREE_SUP:.0f} mm (liner = the insulation, HW.34 sub-2)")
-    print(f"  Pogo {F_POGO_N:.1f} N axial; cyclic lateral drag = µ·F_pogo (µ={MU_CONTACT:.1f}); "
-          f"σ_e ≈ {ENDURANCE_OVER_YIELD:.2f}·{AS_PRINTED_DERATE:.2f}·σ_y (as-printed)")
+    print(f"  Pogo {F_POGO_N:.1f} N axial; cyclic lateral drag = µ·F_pogo (µ={MU_CONTACT:.1f})")
+    print(f"  σ_e ≈ {ENDURANCE_OVER_YIELD:.2f}·derate·σ_y — derate {AS_PRINTED_DERATE:.2f} printed "
+          f"vs {WROUGHT_DERATE:.2f} welded (drawn wire); SHIPPED = {SHIPPED_BRANCH}, weld seam NOT modelled")
 
     # ── 1. Buckling under the pogo axial force ──
     banner("Buckling (pogo axial force on a slender rod)")
@@ -111,70 +137,134 @@ def main() -> int:
     sig_sup = bending_stress_MPa(f_lat, L_FREE_SUP)
     print(f"  Cyclic lateral drag F = µ·F_pogo = {f_lat:.2f} N → root stress: "
           f"unsupported {sig_unsup:.1f} MPa · supported {sig_sup:.1f} MPa\n")
-    print(f"  {'alloy (= bus, monolithic)':<24s} {'σ_y':>5s} {'σ_e':>5s} {'SF unsup':>9s} {'SF sup':>8s} {'unsup life':>11s}")
-    print(f"  {'-'*74}")
+    print(f"  {'alloy (= bus, monolithic)':<24s} {'σ_y':>5s} | {'σ_e pr':>6s} {'SFu pr':>7s} "
+          f"{'life pr':>10s} | {'σ_e wl':>6s} {'SFu wl':>7s} {'life wl':>10s}")
+    print(f"  {'-' * 96}")
+
+    def life_label(sf: float) -> str:
+        # THREE tiers, not two: below SF 1.0 the rod is not "marginal", it is predicted to fail.
+        # A two-tier label printed "marginal" for SF 0.71 — a word with no measurer behind it.
+        if sf >= INFINITE_LIFE_SF:
+            return "∞ (>SF 2)"
+        return "⚠ marginal" if sf >= 1.0 else "✗ FAILS"
+
     alloy_rows = []
     for name, props in sorted(ALLOY_PROPERTIES.items(), key=lambda kv: -kv[1]["yield_MPa"]):
         sy = props["yield_MPa"]
-        se = endurance_MPa(sy)
-        sf_unsup = se / sig_unsup
-        sf_sup = se / sig_sup
-        # THREE tiers, not two: below SF 1.0 the rod is not "marginal", it is predicted to fail.
-        # A two-tier label printed "marginal" for SF 0.71 — a word with no measurer behind it.
-        life = "∞ (>SF 2)" if sf_unsup >= 2.0 else ("⚠ marginal" if sf_unsup >= 1.0 else "✗ FAILS")
-        print(f"  {name:<24s} {sy:>5.0f} {se:>5.0f} {sf_unsup:>8.1f}× {sf_sup:>7.1f}× {life:>11s}")
-        alloy_rows.append({"alloy": name, "yield_MPa": sy, "endurance_MPa": round(se, 1),
-                           "sf_unsupported": round(sf_unsup, 2), "sf_supported": round(sf_sup, 2),
-                           "unsupported_infinite_life": bool(sf_unsup >= 2.0),
-                           "unsupported_predicted_failure": bool(sf_unsup < 1.0)})
+        row = {"alloy": name, "yield_MPa": sy}
+        for branch, derate in FAB_BRANCHES:
+            se = endurance_MPa(sy, derate)
+            row[f"endurance_MPa_{branch}"] = round(se, 1)
+            row[f"sf_unsupported_{branch}"] = round(se / sig_unsup, 2)
+            row[f"sf_supported_{branch}"] = round(se / sig_sup, 2)
+            row[f"unsupported_infinite_life_{branch}"] = bool(se / sig_unsup >= INFINITE_LIFE_SF)
+            row[f"unsupported_predicted_failure_{branch}"] = bool(se / sig_unsup < 1.0)
+        # ⛔ TWO decimals, not one: CP-Ti lands at 1.96 and rounds to "2.0" at one decimal, i.e. the
+        # cell would print the threshold itself while its own label says "marginal" — a table
+        # contradicting itself in adjacent columns, and the reader would trust the number.
+        print(f"  {name:<24s} {sy:>5.0f} | {row['endurance_MPa_printed']:>6.0f} "
+              f"{row['sf_unsupported_printed']:>6.2f}× {life_label(row['sf_unsupported_printed']):>10s} | "
+              f"{row['endurance_MPa_welded']:>6.0f} {row['sf_unsupported_welded']:>6.2f}× "
+              f"{life_label(row['sf_unsupported_welded']):>10s}")
+        alloy_rows.append(row)
+
     # Everything below is DERIVED from alloy_rows. A hardcoded range here mirrored the numbers above and
     # drifted the moment the diameter moved — the table said one thing and its own summary another.
-    sup_lo, sup_hi = min(r["sf_supported"] for r in alloy_rows), max(r["sf_supported"] for r in alloy_rows)
-    uns_lo, uns_hi = min(r["sf_unsupported"] for r in alloy_rows), max(r["sf_unsupported"] for r in alloy_rows)
-    failing = [r["alloy"] for r in alloy_rows if r["unsupported_predicted_failure"]]
-    marginal = [r["alloy"] for r in alloy_rows if not r["unsupported_predicted_failure"]
-                and not r["unsupported_infinite_life"]]
-    sup_all_ok = all(r["sf_supported"] >= 2.0 for r in alloy_rows)
-    print(f"\n  → SUPPORTED (liner): SF {sup_lo:.1f}-{sup_hi:.1f}× — "
-          f"{'infinite life for EVERY alloy' if sup_all_ok else 'NOT infinite life for every alloy'}.")
-    print(f"    UNSUPPORTED: SF {uns_lo:.1f}-{uns_hi:.1f}× — predicted FAILURE for "
-          f"{', '.join(failing) if failing else 'none'}; marginal for "
-          f"{', '.join(marginal) if marginal else 'none'}.")
+    def spread(key: str) -> tuple[float, float]:
+        vals = [r[key] for r in alloy_rows]
+        return min(vals), max(vals)
+
+    branch_summary = {}
+    for branch, _ in FAB_BRANCHES:
+        uns_lo, uns_hi = spread(f"sf_unsupported_{branch}")
+        sup_lo_b, sup_hi_b = spread(f"sf_supported_{branch}")
+        failing_b = [r["alloy"] for r in alloy_rows if r[f"unsupported_predicted_failure_{branch}"]]
+        marginal_b = [r["alloy"] for r in alloy_rows
+                      if not r[f"unsupported_predicted_failure_{branch}"]
+                      and not r[f"unsupported_infinite_life_{branch}"]]
+        infinite_b = [r["alloy"] for r in alloy_rows if r[f"unsupported_infinite_life_{branch}"]]
+        branch_summary[branch] = {
+            "sf_unsupported_range": [uns_lo, uns_hi], "sf_supported_range": [sup_lo_b, sup_hi_b],
+            "unsupported_predicted_failure": failing_b, "unsupported_marginal": marginal_b,
+            "unsupported_infinite_life": infinite_b,
+            "unsupported_infinite_life_for_all": len(infinite_b) == len(alloy_rows),
+            "supported_infinite_life_for_all": all(r[f"sf_supported_{branch}"] >= INFINITE_LIFE_SF
+                                                   for r in alloy_rows),
+        }
+    shipped = branch_summary[SHIPPED_BRANCH]
+    sup_lo, sup_hi = shipped["sf_supported_range"]
+    uns_lo, uns_hi = shipped["sf_unsupported_range"]
+    failing = shipped["unsupported_predicted_failure"]
+    marginal = shipped["unsupported_marginal"]
+
+    for branch, _ in FAB_BRANCHES:
+        b = branch_summary[branch]
+        tag = " (SHIPPED, ⚖️ 2026-09-10)" if branch == SHIPPED_BRANCH else " (superseded fabrication)"
+        print(f"\n  → {branch.upper()}{tag}")
+        print(f"      SUPPORTED (liner): SF {b['sf_supported_range'][0]:.1f}-{b['sf_supported_range'][1]:.1f}× — "
+              f"{'infinite life for EVERY alloy' if b['supported_infinite_life_for_all'] else 'NOT infinite life for every alloy'}.")
+        print(f"      UNSUPPORTED: SF {b['sf_unsupported_range'][0]:.1f}-{b['sf_unsupported_range'][1]:.1f}× — "
+              f"infinite life for {len(b['unsupported_infinite_life'])}/{len(alloy_rows)}; "
+              f"predicted FAILURE for {', '.join(b['unsupported_predicted_failure']) or 'none'}; "
+              f"marginal for {', '.join(b['unsupported_marginal']) or 'none'}.")
     print("    Same ranking as the thermal side → the leading bake-off candidates win on both.")
 
     # ── 3. Robustness: sweep the friction coefficient (the cyclic-load assumption) ──
     banner("Robustness — friction-coefficient sweep (the cyclic-drag assumption)")
     sy_4v = ALLOY_PROPERTIES["Ti-6Al-4V"]["yield_MPa"]
-    se_4v = endurance_MPa(sy_4v)
-    print(f"  {'µ':>5s} {'F_lat (N)':>10s} {'σ unsup':>9s} {'σ sup':>8s} {'SF unsup(4V)':>13s} {'SF sup(4V)':>11s}")
-    print(f"  {'-'*60}")
+    se_4v = {b: endurance_MPa(sy_4v, d) for b, d in FAB_BRANCHES}
+    print(f"  {'µ':>5s} {'F_lat (N)':>10s} {'σ unsup':>9s} {'σ sup':>8s} | "
+          f"{'SFu pr':>7s} {'SFs pr':>7s} | {'SFu wl':>7s} {'SFs wl':>7s}   (4V)")
+    print(f"  {'-' * 82}")
     mu_rows = []
     for mu in MU_SWEEP:
         fl = mu * F_POGO_N
         su = bending_stress_MPa(fl, L_FREE_UNSUP)
         ss = bending_stress_MPa(fl, L_FREE_SUP)
-        print(f"  {mu:>5.1f} {fl:>10.2f} {su:>7.1f} MPa {ss:>5.1f} MPa {se_4v / su:>11.1f}× {se_4v / ss:>10.1f}×")
-        mu_rows.append({"mu": mu, "f_lat_N": round(fl, 3), "sigma_unsup_MPa": round(su, 1),
-                        "sigma_sup_MPa": round(ss, 1), "sf_unsup_4v": round(se_4v / su, 2),
-                        "sf_sup_4v": round(se_4v / ss, 2)})
-    worst_sup_4v = min(r["sf_sup_4v"] for r in mu_rows)
+        row = {"mu": mu, "f_lat_N": round(fl, 3), "sigma_unsup_MPa": round(su, 1),
+               "sigma_sup_MPa": round(ss, 1)}
+        for branch, _ in FAB_BRANCHES:
+            row[f"sf_unsup_4v_{branch}"] = round(se_4v[branch] / su, 2)
+            row[f"sf_sup_4v_{branch}"] = round(se_4v[branch] / ss, 2)
+        print(f"  {mu:>5.1f} {fl:>10.2f} {su:>7.1f} MPa {ss:>5.1f} MPa | "
+              f"{row['sf_unsup_4v_printed']:>6.1f}× {row['sf_sup_4v_printed']:>6.1f}× | "
+              f"{row['sf_unsup_4v_welded']:>6.1f}× {row['sf_sup_4v_welded']:>6.1f}×")
+        mu_rows.append(row)
     worst_mu = max(MU_SWEEP)
-    print(f"  → Even at µ={worst_mu:.1f} the SUPPORTED rod stays SF {worst_sup_4v:.1f}× (4V) — "
-          f"{'above' if worst_sup_4v >= 2.0 else 'BELOW'} the SF-2 line. The liner is the robust")
-    print("    mitigation; bare-cantilever margin erodes with µ → don't run the bus unsupported.")
+    for branch, _ in FAB_BRANCHES:
+        worst_sup = min(r[f"sf_sup_4v_{branch}"] for r in mu_rows)
+        worst_uns = min(r[f"sf_unsup_4v_{branch}"] for r in mu_rows)
+        print(f"  → {branch}: at µ={worst_mu:.1f} the SUPPORTED rod holds SF {worst_sup:.1f}× (4V, "
+              f"{'above' if worst_sup >= INFINITE_LIFE_SF else 'BELOW'} the SF-2 line); "
+              f"BARE it falls to {worst_uns:.1f}× "
+              f"({'still above' if worst_uns >= INFINITE_LIFE_SF else 'BELOW'}).")
+    print("    The liner is the robust mitigation in BOTH branches; bare-cantilever margin erodes with µ.")
 
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
     print(f"  1. Buckling: non-issue (P_cr {p_cr_unsup:.0f} N ≫ 1 N pogo, SF {p_cr_unsup / F_POGO_N:.0f}× even unsupported).")
-    print("  2. Sway fatigue: the LINER (= the insulation, HW.34 sub-2) is load-bearing — supported gives")
-    print(f"     SF {sup_lo:.1f}-{sup_hi:.1f}× (infinite life, all alloys); unsupported FAILS for "
-          f"{', '.join(failing) if failing else 'no alloy'}.")
-    print("  3. So the SAME part fixes three things at once — short-circuit isolation, lateral support,")
-    print("     and fatigue. Monolithic is mechanically sound WITH the bore liner; do NOT run it bare.")
-    print("  4. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
+    print(f"  2. Sway fatigue on the SHIPPED ({SHIPPED_BRANCH}) rod: supported SF {sup_lo:.1f}-{sup_hi:.1f}×; "
+          f"unsupported FAILS for {', '.join(failing) or 'no alloy'}.")
+    # ⛔ The sentence below is DERIVED, never typed: a hand-written "all alloys clear it" is exactly the
+    # claim that goes stale the moment an input moves, and this file's own inputs just moved.
+    n_inf = len(shipped["unsupported_infinite_life"])
+    clears_all = shipped["unsupported_infinite_life_for_all"]
+    print(f"  3. ⚖️ ANSWER TO THE OPEN LINING VERDICT — bare, the drawn wire "
+          f"{'clears EVERY alloy' if clears_all else 'does NOT clear every alloy'}:")
+    print(f"     unsupported infinite life is reached by {n_inf}/{len(alloy_rows)} "
+          f"({', '.join(shipped['unsupported_infinite_life']) or 'none'}); still short of the SF-2 line: "
+          f"{', '.join(marginal) or 'none'}; predicted failure: {', '.join(failing) or 'none'}.")
+    print("     Dropping the as-printed derate lifted the soft alloys OUT of predicted failure; whether"
+          if not clears_all else "     Every alloy clears it bare, so the support motive is spent;")
+    print("     it also carried them over the infinite-life line is what the two lists above answer."
+          if not clears_all else "     the liner's remaining ground is insulation alone.")
+    print("  4. ⛔ And the ×2 belongs to the WIRE, never to the JOINT: this model is a homogeneous")
+    print("     cantilever with NO WELD SEAM, while the weld sits in the root — the point of maximum")
+    print("     bending moment. The seam is unmodelled here and must be judged on its own (00_07 HW.34).")
+    print("  5. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
-    print("  5. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
+    print("  6. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
     print("     sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported is robust.")
 
     out = {
@@ -182,31 +272,44 @@ def main() -> int:
                   "+ S-N endurance ratio (σ_e ≈ k·σ_y, as-printed derate). No FEA.",
         "geometry_mm": {"bus_dia": D_BUS, "free_len_unsupported": L_FREE_UNSUP, "free_len_supported": L_FREE_SUP},
         "loads": {"pogo_axial_N": F_POGO_N, "friction_mu": MU_CONTACT, "lateral_drag_N": MU_CONTACT * F_POGO_N},
-        "fatigue_model": {"endurance_over_yield": ENDURANCE_OVER_YIELD, "as_printed_derate": AS_PRINTED_DERATE},
+        "fatigue_model": {"endurance_over_yield": ENDURANCE_OVER_YIELD,
+                          "as_printed_derate": AS_PRINTED_DERATE, "wrought_derate": WROUGHT_DERATE,
+                          "shipped_branch": SHIPPED_BRANCH, "infinite_life_sf": INFINITE_LIFE_SF,
+                          "weld_seam_modelled": False},
         "buckling": {"p_cr_unsupported_N": round(euler_buckling_N(L_FREE_UNSUP), 1),
                      "p_cr_supported_N": round(euler_buckling_N(L_FREE_SUP), 1),
                      "sf_unsupported": round(euler_buckling_N(L_FREE_UNSUP) / F_POGO_N, 1)},
         "bending_stress_MPa": {"unsupported": round(sig_unsup, 1), "supported": round(sig_sup, 1)},
         "per_alloy_fatigue": alloy_rows,
+        "fabrication_branches": branch_summary,
         "friction_sweep": mu_rows,
-        "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4): buckling non-issue (SF "
-                    f"{p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> fatigue SF "
-                    f"{sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys). UNSUPPORTED, NOT ONE of the six "
-                    f"alloys reaches infinite life: SF {uns_lo:.1f}-{uns_hi:.1f}x, predicted FAILURE for "
-                    f"{', '.join(failing)} and marginal for the rest. So lateral support is not a "
-                    "soft-alloy mitigation, it is a REQUIREMENT for every candidate — which prices the open "
-                    "HW.34 lining verdict: a film that does not touch the rod insulates without supporting. "
+        "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4), SHIPPED fabrication = "
+                    f"{SHIPPED_BRANCH} (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue "
+                    f"(SF {p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> "
+                    f"fatigue SF {sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys). BARE, the drawn "
+                    f"wire reaches infinite life for {len(shipped['unsupported_infinite_life'])} of "
+                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x): dropping the as-printed "
+                    f"derate lifted {', '.join(marginal) or 'the soft alloys'} OUT of predicted failure but "
+                    "NOT over the SF-2 line. So the liner's SUPPORT role is NARROWED by the fabrication "
+                    "verdict, not retired - which is the measurement the open HW.34 lining verdict was "
+                    "missing. On the superseded PRINTED branch not one of the six cleared it. "
                     "Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). "
                     "Per-alloy margin tracks yield = same ranking as "
-                    "thermal → leading HW.24 candidates win on both."),
+                    "thermal -> leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
-                   "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust.",
+                   "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. "
+                   "NO WELD SEAM is modelled: this is a homogeneous cantilever, while the ratified welded "
+                   "rod puts a heat-affected zone at the root, i.e. at peak bending moment. The wrought "
+                   "derate describes the WIRE and says nothing about the JOINT.",
     }
     json_path = OUT_DIR / "bus_mechanical.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))
     banner(f"✅ Saved {json_path.relative_to(REPO_ROOT)}")
-    # gate: supported rod must clear infinite life for the baseline alloy (sanity, not a product pass/fail)
-    return 0 if endurance_MPa(sy_4v) / sig_sup >= 2.0 else 1
+    # gate: the SUPPORTED rod must clear infinite life for the baseline alloy on the SHIPPED branch
+    # (sanity, not a product pass/fail). ⛔ Declared ceiling: it judges one alloy in one branch, so it
+    # stays green while any bare-rod or weld-seam question is open — those are verdicts, not gates.
+    shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
+    return 0 if endurance_MPa(sy_4v, shipped_derate) / sig_sup >= INFINITE_LIFE_SF else 1
 
 
 if __name__ == "__main__":

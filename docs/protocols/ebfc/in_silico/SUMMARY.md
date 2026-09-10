@@ -385,14 +385,19 @@ free at µA (Ti 11.3 µV at 100 µA, 4×10⁴ below the 500 mV reference).
 (`mechanical/anchor_thermal_bridge.json`)
 > ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — the numbers above are the new ones. What the diameter move cost on THIS side: the bus area shrinks ×1.69 (A ∝ d²), so the bridge looks *better*, i.e. the old figures were conservative and both load-bearing verdicts survived (Cu ×24.3 → ×18.2 vs no-bus, Cu/Ti ratio 9.57 → 9.31; monolithic Ti −1.43 → −0.70 °C). Exactly **one** cached boolean flipped — `cell_freeze_risk["316SS"]` true → false (−3.16 → −1.94 °C against the −2.0 gate) — and 316SS is the superseded pre-monolithic alternative, not a bake-off candidate; all six HW.24 alloys kept their verdicts. The one **anti-conservative** axis was electrical (R ∝ 1/A → IR drop was understated ×1.69, Ti 6.7 → 11.3 µV at 100 µA). ⛔ The direction here is OPPOSITE to script 55 below — never read one diameter caveat as covering both.
 
-**Mechanical (script 55)** — slender-beam closed form, at the canon rod **Ø1.0**. Buckling SF **10×**
-(1 N pogo) even unsupported → still a non-issue. Sway fatigue: the bore **liner** (= the short-circuit
-insulation) doubles as lateral support → SF **4.2–11.7×** (infinite life, all alloys). 🔴 **Bare
-cantilever: NOT ONE of the six alloys reaches infinite life** — SF 0.71–1.94×, a predicted fatigue
-**failure** for Ta (0.71) and CP-Ti (0.98) and merely marginal for the four alloyed Ti (1.74–1.94, all
-below the SF-2 line). Per-alloy margin tracks yield = SAME ranking as the thermal side → leading HW.24
-candidates win on both. (`mechanical/bus_mechanical.json`)
-> ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — and here the diameter move changed the CONCLUSION, not just the digits (σ ∝ 1/d³, SFs fall ×2.2). The unsupported branch did not thin out, it crossed the line: Ta 1.55 → **0.71**, CP-Ti 2.16 → **0.98**, and the four alloyed Ti dropped 3.8–4.3 → **1.74–1.94**, i.e. `unsupported_infinite_life` went **true → false for all six**. 🔑 **So lateral support is not a soft-alloy mitigation, it is a requirement for every candidate** — which is the input the open HW.34 lining verdict was missing: a film that does not touch the rod (Parylene ~10 µm, anodised TiO₂ ≤10 µm in a Ø1.3 channel) insulates without supporting, and the model has no liner stiffness to give it credit for.
+**Mechanical (script 55)** — slender-beam closed form, at the canon rod **Ø1.0**, and since the
+fabrication verdict it reports **two branches**: `printed` (superseded) and `welded` (SHIPPED, ⚖️
+2026-09-10, cold-drawn wire, no as-built knockdown). Buckling SF **10×** (1 N pogo) even unsupported →
+still a non-issue in both. Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as
+lateral support → infinite life for **every** alloy in both branches (SF 4.2–11.7× printed, 8.5–23.3×
+welded). 🔴 **Bare, the fabrication choice decides — and it decides two different verdicts.** Printed:
+NOT ONE of the six reaches infinite life (SF 0.71–1.94×), a predicted fatigue **failure** for Ta (0.71)
+and CP-Ti (0.98). Welded: every SF doubles, so predicted failures drop to **none** — but infinite life
+is reached by only **4 of 6** (SF 1.41–3.89×), with Ta (**1.41**) and CP-Ti (**1.96**) still under the
+SF-2 line. Per-alloy margin tracks yield = SAME ranking as the thermal side → leading HW.24 candidates
+win on both. (`mechanical/bus_mechanical.json`)
+> ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — and here the diameter move changed the CONCLUSION, not just the digits (σ ∝ 1/d³, SFs fall ×2.2). The unsupported branch did not thin out, it crossed the line: Ta 1.55 → **0.71**, CP-Ti 2.16 → **0.98**, and the four alloyed Ti dropped 3.8–4.3 → **1.74–1.94**, i.e. `unsupported_infinite_life` went **true → false for all six** (⚠️ that per-alloy boolean is now branch-suffixed — `unsupported_infinite_life_printed` / `_welded`; the bare name survives in `fabrication_branches` but as a LIST of alloys, so it resolves and no longer means the same thing). 🔑 **So lateral support is not a soft-alloy mitigation, it is a requirement for every candidate** — which is the input the open HW.34 lining verdict was missing: a film that does not touch the rod (Parylene ~10 µm, anodised TiO₂ ≤10 µm in a Ø1.3 channel) insulates without supporting, and the model has no liner stiffness to give it credit for.
+> ⚖️ **Fabrication branch added 2026-09-11** (`00_07` HW.34) — the welded verdict re-opened the lining one, so the script now emits both columns. **The re-run narrowed the support motive without retiring it:** dropping the as-printed derate lifts Ta and CP-Ti out of predicted failure (0.71→1.41, 0.98→1.96) and **not** over the infinite-life line, so bare-rod infinite life goes 0/6 → **4/6**, not 6/6. 🔴 **The tracker verdict's stated ground said "all six" and its own adjacent table did not** — the arithmetic there was right (every SF doubles) and only the conclusion was wrong; corrected in `00_07`. ⛔ And the doubling belongs to the WIRE: the model is a homogeneous cantilever with **no weld seam**, while the ratified joint sits in the root, at peak bending moment — `fatigue_model.weld_seam_modelled: false` says so in the cache itself.
 
 **Verdict** — 🟢 Monolithic bus (= anode alloy, HW.24-gated) resolves the Cu/Ti dichotomy: thermal
 bridge minimized + Ti↔Cu galvanic joint eliminated + mechanically sound **with the bore liner**.
