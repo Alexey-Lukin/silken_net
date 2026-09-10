@@ -135,18 +135,102 @@ public class TopologyCrossChecksTests
         Assert.Null(r.MeanTortuosity);
     }
 
-    // --- Print fidelity: a comfortably-thick-walled small anchor should read the same both ways ---
+    // --- As-printed: the morphological opening at the SLM wall floor ---
 
     [Fact]
     public void Print_Fidelity_Agrees_For_A_Wall_Comfortably_Above_The_Slm_Floor()
     {
         // period 2.5 mm, default wallParam 1.0 ⇒ wall well above the 0.2 mm SLM floor (canon: wall ≈
-        // 0.1·period ≈ 0.25 mm) — both resolutions should see the SAME topology class.
+        // 0.1·period ≈ 0.25 mm) — the opening must take almost nothing and leave the topology intact.
         AnchorCem cem = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
         var r = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
 
-        Assert.True(r.Intent.PorePercolates[2], "intent-resolution sample must percolate axially");
-        Assert.True(r.AsPrinted.PorePercolates[2], "as-printed-resolution sample must percolate axially");
+        Assert.Equal(0.05f, r.StepMm);                              // min(2.5/24, 0.2/4)
+        Assert.Equal(TopologyCrossChecks.SlmMinWallMm, r.FloorMm);
+        Assert.True(r.Intent.PorePercolates[2], "intent sample must percolate axially");
+        Assert.True(r.AsPrinted.PorePercolates[2], "as-printed sample must percolate axially");
         Assert.True(r.TopologyMatches, $"intent clusters={r.Intent.PoreClusterCount} vs as-printed clusters={r.AsPrinted.PoreClusterCount}");
+
+        // MEASURED 2026-09-10: 0.00727. The band is ±~35 % around that measurement, not a round guess —
+        // wide enough to absorb a 1-ULP float-trig difference between the macOS ARM64 dev box and the
+        // Linux x64 CI runner flipping a handful of boundary cells, tight enough that a broken erosion
+        // (which takes tens of percent — see the shipped-SKU pin below) reds it immediately.
+        Assert.InRange(r.SubFloorSolidFraction, 0.005, 0.010);
+    }
+
+    [Fact]
+    public void Opening_Deletes_A_Sub_Floor_Wall_And_Keeps_A_Slab_Thicker_Than_The_Ball()
+    {
+        // Ball radius 0.2 mm on a 0.1 mm grid ⇒ r = 2 cells, so the opening keeps a slab only at
+        // ≥ 2r+1 = 5 cells. That quantisation IS the declared ceiling of the model (whole cells, ±1),
+        // so all three cases are pinned: 1 cell and 2r cells go, 2r+1 cells survives untouched.
+        const float fStep = 0.1f, fRadius = 0.2f;
+
+        (Connectivity.Grid one, double dSubOne) = TopologyCrossChecks.OpenSolid(SlabGrid(5, 5), fRadius);
+        Assert.Equal(0, CountSolid(one));
+        Assert.Equal(1.0, dSubOne, 9);
+
+        (Connectivity.Grid four, double dSubFour) = TopologyCrossChecks.OpenSolid(SlabGrid(3, 6), fRadius);   // 4 layers = 2r
+        Assert.Equal(0, CountSolid(four));
+        Assert.Equal(1.0, dSubFour, 9);
+
+        (Connectivity.Grid five, double dSubFive) = TopologyCrossChecks.OpenSolid(SlabGrid(3, 7), fRadius);
+        Assert.Equal(5 * 5 * 5, CountSolid(five));   // 5 solid layers × the full 5×5 cross-section
+        Assert.Equal(0.0, dSubFive, 9);
+
+        // An 11×5×5 pore box with the X-layers [iLo, iHi] made Solid.
+        static Connectivity.Grid SlabGrid(int iLo, int iHi)
+        {
+            const int nx = 11, ny = 5, nz = 5;
+            var cells = new Phase[nx * ny * nz];
+            Array.Fill(cells, Phase.Pore);
+            for (int i = iLo; i <= iHi; i++)
+                for (int j = 0; j < ny; j++)
+                    for (int k = 0; k < nz; k++)
+                        cells[(((i * ny) + j) * nz) + k] = Phase.Solid;
+            return new Connectivity.Grid(cells, nx, ny, nz, fStep);
+        }
+
+        static int CountSolid(Connectivity.Grid g)
+        {
+            int n = 0;
+            foreach (Phase p in g.Cells) if (p == Phase.Solid) n++;
+            return n;
+        }
+    }
+
+    // What is pinned here is an ORDERING the physics predicts, never a threshold: in a radially graded
+    // sheet gyroid the RIM cell is the finest, so the rim wall (≈ rim period / 10, 01_01 §5.5) is the
+    // thinnest metal in the part, and the share the print floor deletes must fall monotonically as that
+    // rim wall grows. Measured 2026-09-10 (grid 0.050 mm, floor 200 µm): stepped (rim 1.3 mm ⇒ wall
+    // ≈0.13, BELOW the floor) 71.8 % > broadleaf (1.6 ⇒ 0.16, below) 49.7 % > pine (2.0) 24.4 % >
+    // mangrove (2.2) 20.5 % > oak (2.8 ⇒ 0.28, well above) 4.3 % > tropical (3.2 ⇒ 0.32) 1.5 %.
+    // graded_porosity is EXCLUDED by construction, not by hand: its wall BAND is graded too (1.3 → 0.8),
+    // so the rim period alone does not predict where it lands (measured 12.5 %, between mangrove and
+    // oak) — the filter below drops exactly the SKUs whose porosity axis moves.
+    [Fact]
+    public void As_Printed_Sub_Floor_Share_Falls_As_The_Rim_Wall_Thickens_On_The_Shipped_Cems()
+    {
+        var aByRim = CemFixtures.AnchorFiles()
+            .Select(CemFixtures.Anchor)
+            .Where(cem => cem.GyroidWallParamRim <= 0f)          // constant porosity band ⇒ rim PERIOD is the only wall axis
+            .OrderBy(CemFixtures.RimPeriodMm)
+            .ToArray();
+        Assert.True(aByRim.Length >= 5, $"only {aByRim.Length} constant-band anchor SKUs found — the chain below would be near-vacuous");
+
+        var aSubFloor = aByRim
+            .Select(cem => TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem).SubFloorSolidFraction)
+            .ToArray();
+
+        int nCompared = 0;
+        for (int i = 1; i < aByRim.Length; i++)
+        {
+            if (CemFixtures.RimPeriodMm(aByRim[i]) <= CemFixtures.RimPeriodMm(aByRim[i - 1])) continue; // equal rim ⇒ no prediction
+            nCompared++;
+            Assert.True(aSubFloor[i - 1] > aSubFloor[i],
+                $"{aByRim[i - 1].Name} (rim {CemFixtures.RimPeriodMm(aByRim[i - 1]):F1} mm) lost {aSubFloor[i - 1]:P1} to the print floor " +
+                $"but {aByRim[i].Name} (rim {CemFixtures.RimPeriodMm(aByRim[i]):F1} mm) lost {aSubFloor[i]:P1} — a THINNER rim wall must lose MORE");
+        }
+        Assert.True(nCompared >= 4, $"only {nCompared} ordered pairs compared — the chain proved almost nothing");
     }
 }

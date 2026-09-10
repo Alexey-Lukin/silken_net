@@ -124,13 +124,7 @@ public class DrawingTests
     // This test reads the REAL cem/*.json and asserts every non-empty note reaches the DXF verbatim
     // (through DxfSafe, the writer's own mapping). It catches drop, fallback, truncation and escaping
     // in one assert — the four symptoms picogk gotcha #11 lists as one class.
-    private static string CemDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "cem"))) dir = dir.Parent;
-        Assert.NotNull(dir); // no cem/ above the test binary ⇒ the test is measuring nothing
-        return Path.Combine(dir!.FullName, "cem");
-    }
+    private static string CemDir() => CemFixtures.Dir();
 
     // 🔴 The InlineData roster that stood here named THREE of the seven shipped `ti_coin.*` manifests,
     // so four alloys of the bake-off — the very SKUs whose whole point is that the metal is the

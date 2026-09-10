@@ -41,15 +41,20 @@ internal sealed record GeometryMetrics
     // ARCH.25 nice-to-have residual (TopologyCrossChecks.cs, null for non-anchor parts): Euler-χ
     // cross-check against the flood-fill's own b0/b2 (a negative EulerHandles proves one of the two
     // independent checks has a bug, not a new physical finding), random-walk tortuosity through the
-    // percolated pore network (HW.33 electrolyte-transport input), and whether topology survives
-    // resampling at the real SLM print floor (~200 µm) rather than just the SDF-intent resolution.
+    // percolated pore network (HW.33 electrolyte-transport input), and the as-printed model — a
+    // morphological opening of the solid at the ~200 µm SLM wall floor, i.e. what is left once every
+    // feature the machine cannot hold is deleted rather than merely coarsened.
     public long? EulerCharacteristic { get; init; }
     public long? EulerHandles { get; init; }                 // b1 = b0 + b2 − χ; must be ≥0
     public bool? EulerSound { get; init; }
     public double? TortuosityMean { get; init; }             // path/displacement, percolated-pore random walk
     public int? TortuositySuccesses { get; init; }
     public int? TortuosityAttempts { get; init; }
-    public bool? PrintFidelityMatches { get; init; }         // pore-cluster count + percolation agree, SDF-intent vs as-printed resample
+    public bool? PrintFidelityMatches { get; init; }         // pore-cluster count + percolation survive the opening — topology CLASS only, blind to how much metal went: read it WITH the sub-floor share below
+    public double? PrintFidelitySubFloorSolidFraction { get; init; } // solid deleted by the opening / intent solid — the sub-floor wall share
+    public int? PrintFidelityIntentClusters { get; init; }   // big pore clusters as designed
+    public int? PrintFidelityPrintedClusters { get; init; }  // …and after the opening; a drop = the labyrinths merged through a lost wall
+    public double? PrintFidelityPrintedSolidDisconnectedFraction { get; init; } // metal islanded by the opening (as-printed AM/electrical defect)
 
     // Mechanical-lock shank measurements (01_01 §4.3, null for non-lock parts). See Validation.MeasureLock.
     public int? BarbCount { get; init; }                    // ratchet teeth counted along R(z) — must == BarbRows
@@ -178,8 +183,8 @@ internal static class Validation
         double dBboxVol = oBase.BboxSizeMm[0] * oBase.BboxSizeMm[1] * oBase.BboxSizeMm[2];
 
         // ARCH.25 nice-to-have: Euler-χ cross-check (reuses this SAME grid+conn, no resample) + random-
-        // walk tortuosity (reuses this SAME grid) + as-printed voxel cross-check (its own coarser resample,
-        // deliberately independent — that IS the manufacturability question).
+        // walk tortuosity (reuses this SAME grid) + the as-printed opening (its own finer grid, tied to
+        // the print floor rather than to the design period — that IS the manufacturability question).
         TopologyCrossChecks.EulerCrossCheckResult euler = TopologyCrossChecks.EulerCrossCheck(grid, conn);
         TopologyCrossChecks.TortuosityResult tort = TopologyCrossChecks.EstimateAxialTortuosity(grid);
         TopologyCrossChecks.PrintFidelityResult fidelity = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
@@ -202,6 +207,10 @@ internal static class Validation
             TortuositySuccesses = tort.Successes,
             TortuosityAttempts = tort.Attempts,
             PrintFidelityMatches = fidelity.TopologyMatches,
+            PrintFidelitySubFloorSolidFraction = fidelity.SubFloorSolidFraction,
+            PrintFidelityIntentClusters = fidelity.Intent.PoreClusterCount,
+            PrintFidelityPrintedClusters = fidelity.AsPrinted.PoreClusterCount,
+            PrintFidelityPrintedSolidDisconnectedFraction = fidelity.AsPrinted.SolidDisconnectedFraction,
         };
     }
 

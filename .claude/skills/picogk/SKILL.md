@@ -86,9 +86,15 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    `dotnet run` is unaffected.
 8. **Connectivity needs WALL-resolution, not pore-resolution** (`Connectivity.cs`, ARCH.25) —
    the gyroid wall is only ~period/10 thick; sampling the SDF coarser than ~wall/2 fragments thin
-   walls into **false** solid "islands" (measured 24–61% disconnected at 0.3mm → ~0% at period/16).
-   Pore-phase metrics (open/percolation) are fine at any step → `SampleAnchor` ties the step to the
-   finest period. And a **sheet** gyroid is tricontinuous → `PoreClusterCount`==2 is a topology FACT,
+   walls into **false** solid "islands" (measured 24–61% disconnected at 0.3mm → ≤0.3% at period/16) —
+   🔴 **but the island FRACTION converges before the island COUNT and the labyrinth count** (2026-09-10,
+   all seven shipped SKUs): at period/16 all five period-graded species SKUs (broadleaf · mangrove ·
+   oak · pine · tropical) still read ONE pore labyrinth with 52–473 false islands, period/20 still
+   fails broadleaf + mangrove, **period/24 is where all seven converge** (2 labyrinths for the six
+   sheet SKUs, 1 for `stepped` at every step; `graded_porosity`, constant period, converges earlier). A volume-fraction
+   reading certified «~0%» while the topology was still wrong — judge convergence by the COUNT, and
+   treat «wall ≈ period/10» as an UPPER bound on a graded SDF. Pore-phase metrics (open/percolation)
+   are fine at any step → `SampleAnchor` ties the step to the finest period/24. And a **sheet** gyroid is tricontinuous → `PoreClusterCount`==2 is a topology FACT,
    not a defect (don't gate on it). NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
    a genus-torus shape; computes no genus) — LEAP exposes no connectivity, but `Measure.fGetSurfaceArea`
    (surface) + `fGetVolume` exist and are reused, not re-implemented.
@@ -182,12 +188,21 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     (b) The walk's original bias treated lateral wandering as equal to real progress, so it burned its
     self-avoidance budget circling in one plane — invisible on small synthetic clusters, fatal on the real
     anchor's actual pore network. Both were only caught by running `dotnet run -- verify` against a real
-    shipped `cem/*.json`, never by the xUnit suite alone. **On the real pine anchor:** Euler-χ=−4042,
-    handles(b1)=4270 (sound — agrees with flood-fill connectivity); tortuosity mean=1.45 (30/40 walks
-    converged, feeds `HW.33`'s open transport-axis residual); **as-printed topology at the true ~200µm SLM
-    wall floor DIVERGES from SDF-intent** on this SKU specifically (rim wall ~0.20mm sits right at the
-    print floor) — `stepped` SKU (different period) passes clean, so this is a per-SKU finding, not a
-    universal one. Design-justification + numbers → [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); open decision → [`00_07` HW.33](../../../docs/00_07_Action_Plan_Tracker.md).
+    shipped `cem/*.json`, never by the xUnit suite alone. **On the shipped seven (2026-09-10, intent step
+    period/24):** Euler-χ sound on all; tortuosity mean ≈1.3–1.4; the as-printed check is a morphological
+    OPENING of the solid at the SLM floor (ball radius floor/2 on a 0.05 mm grid), and its sub-floor
+    share is monotone in the rim wall — `stepped` 71.8 % · `broadleaf` 49.7 % · `pine` 24.4 % ·
+    `mangrove` 20.5 % · `oak` 4.3 % · `tropical` 1.5 % (`graded_porosity` 12.5 %). 🔴 **Read
+    `print_fidelity_matches` only WITH `print_fidelity_sub_floor_solid_fraction`:** the boolean compares
+    topology CLASS — `stepped` reads ✓ while losing the most metal, and the six sheet SKUs read ⚠ because
+    one pinhole merges their two labyrinths. 🔴 **The previous form of this check — a coarse RESAMPLE at
+    floor/2 — measured the wrong thing in the wrong order:** on 5 of 7 SKUs its «print» grid was FINER than
+    the intent grid, so «DIVERGES on pine» reported the intent grid's own under-resolution (period/16,
+    gotcha #8) under a manufacturability caption, and on `broadleaf` the two grids coincided and it
+    matched vacuously (`ssot-maintenance` §Guard-craft #78 — a pin on an identity transform); a resample
+    AT the floor fragments every SKU (lattice aliasing of a curved wall). Reflex: a check named «X vs Y»
+    must prove which grid is coarser BEFORE its ⚠ means anything — and a class-level boolean must ship
+    beside the magnitude it is blind to. Design-justification + numbers → [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); open decision → [`00_07` HW.33](../../../docs/00_07_Action_Plan_Tracker.md).
 
 ## Common Tasks
 
@@ -223,7 +238,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Connectivity / validation (ARCH.25)**: `Connectivity.cs` samples the CEM SDF → 3-phase grid →
   6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) / solid-island (AM +
   electrical) / closed-pore (trapped-powder) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
-  **pore** OK at the coarse step, **solid** needs ~period/16 (gotcha #8). The `verify` gate adds
+  **pore** OK at the coarse step, **solid** needs ~period/24 (gotcha #8 — the labyrinth COUNT converges
+  later than the island FRACTION). The `verify` gate adds
   open≥95% · solid-disc≤2% · percolate axial+radial. Feeds HW.33 sheet-vs-network (topology-agnostic).
 - **Capsule-end assembly (`Assembly.cs`, SHIPPED)**: brings Деталь 3 ↔ Деталь 4 into one frame at the
   bayonet datum (radome lock-groove ↔ flange lugs) via `MeshUtility.voxApplyTransformation` (lift; the

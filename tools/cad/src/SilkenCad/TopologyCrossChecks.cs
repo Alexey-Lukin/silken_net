@@ -264,38 +264,163 @@ internal static class TopologyCrossChecks
         return (kLo, kHi);
     }
 
-    // ── 3. Voxel-cross-check on the as-printed grid (manufacturability, not SDF-intent) ────────
+    // ── 3. As-printed model: morphological OPENING of the solid at the SLM wall floor ──────────
     //
-    // Connectivity.SampleAnchor's adaptive step (period/16, floor 0.06 mm) is a SIMULATION-fidelity
-    // choice: fine enough to resolve whatever wall the CAD file specifies, however thin. It says
-    // nothing about what SLM Ti-6Al-4V can actually BUILD — the real, canon-sourced minimum
-    // printable wall is ~200 µm (01_01 §5.5 / 01_02 §6: "SLM стінка ~200 µm … мін. друкована пора
-    // ≈1.2 мм"), independent of and coarser than the 30 µm Z-layer thickness (01_02 §6 "SLM: шар
-    // 30 µm" — that number governs build-direction slicing, not the XY feature floor a thin gyroid
-    // wall must clear). This resamples the SAME SDF at a step tied to that print floor (wall must
-    // span ≳2 voxels, the same rule SampleAnchor already applies to the design period) and diffs
-    // topology against the intent-resolution sample. The two are NOT always ordered — for a coarse
-    // design period the print-floor step is finer (this becomes a resolution-convergence sanity
-    // check); for a design pushed toward the anatomical 100 µm rim floor 01_01 §5.5 already flags as
-    // SLM-incompatible, the print-floor step is the coarser, binding one, and THIS is where a design
-    // that looks sound in SDF-intent space would show real degradation once printed.
+    // MODEL. The canon-sourced minimum printable wall for SLM Ti-6Al-4V is ~200 µm (01_01 §5.5 /
+    // 01_02 §6: "SLM стінка ~200 µm … мін. друкована пора ≈1.2 мм"), independent of and coarser than the
+    // 30 µm Z-layer (01_02 §6 "SLM: шар 30 µm" — that governs build-direction slicing, not the XY
+    // feature floor a thin gyroid wall must clear). A feature the machine cannot hold is not COARSENED,
+    // it is ABSENT. So the as-printed solid is the morphological OPENING of the intent solid by a
+    // Euclidean ball of radius floor/2: erode (a solid cell survives only if the whole ball around it is
+    // solid — Outside counts as solid, so the part's own envelope surface is not eaten and only Pore
+    // erodes), then dilate the survivors back, but only onto cells that were solid to begin with. What
+    // the opening deletes is exactly the sub-floor material — wall thinner than the melt track can hold
+    // — and SubFloorSolidFraction is that deleted share. Both halves are measured on ONE grid, sampled
+    // at min(intent step, floor/4), so the ball is ≥2 cells in radius and the floor itself is resolved.
+    //
+    // MEASURED GROUND (2026-09-10, the seven shipped cem/anchor_zone1.*.json). A coarse RESAMPLE cannot
+    // model a print floor, in either direction. Sampled at the 0.2 mm floor, EVERY SKU "fails": pore
+    // clusters collapse to 1 everywhere and solid-disconnected reads broadleaf 10.6 % · stepped 52 % ·
+    // pine 3.5 % · mangrove 2.9 % · graded_porosity 2.2 % · oak 0.3 % · tropical 0.06 % — that is lattice
+    // aliasing of a curved wall against a cubic grid, not manufacturability. And a resample is a
+    // RESOLUTION knob, not a physics one, so it can equally land FINER than the intent grid, in which
+    // case the diff reports the intent grid's own under-resolution under a manufacturability caption, or
+    // land on exactly the intent step and match vacuously. An opening has no such freedom: the ball
+    // radius is the physical floor, and refining the grid only sharpens the same verdict.
+    //
+    // CEILING (declared, not hidden). An opening on a cubic grid quantises thickness to whole cells, so
+    // it over-/under-estimates a wall by up to one cell (at floor/4 sampling, ±50 µm on a 200 µm floor);
+    // a slab survives at ≥2r+1 cells, i.e. 0.25 mm at the shipped step, not 0.20 mm exactly. It models
+    // the XY feature floor ONLY: not build-direction slicing (30 µm layers, staircase on shallow
+    // overhangs), not support/overhang collapse, not powder trapping or de-powdering of the surviving
+    // channels — those are 01_02 §1.3 bench questions, and nothing here substitutes for them.
     public const float SlmMinWallMm = 0.2f;
+
+    // The one grid both halves of the as-printed model are measured on. One home — the report line
+    // prints this number and must not re-derive the formula. NB the floor/4 branch wins for every
+    // possible AnchorCem today, because AdaptiveStepMm clamps at 0.06 mm > 0.05; the Min is the guard
+    // that keeps the as-printed grid from ever being COARSER than the intent one if either bound moves.
+    public static float PrintGridStepMm(AnchorCem cem)
+        => MathF.Min(Connectivity.AdaptiveStepMm(cem), SlmMinWallMm / 4f);
 
     internal sealed record PrintFidelityResult
     {
         public required ConnectivityMetrics Intent { get; init; }
         public required ConnectivityMetrics AsPrinted { get; init; }
+
+        // ⚠ A topology-CLASS comparison, and therefore blind to HOW MUCH metal the floor deleted: a SKU
+        // that is already single-labyrinth matches trivially. Measured 2026-09-10 on the shipped seven —
+        // `stepped` reads ✓ (1→1) while losing 71.8 % of its solid, the worst of the family; the six
+        // sheet SKUs read ⚠ (2→1) losing 1.5–49.7 %. Never read this flag without SubFloorSolidFraction.
         public required bool TopologyMatches { get; init; }
+        public required float StepMm { get; init; }              // sampling step of BOTH metrics above
+        public required float FloorMm { get; init; }             // the modelled print floor (= SlmMinWallMm)
+        public required double SubFloorSolidFraction { get; init; } // solid removed by the opening / intent solid, 0..1
     }
 
     public static PrintFidelityResult CheckPrintFidelity(IImplicit sdf, AnchorCem cem)
     {
-        Connectivity.Grid gridIntent = Connectivity.SampleAnchor(sdf, cem);
-        Connectivity.Grid gridPrinted = Connectivity.SampleAnchor(sdf, cem, SlmMinWallMm / 2f);
+        float fStep = PrintGridStepMm(cem);
+        Connectivity.Grid gridIntent = Connectivity.SampleAnchor(sdf, cem, fStep);
         ConnectivityMetrics mIntent = Connectivity.Analyse(gridIntent);
+
+        (Connectivity.Grid gridPrinted, double dSubFloor) = OpenSolid(gridIntent, SlmMinWallMm / 2f);
         ConnectivityMetrics mPrinted = Connectivity.Analyse(gridPrinted);
+
         bool bMatches = mIntent.PoreClusterCount == mPrinted.PoreClusterCount
             && mIntent.PorePercolates.SequenceEqual(mPrinted.PorePercolates);
-        return new PrintFidelityResult { Intent = mIntent, AsPrinted = mPrinted, TopologyMatches = bMatches };
+        return new PrintFidelityResult
+        {
+            Intent = mIntent,
+            AsPrinted = mPrinted,
+            TopologyMatches = bMatches,
+            StepMm = fStep,
+            FloorMm = SlmMinWallMm,
+            SubFloorSolidFraction = dSubFloor,
+        };
+    }
+
+    // Morphological opening of the Solid phase by a ball of radius fRadiusMm (r = radius/step cells,
+    // ≥1). Returns the opened grid — sub-floor solid demoted to Pore, Outside untouched — and the
+    // removed share of the original solid. Explicit precomputed offset stencil (dx²+dy²+dz² ≤ r²), no
+    // recursion, no LINQ in the loops: O(N·|stencil|), |stencil| = 33 at r = 2.
+    internal static (Connectivity.Grid Opened, double SubFloorSolidFraction) OpenSolid(
+        Connectivity.Grid grid, float fRadiusMm)
+    {
+        Phase[] aIn = grid.Cells;
+        int nx = grid.Nx, ny = grid.Ny, nz = grid.Nz;
+        int nR = Math.Max(1, (int)MathF.Round(fRadiusMm / grid.StepMm));
+        int nR2 = nR * nR;
+
+        int nStencil = 0;
+        for (int di = -nR; di <= nR; di++)
+            for (int dj = -nR; dj <= nR; dj++)
+                for (int dk = -nR; dk <= nR; dk++)
+                    if ((di * di) + (dj * dj) + (dk * dk) <= nR2) nStencil++;
+
+        var aDi = new int[nStencil];
+        var aDj = new int[nStencil];
+        var aDk = new int[nStencil];
+        var aFlat = new int[nStencil];
+        int t = 0;
+        for (int di = -nR; di <= nR; di++)
+            for (int dj = -nR; dj <= nR; dj++)
+                for (int dk = -nR; dk <= nR; dk++)
+                {
+                    if ((di * di) + (dj * dj) + (dk * dk) > nR2) continue;
+                    aDi[t] = di; aDj[t] = dj; aDk[t] = dk;
+                    aFlat[t] = (((di * ny) + dj) * nz) + dk;
+                    t++;
+                }
+
+        // Erosion. A solid cell is CORE iff no Pore cell lies within the ball. Off-grid neighbours are
+        // Outside by construction (the sample box only ever extends past the envelope), and Outside
+        // counts as solid — the envelope skin must not erode, only genuinely thin wall must.
+        var aCore = new bool[aIn.Length];
+        long nSolid = 0;
+        for (int i = 0; i < nx; i++)
+            for (int j = 0; j < ny; j++)
+                for (int k = 0; k < nz; k++)
+                {
+                    int idx = (((i * ny) + j) * nz) + k;
+                    if (aIn[idx] != Phase.Solid) continue;
+                    nSolid++;
+                    bool bCore = true;
+                    for (int s = 0; s < nStencil; s++)
+                    {
+                        int ii = i + aDi[s]; if (ii < 0 || ii >= nx) continue;
+                        int jj = j + aDj[s]; if (jj < 0 || jj >= ny) continue;
+                        int kk = k + aDk[s]; if (kk < 0 || kk >= nz) continue;
+                        if (aIn[idx + aFlat[s]] == Phase.Pore) { bCore = false; break; }
+                    }
+                    aCore[idx] = bCore;
+                }
+
+        // Dilation, clipped to the original solid: every cell in the ball of a core cell that WAS solid
+        // comes back. Everything else that was solid stays demoted — that is the sub-floor material.
+        var aOut = new Phase[aIn.Length];
+        for (int c = 0; c < aIn.Length; c++)
+            aOut[c] = aIn[c] == Phase.Solid ? Phase.Pore : aIn[c];
+
+        for (int i = 0; i < nx; i++)
+            for (int j = 0; j < ny; j++)
+                for (int k = 0; k < nz; k++)
+                {
+                    int idx = (((i * ny) + j) * nz) + k;
+                    if (!aCore[idx]) continue;
+                    for (int s = 0; s < nStencil; s++)
+                    {
+                        int ii = i + aDi[s]; if (ii < 0 || ii >= nx) continue;
+                        int jj = j + aDj[s]; if (jj < 0 || jj >= ny) continue;
+                        int kk = k + aDk[s]; if (kk < 0 || kk >= nz) continue;
+                        int to = idx + aFlat[s];
+                        if (aIn[to] == Phase.Solid) aOut[to] = Phase.Solid;
+                    }
+                }
+
+        long nKept = 0;
+        foreach (Phase p in aOut) if (p == Phase.Solid) nKept++;
+
+        return (grid with { Cells = aOut }, nSolid > 0 ? (double)(nSolid - nKept) / nSolid : 0.0);
     }
 }

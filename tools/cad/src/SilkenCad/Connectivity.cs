@@ -15,9 +15,12 @@ namespace SilkenCad;
 //                            (electrons travel the metal to the bus, 01_01 §1)
 //   • closed-pore fraction → trapped-powder dead-end caverns (01_02 §1.3 vacuum-decant)
 // Pure-managed: topology is a property of the FIELD, not the render — so this runs as a fast,
-// display-less xUnit gate (no PicoGK Library.Go), and is stable to coarsening (a percolation
-// threshold survives a coarser voxel better than an absolute volume does). It measures the
-// geometric INTENT; an as-printed voxel cross-check is deferred. Sheet gyroid is TRICONTINUOUS
+// display-less xUnit gate (no PicoGK Library.Go). Its PORE metrics are stable to coarsening (a
+// percolation threshold survives a coarser voxel better than an absolute volume does); its SOLID
+// metrics are not, which is what AdaptiveStepMm below exists to hold. It measures the geometric
+// INTENT — what the CAD file specifies, however thin; the as-printed question (what survives the
+// ~200 µm SLM wall floor) is a morphological OPENING of this same field, and lives in
+// TopologyCrossChecks.CheckPrintFidelity. Sheet gyroid is TRICONTINUOUS
 // (two pore labyrinths + one wall), so PoreClusterCount==2 for a sheet is a topology fact, NOT a
 // defect — the gate must not punish it (HW.33 sheet-vs-network input).
 internal enum Phase : byte { Outside = 0, Solid = 1, Pore = 2 }
@@ -47,17 +50,31 @@ internal static class Connectivity
         public int Index(int i, int j, int k) => ((i * Ny) + j) * Nz + k;
     }
 
+    // RULE: sample an anchor at the FINEST gyroid period / 24, clamped to [0.06 mm, DefaultStepMm].
+    // The pore phase is coarse and reads correctly at any step; the SOLID phase binds — a graded sheet
+    // wall is thinner than the "wall ≈ period/10" figure, which is an UPPER bound on the graded SDF, so
+    // an under-resolved grid shreds the wall into false islands and WELDS the two pore labyrinths into
+    // one. Measured 2026-09-10 over the seven shipped cem/anchor_zone1.*.json: at period/16 all five
+    // radially period-graded sheet SKUs (broadleaf · mangrove · oak · pine · tropical) read
+    // PoreClusterCount = 1 with 52–473 false solid islands (solid-disc 0.06–0.29 %); period/20 still
+    // reads 1 on broadleaf and mangrove; period/24 is the FIRST divisor at which all seven converge — 2
+    // for the six sheet SKUs (tricontinuous, the topology fact above), 1 for `stepped`, which is
+    // genuinely single-labyrinth at every resolution — and solid-disc drops to 0.001–0.028 %. The
+    // thinnest shipped wall spans ~2.4 cells there. Carrier:
+    // AnchorTests.Shipped_Anchor_Cems_Converge_At_The_Adaptive_Step (mutation: /16 reds exactly those five).
+    public static float AdaptiveStepMm(AnchorCem cem)
+    {
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        return Math.Clamp(fPeriodMin / 24f, 0.06f, DefaultStepMm);
+    }
+
     // Anchor sampling: a cartesian box clipped to the pipe envelope (bore ≤ r ≤ outer). The gyroid
     // SDF is periodic, so the absolute Z origin only shifts the phase, never the topology/porosity.
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {
         float fROuter = cem.OuterDiameterMm / 2f;
         float fRInner = cem.BoreDiameterMm / 2f;
-        // Adaptive resolution: the gyroid WALL is only ~period/10 thick, so the step must be tied to
-        // the FINEST period — otherwise thin walls fall below the voxel and fragment into false solid
-        // "islands" (the pore phase, ~10× coarser, is fine at any step). Wall must span ≳2 voxels.
-        float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
-        float fStep = fStepMm > 0f ? fStepMm : Math.Clamp(fPeriodMin / 16f, 0.06f, DefaultStepMm);
+        float fStep = fStepMm > 0f ? fStepMm : AdaptiveStepMm(cem);
         return Sample(sdf, 2f * fROuter, 2f * fROuter, cem.LengthMm, fStep,
             (x, y, _) =>
             {

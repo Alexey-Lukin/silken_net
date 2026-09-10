@@ -129,6 +129,42 @@ public class AnchorTests
         Assert.True(dMax - dMin < 0.10, $"axial porosity spread {dMax - dMin:F3} (min={dMin:F3} max={dMax:F3}) — should be ~flat");
     }
 
+    // Enumerated, never a hand-written roster (CemFixtures says why) — a new SKU is pinned by existing.
+    public static TheoryData<string> ShippedAnchorCems()
+    {
+        var data = new TheoryData<string>();
+        foreach (string strFile in CemFixtures.AnchorFiles()) data.Add(strFile);
+        return data;
+    }
+
+    // 🔴 The carrier for Connectivity.AdaptiveStepMm's period/24 RULE — and it has to read the REAL
+    // manifests. Every connectivity test above feeds a synthetic coupon at a hand-picked step, so not
+    // one of them can see an under-resolved GRADED wall: the "wall ≈ period/10" figure is an upper
+    // bound, and the graded SDF's thinnest wall sits well under it. Measured 2026-09-10 on the seven
+    // shipped SKUs: at period/16 the graded sheet SKUs read ONE pore cluster — the two labyrinths
+    // welded together through a wall shredded into 52–473 false islands — while at period/24 all seven
+    // converge. The counts asserted here are topology FACTS, not tuned thresholds: a sheet gyroid is
+    // tricontinuous ⇒ 2 labyrinths, a `stepped` zoned gyroid is genuinely single-labyrinth ⇒ 1.
+    // MUTATION-VERIFIED 2026-09-10: divisor 24 → 16 reds exactly five rows — broadleaf (step 0.1000,
+    // solid-disc 0.121 %) · mangrove (0.1375, 0.285 %) · oak (0.1750, 0.139 %) · pine (0.1250, 0.099 %) ·
+    // tropical (0.2000, 0.058 %). `stepped` and `graded_porosity` stay green at /16 (the first is 1 at
+    // every resolution, the second has no rim-period taper), so they are passengers here, not the
+    // discriminator — read the five when this test reds.
+    [Theory]
+    [MemberData(nameof(ShippedAnchorCems))]
+    public void Shipped_Anchor_Cems_Converge_At_The_Adaptive_Step(string strFile)
+    {
+        AnchorCem cem = CemFixtures.Anchor(strFile);
+        Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem);
+        ConnectivityMetrics m = Connectivity.Analyse(grid);
+
+        int nExpected = cem.Topology == "stepped" ? 1 : 2;
+        Assert.True(nExpected == m.PoreClusterCount,
+            $"{strFile} ({cem.Topology}, rim period {CemFixtures.RimPeriodMm(cem):F1} mm) read {m.PoreClusterCount} pore " +
+            $"cluster(s) at step {Connectivity.AdaptiveStepMm(cem):F4} mm, expected {nExpected}; " +
+            $"solid-disconnected {m.SolidDisconnectedFraction:P3} — an under-resolved wall welds the labyrinths together");
+    }
+
     [Fact]
     public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__Else_Legacy_Bore()
     {

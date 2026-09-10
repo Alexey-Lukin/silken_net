@@ -493,8 +493,14 @@ internal static class Program
             $"  [nice-to-have] tortuosity(path/displacement) mean={oM.TortuosityMean:F2} " +
             $"({oM.TortuositySuccesses}/{oM.TortuosityAttempts} walks converged)");
         Console.WriteLine(
-            $"  [nice-to-have] as-printed (SLM ~{TopologyCrossChecks.SlmMinWallMm * 1000:F0} µm wall floor) vs SDF-intent topology: " +
-            (oM.PrintFidelityMatches == true ? "✓ matches" : "⚠ DIVERGES — design may not survive print at this wall thickness"));
+            $"  [nice-to-have] as-printed (opening at SLM {TopologyCrossChecks.SlmMinWallMm * 1000:F0} µm wall floor, " +
+            $"grid {TopologyCrossChecks.PrintGridStepMm(cem):F3} mm): " +
+            $"sub-floor solid={oM.PrintFidelitySubFloorSolidFraction:P1} · " +
+            $"pore clusters intent→printed {oM.PrintFidelityIntentClusters}→{oM.PrintFidelityPrintedClusters} · " +
+            $"printed solid-disc={oM.PrintFidelityPrintedSolidDisconnectedFraction:P1} → " +
+            (oM.PrintFidelityMatches == true
+                ? "✓ topology survives"
+                : "⚠ DIVERGES — the topology depends on walls thinner than the print floor"));
 
         // Monolithic bus rod (01_01 §1.4) — MEASURE that the solid rod actually fused into the part
         // (gotcha #4 — don't assume the BoolAdd landed). voxAnode (the gyroid) is done being measured, so

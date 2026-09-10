@@ -135,8 +135,10 @@ macOS-with-display runner would re-arm render-verify as a hard gate.
 **ARCH.25 connectivity (shipped)** — `Connectivity.cs` adds a two-phase topological audit
 (open-pore↔Archimedes · percolation↔EAAE flow-through · solid-island↔AM/electrical · closed-pore↔trapped-powder · specific-surface
 ↔EBFC-area) as a fast display-less xUnit gate; `verify` adds open≥95% · solid-disc≤2% · percolate
-axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/16 (a coarse
-grid fragments thin walls into false islands — skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
+axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/24 (a coarse
+grid fragments thin walls into false islands AND merges the sheet gyroid's two pore labyrinths — at
+period/16 the island FRACTION already reads ≤0.3 % while the labyrinth COUNT is still wrong on every
+period-graded species SKU; skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
 
 **Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
 a **DIN-471 retaining groove** on the Ti shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK

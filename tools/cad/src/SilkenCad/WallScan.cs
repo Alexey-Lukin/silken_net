@@ -40,7 +40,7 @@ internal static class WallScan
     private const double PorosityLo = 0.55, PorosityHi = 0.75;
     private const double OpenMin = 0.95, SolidDiscMax = 0.02;
 
-    // Sweep wallParam ∈ [lo, hi] step `fStep`. fSampleStepMm = 0 ⇒ Connectivity's adaptive step (period/16,
+    // Sweep wallParam ∈ [lo, hi] step `fStep`. fSampleStepMm = 0 ⇒ Connectivity's adaptive step (period/24,
     // the floor for an honest solid-island count); tests pass a coarser step on a small coupon for speed.
     public static WallScanResult Run(AnchorCem baseCem, float fLo, float fHi, float fStep, float fSampleStepMm = 0f)
     {
