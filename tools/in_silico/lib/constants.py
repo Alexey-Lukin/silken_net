@@ -67,10 +67,12 @@ ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — 
 # 0.85 was an unvalidated orphan value with no table/citation; SLUSBH2G Figures 6-7
 # (Charger Efficiency vs Input Current, VIN=0.5V/0.2V) put I_IN≈15-46µA solidly on the
 # steep low-current rise of the curve — eyeball range ~45-80% across the plotted VSTOR
-# curves, i.e. clearly below 0.85 and roughly consistent with 0.68. Precision residual:
-# the 15µW/325mV "typical" anchor itself may be mis-copied from BQ25570's OWN cold-start
-# threshold spec (P_IN(CS) TYP=15µW, old VIN(CS)=330mV) rather than derived from real
-# EBFC output — see HW.47/HW.46 in the tracker before treating 0.68 as final-precision.
+# curves, i.e. clearly below 0.85 and roughly consistent with 0.68. Precision residual
+# [HW.46, measured 2026-09-10]: the 15µW/325mV anchor is NOT a physical EBFC number —
+# 325 mV = 0.65 × 500 mV (MPPT fraction × the retired «V_OC ≥ 500» claim) and 15 µW has
+# no traceable source (born with the rest of 02_03 §9 in the initial commit; equals
+# P_IN(CS) TYP). V_OP above (0.5 V) is the OTHER model's guess (≈0.65 × 0.77 V OCV).
+# Both wait for the HW.13 bench P-V curve — do not reconcile them by editing either.
 E_CYCLE = 5e-3               # J — energy per MCU wake cycle
 BASELINE_DELTA_T_S = 60      # s — firmware baseline (bio_contract.rb)
 
