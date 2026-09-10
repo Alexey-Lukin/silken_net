@@ -283,7 +283,8 @@ uint32_t delta_t_seconds = 0;          // Швидкість заряду іон
 uint32_t tree_did = 0;                 // Decentralized Identity (Гаманець Дерева)
 
 // [SEC.10] Лічильник panic-кадрів — пакується у DR0[31:16] поряд з
-// acoustic_events у DR0[7:0] (DR0[15:10] резервовано). Сторожовий пес
+// acoustic_events у DR0[7:0]; решта бітів DR0 — за картою 03_01 §2, тут не
+// дублюється (дубль уже раз протух і заходив на чужий біт). Сторожовий пес
 // панічного каналу: інкрементується (saturating) перед кожним
 // Trigger_Emergency_LoRa_TX, передається у байтах 14..15 panic_payload (BE),
 // сервер рубає replay через Redis SETNX nonce-key. Cold-boot RTC reset

@@ -823,7 +823,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Enum | Значення |
 |------|----------|
-| `device_type` | `water_valve(0) / fire_siren(1) / seismic_beacon(2) / drone_launcher(3)` |
+| `device_type` | `water_valve(0) / fire_siren(1) / seismic_beacon(2) / drone_launcher(3)` — ⛔ `seismic_beacon` без диспетчера: сейсмічного каналу на дроті не існує [ARCH.102], носій `app/models/actuator.rb` |
 | `state` | `idle(0) / active(1) / offline(2) / maintenance_needed(3)` |
 
 **AASM:** `activate` (idle→active), `deactivate` (→idle), `go_offline` (→offline), `report_fault` (→maintenance_needed).

@@ -552,7 +552,7 @@ module SilkenNet
     # називати рівно ту подію, яку воно рахує: сплутати їх тепер значить вигадати число.
     EWS_ALERTS_TOTAL = REGISTRY.counter(
       :silkennet_ews_alerts_total,
-      docstring: "Total EWS alerts created (fire, drought, pest, storm) " \
+      docstring: "Total EWS alerts created, one label per EwsAlert#alert_type (no pest/storm verdict exists — ARCH.102) " \
                  "[INF.26; diagnostic tier: no alert until a fleet establishes a baseline rate — «spike» has no threshold over a zero baseline, and each alert kind already carries its own rule]",
       labels: [ :alert_type ]
     )

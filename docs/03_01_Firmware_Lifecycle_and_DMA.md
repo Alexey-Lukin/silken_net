@@ -345,18 +345,20 @@ if (climate_due) {
 ```
 Piezo EXTI ISR → vibration_detected = 1
        ↓
+Audio_Dma_Peripherals_Ready()?   [ARCH.102] ні → audio_ready = AUDIO_DMA_IDLE, інференс НЕ біжить
+       ↓ так                      (сьогоднішній кремній: тіла MX_ADC_Init/MX_TIM2_Init порожні — board-freeze FW.46)
 TIM2 Start (16 kHz clock)
-ADC Start DMA → raw_audio_buffer[512]
+HAL_ADC_Start_DMA → raw_audio_buffer[512]      rc ≠ HAL_OK → AUDIO_DMA_ERROR → вихід
        ↓
-CPU: __disable_irq() → HAL_PWR_EnterSLEEPMode(WFI) → __enable_irq()
+CPU: __disable_irq() → HAL_PWR_EnterSLEEPMode(WFI) → __enable_irq()   дедлайн AUDIO_DMA_TIMEOUT_MS (250 мс) → AUDIO_DMA_ERROR → вихід
        ↓  (CPU спить, DMA наповнює буфер без участі процесора)
-DMA ConvCplt ISR → audio_ready = 1 → CPU wake
+DMA ConvCplt ISR → audio_ready = AUDIO_DMA_DONE → CPU wake      (HAL_ADC_ErrorCallback → AUDIO_DMA_ERROR)
        ↓
 __DMB() (memory barrier — гарантуємо видимість DMA-даних CPU)
        ↓
-HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()
+HAL_ADC_Stop_DMA() + HAL_TIM_Base_Stop()   — на КОЖНОМУ виході, не лише на успіху
        ↓
-Normalization: raw_audio_buffer[i] / 4095.0f → audio_buffer[i]
+Normalization: raw_audio_buffer[i] / 4095.0f → audio_buffer[i]   (лише при AUDIO_DMA_DONE)
        ↓
 Compute_LogMel(audio_buffer) → 40 log-mel ознак   [Path B log-mel — FW.25, 03_03 §3.4]
        ↓
@@ -364,7 +366,8 @@ TinyML Inference → ml_event_id + ml_confidence
        ↓
 if (ml_confidence ≥ critical_threshold):   # FW.18 dual-zone (warn 0.60 / crit 0.85) — повна логіка 03_03 §5
   ml_event_id == 2 → acoustic_events++ (кавітація ксилеми)
-  ml_event_id == 3 → Trigger_Emergency_LoRa_TX() (бензопила/вандалізм)
+  ml_event_id == 3 → acoustic_events++ + Trigger_Emergency_LoRa_TX() (бензопила/вандалізм — лічильник ЗМІШАНИЙ, 03_04 §2.1)
+warn-зона (0.60 ≤ conf < 0.85): 2 або 3 → acoustic_events++ (+ ескалація 3× WARNING → паніка лише для пилки)
 ```
 
 **TinyML Classes:**
@@ -374,7 +377,7 @@ if (ml_confidence ≥ critical_threshold):   # FW.18 dual-zone (warn 0.60 / crit
 | 0 | Тиша (Silence) | Нічого |
 | 1 | Вітер (Wind) | Нічого |
 | 2 | Кавітація (Cavitation) | `acoustic_events++` |
-| 3 | Бензопила / Тампер (Chainsaw/Tamper) | `Trigger_Emergency_LoRa_TX()` — паніка! |
+| 3 | Бензопила / Тампер (Chainsaw/Tamper) | `acoustic_events++` **+** `Trigger_Emergency_LoRa_TX()` — паніка! (лічильник змішаний з кавітацією — [ARCH.102]) |
 
 > **Ключова деталь DMA:** Під час наповнення буферу CPU переходить у `SLEEP` (не `STOP2`). Це легший сон: тактування CPU зупинено, але DMA, TIM2 та ADC продовжують працювати. `DMA ConvCpltCallback` виводить CPU зі сну через переривання.
 
