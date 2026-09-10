@@ -324,7 +324,7 @@ rb_dark() {
 # 2026-09-09: 162 → 164 — два нові файли, `feedback_note_as_frozen_snapshot` +
 # `feedback_worktree_branch_content_verify` (обидва hub-inline в «Вісь помилки», IDX
 # бамп поруч). Підняття робить обидва нові доми захищеними підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-164}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-165}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
