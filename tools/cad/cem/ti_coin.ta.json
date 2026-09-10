@@ -13,7 +13,8 @@
   },
   "notes": {
     "material": "Tantalum (bioinert benchmark)",
-    "process": "PBF-LB / SLM (high Tm 3017C, scanning-speed tuned); porous-Ta implant proven",
+    "process": "PBF-LB / SLM of bulk Ta (Tm 3017C; process window - preheat, scanning speed, atmosphere - NOT SPECIFIED in canon, vendor declares). Bulk-Ta LPBF vs Ta-coating-on-Ti route is OPEN (RFQ 2, 00_07 HW.24 orphan 3). NOTE: 'porous-Ta implant' evidence is bone-proven (CVD Ta on a carbon scaffold), NOT LPBF and NOT tree-proven (01_04 4.2) - it is not a qualification of this coupon",
+    "post_process": "OPEN - dehydrogenation bake and HIP for Ta are on verdict (00_07 HW.27): do not bake, HIP or skip either without written direction",
     "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2); Ta etch chemistry differs from Ti",
     "coating_restriction": "Active face (EBFC Gen 2.0 stack): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ta as delivered, any dielectric blocks DET (01_02 3.6; RFQ 4.B). The native Ta2O5 (wider band-gap + thicker film than TiO2 -> steeper tunnelling decay, in-silico 53; CAVEAT below) is what this bracket coupon measures, not a coating to strip",
     "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Ta release (bioinert ceiling)",

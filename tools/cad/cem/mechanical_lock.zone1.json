@@ -17,7 +17,7 @@
   "groove_width_mm": 1.1,
   "groove_depth_mm": 0.25,
   "notes": {
-    "material": "Ti-6Al-4V (Grade 5)",
+    "material": "V-free Ti alloy - same body as the Zone-1 gyroid anode (01_02 2.5, founder 2026-06-21): alloy NOT SELECTED until the Stage-2 coin bake-off (00_07 HW.24); Ti-6Al-4V is the price baseline only, NOT the material of this part",
     "process": "SLM/DMLS, same build cycle as the Zone-1 gyroid anode (01_01 §3 step 1); build tip-down, leading-ramp-down (01_02 §1.6) — barb downface ≈60° from horizontal self-supports (Ti64 LPBF, Sa≈15 µm)",
     "post_process": "HIP (01_02 §1.7); DIN-471 retaining-ring groove — CNC post-DMLS (§4.3 B, +15 min/anchor)",
     "extra": [
