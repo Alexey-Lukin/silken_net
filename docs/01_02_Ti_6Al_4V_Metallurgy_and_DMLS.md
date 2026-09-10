@@ -237,6 +237,8 @@
 
 **Чому не годиться «легше зробити пасивацію довшою»:** H у решітці Ti термодинамічно стабільний при 25°C; пасивація (H₂O₂ 30%, 25°C) не виганяє водень — лише нарощує TiO₂. Дегідрогенізація потребує T ≥ 200°C і вакууму для evacuated diffusion.
 
+> **Cross-ref:** ширший S×O×D→RPN risk-register, що охоплює весь периметр анкер+EBFC failure-mode'ів (не лише ці три DMLS-кроки) — [`fmea_fmeca_register.md`](protocols/hardware/fmea_fmeca_register.md) ([`00_07`](00_07_Action_Plan_Tracker) HW.36). 🟡 Робочий артефакт: severity-числа там — гіпотеза, ⚖️ founder-валідація ще відкрита ([`00_06 §0`](00_06_SSOT_Documentation_Standard)).
+
 ### 1.4. Фізичне Обґрунтування
 
 ```
@@ -575,6 +577,7 @@ nTop — провідний інструмент для генерації мі�
 - **Одна модель → родина:** per-species 7-SKU (5 видів + porosity-gradient + stepped demo) = один CEM × N спеків ([`01_01 §6`](01_01_Coaxial_Gyroid_Topology_and_PEEK)) — як Noyron робить різні двигуни з одного CEM.
 - **Design↔sim злиті:** validation-as-code (порозність/градієнт/wall/manifold + **двофазна зв'язність** — open-pore/percolation/solid-island/closed-pore (+ specific-surface), ARCH.25, [`00_07`](00_07_Action_Plan_Tracker) → `metrics.json`) = Noyron-івський «predicted-performance» output генератора (геометрія емітить власні передбачені фіз-властивості).
   - **ARCH.25 двофазний аудит = прокси чотирьох лаб-тестів** (один flood-fill замість окремих стендів): open-pore↔Архімедова порозність, pore-percolation↔µCT + EAAE flow-through (закритий канал ⇒ H₂ gas-lock), solid-island↔AM floating-island + анод-електро-цілісність, closed-pore↔trapped-powder. Pore-фаза стабільна до огрубіння сітки, але **solid-зв'язність вимагає кроку ≈період/16** — грубіша сітка фрагментує тонку гіроїдну стінку у хибні «острівці» (метод-застереження). Робоче вікно стінки CEM (сосна) — `wallParam ∈ [0.80, 1.30]` @ порозності 55–75% (default 1.0 → ~67%). Деталі реалізації — `tools/cad` + skill `picogk`.
+  - **ARCH.25 третя фаза (nice-to-have, `TopologyCrossChecks.cs`, 2026-09-09) — три cross-check'и ПОВЕРХ flood-fill'а, інформаційні (НЕ гейтують `VERIFY OK/FAILED`):** (1) **Euler-χ крос-чек** — незалежне обчислення топологічного інваріанта (cubical-complex inclusion-exclusion), звірене проти flood-fill-зв'язності; на живому pine-анкері χ=−4042, handles(b1)=4270 — узгоджено, sound. (2) **Tortuosity** — random-walk (3-рівнева упереджена самоуникна хода: advancing > lateral > forced retreat) на percolated-кластері; pine-анкер дає mean=1.45 (30/40 ход збіглись) — годує відкриту `transport`-вісь `HW.33` sheet-vs-network рішення. (3) **As-printed vs SDF-intent** — та сама топологія на СПРАВЖНЬОМУ voxel-роздільнику друку (SLM ~200 µm стінка-підлога), не лише на internal-роздільнику CAD-інструмента. ⚠️ **На pine-анкері (rim-період 2.0 мм → стінка ≈0.20 мм) ця перевірка DIVERGES** — топологія при true print-resolution НЕ узгоджується зі SDF-intent, бо стінка сидить рівно на межі SLM print floor; наявний аналітичний гейт `PrintablePeriodFloorMm ≥ 1 мм` (`Program.cs`) цей крайовий випадок не ловить (перевіряє лише період, не перевиживання топології на огрубленій сітці). Живий residual → [`00_07` HW.33](00_07_Action_Plan_Tracker).
 
 **Реальний стек (підтверджено в `tools/cad`, НЕ псевдокод):**
 
