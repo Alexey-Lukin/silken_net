@@ -188,8 +188,24 @@ CHECKS = [
         lambda d: named(d["reference_points"], "scenario", "healthy summer")["delta_t_s"], 0.1,
     ),
     (
-        "delta_t cold-winter → delta_t_lookup.json (also in Executive Summary)",
+        "delta_t cold-winter → delta_t_lookup.json (§delta_t Predictions table)",
         SUMMARY, r"Cold winter \| 5 mM \| 5°C \| \*\*([\d.]+)\*\*",
+        "kinetics/delta_t_lookup.json",
+        lambda d: named(d["reference_points"], "scenario", "cold winter / stress")["delta_t_s"], 0.1,
+    ),
+    # The two rows above anchor on the §delta_t Predictions TABLE. The Executive Summary
+    # restates the same pair in prose, and a table-anchored pattern cannot see it — which is
+    # exactly how the η_BQ 0.85→0.68 recompute (HW.47) left "36s / 190s" standing there under
+    # a green guard whose own label claimed the Executive Summary was covered. Pin the prose.
+    (
+        "delta_t healthy-summer → delta_t_lookup.json (Executive Summary prose, NOT the table)",
+        SUMMARY, r"✅ Healthy ([\d.]+)s / Stressed",
+        "kinetics/delta_t_lookup.json",
+        lambda d: named(d["reference_points"], "scenario", "healthy summer")["delta_t_s"], 0.1,
+    ),
+    (
+        "delta_t cold-winter → delta_t_lookup.json (Executive Summary prose, NOT the table)",
+        SUMMARY, r"/ Stressed ([\d.]+)s",
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["reference_points"], "scenario", "cold winter / stress")["delta_t_s"], 0.1,
     ),

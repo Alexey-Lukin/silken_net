@@ -17,7 +17,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline — geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30), NOT the old ×10⁵ (see §Cathode) |
-| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 36s / Stressed 190s |
+| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 44.7s / Stressed 237.5s (η_BQ 0.68 post-HW.47) |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
 
