@@ -60,7 +60,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import A_ELECTRODE, F_CONST, J_MAX_25C, KINETICS_DIR, R_GAS, REPO_ROOT, TEMPERATURE_K
+from lib.constants import F_CONST, J_MAX_25C, KINETICS_DIR, R_GAS, REPO_ROOT, TEMPERATURE_K
 from lib.utils import banner
 
 OUT_JSON = KINETICS_DIR / "gdl_breakthrough.json"
@@ -228,8 +228,12 @@ def main() -> int:
     j_a_m2 = J_MAX_25C * 1e4                      # A/cm2 -> A/m2
     demand = j_a_m2 / (N_E_PER_O2 * F_CONST)      # mol O2 / m2 / s
     c_o2 = X_O2_AIR * P_ATM / (R_GAS * TEMPERATURE_K)
-    print(f"  peak current density {J_MAX_25C * 1e6:.0f} uA/cm2 (lib.constants J_MAX_25C, "
-          f"electrode {A_ELECTRODE:.1f} cm2) -> O2 demand {demand:.3e} mol/m2/s")
+    # The demand is per unit area, so no electrode area enters it. The line used to print
+    # A_ELECTRODE here, which attached a BODY (the 2 cm² Ti-coin face) to an area-normalised
+    # number and read as if the margin were coupon-specific — it is not, it is per m² and
+    # therefore holds for coupon and anchor alike. [E.63, 2026-09-11]
+    print(f"  peak current density {J_MAX_25C * 1e6:.0f} uA/cm2 (lib.constants J_MAX_25C) "
+          f"-> O2 demand {demand:.3e} mol/m2/s (per unit area, body-independent)")
     print(f"  air-side O2 concentration {c_o2:.2f} mol/m3 at {TEMPERATURE_K:.2f} K")
     print(f"\n  {'pore (um)':>10s} {'D_Knudsen':>12s} {'D_Bosanquet':>13s} {'D_eff':>11s} "
           f"{'flux @50um':>13s} {'margin':>10s}")

@@ -16,7 +16,7 @@ namespace SilkenCad;
 // ⚠ MATE-Ø FLAG (HW.17): Деталь-3 lugs protrude radially to ~Ø29 (flange Ø25 + 2·2); a cap that slides
 // over them needs OD > Ø25, conflicting with the frozen "radome Ø25" (02_02 §1.3). This generator keeps
 // the dome body Ø25 and models the socket at the lug Ø for mate-fit.
-// ⚖️ RECONCILED radially 2026-09-11 (00_07 HW.33): Ø25 stays, the lugs go inboard, the enclosing skirt is
+// ⚖️ RECONCILED radially 2026-09-10 (00_07 HW.33): Ø25 stays, the lugs go inboard, the enclosing skirt is
 // WITHDRAWN — it cuts the lower cavity back past the flange rim and so deletes the face the ratified
 // O-ring seals against. The socket moves into a LOCAL internal boss at the rim that carries both the
 // bayonet and the seal land; this generator does not model that boss yet (open leg). The bayonet-Z /

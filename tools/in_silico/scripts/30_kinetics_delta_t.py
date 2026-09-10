@@ -22,10 +22,27 @@ Key literature parameters
   η_bq = 0.68                 — BQ25570 boost efficiency @ P_EBFC≈15µW (docs/02_03 §9.1
                                  table is source of truth; TI SLUSBH2G gives no closed-form
                                  η(P_IN) — see constants.py ETA_BQ comment, [HW.47] 2026-09-09)
+  A = 2.0 cm²                 — ONE face of the Ø16×1 mm Ti-coin COUPON (01_01 §6), see
+                                 the WHICH BODY note below; constants.py A_ELECTRODE
   E_cycle = 5 mJ              — STM32WLE5JC per wake cycle (sense + LoRa TX)
   Ea = 40 kJ/mol              — Arrhenius activation energy (FAD enzyme typical)
   D_eff = 2e-6 cm²/s          — glucose through chitosan hydrogel matrix
   δ = 20 µm                   — membrane + hydrogel thickness (01_03 §2.1)
+
+WHICH BODY these delta_t belong to
+----------------------------------
+Every absolute delta_t printed here is a **Ti-coin coupon** prediction, and that is what
+it is for: the Stage-2 in-vitro coin is the body this model is meant to be compared
+against (01_01 §6). It is NOT the anchor. The Zone-1 gyroid anode is a different body by
+30-60× — CAD `SpecificSurface` puts it at 65-123 cm² against the coupon's 2.0 — and the
+scaling is not a rounding error: this model is KINETICS-limited across its whole range
+(j_kinetic 99-247 vs j_diffusion 965-3859 µA/cm²), so area passes into current without
+saturating and delta_t ∝ 1/A EXACTLY (A=1→89.3 s, 2→44.7, 3→29.8, 5→17.9).
+
+So do not read a number from here as the anchor's recharge interval, and do not feed one
+into the DELTA_T_FAST_S / DELTA_T_SLOW_S calibration — those are per-deployment and wait
+on a measured recharge curve (00_07 E.63, HW.13). Anchor-scale delta_t is not computed by
+this model at all. [E.63, 2026-09-11]
 
 Run
 ---

@@ -61,7 +61,13 @@ J_MAX_25C = 494e-6           # A/cm² — dgrGcGDH + Os-polymer (Zafar 2012, PMC
 KM_GLUCOSE = 20.0            # mM — estimated for GcGDH
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
-A_ELECTRODE = 2.0            # cm² — effective electroactive area
+A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =
+# 2.01 cm²), never the anchor. Canon home docs/01_01 §6 ties the number to that face and
+# normalises j on the PROJECTED geometric area, because EAAE roughness r=10-50× makes the
+# real area unmeasurable (docs/01_02 §1.4). The Zone-1 gyroid anode is a different body by
+# 30-60×: the CAD `SpecificSurface` proxy puts it at 65-123 cm² depending on topology.
+# So every ABSOLUTE number derived from this constant is a coupon prediction, and the
+# Stage-2 coin is exactly what it is meant to be compared against. [E.63, 2026-09-11]
 ETA_BQ = 0.68                 # BQ25570 boost efficiency at P_EBFC≈15 µW — mirror of
 # docs/02_03 §9.1 table (source of truth; edit there, not here). [HW.47, 2026-09-09]
 # 0.85 was an unvalidated orphan value with no table/citation; SLUSBH2G Figures 6-7

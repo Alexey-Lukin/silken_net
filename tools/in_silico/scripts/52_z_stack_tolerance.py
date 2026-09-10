@@ -19,7 +19,7 @@ spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearan
 
 1D linear tolerance chain — closed-form RSS + worst-case, no FEA / numpy.
 
-A second question rides the same axis and is answered in the gland section: the ⚖️ of 2026-09-11 fixed
+A second question rides the same axis and is answered in the gland section: the ⚖️ of 2026-09-10 fixed
 the O-ring squeeze and therefore the groove DEPTH, but an O-ring displaces a fixed cross-section area,
 so the depth implies a WIDTH — and the width has to live inside the flat face that closes on it. That
 face is the bottom annulus of the PEEK dome wall, i.e. its width IS the wall thickness, and the three
@@ -52,7 +52,7 @@ ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 POGO_WIN = (0.50, 0.70)   # Mill-Max mid-stroke (02_02 §3.5)
 ORING_WIN = (0.15, 0.30)  # industry practice for static seals, centre 20 % (02_02 §3.5).
 # ⚠️ NOT Parker: that attribution was withdrawn 2026-09-10. The applicable Parker table is settled now —
-# ⚖️ founder 2026-09-11 put the single O-ring on the flange TOP face against the radome rim, i.e. a FACE
+# ⚖️ founder 2026-09-10 put the single O-ring on the flange TOP face against the radome rim, i.e. a FACE
 # seal, so Parker ORD 5700 Chart 4-3 for W .070" applies and its window is TIGHTER at the bottom.
 ORING_WIN_PARKER_FACE = (0.19, 0.32)  # Parker ORD 5700 Chart 4-3, face seal, W .070" (00_07 HW.33)
 PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max (Sil-Pad tolerates wide squeeze)
@@ -67,11 +67,11 @@ GAP_OR = ORING_CS * (1.0 - 0.20)           # Radome rim ↔ Zone 3 so O-ring sit
 # ── RF constraint (02_01 §5.3) — geometric, self-owned (Гончаров VNA pending) ──
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna ↔ Ti flange min Z-clearance for VSWR
 
-# ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-11) ──
+# ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-10) ──
 # The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
 # fixed cross-section area, so the WIDTH follows from the depth, and the width has to live inside the
 # flat face that closes on it. That third question is what this block asks.
-ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-11 — centre of the 19-30 % intersection
+ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of the 19-30 % intersection
 # Gland fill = O-ring section area / groove section area. A gland filled to 100 % has nowhere to put the
 # elastomer it displaces, so the ring extrudes or the faces are held apart. ⚠️ 00_06 §0: the ceiling
 # below is CITED industry practice (Parker's own design rule is a groove ~25 % larger than the ring,
@@ -149,7 +149,7 @@ def gland_width_required(cs: float, depth: float, fill: float) -> float:
 def seal_faces() -> dict:
     """Where a FACE seal can physically live, per MATE-Ø candidate — read off the shipped geometry.
 
-    ⚖️ 2026-09-11 put one O-ring on the flange TOP face, closed by the radome rim. That rim is the
+    ⚖️ 2026-09-10 put one O-ring on the flange TOP face, closed by the radome rim. That rim is the
     bottom annulus of the dome wall, so its width IS the wall thickness — and the three MATE-Ø
     candidates do not merely resize it, they disagree on whether it exists at all.
     """
