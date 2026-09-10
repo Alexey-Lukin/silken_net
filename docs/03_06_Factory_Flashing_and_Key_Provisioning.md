@@ -98,11 +98,14 @@
      # Slot 4..15 — reserved (legacy ATECC-нумерація; SE05x = object-model, не slots;
      #   FW.17-ратчет ротує session на MCU — 03_05 §3.8, НЕ в SE)
 
-  5. Lock (irreversible на ASIC рівні):
+  5. Lock (irreversible на ASIC рівні; legacy ATECC-скетч — SE05x немає 1:1 еквівалента,
+     policy per-object фіксується в момент СТВОРЕННЯ (крок 4), не двома фінальними
+     викликами, тож форма цього completion-proof теж зміниться —
+     protocols/hardware/se050_atecc_api_migration_candidates.md):
      atcab_lock_config_zone()    # Config (slot policies) → permanent
      atcab_lock_data_zone()      # All slot writes → forbidden forever
      # ⚠️ Після цього кроку ключі НЕ можуть бути ні прочитані, ні переписані —
-     # навіть з фізичним доступом, navigate ASIC шар.
+     # навіть з фізичним доступом до ASIC шару.
 
   6. Lock STM32:
      STM32CubeProgrammer → Set RDP Level 1 (або Level 2 після SEC.2 верифікації OTA)
