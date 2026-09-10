@@ -25,6 +25,9 @@ on:
     paths:
       - 'tools/cad/**'
       - '.github/workflows/cad_smoke.yml'
+      # The committed gallery is an OUTPUT of tools/cad pinned by DrawingTests — a gallery-only push
+      # (a republished sheet) must run `logic` too, or main stays on the last verdict (2026-09-10).
+      - 'docs/images/cad/*.drawing.svg'
 
 jobs:
   changes:
