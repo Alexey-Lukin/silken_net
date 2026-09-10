@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /*
- * cmd_token.h — [FW.60/FW.63] Локатор idempotency-токена в CMD-конверті Королеви.
+ * cmd_token.h — [FW.60, FW.63] Локатор idempotency-токена в CMD-конверті Королеви.
  *
- * Wire (03_02 §6, 03_05 §CMD):  CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<TOKEN>
+ * Wire (03_02 §6, 03_05 §2.3): CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<TOKEN>
  * Токен — ОСТАННЄ поле, і саме воно (а) хешується для Cmd_Dedup_Check і
  * (б) луною повертається Rails у `?cmd=` наступного poll'а, де
  * `observe_delivered_command!` шукає його `find_by(idempotency_token:)`.
