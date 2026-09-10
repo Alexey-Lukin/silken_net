@@ -6,7 +6,8 @@ HW.24 bake-off — per-alloy native-oxide DET feasibility (Ta DET-risk pre-coin)
 Each candidate alloy forms a native passive oxide; enzyme/mediator DET requires the
 electron to tunnel through it to the metal. A WIDER band-gap + THICKER oxide → steeper
 tunnelling decay → worse DET. This ANALYTICAL model (lit band-gaps + a WKB square-barrier
-decay) predicts — BEFORE the coin — that Ta2O5 (wider, thicker, more dielectric than TiO2)
+decay) predicts — BEFORE the coin — that Ta2O5 (wider band-gap, thicker native film → a stronger
+tunnelling BARRIER than TiO2; not permittivity — rutile TiO2 is the higher-κ dielectric)
 is a DET RISK relative to the TiO2 baseline the Gen 2.0 stack is designed on, and that the
 Au-coated coupon (no oxide, metallic) is the DET-electrical CEILING.
 

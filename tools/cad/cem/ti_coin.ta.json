@@ -15,11 +15,12 @@
     "material": "Tantalum (bioinert benchmark)",
     "process": "PBF-LB / SLM (high Tm 3017C, scanning-speed tuned); porous-Ta implant proven",
     "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2); Ta etch chemistry differs from Ti",
+    "coating_restriction": "Active face (EBFC Gen 2.0 stack): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ta as delivered, any dielectric blocks DET (01_02 3.6; RFQ 4.B). The native Ta2O5 (wider band-gap + thicker film than TiO2 -> steeper tunnelling decay, in-silico 53; CAVEAT below) is what this bracket coupon measures, not a coating to strip",
     "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Ta release (bioinert ceiling)",
     "extra": [
       "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
       "Alloy bake-off BENCHMARK: bioinertness ceiling (osteointegration gold-std) -> measures how much EBFC+interface lose vs the inert ideal",
-      "CAVEAT: Ta2O5 more dielectric than TiO2 -> DET risk for the enzyme cathode; heavy 16.6 g/cm3 -> coin-only, NOT an anchor candidate",
+      "CAVEAT: Ta2O5 = wider band-gap + thicker native film than TiO2 -> stronger tunnelling barrier (in-silico 53; NOT permittivity - rutile TiO2 is the higher-k dielectric) -> DET risk for the enzyme cathode; heavy 16.6 g/cm3 -> coin-only, NOT an anchor candidate",
       "Tree-first: bone-proven != tree-proven (01_04 4.2) -> sap CV/EIS decides"
     ]
   }
