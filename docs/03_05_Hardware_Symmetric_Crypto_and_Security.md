@@ -839,7 +839,7 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 **Decision-record (на випадок reopen):** дефолтом був би **pull-tab** (one-shot, не спуфиться магнітом, дешевший); геркон (Hamlin 59140-1-T-00-A + N52 ∅6×3 мм) — **лише** з latching first-boot: геркон гейтить тільки перший boot, далі софт латчить power-on (set-and-hold GPIO/load-switch) і ігнорує геркон, інакше **magnet-DoS** — зловмисник сильним магнітом глушить security-сенсор (реальний вектор проти anti-illegal-logging вузла). Latching-патерн «one-shot arm замість continuous power-cut» — reusable інсайт для будь-якого магнітного інтерфейсу на security-пристрої.
 
-**Reopen-умови (усі одночасно):** bench показує патологічний EBFC cold-start (R_int > 12 кΩ без мітигацій HW.13) × логістика ≤ тижня (заряд частково доживає) × pilot вимагає same-day TX — і навіть тоді перший кандидат = pogo-підзарядка вище, не транспорт-вимикач.
+**Reopen-умови (усі одночасно):** bench показує патологічний EBFC cold-start (`R_int` вище стелі [`02_03 §1.5`](02_03_BQ25570_MPPT_Nano_Power) без мітигацій HW.13; ⛔ колишнє «> 12 кΩ» виведено з 330 мВ і не діє) × логістика ≤ тижня (заряд частково доживає) × pilot вимагає same-day TX — і навіть тоді перший кандидат = pogo-підзарядка вище, не транспорт-вимикач.
 
 ---
 
