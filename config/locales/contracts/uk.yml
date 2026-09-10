@@ -8,7 +8,7 @@ uk:
         cluster_emission: Емісія кластера
         command: Команда
         id_status: ID / Статус
-        investment: Плата за послугу
+        service_fee: Плата за послугу
         organization: Організація
         period: Період
         target_cluster: Цільовий кластер

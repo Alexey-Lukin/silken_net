@@ -28,7 +28,7 @@ module Organizations
               tr do
                 th(scope: "col", class: "p-4") { t(".columns.name") }
                 th(scope: "col", class: "p-4") { t(".columns.sectors") }
-                th(scope: "col", class: "p-4") { t(".columns.investment") }
+                th(scope: "col", class: "p-4") { t(".columns.contracted") }
                 th(scope: "col", class: "p-4") { t(".columns.identity") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.audit") }
                 th(scope: "col", class: "p-4 text-right") { t(".columns.context") }
@@ -53,7 +53,7 @@ module Organizations
       tr(class: "hover:bg-gaia-surface-sunken transition-colors group") do
         td(class: "p-4 text-gaia-text font-bold") { org.name }
         td(class: "p-4 text-gaia-text-subtle") { org.total_clusters }
-        td(class: "p-4 text-gaia-text-strong") { t(".investment_value", amount: org.total_contracted) }
+        td(class: "p-4 text-gaia-text-strong") { t(".contracted_value", amount: org.total_contracted) }
         td(class: "p-4 text-tiny text-gaia-text-muted font-mono") do
           render Views::Shared::Web3::Address.new(address: org.crypto_public_address)
         end

@@ -6,11 +6,11 @@ lv:
         audit: Audits
         context: Konteksts
         identity: Ķēdes identitāte
-        investment: Līgumos (USD)
+        contracted: Līgumos (USD)
         name: Organizācijas nosaukums
         sectors: Sektori
       current_context: AKTĪVAIS_KONTEKSTS
-      investment_value: "%{amount} USD"
+      contracted_value: "%{amount} USD"
       subtitle: Daudzvadītāju entītiju un to vides kapitāla pārvaldība.
       switch: PĀRSLĒGT →
       switch_aria: Pārslēgt darba kontekstu uz %{name}

@@ -8,7 +8,7 @@ en:
         cluster_emission: Cluster Emission
         command: Command
         id_status: ID / Status
-        investment: Service Fee
+        service_fee: Service Fee
         organization: Organization
         period: Period
         target_cluster: Target Cluster

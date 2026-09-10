@@ -45,7 +45,26 @@
 #               this layer is no longer gated on a ruling — what remains is
 #               mechanics: response keys in app/controllers/api/**
 #               and app/blueprints/**, rendered strings in app/views/**, db/seeds.rb.
-#               Reported, never fatal; flip a scope to HARD once it reaches zero.
+#               Reported, never fatal.
+#               🔴 "FLIP A SCOPE TO HARD ONCE IT REACHES ZERO" STOOD HERE AND IS
+#               UNREACHABLE AS WRITTEN — measured 2026-09-10, and the reason is two
+#               RATIFIED verdicts sitting inside the scope, not unfinished work.
+#               `contracts/show.rb` renders `early_exit_fee_percent` FROM THE RECORD
+#               (historical contracts must show the term they were signed under, ⛔ in
+#               00_07 BIZ.22), and its seed sibling is held pending a founder's word.
+#               A criterion that can only be met by violating a verdict is not a
+#               criterion. The honest form is ZERO UNTRIAGED hits, with each surviving
+#               one belonging to a NAMED class — and after the 2026-09-10 sweep the
+#               remaining set is exactly two such classes, nothing loose:
+#                 · ratified ⛔ sites (the fee rendered from a record, and its seed);
+#                 · the biological `yield` — and its triage is sharper than "homonym".
+#                   Of those hits only THREE are response keys at all (`yield_impact`,
+#                   `biomass_yield_kg` ×2) and all three mean the CROP, not a return.
+#                   The rest are internal identifiers, a cache key and a comment that
+#                   never reach a client — i.e. the regex overshoots this gate's own
+#                   declared subject ("response keys"), scanning whole lines instead.
+#               Which of the two classes becomes a declared exemption is a ⚖️, and it
+#               is the ONLY thing between this scope and HARD.
 #
 # NAMED CEILINGS [BIZ.22], all three because a regex cannot read intent:
 #   (1) HOMONYM terms are gated only inside locale values, so investment framing in

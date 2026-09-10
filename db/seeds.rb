@@ -191,7 +191,7 @@ active_bridge = Organization.create!(
 eco_future_fund = Organization.create!(
   name: "EcoFuture Fund",
   crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-  billing_email: "investments@ecofuture.fund",
+  billing_email: "billing@ecofuture.fund",
   hadron_kyc_status: "approved"
 )
 

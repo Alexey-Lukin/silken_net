@@ -28,7 +28,7 @@ module Contracts
                   th(scope: "col", class: "p-4") { t(".columns.id_status") }
                   th(scope: "col", class: "p-4") { t(".columns.organization") }
                   th(scope: "col", class: "p-4") { t(".columns.target_cluster") }
-                  th(scope: "col", class: "p-4") { t(".columns.investment") }
+                  th(scope: "col", class: "p-4") { t(".columns.service_fee") }
                   th(scope: "col", class: "p-4") { t(".columns.cluster_emission") }
                   th(scope: "col", class: "p-4") { t(".columns.period") }
                   # [UI.10] Колонки «Cluster Health» тут більше немає: датчик під

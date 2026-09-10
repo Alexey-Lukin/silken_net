@@ -8,7 +8,7 @@ lv:
         cluster_emission: Klastera emisija
         command: Komanda
         id_status: ID / Statuss
-        investment: Pakalpojuma maksa
+        service_fee: Pakalpojuma maksa
         organization: Organizācija
         period: Periods
         target_cluster: Mērķa klasteris
