@@ -79,6 +79,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 60 | `60_paper_figures.py` | Стаття 1 figures from cache (+PDB for Fig 2): Fig 2 DRAFT / 3 / 4 / 5 + S1; canon-asserted → `paper/figures/` | ~4 s |
 | 61 | `61_paper_tables.py` | Стаття 1 Tables T1–T4 from cache (canon-asserted, no DFT) → `paper/06_tables.md` | ~1 s |
 | 63 | `63_delta_t_aux_power_sensitivity.py` | HW.42: does a second (TEG) power source on the shared BQ25570 rail contaminate `delta_t` — closed-form P_aux 10-200 µW sensitivity bracket | ~1 s |
+| 64 | `64_teg_across_peek_break.py` | HW.21: may a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to bark — imports script 54's ladder + a `G_TEG` branch, thermal gate vs own Seebeck output | ~2 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —

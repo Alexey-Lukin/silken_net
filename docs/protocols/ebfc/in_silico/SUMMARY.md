@@ -563,6 +563,74 @@ explicit ⚖️ reserved for the founder (`00_07` HW.42) — not decided here.
 
 ---
 
+## HW.21 — A TEG ACROSS the Zone-2 PEEK Break, Not Glued to the Bark (script 64)
+
+Canon home → [`01_03 §6.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (TEG concept) +
+[`01_01 §4.1`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (why the break exists at all);
+decision → `00_07` HW.21.
+
+`HW.21`'s 🤖 leg asks the geometrically obvious question: a bark-glued module sees its ΔT through bark
+(λ 0.05–0.1) and an unclamped joint, whereas **Zone 2 is the one place in the anchor where both junctions
+are already mechanically fixed on opposite sides of a λ 0.25 insulator**. ⚠️ But it aims straight at the
+reason Zone 2 exists — a continuous Ti bridge super-cools the cambial ring into intracellular ice — and a
+TEG is, before it is anything else, a conductive plate. Script 64 **imports** script 54's ladder rather
+than copying it (it re-derives 54's own cached Ti / no-bus / Cu conductances to rtol 1e-12 or aborts the
+run) and adds `G_TEG = κ_eff·A/t` in parallel with either the 6 mm PEEK-only gap (`gap` mount) or the
+whole 50 mm sleeve (`sleeve` mount), judged against the same −2.0 °C cambium gate and the same
+wood-reservoir sweep. Straps and collars are modelled as **ideal**, which overstates the thermal harm AND
+the electrical output — both biases favour the idea under test, so a rejection under them is robust.
+Output is taken at the ΔT that *survives the module's own installation*:
+`P_max = (ZT/T̄)·G_TEG·ΔT²/4` (≡ `S²ΔT²/4R`, since `Z = S²/(R·K)` at module level), with κ_eff
+1.2–1.6 W/(m·K) and ZT 0.7 from Bi₂Te₃ literature — Poudel *et al.*, *Science* **320**(5876) 634–638
+(2008), [doi:10.1126/science.1156446](https://doi.org/10.1126/science.1156446); Goldsmid,
+*Introduction to Thermoelectricity* 2nd ed., Springer Series in Materials Science (2016),
+[doi:10.1007/978-3-662-49256-7](https://doi.org/10.1007/978-3-662-49256-7) — both Crossref-verified.
+
+| Case (κ_eff 1.4, `gap` mount) | G_TEG | × whole anchor | T_anode | gate | P at surviving ΔT | V_oc |
+|---|---|---|---|---|---|---|
+| *no TEG — the residual monolithic-Ti bus we already accept* | — | 1× | **−1.43 °C** | ok | — | — |
+| 8×8×4 mm — smallest geometry swept | 2.24e−2 W/K | 11× | −8.74 °C | ❄ FAIL | 806 µW | 14.8 mV |
+| 15×15×3 mm | 1.05e−1 W/K | 51× | −10.91 °C | ❄ FAIL | 290 µW | 14.3 mV |
+| 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 364× | −11.61 °C | ❄ FAIL | 47 µW | 15.4 mV |
+| *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.73 °C | ❄ FAIL | — | — |
+| *reference:* **solid Ti, NO PEEK break at all** | 1.25e−2 W/K | 6× | **−11.49 °C** | ❄ FAIL | — | — |
+
+**Verdict** — 🔴 **Reject as posed, and not because the part is badly chosen.** `0 of 90` swept
+combinations (5 footprints × 3 thicknesses × 3 κ × 2 mounts) pass the gate: the *smallest* geometry
+swept already conducts **11× the entire anchor**. It is not a partial defeat — a gap-spanning module
+saturates at −11.73 °C, **0.24 °C from a solid Ti anchor with no PEEK break at all** (−11.49 °C), i.e.
+it reverts the design to precisely the pre-PEEK condition Zone 2 exists to prevent. Inverted, the number
+worth keeping is the **budget**: anything crossing the break must stay under **5.4e−4 W/K ≈ 1.2 mm² at
+3 mm** — ×55 smaller than the smallest module — and across the 32 live wood-grid points that budget goes
+**negative** (min −1.5e−3 W/K), because the residual Ti bus has already spent the whole allowance there.
+Two objections were tested and neither rescues it: at the leg-only fill-factor lower bound (κ_eff 0.4)
+the 8×8×4 still fails at −5.66 °C, and the HW.34 Ø1.3-vs-Ø1.0 bus caveat is **immaterial here** (−8.74 →
+−8.65 °C) because the module out-conducts the whole anchor either way.
+⚖️ **The honest residual, stated rather than buried:** at exactly the budget a bespoke sub-mm² micro-TEG
+still yields ~202 µW — *inside* HW.21's own 50–200 µW winter target — but at zero gate margin, and its
+V_oc is ~9 mV, **×64 below BQ25570's VIN(CS) 600 mV** (HW.46), so it would need a mV-class transformer
+harvester, not a BQ25570-class part. That is a different project, not a module choice. Note also the
+thermal impedance match: power peaks at G_TEG 9.2e−3 W/K (≈4.4×4.4×3 mm, 972 µW) and **falls** for larger
+modules — 40×40×3 gives 17× *less* than 8×8×4 — so "buy a bigger TEG" loses on both axes at once.
+This is the same structural shape as the already-ratified `HW.42`: there the power that helps is the
+power that poisons `delta_t`; here **the conductance that harvests is the conductance that kills the
+break**. Neither is a budget problem, so no number moves either.
+
+⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md) Validation
+Gate). What the 1D ladder structurally cannot see: **3-D spreading** (a flat plate on a Ø11–15 mm
+cylinder — the ladder assumes the whole footprint is thermally engaged, overstating G_TEG, and equally
+misses the lateral bark/air bypass); **contact resistance** (collars, straps, TIM and both alumina faces
+are all zero here — a real 50 mm Al strap is ~0.08 W/K, the same order as the module, so the `sleeve`
+mount especially is an idealisation; adding them shrinks *both* sides of the trade rather than rescuing
+it); **the module's own leg geometry** (fill factor, leg aspect ratio, ceramics and the Peltier/Thomson
+back-reaction under load are folded into one κ_eff and one ZT); and **transients / seasonal reversal**
+(steady state only — the summer inward-heat desiccation of `01_01 §4.1` and freeze-thaw cycling are
+invisible, and a permanently installed conductive plate makes both worse). 16 of the 48 grid points are
+degenerate (reservoir at or below the gate). Bench (Cherkasy winter) + conjugate 3-D FEA remain the only
+things that can turn any of this into a measurement. (`mechanical/teg_across_peek_break.json`)
+
+---
+
 ## Infrastructure
 
 | Component | Location |

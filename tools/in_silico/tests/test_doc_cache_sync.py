@@ -308,6 +308,31 @@ CHECKS = [
         "kinetics/gdl_breakthrough.json",
         lambda d: d["o2_budget"]["per_pore"]["0.02um"]["margin_x"], 1.0,
     ),
+    # ── HW.21 TEG across the PEEK break (script 64) — the load-bearing four ──
+    (
+        "gap-mount asymptote → teg_across_peek_break.json (SUMMARY §HW.21 verdict)",
+        SUMMARY, rf"saturates at {N} °C",
+        "mechanical/teg_across_peek_break.json",
+        lambda d: d["baseline_from_script_54"]["gap_mount_asymptote_t_anode_C"], 0.005,
+    ),
+    (
+        "solid-Ti no-break reference → teg_across_peek_break.json (SUMMARY §HW.21 table)",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| 6× \| \*\*{N} °C",
+        "mechanical/teg_across_peek_break.json",
+        lambda d: d["baseline_from_script_54"]["solid_ti_no_break_t_anode_C"], 0.005,
+    ),
+    (
+        "micro-TEG yield at the thermal budget → teg_across_peek_break.json (SUMMARY §HW.21)",
+        SUMMARY, rf"still yields ~{N} µW",
+        "mechanical/teg_across_peek_break.json",
+        lambda d: d["thermal_budget"]["at_budget"]["p_uW"], 1.0,
+    ),
+    (
+        "fill-factor lower-bound rescue attempt → teg_across_peek_break.json (SUMMARY §HW.21)",
+        SUMMARY, rf"the 8×8×4 still fails at {N} °C",
+        "mechanical/teg_across_peek_break.json",
+        lambda d: d["sensitivities"]["fill_factor_lower_bound"]["t_anode_C"], 0.005,
+    ),
 ]
 
 
