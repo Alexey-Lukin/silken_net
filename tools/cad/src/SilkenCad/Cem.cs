@@ -199,7 +199,8 @@ internal sealed record CathodeFlangeCem
     public float LugProtrusionMm { get; init; } = 2f;      // radial protrusion beyond the flange rim
     public float LugRadiusMm { get; init; } = 1.5f;        // pin radius
 
-    // O-ring groove on the flange underside (mate the Радом O-ring, CS 1.78 → 02_02 §3.2)
+    // O-ring groove on the flange TOP (capsule-side) face — mates the Радом RIM groove, CS 1.78
+    // (02_02 §3.2). NOT the underside: there is no elastomer under the flange (00_07 HW.33).
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 2.0f;
 
