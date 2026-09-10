@@ -5,12 +5,12 @@ en:
       columns:
         audit: Audit
         context: Context
-        identity: On-Chain Identity
         contracted: Contracted (USD)
+        identity: On-Chain Identity
         name: Organization Name
         sectors: Sectors
-      current_context: ACTIVE_CONTEXT
       contracted_value: "%{amount} USD"
+      current_context: ACTIVE_CONTEXT
       subtitle: Management of multi-tenant entities and their environmental programmes.
       switch: SWITCH_TO →
       switch_aria: Switch acting context to %{name}

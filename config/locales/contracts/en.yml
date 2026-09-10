@@ -8,9 +8,9 @@ en:
         cluster_emission: Cluster Emission
         command: Command
         id_status: ID / Status
-        service_fee: Service Fee
         organization: Organization
         period: Period
+        service_fee: Service Fee
         target_cluster: Target Cluster
       portfolio_title: Monitored Clusters
       stats:

@@ -5,12 +5,12 @@ uk:
       columns:
         audit: Аудит
         context: Контекст
-        identity: On-Chain ідентичність
         contracted: Законтрактовано (USD)
+        identity: On-Chain ідентичність
         name: Назва організації
         sectors: Сектори
-      current_context: АКТИВНИЙ_КОНТЕКСТ
       contracted_value: "%{amount} USD"
+      current_context: АКТИВНИЙ_КОНТЕКСТ
       subtitle: Управління multi-tenant сутностями та їхніми екологічними програмами.
       switch: ПЕРЕМКНУТИСЬ →
       switch_aria: Перемкнути робочий контекст на %{name}

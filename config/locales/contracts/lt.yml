@@ -8,9 +8,9 @@ lt:
         cluster_emission: Klasterio emisija
         command: Komanda
         id_status: ID / Būsena
-        service_fee: Paslaugos mokestis
         organization: Organizacija
         period: Laikotarpis
+        service_fee: Paslaugos mokestis
         target_cluster: Tikslinis klasteris
       portfolio_title: Stebimi klasteriai
       stats:

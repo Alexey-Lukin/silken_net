@@ -5,12 +5,12 @@ lv:
       columns:
         audit: Audits
         context: Konteksts
-        identity: Ķēdes identitāte
         contracted: Līgumos (USD)
+        identity: Ķēdes identitāte
         name: Organizācijas nosaukums
         sectors: Sektori
-      current_context: AKTĪVAIS_KONTEKSTS
       contracted_value: "%{amount} USD"
+      current_context: AKTĪVAIS_KONTEKSTS
       subtitle: Daudzvadītāju entītiju un to vides kapitāla pārvaldība.
       switch: PĀRSLĒGT →
       switch_aria: Pārslēgt darba kontekstu uz %{name}

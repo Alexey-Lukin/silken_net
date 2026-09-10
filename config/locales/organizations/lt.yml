@@ -5,12 +5,12 @@ lt:
       columns:
         audit: Auditas
         context: Kontekstas
-        identity: Grandinės tapatybė
         contracted: Pagal sutartis (USD)
+        identity: Grandinės tapatybė
         name: Organizacijos pavadinimas
         sectors: Sektoriai
-      current_context: AKTYVUS_KONTEKSTAS
       contracted_value: "%{amount} USD"
+      current_context: AKTYVUS_KONTEKSTAS
       subtitle: Daugianuomininkių entitetų ir jų aplinkos kapitalo valdymas.
       switch: PERJUNGTI →
       switch_aria: Perjungti darbo kontekstą į %{name}
