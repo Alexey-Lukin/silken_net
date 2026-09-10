@@ -357,7 +357,7 @@ RSpec.describe Downlink::PendingQueueService do
 
     it "chunk-server віддає чанк за (v, ch) і nil поза межами/на чужу версію" do
       packages = OtaPackagerService.prepare(
-        firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE, cluster_id: cluster.id
+        firmware, chunk_size: OtaChunkable::CHUNK_SIZE, cluster_id: cluster.id
       )[:packages].to_a
 
       fetched = described_class.ota_chunk_reply(
@@ -391,7 +391,7 @@ RSpec.describe Downlink::PendingQueueService do
     # виміряно coverage'ом, не оком (решта негативних гілок уже доведена сусідами
     # вище). Backstop стоїть на ВЖЕ ЗАШИФРОВАНОМУ конверті, і досяжний він лише
     # звідси: `oversized?(inner)` питається на CMD-сходинці, а чанк іде в `envelope`
-    # без жодної перевірки розміру — тобто підняття `OtaTransmissionWorker::CHUNK_SIZE`
+    # без жодної перевірки розміру — тобто підняття `OtaChunkable::CHUNK_SIZE`
     # детонувало б саме тут. Вироджуємось у time-only (Королева лишається з живим
     # RTC-sync), а не шлемо конверт, який вона мовчки відкине ще до decrypt.
     it "чанк понад стелю конверта вироджується в time-only, а не їде на мовчазне відкидання" do
@@ -503,7 +503,7 @@ RSpec.describe Downlink::PendingQueueService do
 
     it "chunk-fetch мовить прогрес (ch+1 із total)" do
       total = OtaPackagerService.prepare(
-        firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE, cluster_id: cluster.id
+        firmware, chunk_size: OtaChunkable::CHUNK_SIZE, cluster_id: cluster.id
       )[:packages].to_a.size
 
       described_class.ota_chunk_reply(gateway: gateway, query: { "v" => firmware.id.to_s, "ch" => "0" })

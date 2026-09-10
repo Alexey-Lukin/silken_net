@@ -72,7 +72,7 @@ RSpec.describe "OTA deploy tract (FW.60 poll-ера)", type: :request do
 
   def packages
     @packages ||= OtaPackagerService.prepare(
-      firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE, cluster_id: cluster.id
+      firmware, chunk_size: OtaChunkable::CHUNK_SIZE, cluster_id: cluster.id
     )[:packages].to_a
   end
 

@@ -54,7 +54,7 @@ module Ota
     # HMAC-трейлер 0x9B живе поза Queen-bitmap'ом і стелі не їсть.
     def oversized_rejection
       manifest = OtaPackagerService.prepare(
-        @firmware, chunk_size: OtaTransmissionWorker::CHUNK_SIZE
+        @firmware, chunk_size: OtaChunkable::CHUNK_SIZE
       )[:manifest]
       return nil if manifest[:total_chunks] <= QUEEN_MAX_BYTECODE_CHUNKS
 

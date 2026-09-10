@@ -8,7 +8,8 @@ require "timeout"
 # Ota::DeploymentDispatcherService пише gateways.pending_firmware_id, доставку
 # тягне сама Королева (poll → OTA-hint → Downlink::PendingQueueService
 # chunk-server). Видалити після bench-верифікації poll-тракту [bench:coap];
-# CHUNK_SIZE лишається живою константою пакування.
+# CHUNK_SIZE переселено в `OtaChunkable` (2026-09-10) — тут лишився лише псевдонім,
+# тож зняття файлу більше не забирає з собою живе значення.
 #
 # 🔴 [UI.4] ВИДАЛЯЮЧИ ЦЕЙ ФАЙЛ, ЗНІМИ Й РЯДОК ІЗ `producer_files` у
 # `spec/security/turbo_stream_scope_spec.rb` — інакше гейт почервоніє на
@@ -34,7 +35,7 @@ class OtaTransmissionWorker
   # відроджувати тут порятунок означало б лікувати мертвий шлях. Живий сторож
   # цього стану — `GatewayStalenessSweepWorker#release_stuck_ota_gateways`, і він
   # не залежить від того, який саме процес залишив шлюз у `:updating`.
-  CHUNK_SIZE = 512
+  CHUNK_SIZE = OtaChunkable::CHUNK_SIZE
   MAX_CHUNK_RETRIES = 5
 
   def perform(queen_uid, firmware_type, record_id, chunk_index = 0, retry_count = 0)

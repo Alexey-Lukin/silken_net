@@ -315,7 +315,7 @@ module Downlink
 
         OtaPackagerService.prepare(
           firmware,
-          chunk_size: OtaTransmissionWorker::CHUNK_SIZE,
+          chunk_size: OtaChunkable::CHUNK_SIZE,
           cluster_id: @gateway.cluster_id
         )[:packages].to_a
       end

@@ -6,6 +6,14 @@
 module OtaChunkable
   extend ActiveSupport::Concern
 
+  # One-Home пакувального кроку OTA. Число жило в `OtaTransmissionWorker`, чий ПУСКАЧ мертвий
+  # із [FW.60] і чий файл піде після bench-верифікації poll-тракту — а константу читають два
+  # живі сайти (`Downlink::PendingQueueService`, `Ota::DeploymentDispatcherService`). Тут воно
+  # стоїть біля обох методів, які ним ріжуть, тож наступний, хто зноситиме воркер, не візьме
+  # з собою живе значення. ⚠️ Підняття вище MTU конверта CoAP не перевіряє ніщо —
+  # `PendingQueueService` нарізає без контролю розміру (спека того сервісу це фіксує).
+  CHUNK_SIZE = 512
+
   # Розбиття на сегменти (MTU-friendly). byteslice без regex: O(n/chunk) memcpy
   # без backtracking. На 256 KB binary payload (FW.4 max) це ~3× швидше за
   # regex.scan і не виділяє inter-buffer regex match data.
@@ -16,7 +24,7 @@ module OtaChunkable
   # живий poll-тракт нарізає чанки сам (`OtaPackagerService`). Метод лишено, не
   # зрізано: зняття push-ери гейтоване стендом (`00_07` ARCH.59-нитка), і в
   # передпродовому дереві нуль викликачів вимірює недобудованість, не смерть.
-  def chunks(chunk_size = 512)
+  def chunks(chunk_size = CHUNK_SIZE)
     size = payload_size
     return [] if size.zero?
 
@@ -34,7 +42,7 @@ module OtaChunkable
 
   # Integer math — уникаємо Float, щоб для великих payload не отримати
   # off-by-one через накопичення похибки `to_f`.
-  def total_chunks(chunk_size = 512)
+  def total_chunks(chunk_size = CHUNK_SIZE)
     size = payload_size
     return 0 if size.zero?
 
