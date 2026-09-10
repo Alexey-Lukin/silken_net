@@ -815,6 +815,8 @@ Device Memory → Option Bytes → Read Out Protection → RDP: Level 1 (або 
 
 **Поточний стан (Reverse Shaping аудит):** RDP Level 0 — відкрито для розробки. Перехід на Level 1 є фінальним кроком перед відправкою першої партії в ліс.
 
+> ⚖️ **Secure boot (BFU) — схему підпису ратифіковано founder 2026-09-10 ([`00_07` SEC.24](00_07_Action_Plan_Tracker)): ECDSA-P256 підпис C-образу, БЕЗ шифрування образу.** Підстава виміряна, не смакова: образ не несе секретів (усі ключі — Protected Flash стор. 124–125, [`03_06`](03_06_Factory_Flashing_and_Key_Provisioning); TinyML-ваги AGPL-публічні), тож +AES-CBC ховав би вже опубліковане ціною симетричного ключа без enclave на single-core WLE5. Реалізація (BFU-верифікація + rescue-ланцюг) і порядок паління (WRP → BOOT_LOCK → RDP L2 останнім) — відкриті ноги SEC.24. ⚠️ Юр-питання AGPL §6 (anti-tivoization: підпис + BOOT_LOCK на образі з AGPL-кодом) — [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) / UNI.16, не кремній.
+
 ---
 
 ### 3.4 Стратегія Масового Виробництва (Factory Flashing Pipeline) — винесено в 03_06
