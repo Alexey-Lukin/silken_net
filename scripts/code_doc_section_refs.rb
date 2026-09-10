@@ -84,7 +84,11 @@ GITHUB_TREE = ".github"
 # коректна й тепер уперше стереже́ться. Це рівно тест, який приписує пункт #7
 # цього ж скіла: «для кожного винятку спитай, що зламається, якщо цей рядок
 # видалити» — відповідь була «нічого, крім двох речень».
-EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb)}
+# `.claude/worktrees/`: a live agent worktree is a FULL nested checkout under the
+# `.claude` tree this gate walks, so its CHANGELOG/canon copies carry every historical
+# §-ref the live tree has already retired (measured 2026-09-10: 15 «stale» hits, all
+# the copy). Same exclusion `claude_prose_path_refs_spec` already applies.
+EXEMPT = %r{\A(?:lib/docs_linter\.rb|lib/docs_graph\.rb|lib/tracker/dashboard\.rb|\.claude/worktrees/)}
 
 # Пер-рефні винятки: файл СКАНУЄТЬСЯ, але ці конкретні реф-и — навмисні
 # цитати дрейфу, і саме цитата є документацією («доc-renumber ПЕРЕСУНУВ ці

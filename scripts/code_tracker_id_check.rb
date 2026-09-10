@@ -88,7 +88,12 @@ EXTS  = "{rb,c,h,sol,py,sh,rake,erb,yml,yaml,md,json}"
 # in CI — the "on the FS, not in git" divergence. Measured when `subgraph/` joined
 # TREES: 6873 vendored files entered the scan from one gitignored directory, i.e. the
 # local run and the CI run were grading different trees while both printed green.
-EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|spec/quality/tracker_id_range_split_spec\.rb|scripts/code_tracker_id_check\.rb|[^\n]*node_modules/|contracts/(?:out|cache|lib)/|firmware/extern/|tools/[^/]+/venv/)}
+# `.claude/worktrees/` is the same class one level up: `git worktree add` there drops a
+# FULL nested checkout (its own docs/, CHANGELOG, tracker copy) inside the `.claude` tree
+# this gate walks, so every historical citation in that copy reads as a phantom of the
+# live tracker. Measured 2026-09-10: one live agent worktree = 24 «phantom» hits, all of
+# them the copy — same shape as `claude_prose_path_refs_spec`, which already excludes it.
+EXEMPT = %r{\A(?:lib/tracker/dashboard\.rb|spec/lib/|spec/quality/tracker_id_range_split_spec\.rb|scripts/code_tracker_id_check\.rb|[^\n]*node_modules/|contracts/(?:out|cache|lib)/|firmware/extern/|tools/[^/]+/venv/|\.claude/worktrees/)}
 ADVISORY_ONLY = %r{\ACHANGELOG\.md:}
 
 # ID-shaped tokens that are NOT tracker refs: external standards etc.
