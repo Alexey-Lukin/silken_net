@@ -25,6 +25,8 @@ on:
     paths:
       - 'tools/ml/**'
       - 'firmware/common/logmel_*.h'
+      - 'firmware/soldier/silken_net_audio_model.h'
+      - 'firmware/test/silken_net_audio_model_golden.h'
       - '.github/workflows/ml_smoke.yml'
 
 jobs:
@@ -48,6 +50,8 @@ jobs:
             ml:
               - 'tools/ml/**'
               - 'firmware/common/logmel_*.h'
+              - 'firmware/soldier/silken_net_audio_model.h'
+              - 'firmware/test/silken_net_audio_model_golden.h'
               - '.github/workflows/ml_smoke.yml'
 
   smoke:
@@ -96,6 +100,14 @@ jobs:
       - name: Firmware tables match the contract (canonical regen)
         shell: bash -el {0}
         run: python -m silken_ml.codegen.emit_c --check
+
+      # [FW.4] The model header says DO NOT EDIT and is fully determined by a committed
+      # run; nothing proved the committed copy still matches it. Needs TF (extract_params
+      # reads the tflite through tf.lite.Interpreter) — measured before building, which is
+      # why it rides this conda job and not the stdlib firmware job. Ceilings: 00_06 §3.
+      - name: Model header + golden match the committed run (FW.4)
+        shell: bash -el {0}
+        run: python tools/ml/scripts/check_model_header.py
 
   ml-ok:
     # Single aggregate status check for branch protection — mirrors docs-ok/ci-ok.

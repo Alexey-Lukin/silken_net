@@ -184,7 +184,7 @@ CANON_CODE_GATES_OUTSIDE_DOCS = {
     "check_firmware_tables.py", "check_bytecode.py", "gen_bytecode.sh --check",
     "deploy_secret_scan.rb"
   ],
-  "ml_smoke.yml"        => [ "emit_c --check" ],
+  "ml_smoke.yml"        => [ "emit_c --check", "check_model_header.py" ],
   "in_silico_smoke.yml" => [ "test_doc_cache_sync.py", "conda-lock lock --check-input-hash" ],
   # TEST.14: конвенція `testRevert_*` живе в CLAUDE.md §8 — тобто це canon↔code
   # дзеркало, а не build/test-крок, і саме тому воно тут. ⚠️ Сусідній last-admin
