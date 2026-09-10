@@ -428,23 +428,26 @@ def build_from_run(run_dir, header_out="firmware/soldier/silken_net_audio_model.
 # ── freshness gate: committed header == regen from the committed run [FW.4] ──
 #
 # `silken_net_audio_model.h` says DO NOT EDIT and is fully determined by a committed
-# run (`model_int8.tflite` + `parity_test.npz` + `reproducibility.json`), yet nothing
-# proved the committed header still matches it: `test_export_arithmetic` checks the
-# requantize math, and the host `test_audio_model` compares the runtime against goldens
-# emitted in the SAME commit. Mirror of the log-mel `emit_c --check` gate.
+# run, yet nothing proved the committed header still matches it: `test_export_arithmetic`
+# checks the requantize math, and the host `test_audio_model` compares the runtime against
+# goldens emitted in the SAME commit. Mirror of the log-mel `emit_c --check` gate.
 #
 # 🔒 DECLARED CEILINGS — a green run does NOT mean:
-#   · that `model_int8.tflite` still matches `model.keras`. The check starts FROM the
-#     committed tflite; re-running `to_int8_tflite` would make the gate converter-
-#     version-sensitive, which is a different (and much noisier) guarantee.
-#   · that a retrain was committed at all. If neither the run nor the header is
-#     committed, nothing changed in git and the gate is silent by construction —
-#     it catches "new run committed, stale header", not "nothing committed".
-#   · that a header emitted with a different `n_golden` is wrong. This check pins
-#     `build_from_run`'s default (12); change one, change both.
+#   · that the GOLDEN header is fresh. `emit_golden` needs the held-out vectors from
+#     `parity_test.npz`, and `tools/ml/.gitignore` excludes `*.npz` on purpose, so that
+#     input does not exist in a CI checkout. Scope is the model header alone; the golden
+#     is covered only by the host test that consumes it.
+#   · that `int8_acc` / parity were re-derived. They are read from the run's committed
+#     `export_report.json` (the export's own record) because recomputing them needs the
+#     same gitignored test set. The WEIGHT ARRAYS are still re-extracted from the
+#     committed `model_int8.tflite`, which is what a stale header actually gets wrong.
+#   · that `model_int8.tflite` still matches `model.keras`. Re-running the conversion
+#     would make the gate converter-version-sensitive — a different guarantee.
+#   · that a retrain was committed at all. With neither run nor header committed, nothing
+#     changed in git and the gate is silent by construction: it catches "new run
+#     committed, stale header", not "nothing committed".
 REGISTRY_DIR = "tools/ml/models/registry"
 DEFAULT_HEADER = "firmware/soldier/silken_net_audio_model.h"
-DEFAULT_GOLDEN = "firmware/test/silken_net_audio_model_golden.h"
 
 
 def latest_run(registry_dir: str | Path = REGISTRY_DIR) -> Path:
@@ -455,44 +458,40 @@ def latest_run(registry_dir: str | Path = REGISTRY_DIR) -> Path:
     return runs[-1]
 
 
-def regenerate_from_run(run: Path, n_golden: int = 12) -> tuple[str, str]:
-    """(header, golden) re-emitted from a committed run — no training, no re-conversion."""
+def regenerate_header_from_run(run: Path) -> str:
+    """Re-emit the model header from a run's COMMITTED files — no training, no conversion."""
     import json
 
-    p = extract_params((run / "model_int8.tflite").read_bytes())
-    d = np.load(run / "parity_test.npz")
-    x_te, y_te = d["X"], d["y"]
-    par = quantization_parity(p, (run / "model_int8.tflite").read_bytes(), x_te)
+    params = extract_params((run / "model_int8.tflite").read_bytes())
     repro = json.loads((run / "reproducibility.json").read_text())
+    report = json.loads((run / "export_report.json").read_text())
+    # Cross-check the two records before trusting either: a report copied from another run
+    # would otherwise regenerate a plausible-but-wrong provenance line.
+    if report["provenance"]["run_id"] != repro["run_id"]:
+        raise RuntimeError(f"export_report.json is from run {report['provenance']['run_id']}, "
+                           f"reproducibility.json from {repro['run_id']}")
     prov = {"run_id": repro["run_id"], "float_acc": repro["metrics"]["accuracy"],
-            "int8_acc": int8_accuracy(p, x_te, y_te),
-            "manifest_hash": repro["data_manifest_hash"], "parity": par}
-    return emit_header(p, prov), emit_golden(p, x_te, n_golden=n_golden)
+            "int8_acc": report["int8_acc"], "manifest_hash": repro["data_manifest_hash"],
+            "parity": report["parity"]}
+    return emit_header(params, prov)
 
 
 def check_committed(header_out: str | Path = DEFAULT_HEADER,
-                    golden_out: str | Path = DEFAULT_GOLDEN,
                     registry_dir: str | Path = REGISTRY_DIR) -> int:
-    """0 when both committed files equal the regen; 1 with a named diff otherwise."""
+    """0 when the committed header equals the regen; 1 with a named diff otherwise."""
     run = latest_run(registry_dir)
-    header, golden = regenerate_from_run(run)
-    bad = []
-    for path, regen in ((Path(header_out), header), (Path(golden_out), golden)):
-        if not path.exists():
-            bad.append(f"{path}: MISSING (regen is {len(regen)} chars)")
-            continue
-        committed = path.read_text(encoding="utf-8")
-        if committed != regen:
-            first = next((i for i, (a, b) in enumerate(
-                zip(committed.splitlines(), regen.splitlines(), strict=False), 1) if a != b), None)
-            bad.append(f"{path}: DRIFT vs run {run.name}"
-                       + (f" — first differing line {first}" if first else " — length differs"))
-    if bad:
-        print(f"❌ model header drift (run {run.name}):")
-        for b in bad:
-            print(f"   · {b}")
-        print("   Regenerate: python -c \"from silken_ml.export import build_from_run;"
-              f" build_from_run('{run}')\"  (or re-export from the training run)")
+    regen = regenerate_header_from_run(run)
+    path = Path(header_out)
+    if not path.exists():
+        print(f"❌ {path}: MISSING (regen is {len(regen)} chars, run {run.name})")
         return 1
-    print(f"✅ committed model header + golden match run {run.name}")
-    return 0
+    committed = path.read_text(encoding="utf-8")
+    if committed == regen:
+        print(f"✅ committed model header matches run {run.name}")
+        return 0
+    first = next((i for i, (a, b) in enumerate(
+        zip(committed.splitlines(), regen.splitlines(), strict=False), 1) if a != b), None)
+    print(f"❌ model header drift vs run {run.name}:")
+    print(f"   · {path}: " + (f"first differing line {first}" if first else "length differs"))
+    print("   Re-export from the training run (build_from_run) and commit the header.")
+    return 1

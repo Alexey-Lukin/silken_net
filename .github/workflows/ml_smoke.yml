@@ -26,7 +26,6 @@ on:
       - 'tools/ml/**'
       - 'firmware/common/logmel_*.h'
       - 'firmware/soldier/silken_net_audio_model.h'
-      - 'firmware/test/silken_net_audio_model_golden.h'
       - '.github/workflows/ml_smoke.yml'
 
 jobs:
@@ -51,7 +50,6 @@ jobs:
               - 'tools/ml/**'
               - 'firmware/common/logmel_*.h'
               - 'firmware/soldier/silken_net_audio_model.h'
-              - 'firmware/test/silken_net_audio_model_golden.h'
               - '.github/workflows/ml_smoke.yml'
 
   smoke:
