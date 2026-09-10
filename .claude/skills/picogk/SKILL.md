@@ -172,6 +172,22 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     over a plausible default. ⊕ Second half, bought by the same pass: **a drawing has TWO readers with
     different eyes** (human SVG ⊥ machine DXF), so any change to notes/title-block must be checked in
     BOTH — every symptom above was invisible in one of them.
+12. **`TopologyCrossChecks.cs` (ARCH.25 third phase, 2026-09-09) — Euler-χ / tortuosity / as-printed
+    cross-checks, wired into `verify` as `[nice-to-have]` INFORMATIONAL lines, not the `VERIFY OK/FAILED`
+    gate.** Two real bugs only surfaced on the actual shipped geometry, not on synthetic unit-test inputs —
+    worth the reflex generalizing beyond this file: a toy-scale test proves the ALGORITHM compiles and
+    handles its edge cases, never that it survives REAL geometry at true scale. (a) The visited-marking in
+    the tortuosity walk flagged every *offered* neighbour as visited, not just the one stepped to — passed
+    every unit test, then converged 0/100 on the real 88×88×320 pine grid (trapped by its own over-marking).
+    (b) The walk's original bias treated lateral wandering as equal to real progress, so it burned its
+    self-avoidance budget circling in one plane — invisible on small synthetic clusters, fatal on the real
+    anchor's actual pore network. Both were only caught by running `dotnet run -- verify` against a real
+    shipped `cem/*.json`, never by the xUnit suite alone. **On the real pine anchor:** Euler-χ=−4042,
+    handles(b1)=4270 (sound — agrees with flood-fill connectivity); tortuosity mean=1.45 (30/40 walks
+    converged, feeds `HW.33`'s open transport-axis residual); **as-printed topology at the true ~200µm SLM
+    wall floor DIVERGES from SDF-intent** on this SKU specifically (rim wall ~0.20mm sits right at the
+    print floor) — `stepped` SKU (different period) passes clean, so this is a per-SKU finding, not a
+    universal one. Design-justification + numbers → [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); open decision → [`00_07` HW.33](../../../docs/00_07_Action_Plan_Tracker.md).
 
 ## Common Tasks
 
