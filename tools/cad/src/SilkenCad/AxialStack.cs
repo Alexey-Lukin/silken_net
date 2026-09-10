@@ -55,6 +55,20 @@ internal static class AxialStack
     // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
     // rod Ø + 2·liner ≤ flange channel Ø. Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
     // old "anode bore ≥ flange bore" continuity check. Pure boolean finding (CEM-only → xUnit).
+    //
+    // ⛔ DECLARED CEILINGS — two, and both are the kind that stay green while the assembly does not go
+    //    together, so read them as the hand-check list after any change here (00_05 §4).
+    //  1. WALL COATING IS INVISIBLE. This judges the rod side only; a coating applied to the CHANNEL
+    //     (anodised TiO₂, Parylene) physically narrows the bore and this gate never learns of it.
+    //     ⚖️ Widening it was MEASURED and REFUSED 2026-09-11 (00_07 HW.34): the CEM schema carries no
+    //     channel-coating field at all, zero of the manifests declare one, and the design branch that
+    //     would need it (rod Ø1.3 insulated at the wall) is rejected — so the widened gate would range
+    //     over an EMPTY set and be green by construction. Price of the refusal, named out loud: if that
+    //     branch ever returns, the carrier is the ⛔ in the lining verdict plus the geometric ground in
+    //     01_01 §1.4, NOT this gate — so re-measure here the same day the branch does.
+    //  2. `<=` MEANS ZERO NOMINAL CLEARANCE IS A PASS. 1.0 + 2×0.15 = 1.3 ≤ 1.3 clears, and a tube whose
+    //     outer Ø equals the bore does not go in. The gate proves the liner fits the ARITHMETIC, never
+    //     that the parts assemble; clearance allocation is an open leg, not a gate finding.
     public static bool BusRodClears(AnchorAxialStackCem cem)
         => cem.Zone1.BusRodDiameterMm > 0f
             ? cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) <= cem.Capsule.Flange.BoreDiameterMm
