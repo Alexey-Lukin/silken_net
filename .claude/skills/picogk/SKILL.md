@@ -130,8 +130,9 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     `DxfSafe`. Every other test here feeds an INLINE literal, which is precisely why a drop and an
     invention coexisted for weeks under a green suite — and mutation confirms it: narrowing `DxfSafe`
     by one glyph reds that test alone. **When you add a `draw` kind, add its round-trip row too.**
-    ⛔ Still OPEN in this class: `topology: "sheet"` silently defaulting (below) — that one is an unmade
-    founder verdict (HW.33 ⚖️), not a coding defect, so it is NOT covered by the fix above.
+    ⛔ Still OPEN in this class: `topology: "sheet"` silently defaulting (below) — the verdict it was
+    waiting on landed 2026-09-11 (`network`), but the manifests have not moved and the default now
+    contradicts a ratified choice, so it is still NOT covered by the fix above.
 
     🔴 **A FIFTH member found and closed 2026-09-09 (HW.1): the SSOT line printed `cem.Name`, not the
     real filename.** `mechanical_lock.zone1.json`'s `name` field ("mechanical_lock_zone1") already didn't
@@ -211,12 +212,17 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
-  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`; a member of gotcha #11's class) and 6/7 `anchor_zone1.*` omit the key —
-  so every SKU renders sheet, while canon `01_01 §5.5` says "дані схиляють до **network**". That choice
-  is an un-made founder verdict (`00_07 HW.33` ⚖️), not a default to inherit: a factory STL cut today
-  would ship the disfavored branch. Do NOT quietly pick a side when touching these manifests.
-  (`stepped` is a separate, already-decided THIRD branch — implemented `ZonedGyroid`, orthogonal to the
-  open sheet-vs-network verdict; `Cem.cs` now documents all three.)
+  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`; a member of gotcha #11's class) and every
+  `anchor_zone1.*` but `stepped` omits the key — so every SKU still renders sheet. ⚖️ **The verdict is
+  MADE since 2026-09-11 and it went to `network`** (`00_07 HW.33`), which makes the warning STRONGER,
+  not obsolete: a factory STL cut today ships the branch a ratified verdict rejects. **And the fix is
+  not the key.** Measured the same day on one manifest: at an unchanged `wallParam` the network branch
+  lands at 50.2 % porosity instead of 65, where Gibson-Ashby puts it at ~27 GPa — *stiffer* than sheet
+  and with 43 % less area, i.e. flipping the key alone delivers the opposite of what the verdict wants.
+  `wallParam` has to be re-solved against the porosity target per SKU first (0.10 for pine → 64.9 %,
+  13.6 GPa); the generator's own comment says as much («the same wallParam yields different porosity
+  per topology») and nobody had measured it. (`stepped` is a separate, already-decided THIRD branch —
+  implemented `ZonedGyroid`, orthogonal to this one; `Cem.cs` documents all three.)
 - **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
   rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**

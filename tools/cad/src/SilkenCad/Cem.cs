@@ -101,7 +101,10 @@ internal sealed record TiCoinCem
 //   • pore/cell size — GyroidPeriod{Mm core → RimMm} (biology: ingrowth core / transport rim)
 //   • porosity / E   — GyroidWallParam{ core → Rim }  (mechanics: HOLD or GRADE the porosity)
 //   • topology       — sheet|network|stepped           (surface vs stress-shielding, HW.33;
-//                       sheet|network = the OPEN founder verdict — do NOT inherit the default
+//                       sheet|network = RATIFIED 2026-09-11 to network (00_07 HW.33) — the default
+//                       below still says sheet, so do NOT inherit it; and re-solve wallParam against
+//                       the porosity target BEFORE setting the key: at an unchanged wallParam the
+//                       network branch lands ~50 % porous, i.e. STIFFER than sheet (measured)
 //                       silently; stepped = zoned-period variant, a third implemented branch)
 // Core = axis (r=bore/2), Rim = periphery (r=outer/2); a *Rim* field of 0 ⇒ equals Core ⇒ v1 constant.
 // Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough

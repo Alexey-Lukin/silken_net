@@ -35,7 +35,11 @@ internal sealed record GeometryMetrics
     public double? SolidDisconnectedFraction { get; init; } // metal not in the largest body (floating islands; print + electrical defect, ~0)
     public bool[]? PorePercolates { get; init; }            // [X,Y,Z] spanning (X,Y rim-to-rim radial; Z end-to-end axial)
     public int? PoreClusterCount { get; init; }             // big pore clusters: network→1, sheet→2 (tricontinuous — a fact, not a defect)
-    public double? SpecificSurfaceMm2PerMm3 { get; init; }  // wetted area / bbox volume — EBFC-area proxy (sheet ~2× network), HW.33 trade-off
+    // wetted area / bbox volume — the EBFC-area proxy behind the HW.33 trade-off. Measured 2026-09-11
+    // at EQUAL porosity (~65 %): sheet 2.54 vs network 1.35 ⇒ 1.88×. ⚠ The ratio only means that at
+    // equal porosity — compared at an equal wallParam instead, network reads 1.45 while sitting at
+    // 50 % porous, which is a different part, not a different topology.
+    public double? SpecificSurfaceMm2PerMm3 { get; init; }
     public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
 
     // ARCH.25 nice-to-have residual (TopologyCrossChecks.cs, null for non-anchor parts): Euler-χ
