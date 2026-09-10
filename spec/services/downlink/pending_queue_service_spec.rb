@@ -54,7 +54,9 @@ RSpec.describe Downlink::PendingQueueService do
 
     before { allow(ActuatorCommandWorker).to receive(:broadcast_command_state_static) }
 
-    it "видає CMD-рядок у форматі воркера і проводить повний success-lifecycle" do
+    def echo(token) = poll({ "cmd" => token })
+
+    it "видає CMD-рядок у форматі воркера — dispatch! сам по собі НЕ просуває lifecycle далі" do
       inner = decrypt_inner(poll)
 
       expected = "CMD:#{command.command_payload}:#{command.duration_seconds}:" \
@@ -62,34 +64,102 @@ RSpec.describe Downlink::PendingQueueService do
       expect(inner.byteslice(0, expected.bytesize)).to eq(expected)
 
       command.reload
+      expect(command.status).to eq("sent")
+      expect(actuator.reload.state).to eq("idle")
+      expect(ResetActuatorStateWorker.jobs).to be_empty
+    end
+
+    # [FW.63] Сама діра, яку пункт закриває: раніше 2.05 губилась і команда
+    # зникала назавжди з брехливим "confirmed" слідом. Тепер втрачена відповідь
+    # просто повторює той самий конверт — Cmd_Dedup_Check на Королеві робить
+    # повторну доставку безпечною.
+    it "без echo той самий конверт re-serve'иться (втрачена 2.05 не губить CMD назавжди)" do
+      first_inner = decrypt_inner(poll)
+      second_inner = decrypt_inner(poll)
+
+      expect(first_inner).to eq(second_inner)
+      expect(command.reload.status).to eq("sent")
+    end
+
+    it "echo (?cmd=token) завершує lifecycle: acknowledged + actuator active + Reset заплановано" do
+      decrypt_inner(poll)
+
+      decrypt_inner(echo(command.idempotency_token))
+
+      command.reload
       expect(command.status).to eq("acknowledged")
       expect(actuator.reload.state).to eq("active")
       expect(ResetActuatorStateWorker.jobs.sole["args"]).to eq([ command.id ])
     end
 
-    it "друга видача бере НАСТУПНУ команду (перша вже acknowledged)" do
+    it "echo просуває чергу: НАСТУПНА команда видається лише ПІСЛЯ acknowledge першої" do
       second = create(:actuator_command, actuator: actuator)
 
-      first_inner = decrypt_inner(poll)
-      second_inner = decrypt_inner(poll)
+      expect(decrypt_inner(poll)).to include(command.idempotency_token)  # перша, :sent
+      expect(decrypt_inner(poll)).to include(command.idempotency_token)  # без echo — та сама
 
-      expect(first_inner).to include(command.idempotency_token)
-      expect(second_inner).to include(second.idempotency_token)
+      decrypt_inner(echo(command.idempotency_token))                    # тепер acknowledged
+
+      expect(decrypt_inner(poll)).to include(second.idempotency_token)   # тепер друга
     end
 
-    # 🔴 [ARCH.75] Єдина негативна гілка файла, що ВИКОНУВАЛАСЬ (branch-coverage чистий),
-    # але не мала ІМЕНОВАНОГО піна — тобто трималась на сусідах. Гілка не косметична:
-    # голий `mark_active!` на вже активному актуаторі кидає `AASM::InvalidTransition`,
-    # а тут ми в синхронному reply-шляху coap-демона — виняток лишив би `reply`
-    # непризначеним, тож poll помер би БЕЗ ВІДПОВІДІ разом із ratchet, OTA-hint і
-    # time-sync. Подовження/override на активний пристрій — легальний потік, і саме
-    # він найімовірніший під час пожежі.
-    it "друга команда на ВЖЕ активний актуатор видається (подовження/override — легальний потік)" do
-      actuator.update!(state: :active)
+    it "echo без ЖОДНОЇ .status_sent-команди на цей токен — безпечний no-op" do
+      decrypt_inner(poll) # command → :sent, але з ІНШИМ токеном
 
-      expect(decrypt_inner(poll)).to include(command.idempotency_token)
+      expect { decrypt_inner(echo(SecureRandom.uuid)) }.not_to raise_error
+      expect(command.reload.status).to eq("sent")
+    end
+
+    it "echo НЕ акноледжить команду ІНШОГО gateway за збігом токена (scope по gateway_id)" do
+      foreign = create(:actuator_command, actuator: create(:actuator, gateway: create(:gateway, cluster: cluster)))
+
+      decrypt_inner(echo(foreign.idempotency_token))
+
+      expect(foreign.reload.status).to eq("issued")
+    end
+
+    it "повторний echo вже-acknowledged токена — ідемпотентний no-op (Reset НЕ переозброюється вдруге)" do
+      decrypt_inner(poll)
+      decrypt_inner(echo(command.idempotency_token))
+      ResetActuatorStateWorker.jobs.clear
+
+      expect { decrypt_inner(echo(command.idempotency_token)) }.not_to raise_error
+      expect(ResetActuatorStateWorker.jobs).to be_empty
+    end
+
+    # 🔴 [ARCH.75] Гілка не косметична: голий `mark_active!` на вже активному
+    # актуаторі кидає `AASM::InvalidTransition`, а тут ми в синхронному
+    # reply-шляху coap-демона — виняток лишив би `reply` непризначеним, тож
+    # poll помер би БЕЗ ВІДПОВІДІ разом із ratchet, OTA-hint і time-sync.
+    # Подовження/override на активний пристрій — легальний потік, і саме він
+    # найімовірніший під час пожежі. [FW.63] Guard тепер стоїть на ECHO-кроці,
+    # не на dispatch! — dispatch! actuator взагалі не чіпає.
+    it "друга команда на ВЖЕ активний актуатор echo'иться без AASM::InvalidTransition" do
+      actuator.update!(state: :active)
+      decrypt_inner(poll)
+
+      expect { decrypt_inner(echo(command.idempotency_token)) }.not_to raise_error
       expect(command.reload.status).to eq("acknowledged")
       expect(actuator.reload.state).to eq("active")
+    end
+
+    # [FW.63] Стара версія цього тесту доводила регрес acknowledged→sent, бо
+    # dispatch!+mark_active!+acknowledge! колись писались ТРЬОМА викликами в
+    # одній транзакції build-часу. dispatch! тепер єдиний одиночний запис —
+    # той клас гонки зник разом із причиною. Ризик 2-writes (mark_active! +
+    # acknowledge!) переїхав в observe_delivered_command! (ECHO-крок); тут
+    # лишається дешевший, але реальний доказ: stale-копія команди, завантажена
+    # ДО echo, все одно безпечна (AASM save! пише без WHERE на старий стан).
+    it "застаріла копія команди на ECHO-кроці не кидає й не регресує статус (LEAVE)" do
+      decrypt_inner(poll)
+      stale_copy = ActuatorCommand.find(command.id)
+
+      decrypt_inner(echo(command.idempotency_token))
+      expect(command.reload.status).to eq("acknowledged")
+
+      expect(stale_copy.may_acknowledge?).to be(true) # локально й досі :sent
+      expect { stale_copy.acknowledge! }.not_to raise_error
+      expect(command.reload.status).to eq("acknowledged") # той самий термінальний стан, без регресу
     end
 
     it "протермінована команда фейлиться і пропускається (не блокує чергу)" do
@@ -117,47 +187,6 @@ RSpec.describe Downlink::PendingQueueService do
       command.update!(actuator: create(:actuator, gateway: create(:gateway, cluster: cluster)))
 
       expect(decrypt_inner(poll).bytes).to all(eq(0))
-    end
-
-    # 🔴 [00_07 FW.60 case 3, §B.4-тріаж] Гіпотеза: `pending_commands.first` без
-    # `FOR UPDATE` дає гонку двох одночасних poll'ів на ОДИН `:issued`-рядок.
-    # **Недосяжно СЬОГОДНІ, і не з причини «Rails request-per-thread» (тут
-    # узагалі нема Puma/контролера).** Єдиний прод call-site цього сервісу —
-    # `CoapGate.handle_queen_pull` (lib/coap_gate.rb), викликаний ЛИШЕ зсередини
-    # `lib/daemons/coap_listener`: однопроцесний однопотоковий `while` з
-    # блокуючим `IO.select`, що обробляє один датаграм ЦІЛКОМ (уключно з
-    # комітом транзакції нижче) до читання наступного з сокета. Паралельних
-    # викликів `poll_reply` не існує СТРУКТУРНО, доки інтейк лишається цим
-    # одним процесом — той самий факт несе сусідній коментар над
-    # `CoapGate::REPLY_CACHE` («демон однопроцесний і однопотоковий → без
-    # mutex»). Стеля названа тут-таки в класі («масштаб-відповідь — коли
-    # Королев стане багато, не зараз») — це і є день, коли гарди нижче
-    # прокинуться.
-    #
-    # Тому справжнього другого OS-потоку тут НЕМА — і не буде: `04_06 §B.1.3`
-    # вже відмовився від такого файла для симетричного випадку Wallet (тестував
-    # би серіалізацію Postgres, не нашу логіку; без `lock_version` на
-    # `actuator_commands` гонка AASM vacuous — кожен writer бачить свій ЛОКАЛЬНО
-    # валідний from-state, last-write-wins, нуль raise; був би перший
-    # non-transactional thread-DB файл, TEST.2-клас флак-ризику). Замість
-    # другого потоку — друга Ruby-змінна на ТОМУ САМОМУ рядку: вона відтворює
-    # рівно те, що побачив би потік, який устиг прочитати рядок ДО коміту
-    # першого.
-    it "застаріла копія команди проходить ОБИДВА гарди без raise — гонка мовчить, а не кричить (LEAVE)" do
-      stale_copy = ActuatorCommand.find(command.id)
-
-      decrypt_inner(poll)
-      expect(command.reload.status).to eq("acknowledged")
-
-      # «Другий poll» діє на копії, завантаженій ДО коміту першого: локально
-      # вона й досі :issued, тож обидва гарди мовчки кажуть «так».
-      expect(stale_copy.may_dispatch?).to be(true)
-      stale_copy.dispatch!
-      expect(command.reload.status).to eq("sent") # регрес acknowledged→sent, БЕЗ винятку
-
-      expect(stale_copy.may_acknowledge?).to be(true)
-      expect { stale_copy.acknowledge! }.not_to raise_error
-      expect(command.reload.status).to eq("acknowledged")
     end
 
     # 🔴 [ARCH.75] Найгостріший клас, знайдений виміром: `EmergencyResponseService`
@@ -196,32 +225,43 @@ RSpec.describe Downlink::PendingQueueService do
         expect(decrypt_inner(poll)).to include("CMD:#{command.command_payload}")
       end
 
-      # Невалідним у транзакції може виявитись АКТУАТОР (`mark_active!` — AASM
-      # `whiny_persistence` → save! з валідаціями). Маркувати тоді команду
-      # «невалідною» = брехати про винуватця й вигасити цілком доставну чергу
-      # хворого актуатора по одній.
-      it "не звинувачує наказ, коли невалідний сам актуатор" do
-        sick = create(:actuator, gateway: gateway)
-        good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
-        sick.update_columns(name: nil)
-
-        expect { poll }.not_to raise_error
-        expect(good.reload.status).to eq("issued")
-      end
-
-      it "хворий актуатор не валить тракт — драбина віддає конверт нижчої сходинки" do
-        sick = create(:actuator, gateway: gateway)
-        create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
-        sick.update_columns(name: nil)
-
-        expect(decrypt_inner(poll).bytes).to all(eq(0))
-      end
-
+      # [FW.63] Невалідний АКТУАТОР (mark_active!) більше НЕ може зʼявитись тут:
+      # actuator_command_payload пише лише dispatch! (сама команда). Сценарій
+      # «хворий актуатор» переїхав нижче, у контекст echo — саме там тепер
+      # відбувається mark_active!.
       it "протермінований невалідний наказ теж виноситься (fail! інакше б'ється об ту саму валідацію)" do
         capped.commands.sole.update_columns(expires_at: 1.minute.ago)
 
         expect { poll }.not_to raise_error
         expect(capped.commands.sole.reload.status).to eq("failed")
+      end
+    end
+
+    # [FW.63] Дзеркало сусіднього "наказ, який неможливо зберегти" — тут невалідний
+    # НЕ наказ, а АКТУАТОР (`mark_active!` — AASM `whiny_persistence` → save! з
+    # валідаціями). Маркувати тоді команду «невалідною» = брехати про винуватця й
+    # вигасити цілком доставну чергу хворого актуатора по одній; `.status_sent`
+    # scope теж не сміє мовчки зникнути з echo-кроку.
+    describe "echo, коли невалідний АКТУАТОР (mark_active! кидає RecordInvalid)" do
+      it "не звинувачує наказ — лишається :sent, не 'failed'" do
+        sick = create(:actuator, gateway: gateway)
+        good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
+        decrypt_inner(poll) # `command` пріоритетніша (default priority) → good лишається issued
+        decrypt_inner(echo(command.idempotency_token)) # прибираємо command із черги
+        sick.update_columns(name: nil)
+
+        expect { decrypt_inner(echo(good.idempotency_token)) }.not_to raise_error
+        expect(good.reload.status).to eq("sent")
+      end
+
+      it "хворий актуатор на echo-кроці не валить тракт — конверт лишається живим" do
+        sick = create(:actuator, gateway: gateway)
+        good = create(:actuator_command, actuator: sick, duration_seconds: 30, priority: :high)
+        decrypt_inner(poll)
+        decrypt_inner(echo(command.idempotency_token))
+        sick.update_columns(name: nil)
+
+        expect(decrypt_inner(echo(good.idempotency_token)).byteslice(0, 4)).to eq("CMD:")
       end
     end
   end

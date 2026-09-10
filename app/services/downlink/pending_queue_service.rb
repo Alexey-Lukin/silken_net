@@ -61,6 +61,7 @@ module Downlink
       return nil unless encryption_key
 
       observe_delivered_firmware!(query["fw"])
+      observe_delivered_command!(query["cmd"])
 
       envelope(next_inner_payload)
     end
@@ -92,16 +93,16 @@ module Downlink
     end
 
     # ── CMD (найпріоритетніший — сирена/клапан) ──────────────────────────
-    # Видача в 2.05 = семантичний аналог push-успіху (Queen запитала і
-    # отримує відповідь на власний свіжий NAT-pinhole). Тому тут повне дзеркало
-    # success-гілки ActuatorCommandWorker: dispatch→acknowledge→mark_active→Reset-план.
-    #
-    # 🔴 [FW.63] Раніше тут стояло, що «втрату відповіді покриває CON-ретрансміт
-    # Королеви + MID-кеш CoapGate». Це НЕПРАВДА: poll-тракт прошивки ретрансміту
-    # не має (`coap_mid++` на кожну спробу, `Sim7070_Udp_Fetch` — одна розмова),
-    # same-MID retry живе лише в uplink-PUT. Отже стан просувається при ПОБУДОВІ
-    # відповіді, а не при її отриманні, і загублена 2.05 губить наказ назавжди —
-    # причому слід БРЕШЕ: Reset через `duration_seconds` допише `confirmed`.
+    # [FW.63] Видача в 2.05 НЕ є доказом доставки (poll-тракт прошивки
+    # ретрансміту не має — `coap_mid++` на кожну спробу, `Sim7070_Udp_Fetch` —
+    # одна розмова; same-MID retry живе лише в uplink-PUT). Тому тут — лише
+    # `dispatch!` (issued→sent); acknowledge!/mark_active!/Reset-план ЧЕКАЮТЬ
+    # `observe_delivered_command!` нижче — дзеркало вже наявного `fw=`-патерну.
+    # `:sent` лежить у скоупі `.pending`, тож недоставлена команда re-serve'иться
+    # на наступному poll'і тим самим `inner` (той самий idempotency_token) —
+    # безпечно, бо `Cmd_Dedup_Check` на Королеві вже унеможливлює подвійне
+    # виконання повторно доставленого токена. Протерміновується вона так само,
+    # як і раніше — TTL-гілка нижче на статус `:sent` сліпа.
     def actuator_command_payload
       loop do
         command = pending_commands.first
@@ -130,44 +131,22 @@ module Downlink
         end
 
         # [00_07 FW.60 case 3, §B.4-тріаж] `pending_commands.first` — без `FOR
-        # UPDATE`. Гарди нижче НЕДОСЯЖНІ сьогодні: єдиний прод call-site цього
+        # UPDATE`. Гард нижче НЕДОСЯЖНИЙ сьогодні: єдиний прод call-site цього
         # сервісу — однопроцесний однопотоковий `lib/daemons/coap_listener`
         # (наступний датаграм читається лише ПІСЛЯ повного коміту цієї
         # транзакції), тож двох одночасних `pending_commands.first` не існує
         # СТРУКТУРНО — не Rails request-per-thread (тут нема Puma/контролера
         # взагалі), а серіалізація самим демоном. Стеля названа при класі
         # (`WORST_CASE_POLL_INTERVAL_S`-сусід): «одна Королева, коли їх стане
-        # багато — не зараз» — це день, коли ці гарди прокинуться. LEAVE, не
-        # `FOR UPDATE`: без `lock_version` на `actuator_commands` вони й тоді
-        # не захистять (AASM `save!` пише без WHERE на старий стан) — повний
-        # доказ і причина не чіпати замок без founder-рішення — spec
-        # «застаріла копія команди…» в pending_queue_service_spec.rb.
-        ActiveRecord::Base.transaction do
-          command.dispatch! if command.may_dispatch?
-          # may_activate?-guard: друга команда на ВЖЕ активний актуатор
-          # (подовження/override) — легальний потік; голий mark_active! тут
-          # кидав AASM::InvalidTransition (латентна бомба ще push-воркера).
-          command.actuator.mark_active! if command.actuator.may_activate?
-          command.acknowledge! if command.may_acknowledge?
-        end
-        ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
+        # багато — не зараз» — це день, коли цей гард прокинеться.
+        command.dispatch! if command.may_dispatch?
         ActuatorCommandWorker.broadcast_command_state_static(command)
 
         return inner
       rescue ActiveRecord::RecordInvalid => e
-        # Невалідним може виявитись НЕ наказ: у транзакції нижче зберігається ще
-        # й `actuator` (`mark_active!` — AASM `whiny_persistence`). Маркувати
-        # тоді команду «невалідною» = брехати про винуватця й по одній вигасити
-        # цілком доставну чергу хворого актуатора. Пропускаємо лише CMD-сходинку:
-        # драбина віддасть ratchet/OTA-hint/time-only, тракт лишається живим, а
-        # причина видно в логу під власним іменем.
-        unless e.record.is_a?(ActuatorCommand)
-          Rails.logger.error "🛑 [ARCH.75] #{e.record.class} ##{e.record.id} невалідний " \
-                             "(#{e.record.errors.full_messages.first}) — CMD-сходинку пропущено"
-          return nil
-        end
-
-        # 🔴 [ARCH.75] Наказ, який НЕ МОЖЕ бути збережений, не сміє вбити тракт.
+        # [FW.63] Єдиний запис тут — сам `command` (`dispatch!`); `actuator` цей
+        # метод більше не чіпає (mark_active! переїхав у observe_delivered_command!),
+        # тож `e.record` завжди `ActuatorCommand` — дублювати перевірку не треба.
         # `EmergencyResponseService` пише `insert_all` (валідації обходить) і ріже
         # тривалість за ВЛАСНОЮ константою, не за стелею актуатора — тож при
         # `max_active_duration_s < 3600` (сіди: клапан 300, сирена 120) кожна
@@ -272,6 +251,41 @@ module Downlink
         state: @gateway.updating? ? :idle : @gateway.state
       )
       broadcast_ota_progress(0, 0, "COMPLETE")
+    end
+
+    # [FW.63] Спостережене підтвердження CMD — дзеркало observe_delivered_firmware!
+    # вище. Королева тримає RAM-токен останньої УСПІШНО обробленої команди (нове
+    # виконання АБО дедуп-збіг повтору — обидва означають «конверт доїхав і
+    # Cmd_Dedup_Check його побачив») і несе його в КОЖНОМУ наступному poll'і, доки
+    # не заступить новий. Ідемпотентно за побудовою: `status_sent`-звуження саме
+    # й робить повторний echo безпечним no-op'ом (команда вже поза `:sent` після
+    # першого acknowledge!, `find_by` просто не знайде її вдруге).
+    def observe_delivered_command!(cmd_token)
+      return if cmd_token.blank?
+
+      command = ActuatorCommand.joins(:actuator)
+                               .where(actuators: { gateway_id: @gateway.id })
+                               .status_sent
+                               .find_by(idempotency_token: cmd_token)
+      return unless command
+
+      # may_activate?-guard: друга команда на ВЖЕ активний актуатор
+      # (подовження/override) — легальний потік; голий mark_active! тут
+      # кидав би AASM::InvalidTransition (латентна бомба ще push-воркера).
+      command.actuator.mark_active! if command.actuator.may_activate?
+      command.acknowledge! if command.may_acknowledge?
+      return unless command.status_acknowledged?
+
+      ResetActuatorStateWorker.perform_in(command.duration_seconds.seconds, command.id)
+      ActuatorCommandWorker.broadcast_command_state_static(command)
+    rescue ActiveRecord::RecordInvalid => e
+      # На відміну від dispatch! (лише command), тут пишеться ще й `actuator`
+      # (mark_active!, AASM whiny_persistence) — винуватцем буває він. Ані echo,
+      # ані команда не сміють зникнути мовчки: `:sent` лишається `.pending`,
+      # тож або наступний echo повторить спробу, або TTL чесно fail!'ить —
+      # обидва кращі за силуваний force-fail на команді, чий конверт УЖЕ доїхав.
+      Rails.logger.error "🛑 [FW.63] echo-підтвердження ##{command.id} не пройшло " \
+                         "валідацію (#{e.record.class}: #{e.record.errors.full_messages.first})"
     end
 
     def firmware_version_label(firmware_id)

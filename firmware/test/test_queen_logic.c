@@ -155,6 +155,22 @@ static uint8_t Cmd_Dedup_Check(uint32_t hash)
     return 0;
 }
 
+/* [FW.63] cmd= echo token — identical to queen/main.c (Handle_CoAP_Command
+ * copy-loop + g_last_acked_cmd_token). Copied independently of was_duplicate:
+ * both a fresh execution and a dedup-hit mean "the envelope arrived", which is
+ * exactly what Rails' observe_delivered_command! waits to see echoed back. */
+static char g_last_acked_cmd_token[UUID_STR_LEN + 1] = { 0 };
+
+static void Cmd_Remember_Token(const char *p)
+{
+    uint8_t tok_i = 0;
+    while (tok_i < UUID_STR_LEN && p[tok_i] != '\0') {
+        g_last_acked_cmd_token[tok_i] = p[tok_i];
+        tok_i++;
+    }
+    g_last_acked_cmd_token[tok_i] = '\0';
+}
+
 /* CIFO cache — with priority-aware eviction FIX (Risk 3) and
  * [E.8] SNR-aware tiebreaker for non-critical entries with equal RSSI.
  * [FW.2] fmt-aware дзеркало: ECB16 = 16B розшифрованих (bio_status видно),
@@ -709,6 +725,42 @@ TEST(test_dedup_stress_100) {
     for (uint32_t i = 84; i < 100; i++)
         ASSERT_EQ(Cmd_Dedup_Check(i + 1000), 1);
     ASSERT_EQ(Cmd_Dedup_Check(1000), 0);
+}
+
+/* [FW.63] cmd= echo token — Queen remembers the last successfully-processed
+ * CMD token (poll-tract lost 2.05 no longer silently lies about delivery). */
+TEST(test_cmd_remember_token_full_uuid) {
+    memset(g_last_acked_cmd_token, 0xAA, sizeof g_last_acked_cmd_token);
+    const char *uuid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"; /* 36 chars */
+    ASSERT_EQ((int)strlen(uuid), UUID_STR_LEN);
+    Cmd_Remember_Token(uuid);
+    ASSERT_EQ(strcmp(g_last_acked_cmd_token, uuid), 0);
+    ASSERT_EQ(g_last_acked_cmd_token[UUID_STR_LEN], '\0');
+}
+
+TEST(test_cmd_remember_token_short_string_nul_terminates) {
+    memset(g_last_acked_cmd_token, 0xAA, sizeof g_last_acked_cmd_token);
+    Cmd_Remember_Token("short");
+    ASSERT_EQ(strcmp(g_last_acked_cmd_token, "short"), 0);
+}
+
+TEST(test_cmd_remember_token_overwrites_previous) {
+    Cmd_Remember_Token("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"); /* 36 'a's */
+    Cmd_Remember_Token("bbbb");
+    ASSERT_EQ(strcmp(g_last_acked_cmd_token, "bbbb"), 0);
+}
+
+/* [FW.63] Семантика, а не лише safe-copy: дублікат теж мусить оновити токен —
+ * Rails чекає echo на КОЖЕН доїхавший конверт (повторна доставка теж
+ * підтверджує доставку), не лише на перше НОВЕ виконання. */
+TEST(test_cmd_remember_token_duplicate_still_remembered) {
+    reset_dedup();
+    const char *uuid = "11111111-1111-1111-1111-111111111111";
+    ASSERT_EQ(Cmd_Dedup_Check(djb2_hash(uuid, UUID_STR_LEN)), 0); /* new */
+    Cmd_Remember_Token(uuid);
+    ASSERT_EQ(Cmd_Dedup_Check(djb2_hash(uuid, UUID_STR_LEN)), 1); /* duplicate */
+    Cmd_Remember_Token(uuid); /* firmware calls this regardless of was_duplicate */
+    ASSERT_EQ(strcmp(g_last_acked_cmd_token, uuid), 0);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2890,6 +2942,12 @@ int main(void)
     RUN(test_dedup_all_16_detected);
     RUN(test_dedup_hash_zero);
     RUN(test_dedup_stress_100);
+
+    printf("\n  CMD Echo Token (FW.63):\n");
+    RUN(test_cmd_remember_token_full_uuid);
+    RUN(test_cmd_remember_token_short_string_nul_terminates);
+    RUN(test_cmd_remember_token_overwrites_previous);
+    RUN(test_cmd_remember_token_duplicate_still_remembered);
 
     printf("\n  CIFO Cache:\n");
     RUN(test_cache_insert_single);

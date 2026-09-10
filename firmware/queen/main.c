@@ -721,6 +721,15 @@ uint16_t ota_chunks_received = 0;        // Скільки чанків вже �
 // poll'і чесно каже Rails «я нічого не пам'ятаю» → повторний hint → безпечний
 // idempotent re-fetch; bitmap і 0x9B-гілка дедуплікують повтори).
 static uint32_t g_ota_delivered_fw_id = 0; // повністю зібраний contract-id (їде в poll ?fw=)
+
+// [FW.63] RAM-токен останньої УСПІШНО обробленої CMD (нове виконання АБО
+// дедуп-збіг повтору — обидва означають «конверт доїхав»), дзеркало
+// g_ota_delivered_fw_id вище: несемо його в КОЖНОМУ poll'і (?cmd=), доки не
+// заступить новий; гине з ребутом СВІДОМО (Rails просто re-serve'ить .pending
+// команду на наступному poll'і — той самий idempotency_token, Cmd_Dedup_Check
+// робить повтор безпечним). +1 для '\0'.
+static char g_last_acked_cmd_token[UUID_STR_LEN + 1] = { 0 };
+
 static uint32_t g_ota_fetch_fw_id     = 0; // кампанія, яку зараз тягнемо
 static uint16_t g_ota_fetch_total     = 0; // пакетів у кампанії (bytecode + 0x9B-трейлер)
 static uint16_t g_ota_fetch_next_ch   = 0; // курсор послідовного фетчу
@@ -2471,8 +2480,22 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
         if (colons < 3 || *p == '\0') return 1;
 
         // 7. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
-        if (Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN)) == 1) {
-            return 1; // Дублікат — ACK відправляємо, але команду НЕ виконуємо вдруге
+        uint8_t was_duplicate = Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN));
+
+        // [FW.63] Токен пам'ятаємо НЕЗАЛЕЖНО від was_duplicate: нове виконання
+        // й дедуп-збіг повтору однаково означають «конверт доїхав», а саме це
+        // Rails чекає в наступному poll (?cmd=) — дзеркало g_ota_delivered_fw_id.
+        // Та сама межа, що в djb2_hash: зупиняємось на NUL/UUID_STR_LEN, ніколи
+        // не читаємо/пишемо поза буфером.
+        uint8_t tok_i = 0;
+        while (tok_i < UUID_STR_LEN && p[tok_i] != '\0') {
+            g_last_acked_cmd_token[tok_i] = p[tok_i];
+            tok_i++;
+        }
+        g_last_acked_cmd_token[tok_i] = '\0';
+
+        if (was_duplicate == 1) {
+            return 1; // Дублікат — echo підемо, але команду НЕ виконуємо вдруге
         }
 
         // 8. Команда валідна та унікальна — передаємо на виконання актуатору
@@ -2651,18 +2674,33 @@ static void Queen_Poll_Downlink(void)
 {
     if (coap_server_ip[0] == '\0' || queen_uid[0] == '\0') return;
 
-    static uint8_t poll_pdu[96];
+    // [FW.63] 96→128: worst-case тепер header(4) + Uri-Path"poll"(5) +
+    // Uri-Path queen_uid(2+31=33, QUEEN_UID_MAX_LEN-1) + Uri-Query fw=(2+13=15,
+    // "fw=4294967295") + Uri-Query cmd=(2+40=42, "cmd=" + UUID_STR_LEN) = 99 Б —
+    // 96 не вміщав. 128 лишає запас, не претендуючи на точність до байта.
+    static uint8_t poll_pdu[128];
     static uint8_t poll_reply[QUEEN_POLL_REPLY_MAX];
-    char q1[24], q2[16];
+    // q2: OTA-фетч нижче кладе туди лише "ch=<u16>" (≤8 Б), але POLL-цикл тепер
+    // може нести "cmd=" + UUID_STR_LEN — спільний буфер тому розмірений під
+    // більшого споживача.
+    char q1[24], q2[UUID_STR_LEN + 5];
 
     for (uint8_t i = 0; i < QUEEN_POLL_MAX_PER_FLUSH; i++) {
         HAL_IWDG_Refresh(&hiwdg);
         // fw= несе повністю зібраний contract-id (0 після ребуту): Rails
         // звіряє з pending_firmware_id — спостережене підтвердження доставки.
         snprintf(q1, sizeof q1, "fw=%lu", (unsigned long)g_ota_delivered_fw_id);
+        // [FW.63] cmd= несе токен останньої успішно обробленої CMD (порожньо
+        // одразу після ребуту/якщо ще нічого не оброблено — Rails тоді просто
+        // не знаходить .status_sent-збіг і безпечно не робить нічого).
+        const char *q2_ptr = NULL;
+        if (g_last_acked_cmd_token[0] != '\0') {
+            snprintf(q2, sizeof q2, "cmd=%s", g_last_acked_cmd_token);
+            q2_ptr = q2;
+        }
         coap_mid++;
         uint16_t pdu_len = Coap_Build_Get(poll_pdu, sizeof poll_pdu, coap_mid,
-                                          "poll", queen_uid, q1, NULL);
+                                          "poll", queen_uid, q1, q2_ptr);
         if (pdu_len == 0u) return;
 
         UartAtIo io = { HAL_GetTick() + COAP_CONV_BUDGET_MS };
