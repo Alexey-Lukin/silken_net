@@ -81,6 +81,20 @@ RSpec.describe Downlink::PendingQueueService do
       expect(command.reload.status).to eq("sent")
     end
 
+    # [FW.60] Контракт локатора Королеви (`firmware/queen/cmd_token.h`): токен — ОСТАННЄ
+    # поле конверта, і після "CMD:" стоять рівно три роздільники, бо ACTION двокрапки
+    # не несе (`ActuatorCommand::ALLOWED_PAYLOAD_FORMAT`). Пін на Rails-боці — щоб
+    # майбутня зміна формату payload не повернула зсув поля токена мовчки.
+    it "токен стоїть ОСТАННІМ полем, а після CMD: рівно три роздільники" do
+      inner = decrypt_inner(poll)
+      text = inner.byteslice(0, inner.index("\x00") || inner.bytesize)
+      fields = text.split(":")
+
+      expect(fields.first).to eq("CMD")
+      expect(fields.last).to eq(command.idempotency_token)
+      expect(fields.size).to eq(5)
+    end
+
     it "echo (?cmd=token) завершує lifecycle: acknowledged + actuator active + Reset заплановано" do
       decrypt_inner(poll)
 

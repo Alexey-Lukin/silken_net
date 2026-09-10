@@ -22,14 +22,18 @@ RSpec.describe ActuatorCommand, type: :model do
       expect(command).to be_valid
     end
 
-    it "accepts valid payload format ACTION:value" do
+    # [FW.60] Двокрапка в ACTION зсувала Королеві поле токена (`CMD:OPEN:60:60:5:<uuid>`
+    # → echo `?cmd=5:…` ніколи не знаходив `idempotency_token`); форма `ACTION:value`
+    # читача не мала — `duration_seconds` є окремою колонкою.
+    it "rejects ACTION:value — a colon inside the action shifts the Queen's token field" do
       command = described_class.new(
         actuator: actuator,
         command_payload: "OPEN:60",
         duration_seconds: 60,
         status: :issued
       )
-      expect(command).to be_valid
+      expect(command).not_to be_valid
+      expect(command.errors[:command_payload].sole).to include("без двокрапки")
     end
 
     it "accepts payload with underscores" do
@@ -229,14 +233,20 @@ RSpec.describe ActuatorCommand, type: :model do
       expect(command).to be_priority_override
     end
 
-    it "auto-sets override for STOP:value format" do
+    # [FW.60] Форма `STOP:value` пішла разом із двокрапкою: сирий `STOP:5` більше не
+    # читається як override (in-flight гард контролера не обходиться зіпсованим STOP)
+    # і не проходить валідацію.
+    it "STOP:value більше не форма — не override і не валідний запис" do
+      expect(described_class.override_payload?("STOP:5")).to be(false)
+
       command = described_class.new(
         actuator: actuator,
-        command_payload: "STOP:0",
+        command_payload: "STOP:5",
         duration_seconds: 1
       )
       command.valid?
-      expect(command).to be_priority_override
+      expect(command).not_to be_priority_override
+      expect(command).not_to be_valid
     end
 
     it "does not auto-set override for regular commands" do
@@ -252,7 +262,7 @@ RSpec.describe ActuatorCommand, type: :model do
     it "cancels all pending commands for the actuator on creation" do
       # Create two pending commands
       pending1 = create(:actuator_command, actuator: actuator, command_payload: "OPEN", duration_seconds: 60)
-      pending2 = create(:actuator_command, actuator: actuator, command_payload: "OPEN:120", duration_seconds: 120)
+      pending2 = create(:actuator_command, actuator: actuator, command_payload: "OPEN_VALVE", duration_seconds: 120)
 
       # Create override STOP command
       create(:actuator_command, actuator: actuator, command_payload: "STOP", duration_seconds: 1)
@@ -455,8 +465,11 @@ RSpec.describe ActuatorCommand, type: :model do
     end
 
     describe ".override_payload?" do
-      it "розпізнає базову команду з аргументом" do
-        expect(described_class.override_payload?("STOP:5")).to be(true)
+      # [FW.60] Форми `ACTION:value` більше немає, тож і префікс-правила: сирий `STOP:5`
+      # з params — не override (інакше зіпсований STOP обходив би in-flight гард
+      # контролера, а модель потім відкидала б запис).
+      it "НЕ розпізнає STOP з аргументом — точний збіг, не префікс" do
+        expect(described_class.override_payload?("STOP:5")).to be(false)
       end
 
       it "не бере звичайні команди" do

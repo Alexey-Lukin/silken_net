@@ -124,7 +124,7 @@ tdma: $(BINDIR)/test_tdma_schedule
 cad: $(BINDIR)/test_cad_sniff
 	@./$(BINDIR)/test_cad_sniff
 
-$(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h
+$(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
 $(BINDIR)/test_soldier: test_soldier_logic.c hal_mock.h ../common/lorenz_seed.h ../common/silken_sha256.h ../common/silken_crc.h ../common/adc_convert.h ../common/wall_time.h ../common/beacon_dedup.h ../common/tx_defer.h ../common/acoustic_ledger.h

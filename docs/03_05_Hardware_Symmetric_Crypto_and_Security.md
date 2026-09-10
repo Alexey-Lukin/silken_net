@@ -655,8 +655,9 @@ record = [did:4 BE][code:1][soldier_seq:2 BE]
 **Актуаторна команда (CMD):**
 ```
 CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
-Приклад: CMD:OPEN:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+Приклад: CMD:OPEN_VALVE:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
+Токен — ОСТАННЄ поле; `ACTION` двокрапок не несе (Rails `ALLOWED_PAYLOAD_FORMAT`), Королева ключує на останній `:` (`firmware/queen/cmd_token.h`) — парсинг і словник дій = [`03_02 §6`](03_02_Queen_Gateway_Firmware).
 
 **OTA Downlink (0x99 маркер):**
 ```

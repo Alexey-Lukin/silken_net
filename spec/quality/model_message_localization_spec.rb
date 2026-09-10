@@ -52,7 +52,7 @@ module ModelMessageLocalization
   # tree_families), тож текст доходить лише до JSON-контуру або лога.
   DECLARED = {
     [ "app/models/actuator_command.rb",
-      "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" ] => {
+      "дозволені лише скалярні команди формату ACTION без двокрапки (напр. OPEN_VALVE)" ] => {
       why: "формат команди; `actuators#execute` створює наказ усередині контролера, але " \
            "`RecordInvalid` там свідомо не має `rescue_from` і летить у generic 500 — " \
            "людина бачить `errors.api.internal`, кирилиця йде в `Rails.logger.fatal`",

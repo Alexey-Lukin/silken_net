@@ -1123,6 +1123,10 @@ push-воркер superseded — CGNAT). Якщо команда прилеті�
 Формат команди (plaintext після CBC decrypt):
   CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<IDEMPOTENCY_TOKEN>
   Приклад: CMD:OPEN_VALVE:60:42:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Токен = ОСТАННЄ поле: Королева ключує на останній ':' (cmd_token.h, pure,
+  host-тестований), Rails гарантує ACTION без двокрапки (ALLOWED_PAYLOAD_FORMAT).
+  [FW.60] Доти — «після 3-ї ':'»: `ACTION:value` зсував вікно на ACTUATOR_ID,
+  дедуп лишався self-consistent, а echo ?cmd= ніколи не збігався з токеном.
 
 DJB2 Hash UUID токена (36 символів):
   h = 5381

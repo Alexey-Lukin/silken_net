@@ -1038,7 +1038,7 @@ first_actuator = Actuator.first
 ActuatorCommand.create!(
   actuator: first_actuator,
   user: alexey,
-  command_payload: "OPEN:60",
+  command_payload: "OPEN_VALVE",
   duration_seconds: 60,
   priority: :low,
   status: :confirmed,
@@ -1055,7 +1055,7 @@ ActuatorCommand.create!(
 ActuatorCommand.create!(
   actuator: fire_siren,
   ews_alert: fire_alert,
-  command_payload: "ACTIVATE:120",
+  command_payload: "ACTIVATE_SIREN",
   duration_seconds: 120,
   priority: :high,
   status: :issued,

@@ -866,7 +866,7 @@ faulty ──recover──► idle              # [ARCH.54 Шар 0] sweeper п�
 
 | Поле | Тип | Опис |
 |------|-----|------|
-| `command_payload` | text | Скалярна команда `ACTION` або `ACTION:value` (`ALLOWED_PAYLOAD_FORMAT`) — **НЕ** jsonb: дротова форма `CMD:<payload>:<duration>:<actuator_id>:<token>` ([`03_02 §6`](03_02_Queen_Gateway_Firmware)) тримається на скалярності, а двокрапка всередині payload зсуває вікно дедупу Королеви |
+| `command_payload` | text | Скалярна дія `ACTION` **без двокрапки** (`ALLOWED_PAYLOAD_FORMAT`; вокабуляр — доменний за `device_type`, [`03_02 §6`](03_02_Queen_Gateway_Firmware)) — **НЕ** jsonb: дротова форма `CMD:<payload>:<duration>:<actuator_id>:<token>` тримається на скалярності. Форму `ACTION:value` знято 2026-09-10 (FW.60): читача в `value` не було (`duration_seconds` — окрема колонка), а двокрапка в payload зсувала Королеві поле токена, тож echo `?cmd=` не знаходив `idempotency_token` і виконана команда по TTL ставала `failed`. Дві лінії: Rails не пропускає двокрапку, Королева ключує токен на ОСТАННІЙ двокрапці (`firmware/queen/cmd_token.h`) |
 | `idempotency_token` | uuid | Захист від дублів; Королева дедуплікує за ним ([`03_02 §6`](03_02_Queen_Gateway_Firmware)) |
 | `duration_seconds` | integer | Тривалість дії (safety envelope, ≤ `actuator.max_active_duration_s`) |
 | `sent_at` | datetime | Мітка `dispatch` — момент видачі в downlink |

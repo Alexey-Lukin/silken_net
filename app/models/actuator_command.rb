@@ -95,7 +95,14 @@ class ActuatorCommand < ApplicationRecord
   # При створенні такої команди всі pending-команди для цього актуатора скасовуються.
   OVERRIDE_COMMANDS = %w[STOP EMERGENCY_SHUTDOWN EMERGENCY_STOP].freeze
 
-  ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+(?::\d+)?\z/
+  # [FW.60] Скалярна дія БЕЗ двокрапки. Хвіст `(?::\d+)?` (форма `OPEN:60`) стояв тут
+  # без жодного читача (`duration_seconds` — окрема колонка; `override_payload?` бере
+  # лише `split(":").first`), а на дроті `CMD:<payload>:<duration>:<actuator_id>:<token>`
+  # двокрапка в payload зсувала Королеві поле токена — echo `?cmd=` тоді ніколи не
+  # збігався з `idempotency_token`, і виконана команда по TTL ставала `failed`.
+  # Вокабуляр дій — доменний за `device_type` (03_02 §6, UI.14); друга лінія на
+  # Королеві — `firmware/queen/cmd_token.h` (токен = після ОСТАННЬОЇ двокрапки).
+  ALLOWED_PAYLOAD_FORMAT = /\A[A-Z_]+\z/
 
   # [ARCH.75] Протокольна стеля ОДНІЄЇ команди — дім один. Доти те саме число
   # стояло двома незв'язаними літералами: тут у валідації й `MAX_COMMAND_DURATION`
@@ -112,7 +119,7 @@ class ActuatorCommand < ApplicationRecord
   # створення запису (in-flight гард). Без спільного методу правило жило б у
   # двох місцях і розійшлось би на першій же зміні `OVERRIDE_COMMANDS`.
   def self.override_payload?(payload)
-    OVERRIDE_COMMANDS.include?(payload.to_s.split(":").first)
+    OVERRIDE_COMMANDS.include?(payload.to_s)
   end
 
   # 🛡️ Idempotency: UUID генерується автоматично перед валідацією
@@ -124,7 +131,7 @@ class ActuatorCommand < ApplicationRecord
 
   validates :command_payload, presence: true,
                               format: { with: ALLOWED_PAYLOAD_FORMAT,
-                                        message: "дозволені лише команди формату ACTION або ACTION:value (напр. OPEN:60)" }
+                                        message: "дозволені лише скалярні команди формату ACTION без двокрапки (напр. OPEN_VALVE)" }
   validates :duration_seconds, presence: true,
                                numericality: { greater_than: 0, less_than_or_equal_to: MAX_DURATION_S }
   validates :idempotency_token, presence: true, uniqueness: true

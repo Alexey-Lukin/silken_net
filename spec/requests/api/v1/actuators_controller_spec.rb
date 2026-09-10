@@ -219,16 +219,21 @@ RSpec.describe Api::V1::ActuatorsController, type: :request do
       expect(ActuatorCommand.find(response.parsed_body["command_id"]).priority).to eq("override")
     end
 
-    it "STOP з аргументом (STOP:5) теж розпізнається як override" do
+    # [FW.60] `STOP:5` більше не override: форму `ACTION:value` знято (двокрапка зсувала
+    # Королеві поле токена), тож зіпсований STOP не обходить in-flight гард — 409 і
+    # жодного запису, замість «прийнято» з наказом, який модель відкинула б.
+    it "STOP з аргументом (STOP:5) НЕ обходить in-flight гард — 409, запис не створюється" do
       own_actuator.commands.create!(
         user: user, command_payload: "OPEN_VALVE", duration_seconds: 10, status: :issued
       )
 
-      post "/actuators/#{own_actuator.id}/execute",
-           params: { action_payload: "STOP:5", duration_seconds: 1 },
-           headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+      expect {
+        post "/actuators/#{own_actuator.id}/execute",
+             params: { action_payload: "STOP:5", duration_seconds: 1 },
+             headers: headers.merge("Idempotency-Key" => SecureRandom.uuid), as: :json
+      }.not_to change(ActuatorCommand, :count)
 
-      expect(response).to have_http_status(:accepted)
+      expect(response).to have_http_status(:conflict)
     end
 
     context "with idempotency key" do

@@ -45,6 +45,8 @@
 // [FW.2] Маршрутизація RX (16B ECB / 30B CCM rev2.1 / шум) + 31B CoAP-запис —
 // pure-контракт blind-forward'а (Королева CCM не розшифровує; rx_route.h).
 #include "rx_route.h"
+// [FW.60] Токен CMD-конверта = ОСТАННЄ поле; локатор pure, host-тестований.
+#include "cmd_token.h"
 // [L1 QATT] Розкладка підписаного батч-конверта (pure, host-tested) — 03_05 §2.2
 #include "../common/queen_attest.h"
 // [FW.59] Декодер RCC_CSR → 3-бітна причина ребута (pure, host-tested) — 03_02 §7
@@ -2474,30 +2476,21 @@ int Handle_CoAP_Command(uint8_t* payload, uint16_t len)
     if (inner_aligned >= 4 && strncmp((char*)inner_payload, "CMD:", 4) == 0) {
         // ── Гілка актуаторних команд ──────────────────────────────────
 
-        // 6. Знаходимо idempotency_token (після 3-ї ':' від позиції +4)
-        const char* p = (char*)inner_payload + 4;
-        uint16_t scanned = 4;
-        uint8_t colons = 0;
-        while (scanned < inner_aligned && *p && colons < 3) {
-            if (*p++ == ':') colons++;
-            scanned++;
-        }
-        if (colons < 3 || *p == '\0') return 1;
+        // 6. Знаходимо idempotency_token — ОСТАННЄ поле конверта (cmd_token.h).
+        //    «Після 3-ї ':'» тут стояло до 2026-09-10 і зсувало вікно на
+        //    ACTUATOR_ID, щойно ACTION ніс двокрапку (`OPEN:60`) — echo тоді
+        //    ніколи не збігався з idempotency_token у Rails.
+        const char* p = Cmd_Locate_Token((const char*)inner_payload, inner_aligned);
+        if (p == NULL) return 1;
+        uint8_t tok_len = Cmd_Token_Len(p, (uint16_t)(((const char*)inner_payload + inner_aligned) - p));
 
         // 7. 🛡️ Idempotency: хешуємо токен і перевіряємо кільцевий буфер
-        uint8_t was_duplicate = Cmd_Dedup_Check(djb2_hash(p, UUID_STR_LEN));
+        uint8_t was_duplicate = Cmd_Dedup_Check(djb2_hash(p, tok_len));
 
         // [FW.63] Токен пам'ятаємо НЕЗАЛЕЖНО від was_duplicate: нове виконання
         // й дедуп-збіг повтору однаково означають «конверт доїхав», а саме це
         // Rails чекає в наступному poll (?cmd=) — дзеркало g_ota_delivered_fw_id.
-        // Та сама межа, що в djb2_hash: зупиняємось на NUL/UUID_STR_LEN, ніколи
-        // не читаємо/пишемо поза буфером.
-        uint8_t tok_i = 0;
-        while (tok_i < UUID_STR_LEN && p[tok_i] != '\0') {
-            g_last_acked_cmd_token[tok_i] = p[tok_i];
-            tok_i++;
-        }
-        g_last_acked_cmd_token[tok_i] = '\0';
+        Cmd_Copy_Token(g_last_acked_cmd_token, p, tok_len);
 
         if (was_duplicate == 1) {
             return 1; // Дублікат — echo підемо, але команду НЕ виконуємо вдруге

@@ -155,20 +155,17 @@ static uint8_t Cmd_Dedup_Check(uint32_t hash)
     return 0;
 }
 
-/* [FW.63] cmd= echo token — identical to queen/main.c (Handle_CoAP_Command
- * copy-loop + g_last_acked_cmd_token). Copied independently of was_duplicate:
- * both a fresh execution and a dedup-hit mean "the envelope arrived", which is
- * exactly what Rails' observe_delivered_command! waits to see echoed back. */
+/* [FW.63] cmd= echo token — the locator + copy now live in the pure header
+ * ../queen/cmd_token.h (One-Home, compiled into main.c AND here — no mirror).
+ * Remembered independently of was_duplicate: both a fresh execution and a
+ * dedup-hit mean "the envelope arrived", which is exactly what Rails'
+ * observe_delivered_command! waits to see echoed back. */
+#include "../queen/cmd_token.h"
 static char g_last_acked_cmd_token[UUID_STR_LEN + 1] = { 0 };
 
 static void Cmd_Remember_Token(const char *p)
 {
-    uint8_t tok_i = 0;
-    while (tok_i < UUID_STR_LEN && p[tok_i] != '\0') {
-        g_last_acked_cmd_token[tok_i] = p[tok_i];
-        tok_i++;
-    }
-    g_last_acked_cmd_token[tok_i] = '\0';
+    Cmd_Copy_Token(g_last_acked_cmd_token, p, Cmd_Token_Len(p, UUID_STR_LEN));
 }
 
 /* CIFO cache — with priority-aware eviction FIX (Risk 3) and
@@ -761,6 +758,83 @@ TEST(test_cmd_remember_token_duplicate_still_remembered) {
     ASSERT_EQ(Cmd_Dedup_Check(djb2_hash(uuid, UUID_STR_LEN)), 1); /* duplicate */
     Cmd_Remember_Token(uuid); /* firmware calls this regardless of was_duplicate */
     ASSERT_EQ(strcmp(g_last_acked_cmd_token, uuid), 0);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+ * [FW.60] CMD token locator — ../queen/cmd_token.h, the code main.c runs.
+ * Wire: CMD:<ACTION>:<DURATION>:<ACTUATOR_ID>:<TOKEN>; token = LAST field.
+ * ════════════════════════════════════════════════════════════════════ */
+#define TEST_CMD_UUID "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+TEST(test_cmd_token_canonical_wire_is_last_field) {
+    static const char wire[] = "CMD:OPEN_VALVE:60:42:" TEST_CMD_UUID;
+    const char *p = Cmd_Locate_Token(wire, (uint16_t)sizeof wire);
+    ASSERT_TRUE(p != NULL);
+    ASSERT_EQ(strcmp(p, TEST_CMD_UUID), 0);
+    ASSERT_EQ(Cmd_Token_Len(p, (uint16_t)(wire + sizeof wire - p)), UUID_STR_LEN);
+}
+
+/* The regression itself: a colon inside ACTION used to land the "3rd colon"
+ * window on ACTUATOR_ID, so the echoed token read "5:<uuid-prefix>" and
+ * Rails' find_by(idempotency_token:) never matched. */
+TEST(test_cmd_token_action_with_value_still_last_field) {
+    static const char wire[] = "CMD:OPEN:60:60:5:" TEST_CMD_UUID;
+    const char *p = Cmd_Locate_Token(wire, (uint16_t)sizeof wire);
+    ASSERT_TRUE(p != NULL);
+    ASSERT_EQ(strcmp(p, TEST_CMD_UUID), 0);
+    ASSERT_TRUE(p[0] != '5');
+}
+
+TEST(test_cmd_token_rejects_fewer_than_three_separators) {
+    static const char wire[] = "CMD:OPEN_VALVE:60:42";
+    ASSERT_TRUE(Cmd_Locate_Token(wire, (uint16_t)sizeof wire) == NULL);
+}
+
+TEST(test_cmd_token_rejects_empty_token) {
+    static const char wire[] = "CMD:OPEN_VALVE:60:42:";
+    ASSERT_TRUE(Cmd_Locate_Token(wire, (uint16_t)sizeof wire) == NULL);
+}
+
+TEST(test_cmd_token_rejects_separator_at_buffer_edge) {
+    /* inner_len ends right after the last ':' — the token would start past the buffer */
+    static const char wire[] = "CMD:OPEN_VALVE:60:42:" TEST_CMD_UUID;
+    ASSERT_TRUE(Cmd_Locate_Token(wire, (uint16_t)21) == NULL);
+}
+
+TEST(test_cmd_token_cbc_zero_pad_terminates_copy) {
+    uint8_t buf[64];
+    memset(buf, 0, sizeof buf);
+    memcpy(buf, "CMD:OPEN_VALVE:60:42:" TEST_CMD_UUID, 21 + UUID_STR_LEN);
+    const char *p = Cmd_Locate_Token((const char*)buf, (uint16_t)sizeof buf);
+    ASSERT_TRUE(p != NULL);
+    char out[UUID_STR_LEN + 1];
+    Cmd_Copy_Token(out, p, Cmd_Token_Len(p, (uint16_t)((const char*)buf + sizeof buf - p)));
+    ASSERT_EQ(strcmp(out, TEST_CMD_UUID), 0);
+}
+
+TEST(test_cmd_token_bounded_by_inner_len_without_nul) {
+    /* No NUL anywhere: bytes past inner_len are 'X' and must never be read or copied. */
+    char buf[80];
+    memset(buf, 'X', sizeof buf);
+    memcpy(buf, "CMD:OPEN_VALVE:60:42:" TEST_CMD_UUID, 21 + UUID_STR_LEN);
+    const uint16_t inner_len = 21 + 20; /* cuts inside the uuid */
+    const char *p = Cmd_Locate_Token(buf, inner_len);
+    ASSERT_TRUE(p != NULL);
+    uint8_t n = Cmd_Token_Len(p, (uint16_t)(buf + inner_len - p));
+    ASSERT_EQ(n, 20);
+    char out[UUID_STR_LEN + 1];
+    Cmd_Copy_Token(out, p, n);
+    ASSERT_EQ((int)strlen(out), 20);
+    ASSERT_TRUE(strchr(out, 'X') == NULL);
+}
+
+TEST(test_cmd_token_dedup_hash_parity_with_legacy_window) {
+    /* On the canonical wire the dedup hash is byte-identical to the former
+     * djb2_hash(p, UUID_STR_LEN) — the ring buffer sees no behaviour change. */
+    static const char wire[] = "CMD:OPEN_VALVE:60:42:" TEST_CMD_UUID;
+    const char *p = Cmd_Locate_Token(wire, (uint16_t)sizeof wire);
+    ASSERT_EQ(djb2_hash(p, Cmd_Token_Len(p, (uint16_t)(wire + sizeof wire - p))),
+              djb2_hash(TEST_CMD_UUID, UUID_STR_LEN));
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2948,6 +3022,16 @@ int main(void)
     RUN(test_cmd_remember_token_short_string_nul_terminates);
     RUN(test_cmd_remember_token_overwrites_previous);
     RUN(test_cmd_remember_token_duplicate_still_remembered);
+
+    printf("\n  CMD Token Locator (FW.60, cmd_token.h):\n");
+    RUN(test_cmd_token_canonical_wire_is_last_field);
+    RUN(test_cmd_token_action_with_value_still_last_field);
+    RUN(test_cmd_token_rejects_fewer_than_three_separators);
+    RUN(test_cmd_token_rejects_empty_token);
+    RUN(test_cmd_token_rejects_separator_at_buffer_edge);
+    RUN(test_cmd_token_cbc_zero_pad_terminates_copy);
+    RUN(test_cmd_token_bounded_by_inner_len_without_nul);
+    RUN(test_cmd_token_dedup_hash_parity_with_legacy_window);
 
     printf("\n  CIFO Cache:\n");
     RUN(test_cache_insert_single);
