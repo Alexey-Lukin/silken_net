@@ -344,6 +344,10 @@ class BlockchainBurningService < ApplicationService
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
       # повертається миттєво після відправки TX у мемпул). Операції всередині локу:
       # client.transact (~1-3s мережева затримка) + DB writes (~10-50ms) = ~5s worst case.
+      # 🔴 [ARCH.62, 2026-09-11] «~1-3s» рахувалось як ОДИН round-trip, а `transact`
+      # їх робить ШІСТЬ (освіження fee ×2 · estimate · balance · nonce · sendRaw),
+      # тож тут запас під 30-секундним локом вужчий, ніж каже рядок вище — і це
+      # шлях СЛЕШИНГУ. Перевимір + вибір числа — `00_07` ARCH.62.
       # Попередній 60s лок був для transact_and_wait, який чекав підтвердження блоку.
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість

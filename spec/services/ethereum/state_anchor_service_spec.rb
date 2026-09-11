@@ -259,9 +259,16 @@ RSpec.describe Ethereum::StateAnchorService do
 
       described_class.new.anchor_to_l1!
 
+      # 🔴 [ARCH.62] ДВІЧІ — і рахунок тут НЕСУЧИЙ, бо він і є доказом того, що
+      # освіження fee на шві підписанта якоря НЕ ЧІПАЄ. Політика накладається на
+      # народженні клієнта і ще раз перед підписом (`KeySigner#transact` →
+      # `RpcConnectionPool#refresh_fee!`); Ethereum запінений ENV-дефолтами, тож
+      # обидва рази приходить ТЕ САМЕ ратифіковане число, а виміру не відбувається
+      # взагалі. Ослабити до `at_least(:once)` не можна: тоді пін лишився б зеленим
+      # і в тому разі, якби друге накладання перетерло 100/2 Gwei чимось міряним.
       aggregate_failures do
-        expect(mock_client).to have_received(:max_fee_per_gas=).with(100 * (10**9))
-        expect(mock_client).to have_received(:max_priority_fee_per_gas=).with(2 * (10**9))
+        expect(mock_client).to have_received(:max_fee_per_gas=).with(100 * (10**9)).twice
+        expect(mock_client).to have_received(:max_priority_fee_per_gas=).with(2 * (10**9)).twice
         expect(mock_client).to have_received(:transact) do |_contract, _method, _root, **opts|
           expect(opts[:gas_limit]).to eq(100_000)
           expect(opts[:legacy]).to be false

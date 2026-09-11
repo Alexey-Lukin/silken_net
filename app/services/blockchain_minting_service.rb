@@ -287,6 +287,13 @@ class BlockchainMintingService < ApplicationService
       #   - Binary Search Isolation при revert: до MAX_BINARY_SEARCH_DEPTH=6 рівнів × 2 eth_call = ~36s
       #   - Fallback individual mints для poisoned records: до ~30 × transact() = ~90s
       # Загальний worst case: ~130s. З 30s lock виникає double-mint ризик при RPC congestion.
+      # 🔴 [ARCH.62, 2026-09-11] ЦЕЙ БЮДЖЕТ РОЗМІРЯЛИ ПРОТИ transact-у на ЧОТИРИ
+      # RPC (estimate · balance · nonce · sendRaw), А ЇХ ТЕПЕР ШІСТЬ: освіження fee
+      # додало `eth_maxPriorityFeePerGas` + `eth_getBlockByNumber` на КОЖЕН підпис.
+      # Отже «~90s» на 30 індивідуальних мінтів масштабується ×1.5, і запас під
+      # 180-секундною стелею з'їдається майже повністю. ⚠️ Пін ARCH.106 цього НЕ
+      # побачить за побудовою — він порівнює константу з ЛІТЕРАЛОМ `130.seconds`,
+      # а не з роботою всередині локу. Перевимір + вибір числа — `00_07` ARCH.62.
       # 🔴 [ARCH.106] Доти тут стояло `120.seconds` — МЕНШЕ за власний worst case
       # рядком вище, тобто лок авто-відпускався за ~10 с до кінця найдовшого
       # легального проходу й пускав другого воркера на того самого підписанта.

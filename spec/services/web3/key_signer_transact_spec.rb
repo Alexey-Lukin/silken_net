@@ -197,4 +197,108 @@ RSpec.describe Web3::KeySigner, "#transact" do
       expect(real_client).not_to have_received(:get_balance)
     end
   end
+
+  # =======================================================================
+  # ⛽🕰 ОСВІЖЕННЯ ВИМІРЯНОГО FEE НА ШВІ [ARCH.62]
+  # =======================================================================
+  # 🔴 Предмет: fee міряється на НАРОДЖЕННІ клієнта, клієнт кешується per-thread,
+  # а Sidekiq-потік живе до деплою — тож виміряне число далі лише старіє. Режим
+  # відмови детермінований: протухлий-занизький cap → tx не майниться → вічний
+  # `:sent` → rollback → `manual_review`, тобто заблоковані кошти.
+  #
+  # 🔑 ЧОМУ НЕ TTL: TTL є проксі для «щось змінилось», а пускач тут відомий точно —
+  # мить перед підписом. Заразом це знімає потребу в ЧИСЛІ порога, якого не існує:
+  # форми Polygon і Celo інверсні (tip домінує ⊥ база домінує).
+  describe "освіження fee перед підписом" do
+    let(:stale_cap)   { 1_000_000 }          # виміряне колись і відтоді протухле
+    let(:fresh_tip)   { 100_000_000_000 }    # 100 Gwei — чайова, яку нода каже ЗАРАЗ
+    let(:fresh_base)  { 10_000_000_000 }     # 10 Gwei бази
+    # ⛔ База СВІДОМО не нульова: при `base = 0` вирази `base×2 + tip` і просто `tip`
+    # збігаються, тож пін на «свіжий cap» був би сліпий до самої формули.
+    let(:fresh_cap)   { (fresh_base * Web3::FeePolicy::BASE_FEE_HEADROOM) + fresh_tip }
+    let(:gas_limit)   { (74_494 * described_class::HEADROOM).ceil }
+    let(:stale_reserve) { gas_limit * stale_cap }
+
+    # Клієнт, народжений ПУЛОМ, — саме це робить його впізнаваним для освіження.
+    let(:pooled_client) do
+      Eth::Client.create("http://127.0.0.1:8545").tap do |c|
+        allow(c).to receive_messages(
+          transact: "0x#{'f' * 64}",
+          eth_estimate_gas: { "result" => "0x122fe" },
+          eth_max_priority_fee_per_gas: { "result" => "0x174876e800" }
+        )
+        allow(c).to receive(:eth_get_block_by_number)
+          .with("latest", false).and_return({ "result" => { "baseFeePerGas" => "0x2540be400" } })
+      end
+    end
+
+    before do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:[]).and_call_original
+      # ⛔ Не покладатись на оточення машини: заданий ENV-пін БʼЄ вимір, тож
+      # експортована `POLYGON_*_FEE_GWEI` зробила б ці приклади зеленими з
+      # ХИБНОЇ причини (пін теж перевищує протухлий резерв).
+      allow(ENV).to receive(:fetch).with("POLYGON_MAX_FEE_GWEI", nil).and_return(nil)
+      allow(ENV).to receive(:fetch).with("POLYGON_PRIORITY_FEE_GWEI", nil).and_return(nil)
+      Web3::RpcConnectionPool::NETWORK_FALLBACK_ENV_KEYS.values.flatten.uniq.each do |key|
+        allow(ENV).to receive(:[]).with(key).and_return(nil)
+      end
+      allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("http://127.0.0.1:8545")
+      allow(Eth::Client).to receive(:create).and_return(pooled_client)
+    end
+
+    # Клієнт беруть із пулу, і аж ТОДІ його число протухає — саме так воно й
+    # старіє в проді: вимір лишається на народженні, а мережа їде далі.
+    def client_with_stale_cap
+      Web3::RpcConnectionPool.client_for("ALCHEMY_POLYGON_RPC_URL").tap do |c|
+        c.max_fee_per_gas = stale_cap
+      end
+    end
+
+    # 🔑 НЕСУЧИЙ ПІН, і він дискримінує саме той дефект, а не сусідній: баланс
+    # рівно покриває резерв за ПРОТУХЛИМ cap і не покриває за СВІЖИМ. Без
+    # освіження резерв рахувався б за протухлою ціною, гейт мовчав би, і на дріт
+    # пішла б невключабельна транзакція — тобто зелений прогін над заблокованими
+    # коштами. ⚠️ Пін ловить і ПОРЯДОК — мутаційно доведено в ОБИДВА боки: зняти
+    # освіження ЦІЛКОМ і пересунути його ПІСЛЯ `assert_gas_reserve!` червонять
+    # саме цей приклад (сусід нижче при тій самій перестановці лишається зеленим
+    # правильно — свіжий cap на дроті є й тоді). Тобто приклади міряють різне.
+    it "резерв судиться за СВІЖОЮ ціною, а не за протухлою" do
+      client = client_with_stale_cap
+      allow(client).to receive(:get_balance).and_return(stale_reserve)
+
+      expect { signer.transact(client, contract, "mint") }
+        .to raise_error(described_class::InsufficientGasReserve, /insufficient funds/)
+      expect(client).not_to have_received(:transact)
+    end
+
+    it "на дріт іде СВІЖИЙ cap — протухле число не переживає підпису" do
+      client = client_with_stale_cap
+      allow(client).to receive(:get_balance).and_return(10**18)
+
+      signer.transact(client, contract, "mint")
+
+      aggregate_failures do
+        expect(client.max_fee_per_gas).to eq(fresh_cap) # base × BASE_FEE_HEADROOM + tip
+        expect(client.max_priority_fee_per_gas).to eq(fresh_tip)
+        expect(client).to have_received(:transact)
+      end
+    end
+
+    # 🔴 ДРУГИЙ ГАРД, і він окремий від `MEASURABLE_CLIENTS`: клієнт, який НЕ
+    # народився в пулі, не впізнається за ENV-ключем — тож його не допитують
+    # цінових RPC ВЗАГАЛІ. Саме це тримає периметр правки нульовим і закриває
+    # той клас регресії, що вже коштував 175 і 78 падінь сюїти.
+    it "клієнт ПОЗА пулом не допитується й свого числа не втрачає" do
+      allow(real_client).to receive(:eth_estimate_gas).and_return({ "result" => "0x122fe" })
+      allow(real_client).to receive(:eth_max_priority_fee_per_gas)
+
+      signer.transact(real_client, contract, "mint")
+
+      aggregate_failures do
+        expect(real_client).not_to have_received(:eth_max_priority_fee_per_gas)
+        expect(real_client.max_fee_per_gas).to eq(1_000_000)
+      end
+    end
+  end
 end

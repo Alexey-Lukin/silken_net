@@ -239,6 +239,57 @@ RSpec.describe Web3::RpcConnectionPool do
     end
   end
 
+  # 🔴 [ARCH.62] Освіження виміряного fee. Пул — єдиний, хто знає ENV-ключ клієнта
+  # (сам клієнт його не несе, а деривація мережі через `chain_id` уже коштувала 78
+  # падінь), тож і питання «чи це НАШ клієнт» судиться тут. Ключ не зберігається
+  # окремо — він уже стоїть в імені thread-local'а.
+  describe ".env_key_for / .refresh_fee!" do
+    before do
+      allow(ENV).to receive(:fetch).with("ALCHEMY_POLYGON_RPC_URL").and_return("https://polygon-rpc.example.com")
+      allow(Eth::Client).to receive(:create).and_return(pooled)
+    end
+
+    let(:pooled) { stub_eth_client }
+
+    it "впізнає клієнта, якого сам видав" do
+      client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+
+      expect(described_class.env_key_for(client)).to eq("ALCHEMY_POLYGON_RPC_URL")
+    end
+
+    # ⛔ Тотожність, не рівність: питання «чи це ТОЙ САМИЙ обʼєкт», а не «чи схожі».
+    it "чужого клієнта НЕ впізнає — і це не помилка, а чесний no-op" do
+      described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+      foreign = stub_eth_client
+
+      aggregate_failures do
+        expect(described_class.env_key_for(foreign)).to be_nil
+        expect(described_class.refresh_fee!(foreign)).to be false
+        expect(foreign).not_to have_received(:max_fee_per_gas=)
+      end
+    end
+
+    # ⚠️ **ОГОЛОШЕНА СТЕЛЯ ЦЬОГО ПРИКЛАДА, і вона куплена адверсарним ревʼю:** він
+    # судить, що освіження перенакладає ОБИДВА атрибути — половина політики гірша
+    # за її відсутність (cap без tip лишає gem-дефолт 1.01 Gwei, тобто «полагоджено»
+    # на вигляд і невключабельно насправді). Він НЕ судить пріоритету «ENV бʼє
+    # вимір»: `stub_eth_client` є `instance_double`, тож `MEASURABLE_CLIENTS`
+    # відсікає вимір ще до драбинки, і без цієї межі приклад був би ВАКУУМНИЙ на
+    # половині власної назви. Ту вісь пінять `fee_policy_spec` (пін 777 бʼє
+    # виміряні 99.57) і шов у `key_signer_transact_spec`.
+    it "перенакладає ОБИДВА fee-атрибути, не половину" do
+      allow(ENV).to receive(:fetch).with("POLYGON_MAX_FEE_GWEI", nil).and_return("500")
+      allow(ENV).to receive(:fetch).with("POLYGON_PRIORITY_FEE_GWEI", nil).and_return("40")
+      client = described_class.client_for("ALCHEMY_POLYGON_RPC_URL")
+
+      aggregate_failures do
+        expect(described_class.refresh_fee!(client)).to be true
+        expect(client).to have_received(:max_fee_per_gas=).with(500 * (10**9)).twice
+        expect(client).to have_received(:max_priority_fee_per_gas=).with(40 * (10**9)).twice
+      end
+    end
+  end
+
   # ⛔ Реєстр не сміє обіцяти провайдера, якого немає: порожній ENV просто випадає
   # зі списку, тож вигаданий ключ нічого не ламає — і саме тому прожив би роками
   # як фальшива обіцянка другого RPC. Пін тримає реєстр проти `.env.example`.
