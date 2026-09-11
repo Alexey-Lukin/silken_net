@@ -119,7 +119,8 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **Post-process notes** (the AM-specific half the shop needs): HIP (`01_02 §1.7` / HW.23),
   EAAE + **dehydrogenation bake** (`01_02 §1.3`, HW.27), selective Hard-Gold ENIG map (`02_02 §1.2`,
   HW.8.2), build orientation (`01_02 §1.6`). These belong in the drawing's notes block.
-- **Lattice spec callout** (not geometry): porosity 65 %±2, pore period, topology (sheet/network
+- **Lattice spec callout** (not geometry): porosity 65 %±2, pore period, topology (⚖️ 2026-09-10 → network
+  for every shipped anchor; `stepped` is the one exception and declares itself
   open, HW.33), "inspect by Archimedes + µCT" — per ISO/ASTM 52900 lattice-as-spec.
 - **Surface finish**: dual-scale roughness Sa (`01_02 §1.2`, HW.2).
 - **Title block**: part name + Деталь №, material **from the part's own spec** (PEEK for Zone 2), scale, units.

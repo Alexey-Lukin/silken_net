@@ -67,9 +67,12 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    (the v1.6 headless pattern → "relies on Library::Go" abort in v2.2). It briefly inits a
    Metal/GL viewer then closes with the task — so CI needs a display (macOS runner / xvfb).
 4. **Gyroid `wallParam` is DIMENSIONLESS** (gyroid eq ∈ [-1.5, 1.5]), not mm: `|eq| <
-   0.5*wallParam` ⇒ solid; a clean wall needs `wallParam ≪ amplitude`. **Porosity is
+   0.5*wallParam` ⇒ solid; a clean wall needs `wallParam ≪ amplitude`. 🔴 **That is the SHEET
+   reading and it does NOT generalise — network treats the same number as a LEVEL (`eq < 0.5(w−1)`),
+   where ≪-the-amplitude is not the rule and 0 / negative are ordinary.** **Porosity is
    voxel-dependent → MEASURE it** (a coarse voxel under-resolves voids → falsely high
-   porosity; at 0.1mm the Ø11 anode reads 67.6% ≈ the 65% target, vs 21–28% at 0.4–0.5mm).
+   porosity; at 0.1mm the Ø11 anode reads 67.6% ≈ the 65% target, vs 21–28% at 0.4–0.5mm — that 67.6 is
+   the SHEET branch at wallParam 1.0; the shipped network SKUs read 64.7–65.0 at 0.10).
 5. **Voxel-resolution floor + gradient distortion** — sub-100µm pores need voxel ~0.03mm →
    ~10⁹-voxel grids. The Ø11 anode renders cleanly at 0.1mm (pores ~2.5mm); realistic 300→100µm
    pores are the HW.33 ceiling (and **un-printable at 65%**: SLM wall ~200µm → min pore ~1.2mm).
@@ -281,7 +284,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   electrical) / closed-pore (trapped-powder) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
   **pore** OK at the coarse step, **solid** needs ~period/24 (gotcha #8 — the labyrinth COUNT converges
   later than the island FRACTION). The `verify` gate adds
-  open≥95% · solid-disc≤2% · percolate axial+radial. Feeds HW.33 sheet-vs-network (topology-agnostic).
+  open≥95% · solid-disc≤2% · percolate axial+radial. Topology-agnostic by construction — which is why it
+  survived the sheet→network switch unchanged (the HW.33 axis it once fed is closed).
 - **Capsule-end assembly (`Assembly.cs`, SHIPPED)**: brings Деталь 3 ↔ Деталь 4 into one frame at the
   bayonet datum (radome lock-groove ↔ flange lugs) via `MeshUtility.voxApplyTransformation` (lift; the
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models

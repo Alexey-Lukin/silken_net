@@ -22,7 +22,8 @@ namespace SilkenCad;
 // ~200 µm SLM wall floor) is a morphological OPENING of this same field, and lives in
 // TopologyCrossChecks.CheckPrintFidelity. Sheet gyroid is TRICONTINUOUS
 // (two pore labyrinths + one wall), so PoreClusterCount==2 for a sheet is a topology fact, NOT a
-// defect — the gate must not punish it (HW.33 sheet-vs-network input).
+// defect — the gate must not punish it. ⚠ The sheet/network axis itself is CLOSED (⚖️ 2026-09-10 →
+// network, HW.33); this stays because `stepped` and any sheet-held fixture still read 2.
 internal enum Phase : byte { Outside = 0, Solid = 1, Pore = 2 }
 
 internal sealed record ConnectivityMetrics

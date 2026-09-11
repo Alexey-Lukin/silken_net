@@ -138,7 +138,9 @@ macOS-with-display runner would re-arm render-verify as a hard gate.
 axial+radial. Two-phase resolution: **pore** OK at the coarse step, **solid** needs ~period/24 (a coarse
 grid fragments thin walls into false islands AND merges the sheet gyroid's two pore labyrinths — at
 period/16 the island FRACTION already reads ≤0.3 % while the labyrinth COUNT is still wrong on every
-period-graded species SKU; skill `picogk` gotcha #8). Feeds `00_07` HW.33 sheet-vs-network.
+period-graded species SKU; skill `picogk` gotcha #8). ⚠ That calibration is SHEET-era: since the
+network verdict landed (2026-09-11) no shipped SKU has two labyrinths to merge, so the shipped set no
+longer exercises the period/24 rule — its carrier is now a dedicated sheet-held pin (`picogk` #8).
 
 **Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
 a **DIN-471 retaining groove** on the Ti shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
@@ -163,9 +165,12 @@ O-ring / lacquer defined-area cell — decouples A from the coin edge). Disc not
 radial j, no corner edge-effects (01_01 §6.1).
 
 **wallParam scan (shipped)** — `scan <anchor-cem>` sweeps the gyroid wall band → the CEM working window
-(the wallParam range that stays printable + open-pore + percolating; pine: [0.80, 1.30], default 1.0 →
-67.6 % mid-window). Pure-managed (no Library.Go), `WallScan.cs` under xUnit; feeds HW.33 + the FEA
-sheet-vs-network envelope.
+(the wallParam range that stays printable + open-pore + percolating). 🔴 **The window is
+TOPOLOGY-dependent, because the parameter changes meaning**: on sheet it is a band and pine reads
+[0.80, 1.30] with 1.0 → 67.6 % mid-window; on the network branch we now ship it is a level, the measured
+pine window is [−0.50, 0.60], and the working point is 0.10. The sweep bounds follow the CEM's topology
+— they used to be fixed at [0.2, 1.8], which put the ratified network point OUTSIDE the sweep. Pure-
+managed (no Library.Go), `WallScan.cs` under xUnit.
 
 **Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
 intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +

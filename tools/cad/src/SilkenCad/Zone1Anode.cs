@@ -10,6 +10,9 @@ namespace SilkenCad;
 // bicontinuous, the orientation-agnostic property the founder's decision (б) accepted
 // (HW.33). Formula matches the LEAP presets exactly: |eq| − 0.5*wallParam (dimensionless;
 // solid where < 0). Per the LEAP guide, a clean wall needs wallParam ≪ the eq amplitude.
+// ⚠ That is the SHEET reading of the parameter and it does not generalise: the network branch treats
+// the same number as a LEVEL (eq − 0.5(w−1)), where ≪-the-amplitude is not the rule and 0 / negative
+// are ordinary values. This class is sheet-only; the branch lives in GradedCartesianGyroid.
 // v1 (constant period); the radially GRADED sibling is GradedCartesianGyroid below.
 internal sealed class CartesianGyroid(float fPeriodMm, float fWallParam) : IImplicit
 {
@@ -113,7 +116,8 @@ internal static class Zone1Anode
         return oPipe.voxConstruct();
     }
 
-    // Constant (v1) when there is no Rim taper and sheet topology; graded otherwise.
+    // Constant (v1) ONLY when there is no Rim taper AND sheet topology — `bGraded` ORs in `bNetwork`, so
+    // every shipped anchor takes the graded generator today, taper or not.
     // An ABSENT Rim field means "equals core" (back-compat with v1 manifests). ⚠ Period keeps its `> 0`
     // sentinel because a period ≤ 0 is meaningless in every topology; the WALL param does not, because
     // on network it is a level and 0 / negative are ordinary values (Cem.cs).

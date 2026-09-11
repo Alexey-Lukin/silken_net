@@ -8,7 +8,9 @@ namespace SilkenCad;
 // map porosity + two-phase connectivity. The OUTPUT is the CEM working window: the wallParam range that
 // stays printable AND open-pore AND percolating. Too thin (low wall) → the solid fragments into false
 // islands / porosity runs high; too thick (high wall) → pores pinch shut (open↓, percolation lost).
-// Feeds the FEA sheet-vs-network choice and bounds every SKU's safe parameter envelope.
+// Bounds every SKU's safe parameter envelope. ⚠ The envelope is per-TOPOLOGY (the param is a band on
+// sheet, a level on network), so a window quoted without its branch is meaningless — Program.Scan picks
+// the sweep bounds from the CEM's own topology for exactly that reason.
 
 internal sealed record WallScanPoint
 {
