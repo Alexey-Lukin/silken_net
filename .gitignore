@@ -129,6 +129,7 @@ coverage/
 /firmware/test/test_helium_sos
 /firmware/test/test_soft_timer
 /firmware/test/test_helium_mac_smoke
+/firmware/test/test_lora_phy
 # macOS clang debug-symbol bundles (the -g ASan/coverage lanes emit these)
 /firmware/test/*.dSYM/
 # [TEST.1] coverage-lane artifacts (make -C firmware/test coverage)

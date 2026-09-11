@@ -893,7 +893,7 @@ RTC Backup Domain не скидається при STOP2 та більшості
 ### 4.2 Загальний Lifecycle
 
 ```
-Init → Radio.Init → Radio.Rx(0xFFFFFF) [infinite]
+Init → Radio.Init → Radio.SetChannel → Lora_Phy_Apply_Tx/Rx [FW.61] → Radio.Rx(0xFFFFFF) [infinite]
 ┌─────────────────────────────────────────────────────────┐
 │  while LoRa_Rx_Ring_Pop(rx_payload, &rx_rssi):  [FW.3]  │
 │    1. AES-128-ECB Decrypt (16 bytes) [post-ARCH.42]    │

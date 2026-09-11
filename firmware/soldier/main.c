@@ -42,6 +42,7 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 #include "../common/mpu_regions.h"  // [SEC.21] MPU NX-stack/RO-code розкладка (draft)
 #include "../common/device_event.h" // [SEC.21] uplink 0x57 device-event (canary-слід → Rails)
 #include "../common/tdma_schedule.h" // [ARCH.26 L2] розклад синхронних вікон з маяка (One-Home)
+#include "../common/lora_phy.h"      // [FW.61] базлайн модуляції raw-LoRa P2P (One-Home)
 #include "../common/cad_sniff.h"     // [ARCH.26 L3] CAD-нюх + PANIC-преамбула (One-Home)
 #include "../common/tx_defer.h"      // [FW.10] зимовий кенозис TX: Should_Defer_TX (One-Home)
 #include "../common/acoustic_ledger.h" // [ARCH.102] ледж акустики: споживає лише доставлене (One-Home)
@@ -64,6 +65,9 @@ volatile int g_sym_selftest_failed = -1;  // читати через SWD: 0 = PA
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
+// [FW.61] Шов базлайну модуляції у драйвер (потребує radio.h — тому тут,
+// а не поруч із pure-заголовками вище; сам lora_phy.h лишається pure).
+#include "../common/lora_phy_apply.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -527,12 +531,11 @@ static TdmaSchedule g_tdma_schedule = {0u, 0u, 0u, 0u};
 #define ARCH26_CAD_ENABLED        0  // 🟡 фліп = bench (compile-lane: -D через hal_check_ccm)
 #endif
 #if ARCH26_CAD_ENABLED
-// Модуляція PANIC-TX = Scenario C (02_03 §9.8): SF9 / BW125 / CR4-5 / +14 дБм.
-// Semtech SetTxConfig LoRa-кодування: bandwidth 0 = 125 кГц, coderate 1 = 4/5.
-#define LORA_PANIC_TX_POWER_DBM   14
-#define LORA_PANIC_BW_125K        0u
-#define LORA_PANIC_SF             9u
-#define LORA_PANIC_CR_4_5         1u
+// [FW.61] Власних LORA_PANIC_{SF,BW,CR,TX_POWER} тут БІЛЬШЕ НЕМА — PANIC їде
+// базлайном `lora_phy.h` і відрізняється від звичайного TX рівно ОДНИМ
+// аргументом: преамбулою. Доти це була окрема четвірка, яка дорівнювала
+// канону ВИПАДКОВО, і саме вона робила «часткове відновлення» схожим на повне
+// (`firmware`-скіл гоча #1, нога «в»).
 static uint32_t g_last_cad_sniff_wall = 0u;  // RAM-only маркер (як g_tdma_schedule)
 volatile uint8_t g_cad_activity = 0u;        // ставить OnCadDone; читач = bench
                                              // WUT-цикл «нюх-замість-RX» (RUNBOOK)
@@ -2042,7 +2045,19 @@ int main(void)
   radio_events.CadDone = OnCadDone;
 #endif
   Radio.Init(&radio_events);
-  Radio.SetChannel(868000000); // Налаштовуємо на 868 МГц
+  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.0 МГц — raw-LoRa P2P (lora_phy.h)
+
+  // [FW.61] Базлайн модуляції. ⛔ Не прибирати як «драйвер і так дефолтить»:
+  // `RadioInit` ставить лише таймери/IRQ і `SUBGRF_SetTxParams(RFO_LP, 0, …)`
+  // — тобто низькопотужний PA на 0 дБм; SF/BW/CR/преамбулу/CRC не чіпає ніхто.
+  // Доти єдиний `SetTxConfig` жив у panic-шляху ЗА гейтом ARCH.26 (у бойовій
+  // збірці нуль), тож базлайн не існував як стан — повертати не було куди.
+  // Порядок TX→RX навмисний: обидва виклики ділять одну пару структур драйвера,
+  // і останній лишає чіп готовим слухати; довжину payload'у `RadioSend`
+  // переписує на кожен кадр. Дім номіналів — 03_05 §2.1.
+  Lora_Phy_Apply_Sync_Word();
+  Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+  Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_SOLDIER);
 
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код
   const uint32_t* flash_check = (const uint32_t*)MRUBY_CONTRACT_FLASH_ADDR;
@@ -3360,13 +3375,10 @@ void Trigger_Emergency_LoRa_TX(void)
     // зловить. Контекст: main-loop Path-B (EXTI лише ставить
     // vibration_detected) — блокуючий SetTxConfig/HAL_Delay безпечні;
     // НЕ кликати цю функцію з ISR.
-    Radio.SetTxConfig(MODEM_LORA, LORA_PANIC_TX_POWER_DBM, 0u,
-                      LORA_PANIC_BW_125K, LORA_PANIC_SF, LORA_PANIC_CR_4_5,
-                      Cad_Panic_Preamble_Symbols(
-                          EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
-                          Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
-                                                      CAD_T_SYM_SF9_BW125_US)),
-                      false, true, false, 0u, false, 0u);
+    Lora_Phy_Apply_Tx(Cad_Panic_Preamble_Symbols(
+        EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
+        Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
+                                    CAD_T_SYM_SF9_BW125_US)));
 #endif
 #if FW2_CCM_ENABLED
     // Збій збірки (HAL захрип) → мовчимо: підроблений/битий зойк гірший за
@@ -3385,10 +3397,10 @@ void Trigger_Emergency_LoRa_TX(void)
     // Обов'язкове відновлення дефолтної преамбули (дисципліна
     // Restore_ECB_Mode): липкі ~973 симв на наступному звичайному TX
     // мовчки з'їли б ~40× airtime і енергобюджет циклу.
-    Radio.SetTxConfig(MODEM_LORA, LORA_PANIC_TX_POWER_DBM, 0u,
-                      LORA_PANIC_BW_125K, LORA_PANIC_SF, LORA_PANIC_CR_4_5,
-                      CAD_PREAMBLE_DEFAULT_SYMBOLS,
-                      false, true, false, 0u, false, 0u);
+    // [FW.61] Відновлюється ПОВНИЙ набір із базлайну, а не один аргумент із
+    // шести: решта п'ять і далі проходили б повз, і правильними вони були
+    // лише тому, що дорівнювали канону випадково.
+    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
 #endif
 
     // 6. Примусово присипляємо радіо, щоб не садити батарею

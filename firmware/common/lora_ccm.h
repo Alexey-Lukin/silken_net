@@ -14,12 +14,19 @@
  *
  * Wire format (30 bytes on the air — rev2.1, founder decision 2026-07-03
  * [E.63 гейт (г)]; Queen prepends RSSI byte before forwarding the 31-byte
- * chunk over CoAP to Rails). Airtime note: at SF10/125kHz/CR4:5 the
- * 28..31B frames share ONE symbol block (48 symbols, 493.6 ms) — the
+ * chunk over CoAP to Rails). Airtime note [FW.61, corrected 2026-09-11]:
+ * at the SHIPPING profile — SF9/125kHz/CR4:5, `common/lora_phy.h` — the
+ * 27..30B frames share ONE symbol block (43 symbols, 226.3 ms), so the
  * +2B EMA field rides airtime-free inside the block rev2 already paid
- * for (wire-budget ledger, docs/03_05): the frame homes EVERY known
+ * for (wire-budget ledger, docs/03_05 §2.1): the frame homes EVERY known
  * claimant (device_z, diag bits, VPD, gossip, EMA-delta_t) so no field
  * migration is pending.
+ * ⚠️ This line said SF10 / "28..31B / 48 symbols / 493.6 ms" until the
+ * profile was reconciled: those are LoRaWAN-detour numbers (ARCH.34), not
+ * ours. The conclusion survived the correction — 28B and 30B are still one
+ * block — but 30B is now the LAST byte of it, so a 31st byte costs +20.5 ms
+ * rather than nothing. Do not restate block edges here: read them from the
+ * table in 03_05 §2.1, which `tools/firmware/lora_airtime.rb` recomputes.
  *
  *   ┌─ AAD (cleartext, MIC-protected) ─────────────────────────────┐
  *   │ Byte 0..3 : DID (uint32 BE)                                  │

@@ -219,9 +219,9 @@ SIM7070G у режимі LTE-M TX може споживати імпульсно
 
 | Параметр | Значення |
 |---------|---------|
-| Частота | 868.0 МГц (EU ISM, `Radio.SetChannel(868000000)`) |
+| Частота | 868.0 МГц (EU ISM, `Radio.SetChannel(868000000)`) — повний PHY-профіль (SF/BW/CR/преамбула) має один дім: [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security) |
 | Розмір пакету | 16 байт (один AES блок; block size 128 bit фіксований; key size = AES-128 для LoRa post-ARCH.42) |
-| Режим RX | Continuous (`LORA_RX_INFINITE`) |
+| Режим RX | Continuous — і його робить **`SetRxConfig(… rxContinuous = true)`**, а не сам по собі `LORA_RX_INFINITE`. ⚠️ [FW.61] Доти цього виклику не було, тож `RadioInit` лишав `SubgRf.RxContinuous = false`, і драйвер програмував RX-**single** незалежно від переданого таймауту: always-on listener існував лише в цьому рядку |
 | ISR | `OnRxDone()` — апаратне переривання від SX1262 |
 | Обробка пакету | `Process_And_Cache_Data()` → CIFO cache (50 слотів) |
 
@@ -661,7 +661,7 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 > Будь-який виклик `queen_helium_lorawan_uplink()` ОБОВ'ЯЗКОВО супроводжується:
 > 1. **Pre-flight IWDG refresh** + захоплення `helium_session_start_tick = HAL_GetTick()`.
 > 2. **Multi-channel hopping** Helium-сесії на каналах 868.1/868.3/868.5 МГц (LoRaWAN MAC), під час якої raw-LoRa preamble на 868.0 МГц апаратно не детектується — будь-який панічний пакет від Soldier (chainsaw alert) втрачається.
-> 3. **Жорстка post-condition:** одразу після `LoRaMacMlmeRequest/MCPS` (або при таймауті) виклик `Radio_Reinit_RawLoRa_868MHz()` → `Radio.SetChannel(868000000)` → `Radio.SetModem(MODEM_LORA)` → `Radio.Rx(LORA_RX_INFINITE)`.
+> 3. **Жорстка post-condition:** одразу після `LoRaMacMlmeRequest/MCPS` (або при таймауті) виклик `Radio_Reinit_RawLoRa_868MHz()` → `Radio.SetChannel(868000000)` → `Radio.SetModem(MODEM_LORA)` → **`Lora_Phy_Apply_Tx/Rx` (базлайн модуляції, [FW.61])** → `Radio.Rx(LORA_RX_INFINITE)`. ⚠️ Четвертий крок доданий 2026-09-11 і він несучий: детур перепрограмовує SF/BW/CR/преамбулу під свій DR, тож повернення самих лише частоти й модему лишало б вуха відкритими на ЧУЖІЙ модуляції — і `rxContinuous` теж MAC'овим.
 > 4. **Бюджет сліпоти:** `helium_session_elapsed = HAL_GetTick() - helium_session_start_tick` має бути `< HELIUM_BLIND_WINDOW_MAX_MS (20 с)`. Перевищення → форсований hardware reset через IWDG (~26.6 с), оскільки кластер краще перезавантажити, ніж довго не слухати.
 > 5. **AES контекст (post-ARCH.42):** Helium uplink використовує LoRaWAN AES-128 CMAC/CTR (інший ключ — `AppSKey`/`NwkSKey`). Наш raw LoRa тепер також AES-128-ECB (ARCH.42 Variant B). Після виходу з Helium-сесії `hcryp` має бути перевипадково ініціалізований у `CRYP_KEYSIZE_128B` + `CRYP_AES_ECB` режим з нашим LoRa-ключем (`aes_key[4]`) для `radio_decrypt_lora()`. Спрощений context-switch — обидві сесії на тій самій key-size.
 >

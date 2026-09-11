@@ -26,9 +26,9 @@ BINDIR   = .
 OPENSSL_CFLAGS = $(shell pkg-config --cflags openssl 2>/dev/null)
 OPENSSL_LIBS   = $(shell pkg-config --libs openssl 2>/dev/null || echo -lcrypto)
 
-.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad coverage size-check asan clean
+.PHONY: all queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy coverage size-check asan clean
 
-all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad
+all: queen soldier bio_contract tinyml logmel audio_model encryption seed_derivation ccm selftest sym_selftest rx_route at_engine uart_ring flash_kv flash_ring flash_ota ota_sha_guard attest key_ratchet cmd_queue fauna bme280 tdma helium soft_timer helium_mac_smoke cad lora_phy
 
 queen: $(BINDIR)/test_queen
 	@./$(BINDIR)/test_queen
@@ -124,6 +124,9 @@ tdma: $(BINDIR)/test_tdma_schedule
 cad: $(BINDIR)/test_cad_sniff
 	@./$(BINDIR)/test_cad_sniff
 
+lora_phy: $(BINDIR)/test_lora_phy
+	@./$(BINDIR)/test_lora_phy
+
 $(BINDIR)/test_queen: test_queen_logic.c hal_mock.h ../common/silken_crc.h ../queen/cmd_token.h
 	$(CC) $(CFLAGS) -o $@ test_queen_logic.c
 
@@ -134,8 +137,15 @@ $(BINDIR)/test_tdma_schedule: test_tdma_schedule.c ../common/tdma_schedule.h
 	$(CC) $(CFLAGS) -o $@ test_tdma_schedule.c
 
 # [ARCH.26 L3] CAD-нюх Провідника + PANIC extended-preamble — pure, без HAL.
-$(BINDIR)/test_cad_sniff: test_cad_sniff.c ../common/cad_sniff.h ../common/wall_time.h
+$(BINDIR)/test_cad_sniff: test_cad_sniff.c ../common/cad_sniff.h ../common/wall_time.h ../common/lora_phy.h
 	$(CC) $(CFLAGS) -o $@ test_cad_sniff.c
+
+# [FW.61] Єдиний host-тест, що лінкується проти ВЕНДОРСЬКОГО radio.h: він
+# визначає `const struct Radio_s Radio` заглушками-записувачами й ганяє той
+# самий шов, що прошивки. Тому окремий -I на radio_driver — решта сюїти
+# драйвера не бачить і бачити не повинна.
+$(BINDIR)/test_lora_phy: test_lora_phy.c ../common/lora_phy.h ../common/lora_phy_apply.h
+	$(CC) $(CFLAGS) -I../extern/subghz-phy/radio_driver -o $@ test_lora_phy.c
 
 $(BINDIR)/test_bio_contract: test_bio_contract.c
 	$(CC) $(CFLAGS) -o $@ test_bio_contract.c -lm

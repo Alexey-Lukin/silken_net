@@ -18,6 +18,9 @@
 
 // Підключаємо низькорівневий драйвер радіо (Radio Middleware)
 #include "radio.h"
+// [FW.61] Шов базлайну модуляції у драйвер (потребує radio.h; pure-половина
+// профілю — ../common/lora_phy.h, її включає й cad_sniff.h без драйвера).
+#include "../common/lora_phy_apply.h"
 // [HRNG-IV] Pure, host-testable CoAP-batch fallback-IV derivation (coap_fallback_iv)
 #include "coap_iv.h"
 // [FW.53] CRC16-CCITT One-Home — перевірка CoAP-OTA чанків від Rails
@@ -53,6 +56,7 @@
 #include "../common/reset_cause.h"
 // [ARCH.26 L2] TDMA слот-розкладка маяка (байти 5..8) — One-Home математика
 #include "../common/tdma_schedule.h"
+#include "../common/lora_phy.h"     // [FW.61] базлайн модуляції raw-LoRa P2P (One-Home)
 // [L1 QATT] Ed25519 (Monocypher, pinned submodule — 03_01 §12.5): голос Королеви
 #include "monocypher-ed25519.h"
 /* USER CODE END Includes */
@@ -923,6 +927,9 @@ static AtTxResult SIM7070_Transact(const char* command, uint32_t budget_ms);
 void Process_And_Cache_Data(uint32_t uid, const uint8_t* payload, int8_t rssi, int8_t snr,
                             uint8_t fmt);
 void Flush_Cache_To_Rails(void);
+// [FW.61] Базлайн модуляції — ОДИН шов на два виклики (boot + повернення вух),
+// бо два незалежні набори аргументів розходяться мовчки.
+static void Queen_Apply_Lora_Baseline(void);
 // [ARCH.34] SOS-обв'язка + повернення вух у raw-LoRa після LoRaWAN-детуру
 static void Radio_Reinit_RawLoRa_868MHz(void);
 static void queen_helium_lorawan_uplink(const uint8_t sos_frame[HELIUM_SOS_WIRE_LEN]);
@@ -1097,7 +1104,14 @@ int main(void)
   // кадру, і весь RX-конвеєр (CIFO → CoAP) лишився б глухим. Решта полів NULL.
   radio_events.RxDone = OnRxDone;
   Radio.Init(&radio_events);
-  Radio.SetChannel(868000000); // 868 МГц (Європа / Україна)
+  Radio.SetChannel(LORA_PHY_FREQ_HZ); // 868.0 МГц (EU ISM, raw-LoRa P2P — lora_phy.h)
+
+  // [FW.61] Базлайн модуляції — і тут він дорожчий, ніж у Солдата.
+  // `SubgRf.RxContinuous` виставляє ВИКЛЮЧНО `RadioSetRxConfig`, а `RadioInit`
+  // кладе його у `false`. Без цього виклику `Radio.Rx(LORA_RX_INFINITE)` нижче
+  // програмував би RX-SINGLE, тобто always-on listener із 03_02 §1 — основа
+  // Проблеми Рандеву — жив би лише в каноні. Дім номіналів — 03_05 §2.1.
+  Queen_Apply_Lora_Baseline();
 
   // 2. Ініціалізація Кешу нулями
   memset(forest_cache, 0, sizeof(forest_cache));
@@ -1792,11 +1806,28 @@ static void Restore_ECB_Mode(void)
 // єдиний events-вказівник драйвера на свою таблицю; без re-bind RxDone
 // Солдатів летів би у MAC-обробник назавжди (глуха Королева при живому Rx).
 // =========================================================================
+// [FW.61] Базлайн модуляції Королеви. Несучий тут ОДИН порядок — sync word
+// першим (він відновлює регістр після LoRaWAN-детуру); TX-перед-RX є
+// конвенцією форми, не вимогою заліза. `rxContinuous = true` робить Королеву
+// always-on listener'ом (03_02 §1). Номінали — 03_05 §2.1 через `lora_phy.h`.
+static void Queen_Apply_Lora_Baseline(void)
+{
+    Lora_Phy_Apply_Sync_Word();
+    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_QUEEN);
+}
+
 static void Radio_Reinit_RawLoRa_868MHz(void)
 {
     Radio.Init(&radio_events);
-    Radio.SetChannel(868000000);
+    Radio.SetChannel(LORA_PHY_FREQ_HZ);
     Radio.SetModem(MODEM_LORA);
+    // [FW.61] LoRaWAN-детур перепрограмував модуляцію під свій DR — повернути
+    // саму лише частоту й модем НЕ досить: SF/BW/CR/преамбула й `rxContinuous`
+    // лишились би MAC'овими, тобто вуха формально відкриті, а слухають не той
+    // тракт. Це і є сусід гочі «відновлюй базлайн» на рівень вище: доти
+    // ВІДНОВЛЮВАТИ БУЛО НІКУДИ, бо базлайн ніхто не ставив.
+    Queen_Apply_Lora_Baseline();
     Radio.Rx(LORA_RX_INFINITE);
 }
 

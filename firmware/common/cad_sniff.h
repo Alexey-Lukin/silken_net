@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include "wall_time.h"
+#include "lora_phy.h"
 
 /* Дефолтна LoRaWAN-преамбула (03_05) — ціль ОБОВ'ЯЗКОВОГО відновлення
  * після PANIC-TX (липка довга преамбула на звичайних TX мовчки палить
@@ -39,6 +40,15 @@
 #define CAD_PANIC_PREAMBLE_MS          4000u
 /* T_sym @ SF9/BW125 = 2^9/125 кГц = 4096 мкс (SF9-basis — 02_03 §9.8). */
 #define CAD_T_SYM_SF9_BW125_US         4096u
+
+/* [FW.61] Обидві константи вище — ПОХІДНІ базлайн-профілю, а не самостійні
+ * числа, і доти зв'язок тримала лише проза. Зсунь SF у lora_phy.h — і
+ * «973 симв ≈ 4 с» мовчки стане неправдою, а гарантія T_pre > T_sniff
+ * порахується не на тому T_sym. Носій = помилка КОМПІЛЯЦІЇ, не свіп. */
+_Static_assert(CAD_T_SYM_SF9_BW125_US == LORA_PHY_T_SYM_US,
+               "cad_sniff: T_sym розійшовся з базлайном lora_phy.h (SF/BW)");
+_Static_assert(CAD_PREAMBLE_DEFAULT_SYMBOLS == LORA_PHY_PREAMBLE_SYMBOLS,
+               "cad_sniff: ціль restore-8 розійшлась із преамбулою базлайну");
 /* Vcap-поріг повної преамбули — дзеркало FAUNA_VCAP_MIN_MV: вище стелі
  * VREFINT-тракту (~3300 мВ), тож до живого Vcap-каналу (FW.50)
  * extended-half чесно fail-closed. */

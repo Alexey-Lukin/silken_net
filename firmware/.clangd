@@ -71,6 +71,24 @@ CompileFlags:
 
 ---
 
+# [FW.61] common/lora_phy_apply.h + test/test_lora_phy.c — єдина пара у
+# `common/`, що торкається вендорського `radio.h` (шов базлайну модуляції;
+# сам `lora_phy.h` лишається pure і сюди не потрапляє). Блок вище їх не
+# накриває — його PathMatch знає лише soldier|queen|hal_glue.
+If:
+  PathMatch: (common/lora_phy_apply|test/test_lora_phy)\.(c|h)
+CompileFlags:
+  CompilationDatabase: None
+  Add:
+    - -xc          # standalone .h інакше парситься як ObjC++
+    - -std=c11
+    - -I.
+    - -I../common
+    - -I../extern/subghz-phy/radio_driver
+    - -I../../extern/subghz-phy/radio_driver
+
+---
+
 # test_helium_mac_smoke.c — Makefile-збірка (не CMake), тож build-host DB
 # його не знає. Дзеркало LORAWAN_INC + -DAES_DEC_PREKEYED з firmware/test/
 # Makefile (міняєш там → синкни тут). Решта test/*.c лишається на build-host.
