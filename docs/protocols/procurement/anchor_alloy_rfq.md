@@ -21,20 +21,24 @@
 
 ## 1. Per-alloy spec (6 купонів — усі рівні до coin-даних)
 
-| # | Сплав | ASTM | V/Al wt% | E (ГПа) | Вісь bake-off | Tier |
+| # | Сплав | Стандарт (AM ⊥ wrought) | V/Al wt% | E (ГПа) | Вісь bake-off | Tier |
 |---|---|---|---|---|---|---|
-| 1 | **Ti-6Al-4V** Gr5 | F2924 | 4 / 6 | 110 | control + друк-еталон (V+Al токсичні = нижня межа) | 1 |
-| 2 | **Ti-6Al-7Nb** | F1295 | 0 / 6 | 103 | V-free (Al лишається) | 1 |
-| 3 | **CP-Ti Gr4** | F1581 | 0 / 0 | 104 | zero-tox, α-Ti (міцність ↓ ~480) | 1 |
-| 4 | **β-Ti-13Nb-13Zr** | F1713 | 0 / 0 | 80 | low-E dual-win (ізоеластичність, HW.33) | 2 |
-| 5 | **Tantalum** | F560 | 0 / 0 | 186 | benchmark біоінертності (⚠️ Ta₂O₅ DET-ризик; coin-only) | 2 |
-| 6 | **Ti-15Zr** (Roxolid) | F2066-class | 0 / 0 | 100 | high-strength V/Al-free (практичний анкер-кандидат) | 2 |
+| 1 | **Ti-6Al-4V** Gr5 | **F2924 — AM PBF** (єдиний AM-стандарт у таблиці) | 4 / 6 | 110 | control + друк-еталон (V+Al токсичні = нижня межа) | 1 |
+| 2 | **Ti-6Al-7Nb** | F1295 / R56700 — **wrought**, лише склад | 0 / 6 | 103 | V-free (Al лишається) | 1 |
+| 3 | **CP-Ti Gr4** | **F67 Gr4 / R50700** — wrought, лише склад | 0 / 0 | 104 | zero-tox, α-Ti (міцність ↓ ~480) | 1 |
+| 4 | **β-Ti-13Nb-13Zr** | F1713 / R58130 — **wrought**, лише склад | 0 / 0 | 80 | low-E dual-win (ізоеластичність, HW.33) | 2 |
+| 5 | **Tantalum** | F560 / R05200 — **wrought**, лише склад | 0 / 0 | 186 | benchmark біоінертності (⚠️ Ta₂O₅ DET-ризик; coin-only) | 2 |
+| 6 | **Ti-15Zr** (Roxolid) | **стандарту НЕМАЄ** — датшит постачальника | 0 / 0 | 100 | high-strength V/Al-free (практичний анкер-кандидат) | 2 |
+
+> 🔴 **Колонку звірено з ОБЛАСТЮ ЗАСТОСУВАННЯ кожного стандарту 2026-09-11 (HW.24), і два рядки називали не той предмет.** `F1581` на CP-Ti Gr4 **не є титановим стандартом узагалі** — це *Composition of Anorganic Bone for Surgical Implants*, кістковий апатит із нульовим вмістом Ti; нелегований титан специфікує **F67**, де Grade 4 = UNS R50700. `F2066-class` на Ti-15Zr є **Ti-15 МОЛІБДЕН** (UNS R58150) — збігається число, не елемент; стандарту ASTM чи ISO на бінарний Ti-Zr не існує ні для AM, ні для деформованого, бо Roxolid пропрієтарний Straumann. ⛔ Не відновлювати жодного з двох.
+>
+> ⚠️ **Друга вісь, і вона переживає обидва фікси: ми замовляємо ДРУК, а п'ять рядків із шести цитують специфікації ДЕФОРМОВАНОГО металу** (слово *Wrought* стоїть у власній назві F1295 · F67 · F1713 · F560). ASTM видає AM-специфікацію матеріалу лише на Ti-6Al-4V — `F2924` (Gr5) і `F3001` (ELI Gr23); на 7Nb, CP-Ti, β-Ti, Ti-Zr і Ta її немає, і єдина тугоплавка AM-спека F42 це `F3635` (Nb-Hf), не тантал. Тому рядки 2–5 є **посиланням на СКЛАД**, ніколи на режим друку, а рядок 6 не має й того. Це рівно та процесна вісь, яку фікс `F136`→`F2924` 2026-09-08 лишив незвіреною первинкою; тепер вона звірена. ⚖️ **Чи нарощувати замовлення до повного AM-стека** (склад по спеці вище · порошок ISO/ASTM 52907 · термообробка F3301 · приймання по свідках-купонах F3122) — **присуд закупівлі, не інженерії**: він піднімає ціну й може відсіяти дрібніші бюро, тож вирішує власник. Сьогодні документ просить менше: вендор сам оголошує, до чого друкує (§Powder specification нижче).
 
 **+ Au-coated bracket (опц., 7-й купон — `cem/ti_coin.au.json`):** DET-electrical **стеля** (Au = найкращий electron transfer), пара до Ta біоінертної стелі → реальні сплави затиснуті між двома межами. Surface-only (дешевий Ti + thin Au), **НЕ** структурний/анкер-кандидат — лише control-точка bake-off.
 
-**Спільна обробка (усі купони):** SLM/LPBF друк → **HIP** (920°C/100-150МПа Ar/2-4год, §4.B) → **EAAE dual-scale** активація грані (Sa 0.5-5µm + Sv 50-500nm, [`01_02 §1.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) → **dehydrogenation bake** (250°C/10⁻³mbar, <2год після rinse, H<100ppm, §4.B). ⚠️ EAAE-протокол tuned під 4V → β-Ti/CP-Ti/Ta травляться інакше → **per-alloy etch-tuning** (CRO; coin виявить — squeeze-data SEM Sa/Sv).
+**Спільна обробка (усі купони):** SLM/LPBF друк → **HIP** (920°C/100-150МПа Ar/2-4год, §4.B) → **EAAE dual-scale** активація грані (Sa 0.5-5µm + Sv 50-500nm, [`01_02 §1.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) → **dehydrogenation bake** (250°C/10⁻³mbar, <2год після rinse, H<100ppm, §4.B). ⚠️ **EAAE-протокол tuned під 4V, тож per-alloy etch-tuning потрібен КОЖНОМУ купону, крім самого 4V-контролю** (CRO; coin виявить — squeeze-data SEM Sa/Sv). 🔴 Тут стояв список із трьох сплавів, а CEM-нотатки несли список із трьох ІНШИХ; перетин був один. Обидва писались окремими комітами й жоден не виводився з підстави, яку це саме речення й називає: різна хімія травиться інакше, а «інша за 4V» є кожна з п'яти. **Ціна розбіжності не косметична — вісь травлення задає ECSA, тобто `j_max`, тобто головну метрику down-select'у: сплав, який CRO протравив 4V-протоколом, порівнюється з підтюненими сусідами й програє приладу, а не собі.**
 
-**QC/acceptance (substrate):** SEM грані (Sa/Sv) · LECO RH404 H<100ppm · ICP-MS промивної води (Al<1ppb для 4V/7Nb).
+**QC/acceptance (substrate):** **SEM грані ПЕРЕД відправкою — ×5 000 (Sa) і ×50 000 (Sv)**, обов'язок заводу за [`01_02 §1.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); не видно нанопор при ×50 000 ⇒ травлення недостатнє ⇒ повторити Крок 4 (⛔ третій кадр §1.5, ×500 по макропорах гіроїда, на плоскому купоні предмета не має) · LECO RH404 H<100ppm · ICP-MS промивної води (Al<1ppb для 4V/7Nb).
 
 ---
 
@@ -105,18 +109,20 @@ We are an R&D group and need a small batch of flat metal coupons produced by las
 
 - **Geometry:** flat disc, **Ø16 mm × 1 mm** thick, with a small tab or edge through-hole for a potentiostat clip. The tab must not encroach on the active face. Per-alloy STL and dimensioned DXF are attached and are the **dimensional authority**.
 - **Quantity: 3 replicates per alloy.** Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
-> ⚠️ **Рядок 1 ніс `ASTM F136` до 2026-09-08, і це була не косметика: F136 є специфікацією ELI (= Grade 23), а купон №1 є саме Gr5-контролем і друк-еталоном** — цитувати для нього implant-ELI-спеку означало замовити в вендора інший порошок. **Виправлено на `F2924`**, і це НЕ вибір, а виведення з нашого ж дерева: [`vendor_templates`](vendor_templates.md) незалежно парує «Grade 5 (F2924)» і називає F136 ELI-спекою, а [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) обрав V-free напрям **явно НЕ ELI**. Одної осі МАРКИ (ELI ⊥ Gr5) досить — процесна вісь (AM ⊥ wrought) є нашим виведенням і присуду не тримає. ⛔ **І не звужувати вимогу до ELI взагалі** ([`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md)) — фінальний сплав визначить bake-off. ⚠️ **Решта колонки ASTM лишається НЕПЕРЕВІРЕНОЮ первинкою** (дім — `ALLOY_PROPERTIES`, і його шапка каже «literature»): перед відправкою будь-якого рядка вендорові звір сам стандарт, а не наш переказ.
+> ⚠️ **Рядок 1 ніс `ASTM F136` до 2026-09-08, і це була не косметика: F136 є специфікацією ELI (= Grade 23), а купон №1 є саме Gr5-контролем і друк-еталоном** — цитувати для нього implant-ELI-спеку означало замовити в вендора інший порошок. **Виправлено на `F2924`**, і це НЕ вибір, а виведення з нашого ж дерева: [`vendor_templates`](vendor_templates.md) незалежно парує «Grade 5 (F2924)» і називає F136 ELI-спекою, а [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) обрав V-free напрям **явно НЕ ELI**. Одної осі МАРКИ (ELI ⊥ Gr5) досить, і процесна вісь (AM ⊥ wrought) тоді лишилась нашим виведенням. ⛔ **І не звужувати вимогу до ELI взагалі** ([`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md)) — фінальний сплав визначить bake-off. ✅ **Решту колонки звірено первинкою 2026-09-11** (області застосування самих стандартів; знахідки — у врізці під таблицею §1): F136 підтверджено ще й як **wrought**, тобто для друкованого Gr5-купона він хибний на ОБОХ осях. 🔑 **Урок, ширший за рядок: перший фікс закрив вісь, на якій його спіймали, і лишив сусідню відкритою в тому самому реченні** — коли правиш один бік пари, дочитай, чи другий не стоїть тут же непоміченим.
 
 - **Powder specification:** for each alloy, state the powder specification you would actually use (designation, ASTM/ISO spec, grade, particle size distribution, lot traceability). If your available powder differs from the standard cited below, quote your equivalent and tell us what it is — do not substitute silently.
 
 | # | Alloy | Standard cited | Qty |
 |---|---|---|---|
-| 1 | Ti-6Al-4V | ASTM F2924 | 3 |
-| 2 | Ti-6Al-7Nb | ASTM F1295 | 3 |
-| 3 | CP-Ti Grade 4 | ASTM F1581 | 3 |
-| 4 | Ti-13Nb-13Zr (β-Ti) | ASTM F1713 | 3 |
-| 5 | Tantalum | ASTM F560 | 3 |
-| 6 | Ti-15Zr | ASTM F2066-class | 3 |
+| 1 | Ti-6Al-4V | ASTM F2924 — additive manufacturing, powder bed fusion | 3 |
+| 2 | Ti-6Al-7Nb | ASTM F1295 (UNS R56700) — wrought spec, cited for CHEMISTRY only | 3 |
+| 3 | CP-Ti Grade 4 | ASTM F67 Grade 4 (UNS R50700) — wrought spec, cited for CHEMISTRY only | 3 |
+| 4 | Ti-13Nb-13Zr (β-Ti) | ASTM F1713 (UNS R58130) — wrought spec, cited for CHEMISTRY only | 3 |
+| 5 | Tantalum | ASTM F560 (UNS R05200) — wrought spec, cited for CHEMISTRY only | 3 |
+| 6 | Ti-15Zr | **no ASTM or ISO standard exists** for binary Ti-Zr — attach your powder datasheet | 3 |
+
+> **Row 1 is the only one with an additive-manufacturing material specification.** For rows 2–5 the standard above fixes the CHEMISTRY and nothing else — it is a wrought-product spec and we are not buying wrought product. Tell us the specification you will actually print to (your own, the powder producer's, or a company spec), and if it differs from the chemistry cited, say how. Row 6 has no standard at any process route; attach the powder datasheet as the material reference.
 
 - **Item 5 alternative:** if bulk tantalum is outside your process window, we will also consider a **tantalum-coated titanium coupon** of the same geometry (the coating only needs to cover the active face) — quote it as an alternative line item.
 - **Optional item 7:** one coupon of the same geometry in titanium with a **thin gold coating on the active face** — surface treatment only, non-structural. Quote separately if you can supply or subcontract it.

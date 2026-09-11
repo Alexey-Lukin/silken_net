@@ -12,17 +12,17 @@
     "minus_mm": -0.1
   },
   "notes": {
-    "material": "Tantalum (bioinert benchmark)",
+    "material": "Unalloyed tantalum, UNS R05200 (bioinert benchmark). Chemistry per ASTM F560 - a WROUGHT spec quoted here for COMPOSITION only; ASTM has no AM material spec for Ta (its only refractory AM spec is F3635, Nb-Hf), so declare the powder spec you will actually print to. NOTE F560's second grade R05400 is powder-metallurgy-CONSOLIDATED billet feeding wrought processing, not additive manufacturing - do not read it as an AM allowance",
     "process": "PBF-LB / SLM of bulk Ta (Tm 3017C; process window - preheat, scanning speed, atmosphere - NOT SPECIFIED in canon, vendor declares). Bulk-Ta LPBF vs Ta-coating-on-Ti route is OPEN (RFQ 2, 00_07 HW.24 orphan 3). NOTE: 'porous-Ta implant' evidence is bone-proven (CVD Ta on a carbon scaffold), NOT LPBF and NOT tree-proven (01_04 4.2) - it is not a qualification of this coupon",
     "post_process": "OPEN - dehydrogenation bake and HIP for Ta are on verdict (00_07 HW.27): do not bake, HIP or skip either without written direction",
     "surface_finish": "EAAE dual-scale on the active face: micro Sa 0.5-5 um + nano Sv 50-500 nm (01_02 1.2); Ta etch chemistry differs from Ti",
     "coating_restriction": "Active face (EBFC Gen 2.0 stack): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ta as delivered, any dielectric blocks DET (01_02 3.6; RFQ 4.B). The native Ta2O5 (wider band-gap + thicker film than TiO2 -> steeper tunnelling decay, in-silico 53; CAVEAT below) is what this bracket coupon measures, not a coating to strip",
-    "inspection": "CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Ta release (bioinert ceiling)",
+    "inspection": "SEM of the active face BEFORE shipment (01_02 1.5, factory obligation): x5,000 for micro-roughness Sa and x50,000 for nano-pores Sv - if nano-pores are not visible at x50,000 the etch is insufficient and EAAE (01_02 1.3 Step 4) is repeated; 01_02 1.5 also names x500 for gyroid macro-pores, which a flat coupon does not have, so that frame does not apply here. CV/EIS biochem (Stage-2, 01_01 6); j on PROJECTED area (01_02 1.4); ICP-MS Ta release (bioinert ceiling)",
     "extra": [
       "Active electrode area = 1 face ~= 2.01 cm2 (O16, 01_03 3.5)",
       "Alloy bake-off BENCHMARK: bioinertness ceiling (osteointegration gold-std) -> measures how much EBFC+interface lose vs the inert ideal",
       "CAVEAT: Ta2O5 = wider band-gap + thicker native film than TiO2 -> stronger tunnelling barrier (in-silico 53; NOT permittivity - rutile TiO2 is the higher-k dielectric) -> DET risk for the enzyme cathode; heavy 16.6 g/cm3 -> coin-only, NOT an anchor candidate",
-      "Tree-first: bone-proven != tree-proven (01_04 4.2) -> sap CV/EIS decides"
+      "Tree-first down-select: CV/EIS + ion-release in synthetic xylem sap, not PBS (01_04 4.2) - and bone-proven != tree-proven, so only the sap run decides for this coupon"
     ]
   }
 }

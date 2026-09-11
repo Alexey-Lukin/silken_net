@@ -108,13 +108,25 @@ CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (
 
 # ── Structural alloy candidates — Stage-2 coin bake-off (01_02 §2.5, HW.24) ──
 # Composition (wt%) + mechanical/thermal props feeding the V/Al-release (script 51) + Lamé (script 50)
-# + bus thermal bridge (script 54) comparative. ⚠️ The `spec` field is DOCUMENTATION-ONLY — no script
-# reads it — and it is LITERATURE, never primary-verified by us: do NOT quote it to a vendor as
-# authoritative without checking the standard itself (00_06 §0 Validation Gate applies to us too).
-# The 4V row was `ASTM F136` until 2026-09-08. F136 is the ELI (Grade 23) spec, while this row IS the
-# Grade-5 control and 01_02 §2.5 chose V-free explicitly NOT ELI — the GRADE axis alone settles it.
-# Corrected to F2924, the pairing our own vendor_templates already used for Grade 5 before that fix.
-# (Whether F136 is also non-AM is our inference from the F3001 contrast, not a checked claim.)
+# + bus thermal bridge (script 54) comparative. The `spec` field is DOCUMENTATION-ONLY — no script
+# reads it — but it DOES reach a vendor, via the RFQ tables and the CEM notes that print on the
+# factory drawing, so it is held to the Validation Gate (00_06 §0) like any other outbound claim.
+# 🔴 Every designation below was read against the standard's OWN SCOPE on 2026-09-11 (HW.24), and two
+# were not what they claimed. ⛔ Do not restore either without re-reading the standard:
+#   · `F1581` stood on CP-Ti Gr4 and is not a titanium standard at all — "Composition of Anorganic
+#     Bone for Surgical Implants", a bone-derived apatite with zero Ti. CP-Ti is F67 (Gr4 = R50700).
+#   · `F2066-class` stood on Ti-15Zr and is Ti-15 MOLYBDENUM (R58150). The 15 collides, the element
+#     does not. No ASTM/ISO specification for binary Ti-Zr exists, AM or wrought — Roxolid is a
+#     Straumann proprietary alloy, so that row has no standard to name and says so.
+# ⛔ And the earlier fix on this same axis STANDS — do not "correct" the 4V row back to `F136`: that is
+#   the ELI (Grade 23) spec, this row is the Grade-5 control, and 01_02 §2.5 chose V-free explicitly
+#   NOT ELI. F136 is now confirmed WROUGHT as well, so it fails both axes for a printed Gr5 coupon.
+# ⚠️ SECOND AXIS, and it is the one that survives the two fixes: we order laser powder-bed fusion, and
+# ASTM publishes an AM MATERIAL spec for Ti-6Al-4V only (F2924 Gr5 / F3001 ELI). F1295 · F67 · F1713 ·
+# F560 all carry "Wrought" in their own titles, so for those alloys the row is a COMPOSITION reference,
+# never a print spec — an AM order stacks it with feedstock, process and acceptance callouts, which is
+# a procurement decision and lives in the RFQ, not here. This closes the axis 01_02 §2.5 / the RFQ had
+# left open as "our inference from the F3001 contrast, not a checked claim": it is checked now.
 # The oxide-diffusion
 # D_V/D_Al stays a SHARED constant in script 51 (per-alloy oxide-diffusion is rarely published → the
 # COMPOSITION effect dominates: 4% V → V release, 0% V → none). Tree-first (01_04 §4.2): V + Al are
@@ -133,31 +145,31 @@ ALLOY_PROPERTIES = {
         "lambda_W_mK": 6.7,
     },
     "Ti-6Al-7Nb": {
-        "spec": "ASTM F1295 (V-free, direction a)",
+        "spec": "ASTM F1295 / UNS R56700 — WROUGHT composition ref (no AM spec exists; V-free, dir. a)",
         "V_wt": 0.0, "Al_wt": 6.0, "Nb_wt": 7.0, "Zr_wt": 0.0,
         "E_GPa": 103.0, "nu": 0.31, "alpha_1K": 8.4e-6, "yield_MPa": 850.0, "rho_kg_m3": 4520.0,
         "lambda_W_mK": 7.0,
     },
     "CP-Ti-Gr4": {
-        "spec": "ASTM F1581 (zero V/Al, alpha-Ti)",
+        "spec": "ASTM F67 Gr4 / UNS R50700 — WROUGHT composition ref (no AM spec exists; zero V/Al, alpha-Ti)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
         "E_GPa": 104.0, "nu": 0.34, "alpha_1K": 8.6e-6, "yield_MPa": 480.0, "rho_kg_m3": 4510.0,
         "lambda_W_mK": 17.0,
     },
     "beta-Ti-13Nb-13Zr": {
-        "spec": "ASTM F1713 (low-E V/Al-free)",
+        "spec": "ASTM F1713 / UNS R58130 — WROUGHT composition ref (no AM spec exists; low-E V/Al-free)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 13.0, "Zr_wt": 13.0,
         "E_GPa": 80.0, "nu": 0.33, "alpha_1K": 8.8e-6, "yield_MPa": 900.0, "rho_kg_m3": 5050.0,
         "lambda_W_mK": 7.5,   # estimate — β-Ti(Nb,Zr) heavily alloyed, sparse data
     },
     "Ta": {
-        "spec": "ASTM F560 (bioinert benchmark; coin-only, heavy)",
+        "spec": "ASTM F560 / UNS R05200 — WROUGHT composition ref (no AM spec exists; bioinert benchmark, coin-only, heavy)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
         "E_GPa": 186.0, "nu": 0.34, "alpha_1K": 6.5e-6, "yield_MPa": 345.0, "rho_kg_m3": 16650.0,
         "lambda_W_mK": 57.0,
     },
     "Ti-15Zr": {
-        "spec": "ASTM F2066-class (Roxolid; V/Al-free, high-strength)",
+        "spec": "NO STANDARD — binary Ti-Zr has no ASTM/ISO spec (Roxolid is Straumann-proprietary); vendor datasheet is the only reference",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 15.0,
         "E_GPa": 100.0, "nu": 0.33, "alpha_1K": 8.5e-6, "yield_MPa": 950.0, "rho_kg_m3": 4800.0,
         "lambda_W_mK": 8.0,   # estimate — Ti-Zr solid-solution scattering, sparse data
