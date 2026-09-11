@@ -65,6 +65,25 @@ L_FREE_UNSUP = 36.0   # mm — no liner: gap 6 + cathode bore ~14 + flange/pad s
 L_FREE_SUP = 6.0      # mm — liner supports the bore run → only the PEEK gap is unsupported
 
 # ── Loads ──
+# ── Channel run (mm from the anode root) — the wall that the two branches above IGNORE ──
+# Both L_FREE_* above are free-cantilever idealisations: they assume NO wall anywhere over the span.
+# The real rod threads a Ø1.3 bore, so a branch that leaves a gap is neither of them — see §4 below.
+# ⚠️ The run length is read CONSERVATIVELY (shorter = less room for contact to happen): the model's own
+# decomposition of L_FREE_UNSUP says "cathode bore ~14", while cem/cathode_flange.json gives
+# shank 14 + flange 3 = 17. Taking 14 makes the contact finding harder to reach, not easier.
+CHANNEL_START_MM = L_FREE_SUP      # the PEEK gap ends and the bore begins
+CHANNEL_LEN_MM = 14.0
+D_CHANNEL_MM = 1.3                 # cathode channel Ø, canon 01_01 §1.4 (frozen)
+# Radial free play left by each insulation branch, measured on the ROD side.
+# ⛔ `liner` is NOMINALLY zero — that is the F3 gate's arithmetic (1.0 + 2×0.15 ≤ 1.3), not an assembly
+#    clearance; the real allocation is an open ⚖️ (00_07 HW.34). A few µm is carried so the regime is
+#    computed rather than asserted, and the conclusion does not depend on which µm-value you pick.
+INSULATION_OPTIONS = (
+    ("conformal 10 µm film", 0.010),
+    ("conformal TiO2 ~5 µm", 0.005),
+    ("PEEK liner 0.15 mm", 0.1475),   # 2.5 µm radial assembly play — µm-scale by construction
+)
+
 F_POGO_N = 1.0        # N — pogo spring force on the rod tip (~100 g, 02_02 §2.2)
 MU_CONTACT = 0.3      # Au↔Ti dry sliding friction (the cyclic lateral drag = µ·F_pogo); swept 0.2-0.5
 MU_SWEEP = (0.2, 0.3, 0.4, 0.5)
@@ -104,6 +123,35 @@ def bending_stress_MPa(force_lat_N: float, length_mm: float) -> float:
     i_area = second_moment_m4(D_BUS)
     c = (D_BUS / 2.0) * MM_M
     return force_lat_N * (length_mm * MM_M) * c / i_area / 1e6
+
+
+def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float) -> float:
+    """Free-cantilever deflection at x under a TRANSVERSE TIP load: δ(x) = F·x²·(3L−x)/(6EI).
+
+    Same F, L, E, I as the bending-stress model above — this is that model read as a SHAPE rather
+    than as a root stress, which is the one question it was never asked.
+    """
+    i_area = second_moment_m4(D_BUS)
+    x, ell = x_mm * MM_M, length_mm * MM_M
+    return force_lat_N * x ** 2 * (3.0 * ell - x) / (6.0 * E_TI * i_area) / MM_M
+
+
+def first_wall_contact_mm(force_lat_N: float, radial_play_mm: float, length_mm: float) -> float:
+    """Distance from the root at which the FREE deflection first equals the radial play.
+
+    Bisection on a monotonic function — no solver dependency. Returns `length_mm` if the rod never
+    takes up the play over the whole span (i.e. it really is a free cantilever).
+    """
+    if tip_load_deflection_mm(force_lat_N, length_mm, length_mm) <= radial_play_mm:
+        return length_mm
+    lo, hi = 0.0, length_mm
+    for _ in range(60):
+        mid = (lo + hi) / 2.0
+        if tip_load_deflection_mm(force_lat_N, mid, length_mm) < radial_play_mm:
+            lo = mid
+        else:
+            hi = mid
+    return lo
 
 
 def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
@@ -240,6 +288,42 @@ def main() -> int:
               f"({'still above' if worst_uns >= INFINITE_LIFE_SF else 'BELOW'}).")
     print("    The liner is the robust mitigation in BOTH branches; bare-cantilever margin erodes with µ.")
 
+    # ── 4. Which regime each insulation branch actually puts the rod in ──────────────────────────
+    # 🔴 The question §2 never asks. Both L_FREE_* are free cantilevers: no wall anywhere. But the rod
+    # threads a Ø1.3 bore, so an insulation branch that leaves play is NEITHER idealisation — it is a
+    # gap-limited beam. Which one it is decides whether the SF printed above describes it at all.
+    banner("Clearance regime — does the rod REACH the channel wall? (the branch the SF table omits)")
+    channel_end = CHANNEL_START_MM + CHANNEL_LEN_MM
+    print(f"  Channel Ø{D_CHANNEL_MM:.1f} runs {CHANNEL_START_MM:.0f}→{channel_end:.0f} mm from the root "
+          f"(conservative length {CHANNEL_LEN_MM:.0f} mm; CEM shank+flange would give 17).")
+    print(f"  {'insulation branch':<24s} {'radial play':>11s} {'first contact, mm from root':>30s}   regime")
+    print(f"  {'-' * 92}")
+    regimes = []
+    for label, t_mm in INSULATION_OPTIONS:
+        play = (D_CHANNEL_MM - (D_BUS + 2.0 * t_mm)) / 2.0
+        contacts = {}
+        for mu in MU_SWEEP:
+            contacts[mu] = round(first_wall_contact_mm(mu * F_POGO_N, play, L_FREE_UNSUP), 2)
+        lo_x, hi_x = min(contacts.values()), max(contacts.values())
+        # Bears on the wall INSIDE the bore on every µ the model itself sweeps ⇒ not a free cantilever.
+        bears = all(x < channel_end for x in contacts.values())
+        at_mouth = all(x <= CHANNEL_START_MM for x in contacts.values())
+        regime = ("supported at the bore mouth" if at_mouth
+                  else "GAP-LIMITED — bears inside the bore" if bears
+                  else "free cantilever (never reaches the wall)")
+        print(f"  {label:<24s} {play * 1000:>8.1f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>30s}   {regime}")
+        regimes.append({"branch": label, "coating_or_liner_mm": t_mm,
+                        "radial_play_mm": round(play, 4), "first_contact_mm_by_mu": contacts,
+                        "bears_inside_bore": bool(bears), "supported_at_mouth": bool(at_mouth),
+                        "regime": regime})
+    gap_limited = [r["branch"] for r in regimes if r["bears_inside_bore"] and not r["supported_at_mouth"]]
+    # ⛔ DERIVED, never typed — this sentence is the ground the lining verdict stands on.
+    print(f"\n  → The free-cantilever SF above describes NO branch that bears on the wall: "
+          f"{', '.join(gap_limited) or 'none'}.")
+    print("    For those the effective span is a FRACTION of the 36 mm span priced above, so the")
+    print("    unsupported SF is a number for a configuration that does not exist — while the contact")
+    print("    it implies is FORCED by geometry on every µ, which is a wear question, not a fatigue one.")
+
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
@@ -283,6 +367,16 @@ def main() -> int:
         "per_alloy_fatigue": alloy_rows,
         "fabrication_branches": branch_summary,
         "friction_sweep": mu_rows,
+        "clearance_regime": {
+            "channel": {"dia_mm": D_CHANNEL_MM, "start_mm": CHANNEL_START_MM,
+                        "length_mm": CHANNEL_LEN_MM,
+                        "note": "length read conservatively (model's own '~14' rather than the CEM's "
+                                "shank 14 + flange 3 = 17) — a shorter bore makes contact HARDER to reach"},
+            "branches": regimes,
+            "gap_limited_branches": gap_limited,
+            "free_cantilever_sf_describes_these": [r["branch"] for r in regimes
+                                                   if r["regime"].startswith("free cantilever")],
+        },
         "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4), SHIPPED fabrication = "
                     f"{SHIPPED_BRANCH} (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue "
                     f"(SF {p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> "

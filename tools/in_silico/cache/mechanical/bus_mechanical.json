@@ -203,6 +203,63 @@
       "sf_sup_4v_welded": 12.96
     }
   ],
+  "clearance_regime": {
+    "channel": {
+      "dia_mm": 1.3,
+      "start_mm": 6.0,
+      "length_mm": 14.0,
+      "note": "length read conservatively (model's own '~14' rather than the CEM's shank 14 + flange 3 = 17) \u2014 a shorter bore makes contact HARDER to reach"
+    },
+    "branches": [
+      {
+        "branch": "conformal 10 \u00b5m film",
+        "coating_or_liner_mm": 0.01,
+        "radial_play_mm": 0.14,
+        "first_contact_mm_by_mu": {
+          "0.2": 15.67,
+          "0.3": 12.59,
+          "0.4": 10.8,
+          "0.5": 9.6
+        },
+        "bears_inside_bore": true,
+        "supported_at_mouth": false,
+        "regime": "GAP-LIMITED \u2014 bears inside the bore"
+      },
+      {
+        "branch": "conformal TiO2 ~5 \u00b5m",
+        "coating_or_liner_mm": 0.005,
+        "radial_play_mm": 0.145,
+        "first_contact_mm_by_mu": {
+          "0.2": 15.98,
+          "0.3": 12.83,
+          "0.4": 11.0,
+          "0.5": 9.78
+        },
+        "bears_inside_bore": true,
+        "supported_at_mouth": false,
+        "regime": "GAP-LIMITED \u2014 bears inside the bore"
+      },
+      {
+        "branch": "PEEK liner 0.15 mm",
+        "coating_or_liner_mm": 0.1475,
+        "radial_play_mm": 0.0025,
+        "first_contact_mm_by_mu": {
+          "0.2": 1.95,
+          "0.3": 1.59,
+          "0.4": 1.38,
+          "0.5": 1.23
+        },
+        "bears_inside_bore": true,
+        "supported_at_mouth": true,
+        "regime": "supported at the bore mouth"
+      }
+    ],
+    "gap_limited_branches": [
+      "conformal 10 \u00b5m film",
+      "conformal TiO2 ~5 \u00b5m"
+    ],
+    "free_cantilever_sf_describes_these": []
+  },
   "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 10x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.4-3.9x): dropping the as-printed derate lifted CP-Ti-Gr4, Ta OUT of predicted failure but NOT over the SF-2 line. So the liner's SUPPORT role is NARROWED by the fabrication verdict, not retired - which is the measurement the open HW.34 lining verdict was missing. On the superseded PRINTED branch not one of the six cleared it. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. NO WELD SEAM is modelled: this is a homogeneous cantilever, while the ratified welded rod puts a heat-affected zone at the root, i.e. at peak bending moment. The wrought derate describes the WIRE and says nothing about the JOINT."
 }
