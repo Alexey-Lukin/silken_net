@@ -174,9 +174,9 @@ managed (no Library.Go), `WallScan.cs` under xUnit.
 
 **Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
 intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +
-bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (antenna↔Ti ≥12) + rim O-ring groove. `verify`
+bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — 00_07 HW.33) + rim O-ring groove (⛔ RATIFIED AWAY 2026-09-10 and still cut: one groove belongs in the flange against a FLAT rim). `verify`
 gates hollow-fraction / bell-rise / cavity / mate-fit. **🏁 Anchor-CAD family complete** (coin→anode-v2→
-ARCH.25→barbs→Деталь3→Деталь4). ⚠ MATE-Ø: Деталь-3 lugs Ø29 ↔ dome Ø25 → enclosing-skirt / lugs-inboard (HW.17 bench).
+ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10 — Ø25 stays, lugs go inboard, and a LOCAL INTERNAL RIM BOSS carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. The boss is not modelled yet (open leg); the bayonet-Z half is an open ⚖️, not bench work (00_07 HW.33).
 
 **Capsule-end assembly / mate-audit (shipped)** — `Assembly.cs` + `anchor_assembly` CEM brings Деталь 3 ↔ Деталь 4
 into one frame at the bayonet datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch (radial
@@ -220,7 +220,7 @@ EMBEDS it as `![…](…)`, and none does.) Touch `Drawing.cs` or a CEM ⇒ re-r
 from the shipped manifests (ceiling: content + frame-fit, not byte-currency; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
-**Deferred:** the MATE-Ø skirt/inboard CHOICE + Z-reconcile (lock-groove-Z ↔ lug-Z, 👤 bench HW.8.8) · the shank-Ø
+**Deferred:** the rim-boss implementation + the bayonet-Z reconcile (open ⚖️: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug needs a Z of its own — `Assembly.RequiredLugZMm`; bench follows at HW.8.8) · the shank-Ø
 press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/
 conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
 

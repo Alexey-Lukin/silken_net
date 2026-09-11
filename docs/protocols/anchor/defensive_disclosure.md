@@ -39,8 +39,8 @@ placed here into the public record:
   no separate sensor, there is no separate sensor noise, sensor power draw, or sensor drift. Conventional
   engineering *adds* a sensor; here the sensor is *eliminated*.
 - **SYNERGY B — triple-function gyroid.** A single triply-periodic-minimal-surface (gyroid) geometry
-  **simultaneously** (a) admits xylem sap into its porous volume, (b) provides isoelastic stress matching
-  to living wood, and (c) forms the metal↔xylem interface electrode of that same EBFC.
+  **simultaneously** (a) admits xylem sap into its porous volume, (b) reduces the modulus mismatch with
+  living wood, and (c) forms the metal↔xylem interface electrode of that same EBFC.
 - **SYNERGY C — the chaotic transform as an INTEGRITY SEAL, not a sensor.** The same non-linear
   (Lorenz) transform is evaluated **twice and independently**: once on the constrained node, from a
   per-device secret seed provisioned at manufacture, and once on the verifying server from that same
@@ -64,9 +64,10 @@ comprising:
   (ASTM F2924), and equally Ti-6Al-7Nb, commercially pure titanium, tantalum, other niobium- or
   zirconium-bearing biocompatible alloys, and noble-metal-coated variants of any of these — with a **gyroid**
   (TPMS) architecture, for implantation into the xylem of a living tree, wherein the gyroid
-  **simultaneously** (i) admits xylem sap into the porous volume, (ii) provides a stiffness gradient
-  isoelastic with living wood, and (iii) constitutes the metal↔xylem interface electrode (≈65% porosity;
-  unit-cell axis parallel to sap flow);
+  **simultaneously** (i) admits xylem sap into the porous volume, (ii) provides a stiffness gradient that
+  REDUCES the modulus mismatch with living wood, and (iii) constitutes the metal↔xylem interface electrode
+  (≈65% porosity; the unit cell in ANY orientation, the structure being bicontinuous and therefore
+  permeable along every axis);
 - **(b) an enzymatic biofuel cell (EBFC)** at that interface: an anode carrying an immobilised
   flavin-dependent oxidoreductase (deglycosylated FAD-dependent glucose dehydrogenase, dgrFAD-GDH) that
   oxidises xylem glucose via a redox mediator (an osmium bis-bipyridyl polyvinylimidazole complex in a

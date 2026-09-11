@@ -249,8 +249,9 @@ internal sealed record CathodeFlangeCem
 
 // PEEK Radome (Деталь 4, 02_01 §5.2 + 01_04 §5.5) — the radio-transparent dome that bayonets onto the
 // Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
-// (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge) + an internal PCB cavity (antenna↔Ti
-// ≥12 mm) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove. The cathode is NOT
+// (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge; ⛔ neither field DRIVES the geometry —
+// the cap rise and edge radius are both the dome radius, and these two are floor-checks only) + an
+// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove. The cathode is NOT
 // sealed under the dome — it breathes O₂ from the SIDE/perimeter (02_02 §1.2; gas-phase 5–10× vs dissolved).
 internal sealed record RadomeCem
 {
@@ -259,7 +260,7 @@ internal sealed record RadomeCem
     public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø25, no sub-mm features → 0.1 ok
     public float DomeDiameterMm { get; init; } = 25f;      // frozen (= Zone-3 flange Ø, 02_02 §1.3)
     public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)
-    public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF); antenna↔Ti ≥12
+    public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF). ⛔ NOT antenna↔Ti: that is cavityH − lockGrooveZ − t/2 = 8.0 here, and the ≥12 floor is OURS (canon asks ≥8) — 00_07 HW.33
     public float BellRiseMm { get; init; } = 3f;           // rounded top over the body (≥3, 01_04 §5.5)
     public float BellRadiusMm { get; init; } = 5f;         // top edge round (≥5 — no callus-grip edge)
 

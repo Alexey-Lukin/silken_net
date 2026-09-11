@@ -15,7 +15,7 @@ public class RadomeTests
         RadomeCem cem = Cem.Parse<RadomeCem>(strJson);
         Assert.Equal(25f, cem.DomeDiameterMm);     // frozen (= Zone-3 flange Ø)
         Assert.Equal(3, cem.BayonetLugs);
-        Assert.True(cem.CavityHeightMm >= 12f);    // antenna↔Ti RF clearance (02_01 §5.3)
+        Assert.True(cem.CavityHeightMm >= 12f);    // OUR working floor on the CEM dim — NOT antenna↔Ti (that is cavityH − lockGrooveZ − t/2) and NOT the canon ≥8 (00_07 HW.33)
         Assert.True(cem.BellRiseMm >= 3f);         // anti-overgrowth shield (01_04 §5.5)
     }
 

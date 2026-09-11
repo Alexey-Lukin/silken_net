@@ -647,8 +647,20 @@ internal static class Program
     }
 
     // Radome verify (Деталь 4, 02_01 §5.2): HOLLOW-shell gates (gotcha #9 INVERTED) — hollow fraction
-    // (a real shell, not a solid block), bell rise (shield cap ≥ BellRiseMm, 01_04 §5.5), cavity height
-    // (antenna↔Ti ≥12 mm, 02_01 §5.3), bayonet socket mate-fit (slot ≥ lug + clearance).
+    // (a real shell, not a solid block), bell rise (shield cap ≥ BellRiseMm, 01_04 §5.5), cavity height,
+    // bayonet socket mate-fit (slot ≥ lug + clearance).
+    //
+    // ⛔ DECLARED CEILINGS on the cavity gate — it is the weakest one here and reads as the strongest:
+    //  1. CAVITY HEIGHT IS NOT ANTENNA↔Ti CLEARANCE. The real clearance at the bayonet datum is
+    //     `cavityH − lockGrooveZ − t/2` (Assembly.RfClearanceMm) = 8.0 at cavityH 13, so passing this
+    //     gate says nothing about the RF constraint it used to name. And `RfClearanceMm` itself puts the
+    //     antenna on the cavity CEILING by assumption (Validation.cs), i.e. on a board stack nobody froze.
+    //  2. THE 12 IS OURS, NOT CANON'S. 02_01 §5.3 asks for ≥ 8 mm (10–15 desirable) on the λ/40 = 8.6
+    //     ground and makes HFSS mandatory below 10; its only 12 is the OUTCOME of a proposed two-deck
+    //     layout. Which number is the acceptance floor is an OPEN verdict (00_07 HW.33), settled by the
+    //     UNI.10 VNA sweep — so this stays a working floor on the CEM dimension, not an RF claim.
+    //  ⊕ Same mirror family as Cem.RfClearanceMinMm and 52_z_stack_tolerance.RF_ANT_TI_CLEARANCE_MIN;
+    //     all three cite one canon row, and one date is ONE witness (00_05 §5).
     private static int ReportRadome(RadomeCem cem, Voxels voxRadome)
     {
         GeometryMetrics oM = Validation.MeasureRadome(cem, voxRadome);
@@ -669,12 +681,12 @@ internal static class Program
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
         bool bHollow = oM.HollowFraction is > 0.5;                          // a real shell, NOT a solid block (gotcha #9 inverted)
         bool bBell = oM.BellRiseMm is { } dB && dB >= cem.BellRiseMm - (2f * cem.VoxelSizeMm);
-        bool bCavity = cem.CavityHeightMm >= 12f;                           // antenna↔Ti RF clearance (02_01 §5.3)
+        bool bCavity = cem.CavityHeightMm >= 12f;                           // OUR working floor on the CEM dim — read the ⛔ ceilings above
         bool bMate = fSocketSlot >= cem.LugRadiusMm + 0.1f;                 // socket admits the Деталь-3 lug + clearance
 
         if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
         if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
-        if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — antenna↔Ti RF clearance (02_01 §5.3)");
+        if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — OUR working floor, NOT the canon RF minimum (02_01 §5.3 asks ≥8); antenna↔Ti is cavityH − lockGrooveZ − t/2, see 00_07 HW.33");
         if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
 
         bool bOk = bSane && bHollow && bBell && bCavity && bMate;
