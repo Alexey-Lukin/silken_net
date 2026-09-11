@@ -73,7 +73,7 @@ are computed **analytically from the CEM parameters** we already own — no mesh
 | **Zone-2 sleeve** (Деталь 2) | Side section (bore Ø11 / OD Ø15 / 50 mm) + end view | Plain tube — fully analytic from CEM. Note hex + flange-shoulder are deferred (`01_01 §Zone 2`). |
 | **Деталь 3 flange** | Front (Ø25 + 3 lugs) + side section (shank, bore, O-ring groove) | Analytic; lugs at 120° (asymmetric bbox, as in `verify`). |
 | **Деталь 4 radome** | Side section (dome + bell + cavity + socket) + bottom (socket) | Analytic revolved + bell radius callout (≥3/R≥5, `01_04 §5.5`). |
-| **Zone-1 anode (gyroid)** | **Envelope** (Ø11 × L40) + **one cross-section** (SDF sample) + **spec callout** | Lattice NOT drawn point-by-point. Cross-section via `fSignedDistance` sampled on a plane → contour (PicoGK has the SDF; no native drawing export, but `voxExtrudeZSlice` + `GenericContour` exist). Spec: porosity 65 %±2, period, topology, "inspect Archimedes/µCT" (`01_01 §5.5`). |
+| **Zone-1 anode (gyroid)** | **Envelope** (section A–A: Ø11 + the solid bus-rod core; side Ø11 × L40) + **spec callout** | ✅ **Shipped 2026-09-11** as `draw anchor_zone1` (`00_07` HW.1) — the carrier of the `01_02 §3.6` coating map. ⛔ **The cross-section this row used to prescribe was NOT taken, and the reason is canon, not effort:** an honest SDF-sampled contour is available pure-managed (`Zone1Anode.Gyroid` is plain math), but [`01_02 §6`](../../../docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) rules the gyroid is a spec callout on an envelope and never drawn cell-by-cell — over-drawing a PBF lattice promises a precision nobody measures (acceptance = Archimedes + µCT, ISO/ASTM 52900), and this file's own header says canon wins. Pinned by `AnchorTests`-side `DrawingTests.Anchor_Sheet_Carries_The_Lattice_As_A_Callout_…`, so a later "let's sample the SDF" pass has to argue with canon rather than drift into it. |
 | **Axial stack / capsule-end** | **Assembly drawing** — section through the stacked zones | Reuse `AxialStack.Build` Z-layout; show press-fit interfaces + the F1 gap + datum chain. The audit, drawn. |
 
 ## 5. Technical paths (ranked)
@@ -148,12 +148,17 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
    `MechanicalLockDxf`, HW.26 — Zone-1 anchor end + Zone-3 flange end, one CEM `kind`/generator shared
    by both `mechanical_lock.zone1/.zone3.json`), same mirror xUnit set + round-trip. ⛔ Test counts are
    deliberately not quoted here — the roster is `DrawingTests.cs`.
-   Still open: Zone-2 sleeve, Деталь 4 radome (analytic sections).
+   **Zone-2 sleeve ✅ landed** (`Drawing.Zone2Sleeve` + `Zone2SleeveDxf`) — its manifest had carried a complete `tolerances`+`notes` block with no carrier at all, and it is the one part that goes to a PEEK CNC shop rather than an SLM one. ⛔ **Деталь 4 radome deliberately NOT drawn, and the ground is named:** its geometry carries two ratified-but-unapplied verdicts (flat crown R5 in place of the hemisphere · flat rim with no counter-groove, [`00_07`](../../../docs/00_07_Action_Plan_Tracker.md) HW.33), both gated on the HW.9 board budget — a sheet issued today would be wrong the moment it printed. Draw it with the application, not before.
 3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
-4. **Zone-1 envelope + lattice spec** (**Phase 2**) — the gyroid is an **inspection-card** (envelope +
-   porosity/period/topology + Archimedes/µCT thresholds), NOT point-by-point (ISO/ASTM 52900). A
-   cross-section, if wanted, = **pure SDF-sample à la `Connectivity.SampleAnchor`** (no `Library.Go`).
+4. **Zone-1 envelope + lattice spec** (**Phase 2**) — ✅ **landed 2026-09-11** as `draw anchor_zone1`
+   (`00_07` HW.1): envelope + porosity/period/topology callout + Archimedes/µCT acceptance, NOT
+   point-by-point (ISO/ASTM 52900). ⛔ The SDF cross-section this step once offered as an option is
+   **refused on canon grounds** — see the §4 row; do not re-propose it as a free nicety.
+   🔴 The sheet's load-bearing content is the part nobody had asked for: the `01_02 §3.6` coating
+   zone-map, whose Zone-1 rows carry OPPOSITE permissions and whose dividing surface is in no
+   manifest. The drawing renders that as a REFUSAL (a leader at the rim + a notes line), because a
+   boundary circle drawn here would be a fabricated instruction on the one artefact a shop obeys.
 5. **Assembly drawings** (**Phase 2**) — capsule-end (`Assembly`) + axial stack (`AxialStack`): the
    mate-audits drawn, with the datum chain + F1/F2 findings annotated.
 

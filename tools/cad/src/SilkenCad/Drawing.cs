@@ -178,14 +178,24 @@ internal static class Drawing
         }
     }
 
-    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std)
+    // 🔴 The footer carries the SSOT path as well as the revision, and that is a FIX, not decoration
+    // (2026-09-11, found by the first manifest filename long enough to expose it). The title block's value
+    // column MEASURES 155 px ≈ 28 glyphs — that is why `Cell` exists — but the SSOT row was passed RAW,
+    // so a long manifest name walked out of the block and, at `cem/anchor_zone1.graded_porosity.json`,
+    // off the 820-wide canvas entirely. `cem/mechanical_lock.zone1.json` had been overrunning the BLOCK
+    // for weeks already; it stayed invisible because the frame-fit pin measures the CANVAS, not the grid.
+    // 🔑 The cure has to keep the pointer TRUE: `Cell(…, ptr: "→ FOOTER")` may only be written once the
+    // footer really holds the full value — the same discipline REV already follows. So the untruncated
+    // path lives here, on the one line that is not inside a fixed-width grid, and the two readers agree
+    // (the DXF has carried `SSOT cem/<file>` on its own last line all along).
+    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std, string strSsot)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"<svg xmlns='http://www.w3.org/2000/svg' width='{N(w)}' height='{N(h)}' viewBox='0 0 {N(w)} {N(h)}'>");
         sb.AppendLine($"<rect x='0' y='0' width='{N(w)}' height='{N(h)}' fill='white'/>");
         sb.AppendLine(Rect(8, 8, w - 16, h - 16, Stroke, 1.2));            // drawing border
         sb.Append(body);
-        sb.AppendLine(Text(w - 14, h - 14, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)}", 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
         sb.AppendLine("</svg>");
         return sb.ToString();
     }
@@ -228,12 +238,27 @@ internal static class Drawing
     // 🔴 And the mirror: the feature line vanished ENTIRELY when both sides were absent, so
     // `cathode_flange.json`'s `shank_dia` (Ø9 — itself an HW.8.9 placeholder) appeared in NEITHER svg nor
     // dxf. A named feature with no limits is exactly what the shop must be told about.
+    //
+    // 🔴 THIRD member, found 2026-09-11 the first time this emitter ever ran on a CEM that fills
+    // `interference_*` — and its shape is different from the two above: not an invented VALUE but an
+    // invented PROVENANCE. The interference line carried a hard-coded suffix «(Lamé, E_PEEK-aware)»,
+    // while `zone2_sleeve.json`'s own `fit` string two lines earlier says the same 5–34 µm is «ISO 286,
+    // Ø11» — which is the truth (`tools/in_silico/lib/constants.py`: H7 0/+18 + s6 +23/+34 ⇒ 5–34
+    // diametral; Lamé CONSUMES that band to compute a contact pressure, it does not produce it). Canon
+    // `01_01 §4.2` makes the confusion expensive rather than cosmetic: it requires the drawing's µm to
+    // come from the Lamé window and explicitly NOT from a blind ISO 286 lookup — so the sheet was
+    // printing the rejected source under the required source's name. It hid because `zone2_sleeve` is
+    // the only manifest with these fields and had no `draw` kind until the same day.
+    // 🔑 Rule this leaves: this emitter states the QUANTITY, never where it came from. Provenance is
+    // engineering text and belongs in the CEM (`fit`, `extra`), like every other word on the sheet.
+    // (Whether the band itself should be re-derived per canon §4.2 is an engineering verdict, not a
+    // rendering one → `00_07` HW.3.)
     private static List<string> ToleranceLines(ToleranceSpec? t)
     {
         var lines = new List<string>();
         if (t is null) return lines;
         if (t.Fit is { } fit) lines.Add($"Fit: {fit}");
-        if (t.InterferenceMinUm is { } lo && t.InterferenceMaxUm is { } hi) lines.Add($"Interference: {N(lo)}–{N(hi)} µm (Lamé, E_PEEK-aware)");
+        if (t.InterferenceMinUm is { } lo && t.InterferenceMaxUm is { } hi) lines.Add($"Interference: {N(lo)}–{N(hi)} µm diametral");
         else if (t.InterferenceMinUm is { } only) lines.Add($"Interference: min {N(only)} µm, max {NotSpecified}");
         else if (t.InterferenceMaxUm is { } onlyHi) lines.Add($"Interference: min {NotSpecified}, max {N(onlyHi)} µm");
         if (t.ClearanceMm is { } cl) lines.Add($"Clearance: ≤{N(cl)} mm");
@@ -301,6 +326,7 @@ internal static class Drawing
         // 🔴 A null here used to print the 4V baseline — on a bake-off part whose whole purpose is that
         // the alloy is the VARIABLE (Ta / Au / 7Nb / CP-Ti), that default is the single most expensive
         // string in the drawing: it names the wrong metal in the box the shop reads first.
+        string strSsot = $"cem/{strCemFile}";
         var rows = new[]
         {
             ("PART", "Ti-coin"),
@@ -314,7 +340,7 @@ internal static class Drawing
             // that does not exist on disk for every alloy variant (HW.1, found 2026-09-09). The base
             // `ti_coin.json` coincidentally matched, which is exactly why this went unnoticed. The
             // caller (`Program.Draw`, which already holds the real invoked path) passes it in explicitly.
-            ("SSOT", $"cem/{strCemFile}"),
+            ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
         };
 
         // 🔴 Canvas height and title-block Y are COMPUTED from the content, not tuned. The constant
@@ -324,7 +350,7 @@ internal static class Drawing
         // moment a CEM note grows; a computed height cannot fall behind the notes it has to contain.
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
     }
 
     // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
@@ -433,6 +459,7 @@ internal static class Drawing
         // says so and names where the full value went, which is the whole difference between a cut and a lie.
         // (The Ti-coin block never truncated, which is why the same overflow surfaced there as clipping
         // instead — one class, two symptoms, and neither visible from the other file.)
+        string strSsot = $"cem/{cem.Name}.json";
         var rows = new[]
         {
             ("PART", "Cathode flange (Деталь 3)"),
@@ -440,11 +467,11 @@ internal static class Drawing
             ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
-            ("SSOT", $"cem/{cem.Name}.json"),
+            ("SSOT", Cell($"cem/{cem.Name}.json", ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
     }
 
     // ── Cathode-flange DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. ──
@@ -568,6 +595,7 @@ internal static class Drawing
         double bottom = NotesAndTolerances(b, 20, sideBot + 82, (int)((w - 40) / Glyph9),
                                            NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
 
+        string strSsot = $"cem/{strCemFile}";
         var rows = new[]
         {
             ("PART", "Mechanical lock (§4.3 shank)"),
@@ -575,11 +603,11 @@ internal static class Drawing
             ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
-            ("SSOT", $"cem/{strCemFile}"),
+            ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
     }
 
     // ── Mechanical-lock DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. Mirrors
@@ -632,6 +660,260 @@ internal static class Drawing
         lines.Add($"SilkenNet mechanical lock | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
         double yy = top - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rS, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
+
+    // ── Zone-1 gyroid anode (01_01 §5, 01_02 §3.6) — the ENVELOPE CARD. Section A–A (Ø envelope + the
+    // monolithic bus-rod core) + side envelope + a lattice SPEC CALLOUT. This is the sheet that carries
+    // the coating zone-map to the shop: until it existed the map had a SOURCE (the CEM notes, 2026-09-11)
+    // and no CARRIER, so nothing conveyed it and the factory's default would have been ZnO-Ta everywhere.
+    //
+    // ⚖️ ONE decision was taken here rather than inherited, and it is recorded because the code would
+    // otherwise have made it silently (the §01a lesson: a code default is a verdict nobody ratified).
+    // `tools/cad/docs/drawings_program.md §4` prescribes "envelope + ONE CROSS-SECTION (SDF sample) +
+    // spec callout" for this part, and an honest SDF-sampled contour IS available pure-managed
+    // (`Zone1Anode.Gyroid` is plain math, no Library.Go). Canon `01_02 §6` says the opposite and says it
+    // with a reason: the gyroid is NOT drawn cell-by-cell, because over-drawing a PBF lattice promises a
+    // precision nobody measures — acceptance is Archimedes + µCT (ISO/ASTM 52900), and GD&T of PBF
+    // lattices is an open industrial problem. That research file's own header states canon wins on any
+    // disagreement, so the lattice here is a CALLOUT over a plain annulus, never a contour. The §4 row
+    // is the stale half → 00_07 HW.1.
+    public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
+    {
+        double rOut = cem.OuterDiameterMm / 2.0 * Px;
+        // Mirrors Zone1Anode.InnerRadiusMm EXACTLY: the monolithic bus rod (01_01 §1.4) when set, else
+        // the legacy hollow bore. Two formulas for one radius is how the drawing and the part diverge.
+        bool bRod = cem.BusRodDiameterMm > 0f;
+        double dInnerMm = bRod ? cem.BusRodDiameterMm / 2.0 : cem.BoreDiameterMm / 2.0;
+        double rIn = dInnerMm * Px;
+        double frontCx = 130, cy = 150;
+        double sideX = 300, shL = cem.LengthMm * Px;
+        double sideTop = cy - rOut, sideBot = cy + rOut;
+        var b = new StringBuilder();
+
+        b.AppendLine(Text(20, 30, "ZONE-1 ANODE  (gyroid — envelope card)", 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, $"Деталь 1 — buried EBFC anode · {cem.Name} · 01_01 §5 · coating map 01_02 §3.6", 10, "start", "#555"));
+
+        // SECTION A–A — envelope Ø + the central core. The annulus between them is the lattice ZONE:
+        // marked by a callout, never drawn (see the ⚖️ above).
+        b.AppendLine(Circle(frontCx, cy, rOut, Stroke, 1.2));
+        b.AppendLine(Circle(frontCx, cy, rIn, Stroke, 1.0));
+        b.AppendLine(Centre(frontCx, cy, rOut, b));
+        b.AppendLine(Text(frontCx, cy + rOut + 40, "SECTION A–A", 10, "middle", "#555"));
+        HDim(b, frontCx - rOut, frontCx + rOut, cy + rOut + 22, $"Ø{N(cem.OuterDiameterMm)}", cy + rOut);
+        b.AppendLine(Text(frontCx + rIn + 6, cy - 4, bRod
+            ? $"Ø{N(cem.BusRodDiameterMm)} bus rod (SOLID, monolithic §1.4)"
+            : $"Ø{N(cem.BoreDiameterMm)} bore (legacy hollow)", 9, "start", Dim));
+        b.AppendLine(Text(frontCx - rOut, cy - rOut - 10, "gyroid lattice annulus — SPEC, not drawn", 9, "start", Dim));
+
+        // 🔴 The loud absence this sheet exists for, placed ON the view rather than only in prose.
+        // 01_02 §3.6 gives Zone 1 TWO rows with OPPOSITE permissions (gyroid wall in sap: every
+        // dielectric forbidden ⊥ periphery in callus contact: Zn-HAp + chitosan allowed), and the
+        // surface dividing them is not a field of this manifest and is not derivable from the geometry.
+        // Drawing a boundary circle here would be a FABRICATED instruction of exactly the class this
+        // file exists to prevent — so the leader points at the place a shop would otherwise guess and
+        // says the question out loud instead.
+        b.AppendLine(Line(frontCx - (rOut * 0.71), cy + (rOut * 0.71), frontCx - rOut - 30, cy + rOut + 40, Stroke, 0.4, "4 2"));
+        b.AppendLine(Text(20, cy + rOut + 85, $"⚠ coating zone boundary: {NotSpecified} — see COATING note", 9, "start", Stroke, "bold"));
+
+        // SIDE — the envelope silhouette; the rod runs its whole length inside (hidden lines).
+        b.AppendLine(Rect(sideX, sideTop, shL, 2 * rOut, Stroke, 1.2));
+        b.AppendLine(Line(sideX, cy - rIn, sideX + shL, cy - rIn, Stroke, 0.6, "6 3"));
+        b.AppendLine(Line(sideX, cy + rIn, sideX + shL, cy + rIn, Stroke, 0.6, "6 3"));
+        b.AppendLine(Text(sideX + (shL / 2), cy + rOut + 40, "SIDE (envelope)", 10, "middle", "#555"));
+        HDim(b, sideX, sideX + shL, cy + rOut + 22, $"{N(cem.LengthMm)}", cy + rOut);
+        VDim(b, sideTop, sideBot, sideX + shL + 26, $"Ø{N(cem.OuterDiameterMm)}", sideX + shL);
+
+        const double w = 820;
+        double bottom = NotesAndTolerances(b, 20, cy + rOut + 112, (int)((w - 40) / Glyph9),
+                                           AnchorNotes(cem), ToleranceLines(cem.Tolerances));
+
+        string strSsot = $"cem/{strCemFile}";
+        var rows = new[]
+        {
+            ("PART", "Zone-1 anode (gyroid)"),
+            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
+            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
+            ("UNITS / SCALE", "mm / 6:1"),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
+            // strCemFile, never cem.Name: every shipped anchor_zone1.<sku>.json carries the underscore
+            // form ("anchor_zone1_pine") where the real filename uses a dot — the same false-SSOT-pointer
+            // trap already paid for twice on ti_coin and mechanical_lock (HW.1, 2026-09-09).
+            ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
+        };
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+    }
+
+    // The anchor's notes block = the shared CEM field-set PLUS two lines this part alone needs, and both
+    // are computed/quoted rather than invented:
+    //   · the LATTICE lead — every value straight from the manifest, plus WHICH print floor is in force
+    //     (the vendor's own number or the canon 01_01 §5.5 default), the same distinction `verify` prints.
+    //     ⛔ `porosity_target` is quoted as a TARGET and explicitly denied as the acceptance band: canon
+    //     carries three different porosity numbers whose relation is an OPEN verdict (00_07 HW.33), so a
+    //     single number printed bare in the acceptance contract would settle by typography what nobody
+    //     has settled by judgement.
+    //   · the COATING-BOUNDARY line, repeating in prose what the leader says on the view — the DXF has
+    //     no leader geometry for it, and the two readers must not disagree about a refusal.
+    private static List<string> AnchorNotes(AnchorCem cem)
+    {
+        float fFloor = cem.SlmMinWallMm ?? TopologyCrossChecks.CanonSlmMinWallMm;
+        string strFloorSrc = cem.SlmMinWallMm is null ? "canon default 01_01 §5.5" : "vendor input, this CEM";
+        string strPeriod = cem.GyroidPeriodRimMm > 0f && Math.Abs(cem.GyroidPeriodRimMm - cem.GyroidPeriodMm) > 1e-6f
+            ? $"{N(cem.GyroidPeriodMm)}→{N(cem.GyroidPeriodRimMm)} mm core→rim"
+            : $"{N(cem.GyroidPeriodMm)} mm constant";
+        string strWall = cem.GyroidWallParamRim is { } fRim && Math.Abs(fRim - cem.GyroidWallParam) > 1e-6f
+            ? $"{N(cem.GyroidWallParam)}→{N(fRim)} core→rim"
+            : $"{N(cem.GyroidWallParam)} constant";
+        string lead = $"Envelope & lattice parameters (from this manifest's own fields): gyroid, topology "
+            + $"{cem.Topology}; cell period {strPeriod}; wall param {strWall} "
+            + $"(dimensionless, topology-coupled — NOT mm); print floor {N(fFloor)} mm [{strFloorSrc}]. "
+            + $"Porosity TARGET {N(cem.PorosityTarget * 100)} % — this is the generator's goal, NOT the acceptance band; "
+            + "the band and its verdict are in the Lattice note below.";
+
+        var lines = NotesLines(cem.Notes, lead);
+        lines.Insert(1, $"Coating zone boundary: {NotSpecified}. 01_02 §3.6 gives Zone 1 TWO rows with opposite "
+            + "permissions (gyroid wall in xylem sap ⊥ periphery in callus contact); the dividing surface is not a "
+            + "field of this manifest and is NOT derivable from the geometry on this sheet. Query it before applying "
+            + "any coating — do not infer it.");
+        return lines;
+    }
+
+    // ── Zone-1 anode DXF (CAD-native factory deliverable, 1:1 mm Y-up) — the same two views in real mm.
+    // Same SVG⊥DXF split as the flange/lock: the SVG's leader line is human polish, and the refusal it
+    // carries rides here as a NOTES line instead, so neither reader is told less than the other. ──
+    public static bool AnchorZone1Dxf(AnchorCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double rO = cem.OuterDiameterMm / 2.0;
+        double rI = cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2.0 : cem.BoreDiameterMm / 2.0;
+        double cx = 0, cy = 0;
+
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rO) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rI) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rO - 2, cy), new Vector2(cx + rO + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rO - 2), new Vector2(cx, cy + rO + 2)) { Layer = geo });
+        DxfHDim(doc, dmn, cx - rO, cx + rO, cy - rO - 5, $"%%c{N(cem.OuterDiameterMm)}");
+        doc.Entities.Add(new Text("SECTION A-A", new Vector2(cx - (rO / 2), cy - rO - 11), 2.0) { Layer = nte });
+
+        double sx = rO + 16, top = cy - rO, bot = cy + rO;
+        var env = new[] { new Vector2(sx, top), new Vector2(sx + cem.LengthMm, top), new Vector2(sx + cem.LengthMm, bot), new Vector2(sx, bot) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(env[i], env[(i + 1) % 4]) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(sx, cy - rI), new Vector2(sx + cem.LengthMm, cy - rI)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(sx, cy + rI), new Vector2(sx + cem.LengthMm, cy + rI)) { Layer = geo });
+        DxfHDim(doc, dmn, sx, sx + cem.LengthMm, bot + 5, N(cem.LengthMm));
+        doc.Entities.Add(new Text("SIDE (envelope)", new Vector2(sx, top - 11), 2.0) { Layer = nte });
+
+        var lines = new List<string> { "NOTES:" };
+        var nl = AnchorNotes(cem);
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet Zone-1 anode | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        double yy = top - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rO, yy), 1.6) { Layer = nte }); yy -= 3.2; }
+
+        return doc.Save(path);
+    }
+
+    // ── Zone-2 PEEK sleeve (Деталь 2, 01_01 §1/§4.1/§4.2) — END view (OD + bore) + SIDE SECTION. A plain
+    // tube, fully analytic. It gets its own sheet because it goes to a DIFFERENT shop from every other
+    // part here (PEEK CNC, not SLM), and its manifest has carried a complete tolerances+notes block with
+    // no carrier at all — the same source-without-carrier gap as the anchor's coating map.
+    // 🔑 The one number on this sheet that is DERIVED rather than quoted is the OD: bore + 2·wall. It is
+    // also the WOUND diameter in the tree, i.e. the dimension that sets which trees may be instrumented
+    // at all (01_01 §1: wound <25 mm ⇒ DBH ≥38 cm) — so the lead says so rather than printing Ø15 bare.
+    public static string Zone2Sleeve(Zone2SleeveCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
+    {
+        double odMm = cem.BoreDiameterMm + (2.0 * cem.WallThicknessMm);
+        double rOut = odMm / 2.0 * Px, rIn = cem.BoreDiameterMm / 2.0 * Px;
+        double frontCx = 130, cy = 150;
+        double sideX = 300, shL = cem.LengthMm * Px;
+        double sideTop = cy - rOut, sideBot = cy + rOut;
+        var b = new StringBuilder();
+
+        b.AppendLine(Text(20, 30, "ZONE-2 SLEEVE  (PEEK thermal break)", 15, "start", Stroke, "bold"));
+        b.AppendLine(Text(20, 46, $"Деталь 2 — {cem.Name} · 01_01 §1 / §4.1 / §4.2", 10, "start", "#555"));
+
+        b.AppendLine(Circle(frontCx, cy, rOut, Stroke, 1.2));
+        b.AppendLine(Circle(frontCx, cy, rIn, Stroke, 1.2));
+        b.AppendLine(Centre(frontCx, cy, rOut, b));
+        b.AppendLine(Text(frontCx, cy + rOut + 40, "END", 10, "middle", "#555"));
+        HDim(b, frontCx - rOut, frontCx + rOut, cy + rOut + 22, $"Ø{N(odMm)}", cy + rOut);
+        b.AppendLine(Text(frontCx + rIn + 6, cy - 4, $"Ø{N(cem.BoreDiameterMm)} bore (press-fit, primary datum)", 9, "start", Dim));
+
+        // SIDE SECTION — outer silhouette + the bore walls (a section, so the bore is a solid line pair).
+        b.AppendLine(Rect(sideX, sideTop, shL, 2 * rOut, Stroke, 1.2));
+        b.AppendLine(Line(sideX, cy - rIn, sideX + shL, cy - rIn, Stroke, 1.0));
+        b.AppendLine(Line(sideX, cy + rIn, sideX + shL, cy + rIn, Stroke, 1.0));
+        b.AppendLine(Text(sideX + (shL / 2), cy + rOut + 40, "SIDE (section)", 10, "middle", "#555"));
+        HDim(b, sideX, sideX + shL, cy + rOut + 22, $"{N(cem.LengthMm)}", cy + rOut);
+        VDim(b, sideTop, sideBot, sideX + shL + 26, $"Ø{N(odMm)}", sideX + shL);
+
+        string lead = $"Wall {N(cem.WallThicknessMm)} mm ⇒ OD Ø{N(odMm)} (derived: bore + 2×wall). "
+            + "That OD is the WOUND diameter in the tree, not a cosmetic dim — growing it raises the DBH "
+            + "threshold at which a tree may be instrumented (01_01 §1: wound <25 mm ⇒ DBH ≥38 cm).";
+        const double w = 820;
+        double bottom = NotesAndTolerances(b, 20, cy + rOut + 82, (int)((w - 40) / Glyph9),
+                                           NotesLines(cem.Notes, lead), ToleranceLines(cem.Tolerances));
+
+        string strSsot = $"cem/{cem.Name}.json";
+        var rows = new[]
+        {
+            ("PART", "Zone-2 sleeve (PEEK)"),
+            ("MATERIAL", Cell(cem.Notes?.Material ?? NotSpecified)),
+            ("PROCESS", Cell(cem.Notes?.Process ?? NotSpecified)),
+            ("UNITS / SCALE", "mm / 6:1"),
+            ("REV", Cell(sha, ptr: "→ FOOTER")),
+            ("SSOT", Cell($"cem/{cem.Name}.json", ptr: "→ FOOTER")),
+        };
+        double tbY = bottom + 18;
+        TitleBlock(b, w - 280, tbY, rows);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+    }
+
+    // ── Zone-2 sleeve DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same two views, real mm. ──
+    public static bool Zone2SleeveDxf(Zone2SleeveCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    {
+        var doc = new DxfDocument();
+        var geo = new Layer("GEOMETRY");
+        var dmn = new Layer("DIMENSIONS") { Color = AciColor.Blue };
+        var nte = new Layer("NOTES") { Color = AciColor.Cyan };
+
+        double odMm = cem.BoreDiameterMm + (2.0 * cem.WallThicknessMm);
+        double rO = odMm / 2.0, rI = cem.BoreDiameterMm / 2.0, cx = 0, cy = 0;
+
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rO) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rI) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx - rO - 2, cy), new Vector2(cx + rO + 2, cy)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(cx, cy - rO - 2), new Vector2(cx, cy + rO + 2)) { Layer = geo });
+        DxfHDim(doc, dmn, cx - rO, cx + rO, cy - rO - 5, $"%%c{N(odMm)}");
+        doc.Entities.Add(new Text("END", new Vector2(cx - (rO / 2), cy - rO - 11), 2.0) { Layer = nte });
+
+        double sx = rO + 16, top = cy - rO, bot = cy + rO;
+        var env = new[] { new Vector2(sx, top), new Vector2(sx + cem.LengthMm, top), new Vector2(sx + cem.LengthMm, bot), new Vector2(sx, bot) };
+        for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(env[i], env[(i + 1) % 4]) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(sx, cy - rI), new Vector2(sx + cem.LengthMm, cy - rI)) { Layer = geo });
+        doc.Entities.Add(new Line(new Vector2(sx, cy + rI), new Vector2(sx + cem.LengthMm, cy + rI)) { Layer = geo });
+        DxfHDim(doc, dmn, sx, sx + cem.LengthMm, bot + 5, N(cem.LengthMm));
+        doc.Entities.Add(new Text("SIDE (section)", new Vector2(sx, top - 11), 2.0) { Layer = nte });
+
+        var lines = new List<string> { "NOTES:" };
+        var nl = NotesLines(cem.Notes, $"Wall {N(cem.WallThicknessMm)} mm => OD %%c{N(odMm)} (derived: bore + 2x wall); "
+            + "that OD is the WOUND diameter in the tree (01_01 sec. 1: wound <25 mm => DBH >=38 cm)");
+        for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
+        var tl = ToleranceLines(cem.Tolerances);
+        if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
+        lines.Add($"SilkenNet Zone-2 sleeve | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
+        double yy = top - 20;
+        foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rO, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
         return doc.Save(path);
     }

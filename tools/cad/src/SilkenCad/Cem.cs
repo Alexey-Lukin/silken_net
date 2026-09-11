@@ -176,6 +176,17 @@ internal sealed record AnchorCem
     // could not hold it. `draw anchor_zone1` still does not exist, so nothing RENDERS these yet; what
     // makes them load-bearing today is the pin that every shipped SKU declares its coating restriction.
     public NotesSpec? Notes { get; init; }
+
+    // 🔴 The SAME silent-absence class as `Notes` above, one field over, and it survived the 2026-09-11
+    // pass because that pass was scoped to notes: this record had no `Tolerances` slot either, so a
+    // `tolerances` block written into cem/anchor_zone1.*.json would have parsed cleanly and evaporated
+    // (Cem.Parse runs without UnmappedMemberHandling.Disallow — gotcha 0b). Added 2026-09-11 with
+    // `draw anchor_zone1` (00_07 HW.1): a drawing is an ACCEPTANCE contract, and a lattice part whose
+    // primary mating Ø carries no PMI row at all is the silent half of the loud-absence rule.
+    // ⛔ What it must NOT hold: a lattice GD&T profile. Canon 01_02 §6 forbids drawing the gyroid
+    // cell-by-cell — over-drawing it promises a precision nobody measures (acceptance is Archimedes +
+    // µCT, ISO/ASTM 52900). PMI here is the ENVELOPE only.
+    public ToleranceSpec? Tolerances { get; init; }
 }
 
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep

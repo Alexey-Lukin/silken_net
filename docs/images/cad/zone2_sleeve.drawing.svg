@@ -1,0 +1,94 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='829' viewBox='0 0 820 829'>
+<rect x='0' y='0' width='820' height='829' fill='white'/>
+<rect x='8' y='8' width='804' height='813' fill='none' stroke='#111' stroke-width='1.2'/>
+<text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-2 SLEEVE  (PEEK thermal break)</text>
+<text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 2 — zone2_sleeve · 01_01 §1 / §4.1 / §4.2</text>
+<circle cx='130' cy='150' r='45' fill='none' stroke='#111' stroke-width='1.2'/>
+<circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
+<line x1='81' y1='150' x2='179' y2='150' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<line x1='130' y1='101' x2='130' y2='199' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<text x='130' y='235' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>END</text>
+<line x1='85' y1='195' x2='85' y2='217' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='175' y1='195' x2='175' y2='217' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='85' y1='217' x2='175' y2='217' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='85' y1='217' x2='89' y2='214.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='85' y1='217' x2='89' y2='219.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='175' y1='217' x2='171' y2='214.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='175' y1='217' x2='171' y2='219.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='130' y='214' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>Ø15</text>
+<text x='169' y='146' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø11 bore (press-fit, primary datum)</text>
+<rect x='300' y='105' width='300' height='90' fill='none' stroke='#111' stroke-width='1.2'/>
+<line x1='300' y1='117' x2='600' y2='117' stroke='#111' stroke-width='1'/>
+<line x1='300' y1='183' x2='600' y2='183' stroke='#111' stroke-width='1'/>
+<text x='450' y='235' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE (section)</text>
+<line x1='300' y1='195' x2='300' y2='217' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='600' y1='195' x2='600' y2='217' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='300' y1='217' x2='600' y2='217' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='300' y1='217' x2='304' y2='214.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='300' y1='217' x2='304' y2='219.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='600' y1='217' x2='596' y2='214.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='600' y1='217' x2='596' y2='219.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='450' y='214' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>50</text>
+<line x1='600' y1='105' x2='626' y2='105' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='600' y1='195' x2='626' y2='195' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='626' y1='105' x2='626' y2='195' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='626' y1='105' x2='623.5' y2='109' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='626' y1='105' x2='628.5' y2='109' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='626' y1='195' x2='623.5' y2='191' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='626' y1='195' x2='628.5' y2='191' stroke='#1166cc' stroke-width='0.7'/>
+<text x='630' y='153' font-family='monospace' font-size='10' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø15</text>
+<text x='20' y='277' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>NOTES:</text>
+<text x='20' y='293' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>1. Wall 2 mm ⇒ OD Ø15 (derived: bore + 2×wall). That OD is the WOUND diameter in the tree, not a cosmetic dim — growing it raises the DBH</text>
+<text x='20' y='307' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   threshold at which a tree may be instrumented (01_01 §1: wound &lt;25 mm ⇒ DBH ≥38 cm).</text>
+<text x='20' y='321' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>2. Material: PEEK 450G (Victrex or equiv.)</text>
+<text x='20' y='335' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: CNC from rod; anneal 200-250 C before final micromachining (else internal stress drifts the um tolerances)</text>
+<text x='20' y='349' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: smooth round bore (hex anti-rotation 4.3 C, &lt;=0.05 mm, is bench-gated -&gt; deferred)</text>
+<text x='20' y='363' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: None after final micromachining. The one thermal step is the 200-250 C anneal, and it belongs BEFORE that cut, not after -</text>
+<text x='20' y='377' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   see process and inspection: reversing the order is the failure, not omitting a step</text>
+<text x='20' y='391' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: Nothing is applied to this part - 01_02 3.6 excludes ZnO-Ta, self-healing 8-HQ and biomimetic layers from PEEK surfaces</text>
+<text x='20' y='405' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   outright, and the Zone-2 row of that map is not blank - it carries three explicit refusals. The bore is a press-fit surface specified in</text>
+<text x='20' y='419' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   micrometres (01_01 4.2), so a coating of thickness t would also eat 2t of the interference band</text>
+<text x='20' y='433' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid PEEK tube</text>
+<text x='20' y='447' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: Bore diameter and concentricity to the tolerance block on this manifest (bore axis is the primary datum). Verify the 200-250 C</text>
+<text x='20' y='461' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   anneal was done BEFORE final micromachining - the order is the requirement, because internal stress released afterwards drifts exactly</text>
+<text x='20' y='475' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the micrometre-level fit this part exists to hold. OD is the WOUND diameter in the tree (01_01 1: wound 15 &lt; 25 mm keeps CODIT tolerable,</text>
+<text x='20' y='489' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   hence DBH &gt;= 38 cm), i.e. a tree-facing dimension, not a cosmetic one: growing it raises the DBH threshold at which a tree may be</text>
+<text x='20' y='503' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   instrumented</text>
+<text x='20' y='517' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Press-fit Lame-computed (HW.3.IS script 50, frozen O11/2mm, E_PEEK 4.0 GPa): contact P_c 0.49-3.32 MPa -&gt; 0.32-2.16 at 20yr; at MIN H7/s6</text>
+<text x='20' y='531' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   fit the relaxed P_c &lt;= sap -&gt; the O-ring is the essential seal (PEEK backup marginal)</text>
+<text x='20' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. OD O15 = wound in tree (CODIT &lt;25 -&gt; DBH &gt;=38); wall 2.0 = robust default, NOT CTE-limited (unified Lame 4.2: combined SF 5.6x,</text>
+<text x='20' y='559' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   thermal-only 14.6x)</text>
+<text x='20' y='573' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. Mechanical retention (barbs + DIN-471) is on the Ti ends, not this PEEK bore (4.3)</text>
+<text x='20' y='599' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='615' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: H7/s6 (ISO 286, O11): 5-34 um diametral interference</text>
+<text x='20' y='629' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Interference: 5–34 µm diametral</text>
+<text x='20' y='643' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Clearance: ≤0.05 mm</text>
+<text x='20' y='657' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='671' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
+<text x='20' y='685' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
+<rect x='540' y='703' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='703' x2='630' y2='719' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='714' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='714' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-2 sleeve (PEEK)</text>
+<line x1='540' y1='719' x2='790' y2='719' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='719' x2='630' y2='735' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='730' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='730' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>PEEK 450G (Victrex … → NOTES</text>
+<line x1='540' y1='735' x2='790' y2='735' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='735' x2='630' y2='751' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='746' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='746' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>CNC from rod; annea… → NOTES</text>
+<line x1='540' y1='751' x2='790' y2='751' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='751' x2='630' y2='767' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='762' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='762' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='767' x2='790' y2='767' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='767' x2='630' y2='783' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='778' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='778' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>986141fa-dirty</text>
+<line x1='540' y1='783' x2='790' y2='783' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='783' x2='630' y2='799' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='794' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='794' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/zone2_sleeve.json</text>
+<text x='806' y='815' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 986141fa-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+</svg>

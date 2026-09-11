@@ -532,6 +532,184 @@ public class DrawingTests
         AssertEveryLineIsInsideTheFrame(svg);
     }
 
+
+    // ── Zone-1 anode envelope card (00_07 HW.1) ─────────────────────────────────────────────────
+    // 🔴 This sheet is the CARRIER of the 01_02 §3.6 coating zone-map. Until 2026-09-11 the map had a
+    // source (the CEM notes) and no carrier at all, so a shop's default would have been "coat it" on a
+    // surface where any dielectric kills DET. The pins below are therefore not layout checks: they are
+    // the proof that the acceptance contract leaves the manifest.
+
+    // Directory-enumerated for the same reason as ShippedCoinCems above: a hand-written roster is a
+    // volatile counter in test form, and this family grows a SKU per species.
+    public static TheoryData<string> ShippedAnchorCems()
+    {
+        var data = new TheoryData<string>();
+        foreach (string p in Directory.GetFiles(CemDir(), "anchor_zone1*.json").OrderBy(p => p))
+            data.Add(Path.GetFileName(p));
+        return data;
+    }
+
+    // The round-trip row picgok gotcha #11 prescribes for every new `draw` kind: read the REAL manifest,
+    // assert every non-empty note reaches the DXF through the writer's own DxfSafe mapping.
+    [Theory]
+    [MemberData(nameof(ShippedAnchorCems))]
+    public void Shipped_Anchor_Cem_Notes_Reach_The_Dxf_Verbatim(string strFile)
+    {
+        var cem = Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemDir(), strFile)));
+        string path = Path.Combine(Path.GetTempPath(), $"anchor_roundtrip_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.AnchorZone1Dxf(cem, "test", strFile, path));
+            string dxf = File.ReadAllText(path);
+
+            var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish,
+                                 cem.Notes?.PostProcess, cem.Notes?.CoatingRestriction,
+                                 cem.Notes?.LatticeSpec, cem.Notes?.Inspection }
+                         .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            Assert.NotEmpty(fields);   // counter-lamp: an empty NotesSpec would make the loop vacuous
+            foreach (string? v in fields) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+
+            Assert.DoesNotContain("NaN", dxf);
+            // The SSOT row names the REAL manifest filename, never cem.Name: every anchor_zone1.<sku>.json
+            // carries the underscore form ("anchor_zone1_pine") where the file uses a dot — the same false
+            // pointer already paid for on ti_coin and mechanical_lock (HW.1, 2026-09-09).
+            Assert.Contains($"SSOT cem/{strFile}", dxf);
+            Assert.DoesNotContain($"SSOT cem/{cem.Name}.json", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // 🔴 THE pin of this sheet, and it guards a REFUSAL rather than a value. 01_02 §3.6 splits Zone 1
+    // into two rows with opposite coating permissions, and the surface dividing them is not a manifest
+    // field and is not derivable from the geometry drawn here. A future layout pass that "tidies" the
+    // leader away, or a helpful default that draws a boundary circle, would turn the sheet from a
+    // question into a fabricated instruction — on the one artefact that reaches a shop floor.
+    // Mutation-verified: delete the Insert(1, …) in AnchorNotes and this reds alone.
+    [Fact]
+    public void Anchor_Sheet_Refuses_The_Coating_Zone_Boundary_Out_Loud_In_Both_Readers()
+    {
+        var cem = Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemDir(), "anchor_zone1.pine.json")));
+        string svg = Drawing.AnchorZone1(cem, "test", "anchor_zone1.pine.json");
+        string flat = FlattenSvgText(svg);
+        Assert.Contains($"coating zone boundary: {Drawing.NotSpecified}", flat);          // on the view
+        Assert.Contains($"Coating zone boundary: {Drawing.NotSpecified}", flat);          // in the notes
+
+        string path = Path.Combine(Path.GetTempPath(), $"anchor_boundary_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.AnchorZone1Dxf(cem, "test", "anchor_zone1.pine.json", path));
+            // The DXF has no leader geometry, so the refusal must ride as prose — the two readers may
+            // differ in FORM, never in what they are told (01_02 §6, the inverted-risk half).
+            Assert.Contains(Drawing.DxfSafe($"Coating zone boundary: {Drawing.NotSpecified}"), File.ReadAllText(path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // Canon 01_02 §6: the gyroid is a SPEC CALLOUT on an envelope, never drawn cell-by-cell — over-drawing
+    // a PBF lattice promises a precision nobody measures (acceptance = Archimedes + µCT, ISO/ASTM 52900).
+    // The sheet must therefore say what the lattice IS and draw only the envelope. `drawings_program.md §4`
+    // prescribes an SDF cross-section instead and is the stale half (00_07 HW.1); this pin is the carrier
+    // of the canon side, so a later "let's sample the SDF" pass has to argue with canon rather than drift.
+    [Fact]
+    public void Anchor_Sheet_Carries_The_Lattice_As_A_Callout_And_Never_As_A_Drawn_Profile()
+    {
+        var cem = Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemDir(), "anchor_zone1.pine.json")));
+        string svg = Drawing.AnchorZone1(cem, "test", "anchor_zone1.pine.json");
+        Assert.Contains("topology network", FlattenSvgText(svg));
+        Assert.Contains("SPEC, not drawn", FlattenSvgText(svg));
+        // Envelope + core + the two centre-cross dashes only: a sampled lattice contour would be hundreds.
+        Assert.True(Regex.Matches(svg, "<circle").Count <= 4, "the lattice must not be drawn cell-by-cell (01_02 §6)");
+    }
+
+    // The porosity TARGET is the generator's goal; canon carries three different porosity numbers whose
+    // relation is an open verdict (00_07 HW.33). Printing one bare on an acceptance contract would settle
+    // by typography what nobody has settled by judgement — so the sheet must deny it in the same breath.
+    [Fact]
+    public void Anchor_Sheet_Never_Prints_The_Porosity_Target_As_An_Acceptance_Band()
+    {
+        var cem = Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemDir(), "anchor_zone1.pine.json")));
+        string flat = FlattenSvgText(Drawing.AnchorZone1(cem, "test", "anchor_zone1.pine.json"));
+        Assert.Contains("Porosity TARGET 65 %", flat);
+        Assert.Contains("NOT the acceptance band", flat);
+    }
+
+    // 🔴 The interference line used to append a hard-coded "(Lamé, E_PEEK-aware)" to a number the CEM
+    // supplies — while zone2_sleeve.json's own `fit` string says the same 5–34 µm is ISO 286, which is the
+    // truth (lib/constants.py: H7 0/+18 + s6 +23/+34). Canon 01_01 §4.2 requires the drawing's µm to come
+    // from the Lamé window and NOT from a blind ISO 286 lookup, so the sheet was printing the rejected
+    // source under the required source's name. It hid because zone2_sleeve is the only manifest filling
+    // these fields and had no `draw` kind. Invention of PROVENANCE, the third member of gotcha #11's class.
+    [Fact]
+    public void Interference_Line_States_The_Quantity_And_Never_Invents_Its_Provenance()
+    {
+        var cem = Cem.Parse<Zone2SleeveCem>(File.ReadAllText(Path.Combine(CemDir(), "zone2_sleeve.json")));
+        string flat = FlattenSvgText(Drawing.Zone2Sleeve(cem, "test"));
+        Assert.Contains("Interference: 5–34 µm diametral", flat);
+        Assert.DoesNotContain("Lamé, E_PEEK-aware", flat);
+    }
+
+    [Fact]
+    public void Zone2Sleeve_Derives_The_Wound_Diameter_Rather_Than_Quoting_It()
+    {
+        // OD is not a CEM field — it is bore + 2·wall, and it is the WOUND in the tree, i.e. the dim that
+        // decides which trees may be instrumented at all. A hard-coded Ø15 would silently survive a wall change.
+        var cem = new Zone2SleeveCem { BoreDiameterMm = 11f, WallThicknessMm = 3f };
+        string flat = FlattenSvgText(Drawing.Zone2Sleeve(cem, "test"));
+        Assert.Contains("Ø17", flat);
+        Assert.DoesNotContain("Ø15", flat);
+    }
+
+    [Fact]
+    public void Shipped_Anchor_And_Sleeve_Draw_No_Text_Outside_The_Frame()
+    {
+        foreach (string strFile in Directory.GetFiles(CemDir(), "anchor_zone1*.json").OrderBy(p => p))
+        {
+            var cem = Cem.Parse<AnchorCem>(File.ReadAllText(strFile));
+            AssertEveryLineIsInsideTheFrame(Drawing.AnchorZone1(cem, "test", Path.GetFileName(strFile)));
+        }
+        var sleeve = Cem.Parse<Zone2SleeveCem>(File.ReadAllText(Path.Combine(CemDir(), "zone2_sleeve.json")));
+        AssertEveryLineIsInsideTheFrame(Drawing.Zone2Sleeve(sleeve, "test"));
+    }
+
+    // The published-snapshot pin, extended to the two new sheets. Same declared ceiling as the rows above:
+    // it pins CONTENT and FIT, not byte-currency, and says nothing about the PNG renders beside them.
+    [Theory]
+    [InlineData("anchor_zone1.pine.json", "anchor_zone1_pine")]
+    public void Published_Gallery_Anchor_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame(string strCemFile, string strOutName)
+    {
+        string svg = File.ReadAllText(Path.Combine(GalleryDir(), $"{strOutName}.drawing.svg"));
+        var cem = Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemDir(), strCemFile)));
+
+        var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish, cem.Notes?.PostProcess,
+                             cem.Notes?.CoatingRestriction, cem.Notes?.LatticeSpec, cem.Notes?.Inspection }
+                     .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+        Assert.NotEmpty(fields);
+
+        string flat = FlattenSvgText(svg);
+        foreach (string? v in fields)
+            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+
+        AssertEveryLineIsInsideTheFrame(svg);
+    }
+
+    [Fact]
+    public void Published_Gallery_Zone2Sleeve_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame()
+    {
+        string svg = File.ReadAllText(Path.Combine(GalleryDir(), "zone2_sleeve.drawing.svg"));
+        var cem = Cem.Parse<Zone2SleeveCem>(File.ReadAllText(Path.Combine(CemDir(), "zone2_sleeve.json")));
+
+        var fields = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish, cem.Notes?.PostProcess,
+                             cem.Notes?.CoatingRestriction, cem.Notes?.LatticeSpec, cem.Notes?.Inspection }
+                     .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+        Assert.NotEmpty(fields);
+
+        string flat = FlattenSvgText(svg);
+        foreach (string? v in fields)
+            Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
+
+        AssertEveryLineIsInsideTheFrame(svg);
+    }
+
     [Fact]
     public void A_Long_Note_Grows_The_Canvas_Instead_Of_Falling_Off_It()
     {

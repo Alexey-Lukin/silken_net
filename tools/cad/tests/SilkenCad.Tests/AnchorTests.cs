@@ -216,9 +216,9 @@ public class AnchorTests
     // gyroid wall OUTRIGHT — a dielectric there blocks direct electron transfer, i.e. it does not degrade
     // the EBFC, it stops it. Until 2026-09-11 that rule had NO carrier on this part at all (00_07 HW.1):
     // AnchorCem had no Notes property, so a `notes` block written into a manifest would have been dropped
-    // by the deserializer (unmapped members are ignored) and looked done. `draw anchor_zone1` still does
-    // not exist, so nothing RENDERS these notes yet — this pin is what keeps them load-bearing meanwhile:
-    // a new SKU cannot ship silent on the one restriction whose violation is unrecoverable.
+    // by the deserializer (unmapped members are ignored) and looked done. `draw anchor_zone1` RENDERS them
+    // since 2026-09-11, so the pin is no longer the only thing keeping them load-bearing — it is now the
+    // thing keeping a NEW SKU from shipping silent on the one restriction whose violation is unrecoverable.
     // ⛔ Declared ceiling: PRESENCE of the field, never its correctness — no gate can read a coating rule.
     // MUTATION: drop the "coating_restriction" key from any cem/anchor_zone1.*.json ⇒ reds naming it.
     // 🔴 Both halves are load-bearing and they fail DIFFERENTLY — adversarial review caught the first
@@ -245,6 +245,42 @@ public class AnchorTests
             $"{string.Join(", ", aLostOnParse)} carry the key in the file but it does NOT survive parsing — " +
             "`AnchorCem` has no slot for it, and `Cem.Parse` drops unmapped members in silence. That is the " +
             "exact state this part was in until 2026-09-11 (00_07 HW.1): done-looking and inert.");
+    }
+
+    // 🔴 The SAME pin one field over, and the reason it exists is that the first one did not generalise:
+    // `AnchorCem` had no `Tolerances` slot either, so the very next block written into these manifests
+    // would have evaporated exactly like `notes` did — one day after that fix landed (00_07 HW.1). Two
+    // holes in one record, and the pass that closed the first saw only what it was hunting.
+    // ⛔ Declared ceiling: PRESENCE of the block, never the correctness of a limit. The envelope Ø
+    // deliberately carries NO limits — canon 01_01 §4.2 wants Lamé-window micrometres and that window is
+    // unsolved (00_07 HW.3) — so a NAMED feature with blank sides is the intended state: the shop reads
+    // `NOT SPECIFIED IN CEM` and asks, instead of reading a default into a missing line.
+    // MUTATION (both halves verified 2026-09-11): drop the "tolerances" block from any
+    // cem/anchor_zone1.*.json ⇒ reds naming it; leave the block but empty (`"tolerances": {}`) ⇒ reds on
+    // the parse half while the key is still in the file. ⚠️ The obvious third mutation — deleting
+    // `AnchorCem.Tolerances` — does NOT red this test, it fails to COMPILE, because `Drawing.AnchorZone1`
+    // now reads the property. That is a stronger guard than a pin and it is also why the parse half here
+    // guards a DIFFERENT case than its `coating_restriction` sibling: there the slot could vanish while
+    // every manifest kept its key, here it cannot.
+    [Fact]
+    public void Every_Shipped_Anchor_Cem_Declares_A_Tolerance_Block_For_Its_Envelope()
+    {
+        string[] aSilentInJson = [.. CemFixtures.AnchorFiles()
+            .Where(f => !File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"tolerances\""))];
+
+        Assert.True(aSilentInJson.Length == 0,
+            $"{string.Join(", ", aSilentInJson)} declare no `tolerances` block — the drawing then prints NO " +
+            "TOLERANCES section at all, which is the SILENT half of the loud-absence rule: the shop cannot " +
+            "tell an undeclared dimension from an unasked question (01_02 §6).");
+
+        string[] aLostOnParse = [.. CemFixtures.AnchorFiles()
+            .Where(f => Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)))
+                           .Tolerances?.Features is not { Count: > 0 })];
+
+        Assert.True(aLostOnParse.Length == 0,
+            $"{string.Join(", ", aLostOnParse)} carry the key in the file but no named feature survives " +
+            "parsing — either `AnchorCem` lost its slot or the block names nothing, and both render as an " +
+            "absent section rather than an open question.");
     }
 
     [Fact]

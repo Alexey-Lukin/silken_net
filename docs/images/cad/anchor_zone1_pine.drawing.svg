@@ -1,0 +1,121 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1183' viewBox='0 0 820 1183'>
+<rect x='0' y='0' width='820' height='1183' fill='white'/>
+<rect x='8' y='8' width='804' height='1167' fill='none' stroke='#111' stroke-width='1.2'/>
+<text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
+<text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
+<circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
+<circle cx='130' cy='150' r='3' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='93' y1='150' x2='167' y2='150' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<line x1='130' y1='113' x2='130' y2='187' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<text x='130' y='223' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SECTION A–A</text>
+<line x1='97' y1='183' x2='97' y2='205' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='163' y1='183' x2='163' y2='205' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='97' y1='205' x2='163' y2='205' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='97' y1='205' x2='101' y2='202.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='97' y1='205' x2='101' y2='207.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='163' y1='205' x2='159' y2='202.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='163' y1='205' x2='159' y2='207.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='130' y='202' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>Ø11</text>
+<text x='139' y='146' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø1 bus rod (SOLID, monolithic §1.4)</text>
+<text x='97' y='107' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>gyroid lattice annulus — SPEC, not drawn</text>
+<line x1='106.57' y1='173.43' x2='67' y2='223' stroke='#111' stroke-width='0.4' stroke-dasharray='4 2'/>
+<text x='20' y='268' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>⚠ coating zone boundary: NOT SPECIFIED IN CEM — see COATING note</text>
+<rect x='300' y='117' width='240' height='66' fill='none' stroke='#111' stroke-width='1.2'/>
+<line x1='300' y1='147' x2='540' y2='147' stroke='#111' stroke-width='0.6' stroke-dasharray='6 3'/>
+<line x1='300' y1='153' x2='540' y2='153' stroke='#111' stroke-width='0.6' stroke-dasharray='6 3'/>
+<text x='420' y='223' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE (envelope)</text>
+<line x1='300' y1='183' x2='300' y2='205' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='540' y1='183' x2='540' y2='205' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='300' y1='205' x2='540' y2='205' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='300' y1='205' x2='304' y2='202.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='300' y1='205' x2='304' y2='207.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='540' y1='205' x2='536' y2='202.5' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='540' y1='205' x2='536' y2='207.5' stroke='#1166cc' stroke-width='0.7'/>
+<text x='420' y='202' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>40</text>
+<line x1='540' y1='117' x2='566' y2='117' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='540' y1='183' x2='566' y2='183' stroke='#1166cc' stroke-width='0.5'/>
+<line x1='566' y1='117' x2='566' y2='183' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='566' y1='117' x2='563.5' y2='121' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='566' y1='117' x2='568.5' y2='121' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='566' y1='183' x2='563.5' y2='179' stroke='#1166cc' stroke-width='0.7'/>
+<line x1='566' y1='183' x2='568.5' y2='179' stroke='#1166cc' stroke-width='0.7'/>
+<text x='570' y='153' font-family='monospace' font-size='10' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø11</text>
+<text x='20' y='295' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>NOTES:</text>
+<text x='20' y='311' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>1. Envelope &amp; lattice parameters (from this manifest's own fields): gyroid, topology network; cell period 2.5→2 mm core→rim; wall param 0.1</text>
+<text x='20' y='325' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   constant (dimensionless, topology-coupled — NOT mm); print floor 0.2 mm [canon default 01_01 §5.5]. Porosity TARGET 65 % — this is the</text>
+<text x='20' y='339' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   generator's goal, NOT the acceptance band; the band and its verdict are in the Lattice note below.</text>
+<text x='20' y='353' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>2. Coating zone boundary: NOT SPECIFIED IN CEM. 01_02 §3.6 gives Zone 1 TWO rows with opposite permissions (gyroid wall in xylem sap ⊥</text>
+<text x='20' y='367' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   periphery in callus contact); the dividing surface is not a field of this manifest and is NOT derivable from the geometry on this sheet.</text>
+<text x='20' y='381' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Query it before applying any coating — do not infer it.</text>
+<text x='20' y='395' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Material: V-free Ti alloy (01_02 2.5, founder 2026-06-21) - the SPECIFIC alloy is NOT selected until the Stage-2 coin bake-off (00_07</text>
+<text x='20' y='409' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   HW.24); Ti-6Al-4V is the price and print baseline only, NOT the material of this part</text>
+<text x='20' y='423' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Process: SLM/LPBF MANDATORY for Zone 1 - NOT EBM, and the powder fraction is the reason: 15-45 um resolves the lattice where EBM 45-105</text>
+<text x='20' y='437' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   um risks plugging fine pores (01_02 1.7) | HIP obligatory 920C/100-150 MPa Ar/2-4 h, then vacuum anneal 800C/2 h (01_02 1.3 Step 2, 1.7)</text>
+<text x='20' y='451' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   | build direction PARALLEL to the long axis, 0 +/-5 deg, externally-only supports (01_02 1.6) | de-powdering is CHEMICAL: vacuum</text>
+<text x='20' y='465' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   decanting + citric/Tween circulation (1.3 Step 3). NO Al2O3 sand-blasting and NO static-tank etching on this part - both are</text>
+<text x='20' y='479' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   canon-forbidden for Zone 1 specifically, unlike the Zone-3 flange (01_02 1.3a Failure Modes A and B)</text>
+<text x='20' y='493' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Surface: EAAE dual-scale on the gyroid walls: micro Sa 0.5-5 um + nano Sv 50-500 nm, BET area &gt;10x a smooth sample (01_02 1.2). NO PEP</text>
+<text x='20' y='507' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   smoothing on this part - the plasma sheath is Faraday-caged in sub-500 um channels and PEP belongs to the Zone-3 outer jacket only (01_02</text>
+<text x='20' y='521' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   1.3 Step 7)</text>
+<text x='20' y='535' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Post-process: EAAE with forced flow-through + ultrasonic cavitation (01_02 1.3 Step 4), then dehydrogenation bake 250C/10-3 mbar/3h</text>
+<text x='20' y='549' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   within 2h of rinse - MANDATORY, and HIP does NOT substitute for it: hydrogen enters AFTER HIP, at the EAAE stage (01_02 1.3a Failure Mode</text>
+<text x='20' y='563' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   C). LECO RH404 H&lt;100 ppm per batch or the batch is rejected</text>
+<text x='20' y='577' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Coating: Gyroid walls in xylem-sap contact (the anode active surface): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL</text>
+<text x='20' y='591' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   FORBIDDEN - any dielectric blocks DET, and canon forbids ZnO-Ta on Zone-1 gyroid walls outright (01_02 3.6). Bare Ti with the dual-scale</text>
+<text x='20' y='605' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   roughness only; the Gen 2.0 bio-electrochemical stack is applied by us downstream, cold (01_03 2.1). The Zone-1 PERIPHERY in callus</text>
+<text x='20' y='619' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   contact, carrying no immobilised enzymes, is a DIFFERENT row of the same map (Zn-HAp + chitosan allowed, ZnO-Ta only outside the enzyme</text>
+<text x='20' y='633' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   zone - 01_02 3.6, 01_04 4). WHERE that boundary runs is STILL not a field of this manifest and is not derivable from the geometry. Since</text>
+<text x='20' y='647' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-11 it has a CARRIER but not an ANSWER: draw anchor_zone1 renders the refusal on the sheet itself - a leader pointing at the rim</text>
+<text x='20' y='661' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   plus its own NOTES line - so the shop is handed the question instead of a silent default. Query it before applying anything; do not infer</text>
+<text x='20' y='675' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   it from the geometry (00_07 HW.1)</text>
+<text x='20' y='689' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Lattice: Gyroid, NETWORK topology (ratified founder 2026-09-10, 00_07 HW.33) - ONE through pore labyrinth by construction. Cell period is</text>
+<text x='20' y='703' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   graded core-&gt;rim by this manifest's own fields; read them, not prose. Porosity: canon carries THREE numbers and they are not</text>
+<text x='20' y='717' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   interchangeable - nominal 65% (01_01 5.2), verification 65 +/-2% (01_01 5.6), factory acceptance band 60-70% (01_02 1.2). How they relate</text>
+<text x='20' y='731' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is an OPEN verdict (00_07 HW.33), so all three are quoted and none is dropped. Verify by Archimedes open porosity + uCT connectivity</text>
+<text x='20' y='745' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (01_02 1.2)</text>
+<text x='20' y='759' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Inspect: SEM before shipment at x500 (gyroid macro-pores), x5,000 (micro-roughness: report the AREAL Sa of the 01_02 1.2 acceptance row,</text>
+<text x='20' y='773' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   not a profile Ra) and x50,000 (nano-pores Sv) - all three frames apply to THIS part because it has the macro-pore geometry the x500 frame</text>
+<text x='20' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is for; if nano-pores are not visible at x50,000 the etch is insufficient and EAAE is repeated (01_02 1.5). uCT pore-gradient</text>
+<text x='20' y='801' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   verification in the PRINTED range (targets set by 00_07 HW.33, not by this line). Archimedes open porosity. LECO RH404 H&lt;100 ppm per</text>
+<text x='20' y='815' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   batch or rejected. ICP-MS of the rinse water, Al&lt;1 ppb - confirms no corundum residue (01_02 1.2, 1.5)</text>
+<text x='20' y='829' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Zone 1 = the buried anode: gyroid walls in xylem sap (01_01 1)</text>
+<text x='20' y='843' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. The monolithic bus rod (01_01 1.4) is this part's own solid core when bus_rod_diameter_mm &gt; 0; it is SDF-invisible, so the porosity and</text>
+<text x='20' y='857' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   connectivity gates measure the gyroid annulus, not the rod</text>
+<text x='20' y='871' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. slm_min_wall_mm is a VENDOR input (ratified 2026-09-10): absent means the canon 200 um default of 01_01 5.5 (a DEFAULT, not a constant -</text>
+<text x='20' y='885' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   and a different quantity from the 0.3 mm gyroid wall floor of 01_02 1.7), and the same number also sets the measurement grid - a finer</text>
+<text x='20' y='899' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   vendor floor costs about an order of magnitude more run time</text>
+<text x='20' y='913' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. The factory sheet EXISTS since 2026-09-11 (draw anchor_zone1 -&gt; SVG + DXF, 00_07 HW.1): these notes are both the SOURCE of the</text>
+<text x='20' y='927' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance contract and, through that generator, its CARRIER. Re-run draw after editing any note - nothing re-runs the published gallery</text>
+<text x='20' y='941' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   for you</text>
+<text x='20' y='955' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is the MALE half of the Zone1&lt;-&gt;Zone2 press-fit, and its diametral band on the tolerance block is deliberately BLANK</text>
+<text x='20' y='969' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   rather than absent: canon 01_01 4.2 requires those micrometres to come from the Lame interference window (E_PEEK-aware) and explicitly</text>
+<text x='20' y='983' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   NOT from a blind ISO 286 H7/s6 lookup, and that window has not been solved into a band (00_07 HW.3). Quote your achievable as-printed</text>
+<text x='20' y='997' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   band rather than reading a default into the blank</text>
+<text x='20' y='1023' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='1039' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<rect x='540' y='1057' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='1057' x2='630' y2='1073' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1068' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='1068' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
+<line x1='540' y1='1073' x2='790' y2='1073' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1073' x2='630' y2='1089' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1084' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='1084' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
+<line x1='540' y1='1089' x2='790' y2='1089' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1089' x2='630' y2='1105' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1100' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='1100' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
+<line x1='540' y1='1105' x2='790' y2='1105' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1105' x2='630' y2='1121' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1116' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='1116' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='1121' x2='790' y2='1121' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1121' x2='630' y2='1137' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1132' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='1132' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>986141fa-dirty</text>
+<line x1='540' y1='1137' x2='790' y2='1137' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1137' x2='630' y2='1153' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1148' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='1148' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
+<text x='806' y='1169' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 986141fa-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+</svg>

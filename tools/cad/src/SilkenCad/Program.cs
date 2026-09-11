@@ -252,7 +252,9 @@ internal static class Program
     // CEM-native engineering drawing (tools/cad/docs/drawings_program.md): analytic orthographic SVG
     // computed from the CEM numbers (no mesh, no Library.Go) — the Noyron "generator documents itself".
     // Phase 1 = ti_coin (Stage-2 coupon, the most urgent physical part); Phase 2 landed cathode_flange
-    // (Деталь 3). Remaining kinds (Zone-2 sleeve, Zone-1 envelope card, assemblies) → roadmap §7.
+    // (Деталь 3), then mechanical_lock, then the Zone-1 envelope card + Zone-2 sleeve. ⛔ The roster of
+    // shipped kinds is the `switch` below, never this comment — a prose list of what exists rots on the
+    // next kind added, and this one already did. Remaining kinds + phasing → roadmap §7.
     private static int Draw(string strCemPath)
     {
         string strJson = File.ReadAllText(strCemPath);
@@ -299,8 +301,28 @@ internal static class Program
                 strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p);
                 break;
             }
+            case "anchor_zone1":
+            {
+                // strFile (not cem.Name) — every anchor_zone1.<sku>.json carries the underscore form
+                // ("anchor_zone1_pine") where the filename uses a dot, i.e. the same false-SSOT-pointer
+                // this family already paid for on ti_coin and mechanical_lock (HW.1, 2026-09-09).
+                AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+                string strFile = Path.GetFileName(strCemPath);
+                strName = cem.Name; strSvg = Drawing.AnchorZone1(cem, strRev, strFile); fnDxf = p => Drawing.AnchorZone1Dxf(cem, strRev, strFile, p);
+                break;
+            }
+            case "zone2_sleeve":
+            {
+                Zone2SleeveCem cem = Cem.Parse<Zone2SleeveCem>(strJson);
+                strName = cem.Name; strSvg = Drawing.Zone2Sleeve(cem, strRev); fnDxf = p => Drawing.Zone2SleeveDxf(cem, strRev, p);
+                break;
+            }
             default:
-                return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
+                // ⛔ `radome` is deliberately absent, and the reason is not effort: its geometry carries TWO
+                // ratified-but-unapplied verdicts (flat crown R5 instead of the hemisphere · flat rim with
+                // no counter-groove — 00_07 HW.33), both gated on the HW.9 board budget. A sheet issued
+                // from today's generator would be wrong the moment it printed.
+                return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
         string strSvgPath = Path.Combine("out", $"{strName}.drawing.svg");
@@ -831,7 +853,7 @@ internal static class Program
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
-            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock)");
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)");
         return 0;
     }
 

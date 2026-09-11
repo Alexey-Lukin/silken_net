@@ -28,17 +28,22 @@ run() { dotnet run --project src/SilkenCad -- "$@" >/dev/null; }
 export CAD_REV="${CAD_REV:-$(git rev-parse --short HEAD 2>/dev/null || echo UNTRACKED)$(git diff --quiet 2>/dev/null || echo -dirty)}"
 
 echo "▸ drawings (SVG)…"
-for c in ti_coin cathode_flange; do
+for c in ti_coin cathode_flange zone2_sleeve; do
   run draw "cem/$c.json"
   cp "out/$c.drawing.svg" "$GAL/$c.drawing.svg"
 done
-# mechanical_lock.zone1/.zone3.json carry `name: mechanical_lock_zone1/_zone3` (no dot/zone split), so the
-# output-artefact stem (out/<name>.*) does not equal the manifest filename stem — unlike the loop above.
-for c in mechanical_lock.zone1 mechanical_lock.zone3; do
+# mechanical_lock.zone1/.zone3.json and anchor_zone1.<sku>.json carry an UNDERSCORE `name`
+# (mechanical_lock_zone1 / anchor_zone1_pine), so the output-artefact stem (out/<name>.*) does not equal
+# the manifest filename stem — unlike the loop above.
+for c in mechanical_lock.zone1 mechanical_lock.zone3 anchor_zone1.pine; do
   run draw "cem/$c.json"
 done
 cp out/mechanical_lock_zone1.drawing.svg "$GAL/mechanical_lock_zone1.drawing.svg"
 cp out/mechanical_lock_zone3.drawing.svg "$GAL/mechanical_lock_zone3.drawing.svg"
+# One species SKU only: the seven anchor sheets differ solely in lattice numbers, and the gallery is a
+# published SNAPSHOT, not the deliverable set — the factory gets `draw` run per SKU. `pine` because the
+# 3D render and the section reveal below already use it, so the gallery stays one consistent part.
+cp out/anchor_zone1_pine.drawing.svg "$GAL/anchor_zone1_pine.drawing.svg"
 
 # ⚠️ The renders are NOT byte-deterministic (a viewer screenshot), so this step churns PNGs even when no
 # geometry moved. The drawings above are pure string/entity build and ARE deterministic. If you only
