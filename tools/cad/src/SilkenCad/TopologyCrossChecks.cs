@@ -270,7 +270,18 @@ internal static class TopologyCrossChecks
     // 01_02 §6: "SLM стінка ~200 µm … мін. друкована пора ≈1.2 мм"), independent of and coarser than the
     // 30 µm Z-layer (01_02 §6 "SLM: шар 30 µm" — that governs build-direction slicing, not the XY
     // feature floor a thin gyroid wall must clear). A feature the machine cannot hold is not COARSENED,
-    // it is ABSENT. So the as-printed solid is the morphological OPENING of the intent solid by a
+    // it is ABSENT.
+    // ⛔ READ THAT SENTENCE AS THE MODEL'S ASSUMPTION, NOT AS THE MEASUREMENT'S VERDICT. What
+    // SubFloorSolidFraction reports is the share of intended METAL thinner than the melt track — and the
+    // metric does NOT determine the DIRECTION of the physical error, because a real machine has two
+    // outs: it either fails to form the wall (the part comes out MORE porous, which is what "ABSENT"
+    // models) or it runs the track wide and WIDENS the wall to its own min-wall (the part comes out
+    // DENSER, with the pore pinched). Reading a high share as "those pores will sinter shut" claims more
+    // than the instrument measured; reading it as "that metal is simply missing" claims the other half.
+    // Both readings are one-sided — the honest statement is "this much intended metal is below the
+    // floor, and what the machine does with it is a bench question" (01_02 §1.3).
+    // [migrated from 00_07 HW.33 on 2026-09-11 — it stood only in the tracker while this header
+    //  asserted the one-sided reading, i.e. the refutation lived away from the claim it refutes.] So the as-printed solid is the morphological OPENING of the intent solid by a
     // Euclidean ball of radius floor/2: erode (a solid cell survives only if the whole ball around it is
     // solid — Outside counts as solid, so the part's own envelope surface is not eaten and only Pore
     // erodes), then dilate the survivors back, but only onto cells that were solid to begin with. What

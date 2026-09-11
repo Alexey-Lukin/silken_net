@@ -58,6 +58,14 @@ SOLVENT_EPS_WATER = 78.3553
 
 # ── EBFC parameters (from literature, 01_03 §1) ──
 J_MAX_25C = 494e-6           # A/cm² — dgrGcGDH + Os-polymer (Zafar 2012, PMC3275720)
+# ⛔ This number is ALREADY Gen 2.0, and that closes an argument people keep reaching for. The
+# ratified network topology costs 1.88× of the electroactive area (00_07 HW.33, ⚖️ 2026-09-10), and
+# "we compensate the area with a better enzyme" is NOT available: since 30_kinetics_delta_t is
+# kinetics-limited across its whole range, area passes into current without saturating, so covering
+# 1.88× needs j_max to reach 929 µA/cm² — i.e. the compensation would have to be paid by the very
+# figure written above. Raise this constant only against a NEW measured couple, never to balance a
+# geometry decision. [migrated from 00_07 HW.33 on 2026-09-11 — the break-even lived only in the
+#  tracker, while the constant it prices sits here, where a reader is tempted to "improve" it.]
 KM_GLUCOSE = 20.0            # mM — estimated for GcGDH
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
