@@ -60,6 +60,29 @@ public class AssemblyTests
     }
 
     [Fact]
+    public void The_Bayonet_Z_Mismatch_Is_The_Lug_Z_Deficit__Three_Positive_Terms()
+    {
+        // The finding this pins is structural, not numeric: the mismatch decomposes into t/2 + lockGrooveZ
+        // + gap, every term positive, so no assignment of the frozen dims reaches zero — and it equals the
+        // LUG's Z deficit exactly, which is what names the lever (00_07 HW.33 MATE-Ø).
+        AnchorAssemblyCem cem = new();
+        float fClosedForm = (cem.Flange.FlangeThicknessMm / 2f) + cem.Radome.LockGrooveZMm + cem.ORingGapMm;
+        Assert.Equal(fClosedForm, Assembly.BayonetZMismatchMm(cem), 3);
+        Assert.Equal(Assembly.RequiredLugZMm(cem) - Assembly.FlangeLugZMm(cem), Assembly.BayonetZMismatchMm(cem), 3);
+
+        // Shank cancels in BOTH equations — the mate maths cannot be moved by the one dim HW.8 calls a
+        // placeholder, so a shank reconcile is not a Z-reconcile.
+        AnchorAssemblyCem cemLong = cem with { Flange = cem.Flange with { ShankLengthMm = 22f } };
+        Assert.Equal(Assembly.BayonetZMismatchMm(cem), Assembly.BayonetZMismatchMm(cemLong), 3);
+        Assert.Equal(Assembly.RfClearanceMm(cem), Assembly.RfClearanceMm(cemLong), 3);
+
+        // The two "independent" equations share a conservation law: lowering lockGrooveZ or t pays into
+        // both at once, cavityH pays into RF alone.
+        Assert.Equal(cem.Radome.CavityHeightMm + cem.ORingGapMm,
+                     Assembly.RfClearanceMm(cem) + Assembly.BayonetZMismatchMm(cem), 3);
+    }
+
+    [Fact]
     public void Inboard_Candidate_Pulls_The_Lug_Tips_Within_Ø25()
     {
         // The inboard MATE-Ø candidate clamps protrusion to 0 ⇒ lug tip = flangeR = Ø25 (no protrusion).

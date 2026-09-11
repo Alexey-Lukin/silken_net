@@ -290,7 +290,13 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   bayonet datum (radome lock-groove ↔ flange lugs) via `MeshUtility.voxApplyTransformation` (lift; the
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models
   the skirt/inboard MATE-Ø candidates. An AUDIT table — `verify` exits on a broken render only; the
-  mismatch numbers are asserted by pure xUnit. Canon `02_02 §4.4`; reconcile is 👤 bench (HW.17/HW.8).
+  mismatch numbers are asserted by pure xUnit. Canon `02_02 §4.4`. ⚖️ **The reconcile is NOT one bench job:
+  the RADIAL half was ratified 2026-09-10** (Ø25 stays, a local internal rim boss carries socket + seal land,
+  `skirt` withdrawn because it deletes the sealing face), **and the bayonet-Z half is an open ⚖️, not bench
+  work** — because the mismatch is `t/2 + lockGrooveZ + gap`, three positive terms, so no assignment of the
+  frozen dims reaches zero and the lug needs a Z of its own (`Assembly.RequiredLugZMm`). ⊕ The two "separate"
+  equations share `Rf + mismatch = cavityH + gap`: lowering `lockGrooveZ` pays into BOTH, `cavityH` into RF
+  alone. Open in `00_07` HW.33; HW.8.8 is the bench leg that follows it, not the decider.
 - **Full axial stack (`AxialStack.cs`, SHIPPED)**: the SECOND integration artifact — brings ALL FOUR zones
   (anode → Zone-2 sleeve → flange → radome) into one axis and MEASURES the **press-fit** interfaces the
   capsule-end never touched: Zone1↔2 line-to-line (real +interference = H7/s6 band on bench) · **Zone2↔3 =

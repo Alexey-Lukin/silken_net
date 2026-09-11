@@ -38,8 +38,28 @@ internal static class Assembly
 
     // Bayonet-Z mismatch: at the bayonet datum the radome rim lands at `lift`; the O-ring squeeze wants it
     // at flangeTop + ORingGap. Their gap = the un-reconciled Z-stack error (Деталь3/Деталь4, HW.8/HW.17).
+    //
+    // 🔑 SUBSTITUTE AND THE SHANK CANCELS HERE TOO — and what is left is a SUM OF THREE POSITIVE TERMS:
+    //     |(shank + t/2 − lockGrooveZ) − (shank + t + gap)| = t/2 + lockGrooveZ + gap
+    // So this mismatch has NO ZERO in the current parametrisation, and that is a statement about the
+    // PARAMETRISATION, not about the chosen values: shank length is not a lever, and the groove would have
+    // to sit above the rim (negative) to close it on its own. The term never derived from the mate is the
+    // LUG Z — it is `shank + t/2`, i.e. the middle of the disc, while the seal lands on the TOP face, so
+    // the bayonet grips one side of the flange and the seal the other. Closing it needs a lug Z of its own
+    // (`RequiredLugZMm` below): the lug stands lockGrooveZ + gap ABOVE the sealing face, not at it — a
+    // raised collar, i.e. NEW GEOMETRY, unreachable by re-assigning a frozen dim.
+    // ⊕ And the two "independent" equations are tied by an identity, Rf + mismatch = cavityH + gap, so
+    // LOWERING lockGrooveZ (or t) buys the same millimetre in BOTH — the only lever that pays twice, where
+    // cavityH moves Rf alone. [00_07 HW.33 MATE-Ø, ⚖️ 2026-09-11]
     public static float BayonetZMismatchMm(AnchorAssemblyCem cem)
         => MathF.Abs(RadomeLiftZMm(cem) - (FlangeTopZMm(cem) + cem.ORingGapMm));
+
+    // The lug Z the mate REQUIRES: the rim must land on the sealing face (+ whatever face gap the O-ring
+    // model still carries), and the socket sits lockGrooveZ above that rim ⇒ the lug sits there too.
+    // ⛔ An AUDIT quantity, not a ratified dimension — where the collar that carries such a lug goes is the
+    // open ⚖️ (00_07 HW.33), and it rides AFTER the ratified rim boss, whose radial band it must share.
+    public static float RequiredLugZMm(AnchorAssemblyCem cem)
+        => FlangeTopZMm(cem) + cem.ORingGapMm + cem.Radome.LockGrooveZMm;
 
     // MATE-Ø radial gap: radome inner-cavity radius − flange rim radius. <0 ⇒ the Ø25 disc cannot enter
     // the Ø(25−2·wall) cavity (radial interference). CEM-analytic, independent of lift / strategy.
