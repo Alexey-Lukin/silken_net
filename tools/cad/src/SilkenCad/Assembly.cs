@@ -48,6 +48,17 @@ internal static class Assembly
 
     // RF clearance at the bayonet datum: antenna plane (cavity top) over the Ti flange top face.
     // Radome cavity z∈[lift, lift+cavityH], Ti at flangeTop ⇒ antenna↔Ti = (lift+cavityH) − flangeTop.
+    //
+    // 🔑 SUBSTITUTE AND THE SHANK CANCELS, which decides which levers exist at all:
+    //     Rf = (shank + t/2 − lockGrooveZ) + cavityH − (shank + t) = cavityH − lockGrooveZ − t/2
+    // So shank length is NOT a lever here, and only three things move this number: cavity height,
+    // lock-groove Z, and flange thickness. ⛔ And the sign of the middle one is the opposite of the
+    // intuitive reading: RAISING `lock_groove_z_mm` LOWERS the antenna (it shortens the lift), so
+    // "lift the radome by raising the lock groove" runs backwards. Reaching the 12 mm RF minimum from
+    // today's 8.0 needs +4 on `cavityH` (13 → 17); doing it on the groove alone would need −0.5, i.e.
+    // a groove above the rim. ⊕ Cavity height is also the only one of the three that does NOT move the
+    // rim, so it leaves the O-ring datum untouched — which is why it is the lever, not merely a lever.
+    // [00_07 HW.33 MATE-Ø, ⚖️ 2026-09-11]
     public static float RfClearanceMm(AnchorAssemblyCem cem)
         => (RadomeLiftZMm(cem) + cem.Radome.CavityHeightMm) - FlangeTopZMm(cem);
 
