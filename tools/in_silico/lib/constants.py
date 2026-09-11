@@ -151,25 +151,25 @@ ALLOY_PROPERTIES = {
         "lambda_W_mK": 6.7,
     },
     "Ti-6Al-7Nb": {
-        "spec": "ASTM F1295 / UNS R56700 — WROUGHT composition ref (no AM spec exists; V-free, dir. a)",
+        "spec": "ASTM F1295 / UNS R56700 — WROUGHT composition ref (AM spec UNKNOWN - F3302 grade table unread; V-free, dir. a)",
         "V_wt": 0.0, "Al_wt": 6.0, "Nb_wt": 7.0, "Zr_wt": 0.0,
         "E_GPa": 103.0, "nu": 0.31, "alpha_1K": 8.4e-6, "yield_MPa": 850.0, "rho_kg_m3": 4520.0,
         "lambda_W_mK": 7.0,
     },
     "CP-Ti-Gr4": {
-        "spec": "ASTM F67 Gr4 / UNS R50700 — WROUGHT composition ref (no AM spec exists; zero V/Al, alpha-Ti)",
+        "spec": "ASTM F67 Gr4 / UNS R50700 — WROUGHT composition ref (AM spec UNKNOWN - F3302 grade table unread; zero V/Al, alpha-Ti)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
         "E_GPa": 104.0, "nu": 0.34, "alpha_1K": 8.6e-6, "yield_MPa": 480.0, "rho_kg_m3": 4510.0,
         "lambda_W_mK": 17.0,
     },
     "beta-Ti-13Nb-13Zr": {
-        "spec": "ASTM F1713 / UNS R58130 — WROUGHT composition ref (no AM spec exists; low-E V/Al-free)",
+        "spec": "ASTM F1713 / UNS R58130 — WROUGHT composition ref (AM spec UNKNOWN - F3302 grade table unread; low-E V/Al-free)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 13.0, "Zr_wt": 13.0,
         "E_GPa": 80.0, "nu": 0.33, "alpha_1K": 8.8e-6, "yield_MPa": 900.0, "rho_kg_m3": 5050.0,
         "lambda_W_mK": 7.5,   # estimate — β-Ti(Nb,Zr) heavily alloyed, sparse data
     },
     "Ta": {
-        "spec": "ASTM F560 / UNS R05200 — WROUGHT composition ref (no AM spec exists; bioinert benchmark, coin-only, heavy)",
+        "spec": "ASTM F560 / UNS R05200 — WROUGHT composition ref (no AM material spec LISTED in the ASTM AM catalogue; F3302 is titanium alloys, so it does not reach Ta; bioinert benchmark, coin-only, heavy)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 0.0, "Zr_wt": 0.0,
         "E_GPa": 186.0, "nu": 0.34, "alpha_1K": 6.5e-6, "yield_MPa": 345.0, "rho_kg_m3": 16650.0,
         "lambda_W_mK": 57.0,

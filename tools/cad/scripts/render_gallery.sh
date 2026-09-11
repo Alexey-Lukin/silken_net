@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Build the committed presentation gallery (docs/images/cad/) — deterministic, re-runnable.
 #
-#   CEM-native drawings → SVG (vector; GitHub renders inline, wiki:sync carries it)
+#   CEM-native drawings → SVG (vector; GitHub renders them inline from the blob).
+#   ⛔ `wiki:sync` does NOT carry these, and this header said it did until 2026-09-11 — a fabricated
+#   mechanism, measured: `lib/tasks/wiki.rake` copies an image only where a canon doc EMBEDS it as
+#   `![…](…)`, and no canon doc embeds docs/images/cad. Want them on the wiki: embed one first.
 #   PicoGK native 3D renders → TGA → PNG (presentation-sized; GitHub raster)
 #
 # The SSOT stays cem/*.json + the .cs generators — these are PUBLISHED snapshots for fundraising /
