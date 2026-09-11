@@ -285,6 +285,118 @@
       }
     }
   },
+  "rim_boss_radial_budget": {
+    "inputs_mm": {
+      "dome_dia": 25.0,
+      "slot_clearance": 0.3,
+      "socket_band": 1.8,
+      "misalignment_allowance": 0.6
+    },
+    "cavity_today_mm": 21.0,
+    "rows": [
+      {
+        "cord_cs_mm": 1.78,
+        "gland_fill": 0.8,
+        "gland_width_mm": 2.315,
+        "seal_band_mm": 2.915,
+        "boss_radial_mm": 4.715,
+        "cavity_ceiling_mm": 15.57,
+        "shipped_cord": true
+      },
+      {
+        "cord_cs_mm": 1.78,
+        "gland_fill": 0.85,
+        "gland_width_mm": 2.178,
+        "seal_band_mm": 2.778,
+        "boss_radial_mm": 4.578,
+        "cavity_ceiling_mm": 15.84,
+        "shipped_cord": true
+      },
+      {
+        "cord_cs_mm": 1.78,
+        "gland_fill": 0.9,
+        "gland_width_mm": 2.057,
+        "seal_band_mm": 2.657,
+        "boss_radial_mm": 4.457,
+        "cavity_ceiling_mm": 16.09,
+        "shipped_cord": true
+      },
+      {
+        "cord_cs_mm": 1.42,
+        "gland_fill": 0.8,
+        "gland_width_mm": 1.846,
+        "seal_band_mm": 2.446,
+        "boss_radial_mm": 4.246,
+        "cavity_ceiling_mm": 16.51,
+        "shipped_cord": false
+      },
+      {
+        "cord_cs_mm": 1.42,
+        "gland_fill": 0.85,
+        "gland_width_mm": 1.738,
+        "seal_band_mm": 2.338,
+        "boss_radial_mm": 4.138,
+        "cavity_ceiling_mm": 16.72,
+        "shipped_cord": false
+      },
+      {
+        "cord_cs_mm": 1.42,
+        "gland_fill": 0.9,
+        "gland_width_mm": 1.641,
+        "seal_band_mm": 2.241,
+        "boss_radial_mm": 4.041,
+        "cavity_ceiling_mm": 16.92,
+        "shipped_cord": false
+      },
+      {
+        "cord_cs_mm": 1.27,
+        "gland_fill": 0.8,
+        "gland_width_mm": 1.651,
+        "seal_band_mm": 2.251,
+        "boss_radial_mm": 4.051,
+        "cavity_ceiling_mm": 16.9,
+        "shipped_cord": false
+      },
+      {
+        "cord_cs_mm": 1.27,
+        "gland_fill": 0.85,
+        "gland_width_mm": 1.554,
+        "seal_band_mm": 2.154,
+        "boss_radial_mm": 3.954,
+        "cavity_ceiling_mm": 17.09,
+        "shipped_cord": false
+      },
+      {
+        "cord_cs_mm": 1.27,
+        "gland_fill": 0.9,
+        "gland_width_mm": 1.468,
+        "seal_band_mm": 2.068,
+        "boss_radial_mm": 3.868,
+        "cavity_ceiling_mm": 17.26,
+        "shipped_cord": false
+      }
+    ],
+    "shipped_cord_range_mm": [
+      15.57,
+      16.09
+    ],
+    "design_to_mm": 15.57,
+    "levers_that_keep_the_od_freeze": {
+      "raise_gland_fill": {
+        "from_pct": 80,
+        "to_pct": 90,
+        "buys_mm": 0.52
+      },
+      "thin_the_cord": {
+        "from_cs": 1.78,
+        "to_cs": 1.27,
+        "at_fill_pct": 80,
+        "buys_mm": 1.33,
+        "price": "moves the SSOT cross-section 02_02 \u00a73.2"
+      }
+    },
+    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates \u2014 cavity_height_mm and the antenna\u2194Ti clearance are separate and are NOT judged here."
+  },
   "shipped_groove_alignment": {
     "flange_groove_r_mm": [
       9.0,

@@ -207,6 +207,70 @@ def gland_verdict() -> dict:
             "faces": faces, "candidates": candidates, "smaller_cord_options": alt}
 
 
+def rim_boss_radial_budget() -> dict:
+    """What the ratified rim BOSS leaves for the PCB — and it is a CEILING, not a nominal.
+
+    ⚖️ 2026-09-10 (00_07 HW.33) put the bayonet socket and the seal land on ONE local inward boss,
+    radially one after the other. Its named price was «the rim cavity becomes ≈Ø15–16 against Ø21
+    today», and that range is what this derives — every term from the CEM or from the gland function
+    above, none typed:
+
+        cavity ≤ dome_Ø − 2·( socket_band + gland_width(cs, fill) + 2·slot_clearance )
+        socket_band = lug_radius + slot_clearance   (the entry slot must clear the lug)
+
+    🔴 **All three terms are MINIMA, so the result is an upper bound on the cavity, with ZERO
+    tolerance allowance in it.** Reading it as a nominal to design a board against is the error this
+    function exists to prevent: any growth in any term eats the board, and nothing here has grown yet
+    because the boss is not cut. HW.9 designs against the WORST row, not the friendliest.
+    ⊕ It also prices the levers, which is the half a single number hides: raising the gland fill
+    ceiling and thinning the cord both widen the cavity WITHOUT touching the Ø25 freeze — and the
+    freeze is the most expensive move available, not the first one.
+    """
+    radome = cem("radome")
+    dome_d = radome["dome_diameter_mm"]
+    slot_clear = radome["slot_clearance_mm"]
+    socket_band = radome["lug_radius_mm"] + slot_clear      # entry slot must clear the lug
+    misalign = 2.0 * slot_clear                              # radial socket misalignment allowance
+
+    rows = []
+    for cs in (ORING_CS, 1.42, 1.27):
+        depth = cs * (1.0 - ORING_SQUEEZE_RATIFIED)
+        for fill in GLAND_FILL_CEILINGS:
+            seal_band = gland_width_required(cs, depth, fill) + misalign
+            boss = socket_band + seal_band
+            rows.append({"cord_cs_mm": cs, "gland_fill": fill,
+                         "gland_width_mm": round(gland_width_required(cs, depth, fill), 3),
+                         "seal_band_mm": round(seal_band, 3), "boss_radial_mm": round(boss, 3),
+                         "cavity_ceiling_mm": round(dome_d - 2.0 * boss, 2),
+                         "shipped_cord": bool(abs(cs - ORING_CS) < 1e-9)})
+    shipped = [r for r in rows if r["shipped_cord"]]
+    worst = min(shipped, key=lambda r: r["cavity_ceiling_mm"])
+    best = max(shipped, key=lambda r: r["cavity_ceiling_mm"])
+    # Cheapest lever that does NOT touch the Ø25 freeze: keep the fill, thin the cord.
+    same_fill = [r for r in rows if abs(r["gland_fill"] - worst["gland_fill"]) < 1e-9]
+    cord_lever = max(same_fill, key=lambda r: r["cavity_ceiling_mm"])
+    return {
+        "inputs_mm": {"dome_dia": dome_d, "slot_clearance": slot_clear,
+                      "socket_band": round(socket_band, 3), "misalignment_allowance": misalign},
+        "cavity_today_mm": round(dome_d - 2.0 * radome["wall_thickness_mm"], 2),
+        "rows": rows,
+        "shipped_cord_range_mm": [worst["cavity_ceiling_mm"], best["cavity_ceiling_mm"]],
+        "design_to_mm": worst["cavity_ceiling_mm"],
+        "levers_that_keep_the_od_freeze": {
+            "raise_gland_fill": {"from_pct": int(worst["gland_fill"] * 100),
+                                 "to_pct": int(best["gland_fill"] * 100),
+                                 "buys_mm": round(best["cavity_ceiling_mm"] - worst["cavity_ceiling_mm"], 2)},
+            "thin_the_cord": {"from_cs": ORING_CS, "to_cs": cord_lever["cord_cs_mm"],
+                              "at_fill_pct": int(worst["gland_fill"] * 100),
+                              "buys_mm": round(cord_lever["cavity_ceiling_mm"] - worst["cavity_ceiling_mm"], 2),
+                              "price": "moves the SSOT cross-section 02_02 §3.2"},
+        },
+        "ceiling": "⛔ every term is a MINIMUM, so this is an upper bound with no tolerance in it; "
+                   "the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates — "
+                   "cavity_height_mm and the antenna↔Ti clearance are separate and are NOT judged here.",
+    }
+
+
 def shipped_groove_alignment() -> dict:
     """The two counter-grooves the shipped CAD still cuts — do they even face each other?"""
     flange, radome = cem("cathode_flange"), cem("radome")
@@ -380,6 +444,7 @@ def main() -> int:
     # green run as "the gland is fine" is exactly the mis-read this note exists to stop.
     banner("Gland geometry — the ratified depth needs a WIDTH, and the width needs a FACE")
     gland = gland_verdict()
+    boss = rim_boss_radial_budget()
     align = shipped_groove_alignment()
     budget = depth_tolerance_budget()
     rim = rim_datum_creep()
@@ -462,6 +527,7 @@ def main() -> int:
                     "chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a "
                     "judgement."},
         "gland_geometry": gland,
+        "rim_boss_radial_budget": boss,
         "shipped_groove_alignment": align,
         "depth_tolerance_budget": budget,
         "rim_datum_creep": rim,
