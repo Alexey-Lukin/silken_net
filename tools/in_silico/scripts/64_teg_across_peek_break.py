@@ -118,9 +118,9 @@ COUPLE_DENSITY_MM2 = 0.08          # couples per mm² (127-couple / 40×40 mm fo
 VIN_CS_MV = 600.0                  # BQ25570 cold-start VIN(CS) typ., `02_03 §1.5` / HW.46
 TARGET_UW = (50.0, 200.0)          # HW.21's own winter harvest target (µW) — the band the residual is judged against
 # Bus-Ø robustness bound. Script 54 now carries the canon rod (lib.constants D_BUS_ROD_MM, 01_01 §1.4);
-# the Ø1.3 cathode CHANNEL is the physical upper bound on how fat that rod could ever be, so sweeping to
+# the Ø1.35 cathode CHANNEL is the physical upper bound on how fat that rod could ever be, so sweeping to
 # it answers "could the bus diameter move this verdict at all?" — the check the old caveat performed.
-D_BUS_UPPER_BOUND_MM = 1.3         # cathode channel Ø (01_01 §1.4) — the fattest a bus rod could be
+D_BUS_UPPER_BOUND_MM = 1.35        # cathode channel Ø (01_01 §1.4, opened by 00_07 HW.34) — the fattest a bus rod could be
 
 MM2_M2 = 1e-6
 MM_M = 1e-3
@@ -585,7 +585,7 @@ def main() -> int:
                 "t_anode_with_8x8x4_baseline_C": round(t_rod, 2),
                 "t_anode_with_8x8x4_upper_C": round(t_fat, 2),
                 "g_teg_over_anchor_x": gm_ref / base_ti["g_total"],
-                "note": "Baseline is the canon rod O1.0 (01_01 1.4, lib D_BUS_ROD_MM); the O1.3 cathode "
+                "note": "Baseline is the canon rod O1.0 (01_01 1.4, lib D_BUS_ROD_MM); the O1.35 cathode "
                         "channel is the fattest a bus could physically be. Widening to it shifts the "
                         "bare-anchor conductance materially but CANNOT move this verdict, because the "
                         "smallest swept module conducts orders of magnitude more than the whole anchor "

@@ -11,7 +11,9 @@
     "interference_min_um": 5,
     "interference_max_um": 34,
     "clearance_mm": 0.05,
-    "feature": "bore",
+    "features": [
+      { "feature": "bore" }
+    ],
     "primary_datum": "bore axis",
     "concentricity_mm": "0.05"
   },

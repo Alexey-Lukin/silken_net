@@ -7,9 +7,10 @@ the monolithic-bus idea after the thermal bridge (script 54).
 A monolithic Ti bus rises from the anode shank, through the PEEK gap and the cathode bore, to the pogo pad.
 
 ⛔ DIAMETER — THE ROD, NEVER THE CHANNEL. Canon 01_01 §1.4 freezes three dimensions and only one of
-   them is metal: rod Ø1.0 · cathode channel Ø1.3 · liner 0.15. D_BUS here is the ROD, imported from
-   lib.constants (one home). Substituting the channel inflates every fatigue SF ×2.2 (σ ∝ 1/d³) and
-   flips the load-bearing conclusion: at Ø1.3 the unsupported branch reads 'marginal for the soft
+   them is metal: rod Ø1.0 · cathode channel Ø1.35 · liner 0.15 (channel opened from 1.30 by the
+   clearance verdict, 00_07 HW.34, 2026-09-11). D_BUS here is the ROD, imported from
+   lib.constants (one home). Substituting the channel inflates every fatigue SF ×2.46 (σ ∝ 1/d³) and
+   flips the load-bearing conclusion: at the channel Ø the unsupported branch reads 'marginal for the soft
    alloys', at Ø1.0 it is a predicted FAILURE for Ta and CP-Ti and infinite life for NOBODY — ⚠️ and
    that last sentence is the PRINTED branch, superseded as the shipped route by the welded verdict
    (2026-09-10); on the welded branch four of six clear it bare. ⛔ Do NOT quote either number as the
@@ -25,11 +26,11 @@ Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
 KEY COUPLING — ⚠️ REWRITTEN 2026-09-11, and the old version is kept nowhere on purpose: it argued the
 liner from FATIGUE, and that ground is RETIRED, not narrowed (⚖️ founder, 00_07 HW.34). What retired it
 is §4 of this very script: both L_FREE_* columns are FREE cantilevers — no wall anywhere — while the
-real rod threads a Ø1.3 bore, so any branch that leaves play takes it up and BEARS on the wall inside
+real rod threads a Ø1.35 bore, so any branch that leaves play takes it up and BEARS on the wall inside
 the bore. An unsupported SF is therefore a number for a configuration that does not exist, and the
 script says so through a DERIVED flag (`clearance_regime.free_cantilever_sf_describes_these`), never
 through prose. What the liner carries instead is WEAR: the same contact makes rubbing geometrically
-FORCED, and a 10 µm conformal film asked to be a bearing in a blind L/D ≈ 13 bore wears through to a
+FORCED, and a 10 µm conformal film asked to be a bearing in a blind bore of L/D ≈ 12.6 wears through to a
 ~0.5 V anode↔cathode short. The supported/unsupported columns stay because they price the DIAMETER and
 the FABRICATION branch honestly — they are simply not the argument for the liner.
 
@@ -63,8 +64,8 @@ from lib.utils import banner
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Bus geometry (mm) — the ROD, not the Ø1.3 cathode channel it threads ──
-# ⛔ Do not substitute the channel here: σ ∝ 1/d³, so Ø1.3 inflates every fatigue SF ×2.2 and turns a
+# ── Bus geometry (mm) — the ROD, not the Ø1.35 cathode channel it threads ──
+# ⛔ Do not substitute the channel here: σ ∝ 1/d³, so the channel Ø inflates every fatigue SF ×2.46 and turns a
 #    predicted failure into a comfortable margin. One home for the value: lib.constants (01_01 §1.4).
 D_BUS = D_BUS_ROD_MM
 # Free (laterally UNSUPPORTED) cantilever length in each case:
@@ -74,25 +75,48 @@ L_FREE_SUP = 6.0      # mm — liner supports the bore run → only the PEEK gap
 # ── Loads ──
 # ── Channel run (mm from the anode root) — the wall that the two branches above IGNORE ──
 # Both L_FREE_* above are free-cantilever idealisations: they assume NO wall anywhere over the span.
-# The real rod threads a Ø1.3 bore, so a branch that leaves a gap is neither of them — see §4 below.
+# The real rod threads a Ø1.35 bore, so a branch that leaves a gap is neither of them — see §4 below.
 # ⚠️ The run length is read CONSERVATIVELY (shorter = less room for contact to happen): the model's own
 # decomposition of L_FREE_UNSUP says "cathode bore ~14", while cem/cathode_flange.json gives
 # shank 14 + flange 3 = 17. Taking 14 makes the contact finding harder to reach, not easier.
 CHANNEL_START_MM = L_FREE_SUP      # the PEEK gap ends and the bore begins
 CHANNEL_LEN_MM = 14.0
-D_CHANNEL_MM = 1.3                 # cathode channel Ø, canon 01_01 §1.4 (frozen)
-# Radial free play left by each insulation branch, measured on the ROD side.
-# ⛔ `liner` is NOMINALLY zero — that is the F3 gate's arithmetic (1.0 + 2×0.15 ≤ 1.3), not an assembly
-#    clearance; the real allocation is an open ⚖️ (00_07 HW.34). A few µm is carried so the regime is
-#    computed rather than asserted, and the conclusion does not depend on which µm-value you pick.
+# Full DRILLED depth of the blind bore, from cem/cathode_flange.json (shank 14 + flange 3). Distinct from
+# CHANNEL_LEN_MM above, which is the deliberately-short span used for the CONTACT question; this one is
+# the machining referent, and it is what the L/D ratio is about — which operation the bore needs.
+# ⛔ That ratio lived in prose (here and in SUMMARY) with no cache owner, so it could not be checked
+#    against the diameter it divides by. Derived now.
+BORE_DEPTH_MM = 17.0
+D_CHANNEL_MM = 1.35                # cathode channel Ø, canon 01_01 §1.4 — OPENED 1.30 → 1.35 by the
+                                   # clearance verdict (00_07 HW.34, branch (в), 2026-09-11)
+
+# Insulation branches: wall thickness AND — new 2026-09-11 — WHICH SIDE the leftover play sits on.
+# ⛔ The side is not bookkeeping, it changes what the BEAM is. A conformal film is bonded to the rod, so
+#    its play is on the rod side by construction and the bending member is the bare Ti rod. The ratified
+#    liner is the opposite: the tube is tight on the WIRE and the pair enters the blind bore as ONE body
+#    (00_07 HW.34 — the direction verdict), so the play is on the CHANNEL side and the member is the
+#    rod-plus-tube composite. Until this field existed the model could only say the first thing, which is
+#    why the canon sentence it fed ("a hundredfold reduction, 140 → ~2.5 µm") described the rod-side
+#    allocation nobody ratified.
+# ⚠️ The liner wall is now the CANON 0.150, not the 0.1475 this line used to carry. That 2.5 µm shaving
+#    was a workaround for the pre-verdict channel: at Ø1.30 the honest 0.150 summed to EXACTLY the bore,
+#    so a zero-play row would have divided by a regime that cannot exist. The verdict removed the reason.
 INSULATION_OPTIONS = (
-    ("conformal 10 µm film", 0.010),
-    ("conformal TiO2 ~5 µm", 0.005),
-    ("PEEK liner 0.15 mm", 0.1475),   # 2.5 µm radial assembly play — µm-scale by construction
+    ("conformal 10 µm film", 0.010, "rod"),
+    ("conformal TiO2 ~5 µm", 0.005, "rod"),
+    ("PEEK liner 0.15 mm", 0.150, "channel"),
 )
 
+# ── Composite bending stiffness, for the CHANNEL-side branch only ──
+# With the tube tight on the wire the two bend together, so the member is stiffer than the bare rod and
+# the wall is reached LATER — which is the conservative direction for the question "is the rod supported
+# at the bore mouth". Bounds, both reported rather than one picked: LOWER = bare rod (tube slips, carries
+# no shear), UPPER = full composite (perfect bond). Neither is measured; a press-fit polymer tube sits
+# between them, and PEEK is soft enough that the whole span between the bounds is a few per cent.
+E_PEEK = 3.6e9        # Pa — PEEK 450G flexural modulus (01_01 §4.3 uses the same class of figure)
+
 # ── Assembly-clearance allocation candidates (00_07 HW.34, «кому віддано зазор») ──────────────
-# The three frozen dims (01_01 §1.4: rod Ø1.0 · channel Ø1.3 · liner 0.15 wall) sum to ZERO nominal
+# The three PRE-VERDICT dims (rod Ø1.0 · channel Ø1.30 · liner 0.15 wall) summed to ZERO nominal
 # clearance, so the assembly needs exactly one of them to move — and WHICH one is the verdict.
 # Each row is (label, rod Ø mm, liner WALL mm, channel Ø mm); play and first-contact are COMPUTED,
 # so a candidate is priced here rather than argued in prose. ⛔ The tracker quoted «first contact
@@ -153,8 +177,22 @@ def bending_stress_MPa(force_lat_N: float, length_mm: float) -> float:
     return force_lat_N * (length_mm * MM_M) * c / i_area / 1e6
 
 
+def flexural_rigidity_Nm2(rod_dia_mm: float, liner_wall_mm: float | None = None) -> float:
+    """EI of the bending member. Bare Ti rod, or rod + PEEK tube in full composite (parallel-axis-free,
+    both concentric about the same neutral axis, so the second moments simply add).
+
+    `liner_wall_mm=None` is the LOWER bound (tube slips): the rod carries the whole moment.
+    """
+    ei = E_TI * second_moment_m4(rod_dia_mm)
+    if liner_wall_mm:
+        r_i = (rod_dia_mm / 2.0) * MM_M
+        r_o = r_i + liner_wall_mm * MM_M
+        ei += E_PEEK * (np.pi / 4.0) * (r_o ** 4 - r_i ** 4)
+    return ei
+
+
 def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float,
-                           dia_mm: float | None = None) -> float:
+                           dia_mm: float | None = None, ei_Nm2: float | None = None) -> float:
     """Free-cantilever deflection at x under a TRANSVERSE TIP load: δ(x) = F·x²·(3L−x)/(6EI).
 
     Same F, L, E, I as the bending-stress model above — this is that model read as a SHAPE rather
@@ -163,25 +201,28 @@ def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float,
     `dia_mm` defaults to the canon rod Ø; it is a parameter ONLY so an allocation candidate that
     moves the ROD (00_07 HW.34 branch (г)) is priced on its own I, never on the canon one — I ∝ d⁴,
     so borrowing the canon stiffness for a thinner rod understates its deflection by ~20 %.
+
+    `ei_Nm2` overrides both, for the channel-side branch where the bending member is the rod PLUS the
+    tube it carries. Passing it is the only way to say "this is not a bare rod".
     """
-    i_area = second_moment_m4(D_BUS if dia_mm is None else dia_mm)
+    ei = ei_Nm2 if ei_Nm2 is not None else E_TI * second_moment_m4(D_BUS if dia_mm is None else dia_mm)
     x, ell = x_mm * MM_M, length_mm * MM_M
-    return force_lat_N * x ** 2 * (3.0 * ell - x) / (6.0 * E_TI * i_area) / MM_M
+    return force_lat_N * x ** 2 * (3.0 * ell - x) / (6.0 * ei) / MM_M
 
 
 def first_wall_contact_mm(force_lat_N: float, radial_play_mm: float, length_mm: float,
-                          dia_mm: float | None = None) -> float:
+                          dia_mm: float | None = None, ei_Nm2: float | None = None) -> float:
     """Distance from the root at which the FREE deflection first equals the radial play.
 
     Bisection on a monotonic function — no solver dependency. Returns `length_mm` if the rod never
     takes up the play over the whole span (i.e. it really is a free cantilever).
     """
-    if tip_load_deflection_mm(force_lat_N, length_mm, length_mm, dia_mm) <= radial_play_mm:
+    if tip_load_deflection_mm(force_lat_N, length_mm, length_mm, dia_mm, ei_Nm2) <= radial_play_mm:
         return length_mm
     lo, hi = 0.0, length_mm
     for _ in range(60):
         mid = (lo + hi) / 2.0
-        if tip_load_deflection_mm(force_lat_N, mid, length_mm, dia_mm) < radial_play_mm:
+        if tip_load_deflection_mm(force_lat_N, mid, length_mm, dia_mm, ei_Nm2) < radial_play_mm:
             lo = mid
         else:
             hi = mid
@@ -324,33 +365,87 @@ def main() -> int:
 
     # ── 4. Which regime each insulation branch actually puts the rod in ──────────────────────────
     # 🔴 The question §2 never asks. Both L_FREE_* are free cantilevers: no wall anywhere. But the rod
-    # threads a Ø1.3 bore, so an insulation branch that leaves play is NEITHER idealisation — it is a
+    # threads a Ø1.35 bore, so an insulation branch that leaves play is NEITHER idealisation — it is a
     # gap-limited beam. Which one it is decides whether the SF printed above describes it at all.
     banner("Clearance regime — does the rod REACH the channel wall? (the branch the SF table omits)")
     channel_end = CHANNEL_START_MM + CHANNEL_LEN_MM
-    print(f"  Channel Ø{D_CHANNEL_MM:.1f} runs {CHANNEL_START_MM:.0f}→{channel_end:.0f} mm from the root "
+    # ⛔ TWO decimals: `.1f` printed the Ø1.35 channel as "Ø1.4" — a diameter the model never used, on
+    #    the one line a reader takes the geometry from. The 50 µm this whole verdict bought is smaller
+    #    than that rounding step.
+    print(f"  Channel Ø{D_CHANNEL_MM:.2f} runs {CHANNEL_START_MM:.0f}→{channel_end:.0f} mm from the root "
           f"(conservative length {CHANNEL_LEN_MM:.0f} mm; CEM shank+flange would give 17).")
-    print(f"  {'insulation branch':<24s} {'radial play':>11s} {'first contact, mm from root':>30s}   regime")
+    print(f"  {'insulation branch':<24s} {'play on':>8s} {'radial play':>11s} "
+          f"{'first contact, mm from root':>21s}   regime")
     print(f"  {'-' * 92}")
     regimes = []
-    for label, t_mm in INSULATION_OPTIONS:
+    for label, t_mm, play_side in INSULATION_OPTIONS:
         play = (D_CHANNEL_MM - (D_BUS + 2.0 * t_mm)) / 2.0
-        contacts = {}
+        # The bending member follows the SIDE the play sits on, not the branch's name. Rod-side ⇒ the
+        # bare Ti rod. Channel-side ⇒ the rod carrying its tube; that pair is stiffer, so it reaches the
+        # wall LATER — the conservative direction for "is it supported at the mouth", which is why both
+        # bounds are computed and the WORST (stiffest, latest contact) drives the regime verdict.
+        ei_lo = flexural_rigidity_Nm2(D_BUS)
+        ei_hi = flexural_rigidity_Nm2(D_BUS, t_mm) if play_side == "channel" else ei_lo
+        contacts, contacts_bond = {}, {}
         for mu in MU_SWEEP:
-            contacts[mu] = round(first_wall_contact_mm(mu * F_POGO_N, play, L_FREE_UNSUP), 2)
-        lo_x, hi_x = min(contacts.values()), max(contacts.values())
+            contacts[mu] = round(first_wall_contact_mm(mu * F_POGO_N, play, L_FREE_UNSUP, ei_Nm2=ei_lo), 2)
+            contacts_bond[mu] = round(first_wall_contact_mm(mu * F_POGO_N, play, L_FREE_UNSUP, ei_Nm2=ei_hi), 2)
+        lo_x, hi_x = min(contacts.values()), max(contacts_bond.values())
         # Bears on the wall INSIDE the bore on every µ the model itself sweeps ⇒ not a free cantilever.
-        bears = all(x < channel_end for x in contacts.values())
-        at_mouth = all(x <= CHANNEL_START_MM for x in contacts.values())
+        bears = all(x < channel_end for x in contacts_bond.values())
+        at_mouth = all(x <= CHANNEL_START_MM for x in contacts_bond.values())
         regime = ("supported at the bore mouth" if at_mouth
                   else "GAP-LIMITED — bears inside the bore" if bears
                   else "free cantilever (never reaches the wall)")
-        print(f"  {label:<24s} {play * 1000:>8.1f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>30s}   {regime}")
-        regimes.append({"branch": label, "coating_or_liner_mm": t_mm,
+        print(f"  {label:<24s} {play_side:>8s} {play * 1000:>8.1f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>21s}   {regime}")
+        regimes.append({"branch": label, "coating_or_liner_mm": t_mm, "play_side": play_side,
                         "radial_play_mm": round(play, 4), "first_contact_mm_by_mu": contacts,
+                        "first_contact_mm_by_mu_bonded": contacts_bond,
+                        "ei_Nm2_bare_rod": round(ei_lo, 4), "ei_Nm2_bonded": round(ei_hi, 4),
                         "bears_inside_bore": bool(bears), "supported_at_mouth": bool(at_mouth),
                         "regime": regime})
     gap_limited = [r["branch"] for r in regimes if r["bears_inside_bore"] and not r["supported_at_mouth"]]
+
+    # The canon sentence this table feeds (01_01 §1.4) used to quote a "hundredfold" reduction. DERIVE it
+    # — the factor is a ratio of two rows here and moves whenever either does.
+    rod_side = [r for r in regimes if r["play_side"] == "rod"]
+    chan_side = [r for r in regimes if r["play_side"] == "channel"]
+    play_reduction = None
+    if rod_side and chan_side:
+        worst_film = max(r["radial_play_mm"] for r in rod_side)
+        liner_play = min(r["radial_play_mm"] for r in chan_side)
+        play_reduction = {
+            "conformal_worst_radial_play_mm": worst_film,
+            "liner_radial_play_mm": liner_play,
+            "factor": round(worst_film / liner_play, 2) if liner_play else None,
+            "note": "the liner still shrinks the free travel by this factor, but it is NOT the "
+                    "hundredfold the canon prose carried: that figure came from a rod-side allocation "
+                    "(tube loose on the wire) which the 2026-09-11 direction verdict did not choose",
+        }
+        print(f"\n  → Free travel falls {worst_film * 1000:.0f} → {liner_play * 1000:.0f} µm = "
+              f"{play_reduction['factor']:.1f}× (DERIVED; the play is on the {chan_side[0]['play_side']} side "
+              f"by verdict, so this is not the rod-side hundredfold the prose used to quote).")
+
+    # ── Is L_FREE_SUP = 6 mm actually grounded? The §2 table ASSUMES the liner turns the span into the
+    # PEEK gap alone. That is an assumption about WHERE contact happens, and §4 just computed it — so
+    # check the two against each other instead of asserting the first. Worst case = the stiffest member
+    # (bonded tube) at the lightest drag, i.e. the deepest first contact.
+    supported_span_check = None
+    if chan_side:
+        deepest = max(max(r["first_contact_mm_by_mu_bonded"].values()) for r in chan_side)
+        overshoot = deepest - L_FREE_SUP
+        supported_span_check = {
+            "assumed_free_span_mm": L_FREE_SUP,
+            "deepest_first_contact_mm": round(deepest, 2),
+            "overshoot_mm": round(overshoot, 2),
+            "sigma_understated_pct": round(100.0 * overshoot / L_FREE_SUP, 1),
+            "note": "sigma is linear in span, so the supported-column SF is optimistic by this "
+                    "percentage; it stays far above the SF-2 line, but the number is measured now "
+                    "rather than assumed (00_07 HW.34)",
+        }
+        print(f"  → L_FREE_SUP = {L_FREE_SUP:.0f} mm vs deepest measured first contact "
+              f"{deepest:.2f} mm ⇒ the assumed span is short by {overshoot:.2f} mm, i.e. the supported "
+              f"root stress is understated by {supported_span_check['sigma_understated_pct']:.1f} %.")
 
     # ── 4b. Allocation candidates — the OTHER question the same geometry answers ─────────────────
     banner("Assembly-clearance allocation — which frozen dim moves (00_07 HW.34)")
@@ -366,11 +461,17 @@ def main() -> int:
                     for mu in MU_SWEEP}
         lo_x, hi_x = min(contacts.values()), max(contacts.values())
         assembles = diametral > 0.0
+        # The row whose three dims ARE the current frozen set is the one that shipped — derived, so the
+        # label cannot drift away from the numbers the rest of this file uses.
+        shipped_row = (abs(rod_mm - D_BUS) < 1e-9 and abs(liner_mm - 0.150) < 1e-9
+                       and abs(chan_mm - D_CHANNEL_MM) < 1e-9)
+        tag = ("   ⛔ zero/negative — does not assemble" if not assembles
+               else "   ✅ RATIFIED + APPLIED" if shipped_row else "")
         print(f"  {label:<26s} {rod_mm:>6.2f} {liner_mm:>6.3f} {chan_mm:>7.2f} "
-              f"{diametral * 1000:>7.0f} µm {play * 1000:>5.0f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>19s}"
-              f"{'' if assembles else '   ⛔ zero/negative — does not assemble'}")
+              f"{diametral * 1000:>7.0f} µm {play * 1000:>5.0f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>19s}{tag}")
         allocations.append({"candidate": label, "rod_dia_mm": rod_mm, "liner_wall_mm": liner_mm,
                             "channel_dia_mm": chan_mm, "stack_od_mm": round(stack_mm, 4),
+                            "is_shipped_geometry": bool(shipped_row),
                             "diametral_clearance_mm": round(diametral, 4),
                             "radial_play_mm": round(play, 4),
                             "first_contact_mm_by_mu": contacts, "assembles": bool(assembles)})
@@ -385,6 +486,12 @@ def main() -> int:
     print("    For those the effective span is a FRACTION of the 36 mm span priced above, so the")
     print("    unsupported SF is a number for a configuration that does not exist — while the contact")
     print("    it implies is FORCED by geometry on every µ, which is a wear question, not a fatigue one.")
+    # ⚠️ The flag is binary and the branches are NOT equivalent — read the depth, not the label. Since the
+    # channel opened to Ø1.35 the liner row also lands a hair past the mouth (6.51 vs 6.00 mm), so it joins
+    # this list; a conformal film reaches the wall 10-17 mm in, i.e. deep in the bore or past its end.
+    # Same word, an order of magnitude apart in what it costs.
+    print("    ⚠️ The list is not a ranking: the liner bears 0.5 mm past the mouth, a conformal film")
+    print("    10–17 mm in. The flag says 'not a free cantilever'; the DEPTH says how much that matters.")
 
     # ── Verdict ──
     banner("Verdict")
@@ -432,16 +539,26 @@ def main() -> int:
         "clearance_regime": {
             "channel": {"dia_mm": D_CHANNEL_MM, "start_mm": CHANNEL_START_MM,
                         "length_mm": CHANNEL_LEN_MM,
+                        "drilled_depth_mm": BORE_DEPTH_MM,
+                        "aspect_ratio_l_over_d": round(BORE_DEPTH_MM / D_CHANNEL_MM, 2),
+                        "aspect_note": "L/D of the BLIND bore as machined (depth 17 = shank 14 + flange 3, "
+                                       "cem/cathode_flange.json). It decides which operation the vendor "
+                                       "needs and is the ratio quoted in canon prose - derived here so it "
+                                       "moves with the diameter instead of being retyped",
                         "note": "length read conservatively (model's own '~14' rather than the CEM's "
                                 "shank 14 + flange 3 = 17) — a shorter bore makes contact HARDER to reach"},
             "branches": regimes,
+            "play_reduction": play_reduction,
+            "supported_span_check": supported_span_check,
             "gap_limited_branches": gap_limited,
             "free_cantilever_sf_describes_these": [r["branch"] for r in regimes
                                                    if r["regime"].startswith("free cantilever")],
         },
         "assembly_clearance": {
             "question": "00_07 HW.34 — which of the three frozen dims (01_01 §1.4) gives up the "
-                        "assembly clearance; direction ratified 2026-09-11 (channel side), SIZE open",
+                        "assembly clearance. CLOSED 2026-09-11: direction = channel side, size = "
+                        "branch (в), channel 1.30 -> 1.35. The table stays because it is the PRICING "
+                        "the verdict stands on, not an open menu; the shipped row is flagged",
             "frozen_dims_mm": {"rod": D_BUS, "channel": D_CHANNEL_MM, "liner_wall": 0.150},
             "candidates": allocations,
             "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT — different "

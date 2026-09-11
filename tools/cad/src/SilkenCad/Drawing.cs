@@ -237,10 +237,11 @@ internal static class Drawing
         else if (t.InterferenceMinUm is { } only) lines.Add($"Interference: min {N(only)} µm, max {NotSpecified}");
         else if (t.InterferenceMaxUm is { } onlyHi) lines.Add($"Interference: min {NotSpecified}, max {N(onlyHi)} µm");
         if (t.ClearanceMm is { } cl) lines.Add($"Clearance: ≤{N(cl)} mm");
-        if (t.Feature is { } f)
+        foreach (var lf in t.Features ?? Array.Empty<LinearToleranceSpec>())
         {
-            string plus = t.PlusMm is { } p ? $"+{N(p)}" : NotSpecified;
-            string minus = t.MinusMm is { } m ? $"-{N(m)}" : NotSpecified;
+            if (lf.Feature is not { } f) continue;
+            string plus = lf.PlusMm is { } p ? $"+{N(p)}" : NotSpecified;
+            string minus = lf.MinusMm is { } m ? $"-{N(m)}" : NotSpecified;
             lines.Add($"{f}: {plus} / {minus} mm");
         }
         if (t.PrimaryDatum is { } d) lines.Add($"Datum A: {d}");

@@ -205,22 +205,34 @@
   ],
   "clearance_regime": {
     "channel": {
-      "dia_mm": 1.3,
+      "dia_mm": 1.35,
       "start_mm": 6.0,
       "length_mm": 14.0,
+      "drilled_depth_mm": 17.0,
+      "aspect_ratio_l_over_d": 12.59,
+      "aspect_note": "L/D of the BLIND bore as machined (depth 17 = shank 14 + flange 3, cem/cathode_flange.json). It decides which operation the vendor needs and is the ratio quoted in canon prose - derived here so it moves with the diameter instead of being retyped",
       "note": "length read conservatively (model's own '~14' rather than the CEM's shank 14 + flange 3 = 17) \u2014 a shorter bore makes contact HARDER to reach"
     },
     "branches": [
       {
         "branch": "conformal 10 \u00b5m film",
         "coating_or_liner_mm": 0.01,
-        "radial_play_mm": 0.14,
+        "play_side": "rod",
+        "radial_play_mm": 0.165,
         "first_contact_mm_by_mu": {
-          "0.2": 15.67,
-          "0.3": 12.59,
-          "0.4": 10.8,
-          "0.5": 9.6
+          "0.2": 17.15,
+          "0.3": 13.75,
+          "0.4": 11.79,
+          "0.5": 10.47
         },
+        "first_contact_mm_by_mu_bonded": {
+          "0.2": 17.15,
+          "0.3": 13.75,
+          "0.4": 11.79,
+          "0.5": 10.47
+        },
+        "ei_Nm2_bare_rod": 0.0054,
+        "ei_Nm2_bonded": 0.0054,
         "bears_inside_bore": true,
         "supported_at_mouth": false,
         "regime": "GAP-LIMITED \u2014 bears inside the bore"
@@ -228,43 +240,75 @@
       {
         "branch": "conformal TiO2 ~5 \u00b5m",
         "coating_or_liner_mm": 0.005,
-        "radial_play_mm": 0.145,
+        "play_side": "rod",
+        "radial_play_mm": 0.17,
         "first_contact_mm_by_mu": {
-          "0.2": 15.98,
-          "0.3": 12.83,
-          "0.4": 11.0,
-          "0.5": 9.78
+          "0.2": 17.44,
+          "0.3": 13.97,
+          "0.4": 11.97,
+          "0.5": 10.64
         },
+        "first_contact_mm_by_mu_bonded": {
+          "0.2": 17.44,
+          "0.3": 13.97,
+          "0.4": 11.97,
+          "0.5": 10.64
+        },
+        "ei_Nm2_bare_rod": 0.0054,
+        "ei_Nm2_bonded": 0.0054,
         "bears_inside_bore": true,
         "supported_at_mouth": false,
         "regime": "GAP-LIMITED \u2014 bears inside the bore"
       },
       {
         "branch": "PEEK liner 0.15 mm",
-        "coating_or_liner_mm": 0.1475,
-        "radial_play_mm": 0.0025,
+        "coating_or_liner_mm": 0.15,
+        "play_side": "channel",
+        "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
-          "0.2": 1.95,
-          "0.3": 1.59,
-          "0.4": 1.38,
-          "0.5": 1.23
+          "0.2": 6.31,
+          "0.3": 5.12,
+          "0.4": 4.42,
+          "0.5": 3.95
         },
+        "first_contact_mm_by_mu_bonded": {
+          "0.2": 6.51,
+          "0.3": 5.28,
+          "0.4": 4.56,
+          "0.5": 4.07
+        },
+        "ei_Nm2_bare_rod": 0.0054,
+        "ei_Nm2_bonded": 0.0057,
         "bears_inside_bore": true,
-        "supported_at_mouth": true,
-        "regime": "supported at the bore mouth"
+        "supported_at_mouth": false,
+        "regime": "GAP-LIMITED \u2014 bears inside the bore"
       }
     ],
+    "play_reduction": {
+      "conformal_worst_radial_play_mm": 0.17,
+      "liner_radial_play_mm": 0.025,
+      "factor": 6.8,
+      "note": "the liner still shrinks the free travel by this factor, but it is NOT the hundredfold the canon prose carried: that figure came from a rod-side allocation (tube loose on the wire) which the 2026-09-11 direction verdict did not choose"
+    },
+    "supported_span_check": {
+      "assumed_free_span_mm": 6.0,
+      "deepest_first_contact_mm": 6.51,
+      "overshoot_mm": 0.51,
+      "sigma_understated_pct": 8.5,
+      "note": "sigma is linear in span, so the supported-column SF is optimistic by this percentage; it stays far above the SF-2 line, but the number is measured now rather than assumed (00_07 HW.34)"
+    },
     "gap_limited_branches": [
       "conformal 10 \u00b5m film",
-      "conformal TiO2 ~5 \u00b5m"
+      "conformal TiO2 ~5 \u00b5m",
+      "PEEK liner 0.15 mm"
     ],
     "free_cantilever_sf_describes_these": []
   },
   "assembly_clearance": {
-    "question": "00_07 HW.34 \u2014 which of the three frozen dims (01_01 \u00a71.4) gives up the assembly clearance; direction ratified 2026-09-11 (channel side), SIZE open",
+    "question": "00_07 HW.34 \u2014 which of the three frozen dims (01_01 \u00a71.4) gives up the assembly clearance. CLOSED 2026-09-11: direction = channel side, size = branch (\u0432), channel 1.30 -> 1.35. The table stays because it is the PRICING the verdict stands on, not an open menu; the shipped row is flagged",
     "frozen_dims_mm": {
       "rod": 1.0,
-      "channel": 1.3,
+      "channel": 1.35,
       "liner_wall": 0.15
     },
     "candidates": [
@@ -274,6 +318,7 @@
         "liner_wall_mm": 0.15,
         "channel_dia_mm": 1.3,
         "stack_od_mm": 1.3,
+        "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.0,
         "radial_play_mm": 0.0,
         "first_contact_mm_by_mu": {
@@ -290,6 +335,7 @@
         "liner_wall_mm": 0.125,
         "channel_dia_mm": 1.3,
         "stack_od_mm": 1.25,
+        "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
@@ -306,6 +352,7 @@
         "liner_wall_mm": 0.15,
         "channel_dia_mm": 1.35,
         "stack_od_mm": 1.3,
+        "is_shipped_geometry": true,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
@@ -322,6 +369,7 @@
         "liner_wall_mm": 0.15,
         "channel_dia_mm": 1.3,
         "stack_od_mm": 1.25,
+        "is_shipped_geometry": false,
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {

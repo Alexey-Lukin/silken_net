@@ -61,7 +61,7 @@ internal static class CathodeFlange
             voxPart.BoolAdd(new BaseCylinder(oLug, cem.LugProtrusionMm + fOverlap, cem.LugRadiusMm).voxConstruct());
         }
 
-        // 4. Bus channel through the flange (the shank channel continues) — Ø1.3 to the pogo face; the
+        // 4. Bus channel through the flange (the shank channel continues) — Ø1.35 to the pogo face; the
         //    monolithic anode bus rod threads it, isolated by the liner (01_01 §1.4).
         voxPart.BoolSubtract(new BaseCylinder(oFlange, fThick, cem.BoreDiameterMm / 2f).voxConstruct());
 

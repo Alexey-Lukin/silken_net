@@ -23,35 +23,35 @@
   "peek_wall_G_W_K": 0.0004084070449666731,
   "anchor_conductance": {
     "none": {
-      "g_total_W_K": 0.0008068162742273056,
-      "r_total_K_W": 1239.4395501723216,
-      "g_center_W_K": 0.0003984092292606325,
+      "g_total_W_K": 0.0008068073637993564,
+      "r_total_K_W": 1239.4532386155668,
+      "g_center_W_K": 0.0003984003188326833,
       "g_wall_W_K": 0.0004084070449666731,
       "x_vs_no_bus": 1.0
     },
     "Cu": {
-      "g_total_W_K": 0.01467550835007324,
-      "r_total_K_W": 68.14074007835029,
-      "g_center_W_K": 0.014267101305106568,
+      "g_total_W_K": 0.014671792567170813,
+      "r_total_K_W": 68.15799742408925,
+      "g_center_W_K": 0.014263385522204141,
       "g_wall_W_K": 0.0004084070449666731,
-      "x_vs_no_bus": 18.189405467964924
+      "x_vs_no_bus": 18.185000813675664
     },
     "Ti": {
-      "g_total_W_K": 0.0015756058954767066,
-      "r_total_K_W": 634.6764777098308,
-      "g_center_W_K": 0.0011671988505100334,
+      "g_total_W_K": 0.0015755313160491996,
+      "r_total_K_W": 634.7065207866505,
+      "g_center_W_K": 0.0011671242710825265,
       "g_wall_W_K": 0.0004084070449666731,
-      "x_vs_no_bus": 1.952868262338507
+      "x_vs_no_bus": 1.9527973922174264
     },
     "316SS": {
-      "g_total_W_K": 0.002404953964259255,
-      "r_total_K_W": 415.8083750713324,
-      "g_center_W_K": 0.001996546919292582,
+      "g_total_W_K": 0.002404742341079432,
+      "r_total_K_W": 415.84496722053126,
+      "g_center_W_K": 0.001996335296112759,
       "g_wall_W_K": 0.0004084070449666731,
-      "x_vs_no_bus": 2.980795059646632
+      "x_vs_no_bus": 2.9805656826868816
     }
   },
-  "cu_vs_ti_conductance_ratio": 9.314199948225696,
+  "cu_vs_ti_conductance_ratio": 9.312282414012424,
   "electrical_ir_drop_uV": {
     "at_100uA": {
       "Cu": 0.10695212175775369,
@@ -74,13 +74,13 @@
     "cell_freeze_threshold_C": -2.0,
     "t_anode_C": {
       "none": 0.56,
-      "Cu": -12.78,
+      "Cu": -12.77,
       "Ti": -0.7,
       "316SS": -1.94
     },
     "depression_below_core_C": {
       "none": 1.44,
-      "Cu": 14.78,
+      "Cu": 14.77,
       "Ti": 2.7,
       "316SS": 3.94
     },
@@ -90,7 +90,7 @@
       "Ti": false,
       "316SS": false
     },
-    "cu_colder_than_none_C": 13.34,
+    "cu_colder_than_none_C": 13.33,
     "ti_within_of_none_C": 1.26
   },
   "robustness_sweep": {
@@ -141,7 +141,7 @@
         "r_res_mm": 100.0,
         "t_cu": -10.41,
         "t_ti": -5.86,
-        "dt_cu_ti": -4.56
+        "dt_cu_ti": -4.55
       },
       {
         "t_air": -20.0,
@@ -175,7 +175,7 @@
         "t_deep": 0.0,
         "lambda_wood": 0.2,
         "r_res_mm": 100.0,
-        "t_cu": -10.61,
+        "t_cu": -10.6,
         "t_ti": -2.16,
         "dt_cu_ti": -8.44
       },
@@ -202,7 +202,7 @@
         "t_deep": 0.0,
         "lambda_wood": 0.3,
         "r_res_mm": 150.0,
-        "t_cu": -9.24,
+        "t_cu": -9.23,
         "t_ti": -1.69,
         "dt_cu_ti": -7.55
       },
@@ -337,7 +337,7 @@
         "t_deep": -5.0,
         "lambda_wood": 0.3,
         "r_res_mm": 100.0,
-        "t_cu": -15.74,
+        "t_cu": -15.73,
         "t_ti": -6.87,
         "dt_cu_ti": -8.87
       },
@@ -348,7 +348,7 @@
         "r_res_mm": 150.0,
         "t_cu": -16.54,
         "t_ti": -7.11,
-        "dt_cu_ti": -9.44
+        "dt_cu_ti": -9.43
       },
       {
         "t_air": -30.0,
@@ -382,7 +382,7 @@
         "t_deep": -5.0,
         "lambda_wood": 0.5,
         "r_res_mm": 150.0,
-        "t_cu": -13.5,
+        "t_cu": -13.49,
         "t_ti": -6.31,
         "dt_cu_ti": -7.19
       },
@@ -393,7 +393,7 @@
         "r_res_mm": 100.0,
         "t_cu": -15.91,
         "t_ti": -3.24,
-        "dt_cu_ti": -12.67
+        "dt_cu_ti": -12.66
       },
       {
         "t_air": -30.0,
@@ -427,7 +427,7 @@
         "t_deep": 0.0,
         "lambda_wood": 0.4,
         "r_res_mm": 100.0,
-        "t_cu": -10.83,
+        "t_cu": -10.82,
         "t_ti": -1.71,
         "dt_cu_ti": -9.11
       },
@@ -436,7 +436,7 @@
         "t_deep": 0.0,
         "lambda_wood": 0.4,
         "r_res_mm": 150.0,
-        "t_cu": -11.75,
+        "t_cu": -11.74,
         "t_ti": -1.94,
         "dt_cu_ti": -9.81
       },
@@ -447,7 +447,7 @@
         "r_res_mm": 100.0,
         "t_cu": -9.33,
         "t_ti": -1.39,
-        "dt_cu_ti": -7.95
+        "dt_cu_ti": -7.94
       },
       {
         "t_air": -30.0,
@@ -490,7 +490,7 @@
         "t_deep": 2.0,
         "lambda_wood": 0.3,
         "r_res_mm": 150.0,
-        "t_cu": -12.78,
+        "t_cu": -12.77,
         "t_ti": -0.7,
         "dt_cu_ti": -12.08
       },
@@ -499,7 +499,7 @@
         "t_deep": 2.0,
         "lambda_wood": 0.4,
         "r_res_mm": 100.0,
-        "t_cu": -9.55,
+        "t_cu": -9.54,
         "t_ti": 0.17,
         "dt_cu_ti": -9.72
       },
@@ -517,9 +517,9 @@
         "t_deep": 2.0,
         "lambda_wood": 0.5,
         "r_res_mm": 100.0,
-        "t_cu": -7.96,
+        "t_cu": -7.95,
         "t_ti": 0.52,
-        "dt_cu_ti": -8.48
+        "dt_cu_ti": -8.47
       },
       {
         "t_air": -30.0,
@@ -538,7 +538,7 @@
       {
         "alloy": "Ti-6Al-4V",
         "lambda_W_mK": 6.7,
-        "g_anchor_W_K": 0.0015756058954767066,
+        "g_anchor_W_K": 0.0015755313160491996,
         "t_anode_C": -0.7,
         "depression_below_core_C": 2.7,
         "cell_freeze_risk": false
@@ -546,7 +546,7 @@
       {
         "alloy": "Ti-6Al-7Nb",
         "lambda_W_mK": 7.0,
-        "g_anchor_W_K": 0.001607773003452124,
+        "g_anchor_W_K": 0.0016076943446175999,
         "t_anode_C": -0.75,
         "depression_below_core_C": 2.75,
         "cell_freeze_risk": false
@@ -554,7 +554,7 @@
       {
         "alloy": "beta-Ti-13Nb-13Zr",
         "lambda_W_mK": 7.5,
-        "g_anchor_W_K": 0.0016609900397708004,
+        "g_anchor_W_K": 0.0016609044052404156,
         "t_anode_C": -0.83,
         "depression_below_core_C": 2.83,
         "cell_freeze_risk": false
@@ -562,7 +562,7 @@
       {
         "alloy": "Ti-15Zr",
         "lambda_W_mK": 8.0,
-        "g_anchor_W_K": 0.0017137204841452622,
+        "g_anchor_W_K": 0.0017136276606092775,
         "t_anode_C": -0.91,
         "depression_below_core_C": 2.91,
         "cell_freeze_risk": false
@@ -570,15 +570,15 @@
       {
         "alloy": "CP-Ti-Gr4",
         "lambda_W_mK": 17.0,
-        "g_anchor_W_K": 0.002587842257697173,
-        "t_anode_C": -2.21,
-        "depression_below_core_C": 4.21,
+        "g_anchor_W_K": 0.002587591928187455,
+        "t_anode_C": -2.2,
+        "depression_below_core_C": 4.2,
         "cell_freeze_risk": true
       },
       {
         "alloy": "Ta",
         "lambda_W_mK": 57.0,
-        "g_anchor_W_K": 0.005353526087372251,
+        "g_anchor_W_K": 0.005352406833984012,
         "t_anode_C": -5.63,
         "depression_below_core_C": 7.63,
         "cell_freeze_risk": true
@@ -590,16 +590,16 @@
       "l_a": 30.0,
       "l_c": 14.0,
       "gap": 6.0,
-      "r_anchor_cu": 68.1,
+      "r_anchor_cu": 68.2,
       "r_anchor_ti": 634.7,
-      "r_anchor_none": 1239.4
+      "r_anchor_none": 1239.5
     },
     {
       "l_a": 20.0,
       "l_c": 10.0,
       "gap": 20.0,
       "r_anchor_cu": 94.4,
-      "r_anchor_ti": 1270.7,
+      "r_anchor_ti": 1270.8,
       "r_anchor_none": 1882.9
     },
     {
@@ -626,5 +626,5 @@
     "pocket_C_J_K": 38.1
   },
   "verdict": "Cu bus dominates the axial cold path (~9x the Ti-bus anchor) and drives the Zone-1 anode pocket ~12C colder than a Ti bus (into a freeze), which is itself thermally invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus monolithic with the anode (also kills the Ti-Cu galvanic joint). Material = founder call, 00_07 HW.34.",
-  "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir (lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers. DIAMETER: bus_dia_bottleneck is the canon ROD O1.0 (01_01 1.4, lib D_BUS_ROD_MM), not the O1.3 cathode channel it threads. Substituting the channel would overstate the bus area x1.69 (A ~ d^2) - conservative for the thermal verdicts, ANTI-conservative for the electrical one (R ~ 1/A). Opposite direction to script 55."
+  "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir (lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers. DIAMETER: bus_dia_bottleneck is the canon ROD O1.0 (01_01 1.4, lib D_BUS_ROD_MM), not the O1.35 cathode channel it threads. Substituting the channel would overstate the bus area x1.69 (A ~ d^2) - conservative for the thermal verdicts, ANTI-conservative for the electrical one (R ~ 1/A). Opposite direction to script 55."
 }

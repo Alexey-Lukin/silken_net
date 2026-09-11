@@ -53,7 +53,7 @@ public class DrawingTests
     [Fact]
     public void One_Sided_Tolerance_Never_Fabricates_A_Zero_Limit()
     {
-        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "bore", PlusMm = 0.1f } };
+        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Features = [new LinearToleranceSpec { Feature = "bore", PlusMm = 0.1f }] } };
         string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
         Assert.Contains($"bore: +0.1 / {Drawing.NotSpecified} mm", svg);
         Assert.DoesNotContain("0.1/0 mm", svg);
@@ -64,8 +64,28 @@ public class DrawingTests
     [Fact]
     public void Named_Feature_Without_Limits_Still_Reaches_The_Drawing()
     {
-        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Feature = "shank_dia" } };
+        var cem = new TiCoinCem { Tolerances = new ToleranceSpec { Features = [new LinearToleranceSpec { Feature = "shank_dia" }] } };
         Assert.Contains("shank_dia", Drawing.TiCoin(cem, "t", "ti_coin.json"));
+    }
+
+    // A part can carry MORE THAN ONE toleranced size, and until 2026-09-11 the spec held exactly one —
+    // so the cathode flange, whose single slot went to `shank_dia`, had no way to give its own PRIMARY
+    // DATUM (the machined bus bore) a dimensional row at all. Both must reach the sheet, and the bore's
+    // band is deliberately blank: it is an open vendor question (00_07 HW.34), printed as such.
+    [Fact]
+    public void Every_Named_Feature_Reaches_The_Drawing__Not_Just_The_First()
+    {
+        var cem = new TiCoinCem
+        {
+            Tolerances = new ToleranceSpec
+            {
+                Features = [new LinearToleranceSpec { Feature = "shank_dia" },
+                            new LinearToleranceSpec { Feature = "bore_dia" }],
+            },
+        };
+        string svg = Drawing.TiCoin(cem, "t", "ti_coin.json");
+        Assert.Contains("shank_dia", svg);
+        Assert.Contains($"bore_dia: {Drawing.NotSpecified} / {Drawing.NotSpecified} mm", svg);
     }
 
     [Fact]

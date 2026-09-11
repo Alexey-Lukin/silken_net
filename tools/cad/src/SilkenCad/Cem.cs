@@ -47,10 +47,12 @@ internal sealed record ToleranceSpec
     public float? InterferenceMaxUm { get; init; }
     public float? ClearanceMm { get; init; }           // hex/spline anti-rotation ≤0.05 (01_01 §4.3 C)
 
-    // Linear ± on a named feature (e.g. "bore", "flange_dia").
-    public string? Feature { get; init; }
-    public float? PlusMm { get; init; }
-    public float? MinusMm { get; init; }
+    // Linear ± on named features (e.g. "bore_dia", "flange_dia"). A LIST, because a part can carry more
+    // than one toleranced size and the single slot this replaced silently capped it at one: the cathode
+    // flange spends its slot on `shank_dia` and therefore had no way to give its own PRIMARY DATUM — the
+    // machined bus bore — a dimensional row at all (00_07 HW.34). A named feature with NO limits still
+    // renders, as loud absence; that is the point, not a gap.
+    public IReadOnlyList<LinearToleranceSpec>? Features { get; init; }
 
     // GD&T datums + geometric tolerances (ISO 1101 — the coaxial stack needs concentricity/runout on the
     // mating bore/flange; the lattice bulk gets no GD&T).
@@ -58,6 +60,17 @@ internal sealed record ToleranceSpec
     public string? SecondaryDatum { get; init; }       // e.g. "flange face"
     public string? ConcentricityMm { get; init; }      // e.g. "0.05"
     public string? RunoutMm { get; init; }
+}
+
+// One toleranced linear size. Both limits are optional ON PURPOSE: a feature the shop must hold but
+// whose band we have not bought yet prints each missing side as NOT SPECIFIED IN CEM rather than as a
+// plausible number — the `?? 0` that once rendered a zero minus-limit (the TIGHTEST possible) is the
+// defect this shape exists to prevent.
+internal sealed record LinearToleranceSpec
+{
+    public string? Feature { get; init; }
+    public float? PlusMm { get; init; }
+    public float? MinusMm { get; init; }
 }
 
 // Engineering-drawing notes — the AM-specific acceptance half (material, process, surface finish,
@@ -179,7 +192,7 @@ internal sealed record MechanicalLockCem
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = µCT (01_01 §5.6)
     public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
     public float ShankLengthMm { get; init; } = 18f;
-    public float BoreDiameterMm { get; init; } = 1.3f;     // 0 ⇒ SOLID shank (monolithic anode, the bus IS the metal core, 01_01 §1.4); >0 ⇒ the cathode channel the bus rod threads
+    public float BoreDiameterMm { get; init; } = 1.35f;    // 0 ⇒ SOLID shank (monolithic anode, the bus IS the metal core, 01_01 §1.4); >0 ⇒ the cathode channel the bus rod threads (Ø1.35 since the clearance verdict, 00_07 HW.34)
     public float ContactStartMm { get; init; } = 2f;       // z where PEEK contact begins
     public float ContactLengthMm { get; init; } = 12f;     // contact zone 8–15 mm (§4.3 A)
 
@@ -214,7 +227,7 @@ internal sealed record CathodeFlangeCem
     public float FlangeThicknessMm { get; init; } = 3f;    // placeholder (HW.8 dim-freeze)
     public float ShankDiameterMm { get; init; } = 9f;      // placeholder (HW.8); Zone-3 into PEEK
     public float ShankLengthMm { get; init; } = 14f;
-    public float BoreDiameterMm { get; init; } = 1.3f;     // GND bus channel (hollow through flange+shank) — the monolithic rod threads it, isolated
+    public float BoreDiameterMm { get; init; } = 1.35f;    // GND bus channel (hollow through flange+shank) — the monolithic rod threads it, isolated. This DEFAULT is the effective channel for the F3 gate on the full stack, because the assembly manifests declare no such field (00_07 HW.45) — so it moves with canon 01_01 §1.4, not behind it
     public float BusLinerThicknessMm { get; init; }        // bus-rod insulation liner in the channel (01_01 §1.4); feeds the F3 BusRodClears clearance
 
     // Barbs (§4.3, reuse MechanicalLock; Zone-3 = opposite ratchet lean, dir −1)

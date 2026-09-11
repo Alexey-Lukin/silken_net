@@ -66,12 +66,17 @@ internal static class AxialStack
     //     over an EMPTY set and be green by construction. Price of the refusal, named out loud: if that
     //     branch ever returns, the carrier is the ⛔ in the lining verdict plus the geometric ground in
     //     01_01 §1.4, NOT this gate — so re-measure here the same day the branch does.
-    //  2. `<=` MEANS ZERO NOMINAL CLEARANCE IS A PASS. 1.0 + 2×0.15 = 1.3 ≤ 1.3 clears, and a tube whose
-    //     outer Ø equals the bore does not go in. The gate proves the liner fits the ARITHMETIC, never
-    //     that the parts assemble; clearance allocation is an open leg, not a gate finding.
+    //  2. IT ASKS FOR CLEARANCE, NOT FOR ARITHMETIC — and that is new as of 2026-09-11. The comparison
+    //     used to be `<=`, so the frozen trio 1.0 + 2×0.15 = 1.3 ≤ 1.3 passed at ZERO nominal clearance,
+    //     i.e. a tube whose outer Ø equals the bore. That was a true statement about the sum and a false
+    //     one about the assembly. The clearance verdict (00_07 HW.34) opened the channel to Ø1.35, so
+    //     zero is no longer a state anyone intends and the gate is STRICT: it now fails exactly the
+    //     configuration the verdict calls «does not assemble». ⚠️ It still judges NOMINALS — the
+    //     diametral band of the machined bore is an open vendor question, so a green here is not proof
+    //     that a given pair of real parts mates.
     public static bool BusRodClears(AnchorAxialStackCem cem)
         => cem.Zone1.BusRodDiameterMm > 0f
-            ? cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) <= cem.Capsule.Flange.BoreDiameterMm
+            ? cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) < cem.Capsule.Flange.BoreDiameterMm
             : cem.Zone1.BoreDiameterMm >= cem.Capsule.Flange.BoreDiameterMm;
 
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
@@ -99,7 +104,7 @@ internal static class AxialStack
         // The FULL monolithic bus rod (01_01 §1.4): a Ø(bus) core from the anode bottom (z=0) up through
         // the PEEK gap + the cathode channel to the flange-top pogo pad — the actual anode V−/GND path to
         // the capsule. It is the solid core inside the Ø11 anode, then a free rod threading the cathode
-        // channel (Ø1.3, isolated by the liner). voxConstruct (gotcha #9). Kept apart for the section colour.
+        // channel (Ø1.35, isolated by the liner). voxConstruct (gotcha #9). Kept apart for the section colour.
         Voxels? voxBus = null;
         if (cem.Zone1.BusRodDiameterMm > 0f)
         {

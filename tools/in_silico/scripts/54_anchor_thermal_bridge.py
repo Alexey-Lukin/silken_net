@@ -12,7 +12,8 @@ material ambiguously ("анодний вал / Cu-провідник"). This scr
 defeat the PEEK break, and does the MATERIAL (Cu vs Ti-monolithic vs steel) matter?
 
 ⛔ DIAMETER — THE ROD, NEVER THE CHANNEL. `D_BUS` here is the canon rod Ø1.0, imported from
-   lib.constants (one home; `01_01 §1.4` freezes rod 1.0 + 2×0.15 liner = the Ø1.3 channel). Substituting
+   lib.constants (one home; `01_01 §1.4` freezes rod 1.0 + 2×0.15 liner = 1.30, inside the Ø1.35 channel
+   since the clearance verdict of 2026-09-11, 00_07 HW.34). Substituting
    the channel overstates the conducting AREA ×1.69 (A ∝ d²: 1.327 vs 0.785 mm²), which makes the bridge
    look WORSE — conservative for the two load-bearing verdicts, but ANTI-conservative for the electrical
    axis (R ∝ 1/A, so the IR drop would be understated by the same factor). Note the direction is OPPOSITE
@@ -82,14 +83,16 @@ D_SLEEVE_BORE = 11.0   # PEEK bore = Zone-1 shaft Ø (zone2_sleeve.json)
 D_Z1_SHANK = 11.0      # Zone-1 anode shank OD (mechanical_lock.zone1.json)
 D_Z3_SHANK = 9.0       # Zone-3 cathode shank OD (cathode_flange.json / mechanical_lock.zone3.json)
 D_BORE_ANODE = 1.6     # bus bore in the anode shank (anchor_zone1.pine.json; = script 50 R_INNER Ø1.6)
-D_BORE_CATHODE = 1.3   # bus bore through the cathode shank+flange (cathode_flange.json) — the BOTTLENECK
+D_BORE_CATHODE = 1.35  # bus bore through the cathode shank+flange (cathode_flange.json) — the BOTTLENECK
+                       # (opened 1.30 → 1.35 by the clearance verdict, 00_07 HW.34, 2026-09-11: the metal
+                       # annulus it bores out of the Zone-3 shank grows with it)
 L_SLEEVE = 50.0        # PEEK break axial length (01_01 §4.1, frozen)
 # Shank insertion placeholders (F2 axial-stack: 50 − 30 − 14 = 6 mm gap). These are HW.8 placeholders →
 # the gap (effective PEEK break) is itself a design lever, swept below.
 L_A_INSERT = 30.0      # Zone-1 anode shank insertion into the sleeve
 L_C_INSERT = 14.0      # Zone-3 cathode shank insertion
 
-# The conducting cross-section is the ROD, not the channel it threads: the remaining Ø1.3 − Ø1.0 is the
+# The conducting cross-section is the ROD, not the channel it threads: the remaining Ø1.35 − Ø1.0 is the
 # insulating liner (01_01 §1.4). Modelling the bus as FILLING the channel overstated its area ×1.69 —
 # conservative for the bridge, anti-conservative for IR drop. Re-run landed 2026-09-10, 00_07 HW.34.
 D_BUS = D_BUS_ROD_MM
@@ -423,7 +426,7 @@ def main() -> int:
                    "(lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. "
                    "Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers. "
                    "DIAMETER: bus_dia_bottleneck is the canon ROD O1.0 (01_01 1.4, lib D_BUS_ROD_MM), "
-                   "not the O1.3 cathode channel it threads. Substituting the channel would overstate "
+                   "not the O1.35 cathode channel it threads. Substituting the channel would overstate "
                    "the bus area x1.69 (A ~ d^2) - conservative for the thermal verdicts, ANTI-"
                    "conservative for the electrical one (R ~ 1/A). Opposite direction to script 55.",
     }

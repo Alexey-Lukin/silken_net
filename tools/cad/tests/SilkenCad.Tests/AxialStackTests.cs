@@ -65,16 +65,16 @@ public class AxialStackTests
     public void Legacy_Hollow_Bore_Falls_Back__Anode_Bore_Ge_Flange_Bore()
     {
         // Back-compat: a CEM with no monolithic rod (BusRodDiameterMm==0) keeps the old continuity check —
-        // the anode Ø1.6 bore ≥ the flange Ø1.3 bore (01_01 §1).
+        // the anode Ø1.6 bore ≥ the flange Ø1.35 bore (01_01 §1).
         AnchorAxialStackCem cem = new();
         Assert.True(AxialStack.BusRodClears(cem));
     }
 
     [Fact]
-    public void Monolithic_Bus_Rod_Clears_Cathode_Channel__Rod_Plus_2Liner_Le_Bore()
+    public void Monolithic_Bus_Rod_Clears_Cathode_Channel__Rod_Plus_2Liner_Lt_Bore()
     {
-        // F3 (01_01 §1.4): the solid rod + its insulation liner must fit the cathode channel.
-        // rod 1.0 + 2·liner 0.15 = 1.30 ≤ channel 1.3 ⇒ clears.
+        // F3 (01_01 §1.4): the solid rod + its insulation liner must fit the cathode channel WITH room.
+        // rod 1.0 + 2·liner 0.15 = 1.30 < channel 1.35 ⇒ clears by 50 µm diametral.
         AnchorAxialStackCem cem = new()
         {
             Zone1 = new AnchorCem { BusRodDiameterMm = 1.0f },
@@ -83,10 +83,28 @@ public class AxialStackTests
         Assert.True(AxialStack.BusRodClears(cem));
     }
 
+    // The state the gate used to bless, and the reason it is strict now: at the pre-verdict channel Ø1.30
+    // the stack sums to EXACTLY the bore. `<=` called that a pass — a true statement about the sum and a
+    // false one about the assembly, since a tube whose outer Ø equals the bore does not go in. The
+    // clearance verdict (00_07 HW.34) made zero an unintended state, so it must now FAIL.
+    [Fact]
+    public void Zero_Nominal_Clearance_Is_Not_A_Pass__The_Pre_Verdict_Channel()
+    {
+        AnchorAxialStackCem cem = new()
+        {
+            Zone1 = new AnchorCem { BusRodDiameterMm = 1.0f },
+            Capsule = new AnchorAssemblyCem
+            {
+                Flange = new CathodeFlangeCem { BusLinerThicknessMm = 0.15f, BoreDiameterMm = 1.3f },
+            },
+        };
+        Assert.False(AxialStack.BusRodClears(cem));
+    }
+
     [Fact]
     public void Monolithic_Bus_Rod_Pinched__Rod_Plus_Liner_Exceeds_Channel()
     {
-        // rod 1.2 + 2·liner 0.15 = 1.50 > channel 1.3 ⇒ pinched (F3 ⚠).
+        // rod 1.2 + 2·liner 0.15 = 1.50 > channel 1.35 ⇒ pinched (F3 ⚠).
         AnchorAxialStackCem cem = new()
         {
             Zone1 = new AnchorCem { BusRodDiameterMm = 1.2f },

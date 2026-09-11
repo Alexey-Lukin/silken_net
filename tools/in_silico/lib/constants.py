@@ -207,9 +207,11 @@ H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs ho
 
 # Central bus rod (HW.34) — the monolithic conductor that threads the PEEK break to the pogo pad.
 # Canon 01_01 §1.4 freezes THREE diameters and only ONE of them is metal: rod Ø1.0 · cathode channel
-# Ø1.3 · liner 0.15 mm (rod + 2×liner ≤ channel, CAD gate `AxialStack.BusRodClears`).
+# Ø1.35 · liner 0.15 mm (rod + 2×liner = 1.30 < channel, i.e. 50 µm diametral clearance — CAD gate
+# `AxialStack.BusRodClears`, STRICT since 2026-09-11; the channel was opened from Ø1.30 by the clearance
+# verdict, 00_07 HW.34, precisely because `<=` had been blessing a ZERO-clearance stack).
 # ⛔ Mechanics (σ ∝ 1/d³) and conduction (A ∝ d²) take the ROD — the rest of the channel is the
-# insulating liner, not metal. Substituting the channel here overstates every bending SF ×2.2 and the
+# insulating liner, not metal. Substituting the channel here overstates every bending SF ×2.46 and the
 # bus cross-section ×1.69, and the two errors point in OPPOSITE safety directions.
 D_BUS_ROD_MM = 1.0              # mm — 01_01 §1.4 frozen dims (mirror: cem/anchor_zone1.*.json)
 

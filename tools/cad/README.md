@@ -145,7 +145,7 @@ longer exercises the period/24 rule — its carrier is now a dedicated sheet-hel
 **Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
 a **DIN-471 retaining groove** on the Ti shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
 cold-flow creep): own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge `BoolAdd` +
-groove-ring `BoolSubtract` + a central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.3` ⇒
+groove-ring `BoolSubtract` + a central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.35` ⇒
 cathode channel the bus rod threads). Golden-metrics MEASURED off the profile (barb count /
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientation (Ti64 LPBF 60°
@@ -154,7 +154,7 @@ tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-sp
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the
 §4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping, dir −1) + 3 radial **bayonet lugs**
-(`LocalFrame(pos, radialZ)`) + Ø1.3 bus channel (the monolithic rod threads it) + O-ring groove. `verify` gates solidity (NOT hollow-shell,
+(`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the monolithic rod threads it) + O-ring groove. `verify` gates solidity (NOT hollow-shell,
 gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
 protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
 (O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
