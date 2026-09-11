@@ -213,7 +213,7 @@ public class TopologyCrossChecksTests
     {
         var aByRim = CemFixtures.AnchorFiles()
             .Select(CemFixtures.Anchor)
-            .Where(cem => cem.GyroidWallParamRim <= 0f)          // constant porosity band ⇒ rim PERIOD is the only wall axis
+            .Where(cem => cem.GyroidWallParamRim is null)        // constant porosity band ⇒ rim PERIOD is the only wall axis
             .OrderBy(CemFixtures.RimPeriodMm)
             .ToArray();
         Assert.True(aByRim.Length >= 5, $"only {aByRim.Length} constant-band anchor SKUs found — the chain below would be near-vacuous");

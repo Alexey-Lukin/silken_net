@@ -95,7 +95,18 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    reading certified «~0%» while the topology was still wrong — judge convergence by the COUNT, and
    treat «wall ≈ period/10» as an UPPER bound on a graded SDF. Pore-phase metrics (open/percolation)
    are fine at any step → `SampleAnchor` ties the step to the finest period/24. And a **sheet** gyroid is tricontinuous → `PoreClusterCount`==2 is a topology FACT,
-   not a defect (don't gate on it). NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
+   not a defect (don't gate on it).
+   🔴 **That whole measurement is now HISTORICAL, and the way it expired is worth more than the numbers:
+   applying the network verdict (2026-09-11) EMPTIED this rule's carrier without touching the rule.** The
+   shipped set used to be six sheet SKUs, whose thin wall a coarse grid shreds — that is what welded two
+   labyrinths into one and made `/24 → /16` red five rows. A network gyroid has ONE labyrinth by
+   construction, so under-resolution has nothing to weld: re-measured the same day, the identical mutation
+   leaves the whole shipped Theory GREEN. The rule still holds for a graded sheet wall; only its witness
+   was gone, and nothing would have told you. Carrier restored as a dedicated pin that holds the real pine
+   geometry at `sheet` on purpose (`AnchorTests.A_Graded_Sheet_Wall_Still_Needs_The_Period_24_Step`).
+   🔑 **Reflex, general: after a change that narrows what the shipped set CONTAINS, re-run the mutations of
+   the pins that ranged over it — a pin can keep passing because its subject left, and that reads exactly
+   like a pin that still works.** NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
    a genus-torus shape; computes no genus) — LEAP exposes no connectivity, but `Measure.fGetSurfaceArea`
    (surface) + `fGetVolume` exist and are reused, not re-implemented.
 9. **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT `new Voxels(IImplicit, BBox3)`.**
@@ -130,9 +141,15 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     `DxfSafe`. Every other test here feeds an INLINE literal, which is precisely why a drop and an
     invention coexisted for weeks under a green suite — and mutation confirms it: narrowing `DxfSafe`
     by one glyph reds that test alone. **When you add a `draw` kind, add its round-trip row too.**
-    ⛔ Still OPEN in this class: `topology: "sheet"` silently defaulting (below) — the verdict it was
-    waiting on landed 2026-09-10 (`network`), but the manifests have not moved and the default now
-    contradicts a ratified choice, so it is still NOT covered by the fix above.
+    ✅ CLOSED 2026-09-11 for `topology` (below) — but note HOW, because the obvious fix was the worse
+    one: the default was NOT flipped to `network`. Flipping it would have silently re-pointed four
+    synthetic in-test coupons at a different branch while their comments still argued sheet wall
+    thickness — one silent default swapped for another. Instead every shipped manifest now DECLARES its
+    topology, pinned by `AnchorTests.Every_Shipped_Anchor_Cem_Declares_Its_Topology` (it reads the RAW
+    json, because a parsed record cannot tell an absent key from an explicit `"sheet"`), so the default
+    is load-bearing for no real part and a new SKU that omits the key reds instead of inheriting.
+    🔑 **Generalises: when a default is wrong, ask whether to change it or to make it NON-LOAD-BEARING —
+    the second is what removes the class, the first only moves it.**
 
     🔴 **A FIFTH member found and closed 2026-09-09 (HW.1): the SSOT line printed `cem.Name`, not the
     real filename.** `mechanical_lock.zone1.json`'s `name` field ("mechanical_lock_zone1") already didn't
@@ -193,10 +210,14 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     period/24):** Euler-χ sound on all; tortuosity mean ≈1.3–1.4; the as-printed check is a morphological
     OPENING of the solid at the SLM floor (ball radius floor/2 on a 0.05 mm grid), and its sub-floor
     share is monotone in the rim wall — `stepped` 71.8 % · `broadleaf` 49.7 % · `pine` 24.4 % ·
-    `mangrove` 20.5 % · `oak` 4.3 % · `tropical` 1.5 % (`graded_porosity` 12.5 %). 🔴 **Read
-    `print_fidelity_matches` only WITH `print_fidelity_sub_floor_solid_fraction`:** the boolean compares
-    topology CLASS — `stepped` reads ✓ while losing the most metal, and the six sheet SKUs read ⚠ because
-    one pinhole merges their two labyrinths. 🔴 **The previous form of this check — a coarse RESAMPLE at
+    `mangrove` 20.5 % · `oak` 4.3 % · `tropical` 1.5 % (`graded_porosity` 12.5 %). ✅ **Those six are the
+    SHEET era. Re-measured 2026-09-11 after the network verdict landed, same grid and floor: `broadleaf`
+    1.3 % · `pine` 0.7 % · `mangrove` 0.7 % · `graded_porosity` 0.4 % · `oak` 0.3 % · `tropical` 0.2 %,
+    `printed solid-disc` 0.0 % on all six, and no SKU reads ⚠ DIVERGES any more** — the metal the floor
+    was deleting WAS the sheet wall. `stepped` is untouched at 71.8 % (third branch, outside the verdict).
+    🔴 **Read `print_fidelity_matches` only WITH `print_fidelity_sub_floor_solid_fraction`:** the boolean
+    compares topology CLASS — `stepped` reads ✓ while losing the most metal, and the sheet SKUs read ⚠
+    because one pinhole merges their two labyrinths. 🔴 **The previous form of this check — a coarse RESAMPLE at
     floor/2 — measured the wrong thing in the wrong order:** on 5 of 7 SKUs its «print» grid was FINER than
     the intent grid, so «DIVERGES on pine» reported the intent grid's own under-resolution (period/16,
     gotcha #8) under a manufacturability caption, and on `broadleaf` the two grids coincided and it
@@ -212,17 +233,25 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
-  🔴 **`topology` defaults to `"sheet"` SILENTLY** (`Cem.cs`; a member of gotcha #11's class) and every
-  `anchor_zone1.*` but `stepped` omits the key — so every SKU still renders sheet. ⚖️ **The verdict is
-  MADE since 2026-09-10 and it went to `network`** (`00_07 HW.33`), which makes the warning STRONGER,
-  not obsolete: a factory STL cut today ships the branch a ratified verdict rejects. **And the fix is
-  not the key.** Measured the same day on one manifest: at an unchanged `wallParam` the network branch
-  lands at 50.2 % porosity instead of 65, where Gibson-Ashby puts it at ~27 GPa — *stiffer* than sheet
-  and with 43 % less area, i.e. flipping the key alone delivers the opposite of what the verdict wants.
-  `wallParam` has to be re-solved against the porosity target per SKU first (0.10 for pine → 64.9 %,
-  13.6 GPa); the generator's own comment says as much («the same wallParam yields different porosity
-  per topology») and nobody had measured it. (`stepped` is a separate, already-decided THIRD branch —
-  implemented `ZonedGyroid`, orthogonal to this one; `Cem.cs` documents all three.)
+  ⚖️ **Topology = `network` (ratified 2026-09-10, APPLIED 2026-09-11)** — every shipped `anchor_zone1.*`
+  but `stepped` now declares it; `stepped` is a separate, already-decided THIRD branch (`ZonedGyroid`).
+  🔴 **The live rule is that `wallParam` NEVER carries across a topology flip, and it is not cosmetic:**
+  the param is a BAND on sheet (`|eq| < 0.5·w`) and a LEVEL on network (`eq < 0.5·(w−1)`), so the
+  sheet-era 1.0 lands network at 50.2 % porous / ~27 GPa — *stiffer* than the branch it replaced. Re-solve
+  against the porosity target FIRST. Measured 2026-09-11: the network curve is `porosity ≈ 66.4 − 16.2·w`
+  and it is a function of the LEVEL, not of the period — so one value, **0.10**, hits 65 % on all five
+  species SKUs (64.7–65.0 %), contrary to the tracker's assumption that each SKU needs its own.
+  🔴 **Two traps this branch arms, both silent, both bought here.** (a) The `graded_porosity` SKU grades
+  the wall itself, and on network its rim needs a NEGATIVE level (−0.46 → 73 % porous); the old
+  `GyroidWallParamRim > 0f` sentinel swallowed that back to the core value, i.e. the manifest would state
+  a gradient and the geometry would be constant, with nothing red. The field is nullable now — but the
+  general form is the lesson: **a `> 0` sentinel encodes «≤ 0 is meaningless», and a topology change can
+  make ≤ 0 ordinary.** (b) The CLI `scan` swept `wallParam` from 0.2, so the ratified working point 0.10
+  sat OUTSIDE the sweep and the command would have answered "no working window" on a sound part; the
+  bounds are topology-dependent now (measured network window `[−0.50, 0.60]`).
+  📐 Prices, measured per SKU rather than quoted: specific surface sheet→network **1.84–1.89×** (the canon
+  «~2×»), and sub-floor solid metal **1.5–49.7 % → 0.2–1.3 %** — the print-floor divergence the sheet
+  branch carried was the thin wall, and network has none.
 - **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
   rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**

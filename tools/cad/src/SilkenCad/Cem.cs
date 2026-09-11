@@ -101,15 +101,15 @@ internal sealed record TiCoinCem
 //   • pore/cell size — GyroidPeriod{Mm core → RimMm} (biology: ingrowth core / transport rim)
 //   • porosity / E   — GyroidWallParam{ core → Rim }  (mechanics: HOLD or GRADE the porosity)
 //   • topology       — sheet|network|stepped           (surface vs stress-shielding, HW.33;
-//                       sheet|network = RATIFIED 2026-09-10 to network (00_07 HW.33) — the default
-//                       below still says sheet, so do NOT inherit it; and re-solve wallParam against
-//                       the porosity target BEFORE setting the key: at an unchanged wallParam the
-//                       network branch lands ~50 % porous, i.e. STIFFER than sheet (measured)
-//                       silently; stepped = zoned-period variant, a third implemented branch)
-// Core = axis (r=bore/2), Rim = periphery (r=outer/2); a *Rim* field of 0 ⇒ equals Core ⇒ v1 constant.
+//                       sheet|network = RATIFIED 2026-09-10 to network and APPLIED 2026-09-11 — every
+//                       shipped anchor manifest now declares it; stepped = zoned-period variant, a
+//                       third implemented branch. ⛔ A wallParam never carries across a topology flip:
+//                       at the sheet-era 1.0 the network branch lands ~50 % porous, i.e. STIFFER than
+//                       the branch it replaced, so re-solve against the porosity target FIRST)
+// Core = axis (r=bore/2), Rim = periphery (r=outer/2); an ABSENT *Rim* field ⇒ equals Core ⇒ v1 constant.
 // Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough
-// placeholder (founder 2026-06-21) — Gibson-Ashby n=2 suits network, not our sheet (n≈1.3 → higher E),
-// and wood E is anisotropic (HW.33). Porosity is a parameter here, not a frozen truth.
+// placeholder (founder 2026-06-21) — Gibson-Ashby n=2 suits the network branch we now ship (sheet was
+// n≈1.3 → higher E), and wood E is anisotropic (HW.33). Porosity is a parameter here, not a frozen truth.
 internal sealed record AnchorCem
 {
     public string Kind { get; init; } = "anchor_zone1";
@@ -124,12 +124,25 @@ internal sealed record AnchorCem
     public float GyroidPeriodMm { get; init; } = 2.5f;     // core period (mm); printable wall ≈ 0.1·period
     public float GyroidPeriodRimMm { get; init; }          // periphery period (mm); 0 ⇒ = core (constant size)
 
-    // Porosity axis — dimensionless band (solid where |eq| < 0.5·param, eq ∈ [-1.5,1.5], NOT mm).
-    public float GyroidWallParam { get; init; } = 1.0f;    // core band
-    public float GyroidWallParamRim { get; init; }         // periphery band; 0 ⇒ = core (constant porosity)
+    // Porosity axis — dimensionless, and its MEANING is topology-dependent, so a value never carries
+    // across a topology flip: sheet reads it as a band (solid where |eq| < 0.5·param), network as a LEVEL
+    // SHIFT (solid where eq < 0.5·(param−1)). Measured 2026-09-11 on the shipped SKUs: 0.10 ⇒ ~65 %
+    // porous on network, while the sheet-era 1.0 ⇒ ~50 %, i.e. STIFFER than the branch it replaced.
+    public float GyroidWallParam { get; init; } = 1.0f;    // core band / level
+    // Periphery; null (absent) ⇒ = core ⇒ constant porosity. 🔴 NULLABLE, not a `> 0` sentinel, and the
+    // reason is the network verdict: on sheet a param ≤ 0 is meaningless (no band), so "0 ⇒ core" cost
+    // nothing; on network it is an ORDINARY level and the rim of a porosity gradient legitimately needs
+    // it (measured: −0.40 ⇒ 73.2 % porous, the graded_porosity rim). A sentinel would have collapsed that
+    // gradient to constant SILENTLY — the manifest saying one thing and the geometry doing another.
+    public float? GyroidWallParamRim { get; init; }
 
     // sheet (more surface, stiffer) | network (lower-E) | stepped (heterostructure zones: strong pore
     // contrast at constant porosity — uses Period + PeriodRim as the two zone periods, ignores wall-grad)
+    // ⚖️ RATIFIED 2026-09-10 (founder, 00_07 HW.33): the anode is NETWORK. This default is NOT that
+    // verdict and must not be read as one — it exists for synthetic in-test coupons only. Every shipped
+    // cem/anchor_zone1.*.json now DECLARES its topology, pinned by
+    // AnchorTests.Every_Shipped_Anchor_Cem_Declares_Its_Topology, so the default is load-bearing for no
+    // real part; a new SKU that omits the key reds instead of inheriting a branch nobody chose.
     public string Topology { get; init; } = "sheet";
     public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — placeholder, FEA-gated (HW.33)
 }

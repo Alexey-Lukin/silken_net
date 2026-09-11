@@ -216,7 +216,16 @@ internal static class Program
             return Fail("scan needs an anchor_zone1 CEM");
         AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
 
-        WallScanResult oR = WallScan.Run(cem, fLo: 0.2f, fHi: 1.8f, fStep: 0.1f);
+        // 🔴 The sweep bounds are TOPOLOGY-DEPENDENT, and a single hardcoded pair silently reports "no
+        // working window" on a perfectly sound part of the other branch. On sheet the param is a BAND and
+        // the 55–75 % porosity window sits near 0.75–1.35; on network it is a LEVEL and the same window
+        // sits near −0.5…0.7 (measured 2026-09-11: porosity ≈ 66.4 − 16.2·wall). The ratified network
+        // working point 0.10 is BELOW the old fixed `fLo: 0.2f`, i.e. this scan was about to answer a
+        // question about a range that no longer contains the part. `stepped` is a band branch ⇒ sheet bounds.
+        (float fLo, float fHi) = cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase)
+            ? (-0.8f, 1.0f)
+            : (0.2f, 1.8f);
+        WallScanResult oR = WallScan.Run(cem, fLo, fHi, fStep: 0.1f);
 
         Directory.CreateDirectory("out");
         string strPath = Path.Combine("out", $"{cem.Name}.wallscan.json");

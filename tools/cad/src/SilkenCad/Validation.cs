@@ -35,10 +35,13 @@ internal sealed record GeometryMetrics
     public double? SolidDisconnectedFraction { get; init; } // metal not in the largest body (floating islands; print + electrical defect, ~0)
     public bool[]? PorePercolates { get; init; }            // [X,Y,Z] spanning (X,Y rim-to-rim radial; Z end-to-end axial)
     public int? PoreClusterCount { get; init; }             // big pore clusters: network→1, sheet→2 (tricontinuous — a fact, not a defect)
-    // wetted area / bbox volume — the EBFC-area proxy behind the HW.33 trade-off. Measured 2026-09-10
-    // at EQUAL porosity (~65 %): sheet 2.54 vs network 1.35 ⇒ 1.88×. ⚠ The ratio only means that at
-    // equal porosity — compared at an equal wallParam instead, network reads 1.45 while sitting at
-    // 50 % porous, which is a different part, not a different topology.
+    // wetted area / bbox volume — the EBFC-area proxy behind the HW.33 trade-off, and since ⚖️ 2026-09-10
+    // it is a PAID cost, not a projected one: every shipped anchor is network. Measured per SKU at equal
+    // porosity (~65 %) on 2026-09-11, sheet → network: pine 2.54→1.35 · broadleaf 3.17→1.68 ·
+    // mangrove 2.38→1.26 · oak 1.82→0.98 · tropical 1.60→0.87 — i.e. 1.84–1.89×, which is what the canon
+    // «~2×» and the verdict's «1.88×» were claiming. ⚠ The ratio only means that at EQUAL POROSITY —
+    // compared at an equal wallParam instead, network reads 1.45 while sitting at 50 % porous, which is a
+    // different part, not a different topology.
     public double? SpecificSurfaceMm2PerMm3 { get; init; }
     public double[]? AxialPorosityProfile { get; init; }    // per-Z porosity; must be ~flat (the radial-gradient axial-uniformity gate)
 

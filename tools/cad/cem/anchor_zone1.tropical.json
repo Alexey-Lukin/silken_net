@@ -1,5 +1,5 @@
 {
-  "_note": "v2 GRADED demo — radial cell-size gradient (core→rim period) at ~constant porosity, printable (rim ≥ DMLS floor). NOT a validated per-species spec: real pore sizes are bio-hub + FEA gated (01_01 §6, HW.33). Tropical-hardwood (Eucalyptus): dense wood, larger anchor.",
+  "_note": "v2 GRADED demo — radial cell-size gradient (core→rim period) at ~constant porosity, printable (rim ≥ DMLS floor). NOT a validated per-species spec: real pore sizes are bio-hub + FEA gated (01_01 §6, HW.33). Tropical-hardwood (Eucalyptus): dense wood, larger anchor. Topology NETWORK (⚖️ founder 2026-09-10, HW.33); gyroid_wall_param is TOPOLOGY-COUPLED — 0.10 hits the 65% target on network, the sheet-era 1.0 would land ~50% (i.e. STIFFER than sheet). Re-solve it, never carry it across a topology flip.",
   "kind": "anchor_zone1",
   "name": "anchor_zone1_tropical",
   "voxel_size_mm": 0.1,
@@ -9,6 +9,7 @@
   "length_mm": 45.0,
   "gyroid_period_mm": 4.0,
   "gyroid_period_rim_mm": 3.2,
-  "gyroid_wall_param": 1.0,
+  "gyroid_wall_param": 0.10,
+  "topology": "network",
   "porosity_target": 0.65
 }

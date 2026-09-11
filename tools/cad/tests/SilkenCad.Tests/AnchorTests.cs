@@ -66,6 +66,12 @@ public class AnchorTests
     [InlineData(2.5f, 0f, "sheet", typeof(CartesianGyroid))]          // no rim taper ⇒ constant v1
     [InlineData(2.5f, 2.0f, "sheet", typeof(GradedCartesianGyroid))]  // rim taper ⇒ continuous graded
     [InlineData(2.5f, 1.3f, "stepped", typeof(ZonedGyroid))]          // stepped topology ⇒ zoned
+    // 🔴 The two network rows were MISSING while network was the minority branch; after ⚖️ 2026-09-10 it
+    // is the branch every shipped anchor uses, so the factory dispatch for it was the one row this matrix
+    // did not cover. Network takes the graded generator even with NO rim taper — `bGraded` ORs in
+    // `bNetwork` (Zone1Anode.Gyroid), because CartesianGyroid only knows the |eq| band.
+    [InlineData(2.5f, 0f, "network", typeof(GradedCartesianGyroid))]  // network ⇒ graded even w/o taper
+    [InlineData(2.5f, 2.0f, "network", typeof(GradedCartesianGyroid))]
     public void Factory_Selects_The_Right_Generator(float fPeriod, float fRim, string strTopology, Type expected)
     {
         AnchorCem cem = new() { GyroidPeriodMm = fPeriod, GyroidPeriodRimMm = fRim, Topology = strTopology };
@@ -137,19 +143,17 @@ public class AnchorTests
         return data;
     }
 
-    // 🔴 The carrier for Connectivity.AdaptiveStepMm's period/24 RULE — and it has to read the REAL
-    // manifests. Every connectivity test above feeds a synthetic coupon at a hand-picked step, so not
-    // one of them can see an under-resolved GRADED wall: the "wall ≈ period/10" figure is an upper
-    // bound, and the graded SDF's thinnest wall sits well under it. Measured 2026-09-10 on the seven
-    // shipped SKUs: at period/16 the graded sheet SKUs read ONE pore cluster — the two labyrinths
-    // welded together through a wall shredded into 52–473 false islands — while at period/24 all seven
-    // converge. The counts asserted here are topology FACTS, not tuned thresholds: a sheet gyroid is
-    // tricontinuous ⇒ 2 labyrinths, a `stepped` zoned gyroid is genuinely single-labyrinth ⇒ 1.
-    // MUTATION-VERIFIED 2026-09-10: divisor 24 → 16 reds exactly five rows — broadleaf (step 0.1000,
-    // solid-disc 0.121 %) · mangrove (0.1375, 0.285 %) · oak (0.1750, 0.139 %) · pine (0.1250, 0.099 %) ·
-    // tropical (0.2000, 0.058 %). `stepped` and `graded_porosity` stay green at /16 (the first is 1 at
-    // every resolution, the second has no rim-period taper), so they are passengers here, not the
-    // discriminator — read the five when this test reds.
+    // Each shipped manifest must resolve to its own topology's labyrinth count at the adaptive step:
+    // a sheet gyroid is tricontinuous ⇒ 2, network is bicontinuous ⇒ 1, a `stepped` zoned gyroid is
+    // genuinely single-labyrinth ⇒ 1. These are topology FACTS, not tuned thresholds.
+    // 🔴 THIS TEST IS NO LONGER THE CARRIER OF THE period/24 RULE, and the loss was measured rather than
+    // assumed. Until 2026-09-11 the shipped set was six SHEET SKUs, whose thin wall a coarse grid shreds
+    // into false islands — welding the two labyrinths into one — so divisor 24 → 16 reddened exactly five
+    // rows. Applying the network verdict emptied that: a network gyroid has ONE labyrinth by
+    // construction, so under-resolution has nothing to weld, and the same mutation now leaves this
+    // Theory FULLY GREEN (re-measured 2026-09-11 at /16). The rule is still true for a graded sheet wall;
+    // what died is its carrier over the shipped set. Its carrier is now the sheet-derived case below —
+    // do not delete that one as redundant with this one.
     [Theory]
     [MemberData(nameof(ShippedAnchorCems))]
     public void Shipped_Anchor_Cems_Converge_At_The_Adaptive_Step(string strFile)
@@ -158,11 +162,54 @@ public class AnchorTests
         Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem);
         ConnectivityMetrics m = Connectivity.Analyse(grid);
 
-        int nExpected = cem.Topology == "stepped" ? 1 : 2;
+        int nExpected = cem.Topology == "sheet" ? 2 : 1;
         Assert.True(nExpected == m.PoreClusterCount,
             $"{strFile} ({cem.Topology}, rim period {CemFixtures.RimPeriodMm(cem):F1} mm) read {m.PoreClusterCount} pore " +
             $"cluster(s) at step {Connectivity.AdaptiveStepMm(cem):F4} mm, expected {nExpected}; " +
             $"solid-disconnected {m.SolidDisconnectedFraction:P3} — an under-resolved wall welds the labyrinths together");
+    }
+
+    // 🔴 THE carrier for Connectivity.AdaptiveStepMm's period/24 rule, and it exists because the shipped
+    // set stopped exercising that rule on 2026-09-11 (see the Theory above). The rule is a property of a
+    // graded SHEET wall — only there is the metal thin enough for a coarse grid to shred it into false
+    // islands and weld the two labyrinths into one — so its carrier must BE a graded sheet. It takes the
+    // real pine geometry and overrides only the topology, because a synthetic toy coupon proves the
+    // algorithm compiles, never that it survives real geometry at true scale (that is how both tortuosity
+    // bugs got through a green suite).
+    // MUTATION: Connectivity.AdaptiveStepMm divisor 24 → 16 ⇒ this test must red with 1 cluster.
+    [Fact]
+    public void A_Graded_Sheet_Wall_Still_Needs_The_Period_24_Step()
+    {
+        AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { Topology = "sheet", GyroidWallParam = 1.0f };
+        Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem);
+        ConnectivityMetrics m = Connectivity.Analyse(grid);
+
+        Assert.True(m.PoreClusterCount == 2,
+            $"a graded SHEET gyroid read {m.PoreClusterCount} pore cluster(s) at step " +
+            $"{Connectivity.AdaptiveStepMm(cem):F4} mm (solid-disconnected {m.SolidDisconnectedFraction:P3}) — " +
+            "a coarser step shreds the thin wall into false islands and welds the two labyrinths into one");
+    }
+
+    // 🔴 The carrier that makes the `Topology` RECORD DEFAULT non-load-bearing. It is NOT the pin that
+    // `cem_canon_sync.rb` declares refused (⚖️ 2026-09-09): that one would assert each C# default EQUALS
+    // its canon value — a different subject, and refused because all such defaults are correct today, so
+    // its true set is empty. This one asserts the shipped manifests do not RELY on the default at all,
+    // which is what the 2026-09-10 network verdict made necessary: an omitted key used to mean `sheet`,
+    // i.e. a new SKU would silently inherit the branch a founder verdict rejected, and a factory STL cut
+    // from it would go out on that branch. A parsed AnchorCem cannot tell an absent key from an explicit
+    // "sheet", so this reads the RAW json — a pin on the parsed record would be vacuous by construction.
+    // MUTATION: delete the "topology" line from any cem/anchor_zone1.*.json ⇒ this test must red naming
+    // that file.
+    [Fact]
+    public void Every_Shipped_Anchor_Cem_Declares_Its_Topology()
+    {
+        string[] aSilent = [.. CemFixtures.AnchorFiles()
+            .Where(f => !File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"topology\""))];
+
+        Assert.True(aSilent.Length == 0,
+            $"{string.Join(", ", aSilent)} do not declare `topology` and would inherit the Cem.cs default " +
+            "(`sheet`) — the branch ⚖️ founder 2026-09-10 rejected for the anode (00_07 HW.33). " +
+            "Declare it explicitly; the default exists for synthetic in-test coupons only.");
     }
 
     [Fact]

@@ -23,7 +23,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 
 | # | Script | What it does | Cost |
 |---|--------|--------------|------|
-| 01 | `01_smoke_test_water_box.py` | Engine sanity check — load protein, water box, 1000 steps | ~30 s |
+| 01 | `01_smoke_test_water_box.py` | Engine sanity check — load protein (N-terminal tail dropped), water box, 1000 steps | ~70 s CI |
 | 02 | `02_parameterize_fad.py` | AF3 PDB + CCD SMILES → `FAD.sdf` + cached GAFF params | ~4 min |
 | 03 | `03_parameterize_genipin.py` | SMILES → `genipin.sdf` + cached GAFF params | ~7 s |
 | 04 | `04_parameterize_chitosan.py` | Chitosan trimer (3×GlcN) → `chitosan_trimer.sdf` + GAFF cache | ~43 s |

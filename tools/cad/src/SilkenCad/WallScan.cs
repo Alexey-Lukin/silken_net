@@ -49,7 +49,7 @@ internal static class WallScan
 
         for (float fWp = fLo; fWp <= fHi + (fStep / 2f); fWp += fStep)
         {
-            AnchorCem cem = baseCem with { GyroidWallParam = fWp, GyroidWallParamRim = 0f };
+            AnchorCem cem = baseCem with { GyroidWallParam = fWp, GyroidWallParamRim = null };
             Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fSampleStepMm);
             ConnectivityMetrics conn = Connectivity.Analyse(grid);
             double dPorosity = Connectivity.Porosity(grid);

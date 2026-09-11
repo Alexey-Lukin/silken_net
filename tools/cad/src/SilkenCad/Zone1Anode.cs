@@ -114,11 +114,13 @@ internal static class Zone1Anode
     }
 
     // Constant (v1) when there is no Rim taper and sheet topology; graded otherwise.
-    // A Rim field of 0 means "equals core" (back-compat with v1 manifests).
+    // An ABSENT Rim field means "equals core" (back-compat with v1 manifests). ⚠ Period keeps its `> 0`
+    // sentinel because a period ≤ 0 is meaningless in every topology; the WALL param does not, because
+    // on network it is a level and 0 / negative are ordinary values (Cem.cs).
     public static IImplicit Gyroid(AnchorCem cem)
     {
         float fPeriodRim = cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
-        float fWallRim = cem.GyroidWallParamRim > 0f ? cem.GyroidWallParamRim : cem.GyroidWallParam;
+        float fWallRim = cem.GyroidWallParamRim ?? cem.GyroidWallParam;
         bool bNetwork = cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase);
 
         if (cem.Topology.Equals("stepped", StringComparison.OrdinalIgnoreCase))

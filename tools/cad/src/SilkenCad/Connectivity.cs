@@ -60,8 +60,13 @@ internal static class Connectivity
     // reads 1 on broadleaf and mangrove; period/24 is the FIRST divisor at which all seven converge — 2
     // for the six sheet SKUs (tricontinuous, the topology fact above), 1 for `stepped`, which is
     // genuinely single-labyrinth at every resolution — and solid-disc drops to 0.001–0.028 %. The
-    // thinnest shipped wall spans ~2.4 cells there. Carrier:
-    // AnchorTests.Shipped_Anchor_Cems_Converge_At_The_Adaptive_Step (mutation: /16 reds exactly those five).
+    // thinnest shipped wall spans ~2.4 cells there.
+    // ⚠ That measurement is HISTORICAL: those six sheet SKUs became network on 2026-09-11 (⚖️ HW.33), and
+    // a network gyroid has ONE labyrinth by construction, so under-resolution has nothing left to weld —
+    // re-measured the same day, /16 leaves the whole shipped Theory green. The RULE is unchanged (it is a
+    // property of a graded sheet wall); only its carrier moved, to
+    // AnchorTests.A_Graded_Sheet_Wall_Still_Needs_The_Period_24_Step, which holds the pine geometry at
+    // sheet on purpose (mutation: /16 reds it at step 0.1250 mm, solid-disc 0.099 % — the pine row above).
     public static float AdaptiveStepMm(AnchorCem cem)
     {
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
