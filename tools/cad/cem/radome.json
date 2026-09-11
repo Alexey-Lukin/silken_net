@@ -1,5 +1,5 @@
 {
-  "_note": "Деталь 4 — PEEK Radome v2c (02_01 §5.2 + 01_04 §5.5). Hollow PEEK dome Ø25 (= Zone-3 flange) frozen. Wall 1.5-2.0 (RF vs strength). Cavity for PCB stack (antenna<->Ti >=12mm). Shield bell >=3mm rise / R>=5 (anti-overgrowth, no callus edge). Bayonet socket = L-slot mating Деталь-3 lugs. Cathode O2 = side/perimeter (02_02 §1.2), NOT sealed under the dome.",
+  "_note": "Деталь 4 — PEEK Radome v2c (02_01 §5.2 + 01_04 §5.5). Hollow PEEK dome Ø25 (= Zone-3 flange) frozen. Wall 1.5-2.0 (RF vs strength). Cavity for PCB stack. NB cavity height is NOT antenna<->Ti clearance (that is cavityH - lockGrooveZ - t/2 = 8.0 at the bayonet datum) and the >=12 floor is OURS, not canon's (02_01 5.3 asks >=8) - 00_07 HW.33. Internal axial headroom is cavityH + inner cap radius, not cavityH. Shield bell >=3mm rise / R>=5 (anti-overgrowth, no callus edge). Bayonet socket = L-slot mating Деталь-3 lugs. Cathode O2 = side/perimeter (02_02 §1.2), NOT sealed under the dome.",
   "kind": "radome",
   "name": "radome",
   "voxel_size_mm": 0.1,
