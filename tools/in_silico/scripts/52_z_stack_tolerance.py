@@ -305,13 +305,44 @@ def depth_tolerance_budget() -> dict:
     lo = max(ORING_WIN[0], ORING_WIN_PARKER_FACE[0])
     hi = min(ORING_WIN[1], ORING_WIN_PARKER_FACE[1])
     half_pct = min(ORING_SQUEEZE_RATIFIED - lo, hi - ORING_SQUEEZE_RATIFIED)
+    budget = half_pct * ORING_CS
+    # ── Allocation: what a candidate depth tolerance LEAVES for the two mating faces ──
+    # 🔴 Combination is RSS, and the rule is not cosmetic: linear subtraction (budget − depth) reads
+    # ±48 µm left at a ±50 µm depth where RSS leaves ±84, and at ±100 µm it reads «−2 µm» instead of
+    # «the depth alone already busts it». Both mislead, in opposite directions, at different values.
+    alloc = []
+    for depth_tol in (0.025, 0.05, 0.10):
+        rem_sq = budget ** 2 - depth_tol ** 2
+        fits = rem_sq > 0
+        alloc.append({
+            "depth_tol_mm": depth_tol,
+            "fits_alone": bool(fits),
+            "flatness_left_rss_mm": round(math.sqrt(rem_sq), 4) if fits else 0.0,
+            "per_face_if_equal_mm": round(math.sqrt(rem_sq / 2.0), 4) if fits else 0.0,
+            "linear_leftover_mm": round(budget - depth_tol, 4),   # the WRONG rule, kept to show the gap
+        })
+    # What the chain looks like BEFORE branch (а) lands — the pair of counter-grooves still in TOL_OR.
+    today_rss = rss(list(TOL_OR.values()))
     return {"intersection_window_pct": [round(lo * 100, 1), round(hi * 100, 1)],
             "nominal_pct": round(ORING_SQUEEZE_RATIFIED * 100, 1),
             "half_band_pct_points": round(half_pct * 100, 2),
-            "total_gap_budget_half_width_mm": round(half_pct * ORING_CS, 4),
+            "total_gap_budget_half_width_mm": round(budget, 4),
+            "allocation_rss": alloc,
+            "chain_as_modelled_today": {
+                "contributors_mm": dict(TOL_OR), "rss_mm": round(today_rss, 4),
+                "over_budget_x": round(today_rss / budget, 2),
+                "note": "this is the PRE-branch-(а) pair of counter-grooves, and it does NOT fit — which "
+                        "is what branch (а) exists to collapse into ONE machined dimension. Until that "
+                        "lands, `o_ring_groove_depth_mm` in the flange CEM is still the superseded 0.9, "
+                        "so there is no ratified nominal to hang a tolerance on yet.",
+            },
             "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus "
-                    "the flatness of both mating faces, RSS. It is not a tight number — a routine "
-                    "±0.05 mm on the depth leaves the rest of the budget for flatness."}
+                    "the flatness of both mating faces, RSS. ⛔ The number itself is NOT ours to invent "
+                    "(00_07 HW.33: it comes from whoever machines the part) — what this derives is the "
+                    "REQUIREMENT the shop's tolerance has to fit inside, i.e. it turns «what is your "
+                    "tolerance?» into «can you hold ±X?». ⚠️ And a general-tolerance GRADE is not a "
+                    "substitute: a grade is a table keyed to the nominal size, so citing one without "
+                    "opening it at 1.344 mm is a claim, not a specification — see the allocation rows."}
 
 
 def rim_datum_creep() -> dict:

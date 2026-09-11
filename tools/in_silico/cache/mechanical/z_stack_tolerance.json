@@ -423,7 +423,39 @@
     "nominal_pct": 24.5,
     "half_band_pct_points": 5.5,
     "total_gap_budget_half_width_mm": 0.0979,
-    "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. It is not a tight number \u2014 a routine \u00b10.05 mm on the depth leaves the rest of the budget for flatness."
+    "allocation_rss": [
+      {
+        "depth_tol_mm": 0.025,
+        "fits_alone": true,
+        "flatness_left_rss_mm": 0.0947,
+        "per_face_if_equal_mm": 0.0669,
+        "linear_leftover_mm": 0.0729
+      },
+      {
+        "depth_tol_mm": 0.05,
+        "fits_alone": true,
+        "flatness_left_rss_mm": 0.0842,
+        "per_face_if_equal_mm": 0.0595,
+        "linear_leftover_mm": 0.0479
+      },
+      {
+        "depth_tol_mm": 0.1,
+        "fits_alone": false,
+        "flatness_left_rss_mm": 0.0,
+        "per_face_if_equal_mm": 0.0,
+        "linear_leftover_mm": -0.0021
+      }
+    ],
+    "chain_as_modelled_today": {
+      "contributors_mm": {
+        "DMLS_Ti_seat": 0.15,
+        "CNC_radome_rim": 0.1
+      },
+      "rss_mm": 0.1803,
+      "over_budget_x": 1.84,
+      "note": "this is the PRE-branch-(\u0430) pair of counter-grooves, and it does NOT fit \u2014 which is what branch (\u0430) exists to collapse into ONE machined dimension. Until that lands, `o_ring_groove_depth_mm` in the flange CEM is still the superseded 0.9, so there is no ratified nominal to hang a tolerance on yet."
+    },
+    "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. \u26d4 The number itself is NOT ours to invent (00_07 HW.33: it comes from whoever machines the part) \u2014 what this derives is the REQUIREMENT the shop's tolerance has to fit inside, i.e. it turns \u00abwhat is your tolerance?\u00bb into \u00abcan you hold \u00b1X?\u00bb. \u26a0\ufe0f And a general-tolerance GRADE is not a substitute: a grade is a table keyed to the nominal size, so citing one without opening it at 1.344 mm is a claim, not a specification \u2014 see the allocation rows."
   },
   "rim_datum_creep": {
     "rim_contact_area_mm2": 144.5,
