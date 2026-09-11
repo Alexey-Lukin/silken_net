@@ -202,8 +202,16 @@ internal sealed record CathodeFlangeCem
     public float LugProtrusionMm { get; init; } = 2f;      // radial protrusion beyond the flange rim
     public float LugRadiusMm { get; init; } = 1.5f;        // pin radius
 
-    // O-ring groove on the flange TOP (capsule-side) face — mates the Радом RIM groove, CS 1.78
-    // (02_02 §3.2). NOT the underside: there is no elastomer under the flange (00_07 HW.33).
+    // O-ring groove on the flange TOP (capsule-side) face, CS 1.78 (02_02 §3.2). NOT the
+    // underside: there is no elastomer under the flange (00_07 HW.33).
+    // ⛔ THE VALUE BELOW IS SUPERSEDED AND STILL SHIPPED. ⚖️ 2026-09-10 ratified ONE groove in
+    //    the flange at 1.344 mm (= CS × (1 − 0.245)) against a FLAT radome rim. This default is
+    //    still 0.9, and Radome.cs still cuts the opposing groove, so the shipped pair gives
+    //    0.9 + 0.9 = 1.8 against a 1.78 cord — a squeeze of −1.1 %, i.e. it does not seal at all.
+    //    This comment said "mates the Radome RIM groove" until 2026-09-11, which asserted the very
+    //    counter-groove the verdict removed. Applying the verdict is an open leg (00_07 HW.33);
+    //    it is a CHAIN change, not a number: with the rim as a hard datum the bayonet stops
+    //    setting Z, so script 52 is rebuilt rather than re-run.
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 2.0f;
 

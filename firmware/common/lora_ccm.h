@@ -47,8 +47,11 @@
  *   │ Byte 20..21: ema_delta_t_s (uint16 BE, seconds — [E.63 (г)]  │
  *   │             КОНТРАКТ «wire = вхід GP»: це САМЕ число пішло у │
  *   │             mruby metabolic_health цього циклу (сатуроване   │
- *   │             min(EMA,0xFFFF); не-warmed → BASELINE 60; panic  │
- *   │             → 0). Stateless GP-recompute: backend рахує      │
+ *   │             min(EMA,0xFFFF); не-warmed → DELTA_T_UNKNOWN_S   │
+ *   │             = 0, НЕ 60 [ARCH.102]; panic теж → 0). Сентинел  │
+ *   │             тут несучий: 60 мапиться у GP = максимум, тобто  │
+ *   │             «нейтральний» baseline був би екстремумом виходу │
+ *   │             грошового шляху. Stateless GP-recompute: backend │
  *   │             m(ema) з нього ж — observational до bench-       │
  *   │             калібрування порогів. Transient (не персистить). │
  *   ├─ MIC (AES-CCM tag) ──────────────────────────────────────────┤
