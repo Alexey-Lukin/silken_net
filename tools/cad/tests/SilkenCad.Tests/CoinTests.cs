@@ -46,9 +46,14 @@ public class CoinTests
     {
         // Alloy bake-off SKU (01_02 §2.5): each ti_coin.<alloy>.json carries its own Notes.Material,
         // which flows to the drawing title-block + metrics.json (the Stage-2 down-select traceability).
-        const string strJson = """{ "kind": "ti_coin", "name": "ti_coin_7nb", "notes": { "material": "Ti-6Al-7Nb (ASTM F1295, V-free)" } }""";
+        // The literal tracks the SHIPPED form on purpose. It used to read "Ti-6Al-7Nb (ASTM F1295,
+        // V-free)", which stopped existing in 2026-09-11 (00_07 HW.24) when every row gained its
+        // process axis — F1295 is a WROUGHT spec and we print. A retired form frozen in a green test
+        // is an invitation to restore it, so this one moves with the manifests.
+        const string strJson = """{ "kind": "ti_coin", "name": "ti_coin_7nb", "notes": { "material": "Ti-6Al-7Nb, UNS R56700 (V-free). Chemistry per ASTM F1295 - a WROUGHT spec quoted here for COMPOSITION only" } }""";
         TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
         Assert.Equal("ti_coin_7nb", cem.Name);
-        Assert.Equal("Ti-6Al-7Nb (ASTM F1295, V-free)", cem.Notes?.Material);
+        Assert.StartsWith("Ti-6Al-7Nb, UNS R56700", cem.Notes?.Material);
+        Assert.Contains("WROUGHT spec quoted here for COMPOSITION only", cem.Notes?.Material);
     }
 }

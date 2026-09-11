@@ -183,7 +183,7 @@ public class DrawingTests
     [Fact]
     public void TiCoin_Title_Block_And_Ssot_Are_Per_Alloy_From_The_Cem()
     {
-        var cem = new TiCoinCem { Name = "ti_coin_7nb", Notes = new NotesSpec { Material = "Ti-6Al-7Nb (ASTM F1295, V-free)" } };
+        var cem = new TiCoinCem { Name = "ti_coin_7nb", Notes = new NotesSpec { Material = "Ti-6Al-7Nb, UNS R56700 (V-free). Chemistry per ASTM F1295 - a WROUGHT spec quoted here for COMPOSITION only" } };
         string svg = Drawing.TiCoin(cem, "t", "ti_coin.7nb.json");
         Assert.Contains("Ti-6Al-7Nb", svg);                 // title-block reflects the alloy SKU, not 4V
         Assert.Contains("cem/ti_coin.7nb.json", svg);       // SSOT row is the REAL filename (dot)…

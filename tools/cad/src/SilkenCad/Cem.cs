@@ -154,6 +154,15 @@ internal sealed record AnchorCem
     // a vendor floor of 0.1 instead of 0.2 halves the step on every axis — ~8× the cells, roughly an
     // order of magnitude more time per run. Change it knowing you are also changing what a run costs.
     public float? SlmMinWallMm { get; init; }
+
+    // 🔴 This record had NO Notes property until 2026-09-11 (00_07 HW.1), and the absence was SILENT in
+    // the worst direction: the deserializer ignores unmapped members, so a `notes` block written into
+    // cem/anchor_zone1.*.json would have parsed cleanly and vanished — done-looking and inert. Worse,
+    // the comment over NotesSpec.CoatingRestriction illustrates that very field with THIS part's rule
+    // ("ZnO-Ta FORBIDDEN on Zone-1 gyroid — blocks DET"), i.e. the field was designed around a part that
+    // could not hold it. `draw anchor_zone1` still does not exist, so nothing RENDERS these yet; what
+    // makes them load-bearing today is the pin that every shipped SKU declares its coating restriction.
+    public NotesSpec? Notes { get; init; }
 }
 
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
@@ -273,6 +282,10 @@ internal sealed record RadomeCem
     // O-ring groove on the rim (mate the Деталь-3 O-ring, CS 1.78 → 02_02 §3.2); width ≤ wall (fits the 2 mm wall)
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 1.0f;
+
+    // Added 2026-09-11 with AnchorCem's (00_07 HW.1) — same silent absence: unmapped members are dropped,
+    // so a `notes` block here would have parsed and disappeared. `draw radome` does not exist yet.
+    public NotesSpec? Notes { get; init; }
 }
 
 // Zone 2 PEEK thermal-break sleeve (Деталь 2, 01_01 §1 + §4.1/§4.2) — the MIDDLE part: a plain hollow

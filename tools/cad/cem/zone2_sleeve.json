@@ -18,7 +18,11 @@
   "notes": {
     "material": "PEEK 450G (Victrex or equiv.)",
     "process": "CNC from rod; anneal 200-250 C before final micromachining (else internal stress drifts the um tolerances)",
+    "post_process": "None after final micromachining. The one thermal step is the 200-250 C anneal, and it belongs BEFORE that cut, not after - see process and inspection: reversing the order is the failure, not omitting a step",
     "surface_finish": "smooth round bore (hex anti-rotation 4.3 C, <=0.05 mm, is bench-gated -> deferred)",
+    "coating_restriction": "Nothing is applied to this part - 01_02 3.6 excludes ZnO-Ta, self-healing 8-HQ and biomimetic layers from PEEK surfaces outright, and the Zone-2 row of that map is not blank - it carries three explicit refusals. The bore is a press-fit surface specified in micrometres (01_01 4.2), so a coating of thickness t would also eat 2t of the interference band",
+    "lattice_spec": "Not applicable - solid PEEK tube",
+    "inspection": "Bore diameter and concentricity to the tolerance block on this manifest (bore axis is the primary datum). Verify the 200-250 C anneal was done BEFORE final micromachining - the order is the requirement, because internal stress released afterwards drifts exactly the micrometre-level fit this part exists to hold. OD is the WOUND diameter in the tree (01_01 1: wound 15 < 25 mm keeps CODIT tolerable, hence DBH >= 38 cm), i.e. a tree-facing dimension, not a cosmetic one: growing it raises the DBH threshold at which a tree may be instrumented",
     "extra": [
       "Press-fit Lame-computed (HW.3.IS script 50, frozen O11/2mm, E_PEEK 4.0 GPa): contact P_c 0.49-3.32 MPa -> 0.32-2.16 at 20yr; at MIN H7/s6 fit the relaxed P_c <= sap -> the O-ring is the essential seal (PEEK backup marginal)",
       "OD O15 = wound in tree (CODIT <25 -> DBH >=38); wall 2.0 = robust default, NOT CTE-limited (unified Lame 4.2: combined SF 5.6x, thermal-only 14.6x)",

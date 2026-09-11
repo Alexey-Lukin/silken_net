@@ -121,12 +121,18 @@ CASCADE_DRIVING_FORCE_MV = E_OS_MEDIATOR_MV_NHE - E_FAD_GDH_MV_SHE   # +574 mV (
 # ⛔ And the earlier fix on this same axis STANDS — do not "correct" the 4V row back to `F136`: that is
 #   the ELI (Grade 23) spec, this row is the Grade-5 control, and 01_02 §2.5 chose V-free explicitly
 #   NOT ELI. F136 is now confirmed WROUGHT as well, so it fails both axes for a printed Gr5 coupon.
-# ⚠️ SECOND AXIS, and it is the one that survives the two fixes: we order laser powder-bed fusion, and
-# ASTM publishes an AM MATERIAL spec for Ti-6Al-4V only (F2924 Gr5 / F3001 ELI). F1295 · F67 · F1713 ·
-# F560 all carry "Wrought" in their own titles, so for those alloys the row is a COMPOSITION reference,
-# never a print spec — an AM order stacks it with feedstock, process and acceptance callouts, which is
-# a procurement decision and lives in the RFQ, not here. This closes the axis 01_02 §2.5 / the RFQ had
-# left open as "our inference from the F3001 contrast, not a checked claim": it is checked now.
+# ⚠️ SECOND AXIS, and it is the one that survives the two fixes: we order laser powder-bed fusion, while
+# F1295 · F67 · F1713 · F560 all carry "Wrought" in their own titles. That much IS checked against each
+# standard's scope, and it closes what 01_02 §2.5 and the RFQ had left open as "our inference from the
+# F3001 contrast": those rows are a COMPOSITION reference, never a print spec.
+# ⛔ What is NOT checked, and must not be written as if it were: whether an AM material spec EXISTS for
+#   those alloys. The verified AM titanium material specs are F2924 (Gr5) and F3001 (ELI). `ASTM F3302`
+#   — "Additive Manufacturing, Finished Part Properties, Titanium ALLOYS via Powder Bed Fusion" — is
+#   active, and its covered-grade table is behind the paywall: we have not read it. So for 7Nb, CP-Ti
+#   and β-Ti the honest state is UNKNOWN, not "none". For Ta the F42 catalogue lists no Ta material
+#   spec at all (its one refractory AM spec is F3635, Nb-Hf) — an enumeration, weaker than a read scope.
+#   An AM order therefore stacks the composition reference with feedstock, process and acceptance
+#   callouts; that is a procurement decision and lives in the RFQ, not here.
 # The oxide-diffusion
 # D_V/D_Al stays a SHARED constant in script 51 (per-alloy oxide-diffusion is rarely published → the
 # COMPOSITION effect dominates: 4% V → V release, 0% V → none). Tree-first (01_04 §4.2): V + Al are

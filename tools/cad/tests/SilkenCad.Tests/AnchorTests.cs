@@ -212,6 +212,41 @@ public class AnchorTests
             "Declare it explicitly; the default exists for synthetic in-test coupons only.");
     }
 
+    // The coating map of 01_02 §3.6 forbids ZnO-Ta, self-healing 8-HQ and biomimetic layers on the Zone-1
+    // gyroid wall OUTRIGHT — a dielectric there blocks direct electron transfer, i.e. it does not degrade
+    // the EBFC, it stops it. Until 2026-09-11 that rule had NO carrier on this part at all (00_07 HW.1):
+    // AnchorCem had no Notes property, so a `notes` block written into a manifest would have been dropped
+    // by the deserializer (unmapped members are ignored) and looked done. `draw anchor_zone1` still does
+    // not exist, so nothing RENDERS these notes yet — this pin is what keeps them load-bearing meanwhile:
+    // a new SKU cannot ship silent on the one restriction whose violation is unrecoverable.
+    // ⛔ Declared ceiling: PRESENCE of the field, never its correctness — no gate can read a coating rule.
+    // MUTATION: drop the "coating_restriction" key from any cem/anchor_zone1.*.json ⇒ reds naming it.
+    // 🔴 Both halves are load-bearing and they fail DIFFERENTLY — adversarial review caught the first
+    // version of this test carrying only the raw-text half, which cannot see the defect it was written
+    // for: delete `AnchorCem.Notes` and the KEY stays in every json while the block evaporates on parse,
+    // i.e. green while the mine is re-armed. Raw text catches a manifest that never declared it; the
+    // PARSE catches a record that cannot hold it.
+    [Fact]
+    public void Every_Shipped_Anchor_Cem_Declares_Its_Coating_Restriction()
+    {
+        string[] aSilentInJson = [.. CemFixtures.AnchorFiles()
+            .Where(f => !File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"coating_restriction\""))];
+
+        Assert.True(aSilentInJson.Length == 0,
+            $"{string.Join(", ", aSilentInJson)} declare no `coating_restriction` — the Zone-1 gyroid wall is " +
+            "the one surface where a dielectric coating does not degrade the cell but stops it (01_02 §3.6). " +
+            "A manifest silent on that rule hands the shop nothing to refuse.");
+
+        string[] aLostOnParse = [.. CemFixtures.AnchorFiles()
+            .Where(f => string.IsNullOrWhiteSpace(
+                Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), f))).Notes?.CoatingRestriction))];
+
+        Assert.True(aLostOnParse.Length == 0,
+            $"{string.Join(", ", aLostOnParse)} carry the key in the file but it does NOT survive parsing — " +
+            "`AnchorCem` has no slot for it, and `Cem.Parse` drops unmapped members in silence. That is the " +
+            "exact state this part was in until 2026-09-11 (00_07 HW.1): done-looking and inert.");
+    }
+
     [Fact]
     public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__Else_Legacy_Bore()
     {

@@ -13,5 +13,19 @@
   "slot_clearance_mm": 0.3,
   "lock_groove_z_mm": 3.5,
   "o_ring_groove_depth_mm": 0.9,
-  "o_ring_groove_width_mm": 1.0
+  "o_ring_groove_width_mm": 1.0,
+  "notes": {
+    "material": "PEEK (polyetheretherketone), medical grade - chosen for RF, not for strength: er 3.2 and tan d 0.003 at 868 MHz make it effectively transparent to the antenna, where water (er about 80) is the thing that is not (02_01 5.2). Canon names UV-stable PC/ASA coloured to bark as a declared alternative. Not a bio-contact part - but NOT mechanically idle either: 02_01 5.2 calls it an anti-vandal sealed cover, and 00_07 HW.33 makes its RIM a hard datum that the bayonet closes against, so treat the rim as a load-bearing face",
+    "process": "Thermal moulding (термолиття) is the route costed in 02_06 1.2 at the 1K tier; the rim, however, is a machined feature in the Z-stack chain (00_07 HW.33 carries it as CNC_radome_rim). No supplier is fixed. If your route differs, say so - the rim tolerance is what the seal depends on, so the forming route is not a free choice here",
+    "post_process": "Thermal moulding needs no metallurgical post-process; the only post-forming operation canon names for this part is the machined RIM that the Z-stack chain depends on (00_07 HW.33, CNC_radome_rim). If your route needs annealing or stress relief before that cut, say so - PEEK stress released after machining would drift exactly the seal datum",
+    "surface_finish": "NOT SPECIFIED IN CANON for the outer shell. Note what the part has to do before proposing one: it is the outward face of a device that sits on living bark for two decades, and 01_04 5.5 asks for a rounded top edge so callus cannot get a grip. A finish proposal is welcome; a finish assumption is not. The RIM is the exception - it is a sealing datum, not decoration (00_07 HW.33)",
+    "coating_restriction": "Nothing is applied to PEEK - 01_02 3.6 excludes ZnO-Ta, self-healing 8-HQ and biomimetic layers from PEEK surfaces outright. Beyond that map: any metallic or otherwise conductive coating, paint or label would defeat the single function this part exists for, since the antenna radiates THROUGH it (02_01 5.2). Consequence, not a canon clause - but it is the one that costs the link budget",
+    "lattice_spec": "Not applicable - solid PEEK shell",
+    "inspection": "Wall thickness within the 1.5-2.0 mm band (02_01 5.2). ATTENTION: that band is an RF DESIGN band whose VNA validation has not been run (00_07 UNI.10), so it is a requirement to hold, not a measured margin to spend. ATTENTION 2, and it is the one that would scrap a batch: the SHIPPED geometry of this manifest is knowingly NOT the ratified geometry. THREE founder verdicts are ratified and NOT YET APPLIED to this part (00_07 HW.33), and they are not all held by the same thing - (a) the cap becomes a FLAT CROWN with an R5 edge instead of a full hemisphere, gated on the board budget of 00_07 HW.9; (b) the rim becomes FLAT against a SINGLE 1.344 mm groove in the flange, which is not budget-gated at all - the manifest still cuts an opposing 0.9 groove, and the shipped pair squeezes a CS 1.78 cord by MINUS 1.1 percent, i.e. it does not seal; (c) a local internal BOSS on the rim is to carry both the bayonet socket and the seal land, which no field of this manifest expresses yet. Do not cut a part from this manifest as an acceptance geometry until those land",
+    "extra": [
+      "Деталь 4 of the mechanical stack; bayonet 1/4-turn onto Деталь 3 (the cathode flange), NEVER onto the Zone-1 gyroid anode - that mistake destroys the enzyme surface (02_01 5.2)",
+      "The cathode breathes O2 from the SIDE/perimeter under the bell, not from under this dome (01_04 5.5; 02_02 1.2 only cross-refs it) - the dome is not a gas reservoir",
+      "NO factory drawing exists for this part yet (draw radome unimplemented, 00_07 HW.1): these notes are the SOURCE of the acceptance contract, not yet its carrier"
+    ]
+  }
 }
