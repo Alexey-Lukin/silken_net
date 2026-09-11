@@ -81,7 +81,11 @@ internal sealed record GeometryMetrics
     // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4, null for non-assembly). See MeasureAssembly.
     public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (Z-stack reconcile, HW.8)
     public double? MateRadialGapMm { get; init; }           // radome inner-cavity R − flange R; <0 = the Ø25 disc fouls the cavity (MATE-Ø)
-    public double? RfClearanceMm { get; init; }             // antenna(cavity top)↔Ti(flange face) at the datum — must ≥ 12 (02_01 §5.3)
+    // antenna(cavity top)↔Ti(flange face) at the datum. ⛔ Judged against Cem.RfClearanceMinMm, which is
+    // OUR 12, not canon's: 02_01 §5.3 asks for ≥ 8 (10-15 desirable, HFSS below 10) — read the ⛔ at that
+    // field. ⊕ And the antenna plane here is ASSUMED to be the cavity top, so this measures ROOM, not the
+    // antenna: raising cavity height moves this number without moving a board. [00_07 HW.33, 2026-09-11]
+    public double? RfClearanceMm { get; init; }
     public double? MateInterferenceMm3 { get; init; }       // flange ∩ radome solid overlap (render) — large = parts foul, ~0 = clean mate
     public double? LugTipDiameterMm { get; init; }          // bayonet lug-tip Ø the radome socket must clear (Ø29 default vs Ø25 dome)
 

@@ -324,7 +324,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 |---|---|---|
 | MATE-Ø radial | lugs Ø29 (flangeR + protrusion) vs dome Ø25; cavity Ø21 < disc Ø25 → **gap −2.0 мм** (disc fouls) | lug-protrusion 2.0 мм за периметр Ø25 |
 | Bayonet-Z | rim сідає на **6.42 мм** нижче O-ring цілі | Деталь3 lug-Z 15.5 ↔ Деталь4 lock-groove-Z 3.5 **незведені** |
-| RF clearance | antenna↔Ti **8.0 < 12 мм** floor | при datum cavity провалюється на фланець ([`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)) |
+| RF clearance | antenna↔Ti **8.0 мм** при datum | ⚠️ 2026-09-11: «< 12 floor» знято — 12 є числом CEM, а [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) вимагає `≥ 8` (врізка там) |
 
 **MATE-Ø кандидати** (Δ для bench-вибору, HW.17):
 
@@ -340,7 +340,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
 >
 > ⚠️ **Що присуд НЕ закриває:** рядок `inboard` «disc досі fouls Ø21-cavity» лишається, і прилив його не лікує — він робить порожнину ще вужчою. Але цей foul **не радіальний за природою**: він виникає лише тому, що незведений bayonet-Z садить радом на 1.5 мм нижче верхньої грані фланця, і диск опиняється всередині порожнини. Отже він належить Z-reconcile нижче, а не вибору Ø.
 
-Обидва кандидати — лише **radial**; bayonet-Z + RF (8<12) = глибший Z-reconcile (§3.5). 👤 bench: **цілісний lug/Z redesign** (lug-protrusion + lock-groove-Z + lug-Z разом — placeholder/незведені, HW.8) + HFSS на приливі (не на Ø30-overhang: габарит лишається Ø25, локально товщає лише обідець зсередини). Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly` (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)).
+Обидва кандидати — лише **radial**; bayonet-Z (6.42) + RF (8.0 проти CEM-числа 12, не проти канону — рядок вище) = глибший Z-reconcile (§3.5). 👤 bench: **цілісний lug/Z redesign** (lug-protrusion + lock-groove-Z + lug-Z разом — placeholder/незведені, HW.8) + HFSS на приливі (не на Ø30-overhang: габарит лишається Ø25, локально товщає лише обідець зсередини). Регресія чисел — pure xUnit (`AssemblyTests`); рендер-аудит — `verify anchor_assembly` (→ [`00_07` — HW.17 / HW.8](00_07_Action_Plan_Tracker)).
 
 ### 4.5. In-silico Mate-Audit (Повний осьовий стек) — Деталь 1 ↔ 2 ↔ 3 ↔ 4 (press-fit)
 

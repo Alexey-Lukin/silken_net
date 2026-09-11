@@ -22,10 +22,20 @@
 #     2026-09-09: 14 such fields, all in the assembly-level manifests, and the sharpest are the ones
 #     that cross machine halves — o_ring_gap_mm 1.424f is DERIVED from in-silico script 52
 #     (ORING_CS 1.78 × 0.80), rf_clearance_min_mm 12f mirrors 02_01 §5.3, and zone1_insertion_mm 30
-#     carries no provenance comment at all. All correct today → a pin would have an empty true set,
-#     so it is NOT built — ⚖️ founder RATIFIED the refusal 2026-09-09 (00_07 §🗄️ HW.45); the
-#     carriers are the picogk and in-silico skills, and the declared price is that the next
-#     copy taken from a foreign referent will red NOTHING. ⛔ Do not rebuild this pin.
+#     carries no provenance comment at all.
+#     🔴 «All correct today» stood here as the GROUND of the refusal and FELL 2026-09-11 on that very
+#     example: 02_01 §5.3 requires ≥ 8 mm (10–15 desirable, λ/40 = 8.6, HFSS mandatory below 10), and
+#     its only 12 is the OUTCOME of a proposed two-deck board stack. So rf_clearance_min_mm mirrors a
+#     design POINT as a floor, and the true set was never empty — the 2026-09-09 audit checked each
+#     field's ADDRESS (does §5.3 exist and speak about this) and never its CLAUSE (does §5.3 require
+#     this number). The same miss is why the in-silico half carries the identical 12.
+#     ⛔ The REFUSAL still stands and is NOT overturned here — it is ⚖️ founder-ratified (00_07 §🗄️
+#     HW.45), and one wrong field is an instance to fix, not a class to gate (00_05 §5: when the
+#     measurement shrinks a «class» to one or two instances, treat the instances). Do not rebuild the
+#     pin on this note alone. What DID change is the price: it is no longer «a hypothetical future
+#     copy reds nothing» but «a live one already did», so the carriers (picogk + in-silico skills,
+#     both patched 2026-09-11) are now load-bearing rather than precautionary, and re-opening the
+#     verdict is founder's call — 00_07 HW.33 holds the measurement.
 #   • DocsLinter.anchor_dimension_drift only catches prose RANGES (20-30 flange / 40-60 Zone-2), never a
 #     cem value.  • bell_radius_mm=5.0 had NO assert anywhere.
 # So a shipped cem number could drift from canon with zero gate. This closes that.

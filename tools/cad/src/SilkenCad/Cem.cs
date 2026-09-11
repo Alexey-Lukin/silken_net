@@ -318,7 +318,14 @@ internal sealed record AnchorAssemblyCem
 
     // Z-stack inputs (script 52): O-ring rim↔Zone3 gap target + RF antenna↔Ti floor (02_01 §5.3).
     public float ORingGapMm { get; init; } = 1.424f;      // GAP_OR = ORING_CS(1.78)·(1−0.20), script 52
-    public float RfClearanceMinMm { get; init; } = 12f;   // antenna↔Ti min Z for VSWR (02_01 §5.3)
+    // ⛔ This 12 is OUR number, not canon's — do NOT "correct" a measured 8.0 upward to meet it.
+    // 02_01 §5.3's normative table asks for ≥ 8 mm (10-15 desirable), grounds it on λ/40 = 8.6, and
+    // makes HFSS mandatory below 10. Its only 12 is the OUTCOME of a proposed two-deck board stack
+    // (standoff 8-10 over a Power Deck sitting ~2 over the flange), i.e. a design point mirrored here
+    // as if it were a floor. Same mirror in 52_z_stack_tolerance.RF_ANT_TI_CLEARANCE_MIN.
+    // Which number is the acceptance floor is an open verdict (00_07 HW.33); the measurement that
+    // settles it is the UNI.10 VNA sweep of Z-clearance 5/8/12. [2026-09-11]
+    public float RfClearanceMinMm { get; init; } = 12f;   // antenna↔Ti min Z for VSWR (02_01 §5.3 — read the ⛔ above)
     public float SkirtClearanceMm { get; init; } = 0.5f;  // skirt OD = lug-tip Ø + 2·clearance
 
     // Components — reuse the per-part records (nested); defaults = the frozen Деталь-3 / Деталь-4 dims.

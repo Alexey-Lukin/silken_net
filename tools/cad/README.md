@@ -180,7 +180,7 @@ ARCH.25→barbs→Деталь3→Деталь4). ⚠ MATE-Ø: Деталь-3 lu
 
 **Capsule-end assembly / mate-audit (shipped)** — `Assembly.cs` + `anchor_assembly` CEM brings Деталь 3 ↔ Деталь 4
 into one frame at the bayonet datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch (radial
-−2.0 · bayonet-Z 6.42 · RF 8<12 mm) + models the two MATE-Ø candidates (`mate_strategy` skirt Ø30 vs inboard Ø25).
+−2.0 · bayonet-Z 6.42 · RF 8.0 mm) + models the two MATE-Ø candidates (`mate_strategy` skirt Ø30 vs inboard Ø25). ⚠️ The `RfClearanceMinMm = 12` it is judged against is the CEM's number, NOT canon: `02_01 §5.3` asks for `≥ 8` and calls 12 the outcome of a proposed board stack (00_07 HW.33, 2026-09-11).
 An AUDIT table, NOT a part pass/fail — the mismatch is the real un-reconciled Z-stack (→ HW.17/HW.8), so `verify`
 exits on a broken render only; the numbers are asserted by the pure xUnit suite (`AssemblyTests`). Reuses
 `CathodeFlange.Build` · `Radome.Build` · `MeshUtility.voxApplyTransformation` (lift) · `BoolIntersect`. Z-stack

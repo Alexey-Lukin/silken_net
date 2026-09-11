@@ -10,8 +10,11 @@ A monolithic Ti bus rises from the anode shank, through the PEEK gap and the cat
    them is metal: rod Ø1.0 · cathode channel Ø1.3 · liner 0.15. D_BUS here is the ROD, imported from
    lib.constants (one home). Substituting the channel inflates every fatigue SF ×2.2 (σ ∝ 1/d³) and
    flips the load-bearing conclusion: at Ø1.3 the unsupported branch reads 'marginal for the soft
-   alloys', at Ø1.0 it is a predicted FAILURE for Ta and CP-Ti and infinite life for NOBODY. That is
-   the whole reason the liner's support role is not optional — see the verdict.
+   alloys', at Ø1.0 it is a predicted FAILURE for Ta and CP-Ti and infinite life for NOBODY — ⚠️ and
+   that last sentence is the PRINTED branch, superseded as the shipped route by the welded verdict
+   (2026-09-10); on the welded branch four of six clear it bare. ⛔ Do NOT quote either number as the
+   reason the liner is needed: that ground was RETIRED 2026-09-11, not narrowed (§4 below + the
+   verdict). The diameter warning itself stands — it is about σ ∝ 1/d³, not about the liner.
 
 Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
   1. Buckling — the pogo pin presses the rod tip axially (~1 N, 02_02 §2.2). Does a slender rod buckle?
@@ -19,12 +22,16 @@ Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
      defensible driver is pogo-contact friction drag (µ·F_pogo) as the capsule sways and the pin slides
      on the pad; PEEK-sleeve flex adds a secondary base motion. Does the rod survive infinite-life?
 
-KEY COUPLING (the whole point): the unsupported free length is what hurts. The SAME insulating liner the
-bus needs through the cathode bore (short-circuit guard, HW.34 sub-2) also LATERALLY SUPPORTS the rod →
-collapses the free length from the full protrusion to just the PEEK gap. So insulation = support =
-fatigue-fix are ONE design item. This script quantifies "supported vs unsupported" and shows the liner
-is what makes fatigue comfortable for every alloy (and that the weaker bake-off alloys — Ta, CP-Ti —
-have the least margin, the same ranking as the thermal side).
+KEY COUPLING — ⚠️ REWRITTEN 2026-09-11, and the old version is kept nowhere on purpose: it argued the
+liner from FATIGUE, and that ground is RETIRED, not narrowed (⚖️ founder, 00_07 HW.34). What retired it
+is §4 of this very script: both L_FREE_* columns are FREE cantilevers — no wall anywhere — while the
+real rod threads a Ø1.3 bore, so any branch that leaves play takes it up and BEARS on the wall inside
+the bore. An unsupported SF is therefore a number for a configuration that does not exist, and the
+script says so through a DERIVED flag (`clearance_regime.free_cantilever_sf_describes_these`), never
+through prose. What the liner carries instead is WEAR: the same contact makes rubbing geometrically
+FORCED, and a 10 µm conformal film asked to be a bearing in a blind L/D ≈ 13 bore wears through to a
+~0.5 V anode↔cathode short. The supported/unsupported columns stay because they price the DIAMETER and
+the FABRICATION branch honestly — they are simply not the argument for the liner.
 
 FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT, not a parameter.
   ⚖️ 2026-09-10 (00_07 HW.34) ratified the rod as a WELDED cold-drawn wire, so the as-built knockdown
@@ -449,11 +456,14 @@ def main() -> int:
                     f"wire reaches infinite life for {len(shipped['unsupported_infinite_life'])} of "
                     f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x): dropping the as-printed "
                     f"derate lifted {', '.join(marginal) or 'the soft alloys'} OUT of predicted failure but "
-                    "NOT over the SF-2 line. So the liner's SUPPORT role is NARROWED by the fabrication "
-                    "verdict, not retired - which is the measurement the open HW.34 lining verdict was "
-                    "missing. On the superseded PRINTED branch not one of the six cleared it. "
-                    "Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). "
-                    "Per-alloy margin tracks yield = same ranking as "
+                    "NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. "
+                    "BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): "
+                    f"the free-cantilever SF describes "
+                    f"{', '.join(r['branch'] for r in regimes if r['regime'].startswith('free cantilever')) or 'NO shipped branch'}"
+                    ", because every branch that leaves play takes it up and bears on the bore wall. "
+                    "What the liner carries is WEAR - the contact is geometrically forced, and wear-through "
+                    "is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; "
+                    "NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
                     "thermal -> leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
                    "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. "

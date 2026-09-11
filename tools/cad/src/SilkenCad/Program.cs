@@ -711,7 +711,7 @@ internal static class Program
         if (oM.MateInterferenceMm3 is > 5.0)
             Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø25 disc in the Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} cavity and/or Ø29 lugs (skirt opens BOTH, inboard only the lugs; HW.17)");
         if (oM.RfClearanceMm is { } dRf && dRf < cem.RfClearanceMinMm)
-            Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm at the bayonet datum — Z-stack pulls the cavity onto the flange (02_01 §5.3)");
+            Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm (OUR floor, not canon's — 02_01 §5.3 asks ≥8, HFSS below 10; 00_07 HW.33) at the bayonet datum — Z-stack pulls the cavity onto the flange");
         if (oM.BayonetZMismatchMm is { } dBz && dBz > 2f * cem.VoxelSizeMm)
             Console.WriteLine($"  ⚠ bayonet-Z: rim lands {dBz:F2} mm off the O-ring target — Деталь3 lug-Z ↔ Деталь4 lock-groove-Z un-reconciled (HW.8)");
 

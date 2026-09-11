@@ -65,7 +65,15 @@ POGO_FREE = GAP_PZ + 0.60 * POGO_TRAVEL    # protrusion so pogo sits at 60 % at 
 GAP_OR = ORING_CS * (1.0 - 0.20)           # Radome rim ↔ Zone 3 so O-ring sits at 20 %
 
 # ── RF constraint (02_01 §5.3) — geometric, self-owned (Гончаров VNA pending) ──
-RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna ↔ Ti flange min Z-clearance for VSWR
+# ⛔ This 12 is OURS, not canon's — do NOT "correct" a measured 8.0 upward to meet it, and do not
+# quote it as a requirement. 02_01 §5.3's normative table asks for >= 8 mm (10-15 desirable), grounds
+# it on lambda/40 = 8.6, and makes HFSS mandatory below 10. Its only 12 is the OUTCOME of a proposed
+# two-deck board stack, i.e. a design point mirrored here as a floor. The same mirror sits in the
+# other machine half (tools/cad Cem.RfClearanceMinMm). Which number is the acceptance floor is an
+# open verdict (00_07 HW.33); the measurement that settles it is the UNI.10 VNA sweep of 5/8/12.
+# Rule this violates, and it is ours: skill in-silico #9 — if canon gives a RANGE, say which END you
+# took; if the number is not an end, say what it IS and whose. [2026-09-11]
+RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
 
 # ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-10) ──
 # The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
@@ -518,7 +526,8 @@ def main() -> int:
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
     print("  🔑 Pad = 3rd spring (∥ pogo on the shared gap) — absent from 02_02 §3.5; close that canon gap.")
     print("  🔑 Bayonet (not thread) hard-stop is load-bearing — deterministic Z halves the CNC residual → O-ring holds.")
-    print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = geometric radome-height constraint (VNA self-owned; Гончаров lab pending).")
+    print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
+          "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; open verdict 00_07 HW.33, VNA sweep 5/8/12 = UNI.10).")
 
     out = {
         "method": "1D linear tolerance chain (RSS + worst-case), 3-spring blind-mate Z-stack",
