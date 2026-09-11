@@ -260,6 +260,81 @@
     ],
     "free_cantilever_sf_describes_these": []
   },
+  "assembly_clearance": {
+    "question": "00_07 HW.34 \u2014 which of the three frozen dims (01_01 \u00a71.4) gives up the assembly clearance; direction ratified 2026-09-11 (channel side), SIZE open",
+    "frozen_dims_mm": {
+      "rod": 1.0,
+      "channel": 1.3,
+      "liner_wall": 0.15
+    },
+    "candidates": [
+      {
+        "candidate": "(\u0430) all three frozen",
+        "rod_dia_mm": 1.0,
+        "liner_wall_mm": 0.15,
+        "channel_dia_mm": 1.3,
+        "stack_od_mm": 1.3,
+        "diametral_clearance_mm": 0.0,
+        "radial_play_mm": 0.0,
+        "first_contact_mm_by_mu": {
+          "0.2": 0.0,
+          "0.3": 0.0,
+          "0.4": 0.0,
+          "0.5": 0.0
+        },
+        "assembles": false
+      },
+      {
+        "candidate": "(\u0431) liner 0.150 \u2192 0.125",
+        "rod_dia_mm": 1.0,
+        "liner_wall_mm": 0.125,
+        "channel_dia_mm": 1.3,
+        "stack_od_mm": 1.25,
+        "diametral_clearance_mm": 0.05,
+        "radial_play_mm": 0.025,
+        "first_contact_mm_by_mu": {
+          "0.2": 6.31,
+          "0.3": 5.12,
+          "0.4": 4.42,
+          "0.5": 3.95
+        },
+        "assembles": true
+      },
+      {
+        "candidate": "(\u0432) channel 1.30 \u2192 1.35",
+        "rod_dia_mm": 1.0,
+        "liner_wall_mm": 0.15,
+        "channel_dia_mm": 1.35,
+        "stack_od_mm": 1.3,
+        "diametral_clearance_mm": 0.05,
+        "radial_play_mm": 0.025,
+        "first_contact_mm_by_mu": {
+          "0.2": 6.31,
+          "0.3": 5.12,
+          "0.4": 4.42,
+          "0.5": 3.95
+        },
+        "assembles": true
+      },
+      {
+        "candidate": "(\u0433) rod 1.00 \u2192 0.95",
+        "rod_dia_mm": 0.95,
+        "liner_wall_mm": 0.15,
+        "channel_dia_mm": 1.3,
+        "stack_od_mm": 1.25,
+        "diametral_clearance_mm": 0.05,
+        "radial_play_mm": 0.025,
+        "first_contact_mm_by_mu": {
+          "0.2": 5.68,
+          "0.3": 4.61,
+          "0.4": 3.98,
+          "0.5": 3.55
+        },
+        "assembles": true
+      }
+    ],
+    "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
+  },
   "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 10x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.4-3.9x): dropping the as-printed derate lifted CP-Ti-Gr4, Ta OUT of predicted failure but NOT over the SF-2 line. So the liner's SUPPORT role is NARROWED by the fabrication verdict, not retired - which is the measurement the open HW.34 lining verdict was missing. On the superseded PRINTED branch not one of the six cleared it. Liner = insulation + support + fatigue-fix in one (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. NO WELD SEAM is modelled: this is a homogeneous cantilever, while the ratified welded rod puts a heat-affected zone at the root, i.e. at peak bending moment. The wrought derate describes the WIRE and says nothing about the JOINT."
 }

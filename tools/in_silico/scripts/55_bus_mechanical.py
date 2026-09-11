@@ -84,6 +84,27 @@ INSULATION_OPTIONS = (
     ("PEEK liner 0.15 mm", 0.1475),   # 2.5 µm radial assembly play — µm-scale by construction
 )
 
+# ── Assembly-clearance allocation candidates (00_07 HW.34, «кому віддано зазор») ──────────────
+# The three frozen dims (01_01 §1.4: rod Ø1.0 · channel Ø1.3 · liner 0.15 wall) sum to ZERO nominal
+# clearance, so the assembly needs exactly one of them to move — and WHICH one is the verdict.
+# Each row is (label, rod Ø mm, liner WALL mm, channel Ø mm); play and first-contact are COMPUTED,
+# so a candidate is priced here rather than argued in prose. ⛔ The tracker quoted «first contact
+# 3.95–6.31 mm at 25 µm» for months while no branch in this file produced it — that is a doc value
+# with no cache owner, exactly what the skill's «verify a doc value against its cache» forbids.
+# ⚠️ TWO different quantities per row and they answer different questions: RADIAL PLAY answers
+# «does it go together», FIRST CONTACT answers «where does the wall start carrying the beam».
+# Quoting one for the other is the substitution this table exists to prevent.
+# ⛔ This table prices GEOMETRY only. The costs that decide the verdict live elsewhere and are NOT
+# derivable here: (б) spends 17 % of the wear allowance the 2026-09-11 verdict made the MAIN axis;
+# (в) is a re-spec of a hole already machined post-print as the part's primary datum; (г) cuts the
+# fatigue SF by ~14 % (σ ∝ 1/d³) on a Ta that already sits at 1.41. See the per-alloy table above.
+ASSEMBLY_CLEARANCE_CANDIDATES = (
+    ("(а) all three frozen",     1.00, 0.150, 1.30),
+    ("(б) liner 0.150 → 0.125",  1.00, 0.125, 1.30),
+    ("(в) channel 1.30 → 1.35",  1.00, 0.150, 1.35),
+    ("(г) rod 1.00 → 0.95",      0.95, 0.150, 1.30),
+)
+
 F_POGO_N = 1.0        # N — pogo spring force on the rod tip (~100 g, 02_02 §2.2)
 MU_CONTACT = 0.3      # Au↔Ti dry sliding friction (the cyclic lateral drag = µ·F_pogo); swept 0.2-0.5
 MU_SWEEP = (0.2, 0.3, 0.4, 0.5)
@@ -125,29 +146,35 @@ def bending_stress_MPa(force_lat_N: float, length_mm: float) -> float:
     return force_lat_N * (length_mm * MM_M) * c / i_area / 1e6
 
 
-def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float) -> float:
+def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float,
+                           dia_mm: float | None = None) -> float:
     """Free-cantilever deflection at x under a TRANSVERSE TIP load: δ(x) = F·x²·(3L−x)/(6EI).
 
     Same F, L, E, I as the bending-stress model above — this is that model read as a SHAPE rather
     than as a root stress, which is the one question it was never asked.
+
+    `dia_mm` defaults to the canon rod Ø; it is a parameter ONLY so an allocation candidate that
+    moves the ROD (00_07 HW.34 branch (г)) is priced on its own I, never on the canon one — I ∝ d⁴,
+    so borrowing the canon stiffness for a thinner rod understates its deflection by ~20 %.
     """
-    i_area = second_moment_m4(D_BUS)
+    i_area = second_moment_m4(D_BUS if dia_mm is None else dia_mm)
     x, ell = x_mm * MM_M, length_mm * MM_M
     return force_lat_N * x ** 2 * (3.0 * ell - x) / (6.0 * E_TI * i_area) / MM_M
 
 
-def first_wall_contact_mm(force_lat_N: float, radial_play_mm: float, length_mm: float) -> float:
+def first_wall_contact_mm(force_lat_N: float, radial_play_mm: float, length_mm: float,
+                          dia_mm: float | None = None) -> float:
     """Distance from the root at which the FREE deflection first equals the radial play.
 
     Bisection on a monotonic function — no solver dependency. Returns `length_mm` if the rod never
     takes up the play over the whole span (i.e. it really is a free cantilever).
     """
-    if tip_load_deflection_mm(force_lat_N, length_mm, length_mm) <= radial_play_mm:
+    if tip_load_deflection_mm(force_lat_N, length_mm, length_mm, dia_mm) <= radial_play_mm:
         return length_mm
     lo, hi = 0.0, length_mm
     for _ in range(60):
         mid = (lo + hi) / 2.0
-        if tip_load_deflection_mm(force_lat_N, mid, length_mm) < radial_play_mm:
+        if tip_load_deflection_mm(force_lat_N, mid, length_mm, dia_mm) < radial_play_mm:
             lo = mid
         else:
             hi = mid
@@ -317,6 +344,34 @@ def main() -> int:
                         "bears_inside_bore": bool(bears), "supported_at_mouth": bool(at_mouth),
                         "regime": regime})
     gap_limited = [r["branch"] for r in regimes if r["bears_inside_bore"] and not r["supported_at_mouth"]]
+
+    # ── 4b. Allocation candidates — the OTHER question the same geometry answers ─────────────────
+    banner("Assembly-clearance allocation — which frozen dim moves (00_07 HW.34)")
+    print(f"  {'candidate':<26s} {'rod Ø':>6s} {'liner':>6s} {'chan Ø':>7s} {'DIAMETRAL':>10s} "
+          f"{'RADIAL':>8s} {'first contact, mm':>19s}")
+    print(f"  {'-' * 94}")
+    allocations = []
+    for label, rod_mm, liner_mm, chan_mm in ASSEMBLY_CLEARANCE_CANDIDATES:
+        stack_mm = rod_mm + 2.0 * liner_mm
+        diametral = chan_mm - stack_mm
+        play = diametral / 2.0
+        contacts = {mu: round(first_wall_contact_mm(mu * F_POGO_N, play, L_FREE_UNSUP, rod_mm), 2)
+                    for mu in MU_SWEEP}
+        lo_x, hi_x = min(contacts.values()), max(contacts.values())
+        assembles = diametral > 0.0
+        print(f"  {label:<26s} {rod_mm:>6.2f} {liner_mm:>6.3f} {chan_mm:>7.2f} "
+              f"{diametral * 1000:>7.0f} µm {play * 1000:>5.0f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>19s}"
+              f"{'' if assembles else '   ⛔ zero/negative — does not assemble'}")
+        allocations.append({"candidate": label, "rod_dia_mm": rod_mm, "liner_wall_mm": liner_mm,
+                            "channel_dia_mm": chan_mm, "stack_od_mm": round(stack_mm, 4),
+                            "diametral_clearance_mm": round(diametral, 4),
+                            "radial_play_mm": round(play, 4),
+                            "first_contact_mm_by_mu": contacts, "assembles": bool(assembles)})
+    print("\n  → Every non-(а) candidate lands the SAME 25 µm radial play by construction, so the")
+    print("    support question does NOT discriminate between them — first contact is 3.9–6.3 mm in")
+    print("    all three, i.e. practically at the bore mouth. The verdict is decided by the COSTS")
+    print("    named over the table, never by this geometry. ⛔ (а) is listed to show it is not an")
+    print("    option: zero diametral clearance is the F3 gate's arithmetic, not an assembly.")
     # ⛔ DERIVED, never typed — this sentence is the ground the lining verdict stands on.
     print(f"\n  → The free-cantilever SF above describes NO branch that bears on the wall: "
           f"{', '.join(gap_limited) or 'none'}.")
@@ -376,6 +431,16 @@ def main() -> int:
             "gap_limited_branches": gap_limited,
             "free_cantilever_sf_describes_these": [r["branch"] for r in regimes
                                                    if r["regime"].startswith("free cantilever")],
+        },
+        "assembly_clearance": {
+            "question": "00_07 HW.34 — which of the three frozen dims (01_01 §1.4) gives up the "
+                        "assembly clearance; direction ratified 2026-09-11 (channel side), SIZE open",
+            "frozen_dims_mm": {"rod": D_BUS, "channel": D_CHANNEL_MM, "liner_wall": 0.150},
+            "candidates": allocations,
+            "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT — different "
+                    "questions, same row. Geometry does not discriminate (б)/(в)/(г): all three "
+                    "land 25 µm radial. The discriminating costs are NOT computed here — wear "
+                    "allowance (б), re-spec of the primary datum (в), fatigue σ ∝ 1/d³ (г).",
         },
         "verdict": (f"Monolithic bus at the canon rod O{D_BUS:.1f} (01_01 1.4), SHIPPED fabrication = "
                     f"{SHIPPED_BRANCH} (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue "
