@@ -146,7 +146,11 @@ public class TopologyCrossChecksTests
         var r = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
 
         Assert.Equal(0.05f, r.StepMm);                              // min(2.5/24, 0.2/4)
-        Assert.Equal(TopologyCrossChecks.SlmMinWallMm, r.FloorMm);
+        // This CEM declares no vendor floor ⇒ the canon default is in force. ⚠ Asserting against
+        // `FloorMmFor(cem)` here would be a TAUTOLOGY (the model computes FloorMm through it), so the
+        // literal is deliberate: it pins that an absent field resolves to canon's 200 µm, not to 0.
+        Assert.Null(cem.SlmMinWallMm);
+        Assert.Equal(0.2f, r.FloorMm);
         Assert.True(r.Intent.PorePercolates[2], "intent sample must percolate axially");
         Assert.True(r.AsPrinted.PorePercolates[2], "as-printed sample must percolate axially");
         Assert.True(r.TopologyMatches, $"intent clusters={r.Intent.PoreClusterCount} vs as-printed clusters={r.AsPrinted.PoreClusterCount}");
@@ -158,12 +162,36 @@ public class TopologyCrossChecksTests
         Assert.InRange(r.SubFloorSolidFraction, 0.005, 0.010);
     }
 
+    // 🔴 The other half of the vendor-floor field, and it is the half a presence-shaped test misses: that
+    // the number is actually USED, in BOTH of its roles. A declared floor must move the threshold AND the
+    // measurement grid (`step = min(adaptive, floor/4)`) — the coupling the ⚖️ 2026-09-10 verdict names as
+    // the unpriced cost of a cheaper machine. Halving the floor here must halve the step and delete MORE
+    // metal than the canon default did on the identical geometry.
+    // MUTATION: make `FloorMmFor` ignore `cem.SlmMinWallMm` ⇒ both assertions below red.
+    [Fact]
+    public void A_Cem_Declared_Vendor_Floor_Moves_Both_The_Threshold_And_The_Grid()
+    {
+        AnchorCem canon = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
+        AnchorCem vendor = canon with { SlmMinWallMm = 0.4f };
+
+        var rCanon = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(canon), canon);
+        var rVendor = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(vendor), vendor);
+
+        Assert.Equal(0.4f, rVendor.FloorMm);
+        Assert.Equal(0.1f, rVendor.StepMm);   // min(2.5/24 = 0.104, 0.4/4 = 0.1) — the grid follows the floor
+        Assert.True(rVendor.SubFloorSolidFraction > rCanon.SubFloorSolidFraction,
+            $"a 400 µm floor deleted {rVendor.SubFloorSolidFraction:P2} where the canon 200 µm floor deleted " +
+            $"{rCanon.SubFloorSolidFraction:P2} — a coarser machine cannot hold MORE of a thin wall");
+    }
+
     [Fact]
     public void Opening_Deletes_A_Sub_Floor_Wall_And_Keeps_A_Slab_Thicker_Than_The_Ball()
     {
         // Ball radius 0.2 mm on a 0.1 mm grid ⇒ r = 2 cells, so the opening keeps a slab only at
         // ≥ 2r+1 = 5 cells. That quantisation IS the declared ceiling of the model (whole cells, ±1),
         // so all three cases are pinned: 1 cell and 2r cells go, 2r+1 cells survives untouched.
+        // ⚠ The two literals below are UNIT MATH on OpenSolid's own arguments, deliberately independent
+        // of whatever floor any CEM declares — do not re-derive them from the canon constant.
         const float fStep = 0.1f, fRadius = 0.2f;
 
         (Connectivity.Grid one, double dSubOne) = TopologyCrossChecks.OpenSolid(SlabGrid(5, 5), fRadius);
@@ -217,6 +245,17 @@ public class TopologyCrossChecksTests
             .OrderBy(CemFixtures.RimPeriodMm)
             .ToArray();
         Assert.True(aByRim.Length >= 5, $"only {aByRim.Length} constant-band anchor SKUs found — the chain below would be near-vacuous");
+
+        // 🔴 The chain compares SKUs to each other, so it only MEANS anything at a shared floor: the
+        // ordering claim is «a thinner rim wall loses more to the SAME machine». Once `slm_min_wall_mm`
+        // became a per-manifest vendor input (⚖️ 2026-09-10), two SKUs could carry different floors and
+        // this comparison would keep passing while measuring nothing — the premise would be gone with no
+        // token to grep for. So assert the premise instead of assuming it; if the family ever splits
+        // across vendors, this reds and the chain must be re-scoped per floor, not silenced.
+        float[] aFloors = [.. aByRim.Select(TopologyCrossChecks.FloorMmFor).Distinct()];
+        Assert.True(aFloors.Length == 1,
+            $"the shipped SKUs no longer share one print floor ({string.Join(", ", aFloors.Select(f => $"{f * 1000:F0} µm"))}) — " +
+            "a cross-SKU sub-floor ordering is only meaningful at a common floor");
 
         var aSubFloor = aByRim
             .Select(cem => TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem).SubFloorSolidFraction)

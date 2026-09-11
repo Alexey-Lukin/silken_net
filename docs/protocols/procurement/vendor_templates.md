@@ -347,6 +347,7 @@ These are mandatory process requirements for the structural part. **Please confi
 5. **No ZnO-Ta (tantalum-doped zinc oxide) or comparable antibacterial oxide coating** on functional surfaces — it blocks electron transfer.
 6. **You accept our STL + dimensioned DXF as the geometry authority**, one set per alloy.
 7. **Thin-wall lattice capability.** The required porosity and wall thickness are defined by the supplied geometry, not by a separate number we hand you. Confirm you can hold the wall thickness of a TPMS lattice at that scale, and that you can report **measured as-built** values — dimensional report, and CT or SEM of internal features if you have that capability. We buy measured values, not declared ones.
+8. **Declare your minimum printable wall — per machine and per powder lot, in µm.** This is the one number we ask you to hand US, and it runs opposite to item 7: there we ask whether you can hold our geometry, here we ask what your process floor is, because we re-compute the lattice against it rather than assuming an industry figure. State it as a measured or qualified value with the basis (test artefact, coupon, machine specification), and say whether it differs between your titanium machines. If the answer is a range, give the range and the conditions that move it.
 
 ### What we ask you to provide
 

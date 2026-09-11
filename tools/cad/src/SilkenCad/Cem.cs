@@ -145,6 +145,15 @@ internal sealed record AnchorCem
     // real part; a new SKU that omits the key reds instead of inheriting a branch nobody chose.
     public string Topology { get; init; } = "sheet";
     public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — placeholder, FEA-gated (HW.33)
+
+    // Minimum printable wall of the machine + powder that will print THIS part — a VENDOR INPUT from the
+    // DMLS RFQ, not a canon constant (⚖️ founder 2026-09-10, 00_07 HW.33: canon must not hardcode one
+    // supplier's machine). null ⇒ the canon default 200 µm (01_01 §5.5) applies, and `verify` says which
+    // of the two it used. ⚠️ **This number has TWO roles and the second is the expensive one:** besides
+    // being the as-printed threshold, it sets the measurement grid (`step = min(adaptive, floor/4)`), so
+    // a vendor floor of 0.1 instead of 0.2 halves the step on every axis — ~8× the cells, roughly an
+    // order of magnitude more time per run. Change it knowing you are also changing what a run costs.
+    public float? SlmMinWallMm { get; init; }
 }
 
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep

@@ -294,14 +294,26 @@ internal static class TopologyCrossChecks
     // the XY feature floor ONLY: not build-direction slicing (30 µm layers, staircase on shallow
     // overhangs), not support/overhang collapse, not powder trapping or de-powdering of the surviving
     // channels — those are 01_02 §1.3 bench questions, and nothing here substitutes for them.
-    public const float SlmMinWallMm = 0.2f;
+    // ⚖️ RATIFIED 2026-09-10 (founder, 00_07 HW.33): this number is a VENDOR INPUT — every machine and
+    // powder has its own min wall — so canon must not hardcode one supplier's machine. It stays here as
+    // the CANON DEFAULT (01_01 §5.5) for a manifest that declares nothing, and `AnchorCem.SlmMinWallMm`
+    // overrides it per part once an RFQ answers. ⚠️ Read `FloorSourceMm` below, not this constant, in
+    // anything that reports a measurement: quoting the default while a manifest overrode it is the exact
+    // shape of a report that describes the instrument instead of the tree.
+    public const float CanonSlmMinWallMm = 0.2f;
+
+    // The floor actually in force for this part: the manifest's vendor number, else the canon default.
+    public static float FloorMmFor(AnchorCem cem) => cem.SlmMinWallMm ?? CanonSlmMinWallMm;
 
     // The one grid both halves of the as-printed model are measured on. One home — the report line
     // prints this number and must not re-derive the formula. NB the floor/4 branch wins for every
-    // possible AnchorCem today, because AdaptiveStepMm clamps at 0.06 mm > 0.05; the Min is the guard
-    // that keeps the as-printed grid from ever being COARSER than the intent one if either bound moves.
+    // possible AnchorCem at the canon floor, because AdaptiveStepMm clamps at 0.06 mm > 0.05; the Min is
+    // the guard that keeps the as-printed grid from ever being COARSER than the intent one if either
+    // bound moves. 🔴 **The floor sets the GRID as well as the threshold, and that is the half a reader
+    // loses**: a vendor floor of 0.1 instead of 0.2 halves the step on EVERY axis, i.e. ~8× the cells and
+    // roughly an order of magnitude more time per run. A cheaper-sounding machine is not a cheaper run.
     public static float PrintGridStepMm(AnchorCem cem)
-        => MathF.Min(Connectivity.AdaptiveStepMm(cem), SlmMinWallMm / 4f);
+        => MathF.Min(Connectivity.AdaptiveStepMm(cem), FloorMmFor(cem) / 4f);
 
     internal sealed record PrintFidelityResult
     {
@@ -314,7 +326,7 @@ internal static class TopologyCrossChecks
         // sheet SKUs read ⚠ (2→1) losing 1.5–49.7 %. Never read this flag without SubFloorSolidFraction.
         public required bool TopologyMatches { get; init; }
         public required float StepMm { get; init; }              // sampling step of BOTH metrics above
-        public required float FloorMm { get; init; }             // the modelled print floor (= SlmMinWallMm)
+        public required float FloorMm { get; init; }             // the modelled print floor in force (manifest vendor input, else canon)
         public required double SubFloorSolidFraction { get; init; } // solid removed by the opening / intent solid, 0..1
     }
 
@@ -324,7 +336,7 @@ internal static class TopologyCrossChecks
         Connectivity.Grid gridIntent = Connectivity.SampleAnchor(sdf, cem, fStep);
         ConnectivityMetrics mIntent = Connectivity.Analyse(gridIntent);
 
-        (Connectivity.Grid gridPrinted, double dSubFloor) = OpenSolid(gridIntent, SlmMinWallMm / 2f);
+        (Connectivity.Grid gridPrinted, double dSubFloor) = OpenSolid(gridIntent, FloorMmFor(cem) / 2f);
         ConnectivityMetrics mPrinted = Connectivity.Analyse(gridPrinted);
 
         bool bMatches = mIntent.PoreClusterCount == mPrinted.PoreClusterCount
@@ -335,7 +347,7 @@ internal static class TopologyCrossChecks
             AsPrinted = mPrinted,
             TopologyMatches = bMatches,
             StepMm = fStep,
-            FloorMm = SlmMinWallMm,
+            FloorMm = FloorMmFor(cem),
             SubFloorSolidFraction = dSubFloor,
         };
     }

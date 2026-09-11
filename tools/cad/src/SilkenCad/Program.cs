@@ -502,7 +502,8 @@ internal static class Program
             $"  [nice-to-have] tortuosity(path/displacement) mean={oM.TortuosityMean:F2} " +
             $"({oM.TortuositySuccesses}/{oM.TortuosityAttempts} walks converged)");
         Console.WriteLine(
-            $"  [nice-to-have] as-printed (opening at SLM {TopologyCrossChecks.SlmMinWallMm * 1000:F0} µm wall floor, " +
+            $"  [nice-to-have] as-printed (opening at SLM {TopologyCrossChecks.FloorMmFor(cem) * 1000:F0} µm wall floor " +
+            $"[{(cem.SlmMinWallMm is null ? "canon default 01_01 §5.5" : "vendor, from this CEM")}], " +
             $"grid {TopologyCrossChecks.PrintGridStepMm(cem):F3} mm): " +
             $"sub-floor solid={oM.PrintFidelitySubFloorSolidFraction:P1} · " +
             $"pore clusters intent→printed {oM.PrintFidelityIntentClusters}→{oM.PrintFidelityPrintedClusters} · " +

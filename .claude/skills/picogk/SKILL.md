@@ -208,7 +208,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     anchor's actual pore network. Both were only caught by running `dotnet run -- verify` against a real
     shipped `cem/*.json`, never by the xUnit suite alone. **On the shipped seven (2026-09-10, intent step
     period/24):** Euler-χ sound on all; tortuosity mean ≈1.3–1.4; the as-printed check is a morphological
-    OPENING of the solid at the SLM floor (ball radius floor/2 on a 0.05 mm grid), and its sub-floor
+    OPENING of the solid at the SLM floor (ball radius floor/2; ⚖️ 2026-09-10, applied 09-11, that floor
+    is a per-CEM **vendor input** `slm_min_wall_mm` — absent ⇒ the canon 200 µm default, and `verify`
+    prints WHICH of the two it used. 🔴 The floor also sets the measurement grid, `min(adaptive, floor/4)`,
+    so a vendor floor of 0.1 instead of 0.2 is ~8× the cells and about an order of magnitude more time —
+    a cheaper machine is not a cheaper run), and its sub-floor
     share is monotone in the rim wall — `stepped` 71.8 % · `broadleaf` 49.7 % · `pine` 24.4 % ·
     `mangrove` 20.5 % · `oak` 4.3 % · `tropical` 1.5 % (`graded_porosity` 12.5 %). ✅ **Those six are the
     SHEET era. Re-measured 2026-09-11 after the network verdict landed, same grid and floor: `broadleaf`
