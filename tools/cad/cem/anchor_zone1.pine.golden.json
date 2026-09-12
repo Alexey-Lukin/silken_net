@@ -1,0 +1,10 @@
+{
+  "_note": "Regression baseline for \u0060verify\u0060 \u2014 voxel-specific, pins REGRESSION not correctness (Golden.cs). Update only through \u0060verify --write-golden\u0060, and only as a reviewed diff.",
+  "voxel_size_mm": 0.1,
+  "porosity": 0.6486965082613849,
+  "specific_surface_mm2_per_mm3": 1.354304947575984,
+  "open_porosity": 1,
+  "solid_disconnected_fraction": 1.0078860510298604E-05,
+  "pore_cluster_count": 1,
+  "print_fidelity_sub_floor_solid_fraction": 0.006847554705266304
+}

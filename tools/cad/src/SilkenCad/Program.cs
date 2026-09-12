@@ -21,7 +21,9 @@ internal static class Program
             {
                 "smoke" => RunHeadless(0.5f, Smoke),
                 "build" => args.Length >= 2 ? Build(args[1]) : Fail("usage: build <cem.json>"),
-                "verify" => args.Length >= 2 ? Verify(args[1]) : Fail("usage: verify <cem.json>"),
+                "verify" => args.Length >= 2
+                    ? Verify(args[1], args.Contains("--write-golden"))
+                    : Fail("usage: verify <cem.json> [--write-golden]"),
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
@@ -127,7 +129,7 @@ internal static class Program
         }
     }
 
-    private static int Verify(string strCemPath)
+    private static int Verify(string strCemPath, bool bWriteGolden = false)
     {
         string strJson = File.ReadAllText(strCemPath);
         switch (Cem.Kind(strJson))
@@ -144,7 +146,7 @@ internal static class Program
                 {
                     Voxels voxEnv = Zone1Anode.Envelope(cem);
                     Voxels voxAnode = Zone1Anode.Anode(cem, voxEnv);
-                    return ReportAnchor(cem, voxAnode, voxEnv);
+                    return ReportAnchor(cem, voxAnode, voxEnv, strCemPath, bWriteGolden);
                 });
             }
             case "mechanical_lock":
@@ -497,7 +499,8 @@ internal static class Program
     // Anchor verify: graded-aware golden metrics (per-shell porosity + finest period) → metrics.json,
     // plus the CI gate (sanity + DMLS floor + sane porosity band). Detailed profile asserts
     // (flat-vs-monotone, gradient present) live in the xUnit suite, not here.
-    private static int ReportAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope)
+    private static int ReportAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope,
+                                    string? strCemPath = null, bool bWriteGolden = false)
     {
         GeometryMetrics oM = Validation.MeasureAnchor(cem, voxAnode, voxEnvelope);
 
@@ -583,7 +586,19 @@ internal static class Program
         if (!bPercolates)
             Console.WriteLine("  ⚠ pore does not percolate axially + radially — sap / flow-through blockage");
 
-        bool bOk = bSane && bFloor && bPorositySane && bConnSound && bRodOk;
+        // Committed regression baseline (Golden.cs) — ⛔ it GATES only when one exists: an absent
+        // baseline is silence, never a pass, and that asymmetry is deliberate. The wide sanity bands
+        // above cannot see a 65 % → 72 % move; this can, and only this.
+        bool bGolden = true;
+        if (strCemPath is not null)
+        {
+            if (bWriteGolden)
+                Golden.Write(strCemPath, oM, cem.VoxelSizeMm);
+            else
+                bGolden = Golden.Check(strCemPath, oM, cem.VoxelSizeMm);
+        }
+
+        bool bOk = bSane && bFloor && bPorositySane && bConnSound && bRodOk && bGolden;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }

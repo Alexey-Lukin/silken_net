@@ -324,7 +324,7 @@ rb_dark() {
 # 2026-09-09: 162 → 164 — два нові файли, `feedback_note_as_frozen_snapshot` +
 # `feedback_worktree_branch_content_verify` (обидва hub-inline в «Вісь помилки», IDX
 # бамп поруч). Підняття робить обидва нові доми захищеними підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-165}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -439,7 +439,12 @@ index_reach_expected() {
 # Перший опис написано ~240 B і стиснуто до ~150 B ПЕРЕД цим бампом (окрема правка,
 # видима в diff); другий написано вже коротким. Чужих описів не підрізано — 261 B
 # для двох нових класів-домів дешевше за більшість одиничних бампів вище.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44801}
+# 2026-09-12: 44801 → 44939 (+138) — вартість ОДНОГО нового журналу `log_picogk_cad`,
+# заведеного не заради нового класу, а тому що `project_picogk_code_as_cad` уперся в робочу
+# стелю й метод приписує евікцію ТІЛ у близнюк. Прецедент дотримано: власний опис стиснуто
+# (163 → 103 B) ПЕРЕД бампом, чужих не підрізано. ⊕ Найдешевший бамп у цьому переліку, і саме
+# тому, що журнал НЕ додає тригера відкликання — його дістають `[[strings]]`, не індекс.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44939}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
