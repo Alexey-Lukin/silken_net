@@ -294,19 +294,27 @@
           "by_mu": {
             "0.2": {
               "deflection_at_mouth_um": 14.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.255
             },
             "0.3": {
               "deflection_at_mouth_um": 21.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.382
             },
             "0.4": {
               "deflection_at_mouth_um": 28.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.509
             },
             "0.5": {
               "deflection_at_mouth_um": 35.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.637
             }
           },
           "edge_bearing_mus": [],
@@ -318,19 +326,27 @@
           "by_mu": {
             "0.2": {
               "deflection_at_mouth_um": 14.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.255
             },
             "0.3": {
               "deflection_at_mouth_um": 21.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.382
             },
             "0.4": {
               "deflection_at_mouth_um": 28.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.509
             },
             "0.5": {
               "deflection_at_mouth_um": 35.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.637
             }
           },
           "edge_bearing_mus": [],
@@ -342,19 +358,27 @@
           "by_mu": {
             "0.2": {
               "deflection_at_mouth_um": 13.0,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.237
             },
             "0.3": {
               "deflection_at_mouth_um": 19.6,
-              "edge_bearing": false
+              "edge_bearing": false,
+              "interference_at_mouth_um": 0.0,
+              "approach_angle_deg": 0.356
             },
             "0.4": {
               "deflection_at_mouth_um": 26.1,
-              "edge_bearing": true
+              "edge_bearing": true,
+              "interference_at_mouth_um": 1.1,
+              "approach_angle_deg": 0.474
             },
             "0.5": {
               "deflection_at_mouth_um": 32.6,
-              "edge_bearing": true
+              "edge_bearing": true,
+              "interference_at_mouth_um": 7.6,
+              "approach_angle_deg": 0.593
             }
           },
           "edge_bearing_mus": [
@@ -364,6 +388,13 @@
           "edge_bearing_on_any_mu": true
         }
       ],
+      "liner_start": {
+        "earliest_computed_contact_mm_from_root": 5.03,
+        "mouth_mm": 6.0,
+        "min_protrusion_into_gap_mm": 0.97,
+        "why": "below this the bore edge arrives at the tube's END FACE (ring on ring) instead of its cylindrical flank; the materials are the same either way (play is channel-side, so the tube's outer surface is what meets the bore), the FEATURE is not",
+        "not_modelled": "the contact stress itself \u2014 no notch factor, no contact model, and no wear model exists anywhere in this tree (00_07 HW.34)"
+      },
       "note": "geometric condition only (free deflection at the mouth vs radial play); no notch factor and no contact model exists in this tree. Input to the OPEN axial-extent verdict (00_07 HW.34)"
     },
     "play_reduction": {

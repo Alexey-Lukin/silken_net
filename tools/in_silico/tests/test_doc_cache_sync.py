@@ -406,6 +406,32 @@ CHECKS = [
     # ⛔ Two pins stood here and held the PAIR of protrusion rows, because the headline rode a span
     # the tracker recorded as wrong. The span was corrected 2026-09-12 (CEM-derived, 23 mm) and the
     # sweep went with the dispute, so what the doc may quote is ONE row and this is its pin.
+    # ⛔ These three carry the 2026-09-12 axial verdicts into a pin. The protrusion figure is the one
+    # that became a canon SPEC («≥ 1.0 mm», rounded from it), so a silent re-derivation would leave
+    # the shop building to a number the model no longer produces.
+    (
+        "liner min protrusion into the PEEK gap → bus_mechanical.json §edge_bearing.liner_start",
+        SUMMARY, rf"the tube must start\s+\*\*{N} mm\*\* before it",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["edge_bearing"]["liner_start"]["min_protrusion_into_gap_mm"], 0.01,
+    ),
+    (
+        "rod approach angle at the bore mouth → bus_mechanical.json §edge_bearing",
+        SUMMARY, rf"inside the wall at \*\*{N}°\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: max(v["approach_angle_deg"]
+                      for r in d["clearance_regime"]["edge_bearing"]["rows"]
+                      if r["radial_play_um"] < 100.0
+                      for v in r["by_mu"].values()), 0.01,
+    ),
+    (
+        "interference at the mouth, worst corner → bus_mechanical.json §edge_bearing",
+        SUMMARY, rf"arrives \*\*{N} µm\*\* inside the wall",
+        "mechanical/bus_mechanical.json",
+        lambda d: max(v["interference_at_mouth_um"]
+                      for r in d["clearance_regime"]["edge_bearing"]["rows"]
+                      for v in r["by_mu"].values()), 0.01,
+    ),
     (
         "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §binding_candidate",
         SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",

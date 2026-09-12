@@ -301,6 +301,19 @@ def first_wall_contact_mm(force_lat_N: float, radial_play_mm: float, length_mm: 
     return lo
 
 
+def tip_load_slope_rad(force_lat_N: float, x_mm: float, length_mm: float,
+                       ei_Nm2: float | None = None) -> float:
+    """Slope θ(x) = dδ/dx of the same cantilever — the ANGLE at which the rod meets the bore.
+
+    Analytic derivative of `tip_load_deflection_mm`, not a finite difference: θ = F·x·(2L−x)/(2EI).
+    It answers a question the deflection cannot — WHETHER a chamfer would be met by the rod at all,
+    since a lead-in at 30-45° is two orders steeper than this approach angle.
+    """
+    ei = ei_Nm2 if ei_Nm2 is not None else E_TI * second_moment_m4(D_BUS)
+    x, ell = x_mm * MM_M, length_mm * MM_M
+    return force_lat_N * x * (2.0 * ell - x) / (2.0 * ei)
+
+
 def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
     """σ_e ≈ fatigue-ratio × yield, knocked down only if the rod is AS-PRINTED.
 
@@ -586,8 +599,16 @@ def main() -> int:
         per_mu = {}
         for mu in MU_SWEEP:
             d_mouth = tip_load_deflection_mm(mu * F_POGO_N, CHANNEL_START_MM, L_FREE_UNSUP, ei_Nm2=ei_eff)
+            slope = tip_load_slope_rad(mu * F_POGO_N, CHANNEL_START_MM, L_FREE_UNSUP, ei_Nm2=ei_eff)
             per_mu[mu] = {"deflection_at_mouth_um": round(d_mouth * 1000.0, 1),
-                          "edge_bearing": bool(d_mouth > r["radial_play_mm"])}
+                          "edge_bearing": bool(d_mouth > r["radial_play_mm"]),
+                          # How far the rod WANTS to be inside the wall when it arrives. Elastic
+                          # contact has to absorb exactly this — on a sharp edge, over ~no area.
+                          "interference_at_mouth_um": round(max(0.0, d_mouth - r["radial_play_mm"]) * 1000.0, 1),
+                          # The approach angle. A lead-in chamfer is cut at 30-45°; if the rod
+                          # arrives two orders flatter, the chamfer is not what it lands on — the
+                          # chamfer/cylinder junction is, i.e. the edge simply MOVES inward.
+                          "approach_angle_deg": round(float(np.degrees(slope)), 3)}
         edge_mus = [mu for mu, v in per_mu.items() if v["edge_bearing"]]
         edge_rows.append({"branch": r["branch"], "radial_play_um": round(r["radial_play_mm"] * 1000.0, 1),
                           "by_mu": per_mu, "edge_bearing_mus": edge_mus,
@@ -600,8 +621,41 @@ def main() -> int:
     _edge_any = [r["branch"] for r in edge_rows if r["edge_bearing_on_any_mu"]]
     print(f"  → Branches whose first contact is the bore EDGE on at least one swept µ: "
           f"{', '.join(_edge_any) or 'none'} (DERIVED).")
-    print("    ⚖️ This is the input the OPEN axial verdict needs: a liner flush with the mouth lands")
-    print("    that contact on titanium; one protruding into the PEEK gap lands it on polymer.")
+    _worst = max((v for r in edge_rows for v in r["by_mu"].values()),
+                 key=lambda v: v["interference_at_mouth_um"])
+    print(f"  → Worst corner: the member wants to be {_worst['interference_at_mouth_um']:.1f} µm INSIDE the "
+          f"wall on arrival, meeting it at {_worst['approach_angle_deg']:.2f}°.")
+    print("    🔴 Two consequences, and the second one kills the obvious fix. (1) On a SHARP edge that")
+    print("    interference is taken over ~no area, so the contact is a stress raiser by construction —")
+    print("    and no chamfer/radius is specified anywhere in the tree (canon, CEM, generator: zero hits).")
+    print("    (2) ⛔ A LEAD-IN CHAMFER does not solve it: cut at 30-45° it is two orders steeper than")
+    print("    the approach angle above, so the rod never lands on the chamfer face — it lands where")
+    print("    the chamfer meets the cylinder. A chamfer MOVES the edge inward; only a RADIUS removes it.")
+    # ⛔ The materials do NOT change with the tube's start, and saying they do was wrong: the ratified
+    #    direction puts the play on the CHANNEL side, so what meets the bore is the tube's OUTER
+    #    surface — polymer against titanium either way. What DOES change is which FEATURE meets it.
+    #    Flush with the mouth, the tube's own END FACE arrives at the bore edge: ring against ring.
+    #    Started earlier, the edge meets the tube's cylindrical flank instead. Derived below is the
+    #    protrusion at which that is true for EVERY swept µ, i.e. the earliest computed contact.
+    _chan = [r for r in regimes if r["play_side"] == "channel"]
+    earliest = min(min(r["first_contact_mm_by_mu"].values()) for r in _chan) if _chan else None
+    liner_start = None
+    if earliest is not None:
+        liner_start = {
+            "earliest_computed_contact_mm_from_root": round(earliest, 2),
+            "mouth_mm": CHANNEL_START_MM,
+            "min_protrusion_into_gap_mm": round(max(0.0, CHANNEL_START_MM - earliest), 2),
+            "why": "below this the bore edge arrives at the tube's END FACE (ring on ring) instead of "
+                   "its cylindrical flank; the materials are the same either way (play is channel-side, "
+                   "so the tube's outer surface is what meets the bore), the FEATURE is not",
+            "not_modelled": "the contact stress itself — no notch factor, no contact model, and no wear "
+                            "model exists anywhere in this tree (00_07 HW.34)",
+        }
+        print(f"  → For the edge to meet the tube's FLANK rather than its END FACE on every swept µ, the "
+              f"tube must start {liner_start['min_protrusion_into_gap_mm']:.2f} mm before the mouth "
+              f"(earliest computed contact {earliest:.2f} mm from the root, DERIVED).")
+        print("    ⛔ The tube is tight on the WIRE, so protruding does NOT leave it unsupported — it")
+        print("    rides the rod. What protrusion costs is length, not a new free span.")
 
     # ── Is L_FREE_SUP = 6 mm actually grounded? The §2 table ASSUMES the liner turns the span into the
     # PEEK gap alone. That is an assumption about WHERE contact happens, and §4 just computed it — so
@@ -920,6 +974,7 @@ def main() -> int:
             # full-length wall, and the first CHANNEL_START_MM has none (PEEK gap, Ø11 sleeve bore).
             # A contact shorter than the mouth therefore means EDGE bearing, not deep support.
             "edge_bearing": {"mouth_mm": CHANNEL_START_MM, "rows": edge_rows,
+                             "liner_start": liner_start,
                              "note": "geometric condition only (free deflection at the mouth vs radial "
                                      "play); no notch factor and no contact model exists in this tree. "
                                      "Input to the OPEN axial-extent verdict (00_07 HW.34)"},
