@@ -90,6 +90,20 @@ CHANNEL_LEN_MM = 14.0
 # ⛔ That ratio lived in prose (here and in SUMMARY) with no cache owner, so it could not be checked
 #    against the diameter it divides by. Derived now.
 BORE_DEPTH_MM = 17.0
+# ⚠️ The word "blind" above is RETIRED (00_07 HW.34): `CathodeFlange.cs` cuts this channel THROUGH
+# — z 0..14 in the shank and 14..17 in the disc, exiting the pogo face — and a blind bore could not
+# pass a conductor at all. The DEPTH is unchanged; what changes is the machining class the L/D
+# argument rests on. Left as prose-with-a-correction rather than silently reworded, because five doc
+# homes inherited the word from this very comment.
+#
+# Protrusion of the rod above the anode top — the span the free-cantilever column prices.
+# 🔴 `L_FREE_UNSUP = 36` decomposes itself as "gap 6 + bore ~14 + flange/pad standoff ~16", and that
+# third term cites nothing. The CEM stack says otherwise: anode top z=40, sleeve 10..60, shank
+# 46..60, disc 60..63 ⇒ 6 + 14 + 3 = 23, and the pad IS the rod's end face (02_02 §1.2), so nothing
+# protrudes past the flange. Kept as a SEPARATE constant rather than corrected in place: fixing
+# `L_FREE_UNSUP` moves published per-alloy numbers in several homes and is its own pass (00_07
+# HW.34). What this constant buys meanwhile is that §5b can PRICE the dispute instead of ignoring it.
+PROTRUSION_FROM_CEM_MM = 23.0
 D_CHANNEL_MM = 1.35                # cathode channel Ø, canon 01_01 §1.4 — OPENED 1.30 → 1.35 by the
                                    # clearance verdict (00_07 HW.34, branch (в), 2026-09-11)
 
@@ -487,16 +501,35 @@ def main() -> int:
         "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * BORE_DEPTH_MM * dt * 1000.0, 1)
                                           for dt in (20, 40, 60, 80)},
         "radial_diametral_um_at_40K": round(d_alpha * (D_BUS + 2.0 * 0.150) * 40.0 * 1000.0, 1),
-        "note": "the radial term is the one canon carries; the axial term is larger by the ratio of the "
-                "bore DEPTH to the liner OD, and it is what forbids capturing the tube at both ends. "
-                "Both are differential against Ti, so they vanish if the counterpart is also PEEK",
+        # ⛔ Two claims were corrected here 2026-09-12 by adversarial review, and both were the kind
+        # that reads as physics while being arithmetic. (1) «an order of magnitude larger than the
+        # radial term» compares two REFERENCE LENGTHS, not two mechanical demands: both terms are
+        # Δα·ΔT times a length, so the strains are IDENTICAL and the ratio is exactly depth/OD.
+        # (2) «captured at both ends it has nowhere to put it» is false — it has elastic compression.
+        # The model now prices that instead of inferring an impossibility from a displacement.
+        "strain": round(d_alpha * 40.0, 8),
+        "note": "axial and radial carry the SAME differential strain; their ratio is the ratio of "
+                "their reference lengths (bore depth vs liner OD), so quoting it as a mechanical "
+                "finding overstates it. What both-end capture actually costs is the stress below",
     }
     ax40 = axial_thermal["differential_axial_um_by_dT_K"]["40"]
+    # Elastic cost of constraining that growth, so the prohibition is PRICED rather than asserted.
+    # ⚠️ Declared ceiling: this is the instantaneous elastic stress. It does NOT model 20 yr of PEEK
+    # creep/relaxation ratcheting, which is the real argument against both-end capture and which
+    # this file has no model for (01_01 §4.3 tabulates relaxation; nothing here reads it).
+    for dt_k in (40, 80):
+        strain = d_alpha * dt_k
+        axial_thermal[f"constrained_stress_MPa_at_{dt_k}K"] = round(strain * E_PEEK / 1e6, 2)
     print(f"\n  → Liner axial growth vs Ti over {BORE_DEPTH_MM:.0f} mm: {ax40:.0f} µm at 40 K "
-          f"({axial_thermal['differential_axial_um_by_dT_K']['80']:.0f} µm at 80 K) — "
-          f"{ax40 / axial_thermal['radial_diametral_um_at_40K']:.0f}× the radial term canon carries.")
-    print("    ⛔ Capturing the tube at BOTH ends therefore is not an option; which end is fixed is a")
-    print("    geometry verdict, not an output of this model (00_07 HW.34).")
+          f"({axial_thermal['differential_axial_um_by_dT_K']['80']:.0f} µm at 80 K). ⚠️ The radial "
+          f"term carries the SAME strain —")
+    print(f"    the {ax40 / axial_thermal['radial_diametral_um_at_40K']:.0f}× is the ratio of "
+          f"reference LENGTHS (depth {BORE_DEPTH_MM:.0f} vs OD {D_BUS + 2 * 0.150:.2f}), not of demands.")
+    print(f"  → Constraining it at BOTH ends costs {axial_thermal['constrained_stress_MPa_at_40K']:.1f} MPa "
+          f"at 40 K ({axial_thermal['constrained_stress_MPa_at_80K']:.1f} at 80 K) of axial compression —")
+    print("    a few per cent of PEEK yield, so it is NOT an impossibility. ⛔ What argues against")
+    print("    both-end capture is 20 yr of creep/relaxation ratcheting, which this file does NOT")
+    print("    model; which end is fixed is a geometry verdict either way (00_07 HW.34).")
 
     # ── Is L_FREE_SUP = 6 mm actually grounded? The §2 table ASSUMES the liner turns the span into the
     # PEEK gap alone. That is an assumption about WHERE contact happens, and §4 just computed it — so
@@ -568,19 +601,41 @@ def main() -> int:
     # ── 5. The WELD SEAM at the root — how bad may the JOINT be? (00_07 HW.34) ───────────────────
     # 🔴 The question §2 answers for the WIRE and never for the JOINT. Canon (01_01 §1.4 and the
     # factory protocol §3 step 1) sent the reader here for this state while nothing here held it.
-    # ⛔ Priced on the SUPPORTED span ONLY, and that is a decision rather than an omission: the
-    # free-cantilever column describes no branch that bears on the wall (§4's derived flag), so a
-    # seam number computed on it would be a tolerance for a configuration that does not exist —
-    # the very error the 2026-09-11 verdict corrected. The conservatism instead comes from two
-    # corrections that belong to the REAL span: the worst friction the load sweep carries, and
-    # the span-optimism §4 just measured against this model's own L_FREE_SUP assumption.
+    # 🔴 «Priced on the SUPPORTED span ONLY» stood here until 2026-09-12 and was FALSE — caught by
+    # adversarial review, and the mechanism was this file's own: the conservatism term comes from
+    # `supported_span_check`, which measures first contact along `L_FREE_UNSUP`. So the declared
+    # exclusion was never executed, and the disputed 36 mm span feeds the seam bound through the
+    # back door. ⛔ Do not "fix" that by dropping the correction — it is real; fix it by making the
+    # DEPENDENCE explicit, which is what the protrusion sweep below does.
+    #
+    # ⛔ AND THE HEADLINE FLIPS ON IT. `L_FREE_UNSUP = 36` is under an open correction (00_07 HW.34:
+    # the CEM stack gives 23 mm and the pad is the rod's own end face). At 23 the span optimism is
+    # not 8.5 % but ~40 %, and the binding alloy stops clearing the SF-2 line against our own
+    # as-printed marker. A single number would therefore assert a configuration that is itself in
+    # dispute, so the model emits BOTH and derives the flip rather than letting prose carry it.
     banner("Weld seam at the root — break-even knockdown (the JOINT, not the wire)")
-    span_inflation = 1.0 + (supported_span_check["sigma_understated_pct"] / 100.0
-                            if supported_span_check else 0.0)
     mu_worst = max(MU_SWEEP)
-    sig_sup_worst = bending_stress_MPa(mu_worst * F_POGO_N, L_FREE_SUP) * span_inflation
     shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
-    print("  Seam = root = peak bending moment, so SF_seam = k·SF_wire and k is the only unknown.")
+
+    def span_inflation_for(protrusion_mm: float) -> float:
+        """Span optimism of `L_FREE_SUP`, measured against first contact over `protrusion_mm`.
+
+        ⛔ This is the term that couples the seam bound to the protrusion, and naming the argument
+        is the whole point: the caller must choose a protrusion consciously instead of inheriting
+        the module constant, which is the defect this function replaced.
+        """
+        chan = [r for r in regimes if r["play_side"] == "channel"]
+        if not chan:
+            return 1.0
+        deepest = max(max(first_wall_contact_mm(mu * F_POGO_N, r["radial_play_mm"], protrusion_mm,
+                                                ei_Nm2=r["ei_Nm2_bonded"])
+                          for mu in MU_SWEEP) for r in chan)
+        return max(1.0, deepest / L_FREE_SUP)
+
+    span_inflation = span_inflation_for(L_FREE_UNSUP)
+    sig_sup_worst = bending_stress_MPa(mu_worst * F_POGO_N, L_FREE_SUP) * span_inflation
+    print("  Seam = root; SF_seam = k·SF_wire because both refer to the SAME section (see caveats:")
+    print("  the peak-moment section of the real overhang is the bore mouth, not the root).")
     print("  k is NOT MEASURED anywhere in this tree (no canon row, no vendor answer) — so the")
     print(f"  model bounds it instead of guessing it. Nominal σ_sup = {sig_sup:.1f} MPa (µ={MU_CONTACT:.1f}); "
           f"worst corner = {sig_sup_worst:.1f} MPa")
@@ -619,17 +674,55 @@ def main() -> int:
     k_binding = binding["k_at_infinite_life_worst_corner"]
     marker_label, marker_k = WELD_KNOCKDOWN_MARKERS[0]
     marker_clears = k_binding is not None and marker_k >= k_binding
+    # ⛔ `k_*` is None whenever the WIRE itself is already under the line — a state findings of
+    # 2026-09-12 put within reach — and the arithmetic below used to crash on it with a TypeError
+    # rather than report it. A model that dies at the moment its subject becomes interesting is
+    # worse than one that says «unreachable».
+    def pct_lost(k):
+        return "unreachable — the WIRE is already under this line" if k is None else f"{100.0 * (1.0 - k):.0f} %"
+
     print(f"\n  → The binding candidate at the worst corner is {binding['alloy']} "
           f"(SF {binding['sf_wire_supported_worst_corner']:.1f}×): the seam may lose "
-          f"{100.0 * (1.0 - k_binding):.0f} % of the wire's endurance before the SF-2 line goes, and "
-          f"{100.0 * (1.0 - binding['k_at_failure_line_worst_corner']):.0f} % before failure is predicted.")
+          f"{pct_lost(k_binding)} of the wire's endurance before the SF-2 line goes, and "
+          f"{pct_lost(binding['k_at_failure_line_worst_corner'])} before failure is predicted.")
     print(f"  → Against our own marker «{marker_label}» (k = {marker_k:.2f}): "
           f"{'CLEARS' if marker_clears else 'DOES NOT CLEAR'} the SF-2 line, margin in k = "
-          f"{marker_k - k_binding:+.3f}.")
+          f"{'n/a' if k_binding is None else format(marker_k - k_binding, '+.3f')}.")
     print("  ⚠️ This bounds ONE mechanism. Three the model still does not carry, with their signs:")
     print("     bead section (upset/fillet lowers nominal stress — RELIEVES) · weld-toe notch")
     print("     (concentrates it — AGGRAVATES) · weld residual TENSION, which is a MEAN stress and")
     print("     this file has no Goodman/Haigh correction anywhere, so even k = 1 would understate.")
+
+    # ── 5b. The verdict's dependence on the DISPUTED protrusion — derived, never asserted ─────────
+    # ⛔ The number above is not quotable on its own: it rides `L_FREE_UNSUP`, and that constant is
+    # under an open correction (00_07 HW.34 — the CEM stack gives 23 mm). Emitting both spans turns
+    # «the bound may flip» from a caveat into a measurement, and shows WHICH way.
+    binding_alloy = binding["alloy"]
+    se_binding = binding["endurance_MPa"]
+    protrusion_rows = []
+    for label, prot in (("shipped constant L_FREE_UNSUP", L_FREE_UNSUP),
+                        ("CEM-derived candidate (00_07 HW.34)", PROTRUSION_FROM_CEM_MM)):
+        infl = span_inflation_for(prot)
+        sig = bending_stress_MPa(mu_worst * F_POGO_N, L_FREE_SUP) * infl
+        k_inf = break_even_knockdown(se_binding / sig, INFINITE_LIFE_SF)
+        protrusion_rows.append({
+            "label": label, "protrusion_mm": prot,
+            "span_optimism_pct": round(100.0 * (infl - 1.0), 1),
+            "sigma_worst_corner_MPa": round(sig, 1),
+            "binding_k_at_infinite_life": round(k_inf, 3) if k_inf <= 1.0 else None,
+            "as_printed_marker_clears_sf2": bool(k_inf <= marker_k),
+            "margin_in_k": round(marker_k - k_inf, 3),
+        })
+    flips = len({r["as_printed_marker_clears_sf2"] for r in protrusion_rows}) > 1
+    print(f"\n  → Dependence on the DISPUTED protrusion ({binding_alloy} binds either way):")
+    for r in protrusion_rows:
+        print(f"      {r['label']:<38s} L={r['protrusion_mm']:>5.1f} mm → optimism {r['span_optimism_pct']:>5.1f} % · "
+              f"σ {r['sigma_worst_corner_MPa']:>5.1f} MPa · k {r['binding_k_at_infinite_life']} · "
+              f"{'CLEARS' if r['as_printed_marker_clears_sf2'] else 'DOES NOT CLEAR'} ({r['margin_in_k']:+.3f})")
+    print("    🔴 THE VERDICT FLIPS ON IT — so the seam bound is NOT quotable until the protrusion"
+          if flips else "    ✅ The verdict is the same at both spans — the bound is quotable as it stands")
+    print("    correction lands (00_07 HW.34); quote the pair, never the shipped-constant row alone."
+          if flips else "    (the protrusion correction changes the digits, not the answer).")
 
     weld_seam = {
         "question": "00_07 HW.34 — the ratified rod is a WELDED drawn wire, so a heat-affected zone "
@@ -652,6 +745,15 @@ def main() -> int:
                                             "computed on it would price a configuration that does "
                                             "not exist (the error the 2026-09-11 verdict corrected)"},
         "per_alloy": seam_rows,
+        # 🔴 Read this BEFORE `binding_candidate`: the bound rides the disputed protrusion, and at
+        # the CEM-derived span the verdict against our own marker reverses. `verdict_flips_on_it`
+        # is DERIVED — when the protrusion correction lands it goes false on its own.
+        "protrusion_sensitivity": {"binding_alloy": binding_alloy,
+                                   "rows": protrusion_rows,
+                                   "verdict_flips_on_it": bool(flips),
+                                   "note": "the conservatism term (span optimism) is measured along "
+                                           "the protrusion, so the seam bound inherits a constant "
+                                           "that 00_07 HW.34 records as wrong; quote the PAIR"},
         "binding_candidate": {"alloy": binding["alloy"],
                               "sf_wire_worst_corner": binding["sf_wire_supported_worst_corner"],
                               "k_at_infinite_life": k_binding,

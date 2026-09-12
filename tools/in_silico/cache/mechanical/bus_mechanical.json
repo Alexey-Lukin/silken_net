@@ -304,7 +304,10 @@
         "80": 52.2
       },
       "radial_diametral_um_at_40K": 2.0,
-      "note": "the radial term is the one canon carries; the axial term is larger by the ratio of the bore DEPTH to the liner OD, and it is what forbids capturing the tube at both ends. Both are differential against Ti, so they vanish if the counterpart is also PEEK"
+      "strain": 0.001536,
+      "note": "axial and radial carry the SAME differential strain; their ratio is the ratio of their reference lengths (bore depth vs liner OD), so quoting it as a mechanical finding overstates it. What both-end capture actually costs is the stress below",
+      "constrained_stress_MPa_at_40K": 5.53,
+      "constrained_stress_MPa_at_80K": 11.06
     },
     "supported_span_check": {
       "assumed_free_span_mm": 6.0,
@@ -339,9 +342,9 @@
     "span": {
       "which": "supported (liner) ONLY",
       "nominal_sigma_MPa": 18.3,
-      "worst_corner_sigma_MPa": 33.2,
+      "worst_corner_sigma_MPa": 33.1,
       "worst_corner_mu": 0.5,
-      "span_optimism_pct": 8.5,
+      "span_optimism_pct": 8.2,
       "why_not_free_cantilever": "\u00a74's derived flag says the free-cantilever SF describes no branch that bears on the wall, so a seam tolerance computed on it would price a configuration that does not exist (the error the 2026-09-11 verdict corrected)"
     },
     "per_alloy": [
@@ -349,11 +352,11 @@
         "alloy": "Ti-15Zr",
         "endurance_MPa": 427.5,
         "sf_wire_supported_nominal": 23.32,
-        "sf_wire_supported_worst_corner": 12.89,
+        "sf_wire_supported_worst_corner": 12.93,
         "k_at_failure_line_nominal": 0.043,
         "k_at_infinite_life_nominal": 0.086,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.078,
+        "k_at_failure_line_worst_corner": 0.077,
         "k_at_infinite_life_worst_corner": 0.155,
         "infinite_life_reachable_worst_corner": true
       },
@@ -361,23 +364,23 @@
         "alloy": "beta-Ti-13Nb-13Zr",
         "endurance_MPa": 405.0,
         "sf_wire_supported_nominal": 22.09,
-        "sf_wire_supported_worst_corner": 12.22,
+        "sf_wire_supported_worst_corner": 12.25,
         "k_at_failure_line_nominal": 0.045,
         "k_at_infinite_life_nominal": 0.091,
         "infinite_life_reachable_nominal": true,
         "k_at_failure_line_worst_corner": 0.082,
-        "k_at_infinite_life_worst_corner": 0.164,
+        "k_at_infinite_life_worst_corner": 0.163,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ti-6Al-4V",
         "endurance_MPa": 396.0,
         "sf_wire_supported_nominal": 21.6,
-        "sf_wire_supported_worst_corner": 11.94,
+        "sf_wire_supported_worst_corner": 11.98,
         "k_at_failure_line_nominal": 0.046,
         "k_at_infinite_life_nominal": 0.093,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.084,
+        "k_at_failure_line_worst_corner": 0.083,
         "k_at_infinite_life_worst_corner": 0.167,
         "infinite_life_reachable_worst_corner": true
       },
@@ -385,11 +388,11 @@
         "alloy": "Ti-6Al-7Nb",
         "endurance_MPa": 382.5,
         "sf_wire_supported_nominal": 20.86,
-        "sf_wire_supported_worst_corner": 11.54,
+        "sf_wire_supported_worst_corner": 11.57,
         "k_at_failure_line_nominal": 0.048,
         "k_at_infinite_life_nominal": 0.096,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.087,
+        "k_at_failure_line_worst_corner": 0.086,
         "k_at_infinite_life_worst_corner": 0.173,
         "infinite_life_reachable_worst_corner": true
       },
@@ -397,34 +400,59 @@
         "alloy": "CP-Ti-Gr4",
         "endurance_MPa": 216.0,
         "sf_wire_supported_nominal": 11.78,
-        "sf_wire_supported_worst_corner": 6.51,
+        "sf_wire_supported_worst_corner": 6.54,
         "k_at_failure_line_nominal": 0.085,
         "k_at_infinite_life_nominal": 0.17,
         "infinite_life_reachable_nominal": true,
         "k_at_failure_line_worst_corner": 0.153,
-        "k_at_infinite_life_worst_corner": 0.307,
+        "k_at_infinite_life_worst_corner": 0.306,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ta",
         "endurance_MPa": 155.2,
         "sf_wire_supported_nominal": 8.47,
-        "sf_wire_supported_worst_corner": 4.68,
+        "sf_wire_supported_worst_corner": 4.7,
         "k_at_failure_line_nominal": 0.118,
         "k_at_infinite_life_nominal": 0.236,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.214,
-        "k_at_infinite_life_worst_corner": 0.427,
+        "k_at_failure_line_worst_corner": 0.213,
+        "k_at_infinite_life_worst_corner": 0.426,
         "infinite_life_reachable_worst_corner": true
       }
     ],
+    "protrusion_sensitivity": {
+      "binding_alloy": "Ta",
+      "rows": [
+        {
+          "label": "shipped constant L_FREE_UNSUP",
+          "protrusion_mm": 36.0,
+          "span_optimism_pct": 8.2,
+          "sigma_worst_corner_MPa": 33.1,
+          "binding_k_at_infinite_life": 0.426,
+          "as_printed_marker_clears_sf2": true,
+          "margin_in_k": 0.074
+        },
+        {
+          "label": "CEM-derived candidate (00_07 HW.34)",
+          "protrusion_mm": 23.0,
+          "span_optimism_pct": 40.0,
+          "sigma_worst_corner_MPa": 42.8,
+          "binding_k_at_infinite_life": 0.551,
+          "as_printed_marker_clears_sf2": false,
+          "margin_in_k": -0.051
+        }
+      ],
+      "verdict_flips_on_it": true,
+      "note": "the conservatism term (span optimism) is measured along the protrusion, so the seam bound inherits a constant that 00_07 HW.34 records as wrong; quote the PAIR"
+    },
     "binding_candidate": {
       "alloy": "Ta",
-      "sf_wire_worst_corner": 4.68,
-      "k_at_infinite_life": 0.427,
-      "k_at_failure_line": 0.214,
+      "sf_wire_worst_corner": 4.7,
+      "k_at_infinite_life": 0.426,
+      "k_at_failure_line": 0.213,
       "as_printed_marker_clears_sf2": true,
-      "margin_in_k_vs_as_printed_marker": 0.073
+      "margin_in_k_vs_as_printed_marker": 0.074
     },
     "not_modelled": {
       "bead_section": "an upset/fillet raises the local section, which LOWERS nominal stress \u2014 this omission is conservative",

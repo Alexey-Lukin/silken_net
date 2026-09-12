@@ -403,17 +403,20 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["axial_thermal"]["differential_axial_um_by_dT_K"]["40"], 0.5,
     ),
+    # ⛔ These two pinned a SINGLE headline until 2026-09-12, and the headline turned out to ride a
+    # constant the tracker records as wrong — so a green pin was certifying a number that flips.
+    # They now pin the PAIR, which is what the doc may quote: both protrusion rows, by position.
     (
-        "weld-seam break-even k for the binding alloy → bus_mechanical.json §weld_seam",
-        SUMMARY, rf"the joint may lose \*\*`k` = {N}\*\* of the wire",
+        "weld-seam k at the SHIPPED protrusion → bus_mechanical.json §protrusion_sensitivity",
+        SUMMARY, rf"\| 36 mm \(shipped constant\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
+        lambda d: d["weld_seam"]["protrusion_sensitivity"]["rows"][0]["binding_k_at_infinite_life"], 0.001,
     ),
     (
-        "margin in k against our own as-printed marker → bus_mechanical.json §weld_seam",
-        SUMMARY, rf"still \*\*clears\*\* the SF-2 line, but by only \*\*\+{N}\*\* in `k`",
+        "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §protrusion_sensitivity",
+        SUMMARY, rf"\| 23 mm \(CEM-derived\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: d["weld_seam"]["binding_candidate"]["margin_in_k_vs_as_printed_marker"], 0.001,
+        lambda d: d["weld_seam"]["protrusion_sensitivity"]["rows"][1]["binding_k_at_infinite_life"], 0.001,
     ),
 ]
 

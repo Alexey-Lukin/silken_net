@@ -316,9 +316,13 @@ def test_bus_mechanical_liner_axial_thermal():
     ax = json.loads(path.read_text())["clearance_regime"]["axial_thermal"]
     by_dt = ax["differential_axial_um_by_dT_K"]
     assert ax["alpha_peek_1K"] > ax["alpha_ti_1K"], "PEEK must be the faster-expanding half"
-    assert by_dt["40"] > ax["radial_diametral_um_at_40K"], "the axial term is the load-bearing one"
-    # linear in ΔT — a model that stopped being linear here changed physics, not parameters
-    assert abs(by_dt["80"] - 2.0 * by_dt["40"]) < 0.2
+    # ⛔ Two assertions stood here and both were vacuous (2026-09-12, adversarial review): the ΔT
+    #    linearity is true BY CONSTRUCTION of the dict comprehension, and «axial > radial» reduces
+    #    to `17 > 1.30`, i.e. it compares two reference LENGTHS while both terms carry the SAME
+    #    strain. That second one was worse than useless — it dressed a unit ratio as a mechanical
+    #    finding. What is checkable is that the two terms stay tied to the geometry they claim.
+    assert ax["liner_length_mm"] > 0.0
+    assert set(by_dt) == {"20", "40", "60", "80"}, "the ΔT sweep lost or gained a point"
 
 
 def test_bus_mechanical_weld_seam():
@@ -347,22 +351,26 @@ def test_bus_mechanical_weld_seam():
     assert d["clearance_regime"]["free_cantilever_sf_describes_these"] == []
     assert "supported" in seam["span"]["which"]
     assert seam["span"]["worst_corner_sigma_MPa"] > seam["span"]["nominal_sigma_MPa"]
-    # 3. The relation the whole bound rests on, per alloy and per corner.
-    inf_sf = fm["infinite_life_sf"]
-    for row in seam["per_alloy"]:
-        for tag, sf_key in (("nominal", "sf_wire_supported_nominal"),
-                            ("worst_corner", "sf_wire_supported_worst_corner")):
-            sf = row[sf_key]
-            assert abs(row[f"k_at_infinite_life_{tag}"] * sf - inf_sf) < 0.02, row["alloy"]
-            assert abs(row[f"k_at_failure_line_{tag}"] * sf - 1.0) < 0.02, row["alloy"]
-        # both corrections bite in the same direction
-        assert row["sf_wire_supported_worst_corner"] < row["sf_wire_supported_nominal"]
-        assert row["k_at_infinite_life_worst_corner"] > row["k_at_infinite_life_nominal"]
-    # 4. The binding candidate is DERIVED — the softest wire tolerates the least bad joint.
-    worst = min(seam["per_alloy"], key=lambda r: r["sf_wire_supported_worst_corner"])
-    assert seam["binding_candidate"]["alloy"] == worst["alloy"]
-    assert seam["binding_candidate"]["k_at_infinite_life"] == max(
-        r["k_at_infinite_life_worst_corner"] for r in seam["per_alloy"])
+    # 3. The dispute the bound rides. ⛔ Five assertions stood here until 2026-09-12 and adversarial
+    #    review proved every one of them an IDENTITY re-executed on the producer's own output
+    #    (`k = line/sf` then `k*sf == line`; `min()` re-run to confirm `min()`), i.e. green on any
+    #    data whatsoever. They are gone rather than reworded: a test that cannot fail is worse than
+    #    no test, because it is counted. What replaces them can fail on data — the two protrusion
+    #    rows must stay ORDERED, and the CEM-derived one must stay the harsher, which is the whole
+    #    reason the headline is not quotable alone.
+    sens = seam["protrusion_sensitivity"]
+    shipped_row, cem_row = sens["rows"]
+    assert shipped_row["protrusion_mm"] > cem_row["protrusion_mm"], "the rows swapped order"
+    assert cem_row["span_optimism_pct"] > shipped_row["span_optimism_pct"]
+    assert cem_row["sigma_worst_corner_MPa"] > shipped_row["sigma_worst_corner_MPa"]
+    assert cem_row["binding_k_at_infinite_life"] > shipped_row["binding_k_at_infinite_life"]
+    # the flip flag must be DERIVED from the two rows, never typed
+    assert sens["verdict_flips_on_it"] == (
+        shipped_row["as_printed_marker_clears_sf2"] != cem_row["as_printed_marker_clears_sf2"])
+    # 4. The binding candidate must be a real alloy of the table, and the sensitivity must be about
+    #    that same alloy — a mismatch means the two blocks drifted apart.
+    assert seam["binding_candidate"]["alloy"] in {r["alloy"] for r in seam["per_alloy"]}
+    assert sens["binding_alloy"] == seam["binding_candidate"]["alloy"]
     # 5. Both markers are OUR OWN numbers, so they must still match the model they came from.
     markers = {m["label"]: m["k"] for m in seam["markers"]}
     assert fm["as_printed_derate"] in markers.values()
