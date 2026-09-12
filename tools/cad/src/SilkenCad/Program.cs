@@ -27,6 +27,10 @@ internal static class Program
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
+                // Falsifiable probes of KERNEL assumptions (Probe.cs) — not of our geometry.
+                "probe" => args.Length >= 2 && float.TryParse(args[1], out float fPv)
+                    ? RunHeadless(fPv, () => Probe.Run(fPv))
+                    : Fail("usage: probe <voxel-mm>   e.g. probe 0.34 · probe 0.33"),
                 "help" or "--help" or "-h" => Help(),
                 var strCmd => Fail($"unknown command: {strCmd}"),
             };

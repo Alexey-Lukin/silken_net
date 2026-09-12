@@ -57,11 +57,16 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 0a. 🔴 **«CEM json = parameter SSOT» is true only where the manifest SPEAKS — and `cem_canon_sync` guards exactly that half, so the silent half has no gate at all.** Where a manifest omits a field, the effective geometry is the **`Cem.cs` record default**, and nothing binds that default to canon: the guard reads `cem/*.json`, and the C# xUnit pins the defaults against numbers hand-written in the TEST (that arrangement locked an off-spec groove once — repaired, see the guard's header). Measured 2026-09-09 (`00_07` HW.45): **14 such fields**, all in the assembly-level manifests (`anchor_assembly*.json`, `anchor_axial_stack.json`), and the sharpest are the ones that CROSS machine halves — `o_ring_gap_mm = 1.424f` is *derived* from in-silico script 52 (`ORING_CS 1.78 × 0.80`, and that window itself reconciles a `02_02 §3.2`/`§3.5` drift), `rf_clearance_min_mm = 12f` mirrors [`02_01 §5.3`](../../../docs/02_01_Hardware_Architecture_and_BOM.md), and `zone1_insertion_mm = 30` carries **no provenance comment at all** while the same 30 lives in scripts 54/58 and in a JSON `_note` sentence. 🔴 **«All correct today» stood here until 2026-09-11 and it was FALSE for the very field this entry uses as its example — `rf_clearance_min_mm = 12f`.** [`02_01 §5.3`](../../../docs/02_01_Hardware_Architecture_and_BOM.md), the home it names, requires **«≥ 8 мм (мінімум), бажано 10–15»** with «λ/40 = 8.6» as the ground and «HFSS обовʼязкова якщо < 10» as the trigger; the only `12` there is the OUTCOME of a proposed two-deck layout («standoff 8–10 над Power Deck, що стоїть ~2 над фланцем → ~12 ✓»). So the constant mirrors a design POINT as if it were a floor, and `52_z_stack_tolerance.RF_ANT_TI_CLEARANCE_MIN = 12.0` mirrors it again in the other machine half. 🔑 **Why the check passed anyway, and this is the portable half: the verification was of the ADDRESS, not of the CLAUSE.** «§5.3 exists and is about antenna↔Ti clearance» is true; «§5.3 requires 12» was never read. ⊕ `git log -S` prices it: the canon row was born 2026-05-16 (`4228f53a`), the 12 a month later in **two commits of one day** (`02469300` code · `52eb1f8a` docs), and it now stands in nine homes — one date, ONE witness, and contradicting its own source from birth. ⚠️ The in-silico half already had the rule that catches this and it was never applied here: skill `in-silico` #9 — **if canon gives a RANGE, say which END you took and why.** The 12 took neither end. **Practice: a record default that can be the EFFECTIVE value names its home in the comment beside it (canon row · CEM field · the in-silico script that computes it) — and «names its home» means you OPENED the home and read the clause, not that the address resolves; changing a number in one machine half, ask which artefact in the OTHER half re-states it, because the two share no identifier vocabulary and grep across them only works on the VALUE.**
 
 1. **Render lattices via `new Voxels(IImplicit, BBox3)` + `BoolIntersect`** — NOT
-   `voxBounding.voxIntersectImplicit(impl)`. The convenience method yields a malformed
-   (background-0) OpenVDB level set at fine voxel on a thin bored part → an **uncatchable
-   native abort** (`libc++abi … ValueError: expected grid A outside value > 0, got 0` — a
-   process kill, not a .NET exception). The ctor path runs at 0.1mm; voxIntersect's ceiling
-   was ~0.4mm. (`Zone1Anode.Anode`.)
+   `voxBounding.voxIntersectImplicit(impl)`, which dies with an **uncatchable native abort**
+   (`libc++abi … ValueError: expected grid A outside value > 0, got 0` — a process kill, not a
+   .NET exception). ✅ **The WORKAROUND stands; its stated CAUSE was wrong and is now measured
+   (2026-09-12, `dotnet run -- probe <voxel>`).** It is NOT «a thin bored part at fine voxel» —
+   geometry is irrelevant. The convenience path passes the narrow-band width **in mm** into an
+   **`int`** parameter, so below 1/3 mm `3 × voxel` truncates to 0 and the grid is born invalid.
+   The boundary is therefore SHARP and ARITHMETIC, and the probe hits it exactly: **0.34 mm
+   survives** (3×0.34 = 1.02 → int 1), **0.33 mm aborts** (0.99 → int 0, exit 134). So the
+   «ceiling ~0.4 mm» this line used to carry is really **0.334 mm**, and it moves with nothing
+   about our parts. ⊕ Upstream bug, worth reporting (`00_07` HW.50).
 2. **`ImplicitRadialGyroid` is degenerate near r=0** (cylindrical singularity) — fine for
    large annular parts, empty grid for a small rod near its own axis. Use a **cartesian
    gyroid** (uniform everywhere, still bicontinuous → honors founder decision (б), HW.33).
@@ -135,10 +140,20 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     part's own volume — and when a feature is thinner than the voxel, say so where the geometry is READ,
     because a CEM-true dimension and a mesh that carries it are two different claims.**
 
-9. **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT `new Voxels(IImplicit, BBox3)`.**
-   The SDF ctor builds a **narrow-band** field (voxels near the surface only), so a solid core falls
-   *outside* the band and renders as a **hollow shell** (`MechanicalLock.cs`: a Ø11 shank measured
-   ~17 mm³ vs ~1700 expected). The gyroid dodges this only because it is thin-walled everywhere.
+9. **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT `new Voxels(IImplicit, BBox3)`
+   — unless your field is CLOSED, and that exception is measured, not theoretical.**
+   The symptom is real (`MechanicalLock.cs`: a Ø11 shank measured ~17 mm³ vs ~1700 expected), but
+   🔴 **the mechanism this entry claimed — «the narrow band excludes the solid core» — is FALSE,
+   falsified 2026-09-12 by `dotnet run -- probe <voxel>`:** a *buried* cylinder
+   (`max(r − R, |z − z_c| − L/2)`, closed on every side inside the bbox) renders through the very
+   same ctor at **99.7–99.8 %** of its analytic volume, at both 0.33 and 0.34 mm. What actually
+   hollows a body is a field left **OPEN at the bbox caps** — an unbounded radial field is still
+   «inside» there, so `volumeToMesh` yields an open tube, `CalculateProperties` rebuilds a level set
+   from a non-watertight mesh, and the interior is gone. The gyroid dodges it not by being
+   thin-walled but because `BoolIntersect(envelope)` closes it. 🔑 **Consequence worth having: a
+   closed SDF solid is ALLOWED**, which the old rule forbade — and that is exactly what a single-field
+   «gyroid + monolithic rod» would need. Keep `voxConstruct` as the default anyway: it is simpler and
+   cannot be got wrong by forgetting to close a field.
    Pattern: solid = `BaseCylinder().voxConstruct()`; thin features (barb ridges) = SDF `BoolAdd` (the
    Ti-coin split). The `verify` solidity gate (volume > 0.8·annulus) guards the regression.
 10. **`render`/`section` (presentation) need a display + the screenshot is TGA.** The PicoGK native
