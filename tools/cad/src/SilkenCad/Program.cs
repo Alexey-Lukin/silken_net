@@ -820,6 +820,13 @@ internal static class Program
         Console.WriteLine(
             $"  insertion budget={oM.InsertionBudgetMm:F1} mm · embedded span={oM.OverallStackLengthMm:F1} mm · " +
             $"bus-rod clears channel={oM.BusRodClears}");
+        Console.WriteLine(
+            $"  liner: length={oM.LinerLengthMm:F1} mm (channel {AxialStack.ChannelTopZMm(cem) - AxialStack.ChannelBottomZMm(cem):F1} + " +
+            $"protrusion {cem.Capsule.Flange.BusLinerProtrusionMm:F1} below the shank face) · covers channel={oM.LinerCoversChannel}");
+        if (oM.LinerVolumeAnalyticMm3 is { } dAn and > 0)
+            Console.WriteLine(
+                $"  liner body: analytic {dAn:F2} mm³ · own voxels {oM.LinerVolumeRenderedMm3:F2} mm³ · " +
+                $"ADDS TO STACK {oM.LinerAddsToStackMm3:F2} mm³ (wall {cem.Capsule.Flange.BusLinerThicknessMm:F2} mm vs voxel {cem.VoxelSizeMm:F2} mm)");
 
         // Render sanity — the ONLY exit-gate: a broken transform / Bool yields an empty or degenerate merge.
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
@@ -835,6 +842,27 @@ internal static class Program
             Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
                 ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F1} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} > cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — rod+insulation pinched (01_01 §1.4)"
                 : $"  ⚠ F3: anode bore Ø{cem.Zone1.BoreDiameterMm:F1} < flange bore Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — bus conductor pinched");
+
+        if (oM.LinerCoversChannel is false)
+            Console.WriteLine(
+                $"  ⚠ F4: liner z[{AxialStack.LinerBottomZMm(cem):F1}, {AxialStack.LinerTopZMm(cem):F1}] does not cover channel " +
+                $"z[{AxialStack.ChannelBottomZMm(cem):F1}, {AxialStack.ChannelTopZMm(cem):F1}] — bare cathode metal against the bus " +
+                "at an end (01_01 §1.4; F3 judges a DIAMETER and cannot see this)");
+        // 🔴 The finding this audit did NOT have until 2026-09-12, and its absence was the expensive
+        // kind: the tube was BUILT, BoolAdd'ed and reported as covered while contributing zero voxels,
+        // so the merged volume was byte-identical with and without it. A CEM-true body that reaches no
+        // mesh is a claim nothing measures — say it out loud rather than let a reader infer geometry.
+        if (oM.LinerVolumeAnalyticMm3 is { } dOwed and > 0 && (oM.LinerAddsToStackMm3 ?? 0) < 0.5 * dOwed)
+            Console.WriteLine(
+                $"  ⚠ the liner adds {oM.LinerAddsToStackMm3:F2} mm³ to the stack against {dOwed:F2} mm³ of analytic body — " +
+                $"at this voxel ({cem.VoxelSizeMm:F2} mm) the Ø{cem.Zone1.BusRodDiameterMm:F2} rod and the " +
+                $"Ø{cem.Capsule.Flange.BoreDiameterMm:F2} channel are the same voxels, so the annulus between them has " +
+                "nowhere to land. F4 and the Z figures above are CEM MATH and stand; the MERGED MESH does not carry the " +
+                "tube, and its own voxel volume says nothing about that (00_07 HW.34)");
+        if (cem.Capsule.Flange.BusLinerThicknessMm > 0f && cem.Capsule.Flange.BusLinerProtrusionMm <= 0f)
+            Console.WriteLine(
+                "  ⚠ liner flush with the bore mouth — the bore EDGE then meets the tube's END FACE rather than its " +
+                "flank (⚖️ 2026-09-12 ratified ≥ 1.0 mm of protrusion; 00_07 HW.34)");
 
         Console.WriteLine(bSane
             ? "AUDIT OK — stack rendered; press-fit findings above → HW.8 reconcile"

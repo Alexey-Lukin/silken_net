@@ -101,6 +101,14 @@ internal sealed record GeometryMetrics
     public double? Zone1Zone2InterferenceMm3 { get; init; } // render overlap — 0 at nominal Ø11=Ø11 (surfaces touch, volumes don't; press-fit is +interference on bench)
     public double? Zone2Zone3InterferenceMm3 { get; init; } // render overlap — a thin shell = flange shoulder on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11 = F1)
     public bool? BusRodClears { get; init; }                // F3 — monolithic bus rod + 2·liner < cathode channel (STRICT) (01_01 §1.4); legacy bore≥bore when rod==0
+    public bool? LinerCoversChannel { get; init; }          // F4 — the liner covers the channel end to end (01_01 §1.4, ⚖️ 2026-09-12); F3 judges a DIAMETER and is blind to length
+    public double? LinerLengthMm { get; init; }             // liner axial length = channel + the ratified lower protrusion into the PEEK gap
+    // 🔴 The liner WALL (0.15 mm) is thinner than the stack voxel (0.2 mm), so the tube can be
+    // absent from the render while every CEM number about it is right. These two make that
+    // visible instead of leaving it to be discovered by someone measuring the mesh.
+    public double? LinerVolumeRenderedMm3 { get; init; }    // the tube's OWN voxel volume — ⚠️ healthy even when it adds nothing to the stack
+    public double? LinerAddsToStackMm3 { get; init; }       // what the MERGE gained by it — the number that is not fooled by a resolved standalone body
+    public double? LinerVolumeAnalyticMm3 { get; init; }    // π/4·(OD²−ID²)·length from the CEM — what a resolved render owes
 }
 
 internal static class Validation
@@ -368,6 +376,16 @@ internal static class Validation
     {
         GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, sv.Merged, null);
 
+        // ⛔ Measured, never assumed: at a 0.2 mm stack voxel a 0.15 mm tube wall can round away
+        // entirely, and a merged volume identical with and without it is exactly what that looks
+        // like. Reporting 0 here is the honest outcome; reporting nothing was the defect.
+        double? dLinerRendered = null;
+        if (sv.Liner is { } voxLiner)
+        {
+            voxLiner.CalculateProperties(out float fLinerVol, out _);
+            dLinerRendered = fLinerVol;
+        }
+
         Voxels voxZ1Z2 = new(sv.Zone1);
         voxZ1Z2.BoolIntersect(sv.Zone2);
         voxZ1Z2.CalculateProperties(out float fZ1Z2, out BBox3 _);
@@ -385,6 +403,11 @@ internal static class Validation
             Zone1Zone2InterferenceMm3 = fZ1Z2,
             Zone2Zone3InterferenceMm3 = fZ2Z3,
             BusRodClears = AxialStack.BusRodClears(cem),
+            LinerCoversChannel = AxialStack.LinerCoversChannel(cem),
+            LinerLengthMm = AxialStack.LinerLengthMm(cem),
+            LinerVolumeRenderedMm3 = dLinerRendered,
+            LinerAddsToStackMm3 = sv.Liner is null ? null : sv.LinerAddsMm3,
+            LinerVolumeAnalyticMm3 = AxialStack.LinerAnalyticVolumeMm3(cem),
         };
     }
 

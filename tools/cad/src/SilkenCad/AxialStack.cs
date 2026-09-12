@@ -52,6 +52,47 @@ internal static class AxialStack
     public static float OverallStackLengthMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 
+    // ── The cathode CHANNEL and the liner that lines it, in stack-frame Z (01_01 §1.4) ──
+    // The channel is THROUGH: it runs the whole flange, shank face → pogo face, and the pad IS the rod's
+    // end face. ⛔ Not a blind bore — that word travelled from an in-silico comment into five doc homes
+    // and could never have passed a conductor (00_07 HW.34, swept 2026-09-12).
+    public static float ChannelBottomZMm(AnchorAxialStackCem cem) => CapsuleLiftZMm(cem);
+
+    public static float ChannelTopZMm(AnchorAxialStackCem cem)
+        => CapsuleLiftZMm(cem) + cem.Capsule.Flange.ShankLengthMm + cem.Capsule.Flange.FlangeThicknessMm;
+
+    // ⚖️ 2026-09-12: the liner covers the channel ENTIRELY (ground = the perimeter of CATHODE METAL —
+    // metal surrounds the rod over the whole channel INCLUDING the top face, so a tube short of either
+    // end leaves metal against metal there), and its LOWER end protrudes into the PEEK gap.
+    public static float LinerBottomZMm(AnchorAxialStackCem cem)
+        => ChannelBottomZMm(cem) - cem.Capsule.Flange.BusLinerProtrusionMm;
+
+    public static float LinerTopZMm(AnchorAxialStackCem cem) => ChannelTopZMm(cem);
+
+    public static float LinerLengthMm(AnchorAxialStackCem cem)
+        => LinerTopZMm(cem) - LinerBottomZMm(cem);
+
+    // What a RESOLVED render of that tube would weigh — the reference the measured voxel volume is
+    // read against. ⛔ Its purpose is not the number but the COMPARISON: the wall is 0.15 mm and the
+    // stack voxel 0.2, so the tube can vanish from the mesh while every CEM figure about it stays right.
+    public static double LinerAnalyticVolumeMm3(AnchorAxialStackCem cem)
+    {
+        float fIn = cem.Zone1.BusRodDiameterMm / 2f;
+        float fOut = fIn + cem.Capsule.Flange.BusLinerThicknessMm;
+        return Math.PI * ((fOut * fOut) - (fIn * fIn)) * LinerLengthMm(cem);
+    }
+
+    // F4 — the liner COVERS the channel over its whole length, not merely fits it by diameter.
+    // ⛔ This is the blindness F3 declares and cannot see: `BusRodClears` compares rod + 2·liner against
+    //    the bore, i.e. a DIAMETER, so a tube shorter than the channel passes it green while leaving bare
+    //    Ti against the bus at one end (00_07 HW.34; gate-blindness class → ssot-maintenance §Guard-craft).
+    // ⛔ DECLARED CEILING, same shape as F3's: this judges NOMINAL axial dims. It says nothing about the
+    //    tube's own length tolerance, nothing about whether it is retained, and nothing about the edge
+    //    contact the protrusion exists to move — the contact STRESS has no model anywhere in this tree.
+    public static bool LinerCoversChannel(AnchorAxialStackCem cem)
+        => cem.Capsule.Flange.BusLinerThicknessMm <= 0f
+           || (LinerBottomZMm(cem) <= ChannelBottomZMm(cem) && LinerTopZMm(cem) >= ChannelTopZMm(cem));
+
     // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
     // rod Ø + 2·liner < flange channel Ø (STRICT since 2026-09-11 — zero nominal clearance is not a pass). Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
     // old "anode bore ≥ flange bore" continuity check. Pure boolean finding (CEM-only → xUnit).
@@ -111,7 +152,31 @@ internal static class AxialStack
             voxBus = new BaseCylinder(new LocalFrame(), OverallStackLengthMm(cem), cem.Zone1.BusRodDiameterMm / 2f).voxConstruct();
             voxMerged.BoolAdd(voxBus);
         }
-        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule, voxBus);
+        // The LINER (⚖️ 2026-09-12): a PEEK tube on the rod, covering the channel end to end and
+        // protruding below the shank face into the PEEK gap. BasePipe + voxConstruct (gotcha #9 — a
+        // thin annulus is still a FILLED body, not a narrow band). Kept apart for the section colour,
+        // exactly like the bus, and BoolAdd'ed so the merged volume carries it.
+        Voxels? voxLiner = null;
+        double dLinerAdds = 0.0;
+        if (cem.Zone1.BusRodDiameterMm > 0f && cem.Capsule.Flange.BusLinerThicknessMm > 0f)
+        {
+            float fInnerR = cem.Zone1.BusRodDiameterMm / 2f;
+            voxLiner = MeshUtility.voxApplyTransformation(
+                new BasePipe(new LocalFrame(), LinerLengthMm(cem), fInnerR,
+                             fInnerR + cem.Capsule.Flange.BusLinerThicknessMm).voxConstruct(),
+                v => v + new Vector3(0f, 0f, LinerBottomZMm(cem)));
+
+            // 🔴 Measure the CONTRIBUTION, not the body. A standalone BasePipe of this wall renders
+            // fine in its own grid — so a «rendered volume» reads healthy — while adding NOTHING to the
+            // stack, because at a 0.2 mm voxel the Ø1.0 rod and the Ø1.35 channel are the same handful
+            // of voxels and the annulus between them does not exist to voxelise into. The honest
+            // question is what the merge GAINED, and it is one subtraction away (00_07 HW.34).
+            voxMerged.CalculateProperties(out float fBefore, out _);
+            voxMerged.BoolAdd(voxLiner);
+            voxMerged.CalculateProperties(out float fAfter, out _);
+            dLinerAdds = fAfter - fBefore;
+        }
+        return new AxialStackVoxels(voxMerged, voxZone1, voxZone2, voxCapsule, voxBus, voxLiner, dLinerAdds);
     }
 }
 
@@ -120,4 +185,4 @@ internal static class AxialStack
 // = 0 (anode Ø11 and bore Ø11 are line-to-line → surfaces TOUCH but volumes don't overlap; real press-fit
 // is +interference on the bench); sleeve∩capsule ≈ a thin shell = the flange SHOULDER (Ø25 disc) resting
 // on the sleeve TOP face (Ø15), NOT the shank — the shank Ø9 floats free in the bore Ø11 (the F1 clearance).
-internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, Voxels? Bus = null);
+internal sealed record AxialStackVoxels(Voxels Merged, Voxels Zone1, Voxels Zone2, Voxels Capsule, Voxels? Bus = null, Voxels? Liner = null, double LinerAddsMm3 = 0.0);

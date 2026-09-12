@@ -101,6 +101,61 @@ public class AxialStackTests
         Assert.False(AxialStack.BusRodClears(cem));
     }
 
+    // ── F4: the liner covers the channel LENGTHWISE — the axis F3 declares itself blind to ──
+
+    [Fact]
+    public void Liner_Covers_The_Channel_End_To_End__And_Protrudes_Below_The_Shank_Face()
+    {
+        // ⚖️ 2026-09-12 (00_07 HW.34): the tube spans the whole channel — ground = the perimeter of
+        // CATHODE METAL, which surrounds the rod over the entire channel INCLUDING the top face — and
+        // its lower end reaches 1.0 mm further, into the PEEK gap.
+        AnchorAxialStackCem cem = Fix();
+        Assert.Equal(45f, AxialStack.LinerBottomZMm(cem), 3);   // shank face 46 − 1.0 protrusion
+        Assert.Equal(63f, AxialStack.LinerTopZMm(cem), 3);      // flush with the pogo face
+        Assert.Equal(18f, AxialStack.LinerLengthMm(cem), 3);    // channel 17 + protrusion 1
+        Assert.True(AxialStack.LinerCoversChannel(cem));
+    }
+
+    // ⛔ The state F3 cannot see, and the reason F4 exists: a tube SHORTER than the channel still
+    // satisfies rod + 2·liner < bore — a statement about the DIAMETER — while leaving bare cathode
+    // metal against the bus at one end. Mutation of the protrusion alone must not rescue it.
+    [Fact]
+    public void A_Liner_Shorter_Than_The_Channel_Passes_F3_And_Must_Fail_F4()
+    {
+        AnchorAxialStackCem cem = Fix();
+        Assert.True(AxialStack.BusRodClears(cem));              // diameter: still fine
+
+        // A flange whose channel is LONGER than the tube the protrusion accounts for: lengthen the
+        // shank without lengthening the liner, i.e. exactly the drift this gate is for.
+        AnchorAxialStackCem shortLiner = Fix(protrusionMm: -2f);
+        Assert.True(AxialStack.BusRodClears(shortLiner));
+        Assert.False(AxialStack.LinerCoversChannel(shortLiner));
+    }
+
+    [Fact]
+    public void No_Liner_Declared__F4_Is_Vacuously_True_Not_Silently_False()
+    {
+        // A CEM with no liner at all (thickness 0) has no tube to place, so F4 must not manufacture a
+        // finding about one. ⛔ The declared ceiling, stated in the gate itself: this is the ONLY
+        // branch where a green F4 says nothing about coverage.
+        AnchorAxialStackCem cem = Fix(linerMm: 0f);
+        Assert.True(AxialStack.LinerCoversChannel(cem));
+    }
+
+    private static AnchorAxialStackCem Fix(float linerMm = 0.15f, float protrusionMm = 1.0f)
+        => new()
+        {
+            Zone1 = new AnchorCem { BusRodDiameterMm = 1.0f },
+            Capsule = new AnchorAssemblyCem
+            {
+                Flange = new CathodeFlangeCem
+                {
+                    BusLinerThicknessMm = linerMm,
+                    BusLinerProtrusionMm = protrusionMm,
+                },
+            },
+        };
+
     [Fact]
     public void Monolithic_Bus_Rod_Pinched__Rod_Plus_Liner_Exceeds_Channel()
     {

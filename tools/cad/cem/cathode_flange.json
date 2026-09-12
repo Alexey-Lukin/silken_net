@@ -9,6 +9,7 @@
   "shank_length_mm": 14.0,
   "bore_diameter_mm": 1.35,
   "bus_liner_thickness_mm": 0.15,
+  "bus_liner_protrusion_mm": 1.0,
   "barb_rows": 3,
   "barb_height_mm": 0.28,
   "lead_angle_deg": 30.0,
@@ -28,8 +29,12 @@
   "tolerances": {
     "fit": "H7/s6 (nominal class only)",
     "features": [
-      { "feature": "shank_dia" },
-      { "feature": "bore_dia" }
+      {
+        "feature": "shank_dia"
+      },
+      {
+        "feature": "bore_dia"
+      }
     ],
     "primary_datum": "bore axis",
     "secondary_datum": "flange face",

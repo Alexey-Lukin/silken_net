@@ -244,6 +244,12 @@ internal sealed record CathodeFlangeCem
     public float ShankLengthMm { get; init; } = 14f;
     public float BoreDiameterMm { get; init; } = 1.35f;    // GND bus channel (hollow through flange+shank) — the monolithic rod threads it, isolated. This DEFAULT is the effective channel for the F3 gate on the full stack, because the assembly manifests declare no such field (00_07 HW.45) — so it moves with canon 01_01 §1.4, not behind it
     public float BusLinerThicknessMm { get; init; }        // bus-rod insulation liner in the channel (01_01 §1.4); feeds the F3 BusRodClears clearance
+    // How far the liner reaches BELOW the shank face, into the PEEK gap (01_01 §1.4, ⚖️ 2026-09-12).
+    // ⛔ Not decoration and not a safety margin: the rod+tube pair takes up its radial play before it
+    // reaches the bore, so flush with the mouth the bore EDGE meets the tube's END FACE (ring on ring)
+    // instead of its flank. Derived 0.97 mm (55_bus_mechanical §clearance_regime.edge_bearing), ratified
+    // at ≥ 1.0. The MATERIALS do not depend on it — the play is channel-side either way — the FEATURE does.
+    public float BusLinerProtrusionMm { get; init; }       // liner overhang below the shank face (mm)
 
     // Barbs (§4.3, reuse MechanicalLock; Zone-3 = opposite ratchet lean, dir −1)
     public int BarbRows { get; init; } = 3;

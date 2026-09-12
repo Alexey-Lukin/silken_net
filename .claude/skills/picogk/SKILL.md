@@ -123,6 +123,18 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    like a pin that still works.** NB `Ex_ImplicitGyroidGenus` is **misleading** (renders a gyroid on
    a genus-torus shape; computes no genus) — LEAP exposes no connectivity, but `Measure.fGetSurfaceArea`
    (surface) + `fGetVolume` exist and are reused, not re-implemented.
+9b. 🔴 **A body can render PERFECTLY in its own grid and add NOTHING to the assembly — and its own
+    volume is the metric that hides it** (measured 2026-09-12, `AxialStack` liner, `00_07` HW.34). The
+    bus liner is a 0.15 mm wall at the stack's 0.2 mm voxel: `BasePipe.voxConstruct()` gives 9.99 mm³
+    against 9.75 analytic, i.e. a healthy standalone body, while `voxMerged.BoolAdd(liner)` gains
+    **0.00 mm³** — at that voxel the Ø1.0 rod and the Ø1.35 channel ARE the same voxels and the annulus
+    between them has nowhere to land. ⛔ The first version of that audit reported the standalone volume
+    and read as "the tube is there"; the tell that it was a MEASUREMENT SUBSTITUTION is that the merged
+    volume was byte-identical with and without the tube while the triangle count moved. **Reflex: for
+    anything added to a merge, measure the CONTRIBUTION (properties before ⊥ after the Bool), never the
+    part's own volume — and when a feature is thinner than the voxel, say so where the geometry is READ,
+    because a CEM-true dimension and a mesh that carries it are two different claims.**
+
 9. **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT `new Voxels(IImplicit, BBox3)`.**
    The SDF ctor builds a **narrow-band** field (voxels near the surface only), so a solid core falls
    *outside* the band and renders as a **hollow shell** (`MechanicalLock.cs`: a Ø11 shank measured
