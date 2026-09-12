@@ -104,7 +104,7 @@ public class VoxelFeaTests
     // The fear driving the whole measurement was a SIZE EFFECT: a specimen only a few cells across
     // should be softer than the same lattice at continuum scale, and the shipped part spans just
     // 1.50–2.50 cells across its radial wall (01_01 §5.2 uncertainty (4)). Measured, that fear is
-    // EMPTY for a network gyroid — one cell through six agree within 0.3 %
+    // EMPTY for a network gyroid — one cell through eight agree within 0.2 %
     // (`cache/fea/size_effect_ladder.network.json`). A bicontinuous solid has no slender struts for a
     // free surface to cut; the cut face is solid, so the load paths survive.
     // ⚠️ And the first version of this test asserted the OPPOSITE and PASSED. At 8 steps/period a

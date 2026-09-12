@@ -31,8 +31,9 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 
 | Path | What |
 |---|---|
+| `cache/fea/` | **COMMITTED** voxel-FE results (unlike `out/`, which is gitignored) — the numbers canon `01_01 §5.2` quotes. A `fea` run therefore has a diff |
 | `cem/*.json` | CEM manifests (Git-SSOT inputs) — e.g. `ti_coin`, `anchor_zone1.pine` |
-| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) · `draw <cem>` (engineering drawing SVG+DXF, pure-managed) · `render` / `section <cem>` (PicoGK native-viewer screenshot / cutaway → `out/*.png`) · `probe <voxel-mm>` (falsifiable probes of KERNEL assumptions, not of our geometry) |
+| `src/SilkenCad/Program.cs` | CLI: `smoke` / `build <cem>` / `verify <cem>` (headless `Library.Go`) · `scan <cem>` (wallParam window, pure) · `draw <cem>` (engineering drawing SVG+DXF, pure-managed) · `render` / `section <cem>` (PicoGK native-viewer screenshot / cutaway → `out/*.png`) · `fea <cem>` (voxel-FE apparent stiffness → `cache/fea/*.json`; `--sweep` / `--with-rod` / `--ladder`; pure-managed) · `sweep` (generate + verify every anchor SKU) · `probe <voxel-mm>` (falsifiable probes of KERNEL assumptions, not of our geometry) |
 | `src/SilkenCad/Drawing.cs` | CEM-native engineering drawings (`draw`): SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion). Pure-managed; consumes the CEM `ToleranceSpec`/`NotesSpec` (zero hard-coded eng-text). ⚠️ The SVG has a `viewBox` and therefore CLIPS; the DXF has no viewport and clips nothing — so a layout defect here always reads «reviewer sees LESS than the factory». The three symptoms of that (silent 22-char title-block truncation · title block drawn past the canvas · unwrapped notes running off the frame) are FIXED: truncation is announced (`… → NOTES` / `… → FOOTER`), notes word-WRAP, and the canvas height is COMPUTED from content. The rule survives the fix — check any notes/title-block change in BOTH readers |
 | `src/SilkenCad/TiCoin.cs` | Stage-2 in-vitro coupon — disc + eyelet (`01_01 §6.1`) |
 | `src/SilkenCad/Zone1Anode.cs` | Zone-1 gyroid anode + the custom `CartesianGyroid` SDF |
@@ -40,6 +41,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Golden.cs` | committed REGRESSION baseline: each `cem/anchor_zone1.*.json` has a sibling `*.golden.json` (six metrics, per-field tolerances) that `verify` compares and FAILS on. ⛔ Voxel-specific; pins regression, never correctness; an absent baseline is silence, not a pass. Write one only with `verify <cem> --write-golden`, as a reviewed diff |
 | `src/SilkenCad/Probe.cs` | falsifiable probes of PicoGK-kernel BELIEFS (`probe <voxel-mm>`). Permanent on purpose: a belief about someone else's kernel that nothing re-runs survives their next release. Measured 2026-09-12 — the fine-voxel abort is an `int` truncation of the band width (0.34 mm lives, 0.33 dies), and the SDF ctor renders a CLOSED solid at 99.7 % |
 | `src/SilkenCad/Connectivity.cs` | ARCH.25 two-phase topological audit — SDF-sample + flood-fill (open/closed-pore, percolation, solid-island, specific-surface) |
+| `src/SilkenCad/VoxelFea.cs` | voxel finite-element elasticity — trilinear hexes on the Connectivity grid, matrix-free element-by-element, 8-colour parallel, Jacobi-CG; apparent stiffness in units of `E_solid`. Declared ceiling in the class header |
+| `src/SilkenCad/Resolution.cs` | resolution adequacy — does a declared or DERIVED feature fit the voxel its own assembly asks for (`2·voxel` represented / `4·voxel` volume-honest); walks the parsed record tree, not the JSON |
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on the shank (Zone-1 solid monolithic / Zone-3 channelled) + self-support metric |
 | `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus channel + O-ring groove |
@@ -49,7 +52,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/AxialStack.cs` | Full axial stack mate-audit (Зони 1↔2↔3↔4, 02_02 §4.5): press-fit interference (Zone1↔2 line-to-line · Zone2↔3 = Ø9-in-Ø11 clearance F1) + insertion budget + span |
 | `src/SilkenCad.Leap/` | vendored LEAP source compiled in (relaxed warnings — not ours) |
 | `extern/LEAP71_{ShapeKernel,LatticeLibrary}` | git submodules (source-only; not on NuGet) |
-| `tests/SilkenCad.Tests/` | xUnit scaffold |
+| `tests/SilkenCad.Tests/` | the HARD regression gate (pure-managed xUnit — CEM parse, SDF math, flood-fill, mate arithmetic, FE closed-form calibration, resolution adequacy). ⛔ Not a scaffold: `cad_smoke.yml` job `logic` runs it on every PR touching this tree |
 | `global.json` · `Directory.{Build,Packages}.props` · `.editorconfig` | pinned SDK + CPM + lint |
 
 ## Verify locally
@@ -63,6 +66,7 @@ dotnet run --project src/SilkenCad -- build  cem/anchor_zone1.pine.json     # �
 dotnet run --project src/SilkenCad -- verify cem/anchor_zone1.pine.json     # → out/*.metrics.json (exit 0/1)
 dotnet run --project src/SilkenCad -- scan   cem/anchor_zone1.pine.json     # → out/*.wallscan.json (wallParam working window)
 dotnet run --project src/SilkenCad -- draw   cem/ti_coin.json               # → out/*.svg + *.dxf (engineering drawing, pure-managed)
+dotnet run --project src/SilkenCad -- fea    cem/anchor_zone1.pine.json --sweep   # → cache/fea/*.json (apparent stiffness; COMMITTED output, pure-managed)
 dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # → out/*.png (PicoGK viewer; needs a display — macOS desktop, not headless CI)
 ```
 
@@ -104,7 +108,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   under-count metal on distorted geometry).
 - **`ImplicitUsings` must stay ENABLED** for `src/SilkenCad.Leap` (vendored LEAP source
   relies on implicit `using System` / `System.Collections.Generic`).
-- **`out/` + `imgui.ini` are gitignored** (derived / viewer runtime). Native runtime
+- **`out/` + `imgui.ini` are gitignored** (derived / viewer runtime) — but **`cache/fea/` is NOT**: FE results are committed, because canon quotes them and a number canon quotes has to be diffable. Native runtime
   lives in `~/.dotnet` → `export DOTNET_ROOT=$HOME/.dotnet` if running the apphost directly.
 - **`render`/`section` need a display** (PicoGK native viewer): macOS desktop OK, headless
   CI = `Library.Go` SIGSEGV/139. The screenshot is **TGA** regardless of a `.png` name
@@ -235,7 +239,7 @@ LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering inte
 
 **Deferred:** the rim-boss implementation + the bayonet-Z reconcile (open ⚖️: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug needs a Z of its own — `Assembly.RequiredLugZMm`; bench follows at HW.8.8) · the shank-Ø
 press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/
-conformal) · Euler-χ / tortuosity connectivity cross-checks (ARCH.25 nice-to-have).
+conformal) · the C-vs-n porosity sweep and the as-built dilation parameter for the FE (00_07 HW.33 / HW.51). ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 
 ## License
 

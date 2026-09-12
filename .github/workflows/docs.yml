@@ -271,6 +271,16 @@ jobs:
         # no assert anywhere). §01a vilize 2026-07-14.
         run: ruby scripts/cem_canon_sync.rb
 
+      - name: Voxel-FE cache↔canon guard (HW.33/HW.51 — 01_01 §5.2 ↔ tools/cad/cache/fea)
+        # Pure Ruby stdlib (json). The FE numbers landed with NO machine tie to their cache:
+        # test_doc_cache_sync hard-codes tools/in_silico/cache, one directory over. Within
+        # hours two quoted figures were already wrong (a spread, a calibration) — arithmetic
+        # ABOUT the cache, which a comparison holds and prose cannot. Three layers:
+        # transcription (both tables), derivation (Gibson-Ashby, ratios, GPa, C/n, spread) and
+        # provenance (SKU, topology, rod excluded). Counts its own anchors, so a canon
+        # rewording that disarms a comparison reds instead of going quietly green.
+        run: ruby scripts/fea_canon_sync.rb
+
       - name: 00_07 volatile counter in prose (DOC-T.99 — HARD ⚖️ founder 2026-09-05)
         # Pure Ruby, no Rails — a number + a MOVING-SET noun (ніг · носіїв · ланок ·
         # сайтів · поверхонь) inside `**Стан:**` or a WATCH line. Judges FORM, never

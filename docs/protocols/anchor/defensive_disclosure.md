@@ -101,8 +101,8 @@ as not to passivate the EBFC interface.
 ## 3. Disclosed method (description)
 
 A method of monitoring the health of a living tree: implanting into its xylem a porous gyroid anchor of a
-biocompatible metal (as in §2(a) — not limited to titanium alloys) that **simultaneously** integrates with sap flow, matches the elastic response of the wood,
-and forms the metal↔xylem electrode of an enzymatic biofuel cell; generating electrical energy from xylem
+biocompatible metal (as in §2(a) — not limited to titanium alloys) that **simultaneously** integrates with sap flow, reduces the elastic-modulus mismatch with the
+surrounding wood, and forms the metal↔xylem electrode of an enzymatic biofuel cell; generating electrical energy from xylem
 glucose at that cell; storing that energy in an energy store; and deriving a health signal **from the
 charge-time dynamics of that same cell** — such that a single enzymatic biofuel cell both powers the
 monitoring and constitutes its sensor, with zero instrumental noise.
