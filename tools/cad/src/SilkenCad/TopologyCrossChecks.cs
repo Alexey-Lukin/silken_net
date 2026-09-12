@@ -267,7 +267,8 @@ internal static class TopologyCrossChecks
     // ── 3. As-printed model: morphological OPENING of the solid at the SLM wall floor ──────────
     //
     // MODEL. The canon-sourced minimum printable wall for SLM Ti-6Al-4V is ~200 µm (01_01 §5.5 /
-    // 01_02 §6: "SLM стінка ~200 µm … мін. друкована пора ≈1.2 мм"), independent of and coarser than the
+    // 01_02 §6: "SLM стінка ~200 µm"; the "≈1.2 мм min printable pore" once quoted alongside it is
+    // the SHEET figure and does NOT apply here — on network it is ≈0.33 mm, 01_01 §5.5), independent of and coarser than the
     // 30 µm Z-layer (01_02 §6 "SLM: шар 30 µm" — that governs build-direction slicing, not the XY
     // feature floor a thin gyroid wall must clear). A feature the machine cannot hold is not COARSENED,
     // it is ABSENT.

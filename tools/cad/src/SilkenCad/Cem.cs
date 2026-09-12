@@ -134,7 +134,10 @@ internal sealed record AnchorCem
     public float LengthMm { get; init; } = 40f;            // Zone-1 30–50 mm
 
     // Cell-size (pore) axis — period at the core; RimMm tapers it toward the periphery.
-    public float GyroidPeriodMm { get; init; } = 2.5f;     // core period (mm); printable wall ≈ 0.1·period
+    // Core period (mm). ⚠ Printed feature size is TOPOLOGY-dependent and the `0.1·period` that
+    // stood here is the SHEET figure: measured 2026-09-12 it is 0.12·period on sheet and
+    // 0.36·period on network (01_01 §5.5 — three instruments, ceilings declared there).
+    public float GyroidPeriodMm { get; init; } = 2.5f;
     public float GyroidPeriodRimMm { get; init; }          // periphery period (mm); 0 ⇒ = core (constant size)
 
     // Porosity axis — dimensionless, and its MEANING is topology-dependent, so a value never carries

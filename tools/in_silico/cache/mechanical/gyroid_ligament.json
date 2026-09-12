@@ -1,0 +1,118 @@
+{
+  "sheet": {
+    "param": 1.0799892738513681,
+    "param_meaning": "wallParam as a BAND: |eq| < 0.5*w",
+    "measured_phi_solid": 0.3500038429542824,
+    "t_median_over_period": 0.1205094817528013,
+    "t_thickest_decile_over_period": 0.1400938706606644,
+    "pore_median_over_period": 0.34275488336813176,
+    "closure_check_t_plus_pore_over_period": 0.46326436512093305,
+    "t_analytic_over_period": 0.11323320703794318,
+    "analytic_vs_measured_ratio": 1.0642591948527955
+  },
+  "network": {
+    "param": -0.46465284095109816,
+    "param_meaning": "wallParam as a LEVEL: eq < 0.5*(w-1); this script solves the level directly, so `param` here IS the level, not wallParam",
+    "measured_phi_solid": 0.34999706127025465,
+    "t_median_over_period": 0.3620745459196213,
+    "t_thickest_decile_over_period": 0.3724149091839243,
+    "pore_median_over_period": 0.5513551023186184,
+    "closure_check_t_plus_pore_over_period": 0.9134296482382397
+  },
+  "cross_check_hydraulic_diameter": {
+    "source": "tools/cad/out/anchor_zone1_pine.metrics.json (PicoGK, network, voxel 0.10 mm)",
+    "graded_period_mean_mm": 2.25,
+    "network_t_hyd_over_period": 0.46115133964952815,
+    "sheet_wall_from_specific_surface_over_period": 0.12330249723249415,
+    "sheet_specific_surface_ratio_provenance": "01_02 \u00a76 measured sheet->network specific surface at 1.84-1.89x per SKU; 1.87 used",
+    "note": "a graded SKU has no single period, so the mean of core and rim is used; this is the coarsest assumption in the cross-check and it is why this instrument is a CHECK on the order of magnitude, not a second decimal place"
+  },
+  "floor_inversion": {
+    "sheet": {
+      "slm_default": {
+        "floor_um": 200.0,
+        "min_period_um": 1659.620447213075,
+        "min_pore_um_inscribed_sphere": 568.8430128198842,
+        "min_pore_um_canon_implied_0p60": 995.772268327845
+      },
+      "u_lpbf": {
+        "floor_um": 100.0,
+        "min_period_um": 829.8102236065375,
+        "min_pore_um_inscribed_sphere": 284.4215064099421,
+        "min_pore_um_canon_implied_0p60": 497.8861341639225
+      }
+    },
+    "network": {
+      "slm_default": {
+        "floor_um": 200.0,
+        "min_period_um": 552.3724389186943,
+        "min_pore_um_inscribed_sphere": 304.5533625780015,
+        "min_pore_um_canon_implied_0p60": 331.4234633512166
+      },
+      "u_lpbf": {
+        "floor_um": 100.0,
+        "min_period_um": 276.18621945934717,
+        "min_pore_um_inscribed_sphere": 152.27668128900075,
+        "min_pore_um_canon_implied_0p60": 165.7117316756083
+      }
+    },
+    "pore_convention_note": "Two conventions, reported side by side on purpose. `inscribed_sphere` is what this script measures (median ball that fits in the pore phase). `canon_implied_0p60` reproduces the existing canon chain and exists only so the comparison is like-for-like \u2014 it is NOT a second measurement, and canon never states it."
+  },
+  "canonical_bio_gradient_on_network": {
+    "pore_100um__inscribed_sphere": {
+      "period_um": 181.37131510975254,
+      "network_ligament_um": 65.6699365612082,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": false
+    },
+    "pore_100um__canon_implied_0p60": {
+      "period_um": 166.66666666666669,
+      "network_ligament_um": 60.34575765327022,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": false
+    },
+    "pore_150um__inscribed_sphere": {
+      "period_um": 272.05697266462886,
+      "network_ligament_um": 98.50490484181232,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": false
+    },
+    "pore_150um__canon_implied_0p60": {
+      "period_um": 250.0,
+      "network_ligament_um": 90.51863647990533,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": false
+    },
+    "pore_300um__inscribed_sphere": {
+      "period_um": 544.1139453292577,
+      "network_ligament_um": 197.00980968362464,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": true
+    },
+    "pore_300um__canon_implied_0p60": {
+      "period_um": 500.0,
+      "network_ligament_um": 181.03727295981065,
+      "clears_slm_default_floor": false,
+      "clears_u_lpbf_floor": true
+    },
+    "pore_500um__inscribed_sphere": {
+      "period_um": 906.8565755487627,
+      "network_ligament_um": 328.349682806041,
+      "clears_slm_default_floor": true,
+      "clears_u_lpbf_floor": true
+    },
+    "pore_500um__canon_implied_0p60": {
+      "period_um": 833.3333333333334,
+      "network_ligament_um": 301.7287882663511,
+      "clears_slm_default_floor": true,
+      "clears_u_lpbf_floor": true
+    }
+  },
+  "headline": {
+    "sheet_t_over_period": 0.1205094817528013,
+    "network_t_over_period": 0.3620745459196213,
+    "network_over_sheet": 3.004531599117965,
+    "verdict": "At 65% porosity a network ligament is 3.0x thicker than a sheet wall. The canon rule `wall ~= 0.10*period` is the SHEET rule and must not be quoted for the shipped network SKUs. MEASURED here; the pore-size TARGET is not decided by this script and stays bio-hub/FEA-gated.",
+    "ceilings": "Both instruments are isotropic and cannot see the minimum neck of an inclined ligament, so the thickness is an UPPER bound and the minimum printable pore a LOWER bound -- this script errs optimistic by an unmeasured margin. Ideal infinite ungraded gyroid; per-PART numbers live in 01_02 \u00a76. XY feature size only: no Z slicing, supports, trapped powder or melt-pool physics. `stepped` is out of scope -- it is still on the sheet formulation."
+  }
+}

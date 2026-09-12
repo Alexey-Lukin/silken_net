@@ -77,7 +77,16 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
    the SHEET branch at wallParam 1.0; the shipped network SKUs read 64.7–65.0 at 0.10).
 5. **Voxel-resolution floor + gradient distortion** — sub-100µm pores need voxel ~0.03mm →
    ~10⁹-voxel grids. The Ø11 anode renders cleanly at 0.1mm (pores ~2.5mm); realistic 300→100µm
-   pores are the HW.33 ceiling (and **un-printable at 65%**: SLM wall ~200µm → min pore ~1.2mm).
+   pores are the HW.33 ceiling. 🔴 **The printability half of that ceiling is TOPOLOGY-dependent,
+   and the `min pore ~1.2mm` this line carried is the SHEET number** (measured 2026-09-12,
+   `tools/in_silico/scripts/66_gyroid_ligament_thickness.py`): at 65% a sheet WALL is 0.12·period
+   but a network LIGAMENT is 0.36·period — 3× thicker — so at the 200µm SLM floor the minimum
+   printable pore is ≈0.33mm on the shipped network branch, not 1.2mm. What survives: the
+   PERIPHERY (100–150µm) is still un-printable on both machines; 500µm clears SLM and 300µm clears
+   µ-LPBF. The pore TARGET is unchanged and stays bio-hub/FEA-gated — only its ground moved
+   (`01_01 §5.5`). ⚠️ `stepped` is the one SKU still on the sheet formulation, so the 1.2mm figure
+   is the live one for it. ⛔ Both instruments are isotropic and cannot see the minimum NECK of an
+   inclined ligament, so the number errs optimistic by an unmeasured margin.
    Separately, a **continuous radial gradient distorts above ~0.8× period ratio** (non-Eikonal
    `|∇eq|∝f`; the `∇f·coord` term collapses porosity 67→42% at 2.5→1.3mm) → keep continuous gentle,
    or use `ZonedGyroid` (stepped) for strong contrast. Per-shell porosity = cumulative-diff (thin

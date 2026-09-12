@@ -24,8 +24,11 @@ internal static class CemFixtures
     public static AnchorCem Anchor(string strFile)
         => Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(Dir(), strFile)));
 
-    // The rim (periphery) gyroid period — the finest cell, hence the THINNEST wall (≈ period/10,
-    // 01_01 §5.5); 0 in the manifest means "same as the core".
+    // The rim (periphery) gyroid period — the finest cell, hence the THINNEST feature. ⚠ The
+    // period→thickness factor is TOPOLOGY-dependent and the `period/10` that stood here is the
+    // SHEET one: 0.12·period on sheet, 0.36·period on network (01_01 §5.5, measured 2026-09-12).
+    // This helper serves BOTH branches, so it must not carry either factor. 0 in the manifest
+    // means "same as the core".
     public static float RimPeriodMm(AnchorCem cem)
         => cem.GyroidPeriodRimMm > 0f ? cem.GyroidPeriodRimMm : cem.GyroidPeriodMm;
 }

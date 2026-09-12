@@ -481,7 +481,14 @@ internal static class Program
         return bOk ? 0 : 1;
     }
 
-    private const float PrintablePeriodFloorMm = 1.0f;  // rim period ≥ ~1 mm ⇒ wall ≥ ~0.1 mm (µ-LPBF floor); 01_01 §5.5
+    // Rim period floor. ⚠ The ground it was written on is the SHEET rule (period 1 mm ⇒ wall
+    // ~0.1 mm = the µ-LPBF floor). Measured 2026-09-12: on the shipped NETWORK branch the same
+    // period yields a ligament of ~0.36 mm, so this threshold is ~3x STRICTER than its own
+    // rationale and already clears the SLM floor of 0.2 mm. It is therefore conservative, not
+    // leaky — and it rejects periods 0.28-1.0 mm that network can in fact print. Left unchanged
+    // on purpose: moving it decides which geometry ships, which is a founder judgment (00_07
+    // HW.33). Thickness-per-topology + its ceilings: 01_01 §5.5.
+    private const float PrintablePeriodFloorMm = 1.0f;
 
     // Anchor verify: graded-aware golden metrics (per-shell porosity + finest period) → metrics.json,
     // plus the CI gate (sanity + DMLS floor + sane porosity band). Detailed profile asserts
@@ -562,7 +569,7 @@ internal static class Program
         bool bConnSound = bOpen && bNoIslands && bPercolates;
 
         if (!bFloor)
-            Console.WriteLine($"  ⚠ finest period < printable floor {PrintablePeriodFloorMm:F2} mm (wall < ~0.1 mm — µ-LPBF/nTop only, HW.33)");
+            Console.WriteLine($"  ⚠ finest period < printable floor {PrintablePeriodFloorMm:F2} mm (thickness per topology: sheet ~0.12·period, network ~0.36·period — 01_01 §5.5, HW.33)");
         if (!bPorositySane)
             Console.WriteLine("  ⚠ porosity outside the sane 40–85 % band");
         if (!bOpen)

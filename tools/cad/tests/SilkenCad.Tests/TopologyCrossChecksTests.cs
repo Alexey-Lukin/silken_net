@@ -140,8 +140,11 @@ public class TopologyCrossChecksTests
     [Fact]
     public void Print_Fidelity_Agrees_For_A_Wall_Comfortably_Above_The_Slm_Floor()
     {
-        // period 2.5 mm, default wallParam 1.0 ⇒ wall well above the 0.2 mm SLM floor (canon: wall ≈
-        // 0.1·period ≈ 0.25 mm) — the opening must take almost nothing and leave the topology intact.
+        // period 2.5 mm, default wallParam 1.0 and NO `topology` key ⇒ this coupon is on the SHEET
+        // branch, where wall ≈ 0.12·period ≈ 0.30 mm — well above the 0.2 mm SLM floor, so the
+        // opening must take almost nothing and leave the topology intact. ⚠ The factor is sheet's;
+        // network is ~0.36·period (01_01 §5.5). Naming the branch matters here because no shipped
+        // SKU is sheet any more — this fixture is deliberately one, and that is what it pins.
         AnchorCem cem = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
         var r = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
 

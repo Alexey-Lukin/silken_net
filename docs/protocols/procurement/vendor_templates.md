@@ -149,7 +149,7 @@
 | **Зважений (0–100)** | 100% | `___` | `___` | `___` |
 | **Verdict** | — | award/short/reject | … | … |
 
-> **Кандидат-пул (seed з [`rfq_registry`](rfq_registry.md)):** UA — 3D Metal Tech Київ (Concept Laser M2, ISO-13485) · medical-AM-бюро (Eplus3D/MET3DP, CP-Ti/7Nb). EU-backup — Protolabs · 3D Lab PL. Внести реальні після RFQ-відгуку.
+> **Кандидат-пул (seed з [`rfq_registry`](rfq_registry.md)):** UA — 3D Metal Tech Київ (Concept Laser M2, ISO-13485) · **ALT print** (Alfa-150D 150×150×180 мм і Alfa-280N 280×280×300 мм, Ti-6Al-4V — верифіковано на сайті вендора 2026-09-12; доти дерево знало лише машину «Alfa-280» без імені постачальника, у вартісному рядку [`02_06 §3`](../../02_06_Unit_Economics_and_BOM.md)) · medical-AM-бюро (Eplus3D/MET3DP, CP-Ti/7Nb). EU-backup — Protolabs · 3D Lab PL. Внести реальні після RFQ-відгуку. ⚠️ **Діаметр плями лазера й фракція порошку в жодного з двох UA-вендорів на сайті НЕ вказані** — це і є питання про мін-стінку ([`00_07` HW.33](../../00_07_Action_Plan_Tracker.md)), а не число, яке можна взяти з реклами.
 
 ---
 ---
