@@ -85,6 +85,12 @@ Dir.glob(File.join(CEM_DIR, "*.json")).sort.each do |path|
 
   doc = JSON.parse(File.read(path))
   kind = doc["kind"]
+  # ⛔ A sibling in cem/ that declares no `kind` is NOT a manifest — the regression baselines
+  #    (`*.golden.json`, Golden.cs) live here on purpose, beside the CEM they pin. Скіпати їх треба
+  #    по ВІДСУТНОСТІ kind, а не по імені: наступний сусід може зватись інакше. 🔴 Виміряно на собі
+  #    2026-09-12 — без цього рядка звіт рахував 27 «маніфестів» замість 20 і ПАДАВ на sort (nil
+  #    у ключі), тобто новий артефакт мовчки вбив сусідній прилад.
+  next if kind.nil? || kind.empty?
   numeric_fields(doc).each do |field, value|
     entry = rules.dig(kind, field) || rules.dig("*", field) || nested_entry(rules, field)
     rows << { file: File.basename(path), kind: kind, field: field, value: value, entry: entry }
