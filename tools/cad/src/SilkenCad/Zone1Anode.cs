@@ -26,6 +26,43 @@ internal sealed class CartesianGyroid(float fPeriodMm, float fWallParam) : IImpl
     }
 }
 
+// First-order NORMALISATION of any implicit field: d ≈ f / |∇f| (00_07 HW.49).
+//
+// 🔴 Why this exists. `IImplicit.fSignedDistance` is contractually a distance in MILLIMETRES — the
+// runtime clamps the stored field at `3 × voxel` mm — while our gyroids return the VALUE of the
+// gyroid equation, which is dimensionless and rises `|∇eq| · k` times faster (k = 2π/period). Measured
+// 2026-09-12: the active half-band is 0.83 voxels at period 2.5 mm, 0.67 at 2.0, 0.43 on a 1.3 mm rim,
+// against OpenVDB's requirement of more than one — and it does NOT scale with the voxel, because clamp
+// and field shrink together. Dividing by the gradient magnitude restores millimetres to first order.
+//
+// ⛔ The zero set is UNCHANGED (f/|∇f| = 0 ⟺ f = 0), so this cannot move the ideal geometry — only what
+//    lands in the grid. If a measured porosity DOES move, what moved is what we had been measuring.
+// ⚠️ Central differences rather than an analytic gradient on purpose: the graded field's frequency
+//    varies with radius, so its true gradient carries a `∇k·coord` term that an analytic derivative of
+//    the constant-period formula would omit — the very term gotcha #5 blames for the graded porosity
+//    collapse. Differences absorb it for free. Cost: 6 extra field evaluations per sample.
+// ⚠️ Declared ceiling: FIRST order. A sheet field carries a crease at eq = 0 where the numeric
+//    gradient collapses; `fFloor` keeps the division well-conditioned there instead of exploding.
+internal sealed class NormalisedField(IImplicit oInner, float fStepMm, float fFloor = 1e-4f) : IImplicit
+{
+    public float fSignedDistance(in Vector3 vecPt)
+    {
+        Vector3 vecAt = vecPt;
+        float fValue = oInner.fSignedDistance(vecAt);
+        float fGx = Slope(vecAt, new Vector3(fStepMm, 0f, 0f));
+        float fGy = Slope(vecAt, new Vector3(0f, fStepMm, 0f));
+        float fGz = Slope(vecAt, new Vector3(0f, 0f, fStepMm));
+        float fMag = MathF.Sqrt((fGx * fGx) + (fGy * fGy) + (fGz * fGz));
+        return fMag > fFloor ? fValue / fMag : fValue;
+    }
+
+    private float Slope(Vector3 vecAt, Vector3 vecStep)
+    {
+        Vector3 vecPlus = vecAt + vecStep, vecMinus = vecAt - vecStep;
+        return (oInner.fSignedDistance(vecPlus) - oInner.fSignedDistance(vecMinus)) / (2f * fStepMm);
+    }
+}
+
 // Radially GRADED cartesian gyroid (anchor v2, 01_01 §5.5). Tapers TWO independent axes from
 // the core (r=rCore, the rod axis) to the rim (r=rRim, the outer wall): period (cell/pore size)
 // and wallParam (porosity/E). Per the FGS method s=p/(1−ρ), at constant porosity a linear pore
@@ -134,12 +171,20 @@ internal static class Zone1Anode
 
         bool bGraded = fPeriodRim != cem.GyroidPeriodMm || fWallRim != cem.GyroidWallParam || bNetwork;
 
-        return bGraded
+        IImplicit oField = bGraded
             ? new GradedCartesianGyroid(
                 InnerRadiusMm(cem), cem.OuterDiameterMm / 2f,
                 cem.GyroidPeriodMm, fPeriodRim,
                 cem.GyroidWallParam, fWallRim, bNetwork)
             : new CartesianGyroid(cem.GyroidPeriodMm, cem.GyroidWallParam);
+
+        // ⛔ OFF by default, and that is the whole point of the field existing: every shipped number
+        //    was measured on the un-normalised field, so flipping this silently would move them all
+        //    with nothing red. It is here to make the A/B MEASURABLE (00_07 HW.49); the switch is a
+        //    ⚖️ that follows the measurement, never precedes it.
+        return cem.NormaliseField
+            ? new NormalisedField(oField, MathF.Min(cem.GyroidPeriodMm, fPeriodRim) / 200f)
+            : oField;
     }
 
     // Render the gyroid into the envelope's bbox via the Voxels(IImplicit, BBox3) ctor,

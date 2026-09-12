@@ -160,6 +160,9 @@ internal sealed record AnchorCem
     // AnchorTests.Every_Shipped_Anchor_Cem_Declares_Its_Topology, so the default is load-bearing for no
     // real part; a new SKU that omits the key reds instead of inheriting a branch nobody chose.
     public string Topology { get; init; } = "sheet";
+    // A/B switch for the first-order field normalisation (00_07 HW.49). Default FALSE: every
+    // shipped metric was measured on the raw field, so this must never flip by omission.
+    public bool NormaliseField { get; init; }
     public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — placeholder, FEA-gated (HW.33)
 
     // Minimum printable wall of the machine + powder that will print THIS part — a VENDOR INPUT from the

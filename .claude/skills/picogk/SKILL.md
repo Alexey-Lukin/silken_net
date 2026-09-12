@@ -73,6 +73,23 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 3. **Headless = `Library.Go(voxel, task, bEndAppWithTask:true)`**, not `new Library()`
    (the v1.6 headless pattern → "relies on Library::Go" abort in v2.2). It briefly inits a
    Metal/GL viewer then closes with the task — so CI needs a display (macOS runner / xvfb).
+4a. ⚖️ **«Porosity is voxel-dependent → MEASURE it» — the RULE stands, its suspected CAUSE was tested
+    and REFUTED (2026-09-12, `00_07` HW.49).** Our fields return the gyroid EQUATION, dimensionless,
+    where `IImplicit` is contractually millimetres and the runtime clamps at `3 × voxel` mm — measured,
+    the active half-band is 0.83 voxels at period 2.5, 0.67 at 2.0, **0.43** on the `stepped` rim, against
+    OpenVDB's «greater than one», and it does not scale with the voxel. That violation is REAL. The
+    hypothesis built on it — that the 67.6 → 21–28 % collapse at coarse voxel is an artefact of the
+    squeezed band, so first-order normalisation `d = f/|∇f|` would cure it — **is false on three axes**:
+    at the working 0.1 mm the two agree within noise (64.9 ⊥ 64.7); at 0.4 mm normalisation is WORSE
+    (42.4 vs 49.3); and on `stepped`, where the band is narrowest, the difference is exactly **zero**
+    (66.4 ⊥ 66.4, surface 3.14 ⊥ 3.14). 🔑 **Why the violation does not reach the numbers:
+    `CalculateProperties` rebuilds a level set from the MESH, and the mesh is extracted from the zero
+    set, which the clamp does not move.** So the coarse-voxel collapse is honest under-resolution (a
+    network ligament ≈ 0.36·period = 2 voxels at 0.4 mm), not a field defect. ⛔ Do NOT switch the
+    shipped SKUs to `normalise_field` — the ⚖️ is recorded and the instrument (`NormalisedField`, off by
+    default) stays only so the verdict can be re-measured if the KERNEL changes or an SKU appears with a
+    period ≪ 1.3 mm, the two events its ground depends on.
+
 4. **Gyroid `wallParam` is DIMENSIONLESS** (gyroid eq ∈ [-1.5, 1.5]), not mm: `|eq| <
    0.5*wallParam` ⇒ solid; a clean wall needs `wallParam ≪ amplitude`. 🔴 **That is the SHEET
    reading and it does NOT generalise — network treats the same number as a LEVEL (`eq < 0.5(w−1)`),
