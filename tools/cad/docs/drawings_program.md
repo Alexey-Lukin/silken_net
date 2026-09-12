@@ -111,7 +111,9 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **Envelope + critical mating dims** with **tolerances**: the press-fit Ø11 bore / Ø15 OD, flange
   Ø25, bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
   in a _PEEK_ bore (E≈4 vs Ti≈114 GPa)** → the same geometric interference gives a different contact
-  pressure. The CEM carries the **Lamé-computed µm** (`01_01 §4.2`, script 50, E_PEEK-aware), with
+  pressure. The CEM carries the band in **µm** (`tools/in_silico/lib/constants.py`), with
+  🔴 **a provenance correction, 2026-09-11 (`00_07` HW.3): this line said «Lamé-computed µm» and that is wrong about the SOURCE.** 5–34 µm is a plain ISO 286 table read (H7 0/+18 + s6 +23/+34 on Ø11); Lamé CONSUMES that band to compute a contact pressure and does not produce it. The sharpness is that `01_01 §4.2` REQUIRES the drawing's micrometres to come from the Lamé interference window and explicitly rejects a blind ISO 286 lookup — so the old wording dressed the rejected source in the required source's name, in the one file that tells a future author what the CEM is for. Whether to re-derive the band is an open engineering verdict, not a wording fix.
+  Beyond that,
   `H7/s6` only as the nominal class label — not a blind ISO-286 lookup. This is the band `AxialStack`
   flagged as missing in F1 (shank Ø placeholder, HW.8.9).
 - **GD&T datums** on mating features (bore axis, flange face, bayonet) — concentricity/runout matter
@@ -119,7 +121,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **Post-process notes** (the AM-specific half the shop needs): HIP (`01_02 §1.7` / HW.23),
   EAAE + **dehydrogenation bake** (`01_02 §1.3`, HW.27), selective Hard-Gold ENIG map (`02_02 §1.2`,
   HW.8.2), build orientation (`01_02 §1.6`). These belong in the drawing's notes block.
-- **Lattice spec callout** (not geometry): porosity 65 %±2, pore period, topology (⚖️ 2026-09-10 → network
+- **Lattice spec callout** (not geometry): porosity — ⛔ **the sheet must NOT print one number**, because canon carries three that are not interchangeable (nominal 65 % · verification 65 ± 2 %, valid only for the CONSTANT branch · factory acceptance 60–70 %) and their relation is an open verdict (`00_07` HW.33); the shipped generator prints the manifest's TARGET and denies it as an acceptance band in the same breath, pinned by `DrawingTests.Anchor_Sheet_Never_Prints_The_Porosity_Target_As_An_Acceptance_Band` — pore period, topology (⚖️ 2026-09-10 → network
   for every shipped anchor; `stepped` is the one exception and declares itself
   open, HW.33), "inspect by Archimedes + µCT" — per ISO/ASTM 52900 lattice-as-spec.
 - **Surface finish**: dual-scale roughness Sa (`01_02 §1.2`, HW.2).

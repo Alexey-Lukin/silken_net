@@ -608,8 +608,9 @@ public class DrawingTests
     // Canon 01_02 §6: the gyroid is a SPEC CALLOUT on an envelope, never drawn cell-by-cell — over-drawing
     // a PBF lattice promises a precision nobody measures (acceptance = Archimedes + µCT, ISO/ASTM 52900).
     // The sheet must therefore say what the lattice IS and draw only the envelope. `drawings_program.md §4`
-    // prescribes an SDF cross-section instead and is the stale half (00_07 HW.1); this pin is the carrier
-    // of the canon side, so a later "let's sample the SDF" pass has to argue with canon rather than drift.
+    // used to prescribe an SDF cross-section and was RECONCILED to canon the same day (00_07 HW.1) — so this pin
+    // is no longer guarding against a doc that disagrees, it is the carrier of the canon side itself: a later
+    // "let's sample the SDF" pass has to argue with canon rather than drift into it.
     [Fact]
     public void Anchor_Sheet_Carries_The_Lattice_As_A_Callout_And_Never_As_A_Drawn_Profile()
     {

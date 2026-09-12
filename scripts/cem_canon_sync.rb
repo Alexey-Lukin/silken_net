@@ -63,7 +63,11 @@ CHECKS = [
    C1, /leading-edge α = (\d+)°/, :eq, 0.5 ],
   [ "barb trail-angle β", "mechanical_lock.zone1.json", "trail_angle_deg",
    C1, /trailing-edge β = (\d+)°/, :eq, 0.5 ],
-  # ── §1.4 monolithic bus (rod Ø1.0 / channel Ø1.3 / liner 0.15) ──
+  # ── §1.4 monolithic bus (rod Ø1.0 / channel Ø1.35 / liner 0.15) ──
+  # ⚠️ The channel read Ø1.3 in this heading until 2026-09-11, a day after the verdict opened it to 1.35
+  # (`00_07` HW.34). The ASSERT below was never wrong — it reads the number out of canon — so the gate
+  # stayed green and true while the only stale text was the line a HUMAN reads before touching the dim.
+  # Reflex: a guard's heading is documentation, not code, and nothing verifies it; move it with the value.
   [ "bus rod Ø (§1.4)", "anchor_zone1.pine.json", "bus_rod_diameter_mm",
    C1, /стрижень \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
   [ "cathode bus channel Ø (§1.4)", "cathode_flange.json", "bore_diameter_mm",

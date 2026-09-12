@@ -173,8 +173,9 @@ internal sealed record AnchorCem
     // cem/anchor_zone1.*.json would have parsed cleanly and vanished — done-looking and inert. Worse,
     // the comment over NotesSpec.CoatingRestriction illustrates that very field with THIS part's rule
     // ("ZnO-Ta FORBIDDEN on Zone-1 gyroid — blocks DET"), i.e. the field was designed around a part that
-    // could not hold it. `draw anchor_zone1` still does not exist, so nothing RENDERS these yet; what
-    // makes them load-bearing today is the pin that every shipped SKU declares its coating restriction.
+    // could not hold it. `draw anchor_zone1` RENDERS them since 2026-09-11, so the pin that every shipped SKU
+    // declares its coating restriction is no longer the only thing keeping them load-bearing — it is now what
+    // stops a NEW SKU shipping silent on the one restriction whose violation is unrecoverable.
     public NotesSpec? Notes { get; init; }
 
     // 🔴 The SAME silent-absence class as `Notes` above, one field over, and it survived the 2026-09-11

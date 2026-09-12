@@ -200,9 +200,9 @@ flange SHOULDER resting on the sleeve top face, NOT the shank (Ø9 floats in bor
 `Zone2Sleeve.Build` · `Assembly.Build` · `voxApplyTransformation` (Noyron Boolean multi-part). Canon `02_02 §4.5`.
 
 **Monolithic bus rod (shipped, `01_01 §1.4` / HW.34)** — `bus_rod_diameter_mm` > 0 ⇒ `Zone1Anode.BuildMonolithic`
-adds a SOLID central rod (`BusRod.voxConstruct()` `BoolAdd`, gotcha #9 — not the SDF ctor); porosity stays a property
+adds a SOLID central rod (`BusRod.voxConstruct()` `BoolAdd`, gotcha #9 — not the SDF ctor). ⚠️ **Fabrication-AGNOSTIC: «monolithic» is the RESULT, not the route — the ratified fabrication is a WELD** (`00_07` HW.34, 2026-09-10: an as-printed rod carries `ENDURANCE_OVER_YIELD × AS_PRINTED_DERATE`, a welded cold-drawn wire does not), so the rod arrives as bought wire plus a weld and its tolerance/`Sa` come from a wire spec canon does not carry. Porosity stays a property
 of the gyroid (the rod is SDF-invisible → connectivity/porosity gates untouched), `verify` separately MEASURES the
-fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.BusRodClears` audits rod + 2·liner ≤ channel.
+fused rod. Full anode→cathode-channel→flange-pad through-rod; `AxialStack.BusRodClears` audits rod + 2·liner **<** channel — STRICT since 2026-09-11 (`00_07` HW.34): at `≤` the frozen trio `1.0 + 2×0.15 = 1.30` passed against a Ø1.30 bore, i.e. the gate blessed a ZERO nominal clearance — a true statement about the sum and a false one about the assembly. ⛔ Its declared ceiling did not change: it judges NOMINALS and a DIAMETER, so green here is not proof that a real pair mates, and it says nothing whatever about the liner's LENGTH or its ends (open ⚖️, `00_07` HW.34).
 
 **Engineering drawings + render (shipped)** — `draw <cem>` → SVG (human) + **DXF via netDxf** (factory-native, opens
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits; GD&T datums;

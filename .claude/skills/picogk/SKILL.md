@@ -280,7 +280,11 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   «~2×»), and sub-floor solid metal **1.5–49.7 % → 0.2–1.3 %** — the print-floor divergence the sheet
   branch carried was the thin wall, and network has none.
 - **Monolithic bus rod (`01_01 §1.4`, HW.34, SHIPPED)**: `bus_rod_diameter_mm` > 0 ⇒ a SOLID central
-  rod core. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
+  rod core. ⚠️ **The generator is FABRICATION-AGNOSTIC, and «monolithic» here does NOT mean «printed»:**
+  the ratified route is a WELD (⚖️ 2026-09-10 — an as-printed rod carries `ENDURANCE_OVER_YIELD ×
+  AS_PRINTED_DERATE`, a welded cold-drawn wire does not), so `BoolAdd` models the RESULT and never the
+  route. Consequence you will hit: the rod's tolerance and `Sa` come from a WIRE spec canon does not
+  carry, not from an LPBF surface — an open ⚖️ in `00_07` HW.34, and the CEM has no field for either. `Zone1Anode.BuildMonolithic` = `Anode` (gyroid, ctor) **+ `BoolAdd(BusRod.voxConstruct())`**
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**
   (`Anode` + the annulus envelope, `InnerRadiusMm` = rod surface) — the rod is SDF-invisible, so connectivity
   /porosity gates are untouched; `verify` separately MEASURES the fused rod volume (`ReportAnchor`, ≳π(r)²·L).
@@ -364,10 +368,12 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   a FABRICATED mechanism** (measured 2026-09-09): `lib/tasks/wiki.rake` syncs only the canon `NN_NN_*.md`
   and copies an image only where a doc EMBEDS it as `![…](…)`; no canon doc embeds these, so that set is
   empty. Want them on the wiki — embed them in a canon doc first. Change `Drawing.cs` or a CEM ⇒ re-run
-  `tools/cad/scripts/render_gallery.sh` (or at least its DRAWING loops — ⛔ "its two `draw` lines" stood
-  here and was wrong by half: the script now has TWO loops covering FOUR targets, `ti_coin` ·
-  `cathode_flange` · `mechanical_lock.zone1` · `mechanical_lock.zone3`, so obeying the old wording left
-  both lock sheets stale — the exact lag this gotcha exists to stop. Read the loops, never a count) and commit the SVGs. A pin now reds on the CONTENT drifting apart
+  `tools/cad/scripts/render_gallery.sh` (or at least its DRAWING loops — ⛔ **read the loops, never a
+  count**. This passage has now been wrong TWICE by its own counting: "its two `draw` lines" was wrong by
+  half, and the "FOUR targets" that replaced it was wrong again within two days when the anchor card and the
+  Zone-2 sleeve landed. 🔑 The second miss is the instructive one, because the sentence carrying the count
+  was the very sentence forbidding counts — an example does not get an exemption from the rule it
+  illustrates, and a roster beside a growing script is the volatile counter in prose form) and commit the SVGs. A pin now reds on the CONTENT drifting apart
   (`Published_Gallery_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame`) — ⛔ but its declared
   ceiling is content + frame-fit, NOT byte-currency, and the PNG renders beside it are pinned by nothing.
 - **Render / section for presentation (`render`/`section`, SHIPPED)**: `render <cem>` = a PicoGK native-viewer
