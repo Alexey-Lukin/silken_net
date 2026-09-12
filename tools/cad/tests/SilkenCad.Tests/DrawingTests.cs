@@ -154,7 +154,7 @@ public class DrawingTests
     public static TheoryData<string> ShippedCoinCems()
     {
         var data = new TheoryData<string>();
-        foreach (string p in Directory.GetFiles(CemDir(), "ti_coin*.json").OrderBy(p => p))
+        foreach (string p in Cem.ManifestFiles(CemDir(), "ti_coin*.json"))
             data.Add(Path.GetFileName(p));
         return data;
     }
@@ -381,7 +381,7 @@ public class DrawingTests
     public static TheoryData<string> ShippedMechanicalLockCems()
     {
         var data = new TheoryData<string>();
-        foreach (string p in Directory.GetFiles(CemDir(), "mechanical_lock*.json").OrderBy(p => p))
+        foreach (string p in Cem.ManifestFiles(CemDir(), "mechanical_lock*.json"))
             data.Add(Path.GetFileName(p));
         return data;
     }
@@ -544,7 +544,7 @@ public class DrawingTests
     public static TheoryData<string> ShippedAnchorCems()
     {
         var data = new TheoryData<string>();
-        foreach (string p in Directory.GetFiles(CemDir(), "anchor_zone1*.json").OrderBy(p => p))
+        foreach (string p in Cem.ManifestFiles(CemDir(), "anchor_zone1*.json"))
             data.Add(Path.GetFileName(p));
         return data;
     }
@@ -663,7 +663,7 @@ public class DrawingTests
     [Fact]
     public void Shipped_Anchor_And_Sleeve_Draw_No_Text_Outside_The_Frame()
     {
-        foreach (string strFile in Directory.GetFiles(CemDir(), "anchor_zone1*.json").OrderBy(p => p))
+        foreach (string strFile in Cem.ManifestFiles(CemDir(), "anchor_zone1*.json"))
         {
             var cem = Cem.Parse<AnchorCem>(File.ReadAllText(strFile));
             AssertEveryLineIsInsideTheFrame(Drawing.AnchorZone1(cem, "test", Path.GetFileName(strFile)));

@@ -17,9 +17,9 @@ internal static class CemFixtures
 
     // File NAMES (not paths) of every shipped anchor manifest, in a stable order.
     public static string[] AnchorFiles()
-        => [.. Directory.GetFiles(Dir(), "anchor_zone1.*.json")
-                        .Select(Path.GetFileName)
-                        .OrderBy(p => p, StringComparer.Ordinal)!];
+        => [.. Cem.ManifestFiles(Dir(), "anchor_zone1.*.json")
+                  .Select(Path.GetFileName)
+                  .OrderBy(p => p, StringComparer.Ordinal)!];
 
     public static AnchorCem Anchor(string strFile)
         => Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(Dir(), strFile)));

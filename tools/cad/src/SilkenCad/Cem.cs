@@ -19,6 +19,32 @@ internal static class Cem
     };
 
     // Cheap discriminator read so `build` can dispatch to the right generator.
+    // Which files in a cem/ directory are MANIFESTS. ⛔ The discriminator is the ABSENCE of `kind`,
+    // never the filename: siblings live in that directory on purpose (the `*.golden.json` regression
+    // baselines sit beside the CEM they pin), and the next one will be named something else.
+    // 🔴 Bought 2026-09-12 the expensive way. Seven baselines landed in `cem/`, and FIVE separate globs
+    // over that directory silently widened: the ruby provenance report died on a nil sort, `sweep` and
+    // the shared test fixture took them as SKUs, and CI went red on the drawing round-trip asserting
+    // notes a baseline does not have. I fixed the ruby one and did NOT sweep the class — so the same
+    // defect shipped twice in one hour. ⚠️ And the local `dotnet test` that said 131-green ran BEFORE
+    // the baselines existed; the commit went out without a re-run.
+    public static string[] ManifestFiles(string strDir, string strPattern)
+        => [.. Directory.GetFiles(strDir, strPattern)
+                        .Where(p => !string.IsNullOrEmpty(SafeKind(p)))
+                        .OrderBy(p => p, StringComparer.Ordinal)];
+
+    private static string? SafeKind(string strPath)
+    {
+        try
+        {
+            return Kind(File.ReadAllText(strPath));
+        }
+        catch (Exception)
+        {
+            return null;   // unreadable / not JSON ⇒ not a manifest, and never a crash in a glob
+        }
+    }
+
     public static string Kind(string strJson)
     {
         using JsonDocument doc = JsonDocument.Parse(strJson);

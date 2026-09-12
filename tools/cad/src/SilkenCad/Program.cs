@@ -189,10 +189,7 @@ internal static class Program
     // code-as-CAD over a GUI: a whole family from one generator × N manifests.
     private static int Sweep()
     {
-        string[] aCems = Directory.GetFiles("cem", "anchor_zone1.*.json")
-            .Where(p => !p.EndsWith(".metrics.json", StringComparison.Ordinal))
-            .OrderBy(p => p, StringComparer.Ordinal)
-            .ToArray();
+        string[] aCems = Cem.ManifestFiles("cem", "anchor_zone1.*.json");
         if (aCems.Length == 0)
             return Fail("no cem/anchor_zone1.*.json found");
 
