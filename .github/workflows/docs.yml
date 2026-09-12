@@ -289,7 +289,8 @@ jobs:
         # hours two quoted figures were already wrong (a spread, a calibration) — arithmetic
         # ABOUT the cache, which a comparison holds and prose cannot. Three layers:
         # transcription (both tables), derivation (Gibson-Ashby, ratios, GPa, C/n, spread) and
-        # provenance (SKU, topology, rod excluded). Counts its own anchors, so a canon
+        # provenance (SKU, topology, rod excluded), plus a FOURTH over the fitted C/n table against the
+          # per-resolution gibson_ashby_fit.* cache family. Counts its own anchors, so a canon
         # rewording that disarms a comparison reds instead of going quietly green.
         run: ruby scripts/fea_canon_sync.rb
 

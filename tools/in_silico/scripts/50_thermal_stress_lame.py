@@ -142,7 +142,10 @@ def alloy_comparative() -> dict:
     alloy-ROBUST; (2) the bulk E that sets the gyroid isoelasticity — the REAL bake-off lever, because
     the lattice's apparent stiffness scales with whatever alloy the bake-off picks.
     ⛔ The Gibson-Ashby form `E_gyroid ≈ E·(1−φ)^n` that stood here is NOT how we get that number any
-    more: the shipped SKUs sit outside its domain (1.50–2.50 cells across the radial wall), so the
+    more: the shipped SKUs sit outside its domain (1.50–2.50 cells across the radial wall) — a worry
+    the cube ladder then measured as nearly FREE (flat from one cell to eight, 2026-09-12). The real
+    reason the formula overshoots is its COEFFICIENT: C ≈ 0.98 / n ≈ 2.24 measured, not C = 1 / n = 2
+    assumed (01_01 §5.2, verb `fea --fit`). Either way the
     knockdown is MEASURED by voxel-FE on the real part — `tools/cad`, `dotnet run -- fea` — and its
     home is 01_01 §5.2. This column supplies only the E it multiplies.
     ⛔ And the comparison target is the TRANSVERSE wood modulus E_R/E_T ≈ 0.5–1.5 GPa, not the

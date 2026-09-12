@@ -218,7 +218,13 @@ MU_SWEEP = (0.2, 0.3, 0.4, 0.5)
 E_TI = 110e9          # Pa — Ti-6Al-4V Young's modulus (β-Ti lower, but E barely moves buckling here)
 # Endurance limit ≈ fatigue ratio × yield, then knocked down for AS-PRINTED SLM surface/porosity
 # (HIP + machining recovers most of it — the bus tip is gold-plated/finished anyway). Conservative.
-ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio (σ_e/σ_y ≈ 0.4-0.5)
+ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio — a BAND 0.40-0.50, not a constant, and the
+                              # band is written right here while only its MIDPOINT enters the model.
+                              # ⚠️ Every SF scales LINEARLY with it: at 0.40 the binding link (Ta,
+                              # welded, unsupported) reads 1.96, so the shipped verdict «all six clear
+                              # SF 2» is a statement about the midpoint of an unmeasured band, not
+                              # about the band. Found 2026-09-12 by a same-FORM sweep (a single point
+                              # standing in for a coefficient); not yet swept — 00_07 HW.34.
 AS_PRINTED_DERATE = 0.5       # SLM as-built knockdown (rough surface + sub-surface porosity)
 WROUGHT_DERATE = 1.0          # cold-drawn wire carries no as-built knockdown at all
 # ⚖️ HW.34 ratified 2026-09-10: the rod is a WELDED cold-drawn wire, so `welded` is the SHIPPED

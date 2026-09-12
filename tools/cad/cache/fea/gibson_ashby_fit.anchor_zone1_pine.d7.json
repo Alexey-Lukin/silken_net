@@ -1,5 +1,5 @@
 {
-  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with gibson_ashby_fit.network.json (the material-scale cube): 01_01 \u00A75.2 asks for both curves because a single-point C differs between them in a direction no monotone power law allows. Porosity is measured on the grid, never derived.",
+  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with the gibson_ashby_fit.network.s<steps>.json family (the material-scale cube): 01_01 §5.2 asks for both curves because a single-point C differs between them in a direction no monotone power law allows. Porosity is measured on the grid, never derived.",
   "cem": "anchor_zone1_pine",
   "topology": "network",
   "with_bus_rod": false,

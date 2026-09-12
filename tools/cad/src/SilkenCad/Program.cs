@@ -1193,12 +1193,13 @@ internal static class Program
         return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
     }
 
-    // The SAME sweep on the SHIPPED annulus. 01_01 §5.2 records a gap it refuses to explain away —
-    // at one voxel the part reads C = 0.80 and the cube C = 0.71, i.e. the part is STIFFER at LOWER
-    // density, which no monotone C·ρⁿ allows — and names this sweep, run over both geometries, as the
-    // only thing that can settle it. Two candidate causes are on the record: the period gradient
-    // (phase distortion, clean only to ~0.8× and the part sits exactly at 0.8) and the annulus's two
-    // free surfaces. ⛔ Until both curves exist, no coefficient crosses between them.
+    // The SAME sweep on the SHIPPED annulus. Run over both geometries on 2026-09-12 it DISSOLVED the
+    // gap canon had called non-physical: the single-point C of the cube ITSELF wanders 0.71 / 0.80 /
+    // 0.77 across grid steps, the FITTED exponents agree (2.242 lattice, 2.269 part), and only C
+    // differs — the part runs 3.2x coarser, and refining it 7 -> 10 divisions moves C the measured way
+    // (1.169 -> 1.069). ⛔ The value at EQUAL step is NOT extrapolated from two points, and coefficients
+    // still do not cross between geometries — but the ground for that is now «not measured alike»,
+    // never «physically different» (01_01 §5.2).
     private static int FeaFitPart(string[] args)
     {
         string strCemPath = args[1];
@@ -1274,7 +1275,7 @@ internal static class Program
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
-                      + "Pairs with gibson_ashby_fit.network.json (the material-scale cube): 01_01 §5.2 asks "
+                      + "Pairs with the gibson_ashby_fit.network.s<steps>.json family (the material-scale cube): 01_01 §5.2 asks "
                       + "for both curves because a single-point C differs between them in a direction no "
                       + "monotone power law allows. Porosity is measured on the grid, never derived.",
             ["cem"] = cemBase.Name,

@@ -13,12 +13,16 @@
 # at 0.2 %, and a calibration stated to nine decimals that the cache does not support. Both were
 # arithmetic ABOUT the cache, which is exactly the class a comparison can hold and prose cannot.
 #
-# WHAT IT CHECKS — three layers, in increasing distance from the raw data:
+# WHAT IT CHECKS — FOUR layers, in increasing distance from the raw data (⚠️ this line said "three"
+# for the hours between the fourth landing and this correction — a header is a claim about its own file,
+# and the edit that falsifies it is one section below, where nothing looks at the header):
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
 #   2. DERIVATION — the figures canon computes FROM those rows (Gibson-Ashby at the measured density,
-#      the two ratios to it, GPa at the reference solid modulus, the fitted C and n, the ladder spread).
+#      the two ratios to it, GPa at the reference solid modulus, the single-point readings, the spread).
 #      This is the layer that catches a correct cache quoted into a wrong sentence.
 #   3. PROVENANCE — that the cache still describes the run canon claims (SKU, topology, rod excluded).
+#   4. THE FITTED TABLE — the measured Gibson-Ashby C/n against the per-resolution `gibson_ashby_fit.*`
+#      family, which layers 1-3 do not read at all, plus that family's own provenance (specimen size).
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS, never the prose around them. A row can match perfectly under a sentence that
@@ -189,13 +193,17 @@ end
 # (ρ, E) pairs are wrong but whose regression is arithmetically right passes here; the pairs are held
 # only by the FE solver's own pins (VoxelFeaTests), not by canon.
 FIT_ROWS = {
-  "ґратка (куб 2 комірки)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.network.s%<n>d.json", label: "період/%<n>d" },
+  "ґратка (куб 2 комірки)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.network.s%<n>d.json", label: "період/%<n>d", cells: 2 },
   "деталь (кільцева зона Ø11×40)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" }
 }.freeze
 
 fit_rows_seen = 0
-canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
-  specimen, div, c_q, n_q, r2_q = Regexp.last_match.captures
+# ⚠️ The AXIS cell is part of the KEY, not decoration: the cache carries a radial fit too (`fit_radial_*`,
+# `null` until `--with-radial` is run), and the anchor's load-bearing axis is the RADIAL one — so a row
+# that ever says «радіальна» must read a DIFFERENT field, and silently reading the axial one there would
+# be the exact substitution this guard exists to prevent.
+canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
+  specimen, div, axis, c_q, n_q, r2_q = Regexp.last_match.captures
   spec = FIT_ROWS[specimen.strip]
   next failures << "fit table names an unknown specimen '#{specimen.strip}' — add it to FIT_ROWS or fix canon" if spec.nil?
 
@@ -204,11 +212,28 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
 
   fit_rows_seen += 1
   f = JSON.parse(File.read(path))
+  unless axis.strip == "осьова"
+    failures << "fit row #{specimen.strip} /#{div} declares axis '#{axis.strip}' — only the AXIAL fit is "\
+                "cached (`fit_radial_*` is null until `--with-radial`); this guard would silently compare "\
+                "an axial number against a radial claim"
+    next
+  end
   c_cached = f["fit_c"] || f["fit_axial_c"]
   n_cached = f["fit_n"] || f["fit_axial_n"]
   r2_cached = f["fit_r_squared_log"] || f["fit_axial_r_squared_log"]
   failures << "fit cache #{File.basename(path)} is not the network branch (#{f['topology']})" unless f["topology"] == "network"
   failures << "fit cache #{File.basename(path)} has a non-converged row" unless f["rows"].all? { |r| r["converged"] }
+  # 🔴 PROVENANCE of the fit cache, and it closes a hole the FILENAME leaves open: the lattice file is
+  # named by topology and steps-per-period only, while the verb also takes `--cells` (default THREE) and
+  # every committed row was measured on TWO. So a bare `fea --fit` lands exactly on a canon-pinned file
+  # with a different SPECIMEN — the numbers would differ and red, but as "canon drifted", which sends the
+  # reader to edit canon rather than to re-run. Naming the specimen here makes the message true.
+  if spec.key?(:cells)
+    failures << "fit cache #{File.basename(path)} was measured on #{f['cells_per_side']} cells a side, "\
+                "not #{spec[:cells]} — a bare `fea --fit` defaults to --cells 3 and OVERWRITES this file; "\
+                "re-run with the full flag set" unless f["cells_per_side"] == spec[:cells]
+  end
+  failures << "fit cache #{File.basename(path)} INCLUDES the bus rod — the quoted row is the lattice" if f["with_bus_rod"]
   # ⚠️ Compare at the PRECISION CANON QUOTES, not at a fixed epsilon: a fixed 5e-4 sits exactly on the
   # rounding boundary for a 3-decimal quote (1.1695 → "1.170" differs by 0.0005 in binary floating
   # point and reds a CORRECT transcription). Rounding the cache to the quoted decimals makes the

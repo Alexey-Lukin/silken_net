@@ -6,11 +6,13 @@ namespace SilkenCad;
 
 // Voxel finite-element homogenisation of the Zone-1 lattice (00_07 HW.51 / HW.33).
 //
-// 🔴 WHY THIS EXISTS, in one sentence: the only stiffness number the canon has for this part comes
-// from Gibson-Ashby `E_foam/E_solid ≈ C·ρⁿ`, and the shipped SKUs sit OUTSIDE that relation's domain
-// of validity — 1.50–2.50 cells across the radial wall (01_01 §5.2, uncertainty (4)) — so 13.6 GPa is
-// the value of a formula evaluated where the formula does not apply, not a prediction for this
-// geometry. This module measures the APPARENT stiffness of the real part instead.
+// 🔴 WHY THIS EXISTS: the only stiffness number the canon had for this part came from Gibson-Ashby
+// `E_foam/E_solid ≈ C·ρⁿ` quoted at the TEXTBOOK pair C = 1, n = 2 — and a wall_param sweep (verb
+// `fea --fit`) measured that pair wrong: C ≈ 0.98, n ≈ 2.24 (01_01 §5.2).
+// ⚠️ The domain worry that first motivated this module — 1.50–2.50 cells across the radial wall,
+// 01_01 §5.2 uncertainty (4) — was then MEASURED and costs almost nothing (the cube ladder is flat
+// from one cell to eight). The verdict survived; its GROUND did not. This module measures the
+// APPARENT stiffness of the real part instead.
 //
 // Method. Every Solid voxel of a Connectivity.Grid becomes one trilinear 8-node hexahedral element.
 // All elements are identical cubes of the same isotropic material, so a SINGLE 24×24 element matrix
