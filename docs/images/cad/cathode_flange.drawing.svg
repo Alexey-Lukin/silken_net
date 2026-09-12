@@ -123,10 +123,10 @@
 <line x1='620' y1='1141' x2='870' y2='1141' stroke='#111' stroke-width='0.5'/>
 <line x1='710' y1='1141' x2='710' y2='1157' stroke='#111' stroke-width='0.5'/>
 <text x='625' y='1152' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='715' y='1152' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>41c5545a-dirty</text>
+<text x='715' y='1152' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>90f224e5</text>
 <line x1='620' y1='1157' x2='870' y2='1157' stroke='#111' stroke-width='0.5'/>
 <line x1='710' y1='1157' x2='710' y2='1173' stroke='#111' stroke-width='0.5'/>
 <text x='625' y='1168' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='715' y='1168' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/cathode_flange.json</text>
-<text x='886' y='1189' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 41c5545a-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
+<text x='886' y='1189' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 90f224e5 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
 </svg>

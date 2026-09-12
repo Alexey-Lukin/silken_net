@@ -93,10 +93,10 @@
 <line x1='540' y1='791' x2='790' y2='791' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='791' x2='630' y2='807' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='802' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='802' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>41c5545a-dirty</text>
+<text x='635' y='802' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>90f224e5</text>
 <line x1='540' y1='807' x2='790' y2='807' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='807' x2='630' y2='823' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='818' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='635' y='818' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/mechanical_loc… → FOOTER</text>
-<text x='806' y='839' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 41c5545a-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='806' y='839' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 90f224e5 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
 </svg>
