@@ -231,11 +231,16 @@ public class TopologyCrossChecksTests
     }
 
     // What is pinned here is an ORDERING the physics predicts, never a threshold: in a radially graded
-    // sheet gyroid the RIM cell is the finest, so the rim wall (≈ rim period / 10, 01_01 §5.5) is the
-    // thinnest metal in the part, and the share the print floor deletes must fall monotonically as that
-    // rim wall grows. Measured 2026-09-10 (grid 0.050 mm, floor 200 µm): stepped (rim 1.3 mm ⇒ wall
-    // ≈0.13, BELOW the floor) 71.8 % > broadleaf (1.6 ⇒ 0.16, below) 49.7 % > pine (2.0) 24.4 % >
-    // mangrove (2.2) 20.5 % > oak (2.8 ⇒ 0.28, well above) 4.3 % > tropical (3.2 ⇒ 0.32) 1.5 %.
+    // gyroid the RIM cell is the finest, so the rim metal is the thinnest in the part, and the share
+    // the print floor deletes must fall monotonically as that rim feature grows. The ordering is
+    // TOPOLOGY-INDEPENDENT — which is why this pin survived the sheet→network flip untouched — but
+    // the magnitudes are not, and the period→thickness factor differs by 3× between the branches
+    // (sheet 0.12·period, network 0.36·period; 01_01 §5.5, measured 2026-09-12).
+    // ⚠ HISTORICAL, do not read as current: measured 2026-09-10 (grid 0.050 mm, floor 200 µm) while
+    // every SKU was still SHEET — stepped (rim 1.3 mm) 71.8 % > broadleaf (1.6) 49.7 % > pine (2.0)
+    // 24.4 % > mangrove (2.2) 20.5 % > oak (2.8) 4.3 % > tropical (3.2) 1.5 %. After the network port
+    // the same six read 0.2–1.3 % (01_02 §6); `stepped` alone is still on the sheet formulation and
+    // still carries 71.8 %, which is what keeps that SKU an open ⚖️ in HW.33.
     // graded_porosity is EXCLUDED by construction, not by hand: its wall BAND is graded too (1.3 → 0.8),
     // so the rim period alone does not predict where it lands (measured 12.5 %, between mangrove and
     // oak) — the filter below drops exactly the SKUs whose porosity axis moves.
