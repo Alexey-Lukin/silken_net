@@ -464,6 +464,32 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
     ),
+    # ── HW.34 wear budget: the two ends SUMMARY quotes from script 55 §wear_budget ──
+    # ⛔ Both ends are pinned, not just the headline, and the reason is the finding itself: the SPAN
+    # between them IS the message («the tribology does not decide this, our contact geometry does»),
+    # so a doc that kept one end current and let the other rot would still read as a bound while
+    # having stopped being one. The span ratio is pinned for the same reason — it is the only number
+    # in that paragraph a reader ACTS on.
+    (
+        "wear budget, flow-limited end → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"flow-limited patch[^|]*\| \*\*{N} × 10⁻⁸\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: min(p["k_max_edge_mm3_per_Nm"]
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e8, 0.01,
+    ),
+    (
+        "wear budget, worn-in end → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*{N} × 10⁻⁴\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: min(p["k_max_conformal_mm3_per_Nm"]
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e4, 0.01,
+    ),
+    (
+        "wear budget, span between the two ends → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"budget's span is \*\*{N}×\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["wear_budget"]["binding"]["k_max_span_ratio"], 0.5,
+    ),
     # ⛔ The four rows below pin a table whose WHOLE POINT is that the two topologies differ. The
     # defect they exist against is not drift in one number but a SWAP: quoting the sheet factor for
     # a network part is exactly what canon did for three months after the topology was ratified, and

@@ -300,6 +300,32 @@ WIRE_OD_TOLERANCE_MEASURED_UM = None      # cold-drawn wire OD band — RFQ (00_
 #    interesting answer is the one that survives the friendliest assumption to the opposite case.
 MU_PEEK_TI_SWEEP = (0.1, 0.2, 0.3, 0.4)
 
+# ── WEAR — the ground the liner actually stands on (00_07 HW.34, ⚖️ 2026-09-11) ────────────────
+# ⛔ NOT MEASURED, and kept visibly absent for the third time in this file, for the same reason as
+#    WELD_KNOCKDOWN_MEASURED and the two vendor bands: there is no canon row, no vendor answer and no
+#    measurement anywhere in this tree for a PEEK-on-Ti pair, so a plausible number typed here would
+#    be the FALLBACK species of fabrication (00_01 §1.1). What §7 computes instead is the BUDGET —
+#    the rate the pair may have and still keep the wall — so an accelerated tribo-test returns a
+#    VERDICT rather than a figure in a report.
+SPECIFIC_WEAR_RATE_MEASURED = None   # k_w [mm³/(N·m)] — Archard specific wear rate, NOT MEASURED
+# ⛔ THE FLOW PRESSURE THAT BOUNDS THE CONTACT AREA IS A SWEEP, NOT A VALUE — and getting this wrong
+#    is the difference between a budget and a flattering number. PEEK cannot carry a line load: it
+#    flows until the pressure drops to what the material supports, so A ≥ R/p_flow and the budget is
+#    proportional to that area. p_flow is NOT the tensile yield: a contact confined by the surrounding
+#    material flows at the INDENTATION limit, classically ~3× yield (the same constraint factor that
+#    puts HARDNESS, not yield, in Archard's own law). One end of the sweep would therefore over-state
+#    the allowable area threefold, in the direction that makes the part look safe.
+#    1.0 = unconfined simple compression (loosest) · 3.0 = fully-plastic indentation (tightest).
+#    ⚠️ Neither is measured for PEEK at this geometry, and the yield they scale is the 23 °C TENSILE
+#    datasheet figure while the contact is compressive and cold — so the pair is a bracket on the flow
+#    pressure, never a value, and the CONSERVATIVE end drives every headline.
+CONTACT_CONSTRAINT_FACTORS = (1.0, 3.0)
+# Where the duty comes from. ⛔ NOT retyped: script 62 derived the sway-cycle count from ten years of
+# real NASA POWER wind for Cherkasy and named two literature gaps it could not close, so a literal
+# here would be a mirror of another script's result — the one thing the in-silico rule forbids
+# outright. A missing cache is REPORTED, never defaulted: §7 simply does not compute.
+WIND_CACHE = OUT_DIR / "wind_duty_cycle.json"
+
 MM_M = 1e-3
 
 
@@ -412,6 +438,47 @@ def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
     printing a number above 1, which would read as a tolerance.
     """
     return sf_line / sf_wire
+
+
+def prop_reaction_N(force_lat_N: float, station_mm: float, gap_mm: float, length_mm: float,
+                    ei_Nm2: float) -> float:
+    """Wall reaction if the unilateral constraint is idealised as ONE rigid prop at `station_mm`.
+
+    Compatibility, not equilibrium: the free tip-loaded shape overshoots the gap at that station by
+    δ(a) − g, and the prop has to push it back through its own flexibility f = a³/(3EI). Hence
+    R = (δ(a) − g)/f, clipped at zero where the rod does not reach the wall there.
+
+    ⛔ Declared ceiling, and it is the whole reason the caller reports a BRACKET instead of a number:
+    the real constraint is DISTRIBUTED over the run from first contact to the bore end, and no
+    distributed-contact solution exists anywhere in this tree. A single prop is exact only for a
+    single-point contact; the family of stations across the active run brackets the distributed case.
+    Also rigid and frictionless — no contact compliance, no tangential traction at the prop.
+    """
+    over_mm = tip_load_deflection_mm(force_lat_N, station_mm, length_mm, ei_Nm2=ei_Nm2) - gap_mm
+    if over_mm <= 0.0:
+        return 0.0
+    flex_m_per_N = (station_mm * MM_M) ** 3 / (3.0 * ei_Nm2)
+    return over_mm * MM_M / flex_m_per_N
+
+
+def surface_axial_slip_mm(force_lat_N: float, station_mm: float, length_mm: float,
+                          radius_mm: float, ei_Nm2: float) -> float:
+    """Axial travel of the CONTACT fibre between the unloaded and fully-loaded states (mm).
+
+    Euler-Bernoulli kinematics, nothing more: plane sections stay plane and normal, so a fibre at
+    `radius_mm` from the neutral axis displaces axially by r·θ(x) as the beam rotates. That is the
+    only relative tangential motion the contact sees — the bore is fixed, the rod's surface slides
+    past it — and it is what turns a cycle COUNT into a sliding DISTANCE.
+
+    ⛔ Two declared ceilings, both in the CONSERVATIVE direction (they over-state the slip, so the
+    budget they feed is tighter than the truth):
+      (a) θ is the FREE slope; a rod held by the wall rotates less there;
+      (b) the whole excursion is counted as sliding, while contact exists only over the part of it
+          after touchdown.
+    ⛔ What it is NOT: the second-order axial foreshortening of the beam (≈ 0.6·δ²/L, three orders
+       smaller here) and any rolling component of the contact. Neither is modelled.
+    """
+    return radius_mm * tip_load_slope_rad(force_lat_N, station_mm, length_mm, ei_Nm2=ei_Nm2)
 
 
 # ── The liner↔wire fit: Lamé on the tube, thermal on the pair, friction along it ──────────────
@@ -1229,6 +1296,204 @@ def main() -> int:
                                             "computed; at the ceiling it is a real handling question"},
     }
 
+    # ── 7. WEAR — the budget for the ground the liner actually STANDS on (00_07 HW.34) ────────────
+    # 🔴 ⚖️ 2026-09-11 retired the fatigue ground and replaced it with WEAR. Until this block nothing
+    # in this tree computed it: every `wear`/`fretting` mention in this file was PROSE, one of them
+    # literally «The discriminating costs are NOT computed here», so «rated for 20 years» was a claim
+    # with no instrument — and FMEA #21, the highest RPN in the whole register, asserted wear-through
+    # outright. An assertion and its denial were both available and neither was measurable.
+    # ⛔ Same inversion as §5 and §6, third time, same reason: the specific wear rate of PEEK on Ti is
+    #    NOT in this tree, so the model bounds what it CAN — the rate the pair may have and still keep
+    #    the wall — and an accelerated tribo-test then returns a VERDICT instead of a figure.
+    # 🔑 THE CHAIN, so a reader can attack each link separately:
+    #    duty  = (cycles from script 62's real-wind cache) × (slip per cycle from beam kinematics)
+    #    load  = propped-cantilever reaction at the wall, bracketed over the active run
+    #    budget= wear-through volume / (load × duty), with the area bracketed between a bound the
+    #            MATERIAL sets and the full projected bearing area
+    banner("Wear budget — what rate may the pair have and still keep the wall? (00_07 HW.34)")
+    # 🔑 SELF-CHECK against a CLOSED-FORM solution, not against a frozen baseline. A regression pin
+    #    proves a number stopped moving; these prove it is RIGHT, and one line each covers the
+    #    deflection formula, the flexibility, the unit handling and the sign together.
+    #    (a) A prop at the TIP with ZERO gap must carry the ENTIRE tip load: R = δ(L)/f(L) = F exactly.
+    #    (b) The slope at the tip of a tip-loaded cantilever is F·L²/(2EI), so the surface fibre's
+    #        axial travel there is exactly r·F·L²/(2EI).
+    _ei_chk = flexural_rigidity_Nm2(D_BUS)
+    _f_chk = MU_CONTACT * F_POGO_N
+    assert abs(prop_reaction_N(_f_chk, L_FREE_UNSUP, 0.0, L_FREE_UNSUP, _ei_chk) - _f_chk) < 1e-9, \
+        "a zero-gap prop at the tip must carry the whole tip load"
+    _slip_closed = (D_BUS / 2.0) * _f_chk * (L_FREE_UNSUP * MM_M) ** 2 / (2.0 * _ei_chk)
+    assert abs(surface_axial_slip_mm(_f_chk, L_FREE_UNSUP, L_FREE_UNSUP, D_BUS / 2.0, _ei_chk)
+               - _slip_closed) < 1e-12, "tip slip diverged from r·F·L²/(2EI)"
+    wear_rows: list[dict] = []
+    duty_anchors: list[dict] = []
+    thermal_rows: list[dict] = []
+    binding_wear: dict | None = None
+    wind = None
+    if WIND_CACHE.exists():
+        wind = json.loads(WIND_CACHE.read_text())
+        for row in wind.get("beaufort_exceedance", []):
+            duty_anchors.append({"anchor": row["anchor"], "n_cycles": float(row["n_eff_cycles_upper_bound"])})
+        # The raw 20 yr × 1 Hz budget, kept as the ABSOLUTE ceiling: script 62's own verdict is that
+        # the duty does NOT close to a single number (two named literature gaps), so the bracket is
+        # the honest object and its top is this.
+        duty_anchors.append({"anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+                             "n_cycles": float(wind["budget_cycles_upper_bound"])})
+    if not duty_anchors:
+        print("  ⛔ NOT COMPUTED — wind_duty_cycle.json is absent, so the cycle count has no source.")
+        print("     ⛔ No fallback is substituted: a typed cycle count would be the very species of")
+        print("     fabrication this whole block exists to avoid. Run `62_wind_duty_cycle.py` first.")
+    else:
+        n_worst = max(a["n_cycles"] for a in duty_anchors)
+        print(f"  Duty: {len(duty_anchors)} anchors from script 62 (real NASA POWER wind, "
+              f"{wind['n_days']} days), {min(a['n_cycles'] for a in duty_anchors):.2e}"
+              f"–{n_worst:.2e} sway cycles over the service life.")
+        print("  Wear-through = the branch's own wall thickness, because nothing else separates the "
+              "anode from the cathode:")
+        print(f"  {'branch':<24s} {'µ':>4s} {'R_wall':>8s} {'slip/cyc':>9s} {'sliding':>10s} "
+              f"{'k_max lo':>10s} {'k_max hi':>10s}")
+        print(f"  {'-' * 92}")
+        for r in regimes:
+            play, t_mm = r["radial_play_mm"], r["coating_or_liner_mm"]
+            ei = r["ei_Nm2_bonded"]
+            od_mm = D_BUS + 2.0 * t_mm
+            for mu in MU_SWEEP:
+                f_lat = mu * F_POGO_N
+                onset = first_wall_contact_mm(f_lat, play, L_FREE_UNSUP, ei_Nm2=ei)
+                # The wall only exists from the mouth inward; a computed onset before it means the rod
+                # has already exceeded the play on arrival, i.e. it meets the bore EDGE (§4b).
+                run_start = max(onset, CHANNEL_START_MM)
+                if run_start >= channel_end:
+                    wear_rows.append({"branch": r["branch"], "mu": mu, "contact": False,
+                                      "why": "the rod never reaches the wall inside the bore at this "
+                                             "µ — the free-cantilever case, so no rubbing is priced"})
+                    print(f"  {r['branch']:<24s} {mu:>4.1f} {'—':>8s} {'—':>9s} {'—':>10s} "
+                          f"{'no contact':>10s} {'':>10s}")
+                    continue
+                # ⛔ BRACKET, not a number: scan the single-prop family across the active run and keep
+                #    its maximum. The distributed reaction the real contact carries lies inside this
+                #    family; taking the max is the conservative end for a wear budget.
+                stations = np.linspace(run_start, channel_end, 201)
+                reactions = [prop_reaction_N(f_lat, float(a), play, L_FREE_UNSUP, ei) for a in stations]
+                i_max = int(np.argmax(reactions))
+                r_wall, a_star = float(reactions[i_max]), float(stations[i_max])
+                if r_wall <= 0.0:
+                    wear_rows.append({"branch": r["branch"], "mu": mu, "contact": False,
+                                      "why": "the wall is touched but carries no reaction at this load "
+                                             "— contact begins exactly where the play is taken up"})
+                    print(f"  {r['branch']:<24s} {mu:>4.1f} {'0.00 N':>8s} {'—':>9s} {'—':>10s} "
+                          f"{'no load':>10s} {'':>10s}")
+                    continue
+                slip_mm = surface_axial_slip_mm(f_lat, a_star, L_FREE_UNSUP, od_mm / 2.0, ei)
+                # ⛔ The MATERIAL sets the smallest area the contact may have: PEEK cannot carry a line
+                #    load, it flows until the pressure falls to what it supports. So A ≥ R/p_flow is
+                #    DERIVED, not assumed — and it is what replaces the arbitrary contact patch this
+                #    block would otherwise need. p_flow is BRACKETED (see the constant block); the
+                #    TIGHTEST factor drives the headline, the loosest is reported beside it so the
+                #    reader sees what the choice is worth. Ceiling: a flow-pressure bound, never a
+                #    Hertz solution; no strain hardening, no viscoelastic recovery.
+                area_by_factor = {f"{c:.1f}": r_wall / (c * SIGMA_YIELD_PEEK_PA) * 1e6
+                                  for c in CONTACT_CONSTRAINT_FACTORS}
+                a_min_mm2 = min(area_by_factor.values())
+                # The opposite end: the pair worn in until it bears over the whole run, priced in the
+                # PROJECTED-AREA convention that polymer plain-bearing wear rates are quoted against.
+                a_proj_mm2 = od_mm * (channel_end - run_start)
+                # 🔑 THE REACTION CANCELS AT THE TIGHT END, and that was not the plan — it is what the
+                #    algebra turned out to say. A = R/p_flow and duty = R·s, so k = h·A/duty reduces to
+                #    h/(p_flow·s): the flow-limited budget does not contain the contact force AT ALL.
+                #    Consequence worth more than the number: the weakest link in this chain — a
+                #    propped-cantilever reaction standing in for a distributed contact — has NO say in
+                #    the binding half of the answer. It survives only in the loose (worn-in) end.
+                #    Pinned against the closed form rather than described, so a refactor cannot quietly
+                #    reintroduce the dependence. ⚠️ Checked on the UNROUNDED distance: the first version
+                #    read the rounded field back out of the payload and failed on its own 4e-6 of
+                #    rounding — a pin that judges a display value is judging the formatter.
+                p_flow_N_mm2 = max(CONTACT_CONSTRAINT_FACTORS) * SIGMA_YIELD_PEEK_PA / 1e6
+                per_anchor = []
+                for anc in duty_anchors:
+                    sliding_m = anc["n_cycles"] * 2.0 * slip_mm * MM_M
+                    duty_nm = r_wall * sliding_m
+                    k_edge = t_mm * a_min_mm2 / duty_nm
+                    k_closed = t_mm / (p_flow_N_mm2 * sliding_m)
+                    assert abs(k_edge - k_closed) <= 1e-9 * k_closed, \
+                        "the flow-limited budget stopped reducing to h/(p_flow·s) — the reaction crept back in"
+                    per_anchor.append({
+                        "anchor": anc["anchor"], "n_cycles": anc["n_cycles"],
+                        "sliding_distance_m": round(sliding_m, 1),
+                        "duty_N_m": round(duty_nm, 1),
+                        "k_max_edge_mm3_per_Nm": t_mm * a_min_mm2 / duty_nm,
+                        "k_max_conformal_mm3_per_Nm": t_mm * a_proj_mm2 / duty_nm,
+                    })
+                worst = min(per_anchor, key=lambda p: p["k_max_edge_mm3_per_Nm"])
+                # 🔑 Bounds with a KNOWN sign are asserted IN THE CODE, not trusted to the author: the
+                #    bracket must be a bracket (the flow-limited patch cannot exceed the full projected
+                #    bearing), every budget must be positive, and the slip must stay a small fraction
+                #    of the span or the small-deflection beam this whole file rests on is the wrong
+                #    model. A quantity whose limit is known and unchecked is the one class of error
+                #    that is free to catch (00_06 §0).
+                assert 0.0 < a_min_mm2 <= a_proj_mm2, "the area bracket inverted — bound above the full run"
+                assert all(p["k_max_edge_mm3_per_Nm"] > 0.0 for p in per_anchor), "non-positive budget"
+                assert slip_mm < 0.01 * L_FREE_UNSUP, "slip is no longer small against the span"
+                wear_rows.append({
+                    "branch": r["branch"], "mu": mu, "contact": True,
+                    "wall_allowance_mm": t_mm, "rubbing_od_mm": round(od_mm, 3),
+                    "contact_run_mm": [round(run_start, 2), round(channel_end, 2)],
+                    "edge_bearing": bool(onset < CHANNEL_START_MM),
+                    "reaction_max_N": round(r_wall, 3), "reaction_station_mm": round(a_star, 2),
+                    "slip_per_cycle_um": round(slip_mm * 1000.0, 3),
+                    "area_material_bound_mm2": round(a_min_mm2, 5),
+                    "area_by_constraint_factor_mm2": {k: round(v, 5) for k, v in area_by_factor.items()},
+                    "area_projected_full_run_mm2": round(a_proj_mm2, 3),
+                    "by_duty_anchor": per_anchor,
+                    "k_max_span_ratio": round(a_proj_mm2 / a_min_mm2, 1),
+                })
+                print(f"  {r['branch']:<24s} {mu:>4.1f} {r_wall:>6.2f} N {slip_mm * 1000:>7.1f} µm "
+                      f"{worst['sliding_distance_m']:>8.0f} m {worst['k_max_edge_mm3_per_Nm']:>10.2e} "
+                      f"{worst['k_max_conformal_mm3_per_Nm']:>10.2e}")
+        # The SECOND driver, priced so that «the sway dominates» is a measurement and not an assumption.
+        # ⛔ Its cycle count is a SWEEP, never a value: the seasonal swing is one per year by definition,
+        #    the diurnal count is not in this tree at all, and the point is that even the generous end
+        #    stays orders below the sway term.
+        for per_year in (1, 365):
+            for dt_k in (40, 80):
+                growth_mm = d_alpha * LINER_LENGTH_MM * dt_k
+                sliding_m = 20.0 * per_year * 2.0 * growth_mm * MM_M
+                thermal_rows.append({"cycles_per_year": per_year, "delta_T_K": dt_k,
+                                     "stroke_um": round(growth_mm * 1000.0, 1),
+                                     "sliding_distance_m": round(sliding_m, 4)})
+        sway_max = max((p["sliding_distance_m"] for w in wear_rows if w["contact"]
+                        for p in w["by_duty_anchor"]), default=0.0)
+        thermal_max = max(t["sliding_distance_m"] for t in thermal_rows)
+        print(f"\n  → Second driver, the liner's differential thermal travel: at most "
+              f"{thermal_max:.3f} m of sliding over the service life")
+        print(f"    against {sway_max:.0f} m from sway — "
+              f"{sway_max / thermal_max:.0e}× smaller, so the sway drag is the whole wear axis "
+              f"(DERIVED, not assumed).")
+        contact_rows = [w for w in wear_rows if w["contact"]]
+        if contact_rows:
+            shipped_rows = [w for w in contact_rows if w["branch"].startswith("PEEK liner")]
+            binding_wear = min(shipped_rows or contact_rows,
+                               key=lambda w: min(p["k_max_edge_mm3_per_Nm"] for p in w["by_duty_anchor"]))
+            b_worst = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_max_edge_mm3_per_Nm"])
+            print(f"\n  → BUDGET for the shipped branch at its worst corner (µ {binding_wear['mu']:.1f}, "
+                  f"{b_worst['anchor']}):")
+            print(f"    the pair may wear at k ≤ {b_worst['k_max_edge_mm3_per_Nm']:.2e} mm³/(N·m) if the "
+                  f"contact stays the MATERIAL-bounded patch")
+            print(f"    ({binding_wear['area_material_bound_mm2']:.4f} mm² — PEEK at the TIGHTEST "
+                  f"swept flow pressure; the loosest gives "
+                  f"{max(binding_wear['area_by_constraint_factor_mm2'].values()):.4f} mm²),")
+            print(f"    and at k ≤ {b_worst['k_max_conformal_mm3_per_Nm']:.2e} once it is worn in over "
+                  f"the run.")
+            print(f"  🔴 The two ends differ by {binding_wear['k_max_span_ratio']:.0f}×, and NOTHING in "
+                  f"the tribology decides between them —")
+            print("     the CONTACT GEOMETRY does, and that is an OPEN ⚖️ (the bore entry carries a")
+            print("     radius whose value is unnamed; the liner's protrusion decides whether first")
+            print("     contact lands on titanium edge or on polymer). So the wear verdict is gated on")
+            print("     a decision of OURS, not on a number from a vendor. ⛔ k itself stays NOT MEASURED.")
+            print("  🔑 And the TIGHT end does not contain the contact force at all: with the area")
+            print("     flow-limited, k = wall / (flow pressure × sliding distance) — the reaction")
+            print("     cancels. The shakiest input of the chain (a single prop standing in for a")
+            print("     distributed contact) therefore has no say in the binding half of the answer.")
+
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
@@ -1250,9 +1515,14 @@ def main() -> int:
     print("     Dropping the as-printed derate lifted the soft alloys OUT of predicted failure; whether"
           if not clears_all else "     Every alloy clears it bare, so the FATIGUE motive for support is "
                                  "spent — which is NOT news:")
+    # ⛔ This branch read «The ratified ground is WEAR, and NOTHING here computes it» until §7 existed.
+    #    True when written, false the moment the wear block shipped — and nothing but reading the file's
+    #    own output as a stranger would have caught it: both halves are grammatical and each was once
+    #    correct. The pointer is DERIVED from whether the block actually ran, never from this sentence.
     print("     it also carried them over the infinite-life line is what the two lists above answer."
-          if not clears_all else "     ⚖️ 2026-09-11 retired that ground already. The ratified ground is "
-                                 "WEAR, and NOTHING here computes it.")
+          if not clears_all else
+          "     ⚖️ 2026-09-11 retired that ground already. The ratified ground is WEAR — "
+          + ("BOUNDED in §7." if binding_wear is not None else "NOT computed in this run (§7)."))
     # ⛔ DERIVED from §5, never typed. The old text here said the seam "must be judged on its own"
     # and left it at that; §5 now judges it the only way an unmeasured input can be judged — by
     # bounding it. What has NOT changed: the ×2 still belongs to the WIRE.
@@ -1280,8 +1550,35 @@ def main() -> int:
     print(f"     Friction locks the tube axially over the whole window except its floor "
           f"(locked_over_whole_window={_iw['axial_friction_lock']['locked_over_whole_window']}), so")
     print("     the ratified ground for ONE-end capture does not discriminate above ~1 µm of fit.")
-    print("  7. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
+    # ⛔ DERIVED from §7, never typed. The sentence this replaces was the file's own «NOTHING here
+    # computes it» — true when written, and the reason this block exists.
+    if binding_wear is not None:
+        _bw = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_max_edge_mm3_per_Nm"])
+        print(f"  7. WEAR (§7) — the ratified ground is no longer unpriced. The shipped liner at its "
+              f"worst corner (µ {binding_wear['mu']:.1f})")
+        print(f"     may wear at k ≤ {_bw['k_max_edge_mm3_per_Nm']:.2e} mm³/(N·m) on the material-bounded "
+              f"patch, k ≤ {_bw['k_max_conformal_mm3_per_Nm']:.2e} worn in —")
+        print(f"     a {binding_wear['k_max_span_ratio']:.0f}× span decided by CONTACT GEOMETRY, which is "
+              f"our own open ⚖️, not the vendor's number.")
+        print("     ⛔ k stays NOT MEASURED; what changed is that a tribo-test now returns a verdict.")
+    else:
+        print("  7. WEAR (§7): NOT COMPUTED — the duty cache is absent and no cycle count is "
+              "substituted (run script 62).")
+    print("  8. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
     print("     sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported is robust.")
+
+    # ⛔ Built as ONE expression, never as a literal glued onto the verdict: adjacent string literals
+    #    concatenate BEFORE a trailing conditional binds, so writing this inline would have emptied the
+    #    whole verdict on the branch where the duty cache is missing — a defect visible only in the
+    #    absent-cache run, i.e. exactly the one nobody executes.
+    wear_verdict_sentence = (
+        "WEAR is BOUNDED since 2026-09-12 (wear_budget): the rate is not measured anywhere, so the "
+        "block prices the BUDGET, and its two ends are set by the CONTACT GEOMETRY - an open verdict "
+        "of ours - not by tribology. The same block re-earns the rejection of the conformal branches "
+        "on the wear axis itself, which is where the 2026-09-11 ground had been weakened."
+        if binding_wear is not None else
+        "WEAR is NOT priced in this run: the duty cache is absent and no cycle count is substituted."
+    )
 
     out = {
         "method": "slender-beam closed form — Euler buckling (fixed-free) + cantilever tip-load bending "
@@ -1334,6 +1631,78 @@ def main() -> int:
         },
         "weld_seam": weld_seam,
         "interference_window": interference_window,
+        "wear_budget": {
+            "question": "00_07 HW.34 — ⚖️ 2026-09-11 made WEAR the ground the structural liner stands "
+                        "on, and nothing in this tree computed it: every wear/fretting mention in this "
+                        "file was prose, so 'rated for 20 years' had no instrument and FMEA #21 "
+                        "asserted wear-through with none either. This block bounds the rate the pair "
+                        "may have and still keep the wall, so a tribo-test returns a verdict",
+            "specific_wear_rate_measured": SPECIFIC_WEAR_RATE_MEASURED,
+            "contact_constraint_factors_swept": list(CONTACT_CONSTRAINT_FACTORS),
+            "contact_area_bound": "A >= R / (constraint x PEEK yield). The constraint factor is SWEPT, "
+                                  "never chosen: a confined contact flows at the indentation limit "
+                                  "(~3x yield, the same factor that puts HARDNESS in Archard's law), "
+                                  "so taking yield alone would over-state the allowable area threefold "
+                                  "in the direction that makes the part look safe. Headlines use the "
+                                  "TIGHTEST factor",
+            "interface": "liner OD (PEEK) against the cathode bore (Ti). Set by the 2026-09-11 "
+                         "DIRECTION verdict: the tube is tight on the wire, so the play - and "
+                         "therefore the rubbing - sits on the CHANNEL side",
+            "second_interface_not_priced": "at the FLOOR of the interference window §6 shows the tube "
+                                           "slips on the WIRE instead, which puts a second sliding "
+                                           "pair inside the same part. Nothing specifies which of the "
+                                           "two ships, and this block prices only the ratified one",
+            "duty_source": str(WIND_CACHE.relative_to(REPO_ROOT)) if wind else None,
+            "duty_anchors": duty_anchors,
+            "duty_note": "cycle counts are LOADED from script 62 (ten years of real NASA POWER wind "
+                         "for Cherkasy), never retyped. Script 62's own verdict is that the duty does "
+                         "NOT close to a single number - two named literature gaps - so the anchors "
+                         "are a bracket and the raw 20 yr x 1 Hz budget is its ceiling",
+            "rows": wear_rows,
+            "thermal_driver": {
+                "rows": thermal_rows,
+                "cycles_per_year_is_swept": True,
+                "note": "the liner's differential axial travel against Ti, the only other sliding this "
+                        "geometry produces. Its cycle count is SWEPT (seasonal = 1/yr by definition, "
+                        "diurnal is nowhere in this tree) because the finding is the ORDER: even the "
+                        "generous end stays orders below the sway term, so the sway drag is the wear "
+                        "axis. DERIVED, not assumed",
+            },
+            "binding": binding_wear,
+            "reaction_cancels_at_the_tight_end": "A = R/p_flow and duty = R x s, so k = h x A / duty "
+                                                 "reduces EXACTLY to h / (p_flow x s). The flow-limited "
+                                                 "budget therefore contains no contact force, and the "
+                                                 "weakest input of the chain - a single prop standing in "
+                                                 "for a distributed contact - has no say in the binding "
+                                                 "half of the answer. It survives only in the worn-in "
+                                                 "end, through the projected area. Pinned in-run against "
+                                                 "the closed form, not merely described",
+            "not_modelled": {
+                "distributed_contact": "the wall reaction is the maximum of the single-prop family "
+                                       "across the active run; no distributed-contact solution exists "
+                                       "in this tree, so the true reaction is bracketed, not solved - "
+                                       "and see reaction_cancels_at_the_tight_end for why that "
+                                       "bracket does not reach the binding number",
+                "slip_regime": "Archard assumes GROSS slip. The slip amplitudes here sit in the range "
+                               "where a real pair may be in partial slip instead, which wears far "
+                               "less and damages by fretting FATIGUE rather than by removal. The "
+                               "regime boundary is not in this tree, so the gross-slip reading is "
+                               "taken - the conservative one for a wear budget, and the wrong one for "
+                               "predicting the failure MODE",
+                "third_body": "PEEK debris trapped in a 25 um clearance is neither evacuated nor "
+                              "modelled; it can either bed the contact in (less wear) or turn the "
+                              "pair abrasive (much more)",
+                "titanium_side": "only the polymer is priced. The bore also wears, and on the EDGE "
+                                 "branch it is the sharp edge doing the cutting",
+                "temperature_and_creep": "k, the PEEK yield that bounds the contact area, and the "
+                                         "modulus are all 23 C datasheet values; none is swept over "
+                                         "the -30..+40 C service band, and creep flattens the contact "
+                                         "over 20 yr in a direction this bound does not follow",
+                "amplitude_coupling": "slip and reaction both scale with the drag, so a real sway "
+                                      "SPECTRUM (not a single amplitude) would redistribute the duty; "
+                                      "the load spectrum is bench/field, 00_02",
+            },
+        },
         "assembly_clearance": {
             "question": "00_07 HW.34 — which of the three frozen dims (01_01 §1.4) gives up the "
                         "assembly clearance. CLOSED 2026-09-11: direction = channel side, size = "
@@ -1362,7 +1731,7 @@ def main() -> int:
                     "What the liner carries is WEAR - the contact is geometrically forced, and wear-through "
                     "is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; "
                     "NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
-                    "thermal -> leading HW.24 candidates win on both."),
+                    "thermal -> leading HW.24 candidates win on both. " + wear_verdict_sentence),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
                    "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. "
                    "WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought "
@@ -1375,6 +1744,12 @@ def main() -> int:
                    "line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and "
                    "landing in the window needs a nominal interference - a verdict, not a tolerance. "
                    "Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. "
+                   "WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET, and "
+                   "its span is set by the contact AREA, which is bracketed between a flow-pressure bound "
+                   "and the full projected run. Archard assumes GROSS slip - at these amplitudes a real "
+                   "pair may be in partial slip, which removes less material and fails by fretting FATIGUE "
+                   "instead, a mode nothing here models. Third-body debris, the titanium side of the pair "
+                   "and the whole -30..+40 C dependence are outside the bound. "
                    "Three seam mechanisms "
                    "stay outside even that bound, and their signs differ: bead section RELIEVES nominal "
                    "stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this "

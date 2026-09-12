@@ -439,6 +439,72 @@ def test_bus_mechanical_weld_seam():
     assert fm["wrought_derate"] in markers.values()
 
 
+def test_bus_mechanical_wear_budget():
+    """Script 55 (HW.34): the ground the liner STANDS on is bounded, and its inputs stay honest.
+
+    ⚖️ 2026-09-11 made WEAR the liner's ground and nothing computed it until 2026-09-12 — every
+    `wear`/`fretting` mention in that script was prose, so «rated for 20 years» had no instrument
+    while FMEA #21, the highest RPN in the register, asserted wear-through with none either.
+    The honesty condition is the same as the weld seam's and the fit's: nobody may quietly type a
+    wear rate, nor a cycle count, and let the corpus read either as measured.
+    """
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    d = json.loads(path.read_text())
+    w = d["wear_budget"]
+    # 1. Honesty on BOTH unmeasured inputs. The rate is the obvious one; the cycle count is the one
+    #    that could be faked without looking like a fake, so it must still name its source file.
+    assert w["specific_wear_rate_measured"] is None, "a wear rate was typed in — it is NOT MEASURED"
+    assert w["duty_source"] and w["duty_source"].endswith("wind_duty_cycle.json"), \
+        "the cycle count stopped citing script 62's cache and is now a literal"
+    assert len(w["duty_anchors"]) >= 2, "the duty collapsed to a single number — it is a bracket"
+    # 2. The flow pressure is SWEPT, and the headline area must be the TIGHTEST of the sweep. Taking
+    #    the loosest would over-state the allowable area threefold in the direction that flatters.
+    assert len(w["contact_constraint_factors_swept"]) >= 2
+    contact = [r for r in w["rows"] if r["contact"]]
+    assert contact, "every branch lost contact — the wear axis has nothing to price"
+    for r in contact:
+        by_factor = r["area_by_constraint_factor_mm2"]
+        assert r["area_material_bound_mm2"] == min(by_factor.values()), \
+            "the headline area is no longer the tightest swept flow pressure"
+        # 3. The bracket must BE a bracket, and it must stay one that has an answer inside it.
+        assert 0.0 < r["area_material_bound_mm2"] <= r["area_projected_full_run_mm2"]
+        for p in r["by_duty_anchor"]:
+            assert 0.0 < p["k_max_edge_mm3_per_Nm"] < p["k_max_conformal_mm3_per_Nm"]
+    # 4. 🔴 The SUBSTANTIVE claim, and the one canon leans on: on the wear axis a branch with LESS
+    #    allowance than the shipped liner demands a STRICTER rate at the same friction — which is
+    #    what re-earns the rejection of the conformal coatings after the 2026-09-12 protrusion fix
+    #    weakened the ground that had carried it (they stop reaching the wall at the two lowest µ).
+    #    ⛔ Scoped by ALLOWANCE, not by «is not the shipped branch», and the scope is the difference
+    #    between a pin and a trap: a future branch with a THICKER wall would legitimately carry a
+    #    looser budget, and an unscoped assertion would red on correct work. Naming the scope also
+    #    names what the assertion does NOT prove — a thinner wall alone would give a smaller budget
+    #    arithmetically; what is checked is that nothing in the model has inverted that.
+    by_branch_mu = {(r["branch"], r["mu"]): r for r in contact}
+    assert any(b == SHIPPED_INSULATION for b, _ in by_branch_mu), \
+        "the shipped liner branch is absent from the wear table"
+    for (branch, mu), row in by_branch_mu.items():
+        peer = by_branch_mu.get((SHIPPED_INSULATION, mu))
+        if peer is None or branch == SHIPPED_INSULATION:
+            continue
+        if row["wall_allowance_mm"] >= peer["wall_allowance_mm"]:
+            continue
+        worst_other = min(p["k_max_edge_mm3_per_Nm"] for p in row["by_duty_anchor"])
+        worst_ship = min(p["k_max_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"])
+        assert worst_other < worst_ship, \
+            f"{branch} has less allowance than the shipped liner at µ {mu} yet a looser wear budget"
+    # 5. The second driver is priced so «sway dominates» stays a measurement. If the thermal travel
+    #    ever approached the sway sliding, the block's own headline would be wrong.
+    thermal_max = max(t["sliding_distance_m"] for t in w["thermal_driver"]["rows"])
+    sway_max = max(p["sliding_distance_m"] for r in contact for p in r["by_duty_anchor"])
+    assert w["thermal_driver"]["cycles_per_year_is_swept"] is True
+    assert thermal_max * 100.0 < sway_max, "the thermal driver stopped being negligible — re-read §7"
+    # 6. The binding row must be the SHIPPED branch: a budget quoted from a rejected branch would be
+    #    a true number about a part we do not build.
+    assert w["binding"]["branch"] == SHIPPED_INSULATION
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():

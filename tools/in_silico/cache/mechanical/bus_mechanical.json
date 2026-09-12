@@ -717,6 +717,706 @@
       "insertion_force": "the force to press the tube onto the wire is not computed; at the ceiling it is a real handling question"
     }
   },
+  "wear_budget": {
+    "question": "00_07 HW.34 \u2014 \u2696\ufe0f 2026-09-11 made WEAR the ground the structural liner stands on, and nothing in this tree computed it: every wear/fretting mention in this file was prose, so 'rated for 20 years' had no instrument and FMEA #21 asserted wear-through with none either. This block bounds the rate the pair may have and still keep the wall, so a tribo-test returns a verdict",
+    "specific_wear_rate_measured": null,
+    "contact_constraint_factors_swept": [
+      1.0,
+      3.0
+    ],
+    "contact_area_bound": "A >= R / (constraint x PEEK yield). The constraint factor is SWEPT, never chosen: a confined contact flows at the indentation limit (~3x yield, the same factor that puts HARDNESS in Archard's law), so taking yield alone would over-state the allowable area threefold in the direction that makes the part look safe. Headlines use the TIGHTEST factor",
+    "interface": "liner OD (PEEK) against the cathode bore (Ti). Set by the 2026-09-11 DIRECTION verdict: the tube is tight on the wire, so the play - and therefore the rubbing - sits on the CHANNEL side",
+    "second_interface_not_priced": "at the FLOOR of the interference window \u00a76 shows the tube slips on the WIRE instead, which puts a second sliding pair inside the same part. Nothing specifies which of the two ships, and this block prices only the ratified one",
+    "duty_source": "tools/in_silico/cache/mechanical/wind_duty_cycle.json",
+    "duty_anchors": [
+      {
+        "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+        "n_cycles": 443570000.0
+      },
+      {
+        "anchor": "Beaufort 4 (small branches move)",
+        "n_cycles": 156420000.0
+      },
+      {
+        "anchor": "Beaufort 5 (small trees begin to sway)",
+        "n_cycles": 21900000.0
+      },
+      {
+        "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+        "n_cycles": 630000000.0
+      }
+    ],
+    "duty_note": "cycle counts are LOADED from script 62 (ten years of real NASA POWER wind for Cherkasy), never retyped. Script 62's own verdict is that the duty does NOT close to a single number - two named literature gaps - so the anchors are a bracket and the raw 20 yr x 1 Hz budget is its ceiling",
+    "rows": [
+      {
+        "branch": "conformal 10 \u00b5m film",
+        "mu": 0.2,
+        "contact": false,
+        "why": "the rod never reaches the wall inside the bore at this \u00b5 \u2014 the free-cantilever case, so no rubbing is priced"
+      },
+      {
+        "branch": "conformal 10 \u00b5m film",
+        "mu": 0.3,
+        "contact": true,
+        "wall_allowance_mm": 0.01,
+        "rubbing_od_mm": 1.02,
+        "contact_run_mm": [
+          18.85,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.033,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 7.367,
+        "area_material_bound_mm2": 0.00011,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00033,
+          "3.0": 0.00011
+        },
+        "area_projected_full_run_mm2": 1.173,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 6535.3,
+            "duty_N_m": 218.1,
+            "k_max_edge_mm3_per_Nm": 5.100533036305493e-09,
+            "k_max_conformal_mm3_per_Nm": 5.376154011338762e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 2304.6,
+            "duty_N_m": 76.9,
+            "k_max_edge_mm3_per_Nm": 1.446390128445229e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0001524549696208627
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 322.7,
+            "duty_N_m": 10.8,
+            "k_max_edge_mm3_per_Nm": 1.033079195851154e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0010889043994564084
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 9282.0,
+            "duty_N_m": 309.8,
+            "k_max_edge_mm3_per_Nm": 3.591180061768297e-09,
+            "k_max_conformal_mm3_per_Nm": 3.7852391028722764e-05
+          }
+        ],
+        "k_max_span_ratio": 10540.4
+      },
+      {
+        "branch": "conformal 10 \u00b5m film",
+        "mu": 0.4,
+        "contact": true,
+        "wall_allowance_mm": 0.01,
+        "rubbing_od_mm": 1.02,
+        "contact_run_mm": [
+          15.86,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.156,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 9.822,
+        "area_material_bound_mm2": 0.00052,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00156,
+          "3.0": 0.00052
+        },
+        "area_projected_full_run_mm2": 4.224,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 8713.7,
+            "duty_N_m": 1358.2,
+            "k_max_edge_mm3_per_Nm": 3.8253997772291185e-09,
+            "k_max_conformal_mm3_per_Nm": 3.1099602022215724e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 3072.8,
+            "duty_N_m": 479.0,
+            "k_max_edge_mm3_per_Nm": 1.0847925963339216e-08,
+            "k_max_conformal_mm3_per_Nm": 8.81910910944523e-05
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 430.2,
+            "duty_N_m": 67.1,
+            "k_max_edge_mm3_per_Nm": 7.748093968883654e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0006299018478992799
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 12376.0,
+            "duty_N_m": 1929.1,
+            "k_max_edge_mm3_per_Nm": 2.6933850463262225e-09,
+            "k_max_conformal_mm3_per_Nm": 2.1896588046022583e-05
+          }
+        ],
+        "k_max_span_ratio": 8129.8
+      },
+      {
+        "branch": "conformal 10 \u00b5m film",
+        "mu": 0.5,
+        "contact": true,
+        "wall_allowance_mm": 0.01,
+        "rubbing_od_mm": 1.02,
+        "contact_run_mm": [
+          13.93,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.278,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 12.278,
+        "area_material_bound_mm2": 0.00093,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00278,
+          "3.0": 0.00093
+        },
+        "area_projected_full_run_mm2": 6.187,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 10892.1,
+            "duty_N_m": 3032.1,
+            "k_max_edge_mm3_per_Nm": 3.0603198217832964e-09,
+            "k_max_conformal_mm3_per_Nm": 2.0404648222515656e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 3841.0,
+            "duty_N_m": 1069.2,
+            "k_max_edge_mm3_per_Nm": 8.678340770671376e-09,
+            "k_max_conformal_mm3_per_Nm": 5.786274013592424e-05
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 537.8,
+            "duty_N_m": 149.7,
+            "k_max_edge_mm3_per_Nm": 6.198475175106924e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00041328263982014923
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 15470.0,
+            "duty_N_m": 4306.5,
+            "k_max_edge_mm3_per_Nm": 2.1547080370609787e-09,
+            "k_max_conformal_mm3_per_Nm": 1.4366491765176617e-05
+          }
+        ],
+        "k_max_span_ratio": 6667.5
+      },
+      {
+        "branch": "conformal TiO2 ~5 \u00b5m",
+        "mu": 0.2,
+        "contact": false,
+        "why": "the rod never reaches the wall inside the bore at this \u00b5 \u2014 the free-cantilever case, so no rubbing is priced"
+      },
+      {
+        "branch": "conformal TiO2 ~5 \u00b5m",
+        "mu": 0.3,
+        "contact": true,
+        "wall_allowance_mm": 0.005,
+        "rubbing_od_mm": 1.01,
+        "contact_run_mm": [
+          19.2,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.023,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 7.294,
+        "area_material_bound_mm2": 8e-05,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00023,
+          "3.0": 8e-05
+        },
+        "area_projected_full_run_mm2": 0.807,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 6471.2,
+            "duty_N_m": 150.5,
+            "k_max_edge_mm3_per_Nm": 2.5755166816988126e-09,
+            "k_max_conformal_mm3_per_Nm": 2.6814266211733458e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 2282.0,
+            "duty_N_m": 53.1,
+            "k_max_edge_mm3_per_Nm": 7.303554113931353e-09,
+            "k_max_conformal_mm3_per_Nm": 7.603889568813841e-05
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 319.5,
+            "duty_N_m": 7.4,
+            "k_max_edge_mm3_per_Nm": 5.216538513703846e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0005431052083807585
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 9191.0,
+            "duty_N_m": 213.7,
+            "k_max_edge_mm3_per_Nm": 1.8133681500018133e-09,
+            "k_max_conformal_mm3_per_Nm": 1.8879371529426365e-05
+          }
+        ],
+        "k_max_span_ratio": 10411.2
+      },
+      {
+        "branch": "conformal TiO2 ~5 \u00b5m",
+        "mu": 0.4,
+        "contact": true,
+        "wall_allowance_mm": 0.005,
+        "rubbing_od_mm": 1.01,
+        "contact_run_mm": [
+          16.14,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.146,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 9.726,
+        "area_material_bound_mm2": 0.00049,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00146,
+          "3.0": 0.00049
+        },
+        "area_projected_full_run_mm2": 3.899,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 8628.3,
+            "duty_N_m": 1257.6,
+            "k_max_edge_mm3_per_Nm": 1.9316375112741096e-09,
+            "k_max_conformal_mm3_per_Nm": 1.5500570740677695e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 3042.7,
+            "duty_N_m": 443.5,
+            "k_max_edge_mm3_per_Nm": 5.477665585448516e-09,
+            "k_max_conformal_mm3_per_Nm": 4.395594018311217e-05
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 426.0,
+            "duty_N_m": 62.1,
+            "k_max_edge_mm3_per_Nm": 3.9124038852778854e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00031395379741746144
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 12254.7,
+            "duty_N_m": 1786.1,
+            "k_max_edge_mm3_per_Nm": 1.3600261125013602e-09,
+            "k_max_conformal_mm3_per_Nm": 1.0913632005464138e-05
+          }
+        ],
+        "k_max_span_ratio": 8024.6
+      },
+      {
+        "branch": "conformal TiO2 ~5 \u00b5m",
+        "mu": 0.5,
+        "contact": true,
+        "wall_allowance_mm": 0.005,
+        "rubbing_od_mm": 1.01,
+        "contact_run_mm": [
+          14.17,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.268,
+        "reaction_station_mm": 20.0,
+        "slip_per_cycle_um": 12.157,
+        "area_material_bound_mm2": 0.00089,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00268,
+          "3.0": 0.00089
+        },
+        "area_projected_full_run_mm2": 5.883,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 10785.3,
+            "duty_N_m": 2893.2,
+            "k_max_edge_mm3_per_Nm": 1.5453100090192882e-09,
+            "k_max_conformal_mm3_per_Nm": 1.0167533931232407e-05
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 3803.3,
+            "duty_N_m": 1020.2,
+            "k_max_edge_mm3_per_Nm": 4.382132468358813e-09,
+            "k_max_conformal_mm3_per_Nm": 2.8832713373460924e-05
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 532.5,
+            "duty_N_m": 142.8,
+            "k_max_edge_mm3_per_Nm": 3.129923108222308e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0002059366678482538
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 15318.3,
+            "duty_N_m": 4109.1,
+            "k_max_edge_mm3_per_Nm": 1.0880208900010881e-09,
+            "k_max_conformal_mm3_per_Nm": 7.158750834725013e-06
+          }
+        ],
+        "k_max_span_ratio": 6579.6
+      },
+      {
+        "branch": "PEEK liner 0.15 mm",
+        "mu": 0.2,
+        "contact": true,
+        "wall_allowance_mm": 0.15,
+        "rubbing_od_mm": 1.3,
+        "contact_run_mm": [
+          8.48,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.234,
+        "reaction_station_mm": 13.78,
+        "slip_per_cycle_um": 4.975,
+        "area_material_bound_mm2": 0.00078,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00234,
+          "3.0": 0.00078
+        },
+        "area_projected_full_run_mm2": 14.979,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 4413.8,
+            "duty_N_m": 1035.0,
+            "k_max_edge_mm3_per_Nm": 1.1327987192063278e-07,
+            "k_max_conformal_mm3_per_Nm": 0.002170885786197533
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 1556.5,
+            "duty_N_m": 365.0,
+            "k_max_edge_mm3_per_Nm": 3.2123483434237997e-07,
+            "k_max_conformal_mm3_per_Nm": 0.006156116917169413
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 217.9,
+            "duty_N_m": 51.1,
+            "k_max_edge_mm3_per_Nm": 2.294408803097492e-06,
+            "k_max_conformal_mm3_per_Nm": 0.043969854254960715
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 6269.0,
+            "duty_N_m": 1470.0,
+            "k_max_edge_mm3_per_Nm": 7.975802029815092e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0015284758860057773
+          }
+        ],
+        "k_max_span_ratio": 19163.9
+      },
+      {
+        "branch": "PEEK liner 0.15 mm",
+        "mu": 0.3,
+        "contact": true,
+        "wall_allowance_mm": 0.15,
+        "rubbing_od_mm": 1.3,
+        "contact_run_mm": [
+          6.83,
+          20.0
+        ],
+        "edge_bearing": false,
+        "reaction_max_N": 0.464,
+        "reaction_station_mm": 11.24,
+        "slip_per_cycle_um": 6.569,
+        "area_material_bound_mm2": 0.00155,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00464,
+          "3.0": 0.00155
+        },
+        "area_projected_full_run_mm2": 17.121,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 5827.2,
+            "duty_N_m": 2706.7,
+            "k_max_edge_mm3_per_Nm": 8.580402851431019e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0009488347264822313
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 2054.9,
+            "duty_N_m": 954.5,
+            "k_max_edge_mm3_per_Nm": 2.4331986272914313e-07,
+            "k_max_conformal_mm3_per_Nm": 0.002690670116517858
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 287.7,
+            "duty_N_m": 133.6,
+            "k_max_edge_mm3_per_Nm": 1.7379037866708934e-06,
+            "k_max_conformal_mm3_per_Nm": 0.019218019160991934
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 8276.4,
+            "duty_N_m": 3844.3,
+            "k_max_edge_mm3_per_Nm": 6.041284591760725e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0006680549517868625
+          }
+        ],
+        "k_max_span_ratio": 11058.2
+      },
+      {
+        "branch": "PEEK liner 0.15 mm",
+        "mu": 0.4,
+        "contact": true,
+        "wall_allowance_mm": 0.15,
+        "rubbing_od_mm": 1.3,
+        "contact_run_mm": [
+          6.0,
+          20.0
+        ],
+        "edge_bearing": true,
+        "reaction_max_N": 0.746,
+        "reaction_station_mm": 9.71,
+        "slip_per_cycle_um": 7.898,
+        "area_material_bound_mm2": 0.00249,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.00746,
+          "3.0": 0.00249
+        },
+        "area_projected_full_run_mm2": 18.2,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 7006.7,
+            "duty_N_m": 5227.5,
+            "k_max_edge_mm3_per_Nm": 7.136023737430985e-08,
+            "k_max_conformal_mm3_per_Nm": 0.000522243029742199
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 2470.8,
+            "duty_N_m": 1843.4,
+            "k_max_edge_mm3_per_Nm": 2.02360698709389e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0014809572989563178
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 345.9,
+            "duty_N_m": 258.1,
+            "k_max_edge_mm3_per_Nm": 1.4453543603708965e-06,
+            "k_max_conformal_mm3_per_Nm": 0.010577686790079784
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 9951.6,
+            "duty_N_m": 7424.5,
+            "k_max_edge_mm3_per_Nm": 5.024327062241687e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0003677005407980115
+          }
+        ],
+        "k_max_span_ratio": 7318.4
+      },
+      {
+        "branch": "PEEK liner 0.15 mm",
+        "mu": 0.5,
+        "contact": true,
+        "wall_allowance_mm": 0.15,
+        "rubbing_od_mm": 1.3,
+        "contact_run_mm": [
+          6.0,
+          20.0
+        ],
+        "edge_bearing": true,
+        "reaction_max_N": 1.072,
+        "reaction_station_mm": 8.73,
+        "slip_per_cycle_um": 9.116,
+        "area_material_bound_mm2": 0.00357,
+        "area_by_constraint_factor_mm2": {
+          "1.0": 0.01072,
+          "3.0": 0.00357
+        },
+        "area_projected_full_run_mm2": 18.2,
+        "by_duty_anchor": [
+          {
+            "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+            "n_cycles": 443570000.0,
+            "sliding_distance_m": 8087.1,
+            "duty_N_m": 8670.5,
+            "k_max_edge_mm3_per_Nm": 6.18270940583386e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00031486104127651264
+          },
+          {
+            "anchor": "Beaufort 4 (small branches move)",
+            "n_cycles": 156420000.0,
+            "sliding_distance_m": 2851.8,
+            "duty_N_m": 3057.6,
+            "k_max_edge_mm3_per_Nm": 1.7532696657369423e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0008928711934472747
+          },
+          {
+            "anchor": "Beaufort 5 (small trees begin to sway)",
+            "n_cycles": 21900000.0,
+            "sliding_distance_m": 399.3,
+            "duty_N_m": 428.1,
+            "k_max_edge_mm3_per_Nm": 1.252266854404441e-06,
+            "k_max_conformal_mm3_per_Nm": 0.006377301921416563
+          },
+          {
+            "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+            "n_cycles": 630000000.0,
+            "sliding_distance_m": 11486.0,
+            "duty_N_m": 12314.7,
+            "k_max_edge_mm3_per_Nm": 4.3531181129297226e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0002216871620301948
+          }
+        ],
+        "k_max_span_ratio": 5092.6
+      }
+    ],
+    "thermal_driver": {
+      "rows": [
+        {
+          "cycles_per_year": 1,
+          "delta_T_K": 40,
+          "stroke_um": 27.6,
+          "sliding_distance_m": 0.0011
+        },
+        {
+          "cycles_per_year": 1,
+          "delta_T_K": 80,
+          "stroke_um": 55.3,
+          "sliding_distance_m": 0.0022
+        },
+        {
+          "cycles_per_year": 365,
+          "delta_T_K": 40,
+          "stroke_um": 27.6,
+          "sliding_distance_m": 0.4037
+        },
+        {
+          "cycles_per_year": 365,
+          "delta_T_K": 80,
+          "stroke_um": 55.3,
+          "sliding_distance_m": 0.8073
+        }
+      ],
+      "cycles_per_year_is_swept": true,
+      "note": "the liner's differential axial travel against Ti, the only other sliding this geometry produces. Its cycle count is SWEPT (seasonal = 1/yr by definition, diurnal is nowhere in this tree) because the finding is the ORDER: even the generous end stays orders below the sway term, so the sway drag is the wear axis. DERIVED, not assumed"
+    },
+    "binding": {
+      "branch": "PEEK liner 0.15 mm",
+      "mu": 0.5,
+      "contact": true,
+      "wall_allowance_mm": 0.15,
+      "rubbing_od_mm": 1.3,
+      "contact_run_mm": [
+        6.0,
+        20.0
+      ],
+      "edge_bearing": true,
+      "reaction_max_N": 1.072,
+      "reaction_station_mm": 8.73,
+      "slip_per_cycle_um": 9.116,
+      "area_material_bound_mm2": 0.00357,
+      "area_by_constraint_factor_mm2": {
+        "1.0": 0.01072,
+        "3.0": 0.00357
+      },
+      "area_projected_full_run_mm2": 18.2,
+      "by_duty_anchor": [
+        {
+          "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
+          "n_cycles": 443570000.0,
+          "sliding_distance_m": 8087.1,
+          "duty_N_m": 8670.5,
+          "k_max_edge_mm3_per_Nm": 6.18270940583386e-08,
+          "k_max_conformal_mm3_per_Nm": 0.00031486104127651264
+        },
+        {
+          "anchor": "Beaufort 4 (small branches move)",
+          "n_cycles": 156420000.0,
+          "sliding_distance_m": 2851.8,
+          "duty_N_m": 3057.6,
+          "k_max_edge_mm3_per_Nm": 1.7532696657369423e-07,
+          "k_max_conformal_mm3_per_Nm": 0.0008928711934472747
+        },
+        {
+          "anchor": "Beaufort 5 (small trees begin to sway)",
+          "n_cycles": 21900000.0,
+          "sliding_distance_m": 399.3,
+          "duty_N_m": 428.1,
+          "k_max_edge_mm3_per_Nm": 1.252266854404441e-06,
+          "k_max_conformal_mm3_per_Nm": 0.006377301921416563
+        },
+        {
+          "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+          "n_cycles": 630000000.0,
+          "sliding_distance_m": 11486.0,
+          "duty_N_m": 12314.7,
+          "k_max_edge_mm3_per_Nm": 4.3531181129297226e-08,
+          "k_max_conformal_mm3_per_Nm": 0.0002216871620301948
+        }
+      ],
+      "k_max_span_ratio": 5092.6
+    },
+    "reaction_cancels_at_the_tight_end": "A = R/p_flow and duty = R x s, so k = h x A / duty reduces EXACTLY to h / (p_flow x s). The flow-limited budget therefore contains no contact force, and the weakest input of the chain - a single prop standing in for a distributed contact - has no say in the binding half of the answer. It survives only in the worn-in end, through the projected area. Pinned in-run against the closed form, not merely described",
+    "not_modelled": {
+      "distributed_contact": "the wall reaction is the maximum of the single-prop family across the active run; no distributed-contact solution exists in this tree, so the true reaction is bracketed, not solved - and see reaction_cancels_at_the_tight_end for why that bracket does not reach the binding number",
+      "slip_regime": "Archard assumes GROSS slip. The slip amplitudes here sit in the range where a real pair may be in partial slip instead, which wears far less and damages by fretting FATIGUE rather than by removal. The regime boundary is not in this tree, so the gross-slip reading is taken - the conservative one for a wear budget, and the wrong one for predicting the failure MODE",
+      "third_body": "PEEK debris trapped in a 25 um clearance is neither evacuated nor modelled; it can either bed the contact in (less wear) or turn the pair abrasive (much more)",
+      "titanium_side": "only the polymer is priced. The bore also wears, and on the EDGE branch it is the sharp edge doing the cutting",
+      "temperature_and_creep": "k, the PEEK yield that bounds the contact area, and the modulus are all 23 C datasheet values; none is swept over the -30..+40 C service band, and creep flattens the contact over 20 yr in a direction this bound does not follow",
+      "amplitude_coupling": "slip and reaction both scale with the drag, so a real sway SPECTRUM (not a single amplitude) would redistribute the duty; the load spectrum is bench/field, 00_02"
+    }
+  },
   "assembly_clearance": {
     "question": "00_07 HW.34 \u2014 which of the three frozen dims (01_01 \u00a71.4) gives up the assembly clearance. CLOSED 2026-09-11: direction = channel side, size = branch (\u0432), channel 1.30 -> 1.35. The table stays because it is the PRICING the verdict stands on, not an open menu; the shipped row is flagged",
     "frozen_dims_mm": {
@@ -798,6 +1498,6 @@
     ],
     "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 6 of 6 alloys (SF 2.2-6.1x): dropping the as-printed derate lifted the soft alloys OUT of predicted failure but NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): the free-cantilever SF describes conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, because every branch that leaves play takes it up and bears on the bore wall. What the liner carries is WEAR - the contact is geometrically forced, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the weld_seam block). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The headline is not the width but the nominals: rod O1.0 against tube bore O1.00 is a line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and landing in the window needs a nominal interference - a verdict, not a tolerance. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. Three seam mechanisms stay outside even that bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries - the endurance ratio is fully-reversed by construction."
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 6 of 6 alloys (SF 2.2-6.1x): dropping the as-printed derate lifted the soft alloys OUT of predicted failure but NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): the free-cantilever SF describes conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, because every branch that leaves play takes it up and bears on the bore wall. What the liner carries is WEAR - the contact is geometrically forced, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED since 2026-09-12 (wear_budget): the rate is not measured anywhere, so the block prices the BUDGET, and its two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The same block re-earns the rejection of the conformal branches on the wear axis itself, which is where the 2026-09-11 ground had been weakened.",
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the weld_seam block). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The headline is not the width but the nominals: rod O1.0 against tube bore O1.00 is a line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and landing in the window needs a nominal interference - a verdict, not a tolerance. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET, and its span is set by the contact AREA, which is bracketed between a flow-pressure bound and the full projected run. Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside even that bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries - the endurance ratio is fully-reversed by construction."
 }
