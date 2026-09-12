@@ -25,7 +25,7 @@
     "extra": [
       "Деталь 4 of the mechanical stack; bayonet 1/4-turn onto Деталь 3 (the cathode flange), NEVER onto the Zone-1 gyroid anode - that mistake destroys the enzyme surface (02_01 5.2)",
       "The cathode breathes O2 from the SIDE/perimeter under the bell, not from under this dome (01_04 5.5; 02_02 1.2 only cross-refs it) - the dome is not a gas reservoir",
-      "NO factory drawing exists for this part yet (draw radome unimplemented, 00_07 HW.1): these notes are the SOURCE of the acceptance contract, not yet its carrier"
+      "NO factory drawing exists for this part, and that is a RATIFIED DEFERRAL rather than a gap (00_07 HW.1, 2026-09-11): this geometry carries TWO ratified-but-unapplied verdicts of 00_07 HW.33 - a flat crown R5 in place of the hemisphere, and a flat rim with no counter-groove - so a sheet issued from today's generator would be wrong the moment it printed. Draw it TOGETHER with the application, never before. Until then these notes are the SOURCE of the acceptance contract and have no carrier"
     ]
   }
 }
