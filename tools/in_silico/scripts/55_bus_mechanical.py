@@ -61,7 +61,21 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, D_BUS_ROD_MM, E_PEEK_PA, REPO_ROOT
+from lib.constants import (
+    ALLOY_BASELINE,
+    ALLOY_PROPERTIES,
+    ALPHA_PEEK_1K,
+    CACHE_DIR,
+    D_BUS_ROD_MM,
+    E_PEEK_PA,
+    NU_PEEK,
+    REPO_ROOT,
+    SIGMA_YIELD_PEEK_PA,
+    T_ASSEMBLY_C,
+    T_FOREST_MAX_C,
+    T_FOREST_MIN_C,
+)
+from lib.mechanics import thick_wall_hoop
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -122,18 +136,29 @@ CHANNEL_LEN_MM = SHANK_LEN_MM      # conservative: the shank run ONLY, not the f
 BORE_DEPTH_MM = SHANK_LEN_MM + FLANGE_THK_MM
 # ⛔ SECOND REFERENT, split out 2026-09-12 (00_07 HW.34): the thermal block below needs the LINER's
 #    length, and it used to borrow the machining depth — one name for two quantities, so editing either
-#    silently moved the other (the very class this file guards for D_BUS). They are numerically equal
-#    today and that is a coincidence of the open verdict, not an identity: canon freezes the liner WALL
-#    (0.15) and says NOTHING about where the tube starts or ends (⚖️ HW.34). Taking the full channel is
-#    the UPPER BOUND on differential axial growth, and it is named as an assumption, never a dimension.
-LINER_LENGTH_ASSUMED_MM = BORE_DEPTH_MM
+#    silently moved the other (the very class this file guards for D_BUS).
+# ⛔ DO NOT re-declare this length an assumption, and do not drop the protrusion term: the axial
+#    extent is RATIFIED (01_01 §1.4, founder-proxy 2026-09-12 — the tube covers the channel END TO
+#    END and its lower end protrudes into the PEEK gap), so the liner runs the channel PLUS that
+#    overhang. A constant calling a settled dimension «assumed» is worse than an unmarked one: it
+#    tells the reader the number is soft when it is the spec.
+# ⚠️ By-value crossing, declared: `AxialStack.LinerLengthMm` in tools/cad does this same arithmetic
+#    (channel run + protrusion) over the same two CEM fields. Nothing binds the two halves; what binds
+#    both to canon is `cem_canon_sync.rb` on the fields themselves.
+LINER_PROTRUSION_MM = float(_FLANGE["bus_liner_protrusion_mm"])
+LINER_LENGTH_MM = BORE_DEPTH_MM + LINER_PROTRUSION_MM
 # ⛔ The channel is THROUGH, never blind: `CathodeFlange.cs` cuts z 0..14 in the shank and 14..17 in
 # the disc, exiting the pogo face — and a blind bore could not pass a conductor at all. It matters
 # because the L/D argument («the vendor picks the operation») is about a MACHINING class, and L/D 12.6
 # through is a different class from L/D 12.6 blind: reaming from both ends, chip evacuation. The word
 # «blind» was this file's own prose and reached five doc homes from here; swept 2026-09-12.
-D_CHANNEL_MM = 1.35                # cathode channel Ø, canon 01_01 §1.4 — OPENED 1.30 → 1.35 by the
-                                   # clearance verdict (00_07 HW.34, branch (в), 2026-09-11)
+# ⛔ Both dims below were LITERALS (1.35 and a 0.150 repeated in four places) in a file that already
+#    loads `_FLANGE` — i.e. the same "constant with no home" class its own D_BUS comment guards, and
+#    the same one the protrusion fix cured by DERIVING rather than retyping. The manifest fields exist
+#    and `cem_canon_sync.rb` pins them to canon, so reading them inherits the gate.
+D_CHANNEL_MM = float(_FLANGE["bore_diameter_mm"])     # cathode channel Ø (canon 01_01 §1.4; OPENED
+                                                      # 1.30 → 1.35, branch (в), 00_07 HW.34)
+LINER_WALL_MM = float(_FLANGE["bus_liner_thickness_mm"])
 
 # Insulation branches: wall thickness AND — new 2026-09-11 — WHICH SIDE the leftover play sits on.
 # ⛔ The side is not bookkeeping, it changes what the BEAM is. A conformal film is bonded to the rod, so
@@ -149,7 +174,9 @@ D_CHANNEL_MM = 1.35                # cathode channel Ø, canon 01_01 §1.4 — O
 INSULATION_OPTIONS = (
     ("conformal 10 µm film", 0.010, "rod"),
     ("conformal TiO2 ~5 µm", 0.005, "rod"),
-    ("PEEK liner 0.15 mm", 0.150, "channel"),
+    # ⛔ The label is DERIVED from the same field as the value: a literal label is free to keep
+    #    saying 0.15 after the wall moves, and it is the label that test fixtures and prose quote.
+    (f"PEEK liner {LINER_WALL_MM:.2f} mm", LINER_WALL_MM, "channel"),
 )
 
 # ── Composite bending stiffness, for the CHANNEL-side branch only ──
@@ -226,6 +253,33 @@ WELD_KNOCKDOWN_MEASURED = None   # k = σ_e(seam)/σ_e(wire) ∈ (0,1] — NOT M
 #       before this block existed.
 WELD_KNOCKDOWN_MARKERS = (("joint as bad as an as-printed surface", AS_PRINTED_DERATE),
                           ("joint as good as the drawn wire", WROUGHT_DERATE))
+
+# ── The FIT between the liner and the wire (00_07 HW.34) ──────────────────────────────────────
+# ⚖️ 2026-09-11 ratified the DIRECTION of the assembly clearance: the play goes to the CHANNEL side,
+# «the tube is tight on the WIRE and the pair enters the bore as one body». Every stiffness bound,
+# every first-contact number and the whole wear axis rest on that sentence — and until this block
+# existed NOTHING in the tree carried the interference it asserts. Canon says so in as many words:
+# «натягу пари „трубка ↔ дріт“ у дереві НЕМАЄ ЖОДНОГО» (01_01 §1.4).
+#
+# 🔴 AND THE NOMINALS SAY THE OPPOSITE OF THE VERDICT. The rod is Ø1.0 and canon names the tube by
+#    its bore — «допуск OD екструдованої PEEK-трубки на ID 1.00» — so the specified fit is ZERO
+#    nominal interference. Whether the tube is tight is then decided by WHICH WAY THE TOLERANCES
+#    FALL, not by the drawing: half the population comes out with clearance. Same shape as the F3
+#    gate's `≤` (00_07 HW.34, fixed 2026-09-11) — a true statement about the arithmetic and a false
+#    one about the assembly.
+LINER_BORE_NOMINAL_MM = D_BUS      # canon names the tube «ID 1.00» on a Ø1.0 rod ⇒ zero nominal fit
+# ⛔ NOT MEASURED, and kept visibly absent for the same reason as WELD_KNOCKDOWN_MEASURED: there is no
+#    canon row, no vendor answer and no measurement for either band, so a plausible number typed here
+#    would be the FALLBACK species of fabrication (00_01 §1.1). What the model computes instead is the
+#    question that CAN be answered from what we hold — the BUDGET the pair can absorb — against which
+#    a vendor's answer becomes a verdict rather than a figure in a letter.
+LINER_BORE_TOLERANCE_MEASURED_UM = None   # extruded PEEK tube ID band — RFQ (00_07 HW.34)
+WIRE_OD_TOLERANCE_MEASURED_UM = None      # cold-drawn wire OD band — RFQ (00_07 HW.34)
+# ⛔ NO measured or cited µ for PEEK-on-Ti exists anywhere in this tree, so this is a SWEEP and never
+#    a value: its only job is to report whether the axial-lock verdict is µ-INVARIANT across it. The
+#    low end is deliberately below anything a dry polymer/metal pair is likely to show, because the
+#    interesting answer is the one that survives the friendliest assumption to the opposite case.
+MU_PEEK_TI_SWEEP = (0.1, 0.2, 0.3, 0.4)
 
 MM_M = 1e-3
 
@@ -339,6 +393,48 @@ def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
     printing a number above 1, which would read as a tolerance.
     """
     return sf_line / sf_wire
+
+
+# ── The liner↔wire fit: Lamé on the tube, thermal on the pair, friction along it ──────────────
+# ⛔ ONE geometry for all three, declared once: the tube is the SLEEVE (bore = rod radius, OD = bore +
+#    wall) and the Ti wire is the SHAFT. `lib.mechanics.thick_wall_hoop` is exactly that case — rigid
+#    inner, free outer. Two declared ceilings ride on it.
+#    (a) RIGID INNER. E_Ti/E_PEEK ≈ 27, so the wire does compress a little and the true contact
+#        pressure is slightly LOWER than this. That makes the yield-limited ceiling CONSERVATIVE
+#        (the real allowable interference is a few per cent larger), which is the safe direction.
+#    (b) FREE OUTER. The tube's OD is free only while it does not touch the Ø1.35 wall. That is not
+#        assumed — `liner_od_growth_m` prices the growth and §6 checks the remaining play stays
+#        positive across the whole band. If it ever did not, this whole model would be the wrong one.
+LINER_BORE_M = (LINER_BORE_NOMINAL_MM / 2.0) * MM_M
+LINER_OD_M = LINER_BORE_M + LINER_WALL_MM * MM_M
+
+
+def fit_state(delta_radial_m: float) -> dict:
+    """Bore stress state of the liner at a given RADIAL interference on the wire (Pa)."""
+    return thick_wall_hoop(delta_radial_m, LINER_BORE_M, LINER_OD_M, E_PEEK_PA, NU_PEEK)
+
+
+def liner_thermal_interference_m(t_c: float, t_ref_c: float = T_ASSEMBLY_C) -> float:
+    """Extra RADIAL interference on the WIRE when the pair sits at `t_c` (m).
+
+    ⛔ Sign discipline, and this is the interface the canon sentence warns about mixing up: here PEEK
+    is the OUTER member, so cooling shrinks it ONTO the wire and the interference GROWS (positive).
+    On the OTHER interface — liner OD against the cathode bore — PEEK is the inner member and cooling
+    pulls it AWAY, which is the ~2.0 µm diametral term §4 already carries. Same Δα, opposite effect.
+    """
+    alpha_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    return (ALPHA_PEEK_1K - alpha_ti) * (t_ref_c - t_c) * LINER_BORE_M
+
+
+def liner_od_growth_m(p_c_Pa: float) -> float:
+    """Radial growth of the liner OD under bore pressure `p_c` — Lamé, free outer surface.
+
+    u(c) = (c/E)·σ_θ(c) with σ_θ(c) = 2·P_c·b²/(c²−b²). This is what EATS the channel play the
+    clearance table above treats as a constant 25 µm: that figure is only true at ZERO interference,
+    i.e. at exactly the fit the direction verdict rules out.
+    """
+    b2, c2 = LINER_BORE_M ** 2, LINER_OD_M ** 2
+    return 2.0 * p_c_Pa * b2 * LINER_OD_M / (E_PEEK_PA * (c2 - b2))
 
 
 def main() -> int:
@@ -531,24 +627,35 @@ def main() -> int:
               f"by verdict, so this is not the rod-side hundredfold the prose used to quote).")
 
     # ── Differential AXIAL expansion of the liner — the term canon did not carry ──────────────────
-    # 🔴 01_01 §1.4 carries the RADIAL thermal term (~2.0 µm diametral over 40 K) and is silent on the
-    # axial one, which is an order of magnitude larger because it multiplies by the bore DEPTH rather
-    # than by a sub-millimetre diameter. It decides a question the radial term cannot touch: whether the
-    # liner may be captured at BOTH ends. Captured at both, a tube that wants 26 µm of extra length over
-    # a 40 K swing has nowhere to put it. ⛔ This says nothing about WHICH end to fix — that is a
-    # geometry verdict (00_07 HW.34); the model only prices the motion the verdict has to accommodate.
+    # 🔴 01_01 §1.4 carries the RADIAL thermal term (~2.0 µm diametral over 40 K) and was silent on the
+    # axial one. It decides a question the radial term cannot touch: whether the liner may be captured
+    # at BOTH ends. ⛔ This says nothing about WHICH end to fix — that is a geometry verdict
+    # (00_07 HW.34); the model only prices the motion the verdict has to accommodate.
+    # 🔴 AND SINCE §6 BELOW EXISTS, READ THAT FIRST: the motion priced here is the FREE differential
+    #    growth, which is what a MECHANICAL capture has to accommodate. §6 measures that friction on
+    #    the wire already restrains it over essentially the whole allowable interference band — so the
+    #    stress below is incurred whichever end is captured, and «both ends» is not the discriminator
+    #    the ratified ground reads as. The exception is a fit at the very FLOOR of that band, where the
+    #    tube slips and relieves instead; nothing in the tree specifies which of the two we ship.
     alpha_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
     d_alpha = ALPHA_PEEK_1K - alpha_ti
     axial_thermal = {
-        "liner_length_mm": LINER_LENGTH_ASSUMED_MM,
-        "liner_length_is_assumed": True,
-        "liner_length_assumption": "the liner is taken to run the FULL channel — an UPPER BOUND on differential growth. Canon freezes the 0.15 WALL and says nothing about the axial extent (⚖️ 00_07 HW.34), so this is an assumption, not a dimension",
+        "liner_length_mm": LINER_LENGTH_MM,
+        # ⛔ DO NOT flip this back to an «assumed» flag — the axial extent is ratified, and a flag
+        #    that calls a frozen dim soft is read downstream as «this may still move».
+        "liner_length_is_ratified": True,
+        "liner_length_provenance": "channel run (cem/cathode_flange shank + flange) + the RATIFIED "
+                                   "protrusion (cem bus_liner_protrusion_mm, ⚖️ 01_01 §1.4 "
+                                   "2026-09-12: tube covers the channel end to end, lower end "
+                                   "protrudes into the PEEK gap). ⚠️ Canon states the protrusion as "
+                                   "a MINIMUM (≥ 1.0 mm); the CEM nominal is taken, so a longer tube "
+                                   "grows proportionally more",
         "alpha_peek_1K": ALPHA_PEEK_1K,
         "alpha_ti_1K": alpha_ti,
         "alpha_ti_source": ALLOY_BASELINE,
-        "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * LINER_LENGTH_ASSUMED_MM * dt * 1000.0, 1)
+        "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * LINER_LENGTH_MM * dt * 1000.0, 1)
                                           for dt in (20, 40, 60, 80)},
-        "radial_diametral_um_at_40K": round(d_alpha * (D_BUS + 2.0 * 0.150) * 40.0 * 1000.0, 1),
+        "radial_diametral_um_at_40K": round(d_alpha * (D_BUS + 2.0 * LINER_WALL_MM) * 40.0 * 1000.0, 1),
         # ⛔ Two claims were corrected here 2026-09-12 by adversarial review, and both were the kind
         # that reads as physics while being arithmetic. (1) «an order of magnitude larger than the
         # radial term» compares two REFERENCE LENGTHS, not two mechanical demands: both terms are
@@ -568,11 +675,11 @@ def main() -> int:
     for dt_k in (40, 80):
         strain = d_alpha * dt_k
         axial_thermal[f"constrained_stress_MPa_at_{dt_k}K"] = round(strain * E_PEEK_PA / 1e6, 2)
-    print(f"\n  → Liner axial growth vs Ti over {LINER_LENGTH_ASSUMED_MM:.0f} mm (ASSUMED full channel — the axial extent is an open ⚖️): {ax40:.0f} µm at 40 K "
+    print(f"\n  → Liner axial growth vs Ti over {LINER_LENGTH_MM:.1f} mm (channel {BORE_DEPTH_MM:.0f} + ratified protrusion {LINER_PROTRUSION_MM:.1f}, ⚖️ 2026-09-12): {ax40:.1f} µm at 40 K "
           f"({axial_thermal['differential_axial_um_by_dT_K']['80']:.0f} µm at 80 K). ⚠️ The radial "
           f"term carries the SAME strain —")
     print(f"    the {ax40 / axial_thermal['radial_diametral_um_at_40K']:.0f}× is the ratio of "
-          f"reference LENGTHS (liner {LINER_LENGTH_ASSUMED_MM:.0f} vs OD {D_BUS + 2 * 0.150:.2f}), not of demands.")
+          f"reference LENGTHS (liner {LINER_LENGTH_MM:.1f} vs OD {D_BUS + 2 * LINER_WALL_MM:.2f}), not of demands.")
     print(f"  → Constraining it at BOTH ends costs {axial_thermal['constrained_stress_MPa_at_40K']:.1f} MPa "
           f"at 40 K ({axial_thermal['constrained_stress_MPa_at_80K']:.1f} at 80 K) of axial compression —")
     print("    a few per cent of PEEK yield, so it is NOT an impossibility. ⛔ What argues against")
@@ -694,7 +801,7 @@ def main() -> int:
         assembles = diametral > 0.0
         # The row whose three dims ARE the current frozen set is the one that shipped — derived, so the
         # label cannot drift away from the numbers the rest of this file uses.
-        shipped_row = (abs(rod_mm - D_BUS) < 1e-9 and abs(liner_mm - 0.150) < 1e-9
+        shipped_row = (abs(rod_mm - D_BUS) < 1e-9 and abs(liner_mm - LINER_WALL_MM) < 1e-9
                        and abs(chan_mm - D_CHANNEL_MM) < 1e-9)
         tag = ("   ⛔ zero/negative — does not assemble" if not assembles
                else "   ✅ RATIFIED + APPLIED" if shipped_row else "")
@@ -896,6 +1003,187 @@ def main() -> int:
                                           "a socketed or filleted joint moves effective fixity"},
     }
 
+    # ── 6. The liner↔wire FIT — the interference the ratified direction asserts (00_07 HW.34) ────
+    # 🔴 §2–§5 all stand on one sentence of the 2026-09-11 direction verdict: «the tube is tight on
+    # the WIRE and the pair enters the bore as one body». The composite stiffness bound, the
+    # first-contact numbers, the wear axis and the whole edge-bearing block inherit it — and the
+    # interference that sentence asserts existed NOWHERE, which canon states outright.
+    # ⛔ Same inversion as §5, and for the same reason: both vendor bands are unmeasured, so the model
+    # bounds what it CAN — the window the geometry allows — and reports the BUDGET. A vendor answer is
+    # then judged against a number instead of read into a blank.
+    banner("Liner↔wire fit — the interference window (00_07 HW.34)")
+    t_ref = T_ASSEMBLY_C
+    g_cold = liner_thermal_interference_m(T_FOREST_MIN_C, t_ref)   # > 0: cold grips harder
+    g_hot = liner_thermal_interference_m(T_FOREST_MAX_C, t_ref)    # < 0: heat loosens it
+    unit = fit_state(1e-6)                                          # everything here is linear in δ
+    per_um = {k: v / 1e-6 for k, v in unit.items()}                 # Pa per metre of interference
+    # CEILING — von Mises at the bore reaches PEEK yield, evaluated at the COLD extreme where the
+    # thermal term ADDS. ⛔ vM governs, not hoop: at this wall ratio σ_vm/σ_t ≈ 1.15, so pinning the
+    # ceiling on the hoop alone would allow ~15 % more interference than the material does.
+    d_yield_vm = SIGMA_YIELD_PEEK_PA / per_um["sigma_vm"]
+    d_yield_hoop = SIGMA_YIELD_PEEK_PA / per_um["sigma_t"]
+    ceiling = d_yield_vm - g_cold
+    # FLOOR — the fit must still BE a fit at the hot extreme, i.e. survive the thermal loss. This is
+    # the weakest possible floor and it is named as such: it only asks that interference not reach
+    # zero, never that it be enough for anything.
+    floor = -g_hot
+    window = ceiling - floor
+    print(f"  Pair: wire Ø{D_BUS:.2f} in a tube bore Ø{LINER_BORE_NOMINAL_MM:.2f}, wall "
+          f"{LINER_WALL_MM:.3f} ⇒ OD Ø{2 * LINER_OD_M / MM_M:.2f} (CEM-derived).")
+    print(f"  🔴 Nominal interference = {2 * (D_BUS - LINER_BORE_NOMINAL_MM) / 2 * 1000:.0f} µm — the "
+          f"specified fit is ZERO, so «tight on the wire» is a TOLERANCE OUTCOME, not a dimension.")
+    print(f"  Thermal on THIS interface (PEEK outside ⇒ cold grips): {g_cold * 1e6:+.2f} µm radial at "
+          f"{T_FOREST_MIN_C:.0f} °C, {g_hot * 1e6:+.2f} µm at {T_FOREST_MAX_C:.0f} °C (ref {t_ref:.0f} °C).")
+    print(f"  σ per µm of radial interference: P_c {per_um['P_c'] * 1e-12:.2f} · σ_t "
+          f"{per_um['sigma_t'] * 1e-12:.2f} · σ_vm {per_um['sigma_vm'] * 1e-12:.2f} MPa/µm.")
+    print(f"  → WINDOW (as-manufactured at {t_ref:.0f} °C): {floor * 1e6:.2f} … {ceiling * 1e6:.2f} µm "
+          f"radial = {window * 2e6:.1f} µm DIAMETRAL budget for BOTH parts together.")
+    print(f"    Ceiling = σ_vm at the bore hits PEEK yield {SIGMA_YIELD_PEEK_PA / 1e6:.0f} MPa at "
+          f"{T_FOREST_MIN_C:.0f} °C ({d_yield_vm * 1e6:.2f} µm there, {d_yield_hoop * 1e6:.2f} on hoop alone);")
+    print(f"    floor = the thermal loss at {T_FOREST_MAX_C:.0f} °C, i.e. the fit merely stays a fit.")
+    print(f"  ⛔ To land INSIDE that window the NOMINAL must move: the tube bore has to run "
+          f"{(floor + ceiling) / 2 * 2e6:.1f} µm under the wire")
+    print("     diametrally at mid-window. That is a ⚖️ (a nominal interference, or a graded/selected")
+    print("     fit, or a heated assembly — available only BEFORE enzyme functionalisation), not a")
+    print("     tolerance question, and it is NOT decided here.")
+
+    # The play the clearance table above treats as a constant — priced across the window.
+    play_nominal = (D_CHANNEL_MM - (D_BUS + 2.0 * LINER_WALL_MM)) / 2.0 * MM_M
+    play_rows = []
+    for label, d in (("floor", floor), ("mid-window", 0.5 * (floor + ceiling)), ("ceiling", ceiling)):
+        growth = liner_od_growth_m(per_um["P_c"] * d)
+        play_rows.append({"at": label, "interference_radial_um": round(d * 1e6, 2),
+                          "od_growth_radial_um": round(growth * 1e6, 2),
+                          "channel_radial_play_um": round((play_nominal - growth) * 1e6, 2),
+                          "outer_surface_still_free": bool(growth < play_nominal)})
+        print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → OD +{growth * 1e6:>5.2f} µm radial → channel "
+              f"play {play_nominal * 1e6:.1f} → {(play_nominal - growth) * 1e6:>5.2f} µm")
+    print(f"  🔴 So the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the value at ZERO "
+          f"interference — the one fit the direction")
+    print("     verdict excludes. At the top of the window it is ~40 % smaller, which makes edge")
+    print("     bearing MORE likely, not less: the same geometry, read at the fit that ships.")
+
+    # Axial friction lock — does the wire hold the tube, or does the CAPTURED END hold it?
+    a_tube = np.pi * (LINER_OD_M ** 2 - LINER_BORE_M ** 2)
+    peri = np.pi * (2.0 * LINER_BORE_M) * (LINER_LENGTH_MM * MM_M)
+    lock_rows = []
+    for dt_k in (40, 80):
+        sig_z = d_alpha * dt_k * E_PEEK_PA
+        f_thermal = sig_z * a_tube
+        mu_delta = f_thermal / (per_um["P_c"] * peri)     # the product that balances it, m
+        by_mu = {}
+        for mu in MU_PEEK_TI_SWEEP:
+            d_slip = mu_delta / mu
+            # Full lock of the mid-section needs the shear to accumulate within HALF the length.
+            d_full = 2.0 * d_slip
+            by_mu[mu] = {"slip_threshold_um": round(d_slip * 1e6, 3),
+                         "full_lock_threshold_um": round(d_full * 1e6, 3),
+                         "floor_is_locked": bool(floor >= d_full),
+                         "floor_holds_at_all": bool(floor >= d_slip)}
+        lock_rows.append({"delta_T_K": dt_k, "axial_stress_MPa": round(sig_z / 1e6, 2),
+                          "differential_force_N": round(f_thermal, 3),
+                          "mu_times_delta_break_even_um": round(mu_delta * 1e6, 4), "by_mu": by_mu})
+        worst = by_mu[min(MU_PEEK_TI_SWEEP)]
+        print(f"\n  ΔT {dt_k} K: the tube's differential growth needs {f_thermal:.2f} N to restrain "
+              f"({sig_z / 1e6:.1f} MPa axial).")
+        print(f"    Friction on the wire supplies it once µ·δ ≥ {mu_delta * 1e6:.3f} µm; at the "
+              f"friendliest µ {min(MU_PEEK_TI_SWEEP):.1f} that is δ ≥ "
+              f"{worst['slip_threshold_um']:.2f} µm to hold at all, {worst['full_lock_threshold_um']:.2f} µm to lock the mid-section.")
+    # ⛔ DERIVED, never typed: the verdict is whether the whole window is on one side of that line.
+    locked_everywhere = all(r["by_mu"][mu]["floor_is_locked"] for r in lock_rows for mu in MU_PEEK_TI_SWEEP)
+    locked_above_floor = all(v["full_lock_threshold_um"] * 1e-6 < ceiling
+                             for r in lock_rows for v in r["by_mu"].values())
+    print(f"\n  → Locked over the WHOLE window including its floor, on every swept µ: {locked_everywhere}.")
+    print(f"    Locked somewhere below the ceiling on every swept µ: {locked_above_floor}.")
+    print("  🔴 Consequence for the OPEN ⚖️ «which end is fixed»: above a fraction of a micrometre the")
+    print("     WIRE is the second capture, so the differential stress §4 prices is incurred whichever")
+    print("     end is mechanically fixed — the ratified ground («both-end capture is what 20 yr of")
+    print("     creep forbids») does not discriminate there. It discriminates ONLY at the very floor,")
+    print("     where the tube slips and relieves. ⛔ Which of the two ships is set by a number no")
+    print("     drawing carries, so this is an input to that verdict, not an answer to it.")
+
+    interference_window = {
+        "question": "00_07 HW.34 — the 2026-09-11 direction verdict asserts the tube is TIGHT on the "
+                    "wire; canon states no interference for that pair exists anywhere (01_01 1.4). "
+                    "This block derives the window the geometry allows, so a vendor tolerance becomes "
+                    "judgeable instead of being read into a blank",
+        "pair_mm": {"wire_dia": D_BUS, "liner_bore_nominal": LINER_BORE_NOMINAL_MM,
+                    "liner_wall": LINER_WALL_MM, "liner_od_nominal": round(2 * LINER_OD_M / MM_M, 3),
+                    "liner_length": LINER_LENGTH_MM},
+        "nominal_interference_um": round((D_BUS - LINER_BORE_NOMINAL_MM) / 2.0 * 1000.0, 3),
+        "nominal_fit_is_zero_interference": bool(abs(D_BUS - LINER_BORE_NOMINAL_MM) < 1e-9),
+        "nominal_finding": "the specified nominals (rod O1.0, tube bore O1.00) are a LINE-TO-LINE "
+                           "fit, so whether the tube is tight is decided by which way the two "
+                           "tolerances fall - half the population comes out with clearance. Same "
+                           "shape as the F3 gate's `<=`: true about the arithmetic, false about the "
+                           "assembly. Landing inside the window needs a NOMINAL interference, which "
+                           "is a verdict (00_07 HW.34), not a tolerance",
+        "thermal": {"t_ref_c": t_ref, "t_min_c": T_FOREST_MIN_C, "t_max_c": T_FOREST_MAX_C,
+                    "radial_gain_at_t_min_um": round(g_cold * 1e6, 3),
+                    "radial_loss_at_t_max_um": round(g_hot * 1e6, 3),
+                    "sign_note": "PEEK is the OUTER member on THIS interface, so cooling grips "
+                                 "harder; on the liner-OD/bore interface it is the inner member and "
+                                 "cooling pulls away (the ~2.0 um diametral term in axial_thermal). "
+                                 "Same Delta-alpha, opposite effect - the confusion canon warns about"},
+        "per_um_radial_MPa": {k: round(v * 1e-12, 3) for k, v in per_um.items()},
+        "floor": {"radial_um": round(floor * 1e6, 3),
+                  "ground": "the fit must still be a fit at the hot extreme; this asks only that the "
+                            "interference not reach zero, never that it suffice for anything"},
+        "ceiling": {"radial_um": round(ceiling * 1e6, 2),
+                    "criterion": "von Mises at the liner bore = PEEK tensile yield, evaluated at the "
+                                 "COLD extreme where the thermal term adds",
+                    "yield_MPa": SIGMA_YIELD_PEEK_PA / 1e6,
+                    "delta_at_yield_cold_um": round(d_yield_vm * 1e6, 2),
+                    "delta_at_yield_hoop_only_um": round(d_yield_hoop * 1e6, 2),
+                    "why_von_mises": "sigma_vm/sigma_t ~ 1.15 at this wall ratio, so a hoop-only "
+                                     "ceiling would allow ~15 % more interference than the material"},
+        "window_radial_um": round(window * 1e6, 2),
+        "window_diametral_um": round(window * 2e6, 2),
+        "required_nominal_offset_diametral_um": round((floor + ceiling) / 2 * 2e6, 2),
+        "vendor_inputs_measured": {"liner_bore_tolerance_um": LINER_BORE_TOLERANCE_MEASURED_UM,
+                                   "wire_od_tolerance_um": WIRE_OD_TOLERANCE_MEASURED_UM,
+                                   "source": "NOT MEASURED - zero data in this tree for either band "
+                                             "(00_07 HW.34, two open RFQ legs). The diametral window "
+                                             "above is what their SUM may occupy; a quoted band wider "
+                                             "than it means the ratified fit cannot be bought, it has "
+                                             "to be selected, machined or heat-assembled"},
+        "od_growth_eats_channel_play": {"nominal_radial_play_um": round(play_nominal * 1e6, 2),
+                                        "rows": play_rows,
+                                        "note": "the 25 um the clearance table uses is the ZERO-"
+                                                "interference value, i.e. the one fit the direction "
+                                                "verdict excludes; at the ceiling it is ~40 % smaller, "
+                                                "which makes EDGE bearing more likely, not less"},
+        "axial_friction_lock": {"mu_is_swept_not_measured": True,
+                                "mu_sweep": list(MU_PEEK_TI_SWEEP),
+                                "tube_section_mm2": round(a_tube / (MM_M ** 2), 4),
+                                "rows": lock_rows,
+                                "locked_over_whole_window": bool(locked_everywhere),
+                                "locked_below_ceiling_on_every_mu": bool(locked_above_floor),
+                                "consequence": "above a fraction of a micrometre the WIRE is the "
+                                               "second capture, so the differential axial stress is "
+                                               "incurred whichever end is mechanically fixed. The "
+                                               "ratified ground for one-end capture (20 yr creep "
+                                               "under sustained compression) therefore does not "
+                                               "discriminate except at the window FLOOR, where the "
+                                               "tube slips and relieves instead - and nothing "
+                                               "specifies which of the two ships (00_07 HW.34)"},
+        "not_modelled": {"creep_relaxation": "PEEK relaxes under sustained hoop stress, so over 20 yr "
+                                             "the real floor RISES (grip decays) and the real ceiling "
+                                             "FALLS (sustained stress limit < yield). The true window "
+                                             "is NARROWER than this on BOTH sides. 01_01 4.3 "
+                                             "tabulates relaxation and nothing reads it into this chain",
+                         "temperature_dependence": "E_PEEK and the yield are the 23 C datasheet "
+                                                   "values; both move at -30 C and in opposite "
+                                                   "directions for this bound",
+                         "form_error": "tube ovality, wire out-of-round and bore straightness are "
+                                       "assumed zero; a real pair consumes part of this window on "
+                                       "form before it consumes any on size",
+                         "surface": "asperity flattening on assembly reduces the effective "
+                                    "interference, and no Sa for either surface exists in canon",
+                         "insertion_force": "the force to press the tube onto the wire is not "
+                                            "computed; at the ceiling it is a real handling question"},
+    }
+
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
@@ -933,7 +1221,21 @@ def main() -> int:
           f"it by {marker_k - k_binding:+.3f} in k. ⛔ k itself stays NOT MEASURED — bounded, not assumed.")
     print("  5. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
-    print("  6. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
+    # ⛔ DERIVED from §6, never typed. The point is not the width but WHERE the nominals sit: the
+    # verdict every other section leans on («tight on the wire») is not produced by the drawing.
+    _iw = interference_window
+    print(f"  6. THE FIT (§6) — the interference the direction verdict asserts is now BOUNDED: "
+          f"{_iw['floor']['radial_um']:.2f}…{_iw['ceiling']['radial_um']:.2f} µm radial,")
+    print(f"     i.e. {_iw['window_diametral_um']:.1f} µm diametral for BOTH parts together. "
+          f"⛔ But the specified nominals are")
+    print(f"     {'LINE-TO-LINE' if _iw['nominal_fit_is_zero_interference'] else 'an interference fit'}"
+          f", so «tight on the wire» is decided by tolerance direction, not by the drawing —")
+    print(f"     the nominal must move {_iw['required_nominal_offset_diametral_um']:.1f} µm "
+          f"diametrally to land in the window (a ⚖️, not a tolerance).")
+    print(f"     Friction locks the tube axially over the whole window except its floor "
+          f"(locked_over_whole_window={_iw['axial_friction_lock']['locked_over_whole_window']}), so")
+    print("     the ratified ground for ONE-end capture does not discriminate above ~1 µm of fit.")
+    print("  7. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
     print("     sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported is robust.")
 
     out = {
@@ -986,12 +1288,14 @@ def main() -> int:
                                                    if r["regime"].startswith("free cantilever")],
         },
         "weld_seam": weld_seam,
+        "interference_window": interference_window,
         "assembly_clearance": {
             "question": "00_07 HW.34 — which of the three frozen dims (01_01 §1.4) gives up the "
                         "assembly clearance. CLOSED 2026-09-11: direction = channel side, size = "
                         "branch (в), channel 1.30 -> 1.35. The table stays because it is the PRICING "
                         "the verdict stands on, not an open menu; the shipped row is flagged",
-            "frozen_dims_mm": {"rod": D_BUS, "channel": D_CHANNEL_MM, "liner_wall": 0.150},
+            "frozen_dims_mm": {"rod": D_BUS, "channel": D_CHANNEL_MM, "liner_wall": LINER_WALL_MM,
+                               "liner_length": LINER_LENGTH_MM, "liner_protrusion": LINER_PROTRUSION_MM},
             "candidates": allocations,
             "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT — different "
                     "questions, same row. Geometry does not discriminate (б)/(в)/(г): all three "
@@ -1019,7 +1323,14 @@ def main() -> int:
                    "WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought "
                    "derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the "
                    "SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the "
-                   "weld_seam block). k itself is NOT MEASURED and is not assumed here. Three seam mechanisms "
+                   "weld_seam block). k itself is NOT MEASURED and is not assumed here. "
+                   "THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since "
+                   "2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The "
+                   "headline is not the width but the nominals: rod O1.0 against tube bore O1.00 is a "
+                   "line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and "
+                   "landing in the window needs a nominal interference - a verdict, not a tolerance. "
+                   "Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. "
+                   "Three seam mechanisms "
                    "stay outside even that bound, and their signs differ: bead section RELIEVES nominal "
                    "stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this "
                    "file never carries - the endurance ratio is fully-reversed by construction.",

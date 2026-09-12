@@ -404,17 +404,17 @@
       "note": "the liner still shrinks the free travel by this factor, but it is NOT the hundredfold the canon prose carried: that figure came from a rod-side allocation (tube loose on the wire) which the 2026-09-11 direction verdict did not choose"
     },
     "axial_thermal": {
-      "liner_length_mm": 17.0,
-      "liner_length_is_assumed": true,
-      "liner_length_assumption": "the liner is taken to run the FULL channel \u2014 an UPPER BOUND on differential growth. Canon freezes the 0.15 WALL and says nothing about the axial extent (\u2696\ufe0f 00_07 HW.34), so this is an assumption, not a dimension",
+      "liner_length_mm": 18.0,
+      "liner_length_is_ratified": true,
+      "liner_length_provenance": "channel run (cem/cathode_flange shank + flange) + the RATIFIED protrusion (cem bus_liner_protrusion_mm, \u2696\ufe0f 01_01 \u00a71.4 2026-09-12: tube covers the channel end to end, lower end protrudes into the PEEK gap). \u26a0\ufe0f Canon states the protrusion as a MINIMUM (\u2265 1.0 mm); the CEM nominal is taken, so a longer tube grows proportionally more",
       "alpha_peek_1K": 4.7e-05,
       "alpha_ti_1K": 8.6e-06,
       "alpha_ti_source": "Ti-6Al-4V",
       "differential_axial_um_by_dT_K": {
-        "20": 13.1,
-        "40": 26.1,
-        "60": 39.2,
-        "80": 52.2
+        "20": 13.8,
+        "40": 27.6,
+        "60": 41.5,
+        "80": 55.3
       },
       "radial_diametral_um_at_40K": 2.0,
       "strain": 0.001536,
@@ -556,12 +556,174 @@
       "seam_position": "the fusion line is assumed coincident with the fixed end; a socketed or filleted joint moves effective fixity"
     }
   },
+  "interference_window": {
+    "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon states no interference for that pair exists anywhere (01_01 1.4). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
+    "pair_mm": {
+      "wire_dia": 1.0,
+      "liner_bore_nominal": 1.0,
+      "liner_wall": 0.15,
+      "liner_od_nominal": 1.3,
+      "liner_length": 18.0
+    },
+    "nominal_interference_um": 0.0,
+    "nominal_fit_is_zero_interference": true,
+    "nominal_finding": "the specified nominals (rod O1.0, tube bore O1.00) are a LINE-TO-LINE fit, so whether the tube is tight is decided by which way the two tolerances fall - half the population comes out with clearance. Same shape as the F3 gate's `<=`: true about the arithmetic, false about the assembly. Landing inside the window needs a NOMINAL interference, which is a verdict (00_07 HW.34), not a tolerance",
+    "thermal": {
+      "t_ref_c": 20.0,
+      "t_min_c": -30.0,
+      "t_max_c": 40.0,
+      "radial_gain_at_t_min_um": 0.96,
+      "radial_loss_at_t_max_um": -0.384,
+      "sign_note": "PEEK is the OUTER member on THIS interface, so cooling grips harder; on the liner-OD/bore interface it is the inner member and cooling pulls away (the ~2.0 um diametral term in axial_thermal). Same Delta-alpha, opposite effect - the confusion canon warns about"
+    },
+    "per_um_radial_MPa": {
+      "P_c": 1.861,
+      "sigma_t": 7.256,
+      "sigma_r": -1.861,
+      "sigma_vm": 8.343
+    },
+    "floor": {
+      "radial_um": 0.384,
+      "ground": "the fit must still be a fit at the hot extreme; this asks only that the interference not reach zero, never that it suffice for anything"
+    },
+    "ceiling": {
+      "radial_um": 11.03,
+      "criterion": "von Mises at the liner bore = PEEK tensile yield, evaluated at the COLD extreme where the thermal term adds",
+      "yield_MPa": 100.0,
+      "delta_at_yield_cold_um": 11.99,
+      "delta_at_yield_hoop_only_um": 13.78,
+      "why_von_mises": "sigma_vm/sigma_t ~ 1.15 at this wall ratio, so a hoop-only ceiling would allow ~15 % more interference than the material"
+    },
+    "window_radial_um": 10.64,
+    "window_diametral_um": 21.28,
+    "required_nominal_offset_diametral_um": 11.41,
+    "vendor_inputs_measured": {
+      "liner_bore_tolerance_um": null,
+      "wire_od_tolerance_um": null,
+      "source": "NOT MEASURED - zero data in this tree for either band (00_07 HW.34, two open RFQ legs). The diametral window above is what their SUM may occupy; a quoted band wider than it means the ratified fit cannot be bought, it has to be selected, machined or heat-assembled"
+    },
+    "od_growth_eats_channel_play": {
+      "nominal_radial_play_um": 25.0,
+      "rows": [
+        {
+          "at": "floor",
+          "interference_radial_um": 0.38,
+          "od_growth_radial_um": 0.34,
+          "channel_radial_play_um": 24.66,
+          "outer_surface_still_free": true
+        },
+        {
+          "at": "mid-window",
+          "interference_radial_um": 5.7,
+          "od_growth_radial_um": 5.0,
+          "channel_radial_play_um": 20.0,
+          "outer_surface_still_free": true
+        },
+        {
+          "at": "ceiling",
+          "interference_radial_um": 11.03,
+          "od_growth_radial_um": 9.67,
+          "channel_radial_play_um": 15.33,
+          "outer_surface_still_free": true
+        }
+      ],
+      "note": "the 25 um the clearance table uses is the ZERO-interference value, i.e. the one fit the direction verdict excludes; at the ceiling it is ~40 % smaller, which makes EDGE bearing more likely, not less"
+    },
+    "axial_friction_lock": {
+      "mu_is_swept_not_measured": true,
+      "mu_sweep": [
+        0.1,
+        0.2,
+        0.3,
+        0.4
+      ],
+      "tube_section_mm2": 0.5419,
+      "rows": [
+        {
+          "delta_T_K": 40,
+          "axial_stress_MPa": 6.14,
+          "differential_force_N": 3.33,
+          "mu_times_delta_break_even_um": 0.0316,
+          "by_mu": {
+            "0.1": {
+              "slip_threshold_um": 0.316,
+              "full_lock_threshold_um": 0.633,
+              "floor_is_locked": false,
+              "floor_holds_at_all": true
+            },
+            "0.2": {
+              "slip_threshold_um": 0.158,
+              "full_lock_threshold_um": 0.316,
+              "floor_is_locked": true,
+              "floor_holds_at_all": true
+            },
+            "0.3": {
+              "slip_threshold_um": 0.105,
+              "full_lock_threshold_um": 0.211,
+              "floor_is_locked": true,
+              "floor_holds_at_all": true
+            },
+            "0.4": {
+              "slip_threshold_um": 0.079,
+              "full_lock_threshold_um": 0.158,
+              "floor_is_locked": true,
+              "floor_holds_at_all": true
+            }
+          }
+        },
+        {
+          "delta_T_K": 80,
+          "axial_stress_MPa": 12.29,
+          "differential_force_N": 6.659,
+          "mu_times_delta_break_even_um": 0.0633,
+          "by_mu": {
+            "0.1": {
+              "slip_threshold_um": 0.633,
+              "full_lock_threshold_um": 1.265,
+              "floor_is_locked": false,
+              "floor_holds_at_all": false
+            },
+            "0.2": {
+              "slip_threshold_um": 0.316,
+              "full_lock_threshold_um": 0.633,
+              "floor_is_locked": false,
+              "floor_holds_at_all": true
+            },
+            "0.3": {
+              "slip_threshold_um": 0.211,
+              "full_lock_threshold_um": 0.422,
+              "floor_is_locked": false,
+              "floor_holds_at_all": true
+            },
+            "0.4": {
+              "slip_threshold_um": 0.158,
+              "full_lock_threshold_um": 0.316,
+              "floor_is_locked": true,
+              "floor_holds_at_all": true
+            }
+          }
+        }
+      ],
+      "locked_over_whole_window": false,
+      "locked_below_ceiling_on_every_mu": true,
+      "consequence": "above a fraction of a micrometre the WIRE is the second capture, so the differential axial stress is incurred whichever end is mechanically fixed. The ratified ground for one-end capture (20 yr creep under sustained compression) therefore does not discriminate except at the window FLOOR, where the tube slips and relieves instead - and nothing specifies which of the two ships (00_07 HW.34)"
+    },
+    "not_modelled": {
+      "creep_relaxation": "PEEK relaxes under sustained hoop stress, so over 20 yr the real floor RISES (grip decays) and the real ceiling FALLS (sustained stress limit < yield). The true window is NARROWER than this on BOTH sides. 01_01 4.3 tabulates relaxation and nothing reads it into this chain",
+      "temperature_dependence": "E_PEEK and the yield are the 23 C datasheet values; both move at -30 C and in opposite directions for this bound",
+      "form_error": "tube ovality, wire out-of-round and bore straightness are assumed zero; a real pair consumes part of this window on form before it consumes any on size",
+      "surface": "asperity flattening on assembly reduces the effective interference, and no Sa for either surface exists in canon",
+      "insertion_force": "the force to press the tube onto the wire is not computed; at the ceiling it is a real handling question"
+    }
+  },
   "assembly_clearance": {
     "question": "00_07 HW.34 \u2014 which of the three frozen dims (01_01 \u00a71.4) gives up the assembly clearance. CLOSED 2026-09-11: direction = channel side, size = branch (\u0432), channel 1.30 -> 1.35. The table stays because it is the PRICING the verdict stands on, not an open menu; the shipped row is flagged",
     "frozen_dims_mm": {
       "rod": 1.0,
       "channel": 1.35,
-      "liner_wall": 0.15
+      "liner_wall": 0.15,
+      "liner_length": 18.0,
+      "liner_protrusion": 1.0
     },
     "candidates": [
       {
@@ -636,5 +798,5 @@
     "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
   "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 6 of 6 alloys (SF 2.2-6.1x): dropping the as-printed derate lifted the soft alloys OUT of predicted failure but NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): the free-cantilever SF describes conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, because every branch that leaves play takes it up and bears on the bore wall. What the liner carries is WEAR - the contact is geometrically forced, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the weld_seam block). k itself is NOT MEASURED and is not assumed here. Three seam mechanisms stay outside even that bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries - the endurance ratio is fully-reversed by construction."
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the weld_seam block). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The headline is not the width but the nominals: rod O1.0 against tube bore O1.00 is a line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and landing in the window needs a nominal interference - a verdict, not a tolerance. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. Three seam mechanisms stay outside even that bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries - the endurance ratio is fully-reversed by construction."
 }

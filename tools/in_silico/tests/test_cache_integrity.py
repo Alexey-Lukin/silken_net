@@ -303,12 +303,14 @@ def test_thermal_install_field():
 
 
 def test_bus_mechanical_liner_axial_thermal():
-    """Script 55 (HW.34): the liner's AXIAL thermal term must stay the larger of the two.
+    """Script 55 (HW.34): the liner's axial thermal term stays tied to the geometry it claims.
 
-    Canon carried the radial term and was silent on the axial one; the whole point of deriving it is
-    that it is larger by the ratio of bore DEPTH to liner OD, which is what forbids capturing the tube
-    at both ends. If a geometry change ever inverts that ratio, the sentence canon now carries stops
-    being true and nothing else would notice.
+    ⛔ This docstring used to say the axial term «must stay the LARGER of the two» — which is what the
+    body's own comment retracts two lines down as a comparison of reference LENGTHS dressed as a
+    mechanical finding. The docstring outlived the assertion it described, which is the same class the
+    block below pins: a file disagreeing with itself while every individual sentence reads fine.
+    What is checkable is that the length is the RATIFIED one (channel + protrusion, ⚖️ 2026-09-12) and
+    that the ΔT sweep keeps its points.
     """
     path = MECHANICAL / "bus_mechanical.json"
     if not path.exists():
@@ -323,6 +325,49 @@ def test_bus_mechanical_liner_axial_thermal():
     #    finding. What is checkable is that the two terms stay tied to the geometry they claim.
     assert ax["liner_length_mm"] > 0.0
     assert set(by_dt) == {"20", "40", "60", "80"}, "the ΔT sweep lost or gained a point"
+    # ⛔ The axial ⚖️ was RATIFIED 2026-09-12 (01_01 §1.4) and this key called itself an assumption
+    #    for hours afterwards, feeding canon a length that excluded the ratified protrusion. A flag
+    #    that says «assumed» about a settled dimension is worse than no flag: it tells the reader the
+    #    number is soft when it is the spec.
+    assert ax["liner_length_is_ratified"] is True
+    assert "protrusion" in ax["liner_length_provenance"], "the length stopped citing the CEM field"
+
+
+def test_bus_mechanical_interference_window():
+    """Script 55 (HW.34): the liner↔wire fit is BOUNDED, and its two vendor inputs stay ABSENT.
+
+    The 2026-09-11 direction verdict asserts the tube is tight on the wire; every stiffness bound and
+    the whole wear axis inherit that sentence, and no interference existed anywhere in the tree until
+    this block. Its honesty condition is the same as the weld seam's: nobody may quietly type a
+    tolerance into a sentinel and let the corpus read it as measured.
+    """
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    iw = json.loads(path.read_text())["interference_window"]
+    # 1. Honesty: both vendor bands absent, and µ declared a sweep rather than a value.
+    vendor = iw["vendor_inputs_measured"]
+    assert vendor["liner_bore_tolerance_um"] is None, "a tube tolerance was typed in — NOT MEASURED"
+    assert vendor["wire_od_tolerance_um"] is None, "a wire tolerance was typed in — NOT MEASURED"
+    assert iw["axial_friction_lock"]["mu_is_swept_not_measured"] is True
+    # 2. The window must be a window. A non-positive one would mean the geometry admits no fit at
+    #    all, which is a finding — not something to report as a budget.
+    assert iw["window_radial_um"] > 0.0
+    assert iw["floor"]["radial_um"] < iw["ceiling"]["radial_um"]
+    # 3. The free-outer premise of the Lamé model, CHECKED rather than assumed: the tube's OD grows
+    #    under the fit, and if that growth ever closed the channel play the whole model would be the
+    #    wrong one (a contained cylinder, not a free-outer sleeve).
+    rows = iw["od_growth_eats_channel_play"]["rows"]
+    assert rows, "the play coupling lost its rows"
+    assert all(r["outer_surface_still_free"] for r in rows), \
+        "OD growth closed the channel play — free-outer Lamé no longer describes this pair"
+    assert all(r["channel_radial_play_um"] > 0.0 for r in rows)
+    # 4. The nominal finding is the headline and it is a BOOLEAN, so it cannot rot into prose: the
+    #    specified fit is line-to-line, which is why landing in the window is a verdict, not a
+    #    tolerance. If a nominal interference is ever ratified this flips, and the sentence canon
+    #    carries about «half the population comes out with clearance» must go with it.
+    assert iw["nominal_fit_is_zero_interference"] is True
+    assert iw["required_nominal_offset_diametral_um"] > 0.0
 
 
 # The insulation branch the ⚖️ 2026-09-11 verdict ratified. Named once: the assertions below

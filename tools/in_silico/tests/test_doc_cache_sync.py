@@ -432,6 +432,32 @@ CHECKS = [
                       for r in d["clearance_regime"]["edge_bearing"]["rows"]
                       for v in r["by_mu"].values()), 0.01,
     ),
+    # ── HW.34 liner↔wire FIT: the interference window canon now carries (derived 2026-09-12) ──
+    # ⛔ These three exist because the block's whole point is that its two vendor inputs are ABSENT,
+    # so what canon quotes is the model's OWN bound. A bound is the most tempting kind of number to
+    # round while editing prose around it, and nothing else would notice: the sentence stays
+    # internally consistent either way. The nominal OFFSET is pinned separately from the WIDTH on
+    # purpose — they answer different questions (how far the drawing must move ⊥ how much tolerance
+    # the pair may spend), and quoting one for the other is the substitution this file exists against.
+    (
+        "liner↔wire interference window, diametral budget → bus_mechanical.json §interference_window",
+        COAXIAL, rf"тобто {N} мкм ДІАМЕТРАЛЬНО на ОБИДВІ деталі",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["interference_window"]["window_diametral_um"], 0.05,
+    ),
+    (
+        "required nominal interference offset → bus_mechanical.json §interference_window",
+        COAXIAL, rf"≈{N} мкм діаметрально на середині вікна",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["interference_window"]["required_nominal_offset_diametral_um"], 0.05,
+    ),
+    (
+        "channel play at the window ceiling → bus_mechanical.json §od_growth_eats_channel_play",
+        COAXIAL, rf"люфт падає 25 → {N} мкм",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["interference_window"]["od_growth_eats_channel_play"]["rows"]
+                       if r["at"] == "ceiling")["channel_radial_play_um"], 0.05,
+    ),
     (
         "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §binding_candidate",
         SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
