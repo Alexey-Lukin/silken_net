@@ -2,7 +2,7 @@
   "method": "slender-beam closed form \u2014 Euler buckling (fixed-free) + cantilever tip-load bending + S-N endurance ratio (\u03c3_e \u2248 k\u00b7\u03c3_y, as-printed derate). No FEA.",
   "geometry_mm": {
     "bus_dia": 1.0,
-    "free_len_unsupported": 36.0,
+    "free_len_unsupported": 23.0,
     "free_len_supported": 6.0
   },
   "loads": {
@@ -21,12 +21,12 @@
     "mean_stress_correction_modelled": false
   },
   "buckling": {
-    "p_cr_unsupported_N": 10.3,
+    "p_cr_unsupported_N": 25.2,
     "p_cr_supported_N": 370.1,
-    "sf_unsupported": 10.3
+    "sf_unsupported": 25.2
   },
   "bending_stress_MPa": {
-    "unsupported": 110.0,
+    "unsupported": 70.3,
     "supported": 18.3
   },
   "per_alloy_fatigue": [
@@ -34,12 +34,12 @@
       "alloy": "Ti-15Zr",
       "yield_MPa": 950.0,
       "endurance_MPa_printed": 213.8,
-      "sf_unsupported_printed": 1.94,
+      "sf_unsupported_printed": 3.04,
       "sf_supported_printed": 11.66,
-      "unsupported_infinite_life_printed": false,
+      "unsupported_infinite_life_printed": true,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 427.5,
-      "sf_unsupported_welded": 3.89,
+      "sf_unsupported_welded": 6.08,
       "sf_supported_welded": 23.32,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
@@ -48,12 +48,12 @@
       "alloy": "beta-Ti-13Nb-13Zr",
       "yield_MPa": 900.0,
       "endurance_MPa_printed": 202.5,
-      "sf_unsupported_printed": 1.84,
+      "sf_unsupported_printed": 2.88,
       "sf_supported_printed": 11.04,
-      "unsupported_infinite_life_printed": false,
+      "unsupported_infinite_life_printed": true,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 405.0,
-      "sf_unsupported_welded": 3.68,
+      "sf_unsupported_welded": 5.76,
       "sf_supported_welded": 22.09,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
@@ -62,12 +62,12 @@
       "alloy": "Ti-6Al-4V",
       "yield_MPa": 880.0,
       "endurance_MPa_printed": 198.0,
-      "sf_unsupported_printed": 1.8,
+      "sf_unsupported_printed": 2.82,
       "sf_supported_printed": 10.8,
-      "unsupported_infinite_life_printed": false,
+      "unsupported_infinite_life_printed": true,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 396.0,
-      "sf_unsupported_welded": 3.6,
+      "sf_unsupported_welded": 5.63,
       "sf_supported_welded": 21.6,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
@@ -76,12 +76,12 @@
       "alloy": "Ti-6Al-7Nb",
       "yield_MPa": 850.0,
       "endurance_MPa_printed": 191.2,
-      "sf_unsupported_printed": 1.74,
+      "sf_unsupported_printed": 2.72,
       "sf_supported_printed": 10.43,
-      "unsupported_infinite_life_printed": false,
+      "unsupported_infinite_life_printed": true,
       "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 382.5,
-      "sf_unsupported_welded": 3.48,
+      "sf_unsupported_welded": 5.44,
       "sf_supported_welded": 20.86,
       "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
@@ -90,63 +90,40 @@
       "alloy": "CP-Ti-Gr4",
       "yield_MPa": 480.0,
       "endurance_MPa_printed": 108.0,
-      "sf_unsupported_printed": 0.98,
+      "sf_unsupported_printed": 1.54,
       "sf_supported_printed": 5.89,
       "unsupported_infinite_life_printed": false,
-      "unsupported_predicted_failure_printed": true,
+      "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 216.0,
-      "sf_unsupported_welded": 1.96,
+      "sf_unsupported_welded": 3.07,
       "sf_supported_welded": 11.78,
-      "unsupported_infinite_life_welded": false,
+      "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     },
     {
       "alloy": "Ta",
       "yield_MPa": 345.0,
       "endurance_MPa_printed": 77.6,
-      "sf_unsupported_printed": 0.71,
+      "sf_unsupported_printed": 1.1,
       "sf_supported_printed": 4.23,
       "unsupported_infinite_life_printed": false,
-      "unsupported_predicted_failure_printed": true,
+      "unsupported_predicted_failure_printed": false,
       "endurance_MPa_welded": 155.2,
-      "sf_unsupported_welded": 1.41,
+      "sf_unsupported_welded": 2.21,
       "sf_supported_welded": 8.47,
-      "unsupported_infinite_life_welded": false,
+      "unsupported_infinite_life_welded": true,
       "unsupported_predicted_failure_welded": false
     }
   ],
   "fabrication_branches": {
     "printed": {
       "sf_unsupported_range": [
-        0.71,
-        1.94
+        1.1,
+        3.04
       ],
       "sf_supported_range": [
         4.23,
         11.66
-      ],
-      "unsupported_predicted_failure": [
-        "CP-Ti-Gr4",
-        "Ta"
-      ],
-      "unsupported_marginal": [
-        "Ti-15Zr",
-        "beta-Ti-13Nb-13Zr",
-        "Ti-6Al-4V",
-        "Ti-6Al-7Nb"
-      ],
-      "unsupported_infinite_life": [],
-      "unsupported_infinite_life_for_all": false,
-      "supported_infinite_life_for_all": true
-    },
-    "welded": {
-      "sf_unsupported_range": [
-        1.41,
-        3.89
-      ],
-      "sf_supported_range": [
-        8.47,
-        23.32
       ],
       "unsupported_predicted_failure": [],
       "unsupported_marginal": [
@@ -161,47 +138,69 @@
       ],
       "unsupported_infinite_life_for_all": false,
       "supported_infinite_life_for_all": true
+    },
+    "welded": {
+      "sf_unsupported_range": [
+        2.21,
+        6.08
+      ],
+      "sf_supported_range": [
+        8.47,
+        23.32
+      ],
+      "unsupported_predicted_failure": [],
+      "unsupported_marginal": [],
+      "unsupported_infinite_life": [
+        "Ti-15Zr",
+        "beta-Ti-13Nb-13Zr",
+        "Ti-6Al-4V",
+        "Ti-6Al-7Nb",
+        "CP-Ti-Gr4",
+        "Ta"
+      ],
+      "unsupported_infinite_life_for_all": true,
+      "supported_infinite_life_for_all": true
     }
   },
   "friction_sweep": [
     {
       "mu": 0.2,
       "f_lat_N": 0.2,
-      "sigma_unsup_MPa": 73.3,
+      "sigma_unsup_MPa": 46.9,
       "sigma_sup_MPa": 12.2,
-      "sf_unsup_4v_printed": 2.7,
+      "sf_unsup_4v_printed": 4.23,
       "sf_sup_4v_printed": 16.2,
-      "sf_unsup_4v_welded": 5.4,
+      "sf_unsup_4v_welded": 8.45,
       "sf_sup_4v_welded": 32.4
     },
     {
       "mu": 0.3,
       "f_lat_N": 0.3,
-      "sigma_unsup_MPa": 110.0,
+      "sigma_unsup_MPa": 70.3,
       "sigma_sup_MPa": 18.3,
-      "sf_unsup_4v_printed": 1.8,
+      "sf_unsup_4v_printed": 2.82,
       "sf_sup_4v_printed": 10.8,
-      "sf_unsup_4v_welded": 3.6,
+      "sf_unsup_4v_welded": 5.63,
       "sf_sup_4v_welded": 21.6
     },
     {
       "mu": 0.4,
       "f_lat_N": 0.4,
-      "sigma_unsup_MPa": 146.7,
+      "sigma_unsup_MPa": 93.7,
       "sigma_sup_MPa": 24.4,
-      "sf_unsup_4v_printed": 1.35,
+      "sf_unsup_4v_printed": 2.11,
       "sf_sup_4v_printed": 8.1,
-      "sf_unsup_4v_welded": 2.7,
+      "sf_unsup_4v_welded": 4.23,
       "sf_sup_4v_welded": 16.2
     },
     {
       "mu": 0.5,
       "f_lat_N": 0.5,
-      "sigma_unsup_MPa": 183.3,
+      "sigma_unsup_MPa": 117.1,
       "sigma_sup_MPa": 30.6,
-      "sf_unsup_4v_printed": 1.08,
+      "sf_unsup_4v_printed": 1.69,
       "sf_sup_4v_printed": 6.48,
-      "sf_unsup_4v_welded": 2.16,
+      "sf_unsup_4v_welded": 3.38,
       "sf_sup_4v_welded": 12.96
     }
   ],
@@ -212,8 +211,8 @@
       "length_mm": 14.0,
       "drilled_depth_mm": 17.0,
       "aspect_ratio_l_over_d": 12.59,
-      "aspect_note": "L/D of the BLIND bore as machined (depth 17 = shank 14 + flange 3, cem/cathode_flange.json). It decides which operation the vendor needs and is the ratio quoted in canon prose - derived here so it moves with the diameter instead of being retyped",
-      "note": "length read conservatively (model's own '~14' rather than the CEM's shank 14 + flange 3 = 17) \u2014 a shorter bore makes contact HARDER to reach"
+      "aspect_note": "L/D of the bore as machined (depth = shank + flange, read from cem/cathode_flange.json). It decides which operation the vendor needs and is the ratio quoted in canon prose - derived here so it moves with the diameter instead of being retyped",
+      "note": "length read conservatively \u2014 the SHANK run only, not the flange disc above it; a shorter bore makes contact HARDER to reach, so the contact finding is not an artefact of the span"
     },
     "branches": [
       {
@@ -222,22 +221,22 @@
         "play_side": "rod",
         "radial_play_mm": 0.165,
         "first_contact_mm_by_mu": {
-          "0.2": 17.15,
-          "0.3": 13.75,
-          "0.4": 11.79,
-          "0.5": 10.47
+          "0.2": 23.0,
+          "0.3": 18.85,
+          "0.4": 15.86,
+          "0.5": 13.93
         },
         "first_contact_mm_by_mu_bonded": {
-          "0.2": 17.15,
-          "0.3": 13.75,
-          "0.4": 11.79,
-          "0.5": 10.47
+          "0.2": 23.0,
+          "0.3": 18.85,
+          "0.4": 15.86,
+          "0.5": 13.93
         },
         "ei_Nm2_bare_rod": 0.0054,
         "ei_Nm2_bonded": 0.0054,
-        "bears_inside_bore": true,
+        "bears_inside_bore": false,
         "supported_at_mouth": false,
-        "regime": "GAP-LIMITED \u2014 bears inside the bore"
+        "regime": "free cantilever (never reaches the wall)"
       },
       {
         "branch": "conformal TiO2 ~5 \u00b5m",
@@ -245,22 +244,22 @@
         "play_side": "rod",
         "radial_play_mm": 0.17,
         "first_contact_mm_by_mu": {
-          "0.2": 17.44,
-          "0.3": 13.97,
-          "0.4": 11.97,
-          "0.5": 10.64
+          "0.2": 23.0,
+          "0.3": 19.2,
+          "0.4": 16.14,
+          "0.5": 14.17
         },
         "first_contact_mm_by_mu_bonded": {
-          "0.2": 17.44,
-          "0.3": 13.97,
-          "0.4": 11.97,
-          "0.5": 10.64
+          "0.2": 23.0,
+          "0.3": 19.2,
+          "0.4": 16.14,
+          "0.5": 14.17
         },
         "ei_Nm2_bare_rod": 0.0054,
         "ei_Nm2_bonded": 0.0054,
-        "bears_inside_bore": true,
+        "bears_inside_bore": false,
         "supported_at_mouth": false,
-        "regime": "GAP-LIMITED \u2014 bears inside the bore"
+        "regime": "free cantilever (never reaches the wall)"
       },
       {
         "branch": "PEEK liner 0.15 mm",
@@ -268,19 +267,19 @@
         "play_side": "channel",
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
-          "0.2": 6.31,
-          "0.3": 5.12,
-          "0.4": 4.42,
-          "0.5": 3.95
+          "0.2": 8.16,
+          "0.3": 6.58,
+          "0.4": 5.65,
+          "0.5": 5.03
         },
         "first_contact_mm_by_mu_bonded": {
-          "0.2": 6.51,
-          "0.3": 5.28,
-          "0.4": 4.56,
-          "0.5": 4.07
+          "0.2": 8.45,
+          "0.3": 6.81,
+          "0.4": 5.85,
+          "0.5": 5.21
         },
         "ei_Nm2_bare_rod": 0.0054,
-        "ei_Nm2_bonded": 0.0057,
+        "ei_Nm2_bonded": 0.0058,
         "bears_inside_bore": true,
         "supported_at_mouth": false,
         "regime": "GAP-LIMITED \u2014 bears inside the bore"
@@ -294,6 +293,8 @@
     },
     "axial_thermal": {
       "liner_length_mm": 17.0,
+      "liner_length_is_assumed": true,
+      "liner_length_assumption": "the liner is taken to run the FULL channel \u2014 an UPPER BOUND on differential growth. Canon freezes the 0.15 WALL and says nothing about the axial extent (\u2696\ufe0f 00_07 HW.34), so this is an assumption, not a dimension",
       "alpha_peek_1K": 4.7e-05,
       "alpha_ti_1K": 8.6e-06,
       "alpha_ti_source": "Ti-6Al-4V",
@@ -306,22 +307,23 @@
       "radial_diametral_um_at_40K": 2.0,
       "strain": 0.001536,
       "note": "axial and radial carry the SAME differential strain; their ratio is the ratio of their reference lengths (bore depth vs liner OD), so quoting it as a mechanical finding overstates it. What both-end capture actually costs is the stress below",
-      "constrained_stress_MPa_at_40K": 5.53,
-      "constrained_stress_MPa_at_80K": 11.06
+      "constrained_stress_MPa_at_40K": 6.14,
+      "constrained_stress_MPa_at_80K": 12.29
     },
     "supported_span_check": {
       "assumed_free_span_mm": 6.0,
-      "deepest_first_contact_mm": 6.51,
-      "overshoot_mm": 0.51,
-      "sigma_understated_pct": 8.5,
+      "deepest_first_contact_mm": 8.45,
+      "overshoot_mm": 2.45,
+      "sigma_understated_pct": 40.8,
       "note": "sigma is linear in span, so the supported-column SF is optimistic by this percentage; it stays far above the SF-2 line, but the number is measured now rather than assumed (00_07 HW.34)"
     },
     "gap_limited_branches": [
-      "conformal 10 \u00b5m film",
-      "conformal TiO2 ~5 \u00b5m",
       "PEEK liner 0.15 mm"
     ],
-    "free_cantilever_sf_describes_these": []
+    "free_cantilever_sf_describes_these": [
+      "conformal 10 \u00b5m film",
+      "conformal TiO2 ~5 \u00b5m"
+    ]
   },
   "weld_seam": {
     "question": "00_07 HW.34 \u2014 the ratified rod is a WELDED drawn wire, so a heat-affected zone sits at the root, i.e. at peak bending moment. The wrought derate describes the WIRE. How bad may the JOINT be before the verdict moves?",
@@ -340,11 +342,11 @@
       }
     ],
     "span": {
-      "which": "supported (liner) ONLY",
+      "which": "supported (liner) span, inflated by an optimism term measured along the protrusion \u2014 NOT a supported-only figure, see span_provenance",
       "nominal_sigma_MPa": 18.3,
-      "worst_corner_sigma_MPa": 33.1,
+      "worst_corner_sigma_MPa": 43.2,
       "worst_corner_mu": 0.5,
-      "span_optimism_pct": 8.2,
+      "span_optimism_pct": 41.3,
       "why_not_free_cantilever": "\u00a74's derived flag says the free-cantilever SF describes no branch that bears on the wall, so a seam tolerance computed on it would price a configuration that does not exist (the error the 2026-09-11 verdict corrected)"
     },
     "per_alloy": [
@@ -352,107 +354,88 @@
         "alloy": "Ti-15Zr",
         "endurance_MPa": 427.5,
         "sf_wire_supported_nominal": 23.32,
-        "sf_wire_supported_worst_corner": 12.93,
+        "sf_wire_supported_worst_corner": 9.9,
         "k_at_failure_line_nominal": 0.043,
         "k_at_infinite_life_nominal": 0.086,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.077,
-        "k_at_infinite_life_worst_corner": 0.155,
+        "k_at_failure_line_worst_corner": 0.101,
+        "k_at_infinite_life_worst_corner": 0.202,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "beta-Ti-13Nb-13Zr",
         "endurance_MPa": 405.0,
         "sf_wire_supported_nominal": 22.09,
-        "sf_wire_supported_worst_corner": 12.25,
+        "sf_wire_supported_worst_corner": 9.38,
         "k_at_failure_line_nominal": 0.045,
         "k_at_infinite_life_nominal": 0.091,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.082,
-        "k_at_infinite_life_worst_corner": 0.163,
+        "k_at_failure_line_worst_corner": 0.107,
+        "k_at_infinite_life_worst_corner": 0.213,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ti-6Al-4V",
         "endurance_MPa": 396.0,
         "sf_wire_supported_nominal": 21.6,
-        "sf_wire_supported_worst_corner": 11.98,
+        "sf_wire_supported_worst_corner": 9.17,
         "k_at_failure_line_nominal": 0.046,
         "k_at_infinite_life_nominal": 0.093,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.083,
-        "k_at_infinite_life_worst_corner": 0.167,
+        "k_at_failure_line_worst_corner": 0.109,
+        "k_at_infinite_life_worst_corner": 0.218,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ti-6Al-7Nb",
         "endurance_MPa": 382.5,
         "sf_wire_supported_nominal": 20.86,
-        "sf_wire_supported_worst_corner": 11.57,
+        "sf_wire_supported_worst_corner": 8.86,
         "k_at_failure_line_nominal": 0.048,
         "k_at_infinite_life_nominal": 0.096,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.086,
-        "k_at_infinite_life_worst_corner": 0.173,
+        "k_at_failure_line_worst_corner": 0.113,
+        "k_at_infinite_life_worst_corner": 0.226,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "CP-Ti-Gr4",
         "endurance_MPa": 216.0,
         "sf_wire_supported_nominal": 11.78,
-        "sf_wire_supported_worst_corner": 6.54,
+        "sf_wire_supported_worst_corner": 5.0,
         "k_at_failure_line_nominal": 0.085,
         "k_at_infinite_life_nominal": 0.17,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.153,
-        "k_at_infinite_life_worst_corner": 0.306,
+        "k_at_failure_line_worst_corner": 0.2,
+        "k_at_infinite_life_worst_corner": 0.4,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ta",
         "endurance_MPa": 155.2,
         "sf_wire_supported_nominal": 8.47,
-        "sf_wire_supported_worst_corner": 4.7,
+        "sf_wire_supported_worst_corner": 3.59,
         "k_at_failure_line_nominal": 0.118,
         "k_at_infinite_life_nominal": 0.236,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.213,
-        "k_at_infinite_life_worst_corner": 0.426,
+        "k_at_failure_line_worst_corner": 0.278,
+        "k_at_infinite_life_worst_corner": 0.556,
         "infinite_life_reachable_worst_corner": true
       }
     ],
-    "protrusion_sensitivity": {
-      "binding_alloy": "Ta",
-      "rows": [
-        {
-          "label": "shipped constant L_FREE_UNSUP",
-          "protrusion_mm": 36.0,
-          "span_optimism_pct": 8.2,
-          "sigma_worst_corner_MPa": 33.1,
-          "binding_k_at_infinite_life": 0.426,
-          "as_printed_marker_clears_sf2": true,
-          "margin_in_k": 0.074
-        },
-        {
-          "label": "CEM-derived candidate (00_07 HW.34)",
-          "protrusion_mm": 23.0,
-          "span_optimism_pct": 40.0,
-          "sigma_worst_corner_MPa": 42.8,
-          "binding_k_at_infinite_life": 0.551,
-          "as_printed_marker_clears_sf2": false,
-          "margin_in_k": -0.051
-        }
-      ],
-      "verdict_flips_on_it": true,
-      "note": "the conservatism term (span optimism) is measured along the protrusion, so the seam bound inherits a constant that 00_07 HW.34 records as wrong; quote the PAIR"
+    "span_provenance": {
+      "protrusion_mm": 23.0,
+      "derived_from": "cem/zone2_sleeve.length_mm - Cem.cs Zone1InsertionMm (HW.8 placeholder, no JSON field) - cem/cathode_flange.shank_length_mm, + shank + flange_thickness_mm",
+      "was_literal_until": "2026-09-12",
+      "note": "a literal 36 mm stood here and decomposed itself in a comment whose third term cited nothing; the CEM stack gives 23. The reversal it caused is recorded in 00_07 HW.34 \u2014 at 36 our own as-printed marker cleared the SF-2 line, at 23 it does not. The bound did not worsen; it was reading a span the part does not have"
     },
     "binding_candidate": {
       "alloy": "Ta",
-      "sf_wire_worst_corner": 4.7,
-      "k_at_infinite_life": 0.426,
-      "k_at_failure_line": 0.213,
-      "as_printed_marker_clears_sf2": true,
-      "margin_in_k_vs_as_printed_marker": 0.074
+      "sf_wire_worst_corner": 3.59,
+      "k_at_infinite_life": 0.556,
+      "k_at_failure_line": 0.278,
+      "as_printed_marker_clears_sf2": false,
+      "margin_in_k_vs_as_printed_marker": -0.056
     },
     "not_modelled": {
       "bead_section": "an upset/fillet raises the local section, which LOWERS nominal stress \u2014 this omission is conservative",
@@ -496,10 +479,10 @@
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
-          "0.2": 6.31,
-          "0.3": 5.12,
-          "0.4": 4.42,
-          "0.5": 3.95
+          "0.2": 8.16,
+          "0.3": 6.58,
+          "0.4": 5.65,
+          "0.5": 5.03
         },
         "assembles": true
       },
@@ -513,10 +496,10 @@
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
-          "0.2": 6.31,
-          "0.3": 5.12,
-          "0.4": 4.42,
-          "0.5": 3.95
+          "0.2": 8.16,
+          "0.3": 6.58,
+          "0.4": 5.65,
+          "0.5": 5.03
         },
         "assembles": true
       },
@@ -530,16 +513,16 @@
         "diametral_clearance_mm": 0.05,
         "radial_play_mm": 0.025,
         "first_contact_mm_by_mu": {
-          "0.2": 5.68,
-          "0.3": 4.61,
-          "0.4": 3.98,
-          "0.5": 3.55
+          "0.2": 7.31,
+          "0.3": 5.9,
+          "0.4": 5.08,
+          "0.5": 4.52
         },
         "assembles": true
       }
     ],
     "note": "radial_play answers ASSEMBLY, first_contact answers SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 10x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 4 of 6 alloys (SF 1.4-3.9x): dropping the as-printed derate lifted CP-Ti-Gr4, Ta OUT of predicted failure but NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): the free-cantilever SF describes NO shipped branch, because every branch that leaves play takes it up and bears on the bore wall. What the liner carries is WEAR - the contact is geometrically forced, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 8.5-23.3x (infinite life, all alloys). BARE, the drawn wire reaches infinite life for 6 of 6 alloys (SF 2.2-6.1x): dropping the as-printed derate lifted the soft alloys OUT of predicted failure but NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): the free-cantilever SF describes conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, because every branch that leaves play takes it up and bears on the bore wall. What the liner carries is WEAR - the contact is geometrically forced, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the weld_seam block). k itself is NOT MEASURED and is not assumed here. Three seam mechanisms stay outside even that bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries - the endurance ratio is fully-reversed by construction."
 }

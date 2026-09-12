@@ -403,20 +403,14 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["axial_thermal"]["differential_axial_um_by_dT_K"]["40"], 0.5,
     ),
-    # ⛔ These two pinned a SINGLE headline until 2026-09-12, and the headline turned out to ride a
-    # constant the tracker records as wrong — so a green pin was certifying a number that flips.
-    # They now pin the PAIR, which is what the doc may quote: both protrusion rows, by position.
+    # ⛔ Two pins stood here and held the PAIR of protrusion rows, because the headline rode a span
+    # the tracker recorded as wrong. The span was corrected 2026-09-12 (CEM-derived, 23 mm) and the
+    # sweep went with the dispute, so what the doc may quote is ONE row and this is its pin.
     (
-        "weld-seam k at the SHIPPED protrusion → bus_mechanical.json §protrusion_sensitivity",
-        SUMMARY, rf"\| 36 mm \(shipped constant\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
+        "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §binding_candidate",
+        SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: d["weld_seam"]["protrusion_sensitivity"]["rows"][0]["binding_k_at_infinite_life"], 0.001,
-    ),
-    (
-        "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §protrusion_sensitivity",
-        SUMMARY, rf"\| 23 mm \(CEM-derived\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
-        "mechanical/bus_mechanical.json",
-        lambda d: d["weld_seam"]["protrusion_sensitivity"]["rows"][1]["binding_k_at_infinite_life"], 0.001,
+        lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
     ),
     # ⛔ The four rows below pin a table whose WHOLE POINT is that the two topologies differ. The
     # defect they exist against is not drift in one number but a SWAP: quoting the sheet factor for

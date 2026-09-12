@@ -30,7 +30,7 @@ real rod threads a Ø1.35 bore, so any branch that leaves play takes it up and B
 the bore. An unsupported SF is therefore a number for a configuration that does not exist, and the
 script says so through a DERIVED flag (`clearance_regime.free_cantilever_sf_describes_these`), never
 through prose. What the liner carries instead is WEAR: the same contact makes rubbing geometrically
-FORCED, and a 10 µm conformal film asked to be a bearing in a blind bore of L/D ≈ 12.6 wears through to a
+FORCED, and a 10 µm conformal film asked to be a bearing in a THROUGH bore of L/D ≈ 12.6 wears through to a
 ~0.5 V anode↔cathode short. The supported/unsupported columns stay because they price the DIAMETER and
 the FABRICATION branch honestly — they are simply not the argument for the liner.
 
@@ -61,7 +61,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
+from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, D_BUS_ROD_MM, E_PEEK_PA, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -71,9 +71,39 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ⛔ Do not substitute the channel here: σ ∝ 1/d³, so the channel Ø inflates every fatigue SF ×2.46 and turns a
 #    predicted failure into a comfortable margin. One home for the value: lib.constants (01_01 §1.4).
 D_BUS = D_BUS_ROD_MM
+
+# ── Axial stack (mm) — READ from the CEM manifests at runtime, never re-typed ─────────────────────
+# 🔴 Every span below used to be a literal, and the costliest one decomposed ITSELF in prose — "gap 6
+#    + cathode bore ~14 + flange/pad standoff ~16 = 36" — with the third term citing nothing. The CEM
+#    stack says otherwise: the pad IS the rod's own end face (02_02 §1.2), so nothing protrudes past
+#    the flange disc, and the span is 23 mm. σ ∝ L, so the free-cantilever column was over-stated
+#    1.57× and every unsupported SF under-stated by the same factor (00_07 HW.34, fixed 2026-09-12).
+# ⛔ The lesson is the FORM, not the number: a constant that decomposes itself in a comment READS as
+#    derived and is not. These are derived — change a CEM field and they move.
+CEM_DIR = REPO_ROOT / "tools" / "cad" / "cem"
+
+
+def cem(stem: str) -> dict:
+    """CEM manifests = the parameter SSOT of the shipped geometry (canon-gated by cem_canon_sync.rb)."""
+    return json.loads((CEM_DIR / f"{stem}.json").read_text(encoding="utf-8"))
+
+
+_FLANGE, _SLEEVE = cem("cathode_flange"), cem("zone2_sleeve")
+SHANK_LEN_MM = float(_FLANGE["shank_length_mm"])        # Zone-3 shank — enters the sleeve from the top
+FLANGE_THK_MM = float(_FLANGE["flange_thickness_mm"])   # the disc the pogo pad sits on
+SLEEVE_LEN_MM = float(_SLEEVE["length_mm"])             # PEEK thermal break, axial (01_01 §4.1)
+# ⚠️ The ONE term with no JSON field: how deep the Zone-1 anode inserts into the sleeve. Its only home
+#    is `Cem.cs AnchorAxialStackCem.Zone1InsertionMm` — an HW.8 PLACEHOLDER, not a frozen dim — so it
+#    crosses the machine halves BY VALUE, which is the caveat Cem.cs itself writes about scripts 54/58.
+#    ⛔ Do not promote it into a CEM field to make this line look derived: that would canonise a
+#    placeholder (00_06 §0). It is quoted here as what it is.
+Z1_INSERTION_MM = 30.0
+# F2 insertion budget (AxialStack.InsertionBudgetMm) — what is left of the sleeve bore once both shanks
+# are in. This IS the unsupported PEEK gap: the rod crosses it with no wall on either side.
+PEEK_GAP_MM = SLEEVE_LEN_MM - Z1_INSERTION_MM - SHANK_LEN_MM
 # Free (laterally UNSUPPORTED) cantilever length in each case:
-L_FREE_UNSUP = 36.0   # mm — no liner: gap 6 + cathode bore ~14 + flange/pad standoff ~16 = full protrusion
-L_FREE_SUP = 6.0      # mm — liner supports the bore run → only the PEEK gap is unsupported
+L_FREE_UNSUP = PEEK_GAP_MM + SHANK_LEN_MM + FLANGE_THK_MM   # full protrusion above the anode top
+L_FREE_SUP = PEEK_GAP_MM                                    # liner supports the bore run → the gap only
 
 # ── Loads ──
 # ── Channel run (mm from the anode root) — the wall that the two branches above IGNORE ──
@@ -82,35 +112,33 @@ L_FREE_SUP = 6.0      # mm — liner supports the bore run → only the PEEK gap
 # ⚠️ The run length is read CONSERVATIVELY (shorter = less room for contact to happen): the model's own
 # decomposition of L_FREE_UNSUP says "cathode bore ~14", while cem/cathode_flange.json gives
 # shank 14 + flange 3 = 17. Taking 14 makes the contact finding harder to reach, not easier.
-CHANNEL_START_MM = L_FREE_SUP      # the PEEK gap ends and the bore begins
-CHANNEL_LEN_MM = 14.0
-# Full DRILLED depth of the blind bore, from cem/cathode_flange.json (shank 14 + flange 3). Distinct from
-# CHANNEL_LEN_MM above, which is the deliberately-short span used for the CONTACT question; this one is
-# the machining referent, and it is what the L/D ratio is about — which operation the bore needs.
+CHANNEL_START_MM = PEEK_GAP_MM     # the PEEK gap ends and the bore begins
+CHANNEL_LEN_MM = SHANK_LEN_MM      # conservative: the shank run ONLY, not the flange disc above it
+# Full DRILLED depth of the bore (shank + flange disc). Distinct from CHANNEL_LEN_MM above, which is
+# the deliberately-short span used for the CONTACT question; this one is the MACHINING referent, and it
+# is what the L/D ratio is about — which operation the bore needs.
 # ⛔ That ratio lived in prose (here and in SUMMARY) with no cache owner, so it could not be checked
 #    against the diameter it divides by. Derived now.
-BORE_DEPTH_MM = 17.0
-# ⚠️ The word "blind" above is RETIRED (00_07 HW.34): `CathodeFlange.cs` cuts this channel THROUGH
-# — z 0..14 in the shank and 14..17 in the disc, exiting the pogo face — and a blind bore could not
-# pass a conductor at all. The DEPTH is unchanged; what changes is the machining class the L/D
-# argument rests on. Left as prose-with-a-correction rather than silently reworded, because five doc
-# homes inherited the word from this very comment.
-#
-# Protrusion of the rod above the anode top — the span the free-cantilever column prices.
-# 🔴 `L_FREE_UNSUP = 36` decomposes itself as "gap 6 + bore ~14 + flange/pad standoff ~16", and that
-# third term cites nothing. The CEM stack says otherwise: anode top z=40, sleeve 10..60, shank
-# 46..60, disc 60..63 ⇒ 6 + 14 + 3 = 23, and the pad IS the rod's end face (02_02 §1.2), so nothing
-# protrudes past the flange. Kept as a SEPARATE constant rather than corrected in place: fixing
-# `L_FREE_UNSUP` moves published per-alloy numbers in several homes and is its own pass (00_07
-# HW.34). What this constant buys meanwhile is that §5b can PRICE the dispute instead of ignoring it.
-PROTRUSION_FROM_CEM_MM = 23.0
+BORE_DEPTH_MM = SHANK_LEN_MM + FLANGE_THK_MM
+# ⛔ SECOND REFERENT, split out 2026-09-12 (00_07 HW.34): the thermal block below needs the LINER's
+#    length, and it used to borrow the machining depth — one name for two quantities, so editing either
+#    silently moved the other (the very class this file guards for D_BUS). They are numerically equal
+#    today and that is a coincidence of the open verdict, not an identity: canon freezes the liner WALL
+#    (0.15) and says NOTHING about where the tube starts or ends (⚖️ HW.34). Taking the full channel is
+#    the UPPER BOUND on differential axial growth, and it is named as an assumption, never a dimension.
+LINER_LENGTH_ASSUMED_MM = BORE_DEPTH_MM
+# ⛔ The channel is THROUGH, never blind: `CathodeFlange.cs` cuts z 0..14 in the shank and 14..17 in
+# the disc, exiting the pogo face — and a blind bore could not pass a conductor at all. It matters
+# because the L/D argument («the vendor picks the operation») is about a MACHINING class, and L/D 12.6
+# through is a different class from L/D 12.6 blind: reaming from both ends, chip evacuation. The word
+# «blind» was this file's own prose and reached five doc homes from here; swept 2026-09-12.
 D_CHANNEL_MM = 1.35                # cathode channel Ø, canon 01_01 §1.4 — OPENED 1.30 → 1.35 by the
                                    # clearance verdict (00_07 HW.34, branch (в), 2026-09-11)
 
 # Insulation branches: wall thickness AND — new 2026-09-11 — WHICH SIDE the leftover play sits on.
 # ⛔ The side is not bookkeeping, it changes what the BEAM is. A conformal film is bonded to the rod, so
 #    its play is on the rod side by construction and the bending member is the bare Ti rod. The ratified
-#    liner is the opposite: the tube is tight on the WIRE and the pair enters the blind bore as ONE body
+#    liner is the opposite: the tube is tight on the WIRE and the pair enters the bore as ONE body
 #    (00_07 HW.34 — the direction verdict), so the play is on the CHANNEL side and the member is the
 #    rod-plus-tube composite. Until this field existed the model could only say the first thing, which is
 #    why the canon sentence it fed ("a hundredfold reduction, 140 → ~2.5 µm") described the rod-side
@@ -130,7 +158,9 @@ INSULATION_OPTIONS = (
 # at the bore mouth". Bounds, both reported rather than one picked: LOWER = bare rod (tube slips, carries
 # no shear), UPPER = full composite (perfect bond). Neither is measured; a press-fit polymer tube sits
 # between them, and PEEK is soft enough that the whole span between the bounds is a few per cent.
-E_PEEK = 3.6e9        # Pa — PEEK 450G flexural modulus (01_01 §4.3 uses the same class of figure)
+# ⛔ ONE home: `lib.constants.E_PEEK_PA` (Victrex 450G, 23 °C). A local 3.6e9 lived here until
+#    2026-09-12 — a SECOND PEEK modulus in a file that already imports the first, 10 % apart, feeding
+#    the composite EI → first contact → the span-optimism term of the seam bound (00_07 HW.34).
 
 # ── Assembly-clearance allocation candidates (00_07 HW.34, «кому віддано зазор») ──────────────
 # The three PRE-VERDICT dims (rod Ø1.0 · channel Ø1.30 · liner 0.15 wall) summed to ZERO nominal
@@ -229,7 +259,7 @@ def flexural_rigidity_Nm2(rod_dia_mm: float, liner_wall_mm: float | None = None)
     if liner_wall_mm:
         r_i = (rod_dia_mm / 2.0) * MM_M
         r_o = r_i + liner_wall_mm * MM_M
-        ei += E_PEEK * (np.pi / 4.0) * (r_o ** 4 - r_i ** 4)
+        ei += E_PEEK_PA * (np.pi / 4.0) * (r_o ** 4 - r_i ** 4)
     return ei
 
 
@@ -497,11 +527,13 @@ def main() -> int:
     alpha_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
     d_alpha = ALPHA_PEEK_1K - alpha_ti
     axial_thermal = {
-        "liner_length_mm": BORE_DEPTH_MM,
+        "liner_length_mm": LINER_LENGTH_ASSUMED_MM,
+        "liner_length_is_assumed": True,
+        "liner_length_assumption": "the liner is taken to run the FULL channel — an UPPER BOUND on differential growth. Canon freezes the 0.15 WALL and says nothing about the axial extent (⚖️ 00_07 HW.34), so this is an assumption, not a dimension",
         "alpha_peek_1K": ALPHA_PEEK_1K,
         "alpha_ti_1K": alpha_ti,
         "alpha_ti_source": ALLOY_BASELINE,
-        "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * BORE_DEPTH_MM * dt * 1000.0, 1)
+        "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * LINER_LENGTH_ASSUMED_MM * dt * 1000.0, 1)
                                           for dt in (20, 40, 60, 80)},
         "radial_diametral_um_at_40K": round(d_alpha * (D_BUS + 2.0 * 0.150) * 40.0 * 1000.0, 1),
         # ⛔ Two claims were corrected here 2026-09-12 by adversarial review, and both were the kind
@@ -522,12 +554,12 @@ def main() -> int:
     # this file has no model for (01_01 §4.3 tabulates relaxation; nothing here reads it).
     for dt_k in (40, 80):
         strain = d_alpha * dt_k
-        axial_thermal[f"constrained_stress_MPa_at_{dt_k}K"] = round(strain * E_PEEK / 1e6, 2)
-    print(f"\n  → Liner axial growth vs Ti over {BORE_DEPTH_MM:.0f} mm: {ax40:.0f} µm at 40 K "
+        axial_thermal[f"constrained_stress_MPa_at_{dt_k}K"] = round(strain * E_PEEK_PA / 1e6, 2)
+    print(f"\n  → Liner axial growth vs Ti over {LINER_LENGTH_ASSUMED_MM:.0f} mm (ASSUMED full channel — the axial extent is an open ⚖️): {ax40:.0f} µm at 40 K "
           f"({axial_thermal['differential_axial_um_by_dT_K']['80']:.0f} µm at 80 K). ⚠️ The radial "
           f"term carries the SAME strain —")
     print(f"    the {ax40 / axial_thermal['radial_diametral_um_at_40K']:.0f}× is the ratio of "
-          f"reference LENGTHS (depth {BORE_DEPTH_MM:.0f} vs OD {D_BUS + 2 * 0.150:.2f}), not of demands.")
+          f"reference LENGTHS (liner {LINER_LENGTH_ASSUMED_MM:.0f} vs OD {D_BUS + 2 * 0.150:.2f}), not of demands.")
     print(f"  → Constraining it at BOTH ends costs {axial_thermal['constrained_stress_MPa_at_40K']:.1f} MPa "
           f"at 40 K ({axial_thermal['constrained_stress_MPa_at_80K']:.1f} at 80 K) of axial compression —")
     print("    a few per cent of PEEK yield, so it is NOT an impossibility. ⛔ What argues against")
@@ -583,39 +615,52 @@ def main() -> int:
                             "diametral_clearance_mm": round(diametral, 4),
                             "radial_play_mm": round(play, 4),
                             "first_contact_mm_by_mu": contacts, "assembles": bool(assembles)})
-    print("\n  → Every non-(а) candidate lands the SAME 25 µm radial play by construction, so the")
-    print("    support question does NOT discriminate between them — first contact is 3.9–6.3 mm in")
+    # ⛔ DERIVED from the rows just printed. A typed "3.9-6.3 mm" stood here and had drifted off its
+    #    own table by the time the protrusion was corrected — the exact class this file guards.
+    _ok = [a for a in allocations if a["assembles"]]
+    _c = [x for a in _ok for x in a["first_contact_mm_by_mu"].values()]
+    _play = {round(a["radial_play_mm"] * 1000) for a in _ok}
+    print(f"\n  → Every non-(а) candidate lands the SAME "
+          f"{'/'.join(str(p) for p in sorted(_play))} µm radial play by construction, so the")
+    print(f"    support question does NOT discriminate between them — first contact is "
+          f"{min(_c):.1f}–{max(_c):.1f} mm in")
     print("    all three, i.e. practically at the bore mouth. The verdict is decided by the COSTS")
     print("    named over the table, never by this geometry. ⛔ (а) is listed to show it is not an")
     print("    option: zero diametral clearance is the F3 gate's arithmetic, not an assembly.")
     # ⛔ DERIVED, never typed — this sentence is the ground the lining verdict stands on.
     print(f"\n  → The free-cantilever SF above describes NO branch that bears on the wall: "
           f"{', '.join(gap_limited) or 'none'}.")
-    print("    For those the effective span is a FRACTION of the 36 mm span priced above, so the")
+    print(f"    For those the effective span is a FRACTION of the {L_FREE_UNSUP:.0f} mm span priced "
+          f"above, so the")
     print("    unsupported SF is a number for a configuration that does not exist — while the contact")
     print("    it implies is FORCED by geometry on every µ, which is a wear question, not a fatigue one.")
-    # ⚠️ The flag is binary and the branches are NOT equivalent — read the depth, not the label. Since the
-    # channel opened to Ø1.35 the liner row also lands a hair past the mouth (6.51 vs 6.00 mm), so it joins
-    # this list; a conformal film reaches the wall 10-17 mm in, i.e. deep in the bore or past its end.
-    # Same word, an order of magnitude apart in what it costs.
-    print("    ⚠️ The list is not a ranking: the liner bears 0.5 mm past the mouth, a conformal film")
-    print("    10–17 mm in. The flag says 'not a free cantilever'; the DEPTH says how much that matters.")
+    # ⚠️ The flag is binary and the branches are NOT equivalent — read the DEPTH, not the label, and
+    # read how MANY friction points reach the wall at all. 🔴 Both used to be typed here ("the liner
+    # bears 0.5 mm past the mouth, a conformal film 10-17 mm in") and both went stale the moment the
+    # protrusion was corrected 2026-09-12: on the true 23 mm span a conformal film no longer reaches
+    # the wall inside the bore at LOW friction, so «contact is forced on every µ» — the sentence the
+    # lining verdict leaned on — is now true of the LINER and only partly true of a film.
+    for r in regimes:
+        inside = [mu for mu, x in r["first_contact_mm_by_mu_bonded"].items() if x < channel_end]
+        depth = min(r["first_contact_mm_by_mu_bonded"].values()) - CHANNEL_START_MM
+        print(f"    ⚠️ {r['branch']:<24s} bears at {depth:+.1f} mm vs the mouth, on "
+              f"{len(inside)}/{len(MU_SWEEP)} of the swept µ"
+              f"{' — NOT on the whole sweep' if len(inside) < len(MU_SWEEP) else ''}")
 
     # ── 5. The WELD SEAM at the root — how bad may the JOINT be? (00_07 HW.34) ───────────────────
     # 🔴 The question §2 answers for the WIRE and never for the JOINT. Canon (01_01 §1.4 and the
     # factory protocol §3 step 1) sent the reader here for this state while nothing here held it.
     # 🔴 «Priced on the SUPPORTED span ONLY» stood here until 2026-09-12 and was FALSE — caught by
     # adversarial review, and the mechanism was this file's own: the conservatism term comes from
-    # `supported_span_check`, which measures first contact along `L_FREE_UNSUP`. So the declared
-    # exclusion was never executed, and the disputed 36 mm span feeds the seam bound through the
-    # back door. ⛔ Do not "fix" that by dropping the correction — it is real; fix it by making the
-    # DEPENDENCE explicit, which is what the protrusion sweep below does.
+    # `supported_span_check`, which measures first contact along `L_FREE_UNSUP`. ⛔ That coupling is
+    # REAL and is not removed — the seam bound rides the protrusion by construction, so the honest
+    # fix was the INPUT, not the declaration: the protrusion is derived from the CEM stack now
+    # (23 mm), where it used to be a literal 36 that decomposed itself in a comment.
     #
-    # ⛔ AND THE HEADLINE FLIPS ON IT. `L_FREE_UNSUP = 36` is under an open correction (00_07 HW.34:
-    # the CEM stack gives 23 mm and the pad is the rod's own end face). At 23 the span optimism is
-    # not 8.5 % but ~40 %, and the binding alloy stops clearing the SF-2 line against our own
-    # as-printed marker. A single number would therefore assert a configuration that is itself in
-    # dispute, so the model emits BOTH and derives the flip rather than letting prose carry it.
+    # ⛔ AND THE HEADLINE REVERSED WHEN IT LANDED (2026-09-12). At 36 mm the span optimism read
+    # 8.5 % and our own as-printed marker cleared the SF-2 line; at the true 23 mm the optimism is
+    # ~40 %, the stress is higher, and the binding alloy NO LONGER clears it. The bound did not get
+    # worse — it was never that good, and the model was reading a span the part does not have.
     banner("Weld seam at the root — break-even knockdown (the JOINT, not the wire)")
     mu_worst = max(MU_SWEEP)
     shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
@@ -696,36 +741,13 @@ def main() -> int:
     print("     (concentrates it — AGGRAVATES) · weld residual TENSION, which is a MEAN stress and")
     print("     this file has no Goodman/Haigh correction anywhere, so even k = 1 would understate.")
 
-    # ── 5b. The verdict's dependence on the DISPUTED protrusion — derived, never asserted ─────────
-    # ⛔ The number above is not quotable on its own: it rides `L_FREE_UNSUP`, and that constant is
-    # under an open correction (00_07 HW.34 — the CEM stack gives 23 mm). Emitting both spans turns
-    # «the bound may flip» from a caveat into a measurement, and shows WHICH way.
-    binding_alloy = binding["alloy"]
-    se_binding = binding["endurance_MPa"]
-    protrusion_rows = []
-    for label, prot in (("shipped constant L_FREE_UNSUP", L_FREE_UNSUP),
-                        ("CEM-derived candidate (00_07 HW.34)", PROTRUSION_FROM_CEM_MM)):
-        infl = span_inflation_for(prot)
-        sig = bending_stress_MPa(mu_worst * F_POGO_N, L_FREE_SUP) * infl
-        k_inf = break_even_knockdown(se_binding / sig, INFINITE_LIFE_SF)
-        protrusion_rows.append({
-            "label": label, "protrusion_mm": prot,
-            "span_optimism_pct": round(100.0 * (infl - 1.0), 1),
-            "sigma_worst_corner_MPa": round(sig, 1),
-            "binding_k_at_infinite_life": round(k_inf, 3) if k_inf <= 1.0 else None,
-            "as_printed_marker_clears_sf2": bool(k_inf <= marker_k),
-            "margin_in_k": round(marker_k - k_inf, 3),
-        })
-    flips = len({r["as_printed_marker_clears_sf2"] for r in protrusion_rows}) > 1
-    print(f"\n  → Dependence on the DISPUTED protrusion ({binding_alloy} binds either way):")
-    for r in protrusion_rows:
-        print(f"      {r['label']:<38s} L={r['protrusion_mm']:>5.1f} mm → optimism {r['span_optimism_pct']:>5.1f} % · "
-              f"σ {r['sigma_worst_corner_MPa']:>5.1f} MPa · k {r['binding_k_at_infinite_life']} · "
-              f"{'CLEARS' if r['as_printed_marker_clears_sf2'] else 'DOES NOT CLEAR'} ({r['margin_in_k']:+.3f})")
-    print("    🔴 THE VERDICT FLIPS ON IT — so the seam bound is NOT quotable until the protrusion"
-          if flips else "    ✅ The verdict is the same at both spans — the bound is quotable as it stands")
-    print("    correction lands (00_07 HW.34); quote the pair, never the shipped-constant row alone."
-          if flips else "    (the protrusion correction changes the digits, not the answer).")
+    # ⛔ §5b stood here until 2026-09-12 and swept the seam bound over TWO protrusions, because the
+    # span it rides was a literal under open correction. The correction landed (the span is CEM-derived
+    # now), so the sweep priced a dispute that no longer exists and is gone with it. What survives is
+    # the DEPENDENCE, recorded in `span_provenance` below — the term is still measured along the
+    # protrusion, and that is a property of the mechanism, not of the bad constant.
+    print(f"\n  → Span: the optimism term is measured along the protrusion "
+          f"({L_FREE_UNSUP:.0f} mm, CEM-derived), so the bound moves with the axial stack.")
 
     weld_seam = {
         "question": "00_07 HW.34 — the ratified rod is a WELDED drawn wire, so a heat-affected zone "
@@ -741,7 +763,9 @@ def main() -> int:
                               "input and enters through the Validation Gate (00_06 §0), not through "
                               "this constant",
         "markers": [{"label": lbl, "k": k} for lbl, k in WELD_KNOCKDOWN_MARKERS],
-        "span": {"which": "supported (liner) ONLY", "nominal_sigma_MPa": round(sig_sup, 1),
+        "span": {"which": "supported (liner) span, inflated by an optimism term measured along the "
+                          "protrusion — NOT a supported-only figure, see span_provenance",
+                 "nominal_sigma_MPa": round(sig_sup, 1),
                  "worst_corner_sigma_MPa": round(sig_sup_worst, 1),
                  "worst_corner_mu": mu_worst,
                  "span_optimism_pct": round(100.0 * (span_inflation - 1.0), 1),
@@ -750,15 +774,19 @@ def main() -> int:
                                             "computed on it would price a configuration that does "
                                             "not exist (the error the 2026-09-11 verdict corrected)"},
         "per_alloy": seam_rows,
-        # 🔴 Read this BEFORE `binding_candidate`: the bound rides the disputed protrusion, and at
-        # the CEM-derived span the verdict against our own marker reverses. `verdict_flips_on_it`
-        # is DERIVED — when the protrusion correction lands it goes false on its own.
-        "protrusion_sensitivity": {"binding_alloy": binding_alloy,
-                                   "rows": protrusion_rows,
-                                   "verdict_flips_on_it": bool(flips),
-                                   "note": "the conservatism term (span optimism) is measured along "
-                                           "the protrusion, so the seam bound inherits a constant "
-                                           "that 00_07 HW.34 records as wrong; quote the PAIR"},
+        # 🔴 Read this BEFORE `binding_candidate`: the bound rides the PROTRUSION through the span
+        # optimism term, so the span's provenance is part of the result, not metadata.
+        "span_provenance": {
+            "protrusion_mm": L_FREE_UNSUP,
+            "derived_from": "cem/zone2_sleeve.length_mm - Cem.cs Zone1InsertionMm (HW.8 placeholder, "
+                            "no JSON field) - cem/cathode_flange.shank_length_mm, + shank + "
+                            "flange_thickness_mm",
+            "was_literal_until": "2026-09-12",
+            "note": "a literal 36 mm stood here and decomposed itself in a comment whose third term "
+                    "cited nothing; the CEM stack gives 23. The reversal it caused is recorded in "
+                    "00_07 HW.34 — at 36 our own as-printed marker cleared the SF-2 line, at 23 it "
+                    "does not. The bound did not worsen; it was reading a span the part does not have",
+        },
         "binding_candidate": {"alloy": binding["alloy"],
                               "sf_wire_worst_corner": binding["sf_wire_supported_worst_corner"],
                               "k_at_infinite_life": k_binding,
@@ -792,10 +820,15 @@ def main() -> int:
     print(f"     unsupported infinite life is reached by {n_inf}/{len(alloy_rows)} "
           f"({', '.join(shipped['unsupported_infinite_life']) or 'none'}); still short of the SF-2 line: "
           f"{', '.join(marginal) or 'none'}; predicted failure: {', '.join(failing) or 'none'}.")
+    # 🔴 The `clears_all` branch used to end "the liner's remaining ground is insulation alone", and
+    # that CONTRADICTED the ratified verdict: ⚖️ 2026-09-11 already retired the fatigue ground and
+    # replaced it with WEAR. The line was written before that verdict and survived it.
     print("     Dropping the as-printed derate lifted the soft alloys OUT of predicted failure; whether"
-          if not clears_all else "     Every alloy clears it bare, so the support motive is spent;")
+          if not clears_all else "     Every alloy clears it bare, so the FATIGUE motive for support is "
+                                 "spent — which is NOT news:")
     print("     it also carried them over the infinite-life line is what the two lists above answer."
-          if not clears_all else "     the liner's remaining ground is insulation alone.")
+          if not clears_all else "     ⚖️ 2026-09-11 retired that ground already. The ratified ground is "
+                                 "WEAR, and NOTHING here computes it.")
     # ⛔ DERIVED from §5, never typed. The old text here said the seam "must be judged on its own"
     # and left it at that; §5 now judges it the only way an unmeasured input can be judged — by
     # bounding it. What has NOT changed: the ×2 still belongs to the WIRE.
@@ -839,12 +872,12 @@ def main() -> int:
                         "length_mm": CHANNEL_LEN_MM,
                         "drilled_depth_mm": BORE_DEPTH_MM,
                         "aspect_ratio_l_over_d": round(BORE_DEPTH_MM / D_CHANNEL_MM, 2),
-                        "aspect_note": "L/D of the BLIND bore as machined (depth 17 = shank 14 + flange 3, "
+                        "aspect_note": "L/D of the bore as machined (depth = shank + flange, read from "
                                        "cem/cathode_flange.json). It decides which operation the vendor "
                                        "needs and is the ratio quoted in canon prose - derived here so it "
                                        "moves with the diameter instead of being retyped",
-                        "note": "length read conservatively (model's own '~14' rather than the CEM's "
-                                "shank 14 + flange 3 = 17) — a shorter bore makes contact HARDER to reach"},
+                        "note": "length read conservatively — the SHANK run only, not the flange disc above it; a shorter bore makes contact HARDER to reach, so the contact finding is not an artefact of "
+                                "the span"},
             "branches": regimes,
             "play_reduction": play_reduction,
             "axial_thermal": axial_thermal,

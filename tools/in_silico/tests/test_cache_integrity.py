@@ -325,6 +325,11 @@ def test_bus_mechanical_liner_axial_thermal():
     assert set(by_dt) == {"20", "40", "60", "80"}, "the ΔT sweep lost or gained a point"
 
 
+# The insulation branch the ⚖️ 2026-09-11 verdict ratified. Named once: the assertions below
+# are about THAT branch, not about whichever row happens to be first.
+SHIPPED_INSULATION = "PEEK liner 0.15 mm"
+
+
 def test_bus_mechanical_weld_seam():
     """Script 55 (HW.34): the seam at the root is BOUNDED, never assumed.
 
@@ -347,30 +352,27 @@ def test_bus_mechanical_weld_seam():
     assert fm["weld_seam_geometry_modelled"] is False
     assert fm["weld_seam_sensitivity_modelled"] is True
     assert fm["mean_stress_correction_modelled"] is False
-    # 2. Priced on the span that exists. The free-cantilever column describes no shipped branch.
-    assert d["clearance_regime"]["free_cantilever_sf_describes_these"] == []
+    # 2. Priced on the span that exists. ⛔ This used to assert the list is EMPTY, and the protrusion
+    #    correction (2026-09-12) made that false WITHOUT touching the verdict: at the true 23 mm span
+    #    the rod is stiffer, so the two REJECTED conformal branches stop reaching the wall and enter
+    #    that list. What the verdict rests on is narrower and is what is pinned — the SHIPPED branch
+    #    still bears, i.e. its free-cantilever SF still describes nothing.
+    assert SHIPPED_INSULATION not in d["clearance_regime"]["free_cantilever_sf_describes_these"]
+    assert SHIPPED_INSULATION in d["clearance_regime"]["gap_limited_branches"]
     assert "supported" in seam["span"]["which"]
     assert seam["span"]["worst_corner_sigma_MPa"] > seam["span"]["nominal_sigma_MPa"]
-    # 3. The dispute the bound rides. ⛔ Five assertions stood here until 2026-09-12 and adversarial
-    #    review proved every one of them an IDENTITY re-executed on the producer's own output
-    #    (`k = line/sf` then `k*sf == line`; `min()` re-run to confirm `min()`), i.e. green on any
-    #    data whatsoever. They are gone rather than reworded: a test that cannot fail is worse than
-    #    no test, because it is counted. What replaces them can fail on data — the two protrusion
-    #    rows must stay ORDERED, and the CEM-derived one must stay the harsher, which is the whole
-    #    reason the headline is not quotable alone.
-    sens = seam["protrusion_sensitivity"]
-    shipped_row, cem_row = sens["rows"]
-    assert shipped_row["protrusion_mm"] > cem_row["protrusion_mm"], "the rows swapped order"
-    assert cem_row["span_optimism_pct"] > shipped_row["span_optimism_pct"]
-    assert cem_row["sigma_worst_corner_MPa"] > shipped_row["sigma_worst_corner_MPa"]
-    assert cem_row["binding_k_at_infinite_life"] > shipped_row["binding_k_at_infinite_life"]
-    # the flip flag must be DERIVED from the two rows, never typed
-    assert sens["verdict_flips_on_it"] == (
-        shipped_row["as_printed_marker_clears_sf2"] != cem_row["as_printed_marker_clears_sf2"])
-    # 4. The binding candidate must be a real alloy of the table, and the sensitivity must be about
-    #    that same alloy — a mismatch means the two blocks drifted apart.
+    # 3. The SPAN the bound rides. A `protrusion_sensitivity` block stood here and swept two spans,
+    #    because one of them was a literal under open correction; the correction landed 2026-09-12
+    #    and the sweep went with it. What must not drift is the span's PROVENANCE: the seam bound
+    #    inherits the protrusion through the optimism term, so a block quoting a protrusion that no
+    #    longer matches the geometry block is the failure this pins.
+    prov = seam["span_provenance"]
+    assert prov["protrusion_mm"] == d["geometry_mm"]["free_len_unsupported"], \
+        "the seam block and the geometry block disagree about the protrusion"
+    assert "cem/" in prov["derived_from"], "the span stopped being CEM-derived"
+    assert seam["span"]["span_optimism_pct"] > 0.0
+    # 4. The binding candidate must be a real alloy of the table.
     assert seam["binding_candidate"]["alloy"] in {r["alloy"] for r in seam["per_alloy"]}
-    assert sens["binding_alloy"] == seam["binding_candidate"]["alloy"]
     # 5. Both markers are OUR OWN numbers, so they must still match the model they came from.
     markers = {m["label"]: m["k"] for m in seam["markers"]}
     assert fm["as_printed_derate"] in markers.values()
