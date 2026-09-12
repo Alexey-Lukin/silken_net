@@ -61,7 +61,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import ALLOY_PROPERTIES, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
+from lib.constants import ALLOY_BASELINE, ALLOY_PROPERTIES, ALPHA_PEEK_1K, CACHE_DIR, D_BUS_ROD_MM, REPO_ROOT
 from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -470,6 +470,34 @@ def main() -> int:
               f"{play_reduction['factor']:.1f}× (DERIVED; the play is on the {chan_side[0]['play_side']} side "
               f"by verdict, so this is not the rod-side hundredfold the prose used to quote).")
 
+    # ── Differential AXIAL expansion of the liner — the term canon did not carry ──────────────────
+    # 🔴 01_01 §1.4 carries the RADIAL thermal term (~2.0 µm diametral over 40 K) and is silent on the
+    # axial one, which is an order of magnitude larger because it multiplies by the bore DEPTH rather
+    # than by a sub-millimetre diameter. It decides a question the radial term cannot touch: whether the
+    # liner may be captured at BOTH ends. Captured at both, a tube that wants 26 µm of extra length over
+    # a 40 K swing has nowhere to put it. ⛔ This says nothing about WHICH end to fix — that is a
+    # geometry verdict (00_07 HW.34); the model only prices the motion the verdict has to accommodate.
+    alpha_ti = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]
+    d_alpha = ALPHA_PEEK_1K - alpha_ti
+    axial_thermal = {
+        "liner_length_mm": BORE_DEPTH_MM,
+        "alpha_peek_1K": ALPHA_PEEK_1K,
+        "alpha_ti_1K": alpha_ti,
+        "alpha_ti_source": ALLOY_BASELINE,
+        "differential_axial_um_by_dT_K": {str(dt): round(d_alpha * BORE_DEPTH_MM * dt * 1000.0, 1)
+                                          for dt in (20, 40, 60, 80)},
+        "radial_diametral_um_at_40K": round(d_alpha * (D_BUS + 2.0 * 0.150) * 40.0 * 1000.0, 1),
+        "note": "the radial term is the one canon carries; the axial term is larger by the ratio of the "
+                "bore DEPTH to the liner OD, and it is what forbids capturing the tube at both ends. "
+                "Both are differential against Ti, so they vanish if the counterpart is also PEEK",
+    }
+    ax40 = axial_thermal["differential_axial_um_by_dT_K"]["40"]
+    print(f"\n  → Liner axial growth vs Ti over {BORE_DEPTH_MM:.0f} mm: {ax40:.0f} µm at 40 K "
+          f"({axial_thermal['differential_axial_um_by_dT_K']['80']:.0f} µm at 80 K) — "
+          f"{ax40 / axial_thermal['radial_diametral_um_at_40K']:.0f}× the radial term canon carries.")
+    print("    ⛔ Capturing the tube at BOTH ends therefore is not an option; which end is fixed is a")
+    print("    geometry verdict, not an output of this model (00_07 HW.34).")
+
     # ── Is L_FREE_SUP = 6 mm actually grounded? The §2 table ASSUMES the liner turns the span into the
     # PEEK gap alone. That is an assumption about WHERE contact happens, and §4 just computed it — so
     # check the two against each other instead of asserting the first. Worst case = the stiffest member
@@ -712,6 +740,7 @@ def main() -> int:
                                 "shank 14 + flange 3 = 17) — a shorter bore makes contact HARDER to reach"},
             "branches": regimes,
             "play_reduction": play_reduction,
+            "axial_thermal": axial_thermal,
             "supported_span_check": supported_span_check,
             "gap_limited_branches": gap_limited,
             "free_cantilever_sf_describes_these": [r["branch"] for r in regimes

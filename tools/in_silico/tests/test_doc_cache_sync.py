@@ -74,6 +74,7 @@ SUMMARY = "docs/protocols/ebfc/in_silico/SUMMARY.md"
 L3 = "docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md"
 CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"  # thermal-penetration cache (§3.5) — a non-SUMMARY doc-target
 BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland geometry (§3.5), owner = script 52
+COAXIAL = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"  # anchor geometry; §1.4 bus + liner, owner = script 55
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -394,6 +395,14 @@ CHECKS = [
     # joint may be, the other says how little room is left against our own marker. Both move the
     # moment ANY input of that model moves (µ sweep, span check, yield table, derates), and the
     # prose around them would stay internally consistent on the old value.
+    # ⛔ The axial thermal term entered canon prose the same hour it was derived, which is exactly the
+    # shape this file exists against: a number with no owner reads identically to one with an owner.
+    (
+        "liner differential AXIAL growth at 40 K → bus_mechanical.json §axial_thermal",
+        COAXIAL, rf"дає \*\*{N} мкм на 40 К\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["axial_thermal"]["differential_axial_um_by_dT_K"]["40"], 0.5,
+    ),
     (
         "weld-seam break-even k for the binding alloy → bus_mechanical.json §weld_seam",
         SUMMARY, rf"the joint may lose \*\*`k` = {N}\*\* of the wire",

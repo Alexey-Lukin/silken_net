@@ -292,6 +292,20 @@
       "factor": 6.8,
       "note": "the liner still shrinks the free travel by this factor, but it is NOT the hundredfold the canon prose carried: that figure came from a rod-side allocation (tube loose on the wire) which the 2026-09-11 direction verdict did not choose"
     },
+    "axial_thermal": {
+      "liner_length_mm": 17.0,
+      "alpha_peek_1K": 4.7e-05,
+      "alpha_ti_1K": 8.6e-06,
+      "alpha_ti_source": "Ti-6Al-4V",
+      "differential_axial_um_by_dT_K": {
+        "20": 13.1,
+        "40": 26.1,
+        "60": 39.2,
+        "80": 52.2
+      },
+      "radial_diametral_um_at_40K": 2.0,
+      "note": "the radial term is the one canon carries; the axial term is larger by the ratio of the bore DEPTH to the liner OD, and it is what forbids capturing the tube at both ends. Both are differential against Ti, so they vanish if the counterpart is also PEEK"
+    },
     "supported_span_check": {
       "assumed_free_span_mm": 6.0,
       "deepest_first_contact_mm": 6.51,

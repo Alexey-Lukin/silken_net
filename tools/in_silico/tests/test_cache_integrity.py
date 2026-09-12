@@ -302,6 +302,25 @@ def test_thermal_install_field():
         "the constructive half of the finding — a hold that coagulates and spares — is gone"
 
 
+def test_bus_mechanical_liner_axial_thermal():
+    """Script 55 (HW.34): the liner's AXIAL thermal term must stay the larger of the two.
+
+    Canon carried the radial term and was silent on the axial one; the whole point of deriving it is
+    that it is larger by the ratio of bore DEPTH to liner OD, which is what forbids capturing the tube
+    at both ends. If a geometry change ever inverts that ratio, the sentence canon now carries stops
+    being true and nothing else would notice.
+    """
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    ax = json.loads(path.read_text())["clearance_regime"]["axial_thermal"]
+    by_dt = ax["differential_axial_um_by_dT_K"]
+    assert ax["alpha_peek_1K"] > ax["alpha_ti_1K"], "PEEK must be the faster-expanding half"
+    assert by_dt["40"] > ax["radial_diametral_um_at_40K"], "the axial term is the load-bearing one"
+    # linear in ΔT — a model that stopped being linear here changed physics, not parameters
+    assert abs(by_dt["80"] - 2.0 * by_dt["40"]) < 0.2
+
+
 def test_bus_mechanical_weld_seam():
     """Script 55 (HW.34): the seam at the root is BOUNDED, never assumed.
 
