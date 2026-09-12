@@ -26,7 +26,11 @@ internal sealed record GeometryMetrics
 
     // v2 graded-anchor measurements (null for non-anchor parts):
     public double[]? RadialPorosityByShell { get; init; }   // core→rim; ~flat = constant SKU, monotone = graded SKU
-    public double? FinestPeriodMm { get; init; }            // smallest cell period across radius (the rim); wall ≈ 0.1× this — the DMLS-floor proxy (exact wall = µCT, 01_01 §5.6)
+    // Smallest cell period across the radius (the rim) — the DMLS-floor proxy. ⚠ The factor from
+    // period to printed feature size is TOPOLOGY-dependent, and the `0.1×` that stood here is the
+    // SHEET one: measured 2026-09-12 it is 0.12·period on sheet and 0.36·period on network, which
+    // is the branch every shipped SKU but `stepped` is on (01_01 §5.5). Exact wall = µCT, 01_01 §5.6.
+    public double? FinestPeriodMm { get; init; }
 
     // ARCH.25 two-phase connectivity + specific-surface (null for non-anchor parts). See Connectivity.cs
     // for the canon mapping (open-pore↔Archimedes, percolation↔EAAE flow-through, solid-disc↔AM islands).
