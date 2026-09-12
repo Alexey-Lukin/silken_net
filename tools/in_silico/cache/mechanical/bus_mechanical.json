@@ -389,9 +389,9 @@
         }
       ],
       "liner_start": {
-        "earliest_computed_contact_mm_from_root": 5.03,
+        "earliest_computed_contact_mm_from_root": 5.21,
         "mouth_mm": 6.0,
-        "min_protrusion_into_gap_mm": 0.97,
+        "min_protrusion_into_gap_mm": 0.79,
         "why": "below this the bore edge arrives at the tube's END FACE (ring on ring) instead of its cylindrical flank; the materials are the same either way (play is channel-side, so the tube's outer surface is what meets the bore), the FEATURE is not",
         "not_modelled": "the contact stress itself \u2014 no notch factor, no contact model, and no wear model exists anywhere in this tree (00_07 HW.34)"
       },
@@ -560,14 +560,14 @@
     "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon states no interference for that pair exists anywhere (01_01 1.4). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
     "pair_mm": {
       "wire_dia": 1.0,
-      "liner_bore_nominal": 1.0,
+      "liner_bore_assumed": 1.0,
       "liner_wall": 0.15,
       "liner_od_nominal": 1.3,
       "liner_length": 18.0
     },
-    "nominal_interference_um": 0.0,
-    "nominal_fit_is_zero_interference": true,
-    "nominal_finding": "the specified nominals (rod O1.0, tube bore O1.00) are a LINE-TO-LINE fit, so whether the tube is tight is decided by which way the two tolerances fall - half the population comes out with clearance. Same shape as the F3 gate's `<=`: true about the arithmetic, false about the assembly. Landing inside the window needs a NOMINAL interference, which is a verdict (00_07 HW.34), not a tolerance",
+    "bore_nominal_specified_mm": null,
+    "bore_nominal_is_assumed": true,
+    "nominal_finding": "the tube's bore nominal is SPECIFIED NOWHERE. Canon freezes the WALL (0.15) and states that the extruded-tube supplier holds ID and OD, i.e. the bought part is dimensioned by a quantity its process does not control; 'ID 1.00' lives only in an OPEN RFQ leg, never on a drawing. So the ratified 'tight on the wire' is not a tolerance outcome yet - it is whatever the vendor's process centres on, and at the assumed bore = rod diameter it is a line-to-line fit where half the population comes out with clearance. Landing inside the window needs a SPECIFIED nominal interference - a verdict (00_07 HW.34), not a tolerance. CORRECTED 2026-09-12: this key used to assert the nominals as a SPEC and compared D_BUS with itself, so the flag was identically true and could never falsify",
     "thermal": {
       "t_ref_c": 20.0,
       "t_min_c": -30.0,
@@ -706,6 +706,7 @@
       ],
       "locked_over_whole_window": false,
       "locked_below_ceiling_on_every_mu": true,
+      "not_modelled": "the thermal SIGN coupling, and it bites at the floor: the floor is DEFINED as the interference that just survives +40 C, so AT the floor at the hot extreme the interference is 0 and so is the grip - for every mu. The grip here is priced from P_c at the 20 C reference while loading a 40-80 K excursion, so `floor_is_locked` describes the reference state, never the end of the excursion that removes it. Anywhere above the floor the coupling is second-order; at the floor it is the whole answer (adversarial review 2026-09-12)",
       "consequence": "above a fraction of a micrometre the WIRE is the second capture, so the differential axial stress is incurred whichever end is mechanically fixed. The ratified ground for one-end capture (20 yr creep under sustained compression) therefore does not discriminate except at the window FLOOR, where the tube slips and relieves instead - and nothing specifies which of the two ships (00_07 HW.34)"
     },
     "not_modelled": {

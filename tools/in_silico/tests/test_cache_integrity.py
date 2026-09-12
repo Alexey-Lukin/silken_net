@@ -362,11 +362,15 @@ def test_bus_mechanical_interference_window():
     assert all(r["outer_surface_still_free"] for r in rows), \
         "OD growth closed the channel play — free-outer Lamé no longer describes this pair"
     assert all(r["channel_radial_play_um"] > 0.0 for r in rows)
-    # 4. The nominal finding is the headline and it is a BOOLEAN, so it cannot rot into prose: the
-    #    specified fit is line-to-line, which is why landing in the window is a verdict, not a
-    #    tolerance. If a nominal interference is ever ratified this flips, and the sentence canon
-    #    carries about «half the population comes out with clearance» must go with it.
-    assert iw["nominal_fit_is_zero_interference"] is True
+    # 4. 🔴 The headline — and this REPLACED a tautology (adversarial review 2026-09-12). It used to
+    #    read `nominal_fit_is_zero_interference is True`, computed as `abs(x - x) < 1e-9` from a
+    #    constant defined AS the rod diameter: identically true, unfalsifiable from the model side,
+    #    i.e. the repo's own «приклад, що не може ВПАСТИ». What is checkable is the honesty of the
+    #    INPUT: the tube's bore nominal is specified NOWHERE (canon freezes the wall and says the
+    #    supplier holds ID/OD), so the sentinel must stay absent and the window must declare itself
+    #    computed at an assumption. Typing a bore nominal in flips both and reds this.
+    assert iw["bore_nominal_specified_mm"] is None, "a bore nominal was typed in — it is NOT SPECIFIED"
+    assert iw["bore_nominal_is_assumed"] is True
     assert iw["required_nominal_offset_diametral_um"] > 0.0
 
 

@@ -271,6 +271,18 @@ jobs:
         # no assert anywhere). §01a vilize 2026-07-14.
         run: ruby scripts/cem_canon_sync.rb
 
+      - name: CEM provenance guard (HW.48 — every cem/*.json number declares its ground)
+        # Pure Ruby stdlib (json). Sibling of the geometry guard above and the other half of
+        # one axis: that one asks «does the number match its home», this one «is a home even
+        # NAMED». ⚖️ Flipped advisory → HARD 2026-09-12, when the classification became
+        # complete — the script's own header recorded that precondition, because a gate over
+        # an unmeasured set is either empty or permanently red, and permanently red teaches
+        # the reader to skim. ⛔ Declared ceiling: it judges the PRESENCE of a ground (class,
+        # non-empty `from:`, a canon address that resolves), never its TRUTH — exactly the
+        # miss that cost `rf_clearance_min_mm`, which cited a real section whose row said
+        # something else.
+        run: ruby scripts/cem_provenance.rb
+
       - name: Voxel-FE cache↔canon guard (HW.33/HW.51 — 01_01 §5.2 ↔ tools/cad/cache/fea)
         # Pure Ruby stdlib (json). The FE numbers landed with NO machine tie to their cache:
         # test_doc_cache_sync hard-codes tools/in_silico/cache, one directory over. Within

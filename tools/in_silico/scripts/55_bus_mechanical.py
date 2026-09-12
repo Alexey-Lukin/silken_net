@@ -258,16 +258,29 @@ WELD_KNOCKDOWN_MARKERS = (("joint as bad as an as-printed surface", AS_PRINTED_D
 # ⚖️ 2026-09-11 ratified the DIRECTION of the assembly clearance: the play goes to the CHANNEL side,
 # «the tube is tight on the WIRE and the pair enters the bore as one body». Every stiffness bound,
 # every first-contact number and the whole wear axis rest on that sentence — and until this block
-# existed NOTHING in the tree carried the interference it asserts. Canon says so in as many words:
-# «натягу пари „трубка ↔ дріт“ у дереві НЕМАЄ ЖОДНОГО» (01_01 §1.4).
+# existed NOTHING in the tree carried the interference it asserts — canon said so in as many words
+# («натягу пари … у дереві НЕМАЄ ЖОДНОГО»), and ⛔ DO NOT grep for that sentence: the commit that
+# wrote this block is the one that replaced it with the derived window, so the citation would be a
+# quote of text it deleted. Provenance is `git log -S` on 01_01 §1.4, not a live phrase.
 #
-# 🔴 AND THE NOMINALS SAY THE OPPOSITE OF THE VERDICT. The rod is Ø1.0 and canon names the tube by
-#    its bore — «допуск OD екструдованої PEEK-трубки на ID 1.00» — so the specified fit is ZERO
-#    nominal interference. Whether the tube is tight is then decided by WHICH WAY THE TOLERANCES
-#    FALL, not by the drawing: half the population comes out with clearance. Same shape as the F3
-#    gate's `≤` (00_07 HW.34, fixed 2026-09-11) — a true statement about the arithmetic and a false
-#    one about the assembly.
-LINER_BORE_NOMINAL_MM = D_BUS      # canon names the tube «ID 1.00» on a Ø1.0 rod ⇒ zero nominal fit
+# 🔴 AND THE TUBE'S BORE NOMINAL IS SPECIFIED NOWHERE — the constant block below carries the
+#    evidence and the correction. At the assumption the window is computed under (bore = rod Ø)
+#    the fit is line-to-line, i.e. half the population comes out with clearance — the same shape
+#    as the F3 gate's `≤` (00_07 HW.34, fixed 2026-09-11): a true statement about the arithmetic
+#    and a false one about the assembly. ⛔ But «line-to-line» is that ASSUMPTION's consequence,
+#    never a drawing's: nobody has specified the bore, so today the vendor's process centres it.
+# 🔴 THE TUBE'S BORE NOMINAL IS SPECIFIED NOWHERE, and saying «canon names it ID 1.00» was wrong —
+#    caught by adversarial review 2026-09-12, hours after this block shipped. Canon `01_01 §1.4`
+#    says the OPPOSITE four sentences from the paragraph this block fed: the frozen dim is the
+#    WALL (0.15), «а постачальник екструдованої PEEK-трубки продає й тримає ID та OD», and it tells
+#    the reader to re-express the dim as an ID/OD pair before moving it. «ID 1.00» appears only in
+#    an OPEN RFQ leg (`00_07` HW.34) and the procurement registry — a question, never a drawing.
+# ⛔ So the honest state is WORSE than «line-to-line», and the worse version is the useful one:
+#    nobody has specified the bore, therefore the fit is whatever the vendor's process happens to
+#    centre on. The block computes the window under a DECLARED assumption (bore = rod Ø, the only
+#    reading the tree supports) and says so in the cache instead of asserting a spec.
+LINER_BORE_SPECIFIED_MM = None     # NOT SPECIFIED — no canon row, no drawing (00_07 HW.34 RFQ leg)
+LINER_BORE_ASSUMED_MM = D_BUS      # the assumption the window is computed at, named as one
 # ⛔ NOT MEASURED, and kept visibly absent for the same reason as WELD_KNOCKDOWN_MEASURED: there is no
 #    canon row, no vendor answer and no measurement for either band, so a plausible number typed here
 #    would be the FALLBACK species of fabrication (00_01 §1.1). What the model computes instead is the
@@ -405,7 +418,7 @@ def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
 #    (b) FREE OUTER. The tube's OD is free only while it does not touch the Ø1.35 wall. That is not
 #        assumed — `liner_od_growth_m` prices the growth and §6 checks the remaining play stays
 #        positive across the whole band. If it ever did not, this whole model would be the wrong one.
-LINER_BORE_M = (LINER_BORE_NOMINAL_MM / 2.0) * MM_M
+LINER_BORE_M = ((LINER_BORE_SPECIFIED_MM or LINER_BORE_ASSUMED_MM) / 2.0) * MM_M
 LINER_OD_M = LINER_BORE_M + LINER_WALL_MM * MM_M
 
 
@@ -745,7 +758,16 @@ def main() -> int:
     #    Started earlier, the edge meets the tube's cylindrical flank instead. Derived below is the
     #    protrusion at which that is true for EVERY swept µ, i.e. the earliest computed contact.
     _chan = [r for r in regimes if r["play_side"] == "channel"]
-    earliest = min(min(r["first_contact_mm_by_mu"].values()) for r in _chan) if _chan else None
+    # 🔴 The BONDED column, and the correction matters more than the number: this used to read
+    #    `first_contact_mm_by_mu` (the BARE rod), while §2 of this same file declares the composite
+    #    to be the member for the channel-side branch — «the tube is tight on the WIRE and the pair
+    #    enters the bore as ONE body». So the ratified protrusion cited the configuration the
+    #    direction verdict EXCLUDES, which is the exact row-mix this commit congratulated itself
+    #    for finding in the play table (found by adversarial review 2026-09-12). The neighbour
+    #    `supported_span_check` already used the bonded column, so one section picked bare and the
+    #    next picked bonded, unexplained. ⚖️ The ratified ≥ 1.0 mm STANDS and is now conservative
+    #    by a larger margin, not by accident.
+    earliest = min(min(r["first_contact_mm_by_mu_bonded"].values()) for r in _chan) if _chan else None
     liner_start = None
     if earliest is not None:
         liner_start = {
@@ -1028,10 +1050,11 @@ def main() -> int:
     # zero, never that it be enough for anything.
     floor = -g_hot
     window = ceiling - floor
-    print(f"  Pair: wire Ø{D_BUS:.2f} in a tube bore Ø{LINER_BORE_NOMINAL_MM:.2f}, wall "
+    print(f"  Pair: wire Ø{D_BUS:.2f} in a tube bore Ø{2 * LINER_BORE_M / MM_M:.2f} (ASSUMED — not specified anywhere), wall "
           f"{LINER_WALL_MM:.3f} ⇒ OD Ø{2 * LINER_OD_M / MM_M:.2f} (CEM-derived).")
-    print(f"  🔴 Nominal interference = {2 * (D_BUS - LINER_BORE_NOMINAL_MM) / 2 * 1000:.0f} µm — the "
-          f"specified fit is ZERO, so «tight on the wire» is a TOLERANCE OUTCOME, not a dimension.")
+    print("  🔴 The tube's bore nominal is NOT SPECIFIED anywhere — canon freezes the WALL and says the")
+    print("     supplier holds ID/OD. So «tight on the wire» is not even a tolerance outcome yet: it is")
+    print("     whatever the vendor's process centres on. The window below assumes bore = rod Ø.")
     print(f"  Thermal on THIS interface (PEEK outside ⇒ cold grips): {g_cold * 1e6:+.2f} µm radial at "
           f"{T_FOREST_MIN_C:.0f} °C, {g_hot * 1e6:+.2f} µm at {T_FOREST_MAX_C:.0f} °C (ref {t_ref:.0f} °C).")
     print(f"  σ per µm of radial interference: P_c {per_um['P_c'] * 1e-12:.2f} · σ_t "
@@ -1107,17 +1130,23 @@ def main() -> int:
                     "wire; canon states no interference for that pair exists anywhere (01_01 1.4). "
                     "This block derives the window the geometry allows, so a vendor tolerance becomes "
                     "judgeable instead of being read into a blank",
-        "pair_mm": {"wire_dia": D_BUS, "liner_bore_nominal": LINER_BORE_NOMINAL_MM,
+        "pair_mm": {"wire_dia": D_BUS, "liner_bore_assumed": LINER_BORE_ASSUMED_MM,
                     "liner_wall": LINER_WALL_MM, "liner_od_nominal": round(2 * LINER_OD_M / MM_M, 3),
                     "liner_length": LINER_LENGTH_MM},
-        "nominal_interference_um": round((D_BUS - LINER_BORE_NOMINAL_MM) / 2.0 * 1000.0, 3),
-        "nominal_fit_is_zero_interference": bool(abs(D_BUS - LINER_BORE_NOMINAL_MM) < 1e-9),
-        "nominal_finding": "the specified nominals (rod O1.0, tube bore O1.00) are a LINE-TO-LINE "
-                           "fit, so whether the tube is tight is decided by which way the two "
-                           "tolerances fall - half the population comes out with clearance. Same "
-                           "shape as the F3 gate's `<=`: true about the arithmetic, false about the "
-                           "assembly. Landing inside the window needs a NOMINAL interference, which "
-                           "is a verdict (00_07 HW.34), not a tolerance",
+        "bore_nominal_specified_mm": LINER_BORE_SPECIFIED_MM,
+        "bore_nominal_is_assumed": bool(LINER_BORE_SPECIFIED_MM is None),
+        "nominal_finding": "the tube's bore nominal is SPECIFIED NOWHERE. Canon freezes the WALL "
+                           "(0.15) and states that the extruded-tube supplier holds ID and OD, i.e. "
+                           "the bought part is dimensioned by a quantity its process does not "
+                           "control; 'ID 1.00' lives only in an OPEN RFQ leg, never on a drawing. "
+                           "So the ratified 'tight on the wire' is not a tolerance outcome yet - it "
+                           "is whatever the vendor's process centres on, and at the assumed "
+                           "bore = rod diameter it is a line-to-line fit where half the population "
+                           "comes out with clearance. Landing inside the window needs a SPECIFIED "
+                           "nominal interference - a verdict (00_07 HW.34), not a tolerance. "
+                           "CORRECTED 2026-09-12: this key used to assert the nominals as a SPEC "
+                           "and compared D_BUS with itself, so the flag was identically true and "
+                           "could never falsify",
         "thermal": {"t_ref_c": t_ref, "t_min_c": T_FOREST_MIN_C, "t_max_c": T_FOREST_MAX_C,
                     "radial_gain_at_t_min_um": round(g_cold * 1e6, 3),
                     "radial_loss_at_t_max_um": round(g_hot * 1e6, 3),
@@ -1159,6 +1188,16 @@ def main() -> int:
                                 "rows": lock_rows,
                                 "locked_over_whole_window": bool(locked_everywhere),
                                 "locked_below_ceiling_on_every_mu": bool(locked_above_floor),
+                                "not_modelled": "the thermal SIGN coupling, and it bites at the floor: "
+                                                "the floor is DEFINED as the interference that just "
+                                                "survives +40 C, so AT the floor at the hot extreme the "
+                                                "interference is 0 and so is the grip - for every mu. "
+                                                "The grip here is priced from P_c at the 20 C reference "
+                                                "while loading a 40-80 K excursion, so `floor_is_locked` "
+                                                "describes the reference state, never the end of the "
+                                                "excursion that removes it. Anywhere above the floor the "
+                                                "coupling is second-order; at the floor it is the whole "
+                                                "answer (adversarial review 2026-09-12)",
                                 "consequence": "above a fraction of a micrometre the WIRE is the "
                                                "second capture, so the differential axial stress is "
                                                "incurred whichever end is mechanically fixed. The "
@@ -1228,8 +1267,8 @@ def main() -> int:
           f"{_iw['floor']['radial_um']:.2f}…{_iw['ceiling']['radial_um']:.2f} µm radial,")
     print(f"     i.e. {_iw['window_diametral_um']:.1f} µm diametral for BOTH parts together. "
           f"⛔ But the specified nominals are")
-    print(f"     {'LINE-TO-LINE' if _iw['nominal_fit_is_zero_interference'] else 'an interference fit'}"
-          f", so «tight on the wire» is decided by tolerance direction, not by the drawing —")
+    print(f"     {'NOT SPECIFIED AT ALL' if _iw['bore_nominal_is_assumed'] else 'specified'}"
+          f", so «tight on the wire» is whatever the vendor centres on, not a drawing —")
     print(f"     the nominal must move {_iw['required_nominal_offset_diametral_um']:.1f} µm "
           f"diametrally to land in the window (a ⚖️, not a tolerance).")
     print(f"     Friction locks the tube axially over the whole window except its floor "

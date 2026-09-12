@@ -40,7 +40,8 @@ module ClaudeProsePathRefs
   # виняток, чий предмет зник, сам є знахідкою (див. приклад нижче).
   EXEMPT = {
     "activestorage/engine.rb" => "файл ГЕМА (Rails), не наше дерево — цитується як місце дефолту",
-    "radio_driver/radio.h" => "vendored Semtech API; його база (`firmware/extern/subghz-phy`) названа в ТІЙ САМІЙ комірці таблиці, тож форма однозначна для читача"
+    "radio_driver/radio.h" => "vendored Semtech API; його база (`firmware/extern/subghz-phy`) названа в ТІЙ САМІЙ комірці таблиці, тож форма однозначна для читача",
+    "Source/PicoGKVdbVoxels.h" => "файл UPSTREAM-репо `leap71/PicoGKRuntime`, не наше дерево — цитується як МІСЦЕ дефекту ядра (HW.50, архів); репо назване в тому самому реченні разом із номером issue, тож форма однозначна"
   }.freeze
 
   # 🔴 Гейт міряє ФАЙЛОВУ СИСТЕМУ (`.exist?`), а не git-дерево — тож усе, що є на
