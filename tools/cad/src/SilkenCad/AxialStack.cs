@@ -53,7 +53,7 @@ internal static class AxialStack
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 
     // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
-    // rod Ø + 2·liner ≤ flange channel Ø. Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
+    // rod Ø + 2·liner < flange channel Ø (STRICT since 2026-09-11 — zero nominal clearance is not a pass). Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
     // old "anode bore ≥ flange bore" continuity check. Pure boolean finding (CEM-only → xUnit).
     //
     // ⛔ DECLARED CEILINGS — two, and both are the kind that stay green while the assembly does not go
