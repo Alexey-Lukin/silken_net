@@ -190,7 +190,7 @@ end
 # only by the FE solver's own pins (VoxelFeaTests), not by canon.
 FIT_ROWS = {
   "ґратка (куб 2 комірки)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.network.s%<n>d.json", label: "період/%<n>d" },
-  "деталь (кільцева зона Ø11×40)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" },
+  "деталь (кільцева зона Ø11×40)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" }
 }.freeze
 
 fit_rows_seen = 0
@@ -213,10 +213,16 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   # rounding boundary for a 3-decimal quote (1.1695 → "1.170" differs by 0.0005 in binary floating
   # point and reds a CORRECT transcription). Rounding the cache to the quoted decimals makes the
   # comparison exact and lets canon choose its own precision per row.
-  decimals = ->(q) { q.include?(".") ? q.split(".").last.length : 0 }
-  flag(failures, "fit C (#{specimen.strip}, /#{div})", c_cached.round(decimals[c_q]), c_q) if c_cached.round(decimals[c_q]) != c_q.to_f
-  flag(failures, "fit n (#{specimen.strip}, /#{div})", n_cached.round(decimals[n_q]), n_q) if n_cached.round(decimals[n_q]) != n_q.to_f
-  flag(failures, "fit R² (#{specimen.strip}, /#{div})", r2_cached.round(decimals[r2_q]), r2_q) if r2_cached.round(decimals[r2_q]) != r2_q.to_f
+  # ⊕ The comparison is on STRINGS, and that is not a style choice: a float equality after rounding is
+  # what `Lint/FloatComparison` warns about, and formatting both sides to the quoted precision removes
+  # the question instead of suppressing it.
+  at_quoted = lambda do |cached, quoted|
+    [ format("%.#{quoted.include?(".") ? quoted.split(".").last.length : 0}f", cached), quoted ]
+  end
+  { "C" => [ c_cached, c_q ], "n" => [ n_cached, n_q ], "R²" => [ r2_cached, r2_q ] }.each do |what, (cached, quoted)|
+    rendered, as_written = at_quoted.call(cached, quoted)
+    flag(failures, "fit #{what} (#{specimen.strip}, /#{div})", rendered, as_written) if rendered != as_written
+  end
 end
 
 EXPECTED_FIT_ROWS = 5
