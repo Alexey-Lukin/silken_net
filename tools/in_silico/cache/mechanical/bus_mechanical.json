@@ -556,6 +556,101 @@
       "seam_position": "the fusion line is assumed coincident with the fixed end; a socketed or filleted joint moves effective fixity"
     }
   },
+  "endurance_ratio_band": {
+    "question": "00_07 HW.34 \u2014 ENDURANCE_OVER_YIELD is a BAND written beside the constant since this file was born, and only its MIDPOINT ever entered the model. Every SF scales linearly with it, so a standing conclusion may be a statement about one point wearing the clothes of a statement about the band. This block sweeps it and reports INVARIANCE; it chooses no end",
+    "band": [
+      0.4,
+      0.45,
+      0.5
+    ],
+    "model_runs_at": 0.45,
+    "band_is_measured": false,
+    "band_provenance": "the ends are the ones the constant's own comment has carried from the first commit (wrought-Ti fatigue ratio ~0.4-0.5). They are NOT measured for our alloys and are NOT a distribution - a bracket",
+    "seam_corner": "priced at \u00a75's OWN corner (worst swept mu x span optimism), reused rather than re-derived, so the column is the same quantity as the weld_seam headline a reader will compare it against",
+    "rows": [
+      {
+        "endurance_over_yield": 0.4,
+        "unsupported_infinite_life": [
+          "Ti-15Zr",
+          "beta-Ti-13Nb-13Zr",
+          "Ti-6Al-4V",
+          "Ti-6Al-7Nb",
+          "CP-Ti-Gr4"
+        ],
+        "unsupported_marginal": [
+          "Ta"
+        ],
+        "unsupported_predicted_failure": [],
+        "unsupported_infinite_life_for_all": false,
+        "sf_unsupported_by_alloy": {
+          "Ti-15Zr": 5.41,
+          "beta-Ti-13Nb-13Zr": 5.12,
+          "Ti-6Al-4V": 5.01,
+          "Ti-6Al-7Nb": 4.84,
+          "CP-Ti-Gr4": 2.73,
+          "Ta": 1.96
+        },
+        "binding_alloy_unsupported": "Ta",
+        "binding_sf_unsupported": 1.96,
+        "seam_break_even_k_worst_corner": 0.626,
+        "seam_k_cleared_by_our_marker": false
+      },
+      {
+        "endurance_over_yield": 0.45,
+        "unsupported_infinite_life": [
+          "Ti-15Zr",
+          "beta-Ti-13Nb-13Zr",
+          "Ti-6Al-4V",
+          "Ti-6Al-7Nb",
+          "CP-Ti-Gr4",
+          "Ta"
+        ],
+        "unsupported_marginal": [],
+        "unsupported_predicted_failure": [],
+        "unsupported_infinite_life_for_all": true,
+        "sf_unsupported_by_alloy": {
+          "Ti-15Zr": 6.08,
+          "beta-Ti-13Nb-13Zr": 5.76,
+          "Ti-6Al-4V": 5.63,
+          "Ti-6Al-7Nb": 5.44,
+          "CP-Ti-Gr4": 3.07,
+          "Ta": 2.21
+        },
+        "binding_alloy_unsupported": "Ta",
+        "binding_sf_unsupported": 2.21,
+        "seam_break_even_k_worst_corner": 0.556,
+        "seam_k_cleared_by_our_marker": false
+      },
+      {
+        "endurance_over_yield": 0.5,
+        "unsupported_infinite_life": [
+          "Ti-15Zr",
+          "beta-Ti-13Nb-13Zr",
+          "Ti-6Al-4V",
+          "Ti-6Al-7Nb",
+          "CP-Ti-Gr4",
+          "Ta"
+        ],
+        "unsupported_marginal": [],
+        "unsupported_predicted_failure": [],
+        "unsupported_infinite_life_for_all": true,
+        "sf_unsupported_by_alloy": {
+          "Ti-15Zr": 6.76,
+          "beta-Ti-13Nb-13Zr": 6.4,
+          "Ti-6Al-4V": 6.26,
+          "Ti-6Al-7Nb": 6.05,
+          "CP-Ti-Gr4": 3.41,
+          "Ta": 2.45
+        },
+        "binding_alloy_unsupported": "Ta",
+        "binding_sf_unsupported": 2.45,
+        "seam_break_even_k_worst_corner": 0.501,
+        "seam_k_cleared_by_our_marker": false
+      }
+    ],
+    "bare_infinite_life_for_all_is_invariant": false,
+    "our_marker_covers_seam_is_invariant": true
+  },
   "interference_window": {
     "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon states no interference for that pair exists anywhere (01_01 1.4). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
     "pair_mm": {

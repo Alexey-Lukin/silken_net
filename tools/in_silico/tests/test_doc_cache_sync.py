@@ -464,6 +464,25 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
     ),
+    # ── HW.34 endurance band: the two numbers the SUMMARY table is READ for ──
+    # ⛔ The binding SF at the LOW end and the break-even at the HIGH end are pinned, and they are
+    # the two the reader acts on: one says a standing conclusion flips, the other says a conclusion
+    # that looked shakier does not. Both sit in a table whose rows differ only in a coefficient, so
+    # a stale one would read as the live one — the row anchor is therefore load-bearing.
+    (
+        "endurance band, binding Ta SF at the low end → bus_mechanical.json §endurance_ratio_band",
+        SUMMARY, rf"\| 0\.40 \| 5 / 6 \| \*\*{N}\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
+                       if r["endurance_over_yield"] == 0.40)["binding_sf_unsupported"], 0.005,
+    ),
+    (
+        "endurance band, seam break-even at the high end → bus_mechanical.json §endurance_ratio_band",
+        SUMMARY, rf"\| 0\.50 \| 6 / 6 \| [\d.]+ \| \*\*{N}\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
+                       if r["endurance_over_yield"] == 0.50)["seam_break_even_k_worst_corner"], 0.0005,
+    ),
     # ── HW.34 wear budget: the two ends SUMMARY quotes from script 55 §wear_budget ──
     # ⛔ Both ends are pinned, not just the headline, and the reason is the finding itself: the SPAN
     # between them IS the message («the tribology does not decide this, our contact geometry does»),

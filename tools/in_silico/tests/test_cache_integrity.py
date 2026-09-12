@@ -439,6 +439,44 @@ def test_bus_mechanical_weld_seam():
     assert fm["wrought_derate"] in markers.values()
 
 
+def test_bus_mechanical_endurance_ratio_band():
+    """Script 55 (HW.34): the fatigue ratio is swept, and the sweep AGREES with the block it prices.
+
+    `ENDURANCE_OVER_YIELD` is a band whose midpoint was the only point entering the model, while
+    every SF scales linearly with it. The honesty condition here is unusual — nothing is missing,
+    the danger is the opposite: a sweep whose column looks like a neighbouring headline while being
+    priced at a different corner. So the load-bearing assertion is CROSS-BLOCK equality, not a
+    frozen number.
+    """
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    d = json.loads(path.read_text())
+    band, seam = d["endurance_ratio_band"], d["weld_seam"]
+    # 1. The band stays declared-unmeasured and must actually BRACKET the point the model runs at —
+    #    a sweep sitting entirely to one side of the operating value is not a sensitivity.
+    assert band["band_is_measured"] is False
+    assert min(band["band"]) <= band["model_runs_at"] <= max(band["band"])
+    assert {r["endurance_over_yield"] for r in band["rows"]} == set(band["band"])
+    # 2. 🔴 The one that matters: at the model's own ratio the swept seam break-even must equal the
+    #    §5 headline EXACTLY. They are the same quantity at the same corner, and when this block
+    #    was first written one section earlier it silently used the NOMINAL corner instead — a
+    #    number less than half the headline, same units, same name, one screen apart.
+    at_model = next(r for r in band["rows"] if r["endurance_over_yield"] == band["model_runs_at"])
+    assert at_model["seam_break_even_k_worst_corner"] == seam["binding_candidate"]["k_at_infinite_life"], \
+        "the band prices the seam at a different corner than §5 — same name, different quantity"
+    # 3. Monotonicity with a KNOWN sign: SF scales linearly with the ratio, so the break-even
+    #    knockdown must fall as the ratio rises. A model that lost that has inverted something.
+    ordered = sorted(band["rows"], key=lambda r: r["endurance_over_yield"])
+    ks = [r["seam_break_even_k_worst_corner"] for r in ordered]
+    assert ks == sorted(ks, reverse=True), "break-even k stopped falling as the fatigue ratio rises"
+    # 4. Both invariance flags DERIVED from the rows, never typed — that is the block's whole output.
+    assert band["bare_infinite_life_for_all_is_invariant"] == \
+        (len({r["unsupported_infinite_life_for_all"] for r in band["rows"]}) == 1)
+    assert band["our_marker_covers_seam_is_invariant"] == \
+        (len({r["seam_k_cleared_by_our_marker"] for r in band["rows"]}) == 1)
+
+
 def test_bus_mechanical_wear_budget():
     """Script 55 (HW.34): the ground the liner STANDS on is bounded, and its inputs stay honest.
 

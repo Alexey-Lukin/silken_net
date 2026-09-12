@@ -225,6 +225,12 @@ ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio — a BAND 0.40-0.50, n
                               # SF 2» is a statement about the midpoint of an unmeasured band, not
                               # about the band. Found 2026-09-12 by a same-FORM sweep (a single point
                               # standing in for a coefficient); not yet swept — 00_07 HW.34.
+# ⛔ THE BAND ENTERS THE MODEL NOW, not just the comment above it. Until 2026-09-12 only the MIDPOINT
+#    did, while every SF scales LINEARLY with this coefficient — so «all six clear SF 2» was a statement
+#    about one point of an unmeasured band, dressed as a statement about the band. The ends are the ones
+#    the comment has carried since the constant was written; ⛔ they are not measured for OUR alloys and
+#    are not a distribution — a sweep, and its job is to say whether a verdict SURVIVES it (00_07 HW.34).
+ENDURANCE_RATIO_SWEEP = (0.40, 0.45, 0.50)
 AS_PRINTED_DERATE = 0.5       # SLM as-built knockdown (rough surface + sub-surface porosity)
 WROUGHT_DERATE = 1.0          # cold-drawn wire carries no as-built knockdown at all
 # ⚖️ HW.34 ratified 2026-09-10: the rod is a WELDED cold-drawn wire, so `welded` is the SHIPPED
@@ -413,14 +419,19 @@ def tip_load_slope_rad(force_lat_N: float, x_mm: float, length_mm: float,
     return force_lat_N * x * (2.0 * ell - x) / (2.0 * ei)
 
 
-def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
+def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE,
+                  ratio: float | None = None) -> float:
     """σ_e ≈ fatigue-ratio × yield, knocked down only if the rod is AS-PRINTED.
 
     `derate` is the fabrication branch, not a tuning knob: 0.5 for an SLM as-built surface,
     1.0 for cold-drawn wire. ⛔ It describes the WIRE and says nothing about the WELD — the
     seam has its own knockdown, and `break_even_knockdown` below is what this file says about it.
+
+    `ratio` overrides the fatigue ratio and exists for ONE caller: the band sweep. It defaults to
+    the module constant, so every pre-existing call keeps its exact value — the sweep is added
+    beside the model, never folded into it.
     """
-    return ENDURANCE_OVER_YIELD * derate * yield_MPa
+    return (ENDURANCE_OVER_YIELD if ratio is None else ratio) * derate * yield_MPa
 
 
 def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
@@ -1098,6 +1109,67 @@ def main() -> int:
                                           "a socketed or filleted joint moves effective fixity"},
     }
 
+    # ── 5b. The OTHER coefficient the model took a single POINT of (00_07 HW.34) ─────────────────
+    # 🔴 `ENDURANCE_OVER_YIELD` is a BAND, written beside the constant since the file was born, and
+    # only its MIDPOINT ever entered the model. Every SF scales LINEARLY with it, so «all six clear
+    # SF 2» was a claim about one point of an unmeasured band wearing the clothes of a claim about
+    # the band. ⛔ This block does NOT choose an end and does NOT re-verdict: it reports whether each
+    # STANDING conclusion survives the band — the measurement the open ⚖️ was missing.
+    # ⛔ IT SITS HERE, AFTER §5, AND THAT IS NOT COSMETIC. The seam's break-even rides the ratio
+    #    inversely (`k = SF_line/SF_wire`, SF_wire ∝ ratio), so a lower ratio RAISES the knockdown the
+    #    joint must beat. To be comparable with §5's headline it must be priced at §5's OWN corner —
+    #    worst swept µ times the span optimism. Computed one section earlier it came out on the
+    #    NOMINAL corner: a number less than half the headline, in the same units, under the same
+    #    name, one screen apart. Same quantity, different corner is the substitution this file
+    #    keeps catching in others.
+    banner("Endurance-ratio band — does any standing verdict survive it? (00_07 HW.34, sweep only)")
+    print(f"  σ_e/σ_y is a BAND {min(ENDURANCE_RATIO_SWEEP):.2f}–{max(ENDURANCE_RATIO_SWEEP):.2f}; the model runs "
+          f"at {ENDURANCE_OVER_YIELD:.2f}. ⛔ A sweep, never a distribution — no end is measured for OUR alloys.")
+    print(f"  {'ratio':>6s} {'bare: ∞-life':>14s} {'below SF 2':>24s} {'predicted failure':>20s} "
+          f"{'seam k→SF2':>11s} {'marker':>8s}")
+    print(f"  {'-' * 92}")
+    ratio_rows = []
+    for ratio in ENDURANCE_RATIO_SWEEP:
+        inf_l, marg_l, fail_l = [], [], []
+        sf_by_alloy = {}
+        for r in alloy_rows:
+            sf_u = endurance_MPa(r["yield_MPa"], shipped_derate, ratio) / sig_unsup
+            sf_by_alloy[r["alloy"]] = round(sf_u, 2)
+            (inf_l if sf_u >= INFINITE_LIFE_SF else fail_l if sf_u < 1.0 else marg_l).append(r["alloy"])
+        # ⛔ The BINDING SF gets its own field because prose quotes it: a doc number with no cache
+        #    owner is the one thing this tree forbids outright, and «Ta reads 1.96 at 0.40» is
+        #    exactly the sentence a reader acts on.
+        binding_alloy = min(sf_by_alloy, key=lambda a: sf_by_alloy[a])
+        # ⛔ `sig_sup_worst` — §5's OWN corner, reused rather than re-derived, so the column is the
+        #    same quantity as the headline it will be read beside.
+        sf_worst_min = min(endurance_MPa(r["yield_MPa"], shipped_derate, ratio) / sig_sup_worst
+                           for r in alloy_rows)
+        k_be = break_even_knockdown(sf_worst_min, INFINITE_LIFE_SF)
+        cleared = bool(k_be <= AS_PRINTED_DERATE)
+        ratio_rows.append({
+            "endurance_over_yield": ratio,
+            "unsupported_infinite_life": inf_l,
+            "unsupported_marginal": marg_l,
+            "unsupported_predicted_failure": fail_l,
+            "unsupported_infinite_life_for_all": len(inf_l) == len(alloy_rows),
+            "sf_unsupported_by_alloy": sf_by_alloy,
+            "binding_alloy_unsupported": binding_alloy,
+            "binding_sf_unsupported": sf_by_alloy[binding_alloy],
+            "seam_break_even_k_worst_corner": round(k_be, 3),
+            "seam_k_cleared_by_our_marker": cleared,
+        })
+        print(f"  {ratio:>6.2f} {f'{len(inf_l)}/{len(alloy_rows)}':>14s} {', '.join(marg_l) or '—':>24s} "
+              f"{', '.join(fail_l) or '—':>20s} {k_be:>11.3f} {'clears' if cleared else 'NO':>8s}")
+    # ⛔ DERIVED, never typed: the question is INVARIANCE, and a hand-written «holds across the band»
+    #    is exactly the sentence that survives the input that falsifies it.
+    band_all_clear = {r["unsupported_infinite_life_for_all"] for r in ratio_rows}
+    band_marker = {r["seam_k_cleared_by_our_marker"] for r in ratio_rows}
+    print(f"\n  → «bare rod reaches infinite life for EVERY alloy» is "
+          f"{'INVARIANT across the band' if len(band_all_clear) == 1 else 'NOT invariant — it FLIPS inside the band'}.")
+    print(f"  → «our as-printed marker {AS_PRINTED_DERATE:.2f} covers the seam» is "
+          f"{'INVARIANT across the band' if len(band_marker) == 1 else 'NOT invariant — it FLIPS inside the band'}.")
+    print("  ⛔ Which end to stand on is a ⚖️ (00_07 HW.34); this block measures, it does not choose.")
+
     # ── 6. The liner↔wire FIT — the interference the ratified direction asserts (00_07 HW.34) ────
     # 🔴 §2–§5 all stand on one sentence of the 2026-09-11 direction verdict: «the tube is tight on
     # the WIRE and the pair enters the bore as one body». The composite stiffness bound, the
@@ -1536,6 +1608,20 @@ def main() -> int:
           f"it by {marker_k - k_binding:+.3f} in k. ⛔ k itself stays NOT MEASURED — bounded, not assumed.")
     print("  5. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
+    # ⛔ DERIVED from §5b. Both halves are printed even though only one flips: a line that reported
+    # only the flip would read as «the other one is fine», when the other one is fine by 0.001.
+    _r_flip = [r["endurance_over_yield"] for r in ratio_rows
+               if not r["unsupported_infinite_life_for_all"]]
+    _k_span = [r["seam_break_even_k_worst_corner"] for r in ratio_rows]
+    print("  5b. THE ENDURANCE BAND (§5b) — the model runs at the MIDPOINT of an unmeasured band, and")
+    print("     two standing conclusions were tested against it. «Bare rod: infinite life for every")
+    print(f"     alloy» {'FLIPS' if _r_flip else 'holds'}"
+          + (f" at ratio {', '.join(f'{r:.2f}' for r in _r_flip)}." if _r_flip else " across the whole band.")
+          + f" «Our marker {AS_PRINTED_DERATE:.2f} covers the seam»")
+    print(f"     {'holds' if len(band_marker) == 1 else 'FLIPS'} — the break-even runs "
+          f"{min(_k_span):.3f}–{max(_k_span):.3f}, i.e. it fails at BOTH ends, "
+          f"by {AS_PRINTED_DERATE - min(_k_span):+.3f} at the friendliest.")
+    print("     ⛔ Which end to stand on is a ⚖️ (00_07 HW.34); §5b measures, it does not choose.")
     # ⛔ DERIVED from §6, never typed. The point is not the width but WHERE the nominals sit: the
     # verdict every other section leans on («tight on the wire») is not produced by the drawing.
     _iw = interference_window
@@ -1630,6 +1716,25 @@ def main() -> int:
                                                    if r["regime"].startswith("free cantilever")],
         },
         "weld_seam": weld_seam,
+        "endurance_ratio_band": {
+            "question": "00_07 HW.34 — ENDURANCE_OVER_YIELD is a BAND written beside the constant "
+                        "since this file was born, and only its MIDPOINT ever entered the model. "
+                        "Every SF scales linearly with it, so a standing conclusion may be a "
+                        "statement about one point wearing the clothes of a statement about the "
+                        "band. This block sweeps it and reports INVARIANCE; it chooses no end",
+            "band": list(ENDURANCE_RATIO_SWEEP),
+            "model_runs_at": ENDURANCE_OVER_YIELD,
+            "band_is_measured": False,
+            "band_provenance": "the ends are the ones the constant's own comment has carried from "
+                               "the first commit (wrought-Ti fatigue ratio ~0.4-0.5). They are NOT "
+                               "measured for our alloys and are NOT a distribution - a bracket",
+            "seam_corner": "priced at §5's OWN corner (worst swept mu x span optimism), reused "
+                           "rather than re-derived, so the column is the same quantity as the "
+                           "weld_seam headline a reader will compare it against",
+            "rows": ratio_rows,
+            "bare_infinite_life_for_all_is_invariant": len(band_all_clear) == 1,
+            "our_marker_covers_seam_is_invariant": len(band_marker) == 1,
+        },
         "interference_window": interference_window,
         "wear_budget": {
             "question": "00_07 HW.34 — ⚖️ 2026-09-11 made WEAR the ground the structural liner stands "
