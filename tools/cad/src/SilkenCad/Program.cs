@@ -916,7 +916,8 @@ internal static class Program
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --sweep | --with-rod]\n" +
-            "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]");
+            "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
+            "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]");
         return 0;
     }
 
@@ -944,6 +945,13 @@ internal static class Program
     // for one. Pure-managed on purpose — the whole point is that it runs where `verify` cannot.
     private static int Fea(string[] args)
     {
+        // ⚠️ `--fit` has TWO specimens and canon 01_01 §5.2 asks for BOTH: the lattice cube answers
+        //    "what are C and n for this material", the shipped annulus answers "does the part lie on
+        //    that curve at all". A coefficient measured on one is explicitly NOT transferable to the
+        //    other until the two sweeps exist side by side.
+        if (args.Contains("--fit"))
+            return args.Length >= 2 && args[1].EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+                ? FeaFitPart(args) : FeaFitLattice(args);
         if (args.Contains("--ladder"))
             return FeaLadder(args);
 
@@ -1090,6 +1098,196 @@ internal static class Program
             ["period_mm"] = fPeriod,
             ["wall_param"] = fWall,
             ["steps_per_period"] = nStepsPerPeriod,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"→ {strOut}");
+        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The Gibson-Ashby COEFFICIENTS, measured instead of assumed (00_07 HW.33).
+    //
+    // 🔴 Why this verb is separate from `--ladder`: the ladder varies the SIZE of the specimen at one
+    // density and answers "is there a size effect". This varies the DENSITY at one converged size and
+    // answers "what are C and n". A single porosity cannot do the second — it pins only the product
+    // C·ρⁿ at that ρ, so fixing either constant by hand determines the other, which is exactly how the
+    // canon came to carry `C ≈ 1` as "an idealisation" beside `n ≈ 2` from the textbook.
+    //
+    // ⛔ POROSITY IS MEASURED, never derived from wall_param (01_02 §6): the wall parameter is a LEVEL
+    // on a network gyroid, and the level→density map is itself resolution-dependent, so reading density
+    // off the input would fold the instrument into the result.
+    //
+    // ⚠️ The specimen is the LATTICE CUBE, not the shipped annulus, and that is the point rather than a
+    // shortcut: Gibson-Ashby is a statement about a cellular MATERIAL, so the fit must be measured on a
+    // material-scale specimen. The part's own apparent stiffness is the other verb (`fea <cem>`), and
+    // 01_01 §5.2 keeps the two columns apart deliberately.
+    private static int FeaFitLattice(string[] args)
+    {
+        float fPeriod = ArgFloat(args, "--period", 2.0f);
+        bool bSheet = args.Contains("--sheet");
+        int nCells = ArgInt(args, "--cells", 3);
+        int nStepsPerPeriod = ArgInt(args, "--steps-per-period", 16);
+        float[] aWalls = (ArgStr(args, "--walls", "-0.40,-0.15,0.10,0.35,0.60") ?? "").Split(',')
+            .Select(s => float.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+
+        Console.WriteLine($"fea --fit — {(bSheet ? "sheet" : "network")} gyroid, period {fPeriod} mm, " +
+                          $"{nCells}-cell cube, {nStepsPerPeriod} steps/period, frictionless platens");
+        Console.WriteLine($"{"wall",7} {"elements",10} {"poros.",8} {"rho",7} {"E/E_solid",11}");
+
+        var aRows = new List<Dictionary<string, object>>();
+        var aFitPoints = new List<(double Density, double Ratio)>();
+        bool bFirst = true;
+        double dCalibration = double.NaN;
+        foreach (float fWall in aWalls)
+        {
+            Connectivity.Grid grid = VoxelFea.SampleLatticeCube(fPeriod, fWall, !bSheet, nCells, nStepsPerPeriod);
+            VoxelFea.FeaResult o = VoxelFea.ApparentAxialModulus(grid, 2);
+            // Same self-calibration contract as the ladder: a fully solid cube under frictionless
+            // platens is exactly E_solid at any resolution, so the divisor is 1 and the calibration RUN
+            // is kept once, as proof rather than as an assertion.
+            if (bFirst)
+            {
+                dCalibration = VoxelFea.ApparentAxialModulus(VoxelFea.SolidCounterpart(grid), 2).StiffnessRatio;
+                bFirst = false;
+            }
+            double dPorosity = Connectivity.Porosity(grid);
+            double dRho = 1.0 - dPorosity;
+            Console.WriteLine($"{fWall,7:F2} {o.Elements,10:N0} {dPorosity,8:P1} {dRho,7:F4} {o.StiffnessRatio,11:F4}");
+            aFitPoints.Add((dRho, o.StiffnessRatio));
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["wall_param"] = fWall,
+                ["elements"] = o.Elements,
+                ["porosity"] = dPorosity,
+                ["relative_density"] = dRho,
+                ["axial_ratio"] = o.StiffnessRatio,
+                ["converged"] = o.Converged,
+            });
+        }
+
+        VoxelFea.PowerLaw fit = VoxelFea.FitPowerLaw(aFitPoints);
+        Console.WriteLine($"fit  E/E_solid = {fit.C:F4}·rho^{fit.N:F3}   (R² {fit.RSquared:F4} in log space, " +
+                          $"{fit.Points} points; solid calibration {dCalibration:F6})");
+        foreach ((double dRho, double dE) in aFitPoints)
+            Console.WriteLine($"  rho {dRho:F4}  measured {dE:F4}  fit {fit.C * Math.Pow(dRho, fit.N):F4}  " +
+                              $"({(fit.C * Math.Pow(dRho, fit.N) / dE) - 1.0:+0.0%;-0.0%;0.0%})");
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{(bSheet ? "sheet" : "network")}.s{nStepsPerPeriod}.json");
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "Gibson-Ashby C and n fitted to MEASURED (relative density, apparent axial stiffness) "
+                      + "pairs of the same lattice in a converged cube. Porosity is measured on the grid, never "
+                      + "derived from wall_param. A staircase voxel mesh of fully integrated hexes is stiff-biased, "
+                      + "so C is an UPPER bound; compare two steps_per_period before quoting n.",
+            ["topology"] = bSheet ? "sheet" : "network",
+            ["period_mm"] = fPeriod,
+            ["cells_per_side"] = nCells,
+            ["steps_per_period"] = nStepsPerPeriod,
+            ["solid_calibration_axial"] = dCalibration,
+            ["fit_c"] = fit.C,
+            ["fit_n"] = fit.N,
+            ["fit_r_squared_log"] = fit.RSquared,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"→ {strOut}");
+        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The SAME sweep on the SHIPPED annulus. 01_01 §5.2 records a gap it refuses to explain away —
+    // at one voxel the part reads C = 0.80 and the cube C = 0.71, i.e. the part is STIFFER at LOWER
+    // density, which no monotone C·ρⁿ allows — and names this sweep, run over both geometries, as the
+    // only thing that can settle it. Two candidate causes are on the record: the period gradient
+    // (phase distortion, clean only to ~0.8× and the part sits exactly at 0.8) and the annulus's two
+    // free surfaces. ⛔ Until both curves exist, no coefficient crosses between them.
+    private static int FeaFitPart(string[] args)
+    {
+        string strCemPath = args[1];
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail($"fea --fit: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
+
+        AnchorCem cemBase = Cem.Parse<AnchorCem>(strJson);
+        bool bWithRod = args.Contains("--with-rod");
+        bool bRadial = args.Contains("--with-radial");
+        int nDiv = ArgInt(args, "--step-div", 12);
+        float[] aWalls = (ArgStr(args, "--walls", "-0.40,-0.15,0.10,0.35,0.60") ?? "").Split(',')
+            .Select(s => float.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+
+        float fPeriodMin = cemBase.GyroidPeriodRimMm > 0f
+            ? MathF.Min(cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm) : cemBase.GyroidPeriodMm;
+        float fStep = fPeriodMin / nDiv;
+
+        Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED annulus swept over wall_param, step {fStep:F4} mm");
+        Console.WriteLine(bWithRod
+            ? "  envelope: gyroid annulus + monolithic bus rod"
+            : "  envelope: the gyroid annulus only (rod excluded — the lattice, comparable to the cube)");
+        Console.WriteLine($"{"wall",7} {"elements",10} {"poros.",8} {"rho",7} {"axial-Z",9} {(bRadial ? "radial" : ""),9}");
+
+        var aRows = new List<Dictionary<string, object>>();
+        var aAxial = new List<(double Density, double Ratio)>();
+        var aRadial = new List<(double Density, double Ratio)>();
+        foreach (float fWall in aWalls)
+        {
+            // ⚠️ Rim follows the core deliberately: an ABSENT rim field already means "equals core"
+            //    (Zone1Anode.Gyroid), so overriding only the core would silently turn a wall-uniform
+            //    manifest into a wall-GRADED one and the sweep would vary two things at once.
+            AnchorCem cem = cemBase with
+            {
+                GyroidWallParam = fWall,
+                GyroidWallParamRim = cemBase.GyroidWallParamRim.HasValue ? fWall : null,
+            };
+            Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod);
+            VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
+            double dPorosity = Connectivity.Porosity(grid);
+            double dRho = 1.0 - dPorosity;
+            double dRadial = double.NaN;
+            if (bRadial)
+            {
+                Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
+                dRadial = VoxelFea.RadialStiffness(grid, cem.OuterDiameterMm / 2f).StiffnessRatio
+                        / VoxelFea.RadialStiffness(gridSolid, cem.OuterDiameterMm / 2f).StiffnessRatio;
+                aRadial.Add((dRho, dRadial));
+            }
+            Console.WriteLine($"{fWall,7:F2} {oAxial.Elements,10:N0} {dPorosity,8:P1} {dRho,7:F4} {oAxial.StiffnessRatio,9:F4} " +
+                              $"{(bRadial ? dRadial.ToString("F4") : ""),9}");
+            aAxial.Add((dRho, oAxial.StiffnessRatio));
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["wall_param"] = fWall,
+                ["elements"] = oAxial.Elements,
+                ["porosity"] = dPorosity,
+                ["relative_density"] = dRho,
+                ["axial_ratio"] = oAxial.StiffnessRatio,
+                ["radial_ratio"] = bRadial ? dRadial : null!,
+                ["converged"] = oAxial.Converged,
+            });
+        }
+
+        VoxelFea.PowerLaw fitAxial = VoxelFea.FitPowerLaw(aAxial);
+        Console.WriteLine($"fit axial   E/E_solid = {fitAxial.C:F4}·rho^{fitAxial.N:F3}   (R² {fitAxial.RSquared:F4} log, {fitAxial.Points} pts)");
+        VoxelFea.PowerLaw? fitRadial = bRadial ? VoxelFea.FitPowerLaw(aRadial) : null;
+        if (fitRadial is { } fr)
+            Console.WriteLine($"fit radial  E/E_solid = {fr.C:F4}·rho^{fr.N:F3}   (R² {fr.RSquared:F4} log, {fr.Points} pts)");
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.d{nDiv}{(bWithRod ? ".with_rod" : "")}.json");
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
+                      + "Pairs with gibson_ashby_fit.network.json (the material-scale cube): 01_01 §5.2 asks "
+                      + "for both curves because a single-point C differs between them in a direction no "
+                      + "monotone power law allows. Porosity is measured on the grid, never derived.",
+            ["cem"] = cemBase.Name,
+            ["topology"] = cemBase.Topology,
+            ["with_bus_rod"] = bWithRod,
+            ["step_mm"] = fStep,
+            ["step_divisor"] = nDiv,
+            ["fit_axial_c"] = fitAxial.C,
+            ["fit_axial_n"] = fitAxial.N,
+            ["fit_axial_r_squared_log"] = fitAxial.RSquared,
+            ["fit_radial_c"] = fitRadial?.C!,
+            ["fit_radial_n"] = fitRadial?.N!,
+            ["fit_radial_r_squared_log"] = fitRadial?.RSquared!,
             ["rows"] = aRows,
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"→ {strOut}");

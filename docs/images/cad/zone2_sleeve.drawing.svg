@@ -88,10 +88,10 @@
 <line x1='540' y1='809' x2='790' y2='809' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='809' x2='630' y2='825' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>41e66b76-dirty</text>
+<text x='635' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>41c5545a-dirty</text>
 <line x1='540' y1='825' x2='790' y2='825' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='825' x2='630' y2='841' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='635' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/zone2_sleeve.json</text>
-<text x='806' y='857' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 41e66b76-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<text x='806' y='857' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 41c5545a-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
 </svg>

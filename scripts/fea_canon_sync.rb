@@ -177,6 +177,54 @@ else
   failures << "the with-rod cache is missing — canon quotes it (`--with-rod`), so it must be committed"
 end
 
+# ── 4. THE FITTED GIBSON-ASHBY TABLE (HW.33) ─────────────────────────────────────────────────────
+#
+# 🔴 Added 2026-09-12, and the reason is this guard's OWN founding lesson applied one file over: the
+# C/n table landed in §5.2 sourced from `gibson_ashby_fit.*.json`, which layers 1–3 do not read at all,
+# so a correct cache quoted into a wrong cell would have passed green. ⚠️ The cache is PER-RESOLUTION
+# by filename on purpose — a single `gibson_ashby_fit.network.json` held only the last run, so two of
+# the three quoted rows had no machine tie by construction.
+#
+# ⛔ DECLARED CEILING: this pins the FIT, never the SWEEP ROWS it was fitted to. A cache whose eight
+# (ρ, E) pairs are wrong but whose regression is arithmetically right passes here; the pairs are held
+# only by the FE solver's own pins (VoxelFeaTests), not by canon.
+FIT_ROWS = {
+  "ґратка (куб 2 комірки)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.network.s%<n>d.json", label: "період/%<n>d" },
+  "деталь (кільцева зона Ø11×40)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" },
+}.freeze
+
+fit_rows_seen = 0
+canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
+  specimen, div, c_q, n_q, r2_q = Regexp.last_match.captures
+  spec = FIT_ROWS[specimen.strip]
+  next failures << "fit table names an unknown specimen '#{specimen.strip}' — add it to FIT_ROWS or fix canon" if spec.nil?
+
+  path = File.join(ROOT, format(spec[:glob], n: div.to_i))
+  next failures << "fit row #{specimen.strip} #{div} quotes a cache that is not committed (#{spec[:glob] % { n: div.to_i }})" unless File.exist?(path)
+
+  fit_rows_seen += 1
+  f = JSON.parse(File.read(path))
+  c_cached = f["fit_c"] || f["fit_axial_c"]
+  n_cached = f["fit_n"] || f["fit_axial_n"]
+  r2_cached = f["fit_r_squared_log"] || f["fit_axial_r_squared_log"]
+  failures << "fit cache #{File.basename(path)} is not the network branch (#{f['topology']})" unless f["topology"] == "network"
+  failures << "fit cache #{File.basename(path)} has a non-converged row" unless f["rows"].all? { |r| r["converged"] }
+  # ⚠️ Compare at the PRECISION CANON QUOTES, not at a fixed epsilon: a fixed 5e-4 sits exactly on the
+  # rounding boundary for a 3-decimal quote (1.1695 → "1.170" differs by 0.0005 in binary floating
+  # point and reds a CORRECT transcription). Rounding the cache to the quoted decimals makes the
+  # comparison exact and lets canon choose its own precision per row.
+  decimals = ->(q) { q.include?(".") ? q.split(".").last.length : 0 }
+  flag(failures, "fit C (#{specimen.strip}, /#{div})", c_cached.round(decimals[c_q]), c_q) if c_cached.round(decimals[c_q]) != c_q.to_f
+  flag(failures, "fit n (#{specimen.strip}, /#{div})", n_cached.round(decimals[n_q]), n_q) if n_cached.round(decimals[n_q]) != n_q.to_f
+  flag(failures, "fit R² (#{specimen.strip}, /#{div})", r2_cached.round(decimals[r2_q]), r2_q) if r2_cached.round(decimals[r2_q]) != r2_q.to_f
+end
+
+EXPECTED_FIT_ROWS = 5
+if fit_rows_seen < EXPECTED_FIT_ROWS
+  failures << "only #{fit_rows_seen} of #{EXPECTED_FIT_ROWS} fitted-coefficient rows matched — a canon "\
+              "rewording has DISARMED the C/n comparison; fix the row shape, do not lower this number"
+end
+
 EXPECTED_ANCHORS = 8
 if anchors < EXPECTED_ANCHORS
   failures << "only #{anchors} of #{EXPECTED_ANCHORS} derivation anchors matched — a canon rewording has "\

@@ -1,0 +1,70 @@
+{
+  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with gibson_ashby_fit.network.json (the material-scale cube): 01_01 \u00A75.2 asks for both curves because a single-point C differs between them in a direction no monotone power law allows. Porosity is measured on the grid, never derived.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "with_bus_rod": false,
+  "step_mm": 0.2857143,
+  "step_divisor": 7,
+  "fit_axial_c": 1.1694586620386944,
+  "fit_axial_n": 2.32148774604961,
+  "fit_axial_r_squared_log": 0.9989120533644587,
+  "fit_radial_c": null,
+  "fit_radial_n": null,
+  "fit_radial_r_squared_log": null,
+  "rows": [
+    {
+      "wall_param": -0.4,
+      "elements": 43973,
+      "porosity": 0.7262668814273324,
+      "relative_density": 0.2737331185726676,
+      "axial_ratio": 0.05847673827413039,
+      "radial_ratio": null,
+      "converged": true
+    },
+    {
+      "wall_param": -0.2,
+      "elements": 49332,
+      "porosity": 0.6933961095279395,
+      "relative_density": 0.3066038904720605,
+      "axial_ratio": 0.07388014103325713,
+      "radial_ratio": null,
+      "converged": true
+    },
+    {
+      "wall_param": 0,
+      "elements": 54701,
+      "porosity": 0.6605934828397968,
+      "relative_density": 0.3394065171602032,
+      "axial_ratio": 0.09630275508298758,
+      "radial_ratio": null,
+      "converged": true
+    },
+    {
+      "wall_param": 0.2,
+      "elements": 59979,
+      "porosity": 0.6281377772271094,
+      "relative_density": 0.3718622227728906,
+      "axial_ratio": 0.1157731965021298,
+      "radial_ratio": null,
+      "converged": true
+    },
+    {
+      "wall_param": 0.4,
+      "elements": 65418,
+      "porosity": 0.5946041382728287,
+      "relative_density": 0.40539586172717135,
+      "axial_ratio": 0.1441433395991105,
+      "radial_ratio": null,
+      "converged": true
+    },
+    {
+      "wall_param": 0.6,
+      "elements": 70671,
+      "porosity": 0.5620988725065048,
+      "relative_density": 0.4379011274934952,
+      "axial_ratio": 0.17321725388213446,
+      "radial_ratio": null,
+      "converged": true
+    }
+  ]
+}

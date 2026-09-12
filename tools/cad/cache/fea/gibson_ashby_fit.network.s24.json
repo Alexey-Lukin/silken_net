@@ -1,0 +1,77 @@
+{
+  "_note": "Gibson-Ashby C and n fitted to MEASURED (relative density, apparent axial stiffness) pairs of the same lattice in a converged cube. Porosity is measured on the grid, never derived from wall_param. A staircase voxel mesh of fully integrated hexes is stiff-biased, so C is an UPPER bound; compare two steps_per_period before quoting n.",
+  "topology": "network",
+  "period_mm": 2,
+  "cells_per_side": 2,
+  "steps_per_period": 24,
+  "solid_calibration_axial": 1.0000000298016045,
+  "fit_c": 0.9891403599849778,
+  "fit_n": 2.247213927057647,
+  "fit_r_squared_log": 0.9944265610712828,
+  "rows": [
+    {
+      "wall_param": -0.4,
+      "elements": 29824,
+      "porosity": 0.7303240740740741,
+      "relative_density": 0.26967592592592593,
+      "axial_ratio": 0.05247699270428323,
+      "converged": true
+    },
+    {
+      "wall_param": -0.25,
+      "elements": 32512,
+      "porosity": 0.7060185185185185,
+      "relative_density": 0.2939814814814815,
+      "axial_ratio": 0.06113654164321875,
+      "converged": true
+    },
+    {
+      "wall_param": -0.1,
+      "elements": 35584,
+      "porosity": 0.6782407407407407,
+      "relative_density": 0.3217592592592593,
+      "axial_ratio": 0.07673117969622711,
+      "converged": true
+    },
+    {
+      "wall_param": 0.05,
+      "elements": 39040,
+      "porosity": 0.6469907407407407,
+      "relative_density": 0.3530092592592593,
+      "axial_ratio": 0.0996568300837451,
+      "converged": true
+    },
+    {
+      "wall_param": 0.2,
+      "elements": 40576,
+      "porosity": 0.6331018518518519,
+      "relative_density": 0.36689814814814814,
+      "axial_ratio": 0.10743955761732453,
+      "converged": true
+    },
+    {
+      "wall_param": 0.35,
+      "elements": 43392,
+      "porosity": 0.6076388888888888,
+      "relative_density": 0.39236111111111116,
+      "axial_ratio": 0.11672888930925732,
+      "converged": true
+    },
+    {
+      "wall_param": 0.5,
+      "elements": 46080,
+      "porosity": 0.5833333333333334,
+      "relative_density": 0.41666666666666663,
+      "axial_ratio": 0.13737341063326283,
+      "converged": true
+    },
+    {
+      "wall_param": 0.6,
+      "elements": 48000,
+      "porosity": 0.5659722222222222,
+      "relative_density": 0.4340277777777778,
+      "axial_ratio": 0.15091109571529365,
+      "converged": true
+    }
+  ]
+}

@@ -149,4 +149,38 @@ public class VoxelFeaTests
         Assert.True(Connectivity.Porosity(gridRod) < Connectivity.Porosity(gridNoRod),
             "adding a solid core must lower the measured porosity of the sampled envelope");
     }
+
+    // 🔴 The Gibson-Ashby fit has a CLOSED FORM too, and it is the only kind of pin worth writing for
+    // a regression: points generated FROM a known C and n must come back as that C and n. A fit is
+    // exactly the sort of routine that returns a plausible pair whatever it does — and the pair it
+    // returns is about to be quoted as a measured coefficient in canon (01_01 §5.2).
+    // MUTATION: in FitPowerLaw drop the mean-centring of `dX` (use `Math.Log(dRho)` raw in dSxx/dSxy)
+    // ⇒ the slope stays right and C comes back ~0.18 instead of 0.72, i.e. exactly the half a reader
+    // would not notice.
+    [Fact]
+    public void The_Power_Law_Fit_Recovers_The_Coefficients_It_Was_Given()
+    {
+        const double dC = 0.72, dN = 2.34;
+        double[] aRho = [0.26, 0.30, 0.34, 0.38, 0.44];
+        var aPoints = aRho.Select(r => (Density: r, Ratio: dC * Math.Pow(r, dN))).ToList();
+
+        VoxelFea.PowerLaw fit = VoxelFea.FitPowerLaw(aPoints);
+
+        Assert.True(Math.Abs(fit.C - dC) < 1e-9, $"C came back {fit.C:F9} from points generated with {dC}");
+        Assert.True(Math.Abs(fit.N - dN) < 1e-9, $"n came back {fit.N:F9} from points generated with {dN}");
+        Assert.True(Math.Abs(fit.RSquared - 1.0) < 1e-9, $"noiseless points must fit exactly; R² = {fit.RSquared:F9}");
+        Assert.Equal(aRho.Length, fit.Points);
+    }
+
+    // The fit must REFUSE the two inputs that would let it report a number it cannot know: a single
+    // point (C and n are not separable — any C is reachable by moving n) and a sweep that varied
+    // nothing. Both are silent failures otherwise: OLS on one point has no slope to solve, and a
+    // zero-variance x gives a division by zero that surfaces as NaN in a JSON cache nobody re-reads.
+    [Fact]
+    public void The_Power_Law_Fit_Refuses_Inputs_That_Cannot_Separate_C_From_N()
+    {
+        Assert.Throws<ArgumentException>(() => VoxelFea.FitPowerLaw([(0.35, 0.10)]));
+        Assert.Throws<ArgumentException>(() => VoxelFea.FitPowerLaw([(0.35, 0.10), (0.35, 0.11)]));
+        Assert.Throws<ArgumentException>(() => VoxelFea.FitPowerLaw([(0.35, 0.0), (0.40, 0.12)]));
+    }
 }

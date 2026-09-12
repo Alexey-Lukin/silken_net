@@ -628,6 +628,82 @@ internal static class VoxelFea
             fXMin: -fROuter, fYMin: -fROuter, fZMin: 0f);
     }
 
+    /// <summary>Least-squares fit of `E/E_solid = C·ρⁿ` in log space (00_07 HW.33).</summary>
+    internal readonly record struct PowerLaw
+    {
+        public required double C { get; init; }
+        public required double N { get; init; }
+        /// <summary>Coefficient of determination of the LOG-space regression, not of E itself.</summary>
+        public required double RSquared { get; init; }
+        public required int Points { get; init; }
+    }
+
+    /// <summary>
+    /// Fit `E/E_solid = C·ρⁿ` to measured (relative density, stiffness ratio) pairs by ordinary least
+    /// squares on `ln E = ln C + n·ln ρ`.
+    ///
+    /// 🔑 WHY A FIT AND NOT A SOLVE: one porosity cannot separate C from n — any C is reachable by
+    /// moving n, so a single point pins only their product at that ρ. The canon carried `C ≈ 1`
+    /// (01_01 §5.2, uncertainty (3)) purely as an idealisation, and `n ≈ 2` from the textbook
+    /// bending-dominated argument; neither was ever measured on OUR lattice.
+    ///
+    /// ⚠️ DECLARED CEILING. (a) Log-space OLS weights each point equally in ln E, i.e. it minimises
+    /// RELATIVE error — appropriate here, and deliberately not the same fit as least-squares on E.
+    /// (b) The exponent is a SLOPE, so any bias that is constant in log space (the staircase mesh is
+    /// stiff by a roughly multiplicative factor at fixed resolution) lands entirely in C and leaves n
+    /// alone — but a bias that VARIES with ligament thickness does move n, and ligament thickness is
+    /// exactly what the sweep varies. That is why nothing here is quoted from one resolution: run the
+    /// same sweep at two steps-per-period and read the spread as the instrument's own uncertainty.
+    /// (c) R² is reported on the log regression; a high value says the power law describes the points,
+    /// never that the points describe the printed part.
+    /// </summary>
+    internal static PowerLaw FitPowerLaw(IReadOnlyList<(double Density, double Ratio)> aPoints)
+    {
+        if (aPoints.Count < 2)
+            throw new ArgumentException("a power law needs at least two points to separate C from n", nameof(aPoints));
+        if (aPoints.Any(p => p.Density <= 0.0 || p.Ratio <= 0.0))
+            throw new ArgumentException("density and stiffness ratio must be positive to take a log", nameof(aPoints));
+
+        int n = aPoints.Count;
+        double dSx = 0.0, dSy = 0.0;
+        foreach ((double dRho, double dE) in aPoints)
+        {
+            dSx += Math.Log(dRho);
+            dSy += Math.Log(dE);
+        }
+        double dMx = dSx / n, dMy = dSy / n;
+
+        double dSxx = 0.0, dSxy = 0.0;
+        foreach ((double dRho, double dE) in aPoints)
+        {
+            double dX = Math.Log(dRho) - dMx;
+            dSxx += dX * dX;
+            dSxy += dX * (Math.Log(dE) - dMy);
+        }
+        if (dSxx <= 0.0)
+            throw new ArgumentException("every point has the same density — the sweep varied nothing", nameof(aPoints));
+
+        double dSlope = dSxy / dSxx;
+        double dIntercept = dMy - (dSlope * dMx);
+
+        double dSsRes = 0.0, dSsTot = 0.0;
+        foreach ((double dRho, double dE) in aPoints)
+        {
+            double dPred = dIntercept + (dSlope * Math.Log(dRho));
+            double dObs = Math.Log(dE);
+            dSsRes += (dObs - dPred) * (dObs - dPred);
+            dSsTot += (dObs - dMy) * (dObs - dMy);
+        }
+
+        return new PowerLaw
+        {
+            C = Math.Exp(dIntercept),
+            N = dSlope,
+            RSquared = dSsTot > 0.0 ? 1.0 - (dSsRes / dSsTot) : 1.0,
+            Points = n,
+        };
+    }
+
     /// <summary>
     /// A plain cube of the same lattice, `nCells` periods on a side — the MATERIAL-scale counterpart
     /// of the part. Running the axial case over a ladder of nCells is how the size effect is measured

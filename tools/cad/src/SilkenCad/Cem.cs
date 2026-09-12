@@ -147,8 +147,12 @@ internal sealed record TiCoinCem
 //                       the branch it replaced, so re-solve against the porosity target FIRST)
 // Core = axis (r=bore/2), Rim = periphery (r=outer/2); an ABSENT *Rim* field ⇒ equals Core ⇒ v1 constant.
 // Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough
-// placeholder (founder 2026-06-21) — Gibson-Ashby n=2 suits the network branch we now ship (sheet was
-// n≈1.3 → higher E), and wood E is anisotropic (HW.33). Porosity is a parameter here, not a frozen truth.
+// placeholder (founder 2026-06-21). ⚠️ The textbook Gibson-Ashby `n=2` for the network branch we ship is
+// SUPERSEDED by measurement (2026-09-12): a wall_param sweep fits n = 2.24 on the lattice and 2.27 on the
+// shipped annulus, at C ≈ 1 rather than the 0.71 a single density suggested — numbers, the literature
+// comparison and the declared ceiling live in 01_01 §5.2 (verb `fea --fit`). Sheet remains the other
+// branch (n≈1.3 → higher E), and wood E is anisotropic (HW.33). Porosity is a parameter here, not a
+// frozen truth.
 internal sealed record AnchorCem
 {
     public string Kind { get; init; } = "anchor_zone1";
