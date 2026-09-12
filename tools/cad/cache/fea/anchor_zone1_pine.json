@@ -1,0 +1,73 @@
+{
+  "_note": "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. Declared ceiling lives in VoxelFea.cs; a single row is an UPPER bound, read the sweep.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "with_bus_rod": false,
+  "poisson_ratio": 0.342,
+  "rows": [
+    {
+      "step_mm": 0.33333334,
+      "step_divisor": 6,
+      "elements": 36116,
+      "dofs": 247965,
+      "porosity": 0.6452856025039123,
+      "axial_ratio": 0.10873590643611299,
+      "radial_ratio": 0.08056917720105256,
+      "solid_calibration_axial": 0.9999998567009503,
+      "discarded_island_fraction": 0.004136105443114713,
+      "axial_iterations": 3486,
+      "axial_residual": 9.856208282083825E-09,
+      "radial_iterations": 638,
+      "radial_residual": 9.865410501261311E-09,
+      "converged": true
+    },
+    {
+      "step_mm": 0.25,
+      "step_divisor": 8,
+      "elements": 85994,
+      "dofs": 509625,
+      "porosity": 0.6447724274406332,
+      "axial_ratio": 0.10425785412172205,
+      "radial_ratio": 0.07462396184637418,
+      "solid_calibration_axial": 1.000000009985736,
+      "discarded_island_fraction": 0.001972981755721692,
+      "axial_iterations": 4733,
+      "axial_residual": 9.836384199815537E-09,
+      "radial_iterations": 869,
+      "radial_residual": 9.750473585620526E-09,
+      "converged": true
+    },
+    {
+      "step_mm": 0.16666667,
+      "step_divisor": 12,
+      "elements": 289998,
+      "dofs": 1438458,
+      "porosity": 0.6449985311398355,
+      "axial_ratio": 0.10229391248852966,
+      "radial_ratio": 0.07083688498049948,
+      "solid_calibration_axial": 1.0000000348608153,
+      "discarded_island_fraction": 8.275234292576261E-05,
+      "axial_iterations": 7269,
+      "axial_residual": 9.92970537026119E-09,
+      "radial_iterations": 1300,
+      "radial_residual": 9.902945685451528E-09,
+      "converged": true
+    },
+    {
+      "step_mm": 0.125,
+      "step_divisor": 16,
+      "elements": 685931,
+      "dofs": 3059880,
+      "porosity": 0.6450155215231788,
+      "axial_ratio": 0.10073987622362182,
+      "radial_ratio": 0.06916900602937844,
+      "solid_calibration_axial": 1.0000002255767664,
+      "discarded_island_fraction": 0.0002667195247436638,
+      "axial_iterations": 10119,
+      "axial_residual": 9.957769905591935E-09,
+      "radial_iterations": 1727,
+      "radial_residual": 9.898868433312432E-09,
+      "converged": true
+    }
+  ]
+}

@@ -64,7 +64,7 @@
 - **CV/EIS** у синт. ксилемному соку *Pinus sylvestris* pH 4.5-5.5 ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)): j_max, k_s, DET-маржа.
 - **ICP-MS** іон-release у сік: V≤0.02 / Al≤0.05 µg/cm² (4V/7Nb); Nb/Zr/Ta — informational (біоінертні). Predicted — `tools/in_silico` script 51.
 - **30-day stability** ≥80% retention · **chloride** 0.25M ramp · **UCST** −10→+25°C recovery (квантитативні пороги — дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
-- **Нано-індентор E** (post-coin) — ізоеластичність vs деревина 9-16 ГПа (β-Ti dual-win check); predicted — script 50.
+- **Нано-індентор E** (post-coin) — модуль СУЦІЛЬНОГО сплаву купона (β-Ti dual-win check). ⛔ **Це НЕ перевірка ізоеластичності, і плутати два виміри дорого:** ізоеластичність є властивістю ҐРАТКИ, купон її не має, а порівнювати треба з ПОПЕРЕЧНИМ модулем деревини `E_R`/`E_T` ≈ 0.5–1.5 ГПа — анкер сидить поперек стовбура ([`01_01 §5.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)). Поздовжні 9–16 ГПа, що стояли тут, є ~вдесятеро завищеною ціллю. Апарентну жорсткість самої ґратки міряє voxel-FE (`dotnet run -- fea`, дім числа — [`01_01 §5.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)); фізичний метод для неї — ISO 13314 на друкованому зразку, не нано-індентор на купоні.
 
 **Electrochem-CRO:** **EL-CELL (DE)** — бере клієнтські купони + custom-electrolyte CV/EIS, будує протокол. Альт: ЧНУ/ЧМА co-pub ([`00_02 §1.2`](../../00_02_Academic_Integration_and_IP.md)).
 

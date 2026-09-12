@@ -317,6 +317,27 @@ internal static class TopologyCrossChecks
     // The floor actually in force for this part: the manifest's vendor number, else the canon default.
     public static float FloorMmFor(AnchorCem cem) => cem.SlmMinWallMm ?? CanonSlmMinWallMm;
 
+    // Metal thickness as a fraction of the cell period, at the 65 % porosity target — the two branches
+    // differ by 3× because sheet metal is a WALL around the minimal surface and network metal is a solid
+    // LIGAMENT (canon 01_01 §5.5; measured by `tools/in_silico/scripts/66_gyroid_ligament_thickness.py`
+    // → `cache/mechanical/gyroid_ligament.json`, three instruments agreeing within 9 %).
+    // ⚠️ Mirrors of a canon value: edit THERE, then here. They earn a home in code because the
+    // resolution check below has to know how thick the thinnest real feature of a lattice is, and that
+    // feature is DERIVED — no manifest declares it, so a field-only check cannot see it at all.
+    // ⛔ Both are isotropic estimates and cannot see the minimum NECK of an inclined ligament, so they
+    // err optimistic by an unmeasured margin (same ceiling as their source).
+    public const float SheetThicknessPerPeriod = 0.121f;
+    public const float NetworkThicknessPerPeriod = 0.362f;
+
+    /// <summary>The thinnest metal feature of this lattice, in mm — the ratio above times the finest period.</summary>
+    public static float LatticeThicknessMm(AnchorCem cem)
+    {
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f
+            ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        bool bNetwork = cem.Topology.Equals("network", StringComparison.OrdinalIgnoreCase);
+        return fPeriodMin * (bNetwork ? NetworkThicknessPerPeriod : SheetThicknessPerPeriod);
+    }
+
     // The one grid both halves of the as-printed model are measured on. One home — the report line
     // prints this number and must not re-derive the formula. NB the floor/4 branch wins for every
     // possible AnchorCem at the canon floor, because AdaptiveStepMm clamps at 0.06 mm > 0.05; the Min is

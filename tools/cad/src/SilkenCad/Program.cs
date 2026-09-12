@@ -27,6 +27,8 @@ internal static class Program
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
+                // Voxel-FE elasticity (VoxelFea.cs) — pure-managed like `draw`, no Library.Go.
+                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--with-rod] [--sweep] | fea --ladder"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
                 // Falsifiable probes of KERNEL assumptions (Probe.cs) — not of our geometry.
@@ -459,6 +461,7 @@ internal static class Program
     // wetted area. The coupon must also ENCLOSE the window (a defined area can't exceed the disc).
     private static int ReportCoin(TiCoinCem cem, Voxels voxCoin)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureCoin(cem, voxCoin);
 
         Directory.CreateDirectory("out");
@@ -582,6 +585,7 @@ internal static class Program
             Console.WriteLine("  ⚠ solid disconnected > 2 % — floating metal islands (DMLS defect / electrically dead anode)");
         if (!bPercolates)
             Console.WriteLine("  ⚠ pore does not percolate axially + radially — sap / flow-through blockage");
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
 
         // Committed regression baseline (Golden.cs) — ⛔ it GATES only when one exists: an absent
         // baseline is silence, never a pass, and that asymmetry is deliberate. The wide sanity bands
@@ -605,6 +609,7 @@ internal static class Program
     // an orientation/bench call, and Ti64 LPBF self-supports the 60° downface (Sa≈15µm) anyway.
     private static int ReportLock(MechanicalLockCem cem, Voxels voxShank)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureLock(cem, voxShank);
 
         Directory.CreateDirectory("out");
@@ -655,6 +660,7 @@ internal static class Program
     // flange rim), barbs present (BoolAdd from the §4.3 lock), bus channel. Cathode side-area is informational.
     private static int ReportFlange(CathodeFlangeCem cem, Voxels voxFlange)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureFlange(cem, voxFlange);
 
         Directory.CreateDirectory("out");
@@ -708,6 +714,7 @@ internal static class Program
     //     all three cite one canon row, and one date is ONE witness (00_05 §5).
     private static int ReportRadome(RadomeCem cem, Voxels voxRadome)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureRadome(cem, voxRadome);
 
         Directory.CreateDirectory("out");
@@ -745,6 +752,7 @@ internal static class Program
     // Bool), keeping CI green while the findings drive the bench reconcile.
     private static int ReportAssembly(AnchorAssemblyCem cem, AssemblyVoxels av)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureAssembly(cem, av);
 
         Directory.CreateDirectory("out");
@@ -783,6 +791,7 @@ internal static class Program
     // break §4.1). A simple part → ordinary pass/fail (unlike the audit-table assembly/stack).
     private static int ReportSleeve(Zone2SleeveCem cem, Voxels voxSleeve)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureSleeve(cem, voxSleeve);
 
         Directory.CreateDirectory("out");
@@ -819,6 +828,7 @@ internal static class Program
     // gates ONLY that the merge rendered, keeping CI green while the findings drive bench (as ReportAssembly).
     private static int ReportAxialStack(AnchorAxialStackCem cem, AxialStackVoxels sv)
     {
+        ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureAxialStack(cem, sv);
 
         Directory.CreateDirectory("out");
@@ -904,9 +914,200 @@ internal static class Program
             "  verify <cem.json> measure golden-metrics → out/<name>.metrics.json (exit 0/1)\n" +
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
-            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)");
+            "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
+            "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --sweep | --with-rod]\n" +
+            "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]");
         return 0;
     }
+
+    // Resolution adequacy at the moment of generation (Resolution.cs, 00_07 HW.51). ⛔ It does NOT
+    // gate `verify`: the HARD carrier is `ResolutionTests`, which runs on EVERY manifest in CI with no
+    // display, whereas `verify` sees one part at a time and needs a render host. What the line buys is
+    // the operator standing at the part — the reader `verify` has and the suite does not. One home for
+    // the arithmetic, two readers; the exemption list lives with the gate, so a known row prints here
+    // too rather than being silently filtered by a second copy of the policy.
+    private static void ReportResolution(IReadOnlyList<Resolution.Feature> aFeatures)
+    {
+        foreach (Resolution.Feature f in aFeatures.Where(f => !f.Represented))
+            Console.WriteLine($"  ⚠ {f.Path} spans {f.Voxels:F2} voxels ({f.ValueMm:F3} mm at voxel {f.VoxelMm:F2}) — " +
+                              "below 2 the grid can drop it entirely and every metric describes a part without it");
+        foreach (Resolution.Feature f in aFeatures.Where(f => f.Represented && !f.VolumeHonest))
+            Console.WriteLine($"  ℹ {f.Path} spans {f.Voxels:F2} voxels — present but its measured VOLUME is coarse");
+    }
+
+    // ── Voxel-FE elasticity (00_07 HW.51 / HW.33) ────────────────────────────────────────────────
+    //
+    // Reports the part's APPARENT stiffness as a fraction of the solid alloy's, measured on the
+    // geometry `build` would ship. ⛔ Nothing here converts that fraction into GPa: the Zone-1 alloy
+    // is not selected until the Stage-2 bake-off (00_07 HW.24) and the candidates span 80–186 GPa, so
+    // the ratio is the durable result and the GPa column is printed for every candidate rather than
+    // for one. Pure-managed on purpose — the whole point is that it runs where `verify` cannot.
+    private static int Fea(string[] args)
+    {
+        if (args.Contains("--ladder"))
+            return FeaLadder(args);
+
+        string strCemPath = args[1];
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail($"fea: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
+
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+        bool bWithRod = args.Contains("--with-rod");
+        int nDiv = ArgInt(args, "--step-div", 12);
+        IImplicit sdf = Zone1Anode.Gyroid(cem);
+
+        int[] aDivs = args.Contains("--sweep") ? [6, 8, 12, 16] : [nDiv];
+        Console.WriteLine($"fea {cem.Name} — apparent stiffness / E_solid, ν = {VoxelFea.SolidPoissonRatio}");
+        Console.WriteLine(bWithRod
+            ? "  envelope: the full printed part (gyroid annulus + monolithic bus rod, 01_01 §1.4)"
+            : "  envelope: the gyroid annulus only (rod excluded — comparable to the canon lattice target)");
+        Console.WriteLine($"{"step,mm",9} {"elements",10} {"poros.",8} {"axial-Z",9} {"radial",9} {"islands",8} {"CG it.",8}");
+
+        var aRows = new List<Dictionary<string, object>>();
+        bool bFirstRow = true;
+        foreach (int nDivisor in aDivs)
+        {
+            float fPeriodMin = cem.GyroidPeriodRimMm > 0f
+                ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+            float fStep = fPeriodMin / nDivisor;
+
+            Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(sdf, cem, fStep, bWithRod);
+            Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
+
+            VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
+            // 🔑 The axial divisor is analytically 1 and is NOT solved per row. The envelope is
+            // prismatic along Z, so a frictionless axial compression of the fully solid grid is uniform
+            // uniaxial stress at ANY step — the calibration is a property of the solver, not of the
+            // resolution. Solving it per row cost more than the lattice itself (a solid grid carries
+            // ~2.6× the elements) and measured 1.000000000 every time. It still RUNS once, on the
+            // coarsest row, because a calibration that is only argued is not a calibration.
+            double dAxialSolid = bFirstRow ? VoxelFea.ApparentAxialModulus(gridSolid, 2).StiffnessRatio : 1.0;
+            VoxelFea.FeaResult oRadial = VoxelFea.RadialStiffness(grid, cem.OuterDiameterMm / 2f);
+            VoxelFea.FeaResult oRadialSolid = VoxelFea.RadialStiffness(gridSolid, cem.OuterDiameterMm / 2f);
+            bFirstRow = false;
+
+            double dAxial = oAxial.StiffnessRatio;
+            double dRadial = oRadial.StiffnessRatio / oRadialSolid.StiffnessRatio;
+            double dPorosity = Connectivity.Porosity(grid);
+
+            Console.WriteLine($"{fStep,9:F4} {oAxial.Elements,10:N0} {dPorosity,8:P1} {dAxial,9:F4} {dRadial,9:F4} " +
+                              $"{oAxial.DiscardedIslandFraction,8:P3} {oAxial.Iterations,8:N0}");
+            if (!oAxial.Converged || !oRadial.Converged)
+                Console.WriteLine($"  ⚠ CG did not reach tolerance (axial residual {oAxial.Residual:E2}, radial {oRadial.Residual:E2}) — the row above is NOT a measurement");
+            // The solid counterpart is a live calibration, not a formality: a frictionless uniaxial
+            // test on a fully solid envelope must return E_solid exactly, so any drift here indicts
+            // the element matrix or the reaction sum before it indicts the lattice.
+            if (Math.Abs(dAxialSolid - 1.0) > 0.02)
+                Console.WriteLine($"  ⚠ solid calibration returned {dAxialSolid:F4} of E_solid, not 1.000 — the SOLVER is off, not the lattice");
+
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["step_mm"] = fStep,
+                ["step_divisor"] = nDivisor,
+                ["elements"] = oAxial.Elements,
+                ["dofs"] = oAxial.Dofs,
+                ["porosity"] = dPorosity,
+                ["axial_ratio"] = dAxial,
+                ["radial_ratio"] = dRadial,
+                ["solid_calibration_axial"] = dAxialSolid,
+                ["discarded_island_fraction"] = oAxial.DiscardedIslandFraction,
+                ["axial_iterations"] = oAxial.Iterations,
+                ["axial_residual"] = oAxial.Residual,
+                ["radial_iterations"] = oRadial.Iterations,
+                ["radial_residual"] = oRadial.Residual,
+                ["converged"] = oAxial.Converged && oRadial.Converged,
+            });
+        }
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        string strOut = Path.Combine("cache", "fea", $"{cem.Name}{(bWithRod ? ".with_rod" : "")}.json");
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. "
+                      + "Declared ceiling lives in VoxelFea.cs; a single row is an UPPER bound, read the sweep.",
+            ["cem"] = cem.Name,
+            ["topology"] = cem.Topology,
+            ["with_bus_rod"] = bWithRod,
+            ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"→ {strOut}");
+        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The MATERIAL-scale ladder: the same lattice in a plain cube of n periods a side, free lateral
+    // surfaces, frictionless platens. Its converged rung is what Gibson-Ashby tries to predict; its
+    // low rungs are where the real part lives (1.50–2.50 cells across the radial wall, 01_01 §5.2).
+    // The gap between them is the size effect — measured here rather than argued.
+    private static int FeaLadder(string[] args)
+    {
+        float fPeriod = ArgFloat(args, "--period", 2.0f);
+        float fWall = ArgFloat(args, "--wall", 0.10f);
+        bool bSheet = args.Contains("--sheet");
+        int nStepsPerPeriod = ArgInt(args, "--steps-per-period", 12);
+        int[] aCells = (ArgStr(args, "--cells", "1,2,3,4,6,8") ?? "").Split(',')
+            .Select(s => int.Parse(s.Trim())).ToArray();
+
+        Console.WriteLine($"fea --ladder — {(bSheet ? "sheet" : "network")} gyroid, period {fPeriod} mm, wall {fWall}, " +
+                          $"{nStepsPerPeriod} steps/period, frictionless platens");
+        Console.WriteLine($"{"cells",6} {"elements",10} {"poros.",8} {"E_app/E_solid",14}");
+
+        var aRows = new List<Dictionary<string, object>>();
+        bool bFirstRung = true;
+        foreach (int nCells in aCells)
+        {
+            Connectivity.Grid grid = VoxelFea.SampleLatticeCube(fPeriod, fWall, !bSheet, nCells, nStepsPerPeriod);
+            VoxelFea.FeaResult o = VoxelFea.ApparentAxialModulus(grid, 2);
+            // Same reason as the part sweep: a fully solid cube under frictionless platens is exactly
+            // E_solid at any resolution, so the divisor is 1 and only the calibration RUN is kept — on
+            // the first rung, where it is cheapest and still proves the solver rather than asserting it.
+            double dSolid = bFirstRung
+                ? VoxelFea.ApparentAxialModulus(VoxelFea.SolidCounterpart(grid), 2).StiffnessRatio : 1.0;
+            bFirstRung = false;
+            double dRatio = o.StiffnessRatio;
+            double dPorosity = Connectivity.Porosity(grid);
+            Console.WriteLine($"{nCells,6} {o.Elements,10:N0} {dPorosity,8:P1} {dRatio,14:F4}");
+            aRows.Add(new Dictionary<string, object>
+            {
+                ["cells_per_side"] = nCells,
+                ["elements"] = o.Elements,
+                ["porosity"] = dPorosity,
+                ["axial_ratio"] = dRatio,
+                ["solid_calibration_axial"] = dSolid,
+                ["converged"] = o.Converged,
+            });
+        }
+
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        string strOut = Path.Combine("cache", "fea", $"size_effect_ladder.{(bSheet ? "sheet" : "network")}.json");
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["_note"] = "Apparent axial stiffness of an n-cell cube of the same lattice, in units of E_solid. "
+                      + "The converged rung is the continuum value Gibson-Ashby predicts; the low rungs are the "
+                      + "regime the shipped part is in.",
+            ["topology"] = bSheet ? "sheet" : "network",
+            ["period_mm"] = fPeriod,
+            ["wall_param"] = fWall,
+            ["steps_per_period"] = nStepsPerPeriod,
+            ["rows"] = aRows,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"→ {strOut}");
+        return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    private static string? ArgStr(string[] args, string strFlag, string? strDefault)
+    {
+        int i = Array.IndexOf(args, strFlag);
+        return i >= 0 && i + 1 < args.Length ? args[i + 1] : strDefault;
+    }
+
+    private static int ArgInt(string[] args, string strFlag, int nDefault)
+        => int.TryParse(ArgStr(args, strFlag, null), out int n) ? n : nDefault;
+
+    private static float ArgFloat(string[] args, string strFlag, float fDefault)
+        => float.TryParse(ArgStr(args, strFlag, null), System.Globalization.CultureInfo.InvariantCulture, out float f)
+            ? f : fDefault;
 
     private static int Fail(string strMsg)
     {

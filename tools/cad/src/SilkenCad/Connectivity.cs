@@ -95,9 +95,20 @@ internal static class Connectivity
     public static Grid SampleBox(IImplicit sdf, float fExtentMm, float fStepMm = DefaultStepMm)
         => Sample(sdf, fExtentMm, fExtentMm, fExtentMm, fStepMm, static (_, _, _) => true, 0f, 0f, 0f);
 
+    // Sampling with a caller-supplied envelope AND an optional phase OVERRIDE — the door VoxelFea
+    // needs, because a body that is SDF-invisible (the monolithic bus rod, 01_01 §1.4) has to be
+    // forced solid rather than inferred from the field. Kept here, next to the flood-fill it feeds,
+    // so the grid has one home; `fnOverride` returning null means "let the SDF decide".
+    internal static Grid SampleRegion(
+        IImplicit sdf, float fSizeX, float fSizeY, float fSizeZ, float fStepMm,
+        Func<float, float, float, bool> fnInside, Func<float, float, float, Phase?> fnOverride,
+        float fXMin, float fYMin, float fZMin)
+        => Sample(sdf, fSizeX, fSizeY, fSizeZ, fStepMm, fnInside, fXMin, fYMin, fZMin, fnOverride);
+
     private static Grid Sample(
         IImplicit sdf, float fSizeX, float fSizeY, float fSizeZ, float fStepMm,
-        Func<float, float, float, bool> fnInside, float fXMin, float fYMin, float fZMin)
+        Func<float, float, float, bool> fnInside, float fXMin, float fYMin, float fZMin,
+        Func<float, float, float, Phase?>? fnOverride = null)
     {
         int nx = Math.Max(1, (int)MathF.Ceiling(fSizeX / fStepMm));
         int ny = Math.Max(1, (int)MathF.Ceiling(fSizeY / fStepMm));
@@ -117,6 +128,12 @@ internal static class Connectivity
                     if (!fnInside(x, y, z))
                     {
                         aCells[idx] = Phase.Outside;
+                        continue;
+                    }
+                    Phase? phaseForced = fnOverride?.Invoke(x, y, z);
+                    if (phaseForced.HasValue)
+                    {
+                        aCells[idx] = phaseForced.Value;
                         continue;
                     }
                     // Solid where the SDF is negative (matches the render's BoolIntersect convention).
@@ -208,6 +225,57 @@ internal static class Connectivity
             if (p == Phase.Pore) nPore++;
         }
         return nInside > 0 ? (double)nPore / nInside : 0.0;
+    }
+
+    // MEMBERSHIP of the largest face-connected component, which `Components` deliberately does not
+    // keep (it summarises clusters, it does not label cells). VoxelFea needs the labels: a floating
+    // island is a rigid-body mode in a stiffness matrix, so it must be excluded from the mesh rather
+    // than counted. Same 6-connectivity and the same Outside handling — one home for both.
+    internal static bool[] LargestComponentMask(in Grid grid, Phase phase)
+    {
+        Phase[] cells = grid.Cells;
+        int nx = grid.Nx, ny = grid.Ny, nz = grid.Nz;
+        var aLabel = new int[cells.Length];
+        Array.Fill(aLabel, -1);
+        var oStack = new Stack<int>();
+        int nLabel = 0, nBest = -1, nBestSize = 0;
+
+        for (int s = 0; s < cells.Length; s++)
+        {
+            if (cells[s] != phase || aLabel[s] >= 0) continue;
+            aLabel[s] = nLabel;
+            oStack.Push(s);
+            int nSize = 0;
+            while (oStack.Count > 0)
+            {
+                int c = oStack.Pop();
+                nSize++;
+                int i = c / (ny * nz);
+                int j = (c / nz) % ny;
+                int k = c % nz;
+                PushLabel(i > 0 ? c - (ny * nz) : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(i < nx - 1 ? c + (ny * nz) : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(j > 0 ? c - nz : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(j < ny - 1 ? c + nz : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(k > 0 ? c - 1 : -1, cells, aLabel, oStack, phase, nLabel);
+                PushLabel(k < nz - 1 ? c + 1 : -1, cells, aLabel, oStack, phase, nLabel);
+            }
+            if (nSize > nBestSize) { nBestSize = nSize; nBest = nLabel; }
+            nLabel++;
+        }
+
+        var aMask = new bool[cells.Length];
+        if (nBest < 0) return aMask;
+        for (int s = 0; s < cells.Length; s++)
+            aMask[s] = aLabel[s] == nBest;
+        return aMask;
+    }
+
+    private static void PushLabel(int to, Phase[] cells, int[] aLabel, Stack<int> oStack, Phase phase, int nLabel)
+    {
+        if (to < 0 || cells[to] != phase || aLabel[to] >= 0) return;
+        aLabel[to] = nLabel;
+        oStack.Push(to);
     }
 
     private readonly record struct Cluster(

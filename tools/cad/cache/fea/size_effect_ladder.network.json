@@ -1,0 +1,57 @@
+{
+  "_note": "Apparent axial stiffness of an n-cell cube of the same lattice, in units of E_solid. The converged rung is the continuum value Gibson-Ashby predicts; the low rungs are the regime the shipped part is in.",
+  "topology": "network",
+  "period_mm": 2,
+  "wall_param": 0.1,
+  "steps_per_period": 16,
+  "rows": [
+    {
+      "cells_per_side": 1,
+      "elements": 1520,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.09787544372069773,
+      "solid_calibration_axial": 0.9999999999996578,
+      "converged": true
+    },
+    {
+      "cells_per_side": 2,
+      "elements": 12160,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.0978489915565789,
+      "solid_calibration_axial": 1,
+      "converged": true
+    },
+    {
+      "cells_per_side": 3,
+      "elements": 41040,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.09799020830431689,
+      "solid_calibration_axial": 1,
+      "converged": true
+    },
+    {
+      "cells_per_side": 4,
+      "elements": 97280,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.09803862684672789,
+      "solid_calibration_axial": 1,
+      "converged": true
+    },
+    {
+      "cells_per_side": 6,
+      "elements": 328320,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.09806063068652225,
+      "solid_calibration_axial": 1,
+      "converged": true
+    },
+    {
+      "cells_per_side": 8,
+      "elements": 778240,
+      "porosity": 0.62890625,
+      "axial_ratio": 0.09805761504033049,
+      "solid_calibration_axial": 1,
+      "converged": true
+    }
+  ]
+}

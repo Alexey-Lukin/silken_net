@@ -139,8 +139,15 @@ def alloy_comparative() -> dict:
     """Per-alloy comparative for the Stage-2 coin bake-off (01_02 §2.5). Two signals: (1) the
     worst-case Ti↔PEEK thermal stress driven by the alloy CTE mismatch with PEEK — the Ti CTE
     barely moves it (PEEK's 47e-6 dominates the mismatch), so this CONFIRMS the press-fit is
-    alloy-ROBUST; (2) the bulk E that sets the gyroid isoelasticity (E_gyroid ≈ E·(1−φ)^n) — the
-    REAL bake-off lever: β-Ti's low 80 GPa pulls E toward wood (9–16), the HW.33 sheet/network knob.
+    alloy-ROBUST; (2) the bulk E that sets the gyroid isoelasticity — the REAL bake-off lever, because
+    the lattice's apparent stiffness scales with whatever alloy the bake-off picks.
+    ⛔ The Gibson-Ashby form `E_gyroid ≈ E·(1−φ)^n` that stood here is NOT how we get that number any
+    more: the shipped SKUs sit outside its domain (1.50–2.50 cells across the radial wall), so the
+    knockdown is MEASURED by voxel-FE on the real part — `tools/cad`, `dotnet run -- fea` — and its
+    home is 01_01 §5.2. This column supplies only the E it multiplies.
+    ⛔ And the comparison target is the TRANSVERSE wood modulus E_R/E_T ≈ 0.5–1.5 GPa, not the
+    longitudinal 9–16 GPa that stood here: the anchor sits across the trunk (01_01 §5.1). Both this
+    docstring and the printed line below said 9–16, i.e. a target ~10x too high, on every run.
     Numbers compare against the coin nano-indentation (criterion 4) when in-vitro data lands."""
     banner("Alloy comparative (Stage-2 bake-off) — CTE-mismatch stress + gyroid-E lever")
     print(f"  {'alloy':>20s}  {'E (GPa)':>8s}  {'a (1e-6/K)':>11s}  {'sig_t @-30C':>13s}  {'note':>6s}")
@@ -161,7 +168,9 @@ def alloy_comparative() -> dict:
         print(f"  {alloy:>20s}  {props['E_GPa']:>8.0f}  {alpha*1e6:>11.1f}  {sigma_t/1e6:>11.2f} MPa  {flag:>6s}")
     print()
     print("  Press-fit is alloy-ROBUST (PEEK CTE 47e-6 dominates). The E column is the bake-off signal:")
-    print("  beta-Ti 80 GPa lowers gyroid E toward wood (9-16) -> softens the HW.33 sheet/network call.")
+    print("  beta-Ti 80 GPa lowers the gyroid's apparent E; the target is TRANSVERSE wood 0.5-1.5 GPa,")
+    print("  not the longitudinal 9-16 (01_01 5.1). Lattice knockdown is measured, not Gibson-Ashby:")
+    print("  tools/cad `dotnet run -- fea`, home 01_01 5.2.")
     return out
 
 
