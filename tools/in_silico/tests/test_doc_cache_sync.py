@@ -418,6 +418,36 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["weld_seam"]["protrusion_sensitivity"]["rows"][1]["binding_k_at_infinite_life"], 0.001,
     ),
+    # ⛔ The four rows below pin a table whose WHOLE POINT is that the two topologies differ. The
+    # defect they exist against is not drift in one number but a SWAP: quoting the sheet factor for
+    # a network part is exactly what canon did for three months after the topology was ratified, and
+    # every gate stayed green because each number was individually true. Anchoring per-ROW is
+    # therefore load-bearing — a check on a bare `0.121` would pass on a table with the rows
+    # transposed. (`01_01 §5.5`, owner = script 66.)
+    (
+        "gyroid SHEET wall / period → gyroid_ligament.json (topology table, row 1)",
+        COAXIAL, rf"\| sheet \| {N} \|",
+        "mechanical/gyroid_ligament.json",
+        lambda d: d["sheet"]["t_median_over_period"], 0.001,
+    ),
+    (
+        "gyroid SHEET min period @ 200 µm floor → gyroid_ligament.json",
+        COAXIAL, rf"\| sheet \| [\d.]+ \| {N} µm \|",
+        "mechanical/gyroid_ligament.json",
+        lambda d: d["floor_inversion"]["sheet"]["slm_default"]["min_period_um"], 1.0,
+    ),
+    (
+        "gyroid NETWORK ligament / period → gyroid_ligament.json (topology table, row 2)",
+        COAXIAL, rf"\*\*network\*\* \(відвантажені SKU\) \| \*\*{N}\*\*",
+        "mechanical/gyroid_ligament.json",
+        lambda d: d["network"]["t_median_over_period"], 0.001,
+    ),
+    (
+        "gyroid NETWORK min period @ 200 µm floor → gyroid_ligament.json",
+        COAXIAL, rf"\*\*network\*\* \(відвантажені SKU\) \| \*\*[\d.]+\*\* \| \*\*{N} µm\*\*",
+        "mechanical/gyroid_ligament.json",
+        lambda d: d["floor_inversion"]["network"]["slm_default"]["min_period_um"], 1.0,
+    ),
 ]
 
 
