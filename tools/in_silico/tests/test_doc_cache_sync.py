@@ -388,6 +388,24 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["depth_tolerance_budget"]["total_gap_budget_half_width_mm"] * 1000.0, 1.0,
     ),
+    # ── HW.34 weld seam: the break-even knockdown SUMMARY quotes from script 55 ──
+    # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
+    # These two are pinned first because they are the ones a reader acts on: one says how bad the
+    # joint may be, the other says how little room is left against our own marker. Both move the
+    # moment ANY input of that model moves (µ sweep, span check, yield table, derates), and the
+    # prose around them would stay internally consistent on the old value.
+    (
+        "weld-seam break-even k for the binding alloy → bus_mechanical.json §weld_seam",
+        SUMMARY, rf"the joint may lose \*\*`k` = {N}\*\* of the wire",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
+    ),
+    (
+        "margin in k against our own as-printed marker → bus_mechanical.json §weld_seam",
+        SUMMARY, rf"still \*\*clears\*\* the SF-2 line, but by only \*\*\+{N}\*\* in `k`",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["weld_seam"]["binding_candidate"]["margin_in_k_vs_as_printed_marker"], 0.001,
+    ),
 ]
 
 

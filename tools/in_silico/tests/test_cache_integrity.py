@@ -14,6 +14,7 @@ LIGANDS = REPO / "docs/protocols/ebfc/in_silico/ligands"
 CACHE = REPO / "tools/in_silico/cache"
 DFT = CACHE / "dft"
 KINETICS = CACHE / "kinetics"
+MECHANICAL = CACHE / "mechanical"
 
 
 # ── Ligand SDF/XYZ files ──
@@ -299,6 +300,54 @@ def test_thermal_install_field():
     assert peaks == sorted(peaks), "cambium damage must grow with hold length"
     assert any(h["cambium_peak_C"] < gate and h["cauterisation_dwell_s"] > 0 for h in holds), \
         "the constructive half of the finding — a hold that coagulates and spares — is gone"
+
+
+def test_bus_mechanical_weld_seam():
+    """Script 55 (HW.34): the seam at the root is BOUNDED, never assumed.
+
+    The point of the block is that its input is missing, so the first assertion is the honesty
+    one — nobody may quietly type a knockdown into the sentinel and let the rest of the corpus
+    read it as measured. The rest pin the RELATION the bound rests on (SF_seam = k·SF_wire) and
+    the direction of the two corrections; a model whose worst corner is not harsher than its
+    nominal is measuring nothing.
+    """
+    path = MECHANICAL / "bus_mechanical.json"
+    if not path.exists():
+        pytest.skip("bus_mechanical.json not computed")
+    d = json.loads(path.read_text())
+    seam = d["weld_seam"]
+    fm = d["fatigue_model"]
+    # 1. The input stays absent, and the two flags say WHICH half exists. ⛔ A single boolean
+    #    cannot: the geometry is unmodelled while the sensitivity is, and flipping one flag to
+    #    cover both is how a surface splits into halves that disagree.
+    assert seam["knockdown_k_measured"] is None, "a knockdown was typed in — it is NOT MEASURED"
+    assert fm["weld_seam_geometry_modelled"] is False
+    assert fm["weld_seam_sensitivity_modelled"] is True
+    assert fm["mean_stress_correction_modelled"] is False
+    # 2. Priced on the span that exists. The free-cantilever column describes no shipped branch.
+    assert d["clearance_regime"]["free_cantilever_sf_describes_these"] == []
+    assert "supported" in seam["span"]["which"]
+    assert seam["span"]["worst_corner_sigma_MPa"] > seam["span"]["nominal_sigma_MPa"]
+    # 3. The relation the whole bound rests on, per alloy and per corner.
+    inf_sf = fm["infinite_life_sf"]
+    for row in seam["per_alloy"]:
+        for tag, sf_key in (("nominal", "sf_wire_supported_nominal"),
+                            ("worst_corner", "sf_wire_supported_worst_corner")):
+            sf = row[sf_key]
+            assert abs(row[f"k_at_infinite_life_{tag}"] * sf - inf_sf) < 0.02, row["alloy"]
+            assert abs(row[f"k_at_failure_line_{tag}"] * sf - 1.0) < 0.02, row["alloy"]
+        # both corrections bite in the same direction
+        assert row["sf_wire_supported_worst_corner"] < row["sf_wire_supported_nominal"]
+        assert row["k_at_infinite_life_worst_corner"] > row["k_at_infinite_life_nominal"]
+    # 4. The binding candidate is DERIVED — the softest wire tolerates the least bad joint.
+    worst = min(seam["per_alloy"], key=lambda r: r["sf_wire_supported_worst_corner"])
+    assert seam["binding_candidate"]["alloy"] == worst["alloy"]
+    assert seam["binding_candidate"]["k_at_infinite_life"] == max(
+        r["k_at_infinite_life_worst_corner"] for r in seam["per_alloy"])
+    # 5. Both markers are OUR OWN numbers, so they must still match the model they came from.
+    markers = {m["label"]: m["k"] for m in seam["markers"]}
+    assert fm["as_printed_derate"] in markers.values()
+    assert fm["wrought_derate"] in markers.values()
 
 
 # ── Constants consistency ──

@@ -39,10 +39,13 @@ FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT
   `AS_PRINTED_DERATE` no longer applies to the shipped part. Both columns are printed side by side —
   `printed` (superseded) and `welded` (shipped) — because the fabrication choice is what moves the
   still-open LINING verdict, and a reader handed one column cannot see that it moved.
-  ⛔ THE MODEL HAS NO WELD SEAM. It is a homogeneous cantilever, while the ratified rod carries a
-  heat-affected zone in the ROOT — exactly where the bending moment peaks. So the doubled SF describes
-  the WIRE and says NOTHING about the JOINT; the seam is a separate open question (00_07 HW.34), and
-  quoting a welded-column SF as if it covered the weld is the error this note exists to prevent.
+  ⛔ THE MODEL STILL HAS NO WELD-SEAM GEOMETRY. It is a homogeneous cantilever, while the ratified rod
+  carries a heat-affected zone in the ROOT — exactly where the bending moment peaks. So the doubled SF
+  describes the WIRE and says NOTHING about the JOINT, and quoting a welded-column SF as if it covered
+  the weld is the error this note exists to prevent. ⊕ What §5 adds (2026-09-12) is not that geometry
+  but the SENSITIVITY: the seam's knockdown k is NOT MEASURED anywhere in this tree, so the model
+  BOUNDS it — the break-even k at which each alloy crosses the failure and infinite-life lines — rather
+  than assuming a value. Priced on the SUPPORTED span only, and deliberately so (§5's own note).
   ⚠️ Likewise absent from canon: as-printed `Sa` and the printed diameter tolerance — `DMLS Ti ±0.3`
   is an AXIAL Z-stack contribution, not a diametral one.
 
@@ -155,6 +158,31 @@ FAB_BRANCHES = (("printed", AS_PRINTED_DERATE), ("welded", WROUGHT_DERATE))
 SHIPPED_BRANCH = "welded"
 INFINITE_LIFE_SF = 2.0        # the SF line this script calls "infinite life"
 
+# ── The WELD SEAM at the root (00_07 HW.34) ───────────────────────────────────────────────────
+# The ratified rod is a welded cold-drawn wire, so the joint sits at the ROOT — which is exactly
+# where this model puts the peak bending moment, in BOTH spans (tip-loaded cantilever, fixed at
+# the root). The derates above describe the WIRE; the seam carries its own fatigue-strength
+# reduction on top: weld-toe notch + HAZ microstructure + weld residual tension.
+#
+# ⛔ THAT FACTOR IS NOT IN THIS TREE AND IS NOT INVENTED HERE. There is no canon row, no vendor
+#    answer and no measurement for it, so the sentinel below stays None. Typing a plausible
+#    number would be the FALLBACK species of fabrication (00_01 §1.1): a branch of code that
+#    exists while its measurer does not. What the model computes instead is the question that
+#    CAN be answered from what we already have — the BREAK-EVEN knockdown, i.e. how bad the
+#    joint may be before each alloy crosses a line. The relation is deliberately trivial
+#    (SF_seam = k·SF_wire, same stress at the same point); its whole value is that it INVERTS
+#    an unanswerable input into an answerable bound.
+WELD_KNOCKDOWN_MEASURED = None   # k = σ_e(seam)/σ_e(wire) ∈ (0,1] — NOT MEASURED (00_06 §0)
+# Two reference markers, and BOTH are OURS — neither is a weld figure borrowed from anywhere,
+# so neither claims authority it does not have (in-silico skill #9, the mirror half):
+#   k = AS_PRINTED_DERATE — "the joint is as bad as an as-built SLM surface". At that k the
+#       welded branch collapses onto `printed` AT THE SEAM, i.e. the metallurgical argument for
+#       welding buys nothing where the part actually breaks.
+#   k = WROUGHT_DERATE    — "the joint is as good as the drawn wire", i.e. the model as it stood
+#       before this block existed.
+WELD_KNOCKDOWN_MARKERS = (("joint as bad as an as-printed surface", AS_PRINTED_DERATE),
+                          ("joint as good as the drawn wire", WROUGHT_DERATE))
+
 MM_M = 1e-3
 
 
@@ -233,9 +261,24 @@ def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
     """σ_e ≈ fatigue-ratio × yield, knocked down only if the rod is AS-PRINTED.
 
     `derate` is the fabrication branch, not a tuning knob: 0.5 for an SLM as-built surface,
-    1.0 for cold-drawn wire. ⛔ It describes the WIRE and says nothing about the WELD.
+    1.0 for cold-drawn wire. ⛔ It describes the WIRE and says nothing about the WELD — the
+    seam has its own knockdown, and `break_even_knockdown` below is what this file says about it.
     """
     return ENDURANCE_OVER_YIELD * derate * yield_MPa
+
+
+def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
+    """The seam knockdown `k` at which a rod whose WIRE stands at `sf_wire` crosses `sf_line`.
+
+    The seam sits at the root and the root is where this model's bending moment peaks, so the
+    seam sees the very stress the wire already sees and SF_seam = k · SF_wire. Inverting gives
+    k = sf_line / sf_wire — a bound on the unmeasured input rather than a guess at it.
+
+    ⚠️ A result > 1 is not a knockdown at all: it means the WIRE is already below `sf_line`, so
+    no joint quality can reach it. The caller reports that as `reachable: false` rather than
+    printing a number above 1, which would read as a tolerance.
+    """
+    return sf_line / sf_wire
 
 
 def main() -> int:
@@ -244,7 +287,8 @@ def main() -> int:
           f"supported {L_FREE_SUP:.0f} mm (liner = the insulation, HW.34 sub-2)")
     print(f"  Pogo {F_POGO_N:.1f} N axial; cyclic lateral drag = µ·F_pogo (µ={MU_CONTACT:.1f})")
     print(f"  σ_e ≈ {ENDURANCE_OVER_YIELD:.2f}·derate·σ_y — derate {AS_PRINTED_DERATE:.2f} printed "
-          f"vs {WROUGHT_DERATE:.2f} welded (drawn wire); SHIPPED = {SHIPPED_BRANCH}, weld seam NOT modelled")
+          f"vs {WROUGHT_DERATE:.2f} welded (drawn wire); SHIPPED = {SHIPPED_BRANCH}. The seam's own "
+          f"knockdown is BOUNDED in §5, never assumed (k NOT MEASURED)")
 
     # ── 1. Buckling under the pogo axial force ──
     banner("Buckling (pogo axial force on a slender rod)")
@@ -493,6 +537,111 @@ def main() -> int:
     print("    ⚠️ The list is not a ranking: the liner bears 0.5 mm past the mouth, a conformal film")
     print("    10–17 mm in. The flag says 'not a free cantilever'; the DEPTH says how much that matters.")
 
+    # ── 5. The WELD SEAM at the root — how bad may the JOINT be? (00_07 HW.34) ───────────────────
+    # 🔴 The question §2 answers for the WIRE and never for the JOINT. Canon (01_01 §1.4 and the
+    # factory protocol §3 step 1) sent the reader here for this state while nothing here held it.
+    # ⛔ Priced on the SUPPORTED span ONLY, and that is a decision rather than an omission: the
+    # free-cantilever column describes no branch that bears on the wall (§4's derived flag), so a
+    # seam number computed on it would be a tolerance for a configuration that does not exist —
+    # the very error the 2026-09-11 verdict corrected. The conservatism instead comes from two
+    # corrections that belong to the REAL span: the worst friction the load sweep carries, and
+    # the span-optimism §4 just measured against this model's own L_FREE_SUP assumption.
+    banner("Weld seam at the root — break-even knockdown (the JOINT, not the wire)")
+    span_inflation = 1.0 + (supported_span_check["sigma_understated_pct"] / 100.0
+                            if supported_span_check else 0.0)
+    mu_worst = max(MU_SWEEP)
+    sig_sup_worst = bending_stress_MPa(mu_worst * F_POGO_N, L_FREE_SUP) * span_inflation
+    shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
+    print("  Seam = root = peak bending moment, so SF_seam = k·SF_wire and k is the only unknown.")
+    print("  k is NOT MEASURED anywhere in this tree (no canon row, no vendor answer) — so the")
+    print(f"  model bounds it instead of guessing it. Nominal σ_sup = {sig_sup:.1f} MPa (µ={MU_CONTACT:.1f}); "
+          f"worst corner = {sig_sup_worst:.1f} MPa")
+    print(f"  (µ={mu_worst:.1f} × span-optimism {100.0 * (span_inflation - 1.0):.1f} %).\n")
+    print(f"  {'alloy (= bus, monolithic)':<24s} {'σ_e wl':>6s} | {'SF nom':>7s} {'k→fail':>7s} {'k→SF2':>7s} | "
+          f"{'SF worst':>8s} {'k→fail':>7s} {'k→SF2':>7s}")
+    print(f"  {'-' * 92}")
+
+    def fmt_k(k: float) -> str:
+        # ⛔ A k above 1 is not a tolerance — it means the WIRE itself is under the line, and any
+        # joint quality whatsoever leaves it there. Printing "1.42" would read as head-room.
+        return f"{k:.3f}" if k <= 1.0 else "  — "
+
+    seam_rows = []
+    for row in alloy_rows:
+        se = row[f"endurance_MPa_{SHIPPED_BRANCH}"]
+        sf_nom = row[f"sf_supported_{SHIPPED_BRANCH}"]
+        sf_worst = se / sig_sup_worst
+        entry = {"alloy": row["alloy"], "endurance_MPa": se,
+                 "sf_wire_supported_nominal": sf_nom,
+                 "sf_wire_supported_worst_corner": round(sf_worst, 2)}
+        for tag, sf in (("nominal", sf_nom), ("worst_corner", sf_worst)):
+            k_fail = break_even_knockdown(sf, 1.0)
+            k_inf = break_even_knockdown(sf, INFINITE_LIFE_SF)
+            entry[f"k_at_failure_line_{tag}"] = round(k_fail, 3) if k_fail <= 1.0 else None
+            entry[f"k_at_infinite_life_{tag}"] = round(k_inf, 3) if k_inf <= 1.0 else None
+            entry[f"infinite_life_reachable_{tag}"] = bool(k_inf <= 1.0)
+        print(f"  {row['alloy']:<24s} {se:>6.0f} | {sf_nom:>6.1f}× "
+              f"{fmt_k(break_even_knockdown(sf_nom, 1.0)):>7s} {fmt_k(break_even_knockdown(sf_nom, INFINITE_LIFE_SF)):>7s} | "
+              f"{sf_worst:>7.1f}× {fmt_k(break_even_knockdown(sf_worst, 1.0)):>7s} "
+              f"{fmt_k(break_even_knockdown(sf_worst, INFINITE_LIFE_SF)):>7s}")
+        seam_rows.append(entry)
+
+    # ⛔ DERIVED, never typed: which alloy binds, and whether our own as-printed marker clears it.
+    binding = min(seam_rows, key=lambda r: r["sf_wire_supported_worst_corner"])
+    k_binding = binding["k_at_infinite_life_worst_corner"]
+    marker_label, marker_k = WELD_KNOCKDOWN_MARKERS[0]
+    marker_clears = k_binding is not None and marker_k >= k_binding
+    print(f"\n  → The binding candidate at the worst corner is {binding['alloy']} "
+          f"(SF {binding['sf_wire_supported_worst_corner']:.1f}×): the seam may lose "
+          f"{100.0 * (1.0 - k_binding):.0f} % of the wire's endurance before the SF-2 line goes, and "
+          f"{100.0 * (1.0 - binding['k_at_failure_line_worst_corner']):.0f} % before failure is predicted.")
+    print(f"  → Against our own marker «{marker_label}» (k = {marker_k:.2f}): "
+          f"{'CLEARS' if marker_clears else 'DOES NOT CLEAR'} the SF-2 line, margin in k = "
+          f"{marker_k - k_binding:+.3f}.")
+    print("  ⚠️ This bounds ONE mechanism. Three the model still does not carry, with their signs:")
+    print("     bead section (upset/fillet lowers nominal stress — RELIEVES) · weld-toe notch")
+    print("     (concentrates it — AGGRAVATES) · weld residual TENSION, which is a MEAN stress and")
+    print("     this file has no Goodman/Haigh correction anywhere, so even k = 1 would understate.")
+
+    weld_seam = {
+        "question": "00_07 HW.34 — the ratified rod is a WELDED drawn wire, so a heat-affected zone "
+                    "sits at the root, i.e. at peak bending moment. The wrought derate describes the "
+                    "WIRE. How bad may the JOINT be before the verdict moves?",
+        "seam_location": "root of the cantilever = the peak-bending-moment section of this model",
+        "geometry_modelled": False,
+        "knockdown_k_measured": WELD_KNOCKDOWN_MEASURED,
+        "knockdown_k_source": "NOT MEASURED — no canon row, no vendor answer, no experiment in this "
+                              "tree. Bounded here instead of assumed; a value is an RFQ/literature "
+                              "input and enters through the Validation Gate (00_06 §0), not through "
+                              "this constant",
+        "markers": [{"label": lbl, "k": k} for lbl, k in WELD_KNOCKDOWN_MARKERS],
+        "span": {"which": "supported (liner) ONLY", "nominal_sigma_MPa": round(sig_sup, 1),
+                 "worst_corner_sigma_MPa": round(sig_sup_worst, 1),
+                 "worst_corner_mu": mu_worst,
+                 "span_optimism_pct": round(100.0 * (span_inflation - 1.0), 1),
+                 "why_not_free_cantilever": "§4's derived flag says the free-cantilever SF describes "
+                                            "no branch that bears on the wall, so a seam tolerance "
+                                            "computed on it would price a configuration that does "
+                                            "not exist (the error the 2026-09-11 verdict corrected)"},
+        "per_alloy": seam_rows,
+        "binding_candidate": {"alloy": binding["alloy"],
+                              "sf_wire_worst_corner": binding["sf_wire_supported_worst_corner"],
+                              "k_at_infinite_life": k_binding,
+                              "k_at_failure_line": binding["k_at_failure_line_worst_corner"],
+                              "as_printed_marker_clears_sf2": bool(marker_clears),
+                              "margin_in_k_vs_as_printed_marker": round(marker_k - k_binding, 3)
+                              if k_binding is not None else None},
+        "not_modelled": {"bead_section": "an upset/fillet raises the local section, which LOWERS "
+                                         "nominal stress — this omission is conservative",
+                         "weld_toe_notch": "a geometric stress concentration at the toe — this "
+                                           "omission is ANTI-conservative",
+                         "mean_stress": "weld residual tension is a mean stress, and this file "
+                                        "carries no Goodman/Haigh correction at all, so the "
+                                        "endurance ratio is fully-reversed by construction",
+                         "seam_position": "the fusion line is assumed coincident with the fixed end; "
+                                          "a socketed or filleted joint moves effective fixity"},
+    }
+
     # ── Verdict ──
     banner("Verdict")
     p_cr_unsup = euler_buckling_N(L_FREE_UNSUP)
@@ -512,9 +661,17 @@ def main() -> int:
           if not clears_all else "     Every alloy clears it bare, so the support motive is spent;")
     print("     it also carried them over the infinite-life line is what the two lists above answer."
           if not clears_all else "     the liner's remaining ground is insulation alone.")
-    print("  4. ⛔ And the ×2 belongs to the WIRE, never to the JOINT: this model is a homogeneous")
-    print("     cantilever with NO WELD SEAM, while the weld sits in the root — the point of maximum")
-    print("     bending moment. The seam is unmodelled here and must be judged on its own (00_07 HW.34).")
+    # ⛔ DERIVED from §5, never typed. The old text here said the seam "must be judged on its own"
+    # and left it at that; §5 now judges it the only way an unmeasured input can be judged — by
+    # bounding it. What has NOT changed: the ×2 still belongs to the WIRE.
+    print("  4. The WELD SEAM (§5): the ×2 still belongs to the WIRE, but the JOINT is no longer")
+    print(f"     unpriced. Binding candidate {binding['alloy']} at the worst corner (µ {mu_worst:.1f} + "
+          f"span-optimism {100.0 * (span_inflation - 1.0):.1f} %):")
+    print(f"     the seam may lose {100.0 * (1.0 - k_binding):.0f} % of the wire's endurance before the "
+          f"SF-2 line and {100.0 * (1.0 - binding['k_at_failure_line_worst_corner']):.0f} % before "
+          f"predicted failure.")
+    print(f"     Our own as-printed marker (k = {marker_k:.2f}) {'clears' if marker_clears else 'does NOT clear'} "
+          f"it by {marker_k - k_binding:+.3f} in k. ⛔ k itself stays NOT MEASURED — bounded, not assumed.")
     print("  5. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
     print("  6. Caveat: the cyclic-load amplitude (pogo friction + PEEK flex) is an ESTIMATE — the real")
@@ -525,10 +682,16 @@ def main() -> int:
                   "+ S-N endurance ratio (σ_e ≈ k·σ_y, as-printed derate). No FEA.",
         "geometry_mm": {"bus_dia": D_BUS, "free_len_unsupported": L_FREE_UNSUP, "free_len_supported": L_FREE_SUP},
         "loads": {"pogo_axial_N": F_POGO_N, "friction_mu": MU_CONTACT, "lateral_drag_N": MU_CONTACT * F_POGO_N},
+        # ⚠️ `weld_seam_modelled: false` stood here until 2026-09-12 and four doc homes cited it.
+        # It is replaced rather than flipped, because neither boolean is true any more: the seam's
+        # GEOMETRY is still unmodelled while its SENSITIVITY now is. A flipped flag would have been
+        # the half-fix that splits a surface into halves that disagree — the sub-block says both.
         "fatigue_model": {"endurance_over_yield": ENDURANCE_OVER_YIELD,
                           "as_printed_derate": AS_PRINTED_DERATE, "wrought_derate": WROUGHT_DERATE,
                           "shipped_branch": SHIPPED_BRANCH, "infinite_life_sf": INFINITE_LIFE_SF,
-                          "weld_seam_modelled": False},
+                          "weld_seam_geometry_modelled": False,
+                          "weld_seam_sensitivity_modelled": True,
+                          "mean_stress_correction_modelled": False},
         "buckling": {"p_cr_unsupported_N": round(euler_buckling_N(L_FREE_UNSUP), 1),
                      "p_cr_supported_N": round(euler_buckling_N(L_FREE_SUP), 1),
                      "sf_unsupported": round(euler_buckling_N(L_FREE_UNSUP) / F_POGO_N, 1)},
@@ -554,6 +717,7 @@ def main() -> int:
             "free_cantilever_sf_describes_these": [r["branch"] for r in regimes
                                                    if r["regime"].startswith("free cantilever")],
         },
+        "weld_seam": weld_seam,
         "assembly_clearance": {
             "question": "00_07 HW.34 — which of the three frozen dims (01_01 §1.4) gives up the "
                         "assembly clearance. CLOSED 2026-09-11: direction = channel side, size = "
@@ -584,9 +748,13 @@ def main() -> int:
                     "thermal -> leading HW.24 candidates win on both."),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "
                    "is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. "
-                   "NO WELD SEAM is modelled: this is a homogeneous cantilever, while the ratified welded "
-                   "rod puts a heat-affected zone at the root, i.e. at peak bending moment. The wrought "
-                   "derate describes the WIRE and says nothing about the JOINT.",
+                   "WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought "
+                   "derate still describes the WIRE, not the JOINT. What IS modelled since 2026-09-12 is the "
+                   "SENSITIVITY - the break-even knockdown k at which the seam crosses each line (see the "
+                   "weld_seam block). k itself is NOT MEASURED and is not assumed here. Three seam mechanisms "
+                   "stay outside even that bound, and their signs differ: bead section RELIEVES nominal "
+                   "stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this "
+                   "file never carries - the endurance ratio is fully-reversed by construction.",
     }
     json_path = OUT_DIR / "bus_mechanical.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))
@@ -594,7 +762,6 @@ def main() -> int:
     # gate: the SUPPORTED rod must clear infinite life for the baseline alloy on the SHIPPED branch
     # (sanity, not a product pass/fail). ⛔ Declared ceiling: it judges one alloy in one branch, so it
     # stays green while any bare-rod or weld-seam question is open — those are verdicts, not gates.
-    shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
     return 0 if endurance_MPa(sy_4v, shipped_derate) / sig_sup >= INFINITE_LIFE_SF else 1
 
 
