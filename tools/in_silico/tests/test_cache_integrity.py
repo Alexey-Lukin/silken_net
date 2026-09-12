@@ -373,6 +373,17 @@ def test_bus_mechanical_weld_seam():
     assert seam["span"]["span_optimism_pct"] > 0.0
     # 4. The binding candidate must be a real alloy of the table.
     assert seam["binding_candidate"]["alloy"] in {r["alloy"] for r in seam["per_alloy"]}
+    # 5. The edge-bearing block feeds the OPEN axial verdict, so it must stay wired to the geometry
+    #    it reasons about: the mouth it uses IS the channel start, and it must cover every branch the
+    #    regime table carries. A block that silently drops a branch would answer the verdict for a
+    #    shorter list than the one the reader sees.
+    edge = d["clearance_regime"]["edge_bearing"]
+    assert edge["mouth_mm"] == d["clearance_regime"]["channel"]["start_mm"], \
+        "edge_bearing measures from a different mouth than the channel block declares"
+    assert {r["branch"] for r in edge["rows"]} == {r["branch"] for r in d["clearance_regime"]["branches"]}
+    # and the flag must be DERIVED from the per-µ rows, never typed
+    for row in edge["rows"]:
+        assert row["edge_bearing_on_any_mu"] == any(v["edge_bearing"] for v in row["by_mu"].values())
     # 5. Both markers are OUR OWN numbers, so they must still match the model they came from.
     markers = {m["label"]: m["k"] for m in seam["markers"]}
     assert fm["as_printed_derate"] in markers.values()

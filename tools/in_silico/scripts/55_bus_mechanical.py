@@ -566,6 +566,43 @@ def main() -> int:
     print("    both-end capture is 20 yr of creep/relaxation ratcheting, which this file does NOT")
     print("    model; which end is fixed is a geometry verdict either way (00_07 HW.34).")
 
+    # ── 4b. WHERE the wall actually starts — the assumption every contact number above makes ────
+    # 🔴 `first_wall_contact_mm` bisects from the ROOT and assumes a wall over the whole span. There
+    # is none for the first `CHANNEL_START_MM`: that run is the PEEK gap inside the Ø11 sleeve bore,
+    # where the rod has millimetres of room, not micrometres. So a computed contact SHORTER than the
+    # mouth does not mean «it touches there» — it means the rod has ALREADY exceeded the play by the
+    # time it reaches the mouth, and what it meets is the bore EDGE, not the wall.
+    # ⛔ Why this is a verdict input and not a footnote (00_07 HW.34, the open ⚖️ on the liner's AXIAL
+    # extent): a liner that starts flush with the mouth puts that first contact on its own end face /
+    # the titanium edge — a line contact and a stress raiser — while a liner protruding into the gap
+    # puts it on polymer, distributed. Canon freezes the 0.15 WALL and says nothing about where the
+    # tube begins, so the model prices the CONDITION and leaves the choice to the verdict.
+    # ⚠️ Declared ceiling: this derives a GEOMETRIC condition (free deflection at the mouth vs play),
+    # never the edge stress itself — no notch factor and no contact model exists anywhere here.
+    banner("Where the wall starts — is first contact an EDGE, not a wall? (input to the axial ⚖️)")
+    edge_rows = []
+    for r in regimes:
+        ei_eff = r["ei_Nm2_bonded"]
+        per_mu = {}
+        for mu in MU_SWEEP:
+            d_mouth = tip_load_deflection_mm(mu * F_POGO_N, CHANNEL_START_MM, L_FREE_UNSUP, ei_Nm2=ei_eff)
+            per_mu[mu] = {"deflection_at_mouth_um": round(d_mouth * 1000.0, 1),
+                          "edge_bearing": bool(d_mouth > r["radial_play_mm"])}
+        edge_mus = [mu for mu, v in per_mu.items() if v["edge_bearing"]]
+        edge_rows.append({"branch": r["branch"], "radial_play_um": round(r["radial_play_mm"] * 1000.0, 1),
+                          "by_mu": per_mu, "edge_bearing_mus": edge_mus,
+                          "edge_bearing_on_any_mu": bool(edge_mus)})
+        state = (f"EDGE at µ {', '.join(str(m) for m in edge_mus)}" if edge_mus else "no edge contact on any swept µ")
+        print(f"  {r['branch']:<24s} play {r['radial_play_mm'] * 1000:>5.1f} µm · "
+              f"free deflection at the mouth "
+              f"{min(v['deflection_at_mouth_um'] for v in per_mu.values()):>5.1f}–"
+              f"{max(v['deflection_at_mouth_um'] for v in per_mu.values()):>5.1f} µm   → {state}")
+    _edge_any = [r["branch"] for r in edge_rows if r["edge_bearing_on_any_mu"]]
+    print(f"  → Branches whose first contact is the bore EDGE on at least one swept µ: "
+          f"{', '.join(_edge_any) or 'none'} (DERIVED).")
+    print("    ⚖️ This is the input the OPEN axial verdict needs: a liner flush with the mouth lands")
+    print("    that contact on titanium; one protruding into the PEEK gap lands it on polymer.")
+
     # ── Is L_FREE_SUP = 6 mm actually grounded? The §2 table ASSUMES the liner turns the span into the
     # PEEK gap alone. That is an assumption about WHERE contact happens, and §4 just computed it — so
     # check the two against each other instead of asserting the first. Worst case = the stiffest member
@@ -879,6 +916,13 @@ def main() -> int:
                         "note": "length read conservatively — the SHANK run only, not the flange disc above it; a shorter bore makes contact HARDER to reach, so the contact finding is not an artefact of "
                                 "the span"},
             "branches": regimes,
+            # 🔴 Read BEFORE any first_contact number: those bisect from the root over an assumed
+            # full-length wall, and the first CHANNEL_START_MM has none (PEEK gap, Ø11 sleeve bore).
+            # A contact shorter than the mouth therefore means EDGE bearing, not deep support.
+            "edge_bearing": {"mouth_mm": CHANNEL_START_MM, "rows": edge_rows,
+                             "note": "geometric condition only (free deflection at the mouth vs radial "
+                                     "play); no notch factor and no contact model exists in this tree. "
+                                     "Input to the OPEN axial-extent verdict (00_07 HW.34)"},
             "play_reduction": play_reduction,
             "axial_thermal": axial_thermal,
             "supported_span_check": supported_span_check,

@@ -285,6 +285,87 @@
         "regime": "GAP-LIMITED \u2014 bears inside the bore"
       }
     ],
+    "edge_bearing": {
+      "mouth_mm": 6.0,
+      "rows": [
+        {
+          "branch": "conformal 10 \u00b5m film",
+          "radial_play_um": 165.0,
+          "by_mu": {
+            "0.2": {
+              "deflection_at_mouth_um": 14.0,
+              "edge_bearing": false
+            },
+            "0.3": {
+              "deflection_at_mouth_um": 21.0,
+              "edge_bearing": false
+            },
+            "0.4": {
+              "deflection_at_mouth_um": 28.0,
+              "edge_bearing": false
+            },
+            "0.5": {
+              "deflection_at_mouth_um": 35.0,
+              "edge_bearing": false
+            }
+          },
+          "edge_bearing_mus": [],
+          "edge_bearing_on_any_mu": false
+        },
+        {
+          "branch": "conformal TiO2 ~5 \u00b5m",
+          "radial_play_um": 170.0,
+          "by_mu": {
+            "0.2": {
+              "deflection_at_mouth_um": 14.0,
+              "edge_bearing": false
+            },
+            "0.3": {
+              "deflection_at_mouth_um": 21.0,
+              "edge_bearing": false
+            },
+            "0.4": {
+              "deflection_at_mouth_um": 28.0,
+              "edge_bearing": false
+            },
+            "0.5": {
+              "deflection_at_mouth_um": 35.0,
+              "edge_bearing": false
+            }
+          },
+          "edge_bearing_mus": [],
+          "edge_bearing_on_any_mu": false
+        },
+        {
+          "branch": "PEEK liner 0.15 mm",
+          "radial_play_um": 25.0,
+          "by_mu": {
+            "0.2": {
+              "deflection_at_mouth_um": 13.0,
+              "edge_bearing": false
+            },
+            "0.3": {
+              "deflection_at_mouth_um": 19.6,
+              "edge_bearing": false
+            },
+            "0.4": {
+              "deflection_at_mouth_um": 26.1,
+              "edge_bearing": true
+            },
+            "0.5": {
+              "deflection_at_mouth_um": 32.6,
+              "edge_bearing": true
+            }
+          },
+          "edge_bearing_mus": [
+            0.4,
+            0.5
+          ],
+          "edge_bearing_on_any_mu": true
+        }
+      ],
+      "note": "geometric condition only (free deflection at the mouth vs radial play); no notch factor and no contact model exists in this tree. Input to the OPEN axial-extent verdict (00_07 HW.34)"
+    },
     "play_reduction": {
       "conformal_worst_radial_play_mm": 0.17,
       "liner_radial_play_mm": 0.025,
