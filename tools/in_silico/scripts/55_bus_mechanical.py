@@ -284,8 +284,11 @@ def endurance_MPa(yield_MPa: float, derate: float = AS_PRINTED_DERATE) -> float:
 def break_even_knockdown(sf_wire: float, sf_line: float) -> float:
     """The seam knockdown `k` at which a rod whose WIRE stands at `sf_wire` crosses `sf_line`.
 
-    The seam sits at the root and the root is where this model's bending moment peaks, so the
-    seam sees the very stress the wire already sees and SF_seam = k · SF_wire. Inverting gives
+    The seam and `sig_sup` refer to the SAME section by construction, so SF_seam = k · SF_wire.
+    ⛔ The ground this docstring used to give — «the root is where the bending moment peaks» — is
+    RETRACTED (2026-09-12, adversarial review): the drag acts at the pad BEYOND the bore, so in the
+    real overhang the peak-moment section is the bore MOUTH and the root moment is bracketed
+    [0, µ·F·(L−6)/2]. The relation survives on identity, not on a maximum. Inverting gives
     k = sf_line / sf_wire — a bound on the unmeasured input rather than a guess at it.
 
     ⚠️ A result > 1 is not a knockdown at all: it means the WIRE is already below `sf_line`, so
@@ -728,7 +731,9 @@ def main() -> int:
         "question": "00_07 HW.34 — the ratified rod is a WELDED drawn wire, so a heat-affected zone "
                     "sits at the root, i.e. at peak bending moment. The wrought derate describes the "
                     "WIRE. How bad may the JOINT be before the verdict moves?",
-        "seam_location": "root of the cantilever = the peak-bending-moment section of this model",
+        "seam_location": "root of the modelled cantilever; the two quantities refer to the SAME "
+                         "section, which is why SF_seam = k*SF_wire holds. NOT the peak-moment "
+                         "section of the real overhang - that is the bore mouth (retracted 2026-09-12)",
         "geometry_modelled": False,
         "knockdown_k_measured": WELD_KNOCKDOWN_MEASURED,
         "knockdown_k_source": "NOT MEASURED — no canon row, no vendor answer, no experiment in this "

@@ -325,7 +325,7 @@
   },
   "weld_seam": {
     "question": "00_07 HW.34 \u2014 the ratified rod is a WELDED drawn wire, so a heat-affected zone sits at the root, i.e. at peak bending moment. The wrought derate describes the WIRE. How bad may the JOINT be before the verdict moves?",
-    "seam_location": "root of the cantilever = the peak-bending-moment section of this model",
+    "seam_location": "root of the modelled cantilever; the two quantities refer to the SAME section, which is why SF_seam = k*SF_wire holds. NOT the peak-moment section of the real overhang - that is the bore mouth (retracted 2026-09-12)",
     "geometry_modelled": false,
     "knockdown_k_measured": null,
     "knockdown_k_source": "NOT MEASURED \u2014 no canon row, no vendor answer, no experiment in this tree. Bounded here instead of assumed; a value is an RFQ/literature input and enters through the Validation Gate (00_06 \u00a70), not through this constant",
