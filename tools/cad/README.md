@@ -86,8 +86,13 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   coarse voxel under-resolves voids → falsely high porosity).
 - **Voxel-resolution floor:** sub-100 µm pores need voxel ~0.03 mm → huge grids. The Ø11
   anode renders cleanly at 0.1 mm (pores ~2.5 mm); realistic 300→100 µm pores are the
-  HW.33 ceiling — and **un-printable at 65 %** anyway (SLM wall ~200 µm → min printable pore
-  ≈ 1.2 mm; canonical 100 µm periphery would need a ~26 µm wall).
+  HW.33 ceiling. ⚠️ **The printability half is TOPOLOGY-dependent and the `≈1.2 mm` this line
+  carried is the SHEET number** (measured 2026-09-12, `tools/in_silico/scripts/66_gyroid_ligament_thickness.py`):
+  at 65 % a sheet WALL is 0.12·period while a network LIGAMENT is 0.36·period, so at the 200 µm
+  SLM floor the minimum printable pore is **≈0.33 mm** on the shipped network branch. What still
+  holds: the 100–150 µm PERIPHERY is un-printable on both machines (500 µm clears SLM, 300 µm
+  clears µ-LPBF). `stepped` is the one SKU still on the sheet formulation, so 1.2 mm is live for
+  it. Ground + declared ceilings: `01_01 §5.5`.
 - **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
   porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle. For a
