@@ -3,14 +3,6 @@
 # CVEs that are not relevant to the application can be enumerated on the ignore list below.
 
 ignore:
-  # webrick 1.9.2 — CVE-2026-38969 / GHSA-h4w6-wx8r-p68v (WEBrick re-parses trailer).
-  # TRANSITIVE via ferrum → cuprite → capybara (group :test ONLY). NOT in the prod serving
-  # path: Puma serves production; webrick backs only the headless-Chrome system-test browser.
-  # 1.9.2 is the latest release (no patch as of 2026-07-06); the trailer-reparse surface is
-  # unreachable in test-only use. Review + drop this ignore when webrick >1.9.2 ships.
-  - CVE-2026-38969
-  - GHSA-h4w6-wx8r-p68v
-
   # rubyzip 2.4.1 — CVE-2026-85396 / GHSA-47m2-wp7j-p9vc (path traversal pre-3.4.0).
   # ⛔ ШЛЯХУ ВГОРУ НЕМАЄ: транзитивний через `rbsecp256k1 6.0.0`, який вимагає
   # `rubyzip (~> 2.3)`, а 6.0.0 — НАЙНОВІШИЙ реліз (перевірено `gem list --remote --all`).

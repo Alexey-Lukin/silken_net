@@ -30,7 +30,6 @@ Capybara.register_driver(:cuprite) do |app|
     # Ціна підвищення однобічна й мала: коли Chrome справді мертвий, приклад
     # чекатиме 45 с замість 15 — один раз, перед тим самим падінням.
     process_timeout: 45,
-    inspector: ENV["INSPECTOR"].present?,
     headless: ENV.fetch("HEADLESS", "true") != "false"
   )
 end
