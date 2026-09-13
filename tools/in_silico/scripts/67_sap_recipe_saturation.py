@@ -20,19 +20,24 @@ laboratory is asked to prepare a member of that set, the set has to be checked f
       and what that does to the cation totals.
   Q4  THE PRICE OF LOWERING OXALATE. The recipe buffers with its own organic acids; how much buffer capacity the
       medium keeps when oxalate is cut to the window.
-  Q5  CONSTANT SENSITIVITY. How far the window moves across the documented spread of every constant.
+  Q5  CONSTANT SENSITIVITY. How far the window moves across the NEA spread of the oxalate constants and the malate
+      readings — and what one pH set-point would do to it.
 
 THE CONSTANT THAT DOES NOT EXIST, and why the window does not need it. No open primary gives the calcium or
 magnesium malate complex at I = 0; the only measured values found are APPARENT constants in a Na+ medium at
 pHa 7.4 and I ≈ 0.1 (Günzel et al. 2005). The script elects none. It uses the SIGN of each effect, which needs no
-number: a calcium ligand missing from the model can only lower free calcium, so leaving it out can only RAISE the
-calcium oxalate SI; a magnesium ligand frees oxalate from magnesium, so the SI can at most reach the value it has
-when magnesium does not bind oxalate at all. The HARD BOUND — calcium bound by nothing but oxalate and sulfate,
-magnesium oxalate-inert, every oxalate constant at the SI-raising end of its NEA spread — is therefore an upper
-bound on the SI whatever the missing constants are, and a window computed on it is safe without them. That it
-dominates every documented reading is ASSERTED at every corner evaluated, not assumed. What the missing constant
-costs is then a number — how much wider the window gets under the documented readings — and for the verdict the
-question is inverted: what calcium malate constant would make a canon corner undersaturated.
+number — through BOTH channels, and the second is the one a first draft of this argument missed (caught by review):
+by MASS ACTION a calcium ligand lowers free calcium and so lowers the SI, while a magnesium ligand frees oxalate and
+so raises it; by IONIC STRENGTH a neutral complex takes two divalent ions out of solution and so raises the activity
+coefficients of Ca2+ and ox2-. For calcium the first channel wins; for magnesium both push the same way, and both
+are at their extreme when no magnesium binds oxalate and every magnesium ion is held as a neutral complex. The
+HARD BOUND takes exactly that — no calcium malate, magnesium sequestered and oxalate-inert, every oxalate constant
+at the SI-raising end of its NEA spread — and a window computed on it is safe whatever the malate constants are.
+That it dominates is ASSERTED, not argued: at every corner, against every documented reading and against both
+constants swept up the log K grid. What the missing constant costs is then a number — how much wider the window gets
+under the documented readings — and for the verdict the question is inverted: what calcium malate constant would
+make a canon corner undersaturated. ⚠️ Not covered: background ion pairs with no constant (K+/Na+ with malate,
+KNO3(aq)) lower the ionic strength too.
 
 ⚠️ WHAT THIS DOES NOT SETTLE, up front. Which ion to lower is a CHOICE — calcium is the structural cation of the
    cell wall, oxalate the chelator aggressive to titanium — and the script prices both directions without taking
@@ -269,14 +274,25 @@ class Scenario:
     key: str
     label: str
     oxalate_end: str
-    ca_malate: str | None = None    # None · "apparent" (Günzel log K′ read as I = 0) · "i0" (Davies-corrected, derived)
-    mg_malate: str | None = None
+    # None · "apparent" (Günzel log K′ read as I = 0) · "i0" (Davies-corrected, derived) · a swept log K (float) ·
+    # "limit" (magnesium only: every ion held as a neutral complex — see SEQUESTRATION_LOG_K)
+    ca_malate: str | float | None = None
+    mg_malate: str | float | None = None
     mg_oxalate_inert: bool = False
 
 
+# The magnesium half of the hard bound. A magnesium ligand raises the calcium oxalate SI through TWO channels: it
+# frees oxalate (mass action) and, as a neutral complex, it lowers the ionic strength and so raises the activity
+# coefficients of Ca2+ and ox2-. Both are at their extreme when no magnesium binds oxalate and every magnesium ion
+# is held as a neutral 1:1 complex — the largest ionic-strength drop any magnesium ligand of this recipe can cause.
+# log K 12 makes that complete at every corner; it is a LIMIT, not a literature constant.
+SEQUESTRATION_LOG_K = 12.0
+DOMINANCE_SWEEP_LOG_K = (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0)
+
 SCENARIOS = (
-    Scenario("hard_bound", "HARD BOUND — calcium bound only by oxalate and sulfate, magnesium oxalate-inert, "
-             "oxalate constants at their SI-raising end", "si_high", mg_oxalate_inert=True),
+    Scenario("hard_bound", "HARD BOUND — calcium bound only by oxalate and sulfate, magnesium held entirely as a "
+             "neutral complex that binds no oxalate, oxalate constants at their SI-raising end", "si_high",
+             mg_malate="limit", mg_oxalate_inert=True),
     Scenario("selected", "NEA-selected constants, malate complexes absent", "selected"),
     Scenario("selected_guenzel_apparent", "NEA-selected + Günzel apparent malate constants read as I = 0", "selected",
              "apparent", "apparent"),
@@ -286,24 +302,31 @@ SCENARIOS = (
     Scenario("spread_si_low", "oxalate constants at their SI-lowering end, malate complexes absent", "si_low"),
     Scenario("si_lowest_documented", "SI-LOWEST documented reading — oxalate constants at their SI-lowering end, the "
              "strongest calcium malate reading, no magnesium malate", "si_low", "i0", None),
+    Scenario("si_highest_documented", "SI-HIGHEST documented reading — oxalate constants at their SI-raising end, the "
+             "strongest magnesium malate reading, no calcium malate", "si_high", None, "i0"),
 )
 SC = {s.key: s for s in SCENARIOS}
 WINDOW_SCENARIOS = ("hard_bound", "selected", "selected_guenzel_apparent", "selected_guenzel_i0", "spread_si_high",
-                    "spread_si_low")
+                    "spread_si_low", "si_highest_documented")
 
 
-def build(sc: Scenario, ca_malate_log_k: float | None = None) -> ConstantSet:
+def malate_complex(metal: str, how) -> Species:
+    if isinstance(how, float):
+        log_k, source = how, "swept log K — not a literature constant"
+    elif how == "limit":
+        log_k, source = SEQUESTRATION_LOG_K, "sequestration LIMIT — not a literature constant"
+    else:
+        log_k = guenzel_log_k(metal, how == "i0")
+        source = f"{GUENZEL} — {'Davies-corrected to I = 0, derived' if how == 'i0' else 'log K′ read as I = 0'}"
+    return Species(f"{metal}Mal0", ((metal, 1), ("Mal", 1)), LogK(log_k), source)
+
+
+def build(sc: Scenario) -> ConstantSet:
     species, solids = oxalate_block(sc.oxalate_end)
     if sc.mg_oxalate_inert:
         species = tuple(sp for sp in species if not sp.name.startswith("Mg"))
-    extra = []
-    for metal, how in (("Ca", sc.ca_malate), ("Mg", sc.mg_malate)):
-        if how is not None:
-            extra.append(Species(f"{metal}Mal0", ((metal, 1), ("Mal", 1)), LogK(guenzel_log_k(metal, how == "i0")),
-                                 f"{GUENZEL} — {'Davies-corrected to I = 0, derived' if how == 'i0' else 'log K′ read as I = 0'}"))
-    if ca_malate_log_k is not None:
-        extra.append(Species("CaMal0", (("Ca", 1), ("Mal", 1)), LogK(ca_malate_log_k),
-                             "break-even search — not a literature constant"))
+    extra = [malate_complex(metal, how) for metal, how in (("Ca", sc.ca_malate), ("Mg", sc.mg_malate))
+             if how is not None]
     return ConstantSet(sc.label, (*species, *MALATE, *SULFATE, *extra), (*solids, GYPSUM, GLUSHINSKITE))
 
 
@@ -335,10 +358,10 @@ class Model:
 _MODELS: dict = {}
 
 
-def model_for(sc: Scenario, t_c: float, ca_malate_log_k: float | None = None) -> Model:
-    key = (sc.key, t_c, ca_malate_log_k)
+def model_for(sc: Scenario, t_c: float) -> Model:
+    key = (sc, t_c)
     if key not in _MODELS:
-        _MODELS[key] = Model(build(sc, ca_malate_log_k), t_c + 273.15)
+        _MODELS[key] = Model(build(sc), t_c + 273.15)
     return _MODELS[key]
 
 
@@ -486,7 +509,7 @@ _CORNERS: dict = {}
 
 
 def corner(sc: Scenario, comp: dict, ph: float, t_c: float, base: str = "K") -> dict:
-    key = (sc.key, tuple(comp[k] for k in RECIPE_KEYS), ph, t_c, base)
+    key = (sc, tuple(comp[k] for k in RECIPE_KEYS), ph, t_c, base)
     if key not in _CORNERS:
         m = model_for(sc, t_c)
         sol = speciate(m, totals_mm(comp), ph, base)
@@ -528,13 +551,12 @@ def break_even_camal(test: str) -> dict:
     corner at that constant — a corner that would flip earlier replaces the candidate."""
     sc = SC["si_lowest_documented"]
     documented = guenzel_log_k("Ca", True)
-    base_sc = Scenario("camal_break_even", "break-even", sc.oxalate_end)
     rows = corner_rows(sc, test)
     cand = rows[int(np.argmin([r["si"][WHEWELLITE] for r in rows]))]
     tried = set()
 
     def si_for(log_k, row):
-        m = model_for(base_sc, row["t_c"], log_k)
+        m = model_for(Scenario("camal_break_even", "break-even", sc.oxalate_end, ca_malate=float(log_k)), row["t_c"])
         sol = speciate(m, totals_mm(row), row["ph"])
         return saturation_index(sol, m, m.cs.solids[0]), sol
 
@@ -581,6 +603,12 @@ def conditions(tests: tuple) -> list:
     return out
 
 
+def conditions_at_ph(ph: float) -> list:
+    """One pH set-point held across every test temperature — what the window becomes if the pH verdict picks a point."""
+    temps = sorted({t for spec in TESTS.values() for t in spec["t_c"]})
+    return [(bg, ph, t_c) for bg in backgrounds() for t_c in temps]
+
+
 def si_window(sc: Scenario, fixed: str, level_mm: float, partner_mm: float, cond: tuple) -> float:
     bg, ph, t_c = cond
     ca, ox = (level_mm, partner_mm) if fixed == "Ca" else (partner_mm, level_mm)
@@ -589,12 +617,11 @@ def si_window(sc: Scenario, fixed: str, level_mm: float, partner_mm: float, cond
     return saturation_index(sol, m, m.cs.solids[0])
 
 
-def partner_limit(sc: Scenario, tests: tuple, fixed: str, level_mm: float) -> dict:
-    """The largest total of the partner ion with SI(whewellite) ≤ 0 in EVERY condition of the tests. Each condition's
-    SI rises monotonically with the partner, so the edge is the smallest per-condition root: rank the conditions at a
+def partner_limit(sc: Scenario, conds: list, fixed: str, level_mm: float) -> dict:
+    """The largest total of the partner ion with SI(whewellite) ≤ 0 in EVERY condition given. Each condition's SI
+    rises monotonically with the partner, so the edge is the smallest per-condition root: rank the conditions at a
     trial point, find the root of the worst, then verify every condition at that root — one that is still above
     zero replaces the candidate. The binding condition is recorded, never assumed."""
-    conds = conditions(tests)
     trial = [si_window(sc, fixed, level_mm, 1e-2, c) for c in conds]
     cand = int(np.argmax(trial))
     tried = set()
@@ -681,14 +708,31 @@ def main() -> int:
             s = q1[test][sc.key]
             print(f"    {sc.key:<27s} SI(whewellite) {s['si_whewellite_min']:+.3f} … {s['si_whewellite_max']:+.3f}")
     # The hard bound must dominate every documented reading at every corner — the claim the window rests on.
-    worst_gap, ionic_max = math.inf, 0.0
+    hb_sc = SC["hard_bound"]
+    worst_gap = math.inf
     for test in TESTS:
-        hb_rows = corner_rows(SC["hard_bound"], test)
-        for sc in (s for s in SCENARIOS if s.key != "hard_bound"):
-            for hb, r in zip(hb_rows, corner_rows(sc, test), strict=True):
-                worst_gap = min(worst_gap, hb["si"][WHEWELLITE] - r["si"][WHEWELLITE])
-                ionic_max = max(ionic_max, r["ionic_strength"])
+        hb_rows = corner_rows(hb_sc, test)
+        for sc in (s for s in SCENARIOS if s is not hb_sc):
+            for h, r in zip(hb_rows, corner_rows(sc, test), strict=True):
+                worst_gap = min(worst_gap, h["si"][WHEWELLITE] - r["si"][WHEWELLITE])
     assert worst_gap >= -1e-9, f"the hard bound falls below a documented reading by {-worst_gap:.2e}"
+    # A documented reading is not the edge of what a missing constant could be, and the sign argument alone once
+    # missed the ionic-strength channel — so each missing constant is also SWEPT, the rest of the bound held:
+    # calcium malate beside the sequestered magnesium, magnesium malate on its own with magnesium oxalate-inert.
+    swept = [Scenario(f"sweep_ca_{k:g}", "dominance sweep", hb_sc.oxalate_end, ca_malate=k, mg_malate="limit",
+                      mg_oxalate_inert=True) for k in DOMINANCE_SWEEP_LOG_K]
+    swept += [Scenario(f"sweep_mg_{k:g}", "dominance sweep", hb_sc.oxalate_end, mg_malate=k, mg_oxalate_inert=True)
+              for k in DOMINANCE_SWEEP_LOG_K]
+    sweep_gap = math.inf
+    for test in TESTS:
+        hb_rows = corner_rows(hb_sc, test)
+        for sc in swept:
+            for h, r in zip(hb_rows, corner_rows(sc, test), strict=True):
+                sweep_gap = min(sweep_gap, h["si"][WHEWELLITE] - r["si"][WHEWELLITE])
+    assert sweep_gap >= -1e-9, f"a swept malate constant rises above the hard bound by {-sweep_gap:.2e}"
+    ionic_max = max(r["ionic_strength"] for test in TESTS for sc in SCENARIOS for r in corner_rows(sc, test))
+    print(f"  hard bound above every documented reading by ≥ {worst_gap:.4f}, above every swept malate constant "
+          f"(log K {DOMINANCE_SWEEP_LOG_K[0]:g}–{DOMINANCE_SWEEP_LOG_K[-1]:g}) by ≥ {sweep_gap:.2e}")
     for sc in SCENARIOS:
         log_ks = [s.log_ks for s in build(sc).solids[:3]]
         for t_c in sorted({t for spec in TESTS.values() for t in spec["t_c"]}):
@@ -707,7 +751,7 @@ def main() -> int:
               f"holding {b['calcium_held_by_malate_at_break_even']:.0%} of the calcium")
 
     banner("Q2 — admissible window (partner ion's largest total at SI ≤ 0, worst case over the test's band)")
-    windows = {key: {test: {fixed: [partner_limit(SC[key], (test,), fixed, level) for level in FIXED_LEVELS_MM]
+    windows = {key: {test: {fixed: [partner_limit(SC[key], conditions((test,)), fixed, level) for level in FIXED_LEVELS_MM]
                             for fixed in ("Ca", "Ox")} for test in TESTS} for key in WINDOW_SCENARIOS}
     for key in WINDOW_SCENARIOS:
         for test in TESTS:
@@ -727,8 +771,35 @@ def main() -> int:
                   for hb, w in zip(windows["hard_bound"][test][fixed], windows[key][test][fixed], strict=True)]
         q5[key] = [round(min(ratios), 3), round(max(ratios), 3)]
         print(f"  {key:<27s} ×{min(ratios):.2f} … ×{max(ratios):.2f}")
+    # The two ratios above bundle the oxalate spread and the magnesium limit with the malate reading, so the reading's
+    # OWN share is taken against the NEA-selected window it is added to.
+    malate_over_selected = {}
+    for key in ("selected_guenzel_apparent", "selected_guenzel_i0"):
+        ratios = [w["partner_max_total_uM"] / s["partner_max_total_uM"] for test in TESTS for fixed in ("Ca", "Ox")
+                  for s, w in zip(windows["selected"][test][fixed], windows[key][test][fixed], strict=True)]
+        malate_over_selected[key] = [round(min(ratios), 3), round(max(ratios), 3)]
+        print(f"  {key:<27s} over NEA-selected alone ×{min(ratios):.2f} … ×{max(ratios):.2f}")
+    spread = [lo_end["partner_max_total_uM"] / hi_end["partner_max_total_uM"] for test in TESTS for fixed in ("Ca", "Ox")
+              for hi_end, lo_end in zip(windows["spread_si_high"][test][fixed], windows["spread_si_low"][test][fixed],
+                                        strict=True)]
+    oxalate_spread = [round(min(spread), 3), round(max(spread), 3)]
+    print(f"  oxalate constants, SI-lowering end over SI-raising end ×{min(spread):.2f} … ×{max(spread):.2f}")
+
+    banner("The pH verdict's price here: the hard-bound window at ONE pH set-point, over every test temperature")
+    both = {fixed: [min(windows["hard_bound"][t][fixed][i]["partner_max_total_uM"] for t in TESTS)
+                    for i in range(len(FIXED_LEVELS_MM))] for fixed in ("Ca", "Ox")}
+    by_ph = {}
+    for ph in sorted({p for spec in TESTS.values() for p in spec["ph"]}):
+        per = {fixed: [round(partner_limit(SC["hard_bound"], conditions_at_ph(ph), fixed, level)["partner_max_total_uM"], 4)
+                       for level in FIXED_LEVELS_MM] for fixed in ("Ca", "Ox")}
+        ratios = [x / y for fixed in ("Ca", "Ox") for x, y in zip(per[fixed], both[fixed], strict=True)]
+        by_ph[f"{ph:.1f}"] = {"partner_max_total_uM": per,
+                              "over_both_tests_window": [round(min(ratios), 3), round(max(ratios), 3)]}
+        print(f"  pH {ph:.1f}: Ca 0.5/1/2 → oxalate ≤ " + " / ".join(f"{v:.2f}" for v in per["Ca"])
+              + " µM · oxalate 0.5/1/2 → Ca ≤ " + " / ".join(f"{v:.2f}" for v in per["Ox"])
+              + f" µM (×{min(ratios):.2f}–{max(ratios):.2f} of the both-tests window)")
     curve_levels = tuple(float(v) for v in np.geomspace(0.005, 2.0, 12))
-    curves = {key: [(level, partner_limit(SC[key], tuple(TESTS), "Ca", level)["partner_max_total_uM"] * 1e-3)
+    curves = {key: [(level, partner_limit(SC[key], conditions(tuple(TESTS)), "Ca", level)["partner_max_total_uM"] * 1e-3)
                     for level in curve_levels] for key in ("hard_bound", "selected", "selected_guenzel_i0")}
 
     banner("Q3 — the base the recipe does not name")
@@ -820,15 +891,15 @@ def main() -> int:
         f"(coin, pH 4.5–5.5, 20–25 °C) and {signed(sel['accelerated']['si_whewellite_min'])} … "
         f"{signed(sel['accelerated']['si_whewellite_max'])} (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented "
         f"reading still leaves the least-supersaturated corner at SI {signed(min(v['si_whewellite_min'] for v in low.values()))}. "
-        f"With every other constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C "
-        f"reaches {plain(min(be_ks.values()))} (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches "
+        f"With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at "
+        f"25 °C reaches {plain(min(be_ks.values()))} (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches "
         f"{plain(b['log_k_camal_break_even'])} — {plain(b['margin_over_strongest_documented'])} above the strongest documented "
         f"reading ({plain(b['strongest_documented_reading_log_k'])}, itself derived here) — holding "
         f"{b['calcium_held_by_malate_at_break_even']:.0%} of the calcium. Admissible window on the HARD BOUND, safe whatever "
-        f"the missing malate constants are: {window_text}. The NEA-selected constants widen it ×{q5['selected'][0]:.2f}–"
-        f"{q5['selected'][1]:.2f}, and with the strongest documented malate reading ×{q5['selected_guenzel_i0'][0]:.2f}–"
-        f"{q5['selected_guenzel_i0'][1]:.2f}. Which ion to lower is NOT decided here, and a window edge is the saturation "
-        f"point itself, not a margin."
+        f"the calcium and magnesium malate constants are: {window_text}. The NEA-selected constants widen it "
+        f"×{q5['selected'][0]:.2f}–{q5['selected'][1]:.2f}; the malate readings add at most "
+        f"×{malate_over_selected['selected_guenzel_i0'][1]:.2f} on top of those. Which ion to lower is NOT decided here, and "
+        f"a window edge is the saturation point itself, not a margin."
     )
     out = {
         "script": Path(__file__).name,
@@ -849,27 +920,36 @@ def main() -> int:
             "malate_complexes_readings": {**guenzel, "source": GUENZEL,
                                           "status": "NOT FOUND at I = 0 in any open primary; readings only"},
             "sulfate_and_other_solids": {sp.name: sp.source for sp in (*SULFATE, GYPSUM, GLUSHINSKITE)},
+            "magnesium_sequestration_limit_log_k": SEQUESTRATION_LOG_K,
             "scenarios": {sc.key: {"label": sc.label, "oxalate_end": sc.oxalate_end, "ca_malate": sc.ca_malate,
                                    "mg_malate": sc.mg_malate, "mg_oxalate_inert": sc.mg_oxalate_inert}
                           for sc in SCENARIOS},
         },
         "verification": {**checks, "hard_bound_min_si_margin_over_every_reading": round(worst_gap, 6),
+                         "hard_bound_min_si_margin_over_swept_malate_constants": round(sweep_gap, 6),
+                         "dominance_sweep_log_k": DOMINANCE_SWEEP_LOG_K,
                          "hard_bound_window_is_the_narrowest": True, "whewellite_is_the_least_soluble_hydrate": True},
         "q1_corners": {"per_test": q1, "break_even_whewellite_log_ks_25c": be_ks, "break_even_calcium_malate": be_camal,
-                       "break_even_conditions": "every other constant at its SI-lowering end, no magnesium malate"},
+                       "break_even_conditions": "every oxalate constant at its SI-lowering end, no magnesium malate"},
         "q2_window": {"per_scenario": windows, "hard_bound_same_for_both_tests": same_for_both,
+                      "hard_bound_by_single_ph": by_ph,
                       "boundary_curve_mM": {k: [[round(x, 6), round(y, 6)] for x, y in v] for k, v in curves.items()}},
         "q3_base": {**q3, "max_si_change_naoh_vs_koh": round(base_na_gap, 5)},
         "q4_buffer_capacity": {"t_c": 25.0, "background_mM": {"kno3": 2.0, "cacl2": 0.5, "mgso4": 0.2},
                                "constants": "selected", "rows": q4},
         "q5_window_over_hard_bound": q5,
+        "q5_malate_reading_over_selected": malate_over_selected,
+        "q5_oxalate_spread_low_end_over_high_end": oxalate_spread,
         "prices": prices,
         "verdict": verdict,
         "caveats": [
             "Hypothesis from literature constants, not measurement (00_06 §0). No prepared solution was analysed.",
             "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its "
-            f"reviews; the largest ionic strength met at any canon corner is {ionic_max:.3f} mol/L. Concentrations are "
-            "molar, the constants molal; at these dilutions the two scales differ by the density of water.",
+            f"reviews; the largest ionic strength met at any canon corner under any reading is {ionic_max:.3f} mol/L. "
+            "Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of "
+            "water.",
+            "Varied: the oxalate constants (NEA spread) and the malate complexes (readings, sweep, limit). Single values: "
+            "the malic-acid protonation, the sulfate ion pairs and Davies A(T).",
             "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.5); pH is "
             "−log10 of the H+ activity.",
             "Complexes for which NEA selects no enthalpy — the calcium and magnesium oxalate complexes — keep their "
@@ -877,9 +957,13 @@ def main() -> int:
             "pH on a 0.5-unit grid and temperature on a 5 °C grid; every band end is a grid point.",
             "Günzel's malate constants are APPARENT (Na+ medium, pHa 7.4, no Na+/K+–malate pair separated out) and the "
             "I = 0 values are a Davies correction from I = 0.104 / 0.124, past that equation's stated range. They enter "
-            "only the readings; the hard bound and its window use no malate constant at all.",
-            "The hard bound rests on the SIGN of every omitted ligand's effect; its dominance over the documented "
-            "readings is asserted at every corner evaluated, and its window is asserted the narrowest.",
+            "only the readings; the hard bound uses none of them — its magnesium half is a sequestration LIMIT.",
+            "The hard bound rests on the SIGN of each malate complex's effect through BOTH channels, mass action and "
+            "ionic strength: no calcium malate, and every magnesium ion held as a neutral complex that binds no oxalate. "
+            "Its dominance is asserted at every corner against every documented reading and against calcium and "
+            "magnesium malate swept over the log K grid in `verification`, and its window is asserted the narrowest.",
+            "NOT bounded: background ion pairs with no constant in the sources used — K+ or Na+ with malate, KNO3(aq) — "
+            "would lower the ionic strength and raise the SI, and the hard bound does not cover that channel.",
             "SI < 0 is the thermodynamic criterion. Precipitation kinetics and a metastable zone are not modelled, and a "
             "window edge is the saturation point, not a margin — how far below it to prepare is part of the choice.",
             f"KOH is taken as the base; NaOH moves SI by at most {base_na_gap:.4f} at any corner.",
@@ -891,11 +975,16 @@ def main() -> int:
             {"item": "calcium malate as a solid", "why": "no solubility product in the sources used",
              "effect_of_omission": "a second precipitate the window does not check"},
             {"item": "calcium ligands other than oxalate, sulfate and the malate readings (Cl-, NO3-, HMal-)",
-             "why": "not in the constant sets", "effect_of_omission": "can only raise the calcium oxalate SI"},
+             "why": "not in the constant sets",
+             "effect_of_omission": "overstates the SI through mass action; their ionic-strength channel is not assessed"},
             {"item": "magnesium ligands other than oxalate, sulfate and the malate readings",
-             "why": "not in the constant sets", "effect_of_omission": "bounded by the hard bound's oxalate-inert magnesium"},
+             "why": "not in the constant sets",
+             "effect_of_omission": "covered by the hard bound, which holds every magnesium ion as a neutral complex"},
             {"item": "K+/Na+–oxalate ion pairs", "why": "not in the constant sets",
-             "effect_of_omission": "can only raise the calcium oxalate SI"},
+             "effect_of_omission": "overstates the SI through mass action; their ionic-strength channel is not assessed"},
+            {"item": "K+/Na+–malate and KNO3(aq) ion pairs", "why": "no constant in the sources used",
+             "effect_of_omission": "the pairs would lower the ionic strength and raise the SI, so leaving them out "
+                                   "UNDERSTATES it — not covered by the hard bound"},
             {"item": "atmospheric CO2", "why": "not in the constant sets", "effect_of_omission": "not assessed"},
             {"item": "glushinskite as a verdict", "why": "NEA recommends no solubility product (scoping value only)",
              "effect_of_omission": "its SI is reported from the scoping value and never used"},

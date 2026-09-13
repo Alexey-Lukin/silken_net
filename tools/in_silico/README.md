@@ -84,7 +84,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 64 | `64_teg_across_peek_break.py` | HW.21: may a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to bark — imports script 54's ladder + a `G_TEG` branch, thermal gate vs own Seebeck output | ~2 s |
 | 65 | `65_zif_radiosensitization.py` | HW.22: does the ZIF nanozyme radiosensitise the enzymes under Co-60 — closed-form Compton/CSDA transport, no DFT | < 1 s |
 | 66 | `66_gyroid_ligament_thickness.py` | HW.33: thinnest printed feature of a gyroid per topology (sheet vs network) at fixed porosity → minimum printable period | ~2 min |
-| 67 | `67_sap_recipe_saturation.py` | HW.3: calcium oxalate saturation of the `01_02 §2.1` synthetic sap — corner scan per test band, admissible Ca × oxalate window on a constant-free hard bound, base and buffer prices | ~8 s |
+| 67 | `67_sap_recipe_saturation.py` | HW.3: calcium oxalate saturation of the `01_02 §2.1` synthetic sap — corner scan per test band, admissible Ca × oxalate window on a constant-free hard bound, base and buffer prices | ~13 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —

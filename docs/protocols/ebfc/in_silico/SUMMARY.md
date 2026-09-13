@@ -774,25 +774,30 @@ matches a closed-form reduced system to machine precision.
 The only measured values are **apparent** constants (Günzel, McGuigan & Schlue 2005: Kapp 10.32 mM for Ca at
 I = 0.124 and 15.85 mM for Mg at I = 0.104, Na⁺ medium, pHa 7.4) — log K′ 1.99 / 1.80, or 2.90 / 2.67 after a
 Davies correction to I = 0 that the script derives from beyond that equation's stated range. None is elected.
-Leaving a calcium ligand out of the model can only **raise** the calcium oxalate SI, and a magnesium ligand can
-at most free all the oxalate magnesium holds. So the **hard bound** — calcium bound only by oxalate and sulfate,
-magnesium made oxalate-inert, every oxalate constant at its SI-raising end — bounds the SI from above whatever
-the missing constants are. Its dominance over every documented reading is asserted at every corner (margin
-≥ 0.014), and its window is asserted the narrowest; the readings then price the missing constant instead of
-hiding it.
+The sign of each effect needs no value, but it has to be followed through **both** channels a complex acts on —
+the first draft of this argument followed only one, and review caught the other. By mass action a calcium ligand
+lowers free calcium (SI down) while a magnesium ligand frees oxalate (SI up); by ionic strength a neutral complex
+takes two divalent ions out of solution and raises the activity coefficients of Ca²⁺ and ox²⁻ (SI up). For
+calcium the first channel wins; for magnesium both push the same way and peak together when every magnesium ion
+is held as a neutral complex that binds no oxalate. So the **hard bound** — no calcium malate, magnesium
+sequestered and oxalate-inert, every oxalate constant at its SI-raising end — bounds the SI from above whatever
+the malate constants are. That is asserted rather than argued: at every corner, against every documented reading
+(margin ≥ 0.015) and against calcium and magnesium malate swept from log K 1 to 8, and its window is asserted the
+narrowest. The readings then price the missing constant instead of hiding it. ⚠️ Not covered: background ion
+pairs with no constant in the sources used (K⁺ or Na⁺ with malate, KNO₃(aq)) lower the ionic strength too.
 
 **Q1 — every canon corner is supersaturated.** SI of whewellite over all corners of the recipe:
 
 | test (its band) | NEA-selected constants | SI-lowest documented reading | hard bound |
 |---|---|---|---|
-| coin (pH 4.5–5.5, 20–25 °C) | **+1.19** … +2.49 | +0.90 … +2.35 | +1.46 … +2.64 |
-| accelerated (pH 5.0–5.5, 20–40 °C) | **+1.03** … +2.49 | **+0.72** … +2.35 | +1.31 … +2.64 |
+| coin (pH 4.5–5.5, 20–25 °C) | **+1.19** … +2.49 | +0.90 … +2.35 | +1.48 … +2.64 |
+| accelerated (pH 5.0–5.5, 20–40 °C) | **+1.03** … +2.49 | **+0.72** … +2.35 | +1.33 … +2.64 |
 
-Weddellite and caoxite are supersaturated at every corner under every reading too; gypsum is not (SI ≤ −1.66).
+Weddellite and caoxite are supersaturated at every corner under every reading too; gypsum is not (SI ≤ −1.6).
 Under the NEA-selected constants the least-supersaturated corner is malic 5 · oxalic 0.5 · KNO₃ 5 · CaCl₂ 0.5 ·
 MgSO₄ 1 mM at the band's lowest pH and warmest temperature; the most, malic 1 · oxalic 2 · KNO₃ 2 · CaCl₂ 2 ·
 MgSO₄ 0.2 mM at pH 5.5, 20 °C.
-**How wrong the constants would have to be:** with every other constant at its SI-lowering end, a corner turns
+**How wrong the constants would have to be:** with every oxalate constant at its SI-lowering end, a corner turns
 undersaturated only if whewellite log Ks at 25 °C reaches **−7.95** (NEA selects −8.73 ± 0.06), or calcium malate
 log K° reaches **3.98** — 1.09 above the strongest documented reading, which is itself derived — with malate then
 holding 90 % of the calcium (accelerated test; the coin test needs 4.17 and 94 %).
@@ -802,27 +807,30 @@ SI(whewellite) ≤ 0 in every condition of the test's band, worst case over the 
 
 | held at a canon level | **hard bound** (needs no malate constant) | NEA-selected, no malate complexes | NEA-selected + Günzel at I = 0 (derived) |
 |---|---|---|---|
-| Ca 0.5 mM → total oxalate ≤ | **7.5 µM** | 11.6 µM | 13.4 µM |
+| Ca 0.5 mM → total oxalate ≤ | **7.3 µM** | 11.6 µM | 13.4 µM |
 | Ca 1 mM → total oxalate ≤ | **4.7 µM** | 7.3 µM | 8.1 µM |
 | Ca 2 mM → total oxalate ≤ | **3.3 µM** | 5.1 µM | 5.4 µM |
-| oxalate 0.5 mM → total Ca ≤ | **7.5 µM** | 10.6 µM | 12.6 µM |
-| oxalate 1 mM → total Ca ≤ | **4.8 µM** | 6.5 µM | 7.5 µM |
-| oxalate 2 mM → total Ca ≤ | **3.4 µM** | 4.7 µM | 5.1 µM |
+| oxalate 0.5 mM → total Ca ≤ | **7.4 µM** | 10.6 µM | 12.6 µM |
+| oxalate 1 mM → total Ca ≤ | **4.7 µM** | 6.5 µM | 7.5 µM |
+| oxalate 2 mM → total Ca ≤ | **3.3 µM** | 4.7 µM | 5.1 µM |
 
-The binding condition is malic 1 · KNO₃ 2 · MgSO₄ 0.2 mM at pH 5.5 and 20 °C — inside **both** bands, so the two
-tests share one window and this chemistry does not force the pH choice. Whichever ion is held, the other lands
-×66–149 below its canon floor; the boundary between the two directions is a continuum
-(`cache/chemistry/sap_recipe_saturation.png`). ⚠️ A window edge is the saturation point itself, not a margin.
+For the hard bound and the NEA-selected column the binding condition is malic 1 · KNO₃ 2 · MgSO₄ 0.2 mM at pH 5.5
+and 20 °C — inside **both** bands, so the two tests share one window (the Günzel column binds at pH 5.0 in most
+slots). Whichever ion is held, the other lands ×68–151 below its canon floor; the boundary between the two
+directions is a continuum (`cache/chemistry/sap_recipe_saturation.png`). **This chemistry prices the pH verdict
+rather than forcing it:** held at ONE set-point over every test temperature, the hard-bound window is at pH 4.5
+×1.13–1.23 wider and at pH 5.0 ×1.03–1.05 wider than the both-tests window above, which pH 5.5 sets. ⚠️ A window
+edge is the saturation point itself, not a margin.
 
 **Q3 — the base the recipe does not name.** Reaching the set-point takes **2.0–13.0 mM** of strong base; as KOH
 it makes K⁺ **4.0–18.0 mM**, against the 2–5 mM KNO₃ the table calls the dominant cation. Its identity barely
-touches saturation (NaOH instead of KOH moves SI by ≤ 0.0004), but it is the largest ionic ingredient of the
-medium, so a confirmed recipe has to name it.
+touches saturation (NaOH instead of KOH moves SI by < 0.0005), but at its upper end it is the largest ionic
+ingredient of the medium, so a confirmed recipe has to name it.
 
 **Q4 — what cutting oxalate costs in buffering.** Buffer capacity β (mM per pH unit) at 25 °C, KNO₃ 2 · CaCl₂ 0.5 ·
 MgSO₄ 0.2 mM, at pH 4.5 / 5.0 / 5.5:
 
-| malic acid | oxalate 0.5 mM (canon) | oxalate 2 mM (canon) | oxalate 7.5 µM (window) | no oxalate |
+| malic acid | oxalate 0.5 mM (canon) | oxalate 2 mM (canon) | oxalate 7.3 µM (window) | no oxalate |
 |---|---|---|---|---|
 | 1 mM | 0.88 / 0.75 / 0.46 | 1.52 / 1.05 / 0.56 | 0.69 / 0.67 / 0.44 | 0.68 / 0.67 / 0.44 |
 | 5 mM | 3.43 / 3.34 / 2.04 | 4.09 / 3.61 / 2.10 | 3.23 / 3.26 / 2.02 | 3.23 / 3.26 / 2.02 |
@@ -840,13 +848,17 @@ tests, both directions and all three levels:
 
 | reading | window ÷ hard bound |
 |---|---|
-| NEA-selected, no malate complexes | ×1.38–1.54 |
-| + Günzel apparent constants read as I = 0 | ×1.40–1.58 |
-| + Günzel constants corrected to I = 0 (derived) | ×1.53–1.78 |
-| oxalate constants at their SI-raising end, no malate | ×1.03–1.18 |
-| oxalate constants at their SI-lowering end, no malate | ×1.71–1.94 |
+| NEA-selected, no malate complexes | ×1.40–1.58 |
+| + Günzel apparent constants read as I = 0 | ×1.42–1.62 |
+| + Günzel constants corrected to I = 0 (derived) | ×1.55–1.82 |
+| oxalate constants at their SI-raising end, no malate | ×1.04–1.21 |
+| oxalate constants at their SI-lowering end, no malate | ×1.74–1.97 |
+| SI-highest documented reading (SI-raising oxalate ends + Günzel magnesium malate at I = 0) | ×1.04–1.18 |
 
-No reading comes within an order of magnitude of the canon ranges.
+The rows bundle effects, so the malate readings' OWN share is taken against the NEA-selected window they are added
+to: the apparent constants add ×1.01–1.03 and the I = 0 constants ×1.06–1.19, while the documented spread of the
+oxalate constants, end to end, moves it ×1.54–1.77 — **the missing constant matters less than the constants we
+already have**, so chasing it is not what would widen the recipe. No reading comes within an order of magnitude of the canon ranges.
 
 **Verdict** — 🔴 **The recipe as specified has no member that is a stable solution.** Every corner of both tests'
 bands is supersaturated to all three calcium oxalate hydrates, by a margin no documented constant closes. The
@@ -856,10 +868,12 @@ hard-bound window is the machine half of HW.3; which ion to lower, and how far b
 ⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Structurally
 blind to: precipitation kinetics and the metastable zone — a supersaturated flask that has not clouded yet is
 exactly the case this criterion exists to reject; the composition of real *Pinus sylvestris* sap (no primary
-measurement in the tree); phytosiderophores, calcium malate as a solid and atmospheric CO₂, for which the
-sources used give no constants; and the Davies activity model, although the largest ionic strength met,
-0.031 mol/L, sits well inside its stated range. The MD sap profiles in `lib/xylem_sap.py` carry the same
-calcium/oxalate pair at millimolar levels — they parameterise solvation, not a medium anyone can prepare.
+measurement in the tree); phytosiderophores and calcium malate as a solid (no constants in the sources used) and
+atmospheric CO₂ (not in the constant sets); background ion pairs with no constant, whose ionic-strength channel
+the hard bound does not cover; and the Davies activity model, although the largest ionic strength met,
+0.030 mol/L, sits well inside its stated range. The MD sap profiles in `lib/xylem_sap.py` list the same
+calcium/oxalate pair at millimolar levels, but script 14 builds its box from a profile's pH and ionic strength alone,
+filling it with Na⁺/Cl⁻ — the pair never entered a simulation, and a profile is not a medium anyone can prepare.
 
 ---
 

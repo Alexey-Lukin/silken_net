@@ -174,12 +174,13 @@
       "gypsum CaSO4·2H2O": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; analytic expression (its log_k line: −4.58)",
       "glushinskite MgC2O4·2H2O": "NEA9 = Hummel, Anderegg, Rao, Puigdomènech, Tochiyama (2005) Chemical Thermodynamics Vol. 9, OECD-NEA/Elsevier (open NEA PDF), §VI p.163 — −6.4 ± 0.2 'for scoping calculations'; 'no value is recommended'"
     },
+    "magnesium_sequestration_limit_log_k": 12.0,
     "scenarios": {
       "hard_bound": {
-        "label": "HARD BOUND — calcium bound only by oxalate and sulfate, magnesium oxalate-inert, oxalate constants at their SI-raising end",
+        "label": "HARD BOUND — calcium bound only by oxalate and sulfate, magnesium held entirely as a neutral complex that binds no oxalate, oxalate constants at their SI-raising end",
         "oxalate_end": "si_high",
         "ca_malate": null,
-        "mg_malate": null,
+        "mg_malate": "limit",
         "mg_oxalate_inert": true
       },
       "selected": {
@@ -223,6 +224,13 @@
         "ca_malate": "i0",
         "mg_malate": null,
         "mg_oxalate_inert": false
+      },
+      "si_highest_documented": {
+        "label": "SI-HIGHEST documented reading — oxalate constants at their SI-raising end, the strongest magnesium malate reading, no calcium malate",
+        "oxalate_end": "si_high",
+        "ca_malate": null,
+        "mg_malate": "i0",
+        "mg_oxalate_inert": false
       }
     }
   },
@@ -257,7 +265,17 @@
         "printed_log_k": -4.58
       }
     },
-    "hard_bound_min_si_margin_over_every_reading": 0.01436,
+    "hard_bound_min_si_margin_over_every_reading": 0.015021,
+    "hard_bound_min_si_margin_over_swept_malate_constants": 0.0,
+    "dominance_sweep_log_k": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0,
+      8.0
+    ],
     "hard_bound_window_is_the_narrowest": true,
     "whewellite_is_the_least_soluble_hydrate": true
   },
@@ -266,8 +284,8 @@
       "coin": {
         "hard_bound": {
           "corners_evaluated": 192,
-          "si_whewellite_min": 1.4629,
-          "si_whewellite_max": 2.6401,
+          "si_whewellite_min": 1.4783,
+          "si_whewellite_max": 2.6443,
           "every_corner_supersaturated": true,
           "least_supersaturated_corner": {
             "malic": 5.0,
@@ -289,16 +307,16 @@
           },
           "si_range_other_solids": {
             "weddellite CaC2O4·2H2O": [
-              1.033,
-              2.221
+              1.048,
+              2.225
             ],
             "caoxite CaC2O4·3H2O": [
-              0.903,
-              2.105
+              0.918,
+              2.109
             ],
             "gypsum CaSO4·2H2O": [
-              -3.197,
-              -1.675
+              -3.188,
+              -1.625
             ]
           }
         },
@@ -553,13 +571,55 @@
               -0.431
             ]
           }
+        },
+        "si_highest_documented": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.3408,
+          "si_whewellite_max": 2.6246,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.911,
+              2.206
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.781,
+              2.089
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.183,
+              -1.658
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.613,
+              -0.298
+            ]
+          }
         }
       },
       "accelerated": {
         "hard_bound": {
           "corners_evaluated": 320,
-          "si_whewellite_min": 1.3131,
-          "si_whewellite_max": 2.6401,
+          "si_whewellite_min": 1.3318,
+          "si_whewellite_max": 2.6443,
           "every_corner_supersaturated": true,
           "least_supersaturated_corner": {
             "malic": 5.0,
@@ -581,16 +641,16 @@
           },
           "si_range_other_solids": {
             "weddellite CaC2O4·2H2O": [
-              0.852,
-              2.221
+              0.871,
+              2.225
             ],
             "caoxite CaC2O4·3H2O": [
-              0.684,
-              2.105
+              0.703,
+              2.109
             ],
             "gypsum CaSO4·2H2O": [
-              -3.2,
-              -1.686
+              -3.19,
+              -1.63
             ]
           }
         },
@@ -845,6 +905,48 @@
               -0.431
             ]
           }
+        },
+        "si_highest_documented": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 1.1986,
+          "si_whewellite_max": 2.6246,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.0,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.738,
+              2.206
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.57,
+              2.089
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.186,
+              -1.665
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.618,
+              -0.298
+            ]
+          }
         }
       }
     },
@@ -886,7 +988,7 @@
         "margin_over_strongest_documented": 1.086
       }
     },
-    "break_even_conditions": "every other constant at its SI-lowering end, no magnesium malate"
+    "break_even_conditions": "every oxalate constant at its SI-lowering end, no magnesium malate"
   },
   "q2_window": {
     "per_scenario": {
@@ -896,7 +998,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 0.5,
-              "partner_max_total_uM": 7.5253,
+              "partner_max_total_uM": 7.3427,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -908,7 +1010,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 1.0,
-              "partner_max_total_uM": 4.7448,
+              "partner_max_total_uM": 4.6586,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -920,7 +1022,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 2.0,
-              "partner_max_total_uM": 3.3461,
+              "partner_max_total_uM": 3.3065,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -934,7 +1036,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 0.5,
-              "partner_max_total_uM": 7.5322,
+              "partner_max_total_uM": 7.3504,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -946,7 +1048,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 1.0,
-              "partner_max_total_uM": 4.7554,
+              "partner_max_total_uM": 4.6698,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -958,7 +1060,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 2.0,
-              "partner_max_total_uM": 3.3648,
+              "partner_max_total_uM": 3.3255,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -974,7 +1076,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 0.5,
-              "partner_max_total_uM": 7.5253,
+              "partner_max_total_uM": 7.3427,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -986,7 +1088,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 1.0,
-              "partner_max_total_uM": 4.7448,
+              "partner_max_total_uM": 4.6586,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -998,7 +1100,7 @@
             {
               "fixed_ion": "Ca",
               "fixed_level_mM": 2.0,
-              "partner_max_total_uM": 3.3461,
+              "partner_max_total_uM": 3.3065,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -1012,7 +1114,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 0.5,
-              "partner_max_total_uM": 7.5322,
+              "partner_max_total_uM": 7.3504,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -1024,7 +1126,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 1.0,
-              "partner_max_total_uM": 4.7554,
+              "partner_max_total_uM": 4.6698,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -1036,7 +1138,7 @@
             {
               "fixed_ion": "Ox",
               "fixed_level_mM": 2.0,
-              "partner_max_total_uM": 3.3648,
+              "partner_max_total_uM": 3.3255,
               "binding_condition": {
                 "malic": 1.0,
                 "kno3": 2.0,
@@ -1837,58 +1939,272 @@
             }
           ]
         }
+      },
+      "si_highest_documented": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.6419,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.3095,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.6332,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.2843,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.0381,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.4605,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.6419,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.3095,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.6332,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.2843,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.0381,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.4605,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
       }
     },
     "hard_bound_same_for_both_tests": true,
+    "hard_bound_by_single_ph": {
+      "4.5": {
+        "partner_max_total_uM": {
+          "Ca": [
+            9.0652,
+            5.5708,
+            3.8067
+          ],
+          "Ox": [
+            8.9852,
+            5.4998,
+            3.7511
+          ]
+        },
+        "over_both_tests_window": [
+          1.128,
+          1.235
+        ]
+      },
+      "5.0": {
+        "partner_max_total_uM": {
+          "Ca": [
+            7.7055,
+            4.8542,
+            3.4162
+          ],
+          "Ox": [
+            7.6914,
+            4.8449,
+            3.4165
+          ]
+        },
+        "over_both_tests_window": [
+          1.027,
+          1.049
+        ]
+      },
+      "5.5": {
+        "partner_max_total_uM": {
+          "Ca": [
+            7.3427,
+            4.6586,
+            3.3065
+          ],
+          "Ox": [
+            7.3504,
+            4.6698,
+            3.3255
+          ]
+        },
+        "over_both_tests_window": [
+          1.0,
+          1.0
+        ]
+      }
+    },
     "boundary_curve_mM": {
       "hard_bound": [
         [
           0.005,
-          0.919041
+          0.890369
         ],
         [
           0.00862,
-          0.418179
+          0.404322
         ],
         [
           0.014862,
-          0.216172
+          0.20883
         ],
         [
           0.025623,
-          0.118577
+          0.114524
         ],
         [
           0.044175,
-          0.067285
+          0.065004
         ],
         [
           0.07616,
-          0.039127
+          0.03783
         ],
         [
           0.131303,
-          0.023295
+          0.022555
         ],
         [
           0.226374,
-          0.014272
+          0.013852
         ],
         [
           0.390281,
-          0.00909
+          0.008852
         ],
         [
           0.672865,
-          0.006097
+          0.005964
         ],
         [
           1.160056,
-          0.00436
+          0.004287
         ],
         [
           2.0,
-          0.003346
+          0.003307
         ]
       ],
       "selected": [
@@ -2073,12 +2389,12 @@
       },
       {
         "malic_mM": 1.0,
-        "oxalate": "hard-bound window at Ca 0.5 mM (7.5 µM)",
-        "oxalate_mM": 0.007525,
+        "oxalate": "hard-bound window at Ca 0.5 mM (7.3 µM)",
+        "oxalate_mM": 0.007343,
         "beta_mM_per_pH": {
-          "4.5": 0.6857,
-          "5.0": 0.667,
-          "5.5": 0.4362
+          "4.5": 0.6856,
+          "5.0": 0.6669,
+          "5.5": 0.4361
         }
       },
       {
@@ -2113,11 +2429,11 @@
       },
       {
         "malic_mM": 5.0,
-        "oxalate": "hard-bound window at Ca 0.5 mM (7.5 µM)",
-        "oxalate_mM": 0.007525,
+        "oxalate": "hard-bound window at Ca 0.5 mM (7.3 µM)",
+        "oxalate_mM": 0.007343,
         "beta_mM_per_pH": {
-          "4.5": 3.2307,
-          "5.0": 3.2586,
+          "4.5": 3.2306,
+          "5.0": 3.2585,
           "5.5": 2.0171
         }
       },
@@ -2135,50 +2451,68 @@
   },
   "q5_window_over_hard_bound": {
     "selected": [
-      1.377,
-      1.544
+      1.398,
+      1.582
     ],
     "selected_guenzel_apparent": [
-      1.402,
-      1.577
+      1.419,
+      1.616
     ],
     "selected_guenzel_i0": [
-      1.53,
-      1.78
+      1.548,
+      1.824
     ],
     "spread_si_high": [
-      1.031,
-      1.178
+      1.043,
+      1.207
     ],
     "spread_si_low": [
-      1.713,
-      1.943
+      1.745,
+      1.966
+    ],
+    "si_highest_documented": [
+      1.041,
+      1.177
     ]
   },
+  "q5_malate_reading_over_selected": {
+    "selected_guenzel_apparent": [
+      1.01,
+      1.026
+    ],
+    "selected_guenzel_i0": [
+      1.061,
+      1.187
+    ]
+  },
+  "q5_oxalate_spread_low_end_over_high_end": [
+    1.54,
+    1.766
+  ],
   "prices": {
     "cut_oxalate_keep_calcium": {
       "oxalate_max_uM_at_calcium_levels": {
         "coin": [
-          7.5253,
-          4.7448,
-          3.3461
+          7.3427,
+          4.6586,
+          3.3065
         ],
         "accelerated": [
-          7.5253,
-          4.7448,
-          3.3461
+          7.3427,
+          4.6586,
+          3.3065
         ]
       },
       "fold_below_canon_oxalate_floor": {
         "coin": [
-          66.4,
-          105.4,
-          149.4
+          68.1,
+          107.3,
+          151.2
         ],
         "accelerated": [
-          66.4,
-          105.4,
-          149.4
+          68.1,
+          107.3,
+          151.2
         ]
       },
       "buffer_capacity_lost_fraction_range": [
@@ -2199,33 +2533,33 @@
     "cut_calcium_keep_oxalate": {
       "calcium_max_uM_at_oxalate_levels": {
         "coin": [
-          7.5322,
-          4.7554,
-          3.3648
+          7.3504,
+          4.6698,
+          3.3255
         ],
         "accelerated": [
-          7.5322,
-          4.7554,
-          3.3648
+          7.3504,
+          4.6698,
+          3.3255
         ]
       },
       "fold_below_canon_calcium_floor": {
         "coin": [
-          66.4,
-          105.1,
-          148.6
+          68.0,
+          107.1,
+          150.4
         ],
         "accelerated": [
-          66.4,
-          105.1,
-          148.6
+          68.0,
+          107.1,
+          150.4
         ]
       },
       "glushinskite_scoping_si_at_window_edge": {
         "coin": [
           {
             "oxalate_mM": 0.5,
-            "calcium_uM": 7.532,
+            "calcium_uM": 7.35,
             "si_glushinskite_scoping_max": -0.747,
             "at": {
               "malic": 1.0,
@@ -2237,7 +2571,7 @@
           },
           {
             "oxalate_mM": 1.0,
-            "calcium_uM": 4.755,
+            "calcium_uM": 4.67,
             "si_glushinskite_scoping_max": -0.52,
             "at": {
               "malic": 1.0,
@@ -2249,7 +2583,7 @@
           },
           {
             "oxalate_mM": 2.0,
-            "calcium_uM": 3.365,
+            "calcium_uM": 3.325,
             "si_glushinskite_scoping_max": -0.368,
             "at": {
               "malic": 1.0,
@@ -2263,7 +2597,7 @@
         "accelerated": [
           {
             "oxalate_mM": 0.5,
-            "calcium_uM": 7.532,
+            "calcium_uM": 7.35,
             "si_glushinskite_scoping_max": -0.747,
             "at": {
               "malic": 1.0,
@@ -2275,7 +2609,7 @@
           },
           {
             "oxalate_mM": 1.0,
-            "calcium_uM": 4.755,
+            "calcium_uM": 4.67,
             "si_glushinskite_scoping_max": -0.52,
             "at": {
               "malic": 1.0,
@@ -2287,7 +2621,7 @@
           },
           {
             "oxalate_mM": 2.0,
-            "calcium_uM": 3.365,
+            "calcium_uM": 3.325,
             "si_glushinskite_scoping_max": -0.368,
             "at": {
               "malic": 1.0,
@@ -2305,15 +2639,17 @@
       "potassium_total_mM_max_if_koh": 17.973
     }
   },
-  "verdict": "Every canon corner of the 01_02 §2.1 recipe is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every other constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the missing malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.5 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.5 / 4.8 / 3.4 µM — the same in both tests. The NEA-selected constants widen it ×1.38–1.54, and with the strongest documented malate reading ×1.53–1.78. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
+  "verdict": "Every canon corner of the 01_02 §2.1 recipe is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the calcium and magnesium malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.3 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.4 / 4.7 / 3.3 µM — the same in both tests. The NEA-selected constants widen it ×1.40–1.58; the malate readings add at most ×1.19 on top of those. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
   "caveats": [
     "Hypothesis from literature constants, not measurement (00_06 §0). No prepared solution was analysed.",
-    "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its reviews; the largest ionic strength met at any canon corner is 0.030 mol/L. Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of water.",
+    "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its reviews; the largest ionic strength met at any canon corner under any reading is 0.030 mol/L. Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of water.",
+    "Varied: the oxalate constants (NEA spread) and the malate complexes (readings, sweep, limit). Single values: the malic-acid protonation, the sulfate ion pairs and Davies A(T).",
     "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.5); pH is −log10 of the H+ activity.",
     "Complexes for which NEA selects no enthalpy — the calcium and magnesium oxalate complexes — keep their 25 °C constants over 20–40 °C.",
     "pH on a 0.5-unit grid and temperature on a 5 °C grid; every band end is a grid point.",
-    "Günzel's malate constants are APPARENT (Na+ medium, pHa 7.4, no Na+/K+–malate pair separated out) and the I = 0 values are a Davies correction from I = 0.104 / 0.124, past that equation's stated range. They enter only the readings; the hard bound and its window use no malate constant at all.",
-    "The hard bound rests on the SIGN of every omitted ligand's effect; its dominance over the documented readings is asserted at every corner evaluated, and its window is asserted the narrowest.",
+    "Günzel's malate constants are APPARENT (Na+ medium, pHa 7.4, no Na+/K+–malate pair separated out) and the I = 0 values are a Davies correction from I = 0.104 / 0.124, past that equation's stated range. They enter only the readings; the hard bound uses none of them — its magnesium half is a sequestration LIMIT.",
+    "The hard bound rests on the SIGN of each malate complex's effect through BOTH channels, mass action and ionic strength: no calcium malate, and every magnesium ion held as a neutral complex that binds no oxalate. Its dominance is asserted at every corner against every documented reading and against calcium and magnesium malate swept over the log K grid in `verification`, and its window is asserted the narrowest.",
+    "NOT bounded: background ion pairs with no constant in the sources used — K+ or Na+ with malate, KNO3(aq) — would lower the ionic strength and raise the SI, and the hard bound does not cover that channel.",
     "SI < 0 is the thermodynamic criterion. Precipitation kinetics and a metastable zone are not modelled, and a window edge is the saturation point, not a margin — how far below it to prepare is part of the choice.",
     "KOH is taken as the base; NaOH moves SI by at most 0.0004 at any corner."
   ],
@@ -2335,17 +2671,22 @@
     {
       "item": "calcium ligands other than oxalate, sulfate and the malate readings (Cl-, NO3-, HMal-)",
       "why": "not in the constant sets",
-      "effect_of_omission": "can only raise the calcium oxalate SI"
+      "effect_of_omission": "overstates the SI through mass action; their ionic-strength channel is not assessed"
     },
     {
       "item": "magnesium ligands other than oxalate, sulfate and the malate readings",
       "why": "not in the constant sets",
-      "effect_of_omission": "bounded by the hard bound's oxalate-inert magnesium"
+      "effect_of_omission": "covered by the hard bound, which holds every magnesium ion as a neutral complex"
     },
     {
       "item": "K+/Na+–oxalate ion pairs",
       "why": "not in the constant sets",
-      "effect_of_omission": "can only raise the calcium oxalate SI"
+      "effect_of_omission": "overstates the SI through mass action; their ionic-strength channel is not assessed"
+    },
+    {
+      "item": "K+/Na+–malate and KNO3(aq) ion pairs",
+      "why": "no constant in the sources used",
+      "effect_of_omission": "the pairs would lower the ionic strength and raise the SI, so leaving them out UNDERSTATES it — not covered by the hard bound"
     },
     {
       "item": "atmospheric CO2",

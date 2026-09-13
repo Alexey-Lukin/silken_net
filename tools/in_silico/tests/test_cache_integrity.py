@@ -548,15 +548,17 @@ def test_bus_mechanical_wear_budget():
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 
-    Sanity is STRUCTURAL — the quoted numbers are pinned by test_doc_cache_sync. Four things must hold:
-      1. the verdict: every canon corner supersaturated, in both tests, under every constant reading;
-      2. the window rests on the HARD BOUND, which needs no calcium or magnesium malate constant — so
-         the bound must stay above every reading and its window must stay the narrowest. A script that
-         lost either would still print a window, now resting on a constant nobody has measured;
+    Sanity is STRUCTURAL — the headline numbers are pinned by test_doc_cache_sync, and only a subset of what the
+    docs quote is. Four things must hold:
+      1. the verdict: every canon corner supersaturated, in both tests, under every constant reading evaluated;
+      2. the window rests on the HARD BOUND, which needs no calcium or magnesium malate constant — so the margins
+         the script computed must stay non-negative (they cover only the readings and the swept constants the
+         script evaluates; a reading it never runs is invisible here), the sweep must still reach a strong
+         constant, and the bound's window must stay the narrowest;
       3. the window moves the right way: more of the held ion leaves less room for the other;
-      4. the malic-acid equations the CACHE carries still return the constants printed beside them in the
-         primary. The scan's text layer misreads two coefficients; the script asserts this too, but only
-         this reads what was actually written.
+      4. the malic-acid equation coefficients in the cache still reproduce the 25 °C constants in the cache — two
+         transcriptions checked against each other, so an error made the same way in both passes; only the page
+         image of the primary catches that.
     """
     path = CHEMISTRY / "sap_recipe_saturation.json"
     if not path.exists():
@@ -569,6 +571,8 @@ def test_sap_recipe_saturation():
             assert s["every_corner_supersaturated"] and s["si_whewellite_min"] > 0.0, f"{test}/{key}"
             assert s["si_range_other_solids"]["gypsum CaSO4·2H2O"][1] < 0.0, "gypsum reached saturation"
     assert d["verification"]["hard_bound_min_si_margin_over_every_reading"] >= 0.0
+    assert d["verification"]["hard_bound_min_si_margin_over_swept_malate_constants"] >= 0.0
+    assert max(d["verification"]["dominance_sweep_log_k"]) >= 8.0, "the dominance sweep no longer reaches a strong constant"
     windows = d["q2_window"]["per_scenario"]
     for key, per_scenario in windows.items():
         for test in per_test:

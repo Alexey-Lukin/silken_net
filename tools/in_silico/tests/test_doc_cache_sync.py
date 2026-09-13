@@ -595,10 +595,38 @@ CHECKS = [
                            for rows in d["prices"]["cut_calcium_keep_oxalate"]["glushinskite_scoping_si_at_window_edge"].values()
                            for g in rows), 0.006,
     ),
+    # ⛔ The row below is a ratio over the HARD BOUND and it bundles three effects (oxalate spread, the magnesium
+    # limit, the malate reading), so its label must not credit it to the malate constant — a review caught exactly
+    # that misreading in the tracker. The malate reading's OWN share is the next row, pinned separately.
     (
-        "sap widest widening by a documented malate reading → sap_recipe_saturation.json (SUMMARY §HW.3 Q5)",
+        "sap window over the hard bound, NEA-selected + Günzel at I = 0, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q5)",
         SUMMARY, rf"\| \+ Günzel constants corrected to I = 0 \(derived\) \| ×[\d.]+–{N} \|",
         SAP, lambda d: d["q5_window_over_hard_bound"]["selected_guenzel_i0"][1], 0.006,
+    ),
+    (
+        "sap malate reading's own share over NEA-selected, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q5)",
+        SUMMARY, rf"the I = 0 constants ×[\d.]+–{N}, while",
+        SAP, lambda d: d["q5_malate_reading_over_selected"]["selected_guenzel_i0"][1], 0.006,
+    ),
+    (
+        "sap oxalate-constant spread end to end, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q5)",
+        SUMMARY, rf"end to end, moves it ×[\d.]+–{N} —",
+        SAP, lambda d: d["q5_oxalate_spread_low_end_over_high_end"][1], 0.006,
+    ),
+    (
+        "sap one pH set-point at 4.5 widens the window, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q2)",
+        SUMMARY, rf"at pH 4\.5\s+×[\d.]+–{N} wider",
+        SAP, lambda d: d["q2_window"]["hard_bound_by_single_ph"]["4.5"]["over_both_tests_window"][1], 0.006,
+    ),
+    (
+        "sap hard-bound dominance margin over the documented readings → sap_recipe_saturation.json (SUMMARY §HW.3)",
+        SUMMARY, rf"\(margin ≥ {N}\)",
+        SAP, lambda d: d["verification"]["hard_bound_min_si_margin_over_every_reading"], 0.0006,
+    ),
+    (
+        "sap largest ionic strength met → sap_recipe_saturation.json (SUMMARY §HW.3 caveats)",
+        SUMMARY, rf"largest ionic strength met,\s+{N} mol/L",
+        SAP, lambda d: d["activity_model"]["ionic_strength_max_mol_l"], 0.0006,
     ),
     (
         "sap SI floor quoted by canon → sap_recipe_saturation.json (01_02 §2.1)",
