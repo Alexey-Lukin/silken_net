@@ -232,12 +232,13 @@ def edlc_endurance_hours():
 def kirkendall_diffusion():
     """Fick's 1st law: V/Al diffusion through the passive oxide, PER candidate alloy (Stage-2
     coin bake-off, 01_02 §2.5). Composition-driven: release ∝ bulk wt%, so 4% V gives the 56×
-    baseline and every V-free alloy gives ~0. The oxide-diffusion D is a SHARED literature constant
-    (per-alloy oxide diffusivity is rarely published; the composition effect dominates the small
+    baseline and every V-free alloy gives ~0. The oxide-diffusion D is a SHARED order-of-magnitude constant,
+    labelled literature with NO source named — every release below is linear in it (per-alloy oxide diffusivity is rarely published; the composition effect dominates the small
     Nb/Zr/Ta oxide-stability difference). Output is nested {alloy: {year: {...}}}."""
     banner("2. Kirkendall Ion Diffusion (V/Al through the oxide) — per alloy")
 
-    # Diffusion coefficients through the passive oxide (literature; shared across Ti alloys, 01_02 §2.5)
+    # Diffusion coefficients through the passive oxide — labelled literature, SOURCE NOT NAMED (order of magnitude;
+    # shared across Ti alloys, 01_02 §2.5). The release is linear in D, so the magnitude of D is the magnitude of the answer.
     D_V = 1e-20     # m²/s — V through TiO₂ (very slow, dense oxide)
     D_AL = 5e-20    # m²/s — Al through TiO₂ (slightly faster)
     L_OXIDE = 5e-9  # m — passive layer thickness (5 nm)

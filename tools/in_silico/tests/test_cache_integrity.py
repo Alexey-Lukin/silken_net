@@ -168,7 +168,8 @@ ALLOY_SKUS = ("Ti-6Al-4V", "Ti-6Al-7Nb", "CP-Ti-Gr4", "beta-Ti-13Nb-13Zr", "Ta",
 
 def test_gusak_degradation_multi_alloy():
     """Script 51 outputs V/Al release per candidate alloy (Stage-2 bake-off, 01_02 §2.5).
-    Sanity: 4V control ≈ 1.12 µg/cm²/yr V (the 56× baseline); every V-free alloy releases ~0."""
+    Sanity: 4V control ≈ 1.12 µg/cm²/yr V (the in-silico baseline — order of magnitude on an unsourced D, 01_02 §2.5);
+    every V-free alloy releases ~0."""
     path = KINETICS / "gusak_degradation.json"
     if not path.exists():
         pytest.skip("gusak_degradation.json not computed")
