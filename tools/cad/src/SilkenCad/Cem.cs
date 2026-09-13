@@ -324,7 +324,9 @@ internal sealed record CathodeFlangeCem
     // fix) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
     // «точні Ø фланця/площадки потребують CAD → HW.8»; the flange drawing is that forcing function, §F).
     public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, Hard Gold ENIG (4–5, HW.8)
-    public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard)
+    public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard) — a
+                                                               // DRAWING annotation of a requirement: CathodeFlange.cs does not
+                                                               // model the ring (solid Ti top face; open, 00_07 HW.34)
 
     public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (concentricity — coaxial stack)
     public NotesSpec? Notes { get; init; }                // drawing notes block

@@ -457,7 +457,9 @@ internal static class Drawing
         b.AppendLine(Text(frontCx, cy + rFlange + 46, "FRONT (pogo face)", 10, "middle", "#555"));
         HDim(b, frontCx - rFlange, frontCx + rFlange, cy + rFlange + 24, $"Ø{N(cem.FlangeDiameterMm)}", cy + rFlange);
         b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad", 9, "start", Dim));
-        b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"PEEK iso ring {N(cem.IsolationRingWidthMm)}", 9, "start", Dim));
+        // The ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (the top face is solid Ti to the bore
+        // edge; how to meet it is an open verdict, 00_07 HW.34) — so the sheet labels it absent, never as a feature.
+        b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"iso ring ≥{N(cem.IsolationRingWidthMm)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
         b.AppendLine(Text(frontCx + lugOut - rLug, cy - lugOut - rLug - 3, $"{cem.BayonetLugs}× bayonet lug", 9, "middle", Dim));
 
         // SIDE — flange (thick × Ø) ↦ shank (Ø9 × L), bore axis, bayonet lug edge-on
@@ -516,7 +518,10 @@ internal static class Drawing
 
         // FRONT — flange + iso ring + pad + bore + centre + lugs
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rF) { Layer = geo });
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = geo });
+        // NOTES layer, not GEOMETRY: the ring is a 02_02 §1.2 requirement the part does not have (00_07 HW.34), and a CAD
+        // reader takes a GEOMETRY-layer circle as a contour to machine.
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = nte });
+        doc.Entities.Add(new Text($"iso ring >={N(cem.IsolationRingWidthMm)} REQUIRED - NOT IN GEOMETRY", new Vector2(cx + rIso + 1, cy + 1), 1.2) { Layer = nte });
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rP) { Layer = geo });
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rB) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx - rF - 2, cy), new Vector2(cx + rF + 2, cy)) { Layer = geo });

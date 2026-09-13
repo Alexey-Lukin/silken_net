@@ -332,6 +332,28 @@ public class DrawingTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+    // The isolation ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (solid Ti top face; open,
+    // 00_07 HW.34). A sheet that draws it as a feature hands the shop a part that does not exist, so both readers must
+    // call it absent, and the DXF must keep its circle off the layer a CAD reader takes as a contour to machine.
+    [Fact]
+    public void Flange_Sheet_Labels_The_Unmodelled_Isolation_Ring_Absent_In_Both_Readers()
+    {
+        var cem = new CathodeFlangeCem();
+        Assert.Contains("NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
+        string path = Path.Combine(Path.GetTempPath(), $"flange_iso_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
+            Assert.Contains("NOT IN GEOMETRY", File.ReadAllText(path));
+            var doc = netDxf.DxfDocument.Load(path);
+            double rIso = cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm;
+            var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rIso) < 1e-3).ToArray();
+            Assert.NotEmpty(ring);
+            Assert.All(ring, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     // The round-trip gotcha #11 prescribes for EVERY `draw` kind, not only the coin: read the REAL
     // manifest and prove each non-empty note reaches the DXF through `DxfSafe`.
     [Fact]
