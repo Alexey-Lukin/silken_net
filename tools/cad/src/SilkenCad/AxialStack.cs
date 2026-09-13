@@ -36,6 +36,43 @@ internal static class AxialStack
     public static float InsertionBudgetMm(AnchorAxialStackCem cem)
         => cem.Zone2.LengthMm - (cem.Zone1InsertionMm + cem.Capsule.Flange.ShankLengthMm);
 
+    // The Zone-1 lock this stack NAMES (Cem.cs Zone1LockManifest), read from its own manifest beside this
+    // one. null ⇔ the stack names none. A dangling name throws: a broken manifest, not an audit finding.
+    // ⛔ The kind check is load-bearing: Cem.Parse fills absent members from record defaults, and the
+    //    MechanicalLockCem defaults carry the Zone-1 lock's contact zone and groove — a wrong file would
+    //    print the right window.
+    internal static MechanicalLockCem? Zone1Lock(AnchorAxialStackCem cem, string strStackManifestPath)
+    {
+        if (string.IsNullOrWhiteSpace(cem.Zone1LockManifest)) return null;
+        string strDir = Path.GetDirectoryName(Path.GetFullPath(strStackManifestPath)) ?? ".";
+        string strJson = File.ReadAllText(Path.Combine(strDir, cem.Zone1LockManifest));
+        string strKind = Cem.Kind(strJson);
+        return strKind == "mechanical_lock"
+            ? Cem.Parse<MechanicalLockCem>(strJson)
+            : throw new InvalidDataException(
+                $"zone1_lock_manifest '{cem.Zone1LockManifest}' is a '{strKind}' manifest, not a mechanical_lock");
+    }
+
+    // null ⇔ the Zone-1 insertion sits inside the window its lock admits (MechanicalLock.InsertionWindowMm —
+    // the arithmetic's one home); otherwise the finding, naming the input and the feature it misplaces.
+    // ⛔ A DETECTOR, not a cement: nothing here says what the insertion SHOULD be. Moving the placeholder is
+    //    00_07 HW.26 G1's verdict, because the in-silico half carries the same value under its own names.
+    public static string? Zone1InsertionConflict(AnchorAxialStackCem cem, MechanicalLockCem lockCem)
+    {
+        MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
+        float fIn = cem.Zone1InsertionMm;
+        var aWhy = new List<string>(2);
+        if (fIn < w.MinMm)
+            aWhy.Add($"the PEEK-contact zone (barbs) ends {w.MinMm - fIn:F1} mm outside the sleeve");
+        if (fIn > w.MaxMm)
+            aWhy.Add($"the DIN-471 groove's near flank sits {fIn - w.MaxMm:F1} mm inside the PEEK, where no ring can be fitted after the press");
+        return aWhy.Count == 0
+            ? null
+            : $"zone1_insertion_mm = {fIn:F1} lies outside the Zone-1 lock's insertion window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
+              $"from the shank's free end: {string.Join("; ", aWhy)} — an HW.8 placeholder in conflict with the lock " +
+              "geometry, shared by value with the in-silico half (00_07 HW.26 G1)";
+    }
+
     // Sleeve lower-end Z in the stack frame (Zone-1 top, minus how deep the anode inserts).
     public static float SleeveBottomZMm(AnchorAxialStackCem cem)
         => cem.Zone1.LengthMm - cem.Zone1InsertionMm;

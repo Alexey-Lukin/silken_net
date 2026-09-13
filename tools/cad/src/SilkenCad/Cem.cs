@@ -440,10 +440,20 @@ internal sealed record AnchorAxialStackCem
 
     // How deep the Zone-1 anode shaft inserts into the Zone-2 bore (press-fit overlap). The Zone-3 shank
     // enters the OTHER end by its own shank length → InsertionBudget guards the two shanks don't collide.
-    // 30 is an HW.8 PLACEHOLDER, not a frozen dim — and it is the same number as `L_A_INSERT` in the
-    // in-silico scripts 54/58 (F2 budget 50−30−14 = 6 mm gap). No gate binds the two halves: they share
-    // no identifier, so a change here must be swept across `tools/in_silico/scripts/5*.py` BY VALUE.
+    // 30 is an HW.8 PLACEHOLDER, not a frozen dim (F2 budget 50−30−14 = 6 mm) — and the in-silico half
+    // re-types the same value under TWO names, `L_A_INSERT` and `Z1_INSERTION_MM`: grep both and follow
+    // their importers. No gate binds the two halves, so a change here is swept BY VALUE.
+    // ⚠️ `verify` judges it against the window of the Zone-1 lock this stack names below and flags it when
+    // outside (AxialStack.Zone1InsertionConflict; the standing conflict is 00_07 HW.26 G1) — a detector,
+    // never a correction.
     public float Zone1InsertionMm { get; init; } = 30f;
+
+    // The Zone-1 lock that insertion is judged against — a FILENAME beside this manifest, never a copy of
+    // its numbers: the barb/groove geometry has one home, the lock manifest, and a nested MechanicalLockCem
+    // would fill every absent field from record defaults (gotcha #0a) — whose contact zone and groove ARE
+    // the Zone-1 lock's, so a wrong or empty copy would still print the right window. null ⇒ the window
+    // prints as NOT SPECIFIED IN CEM. Resolved by AxialStack.Zone1Lock (00_07 HW.26).
+    public string? Zone1LockManifest { get; init; }
 
     // Components — reuse the per-part records (nested); defaults = the frozen Zone-1 / Zone-2 dims + the
     // capsule-end (flange + radome) sub-assembly (it carries its own mate strategy).

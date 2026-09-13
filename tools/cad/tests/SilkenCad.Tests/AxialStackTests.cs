@@ -158,6 +158,58 @@ public class AxialStackTests
             },
         };
 
+    // ── Zone-1 insertion vs the window its own lock admits (00_07 HW.26 G1) ──
+
+    // ⛔ A DETECTOR pin, never a cement: every insertion below is SET, never read from the stack default — so the
+    //    day G1 moves `zone1_insertion_mm` into the window this stays green and only the verify ⚠ goes quiet.
+    // MUTATION: drop either comparison in AxialStack.Zone1InsertionConflict ⇒ its row reds.
+    [Fact]
+    public void An_Insertion_Outside_The_Zone1_Lock_Window_Is_Reported_By_Name()
+    {
+        MechanicalLockCem lockCem = Cem.Parse<MechanicalLockCem>(
+            File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
+        MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
+
+        // The HW.8 placeholder VALUE, handed in explicitly — too deep: the groove is buried.
+        string? strAt30 = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = 30f }, lockCem);
+        Assert.NotNull(strAt30);
+        Assert.Contains("zone1_insertion_mm", strAt30);
+        Assert.Contains("DIN-471 groove", strAt30);
+        Assert.DoesNotContain("PEEK-contact zone", strAt30);
+        Assert.Contains("HW.26 G1", strAt30);
+
+        // Too shallow: the barbs stick out, and only that is named.
+        string? strShallow = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = w.MinMm - 1f }, lockCem);
+        Assert.NotNull(strShallow);
+        Assert.Contains("PEEK-contact zone", strShallow);
+        Assert.DoesNotContain("DIN-471 groove", strShallow);
+
+        Assert.Null(AxialStack.Zone1InsertionConflict(
+            new AnchorAxialStackCem { Zone1InsertionMm = (w.MinMm + w.MaxMm) / 2f }, lockCem));
+    }
+
+    // The shipped stack NAMES its Zone-1 lock instead of copying it, and the name must land on the right PART: a
+    // solid shank of the Zone-1 shaft's own Ø — the Zone-3 lock has a channel, and its Ø is an HW.8 placeholder that
+    // may yet become 11. A stack naming none gets no lock (never a default one), and a name resolving to another kind
+    // refuses rather than parsing into record defaults — whose contact zone and groove ARE the Zone-1 lock's.
+    // MUTATION: drop the json key · point it at mechanical_lock.zone3.json · fall back to `new MechanicalLockCem()` ·
+    // remove the kind check ⇒ each reds.
+    [Fact]
+    public void The_Shipped_Stack_Names_The_Solid_Lock_Of_Its_Own_Shaft__Never_A_Default_Or_Another_Kind()
+    {
+        string strStack = Path.Combine(CemFixtures.Dir(), "anchor_axial_stack.json");
+        AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(File.ReadAllText(strStack));
+
+        MechanicalLockCem? lockCem = AxialStack.Zone1Lock(cem, strStack);
+        Assert.NotNull(lockCem);
+        Assert.Equal(cem.Zone1.OuterDiameterMm, lockCem.ShankDiameterMm);
+        Assert.Equal(0f, lockCem.BoreDiameterMm);
+
+        Assert.Null(AxialStack.Zone1Lock(new AnchorAxialStackCem(), strStack));
+        Assert.Throws<InvalidDataException>(() =>
+            AxialStack.Zone1Lock(new AnchorAxialStackCem { Zone1LockManifest = "anchor_zone1.pine.json" }, strStack));
+    }
+
     [Fact]
     public void Monolithic_Bus_Rod_Pinched__Rod_Plus_Liner_Exceeds_Channel()
     {

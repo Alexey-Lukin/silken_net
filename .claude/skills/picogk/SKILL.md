@@ -427,6 +427,12 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   🔑 **`BasePipe`/`BaseCylinder` Z-origin = `[0, L]` from the frame** (grows along +localZ; verified in LEAP
   `Frames.cs` — NOT centred), so stack lifts are absolute; the render overlap sleeve∩capsule is the flange
   SHOULDER on the sleeve top face, not the shank (the Ø9 floats in the bore).
+  ⊕ **The Zone-1 insertion is judged against its OWN lock (2026-09-13, `00_07` HW.26 G1):** the stack NAMES the lock by
+  file (`zone1_lock_manifest`) and never copies its numbers — a nested `MechanicalLockCem` fills absent fields from defaults
+  whose contact zone and groove ARE the Zone-1 lock's, so a wrong or empty copy would print the right window (hence the
+  `kind` check in `AxialStack.Zone1Lock`). One home: `MechanicalLock.InsertionWindowMm`; `verify` prints it beside
+  `zone1_insertion_mm` and flags an insertion outside it. 🔑 **Pin a detector with the value HANDED IN, never read from
+  the default** — a pin asserting that the shipped placeholder stays outside cements the defect and reds the day G1 is fixed.
 - **Generate an engineering drawing (`Drawing.cs` / `draw`, SHIPPED Phase 0+1)**: `draw <cem>` emits
   **SVG (human) + DXF via netDxf (factory, opens in AutoCAD/Fusion)** — no PDF (scoped in research, never
   built); ⚠️ read gotcha #11 BEFORE touching notes/tolerances — pure-managed, no Library.Go,

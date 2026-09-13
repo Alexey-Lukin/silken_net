@@ -180,7 +180,8 @@ internal static class Program
             case "anchor_axial_stack":
             {
                 AnchorAxialStackCem cem = Cem.Parse<AnchorAxialStackCem>(strJson);
-                return RunHeadless(cem.VoxelSizeMm, () => ReportAxialStack(cem, AxialStack.Build(cem)));
+                MechanicalLockCem? lockCem = AxialStack.Zone1Lock(cem, strCemPath);   // before the render: a dangling name fails fast
+                return RunHeadless(cem.VoxelSizeMm, () => ReportAxialStack(cem, AxialStack.Build(cem), lockCem));
             }
             default:
                 return Fail($"unknown CEM kind: {Cem.Kind(strJson)}");
@@ -835,7 +836,7 @@ internal static class Program
     // press-fit findings (Zone-3 shank Ø9 ≪ bore Ø11 = clearance F1; insertion budget F2) are the real
     // un-reconciled state (HW.8), surfaced as ⚠ + asserted by the pure xUnit suite — so the exit-code
     // gates ONLY that the merge rendered, keeping CI green while the findings drive bench (as ReportAssembly).
-    private static int ReportAxialStack(AnchorAxialStackCem cem, AxialStackVoxels sv)
+    private static int ReportAxialStack(AnchorAxialStackCem cem, AxialStackVoxels sv, MechanicalLockCem? lockCem)
     {
         ReportResolution(Resolution.Features(cem, cem.VoxelSizeMm));
         GeometryMetrics oM = Validation.MeasureAxialStack(cem, sv);
@@ -855,6 +856,20 @@ internal static class Program
         Console.WriteLine(
             $"  insertion budget={oM.InsertionBudgetMm:F1} mm · embedded span={oM.OverallStackLengthMm:F1} mm · " +
             $"bus-rod clears channel={oM.BusRodClears}");
+        // Zone-1 insertion beside the window its own lock admits (00_07 HW.26) — printed on every run, since
+        // the conflict below is the standing state; an unnamed lock prints as loud absence, never a default.
+        if (lockCem is null)
+        {
+            Console.WriteLine($"  Zone-1 insertion={cem.Zone1InsertionMm:F1} mm · lock window {Drawing.NotSpecified} " +
+                              "(no zone1_lock_manifest — nothing to judge the insertion against)");
+        }
+        else
+        {
+            MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
+            Console.WriteLine($"  Zone-1 insertion={cem.Zone1InsertionMm:F1} mm · lock window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
+                              $"from the shank's free end ({cem.Zone1LockManifest}: PEEK-contact zone end → DIN-471 groove flank, " +
+                              $"Ø{lockCem.ShankDiameterMm:F0} shank{(lockCem.BoreDiameterMm > 0f ? $" with a Ø{lockCem.BoreDiameterMm:F2} channel" : ", solid")})");
+        }
         Console.WriteLine(
             $"  liner: length={oM.LinerLengthMm:F1} mm (channel {AxialStack.ChannelTopZMm(cem) - AxialStack.ChannelBottomZMm(cem):F1} + " +
             $"protrusion {cem.Capsule.Flange.BusLinerProtrusionMm:F1} below the shank face) · covers channel={oM.LinerCoversChannel}");
@@ -873,6 +888,8 @@ internal static class Program
             Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the H7/s6 band (bench, 01_01 §3)");
         if (oM.InsertionBudgetMm is { } dB && dB < 0)
             Console.WriteLine($"  ⚠ press-fit F2: insertion budget {dB:F1} mm < 0 — Zone-1 + Zone-3 shanks collide inside the {cem.Zone2.LengthMm:F0} mm bore");
+        if (lockCem is not null && AxialStack.Zone1InsertionConflict(cem, lockCem) is { } strConflict)
+            Console.WriteLine($"  ⚠ {strConflict}");
         if (oM.BusRodClears is false)
             Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
                 ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F1} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} > cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — rod+insulation pinched (01_01 §1.4)"

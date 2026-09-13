@@ -205,6 +205,10 @@ shanks at 150 °C (hex anti-rotation `§4.3 C` is bench-gated → deferred). `ve
 → Zone-2 sleeve → flange → radome) into one axis and MEASURES the press-fit interfaces the capsule-end never touched:
 **Zone1↔Zone2 = 0.00 mm line-to-line** (real +interference = the H7/s6 band on bench, ISO 286) · **Zone2↔Zone3 = −1.0 mm
 = the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 6 mm · span 63 mm · bus continuous.
+The Zone-1 insertion is also judged against the window its OWN lock admits: the stack names that lock by file
+(`zone1_lock_manifest`, never a copy of its numbers) and `MechanicalLock.InsertionWindowMm` derives the window from the
+shank's free end — PEEK-contact zone end → DIN-471 groove flank; `verify` prints it beside `zone1_insertion_mm` and
+flags an insertion outside it (the standing conflict → `00_07` HW.26 G1).
 An AUDIT table like the capsule-end — render-sanity exit only, findings asserted by `AxialStackTests`. Render uses the
 Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the
 flange SHOULDER resting on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11). Reuses `Zone1Anode.Envelope` ·

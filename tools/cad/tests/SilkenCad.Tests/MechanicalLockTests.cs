@@ -131,11 +131,10 @@ public void Shallow_Ramp_Faces_Local_Z0__The_End_That_Enters_The_Peek_First()
         "the tooth met first from the insertion end rises over the STEEP face — a reversed ratchet");
 }
 
-// Every shipped lock end — both standalone manifests AND the shank the cathode flange actually builds —
-// obeys the same invariant. The flange is read through CathodeFlange.ShankCem, because that mapping is
-// where the reversal lived; a manifest-only check would have stayed green over the built part.
-[Fact]
-public void Every_Shipped_Lock_End_Presents_Its_Shallow_Ramp_To_The_Peek_First()
+// Every shipped lock end — both standalone manifests AND the shank the cathode flange actually builds. The
+// flange is read through CathodeFlange.ShankCem, because that mapping is where the reversal lived; a
+// manifest-only roster would have stayed green over the built part.
+private static List<(string Name, MechanicalLockCem Cem)> ShippedLockEnds()
 {
     var ends = Cem.ManifestFiles(CemFixtures.Dir(), "mechanical_lock*.json")
         .Select(p => (Path.GetFileName(p), Cem.Parse<MechanicalLockCem>(File.ReadAllText(p))))
@@ -143,7 +142,14 @@ public void Every_Shipped_Lock_End_Presents_Its_Shallow_Ramp_To_The_Peek_First()
             Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "cathode_flange.json"))))))
         .ToList();
     Assert.True(ends.Count >= 3, "the roster must include both lock manifests and the flange shank");
-    foreach ((string strName, MechanicalLockCem cem) in ends)
+    return ends;
+}
+
+// Every shipped lock end obeys the same ratchet invariant.
+[Fact]
+public void Every_Shipped_Lock_End_Presents_Its_Shallow_Ramp_To_The_Peek_First()
+{
+    foreach ((string strName, MechanicalLockCem cem) in ShippedLockEnds())
     {
         float fLeadLen = cem.BarbHeightMm / MathF.Tan(cem.LeadAngleDeg * MathF.PI / 180f);
         float fTrailLen = cem.BarbHeightMm / MathF.Tan(cem.TrailAngleDeg * MathF.PI / 180f);
@@ -166,5 +172,60 @@ public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
         Assert.False(File.ReadAllText(p).Contains("\"barb_direction\"", StringComparison.Ordinal),
             $"{Path.GetFileName(p)} carries `barb_direction`, which MechanicalLockCem has no slot for — the key " +
             "evaporates on parse; the ratchet direction is fixed by the insertion end, not by a sign");
+}
+
+// ── Insertion window (00_07 HW.26) — MechanicalLock.InsertionWindowMm is the arithmetic's one home ──
+
+// The window the SHIPPED Zone-1 lock admits, from its free end: the end of its PEEK-contact zone to the near
+// flank of its DIN-471 groove. A regression pin on a DERIVED number read from the real manifest — it reds when
+// the lock geometry moves, which is the moment any insertion judged against it has to be judged again.
+// MUTATION: Min = contact_start alone · Max = groove_offset + groove_width ⇒ reds.
+[Fact]
+public void Zone1_Lock_Admits_Insertion_From_Its_Contact_Zone_End_To_Its_Groove_Flank()
+{
+    var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
+    MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(cem);
+    Assert.Equal(14.0f, w.MinMm, 3);   // contact_start 2 + contact_length 12
+    Assert.Equal(15.0f, w.MaxMm, 3);   // groove_offset 15
+}
+
+// What the window MEANS, walked on each part's own profile rather than re-derived from its fields: at any
+// insertion inside it, every sample of barb metal is on the PEEK side of the mouth and every sample of the
+// groove on the air side. Lock frame, z = 0 enters first (gotcha #15): a window measured from the other end
+// keeps plausible arithmetic and reds here. Roster = both lock manifests AND the shank the flange builds.
+// MUTATION: Min = contact_start alone ⇒ a barb lies past it · Max = groove_offset + groove_width ⇒ the groove
+// starts before it · Min/Max measured from z = shank_length ⇒ both.
+[Fact]
+public void Inside_Its_Window_Every_Barb_Is_In_The_Peek_And_The_Groove_Is_Not()
+{
+    const float fStep = 0.005f;
+    foreach ((string strName, MechanicalLockCem cem) in ShippedLockEnds())
+    {
+        MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(cem);
+        var sdf = new MechanicalLockShank(cem);
+        float fRShank = cem.ShankDiameterMm / 2f;
+        int nBarb = 0, nGroove = 0;
+        for (int i = 0; i * fStep <= cem.ShankLengthMm; i++)
+        {
+            float fZ = i * fStep;
+            float fR = sdf.ProfileRadius(fZ);
+            if (fR > fRShank + 1e-4f)
+            {
+                nBarb++;
+                Assert.True(fZ <= w.MinMm,
+                    $"{strName}: barb metal at z = {fZ:F3} mm lies past the window's shallow end {w.MinMm:F3} mm — " +
+                    "at that insertion it is outside the sleeve");
+            }
+            else if (fR < fRShank - 1e-4f)
+            {
+                nGroove++;
+                Assert.True(fZ >= w.MaxMm,
+                    $"{strName}: the groove at z = {fZ:F3} mm starts before the window's deep end {w.MaxMm:F3} mm — " +
+                    "at that insertion it is inside the PEEK");
+            }
+        }
+        Assert.True(nBarb > 0 && nGroove > 0,
+            $"{strName}: the walk met {nBarb} barb and {nGroove} groove samples — one that meets neither measures nothing");
+    }
 }
 }

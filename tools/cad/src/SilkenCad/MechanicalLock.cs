@@ -119,4 +119,20 @@ internal static class MechanicalLock
 
         return voxShank;
     }
+
+    // The insertion depths this lock admits (00_07 HW.26): where the sleeve MOUTH may sit along the shank,
+    // measured in the LOCK's frame — from local z = 0, the free end that enters the PEEK first (gotcha #15).
+    // A depth is frame-invariant (entering end → mouth), so AnchorAxialStackCem.Zone1InsertionMm compares directly;
+    // what must never be reused in the anode frame is the lock's GEOMETRY (G4), not this scalar.
+    //   Min = end of the declared PEEK-contact zone: shallower, the last barbs and the PEEK that has to sit
+    //         behind their steep faces are outside the sleeve (01_01 §4.3 A).
+    //   Max = near flank of the DIN-471 groove: deeper, the groove is inside the PEEK and the ring fitted
+    //         AFTER the press (01_01 §3 step 6) has nowhere to go (§4.3 B).
+    // ⛔ Declared ceiling: nominal dims only — no depth tolerance of a force-controlled press, no chamfer at
+    //    the mouth, and nothing about which motion the fitted ring then blocks (an open ⚖️, 00_07 HW.26).
+    //    The upper bound exists only because this lock carries a groove.
+    internal readonly record struct InsertionWindow(float MinMm, float MaxMm);
+
+    public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)
+        => new(cem.ContactStartMm + cem.ContactLengthMm, cem.GrooveOffsetMm);
 }
