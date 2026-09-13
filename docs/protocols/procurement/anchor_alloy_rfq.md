@@ -169,7 +169,7 @@ Alloy strength and elastic modulus are background context for our own material c
 
 ### Attachments
 
-Per-alloy **STL** plus a dimensioned **DXF** drawing with title block, one set per alloy, attached to this request. On request we also supply the surface-metrology definition we use for acceptance (how Sa/Sv are measured and over what area).
+Per-alloy **STL** plus a dimensioned **DXF** drawing with title block, one set per alloy, attached to this request. The surface-metrology definition we will accept against (which roughness parameter, which instrument, over what area) is still being fixed on our side — so instead of promising it, we ask you to state the instrument and evaluation area you would use for Sa/Sv, and we will confirm the definition before the order.
 
 ---
 
