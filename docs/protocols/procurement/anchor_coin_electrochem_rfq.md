@@ -154,7 +154,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 - **Who applies the electrode layers — tell us which option you can offer:**
   - **(A)** you apply the layers to our coupons from materials we supply, following our written immobilisation protocol — quote protocol set-up as a development line, then a price per coupon; or
   - **(B)** we deliver coupons already functionalised and you measure only — in that case state how you receive and store enzyme electrodes and how soon after receipt the first measurement starts, because the day-0 baseline is the reference for every later result.
-- **Handling:** do **not sterilise** functionalised coupons — no ethylene oxide, autoclave or dry heat, all of which denature the enzymes. Add **no preservative or antimicrobial agent** to any medium without agreeing it with us first: every additive has to be checked against the enzymes on the electrode.
+- **Handling:** do **not sterilise** functionalised coupons — no ethylene oxide, autoclave or dry heat, all of which denature the enzymes. Add **no preservative or antimicrobial agent** to any medium without agreeing it with us first: every additive has to be checked against the enzymes on the electrode. In particular, **do not use sodium azide** — it inhibits laccase at micromolar concentrations.
 
 ### Test medium
 
@@ -196,7 +196,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 
 - **Potentiostatic hold for 30 days.** Propose the hold potential from the day-0 CV and agree it with us before the hold starts.
 - **Repeat the CV at intervals you propose** (price per check-point), so that retention of the maximum catalytic current can be tracked.
-- State the medium volume per coupon and whether you replace medium during the hold. If you do, keep every removed portion for ICP-MS (F), so that the release figure stays cumulative.
+- **Substrate depletion and acidification.** During the hold the anode consumes glucose and its oxidation product acidifies the medium, so a small fixed volume can fail a stability test through depletion alone. Either **replace the medium on a schedule** or use a volume large enough that glucose and pH stay near their set-points for the whole 30 days — propose which, with the volume per coupon and the schedule, and **log glucose concentration and pH at every replacement or sampling**. Keep every removed portion for ICP-MS (F), so that the release figure stays cumulative.
 - Quote per potentiostat **channel-day** and state how many channels you can dedicate at once.
 
 **D. Chloride tolerance — cathode coupons**
