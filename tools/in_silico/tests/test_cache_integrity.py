@@ -796,8 +796,8 @@ EXPECTED_SCRIPTS = [
     "28_electron_tunneling_pathway.py",
     "29_dft_reorganization_energy.py",
     "32_pcet_redox_potential.py",
-    # The anchor-mechanics block, complete: this list looked full while 52/54/55/56 had never
-    # been added, so it grew selectively and read as an inventory.
+    # The anchor-mechanics block and its successors. A curated list, not the roster (`ls scripts/`
+    # is): it guards against a listed script vanishing, and says nothing about unlisted ones.
     "50_thermal_stress_lame.py",
     "51_gusak_degradation_model.py",
     "52_z_stack_tolerance.py",
@@ -807,6 +807,14 @@ EXPECTED_SCRIPTS = [
     "56_unified_press_fit_lame.py",
     "57_gdl_breakthrough.py",
     "58_thermal_install_field.py",
+    "59_contact_endurance_check.py",
+    "60_paper_figures.py",
+    "61_paper_tables.py",
+    "62_wind_duty_cycle.py",
+    "63_delta_t_aux_power_sensitivity.py",
+    "64_teg_across_peek_break.py",
+    "65_zif_radiosensitization.py",
+    "66_gyroid_ligament_thickness.py",
 ]
 
 

@@ -18,6 +18,7 @@ Runs without the conda env (stdlib + json only) — safe for CI.
 Add a row to CHECKS when you add a headline number with a clean single cache-owner.
 Tolerance rule: ~1 unit in the doc's last displayed digit (honours "within display rounding").
 """
+import fnmatch
 import json
 import re
 from pathlib import Path
@@ -559,3 +560,61 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). "
         f"Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script."
     )
+
+
+# ── Perimeter: a pin is decorative on every change its INPUT cannot trigger ──
+
+WORKFLOW = ".github/workflows/in_silico_smoke.yml"
+
+
+def _quoted_list_after(text: str, key_regex: str) -> list[str]:
+    """Quoted YAML list items directly under the first line matching `key_regex`.
+
+    Hand-parsed on purpose: the job that runs this file installs pytest and nothing else.
+    Comment lines inside the list are skipped; the first non-item line ends it.
+    """
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if re.search(key_regex, line):
+            items = []
+            for nxt in lines[i + 1:]:
+                s = nxt.strip()
+                if not s or s.startswith("#"):
+                    continue
+                m = re.match(r"-\s*'([^']+)'", s)
+                if not m:
+                    break
+                items.append(m.group(1))
+            return items
+    return []
+
+
+def test_every_doc_target_triggers_this_guard():
+    """Every doc a CHECKS row reads must sit inside BOTH path lists of the workflow that runs it.
+
+    This file runs in exactly one place — the `cache_doc_sync` job of `in_silico_smoke.yml` — and
+    that job is gated twice: the push trigger's `paths:` and the `changes` job's paths-filter. A
+    doc outside them can drift from its cache on a change that touches only that doc, and nothing
+    runs. Measured 2026-09-13: the list carried `01_04` beside a comment naming it as the
+    non-SUMMARY target, while rows for `01_01` and `02_02` had been added since without it —
+    twelve pins that a canon-only edit of either doc could not wake. The carrier sits in this
+    file because this is where the next target gets added.
+    Ceiling: judges the DOC half only — caches are read from `tools/in_silico/cache`, which the
+    lists cover by construction.
+    """
+    wf = (REPO / WORKFLOW).read_text(encoding="utf-8")
+    lists = {
+        "push `paths:`": _quoted_list_after(wf, r"^\s+paths:\s*$"),
+        "`changes` paths-filter": _quoted_list_after(wf, r"^\s+in_silico:\s*$"),
+    }
+    for name, patterns in lists.items():
+        assert patterns, f"read no {name} list from {WORKFLOW} — the parser is wrong, not the tree"
+    missing = [
+        f"{target}  ∉  {name}"
+        for target in sorted({row[1] for row in CHECKS})
+        for name, patterns in lists.items()
+        if not any(fnmatch.fnmatchcase(target, p) for p in patterns)
+    ]
+    assert not missing, (
+        f"doc targets outside {WORKFLOW} — their pins cannot fire on a change to the doc alone:\n  "
+        + "\n  ".join(missing))

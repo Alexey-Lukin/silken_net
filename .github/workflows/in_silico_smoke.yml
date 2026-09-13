@@ -21,9 +21,14 @@ on:
   push:
     branches: [ main ]
     paths:
+      # Every canon doc a test_doc_cache_sync CHECKS row reads must be listed here AND in the
+      # `changes` filter below, or its pins cannot fire on an edit to that doc alone. The test
+      # `test_every_doc_target_triggers_this_guard` reds on a missing one — add it to both lists.
       - 'tools/in_silico/**'
       - 'docs/protocols/ebfc/in_silico/**'
-      - 'docs/01_04_CODIT_and_Xylemointegration.md'  # non-SUMMARY cache↔doc target (test_doc_cache_sync)
+      - 'docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md'
+      - 'docs/01_04_CODIT_and_Xylemointegration.md'
+      - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
       - '.github/workflows/in_silico_smoke.yml'
 
 jobs:
@@ -46,7 +51,9 @@ jobs:
             in_silico:
               - 'tools/in_silico/**'
               - 'docs/protocols/ebfc/in_silico/**'
+              - 'docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md'
               - 'docs/01_04_CODIT_and_Xylemointegration.md'
+              - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
               - '.github/workflows/in_silico_smoke.yml'
 
   lock_sync:
