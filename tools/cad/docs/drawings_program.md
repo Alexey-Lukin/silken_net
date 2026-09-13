@@ -112,7 +112,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
   Ø25, bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
   in a _PEEK_ bore (E≈4 vs Ti≈114 GPa)** → the same geometric interference gives a different contact
   pressure. The CEM carries the band in **µm** (`tools/in_silico/lib/constants.py`), with
-  🔴 **a provenance correction, 2026-09-11 (`00_07` HW.3): this line said «Lamé-computed µm» and that is wrong about the SOURCE.** 5–34 µm is a plain ISO 286 table read (H7 0/+18 + s6 +23/+34 on Ø11); Lamé CONSUMES that band to compute a contact pressure and does not produce it. The sharpness is that `01_01 §4.2` REQUIRES the drawing's micrometres to come from the Lamé interference window and explicitly rejects a blind ISO 286 lookup — so the old wording dressed the rejected source in the required source's name, in the one file that tells a future author what the CEM is for. Whether to re-derive the band is an open engineering verdict, not a wording fix.
+  🔴 **a provenance correction, 2026-09-11 (`00_07` HW.3): this line said «Lamé-computed µm» and that is wrong about the SOURCE.** 5–34 µm is a plain ISO 286 table read (H7 0/+18 + r6 +23/+34 on Ø11 — read under the s6 label; s6 there gives 10–39, and which class is meant is open, `00_07` HW.3); Lamé CONSUMES that band to compute a contact pressure and does not produce it. The sharpness is that `01_01 §4.2` REQUIRES the drawing's micrometres to come from the Lamé interference window and explicitly rejects a blind ISO 286 lookup — so the old wording dressed the rejected source in the required source's name, in the one file that tells a future author what the CEM is for. Whether to re-derive the band is an open engineering verdict, not a wording fix.
   Beyond that,
   `H7/s6` only as the nominal class label — not a blind ISO-286 lookup. This is the band `AxialStack`
   flagged as missing in F1 (shank Ø placeholder, HW.8.9).
@@ -151,7 +151,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
    by both `mechanical_lock.zone1/.zone3.json`), same mirror xUnit set + round-trip. ⛔ Test counts are
    deliberately not quoted here — the roster is `DrawingTests.cs`.
    **Zone-2 sleeve ✅ landed** (`Drawing.Zone2Sleeve` + `Zone2SleeveDxf`) — its manifest had carried a complete `tolerances`+`notes` block with no carrier at all, and it is the one part that goes to a PEEK CNC shop rather than an SLM one. ⛔ **Деталь 4 radome deliberately NOT drawn, and the ground is named:** its geometry carries two ratified-but-unapplied verdicts (flat crown R5 in place of the hemisphere · flat rim with no counter-groove, [`00_07`](../../../docs/00_07_Action_Plan_Tracker.md) HW.33), both gated on the HW.9 board budget — a sheet issued today would be wrong the moment it printed. Draw it with the application, not before.
-3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (Lamé-µm), GD&T datums, surface-finish,
+3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (a µm band: an ISO 286 read today; the Lamé window canon asks for is an open verdict, `00_07` HW.3), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
 4. **Zone-1 envelope + lattice spec** (**Phase 2**) — ✅ **landed 2026-09-11** as `draw anchor_zone1`
    (`00_07` HW.1): envelope + porosity/period/topology callout + Archimedes/µCT acceptance, NOT
