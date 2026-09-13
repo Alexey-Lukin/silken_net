@@ -33,8 +33,9 @@ namespace SilkenCad;
 //     integrated trilinear hexes are additionally too stiff in bending, and a NETWORK gyroid is
 //     bending-dominated. Both errors push the same way, so a single-resolution number is an UPPER
 //     bound — which is why every result carries a step sweep and nothing is quoted without one.
-//   • It measures the part as MODELLED, i.e. the geometric intent. As-printed thickening is a
-//     separate input (`dilateVoxels`), not a correction folded in silently.
+//   • It measures the part as MODELLED, i.e. the geometric intent. As-printed thickening is NOT an
+//     input today — no parameter carries it and nothing applies it — so every number this module
+//     reports describes the geometric intent, never the printed body. Adding it is open work (00_07 HW.51).
 //   • The ratio is to the solid ENVELOPE, so it already contains the free-surface size effect of the
 //     real annular wall. That is the point; it is NOT a material property and must not be quoted as one.
 internal static class VoxelFea

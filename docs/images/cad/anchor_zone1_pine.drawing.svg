@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1183' viewBox='0 0 820 1183'>
-<rect x='0' y='0' width='820' height='1183' fill='white'/>
-<rect x='8' y='8' width='804' height='1167' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1211' viewBox='0 0 820 1211'>
+<rect x='0' y='0' width='820' height='1211' fill='white'/>
+<rect x='8' y='8' width='804' height='1195' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
 <circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -93,7 +93,7 @@
 <text x='20' y='997' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   band rather than reading a default into the blank</text>
 <text x='20' y='1023' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
 <text x='20' y='1039' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<rect x='540' y='1057' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<rect x='540' y='1057' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
 <line x1='630' y1='1057' x2='630' y2='1073' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1068' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
 <text x='635' y='1068' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
@@ -112,10 +112,15 @@
 <line x1='540' y1='1121' x2='790' y2='1121' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1121' x2='630' y2='1137' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1132' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1132' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>90f224e5</text>
+<text x='635' y='1132' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0344a865</text>
 <line x1='540' y1='1137' x2='790' y2='1137' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1137' x2='630' y2='1153' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1148' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='635' y='1148' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
-<text x='806' y='1169' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 90f224e5 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<line x1='540' y1='1153' x2='790' y2='1153' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1153' x2='630' y2='1169' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1164' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='1164' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2c9ae030839657085f… → FOOTER</text>
+<text x='806' y='1185' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 0344a865 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1197' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 2c9ae030839657085fed30aebf973dd291a555c07fa25f30200526fa2fd26e76</text>
 </svg>

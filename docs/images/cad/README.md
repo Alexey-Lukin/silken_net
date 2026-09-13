@@ -9,8 +9,10 @@ from GitHub, so they are the drawings an outsider actually reads — and nothing
 Measured 2026-09-09: the flange drawing here sat on its pre-2026-08-28 output for weeks, publishing the
 invented alloy default and the dropped note lines that the fix had already removed from the generator.
 **Change `Drawing.cs` or a CEM ⇒ re-run the script and commit the results in the SAME commit.**
-Every `*.drawing.svg` here has a pin behind it (the `DrawingTests.Published_Gallery_…` family — content
-+ frame-fit only, never byte-currency); ⛔ **the PNG renders have none** — they need a display, so a stale
+Every `*.drawing.svg` here has a pin behind it (the `DrawingTests.Published_Gallery_…` family — content,
+frame-fit and **manifest identity**: each sheet prints the SHA-256 of the manifest it was drawn from, and the
+pin reds when that is no longer the manifest shipped today, so any byte change to it, a note included, means
+a redraw; ⛔ still NOT the sheet's own layout bytes or its `rev` stamp); ⛔ **the PNG renders have none** — they need a display, so a stale
 render here is invisible to every gate we own. 🔑 Membership is stated as a RULE rather than a tally on
 purpose: this line read «the two `*.drawing.svg` files» while four of them sat in the directory, and a
 count beside a growing folder is right the day it is written and quietly narrower every day after.

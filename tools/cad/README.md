@@ -234,7 +234,9 @@ acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.
 from GitHub (blob-rendered), so they are the drawings an outsider actually reads — and nothing re-runs the script
 for you. (⛔ `wiki:sync` does NOT carry them: it syncs canon `NN_NN_*.md` and copies an image only where a doc
 EMBEDS it as `![…](…)`, and none does.) Touch `Drawing.cs` or a CEM ⇒ re-run it and commit the SVGs; `DrawingTests` reds if their CONTENT drifts
-from the shipped manifests (ceiling: content + frame-fit, not byte-currency; the PNGs are pinned by nothing).
+from the shipped manifests, and — since every sheet prints the SHA-256 of its manifest (title block + footer + DXF) —
+if a published sheet no longer names the manifest shipped today, so any byte change to it, a note included, means a
+redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
 **Deferred:** the rim-boss implementation + the bayonet-Z reconcile (open ⚖️: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug needs a Z of its own — `Assembly.RequiredLugZMm`; bench follows at HW.8.8) · the shank-Ø

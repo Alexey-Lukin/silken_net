@@ -33,6 +33,24 @@ internal static class Drawing
     // Deliberately verbose and ALL-CAPS: it must survive a glance at a printed A3.
     internal const string NotSpecified = "NOT SPECIFIED IN CEM";
 
+    // 🔑 Manifest IDENTITY on the sheet (00_07 HW.51 — the ratified cheap alternative to signing a deliverable).
+    // `rev` names a COMMIT, and that link breaks exactly where a sheet is used: printed, e-mailed to a vendor,
+    // drawn from a dirty tree. The SHA-256 of the manifest's raw bytes travels WITH the sheet, so anyone holding
+    // the file checks it with `sha256sum`, no repo needed. ⛔ Declared ceiling: it names the MANIFEST, never the
+    // generator — two sheets with one hash can still differ where `Drawing.cs` moved (that is what `rev` is for) —
+    // and it names the bytes as checked out, so a CRLF checkout hashes differently from the committed LF file.
+    // A sheet with no manifest file behind it (a CEM built in memory) prints this marker, never an empty cell.
+    internal const string NotComputed = "NOT COMPUTED (no CEM file)";
+
+    private static string CemSha256Value(string? cemSha256) => string.IsNullOrWhiteSpace(cemSha256) ? NotComputed : cemSha256;
+
+    // One formatter for both readers (SVG footer + DXF last line), so they cannot disagree on the wording.
+    private static string CemIdentityLine(string? cemSha256) => $"CEM SHA-256 (sha256sum of the SSOT manifest file): {CemSha256Value(cemSha256)}";
+
+    // The identity rides its OWN footer line: the rev/SSOT line already sits at the frame budget on the longest
+    // manifest name, so appending 64 hex digits to it would walk the footer off the canvas.
+    private const double FooterLineH = 12;
+
     // Standard descriptor for the footer/title block (replaces the hard-coded `first-angle (ISO)`).
     private static string StandardLabel(DrawingStandard std) => std == DrawingStandard.Iso
         ? "first-angle (ISO 128/5456 · GD&T ISO 1101)"
@@ -188,14 +206,16 @@ internal static class Drawing
     // footer really holds the full value — the same discipline REV already follows. So the untruncated
     // path lives here, on the one line that is not inside a fixed-width grid, and the two readers agree
     // (the DXF has carried `SSOT cem/<file>` on its own last line all along).
-    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std, string strSsot)
+    private static string Frame(double w, double h, StringBuilder body, string sha, DrawingStandard std, string strSsot, string? cemSha256)
     {
+        h += FooterLineH;   // Frame owns the footer, so it owns the height of its second line (manifest identity)
         var sb = new StringBuilder();
         sb.AppendLine($"<svg xmlns='http://www.w3.org/2000/svg' width='{N(w)}' height='{N(h)}' viewBox='0 0 {N(w)} {N(h)}'>");
         sb.AppendLine($"<rect x='0' y='0' width='{N(w)}' height='{N(h)}' fill='white'/>");
         sb.AppendLine(Rect(8, 8, w - 16, h - 16, Stroke, 1.2));            // drawing border
         sb.Append(body);
-        sb.AppendLine(Text(w - 14, h - 14, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14 - FooterLineH, $"SilkenNet · CEM-native drawing · rev {sha} · units mm · scale 6:1 · {StandardLabel(std)} · SSOT {strSsot}", 8, "end", "#888"));
+        sb.AppendLine(Text(w - 14, h - 14, CemIdentityLine(cemSha256), 8, "end", "#888"));
         sb.AppendLine("</svg>");
         return sb.ToString();
     }
@@ -277,7 +297,11 @@ internal static class Drawing
     }
 
     // ── Ti-coin (Stage-2 coupon, 01_01 §6.1) — front (Ø disc) + side (thickness) + eyelet + A_electrode ──
-    public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
+    // `cemSha256` is OPTIONAL on every drawing and that default is not an invented value: null prints
+    // `NotComputed`, which is the truth for a CEM built in memory. What keeps the CLI from ever relying on it
+    // is `DrawingTests.Every_Drawn_Sheet_Names_The_Sha256_Of_The_Manifest_Bytes_It_Was_Drawn_From`, which runs
+    // `Program.Draw` itself over every shipped manifest.
+    public static string TiCoin(TiCoinCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double r = cem.DiscDiameterMm / 2.0 * Px;
         double t = cem.DiscThicknessMm * Px;
@@ -341,6 +365,7 @@ internal static class Drawing
             // `ti_coin.json` coincidentally matched, which is exactly why this went unnoticed. The
             // caller (`Program.Draw`, which already holds the real invoked path) passes it in explicitly.
             ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
         };
 
         // 🔴 Canvas height and title-block Y are COMPUTED from the content, not tuned. The constant
@@ -350,14 +375,14 @@ internal static class Drawing
         // moment a CEM note grows; a computed height cannot fall behind the notes it has to contain.
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
     }
 
     // ── DXF (CAD-native factory deliverable) — the same Ti-coin views in real mm (1:1, Y-up). netDxf
     // writes a file the shop opens in AutoCAD/Fusion. Dimension geometry is laid out manually (witness +
     // arrow Lines + a value Text) so the API surface stays Circle/Line/Text/Layer — robust, every CAD
     // reads it. `%%c` is the DXF single-line code for Ø; DxfSafe maps the few Unicode glyphs to ASCII. ──
-    public static bool TiCoinDxf(TiCoinCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool TiCoinDxf(TiCoinCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -392,6 +417,7 @@ internal static class Drawing
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
         lines.Add($"SilkenNet Ti-coin | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add(CemIdentityLine(cemSha256));
         double yy = cy - rr - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rr, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
@@ -401,7 +427,7 @@ internal static class Drawing
     // ── Cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. FRONT (pogo
     // face: flange Ø + GND pad + PEEK isolation ring + bore + bayonet lugs) + SIDE (flange↦shank
     // T-profile, axis horizontal). Same CEM-native pipeline as the Ti-coin; reuses every primitive. ──
-    public static string CathodeFlange(CathodeFlangeCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
+    public static string CathodeFlange(CathodeFlangeCem cem, string sha, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rFlange = cem.FlangeDiameterMm / 2.0 * Px;
         double rPad = cem.CentralPadDiameterMm / 2.0 * Px;
@@ -468,14 +494,15 @@ internal static class Drawing
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", Cell($"cem/{cem.Name}.json", ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
     }
 
     // ── Cathode-flange DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. ──
-    public static bool CathodeFlangeDxf(CathodeFlangeCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool CathodeFlangeDxf(CathodeFlangeCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -520,6 +547,7 @@ internal static class Drawing
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
         lines.Add($"SilkenNet cathode flange | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
+        lines.Add(CemIdentityLine(cemSha256));
         double yy = cy - rF - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rF, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
@@ -540,7 +568,7 @@ internal static class Drawing
     // does not exist on disk. A false SSOT pointer is exactly the class of fabricated instruction gotcha #11
     // exists to prevent, so the caller (`Program.Draw`, which already holds the real invoked path) passes
     // the actual file name in explicitly.
-    public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
+    public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rShank = cem.ShankDiameterMm / 2.0 * Px;
         double rBore = cem.BoreDiameterMm / 2.0 * Px;
@@ -604,17 +632,18 @@ internal static class Drawing
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
     }
 
     // ── Mechanical-lock DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same views, real mm. Mirrors
     // the flange's own SVG⊥DXF asymmetry: secondary-feature TEXT labels (barb count, groove callout) stay
     // SVG-only polish; the DXF carries the same facts as NOTES-block prose (via the shared `lead` line
     // below) plus the GEOMETRY itself (the groove notch is a real cut, not a label, so it IS drawn here). ──
-    public static bool MechanicalLockDxf(MechanicalLockCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool MechanicalLockDxf(MechanicalLockCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -658,6 +687,7 @@ internal static class Drawing
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
         lines.Add($"SilkenNet mechanical lock | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add(CemIdentityLine(cemSha256));
         double yy = top - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rS, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
@@ -680,7 +710,7 @@ internal static class Drawing
     // lattices is an open industrial problem. That research file's own header states canon wins on any
     // disagreement, so the lattice here is a CALLOUT over a plain annulus, never a contour. The §4 row
     // is the stale half → 00_07 HW.1.
-    public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
+    public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rOut = cem.OuterDiameterMm / 2.0 * Px;
         // The inner circle is read from Zone1Anode.InnerRadiusMm — the monolithic bus rod (01_01 §1.4) when
@@ -743,10 +773,11 @@ internal static class Drawing
             // form ("anchor_zone1_pine") where the real filename uses a dot — the same false-SSOT-pointer
             // trap already paid for twice on ti_coin and mechanical_lock (HW.1, 2026-09-09).
             ("SSOT", Cell($"cem/{strCemFile}", ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
     }
 
     // The anchor's notes block = the shared CEM field-set PLUS two lines this part alone needs, and both
@@ -786,7 +817,7 @@ internal static class Drawing
     // ── Zone-1 anode DXF (CAD-native factory deliverable, 1:1 mm Y-up) — the same two views in real mm.
     // Same SVG⊥DXF split as the flange/lock: the SVG's leader line is human polish, and the refusal it
     // carries rides here as a NOTES line instead, so neither reader is told less than the other. ──
-    public static bool AnchorZone1Dxf(AnchorCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool AnchorZone1Dxf(AnchorCem cem, string sha, string strCemFile, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -818,6 +849,7 @@ internal static class Drawing
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
         lines.Add($"SilkenNet Zone-1 anode | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{strCemFile}");
+        lines.Add(CemIdentityLine(cemSha256));
         double yy = top - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rO, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 
@@ -831,7 +863,7 @@ internal static class Drawing
     // 🔑 The one number on this sheet that is DERIVED rather than quoted is the OD: bore + 2·wall. It is
     // also the WOUND diameter in the tree, i.e. the dimension that sets which trees may be instrumented
     // at all (01_01 §1: wound <25 mm ⇒ DBH ≥38 cm) — so the lead says so rather than printing Ø15 bare.
-    public static string Zone2Sleeve(Zone2SleeveCem cem, string sha, DrawingStandard std = DrawingStandard.Iso)
+    public static string Zone2Sleeve(Zone2SleeveCem cem, string sha, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double odMm = cem.BoreDiameterMm + (2.0 * cem.WallThicknessMm);
         double rOut = odMm / 2.0 * Px, rIn = cem.BoreDiameterMm / 2.0 * Px;
@@ -874,14 +906,15 @@ internal static class Drawing
             ("UNITS / SCALE", "mm / 6:1"),
             ("REV", Cell(sha, ptr: "→ FOOTER")),
             ("SSOT", Cell($"cem/{cem.Name}.json", ptr: "→ FOOTER")),
+            ("CEM SHA-256", Cell(CemSha256Value(cemSha256), ptr: "→ FOOTER")),
         };
         double tbY = bottom + 18;
         TitleBlock(b, w - 280, tbY, rows);
-        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot);
+        return Frame(w, tbY + (rows.Length * 16) + 30, b, sha, std, strSsot, cemSha256);
     }
 
     // ── Zone-2 sleeve DXF (CAD-native factory deliverable, 1:1 mm Y-up) — same two views, real mm. ──
-    public static bool Zone2SleeveDxf(Zone2SleeveCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso)
+    public static bool Zone2SleeveDxf(Zone2SleeveCem cem, string sha, string path, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         var doc = new DxfDocument();
         var geo = new Layer("GEOMETRY");
@@ -913,6 +946,7 @@ internal static class Drawing
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }
         lines.Add($"SilkenNet Zone-2 sleeve | rev {sha} | mm 1:1 | {StandardLabel(std)} | SSOT cem/{cem.Name}.json");
+        lines.Add(CemIdentityLine(cemSha256));
         double yy = top - 20;
         foreach (string ln in lines) { doc.Entities.Add(new Text(DxfSafe(ln), new Vector2(cx - rO, yy), 1.6) { Layer = nte }); yy -= 3.2; }
 

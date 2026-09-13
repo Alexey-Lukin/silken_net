@@ -228,8 +228,9 @@ internal sealed record AnchorCem
 
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
 // (HW.26): annular ratchet barbs + a DIN-471 retaining groove on the solid Ti shank that press-fits
-// into the PEEK sleeve. A self-contained demo part (Zone 1 real Ø11, Zone 3 placeholder Ø) — NOT yet
-// integrated into the gyroid rod (separate session, 00_07). Canon over-specifies the tooth (h, base,
+// into the PEEK sleeve. Zone 1 (real Ø11) is a self-contained demo part — NOT yet integrated into the
+// gyroid rod (separate session, 00_07); the Zone-3 set (placeholder Ø) is already the cathode flange's
+// shank (`CathodeFlange.ShankCem` → `MechanicalLock.Build`). Canon over-specifies the tooth (h, base,
 // α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
 // MEASURES it against §4.3 [0.40,0.60]. Barbs emit GEOMETRY only: the 3–5× pull-out, the PEEK 150 °C
 // click and friction retention are FEA (Гусак, HW.3.IS) + bench, never asserted here.

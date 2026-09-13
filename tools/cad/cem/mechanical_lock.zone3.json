@@ -25,7 +25,7 @@
     "lattice_spec": "Not applicable - solid shank with a central bus channel, no lattice",
     "inspection": "Barb tooth geometry MEASURED against 01_01 4.3 (alpha/beta + h specified, base DERIVED, acceptance 0.40-0.60 mm); opposite ratchet lean to the Zone-1 end. DIN-471 groove to the real standard dimensions for this shaft diameter, CNC after printing. Bus channel diameter must accept the structural liner (01_01 1.4). ATTENTION: shank diameter is an HW.8 PLACEHOLDER, not canon - do not treat it as a frozen acceptance dimension. Pull-out retention and the PEEK 150 C click-fit are FEA + bench (00_07 HW.3.IS), NOT drawing acceptance lines",
     "extra": [
-      "Self-contained demo shank (Zone-3 Ø9 = HW.8 placeholder, opposite ratchet lean dir −1, §4.3 figure) — not yet integrated into cathode_flange.json (separate session, 00_07 HW.26)",
+      "Self-contained demo of the Zone-3 lock (Ø9 = HW.8 placeholder, opposite ratchet lean dir −1, §4.3 figure). The cathode flange part already carries this shank: cem/cathode_flange.json holds its own copy of these shank fields, and the same generator builds the flange's shank from them",
       "Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator"
     ]
   }

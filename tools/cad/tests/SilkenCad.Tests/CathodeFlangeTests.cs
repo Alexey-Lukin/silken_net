@@ -30,6 +30,20 @@ public class CathodeFlangeTests
         Assert.Equal(cem.GrooveDepthMm, shank.GrooveDepthMm);
     }
 
+    // The Zone-3 lock SHEET (cem/mechanical_lock.zone3.json, drawn and published) tells the shop that the flange
+    // part already carries its shank — and the two manifests share no source: the flange holds its own copy of
+    // the shank fields (`_provenance.json` calls them mirrors of one HW.8 reconcile). This is what keeps that
+    // sentence true: a reconcile that moves one copy reds here, instead of publishing a lock sheet for a shank
+    // no part has. Name and voxel are set aside on purpose — one is an identity, the other an instrument choice.
+    [Fact]
+    public void Zone3_Lock_Manifest_Describes_The_Shank_The_Flange_Builds()
+    {
+        var flange = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "cathode_flange.json")));
+        var lockCem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone3.json")));
+        MechanicalLockCem shank = CathodeFlange.ShankCem(flange) with { Name = lockCem.Name, VoxelSizeMm = lockCem.VoxelSizeMm };
+        Assert.Equal(lockCem with { Notes = null, Tolerances = null }, shank);
+    }
+
     [Fact]
     public void Shank_Profile_Has_The_Expected_Barb_Rows()
     {

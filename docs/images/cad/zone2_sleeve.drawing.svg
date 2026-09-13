@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='871' viewBox='0 0 820 871'>
-<rect x='0' y='0' width='820' height='871' fill='white'/>
-<rect x='8' y='8' width='804' height='855' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='899' viewBox='0 0 820 899'>
+<rect x='0' y='0' width='820' height='899' fill='white'/>
+<rect x='8' y='8' width='804' height='883' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-2 SLEEVE  (PEEK thermal break)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 2 — zone2_sleeve · 01_01 §1 / §4.1 / §4.2</text>
 <circle cx='130' cy='150' r='45' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -69,7 +69,7 @@
 <text x='20' y='699' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
 <text x='20' y='713' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
 <text x='20' y='727' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
-<rect x='540' y='745' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
+<rect x='540' y='745' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
 <line x1='630' y1='745' x2='630' y2='761' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='756' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
 <text x='635' y='756' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-2 sleeve (PEEK)</text>
@@ -88,10 +88,15 @@
 <line x1='540' y1='809' x2='790' y2='809' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='809' x2='630' y2='825' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>90f224e5</text>
+<text x='635' y='820' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0344a865</text>
 <line x1='540' y1='825' x2='790' y2='825' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='825' x2='630' y2='841' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
 <text x='635' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/zone2_sleeve.json</text>
-<text x='806' y='857' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 90f224e5 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<line x1='540' y1='841' x2='790' y2='841' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='841' x2='630' y2='857' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='852' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='852' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8f15b4b1e1f8628cc5… → FOOTER</text>
+<text x='806' y='873' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 0344a865 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<text x='806' y='885' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 8f15b4b1e1f8628cc5cee0710781d07229c0257ab8275571f15c6fab2f772032</text>
 </svg>

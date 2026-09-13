@@ -90,8 +90,9 @@ internal sealed class BarbRidges(MechanicalLockCem cem) : IImplicit
     }
 }
 
-// Builds the demo shank (Zone-1 real Ø11, Zone-3 placeholder Ø) — a self-contained §4.3 part, not integrated
-// into the gyroid rod (separate session, 00_07). A SOLID cylinder (ShapeKernel) + barb ridges BoolAdd-ed
+// Builds the §4.3 shank. Zone 1 (real Ø11) is a self-contained demo part, not integrated into the gyroid rod
+// (separate session, 00_07); Zone 3 (placeholder Ø) is also the cathode flange's shank — `CathodeFlange.Build`
+// calls this. A SOLID cylinder (ShapeKernel) + barb ridges BoolAdd-ed
 // (thin SDF) − a retaining-groove ring BoolSubtract-ed. Print per 01_02 §1.6 (vertical, tip-down; external
 // supports allowed — barbs are on the outer shank).
 internal static class MechanicalLock

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using PicoGK;
@@ -260,9 +261,16 @@ internal static class Program
     // (Деталь 3), then mechanical_lock, then the Zone-1 envelope card + Zone-2 sleeve. ⛔ The roster of
     // shipped kinds is the `switch` below, never this comment — a prose list of what exists rots on the
     // next kind added, and this one already did. Remaining kinds + phasing → roadmap §7.
-    private static int Draw(string strCemPath)
+    // `strOutDir` exists for one caller besides `Main`: the pin that runs THIS method over every shipped
+    // manifest, because a hash wired wrong inside one `case` is invisible to any test that calls `Drawing.X` directly.
+    internal static int Draw(string strCemPath, string strOutDir = "out")
     {
-        string strJson = File.ReadAllText(strCemPath);
+        // ONE read serves both the parse and the hash, so the sheet names the very bytes it was drawn from
+        // (decoded exactly as File.ReadAllText would: UTF-8, BOM-aware).
+        byte[] aCemBytes = File.ReadAllBytes(strCemPath);
+        using var oReader = new StreamReader(new MemoryStream(aCemBytes));
+        string strJson = oReader.ReadToEnd();
+        string strCemSha256 = Convert.ToHexStringLower(SHA256.HashData(aCemBytes));
         string strKind = Cem.Kind(strJson);
         // 🔴 Was `?? "local"`, and "rev local" on a factory drawing is worse than no rev at all: it LOOKS
         // like a revision, so nobody asks which commit the geometry came from — while a drawing that
@@ -271,10 +279,11 @@ internal static class Program
         string strRev = Environment.GetEnvironmentVariable("CAD_REV") is { Length: > 0 } rev
             ? rev
             : "UNTRACKED (set CAD_REV=$(git rev-parse --short HEAD))";
-        Directory.CreateDirectory("out");
+        Directory.CreateDirectory(strOutDir);
 
         // Same CEM-native pipeline per kind: SVG (human / publication / self-review) + DXF (factory
-        // deliverable) computed from the CEM numbers — never the mesh. Add a kind = add a Drawing.X pair.
+        // deliverable) computed from the CEM numbers — never the mesh. Add a kind = add a Drawing.X pair,
+        // and pass `cemSha256` to BOTH halves (the parameter is optional, so the compiler will not ask).
         string strName; string strSvg; Func<string, bool> fnDxf;
         switch (strKind)
         {
@@ -286,13 +295,13 @@ internal static class Program
                 // 2026-09-09: the base ti_coin.json coincidentally matched, so it went unnoticed).
                 TiCoinCem cem = Cem.Parse<TiCoinCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
-                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p);
+                strName = cem.Name; strSvg = Drawing.TiCoin(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.TiCoinDxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
                 break;
             }
             case "cathode_flange":
             {
                 CathodeFlangeCem cem = Cem.Parse<CathodeFlangeCem>(strJson);
-                strName = cem.Name; strSvg = Drawing.CathodeFlange(cem, strRev); fnDxf = p => Drawing.CathodeFlangeDxf(cem, strRev, p);
+                strName = cem.Name; strSvg = Drawing.CathodeFlange(cem, strRev, cemSha256: strCemSha256); fnDxf = p => Drawing.CathodeFlangeDxf(cem, strRev, p, cemSha256: strCemSha256);
                 break;
             }
             case "mechanical_lock":
@@ -303,7 +312,7 @@ internal static class Program
                 // happens to equal the filename stem — see the comment on Drawing.MechanicalLock.
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
-                strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p);
+                strName = cem.Name; strSvg = Drawing.MechanicalLock(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.MechanicalLockDxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
                 break;
             }
             case "anchor_zone1":
@@ -313,13 +322,13 @@ internal static class Program
                 // this family already paid for on ti_coin and mechanical_lock (HW.1, 2026-09-09).
                 AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
-                strName = cem.Name; strSvg = Drawing.AnchorZone1(cem, strRev, strFile); fnDxf = p => Drawing.AnchorZone1Dxf(cem, strRev, strFile, p);
+                strName = cem.Name; strSvg = Drawing.AnchorZone1(cem, strRev, strFile, cemSha256: strCemSha256); fnDxf = p => Drawing.AnchorZone1Dxf(cem, strRev, strFile, p, cemSha256: strCemSha256);
                 break;
             }
             case "zone2_sleeve":
             {
                 Zone2SleeveCem cem = Cem.Parse<Zone2SleeveCem>(strJson);
-                strName = cem.Name; strSvg = Drawing.Zone2Sleeve(cem, strRev); fnDxf = p => Drawing.Zone2SleeveDxf(cem, strRev, p);
+                strName = cem.Name; strSvg = Drawing.Zone2Sleeve(cem, strRev, cemSha256: strCemSha256); fnDxf = p => Drawing.Zone2SleeveDxf(cem, strRev, p, cemSha256: strCemSha256);
                 break;
             }
             default:
@@ -330,8 +339,8 @@ internal static class Program
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
-        string strSvgPath = Path.Combine("out", $"{strName}.drawing.svg");
-        string strDxfPath = Path.Combine("out", $"{strName}.drawing.dxf");
+        string strSvgPath = Path.Combine(strOutDir, $"{strName}.drawing.svg");
+        string strDxfPath = Path.Combine(strOutDir, $"{strName}.drawing.dxf");
         File.WriteAllText(strSvgPath, strSvg);
         bool bDxf = fnDxf(strDxfPath);
         Console.WriteLine($"drawing → {strSvgPath}  (CEM-native SVG — human / publication / self-review)");

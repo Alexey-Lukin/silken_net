@@ -457,8 +457,16 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   Zone-2 sleeve landed. 🔑 The second miss is the instructive one, because the sentence carrying the count
   was the very sentence forbidding counts — an example does not get an exemption from the rule it
   illustrates, and a roster beside a growing script is the volatile counter in prose form) and commit the SVGs. A pin now reds on the CONTENT drifting apart
-  (`Published_Gallery_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame`) — ⛔ but its declared
-  ceiling is content + frame-fit, NOT byte-currency, and the PNG renders beside it are pinned by nothing.
+  (`Published_Gallery_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame`) and, since 2026-09-13, on
+  MANIFEST IDENTITY: every sheet prints `cem_sha256` (prefix in the title block → FOOTER, full hash in the footer
+  and the DXF), so any byte change to a published manifest — a note or a trailing newline included — reds its
+  gallery row until the drawing loops are re-run. ⛔ Declared ceiling: not the sheet's layout bytes, not its
+  `rev` stamp, and the PNG renders beside it are pinned by nothing.
+  🔴 **`cemSha256:` is an OPTIONAL parameter threaded through one `case` per kind in `Program.Draw`, so the
+  compiler will not ask a new kind to pass it** — the carrier is `Every_Drawn_Sheet_Names_The_Sha256_Of_The_Manifest_Bytes_It_Was_Drawn_From`,
+  which runs `Program.Draw` itself. Measured: unwiring ONE case reds only that row while every pin that calls
+  `Drawing.X` directly stays green. 🔑 A test that hands the emitter a value of its own making proves the
+  emitter, never the wiring — so adding a kind means passing `cemSha256:` to BOTH halves.
 - **Render / section for presentation (`render`/`section`, SHIPPED)**: `render <cem>` = a PicoGK native-viewer
   screenshot (gold Ti-metallic material); `section <cem>` = a −X cutaway (shows the bus rod through a dense gyroid
   where `ColorFloat` alpha can't). Display-gated (gotcha #10); output → `out/*.png` (native TGA → `sips`). The

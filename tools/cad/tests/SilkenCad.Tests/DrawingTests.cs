@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -210,6 +211,77 @@ public class DrawingTests
         Assert.DoesNotContain("cem/ti_coin_7nb.json", svg); // …never cem.Name (underscore) — HW.1
     }
 
+    // ── Manifest identity: every sheet names the SHA-256 of the manifest bytes it was drawn from (00_07 HW.51) ──
+    private static string Sha256Of(string strPath) => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(strPath)));
+
+    private const string CemIdentityLabel = "CEM SHA-256 (sha256sum of the SSOT manifest file): ";
+
+    // The EXEMPTION list, not the roster: kinds `draw` refuses on purpose, each with its ground in
+    // tools/cad/docs/drawings_program.md §7 (radome = two ratified-but-unapplied verdicts, HW.33 · the two
+    // assemblies = Phase-2 step 5, no factory contract). Any other kind must draw and carry its hash, so a new
+    // kind that `draw` refuses reds here until its refusal is NAMED.
+    private static readonly string[] KindsDrawDeliberatelyRefuses = ["radome", "anchor_assembly", "anchor_axial_stack"];
+
+    public static TheoryData<string> ShippedManifests()
+    {
+        var data = new TheoryData<string>();
+        foreach (string p in Cem.ManifestFiles(CemDir(), "*.json"))
+            data.Add(Path.GetFileName(p));
+        return data;
+    }
+
+    // 🔴 Runs `Program.Draw` ITSELF, not `Drawing.X`: the hash is computed in the CLI and threaded through
+    // one `case` per kind, so a test that hands `Drawing.XDxf` a hash of its own making proves the emitter and
+    // never the wiring. The expected value is computed here, independently, from the same file.
+    [Theory]
+    [MemberData(nameof(ShippedManifests))]
+    public void Every_Drawn_Sheet_Names_The_Sha256_Of_The_Manifest_Bytes_It_Was_Drawn_From(string strFile)
+    {
+        string strCem = Path.Combine(CemDir(), strFile);
+        string strOut = Path.Combine(Path.GetTempPath(), $"draw_sha_{Guid.NewGuid():N}");
+        try
+        {
+            int iRc = Program.Draw(strCem, strOut);
+            if (KindsDrawDeliberatelyRefuses.Contains(Cem.Kind(File.ReadAllText(strCem))))
+            {
+                Assert.Equal(2, iRc);
+                Assert.Empty(Directory.GetFiles(strOut));   // a refused kind leaves no sheet behind
+                return;
+            }
+            Assert.Equal(0, iRc);
+            string strSha = Sha256Of(strCem);
+
+            string dxf = File.ReadAllText(Directory.GetFiles(strOut, "*.drawing.dxf").Single());
+            Assert.Contains(CemIdentityLabel + strSha, dxf);                          // factory reader: the full hash
+
+            string flat = FlattenSvgText(File.ReadAllText(Directory.GetFiles(strOut, "*.drawing.svg").Single()));
+            Assert.Contains(CemIdentityLabel + strSha, flat);                         // human reader: footer, full hash
+            Assert.Contains($"CEM SHA-256 {strSha[..12]}", flat);                     // …and the title-block cell
+        }
+        finally { if (Directory.Exists(strOut)) Directory.Delete(strOut, recursive: true); }
+    }
+
+    // A CEM built in memory has no file to hash. The sheet must SAY so — an empty cell or a plausible hex string
+    // would be exactly the fabricated instruction this file exists to prevent (gotcha #11).
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void A_Sheet_With_No_Manifest_File_Says_Its_Hash_Was_Not_Computed_In_Both_Readers(string? strSha)
+    {
+        string flat = FlattenSvgText(Drawing.TiCoin(new TiCoinCem(), "t", "ti_coin.json", cemSha256: strSha));
+        Assert.Contains(CemIdentityLabel + Drawing.NotComputed, flat);
+        Assert.Contains($"CEM SHA-256 {Drawing.NotComputed}", flat);
+
+        string path = Path.Combine(Path.GetTempPath(), $"no_manifest_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.TiCoinDxf(new TiCoinCem(), "t", "ti_coin.json", path, cemSha256: strSha));
+            Assert.Contains(CemIdentityLabel + Drawing.NotComputed, File.ReadAllText(path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     // ── Cathode flange (Деталь 3) — the mirror set ───────────────────────────────────────────────
     // 🔴 `draw cathode_flange` shipped as a LIVE factory deliverable with zero tests, while the Ti-coin
     // beside it carried the whole guard set. That asymmetry is the danger, not the absence: every
@@ -296,6 +368,22 @@ public class DrawingTests
         Assert.Contains("Sv 50-500 nm", sf);       // EAAE nano scale
         Assert.Contains("outer jacket", sf!);      // the PEP surface is NAMED, not implied
         Assert.Contains("NO PEP", sf!);            // …and the catalytic face is fenced off from it
+    }
+
+    // ⚖️ 00_07 HW.34 (delegated verdict 2026-09-12): the bus-channel ENTRY edge carries a RADIUS, not a chamfer,
+    // and its value is deliberately NOT named — it needs a contact model the tree does not have. Before this
+    // the entry was sharp by DEFAULT: canon, CEM and generator said nothing, so nothing could red. This pins the
+    // CEM half — the requirement is written and its value is refused out loud. It rides `post_process`, so the
+    // shipped-CEM round-trip and the gallery pin above carry it into both readers by construction.
+    [Fact]
+    public void Shipped_Cathode_Flange_Asks_For_A_Radius_At_The_Channel_Entry_And_Refuses_Its_Value()
+    {
+        var cem = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        string? pp = cem.Notes?.PostProcess;
+        Assert.False(string.IsNullOrWhiteSpace(pp));
+        Assert.Contains("ENTRY EDGE", pp);
+        Assert.Contains("a RADIUS, NOT a chamfer", pp);
+        Assert.Contains($"RADIUS VALUE: {Drawing.NotSpecified}", pp);   // the refusal, never a number
     }
 
     // ── Mechanical lock (§4.3 shank) — the CNC groove acceptance drawing (HW.26) ─────────────────
@@ -463,10 +551,13 @@ public class DrawingTests
     // defect that pass removed from the code was still on public display weeks later. A fix with no
     // trigger reaches the tree and not the audience.
     //
-    // ⛔ Declared ceiling, because green here is narrower than it looks: this pins CONTENT and FIT, not
-    // byte-currency — a pure layout change will not red it, and the `rev` stamp is deliberately not
-    // compared (it varies with the generating environment). It says nothing whatever about the PNG
-    // renders in the same directory: those need a display and are not checked by anything.
+    // ⛔ Declared ceiling, because green here is narrower than it looks. It pins CONTENT, FIT and — since the
+    // sheets carry `cem_sha256` — MANIFEST IDENTITY: each published sheet must name the SHA-256 of the manifest
+    // shipped TODAY, so any byte change to that manifest (a note, a number, a trailing newline) reds it until
+    // the gallery is redrawn. It is still NOT byte-currency of the sheet: a layout change in `Drawing.cs` that
+    // leaves the manifest alone will not red it, the `rev` stamp is deliberately not compared (it varies with
+    // the generating environment), and the PNG renders in the same directory need a display and are checked by
+    // nothing at all.
     private static string GalleryDir()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -483,6 +574,17 @@ public class DrawingTests
         foreach (Match m in Regex.Matches(svg, @"<text[^>]*>(.*?)</text>"))
             sb.Append(m.Groups[1].Value.Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">")).Append(' ');
         return Regex.Replace(sb.ToString(), @"\s+", " ");
+    }
+
+    // The published sheet must name the manifest it was drawn FROM, and that must be the manifest shipped now.
+    // `strCemFile` is the manifest's real filename, which differs from the gallery stem for the lock and anchor
+    // sheets (mechanical_lock.zone1.json → mechanical_lock_zone1.drawing.svg) — so every caller spells it out.
+    private static void AssertGalleryNamesTheShippedManifest(string svg, string strCemFile)
+    {
+        string strSha = Sha256Of(Path.Combine(CemDir(), strCemFile));
+        Assert.True(FlattenSvgText(svg).Contains(CemIdentityLabel + strSha, StringComparison.Ordinal),
+            $"the published gallery sheet does not name the SHA-256 of the shipped cem/{strCemFile} ({strSha}): " +
+            "the sheet was drawn from other bytes of that manifest (or before sheets carried the hash) — re-run the drawing loops of tools/cad/scripts/render_gallery.sh");
     }
 
     [Theory]
@@ -506,6 +608,7 @@ public class DrawingTests
             Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
+        AssertGalleryNamesTheShippedManifest(svg, $"{strPart}.json");
     }
 
     // A separate Theory, not another InlineData row on the one above: that helper assumes the CEM
@@ -530,6 +633,7 @@ public class DrawingTests
             Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
+        AssertGalleryNamesTheShippedManifest(svg, strCemFile);
     }
 
 
@@ -673,7 +777,8 @@ public class DrawingTests
     }
 
     // The published-snapshot pin, extended to the two new sheets. Same declared ceiling as the rows above:
-    // it pins CONTENT and FIT, not byte-currency, and says nothing about the PNG renders beside them.
+    // CONTENT, FIT and MANIFEST IDENTITY — never the sheet's own layout bytes or `rev`, and nothing about the
+    // PNG renders beside them.
     [Theory]
     [InlineData("anchor_zone1.pine.json", "anchor_zone1_pine")]
     public void Published_Gallery_Anchor_Drawing_Carries_The_Shipped_Cem_Notes_And_Fits_Its_Frame(string strCemFile, string strOutName)
@@ -691,6 +796,7 @@ public class DrawingTests
             Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
+        AssertGalleryNamesTheShippedManifest(svg, strCemFile);
     }
 
     [Fact]
@@ -709,6 +815,7 @@ public class DrawingTests
             Assert.Contains(Regex.Replace(v!, @"\s+", " "), flat);
 
         AssertEveryLineIsInsideTheFrame(svg);
+        AssertGalleryNamesTheShippedManifest(svg, "zone2_sleeve.json");
     }
 
     [Fact]

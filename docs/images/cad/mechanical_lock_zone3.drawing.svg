@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='853' viewBox='0 0 820 853'>
-<rect x='0' y='0' width='820' height='853' fill='white'/>
-<rect x='8' y='8' width='804' height='837' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='895' viewBox='0 0 820 895'>
+<rect x='0' y='0' width='820' height='895' fill='white'/>
+<rect x='8' y='8' width='804' height='879' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Anchor retention (BLOCKER-3, HW.26) · mechanical_lock_zone3 · 01_01 §4.3</text>
 <circle cx='150' cy='150' r='27' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -71,32 +71,38 @@
 <text x='20' y='639' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diameter must accept the structural liner (01_01 1.4). ATTENTION: shank diameter is an HW.8 PLACEHOLDER, not canon - do not treat it as a</text>
 <text x='20' y='653' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   frozen acceptance dimension. Pull-out retention and the PEEK 150 C click-fit are FEA + bench (00_07 HW.3.IS), NOT drawing acceptance</text>
 <text x='20' y='667' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   lines</text>
-<text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Self-contained demo shank (Zone-3 Ø9 = HW.8 placeholder, opposite ratchet lean dir −1, §4.3 figure) — not yet integrated into</text>
-<text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cathode_flange.json (separate session, 00_07 HW.26)</text>
-<text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator</text>
-<rect x='540' y='727' width='250' height='96' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='727' x2='630' y2='743' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='738' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='738' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Mechanical lock (§4.3 shank)</text>
-<line x1='540' y1='743' x2='790' y2='743' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='743' x2='630' y2='759' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='754' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='754' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V Grade 5. … → NOTES</text>
-<line x1='540' y1='759' x2='790' y2='759' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='759' x2='630' y2='775' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='770' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='770' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or CNC (01… → NOTES</text>
-<line x1='540' y1='775' x2='790' y2='775' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='775' x2='630' y2='791' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='786' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='786' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='791' x2='790' y2='791' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='791' x2='630' y2='807' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='802' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='802' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>90f224e5</text>
-<line x1='540' y1='807' x2='790' y2='807' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='807' x2='630' y2='823' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='818' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='818' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/mechanical_loc… → FOOTER</text>
-<text x='806' y='839' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 90f224e5 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Self-contained demo of the Zone-3 lock (Ø9 = HW.8 placeholder, opposite ratchet lean dir −1, §4.3 figure). The cathode flange part</text>
+<text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   already carries this shank: cem/cathode_flange.json holds its own copy of these shank fields, and the same generator builds the flange's</text>
+<text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   shank from them</text>
+<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator</text>
+<rect x='540' y='741' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='741' x2='630' y2='757' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='752' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='752' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Mechanical lock (§4.3 shank)</text>
+<line x1='540' y1='757' x2='790' y2='757' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='757' x2='630' y2='773' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='768' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='768' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V Grade 5. … → NOTES</text>
+<line x1='540' y1='773' x2='790' y2='773' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='773' x2='630' y2='789' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='784' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='784' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or CNC (01… → NOTES</text>
+<line x1='540' y1='789' x2='790' y2='789' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='789' x2='630' y2='805' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='800' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='800' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='805' x2='790' y2='805' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='805' x2='630' y2='821' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='816' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='816' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0344a865</text>
+<line x1='540' y1='821' x2='790' y2='821' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='821' x2='630' y2='837' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='832' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='832' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/mechanical_loc… → FOOTER</text>
+<line x1='540' y1='837' x2='790' y2='837' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='837' x2='630' y2='853' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>a922633cdcf34b5c04… → FOOTER</text>
+<text x='806' y='869' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 0344a865 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='806' y='881' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): a922633cdcf34b5c049088c54f8f442ee4a7b37b1e104ba005968c17c7e27198</text>
 </svg>
