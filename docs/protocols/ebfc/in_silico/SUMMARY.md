@@ -522,7 +522,7 @@ plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25
 | Hand-set field loads (dew film · droplet · 20 m/s air stagnation · 50 mm submersion) | 10 – 489 Pa |
 | Pore the prescribed 30 cm column can fail | **33.9 µm** |
 | Pore the "≥ 1 m" criterion demands at θ 110° / 115° / 120° | **10.2 / 12.6 / 14.9 µm** |
-| Bubble-point pressure to challenge the spec at θ 110° | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
+| Water-entry pressure at θ 110° — pore AND angle together, NOT a bubble point (that one runs in a wetting liquid and does not see θ) | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
 | θ at which the worst field load breaks through | **90.02 – 90.10°** |
 | O₂ transport margin at the canon's own lower bound (0.02 µm) | **8627×** |
 

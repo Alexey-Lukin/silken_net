@@ -180,12 +180,15 @@ def main() -> int:
     print(f"  To CHALLENGE the widest specified pore ({PORE_SPEC_UM[-1]} um) a water column would "
           f"have to be {d_at_spec:.0f} m tall.")
     print("  => the water column is a GROSS-DEFECT detector (pinholes, lamination damage, a torn")
-    print("     web), not a verifier of the pore spec. Verifying the spec needs a PRESSURISED")
-    print("     bubble-point rig, which the canon already prescribes for sterilisation QC (§6.3 F5).")
-    bubble = {f"{d}um": {"pressure_kPa": liquid_entry_pressure(d, CONTACT_ANGLE_DEG[0]) / 1000.0}
-              for d in PORE_SPEC_UM}
-    print(f"  Bubble-point pressures to test the spec at CA {CONTACT_ANGLE_DEG[0]:.0f} deg: "
-          + " · ".join(f"{d} um -> {bubble[f'{d}um']['pressure_kPa']:.0f} kPa" for d in PORE_SPEC_UM))
+    print("     web), not a verifier of the pore spec. Verifying the PORE spec needs a bubble point")
+    print("     in a WETTING liquid (gas clears the widest pore at P = 4*gamma_L/d, independent of")
+    print("     the water contact angle) - the test the canon already prescribes for sterilisation")
+    print("     QC (§6.3 F5), and a result that means nothing without the liquid it was run in.")
+    water_entry = {f"{d}um": {"pressure_kPa": liquid_entry_pressure(d, CONTACT_ANGLE_DEG[0]) / 1000.0}
+                   for d in PORE_SPEC_UM}
+    print(f"  Water-entry pressures at CA {CONTACT_ANGLE_DEG[0]:.0f} deg (pore AND angle together, "
+          f"NOT a bubble point): "
+          + " · ".join(f"{d} um -> {water_entry[f'{d}um']['pressure_kPa']:.0f} kPa" for d in PORE_SPEC_UM))
 
     # ── (3) the field demand the membrane actually faces ────────────────────
     banner("(3) The pressure the field actually applies")
@@ -265,8 +268,11 @@ def main() -> int:
         f"compute.",
         f"2. The prescribed {BENCH_COLUMN_M * 100:.0f} cm column only fails pores wider than "
         f"{d_at_bench:.0f} um, so it is a gross-defect detector. Keep it as such, and verify the "
-        f"pore spec with the bubble-point rig the sterilisation QC already needs "
-        f"({bubble[f'{PORE_SPEC_UM[-1]}um']['pressure_kPa']:.0f} kPa for the widest spec pore).",
+        f"pore spec with a wetting-liquid bubble point, which does not depend on theta (the test "
+        f"the sterilisation QC already needs). The water-entry pressure that challenges the widest "
+        f"spec pore at {CONTACT_ANGLE_DEG[0]:.0f} deg is "
+        f"{water_entry[f'{PORE_SPEC_UM[-1]}um']['pressure_kPa']:.0f} kPa, and it tests pore and "
+        f"angle together, not the pore.",
         f"3. The §5.3 prose bound 'no pores > {CANON_UPPER_PORE_UM:.0f} um' is NOT an arithmetic "
         f"error: it is this same inversion at {CONTACT_ANGLE_DEG[-1]:.0f} deg "
         f"({theta_inv[f'CA_{int(CONTACT_ANGLE_DEG[-1])}']['pore_demanded_um']:.2f} um). What is "
@@ -309,7 +315,7 @@ def main() -> int:
             "canon_prose_upper_pore_um": CANON_UPPER_PORE_UM,
             "canon_prose_optimism_x": CANON_UPPER_PORE_UM / d_at_accept,
             "column_height_to_challenge_widest_spec_pore_m": d_at_spec,
-            "bubble_point_kPa": bubble,
+            "water_entry_pressure_kPa": water_entry,
         },
         "field_pressures_Pa": field,
         "field_pressure_note": "hand-set scenarios, not site data; the upper bound is "
