@@ -159,8 +159,9 @@ cold-flow creep): own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin bar
 groove-ring `BoolSubtract` + a central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.35` ⇒
 cathode channel the bus rod threads). Golden-metrics MEASURED off the profile (barb count /
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
-ratchet self-supports at the `01_02 §1.6` tip-down / leading-ramp-down orientation (Ti64 LPBF 60°
-downface, Sa≈15µm). Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
+ratchet self-supports printed leading-ramp-down as a SEPARATE part (Ti64 LPBF 60° downface, Sa≈15µm);
+on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep face down at 20° — open,
+`00_07` HW.26 G4. Zone-1 Ø11 + Zone-3 placeholder Ø (HW.8 dim-freeze). Grounded over canon §4.3:
 tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the

@@ -250,7 +250,8 @@ internal static class Validation
     // R(z) profile (proves the param→geometry math, catches generator bugs), plus a Noyron-style
     // manufacturability field. A vertical build oriented gentle-ramp-DOWN gives a downface of 90−min(α,β)
     // from horizontal; ≥45° self-supports (the steep ramp then faces up). Print orientation ≠ assembly
-    // orientation ⇒ this costs no ratchet retention. (Groove = CNC post-DMLS per §4.3 — modelled here only
+    // orientation ⇒ this costs no ratchet retention — but the orientation is FREE only on a separate print: the
+    // integrated Zone-1 body inherits the anode's tip-down (00_07 HW.26 G4). (Groove = CNC post-DMLS per §4.3 — modelled here only
     // for the as-assembled envelope, not a printed overhang.)
     public static GeometryMetrics MeasureLock(MechanicalLockCem cem, Voxels voxShank)
     {

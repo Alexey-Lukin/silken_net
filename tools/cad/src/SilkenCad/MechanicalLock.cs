@@ -92,8 +92,9 @@ internal sealed class BarbRidges(MechanicalLockCem cem) : IImplicit
 // Builds the §4.3 shank. Zone 1 (real Ø11) is a self-contained demo part, not integrated into the gyroid rod
 // (separate session, 00_07); Zone 3 (placeholder Ø) is also the cathode flange's shank — `CathodeFlange.Build`
 // calls this. A SOLID cylinder (ShapeKernel) + barb ridges BoolAdd-ed
-// (thin SDF) − a retaining-groove ring BoolSubtract-ed. Print per 01_02 §1.6 (vertical, tip-down; external
-// supports allowed — barbs are on the outer shank).
+// (thin SDF) − a retaining-groove ring BoolSubtract-ed. Self-supports printed gentle-ramp-down as a SEPARATE part
+// (01_01 §4.3 A); integrated into the anode, the anode's tip-down (01_02 §1.6) puts the steep face down — open,
+// 00_07 HW.26 G4 (external supports allowed — barbs are on the outer shank).
 internal static class MechanicalLock
 {
     public static Voxels Build(MechanicalLockCem cem)

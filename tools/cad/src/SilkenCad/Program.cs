@@ -649,8 +649,9 @@ internal static class Program
         // integrated-anchor caveat (HW.26). ≥45° ⇒ self-supporting on the gentle-ramp-down orientation.
         if (oM.SelfSupportFaceDeg is >= 45.0)
             Console.WriteLine(
-                $"  ℹ print gentle-ramp-DOWN (01_02 §1.6 tip-down) → {oM.SelfSupportFaceDeg:F0}° downface self-supports (Ti64 LPBF Sa≈15µm); " +
-                "Zone-1/Zone-3 are SEPARATE prints (PEEK press-fit) ⇒ each orients freely, no co-orientation conflict");
+                $"  ℹ print gentle-ramp-DOWN → {oM.SelfSupportFaceDeg:F0}° downface self-supports (Ti64 LPBF Sa≈15µm) — as a SEPARATE print only " +
+                $"(01_01 §4.3 A); the INTEGRATED Zone-1 body inherits the anode's tip-down (01_02 §1.6), which puts the steep face DOWN at " +
+                $"{90f - Math.Max(cem.LeadAngleDeg, cem.TrailAngleDeg):F0}° — open, 00_07 HW.26 G4");
         else
             Console.WriteLine(
                 $"  ⚠ barb not self-supporting either orientation ({oM.SelfSupportFaceDeg:F0}° < 45°) — needs support or a ≤45°-from-axis ramp");
