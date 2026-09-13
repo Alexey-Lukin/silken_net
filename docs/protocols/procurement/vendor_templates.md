@@ -6,9 +6,9 @@
 > **⚠️ Не юридична / податкова / фінансова порада.** Робочий вхід у платну консультацію з фахівцем, не її заміна.
 > **Дім стану:** [`00_07`](../../00_07_Action_Plan_Tracker.md) — BIZ.17.
 
-> **Склад:** **(A)** DMLS additive-manufacturing vendor-scoring matrix · **(B)** ESG vendor-screening checklist · **(C)** mutual CDA/NDA для ВНЗ-MoU. ⊕ Два EN dispatch-листи: DMLS-бюро (§A/§B як питання + інженерні питання трекера) · постачальник PEEK-мікротрубки лайнера шини (дім тимчасовий — нота над самим листом).
+> **Склад:** **(A)** DMLS additive-manufacturing vendor-scoring matrix · **(B)** ESG vendor-screening checklist · **(C)** mutual CDA/NDA для ВНЗ-MoU. ⊕ Dispatch-листи: DMLS-бюро (EN; §A/§B як питання + інженерні питання трекера) · постачальник PEEK-мікротрубки лайнера шини (EN) · опромінювач ГІЛКИ A стерилізації (UA) · постачальник PTFE-мембрани катода (EN). Останні три — per-component, дім тимчасовий (нота над кожним листом).
 > **Статус:** 🟡 робочий артефакт (**НЕ канон**) — draft-шаблони під заповнення/юр-review, не заморожені специфікації.
-> **Усі числа/пороги — дзеркало канону або явний `PLACEHOLDER`**: сплав/метал-constraint → [`01_02 §1.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §1.7`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · гіроїд-геометрія/поруватість → [`01_01 §5`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_01 §6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · шина (канал Ø1.35 · лайнер · дріт · вхід каналу) → [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md), чиї числа мають власника в `tools/in_silico/cache/mechanical/bus_mechanical.json` і `tools/cad/cem/cathode_flange.json` · procurement-constraint-доми → [`rfq_registry`](rfq_registry.md) §4.B · IP/NDA-постава → [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md). **Правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)).
+> **Усі числа/пороги — дзеркало канону або явний `PLACEHOLDER`**: сплав/метал-constraint → [`01_02 §1.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §1.7`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · гіроїд-геометрія/поруватість → [`01_01 §5`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_01 §6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · шина (канал Ø1.35 · лайнер · дріт · вхід каналу) → [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md), чиї числа мають власника в `tools/in_silico/cache/mechanical/bus_mechanical.json` і `tools/cad/cem/cathode_flange.json` · стерилізація й мембрана катода → [`01_04 §6`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §5`](../../01_04_CODIT_and_Xylemointegration.md) · procurement-constraint-доми → [`rfq_registry`](rfq_registry.md) §4.B · IP/NDA-постава → [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md). **Правити в домі, не тут** (One-Home, [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md)).
 > **Розміщення:** артефакт живе в `docs/protocols/procurement/` поряд з [`rfq_registry`](rfq_registry.md) та RFQ-аркушами; canon-ID — relative-links за конвенцією [`rfq_registry §5`](rfq_registry.md).
 >
 > ℹ️ **IP-постава (наскрізь):** SilkenNet = **defensive-publication** ([`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)) — RFQ-specs/креслення/формат пакета **відкриті** (вже prior art під AGPL/MIT/CERN-OHL-S/CC-BY-SA). Тому:
@@ -433,6 +433,127 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 
 **⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
 
+---
+---
+
+## 📤 Dispatch block (UA) — опромінювач, ГІЛКА A стерилізації (low-dose gamma 15 кГр)
+
+> **Окремий лист, бо адресат інший:** установа з гамма-опромінювачем, а предмет — доставлена й задокументована доза на запакованих зразках із ферментним стеком (ГІЛКА A, [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) крок A4), не деталь і не вимір. **Мова українська**, бо кандидати трекера вітчизняні: Чорнобиль НДІ радіаційної медицини / Київ ІРОНЦ ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.22). **Не контактовано; наявність джерела й діапазон доз НЕ перевірені — лист їх питає, а не припускає.** Індекс — [`rfq_registry`](rfq_registry.md) §1 рядок «Стерилізація» · §4.E. ⏳ Станом на 2026-09-13.
+> **Несе як дзеркало канону (дім кожного):** доза **15 кГр** і «свідомо нижче за 25 кГр» — [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) (рядок low-dose і рядок «Стандартна медична доза») · Co-60 як НАША специфікація, установі не приписаний — там же · «низька потужність, охолодження» — там же, **без чисел** · опромінення в упаковці (блістер) — [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) кроки A3–A4 · після опромінення **4–8 °C, темнота** — там же · немедичний рівень (❌ SAL 10⁻⁶ · ISO 5 · ендотоксини) — там же, 🟢-блок · дві серії «з ZIF ⊥ без ZIF» — [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md) + [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.22 · диск **Ø16 × 1 мм** — [`01_01 §6.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · ⛔ PTFE-мембрана й ущільнювальні кільця поза замовленням (ГІЛКА B — [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md)); причина «PTFE (> 10 кГр)» — [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md), нота «Чому НЕ terminal gamma».
+> **Питає, бо канон цього не несе:** **допуск дози і її тип** — §6.2/§6.3 кажуть лише «15 кГр» і не уточнюють, мінімум це, номінал чи максимум, тож ⛔ жодного «±N %» лист не пише · потужність дози, тривалість, температура в зоні, охолодження — чисел канон не має, а §HW.22 прямо називає себе сліпим до ефектів потужності дози й до пакувального середовища · **джерело** — desk-присуд §HW.22 стоїть на Комптоні при 1.25 МеВ, тож інше джерело лист просить назвати для окремої оцінки, ⛔ не стверджуючи, що воно гірше · дозиметрія, карта дози, сертифікат — жоден стандарт не названо, лише «за яким» · зберігання ДО опромінення й дорога до установи — канон задає 4–8 °C лише ПІСЛЯ кроку A4, тож «від приймання» є нашим проханням · партія, ціна, строки, ланцюг передачі — кількості зразків канон не фіксує.
+> **Немає свідомо:** порогів приймання (втрата активності ≤ 20 % і CV ≤ 25 % — [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md)): це наш аналіз, не послуга опромінювача · in-silico чисел §HW.22 і хімічного механізму · трекер-ID і канон-рефів · імен кандидатів · **підстави для кілець:** канон групує їх із мембраною в ГІЛКУ B, але про EPDM під гаммою не каже нічого, тож лист дає причину лише для PTFE. ⚠️ **Контрольні неопромінені зразки (п. 14 листа) — додаток ПОНАД канон:** «до/після» §6.5 не відокремлює втрату активності за дорогу й зберігання від дії дози; лист лише питає, чи установа це допускає, а чи вони потрібні — рішення HW.22.
+> ⚠️ **Дім тимчасовий:** per-component лист у крос-доменному файлі йде проти конвенції [`rfq_registry §5`](rfq_registry.md) і переїжджає в аркуш «Стерилізація» ([`rfq_registry §1`](rfq_registry.md)), щойно той авториться.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота, у лист вона НЕ йде.
+
+**Тема:** Запит щодо гамма-опромінення дослідницьких зразків дозою 15 кГр — металеві деталі з іммобілізованими ферментами (немедичне застосування)
+
+Шановні колеги!
+
+**Про нас і мету запиту.** Ми розробляємо титановий сенсорний анкер, який встановлюється в стовбур живого дерева й живиться від ферментного біопаливного елемента. Перед встановленням деталі з нанесеними ферментами треба знезаразити — знищити дереворуйнівні гриби й бактерії, зберігши активність ферментів. Етиленоксид, автоклав і сухий жар для цього непридатні: вони денатурують ферменти. Тому наша специфікація процесу передбачає гамма-опромінення (Co-60) **низькою дозою 15 кГр** — свідомо нижче за стандартну медичну дозу 25 кГр.
+
+Це запит пропозиції та інформації про ваші можливості, а ще не замовлення: відповідь ні до чого не зобов'язує жодну сторону, і відповідати можна просто в тексті листа.
+
+**Рівень вимог — не медичний.** Зразки призначені для дерева, не для людини чи тварини, тож нам **не потрібні** валідація стерильності медичного рівня (SAL 10⁻⁶), чисті приміщення класу ISO 5 чи тест на ендотоксини. Дозу задаємо ми; від вас потрібні **виміряна доставлена доза й документ про неї**.
+
+**Що опромінюється**
+
+1. **Зразки двох типів:** плоскі металеві диски **Ø16 × 1 мм** і повні титанові анкери (їхні габарити надішлемо із замовленням) — просимо оцінити обидва варіанти. На поверхні — ферменти (FAD-залежна глюкозодегідрогеназа, лакказа), осмієвмісний редокс-полімер, вуглецеві нанотрубки, гідрогель на основі хітозану, мембрана на основі Nafion; у частини зразків — нанозим на основі цеолітного імідазолатного каркаса з кобальтом, міддю й церієм. Повний перелік матеріалів і паспорти безпеки надамо на запит.
+2. **Упаковка:** зразки надходять уже знезараженими з поверхні й **запечатаними в блістерну упаковку**, опромінюються **в упаковці, без розкриття**. Просимо повідомити ваші вимоги до упаковки (матеріал, габарити, маркування) і чи використовуєте ви індикатори опромінення на упаковці.
+3. **Дві серії, що порівнюються між собою:** зразки **з нанозимом і без нього**. Ми перевіряємо, чи впливає нанозим на збереження активності ферментів після опромінення, тож **обидві серії мусять отримати однакову дозу**. Просимо підтвердити, що їх можна опромінити в одному циклі, розмістивши так, щоб різниця доз між серіями була мінімальною, і повідомити, як ви це задокументуєте.
+4. **Не опромінюються:** мембрани з PTFE та ущільнювальні кільця в це замовлення **не входять** — вони проходять окрему гілку процесу (автоклав або етиленоксид). Для PTFE причина — деградація вже за доз понад 10 кГр; кільця йдуть тією самою гілкою разом із мембраною.
+
+**Просимо повідомити**
+
+*Джерело й доза*
+
+5. **Джерело випромінювання** — ізотоп і тип установки. Нашу оцінку сумісності ферментного шару з опроміненням виконано саме для гамма-випромінювання Co-60; якщо ви пропонуєте інше джерело, скажіть про це прямо — таке джерело ми мусимо оцінити окремо, перш ніж погодитися.
+6. **Доза 15 кГр і допуск.** Чи можете ви забезпечити 15 кГр для невеликих дослідних партій, і яку **мінімальну й максимальну дозу в зразках** гарантуєте для такого завантаження? Допуску наша специфікація поки не містить — назвіть той, який ви реально тримаєте.
+7. **Потужність дози й тривалість:** яку потужність (кГр/год) ви пропонуєте для 15 кГр, скільки триватиме опромінення і чи є вибір потужності. Наша специфікація вимагає низької потужності, але числа не фіксує, тож просимо варіанти.
+8. **Температура:** яка температура в зоні опромінення, чи реєструється вона протягом циклу, **чи можливе опромінення з охолодженням** і до якої температури, і чи впливає охолодження на розподіл дози.
+
+*Дозиметрія й документи*
+
+9. **Карта дози й дозиметрія:** чи виконуєте ви картування дози для нового типу завантаження; яке відношення максимальної дози до мінімальної досяжне для невеликих деталей; які дозиметри ставите в кожному циклі; як калібровано дозиметричну систему і з якою невизначеністю виміряно дозу. Чи ведете дозиметрію за документованим стандартом (міжнародним чи національним) — якщо так, за яким?
+10. **Сертифікат (протокол) опромінення:** що він містить — щонайменше ідентифікатор партії, дату, виміряні мінімальну й максимальну дози, потужність дози або тривалість і температурні умови. Просимо знеособлений зразок документа.
+
+*Зберігання й передача*
+
+11. **Холодовий ланцюг:** після опромінення наш процес вимагає зберігання **при 4–8 °C у темряві**. Чи можете ви тримати ці умови **від приймання до відправлення** (тобто й до опромінення), і як забезпечуєте їх під час відключень електроенергії?
+12. **Приймання й повернення:** чи приймаєте ви зразки кур'єрською або поштовою доставкою в термоконтейнері, чи лише особисто; як повертаєте опромінені зразки і хто відповідає за температуру в дорозі.
+13. **Документування передачі:** чи оформлюєте ви акт приймання-передачі з переліком ідентифікаторів зразків, станом упаковки й датою — при прийманні й при поверненні; чи дозволяєте вкласти в посилку наш термологер і чи може він лишатися в ній під час опромінення.
+14. **Контрольні зразки (опційно):** чи можна, щоб частина зразків їхала тією самою партією й зберігалася в тих самих умовах, але **не опромінювалася** — як контроль впливу дороги й зберігання.
+
+*Обсяг, ціна, строки*
+
+15. **Мінімальне замовлення:** мінімальна партія або мінімальна вартість циклу; чи можна опромінити поодинокі зразки; чи опромінюються вони разом із продукцією інших замовників.
+16. **Пробний цикл:** чи можливий пробний прогін із макетами без ферментів — для карти дози й перевірки упаковки — перед опроміненням справжніх зразків, і скільки він коштує.
+17. **Ціна:** за цикл і/або за зразок; окремо — картування дози, дозиметрія, зберігання в холоді, пробний цикл.
+18. **Строки:** черга до початку, тривалість виконання, строк повернення зразків.
+19. **Умови співпраці:** на якій підставі ви надаєте такі послуги стороннім організаціям (договір, дозвільні документи), які документи потрібні від нас (реквізити, лист-запит, перелік матеріалів) і форма оплати.
+
+**Конфіденційність і публікація.** Технічна специфікація нашого процесу відкрито опублікована, тож для її обговорення угода про конфіденційність не потрібна; ми готові підписати вашу стандартну угоду щодо комерційних умов (ціни, строки). Результати нашої перевірки зразків після опромінення можуть бути опубліковані — повідомте, будь ласка, чи маєте умови щодо згадки вашої установи або опису режиму опромінення.
+
+`[підпис і контакти відправника — заповнити перед відправкою]`
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
+---
+---
+
+## 📤 Dispatch block (EN) — PTFE membrane supplier (cathode gas-diffusion layer)
+
+> **Окремий лист, бо адресат інший:** виробник або дистриб'ютор мембрани, а предмет — матеріал із даними випробувань і зразки, не деталь і не послуга. Кандидати трекера — Gore-Tex industrial · Donaldson · український постачальник ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.25); **TBD, не контактовано, спроможність не перевірена.** Індекс — [`rfq_registry`](rfq_registry.md) §1 рядок «Покриття / біо» · §4.E. ⏳ Станом на 2026-09-13.
+> **Несе як дзеркало канону (дім кожного):** e-PTFE ⊥ d-PTFE · пори **0.2–1.0 µm** · товщина **20–100 µm** · крайовий кут **> 110°** · фіксація механічним обтиском **без клеїв** (підстава канону — «контамінація», лист нічого не домальовує) — усе [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md) · приймання **≥ 1 м H₂O** як детектор ДЕФЕКТУ, а не вимір пор — [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) (≈ 9.8 кПа — лише перерахунок одиниць; «запас великий» — інверсія [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md), без її чисел) · головний ризик = втрата гідрофобності від смоляних кислот і терпенів — [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md), 🔑-блок · утримання електроліту від випаровування — [`01_04 §5.1`](../../01_04_CODIT_and_Xylemointegration.md) · ГІЛКА B разом із кільцем: автоклав **121 °C / 15 psi / 30 хв** або EtO **50 °C / 40 % RH** з аерацією **7–14 днів** — [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) (крок B1 у [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) називає 7 днів — усередині смуги) · bubble point до/після, **Δ ≤ 5 %** — [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md) · мембрана НЕ опромінюється — [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) · pH **4.5–5.5** як ОБ'ЄДНАННЯ двох смуг канону — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) 5.0–5.5 ⊥ [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md), [`01_04 §5.2`](../../01_04_CODIT_and_Xylemointegration.md) і [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) 4.5–5.5; у листі «still being refined», присуд — [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3 · компоненти соку без концентрацій, як «working composition» — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (провенанс не звірено, пор. [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) §2) · EPDM **70 Shore A** — [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md), дім матеріалу [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · фланець **Ø25 мм** — [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (Zone 3, frozen) = поле `flange_diameter_mm` у `tools/cad/cem/cathode_flange.json` · бічна грань як місце мембрани — [`01_04 §5.5`](../../01_04_CODIT_and_Xylemointegration.md) п. A.
+> **Питає, бо канон цього не несе:** визначення рейтингу пор (номінал · середній потоковий · максимальний — «0.2–1.0 µm» цього не каже) і метод розподілу пор · 🔴 **bubble point і тиск входу води — ОКРЕМО, bubble point — з названою рідиною:** числа [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) «100 / 199 / 498 кПа (θ = 110°)» пораховано Young–Laplace для ВОДИ (4 · 0.0728 · |cos 110°| / 1.0 µm = 99.6 кПа), тобто це тиск входу води; вендорський bubble point міряють змочувальною рідиною, і від θ води він не залежить. ⛔ Тому ці числа в лист НЕ йдуть: зіставлені з даними іншої конвенції, вони дали б хибний вирок · метод і тип крайового кута · пористість і повітропроникність — замінюють **прийняті** ε і τ O₂-бюджету §5.3 · проникність водяної пари — вимога §5.1 чисел не має · поведінка після циклів ГІЛКИ B · хімічна сумісність, зокрема підкладки й клею в продукті як поставленому · придатність до обтиску без клею · формати зразків (висоти бічної грані немає: `flange_thickness_mm` у тому ж CEM — PLACEHOLDER за його `_note`) · MOQ · строки · ціна.
+> **Немає свідомо:** порогу деградації θ ≈ 90° і 12-тижневого тесту (наш стенд, не спека постачальника) · запасу O₂ і польових навантажень §5.3 · нашого 30-см апарата · трекер-ID і канон-рефів. ⚠️ **Стик стрічки (п. 10 листа) — наш висновок із геометрії §5.5 п. A, канон про нього мовчить:** мембрана на бічній грані диска є стрічкою, а [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.25 прямо називає дефект шва тим, чого Young–Laplace не рахує.
+> ⚠️ **Дім тимчасовий:** per-component лист у крос-доменному файлі йде проти конвенції [`rfq_registry §5`](rfq_registry.md) і переїжджає в аркуш рядка «Покриття / біо» ([`rfq_registry §1`](rfq_registry.md)), щойно той авториться.
+
+**⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота, у лист вона НЕ йде.
+
+**Subject line:** Enquiry — microporous PTFE membrane (expanded or dense), 0.2–1.0 µm pore rating, 20–100 µm thick: technical data and R&D samples
+
+**Scope of request.** We are developing a titanium sensor anchor that is installed in the trunk of a living tree and powered by an enzymatic bio-fuel cell. Its cathode takes oxygen from the air through an outer PTFE membrane, which has to let oxygen in and keep liquid water out — rain, dew and snow — because a flooded cathode stops producing current. We are looking for a supplier of that membrane. This is an enquiry for technical data and R&D samples, not yet an order; answering commits neither side to anything, and inline answers in this email are fine.
+
+**The membrane we need**
+
+- **Material:** expanded PTFE (e-PTFE) or dense PTFE (d-PTFE) — tell us which you supply.
+- **Pore rating:** 0.2–1.0 µm.
+- **Thickness:** 20–100 µm.
+- **Water contact angle:** greater than 110°.
+- **Fixing:** held only by mechanical clamping along its edges onto a titanium part — **no adhesive of any kind** (contamination risk).
+- **Position:** the outermost layer over the cathode's catalytic layer, on the side face (perimeter) of a titanium flange 25 mm in diameter. The height of that face and the clamp design are not final.
+- **Acceptance criterion we already hold:** the membrane must withstand a water column of **at least 1 m H₂O (about 9.8 kPa)** without water entry. We use it as a screen for defects such as pinholes, not as a measure of pore size: on our own calculation for ideal pores in the rating above the margin is large, so a failure at 1 m would mean a defect.
+
+**What we ask you to provide**
+
+1. **Data sheet** for the grade you would offer, with the **test method, unit and conditions** for every property — a figure without its method is one we cannot compare.
+2. **Pore size:** how your pore rating is defined (nominal, mean flow pore size, or maximum pore size), the method you use to measure the pore-size distribution and the standard you follow if any, and a typical distribution for this grade.
+3. **Bubble point and water entry pressure — as two separate figures.** For the bubble point, name the wetting liquid, the test area and the pressure ramp. For the water entry pressure — the pressure at which liquid water first passes through the dry membrane — give the method, area and ramp as well. They are different measurements, and we use them for different decisions. Please also say whether you test water entry pressure **per lot**, or can state per lot that the 1 m criterion above is met.
+4. **Water contact angle** as delivered: value, method (static, advancing or receding), test liquid and conditions, and whether the surface carries any treatment beyond PTFE itself. **Retention matters more to us than the initial value:** in service the membrane meets tree resin, whose resin acids and terpenes are surface-active, and loss of hydrophobicity is the failure we are most concerned about. Do you have data on contact angle or water entry pressure after exposure to surfactants or resin-like compounds, or after outdoor ageing?
+5. **Porosity and air permeability** — porosity in %, and air permeability with method, unit and test pressure differential. Our oxygen-transport estimate currently rests on an assumed porosity; your measured values replace that assumption.
+6. **Water vapour transmission rate**, with method and conditions. The membrane also has to limit evaporation of the thin aqueous electrolyte film beneath it, so we need to know how much vapour passes.
+7. **Construction:** is the membrane supplied unsupported or on a backing? If on a backing, name its material, give the thickness of the membrane and of the backing separately, and say whether any adhesive or binder is present in the product as supplied.
+8. **Sterilisation compatibility.** The membrane will **not** be gamma-irradiated. Before assembly it goes, together with an EPDM seal, through **one** of these cycles:
+   - **autoclave: 121 °C / 15 psi / 30 min**, or
+   - **ethylene oxide: 50 °C / 40 % RH, followed by aeration of 7–14 days**.
+
+   Tell us whether the membrane — and any backing — tolerates each cycle, and share any data on bubble point, water entry pressure or contact angle before and after. Our own acceptance check is the **bubble point before and after the cycle, changing by no more than 5 %**.
+9. **Chemical compatibility.** In service the membrane may be in contact with:
+   - aqueous media at **pH within 4.5–5.5** (the exact band is still being refined on our side): the electrolyte film beneath the membrane, and tree sap. Our in-vitro reference medium is a synthetic xylem sap of working composition — dilute organic acids (malic, oxalic) and salts (potassium nitrate, calcium chloride, magnesium sulfate) at a few millimolar or less;
+   - tree resin (resin acids, terpenes) — see item 4;
+   - an **EPDM elastomer, 70 Shore A**, in the same assembly.
+
+   Tell us of any known incompatibility, including for a backing or surface treatment if present.
+10. **Mechanical fixing without adhesive.** Is your membrane suitable for being held only by clamping along its edges? In particular: whether sustained clamping damages it or opens a leak path at the clamped edge over time; what edge design you recommend or advise against; whether it can be wrapped around a cylinder 25 mm in diameter without damage; and, if it is fitted as a band around that cylinder, how the joint where the two ends meet can be closed without adhesive.
+11. **Sample formats:** the sizes in which you can supply samples (sheet, roll width, die-cut pieces), the smallest die-cut piece you can make, and whether you can cut to a drawing we supply. The membrane geometry on our part is not final, so sheet or roll stock we can cut ourselves is the most useful first sample.
+12. **Documentation per lot:** certificate of conformance or test report, and lot traceability.
+13. **Commercial:** price of R&D samples, minimum order quantity for samples and for later volumes, lead time, currency and validity of the quote, and a technical point of contact.
+
+**Confidentiality.** The technical specification is openly published, so no confidentiality agreement is needed to discuss it; we are happy to sign your standard mutual CDA covering commercial terms (prices, schedules, QC data).
+
+**⬆️ КІНЕЦЬ ТЕКСТУ ЛИСТА.** Нижче знову репо-шар.
+
 ## Cross-references
 
 | Ресурс | Що бере |
@@ -444,7 +565,11 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | шина: канал Ø1.35 як первинний датум · вхід із радіусом · лайнер (зазор 50 мкм, вікно натягу) · тягнутий дріт — §Processing пп. 11/12 і лист постачальникові трубки |
 | [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Gr5 baseline **І** V-free імплант-сплави · ≥60% пористості · ISO 13485) — дім порогів C2/C6, і він ⛔ забороняє звужувати вимогу до ELI |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |
+| [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §6.5`](../../01_04_CODIT_and_Xylemointegration.md) | лист опромінювачеві: доза 15 кГр · «низька потужність, охолодження» без чисел · опромінення в упаковці · 4–8 °C у темряві після кроку A4 · серії з ZIF ⊥ без ZIF · ГІЛКА B поза замовленням; для мембранника — цикли ГІЛКИ B і Δ bubble point |
+| [`01_04 §5.3`](../../01_04_CODIT_and_Xylemointegration.md) · [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md) | лист мембранникові: спека (тип · пори · товщина · кут · фіксація без клеїв) · приймання ≥ 1 м H₂O як детектор дефекту · EPDM-сумісність |
+| [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | фланець Ø25 (`cathode_flange.json` §`flange_diameter_mm`) · EPDM 70 Shore A · робочий склад синтетичного соку |
+| [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.22 · §HW.25 | межа desk-присуду ZIF (Co-60; сліпий до потужності дози) · інверсія Young–Laplace під числами §5.6 — підстави питань, у листи НЕ йдуть |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 · HW.22 (стерилізація) · HW.25 (PTFE-мембрана) · HW.3 (присуд pH соку) |
 
 > **Статус-нагадування:** 🟡 draft-шаблони. Ваги/пороги (§A.1/§A.3/§B.2) + NDA-поля (§C) — `PLACEHOLDER` під founder/юр-рішення, **не** вигадані. NDA — **draft, юр-review обов'язковий** (§C.7).
