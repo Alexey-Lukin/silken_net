@@ -26,8 +26,8 @@ Two mechanical questions the monolithic idea raises (01_01 §4.1 / 00_07 HW.34):
 KEY COUPLING — ⚠️ REWRITTEN 2026-09-11, and the old version is kept nowhere on purpose: it argued the
 liner from FATIGUE, and that ground is RETIRED, not narrowed (⚖️ founder, 00_07 HW.34). What retired it
 is §4 of this very script: both L_FREE_* columns are FREE cantilevers — no wall anywhere — while the
-real rod threads a Ø1.35 bore, so any branch that leaves play takes it up and BEARS on the wall inside
-the bore. An unsupported SF is therefore a number for a configuration that does not exist, and the
+real rod threads a Ø1.35 bore, so a branch that leaves play can take it up and BEAR on the wall inside
+the bore — and §4 derives on WHICH swept µ it does, per branch. An unsupported SF is therefore a number for a configuration that does not exist, and the
 script says so through a DERIVED flag (`clearance_regime.free_cantilever_sf_describes_these`), never
 through prose. What the liner carries instead is WEAR: the same contact makes rubbing geometrically
 FORCED, and a 10 µm conformal film asked to be a bearing in a THROUGH bore of L/D ≈ 12.6 wears through to a
@@ -40,12 +40,15 @@ FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT
   `printed` (superseded) and `welded` (shipped) — because the fabrication choice is what moves the
   still-open LINING verdict, and a reader handed one column cannot see that it moved.
   ⛔ THE MODEL STILL HAS NO WELD-SEAM GEOMETRY. It is a homogeneous cantilever, while the ratified rod
-  carries a heat-affected zone in the ROOT — exactly where the bending moment peaks. So the doubled SF
-  describes the WIRE and says NOTHING about the JOINT, and quoting a welded-column SF as if it covered
-  the weld is the error this note exists to prevent. ⊕ What §5 adds (2026-09-12) is not that geometry
-  but the SENSITIVITY: the seam's knockdown k is NOT MEASURED anywhere in this tree, so the model
-  BOUNDS it — the break-even k at which each alloy crosses the failure and infinite-life lines — rather
-  than assuming a value. Priced on the SUPPORTED span only, and deliberately so (§5's own note).
+  carries a heat-affected zone at the ROOT — which is NOT where the bending moment peaks: the drag acts
+  at the pad beyond the bore, so the peak-moment section of the real overhang is the bore MOUTH
+  (`break_even_knockdown`). So the doubled SF describes the WIRE and says NOTHING about the JOINT, and
+  quoting a welded-column SF as if it covered the weld is the error this note exists to prevent.
+  ⊕ What §5 adds (2026-09-12) is not that geometry but the SENSITIVITY: the seam's knockdown k is NOT
+  MEASURED anywhere in this tree, so the model BOUNDS it — the break-even k at which each alloy crosses
+  the failure and infinite-life lines — rather than assuming a value. It is priced on the supported
+  span INFLATED by an optimism term measured along the protrusion, not on the supported span alone
+  (§5, `weld_seam.span_provenance`).
   ⚠️ Likewise absent from canon: as-printed `Sa` and the printed diameter tolerance — `DMLS Ti ±0.3`
   is an AXIAL Z-stack contribution, not a diametral one.
 
@@ -202,7 +205,7 @@ INSULATION_OPTIONS = (
 # ⛔ This table prices GEOMETRY only. The costs that decide the verdict live elsewhere and are NOT
 # derivable here: (б) spends 17 % of the wear allowance the 2026-09-11 verdict made the MAIN axis;
 # (в) is a re-spec of a hole already machined post-print as the part's primary datum; (г) cuts the
-# fatigue SF by ~14 % (σ ∝ 1/d³) on a Ta that already sits at 1.41. See the per-alloy table above.
+# fatigue SF by ~14 % (σ ∝ 1/d³) on Ta, the lowest-SF alloy — its SF lives in the cache, not here.
 ASSEMBLY_CLEARANCE_CANDIDATES = (
     ("(а) all three frozen",     1.00, 0.150, 1.30),
     ("(б) liner 0.150 → 0.125",  1.00, 0.125, 1.30),
@@ -224,7 +227,7 @@ ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio — a BAND 0.40-0.50, n
                               # welded, unsupported) reads 1.96, so the shipped verdict «all six clear
                               # SF 2» is a statement about the midpoint of an unmeasured band, not
                               # about the band. Found 2026-09-12 by a same-FORM sweep (a single point
-                              # standing in for a coefficient); not yet swept — 00_07 HW.34.
+                              # standing in for a coefficient); swept since — ENDURANCE_RATIO_SWEEP.
 # ⛔ THE BAND ENTERS THE MODEL NOW, not just the comment above it. Until 2026-09-12 only the MIDPOINT
 #    did, while every SF scales LINEARLY with this coefficient — so «all six clear SF 2» was a statement
 #    about one point of an unmeasured band, dressed as a statement about the band. The ends are the ones
@@ -691,8 +694,14 @@ def main() -> int:
         # Bears on the wall INSIDE the bore on every µ the model itself sweeps ⇒ not a free cantilever.
         bears = all(x < channel_end for x in contacts_bond.values())
         at_mouth = all(x <= CHANNEL_START_MM for x in contacts_bond.values())
+        # 🔴 «never reaches» must mean NO swept µ, not «not every µ»: the last branch used to take the
+        #    partial case too, so on the CEM-derived span the conformal films — which bear inside the
+        #    bore on part of the sweep — were labelled as never reaching it, and the verdict said so.
+        reach_mus = [mu for mu, x in contacts_bond.items() if x < channel_end]
         regime = ("supported at the bore mouth" if at_mouth
                   else "GAP-LIMITED — bears inside the bore" if bears
+                  else f"PARTLY GAP-LIMITED — bears inside the bore on µ {', '.join(str(m) for m in reach_mus)} only"
+                  if reach_mus
                   else "free cantilever (never reaches the wall)")
         print(f"  {label:<24s} {play_side:>8s} {play * 1000:>8.1f} µm {f'{lo_x:.2f}–{hi_x:.2f}':>21s}   {regime}")
         regimes.append({"branch": label, "coating_or_liner_mm": t_mm, "play_side": play_side,
@@ -700,6 +709,7 @@ def main() -> int:
                         "first_contact_mm_by_mu_bonded": contacts_bond,
                         "ei_Nm2_bare_rod": round(ei_lo, 4), "ei_Nm2_bonded": round(ei_hi, 4),
                         "bears_inside_bore": bool(bears), "supported_at_mouth": bool(at_mouth),
+                        "bears_inside_bore_on_mus": reach_mus,
                         "regime": regime})
     gap_limited = [r["branch"] for r in regimes if r["bears_inside_bore"] and not r["supported_at_mouth"]]
 
@@ -831,7 +841,8 @@ def main() -> int:
           f"wall on arrival, meeting it at {_worst['approach_angle_deg']:.2f}°.")
     print("    🔴 Two consequences, and the second one kills the obvious fix. (1) On a SHARP edge that")
     print("    interference is taken over ~no area, so the contact is a stress raiser by construction —")
-    print("    and no chamfer/radius is specified anywhere in the tree (canon, CEM, generator: zero hits).")
+    print("    and the tree asks for a RADIUS with no value (01_01 §1.4 ⚖️ 2026-09-12 · flange CEM · DMLS")
+    print("    letter) while the generator models neither the edge nor a radius.")
     print("    (2) ⛔ A LEAD-IN CHAMFER does not solve it: cut at 30-45° it is two orders steeper than")
     print("    the approach angle above, so the rod never lands on the chamfer face — it lands where")
     print("    the chamfer meets the cylinder. A chamfer MOVES the edge inward; only a RADIUS removes it.")
@@ -1055,8 +1066,9 @@ def main() -> int:
 
     weld_seam = {
         "question": "00_07 HW.34 — the ratified rod is a WELDED drawn wire, so a heat-affected zone "
-                    "sits at the root, i.e. at peak bending moment. The wrought derate describes the "
-                    "WIRE. How bad may the JOINT be before the verdict moves?",
+                    "sits at the root of the modelled cantilever (NOT at the peak-moment section of the "
+                    "real overhang - see seam_location). The wrought derate describes the WIRE. How bad "
+                    "may the JOINT be before the verdict moves?",
         "seam_location": "root of the modelled cantilever; the two quantities refer to the SAME "
                          "section, which is why SF_seam = k*SF_wire holds. NOT the peak-moment "
                          "section of the real overhang - that is the bore mouth (retracted 2026-09-12)",
@@ -1372,7 +1384,7 @@ def main() -> int:
     # 🔴 ⚖️ 2026-09-11 retired the fatigue ground and replaced it with WEAR. Until this block nothing
     # in this tree computed it: every `wear`/`fretting` mention in this file was PROSE, one of them
     # literally «The discriminating costs are NOT computed here», so «rated for 20 years» was a claim
-    # with no instrument — and FMEA #21, the highest RPN in the whole register, asserted wear-through
+    # with no instrument — and FMEA #21 asserted wear-through
     # outright. An assertion and its denial were both available and neither was measurable.
     # ⛔ Same inversion as §5 and §6, third time, same reason: the specific wear rate of PEEK on Ti is
     #    NOT in this tree, so the model bounds what it CAN — the rate the pair may have and still keep
@@ -1712,6 +1724,7 @@ def main() -> int:
             "axial_thermal": axial_thermal,
             "supported_span_check": supported_span_check,
             "gap_limited_branches": gap_limited,
+            "partly_gap_limited_branches": [r["branch"] for r in regimes if r["regime"].startswith("PARTLY")],
             "free_cantilever_sf_describes_these": [r["branch"] for r in regimes
                                                    if r["regime"].startswith("free cantilever")],
         },
@@ -1845,11 +1858,15 @@ def main() -> int:
                               + ". "
                               for b, _ in FAB_BRANCHES if b != SHIPPED_BRANCH)
                     + "BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): "
-                    f"the free-cantilever SF describes "
-                    f"{', '.join(r['branch'] for r in regimes if r['regime'].startswith('free cantilever')) or 'NO shipped branch'}"
-                    ", because every branch that leaves play takes it up and bears on the bore wall. "
-                    "What the liner carries is WEAR - the contact is geometrically forced, and wear-through "
-                    "is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; "
+                    f"on the WHOLE sweep the free-cantilever SF describes "
+                    f"{', '.join(r['branch'] for r in regimes if r['regime'].startswith('free cantilever')) or 'no branch'}"
+                    "; "
+                    + "; ".join(f"{r['branch']} bears on the bore wall on {len(r['bears_inside_bore_on_mus'])}/"
+                                f"{len(MU_SWEEP)} swept µ"
+                                for r in regimes if r["bears_inside_bore_on_mus"])
+                    + ". What the liner carries is WEAR - for "
+                    f"{', '.join(gap_limited) or 'no branch'} the contact is geometrically forced on every "
+                    "swept µ, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; "
                     "NOT a fatigue fix (HW.34 sub-2). Per-alloy margin tracks yield = same ranking as "
                     "thermal -> leading HW.24 candidates win on both. " + wear_verdict_sentence),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "

@@ -393,12 +393,10 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["depth_tolerance_budget"]["total_gap_budget_half_width_mm"] * 1000.0, 1.0,
     ),
-    # ── HW.34 weld seam: the break-even knockdown SUMMARY quotes from script 55 ──
+    # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
-    # These two are pinned first because they are the ones a reader acts on: one says how bad the
-    # joint may be, the other says how little room is left against our own marker. Both move the
-    # moment ANY input of that model moves (µ sweep, span check, yield table, derates), and the
-    # prose around them would stay internally consistent on the old value.
+    # Every number below moves the moment ANY input of that model moves (µ sweep, span check, yield
+    # table, derates), while the prose around it would stay internally consistent on the old value.
     # ⛔ The axial thermal term entered canon prose the same hour it was derived, which is exactly the
     # shape this file exists against: a number with no owner reads identically to one with an owner.
     (

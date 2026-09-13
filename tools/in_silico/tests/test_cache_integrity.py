@@ -403,13 +403,23 @@ def test_bus_mechanical_weld_seam():
     assert fm["weld_seam_geometry_modelled"] is False
     assert fm["weld_seam_sensitivity_modelled"] is True
     assert fm["mean_stress_correction_modelled"] is False
-    # 2. Priced on the span that exists. ⛔ This used to assert the list is EMPTY, and the protrusion
-    #    correction (2026-09-12) made that false WITHOUT touching the verdict: at the true 23 mm span
-    #    the rod is stiffer, so the two REJECTED conformal branches stop reaching the wall and enter
-    #    that list. What the verdict rests on is narrower and is what is pinned — the SHIPPED branch
-    #    still bears, i.e. its free-cantilever SF still describes nothing.
-    assert SHIPPED_INSULATION not in d["clearance_regime"]["free_cantilever_sf_describes_these"]
-    assert SHIPPED_INSULATION in d["clearance_regime"]["gap_limited_branches"]
+    # 2. Priced on the span that exists. What the verdict rests on is pinned — the SHIPPED branch
+    #    bears on every swept µ, i.e. its free-cantilever SF describes nothing. The LIST itself is not
+    #    pinned: on the CEM-derived span the stiffer rod makes the rejected conformal branches bear on
+    #    only part of the sweep, and which branches sit where is the model's output, not a constant.
+    cr = d["clearance_regime"]
+    assert SHIPPED_INSULATION not in cr["free_cantilever_sf_describes_these"]
+    assert SHIPPED_INSULATION in cr["gap_limited_branches"]
+    # ⛔ The LABEL must agree with the contacts it is computed from, per branch. «free cantilever
+    #    (never reaches the wall)» once stood on branches that bore inside the bore on three of four µ,
+    #    because the label's last branch caught «not every µ» instead of «no µ» — and the verdict
+    #    sentence and `free_cantilever_sf_describes_these` both inherited it.
+    n_mu = len(cr["branches"][0]["first_contact_mm_by_mu_bonded"])
+    for br in cr["branches"]:
+        reach = br["bears_inside_bore_on_mus"]
+        assert br["regime"].startswith("free cantilever") == (not reach), br["branch"]
+        assert br["bears_inside_bore"] == (len(reach) == n_mu), br["branch"]
+        assert (br["branch"] in cr["partly_gap_limited_branches"]) == (0 < len(reach) < n_mu and not br["supported_at_mouth"]), br["branch"]
     assert "supported" in seam["span"]["which"]
     assert seam["span"]["worst_corner_sigma_MPa"] > seam["span"]["nominal_sigma_MPa"]
     # 3. The SPAN the bound rides. A `protrusion_sensitivity` block stood here and swept two spans,
