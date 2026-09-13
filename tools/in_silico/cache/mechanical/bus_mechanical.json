@@ -373,28 +373,28 @@
           "radial_play_um": 25.0,
           "by_mu": {
             "0.2": {
-              "deflection_at_mouth_um": 13.0,
+              "deflection_at_mouth_um": 13.1,
               "edge_bearing": false,
               "interference_at_mouth_um": 0.0,
-              "approach_angle_deg": 0.237
+              "approach_angle_deg": 0.239
             },
             "0.3": {
-              "deflection_at_mouth_um": 19.6,
+              "deflection_at_mouth_um": 19.7,
               "edge_bearing": false,
               "interference_at_mouth_um": 0.0,
-              "approach_angle_deg": 0.356
+              "approach_angle_deg": 0.358
             },
             "0.4": {
-              "deflection_at_mouth_um": 26.1,
+              "deflection_at_mouth_um": 26.2,
               "edge_bearing": true,
-              "interference_at_mouth_um": 1.1,
-              "approach_angle_deg": 0.474
+              "interference_at_mouth_um": 1.2,
+              "approach_angle_deg": 0.477
             },
             "0.5": {
-              "deflection_at_mouth_um": 32.6,
+              "deflection_at_mouth_um": 32.8,
               "edge_bearing": true,
-              "interference_at_mouth_um": 7.6,
-              "approach_angle_deg": 0.593
+              "interference_at_mouth_um": 7.8,
+              "approach_angle_deg": 0.596
             }
           },
           "edge_bearing_mus": [
@@ -473,9 +473,9 @@
     "span": {
       "which": "supported (liner) span, inflated by an optimism term measured along the protrusion \u2014 NOT a supported-only figure, see span_provenance",
       "nominal_sigma_MPa": 18.3,
-      "worst_corner_sigma_MPa": 43.2,
+      "worst_corner_sigma_MPa": 43.0,
       "worst_corner_mu": 0.5,
-      "span_optimism_pct": 41.3,
+      "span_optimism_pct": 40.8,
       "why_not_free_cantilever": "\u00a74's derived flag says the free-cantilever SF describes no branch that bears on the wall, so a seam tolerance computed on it would price a configuration that does not exist (the error the 2026-09-11 verdict corrected)"
     },
     "per_alloy": [
@@ -483,23 +483,23 @@
         "alloy": "Ti-15Zr",
         "endurance_MPa": 427.5,
         "sf_wire_supported_nominal": 23.32,
-        "sf_wire_supported_worst_corner": 9.9,
+        "sf_wire_supported_worst_corner": 9.93,
         "k_at_failure_line_nominal": 0.043,
         "k_at_infinite_life_nominal": 0.086,
         "infinite_life_reachable_nominal": true,
         "k_at_failure_line_worst_corner": 0.101,
-        "k_at_infinite_life_worst_corner": 0.202,
+        "k_at_infinite_life_worst_corner": 0.201,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "beta-Ti-13Nb-13Zr",
         "endurance_MPa": 405.0,
         "sf_wire_supported_nominal": 22.09,
-        "sf_wire_supported_worst_corner": 9.38,
+        "sf_wire_supported_worst_corner": 9.41,
         "k_at_failure_line_nominal": 0.045,
         "k_at_infinite_life_nominal": 0.091,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.107,
+        "k_at_failure_line_worst_corner": 0.106,
         "k_at_infinite_life_worst_corner": 0.213,
         "infinite_life_reachable_worst_corner": true
       },
@@ -507,48 +507,48 @@
         "alloy": "Ti-6Al-4V",
         "endurance_MPa": 396.0,
         "sf_wire_supported_nominal": 21.6,
-        "sf_wire_supported_worst_corner": 9.17,
+        "sf_wire_supported_worst_corner": 9.2,
         "k_at_failure_line_nominal": 0.046,
         "k_at_infinite_life_nominal": 0.093,
         "infinite_life_reachable_nominal": true,
         "k_at_failure_line_worst_corner": 0.109,
-        "k_at_infinite_life_worst_corner": 0.218,
+        "k_at_infinite_life_worst_corner": 0.217,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ti-6Al-7Nb",
         "endurance_MPa": 382.5,
         "sf_wire_supported_nominal": 20.86,
-        "sf_wire_supported_worst_corner": 8.86,
+        "sf_wire_supported_worst_corner": 8.89,
         "k_at_failure_line_nominal": 0.048,
         "k_at_infinite_life_nominal": 0.096,
         "infinite_life_reachable_nominal": true,
         "k_at_failure_line_worst_corner": 0.113,
-        "k_at_infinite_life_worst_corner": 0.226,
+        "k_at_infinite_life_worst_corner": 0.225,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "CP-Ti-Gr4",
         "endurance_MPa": 216.0,
         "sf_wire_supported_nominal": 11.78,
-        "sf_wire_supported_worst_corner": 5.0,
+        "sf_wire_supported_worst_corner": 5.02,
         "k_at_failure_line_nominal": 0.085,
         "k_at_infinite_life_nominal": 0.17,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.2,
-        "k_at_infinite_life_worst_corner": 0.4,
+        "k_at_failure_line_worst_corner": 0.199,
+        "k_at_infinite_life_worst_corner": 0.398,
         "infinite_life_reachable_worst_corner": true
       },
       {
         "alloy": "Ta",
         "endurance_MPa": 155.2,
         "sf_wire_supported_nominal": 8.47,
-        "sf_wire_supported_worst_corner": 3.59,
+        "sf_wire_supported_worst_corner": 3.61,
         "k_at_failure_line_nominal": 0.118,
         "k_at_infinite_life_nominal": 0.236,
         "infinite_life_reachable_nominal": true,
-        "k_at_failure_line_worst_corner": 0.278,
-        "k_at_infinite_life_worst_corner": 0.556,
+        "k_at_failure_line_worst_corner": 0.277,
+        "k_at_infinite_life_worst_corner": 0.554,
         "infinite_life_reachable_worst_corner": true
       }
     ],
@@ -560,11 +560,11 @@
     },
     "binding_candidate": {
       "alloy": "Ta",
-      "sf_wire_worst_corner": 3.59,
-      "k_at_infinite_life": 0.556,
-      "k_at_failure_line": 0.278,
+      "sf_wire_worst_corner": 3.61,
+      "k_at_infinite_life": 0.554,
+      "k_at_failure_line": 0.277,
       "as_printed_marker_clears_sf2": false,
-      "margin_in_k_vs_as_printed_marker": -0.056
+      "margin_in_k_vs_as_printed_marker": -0.054
     },
     "not_modelled": {
       "bead_section": "an upset/fillet raises the local section, which LOWERS nominal stress \u2014 this omission is conservative",
@@ -609,7 +609,7 @@
         },
         "binding_alloy_unsupported": "Ta",
         "binding_sf_unsupported": 1.96,
-        "seam_break_even_k_worst_corner": 0.626,
+        "seam_break_even_k_worst_corner": 0.624,
         "seam_k_cleared_by_our_marker": false
       },
       {
@@ -635,7 +635,7 @@
         },
         "binding_alloy_unsupported": "Ta",
         "binding_sf_unsupported": 2.21,
-        "seam_break_even_k_worst_corner": 0.556,
+        "seam_break_even_k_worst_corner": 0.554,
         "seam_k_cleared_by_our_marker": false
       },
       {
@@ -661,12 +661,12 @@
         },
         "binding_alloy_unsupported": "Ta",
         "binding_sf_unsupported": 2.45,
-        "seam_break_even_k_worst_corner": 0.501,
-        "seam_k_cleared_by_our_marker": false
+        "seam_break_even_k_worst_corner": 0.499,
+        "seam_k_cleared_by_our_marker": true
       }
     ],
     "bare_infinite_life_for_all_is_invariant": false,
-    "our_marker_covers_seam_is_invariant": true
+    "our_marker_covers_seam_is_invariant": false
   },
   "interference_window": {
     "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon states no interference for that pair exists anywhere (01_01 1.4). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
@@ -890,34 +890,34 @@
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 6535.3,
-            "duty_N_m": 218.1,
-            "k_max_edge_mm3_per_Nm": 5.100533036305493e-09,
-            "k_max_conformal_mm3_per_Nm": 5.376154011338762e-05
+            "sliding_distance_m": 6535.7,
+            "duty_N_m": 218.3,
+            "k_max_edge_mm3_per_Nm": 5.100166906213635e-09,
+            "k_max_conformal_mm3_per_Nm": 5.375800784260361e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 2304.6,
-            "duty_N_m": 76.9,
-            "k_max_edge_mm3_per_Nm": 1.446390128445229e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0001524549696208627
+            "sliding_distance_m": 2304.8,
+            "duty_N_m": 77.0,
+            "k_max_edge_mm3_per_Nm": 1.4462863026398041e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00015244495293916175
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 322.7,
             "duty_N_m": 10.8,
-            "k_max_edge_mm3_per_Nm": 1.033079195851154e-07,
-            "k_max_conformal_mm3_per_Nm": 0.0010889043994564084
+            "k_max_edge_mm3_per_Nm": 1.0330050386251973e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0010888328556503965
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 9282.0,
-            "duty_N_m": 309.8,
-            "k_max_edge_mm3_per_Nm": 3.591180061768297e-09,
-            "k_max_conformal_mm3_per_Nm": 3.7852391028722764e-05
+            "sliding_distance_m": 9282.7,
+            "duty_N_m": 310.0,
+            "k_max_edge_mm3_per_Nm": 3.590922277125686e-09,
+            "k_max_conformal_mm3_per_Nm": 3.7849904029751886e-05
           }
         ],
         "k_max_span_ratio": 10540.4
@@ -935,45 +935,45 @@
         "edge_bearing": false,
         "reaction_max_N": 0.156,
         "reaction_station_mm": 20.0,
-        "slip_per_cycle_um": 9.822,
+        "slip_per_cycle_um": 9.823,
         "area_material_bound_mm2": 0.00052,
         "area_by_constraint_factor_mm2": {
           "1.0": 0.00156,
           "3.0": 0.00052
         },
-        "area_projected_full_run_mm2": 4.224,
+        "area_projected_full_run_mm2": 4.225,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 8713.7,
-            "duty_N_m": 1358.2,
-            "k_max_edge_mm3_per_Nm": 3.8253997772291185e-09,
-            "k_max_conformal_mm3_per_Nm": 3.1099602022215724e-05
+            "sliding_distance_m": 8714.3,
+            "duty_N_m": 1358.6,
+            "k_max_edge_mm3_per_Nm": 3.825125179660225e-09,
+            "k_max_conformal_mm3_per_Nm": 3.10976084388567e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 3072.8,
-            "duty_N_m": 479.0,
-            "k_max_edge_mm3_per_Nm": 1.0847925963339216e-08,
-            "k_max_conformal_mm3_per_Nm": 8.81910910944523e-05
+            "sliding_distance_m": 3073.0,
+            "duty_N_m": 479.1,
+            "k_max_edge_mm3_per_Nm": 1.084714726979853e-08,
+            "k_max_conformal_mm3_per_Nm": 8.818543776514301e-05
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 430.2,
             "duty_N_m": 67.1,
-            "k_max_edge_mm3_per_Nm": 7.748093968883654e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0006299018478992799
+            "k_max_edge_mm3_per_Nm": 7.747537789688976e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0006298614691882952
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 12376.0,
-            "duty_N_m": 1929.1,
-            "k_max_edge_mm3_per_Nm": 2.6933850463262225e-09,
-            "k_max_conformal_mm3_per_Nm": 2.1896588046022583e-05
+            "sliding_distance_m": 12376.9,
+            "duty_N_m": 1929.5,
+            "k_max_edge_mm3_per_Nm": 2.6931917078442634e-09,
+            "k_max_conformal_mm3_per_Nm": 2.1895184405116932e-05
           }
         ],
         "k_max_span_ratio": 8129.8
@@ -991,7 +991,7 @@
         "edge_bearing": false,
         "reaction_max_N": 0.278,
         "reaction_station_mm": 20.0,
-        "slip_per_cycle_um": 12.278,
+        "slip_per_cycle_um": 12.279,
         "area_material_bound_mm2": 0.00093,
         "area_by_constraint_factor_mm2": {
           "1.0": 0.00278,
@@ -1002,34 +1002,34 @@
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 10892.1,
-            "duty_N_m": 3032.1,
-            "k_max_edge_mm3_per_Nm": 3.0603198217832964e-09,
-            "k_max_conformal_mm3_per_Nm": 2.0404648222515656e-05
+            "sliding_distance_m": 10892.9,
+            "duty_N_m": 3032.6,
+            "k_max_edge_mm3_per_Nm": 3.0601001437281804e-09,
+            "k_max_conformal_mm3_per_Nm": 2.0403351618978797e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 3841.0,
-            "duty_N_m": 1069.2,
-            "k_max_edge_mm3_per_Nm": 8.678340770671376e-09,
-            "k_max_conformal_mm3_per_Nm": 5.786274013592424e-05
+            "sliding_distance_m": 3841.3,
+            "duty_N_m": 1069.4,
+            "k_max_edge_mm3_per_Nm": 8.677717815838824e-09,
+            "k_max_conformal_mm3_per_Nm": 5.785906327599044e-05
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 537.8,
             "duty_N_m": 149.7,
-            "k_max_edge_mm3_per_Nm": 6.198475175106924e-08,
-            "k_max_conformal_mm3_per_Nm": 0.00041328263982014923
+            "k_max_edge_mm3_per_Nm": 6.198030231751182e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00041325637797399203
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 15470.0,
-            "duty_N_m": 4306.5,
-            "k_max_edge_mm3_per_Nm": 2.1547080370609787e-09,
-            "k_max_conformal_mm3_per_Nm": 1.4366491765176617e-05
+            "sliding_distance_m": 15471.1,
+            "duty_N_m": 4307.1,
+            "k_max_edge_mm3_per_Nm": 2.154553366275411e-09,
+            "k_max_conformal_mm3_per_Nm": 1.4365578853381627e-05
           }
         ],
         "k_max_span_ratio": 6667.5
@@ -1053,48 +1053,48 @@
         "edge_bearing": false,
         "reaction_max_N": 0.023,
         "reaction_station_mm": 20.0,
-        "slip_per_cycle_um": 7.294,
+        "slip_per_cycle_um": 7.295,
         "area_material_bound_mm2": 8e-05,
         "area_by_constraint_factor_mm2": {
           "1.0": 0.00023,
           "3.0": 8e-05
         },
-        "area_projected_full_run_mm2": 0.807,
+        "area_projected_full_run_mm2": 0.808,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 6471.2,
-            "duty_N_m": 150.5,
-            "k_max_edge_mm3_per_Nm": 2.5755166816988126e-09,
-            "k_max_conformal_mm3_per_Nm": 2.6814266211733458e-05
+            "sliding_distance_m": 6471.7,
+            "duty_N_m": 150.6,
+            "k_max_edge_mm3_per_Nm": 2.575331804127677e-09,
+            "k_max_conformal_mm3_per_Nm": 2.6812497717625052e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 2282.0,
+            "sliding_distance_m": 2282.2,
             "duty_N_m": 53.1,
-            "k_max_edge_mm3_per_Nm": 7.303554113931353e-09,
-            "k_max_conformal_mm3_per_Nm": 7.603889568813841e-05
+            "k_max_edge_mm3_per_Nm": 7.303029845012874e-09,
+            "k_max_conformal_mm3_per_Nm": 7.603388065852796e-05
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 319.5,
             "duty_N_m": 7.4,
-            "k_max_edge_mm3_per_Nm": 5.216538513703846e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0005431052083807585
+            "k_max_edge_mm3_per_Nm": 5.216164056424263e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0005430693887035135
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 9191.0,
-            "duty_N_m": 213.7,
-            "k_max_edge_mm3_per_Nm": 1.8133681500018133e-09,
-            "k_max_conformal_mm3_per_Nm": 1.8879371529426365e-05
+            "sliding_distance_m": 9191.7,
+            "duty_N_m": 213.9,
+            "k_max_edge_mm3_per_Nm": 1.8132379815189105e-09,
+            "k_max_conformal_mm3_per_Nm": 1.887812636921737e-05
           }
         ],
-        "k_max_span_ratio": 10411.2
+        "k_max_span_ratio": 10411.3
       },
       {
         "branch": "conformal TiO2 ~5 \u00b5m",
@@ -1109,7 +1109,7 @@
         "edge_bearing": false,
         "reaction_max_N": 0.146,
         "reaction_station_mm": 20.0,
-        "slip_per_cycle_um": 9.726,
+        "slip_per_cycle_um": 9.727,
         "area_material_bound_mm2": 0.00049,
         "area_by_constraint_factor_mm2": {
           "1.0": 0.00146,
@@ -1120,34 +1120,34 @@
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 8628.3,
-            "duty_N_m": 1257.6,
-            "k_max_edge_mm3_per_Nm": 1.9316375112741096e-09,
-            "k_max_conformal_mm3_per_Nm": 1.5500570740677695e-05
+            "sliding_distance_m": 8628.9,
+            "duty_N_m": 1257.9,
+            "k_max_edge_mm3_per_Nm": 1.9314988530957576e-09,
+            "k_max_conformal_mm3_per_Nm": 1.5499575378237285e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 3042.7,
-            "duty_N_m": 443.5,
-            "k_max_edge_mm3_per_Nm": 5.477665585448516e-09,
-            "k_max_conformal_mm3_per_Nm": 4.395594018311217e-05
+            "sliding_distance_m": 3042.9,
+            "duty_N_m": 443.6,
+            "k_max_edge_mm3_per_Nm": 5.477272383759654e-09,
+            "k_max_conformal_mm3_per_Nm": 4.395311757144043e-05
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 426.0,
             "duty_N_m": 62.1,
-            "k_max_edge_mm3_per_Nm": 3.9124038852778854e-08,
-            "k_max_conformal_mm3_per_Nm": 0.00031395379741746144
+            "k_max_edge_mm3_per_Nm": 3.9121230423181966e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0003139336370102608
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 12254.7,
-            "duty_N_m": 1786.1,
-            "k_max_edge_mm3_per_Nm": 1.3600261125013602e-09,
-            "k_max_conformal_mm3_per_Nm": 1.0913632005464138e-05
+            "sliding_distance_m": 12255.5,
+            "duty_N_m": 1786.5,
+            "k_max_edge_mm3_per_Nm": 1.3599284861391829e-09,
+            "k_max_conformal_mm3_per_Nm": 1.0912931191309067e-05
           }
         ],
         "k_max_span_ratio": 8024.6
@@ -1165,48 +1165,48 @@
         "edge_bearing": false,
         "reaction_max_N": 0.268,
         "reaction_station_mm": 20.0,
-        "slip_per_cycle_um": 12.157,
+        "slip_per_cycle_um": 12.158,
         "area_material_bound_mm2": 0.00089,
         "area_by_constraint_factor_mm2": {
           "1.0": 0.00268,
           "3.0": 0.00089
         },
-        "area_projected_full_run_mm2": 5.883,
+        "area_projected_full_run_mm2": 5.884,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 10785.3,
-            "duty_N_m": 2893.2,
-            "k_max_edge_mm3_per_Nm": 1.5453100090192882e-09,
-            "k_max_conformal_mm3_per_Nm": 1.0167533931232407e-05
+            "sliding_distance_m": 10786.1,
+            "duty_N_m": 2893.6,
+            "k_max_edge_mm3_per_Nm": 1.5451990824766059e-09,
+            "k_max_conformal_mm3_per_Nm": 1.016688732433389e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 3803.3,
-            "duty_N_m": 1020.2,
-            "k_max_edge_mm3_per_Nm": 4.382132468358813e-09,
-            "k_max_conformal_mm3_per_Nm": 2.8832713373460924e-05
+            "sliding_distance_m": 3803.6,
+            "duty_N_m": 1020.4,
+            "k_max_edge_mm3_per_Nm": 4.3818179070077234e-09,
+            "k_max_conformal_mm3_per_Nm": 2.8830879749742893e-05
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 532.5,
-            "duty_N_m": 142.8,
-            "k_max_edge_mm3_per_Nm": 3.129923108222308e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0002059366678482538
+            "duty_N_m": 142.9,
+            "k_max_edge_mm3_per_Nm": 3.1296984338545577e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00020592357125364308
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 15318.3,
-            "duty_N_m": 4109.1,
-            "k_max_edge_mm3_per_Nm": 1.0880208900010881e-09,
-            "k_max_conformal_mm3_per_Nm": 7.158750834725013e-06
+            "sliding_distance_m": 15319.4,
+            "duty_N_m": 4109.8,
+            "k_max_edge_mm3_per_Nm": 1.087942788911346e-09,
+            "k_max_conformal_mm3_per_Nm": 7.15829557215045e-06
           }
         ],
-        "k_max_span_ratio": 6579.6
+        "k_max_span_ratio": 6579.7
       },
       {
         "branch": "PEEK liner 0.15 mm",
@@ -1215,54 +1215,54 @@
         "wall_allowance_mm": 0.15,
         "rubbing_od_mm": 1.3,
         "contact_run_mm": [
-          8.48,
+          8.45,
           20.0
         ],
         "edge_bearing": false,
-        "reaction_max_N": 0.234,
-        "reaction_station_mm": 13.78,
-        "slip_per_cycle_um": 4.975,
-        "area_material_bound_mm2": 0.00078,
+        "reaction_max_N": 0.236,
+        "reaction_station_mm": 13.71,
+        "slip_per_cycle_um": 4.991,
+        "area_material_bound_mm2": 0.00079,
         "area_by_constraint_factor_mm2": {
-          "1.0": 0.00234,
-          "3.0": 0.00078
+          "1.0": 0.00236,
+          "3.0": 0.00079
         },
-        "area_projected_full_run_mm2": 14.979,
+        "area_projected_full_run_mm2": 15.016,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 4413.8,
-            "duty_N_m": 1035.0,
-            "k_max_edge_mm3_per_Nm": 1.1327987192063278e-07,
-            "k_max_conformal_mm3_per_Nm": 0.002170885786197533
+            "sliding_distance_m": 4427.8,
+            "duty_N_m": 1042.9,
+            "k_max_edge_mm3_per_Nm": 1.1292180251186923e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0021597299558746364
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 1556.5,
-            "duty_N_m": 365.0,
-            "k_max_edge_mm3_per_Nm": 3.2123483434237997e-07,
-            "k_max_conformal_mm3_per_Nm": 0.006156116917169413
+            "sliding_distance_m": 1561.4,
+            "duty_N_m": 367.8,
+            "k_max_edge_mm3_per_Nm": 3.202194344725088e-07,
+            "k_max_conformal_mm3_per_Nm": 0.006124481629761618
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
-            "sliding_distance_m": 217.9,
-            "duty_N_m": 51.1,
-            "k_max_edge_mm3_per_Nm": 2.294408803097492e-06,
-            "k_max_conformal_mm3_per_Nm": 0.043969854254960715
+            "sliding_distance_m": 218.6,
+            "duty_N_m": 51.5,
+            "k_max_edge_mm3_per_Nm": 2.287156344300905e-06,
+            "k_max_conformal_mm3_per_Nm": 0.04374390029805079
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 6269.0,
-            "duty_N_m": 1470.0,
-            "k_max_edge_mm3_per_Nm": 7.975802029815092e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0015284758860057773
+            "sliding_distance_m": 6288.8,
+            "duty_N_m": 1481.2,
+            "k_max_edge_mm3_per_Nm": 7.950591101617432e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0015206212960750991
           }
         ],
-        "k_max_span_ratio": 19163.9
+        "k_max_span_ratio": 19125.9
       },
       {
         "branch": "PEEK liner 0.15 mm",
@@ -1271,54 +1271,54 @@
         "wall_allowance_mm": 0.15,
         "rubbing_od_mm": 1.3,
         "contact_run_mm": [
-          6.83,
+          6.81,
           20.0
         ],
         "edge_bearing": false,
-        "reaction_max_N": 0.464,
-        "reaction_station_mm": 11.24,
-        "slip_per_cycle_um": 6.569,
+        "reaction_max_N": 0.466,
+        "reaction_station_mm": 11.23,
+        "slip_per_cycle_um": 6.604,
         "area_material_bound_mm2": 0.00155,
         "area_by_constraint_factor_mm2": {
-          "1.0": 0.00464,
+          "1.0": 0.00466,
           "3.0": 0.00155
         },
-        "area_projected_full_run_mm2": 17.121,
+        "area_projected_full_run_mm2": 17.15,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 5827.2,
-            "duty_N_m": 2706.7,
-            "k_max_edge_mm3_per_Nm": 8.580402851431019e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0009488347264822313
+            "sliding_distance_m": 5858.3,
+            "duty_N_m": 2732.3,
+            "k_max_edge_mm3_per_Nm": 8.53489328151454e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0009415450591808154
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 2054.9,
-            "duty_N_m": 954.5,
-            "k_max_edge_mm3_per_Nm": 2.4331986272914313e-07,
-            "k_max_conformal_mm3_per_Nm": 0.002690670116517858
+            "sliding_distance_m": 2065.9,
+            "duty_N_m": 963.5,
+            "k_max_edge_mm3_per_Nm": 2.420293193249843e-07,
+            "k_max_conformal_mm3_per_Nm": 0.002669998349960582
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
-            "sliding_distance_m": 287.7,
-            "duty_N_m": 133.6,
-            "k_max_edge_mm3_per_Nm": 1.7379037866708934e-06,
-            "k_max_conformal_mm3_per_Nm": 0.019218019160991934
+            "sliding_distance_m": 289.2,
+            "duty_N_m": 134.9,
+            "k_max_edge_mm3_per_Nm": 1.7286861246033809e-06,
+            "k_max_conformal_mm3_per_Nm": 0.019070371776293803
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 8276.4,
-            "duty_N_m": 3844.3,
-            "k_max_edge_mm3_per_Nm": 6.041284591760725e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0006680549517868625
+            "sliding_distance_m": 8320.5,
+            "duty_N_m": 3880.6,
+            "k_max_edge_mm3_per_Nm": 6.009242242668894e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0006629224474616417
           }
         ],
-        "k_max_span_ratio": 11058.2
+        "k_max_span_ratio": 11031.7
       },
       {
         "branch": "PEEK liner 0.15 mm",
@@ -1331,50 +1331,50 @@
           20.0
         ],
         "edge_bearing": true,
-        "reaction_max_N": 0.746,
+        "reaction_max_N": 0.749,
         "reaction_station_mm": 9.71,
-        "slip_per_cycle_um": 7.898,
-        "area_material_bound_mm2": 0.00249,
+        "slip_per_cycle_um": 7.947,
+        "area_material_bound_mm2": 0.0025,
         "area_by_constraint_factor_mm2": {
-          "1.0": 0.00746,
-          "3.0": 0.00249
+          "1.0": 0.00749,
+          "3.0": 0.0025
         },
         "area_projected_full_run_mm2": 18.2,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 7006.7,
-            "duty_N_m": 5227.5,
-            "k_max_edge_mm3_per_Nm": 7.136023737430985e-08,
-            "k_max_conformal_mm3_per_Nm": 0.000522243029742199
+            "sliding_distance_m": 7050.4,
+            "duty_N_m": 5280.8,
+            "k_max_edge_mm3_per_Nm": 7.091801006142855e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0005169662718267635
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 2470.8,
-            "duty_N_m": 1843.4,
-            "k_max_edge_mm3_per_Nm": 2.02360698709389e-07,
-            "k_max_conformal_mm3_per_Nm": 0.0014809572989563178
+            "sliding_distance_m": 2486.2,
+            "duty_N_m": 1862.2,
+            "k_max_edge_mm3_per_Nm": 2.0110664699493582e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0014659936657345446
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
-            "sliding_distance_m": 345.9,
-            "duty_N_m": 258.1,
-            "k_max_edge_mm3_per_Nm": 1.4453543603708965e-06,
-            "k_max_conformal_mm3_per_Nm": 0.010577686790079784
+            "sliding_distance_m": 348.1,
+            "duty_N_m": 260.7,
+            "k_max_edge_mm3_per_Nm": 1.436397338947391e-06,
+            "k_max_conformal_mm3_per_Nm": 0.01047080955224646
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 9951.6,
-            "duty_N_m": 7424.5,
-            "k_max_edge_mm3_per_Nm": 5.024327062241687e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0003677005407980115
+            "sliding_distance_m": 10013.6,
+            "duty_N_m": 7500.3,
+            "k_max_edge_mm3_per_Nm": 4.993190749674264e-08,
+            "k_max_conformal_mm3_per_Nm": 0.00036398528443523404
           }
         ],
-        "k_max_span_ratio": 7318.4
+        "k_max_span_ratio": 7289.6
       },
       {
         "branch": "PEEK liner 0.15 mm",
@@ -1387,50 +1387,50 @@
           20.0
         ],
         "edge_bearing": true,
-        "reaction_max_N": 1.072,
-        "reaction_station_mm": 8.73,
+        "reaction_max_N": 1.076,
+        "reaction_station_mm": 8.66,
         "slip_per_cycle_um": 9.116,
-        "area_material_bound_mm2": 0.00357,
+        "area_material_bound_mm2": 0.00359,
         "area_by_constraint_factor_mm2": {
-          "1.0": 0.01072,
-          "3.0": 0.00357
+          "1.0": 0.01076,
+          "3.0": 0.00359
         },
         "area_projected_full_run_mm2": 18.2,
         "by_duty_anchor": [
           {
             "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
             "n_cycles": 443570000.0,
-            "sliding_distance_m": 8087.1,
-            "duty_N_m": 8670.5,
-            "k_max_edge_mm3_per_Nm": 6.18270940583386e-08,
-            "k_max_conformal_mm3_per_Nm": 0.00031486104127651264
+            "sliding_distance_m": 8087.4,
+            "duty_N_m": 8704.3,
+            "k_max_edge_mm3_per_Nm": 6.182448685533706e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0003136367527603332
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 156420000.0,
-            "sliding_distance_m": 2851.8,
-            "duty_N_m": 3057.6,
-            "k_max_edge_mm3_per_Nm": 1.7532696657369423e-07,
-            "k_max_conformal_mm3_per_Nm": 0.0008928711934472747
+            "sliding_distance_m": 2851.9,
+            "duty_N_m": 3069.5,
+            "k_max_edge_mm3_per_Nm": 1.753195731646967e-07,
+            "k_max_conformal_mm3_per_Nm": 0.0008893994017510613
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 21900000.0,
             "sliding_distance_m": 399.3,
-            "duty_N_m": 428.1,
-            "k_max_edge_mm3_per_Nm": 1.252266854404441e-06,
-            "k_max_conformal_mm3_per_Nm": 0.006377301921416563
+            "duty_N_m": 429.8,
+            "k_max_edge_mm3_per_Nm": 1.252214047233875e-06,
+            "k_max_conformal_mm3_per_Nm": 0.006352504768123335
           },
           {
             "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
             "n_cycles": 630000000.0,
-            "sliding_distance_m": 11486.0,
-            "duty_N_m": 12314.7,
-            "k_max_edge_mm3_per_Nm": 4.3531181129297226e-08,
-            "k_max_conformal_mm3_per_Nm": 0.0002216871620301948
+            "sliding_distance_m": 11486.5,
+            "duty_N_m": 12362.7,
+            "k_max_edge_mm3_per_Nm": 4.3529345451463267e-08,
+            "k_max_conformal_mm3_per_Nm": 0.0002208251657490492
           }
         ],
-        "k_max_span_ratio": 5092.6
+        "k_max_span_ratio": 5073.0
       }
     ],
     "thermal_driver": {
@@ -1474,50 +1474,50 @@
         20.0
       ],
       "edge_bearing": true,
-      "reaction_max_N": 1.072,
-      "reaction_station_mm": 8.73,
+      "reaction_max_N": 1.076,
+      "reaction_station_mm": 8.66,
       "slip_per_cycle_um": 9.116,
-      "area_material_bound_mm2": 0.00357,
+      "area_material_bound_mm2": 0.00359,
       "area_by_constraint_factor_mm2": {
-        "1.0": 0.01072,
-        "3.0": 0.00357
+        "1.0": 0.01076,
+        "3.0": 0.00359
       },
       "area_projected_full_run_mm2": 18.2,
       "by_duty_anchor": [
         {
           "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
           "n_cycles": 443570000.0,
-          "sliding_distance_m": 8087.1,
-          "duty_N_m": 8670.5,
-          "k_max_edge_mm3_per_Nm": 6.18270940583386e-08,
-          "k_max_conformal_mm3_per_Nm": 0.00031486104127651264
+          "sliding_distance_m": 8087.4,
+          "duty_N_m": 8704.3,
+          "k_max_edge_mm3_per_Nm": 6.182448685533706e-08,
+          "k_max_conformal_mm3_per_Nm": 0.0003136367527603332
         },
         {
           "anchor": "Beaufort 4 (small branches move)",
           "n_cycles": 156420000.0,
-          "sliding_distance_m": 2851.8,
-          "duty_N_m": 3057.6,
-          "k_max_edge_mm3_per_Nm": 1.7532696657369423e-07,
-          "k_max_conformal_mm3_per_Nm": 0.0008928711934472747
+          "sliding_distance_m": 2851.9,
+          "duty_N_m": 3069.5,
+          "k_max_edge_mm3_per_Nm": 1.753195731646967e-07,
+          "k_max_conformal_mm3_per_Nm": 0.0008893994017510613
         },
         {
           "anchor": "Beaufort 5 (small trees begin to sway)",
           "n_cycles": 21900000.0,
           "sliding_distance_m": 399.3,
-          "duty_N_m": 428.1,
-          "k_max_edge_mm3_per_Nm": 1.252266854404441e-06,
-          "k_max_conformal_mm3_per_Nm": 0.006377301921416563
+          "duty_N_m": 429.8,
+          "k_max_edge_mm3_per_Nm": 1.252214047233875e-06,
+          "k_max_conformal_mm3_per_Nm": 0.006352504768123335
         },
         {
           "anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
           "n_cycles": 630000000.0,
-          "sliding_distance_m": 11486.0,
-          "duty_N_m": 12314.7,
-          "k_max_edge_mm3_per_Nm": 4.3531181129297226e-08,
-          "k_max_conformal_mm3_per_Nm": 0.0002216871620301948
+          "sliding_distance_m": 11486.5,
+          "duty_N_m": 12362.7,
+          "k_max_edge_mm3_per_Nm": 4.3529345451463267e-08,
+          "k_max_conformal_mm3_per_Nm": 0.0002208251657490492
         }
       ],
-      "k_max_span_ratio": 5092.6
+      "k_max_span_ratio": 5073.0
     },
     "reaction_cancels_at_the_tight_end": "A = R/p_flow and duty = R x s, so k = h x A / duty reduces EXACTLY to h / (p_flow x s). The flow-limited budget therefore contains no contact force, and the weakest input of the chain - a single prop standing in for a distributed contact - has no say in the binding half of the answer. It survives only in the worn-in end, through the projected area. Pinned in-run against the closed form, not merely described",
     "not_modelled": {

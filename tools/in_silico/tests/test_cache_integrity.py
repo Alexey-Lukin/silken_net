@@ -414,6 +414,10 @@ def test_bus_mechanical_weld_seam():
     #    (never reaches the wall)» once stood on branches that bore inside the bore on three of four µ,
     #    because the label's last branch caught «not every µ» instead of «no µ» — and the verdict
     #    sentence and `free_cantilever_sf_describes_these` both inherited it.
+    # ⛔ ONE quantity, two owners, and they must agree: the seam bound's span optimism IS the
+    #    supported span's understatement. They drifted 41.3 ⊥ 40.8 while the seam block re-read the
+    #    regime row's ROUNDED EI — and that third-decimal shift had decided an invariance verdict.
+    assert abs(seam["span"]["span_optimism_pct"] - cr["supported_span_check"]["sigma_understated_pct"]) <= 0.05
     n_mu = len(cr["branches"][0]["first_contact_mm_by_mu_bonded"])
     for br in cr["branches"]:
         reach = br["bears_inside_bore_on_mus"]

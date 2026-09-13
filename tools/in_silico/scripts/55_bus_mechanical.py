@@ -371,6 +371,20 @@ def flexural_rigidity_Nm2(rod_dia_mm: float, liner_wall_mm: float | None = None)
     return ei
 
 
+def branch_member(row: dict) -> tuple[float, float]:
+    """(radial play mm, EI N·m²) of an insulation branch, re-derived from its DEFINITION.
+
+    ⛔ The clearance-regime rows ROUND both for the cache, and the edge, seam and wear blocks used to
+    compute FROM those rounded fields — the bonded EI came back rounded to four decimals, which moved
+    the seam bound's span optimism off `supported_span_check`'s own value of the same quantity.
+    Computation takes the member from here; the rounded row fields are display only.
+    """
+    t_mm = row["coating_or_liner_mm"]
+    play = (D_CHANNEL_MM - (D_BUS + 2.0 * t_mm)) / 2.0
+    ei = flexural_rigidity_Nm2(D_BUS, t_mm) if row["play_side"] == "channel" else flexural_rigidity_Nm2(D_BUS)
+    return play, ei
+
+
 def tip_load_deflection_mm(force_lat_N: float, x_mm: float, length_mm: float,
                            dia_mm: float | None = None, ei_Nm2: float | None = None) -> float:
     """Free-cantilever deflection at x under a TRANSVERSE TIP load: δ(x) = F·x²·(3L−x)/(6EI).
@@ -809,16 +823,16 @@ def main() -> int:
     banner("Where the wall starts — is first contact an EDGE, not a wall? (input to the axial ⚖️)")
     edge_rows = []
     for r in regimes:
-        ei_eff = r["ei_Nm2_bonded"]
+        play_eff, ei_eff = branch_member(r)
         per_mu = {}
         for mu in MU_SWEEP:
             d_mouth = tip_load_deflection_mm(mu * F_POGO_N, CHANNEL_START_MM, L_FREE_UNSUP, ei_Nm2=ei_eff)
             slope = tip_load_slope_rad(mu * F_POGO_N, CHANNEL_START_MM, L_FREE_UNSUP, ei_Nm2=ei_eff)
             per_mu[mu] = {"deflection_at_mouth_um": round(d_mouth * 1000.0, 1),
-                          "edge_bearing": bool(d_mouth > r["radial_play_mm"]),
+                          "edge_bearing": bool(d_mouth > play_eff),
                           # How far the rod WANTS to be inside the wall when it arrives. Elastic
                           # contact has to absorb exactly this — on a sharp edge, over ~no area.
-                          "interference_at_mouth_um": round(max(0.0, d_mouth - r["radial_play_mm"]) * 1000.0, 1),
+                          "interference_at_mouth_um": round(max(0.0, d_mouth - play_eff) * 1000.0, 1),
                           # The approach angle. A lead-in chamfer is cut at 30-45°; if the rod
                           # arrives two orders flatter, the chamfer is not what it lands on — the
                           # chamfer/cylinder junction is, i.e. the edge simply MOVES inward.
@@ -990,8 +1004,8 @@ def main() -> int:
         chan = [r for r in regimes if r["play_side"] == "channel"]
         if not chan:
             return 1.0
-        deepest = max(max(first_wall_contact_mm(mu * F_POGO_N, r["radial_play_mm"], protrusion_mm,
-                                                ei_Nm2=r["ei_Nm2_bonded"])
+        deepest = max(max(first_wall_contact_mm(mu * F_POGO_N, branch_member(r)[0], protrusion_mm,
+                                                ei_Nm2=branch_member(r)[1])
                           for mu in MU_SWEEP) for r in chan)
         return max(1.0, deepest / L_FREE_SUP)
 
@@ -1014,11 +1028,13 @@ def main() -> int:
 
     seam_rows = []
     for row in alloy_rows:
-        se = row[f"endurance_MPa_{SHIPPED_BRANCH}"]
-        sf_nom = row[f"sf_supported_{SHIPPED_BRANCH}"]
+        # ⛔ From the yield, not from the row: the row fields are ROUNDED for display, and a rounded
+        #    endurance put the binding k one step off the band block's value of the same quantity.
+        se = endurance_MPa(row["yield_MPa"], shipped_derate)
+        sf_nom = se / sig_sup
         sf_worst = se / sig_sup_worst
-        entry = {"alloy": row["alloy"], "endurance_MPa": se,
-                 "sf_wire_supported_nominal": sf_nom,
+        entry = {"alloy": row["alloy"], "endurance_MPa": round(se, 1),
+                 "sf_wire_supported_nominal": round(sf_nom, 2),
                  "sf_wire_supported_worst_corner": round(sf_worst, 2)}
         for tag, sf in (("nominal", sf_nom), ("worst_corner", sf_worst)):
             k_fail = break_even_knockdown(sf, 1.0)
@@ -1437,8 +1453,7 @@ def main() -> int:
               f"{'k_max lo':>10s} {'k_max hi':>10s}")
         print(f"  {'-' * 92}")
         for r in regimes:
-            play, t_mm = r["radial_play_mm"], r["coating_or_liner_mm"]
-            ei = r["ei_Nm2_bonded"]
+            (play, ei), t_mm = branch_member(r), r["coating_or_liner_mm"]
             od_mm = D_BUS + 2.0 * t_mm
             for mu in MU_SWEEP:
                 f_lat = mu * F_POGO_N
@@ -1620,19 +1635,24 @@ def main() -> int:
           f"it by {marker_k - k_binding:+.3f} in k. ⛔ k itself stays NOT MEASURED — bounded, not assumed.")
     print("  5. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
-    # ⛔ DERIVED from §5b. Both halves are printed even though only one flips: a line that reported
-    # only the flip would read as «the other one is fine», when the other one is fine by 0.001.
+    # ⛔ DERIVED from §5b, BOTH halves and whichever way each goes: a line that reported only a flip
+    # would read as «the other one is fine». 🔴 «it fails at BOTH ends» used to be TYPED here and
+    # was true only because the seam block read a rounded EI; with the exact member the friendliest
+    # end clears by a thousandth — a sentence that cannot follow its own number is not derived.
     _r_flip = [r["endurance_over_yield"] for r in ratio_rows
                if not r["unsupported_infinite_life_for_all"]]
     _k_span = [r["seam_break_even_k_worst_corner"] for r in ratio_rows]
+    _marker_ok = [r["endurance_over_yield"] for r in ratio_rows if r["seam_k_cleared_by_our_marker"]]
     print("  5b. THE ENDURANCE BAND (§5b) — the model runs at the MIDPOINT of an unmeasured band, and")
     print("     two standing conclusions were tested against it. «Bare rod: infinite life for every")
     print(f"     alloy» {'FLIPS' if _r_flip else 'holds'}"
           + (f" at ratio {', '.join(f'{r:.2f}' for r in _r_flip)}." if _r_flip else " across the whole band.")
           + f" «Our marker {AS_PRINTED_DERATE:.2f} covers the seam»")
     print(f"     {'holds' if len(band_marker) == 1 else 'FLIPS'} — the break-even runs "
-          f"{min(_k_span):.3f}–{max(_k_span):.3f}, i.e. it fails at BOTH ends, "
-          f"by {AS_PRINTED_DERATE - min(_k_span):+.3f} at the friendliest.")
+          f"{min(_k_span):.3f}–{max(_k_span):.3f}, i.e. the marker "
+          + (f"clears it only at ratio {', '.join(f'{r:.2f}' for r in _marker_ok)}" if _marker_ok
+             else "fails at BOTH ends")
+          + f", by {AS_PRINTED_DERATE - min(_k_span):+.3f} at the friendliest.")
     print("     ⛔ Which end to stand on is a ⚖️ (00_07 HW.34); §5b measures, it does not choose.")
     # ⛔ DERIVED from §6, never typed. The point is not the width but WHERE the nominals sit: the
     # verdict every other section leans on («tight on the wire») is not produced by the drawing.
