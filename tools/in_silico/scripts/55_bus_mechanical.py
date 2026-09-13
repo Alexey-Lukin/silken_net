@@ -1826,10 +1826,25 @@ def main() -> int:
                     f"(SF {p_cr_unsup / F_POGO_N:.0f}x); the bore liner doubles as lateral support -> "
                     f"fatigue SF {sup_lo:.1f}-{sup_hi:.1f}x (infinite life, all alloys). BARE, the drawn "
                     f"wire reaches infinite life for {len(shipped['unsupported_infinite_life'])} of "
-                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x): dropping the as-printed "
-                    f"derate lifted {', '.join(marginal) or 'the soft alloys'} OUT of predicted failure but "
-                    "NOT over the SF-2 line. On the superseded PRINTED branch not one of the six cleared it. "
-                    "BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): "
+                    f"{len(alloy_rows)} alloys (SF {uns_lo:.1f}-{uns_hi:.1f}x); "
+                    # ⛔ DERIVED from branch_summary, never typed: this sentence read «NOT over the SF-2 line.
+                    #    On the superseded PRINTED branch not one of the six cleared it» for a whole day after
+                    #    the L_FREE_UNSUP=36 inputs were retired — the printed report was derived, the cache
+                    #    verdict was prose, and only the cache is what docs quote.
+                    + (f"short of the SF-2 line: {', '.join(marginal)}; " if marginal
+                       else "none is left short of the SF-2 line; ")
+                    + (f"predicted failure: {', '.join(failing)}. " if failing
+                       else "none is predicted to fail. ")
+                    + "".join(f"On the superseded {b.upper()} branch "
+                              f"{len(branch_summary[b]['unsupported_infinite_life'])} of {len(alloy_rows)} "
+                              "reach infinite life bare"
+                              + (f" ({', '.join(branch_summary[b]['unsupported_marginal'])} short of the "
+                                 "SF-2 line)" if branch_summary[b]["unsupported_marginal"] else "")
+                              + (f", predicted failure: {', '.join(branch_summary[b]['unsupported_predicted_failure'])}"
+                                 if branch_summary[b]["unsupported_predicted_failure"] else "")
+                              + ". "
+                              for b, _ in FAB_BRANCHES if b != SHIPPED_BRANCH)
+                    + "BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11): "
                     f"the free-cantilever SF describes "
                     f"{', '.join(r['branch'] for r in regimes if r['regime'].startswith('free cantilever')) or 'NO shipped branch'}"
                     ", because every branch that leaves play takes it up and bears on the bore wall. "
