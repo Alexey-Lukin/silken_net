@@ -237,7 +237,7 @@ internal sealed record MechanicalLockCem
 {
     public string Kind { get; init; } = "mechanical_lock";
     public string Name { get; init; } = "mechanical_lock";
-    public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = µCT (01_01 §5.6)
+    public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = measured on the part (01_01 §4.3)
     public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
     public float ShankLengthMm { get; init; } = 18f;
     public float BoreDiameterMm { get; init; } = 1.35f;    // 0 ⇒ SOLID shank (monolithic anode, the bus IS the metal core, 01_01 §1.4); >0 ⇒ the cathode channel the bus rod threads (Ø1.35 since the clearance verdict, 00_07 HW.34)

@@ -70,9 +70,9 @@
 <text x='20' y='675' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   it from the geometry (00_07 HW.1)</text>
 <text x='20' y='689' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Lattice: Gyroid, NETWORK topology (ratified founder 2026-09-10, 00_07 HW.33) - ONE through pore labyrinth by construction. Cell period is</text>
 <text x='20' y='703' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   graded core-&gt;rim by this manifest's own fields; read them, not prose. Porosity: canon carries THREE numbers and they are not</text>
-<text x='20' y='717' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   interchangeable - nominal 65% (01_01 5.2), verification 65 +/-2% (01_01 5.6), factory acceptance band 60-70% (01_02 1.2). How they relate</text>
-<text x='20' y='731' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is an OPEN verdict (00_07 HW.33), so all three are quoted and none is dropped. Verify by Archimedes open porosity + uCT connectivity</text>
-<text x='20' y='745' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (01_02 1.2)</text>
+<text x='20' y='717' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   interchangeable - nominal 65% (01_01 5.2), verification 65 +/-2% (01_01 5.5, scoped by canon to the constant-porosity branch), factory</text>
+<text x='20' y='731' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance band 60-70% (01_02 1.2). How they relate is an OPEN verdict (00_07 HW.33), so all three are quoted and none is dropped. Verify</text>
+<text x='20' y='745' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   by Archimedes open porosity + uCT connectivity (01_02 1.2)</text>
 <text x='20' y='759' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Inspect: SEM before shipment at x500 (gyroid macro-pores), x5,000 (micro-roughness: report the AREAL Sa of the 01_02 1.2 acceptance row,</text>
 <text x='20' y='773' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   not a profile Ra) and x50,000 (nano-pores Sv) - all three frames apply to THIS part because it has the macro-pore geometry the x500 frame</text>
 <text x='20' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is for; if nano-pores are not visible at x50,000 the etch is insufficient and EAAE is repeated (01_02 1.5). uCT pore-gradient</text>
@@ -119,7 +119,7 @@
 <line x1='540' y1='1219' x2='790' y2='1219' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1219' x2='630' y2='1235' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1230' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1230' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>5c464f7c-dirty</text>
+<text x='635' y='1230' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>4f5064db-dirty</text>
 <line x1='540' y1='1235' x2='790' y2='1235' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1235' x2='630' y2='1251' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1246' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -127,7 +127,7 @@
 <line x1='540' y1='1251' x2='790' y2='1251' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1251' x2='630' y2='1267' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1262' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='1262' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>d3e21486ea278aa54d… → FOOTER</text>
-<text x='806' y='1283' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 5c464f7c-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
-<text x='806' y='1295' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): d3e21486ea278aa54d334a8b2803ffa5c06dad47922e315221c045707c0cd278</text>
+<text x='635' y='1262' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>75e796a263b0d61bc3… → FOOTER</text>
+<text x='806' y='1283' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 4f5064db-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1295' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 75e796a263b0d61bc37f8108b861db495b853e612112680aaebebcb9b96b86d4</text>
 </svg>

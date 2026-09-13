@@ -29,7 +29,7 @@ internal sealed record GeometryMetrics
     // Smallest cell period across the radius (the rim) — the DMLS-floor proxy. ⚠ The factor from
     // period to printed feature size is TOPOLOGY-dependent, and the `0.1×` that stood here is the
     // SHEET one: measured 2026-09-12 it is 0.12·period on sheet and 0.36·period on network, which
-    // is the branch every shipped SKU but `stepped` is on (01_01 §5.5). Exact wall = µCT, 01_01 §5.6.
+    // is the branch every shipped SKU but `stepped` is on (01_01 §5.5). Exact wall = µCT, 01_01 §5.5 (its verification line).
     public double? FinestPeriodMm { get; init; }
 
     // ARCH.25 two-phase connectivity + specific-surface (null for non-anchor parts). See Connectivity.cs
