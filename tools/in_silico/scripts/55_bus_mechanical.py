@@ -813,11 +813,11 @@ def main() -> int:
     # where the rod has millimetres of room, not micrometres. So a computed contact SHORTER than the
     # mouth does not mean «it touches there» — it means the rod has ALREADY exceeded the play by the
     # time it reaches the mouth, and what it meets is the bore EDGE, not the wall.
-    # ⛔ Why this is a verdict input and not a footnote (00_07 HW.34, the open ⚖️ on the liner's AXIAL
-    # extent): a liner that starts flush with the mouth puts that first contact on its own end face /
-    # the titanium edge — a line contact and a stress raiser — while a liner protruding into the gap
-    # puts it on polymer, distributed. Canon freezes the 0.15 WALL and says nothing about where the
-    # tube begins, so the model prices the CONDITION and leaves the choice to the verdict.
+    # ⛔ Why this was a verdict input and not a footnote (00_07 HW.34, the liner's AXIAL extent — ratified
+    # 2026-09-12: the tube covers the channel and protrudes ≥ 1.0 mm): flush with the mouth, the bore EDGE
+    # meets the tube's END FACE (ring on ring — a line contact and a stress raiser); protruding, it meets
+    # the tube's cylindrical flank. The MATERIALS are polymer on titanium either way (see the note below —
+    # the old «titanium edge vs polymer» framing was wrong). The model prices the CONDITION.
     # ⚠️ Declared ceiling: this derives a GEOMETRIC condition (free deflection at the mouth vs play),
     # never the edge stress itself — no notch factor and no contact model exists anywhere here.
     banner("Where the wall starts — is first contact an EDGE, not a wall? (input to the axial ⚖️)")
@@ -1585,8 +1585,9 @@ def main() -> int:
             print(f"  🔴 The two ends differ by {binding_wear['k_max_span_ratio']:.0f}×, and NOTHING in "
                   f"the tribology decides between them —")
             print("     the CONTACT GEOMETRY does, and that is an OPEN ⚖️ (the bore entry carries a")
-            print("     radius whose value is unnamed; the liner's protrusion decides whether first")
-            print("     contact lands on titanium edge or on polymer). So the wear verdict is gated on")
+            print("     radius whose value is unnamed; the ratified protrusion decides which FEATURE of")
+            print("     the tube meets the edge — end face or flank — the materials are polymer on titanium")
+            print("     either way). So the wear verdict is gated on")
             print("     a decision of OURS, not on a number from a vendor. ⛔ k itself stays NOT MEASURED.")
             print("  🔑 And the TIGHT end does not contain the contact force at all: with the area")
             print("     flow-limited, k = wall / (flow pressure × sliding distance) — the reaction")

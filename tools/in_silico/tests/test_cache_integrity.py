@@ -545,7 +545,7 @@ def test_bus_mechanical_wear_budget():
     # 4. 🔴 The SUBSTANTIVE claim, and the one canon leans on: on the wear axis a branch with LESS
     #    allowance than the shipped liner demands a STRICTER rate at the same friction — which is
     #    what re-earns the rejection of the conformal coatings after the 2026-09-12 protrusion fix
-    #    weakened the ground that had carried it (they stop reaching the wall at the two lowest µ).
+    #    weakened the ground that had carried it (they stop reaching the wall at the lowest swept µ).
     #    ⛔ Scoped by ALLOWANCE, not by «is not the shipped branch», and the scope is the difference
     #    between a pin and a trap: a future branch with a THICKER wall would legitimately carry a
     #    looser budget, and an unscoped assertion would red on correct work. Naming the scope also
