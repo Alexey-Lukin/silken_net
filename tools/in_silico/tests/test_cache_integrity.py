@@ -376,6 +376,22 @@ def test_bus_mechanical_interference_window():
     assert iw["required_nominal_offset_diametral_um"] > 0.0
 
 
+def test_gusak_press_fit_flags_follow_their_own_numbers():
+    """Script 51 (HW.3): each temperature row judges TWO mechanisms, and each flag must follow its number.
+
+    ⛔ A single `safe` judged the hoop stress at the band MAX only, so +40 °C read «safe» while the band
+    MIN had already opened to a clearance. The flags are split; this pins that neither can drift off the
+    quantity it is computed from, and that the single flag does not come back.
+    """
+    path = KINETICS / "gusak_degradation.json"
+    if not path.exists():
+        pytest.skip("gusak_degradation.json not computed")
+    rows = json.loads(path.read_text())["press_fit_H7s6"]
+    for t, r in rows.items():
+        assert "safe" not in r, f"{t} °C: a single `safe` flag is back — it hides one mechanism"
+        assert r["interference_retained_at_band_min"] == (r["eff_min_um"] > 0), t
+
+
 # The insulation branch the ⚖️ 2026-09-11 verdict ratified. Named once: the assertions below
 # are about THAT branch, not about whichever row happens to be first.
 SHIPPED_INSULATION = "PEEK liner 0.15 mm"

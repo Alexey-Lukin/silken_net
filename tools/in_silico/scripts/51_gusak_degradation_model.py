@@ -31,6 +31,8 @@ from lib.constants import (
     EATON_KR_RATED_TEMP_C,
     EATON_KR_RATED_VOLTAGE_V,
     FIELD_TEMPS_C,
+    H7S6_INTERF_DIA_MAX_UM,
+    H7S6_INTERF_DIA_MIN_UM,
     KEMET_FG_RATED_HOURS,
     KEMET_FG_RATED_TEMP_C,
     KEMET_FG_RATED_VOLTAGE_V,
@@ -286,28 +288,28 @@ def press_fit_window():
     ALPHA_TI = ALLOY_PROPERTIES["Ti-6Al-4V"]["alpha_1K"]   # 1/K
     ALPHA_PEEK = ALPHA_PEEK_1K   # 1/K
 
-    # Nominal dimensions (mm) — FROZEN Ø11 shaft (HW.33, 2026-06-20). ISO 286 size band 10-18 mm.
-    D_SHAFT = 11.0       # mm — Ti shaft (Zone 1) diameter (frozen Ø11; was Ø10 baseline)
-    # H7 hole tolerance: 0 to +18 µm (10-18 mm band); s6 shaft tolerance: +23 to +34 µm
-    TOL_H7_MIN = 0       # µm
-    TOL_H7_MAX = 18      # µm
-    TOL_S6_MIN = 23      # µm
-    TOL_S6_MAX = 34      # µm
+    # Shaft Ø from the interface radius (lib.constants, One-Home) — a local `D_SHAFT = 11.0` stood here in a
+    # file that already imports the same Ø as R_INTERFACE_M.
+    D_SHAFT = 2.0 * R_INTERFACE_M * 1000.0   # mm
 
     T_ASSEMBLY = T_ASSEMBLY_C   # °C (lib.constants)
     T_RANGE = [-30, -10, 0, 20, 40]
 
-    # Interference range (diametral µm)
-    I_MIN = TOL_S6_MIN - TOL_H7_MAX  # = 23 − 18 = 5 µm (governs sealing)
-    I_MAX = TOL_S6_MAX - TOL_H7_MIN  # = 34 − 0 = 34 µm (governs hoop)
+    # Interference band (diametral µm) — READ from lib.constants, never re-typed. ⛔ A local copy of the
+    # ISO 286 deviations stood here, and it repeated the table read that constants.py flags: +23/+34 is the
+    # r6 row, so the band is H7/r6 under an H7/s6 label (s6 on Ø11 gives 10–39). Which class is meant is an
+    # open verdict (00_07 HW.3); until it lands the band stays the tree's working input, labelled as such.
+    I_MIN = H7S6_INTERF_DIA_MIN_UM   # governs sealing
+    I_MAX = H7S6_INTERF_DIA_MAX_UM   # governs hoop
 
-    print(f"  Shaft: ∅{D_SHAFT:.0f} mm, H7/s6 fit")
-    print(f"  Interference: {I_MIN}–{I_MAX} µm")
+    print(f"  Shaft: ∅{D_SHAFT:.0f} mm — band labelled H7/s6, read from the r6 row (class open, 00_07 HW.3)")
+    print(f"  Interference: {I_MIN:.0f}–{I_MAX:.0f} µm diametral")
     print(f"  ΔCTE: {(ALPHA_PEEK - ALPHA_TI)*1e6:.1f}×10⁻⁶ /K")
     print()
 
-    print(f"  {'T (°C)':>8s}  {'ΔCTE (µm)':>10s}  {'Eff. min I':>12s}  {'Eff. max I':>12s}  {'σ_hoop':>10s}  {'Safe':>6s}")
-    print(f"  {'-'*60}")
+    print(f"  {'T (°C)':>8s}  {'ΔCTE (µm)':>10s}  {'Eff. min I':>12s}  {'Eff. max I':>12s}  {'σ_hoop':>10s}  "
+          f"{'hoop':>5s}  {'grip@min':>8s}")
+    print(f"  {'-'*72}")
 
     results = {}
     for T in T_RANGE:
@@ -322,22 +324,32 @@ def press_fit_window():
         # Hoop stress from max effective interference — consistent thick-wall Lamé (lib.mechanics, HW.3.IS
         # 2026-06-22; was a thin-wall E·δ/D·2 approx that over-stated ~2×). eff_max is DIAMETRAL → radial = /2.
         sigma_max = thick_wall_hoop(eff_max * 1e-6 / 2.0, R_INTERFACE_M, R_OUTER_M, E_PEEK_PA, NU_PEEK)["sigma_t"]
-        safe = abs(sigma_max) < SIGMA_YIELD_PEEK_PA
+        # ⛔ TWO mechanisms, two flags. A single `safe` stood here and judged the hoop stress at the band's
+        # MAX only, so +40 °C read «safe» while the band's MIN had already opened to a clearance.
+        hoop_ok = bool(abs(sigma_max) < SIGMA_YIELD_PEEK_PA)
+        grip_at_min = bool(eff_min > 0.0)
 
-        print(f"  {T:>8.0f}  {delta_I:>+10.1f}  {eff_min:>12.1f}  {eff_max:>12.1f}  {sigma_max/1e6:>8.1f} MPa  {'✅' if safe else '❌'}")
+        print(f"  {T:>8.0f}  {delta_I:>+10.1f}  {eff_min:>12.1f}  {eff_max:>12.1f}  {sigma_max/1e6:>8.1f} MPa  "
+              f"{'✅' if hoop_ok else '❌':>5s}  {'✅' if grip_at_min else '❌ gap':>8s}")
 
         results[str(T)] = {
             "delta_I_um": round(delta_I, 2),
             "eff_min_um": round(eff_min, 2),
             "eff_max_um": round(eff_max, 2),
             "sigma_hoop_MPa": round(sigma_max / 1e6, 2),
-            "safe": safe,
+            "hoop_below_peek_yield": hoop_ok,
+            "interference_retained_at_band_min": grip_at_min,
         }
 
+    # ⛔ DERIVED, never typed: «safe across −30 to +40 °C» was a printed constant beside a row that said
+    #    otherwise one line up.
+    opens = [t for t, r in results.items() if not r["interference_retained_at_band_min"]]
     print()
-    print("  ⚠️ At -30°C effective interference increases → higher hoop stress")
-    print("  ⚠️ At +40°C effective interference decreases → risk of loosening")
-    print("  ✅ H7/s6 safe across -30 to +40°C range")
+    print(f"  {'✅' if all(r['hoop_below_peek_yield'] for r in results.values()) else '❌'} hoop stress "
+          f"{'below' if all(r['hoop_below_peek_yield'] for r in results.values()) else 'ABOVE'} PEEK yield "
+          "over the whole range (the band MAX governs it)")
+    print(f"  {'⚠️ the band MIN opens to a CLEARANCE at ' + ', '.join(f'{t} °C' for t in opens) if opens else '✅ the band MIN keeps interference everywhere'}"
+          " — the fit alone does not seal; the O-ring is the seal (scripts 50/56)")
 
     return results
 
