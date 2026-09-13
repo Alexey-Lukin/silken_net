@@ -107,7 +107,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | Fagus sylvatica (beech) | 6.0 | 0.984 ± 0.244 (max 1.322) | ✅ STABLE |
 | Generic simplified | 4.5 | 1.052 ± 0.268 (max 1.426) | ✅ STABLE |
 
-**Conclusion:** dgrGcGDH + Gen 2.0 matrix stable across all tested tree species (pH 4.2-6.0). Lowest RMSD at pH 6.0 (beech) — less acidic = gentler. Highest at pH 4.2 (spruce) — most acidic, still well within threshold. **Cross-species deployment validated.**
+**Conclusion:** dgrGcGDH + Gen 2.0 matrix stable across the tested pH window 4.2–6.0. Lowest RMSD at pH 6.0 — less acidic = gentler; highest at pH 4.2, still well within threshold. ⛔ **What this validates is pH tolerance inside 4.2–6.0, not cross-species deployment** (the line that stood here said the latter). The species names label PROFILES, and every profile pH is an assumption (`lib/xylem_sap.py`; no *P. sylvestris* measurement exists in the tree, 00_07 HW.3); script 14 also builds the box from pH and ionic strength alone, with Na⁺/Cl⁻. Measured conifer sap sits largely ABOVE this window — *Picea abies* 5.4 in spring and 6.9 in winter, *Pinus cembra* 6.1 / 6.8 (Pramsohler 2022, doi:10.3390/plants11152058) — and the seasonal direction the two pine rows encode (winter 4.5 below summer) is the reverse of what was measured, so the winter end of real sap was never simulated.
 
 ### Parameterized Ligands
 

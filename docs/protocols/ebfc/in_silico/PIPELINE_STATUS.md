@@ -26,7 +26,7 @@
 | 11 | `full_matrix_md` | **RMSD 1.22 Å** (100ps); 10ns 4.02 Å, **Rg stable** → AF3 relaxation, not denaturation | `runs/` |
 | 12 | `temperature_sweep_md` | **4/4 temps** 0.76–1.47 Å, all ≪3Å STABLE (313K NaN fixed) | `kinetics/temperature_sweep.json` |
 | 13 | `psbma_diffusion_md` | D_eff=5.1e-4 cm²/s (monomer; L4 uses lit. 2e-6) | — |
-| 14 | `xylem_sap_sweep_md` | **6/6 species** stable (pH 4.2–6.0) | `kinetics/xylem_sap_sweep.json` |
+| 14 | `xylem_sap_sweep_md` | **6/6 sap profiles** stable across pH 4.2–6.0 — profile pH values are assumptions, measured conifer sap sits largely above this window (SUMMARY §Xylem Sap, 00_07 HW.3) | `kinetics/xylem_sap_sweep.json` |
 | 15 | `pvi_coverage_md` | RMSD 1.10 Å → PVI brush safe, no denaturation | `runs/` |
 | 16 | `strain_cycling_md` | pseudoplastic (compress<stretch), PE drift 1.0% | `kinetics/strain_cycling.json` |
 | 20 | `dft_lumiflavin` | HOMO(FADH₂) = -5.14 eV | `dft/lumiflavin.json` |
@@ -173,7 +173,7 @@ Validation:
 - ✅ ~~Genipin rerun (scripts 10-11)~~ — DONE (RMSD 1.20/1.22 Å)
 - ✅ ~~Temperature sweep (script 12)~~ — DONE 4/4 temps (263K-313K all stable, ≪3Å)
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
-- ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 species (pH 4.2-6.0 all stable)
+- ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 profiles (pH 4.2-6.0 all stable; pH tolerance, not cross-species validation — SUMMARY §Xylem Sap)
 - ✅ ~~ωB97X DFT (scripts 21d/21f/21g)~~ — DONE. **dimethyl recompute B1/B2 ✅**. Koopmans Δε=−6.02 eV dimethyl (RSH artifact). Adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain (uphill; verified cascade +574 mV → SUMMARY).
 - ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30, scripts 24/25/35)
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)

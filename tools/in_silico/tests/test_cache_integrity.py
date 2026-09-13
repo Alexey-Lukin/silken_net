@@ -822,7 +822,8 @@ def test_xylem_sap_profiles():
     assert 4.0 <= pine["ph"] <= 6.0
     assert pine["glucose_mM"] > 0
     spruce = get_sap_profile("picea_abies")
-    assert spruce["ph"] < pine["ph"], "Spruce should be more acidic than pine"
+    # ⛔ Pins the profile TABLE's internal ordering, not biology: every pH here is an assumption (00_07 HW.3).
+    assert spruce["ph"] < pine["ph"], "profile table ordering changed (spruce profile vs pine profile pH)"
 
 
 def test_shared_lib_modules():

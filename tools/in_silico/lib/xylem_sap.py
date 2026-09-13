@@ -2,9 +2,11 @@
 """
 Xylem sap composition profiles for different tree species.
 
-Based on literature and 00_02 §1.1 (Xylem-Sim) protocol. Each profile defines
-the ionic composition for OpenMM solvation to simulate realistic
-xylem-like environments instead of generic TIP3P-FB + NaCl.
+Each profile defines the ionic composition for OpenMM solvation instead of generic TIP3P-FB + NaCl. ⛔ The
+numbers are OUR working assumptions shaped by the 00_02 §1.1 (Xylem-Sim) protocol — no profile traces to a
+measurement of Pinus sylvestris sap, and the glucose values in particular are assumptions, not literature
+values (00_07 HW.3). What was measured in conifers points the other way on season: winter sap is MORE
+alkaline (see the winter profile's note).
 
 Usage:
     from lib.xylem_sap import SAP_PROFILES, get_sap_profile
@@ -24,10 +26,11 @@ from __future__ import annotations
 # Xylem sap profiles by tree species
 # ═══════════════════════════════════════════════════════════════════
 # Sources:
-#   Pinus sylvestris: 00_02 §1.1 (Xylem-Sim) (Cherkasy forest, Spriahailo data)
-#   Quercus robur: Losso et al. 2016, Tree Physiology
-#   Picea abies: Mayr et al. 2014, New Phytologist
-#   Fagus sylvatica: Cochard 2006, Comptes Rendus Geoscience
+#   Pinus sylvestris: 00_02 §1.1 (Xylem-Sim) protocol. ⛔ «Spriahailo data» stood here, and no such data
+#     exists in this tree: the ЧНУ bio-hub measurement is pending (00_07 HW.3), so these are assumptions.
+#   Quercus robur: Losso et al. 2016, Tree Physiology      ⎫ cited as written; NOT verified in this tree
+#   Picea abies: Mayr et al. 2014, New Phytologist          ⎬ against Crossref (00_07 HW.3 could not trace
+#   Fagus sylvatica: Cochard 2006, Comptes Rendus Geoscience⎭ the canon recipe's own sources by title)
 #   Generic: simplified model used in current L2 MD baseline
 
 SAP_PROFILES = {
@@ -57,7 +60,10 @@ SAP_PROFILES = {
         "Mg_mM": 0.2,
         "Cl_mM": 0.3,
         "resin_acids": True,
-        "notes": "Dormancy: reduced sap flow, lower sugar, lower pH.",
+        "notes": "Dormancy: reduced sap flow, lower sugar. ⛔ The pH is an assumption whose seasonal DIRECTION is "
+                 "opposite to conifer measurements: winter sap is MORE alkaline (Picea abies 5.4 spring / 6.9 "
+                 "winter, Pinus cembra 6.1 / 6.8 — Pramsohler 2022, doi:10.3390/plants11152058; 00_07 HW.3). Kept "
+                 "because script 14 ran on it; do not read it as the seasonal trend.",
     },
     "pinus_sylvestris_summer": {
         "common_name": "Scots pine — active photosynthesis",
@@ -71,7 +77,8 @@ SAP_PROFILES = {
         "Mg_mM": 1.0,
         "Cl_mM": 1.0,
         "resin_acids": True,
-        "notes": "Peak photosynthesis: maximum sugar, higher pH, more ions.",
+        "notes": "Peak photosynthesis: maximum sugar, more ions. ⛔ «higher pH» than winter is the assumed trend "
+                 "that conifer measurements reverse (see the winter profile).",
     },
     "quercus_robur": {
         "common_name": "English oak",
