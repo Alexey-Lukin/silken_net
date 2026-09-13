@@ -108,20 +108,22 @@ SimpleCov.start "rails" do
   # ⚠️ Порада «послаблюй Models і Views» звідси ЗНЯТА: вимір показав її
   # інвертованою — Views мала найБІЛЬШИЙ запас із пʼяти. Дім класу «файл, що
   # свідчить про себе неправду» → 04_06 §B.5. Скоуп-політика → 04_06 §B.3.
+  # ⛔ `per:` ТІЛЬКИ через `group("…")`: голий рядок (`per: "Services"`) SimpleCov 1.2 читає
+  # як ПОФАЙЛОВИЙ поріг, тож групова підлога мовчки зникає при зеленому прогоні [OPS.22].
   unless ENV["FEATURE_TEST"] || ENV["COVERAGE"] == "0"
     coverage(:line) do
-      minimum_per_group 99.0, only: "Services"
-      minimum_per_group 99.0, only: "Workers"
-      minimum_per_group 99.0, only: "Models"
-      minimum_per_group 99.0, only: "Controllers"
-      minimum_per_group 99.0, only: "Views"
+      minimum 99.0, per: group("Services")
+      minimum 99.0, per: group("Workers")
+      minimum 99.0, per: group("Models")
+      minimum 99.0, per: group("Controllers")
+      minimum 99.0, per: group("Views")
     end
     coverage(:branch) do
-      minimum_per_group 98.0, only: "Services"
-      minimum_per_group 99.0, only: "Workers"
-      minimum_per_group 99.0, only: "Models"
-      minimum_per_group 99.0, only: "Controllers"
-      minimum_per_group 98.0, only: "Views"
+      minimum 98.0, per: group("Services")
+      minimum 99.0, per: group("Workers")
+      minimum 99.0, per: group("Models")
+      minimum 99.0, per: group("Controllers")
+      minimum 98.0, per: group("Views")
     end
   end
 end if COLLECT_COVERAGE
