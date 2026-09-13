@@ -71,14 +71,14 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           # Manual dispatch + release always (re)build. A post-CI workflow_run only
-          # rebuilds when files that actually affect the image changed — otherwise
-          # the cached layers would just be re-pushed under a new sha tag for nothing.
+          # rebuilds when files that actually affect the image changed — every build is
+          # a full uncached one (see the build step), so a docs-only push must not pay it.
           # The changed-file list comes from the GitHub API (compare, base = last successful
           # mirror — the single-commit `commits/{sha}` read was retired 2026-09-03), NOT a
           # checkout of the event head_sha: a workflow_run runs with a write token, so
           # checking out the (possibly fork-authored) head commit is an untrusted-code
           # vector (Scorecard DangerousWorkflow). On any ambiguity we build — a needless
-          # rebuild is cheap & cached, a missed one is not; a manual dispatch forces one.
+          # rebuild costs one full build, a missed one costs a live commit its `sha-` tag.
           if [ "${{ github.event_name }}" != "workflow_run" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
@@ -168,7 +168,19 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
-          cache-from: type=gha
+          # 🔒 A PUBLISHED image reads NO layer cache: the Dockerfile base stage's `apt-get upgrade`
+          # is what brings Debian security fixes in without waiting on an upstream rebuild
+          # (06_07 §1a), and a cached base layer replays the packages of the day it was first
+          # built — the log says CACHED, not an error. `cache-to` stays: it feeds ci.yml
+          # `docker_smoke`, which never ships.
+          # Cost: a full rebuild on every published build, and `cache-to` then uploads fresh
+          # blobs for EVERY layer, not only the changed ones — more pressure on the repo cache cap.
+          # ⛔ Do not re-add `cache-from` here as an optimisation, and do not narrow this to
+          # `no-cache-filters: base`: measured 2026-09-13 on BuildKit v0.32.2 and v0.33.0 with
+          # the cache imported into a fresh builder (as here), the base RUN re-executes, yet a
+          # later step matches its OLD record through the re-run step's key, and the exported
+          # image keeps the OLD base layer. v0.31.2 cascaded; `buildx-stable-1` floats.
+          no-cache: true
           cache-to: type=gha,mode=max
           # BuildKit SLSA provenance + SBOM, attached to the image (build metadata).
           # The cryptographic SIGNATURE is the Sigstore attestation in the next step;

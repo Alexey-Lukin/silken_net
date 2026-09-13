@@ -32,6 +32,11 @@ WORKDIR /rails
 # ⚠️ Ціна названа: вміст цього шару залежить від ДАТИ збірки, не лише від піна. Але той
 # самий рядок уже ставить `curl`/`libvips`/`postgresql-client` без пінів, тож НОВОГО
 # класу недетермінізму це не додає — воно розширює наявний. Повне обґрунтування → 06_07 §1a.
+# ⛔ Усе вище правдиве лише коли цей RUN ВИКОНУЄТЬСЯ: layer-кеш на base-стадії повертає
+# пакети дня, коли шар зібрали вперше, і мовчки скасовує upgrade (у лозі — `CACHED`, не
+# помилка). Тому збірки, що ПУБЛІКУЮТЬ образ, кешу не читають — `mirror-ghcr.yml` має
+# `no-cache: true`, Kamal кешу не конфігурує; і `no-cache-filters: base` цього НЕ дає
+# (виміряно, → 06_07 §1a).
 RUN apt-get update -qq && \
     apt-get upgrade --no-install-recommends -y && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
