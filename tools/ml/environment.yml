@@ -29,19 +29,17 @@ dependencies:
   # stays where TF's own resolution can move it — raise it only against a TF run.
   - numpy>=2.0
   - scipy>=1.13
-  # 🔴 [OPS.22] Floor стоїть на 0.11, і це НЕ відкат перевірки, а межа КАНАЛУ.
-  # librosa 1.0.0 існує на PyPI, але conda-forge його не має ЖОДНОЇ версії 1.x
-  # (16 версій у каналі, найновіша 0.11.0 — виміряно repoquery). А цей блок
-  # ставить conda, не pip. Тож `>=1.0` тут робив спеку НЕРОЗВʼЯЗНОЮ: свіжий
-  # `mamba create --dry-run` падає «librosa >=1.0 does not exist». ⚠️ І це не
-  # видно з CI, доки теплий кеш: job несе `cache-environment: true`, тож смуга
-  # лишалась зеленою на середовищі, зібраному ДО підняття floor-а, і зламалась
-  # би на першому ж вимиванні кешу, у чужому PR. Сумісність 1.0.0 із контрактом
-  # паритету перевірено руками (bit-identical на `filters.mel` і періодичному
-  # вікні Ганна) — тобто щойно conda-forge її запакує, підняття попередньо
-  # схвалене; ⛔ до того НЕ піднімати тут: floor може називати лише те, що
-  # канал здатен віддати.
-  - librosa>=0.11        # log-mel oracle; pulls soundfile (audio I/O) transitively
+  # 🔴 [OPS.22] conda-forge віддає librosa 1.0.0 з 2026-08-11 (`noarch`, тобто
+  # однаково linux-64 у CI й osx-arm64 локально), тож підняття floor-а, схвалене
+  # наперед ручною перевіркою вище, виконано 2026-09-13.
+  # ⛔ Floor може називати лише те, що віддає КАНАЛ, з якого ставить цей блок, —
+  # а ставить його conda, не pip. «Версії не існує» від локального резолвера є
+  # твердженням про індекс, який той завантажив, а не про канал: перш ніж писати
+  # такий негатив, звір його з самим каналом (`api.anaconda.org/package/
+  # conda-forge/<pkg>` → `files[].upload_time`) і з резолвом у лозі CI.
+  # ⊕ Правка цього файлу сама змінює ключ env-кешу CI (`-file-<sha256>`), тож
+  # перший прогін `ML passed` після неї резолвить спеку холодно.
+  - librosa>=1.0         # log-mel oracle; pulls soundfile (audio I/O) transitively
   # --- classical ML (dataset eval / future backend-RF parity) ---
   - scikit-learn>=1.5
   - matplotlib>=3.9
