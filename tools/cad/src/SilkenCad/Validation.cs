@@ -160,6 +160,16 @@ internal static class Validation
         => Measure(cem.Name, cem.VoxelSizeMm, voxCoin, null)
             with { ActiveElectrodeAreaCm2 = CoinAreaCm2(cem), Material = cem.Notes?.Material };
 
+    // The per-shell radii, core→rim: nShells + 1 boundaries from Zone1Anode.InnerRadiusMm (the surface
+    // `build` cuts) to the outer wall. Pure on purpose — MeasureAnchor needs voxels, so this is the only
+    // place the radius it reads can be pinned without a render (AnchorTests).
+    internal static float[] ShellBoundariesMm(AnchorCem cem, int nShells)
+    {
+        float fRInner = Zone1Anode.InnerRadiusMm(cem);
+        float fDr = ((cem.OuterDiameterMm / 2f) - fRInner) / nShells;
+        return [.. Enumerable.Range(0, nShells + 1).Select(i => fRInner + (i * fDr))];
+    }
+
     // Anchor-specific golden metrics: the base measurement + porosity measured per concentric
     // radial shell (proves the porosity PROFILE — flat for a constant SKU, monotone for a graded
     // one) + the finest cell period (DMLS-floor proxy). Porosity is MEASURED, never derived from
@@ -168,19 +178,18 @@ internal static class Validation
     {
         GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnvelope);
 
-        float fRInner = cem.BoreDiameterMm / 2f;
-        float fROuter = cem.OuterDiameterMm / 2f;
-        float fDr = (fROuter - fRInner) / nShells;
+        float[] aShellR = ShellBoundariesMm(cem, nShells);
 
         // Cumulative-diff per shell: a thin ring intersected with distorted (high-gradient) geometry
-        // under-counts metal at the voxel edges, so each shell = the DIFFERENCE of two thick bore→r
-        // pipes. By construction the outermost cumulative pipe = the full envelope ⇒ the shells always
-        // sum back to the global porosity (no thin-ring measurement drift), honest even when distorted.
+        // under-counts metal at the voxel edges, so each shell = the DIFFERENCE of two thick inner→r
+        // pipes. The shells start on the envelope's own inner radius, so the outermost cumulative pipe =
+        // the full envelope ⇒ the shells sum back to the global porosity (no thin-ring measurement
+        // drift), honest even when distorted.
         double[] aShellPorosity = new double[nShells];
         double dPrevSolid = 0, dPrevEnv = 0;
         for (int i = 0; i < nShells; i++)
         {
-            BasePipe oCum = new(new LocalFrame(), cem.LengthMm, fRInner, fRInner + ((i + 1) * fDr));
+            BasePipe oCum = new(new LocalFrame(), cem.LengthMm, aShellR[0], aShellR[i + 1]);
             Voxels voxCum = oCum.voxConstruct();
             voxCum.CalculateProperties(out float fCumEnv, out BBox3 _);
             voxCum.BoolIntersect(voxAnode);

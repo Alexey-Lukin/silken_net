@@ -292,4 +292,69 @@ public class AnchorTests
         Assert.Equal(0.5f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
         Assert.Equal(0.8f, Zone1Anode.InnerRadiusMm(new AnchorCem { BoreDiameterMm = 1.6f }));  // rod==0 ⇒ legacy bore
     }
+
+    // 🔴 ONE part, ONE inner envelope (00_07 HW.33). Every rod-bearing manifest still carries a
+    // `bore_diameter_mm` that shapes nothing, so a consumer that reads it samples r ≥ bore/2 and drops the
+    // ring [rod/2, bore/2] the printed part carries — silently, because the ring is small. Measured
+    // 2026-09-13 on the shipped seven: it moves `stepped`'s sub-floor share by −0.79 pp (past its golden
+    // tolerance) and every network SKU's by under 0.04 pp (inside it), so the golden gate alone would see
+    // the defect on one SKU of seven. The pin above holds the SOURCE; this one holds its READERS.
+    // Covered: Connectivity.SampleAnchor (and through it CheckPrintFidelity and WallScan, which sample only
+    // via it) · Validation's per-shell radii · VoxelFea.SampleAnchorAsBuilt. Each reader is judged against
+    // the radius Zone1Anode.Envelope cuts, never against another reader, so two readers wrong the same way
+    // still red.
+    // ⛔ Declared ceiling: MeasureAnchor's shell loop needs voxels, so what is pinned is its pure seam
+    // (ShellBoundariesMm), not the loop itself; a reader that grows its own sampler is outside this pin.
+    // MUTATION (2026-09-13, each alone): revert the inner radius to `cem.BoreDiameterMm / 2f` in
+    // Connectivity.SampleAnchor · in Validation.ShellBoundariesMm · in VoxelFea.SampleAnchorAsBuilt ⇒ each
+    // reds naming its own reader.
+    [Fact]
+    public void Every_Anchor_Reader_Samples_The_Inner_Radius_Build_Cuts()
+    {
+        const float fStep = 0.05f;
+        // A ten-cell slab of each real manifest: the radius does not depend on length, the runtime does.
+        AnchorCem[] aRodBearing = [.. CemFixtures.AnchorFiles()
+            .Select(CemFixtures.Anchor)
+            .Where(c => c.BusRodDiameterMm > 0f)
+            .Select(c => c with { LengthMm = 10 * fStep })];
+        // Counter-lamp: the pin only means something where the rudimentary bore and the rod differ by more
+        // than the grid can blur.
+        Assert.Contains(aRodBearing, c => MathF.Abs((c.BoreDiameterMm / 2f) - Zone1Anode.InnerRadiusMm(c)) >= 2 * fStep);
+
+        foreach (AnchorCem cem in aRodBearing)
+        {
+            float fCut = Zone1Anode.InnerRadiusMm(cem);
+            AssertInnerBoundary("Connectivity.SampleAnchor",
+                Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStep), cem, fCut);
+            AssertInnerBoundary("VoxelFea.SampleAnchorAsBuilt",
+                VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod: false), cem, fCut);
+
+            float fShellInner = Validation.ShellBoundariesMm(cem, 5)[0];
+            Assert.True(MathF.Abs(fShellInner - fCut) < 1e-6f,
+                $"{cem.Name}: Validation's per-shell porosity starts at r = {fShellInner:F3} mm while " +
+                $"Zone1Anode.Envelope cuts r = {fCut:F3} mm — the shells no longer sum back to the part's porosity");
+        }
+    }
+
+    // Reads the inner boundary a sampled grid actually carries off its own cells: the cut radius must lie
+    // between the widest Outside centre near the axis (the hole) and the narrowest centre that is inside.
+    // Centres follow the anchor samplers' shared origin, (−R, −R) + (i + ½)·step.
+    private static void AssertInnerBoundary(string strReader, Connectivity.Grid grid, AnchorCem cem, float fCut)
+    {
+        double dR = cem.OuterDiameterMm / 2.0, dHoleMax = double.NegativeInfinity, dInsideMin = double.PositiveInfinity;
+        for (int i = 0; i < grid.Nx; i++)
+            for (int j = 0; j < grid.Ny; j++)
+            {
+                double x = -dR + ((i + 0.5) * grid.StepMm), y = -dR + ((j + 0.5) * grid.StepMm);
+                double r = Math.Sqrt((x * x) + (y * y));
+                if (r > dR / 2) continue;   // past the rim the corners are Outside too; only the hole is asked about
+                if (grid.Cells[grid.Index(i, j, 0)] == Phase.Outside) dHoleMax = Math.Max(dHoleMax, r);
+                else dInsideMin = Math.Min(dInsideMin, r);
+            }
+
+        Assert.True(dHoleMax < fCut && fCut <= dInsideMin,
+            $"{cem.Name}: {strReader} samples an inner boundary between r = {dHoleMax:F3} and {dInsideMin:F3} mm, " +
+            $"but Zone1Anode.Envelope cuts r = {fCut:F3} mm (bore_diameter_mm / 2 = {cem.BoreDiameterMm / 2f:F3}) — " +
+            "the ring between them is in the printed part and missing from every metric read off this grid");
+    }
 }

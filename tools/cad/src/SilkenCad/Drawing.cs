@@ -683,10 +683,11 @@ internal static class Drawing
     public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso)
     {
         double rOut = cem.OuterDiameterMm / 2.0 * Px;
-        // Mirrors Zone1Anode.InnerRadiusMm EXACTLY: the monolithic bus rod (01_01 §1.4) when set, else
-        // the legacy hollow bore. Two formulas for one radius is how the drawing and the part diverge.
+        // The inner circle is read from Zone1Anode.InnerRadiusMm — the monolithic bus rod (01_01 §1.4) when
+        // set, else the legacy hollow bore — because a second formula for one radius is how the drawing
+        // and the part diverge. `bRod` only picks the label.
         bool bRod = cem.BusRodDiameterMm > 0f;
-        double dInnerMm = bRod ? cem.BusRodDiameterMm / 2.0 : cem.BoreDiameterMm / 2.0;
+        double dInnerMm = Zone1Anode.InnerRadiusMm(cem);
         double rIn = dInnerMm * Px;
         double frontCx = 130, cy = 150;
         double sideX = 300, shL = cem.LengthMm * Px;
@@ -793,7 +794,7 @@ internal static class Drawing
         var nte = new Layer("NOTES") { Color = AciColor.Cyan };
 
         double rO = cem.OuterDiameterMm / 2.0;
-        double rI = cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2.0 : cem.BoreDiameterMm / 2.0;
+        double rI = Zone1Anode.InnerRadiusMm(cem);
         double cx = 0, cy = 0;
 
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rO) { Layer = geo });

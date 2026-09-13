@@ -21,7 +21,7 @@ public class ResolutionTests
     {
         // The one PART manifest on the list, and it is a finding rather than an accommodation:
         // `stepped` is the single SKU left on the retired sheet branch, whose 1.3 mm rim period gives
-        // a 0.157 mm wall. It was already known to be below the 200 µm SLM floor (71.8 % sub-floor
+        // a 0.157 mm wall. It was already known to be below the 200 µm SLM floor (71.0 % sub-floor
         // metal); what this adds is that it is also below its OWN declared grid, i.e. every metric we
         // hold for `stepped` is measured where the wall cannot be represented. Feeds the open verdict
         // on whether `stepped` remains a candidate at all — 00_07 HW.33.

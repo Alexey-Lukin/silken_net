@@ -240,7 +240,7 @@ public class TopologyCrossChecksTests
     // every SKU was still SHEET — stepped (rim 1.3 mm) 71.8 % > broadleaf (1.6) 49.7 % > pine (2.0)
     // 24.4 % > mangrove (2.2) 20.5 % > oak (2.8) 4.3 % > tropical (3.2) 1.5 %. After the network port
     // the same six read 0.2–1.3 % (01_02 §6); `stepped` alone is still on the sheet formulation and
-    // still carries 71.8 %, which is what keeps that SKU an open ⚖️ in HW.33.
+    // carries 71.0 %, which is what keeps that SKU an open ⚖️ in HW.33.
     // graded_porosity is EXCLUDED by construction, not by hand: its wall BAND is graded too (1.3 → 0.8),
     // so the rim period alone does not predict where it lands (measured 12.5 %, between mangrove and
     // oak) — the filter below drops exactly the SKUs whose porosity axis moves.

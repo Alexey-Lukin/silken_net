@@ -603,11 +603,10 @@ internal static class VoxelFea
     }
 
     /// <summary>
-    /// Sample the anchor for FE on the RENDERED envelope — inner radius = the monolithic bus-rod
-    /// surface (Zone1Anode.InnerRadiusMm), which is what `build` actually cuts. ⚠️ Connectivity's own
-    /// SampleAnchor uses the CEM `bore_diameter_mm` instead, so the two envelopes differ on a part
-    /// that carries a rod; the FE must stand on the geometry the factory would receive.
-    /// `bWithRod` adds the solid core, turning "the lattice annulus" into "the part as printed".
+    /// Sample the anchor for FE on the RENDERED envelope — inner radius = Zone1Anode.InnerRadiusMm, the
+    /// surface `build` actually cuts and the same one Connectivity.SampleAnchor clips the topology grid
+    /// to, so the FE stands on the geometry the factory would receive and on the grid every topology
+    /// metric reads. `bWithRod` adds the solid core, turning "the lattice annulus" into "the part as printed".
     /// </summary>
     internal static Connectivity.Grid SampleAnchorAsBuilt(
         IImplicit sdf, AnchorCem cem, float fStepMm, bool bWithRod)

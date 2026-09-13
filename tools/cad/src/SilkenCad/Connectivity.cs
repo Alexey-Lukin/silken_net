@@ -67,19 +67,22 @@ internal static class Connectivity
     // re-measured the same day, /16 leaves the whole shipped Theory green. The RULE is unchanged (it is a
     // property of a graded sheet wall); only its carrier moved, to
     // AnchorTests.A_Graded_Sheet_Wall_Still_Needs_The_Period_24_Step, which holds the pine geometry at
-    // sheet on purpose (mutation: /16 reds it at step 0.1250 mm, solid-disc 0.099 % — the pine row above).
+    // sheet on purpose (mutation: /16 reds it at step 0.1250 mm, solid-disc 0.098 % — the pine row above).
     public static float AdaptiveStepMm(AnchorCem cem)
     {
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
         return Math.Clamp(fPeriodMin / 24f, 0.06f, DefaultStepMm);
     }
 
-    // Anchor sampling: a cartesian box clipped to the pipe envelope (bore ≤ r ≤ outer). The gyroid
-    // SDF is periodic, so the absolute Z origin only shifts the phase, never the topology/porosity.
+    // Anchor sampling: a cartesian box clipped to the envelope `build` cuts — inner ≤ r ≤ outer, the inner
+    // radius read from Zone1Anode.InnerRadiusMm (the monolithic rod surface when a rod is declared, else the
+    // hollow bore), never chosen here: every topology metric, the as-printed opening and the wall scan stand
+    // on this grid. The rod itself stays Outside (it is SDF-invisible), so the grid is the lattice annulus.
+    // The gyroid SDF is periodic, so the absolute Z origin only shifts the phase, never the topology/porosity.
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {
         float fROuter = cem.OuterDiameterMm / 2f;
-        float fRInner = cem.BoreDiameterMm / 2f;
+        float fRInner = Zone1Anode.InnerRadiusMm(cem);
         float fStep = fStepMm > 0f ? fStepMm : AdaptiveStepMm(cem);
         return Sample(sdf, 2f * fROuter, 2f * fROuter, cem.LengthMm, fStep,
             (x, y, _) =>

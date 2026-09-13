@@ -300,7 +300,8 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
     SHEET era. Re-measured 2026-09-11 after the network verdict landed, same grid and floor: `broadleaf`
     1.3 % · `pine` 0.7 % · `mangrove` 0.7 % · `graded_porosity` 0.4 % · `oak` 0.3 % · `tropical` 0.2 %,
     `printed solid-disc` 0.0 % on all six, and no SKU reads ⚠ DIVERGES any more** — the metal the floor
-    was deleting WAS the sheet wall. `stepped` is untouched at 71.8 % (third branch, outside the verdict).
+    was deleting WAS the sheet wall. `stepped` is untouched by that verdict (third branch) and reads 71.0 % since the 2026-09-13 envelope fix — the 71.8 in the list above is the same part sampled on the rudimentary bore.
+    🔴 **The golden tolerance on this field (±0.003) is NARROWER than the instrument's own grid-phase scatter on `stepped` (≈0.006 across grid-origin shifts, measured 2026-09-13)** — so a change that only moves the sampler's ORIGIN reds `stepped`'s golden with no change in geometry. Read such a red as the instrument first; a real geometry change shows up as a Δ that is STABLE across phases (the envelope fix: −0.0078…−0.0079 on four phases), which is how the two were told apart.
     🔴 **Read `print_fidelity_matches` only WITH `print_fidelity_sub_floor_solid_fraction`:** the boolean
     compares topology CLASS — `stepped` reads ✓ while losing the most metal, and the sheet SKUs read ⚠
     because one pinhole merges their two labyrinths. 🔴 **The previous form of this check — a coarse RESAMPLE at
@@ -325,7 +326,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 - **Add a part / per-species SKU**: write `cem/<name>.json` (with a `kind`) + a generator in
   `src/SilkenCad/` + wire the `build`/`verify` switch in `Program.cs`; `dotnet run -- verify`.
-- **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, bore, period, wallParam).
+- **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, rod, period, wallParam — `bore_diameter_mm` is INERT while a rod is declared, `_provenance.json` class `superseded`).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
   ⚖️ **Topology = `network` (ratified 2026-09-10, APPLIED 2026-09-11)** — every shipped `anchor_zone1.*`
@@ -357,6 +358,14 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   (solid via voxConstruct, gotcha #9 — NOT the SDF ctor). 🔑 **Porosity stays a property of the gyroid**
   (`Anode` + the annulus envelope, `InnerRadiusMm` = rod surface) — the rod is SDF-invisible, so connectivity
   /porosity gates are untouched; `verify` separately MEASURES the fused rod volume (`ReportAnchor`, ≳π(r)²·L).
+  ⊕ **Since 2026-09-13 that is the ONE inner radius in the tree:** `build`, every topology metric
+  (`Connectivity.SampleAnchor`, and through it the as-printed opening and the wall scan), per-shell porosity
+  (`Validation.ShellBoundariesMm`), the FE sampler and the anchor drawing all read `Zone1Anode.InnerRadiusMm`.
+  Pin `AnchorTests.Every_Anchor_Reader_Samples_The_Inner_Radius_Build_Cuts` judges each reader against the
+  radius `build` cuts — never against another reader, so two readers wrong the same way still red. Before it,
+  topology sampled r ≥ bore/2 and dropped a ring the printed part carries: invisible on six SKUs (Δ ≤ 0.04 pp,
+  inside golden tolerance) and past it only on `stepped` — i.e. a golden gate alone would have seen the defect
+  on one SKU of seven.
   Cathode keeps its channel (`mechanical_lock.zone3`/flange bore); anode shank `bore→0` (solid). F3 audit =
   `AxialStack.BusRodClears` (rod + 2·liner **<** channel), and since 2026-09-12 **F4
   `AxialStack.LinerCoversChannel`** — the liner must cover the channel END TO END, not merely fit it by
