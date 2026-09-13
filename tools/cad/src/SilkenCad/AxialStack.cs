@@ -22,7 +22,7 @@ internal static class AxialStack
 
     // Radial press-fit interference at an interface = (shaft Ø − bore Ø)/2. >0 ⇒ interference (true
     // press-fit); ≤0 ⇒ CLEARANCE (a gap, no grip). Zone-1 shaft Ø11 into the sleeve bore Ø11 ⇒ ~0
-    // (nominal line-to-line; the real +interference is the H7/s6 tolerance band, bench — 01_01 §3).
+    // (nominal line-to-line; the real +interference is the press-fit tolerance band, whose class is open — 00_07 HW.3).
     public static float Zone1SleeveInterferenceMm(AnchorAxialStackCem cem)
         => (cem.Zone1.OuterDiameterMm - cem.Zone2.BoreDiameterMm) / 2f;
 

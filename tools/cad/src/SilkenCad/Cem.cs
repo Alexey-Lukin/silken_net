@@ -69,7 +69,7 @@ internal sealed record ToleranceSpec
     // pressure. The REAL band is the Lamé-computed µm (01_01 §4.2, script 50, HW.3.IS), NOT a blind
     // ISO-286 metal-table lookup → put it in InterferenceMin/MaxUm.
     public string? Fit { get; init; }                  // nominal class label, e.g. "H7/s6"
-    public float? InterferenceMinUm { get; init; }     // Lamé band (E_PEEK-aware), µm
+    public float? InterferenceMinUm { get; init; }     // diametral µm; §4.2 wants the Lamé window, zone2_sleeve's is an ISO read (HW.3)
     public float? InterferenceMaxUm { get; init; }
     public float? ClearanceMm { get; init; }           // hex/spline anti-rotation ≤0.05 (01_01 §4.3 C)
 

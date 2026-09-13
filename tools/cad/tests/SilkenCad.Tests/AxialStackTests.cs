@@ -23,8 +23,8 @@ public class AxialStackTests
     [Fact]
     public void Zone1_Sleeve_Is_Nominal_Line_To_Line__Press_Fit_Band_Is_Bench()
     {
-        // Anode Ø11 into sleeve bore Ø11 ⇒ 0 nominal interference. The real +interference is the H7/s6
-        // tolerance band (tens of µm, ISO 286), set on the bench — not in the nominal CEM (01_01 §3).
+        // Anode Ø11 into sleeve bore Ø11 ⇒ 0 nominal interference. The real +interference is the press-fit
+        // tolerance band (tens of µm; its class is open, 00_07 HW.3), set on the bench — not in the nominal CEM (01_01 §3).
         AnchorAxialStackCem cem = new();
         Assert.Equal(0f, AxialStack.Zone1SleeveInterferenceMm(cem), 3);
     }

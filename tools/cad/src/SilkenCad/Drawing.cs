@@ -263,8 +263,8 @@ internal static class Drawing
     // `interference_*` — and its shape is different from the two above: not an invented VALUE but an
     // invented PROVENANCE. The interference line carried a hard-coded suffix «(Lamé, E_PEEK-aware)»,
     // while `zone2_sleeve.json`'s own `fit` string two lines earlier says the same 5–34 µm is «ISO 286,
-    // Ø11» — which is the truth (`tools/in_silico/lib/constants.py`: H7 0/+18 + s6 +23/+34 ⇒ 5–34
-    // diametral; Lamé CONSUMES that band to compute a contact pressure, it does not produce it). Canon
+    // Ø11» — which is the truth (`tools/in_silico/lib/constants.py`: H7 0/+18 + r6 +23/+34 ⇒ 5–34
+    // diametral — an r6 read under the s6 label, 00_07 HW.3; Lamé CONSUMES that band to compute a contact pressure, it does not produce it). Canon
     // `01_01 §4.2` makes the confusion expensive rather than cosmetic: it requires the drawing's µm to
     // come from the Lamé window and explicitly NOT from a blind ISO 286 lookup — so the sheet was
     // printing the rejected source under the required source's name. It hid because `zone2_sleeve` is

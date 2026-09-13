@@ -762,7 +762,7 @@ public class DrawingTests
 
     // 🔴 The interference line used to append a hard-coded "(Lamé, E_PEEK-aware)" to a number the CEM
     // supplies — while zone2_sleeve.json's own `fit` string says the same 5–34 µm is ISO 286, which is the
-    // truth (lib/constants.py: H7 0/+18 + s6 +23/+34). Canon 01_01 §4.2 requires the drawing's µm to come
+    // truth (lib/constants.py: H7 0/+18 + r6 +23/+34 — an r6 read under the s6 label, 00_07 HW.3). Canon 01_01 §4.2 requires the drawing's µm to come
     // from the Lamé window and NOT from a blind ISO 286 lookup, so the sheet was printing the rejected
     // source under the required source's name. It hid because zone2_sleeve is the only manifest filling
     // these fields and had no `draw` kind. Invention of PROVENANCE, the third member of gotcha #11's class.

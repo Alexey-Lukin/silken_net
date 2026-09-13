@@ -27,7 +27,7 @@
   "central_pad_diameter_mm": 4.5,
   "isolation_ring_width_mm": 1.5,
   "tolerances": {
-    "fit": "H7/s6 (nominal class only)",
+    "fit": "H7/s6 (canon's nominal class only - and the class itself is open: the tree's only band, 5-34 um, is an H7/r6 read, 00_07 HW.3)",
     "features": [
       {
         "feature": "shank_dia"
