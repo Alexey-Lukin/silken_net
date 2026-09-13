@@ -336,7 +336,7 @@ internal sealed record CathodeFlangeCem
 // Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
 // (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge; ⛔ neither field DRIVES the geometry —
 // the cap rise and edge radius are both the dome radius, and these two are floor-checks only) + an
-// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove. The cathode is NOT
+// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove (superseded, see the field). The cathode is NOT
 // sealed under the dome — it breathes O₂ from the SIDE/perimeter (02_02 §1.2; gas-phase 5–10× vs dissolved).
 internal sealed record RadomeCem
 {
@@ -355,7 +355,10 @@ internal sealed record RadomeCem
     public float SlotClearanceMm { get; init; } = 0.3f;    // socket slot clearance over the lug
     public float LockGrooveZMm { get; init; } = 3.5f;      // z of the circumferential lock groove from the rim
 
-    // O-ring groove on the rim (mate the Деталь-3 O-ring, CS 1.78 → 02_02 §3.2); width ≤ wall (fits the 2 mm wall)
+    // O-ring groove on the rim, CS 1.78 (02_02 §3.2); width ≤ wall (fits the 2 mm wall).
+    // ⛔ SUPERSEDED AND STILL SHIPPED — the twin of CathodeFlangeCem's note: ⚖️ 2026-09-10 put ONE groove in
+    //    the flange against a FLAT rim (01_01 §3 step 8), so this field should not exist on the shipped part.
+    //    Removing the cut is the open application leg (00_07 HW.33), a chain change for script 52.
     public float ORingGrooveDepthMm { get; init; } = 0.9f;
     public float ORingGrooveWidthMm { get; init; } = 1.0f;
 

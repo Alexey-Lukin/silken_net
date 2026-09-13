@@ -10,7 +10,8 @@ namespace SilkenCad;
 // the hollow is INTENTIONAL (outer voxConstruct − inner cavity), so the verify gate checks the WALL is
 // present, not solidity. Cylinder body + a rounded shield bell on top (anti-overgrowth, no callus-grip
 // edge, 01_04 §5.5) + a bayonet socket (circumferential lock groove + axial entry slots mating the
-// Деталь-3 lugs) + a rim O-ring groove. The cathode breathes O₂ from the SIDE/perimeter (02_02 §1.2) —
+// Деталь-3 lugs) + a rim O-ring groove (SUPERSEDED, still cut — step 4). The cathode breathes O₂ from the
+// SIDE/perimeter (02_02 §1.2) —
 // the dome does NOT seal it.
 //
 // ⚠ MATE-Ø FLAG (HW.17): Деталь-3 lugs protrude radially to ~Ø29 (flange Ø25 + 2·2); a cap that slides
@@ -19,8 +20,9 @@ namespace SilkenCad;
 // ⚖️ RECONCILED radially 2026-09-10 (00_07 HW.33): Ø25 stays, the lugs go inboard, the enclosing skirt is
 // WITHDRAWN — it cuts the lower cavity back past the flange rim and so deletes the face the ratified
 // O-ring seals against. The socket moves into a LOCAL internal boss at the rim that carries both the
-// bayonet and the seal land; this generator does not model that boss yet (open leg). The bayonet-Z /
-// RF half of the reconcile is still open — SURFACED, not fudged.
+// bayonet and the seal land; this generator does not model that boss yet (open leg). The bayonet-Z half
+// was RATIFIED 2026-09-11 (lugs on a raised collar, 02_02 §4.4) and waits, with the boss and the crown, on
+// the board budget (00_07 HW.9); the RF floor itself (8 ⊥ 12) stays an open verdict (HW.33).
 internal static class Radome
 {
     public static Voxels Build(RadomeCem cem)
@@ -55,7 +57,10 @@ internal static class Radome
             voxDome.BoolSubtract(new BaseCylinder(oSlot, cem.LockGrooveZMm, fSlotR).voxConstruct());
         }
 
-        // 4. O-ring groove on the rim wall (z=0 face, mate the Деталь-3 O-ring) — annular into the wall.
+        // 4. O-ring groove on the rim wall (z=0 face) — annular into the wall. ⛔ SUPERSEDED AND STILL CUT:
+        //    ⚖️ 2026-09-10 ratified ONE groove in the flange against a FLAT rim (01_01 §3 step 8); this cut and
+        //    the flange's 0.9 make a 0.9 + 0.9 pair under a 1.78 cord, a −1.1 % squeeze that does not seal.
+        //    Removing it is the open application leg (00_07 HW.33) — see RadomeCem.ORingGrooveDepthMm.
         LocalFrame oRim = new(Vector3.Zero);
         Voxels voxORing = new BaseCylinder(oRim, cem.ORingGrooveDepthMm, fInnerR + cem.ORingGrooveWidthMm).voxConstruct();
         voxORing.BoolSubtract(new BaseCylinder(oRim, cem.ORingGrooveDepthMm, fInnerR).voxConstruct());

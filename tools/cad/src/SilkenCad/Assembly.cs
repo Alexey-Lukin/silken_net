@@ -56,8 +56,9 @@ internal static class Assembly
 
     // The lug Z the mate REQUIRES: the rim must land on the sealing face (+ whatever face gap the O-ring
     // model still carries), and the socket sits lockGrooveZ above that rim ⇒ the lug sits there too.
-    // ⛔ An AUDIT quantity, not a ratified dimension — where the collar that carries such a lug goes is the
-    // open ⚖️ (00_07 HW.33), and it rides AFTER the ratified rim boss, whose radial band it must share.
+    // ⚖️ The raised collar that carries such a lug is RATIFIED (02_02 §4.4, 2026-09-11) and this is its Z.
+    // Applying it waits on the board budget (00_07 HW.9) and rides AFTER the ratified rim boss, whose radial
+    // band it must share.
     public static float RequiredLugZMm(AnchorAssemblyCem cem)
         => FlangeTopZMm(cem) + cem.ORingGapMm + cem.Radome.LockGrooveZMm;
 
@@ -74,10 +75,12 @@ internal static class Assembly
     // So shank length is NOT a lever here, and only three things move this number: cavity height,
     // lock-groove Z, and flange thickness. ⛔ And the sign of the middle one is the opposite of the
     // intuitive reading: RAISING `lock_groove_z_mm` LOWERS the antenna (it shortens the lift), so
-    // "lift the radome by raising the lock groove" runs backwards. Reaching the 12 mm RF minimum from
-    // today's 8.0 needs +4 on `cavityH` (13 → 17); doing it on the groove alone would need −0.5, i.e.
-    // a groove above the rim. ⊕ Cavity height is also the only one of the three that does NOT move the
-    // rim, so it leaves the O-ring datum untouched — which is why it is the lever, not merely a lever.
+    // "lift the radome by raising the lock groove" runs backwards. Reaching OUR 12 mm working floor
+    // (02_01 §5.3 asks ≥ 8; which number is the floor is open, 00_07 HW.33) from today's 8.0 would need
+    // +4 on `cavityH` (13 → 17); on the groove alone −0.5, i.e. a groove above the rim. Cavity height is
+    // the one term here that does NOT move the rim — an algebraic fact about this function, ⛔ not a
+    // recommendation: «raise the cavity to 15–17» is a REMOVED branch, because the ratified flat crown moves
+    // the headroom the other way and the RF floor is set from BELOW by the board stack (00_07 HW.9).
     // [00_07 HW.33 MATE-Ø, ⚖️ 2026-09-11]
     public static float RfClearanceMm(AnchorAssemblyCem cem)
         => (RadomeLiftZMm(cem) + cem.Radome.CavityHeightMm) - FlangeTopZMm(cem);
@@ -86,7 +89,7 @@ internal static class Assembly
     public static AssemblyVoxels Build(AnchorAssemblyCem cem)
     {
         // inboard candidate (MATE-Ø): clamp the lug protrusion so the tips stay within Ø25 (flush lugs).
-        // Loses radial bayonet grip — a trade-off the metrics expose, a founder/bench call (HW.17).
+        // Loses radial bayonet grip — the trade-off the metrics expose; ratified 2026-09-10 (00_07 HW.33).
         CathodeFlangeCem flangeCem = cem.MateStrategy == "inboard"
             ? cem.Flange with { LugProtrusionMm = 0f }
             : cem.Flange;
@@ -110,7 +113,8 @@ internal static class Assembly
     // a circumferential lock groove at the lug Z (where the lugs sit after the quarter-turn) + axial entry
     // slots (where the lugs pass down from the rim). Only the INNER band [bore, lug-tip+clearance] is cut,
     // so the outer rim stays a structural wall (→ lug∩ring interference ≈ 0, the lug rides the groove). The
-    // dome body stays Ø25 above (RF). Resolves MATE-Ø RADIALLY only — bayonet-Z / RF is a separate Z-reconcile.
+    // dome body stays Ø25 above (RF). Resolves MATE-Ø RADIALLY only. ⛔ WITHDRAWN 2026-09-10 (00_07 HW.33): it
+    // deletes the flange face the ratified O-ring seals against — kept as the audit of the rejected branch.
     private static void ApplyEnclosingSkirt(Voxels voxRadome, AnchorAssemblyCem cem, float fLift)
     {
         float fSkirtTopZ = FlangeTopZMm(cem) + 1f;                       // cover the lugs (15.5) + disc top (17)

@@ -188,7 +188,7 @@ managed (no Library.Go), `WallScan.cs` under xUnit.
 intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +
 bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — 00_07 HW.33) + rim O-ring groove (⛔ RATIFIED AWAY 2026-09-10 and still cut: one groove belongs in the flange against a FLAT rim). `verify`
 gates hollow-fraction / bell-rise / cavity / mate-fit. **🏁 Anchor-CAD family complete** (coin→anode-v2→
-ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10 — Ø25 stays, lugs go inboard, and a LOCAL INTERNAL RIM BOSS carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. The boss is not modelled yet (open leg); the bayonet-Z half is an open ⚖️, not bench work (00_07 HW.33).
+ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10 — Ø25 stays, lugs go inboard, and a LOCAL INTERNAL RIM BOSS carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. The boss is not modelled yet (open leg). ⚖️ The bayonet-Z half was RATIFIED 2026-09-11 (`02_02 §4.4`): the lugs move to a RAISED COLLAR above the sealing face, at the Z `Assembly.RequiredLugZMm` derives — applying boss, collar and crown waits on the board budget (00_07 HW.9/HW.33).
 
 **Capsule-end assembly / mate-audit (shipped)** — `Assembly.cs` + `anchor_assembly` CEM brings Деталь 3 ↔ Деталь 4
 into one frame at the bayonet datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch (radial
@@ -244,7 +244,7 @@ if a published sheet no longer names the manifest shipped today, so any byte cha
 redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
-**Deferred:** the rim-boss implementation + the bayonet-Z reconcile (open ⚖️: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug needs a Z of its own — `Assembly.RequiredLugZMm`; bench follows at HW.8.8) · the shank-Ø
+**Deferred:** the rim-boss + raised-collar implementation (the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug takes a Z of its own on a collar — `Assembly.RequiredLugZMm`; application waits on the HW.9 board budget, bench follows at HW.8.8) · the shank-Ø
 press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/
 conformal) · the C-vs-n porosity sweep and the as-built dilation parameter for the FE (00_07 HW.33 / HW.51). ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 
