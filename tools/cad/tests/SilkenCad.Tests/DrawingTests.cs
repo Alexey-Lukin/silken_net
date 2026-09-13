@@ -390,7 +390,7 @@ public class DrawingTests
     // 🔴 The whole point of this pair: `cem_canon_sync` pins the CEM's groove_width/depth against
     // canon §4.3 B by regex, but a machinist reads the DRAWING, not the guard's stdout — this is the
     // artefact where a human catches the same drift the guard catches by text-match. Zone-1 anchor end
-    // and Zone-3 flange end share one CEM `kind`/generator (opposite ratchet lean) → both manifests
+    // and Zone-3 flange end share one CEM `kind`/generator (the same local ratchet profile) → both manifests
     // must draw, not just one.
 
     [Fact]

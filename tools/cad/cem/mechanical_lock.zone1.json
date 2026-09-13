@@ -12,7 +12,6 @@
   "barb_height_mm": 0.28,
   "lead_angle_deg": 30.0,
   "trail_angle_deg": 70.0,
-  "barb_direction": 1,
   "groove_offset_mm": 15.0,
   "groove_width_mm": 1.1,
   "groove_depth_mm": 0.25,

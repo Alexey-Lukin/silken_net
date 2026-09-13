@@ -25,7 +25,7 @@ count beside a growing folder is right the day it is written and quietly narrowe
 | [`cathode_flange.drawing.svg`](cathode_flange.drawing.svg) | Деталь 3 cathode flange drawing (Ø25 + GND pad + PEEK iso-ring + 3× bayonet, `02_02 §1.2`) | `draw cem/cathode_flange.json` |
 | `cathode_flange.png` | Cathode flange 3D render | `render cem/cathode_flange.json` |
 | [`mechanical_lock_zone1.drawing.svg`](mechanical_lock_zone1.drawing.svg) | §4.3 ratchet shank, Zone-1 anchor end — barb envelope + DIN-471 groove (`01_01 §4.3`, HW.26) | `draw cem/mechanical_lock.zone1.json` |
-| [`mechanical_lock_zone3.drawing.svg`](mechanical_lock_zone3.drawing.svg) | §4.3 ratchet shank, Zone-3 flange end — same generator, opposite ratchet lean | `draw cem/mechanical_lock.zone3.json` |
+| [`mechanical_lock_zone3.drawing.svg`](mechanical_lock_zone3.drawing.svg) | §4.3 ratchet shank, Zone-3 flange end — same generator, same local ratchet profile (the lean looks opposite only in the assembled view) | `draw cem/mechanical_lock.zone3.json` |
 | [`anchor_zone1_pine.drawing.svg`](anchor_zone1_pine.drawing.svg) | Zone-1 anode **envelope card** — the carrier of the `01_02 §3.6` coating zone-map, with the zone boundary refused out loud (`00_07` HW.1) | `draw cem/anchor_zone1.pine.json` |
 | [`zone2_sleeve.drawing.svg`](zone2_sleeve.drawing.svg) | Деталь 2 PEEK thermal-break sleeve — bore Ø11 / OD Ø15 (the WOUND in the tree) / 50 mm, press-fit PMI (`01_01 §1`/`§4.2`) | `draw cem/zone2_sleeve.json` |
 | `anchor_zone1_pine.png` | Zone-1 gyroid anode — the ажурна Ti TPMS structure (pine SKU, `01_01 §5`) | `render cem/anchor_zone1.pine.json` |

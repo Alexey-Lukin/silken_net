@@ -18,7 +18,6 @@ namespace SilkenCad;
 internal sealed class MechanicalLockShank : IImplicit
 {
     private readonly float _fRShank, _fZ0, _fContactLen, _fPitch, _fH, _fLeadLen, _fTrailLen;
-    private readonly int _iDir;
     private readonly float _fGrooveZ0, _fGrooveZ1, _fGrooveDepth;
 
     public MechanicalLockShank(MechanicalLockCem cem)
@@ -30,15 +29,16 @@ internal sealed class MechanicalLockShank : IImplicit
         _fH = cem.BarbHeightMm;
         _fLeadLen = cem.BarbHeightMm / MathF.Tan(cem.LeadAngleDeg * MathF.PI / 180f);    // shallow α ⇒ long
         _fTrailLen = cem.BarbHeightMm / MathF.Tan(cem.TrailAngleDeg * MathF.PI / 180f);  // steep β ⇒ short
-        _iDir = cem.BarbDirection < 0 ? -1 : 1;
         _fGrooveZ0 = cem.GrooveOffsetMm;
         _fGrooveZ1 = cem.GrooveOffsetMm + cem.GrooveWidthMm;
         _fGrooveDepth = cem.GrooveDepthMm;
     }
 
     // Tooth height at local position t∈[0,pitch): rise 0→h over the leading ramp, fall h→0 over the
-    // trailing ramp, flat 0 in the gap. base = leadLen + trailLen = h·(cot α + cot β) must be < pitch
-    // so the teeth stay separated (a clean cylinder between rows).
+    // trailing ramp, flat 0 in the gap. t grows AWAY from local z = 0 — the end that enters the PEEK first —
+    // so the shallow α ramp always meets the PEEK first and the steep β face resists pull-out (no direction
+    // knob: see Cem.cs). base = leadLen + trailLen = h·(cot α + cot β) must be < pitch so the teeth stay
+    // separated (a clean cylinder between rows).
     private float Ratchet(float fT)
     {
         if (fT < _fLeadLen) return _fH * (fT / _fLeadLen);
@@ -55,7 +55,6 @@ internal sealed class MechanicalLockShank : IImplicit
         if (fZ >= _fZ0 && fZ <= _fZ0 + _fContactLen)
         {
             float fLocal = (fZ - _fZ0) - (MathF.Floor((fZ - _fZ0) / _fPitch) * _fPitch);  // t∈[0,pitch)
-            if (_iDir < 0) fLocal = _fPitch - fLocal;                                      // mirror ⇒ opposite lean
             fR += Ratchet(fLocal);
         }
         if (fZ >= _fGrooveZ0 && fZ <= _fGrooveZ1) fR -= _fGrooveDepth;

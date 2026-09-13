@@ -20,11 +20,10 @@ public class CathodeFlangeTests
     }
 
     [Fact]
-    public void ShankCem_Reuses_The_Zone3_Lock_With_Opposite_Lean()
+    public void ShankCem_Reuses_The_Zone3_Lock_Fields()
     {
         CathodeFlangeCem cem = new();
         MechanicalLockCem shank = CathodeFlange.ShankCem(cem);
-        Assert.Equal(-1, shank.BarbDirection);                     // Zone-3 opposite ratchet lean (§4.3 figure)
         Assert.Equal(cem.ShankDiameterMm, shank.ShankDiameterMm);
         Assert.Equal(cem.BarbRows, shank.BarbRows);
         Assert.Equal(cem.GrooveDepthMm, shank.GrooveDepthMm);

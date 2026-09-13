@@ -556,7 +556,7 @@ internal static class Drawing
 
     // ── Mechanical lock (§4.3 shank — ratchet barbs + DIN-471 retaining groove, HW.26) — the CNC
     // acceptance drawing for the feature Zone-1 anchor end and Zone-3 flange end SHARE (same CEM `kind`,
-    // same generator, opposite ratchet lean, `mechanical_lock.zone1/.zone3.json`). FRONT (shank Ø, + the
+    // same generator and the same local ratchet profile, `mechanical_lock.zone1/.zone3.json`). FRONT (shank Ø, + the
     // bus/cathode-channel bore when this end is hollow) + SIDE (shank silhouette + the barb-zone envelope
     // + the DIN-471 groove notch, dimensioned straight off the CEM — never tooth-by-tooth, same "spec,
     // not point-by-point" logic §6 uses for the gyroid lattice). Same CEM-native pipeline as the coin/flange.
@@ -598,7 +598,7 @@ internal static class Drawing
         double bz0 = sideX + (cem.ContactStartMm * Px), bzLen = cem.ContactLengthMm * Px;
         b.AppendLine(Rect(bz0, sideTop, bzLen, shD, Dim, 0.8));
         b.AppendLine(Line(bz0, sideTop, bz0 + bzLen, sideBot, Dim, 0.4, "3 2"));
-        b.AppendLine(Text(bz0 + (bzLen / 2), sideTop - 8, $"{cem.BarbRows}× barb (ratchet, lean {(cem.BarbDirection >= 0 ? "+" : "−")})", 9, "middle", Dim));
+        b.AppendLine(Text(bz0 + (bzLen / 2), sideTop - 8, $"{cem.BarbRows}× barb · shallow α ramp faces the LEFT end (enters PEEK first)", 9, "middle", Dim));
 
         // B. DIN-471 groove — THE feature this drawing exists for (HW.26): a real notch cut at the CEM's
         // own offset/width/depth. This is the number `cem_canon_sync` pins against canon §4.3 B, so the

@@ -8,12 +8,11 @@ namespace SilkenCad.Tests;
 // count vs render, manifold) run in the `verify` CLI on a PicoGK runner.
 public class MechanicalLockTests
 {
-    private static MechanicalLockCem MkCem(int iDir = 1) => new()
+    private static MechanicalLockCem MkCem() => new()
     {
         ShankDiameterMm = 11f, ShankLengthMm = 18f,
         ContactStartMm = 2f, ContactLengthMm = 12f,
         BarbRows = 4, BarbHeightMm = 0.28f, LeadAngleDeg = 30f, TrailAngleDeg = 70f,
-        BarbDirection = iDir,
         GrooveOffsetMm = 15f, GrooveWidthMm = 1.1f, GrooveDepthMm = 0.25f,
     };
 
@@ -28,7 +27,6 @@ public class MechanicalLockTests
         Assert.Equal(3, cem.BarbRows);
         Assert.Equal(0.28f, cem.BarbHeightMm);   // default
         Assert.Equal(0.05f, cem.VoxelSizeMm);    // default voxel
-        Assert.Equal(1, cem.BarbDirection);      // default lean
     }
 
     [Fact]
@@ -103,13 +101,70 @@ public class MechanicalLockTests
         Assert.True(sdf.fSignedDistance(new Vector3(fRShank - cem.GrooveDepthMm - 0.1f, 0f, fZGroove)) < 0f, "below groove floor");
     }
 
-    [Fact]
-    public void Opposite_Direction_Mirrors_The_Lean()
+// 🔴 The physical invariant, not a sign. Walking in from local z = 0 — the end that enters the PEEK
+// first — the first metal a tooth presents must rise over the LONG shallow ramp (α) and fall over the
+// SHORT steep one (β): that is "easy in, hard out" (01_01 §4.3 A). This is the test the ±1 knob never
+// had: `Opposite_Direction_Mirrors_The_Lean` pinned a mirror identity, so a flange built mirrored
+// (steep face first into the PEEK) stayed green while its ratchet pointed the wrong way (00_07 HW.26).
+// MUTATION: re-mirror the profile (fLocal = pitch − fLocal) → the rise measures β, not α → red.
+internal static float FirstToothRiseLengthMm(MechanicalLockCem cem)
+{
+    var sdf = new MechanicalLockShank(cem);
+    float fRShank = cem.ShankDiameterMm / 2f;
+    const float fStep = 0.001f;
+    float fZ = cem.ContactStartMm;
+    float fEnd = cem.ContactStartMm + (cem.ContactLengthMm / cem.BarbRows);
+    while (fZ < fEnd && sdf.ProfileRadius(fZ) <= fRShank + 1e-4f) fZ += fStep;
+    float fStart = fZ;
+    while (fZ < fEnd && sdf.ProfileRadius(fZ + fStep) >= sdf.ProfileRadius(fZ)) fZ += fStep;
+    return fZ - fStart;   // from the first metal to the crest, measured from the insertion end
+}
+
+[Fact]
+public void Shallow_Ramp_Faces_Local_Z0__The_End_That_Enters_The_Peek_First()
+{
+    MechanicalLockCem cem = MkCem();
+    float fLeadLen = cem.BarbHeightMm / MathF.Tan(cem.LeadAngleDeg * MathF.PI / 180f);
+    float fTrailLen = cem.BarbHeightMm / MathF.Tan(cem.TrailAngleDeg * MathF.PI / 180f);
+    Assert.Equal(fLeadLen, FirstToothRiseLengthMm(cem), 2);
+    Assert.True(FirstToothRiseLengthMm(cem) > (fLeadLen + fTrailLen) / 2f,
+        "the tooth met first from the insertion end rises over the STEEP face — a reversed ratchet");
+}
+
+// Every shipped lock end — both standalone manifests AND the shank the cathode flange actually builds —
+// obeys the same invariant. The flange is read through CathodeFlange.ShankCem, because that mapping is
+// where the reversal lived; a manifest-only check would have stayed green over the built part.
+[Fact]
+public void Every_Shipped_Lock_End_Presents_Its_Shallow_Ramp_To_The_Peek_First()
+{
+    var ends = Cem.ManifestFiles(CemFixtures.Dir(), "mechanical_lock*.json")
+        .Select(p => (Path.GetFileName(p), Cem.Parse<MechanicalLockCem>(File.ReadAllText(p))))
+        .Append(("cathode_flange.json (built shank)", CathodeFlange.ShankCem(
+            Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "cathode_flange.json"))))))
+        .ToList();
+    Assert.True(ends.Count >= 3, "the roster must include both lock manifests and the flange shank");
+    foreach ((string strName, MechanicalLockCem cem) in ends)
     {
-        var fwd = new MechanicalLockShank(MkCem(iDir: 1));
-        var rev = new MechanicalLockShank(MkCem(iDir: -1));
-        const float fZ0 = 2f, fPitch = 3f, fT = 0.4f;
-        // Mirror about the pitch midpoint: fwd(z0+t) == rev(z0 + pitch − t).
-        Assert.Equal(fwd.ProfileRadius(fZ0 + fT), rev.ProfileRadius(fZ0 + fPitch - fT), 3);
+        float fLeadLen = cem.BarbHeightMm / MathF.Tan(cem.LeadAngleDeg * MathF.PI / 180f);
+        float fTrailLen = cem.BarbHeightMm / MathF.Tan(cem.TrailAngleDeg * MathF.PI / 180f);
+        float fRise = FirstToothRiseLengthMm(cem);
+        Assert.True(fRise > (fLeadLen + fTrailLen) / 2f,
+            $"{strName}: the first tooth rises over {fRise:F3} mm from the insertion end — the steep face " +
+            $"(β, {fTrailLen:F3} mm) meets the PEEK first, so the ratchet is reversed (01_01 §4.3 A: easy in, hard out)");
     }
+}
+
+// A `barb_direction` key has no slot on MechanicalLockCem, so it would evaporate on parse and look
+// honoured (gotcha #0b). Raw text, not the parsed record — the parser is exactly what would hide it.
+[Fact]
+public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
+{
+    var files = Cem.ManifestFiles(CemFixtures.Dir(), "mechanical_lock*.json")
+        .Append(Path.Combine(CemFixtures.Dir(), "cathode_flange.json")).ToList();
+    Assert.True(files.Count >= 3);
+    foreach (string p in files)
+        Assert.False(File.ReadAllText(p).Contains("\"barb_direction\"", StringComparison.Ordinal),
+            $"{Path.GetFileName(p)} carries `barb_direction`, which MechanicalLockCem has no slot for — the key " +
+            "evaporates on parse; the ratchet direction is fixed by the insertion end, not by a sign");
+}
 }

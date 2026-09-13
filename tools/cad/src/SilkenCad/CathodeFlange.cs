@@ -30,7 +30,6 @@ internal static class CathodeFlange
         BarbHeightMm = c.BarbHeightMm,
         LeadAngleDeg = c.LeadAngleDeg,
         TrailAngleDeg = c.TrailAngleDeg,
-        BarbDirection = -1,   // Zone-3 opposite ratchet lean (§4.3 figure)
         GrooveOffsetMm = c.GrooveOffsetMm,
         GrooveWidthMm = c.GrooveWidthMm,
         GrooveDepthMm = c.GrooveDepthMm,

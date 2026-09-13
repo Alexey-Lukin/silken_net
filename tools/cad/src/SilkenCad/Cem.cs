@@ -249,7 +249,13 @@ internal sealed record MechanicalLockCem
     public float BarbHeightMm { get; init; } = 0.28f;      // h 0.25–0.40; base≈0.59 ∈ [0.40,0.60] at α30/β70
     public float LeadAngleDeg { get; init; } = 30f;        // α leading — shallow ⇒ long ramp ⇒ easy hot insert
     public float TrailAngleDeg { get; init; } = 70f;       // β trailing — steep ⇒ short ramp ⇒ hard pull-out
-    public int BarbDirection { get; init; } = 1;           // +1 Zone-1 lean; −1 Zone-3 opposite (§4.3 figure)
+// ⛔ No direction knob. The shallow α ramp ALWAYS faces local z = 0 — the end that enters the PEEK
+//    first — because that is what 01_01 §4.3 A's "easy in, hard out" means in every part's own frame.
+//    The §4.3 figure's "opposite lean" on Zone 3 is the ASSEMBLED view of two parts pressed in from
+//    opposite ends. A ±1 knob that meant the world view to its author and the local frame to this code
+//    shipped the cathode flange as a reversed ratchet (00_07 HW.26): steep face first into the PEEK,
+//    shallow ramp against pull-out. A part flipped in an assembly is placed by the assembly, never
+//    mirrored here.
 
     // DIN-471 retaining-ring groove (§4.3 B) — 1.1 × 0.25 deep for the Ø11 shank, near the outer (capsule-side) end.
     public float GrooveOffsetMm { get; init; } = 15f;
@@ -264,7 +270,7 @@ internal sealed record MechanicalLockCem
 // flange (Ø25 frozen) on a barbed shank that press-fits into the PEEK Zone-2 sleeve. Top face = pogo-pad
 // plane (centre GND bus + outer V+, Hard Gold — coating, NOT geometry); the side/perimeter is the cathode
 // catalytic zone (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2, фаза-2).
-// Bayonet lugs mate the PEEK Radome (Деталь 4). Barbs reuse the §4.3 lock (Zone-3 set, opposite lean).
+// Bayonet lugs mate the PEEK Radome (Деталь 4). Barbs reuse the §4.3 lock (Zone-3 set, same local profile).
 // Shank Ø + flange thickness = HW.8 placeholders (no-premature-canon).
 internal sealed record CathodeFlangeCem
 {
@@ -284,7 +290,7 @@ internal sealed record CathodeFlangeCem
     // at ≥ 1.0. The MATERIALS do not depend on it — the play is channel-side either way — the FEATURE does.
     public float BusLinerProtrusionMm { get; init; }       // liner overhang below the shank face (mm)
 
-    // Barbs (§4.3, reuse MechanicalLock; Zone-3 = opposite ratchet lean, dir −1)
+    // Barbs (§4.3, reuse MechanicalLock; the shallow ramp faces the shank tip that enters the PEEK first)
     public int BarbRows { get; init; } = 3;
     public float BarbHeightMm { get; init; } = 0.28f;
     public float LeadAngleDeg { get; init; } = 30f;
