@@ -565,8 +565,9 @@ public class DrawingTests
     // The canvas must be COMPUTED, not tuned: a note long enough to wrap has to push the frame down,
     // never off it. The constant this replaced had already been retuned once for the same reason.
     // ── The PUBLISHED snapshot, which is a different artefact from the generator ─────────────────
-    // 🔴 `docs/images/cad/*.drawing.svg` is committed, rendered inline on GitHub and carried by
-    // `wiki:sync` — i.e. it is the drawing an outsider actually sees — and NOTHING re-runs
+    // 🔴 `docs/images/cad/*.drawing.svg` is committed and rendered inline on GitHub — i.e. it is the
+    // drawing an outsider actually sees (⛔ NOT via `wiki:sync`: that task copies only images a canon doc
+    // embeds, and none embeds these — `render_gallery.sh` header) — and NOTHING re-runs
     // `render_gallery.sh` when the generator changes. Measured: the committed flange drawing was still
     // the pre-2026-08-28 one — no `Surface` / `Lattice` / `Inspect` lines at all (the silent-drop bug),
     // no `shank_dia` row, a `PROCESS` cut mid-word at 22 chars and a `rev local` stamp — so every

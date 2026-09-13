@@ -287,8 +287,8 @@ internal sealed record CathodeFlangeCem
     // How far the liner reaches BELOW the shank face, into the PEEK gap (01_01 §1.4, ⚖️ 2026-09-12).
     // ⛔ Not decoration and not a safety margin: the rod+tube pair takes up its radial play before it
     // reaches the bore, so flush with the mouth the bore EDGE meets the tube's END FACE (ring on ring)
-    // instead of its flank. Derived 0.97 mm (55_bus_mechanical §clearance_regime.edge_bearing), ratified
-    // at ≥ 1.0. The MATERIALS do not depend on it — the play is channel-side either way — the FEATURE does.
+    // instead of its flank. Derived in 55_bus_mechanical (§clearance_regime.edge_bearing.liner_start — the
+    // value lives in that cache, on the bonded member), ratified at ≥ 1.0. The MATERIALS do not depend on it — the play is channel-side either way — the FEATURE does.
     public float BusLinerProtrusionMm { get; init; }       // liner overhang below the shank face (mm)
 
     // Barbs (§4.3, reuse MechanicalLock; the shallow ramp faces the shank tip that enters the PEEK first)

@@ -893,7 +893,10 @@ internal static class Program
             Console.WriteLine($"  ⚠ {strConflict}");
         if (oM.BusRodClears is false)
             Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
-                ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F1} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} > cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — rod+insulation pinched (01_01 §1.4)"
+                // ⛔ `≥`, not `>`: the gate is STRICT since 2026-09-11, so a zero-clearance stack fails it too; and
+                //    two decimals, because `:F1` printed the Ø1.35 channel as «Ø1.4» — the 50 µm the clearance
+                //    verdict bought is smaller than that rounding step (the same fix script 55 carries).
+                ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F2} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} ≥ cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F2} — rod+insulation pinched (01_01 §1.4)"
                 : "  ⚠ F3: Zone 1 declares no bus rod — nothing to check the cathode channel against (01_01 §1.4)");
 
         if (oM.LinerCoversChannel is false)
