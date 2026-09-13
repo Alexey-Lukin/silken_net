@@ -51,9 +51,9 @@
 
 | Компонент | Файл | Статус |
 |-----------|------|--------|
-| `sentry-ruby` gem | `Gemfile` | ✅ 6.5.0 |
-| `sentry-rails` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Rails) |
-| `sentry-sidekiq` gem | `Gemfile` | ✅ 6.5.0 (auto-instruments Sidekiq) |
+| `sentry-ruby` gem | `Gemfile` | ✅ 7.0.0 |
+| `sentry-rails` gem | `Gemfile` | ✅ 7.0.0 (auto-instruments Rails) |
+| `sentry-sidekiq` gem | `Gemfile` | ✅ 7.0.0 (auto-instruments Sidekiq) |
 | `prometheus-client` gem | `Gemfile` | ✅ 5.0.0 |
 | Sentry initializer | `config/initializers/sentry.rb` | ✅ Повністю налаштований |
 | Prometheus initializer | `config/initializers/prometheus.rb` | ✅ реєстр метрик визначено (перелік — §2.8) |
@@ -83,9 +83,9 @@
 
 ```ruby
 # Gemfile
-gem "sentry-ruby"    # 6.5.0 — core SDK
-gem "sentry-rails"   # 6.5.0 — auto-instruments Rails (exceptions, breadcrumbs, performance)
-gem "sentry-sidekiq" # 6.5.0 — auto-instruments Sidekiq
+gem "sentry-ruby"    # 7.0.0 — core SDK
+gem "sentry-rails"   # 7.0.0 — auto-instruments Rails (exceptions, breadcrumbs, performance)
+gem "sentry-sidekiq" # 7.0.0 — auto-instruments Sidekiq
 ```
 
 ### 1.2 Налаштування (config/initializers/sentry.rb)
@@ -95,7 +95,9 @@ gem "sentry-sidekiq" # 6.5.0 — auto-instruments Sidekiq
 | `config.dsn` | `ENV["SENTRY_DSN"]` | Інертний без DSN (dev/test) |
 | `config.environment` | `SilkenNet::DeploymentSlot.current` | СЛОТ, не `Rails.env` — обидва слоти біжать під `RAILS_ENV=production` [INF.27]; виміряно на живому canopy 2026-09-02 (`environment: canopy`) |
 | `config.release` | `ENV["RELEASE_VERSION"].presence \|\| ENV["KAMAL_VERSION"].presence` | Git sha, який Kamal інжектить у кожен контейнер сам; `RELEASE_VERSION` — лише явний оверрайд для не-Kamal процесів. 🔴 Доти `env.clear` ніс `"${RELEASE_VERSION}"`, і ВІДДАЛЕНИЙ shell (Kamal передає `env.clear` як `--env` у `docker run` через ssh) розгортав його в порожній рядок — Sentry відкидав release на КОЖНІЙ події (виміряно 2026-09-02, «expected a non-empty string»); `.presence` закриває клас present-but-empty [S2.4] |
-| `config.send_default_pii` | `false` | Zero-Trust: PII не надсилається |
+| `config.send_default_pii` | `false` | Не надсилаються ідентичність користувача, cookies, query string і IP-несучі заголовки (`Authorization` · `Cookie` · `X-Forwarded-For` · `REMOTE_ADDR` → `[Filtered]`). ⚠️ **Це НЕ «PII не надсилається»:** `User-Agent` іде дослівно (виміряно на 7.0.0), `args` Sidekiq-джоб їдуть у `contexts` (§1.3), а breadcrumb `sql.active_record` несе ТЕКСТ запиту — розбіжність із юр-корпусом → [`00_07`](00_07_Action_Plan_Tracker) SEC.23. ⚠️ З 7.0 сетер ПЕРЕБУДОВУЄ `data_collection` з нуля, тож будь-який `config.data_collection.*` мусить стояти ПІСЛЯ нього |
+| `config.rails.structured_logging.enabled` | `false` | ⚖️ [OPS.22, founder 2026-09-05] 7.0 увімкнув логи й метрики за замовчуванням і ПРИБРАВ `enable_logs`/`enable_metrics` (запис у них тепер — `NoMethodError` на буті), тож постава ОГОЛОШЕНА, а не успадкована. Цей рядок гасить категорію, яку 7.0 шле без запиту — лог на кожен запит |
+| `config.before_send_log` · `config.before_send_metric` | `->(_) { nil }` | Відкидають елементи БУДЬ-ЯКОГО емітера, зокрема SDK-метрики, які апстрім уже злив у наступний 7.x. Пін — `spec/initializers/sentry_spec.rb` |
 | `config.traces_sample_rate` | `0.001` (0.1%) | Контроль бюджету APM при мільярдах подій |
 | `config.background_worker_threads` | `2` | Асинхронна передача — не блокує Puma/Sidekiq |
 | `config.max_breadcrumbs` | `30` | Обмеження розміру payload |
@@ -624,7 +626,7 @@ resource "google_logging_project_exclusion" "exclude_info_logs" {
 
 | Файл | Роль | Статус |
 |------|------|--------|
-| `Gemfile` | `prometheus-client` 5.0.0, `sentry-ruby/rails/sidekiq` 6.7.0 | ✅ |
+| `Gemfile` | `prometheus-client` 5.0.0, `sentry-ruby/rails/sidekiq` 7.0.0 | ✅ |
 | `config/initializers/sentry.rb` | Ініціалізація Sentry (DSN, sampling, exclusions, scrubbing) | ✅ |
 | `config/initializers/prometheus.rb` | Визначення `SilkenNet::Metrics` (реєстр + кількість — §2.8) | ✅ |
 | `app/middleware/prometheus_collector.rb` | Rack middleware: `/metrics` endpoint, IP allowlist, Basic Auth, Sidekiq gauge refresh | ✅ |

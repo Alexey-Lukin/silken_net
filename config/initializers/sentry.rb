@@ -38,8 +38,22 @@ Sentry.init do |config|
   # -----------------------------------------------------------------------
   # 🔒 DATA SANITIZATION (Zero-Trust Security)
   # -----------------------------------------------------------------------
-  # Never send PII (emails, IPs, cookies, user-agent) to Sentry.
+  # No user identity, cookies, query string or IP-bearing headers (`Authorization`, `Cookie`,
+  # `X-Forwarded-For`, `REMOTE_ADDR` arrive as `[Filtered]`). ⚠️ NOT everything: `User-Agent`
+  # is sent verbatim — measured on sentry-ruby 7.0.0 with this flag false — so do not read
+  # this line as "no PII leaves" (what still does is tracked in `00_07` SEC.23).
+  # ⚠️ Since 7.0 this setter REBUILDS `data_collection` from scratch: any future
+  # `config.data_collection.*` line must come AFTER it, or it is silently discarded.
   config.send_default_pii = false
+
+  # 🔒 [OPS.22, ⚖️ founder 2026-09-05] Logs and metrics are declared OFF here, not inherited:
+  # 7.0 made both default-on and REMOVED `enable_logs`/`enable_metrics`, so writing those
+  # setters now raises NoMethodError at boot. Rails structured logging — the category 7.0
+  # ships unasked, one log per request — is stopped at its source; the two callbacks drop
+  # items from any other emitter, including SDK-emitted metrics a later 7.x may start sending.
+  config.rails.structured_logging.enabled = false
+  config.before_send_log = ->(_log) { nil }
+  config.before_send_metric = ->(_metric) { nil }
 
   # Scrub AES keys, wallet secrets, mnemonics, and binary payloads.
   # Extends Rails.application.config.filter_parameters automatically via
