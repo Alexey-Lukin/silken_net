@@ -62,10 +62,11 @@ public class AxialStackTests
     }
 
     [Fact]
-    public void A_Stack_Whose_Zone1_Declares_No_Rod_Fails_F3__There_Is_No_Conductor()
+    public void A_Stack_Whose_Zone1_Declares_No_Rod_Fails_F3__Nothing_To_Check_The_Channel_Against()
     {
-        // The monolithic rod IS the anode conductor (01_01 §1.4); a Zone 1 without one has nothing to thread
-        // the cathode channel, so F3 must not pass vacuously on an empty rod.
+        // F3 checks the rod against the cathode channel (01_01 §1.4); a Zone 1 without a rod leaves nothing to
+        // check, so F3 must not pass vacuously on an empty rod. Whether the rod runs through the anode in the
+        // printed part is the render model of an open branch (00_07 HW.34), not something this test asserts.
         AnchorAxialStackCem cem = new();
         Assert.Equal(0f, cem.Zone1.BusRodDiameterMm);
         Assert.False(AxialStack.BusRodClears(cem));

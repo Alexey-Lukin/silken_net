@@ -249,13 +249,14 @@ internal sealed record MechanicalLockCem
     public float BarbHeightMm { get; init; } = 0.28f;      // h 0.25–0.40; base≈0.59 ∈ [0.40,0.60] at α30/β70
     public float LeadAngleDeg { get; init; } = 30f;        // α leading — shallow ⇒ long ramp ⇒ easy hot insert
     public float TrailAngleDeg { get; init; } = 70f;       // β trailing — steep ⇒ short ramp ⇒ hard pull-out
-// ⛔ No direction knob. The shallow α ramp ALWAYS faces local z = 0 — the end that enters the PEEK
-//    first — because that is what 01_01 §4.3 A's "easy in, hard out" means in every part's own frame.
-//    The §4.3 figure's "opposite lean" on Zone 3 is the ASSEMBLED view of two parts pressed in from
-//    opposite ends. A ±1 knob that meant the world view to its author and the local frame to this code
-//    shipped the cathode flange as a reversed ratchet (00_07 HW.26): steep face first into the PEEK,
-//    shallow ramp against pull-out. A part flipped in an assembly is placed by the assembly, never
-//    mirrored here.
+    // ⛔ No direction knob. In the LOCK's own frame — the standalone lock and the flange shank, where z = 0
+    //    is the end that enters the PEEK first — the shallow α ramp ALWAYS faces z = 0, because that is what
+    //    01_01 §4.3 A's "easy in, hard out" means. The §4.3 figure's "opposite lean" on Zone 3 is the
+    //    ASSEMBLED view of two parts pressed in from opposite ends. A ±1 knob that meant the world view to its
+    //    author and the local frame to this code shipped the cathode flange as a reversed ratchet (00_07
+    //    HW.26): steep face first into the PEEK, shallow ramp against pull-out. A body whose own frame runs
+    //    the other way — the Zone-1 anode, where z = 0 is the tree side — must PLACE an integrated shank by
+    //    rotating it, never by a sign.
 
     // DIN-471 retaining-ring groove (§4.3 B) — 1.1 × 0.25 deep for the Ø11 shank, near the outer (capsule-side) end.
     public float GrooveOffsetMm { get; init; } = 15f;

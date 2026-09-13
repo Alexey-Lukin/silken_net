@@ -229,8 +229,9 @@ public class AnchorTests
             .Where(f => File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"bore_diameter_mm\""))];
 
         Assert.True(aNoRod.Length == 0,
-            $"{string.Join(", ", aNoRod)} declare no `bus_rod_diameter_mm` — the lattice would reach the axis and " +
-            "the part would carry no anode conductor (01_01 §1.4).");
+            $"{string.Join(", ", aNoRod)} declare no `bus_rod_diameter_mm` — the lattice would reach the axis, and " +
+            "F3 would have no rod to check the cathode channel against (01_01 §1.4; whether the rod runs through " +
+            "the anode is the render model of an open branch, 00_07 HW.34).");
         Assert.True(aBore.Length == 0,
             $"{string.Join(", ", aBore)} carry `bore_diameter_mm`, which AnchorCem has no slot for — the key " +
             "evaporates on parse; the rod is the core.");

@@ -95,7 +95,7 @@ internal static class AxialStack
 
     // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
     // rod Ø + 2·liner < flange channel Ø (STRICT since 2026-09-11 — zero nominal clearance is not a pass). A Zone 1
-    // that declares no rod carries no anode conductor at all, so the stack FAILS here instead of passing
+    // that declares no rod leaves F3 nothing to check, so the stack FAILS here instead of passing
     // vacuously. Pure boolean finding (CEM-only → xUnit).
     //
     // ⛔ DECLARED CEILINGS — two, and both are the kind that stay green while the assembly does not go

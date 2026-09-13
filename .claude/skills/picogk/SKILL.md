@@ -396,9 +396,10 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.35` ⇒ the cathode channel the bus rod
   threads) (gotcha #9 — never the SDF ctor for the solid). Tooth is over-specified in `01_01 §4.3` → keep
   α/β + h, DERIVE base = h·(cotα+cotβ), MEASURE in `verify`. Self-support is orientation-conditional (print
-  leading-ramp-down, `01_02 §1.6`); DIN-471 groove = real shaft dims (not the off-spec canon 0.8×0.6). The
-  shallow α ramp faces local z = 0 — the end that enters the PEEK first — on BOTH ends, with no direction knob
-  (gotcha #15); on the INTEGRATED Zone-1 body «tip-down» puts the steep face down (20°) — open, `00_07` HW.26.
+  leading-ramp-down, `01_02 §1.6`); DIN-471 groove = real shaft dims (not the off-spec canon 0.8×0.6). In the
+  lock's own frame the shallow α ramp faces z = 0 — the end that enters the PEEK first — on BOTH ends, with no
+  direction knob (gotcha #15); the Zone-1 anode's frame runs the other way (z = 0 = tree side), so an integrated
+  shank is PLACED by rotation; on the INTEGRATED Zone-1 body «tip-down» puts the steep face down (20°) — open, `00_07` HW.26.
 - **Connectivity / verification (ARCH.25)** ⚠️ (this bullet said «validation» until 2026-09-12; canon `01_02 §6` now names it what it is — CODE VERIFICATION, two independent routes to one topological fact. Validation needs the physical experiment we have not run): `Connectivity.cs` samples the CEM SDF → 3-phase grid →
   6-conn flood-fill → open-pore (Archimedes) / percolation (EAAE flow-through) / solid-island (AM +
   electrical) / closed-pore (trapped-powder) / specific-surface. Pure-managed → fast display-less xUnit. Two-phase resolution split:
