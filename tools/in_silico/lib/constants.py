@@ -205,6 +205,8 @@ T_FOREST_MIN_C = -30.0         # °C — Cherkasy winter extreme (worst case for
 T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for sealing)
 
 # H7/s6 interference band (ISO 286, Ø11 in the 10-18 mm size band: H7 0/+18 µm, s6 +23/+34 µm
+# ⚠️ +23/+34 µm are the r6 deviations; s6 for 10-18 mm is +28/+39 µm, so the band below is H7/r6 and
+# H7/s6 would be 10-39 µm. Not moved here: it feeds 50/56 and the lock notes — 00_07 HW.3 verdict leg.
 # → 5-34 µm DIAMETRAL). The Lamé contact pressure takes RADIAL interference = diametral / 2.
 H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs sealing)
 H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs hoop stress)
