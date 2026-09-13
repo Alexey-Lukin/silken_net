@@ -381,7 +381,7 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 | Фітосидерофори | 0.01–0.1 mM | Якщо доступні в лаб. ЧНУ — підвищують агресивність до Ti |
 | Температура | 20–40°C (цикл) | Добовий термальний цикл |
 
-> **Джерело:** Johnson et al. (2018) "Simulated xylem sap composition for metallic implant testing"; Lalonde et al. (2014) "Xylem sap ion composition in deciduous trees".
+> **Джерело:** Johnson et al. (2018) "Simulated xylem sap composition for metallic implant testing"; Lalonde et al. (2014) "Xylem sap ion composition in deciduous trees". ⚠️ Жодне з двох за точними назвами в Crossref не знайдено (2026-09-13, двома незалежними пошуками), тож провенанс рецептури не звірений; і за будь-якого pH смуги пара CaCl₂ + щавлева кислота пересичена щодо оксалату кальцію (SI +1.4…+2.6) → 00_07 (HW.3).
 
 ### 2.2. Механічний Стрес
 
