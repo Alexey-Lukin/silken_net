@@ -314,7 +314,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 **Тип зв'язку:** Послідовний — ЧНУ (Гусак) вимірює концентрації + модель → ЧМА (Суховий) оцінює біологічний вплив + Safety Margin.
 
-> ⚠️ **V-free напрям:** founder обрав сплав **Ti-6Al-7Nb** (V-free, [`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)) → наратив зсувається з «чи безпечний V-release» на **design-rationale V-free + comparative 4V↔7Nb release** (дані дає Stage-2 coin ICP-MS, HW.24/HW.3). Назву/scope не переписуємо до coin-валідації (baseline ще 4V — no-premature-canon).
+> ⚠️ **V-free напрям:** founder обрав **напрям V-free, а не сплав** ([`01_02 §2.5`](01_02_Ti_6Al_4V_Metallurgy_and_DMLS)): конкретний сплав обирає 6-сплавний coin bake-off, і Ti-6Al-7Nb у ньому — кандидат, не вибір → наратив зсувається з «чи безпечний V-release» на **design-rationale V-free + comparative release 4V ↔ V-free кандидати** (дані дає Stage-2 coin ICP-MS, HW.24/HW.3). Назву/scope не переписуємо до coin-валідації (baseline ще 4V — no-premature-canon).
 
 ---
 
