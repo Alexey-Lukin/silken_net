@@ -18,7 +18,7 @@
 <rect x='280' y='117' width='108' height='66' fill='none' stroke='#111' stroke-width='1.2'/>
 <rect x='292' y='117' width='72' height='66' fill='none' stroke='#1166cc' stroke-width='0.8'/>
 <line x1='292' y1='117' x2='364' y2='183' stroke='#1166cc' stroke-width='0.4' stroke-dasharray='3 2'/>
-<text x='328' y='109' font-family='monospace' font-size='9' text-anchor='middle' fill='#1166cc' font-weight='normal'>4× barb (ratchet, lean +)</text>
+<text x='328' y='109' font-family='monospace' font-size='9' text-anchor='middle' fill='#1166cc' font-weight='normal'>4× barb · shallow α ramp faces the LEFT end (enters PEEK first)</text>
 <rect x='370' y='117' width='6.6' height='1.5' fill='none' stroke='#111' stroke-width='1'/>
 <rect x='370' y='181.5' width='6.6' height='1.5' fill='none' stroke='#111' stroke-width='1'/>
 <text x='370' y='197' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>groove 1.1×0.25 DIN-471 (§4.3 B)</text>
@@ -90,7 +90,7 @@
 <line x1='540' y1='783' x2='790' y2='783' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='783' x2='630' y2='799' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='794' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='794' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0344a865</text>
+<text x='635' y='794' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8ba3e5dc</text>
 <line x1='540' y1='799' x2='790' y2='799' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='799' x2='630' y2='815' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='810' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -98,7 +98,7 @@
 <line x1='540' y1='815' x2='790' y2='815' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='815' x2='630' y2='831' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='826' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='826' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f2bea1dace74448471… → FOOTER</text>
-<text x='806' y='847' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 0344a865 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
-<text x='806' y='859' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f2bea1dace74448471599d5bb87fb6dedd389b1a43af968dcabf2e0d1d046353</text>
+<text x='635' y='826' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>65a78c513b93460c55… → FOOTER</text>
+<text x='806' y='847' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8ba3e5dc · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
+<text x='806' y='859' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 65a78c513b93460c55f66a80944ea9aa7b4497969f2e94f66f5a744fd2f840e5</text>
 </svg>
