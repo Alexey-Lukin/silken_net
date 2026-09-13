@@ -459,14 +459,14 @@
   },
   "rim_datum_creep": {
     "rim_contact_area_mm2": 144.5,
-    "force_to_reach_relax_regime_N": 1445.0,
-    "relax_regime_floor_MPa": 10.0,
+    "force_to_reach_relax_regime_N": 361.0,
+    "relax_regime_floor_MPa": 2.5,
     "pogo_pair_force_N_upper_bound": 1.92,
     "stress_at_pogo_alone_MPa": 0.0133,
     "stress_at_100N_assumed_total_MPa": 0.692,
-    "margin_x_at_100N": 14.5,
+    "margin_x_at_100N": 3.6,
     "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
-    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 1445 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 14x margin. No creep member is warranted in the Z-chain for the rim.",
+    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 361 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.6x margin. No creep member is warranted in the Z-chain for the rim.",
     "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
   "rf_constraint": {

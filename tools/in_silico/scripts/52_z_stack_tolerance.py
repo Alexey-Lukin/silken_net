@@ -5,7 +5,8 @@ HW.8.7 — Axial Z-stack tolerance analysis (3-spring) for the Soldier capsule �
 
 The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses THREE compliant elements simultaneously:
   1. Pogo pins  (Mill-Max 0908, 1.52 mm travel)        — 50-70 % mid-stroke window (02_02 §2.2/§3.5)
-  2. O-ring     (EPDM, CS 1.78 mm)                      — 15-30 % static squeeze (Parker handbook)
+  2. O-ring     (EPDM, CS 1.78 mm)                      — 15-30 % static squeeze (industry practice, NOT
+                                                          Parker — Parker's face-seal window is 19-32 %; see ORING_WIN)
   3. Sil-Pad    (Bergquist 1500ST, ~1 mm, HW.30)        — acoustic-coupling contact, 20 yr creep
 
 🔑 Pogo + Sil-Pad are PARALLEL springs on the SAME gap (Power Deck ↔ Zone 3) → one gap sets both
@@ -13,8 +14,9 @@ compressions. O-ring is on a separate gap (Radome rim ↔ Zone 3). 02_02 §3.5 m
 the acoustic pad is the missing 3rd spring (this script closes that gap).
 
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
-spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance (02_01 §5.3,
-~12 mm antenna↔Ti) is enforced here as a GEOMETRIC constraint; the VNA/HFSS validation is lab-side
+spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
+a GEOMETRIC constraint at OUR 12 mm working floor (02_01 §5.3 itself asks ≥ 8 mm, 10-15 desirable — see
+RF_ANT_TI_CLEARANCE_MIN); the VNA/HFSS validation is lab-side
 (Гончаров, 00_02 §1.2 — currently unresponsive, so the geometry is self-owned, not blocked on him).
 
 1D linear tolerance chain — closed-form RSS + worst-case, no FEA / numpy.
@@ -88,8 +90,11 @@ ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of
 GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
 # The stress level below which 20-yr PEEK stress-relaxation is not worth a model. Anchored INSIDE our
 # own canon rather than on an outside datasheet: 01_01 §4.3 tabulates PEEK relaxation on the press-fit
-# joint at 25-30 MPa contact pressure, so a tenth of that is a conservative floor for "negligible".
-PEEK_RELAX_REGIME_MPA = 10.0
+# joint at 25-30 MPa contact pressure, so a tenth of that — of its LOWER end, the conservative reading —
+# is the floor for "negligible". ⛔ 10.0 stood here under this same sentence: a THIRD of the table, and
+# the table's own 20-yr column still relaxes at ~8-12 MPa, i.e. that floor sat inside the regime it
+# was meant to stay below.
+PEEK_RELAX_REGIME_MPA = 2.5
 POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
 POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
 
@@ -359,7 +364,8 @@ def rim_datum_creep() -> dict:
     Asked by INVERSION, because two of the three springs in the stack have no force datum anywhere in
     canon: instead of summing forces we do not have, compute the force that WOULD push the rim into the
     stress regime where relaxation is worth modelling, and compare it with the one spring canon does
-    specify. A bound that holds by three orders of magnitude does not need the missing numbers.
+    specify. A bound that holds by two orders of magnitude against that spring — and still by a few
+    times against a generous guess for the two unmeasured ones — does not need the missing numbers.
     """
     faces = seal_faces()
     dome_r = cem("radome")["dome_diameter_mm"] / 2.0
@@ -380,7 +386,7 @@ def rim_datum_creep() -> dict:
                          "computable today. The bound above is why that does not block the verdict.",
         "verdict": f"NEGLIGIBLE — reaching the relaxation regime needs {f_star:.0f} N on the rim, while "
                    f"the only spring canon specifies contributes {pogo:.2f} N; even a deliberately "
-                   f"generous 100 N for the two unmeasured springs leaves a {f_star / 100.0:.0f}x "
+                   f"generous 100 N for the two unmeasured springs leaves a {f_star / 100.0:.1f}x "
                    f"margin. No creep member is warranted in the Z-chain for the rim.",
         "skirt_note": faces["skirt"]["note"],
     }

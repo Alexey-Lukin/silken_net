@@ -381,9 +381,18 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: min(d["gland_geometry"]["required_width_mm"].values()), 0.005,
     ),
+    # ⛔ The anchor used to spell the floor itself («до 10 МПа»), so the pin guarded the force while
+    # hard-coding the one input that was wrong — 10 MPa is a third of the 01_01 §4.3 table, not the
+    # tenth the prose names. The floor is its own pin now, and the force anchor carries no number.
+    (
+        "PEEK relaxation-regime floor → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"до {N} МПа \(десята частина",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["rim_datum_creep"]["relax_regime_floor_MPa"], 0.05,
+    ),
     (
         "force that would put the PEEK rim into the relaxation regime → z_stack_tolerance.json",
-        BLIND_MATE, rf"до 10 МПа .{{0,120}}?треба \*\*{N} Н\*\*",
+        BLIND_MATE, rf"табулює релаксацію PEEK\) треба \*\*{N} Н\*\*",
         "mechanical/z_stack_tolerance.json",
         lambda d: d["rim_datum_creep"]["force_to_reach_relax_regime_N"], 1.0,
     ),
