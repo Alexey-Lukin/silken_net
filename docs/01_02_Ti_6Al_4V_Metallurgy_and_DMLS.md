@@ -610,7 +610,7 @@ nTop — провідний інструмент для генерації мі�
 | Per-species varianti (5 SKU) | ~1 година на варіант | Зміна 1 змінної + Run (секунди) |
 | Topology errors на TPMS | Можливі | **0** (implicit geometry guarantee) |
 | Ліцензія | Платна (~$25K/year) | Open source (Apache 2.0) |
-| Експорт у DMLS-slicer | STL/3MF | STL/3MF (clean topology) |
+| Експорт у DMLS-slicer | STL/3MF | STL (clean topology); 3MF досяжний, але в `tools/cad` не реалізований — чи потрібен, вирішує відповідь вендора ([`00_07`](00_07_Action_Plan_Tracker) HW.51) |
 
 **Чесні застереження (TRL 3, in-silico):**
 - Згенерований STL ≠ фізичний анкер; жоден TRL-claim не рухається ([`00_03 §1`](00_03_TRL_Matrix_HIL_and_Beyond)).

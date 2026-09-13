@@ -66,7 +66,7 @@
 - **30-day stability** ≥80% retention · **chloride** 0.25M ramp · **UCST** −10→+25°C recovery (квантитативні пороги — дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - **Нано-індентор E** (post-coin) — модуль СУЦІЛЬНОГО сплаву купона (β-Ti dual-win check). ⛔ **Це НЕ перевірка ізоеластичності, і плутати два виміри дорого:** ізоеластичність є властивістю ҐРАТКИ, купон її не має, а порівнювати треба з ПОПЕРЕЧНИМ модулем деревини `E_R`/`E_T` ≈ 0.5–1.5 ГПа — анкер сидить поперек стовбура ([`01_01 §5.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)). Поздовжні 9–16 ГПа, що стояли тут, є ~вдесятеро завищеною ціллю. Апарентну жорсткість самої ґратки міряє voxel-FE (`dotnet run -- fea`, дім числа — [`01_01 §5.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)); фізичний метод для неї — ISO 13314 на друкованому зразку, не нано-індентор на купоні.
 
-**Electrochem-CRO:** **EL-CELL (DE)** — бере клієнтські купони + custom-electrolyte CV/EIS, будує протокол. Альт: ЧНУ/ЧМА co-pub ([`00_02 §1.2`](../../00_02_Academic_Integration_and_IP.md)).
+**Electrochem-CRO:** кандидат **EL-CELL (DE)** — ⚠️ не підтверджений: публічна сторінка його лабораторії описує тестування Li-ion батарей, а ICP-MS і ISO/IEC 17025 не згадує (звірено 2026-09-13); лист лабораторії — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md). Альт: ЧНУ/ЧМА co-pub ([`00_02 §1.2`](../../00_02_Academic_Integration_and_IP.md)).
 
 ---
 
@@ -81,7 +81,7 @@
 
 - [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ / EU medical AM-бюро: 3 репліки×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
 - [ ] 👤 **Tier-2 vendor-hunt** (∥): β-Ti — академ-колаб/спец-порошок; Ta — coating-вендор (Ti+Ta-thin); Ti-15Zr — спец-постачальник.
-- [ ] 👤 **Electrochem-CRO RFQ** → EL-CELL: CV/EIS+EIS у custom-electrolyte (синт. сік), 30-day, chloride, UCST, ICP-MS.
+- [ ] 👤 **Electrochem-CRO RFQ** — текст і чекліст відправки живуть в [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) (CV/EIS у синтетичному соку · 30-day · chloride · UCST · ICP-MS); адресат TBD — EL-CELL не підтверджений (↑).
 - [ ] 👤 Синт. сік — біо-хаб ЧНУ Спрягайло (рецептура, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
 - [ ] 👤 **Критичний шлях паралельно:** chem-стек ([`ebfc_chem_rfq`](ebfc_chem_rfq.md) Spec A фермент 🔴 4-8тиж) — усе сходиться на функціоналізованих купонах.
 
@@ -95,7 +95,7 @@
 > (§2 сам каже «не звірено» → в acceptance не йде взагалі), «Вісь bake-off»/V-Al-раціоналі
 > (наш down-select), трекер-ID/канон-рефів, `tools/cad`-команд (вендору віддається STL+DXF,
 > не команда генерації), статус-маркерів.
-> Адресат — **друк-бюро (laser-PBF)**; електрохім-характеризація = окремий запит, у цьому листі її немає.
+> Адресат — **друк-бюро (laser-PBF)**; електрохім-характеризація = окремий запит, у цьому листі її немає → [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md).
 
 **⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА.** Усе вище — репо-нота (що саме прибрано й чому), у лист вона НЕ йде.
 
