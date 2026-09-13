@@ -514,7 +514,7 @@ def test_bus_mechanical_wear_budget():
 
     ⚖️ 2026-09-11 made WEAR the liner's ground and nothing computed it until 2026-09-12 — every
     `wear`/`fretting` mention in that script was prose, so «rated for 20 years» had no instrument
-    while FMEA #21, the highest RPN in the register, asserted wear-through with none either.
+    while FMEA #21 (RPN 288, second only to #4) asserted wear-through with none either.
     The honesty condition is the same as the weld seam's and the fit's: nobody may quietly type a
     wear rate, nor a cycle count, and let the corpus read either as measured.
     """

@@ -246,8 +246,8 @@ INFINITE_LIFE_SF = 2.0        # the SF line this script calls "infinite life"
 
 # ── The WELD SEAM at the root (00_07 HW.34) ───────────────────────────────────────────────────
 # The ratified rod is a welded cold-drawn wire, so the joint sits at the ROOT — which is exactly
-# where this model puts the peak bending moment, in BOTH spans (tip-loaded cantilever, fixed at
-# the root). The derates above describe the WIRE; the seam carries its own fatigue-strength
+# where this MODEL puts the peak bending moment, in BOTH spans (tip-loaded cantilever, fixed at
+# the root) — ⛔ not the real overhang, which peaks at the bore mouth (`break_even_knockdown`). The derates above describe the WIRE; the seam carries its own fatigue-strength
 # reduction on top: weld-toe notch + HAZ microstructure + weld residual tension.
 #
 # ⛔ THAT FACTOR IS NOT IN THIS TREE AND IS NOT INVENTED HERE. There is no canon row, no vendor
