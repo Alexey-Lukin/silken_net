@@ -1,0 +1,2361 @@
+{
+  "script": "67_sap_recipe_saturation.py",
+  "question": "Is the synthetic sap of 01_02 §2.1 supersaturated to calcium oxalate, and what calcium/oxalate window keeps whewellite undersaturated in both tests' bands? (00_07 HW.3)",
+  "recipe_ranges_mM": {
+    "malic": [
+      1.0,
+      5.0
+    ],
+    "oxalic": [
+      0.5,
+      2.0
+    ],
+    "kno3": [
+      2.0,
+      5.0
+    ],
+    "cacl2": [
+      0.5,
+      2.0
+    ],
+    "mgso4": [
+      0.2,
+      1.0
+    ]
+  },
+  "tests": {
+    "coin": {
+      "label": "Stage-2 Ti-coin electrochemistry",
+      "ph": [
+        4.5,
+        5.0,
+        5.5
+      ],
+      "ph_home": "01_03 §3.5 — 4.5–5.5; the letter names the union of the two canon bands",
+      "t_c": [
+        20.0,
+        25.0
+      ],
+      "t_home": "01_03 §3.5 — 20–25 °C"
+    },
+    "accelerated": {
+      "label": "12-week accelerated corrosion test",
+      "ph": [
+        5.0,
+        5.5
+      ],
+      "ph_home": "01_02 §2.1 — 5.0–5.5",
+      "t_c": [
+        20.0,
+        25.0,
+        30.0,
+        35.0,
+        40.0
+      ],
+      "t_home": "01_02 §2.1 — 20–40 °C cycle"
+    }
+  },
+  "activity_model": {
+    "equation": "Davies, log γ = −A z² (√I/(1+√I) − 0.3 I)",
+    "a_table": [
+      [
+        20.0,
+        0.505
+      ],
+      [
+        25.0,
+        0.509
+      ],
+      [
+        30.0,
+        0.513
+      ],
+      [
+        35.0,
+        0.518
+      ],
+      [
+        40.0,
+        0.525
+      ]
+    ],
+    "ionic_strength_max_mol_l": 0.02991,
+    "validity_mol_kg": 0.1,
+    "source": "NEA TDB-2 guideline (Grenthe, Mompean, Spahiu, Wanner) — Davies eq. (3); A(T) Table 2 p.23"
+  },
+  "constants": {
+    "oxalate_ends": {
+      "order": [
+        "selected",
+        "si_high",
+        "si_low"
+      ],
+      "log_k_hox": [
+        4.25,
+        4.24,
+        4.26
+      ],
+      "log_k_caox": [
+        3.19,
+        3.06,
+        3.27
+      ],
+      "log_b_caox2": [
+        4.02,
+        3.83,
+        4.21
+      ],
+      "log_k_mgox": [
+        3.56,
+        3.38,
+        3.62
+      ],
+      "log_b_mgox2": [
+        5.17,
+        5.09,
+        5.25
+      ],
+      "log_ks_whewellite": [
+        -8.73,
+        -8.79,
+        -8.67
+      ],
+      "log_ks_weddellite": [
+        -8.3,
+        -8.36,
+        -8.24
+      ],
+      "log_ks_caoxite": [
+        -8.19,
+        -8.23,
+        -8.15
+      ],
+      "source": "NEA9 = Hummel, Anderegg, Rao, Puigdomènech, Tochiyama (2005) Chemical Thermodynamics Vol. 9, OECD-NEA/Elsevier (open NEA PDF)"
+    },
+    "malic_acid": {
+      "pk1_equation": [
+        1358.85,
+        -5.1382,
+        0.01355
+      ],
+      "pk2_equation": [
+        1658.53,
+        -6.2364,
+        0.019353
+      ],
+      "k_25c_printed": [
+        0.000348,
+        7.99e-06
+      ],
+      "source": "Eden & Bates (1959) J. Res. NBS 62:161, doi:10.6028/jres.062.028 — both equations and the 25 °C constants as printed in the abstract, p.161"
+    },
+    "malate_complexes_readings": {
+      "Ca": {
+        "kapp_mM": 10.32,
+        "ionic_strength": 0.124,
+        "log_k_apparent": 1.986,
+        "log_k_i0_derived": 2.895
+      },
+      "Mg": {
+        "kapp_mM": 15.85,
+        "ionic_strength": 0.104,
+        "log_k_apparent": 1.8,
+        "log_k_i0_derived": 2.666
+      },
+      "source": "Günzel, McGuigan & Schlue (2005) Front. Biosci. 10:905, doi:10.2741/1585 — Table 2 p.914 (apparent Kapp, Na+ medium, pHa 7.4, room temperature)",
+      "status": "NOT FOUND at I = 0 in any open primary; readings only"
+    },
+    "sulfate_and_other_solids": {
+      "HSO4-": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; analytic expression (its log_k line: 1.988)",
+      "CaSO4_0": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; log_k 2.3, delta_h 1.65 kcal",
+      "MgSO4_0": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; log_k 2.37, delta_h 4.55 kcal",
+      "KSO4-": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; analytic expression (its log_k line: 0.85; its delta_h line implies a different enthalpy)",
+      "NaSO4-": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; log_k 0.7, delta_h 1.12 kcal",
+      "gypsum CaSO4·2H2O": "PHREEQC database wateq4f.dat — the WATEQ4F compilation, Ball & Nordstrom (1991) USGS OFR 91-183, doi:10.3133/ofr91183; analytic expression (its log_k line: −4.58)",
+      "glushinskite MgC2O4·2H2O": "NEA9 = Hummel, Anderegg, Rao, Puigdomènech, Tochiyama (2005) Chemical Thermodynamics Vol. 9, OECD-NEA/Elsevier (open NEA PDF), §VI p.163 — −6.4 ± 0.2 'for scoping calculations'; 'no value is recommended'"
+    },
+    "scenarios": {
+      "hard_bound": {
+        "label": "HARD BOUND — calcium bound only by oxalate and sulfate, magnesium oxalate-inert, oxalate constants at their SI-raising end",
+        "oxalate_end": "si_high",
+        "ca_malate": null,
+        "mg_malate": null,
+        "mg_oxalate_inert": true
+      },
+      "selected": {
+        "label": "NEA-selected constants, malate complexes absent",
+        "oxalate_end": "selected",
+        "ca_malate": null,
+        "mg_malate": null,
+        "mg_oxalate_inert": false
+      },
+      "selected_guenzel_apparent": {
+        "label": "NEA-selected + Günzel apparent malate constants read as I = 0",
+        "oxalate_end": "selected",
+        "ca_malate": "apparent",
+        "mg_malate": "apparent",
+        "mg_oxalate_inert": false
+      },
+      "selected_guenzel_i0": {
+        "label": "NEA-selected + Günzel malate constants corrected to I = 0 (derived here)",
+        "oxalate_end": "selected",
+        "ca_malate": "i0",
+        "mg_malate": "i0",
+        "mg_oxalate_inert": false
+      },
+      "spread_si_high": {
+        "label": "oxalate constants at their SI-raising end, malate complexes absent",
+        "oxalate_end": "si_high",
+        "ca_malate": null,
+        "mg_malate": null,
+        "mg_oxalate_inert": false
+      },
+      "spread_si_low": {
+        "label": "oxalate constants at their SI-lowering end, malate complexes absent",
+        "oxalate_end": "si_low",
+        "ca_malate": null,
+        "mg_malate": null,
+        "mg_oxalate_inert": false
+      },
+      "si_lowest_documented": {
+        "label": "SI-LOWEST documented reading — oxalate constants at their SI-lowering end, the strongest calcium malate reading, no magnesium malate",
+        "oxalate_end": "si_low",
+        "ca_malate": "i0",
+        "mg_malate": null,
+        "mg_oxalate_inert": false
+      }
+    }
+  },
+  "verification": {
+    "closed_form": {
+      "si_solver": 1.394987525585,
+      "si_closed_form": 1.394987525585,
+      "abs_diff_si": 0.0,
+      "abs_diff_base_mol_l": 5.421010862427522e-19
+    },
+    "malate_equations": {
+      "pK1": {
+        "equation_25c": 3.4593,
+        "printed_constant_25c": 3.4584
+      },
+      "pK2": {
+        "equation_25c": 5.0964,
+        "printed_constant_25c": 5.0975
+      }
+    },
+    "analytic_expressions": {
+      "HSO4-": {
+        "analytic_25c": 1.9878,
+        "printed_log_k": 1.988
+      },
+      "KSO4-": {
+        "analytic_25c": 0.8467,
+        "printed_log_k": 0.85
+      },
+      "gypsum": {
+        "analytic_25c": -4.5809,
+        "printed_log_k": -4.58
+      }
+    },
+    "hard_bound_min_si_margin_over_every_reading": 0.01436,
+    "hard_bound_window_is_the_narrowest": true,
+    "whewellite_is_the_least_soluble_hydrate": true
+  },
+  "q1_corners": {
+    "per_test": {
+      "coin": {
+        "hard_bound": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.4629,
+          "si_whewellite_max": 2.6401,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              1.033,
+              2.221
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.903,
+              2.105
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.197,
+              -1.675
+            ]
+          }
+        },
+        "selected": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.191,
+          "si_whewellite_max": 2.4919,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.761,
+              2.073
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.651,
+              1.976
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.225,
+              -1.66
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.573,
+              -0.39
+            ]
+          }
+        },
+        "selected_guenzel_apparent": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.1803,
+          "si_whewellite_max": 2.4872,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.75,
+              2.068
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.64,
+              1.972
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.253,
+              -1.663
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.576,
+              -0.392
+            ]
+          }
+        },
+        "selected_guenzel_i0": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.0617,
+          "si_whewellite_max": 2.4618,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.632,
+              2.043
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.522,
+              1.946
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.408,
+              -1.679
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.593,
+              -0.404
+            ]
+          }
+        },
+        "spread_si_high": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.3215,
+          "si_whewellite_max": 2.6233,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.891,
+              2.204
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.761,
+              2.088
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.181,
+              -1.659
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.497,
+              -0.277
+            ]
+          }
+        },
+        "spread_si_low": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 1.0969,
+          "si_whewellite_max": 2.3845,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 4.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.667,
+              1.966
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.577,
+              1.889
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.257,
+              -1.662
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.613,
+              -0.434
+            ]
+          }
+        },
+        "si_lowest_documented": {
+          "corners_evaluated": 192,
+          "si_whewellite_min": 0.9043,
+          "si_whewellite_max": 2.3549,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.5,
+            "t_c": 25.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.474,
+              1.936
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.384,
+              1.859
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.43,
+              -1.683
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.578,
+              -0.431
+            ]
+          }
+        }
+      },
+      "accelerated": {
+        "hard_bound": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 1.3131,
+          "si_whewellite_max": 2.6401,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.0,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.852,
+              2.221
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.684,
+              2.105
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.2,
+              -1.686
+            ]
+          }
+        },
+        "selected": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 1.0334,
+          "si_whewellite_max": 2.4919,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.0,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.572,
+              2.073
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.425,
+              1.976
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.228,
+              -1.668
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.556,
+              -0.39
+            ]
+          }
+        },
+        "selected_guenzel_apparent": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 1.0136,
+          "si_whewellite_max": 2.4872,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.5,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.553,
+              2.068
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.405,
+              1.972
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.256,
+              -1.673
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.561,
+              -0.392
+            ]
+          }
+        },
+        "selected_guenzel_i0": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 0.8774,
+          "si_whewellite_max": 2.4618,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.5,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.416,
+              2.043
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.269,
+              1.946
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.409,
+              -1.702
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.595,
+              -0.404
+            ]
+          }
+        },
+        "spread_si_high": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 1.1654,
+          "si_whewellite_max": 2.6233,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.0,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.704,
+              2.204
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.537,
+              2.088
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.185,
+              -1.667
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.478,
+              -0.277
+            ]
+          }
+        },
+        "spread_si_low": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 0.9389,
+          "si_whewellite_max": 2.3845,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.0,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.478,
+              1.966
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.35,
+              1.889
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.259,
+              -1.67
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.597,
+              -0.434
+            ]
+          }
+        },
+        "si_lowest_documented": {
+          "corners_evaluated": 320,
+          "si_whewellite_min": 0.725,
+          "si_whewellite_max": 2.3549,
+          "every_corner_supersaturated": true,
+          "least_supersaturated_corner": {
+            "malic": 5.0,
+            "oxalic": 0.5,
+            "kno3": 5.0,
+            "cacl2": 0.5,
+            "mgso4": 1.0,
+            "ph": 5.5,
+            "t_c": 40.0
+          },
+          "most_supersaturated_corner": {
+            "malic": 1.0,
+            "oxalic": 2.0,
+            "kno3": 2.0,
+            "cacl2": 2.0,
+            "mgso4": 0.2,
+            "ph": 5.5,
+            "t_c": 20.0
+          },
+          "si_range_other_solids": {
+            "weddellite CaC2O4·2H2O": [
+              0.264,
+              1.936
+            ],
+            "caoxite CaC2O4·3H2O": [
+              0.136,
+              1.859
+            ],
+            "gypsum CaSO4·2H2O": [
+              -3.431,
+              -1.707
+            ],
+            "glushinskite MgC2O4·2H2O": [
+              -1.545,
+              -0.431
+            ]
+          }
+        }
+      }
+    },
+    "break_even_whewellite_log_ks_25c": {
+      "coin": -7.766,
+      "accelerated": -7.945
+    },
+    "break_even_calcium_malate": {
+      "coin": {
+        "log_k_camal_break_even": 4.169,
+        "corner": {
+          "malic": 5.0,
+          "oxalic": 0.5,
+          "kno3": 2.0,
+          "cacl2": 0.5,
+          "mgso4": 1.0,
+          "ph": 5.5,
+          "t_c": 25.0
+        },
+        "calcium_held_by_malate_at_break_even": 0.937,
+        "strongest_documented_reading_log_k": 2.895,
+        "apparent_reading_log_k": 1.986,
+        "margin_over_strongest_documented": 1.273
+      },
+      "accelerated": {
+        "log_k_camal_break_even": 3.981,
+        "corner": {
+          "malic": 5.0,
+          "oxalic": 0.5,
+          "kno3": 2.0,
+          "cacl2": 0.5,
+          "mgso4": 1.0,
+          "ph": 5.5,
+          "t_c": 40.0
+        },
+        "calcium_held_by_malate_at_break_even": 0.902,
+        "strongest_documented_reading_log_k": 2.895,
+        "apparent_reading_log_k": 1.986,
+        "margin_over_strongest_documented": 1.086
+      }
+    },
+    "break_even_conditions": "every other constant at its SI-lowering end, no magnesium malate"
+  },
+  "q2_window": {
+    "per_scenario": {
+      "hard_bound": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 7.5253,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 4.7448,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.3461,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 7.5322,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 4.7554,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.3648,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 7.5253,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 4.7448,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.3461,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 7.5322,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 4.7554,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.3648,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      },
+      "selected": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 11.6169,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.2588,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.0695,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 10.6129,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 6.5498,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 4.6507,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 11.6169,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.2588,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.0695,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 10.6129,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 6.5498,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 4.6507,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      },
+      "selected_guenzel_apparent": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 11.8665,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.3744,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.1205,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 10.8897,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 6.6865,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 4.7179,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 11.8665,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.3744,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.1205,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 10.8897,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 6.6865,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 4.7179,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      },
+      "selected_guenzel_i0": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 13.3915,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 8.0508,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.379,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 12.5979,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.5437,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.1473,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 13.3915,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 8.0508,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.379,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 12.5979,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 7.5437,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.1473,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.0,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      },
+      "spread_si_high": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.8614,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.414,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.6811,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.3967,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.0699,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.4677,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.8614,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.414,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.6811,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 8.3967,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 5.0699,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 3.4677,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      },
+      "spread_si_low": {
+        "coin": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 14.3271,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 9.1159,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 6.5,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 12.9293,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 8.1465,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.9453,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        },
+        "accelerated": {
+          "Ca": [
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 14.3271,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 9.1159,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ca",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 6.5,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ],
+          "Ox": [
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 0.5,
+              "partner_max_total_uM": 12.9293,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 1.0,
+              "partner_max_total_uM": 8.1465,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            },
+            {
+              "fixed_ion": "Ox",
+              "fixed_level_mM": 2.0,
+              "partner_max_total_uM": 5.9453,
+              "binding_condition": {
+                "malic": 1.0,
+                "kno3": 2.0,
+                "mgso4": 0.2,
+                "ph": 5.5,
+                "t_c": 20.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    "hard_bound_same_for_both_tests": true,
+    "boundary_curve_mM": {
+      "hard_bound": [
+        [
+          0.005,
+          0.919041
+        ],
+        [
+          0.00862,
+          0.418179
+        ],
+        [
+          0.014862,
+          0.216172
+        ],
+        [
+          0.025623,
+          0.118577
+        ],
+        [
+          0.044175,
+          0.067285
+        ],
+        [
+          0.07616,
+          0.039127
+        ],
+        [
+          0.131303,
+          0.023295
+        ],
+        [
+          0.226374,
+          0.014272
+        ],
+        [
+          0.390281,
+          0.00909
+        ],
+        [
+          0.672865,
+          0.006097
+        ],
+        [
+          1.160056,
+          0.00436
+        ],
+        [
+          2.0,
+          0.003346
+        ]
+      ],
+      "selected": [
+        [
+          0.005,
+          1.681265
+        ],
+        [
+          0.00862,
+          0.659136
+        ],
+        [
+          0.014862,
+          0.332961
+        ],
+        [
+          0.025623,
+          0.182859
+        ],
+        [
+          0.044175,
+          0.104255
+        ],
+        [
+          0.07616,
+          0.060828
+        ],
+        [
+          0.131303,
+          0.03625
+        ],
+        [
+          0.226374,
+          0.022177
+        ],
+        [
+          0.390281,
+          0.014068
+        ],
+        [
+          0.672865,
+          0.009378
+        ],
+        [
+          1.160056,
+          0.006656
+        ],
+        [
+          2.0,
+          0.005069
+        ]
+      ],
+      "selected_guenzel_i0": [
+        [
+          0.005,
+          2.135852
+        ],
+        [
+          0.00862,
+          0.821423
+        ],
+        [
+          0.014862,
+          0.410432
+        ],
+        [
+          0.025623,
+          0.22382
+        ],
+        [
+          0.044175,
+          0.126884
+        ],
+        [
+          0.07616,
+          0.073574
+        ],
+        [
+          0.131303,
+          0.043482
+        ],
+        [
+          0.226374,
+          0.026278
+        ],
+        [
+          0.390281,
+          0.01638
+        ],
+        [
+          0.672865,
+          0.010665
+        ],
+        [
+          1.160056,
+          0.00731
+        ],
+        [
+          2.0,
+          0.005379
+        ]
+      ]
+    }
+  },
+  "q3_base": {
+    "coin": {
+      "base_mM_range": [
+        2.029,
+        12.973
+      ],
+      "potassium_total_mM_range_if_koh": [
+        4.029,
+        17.973
+      ],
+      "sodium_total_mM_range_if_naoh": [
+        2.029,
+        12.973
+      ],
+      "largest_base_corner": {
+        "malic": 5.0,
+        "oxalic": 2.0,
+        "kno3": 5.0,
+        "cacl2": 2.0,
+        "mgso4": 1.0,
+        "ph": 5.5,
+        "t_c": 20.0
+      }
+    },
+    "accelerated": {
+      "base_mM_range": [
+        2.423,
+        12.973
+      ],
+      "potassium_total_mM_range_if_koh": [
+        4.423,
+        17.973
+      ],
+      "sodium_total_mM_range_if_naoh": [
+        2.423,
+        12.973
+      ],
+      "largest_base_corner": {
+        "malic": 5.0,
+        "oxalic": 2.0,
+        "kno3": 5.0,
+        "cacl2": 2.0,
+        "mgso4": 1.0,
+        "ph": 5.5,
+        "t_c": 20.0
+      }
+    },
+    "max_si_change_naoh_vs_koh": 0.00043
+  },
+  "q4_buffer_capacity": {
+    "t_c": 25.0,
+    "background_mM": {
+      "kno3": 2.0,
+      "cacl2": 0.5,
+      "mgso4": 0.2
+    },
+    "constants": "selected",
+    "rows": [
+      {
+        "malic_mM": 1.0,
+        "oxalate": "canon 0.5 mM",
+        "oxalate_mM": 0.5,
+        "beta_mM_per_pH": {
+          "4.5": 0.8786,
+          "5.0": 0.751,
+          "5.5": 0.4631
+        }
+      },
+      {
+        "malic_mM": 1.0,
+        "oxalate": "canon 2 mM",
+        "oxalate_mM": 2.0,
+        "beta_mM_per_pH": {
+          "4.5": 1.5238,
+          "5.0": 1.0489,
+          "5.5": 0.5603
+        }
+      },
+      {
+        "malic_mM": 1.0,
+        "oxalate": "hard-bound window at Ca 0.5 mM (7.5 µM)",
+        "oxalate_mM": 0.007525,
+        "beta_mM_per_pH": {
+          "4.5": 0.6857,
+          "5.0": 0.667,
+          "5.5": 0.4362
+        }
+      },
+      {
+        "malic_mM": 1.0,
+        "oxalate": "none",
+        "oxalate_mM": 0.0,
+        "beta_mM_per_pH": {
+          "4.5": 0.6829,
+          "5.0": 0.6658,
+          "5.5": 0.4358
+        }
+      },
+      {
+        "malic_mM": 5.0,
+        "oxalate": "canon 0.5 mM",
+        "oxalate_mM": 0.5,
+        "beta_mM_per_pH": {
+          "4.5": 3.4292,
+          "5.0": 3.3367,
+          "5.5": 2.0353
+        }
+      },
+      {
+        "malic_mM": 5.0,
+        "oxalate": "canon 2 mM",
+        "oxalate_mM": 2.0,
+        "beta_mM_per_pH": {
+          "4.5": 4.0901,
+          "5.0": 3.6053,
+          "5.5": 2.0971
+        }
+      },
+      {
+        "malic_mM": 5.0,
+        "oxalate": "hard-bound window at Ca 0.5 mM (7.5 µM)",
+        "oxalate_mM": 0.007525,
+        "beta_mM_per_pH": {
+          "4.5": 3.2307,
+          "5.0": 3.2586,
+          "5.5": 2.0171
+        }
+      },
+      {
+        "malic_mM": 5.0,
+        "oxalate": "none",
+        "oxalate_mM": 0.0,
+        "beta_mM_per_pH": {
+          "4.5": 3.2278,
+          "5.0": 3.2574,
+          "5.5": 2.0168
+        }
+      }
+    ]
+  },
+  "q5_window_over_hard_bound": {
+    "selected": [
+      1.377,
+      1.544
+    ],
+    "selected_guenzel_apparent": [
+      1.402,
+      1.577
+    ],
+    "selected_guenzel_i0": [
+      1.53,
+      1.78
+    ],
+    "spread_si_high": [
+      1.031,
+      1.178
+    ],
+    "spread_si_low": [
+      1.713,
+      1.943
+    ]
+  },
+  "prices": {
+    "cut_oxalate_keep_calcium": {
+      "oxalate_max_uM_at_calcium_levels": {
+        "coin": [
+          7.5253,
+          4.7448,
+          3.3461
+        ],
+        "accelerated": [
+          7.5253,
+          4.7448,
+          3.3461
+        ]
+      },
+      "fold_below_canon_oxalate_floor": {
+        "coin": [
+          66.4,
+          105.4,
+          149.4
+        ],
+        "accelerated": [
+          66.4,
+          105.4,
+          149.4
+        ]
+      },
+      "buffer_capacity_lost_fraction_range": [
+        0.009,
+        0.55
+      ],
+      "buffer_capacity_lost_least_at": {
+        "malic_mM": 5.0,
+        "canon_oxalate_mM": 0.5,
+        "ph": 5.5
+      },
+      "buffer_capacity_lost_most_at": {
+        "malic_mM": 1.0,
+        "canon_oxalate_mM": 2.0,
+        "ph": 4.5
+      }
+    },
+    "cut_calcium_keep_oxalate": {
+      "calcium_max_uM_at_oxalate_levels": {
+        "coin": [
+          7.5322,
+          4.7554,
+          3.3648
+        ],
+        "accelerated": [
+          7.5322,
+          4.7554,
+          3.3648
+        ]
+      },
+      "fold_below_canon_calcium_floor": {
+        "coin": [
+          66.4,
+          105.1,
+          148.6
+        ],
+        "accelerated": [
+          66.4,
+          105.1,
+          148.6
+        ]
+      },
+      "glushinskite_scoping_si_at_window_edge": {
+        "coin": [
+          {
+            "oxalate_mM": 0.5,
+            "calcium_uM": 7.532,
+            "si_glushinskite_scoping_max": -0.747,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          },
+          {
+            "oxalate_mM": 1.0,
+            "calcium_uM": 4.755,
+            "si_glushinskite_scoping_max": -0.52,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          },
+          {
+            "oxalate_mM": 2.0,
+            "calcium_uM": 3.365,
+            "si_glushinskite_scoping_max": -0.368,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          }
+        ],
+        "accelerated": [
+          {
+            "oxalate_mM": 0.5,
+            "calcium_uM": 7.532,
+            "si_glushinskite_scoping_max": -0.747,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          },
+          {
+            "oxalate_mM": 1.0,
+            "calcium_uM": 4.755,
+            "si_glushinskite_scoping_max": -0.52,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          },
+          {
+            "oxalate_mM": 2.0,
+            "calcium_uM": 3.365,
+            "si_glushinskite_scoping_max": -0.368,
+            "at": {
+              "malic": 1.0,
+              "kno3": 2.0,
+              "mgso4": 1.0,
+              "ph": 5.5,
+              "t_c": 20.0
+            }
+          }
+        ]
+      }
+    },
+    "either_direction": {
+      "base_mM_max": 12.973,
+      "potassium_total_mM_max_if_koh": 17.973
+    }
+  },
+  "verdict": "Every canon corner of the 01_02 §2.1 recipe is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every other constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the missing malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.5 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.5 / 4.8 / 3.4 µM — the same in both tests. The NEA-selected constants widen it ×1.38–1.54, and with the strongest documented malate reading ×1.53–1.78. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
+  "caveats": [
+    "Hypothesis from literature constants, not measurement (00_06 §0). No prepared solution was analysed.",
+    "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its reviews; the largest ionic strength met at any canon corner is 0.030 mol/L. Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of water.",
+    "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.5); pH is −log10 of the H+ activity.",
+    "Complexes for which NEA selects no enthalpy — the calcium and magnesium oxalate complexes — keep their 25 °C constants over 20–40 °C.",
+    "pH on a 0.5-unit grid and temperature on a 5 °C grid; every band end is a grid point.",
+    "Günzel's malate constants are APPARENT (Na+ medium, pHa 7.4, no Na+/K+–malate pair separated out) and the I = 0 values are a Davies correction from I = 0.104 / 0.124, past that equation's stated range. They enter only the readings; the hard bound and its window use no malate constant at all.",
+    "The hard bound rests on the SIGN of every omitted ligand's effect; its dominance over the documented readings is asserted at every corner evaluated, and its window is asserted the narrowest.",
+    "SI < 0 is the thermodynamic criterion. Precipitation kinetics and a metastable zone are not modelled, and a window edge is the saturation point, not a margin — how far below it to prepare is part of the choice.",
+    "KOH is taken as the base; NaOH moves SI by at most 0.0004 at any corner."
+  ],
+  "not_modelled": [
+    {
+      "item": "glucose",
+      "why": "not part of the 01_02 §2.1 recipe"
+    },
+    {
+      "item": "phytosiderophores (optional, 0.01–0.1 mM)",
+      "why": "no constants in the sources used",
+      "effect_of_omission": "not assessed"
+    },
+    {
+      "item": "calcium malate as a solid",
+      "why": "no solubility product in the sources used",
+      "effect_of_omission": "a second precipitate the window does not check"
+    },
+    {
+      "item": "calcium ligands other than oxalate, sulfate and the malate readings (Cl-, NO3-, HMal-)",
+      "why": "not in the constant sets",
+      "effect_of_omission": "can only raise the calcium oxalate SI"
+    },
+    {
+      "item": "magnesium ligands other than oxalate, sulfate and the malate readings",
+      "why": "not in the constant sets",
+      "effect_of_omission": "bounded by the hard bound's oxalate-inert magnesium"
+    },
+    {
+      "item": "K+/Na+–oxalate ion pairs",
+      "why": "not in the constant sets",
+      "effect_of_omission": "can only raise the calcium oxalate SI"
+    },
+    {
+      "item": "atmospheric CO2",
+      "why": "not in the constant sets",
+      "effect_of_omission": "not assessed"
+    },
+    {
+      "item": "glushinskite as a verdict",
+      "why": "NEA recommends no solubility product (scoping value only)",
+      "effect_of_omission": "its SI is reported from the scoping value and never used"
+    }
+  ]
+}

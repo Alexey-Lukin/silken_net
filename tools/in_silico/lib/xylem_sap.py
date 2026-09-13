@@ -11,6 +11,11 @@ Usage:
 
     profile = get_sap_profile("pinus_sylvestris")
     # Use profile["ph"], profile["ionic_strength"], etc. in MD setup
+
+⚠️ A profile is the ionic composition of an MD box, not a medium anyone can prepare. Several carry calcium and
+oxalic acid together at millimolar levels — the pair script 67 finds supersaturated to calcium oxalate at every
+corner of the `01_02 §2.1` recipe (00_07 HW.3). MD cannot precipitate, so the solvation results stand; do not
+copy these numbers into a wet-lab recipe.
 """
 from __future__ import annotations
 

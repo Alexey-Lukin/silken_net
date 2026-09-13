@@ -76,18 +76,22 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 56 | `56_unified_press_fit_lame.py` | HW.3.IS anchor: unified thick-wall Lamé — combined thermal + press-fit (SF 5.6×) | ~1 s |
 | 57 | `57_gdl_breakthrough.py` | HW.25 cathode: PTFE-GDL liquid-entry pressure (Young–Laplace) + O₂ diffusion budget | < 1 s |
 | 58 | `58_thermal_install_field.py` | HW.6 install: 2D axisymmetric thermal field → cambium safety + generator for the 1D orphan cache | ~13 min |
+| 59 | `59_contact_endurance_check.py` | HW.43: endurance-limit literature review for the four contact/elastic parts (pogo spring, Sil-Pad, genipin matrix, PEEK barbs) — closed form, no FEA; the question is the acceptance unit | < 1 s |
 | 60 | `60_paper_figures.py` | Стаття 1 figures from cache (+PDB for Fig 2): Fig 2 DRAFT / 3 / 4 / 5 + S1; canon-asserted → `paper/figures/` | ~4 s |
 | 61 | `61_paper_tables.py` | Стаття 1 Tables T1–T4 from cache (canon-asserted, no DFT) → `paper/06_tables.md` | ~1 s |
+| 62 | `62_wind_duty_cycle.py` | HW.43: wind duty-cycle for the Cherkasy pine forest from the committed NASA POWER record (daily WS10M) — bounds the trunk-sway cycle count | < 1 s |
 | 63 | `63_delta_t_aux_power_sensitivity.py` | HW.42: does a second (TEG) power source on the shared BQ25570 rail contaminate `delta_t` — closed-form P_aux 10-200 µW sensitivity bracket | ~1 s |
 | 64 | `64_teg_across_peek_break.py` | HW.21: may a Bi₂Te₃ TEG be mounted ACROSS the Zone-2 PEEK break instead of glued to bark — imports script 54's ladder + a `G_TEG` branch, thermal gate vs own Seebeck output | ~2 s |
+| 65 | `65_zif_radiosensitization.py` | HW.22: does the ZIF nanozyme radiosensitise the enzymes under Co-60 — closed-form Compton/CSDA transport, no DFT | < 1 s |
+| 66 | `66_gyroid_ligament_thickness.py` | HW.33: thinnest printed feature of a gyroid per topology (sheet vs network) at fixed porosity → minimum printable period | ~2 min |
+| 67 | `67_sap_recipe_saturation.py` | HW.3: calcium oxalate saturation of the `01_02 §2.1` synthetic sap — corner scan per test band, admissible Ca × oxalate window on a constant-free hard bound, base and buffer prices | ~8 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —
 tunneling/λ/PCET/micro-solvation/speciation),
-30-31 L4 kinetics/EIS, 40 validation, 50-58 anchor mechanics/thermal
-(analytical numpy — HW.3/HW.6/HW.8/HW.24/HW.25/HW.34, not part of the L1-L4 enzyme DAG), 60-61 paper assets
-(figures + tables, cache-only renderers). Rows are listed in execution order;
-08-09 reserved for future ligands.
+30-31 L4 kinetics/EIS, 40 validation; from 50 up, lab-gated desk models tied to the tracker item each row
+names (not part of the L1-L4 enzyme DAG), except 60-61, the paper assets (figures + tables, cache-only
+renderers). Rows are listed in execution order; 09 is reserved for a future ligand.
 
 ## Why the GAFF detour (script 02 + 03)?
 

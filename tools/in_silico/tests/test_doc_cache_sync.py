@@ -20,6 +20,7 @@ Tolerance rule: ~1 unit in the doc's last displayed digit (honours "within displ
 """
 import fnmatch
 import json
+import math
 import re
 from pathlib import Path
 
@@ -76,6 +77,8 @@ L3 = "docs/protocols/ebfc/in_silico/L3_quantum_chemistry.md"
 CODIT = "docs/01_04_CODIT_and_Xylemointegration.md"  # thermal-penetration cache (§3.5) — a non-SUMMARY doc-target
 BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland geometry (§3.5), owner = script 52
 COAXIAL = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"  # anchor geometry; §1.4 bus + liner, owner = script 55
+METALLURGY = "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md"  # §2.1 synthetic sap + its saturation verdict, owner = script 67
+SAP = "chemistry/sap_recipe_saturation.json"
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -540,6 +543,114 @@ CHECKS = [
         "mechanical/gyroid_ligament.json",
         lambda d: d["floor_inversion"]["network"]["slm_default"]["min_period_um"], 1.0,
     ),
+    # ── HW.3 synthetic sap: the saturation verdict SUMMARY and canon quote from script 67 ──
+    # ⛔ These carry a verdict against a recipe canon still specifies. The break-even rows are the ones a
+    # reader ACTS on — they say how wrong the chemistry would have to be for the recipe to be preparable,
+    # so a stale one reads as a margin that no longer exists.
+    (
+        "sap SI floor, coin, NEA-selected → sap_recipe_saturation.json (SUMMARY §HW.3 Q1)",
+        SUMMARY, rf"\| coin \(pH 4\.5–5\.5, 20–25 °C\) \| \*\*\+{N}\*\* …",
+        SAP, lambda d: d["q1_corners"]["per_test"]["coin"]["selected"]["si_whewellite_min"], 0.006,
+    ),
+    (
+        "sap SI floor, accelerated, NEA-selected → sap_recipe_saturation.json (SUMMARY §HW.3 Q1)",
+        SUMMARY, rf"\| accelerated \(pH 5\.0–5\.5, 20–40 °C\) \| \*\*\+{N}\*\* …",
+        SAP, lambda d: d["q1_corners"]["per_test"]["accelerated"]["selected"]["si_whewellite_min"], 0.006,
+    ),
+    (
+        "sap SI floor, SI-lowest documented reading → sap_recipe_saturation.json (SUMMARY §HW.3 Q1)",
+        SUMMARY, rf"\| accelerated \(pH 5\.0–5\.5, 20–40 °C\) \| \*\*\+[\d.]+\*\* … \+[\d.]+ \| \*\*\+{N}\*\* …",
+        SAP, lambda d: d["q1_corners"]["per_test"]["accelerated"]["si_lowest_documented"]["si_whewellite_min"], 0.006,
+    ),
+    (
+        "sap break-even whewellite log Ks → sap_recipe_saturation.json (SUMMARY §HW.3 Q1)",
+        SUMMARY, rf"log Ks at 25 °C reaches \*\*{N}\*\*",
+        SAP, lambda d: min(d["q1_corners"]["break_even_whewellite_log_ks_25c"].values()), 0.006,
+    ),
+    (
+        "sap break-even calcium malate log K° → sap_recipe_saturation.json (SUMMARY §HW.3 Q1)",
+        SUMMARY, rf"log K° reaches \*\*{N}\*\* — ",
+        SAP, lambda d: min(v["log_k_camal_break_even"]
+                           for v in d["q1_corners"]["break_even_calcium_malate"].values()), 0.006,
+    ),
+    (
+        "sap unnamed base, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q3)",
+        SUMMARY, rf"takes \*\*[\d.]+–{N} mM\*\* of strong base",
+        SAP, lambda d: d["prices"]["either_direction"]["base_mM_max"], 0.06,
+    ),
+    (
+        "sap potassium as KOH, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q3)",
+        SUMMARY, rf"makes K⁺ \*\*[\d.]+–{N} mM\*\*",
+        SAP, lambda d: d["prices"]["either_direction"]["potassium_total_mM_max_if_koh"], 0.06,
+    ),
+    (
+        "sap buffer capacity lost by cutting oxalate, upper end → sap_recipe_saturation.json (SUMMARY §HW.3 Q4)",
+        SUMMARY, rf"costs \*\*[\d.]+–{N} %\*\* of β",
+        SAP, lambda d: d["prices"]["cut_oxalate_keep_calcium"]["buffer_capacity_lost_fraction_range"][1] * 100.0, 0.6,
+    ),
+    (
+        "sap magnesium oxalate at the calcium-cut window edge → sap_recipe_saturation.json (SUMMARY §HW.3 Q4)",
+        SUMMARY, rf"oxalate reaches SI \*\*{N}\*\* at the window edge",
+        SAP, lambda d: max(g["si_glushinskite_scoping_max"]
+                           for rows in d["prices"]["cut_calcium_keep_oxalate"]["glushinskite_scoping_si_at_window_edge"].values()
+                           for g in rows), 0.006,
+    ),
+    (
+        "sap widest widening by a documented malate reading → sap_recipe_saturation.json (SUMMARY §HW.3 Q5)",
+        SUMMARY, rf"\| \+ Günzel constants corrected to I = 0 \(derived\) \| ×[\d.]+–{N} \|",
+        SAP, lambda d: d["q5_window_over_hard_bound"]["selected_guenzel_i0"][1], 0.006,
+    ),
+    (
+        "sap SI floor quoted by canon → sap_recipe_saturation.json (01_02 §2.1)",
+        METALLURGY, rf"SI вевеліту \*\*\+{N}…\+[\d.]+\*\* на відібраних NEA константах",
+        SAP, lambda d: min(t["selected"]["si_whewellite_min"] for t in d["q1_corners"]["per_test"].values()), 0.006,
+    ),
+    (
+        "sap SI ceiling quoted by canon → sap_recipe_saturation.json (01_02 §2.1)",
+        METALLURGY, rf"SI вевеліту \*\*\+[\d.]+…\+{N}\*\* на відібраних NEA константах",
+        SAP, lambda d: max(t["selected"]["si_whewellite_max"] for t in d["q1_corners"]["per_test"].values()), 0.006,
+    ),
+]
+
+# ── HW.3: the recipe TABLE is script 67's premise, and its window is quoted slot by slot ──
+# ⛔ For the recipe rows the direction of truth is INVERTED and the failure message cannot say so: canon is
+# the source and the cache mirrors it — a recipe edit without a re-run of 67 leaves the verdict and the window
+# describing a medium nobody specifies any more. Each END is pinned on its own, because a range whose one end
+# moved still reads as a range; the window per SLOT, because three levels in one phrase can keep two current.
+_RECIPE_LABELS = {"malic": "Яблучна кислота (malic acid)", "oxalic": "Щавлева кислота (oxalic acid)",
+                  "kno3": "KNO₃ (K⁺)", "cacl2": "CaCl₂ (Ca²⁺)", "mgso4": "MgSO₄ (Mg²⁺)"}
+_LEVELS = ("0.5", "1", "2")
+
+
+def _slot(prefix: str, i: int) -> str:
+    slots = [r"[\d.]+"] * len(_LEVELS)
+    slots[i] = N
+    return prefix + " / ".join(slots) + r" µM\*\*"
+
+
+def _one_window(d, fixed: str, i: int) -> float:
+    """The docs quote ONE window for both tests, so this reds (NaN) the moment the two stop sharing it."""
+    per = d["q2_window"]["per_scenario"]["hard_bound"]
+    coin, accelerated = (per[t][fixed][i]["partner_max_total_uM"] for t in ("coin", "accelerated"))
+    return coin if coin == accelerated else float("nan")
+
+
+CHECKS += [
+    (f"01_02 §2.1 recipe {key} {end} (canon → script 67 premise: re-run 67 on a recipe change)",
+     METALLURGY,
+     rf"\| {re.escape(label)} \| {N}–[\d.]+ mM \|" if j == 0 else rf"\| {re.escape(label)} \| [\d.]+–{N} mM \|",
+     SAP, lambda d, k=key, j=j: d["recipe_ranges_mM"][k][j], 0.0)
+    for key, label in _RECIPE_LABELS.items() for j, end in enumerate(("floor", "ceiling"))
+] + [
+    (f"sap hard-bound window, {fixed} held at {level} mM → sap_recipe_saturation.json ({where})",
+     doc_rel, pattern, SAP, lambda d, f=fixed, i=i: _one_window(d, f, i), 0.06)
+    for i, level in enumerate(_LEVELS)
+    for fixed, doc_rel, where, pattern in (
+        ("Ca", SUMMARY, "SUMMARY §HW.3 Q2", rf"\| Ca {re.escape(level)} mM → total oxalate ≤ \| \*\*{N} µM\*\* \|"),
+        ("Ox", SUMMARY, "SUMMARY §HW.3 Q2", rf"\| oxalate {re.escape(level)} mM → total Ca ≤ \| \*\*{N} µM\*\* \|"),
+        ("Ca", METALLURGY, "01_02 §2.1", _slot(r"щавлева кислота ≤ \*\*", i)),
+        ("Ox", METALLURGY, "01_02 §2.1", _slot(r"CaCl₂ ≤ \*\*", i)),
+    )
 ]
 
 
@@ -555,10 +666,18 @@ def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
         f"[{label}] anchor matched {len(matches)} lines in {doc_rel} — ambiguous; tighten the pattern.")
     doc_val = _to_float(matches[0])
     cache_val = float(resolver(C(cache_rel)))
+    # The remedy is not the same for every row, so the message must not pretend it is: a `premise` row
+    # mirrors CANON into the script (canon moved → re-run), and a NaN resolver refuses a doc sentence the
+    # cache no longer supports as phrased — "fix the number" would be the wrong move for both.
+    if math.isnan(cache_val):
+        remedy = "the resolver refused (NaN): the cache no longer supports the doc's statement as PHRASED — read the resolver."
+    elif "premise" in label:
+        remedy = "CANON is the source for this row — re-run the owning script so its cache mirrors canon again."
+    else:
+        remedy = "Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script."
     assert abs(doc_val - cache_val) <= tol, (
         f"[{label}] DOC↔CACHE DRIFT: {doc_rel} says {doc_val} but "
-        f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). "
-        f"Cache is SSOT — fix the doc, or (if the cache is wrong) re-run the owning script."
+        f"{cache_rel} says {cache_val} (|Δ|={abs(doc_val - cache_val):.4g} > tol {tol}). {remedy}"
     )
 
 

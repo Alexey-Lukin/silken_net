@@ -5,6 +5,7 @@ Verify integrity of committed in-silico cache and ligand files.
 Runs without conda env — uses only stdlib + json. Safe for CI.
 """
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ CACHE = REPO / "tools/in_silico/cache"
 DFT = CACHE / "dft"
 KINETICS = CACHE / "kinetics"
 MECHANICAL = CACHE / "mechanical"
+CHEMISTRY = CACHE / "chemistry"
 
 
 # ── Ligand SDF/XYZ files ──
@@ -543,6 +545,45 @@ def test_bus_mechanical_wear_budget():
     assert w["binding"]["branch"] == SHIPPED_INSULATION
 
 
+def test_sap_recipe_saturation():
+    """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
+
+    Sanity is STRUCTURAL — the quoted numbers are pinned by test_doc_cache_sync. Four things must hold:
+      1. the verdict: every canon corner supersaturated, in both tests, under every constant reading;
+      2. the window rests on the HARD BOUND, which needs no calcium or magnesium malate constant — so
+         the bound must stay above every reading and its window must stay the narrowest. A script that
+         lost either would still print a window, now resting on a constant nobody has measured;
+      3. the window moves the right way: more of the held ion leaves less room for the other;
+      4. the malic-acid equations the CACHE carries still return the constants printed beside them in the
+         primary. The scan's text layer misreads two coefficients; the script asserts this too, but only
+         this reads what was actually written.
+    """
+    path = CHEMISTRY / "sap_recipe_saturation.json"
+    if not path.exists():
+        pytest.skip("sap_recipe_saturation.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    per_test = d["q1_corners"]["per_test"]
+    assert set(per_test) == {"coin", "accelerated"}
+    for test, readings in per_test.items():
+        for key, s in readings.items():
+            assert s["every_corner_supersaturated"] and s["si_whewellite_min"] > 0.0, f"{test}/{key}"
+            assert s["si_range_other_solids"]["gypsum CaSO4·2H2O"][1] < 0.0, "gypsum reached saturation"
+    assert d["verification"]["hard_bound_min_si_margin_over_every_reading"] >= 0.0
+    windows = d["q2_window"]["per_scenario"]
+    for key, per_scenario in windows.items():
+        for test in per_test:
+            for fixed in ("Ca", "Ox"):
+                limits = [w["partner_max_total_uM"] for w in per_scenario[test][fixed]]
+                assert limits == sorted(limits, reverse=True), f"{key}/{test}/{fixed}: window not monotone"
+                bound = [w["partner_max_total_uM"] for w in windows["hard_bound"][test][fixed]]
+                assert all(b <= x * (1.0 + 1e-6) for b, x in zip(bound, limits, strict=True)), \
+                    f"{key}/{test}/{fixed}: narrower than the hard bound"
+    malic, t_k = d["constants"]["malic_acid"], 298.15
+    for (a3, a1, a2), k25 in zip((malic["pk1_equation"], malic["pk2_equation"]), malic["k_25c_printed"], strict=True):
+        assert abs(a3 / t_k + a1 + a2 * t_k + math.log10(k25)) < 2e-3, "malic-acid equation ≠ its printed constant"
+    assert (CHEMISTRY / "sap_recipe_saturation.png").stat().st_size > 10_000
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():
@@ -815,6 +856,7 @@ EXPECTED_SCRIPTS = [
     "64_teg_across_peek_break.py",
     "65_zif_radiosensitization.py",
     "66_gyroid_ligament_thickness.py",
+    "67_sap_recipe_saturation.py",
 ]
 
 

@@ -49,6 +49,7 @@
 
 - ⚠️ **Температурний рядок того рецепта (20–40 °C, цикл) належить прискореному тесту [`01_02 §2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), не монеті** — у лист він не йде. Coin-тест: **20–25 °C** ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - ⚖️ **pH канон тримає ДВОМА смугами:** [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — 5.0–5.5 ⊥ [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — 4.5–5.5 (а реф останнього на [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) pH-числа не містить). Катодне середовище — pH 4.5 (там же, §3.5). **Лист смуги не обирає:** межею називає обʼєднання 4.5–5.5, set-point — «confirmed before the order», ціну просить **за pH-умову**, тож лишається чинним за обох присудів.
+- 🔴 **Діапазони кальцію й оксалату разом не готуються:** кожен кут рецептури пересичений щодо оксалату кальцію на обох pH-смугах ([`SUMMARY §HW.3`](../ebfc/in_silico/SUMMARY.md)), тож точна рецептура «before the order» винесе Ca, оксалат або обидва далеко нижче діапазону — котрий, ⚖️ [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3. **Лист вибору не робить:** «point values within these ranges» знято, несумісність названо лабораторії як факт приготування, а QC партії просить перевірку на осад — порогу не ставить.
 - 🔴 **Глюкози в рецепті немає, а анод без субстрату `j_max` не дає.** Специфікації середовища для coin-тесту канон не тримає: глюкоза в ньому стоїть лише умовою літературного виміру ([`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)) і сценаріями in-silico L4 ([`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md), `Km` там «Estimated»). Лист: концентрація «confirmed before the order» + опційна серія глюкози з ціною за точку, бо споживач даних (`40_validate_vs_experiment.py`) чекає `Km` саме із серії.
 - ⚠️ **Провенанс рецепта не звірено:** обидва джерела [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) без DOI, і пошук за точними назвами 2026-09-13 їх не знайшов. Це **не** доказ відсутності, але й не підстава подавати рецепт лабораторії як літературно валідований — тому в листі він «working composition». Виміряний склад соку *Pinus sylvestris* — робота біо-хабу ЧНУ ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
 - **Мікробний ріст** у глюкозному середовищі за 30 днів канон не адресує → лист питає метод контролю, а добавки дозволяє лише за узгодженням.
@@ -101,6 +102,7 @@
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
 | pH соку: 5.0–5.5 ⊥ 4.5–5.5 | межа = обʼєднання · set-point «before the order» · ціна за pH-умову | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
+| рецептура: Ca ⊥ оксалат — у діапазонах разом пересичені | несумісність названо як факт приготування · точна рецептура «before the order» · QC партії на осад | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3 |
 | глюкоза: концентрація / серія | «before the order» + опційна серія з ціною за точку | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
 | часова база µg/см² | рівні названо, база — «still being fixed»; LOQ + обʼєм + площа + кумулятивні дані | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.3 |
 | матриця тестів: репліки · субстрат катодних купонів · послідовність C/D/E | ціна за одиницю + розкладку пропонує лабораторія | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 (пріоритети живить HW.36) |
@@ -169,12 +171,12 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 | MgSO₄ | 0.2–1 mM |
 | Phytosiderophores (optional — tell us if you can source them) | 0.01–0.1 mM |
 
-- **Exact recipe** (point values within these ranges): **confirmed before the order.** Quote medium preparation per batch.
+- **Exact recipe** (point values): **confirmed before the order.** Calcium and oxalate cannot both sit inside the ranges above — at those levels the medium exceeds the solubility of calcium oxalate — so the confirmed recipe will set calcium, oxalate or both well below their ranges. Quote medium preparation per batch.
 - **pH:** buffered by the recipe's own organic acids, not by an added buffer system. The set-point lies **within pH 4.5–5.5** and is **confirmed before the order**; please quote **per pH condition**, as we may add a second condition at the other end of that band. Tell us how you set and hold pH over 30 days and how often you log it.
 - **Glucose** is added as the anode substrate; its concentration is **confirmed before the order**. As a separately priced option, quote a **glucose concentration series** (price per concentration point), from which an apparent Michaelis constant can be extracted.
 - **Cathode medium:** pH 4.5, air-exposed. Tell us how you keep it air-saturated and whether you log dissolved oxygen.
 - **Microbial growth:** a glucose-containing medium held for 30 days will support it, and growth would consume the substrate and confound the stability result — state how you prevent it (additives only by agreement, see Handling).
-- **Medium QC per batch:** pH with a calibrated meter, conductivity, and verification of the major ions — state the method and include the records in the report.
+- **Medium QC per batch:** pH with a calibrated meter, conductivity, verification of the major ions, and a check that the batch carries **no precipitate** — right after preparation and again at the end of the 30-day hold. State the methods and include the records in the report.
 
 ### Measurements requested
 

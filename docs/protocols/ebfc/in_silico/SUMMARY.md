@@ -749,6 +749,120 @@ sets how much water is there to radiolyse.
 
 ---
 
+## HW.3 — Does the Synthetic Xylem Sap Precipitate Its Own Chelator? (script 67)
+
+Spec home → [`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); decision → `00_07` HW.3.
+
+The recipe is written as ranges — malic acid 1–5, oxalic acid 0.5–2, KNO₃ 2–5, CaCl₂ 0.5–2, MgSO₄ 0.2–1 mM —
+and two tests run in it: the Stage-2 coin electrochemistry (pH 4.5–5.5, 20–25 °C,
+[`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md); the lab letter names the union of canon's two pH
+bands) and the 12-week accelerated corrosion test (pH 5.0–5.5, 20–40 °C cycle). A range is a claim about a
+set of solutions, and calcium oxalate is among the least soluble salts in biology, so the set was checked for
+members that exist: speciation at fixed pH with the neutralising base as an unknown, Davies activities, every
+corner of the ranges × each test's pH and temperature band.
+
+**Constants — each read from its primary, and pinned where it can be misread.** Oxalate protonation, the Ca/Mg
+oxalate complexes and the three calcium oxalate hydrates: NEA-TDB Vol. 9 (Hummel et al. 2005), selected values
+plus their documented spread (the accepted determinations of Table VI-18 where NEA lists several, the stated
+uncertainty otherwise). Malic acid: the Eden & Bates (1959) temperature equations — the scan's text layer reads
+1355.85 / 1655.53 for 1358.85 / 1658.53, a 0.01 error in pK₁, so the script holds both equations to the 25 °C
+constants printed beside them. Sulfate ion pairs and gypsum: WATEQ4F as distributed in PHREEQC `wateq4f.dat`,
+each analytic expression checked against its own `log_k` line. A(T) for Davies: NEA TDB-2 Table 2. The solver
+matches a closed-form reduced system to machine precision.
+
+**The constant that does not exist.** No open primary gives the calcium or magnesium malate complex at I = 0.
+The only measured values are **apparent** constants (Günzel, McGuigan & Schlue 2005: Kapp 10.32 mM for Ca at
+I = 0.124 and 15.85 mM for Mg at I = 0.104, Na⁺ medium, pHa 7.4) — log K′ 1.99 / 1.80, or 2.90 / 2.67 after a
+Davies correction to I = 0 that the script derives from beyond that equation's stated range. None is elected.
+Leaving a calcium ligand out of the model can only **raise** the calcium oxalate SI, and a magnesium ligand can
+at most free all the oxalate magnesium holds. So the **hard bound** — calcium bound only by oxalate and sulfate,
+magnesium made oxalate-inert, every oxalate constant at its SI-raising end — bounds the SI from above whatever
+the missing constants are. Its dominance over every documented reading is asserted at every corner (margin
+≥ 0.014), and its window is asserted the narrowest; the readings then price the missing constant instead of
+hiding it.
+
+**Q1 — every canon corner is supersaturated.** SI of whewellite over all corners of the recipe:
+
+| test (its band) | NEA-selected constants | SI-lowest documented reading | hard bound |
+|---|---|---|---|
+| coin (pH 4.5–5.5, 20–25 °C) | **+1.19** … +2.49 | +0.90 … +2.35 | +1.46 … +2.64 |
+| accelerated (pH 5.0–5.5, 20–40 °C) | **+1.03** … +2.49 | **+0.72** … +2.35 | +1.31 … +2.64 |
+
+Weddellite and caoxite are supersaturated at every corner under every reading too; gypsum is not (SI ≤ −1.66).
+Under the NEA-selected constants the least-supersaturated corner is malic 5 · oxalic 0.5 · KNO₃ 5 · CaCl₂ 0.5 ·
+MgSO₄ 1 mM at the band's lowest pH and warmest temperature; the most, malic 1 · oxalic 2 · KNO₃ 2 · CaCl₂ 2 ·
+MgSO₄ 0.2 mM at pH 5.5, 20 °C.
+**How wrong the constants would have to be:** with every other constant at its SI-lowering end, a corner turns
+undersaturated only if whewellite log Ks at 25 °C reaches **−7.95** (NEA selects −8.73 ± 0.06), or calcium malate
+log K° reaches **3.98** — 1.09 above the strongest documented reading, which is itself derived — with malate then
+holding 90 % of the calcium (accelerated test; the coin test needs 4.17 and 94 %).
+
+**Q2 — the admissible window.** For each canon level of one ion, the largest total of the other with
+SI(whewellite) ≤ 0 in every condition of the test's band, worst case over the other three components:
+
+| held at a canon level | **hard bound** (needs no malate constant) | NEA-selected, no malate complexes | NEA-selected + Günzel at I = 0 (derived) |
+|---|---|---|---|
+| Ca 0.5 mM → total oxalate ≤ | **7.5 µM** | 11.6 µM | 13.4 µM |
+| Ca 1 mM → total oxalate ≤ | **4.7 µM** | 7.3 µM | 8.1 µM |
+| Ca 2 mM → total oxalate ≤ | **3.3 µM** | 5.1 µM | 5.4 µM |
+| oxalate 0.5 mM → total Ca ≤ | **7.5 µM** | 10.6 µM | 12.6 µM |
+| oxalate 1 mM → total Ca ≤ | **4.8 µM** | 6.5 µM | 7.5 µM |
+| oxalate 2 mM → total Ca ≤ | **3.4 µM** | 4.7 µM | 5.1 µM |
+
+The binding condition is malic 1 · KNO₃ 2 · MgSO₄ 0.2 mM at pH 5.5 and 20 °C — inside **both** bands, so the two
+tests share one window and this chemistry does not force the pH choice. Whichever ion is held, the other lands
+×66–149 below its canon floor; the boundary between the two directions is a continuum
+(`cache/chemistry/sap_recipe_saturation.png`). ⚠️ A window edge is the saturation point itself, not a margin.
+
+**Q3 — the base the recipe does not name.** Reaching the set-point takes **2.0–13.0 mM** of strong base; as KOH
+it makes K⁺ **4.0–18.0 mM**, against the 2–5 mM KNO₃ the table calls the dominant cation. Its identity barely
+touches saturation (NaOH instead of KOH moves SI by ≤ 0.0004), but it is the largest ionic ingredient of the
+medium, so a confirmed recipe has to name it.
+
+**Q4 — what cutting oxalate costs in buffering.** Buffer capacity β (mM per pH unit) at 25 °C, KNO₃ 2 · CaCl₂ 0.5 ·
+MgSO₄ 0.2 mM, at pH 4.5 / 5.0 / 5.5:
+
+| malic acid | oxalate 0.5 mM (canon) | oxalate 2 mM (canon) | oxalate 7.5 µM (window) | no oxalate |
+|---|---|---|---|---|
+| 1 mM | 0.88 / 0.75 / 0.46 | 1.52 / 1.05 / 0.56 | 0.69 / 0.67 / 0.44 | 0.68 / 0.67 / 0.44 |
+| 5 mM | 3.43 / 3.34 / 2.04 | 4.09 / 3.61 / 2.10 | 3.23 / 3.26 / 2.02 | 3.23 / 3.26 / 2.02 |
+
+A window-level oxalate buffers like none at all, so cutting it costs **0.9–55 %** of β — least at malic 5 mM with
+0.5 mM oxalate at pH 5.5, most at malic 1 mM with 2 mM oxalate at pH 4.5 — and removes the chelator the recipe
+lists as "active at pH 5.0" as a reagent. **Cutting calcium instead** puts the recipe's "structural cation of the
+cell wall" at micromolar, and keeps a second solid in play: with oxalate at 2 mM and MgSO₄ at 1 mM, magnesium
+oxalate reaches SI **−0.37** at the window edge against NEA's scoping solubility product (−6.4 ± 0.2, for which
+"no value is recommended") — undersaturated on the only number available, by less than twice its stated
+uncertainty.
+
+**Q5 — how far the constants move the window.** Each reading's partner maximum over the hard bound's, across both
+tests, both directions and all three levels:
+
+| reading | window ÷ hard bound |
+|---|---|
+| NEA-selected, no malate complexes | ×1.38–1.54 |
+| + Günzel apparent constants read as I = 0 | ×1.40–1.58 |
+| + Günzel constants corrected to I = 0 (derived) | ×1.53–1.78 |
+| oxalate constants at their SI-raising end, no malate | ×1.03–1.18 |
+| oxalate constants at their SI-lowering end, no malate | ×1.71–1.94 |
+
+No reading comes within an order of magnitude of the canon ranges.
+
+**Verdict** — 🔴 **The recipe as specified has no member that is a stable solution.** Every corner of both tests'
+bands is supersaturated to all three calcium oxalate hydrates, by a margin no documented constant closes. The
+hard-bound window is the machine half of HW.3; which ion to lower, and how far below the edge to prepare, is ⚖️
+(`00_07` HW.3), priced in Q2–Q4. (`chemistry/sap_recipe_saturation.json`)
+
+⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Structurally
+blind to: precipitation kinetics and the metastable zone — a supersaturated flask that has not clouded yet is
+exactly the case this criterion exists to reject; the composition of real *Pinus sylvestris* sap (no primary
+measurement in the tree); phytosiderophores, calcium malate as a solid and atmospheric CO₂, for which the
+sources used give no constants; and the Davies activity model, although the largest ionic strength met,
+0.031 mol/L, sits well inside its stated range. The MD sap profiles in `lib/xylem_sap.py` carry the same
+calcium/oxalate pair at millimolar levels — they parameterise solvation, not a medium anyone can prepare.
+
+---
+
 ## Infrastructure
 
 | Component | Location |
@@ -759,6 +873,7 @@ sets how much water is there to radiolyse.
 | GAFF parameter cache | `tools/in_silico/cache/gaff_cache.json` |
 | DFT results | `tools/in_silico/cache/dft/` |
 | Kinetics results | `tools/in_silico/cache/kinetics/` |
+| Mechanical and solution-chemistry results | `tools/in_silico/cache/mechanical/` · `tools/in_silico/cache/chemistry/` |
 | MD trajectories | `tools/in_silico/cache/runs/` (gitignored) |
 | Paper figures | `scripts/60_paper_figures.py` (cache-only, canon-asserted) → `paper/figures/` (Fig 3/4/5 + S1; Fig 1/2 = molecular/art, pending) |
 | Conda environment | `tools/in_silico/environment.yml` (silken_md) |
