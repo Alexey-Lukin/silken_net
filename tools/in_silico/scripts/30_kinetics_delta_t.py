@@ -16,8 +16,9 @@ which was reversed as economically null/inverted (00_07 E.63 / 03_04 §4.3).
 
 Key literature parameters
 -------------------------
-  j_max(25°C) = 494 µA/cm²    — dgrGcGDH + Os-polymer (Zafar 2012, PMC3275720)
-  Km ≈ 20 mM                  — estimate for GcGDH (between Asp 87 mM, Mucor 28 mM)
+  j_max(25°C) = 494 µA/cm²    — Zafar 2012 (PMC3275720): NATIVE GcGDH at 20 mM glucose, i.e. an
+                                operating point used here as the asymptote (00_07 HW.5.IS)
+  Km ≈ 20 mM                  — no primary; the bracket it claims (Asp 87, Mucor 28) does not contain it
   V_op = 0.5 V                — EBFC under load (OCV 0.6-0.8 V, 01_03 §1)
   η_bq = 0.68                 — BQ25570 boost efficiency @ P_EBFC≈15µW (docs/02_03 §9.1
                                  table is source of truth; TI SLUSBH2G gives no closed-form

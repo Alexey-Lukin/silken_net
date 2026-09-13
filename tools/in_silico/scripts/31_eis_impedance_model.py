@@ -19,7 +19,7 @@ Equivalent circuit
 
 Parameters from in-silico pipeline
 -----------------------------------
-  j_max = 494 µA/cm² (L3, dgrGcGDH + Os-polymer, Zafar 2012)
+  j_max = 494 µA/cm² (native GcGDH at 20 mM, Zafar 2012 — attribution and role open, 00_07 HW.5.IS)
   D_eff = 2e-6 cm²/s (L4, glucose in chitosan hydrogel)
   A     = 2 cm² (effective electrode area on gyroid)
   [S]   = 10 mM (typical xylem glucose)

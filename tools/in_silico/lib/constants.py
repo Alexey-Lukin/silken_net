@@ -57,7 +57,11 @@ ECP_OS = "lanl2dz"
 SOLVENT_EPS_WATER = 78.3553
 
 # ── EBFC parameters (from literature, 01_03 §1) ──
-J_MAX_25C = 494e-6           # A/cm² — dgrGcGDH + Os-polymer (Zafar 2012, PMC3275720)
+J_MAX_25C = 494e-6           # A/cm² — Zafar 2012 (PMC3275720): NATIVE GcGDH + Os-polymer at 20 mM glucose
+# ⚠️ Attribution corrected 2026-09-13: 494 ± 17 is the native enzyme at an OPERATING POINT (20 mM, phosphate
+# pH 7.4, graphite, flow); the deglycosylated form measured 520 ± 20. `30` uses this value as the
+# Michaelis-Menten ASYMPTOTE, so under the source's own conditions it returns 247. Not recomputed here on
+# purpose — the whole L4 cascade moves as one re-run → 00_07 HW.5.IS.
 # ⛔ This number is ALREADY Gen 2.0, and that closes an argument people keep reaching for. The
 # ratified network topology costs 1.88× of the electroactive area (00_07 HW.33, ⚖️ 2026-09-10), and
 # "we compensate the area with a better enzyme" is NOT available: since 30_kinetics_delta_t is
@@ -66,7 +70,7 @@ J_MAX_25C = 494e-6           # A/cm² — dgrGcGDH + Os-polymer (Zafar 2012, PMC
 # figure written above. Raise this constant only against a NEW measured couple, never to balance a
 # geometry decision. [migrated from 00_07 HW.33 on 2026-09-11 — the break-even lived only in the
 #  tracker, while the constant it prices sits here, where a reader is tempted to "improve" it.]
-KM_GLUCOSE = 20.0            # mM — estimated for GcGDH
+KM_GLUCOSE = 20.0            # mM — NO primary (read GcGDH values 10.1–19.0 mM, ≈10 at pH 5.5; 00_07 HW.5.IS)
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =
