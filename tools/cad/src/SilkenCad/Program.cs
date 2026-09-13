@@ -876,7 +876,7 @@ internal static class Program
         if (oM.BusRodClears is false)
             Console.WriteLine(cem.Zone1.BusRodDiameterMm > 0f
                 ? $"  ⚠ F3: bus rod Ø{cem.Zone1.BusRodDiameterMm:F1} + 2·liner {cem.Capsule.Flange.BusLinerThicknessMm:F2} > cathode channel Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — rod+insulation pinched (01_01 §1.4)"
-                : $"  ⚠ F3: anode bore Ø{cem.Zone1.BoreDiameterMm:F1} < flange bore Ø{cem.Capsule.Flange.BoreDiameterMm:F1} — bus conductor pinched");
+                : "  ⚠ F3: Zone 1 declares no bus rod — the stack carries no anode conductor (01_01 §1.4)");
 
         if (oM.LinerCoversChannel is false)
             Console.WriteLine(

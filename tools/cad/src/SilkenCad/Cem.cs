@@ -159,8 +159,7 @@ internal sealed record AnchorCem
     public string Name { get; init; } = "anchor_zone1";
     public float VoxelSizeMm { get; init; } = 0.1f;
     public float OuterDiameterMm { get; init; } = 11f;     // founder 2026-06-20 (HW.33)
-    public float BoreDiameterMm { get; init; } = 1.6f;     // legacy hollow bus channel (gyroid inner); superseded by the monolithic rod below when >0
-    public float BusRodDiameterMm { get; init; }           // monolithic SOLID bus rod Ø (01_01 §1.4): >0 ⇒ rod core + gyroid annulus; 0 ⇒ legacy hollow bore
+    public float BusRodDiameterMm { get; init; }           // monolithic SOLID bus rod Ø (01_01 §1.4) = the core of the gyroid annulus; 0 ⇒ no core, the lattice reaches the axis (synthetic in-test coupons only — every shipped SKU declares a rod, pinned by AnchorTests)
     public float LengthMm { get; init; } = 40f;            // Zone-1 30–50 mm
 
     // Cell-size (pore) axis — period at the core; RimMm tapers it toward the periphery.

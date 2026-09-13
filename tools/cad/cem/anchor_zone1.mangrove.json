@@ -4,7 +4,6 @@
   "name": "anchor_zone1_mangrove",
   "voxel_size_mm": 0.1,
   "outer_diameter_mm": 11.0,
-  "bore_diameter_mm": 1.6,
   "bus_rod_diameter_mm": 1.0,
   "length_mm": 42.0,
   "gyroid_period_mm": 2.8,

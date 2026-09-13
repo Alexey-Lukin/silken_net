@@ -6,7 +6,7 @@ namespace SilkenCad.Tests;
 public class ScanTests
 {
     // Standard Ø11 rod, shortened so adaptive sampling stays honest but fast.
-    private static AnchorCem Rod() => new() { OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, LengthMm = 8f, Name = "scan_test" };
+    private static AnchorCem Rod() => new() { OuterDiameterMm = 11f, BusRodDiameterMm = 1.6f, LengthMm = 8f, Name = "scan_test" };
 
     [Fact]
     public void Scan_Finds_A_Nonempty_Working_Window()

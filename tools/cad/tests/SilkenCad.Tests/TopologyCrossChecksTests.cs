@@ -64,7 +64,7 @@ public class TopologyCrossChecksTests
     {
         // The realistic-geometry sanity test: whatever the sheet gyroid's actual genus is, the
         // cross-check must be internally consistent (Handles >= 0), never merely "some number".
-        AnchorCem cem = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 1.5f };
+        AnchorCem cem = new() { OuterDiameterMm = 6f, BusRodDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 1.5f };
         Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStepMm: 0.15f);
         ConnectivityMetrics conn = Connectivity.Analyse(grid);
         var r = TopologyCrossChecks.EulerCrossCheck(grid, conn);
@@ -115,7 +115,7 @@ public class TopologyCrossChecksTests
         // percolation. That is the real cem/anchor_zone1.pine.json shape, not a synthetic worst case.
         AnchorCem cem = new()
         {
-            OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, BusRodDiameterMm = 1.0f, LengthMm = 40f,
+            OuterDiameterMm = 11f, BusRodDiameterMm = 1.0f, LengthMm = 40f,
             GyroidPeriodMm = 2.5f, GyroidPeriodRimMm = 2.0f, GyroidWallParam = 1.0f,
         };
         Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem);
@@ -145,7 +145,7 @@ public class TopologyCrossChecksTests
         // opening must take almost nothing and leave the topology intact. ⚠ The factor is sheet's;
         // network is ~0.36·period (01_01 §5.5). Naming the branch matters here because no shipped
         // SKU is sheet any more — this fixture is deliberately one, and that is what it pins.
-        AnchorCem cem = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
+        AnchorCem cem = new() { OuterDiameterMm = 6f, BusRodDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
         var r = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(cem), cem);
 
         Assert.Equal(0.05f, r.StepMm);                              // min(2.5/24, 0.2/4)
@@ -174,7 +174,7 @@ public class TopologyCrossChecksTests
     [Fact]
     public void A_Cem_Declared_Vendor_Floor_Moves_Both_The_Threshold_And_The_Grid()
     {
-        AnchorCem canon = new() { OuterDiameterMm = 6f, BoreDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
+        AnchorCem canon = new() { OuterDiameterMm = 6f, BusRodDiameterMm = 1.0f, LengthMm = 6f, GyroidPeriodMm = 2.5f };
         AnchorCem vendor = canon with { SlmMinWallMm = 0.4f };
 
         var rCanon = TopologyCrossChecks.CheckPrintFidelity(Zone1Anode.Gyroid(canon), canon);

@@ -113,7 +113,7 @@ public class AnchorTests
     {
         // The bbox corner (r = outer·√2 > outer) is outside the pipe wall ⇒ Outside, never Pore;
         // and the rod's pore still percolates axially through the envelope.
-        AnchorCem cem = new() { OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, LengthMm = 12f };
+        AnchorCem cem = new() { OuterDiameterMm = 11f, BusRodDiameterMm = 1.6f, LengthMm = 12f };
         Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStepMm: 0.4f);
 
         Assert.Equal(Phase.Outside, grid.Cells[grid.Index(0, 0, grid.Nz / 2)]);
@@ -127,7 +127,7 @@ public class AnchorTests
     {
         // The v2 gradient is RADIAL, so porosity along the axis (Z) must be ~uniform — the axial
         // golden test. A stepped SKU (radial zones) must still be axially flat.
-        AnchorCem cem = new() { OuterDiameterMm = 11f, BoreDiameterMm = 1.6f, LengthMm = 20f, GyroidPeriodRimMm = 1.3f, Topology = "stepped" };
+        AnchorCem cem = new() { OuterDiameterMm = 11f, BusRodDiameterMm = 1.6f, LengthMm = 20f, GyroidPeriodRimMm = 1.3f, Topology = "stepped" };
         Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStepMm: 0.4f);
         double[] aAxial = Connectivity.AxialProfile(grid);
 
@@ -212,6 +212,30 @@ public class AnchorTests
             "Declare it explicitly; the default exists for synthetic in-test coupons only.");
     }
 
+    // The core of every shipped anchor is the monolithic bus rod (01_01 §1.4), and AnchorCem has NO bore
+    // slot: `Cem.Parse` ignores unmapped members, so a `bore_diameter_mm` key written back into a manifest
+    // would parse cleanly and shape nothing — a number on the SSOT surface that the part does not carry.
+    // And a manifest that omits the rod does not fail to build: Zone1Anode.InnerRadiusMm reads 0 and the
+    // lattice reaches the axis, i.e. a factory STL with no conductor. Both are invisible after parsing, so
+    // this reads the RAW json, like the topology pin above.
+    // MUTATION: add `"bore_diameter_mm": 1.6,` to any cem/anchor_zone1.*.json · delete its
+    // "bus_rod_diameter_mm" line ⇒ each reds naming that file.
+    [Fact]
+    public void Every_Shipped_Anchor_Cem_Declares_Its_Bus_Rod_And_No_Bore()
+    {
+        string[] aNoRod = [.. CemFixtures.AnchorFiles()
+            .Where(f => !File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"bus_rod_diameter_mm\""))];
+        string[] aBore = [.. CemFixtures.AnchorFiles()
+            .Where(f => File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"bore_diameter_mm\""))];
+
+        Assert.True(aNoRod.Length == 0,
+            $"{string.Join(", ", aNoRod)} declare no `bus_rod_diameter_mm` — the lattice would reach the axis and " +
+            "the part would carry no anode conductor (01_01 §1.4).");
+        Assert.True(aBore.Length == 0,
+            $"{string.Join(", ", aBore)} carry `bore_diameter_mm`, which AnchorCem has no slot for — the key " +
+            "evaporates on parse; the rod is the core.");
+    }
+
     // The coating map of 01_02 §3.6 forbids ZnO-Ta, self-healing 8-HQ and biomimetic layers on the Zone-1
     // gyroid wall OUTRIGHT — a dielectric there blocks direct electron transfer, i.e. it does not degrade
     // the EBFC, it stops it. Until 2026-09-11 that rule had NO carrier on this part at all (00_07 HW.1):
@@ -284,30 +308,29 @@ public class AnchorTests
     }
 
     [Fact]
-    public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__Else_Legacy_Bore()
+    public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__No_Rod_Means_No_Core()
     {
-        // 01_01 §1.4: with a solid bus rod the gyroid annulus starts at the rod surface (rod/2); without one
-        // it falls back to the legacy hollow bore (bore/2). The solid rod core itself is voxConstruct-added in
-        // BuildMonolithic — render-verified by `verify` (Voxels need Library.Go), not unit-tested here.
+        // 01_01 §1.4: with a solid bus rod the gyroid annulus starts at the rod surface (rod/2); a coupon that
+        // declares no rod has no core and the lattice reaches the axis. The solid rod core itself is
+        // voxConstruct-added in BuildMonolithic — render-verified by `verify` (Voxels need Library.Go), not
+        // unit-tested here.
         Assert.Equal(0.5f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
-        Assert.Equal(0.8f, Zone1Anode.InnerRadiusMm(new AnchorCem { BoreDiameterMm = 1.6f }));  // rod==0 ⇒ legacy bore
+        Assert.Equal(0f, Zone1Anode.InnerRadiusMm(new AnchorCem()));
     }
 
-    // 🔴 ONE part, ONE inner envelope (00_07 HW.33). Every rod-bearing manifest still carries a
-    // `bore_diameter_mm` that shapes nothing, so a consumer that reads it samples r ≥ bore/2 and drops the
-    // ring [rod/2, bore/2] the printed part carries — silently, because the ring is small. Measured
-    // 2026-09-13 on the shipped seven: it moves `stepped`'s sub-floor share by −0.79 pp (past its golden
-    // tolerance) and every network SKU's by under 0.04 pp (inside it), so the golden gate alone would see
-    // the defect on one SKU of seven. The pin above holds the SOURCE; this one holds its READERS.
+    // 🔴 ONE part, ONE inner envelope (00_07 HW.33). A reader that samples from any radius other than the one
+    // `build` cuts drops — or invents — a ring the printed part carries, silently, because the ring is small.
+    // Measured 2026-09-13 with a 0.3 mm ring on the shipped seven: `stepped`'s sub-floor share moved −0.79 pp
+    // (past its golden tolerance) and every network SKU's under 0.04 pp (inside it), so the golden gate alone
+    // would see such a defect on one SKU of seven. The pin above holds the SOURCE; this one holds its READERS.
     // Covered: Connectivity.SampleAnchor (and through it CheckPrintFidelity and WallScan, which sample only
     // via it) · Validation's per-shell radii · VoxelFea.SampleAnchorAsBuilt. Each reader is judged against
     // the radius Zone1Anode.Envelope cuts, never against another reader, so two readers wrong the same way
     // still red.
     // ⛔ Declared ceiling: MeasureAnchor's shell loop needs voxels, so what is pinned is its pure seam
     // (ShellBoundariesMm), not the loop itself; a reader that grows its own sampler is outside this pin.
-    // MUTATION (2026-09-13, each alone): revert the inner radius to `cem.BoreDiameterMm / 2f` in
-    // Connectivity.SampleAnchor · in Validation.ShellBoundariesMm · in VoxelFea.SampleAnchorAsBuilt ⇒ each
-    // reds naming its own reader.
+    // MUTATION (2026-09-13, each alone): cut at r = 0 — ignore the rod — in Connectivity.SampleAnchor ·
+    // in Validation.ShellBoundariesMm · in VoxelFea.SampleAnchorAsBuilt ⇒ each reds naming its own reader.
     [Fact]
     public void Every_Anchor_Reader_Samples_The_Inner_Radius_Build_Cuts()
     {
@@ -317,9 +340,9 @@ public class AnchorTests
             .Select(CemFixtures.Anchor)
             .Where(c => c.BusRodDiameterMm > 0f)
             .Select(c => c with { LengthMm = 10 * fStep })];
-        // Counter-lamp: the pin only means something where the rudimentary bore and the rod differ by more
-        // than the grid can blur.
-        Assert.Contains(aRodBearing, c => MathF.Abs((c.BoreDiameterMm / 2f) - Zone1Anode.InnerRadiusMm(c)) >= 2 * fStep);
+        // Counter-lamp: the pin only means something where the cut hole spans cells the grid can resolve — a
+        // reader that ignores the rod and samples from the axis must land at least two cells off the cut.
+        Assert.Contains(aRodBearing, c => Zone1Anode.InnerRadiusMm(c) >= 2 * fStep);
 
         foreach (AnchorCem cem in aRodBearing)
         {
@@ -354,7 +377,7 @@ public class AnchorTests
 
         Assert.True(dHoleMax < fCut && fCut <= dInsideMin,
             $"{cem.Name}: {strReader} samples an inner boundary between r = {dHoleMax:F3} and {dInsideMin:F3} mm, " +
-            $"but Zone1Anode.Envelope cuts r = {fCut:F3} mm (bore_diameter_mm / 2 = {cem.BoreDiameterMm / 2f:F3}) — " +
-            "the ring between them is in the printed part and missing from every metric read off this grid");
+            $"but Zone1Anode.Envelope cuts r = {fCut:F3} mm (the rod surface) — " +
+            "the ring between them is in the printed part and misread by every metric taken off this grid");
     }
 }

@@ -713,9 +713,9 @@ internal static class Drawing
     public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rOut = cem.OuterDiameterMm / 2.0 * Px;
-        // The inner circle is read from Zone1Anode.InnerRadiusMm — the monolithic bus rod (01_01 §1.4) when
-        // set, else the legacy hollow bore — because a second formula for one radius is how the drawing
-        // and the part diverge. `bRod` only picks the label.
+        // The inner circle is read from Zone1Anode.InnerRadiusMm — the monolithic bus rod (01_01 §1.4) —
+        // because a second formula for one radius is how the drawing and the part diverge. `bRod` only picks
+        // the label, and a manifest without a rod gets a loud absence rather than a plausible core.
         bool bRod = cem.BusRodDiameterMm > 0f;
         double dInnerMm = Zone1Anode.InnerRadiusMm(cem);
         double rIn = dInnerMm * Px;
@@ -736,7 +736,7 @@ internal static class Drawing
         HDim(b, frontCx - rOut, frontCx + rOut, cy + rOut + 22, $"Ø{N(cem.OuterDiameterMm)}", cy + rOut);
         b.AppendLine(Text(frontCx + rIn + 6, cy - 4, bRod
             ? $"Ø{N(cem.BusRodDiameterMm)} bus rod (SOLID, monolithic §1.4)"
-            : $"Ø{N(cem.BoreDiameterMm)} bore (legacy hollow)", 9, "start", Dim));
+            : $"bus rod: {NotSpecified}", 9, "start", Dim));
         b.AppendLine(Text(frontCx - rOut, cy - rOut - 10, "gyroid lattice annulus — SPEC, not drawn", 9, "start", Dim));
 
         // 🔴 The loud absence this sheet exists for, placed ON the view rather than only in prose.

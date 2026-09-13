@@ -94,8 +94,9 @@ internal static class AxialStack
            || (LinerBottomZMm(cem) <= ChannelBottomZMm(cem) && LinerTopZMm(cem) >= ChannelTopZMm(cem));
 
     // F3 — the monolithic bus rod (01_01 §1.4) must clear the cathode channel WITH its insulation liner:
-    // rod Ø + 2·liner < flange channel Ø (STRICT since 2026-09-11 — zero nominal clearance is not a pass). Back-compat: a legacy hollow-bore CEM (rod==0) falls back to the
-    // old "anode bore ≥ flange bore" continuity check. Pure boolean finding (CEM-only → xUnit).
+    // rod Ø + 2·liner < flange channel Ø (STRICT since 2026-09-11 — zero nominal clearance is not a pass). A Zone 1
+    // that declares no rod carries no anode conductor at all, so the stack FAILS here instead of passing
+    // vacuously. Pure boolean finding (CEM-only → xUnit).
     //
     // ⛔ DECLARED CEILINGS — two, and both are the kind that stay green while the assembly does not go
     //    together, so read them as the hand-check list after any change here (00_05 §4).
@@ -117,8 +118,7 @@ internal static class AxialStack
     //     that a given pair of real parts mates.
     public static bool BusRodClears(AnchorAxialStackCem cem)
         => cem.Zone1.BusRodDiameterMm > 0f
-            ? cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) < cem.Capsule.Flange.BoreDiameterMm
-            : cem.Zone1.BoreDiameterMm >= cem.Capsule.Flange.BoreDiameterMm;
+            && cem.Zone1.BusRodDiameterMm + (2f * cem.Capsule.Flange.BusLinerThicknessMm) < cem.Capsule.Flange.BoreDiameterMm;
 
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)

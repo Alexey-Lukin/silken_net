@@ -139,11 +139,11 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
 // (01_01 §4.3A) are a separate session (00_07).
 internal static class Zone1Anode
 {
-    // The gyroid-annulus inner radius: the monolithic bus-rod surface (01_01 §1.4) when a rod is set,
-    // else the legacy hollow bore. Shared by the envelope (porosity ref + clip) and the gyroid gradient core
-    // so the lattice annulus and the solid rod meet exactly.
+    // The gyroid-annulus inner radius: the monolithic bus-rod surface (01_01 §1.4). With no rod declared the
+    // lattice reaches the axis — a synthetic in-test coupon, never a shipped part. Shared by the envelope
+    // (porosity ref + clip) and the gyroid gradient core so the lattice annulus and the solid rod meet exactly.
     internal static float InnerRadiusMm(AnchorCem cem)
-        => cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2f : cem.BoreDiameterMm / 2f;
+        => cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2f : 0f;
 
     // Solid pipe envelope (outer Ø + inner Ø) — also the porosity reference volume (the gyroid annulus only;
     // the solid bus rod is added in BuildMonolithic and is NOT part of the porosity measurement).

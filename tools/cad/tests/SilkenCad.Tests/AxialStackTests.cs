@@ -62,12 +62,13 @@ public class AxialStackTests
     }
 
     [Fact]
-    public void Legacy_Hollow_Bore_Falls_Back__Anode_Bore_Ge_Flange_Bore()
+    public void A_Stack_Whose_Zone1_Declares_No_Rod_Fails_F3__There_Is_No_Conductor()
     {
-        // Back-compat: a CEM with no monolithic rod (BusRodDiameterMm==0) keeps the old continuity check —
-        // the anode Ø1.6 bore ≥ the flange Ø1.35 bore (01_01 §1).
+        // The monolithic rod IS the anode conductor (01_01 §1.4); a Zone 1 without one has nothing to thread
+        // the cathode channel, so F3 must not pass vacuously on an empty rod.
         AnchorAxialStackCem cem = new();
-        Assert.True(AxialStack.BusRodClears(cem));
+        Assert.Equal(0f, cem.Zone1.BusRodDiameterMm);
+        Assert.False(AxialStack.BusRodClears(cem));
     }
 
     [Fact]

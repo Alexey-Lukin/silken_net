@@ -331,7 +331,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 - **Add a part / per-species SKU**: write `cem/<name>.json` (with a `kind`) + a generator in
   `src/SilkenCad/` + wire the `build`/`verify` switch in `Program.cs`; `dotnet run -- verify`.
-- **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, rod, period, wallParam — `bore_diameter_mm` is INERT while a rod is declared, `_provenance.json` class `superseded`).
+- **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, rod, period, wallParam — an anchor declares NO bore: `bus_rod_diameter_mm` is the core, `AnchorCem` has no bore slot, and `AnchorTests.Every_Shipped_Anchor_Cem_Declares_Its_Bus_Rod_And_No_Bore` reds on a manifest that omits the rod or carries a bore key, which would otherwise evaporate on parse).
   Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
   ⚖️ **Topology = `network` (ratified 2026-09-10, APPLIED 2026-09-11)** — every shipped `anchor_zone1.*`

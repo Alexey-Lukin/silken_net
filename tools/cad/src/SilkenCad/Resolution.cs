@@ -55,12 +55,9 @@ internal static class Resolution
         var a = new List<Feature>();
         // The lattice's own metal is the thinnest thing in this part and no field declares it.
         Add(a, strPrefix + "lattice_thickness", TopologyCrossChecks.LatticeThicknessMm(cem), dVoxelMm, bDerived: true);
-        // The legacy hollow bore is NOT a feature when a monolithic rod is declared — the rod fills it
-        // (Zone1Anode.InnerRadiusMm), so measuring the annulus there would invent a gap the part lacks.
-        if (cem.BusRodDiameterMm <= 0f)
-            Add(a, strPrefix + "bore_diameter_mm", cem.BoreDiameterMm, dVoxelMm);
-        else
-            Add(a, strPrefix + "bus_rod_diameter_mm", cem.BusRodDiameterMm, dVoxelMm);
+        // The core is the monolithic rod (Zone1Anode.InnerRadiusMm) — rod and lattice meet, there is no gap
+        // between them to resolve. `Add` skips a zero, so a coupon with no rod declares no core feature.
+        Add(a, strPrefix + "bus_rod_diameter_mm", cem.BusRodDiameterMm, dVoxelMm);
         return a;
     }
 

@@ -375,11 +375,11 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 Spec home → [`01_01 §1.4`](../../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md); decision → `00_07` HW.34.
 
 **Thermal bridge (script 54)** — 1D resistor ladder + 2-node steady state, at the canon rod **Ø1.0**
-(`01_01 §1.4`). A **Cu** bus dominates the Zone-2 PEEK break (G_anchor 9.3× a Ti bus, ×18.2 vs no bus;
+(`01_01 §1.4`). A **Cu** bus dominates the Zone-2 PEEK break (G_anchor 9.4× a Ti bus, ×18.3 vs no bus;
 λ_Cu ~1600× PEEK) → drags the Zone-1 anode pocket to **−12.8 °C** (14.8° below the +2 °C core → living-sapwood
 freeze-risk) at −30 °C air / +2 °C core. A bus **monolithic with the anode** (= the anode alloy) is
 thermally near-invisible (**−0.70 °C**, ×1.95 vs no bus). Per bake-off alloy: alloyed α+β Ti
-(4V/7Nb/β/15Zr, λ≈7) −0.70…−0.91 °C; CP-Ti (λ17) −2.21; Ta (λ57, benchmark) −5.63 — **all ≪ Cu**, and
+(4V/7Nb/β/15Zr, λ≈7) −0.70…−0.92 °C; CP-Ti (λ17) −2.21; Ta (λ57, benchmark) −5.65 — **all ≪ Cu**, and
 the −2 °C freeze gate still separates the four α+β Ti (safe) from CP-Ti and Ta (freeze). Electrically
 free at µA (Ti 11.3 µV at 100 µA, 4×10⁴ below the 500 mV reference).
 (`mechanical/anchor_thermal_bridge.json`)
@@ -646,29 +646,29 @@ Output is taken at the ΔT that *survives the module's own installation*:
 | Case (κ_eff 1.4, `gap` mount) | G_TEG | × whole anchor | T_anode | gate | P at surviving ΔT | V_oc |
 |---|---|---|---|---|---|---|
 | *no TEG — the residual monolithic-Ti bus we already accept* | — | 1× | **−0.70 °C** | ok | — | — |
-| 8×8×4 mm — smallest geometry swept | 2.24e−2 W/K | 14× | −8.65 °C | ❄ FAIL | 832 µW | 15.0 mV |
-| 15×15×3 mm | 1.05e−1 W/K | 67× | −10.86 °C | ❄ FAIL | 291 µW | 14.4 mV |
-| 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 474× | −11.56 °C | ❄ FAIL | 47 µW | 15.4 mV |
-| *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.68 °C | ❄ FAIL | — | — |
-| *reference:* **solid Ti, NO PEEK break at all** | 1.25e−2 W/K | 8× | **−11.49 °C** | ❄ FAIL | — | — |
+| 8×8×4 mm — smallest geometry swept | 2.24e−2 W/K | 14× | −8.70 °C | ❄ FAIL | 841 µW | 15.1 mV |
+| 15×15×3 mm | 1.05e−1 W/K | 67× | −10.93 °C | ❄ FAIL | 295 µW | 14.5 mV |
+| 40×40×3 mm — HW.21's own 4×4 cm part | 7.47e−1 W/K | 474× | −11.65 °C | ❄ FAIL | 48 µW | 15.5 mV |
+| *asymptote:* `gap` mount, G_TEG → ∞ | ∞ | — | −11.77 °C | ❄ FAIL | — | — |
+| *reference:* **solid Ti, NO PEEK break at all** | 1.27e−2 W/K | 8× | **−11.66 °C** | ❄ FAIL | — | — |
 
 **Verdict** — 🔴 **Reject as posed, and not because the part is badly chosen.** `0 of 90` swept
 combinations (5 footprints × 3 thicknesses × 3 κ × 2 mounts) pass the gate: the *smallest* geometry
 swept already conducts **14× the entire anchor**. It is not a partial defeat — a gap-spanning module
-saturates at −11.68 °C, **0.19 °C from a solid Ti anchor with no PEEK break at all** (−11.49 °C), i.e.
+saturates at −11.77 °C, **0.11 °C from a solid Ti anchor with no PEEK break at all** (−11.66 °C), i.e.
 it reverts the design to precisely the pre-PEEK condition Zone 2 exists to prevent. Inverted, the number
-worth keeping is the **budget**: anything crossing the break must stay under **1.1e−3 W/K ≈ 2.5 mm² at
+worth keeping is the **budget**: anything crossing the break must stay under **1.1e−3 W/K ≈ 2.4 mm² at
 3 mm** — ×26 smaller than the smallest module — and across the 32 live wood-grid points that budget goes
 **negative** (min −8.7e−4 W/K), because the residual Ti bus has already spent the whole allowance there.
 Two objections were tested and neither rescues it: at the leg-only fill-factor lower bound (κ_eff 0.4)
-the 8×8×4 still fails at −5.40 °C, and the bus diameter cannot move it either — widening the canon rod
-Ø1.0 to the fattest it could physically be (the Ø1.35 channel) moves the 8×8×4 case −8.65 → −8.75 °C,
+the 8×8×4 still fails at −5.43 °C, and the bus diameter cannot move it either — widening the canon rod
+Ø1.0 to the fattest it could physically be (the Ø1.35 channel) moves the 8×8×4 case −8.70 → −8.81 °C,
 because the module out-conducts the whole anchor either way.
 ⚖️ **The honest residual, stated rather than buried:** at exactly the budget a bespoke sub-mm² micro-TEG
 still yields ~428 µW — *above* HW.21's own 50–200 µW winter target — but at zero gate margin, and its
 V_oc is ~9.4 mV, **×64 below BQ25570's VIN(CS) 600 mV** (HW.46), so it would need a mV-class transformer
 harvester, not a BQ25570-class part. That is a different project, not a module choice. Note also the
-thermal impedance match: power peaks at G_TEG 8.6e−3 W/K (≈4.3×4.3×3 mm, 1035 µW) and **falls** for larger
+thermal impedance match: power peaks at G_TEG 8.6e−3 W/K (≈4.3×4.3×3 mm, 1043 µW) and **falls** for larger
 modules — 40×40×3 gives 18× *less* than 8×8×4 — so "buy a bigger TEG" loses on both axes at once.
 This is the same structural shape as the already-ratified `HW.42`: there the power that helps is the
 power that poisons `delta_t`; here **the conductance that harvests is the conductance that kills the

@@ -58,7 +58,7 @@
     }
   },
   "geometry_mm": {
-    "r_inner": 0.8,
+    "r_inner": 0.0,
     "r_interface": 5.5,
     "r_outer": 7.5
   },

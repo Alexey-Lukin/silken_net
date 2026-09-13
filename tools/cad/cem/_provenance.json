@@ -39,10 +39,6 @@
       "gyroid_period_rim_mm": {
         "class": "design",
         "from": "як gyroid_period_mm — градієнт core→rim, той самий гейт"
-      },
-      "bore_diameter_mm": {
-        "class": "superseded",
-        "from": "рудимент порожнистої гілки: монолітний стрижень (01_01 §1.4) замінив канал, а поле лишилось у всіх семи SKU (1.4–1.8); поки bus_rod_diameter_mm > 0, його не читає ніщо — build, топологічні метрики, FE й креслення беруть внутрішній радіус із Zone1Anode.InnerRadiusMm (пін AnchorTests.Every_Anchor_Reader_Samples_The_Inner_Radius_Build_Cuts). ⛔ Видаляти лише разом із правдоподібним дефолтом Cem.cs, інакше рудимент сховається за ним (picogk #0a)"
       }
     },
     "zone2_sleeve": {

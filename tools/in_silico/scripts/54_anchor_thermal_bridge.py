@@ -77,20 +77,31 @@ RHO_C_TI = 4430.0 * 560.0      # Ti-6Al-4V volumetric heat capacity (ρ from lib
 RHO_C_WOODWET = 900.0 * 2500.0  # wet sapwood (ρ≈900 green, c≈2500 water-laden)
 TI_SOLID_FRACTION = 0.35        # gyroid is 65% porous → 35% solid Ti (01_01 §1, porosity 60-70%)
 
-# ── Geometry (mm), FROZEN dims (HW.33, 2026-06-20; mirrors script 50 + CEM manifests) ──
-D_SLEEVE_OUT = 15.0    # PEEK sleeve OD (= wound Ø, 01_01 §4.2)
-D_SLEEVE_BORE = 11.0   # PEEK bore = Zone-1 shaft Ø (zone2_sleeve.json)
-D_Z1_SHANK = 11.0      # Zone-1 anode shank OD (mechanical_lock.zone1.json)
-D_Z3_SHANK = 9.0       # Zone-3 cathode shank OD (cathode_flange.json / mechanical_lock.zone3.json)
-D_BORE_ANODE = 1.6     # bus bore in the anode shank (anchor_zone1.pine.json; = script 50 R_INNER Ø1.6)
-D_BORE_CATHODE = 1.35  # bus bore through the cathode shank+flange (cathode_flange.json) — the BOTTLENECK
-                       # (opened 1.30 → 1.35 by the clearance verdict, 00_07 HW.34, 2026-09-11: the metal
-                       # annulus it bores out of the Zone-3 shank grows with it)
-L_SLEEVE = 50.0        # PEEK break axial length (01_01 §4.1, frozen)
-# Shank insertion placeholders (F2 axial-stack: 50 − 30 − 14 = 6 mm gap). These are HW.8 placeholders →
-# the gap (effective PEEK break) is itself a design lever, swept below.
-L_A_INSERT = 30.0      # Zone-1 anode shank insertion into the sleeve
-L_C_INSERT = 14.0      # Zone-3 cathode shank insertion
+# ── Geometry (mm), read from the CEM manifests — the parameter SSOT of the shipped geometry, canon-gated
+#    by cem_canon_sync.rb; the same loader as script 55. ⛔ Do not retype these as literals: a literal is a
+#    mirror by value, and a verdict that moves the manifest (the Ø1.30 → Ø1.35 channel, 00_07 HW.34) then
+#    has to find it by hand.
+CEM_DIR = REPO_ROOT / "tools" / "cad" / "cem"
+
+
+def cem(stem: str) -> dict:
+    return json.loads((CEM_DIR / f"{stem}.json").read_text(encoding="utf-8"))
+
+
+_SLEEVE, _FLANGE, _LOCK_Z1 = cem("zone2_sleeve"), cem("cathode_flange"), cem("mechanical_lock.zone1")
+D_SLEEVE_BORE = float(_SLEEVE["bore_diameter_mm"])                          # PEEK bore = Zone-1 shaft Ø
+D_SLEEVE_OUT = D_SLEEVE_BORE + 2.0 * float(_SLEEVE["wall_thickness_mm"])  # PEEK sleeve OD (= wound Ø, 01_01 §4.2)
+L_SLEEVE = float(_SLEEVE["length_mm"])                                      # PEEK break axial length (01_01 §4.1)
+D_Z1_SHANK = float(_LOCK_Z1["shank_diameter_mm"])                           # Zone-1 anode shank OD
+D_BORE_ANODE = float(_LOCK_Z1["bore_diameter_mm"])  # 0 = SOLID shank: the monolithic anode carries no bore (01_01 §1.4)
+D_Z3_SHANK = float(_FLANGE["shank_diameter_mm"])                            # Zone-3 cathode shank OD (HW.8 placeholder)
+D_BORE_CATHODE = float(_FLANGE["bore_diameter_mm"])  # bus channel through the cathode shank+flange — the BOTTLENECK
+# Shank insertions (F2 axial-stack: 50 − 30 − 14 = 6 mm gap) are HW.8 placeholders → the gap (effective PEEK
+# break) is itself a design lever, swept below. The Zone-3 one is a manifest field; the Zone-1 one has none
+# (`Zone1InsertionMm` lives only in Cem.cs) and is deliberately NOT promoted into one — that would canonise a
+# placeholder — so it stays a by-value crossing, the same one script 55 names.
+L_A_INSERT = 30.0                                  # Zone-1 anode shank insertion (Cem.cs Zone1InsertionMm)
+L_C_INSERT = float(_FLANGE["shank_length_mm"])    # Zone-3 cathode shank insertion
 
 # The conducting cross-section is the ROD, not the channel it threads: the remaining Ø1.35 − Ø1.0 is the
 # insulating liner (01_01 §1.4). Modelling the bus as FILLING the channel overstated its area ×1.69 —

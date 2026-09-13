@@ -335,7 +335,7 @@ CHECKS = [
     ),
     (
         "solid-Ti no-break reference → teg_across_peek_break.json (SUMMARY §HW.21 table)",
-        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| 8× \| \*\*{N} °C",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.27e−2 W/K \| 8× \| \*\*{N} °C",
         "mechanical/teg_across_peek_break.json",
         lambda d: d["baseline_from_script_54"]["solid_ti_no_break_t_anode_C"], 0.005,
     ),
@@ -345,7 +345,7 @@ CHECKS = [
     # gets its own row: the anchor cannot carry an unchecked number twice.
     (
         "solid-Ti no-break MULTIPLIER → teg_across_peek_break.json (SUMMARY §HW.21 table)",
-        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.25e−2 W/K \| {N}× \|",
+        SUMMARY, rf"solid Ti, NO PEEK break at all\*\* \| 1\.27e−2 W/K \| {N}× \|",
         "mechanical/teg_across_peek_break.json",
         lambda d: (d["baseline_from_script_54"]["solid_ti_no_break_g_W_K"]
                    / d["baseline_from_script_54"]["ti_bus_g_anchor_W_K"]), 0.5,

@@ -65,8 +65,10 @@ E_PEEK = E_PEEK_PA
 NU_TI = ALLOY_PROPERTIES[ALLOY_BASELINE]["nu"]
 SIGMA_YIELD_PEEK = SIGMA_YIELD_PEEK_PA
 
-# Geometry — frozen Ø11/2mm (HW.33). R_INNER (bus bore) stays local — JSON/winter only, not a contact surface.
-R_INNER = 0.8e-3              # m — Ti shaft central bus bore (~Ø1.6); NOT a press-fit contact surface
+# Geometry — frozen Ø11/2mm (HW.33). The Ti shaft is SOLID where the press-fit grips: the contact band sits on
+# the monolithic shank (mechanical_lock.zone1.json bore_diameter_mm = 0, 01_01 §4.2), and the rigid-shaft model
+# never reads an inner radius — R_INNER is reported into the JSON geometry only.
+R_INNER = 0.0                 # m — solid shaft; NOT a press-fit contact surface
 R_INTERFACE = R_INTERFACE_M   # m — Ti↔PEEK press-fit CONTACT radius (Ø11 shaft / 2)
 R_OUTER = R_OUTER_M           # m — PEEK sleeve outer radius (Ø15 wound / 2)
 
