@@ -175,7 +175,12 @@ SELF=${BASH_SOURCE[0]:-$0}
 # існуючий рядок «Вісь помилки» — жодного нового рядка, найдешевший важіль. Обидва
 # доми взаємно лінкують один одного в `Related`, тож ORPHAN/UNSTRUNG не потребують
 # третього файлу-донора.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25423}
+# 2026-09-14: 25423 → 25464 (+41) — новий дім `project_deep_archival_01a_2026_09_14` (запис кампанії §01a:
+# трим хибний, спростування доганяють місце дії), hub-inline у рядок «SSOT campaign history» — власного
+# рядка не діставши. Заплачено ДО бампу: власний гачок стиснуто 160 → 60 B, сусідній гачок того ж рядка
+# («черга cement-trim ПІДГОТОВЛЕНА, не виконана» → «cement-trim НЕ виконано») стиснуто без втрати змісту;
+# залишок = роутер нового дому.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25464}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -324,7 +329,9 @@ rb_dark() {
 # 2026-09-09: 162 → 164 — два нові файли, `feedback_note_as_frozen_snapshot` +
 # `feedback_worktree_branch_content_verify` (обидва hub-inline в «Вісь помилки», IDX
 # бамп поруч). Підняття робить обидва нові доми захищеними підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
+# 2026-09-14: 166 → 167 — `project_deep_archival_01a_2026_09_14`. Підняття робить новий дім захищеним
+# підлогою так само, як решту.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -444,7 +451,9 @@ index_reach_expected() {
 # стелю й метод приписує евікцію ТІЛ у близнюк. Прецедент дотримано: власний опис стиснуто
 # (163 → 103 B) ПЕРЕД бампом, чужих не підрізано. ⊕ Найдешевший бамп у цьому переліку, і саме
 # тому, що журнал НЕ додає тригера відкликання — його дістають `[[strings]]`, не індекс.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44939}
+# 2026-09-14: 44939 → 45107 (+168) — вартість опису нового дому `project_deep_archival_01a_2026_09_14`.
+# Прецедент дотримано: власний опис стиснуто (317 → 224 B) ПЕРЕД бампом, чужих не підрізано.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-45107}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
