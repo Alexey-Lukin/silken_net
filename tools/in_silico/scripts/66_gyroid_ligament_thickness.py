@@ -66,6 +66,7 @@ from scipy import ndimage
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from lib.constants import SLM_MIN_WALL_DEFAULT_MM
 from lib.utils import banner
 
 OUT_JSON = REPO_ROOT / "tools" / "in_silico" / "cache" / "mechanical" / "gyroid_ligament.json"
@@ -75,9 +76,10 @@ N = 96                      # voxels per period
 POROSITY = 0.65             # `01_01 §5.2` nominal
 GYROID_MINIMAL_SURFACE_A2 = 3.091   # literature: area of the gyroid minimal surface per cubic cell
 
-# SLM / u-LPBF floors. ⚠️ 200 um is a DEFAULT, not a constant -- `01_01 §5.5` puts the real number
-# in the CEM field `slm_min_wall_mm`, answered by the DMLS RFQ (00_07 HW.33).
-FLOORS_UM = {"slm_default": 200.0, "u_lpbf": 100.0}
+# SLM / u-LPBF floors. ⚠️ The SLM floor is a DEFAULT, not a constant -- `01_01 §5.5` puts the real
+# number in the CEM field `slm_min_wall_mm`, answered by the DMLS RFQ (00_07 HW.33). Its one Python
+# home is `lib.constants`; the u-LPBF floor has no other home.
+FLOORS_UM = {"slm_default": SLM_MIN_WALL_DEFAULT_MM * 1000.0, "u_lpbf": 100.0}
 
 # Specific surface of the SHIPPED pine SKU, measured by PicoGK, NOT recomputed here.
 # Provenance: tools/cad/out/anchor_zone1_pine.metrics.json (network, wallParam 0.10, voxel 0.10 mm).
