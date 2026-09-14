@@ -57,6 +57,7 @@ OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 N_BUDGET_CYCLES = 6.3e8  # HW.43 head number: 20 yr x 1 Hz trunk sway (01_02 §2.2 lower bound of 1-5 Hz)
+# ⚠️ that 1-5 Hz band has no source; sway frequency scales with tree size (DBH/H^2) and species (00_07 HW.43)
 
 
 def pogo_spring_verdict() -> dict:

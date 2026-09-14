@@ -6,6 +6,9 @@ HW.43 (checkbox 1) — wind duty-cycle for the Cherkasy pine forest, from open m
 Without this, N = 6.3e8 cycles (HW.43 head: 20 yr x 1 Hz trunk sway, 01_02 §2.2 lower bound of the
 canon's 1-5 Hz range) is an UPPER BOUND, not a budget — a tree does not sway continuously; it sways
 when the wind is strong enough to excite it, and is comparatively still the rest of the time.
+⚠️ The 1-5 Hz band itself carries no source in 01_02 §2.2, and the primary literature ties a tree's natural
+sway frequency to its size (DBH/H^2) and species (Moore & Maguire 2004) — so the budget is uncertain in
+frequency as well as in duty cycle (00_07 HW.43).
 
 ⚠️ 00_06 §0 Validation Gate: this script computes a real fraction from real data, but it does NOT
 manufacture the one number the item wants (a single duty-cycle). Two genuine gaps in the open
