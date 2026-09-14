@@ -87,7 +87,7 @@ SHIPPED_PINE = {
     "core_period_mm": 2.5,
     "rim_period_mm": 2.0,
 }
-# Canon `01_02 §6` measured the sheet->network specific-surface ratio per SKU at 1.84-1.89x.
+# Canon `01_01 §5.5` measured the sheet->network specific-surface ratio per SKU at 1.84-1.89x.
 SHEET_OVER_NETWORK_SPECIFIC_SURFACE = 1.87
 
 
@@ -216,7 +216,7 @@ def main() -> int:
         "network_t_hyd_over_period": t_hyd_net / a_eff,
         "sheet_wall_from_specific_surface_over_period": t_hyd_sheet_slab / a_eff,
         "sheet_specific_surface_ratio_provenance":
-            "01_02 §6 measured sheet->network specific surface at 1.84-1.89x per SKU; 1.87 used",
+            "01_01 §5.5 measured sheet->network specific surface at 1.84-1.89x per SKU; 1.87 used",
         "note": "a graded SKU has no single period, so the mean of core and rim is used; this is "
                 "the coarsest assumption in the cross-check and it is why this instrument is a "
                 "CHECK on the order of magnitude, not a second decimal place",

@@ -395,7 +395,7 @@
         "price": "moves the SSOT cross-section 02_02 \u00a73.2"
       }
     },
-    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates \u2014 cavity_height_mm and the antenna\u2194Ti clearance are separate and are NOT judged here."
+    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates \u2014 the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds its radius, 00_07 HW.33) and the antenna\u2194Ti clearance are separate and are NOT judged here."
   },
   "shipped_groove_alignment": {
     "flange_groove_r_mm": [

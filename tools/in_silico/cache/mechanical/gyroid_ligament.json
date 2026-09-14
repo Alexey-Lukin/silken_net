@@ -24,7 +24,7 @@
     "graded_period_mean_mm": 2.25,
     "network_t_hyd_over_period": 0.46115133964952815,
     "sheet_wall_from_specific_surface_over_period": 0.12330249723249415,
-    "sheet_specific_surface_ratio_provenance": "01_02 \u00a76 measured sheet->network specific surface at 1.84-1.89x per SKU; 1.87 used",
+    "sheet_specific_surface_ratio_provenance": "01_01 \u00a75.5 measured sheet->network specific surface at 1.84-1.89x per SKU; 1.87 used",
     "note": "a graded SKU has no single period, so the mean of core and rim is used; this is the coarsest assumption in the cross-check and it is why this instrument is a CHECK on the order of magnitude, not a second decimal place"
   },
   "floor_inversion": {

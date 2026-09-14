@@ -146,8 +146,9 @@ BORE_DEPTH_MM = SHANK_LEN_MM + FLANGE_THK_MM
 #    overhang. A constant calling a settled dimension «assumed» is worse than an unmarked one: it
 #    tells the reader the number is soft when it is the spec.
 # ⚠️ By-value crossing, declared: `AxialStack.LinerLengthMm` in tools/cad does this same arithmetic
-#    (channel run + protrusion) over the same two CEM fields. Nothing binds the two halves; what binds
-#    both to canon is `cem_canon_sync.rb` on the fields themselves.
+#    (channel run + protrusion) over the same two CEM fields. Nothing binds the two halves, and canon binds
+#    only one field: `cem_canon_sync.rb` pins the liner WALL but has no row for `bus_liner_protrusion_mm`,
+#    so the ratified >= 1.0 is held by this cache and 01_01 §1.4 prose, not by a gate.
 LINER_PROTRUSION_MM = float(_FLANGE["bus_liner_protrusion_mm"])
 LINER_LENGTH_MM = BORE_DEPTH_MM + LINER_PROTRUSION_MM
 # ⛔ The channel is THROUGH, never blind: `CathodeFlange.cs` cuts z 0..14 in the shank and 14..17 in
@@ -886,8 +887,9 @@ def main() -> int:
             "why": "below this the bore edge arrives at the tube's END FACE (ring on ring) instead of "
                    "its cylindrical flank; the materials are the same either way (play is channel-side, "
                    "so the tube's outer surface is what meets the bore), the FEATURE is not",
-            "not_modelled": "the contact stress itself — no notch factor, no contact model, and no wear "
-                            "model exists anywhere in this tree (00_07 HW.34)",
+            "not_modelled": "the contact stress itself — no notch factor and no contact model; wear is "
+                            "BOUNDED in this cache's wear_budget block, but its specific rate is NOT MEASURED "
+                            "(00_07 HW.34)",
         }
         print(f"  → For the edge to meet the tube's FLANK rather than its END FACE on every swept µ, the "
               f"tube must start {liner_start['min_protrusion_into_gap_mm']:.2f} mm before the mouth "
@@ -1898,9 +1900,10 @@ def main() -> int:
                    "weld_seam block). k itself is NOT MEASURED and is not assumed here. "
                    "THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since "
                    "2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The "
-                   "headline is not the width but the nominals: rod O1.0 against tube bore O1.00 is a "
-                   "line-to-line fit, so the ratified 'tight on the wire' is a tolerance outcome, and "
-                   "landing in the window needs a nominal interference - a verdict, not a tolerance. "
+                   "headline is not the width but the nominal: the tube's bore nominal is SPECIFIED NOWHERE "
+                   "('ID 1.00' lives only in an open RFQ leg), so the ratified 'tight on the wire' is not a "
+                   "tolerance outcome yet, and landing in the window needs a nominal interference - a verdict, "
+                   "not a tolerance. "
                    "Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. "
                    "WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET, and "
                    "its span is set by the contact AREA, which is bracketed between a flow-pressure bound "

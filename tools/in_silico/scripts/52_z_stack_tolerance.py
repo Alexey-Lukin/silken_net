@@ -280,7 +280,8 @@ def rim_boss_radial_budget() -> dict:
         },
         "ceiling": "⛔ every term is a MINIMUM, so this is an upper bound with no tolerance in it; "
                    "the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates — "
-                   "cavity_height_mm and the antenna↔Ti clearance are separate and are NOT judged here.",
+                   "the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds "
+                   "its radius, 00_07 HW.33) and the antenna↔Ti clearance are separate and are NOT judged here.",
     }
 
 
@@ -521,10 +522,10 @@ def main() -> int:
           f"{budget['nominal_pct']:.1f} % nominal, inside the {budget['intersection_window_pct']} % window)")
 
     print(f"\n  PEEK rim as a rigid datum (⊂ correction (1)): contact area {rim['rim_contact_area_mm2']:.0f} mm²; "
-          f"reaching {rim['relax_regime_floor_MPa']:.0f} MPa needs {rim['force_to_reach_relax_regime_N']:.0f} N")
+          f"reaching {rim['relax_regime_floor_MPa']:.1f} MPa needs {rim['force_to_reach_relax_regime_N']:.0f} N")
     print(f"    pogo pair (the only spring canon specifies) = {rim['pogo_pair_force_N_upper_bound']:.2f} N "
           f"→ {rim['stress_at_pogo_alone_MPa']:.4f} MPa; at a generous 100 N total the margin is still "
-          f"{rim['margin_x_at_100N']:.0f}×")
+          f"{rim['margin_x_at_100N']:.1f}×")
     print("    → creep member NOT warranted for the rim; missing datum named in the JSON, not guessed")
 
     banner("Verdict")

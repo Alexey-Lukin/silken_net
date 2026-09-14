@@ -435,6 +435,18 @@ CHECKS = [
                       if r["radial_play_um"] < 100.0
                       for v in r["by_mu"].values()), 0.01,
     ),
+# ⛔ The same angle has a canon mirror, and it was the one that rotted: 0.593 → 0.596 moved with the
+# rounding fix (8ebe5f97) while 01_01 §1.4 kept a truncated «0.59». Tolerance is half the last digit,
+# so a truncation reds and an honest two-decimal rounding does not.
+(
+    "rod approach angle at the bore mouth, canon mirror → bus_mechanical.json §edge_bearing",
+    COAXIAL, rf"Стрижень підходить до гирла під \*\*{N}°\*\*",
+    "mechanical/bus_mechanical.json",
+    lambda d: max(v["approach_angle_deg"]
+                  for r in d["clearance_regime"]["edge_bearing"]["rows"]
+                  if r["radial_play_um"] < 100.0
+                  for v in r["by_mu"].values()), 0.005,
+),
     (
         "interference at the mouth, worst corner → bus_mechanical.json §edge_bearing",
         SUMMARY, rf"arrives \*\*{N} µm\*\* inside the wall",
@@ -475,6 +487,34 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
     ),
+# ⛔ The same table row carries two more model numbers, and the row pin above held only k: the span
+# optimism and the margin sat behind wildcards. That is how 41.3 % stood beside a k already
+# recomputed on 40.8 % (fixed 8ebe5f97) — a row that agrees with itself on one cell proves nothing
+# about its neighbours.
+(
+    "weld-seam span optimism on the CEM-derived row → bus_mechanical.json §weld_seam.span",
+    SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| {N} % \|",
+    "mechanical/bus_mechanical.json",
+    lambda d: d["weld_seam"]["span"]["span_optimism_pct"], 0.05,
+),
+(
+    "weld-seam margin in k vs the as-printed marker → bus_mechanical.json §binding_candidate",
+    SUMMARY, rf"\*\*DOES NOT CLEAR\*\*, {N} \|",
+    "mechanical/bus_mechanical.json",
+    lambda d: d["weld_seam"]["binding_candidate"]["margin_in_k_vs_as_printed_marker"], 0.0005,
+),
+(
+    "liner play-reduction factor → bus_mechanical.json §clearance_regime.play_reduction",
+    SUMMARY, rf"`play_reduction\.factor` ≈ {N}×",
+    "mechanical/bus_mechanical.json",
+    lambda d: d["clearance_regime"]["play_reduction"]["factor"], 0.05,
+),
+(
+    "through-bore slenderness L/D → bus_mechanical.json §clearance_regime.channel",
+    SUMMARY, rf"THROUGH bore of `L/D` ≈ {N},",
+    "mechanical/bus_mechanical.json",
+    lambda d: d["clearance_regime"]["channel"]["aspect_ratio_l_over_d"], 0.05,
+),
     # ── HW.34 endurance band: the two numbers the SUMMARY table is READ for ──
     # ⛔ The binding SF at the LOW end and the break-even at the HIGH end are pinned, and they are
     # the two the reader acts on: one says a standing conclusion flips, the other says a conclusion
