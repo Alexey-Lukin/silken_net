@@ -1,0 +1,33 @@
+{
+  "_note": "SENSITIVITY of the geometric INTENT to a hypothetical face offset \u2014 NOT the printed body. The lattice is dilated before sampling (DilatedField, Zone1Anode.cs); the printed excess per face orientation is a vendor answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs; a single step is an UPPER bound.",
+  "cem": "anchor_zone1_pine",
+  "topology": "network",
+  "with_bus_rod": false,
+  "poisson_ratio": 0.342,
+  "dilation_element": "downskin",
+  "face_offset_mm": 0.45,
+  "face_offset_is": "the LENGTH of a segment along \u002Bbuild_direction: a face whose outward normal is -build_direction moves by it, an inclined one by length*cos, vertical and upward faces not at all",
+  "build_direction_part_frame": [
+    0,
+    0,
+    1
+  ],
+  "element_spacing_mm": 0.02,
+  "element_samples": 23,
+  "clipped_to_part_body": true,
+  "step_mm": 0.16666667,
+  "step_divisor": 12,
+  "cells_added_vs_intent": 129522,
+  "elements": 419515,
+  "dofs": 1849452,
+  "porosity": 0.48645710928319624,
+  "axial_ratio": 0.19386868697279674,
+  "radial_ratio": 0.14569778301103511,
+  "solid_calibration_axial": 1.0000000348608153,
+  "discarded_island_fraction": 6.912266651415422E-05,
+  "axial_iterations": 6484,
+  "axial_residual": 9.940332201000278E-09,
+  "radial_iterations": 1102,
+  "radial_residual": 9.8120441475843E-09,
+  "converged": true
+}

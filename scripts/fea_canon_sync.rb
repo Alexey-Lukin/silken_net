@@ -13,7 +13,7 @@
 # at 0.2 %, and a calibration stated to nine decimals that the cache does not support. Both were
 # arithmetic ABOUT the cache, which is exactly the class a comparison can hold and prose cannot.
 #
-# WHAT IT CHECKS — FOUR layers, in increasing distance from the raw data (⚠️ this line said "three"
+# WHAT IT CHECKS — FIVE layers, in increasing distance from the raw data (⚠️ this line said "three"
 # for the hours between the fourth landing and this correction — a header is a claim about its own file,
 # and the edit that falsifies it is one section below, where nothing looks at the header):
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
@@ -23,6 +23,8 @@
 #   3. PROVENANCE — that the cache still describes the run canon claims (SKU, topology, rod excluded).
 #   4. THE FITTED TABLE — the measured Gibson-Ashby C/n against the per-resolution `gibson_ashby_fit.*`
 #      family, which layers 1-3 do not read at all, plus that family's own provenance (specimen size).
+#   5. THE FACE-OFFSET SENSITIVITY TABLE — each row against its per-row `dilation_sensitivity.*` file, and
+#      the zero row against the pinned step sweep FIELD FOR FIELD, which is the identity control itself.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS, never the prose around them. A row can match perfectly under a sentence that
@@ -266,6 +268,114 @@ if fit_rows_seen < EXPECTED_FIT_ROWS
               "rewording has DISARMED the C/n comparison; fix the row shape, do not lower this number"
 end
 
+# ── 5. THE FACE-OFFSET SENSITIVITY TABLE (HW.51) ─────────────────────────────────────────────────────
+#
+# 🔴 Added 2026-09-14 with `fea --dilate`, for the same reason layer 4 exists: the rows live in a file family
+# (`dilation_sensitivity.*`, one file per row) that layers 1-4 never open. Three things are held, and the third is the
+# one prose cannot hold at all:
+#   (a) TRANSCRIPTION — porosity, axial and radial of every quoted row, at the precision canon quotes;
+#   (b) PROVENANCE — the file's own element, offset and step agree with its name and its row; it is clipped to the part
+#       body, rod-free, network, converged — and it calls itself a SENSITIVITY, never the printed body;
+#   (c) THE IDENTITY CONTROL — the zero-offset row equals the pinned step sweep's row of the same divisor EXACTLY, field
+#       for field. That equality is the whole ground for reading every other row as "the intent plus an offset", so a
+#       drift there is not a stale digit — it means the wrapper, the sampler or the solver moved under the curve.
+# ⛔ DECLARED CEILING: it pins the curve canon quotes, never its step convergence (the curve is measured at one step) and
+#    never the geometry of the dilation — identity, clip, frame, monotonicity and the discretisation shortfall are
+#    VoxelFeaTests' pins, which this guard cannot see.
+DILATION_DIR = File.join(ROOT, "tools/cad/cache/fea")
+dilation_rows_seen = 0
+canon.scan(/^\| \*{0,2}(нуль крізь обгортку|downskin|iso)\*{0,2} \| \*{0,2}([0-9.]+) мм\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([0-9.]+) %\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
+  element, offset_q, div, porosity_q, axial_q, radial_q = Regexp.last_match.captures
+  microns = (offset_q.to_f * 1000).round
+  zero = element == "нуль крізь обгортку"
+  next failures << "sensitivity row '#{element} · #{offset_q} мм' pairs an element with the wrong offset" if zero != microns.zero?
+
+  name = "dilation_sensitivity.anchor_zone1_pine.#{zero ? '' : "#{element}."}f#{microns}um.d#{div}.json"
+  path = File.join(DILATION_DIR, name)
+  next failures << "sensitivity row '#{element} · #{offset_q} мм · період/#{div}' quotes #{name}, which is not committed" unless File.exist?(path)
+
+  dilation_rows_seen += 1
+  f = JSON.parse(File.read(path))
+  what = "sensitivity #{element} #{offset_q} мм /#{div}"
+  failures << "#{what}: the file is not the pine network annulus" unless f["cem"] == "anchor_zone1_pine" && f["topology"] == "network" && f["with_bus_rod"] == false
+  failures << "#{what}: the file names element #{f['dilation_element'].inspect}" unless f["dilation_element"] == (zero ? nil : element)
+  failures << "#{what}: the file carries offset #{f['face_offset_mm']} mm and step /#{f['step_divisor']}" unless (f["face_offset_mm"] * 1000).round == microns && f["step_divisor"] == div.to_i
+  failures << "#{what}: the dilation was not clipped to the part body" unless f["clipped_to_part_body"] == true
+  failures << "#{what}: a row that did not converge is quoted" unless f["converged"]
+  failures << "#{what}: the file does not call itself a SENSITIVITY of the intent — a dilated row must never read as the printed body" unless f["_note"].to_s.include?("SENSITIVITY") && f["_note"].to_s.include?("NOT the printed body")
+
+  { "porosity" => [ f["porosity"] * 100.0, porosity_q ], "axial" => [ f["axial_ratio"], axial_q ], "radial" => [ f["radial_ratio"], radial_q ] }.each do |cell, (cached, quoted)|
+    rendered = format("%.#{quoted.include?('.') ? quoted.split('.').last.length : 0}f", cached)
+    flag(failures, "#{what} #{cell}", rendered, quoted) if rendered != quoted
+  end
+
+  pinned = sweep["rows"].find { |r| r["step_divisor"] == div.to_i }
+  next failures << "#{what}: період/#{div} is a step the pinned sweep does not carry — the row has no intent to be read against" if pinned.nil?
+
+  # A dilation only adds metal, and in linear elasticity under prescribed displacements added metal cannot lower either
+  # stiffness — so a row that is not denser AND stiffer than the intent of its own step indicts the instrument. It also
+  # carries canon's sentence that print excess only ever widens the gap to the wood (§5.1).
+  unless zero || (f["porosity"] < pinned["porosity"] && f["axial_ratio"] > pinned["axial_ratio"] && f["radial_ratio"] > pinned["radial_ratio"])
+    failures << "#{what}: the row is not denser and stiffer than the intent at період/#{div} — a dilation cannot soften the part"
+  end
+  next unless zero
+
+  %w[elements dofs porosity axial_ratio radial_ratio discarded_island_fraction axial_iterations radial_iterations].each do |key|
+    next if f[key] == pinned[key]
+
+    failures << "IDENTITY CONTROL broken: the zero row's #{key} is #{f[key].inspect} through the wrapper and #{pinned[key].inspect} "\
+                "in the pinned sweep at /#{div} — the wrapper, the sampler or the solver moved under the whole curve"
+  end
+end
+
+EXPECTED_DILATION_ROWS = 9
+if dilation_rows_seen < EXPECTED_DILATION_ROWS
+  failures << "only #{dilation_rows_seen} of #{EXPECTED_DILATION_ROWS} face-offset sensitivity rows matched — a canon "\
+              "rewording has DISARMED the comparison; fix the row shape, do not lower this number"
+end
+
+# The two sentences canon DERIVES from that table — both are statements about which cells cross a line, so a
+# re-measurement that moves a cell across it must red here rather than leave the prose standing over new numbers.
+dilation_file = lambda do |element, microns, div|
+  path = File.join(DILATION_DIR, "dilation_sensitivity.anchor_zone1_pine.#{element ? "#{element}." : ''}f#{microns}um.d#{div}.json")
+  File.exist?(path) ? JSON.parse(File.read(path)) : nil
+end
+dilation_anchors = 0
+
+# (i) the factory acceptance band 60–70 % (01_02 §1.2): only the first downskin row stays inside it, iso leaves it at once.
+if canon.include?("тримає лише **downskin 0.10 мм**, а iso виходить за неї вже на **0.05 мм**")
+  dilation_anchors += 1
+  band = { "the zero row" => [ nil, 0 ], "downskin 0.10" => [ "downskin", 100 ], "downskin 0.25" => [ "downskin", 250 ], "iso 0.05" => [ "iso", 50 ] }
+  inside = band.transform_values { |(element, microns)| (f = dilation_file.call(element, microns, 12)) && f["porosity"].between?(0.60, 0.70) }
+  expected = { "the zero row" => true, "downskin 0.10" => true, "downskin 0.25" => false, "iso 0.05" => false }
+  expected.each do |row, want|
+    next if inside[row] == want
+
+    failures << "factory-band sentence: canon says #{row} at період/12 is #{want ? 'inside' : 'outside'} 60–70 %, the cache says otherwise"
+  end
+end
+
+# (ii) the equal-density pair: at nearly the same porosity the iso row is stiffer AXIALLY and softer RADIALLY than the
+# downskin row, at both steps quoted. The percentages are relative to the downskin row of the same step.
+canon.scan(/на \*\*період\/(\d+)\*\* iso 0\.05 мм жорсткіший осьово на \*\*\+([0-9.]+) %\*\* і мʼякший радіально на \*\*−([0-9.]+) %\*\*/) do
+  div, axial_q, radial_q = Regexp.last_match.captures
+  downskin, iso = dilation_file.call("downskin", 250, div), dilation_file.call("iso", 50, div)
+  next failures << "equal-density pair at період/#{div}: a row is not committed" if downskin.nil? || iso.nil?
+
+  dilation_anchors += 1
+  { "axial gain" => [ (iso["axial_ratio"] / downskin["axial_ratio"] - 1.0) * 100.0, axial_q ],
+    "radial loss" => [ (1.0 - iso["radial_ratio"] / downskin["radial_ratio"]) * 100.0, radial_q ] }.each do |what, (cached, quoted)|
+    rendered = format("%.#{quoted.include?('.') ? quoted.split('.').last.length : 0}f", cached)
+    flag(failures, "equal-density pair /#{div} #{what} %", rendered, quoted) if rendered != quoted
+  end
+end
+
+EXPECTED_DILATION_ANCHORS = 3
+if dilation_anchors < EXPECTED_DILATION_ANCHORS
+  failures << "only #{dilation_anchors} of #{EXPECTED_DILATION_ANCHORS} sensitivity derivation anchors matched — a canon "\
+              "rewording has DISARMED a comparison; find the reworded sentence, do not lower this number"
+end
+
 EXPECTED_ANCHORS = 8
 if anchors < EXPECTED_ANCHORS
   failures << "only #{anchors} of #{EXPECTED_ANCHORS} derivation anchors matched — a canon rewording has "\
@@ -273,7 +383,9 @@ if anchors < EXPECTED_ANCHORS
 end
 
 if failures.empty?
-  puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance)"
+  puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
+       "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
+       "zero row = the pinned sweep field for field)"
   exit 0
 end
 
