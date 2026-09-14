@@ -27,7 +27,9 @@ KEY COUPLING — ⚠️ REWRITTEN 2026-09-11, and the old version is kept nowher
 liner from FATIGUE, and that ground is RETIRED, not narrowed (⚖️ founder, 00_07 HW.34). What retired it
 is §4 of this very script: both L_FREE_* columns are FREE cantilevers — no wall anywhere — while the
 real rod threads a Ø1.35 bore, so a branch that leaves play can take it up and BEAR on the wall inside
-the bore — and §4 derives on WHICH swept µ it does, per branch. An unsupported SF is therefore a number for a configuration that does not exist, and the
+the bore — and §4 derives on WHICH swept µ it does, per branch. ⚠️ That §4 station is CONTESTED since
+2026-09-14: it is read off the free cantilever at full drag, and script 68 solves the contact (coaxial: the
+wall is met at the pad plane; off-axis: the mouth) — the blocks resting on it await re-derivation (00_07 HW.34). An unsupported SF is therefore a number for a configuration that does not exist, and the
 script says so through a DERIVED flag (`clearance_regime.free_cantilever_sf_describes_these`), never
 through prose. What the liner carries instead is WEAR: the same contact makes rubbing geometrically
 FORCED, and a 10 µm conformal film asked to be a bearing in a THROUGH bore of L/D ≈ 12.6 wears through to a
