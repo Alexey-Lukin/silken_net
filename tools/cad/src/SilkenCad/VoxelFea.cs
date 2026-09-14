@@ -42,6 +42,10 @@ namespace SilkenCad;
 //     real annular wall. That is the point; it is NOT a material property and must not be quoted as one.
 //   • The RADIAL case is centred on the grid, so it is valid only on steps that divide the diameter
 //     (RadialLoadCentreOffsetMm) — any other step is refused, not approximated.
+//   • A CONSTANT-period lattice sampled at a step that divides its period is PHASE-LOCKED: a wall level
+//     moves the voxel model only where it crosses one of the few field values sampled there, so a wall
+//     sweep answers in a staircase and two walls can sample to one grid (PhaseLockCells). A collapsed
+//     sweep is refused (IdenticalSweepGrids); a merely coarse staircase is not, and is read as noise in ρ.
 internal static class VoxelFea
 {
     // Poisson's ratio of the solid phase. Ti-6Al-4V ≈ 0.342 (and every bake-off candidate sits in
@@ -523,6 +527,51 @@ internal static class VoxelFea
     internal static double RadialLoadCentreOffsetMm(in Connectivity.Grid grid, double dOuterRadiusMm)
         => Math.Max(Math.Abs((grid.Nx * (double)grid.StepMm / 2.0) - dOuterRadiusMm),
                     Math.Abs((grid.Ny * (double)grid.StepMm / 2.0) - dOuterRadiusMm));
+
+    // 🔴 A CONSTANT-period lattice sampled at a step that divides its period is PHASE-LOCKED: the sampler puts every
+    // cell's points at the same phases, so the field takes a small discrete set of values there, and a wall level
+    // moves the voxel model only when it crosses one of them. Measured 2026-09-14 on graded_porosity (period 2.0,
+    // Ø11) with the wall held uniform, as `fea --fit` holds it: at /4 ten walls from −0.60 to 0.40 gave THREE
+    // porosities; at /8 and at /10 the walls −0.15 and −0.08 sampled to one grid, and at /8 so did 0.10. The pine
+    // part, whose period is graded 2.5 → 2.0, drifts the phase with radius and gave ten porosities for the same ten
+    // walls. ⚠️ `--step-div N` takes the step FROM the period (period/N), so on a constant-period part EVERY divisor is
+    // locked by definition, aligned or not; the radial pre-check only narrows the way out — a radial sweep needs a
+    // step that is a fraction of the diameter and NOT of the period (`--step-mm`, e.g. 11/50 on Ø11 at period 2.0).
+    // The lattice cube is locked by construction; its fits read the staircase as scatter that shrinks with steps per
+    // period. Returns how many cells the sampled phase takes to repeat (1 = every cell, the --step-div case), or 0
+    // when it does not repeat within nMaxCells — unlocked at the scale of anything sampled here.
+    internal static int PhaseLockCells(float fStepMm, float fPeriodCoreMm, float fPeriodRimMm, int nMaxCells = 4)
+    {
+        float fPeriodRim = fPeriodRimMm > 0f ? fPeriodRimMm : fPeriodCoreMm;
+        if (fPeriodRim != fPeriodCoreMm)
+            return 0;
+        double dStepsPerPeriod = fPeriodCoreMm / (double)fStepMm;
+        for (int nCells = 1; nCells <= nMaxCells; nCells++)
+        {
+            double dSteps = dStepsPerPeriod * nCells;
+            if (Math.Abs(dSteps - Math.Round(dSteps)) < 1e-4 * nCells)
+                return nCells;
+        }
+        return 0;
+    }
+
+    // A sweep point whose grid another point already produced measured nothing new: it is the staircase above, not a
+    // second density. Compared CELL BY CELL rather than by porosity — an equal solid count is not equal geometry,
+    // and what is being refused is precisely "the sweep varied nothing here".
+    internal static List<(float WallA, float WallB)> IdenticalSweepGrids(IReadOnlyList<(float Wall, Connectivity.Grid Grid)> aSamples)
+    {
+        var aPairs = new List<(float WallA, float WallB)>();
+        for (int i = 0; i < aSamples.Count; i++)
+        {
+            for (int j = i + 1; j < aSamples.Count; j++)
+            {
+                Connectivity.Grid a = aSamples[i].Grid, b = aSamples[j].Grid;
+                if (a.Nx == b.Nx && a.Ny == b.Ny && a.Nz == b.Nz && a.Cells.SequenceEqual(b.Cells))
+                    aPairs.Add((aSamples[i].Wall, aSamples[j].Wall));
+            }
+        }
+        return aPairs;
+    }
 
     /// <summary>
     /// Radial stiffness of the annulus: a uniform inward radial displacement is imposed on the outer

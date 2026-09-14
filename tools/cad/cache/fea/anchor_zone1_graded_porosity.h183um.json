@@ -1,0 +1,25 @@
+{
+  "_note": "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. Declared ceiling lives in VoxelFea.cs; a single row is an UPPER bound, read the sweep.",
+  "cem": "anchor_zone1_graded_porosity",
+  "topology": "network",
+  "with_bus_rod": false,
+  "poisson_ratio": 0.342,
+  "rows": [
+    {
+      "step_mm": 0.18333334,
+      "step_divisor": null,
+      "elements": 196836,
+      "dofs": 1021071,
+      "porosity": 0.6791846611820035,
+      "axial_ratio": 0.07745444853399384,
+      "radial_ratio": 0.07888115970044647,
+      "solid_calibration_axial": 0.9999992518839357,
+      "discarded_island_fraction": 0.0008578462475571369,
+      "axial_iterations": 6018,
+      "axial_residual": 9.851749783038752E-09,
+      "radial_iterations": 1032,
+      "radial_residual": 9.967343147421296E-09,
+      "converged": true
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with the gibson_ashby_fit.network.s\u003Csteps\u003E.json family (the material-scale cube): 01_01 \u00A75.2 asks for both curves: they agree on the exponent n and differ in C, a gap measured to move with resolution \u2014 compare the two only at one step size (00_07 HW.33). Porosity is measured on the grid, never derived.",
+  "cem": "anchor_zone1_graded_porosity",
+  "topology": "network",
+  "with_bus_rod": false,
+  "step_mm": 0.18333334,
+  "step_divisor": null,
+  "fit_axial_c": 0.9752739281932019,
+  "fit_axial_n": 2.261724417474092,
+  "fit_axial_r_squared_log": 0.9991636902995757,
+  "fit_radial_c": 0.5049372407431387,
+  "fit_radial_n": 1.6452724926471511,
+  "fit_radial_r_squared_log": 0.9997156516664311,
+  "rows": [
+    {
+      "wall_param": -0.3,
+      "elements": 177311,
+      "porosity": 0.7112507246660023,
+      "relative_density": 0.28874927533399775,
+      "axial_ratio": 0.05883181389617397,
+      "radial_ratio": 0.06545278143840748,
+      "converged": true
+    },
+    {
+      "wall_param": -0.2,
+      "elements": 187478,
+      "porosity": 0.694697399019014,
+      "relative_density": 0.30530260098098605,
+      "axial_ratio": 0.06668973528893293,
+      "radial_ratio": 0.07171361272792129,
+      "converged": true
+    },
+    {
+      "wall_param": -0.1,
+      "elements": 197416,
+      "porosity": 0.6785137344563213,
+      "relative_density": 0.32148626554367865,
+      "axial_ratio": 0.07442973042064498,
+      "radial_ratio": 0.07784594681733037,
+      "converged": true
+    },
+    {
+      "wall_param": 0,
+      "elements": 207324,
+      "porosity": 0.6623789237814212,
+      "relative_density": 0.33762107621857884,
+      "axial_ratio": 0.08400651172853045,
+      "radial_ratio": 0.08474635983110972,
+      "converged": true
+    }
+  ]
+}

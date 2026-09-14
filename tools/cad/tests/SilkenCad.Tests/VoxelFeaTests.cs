@@ -194,6 +194,59 @@ public class VoxelFeaTests
         return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fPeriodMin / nDiv, bWithRod: false);
     }
 
+    // 🔴 Phase lock is a property of the STEP against a CONSTANT period: a whole number of steps per period locks every
+    // cell (the --step-div case), a half-step count locks every second cell, a step taken from the diameter (11/50,
+    // 11/60 at period 2.0) does not repeat within the part, and a graded period (pine, 2.5 → 2.0) never locks.
+    // MUTATION: delete the graded-period early return in PhaseLockCells ⇒ the pine row reports a lock and reds.
+    [Theory]
+    [InlineData(2.0f, 0f, 0.25f, 1)]
+    [InlineData(2.0f, 2.0f, 0.2f, 1)]
+    [InlineData(2.0f, 0f, 0.5f, 1)]
+    [InlineData(2.0f, 0f, 2.0f / 7.5f, 2)]
+    [InlineData(2.0f, 0f, 0.22f, 0)]
+    [InlineData(2.0f, 0f, 11f / 60f, 0)]
+    [InlineData(2.5f, 2.0f, 0.25f, 0)]
+    public void Phase_Lock_Is_Read_From_The_Step_Against_A_Constant_Period_Only(float fCore, float fRim, float fStep, int nExpected)
+        => Assert.Equal(nExpected, VoxelFea.PhaseLockCells(fStep, fCore, fRim));
+
+    // 🔴 The staircase itself, on the shipped constant-period part, read through the real sampler with the wall held
+    // uniform as `fea --fit` holds it: on a locked step (/8, /10) walls a few hundredths apart sample to ONE grid — at /8
+    // so does +0.10 — while a step from the diameter that does not divide the period (0.22 mm) resolves every wall.
+    // This is what broke the graded-pair bracket on 2026-09-14, and the guard must see it before any solve.
+    // MUTATION: negate the cell comparison in IdenticalSweepGrids (`!a.Cells.SequenceEqual(b.Cells)`) ⇒ this reds.
+    // (An early `return aPairs;` is not a usable mutation: it does not compile — CS0162 is an error in this project.)
+    [Fact]
+    public void A_Constant_Period_Wall_Sweep_Collapses_On_A_Locked_Step_And_Resolves_On_A_Step_From_The_Diameter()
+    {
+        const float fPeriod = 2.0f;
+        List<(float WallA, float WallB)> aLockedD8 = VoxelFea.IdenticalSweepGrids(
+            [(-0.15f, GradedPorositySlice(-0.15f, fPeriod / 8)), (-0.08f, GradedPorositySlice(-0.08f, fPeriod / 8)),
+             (0.10f, GradedPorositySlice(0.10f, fPeriod / 8))]);
+        Assert.Equal(3, aLockedD8.Count);
+
+        List<(float WallA, float WallB)> aLockedD10 = VoxelFea.IdenticalSweepGrids(
+            [(-0.15f, GradedPorositySlice(-0.15f, fPeriod / 10)), (-0.08f, GradedPorositySlice(-0.08f, fPeriod / 10))]);
+        Assert.Single(aLockedD10);
+
+        List<(float WallA, float WallB)> aUnlocked = VoxelFea.IdenticalSweepGrids(
+            [(-0.15f, GradedPorositySlice(-0.15f, 0.22f)), (-0.08f, GradedPorositySlice(-0.08f, 0.22f)),
+             (0.10f, GradedPorositySlice(0.10f, 0.22f))]);
+        Assert.Empty(aUnlocked);
+    }
+
+    // The shipped graded_porosity part (constant period 2.0, Ø11) with the wall made uniform — rim follows core, exactly
+    // as FeaFitPart overrides it — as a thin slice, so the pin reads the real field and sampler cheaply.
+    private static Connectivity.Grid GradedPorositySlice(float fWall, float fStepMm)
+    {
+        AnchorCem cem = CemFixtures.Anchor("anchor_zone1.graded_porosity.json") with
+        {
+            LengthMm = 0.6f,
+            GyroidWallParam = fWall,
+            GyroidWallParamRim = fWall,
+        };
+        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStepMm, bWithRod: false);
+    }
+
     // 🔴 The Gibson-Ashby fit has a CLOSED FORM too, and it is the only kind of pin worth writing for
     // a regression: points generated FROM a known C and n must come back as that C and n. A fit is
     // exactly the sort of routine that returns a plausible pair whatever it does — and the pair it

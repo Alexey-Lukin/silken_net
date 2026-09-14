@@ -945,7 +945,7 @@ internal static class Program
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
-            "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --sweep | --with-rod]\n" +
+            "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep | --with-rod]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]");
         return 0;
@@ -995,7 +995,10 @@ internal static class Program
         int nDiv = ArgInt(args, "--step-div", 12);
         IImplicit sdf = Zone1Anode.Gyroid(cem);
 
-        int[] aDivs = args.Contains("--sweep") ? [6, 8, 12, 16] : [nDiv];
+        // `--step-mm` replaces the divisor with one explicit step (a single row) for constant-period parts, whose
+        // every aligned divisor is phase-locked (VoxelFea.PhaseLockCells); divisor 0 marks that row below.
+        float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
+        int[] aDivs = fStepMmArg > 0f ? [0] : args.Contains("--sweep") ? [6, 8, 12, 16] : [nDiv];
         Console.WriteLine($"fea {cem.Name} — apparent stiffness / E_solid, ν = {VoxelFea.SolidPoissonRatio}");
         Console.WriteLine(bWithRod
             ? "  envelope: the full printed part (gyroid annulus + monolithic bus rod, 01_01 §1.4)"
@@ -1008,15 +1011,20 @@ internal static class Program
         {
             float fPeriodMin = cem.GyroidPeriodRimMm > 0f
                 ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
-            float fStep = fPeriodMin / nDivisor;
+            float fStep = nDivisor > 0 ? fPeriodMin / nDivisor : fStepMmArg;
 
             Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(sdf, cem, fStep, bWithRod);
             // Checked BEFORE any solve: every row carries a radial column, and a divisor that does not divide the
             // diameter would spend minutes on axial first and then die inside RadialStiffness (VoxelFea.cs).
             double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, cem.OuterDiameterMm / 2f);
             if (dCentreOffset > VoxelFea.RadialCentreToleranceMm)
-                return Fail($"fea: --step-div {nDivisor} puts the radial load centre {dCentreOffset * 1000.0:F1} µm off the " +
-                            $"part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — pick a divisor that divides the diameter");
+                return Fail($"fea: {(nDivisor > 0 ? $"--step-div {nDivisor}" : $"--step-mm {fStep:0.####}")} puts the radial load centre " +
+                            $"{dCentreOffset * 1000.0:F1} µm off the part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — " +
+                            "pick a step that divides the diameter");
+            int nLockCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm);
+            if (nLockCells > 0)
+                Console.WriteLine($"  ⚠ step {fStep:F4}: phase-locked sampling (constant period, the phase repeats every {nLockCells} cell(s)) — " +
+                                  "porosity and stiffness here sit on a staircase in the wall level (VoxelFea.PhaseLockCells)");
             Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
 
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
@@ -1048,7 +1056,7 @@ internal static class Program
             aRows.Add(new Dictionary<string, object>
             {
                 ["step_mm"] = fStep,
-                ["step_divisor"] = nDivisor,
+                ["step_divisor"] = nDivisor > 0 ? (object)nDivisor : null!,
                 ["elements"] = oAxial.Elements,
                 ["dofs"] = oAxial.Dofs,
                 ["porosity"] = dPorosity,
@@ -1065,7 +1073,8 @@ internal static class Program
         }
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
-        string strOut = Path.Combine("cache", "fea", $"{cem.Name}{(bWithRod ? ".with_rod" : "")}.json");
+        string strOut = Path.Combine("cache", "fea",
+            $"{cem.Name}{(bWithRod ? ".with_rod" : "")}{(fStepMmArg > 0f ? $".h{MathF.Round(fStepMmArg * 1000f):0}um" : "")}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. "
@@ -1167,15 +1176,21 @@ internal static class Program
 
         Console.WriteLine($"fea --fit — {(bSheet ? "sheet" : "network")} gyroid, period {fPeriod} mm, " +
                           $"{nCells}-cell cube, {nStepsPerPeriod} steps/period, frictionless platens");
+        // The cube is phase-locked by construction (steps per period): its staircase is refined by steps per period,
+        // not avoided — but a sweep that collapsed onto one grid is refused before any solve (VoxelFea.IdenticalSweepGrids).
+        var aSamples = aWalls.Select(w => (Wall: w, Grid: VoxelFea.SampleLatticeCube(fPeriod, w, !bSheet, nCells, nStepsPerPeriod))).ToList();
+        List<(float WallA, float WallB)> aCollapsed = VoxelFea.IdenticalSweepGrids(aSamples);
+        if (aCollapsed.Count > 0)
+            return Fail($"fea --fit: walls {string.Join(", ", aCollapsed.Select(p => $"{p.WallA:0.###} and {p.WallB:0.###}"))} sample to the SAME grid " +
+                        $"at {nStepsPerPeriod} steps per period — the cube is phase-locked, so raise --steps-per-period or widen the wall spacing");
         Console.WriteLine($"{"wall",7} {"elements",10} {"poros.",8} {"rho",7} {"E/E_solid",11}");
 
         var aRows = new List<Dictionary<string, object>>();
         var aFitPoints = new List<(double Density, double Ratio)>();
         bool bFirst = true;
         double dCalibration = double.NaN;
-        foreach (float fWall in aWalls)
+        foreach ((float fWall, Connectivity.Grid grid) in aSamples)
         {
-            Connectivity.Grid grid = VoxelFea.SampleLatticeCube(fPeriod, fWall, !bSheet, nCells, nStepsPerPeriod);
             VoxelFea.FeaResult o = VoxelFea.ApparentAxialModulus(grid, 2);
             // Same self-calibration contract as the ladder: a fully solid cube under frictionless
             // platens is exactly E_solid at any resolution, so the divisor is 1 and the calibration RUN
@@ -1252,35 +1267,58 @@ internal static class Program
 
         float fPeriodMin = cemBase.GyroidPeriodRimMm > 0f
             ? MathF.Min(cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm) : cemBase.GyroidPeriodMm;
-        float fStep = fPeriodMin / nDiv;
+        // `--step-mm` exists for the constant-period parts whose every aligned divisor is phase-locked
+        // (VoxelFea.PhaseLockCells); it tags the cache by the step, so it can never overwrite a d<N> file.
+        float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
+        float fStep = fStepMmArg > 0f ? fStepMmArg : fPeriodMin / nDiv;
+        string strStepArg = fStepMmArg > 0f ? $"--step-mm {fStep:0.####}" : $"--step-div {nDiv}";
 
         Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED annulus swept over wall_param, step {fStep:F4} mm");
         Console.WriteLine(bWithRod
             ? "  envelope: gyroid annulus + monolithic bus rod"
             : "  envelope: the gyroid annulus only (rod excluded — the lattice, comparable to the cube)");
-        Console.WriteLine($"{"wall",7} {"elements",10} {"poros.",8} {"rho",7} {"axial-Z",9} {(bRadial ? "radial" : ""),9}");
+        int nLockCells = VoxelFea.PhaseLockCells(fStep, cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm);
+        if (nLockCells > 0)
+            Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
+                              "a wall level registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
 
-        var aRows = new List<Dictionary<string, object>>();
-        var aAxial = new List<(double Density, double Ratio)>();
-        var aRadial = new List<(double Density, double Ratio)>();
+        // Every wall is SAMPLED before anything is solved: a sweep that collapsed onto one grid is refused in
+        // seconds, not after minutes of conjugate gradients spent measuring the same geometry twice.
+        var aSamples = new List<(float Wall, AnchorCem Cem, Connectivity.Grid Grid)>();
         foreach (float fWall in aWalls)
         {
             // ⚠️ Rim follows the core deliberately: an ABSENT rim field already means "equals core"
             //    (Zone1Anode.Gyroid), so overriding only the core would silently turn a wall-uniform
             //    manifest into a wall-GRADED one and the sweep would vary two things at once.
-            AnchorCem cem = cemBase with
+            AnchorCem cemWall = cemBase with
             {
                 GyroidWallParam = fWall,
                 GyroidWallParamRim = cemBase.GyroidWallParamRim.HasValue ? fWall : null,
             };
-            Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod);
-            // The radial fit is refused up front on a divisor that does not divide the diameter (VoxelFea.cs:
-            // the load centre walks off the axis). The AXIAL fit is unaffected and still runs on any divisor.
-            double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, cem.OuterDiameterMm / 2f);
+            Connectivity.Grid gridWall = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cemWall), cemWall, fStep, bWithRod);
+            // The radial fit is refused up front on a step that does not divide the diameter (VoxelFea.cs:
+            // the load centre walks off the axis). The AXIAL fit is unaffected and still runs on any step.
+            double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(gridWall, cemWall.OuterDiameterMm / 2f);
             if (bRadial && dCentreOffset > VoxelFea.RadialCentreToleranceMm)
-                return Fail($"fea --fit --with-radial: --step-div {nDiv} puts the radial load centre {dCentreOffset * 1000.0:F1} µm " +
-                            $"off the part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — run the radial fit " +
-                            "on a divisor that divides the diameter; the axial fit alone runs without --with-radial");
+                return Fail($"fea --fit --with-radial: {strStepArg} puts the radial load centre {dCentreOffset * 1000.0:F1} µm " +
+                            $"off the part axis (Ø{cemWall.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — run the radial fit " +
+                            "on a step that divides the diameter; the axial fit alone runs without --with-radial");
+            aSamples.Add((fWall, cemWall, gridWall));
+        }
+        List<(float WallA, float WallB)> aCollapsed = VoxelFea.IdenticalSweepGrids(aSamples.Select(s => (s.Wall, s.Grid)).ToList());
+        if (aCollapsed.Count > 0)
+            return Fail($"fea --fit: walls {string.Join(", ", aCollapsed.Select(p => $"{p.WallA:0.###} and {p.WallB:0.###}"))} sample to the SAME grid " +
+                        "at this step — the sweep varied nothing there" +
+                        (nLockCells > 0
+                            ? "; the sampling is phase-locked, so take a step that divides the diameter and not the period (--step-mm)"
+                            : "; widen the wall spacing"));
+
+        Console.WriteLine($"{"wall",7} {"elements",10} {"poros.",8} {"rho",7} {"axial-Z",9} {(bRadial ? "radial" : ""),9}");
+        var aRows = new List<Dictionary<string, object>>();
+        var aAxial = new List<(double Density, double Ratio)>();
+        var aRadial = new List<(double Density, double Ratio)>();
+        foreach ((float fWall, AnchorCem cem, Connectivity.Grid grid) in aSamples)
+        {
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
             double dPorosity = Connectivity.Porosity(grid);
             double dRho = 1.0 - dPorosity;
@@ -1314,7 +1352,8 @@ internal static class Program
             Console.WriteLine($"fit radial  E/E_solid = {fr.C:F4}·rho^{fr.N:F3}   (R² {fr.RSquared:F4} log, {fr.Points} pts)");
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
-        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.d{nDiv}{(bWithRod ? ".with_rod" : "")}.json");
+        string strResolution = fStepMmArg > 0f ? $"h{MathF.Round(fStep * 1000f):0}um" : $"d{nDiv}";
+        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.{strResolution}{(bWithRod ? ".with_rod" : "")}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
@@ -1325,7 +1364,7 @@ internal static class Program
             ["topology"] = cemBase.Topology,
             ["with_bus_rod"] = bWithRod,
             ["step_mm"] = fStep,
-            ["step_divisor"] = nDiv,
+            ["step_divisor"] = fStepMmArg > 0f ? null! : (object)nDiv,
             ["fit_axial_c"] = fitAxial.C,
             ["fit_axial_n"] = fitAxial.N,
             ["fit_axial_r_squared_log"] = fitAxial.RSquared,
