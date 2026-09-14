@@ -528,7 +528,7 @@ def vertical_stack_budget(boss: dict) -> dict:
 
     rows = []
     for fr4 in (FR4_THICKNESS_MM, FR4_THICKNESS_UNSOURCED_MM):
-        for b2b in B2B_STACK_MM + (B2B_STACK_ALT_MM,):
+        for b2b in (*B2B_STACK_MM, B2B_STACK_ALT_MM):
             rows.append(row("pad_beside_piezo", None, fr4, b2b))
             for name in PIEZO_HEIGHT_MM:
                 rows.append(row("pad_under_piezo", name, fr4, b2b))
@@ -540,6 +540,7 @@ def vertical_stack_budget(boss: dict) -> dict:
 
     under = [r for r in bom if r["placement"] == "pad_under_piezo"]
     beside = [r for r in bom if r["placement"] == "pad_beside_piezo"]
+    alt_beside = next(r for r in alt if r["placement"] == "pad_beside_piezo")
     rss_key = "tol_pz_rss_as_quoted_02_02"
     return {
         "inputs_mm": {"gap_pz": GAP_PZ, "fr4_bom": FR4_THICKNESS_MM, "fr4_unsourced_contrast": FR4_THICKNESS_UNSOURCED_MM,
@@ -561,10 +562,8 @@ def vertical_stack_budget(boss: dict) -> dict:
             "pad_under_piezo_rows_that_do_not_close_at_all": [
                 f"{r['piezo']} · B2B {r['b2b_mm']:g}" for r in under if r["room_over_rf_deck_centre_mm"] < 0.0],
             "alt_b2b_lever": {"buys_height_mm": round(B2B_STACK_MM[0] - B2B_STACK_ALT_MM, 2),
-                              "antenna_z_mm_pad_beside_piezo": [r["antenna_z_over_ti_mm"] for r in alt
-                                                                if r["placement"] == "pad_beside_piezo"][0],
-                              "below_hfss_trigger_pad_beside_piezo": [r["rf_below_hfss_trigger_10"] for r in alt
-                                                                      if r["placement"] == "pad_beside_piezo"][0]},
+                              "antenna_z_mm_pad_beside_piezo": alt_beside["antenna_z_over_ti_mm"],
+                              "below_hfss_trigger_pad_beside_piezo": alt_beside["rf_below_hfss_trigger_10"]},
         },
         "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); "
                          "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
