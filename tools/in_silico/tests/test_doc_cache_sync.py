@@ -444,7 +444,7 @@ CHECKS = [
     ),
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
-    # Every number below moves the moment ANY input of that model moves (µ sweep, span check, yield
+    # Every number below moves the moment ANY input of that model moves (µ sweep, geometry, yield
     # table, derates), while the prose around it would stay internally consistent on the old value.
     # ⛔ The axial thermal term entered canon prose the same hour it was derived, which is exactly the
     # shape this file exists against: a number with no owner reads identically to one with an owner.
@@ -454,46 +454,45 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["axial_thermal"]["differential_axial_um_by_dT_K"]["40"], 0.5,
     ),
-    # ⛔ Two pins stood here and held the PAIR of protrusion rows, because the headline rode a span
-    # the tracker recorded as wrong. The span was corrected 2026-09-12 (CEM-derived, 23 mm) and the
-    # sweep went with the dispute, so what the doc may quote is ONE row and this is its pin.
-    # ⛔ These three carry the 2026-09-12 axial verdicts into a pin. The protrusion figure is the one
-    # that became a canon SPEC («≥ 1.0 mm», rounded from it), so a silent re-derivation would leave
-    # the shop building to a number the model no longer produces.
+    # ⛔ The pins that stood here for the free-shape stations (min protrusion 0.79 mm · approach 0.60° ·
+    # 7.8 µm inside the wall) went with the drift picture on 2026-09-14: those keys are gone from the cache
+    # and the doc sentences that carried them now say the numbers are retired. What canon and SUMMARY quote
+    # from the equilibrium instead is pinned below — each to the key it is read from, never to a neighbour.
     (
-        "liner min protrusion into the PEEK gap → bus_mechanical.json §edge_bearing.liner_start",
-        SUMMARY, rf"the tube must start\s+\*\*{N} mm\*\* before it",
+        "mouth approach angle per µm of channel offset, shipped branch, placeholder → bus_mechanical.json §edge_bearing",
+        SUMMARY, rf"the approach angle grows at \*\*{N}°/µm\*\* of offset past the play on the placeholder",
         "mechanical/bus_mechanical.json",
-        lambda d: d["clearance_regime"]["edge_bearing"]["liner_start"]["min_protrusion_into_gap_mm"], 0.01,
+        lambda d: next(r for r in d["clearance_regime"]["edge_bearing"]["rows"]
+                       if r["geometry"].startswith("script 55 placeholder") and r["branch"].startswith("PEEK liner"))
+        ["approach_angle_deg_per_um_past_play"], 0.00005,
     ),
     (
-        "rod approach angle at the bore mouth → bus_mechanical.json §edge_bearing",
-        SUMMARY, rf"inside the wall at \*\*{N}°\*\*",
+        "mouth approach angle per µm, canon mirror → bus_mechanical.json §edge_bearing",
+        COAXIAL, rf"кут росте на \*\*{N}°\*\* на мікрометр зсуву понад люфт на плейсхолдері",
         "mechanical/bus_mechanical.json",
-        lambda d: max(v["approach_angle_deg"]
-                      for r in d["clearance_regime"]["edge_bearing"]["rows"]
-                      if r["radial_play_um"] < 100.0
-                      for v in r["by_mu"].values()), 0.01,
+        lambda d: next(r for r in d["clearance_regime"]["edge_bearing"]["rows"]
+                       if r["geometry"].startswith("script 55 placeholder") and r["branch"].startswith("PEEK liner"))
+        ["approach_angle_deg_per_um_past_play"], 0.00005,
     ),
-# ⛔ The same angle has a canon mirror, and it was the one that rotted: 0.593 → 0.596 moved with the
-# rounding fix (8ebe5f97) while 01_01 §1.4 kept a truncated «0.59». Tolerance is half the last digit,
-# so a truncation reds and an honest two-decimal rounding does not.
-(
-    "rod approach angle at the bore mouth, canon mirror → bus_mechanical.json §edge_bearing",
-    COAXIAL, rf"Стрижень підходить до гирла під \*\*{N}°\*\*",
-    "mechanical/bus_mechanical.json",
-    lambda d: max(v["approach_angle_deg"]
-                  for r in d["clearance_regime"]["edge_bearing"]["rows"]
-                  if r["radial_play_um"] < 100.0
-                  for v in r["by_mu"].values()), 0.005,
-),
     (
-        "interference at the mouth, worst corner → bus_mechanical.json §edge_bearing",
-        SUMMARY, rf"arrives \*\*{N} µm\*\* inside the wall",
+        "exit landing angle of the touched-down rod, placeholder → bus_mechanical.json §edge_bearing.exit_contact",
+        SUMMARY, rf"lands on the bore's exit edge at \*\*{N}°\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: max(v["interference_at_mouth_um"]
-                      for r in d["clearance_regime"]["edge_bearing"]["rows"]
-                      for v in r["by_mu"].values()), 0.01,
+        lambda d: d["clearance_regime"]["edge_bearing"]["exit_contact"][0]["landing_angle_deg"], 0.0005,
+    ),
+    # ⛔ The SIGN of this ratio is the finding (the 6 mm column OVERSTATES the coaxial cap, where the drift
+    # picture had it «understated by 40.8 %»), so the number canon and SUMMARY quote is pinned in both.
+    (
+        "§2 supported column over the coaxial cap, placeholder → bus_mechanical.json §supported_column_vs_equilibrium",
+        SUMMARY, rf"OVERSTATES it ×\*\*{N}\*\* at nominal µ on the placeholder",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["column_over_cap_nominal"], 0.005,
+    ),
+    (
+        "§2 supported column over the coaxial cap, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
+        COAXIAL, rf"ЗАВИЩУЄ ×\*\*{N}\*\* при номінальному терті на плейсхолдері",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["column_over_cap_nominal"], 0.005,
     ),
     # ── HW.34 liner↔wire FIT: the interference window canon now carries (derived 2026-09-12) ──
     # ⛔ These three exist because the block's whole point is that its two vendor inputs are ABSENT,
@@ -521,28 +520,11 @@ CHECKS = [
         lambda d: next(r for r in d["interference_window"]["od_growth_eats_channel_play"]["rows"]
                        if r["at"] == "ceiling")["channel_radial_play_um"], 0.05,
     ),
-    (
-        "weld-seam k at the CEM-derived protrusion → bus_mechanical.json §binding_candidate",
-        SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| [\d.]+ % \| [\d.]+ MPa \| \*\*{N}\*\*",
-        "mechanical/bus_mechanical.json",
-        lambda d: d["weld_seam"]["binding_candidate"]["k_at_infinite_life"], 0.001,
-    ),
-# ⛔ The same table row carries two more model numbers, and the row pin above held only k: the span
-# optimism and the margin sat behind wildcards. That is how 41.3 % stood beside a k already
-# recomputed on 40.8 % (fixed 8ebe5f97) — a row that agrees with itself on one cell proves nothing
-# about its neighbours.
-(
-    "weld-seam span optimism on the CEM-derived row → bus_mechanical.json §weld_seam.span",
-    SUMMARY, rf"\| \*\*23 mm\*\* \(CEM-derived, shipped\) \| {N} % \|",
-    "mechanical/bus_mechanical.json",
-    lambda d: d["weld_seam"]["span"]["span_optimism_pct"], 0.05,
-),
-(
-    "weld-seam margin in k vs the as-printed marker → bus_mechanical.json §binding_candidate",
-    SUMMARY, rf"\*\*DOES NOT CLEAR\*\*, {N} \|",
-    "mechanical/bus_mechanical.json",
-    lambda d: d["weld_seam"]["binding_candidate"]["margin_in_k_vs_as_printed_marker"], 0.0005,
-),
+    # ⛔ The weld-seam pins (k 0.554 · span optimism 40.8 % · margin −0.054) stood here until 2026-09-14 and
+    # pinned a bound that stood on the drift picture. The seam block carries no k now; what it carries — the
+    # root amplitude and mean per regime and geometry — is pinned equal to script 68's table by
+    # test_cache_integrity, and 68's table is pinned cell by cell below (_BUS68_COLUMNS). Nothing to add here
+    # without duplicating a row that already has an owner.
 (
     "liner play-reduction factor → bus_mechanical.json §clearance_regime.play_reduction",
     SUMMARY, rf"`play_reduction\.factor` ≈ {N}×",
@@ -555,50 +537,51 @@ CHECKS = [
     "mechanical/bus_mechanical.json",
     lambda d: d["clearance_regime"]["channel"]["aspect_ratio_l_over_d"], 0.05,
 ),
-    # ── HW.34 endurance band: the two numbers the SUMMARY table is READ for ──
-    # ⛔ The binding SF at the LOW end and the break-even at the HIGH end are pinned, and they are
-    # the two the reader acts on: one says a standing conclusion flips, the other says a conclusion
-    # that looked shakier does not. Both sit in a table whose rows differ only in a coefficient, so
-    # a stale one would read as the live one — the row anchor is therefore load-bearing.
+    # ── HW.34 endurance band: the number the SUMMARY table is READ for ──
+    # ⛔ The binding SF at the LOW end is the one the reader acts on — it says a standing conclusion flips.
+    # It sits in a table whose rows differ only in a coefficient, so a stale one would read as the live
+    # one — the row anchor is therefore load-bearing. (The seam column of that table went with the drift
+    # picture on 2026-09-14; the bare-rod sweep is what remains.)
     (
         "endurance band, binding Ta SF at the low end → bus_mechanical.json §endurance_ratio_band",
-        SUMMARY, rf"\| 0\.40 \| 5 / 6 \| \*\*{N}\*\*",
+        SUMMARY, rf"\| 0\.40 \| 5 / 6 \| \*\*{N}\*\* \|",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
                        if r["endurance_over_yield"] == 0.40)["binding_sf_unsupported"], 0.005,
-    ),
-    (
-        "endurance band, seam break-even at the high end → bus_mechanical.json §endurance_ratio_band",
-        SUMMARY, rf"\| 0\.50 \| 6 / 6 \| [\d.]+ \| \*\*{N}\*\*",
-        "mechanical/bus_mechanical.json",
-        lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
-                       if r["endurance_over_yield"] == 0.50)["seam_break_even_k_worst_corner"], 0.0005,
     ),
     # ── HW.34 wear budget: the two ends SUMMARY quotes from script 55 §wear_budget ──
     # ⛔ Both ends are pinned, not just the headline, and the reason is the finding itself: the SPAN
     # between them IS the message («the tribology does not decide this, our contact geometry does»),
     # so a doc that kept one end current and let the other rot would still read as a bound while
     # having stopped being one. The span ratio is pinned for the same reason — it is the only number
-    # in that paragraph a reader ACTS on.
+    # in that paragraph a reader ACTS on. The slip CEILING is pinned because the paragraph's third finding
+    # is that it is a ceiling and not a kinematic result — a doc that re-typed it as «the slip» would
+    # still match the number while losing the claim.
     (
         "wear budget, flow-limited end → bus_mechanical.json §wear_budget.binding",
-        SUMMARY, rf"flow-limited patch[^|]*\| \*\*{N} × 10⁻⁸\*\*",
+        SUMMARY, rf"flow-limited patch[^|]*\| \*\*{N} × 10⁻⁷\*\*",
         "mechanical/bus_mechanical.json",
         lambda d: min(p["k_max_edge_mm3_per_Nm"]
-                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e8, 0.01,
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e7, 0.01,
     ),
     (
         "wear budget, worn-in end → bus_mechanical.json §wear_budget.binding",
-        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*{N} × 10⁻⁴\*\*",
+        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*{N} × 10⁻³\*\*",
         "mechanical/bus_mechanical.json",
         lambda d: min(p["k_max_conformal_mm3_per_Nm"]
-                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e4, 0.01,
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e3, 0.01,
     ),
     (
         "wear budget, span between the two ends → bus_mechanical.json §wear_budget.binding",
         SUMMARY, rf"budget's span is \*\*{N}×\*\*",
         "mechanical/bus_mechanical.json",
         lambda d: d["wear_budget"]["binding"]["k_max_span_ratio"], 0.5,
+    ),
+    (
+        "wear budget, coaxial slip ceiling per cycle → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"the \*\*{N} µm\*\* per cycle the budget stands on",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["wear_budget"]["binding"]["slip_ceiling_per_cycle_um"], 0.005,
     ),
     # ── HW.43 cycle budget: the bracket SUMMARY and canon quote from script 62 ──
     # ⛔ Both ends of the low reading AND the ceiling are pinned, in both homes. The ceiling is the number the

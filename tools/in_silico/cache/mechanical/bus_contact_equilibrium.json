@@ -48,7 +48,8 @@
       0.4,
       0.5
     ],
-    "element_mm": 0.1
+    "element_mm": 0.1,
+    "solver": "lib.beam_contact (one home; script 55's contact blocks use the same solver since 2026-09-14)"
   },
   "drag_coaxial": [
     {
@@ -2376,23 +2377,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 6.8
+          "sigma_root_MPa": 6.8,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 14.2
+          "sigma_root_MPa": 14.2,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 37.0
+          "sigma_root_MPa": 37.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 118.7
+          "sigma_root_MPa": 118.7,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2404,23 +2410,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 2.9
+          "sigma_root_MPa": 2.9,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 8.4
+          "sigma_root_MPa": 8.4,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 19.3
+          "sigma_root_MPa": 19.3,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 41.2
+          "sigma_root_MPa": 41.2,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2432,23 +2443,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 46.5
+          "sigma_root_MPa": 46.5,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 145.7
+          "sigma_root_MPa": 145.7,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 365.2
+          "sigma_root_MPa": 365.2,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 860.1
+          "sigma_root_MPa": 860.1,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2460,23 +2476,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 1.5
+          "sigma_root_MPa": 1.5,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 5.9
+          "sigma_root_MPa": 5.9,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 13.2
+          "sigma_root_MPa": 13.2,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 29.9
+          "sigma_root_MPa": 29.9,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 61.4
+          "sigma_root_MPa": 61.4,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2488,23 +2509,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 1.0
+          "sigma_root_MPa": 1.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 3.0
+          "sigma_root_MPa": 3.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 6.9
+          "sigma_root_MPa": 6.9,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 1.8
+          "sigma_root_MPa": 1.8,
+          "peak_moment_station_mm": 21.0
         }
       ]
     },
@@ -2516,23 +2542,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 3.4
+          "sigma_root_MPa": 3.4,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 14.7
+          "sigma_root_MPa": 14.7,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 39.1
+          "sigma_root_MPa": 39.1,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 89.4
+          "sigma_root_MPa": 89.4,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2544,23 +2575,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 1.5
+          "sigma_root_MPa": 1.5,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 5.9
+          "sigma_root_MPa": 5.9,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 13.2
+          "sigma_root_MPa": 13.2,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 29.0
+          "sigma_root_MPa": 29.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 59.0
+          "sigma_root_MPa": 59.0,
+          "peak_moment_station_mm": 0.0
         }
       ]
     },
@@ -2572,23 +2608,28 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 1.0
+          "sigma_root_MPa": 1.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 2.8
+          "sigma_root_MPa": 2.8,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 6.5
+          "sigma_root_MPa": 6.5,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 2.6
+          "sigma_root_MPa": 2.6,
+          "peak_moment_station_mm": 22.0
         }
       ]
     },
@@ -2600,45 +2641,88 @@
       "by_tilt": [
         {
           "tilt_mrad": 1.0,
-          "sigma_root_MPa": 0.0
+          "sigma_root_MPa": 0.0,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 2.0,
-          "sigma_root_MPa": 3.1
+          "sigma_root_MPa": 3.1,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 3.0,
-          "sigma_root_MPa": 13.5
+          "sigma_root_MPa": 13.5,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 5.0,
-          "sigma_root_MPa": 36.2
+          "sigma_root_MPa": 36.2,
+          "peak_moment_station_mm": 0.0
         },
         {
           "tilt_mrad": 9.0,
-          "sigma_root_MPa": 82.7
+          "sigma_root_MPa": 82.7,
+          "peak_moment_station_mm": 0.0
         }
       ]
     }
   ],
+  "peak_moment_section": {
+    "root_is_peak_in_every_drag_offset_and_reversing_row": true,
+    "rows_where_the_peak_leaves_the_root": {
+      "tilt": [
+        {
+          "geometry": "lock window, near end",
+          "row": "mouth/9.0 mrad",
+          "peak_moment_station_mm": 21.0,
+          "peak_over_root": 12.2
+        },
+        {
+          "geometry": "lock window, far end",
+          "row": "mouth/9.0 mrad",
+          "peak_moment_station_mm": 22.0,
+          "peak_over_root": 8.53
+        }
+      ],
+      "pad_moment": [
+        {
+          "geometry": "lock window, near end",
+          "row": "e +0.5 mm",
+          "peak_moment_station_mm": 38.0,
+          "peak_over_root": 13.16
+        },
+        {
+          "geometry": "lock window, far end",
+          "row": "e +0.5 mm",
+          "peak_moment_station_mm": 39.0,
+          "peak_over_root": 21.38
+        }
+      ]
+    },
+    "note": "read from EI·w'' at every node of every solve (linear inside an element, so the extreme is at a node). The exceptions are the lock-window rows where a tilt about the mouth takes up the play on both walls, and where the pogo couple applied at the exit exceeds the root moment of the long rod"
+  },
   "script55_side_by_side": {
-    "script55_supported_span_sigma_nominal_MPa": 18.33,
-    "script55_supported_span_note": "µ_nominal·F on 55's assumed free span (the 6 mm gap); only 55's worst corner uses the free-shape first contact, through its span optimism",
-    "script55_seam_worst_corner_sigma_MPa": 43.0,
+    "script55_supported_column_sigma_nominal_MPa": 18.3,
+    "script55_supported_column_note": "µ_nominal·F on the 6 mm PEEK gap propped where the bore begins — the §2 «supported» idealisation; script 55 measures it against these caps itself (clearance_regime.supported_column_vs_equilibrium)",
+    "script55_coaxial_cap_MPa_at_worst_mu_bonded": {
+      "script 55 placeholder (HW.8)": 8.04,
+      "lock window, near end": 2.88,
+      "lock window, far end": 2.73
+    },
     "equilibrium_coaxial_cap_MPa_at_worst_mu_bonded": {
       "script 55 placeholder (HW.8)": 8.04,
       "lock window, near end": 2.88,
       "lock window, far end": 2.73
-    }
+    },
+    "caps_agree": true
   },
-  "summary": "Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush, and the root stress is capped whatever the drag — 8.04 MPa on script 55's placeholder geometry, 2.73–2.88 MPa across the Zone-1 lock window (zero-interference play, bonded member). Script 55 prices that section at 18.33 MPa (supported-span assumption) and 43.0 MPa worst corner. Channel off the root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a secant 5.74 MPa/µm on the placeholder and 0.42–0.46 MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of magnitude. Reversing drag on a static offset, amplitude over the swept offsets — script 55 placeholder (HW.8): up to 8.04 MPa against its cap 8.04 (within it); lock window, near end: up to 3.85 MPa against its cap 2.88 (ABOVE it); lock window, far end: up to 3.76 MPa against its cap 2.73 (ABOVE it). A pogo contact off the rod axis by the rod radius, with the worst drag, gives up to 10.52 MPa on the placeholder and 5.22–5.37 MPa across the lock window — above the drag cap there. The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. No verdict is taken here.",
+  "summary": "Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush, and the root stress is capped whatever the drag — 8.04 MPa on script 55's placeholder geometry, 2.73–2.88 MPa across the Zone-1 lock window (zero-interference play, bonded member). Script 55's 6 mm supported column prices that section at 18.30 MPa nominal — above the cap on every geometry. Channel off the root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a secant 5.74 MPa/µm on the placeholder and 0.42–0.46 MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of magnitude. Reversing drag on a static offset, amplitude over the swept offsets — script 55 placeholder (HW.8): up to 8.04 MPa against its cap 8.04 (within it); lock window, near end: up to 3.85 MPa against its cap 2.88 (ABOVE it); lock window, far end: up to 3.76 MPa against its cap 2.73 (ABOVE it). A pogo contact off the rod axis by the rod radius, with the worst drag, gives up to 10.52 MPa on the placeholder and 5.22–5.37 MPa across the lock window — above the drag cap there. The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. Peak moment: the root is the peak-moment section in every drag, offset and reversing-drag row; it leaves the root only in tilt lock window, near end mouth/9.0 mrad, tilt lock window, far end mouth/9.0 mrad, pad_moment lock window, near end e +0.5 mm, pad_moment lock window, far end e +0.5 mm. MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. No verdict is taken here.",
   "not_modelled": {
     "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction; past the play the mouth corner would load the PEEK tube beyond its compressive strength at the larger offsets, so offset stresses are upper bounds",
     "clamp": "perfect — weld and printed-anode compliance lower every stress",
     "swept_not_measured": "insertion, play, offset, tilt and pad eccentricity",
     "mean_stress": "a static offset is a mean stress; no Goodman-type correction; the amplitude of a varying offset needs relative Zone-1<->Zone-3 motion, measured nowhere",
     "drag_contact_edge": "the drag contact is the flush tube end at the pad-plane exit — ring on ring, the edge form the ≥ 1.0 mm protrusion avoids at the mouth — and no exit radius is specified anywhere; the wall reaction there is the drag minus the touchdown force on every cycle",
-    "peak_moment_section": "in every configuration computed here the root is the peak-moment section",
     "other": "small deflection, no thermal term, no liner creep, no P-δ from the axial pogo force"
   }
 }

@@ -399,181 +399,202 @@ SHIPPED_INSULATION = "PEEK liner 0.15 mm"
 
 
 def test_bus_mechanical_weld_seam():
-    """Script 55 (HW.34): the seam at the root is BOUNDED, never assumed.
+    """Script 55 (HW.34): the seam at the root is NOT priced — and the cache says so in every carrier.
 
-    The point of the block is that its input is missing, so the first assertion is the honesty
-    one — nobody may quietly type a knockdown into the sentinel and let the rest of the corpus
-    read it as measured. The rest pin the RELATION the bound rests on (SF_seam = k·SF_wire) and
-    the direction of the two corrections; a model whose worst corner is not harsher than its
-    nominal is measuring nothing.
+    Until 2026-09-14 the block inverted SF_seam = k·SF_wire on ONE fully-reversed stress that no equilibrium
+    configuration produces (a free cantilever whose length was a free-shape crossing station) and reported a
+    break-even k. The equilibrium gives the root two regimes — a capped fully-reversed drag on a coaxial
+    channel, a static MEAN plus the drag under a channel offset — and the model has no mean-stress
+    correction. So the honesty condition is DOUBLE: the vendor input stays absent AND no break-even k is
+    manufactured in its place. What is pinned is the shape of the inputs a seam acceptance needs (amplitude
+    and mean at the root per regime and geometry), their agreement with the regime block, and that the
+    regime block's quantifiers follow their own per-µ rows.
     """
     path = MECHANICAL / "bus_mechanical.json"
     if not path.exists():
         pytest.skip("bus_mechanical.json not computed")
     d = json.loads(path.read_text())
-    seam = d["weld_seam"]
-    fm = d["fatigue_model"]
-    # 1. The input stays absent, and the two flags say WHICH half exists. ⛔ A single boolean
-    #    cannot: the geometry is unmodelled while the sensitivity is, and flipping one flag to
-    #    cover both is how a surface splits into halves that disagree.
+    seam, fm, cr = d["weld_seam"], d["fatigue_model"], d["clearance_regime"]
+    # 1. Both absences, each with its own flag. ⛔ A typed k reds the first; a re-derived break-even k — the
+    #    2026-09-12 shape — reds the second, because its ground (one fully-reversed stress at the root) is gone.
     assert seam["knockdown_k_measured"] is None, "a knockdown was typed in — it is NOT MEASURED"
+    assert seam["break_even_k"] is None, "a break-even k came back — the root has two regimes, not one stress"
+    assert fm["weld_seam_break_even_k_derived"] is False
     assert fm["weld_seam_geometry_modelled"] is False
     assert fm["weld_seam_sensitivity_modelled"] is True
     assert fm["mean_stress_correction_modelled"] is False
-    # 2. Priced on the span that exists. What the verdict rests on is pinned — the SHIPPED branch
-    #    bears on every swept µ, i.e. its free-cantilever SF describes nothing. The LIST itself is not
-    #    pinned: on the CEM-derived span the stiffer rod makes the rejected conformal branches bear on
-    #    only part of the sweep, and which branches sit where is the model's output, not a constant.
-    cr = d["clearance_regime"]
-    assert SHIPPED_INSULATION not in cr["free_cantilever_sf_describes_these"]
-    assert SHIPPED_INSULATION in cr["gap_limited_branches"]
-    # ⛔ The LABEL must agree with the contacts it is computed from, per branch. «free cantilever
-    #    (never reaches the wall)» once stood on branches that bore inside the bore on three of four µ,
-    #    because the label's last branch caught «not every µ» instead of «no µ» — and the verdict
-    #    sentence and `free_cantilever_sf_describes_these` both inherited it.
-    # ⛔ ONE quantity, two owners, and they must agree: the seam bound's span optimism IS the
-    #    supported span's understatement. They drifted 41.3 ⊥ 40.8 while the seam block re-read the
-    #    regime row's ROUNDED EI — and that third-decimal shift had decided an invariance verdict.
-    assert abs(seam["span"]["span_optimism_pct"] - cr["supported_span_check"]["sigma_understated_pct"]) <= 0.05
-    n_mu = len(cr["branches"][0]["first_contact_mm_by_mu_bonded"])
+    assert "mean" in seam["break_even_k_not_derived_because"], "the reason stopped naming the mean stress"
+    for key in ("per_alloy", "binding_candidate", "span", "span_provenance"):
+        assert key not in seam, f"the drift-picture seam bound is back under `{key}`"
+    # 2. The inputs a seam acceptance needs: one row per geometry, coaxial mean zero, and the coaxial amplitude
+    #    EQUAL to the regime block's cap at the worst swept µ — one quantity, two owners, and they must agree.
+    rl = seam["root_section_loading"]
+    assert [r["geometry"] for r in rl] == [g["label"] for g in cr["geometries"]]
+    for r in rl:
+        regime = next(b for b in cr["branches"] if b["geometry"] == r["geometry"] and b["play_side"] == "channel")
+        worst = str(max(float(m) for m in regime["by_mu"]))
+        assert r["coaxial"]["mean_MPa"] == 0.0
+        assert r["coaxial"]["amplitude_MPa"] == regime["by_mu"][worst]["sigma_root_MPa_bonded"], r["geometry"]
+        assert r["offset"]["mean_MPa_per_um_past_play"] > 0.0
+        assert r["offset"]["amplitude_MPa_max_over_swept_offsets"] == max(a["amplitude_MPa"] for a in r["offset"]["by_offset"])
+        assert r["peak_moment_at_root_in_every_solve"] is True
+    # 3. The regime block: the QUANTIFIER is derived from the per-µ rows, the station is the exit when touched
+    #    down, the mouth is never reached coaxially. ⛔ «free cantilever (never reaches the wall)» once stood on
+    #    branches that touched on three of four µ, because an else-branch read «not every µ» as «no µ».
+    n_mu = len(cr["branches"][0]["by_mu"])
     for br in cr["branches"]:
-        reach = br["bears_inside_bore_on_mus"]
-        assert br["regime"].startswith("free cantilever") == (not reach), br["branch"]
-        assert br["bears_inside_bore"] == (len(reach) == n_mu), br["branch"]
-        assert (br["branch"] in cr["partly_gap_limited_branches"]) == (0 < len(reach) < n_mu and not br["supported_at_mouth"]), br["branch"]
-    assert "supported" in seam["span"]["which"]
-    assert seam["span"]["worst_corner_sigma_MPa"] > seam["span"]["nominal_sigma_MPa"]
-    # 3. The SPAN the bound rides. A `protrusion_sensitivity` block stood here and swept two spans,
-    #    because one of them was a literal under open correction; the correction landed 2026-09-12
-    #    and the sweep went with it. What must not drift is the span's PROVENANCE: the seam bound
-    #    inherits the protrusion through the optimism term, so a block quoting a protrusion that no
-    #    longer matches the geometry block is the failure this pins.
-    prov = seam["span_provenance"]
-    assert prov["protrusion_mm"] == d["geometry_mm"]["free_len_unsupported"], \
-        "the seam block and the geometry block disagree about the protrusion"
-    assert "cem/" in prov["derived_from"], "the span stopped being CEM-derived"
-    assert seam["span"]["span_optimism_pct"] > 0.0
-    # 4. The binding candidate must be a real alloy of the table.
-    assert seam["binding_candidate"]["alloy"] in {r["alloy"] for r in seam["per_alloy"]}
-    # 5. The edge-bearing block feeds the OPEN axial verdict, so it must stay wired to the geometry
-    #    it reasons about: the mouth it uses IS the channel start, and it must cover every branch the
-    #    regime table carries. A block that silently drops a branch would answer the verdict for a
-    #    shorter list than the one the reader sees.
-    edge = d["clearance_regime"]["edge_bearing"]
-    assert edge["mouth_mm"] == d["clearance_regime"]["channel"]["start_mm"], \
-        "edge_bearing measures from a different mouth than the channel block declares"
-    assert {r["branch"] for r in edge["rows"]} == {r["branch"] for r in d["clearance_regime"]["branches"]}
-    # and the flag must be DERIVED from the per-µ rows, never typed
+        touch = [mu for mu, v in br["by_mu"].items() if v["touches_down"]]
+        assert [str(m) for m in br["touches_down_on_mus"]] == touch, br["branch"]
+        assert br["touches_down_on_every_mu"] == (len(touch) == n_mu), br["branch"]
+        assert br["regime"].startswith("touches down at the EXIT on every") == br["touches_down_on_every_mu"], br["branch"]
+        assert br["regime"].startswith("free cantilever on every") == (not touch), br["branch"]
+        assert br["mouth_reached_on_any_mu"] is False
+        for v in br["by_mu"].values():
+            assert v["contact_station_mm"] in (None, br["contact_station_when_touched_down_mm"])
+            assert (v["contact_station_mm"] is not None) == v["touches_down"]
+            assert abs(v["deflection_at_mouth_um"]) < br["radial_play_mm"] * 1e3, "the mouth was reached coaxially"
+    shipped = [b for b in cr["branches"] if b["play_side"] == "channel"]
+    assert cr["shipped_exit_contact_forced_on_every_mu_and_geometry"] == all(b["touches_down_on_every_mu"] for b in shipped)
+    for g in cr["by_geometry"]:
+        rows = [b for b in cr["branches"] if b["geometry"] == g["geometry"]]
+        assert g["forced_on_every_mu_branches"] == [b["branch"] for b in rows if b["touches_down_on_every_mu"]]
+        assert g["free_on_every_mu_branches"] == [b["branch"] for b in rows if not b["touches_down_on_mus"]]
+    assert SHIPPED_INSULATION in cr["by_geometry"][0]["forced_on_every_mu_branches"]
+    # 4. The §2 supported column against the cap: the SIGN is derived from the ratios, never typed.
+    sc = cr["supported_column_vs_equilibrium"]
+    assert sc["coaxial_sign"].startswith("the column OVERSTATES") == all(g["column_over_cap_nominal"] > 1.0 for g in sc["by_geometry"])
+    assert {g["geometry"] for g in sc["by_geometry"]} == {g["label"] for g in cr["geometries"]}
+    # 5. Edge bearing: every branch × geometry; at the reference excess the mouth is the ONLY contact; coaxially
+    #    it is never reached; the protrusion floor is NOT typed (its two terms are unmeasured) while the ratified
+    #    value is carried from the CEM; the exit contact names no radius.
+    edge = cr["edge_bearing"]
+    assert {(r["geometry"], r["branch"]) for r in edge["rows"]} == {(b["geometry"], b["branch"]) for b in cr["branches"]}
     for row in edge["rows"]:
-        assert row["edge_bearing_on_any_mu"] == any(v["edge_bearing"] for v in row["by_mu"].values())
-    # 5. Both markers are OUR OWN numbers, so they must still match the model they came from.
+        assert row["at_reference"]["contacts"], row["branch"]
+        assert all(abs(z["station_mm"] - row["mouth_mm"]) < 1e-9 for z in row["at_reference"]["contacts"]), row["branch"]
+        assert row["coaxial_regime_reaches_mouth"] is False
+        assert 0.0 < row["at_reference"]["approach_angle_deg"] < 1.0 <= row["lead_in_chamfer_deg"][0]
+    ls = edge["liner_start"]
+    assert ls["min_protrusion_from_geometry_mm"] is None, "a protrusion floor was typed — its terms are unmeasured"
+    assert ls["ratified_protrusion_mm"] == d["assembly_clearance"]["frozen_dims_mm"]["liner_protrusion"]
+    for x in edge["exit_contact"]:
+        assert x["exit_radius_specified_mm"] is None
+        assert x["reaction_N_over_swept_mu"][0] < x["reaction_N_over_swept_mu"][1]
+    # 6. Both markers are OUR OWN numbers, so they must still match the model they came from.
     markers = {m["label"]: m["k"] for m in seam["markers"]}
     assert fm["as_printed_derate"] in markers.values()
     assert fm["wrought_derate"] in markers.values()
 
 
 def test_bus_mechanical_endurance_ratio_band():
-    """Script 55 (HW.34): the fatigue ratio is swept, and the sweep AGREES with the block it prices.
+    """Script 55 (HW.34): the fatigue ratio is swept, and the sweep stays what it can honestly be.
 
     `ENDURANCE_OVER_YIELD` is a band whose midpoint was the only point entering the model, while
-    every SF scales linearly with it. The honesty condition here is unusual — nothing is missing,
-    the danger is the opposite: a sweep whose column looks like a neighbouring headline while being
-    priced at a different corner. So the load-bearing assertion is CROSS-BLOCK equality, not a
-    frozen number.
+    every SF scales linearly with it. Since 2026-09-14 the sweep covers the §2 free-cantilever column
+    only — the seam column it carried was priced on the retired drift-picture stress, and no seam k
+    exists to sweep — so the pin is that the seam column does NOT come back, beside the bracket.
     """
     path = MECHANICAL / "bus_mechanical.json"
     if not path.exists():
         pytest.skip("bus_mechanical.json not computed")
     d = json.loads(path.read_text())
-    band, seam = d["endurance_ratio_band"], d["weld_seam"]
+    band = d["endurance_ratio_band"]
     # 1. The band stays declared-unmeasured and must actually BRACKET the point the model runs at —
     #    a sweep sitting entirely to one side of the operating value is not a sensitivity.
     assert band["band_is_measured"] is False
     assert min(band["band"]) <= band["model_runs_at"] <= max(band["band"])
     assert {r["endurance_over_yield"] for r in band["rows"]} == set(band["band"])
-    # 2. 🔴 The one that matters: at the model's own ratio the swept seam break-even must equal the
-    #    §5 headline EXACTLY. They are the same quantity at the same corner, and when this block
-    #    was first written one section earlier it silently used the NOMINAL corner instead — a
-    #    number less than half the headline, same units, same name, one screen apart.
-    at_model = next(r for r in band["rows"] if r["endurance_over_yield"] == band["model_runs_at"])
-    assert at_model["seam_break_even_k_worst_corner"] == seam["binding_candidate"]["k_at_infinite_life"], \
-        "the band prices the seam at a different corner than §5 — same name, different quantity"
-    # 3. Monotonicity with a KNOWN sign: SF scales linearly with the ratio, so the break-even
-    #    knockdown must fall as the ratio rises. A model that lost that has inverted something.
+    # 2. No seam column: a break-even k has no ground since the root stopped being one fully-reversed stress.
+    for r in band["rows"]:
+        assert "seam_break_even_k_worst_corner" not in r, "the seam column is back — it stood on the drift picture"
+    assert "our_marker_covers_seam_is_invariant" not in band
+    # 3. Monotonicity with a KNOWN sign: the binding SF rises with the ratio.
     ordered = sorted(band["rows"], key=lambda r: r["endurance_over_yield"])
-    ks = [r["seam_break_even_k_worst_corner"] for r in ordered]
-    assert ks == sorted(ks, reverse=True), "break-even k stopped falling as the fatigue ratio rises"
-    # 4. Both invariance flags DERIVED from the rows, never typed — that is the block's whole output.
+    sfs = [r["binding_sf_unsupported"] for r in ordered]
+    assert sfs == sorted(sfs), "the binding SF stopped rising with the fatigue ratio"
+    # 4. The invariance flag DERIVED from the rows, never typed — that is the block's whole output.
     assert band["bare_infinite_life_for_all_is_invariant"] == \
         (len({r["unsupported_infinite_life_for_all"] for r in band["rows"]}) == 1)
-    assert band["our_marker_covers_seam_is_invariant"] == \
-        (len({r["seam_k_cleared_by_our_marker"] for r in band["rows"]}) == 1)
 
 
 def test_bus_mechanical_wear_budget():
-    """Script 55 (HW.34): the ground the liner STANDS on is bounded, and its inputs stay honest.
+    """Script 55 (HW.34): the ground the liner STANDS on is bounded at the EQUILIBRIUM stations.
 
-    ⚖️ 2026-09-11 made WEAR the liner's ground and nothing computed it until 2026-09-12 — every
-    `wear`/`fretting` mention in that script was prose, so «rated for 20 years» had no instrument
-    while FMEA #21 (RPN 288, second only to #4) asserted wear-through with none either.
-    The honesty condition is the same as the weld seam's and the fit's: nobody may quietly type a
-    wear rate, nor a cycle count, and let the corpus read either as measured.
+    ⚖️ 2026-09-11 made WEAR the liner's ground; since 2026-09-14 the station is the contact solver's — the
+    exit under coaxial drag, the mouth under a channel offset — instead of a prop scanned along a free-shape
+    crossing. The honesty condition is the same as the weld seam's and the fit's: nobody may quietly type a
+    wear rate, nor a cycle count, and let the corpus read either as measured. What the equilibrium adds is a
+    sign the old block could not carry: the touched-down shape does not rotate with the drag, so the coaxial
+    sliding is a CEILING and the rigid-kinematics sliding is zero — pinned so the ceiling cannot be quoted as
+    a kinematic result.
     """
     path = MECHANICAL / "bus_mechanical.json"
     if not path.exists():
         pytest.skip("bus_mechanical.json not computed")
     d = json.loads(path.read_text())
     w = d["wear_budget"]
+    geos = {g["label"]: g for g in d["clearance_regime"]["geometries"]}
     # 1. Honesty on BOTH unmeasured inputs. The rate is the obvious one; the cycle count is the one
     #    that could be faked without looking like a fake, so it must still name its source file.
     assert w["specific_wear_rate_measured"] is None, "a wear rate was typed in — it is NOT MEASURED"
     assert w["duty_source"] and w["duty_source"].endswith("wind_duty_cycle.json"), \
         "the cycle count stopped citing script 62's cache and is now a literal"
     assert len(w["duty_anchors"]) >= 2, "the duty collapsed to a single number — it is a bracket"
-    # 2. The flow pressure is SWEPT, and the headline area must be the TIGHTEST of the sweep. Taking
-    #    the loosest would over-state the allowable area threefold in the direction that flatters.
+    # 2. The flow pressure is SWEPT, and the headline area must be the TIGHTEST of the sweep.
     assert len(w["contact_constraint_factors_swept"]) >= 2
     contact = [r for r in w["rows"] if r["contact"]]
     assert contact, "every branch lost contact — the wear axis has nothing to price"
     for r in contact:
         by_factor = r["area_by_constraint_factor_mm2"]
-        assert r["area_material_bound_mm2"] == min(by_factor.values()), \
-            "the headline area is no longer the tightest swept flow pressure"
-        # 3. The bracket must BE a bracket, and it must stay one that has an answer inside it.
+        assert r["area_material_bound_mm2"] == min(by_factor.values())
         assert 0.0 < r["area_material_bound_mm2"] <= r["area_projected_full_run_mm2"]
         for p in r["by_duty_anchor"]:
             assert 0.0 < p["k_max_edge_mm3_per_Nm"] < p["k_max_conformal_mm3_per_Nm"]
-    # 4. 🔴 The SUBSTANTIVE claim, and the one canon leans on: on the wear axis a branch with LESS
-    #    allowance than the shipped liner demands a STRICTER rate at the same friction — which is
-    #    what re-earns the rejection of the conformal coatings after the 2026-09-12 protrusion fix
-    #    weakened the ground that had carried it (they stop reaching the wall at the lowest swept µ).
-    #    ⛔ Scoped by ALLOWANCE, not by «is not the shipped branch», and the scope is the difference
-    #    between a pin and a trap: a future branch with a THICKER wall would legitimately carry a
-    #    looser budget, and an unscoped assertion would red on correct work. Naming the scope also
-    #    names what the assertion does NOT prove — a thinner wall alone would give a smaller budget
-    #    arithmetically; what is checked is that nothing in the model has inverted that.
-    by_branch_mu = {(r["branch"], r["mu"]): r for r in contact}
-    assert any(b == SHIPPED_INSULATION for b, _ in by_branch_mu), \
-        "the shipped liner branch is absent from the wear table"
-    for (branch, mu), row in by_branch_mu.items():
-        peer = by_branch_mu.get((SHIPPED_INSULATION, mu))
-        if peer is None or branch == SHIPPED_INSULATION:
-            continue
-        if row["wall_allowance_mm"] >= peer["wall_allowance_mm"]:
+    # 3. The stations are the equilibrium's. Coaxial rows sit at their geometry's EXIT, carry a zero
+    #    rigid-kinematics sliding beside a positive ceiling, and — because the reaction cancels and the
+    #    touched-down slope does not depend on the drag — their tight end is µ-INVARIANT per (geometry, branch).
+    coax = [r for r in contact if r["regime"] == "coaxial"]
+    assert coax
+    for r in coax:
+        assert r["station_mm"] == geos[r["geometry"]]["pad_mm"], f"{r['geometry']}/{r['branch']}: coaxial station is not the exit"
+        assert r["sliding_in_contact_um_rigid_kinematics"] == 0.0
+        assert r["slip_ceiling_per_cycle_um"] > 0.0
+    for key in {(r["geometry"], r["branch"]) for r in coax}:
+        tight = {round(min(p["k_max_edge_mm3_per_Nm"] for p in r["by_duty_anchor"]), 15) for r in coax if (r["geometry"], r["branch"]) == key}
+        assert len(tight) == 1, f"{key}: the coaxial tight end depends on µ — the reaction or the slope crept back in"
+    offset = [r for r in contact if r["regime"] == "offset"]
+    assert offset, "the offset regime lost its rows"
+    for r in offset:
+        assert r["station_mm"] == geos[r["geometry"]]["gap_mm"], f"{r['geometry']}: offset station is not the mouth"
+        assert r["mouth_loaded_through_the_cycle"] == (min(r["mouth_reaction_N"].values()) > 0.0)
+        assert r["reaction_N"] == max(r["mouth_reaction_N"].values())
+    # 4. 🔴 The SUBSTANTIVE claim canon leans on: on the wear axis a branch with LESS allowance than the
+    #    shipped liner demands a STRICTER rate at the same geometry and friction, coaxially. Scoped by
+    #    ALLOWANCE, not by «is not the shipped branch», so a future thicker wall does not red correct work.
+    by_key = {(r["geometry"], r["branch"], r["mu"]): r for r in coax}
+    assert any(b == SHIPPED_INSULATION for _, b, _ in by_key), "the shipped liner branch is absent from the wear table"
+    for (geo, branch, mu), row in by_key.items():
+        peer = by_key.get((geo, SHIPPED_INSULATION, mu))
+        if peer is None or branch == SHIPPED_INSULATION or row["wall_allowance_mm"] >= peer["wall_allowance_mm"]:
             continue
         worst_other = min(p["k_max_edge_mm3_per_Nm"] for p in row["by_duty_anchor"])
         worst_ship = min(p["k_max_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"])
-        assert worst_other < worst_ship, \
-            f"{branch} has less allowance than the shipped liner at µ {mu} yet a looser wear budget"
-    # 5. The second driver is priced so «sway dominates» stays a measurement. If the thermal travel
-    #    ever approached the sway sliding, the block's own headline would be wrong.
+        assert worst_other < worst_ship, f"{branch} has less allowance than the shipped liner at {geo} µ {mu} yet a looser wear budget"
+    # 5. The second driver is priced so «sway dominates» stays a measurement.
     thermal_max = max(t["sliding_distance_m"] for t in w["thermal_driver"]["rows"])
     sway_max = max(p["sliding_distance_m"] for r in contact for p in r["by_duty_anchor"])
     assert w["thermal_driver"]["cycles_per_year_is_swept"] is True
     assert thermal_max * 100.0 < sway_max, "the thermal driver stopped being negligible — re-read §7"
-    # 6. The binding row must be the SHIPPED branch: a budget quoted from a rejected branch would be
-    #    a true number about a part we do not build.
+    # 6. The binding row is the SHIPPED branch at its worst corner on BOTH ends: the tight end ties across the
+    #    coaxial µ rows (compared at six significant figures — the rows differ at the 1e-10 level through the
+    #    solve, and a raw min once picked the row by that noise), and the tie is broken by the worn-in end (the
+    #    largest reaction), never by list order.
     assert w["binding"]["branch"] == SHIPPED_INSULATION
+    shipped_rows = [r for r in contact if r["branch"] == SHIPPED_INSULATION]
+    expected = min(shipped_rows, key=lambda r: (float(f"{min(p['k_max_edge_mm3_per_Nm'] for p in r['by_duty_anchor']):.6e}"),
+                                               min(p["k_max_conformal_mm3_per_Nm"] for p in r["by_duty_anchor"])))
+    assert (w["binding"]["geometry"], w["binding"]["regime"], w["binding"].get("mu"), w["binding"].get("offset_um")) == \
+        (expected["geometry"], expected["regime"], expected.get("mu"), expected.get("offset_um"))
 
 
 def test_bus_contact_equilibrium():
@@ -584,7 +605,9 @@ def test_bus_contact_equilibrium():
       2. the liner caps the root below every conformal film on the same geometry (the ratio the tracker quotes);
       3. an offset inside the play bends nothing, and past it the static root stress rises monotonically;
       4. the insertion placeholder prices the offset far above the lock window — the reason every row is swept;
-      5. a tilt the play can take up about its pivot bends nothing.
+      5. a tilt the play can take up about its pivot bends nothing;
+      6. the peak-moment section is READ per solve, its exceptions listed, and the tilt rows carry the station;
+      7. scripts 55 and 68 — one solver, two caches — agree on the coaxial cap (one quantity, two owners).
     """
     path = MECHANICAL / "bus_contact_equilibrium.json"
     if not path.exists():
@@ -612,6 +635,25 @@ def test_bus_contact_equilibrium():
         for row in t["by_tilt"]:
             if row["tilt_mrad"] <= t["tilt_taken_up_by_play_mrad"]:
                 assert row["sigma_root_MPa"] == 0.0, f"{t['geometry']}/{t['pivot']} {row['tilt_mrad']} mrad"
+    # 6. ⛔ «in every configuration computed here the root is the peak-moment section» was PROSE in this cache
+    #    and false for two lock-window classes; read from the moment field it is a flag plus a list, and every
+    #    tilt row whose peak left the root must appear in that list (and vice versa).
+    peak = d["peak_moment_section"]
+    assert peak["root_is_peak_in_every_drag_offset_and_reversing_row"] is True
+    assert set(peak["rows_where_the_peak_leaves_the_root"]) == {"tilt", "pad_moment"}
+    listed = {(p["geometry"], p["peak_moment_station_mm"]) for p in peak["rows_where_the_peak_leaves_the_root"]["tilt"]}
+    from_rows = {(t["geometry"], row["peak_moment_station_mm"]) for t in d["tilt_static_shipped_branch"]
+                 for row in t["by_tilt"] if row["peak_moment_station_mm"] != 0.0}
+    assert listed == from_rows, "the tilt exceptions and the tilt rows disagree about where the peak sits"
+    # 7. One solver, two caches: the coaxial cap script 55 writes must equal the one this script writes.
+    side = d["script55_side_by_side"]
+    assert side["caps_agree"] is True
+    assert side["script55_coaxial_cap_MPa_at_worst_mu_bonded"] == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]
+    bus55 = MECHANICAL / "bus_mechanical.json"
+    if bus55.exists():
+        caps55 = {g["geometry"]: g["coaxial_cap_MPa_bonded"]
+                  for g in json.loads(bus55.read_text())["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
+        assert caps55 == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"], "scripts 55 and 68 drifted apart on the coaxial cap"
 
 
 def test_sap_recipe_saturation():
