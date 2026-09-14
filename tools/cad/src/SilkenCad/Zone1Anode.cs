@@ -63,6 +63,102 @@ internal sealed class NormalisedField(IImplicit oInner, float fStepMm, float fFl
     }
 }
 
+// The two structuring elements of DilatedField below. The name is the mode, the face offset is its ONE length.
+internal enum DilationMode { Downskin, Isotropic }
+
+// Minkowski DILATION of a part's lattice by a structuring element of ONE length in mm (00_07 HW.51) — the
+// face-offset SENSITIVITY of the voxel-FE, read before discretisation so Connectivity and VoxelFea stay untouched.
+//
+// 🔴 What it answers, and what it does NOT. It moves the faces of the MODELLED part by a hypothetical offset, so
+//    every number measured through it is still the geometric INTENT — never the printed body. The printed excess
+//    is a vendor answer per face orientation (down · vertical · up), with state and method, and nobody has given
+//    it (the question rides the DMLS letter, vendor_templates.md §Processing п.8). Until then a row is a point on
+//    a sensitivity curve, and a caption that calls it "as printed" is false.
+//
+// The operation. p is solid ⟺ the inner field is solid at p, OR ∃ q in the element: p + q is solid AND p + q
+// lies inside the part body (fnInBody). Two rules carry the whole design:
+//   • The ORIGIN is never clipped. At offset 0 the element is empty and this returns the inner field's own sign,
+//     so the sampled grid is the intent grid bit for bit — including cells a sampler reads just past the body
+//     end, which a clipped origin would silently empty. That is what makes the zero row an identity CONTROL.
+//   • A SHIFTED sample takes metal only from inside the body. Unclipped, the lattice field continues past the
+//     rim, the bore and both ends, and an isotropic element would grow that phantom lattice into the loaded rim.
+//
+// Modes, and the unit of the offset (a FACE displacement, not a thickness):
+//   • Downskin — a segment of length L along +build direction: p is solid if metal lies within L ABOVE it, so
+//     metal is added on the −BD side of down-facing faces. A face whose outward normal is exactly −BD moves by
+//     L, one inclined θ from it by L·cos θ; vertical and upward faces do not move.
+//   • Isotropic — a ball of RADIUS R: every face moves outward by R. ⚠️ R is not "extra wall": a ligament
+//     thickens by 2R, so a literal 0.45 mm of radius is a different, far larger experiment.
+//
+// ⛔ Returns ±1, NOT a distance. The IImplicit contract is millimetres; this reads only the SIGN of the inner
+//    field and must never be rendered through a Voxels ctor — it exists for the grid samplers, which read `< 0`.
+//
+// ⚠️ DECLARED CEILING — the discretisation, in mm and independent of any FE step (ElementSpacingMm = δ):
+//   • Downskin: the segment at steps ≤ δ, far end exact. Exact on any face whose solid chord along BD is ≥ δ;
+//     a sliver thinner than δ along BD can be crossed without a hit.
+//   • Isotropic: the centre plus concentric shells at radial steps ≤ δ, each covered by a Fibonacci set at ~δ
+//     spacing, the outer shell exactly at R. On a face thicker than R the offset falls SHORT by R(1 − cos α), α
+//     the OUTER shell's covering angle (≈ 2.7/√N rad for N directions) — so that shell never takes fewer than
+//     OuterShellMinDirections, and the shortfall is ≤ 0.49 % of R at every radius swept (measured; the pin
+//     Dilation_Falls_Short_On_A_Flat_Face_By_A_Declared_Fraction_Only holds 0.6 %). δ alone would leave 79
+//     directions at R = 0.05 and a 4.7 % shortfall. A solid feature thinner than ~δ inside the ball can be missed:
+//     the intent lattice has none (a network ligament is ≈ 0.36·period ≫ δ); the slivers the body clip cuts at
+//     the rim, bore and ends do.
+//   • Both are INNER approximations: every sample lies inside the exact element, so no metal is ever added
+//     that the exact Minkowski sum would not add.
+//   • Cost: the ball holds ~(R/δ)³ samples (≈ 7 200 at R = 0.225 mm), and a pore cell farther than R from metal
+//     pays every one of them — iso grids take minutes where downskin takes seconds.
+internal sealed class DilatedField(IImplicit oInner, Func<Vector3, bool> fnInBody, Vector3[] aElement) : IImplicit
+{
+    internal const float ElementSpacingMm = 0.02f;
+    internal const int OuterShellMinDirections = 720;
+
+    public float fSignedDistance(in Vector3 vecPt)
+    {
+        bool bSolid = oInner.fSignedDistance(vecPt) < 0f; // the origin — never clipped (header)
+        for (int i = 0; i < aElement.Length && !bSolid; i++)
+        {
+            Vector3 vecAt = vecPt + aElement[i];
+            bSolid = fnInBody(vecAt) && oInner.fSignedDistance(vecAt) < 0f;
+        }
+        return bSolid ? -1f : 1f;
+    }
+
+    // The element's sample offsets for one face offset, origin EXCLUDED (the field always tests it). Double
+    // arithmetic, so the far end of the segment and the outer shell land on the declared length exactly.
+    internal static Vector3[] Element(DilationMode mode, float fFaceOffsetMm, Vector3 vecBuildDirection)
+    {
+        if (fFaceOffsetMm < 0f)
+            throw new ArgumentOutOfRangeException(nameof(fFaceOffsetMm), fFaceOffsetMm,
+                "a negative face offset is an EROSION — a different operation, not a smaller dilation");
+        var aOffsets = new List<Vector3>();
+        int nSteps = (int)Math.Ceiling(fFaceOffsetMm / (double)ElementSpacingMm);
+        if (mode == DilationMode.Downskin)
+        {
+            for (int i = 1; i <= nSteps; i++)
+                aOffsets.Add(vecBuildDirection * (float)((double)fFaceOffsetMm * i / nSteps));
+            return [.. aOffsets];
+        }
+
+        double dGoldenAngle = Math.PI * (3.0 - Math.Sqrt(5.0));
+        for (int m = nSteps; m >= 1; m--) // outer shell first: for a pore cell near metal it holds the largest hit cap
+        {
+            double dRadius = (double)fFaceOffsetMm * m / nSteps;
+            int nDirs = Math.Max(m == nSteps ? OuterShellMinDirections : 1,
+                (int)Math.Ceiling(4.0 * Math.PI * dRadius * dRadius / (ElementSpacingMm * (double)ElementSpacingMm)));
+            for (int i = 0; i < nDirs; i++)
+            {
+                double dZ = 1.0 - (((2.0 * i) + 1.0) / nDirs);
+                double dRho = Math.Sqrt(1.0 - (dZ * dZ));
+                double dPhi = i * dGoldenAngle;
+                aOffsets.Add(new Vector3(
+                    (float)(dRadius * dRho * Math.Cos(dPhi)), (float)(dRadius * dRho * Math.Sin(dPhi)), (float)(dRadius * dZ)));
+            }
+        }
+        return [.. aOffsets];
+    }
+}
+
 // Radially GRADED cartesian gyroid (anchor v2, 01_01 §5.5). Tapers TWO independent axes from
 // the core (r=rCore, the rod axis) to the rim (r=rRim, the outer wall): period (cell/pore size)
 // and wallParam (porosity/E). Per the FGS method s=p/(1−ρ), at constant porosity a linear pore
@@ -186,6 +282,31 @@ internal static class Zone1Anode
             ? new NormalisedField(oField, MathF.Min(cem.GyroidPeriodMm, fPeriodRim) / 200f)
             : oField;
     }
+
+    // Build direction in the anode's OWN frame. z = 0 is the tree-side tip (AxialStack's datum: the Zone-2 sleeve and
+    // the capsule sit above it), and 01_02 §1.6 prints the anode tip-DOWN, so the part grows away from z = 0: BD = +Z.
+    // ⚖️ The orientation of the INTEGRATED Zone-1 body is an open verdict (00_07 HW.26 G4 · HW.23). Only a LOCAL reading
+    //    of the downskin mode rides on this sign: on the infinite constant-period lattice a 2-fold screw of the gyroid
+    //    maps +Z onto −Z, so a GLOBAL curve barely moves with it — "barely", because the graded, clipped annulus is not
+    //    invariant under that screw (measured 2026-09-14, pine at period/12, downskin 0.45 mm: 48.646 % porous for +Z,
+    //    48.613 % for −Z). Pinned by its physical consequence, never by its value (picogk #15).
+    internal static readonly Vector3 BuildDirection = Vector3.UnitZ;
+
+    // The part body a SHIFTED dilation sample may take metal from — the envelope `build` cuts, with its two ends.
+    internal static Func<Vector3, bool> Body(AnchorCem cem)
+    {
+        float fRInner = InnerRadiusMm(cem), fROuter = cem.OuterDiameterMm / 2f, fLength = cem.LengthMm;
+        return vecAt =>
+        {
+            float fR = MathF.Sqrt((vecAt.X * vecAt.X) + (vecAt.Y * vecAt.Y));
+            return fR >= fRInner && fR <= fROuter && vecAt.Z >= 0f && vecAt.Z <= fLength;
+        };
+    }
+
+    // The part's lattice dilated by one face offset (DilatedField) — the one composition the `fea --dilate` verb and
+    // its pins share. Offset 0 returns the lattice's own sign everywhere: the identity the zero row is checked against.
+    internal static IImplicit Dilated(AnchorCem cem, DilationMode mode, float fFaceOffsetMm)
+        => new DilatedField(Gyroid(cem), Body(cem), DilatedField.Element(mode, fFaceOffsetMm, BuildDirection));
 
     // Render the gyroid into the envelope's bbox via the Voxels(IImplicit, BBox3) ctor,
     // then BoolIntersect to clip to the pipe. The envelope is left intact (BoolIntersect

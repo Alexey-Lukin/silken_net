@@ -35,9 +35,11 @@ namespace SilkenCad;
 //     integrated trilinear hexes are additionally too stiff in bending, and a NETWORK gyroid is
 //     bending-dominated. Both errors push the same way, so a single-resolution number is an UPPER
 //     bound — which is why every result carries a step sweep and nothing is quoted without one.
-//   • It measures the part as MODELLED, i.e. the geometric intent. As-printed thickening is NOT an
-//     input today — no parameter carries it and nothing applies it — so every number this module
-//     reports describes the geometric intent, never the printed body. Adding it is open work (00_07 HW.51).
+//   • It measures the part as MODELLED, i.e. the geometric intent. A face-offset SENSITIVITY exists since
+//     2026-09-14 (`fea <cem> --dilate downskin|iso`): the lattice FIELD is dilated before sampling
+//     (DilatedField, Zone1Anode.cs), so nothing in this class changed — and a dilated row is still intent
+//     with a hypothetical offset, never the printed body. What the printed excess IS, per face orientation,
+//     is a vendor answer nobody has given (00_07 HW.51).
 //   • The ratio is to the solid ENVELOPE, so it already contains the free-surface size effect of the
 //     real annular wall. That is the point; it is NOT a material property and must not be quoted as one.
 //   • The RADIAL case is centred on the grid, so it is valid only on steps that divide the diameter

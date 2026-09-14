@@ -29,7 +29,7 @@ internal static class Program
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
                 // Voxel-FE elasticity (VoxelFea.cs) — pure-managed like `draw`, no Library.Go.
-                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--with-rod] [--sweep] | fea --ladder"),
+                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--with-rod] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
                 // Falsifiable probes of KERNEL assumptions (Probe.cs) — not of our geometry.
@@ -964,6 +964,7 @@ internal static class Program
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep | --with-rod]\n" +
+            "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H | --with-rod]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]");
         return 0;
@@ -993,6 +994,14 @@ internal static class Program
     // for one. Pure-managed on purpose — the whole point is that it runs where `verify` cannot.
     private static int Fea(string[] args)
     {
+        if (args.Contains("--dilate"))
+        {
+            // ⛔ One axis per run: `--dilate` sweeps the face OFFSET at one step. A flag of another axis silently
+            //    ignored would write an intent-shaped row under a caption nobody asked for, so it is refused.
+            if (args.Contains("--fit") || args.Contains("--ladder") || args.Contains("--sweep"))
+                return Fail("fea --dilate sweeps the face offset at ONE step — run --sweep, --fit and --ladder separately");
+            return FeaDilation(args);
+        }
         // ⚠️ `--fit` has TWO specimens and canon 01_01 §5.2 asks for BOTH: the lattice cube answers
         //    "what are C and n for this material", the shipped annulus answers "does the part lie on
         //    that curve at all". A coefficient measured on one is explicitly NOT transferable to the
@@ -1105,6 +1114,197 @@ internal static class Program
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"→ {strOut}");
         return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
+    }
+
+    // The face-offset SENSITIVITY of the shipped part (00_07 HW.51): the lattice dilated by one structuring element
+    // (Zone1Anode.Dilated) BEFORE sampling, swept over the offset at ONE step. ⛔ Every row is the geometric INTENT with
+    // a hypothetical offset — the printed excess per face orientation is a vendor answer nobody has given — so the
+    // console and every cache file say SENSITIVITY, never "as printed".
+    // Every grid is sampled before anything is solved, so each refusal costs seconds rather than a CG run: the
+    // identity control (zero offset through the wrapper = the intent grid), a row that removed metal, a row below the
+    // grid's resolution, two rows that sampled to one grid.
+    private static int FeaDilation(string[] args)
+    {
+        string strCemPath = args[1];
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail($"fea --dilate: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+
+        DilationMode? modeArg = ArgStr(args, "--dilate", null) switch
+        {
+            "downskin" => DilationMode.Downskin,
+            "iso" => DilationMode.Isotropic,
+            _ => null,
+        };
+        if (modeArg is not { } mode)
+            return Fail("fea --dilate: name the element — downskin (a segment along the build direction; the offset is its LENGTH) " +
+                        "or iso (a ball; the offset is its RADIUS)");
+        bool bDownskin = mode == DilationMode.Downskin;
+
+        string? strOffsets = ArgStr(args, "--face-offsets-mm", null);
+        float[] aOffsets = strOffsets is null
+            ? DefaultFaceOffsetsMm(mode)
+            : [.. strOffsets.Split(',').Select(s => float.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture))];
+        // A cache name carries whole micrometres, so a finer offset would share a file with its neighbour (picogk #14).
+        if (aOffsets.Any(f => f < 0f || MathF.Abs((f * 1000f) - MathF.Round(f * 1000f)) > 1e-3f)
+            || aOffsets.Select(f => MathF.Round(f * 1000f)).Distinct().Count() != aOffsets.Length)
+            return Fail("fea --dilate: face offsets must be distinct, non-negative and whole micrometres — the cache name carries µm");
+
+        bool bWithRod = args.Contains("--with-rod");
+        int nDiv = ArgInt(args, "--step-div", 12);
+        float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f
+            ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        float fStep = fStepMmArg > 0f ? fStepMmArg : fPeriodMin / nDiv;
+        float fROuter = cem.OuterDiameterMm / 2f;
+
+        Console.WriteLine($"fea --dilate {(bDownskin ? "downskin" : "iso")} {cem.Name} — SENSITIVITY of the geometric intent to a face " +
+                          $"offset, NOT the printed body; step {fStep:F4} mm, ν = {VoxelFea.SolidPoissonRatio}");
+        Console.WriteLine(bDownskin
+            ? $"  element: a segment along the build direction {Zone1Anode.BuildDirection} (part frame) — the offset is its LENGTH: " +
+              "a face facing straight down moves by it, vertical and upward faces do not"
+            : "  element: a ball — the offset is its RADIUS: every face moves outward by it, a ligament thickens by twice it");
+        Console.WriteLine(bWithRod
+            ? "  envelope: gyroid annulus + monolithic bus rod (the rod is bought wire, so it seeds no dilation)"
+            : "  envelope: the gyroid annulus only (rod excluded — the subject of the pinned step sweep)");
+
+        Connectivity.Grid gridIntent = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod);
+        double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(gridIntent, fROuter);
+        if (dCentreOffset > VoxelFea.RadialCentreToleranceMm)
+            return Fail($"fea --dilate: step {fStep:F4} mm puts the radial load centre {dCentreOffset * 1000.0:F1} µm off the part axis " +
+                        $"(Ø{cem.OuterDiameterMm:0.##} / step is not a whole number) — the sensitivity curve needs its radial column, pick a step that divides the diameter");
+        int nLockCells = VoxelFea.PhaseLockCells(fStep, cem.GyroidPeriodMm, cem.GyroidPeriodRimMm);
+        if (nLockCells > 0)
+            Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
+                              "a face offset registers only where it crosses a sampled field value (VoxelFea.PhaseLockCells)");
+
+        // 🔴 The identity CONTROL runs whatever offsets were asked for: a wrapper that is not the identity at zero would
+        //    shift every row by its own defect, and a curve cannot show that.
+        Connectivity.Grid gridZero = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, 0f), cem, fStep, bWithRod);
+        if (!gridZero.Cells.SequenceEqual(gridIntent.Cells))
+            return Fail("fea --dilate: the zero offset through the wrapper does NOT reproduce the intent grid — the identity control failed");
+        Console.WriteLine("  identity control ✓ zero offset through the wrapper = the intent grid, cell for cell");
+
+        Console.WriteLine($"{"offset,mm",10} {"samples",8} {"poros.",8} {"+solid cells",13} {"sampled in",11}");
+        var aRows = new List<(float Offset, Connectivity.Grid Grid, int Samples, long Added)>();
+        foreach (float fOffset in aOffsets)
+        {
+            long nStart = System.Diagnostics.Stopwatch.GetTimestamp();
+            int nSamples = DilatedField.Element(mode, fOffset, Zone1Anode.BuildDirection).Length;
+            Connectivity.Grid grid = fOffset > 0f
+                ? VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, fOffset), cem, fStep, bWithRod)
+                : gridZero;
+            long nAdded = 0, nRemoved = 0;
+            for (int n = 0; n < grid.Cells.Length; n++)
+            {
+                bool bWas = gridIntent.Cells[n] == Phase.Solid, bIs = grid.Cells[n] == Phase.Solid;
+                if (bIs && !bWas) nAdded++;
+                if (bWas && !bIs) nRemoved++;
+            }
+            Console.WriteLine($"{fOffset,10:F3} {nSamples,8:N0} {Connectivity.Porosity(grid),8:P2} {nAdded,13:N0} " +
+                              $"{System.Diagnostics.Stopwatch.GetElapsedTime(nStart).TotalSeconds,10:F1}s");
+            if (nRemoved > 0)
+                return Fail($"fea --dilate: face offset {fOffset} mm REMOVED {nRemoved:N0} solid cells — a dilation cannot, so the wrapper is broken");
+            if (fOffset > 0f && nAdded == 0)
+                return Fail($"fea --dilate: face offset {fOffset} mm changes no cell at step {fStep:F4} mm — it is below this grid's resolution, " +
+                            "and its row would repeat the zero row under another name");
+            aRows.Add((fOffset, grid, nSamples, nAdded));
+        }
+        List<(float WallA, float WallB)> aCollapsed = VoxelFea.IdenticalSweepGrids([.. aRows.Select(r => (r.Offset, r.Grid))]);
+        if (aCollapsed.Count > 0)
+            return Fail($"fea --dilate: face offsets {string.Join(", ", aCollapsed.Select(p => $"{p.WallA:0.###} and {p.WallB:0.###}"))} mm " +
+                        $"sample to the SAME grid at step {fStep:F4} mm — the sweep varied nothing there; widen the offset spacing");
+
+        // A dilation flips Pore to Solid and never touches Outside, so every row shares ONE solid envelope: its axial
+        // calibration and radial normaliser are solved once, bit-identical to the per-row solves `fea` does.
+        Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(gridIntent);
+        double dAxialSolid = VoxelFea.ApparentAxialModulus(gridSolid, 2).StiffnessRatio;
+        VoxelFea.FeaResult oRadialSolid = VoxelFea.RadialStiffness(gridSolid, fROuter);
+        Console.WriteLine($"  solid envelope: axial calibration {dAxialSolid:F6} of E_solid, radial normaliser in {oRadialSolid.Iterations:N0} CG it.");
+        if (Math.Abs(dAxialSolid - 1.0) > 0.02)
+            Console.WriteLine($"  ⚠ solid calibration returned {dAxialSolid:F4} of E_solid, not 1.000 — the SOLVER is off, not the lattice");
+
+        Console.WriteLine($"{"offset,mm",10} {"elements",10} {"poros.",8} {"axial-Z",9} {"radial",9} {"islands",8} {"CG it.",8}");
+        Directory.CreateDirectory(Path.Combine("cache", "fea"));
+        bool bAllConverged = true;
+        foreach ((float fOffset, Connectivity.Grid grid, int nSamples, long nAdded) in aRows)
+        {
+            VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
+            VoxelFea.FeaResult oRadial = VoxelFea.RadialStiffness(grid, fROuter);
+            double dAxial = oAxial.StiffnessRatio;
+            double dRadial = oRadial.StiffnessRatio / oRadialSolid.StiffnessRatio;
+            double dPorosity = Connectivity.Porosity(grid);
+            bool bConverged = oAxial.Converged && oRadial.Converged;
+            bAllConverged &= bConverged;
+            Console.WriteLine($"{fOffset,10:F3} {oAxial.Elements,10:N0} {dPorosity,8:P2} {dAxial,9:F4} {dRadial,9:F4} " +
+                              $"{oAxial.DiscardedIslandFraction,8:P3} {oAxial.Iterations,8:N0}");
+            if (!bConverged)
+                Console.WriteLine($"  ⚠ CG did not reach tolerance (axial residual {oAxial.Residual:E2}, radial {oRadial.Residual:E2}) — the row above is NOT a measurement");
+
+            bool bZero = fOffset == 0f;
+            string strOut = Path.Combine("cache", "fea", DilationCacheName(cem.Name, mode, fOffset, nDiv, fStepMmArg, bWithRod));
+            // Written per row, so an interrupted sweep keeps what it finished. The zero row carries nothing of the
+            // element: both wrappers are the identity there, so its file is the same bytes whichever sweep wrote it.
+            File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object?>
+            {
+                ["_note"] = "SENSITIVITY of the geometric INTENT to a hypothetical face offset — NOT the printed body. The lattice is "
+                          + "dilated before sampling (DilatedField, Zone1Anode.cs); the printed excess per face orientation is a vendor "
+                          + "answer nobody has given (00_07 HW.51). Declared ceilings live in DilatedField and VoxelFea.cs; a single "
+                          + "step is an UPPER bound.",
+                ["cem"] = cem.Name,
+                ["topology"] = cem.Topology,
+                ["with_bus_rod"] = bWithRod,
+                ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
+                ["dilation_element"] = bZero ? null : bDownskin ? "downskin" : "iso",
+                ["face_offset_mm"] = fOffset,
+                ["face_offset_is"] = bZero
+                    ? "no offset — the identity control: sampled THROUGH the wrapper, equal to the intent grid cell for cell"
+                    : bDownskin
+                        ? "the LENGTH of a segment along +build_direction: a face whose outward normal is -build_direction moves by it, "
+                          + "an inclined one by length*cos, vertical and upward faces not at all"
+                        : "the RADIUS of a ball: every face moves outward by it, a ligament thickens by twice it",
+                ["build_direction_part_frame"] = bZero || !bDownskin
+                    ? null : new[] { Zone1Anode.BuildDirection.X, Zone1Anode.BuildDirection.Y, Zone1Anode.BuildDirection.Z },
+                ["element_spacing_mm"] = DilatedField.ElementSpacingMm,
+                ["element_samples"] = nSamples,
+                ["clipped_to_part_body"] = true,
+                ["step_mm"] = fStep,
+                ["step_divisor"] = fStepMmArg > 0f ? null : nDiv,
+                ["cells_added_vs_intent"] = nAdded,
+                ["elements"] = oAxial.Elements,
+                ["dofs"] = oAxial.Dofs,
+                ["porosity"] = dPorosity,
+                ["axial_ratio"] = dAxial,
+                ["radial_ratio"] = dRadial,
+                ["solid_calibration_axial"] = dAxialSolid,
+                ["discarded_island_fraction"] = oAxial.DiscardedIslandFraction,
+                ["axial_iterations"] = oAxial.Iterations,
+                ["axial_residual"] = oAxial.Residual,
+                ["radial_iterations"] = oRadial.Iterations,
+                ["radial_residual"] = oRadial.Residual,
+                ["converged"] = bConverged,
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine($"  → {strOut}");
+        }
+        return bAllConverged ? 0 : 1;
+    }
+
+    // Face offsets the HW.51 leg prescribes. ⚠️ The iso radii are not the downskin lengths: a ball of radius R thickens a
+    // ligament by 2R, so the literal 0.45 mm as a RADIUS would be a porosity of order 10–20 % — another experiment.
+    internal static float[] DefaultFaceOffsetsMm(DilationMode mode)
+        => mode == DilationMode.Downskin ? [0f, 0.10f, 0.25f, 0.45f] : [0f, 0.05f, 0.125f, 0.225f];
+
+    // One file per ROW, named by every axis a row differs along — element · face offset · step · rod — so no run lands on
+    // another row nor on any file of the other `fea` families (picogk #14: the axis missing from a name is where an
+    // overwrite goes quiet). The zero offset names no element: both wrappers are the identity there (pinned).
+    internal static string DilationCacheName(
+        string strCemName, DilationMode mode, float fFaceOffsetMm, int nStepDivisor, float fStepMm, bool bWithRod)
+    {
+        int nUm = (int)MathF.Round(fFaceOffsetMm * 1000f);
+        string strElement = nUm == 0 ? "" : mode == DilationMode.Downskin ? "downskin." : "iso.";
+        string strStep = fStepMm > 0f ? $"h{MathF.Round(fStepMm * 1000f):0}um" : $"d{nStepDivisor}";
+        return $"dilation_sensitivity.{strCemName}.{strElement}f{nUm}um.{strStep}{(bWithRod ? ".with_rod" : "")}.json";
     }
 
     // The MATERIAL-scale ladder: the same lattice in a plain cube of n periods a side, free lateral
