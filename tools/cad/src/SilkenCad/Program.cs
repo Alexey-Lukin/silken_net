@@ -658,8 +658,8 @@ internal static class Program
 
         double dRShank = cem.ShankDiameterMm / 2f, dRBore = cem.BoreDiameterMm / 2f;
         double dCylVol = Math.PI * ((dRShank * dRShank) - (dRBore * dRBore)) * cem.ShankLengthMm;
-        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED shank (solid, or annulus for a cathode channel), not an SDF narrow-band shell
-        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ {dCylVol:F0} mm³ expected — hollow render (SDF narrow-band)");
+        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dCylVol;   // a FILLED shank (solid, or annulus for a cathode channel), not a hollow render of an open SDF field
+        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ {dCylVol:F0} mm³ expected — hollow render (an SDF field left open at the bbox caps, gotcha #9)");
 
         bool bOk = bSane && bCount && bHeight && bBase && bGroove && bSolid;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
@@ -699,7 +699,7 @@ internal static class Program
         bool bLugs = dMaxXY >= fLugSpanMin && oM.BayonetLugCount == cem.BayonetLugs;
         bool bBarbs = oM.BarbCount == cem.BarbRows;
 
-        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ flange {dFlangeVol:F0} mm³ — hollow render (SDF narrow-band, gotcha #9)");
+        if (!bSolid) Console.WriteLine($"  ⚠ solid volume {oM.SolidVolumeMm3:F0} ≪ flange {dFlangeVol:F0} mm³ — hollow render (an SDF field left open at the bbox caps, gotcha #9)");
         if (!bLugs) Console.WriteLine($"  ⚠ bayonet lugs not fused (max bbox {dMaxXY:F1} < expected ≥{fLugSpanMin:F1} mm)");
         if (!bBarbs) Console.WriteLine($"  ⚠ barb count {oM.BarbCount} ≠ rows {cem.BarbRows}");
 

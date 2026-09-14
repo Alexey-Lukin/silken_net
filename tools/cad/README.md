@@ -80,9 +80,10 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   OpenVDB level set at fine voxel on thin bored parts → an **uncatchable native abort**
   (`libc++abi … ValueError: expected grid A outside value > 0, got 0`).
 - **A FILLED (solid) body must come from ShapeKernel `voxConstruct`, NOT the SDF ctor.**
-  `new Voxels(IImplicit, BBox3)` builds a **narrow-band** field (voxels near the surface only),
-  so a solid core falls outside the band and renders as a **hollow shell** (measured: a Ø11 shank
-  read ~17 mm³ instead of ~1700). The gyroid escapes this only because it is thin-walled everywhere.
+  The symptom is real (measured: a Ø11 shank read ~17 mm³ instead of ~1700), but the mechanism is a
+  field left **OPEN at the bbox caps** — the old «narrow band excludes the core» reading was falsified
+  2026-09-12 (a CLOSED SDF solid renders at 99.7–99.8 %; picogk gotcha #9). The gyroid is closed by its
+  envelope intersect. `voxConstruct` stays the default because it cannot be got wrong by forgetting to close a field.
   Pattern: solid = `BaseCylinder().voxConstruct()`; thin features (barb ridges) = SDF `BoolAdd`
   (`MechanicalLock.cs`, the Ti-coin split). A `verify` solidity gate guards the regression.
 - **`ImplicitRadialGyroid` is degenerate near r=0** (cylindrical singularity) — use a
