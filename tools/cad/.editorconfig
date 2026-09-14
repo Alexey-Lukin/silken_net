@@ -10,6 +10,11 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 
+# Committed FE caches are the generator's bytes (File.WriteAllText of JsonSerializer output, no trailing
+# newline) and must regenerate byte-identical, so an editor must not append one on save (00_07 HW.51).
+[cache/**.json]
+insert_final_newline = false
+
 [*.{cs,csx}]
 indent_size = 4
 # Prefer modern, terse C#
