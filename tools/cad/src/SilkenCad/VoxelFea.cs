@@ -8,7 +8,9 @@ namespace SilkenCad;
 //
 // 🔴 WHY THIS EXISTS: the only stiffness number the canon had for this part came from Gibson-Ashby
 // `E_foam/E_solid ≈ C·ρⁿ` quoted at the TEXTBOOK pair C = 1, n = 2 — and a wall_param sweep (verb
-// `fea --fit`) measured that pair wrong: C ≈ 0.98, n ≈ 2.24 (01_01 §5.2).
+// `fea --fit`) measured that pair wrong: AXIALLY C ≈ 0.98, n ≈ 2.24; RADIALLY, on the shipped part, the
+// exponent stays near 2 and the coefficient is what departs (01_01 §5.2 — which member is wrong is a
+// property of the AXIS, not of the formula).
 // ⚠️ The domain worry that first motivated this module — 1.50–2.50 cells across the radial wall,
 // 01_01 §5.2 uncertainty (4) — was then MEASURED and costs almost nothing (the cube ladder is flat
 // from one cell to eight). The verdict survived; its GROUND did not. This module measures the
@@ -38,6 +40,8 @@ namespace SilkenCad;
 //     reports describes the geometric intent, never the printed body. Adding it is open work (00_07 HW.51).
 //   • The ratio is to the solid ENVELOPE, so it already contains the free-surface size effect of the
 //     real annular wall. That is the point; it is NOT a material property and must not be quoted as one.
+//   • The RADIAL case is centred on the grid, so it is valid only on steps that divide the diameter
+//     (RadialLoadCentreOffsetMm) — any other step is refused, not approximated.
 internal static class VoxelFea
 {
     // Poisson's ratio of the solid phase. Ti-6Al-4V ≈ 0.342 (and every bake-off candidate sits in
@@ -505,6 +509,21 @@ internal static class VoxelFea
         aFixed[(nSecond * 3) + iB] = true; aPres[(nSecond * 3) + iB] = 0.0;
     }
 
+    // 🔴 The radial load is centred on the GRID, and the grid sits on the part axis only when 2R/step is a
+    // whole number. The FE sampler starts at −R and rounds the cell count UP, so a step that does not divide
+    // the diameter adds an empty column and walks the centre off the axis — on Ø11 at period 2.0 the odd
+    // divisors do it (/7: a quarter step, 71 µm; /11: 45 µm, measured 2026-09-14). The prescribed
+    // displacement then presses one side of the rim deeper than the other, i.e. it loads a different part,
+    // and nothing in the result says so. Axial cases never read the centre. REFUSED rather than re-centred:
+    // re-centring moves the last bits of every ALIGNED radial number already pinned to canon (01_01 §5.2),
+    // so the committed caches would stop reproducing from this code.
+    internal const double RadialCentreToleranceMm = 1e-4;
+
+    /// <summary>How far the radial load centre (half the grid extent) sits from the part axis, in mm.</summary>
+    internal static double RadialLoadCentreOffsetMm(in Connectivity.Grid grid, double dOuterRadiusMm)
+        => Math.Max(Math.Abs((grid.Nx * (double)grid.StepMm / 2.0) - dOuterRadiusMm),
+                    Math.Abs((grid.Ny * (double)grid.StepMm / 2.0) - dOuterRadiusMm));
+
     /// <summary>
     /// Radial stiffness of the annulus: a uniform inward radial displacement is imposed on the outer
     /// boundary shell, the two end faces are held in the axial direction (plane-strain surrogate for
@@ -516,6 +535,13 @@ internal static class VoxelFea
     internal static FeaResult RadialStiffness(
         in Connectivity.Grid grid, double dOuterRadiusMm, double dTol = 1e-8, int nMaxIter = 200_000)
     {
+        double dCentreOffset = RadialLoadCentreOffsetMm(grid, dOuterRadiusMm);
+        if (dCentreOffset > RadialCentreToleranceMm)
+            throw new InvalidOperationException(
+                $"radial load centre sits {dCentreOffset * 1000.0:F1} µm off the part axis: 2R/step = " +
+                $"{2.0 * dOuterRadiusMm / grid.StepMm:F3} is not a whole number, so the prescribed displacement would " +
+                "press one side of the rim deeper than the other — pick a step divisor that divides the diameter");
+
         (bool[] aKeep, double dSolid, double dDiscarded) = LargestSolidBody(grid);
         Mesh mesh = Build(grid, aKeep, dSolid, dDiscarded);
         double[] aKe = HexElementStiffness(grid.StepMm, SolidPoissonRatio);

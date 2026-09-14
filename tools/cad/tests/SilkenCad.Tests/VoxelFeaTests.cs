@@ -150,6 +150,50 @@ public class VoxelFeaTests
             "adding a solid core must lower the measured porosity of the sampled envelope");
     }
 
+    // 🔴 The radial load is centred on the GRID, and the grid sits on the part axis only when the step divides the
+    // diameter: the FE sampler starts at −R and rounds the cell count UP, so on Ø11 at the pine rim period the odd
+    // divisors add an empty column (/7 walks the centre a quarter step, ≈71 µm; /11 ≈45 µm). The divisors canon
+    // quotes radial rows at must come out aligned, or each of those numbers is a lopsided load on another part.
+    // The check reads the SAMPLED grid, never re-derives the cell count, so a sampler change moves it too.
+    // MUTATION: drop the halving in RadialLoadCentreOffsetMm (`/ 2.0` → `/ 1.0`) ⇒ every aligned row reds.
+    [Theory]
+    [InlineData(6, false)]
+    [InlineData(7, true)]
+    [InlineData(8, false)]
+    [InlineData(10, false)]
+    [InlineData(11, true)]
+    [InlineData(12, false)]
+    [InlineData(16, false)]
+    public void The_Radial_Load_Centre_Sits_On_The_Part_Axis_Only_When_The_Step_Divides_The_Diameter(int nDiv, bool bOffAxis)
+    {
+        Connectivity.Grid grid = ThinPineSlice(nDiv, out float fOuterRadiusMm);
+        double dOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, fOuterRadiusMm);
+        if (bOffAxis)
+            Assert.True(dOffset > VoxelFea.RadialCentreToleranceMm, $"/{nDiv}: a {dOffset * 1000.0:F2} µm offset must be refused");
+        else
+            Assert.True(dOffset <= VoxelFea.RadialCentreToleranceMm, $"/{nDiv}: {dOffset * 1000.0:F4} µm off the axis on a divisor canon quotes");
+    }
+
+    // The backstop, for a caller that forgets the pre-check the CLI verbs carry: a refusal, never a lopsided number.
+    // MUTATION: delete the throw at the top of RadialStiffness ⇒ this solves the slice and reds.
+    [Fact]
+    public void Radial_Stiffness_Refuses_A_Grid_Whose_Load_Centre_Is_Off_The_Axis()
+    {
+        Connectivity.Grid grid = ThinPineSlice(7, out float fOuterRadiusMm);
+        var ex = Assert.Throws<InvalidOperationException>(() => VoxelFea.RadialStiffness(grid, fOuterRadiusMm));
+        Assert.Contains("off the part axis", ex.Message);
+    }
+
+    // A few-cell-thick slice of the shipped pine part at the step the CLI would use for this divisor — the finest
+    // period, exactly as `fea` derives it — so the pins read the real sampler without paying for a 40 mm part.
+    private static Connectivity.Grid ThinPineSlice(int nDiv, out float fOuterRadiusMm)
+    {
+        AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 0.6f };
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        fOuterRadiusMm = cem.OuterDiameterMm / 2f;
+        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fPeriodMin / nDiv, bWithRod: false);
+    }
+
     // 🔴 The Gibson-Ashby fit has a CLOSED FORM too, and it is the only kind of pin worth writing for
     // a regression: points generated FROM a known C and n must come back as that C and n. A fit is
     // exactly the sort of routine that returns a plausible pair whatever it does — and the pair it

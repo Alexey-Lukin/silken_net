@@ -198,10 +198,10 @@ FIT_ROWS = {
 }.freeze
 
 fit_rows_seen = 0
-# ⚠️ The AXIS cell is part of the KEY, not decoration: the cache carries a radial fit too (`fit_radial_*`,
-# `null` until `--with-radial` is run), and the anchor's load-bearing axis is the RADIAL one — so a row
-# that ever says «радіальна» must read a DIFFERENT field, and silently reading the axial one there would
-# be the exact substitution this guard exists to prevent.
+# ⚠️ The AXIS cell is part of the KEY, not decoration: the part cache carries a radial fit too (`fit_radial_*`),
+# the anchor's load-bearing axis is the RADIAL one, and the two axes disagree about WHICH member of the formula
+# is off (01_01 §5.2) — so a «радіальна» row reads the radial fields and nothing else, and silently reading the
+# axial one there would be the exact substitution this guard exists to prevent.
 canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \| \*{0,2}([0-9.]+)\*{0,2} \|$/) do
   specimen, div, axis, c_q, n_q, r2_q = Regexp.last_match.captures
   spec = FIT_ROWS[specimen.strip]
@@ -212,15 +212,25 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
 
   fit_rows_seen += 1
   f = JSON.parse(File.read(path))
-  unless axis.strip == "осьова"
-    failures << "fit row #{specimen.strip} /#{div} declares axis '#{axis.strip}' — only the AXIAL fit is "\
-                "cached (`fit_radial_*` is null until `--with-radial`); this guard would silently compare "\
-                "an axial number against a radial claim"
+  case axis.strip
+  when "осьова"
+    c_cached = f["fit_c"] || f["fit_axial_c"]
+    n_cached = f["fit_n"] || f["fit_axial_n"]
+    r2_cached = f["fit_r_squared_log"] || f["fit_axial_r_squared_log"]
+  when "радіальна"
+    # A radial claim against a cube cache (no radial fields at all) or against a part cache whose radial fit
+    # is null — run without `--with-radial`, or refused on a step that does not divide the diameter — reds by
+    # name here, instead of falling through to the axial fields.
+    c_cached, n_cached, r2_cached = f.values_at("fit_radial_c", "fit_radial_n", "fit_radial_r_squared_log")
+    if [ c_cached, n_cached, r2_cached ].any?(&:nil?)
+      failures << "fit row #{specimen.strip} /#{div} declares axis 'радіальна' but #{File.basename(path)} carries no "\
+                  "radial fit — re-run with --with-radial on a divisor that divides the diameter"
+      next
+    end
+  else
+    failures << "fit row #{specimen.strip} /#{div} declares axis '#{axis.strip}' — this guard knows «осьова» and «радіальна» only"
     next
   end
-  c_cached = f["fit_c"] || f["fit_axial_c"]
-  n_cached = f["fit_n"] || f["fit_axial_n"]
-  r2_cached = f["fit_r_squared_log"] || f["fit_axial_r_squared_log"]
   failures << "fit cache #{File.basename(path)} is not the network branch (#{f['topology']})" unless f["topology"] == "network"
   failures << "fit cache #{File.basename(path)} has a non-converged row" unless f["rows"].all? { |r| r["converged"] }
   # 🔴 PROVENANCE of the fit cache, and it closes a hole the FILENAME leaves open: the lattice file is
@@ -250,7 +260,7 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   end
 end
 
-EXPECTED_FIT_ROWS = 5
+EXPECTED_FIT_ROWS = 6
 if fit_rows_seen < EXPECTED_FIT_ROWS
   failures << "only #{fit_rows_seen} of #{EXPECTED_FIT_ROWS} fitted-coefficient rows matched — a canon "\
               "rewording has DISARMED the C/n comparison; fix the row shape, do not lower this number"

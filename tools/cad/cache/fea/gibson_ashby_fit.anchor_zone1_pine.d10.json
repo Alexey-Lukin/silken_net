@@ -1,5 +1,5 @@
 {
-  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with the gibson_ashby_fit.network.s<steps>.json family (the material-scale cube): 01_01 §5.2 asks for both curves because a single-point C differs between them in a direction no monotone power law allows. Porosity is measured on the grid, never derived.",
+  "_note": "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. Pairs with the gibson_ashby_fit.network.s\u003Csteps\u003E.json family (the material-scale cube): 01_01 \u00A75.2 asks for both curves: they agree on the exponent n and differ in C, a gap measured to move with resolution \u2014 compare the two only at one step size (00_07 HW.33). Porosity is measured on the grid, never derived.",
   "cem": "anchor_zone1_pine",
   "topology": "network",
   "with_bus_rod": false,
@@ -8,9 +8,9 @@
   "fit_axial_c": 1.0688331963726807,
   "fit_axial_n": 2.269179661738899,
   "fit_axial_r_squared_log": 0.999379487868196,
-  "fit_radial_c": null,
-  "fit_radial_n": null,
-  "fit_radial_r_squared_log": null,
+  "fit_radial_c": 0.5426032612824206,
+  "fit_radial_n": 1.9501049318668797,
+  "fit_radial_r_squared_log": 0.9999188563826974,
   "rows": [
     {
       "wall_param": -0.4,
@@ -18,7 +18,7 @@
       "porosity": 0.7274172325976231,
       "relative_density": 0.27258276740237686,
       "axial_ratio": 0.055499044103722264,
-      "radial_ratio": null,
+      "radial_ratio": 0.04305812954721443,
       "converged": true
     },
     {
@@ -27,7 +27,7 @@
       "porosity": 0.6941447368421053,
       "relative_density": 0.3058552631578947,
       "axial_ratio": 0.07273820026963444,
-      "radial_ratio": null,
+      "radial_ratio": 0.053954592098110786,
       "converged": true
     },
     {
@@ -36,7 +36,7 @@
       "porosity": 0.6614792020373514,
       "relative_density": 0.33852079796264856,
       "axial_ratio": 0.09210470580045407,
-      "radial_ratio": null,
+      "radial_ratio": 0.06556478976196814,
       "converged": true
     },
     {
@@ -45,7 +45,7 @@
       "porosity": 0.6286735993208828,
       "relative_density": 0.37132640067911715,
       "axial_ratio": 0.11393721313453735,
-      "radial_ratio": null,
+      "radial_ratio": 0.0782270298638519,
       "converged": true
     },
     {
@@ -54,7 +54,7 @@
       "porosity": 0.5956918505942275,
       "relative_density": 0.40430814940577253,
       "axial_ratio": 0.1379310016653089,
-      "radial_ratio": null,
+      "radial_ratio": 0.09269004742857478,
       "converged": true
     },
     {
@@ -63,7 +63,7 @@
       "porosity": 0.5636184210526316,
       "relative_density": 0.4363815789473684,
       "axial_ratio": 0.1603191755091558,
-      "radial_ratio": null,
+      "radial_ratio": 0.10813980561427368,
       "converged": true
     }
   ]

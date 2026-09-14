@@ -1011,6 +1011,12 @@ internal static class Program
             float fStep = fPeriodMin / nDivisor;
 
             Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(sdf, cem, fStep, bWithRod);
+            // Checked BEFORE any solve: every row carries a radial column, and a divisor that does not divide the
+            // diameter would spend minutes on axial first and then die inside RadialStiffness (VoxelFea.cs).
+            double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, cem.OuterDiameterMm / 2f);
+            if (dCentreOffset > VoxelFea.RadialCentreToleranceMm)
+                return Fail($"fea: --step-div {nDivisor} puts the radial load centre {dCentreOffset * 1000.0:F1} µm off the " +
+                            $"part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — pick a divisor that divides the diameter");
             Connectivity.Grid gridSolid = VoxelFea.SolidCounterpart(grid);
 
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
@@ -1268,6 +1274,13 @@ internal static class Program
                 GyroidWallParamRim = cemBase.GyroidWallParamRim.HasValue ? fWall : null,
             };
             Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod);
+            // The radial fit is refused up front on a divisor that does not divide the diameter (VoxelFea.cs:
+            // the load centre walks off the axis). The AXIAL fit is unaffected and still runs on any divisor.
+            double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, cem.OuterDiameterMm / 2f);
+            if (bRadial && dCentreOffset > VoxelFea.RadialCentreToleranceMm)
+                return Fail($"fea --fit --with-radial: --step-div {nDiv} puts the radial load centre {dCentreOffset * 1000.0:F1} µm " +
+                            $"off the part axis (Ø{cem.OuterDiameterMm:0.##} / step {fStep:F4} is not a whole number) — run the radial fit " +
+                            "on a divisor that divides the diameter; the axial fit alone runs without --with-radial");
             VoxelFea.FeaResult oAxial = VoxelFea.ApparentAxialModulus(grid, 2);
             double dPorosity = Connectivity.Porosity(grid);
             double dRho = 1.0 - dPorosity;
