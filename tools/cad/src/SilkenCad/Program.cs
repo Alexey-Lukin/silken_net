@@ -309,7 +309,7 @@ internal static class Program
             {
                 // strFile (not cem.Name) feeds the drawing's SSOT row: mechanical_lock.zone1/.zone3.json's
                 // `name` field ("mechanical_lock_zone1"/"_zone3") does not equal its filename stem — same
-                // class as ti_coin above (HW.1); cathode_flange is the one kind left where cem.Name still
+                // class as ti_coin above (HW.1); cathode_flange and zone2_sleeve are the kinds left where cem.Name still
                 // happens to equal the filename stem — see the comment on Drawing.MechanicalLock.
                 MechanicalLockCem cem = Cem.Parse<MechanicalLockCem>(strJson);
                 string strFile = Path.GetFileName(strCemPath);
@@ -579,7 +579,7 @@ internal static class Program
         bool bPorositySane = oM.Porosity is > 0.40 and < 0.85;
 
         // ARCH.25 connectivity gate: open pore (Archimedes), no floating metal (AM-print + electrical
-        // continuity), pore percolates axially (Z = EAAE flow-through) AND ≥1 radial axis (sap/rim access).
+        // continuity), pore percolates axially (Z; the EAAE flow path itself is NOT defined — 01_02 §1.3, 00_07 HW.2) AND ≥1 radial axis (sap/rim access).
         bool bOpen = oM.OpenPorosity is > 0.95;
         bool bNoIslands = oM.SolidDisconnectedFraction is < 0.02;
         bool bPercolates = aPerc.Length == 3 && aPerc[2] && (aPerc[0] || aPerc[1]);
@@ -694,7 +694,7 @@ internal static class Program
         double dFlangeVol = Math.PI * fFlangeR * fFlangeR * cem.FlangeThicknessMm;
 
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
-        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dFlangeVol;   // a FILLED flange (+shank), not an SDF narrow-band shell
+        bool bSolid = oM.SolidVolumeMm3 > 0.8 * dFlangeVol;   // a FILLED flange (+shank), not a hollow render of an SDF left open at the bbox caps
         double dMaxXY = Math.Max(oM.BboxSizeMm[0], oM.BboxSizeMm[1]);
         bool bLugs = dMaxXY >= fLugSpanMin && oM.BayonetLugCount == cem.BayonetLugs;
         bool bBarbs = oM.BarbCount == cem.BarbRows;
@@ -1306,8 +1306,8 @@ internal static class Program
         {
             ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
                       + "Pairs with the gibson_ashby_fit.network.s<steps>.json family (the material-scale cube): 01_01 §5.2 asks "
-                      + "for both curves because a single-point C differs between them in a direction no "
-                      + "monotone power law allows. Porosity is measured on the grid, never derived.",
+                      + "for both curves: they agree on the exponent n and differ in C, a gap measured to move with "
+                      + "resolution — compare the two only at one step size (00_07 HW.33). Porosity is measured on the grid, never derived.",
             ["cem"] = cemBase.Name,
             ["topology"] = cemBase.Topology,
             ["with_bus_rod"] = bWithRod,

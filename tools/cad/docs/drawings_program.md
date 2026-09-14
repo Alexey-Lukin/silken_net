@@ -20,8 +20,8 @@ Our pipeline today emits **3D geometry** (`build` → STL) + **golden metrics** 
 `metrics.json`). Neither is a **dimensioned engineering drawing** — the 2D, toleranced,
 title-blocked document a human or a shop reads. We need one as a deliverable in four contexts:
 
-1. **Factory handoff (the real driver).** `00_07 HW.1` / `HW.24` say "STL/STEP → SLM завод"; an
-   SLM/DMLS shop prints from the **mesh/STEP**, but it inspects and accepts against a **drawing**
+1. **Factory handoff (the real driver).** `00_07 HW.1` says "STL + DXF → SLM завод" (no STEP): an
+   SLM/DMLS shop prints from the **mesh**, but it inspects and accepts against a **drawing**
    (critical dims, tolerances, datums, post-process notes). Ti-coin (Stage 2, ~15 pcs, `01_01 §6.1`)
    is the **first** physical part → its drawing is the most urgent.
 2. **Inspection / acceptance.** AM GD&T is verified by CMM / optical scan vs a GD&T model
@@ -135,7 +135,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 
 > **Phase 0** (canon honesty + CEM `tolerances`/`notes` block) + **Phase 1** (Ti-coin DXF deliverable)
 > are active. **Phase 2** (steps 2/4/5) is deferred until a factory contract — full §7 risks being
-> "packaging for an imagined factory" (no contract yet). **Two Phase-2 parts already landed**: Деталь 3
+> "packaging for an imagined factory" (no contract yet). **Phase-2 parts already landed ahead of a contract** (the roster is §7 and `Program.Draw`'s switch, not this sentence) — e.g. Деталь 3
 > flange (step 2) ships as `draw cathode_flange` — it rode the Ø25 freeze, not a contract — and the §4.3
 > mechanical-lock shank ships as `draw mechanical_lock` (HW.26) — it rode the `cem_canon_sync` DIN-471
 > groove pin, not a contract either.
@@ -150,7 +150,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
    `MechanicalLockDxf`, HW.26 — Zone-1 anchor end + Zone-3 flange end, one CEM `kind`/generator shared
    by both `mechanical_lock.zone1/.zone3.json`), same mirror xUnit set + round-trip. ⛔ Test counts are
    deliberately not quoted here — the roster is `DrawingTests.cs`.
-   **Zone-2 sleeve ✅ landed** (`Drawing.Zone2Sleeve` + `Zone2SleeveDxf`) — its manifest had carried a complete `tolerances`+`notes` block with no carrier at all, and it is the one part that goes to a PEEK CNC shop rather than an SLM one. ⛔ **Деталь 4 radome deliberately NOT drawn, and the ground is named:** its geometry carries two ratified-but-unapplied verdicts (flat crown R5 in place of the hemisphere · flat rim with no counter-groove, [`00_07`](../../../docs/00_07_Action_Plan_Tracker.md) HW.33), both gated on the HW.9 board budget — a sheet issued today would be wrong the moment it printed. Draw it with the application, not before.
+   **Zone-2 sleeve ✅ landed** (`Drawing.Zone2Sleeve` + `Zone2SleeveDxf`) — its manifest had carried a complete `tolerances`+`notes` block with no carrier at all, and it is the one part that goes to a PEEK CNC shop rather than an SLM one. ⛔ **Деталь 4 radome deliberately NOT drawn, and the ground is named:** its geometry carries three ratified-but-unapplied verdicts (flat crown R5 in place of the hemisphere · flat rim with no counter-groove · the internal rim boss, [`00_07`](../../../docs/00_07_Action_Plan_Tracker.md) HW.33); the flat rim is not budget-gated at all, and whether the crown and the boss wait on the HW.9 board budget or feed it is itself open — a sheet issued today would be wrong the moment it printed. Draw it with the application, not before.
 3. **CEM `tolerances`/`notes` block** (**Phase 0**) — fits (a µm band: an ISO 286 read today; the Lamé window canon asks for is an open verdict, `00_07` HW.3), GD&T datums, surface-finish,
    post-process notes, lattice-spec are SSOT in `cem/*.json`, feeding drawing + HW.8 + HW.8.9.
 4. **Zone-1 envelope + lattice spec** (**Phase 2**) — ✅ **landed 2026-09-11** as `draw anchor_zone1`

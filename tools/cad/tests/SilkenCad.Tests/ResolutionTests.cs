@@ -45,6 +45,11 @@ public class ResolutionTests
         ["anchor_assembly.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
         ["anchor_assembly.inboard.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
         ["anchor_assembly.skirt.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
+        // The Ø9 groove moved to its DIN 471 row (0.3 → 0.2 mm, 2026-09-14) and fell under the assembly grid
+        // (1.33 voxels at 0.15): the part manifest renders it at 4 voxels, and the mate audit never reads it.
+        ["anchor_assembly.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
+        ["anchor_assembly.inboard.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
+        ["anchor_assembly.skirt.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
     };
 
     public static TheoryData<string> ShippedManifests()

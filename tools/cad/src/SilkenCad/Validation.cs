@@ -100,7 +100,7 @@ internal sealed record GeometryMetrics
     public double? OverallStackLengthMm { get; init; }      // anode bottom → flange-disc top — embedded install span (F3, CODIT)
     public double? Zone1Zone2InterferenceMm3 { get; init; } // render overlap — 0 at nominal Ø11=Ø11 (surfaces touch, volumes don't; press-fit is +interference on bench)
     public double? Zone2Zone3InterferenceMm3 { get; init; } // render overlap — a thin shell = flange shoulder on the sleeve top face, NOT the shank (Ø9 floats in bore Ø11 = F1)
-    public bool? BusRodClears { get; init; }                // F3 — monolithic bus rod + 2·liner < cathode channel (STRICT) (01_01 §1.4); legacy bore≥bore when rod==0
+    public bool? BusRodClears { get; init; }                // F3 — monolithic bus rod + 2·liner < cathode channel (STRICT) (01_01 §1.4); false when no rod is declared — the zero-clearance legacy reading is gone (AxialStack.BusRodClears)
     public bool? LinerCoversChannel { get; init; }          // F4 — the liner covers the channel end to end (01_01 §1.4, ⚖️ 2026-09-12); F3 judges a DIAMETER and is blind to length
     public double? LinerLengthMm { get; init; }             // liner axial length = channel + the ratified lower protrusion into the PEEK gap
     // 🔴 The liner WALL (0.15 mm) is thinner than the stack voxel (0.2 mm), so the tube can be
@@ -173,7 +173,7 @@ internal static class Validation
     // Anchor-specific golden metrics: the base measurement + porosity measured per concentric
     // radial shell (proves the porosity PROFILE — flat for a constant SKU, monotone for a graded
     // one) + the finest cell period (DMLS-floor proxy). Porosity is MEASURED, never derived from
-    // wallParam (gotcha #4): a coarse voxel under-resolves voids → falsely high porosity.
+    // wallParam (gotcha #4): a coarse voxel under-resolves voids → falsely LOW porosity (0.4–0.5 mm read 21–28 % where 0.1 mm reads ~65 %).
     public static GeometryMetrics MeasureAnchor(AnchorCem cem, Voxels voxAnode, Voxels voxEnvelope, int nShells = 5)
     {
         GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxAnode, voxEnvelope);

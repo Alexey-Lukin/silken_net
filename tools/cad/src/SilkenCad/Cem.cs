@@ -177,7 +177,7 @@ internal sealed record AnchorCem
     // Periphery; null (absent) ⇒ = core ⇒ constant porosity. 🔴 NULLABLE, not a `> 0` sentinel, and the
     // reason is the network verdict: on sheet a param ≤ 0 is meaningless (no band), so "0 ⇒ core" cost
     // nothing; on network it is an ORDINARY level and the rim of a porosity gradient legitimately needs
-    // it (measured: −0.40 ⇒ 73.2 % porous, the graded_porosity rim). A sentinel would have collapsed that
+    // it (the shipped graded_porosity rim: −0.46 ⇒ 73 % porous in the rim shell). A sentinel would have collapsed that
     // gradient to constant SILENTLY — the manifest saying one thing and the geometry doing another.
     public float? GyroidWallParamRim { get; init; }
 
@@ -298,9 +298,9 @@ internal sealed record CathodeFlangeCem
     public float TrailAngleDeg { get; init; } = 70f;
     public float ContactStartMm { get; init; } = 2f;
     public float ContactLengthMm { get; init; } = 9f;
-    public float GrooveOffsetMm { get; init; } = 12f;      // DIN-471 for an Ø9 shaft
-    public float GrooveWidthMm { get; init; } = 1.0f;
-    public float GrooveDepthMm { get; init; } = 0.3f;
+    public float GrooveOffsetMm { get; init; } = 12f;      // groove z (our choice); the groove = the DIN 471 row for Ø9
+    public float GrooveWidthMm { get; init; } = 1.1f;      // DIN 471 d1 = 9: m 1.1 (1.0 is the RING thickness s, not the groove)
+    public float GrooveDepthMm { get; init; } = 0.2f;      // d2 8.6 ⇒ depth 0.2
 
     // Bayonet lugs (mate the Радом socket, фаза 2) — radial pins evenly spaced
     public int BayonetLugs { get; init; } = 3;
@@ -387,7 +387,7 @@ internal sealed record Zone2SleeveCem
     public float WallThicknessMm { get; init; } = 2f;     // frozen §1 — robust default, NOT CTE-limited (§4.2)
     public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
     // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
-    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit Lamé-µm, hex clearance)
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit µm band — an ISO 286 read today; the Lamé window is open, 00_07 HW.3 · hex clearance)
     public NotesSpec? Notes { get; init; }                // drawing notes block
 }
 

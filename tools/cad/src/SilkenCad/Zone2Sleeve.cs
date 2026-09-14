@@ -9,7 +9,7 @@ namespace SilkenCad;
 // катодом (Zone 3). Press-fit на вал Ø11 з одного кінця, приймає shank фланця з іншого; стінка
 // 2 мм (CTE Lamé, §4.2) → OD Ø15 = жива рана у дереві (CODIT <25). Найпростіший генератор родини:
 // труба = BasePipe (готовий hollow-tube примітив, той самий, що Zone1Anode.Envelope) → один
-// voxConstruct, gotcha #9 не загрожує (це не SDF narrow-band). Барбів / DIN-471-канавок / hex тут
+// voxConstruct, gotcha #9 не загрожує (це не SDF-поле, яке можна лишити відкритим на гранях bbox). Барбів / DIN-471-канавок / hex тут
 // немає — гладкий PEEK (барби Ti вдавлюються при 150 °C, канавки на Ti-кінцях; див. Zone2SleeveCem).
 internal static class Zone2Sleeve
 {

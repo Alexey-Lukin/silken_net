@@ -70,10 +70,10 @@ internal sealed class MechanicalLockShank : IImplicit
     }
 }
 
-// A thin annular ridge shell (rShank ≤ r ≤ rShank+ratchet) over the contact zone — narrow-band-safe so
-// it can be BoolAdd-ed onto a SOLID cylinder. A FILLED body must NOT be rendered straight from an SDF:
-// PicoGK's Voxels(IImplicit,bbox) ctor builds a NARROW-BAND field, so a solid core falls outside the band
-// and renders as a HOLLOW SHELL (gotcha — the gyroid escapes it only because it is thin-walled everywhere).
+// A thin annular ridge shell (rShank ≤ r ≤ rShank+ratchet) over the contact zone, BoolAdd-ed onto a SOLID
+// cylinder. A FILLED body is not rendered straight from an SDF here: a field left OPEN at the bbox caps renders
+// as a HOLLOW tube (picogk gotcha #9 — the old «the narrow band excludes the solid core» mechanism was
+// falsified 2026-09-12; a CLOSED field renders solid, and the gyroid is closed by its envelope intersect).
 // Solid bodies come from ShapeKernel voxConstruct; only thin features go through the SDF — the Ti-coin split.
 internal sealed class BarbRidges(MechanicalLockCem cem) : IImplicit
 {
@@ -104,7 +104,7 @@ internal static class MechanicalLock
         // 1. Solid shank — a true filled cylinder (NOT an SDF render; see BarbRidges).
         Voxels voxShank = new BaseCylinder(new LocalFrame(), cem.ShankLengthMm, fRShank).voxConstruct();
 
-        // 2. Barb ridges — a thin annular shell, narrow-band-safe, fused onto the shank.
+        // 2. Barb ridges — a thin annular shell, fused onto the shank.
         voxShank.BoolAdd(new Voxels(new BarbRidges(cem), voxShank.oCalculateBoundingBox()));
 
         // 3. Retaining groove (§4.3 B) — subtract an annular ring (depth grooveDepth) over the groove width.

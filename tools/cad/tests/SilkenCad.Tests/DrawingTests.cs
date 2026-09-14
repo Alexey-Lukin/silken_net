@@ -354,6 +354,22 @@ public class DrawingTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+    // The same absence must reach the NOTES, not only the label: the inspection line beside that pinned
+    // label still told the inspector to leave the ring «bare» (found 2026-09-14 — the pin judged the drawing,
+    // and the note next to it was nobody's). Every shipped note that names the ring must say the geometry lacks it.
+    [Fact]
+    public void Shipped_Flange_Notes_That_Name_The_Isolation_Ring_Say_The_Geometry_Lacks_It()
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        var texts = doc.RootElement.GetProperty("notes").EnumerateObject().SelectMany(p =>
+            p.Value.ValueKind == System.Text.Json.JsonValueKind.Array
+                ? p.Value.EnumerateArray().Select(e => e.GetString() ?? "")
+                : new[] { p.Value.GetString() ?? "" });
+        string[] naming = [.. texts.Where(t => t.Contains("isolation ring", StringComparison.OrdinalIgnoreCase))];
+        Assert.NotEmpty(naming);
+        Assert.All(naming, t => Assert.Matches(@"NOT.{0,40}geometry|geometry.{0,40}NOT", t));
+    }
+
     // The round-trip gotcha #11 prescribes for EVERY `draw` kind, not only the coin: read the REAL
     // manifest and prove each non-empty note reaches the DXF through `DxfSafe`.
     [Fact]
@@ -474,7 +490,7 @@ public class DrawingTests
 
     [Theory]
     [InlineData("mechanical_lock.zone1.json", 11f, "1.1×0.25", "4× barb")]
-    [InlineData("mechanical_lock.zone3.json", 9f, "1×0.3", "3× barb")]
+    [InlineData("mechanical_lock.zone3.json", 9f, "1.1×0.2", "3× barb")]
     public void MechanicalLock_Drawing_Carries_The_Shipped_Cem_Groove_Width_And_Depth(
         string strFile, float fExpectShankDia, string strExpectGroove, string strExpectBarb)
     {

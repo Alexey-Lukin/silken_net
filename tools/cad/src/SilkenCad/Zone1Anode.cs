@@ -136,7 +136,7 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
 // BasePipe envelope. Bicontinuous, orientation-
 // agnostic (founder decision (б), HW.33). v2 = radially graded (period + porosity + topology),
 // CEM-driven; a constant CEM (no Rim fields, sheet) renders the v1 uniform gyroid. Barbs
-// (01_01 §4.3A) are a separate session (00_07).
+// (01_01 §4.3 A) are NOT integrated here yet — open leg 00_07 HW.26 (gated G1–G4).
 internal static class Zone1Anode
 {
     // The gyroid-annulus inner radius: the monolithic bus-rod surface (01_01 §1.4). With no rod declared the
@@ -199,10 +199,10 @@ internal static class Zone1Anode
 
     // The full standalone part = the gyroid annulus (porosity-measured separately, via Anode) PLUS the
     // solid monolithic bus-rod core (01_01 §1.4). The rod is a SOLID body → ShapeKernel voxConstruct +
-    // BoolAdd (gotcha #9 — never the narrow-band SDF ctor; the same split as MechanicalLock's solid shank).
+    // BoolAdd (gotcha #9 — never an SDF field left open at the bbox caps; the same split as MechanicalLock's solid shank).
     // A rod-less CEM (BusRodDiameterMm==0) returns the bare gyroid → back-compat with the v1 manifests.
     // The solid monolithic bus-rod core as voxels (01_01 §1.4) — ShapeKernel voxConstruct (gotcha #9,
-    // never the narrow-band SDF ctor for a solid). Shared by BuildMonolithic (the part) + the verify
+    // never an open SDF field for a solid). Shared by BuildMonolithic (the part) + the verify
     // rod-presence MEASURE (gotcha #4 — don't assume the BoolAdd landed; measure it).
     public static Voxels BusRod(AnchorCem cem)
         => new BaseCylinder(new LocalFrame(), cem.LengthMm, cem.BusRodDiameterMm / 2f).voxConstruct();

@@ -9,7 +9,7 @@ namespace SilkenCad;
 // flange (Ø25 frozen) on the barbed Zone-3 shank that press-fits into the PEEK Zone-2 sleeve, with
 // radial bayonet lugs that mate the PEEK Radome (Деталь 4, фаза 2). Reuses the §4.3 mechanical lock
 // for the shank+barbs+DIN-471 groove (no duplication). Solid bodies come from ShapeKernel voxConstruct
-// (gotcha #9 — never the narrow-band SDF ctor); the thin barb ridges ride the MechanicalLock split.
+// (gotcha #9 — never an SDF field left open at the bbox caps); the thin barb ridges ride the MechanicalLock split.
 // Z: shank z∈[0,shankLen] (deep, into PEEK) → flange on top z∈[shankLen, shankLen+thickness] (capsule
 // side). Pogo pads sit on the top face (Hard Gold = coating, not geometry); the cathode catalytic zone
 // is the side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2).

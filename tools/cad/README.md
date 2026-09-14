@@ -89,7 +89,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   cartesian gyroid for small rods (still bicontinuous).
 - **Gyroid `wallParam` is DIMENSIONLESS** (the gyroid eq ∈ [-1.5, 1.5]), not mm; a clean
   wall needs `wallParam ≪ amplitude`. **Porosity is voxel-dependent → MEASURE it** (a
-  coarse voxel under-resolves voids → falsely high porosity).
+  coarse voxel under-resolves voids → falsely LOW porosity: 0.4–0.5 mm read 21–28 % where 0.1 mm reads ~65 %).
 - **Voxel-resolution floor:** sub-100 µm pores need voxel ~0.03 mm → huge grids. The Ø11
   anode renders cleanly at 0.1 mm (pores ~2.5 mm); realistic 300→100 µm pores are the
   HW.33 ceiling. ⚠️ **The printability half is TOPOLOGY-dependent and the `≈1.2 mm` this line
@@ -244,9 +244,9 @@ if a published sheet no longer names the manifest shipped today, so any byte cha
 redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
-**Deferred:** the rim-boss + raised-collar implementation (the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug takes a Z of its own on a collar — `Assembly.RequiredLugZMm`; application waits on the HW.9 board budget, bench follows at HW.8.8) · the shank-Ø
-press-fit reconcile (Ø9 → H7/s6 under bore Ø11, HW.8.9) · a phase-correct strong continuous gradient (period-tensor/
-conformal) · the C-vs-n porosity sweep and the as-built dilation parameter for the FE (00_07 HW.33 / HW.51). ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
+**Deferred:** the rim-boss + raised-collar implementation (the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug takes a Z of its own on a collar — `Assembly.RequiredLugZMm`; whether the application waits on the HW.9 board budget or is designed under the Ø15.57 ceiling and handed to it is itself open, `00_07` HW.33; bench follows at HW.8.8) · the shank-Ø
+press-fit reconcile (the Ø9 shank placeholder vs bore Ø11, HW.8.9; the fit class is open, HW.3) · a phase-correct strong continuous gradient (period-tensor/
+conformal) · the as-built dilation parameter for the FE (00_07 HW.51). ⛔ The C-vs-n porosity sweep was listed here and **shipped 2026-09-12** as `fea --fit` — removed. ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 
 ## License
 

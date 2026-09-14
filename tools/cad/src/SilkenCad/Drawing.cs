@@ -246,7 +246,7 @@ internal static class Drawing
         return lines;
     }
 
-    // Tolerance-block lines — consume the CEM ToleranceSpec (fits / Lamé-µm / GD&T datums). Null ⇒ empty
+    // Tolerance-block lines — consume the CEM ToleranceSpec (fits as a µm band / GD&T datums). Null ⇒ empty
     // (a part with no ToleranceSpec at all declares no PMI; that is a different statement from a part
     // whose spec is half-filled, and only the second one is a lie waiting to be machined).
     //
@@ -566,7 +566,7 @@ internal static class Drawing
     // + the DIN-471 groove notch, dimensioned straight off the CEM — never tooth-by-tooth, same "spec,
     // not point-by-point" logic §6 uses for the gyroid lattice). Same CEM-native pipeline as the coin/flange.
     //
-    // 🔴 One remaining deviation from the flange's SSOT-row pattern: that one still prints `cem/{cem.Name}.json`,
+    // 🔴 One remaining deviation from the flange's SSOT-row pattern (zone2_sleeve's too): those still print `cem/{cem.Name}.json`,
     // which is only correct because ITS `Name` happens to equal its manifest's filename stem. Here (and for
     // ti_coin's alloy variants, HW.1) it does NOT — `mechanical_lock.zone1.json` carries
     // `name: "mechanical_lock_zone1"` (no dot/zone split), so `cem/{cem.Name}.json` would print a path that
