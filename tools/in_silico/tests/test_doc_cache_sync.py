@@ -402,6 +402,46 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["depth_tolerance_budget"]["total_gap_budget_half_width_mm"] * 1000.0, 1.0,
     ),
+    # ── HW.33 → HW.9 board budget (2026-09-14): the envelope 02_02 §3.5 hands the board layout ──
+    # Every one of these moves with an input nobody re-reads in prose: the gland fill ceiling behind the
+    # Ø, the crown round and cavity height behind the headroom, and the BOM rows behind the stack.
+    (
+        "rim-boss board ceiling the collar is subtracted from → z_stack_tolerance.json §rim_boss_radial_budget",
+        BLIND_MATE, rf"стеля плати `≤ Ø{N} − 2·t_коміра`",
+        "mechanical/z_stack_tolerance.json", lambda d: d["rim_boss_radial_budget"]["design_to_mm"], 0.005,
+    ),
+    (
+        "loosest ceiling any collar can leave (print floor) → z_stack_tolerance.json §collar_radial_budget",
+        BLIND_MATE, rf"найслабшу можливу стелю \*\*Ø{N}\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["collar_radial_budget"]["loosest_ceiling_any_collar_mm"], 0.005,
+    ),
+    (
+        "internal height over the flange face under the ratified crown → z_stack_tolerance.json §vertical_stack_budget",
+        BLIND_MATE, rf"Під ратифікованою короною над гранню фланця \*\*{N} мм\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["vertical_stack_budget"]["internal_height_mm"]["crown_centre"], 0.05,
+    ),
+    (
+        "today's hemisphere headroom (the contrast) → z_stack_tolerance.json §vertical_stack_budget",
+        BLIND_MATE, rf"\(сьогоднішня півсфера — {N}\)",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["vertical_stack_budget"]["internal_height_mm"]["hemisphere_centre_today"], 0.05,
+    ),
+    (
+        "the pad-under-piezo row that does not close at all → z_stack_tolerance.json §vertical_stack_budget",
+        BLIND_MATE, rf"не закривається взагалі \(\*\*{N} мм\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: min(r["room_over_rf_deck_centre_mm"] for r in d["vertical_stack_budget"]["rows"]
+                      if r["placement"] == "pad_under_piezo" and r["fr4_is_bom"]
+                      and not r["b2b_is_named_alternative"]), 0.005,
+    ),
+    (
+        "antenna Z the named B2B alternative leaves (pad beside piezo) → z_stack_tolerance.json",
+        BLIND_MATE, rf"у гілці «поруч» — до \*\*{N} мм\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["vertical_stack_budget"]["summary"]["alt_b2b_lever"]["antenna_z_mm_pad_beside_piezo"], 0.005,
+    ),
     # ── HW.34 bus rod: numbers doc homes quote from script 55 ──
     # ⛔ `bus_mechanical.json` had NO pin here at all while five doc homes quoted its SFs verbatim.
     # Every number below moves the moment ANY input of that model moves (µ sweep, span check, yield

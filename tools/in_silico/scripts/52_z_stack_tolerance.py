@@ -38,7 +38,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import CACHE_DIR, REPO_ROOT
+from lib.constants import CACHE_DIR, REPO_ROOT, SLM_MIN_WALL_DEFAULT_MM
 from lib.utils import banner  # import-safe now (openmm is lazy in pick_platform)
 
 OUT_DIR = CACHE_DIR / "mechanical"
@@ -97,6 +97,26 @@ GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
 PEEK_RELAX_REGIME_MPA = 2.5
 POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
 POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
+
+# ── Board budget inputs handed to HW.9 (00_07 HW.33 leg, 2026-09-14) ──
+# Canon rows, each named beside its number; nothing about the board LAYOUT is typed, because the layout
+# does not exist yet — what is computed is the envelope a layout must fit.
+CROWN_EDGE_R_RATIFIED_MM = 5.0   # ⚖️ founder 2026-09-11 (00_07 HW.33): a flat crown with an R5 edge round
+#                                  replaces the full hemisphere, rise = R (a quarter round). Canon floor R ≥ 5
+#                                  (01_04 §5.5). NOT applied in CAD — `radome.json` carries no crown field yet.
+FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари, 1.6 мм», both decks
+FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
+B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FTSH/CLT board-to-board stack height 8–10
+B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40, 6 mm stack) — priced, not chosen
+# The three live piezo candidates with the heights 02_01 §6 quotes for them (vendor figures, not re-verified
+# here). Canon mounts the piezo on the UNDERSIDE of the Power Deck, inside the gap `GAP_PZ` models.
+PIEZO_HEIGHT_MM = {"Mallory AST1240MLTRQ": 3.3, "Mallory AST1109MLTRQ": 2.0, "Murata PKMCS0909E4000-R1": 1.9}
+# The tallest part named in the BOM for the RF deck: Seeed LoRa-E5 module (02_01 §3.1 pos. 1), 12×12×2.5 mm per
+# https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
+# rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
+RF_DECK_TALLEST_BOM_PART_MM = 2.5
+RF_Z_CANON_FLOOR_MM = 8.0        # 02_01 §5.3 normative row «≥ 8» (λ/40 = 8.6 in the same row)
+RF_Z_HFSS_TRIGGER_MM = 10.0      # 02_01 §5.3, same row: HFSS mandatory below 10
 
 # CEM manifests are the parameter SSOT of the shipped geometry (canon-gated by scripts/cem_canon_sync.rb).
 # Read at RUNTIME, never mirrored as literals here: the CAD and in-silico halves share no identifier
@@ -393,6 +413,168 @@ def rim_datum_creep() -> dict:
     }
 
 
+def collar_radial_budget(boss: dict) -> dict:
+    """(1) The rim-boss ceiling MINUS the wall of the ratified collar — a wall no artefact specifies.
+
+    ⚖️ 2026-09-11 put the lugs on a raised collar grown in the SOCKET band (02_02 §4.4), and the verdict
+    names its own price: the ≤Ø ceiling «shrinks by the collar wall». No CEM field, no canon row and no
+    bayonet load model gives that wall (02_02 §4.1 lists retention requirements without a force), so it is
+    NOT typed here. The ceiling comes back as a function of it, and the one floor that has a home — the
+    canon default SLM min wall — gives the loosest bound ANY collar can leave. A collar that carries lugs
+    is thicker than a print floor, so every real ceiling sits below that row.
+    """
+    slot_clear = cem("radome")["slot_clearance_mm"]
+    design_to = boss["design_to_mm"]
+    rows = []
+    for t in (SLM_MIN_WALL_DEFAULT_MM, 0.5, 1.0, 1.5, 2.0):
+        rows.append({"collar_wall_mm": t,
+                     "ceiling_mm": round(design_to - 2.0 * t, 2),
+                     "ceiling_mm_if_collar_needs_running_clearance": round(design_to - 2.0 * (t + slot_clear), 2)})
+    return {
+        "closed_form": "board_dia <= design_to - 2*collar_wall",
+        "design_to_mm": design_to,
+        "printability_floor_mm": SLM_MIN_WALL_DEFAULT_MM,
+        "loosest_ceiling_any_collar_mm": rows[0]["ceiling_mm"],
+        "rows": rows,
+        "missing_datum": "collar wall thickness — no CEM field, no canon row, no bayonet retention FORCE in "
+                         "canon to size it against; owner = the collar implementation leg (00_07 HW.33) and the "
+                         "lug/Z redesign (HW.8)",
+        "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also "
+                    "needs a running clearance inside its socket — nothing states it — the ceiling drops by "
+                    "2*slot_clearance more (second column). The print floor applies to the SLM branch only: "
+                    "the flange route is open (00_07 HW.23).",
+    }
+
+
+def crown_inner_height_mm(r_mm: float, radome: dict, crown: bool) -> float:
+    """Internal height over the rim plane at radius r — under today's hemisphere or the RATIFIED flat crown.
+
+    The cavity is a cylinder of `cavity_height_mm` under a cap; the cap's inner surface is the outer one
+    offset by the wall, so the crown's inner edge round is R − wall, centred on the outer round's radius.
+    ⚠️ A uniform wall under the crown is the READING of «стінка купола лишається 2.0» — the verdict names
+    the outer round only. With branch (а) the rim sits on the flange face, so this is height over that face.
+    """
+    cav, wall = radome["cavity_height_mm"], radome["wall_thickness_mm"]
+    dome_r = radome["dome_diameter_mm"] / 2.0
+    if not crown:
+        r_in = dome_r - wall
+        return cav + math.sqrt(max(r_in * r_in - r_mm * r_mm, 0.0))
+    round_in = CROWN_EDGE_R_RATIFIED_MM - wall
+    d = r_mm - (dome_r - CROWN_EDGE_R_RATIFIED_MM)
+    if d <= 0.0:
+        return cav + round_in
+    return cav + math.sqrt(max(round_in * round_in - d * d, 0.0))
+
+
+def vertical_stack_budget(boss: dict) -> dict:
+    """(2) Does the board stack fit UNDER the ratified crown, with the stack as the BOM specifies it?
+
+    The block over the flange face is (what stands under the Power Deck) + FR4 + B2B + FR4 + whatever
+    stands on top of the RF deck.
+    🔴 «As the BOM specifies it» carries a term the Z-chain above never had. Canon mounts the SMD piezo on
+    the UNDERSIDE of the Power Deck with the Sil-Pad sandwiched between it and the flange (02_01 §6), while
+    `GAP_PZ` models the pad spanning the whole board↔flange gap — as if nothing stood under the board. A
+    1.9–3.3 mm part cannot live in a 0.65 mm gap, so exactly one of two placements is physical, and they
+    price differently; both are reported, neither is chosen:
+      • pad_beside_piezo — the pad spans board↔flange as `GAP_PZ` models it; the piezo then needs a pocket
+        in the flange face or the other side of the board, and no CEM or canon row carries either;
+      • pad_under_piezo — the reading of 02_01 §6: the board stands h_piezo higher, the pogo protrusion
+        grows by h_piezo, and pad and pogo stop sharing one gap (the 3-spring model above splits).
+    Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
+    spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
+    term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
+    they do). Neither reading is derived from a drawing — both are named, and the worst case rides along.
+    """
+    radome = cem("radome")
+    r_edge = boss["design_to_mm"] / 2.0
+    h = {"crown_centre": crown_inner_height_mm(0.0, radome, True),
+         "crown_at_board_ceiling_edge": crown_inner_height_mm(r_edge, radome, True),
+         "hemisphere_centre_today": crown_inner_height_mm(0.0, radome, False),
+         "hemisphere_at_board_ceiling_edge_today": crown_inner_height_mm(r_edge, radome, False)}
+    tol = {"tol_pz_rss_as_quoted_02_02": rss(list(TOL_PZ.values())),
+           "top_chain_rss_flange_face_datum": rss([v for k, v in TOL_PZ.items() if k != "DMLS_Ti"]
+                                                  + [SPACER_STEP / 2.0]),
+           "tol_pz_worst_case": sum(TOL_PZ.values())}
+
+    def row(placement: str, piezo: str | None, fr4: float, b2b: float) -> dict:
+        h_piezo = PIEZO_HEIGHT_MM[piezo] if piezo else 0.0
+        underside = GAP_PZ + (h_piezo if placement == "pad_under_piezo" else 0.0)
+        # ⛔ pad_beside_piezo leaves the piezo OUT of the stack, so «does a piezo stand under the board» is a
+        # question about the candidates, never about the 0 mm this row stacks — reading it off h_piezo = 0
+        # printed «fits» for a gap no candidate fits.
+        piezo_fits = (True if placement == "pad_under_piezo"
+                      else any(h_p <= GAP_PZ for h_p in PIEZO_HEIGHT_MM.values()))
+        rf_top = underside + 2.0 * fr4 + b2b
+        room_c = h["crown_centre"] - rf_top
+        after = {k: round(room_c - v, 3) for k, v in tol.items()}
+        return {
+            "placement": placement, "piezo": piezo, "piezo_mm": h_piezo if piezo else None,
+            "fr4_mm": fr4, "b2b_mm": b2b,
+            "b2b_is_named_alternative": bool(abs(b2b - B2B_STACK_ALT_MM) < 1e-9),
+            "fr4_is_bom": bool(abs(fr4 - FR4_THICKNESS_MM) < 1e-9),
+            "board_underside_over_flange_mm": round(underside, 3),
+            "piezo_fits_under_board": bool(piezo_fits),
+            "pogo_protrusion_required_mm": round(underside + 0.60 * POGO_TRAVEL, 3),
+            "rf_deck_top_over_flange_mm": round(rf_top, 3),
+            "antenna_z_over_ti_mm": round(rf_top, 3),
+            "rf_meets_canon_floor_8": bool(rf_top >= RF_Z_CANON_FLOOR_MM),
+            "rf_below_hfss_trigger_10": bool(rf_top < RF_Z_HFSS_TRIGGER_MM),
+            "rf_meets_cem_design_point_12": bool(rf_top >= RF_ANT_TI_CLEARANCE_MIN),
+            "room_over_rf_deck_centre_mm": round(room_c, 3),
+            "room_over_rf_deck_at_board_edge_mm": round(h["crown_at_board_ceiling_edge"] - rf_top, 3),
+            "room_after_tolerance_mm": after,
+            "tallest_bom_part_fits_on_top": {k: bool(v >= RF_DECK_TALLEST_BOM_PART_MM) for k, v in after.items()},
+        }
+
+    rows = []
+    for fr4 in (FR4_THICKNESS_MM, FR4_THICKNESS_UNSOURCED_MM):
+        for b2b in B2B_STACK_MM + (B2B_STACK_ALT_MM,):
+            rows.append(row("pad_beside_piezo", None, fr4, b2b))
+            for name in PIEZO_HEIGHT_MM:
+                rows.append(row("pad_under_piezo", name, fr4, b2b))
+    bom = [r for r in rows if r["fr4_is_bom"] and not r["b2b_is_named_alternative"]]
+    alt = [r for r in rows if r["fr4_is_bom"] and r["b2b_is_named_alternative"]]
+
+    def span(sel: list[dict], key: str) -> list[float]:
+        return [min(r[key] for r in sel), max(r[key] for r in sel)]
+
+    under = [r for r in bom if r["placement"] == "pad_under_piezo"]
+    beside = [r for r in bom if r["placement"] == "pad_beside_piezo"]
+    rss_key = "tol_pz_rss_as_quoted_02_02"
+    return {
+        "inputs_mm": {"gap_pz": GAP_PZ, "fr4_bom": FR4_THICKNESS_MM, "fr4_unsourced_contrast": FR4_THICKNESS_UNSOURCED_MM,
+                      "b2b_bom": list(B2B_STACK_MM), "b2b_named_alternative": B2B_STACK_ALT_MM,
+                      "piezo_heights": dict(PIEZO_HEIGHT_MM), "tallest_rf_deck_bom_part": RF_DECK_TALLEST_BOM_PART_MM,
+                      "crown_edge_r_ratified": CROWN_EDGE_R_RATIFIED_MM, "board_ceiling_radius": round(r_edge, 3)},
+        "internal_height_mm": {k: round(v, 3) for k, v in h.items()},
+        "tolerance_readings_mm": {k: round(v, 3) for k, v in tol.items()},
+        "rows": rows,
+        "summary": {
+            "bom_rf_deck_top_mm": {"pad_beside_piezo": span(beside, "rf_deck_top_over_flange_mm"),
+                                   "pad_under_piezo": span(under, "rf_deck_top_over_flange_mm")},
+            "bom_room_centre_mm": {"pad_beside_piezo": span(beside, "room_over_rf_deck_centre_mm"),
+                                   "pad_under_piezo": span(under, "room_over_rf_deck_centre_mm")},
+            "piezo_fits_in_gap_pz_any_candidate": any(h_p <= GAP_PZ for h_p in PIEZO_HEIGHT_MM.values()),
+            "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": {
+                "pad_beside_piezo": any(r["tallest_bom_part_fits_on_top"][rss_key] for r in beside),
+                "pad_under_piezo": any(r["tallest_bom_part_fits_on_top"][rss_key] for r in under)},
+            "pad_under_piezo_rows_that_do_not_close_at_all": [
+                f"{r['piezo']} · B2B {r['b2b_mm']:g}" for r in under if r["room_over_rf_deck_centre_mm"] < 0.0],
+            "alt_b2b_lever": {"buys_height_mm": round(B2B_STACK_MM[0] - B2B_STACK_ALT_MM, 2),
+                              "antenna_z_mm_pad_beside_piezo": [r["antenna_z_over_ti_mm"] for r in alt
+                                                                if r["placement"] == "pad_beside_piezo"][0],
+                              "below_hfss_trigger_pad_beside_piezo": [r["rf_below_hfss_trigger_10"] for r in alt
+                                                                      if r["placement"] == "pad_beside_piezo"][0]},
+        },
+        "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); "
+                         "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
+                         "bottom-side contents inside the B2B gap (not judged here)",
+        "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — not the B2B gap's own "
+                   "contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (open ⚖️ "
+                   "00_07 HW.33, VNA UNI.10); the piezo placement is an open question, not a choice made here.",
+    }
+
+
 def report_row(a: dict) -> str:
     def mark(v, win):
         return "OK " if win[0] <= v <= win[1] else "!! "
@@ -528,6 +710,45 @@ def main() -> int:
           f"{rim['margin_x_at_100N']:.1f}×")
     print("    → creep member NOT warranted for the rim; missing datum named in the JSON, not guessed")
 
+    # ── Board budget handed to HW.9 (00_07 HW.33 leg 2026-09-14) ──
+    # ⚠️ Same declared ceiling as the gland block: an envelope for a layout that does not exist yet, so it
+    # does NOT move the exit code.
+    banner("Board budget handed to HW.9 — collar wall (radial) and the block under the crown (vertical)")
+    collar = collar_radial_budget(boss)
+    vert = vertical_stack_budget(boss)
+    print(f"  (1) Radial: board Ø ≤ {collar['design_to_mm']:.2f} − 2·collar_wall, and no artefact gives the wall:")
+    for r in collar["rows"]:
+        print(f"      wall {r['collar_wall_mm']:.2f} → Ø ≤ {r['ceiling_mm']:.2f}   "
+              f"(Ø ≤ {r['ceiling_mm_if_collar_needs_running_clearance']:.2f} if it also needs a running clearance)")
+    print(f"      → the loosest ceiling ANY collar can leave: Ø{collar['loosest_ceiling_any_collar_mm']:.2f} "
+          f"(the {collar['printability_floor_mm']:.1f} mm print floor, SLM branch only)")
+    ih, tr = vert["internal_height_mm"], vert["tolerance_readings_mm"]
+    rss_key = "tol_pz_rss_as_quoted_02_02"
+    print(f"  (2) Vertical: {ih['crown_centre']:.2f} mm over the flange face under the ratified crown "
+          f"({ih['crown_at_board_ceiling_edge']:.2f} at the Ø{collar['design_to_mm']:.2f} edge; "
+          f"{ih['hemisphere_centre_today']:.2f} under today's hemisphere)")
+    print("      tolerance readings: " + " · ".join(f"{k} ±{v:.2f}" for k, v in tr.items()))
+    print(f"      FR4 {FR4_THICKNESS_MM:.1f} (BOM) rows — RF-deck top over the flange · room over it · after ±{tr[rss_key]:.2f} · "
+          f"tallest BOM part ({RF_DECK_TALLEST_BOM_PART_MM:.1f}) on top  [* = the BOM's named B2B alternative]")
+    for r in vert["rows"]:
+        if not r["fr4_is_bom"]:
+            continue
+        tag = (f"{r['placement']:<17s} {(r['piezo'] or '—'):<25s} "
+               f"B2B {r['b2b_mm']:>4.1f}{'*' if r['b2b_is_named_alternative'] else ' '}")
+        print(f"      {tag} top {r['rf_deck_top_over_flange_mm']:5.2f}  room {r['room_over_rf_deck_centre_mm']:+5.2f}  "
+              f"→ {r['room_after_tolerance_mm'][rss_key]:+5.2f}  "
+              f"{'fits' if r['tallest_bom_part_fits_on_top'][rss_key] else 'NO  '}"
+              f"{'' if r['piezo_fits_under_board'] else '  ⚠ no candidate piezo stands in this gap'}")
+    s = vert["summary"]
+    print(f"  → no candidate piezo fits under the board at GAP_PZ {GAP_PZ:.2f}: "
+          f"{not s['piezo_fits_in_gap_pz_any_candidate']} — the two placements are the open question, not a choice here")
+    print(f"  → tallest BOM part on the RF-deck TOP, any BOM row: pad_beside_piezo "
+          f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_beside_piezo']} · pad_under_piezo "
+          f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_under_piezo']}")
+    if s["pad_under_piezo_rows_that_do_not_close_at_all"]:
+        print(f"  → pad_under_piezo rows with NEGATIVE room before any tolerance: "
+              f"{', '.join(s['pad_under_piezo_rows_that_do_not_close_at_all'])}")
+
     banner("Verdict")
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
@@ -578,6 +799,8 @@ def main() -> int:
         "shipped_groove_alignment": align,
         "depth_tolerance_budget": budget,
         "rim_datum_creep": rim,
+        "collar_radial_budget": collar,
+        "vertical_stack_budget": vert,
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
                           "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 00_02 §1.2, unresponsive"},
         "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"

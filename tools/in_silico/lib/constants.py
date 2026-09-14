@@ -221,6 +221,13 @@ H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs ho
 # bus cross-section ×1.69, and the two errors point in OPPOSITE safety directions.
 D_BUS_ROD_MM = 1.0              # mm — 01_01 §1.4 frozen dims (mirror: cem/anchor_zone1.*.json)
 
+# SLM minimum printable wall — a DEFAULT, not a constant: the real number is a property of the vendor's
+# machine and powder and arrives through the RFQ (`slm_min_wall_mm` in the anchor CEMs). Home of the
+# default: 01_01 §5.5. C# twin: `TopologyCrossChecks.CanonSlmMinWallMm`. ⚠️ It is a printability
+# floor ONLY — on a load-carrying feature it bounds nothing structural, and on a part whose route is
+# still open (the Zone-3 flange: SLM ⊥ EBM ⊥ CNC, 00_07 HW.23) it is a floor for one branch only.
+SLM_MIN_WALL_DEFAULT_MM = 0.2   # mm — 01_01 §5.5 canon default (script 66 still carries its own 200 µm)
+
 # ── EDLC energy budget (HW.42, script 63; 02_03 §9/§12) — delta_t sensitivity to a
 # second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
 # edit `02_03`, not here (same discipline as ETA_BQ above). ──

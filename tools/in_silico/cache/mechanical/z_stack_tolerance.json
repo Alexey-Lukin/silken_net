@@ -469,6 +469,807 @@
     "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 361 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.6x margin. No creep member is warranted in the Z-chain for the rim.",
     "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
+  "collar_radial_budget": {
+    "closed_form": "board_dia <= design_to - 2*collar_wall",
+    "design_to_mm": 15.57,
+    "printability_floor_mm": 0.2,
+    "loosest_ceiling_any_collar_mm": 15.17,
+    "rows": [
+      {
+        "collar_wall_mm": 0.2,
+        "ceiling_mm": 15.17,
+        "ceiling_mm_if_collar_needs_running_clearance": 14.57
+      },
+      {
+        "collar_wall_mm": 0.5,
+        "ceiling_mm": 14.57,
+        "ceiling_mm_if_collar_needs_running_clearance": 13.97
+      },
+      {
+        "collar_wall_mm": 1.0,
+        "ceiling_mm": 13.57,
+        "ceiling_mm_if_collar_needs_running_clearance": 12.97
+      },
+      {
+        "collar_wall_mm": 1.5,
+        "ceiling_mm": 12.57,
+        "ceiling_mm_if_collar_needs_running_clearance": 11.97
+      },
+      {
+        "collar_wall_mm": 2.0,
+        "ceiling_mm": 11.57,
+        "ceiling_mm_if_collar_needs_running_clearance": 10.97
+      }
+    ],
+    "missing_datum": "collar wall thickness \u2014 no CEM field, no canon row, no bayonet retention FORCE in canon to size it against; owner = the collar implementation leg (00_07 HW.33) and the lug/Z redesign (HW.8)",
+    "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also needs a running clearance inside its socket \u2014 nothing states it \u2014 the ceiling drops by 2*slot_clearance more (second column). The print floor applies to the SLM branch only: the flange route is open (00_07 HW.23)."
+  },
+  "vertical_stack_budget": {
+    "inputs_mm": {
+      "gap_pz": 0.65,
+      "fr4_bom": 1.6,
+      "fr4_unsourced_contrast": 1.0,
+      "b2b_bom": [
+        8.0,
+        10.0
+      ],
+      "b2b_named_alternative": 6.0,
+      "piezo_heights": {
+        "Mallory AST1240MLTRQ": 3.3,
+        "Mallory AST1109MLTRQ": 2.0,
+        "Murata PKMCS0909E4000-R1": 1.9
+      },
+      "tallest_rf_deck_bom_part": 2.5,
+      "crown_edge_r_ratified": 5.0,
+      "board_ceiling_radius": 7.785
+    },
+    "internal_height_mm": {
+      "crown_centre": 16.0,
+      "crown_at_board_ceiling_edge": 15.986,
+      "hemisphere_centre_today": 23.5,
+      "hemisphere_at_board_ceiling_edge_today": 20.046
+    },
+    "tolerance_readings_mm": {
+      "tol_pz_rss_as_quoted_02_02": 0.45,
+      "top_chain_rss_flange_face_datum": 0.339,
+      "tol_pz_worst_case": 0.95
+    },
+    "rows": [
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.6,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 11.85,
+        "antenna_z_over_ti_mm": 11.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 4.15,
+        "room_over_rf_deck_at_board_edge_mm": 4.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 3.7,
+          "top_chain_rss_flange_face_datum": 3.811,
+          "tol_pz_worst_case": 3.2
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.6,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 15.15,
+        "antenna_z_over_ti_mm": 15.15,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 0.85,
+        "room_over_rf_deck_at_board_edge_mm": 0.836,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 0.4,
+          "top_chain_rss_flange_face_datum": 0.511,
+          "tol_pz_worst_case": -0.1
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.6,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 13.85,
+        "antenna_z_over_ti_mm": 13.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 2.15,
+        "room_over_rf_deck_at_board_edge_mm": 2.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 1.7,
+          "top_chain_rss_flange_face_datum": 1.811,
+          "tol_pz_worst_case": 1.2
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.6,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 13.75,
+        "antenna_z_over_ti_mm": 13.75,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 2.25,
+        "room_over_rf_deck_at_board_edge_mm": 2.236,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 1.8,
+          "top_chain_rss_flange_face_datum": 1.911,
+          "tol_pz_worst_case": 1.3
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.6,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 13.85,
+        "antenna_z_over_ti_mm": 13.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 2.15,
+        "room_over_rf_deck_at_board_edge_mm": 2.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 1.7,
+          "top_chain_rss_flange_face_datum": 1.811,
+          "tol_pz_worst_case": 1.2
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.6,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 17.15,
+        "antenna_z_over_ti_mm": 17.15,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": -1.15,
+        "room_over_rf_deck_at_board_edge_mm": -1.164,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": -1.6,
+          "top_chain_rss_flange_face_datum": -1.489,
+          "tol_pz_worst_case": -2.1
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.6,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 15.85,
+        "antenna_z_over_ti_mm": 15.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 0.15,
+        "room_over_rf_deck_at_board_edge_mm": 0.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": -0.3,
+          "top_chain_rss_flange_face_datum": -0.189,
+          "tol_pz_worst_case": -0.8
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.6,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 15.75,
+        "antenna_z_over_ti_mm": 15.75,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 0.25,
+        "room_over_rf_deck_at_board_edge_mm": 0.236,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": -0.2,
+          "top_chain_rss_flange_face_datum": -0.089,
+          "tol_pz_worst_case": -0.7
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.6,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 9.85,
+        "antenna_z_over_ti_mm": 9.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": true,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 6.15,
+        "room_over_rf_deck_at_board_edge_mm": 6.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 5.7,
+          "top_chain_rss_flange_face_datum": 5.811,
+          "tol_pz_worst_case": 5.2
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.6,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 13.15,
+        "antenna_z_over_ti_mm": 13.15,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 2.85,
+        "room_over_rf_deck_at_board_edge_mm": 2.836,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 2.4,
+          "top_chain_rss_flange_face_datum": 2.511,
+          "tol_pz_worst_case": 1.9
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.6,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 11.85,
+        "antenna_z_over_ti_mm": 11.85,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 4.15,
+        "room_over_rf_deck_at_board_edge_mm": 4.136,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 3.7,
+          "top_chain_rss_flange_face_datum": 3.811,
+          "tol_pz_worst_case": 3.2
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.6,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": true,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 11.75,
+        "antenna_z_over_ti_mm": 11.75,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 4.25,
+        "room_over_rf_deck_at_board_edge_mm": 4.236,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 3.8,
+          "top_chain_rss_flange_face_datum": 3.911,
+          "tol_pz_worst_case": 3.3
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.0,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 10.65,
+        "antenna_z_over_ti_mm": 10.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 5.35,
+        "room_over_rf_deck_at_board_edge_mm": 5.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 4.9,
+          "top_chain_rss_flange_face_datum": 5.011,
+          "tol_pz_worst_case": 4.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.0,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 13.95,
+        "antenna_z_over_ti_mm": 13.95,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 2.05,
+        "room_over_rf_deck_at_board_edge_mm": 2.036,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 1.6,
+          "top_chain_rss_flange_face_datum": 1.711,
+          "tol_pz_worst_case": 1.1
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.0,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 12.65,
+        "antenna_z_over_ti_mm": 12.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 3.35,
+        "room_over_rf_deck_at_board_edge_mm": 3.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 2.9,
+          "top_chain_rss_flange_face_datum": 3.011,
+          "tol_pz_worst_case": 2.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.0,
+        "b2b_mm": 8.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 12.55,
+        "antenna_z_over_ti_mm": 12.55,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 3.45,
+        "room_over_rf_deck_at_board_edge_mm": 3.436,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 3.0,
+          "top_chain_rss_flange_face_datum": 3.111,
+          "tol_pz_worst_case": 2.5
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.0,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 12.65,
+        "antenna_z_over_ti_mm": 12.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 3.35,
+        "room_over_rf_deck_at_board_edge_mm": 3.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 2.9,
+          "top_chain_rss_flange_face_datum": 3.011,
+          "tol_pz_worst_case": 2.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.0,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 15.95,
+        "antenna_z_over_ti_mm": 15.95,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 0.05,
+        "room_over_rf_deck_at_board_edge_mm": 0.036,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": -0.4,
+          "top_chain_rss_flange_face_datum": -0.289,
+          "tol_pz_worst_case": -0.9
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.0,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 14.65,
+        "antenna_z_over_ti_mm": 14.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 1.35,
+        "room_over_rf_deck_at_board_edge_mm": 1.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 0.9,
+          "top_chain_rss_flange_face_datum": 1.011,
+          "tol_pz_worst_case": 0.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.0,
+        "b2b_mm": 10.0,
+        "b2b_is_named_alternative": false,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 14.55,
+        "antenna_z_over_ti_mm": 14.55,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": true,
+        "room_over_rf_deck_centre_mm": 1.45,
+        "room_over_rf_deck_at_board_edge_mm": 1.436,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 1.0,
+          "top_chain_rss_flange_face_datum": 1.111,
+          "tol_pz_worst_case": 0.5
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": false,
+          "top_chain_rss_flange_face_datum": false,
+          "tol_pz_worst_case": false
+        }
+      },
+      {
+        "placement": "pad_beside_piezo",
+        "piezo": null,
+        "piezo_mm": null,
+        "fr4_mm": 1.0,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 0.65,
+        "piezo_fits_under_board": false,
+        "pogo_protrusion_required_mm": 1.562,
+        "rf_deck_top_over_flange_mm": 8.65,
+        "antenna_z_over_ti_mm": 8.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": true,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 7.35,
+        "room_over_rf_deck_at_board_edge_mm": 7.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 6.9,
+          "top_chain_rss_flange_face_datum": 7.011,
+          "tol_pz_worst_case": 6.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1240MLTRQ",
+        "piezo_mm": 3.3,
+        "fr4_mm": 1.0,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 3.95,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 4.862,
+        "rf_deck_top_over_flange_mm": 11.95,
+        "antenna_z_over_ti_mm": 11.95,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 4.05,
+        "room_over_rf_deck_at_board_edge_mm": 4.036,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 3.6,
+          "top_chain_rss_flange_face_datum": 3.711,
+          "tol_pz_worst_case": 3.1
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Mallory AST1109MLTRQ",
+        "piezo_mm": 2.0,
+        "fr4_mm": 1.0,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.65,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.562,
+        "rf_deck_top_over_flange_mm": 10.65,
+        "antenna_z_over_ti_mm": 10.65,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 5.35,
+        "room_over_rf_deck_at_board_edge_mm": 5.336,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 4.9,
+          "top_chain_rss_flange_face_datum": 5.011,
+          "tol_pz_worst_case": 4.4
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      },
+      {
+        "placement": "pad_under_piezo",
+        "piezo": "Murata PKMCS0909E4000-R1",
+        "piezo_mm": 1.9,
+        "fr4_mm": 1.0,
+        "b2b_mm": 6.0,
+        "b2b_is_named_alternative": true,
+        "fr4_is_bom": false,
+        "board_underside_over_flange_mm": 2.55,
+        "piezo_fits_under_board": true,
+        "pogo_protrusion_required_mm": 3.462,
+        "rf_deck_top_over_flange_mm": 10.55,
+        "antenna_z_over_ti_mm": 10.55,
+        "rf_meets_canon_floor_8": true,
+        "rf_below_hfss_trigger_10": false,
+        "rf_meets_cem_design_point_12": false,
+        "room_over_rf_deck_centre_mm": 5.45,
+        "room_over_rf_deck_at_board_edge_mm": 5.436,
+        "room_after_tolerance_mm": {
+          "tol_pz_rss_as_quoted_02_02": 5.0,
+          "top_chain_rss_flange_face_datum": 5.111,
+          "tol_pz_worst_case": 4.5
+        },
+        "tallest_bom_part_fits_on_top": {
+          "tol_pz_rss_as_quoted_02_02": true,
+          "top_chain_rss_flange_face_datum": true,
+          "tol_pz_worst_case": true
+        }
+      }
+    ],
+    "summary": {
+      "bom_rf_deck_top_mm": {
+        "pad_beside_piezo": [
+          11.85,
+          13.85
+        ],
+        "pad_under_piezo": [
+          13.75,
+          17.15
+        ]
+      },
+      "bom_room_centre_mm": {
+        "pad_beside_piezo": [
+          2.15,
+          4.15
+        ],
+        "pad_under_piezo": [
+          -1.15,
+          2.25
+        ]
+      },
+      "piezo_fits_in_gap_pz_any_candidate": false,
+      "tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted": {
+        "pad_beside_piezo": true,
+        "pad_under_piezo": false
+      },
+      "pad_under_piezo_rows_that_do_not_close_at_all": [
+        "Mallory AST1240MLTRQ \u00b7 B2B 10"
+      ],
+      "alt_b2b_lever": {
+        "buys_height_mm": 2.0,
+        "antenna_z_mm_pad_beside_piezo": 9.85,
+        "below_hfss_trigger_pad_beside_piezo": true
+      }
+    },
+    "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap (not judged here)",
+    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 not the B2B gap's own contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (open \u2696\ufe0f 00_07 HW.33, VNA UNI.10); the piezo placement is an open question, not a choice made here."
+  },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"
