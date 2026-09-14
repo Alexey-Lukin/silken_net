@@ -576,6 +576,44 @@ def test_bus_mechanical_wear_budget():
     assert w["binding"]["branch"] == SHIPPED_INSULATION
 
 
+def test_bus_contact_equilibrium():
+    """Script 68 (HW.34 / HW.23): the bus rod in the cathode channel as a contact problem.
+
+    Sanity is STRUCTURAL — the quoted table is pinned by test_doc_cache_sync. What must hold:
+      1. under coaxial drag the shipped liner meets the wall ONLY at its geometry's pad plane, on every µ and play;
+      2. the liner caps the root below every conformal film on the same geometry (the ratio the tracker quotes);
+      3. an offset inside the play bends nothing, and past it the static root stress rises monotonically;
+      4. the insertion placeholder prices the offset far above the lock window — the reason every row is swept;
+      5. a tilt the play can take up about its pivot bends nothing.
+    """
+    path = MECHANICAL / "bus_contact_equilibrium.json"
+    if not path.exists():
+        pytest.skip("bus_contact_equilibrium.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    pad = {g["label"]: round(g["pad_mm"], 2) for g in d["inputs"]["geometries"]}
+    for row in d["drag_coaxial"]:
+        if row["branch"].startswith("PEEK liner"):
+            for mu, v in row["by_mu"].items():
+                assert [z["station_mm"] for z in v["contacts_bonded"]] == [pad[row["geometry"]]], f"{row['geometry']}/{row['play']}/µ={mu}"
+    for geo in pad:
+        liner = [r for r in d["drag_coaxial"] if r["geometry"] == geo and r["branch"].startswith("PEEK liner")]
+        films = [r for r in d["drag_coaxial"] if r["geometry"] == geo and not r["branch"].startswith("PEEK liner")]
+        for mu in ("0.2", "0.3", "0.4", "0.5"):
+            assert max(r["by_mu"][mu]["sigma_root_MPa_bonded"] for r in liner) < min(r["by_mu"][mu]["sigma_root_MPa_bonded"] for r in films), f"{geo} µ={mu}"
+    for o in d["offset_static_shipped_branch"]:
+        inside = [p_ for p_ in o["by_offset"] if p_["offset_um"] <= o["radial_play_um"]]
+        past = [p_["sigma_root_MPa"] for p_ in o["by_offset"] if p_["offset_um"] > o["radial_play_um"]]
+        assert all(p_["sigma_root_MPa"] == 0.0 and not p_["contacts"] for p_ in inside), f"{o['geometry']}/{o['play']}"
+        assert past == sorted(past) and past[0] < past[-1], f"{o['geometry']}/{o['play']}: not monotone"
+    secant = {o["geometry"]: o["secant_MPa_per_um"] for o in d["offset_static_shipped_branch"] if o["play"] == "zero interference"}
+    placeholder = next(g for g in pad if "placeholder" in g)
+    assert all(secant[placeholder] >= 5.0 * v for g, v in secant.items() if g != placeholder), secant
+    for t in d["tilt_static_shipped_branch"]:
+        for row in t["by_tilt"]:
+            if row["tilt_mrad"] <= t["tilt_taken_up_by_play_mrad"]:
+                assert row["sigma_root_MPa"] == 0.0, f"{t['geometry']}/{t['pivot']} {row['tilt_mrad']} mrad"
+
+
 def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 
@@ -893,6 +931,7 @@ EXPECTED_SCRIPTS = [
     "65_zif_radiosensitization.py",
     "66_gyroid_ligament_thickness.py",
     "67_sap_recipe_saturation.py",
+    "68_bus_contact_equilibrium.py",
 ]
 
 

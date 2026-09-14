@@ -1914,7 +1914,13 @@ def main() -> int:
                    "Three seam mechanisms "
                    "stay outside even that bound, and their signs differ: bead section RELIEVES nominal "
                    "stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this "
-                   "file never carries - the endurance ratio is fully-reversed by construction.",
+                   "file never carries - the endurance ratio is fully-reversed by construction. "
+                   "CONTACT PICTURE, contested 2026-09-14: the drag-contact station here is read off the FREE "
+                   "tip-loaded cantilever at FULL drag, and script 68 solves the contact and finds that this is "
+                   "not an equilibrium - on a coaxial channel the wall is met only at the pad plane and the root "
+                   "stress is capped, while off-axis the mouth becomes a contact station. edge_bearing, the "
+                   "first-contact range under the liner protrusion, span_inflation (so the seam bound) and the "
+                   "wear station stand on the free-shape reading until re-derived (00_07 HW.34).",
     }
     json_path = OUT_DIR / "bus_mechanical.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))

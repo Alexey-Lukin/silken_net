@@ -85,6 +85,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 65 | `65_zif_radiosensitization.py` | HW.22: does the ZIF nanozyme radiosensitise the enzymes under Co-60 — closed-form Compton/CSDA transport, no DFT | < 1 s |
 | 66 | `66_gyroid_ligament_thickness.py` | HW.33: thinnest printed feature of a gyroid per topology (sheet vs network) at fixed porosity → minimum printable period | ~2 min |
 | 67 | `67_sap_recipe_saturation.py` | HW.3: calcium oxalate saturation of the `01_02 §2.1` synthetic sap — corner scan per test band, admissible Ca × oxalate window on a constant-free hard bound, base and buffer prices | ~13 s |
+| 68 | `68_bus_contact_equilibrium.py` | HW.34 / HW.23: bus rod in the cathode channel solved as unilateral contact (FE + active set) — where the wall is met under pogo drag, and what a channel off the root axis costs, swept over the Zone-1 insertion placeholder and lock window | ~10 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —

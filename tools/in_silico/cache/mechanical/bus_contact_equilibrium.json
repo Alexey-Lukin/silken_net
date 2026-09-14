@@ -1,0 +1,2644 @@
+{
+  "question": "Where does the bus rod meet the cathode channel under pogo drag, and what does a channel axis off the root axis cost — solved as contact equilibrium, not read off a free cantilever (00_07 HW.34 / HW.23)",
+  "inputs": {
+    "source": "imported from 55_bus_mechanical.py; the channel run, flange and sleeve lengths come from cem/*.json via 55, but the unsupported GAP depends on the Zone-1 insertion, which in 55 is the HW.8 PLACEHOLDER Z1_INSERTION_MM — swept here against the Zone-1 lock window",
+    "insertion_placeholder_mm": 30.0,
+    "lock_insertion_window_mm": [
+      14.0,
+      15.0
+    ],
+    "lock_window_source": "cem/mechanical_lock.zone1.json, formula of MechanicalLock.InsertionWindowMm (tools/cad) — by-value crossing, not gated here",
+    "geometries": [
+      {
+        "label": "script 55 placeholder (HW.8)",
+        "insertion_mm": 30.0,
+        "gap_mm": 6.0,
+        "pad_mm": 23.0,
+        "liner_from_mm": 5.0
+      },
+      {
+        "label": "lock window, near end",
+        "insertion_mm": 15.0,
+        "gap_mm": 21.0,
+        "pad_mm": 38.0,
+        "liner_from_mm": 20.0
+      },
+      {
+        "label": "lock window, far end",
+        "insertion_mm": 14.0,
+        "gap_mm": 22.0,
+        "pad_mm": 39.0,
+        "liner_from_mm": 21.0
+      }
+    ],
+    "radial_plays_um": {
+      "zero interference": 25.0,
+      "interference window floor": 24.66,
+      "interference window mid-window": 20.0,
+      "interference window ceiling": 15.33
+    },
+    "radial_play_source": "zero interference from the CEM diameters; the rest loaded from 55's cache interference_window.od_growth_eats_channel_play",
+    "rod_dia_mm": 1.0,
+    "E_Ti_Pa": 110000000000.0,
+    "E_PEEK_Pa": 4000000000.0,
+    "pogo_force_N": 1.0,
+    "mu_sweep": [
+      0.2,
+      0.3,
+      0.4,
+      0.5
+    ],
+    "element_mm": 0.1
+  },
+  "drag_coaxial": [
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "conformal 10 µm film",
+      "play": "film",
+      "radial_play_um": 165.0,
+      "touchdown_drag_N": 0.2197,
+      "capped_sigma_MPa_closed_form": 51.47,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 46.86,
+          "sigma_root_MPa_bonded": 46.86,
+          "contacts_bonded": []
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 51.47,
+          "sigma_root_MPa_bonded": 51.47,
+          "contacts_bonded": [
+            {
+              "force_N": -0.0803,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 51.47,
+          "sigma_root_MPa_bonded": 51.47,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1803,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 51.47,
+          "sigma_root_MPa_bonded": 51.47,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2803,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "conformal TiO2 ~5 µm",
+      "play": "film",
+      "radial_play_um": 170.0,
+      "touchdown_drag_N": 0.2263,
+      "capped_sigma_MPa_closed_form": 53.02,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 46.86,
+          "sigma_root_MPa_bonded": 46.86,
+          "contacts_bonded": []
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 53.02,
+          "sigma_root_MPa_bonded": 53.02,
+          "contacts_bonded": [
+            {
+              "force_N": -0.0737,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 53.02,
+          "sigma_root_MPa_bonded": 53.02,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1737,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 53.02,
+          "sigma_root_MPa_bonded": 53.02,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2737,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "touchdown_drag_N": 0.0333,
+      "capped_sigma_MPa_closed_form": 7.8,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 7.8,
+          "sigma_root_MPa_bonded": 8.04,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1657,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 7.8,
+          "sigma_root_MPa_bonded": 8.04,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2657,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 7.8,
+          "sigma_root_MPa_bonded": 8.04,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3657,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 7.8,
+          "sigma_root_MPa_bonded": 8.04,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4657,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "touchdown_drag_N": 0.0328,
+      "capped_sigma_MPa_closed_form": 7.69,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 7.69,
+          "sigma_root_MPa_bonded": 7.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1661,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 7.69,
+          "sigma_root_MPa_bonded": 7.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2661,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 7.69,
+          "sigma_root_MPa_bonded": 7.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3661,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 7.69,
+          "sigma_root_MPa_bonded": 7.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4661,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "touchdown_drag_N": 0.0266,
+      "capped_sigma_MPa_closed_form": 6.24,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 6.24,
+          "sigma_root_MPa_bonded": 6.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1725,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 6.24,
+          "sigma_root_MPa_bonded": 6.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2725,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 6.24,
+          "sigma_root_MPa_bonded": 6.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3725,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 6.24,
+          "sigma_root_MPa_bonded": 6.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4725,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "touchdown_drag_N": 0.0204,
+      "capped_sigma_MPa_closed_form": 4.78,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 4.78,
+          "sigma_root_MPa_bonded": 4.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.179,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 4.78,
+          "sigma_root_MPa_bonded": 4.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.279,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 4.78,
+          "sigma_root_MPa_bonded": 4.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.379,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 4.78,
+          "sigma_root_MPa_bonded": 4.93,
+          "contacts_bonded": [
+            {
+              "force_N": -0.479,
+              "station_mm": 23.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "conformal 10 µm film",
+      "play": "film",
+      "radial_play_um": 165.0,
+      "touchdown_drag_N": 0.0487,
+      "capped_sigma_MPa_closed_form": 18.85,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 18.85,
+          "sigma_root_MPa_bonded": 18.85,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1513,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 18.85,
+          "sigma_root_MPa_bonded": 18.85,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2513,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 18.85,
+          "sigma_root_MPa_bonded": 18.85,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3513,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 18.85,
+          "sigma_root_MPa_bonded": 18.85,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4513,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "conformal TiO2 ~5 µm",
+      "play": "film",
+      "radial_play_um": 170.0,
+      "touchdown_drag_N": 0.0502,
+      "capped_sigma_MPa_closed_form": 19.43,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 19.43,
+          "sigma_root_MPa_bonded": 19.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1498,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 19.43,
+          "sigma_root_MPa_bonded": 19.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2498,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 19.43,
+          "sigma_root_MPa_bonded": 19.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3498,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 19.43,
+          "sigma_root_MPa_bonded": 19.43,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4498,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "touchdown_drag_N": 0.0074,
+      "capped_sigma_MPa_closed_form": 2.86,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1926,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2926,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3926,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4926,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "touchdown_drag_N": 0.0073,
+      "capped_sigma_MPa_closed_form": 2.82,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.82,
+          "sigma_root_MPa_bonded": 2.84,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1927,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.82,
+          "sigma_root_MPa_bonded": 2.84,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2927,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.82,
+          "sigma_root_MPa_bonded": 2.84,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3927,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.82,
+          "sigma_root_MPa_bonded": 2.84,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4927,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "touchdown_drag_N": 0.0059,
+      "capped_sigma_MPa_closed_form": 2.29,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.29,
+          "sigma_root_MPa_bonded": 2.3,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1941,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.29,
+          "sigma_root_MPa_bonded": 2.3,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2941,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.29,
+          "sigma_root_MPa_bonded": 2.3,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3941,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.29,
+          "sigma_root_MPa_bonded": 2.3,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4941,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, near end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "touchdown_drag_N": 0.0045,
+      "capped_sigma_MPa_closed_form": 1.75,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 1.75,
+          "sigma_root_MPa_bonded": 1.76,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1954,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 1.75,
+          "sigma_root_MPa_bonded": 1.76,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2954,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 1.75,
+          "sigma_root_MPa_bonded": 1.76,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3954,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 1.75,
+          "sigma_root_MPa_bonded": 1.76,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4954,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "conformal 10 µm film",
+      "play": "film",
+      "radial_play_um": 165.0,
+      "touchdown_drag_N": 0.0451,
+      "capped_sigma_MPa_closed_form": 17.9,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 17.9,
+          "sigma_root_MPa_bonded": 17.9,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1549,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 17.9,
+          "sigma_root_MPa_bonded": 17.9,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2549,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 17.9,
+          "sigma_root_MPa_bonded": 17.9,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3549,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 17.9,
+          "sigma_root_MPa_bonded": 17.9,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4549,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "conformal TiO2 ~5 µm",
+      "play": "film",
+      "radial_play_um": 170.0,
+      "touchdown_drag_N": 0.0464,
+      "capped_sigma_MPa_closed_form": 18.44,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 18.44,
+          "sigma_root_MPa_bonded": 18.44,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1536,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 18.44,
+          "sigma_root_MPa_bonded": 18.44,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2536,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 18.44,
+          "sigma_root_MPa_bonded": 18.44,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3536,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 18.44,
+          "sigma_root_MPa_bonded": 18.44,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4536,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "touchdown_drag_N": 0.0068,
+      "capped_sigma_MPa_closed_form": 2.71,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.71,
+          "sigma_root_MPa_bonded": 2.73,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1931,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.71,
+          "sigma_root_MPa_bonded": 2.73,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2931,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.71,
+          "sigma_root_MPa_bonded": 2.73,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3931,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.71,
+          "sigma_root_MPa_bonded": 2.73,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4931,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "touchdown_drag_N": 0.0067,
+      "capped_sigma_MPa_closed_form": 2.68,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.68,
+          "sigma_root_MPa_bonded": 2.69,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1932,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.68,
+          "sigma_root_MPa_bonded": 2.69,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2932,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.68,
+          "sigma_root_MPa_bonded": 2.69,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3932,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.68,
+          "sigma_root_MPa_bonded": 2.69,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4932,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "touchdown_drag_N": 0.0055,
+      "capped_sigma_MPa_closed_form": 2.17,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 2.17,
+          "sigma_root_MPa_bonded": 2.18,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1945,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 2.17,
+          "sigma_root_MPa_bonded": 2.18,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2945,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 2.17,
+          "sigma_root_MPa_bonded": 2.18,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3945,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 2.17,
+          "sigma_root_MPa_bonded": 2.18,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4945,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "geometry": "lock window, far end",
+      "branch": "PEEK liner 0.15 mm",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "touchdown_drag_N": 0.0042,
+      "capped_sigma_MPa_closed_form": 1.66,
+      "by_mu": {
+        "0.2": {
+          "sigma_root_MPa_bare": 1.66,
+          "sigma_root_MPa_bonded": 1.67,
+          "contacts_bonded": [
+            {
+              "force_N": -0.1958,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.3": {
+          "sigma_root_MPa_bare": 1.66,
+          "sigma_root_MPa_bonded": 1.67,
+          "contacts_bonded": [
+            {
+              "force_N": -0.2958,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.4": {
+          "sigma_root_MPa_bare": 1.66,
+          "sigma_root_MPa_bonded": 1.67,
+          "contacts_bonded": [
+            {
+              "force_N": -0.3958,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        "0.5": {
+          "sigma_root_MPa_bare": 1.66,
+          "sigma_root_MPa_bonded": 1.67,
+          "contacts_bonded": [
+            {
+              "force_N": -0.4958,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "offset_static_shipped_branch": [
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 22.9,
+          "contacts": [
+            {
+              "force_N": 0.3751,
+              "station_mm": 6.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 72.0,
+          "contacts": [
+            {
+              "force_N": 1.3232,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.0377,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 128.0,
+          "contacts": [
+            {
+              "force_N": 2.6884,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.155,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 270.6,
+          "contacts": [
+            {
+              "force_N": 6.3453,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.5292,
+              "station_mm": 20.4
+            },
+            {
+              "force_N": -0.031,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 424.9,
+          "contacts": [
+            {
+              "force_N": 11.1476,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.1467,
+              "station_mm": 15.7
+            },
+            {
+              "force_N": -1.3861,
+              "station_mm": 16.5
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 5.742,
+      "secant_between_um": [
+        30,
+        100
+      ]
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 1.6,
+          "contacts": [
+            {
+              "force_N": 0.0255,
+              "station_mm": 6.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 24.5,
+          "contacts": [
+            {
+              "force_N": 0.4006,
+              "station_mm": 6.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 74.1,
+          "contacts": [
+            {
+              "force_N": 1.3795,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.0436,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 130.0,
+          "contacts": [
+            {
+              "force_N": 2.7447,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.1609,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 273.0,
+          "contacts": [
+            {
+              "force_N": 6.4355,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.5614,
+              "station_mm": 20.2
+            },
+            {
+              "force_N": -0.0206,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 427.8,
+          "contacts": [
+            {
+              "force_N": 11.2917,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.3946,
+              "station_mm": 15.8
+            },
+            {
+              "force_N": -1.1902,
+              "station_mm": 16.4
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 5.683,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 22.9,
+          "contacts": [
+            {
+              "force_N": 0.3751,
+              "station_mm": 6.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 46.4,
+          "contacts": [
+            {
+              "force_N": 0.7855,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.0067,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 102.4,
+          "contacts": [
+            {
+              "force_N": 2.1508,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.124,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 158.3,
+          "contacts": [
+            {
+              "force_N": 3.516,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.2413,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 308.5,
+          "contacts": [
+            {
+              "force_N": 7.8936,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.592,
+              "station_mm": 16.7
+            },
+            {
+              "force_N": -0.4041,
+              "station_mm": 17.8
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 469.6,
+          "contacts": [
+            {
+              "force_N": 13.5171,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -1.2118,
+              "station_mm": 13.9
+            },
+            {
+              "force_N": -1.2439,
+              "station_mm": 14.6
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 5.955,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 21.4,
+          "contacts": [
+            {
+              "force_N": 0.3503,
+              "station_mm": 6.0
+            }
+          ]
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 46.8,
+          "contacts": [
+            {
+              "force_N": 0.8758,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.0287,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 74.8,
+          "contacts": [
+            {
+              "force_N": 1.5584,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.0873,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 130.7,
+          "contacts": [
+            {
+              "force_N": 2.9237,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.2046,
+              "station_mm": 23.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 190.1,
+          "contacts": [
+            {
+              "force_N": 4.5971,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.4648,
+              "station_mm": 19.2
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 349.0,
+          "contacts": [
+            {
+              "force_N": 9.957,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -0.9256,
+              "station_mm": 14.1
+            },
+            {
+              "force_N": -0.8395,
+              "station_mm": 14.8
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 517.7,
+          "contacts": [
+            {
+              "force_N": 16.7052,
+              "station_mm": 6.0
+            },
+            {
+              "force_N": -2.3476,
+              "station_mm": 12.1
+            },
+            {
+              "force_N": -1.6276,
+              "station_mm": 12.9
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 6.204,
+      "secant_between_um": [
+        20,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 1.9,
+          "contacts": [
+            {
+              "force_N": 0.0087,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 5.6,
+          "contacts": [
+            {
+              "force_N": 0.0262,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 9.4,
+          "contacts": [
+            {
+              "force_N": 0.0437,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 20.4,
+          "contacts": [
+            {
+              "force_N": 0.1296,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0191,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 34.4,
+          "contacts": [
+            {
+              "force_N": 0.293,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0731,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.464,
+      "secant_between_um": [
+        30,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.1,
+          "contacts": [
+            {
+              "force_N": 0.0006,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 2.0,
+          "contacts": [
+            {
+              "force_N": 0.0093,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 5.7,
+          "contacts": [
+            {
+              "force_N": 0.0268,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 9.5,
+          "contacts": [
+            {
+              "force_N": 0.0443,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 20.7,
+          "contacts": [
+            {
+              "force_N": 0.1345,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.021,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 34.7,
+          "contacts": [
+            {
+              "force_N": 0.2979,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.075,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.461,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 1.9,
+          "contacts": [
+            {
+              "force_N": 0.0087,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 3.7,
+          "contacts": [
+            {
+              "force_N": 0.0175,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 7.5,
+          "contacts": [
+            {
+              "force_N": 0.035,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 11.2,
+          "contacts": [
+            {
+              "force_N": 0.0525,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 24.7,
+          "contacts": [
+            {
+              "force_N": 0.2017,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0476,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 38.7,
+          "contacts": [
+            {
+              "force_N": 0.365,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.1017,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.491,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 1.7,
+          "contacts": [
+            {
+              "force_N": 0.0082,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 3.6,
+          "contacts": [
+            {
+              "force_N": 0.0169,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 5.5,
+          "contacts": [
+            {
+              "force_N": 0.0257,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 9.2,
+          "contacts": [
+            {
+              "force_N": 0.0432,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 14.7,
+          "contacts": [
+            {
+              "force_N": 0.1057,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0203,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 28.8,
+          "contacts": [
+            {
+              "force_N": 0.269,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0744,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 42.8,
+          "contacts": [
+            {
+              "force_N": 0.4323,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.1284,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.513,
+      "secant_between_um": [
+        20,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "play": "zero interference",
+      "radial_play_um": 25.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 1.7,
+          "contacts": [
+            {
+              "force_N": 0.0076,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 5.1,
+          "contacts": [
+            {
+              "force_N": 0.0228,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 8.5,
+          "contacts": [
+            {
+              "force_N": 0.038,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 18.2,
+          "contacts": [
+            {
+              "force_N": 0.1059,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0138,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 31.1,
+          "contacts": [
+            {
+              "force_N": 0.2526,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0642,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.42,
+      "secant_between_um": [
+        30,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "play": "interference window floor",
+      "radial_play_um": 24.66,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.1,
+          "contacts": [
+            {
+              "force_N": 0.0005,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 1.8,
+          "contacts": [
+            {
+              "force_N": 0.0081,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 5.2,
+          "contacts": [
+            {
+              "force_N": 0.0233,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 8.6,
+          "contacts": [
+            {
+              "force_N": 0.0386,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 18.5,
+          "contacts": [
+            {
+              "force_N": 0.1104,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0157,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 31.4,
+          "contacts": [
+            {
+              "force_N": 0.2572,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.066,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.417,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "play": "interference window mid-window",
+      "radial_play_um": 20.0,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 1.7,
+          "contacts": [
+            {
+              "force_N": 0.0076,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 3.4,
+          "contacts": [
+            {
+              "force_N": 0.0152,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 6.8,
+          "contacts": [
+            {
+              "force_N": 0.0304,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 10.2,
+          "contacts": [
+            {
+              "force_N": 0.0456,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 22.3,
+          "contacts": [
+            {
+              "force_N": 0.1728,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0413,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 35.2,
+          "contacts": [
+            {
+              "force_N": 0.3195,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0916,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.447,
+      "secant_between_um": [
+        25,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "play": "interference window ceiling",
+      "radial_play_um": 15.33,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 1.6,
+          "contacts": [
+            {
+              "force_N": 0.0071,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 3.3,
+          "contacts": [
+            {
+              "force_N": 0.0147,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 5.0,
+          "contacts": [
+            {
+              "force_N": 0.0223,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 8.4,
+          "contacts": [
+            {
+              "force_N": 0.0375,
+              "station_mm": 22.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 13.3,
+          "contacts": [
+            {
+              "force_N": 0.0885,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0165,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 26.1,
+          "contacts": [
+            {
+              "force_N": 0.2352,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.0669,
+              "station_mm": 39.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 39.0,
+          "contacts": [
+            {
+              "force_N": 0.382,
+              "station_mm": 22.0
+            },
+            {
+              "force_N": -0.1173,
+              "station_mm": 39.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.468,
+      "secant_between_um": [
+        20,
+        100
+      ]
+    }
+  ],
+  "reversing_drag_on_offset": [
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "offset_um": 0,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 8.04,
+      "sigma_amplitude_MPa": 8.04
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "offset_um": 10,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 11.26,
+      "sigma_amplitude_MPa": 8.04
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "offset_um": 25,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 16.08,
+      "sigma_amplitude_MPa": 8.04
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "offset_um": 50,
+      "sigma_no_drag_MPa": 127.98,
+      "sigma_peak_under_reversing_drag_MPa": 139.89,
+      "sigma_amplitude_MPa": 5.96
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "offset_um": 100,
+      "sigma_no_drag_MPa": 424.87,
+      "sigma_peak_under_reversing_drag_MPa": 424.93,
+      "sigma_amplitude_MPa": 1.25
+    },
+    {
+      "geometry": "lock window, near end",
+      "offset_um": 0,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 2.88,
+      "sigma_amplitude_MPa": 2.88
+    },
+    {
+      "geometry": "lock window, near end",
+      "offset_um": 10,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 4.03,
+      "sigma_amplitude_MPa": 2.88
+    },
+    {
+      "geometry": "lock window, near end",
+      "offset_um": 25,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 5.75,
+      "sigma_amplitude_MPa": 2.88
+    },
+    {
+      "geometry": "lock window, near end",
+      "offset_um": 50,
+      "sigma_no_drag_MPa": 9.35,
+      "sigma_peak_under_reversing_drag_MPa": 14.03,
+      "sigma_amplitude_MPa": 2.7
+    },
+    {
+      "geometry": "lock window, near end",
+      "offset_um": 100,
+      "sigma_no_drag_MPa": 34.38,
+      "sigma_peak_under_reversing_drag_MPa": 42.08,
+      "sigma_amplitude_MPa": 3.85
+    },
+    {
+      "geometry": "lock window, far end",
+      "offset_um": 0,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 2.73,
+      "sigma_amplitude_MPa": 2.73
+    },
+    {
+      "geometry": "lock window, far end",
+      "offset_um": 10,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 3.82,
+      "sigma_amplitude_MPa": 2.73
+    },
+    {
+      "geometry": "lock window, far end",
+      "offset_um": 25,
+      "sigma_no_drag_MPa": 0.0,
+      "sigma_peak_under_reversing_drag_MPa": 5.46,
+      "sigma_amplitude_MPa": 2.73
+    },
+    {
+      "geometry": "lock window, far end",
+      "offset_um": 50,
+      "sigma_no_drag_MPa": 8.52,
+      "sigma_peak_under_reversing_drag_MPa": 12.88,
+      "sigma_amplitude_MPa": 2.35
+    },
+    {
+      "geometry": "lock window, far end",
+      "offset_um": 100,
+      "sigma_no_drag_MPa": 31.12,
+      "sigma_peak_under_reversing_drag_MPa": 38.64,
+      "sigma_amplitude_MPa": 3.76
+    }
+  ],
+  "pad_moment_at_rod_radius": [
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "eccentricity_mm": 0.5,
+      "sigma_root_MPa": 5.56
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "eccentricity_mm": -0.5,
+      "sigma_root_MPa": 10.52
+    },
+    {
+      "geometry": "lock window, near end",
+      "eccentricity_mm": 0.5,
+      "sigma_root_MPa": 0.39
+    },
+    {
+      "geometry": "lock window, near end",
+      "eccentricity_mm": -0.5,
+      "sigma_root_MPa": 5.37
+    },
+    {
+      "geometry": "lock window, far end",
+      "eccentricity_mm": 0.5,
+      "sigma_root_MPa": 0.24
+    },
+    {
+      "geometry": "lock window, far end",
+      "eccentricity_mm": -0.5,
+      "sigma_root_MPa": 5.22
+    }
+  ],
+  "tilt_static_shipped_branch": [
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "pivot": "root",
+      "pivot_mm": 0.0,
+      "tilt_taken_up_by_play_mrad": 1.087,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 6.8
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 14.2
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 37.0
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 118.7
+        }
+      ]
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "pivot": "mouth",
+      "pivot_mm": 6.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 2.9
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 8.4
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 19.3
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 41.2
+        }
+      ]
+    },
+    {
+      "geometry": "script 55 placeholder (HW.8)",
+      "pivot": "pad plane",
+      "pivot_mm": 23.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 46.5
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 145.7
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 365.2
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 860.1
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "pivot": "root",
+      "pivot_mm": 0.0,
+      "tilt_taken_up_by_play_mrad": 0.658,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 1.5
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 5.9
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 13.2
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 29.9
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 61.4
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "pivot": "mouth",
+      "pivot_mm": 21.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 1.0
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 3.0
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 6.9
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 1.8
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "pivot": "pad plane",
+      "pivot_mm": 38.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 3.4
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 14.7
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 39.1
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 89.4
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "pivot": "root",
+      "pivot_mm": 0.0,
+      "tilt_taken_up_by_play_mrad": 0.641,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 1.5
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 5.9
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 13.2
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 29.0
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 59.0
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "pivot": "mouth",
+      "pivot_mm": 22.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 1.0
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 2.8
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 6.5
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 2.6
+        }
+      ]
+    },
+    {
+      "geometry": "lock window, far end",
+      "pivot": "pad plane",
+      "pivot_mm": 39.0,
+      "tilt_taken_up_by_play_mrad": 1.471,
+      "by_tilt": [
+        {
+          "tilt_mrad": 1.0,
+          "sigma_root_MPa": 0.0
+        },
+        {
+          "tilt_mrad": 2.0,
+          "sigma_root_MPa": 3.1
+        },
+        {
+          "tilt_mrad": 3.0,
+          "sigma_root_MPa": 13.5
+        },
+        {
+          "tilt_mrad": 5.0,
+          "sigma_root_MPa": 36.2
+        },
+        {
+          "tilt_mrad": 9.0,
+          "sigma_root_MPa": 82.7
+        }
+      ]
+    }
+  ],
+  "script55_side_by_side": {
+    "script55_supported_span_sigma_nominal_MPa": 18.33,
+    "script55_supported_span_note": "µ_nominal·F on 55's assumed free span (the 6 mm gap); only 55's worst corner uses the free-shape first contact, through its span optimism",
+    "script55_seam_worst_corner_sigma_MPa": 43.0,
+    "equilibrium_coaxial_cap_MPa_at_worst_mu_bonded": {
+      "script 55 placeholder (HW.8)": 8.04,
+      "lock window, near end": 2.88,
+      "lock window, far end": 2.73
+    }
+  },
+  "summary": "Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush, and the root stress is capped whatever the drag — 8.04 MPa on script 55's placeholder geometry, 2.73–2.88 MPa across the Zone-1 lock window (zero-interference play, bonded member). Script 55 prices that section at 18.33 MPa (supported-span assumption) and 43.0 MPa worst corner. Channel off the root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a secant 5.74 MPa/µm on the placeholder and 0.42–0.46 MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of magnitude. Reversing drag on a static offset, amplitude over the swept offsets — script 55 placeholder (HW.8): up to 8.04 MPa against its cap 8.04 (within it); lock window, near end: up to 3.85 MPa against its cap 2.88 (ABOVE it); lock window, far end: up to 3.76 MPa against its cap 2.73 (ABOVE it). A pogo contact off the rod axis by the rod radius, with the worst drag, gives up to 10.52 MPa on the placeholder and 5.22–5.37 MPa across the lock window — above the drag cap there. The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. No verdict is taken here.",
+  "not_modelled": {
+    "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction; past the play the mouth corner would load the PEEK tube beyond its compressive strength at the larger offsets, so offset stresses are upper bounds",
+    "clamp": "perfect — weld and printed-anode compliance lower every stress",
+    "swept_not_measured": "insertion, play, offset, tilt and pad eccentricity",
+    "mean_stress": "a static offset is a mean stress; no Goodman-type correction; the amplitude of a varying offset needs relative Zone-1<->Zone-3 motion, measured nowhere",
+    "drag_contact_edge": "the drag contact is the flush tube end at the pad-plane exit — ring on ring, the edge form the ≥ 1.0 mm protrusion avoids at the mouth — and no exit radius is specified anywhere; the wall reaction there is the drag minus the touchdown force on every cycle",
+    "peak_moment_section": "in every configuration computed here the root is the peak-moment section",
+    "other": "small deflection, no thermal term, no liner creep, no P-δ from the axial pogo force"
+  }
+}

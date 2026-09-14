@@ -769,6 +769,37 @@ CHECKS += [
 ]
 
 
+# ── HW.34 / HW.23: script 68's table in SUMMARY §HW.34, cell by cell ──
+# ⛔ Every cell is pinned because the ROWS are the message: the same quantity at the insertion placeholder and at
+# the lock window differs by an order of magnitude, so a doc that kept one row current and let another rot would
+# still read as a sweep while having stopped being one.
+_BUS68 = "mechanical/bus_contact_equilibrium.json"
+_BUS68_ROWS = (("30 mm — script 55 placeholder", "script 55 placeholder (HW.8)"),
+               ("15 mm — lock window near end", "lock window, near end"),
+               ("14 mm — lock window far end", "lock window, far end"))
+
+
+def _bus68_cell(k: int) -> str:
+    return r"[^|]*\|" + r"(?: \*\*[\d.]+\*\* \|)" + "{" + str(k) + "}" + r" \*\*" + N + r"\*\* \|"
+
+
+_BUS68_COLUMNS = (
+    ("drag cap", 0.005, lambda d, g: next(r for r in d["drag_coaxial"] if r["geometry"] == g and r["play"] == "zero interference"
+                                          and r["branch"].startswith("PEEK liner"))["by_mu"]["0.5"]["sigma_root_MPa_bonded"]),
+    ("offset secant", 0.005, lambda d, g: next(o for o in d["offset_static_shipped_branch"]
+                                               if o["geometry"] == g and o["play"] == "zero interference")["secant_MPa_per_um"]),
+    ("reversing-drag amplitude", 0.005, lambda d, g: max(r["sigma_amplitude_MPa"] for r in d["reversing_drag_on_offset"] if r["geometry"] == g)),
+    ("off-axis pogo", 0.005, lambda d, g: max(p_["sigma_root_MPa"] for p_ in d["pad_moment_at_rod_radius"] if p_["geometry"] == g)),
+)
+
+CHECKS += [
+    (f"bus contact equilibrium, {col} at {doc_row} → bus_contact_equilibrium.json", SUMMARY,
+     r"\| " + re.escape(doc_row) + _bus68_cell(k), _BUS68, lambda d, g=geo, fn=fn: fn(d, g), tol)
+    for doc_row, geo in _BUS68_ROWS
+    for k, (col, tol, fn) in enumerate(_BUS68_COLUMNS)
+]
+
+
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
