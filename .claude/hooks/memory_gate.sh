@@ -331,7 +331,7 @@ rb_dark() {
 # бамп поруч). Підняття робить обидва нові доми захищеними підлогою так само, як решту.
 # 2026-09-14: 166 → 167 — `project_deep_archival_01a_2026_09_14`. Підняття робить новий дім захищеним
 # підлогою так само, як решту.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-168}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
