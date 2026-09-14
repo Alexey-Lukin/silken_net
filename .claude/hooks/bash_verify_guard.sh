@@ -154,6 +154,21 @@ body with `01_02:177` inside"'
   t "glob: a bare shell glob is legitimate expansion" silent \
     'ls docs/*.md | head'
 
+  # ── short SHA to `gh run list --commit` · both arms ──
+  # The negatives carry the two shapes a loose anchor would deny: the house fix
+  # itself (a `$(git rev-parse …)` substitution) and a `-c <hex>` that belongs to
+  # a NEIGHBOURING statement, where `-c` is not gh's flag at all.
+  t "gh: short SHA to --commit (09-14 relapse)" deny \
+    "gh run list --commit 9434258f --limit 20 --json workflowName,status,conclusion --jq '.[] | .workflowName'"
+  t "gh: short SHA in the --commit= form" deny \
+    'gh run list --commit=23f2e3f6 --limit 5'
+  t "gh: full 40-hex SHA stays silent" silent \
+    'gh run list --commit 23f2e3f636ad7c5aa9b55e43bd134a7236f02f86 --limit 5'
+  t "gh: rev-parse substitution stays silent" silent \
+    'gh run list --commit "$(git rev-parse 9434258f)" --limit 5'
+  t "gh: -c <hex> in a NEIGHBOUR statement stays silent" silent \
+    'gh run list --branch main --limit 5; git log -c 9434258f'
+
   t "smoke: gate into tail warns (rule A)" warn \
     'bin/rspec spec/foo_spec.rb 2>&1 | tail -5'
   t "smoke: \$? after pipe warns (rule B)" warn \
@@ -299,6 +314,30 @@ fi
 _unq=$(printf '%s' "$cmd" | sed -e "s/'[^']*'//g" -e 's/"[^"]*"//g')
 if printf '%s' "$_unq" | grep -qE '(^|[[:space:]])--?[a-zA-Z][a-zA-Z0-9_-]*=[^[:space:];&|`$()]*[*?[][^[:space:];&|`$()]*'; then
   jq -nc --arg r 'An unquoted glob inside `--flag=…` (e.g. `--include=*.rb`) is expanded by zsh before the program runs, and a glob that matches nothing is FATAL here — unlike bash, the command dies with «no matches found» and nothing executes. When it DOES match (the repo root has nine *.md files), it is worse: grep receives `--include=CLAUDE.md` and the rest as extra search targets, so you get exit 0 and a silently wrong scope. Quote it: --include="*.rb". Measured: 131 such calls in this corpus, 121 killed outright.' \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
+fi
+
+# ── BLOCK · a SHORT sha handed to `gh run list --commit` ─────────────────────
+# `--commit` filters on the FULL 40-character SHA. A short one matches nothing,
+# and gh answers with an EMPTY list and exit 0 — verified live 2026-09-14:
+# `--commit 23f2e3f6` gave 0 runs, the same commit's full SHA gave 5. So the
+# output has no symptom: an empty list reads as «CI has not started yet», and in
+# a wait-until-every-run-completed loop it reads as «all done» at once.
+#
+# Measured 2026-09-14 over 177 session transcripts: 23 distinct calls hand
+# `--commit` a short hex literal (22 of them eight characters) against 12 that
+# pass a full SHA or a substitution — the short form is the HABIT, not a slip.
+# Memory recorded the lesson 2026-08-17 (the empty set read as «CI did not see
+# the push») and it relapsed 2026-09-14 in a CI waiter that exited over the
+# empty set: a journal does not fire at the moment of typing, this does.
+#
+# A BLOCK for the rg reason above: the failure is in the OUTPUT the caller is
+# about to believe, never in the exit code. Segment-scoped (`[^;&|]*`), so a
+# `-c <hex>` in a NEIGHBOURING statement (`git log -c …`) stays silent, and a
+# 40-hex literal or a `$(…)` / `"$VAR"` value can never match.
+if printf '%s' "$cmd" | grep -qE "(^|[;&|(])[[:space:]]*gh[[:space:]]+run[[:space:]]+list([[:space:]][^;&|]*)?[[:space:]](--commit|-c)([[:space:]]+|=)[\"']?[0-9a-f]{4,39}([\"'[:space:];&|)]|\$)"; then
+  jq -nc --arg r '`gh run list --commit` filters on the FULL 40-character SHA: a short SHA matches NOTHING, and gh returns an empty list with exit 0 (verified here: `--commit 23f2e3f6` gave 0 runs, the full SHA of the same commit gave 5). The empty list has no symptom — it reads as «CI has not started», and a wait-until-all-completed loop ends at once as «all done». Pass the full SHA: --commit "$(git rev-parse <sha>)".' \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
   exit 0
 fi
