@@ -81,6 +81,14 @@ internal sealed record GeometryMetrics
     // Radome measurements (Деталь 4, 02_01 §5.2, null for non-radome parts). See Validation.MeasureRadome.
     public double? HollowFraction { get; init; }            // 1 − solidVol/solidDomeVol; a proper shell ≫ 0.5 (hollow IS intended, gotcha #9 inverted)
     public double? BellRiseMm { get; init; }                // dome top over the body (bbox Z − cavity height) — anti-overgrowth shield (≥3, 01_04 §5.5)
+    // Rim boss (Radome.Boss*, 00_07 HW.33): the cavity Ø at the rim after the boss — a CEILING for the board
+    // (every term a minimum), CEM-derived — and the MEASURED solidity of the seal land over the rim face: a
+    // slab of the land annulus ∩ the rendered part, as a fraction of the same slab's own voxel volume. ≈1 ⇒ a
+    // flat rim with a continuous land; the retired counter-groove, or an entry slot reaching the land, reads
+    // below it. This is what «обід плоский, земля нерозривна» MEASURES, where the xUnit pins only derive it.
+    public double? RimCavityDiameterMm { get; init; }
+    public double? SealLandSolidFraction { get; init; }       // the whole land (boss present, rim flat)
+    public double? SealLandEdgeSolidFraction { get; init; }   // a two-voxel strip just inside the land's outer edge — where an entry slot would bite first
 
     // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4, null for non-assembly). See MeasureAssembly.
     public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (Z-stack reconcile, HW.8)
@@ -336,11 +344,43 @@ internal static class Validation
         double dSolidDome = (Math.PI * fR * fR * cem.CavityHeightMm) + ((2.0 / 3.0) * Math.PI * fR * fR * fR);
         double dHollow = dSolidDome > 0 ? 1.0 - (oBase.SolidVolumeMm3 / dSolidDome) : 0.0;
 
+        // Seal-land continuity, MEASURED on the render (00_07 HW.33 branch (а)): a slab of a land annulus — a few
+        // voxels tall so the slab itself voxelises — intersected with the part, against the slab's OWN voxel
+        // volume (the same grid on both sides, so the ratio is not fooled by how a thin body renders). TWO slabs,
+        // because one is blind to the failure the other exists for: the WHOLE land (shrunk a voxel each side so
+        // the boss's staircase does not count) says the boss is there and the rim is flat — the retired 0.9 mm
+        // counter-groove read ~0 over its radii — but an entry slot biting 0.2 mm into the land's outer edge moves
+        // it by under 1 %; the outer EDGE strip (the two voxels just inside the land's outer radius, one voxel of
+        // stand-off from the socket clip) reads that same bite as ~8 %, and the no-boss geometry as ~50 %. Both are
+        // gated in `verify` at 95 %. ⚠ Measured 2026-09-14: this strip read 94 % on the CORRECT geometry while the
+        // boss annulus ended exactly at the inner wall — a SEAM of sub-voxel voids where two touching voxel bodies
+        // were unioned, not a cut; the boss now overlaps the wall (Radome.Build step 3) and the seam is gone.
+        float fV = cem.VoxelSizeMm;
+        float fLandIn = Radome.SealLandInnerRMm(cem) + fV;
+        float fLandOut = Radome.SealLandOuterRMm(cem) - fV;
+        double dLand = SlabSolidFraction(voxRadome, fLandIn, fLandOut, 5f * fV);
+        double dEdge = SlabSolidFraction(voxRadome, fLandOut - (2f * fV), fLandOut, 5f * fV);
+
         return oBase with
         {
             HollowFraction = dHollow,
             BellRiseMm = oBase.BboxSizeMm[2] - cem.CavityHeightMm,
+            RimCavityDiameterMm = Radome.RimCavityDiameterMm(cem),
+            SealLandSolidFraction = dLand,
+            SealLandEdgeSolidFraction = dEdge,
         };
+    }
+
+    // Solid fraction of the part inside an annular slab [rIn, rOut] × z ∈ [0, h] at the rim, measured against the
+    // slab's own voxel volume — the same grid on both sides of the ratio.
+    private static double SlabSolidFraction(Voxels voxPart, float fRIn, float fROut, float fH)
+    {
+        Voxels voxSlab = new BaseCylinder(new LocalFrame(Vector3.Zero), fH, fROut).voxConstruct();
+        voxSlab.BoolSubtract(new BaseCylinder(new LocalFrame(Vector3.Zero), fH, fRIn).voxConstruct());
+        voxSlab.CalculateProperties(out float fFull, out BBox3 _);
+        voxSlab.BoolIntersect(voxPart);
+        voxSlab.CalculateProperties(out float fSolid, out BBox3 _);
+        return fFull > 0f ? fSolid / fFull : 0.0;
     }
 
     // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4): the base measurement on the MERGED part +

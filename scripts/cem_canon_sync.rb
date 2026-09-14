@@ -53,8 +53,11 @@ def dig_num(hash, path) = path.split(".").reduce(hash) { |acc, k| acc.fetch(k) }
 
 C1 = "01_01_Coaxial_Gyroid_Topology_and_PEEK.md"
 C4 = "01_04_CODIT_and_Xylemointegration.md"
+C22 = "02_02_Blind_Mate_Pogo_Pin_Interface.md"
 
-# [label, cem-file, json-path, canon-doc, /regex ONE capture/, mode, tol]
+# [label, cem-file, json-path, canon-doc, /regex ONE capture/, mode, tol, (scale = 1)]
+# `scale` multiplies the CEM value before the comparison — the gland squeeze is a FRACTION in the manifest and a
+# PERCENT in canon prose, and neither home should have to spell the other's unit.
 CHECKS = [
   # ── §4.3 mechanical-lock barb working-point (over-specified tooth: pin h + α/β, base is derived) ──
   [ "barb height h", "mechanical_lock.zone1.json", "barb_height_mm",
@@ -83,18 +86,26 @@ CHECKS = [
   [ "lock groove width (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_width_mm",
    C1, /Ø11 → width ≈ ([\d.]+) mm × depth/, :eq, 0.001 ],
   [ "lock groove depth (§4.3 B DIN-471 Ø11)", "mechanical_lock.zone1.json", "groove_depth_mm",
-   C1, /width ≈ 1\.1 mm × depth ≈ ([\d.]+) mm/, :eq, 0.001 ]
+   C1, /width ≈ 1\.1 mm × depth ≈ ([\d.]+) mm/, :eq, 0.001 ],
+  # ── 02_02 §3.2 O-ring gland (branch (а), applied 2026-09-14): the cord and the ratified squeeze the flange
+  #    groove is DERIVED from. Pinned on the flange (it cuts the groove); the radome's copy is pinned equal to it
+  #    by xUnit (RadomeTests), so one canon anchor covers both halves. The gland FILL is deliberately NOT pinned:
+  #    it is an open ⚖️ with no canon number (00_07 HW.33) — canon would only be quoting the manifest back. ──
+  [ "O-ring cord CS (§3.2)", "cathode_flange.json", "o_ring.cs_mm",
+   C22, /Переріз \(CS\) \| \*\*([\d.]+) мм\*\*/, :eq, 0.001 ],
+  [ "O-ring ratified squeeze nominal (§3.2 mirror of §3.5)", "cathode_flange.json", "o_ring.squeeze",
+   C22, /Ступінь стиснення \| [^|]*номінал \*\*([\d.]+) %\*\*/, :eq, 0.01, 100.0 ]
 ]
 
 failures = []
-CHECKS.each do |label, cem_file, path, doc_file, regex, mode, tol|
+CHECKS.each do |label, cem_file, path, doc_file, regex, mode, tol, scale|
   hits = load_canon(doc_file).scan(regex).flatten
   if hits.size != 1
     failures << "[#{label}] canon anchor matched #{hits.size} (need exactly 1) — reworded? regex=#{regex.source}"
     next
   end
   canon_val = hits[0].to_f
-  cem_val = dig_num(load_cem(cem_file), path)
+  cem_val = dig_num(load_cem(cem_file), path) * (scale || 1.0)
   ok = mode == :ge ? cem_val >= canon_val - tol : (cem_val - canon_val).abs <= tol
   next if ok
 

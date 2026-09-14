@@ -462,6 +462,17 @@ internal static class Drawing
         b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"iso ring ≥{N(cem.IsolationRingWidthMm)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
         b.AppendLine(Text(frontCx + lugOut - rLug, cy - lugOut - rLug - 3, $"{cem.BayonetLugs}× bayonet lug", 9, "middle", Dim));
 
+        // O-ring groove — the capsule's ONE face seal (02_02 §3.2/§3.5, 00_07 HW.33 branch (а), applied
+        // 2026-09-14): two circles on the pogo face at the DERIVED radii (CathodeFlange.ORingGroove*, never a
+        // literal) + a notch on the side view's top face. Its depth TOLERANCE is a `tolerances.features` row the
+        // CEM leaves NOT SPECIFIED on purpose — the open shop question — so it prints as loud absence below.
+        double grIn = SilkenCad.CathodeFlange.ORingGrooveInnerRMm(cem), grOut = SilkenCad.CathodeFlange.ORingGrooveOuterRMm(cem);
+        double grDepth = SilkenCad.CathodeFlange.ORingGrooveDepthMm(cem);
+        b.AppendLine(Circle(frontCx, cy, grOut * Px, Stroke, 0.8));
+        b.AppendLine(Circle(frontCx, cy, grIn * Px, Stroke, 0.8));
+        b.AppendLine(Text(frontCx, cy + rFlange + 60,
+            $"O-ring groove Ø{N(2 * grOut)}/Ø{N(2 * grIn)} × {N(grDepth)} deep (face seal, 02_02 §3.2)", 9, "middle", Dim));
+
         // SIDE — flange (thick × Ø) ↦ shank (Ø9 × L), bore axis, bayonet lug edge-on
         double fTop = cy - rFlange, fBot = cy + rFlange, shTop = cy - shD / 2, shBot = cy + shD / 2;
         double lugT = cem.LugProtrusionMm * Px;
@@ -470,6 +481,19 @@ internal static class Drawing
         b.AppendLine(Rect(sideX, fTop - lugT, t, lugT, Stroke, 0.8));        // lug protrusion top
         b.AppendLine(Rect(sideX, fBot, t, lugT, Stroke, 0.8));              // lug protrusion bottom
         b.AppendLine(Line(sideX, cy, sideX + t + shL, cy, Stroke, 0.4, "6 3"));   // bore axis
+        // The groove notch, cut into the pogo face (the LEFT edge of the flange rectangle — the shank is to the right)
+        // at ±[groove inner, groove outer] off the axis, `depth` into the disc: a real cut, drawn as three lines each.
+        double gd = grDepth * Px;
+        foreach (double sgn in new[] { -1.0, 1.0 })
+        {
+            double y0 = cy + sgn * grOut * Px, y1 = cy + sgn * grIn * Px;
+            b.AppendLine(Line(sideX, y0, sideX + gd, y0, Stroke, 0.8));
+            b.AppendLine(Line(sideX + gd, y0, sideX + gd, y1, Stroke, 0.8));
+            b.AppendLine(Line(sideX + gd, y1, sideX, y1, Stroke, 0.8));
+        }
+        // The notch's own label rides ABOVE the side view (the row under it is the front view's groove line — two
+        // centred labels 230 px apart on one baseline overlapped, measured 2026-09-14 on the rendered sheet).
+        b.AppendLine(Text(sideX, fTop - lugT - 26, $"groove {N(grDepth)} deep × {N(grOut - grIn)} wide (derived, notes 5)", 9, "start", Dim));
         b.AppendLine(Text(sideX + (t + shL) / 2, cy + rFlange + 46, "SIDE (section)", 10, "middle", "#555"));
         HDim(b, sideX, sideX + t, fTop - lugT - 12, $"{N(cem.FlangeThicknessMm)}", fTop - lugT);
         HDim(b, sideX + t, sideX + t + shL, shBot + 22, $"{N(cem.ShankLengthMm)}", shBot);
@@ -533,6 +557,13 @@ internal static class Drawing
         }
         DxfHDim(doc, dmn, cx - rF, cx + rF, cy - rF - 5, $"%%c{N(cem.FlangeDiameterMm)}");
         doc.Entities.Add(new Text("FRONT (pogo face)", new Vector2(cx - rF / 2, cy - rF - 11), 2.0) { Layer = nte });
+        // O-ring groove (the ONE face seal, 00_07 HW.33) — GEOMETRY layer: unlike the isolation ring above, this
+        // IS a contour to machine, at the derived radii (CathodeFlange.ORingGroove*).
+        double grIn = SilkenCad.CathodeFlange.ORingGrooveInnerRMm(cem), grOut = SilkenCad.CathodeFlange.ORingGrooveOuterRMm(cem);
+        double grD = SilkenCad.CathodeFlange.ORingGrooveDepthMm(cem);
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), grOut) { Layer = geo });
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), grIn) { Layer = geo });
+        doc.Entities.Add(new Text(DxfSafe($"O-ring groove %%c{N(2 * grOut)}/%%c{N(2 * grIn)} x {N(grD)} deep (face seal, 02_02 3.2)"), new Vector2(cx - rF, cy - rF - 14.5), 1.6) { Layer = nte });
 
         // SIDE — flange ↦ shank T-profile (axis horizontal) + bore axis
         double sx = rF + 16;
@@ -541,6 +572,13 @@ internal static class Drawing
         var sh = new[] { new Vector2(sx + t, cy - shD / 2), new Vector2(sx + t + shL, cy - shD / 2), new Vector2(sx + t + shL, cy + shD / 2), new Vector2(sx + t, cy + shD / 2) };
         for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(sh[i], sh[(i + 1) % 4]) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(sx, cy), new Vector2(sx + t + shL, cy)) { Layer = geo });
+        // The groove notch on the pogo face (x = sx is the top face; the shank is to the right), ±[grIn, grOut] off
+        // the axis, grD deep — real geometry, three lines each, like the lock sheet's DIN-471 notch.
+        foreach (double sgn in new[] { -1.0, 1.0 })
+        {
+            var notch = new[] { new Vector2(sx, cy + sgn * grOut), new Vector2(sx + grD, cy + sgn * grOut), new Vector2(sx + grD, cy + sgn * grIn), new Vector2(sx, cy + sgn * grIn) };
+            for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(notch[i], notch[i + 1]) { Layer = geo });
+        }
         DxfHDim(doc, dmn, sx + t, sx + t + shL, cy - shD / 2 - 5, N(cem.ShankLengthMm));
         DxfHDim(doc, dmn, sx, sx + t, cy + rF + 4, N(cem.FlangeThicknessMm));
         doc.Entities.Add(new Text("SIDE", new Vector2(sx, cy - rF - 11), 2.0) { Layer = nte });

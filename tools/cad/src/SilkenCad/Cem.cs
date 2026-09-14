@@ -267,6 +267,30 @@ internal sealed record MechanicalLockCem
     public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ NOT SPECIFIED IN CEM per field)
 }
 
+// The ONE O-ring face seal between the flange top face and the radome rim (02_02 §3.2 / §3.5; ⚖️ 2026-09-10,
+// 00_07 HW.33 branch (а), APPLIED 2026-09-14). Carried on BOTH parts and pinned equal by xUnit (as the lug
+// radius is): the flange cuts its groove from it, the radome sizes its seal land from it. Depth and width are
+// DERIVED here and stored nowhere, so the gland cannot drift from its inputs.
+// 🔗 C#↔Python crossing, EXPLICIT: the same formula is `gland_verdict` in
+//    tools/in_silico/scripts/52_z_stack_tolerance.py, which READS these fields off the manifests at runtime and
+//    refuses to run if they differ from its own constants; RadomeTests pins the derived values here against that
+//    script's cache (`cache/mechanical/z_stack_tolerance.json` §gland_geometry / §applied_gland) — both directions.
+internal sealed record ORingGlandCem
+{
+    public float CsMm { get; init; } = 1.78f;           // cord section, AS568 W .070" (02_02 §3.2)
+    // Ratified nominal squeeze (⚖️ 2026-09-10): the centre of the 19–30 % intersection of industry practice
+    // (15–30 %) and the Parker face-seal window (19–32 %), 02_02 §3.5. A FRACTION, not a percent.
+    public float Squeeze { get; init; } = 0.245f;
+    // Gland fill ceiling = ring section / groove section. ⚖️ OPEN (00_07 HW.33): designed to 80 % — the
+    // industry rule script 52 cites (a groove ~25 % larger than the ring) — until the verdict; raising it to
+    // 85 / 90 % is the cheapest lever on the rim-cavity ceiling (+0.27 / +0.52 mm Ø) and is NOT taken here.
+    public float GlandFill { get; init; } = 0.80f;
+
+    public float DepthMm => CsMm * (1f - Squeeze);                    // 1.344 at 24.5 %
+    public float RingAreaMm2 => MathF.PI / 4f * CsMm * CsMm;           // the section the ring displaces (2.489)
+    public float WidthMm => RingAreaMm2 / (GlandFill * DepthMm);        // 2.315 at 80 % fill
+}
+
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end: a SOLID Ti
 // flange (Ø25 frozen) on a barbed shank that press-fits into the PEEK Zone-2 sleeve. Top face = pogo-pad
 // plane (centre GND bus + outer V+, Hard Gold — coating, NOT geometry); the side/perimeter is the cathode
@@ -306,19 +330,21 @@ internal sealed record CathodeFlangeCem
     public int BayonetLugs { get; init; } = 3;
     public float LugProtrusionMm { get; init; } = 2f;      // radial protrusion beyond the flange rim
     public float LugRadiusMm { get; init; } = 1.5f;        // pin radius
+    // Socket running clearance over the lug — the RADOME's socket field, mirrored here because the groove
+    // below is positioned off the socket band (`lug radius + slot clearance`) and keeps one slot clearance of
+    // seal land on each side, i.e. off the radome's radial layout (Radome.SealLand*). Pinned equal to
+    // RadomeCem.SlotClearanceMm by xUnit, as the lug radius already is. No canon ground (00_07 HW.48 → HW.33).
+    public float SlotClearanceMm { get; init; } = 0.3f;
 
-    // O-ring groove on the flange TOP (capsule-side) face, CS 1.78 (02_02 §3.2). NOT the
-    // underside: there is no elastomer under the flange (00_07 HW.33).
-    // ⛔ THE VALUE BELOW IS SUPERSEDED AND STILL SHIPPED. ⚖️ 2026-09-10 ratified ONE groove in
-    //    the flange at 1.344 mm (= CS × (1 − 0.245)) against a FLAT radome rim. This default is
-    //    still 0.9, and Radome.cs still cuts the opposing groove, so the shipped pair gives
-    //    0.9 + 0.9 = 1.8 against a 1.78 cord — a squeeze of −1.1 %, i.e. it does not seal at all.
-    //    This comment said "mates the Radome RIM groove" until 2026-09-11, which asserted the very
-    //    counter-groove the verdict removed. Applying the verdict is an open leg (00_07 HW.33);
-    //    it is a CHAIN change, not a number: with the rim as a hard datum the bayonet stops
-    //    setting Z, so script 52 is rebuilt rather than re-run.
-    public float ORingGrooveDepthMm { get; init; } = 0.9f;
-    public float ORingGrooveWidthMm { get; init; } = 2.0f;
+    // The ONE O-ring groove (⚖️ 2026-09-10, applied 2026-09-14, 00_07 HW.33 branch (а)): a face-seal groove on
+    // the flange TOP (capsule-side) face, closed by the FLAT rim of the radome's seal land. NOT the underside:
+    // there is no elastomer under the flange. Depth and width are DERIVED from this spec
+    // (CathodeFlange.ORingGroove*) — depth = CS·(1 − squeeze) = 1.344, width = ring area / (fill · depth) = 2.315
+    // at the 80 % fill the open ⚖️ designs to — and so is the radial position (inside the radome's seal land,
+    // one slot clearance of land each side). Nothing about the groove is stored, so nothing can go stale.
+    // 🔑 With the rim as a HARD DATUM on this face the squeeze is set by this depth ALONE — the bayonet no
+    //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now.
+    public ORingGlandCem ORing { get; init; } = new();
 
     // Pogo-pad features (02_02 §1.2) — the central GND bus pad (Hard Gold ENIG = the Ti↔Au galvanic-trap
     // fix) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
@@ -336,7 +362,9 @@ internal sealed record CathodeFlangeCem
 // Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
 // (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge; ⛔ neither field DRIVES the geometry —
 // the cap rise and edge radius are both the dome radius, and these two are floor-checks only) + an
-// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a bayonet socket (L-slot mating the Деталь-3 lugs) + a rim O-ring groove (superseded, see the field). The cathode is NOT
+// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a LOCAL INTERNAL RIM BOSS whose
+// outer band carries the bayonet socket (L-slot mating the Деталь-3 lugs) and whose inner band is the seal land
+// that closes the flange's single O-ring groove — the rim itself is FLAT (Radome.cs). The cathode is NOT
 // sealed under the dome — it breathes O₂ from the SIDE/perimeter (02_02 §1.2; gas-phase 5–10× vs dissolved).
 internal sealed record RadomeCem
 {
@@ -355,12 +383,12 @@ internal sealed record RadomeCem
     public float SlotClearanceMm { get; init; } = 0.3f;    // socket slot clearance over the lug
     public float LockGrooveZMm { get; init; } = 3.5f;      // z of the circumferential lock groove from the rim
 
-    // O-ring groove on the rim, CS 1.78 (02_02 §3.2); width ≤ wall (fits the 2 mm wall).
-    // ⛔ SUPERSEDED AND STILL SHIPPED — the twin of CathodeFlangeCem's note: ⚖️ 2026-09-10 put ONE groove in
-    //    the flange against a FLAT rim (01_01 §3 step 8), so this field should not exist on the shipped part.
-    //    Removing the cut is the open application leg (00_07 HW.33), a chain change for script 52.
-    public float ORingGrooveDepthMm { get; init; } = 0.9f;
-    public float ORingGrooveWidthMm { get; init; } = 1.0f;
+    // The seal this rim closes (⚖️ 2026-09-10, applied 2026-09-14, 00_07 HW.33): the O-ring sits in the FLANGE's
+    // groove and this rim is FLAT — the counter-groove that used to be cut here is gone, not shallower. The spec
+    // is carried on both parts (pinned equal by xUnit, like the lug radius) because the radome's SEAL LAND width is
+    // derived from it: seal band = gland width + 2·slot clearance, and the local internal rim boss that carries it
+    // (Radome.Boss*) is what narrows the rim cavity to the ≤ Ø15.57 ceiling handed to the board layout (HW.9).
+    public ORingGlandCem ORing { get; init; } = new();
 
     // Added 2026-09-11 with AnchorCem's (00_07 HW.1) — same silent absence: unmapped members are dropped,
     // so a `notes` block here would have parsed and disappeared. `draw radome` does not exist yet.
@@ -409,8 +437,11 @@ internal sealed record AnchorAssemblyCem
     // Ø(lug-tip + clearance) · inboard = flange lugs kept within Ø25 (protrusion clamped). asis is the audit.
     public string MateStrategy { get; init; } = "asis";
 
-    // Z-stack inputs (script 52): O-ring rim↔Zone3 gap target + RF antenna↔Ti floor (02_01 §5.3).
-    public float ORingGapMm { get; init; } = 1.424f;      // GAP_OR = ORING_CS(1.78)·(1−0.20), script 52
+    // Z-stack input (script 52): the RF antenna↔Ti floor (02_01 §5.3). ⛔ The O-ring rim↔Zone-3 gap that used
+    // to sit beside it (`o_ring_gap_mm` 1.424 = CS·(1 − 0.20), a script-52 mirror) is GONE, not zeroed: under
+    // branch (а) (⚖️ 2026-09-10, applied 2026-09-14) the radome rim is a HARD DATUM on the flange top face and
+    // the squeeze is the flange groove's own derived depth (CathodeFlangeCem.ORing), so a face gap is not a
+    // parameter of the mate any more — Assembly.BayonetZMismatchMm / RequiredLugZMm carry no gap term.
     // ⛔ This 12 is OUR number, not canon's — do NOT "correct" a measured 8.0 upward to meet it.
     // 02_01 §5.3's normative table asks for ≥ 8 mm (10-15 desirable), grounds it on λ/40 = 8.6, and
     // makes HFSS mandatory below 10. Its only 12 is the OUTCOME of a proposed two-deck board stack

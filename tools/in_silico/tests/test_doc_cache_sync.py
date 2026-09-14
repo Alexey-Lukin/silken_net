@@ -402,6 +402,63 @@ CHECKS = [
         "mechanical/z_stack_tolerance.json",
         lambda d: d["depth_tolerance_budget"]["total_gap_budget_half_width_mm"] * 1000.0, 1.0,
     ),
+    # ── HW.33 branch (а) APPLIED (2026-09-14): the numbers 02_02 §3.5 quotes from the rebuilt O-ring chain ──
+    # Every one moves with an input nobody re-reads in prose: the asked depth tolerance behind the band and the
+    # flatness leftover, and the socket band / gland fill behind the applied radii and the rim contact area.
+    (
+        "residual O-ring band on the applied one-term chain → z_stack_tolerance.json §parker_face_reconciliation",
+        BLIND_MATE, rf"залишкова смуга \*\*±{N} в\.п\.\*\*",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["parker_face_reconciliation"]["residual_half_width_pct_points"], 0.005,
+    ),
+    (
+        "applied squeeze band, low edge → z_stack_tolerance.json §parker_face_reconciliation",
+        BLIND_MATE, rf"залишкова смуга \*\*±[\d.]+ в\.п\.\*\* → \*\*{N}\*\*–",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["parker_face_reconciliation"]["band_at_recommended_pct"][0], 0.05,
+    ),
+    (
+        "applied squeeze band, high edge → z_stack_tolerance.json §parker_face_reconciliation",
+        BLIND_MATE, rf"→ \*\*[\d.]+\*\*–\*\*{N} %\*\* усередині обох вікон",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["parker_face_reconciliation"]["band_at_recommended_pct"][1], 0.05,
+    ),
+    (
+        "flatness leftover after the asked depth tolerance → z_stack_tolerance.json §depth_tolerance_budget",
+        BLIND_MATE, rf"лишає \*\*±{N} мкм\*\* \(RSS\) на площинність",
+        "mechanical/z_stack_tolerance.json",
+        lambda d: d["depth_tolerance_budget"]["chain_as_modelled"]["flatness_left_rss_mm"] * 1000.0, 1.0,
+    ),
+    (
+        "seal land inner radius → z_stack_tolerance.json §applied_gland",
+        BLIND_MATE, rf"земля приливу r \*\*{N}\*\*–\*\*[\d.]+\*\* мм",
+        "mechanical/z_stack_tolerance.json", lambda d: d["applied_gland"]["radome_seal_land_r_mm"][0], 0.001,
+    ),
+    (
+        "seal land outer radius → z_stack_tolerance.json §applied_gland",
+        BLIND_MATE, rf"земля приливу r \*\*[\d.]+\*\*–\*\*{N}\*\* мм",
+        "mechanical/z_stack_tolerance.json", lambda d: d["applied_gland"]["radome_seal_land_r_mm"][1], 0.001,
+    ),
+    (
+        "flange groove inner radius → z_stack_tolerance.json §applied_gland",
+        BLIND_MATE, rf"паз r \*\*{N}\*\*–\*\*[\d.]+\*\* мм",
+        "mechanical/z_stack_tolerance.json", lambda d: d["applied_gland"]["flange_groove_r_mm"][0], 0.001,
+    ),
+    (
+        "flange groove outer radius → z_stack_tolerance.json §applied_gland",
+        BLIND_MATE, rf"паз r \*\*[\d.]+\*\*–\*\*{N}\*\* мм",
+        "mechanical/z_stack_tolerance.json", lambda d: d["applied_gland"]["flange_groove_r_mm"][1], 0.001,
+    ),
+    (
+        "rim contact area of the applied boss → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"контактній площі обода \*\*{N} мм²\*\*",
+        "mechanical/z_stack_tolerance.json", lambda d: d["rim_datum_creep"]["rim_contact_area_mm2"], 0.5,
+    ),
+    (
+        "rim-datum margin at a generous 100 N → z_stack_tolerance.json §rim_datum_creep",
+        BLIND_MATE, rf"запас лишається \*\*{N}×\*\*",
+        "mechanical/z_stack_tolerance.json", lambda d: d["rim_datum_creep"]["margin_x_at_100N"], 0.05,
+    ),
     # ── HW.33 → HW.9 board budget (2026-09-14): the envelope 02_02 §3.5 hands the board layout ──
     # Every one of these moves with an input nobody re-reads in prose: the gland fill ceiling behind the
     # Ø, the crown round and cavity height behind the headroom, and the BOM rows behind the stack.

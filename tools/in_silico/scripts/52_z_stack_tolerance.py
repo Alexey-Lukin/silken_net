@@ -10,8 +10,12 @@ The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses THREE compliant element
   3. Sil-Pad    (Bergquist 1500ST, ~1 mm, HW.30)        — acoustic-coupling contact, 20 yr creep
 
 🔑 Pogo + Sil-Pad are PARALLEL springs on the SAME gap (Power Deck ↔ Zone 3) → one gap sets both
-compressions. O-ring is on a separate gap (Radome rim ↔ Zone 3). 02_02 §3.5 models only pogo+O-ring;
-the acoustic pad is the missing 3rd spring (this script closes that gap).
+compressions. The O-ring is on its OWN chain: ⚖️ 2026-09-10 (00_07 HW.33, branch (а), applied in CAD
+2026-09-14) put the single groove in the flange top face against a FLAT radome rim, so the rim is a hard
+datum on that face and the squeeze is set by ONE machined dimension — the groove depth — not by where the
+bayonet seats the rim. `TOL_OR` therefore has one contributor and neither the spacer nor the bayonet
+hard-stop touches it. 02_02 §3.5 models only pogo+O-ring; the acoustic pad is the missing 3rd spring
+(this script closes that gap).
 
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
 spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
@@ -61,10 +65,32 @@ PAD_WIN = (0.20, 0.50)    # gap filler: acoustic-contact-min .. squeeze-out-max 
 PAD_CREEP_RETAIN = 0.85   # compression fraction retained after 20 yr (HW.30 lifecycle estimate)
 PAD_ACOUSTIC_MIN = 0.20   # post-creep floor for acoustic contact (pad_pct·creep must stay ≥ this)
 
-# ── Nominal gaps — design targets, centered (pogo 60 %, pad 35 %, O-ring 20 %) ──
+# ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-10; APPLIED in CAD 2026-09-14) ──
+# The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
+# fixed cross-section area, so the WIDTH follows from the depth, and the width has to live inside the
+# face that closes on it — the seal land of the radome's rim boss since 2026-09-14.
+ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of the 19-30 % intersection
+# Gland fill = O-ring section area / groove section area. A gland filled to 100 % has nowhere to put the
+# elastomer it displaces, so the ring extrudes or the faces are held apart. ⚠️ 00_06 §0: the ceiling
+# below is CITED industry practice (Parker's own design rule is a groove ~25 % larger than the ring,
+# i.e. ~80 % fill), NOT a computed physical fact — the verdict here is deliberately reported against all
+# three so it does not rest on the choice. ⚖️ WHICH fill the part is cut to is an OPEN verdict (00_07
+# HW.33): the CAD designs to the 80 % rule until then, and that choice is read back off the manifests.
+GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
+GLAND_FILL_DESIGN_TO = 0.80
+
+# ── Nominal gaps — design targets, centered (pogo 60 %, pad 35 %, O-ring at the RATIFIED 24.5 %) ──
 GAP_PZ = 0.65                              # mm — Power Deck ↔ Zone 3 (sets pogo + pad)
 POGO_FREE = GAP_PZ + 0.60 * POGO_TRAVEL    # protrusion so pogo sits at 60 % at nominal gap
-GAP_OR = ORING_CS * (1.0 - 0.20)           # Radome rim ↔ Zone 3 so O-ring sits at 20 %
+# The O-ring "gap" IS the flange groove depth: under branch (а) the flat radome rim lands on the flange
+# top face (hard datum), so the ring is squeezed from CS 1.78 to exactly the machined depth. This READ
+# `ORING_CS * (1.0 - 0.20)` = 1.424 — the 20 % nominal the bayonet used to seat the rim at — until the
+# verdict was applied; the pre-verdict figure is kept below as `GAP_OR_PRE_BRANCH_A` for the record only.
+# 🔗 C#↔Python crossing, EXPLICIT: the CAD derives the same depth from the `o_ring` block of
+# cem/cathode_flange.json (CathodeFlangeCem.ORing.DepthMm); `applied_gland()` reads that block and refuses
+# to run if it disagrees with these constants, and RadomeTests pins the C# side against this cache.
+GAP_OR = ORING_CS * (1.0 - ORING_SQUEEZE_RATIFIED)
+GAP_OR_PRE_BRANCH_A = ORING_CS * (1.0 - 0.20)   # the 20 % chain before ⚖️ 2026-09-10 — history, not an input
 
 # ── RF constraint (02_01 §5.3) — geometric, self-owned (Гончаров VNA pending) ──
 # ⛔ This 12 is OURS, not canon's — do NOT "correct" a measured 8.0 upward to meet it, and do not
@@ -77,17 +103,6 @@ GAP_OR = ORING_CS * (1.0 - 0.20)           # Radome rim ↔ Zone 3 so O-ring sit
 # took; if the number is not an end, say what it IS and whose. [2026-09-11]
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
 
-# ── Gland geometry inputs (HW.33 branch (а), ⚖️ 2026-09-10) ──
-# The squeeze verdict fixes the groove DEPTH. Depth alone does not make a gland: an O-ring displaces a
-# fixed cross-section area, so the WIDTH follows from the depth, and the width has to live inside the
-# flat face that closes on it. That third question is what this block asks.
-ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of the 19-30 % intersection
-# Gland fill = O-ring section area / groove section area. A gland filled to 100 % has nowhere to put the
-# elastomer it displaces, so the ring extrudes or the faces are held apart. ⚠️ 00_06 §0: the ceiling
-# below is CITED industry practice (Parker's own design rule is a groove ~25 % larger than the ring,
-# i.e. ~80 % fill), NOT a computed physical fact — the verdict here is deliberately reported against all
-# three so it does not rest on the choice.
-GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
 # The stress level below which 20-yr PEEK stress-relaxation is not worth a model. Anchored INSIDE our
 # own canon rather than on an outside datasheet: 01_01 §4.3 tabulates PEEK relaxation on the press-fit
 # joint at 25-30 MPa contact pressure, so a tenth of that — of its LOWER end, the conservative reading —
@@ -130,10 +145,18 @@ def cem(stem: str) -> dict:
 # ── Tolerance contributors (± half-width, mm) ──
 # Shared Power↔Zone3 gap: DMLS Ti flange + both FR4 decks + B2B stack + CNC radome engagement.
 TOL_PZ = {"DMLS_Ti": 0.30, "FR4_power": 0.20, "B2B_stack": 0.15, "FR4_rf": 0.20, "CNC_radome": 0.10}
-# O-ring gap: DMLS Ti seat + CNC radome rim (fewer links — nearer the bayonet datum).
-TOL_OR = {"DMLS_Ti_seat": 0.15, "CNC_radome_rim": 0.10}
+# O-ring chain: ONE machined dimension — the flange groove depth (branch (а): the flat rim is a hard datum
+# on the flange face, so the DMLS seat and the CNC rim engagement that used to be the two contributors here
+# are no longer in the chain at all; that pair RSS'd to ±0.18 = 1.84× the budget and never fitted).
+# ⛔ The 0.05 is NOT a specification: it is the value the shop is being ASKED whether it holds (00_07 HW.33 👤,
+# 02_02 §3.5 «рутинні ±0.05») — a placeholder for a vendor answer, and the verdict below is conditional on it.
+# The FLATNESS of the two mating faces (flange top face · radome rim) belongs in this chain too and is in
+# no canon: it is a named missing datum (depth_tolerance_budget), and the RSS leftover is what it may spend.
+DEPTH_TOL_ASKED = 0.05
+TOL_OR = {"machined_groove_depth": DEPTH_TOL_ASKED}
+TOL_OR_PRE_BRANCH_A = {"DMLS_Ti_seat": 0.15, "CNC_radome_rim": 0.10}   # the retired two-contributor pair — history
 # A selective 0.1 mm spacer removes the MEASURED rigid stack (DMLS+PCB+B2B), leaving only the CNC PEEK
-# engagement + the spacer half-step as residual (see residual() in main).
+# engagement + the spacer half-step as residual (see residual() in main). It acts on the SHARED gap only.
 SPACER_STEP = 0.10   # mm — eccentric spacer increment (02_02 §3.5); residual ±half-step
 
 
@@ -253,8 +276,9 @@ def rim_boss_radial_budget() -> dict:
 
     🔴 **All three terms are MINIMA, so the result is an upper bound on the cavity, with ZERO
     tolerance allowance in it.** Reading it as a nominal to design a board against is the error this
-    function exists to prevent: any growth in any term eats the board, and nothing here has grown yet
-    because the boss is not cut. HW.9 designs against the WORST row, not the friendliest.
+    function exists to prevent: any growth in any term eats the board. The boss IS cut in CAD since
+    2026-09-14 at exactly these minima (`applied_gland`), so nothing has grown — yet. HW.9 designs
+    against the WORST row, not the friendliest (⚖️ 2026-09-14: the ceiling is its INPUT, not a gate).
     ⊕ It also prices the levers, which is the half a single number hides: raising the gland fill
     ceiling and thinning the cord both widen the cavity WITHOUT touching the Ø25 freeze — and the
     freeze is the most expensive move available, not the first one.
@@ -299,33 +323,83 @@ def rim_boss_radial_budget() -> dict:
                               "price": "moves the SSOT cross-section 02_02 §3.2"},
         },
         "ceiling": "⛔ every term is a MINIMUM, so this is an upper bound with no tolerance in it; "
-                   "the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates — "
+                   "the boss is cut in CAD at exactly these minima (2026-09-14), so nothing has grown yet. Diameter is ONE of three gates — "
                    "the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds "
                    "its radius, 00_07 HW.33) and the antenna↔Ti clearance are separate and are NOT judged here.",
     }
 
 
-def shipped_groove_alignment() -> dict:
-    """The two counter-grooves the shipped CAD still cuts — do they even face each other?"""
+def applied_gland() -> dict:
+    """The gland as the CAD cuts it since 2026-09-14 (branch (а) APPLIED) — re-derived here from both manifests
+    by the SAME chain as the C# (CathodeFlange.ORingGroove* / Radome.SealLand* / Radome.SocketPocket*).
+
+    🔗 The C#↔Python crossing, explicit and pinned in BOTH directions: the manifests carry the gland spec as an
+    `o_ring` block (cord · squeeze · fill) that this function reads and REFUSES if it disagrees with this
+    script's constants; RadomeTests reads this section back and asserts the C# derivation equals it. Every
+    number below is therefore a mirror with a witness on each side, never a retyped literal.
+
+    The retired counter-groove pair this function replaced (flange 0.9 at r 9-11 · radome 0.9 at r 10.5-11.5:
+    0.50 mm of radial overlap, 75 % of the flange groove under the dome cavity, −1.1 % squeeze) is gone from
+    both manifests; the record of WHY the boss exists is `gland_verdict()` (the 2.0 mm wall could not close it).
+    """
     flange, radome = cem("cathode_flange"), cem("radome")
+    for part, doc in (("cathode_flange", flange), ("radome", radome)):
+        o = doc["o_ring"]
+        mismatch = {k: (o[k], v) for k, v in (("cs_mm", ORING_CS), ("squeeze", ORING_SQUEEZE_RATIFIED),
+                                              ("gland_fill", GLAND_FILL_DESIGN_TO)) if abs(o[k] - v) > 1e-9}
+        if mismatch:
+            raise SystemExit(f"cem/{part}.json `o_ring` disagrees with this script (manifest, script): {mismatch} "
+                             "— the C#↔Python gland crossing has two values; fix ONE home, never both")
+    for key in ("lug_radius_mm", "slot_clearance_mm"):
+        if abs(flange[key] - radome[key]) > 1e-9:
+            raise SystemExit(f"{key}: flange {flange[key]} ≠ radome {radome[key]} — the two halves of the socket band "
+                             "disagree (xUnit pins them equal; the manifests drifted)")
+
+    depth = ORING_CS * (1.0 - ORING_SQUEEZE_RATIFIED)
+    width = gland_width_required(ORING_CS, depth, GLAND_FILL_DESIGN_TO)
     flange_r = flange["flange_diameter_mm"] / 2.0
     dome_r = radome["dome_diameter_mm"] / 2.0
-    rim_in = dome_r - radome["wall_thickness_mm"]
-    # CathodeFlange.Build: outer edge = flangeR − 1.5 (a bare literal in the generator, no CEM field).
-    f_out = flange_r - 1.5
-    f_in = f_out - flange["o_ring_groove_width_mm"]
-    r_in, r_out = rim_in, rim_in + radome["o_ring_groove_width_mm"]
-    overlap = max(0.0, min(f_out, r_out) - max(f_in, r_in))
-    under_cavity = max(0.0, min(rim_in, f_out) - f_in)
+    clr = radome["slot_clearance_mm"]
+    socket_band = radome["lug_radius_mm"] + clr
+    seal_band = width + 2.0 * clr
+    boss = socket_band + seal_band
+    land = (dome_r - boss, dome_r - socket_band)
+    groove_out = flange_r - socket_band - clr
+    groove_in = groove_out - width
+    pocket = (dome_r - socket_band, dome_r - radome["wall_thickness_mm"] + socket_band)
+    skin = dome_r - pocket[1]
+    # Rim contact area on the flange face: the boss annulus minus the groove footprint (the ring, not PEEK, is
+    # there) minus the three entry-slot openings in the outer band — each a disc of radius `socket_band` about
+    # the inner wall, clipped to the pocket band [pocket_in, pocket_out] (an exact circular-segment integral).
+    r_slot, rim_in = socket_band, dome_r - radome["wall_thickness_mm"]
+
+    def seg(x: float) -> float:       # ∫ 2·sqrt(R² − t²) dt from 0 to x
+        x = max(-r_slot, min(r_slot, x))
+        return x * math.sqrt(max(r_slot * r_slot - x * x, 0.0)) + r_slot * r_slot * math.asin(x / r_slot)
+
+    slot_opening = seg(pocket[1] - rim_in) - seg(pocket[0] - rim_in)
+    contact = (math.pi * (dome_r ** 2 - land[0] ** 2)
+               - math.pi * (groove_out ** 2 - groove_in ** 2)
+               - radome["bayonet_lugs"] * slot_opening)
     return {
-        "flange_groove_r_mm": [round(f_in, 2), round(f_out, 2)],
-        "radome_groove_r_mm": [round(r_in, 2), round(r_out, 2)],
-        "radome_rim_r_mm": [round(rim_in, 2), round(dome_r, 2)],
-        "radial_overlap_mm": round(overlap, 3),
-        "flange_groove_share_under_dome_cavity": round(under_cavity / (f_out - f_in), 3),
-        "combined_depth_mm": round(flange["o_ring_groove_depth_mm"] + radome["o_ring_groove_depth_mm"], 3),
-        "combined_squeeze_pct": round((ORING_CS - (flange["o_ring_groove_depth_mm"]
-                                                   + radome["o_ring_groove_depth_mm"])) / ORING_CS * 100, 1),
+        "applied": "2026-09-14 — branch (а) in CathodeFlange.cs / Radome.cs; read back off cem/cathode_flange.json + cem/radome.json",
+        "squeeze_pct": round(ORING_SQUEEZE_RATIFIED * 100, 1),
+        "gland_fill": GLAND_FILL_DESIGN_TO,
+        "flange_groove_depth_mm": round(depth, 4),
+        "flange_groove_width_mm": round(width, 4),
+        "flange_groove_r_mm": [round(groove_in, 4), round(groove_out, 4)],
+        "radome_seal_land_r_mm": [round(land[0], 4), round(land[1], 4)],
+        "seal_land_margin_mm": [round(groove_in - land[0], 4), round(land[1] - groove_out, 4)],
+        "socket_band_mm": round(socket_band, 4),
+        "socket_pocket_r_mm": [round(pocket[0], 4), round(pocket[1], 4)],
+        "socket_skin_mm": round(skin, 4),
+        "rim_cavity_mm": round(dome_r * 2.0 - 2.0 * boss, 4),
+        "rim_contact_area_mm2": round(contact, 2),
+        "entry_slot_opening_mm2_each": round(slot_opening, 3),
+        "note": "the seal land backs the groove by one socket clearance on each side, so the ring stays backed with "
+                "the radome one clearance off-centre; the socket pocket is `socket_band − skin` deep, not the full "
+                "band — the budget above counts no skin, and a pocket cut to the dome OD would breach the shell. "
+                "⚠️ The lugs still sit at mid-disc: the ratified collar (02_02 §4.4) is not modelled on either part.",
     }
 
 
@@ -355,20 +429,30 @@ def depth_tolerance_budget() -> dict:
             "per_face_if_equal_mm": round(math.sqrt(rem_sq / 2.0), 4) if fits else 0.0,
             "linear_leftover_mm": round(budget - depth_tol, 4),   # the WRONG rule, kept to show the gap
         })
-    # What the chain looks like BEFORE branch (а) lands — the pair of counter-grooves still in TOL_OR.
-    today_rss = rss(list(TOL_OR.values()))
+    # The chain as modelled NOW (branch (а) applied): one machined depth at the value the shop is asked to hold,
+    # against the retired pair it replaced — the pair never fitted (1.84× the budget), which is what branch (а)
+    # existed to collapse.
+    now_rss = rss(list(TOL_OR.values()))
+    pre_rss = rss(list(TOL_OR_PRE_BRANCH_A.values()))
     return {"intersection_window_pct": [round(lo * 100, 1), round(hi * 100, 1)],
             "nominal_pct": round(ORING_SQUEEZE_RATIFIED * 100, 1),
             "half_band_pct_points": round(half_pct * 100, 2),
             "total_gap_budget_half_width_mm": round(budget, 4),
             "allocation_rss": alloc,
-            "chain_as_modelled_today": {
-                "contributors_mm": dict(TOL_OR), "rss_mm": round(today_rss, 4),
-                "over_budget_x": round(today_rss / budget, 2),
-                "note": "this is the PRE-branch-(а) pair of counter-grooves, and it does NOT fit — which "
-                        "is what branch (а) exists to collapse into ONE machined dimension. Until that "
-                        "lands, `o_ring_groove_depth_mm` in the flange CEM is still the superseded 0.9, "
-                        "so there is no ratified nominal to hang a tolerance on yet.",
+            "chain_as_modelled": {
+                "contributors_mm": dict(TOL_OR), "rss_mm": round(now_rss, 4),
+                "over_budget_x": round(now_rss / budget, 2),
+                "flatness_left_rss_mm": round(math.sqrt(max(budget ** 2 - now_rss ** 2, 0.0)), 4),
+                "note": "branch (а) APPLIED 2026-09-14: ONE machined dimension, the flange groove depth, at the "
+                        "±0.05 the shop is ASKED to hold (00_07 HW.33 👤 — a placeholder for the vendor's answer, "
+                        "not a spec). The flatness of the flange top face and of the radome rim is NOT in the "
+                        "chain (missing datum) and has the RSS leftover to spend, both faces together.",
+            },
+            "chain_pre_branch_a": {
+                "contributors_mm": dict(TOL_OR_PRE_BRANCH_A), "rss_mm": round(pre_rss, 4),
+                "over_budget_x": round(pre_rss / budget, 2),
+                "note": "the retired pair of counter-grooves (DMLS seat + CNC rim) — it did NOT fit, 1.84× the "
+                        "budget; kept as the record of why the chain was rebuilt rather than re-run.",
             },
             "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus "
                     "the flatness of both mating faces, RSS. ⛔ The number itself is NOT ours to invent "
@@ -379,7 +463,7 @@ def depth_tolerance_budget() -> dict:
                     "opening it at 1.344 mm is a claim, not a specification — see the allocation rows."}
 
 
-def rim_datum_creep() -> dict:
+def rim_datum_creep(applied: dict) -> dict:
     """⊂ correction (1) of the ⚖️: the rim is PEEK, so may it be treated as a rigid datum for 20 yr?
 
     Asked by INVERSION, because two of the three springs in the stack have no force datum anywhere in
@@ -387,11 +471,11 @@ def rim_datum_creep() -> dict:
     stress regime where relaxation is worth modelling, and compare it with the one spring canon does
     specify. A bound that holds by two orders of magnitude against that spring — and still by a few
     times against a generous guess for the two unmeasured ones — does not need the missing numbers.
+    The contact area is the APPLIED rim's (boss annulus − groove footprint − entry-slot openings,
+    `applied_gland`), not the bare 2.0 mm wall the verdict was first checked against (144 mm²).
     """
     faces = seal_faces()
-    dome_r = cem("radome")["dome_diameter_mm"] / 2.0
-    rim_in = dome_r - cem("radome")["wall_thickness_mm"]
-    area = math.pi * (dome_r ** 2 - rim_in ** 2)
+    area = applied["rim_contact_area_mm2"]
     f_star = PEEK_RELAX_REGIME_MPA * area                     # N (MPa·mm² = N)
     pogo = POGO_SPRING_FORCE_N * POGO_PIN_COUNT
     return {
@@ -608,14 +692,15 @@ def main() -> int:
     banner("Mitigation escalation (spacer removes measured DMLS+PCB+B2B; bayonet hard-stop halves CNC)")
 
     def residual(bayonet: bool, spacer: bool) -> tuple[float, float]:
-        """Residual gap tolerance (±) after levers. bayonet hard-stop → deterministic engagement
-        (CNC 0.10→0.05); spacer → only CNC + spacer half-step survive (measured stack removed)."""
+        """Residual gap tolerance (±) after levers, for the SHARED gap: bayonet hard-stop → deterministic
+        engagement (CNC 0.10→0.05); spacer → only CNC + spacer half-step survive (measured stack removed).
+        The O-ring chain is untouched by either lever since branch (а): the rim is a hard datum on the
+        flange face, so its residual is the machined groove depth alone, whatever seats the bayonet."""
         cnc_pz = 0.05 if bayonet else TOL_PZ["CNC_radome"]
-        cnc_or = 0.05 if bayonet else TOL_OR["CNC_radome_rim"]
+        res_or = rss(list(TOL_OR.values()))
         if spacer:
-            return rss([cnc_pz, SPACER_STEP / 2]), rss([cnc_or, SPACER_STEP / 2])
-        return (rss([v for k, v in TOL_PZ.items() if k != "CNC_radome"] + [cnc_pz]),
-                rss([v for k, v in TOL_OR.items() if k != "CNC_radome_rim"] + [cnc_or]))
+            return rss([cnc_pz, SPACER_STEP / 2]), res_or
+        return rss([v for k, v in TOL_PZ.items() if k != "CNC_radome"] + [cnc_pz]), res_or
 
     escalation = []
     final_label = None
@@ -634,47 +719,46 @@ def main() -> int:
     mit_ok = final_label is not None
 
     # ── Parker face-seal reconciliation (00_07 HW.33) ──
-    # The mitigation above centres the O-ring at 20 %, which sits BELOW the Parker face-seal floor once
-    # the residual band is applied. The question the open ⚖️ asks is whether that forces a documented
-    # deviation from Parker — so instead of judging the current nominal, derive the nominal that would
-    # satisfy BOTH windows and report what it costs. The O-ring gap has its own tolerance chain
-    # (TOL_OR), so moving it does not touch pogo or pad at all.
-    banner("Parker face-seal reconciliation — does the mitigation need a deviation?")
+    # The chain used to centre the O-ring at 20 %, which sat BELOW the Parker face-seal floor once the
+    # residual band was applied. The question the (then open) ⚖️ asked was whether that forces a documented
+    # deviation from Parker — so instead of judging that nominal, derive the nominal that satisfies BOTH
+    # windows and report what it costs. That nominal (24.5 %) is RATIFIED and, since 2026-09-14, APPLIED:
+    # GAP_OR is the flange groove depth at it. The 20 % figures are re-derived below as the record of the
+    # move, never as a live input. The O-ring has its own chain (TOL_OR), so nothing here touches pogo or pad.
+    banner("Parker face-seal reconciliation — the ratified nominal, and the chain it now rides")
     _, res_or_final = residual(True, True)
     half_pct = res_or_final / ORING_CS
-    now_lo, now_hi = 0.20 - half_pct, 0.20 + half_pct
+    half_pct_pre = rss([0.05, SPACER_STEP / 2]) / ORING_CS   # the pre-(а) residual: CNC rim after hard-stop ⊕ spacer half-step
+    pre_lo, pre_hi = 0.20 - half_pct_pre, 0.20 + half_pct_pre
     lo_both = max(ORING_WIN[0], ORING_WIN_PARKER_FACE[0])
     hi_both = min(ORING_WIN[1], ORING_WIN_PARKER_FACE[1])
     nominal_both = (lo_both + hi_both) / 2.0
     band_lo, band_hi = nominal_both - half_pct, nominal_both + half_pct
     fits_both = band_lo >= lo_both and band_hi <= hi_both
     gap_or_new = ORING_CS * (1.0 - nominal_both)
-    print(f"  Residual O-ring band after spacer + hard-stop: ±{half_pct*100:.2f} pp of squeeze")
-    print(f"  At the CURRENT 20 % nominal:  {now_lo*100:.1f}-{now_hi*100:.1f} %  → "
-          f"industry {'OK' if now_lo >= ORING_WIN[0] and now_hi <= ORING_WIN[1] else 'FAIL'}, "
-          f"Parker face {'OK' if now_lo >= ORING_WIN_PARKER_FACE[0] and now_hi <= ORING_WIN_PARKER_FACE[1] else 'FAIL'}")
+    applied_nominal = abs(gap_or_new - GAP_OR) < 1e-9
+    print(f"  Residual O-ring band on the applied one-term chain (±{DEPTH_TOL_ASKED} depth, asked): ±{half_pct*100:.2f} pp of squeeze")
+    print(f"  (pre-(а) chain, hard-stop + spacer on the two-contributor pair: ±{half_pct_pre*100:.2f} pp; at its 20 % nominal "
+          f"{pre_lo*100:.1f}-{pre_hi*100:.1f} % → industry {'OK' if pre_lo >= ORING_WIN[0] and pre_hi <= ORING_WIN[1] else 'FAIL'}, "
+          f"Parker face {'OK' if pre_lo >= ORING_WIN_PARKER_FACE[0] and pre_hi <= ORING_WIN_PARKER_FACE[1] else 'FAIL'})")
     print(f"  Windows intersect at {lo_both*100:.0f}-{hi_both*100:.0f} % → "
           f"centring the band there means a {nominal_both*100:.1f} % nominal")
     print(f"  At that nominal:              {band_lo*100:.1f}-{band_hi*100:.1f} %  → "
           f"{'BOTH windows hold' if fits_both else 'still outside — a deviation IS required'}")
-    print(f"  Cost of the move: O-ring gap {GAP_OR:.3f} → {gap_or_new:.3f} mm, i.e. the radome rim comes")
-    print(f"  down {abs(GAP_OR - gap_or_new)*1000:.0f} µm. Pogo and pad ride a DIFFERENT tolerance chain "
-          "(TOL_PZ) and do not move.")
-    if fits_both:
-        print("  → The open ⚖️ «accept a deviation from Parker OR re-run 52» does not need a choice:")
-        print("    a ~0.1 mm nominal change satisfies Parker face-seal AND industry practice at once,")
-        print("    with symmetric margin. What remains is a design edit, not a judgement.")
+    print(f"  Applied in CAD: {'YES' if applied_nominal else 'NO'} — GAP_OR (flange groove depth) = {GAP_OR:.3f} mm; the pre-(а) 20 % chain "
+          f"seated the rim at {GAP_OR_PRE_BRANCH_A:.3f}, i.e. the move was {abs(GAP_OR_PRE_BRANCH_A - gap_or_new)*1000:.0f} µm. "
+          "Pogo and pad ride a DIFFERENT chain (TOL_PZ) and did not move.")
 
     # ── Gland geometry: does the ratified seal FIT the face that closes on it? (00_07 HW.33) ──
-    # ⚠️ Declared ceiling: this section judges the PROPOSED branch (а), not the shipped stack, so it
+    # ⚠️ Declared ceiling: this section judges the gland and the faces, not the 3-spring stack, so it
     # deliberately does NOT move the exit code — that stays the 3-spring assessment above. Reading a
     # green run as "the gland is fine" is exactly the mis-read this note exists to stop.
     banner("Gland geometry — the ratified depth needs a WIDTH, and the width needs a FACE")
     gland = gland_verdict()
     boss = rim_boss_radial_budget()
-    align = shipped_groove_alignment()
+    applied = applied_gland()
     budget = depth_tolerance_budget()
-    rim = rim_datum_creep()
+    rim = rim_datum_creep(applied)
 
     print(f"  O-ring CS {ORING_CS} mm → section area {gland['ring_area_mm2']:.3f} mm²; "
           f"ratified squeeze {ORING_SQUEEZE_RATIFIED*100:.1f} % → groove depth {gland['depth_mm']:.3f} mm")
@@ -690,17 +774,22 @@ def main() -> int:
         print(f"    {k}: depth {v['depth_mm']:.3f}  width@85% {v['width_at_85pct_mm']:.3f}  "
               f"land left on the asis rim {v['land_left_on_asis_rim_mm']:+.3f} mm")
 
-    print(f"\n  Shipped counter-grooves — flange r {align['flange_groove_r_mm']} vs radome r {align['radome_groove_r_mm']}:")
-    print(f"    radial overlap {align['radial_overlap_mm']:.2f} mm; "
-          f"{align['flange_groove_share_under_dome_cavity']*100:.0f} % of the flange groove lies under the "
-          f"dome CAVITY (nothing presses it)")
-    print(f"    combined depth {align['combined_depth_mm']:.2f} mm ⇒ squeeze {align['combined_squeeze_pct']:+.1f} % "
-          "— the ring is not compressed at all")
+    print(f"\n  APPLIED gland (branch (а), 2026-09-14, read back off both manifests): flange groove "
+          f"{applied['flange_groove_width_mm']:.3f} × {applied['flange_groove_depth_mm']:.3f} at r {applied['flange_groove_r_mm']}")
+    print(f"    radome seal land r {applied['radome_seal_land_r_mm']} (margin {applied['seal_land_margin_mm']} each side) · "
+          f"socket pocket r {applied['socket_pocket_r_mm']} (skin {applied['socket_skin_mm']:.2f}) · rim cavity Ø{applied['rim_cavity_mm']:.2f}")
+    print(f"    rim contact area {applied['rim_contact_area_mm2']:.1f} mm² (boss − groove − {cem('radome')['bayonet_lugs']} slot openings "
+          f"of {applied['entry_slot_opening_mm2_each']:.2f} each)")
 
-    print(f"\n  Depth-tolerance BUDGET (the input the open ⚖️ lacks): the whole O-ring chain must stay "
+    print(f"\n  Depth-tolerance BUDGET: the whole O-ring chain must stay "
           f"within ±{budget['total_gap_budget_half_width_mm']*1000:.0f} µm")
     print(f"    ({budget['half_band_pct_points']:.2f} pp of squeeze either side of the "
           f"{budget['nominal_pct']:.1f} % nominal, inside the {budget['intersection_window_pct']} % window)")
+    cm = budget["chain_as_modelled"]
+    print(f"    chain as modelled: {cm['contributors_mm']} → RSS ±{cm['rss_mm']*1000:.0f} µm = {cm['over_budget_x']:.2f}× budget, "
+          f"leaving ±{cm['flatness_left_rss_mm']*1000:.0f} µm (RSS) for the flatness of BOTH mating faces — a named missing datum")
+    cp = budget["chain_pre_branch_a"]
+    print(f"    (retired pre-(а) pair {cp['contributors_mm']} → RSS ±{cp['rss_mm']*1000:.0f} µm = {cp['over_budget_x']:.2f}× budget — never fitted)")
 
     print(f"\n  PEEK rim as a rigid datum (⊂ correction (1)): contact area {rim['rim_contact_area_mm2']:.0f} mm²; "
           f"reaching {rim['relax_regime_floor_MPa']:.1f} MPa needs {rim['force_to_reach_relax_regime_N']:.0f} N")
@@ -752,7 +841,8 @@ def main() -> int:
     print(f"  Un-mitigated: {'holds' if raw_ok else 'FAILS — RSS exceeds the narrowest window'} → spacer MANDATORY (02_02 §3.5).")
     print(f"  Minimum mitigation that holds: {final_label or 'NONE in ladder — widen O-ring CS / bigger pogo travel'}.")
     print("  🔑 Pad = 3rd spring (∥ pogo on the shared gap) — absent from 02_02 §3.5; close that canon gap.")
-    print("  🔑 Bayonet (not thread) hard-stop is load-bearing — deterministic Z halves the CNC residual → O-ring holds.")
+    print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
+    print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone.")
     print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
           "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; open verdict 00_07 HW.33, VNA sweep 5/8/12 = UNI.10).")
 
@@ -776,26 +866,30 @@ def main() -> int:
         "min_mitigation_pass": final_label,
         "parker_face_reconciliation": {
             "residual_half_width_pct_points": round(half_pct * 100, 2),
-            "band_at_current_nominal_pct": [round(now_lo * 100, 1), round(now_hi * 100, 1)],
-            "current_nominal_holds_industry": bool(now_lo >= ORING_WIN[0] and now_hi <= ORING_WIN[1]),
-            "current_nominal_holds_parker_face": bool(now_lo >= ORING_WIN_PARKER_FACE[0]
-                                                      and now_hi <= ORING_WIN_PARKER_FACE[1]),
+            "residual_half_width_pct_points_pre_branch_a": round(half_pct_pre * 100, 2),
+            "band_at_pre_branch_a_20pct_nominal": [round(pre_lo * 100, 1), round(pre_hi * 100, 1)],
+            "pre_branch_a_nominal_held_industry": bool(pre_lo >= ORING_WIN[0] and pre_hi <= ORING_WIN[1]),
+            "pre_branch_a_nominal_held_parker_face": bool(pre_lo >= ORING_WIN_PARKER_FACE[0]
+                                                          and pre_hi <= ORING_WIN_PARKER_FACE[1]),
             "intersection_window_pct": [round(lo_both * 100, 1), round(hi_both * 100, 1)],
             "recommended_nominal_pct": round(nominal_both * 100, 1),
             "band_at_recommended_pct": [round(band_lo * 100, 1), round(band_hi * 100, 1)],
             "recommended_holds_both": bool(fits_both),
-            "oring_gap_mm_current": round(GAP_OR, 3),
+            "applied_in_cad": bool(applied_nominal),
+            "oring_gap_mm_applied": round(GAP_OR, 3),
+            "oring_gap_mm_pre_branch_a": round(GAP_OR_PRE_BRANCH_A, 3),
             "oring_gap_mm_recommended": round(gap_or_new, 3),
-            "radome_rim_shift_um": round(abs(GAP_OR - gap_or_new) * 1000, 0),
-            "note": "The open HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. "
-                    "Re-run says the fork is removable: the two windows intersect at 19-30 %, the "
-                    "residual band is +/-3.97 pp, so centring the nominal in the intersection puts the "
-                    "whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance "
-                    "chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a "
-                    "judgement."},
+            "radome_rim_shift_um": round(abs(GAP_OR_PRE_BRANCH_A - gap_or_new) * 1000, 0),
+            "note": "The HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. The re-run "
+                    "said the fork is removable: the two windows intersect at 19-30 %, so centring the nominal "
+                    "there puts the whole residual band inside BOTH with symmetric margin. RATIFIED 2026-09-10 "
+                    "and APPLIED in CAD 2026-09-14 (branch (а)): the residual band is now the one-term machined "
+                    "depth chain (+/-2.81 pp at the +/-0.05 the shop is asked to hold), where the pre-(а) pair "
+                    "after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo and pad "
+                    "are untouched."},
         "gland_geometry": gland,
         "rim_boss_radial_budget": boss,
-        "shipped_groove_alignment": align,
+        "applied_gland": applied,
         "depth_tolerance_budget": budget,
         "rim_datum_creep": rim,
         "collar_radial_budget": collar,

@@ -36,31 +36,48 @@ internal static class Assembly
     public static float RadomeLiftZMm(AnchorAssemblyCem cem)
         => FlangeLugZMm(cem) - cem.Radome.LockGrooveZMm;
 
-    // Bayonet-Z mismatch: at the bayonet datum the radome rim lands at `lift`; the O-ring squeeze wants it
-    // at flangeTop + ORingGap. Their gap = the un-reconciled Z-stack error (Деталь3/Деталь4, HW.8/HW.17).
+    // Bayonet-Z mismatch: at the bayonet datum the radome rim lands at `lift`; the seal wants it ON the flange
+    // top face. ⚖️ Under branch (а) (2026-09-10, applied 2026-09-14) the rim is a HARD DATUM on that face and
+    // the O-ring squeeze is the flange groove's own depth, so the face gap this used to add (`ORingGapMm`,
+    // 1.424 = CS·(1 − 0.20), a script-52 mirror) is ZERO by construction and the field is gone — said out loud
+    // here and in 02_02 §4.4, not recomputed silently: the mismatch fell 6.42 → 5.0 because a TERM left the
+    // chain, not because a value moved.
     //
-    // 🔑 SUBSTITUTE AND THE SHANK CANCELS HERE TOO — and what is left is a SUM OF THREE POSITIVE TERMS:
-    //     |(shank + t/2 − lockGrooveZ) − (shank + t + gap)| = t/2 + lockGrooveZ + gap
+    // 🔑 SUBSTITUTE AND THE SHANK CANCELS HERE TOO — and what is left is a SUM OF TWO POSITIVE TERMS:
+    //     |(shank + t/2 − lockGrooveZ) − (shank + t)| = t/2 + lockGrooveZ
     // So this mismatch has NO ZERO in the current parametrisation, and that is a statement about the
     // PARAMETRISATION, not about the chosen values: shank length is not a lever, and the groove would have
     // to sit above the rim (negative) to close it on its own. The term never derived from the mate is the
     // LUG Z — it is `shank + t/2`, i.e. the middle of the disc, while the seal lands on the TOP face, so
     // the bayonet grips one side of the flange and the seal the other. Closing it needs a lug Z of its own
-    // (`RequiredLugZMm` below): the lug stands lockGrooveZ + gap ABOVE the sealing face, not at it — a
-    // raised collar, i.e. NEW GEOMETRY, unreachable by re-assigning a frozen dim.
-    // ⊕ And the two "independent" equations are tied by an identity, Rf + mismatch = cavityH + gap, so
-    // LOWERING lockGrooveZ (or t) buys the same millimetre in BOTH — the only lever that pays twice, where
-    // cavityH moves Rf alone. [00_07 HW.33 MATE-Ø, ⚖️ 2026-09-11]
+    // (`RequiredLugZMm` below): the lug stands lockGrooveZ ABOVE the sealing face, not at it — a raised
+    // collar, i.e. NEW GEOMETRY, unreachable by re-assigning a frozen dim.
+    // ⊕ And the two "independent" equations are tied by an identity, Rf + mismatch = cavityH, so LOWERING
+    // lockGrooveZ (or t) buys the same millimetre in BOTH — the only lever that pays twice, where cavityH
+    // moves Rf alone. [00_07 HW.33 MATE-Ø, ⚖️ 2026-09-11]
     public static float BayonetZMismatchMm(AnchorAssemblyCem cem)
-        => MathF.Abs(RadomeLiftZMm(cem) - (FlangeTopZMm(cem) + cem.ORingGapMm));
+        => MathF.Abs(RadomeLiftZMm(cem) - FlangeTopZMm(cem));
 
-    // The lug Z the mate REQUIRES: the rim must land on the sealing face (+ whatever face gap the O-ring
-    // model still carries), and the socket sits lockGrooveZ above that rim ⇒ the lug sits there too.
+    // The lug Z the mate REQUIRES: the rim lands on the sealing face and the socket sits lockGrooveZ above
+    // that rim ⇒ the lug sits there too — 20.5 at the frozen dims, exactly lockGrooveZ over the face.
     // ⚖️ The raised collar that carries such a lug is RATIFIED (02_02 §4.4, 2026-09-11) and this is its Z.
-    // Applying it waits on the board budget (00_07 HW.9) and rides AFTER the ratified rim boss, whose radial
-    // band it must share.
+    // It is NOT modelled: nothing sets its wall (no bayonet load model, 00_07 HW.33), and it rides AFTER the
+    // rim boss — now applied (Radome.cs) — whose socket band it must share. The board layout HW.9 takes the
+    // boss's rim-cavity ceiling as an input, not as a gate on this (⚖️ 2026-09-14).
     public static float RequiredLugZMm(AnchorAssemblyCem cem)
-        => FlangeTopZMm(cem) + cem.ORingGapMm + cem.Radome.LockGrooveZMm;
+        => FlangeTopZMm(cem) + cem.Radome.LockGrooveZMm;
+
+    // ── The seal mate under branch (а): the flange groove must sit INSIDE the radome's seal land with land on
+    //    BOTH sides, and the ring must fit its gland. STRICT on purpose — a groove ending exactly at the land's
+    //    edge, or a ring exactly filling the gland, is the zero-margin state nobody intends (the F3 lesson,
+    //    00_07 HW.34). The margins are one slot clearance each at the frozen dims: the radome may sit one
+    //    socket clearance off-centre and the ring is still backed all round. ──
+    public static float SealLandMarginInnerMm(AnchorAssemblyCem cem)
+        => CathodeFlange.ORingGrooveInnerRMm(cem.Flange) - Radome.SealLandInnerRMm(cem.Radome);
+    public static float SealLandMarginOuterMm(AnchorAssemblyCem cem)
+        => Radome.SealLandOuterRMm(cem.Radome) - CathodeFlange.ORingGrooveOuterRMm(cem.Flange);
+    public static bool SealLandBacksTheGroove(AnchorAssemblyCem cem)
+        => SealLandMarginInnerMm(cem) > 0f && SealLandMarginOuterMm(cem) > 0f;
 
     // MATE-Ø radial gap: radome inner-cavity radius − flange rim radius. <0 ⇒ the Ø25 disc cannot enter
     // the Ø(25−2·wall) cavity (radial interference). CEM-analytic, independent of lift / strategy.
@@ -96,6 +113,9 @@ internal static class Assembly
         Voxels voxFlange = CathodeFlange.Build(flangeCem);
 
         // Lift the radome (whole) onto the bayonet datum — vertex-translate, so Radome.Build stays untouched.
+        // ⚠ At the frozen dims this seats the rim 5.0 mm BELOW the flange top face (the bayonet-Z deficit the
+        // collar leg owns), so the applied rim boss now stands INSIDE the disc's envelope and the rendered
+        // interference below grows with it — an audit finding about the un-reconciled Z, not about the boss.
         float fLift = RadomeLiftZMm(cem);
         Voxels voxRadome = MeshUtility.voxApplyTransformation(
             Radome.Build(cem.Radome), v => v + new Vector3(0f, 0f, fLift));

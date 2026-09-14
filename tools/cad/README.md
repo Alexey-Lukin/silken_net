@@ -45,8 +45,8 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/Resolution.cs` | resolution adequacy — does a declared or DERIVED feature fit the voxel its own assembly asks for (`2·voxel` represented / `4·voxel` volume-honest); walks the parsed record tree, not the JSON |
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
 | `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on the shank (Zone-1 solid monolithic / Zone-3 channelled) + self-support metric |
-| `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus channel + O-ring groove |
-| `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + bayonet socket + PCB cavity + O-ring groove |
+| `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus channel + the capsule's SINGLE face-seal O-ring groove (depth · width · radii DERIVED from the `o_ring` block + the socket band — `00_07` HW.33 branch (а), applied 2026-09-14) |
+| `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + a local internal RIM BOSS (socket band outside ⊥ seal land inside; rim cavity ≤ Ø15.57 at the 80 % gland fill, the ceiling HW.9 takes as an input) + bayonet socket (cut in the outer band only) + PCB cavity; the rim is FLAT — the O-ring groove is the flange's |
 | `src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, 02_02 §4.4): bayonet datum + Z/MATE-Ø/RF mismatch + skirt/inboard candidates |
 | `src/SilkenCad/Zone2Sleeve.cs` | Деталь 2 — Zone-2 PEEK thermal-break sleeve (bore Ø11 / OD Ø15 / 50 mm): plain hollow tube via `BasePipe` (press-fit, smooth bore) |
 | `src/SilkenCad/AxialStack.cs` | Full axial stack mate-audit (Зони 1↔2↔3↔4, 02_02 §4.5): press-fit interference (Zone1↔2 line-to-line · Zone2↔3 = Ø9-in-Ø11 clearance F1) + insertion budget + span |
@@ -167,7 +167,7 @@ tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-sp
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the
 §4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping, dir −1) + 3 radial **bayonet lugs**
-(`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the monolithic rod threads it) + O-ring groove. `verify` gates solidity (NOT hollow-shell,
+(`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the monolithic rod threads it) + the capsule's SINGLE O-ring groove on the top face (1.344 × 2.315 at r 8.085–10.4 — depth = CS·(1 − 0.245), width = ring section / (0.80 fill · depth), radii off the socket band; nothing stored, `00_07` HW.33 branch (а) applied 2026-09-14; the flange sheet draws it as geometry in both readers and its depth tolerance as loud absence). `verify` gates solidity (NOT hollow-shell,
 gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
 protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
 (O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
@@ -187,13 +187,15 @@ managed (no Library.Go), `WallScan.cs` under xUnit.
 
 **Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
 intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +
-bayonet socket (L-slot, mate the Деталь-3 lugs) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — 00_07 HW.33) + rim O-ring groove (⛔ RATIFIED AWAY 2026-09-10 and still cut: one groove belongs in the flange against a FLAT rim). `verify`
-gates hollow-fraction / bell-rise / cavity / mate-fit. **🏁 Anchor-CAD family complete** (coin→anode-v2→
-ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10 — Ø25 stays, lugs go inboard, and a LOCAL INTERNAL RIM BOSS carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. The boss is not modelled yet (open leg). ⚖️ The bayonet-Z half was RATIFIED 2026-09-11 (`02_02 §4.4`): the lugs move to a RAISED COLLAR above the sealing face, at the Z `Assembly.RequiredLugZMm` derives — applying boss, collar and crown waits on the board budget (00_07 HW.9/HW.33).
+bayonet socket (L-slot, mate the Деталь-3 lugs — cut in the OUTER band of the rim boss only) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — 00_07 HW.33) + a LOCAL INTERNAL RIM BOSS (`Radome.Boss*`: socket band `lug + clearance` = 1.8 outside, seal land `gland width + 2·clearance` = 2.915 inside, rim cavity ≤ Ø15.57 at the 80 % gland fill — every term a minimum, so a CEILING handed to HW.9 as an input, ⚖️ 2026-09-14) with a FLAT rim: the single O-ring groove is the flange's, and the land here closes it. `verify`
+gates hollow-fraction / bell-rise / cavity / mate-fit / **seal land solid over the full rim face** (a rendered slab measurement, `SealLandSolidFraction` > 95 % — flat rim, no counter-groove, no entry slot in the land). **🏁 Anchor-CAD family complete** (coin→anode-v2→
+ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10, boss APPLIED 2026-09-14 — Ø25 stays, lugs go inboard, and the rim boss carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. ⚖️ The bayonet-Z half was RATIFIED 2026-09-11 (`02_02 §4.4`): the lugs move to a RAISED COLLAR above the sealing face, at the Z `Assembly.RequiredLugZMm` derives (20.5) — NOT modelled: nothing sets the collar's wall, and a placeholder would print on the flange sheet as a decision; the flat crown R5 waits on ⚖️ HW.30 (the cap is still a hemisphere, which is why `draw radome` is refused).
 
 **Capsule-end assembly / mate-audit (shipped)** — `Assembly.cs` + `anchor_assembly` CEM brings Деталь 3 ↔ Деталь 4
 into one frame at the bayonet datum (radome lock-groove ↔ flange lugs) and MEASURES the residual mismatch (radial
-−2.0 · bayonet-Z 6.42 · RF 8.0 mm) + models the two MATE-Ø candidates (`mate_strategy` skirt Ø30 vs inboard Ø25). ⚠️ The `RfClearanceMinMm = 12` it is judged against is the CEM's number, NOT canon: `02_01 §5.3` asks for `≥ 8` and calls 12 the outcome of a proposed board stack (00_07 HW.33, 2026-09-11).
+−2.0 · bayonet-Z 5.0 — it read 6.42 while the chain carried an O-ring face gap of 1.424; that term is ZERO under
+branch (а), applied 2026-09-14, so the field is gone and the number fell because a term left, not because one moved ·
+RF 8.0 mm) + models the two MATE-Ø candidates (`mate_strategy` skirt Ø30 vs inboard Ø25). ⚠️ The `RfClearanceMinMm = 12` it is judged against is the CEM's number, NOT canon: `02_01 §5.3` asks for `≥ 8` and calls 12 the outcome of a proposed board stack (00_07 HW.33, 2026-09-11).
 An AUDIT table, NOT a part pass/fail — the mismatch is the real un-reconciled Z-stack (→ HW.17/HW.8), so `verify`
 exits on a broken render only; the numbers are asserted by the pure xUnit suite (`AssemblyTests`). Reuses
 `CathodeFlange.Build` · `Radome.Build` · `MeshUtility.voxApplyTransformation` (lift) · `BoolIntersect`. Z-stack
@@ -232,7 +234,7 @@ true value, removed — and the engineering verdict is open in `00_07` HW.3. **T
 number came from is engineering text and belongs in the CEM.**
 ⛔ **The shipped-kind roster is `Program.Draw`'s `switch`, not this paragraph** — it carried one and went stale the day
 a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds (today: the radome, because its
-geometry holds two ratified-but-unapplied HW.33 verdicts), live in `docs/drawings_program.md §7`.
+cap is still the hemisphere the ratified flat crown rejects — ⚖️ HW.30, HW.33), live in `docs/drawings_program.md §7`.
 The NORM — why the drawing comes from the CEM and not the mesh, the two readers, the loud-absence rule, what the
 acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.md` stays the research + phase roster.
 `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery `docs/images/cad/`, rebuilt by
@@ -245,7 +247,7 @@ if a published sheet no longer names the manifest shipped today, so any byte cha
 redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
-**Deferred:** the rim-boss + raised-collar implementation (the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ + gap, three positive terms, so the lug takes a Z of its own on a collar — `Assembly.RequiredLugZMm`; whether the application waits on the HW.9 board budget or is designed under the Ø15.57 ceiling and handed to it is itself open, `00_07` HW.33; bench follows at HW.8.8) · the shank-Ø
+**Deferred:** the raised-collar implementation (the rim BOSS is applied since 2026-09-14; the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ — two positive terms now that the O-ring face gap is zero under branch (а) — so the lug takes a Z of its own on a collar, `Assembly.RequiredLugZMm` = 20.5; ⚖️ 2026-09-14: designed under the Ø15.57 ceiling and handed to HW.9 as an INPUT, not gated on it — what holds the collar is its WALL, which no artefact sets (no bayonet load model), and a placeholder would print on the flange sheet as a decision; bench follows at HW.8.8) · the flat crown R5 (ratified 2026-09-11, waits on ⚖️ HW.30 — `hollow_fraction`'s reference solid and the `bell_*` floor-checks must move with it) · the shank-Ø
 press-fit reconcile (the Ø9 shank placeholder vs bore Ø11, HW.8.9; the fit class is open, HW.3) · a phase-correct strong continuous gradient (period-tensor/
 conformal) · the as-built dilation parameter for the FE (00_07 HW.51). ⛔ The C-vs-n porosity sweep was listed here and **shipped 2026-09-12** as `fea --fit` — removed. ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 

@@ -50,6 +50,16 @@ public class ResolutionTests
         ["anchor_assembly.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
         ["anchor_assembly.inboard.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
         ["anchor_assembly.skirt.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
+        // The rim boss (00_07 HW.33, applied 2026-09-14) DECLARES the socket skin — `wall − slot radius` = 0.2 mm, the
+        // pocket's outer wall that always stood there undeclared: exactly two voxels on the radome's own grid, under
+        // it on both audit grids. The mates read the lift and the interference volume, never the skin.
+        ["anchor_assembly.json:radome.rim_boss_socket_skin"] = "socket pocket skin 0.2 mm, not a capsule-end mate measurand",
+        ["anchor_assembly.inboard.json:radome.rim_boss_socket_skin"] = "socket pocket skin 0.2 mm, not a capsule-end mate measurand",
+        ["anchor_assembly.skirt.json:radome.rim_boss_socket_skin"] = "socket pocket skin 0.2 mm, not a capsule-end mate measurand",
+        ["anchor_axial_stack.json:capsule.radome.rim_boss_socket_skin"] = "socket pocket skin 0.2 mm, not a stack measurand",
+        // The flange carries the socket clearance too since 2026-09-14 (its groove radii are positioned off it):
+        // the same 0.3 mm the radome's row above exempts on the stack grid, for the same reason.
+        ["anchor_axial_stack.json:capsule.flange.slot_clearance_mm"] = "bayonet slot clearance mirrored on the flange, not a stack measurand",
     };
 
     public static TheoryData<string> ShippedManifests()

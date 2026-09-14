@@ -333,10 +333,10 @@ internal static class Program
                 break;
             }
             default:
-                // ⛔ `radome` is deliberately absent, and the reason is not effort: its geometry carries TWO
-                // ratified-but-unapplied verdicts (flat crown R5 instead of the hemisphere · flat rim with
-                // no counter-groove — 00_07 HW.33), both gated on the HW.9 board budget. A sheet issued
-                // from today's generator would be wrong the moment it printed.
+                // ⛔ `radome` is deliberately absent, and the reason is not effort: its cap is still the full
+                // hemisphere while ⚖️ 2026-09-11 ratified a FLAT CROWN R5 whose application waits on ⚖️ HW.30
+                // (piezo placement, 00_07 HW.33) — a sheet issued from today's generator would print the
+                // rejected cap the moment it printed. (The flat rim and the rim boss ARE applied, 2026-09-14.)
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
@@ -710,7 +710,9 @@ internal static class Program
 
     // Radome verify (Деталь 4, 02_01 §5.2): HOLLOW-shell gates (gotcha #9 INVERTED) — hollow fraction
     // (a real shell, not a solid block), bell rise (shield cap ≥ BellRiseMm, 01_04 §5.5), cavity height,
-    // bayonet socket mate-fit (slot ≥ lug + clearance).
+    // bayonet socket mate-fit (slot ≥ lug + clearance), and — since branch (а), 2026-09-14 — the seal land
+    // MEASURED solid over the full rim face (Validation.MeasureRadome: a flat rim, no counter-groove, no entry
+    // slot reaching the land; the xUnit pins only DERIVE that, this is the render saying it).
     //
     // ⛔ DECLARED CEILINGS on the cavity gate — it is the weakest one here and reads as the strongest:
     //  1. CAVITY HEIGHT IS NOT ANTENNA↔Ti CLEARANCE. The real clearance at the bayonet datum is
@@ -739,6 +741,13 @@ internal static class Program
         Console.WriteLine(
             $"  dome Ø{cem.DomeDiameterMm:F0} · wall {cem.WallThicknessMm:F1} · hollow={oM.HollowFraction:P0} · " +
             $"bell rise={oM.BellRiseMm:F1} mm · cavity={cem.CavityHeightMm:F0} mm");
+        // The rim boss (00_07 HW.33, applied 2026-09-14): socket in the outer band, seal land in the inner band,
+        // the rim FLAT. The cavity Ø at the rim is the CEILING handed to the board layout (HW.9) — every term of
+        // it is a minimum, so it is an upper bound with no tolerance in it, never a nominal.
+        Console.WriteLine(
+            $"  rim boss: socket band {Radome.SocketBandMm(cem):F2} (pocket r {Radome.SocketPocketInnerRMm(cem):F2}–{Radome.SocketPocketOuterRMm(cem):F2}, skin {Radome.SocketSkinMm(cem):F2}) · " +
+            $"seal land r {Radome.SealLandInnerRMm(cem):F3}–{Radome.SealLandOuterRMm(cem):F2} ({Radome.SealBandMm(cem):F3} wide; gland {cem.ORing.WidthMm:F3}×{cem.ORing.DepthMm:F3} at {cem.ORing.GlandFill:P0} fill, ⚖️ open) · " +
+            $"rim cavity Ø{oM.RimCavityDiameterMm:F2} (ceiling → HW.9) · land solid over the rim face={oM.SealLandSolidFraction:P0} (outer edge strip {oM.SealLandEdgeSolidFraction:P0})");
 
         float fSocketSlot = cem.LugRadiusMm + cem.SlotClearanceMm;
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
@@ -746,13 +755,18 @@ internal static class Program
         bool bBell = oM.BellRiseMm is { } dB && dB >= cem.BellRiseMm - (2f * cem.VoxelSizeMm);
         bool bCavity = cem.CavityHeightMm >= 12f;                           // OUR working floor on the CEM dim — read the ⛔ ceilings above
         bool bMate = fSocketSlot >= cem.LugRadiusMm + 0.1f;                 // socket admits the Деталь-3 lug + clearance
+        // The seal land is solid over the FULL circle of the rim face (branch (а): flat rim, no counter-groove, no slot
+        // in the land). Two slabs on purpose: the whole land sees a missing boss or a counter-groove; only the outer
+        // EDGE strip sees an entry slot biting 0.2 mm into the land (< 1 % of the whole, ~8 % of the strip).
+        bool bLand = oM.SealLandSolidFraction is > 0.95 && oM.SealLandEdgeSolidFraction is > 0.95;
 
         if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
         if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
         if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — OUR working floor, NOT the canon RF minimum (02_01 §5.3 asks ≥8); antenna↔Ti is cavityH − lockGrooveZ − t/2, see 00_07 HW.33");
         if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
+        if (!bLand) Console.WriteLine($"  ⚠ seal land only {oM.SealLandSolidFraction:P0} solid over the rim face (outer edge strip {oM.SealLandEdgeSolidFraction:P0}) — the flat rim is cut where the O-ring must be backed (a counter-groove, a missing boss, or an entry slot reaching the land; 00_07 HW.33)");
 
-        bool bOk = bSane && bHollow && bBell && bCavity && bMate;
+        bool bOk = bSane && bHollow && bBell && bCavity && bMate && bLand;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
         return bOk ? 0 : 1;
     }
@@ -783,9 +797,13 @@ internal static class Program
 
         // Mate findings (INFORMATIONAL — drive HW.17/HW.8, do NOT fail the audit). MATE-Ø is gated on the
         // RENDERED interference (the candidate's actual state), not the analytic gap (the baseline reason):
-        // asis/inboard still foul (disc Ø25 in the Ø21 cavity), skirt opens cavity + L-slots the lugs → ~0.
+        // asis/inboard still foul — the un-reconciled bayonet Z seats the rim 5.0 mm below the flange face, so
+        // the Ø25 disc sits inside the dome, and since the rim boss (applied 2026-09-14) the disc meets the boss
+        // annulus too (rim cavity Ø15.57 at the frozen dims). That foul belongs to the collar leg (Z), not to the
+        // boss: with the rim ON the face the disc is under the rim, never inside it. skirt (withdrawn) opens
+        // cavity + L-slots the lugs → ~0.
         if (oM.MateInterferenceMm3 is > 5.0)
-            Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø25 disc in the Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} cavity and/or Ø29 lugs (skirt opens BOTH, inboard only the lugs; HW.17)");
+            Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø25 disc inside the dome (rim cavity Ø{Radome.RimCavityDiameterMm(cem.Radome):F2} under the boss, Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} above it) because the bayonet Z seats the rim {oM.BayonetZMismatchMm:F1} mm below the flange face, and/or Ø29 lugs (inboard clamps only the lugs; the collar leg owns Z — 00_07 HW.33)");
         if (oM.RfClearanceMm is { } dRf && dRf < cem.RfClearanceMinMm)
             Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm (OUR floor, not canon's — 02_01 §5.3 asks ≥8, HFSS below 10; 00_07 HW.33) at the bayonet datum — Z-stack pulls the cavity onto the flange");
         if (oM.BayonetZMismatchMm is { } dBz && dBz > 2f * cem.VoxelSizeMm)

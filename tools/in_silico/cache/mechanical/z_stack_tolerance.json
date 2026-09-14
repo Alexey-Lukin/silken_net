@@ -33,7 +33,7 @@
   "shared_gap_note": "pogo + pad are parallel springs on the Power\u2194Zone3 gap; O-ring on Radome-rim\u2194Zone3",
   "nominal_gaps_mm": {
     "power_zone3": 0.65,
-    "oring": 1.424
+    "oring": 1.344
   },
   "tolerance_mm": {
     "power_zone3": {
@@ -49,11 +49,10 @@
     },
     "oring": {
       "contributors": {
-        "DMLS_Ti_seat": 0.15,
-        "CNC_radome_rim": 0.1
+        "machined_groove_depth": 0.05
       },
-      "rss": 0.18,
-      "worst_case": 0.25
+      "rss": 0.05,
+      "worst_case": 0.05
     }
   },
   "unmitigated": {
@@ -65,47 +64,47 @@
         "pogo_pct": 0.5999999999999999,
         "pad_pct": 0.35,
         "pad_pct_20yr": 0.2975,
-        "oring_pct": 0.19999999999999993,
+        "oring_pct": 0.24499999999999997,
         "pass": true
       },
       {
         "label": "RSS +",
         "d_pz": 0.45,
-        "d_or": 0.18027756377319948,
+        "d_or": 0.05,
         "pogo_pct": 0.30394736842105247,
         "pad_pct": -0.10000000000000009,
         "pad_pct_20yr": -0.08500000000000008,
-        "oring_pct": 0.0987204697903373,
+        "oring_pct": 0.2169101123595505,
         "pass": false
       },
       {
         "label": "RSS -",
         "d_pz": -0.45,
-        "d_or": -0.18027756377319948,
+        "d_or": -0.05,
         "pogo_pct": 0.8960526315789473,
         "pad_pct": 0.8,
         "pad_pct_20yr": 0.68,
-        "oring_pct": 0.3012795302096625,
+        "oring_pct": 0.27308988764044945,
         "pass": false
       },
       {
         "label": "worst-case +",
         "d_pz": 0.95,
-        "d_or": 0.25,
+        "d_or": 0.05,
         "pogo_pct": -0.025000000000000168,
         "pad_pct": -0.6000000000000001,
         "pad_pct_20yr": -0.51,
-        "oring_pct": 0.059550561797752734,
+        "oring_pct": 0.2169101123595505,
         "pass": false
       },
       {
         "label": "worst-case -",
         "d_pz": -0.95,
-        "d_or": -0.25,
+        "d_or": -0.05,
         "pogo_pct": 1.2249999999999999,
         "pad_pct": 1.2999999999999998,
         "pad_pct_20yr": 1.1049999999999998,
-        "oring_pct": 0.3404494382022471,
+        "oring_pct": 0.27308988764044945,
         "pass": false
       }
     ],
@@ -115,7 +114,7 @@
     {
       "label": "L1 spacer only",
       "residual_pz": 0.112,
-      "residual_or": 0.112,
+      "residual_or": 0.05,
       "cases": [
         {
           "label": "nominal",
@@ -124,36 +123,36 @@
           "pogo_pct": 0.5999999999999999,
           "pad_pct": 0.35,
           "pad_pct_20yr": 0.2975,
-          "oring_pct": 0.19999999999999993,
+          "oring_pct": 0.24499999999999997,
           "pass": true
         },
         {
           "label": "residual +",
           "d_pz": 0.1118033988749895,
-          "d_or": 0.1118033988749895,
+          "d_or": 0.05,
           "pogo_pct": 0.5264451323190857,
           "pad_pct": 0.2381966011250105,
           "pad_pct_20yr": 0.20246711095625894,
-          "oring_pct": 0.13718910175562377,
-          "pass": false
+          "oring_pct": 0.2169101123595505,
+          "pass": true
         },
         {
           "label": "residual -",
           "d_pz": -0.1118033988749895,
-          "d_or": -0.1118033988749895,
+          "d_or": -0.05,
           "pogo_pct": 0.673554867680914,
           "pad_pct": 0.46180339887498945,
           "pad_pct_20yr": 0.392532889043741,
-          "oring_pct": 0.2628108982443761,
+          "oring_pct": 0.27308988764044945,
           "pass": true
         }
       ],
-      "pass": false
+      "pass": true
     },
     {
       "label": "L2 spacer + bayonet hard-stop",
       "residual_pz": 0.071,
-      "residual_or": 0.071,
+      "residual_or": 0.05,
       "cases": [
         {
           "label": "nominal",
@@ -162,56 +161,59 @@
           "pogo_pct": 0.5999999999999999,
           "pad_pct": 0.35,
           "pad_pct_20yr": 0.2975,
-          "oring_pct": 0.19999999999999993,
+          "oring_pct": 0.24499999999999997,
           "pass": true
         },
         {
           "label": "residual +",
           "d_pz": 0.07071067811865477,
-          "d_or": 0.07071067811865477,
+          "d_or": 0.05,
           "pogo_pct": 0.5534798170272007,
           "pad_pct": 0.27928932188134525,
           "pad_pct_20yr": 0.23739592359914347,
-          "oring_pct": 0.1602748999333399,
+          "oring_pct": 0.2169101123595505,
           "pass": true
         },
         {
           "label": "residual -",
           "d_pz": -0.07071067811865477,
-          "d_or": -0.07071067811865477,
+          "d_or": -0.05,
           "pogo_pct": 0.646520182972799,
           "pad_pct": 0.4207106781186547,
           "pad_pct_20yr": 0.3576040764008565,
-          "oring_pct": 0.23972510006665995,
+          "oring_pct": 0.27308988764044945,
           "pass": true
         }
       ],
       "pass": true
     }
   ],
-  "min_mitigation_pass": "L2 spacer + bayonet hard-stop",
+  "min_mitigation_pass": "L1 spacer only",
   "parker_face_reconciliation": {
-    "residual_half_width_pct_points": 3.97,
-    "band_at_current_nominal_pct": [
+    "residual_half_width_pct_points": 2.81,
+    "residual_half_width_pct_points_pre_branch_a": 3.97,
+    "band_at_pre_branch_a_20pct_nominal": [
       16.0,
       24.0
     ],
-    "current_nominal_holds_industry": true,
-    "current_nominal_holds_parker_face": false,
+    "pre_branch_a_nominal_held_industry": true,
+    "pre_branch_a_nominal_held_parker_face": false,
     "intersection_window_pct": [
       19.0,
       30.0
     ],
     "recommended_nominal_pct": 24.5,
     "band_at_recommended_pct": [
-      20.5,
-      28.5
+      21.7,
+      27.3
     ],
     "recommended_holds_both": true,
-    "oring_gap_mm_current": 1.424,
+    "applied_in_cad": true,
+    "oring_gap_mm_applied": 1.344,
+    "oring_gap_mm_pre_branch_a": 1.424,
     "oring_gap_mm_recommended": 1.344,
     "radome_rim_shift_um": 80.0,
-    "note": "The open HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. Re-run says the fork is removable: the two windows intersect at 19-30 %, the residual band is +/-3.97 pp, so centring the nominal in the intersection puts the whole band inside BOTH with symmetric margin. The O-ring rides its own tolerance chain, so pogo and pad are untouched. Cost is a nominal geometry edit, not a judgement."
+    "note": "The HW.33 fork was 'accept a documented deviation from Parker OR re-run 52'. The re-run said the fork is removable: the two windows intersect at 19-30 %, so centring the nominal there puts the whole residual band inside BOTH with symmetric margin. RATIFIED 2026-09-10 and APPLIED in CAD 2026-09-14 (branch (\u0430)): the residual band is now the one-term machined depth chain (+/-2.81 pp at the +/-0.05 the shop is asked to hold), where the pre-(\u0430) pair after hard-stop + spacer read +/-3.97 pp. The O-ring rides its own chain, so pogo and pad are untouched."
   },
   "gland_geometry": {
     "depth_mm": 1.3439,
@@ -395,25 +397,36 @@
         "price": "moves the SSOT cross-section 02_02 \u00a73.2"
       }
     },
-    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is not cut, so nothing has grown yet. Diameter is ONE of three gates \u2014 the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds its radius, 00_07 HW.33) and the antenna\u2194Ti clearance are separate and are NOT judged here."
+    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is cut in CAD at exactly these minima (2026-09-14), so nothing has grown yet. Diameter is ONE of three gates \u2014 the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds its radius, 00_07 HW.33) and the antenna\u2194Ti clearance are separate and are NOT judged here."
   },
-  "shipped_groove_alignment": {
+  "applied_gland": {
+    "applied": "2026-09-14 \u2014 branch (\u0430) in CathodeFlange.cs / Radome.cs; read back off cem/cathode_flange.json + cem/radome.json",
+    "squeeze_pct": 24.5,
+    "gland_fill": 0.8,
+    "flange_groove_depth_mm": 1.3439,
+    "flange_groove_width_mm": 2.3146,
     "flange_groove_r_mm": [
-      9.0,
-      11.0
+      8.0854,
+      10.4
     ],
-    "radome_groove_r_mm": [
-      10.5,
-      11.5
+    "radome_seal_land_r_mm": [
+      7.7854,
+      10.7
     ],
-    "radome_rim_r_mm": [
-      10.5,
-      12.5
+    "seal_land_margin_mm": [
+      0.3,
+      0.3
     ],
-    "radial_overlap_mm": 0.5,
-    "flange_groove_share_under_dome_cavity": 0.75,
-    "combined_depth_mm": 1.8,
-    "combined_squeeze_pct": -1.1
+    "socket_band_mm": 1.8,
+    "socket_pocket_r_mm": [
+      10.7,
+      12.3
+    ],
+    "socket_skin_mm": 0.2,
+    "rim_cavity_mm": 15.5708,
+    "rim_contact_area_mm2": 152.92,
+    "entry_slot_opening_mm2_each": 4.371,
+    "note": "the seal land backs the groove by one socket clearance on each side, so the ring stays backed with the radome one clearance off-centre; the socket pocket is `socket_band \u2212 skin` deep, not the full band \u2014 the budget above counts no skin, and a pocket cut to the dome OD would breach the shell. \u26a0\ufe0f The lugs still sit at mid-disc: the ratified collar (02_02 \u00a74.4) is not modelled on either part."
   },
   "depth_tolerance_budget": {
     "intersection_window_pct": [
@@ -446,27 +459,36 @@
         "linear_leftover_mm": -0.0021
       }
     ],
-    "chain_as_modelled_today": {
+    "chain_as_modelled": {
+      "contributors_mm": {
+        "machined_groove_depth": 0.05
+      },
+      "rss_mm": 0.05,
+      "over_budget_x": 0.51,
+      "flatness_left_rss_mm": 0.0842,
+      "note": "branch (\u0430) APPLIED 2026-09-14: ONE machined dimension, the flange groove depth, at the \u00b10.05 the shop is ASKED to hold (00_07 HW.33 \ud83d\udc64 \u2014 a placeholder for the vendor's answer, not a spec). The flatness of the flange top face and of the radome rim is NOT in the chain (missing datum) and has the RSS leftover to spend, both faces together."
+    },
+    "chain_pre_branch_a": {
       "contributors_mm": {
         "DMLS_Ti_seat": 0.15,
         "CNC_radome_rim": 0.1
       },
       "rss_mm": 0.1803,
       "over_budget_x": 1.84,
-      "note": "this is the PRE-branch-(\u0430) pair of counter-grooves, and it does NOT fit \u2014 which is what branch (\u0430) exists to collapse into ONE machined dimension. Until that lands, `o_ring_groove_depth_mm` in the flange CEM is still the superseded 0.9, so there is no ratified nominal to hang a tolerance on yet."
+      "note": "the retired pair of counter-grooves (DMLS seat + CNC rim) \u2014 it did NOT fit, 1.84\u00d7 the budget; kept as the record of why the chain was rebuilt rather than re-run."
     },
     "note": "the WHOLE O-ring chain must fit inside this half-band: machined groove depth plus the flatness of both mating faces, RSS. \u26d4 The number itself is NOT ours to invent (00_07 HW.33: it comes from whoever machines the part) \u2014 what this derives is the REQUIREMENT the shop's tolerance has to fit inside, i.e. it turns \u00abwhat is your tolerance?\u00bb into \u00abcan you hold \u00b1X?\u00bb. \u26a0\ufe0f And a general-tolerance GRADE is not a substitute: a grade is a table keyed to the nominal size, so citing one without opening it at 1.344 mm is a claim, not a specification \u2014 see the allocation rows."
   },
   "rim_datum_creep": {
-    "rim_contact_area_mm2": 144.5,
-    "force_to_reach_relax_regime_N": 361.0,
+    "rim_contact_area_mm2": 152.9,
+    "force_to_reach_relax_regime_N": 382.0,
     "relax_regime_floor_MPa": 2.5,
     "pogo_pair_force_N_upper_bound": 1.92,
-    "stress_at_pogo_alone_MPa": 0.0133,
-    "stress_at_100N_assumed_total_MPa": 0.692,
-    "margin_x_at_100N": 3.6,
+    "stress_at_pogo_alone_MPa": 0.0126,
+    "stress_at_100N_assumed_total_MPa": 0.654,
+    "margin_x_at_100N": 3.8,
     "missing_datum": "Sil-Pad 1500ST deflection-vs-pressure and the O-ring compression load per unit of seal length \u2014 neither has a home in canon, so the total stack force is not computable today. The bound above is why that does not block the verdict.",
-    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 361 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.6x margin. No creep member is warranted in the Z-chain for the rim.",
+    "verdict": "NEGLIGIBLE \u2014 reaching the relaxation regime needs 382 N on the rim, while the only spring canon specifies contributes 1.92 N; even a deliberately generous 100 N for the two unmeasured springs leaves a 3.8x margin. No creep member is warranted in the Z-chain for the rim.",
     "skirt_note": "the lower cavity is CUT AWAY to r=12.8 to admit the \u00d825 disc, so no radome material stands over the flange top face \u2014 a FACE seal has no mating face here at all, and the surviving interface is the 0.3 mm RADIAL clearance between the skirt bore and the flange rim"
   },
   "collar_radial_budget": {
@@ -1274,5 +1296,5 @@
     "antenna_ti_clearance_min_mm": 12.0,
     "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"
   },
-  "verdict": "3-spring Z-stack holds at 'L2 spacer + bayonet hard-stop' incl. 20yr pad creep"
+  "verdict": "3-spring Z-stack holds at 'L1 spacer only' incl. 20yr pad creep"
 }

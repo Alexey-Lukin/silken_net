@@ -24,6 +24,15 @@ internal static class CemFixtures
     public static AnchorCem Anchor(string strFile)
         => Cem.Parse<AnchorCem>(File.ReadAllText(Path.Combine(Dir(), strFile)));
 
+    // The in-silico half's Z-stack cache (script 52) — the OTHER side of the C#↔Python gland crossing. Located
+    // from the cem/ directory (tools/cad/cem → tools/in_silico/cache), never by a hard-coded absolute path.
+    public static string ZStackCache()
+    {
+        string strPath = Path.GetFullPath(Path.Combine(Dir(), "..", "..", "in_silico", "cache", "mechanical", "z_stack_tolerance.json"));
+        Assert.True(File.Exists(strPath), $"script 52 cache not found at {strPath} — the crossing pin has nothing to read");
+        return strPath;
+    }
+
     // The rim (periphery) gyroid period — the finest cell, hence the THINNEST feature. ⚠ The
     // period→thickness factor is TOPOLOGY-dependent and the `period/10` that stood here is the
     // SHEET one: 0.12·period on sheet, 0.36·period on network (01_01 §5.5, measured 2026-09-12).

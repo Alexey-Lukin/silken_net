@@ -217,8 +217,8 @@ public class DrawingTests
     private const string CemIdentityLabel = "CEM SHA-256 (sha256sum of the SSOT manifest file): ";
 
     // The EXEMPTION list, not the roster: kinds `draw` refuses on purpose, each with its ground in
-    // tools/cad/docs/drawings_program.md §7 (radome = two ratified-but-unapplied verdicts, HW.33 · the two
-    // assemblies = Phase-2 step 5, no factory contract). Any other kind must draw and carry its hash, so a new
+    // tools/cad/docs/drawings_program.md §7 (radome = its cap is still the hemisphere the ratified flat crown
+    // rejects, waiting on ⚖️ HW.30, HW.33 · the two assemblies = Phase-2 step 5, no factory contract). Any other kind must draw and carry its hash, so a new
     // kind that `draw` refuses reds here until its refusal is NAMED.
     private static readonly string[] KindsDrawDeliberatelyRefuses = ["radome", "anchor_assembly", "anchor_axial_stack"];
 
@@ -350,6 +350,40 @@ public class DrawingTests
             var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rIso) < 1e-3).ToArray();
             Assert.NotEmpty(ring);
             Assert.All(ring, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // The capsule's ONE O-ring groove (00_07 HW.33 branch (а), applied 2026-09-14) is a machined contour on this
+    // part, and the sheet must carry it in BOTH readers at the DERIVED radii — as GEOMETRY in the DXF (a CAD reader
+    // machines that layer), not as a note — while its depth TOLERANCE stays a loud absence: the CEM lists
+    // `o_ring_groove_depth` with no limits because the number is the open shop question, never ours to invent.
+    // MUTATION: drop the DXF circles ⇒ the radius assert reds; put them on NOTES ⇒ the layer assert reds; give the
+    // feature a limit in the manifest ⇒ the NOT SPECIFIED row reds.
+    [Fact]
+    public void Flange_Sheet_Carries_The_Single_O_Ring_Groove_As_Geometry_In_Both_Readers_And_Its_Depth_Tolerance_As_Absence()
+    {
+        var cem = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        double rIn = CathodeFlange.ORingGrooveInnerRMm(cem), rOut = CathodeFlange.ORingGrooveOuterRMm(cem);
+
+        string flat = FlattenSvgText(Drawing.CathodeFlange(cem, "test"));
+        Assert.Contains($"O-ring groove Ø{2 * rOut:0.##}/Ø{2 * rIn:0.##} × {CathodeFlange.ORingGrooveDepthMm(cem):0.##} deep", flat);
+        Assert.Contains($"o_ring_groove_depth: {Drawing.NotSpecified} / {Drawing.NotSpecified} mm", flat);
+
+        string path = Path.Combine(Path.GetTempPath(), $"flange_groove_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("O-ring groove", dxf);
+            Assert.Contains($"o_ring_groove_depth: {Drawing.NotSpecified} / {Drawing.NotSpecified} mm", dxf);
+            var doc = netDxf.DxfDocument.Load(path);
+            foreach (double r in new[] { rIn, rOut })
+            {
+                var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - r) < 1e-3).ToArray();
+                Assert.NotEmpty(ring);
+                Assert.All(ring, c => Assert.Equal("GEOMETRY", c.Layer.Name));
+            }
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }

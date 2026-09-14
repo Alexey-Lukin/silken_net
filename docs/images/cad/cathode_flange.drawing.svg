@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='900' height='1343' viewBox='0 0 900 1343'>
-<rect x='0' y='0' width='900' height='1343' fill='white'/>
-<rect x='8' y='8' width='884' height='1327' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='1525' viewBox='0 0 900 1525'>
+<rect x='0' y='0' width='900' height='1525' fill='white'/>
+<rect x='8' y='8' width='884' height='1509' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>CATHODE FLANGE  (Деталь 3 · Zone 3)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Capsule-side anchor end · pogo face + bayonet · 01_01 §1 · 02_02 §1.2</text>
 <circle cx='200' cy='113' r='9' fill='none' stroke='#111' stroke-width='1'/>
@@ -24,11 +24,21 @@
 <text x='218.5' y='197' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø4.5 GND pad</text>
 <text x='227.5' y='212' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>iso ring ≥1.5 REQUIRED · NOT IN GEOMETRY</text>
 <text x='278' y='101' font-family='monospace' font-size='9' text-anchor='middle' fill='#1166cc' font-weight='normal'>3× bayonet lug</text>
+<circle cx='200' cy='200' r='62.4' fill='none' stroke='#111' stroke-width='0.8'/>
+<circle cx='200' cy='200' r='48.51' fill='none' stroke='#111' stroke-width='0.8'/>
+<text x='200' y='335' font-family='monospace' font-size='9' text-anchor='middle' fill='#1166cc' font-weight='normal'>O-ring groove Ø20.8/Ø16.17 × 1.34 deep (face seal, 02_02 §3.2)</text>
 <rect x='430' y='125' width='18' height='150' fill='none' stroke='#111' stroke-width='1.2'/>
 <rect x='448' y='173' width='84' height='54' fill='none' stroke='#111' stroke-width='1.2'/>
 <rect x='430' y='113' width='18' height='12' fill='none' stroke='#111' stroke-width='0.8'/>
 <rect x='430' y='275' width='18' height='12' fill='none' stroke='#111' stroke-width='0.8'/>
 <line x1='430' y1='200' x2='532' y2='200' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
+<line x1='430' y1='137.6' x2='438.06' y2='137.6' stroke='#111' stroke-width='0.8'/>
+<line x1='438.06' y1='137.6' x2='438.06' y2='151.49' stroke='#111' stroke-width='0.8'/>
+<line x1='438.06' y1='151.49' x2='430' y2='151.49' stroke='#111' stroke-width='0.8'/>
+<line x1='430' y1='262.4' x2='438.06' y2='262.4' stroke='#111' stroke-width='0.8'/>
+<line x1='438.06' y1='262.4' x2='438.06' y2='248.51' stroke='#111' stroke-width='0.8'/>
+<line x1='438.06' y1='248.51' x2='430' y2='248.51' stroke='#111' stroke-width='0.8'/>
+<text x='430' y='87' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>groove 1.34 deep × 2.31 wide (derived, notes 5)</text>
 <text x='481' y='321' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE (section)</text>
 <line x1='430' y1='113' x2='430' y2='101' stroke='#1166cc' stroke-width='0.5'/>
 <line x1='448' y1='113' x2='448' y2='101' stroke='#1166cc' stroke-width='0.5'/>
@@ -80,66 +90,79 @@
 <text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   face, where the liner-covered bus rod enters): a RADIUS, NOT a chamfer. The rod reaches that mouth at a shallow angle, far below a lead-in chamfer's</text>
 <text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   30-45 deg, so it never lands on a chamfer - it bears on the line where the chamfer meets the bore; a chamfer only moves that edge, a radius removes it.</text>
 <text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   RADIUS VALUE: NOT SPECIFIED IN CEM - choosing one needs a contact model that does not exist yet (00_07 HW.34), so state the edge radius you can produce</text>
-<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   at the entry of this channel and how you verify it; a sharp or chamfered edge is not a reading of this blank</text>
-<text x='20' y='737' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: Catalytic face (Laccase + ZIF-nanozyme + PTFE-GDL): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ti only,</text>
-<text x='20' y='751' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   any dielectric blocks DET. Outer jacket: ZnO-Ta + 8-HQ allowed. NOT on PEEK. (01_02 3.6)</text>
-<text x='20' y='765' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid flange disc with a central bus channel, no lattice. (The lattice lives in the Zone-1 anode this part mates to,</text>
-<text x='20' y='779' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/anchor_zone1.*.json)</text>
-<text x='20' y='793' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: SEM of the catalytic face BEFORE shipment (01_02 1.5, factory obligation): x5,000 for micro-roughness (report the AREAL Sa of the 01_02 1.2</text>
-<text x='20' y='807' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance row, not a profile Ra) and x50,000 for nano-pores Sv - if nano-pores are not visible at x50,000 the etch is insufficient and EAAE (01_02 1.3</text>
-<text x='20' y='821' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Step 4) is repeated; the x500 frame of 01_02 1.5 is for gyroid macro-pores and has no subject on this part. Bus channel: MACHINED after printing to the</text>
-<text x='20' y='835' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   tolerance block (primary datum, 0.05 concentricity/runout) and it must accept the 0.15 mm structural liner (01_01 1.4) - an as-printed bore fails this</text>
-<text x='20' y='849' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   part. Its own diametral band is listed as bore_dia with BOTH limits NOT SPECIFIED: that blank is the open vendor question of 00_07 HW.34, not a licence</text>
-<text x='20' y='863' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   to accept any bore that passes concentricity. PEP is confined to the outer jacket: measure Ra &lt;= 0.4 um THERE and nowhere else, because PEP on the</text>
-<text x='20' y='877' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   catalytic face would cut away exactly the ECSA Step 4 just created (01_02 1.3 Step 7). Selective Hard-Gold ENIG on the central GND pad and outer pogo</text>
-<text x='20' y='891' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ring only (02_02 1.2); the PEEK isolation ring that clause wants left bare between them is NOT in this geometry (solid Ti top face; open, 00_07 HW.34),</text>
-<text x='20' y='905' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   so there is no bare ring to inspect until it is. ATTENTION: the batch-level SEM ACCEPTANCE CRITERION - what morphology passes, as opposed to which</text>
-<text x='20' y='919' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   frames to shoot - does not exist in canon yet and is an open leg (00_07 HW.1); do not read its absence as a pass. ANODE-TO-CATHODE RESISTANCE, added</text>
-<text x='20' y='933' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-12: measure it on the ASSEMBLED anchor before shipment. The bus rod runs up this channel isolated by a 0.15 mm PEEK liner, and a missing or</text>
-<text x='20' y='947' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   wear-through liner shorts anode to cathode (~0.5 V) - that is a NODE failure, not a degradation, and no direct control on a missing tube exists</text>
-<text x='20' y='961' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   otherwise (00_07 HW.34, FMEA row #22 carries D=8 for exactly this reason). Cheapest mitigation in the whole register and it belongs on THIS part's</text>
-<text x='20' y='975' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance sheet, because the channel is here</text>
-<text x='20' y='989' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Central GND pad O4-5 (Hard Gold ENIG &gt;=0.76 um Au / 1.27 um Ni) — galvanic-trap fix (02_02 1.2)</text>
-<text x='20' y='1003' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. 02_02 1.2 requires a PEEK isolation ring &gt;=1.5 mm centre&lt;-&gt;outer (short-circuit guard); this geometry does NOT provide it - the top face is solid Ti to</text>
-<text x='20' y='1017' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the bore edge (open, 00_07 HW.34)</text>
-<text x='20' y='1031' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. Shank O9 + thickness 3 = HW.8 placeholders — this drawing forces the reconcile</text>
-<text x='20' y='1045' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. Cathode catalytic = side/perimeter (Laccase/ZIF + PTFE-GDL); pogo = top face</text>
-<text x='20' y='1071' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='1087' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: H7/s6 (canon's nominal class only - and the class itself is open: the tree's only band, 5-34 um, is an H7/r6 read, 00_07 HW.3)</text>
-<text x='20' y='1101' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>shank_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<text x='20' y='1115' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<text x='20' y='1129' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
-<text x='20' y='1143' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum B: flange face</text>
-<text x='20' y='1157' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
-<text x='20' y='1171' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Runout: 0.05 (A)</text>
-<rect x='620' y='1189' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='710' y1='1189' x2='710' y2='1205' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1200' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='715' y='1200' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Cathode flange (Деталь 3)</text>
-<line x1='620' y1='1205' x2='870' y2='1205' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1205' x2='710' y2='1221' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1216' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='715' y='1216' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V (Grade 5)</text>
-<line x1='620' y1='1221' x2='870' y2='1221' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1221' x2='710' y2='1237' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1232' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='715' y='1232' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or EBM. Th… → NOTES</text>
-<line x1='620' y1='1237' x2='870' y2='1237' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1237' x2='710' y2='1253' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1248' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='715' y='1248' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='620' y1='1253' x2='870' y2='1253' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1253' x2='710' y2='1269' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='715' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2ae1e3d1-dirty</text>
-<line x1='620' y1='1269' x2='870' y2='1269' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1269' x2='710' y2='1285' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='715' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/cathode_flange.json</text>
-<line x1='620' y1='1285' x2='870' y2='1285' stroke='#111' stroke-width='0.5'/>
-<line x1='710' y1='1285' x2='710' y2='1301' stroke='#111' stroke-width='0.5'/>
-<text x='625' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='715' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>d86c4c5bfc704b6d83… → FOOTER</text>
-<text x='886' y='1317' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 2ae1e3d1-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
-<text x='886' y='1329' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): d86c4c5bfc704b6d83e146d065c949eae57def9c66e4b5fd01a34d81ae5fd3bf</text>
+<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   at the entry of this channel and how you verify it; a sharp or chamfered edge is not a reading of this blank | O-RING GROOVE on the top (pogo) face -</text>
+<text x='20' y='737' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the ONE face seal of the capsule (02_02 3.2 / 3.5, 00_07 HW.33 branch (a), applied 2026-09-14): MACHINE after printing. Depth 1.344 = CS 1.78 x (1 -</text>
+<text x='20' y='751' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   0.245 ratified squeeze); width 2.315 = ring section 2.489 mm2 / (0.80 gland fill x depth); cut between r 8.085 and r 10.4, i.e. inside the radome's seal</text>
+<text x='20' y='765' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   land (r 7.785-10.7) with 0.3 of land on each side. All of these are DERIVED from the o_ring block, none is typed. The radome rim is FLAT and lands on</text>
+<text x='20' y='779' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   this face as the seal datum, so the squeeze is this depth ALONE. DEPTH TOLERANCE: NOT SPECIFIED IN CEM - the whole O-ring chain (this depth + the</text>
+<text x='20' y='793' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   flatness of this face + the flatness of the radome rim, RSS) must stay within +/-98 um, so the question to you is 'can you hold +/-0.05 on this depth',</text>
+<text x='20' y='807' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   never a general-tolerance grade (00_07 HW.33). ATTENTION: the gland fill 80 % is an OPEN verdict - the WIDTH moves with it (85 % -&gt; 2.178, 90 % -&gt;</text>
+<text x='20' y='821' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2.057), the depth does not</text>
+<text x='20' y='835' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: Catalytic face (Laccase + ZIF-nanozyme + PTFE-GDL): ZnO-Ta, self-healing 8-HQ and biomimetic (Zn-HAp/chitosan) ALL FORBIDDEN - bare Ti only,</text>
+<text x='20' y='849' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   any dielectric blocks DET. Outer jacket: ZnO-Ta + 8-HQ allowed. NOT on PEEK. (01_02 3.6)</text>
+<text x='20' y='863' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid flange disc with a central bus channel, no lattice. (The lattice lives in the Zone-1 anode this part mates to,</text>
+<text x='20' y='877' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/anchor_zone1.*.json)</text>
+<text x='20' y='891' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: SEM of the catalytic face BEFORE shipment (01_02 1.5, factory obligation): x5,000 for micro-roughness (report the AREAL Sa of the 01_02 1.2</text>
+<text x='20' y='905' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance row, not a profile Ra) and x50,000 for nano-pores Sv - if nano-pores are not visible at x50,000 the etch is insufficient and EAAE (01_02 1.3</text>
+<text x='20' y='919' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Step 4) is repeated; the x500 frame of 01_02 1.5 is for gyroid macro-pores and has no subject on this part. Bus channel: MACHINED after printing to the</text>
+<text x='20' y='933' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   tolerance block (primary datum, 0.05 concentricity/runout) and it must accept the 0.15 mm structural liner (01_01 1.4) - an as-printed bore fails this</text>
+<text x='20' y='947' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   part. Its own diametral band is listed as bore_dia with BOTH limits NOT SPECIFIED: that blank is the open vendor question of 00_07 HW.34, not a licence</text>
+<text x='20' y='961' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   to accept any bore that passes concentricity. PEP is confined to the outer jacket: measure Ra &lt;= 0.4 um THERE and nowhere else, because PEP on the</text>
+<text x='20' y='975' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   catalytic face would cut away exactly the ECSA Step 4 just created (01_02 1.3 Step 7). Selective Hard-Gold ENIG on the central GND pad and outer pogo</text>
+<text x='20' y='989' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ring only (02_02 1.2); the PEEK isolation ring that clause wants left bare between them is NOT in this geometry (solid Ti top face; open, 00_07 HW.34),</text>
+<text x='20' y='1003' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   so there is no bare ring to inspect until it is. ATTENTION: the batch-level SEM ACCEPTANCE CRITERION - what morphology passes, as opposed to which</text>
+<text x='20' y='1017' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   frames to shoot - does not exist in canon yet and is an open leg (00_07 HW.1); do not read its absence as a pass. ANODE-TO-CATHODE RESISTANCE, added</text>
+<text x='20' y='1031' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-12: measure it on the ASSEMBLED anchor before shipment. The bus rod runs up this channel isolated by a 0.15 mm PEEK liner, and a missing or</text>
+<text x='20' y='1045' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   wear-through liner shorts anode to cathode (~0.5 V) - that is a NODE failure, not a degradation, and no direct control on a missing tube exists</text>
+<text x='20' y='1059' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   otherwise (00_07 HW.34, FMEA row #22 carries D=8 for exactly this reason). Cheapest mitigation in the whole register and it belongs on THIS part's</text>
+<text x='20' y='1073' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance sheet, because the channel is here. O-RING GROOVE (top face): measure the depth 1.344 against the tolerance you quoted (post-process) and the</text>
+<text x='20' y='1087' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   FLATNESS of the top face across the seal land r 7.785-10.7 - the radome rim lands there as the seal datum and both faces share one +/-98 um chain (00_07</text>
+<text x='20' y='1101' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   HW.33); o_ring_groove_depth is listed with BOTH limits NOT SPECIFIED on purpose, that blank is the open shop question, not a licence</text>
+<text x='20' y='1115' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Central GND pad O4-5 (Hard Gold ENIG &gt;=0.76 um Au / 1.27 um Ni) — galvanic-trap fix (02_02 1.2)</text>
+<text x='20' y='1129' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. 02_02 1.2 requires a PEEK isolation ring &gt;=1.5 mm centre&lt;-&gt;outer (short-circuit guard); this geometry does NOT provide it - the top face is solid Ti to</text>
+<text x='20' y='1143' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the bore edge (open, 00_07 HW.34)</text>
+<text x='20' y='1157' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. Shank O9 + thickness 3 = HW.8 placeholders — this drawing forces the reconcile</text>
+<text x='20' y='1171' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. Cathode catalytic = side/perimeter (Laccase/ZIF + PTFE-GDL); pogo = top face</text>
+<text x='20' y='1185' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. O-ring groove on the top face = the capsule's SINGLE seal (02_02 3.2, 00_07 HW.33 branch (a), applied 2026-09-14); the radome rim is FLAT and closes</text>
+<text x='20' y='1199' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   it. The bayonet lugs still sit at mid-disc: the raised collar the Z-reconcile ratified (02_02 4.4) is not in this geometry - its wall is set by nothing</text>
+<text x='20' y='1213' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   yet</text>
+<text x='20' y='1239' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='1255' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: H7/s6 (canon's nominal class only - and the class itself is open: the tree's only band, 5-34 um, is an H7/r6 read, 00_07 HW.3)</text>
+<text x='20' y='1269' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>shank_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='1283' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='1297' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>o_ring_groove_depth: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='1311' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
+<text x='20' y='1325' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum B: flange face</text>
+<text x='20' y='1339' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
+<text x='20' y='1353' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Runout: 0.05 (A)</text>
+<rect x='620' y='1371' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='710' y1='1371' x2='710' y2='1387' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1382' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='715' y='1382' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Cathode flange (Деталь 3)</text>
+<line x1='620' y1='1387' x2='870' y2='1387' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1387' x2='710' y2='1403' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1398' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='715' y='1398' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V (Grade 5)</text>
+<line x1='620' y1='1403' x2='870' y2='1403' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1403' x2='710' y2='1419' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1414' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='715' y='1414' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or EBM. Th… → NOTES</text>
+<line x1='620' y1='1419' x2='870' y2='1419' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1419' x2='710' y2='1435' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1430' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='715' y='1430' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='620' y1='1435' x2='870' y2='1435' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1435' x2='710' y2='1451' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1446' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='715' y='1446' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>5644f74c-dirty</text>
+<line x1='620' y1='1451' x2='870' y2='1451' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1451' x2='710' y2='1467' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1462' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='715' y='1462' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/cathode_flange.json</text>
+<line x1='620' y1='1467' x2='870' y2='1467' stroke='#111' stroke-width='0.5'/>
+<line x1='710' y1='1467' x2='710' y2='1483' stroke='#111' stroke-width='0.5'/>
+<text x='625' y='1478' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='715' y='1478' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>879f1ccdf93299ab59… → FOOTER</text>
+<text x='886' y='1499' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 5644f74c-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
+<text x='886' y='1511' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 879f1ccdf93299ab593af50e6d27b9f0b676550de0a73e4b5180a5f3219d22e2</text>
 </svg>

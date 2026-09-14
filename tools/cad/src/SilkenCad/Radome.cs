@@ -9,22 +9,59 @@ namespace SilkenCad;
 // Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell — gotcha #9 is INVERTED here:
 // the hollow is INTENTIONAL (outer voxConstruct − inner cavity), so the verify gate checks the WALL is
 // present, not solidity. Cylinder body + a rounded shield bell on top (anti-overgrowth, no callus-grip
-// edge, 01_04 §5.5) + a bayonet socket (circumferential lock groove + axial entry slots mating the
-// Деталь-3 lugs) + a rim O-ring groove (SUPERSEDED, still cut — step 4). The cathode breathes O₂ from the
-// SIDE/perimeter (02_02 §1.2) —
-// the dome does NOT seal it.
+// edge, 01_04 §5.5) + a LOCAL INTERNAL RIM BOSS (step 3) that carries, radially one after the other, the
+// bayonet socket in its OUTER band and the O-ring seal land in its INNER band + the bayonet socket itself
+// (circumferential lock groove + axial entry slots mating the Деталь-3 lugs), cut in the outer band ONLY.
+// The rim face (z = 0) is FLAT: the single O-ring groove is the FLANGE's (CathodeFlange.cs) and the seal land
+// here closes it. The cathode breathes O₂ from the SIDE/perimeter (02_02 §1.2) — the dome does NOT seal it.
 //
-// ⚠ MATE-Ø FLAG (HW.17): Деталь-3 lugs protrude radially to ~Ø29 (flange Ø25 + 2·2); a cap that slides
-// over them needs OD > Ø25, conflicting with the frozen "radome Ø25" (02_02 §1.3). This generator keeps
-// the dome body Ø25 and models the socket at the lug Ø for mate-fit.
-// ⚖️ RECONCILED radially 2026-09-10 (00_07 HW.33): Ø25 stays, the lugs go inboard, the enclosing skirt is
-// WITHDRAWN — it cuts the lower cavity back past the flange rim and so deletes the face the ratified
-// O-ring seals against. The socket moves into a LOCAL internal boss at the rim that carries both the
-// bayonet and the seal land; this generator does not model that boss yet (open leg). The bayonet-Z half
-// was RATIFIED 2026-09-11 (lugs on a raised collar, 02_02 §4.4) and waits, with the boss and the crown, on
-// the board budget (00_07 HW.9); the RF floor itself (8 ⊥ 12) stays an open verdict (HW.33).
+// ⚖️ What is APPLIED here (00_07 HW.33) and what is deliberately not:
+//  • rim boss + flat rim + socket-in-the-outer-band — APPLIED 2026-09-14 (ratified 2026-09-10; ⚖️ 2026-09-14
+//    «вхід»: designed to the rim-cavity ceiling now, and the board layout HW.9 takes that ceiling as an INPUT);
+//  • the raised COLLAR that carries the lugs at Assembly.RequiredLugZMm (ratified 2026-09-11, 02_02 §4.4) is NOT
+//    modelled — nothing sets its wall (no bayonet load model; a placeholder would print on the flange sheet as a
+//    decision), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
+//    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
+//    it — socket and collar are the female and male halves of one band;
+//  • the FLAT CROWN (R5, ratified 2026-09-11) waits on ⚖️ HW.30 (piezo placement decides the height it fixes) —
+//    the cap is still a hemisphere, which is why `draw radome` is refused: a sheet would print the rejected cap.
+// ⚠ MATE-Ø: the flange lugs still protrude to ~Ø29 (asis); `inboard` clamps them — the collar leg owns the mate.
 internal static class Radome
 {
+    // ── Rim-boss radial layout — CEM-derived, the same chain as 52_z_stack_tolerance.rim_boss_radial_budget ──
+    // From the dome OD inward: [socket band][seal band] = the boss; what is left is the rim cavity.
+    //   socket band = lug radius + slot clearance          (the entry slot must clear the lug)
+    //   seal band   = gland width + 2·slot clearance       (the land backs the ring even at full socket misalignment)
+    // 🔴 Every term is a MINIMUM, so the cavity is a CEILING with zero tolerance in it (00_07 HW.33): the Ø handed
+    //    to HW.9 is an upper bound on the board, never a nominal to design a board against.
+    // 🔗 C#↔Python crossing, EXPLICIT: script 52 derives the identical numbers from the same manifest fields and
+    //    writes them to its cache (§rim_boss_radial_budget, §applied_gland); RadomeTests pins these against it.
+    public static float SocketBandMm(RadomeCem cem) => cem.LugRadiusMm + cem.SlotClearanceMm;
+    public static float SealBandMm(RadomeCem cem) => cem.ORing.WidthMm + (2f * cem.SlotClearanceMm);
+    public static float BossRadialMm(RadomeCem cem) => SocketBandMm(cem) + SealBandMm(cem);
+    public static float RimCavityDiameterMm(RadomeCem cem) => cem.DomeDiameterMm - (2f * BossRadialMm(cem));
+
+    // The seal land = the boss's inner band, as radii [inner, outer]. Its outer edge is where the socket begins.
+    public static float SealLandInnerRMm(RadomeCem cem) => (cem.DomeDiameterMm / 2f) - BossRadialMm(cem);
+    public static float SealLandOuterRMm(RadomeCem cem) => (cem.DomeDiameterMm / 2f) - SocketBandMm(cem);
+
+    // Boss height = the socket's top (lock-groove Z + slot radius): the boss exists to carry the socket and the
+    // land, and the verdict names no height of its own — DERIVED, not a field, so no number is invented.
+    public static float BossHeightMm(RadomeCem cem) => cem.LockGrooveZMm + SocketBandMm(cem);
+
+    // The socket pocket's radial extent [inner, outer]: today's L-slot cuts (lock groove + entry slots, both of
+    // radius `socket band` about the wall's inner face) CLIPPED to the outer band, so no cut reaches the seal land.
+    // The outer edge stays where the shipped socket always had it — `inner wall + slot radius`, leaving
+    // `wall − slot radius` of skin — so the pocket is `socket band − skin` deep, not the full band: script 52's
+    // budget counts no skin (every term a minimum) and a pocket cut to the dome OD would breach the shell. The
+    // collar leg (00_07 HW.33) sizes the lug protrusion against THIS depth, not against the band.
+    public static float SocketPocketInnerRMm(RadomeCem cem) => SealLandOuterRMm(cem);
+    // Skin first, pocket from it: `wall − slot radius` is the definition, and computing the pocket edge as
+    // `inner wall + slot radius` then subtracting it from the OD accumulates two float32 roundings that read
+    // the 0.2 mm skin as 1.99998 voxels on the radome's own 0.1 mm grid — a threshold miss with no geometry in it.
+    public static float SocketSkinMm(RadomeCem cem) => cem.WallThicknessMm - SocketBandMm(cem);
+    public static float SocketPocketOuterRMm(RadomeCem cem) => (cem.DomeDiameterMm / 2f) - SocketSkinMm(cem);
+
     public static Voxels Build(RadomeCem cem)
     {
         float fR = cem.DomeDiameterMm / 2f;
@@ -35,6 +72,7 @@ internal static class Radome
         // 1. Outer dome — cylinder body + hemispherical cap (rounded shield bell): smooth, no callus-grip
         //    edge. Cap rise = fR ≥ BellRiseMm (gated in verify); cap edge radius = fR ≥ BellRadiusMm
         //    (pinned ≥ canon §5.5 by scripts/cem_canon_sync.rb — no C# verify assert on the radius).
+        //    ⚖️ The ratified flat crown R5 (2026-09-11) is NOT applied — it waits on HW.30 (header).
         Voxels voxDome = new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fR).voxConstruct();
         voxDome.BoolAdd(new BaseSphere(new LocalFrame(new Vector3(0f, 0f, fCavH)), fR).voxConstruct());
 
@@ -42,30 +80,43 @@ internal static class Radome
         voxDome.BoolSubtract(new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fInnerR).voxConstruct());
         voxDome.BoolSubtract(new BaseSphere(new LocalFrame(new Vector3(0f, 0f, fCavH)), fInnerR).voxConstruct());
 
-        // 3. Bayonet socket — a circumferential lock groove (lugs rotate into) + axial entry slots (lugs
-        //    pass from the rim). Pocket radius = lug + clearance (mate-fit; see MATE-Ø flag).
-        float fSlotR = cem.LugRadiusMm + cem.SlotClearanceMm;
+        // 3. Rim BOSS — a local internal annulus from the seal-land inner R out to the socket pocket's outer R,
+        //    from the rim up to the socket's top. It thickens the RIM only (the dome wall over the antenna stays
+        //    fWall — RF untouched) and is what gives the seal land a width the socket does not share: the shipped
+        //    socket used to leave 0.2 of 2.0 mm of land under its entry slots on 16 % of the circle (00_07 HW.33).
+        //    ⚠ The annulus deliberately OVERLAPS the wall (its outer R lies inside the wall's solid; the socket cut
+        //    below carves the pocket out of it again): an annulus ending exactly at the inner wall radius met the
+        //    wall SURFACE-to-surface, and the union of two touching voxel bodies keeps a seam of sub-voxel voids —
+        //    measured 2026-09-14 as ~6 % missing solid in a two-voxel strip across r = 10.5 on a part with nothing
+        //    cut there. Overlap costs nothing and leaves the seal land's edge measurable (Validation.MeasureRadome).
+        LocalFrame oRim = new(Vector3.Zero);
+        float fBossH = BossHeightMm(cem);
+        Voxels voxBoss = new BaseCylinder(oRim, fBossH, SocketPocketOuterRMm(cem)).voxConstruct();
+        voxBoss.BoolSubtract(new BaseCylinder(oRim, fBossH, SealLandInnerRMm(cem)).voxConstruct());
+        voxDome.BoolAdd(voxBoss);
+
+        // 4. Bayonet socket — a circumferential lock groove (lugs rotate into) + axial entry slots (lugs pass
+        //    from the rim): the same L-slot primitives as before, then CLIPPED to the outer band so no cut enters
+        //    the seal land. Radial extent = [SocketPocketInnerRMm, SocketPocketOuterRMm].
+        float fSlotR = SocketBandMm(cem);
         LocalFrame oGrooveF = new(new Vector3(0f, 0f, cem.LockGrooveZMm - fSlotR));
-        Voxels voxGroove = new BaseCylinder(oGrooveF, 2f * fSlotR, fInnerR + fSlotR).voxConstruct();
-        voxGroove.BoolSubtract(new BaseCylinder(oGrooveF, 2f * fSlotR, fInnerR).voxConstruct());
-        voxDome.BoolSubtract(voxGroove);
+        Voxels voxSocket = new BaseCylinder(oGrooveF, 2f * fSlotR, fInnerR + fSlotR).voxConstruct();
+        voxSocket.BoolSubtract(new BaseCylinder(oGrooveF, 2f * fSlotR, fInnerR).voxConstruct());
         for (int i = 0; i < cem.BayonetLugs; i++)
         {
             float fAngle = 2f * MathF.PI * i / cem.BayonetLugs;
             Vector3 vecRadial = new(MathF.Cos(fAngle), MathF.Sin(fAngle), 0f);
             LocalFrame oSlot = new(vecRadial * fInnerR);   // base at the inner wall, axis +Z (default)
-            voxDome.BoolSubtract(new BaseCylinder(oSlot, cem.LockGrooveZMm, fSlotR).voxConstruct());
+            voxSocket.BoolAdd(new BaseCylinder(oSlot, cem.LockGrooveZMm, fSlotR).voxConstruct());
         }
+        Voxels voxOuterBand = new BaseCylinder(oRim, fCavH, fR).voxConstruct();
+        voxOuterBand.BoolSubtract(new BaseCylinder(oRim, fCavH, SocketPocketInnerRMm(cem)).voxConstruct());
+        voxSocket.BoolIntersect(voxOuterBand);
+        voxDome.BoolSubtract(voxSocket);
 
-        // 4. O-ring groove on the rim wall (z=0 face) — annular into the wall. ⛔ SUPERSEDED AND STILL CUT:
-        //    ⚖️ 2026-09-10 ratified ONE groove in the flange against a FLAT rim (01_01 §3 step 8); this cut and
-        //    the flange's 0.9 make a 0.9 + 0.9 pair under a 1.78 cord, a −1.1 % squeeze that does not seal.
-        //    Removing it is the open application leg (00_07 HW.33) — see RadomeCem.ORingGrooveDepthMm.
-        LocalFrame oRim = new(Vector3.Zero);
-        Voxels voxORing = new BaseCylinder(oRim, cem.ORingGrooveDepthMm, fInnerR + cem.ORingGrooveWidthMm).voxConstruct();
-        voxORing.BoolSubtract(new BaseCylinder(oRim, cem.ORingGrooveDepthMm, fInnerR).voxConstruct());
-        voxDome.BoolSubtract(voxORing);
-
+        // The rim face (z = 0) is left FLAT on purpose: ⚖️ 2026-09-10 put the ONE O-ring groove in the flange
+        // (CathodeFlange.cs) and this land closes it. The counter-groove that used to be cut here made a
+        // 0.9 + 0.9 pair under a 1.78 cord (a −1.1 % squeeze that did not seal); it is gone, not shallower.
         return voxDome;
     }
 }

@@ -13,6 +13,8 @@ namespace SilkenCad;
 // Z: shank z∈[0,shankLen] (deep, into PEEK) → flange on top z∈[shankLen, shankLen+thickness] (capsule
 // side). Pogo pads sit on the top face (Hard Gold = coating, not geometry); the cathode catalytic zone
 // is the side/perimeter (Laccase/ZIF + PTFE-GDL, O₂ from the side under the radome bell — 02_02 §1.2).
+// The top face also carries the ONE O-ring groove of the capsule seal (step 5) — the radome rim is flat and
+// lands on this face as the hard datum (00_07 HW.33 branch (а), applied 2026-09-14).
 internal static class CathodeFlange
 {
     // Map the flange CEM's shank fields onto the §4.3 MechanicalLock CEM — reuse, не дублюй.
@@ -35,6 +37,18 @@ internal static class CathodeFlange
         GrooveDepthMm = c.GrooveDepthMm,
     };
 
+    // ── The ONE O-ring groove (⚖️ 2026-09-10, applied 2026-09-14, 00_07 HW.33 branch (а)) — DERIVED, not stored ──
+    // Depth and width come from the gland spec (CathodeFlangeCem.ORing); the radial position comes from the
+    // radome's rim-boss layout, mirrored through the fields the two parts share (Ø, lug radius, slot clearance):
+    // the groove's outer edge sits one slot clearance inside the seal land's outer edge (flangeR − socket band),
+    // so the land backs the ring on BOTH sides even at full socket misalignment. Same chain as Radome.SealLand*,
+    // pinned by AssemblyTests.Seal_Land_Backs_The_Groove_With_One_Slot_Clearance_On_Each_Side.
+    public static float ORingGrooveDepthMm(CathodeFlangeCem c) => c.ORing.DepthMm;
+    public static float ORingGrooveWidthMm(CathodeFlangeCem c) => c.ORing.WidthMm;
+    public static float ORingGrooveOuterRMm(CathodeFlangeCem c)
+        => (c.FlangeDiameterMm / 2f) - (c.LugRadiusMm + c.SlotClearanceMm) - c.SlotClearanceMm;
+    public static float ORingGrooveInnerRMm(CathodeFlangeCem c) => ORingGrooveOuterRMm(c) - ORingGrooveWidthMm(c);
+
     public static Voxels Build(CathodeFlangeCem cem)
     {
         float fShankLen = cem.ShankLengthMm;
@@ -50,6 +64,8 @@ internal static class CathodeFlange
 
         // 3. Bayonet lugs — radial pins evenly spaced around the flange rim (mate the Радом socket, фаза 2).
         //    Each pin's local-Z = the radial outward direction; it overlaps the rim by fOverlap to fuse.
+        //    ⚖️ Their Z is the mid-disc `shank + t/2`; the ratified raised COLLAR (02_02 §4.4) that would carry
+        //    them at Assembly.RequiredLugZMm is not modelled — its wall is set by nothing (00_07 HW.33).
         float fLugZ = fShankLen + (fThick / 2f);
         const float fOverlap = 1.0f;
         for (int i = 0; i < cem.BayonetLugs; i++)
@@ -64,11 +80,14 @@ internal static class CathodeFlange
         //    monolithic anode bus rod threads it, isolated by the liner (01_01 §1.4).
         voxPart.BoolSubtract(new BaseCylinder(oFlange, fThick, cem.BoreDiameterMm / 2f).voxConstruct());
 
-        // 5. O-ring groove — annular subtract on the capsule-side (top) face (mate the Радом O-ring, CS 1.78).
-        LocalFrame oTop = new(new Vector3(0f, 0f, fShankLen + fThick - cem.ORingGrooveDepthMm));
-        float fGrooveOuter = fFlangeR - 1.5f;
-        Voxels voxRing = new BaseCylinder(oTop, cem.ORingGrooveDepthMm, fGrooveOuter).voxConstruct();
-        voxRing.BoolSubtract(new BaseCylinder(oTop, cem.ORingGrooveDepthMm, fGrooveOuter - cem.ORingGrooveWidthMm).voxConstruct());
+        // 5. O-ring groove — the ONE face-seal groove, an annular subtract on the capsule-side (top) face at the
+        //    derived depth (CS·(1 − squeeze) = 1.344 at the ratified 24.5 %) and width (ring area / (fill·depth)),
+        //    on the radii of the radome's seal land. The radome rim lands on this face as a hard datum, so the
+        //    squeeze is this depth alone (02_02 §3.5 — script 52's one-term O-ring chain).
+        float fDepth = ORingGrooveDepthMm(cem);
+        LocalFrame oTop = new(new Vector3(0f, 0f, fShankLen + fThick - fDepth));
+        Voxels voxRing = new BaseCylinder(oTop, fDepth, ORingGrooveOuterRMm(cem)).voxConstruct();
+        voxRing.BoolSubtract(new BaseCylinder(oTop, fDepth, ORingGrooveInnerRMm(cem)).voxConstruct());
         voxPart.BoolSubtract(voxRing);
 
         return voxPart;

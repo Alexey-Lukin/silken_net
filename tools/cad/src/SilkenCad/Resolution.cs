@@ -68,8 +68,11 @@ internal static class Resolution
         Add(a, strPrefix + "barb_height_mm", cem.BarbHeightMm, dVoxelMm);
         Add(a, strPrefix + "groove_depth_mm", cem.GrooveDepthMm, dVoxelMm);
         Add(a, strPrefix + "groove_width_mm", cem.GrooveWidthMm, dVoxelMm);
-        Add(a, strPrefix + "o_ring_groove_depth_mm", cem.ORingGrooveDepthMm, dVoxelMm);
-        Add(a, strPrefix + "o_ring_groove_width_mm", cem.ORingGrooveWidthMm, dVoxelMm);
+        // The O-ring groove is DERIVED from the gland spec (CathodeFlange.ORingGroove*), so it is carried here as
+        // the numbers the generator actually cuts, never as a declared field.
+        Add(a, strPrefix + "o_ring_groove_depth", CathodeFlange.ORingGrooveDepthMm(cem), dVoxelMm, bDerived: true);
+        Add(a, strPrefix + "o_ring_groove_width", CathodeFlange.ORingGrooveWidthMm(cem), dVoxelMm, bDerived: true);
+        Add(a, strPrefix + "slot_clearance_mm", cem.SlotClearanceMm, dVoxelMm);
         Add(a, strPrefix + "isolation_ring_width_mm", cem.IsolationRingWidthMm, dVoxelMm);
         Add(a, strPrefix + "lug_radius_mm", cem.LugRadiusMm, dVoxelMm);
         Add(a, strPrefix + "lug_protrusion_mm", cem.LugProtrusionMm, dVoxelMm);
@@ -81,8 +84,11 @@ internal static class Resolution
         var a = new List<Feature>();
         Add(a, strPrefix + "wall_thickness_mm", cem.WallThicknessMm, dVoxelMm);
         Add(a, strPrefix + "slot_clearance_mm", cem.SlotClearanceMm, dVoxelMm);
-        Add(a, strPrefix + "o_ring_groove_depth_mm", cem.ORingGrooveDepthMm, dVoxelMm);
-        Add(a, strPrefix + "o_ring_groove_width_mm", cem.ORingGrooveWidthMm, dVoxelMm);
+        // Rim boss (Radome.Boss*): the seal band is the boss's inner band; the socket SKIN is the thinnest thing
+        // the socket leaves — `wall − slot radius`, 0.2 mm at the frozen dims — and it always existed under the
+        // shipped socket undeclared; it is carried now so a coarser grid says so instead of dropping it.
+        Add(a, strPrefix + "rim_boss_seal_band", Radome.SealBandMm(cem), dVoxelMm, bDerived: true);
+        Add(a, strPrefix + "rim_boss_socket_skin", Radome.SocketSkinMm(cem), dVoxelMm, bDerived: true);
         Add(a, strPrefix + "lug_radius_mm", cem.LugRadiusMm, dVoxelMm);
         return a;
     }
