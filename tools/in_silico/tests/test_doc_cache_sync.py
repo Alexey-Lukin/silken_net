@@ -537,7 +537,7 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["edge_bearing"]["exit_contact"][0]["landing_angle_deg_rigid_wall"], 0.0005,
     ),
-    # ⛔ The SIGN of this ratio is the finding (the 6 mm column OVERSTATES the coaxial cap, where the drift
+    # ⛔ The SIGN of this ratio is the finding (the 6 mm column OVERSTATES the rigid-wall end of the coaxial bracket, where the drift
     # picture had it «understated by 40.8 %»), so the number canon and SUMMARY quote is pinned in both.
     (
         "§2 supported column over the rigid-wall end, placeholder → bus_mechanical.json §supported_column_vs_equilibrium",

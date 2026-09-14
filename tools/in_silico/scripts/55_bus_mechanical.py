@@ -663,11 +663,11 @@ def main() -> int:
     # · the span optimism and through it the seam bound · the wear station) is re-derived here on the
     # same solver (`lib.beam_contact`, one home), on the placeholder AND at both ends of the lock window.
     # ⛔ What the coaxial solve can say: WHETHER a branch touches down (µ·F against the touchdown drag),
-    #    WHERE (the exit, asserted), the CAP on the root stress and the wall reaction. What it cannot:
-    #    anything about a channel off the root axis — that is §4b.
+    #    WHERE (the exit, asserted), the rigid-wall root stress — the LOWER end of a bracket (below) — and
+    #    the wall reaction. What it cannot: anything about a channel off the root axis — that is §4b.
     banner("Clearance regime — where does the rod meet the wall? (equilibrium, both geometries)")
     print(f"  Channel Ø{D_CHANNEL_MM:.2f}, drilled depth {BORE_DEPTH_MM:.0f} mm (shank + flange; the exit is the pogo face, "
-          f"where the tube ends flush). Rigid frictionless wall, perfect clamp — every stress an UPPER bound.")
+          f"where the tube ends flush). Rigid frictionless wall, perfect clamp — each figure carries its sign (the rigid-wall root is the LOWER end).")
     print(f"  {'geometry':<28s} {'branch':<22s} {'play':>7s} {'F_td':>8s} {'σ_root [rigid…upper] @µ0.5':>28s} {'R_exit≤':>8s}   regime (quantifier explicit)")
     print(f"  {'-' * 118}")
     regimes = []

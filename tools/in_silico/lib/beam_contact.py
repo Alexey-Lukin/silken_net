@@ -33,8 +33,11 @@ rods (cond ~1.2e11); iterative refinement does not improve it (the residual K·u
 2026-09-14).
 
 ⛔ DECLARED CEILINGS: rigid, frictionless wall (no liner compliance, no contact pressure, no axial
-traction); perfect clamp; small deflection; no thermal term; no P-δ from an axial force. Every stress a
-caller derives from a clamp moment here is an UPPER bound on the wall/clamp account.
+traction); perfect clamp; small deflection; no thermal term; no P-δ from an axial force. These carry NO
+blanket sign: where the wall PRESCRIBES a deflection (the coaxial drag once touched down), a compliant wall
+raises the root moment by 3EI·(R/k)/L² — the rigid-wall figure is then the LOWER end — while a compliant
+clamp lowers it. The sign depends on the loading, so every caller states it per derived figure (script
+55's `*_bound` fields); this module cannot.
 """
 from __future__ import annotations
 
