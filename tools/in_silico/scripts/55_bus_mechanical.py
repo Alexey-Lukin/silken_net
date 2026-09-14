@@ -30,7 +30,9 @@ that leaves play can take it up and BEAR on the wall. WHERE it bears is an EQUIL
 answers it with the contact solver of `lib.beam_contact` (the one script 68 shipped 2026-09-14), on the
 insertion placeholder AND at both ends of the Zone-1 lock window: on a coaxial channel the touchdown
 drag is far below every swept µ·F, the ONLY contact under drag is the exit plane (the pad plane, where
-the tube ends flush), and the root stress is capped at 3·E·c·g/L² whatever the drag; a channel off the
+the tube ends flush), and against a RIGID wall the root stress is 3·E·c·g/L² whatever the drag — the
+LOWER end of a bracket whose upper end is the Ti-bore stop behind the polymer wall (the free cantilever
+where the drag cannot reach it), the contact compliance between them measured nowhere; a channel off the
 root axis by more than the play makes the MOUTH a contact station and puts a STATIC bending on the root.
 An unsupported SF is therefore a number for a configuration that does not exist, and the script says
 so through DERIVED flags, never through prose. What the liner carries instead is WEAR: the exit contact
@@ -317,12 +319,13 @@ INFINITE_LIFE_SF = 2.0        # the SF line this script calls "infinite life"
 #    exists while its measurer does not.
 # ⛔ AND NO BREAK-EVEN k IS DERIVED EITHER (2026-09-14). The inversion SF_seam = k·SF_wire needs ONE
 #    fully-reversed stress at the root, and the equilibrium gives the root two regimes instead: on a
-#    coaxial channel the drag is fully reversed and CAPPED (amplitude = the cap, mean 0); a channel
-#    off the root axis by more than the play puts a STATIC bending on the same section (a MEAN) with the
-#    drag as amplitude on top. This file has no mean-stress correction, so the offset regime cannot be
-#    priced, and a k inverted from the coaxial cap alone would silently assume coaxiality — a tolerance
-#    the stack does not carry anywhere. §5 therefore gives the INPUTS a seam acceptance needs
-#    (amplitude and mean per regime and geometry) and keeps k absent.
+#    coaxial channel the drag is fully reversed with an amplitude that is a BRACKET — rigid wall = its
+#    LOWER end, Ti-bore stop = upper, mean 0; a channel off the root axis by more than the play puts a
+#    STATIC bending on the same section (a MEAN, a rigid-wall UPPER bound) with the drag as amplitude on
+#    top. This file has no mean-stress correction, so the offset regime cannot be priced, and a k inverted
+#    from the rigid-wall end of the coaxial bracket alone would silently assume both a coaxiality the stack
+#    does not carry anywhere and a rigid wall the part does not have. §5 therefore gives the INPUTS a seam
+#    acceptance needs (amplitude and mean per regime and geometry, with their signs) and keeps k absent.
 WELD_KNOCKDOWN_MEASURED = None   # k = σ_e(seam)/σ_e(wire) ∈ (0,1] — NOT MEASURED (00_06 §0)
 # Two reference markers, and BOTH are OURS — neither is a weld figure borrowed from anywhere,
 # so neither claims authority it does not have (in-silico skill #9, the mirror half):
@@ -665,10 +668,11 @@ def main() -> int:
     banner("Clearance regime — where does the rod meet the wall? (equilibrium, both geometries)")
     print(f"  Channel Ø{D_CHANNEL_MM:.2f}, drilled depth {BORE_DEPTH_MM:.0f} mm (shank + flange; the exit is the pogo face, "
           f"where the tube ends flush). Rigid frictionless wall, perfect clamp — every stress an UPPER bound.")
-    print(f"  {'geometry':<28s} {'branch':<22s} {'play':>7s} {'F_td':>8s} {'cap σ':>8s} {'R_exit @µ0.5':>13s}   regime (quantifier explicit)")
-    print(f"  {'-' * 110}")
+    print(f"  {'geometry':<28s} {'branch':<22s} {'play':>7s} {'F_td':>8s} {'σ_root [rigid…upper] @µ0.5':>28s} {'R_exit≤':>8s}   regime (quantifier explicit)")
+    print(f"  {'-' * 118}")
     regimes = []
     _coax_solves: dict[tuple, dict] = {}   # raw solves, keyed (geometry, branch, µ, member) — §7 reads slopes UNROUNDED
+    _rot_upper: dict[tuple, float] = {}    # in-contact rotation path per cycle at the upper end (mm), UNROUNDED, for §7
     ei_bare = flexural_rigidity_Nm2(D_BUS)
     for geo in GEOMETRIES:
         ch = geo.channel()
@@ -706,13 +710,36 @@ def main() -> int:
                 r_exit = -res["contacts"][0]["force_N"] if stations else 0.0
                 if touched:
                     assert abs(r_exit - (f_lat - f_td)) <= 2e-4, "exit reaction ≠ drag − touchdown drag"
+                # 🔴 THE RIGID-WALL ROOT STRESS IS THE LOWER END OF A BRACKET, NOT A CAP. A rigid wall prescribes
+                #    the exit deflection at g; the real wall is the PEEK wall of the tube (or the film) on the Ti
+                #    bore's exit edge, so the exit yields by R/k and the root moment grows by 3EI·(R/k)/L² — where
+                #    in the bracket the root sits is set by the CONTACT COMPLIANCE, measured nowhere. The UPPER end
+                #    needs no compliance model: the rod cannot pass the Ti bore behind the polymer, so its exit
+                #    travel is at most the play plus the polymer's own wall — the same solve with the wall moved
+                #    out by that wall (the free cantilever F·L when the drag cannot reach the Ti bore).
+                upper = bc.solve(ch, ei_at_bond, play + t_mm, drag_N=f_lat)
+                sig_upper = root_sigma_MPa(upper["clamp_moment_Nm"])
+                sig_free = bending_stress_MPa(f_lat, geo.pad_mm)
+                assert sig_upper <= sig_free * 1.0001, "the Ti-bore stop cannot exceed the free cantilever"
+                assert sig_upper >= root_sigma_MPa(res["clamp_moment_Nm"]) - 1e-9, "the upper end fell below the rigid-wall end"
+                if geo is PLACEHOLDER_GEOMETRY:
+                    # CONTROL, two owners of one quantity: the free-cantilever end IS §3's unsupported column at this µ.
+                    _mu_row = next(m for m in mu_rows if m["mu"] == mu)
+                    assert abs(sig_free - _mu_row["sigma_unsup_MPa"]) <= 0.05, "free-cantilever end ≠ §3 sigma_unsup"
+                rot_upper = 4.0 * ((D_BUS + 2.0 * t_mm) / 2.0) * (bc.slope_rad(upper, geo.pad_mm) - bc.slope_rad(res, geo.pad_mm))
+                _rot_upper[(geo.label, label, mu)] = rot_upper
                 by_mu[str(mu)] = {"touches_down": bool(touched),
                                   "contact_station_mm": stations[0] if stations else None,
                                   "sigma_root_MPa_bonded": round(root_sigma_MPa(res["clamp_moment_Nm"]), 2),
                                   "sigma_root_MPa_bare": round(root_sigma_MPa(bare["clamp_moment_Nm"]), 2),
-                                  "exit_reaction_N": round(r_exit, 4),
+                                  "sigma_root_MPa_upper_end": round(sig_upper, 2),
+                                  "upper_end_is": ("Ti-bore stop — the polymer wall fully yielded, rod against the bare bore"
+                                                   if upper["contacts"] else "free cantilever — the drag cannot reach the Ti bore"),
+                                  "sigma_root_MPa_free_cantilever": round(sig_free, 2),
+                                  "exit_reaction_N_upper_rigid_wall": round(r_exit, 4),
                                   "deflection_at_mouth_um": round(bc.deflection_mm(res, geo.gap_mm) * 1e3, 2),
-                                  "slope_at_exit_mrad": round(bc.slope_rad(res, geo.pad_mm) * 1e3, 4)}
+                                  "slope_at_exit_mrad_rigid_wall": round(bc.slope_rad(res, geo.pad_mm) * 1e3, 4),
+                                  "in_contact_rotation_path_per_cycle_um_upper": round(rot_upper * 1e3, 3)}
             touch_mus = [mu for mu in MU_SWEEP if by_mu[str(mu)]["touches_down"]]
             # ⛔ The QUANTIFIER is explicit — ALL, SOME or NONE — because an else-branch once read «not on
             #    every µ» as «never» (2026-09-14) and a verdict inherited it.
@@ -724,13 +751,19 @@ def main() -> int:
                             "ei_Nm2_bare_rod": round(ei_bare, 4), "ei_Nm2_bonded": round(ei_bond, 4),
                             "touchdown_drag_N_bonded": round(f_td, 5), "touchdown_drag_N_bare_closed_form": round(f_td_closed, 5),
                             "coaxial_cap_sigma_MPa_bare_closed_form": round(cap_closed, 2),
+                            "coaxial_root_bound": "LOWER end — rigid wall. A compliant polymer wall lets the exit yield by R/k and "
+                                                  "raises the root moment by 3EI·(R/k)/L²; the UPPER end is the Ti-bore stop "
+                                                  "(the polymer wall fully yielded) or the free cantilever F·L where the drag "
+                                                  "cannot reach it — sigma_root_MPa_upper_end per µ. Where the root sits in "
+                                                  "[lower, upper] is set by the contact compliance, MEASURED NOWHERE",
                             "by_mu": by_mu, "touches_down_on_mus": touch_mus,
                             "touches_down_on_every_mu": len(touch_mus) == len(MU_SWEEP),
                             "contact_station_when_touched_down_mm": round(geo.pad_mm, 2),
                             "mouth_reached_on_any_mu": False,
                             "regime": regime})
-            print(f"  {geo.label:<28s} {label:<22s} {play * 1e3:>5.0f} µm {f_td:>7.4f} N {by_mu[str(max(MU_SWEEP))]['sigma_root_MPa_bonded']:>6.2f} MPa "
-                  f"{by_mu[str(max(MU_SWEEP))]['exit_reaction_N']:>10.4f} N   {regime}")
+            _w = by_mu[str(max(MU_SWEEP))]
+            print(f"  {geo.label:<28s} {label:<22s} {play * 1e3:>5.0f} µm {f_td:>7.4f} N {_w['sigma_root_MPa_bonded']:>6.2f}…{_w['sigma_root_MPa_upper_end']:<6.1f} MPa "
+                  f"{_w['exit_reaction_N_upper_rigid_wall']:>8.4f} N   {regime}")
     # Cross-geometry, cross-µ facts the verdict is built from — DERIVED, never typed.
     shipped_regimes = [r for r in regimes if r["play_side"] == "channel"]
     shipped_forced_everywhere = all(r["touches_down_on_every_mu"] for r in shipped_regimes)
@@ -745,8 +778,11 @@ def main() -> int:
     for g in by_geometry:
         print(f"    {g['geometry']:<28s} forced: {', '.join(g['forced_on_every_mu_branches']) or 'none'} · "
               f"partly: {', '.join(g['partly_branches']) or 'none'} · free: {', '.join(g['free_on_every_mu_branches']) or 'none'}")
-    print("  → Coaxially the mouth is never reached (deflection there is a fraction of the play on every row, asserted),")
-    print("    and the root stress is CAPPED at 3·E·c·g/L² once touched down — it does not grow with µ.")
+    print("  → Coaxially the mouth is never reached (deflection there is a fraction of the play on every row, asserted).")
+    print("    Against a RIGID wall the root stress is 3·E·c·g/L² once touched down and does not grow with µ — and that")
+    print("    is the LOWER end of a bracket: the real wall is the polymer on the Ti bore's edge, it yields by R/k, and the")
+    print("    root lies between the rigid figure and the Ti-bore stop / free cantilever (per µ above). The contact")
+    print("    compliance that places it is measured nowhere.")
 
     # The canon sentence this table feeds (01_01 §1.4) used to quote a "hundredfold" reduction. DERIVE it
     # — the factor is a ratio of two rows here and moves whenever either does.
@@ -916,41 +952,66 @@ def main() -> int:
     exit_contact = []
     for geo in GEOMETRIES:
         rows = [r for r in regimes if r["geometry"] == geo.label and r["play_side"] == "channel"]
-        reactions = [v["exit_reaction_N"] for r in rows for v in r["by_mu"].values() if v["touches_down"]]
-        slopes = [v["slope_at_exit_mrad"] for r in rows for v in r["by_mu"].values() if v["touches_down"]]
+        reactions = [v["exit_reaction_N_upper_rigid_wall"] for r in rows for v in r["by_mu"].values() if v["touches_down"]]
+        slopes = [v["slope_at_exit_mrad_rigid_wall"] for r in rows for v in r["by_mu"].values() if v["touches_down"]]
         exit_contact.append({"geometry": geo.label, "exit_mm": geo.pad_mm,
                              "feature": "tube end face flush with the pogo face against the bore's exit edge — ring on ring",
-                             "landing_angle_deg": round(float(np.degrees(max(slopes) * 1e-3)), 4),
-                             "reaction_N_over_swept_mu": [round(min(reactions), 4), round(max(reactions), 4)],
-                             "reaction_note": "the drag minus the touchdown drag, on every cycle, on every swept µ",
+                             "landing_angle_deg_rigid_wall": round(float(np.degrees(max(slopes) * 1e-3)), 4),
+                             "reaction_N_over_swept_mu_upper_rigid_wall": [round(min(reactions), 4), round(max(reactions), 4)],
+                             "reaction_bound": "UPPER — rigid wall: the drag minus the touchdown drag on every cycle; a "
+                                               "compliant polymer edge takes less, down to nothing at the free end",
                              "exit_radius_specified_mm": None, "exit_protrusion_specified_mm": None})
     print(f"  → Exit contact (coaxial drag): edge on edge at the tube's flush end, landing at "
-          f"{exit_contact[0]['landing_angle_deg']:.3f}° with {exit_contact[0]['reaction_N_over_swept_mu'][0]:.2f}–"
-          f"{exit_contact[0]['reaction_N_over_swept_mu'][1]:.2f} N on the placeholder; no exit radius is specified anywhere.")
+          f"{exit_contact[0]['landing_angle_deg_rigid_wall']:.3f}° with at most {exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][0]:.2f}–"
+          f"{exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][1]:.2f} N (rigid wall) on the placeholder; no exit radius is specified anywhere.")
 
     # ── 4c. The §2 «supported» column against the equilibrium ────────────────────────────────────
     # The §2 table prices the liner-supported rod as a 6 mm cantilever (the placeholder's PEEK gap) propped
     # where the bore begins. 🔴 Until 2026-09-14 this block measured that idealisation against the free-shape
     # first contact and reported the column «understated by 40.8 %». Under the equilibrium there is no propped
-    # 6 mm span: the coaxial root stress is CAPPED by the exit contact, and the column OVERSTATES it — the
-    # sign of the finding reversed with the picture. Under a channel offset the comparison has no meaning,
-    # because the root then carries a MEAN the column does not represent at all.
+    # 6 mm span: against a RIGID wall the coaxial root stress is set by the exit contact and the column OVERSTATES
+    # it — the sign of the finding reversed with the picture — and that rigid-wall figure is itself the LOWER end
+    # of a bracket (a compliant polymer wall raises the root moment), so the column's position INSIDE or ABOVE the
+    # bracket is derived per geometry too. Under a channel offset the comparison has no meaning, because the root
+    # then carries a MEAN the column does not represent at all.
     sup_nominal = bending_stress_MPa(MU_CONTACT * F_POGO_N, L_FREE_SUP)
     sup_worst = bending_stress_MPa(max(MU_SWEEP) * F_POGO_N, L_FREE_SUP)
     supported_check = {"idealisation": f"a {L_FREE_SUP:.0f} mm cantilever (the placeholder's PEEK gap) propped where the bore "
                                        "begins — the §2 «supported» column, computed on the placeholder only",
                        "supported_column_sigma_MPa": {"nominal_mu": round(sup_nominal, 1), "worst_mu": round(sup_worst, 1)},
+                       "coaxial_cap_bound": "LOWER — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², "
+                                            "the Ti-bore stop / free cantilever is the UPPER end (bracket_MPa_* per geometry), "
+                                            "and the contact compliance that places the root in it is measured nowhere",
                        "by_geometry": [], "coaxial_sign": None, "offset_regime": "not comparable — a mean stress"}
+
+    def _position(x: float, lo: float, hi: float) -> str:
+        return "below the rigid-wall end" if x < lo else ("inside the bracket" if x <= hi else "above the upper end")
+
     for geo in GEOMETRIES:
-        cap = max(v["sigma_root_MPa_bonded"] for r in regimes if r["geometry"] == geo.label and r["play_side"] == "channel"
-                  for v in r["by_mu"].values())
+        rows_g = [r for r in regimes if r["geometry"] == geo.label and r["play_side"] == "channel"]
+        cap = max(v["sigma_root_MPa_bonded"] for r in rows_g for v in r["by_mu"].values())
+        up_nom = rows_g[0]["by_mu"][str(MU_CONTACT)]["sigma_root_MPa_upper_end"]
+        up_worst = rows_g[0]["by_mu"][str(max(MU_SWEEP))]["sigma_root_MPa_upper_end"]
+        # The binding alloy's SF at BOTH ends of the bracket, so «infinite life with the liner» can be quoted with its
+        # sign: the shipped (welded) endurance of the lowest-endurance alloy against the rigid-wall end and the upper end.
+        se_min = min(endurance_MPa(r["yield_MPa"], dict(FAB_BRANCHES)[SHIPPED_BRANCH]) for r in alloy_rows)
         supported_check["by_geometry"].append({"geometry": geo.label, "coaxial_cap_MPa_bonded": cap,
                                                "column_over_cap_nominal": round(sup_nominal / cap, 2),
-                                               "column_over_cap_worst": round(sup_worst / cap, 2)})
+                                               "column_over_cap_worst": round(sup_worst / cap, 2),
+                                               "bracket_MPa_nominal_mu": [cap, up_nom],
+                                               "bracket_MPa_worst_mu": [cap, up_worst],
+                                               "column_position_nominal_mu": _position(sup_nominal, cap, up_nom),
+                                               "column_position_worst_mu": _position(sup_worst, cap, up_worst),
+                                               "binding_alloy_sf_shipped_at_rigid_end": round(se_min / cap, 2),
+                                               "binding_alloy_sf_shipped_at_upper_end": round(se_min / up_worst, 2)})
     _ratios = [g["column_over_cap_nominal"] for g in supported_check["by_geometry"]]
-    supported_check["coaxial_sign"] = ("the column OVERSTATES the coaxial root stress on every geometry (conservative for a fully-reversed SF)"
-                                       if min(_ratios) > 1.0 else "the column UNDERSTATES the coaxial root stress on at least one geometry")
-    print(f"\n  → §2's supported column ({sup_nominal:.1f} MPa nominal, {sup_worst:.1f} worst µ) against the coaxial cap: "
+    supported_check["coaxial_sign"] = (
+        ("against a RIGID wall the column OVERSTATES the root stress on every geometry" if min(_ratios) > 1.0
+         else "against a RIGID wall the column UNDERSTATES the root stress on at least one geometry")
+        + "; against a compliant wall the root lies in [rigid, upper] and the column sits "
+        + ", ".join(f"{g['column_position_nominal_mu']} at nominal µ / {g['column_position_worst_mu']} at worst µ ({g['geometry']})"
+                    for g in supported_check["by_geometry"]))
+    print(f"\n  → §2's supported column ({sup_nominal:.1f} MPa nominal, {sup_worst:.1f} worst µ) against the rigid-wall end: "
           + " · ".join(f"{g['geometry'][:18]} ×{g['column_over_cap_nominal']:.2f}/{g['column_over_cap_worst']:.2f}" for g in supported_check["by_geometry"]))
     print(f"    {supported_check['coaxial_sign']}; under a channel offset the comparison has no meaning (mean stress).")
 
@@ -998,14 +1059,16 @@ def main() -> int:
     # contact — and reported a break-even k. That stress was the root stress of a free cantilever whose
     # length is a free-shape crossing station: no equilibrium configuration produces it. The equilibrium
     # gives the root TWO regimes instead, and neither is a single fully-reversed number:
-    #   coaxial — the drag is fully reversed and CAPPED (amplitude = the cap, mean 0);
+    #   coaxial — the drag is fully reversed with an amplitude that is a BRACKET (rigid wall = LOWER end,
+    #             Ti-bore stop = upper, mean 0; the compliance between them unmeasured);
     #   offset  — a channel off the root axis by more than the play puts a STATIC bending on the same section
-    #             (a MEAN that grows with the offset) with the reversing drag as amplitude on top.
+    #             (a MEAN that grows with the offset, a rigid-wall UPPER bound) with the reversing drag as
+    #             amplitude on top.
     # ⛔ No k is derived from either. This file has no mean-stress correction, so the offset regime cannot be
-    #    priced; and a k inverted from the coaxial cap alone would silently assume coaxiality — a tolerance
-    #    the stack carries nowhere (00_07 HW.34 ⚖️). What a seam acceptance needs is given instead: the
-    #    amplitude and mean at the root per regime and geometry, on the same solver and the same offset
-    #    points as script 68's sweep.
+    #    priced; and a k inverted from the rigid-wall end of the coaxial bracket alone would silently assume
+    #    both a coaxiality the stack carries nowhere (00_07 HW.34 ⚖️) and a rigid wall. What a seam acceptance
+    #    needs is given instead: the amplitude and mean at the root per regime and geometry, with their signs,
+    #    on the same solver and the same offset points as script 68's sweep.
     banner("Weld seam at the root — the inputs a seam acceptance needs (no break-even k is derived)")
     mu_worst = max(MU_SWEEP)
     shipped_derate = dict(FAB_BRANCHES)[SHIPPED_BRANCH]
@@ -1018,6 +1081,7 @@ def main() -> int:
         ei_at_bond = member_ei_at(geo, liner_def, bonded=True)
         coax = next(r for r in regimes if r["geometry"] == geo.label and r["play_side"] == "channel")
         cap = coax["by_mu"][str(mu_worst)]["sigma_root_MPa_bonded"]
+        cap_upper = coax["by_mu"][str(mu_worst)]["sigma_root_MPa_upper_end"]
         exact = {}
         for e_um in OFFSETS_UM:
             res = bc.solve(ch, ei_at_bond, zero_play, offset_mm=e_um / 1000.0)
@@ -1036,19 +1100,27 @@ def main() -> int:
         amp_max = max(a["amplitude_MPa"] for a in amps)
         root_loading.append({
             "geometry": geo.label,
-            "coaxial": {"amplitude_MPa": cap, "mean_MPa": 0.0,
-                        "note": "fully reversed; the cap at the zero-interference play (the largest play, so the "
-                                "largest cap — the fit's OD growth lowers it, script 68 sweeps the window rows)"},
+            "coaxial": {"amplitude_MPa_lower_rigid_wall": cap, "amplitude_MPa_upper_end": cap_upper,
+                        "upper_end_is": coax["by_mu"][str(mu_worst)]["upper_end_is"], "mean_MPa": 0.0,
+                        "bound": "the rigid-wall figure is the LOWER end — a compliant polymer wall raises the root moment by "
+                                 "3EI·(R/k)/L²; the upper end is the Ti-bore stop (or the free cantilever where the drag cannot "
+                                 "reach it); the contact compliance that places the amplitude in the bracket is measured nowhere",
+                        "note": "fully reversed; at the zero-interference play (the largest play, so the largest rigid-wall "
+                                "figure — the fit's OD growth lowers it, script 68 sweeps the window rows)"},
             "offset": {"mean_MPa_per_um_past_play": round(secant, 3), "secant_between_um": [past[0], past[-1]],
                        "by_offset": amps, "amplitude_MPa_max_over_swept_offsets": amp_max,
+                       "bound": "rigid-wall figures: the static mean is an UPPER bound (a compliant mouth relieves a "
+                                "displacement-driven load); the amplitude bracket under a compliant mouth is not derived",
                        "note": "the mean is a FUNCTION of an offset measured nowhere; the amplitude is the reversing "
-                               "worst-µ drag on top of it, and on the lock-window geometry it exceeds the coaxial cap"},
+                               "worst-µ drag on top of it, and on the lock-window geometry it exceeds the rigid-wall coaxial figure"},
             "peak_moment_at_root_in_every_solve": True,
         })
-        print(f"  {geo.label:<28s} coaxial: amplitude {cap:.2f} MPa, mean 0 · offset: mean {secant:.3f} MPa/µm past the play, "
-              f"amplitude up to {amp_max:.2f} MPa over offsets {min(REVERSING_DRAG_OFFSETS_UM)}–{max(REVERSING_DRAG_OFFSETS_UM)} µm")
-    print("  ⛔ No break-even k: the offset regime carries a MEAN this file cannot correct for, and a k from the coaxial")
-    print("     cap alone would assume a coaxiality no drawing demands. k itself stays NOT MEASURED — it comes from the vendor.")
+        print(f"  {geo.label:<28s} coaxial: amplitude {cap:.2f} (rigid wall, LOWER) … {cap_upper:.1f} MPa (upper end), mean 0 · "
+              f"offset: mean {secant:.3f} MPa/µm past the play, amplitude up to {amp_max:.2f} MPa (rigid wall) over offsets "
+              f"{min(REVERSING_DRAG_OFFSETS_UM)}–{max(REVERSING_DRAG_OFFSETS_UM)} µm")
+    print("  ⛔ No break-even k: the offset regime carries a MEAN this file cannot correct for, the coaxial amplitude is a")
+    print("     BRACKET whose compliance input is unmeasured, and a k from its rigid-wall end alone would assume both a")
+    print("     coaxiality no drawing demands and a rigid wall. k itself stays NOT MEASURED — it comes from the vendor.")
     print("  ⚠️ Three seam mechanisms stay outside any bound, with their signs: bead section (RELIEVES) · weld-toe notch")
     print("     (AGGRAVATES) · weld residual TENSION (a mean, and the model has no Goodman/Haigh correction anywhere).")
 
@@ -1068,12 +1140,14 @@ def main() -> int:
         "break_even_k": None,
         "break_even_k_not_derived_because": "SF_seam = k·SF_wire needs ONE fully-reversed stress at the root. The "
                                             "equilibrium gives the root two regimes: on a coaxial channel the drag is "
-                                            "fully reversed and capped; a channel off the root axis by more than the play "
-                                            "puts a STATIC mean on the same section with the drag as amplitude. No "
-                                            "mean-stress correction exists in this file, so the offset regime cannot be "
-                                            "priced, and a k inverted from the coaxial cap alone would silently assume a "
-                                            "coaxiality the stack carries nowhere (00_07 HW.34). Until 2026-09-14 a k was "
-                                            "inverted from a stress no equilibrium configuration produces",
+                                            "fully reversed with an amplitude that is a BRACKET (rigid wall = LOWER end, "
+                                            "Ti-bore stop = upper, the contact compliance between them unmeasured); a "
+                                            "channel off the root axis by more than the play puts a STATIC mean on the "
+                                            "same section with the drag as amplitude. No mean-stress correction exists in "
+                                            "this file, so the offset regime cannot be priced, and a k inverted from the "
+                                            "rigid-wall end of the coaxial bracket alone would silently assume both a "
+                                            "coaxiality the stack carries nowhere (00_07 HW.34) and a rigid wall. Until "
+                                            "2026-09-14 a k was inverted from a stress no equilibrium configuration produces",
         "root_section_loading": root_loading,
         "what_a_seam_acceptance_needs": ["the joint's fatigue class / knockdown k from the vendor (weld class, WPS, "
                                          "toe treatment) — RFQ, 00_07 HW.34",
@@ -1346,19 +1420,24 @@ def main() -> int:
     # solver says is never a station. Two regimes now, both from §4/§4b:
     #   coaxial — the drag is reacted at the EXIT (the tube's flush end, edge on edge), with R = µ·F − F_td;
     #   offset  — the MOUTH carries a static reaction and the reversing drag rotates the rod about it.
-    # 🔑 AND THE COAXIAL SLIP IS A CEILING, NOT A KINEMATIC RESULT. Once touched down, the rod's shape is the
-    #    prescribed-displacement shape and does NOT change with the drag, so the surface fibre at the exit
-    #    does not rotate while it is pressed on the wall: the 2θ rotation between the two touched-down states
-    #    happens while the rod crosses the play, out of contact. A rigid point contact therefore slides ZERO
-    #    from bending kinematics; what a compliant PEEK contact sees is a normal load cycling 0 ↔ R with a
-    #    landing at angle θ_exit — partial slip / impact fretting, a mode nothing here models. The r·Δθ path
-    #    is kept as the CEILING of any tangential travel (as if the whole rotation happened in contact), and
-    #    the budget is priced on it — the conservative direction for a budget, and the wrong one for the MODE.
+    # 🔑 AND THE COAXIAL SLIDING IS A BRACKET WHOSE ENDS HAVE SIGNS. Against a RIGID wall the touched-down shape
+    #    does not change with the drag, so the surface fibre at the exit does not rotate while pressed on the
+    #    wall: the rotation between the two touched-down states happens while the rod crosses the play, out of
+    #    contact — a rigid point contact slides ZERO from bending kinematics. Against the real wall — the polymer
+    #    on the Ti bore's exit edge — the exit yields by R/k and the rod DOES rotate in contact, by up to the
+    #    rotation between the rigid-wall state and the Ti-bore stop (the polymer wall fully yielded) or the free
+    #    cantilever where the drag cannot reach the bore (§4, `in_contact_rotation_path_per_cycle_um_upper`).
+    #    So the in-contact sliding per cycle lies in [0 (rigid), 4·r·(θ_upper − θ_rigid)], and the contact
+    #    compliance that places it is measured nowhere. ⛔ The rigid-wall rotation 4·r·θ_rigid — «the ceiling»
+    #    this block priced its budget on until 2026-09-14 — is the OUT-of-contact rotation: it bounds nothing,
+    #    and it is kept as a figure only so the rigid-wall reading stays quotable as what it is.
     # 🔑 THE CHAIN, so a reader can attack each link separately:
-    #    duty  = (cycles from script 62's real-wind cache) × (slip ceiling per cycle at the station)
-    #    load  = the station's wall reaction from the contact equilibrium
+    #    duty  = (cycles from script 62's real-wind cache) × (in-contact sliding per cycle at the station)
+    #    load  = the station's wall reaction from the contact equilibrium (rigid wall = its UPPER bound)
     #    budget= wear-through volume / (load × duty), with the area bracketed between a bound the
     #            MATERIAL sets and the full projected bearing of the bore run
+    #    The BOUND takes the upper sliding and the upper reaction (the two maxima are not simultaneous, so the
+    #    product bound is conservative): an allowable k below it passes whatever the compliance turns out to be.
     banner("Wear budget — what rate may the pair have and still keep the wall? (equilibrium stations)")
     # 🔑 SELF-CHECK against a CLOSED-FORM solution, not against a frozen baseline: the touched-down bare rod's
     #    exit slope is 3·g/(2·L) (a cantilever deflected by g at its tip), and the exit reaction is the drag
@@ -1370,6 +1449,7 @@ def main() -> int:
     duty_anchors: list[dict] = []
     thermal_rows: list[dict] = []
     binding_wear: dict | None = None
+    branch_discrimination: dict | None = None
     wind = None
     if WIND_CACHE.exists():
         wind = json.loads(WIND_CACHE.read_text())
@@ -1412,18 +1492,17 @@ def main() -> int:
                     "the flow-limited budget stopped reducing to h/(p_flow·s) — the reaction crept back in"
                 per_anchor.append({"anchor": anc["anchor"], "n_cycles": anc["n_cycles"],
                                    "sliding_distance_m": round(sliding_m, 1), "duty_N_m": round(duty_nm, 1),
-                                   "k_max_edge_mm3_per_Nm": k_edge,
-                                   "k_max_conformal_mm3_per_Nm": t_mm * a_proj_mm2 / duty_nm})
+                                   "k_edge": k_edge, "k_conformal": t_mm * a_proj_mm2 / duty_nm})
             # 🔑 Bounds with a KNOWN sign are asserted IN THE CODE: the bracket must be a bracket, every budget
             #    positive, and the slip a small fraction of the span or the small-deflection beam is wrong.
             assert 0.0 < a_min_mm2 <= a_proj_mm2, "the area bracket inverted — bound above the full run"
-            assert all(p["k_max_edge_mm3_per_Nm"] > 0.0 for p in per_anchor), "non-positive budget"
+            assert all(p["k_edge"] > 0.0 for p in per_anchor), "non-positive budget"
             assert slip_mm < 0.01 * run_mm, "slip is no longer small against the run"
             return area_by_factor, a_min_mm2, a_proj_mm2, per_anchor
 
-        print(f"  {'geometry':<20s} {'branch':<22s} {'regime':<16s} {'µ/offset':>9s} {'R_wall':>8s} {'slip/cyc':>9s} "
-              f"{'sliding':>9s} {'k_max lo':>10s} {'k_max hi':>10s}")
-        print(f"  {'-' * 122}")
+        print(f"  {'geometry':<20s} {'branch':<22s} {'regime':<16s} {'µ/offset':>9s} {'R≤':>8s} {'s/cyc≤':>9s} "
+              f"{'sliding≤':>9s} {'k≥ edge':>10s} {'k≥ worn':>10s} {'rigid fig':>10s}")
+        print(f"  {'-' * 134}")
         for geo in GEOMETRIES:
             ch = geo.channel()
             run_mm = geo.pad_mm - geo.gap_mm
@@ -1442,33 +1521,47 @@ def main() -> int:
                         print(f"  {geo.label[:18]:<20s} {label:<22s} {'coaxial':<16s} {mu:>9.1f} {'—':>8s} {'—':>9s} {'—':>9s} {'no contact':>10s}")
                         continue
                     res = _coax_solves[(geo.label, label, mu, "bonded")]
-                    theta_exit = bc.slope_rad(res, geo.pad_mm)
-                    r_wall = v["exit_reaction_N"]
-                    # Ceiling: the whole out-and-back rotation between the two touched-down states, 2 × r × 2θ,
-                    # counted as if it happened in contact (it does not — see the block comment).
-                    slip_mm = 4.0 * (od_mm / 2.0) * theta_exit
-                    area_by_factor, a_min_mm2, a_proj_mm2, per_anchor = budgets(t_mm, od_mm, run_mm, r_wall, slip_mm)
-                    worst = min(per_anchor, key=lambda p: p["k_max_edge_mm3_per_Nm"])
+                    theta_rigid = bc.slope_rad(res, geo.pad_mm)
+                    r_upper = v["exit_reaction_N_upper_rigid_wall"]
+                    rot_rigid_mm = 4.0 * (od_mm / 2.0) * theta_rigid      # out-of-contact rotation between the ±wall states
+                    s_upper_mm = _rot_upper[(geo.label, label, mu)]       # in-contact sliding at the upper end of the bracket
+                    # The BOUND: upper sliding × upper reaction (conservative — the two maxima are not simultaneous).
+                    area_by_factor, a_min_mm2, a_proj_mm2, per_bound = budgets(t_mm, od_mm, run_mm, r_upper, s_upper_mm)
+                    # The rigid-wall FIGURE: the out-of-contact rotation counted as if it happened in contact — what this
+                    # block called a ceiling until 2026-09-14; it bounds nothing and is kept only as the rigid reading.
+                    _, _, _, per_rigid = budgets(t_mm, od_mm, run_mm, r_upper, rot_rigid_mm)
+                    per_anchor = [{"anchor": b["anchor"], "n_cycles": b["n_cycles"],
+                                   "sliding_distance_m_upper": b["sliding_distance_m"], "duty_N_m_upper": b["duty_N_m"],
+                                   "k_bound_edge_mm3_per_Nm": b["k_edge"], "k_bound_conformal_mm3_per_Nm": b["k_conformal"],
+                                   "k_rigid_wall_figure_edge_mm3_per_Nm": f["k_edge"],
+                                   "k_rigid_wall_figure_conformal_mm3_per_Nm": f["k_conformal"]}
+                                  for b, f in zip(per_bound, per_rigid, strict=True)]
+                    worst = min(per_anchor, key=lambda p: p["k_bound_edge_mm3_per_Nm"])
                     wear_rows.append({
                         "geometry": geo.label, "branch": label, "regime": "coaxial", "mu": mu, "contact": True,
                         "station_mm": geo.pad_mm, "station": "exit — the tube's flush end against the bore's exit edge",
                         "wall_allowance_mm": t_mm, "rubbing_od_mm": round(od_mm, 3),
-                        "reaction_N": round(r_wall, 4),
-                        "landing_angle_mrad": round(theta_exit * 1e3, 4),
+                        "reaction_N_upper_rigid_wall": round(r_upper, 4),
+                        "reaction_bound": "UPPER — rigid wall (drag − touchdown drag); a compliant polymer edge takes less",
+                        "landing_angle_mrad_rigid_wall": round(theta_rigid * 1e3, 4),
                         "sliding_in_contact_um_rigid_kinematics": 0.0,
-                        "slip_ceiling_per_cycle_um": round(slip_mm * 1000.0, 3),
-                        "slip_note": "ceiling = 4·r·θ_exit, the out-and-back rotation between the ±wall states counted "
-                                     "as if in contact; the touched-down shape does not rotate with the drag, so a rigid "
-                                     "contact slides zero and the real driver is the reversing normal load (partial slip / "
-                                     "impact fretting, not modelled)",
+                        "out_of_contact_rotation_per_cycle_um_rigid_wall": round(rot_rigid_mm * 1000.0, 3),
+                        "sliding_in_contact_per_cycle_um_upper": round(s_upper_mm * 1000.0, 3),
+                        "upper_end_is": v["upper_end_is"],
+                        "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4·r·(θ_upper − θ_rigid)]; "
+                                                "the rigid-wall rotation 4·r·θ_rigid is OUT of contact and bounds nothing; the "
+                                                "contact compliance that places the pair in the bracket is measured nowhere, and "
+                                                "the mode at the rigid end is a reversing normal load with a landing (partial "
+                                                "slip / impact fretting, not modelled)",
                         "area_material_bound_mm2": round(a_min_mm2, 5),
                         "area_by_constraint_factor_mm2": {k: round(vv, 5) for k, vv in area_by_factor.items()},
                         "area_projected_full_run_mm2": round(a_proj_mm2, 3),
                         "by_duty_anchor": per_anchor,
-                        "k_max_span_ratio": round(a_proj_mm2 / a_min_mm2, 1),
+                        "k_span_ratio": round(a_proj_mm2 / a_min_mm2, 1),
                     })
-                    print(f"  {geo.label[:18]:<20s} {label:<22s} {'coaxial':<16s} {mu:>9.1f} {r_wall:>6.3f} N {slip_mm * 1000:>7.2f} µm "
-                          f"{worst['sliding_distance_m']:>7.0f} m {worst['k_max_edge_mm3_per_Nm']:>10.2e} {worst['k_max_conformal_mm3_per_Nm']:>10.2e}")
+                    print(f"  {geo.label[:18]:<20s} {label:<22s} {'coaxial':<16s} {mu:>9.1f} {r_upper:>6.3f} N {s_upper_mm * 1000:>7.2f} µm "
+                          f"{worst['sliding_distance_m_upper']:>7.0f} m {worst['k_bound_edge_mm3_per_Nm']:>10.2e} {worst['k_bound_conformal_mm3_per_Nm']:>10.2e} "
+                          f"{worst['k_rigid_wall_figure_edge_mm3_per_Nm']:>10.2e}")
                 # ── OFFSET regime: the mouth station, shipped branch, swept offsets past the play ──
                 past = [e for e in OFFSETS_UM if e / 1000.0 > play]
                 if not past:
@@ -1486,28 +1579,34 @@ def main() -> int:
                     d_theta = abs(bc.slope_rad(sol["+drag"], geo.gap_mm) - bc.slope_rad(sol["-drag"], geo.gap_mm))
                     slip_mm = 2.0 * (od_mm / 2.0) * d_theta
                     r_wall = max(mouth_r.values())
-                    area_by_factor, a_min_mm2, a_proj_mm2, per_anchor = budgets(t_mm, od_mm, run_mm, r_wall, slip_mm)
-                    worst = min(per_anchor, key=lambda p: p["k_max_edge_mm3_per_Nm"])
+                    area_by_factor, a_min_mm2, a_proj_mm2, per_rigid = budgets(t_mm, od_mm, run_mm, r_wall, slip_mm)
+                    per_anchor = [{"anchor": f["anchor"], "n_cycles": f["n_cycles"],
+                                   "sliding_distance_m": f["sliding_distance_m"], "duty_N_m": f["duty_N_m"],
+                                   "k_rigid_wall_figure_edge_mm3_per_Nm": f["k_edge"],
+                                   "k_rigid_wall_figure_conformal_mm3_per_Nm": f["k_conformal"]} for f in per_rigid]
+                    worst = min(per_anchor, key=lambda p: p["k_rigid_wall_figure_edge_mm3_per_Nm"])
                     wear_rows.append({
                         "geometry": geo.label, "branch": label, "regime": "offset", "offset_um": e_um, "mu": mu_worst, "contact": True,
                         "station_mm": geo.gap_mm, "station": "mouth — the bore's entry edge against the tube's flank",
                         "wall_allowance_mm": t_mm, "rubbing_od_mm": round(od_mm, 3),
                         "mouth_reaction_N": {k: round(vv, 4) for k, vv in mouth_r.items()},
                         "mouth_loaded_through_the_cycle": bool(loaded_through),
-                        "reaction_N": round(r_wall, 4),
+                        "reaction_N_upper_rigid_wall": round(r_wall, 4),
                         "rotation_about_mouth_per_cycle_mrad": round(d_theta * 1e3, 4),
-                        "slip_per_cycle_um": round(slip_mm * 1000.0, 3),
-                        "slip_note": "2·r·Δθ — the rod rotates about the loaded mouth as the drag reverses; a genuine "
-                                     "sliding contact under a sustained normal load when the mouth stays loaded through "
-                                     "the cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
+                        "slip_per_cycle_um_rigid_wall": round(slip_mm * 1000.0, 3),
+                        "bound_note": "rigid-wall FIGURES, not bounds: the mouth reaction is an UPPER bound (a compliant mouth "
+                                      "relieves a displacement-driven load), and the in-contact rotation about a compliant mouth "
+                                      "is not derived — 2·r·Δθ is the rigid-wall rotation about the loaded mouth as the drag "
+                                      "reverses; a sliding contact under a sustained load when the mouth stays loaded through the "
+                                      "cycle, intermittent when it does not (the reaction taken is the largest of the three states)",
                         "area_material_bound_mm2": round(a_min_mm2, 5),
                         "area_by_constraint_factor_mm2": {k: round(vv, 5) for k, vv in area_by_factor.items()},
                         "area_projected_full_run_mm2": round(a_proj_mm2, 3),
                         "by_duty_anchor": per_anchor,
-                        "k_max_span_ratio": round(a_proj_mm2 / a_min_mm2, 1),
+                        "k_span_ratio": round(a_proj_mm2 / a_min_mm2, 1),
                     })
-                    print(f"  {geo.label[:18]:<20s} {label:<22s} {'offset':<16s} {e_um:>7d} µm {r_wall:>6.3f} N {slip_mm * 1000:>7.2f} µm "
-                          f"{worst['sliding_distance_m']:>7.0f} m {worst['k_max_edge_mm3_per_Nm']:>10.2e} {worst['k_max_conformal_mm3_per_Nm']:>10.2e}"
+                    print(f"  {geo.label[:18]:<20s} {label:<22s} {'offset (rigid)':<16s} {e_um:>7d} µm {r_wall:>6.3f} N {slip_mm * 1000:>7.2f} µm "
+                          f"{worst['sliding_distance_m']:>7.0f} m {'—':>10s} {'—':>10s} {worst['k_rigid_wall_figure_edge_mm3_per_Nm']:>10.2e}"
                           f"{'' if loaded_through else '   (mouth unloads during part of the cycle)'}")
         # The SECOND driver, priced so that «the sway dominates» is a measurement and not an assumption.
         # ⛔ Its cycle count is a SWEEP, never a value: the seasonal swing is one per year by definition,
@@ -1520,38 +1619,69 @@ def main() -> int:
                 thermal_rows.append({"cycles_per_year": per_year, "delta_T_K": dt_k,
                                      "stroke_um": round(growth_mm * 1000.0, 1),
                                      "sliding_distance_m": round(sliding_m, 4)})
-        sway_max = max((p["sliding_distance_m"] for w in wear_rows if w["contact"]
+        sway_max = max((p.get("sliding_distance_m_upper", p.get("sliding_distance_m", 0.0)) for w in wear_rows if w["contact"]
                         for p in w["by_duty_anchor"]), default=0.0)
         thermal_max = max(t["sliding_distance_m"] for t in thermal_rows)
         print(f"\n  → Second driver, the liner's differential thermal travel: at most "
               f"{thermal_max:.3f} m of sliding over the service life")
-        print(f"    against {sway_max:.0f} m from sway — "
+        print(f"    against up to {sway_max:.0f} m from sway — "
               f"{sway_max / thermal_max:.0e}× smaller, so the sway drag is the whole wear axis "
               f"(DERIVED, not assumed).")
         contact_rows = [w for w in wear_rows if w["contact"]]
-        if contact_rows:
-            shipped_rows = [w for w in contact_rows if w["branch"].startswith("PEEK liner")]
-            # The tight end is µ-INVARIANT on the coaxial rows (the reaction cancels and the touched-down slope
-            # does not depend on the drag), so rows tie there; the tie is broken by the worn-in end, i.e. by
-            # the largest reaction — a corner that is worst on BOTH ends, never one that flatters the loose end.
+        coax_rows = [w for w in contact_rows if w["regime"] == "coaxial"]
+        if coax_rows:
+            liner_label = liner_def["branch"]
+            shipped_rows = [w for w in coax_rows if w["branch"] == liner_label]
+            # The binding row is the SHIPPED branch's worst corner on the BOUND: the tight end ties across the µ rows
+            # once the Ti-bore stop saturates the in-contact rotation (the sliding stops growing with µ), so the tie
+            # is broken by the worn-in end, i.e. by the largest reaction.
             # ⛔ The tie is analytic, not floating-point: the rows differ at the 1e-10 level through the solve, so a
             #    raw `min` picked the binding row by NOISE (µ 0.4 on one cycle count, µ 0.5 on another). The tight
             #    end is compared at six significant figures — far below anything the budget is quoted at.
             def _corner(w: dict) -> tuple[float, float]:
-                edge = min(p["k_max_edge_mm3_per_Nm"] for p in w["by_duty_anchor"])
-                return float(f"{edge:.6e}"), min(p["k_max_conformal_mm3_per_Nm"] for p in w["by_duty_anchor"])
-            binding_wear = min(shipped_rows or contact_rows, key=_corner)
-            b_worst = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_max_edge_mm3_per_Nm"])
-            print(f"\n  → BUDGET for the shipped branch at its worst corner ({binding_wear['regime']} regime, "
-                  f"{binding_wear['geometry']}, {b_worst['anchor']}):")
-            print(f"    the pair may wear at k ≤ {b_worst['k_max_edge_mm3_per_Nm']:.2e} mm³/(N·m) if the "
-                  f"contact stays the MATERIAL-bounded patch")
-            print(f"    ({binding_wear['area_material_bound_mm2']:.4f} mm² — PEEK at the TIGHTEST "
-                  f"swept flow pressure; the loosest gives "
-                  f"{max(binding_wear['area_by_constraint_factor_mm2'].values()):.4f} mm²),")
-            print(f"    and at k ≤ {b_worst['k_max_conformal_mm3_per_Nm']:.2e} once it is worn in over "
-                  f"the run.")
-            print(f"  🔴 The two ends differ by {binding_wear['k_max_span_ratio']:.0f}×, and NOTHING in "
+                edge = min(p["k_bound_edge_mm3_per_Nm"] for p in w["by_duty_anchor"])
+                return float(f"{edge:.6e}"), min(p["k_bound_conformal_mm3_per_Nm"] for p in w["by_duty_anchor"])
+            binding_wear = min(shipped_rows or coax_rows, key=_corner)
+            b_worst = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_bound_edge_mm3_per_Nm"])
+            # 🔴 DOES THE WEAR AXIS DISCRIMINATE THE BRANCHES? Derived on BOTH axes, because the answer differs:
+            #    on the rigid-wall figures a thin film demands a far stricter rate (allowance ÷ the same rotation);
+            #    on the BOUND the in-contact sliding is capped by the polymer's own wall (6·r·t/L at the Ti-bore stop),
+            #    so the allowance and the sliding both scale with the wall and the tight end stops depending on it.
+            by_key = {(w["geometry"], w["branch"], w["mu"]): w for w in coax_rows}
+            disc = []
+            for (g_, b_, mu_), w in by_key.items():
+                peer = by_key.get((g_, liner_label, mu_))
+                if peer is None or b_ == liner_label:
+                    continue
+                fb = min(p["k_bound_edge_mm3_per_Nm"] for p in w["by_duty_anchor"])
+                lb = min(p["k_bound_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"])
+                fr = min(p["k_rigid_wall_figure_edge_mm3_per_Nm"] for p in w["by_duty_anchor"])
+                lr = min(p["k_rigid_wall_figure_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"])
+                disc.append({"geometry": g_, "branch": b_, "mu": mu_,
+                             "film_over_liner_tight_bound": round(fb / lb, 3),
+                             "film_over_liner_tight_rigid_figure": round(fr / lr, 4),
+                             "film_stricter_on_bound": bool(fb < lb), "film_stricter_on_rigid_figure": bool(fr < lr)})
+            branch_discrimination = {
+                "rows": disc,
+                "films_stricter_on_rigid_wall_figures": bool(disc) and all(d["film_stricter_on_rigid_figure"] for d in disc),
+                "films_stricter_on_bounds": bool(disc) and all(d["film_stricter_on_bound"] for d in disc),
+                "films_stricter_on_bounds_anywhere": any(d["film_stricter_on_bound"] for d in disc),
+                "note": "on the rigid-wall figures the conformal films demand a stricter rate than the shipped liner at every "
+                        "swept µ where both touch down; on the BOUND they do not — at the Ti-bore stop the in-contact sliding "
+                        "is 6·r·t/L, proportional to the polymer's own wall, so a thick wall buys allowance and spends it on "
+                        "sliding in equal measure, and the tight end stops depending on the wall. The wear budget therefore "
+                        "discriminates the branches ONLY against a rigid wall; on the bracket it does not, and which reading "
+                        "applies is set by the contact compliance, measured nowhere",
+            }
+            print(f"\n  → BOUND for the shipped branch at its worst corner ({binding_wear['regime']} regime, "
+                  f"{binding_wear['geometry']}, µ {binding_wear['mu']}, {b_worst['anchor']}):")
+            print(f"    an allowable k below {b_worst['k_bound_edge_mm3_per_Nm']:.2e} mm³/(N·m) keeps the wall whatever the contact")
+            print(f"    compliance, if the contact stays the MATERIAL-bounded patch ({binding_wear['area_material_bound_mm2']:.4f} mm² — PEEK at the")
+            print(f"    TIGHTEST swept flow pressure; the loosest gives {max(binding_wear['area_by_constraint_factor_mm2'].values()):.4f} mm²), and below")
+            print(f"    {b_worst['k_bound_conformal_mm3_per_Nm']:.2e} once it is worn in over the run. The rigid-wall FIGURES are "
+                  f"{b_worst['k_rigid_wall_figure_edge_mm3_per_Nm']:.2e} / {b_worst['k_rigid_wall_figure_conformal_mm3_per_Nm']:.2e}")
+            print("    — the out-of-contact rotation counted as if in contact; they bound nothing.")
+            print(f"  🔴 The two ends differ by {binding_wear['k_span_ratio']:.0f}×, and NOTHING in "
                   f"the tribology decides between them —")
             print("     the CONTACT GEOMETRY does, and that is an OPEN ⚖️ (the bore entry carries a radius whose")
             print("     value is unnamed, the EXIT — the coaxial station — has none specified at all, and the")
@@ -1559,8 +1689,10 @@ def main() -> int:
             print("     verdict is gated on a decision of OURS, not on a number from a vendor. ⛔ k itself stays NOT MEASURED.")
             print("  🔑 The TIGHT end does not contain the contact force at all: with the area flow-limited,")
             print("     k = wall / (flow pressure × sliding distance) — the reaction cancels, so the shakiest input")
-            print("     of the chain has no say in the binding half of the answer. ⚠️ And the coaxial sliding is a")
-            print("     CEILING: a rigid point contact slides zero — the binding mode may be fretting fatigue, not removal.")
+            print("     of the chain has no say in the binding half of the answer. ⚠️ And the sliding is a BRACKET:")
+            print("     a rigid point contact slides zero; a compliant one rotates in contact up to the Ti-bore stop.")
+            print(f"  → Branch discrimination: films stricter on the rigid-wall figures = {branch_discrimination['films_stricter_on_rigid_wall_figures']}, "
+                  f"on the bounds = {branch_discrimination['films_stricter_on_bounds']} (DERIVED).")
 
 
     # ── Verdict ──
@@ -1587,16 +1719,19 @@ def main() -> int:
           + ("BOUNDED in §7." if binding_wear is not None else "NOT computed in this run (§7)."))
     # ⛔ DERIVED from §4, never typed.
     print(f"  4. CONTACT (§4, equilibrium): the shipped liner touches down at the EXIT on every swept µ on every geometry: "
-          f"{shipped_forced_everywhere}; the mouth is never reached coaxially; the root stress is capped at "
-          + " / ".join(f"{g['coaxial_cap_MPa_bonded']:.2f}" for g in supported_check["by_geometry"])
-          + " MPa (placeholder / lock window near / far), which the §2 supported column OVERSTATES ×"
-          + "/".join(f"{g['column_over_cap_nominal']:.1f}" for g in supported_check["by_geometry"]) + " at nominal µ.")
+          f"{shipped_forced_everywhere}; the mouth is never reached coaxially; the root stress lies in "
+          + " / ".join(f"[{g['bracket_MPa_worst_mu'][0]:.2f}, {g['bracket_MPa_worst_mu'][1]:.1f}]" for g in supported_check["by_geometry"])
+          + " MPa at worst µ (placeholder / lock window near / far) — rigid wall LOWER, Ti-bore stop or free cantilever UPPER, "
+          "the contact compliance unmeasured; the §2 supported column overstates the rigid-wall end ×"
+          + "/".join(f"{g['column_over_cap_nominal']:.1f}" for g in supported_check["by_geometry"]) + " at nominal µ and sits "
+          + " / ".join(g["column_position_nominal_mu"] for g in supported_check["by_geometry"]) + ".")
     print("  5. The WELD SEAM (§5): the ×2 still belongs to the WIRE, and the JOINT is NOT priced — no break-even k is")
     print("     derived, because the root sees a fully-reversed coaxial cap OR a static mean from a channel offset,")
     print("     and the model has no mean-stress correction. The inputs a seam acceptance needs are in the cache:")
     for rl in root_loading:
-        print(f"     {rl['geometry']:<28s} coaxial amplitude {rl['coaxial']['amplitude_MPa']:.2f} MPa (mean 0) · offset mean "
-              f"{rl['offset']['mean_MPa_per_um_past_play']:.3f} MPa/µm past the play, amplitude ≤ {rl['offset']['amplitude_MPa_max_over_swept_offsets']:.2f} MPa")
+        print(f"     {rl['geometry']:<28s} coaxial amplitude [{rl['coaxial']['amplitude_MPa_lower_rigid_wall']:.2f}, "
+              f"{rl['coaxial']['amplitude_MPa_upper_end']:.1f}] MPa (mean 0) · offset mean "
+              f"{rl['offset']['mean_MPa_per_um_past_play']:.3f} MPa/µm past the play, amplitude up to {rl['offset']['amplitude_MPa_max_over_swept_offsets']:.2f} MPa (rigid wall)")
     print("     ⛔ k itself stays NOT MEASURED — it comes from the vendor (00_07 HW.34).")
     print("  6. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
@@ -1621,14 +1756,17 @@ def main() -> int:
     print("     the ratified ground for ONE-end capture does not discriminate above ~1 µm of fit.")
     # ⛔ DERIVED from §7, never typed.
     if binding_wear is not None:
-        _bw = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_max_edge_mm3_per_Nm"])
+        _bw = min(binding_wear["by_duty_anchor"], key=lambda p: p["k_bound_edge_mm3_per_Nm"])
         print(f"  8. WEAR (§7) — the ratified ground is no longer unpriced. The shipped liner at its worst corner "
-              f"({binding_wear['regime']} regime, {binding_wear['geometry']})")
-        print(f"     may wear at k ≤ {_bw['k_max_edge_mm3_per_Nm']:.2e} mm³/(N·m) on the material-bounded "
-              f"patch, k ≤ {_bw['k_max_conformal_mm3_per_Nm']:.2e} worn in —")
-        print(f"     a {binding_wear['k_max_span_ratio']:.0f}× span decided by CONTACT GEOMETRY, which is "
-              f"our own open ⚖️, not the vendor's number.")
-        print("     ⛔ k stays NOT MEASURED; what changed is that a tribo-test now returns a verdict.")
+              f"({binding_wear['regime']} regime, {binding_wear['geometry']}, µ {binding_wear['mu']})")
+        print(f"     keeps the wall whatever the contact compliance if k < {_bw['k_bound_edge_mm3_per_Nm']:.2e} mm³/(N·m) on the "
+              f"material-bounded patch, k < {_bw['k_bound_conformal_mm3_per_Nm']:.2e} worn in")
+        print(f"     (rigid-wall figures {_bw['k_rigid_wall_figure_edge_mm3_per_Nm']:.2e} / {_bw['k_rigid_wall_figure_conformal_mm3_per_Nm']:.2e} bound nothing) — "
+              f"a {binding_wear['k_span_ratio']:.0f}× span decided by CONTACT GEOMETRY, our own open ⚖️.")
+        print(f"     Films stricter than the liner: on the rigid-wall figures {branch_discrimination['films_stricter_on_rigid_wall_figures']}, "
+              f"on the bounds {branch_discrimination['films_stricter_on_bounds']} — the wear axis discriminates the branches only "
+              "against a rigid wall.")
+        print("     ⛔ k stays NOT MEASURED; a tribo-test returns a verdict only together with the slip amplitude.")
     else:
         print("  8. WEAR (§7): NOT COMPUTED — the duty cache is absent and no cycle count is "
               "substituted (run script 62).")
@@ -1641,14 +1779,19 @@ def main() -> int:
     #    absent-cache run, i.e. exactly the one nobody executes.
     wear_verdict_sentence = (
         "WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, "
-        "the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET, "
-        "the coaxial sliding is a CEILING (a rigid point contact slides zero), and the two ends are set by the "
-        "CONTACT GEOMETRY - an open verdict of ours - not by tribology. The same block re-earns the rejection of "
-        "the conformal branches on the wear axis itself."
+        "the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a "
+        "BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in "
+        "contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the "
+        "CONTACT GEOMETRY - an open verdict of ours - not by tribology. "
+        + ("The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound "
+           "it does not discriminate them, because the in-contact sliding scales with the polymer's own wall."
+           if branch_discrimination and branch_discrimination["films_stricter_on_rigid_wall_figures"]
+           and not branch_discrimination["films_stricter_on_bounds"] else
+           "Branch discrimination on the wear axis: " + json.dumps({k: v for k, v in (branch_discrimination or {}).items() if k != "rows"}))
         if binding_wear is not None else
         "WEAR is NOT priced in this run: the duty cache is absent and no cycle count is substituted."
     )
-    _ship_geo = [f"{g['geometry']} {g['coaxial_cap_MPa_bonded']:.2f} MPa" for g in supported_check["by_geometry"]]
+    _ship_geo = [f"{g['geometry']} [{g['bracket_MPa_worst_mu'][0]:.2f}, {g['bracket_MPa_worst_mu'][1]:.1f}] MPa" for g in supported_check["by_geometry"]]
 
     out = {
         "method": "slender-beam closed form — Euler buckling (fixed-free) + cantilever tip-load bending "
@@ -1754,12 +1897,17 @@ def main() -> int:
                          "offset": "the MOUTH (the bore's entry edge against the tube's flank) when the channel "
                                    "axis is off the root axis by more than the play; the reversing drag rotates "
                                    "the rod about it. SWEPT offsets, never measured"},
-            "coaxial_slip_is_a_ceiling": "once touched down the rod's shape is the prescribed-displacement shape "
-                                         "and does not rotate with the drag, so a rigid point contact slides ZERO "
-                                         "from bending kinematics; the 4·r·θ_exit path is the out-and-back rotation "
-                                         "between the ±wall states counted as if in contact. The real driver at the "
-                                         "exit is a normal load cycling 0 <-> R with a landing at θ_exit - partial "
-                                         "slip / impact fretting, a mode nothing here models",
+            "coaxial_sliding_bracket": "against a RIGID wall the touched-down shape does not rotate with the drag, so a "
+                                       "rigid point contact slides ZERO from bending kinematics and the 4·r·θ_rigid "
+                                       "rotation between the ±wall states happens OUT of contact (it bounds nothing; kept "
+                                       "as the rigid-wall figure). Against the real polymer wall the exit yields by R/k and "
+                                       "the rod rotates IN contact, up to the Ti-bore stop (the polymer wall fully yielded) "
+                                       "— the UPPER end of the sliding, 6·r·t/L per cycle where the drag reaches the bore. "
+                                       "The bound below takes that upper sliding with the upper (rigid-wall) reaction; the "
+                                       "contact compliance that places the real pair in the bracket is measured nowhere, "
+                                       "and at the rigid end the driver is a normal load cycling 0 <-> R with a landing "
+                                       "(partial slip / impact fretting, a mode nothing here models)",
+            "branch_discrimination": branch_discrimination,
             "second_interface_not_priced": "at the FLOOR of the interference window §6 shows the tube "
                                            "slips on the WIRE instead, which puts a second sliding "
                                            "pair inside the same part. Nothing specifies which of the "
@@ -1856,8 +2004,9 @@ def main() -> int:
                     + "BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and "
                     "since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel "
                     f"the shipped liner touches down at the EXIT on every swept µ on every geometry ({shipped_forced_everywhere}), "
-                    "the mouth is never reached, and the root stress is capped at " + " / ".join(_ship_geo)
-                    + " (bonded, zero-interference play); "
+                    "the mouth is never reached, and the root stress at worst µ lies in " + " / ".join(_ship_geo)
+                    + " (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference "
+                    "play; the contact compliance that places it is measured nowhere); "
                     + "; ".join(f"{g['geometry']}: forced {', '.join(g['forced_on_every_mu_branches']) or 'none'}, "
                                 f"partly {', '.join(g['partly_branches']) or 'none'}, free {', '.join(g['free_on_every_mu_branches']) or 'none'}"
                                 for g in by_geometry)
@@ -1872,8 +2021,11 @@ def main() -> int:
                    "GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside "
                    "the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both "
                    "window ends, the §1-§3 tables the placeholder only. "
-                   "CONTACT: rigid frictionless wall, perfect clamp, small deflection - every contact stress is an "
-                   "upper bound; the channel offset, tilt and the fit's play are SWEPT, never measured. "
+                   "CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure "
+                   "differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall "
+                   "raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or free cantilever is the upper end), under a "
+                   "channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the "
+                   "contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. "
                    "WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought "
                    "derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root "
                    "sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress "
@@ -1887,10 +2039,13 @@ def main() -> int:
                    "not a tolerance. "
                    "Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. "
                    "WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the "
-                   "equilibrium stations (exit under coaxial drag, mouth under an offset), its span set by the "
-                   "contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial "
-                   "sliding distance is a CEILING - a rigid point contact slides zero, the driver is the reversing "
-                   "normal load. Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, "
+                   "equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the "
+                   "contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure "
+                   "bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the "
+                   "rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid "
+                   "wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the "
+                   "shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these "
+                   "amplitudes a real pair may be in partial slip, "
                    "which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. "
                    "Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are "
                    "outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead "

@@ -151,7 +151,7 @@ def main() -> int:
     for geo in geos:
         for r in rows:
             for play_label, play in (plays if r["shipped"] else [("film", r["radial_play_mm"])]):
-                capped = 3.0 * e_ti * c * (play * MM_M) / (geo.pad_mm * MM_M) ** 2 / 1e6
+                rigid_closed = 3.0 * e_ti * c * (play * MM_M) / (geo.pad_mm * MM_M) ** 2 / 1e6   # rigid wall, bare member
                 touchdown = 3.0 * s55.flexural_rigidity_Nm2(s55.D_BUS) * play * MM_M / (geo.pad_mm * MM_M) ** 3
                 by_mu = {}
                 for mu in s55.MU_SWEEP:
@@ -159,14 +159,29 @@ def main() -> int:
                     bare = solve(geo, r, play, drag_N=f_lat, bonded=False, block="drag", tag=f"{r['branch']}/{play_label}/µ{mu}/bare")
                     bond = solve(geo, r, play, drag_N=f_lat, bonded=True, block="drag", tag=f"{r['branch']}/{play_label}/µ{mu}")
                     if f_lat > 1.001 * touchdown:
-                        assert abs(bare["sigma_root_MPa"] - capped) <= 0.005 * capped, "coaxial cap ≠ closed form"
+                        assert abs(bare["sigma_root_MPa"] - rigid_closed) <= 0.005 * rigid_closed, "rigid-wall root stress ≠ closed form"
                         assert [z["station_mm"] for z in bare["contacts"]] == [round(geo.pad_mm, 2)], "drag contact is not the pad plane"
+                    # 🔴 The rigid-wall figure is the LOWER end of the root stress: the polymer wall on the Ti bore's edge
+                    #    yields by R/k and the root moment grows by 3EI·(R/k)/L². The UPPER end needs no compliance model —
+                    #    the rod cannot pass the Ti bore behind the polymer, so the same solve with the wall moved out by
+                    #    the polymer's own wall gives it (the free cantilever F·L where the drag cannot reach the bore).
+                    upper = solve(geo, r, play + r["coating_or_liner_mm"], drag_N=f_lat, bonded=True, block="drag",
+                                  tag=f"{r['branch']}/{play_label}/µ{mu}/upper")
+                    assert bond["sigma_root_MPa"] - 1e-9 <= upper["sigma_root_MPa"] <= s55.bending_stress_MPa(f_lat, geo.pad_mm) * 1.0001, \
+                        "the upper end left [rigid wall, free cantilever]"
                     by_mu[str(mu)] = {"sigma_root_MPa_bare": round(bare["sigma_root_MPa"], 2),
                                       "sigma_root_MPa_bonded": round(bond["sigma_root_MPa"], 2),
+                                      "sigma_root_MPa_upper_end": round(upper["sigma_root_MPa"], 2),
+                                      "upper_end_is": ("Ti-bore stop — the polymer wall fully yielded" if upper["contacts"]
+                                                       else "free cantilever — the drag cannot reach the Ti bore"),
                                       "contacts_bonded": bond["contacts"]}
                 drag.append({"geometry": geo.label, "branch": r["branch"], "play": play_label,
                              "radial_play_um": round(play * 1000.0, 2),
-                             "touchdown_drag_N": round(touchdown, 4), "capped_sigma_MPa_closed_form": round(capped, 2),
+                             "touchdown_drag_N": round(touchdown, 4), "rigid_wall_sigma_MPa_closed_form": round(rigid_closed, 2),
+                             "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by "
+                                                  "3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end "
+                                                  "(sigma_root_MPa_upper_end per µ); the contact compliance that places the "
+                                                  "root in the bracket is measured nowhere",
                              "by_mu": by_mu})
                 print(f"  {geo.label[:18]:<18s} {r['branch']:<22s} {play_label:<32s} play {play * 1000:6.2f} µm · "
                       f"root σ µ=0.2…0.5: " + " / ".join(f"{v['sigma_root_MPa_bonded']:.2f}" for v in by_mu.values()) + " MPa")
@@ -270,16 +285,21 @@ def main() -> int:
                             "exceeds the root moment of the long rod"}
 
     placeholder, near, far = geos
-    cap_zero = {g.label: next(d for d in drag if d["geometry"] == g.label and d["play"] == "zero interference")
-                ["by_mu"][str(mu_worst)]["sigma_root_MPa_bonded"] for g in geos}
+    _zero = {g.label: next(d for d in drag if d["geometry"] == g.label and d["play"] == "zero interference"
+                           and d["branch"].startswith("PEEK liner"))["by_mu"][str(mu_worst)] for g in geos}
+    cap_zero = {k: v["sigma_root_MPa_bonded"] for k, v in _zero.items()}
+    upper_zero = {k: v["sigma_root_MPa_upper_end"] for k, v in _zero.items()}
     sec_zero = {o["geometry"]: o["secant_MPa_per_um"] for o in offsets if o["play"] == "zero interference"}
     s55_cache = json.loads(BUS55_CACHE.read_text(encoding="utf-8"))
     s55_column = s55_cache["clearance_regime"]["supported_column_vs_equilibrium"]["supported_column_sigma_MPa"]["nominal_mu"]
     s55_caps = {g["geometry"]: g["coaxial_cap_MPa_bonded"]
                 for g in s55_cache["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
-    # CONTROL across the two scripts: the same solver on the same inputs must give the same cap — a
+    s55_upper = {g["geometry"]: g["bracket_MPa_worst_mu"][1]
+                 for g in s55_cache["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
+    # CONTROL across the two scripts: the same solver on the same inputs must give the same bracket ends — a
     # divergence here means the two scripts disagree on geometry, member or play, never on physics.
     assert s55_caps == cap_zero, f"script 55 and 68 disagree on the coaxial cap: {s55_caps} vs {cap_zero}"
+    assert s55_upper == upper_zero, f"script 55 and 68 disagree on the upper end: {s55_upper} vs {upper_zero}"
     lock_caps = sorted((cap_zero[near.label], cap_zero[far.label]))
     lock_secants = sorted((sec_zero[near.label], sec_zero[far.label]))
     pad_peak = {g.label: max(p["sigma_root_MPa"] for p in pad if p["geometry"] == g.label) for g in geos}
@@ -328,13 +348,22 @@ def main() -> int:
             "script55_coaxial_cap_MPa_at_worst_mu_bonded": s55_caps,
             "equilibrium_coaxial_cap_MPa_at_worst_mu_bonded": cap_zero,
             "caps_agree": s55_caps == cap_zero,
+            "coaxial_cap_bound": "LOWER end — rigid wall; see drag_coaxial[].coaxial_cap_bound",
+            "script55_upper_end_MPa_at_worst_mu": s55_upper,
+            "equilibrium_upper_end_MPa_at_worst_mu": upper_zero,
+            "upper_ends_agree": s55_upper == upper_zero,
         },
         "summary": (
-            f"Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush, "
-            f"and the root stress is capped whatever the drag — {cap_zero[placeholder.label]:.2f} MPa on script 55's "
+            f"Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush; "
+            f"against a RIGID wall the root stress is µ-invariant — {cap_zero[placeholder.label]:.2f} MPa on script 55's "
             f"placeholder geometry, {lock_caps[0]:.2f}–{lock_caps[1]:.2f} MPa across the Zone-1 lock "
-            f"window (zero-interference play, bonded member). Script 55's 6 mm supported column prices that section at "
-            f"{s55_column:.2f} MPa nominal — above the cap on every geometry. Channel off the "
+            f"window (zero-interference play, bonded member) — and that figure is the LOWER end of the root stress: the "
+            f"polymer wall on the Ti bore's edge yields by R/k, and the upper end (the Ti-bore stop, or the free cantilever "
+            f"where the drag cannot reach the bore) is {upper_zero[placeholder.label]:.1f} MPa on the placeholder and "
+            f"{min(upper_zero[near.label], upper_zero[far.label]):.1f}–{max(upper_zero[near.label], upper_zero[far.label]):.1f} MPa "
+            f"across the lock window at the worst swept µ; where in that bracket the root sits is set by the contact "
+            f"compliance, measured nowhere. Script 55's 6 mm supported column prices that section at "
+            f"{s55_column:.2f} MPa nominal — above the rigid-wall end on every geometry, inside the bracket. Channel off the "
             f"root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a "
             f"secant {sec_zero[placeholder.label]:.2f} MPa/µm on the placeholder and "
             f"{lock_secants[0]:.2f}–{lock_secants[1]:.2f} "
@@ -348,9 +377,13 @@ def main() -> int:
             f"No verdict is taken here."
         ),
         "not_modelled": {
-            "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction; past the "
-                    "play the mouth corner would load the PEEK tube beyond its compressive strength at the larger "
-                    "offsets, so offset stresses are upper bounds",
+            "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction. The SIGN of "
+                    "that omission differs by regime: under coaxial DRAG the rigid-wall root stress is the LOWER end — a "
+                    "compliant polymer wall lets the exit yield by R/k and raises the root moment by 3EI·(R/k)/L², up to "
+                    "the Ti-bore stop or the free cantilever (drag_coaxial[].by_mu[].sigma_root_MPa_upper_end); past "
+                    "the play under an OFFSET the mouth corner would load the PEEK tube beyond its compressive strength at "
+                    "the larger offsets, so offset stresses are UPPER bounds. The contact compliance that places either "
+                    "is measured nowhere",
             "clamp": "perfect — weld and printed-anode compliance lower every stress",
             "swept_not_measured": "insertion, play, offset, tilt and pad eccentricity",
             "mean_stress": "a static offset is a mean stress; no Goodman-type correction; the amplitude of a varying "

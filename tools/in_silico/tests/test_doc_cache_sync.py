@@ -478,13 +478,13 @@ CHECKS = [
         "exit landing angle of the touched-down rod, placeholder → bus_mechanical.json §edge_bearing.exit_contact",
         SUMMARY, rf"lands on the bore's exit edge at \*\*{N}°\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: d["clearance_regime"]["edge_bearing"]["exit_contact"][0]["landing_angle_deg"], 0.0005,
+        lambda d: d["clearance_regime"]["edge_bearing"]["exit_contact"][0]["landing_angle_deg_rigid_wall"], 0.0005,
     ),
     # ⛔ The SIGN of this ratio is the finding (the 6 mm column OVERSTATES the coaxial cap, where the drift
     # picture had it «understated by 40.8 %»), so the number canon and SUMMARY quote is pinned in both.
     (
-        "§2 supported column over the coaxial cap, placeholder → bus_mechanical.json §supported_column_vs_equilibrium",
-        SUMMARY, rf"OVERSTATES it ×\*\*{N}\*\* at nominal µ on the placeholder",
+        "§2 supported column over the rigid-wall end, placeholder → bus_mechanical.json §supported_column_vs_equilibrium",
+        SUMMARY, rf"OVERSTATES that rigid-wall end ×\*\*{N}\*\* at nominal µ on the placeholder",
         "mechanical/bus_mechanical.json",
         lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["column_over_cap_nominal"], 0.005,
     ),
@@ -557,31 +557,60 @@ CHECKS = [
     # in that paragraph a reader ACTS on. The slip CEILING is pinned because the paragraph's third finding
     # is that it is a ceiling and not a kinematic result — a doc that re-typed it as «the slip» would
     # still match the number while losing the claim.
+    # ⛔ Each wear end is pinned TWICE — the BOUND over the contact-compliance bracket and the rigid-wall figure —
+    # because the table carries both and the defect this guards is the one that stood for an afternoon: a
+    # rigid-wall figure quoted without its sign, read downstream as the bound.
     (
-        "wear budget, flow-limited end → bus_mechanical.json §wear_budget.binding",
-        SUMMARY, rf"flow-limited patch[^|]*\| \*\*{N} × 10⁻⁷\*\*",
+        "wear budget, flow-limited end, BOUND → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"flow-limited patch[^|]*\| \*\*{N} × 10⁻⁸\*\* mm³/\(N·m\) \|",
         "mechanical/bus_mechanical.json",
-        lambda d: min(p["k_max_edge_mm3_per_Nm"]
+        lambda d: min(p["k_bound_edge_mm3_per_Nm"]
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e8, 0.01,
+    ),
+    (
+        "wear budget, flow-limited end, rigid-wall figure → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"flow-limited patch[^|]*\| \*\*[\d.]+ × 10⁻⁸\*\* mm³/\(N·m\) \| \*\*{N} × 10⁻⁷\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: min(p["k_rigid_wall_figure_edge_mm3_per_Nm"]
                       for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e7, 0.01,
     ),
     (
-        "wear budget, worn-in end → bus_mechanical.json §wear_budget.binding",
-        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*{N} × 10⁻³\*\*",
+        "wear budget, worn-in end, BOUND → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*{N} × 10⁻⁴\*\* mm³/\(N·m\) \|",
         "mechanical/bus_mechanical.json",
-        lambda d: min(p["k_max_conformal_mm3_per_Nm"]
+        lambda d: min(p["k_bound_conformal_mm3_per_Nm"]
+                      for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e4, 0.01,
+    ),
+    (
+        "wear budget, worn-in end, rigid-wall figure → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"worn in over the whole run[^|]*\| \*\*[\d.]+ × 10⁻⁴\*\* mm³/\(N·m\) \| \*\*{N} × 10⁻³\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: min(p["k_rigid_wall_figure_conformal_mm3_per_Nm"]
                       for p in d["wear_budget"]["binding"]["by_duty_anchor"]) * 1e3, 0.01,
     ),
     (
         "wear budget, span between the two ends → bus_mechanical.json §wear_budget.binding",
         SUMMARY, rf"budget's span is \*\*{N}×\*\*",
         "mechanical/bus_mechanical.json",
-        lambda d: d["wear_budget"]["binding"]["k_max_span_ratio"], 0.5,
+        lambda d: d["wear_budget"]["binding"]["k_span_ratio"], 0.5,
     ),
     (
-        "wear budget, coaxial slip ceiling per cycle → bus_mechanical.json §wear_budget.binding",
-        SUMMARY, rf"the \*\*{N} µm\*\* per cycle the budget stands on",
+        "wear budget, rigid-wall out-of-contact rotation per cycle → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"the rigid-wall rotation of \*\*{N} µm\*\* per cycle",
         "mechanical/bus_mechanical.json",
-        lambda d: d["wear_budget"]["binding"]["slip_ceiling_per_cycle_um"], 0.005,
+        lambda d: d["wear_budget"]["binding"]["out_of_contact_rotation_per_cycle_um_rigid_wall"], 0.005,
+    ),
+    (
+        "wear budget, in-contact sliding at the upper end → bus_mechanical.json §wear_budget.binding",
+        SUMMARY, rf"up to the Ti-bore stop: \*\*{N} µm\*\* per cycle",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["wear_budget"]["binding"]["sliding_in_contact_per_cycle_um_upper"], 0.05,
+    ),
+    (
+        "coaxial root-stress bracket, upper end, canon mirror → bus_mechanical.json §supported_column_vs_equilibrium",
+        COAXIAL, rf"дужка \[8\.04, \*\*{N}\*\*\] МПа на плейсхолдері",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"][0]["bracket_MPa_worst_mu"][1], 0.05,
     ),
     # ── HW.43 cycle budget: the bracket SUMMARY and canon quote from script 62 ──
     # ⛔ Both ends of the low reading AND the ceiling are pinned, in both homes. The ceiling is the number the
@@ -819,6 +848,9 @@ _BUS68_COLUMNS = (
                                                if o["geometry"] == g and o["play"] == "zero interference")["secant_MPa_per_um"]),
     ("reversing-drag amplitude", 0.005, lambda d, g: max(r["sigma_amplitude_MPa"] for r in d["reversing_drag_on_offset"] if r["geometry"] == g)),
     ("off-axis pogo", 0.005, lambda d, g: max(p_["sigma_root_MPa"] for p_ in d["pad_moment_at_rod_radius"] if p_["geometry"] == g)),
+    # ⛔ The rigid-wall column is the LOWER end of the root stress; without this column the table read as a cap.
+    ("upper end (Ti-bore stop) at µ 0.5", 0.05, lambda d, g: next(r for r in d["drag_coaxial"] if r["geometry"] == g and r["play"] == "zero interference"
+                                                                    and r["branch"].startswith("PEEK liner"))["by_mu"]["0.5"]["sigma_root_MPa_upper_end"]),
 )
 
 CHECKS += [

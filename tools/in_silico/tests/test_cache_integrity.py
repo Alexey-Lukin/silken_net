@@ -4,6 +4,7 @@ Verify integrity of committed in-silico cache and ligand files.
 
 Runs without conda env — uses only stdlib + json. Safe for CI.
 """
+import itertools
 import json
 import math
 from pathlib import Path
@@ -434,13 +435,22 @@ def test_bus_mechanical_weld_seam():
         regime = next(b for b in cr["branches"] if b["geometry"] == r["geometry"] and b["play_side"] == "channel")
         worst = str(max(float(m) for m in regime["by_mu"]))
         assert r["coaxial"]["mean_MPa"] == 0.0
-        assert r["coaxial"]["amplitude_MPa"] == regime["by_mu"][worst]["sigma_root_MPa_bonded"], r["geometry"]
+        # 🔴 The coaxial amplitude is a BRACKET with signed ends: the rigid-wall figure is the LOWER end (a
+        #    compliant wall raises the root moment), the Ti-bore stop / free cantilever the upper. A single
+        #    `amplitude_MPa` — the 2026-09-14 morning shape, read downstream as «≤ 8.04» — is refused.
+        assert "amplitude_MPa" not in r["coaxial"], "a single coaxial amplitude is back — the bracket lost its sign"
+        assert r["coaxial"]["amplitude_MPa_lower_rigid_wall"] == regime["by_mu"][worst]["sigma_root_MPa_bonded"], r["geometry"]
+        assert r["coaxial"]["amplitude_MPa_upper_end"] == regime["by_mu"][worst]["sigma_root_MPa_upper_end"], r["geometry"]
+        assert r["coaxial"]["amplitude_MPa_upper_end"] >= r["coaxial"]["amplitude_MPa_lower_rigid_wall"]
+        assert r["coaxial"]["bound"].startswith("the rigid-wall figure is the LOWER end")
         assert r["offset"]["mean_MPa_per_um_past_play"] > 0.0
         assert r["offset"]["amplitude_MPa_max_over_swept_offsets"] == max(a["amplitude_MPa"] for a in r["offset"]["by_offset"])
+        assert r["offset"]["bound"].startswith("rigid-wall figures: the static mean is an UPPER bound")
         assert r["peak_moment_at_root_in_every_solve"] is True
     # 3. The regime block: the QUANTIFIER is derived from the per-µ rows, the station is the exit when touched
-    #    down, the mouth is never reached coaxially. ⛔ «free cantilever (never reaches the wall)» once stood on
-    #    branches that touched on three of four µ, because an else-branch read «not every µ» as «no µ».
+    #    down, the mouth is never reached coaxially, and every row carries the SIGN of its rigid-wall figure with
+    #    an upper end inside [rigid wall, free cantilever]. ⛔ «free cantilever (never reaches the wall)» once
+    #    stood on branches that touched on three of four µ, because an else-branch read «not every µ» as «no µ».
     n_mu = len(cr["branches"][0]["by_mu"])
     for br in cr["branches"]:
         touch = [mu for mu, v in br["by_mu"].items() if v["touches_down"]]
@@ -449,10 +459,13 @@ def test_bus_mechanical_weld_seam():
         assert br["regime"].startswith("touches down at the EXIT on every") == br["touches_down_on_every_mu"], br["branch"]
         assert br["regime"].startswith("free cantilever on every") == (not touch), br["branch"]
         assert br["mouth_reached_on_any_mu"] is False
+        assert br["coaxial_root_bound"].startswith("LOWER end"), br["branch"]
         for v in br["by_mu"].values():
             assert v["contact_station_mm"] in (None, br["contact_station_when_touched_down_mm"])
             assert (v["contact_station_mm"] is not None) == v["touches_down"]
             assert abs(v["deflection_at_mouth_um"]) < br["radial_play_mm"] * 1e3, "the mouth was reached coaxially"
+            assert v["sigma_root_MPa_bonded"] <= v["sigma_root_MPa_upper_end"] <= v["sigma_root_MPa_free_cantilever"] + 0.01, br["branch"]
+            assert v["upper_end_is"].startswith(("Ti-bore stop", "free cantilever"))
     shipped = [b for b in cr["branches"] if b["play_side"] == "channel"]
     assert cr["shipped_exit_contact_forced_on_every_mu_and_geometry"] == all(b["touches_down_on_every_mu"] for b in shipped)
     for g in cr["by_geometry"]:
@@ -460,10 +473,24 @@ def test_bus_mechanical_weld_seam():
         assert g["forced_on_every_mu_branches"] == [b["branch"] for b in rows if b["touches_down_on_every_mu"]]
         assert g["free_on_every_mu_branches"] == [b["branch"] for b in rows if not b["touches_down_on_mus"]]
     assert SHIPPED_INSULATION in cr["by_geometry"][0]["forced_on_every_mu_branches"]
-    # 4. The §2 supported column against the cap: the SIGN is derived from the ratios, never typed.
+    # 4. The §2 supported column against the BRACKET: the sign of the rigid-wall comparison and the column's
+    #    position in [rigid, upper] are derived from the numbers, never typed; the bracket's lower end IS the
+    #    rigid-wall figure and its upper end is not below it.
     sc = cr["supported_column_vs_equilibrium"]
-    assert sc["coaxial_sign"].startswith("the column OVERSTATES") == all(g["column_over_cap_nominal"] > 1.0 for g in sc["by_geometry"])
+    assert sc["coaxial_cap_bound"].startswith("LOWER")
+    assert sc["coaxial_sign"].startswith("against a RIGID wall the column OVERSTATES") == all(g["column_over_cap_nominal"] > 1.0 for g in sc["by_geometry"])
     assert {g["geometry"] for g in sc["by_geometry"]} == {g["label"] for g in cr["geometries"]}
+    col = sc["supported_column_sigma_MPa"]
+
+    def position(x, lo, hi):
+        return "below the rigid-wall end" if x < lo else ("inside the bracket" if x <= hi else "above the upper end")
+    for g in sc["by_geometry"]:
+        lo_n, hi_n = g["bracket_MPa_nominal_mu"]
+        lo_w, hi_w = g["bracket_MPa_worst_mu"]
+        assert lo_n == lo_w == g["coaxial_cap_MPa_bonded"] and hi_n >= lo_n and hi_w >= lo_w, g["geometry"]
+        assert g["column_position_nominal_mu"] == position(col["nominal_mu"], lo_n, hi_n), g["geometry"]
+        assert g["column_position_worst_mu"] == position(col["worst_mu"], lo_w, hi_w), g["geometry"]
+        assert g["binding_alloy_sf_shipped_at_upper_end"] <= g["binding_alloy_sf_shipped_at_rigid_end"]
     # 5. Edge bearing: every branch × geometry; at the reference excess the mouth is the ONLY contact; coaxially
     #    it is never reached; the protrusion floor is NOT typed (its two terms are unmeasured) while the ratified
     #    value is carried from the CEM; the exit contact names no radius.
@@ -479,7 +506,8 @@ def test_bus_mechanical_weld_seam():
     assert ls["ratified_protrusion_mm"] == d["assembly_clearance"]["frozen_dims_mm"]["liner_protrusion"]
     for x in edge["exit_contact"]:
         assert x["exit_radius_specified_mm"] is None
-        assert x["reaction_N_over_swept_mu"][0] < x["reaction_N_over_swept_mu"][1]
+        assert x["reaction_N_over_swept_mu_upper_rigid_wall"][0] < x["reaction_N_over_swept_mu_upper_rigid_wall"][1]
+        assert x["reaction_bound"].startswith("UPPER")
     # 6. Both markers are OUR OWN numbers, so they must still match the model they came from.
     markers = {m["label"]: m["k"] for m in seam["markers"]}
     assert fm["as_printed_derate"] in markers.values()
@@ -549,52 +577,73 @@ def test_bus_mechanical_wear_budget():
         assert r["area_material_bound_mm2"] == min(by_factor.values())
         assert 0.0 < r["area_material_bound_mm2"] <= r["area_projected_full_run_mm2"]
         for p in r["by_duty_anchor"]:
-            assert 0.0 < p["k_max_edge_mm3_per_Nm"] < p["k_max_conformal_mm3_per_Nm"]
-    # 3. The stations are the equilibrium's. Coaxial rows sit at their geometry's EXIT, carry a zero
-    #    rigid-kinematics sliding beside a positive ceiling, and — because the reaction cancels and the
-    #    touched-down slope does not depend on the drag — their tight end is µ-INVARIANT per (geometry, branch).
+            assert 0.0 < p["k_rigid_wall_figure_edge_mm3_per_Nm"] < p["k_rigid_wall_figure_conformal_mm3_per_Nm"]
+    # 3. The stations are the equilibrium's, and the coaxial rows carry a sliding BRACKET with signed ends: a zero
+    #    rigid-kinematics sliding, the rigid-wall rotation demoted to a figure (it happens out of contact), and a
+    #    positive in-contact sliding at the upper end — with the BOUND priced on the upper end. ⛔ A row that calls
+    #    the rigid rotation a ceiling again (`slip_ceiling_per_cycle_um`) is refused: quoted without its sign it read
+    #    as an upper bound for an afternoon while a compliant contact can slide six times more.
     coax = [r for r in contact if r["regime"] == "coaxial"]
     assert coax
     for r in coax:
         assert r["station_mm"] == geos[r["geometry"]]["pad_mm"], f"{r['geometry']}/{r['branch']}: coaxial station is not the exit"
+        assert "slip_ceiling_per_cycle_um" not in r, "the rigid-wall rotation is called a ceiling again"
         assert r["sliding_in_contact_um_rigid_kinematics"] == 0.0
-        assert r["slip_ceiling_per_cycle_um"] > 0.0
+        assert r["out_of_contact_rotation_per_cycle_um_rigid_wall"] > 0.0
+        assert r["sliding_in_contact_per_cycle_um_upper"] > 0.0
+        assert r["reaction_bound"].startswith("UPPER")
+        for p in r["by_duty_anchor"]:
+            assert 0.0 < p["k_bound_edge_mm3_per_Nm"] < p["k_bound_conformal_mm3_per_Nm"]
+    # The RIGID-wall figure's tight end is µ-invariant per (geometry, branch) — the reaction cancels and the
+    # touched-down slope does not depend on the drag; the BOUND's tight end may fall with µ but never rise,
+    # because the in-contact sliding at the upper end grows with the drag until the Ti-bore stop saturates it.
     for key in {(r["geometry"], r["branch"]) for r in coax}:
-        tight = {round(min(p["k_max_edge_mm3_per_Nm"] for p in r["by_duty_anchor"]), 15) for r in coax if (r["geometry"], r["branch"]) == key}
-        assert len(tight) == 1, f"{key}: the coaxial tight end depends on µ — the reaction or the slope crept back in"
+        rows_k = sorted((r for r in coax if (r["geometry"], r["branch"]) == key), key=lambda r: r["mu"])
+        rigid = {round(min(p["k_rigid_wall_figure_edge_mm3_per_Nm"] for p in r["by_duty_anchor"]), 15) for r in rows_k}
+        assert len(rigid) == 1, f"{key}: the rigid-wall tight end depends on µ — the reaction or the slope crept back in"
+        bounds = [min(p["k_bound_edge_mm3_per_Nm"] for p in r["by_duty_anchor"]) for r in rows_k]
+        assert all(b >= a * (1 - 1e-9) for a, b in itertools.pairwise(bounds)) or \
+            all(a >= b * (1 - 1e-9) for a, b in itertools.pairwise(bounds)), f"{key}: the bound's tight end is not monotone in µ"
     offset = [r for r in contact if r["regime"] == "offset"]
     assert offset, "the offset regime lost its rows"
     for r in offset:
         assert r["station_mm"] == geos[r["geometry"]]["gap_mm"], f"{r['geometry']}: offset station is not the mouth"
         assert r["mouth_loaded_through_the_cycle"] == (min(r["mouth_reaction_N"].values()) > 0.0)
-        assert r["reaction_N"] == max(r["mouth_reaction_N"].values())
-    # 4. 🔴 The SUBSTANTIVE claim canon leans on: on the wear axis a branch with LESS allowance than the
-    #    shipped liner demands a STRICTER rate at the same geometry and friction, coaxially. Scoped by
-    #    ALLOWANCE, not by «is not the shipped branch», so a future thicker wall does not red correct work.
+        assert r["reaction_N_upper_rigid_wall"] == max(r["mouth_reaction_N"].values())
+        assert r["bound_note"].startswith("rigid-wall FIGURES")
+    # 4. 🔴 The SUBSTANTIVE claim canon leaned on — «a thinner wall demands a stricter rate» — holds on the
+    #    RIGID-wall figures and NOT on the bounds (the in-contact sliding scales with the polymer's own wall),
+    #    and the cache must say so with flags DERIVED from its own rows, never typed.
     by_key = {(r["geometry"], r["branch"], r["mu"]): r for r in coax}
     assert any(b == SHIPPED_INSULATION for _, b, _ in by_key), "the shipped liner branch is absent from the wear table"
+    stricter_rigid, stricter_bound = [], []
     for (geo, branch, mu), row in by_key.items():
         peer = by_key.get((geo, SHIPPED_INSULATION, mu))
         if peer is None or branch == SHIPPED_INSULATION or row["wall_allowance_mm"] >= peer["wall_allowance_mm"]:
             continue
-        worst_other = min(p["k_max_edge_mm3_per_Nm"] for p in row["by_duty_anchor"])
-        worst_ship = min(p["k_max_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"])
-        assert worst_other < worst_ship, f"{branch} has less allowance than the shipped liner at {geo} µ {mu} yet a looser wear budget"
+        stricter_rigid.append(min(p["k_rigid_wall_figure_edge_mm3_per_Nm"] for p in row["by_duty_anchor"])
+                              < min(p["k_rigid_wall_figure_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"]))
+        stricter_bound.append(min(p["k_bound_edge_mm3_per_Nm"] for p in row["by_duty_anchor"])
+                              < min(p["k_bound_edge_mm3_per_Nm"] for p in peer["by_duty_anchor"]))
+    disc = w["branch_discrimination"]
+    assert disc["films_stricter_on_rigid_wall_figures"] == (bool(stricter_rigid) and all(stricter_rigid))
+    assert disc["films_stricter_on_bounds"] == (bool(stricter_bound) and all(stricter_bound))
+    assert disc["films_stricter_on_bounds_anywhere"] == any(stricter_bound)
+    assert all(stricter_rigid), "a thinner wall no longer demands a stricter rate on the rigid-wall figures"
     # 5. The second driver is priced so «sway dominates» stays a measurement.
     thermal_max = max(t["sliding_distance_m"] for t in w["thermal_driver"]["rows"])
-    sway_max = max(p["sliding_distance_m"] for r in contact for p in r["by_duty_anchor"])
+    sway_max = max(p.get("sliding_distance_m_upper", p.get("sliding_distance_m", 0.0)) for r in contact for p in r["by_duty_anchor"])
     assert w["thermal_driver"]["cycles_per_year_is_swept"] is True
     assert thermal_max * 100.0 < sway_max, "the thermal driver stopped being negligible — re-read §7"
-    # 6. The binding row is the SHIPPED branch at its worst corner on BOTH ends: the tight end ties across the
-    #    coaxial µ rows (compared at six significant figures — the rows differ at the 1e-10 level through the
-    #    solve, and a raw min once picked the row by that noise), and the tie is broken by the worn-in end (the
-    #    largest reaction), never by list order.
-    assert w["binding"]["branch"] == SHIPPED_INSULATION
-    shipped_rows = [r for r in contact if r["branch"] == SHIPPED_INSULATION]
-    expected = min(shipped_rows, key=lambda r: (float(f"{min(p['k_max_edge_mm3_per_Nm'] for p in r['by_duty_anchor']):.6e}"),
-                                               min(p["k_max_conformal_mm3_per_Nm"] for p in r["by_duty_anchor"])))
-    assert (w["binding"]["geometry"], w["binding"]["regime"], w["binding"].get("mu"), w["binding"].get("offset_um")) == \
-        (expected["geometry"], expected["regime"], expected.get("mu"), expected.get("offset_um"))
+    # 6. The binding row is the SHIPPED branch's worst corner on the BOUND: the tight end ties across the
+    #    coaxial µ rows once the Ti-bore stop saturates the sliding (compared at six significant figures — the
+    #    rows differ at the 1e-10 level through the solve, and a raw min once picked the row by that noise), and
+    #    the tie is broken by the worn-in end (the largest reaction), never by list order.
+    assert w["binding"]["branch"] == SHIPPED_INSULATION and w["binding"]["regime"] == "coaxial"
+    shipped_rows = [r for r in coax if r["branch"] == SHIPPED_INSULATION]
+    expected = min(shipped_rows, key=lambda r: (float(f"{min(p['k_bound_edge_mm3_per_Nm'] for p in r['by_duty_anchor']):.6e}"),
+                                               min(p["k_bound_conformal_mm3_per_Nm"] for p in r["by_duty_anchor"])))
+    assert (w["binding"]["geometry"], w["binding"]["mu"]) == (expected["geometry"], expected["mu"])
 
 
 def test_bus_contact_equilibrium():
@@ -614,7 +663,15 @@ def test_bus_contact_equilibrium():
         pytest.skip("bus_contact_equilibrium.json not computed")
     d = json.loads(path.read_text(encoding="utf-8"))
     pad = {g["label"]: round(g["pad_mm"], 2) for g in d["inputs"]["geometries"]}
+    inp = d["inputs"]
+    i_rod = math.pi / 64.0 * (inp["rod_dia_mm"] * 1e-3) ** 4
     for row in d["drag_coaxial"]:
+        # 🔴 Every drag row carries the SIGN of its rigid-wall figure and an upper end that stays inside
+        #    [rigid wall, free cantilever F·L·c/I] — the free end is recomputed here from the inputs, not read.
+        assert row["coaxial_cap_bound"].startswith("LOWER end"), f"{row['geometry']}/{row['branch']}"
+        for mu, v in row["by_mu"].items():
+            free = float(mu) * inp["pogo_force_N"] * (pad[row["geometry"]] * 1e-3) * (inp["rod_dia_mm"] * 0.5e-3) / i_rod / 1e6
+            assert v["sigma_root_MPa_bonded"] <= v["sigma_root_MPa_upper_end"] <= free + 0.01, f"{row['geometry']}/{row['branch']}/µ={mu}"
         if row["branch"].startswith("PEEK liner"):
             for mu, v in row["by_mu"].items():
                 assert [z["station_mm"] for z in v["contacts_bonded"]] == [pad[row["geometry"]]], f"{row['geometry']}/{row['play']}/µ={mu}"
@@ -647,13 +704,19 @@ def test_bus_contact_equilibrium():
     assert listed == from_rows, "the tilt exceptions and the tilt rows disagree about where the peak sits"
     # 7. One solver, two caches: the coaxial cap script 55 writes must equal the one this script writes.
     side = d["script55_side_by_side"]
-    assert side["caps_agree"] is True
+    assert side["caps_agree"] is True and side["upper_ends_agree"] is True
     assert side["script55_coaxial_cap_MPa_at_worst_mu_bonded"] == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"]
+    assert side["script55_upper_end_MPa_at_worst_mu"] == side["equilibrium_upper_end_MPa_at_worst_mu"]
+    assert side["coaxial_cap_bound"].startswith("LOWER")
+    for g, lo in side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"].items():
+        assert side["equilibrium_upper_end_MPa_at_worst_mu"][g] >= lo, g
     bus55 = MECHANICAL / "bus_mechanical.json"
     if bus55.exists():
-        caps55 = {g["geometry"]: g["coaxial_cap_MPa_bonded"]
-                  for g in json.loads(bus55.read_text())["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]}
+        by_geo = json.loads(bus55.read_text())["clearance_regime"]["supported_column_vs_equilibrium"]["by_geometry"]
+        caps55 = {g["geometry"]: g["coaxial_cap_MPa_bonded"] for g in by_geo}
+        upper55 = {g["geometry"]: g["bracket_MPa_worst_mu"][1] for g in by_geo}
         assert caps55 == side["equilibrium_coaxial_cap_MPa_at_worst_mu_bonded"], "scripts 55 and 68 drifted apart on the coaxial cap"
+        assert upper55 == side["equilibrium_upper_end_MPa_at_worst_mu"], "scripts 55 and 68 drifted apart on the upper end"
 
 
 def test_sap_recipe_saturation():

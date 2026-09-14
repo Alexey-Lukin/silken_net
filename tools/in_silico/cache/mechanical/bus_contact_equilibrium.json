@@ -58,16 +58,21 @@
       "play": "film",
       "radial_play_um": 165.0,
       "touchdown_drag_N": 0.2197,
-      "capped_sigma_MPa_closed_form": 51.47,
+      "rigid_wall_sigma_MPa_closed_form": 51.47,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 46.86,
           "sigma_root_MPa_bonded": 46.86,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": []
         },
         "0.3": {
           "sigma_root_MPa_bare": 51.47,
           "sigma_root_MPa_bonded": 51.47,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.0803,
@@ -78,6 +83,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 51.47,
           "sigma_root_MPa_bonded": 51.47,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1803,
@@ -88,6 +95,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 51.47,
           "sigma_root_MPa_bonded": 51.47,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2803,
@@ -103,16 +112,21 @@
       "play": "film",
       "radial_play_um": 170.0,
       "touchdown_drag_N": 0.2263,
-      "capped_sigma_MPa_closed_form": 53.02,
+      "rigid_wall_sigma_MPa_closed_form": 53.02,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 46.86,
           "sigma_root_MPa_bonded": 46.86,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": []
         },
         "0.3": {
           "sigma_root_MPa_bare": 53.02,
           "sigma_root_MPa_bonded": 53.02,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.0737,
@@ -123,6 +137,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 53.02,
           "sigma_root_MPa_bonded": 53.02,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1737,
@@ -133,6 +149,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 53.02,
           "sigma_root_MPa_bonded": 53.02,
+          "sigma_root_MPa_upper_end": 54.58,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2737,
@@ -148,11 +166,14 @@
       "play": "zero interference",
       "radial_play_um": 25.0,
       "touchdown_drag_N": 0.0333,
-      "capped_sigma_MPa_closed_form": 7.8,
+      "rigid_wall_sigma_MPa_closed_form": 7.8,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 7.8,
           "sigma_root_MPa_bonded": 8.04,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
               "force_N": -0.1657,
@@ -163,6 +184,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 7.8,
           "sigma_root_MPa_bonded": 8.04,
+          "sigma_root_MPa_upper_end": 56.29,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2657,
@@ -173,6 +196,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 7.8,
           "sigma_root_MPa_bonded": 8.04,
+          "sigma_root_MPa_upper_end": 56.29,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3657,
@@ -183,6 +208,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 7.8,
           "sigma_root_MPa_bonded": 8.04,
+          "sigma_root_MPa_upper_end": 56.29,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4657,
@@ -198,11 +225,14 @@
       "play": "interference window floor",
       "radial_play_um": 24.66,
       "touchdown_drag_N": 0.0328,
-      "capped_sigma_MPa_closed_form": 7.69,
+      "rigid_wall_sigma_MPa_closed_form": 7.69,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 7.69,
           "sigma_root_MPa_bonded": 7.93,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
               "force_N": -0.1661,
@@ -213,6 +243,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 7.69,
           "sigma_root_MPa_bonded": 7.93,
+          "sigma_root_MPa_upper_end": 56.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2661,
@@ -223,6 +255,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 7.69,
           "sigma_root_MPa_bonded": 7.93,
+          "sigma_root_MPa_upper_end": 56.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3661,
@@ -233,6 +267,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 7.69,
           "sigma_root_MPa_bonded": 7.93,
+          "sigma_root_MPa_upper_end": 56.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4661,
@@ -248,11 +284,14 @@
       "play": "interference window mid-window",
       "radial_play_um": 20.0,
       "touchdown_drag_N": 0.0266,
-      "capped_sigma_MPa_closed_form": 6.24,
+      "rigid_wall_sigma_MPa_closed_form": 6.24,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 6.24,
           "sigma_root_MPa_bonded": 6.43,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
               "force_N": -0.1725,
@@ -263,6 +302,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 6.24,
           "sigma_root_MPa_bonded": 6.43,
+          "sigma_root_MPa_upper_end": 54.68,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2725,
@@ -273,6 +314,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 6.24,
           "sigma_root_MPa_bonded": 6.43,
+          "sigma_root_MPa_upper_end": 54.68,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3725,
@@ -283,6 +326,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 6.24,
           "sigma_root_MPa_bonded": 6.43,
+          "sigma_root_MPa_upper_end": 54.68,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4725,
@@ -298,11 +343,14 @@
       "play": "interference window ceiling",
       "radial_play_um": 15.33,
       "touchdown_drag_N": 0.0204,
-      "capped_sigma_MPa_closed_form": 4.78,
+      "rigid_wall_sigma_MPa_closed_form": 4.78,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 4.78,
           "sigma_root_MPa_bonded": 4.93,
+          "sigma_root_MPa_upper_end": 46.86,
+          "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
               "force_N": -0.179,
@@ -313,6 +361,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 4.78,
           "sigma_root_MPa_bonded": 4.93,
+          "sigma_root_MPa_upper_end": 53.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.279,
@@ -323,6 +373,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 4.78,
           "sigma_root_MPa_bonded": 4.93,
+          "sigma_root_MPa_upper_end": 53.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.379,
@@ -333,6 +385,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 4.78,
           "sigma_root_MPa_bonded": 4.93,
+          "sigma_root_MPa_upper_end": 53.18,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.479,
@@ -348,11 +402,14 @@
       "play": "film",
       "radial_play_um": 165.0,
       "touchdown_drag_N": 0.0487,
-      "capped_sigma_MPa_closed_form": 18.85,
+      "rigid_wall_sigma_MPa_closed_form": 18.85,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 18.85,
           "sigma_root_MPa_bonded": 18.85,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1513,
@@ -363,6 +420,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 18.85,
           "sigma_root_MPa_bonded": 18.85,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2513,
@@ -373,6 +432,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 18.85,
           "sigma_root_MPa_bonded": 18.85,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3513,
@@ -383,6 +444,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 18.85,
           "sigma_root_MPa_bonded": 18.85,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4513,
@@ -398,11 +461,14 @@
       "play": "film",
       "radial_play_um": 170.0,
       "touchdown_drag_N": 0.0502,
-      "capped_sigma_MPa_closed_form": 19.43,
+      "rigid_wall_sigma_MPa_closed_form": 19.43,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 19.43,
           "sigma_root_MPa_bonded": 19.43,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1498,
@@ -413,6 +479,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 19.43,
           "sigma_root_MPa_bonded": 19.43,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2498,
@@ -423,6 +491,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 19.43,
           "sigma_root_MPa_bonded": 19.43,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3498,
@@ -433,6 +503,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 19.43,
           "sigma_root_MPa_bonded": 19.43,
+          "sigma_root_MPa_upper_end": 20.0,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4498,
@@ -448,11 +520,14 @@
       "play": "zero interference",
       "radial_play_um": 25.0,
       "touchdown_drag_N": 0.0074,
-      "capped_sigma_MPa_closed_form": 2.86,
+      "rigid_wall_sigma_MPa_closed_form": 2.86,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.86,
           "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.13,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1926,
@@ -463,6 +538,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.86,
           "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.13,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2926,
@@ -473,6 +550,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.86,
           "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.13,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3926,
@@ -483,6 +562,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.86,
           "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.13,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4926,
@@ -498,11 +579,14 @@
       "play": "interference window floor",
       "radial_play_um": 24.66,
       "touchdown_drag_N": 0.0073,
-      "capped_sigma_MPa_closed_form": 2.82,
+      "rigid_wall_sigma_MPa_closed_form": 2.82,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.82,
           "sigma_root_MPa_bonded": 2.84,
+          "sigma_root_MPa_upper_end": 20.09,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1927,
@@ -513,6 +597,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.82,
           "sigma_root_MPa_bonded": 2.84,
+          "sigma_root_MPa_upper_end": 20.09,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2927,
@@ -523,6 +609,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.82,
           "sigma_root_MPa_bonded": 2.84,
+          "sigma_root_MPa_upper_end": 20.09,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3927,
@@ -533,6 +621,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.82,
           "sigma_root_MPa_bonded": 2.84,
+          "sigma_root_MPa_upper_end": 20.09,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4927,
@@ -548,11 +638,14 @@
       "play": "interference window mid-window",
       "radial_play_um": 20.0,
       "touchdown_drag_N": 0.0059,
-      "capped_sigma_MPa_closed_form": 2.29,
+      "rigid_wall_sigma_MPa_closed_form": 2.29,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.29,
           "sigma_root_MPa_bonded": 2.3,
+          "sigma_root_MPa_upper_end": 19.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1941,
@@ -563,6 +656,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.29,
           "sigma_root_MPa_bonded": 2.3,
+          "sigma_root_MPa_upper_end": 19.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2941,
@@ -573,6 +668,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.29,
           "sigma_root_MPa_bonded": 2.3,
+          "sigma_root_MPa_upper_end": 19.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3941,
@@ -583,6 +680,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.29,
           "sigma_root_MPa_bonded": 2.3,
+          "sigma_root_MPa_upper_end": 19.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4941,
@@ -598,11 +697,14 @@
       "play": "interference window ceiling",
       "radial_play_um": 15.33,
       "touchdown_drag_N": 0.0045,
-      "capped_sigma_MPa_closed_form": 1.75,
+      "rigid_wall_sigma_MPa_closed_form": 1.75,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 1.75,
           "sigma_root_MPa_bonded": 1.76,
+          "sigma_root_MPa_upper_end": 19.02,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1954,
@@ -613,6 +715,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 1.75,
           "sigma_root_MPa_bonded": 1.76,
+          "sigma_root_MPa_upper_end": 19.02,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2954,
@@ -623,6 +727,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 1.75,
           "sigma_root_MPa_bonded": 1.76,
+          "sigma_root_MPa_upper_end": 19.02,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3954,
@@ -633,6 +739,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 1.75,
           "sigma_root_MPa_bonded": 1.76,
+          "sigma_root_MPa_upper_end": 19.02,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4954,
@@ -648,11 +756,14 @@
       "play": "film",
       "radial_play_um": 165.0,
       "touchdown_drag_N": 0.0451,
-      "capped_sigma_MPa_closed_form": 17.9,
+      "rigid_wall_sigma_MPa_closed_form": 17.9,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 17.9,
           "sigma_root_MPa_bonded": 17.9,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1549,
@@ -663,6 +774,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 17.9,
           "sigma_root_MPa_bonded": 17.9,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2549,
@@ -673,6 +786,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 17.9,
           "sigma_root_MPa_bonded": 17.9,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3549,
@@ -683,6 +798,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 17.9,
           "sigma_root_MPa_bonded": 17.9,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4549,
@@ -698,11 +815,14 @@
       "play": "film",
       "radial_play_um": 170.0,
       "touchdown_drag_N": 0.0464,
-      "capped_sigma_MPa_closed_form": 18.44,
+      "rigid_wall_sigma_MPa_closed_form": 18.44,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 18.44,
           "sigma_root_MPa_bonded": 18.44,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1536,
@@ -713,6 +833,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 18.44,
           "sigma_root_MPa_bonded": 18.44,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2536,
@@ -723,6 +845,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 18.44,
           "sigma_root_MPa_bonded": 18.44,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3536,
@@ -733,6 +857,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 18.44,
           "sigma_root_MPa_bonded": 18.44,
+          "sigma_root_MPa_upper_end": 18.98,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4536,
@@ -748,11 +874,14 @@
       "play": "zero interference",
       "radial_play_um": 25.0,
       "touchdown_drag_N": 0.0068,
-      "capped_sigma_MPa_closed_form": 2.71,
+      "rigid_wall_sigma_MPa_closed_form": 2.71,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.71,
           "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.1,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1931,
@@ -763,6 +892,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.71,
           "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.1,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2931,
@@ -773,6 +904,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.71,
           "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.1,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3931,
@@ -783,6 +916,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.71,
           "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.1,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4931,
@@ -798,11 +933,14 @@
       "play": "interference window floor",
       "radial_play_um": 24.66,
       "touchdown_drag_N": 0.0067,
-      "capped_sigma_MPa_closed_form": 2.68,
+      "rigid_wall_sigma_MPa_closed_form": 2.68,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.68,
           "sigma_root_MPa_bonded": 2.69,
+          "sigma_root_MPa_upper_end": 19.07,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1932,
@@ -813,6 +951,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.68,
           "sigma_root_MPa_bonded": 2.69,
+          "sigma_root_MPa_upper_end": 19.07,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2932,
@@ -823,6 +963,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.68,
           "sigma_root_MPa_bonded": 2.69,
+          "sigma_root_MPa_upper_end": 19.07,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3932,
@@ -833,6 +975,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.68,
           "sigma_root_MPa_bonded": 2.69,
+          "sigma_root_MPa_upper_end": 19.07,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4932,
@@ -848,11 +992,14 @@
       "play": "interference window mid-window",
       "radial_play_um": 20.0,
       "touchdown_drag_N": 0.0055,
-      "capped_sigma_MPa_closed_form": 2.17,
+      "rigid_wall_sigma_MPa_closed_form": 2.17,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 2.17,
           "sigma_root_MPa_bonded": 2.18,
+          "sigma_root_MPa_upper_end": 18.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1945,
@@ -863,6 +1010,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 2.17,
           "sigma_root_MPa_bonded": 2.18,
+          "sigma_root_MPa_upper_end": 18.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2945,
@@ -873,6 +1022,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 2.17,
           "sigma_root_MPa_bonded": 2.18,
+          "sigma_root_MPa_upper_end": 18.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3945,
@@ -883,6 +1034,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 2.17,
           "sigma_root_MPa_bonded": 2.18,
+          "sigma_root_MPa_upper_end": 18.56,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4945,
@@ -898,11 +1051,14 @@
       "play": "interference window ceiling",
       "radial_play_um": 15.33,
       "touchdown_drag_N": 0.0042,
-      "capped_sigma_MPa_closed_form": 1.66,
+      "rigid_wall_sigma_MPa_closed_form": 1.66,
+      "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
           "sigma_root_MPa_bare": 1.66,
           "sigma_root_MPa_bonded": 1.67,
+          "sigma_root_MPa_upper_end": 18.05,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.1958,
@@ -913,6 +1069,8 @@
         "0.3": {
           "sigma_root_MPa_bare": 1.66,
           "sigma_root_MPa_bonded": 1.67,
+          "sigma_root_MPa_upper_end": 18.05,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.2958,
@@ -923,6 +1081,8 @@
         "0.4": {
           "sigma_root_MPa_bare": 1.66,
           "sigma_root_MPa_bonded": 1.67,
+          "sigma_root_MPa_upper_end": 18.05,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.3958,
@@ -933,6 +1093,8 @@
         "0.5": {
           "sigma_root_MPa_bare": 1.66,
           "sigma_root_MPa_bonded": 1.67,
+          "sigma_root_MPa_upper_end": 18.05,
+          "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
               "force_N": -0.4958,
@@ -2714,11 +2876,23 @@
       "lock window, near end": 2.88,
       "lock window, far end": 2.73
     },
-    "caps_agree": true
+    "caps_agree": true,
+    "coaxial_cap_bound": "LOWER end — rigid wall; see drag_coaxial[].coaxial_cap_bound",
+    "script55_upper_end_MPa_at_worst_mu": {
+      "script 55 placeholder (HW.8)": 56.29,
+      "lock window, near end": 20.13,
+      "lock window, far end": 19.1
+    },
+    "equilibrium_upper_end_MPa_at_worst_mu": {
+      "script 55 placeholder (HW.8)": 56.29,
+      "lock window, near end": 20.13,
+      "lock window, far end": 19.1
+    },
+    "upper_ends_agree": true
   },
-  "summary": "Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush, and the root stress is capped whatever the drag — 8.04 MPa on script 55's placeholder geometry, 2.73–2.88 MPa across the Zone-1 lock window (zero-interference play, bonded member). Script 55's 6 mm supported column prices that section at 18.30 MPa nominal — above the cap on every geometry. Channel off the root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a secant 5.74 MPa/µm on the placeholder and 0.42–0.46 MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of magnitude. Reversing drag on a static offset, amplitude over the swept offsets — script 55 placeholder (HW.8): up to 8.04 MPa against its cap 8.04 (within it); lock window, near end: up to 3.85 MPa against its cap 2.88 (ABOVE it); lock window, far end: up to 3.76 MPa against its cap 2.73 (ABOVE it). A pogo contact off the rod axis by the rod radius, with the worst drag, gives up to 10.52 MPa on the placeholder and 5.22–5.37 MPa across the lock window — above the drag cap there. The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. Peak moment: the root is the peak-moment section in every drag, offset and reversing-drag row; it leaves the root only in tilt lock window, near end mouth/9.0 mrad, tilt lock window, far end mouth/9.0 mrad, pad_moment lock window, near end e +0.5 mm, pad_moment lock window, far end e +0.5 mm. MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. No verdict is taken here.",
+  "summary": "Coaxial channel: under pogo drag the rod meets the wall only at the pad plane, where the tube ends flush; against a RIGID wall the root stress is µ-invariant — 8.04 MPa on script 55's placeholder geometry, 2.73–2.88 MPa across the Zone-1 lock window (zero-interference play, bonded member) — and that figure is the LOWER end of the root stress: the polymer wall on the Ti bore's edge yields by R/k, and the upper end (the Ti-bore stop, or the free cantilever where the drag cannot reach the bore) is 56.3 MPa on the placeholder and 19.1–20.1 MPa across the lock window at the worst swept µ; where in that bracket the root sits is set by the contact compliance, measured nowhere. Script 55's 6 mm supported column prices that section at 18.30 MPa nominal — above the rigid-wall end on every geometry, inside the bracket. Channel off the root axis: past the play the mouth becomes a contact station and the STATIC root bending grows at a secant 5.74 MPa/µm on the placeholder and 0.42–0.46 MPa/µm across the lock window — the insertion placeholder moves the offset price by an order of magnitude. Reversing drag on a static offset, amplitude over the swept offsets — script 55 placeholder (HW.8): up to 8.04 MPa against its cap 8.04 (within it); lock window, near end: up to 3.85 MPa against its cap 2.88 (ABOVE it); lock window, far end: up to 3.76 MPa against its cap 2.73 (ABOVE it). A pogo contact off the rod axis by the rod radius, with the worst drag, gives up to 10.52 MPa on the placeholder and 5.22–5.37 MPa across the lock window — above the drag cap there. The tilt price depends on the PIVOT (root · mouth · pad plane) far more than on the angle. Peak moment: the root is the peak-moment section in every drag, offset and reversing-drag row; it leaves the root only in tilt lock window, near end mouth/9.0 mrad, tilt lock window, far end mouth/9.0 mrad, pad_moment lock window, near end e +0.5 mm, pad_moment lock window, far end e +0.5 mm. MEASURED: contact stations and root stress for swept geometry, play, offset, tilt and pad moment. NOT computed: what the stack delivers, contact pressure, a varying offset's amplitude, weld compliance. No verdict is taken here.",
   "not_modelled": {
-    "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction; past the play the mouth corner would load the PEEK tube beyond its compressive strength at the larger offsets, so offset stresses are upper bounds",
+    "wall": "rigid and frictionless — no liner compliance, no contact pressure, no axial traction. The SIGN of that omission differs by regime: under coaxial DRAG the rigid-wall root stress is the LOWER end — a compliant polymer wall lets the exit yield by R/k and raises the root moment by 3EI·(R/k)/L², up to the Ti-bore stop or the free cantilever (drag_coaxial[].by_mu[].sigma_root_MPa_upper_end); past the play under an OFFSET the mouth corner would load the PEEK tube beyond its compressive strength at the larger offsets, so offset stresses are UPPER bounds. The contact compliance that places either is measured nowhere",
     "clamp": "perfect — weld and printed-anode compliance lower every stress",
     "swept_not_measured": "insertion, play, offset, tilt and pad eccentricity",
     "mean_stress": "a static offset is a mean stress; no Goodman-type correction; the amplitude of a varying offset needs relative Zone-1<->Zone-3 motion, measured nowhere",
