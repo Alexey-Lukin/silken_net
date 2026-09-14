@@ -228,6 +228,24 @@ D_BUS_ROD_MM = 1.0              # mm — 01_01 §1.4 frozen dims (mirror: cem/an
 # still open (the Zone-3 flange: SLM ⊥ EBM ⊥ CNC, 00_07 HW.23) it is a floor for one branch only.
 SLM_MIN_WALL_DEFAULT_MM = 0.2   # mm — 01_01 §5.5 canon default
 
+# Trunk sway — the frequency every cycle count of the anchor stack is built from (00_07 HW.43; canon 01_02 §2.2,
+# edit there first). MEASURED on Pinus sylvestris at ONE site, the Hartheim forest research site (Univ. Freiburg,
+# southern Upper Rhine Valley, 47°56′04″N 7°36′02″E) — all three full texts give those coordinates (read 2026-09-14):
+#   Kolbe & Schindler 2021, HardwareX 9, e00180 (doi 10.1016/j.ohx.2021.e00180): stem tilt, three trees
+#     H 17.2–18.0 m / DBH 22.6–25.8 cm, 10 Apr–10 Oct 2020 — first vibration mode 0.273 · 0.312 · 0.312 Hz;
+#   Nickl, Kolbe & Schindler 2022, HardwareX 12, e00379 (doi 10.1016/j.ohx.2022.e00379): strain at 2.7 m, June 2021 —
+#     f0 = 0.26 Hz, while the spectrum's FIRST maxima sit at 0.04–0.05 Hz (turbulent structures above the canopy);
+#   Schindler & Kolbe 2020, Forests 11, 145 (doi 10.3390/f11020145): one tree H 16.8 m / DBH 21.5 cm, 30 Jan 2019 —
+#     «the damped fundamental sway frequency of the stem (f0) was determined at 0.74 Hz».
+# ⛔ Same group, same site, trees of one size, and the two readings differ 2.4–2.8×. Neither text names a cause (dates
+#    and methods differ, neither compares the other), so the frequency is a BRACKET of two NAMED readings, never a
+#    point: a consumer that needs one ceiling takes the high reading together with its source.
+# ⛔ 1–5 Hz is a BENCH frequency (01_02 §2.2) — no field reading supports it, so no budget is counted at it.
+SWAY_F0_HZ_LOW_READING = (0.26, 0.312)   # Hz — Nickl et al. 2022 · Kolbe & Schindler 2021 (their range)
+SWAY_F0_HZ_HIGH_READING = 0.74           # Hz — Schindler & Kolbe 2020, one tree, one January day
+ANCHOR_SERVICE_LIFE_YEARS = 20.0         # yr — the span the cycle budget is counted over (01_02 §2.2)
+SECONDS_PER_YEAR = 365.25 * 86400.0      # s — Julian year
+
 # ── EDLC energy budget (HW.42, script 63; 02_03 §9/§12) — delta_t sensitivity to a
 # second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
 # edit `02_03`, not here (same discipline as ETA_BQ above). ──

@@ -600,6 +600,52 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["wear_budget"]["binding"]["k_max_span_ratio"], 0.5,
     ),
+    # ── HW.43 cycle budget: the bracket SUMMARY and canon quote from script 62 ──
+    # ⛔ Both ends of the low reading AND the ceiling are pinned, in both homes. The ceiling is the number the
+    # consumers take (55 §wear_budget, 59), and a doc that kept one reading current while the other rotted would
+    # still read as a bracket — a bracket with one stale end is a point in disguise, and nothing else would red.
+    (
+        "cycle budget, low reading floor → wind_duty_cycle.json §budget_cycles_at_low_reading",
+        SUMMARY, rf"\*\*{N}–[\d.]+ × 10⁸\*\* cycles at the low reading",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_at_low_reading"][0] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget, low reading top → wind_duty_cycle.json §budget_cycles_at_low_reading",
+        SUMMARY, rf"\*\*[\d.]+–{N} × 10⁸\*\* cycles at the low reading",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_at_low_reading"][1] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget, ceiling at the high reading → wind_duty_cycle.json §budget_cycles_upper_bound",
+        SUMMARY, rf"a ceiling of \*\*{N} × 10⁸\*\* at the high one",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_upper_bound"] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget, Beaufort-3 N_eff at the ceiling → wind_duty_cycle.json §beaufort_exceedance",
+        SUMMARY, rf"N_eff ≤ \*\*{N} × 10⁸\*\* at the frequency ceiling",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["beaufort_exceedance"][0]["n_eff_cycles_upper_bound"] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget (canon 01_02 §2.2), low reading floor → wind_duty_cycle.json",
+        METALLURGY, rf"дають \*\*{N}–[\d.]+×10⁸ циклів\*\*",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_at_low_reading"][0] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget (canon 01_02 §2.2), low reading top → wind_duty_cycle.json",
+        METALLURGY, rf"дають \*\*[\d.]+–{N}×10⁸ циклів\*\*",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_at_low_reading"][1] / 1e8, 0.005,
+    ),
+    (
+        "cycle budget (canon 01_02 §2.2), ceiling → wind_duty_cycle.json",
+        METALLURGY, rf"стелю \*\*{N}×10⁸\*\* на верхньому",
+        "mechanical/wind_duty_cycle.json",
+        lambda d: d["budget_cycles_upper_bound"] / 1e8, 0.005,
+    ),
     # ⛔ The four rows below pin a table whose WHOLE POINT is that the two topologies differ. The
     # defect they exist against is not drift in one number but a SWAP: quoting the sheet factor for
     # a network part is exactly what canon did for three months after the topology was ratified, and

@@ -5,19 +5,22 @@ HW.43 (checkbox 2) — endurance-limit literature review for the four contact/el
 in the item: pogo spring (Mill-Max 0906), Sil-Pad (HW.30), genipin-chitosan-CNC matrix, PEEK
 mechanical-lock barbs (HW.26). Closed form only (no FEA) — the question is the ACCEPTANCE UNIT
 itself: for each part, is it below its endurance/fatigue limit (N does not matter) or does the
-computed cycle budget N ≈ 6.3e8 (HW.43 head, 20 yr × 1 Hz trunk sway, 01_02 §2.2) decide?
+cycle budget decide? The budget is LOADED from script 62's cache (`wind_duty_cycle.json`), never
+retyped: continuous sway at a bracket of two field f0 readings over the service life — an UPPER
+bound on first-mode cycles, carried with the bounds that travel with it (`bounds_that_travel`).
+Every ratio against it below is computed from that bracket at run time.
 
 ⚠️ 00_06 §0 Validation Gate: every number below is a CITED literature value, not a computed
 physical fact — mark of the ones that remain genuinely open, do not round them into a verdict.
 
 Verdicts by part (see the four functions + `main` for the full reasoning and caveats):
   1. Pogo spring (BeCu C17200) — TWO MISMATCHED FRAMINGS, not one number. By the manufacturer's
-     own full-stroke actuation-life rating: FAILS (N budget is 630-6300x the rated life) — but that
-     framing almost certainly does not apply, because canon (01_01 §2) already asserts the spring
-     travel margin absorbs sway as micro-motion, not full-stroke cycling. By the physically-relevant
-     low-amplitude stress-fatigue model, real S-N anchor points exist, but the actual working stress
-     at the true sway deflection amplitude is NOT computed anywhere in canon — PARTIAL, names the
-     missing datum.
+     own full-stroke actuation-life rating: FAILS (the budget exceeds the rated life; the computed
+     ratio is `framing_A_full_stroke_actuation.overrun_x`) — but that framing almost certainly
+     does not apply, because canon (01_01 §2) already asserts the spring travel margin absorbs sway
+     as micro-motion, not full-stroke cycling. By the physically-relevant low-amplitude
+     stress-fatigue model, real S-N anchor points exist, but the actual working stress at the true
+     sway deflection amplitude is NOT computed anywhere in canon — PARTIAL, names the missing datum.
   2. PEEK mechanical-lock barb (cyclic fatigue, NOT the already-tracked HW.26 static cold-flow
      creep) — a real endurance-limit reference now exists (30-48 MPa @ 1e6-1e7 cycles, two
      independent sources) but the actual barb contact-stress amplitude is not computed (HW.26 FEA
@@ -46,6 +49,7 @@ Sources (fetched 2026-09-09, see verdict `sources` list in the JSON output for e
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -55,38 +59,51 @@ from lib.utils import banner
 
 OUT_DIR = CACHE_DIR / "mechanical"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-N_BUDGET_CYCLES = 6.3e8  # HW.43 head number: 20 yr x 1 Hz trunk sway (01_02 §2.2 lower bound of 1-5 Hz)
-# ⚠️ that 1-5 Hz band has no source; sway frequency scales with tree size (DBH/H^2) and species (00_07 HW.43)
+WIND_CACHE = OUT_DIR / "wind_duty_cycle.json"
 
 
-def pogo_spring_verdict() -> dict:
+def load_budget() -> dict:
+    """The cycle budget has ONE computing home, script 62. ⛔ No fallback: a typed count here would be the
+    very fabrication the two scripts were written to avoid, and it would read as measured."""
+    if not WIND_CACHE.exists():
+        raise SystemExit(f"⛔ {WIND_CACHE.relative_to(REPO_ROOT)} is absent — run 62_wind_duty_cycle.py first; "
+                         "no cycle budget is substituted")
+    w = json.loads(WIND_CACHE.read_text())
+    low = [float(x) for x in w["budget_cycles_at_low_reading"]]
+    return {"low_reading": low, "ceiling": float(w["budget_cycles_upper_bound"]), "floor": min(low),
+            "basis": w["budget_basis"], "bounds_that_travel": w["bounds_that_travel"]}
+
+
+def pogo_spring_verdict(budget: dict) -> dict:
     mfr_life_lo, mfr_life_hi = 1.0e5, 1.0e6  # Mill-Max 0906 series datasheet, "mechanical life at mid-stroke"
     becu_anchor_MPa_cycles = [(400.0, 3.05e6), (240.0, 1.0e10)]  # ultrasonic VHCF test points (C17200)
-    ratio_lo = N_BUDGET_CYCLES / mfr_life_hi
-    ratio_hi = N_BUDGET_CYCLES / mfr_life_lo
+    ratio_lo = budget["floor"] / mfr_life_hi
+    ratio_hi = budget["ceiling"] / mfr_life_lo
+    anchor_covers = becu_anchor_MPa_cycles[-1][1] >= budget["ceiling"]
     return {
         "part": "pogo spring (Mill-Max 0906, BeCu C17200)",
         "framing_A_full_stroke_actuation": {
             "mfr_rated_life_cycles": [mfr_life_lo, mfr_life_hi],
-            "budget_cycles": N_BUDGET_CYCLES,
+            "budget_cycles": [budget["floor"], budget["ceiling"]],
             "overrun_x": [round(ratio_lo, 0), round(ratio_hi, 0)],
-            "verdict": "FAILS by this framing (budget is 630-6300x the manufacturer's rated full-stroke "
-                       "actuation life) — but this framing is almost certainly WRONG for our load case: "
-                       "the mfr spec is for full 1.5mm-travel plunge/mate cycles, and canon (01_01 §2) "
-                       "already asserts the travel margin exists precisely so sway is absorbed as small "
-                       "residual contact micro-motion, not full-stroke actuation.",
+            "verdict": (f"FAILS by this framing (the budget is {ratio_lo:.0f}-{ratio_hi:.0f}x the manufacturer's "
+                        "rated full-stroke actuation life) — but this framing is almost certainly WRONG for our "
+                        "load case: the mfr spec is for full 1.5mm-travel plunge/mate cycles, and canon (01_01 §2) "
+                        "already asserts the travel margin exists precisely so sway is absorbed as small residual "
+                        "contact micro-motion, not full-stroke actuation."),
         },
         "framing_B_low_amplitude_stress_fatigue": {
             "anchor_points_MPa_cycles": becu_anchor_MPa_cycles,
             "vhcf_caveat": "C17200 shows NO strict flat endurance limit in VHCF (>1e7) — stress continues "
                            "to matter at very-high-cycle counts, unlike a classic steel fatigue limit.",
-            "verdict": "PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
-                       "240 MPa -> 1e10-cycle anchor comfortably covers our 6.3e8 budget IF the true "
-                       "working stress stays near or below that. But the actual stress at the REAL sway "
-                       "deflection amplitude at the pogo tip is not computed anywhere in canon — missing "
-                       "datum: spring wire diameter / rate + measured (or bench-derived) micro-deflection "
-                       "amplitude during sway, not the full 1.5mm design travel.",
+            "anchor_covers_budget_ceiling": anchor_covers,
+            "verdict": ("PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
+                        f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
+                        f"{budget['ceiling']:.2e}-cycle budget ceiling IF the true working stress stays near or "
+                        "below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip "
+                        "is not computed anywhere in canon — missing datum: spring wire diameter / rate + measured "
+                        "(or bench-derived) micro-deflection amplitude during sway, not the full 1.5mm design "
+                        "travel."),
         },
         "closed": False,
         "verdict": "TWO mismatched framings, neither closed — see framing_A (fails, likely wrong model) "
@@ -97,21 +114,24 @@ def pogo_spring_verdict() -> dict:
     }
 
 
-def peek_barb_cyclic_verdict() -> dict:
+def peek_barb_cyclic_verdict(budget: dict) -> dict:
     endurance_lo_MPa, endurance_hi_MPa = 30.0, 48.0  # unfilled PEEK, 1e6-1e7 cycles, 2 converging sources
+    tested_hi = 1.0e7
+    orders = (math.log10(budget["floor"] / tested_hi), math.log10(budget["ceiling"] / tested_hi))
     return {
         "part": "PEEK mechanical-lock barb (HW.26) — CYCLIC fatigue axis, distinct from HW.26's "
                 "already-tracked STATIC cold-flow creep (time-based, not cycle-based — orthogonal "
                 "failure mode, both need checking separately)",
         "endurance_limit_MPa": [endurance_lo_MPa, endurance_hi_MPa],
-        "tested_range_cycles": [1.0e6, 1.0e7],
-        "budget_cycles": N_BUDGET_CYCLES,
-        "extrapolation_note": "budget is 1-2 orders beyond the tested range, but PEEK's endurance limit "
-                               "is reported as a genuine flat fatigue limit (self-heating/crack-arrest "
-                               "mechanism, not VHCF-style continued degradation like metals) — Pastukhov "
-                               "et al. 2020 title is literally 'Physical background of the ENDURANCE "
-                               "LIMIT in PEEK'. Treat 30 MPa as a defensible lower-bound acceptance "
-                               "threshold, not a precisely-validated number at 6.3e8.",
+        "tested_range_cycles": [1.0e6, tested_hi],
+        "budget_cycles": [budget["floor"], budget["ceiling"]],
+        "budget_orders_beyond_tested": [round(o, 2) for o in orders],
+        "extrapolation_note": (f"the budget is {orders[0]:.1f}-{orders[1]:.1f} orders beyond the tested range, but "
+                               "PEEK's endurance limit is reported as a genuine flat fatigue limit (self-heating/"
+                               "crack-arrest mechanism, not VHCF-style continued degradation like metals) — "
+                               "Pastukhov et al. 2020 title is literally 'Physical background of the ENDURANCE "
+                               "LIMIT in PEEK'. Treat 30 MPa as a defensible lower-bound acceptance threshold, not "
+                               "a precisely-validated number at the budget."),
         "closed": False,
         "verdict": "Reference endurance limit established (30-48 MPa @ 1e6-1e7 cycles) — see "
                    "missing_datum for what still closes it.",
@@ -138,42 +158,47 @@ def silpad_verdict() -> dict:
     }
 
 
-def genipin_matrix_verdict() -> dict:
+def genipin_matrix_verdict(budget: dict) -> dict:
+    md_cycles = 10
+    orders = (math.log10(budget["floor"] / md_cycles), math.log10(budget["ceiling"] / md_cycles))
     return {
         "part": "genipin-chitosan-CNC matrix (Zone-1 anode enzyme-immobilization layer, 01_03 §2.1 "
                 "Layer 4)",
         "closed": False,
         "category_mismatch": True,
-        "verdict": "CORRECTION TO HW.43's OWN LIST, not a finding about the matrix. Canon (01_03 §2.1) "
+        "verdict": ("CORRECTION TO HW.43's OWN LIST, not a finding about the matrix. Canon (01_03 §2.1) "
                     "describes this as a ~10-20 um hydrogel COATING for enzyme immobilization on the "
                     "Zone-1 gyroid surface — it is not a load-bearing spring/structural element under "
                     "the 0.5-5 N axial mechanical-stress table (01_02 §2.2), so the 'endurance limit / "
                     "S-N' method this checkbox prescribes does not apply to it the way it does to a "
                     "metal spring or a PEEK barb. Its own cyclic-strain durability HAS already been "
                     "probed twice, and neither probe is an S-N measurement: (a) script "
-                    "16_strain_cycling_md.py ran N=10 MD cycles at +/-5% strain and returned a "
+                    f"16_strain_cycling_md.py ran N={md_cycles} MD cycles at +/-5% strain and returned a "
                     "QUALITATIVE verdict ('pseudoplastic, PE drift 1.0%' — PIPELINE_STATUS.md row 16), "
-                    "not a fatigue-life number, and MD cannot be extrapolated 8 orders of magnitude to "
-                    "6.3e8 cycles by any known method; (b) the wet-lab bench spec (01_03 §3.4, 10 000 "
-                    "cycles @ 0.1 Hz, ~28h) is the SAME 5-orders-short comparison HW.43's own head "
-                    "paragraph already names as the open gap. No published S-N/endurance-limit data "
-                    "exists for a crosslinked genipin-chitosan hydrogel coating (searched; none found). "
-                    "The matrix's durability axis that actually matters is CHEMICAL/ENZYMATIC — does the "
-                    "immobilized enzyme retain activity and does the crosslink network stay intact under "
-                    "repeated sap exposure — and that axis is already tracked separately (HW.5 30-day "
-                    "stability test, 01_03 MD stability checks), not by this checkbox.",
+                    f"not a fatigue-life number, and MD cannot be extrapolated {orders[0]:.1f}-{orders[1]:.1f} "
+                    f"orders of magnitude to the {budget['floor']:.1e}-{budget['ceiling']:.1e}-cycle budget by "
+                    "any known method; (b) the wet-lab bench spec (01_03 §3.4, 10 000 cycles @ 0.1 Hz, ~28h) "
+                    "is the SAME orders-short comparison HW.43's own head paragraph already names as the open "
+                    "gap. No published S-N/endurance-limit data exists for a crosslinked genipin-chitosan "
+                    "hydrogel coating (searched; none found). The matrix's durability axis that actually "
+                    "matters is CHEMICAL/ENZYMATIC — does the immobilized enzyme retain activity and does the "
+                    "crosslink network stay intact under repeated sap exposure — and that axis is already "
+                    "tracked separately (HW.5 30-day stability test, 01_03 MD stability checks), not by this "
+                    "checkbox."),
     }
 
 
 def main() -> int:
     banner("HW.43 — Contact/elastic-part endurance-limit literature review (checkbox 2)")
-    print(f"  Cycle budget under review: N = {N_BUDGET_CYCLES:.1e} (HW.43 head, 20yr x 1Hz)\n")
+    budget = load_budget()
+    print(f"  Cycle budget under review (script 62): {budget['floor']:.2e}–{budget['ceiling']:.2e} — "
+          f"ceiling = {budget['basis']}\n")
 
     parts = {
-        "pogo_spring": pogo_spring_verdict(),
-        "peek_barb_cyclic": peek_barb_cyclic_verdict(),
+        "pogo_spring": pogo_spring_verdict(budget),
+        "peek_barb_cyclic": peek_barb_cyclic_verdict(budget),
         "sil_pad": silpad_verdict(),
-        "genipin_matrix": genipin_matrix_verdict(),
+        "genipin_matrix": genipin_matrix_verdict(budget),
     }
     for v in parts.values():
         banner(v["part"])
@@ -194,7 +219,9 @@ def main() -> int:
     out = {
         "method": "literature-cited endurance/fatigue-limit review, no FEA — matches HW.43's own request "
                   "for an acceptance UNIT per part, not a single pass/fail number.",
-        "budget_cycles": N_BUDGET_CYCLES,
+        "budget_cycles": [budget["floor"], budget["ceiling"]],
+        "budget_source": "tools/in_silico/cache/mechanical/wind_duty_cycle.json (script 62)",
+        "budget_basis": budget["basis"],
         "parts": parts,
         "sources": [
             "Mill-Max 0906 series product page (mill-max.com) — mechanical life 1e5-1e6 cycles at mid-stroke",
@@ -215,7 +242,8 @@ def main() -> int:
                    "S-N framing as a category-mismatch correction to HW.43's own checkbox list.",
         "caveats": "All numeric thresholds are cited literature values, not computed physical facts for "
                    "OUR exact parts/geometry (00_06 §0 Validation Gate) — each 'missing_datum' field names "
-                   "exactly what closes the remaining gap.",
+                   "exactly what closes the remaining gap. The cycle budget is an upper bound on first-mode "
+                   "cycles, not a strain-range count (bounds carried in script 62's cache).",
     }
     json_path = OUT_DIR / "contact_endurance_check.json"
     json_path.write_text(json.dumps(out, indent=2, default=str))

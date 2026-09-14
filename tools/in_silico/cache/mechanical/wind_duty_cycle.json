@@ -1,6 +1,36 @@
 {
-  "method": "exceedance-fraction of real 10-year daily-mean open/10m wind speed (NASA POWER) against WMO Beaufort-scale tree-motion anchors, used as a citable proxy for a sway-onset threshold that the peer-reviewed literature reports as poorly constrained.",
-  "budget_cycles_upper_bound": 630000000.0,
+  "method": "exceedance-fraction of real 10-year daily-mean open/10m wind speed (NASA POWER) against WMO Beaufort-scale tree-motion anchors, used as a citable proxy for a sway-onset threshold that the peer-reviewed literature reports as poorly constrained; multiplied by continuous sway at a bracket of two named field frequency readings.",
+  "service_life_years": 20.0,
+  "sway_frequency": {
+    "site": "Hartheim forest research site, Univ. Freiburg, southern Upper Rhine Valley, 47\u00b056'04\"N 7\u00b036'02\"E \u2014 the same coordinates in all three texts",
+    "low_reading_hz": [
+      0.26,
+      0.312
+    ],
+    "low_reading_sources": [
+      "Kolbe S., Schindler D. (2021) TreeMMoSys: A low cost sensor network to measure wind-induced tree response. HardwareX 9, e00180, doi:10.1016/j.ohx.2021.e00180 \u2014 stem tilt, three P. sylvestris H 17.2-18.0 m / DBH 22.6-25.8 cm, 10 Apr-10 Oct 2020: first vibration mode 0.273 / 0.312 / 0.312 Hz",
+      "Nickl J., Kolbe S., Schindler D. (2022) Enhancing TreeMMoSys with a high-precision strain gauge to measure the wind-induced response of trees down to the ground. HardwareX 12, e00379, doi:10.1016/j.ohx.2022.e00379 \u2014 strain at 2.7 m (H/7), June 2021: f0 = 0.26 Hz"
+    ],
+    "high_reading_hz": 0.74,
+    "high_reading_source": "Schindler D., Kolbe S. (2020) Assessment of the Response of a Scots Pine Tree to Effective Wind Loading. Forests 11, 145, doi:10.3390/f11020145 \u2014 one P. sylvestris H 16.8 m / DBH 21.5 cm, 30 Jan 2019: 'The damped fundamental sway frequency of the stem (f0) was determined at 0.74 Hz'",
+    "readings_ratio_x": [
+      2.37,
+      2.85
+    ],
+    "cause_named_by_sources": false,
+    "bench_band_note": "1-5 Hz (01_02 \u00a72.2) is a BENCH frequency with no field reading; no budget is counted at it"
+  },
+  "budget_cycles_upper_bound": 467050000.0,
+  "budget_basis": "20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
+  "budget_cycles_at_low_reading": [
+    164100000.0,
+    196920000.0
+  ],
+  "bounds_that_travel": [
+    "(1) frequency x time counts continuous oscillation at f0, so it bounds FIRST-MODE cycles and is not a count of strain ranges: the strain spectrum's first maxima sit at 0.04-0.05 Hz, below f0 (Nickl et al. 2022), and for its sample tree the maximum wind-induced response is quasi-static rather than the dynamic reaction near f0 (Schindler & Kolbe 2020). The honest budget is a histogram of strain ranges at anchor height, measured for no P. sylvestris.",
+    "(2) the canon's host trees (DBH >= 38 cm) are larger than every measured tree (DBH 21.5-25.8 cm); the natural sway frequency is linear in DBH/H^2 (Moore & Maguire 2004), so a larger DBH raises it and a taller tree lowers it \u2014 the hosts' frequency is extrapolated, and its direction is not fixed without their height.",
+    "(3) the two readings come from one group at one site on trees of one size and differ 2.4-2.8x; both measured STEM motion (tilt, orientation), so 'stem vs whole tree' does not separate them; the dates (one January day vs a summer half-year) and the methods differ, and neither text names a cause \u2014 so the ceiling is the high reading, carried with its source, until a measurement resolves it."
+  ],
   "n_days": 3653,
   "daily_ws10m_ms": {
     "min": 0.79,
@@ -12,26 +42,38 @@
       "anchor": "Beaufort 3 (leaves/twigs in constant motion)",
       "threshold_ms": 3.4,
       "exceedance_fraction": 0.7041,
-      "n_eff_cycles_upper_bound": 443570000.0
+      "n_eff_cycles_upper_bound": 328840000.0,
+      "n_eff_cycles_at_low_reading": [
+        115540000.0,
+        138650000.0
+      ]
     },
     {
       "anchor": "Beaufort 4 (small branches move)",
       "threshold_ms": 5.5,
       "exceedance_fraction": 0.2483,
-      "n_eff_cycles_upper_bound": 156420000.0
+      "n_eff_cycles_upper_bound": 115960000.0,
+      "n_eff_cycles_at_low_reading": [
+        40740000.0,
+        48890000.0
+      ]
     },
     {
       "anchor": "Beaufort 5 (small trees begin to sway)",
       "threshold_ms": 8.0,
       "exceedance_fraction": 0.0348,
-      "n_eff_cycles_upper_bound": 21900000.0
+      "n_eff_cycles_upper_bound": 16240000.0,
+      "n_eff_cycles_at_low_reading": [
+        5710000.0,
+        6850000.0
+      ]
     }
   ],
   "gaps": {
     "sway_onset_threshold": "poorly constrained in peer-reviewed literature (Umlauft et al. 2025) \u2014 Beaufort anchors are a standard PROXY, not a validated criterion.",
     "canopy_attenuation": "sub-canopy wind reduction factor varies >4x by forest type/height/open-wind-speed (ScienceDirect/Wiley/USFS Treesearch, no single constant is defensible) \u2014 this computation uses OPEN/10m wind, which OVER-states in-canopy duty cycle, so the printed N_eff values are themselves upper bounds, not the true budget."
   },
-  "verdict": "Duty cycle NOT closed to a single number (two named open literature gaps). Confirmed: even the most generous bracket bounds N_eff well under the 6.3e8 upper bound \u2014 exact closure needs an in-stand anemometer at trunk height (bench/field) or a species-specific sway-onset study, neither of which exists in open literature today.",
+  "verdict": "Duty cycle NOT closed to a single number (two named open literature gaps), and the frequency it multiplies is a bracket of two named readings. Continuous sway over 20 yr gives 1.64e+08-1.97e+08 cycles at the low reading and 4.67e+08 at the high one; the most generous Beaufort bracket keeps 70% of days, i.e. N_eff <= 3.29e+08 at the ceiling. Every count is an upper bound on first-mode cycles, not a strain-range count (bounds_that_travel). Closure needs an in-stand anemometer at trunk height, a species-specific sway-onset study and a strain-range histogram at anchor height \u2014 none exists in open literature.",
   "source_file": "tools/in_silico/data/nasa_power_cherkasy_ws10m_2015_2024.json",
   "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=WS10M&community=RE&longitude=32.06&latitude=49.44&start=20150101&end=20241231&format=JSON",
   "fetched": "2026-09-09"

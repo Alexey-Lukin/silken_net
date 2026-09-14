@@ -1437,10 +1437,10 @@ def main() -> int:
         wind = json.loads(WIND_CACHE.read_text())
         for row in wind.get("beaufort_exceedance", []):
             duty_anchors.append({"anchor": row["anchor"], "n_cycles": float(row["n_eff_cycles_upper_bound"])})
-        # The raw 20 yr × 1 Hz budget, kept as the ABSOLUTE ceiling: script 62's own verdict is that
-        # the duty does NOT close to a single number (two named literature gaps), so the bracket is
-        # the honest object and its top is this.
-        duty_anchors.append({"anchor": "raw 20 yr x 1 Hz upper bound (script 62 ceiling)",
+        # Continuous sway at the high f0 reading, kept as the ABSOLUTE ceiling: script 62's own verdict is
+        # that neither the duty nor the frequency closes to a single number, so the bracket is the honest
+        # object and its top is this. Its label is script 62's, never typed here.
+        duty_anchors.append({"anchor": f"ceiling: {wind['budget_basis']}",
                              "n_cycles": float(wind["budget_cycles_upper_bound"])})
     if not duty_anchors:
         print("  ⛔ NOT COMPUTED — wind_duty_cycle.json is absent, so the cycle count has no source.")
@@ -1797,10 +1797,11 @@ def main() -> int:
                                            "two ships, and this block prices only the ratified one",
             "duty_source": str(WIND_CACHE.relative_to(REPO_ROOT)) if wind else None,
             "duty_anchors": duty_anchors,
-            "duty_note": "cycle counts are LOADED from script 62 (ten years of real NASA POWER wind "
-                         "for Cherkasy), never retyped. Script 62's own verdict is that the duty does "
-                         "NOT close to a single number - two named literature gaps - so the anchors "
-                         "are a bracket and the raw 20 yr x 1 Hz budget is its ceiling",
+            "duty_note": ("cycle counts are LOADED from script 62 (ten years of real NASA POWER wind "
+                          "for Cherkasy, times a bracket of two field sway-frequency readings), never "
+                          "retyped. Script 62's own verdict is that neither closes to a single number, so "
+                          "the anchors are a bracket and its ceiling is "
+                          + (wind["budget_basis"] if wind else "NOT COMPUTED")),
             "rows": wear_rows,
             "thermal_driver": {
                 "rows": thermal_rows,
