@@ -248,7 +248,7 @@ Nothing is required from us for an initial quotation. On request we supply the m
 | Ресурс | Що бере |
 |---|---|
 | [`sn_fatigue_test_plan`](../anchor/sn_fatigue_test_plan.md) | дім змісту: серії, рівні, маршрути A–F, критерії, статистика, відкриті ⚖️ §9 |
-| [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §2.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | рецепт синтетичного соку (дім) · частота гойдання 1–5 Гц |
+| [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §2.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | рецепт синтетичного соку (дім) · частота: польова — дужка іменованих прочитань, 1–5 Гц — смуга СТЕНДА |
 | [`01_02 §1.3`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) · [`01_02 §1.7`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | маршрут процесу деталі, який повторює зразок · HIP |
 | [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) | мало й непостійно O₂ у ксилемі · метал як струмозбирач анода (звідки опція потенціалу) |
 | [`vendor_templates`](vendor_templates.md) §Processing п.16 | зразки питанням у DMLS-листі; пп. 2–4 на серії не поширюються |
