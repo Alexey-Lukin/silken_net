@@ -150,7 +150,7 @@
 | `ruby scripts/docs_band.rb` | **Уся смуга `CI · Docs`** (~1.5 хв) — перелік кроків читається з `docs.yml`, тож не протухає. Це те, що ганяти ПЕРЕД комітом; решта рядків цієї таблиці — швидкі підмножини (OPS.25). |
 | `ruby scripts/docs_check.rb refs` | Омнібус УСЕРЕДИНІ свого кроку (~0.3с): dangling-лінки, §-drift, TRL, blockers→00_07, ToC, RTC reg-map, Lorenz/GP формули, opcode, deprecated-терми, xref-форма, external-paths. ⚠️ «Омнібус» тут про категорії ОДНОГО кроку, не про смугу — кроків 24. |
 | `ruby scripts/docs_check.rb tracker` | 00_07: dup-IDs, #3-conformance, canon-ref + §-section resolution, section-home, inbound-refs, prose-ID-refs, CHEM.N. |
-| `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_01→00_02 (🎯/TRL/doc-links/секції) — навігація без читання всього. |
+| `ruby scripts/doc_structure_map.rb` | Структурна мапа 00_00→06 (TRL · kB · секції · найважчі підсекції; 🎯/✅/doc-links — `--heads`) — навігація без читання всього. |
 | `ruby scripts/content_dup_audit.rb --near` | Семантичний near-dup (Jaccard) — там, де grep по токену сліпий. |
 | `ruby scripts/crossref_audit.rb` / `normalize_crossrefs.rb` / `linkify_bare_refs.rb` | Таксономія + bulk-нормалізація крос-рефів / лінкіфікація bare-рефів. _(Разовий `fix_stale_anchors.rb` знято 2026-08-09: його мапа одноразових фіксів давно застосована, клас тепер тримає HARD-гейт `#anchor resolution`, а мертвий запис усередині робив запуск неможливим — надгробок, не інструмент.)_ |
 | `bin/rails docs:toc` | Регенерувати auto-ToC після зміни h2-заголовків. |
