@@ -454,8 +454,9 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   ⛔ **Shipped kinds are NOT listed here** (this passage carried a roster and it went stale the day a kind
   landed) — read `Program.Draw`'s `switch`; phasing and the kinds deliberately NOT drawn, each with its
   ground, live in `tools/cad/docs/drawings_program.md §7`. A kind is meant to carry the shipped-CEM DXF
-  round-trip and, if published, a gallery pin — ⚠️ `zone2_sleeve` has NO DXF round-trip (its DXF is reached
-  only by the sha-256 pin; notes and fits are asserted in the SVG alone), so check per kind (⛔ test COUNTS
+  round-trip and, if published, a gallery pin — check per kind rather than trusting this sentence, and do not
+  count the sha-256 pin as a round-trip: it proves WHICH manifest was drawn and nothing about what the sheet
+  carries, so a kind reached only by it ships its notes and fits unverified in the factory reader (⛔ test COUNTS
   quoted nowhere — the roster is `DrawingTests.cs`).
   🔴 **The anchor sheet is the one whose CONTENT is load-bearing rather than its geometry:** `draw
   anchor_zone1` exists to carry the `01_02 §3.6` coating zone-map, whose Zone-1 rows hold OPPOSITE

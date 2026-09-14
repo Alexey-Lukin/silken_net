@@ -792,6 +792,43 @@ public class DrawingTests
         Assert.DoesNotContain("Lamé, E_PEEK-aware", flat);
     }
 
+    // The DXF half the sleeve sheet lacked (00_07 HW.1, found 2026-09-14): its notes and fits were asserted in the SVG
+    // alone, and the reader that actually travels to the PEEK shop was reached only by the sha-256 pin — which proves
+    // WHICH manifest was drawn and says nothing about what the sheet carries. Same shape as the flange and lock
+    // round-trips: read the REAL manifest, prove every note and the fit block reach the DXF through the writer's DxfSafe.
+    [Fact]
+    public void Shipped_Zone2_Sleeve_Notes_And_Fits_Reach_The_Dxf_Verbatim()
+    {
+        var cem = Cem.Parse<Zone2SleeveCem>(File.ReadAllText(Path.Combine(CemDir(), "zone2_sleeve.json")));
+        string path = Path.Combine(Path.GetTempPath(), $"sleeve_roundtrip_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.Zone2SleeveDxf(cem, "test", path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("netDxf", dxf);
+
+            var notes = new[] { cem.Notes?.Material, cem.Notes?.Process, cem.Notes?.SurfaceFinish, cem.Notes?.PostProcess,
+                                cem.Notes?.CoatingRestriction, cem.Notes?.LatticeSpec, cem.Notes?.Inspection }
+                        .Concat(cem.Notes?.Extra ?? [])
+                        .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+            Assert.NotEmpty(notes);
+            foreach (string? v in notes) Assert.Contains(Drawing.DxfSafe(v!), dxf);
+
+            // Numbers in the sheet's own invariant «0.##» form — a culture-default interpolation would read 5,5 on a
+            // Ukrainian locale and fail on a correct DXF.
+            static string Inv(double d) => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+            ToleranceSpec t = Assert.IsType<ToleranceSpec>(cem.Tolerances);
+            Assert.Contains(Drawing.DxfSafe($"Fit: {Assert.IsType<string>(t.Fit)}"), dxf);
+            Assert.Contains(Drawing.DxfSafe(
+                $"Interference: {Inv(Assert.NotNull(t.InterferenceMinUm))}–{Inv(Assert.NotNull(t.InterferenceMaxUm))} µm diametral"), dxf);
+            Assert.Contains(Drawing.DxfSafe($"Datum A: {t.PrimaryDatum}"), dxf);
+            // The one DERIVED dimension on this sheet — OD = bore + 2·wall, the wound diameter in the tree.
+            Assert.Contains($"%%c{Inv(cem.BoreDiameterMm + (2.0 * cem.WallThicknessMm))}", dxf);
+            Assert.DoesNotContain("NaN", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     [Fact]
     public void Zone2Sleeve_Derives_The_Wound_Diameter_Rather_Than_Quoting_It()
     {
