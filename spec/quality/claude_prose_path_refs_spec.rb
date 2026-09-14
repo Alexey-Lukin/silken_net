@@ -70,7 +70,14 @@ module ClaudeProsePathRefs
     # тож `git worktree add .claude/worktrees/agent-*` кладе туди повну вкладену
     # копію кожного скіла/канон-доку, і власні owner-винятки нижче ніколи не
     # матчать вкладений шлях (вони скоуплені на РЕАЛЬНУ адресу файла).
-    Dir.glob(ROOT.join(SCAN_GLOB)).sort.reject { |f| f.include?("/.claude/worktrees/") }.flat_map do |file|
+    # ⛔ Judged on the path RELATIVE to ROOT, never the absolute one: an isolated agent's checkout lives INSIDE
+    # `.claude/worktrees/agent-*`, so every file of that tree carries the substring in its absolute path and the
+    # absolute filter kept ZERO candidates — both examples below went red on a tree where nothing was wrong
+    # (measured 2026-09-14: 22 files, 0 kept). The nested-worktree copies this rejects still start with the
+    # segment when read from their own root.
+    Dir.glob(ROOT.join(SCAN_GLOB)).sort
+       .reject { |f| Pathname(f).relative_path_from(ROOT).to_s.start_with?(".claude/worktrees/") }
+       .flat_map do |file|
       rel = Pathname(file).relative_path_from(ROOT).to_s
       File.readlines(file).each_with_index.flat_map do |line, idx|
         line.scan(PATH_RE).flatten.filter_map do |raw|
