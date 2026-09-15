@@ -44,8 +44,9 @@ db_read_replica_count = 0
 # ── Duty-cycle: репетиція є ПОДІЄЮ, не станом ──────────────────────────────
 # Зупинка між сесіями верифікації: виміряних $145/міс → ~$20. Ставиш NEVER/TERMINATED —
 # це записане рішення, і CI бачить його разом із тобою (в цьому й був сенс файлу).
-db_activation_policy   = "ALWAYS"
-compute_desired_status = "RUNNING"
+# ⚖️ founder 2026-09-15: фокус на модулях 01–03 (анкер/EBFC/залізо) → стек стоїть, ціль < $30/міс.
+db_activation_policy   = "NEVER"
+compute_desired_status = "TERMINATED"
 
 # ── Доступ і захист ─────────────────────────────────────────────────────────
 enable_deletion_protection = true
