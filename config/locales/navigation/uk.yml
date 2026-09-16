@@ -65,9 +65,6 @@ uk:
         users: Користувачі
         verify: Верифікація
         wallets: Гаманці
-    footer:
-      access: Канал повного доступу
-      role: Архітектор
     items:
       account_security: Безпека акаунту
       audit_log: Журнал аудиту

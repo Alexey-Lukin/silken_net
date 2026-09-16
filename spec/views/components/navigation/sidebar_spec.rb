@@ -287,26 +287,6 @@ RSpec.describe Navigation::Sidebar do
     end
   end
 
-  describe "user footer section" do
-    let(:html) { render_en }
-
-    it "renders the user avatar placeholder" do
-      expect(html).to include("A")
-    end
-
-    it "renders the user role label" do
-      expect(html).to include("Architect")
-    end
-
-    it "renders access level text" do
-      expect(html).to include("Full Access Link")
-    end
-
-    it "translates the footer role into Ukrainian when locale is :uk" do
-      expect(I18n.with_locale(:uk) { render_component }).to include("Архітектор")
-    end
-  end
-
   describe "focus-visible accessibility" do
     let(:html) { render_en }
 

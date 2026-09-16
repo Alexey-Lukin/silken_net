@@ -221,6 +221,46 @@ RSpec.describe "Dashboard in a real browser", :js do
     expect(page).to have_css(".custom-tree-marker", visible: :all)
   end
 
+  # 🔴 Сайдбар — ВЛАСНИЙ скрол-контейнер, і його позицію губить не морф, а сам
+  # Drive-візит: `<body>` підміняється, тож свіжий `<aside>` приходить зі
+  # `scrollTop = 0`. Носій — `sidebar_scroll_controller`; платформених важелів тут
+  # два, і обидва закриті виміром (`04_04 §8`): `data-turbo-permanent` скрол не
+  # рятує і заборонений деревом, а `turbo-refresh-scroll: preserve` скролить
+  # `window`, тоді як `body` має `overflow-hidden`.
+  #
+  # Ліхтар на ПЕРЕДУМОВУ обовʼязковий: без нього приклад лишався б зеленим на
+  # вьюпорті, де меню взагалі не має чого скролити, тобто доводив би відсутність
+  # ПРЕДМЕТА, а не живість механізму.
+  it "keeps the sidebar's own scroll position across a real navigation" do
+    sign_in_as(user, password: password)
+
+    sidebar = "document.querySelector('#sidebar-navigation aside')"
+    offset  = 120
+
+    overflow = page.evaluate_script("#{sidebar}.scrollHeight - #{sidebar}.clientHeight")
+    expect(overflow).to be > offset
+
+    page.execute_script("#{sidebar}.scrollTop = #{offset}")
+    # Окремий раунд-трип не лише ліхтар, а й БАРʼЄР: `scroll` фіриться перед
+    # наступним кадром, тож він гарантує, що контролер уже запамʼятав позицію
+    # до того, як почнеться візит.
+    expect(page.evaluate_script("#{sidebar}.scrollTop")).to eq(offset)
+
+    page.execute_script(<<~JS)
+      window.__navigated = false;
+      document.addEventListener("turbo:load", () => { window.__navigated = true }, { once: true });
+      Turbo.visit('/clusters');
+    JS
+
+    Timeout.timeout(Capybara.default_max_wait_time) do
+      sleep 0.1 until page.evaluate_script("window.__navigated === true")
+    end
+
+    # Вузол тут ВЖЕ ІНШИЙ — селектор перезапитується, тобто міряється свіжий
+    # `<aside>`, а не той, якому ми ставили позицію.
+    expect(page.evaluate_script("#{sidebar}.scrollTop")).to eq(offset)
+  end
+
   # 🔴 [UI.11] Остання ціна morph-на-refresh, і вона НЕ від морфу, а від самого
   # ВІЗИТУ: `mobile_nav` закривався на будь-якому `turbo:visit`, тож алерт-шторм
   # згортав drawer користувачеві під пальцем — сторінка не мінялась, а навігація

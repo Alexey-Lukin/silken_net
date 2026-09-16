@@ -65,9 +65,6 @@ lt:
         users: Naudotojai
         verify: Patikrinimas
         wallets: Piniginės
-    footer:
-      access: Visos prieigos nuoroda
-      role: Architektas
     items:
       account_security: Paskyros saugumas
       audit_log: Audito žurnalas

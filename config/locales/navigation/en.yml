@@ -65,9 +65,6 @@ en:
         users: Users
         verify: Verify
         wallets: Wallets
-    footer:
-      access: Full Access Link
-      role: Architect
     items:
       account_security: Account Security
       audit_log: Audit Log

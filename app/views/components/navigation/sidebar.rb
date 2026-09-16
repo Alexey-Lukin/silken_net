@@ -27,7 +27,18 @@ module Navigation
           "transition-colors duration-300"
         ),
         role: "navigation",
-        aria_label: t("navigation.logo.title")
+        aria_label: t("navigation.logo.title"),
+        # Власна скрол-позиція меню мусить переживати Drive-візит — інакше клік по
+        # нижньому пункту вертає меню вгору. Механізм, і чому саме контролер, а не
+        # `data-turbo-permanent`/метатег, — у `sidebar_scroll_controller.js`.
+        # ⚠️ Атрибут стоїть на ОБОХ інстансах свідомо (компонент рендериться і в
+        # `DashboardLayout#render_desktop_sidebar`, і в шухляді): мобільна шухляда
+        # позицію ЗАПАМʼЯТОВУЄ, але не відновлює — `connect()` відпрацьовує, поки
+        # `<dialog>` іще `display:none`, тож присвоєння `scrollTop` браузер ігнорує.
+        # Стеля свідома: модалка, що відкривається на початку списку, є очікуваною
+        # поведінкою, а предметом скарги було ПОСТІЙНО видиме меню. Шлях апгрейду,
+        # якщо попит зʼявиться, — відновлення з `mobile_nav#open` після `showModal()`.
+        data: { controller: "sidebar-scroll" }
       ) do
         render_logo
         render_status_pulse
@@ -67,7 +78,23 @@ module Navigation
           end
         end
 
-        render_user_footer
+        # ⊖ [UI.17-клас] Тут стояв `render_user_footer` — аватар-літера «A»
+        # хардкодом, «Architect» і «Full Access Link» із локалі. Знято ⚖️ founder
+        # 2026-09-16, і підстава та сама, що зняла «Sync: 1.12 THz» двома методами
+        # вище, лише на чутливішій осі: блок СТВЕРДЖУВАВ роль і рівень доступу,
+        # не читаючи актора — хоч компонент його отримує (`@current_user`, [UI.5]).
+        # Тобто рядовому лісникові меню постійно писало «Архітектор / Канал
+        # повного доступу», поки топбар за два сантиметри вище показував його
+        # справжні `full_name` + `role_label`: два твердження про одного актора в
+        # одному лейауті, і одне з них хибне.
+        #
+        # 🔴 Надгробок несучий, бо сам дефект виглядав як ОЗДОБА, а не як заява —
+        # без запису він вертається першим же редизайном «шапки й підвалу».
+        # ⚠️ І друга половина ціни: спека його ПІНІЛА (`include("Architect")` +
+        # приклад про переклад на uk), тобто гейт захищав фабрикацію; четвертий
+        # приклад того блоку (`include("A")`) не міг упасти взагалі — літера є в
+        # «Alerts» і «Account Security». Правдивий носій тієї самої інформації —
+        # `DashboardLayout#render_user_avatar`, він же єдиний вхід у профіль [UI.8].
       end
     end
 
@@ -178,18 +205,6 @@ module Navigation
     def nav_item_inactive_classes
       "text-gaia-text-muted border-transparent hover:text-gaia-primary-strong " \
         "hover:bg-gaia-surface-sunken hover:border-gaia-border-strong"
-    end
-
-    def render_user_footer
-      div(class: "p-4 border-t border-gaia-border mt-auto bg-gaia-surface transition-colors duration-300") do
-        div(class: "flex items-center gap-3 px-2") do
-          div(class: "h-8 w-8 border border-gaia-primary flex items-center justify-center text-gaia-primary-strong text-tiny") { "A" }
-          div(class: "flex-1 overflow-hidden") do
-            p(class: "text-tiny text-gaia-text-strong truncate")                          { t("navigation.footer.role") }
-            p(class: "text-micro text-gaia-text-subtle uppercase tracking-widest")        { t("navigation.footer.access") }
-          end
-        end
-      end
     end
 
     ICON_GLYPHS = {

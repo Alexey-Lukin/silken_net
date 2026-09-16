@@ -65,9 +65,6 @@ lv:
         users: Lietotāji
         verify: Verifikācija
         wallets: Maki
-    footer:
-      access: Pilnas piekļuves saite
-      role: Arhitekts
     items:
       account_security: Konta drošība
       audit_log: Audita žurnāls
