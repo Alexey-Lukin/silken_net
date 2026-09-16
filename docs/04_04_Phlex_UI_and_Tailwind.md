@@ -2277,7 +2277,7 @@ h3 { font-size: clamp(1.125rem, 1vw + 0.5rem,   1.25rem);  }
 | **`@starting-style` CSS** | "From"-frame для transition без JS-flush reflow | Manual rAF в JS | Baseline 2024 |
 | **View Transitions API** (`document.startViewTransition`) | Smooth crossfade між DOM-станами | Manual CSS transitions на кожному елементі | Chromium 111+, Safari 18+ (graceful fallback). ⚠️ У дереві **не вживається** — єдиний консюмер пішов разом із тумблером теми (§14.2) |
 | **`prefers-reduced-motion`** (CSS) | Глобально вимикає анімації | JS feature-detection у кожному компоненті | Baseline |
-| **`<details>` / `<summary>`** | Disclosure pattern + keyboard | Custom accordion JS | Baseline |
+| **`<details>` / `<summary>`** | Disclosure pattern + keyboard | Custom accordion JS | Baseline. ⚠️ **У дереві — НУЛЬ сайтів, і рекомендація вище не є дозволом на дашборд-сторінці:** `open` ставить лише клієнт, сервер його не друкує за побудовою, тож морф його знімає (§8, інвентар клієнтського стану + gotcha `frontend` #29). Вводиш `<details>` під морфом — вводиш разом гард на осі атрибута. Прецедент відмови — §15.2, рядок `sidebar_scroll` |
 
 ### 15.2 Що залишилось у Stimulus (виправдано)
 
