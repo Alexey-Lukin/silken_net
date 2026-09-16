@@ -3,6 +3,9 @@
 
 module BlockchainTransactions
   class OnChainFrame < ApplicationComponent
+    # Спільна зі скелетоном у `BlockchainTransactions::Show` — див. `Wallets::BalanceDisplay::PANEL`.
+    PANEL = "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-4"
+
     def initialize(transaction:)
       @tx = transaction
     end
@@ -16,7 +19,7 @@ module BlockchainTransactions
     private
 
     def render_on_chain_panel
-      div(class: "p-6 border border-gaia-border bg-gaia-surface-sunken space-y-4") do
+      div(class: PANEL) do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted") { t(".heading") }
         if @tx.tx_hash.present?
           div do

@@ -352,6 +352,15 @@
     cursor: pointer;
   }
 
+  /* `<turbo-frame>` — невідомий браузеру елемент, тож за замовчуванням INLINE: кроки
+   * `space-y-*` батька на нього не діють (вертикальний margin inline-боксу ігнорується),
+   * і фрейм прилипає до сусіда. Виміряно 2026-09-16 на гаманці: зазор під балансом 0
+   * замість 32px — і в скелетоні, і з вмістом. `@layer base`, бо явна утиліта на
+   * фреймі мусить перемагати (frontend-гоча #37). Носій — `spec/features/skeleton_box_spec.rb`. */
+  turbo-frame {
+    display: block;
+  }
+
   /* Base h1-h3: standard content hierarchy, fluid clamp() so headings
    * scale smoothly between mobile and desktop without media-query
    * "stairsteps". For hero/landing sections with wider scaling range,

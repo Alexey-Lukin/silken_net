@@ -29,8 +29,15 @@ module Wallets
       @src = src
     end
 
+    # Не порожній: порожній фрейм схлопував картку балансу на КОЖНЕ оновлення, і
+    # леджер під нею стрибав угору й назад, поки летить фетч. Кістки декоративні,
+    # тобто без `t()` — інваріантність класу 2 тримається.
     def view_template
-      turbo_frame(id: Wallets::BalanceFrame.dom_id(@wallet_id), src: @src, loading: "eager")
+      turbo_frame(id: Wallets::BalanceFrame.dom_id(@wallet_id), src: @src, loading: "eager") do
+        div(class: Wallets::BalanceDisplay::PANEL) do
+          render Views::Shared::UI::Skeleton.new(variant: :balance, decorative: true)
+        end
+      end
     end
   end
 end

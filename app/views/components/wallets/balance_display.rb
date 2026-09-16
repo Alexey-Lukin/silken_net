@@ -3,13 +3,17 @@
 
 module Wallets
   class BalanceDisplay < ApplicationComponent
+    # Коробка балансу — спільна з його скелетоном (`Wallets::Show`) і стабом
+    # броадкасту: хром, записаний двічі, розходиться, і тоді сторінка стрибає.
+    PANEL = "p-10 border border-gaia-border bg-gaia-surface-sunken relative overflow-hidden shadow-2xl"
+
     def initialize(wallet:)
       @wallet = wallet
     end
 
     def view_template
       # ⚡ [СИНХРОНІЗАЦІЯ]: target ID для BlockchainMintingService
-      div(id: "wallet_balance_#{@wallet.id}", class: container_classes) do
+      div(id: "wallet_balance_#{@wallet.id}", class: PANEL) do
         div(class: "absolute top-0 right-0 p-4 text-[60px] font-bold text-emerald-900/5 select-none", aria_hidden: "true") { t(".decoration") }
 
         p(class: "text-tiny uppercase tracking-[0.4em] text-gaia-text-muted mb-4") { t(".verified_balance") }
@@ -42,12 +46,6 @@ module Wallets
         end
         p(class: "mt-4 text-xs font-mono text-gaia-text-muted") { t(".locked_for", owner: @wallet.tree&.did || @wallet.organization&.name) }
       end
-    end
-
-    private
-
-    def container_classes
-      "p-10 border border-gaia-border bg-gaia-surface-sunken relative overflow-hidden shadow-2xl"
     end
   end
 end

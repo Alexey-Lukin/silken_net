@@ -95,4 +95,28 @@ RSpec.describe Wallets::BalanceFrame do
       expect(html).to include("30.0")
     end
   end
+
+  describe Wallets::BalanceFrameStub do
+    subject(:stub_html) { described_class.new(wallet_id: 7, src: "/wallets/7/balance").call }
+
+    it "renders an eager frame with the page's id and a src" do
+      expect(stub_html).to include(%(id="wallet_balance_frame_7"))
+      expect(stub_html).to include(%(src="/wallets/7/balance"))
+      expect(stub_html).to include(%(loading="eager"))
+    end
+
+    # Порожній стаб схлопував картку балансу на кожне оновлення, і леджер стрибав.
+    it "holds the balance card's box while the fetch flies" do
+      expect(stub_html).to include(Wallets::BalanceDisplay::PANEL)
+      expect(stub_html).to include("animate-pulse")
+    end
+
+    it "renders byte-identically in every configured locale" do
+      renders = I18n.available_locales.map do |locale|
+        I18n.with_locale(locale) { described_class.new(wallet_id: 7, src: "/x").call }
+      end
+
+      expect(renders.uniq.size).to eq(1)
+    end
+  end
 end

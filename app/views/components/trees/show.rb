@@ -49,7 +49,8 @@ module Trees
     def render_chronicle_frame
       div(class: "p-8 border border-gaia-border bg-gaia-surface-sunken") do
         turbo_frame_tag("tree_chronicle", src: chronicle_tree_path(@tree), loading: :lazy) do
-          render Views::Shared::UI::Skeleton.new(variant: :table)
+          # Коробку тут дає обгортка ЗОВНІ фрейма — `Chronicle` власної не має.
+          render Views::Shared::UI::Skeleton.new(lines: 5)
         end
       end
     end

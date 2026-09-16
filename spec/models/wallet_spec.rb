@@ -38,9 +38,14 @@ RSpec.describe Wallet, type: :model do
       lv = I18n.with_locale(:lv) { wallet.broadcast_balance_update; captured.pop[1][:html] }
 
       expect(uk).to eq(lv)
-      # І це саме порожня заглушка, а не відрендерений фрагмент: інакше «однаково
-      # у двох локалях» могло б означати лише «переклад ще не додано».
-      expect(uk).to match(%r{\A<turbo-frame [^>]*></turbo-frame>\z})
+      # І це заглушка БЕЗ ЖОДНОГО СЛОВА, а не відрендерений фрагмент: інакше «однаково
+      # у двох локалях» могло б означати лише «переклад ще не додано». Доти пін вимагав
+      # ПОРОЖНІЙ фрейм — але порожнеча схлопувала картку балансу на кожне оновлення
+      # (`04_04 §8.2`), тож носій перенесено з порожнечі на те, що вона забезпечувала:
+      # ні текстового вузла з літерою, ні слова в атрибуті.
+      expect(uk).to start_with("<turbo-frame ")
+      expect(uk).not_to match(/>[^<>]*\p{L}[^<>]*</)
+      expect(uk).not_to include("aria-label")
     end
 
     it "points the stub at the balance endpoint each viewer re-fetches for itself" do

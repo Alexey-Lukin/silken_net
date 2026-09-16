@@ -3,6 +3,9 @@
 
 module Wallets
   class MetadataFrame < ApplicationComponent
+    # Спільна зі скелетоном у `Wallets::Show` — див. `BalanceDisplay::PANEL`.
+    PANEL = "p-6 border border-gaia-border bg-gaia-surface shadow-xl"
+
     def initialize(wallet:)
       @wallet = wallet
     end
@@ -16,7 +19,7 @@ module Wallets
     private
 
     def render_wallet_metadata
-      div(class: "p-6 border border-gaia-border bg-gaia-surface shadow-xl") do
+      div(class: PANEL) do
         h3(class: "text-tiny uppercase tracking-widest text-gaia-text-muted mb-6") { t(".title") }
         div(class: "space-y-4 font-mono text-tiny") do
           div do

@@ -21,9 +21,8 @@ module Wallets
   #
   # 🔴 Плейсхолдер усередині — не косметика: порожній фрейм на час фетчу зсуває
   # висоту рядка. Пульс тримає місце бейджа й **не несе жодного слова**, тобто
-  # лишається locale-інваріантним; готовий `Views::Shared::UI::Skeleton` тут НЕ
-  # годиться саме тому, що він локалізований (`t(".loading")`) — тобто повернув би
-  # в payload рівно те, що клас 2 звідти прибирає.
+  # лишається locale-інваріантним. Кістка — спільний `Skeleton::BONE`, а не сам
+  # компонент: той рендерить блок, а місце бейджа рядкове.
   class TransactionStatusFrameStub < ApplicationComponent
     register_element :turbo_frame
 
@@ -35,7 +34,7 @@ module Wallets
     def view_template
       turbo_frame(id: TransactionStatusFrame.dom_id(@tx_id), src: @src, loading: "eager") do
         span(
-          class: "inline-block w-24 h-4 rounded bg-gaia-surface-elevated animate-pulse align-middle",
+          class: tokens(Views::Shared::UI::Skeleton::BONE, "inline-block w-24 h-4 align-middle"),
           aria_hidden: "true"
         )
       end

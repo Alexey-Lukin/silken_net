@@ -21,12 +21,12 @@ module Wallets
       turbo_stream_from @wallet, :transactions
 
       div(class: "space-y-8") do
-        # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом,
-        # поки що показуємо Skeleton (пульсуючі блоки).
+        # Lazy-load: Turbo Frame підвантажує BalanceDisplay окремим запитом, а до
+        # того в ЙОГО ж коробці стоять кістки.
         turbo_frame_tag Wallets::BalanceFrame.dom_id(@wallet.id),
                         src: balance_wallet_path(@wallet),
                         loading: :lazy do
-          render Views::Shared::UI::Skeleton.new(variant: :balance)
+          div(class: Wallets::BalanceDisplay::PANEL) { render Views::Shared::UI::Skeleton.new(variant: :balance) }
         end
 
         div(class: "grid grid-cols-1 lg:grid-cols-3 gap-8") do
@@ -41,7 +41,7 @@ module Wallets
             turbo_frame_tag "wallet_metadata_frame_#{@wallet.id}",
                             src: metadata_wallet_path(@wallet),
                             loading: :lazy do
-              render Views::Shared::UI::Skeleton.new(variant: :card)
+              div(class: Wallets::MetadataFrame::PANEL) { render Views::Shared::UI::Skeleton.new(lines: 10) }
             end
           end
         end

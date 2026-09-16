@@ -536,7 +536,7 @@ it "test that status works" do
 | `spec/views/components/actuators/command_status_frame_spec.rb` | Пара класу 2 ([`04_04 §8.1а`](04_04_Phlex_UI_and_Tailwind)): фрейм сторінки/відповіді **без** `src` (self-referencing `src` Turbo не зациклює, а гасить — `references itself` у консоль і порожній фрейм, тобто симптом тихий) ⟷ broadcast-заглушка **зі** `src`; id фрейма ≠ id бейджа всередині; байт-у-байт однаковий рендер у всіх налаштованих локалях |
 | `spec/views/shared/ui/pagination_spec.rb` | Перша/середня/остання/одна сторінка, відповідність дизайн-системі, доступність, focus-visible, guard невалідного pagy |
 | `spec/views/shared/ui/photo_card_spec.rb` | Ініціалізація, валідація, відповідність дизайн-системі, editable true/false, типографіка |
-| `spec/views/shared/ui/skeleton_spec.rb` | Всі 6 варіантів, кастомні рядки, перевизначення класу |
+| `spec/views/shared/ui/skeleton_spec.rb` | Власного хрому немає · кістка обмежена шириною · `:balance` і `lines:` · `decorative:` побайтово однаковий у кожній локалі. Збіг коробки з вмістом — браузерний `spec/features/skeleton_box_spec.rb` ([`04_04 §8.2`](04_04_Phlex_UI_and_Tailwind)) |
 | `spec/views/components/alerts/row_spec.rb` | Severity, статус, дія вирішення |
 | `spec/views/components/clusters/show_spec.rb` | Індекс здоров'я, список дерев, стан загрози |
 | `spec/views/components/tree_families/form_spec.rb` | Форма створення/оновлення, валідація |

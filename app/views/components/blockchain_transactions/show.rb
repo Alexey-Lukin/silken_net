@@ -29,7 +29,7 @@ module BlockchainTransactions
             turbo_frame_tag "tx_onchain_frame_#{@tx.id}",
                             src: on_chain_blockchain_transaction_path(@tx),
                             loading: :lazy do
-              render Views::Shared::UI::Skeleton.new(variant: :card)
+              div(class: OnChainFrame::PANEL) { render Views::Shared::UI::Skeleton.new(lines: 5) }
             end
           end
         end

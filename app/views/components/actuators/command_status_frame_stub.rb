@@ -16,8 +16,8 @@ module Actuators
   #
   # 🔴 Плейсхолдер усередині — не косметика. Порожній фрейм на час фетчу зсуває
   # рядок таблиці й блимає дірою; пульс тримає місце бейджа й **не несе жодного
-  # слова**, тобто лишається locale-інваріантним. Готовий `Views::Shared::UI::Skeleton`
-  # тут НЕ годиться саме тому, що він локалізований (`t(".loading")`).
+  # слова**, тобто лишається locale-інваріантним. Кістка — спільний
+  # `Skeleton::BONE`, а не сам компонент: той рендерить блок, а місце бейджа рядкове.
   class CommandStatusFrameStub < ApplicationComponent
     register_element :turbo_frame
 
@@ -29,7 +29,7 @@ module Actuators
     def view_template
       turbo_frame(id: CommandStatusFrame.dom_id(@command_id), src: @src, loading: "eager") do
         span(
-          class: "inline-block w-20 h-4 rounded bg-gaia-surface-elevated animate-pulse align-middle",
+          class: tokens(Views::Shared::UI::Skeleton::BONE, "inline-block w-20 h-4 align-middle"),
           aria_hidden: "true"
         )
       end
