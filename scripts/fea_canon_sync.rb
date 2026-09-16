@@ -262,7 +262,7 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   end
 end
 
-EXPECTED_FIT_ROWS = 6
+EXPECTED_FIT_ROWS = 8
 if fit_rows_seen < EXPECTED_FIT_ROWS
   failures << "only #{fit_rows_seen} of #{EXPECTED_FIT_ROWS} fitted-coefficient rows matched — a canon "\
               "rewording has DISARMED the C/n comparison; fix the row shape, do not lower this number"
