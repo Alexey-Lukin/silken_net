@@ -24,7 +24,7 @@
 ## 0. Як користуватись + cover-note для RFQ
 
 1. Один аркуш = один RFQ-пакет. Скопіювати секцію → у запит постачальнику.
-2. **Перед відправкою:** CDA на комерц-умови (§IP). Cover-note: коротка мета («academic R&D,
+2. **CDA — не передумова запиту:** специфікація відкрита, тож квоту просимо без угоди; стандартний взаємний CDA вендора — на комерційній стадії (ціни/строки/QC, [`rfq_registry`](rfq_registry.md) §3; EN-лист каже це сам). Cover-note: коротка мета («academic R&D,
    tree-integrated EBFC») + потрібне для квоти (синергія й так публічна — prior art).
 3. **Послідовність запуску — за критичним шляхом** (§6): спершу 🔴 dgrFAD-GDH (4–8 тиж), паралельно
    геніпін (закупка, найшвидше) та ZIF; мембрана — окремий fluoropolymer-вендор.
@@ -114,7 +114,7 @@
 
 ## 6. RFQ dispatch checklist + послідовність (критичний шлях першим)
 
-- [ ] 👤 **CDA-шаблон** (комерц-умови) — §IP.
+- [ ] 👤 **CDA — на комерційній стадії, не перед запитом:** стандартний взаємний CDA вендора на комерц-умови (§IP; [`rfq_registry`](rfq_registry.md) §3).
 - [ ] 👤 **Spec A (dgrFAD-GDH)** — RFQ на квоту/строки **зараз** (🔴 4–8 тиж тримає весь Stage 2). Sequence freeze — після CHEM.11+CHEM.10.
 - [ ] 👤 **Spec C (геніпін)** — закупка паралельно (найшвидше).
 - [ ] 👤 **Spec B (ZIF)** — RFQ або ЧНУ-партнерство ([`00_02`](../../00_02_Academic_Integration_and_IP.md)) паралельно.
@@ -227,6 +227,10 @@ Please reply with:
 5. **Certifications and documents you can supply:** CoA, ISO 9001 or GMP-grade status where applicable, SDS, REACH/RoHS statements, and animal-free / GMO-status statements where relevant to the item.
 6. Whether a **sample, first-article or small pilot batch** is possible before a larger order, and at what price.
 7. **Quote format:** currency, validity period, payment terms, and the point of contact for technical questions.
+
+### Confidentiality
+
+The technical specification is openly published, so no confidentiality agreement is needed to quote it; we are happy to sign your standard mutual CDA covering commercial terms (prices, schedules, QC data) at the order stage.
 
 ### Commercial & logistics
 

@@ -163,6 +163,10 @@ Alloy strength and elastic modulus are background context for our own material c
 7. **Evidence of comparable work:** a dimensional or metrology report from a previous titanium job with a controlled surface finish (redacted is fine).
 8. **Quote format:** currency, validity period, payment terms, and the technical point of contact.
 
+### Confidentiality
+
+The technical specification is openly published, so no confidentiality agreement is needed to quote it; we are happy to sign your standard mutual CDA covering commercial terms (prices, schedules, QC data) at the order stage.
+
 ### Commercial & logistics
 
 - Ship-to: Ukraine (Cherkasy region); we can nominate an **EU forwarding address** instead if that simplifies export or customs — state your preference.
