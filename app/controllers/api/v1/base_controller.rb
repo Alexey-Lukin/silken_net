@@ -291,7 +291,7 @@ module Api
           current_path: request.path,
           ews_alert_count: ews_alert_count_cached,
           flash: flash.to_hash,
-          # [UI.6] Не-bang: цей хелпер обслуговує ВСІ 66 дашборд-рендерів, зокрема
+          # [UI.6] Не-bang: цей хелпер обслуговує ВСІ дашборд-рендери, зокрема
           # сторінки, що організації не потребують. Bang перетворив би індикатор на
           # гард і поклав би карантин на платформені сторінки.
           acting_organization: acting_organization,
@@ -301,7 +301,7 @@ module Api
 
       # Метод для рендерингу standalone auth-сторінок (login, forgot/reset password).
       # Забезпечує повний HTML-документ з CSS/JS includes без sidebar/DashboardLayout.
-      # `title:` обов'язковий: усі сім викликачів і так передають його явно, тож
+      # `title:` обов'язковий: усі викликачі і так передають його явно, тож
       # англійський дефолт «Access Portal» був недосяжним рядком, який мовчки
       # чекав першого викликача, що його забуде. Видалення дешевше за переклад.
       def render_auth_page(title:, component:, status: :ok)
