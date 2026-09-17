@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='951' viewBox='0 0 820 951'>
-<rect x='0' y='0' width='820' height='951' fill='white'/>
-<rect x='8' y='8' width='804' height='935' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='979' viewBox='0 0 820 979'>
+<rect x='0' y='0' width='820' height='979' fill='white'/>
+<rect x='8' y='8' width='804' height='963' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Anchor retention (BLOCKER-3, HW.26) · mechanical_lock_zone3 · 01_01 §4.3</text>
 <circle cx='150' cy='150' r='27' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -49,64 +49,66 @@
 <text x='20' y='331' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   -&gt; a wrought Grade-5 spec, to be NAMED when the route is fixed rather than guessed now (00_06 0 Validation Gate)</text>
 <text x='20' y='345' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>3. Process: SLM/DMLS or CNC (01_01 §3 step 3 — flat/simple shank, roughness less critical here than the catalytic face); build tip-down,</text>
 <text x='20' y='359' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   leading-ramp-down (01_01 §4.3 A — holds for this SEPARATE print) if SLM</text>
-<text x='20' y='373' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: As-printed or as-machined, NOT etched - the mandatory production ORDER of 01_02 1.3 (print+HIP -&gt; hot press-fit assembly</text>
-<text x='20' y='387' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Ti/PEEK/Ti -&gt; EAAE -&gt; dehydrogenation bake) puts this surface inside the PEEK joint before the anchor is etched. The catalytic-face</text>
-<text x='20' y='401' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   finish of the flange (01_02 1.2, EAAE dual-scale) belongs to cem/cathode_flange.json and does NOT extend to this shank. (The consequence</text>
-<text x='20' y='415' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is ours; the ORDER is canon.) ATTENTION - this is a CONSEQUENCE, not an instruction, and it holds on two conditions canon does not carry:</text>
-<text x='20' y='429' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (1) the ORDER stands - it sits under an open verdict that can move EAAE before assembly (00_07 HW.34: the 250 deg C bake is above the</text>
-<text x='20' y='443' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   PEEK Tg), and then this surface IS etched; (2) the press-fit joint really masks the etch - never measured, while 01_02 1.3 Step 4 claims</text>
-<text x='20' y='457' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the etch reaches the WHOLE surface uniformly and opens with a vacuum pre-degassing whose purpose is to pull etchant into open volumes.</text>
-<text x='20' y='471' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   Canon has NO masking line for this joint. Both conditions are one open verdict (00_07 HW.26).</text>
-<text x='20' y='485' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: DIN-471 retaining-ring groove — CNC post-DMLS (§4.3 B, +15 min/anchor)</text>
-<text x='20' y='499' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: NOT SPECIFIED, and deliberately so: the 01_02 3.6 map covers the flange catalytic face, the outer jacket and the pogo pad - this</text>
-<text x='20' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   press-fit shank is on none of those rows. Apply nothing without a verdict; the constraint here is FIT, not DET (any coating of thickness</text>
-<text x='20' y='527' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   t adds 2t of DIAMETRAL interference to a band specified in micrometres - 01_01 4.2 gives the nominal CLASS (H7/s6); the tree's band is</text>
-<text x='20' y='541' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   5-34 um diametral from tools/in_silico/lib/constants.py, and it is NOT that class but the H7/r6 read (s6 on O11 gives 10-39 um; which</text>
-<text x='20' y='555' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   class is meant is open, 00_07 HW.3). ATTENTION on its PROVENANCE, corrected 2026-09-11 (00_07 HW.3): that is a plain ISO 286 table read</text>
-<text x='20' y='569' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (H7 0/+18 + r6 +23/+34 on O11), NOT a Lame result - Lame CONSUMES the band to get a contact pressure. 01_01 4.2 requires the drawing's</text>
-<text x='20' y='583' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   micrometres to come from the Lame interference window and REJECTS a blind ISO 286 lookup, so calling the band Lame-computed dresses the</text>
-<text x='20' y='597' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   rejected source in the required source's name. Re-deriving it is an open engineering verdict). The selective Hard-Gold ENIG of 02_02 1.2</text>
-<text x='20' y='611' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   belongs to the flange pogo face, NOT to this part</text>
-<text x='20' y='625' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid shank with a central bus channel, no lattice</text>
-<text x='20' y='639' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: Barb tooth geometry MEASURED against 01_01 4.3 (alpha/beta + h specified, base DERIVED, acceptance 0.40-0.60 mm); shallow alpha</text>
-<text x='20' y='653' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ramp toward the shank tip (the end that enters the PEEK first), steep beta face toward the flange - the two ends look opposite only in</text>
-<text x='20' y='667' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the assembled view. DIN-471 groove to the real standard dimensions for this shaft diameter, CNC after printing. ATTENTION: what the ring</text>
-<text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   in this groove does in the assembled stack is an open verdict (00_07 HW.26) - after full insertion the groove sits about 2.0 mm INSIDE</text>
-<text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the PEEK sleeve and cannot take a ring once pressed. Bus channel diameter must accept the structural liner (01_01 1.4). ATTENTION: shank</text>
-<text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diameter is an HW.8 PLACEHOLDER, not canon - do not treat it as a frozen acceptance dimension. Pull-out retention and the PEEK 150 C</text>
-<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   click-fit are FEA + bench (00_07 HW.3.IS), NOT drawing acceptance lines</text>
-<text x='20' y='737' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Self-contained demo of the Zone-3 lock (Ø9 = HW.8 placeholder; shallow ramp toward the shank tip, §4.3 A). The cathode flange part</text>
-<text x='20' y='751' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   already carries this shank: cem/cathode_flange.json holds its own copy of these shank fields, and the same generator builds the flange's</text>
-<text x='20' y='765' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   shank from them</text>
-<text x='20' y='779' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator</text>
-<rect x='540' y='797' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='797' x2='630' y2='813' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='808' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='808' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Mechanical lock (§4.3 shank)</text>
-<line x1='540' y1='813' x2='790' y2='813' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='813' x2='630' y2='829' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='824' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='824' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V Grade 5. … → NOTES</text>
-<line x1='540' y1='829' x2='790' y2='829' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='829' x2='630' y2='845' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='840' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='840' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or CNC (01… → NOTES</text>
-<line x1='540' y1='845' x2='790' y2='845' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='845' x2='630' y2='861' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='856' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='856' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='861' x2='790' y2='861' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='861' x2='630' y2='877' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='872' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='872' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2ae1e3d1-dirty</text>
-<line x1='540' y1='877' x2='790' y2='877' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='877' x2='630' y2='893' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='888' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='888' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/mechanical_loc… → FOOTER</text>
-<line x1='540' y1='893' x2='790' y2='893' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='893' x2='630' y2='909' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='904' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='904' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>973c6fac4e8f833528… → FOOTER</text>
-<text x='806' y='925' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 2ae1e3d1-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
-<text x='806' y='937' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 973c6fac4e8f8335280aa79abb2d419e6478d2348135687823c01129c5cdc4ed</text>
+<text x='20' y='373' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>4. Surface: ETCHED if the part is printed, as-machined if it is turned from bar - and that follows from the production ORDER, not from a</text>
+<text x='20' y='387' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   finish spec. The order INVERTED on 2026-09-17: canon forbids the bake after the PEEK press-fit (measured - at 250 C the O11 bore grows</text>
+<text x='20' y='401' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   180-217 um more than the shaft), and the bake must follow the etch it degasses, so BOTH surviving branches of 01_02 1.3 etch the BARE</text>
+<text x='20' y='415' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   part and assemble afterwards. This surface is therefore no longer inside the joint when the anchor is etched. The catalytic-face finish</text>
+<text x='20' y='429' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   of the flange (01_02 1.2, EAAE dual-scale) belongs to cem/cathode_flange.json and does NOT extend to this shank. (The consequence is</text>
+<text x='20' y='443' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ours; the ORDER is canon.) ATTENTION - what ACCEPTANCE applies here is OPEN, and do not read the flange band onto it: the EAAE dual-scale</text>
+<text x='20' y='457' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   row of 01_02 1.2 is written for a catalytic face, whose duty is surface area, while this is a mating face of an interference fit. The</text>
+<text x='20' y='471' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   question the inversion OPENED, and which nothing has measured, is the mirror of the old one: whether an etched surface survives the</text>
+<text x='20' y='485' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   press-fit, and what the etch takes off the interference (00_07 HW.34/HW.26). Until that is answered this note states the STATE of the</text>
+<text x='20' y='499' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   surface, never a requirement for it.</text>
+<text x='20' y='513' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: DIN-471 retaining-ring groove — CNC post-DMLS (§4.3 B, +15 min/anchor)</text>
+<text x='20' y='527' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: NOT SPECIFIED, and deliberately so: the 01_02 3.6 map covers the flange catalytic face, the outer jacket and the pogo pad - this</text>
+<text x='20' y='541' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   press-fit shank is on none of those rows. Apply nothing without a verdict; the constraint here is FIT, not DET (any coating of thickness</text>
+<text x='20' y='555' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   t adds 2t of DIAMETRAL interference to a band specified in micrometres - 01_01 4.2 gives the nominal CLASS (H7/s6); the tree's band is</text>
+<text x='20' y='569' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   5-34 um diametral from tools/in_silico/lib/constants.py, and it is NOT that class but the H7/r6 read (s6 on O11 gives 10-39 um; which</text>
+<text x='20' y='583' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   class is meant is open, 00_07 HW.3). ATTENTION on its PROVENANCE, corrected 2026-09-11 (00_07 HW.3): that is a plain ISO 286 table read</text>
+<text x='20' y='597' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (H7 0/+18 + r6 +23/+34 on O11), NOT a Lame result - Lame CONSUMES the band to get a contact pressure. 01_01 4.2 requires the drawing's</text>
+<text x='20' y='611' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   micrometres to come from the Lame interference window and REJECTS a blind ISO 286 lookup, so calling the band Lame-computed dresses the</text>
+<text x='20' y='625' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   rejected source in the required source's name. Re-deriving it is an open engineering verdict). The selective Hard-Gold ENIG of 02_02 1.2</text>
+<text x='20' y='639' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   belongs to the flange pogo face, NOT to this part</text>
+<text x='20' y='653' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>7. Lattice: Not applicable - solid shank with a central bus channel, no lattice</text>
+<text x='20' y='667' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Inspect: Barb tooth geometry MEASURED against 01_01 4.3 (alpha/beta + h specified, base DERIVED, acceptance 0.40-0.60 mm); shallow alpha</text>
+<text x='20' y='681' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ramp toward the shank tip (the end that enters the PEEK first), steep beta face toward the flange - the two ends look opposite only in</text>
+<text x='20' y='695' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the assembled view. DIN-471 groove to the real standard dimensions for this shaft diameter, CNC after printing. ATTENTION: what the ring</text>
+<text x='20' y='709' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   in this groove does in the assembled stack is an open verdict (00_07 HW.26) - after full insertion the groove sits about 2.0 mm INSIDE</text>
+<text x='20' y='723' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the PEEK sleeve and cannot take a ring once pressed. Bus channel diameter must accept the structural liner (01_01 1.4). ATTENTION: shank</text>
+<text x='20' y='737' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diameter is an HW.8 PLACEHOLDER, not canon - do not treat it as a frozen acceptance dimension. Pull-out retention and the PEEK 150 C</text>
+<text x='20' y='751' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   click-fit are FEA + bench (00_07 HW.3.IS), NOT drawing acceptance lines</text>
+<text x='20' y='765' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Self-contained demo of the Zone-3 lock (Ø9 = HW.8 placeholder; shallow ramp toward the shank tip, §4.3 A). The cathode flange part</text>
+<text x='20' y='779' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   already carries this shank: cem/cathode_flange.json holds its own copy of these shank fields, and the same generator builds the flange's</text>
+<text x='20' y='793' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   shank from them</text>
+<text x='20' y='807' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Barb pull-out (3–5× vs friction) and PEEK 150°C click-fit retention are FEA + bench (HW.3.IS), NOT asserted by this generator</text>
+<rect x='540' y='825' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='825' x2='630' y2='841' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='836' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Mechanical lock (§4.3 shank)</text>
+<line x1='540' y1='841' x2='790' y2='841' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='841' x2='630' y2='857' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='852' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='852' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Ti-6Al-4V Grade 5. … → NOTES</text>
+<line x1='540' y1='857' x2='790' y2='857' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='857' x2='630' y2='873' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='868' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='868' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/DMLS or CNC (01… → NOTES</text>
+<line x1='540' y1='873' x2='790' y2='873' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='873' x2='630' y2='889' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='884' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='884' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='889' x2='790' y2='889' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='889' x2='630' y2='905' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='900' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='900' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2bc8c287-dirty</text>
+<line x1='540' y1='905' x2='790' y2='905' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='905' x2='630' y2='921' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='916' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='916' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/mechanical_loc… → FOOTER</text>
+<line x1='540' y1='921' x2='790' y2='921' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='921' x2='630' y2='937' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='932' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='932' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>afea2c4e05ec9671f1… → FOOTER</text>
+<text x='806' y='953' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 2bc8c287-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone3.json</text>
+<text x='806' y='965' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): afea2c4e05ec9671f19a416279a2c7c7d0b41595aeb5076c1d1227ab8ccddfd9</text>
 </svg>
