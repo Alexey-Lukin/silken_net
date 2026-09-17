@@ -60,23 +60,23 @@ def regions(text)
   start = nil
   lines.each_with_index do |line, idx|
     if line.include?(END_MARK)
-      out << [start, idx - 1, lang] if start
+      out << [ start, idx - 1, lang ] if start
       start = nil
     elsif line.start_with?("## ")
-      out << [start, idx - 1, lang] if start
+      out << [ start, idx - 1, lang ] if start
       start = nil
       lang  = line[/\((EN|UA)\)/, 1]
     elsif line.include?(MARKER)
       start = idx + 1
     end
   end
-  out << [start, lines.size - 1, lang] if start
+  out << [ start, lines.size - 1, lang ] if start
   out
 end
 
 def violations(file, lines, from, to, lang, ids, facets)
   hits = []
-  add  = ->(lineno, kind, sample) { hits << [file, lineno + 1, kind, sample] }
+  add  = ->(lineno, kind, sample) { hits << [ file, lineno + 1, kind, sample ] }
 
   (from..to).each do |i|
     line = lines[i]
@@ -119,7 +119,7 @@ files.each do |path|
     found_regions += 1
     puts format("  %s:%d-%d  мова=%s  (%d рядків)", rel, from + 1, to + 1, lang || "НЕ ОГОЛОШЕНА", to - from + 1) if list_only
     if lang.nil?
-      undeclared << [rel, from + 1]
+      undeclared << [ rel, from + 1 ]
       next
     end
     all_hits.concat(violations(rel, lines, from, to, lang, ids, facets))
