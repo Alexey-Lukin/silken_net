@@ -423,6 +423,21 @@ jobs:
         # that guards identifiers and hostnames rather than prose.
         run: ruby scripts/homoglyph_check.rb
 
+      - name: Copy-region of vendor letters carries no repo markers (DOC-T.109)
+        # Pure Ruby, no Rails. Everything below «⬇️ КОПІЮВАТИ ВІД ЦЬОГО РЯДКА» is
+        # sent to a supplier VERBATIM — human-executed code with no compiler, whose
+        # first run happens on a vendor's floor. Until this step existed, no script,
+        # workflow or skill read that marker at all: three defects were found by hand
+        # in one session (a Ukrainian blockquote inside an English letter, status
+        # glyphs, and a sentence made false by a later measurement).
+        # The region's BOTH boundaries and its language are read from the file, never
+        # from the script — the first draft knew only the closing `## ` heading and
+        # produced six false positives on the letters' own end marker.
+        # ⛔ Declared ceiling: it judges FORM. A sentence that is plausible, correctly
+        # spelled and STALE has no static tell, so green is not a claim that the
+        # letter is true — only that it carries no repo vocabulary.
+        run: ruby scripts/copy_region_check.rb
+
       - name: SPDX per-file licence headers (UNI.3 — every in-scope source file tagged)
         # Pure Ruby, no Rails. The SAME engine that performed the rollout, run in
         # --check mode — so the gate cannot drift from what it guards, which is the
