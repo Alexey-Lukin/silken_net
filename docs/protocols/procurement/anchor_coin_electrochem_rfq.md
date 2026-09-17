@@ -25,6 +25,7 @@
 | **Геометрія** | диск **Ø16×1 мм**; 1 грань = π·8² = **2.01 см² ≈ A_electrode**; «вушко» під кліпсу потенціостата — поза активною гранню | [`01_01 §6.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`01_03 §3.7`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) п.4 |
 | **Площа** | `j` — на **проєкційну** площу; площу задає **вікно** flat O-ring cell, не край купона (EAAE-шорсткість робить реальну площу невимірною). Звідси прохання експонувати лише активну грань: той самий знаменник і в струмі, і в ICP-MS | [`01_01 §6.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) |
 | **Підкладки** | Ti-6Al-4V (контроль) · Ti-6Al-7Nb · CP-Ti Gr4 · β-Ti-13Nb-13Zr · Ta · Ti-15Zr. Кількість реплік і розкладку купонів між тестами канон не фіксує → лист просить ціну за купон | [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) |
+| **Непокриті купони — бічна ICP-MS-серія** | по три на сплав, та сама активація поверхні, **без** шарів стеку; лише занурення на 30 діб при **pH 4.5** і ICP-MS (без каналів потенціостата). ⚠️ Не плутати з «катодом без нанозиму» ↓: там фермент є, тут металу нічого не вкриває — у листі два різні слова | [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (⚖️ 2026-09-17) |
 | **Au-стеля (опц.)** | Ti-купон із тонким Au на активній грані — стеля DET-порівняння. ⚠️ Канон-дому не має: живе лише в сусідньому аркуші й CEM | [`anchor_alloy_rfq`](anchor_alloy_rfq.md) §1 · `tools/cad/cem/ti_coin.au.json` |
 | **Анод** | dgrFAD-GDH + Os-полімер на fMWCNT · genipin-chitosan-CNC · Nafion-g-PSBMA. E°(Os) = **+309 мВ vs NHE** — іде в лист як вікно потенціалів (опублікована властивість медіатора, не наш прогноз) | [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **Катод** | Laccase + nCoCuCeZIF на MWCNT (DET) | [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
@@ -38,20 +39,21 @@
 
 **Синтетичний ксилемний сік** — дзеркало рецепта [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) (цільова порода *Pinus sylvestris* — [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)):
 
-| Компонент | Діапазон |
+| Компонент | Концентрація |
 |---|---|
-| Яблучна кислота | 1–5 mM |
-| Щавлева кислота | 0.5–2 mM |
-| KNO₃ | 2–5 mM |
-| CaCl₂ | 0.5–2 mM |
-| MgSO₄ | 0.2–1 mM |
-| Фітосидерофори (опц.) | 0.01–0.1 mM |
+| Яблучна кислота | 2.2 mM |
+| KNO₃ | 3.2 mM |
+| CaCl₂ | 1.0 mM |
+| MgSO₄ | 0.45 mM |
+| KOH | до уставки pH (≈ 4.1 mM при 5.75 · ≈ 2.6–2.7 mM при 4.5 — фактичну кількість пише журнал партії) |
+| pH | **5.75** · бічна серія непокритих купонів **4.5** |
 
 - ⚠️ **Температурний рядок того рецепта (20–40 °C, цикл) належить прискореному тесту [`01_02 §2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), не монеті** — у лист він не йде. Coin-тест: **20–25 °C** ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
-- ⚖️ **pH канон тримає ДВОМА смугами:** [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — 5.0–5.5 ⊥ [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) — 4.5–5.5 (а реф останнього на [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) pH-числа не містить). Катодне середовище — pH 4.5 (там же, §3.5). **Лист смуги не обирає:** межею називає обʼєднання 4.5–5.5, set-point — «confirmed before the order», ціну просить **за pH-умову**, тож лишається чинним за обох присудів.
-- 🔴 **Діапазони кальцію й оксалату разом не готуються:** кожен кут рецептури пересичений щодо оксалату кальцію на обох pH-смугах ([`SUMMARY §HW.3`](../ebfc/in_silico/SUMMARY.md)), тож точна рецептура «before the order» винесе Ca, оксалат або обидва далеко нижче діапазону — котрий, ⚖️ [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3. **Лист вибору не робить:** «point values within these ranges» знято, несумісність названо лабораторії як факт приготування, а QC партії просить перевірку на осад — порогу не ставить.
+- ✅ **pH розсуджено (⚖️ founder 2026-09-17, дім [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)):** уставка **5.75** — виміряний pH соку *P. sylvestris* (Tarvainen 2023); бічна серія непокритих купонів лише під ICP-MS при **4.5**, бо вищий pH може занижувати вивільнення Al. Катодне середовище лишається pH 4.5 ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+- 🔴 **Буфер слабкий, і лист мусить це сказати:** β ≈ 0.61 mM на одиницю pH при 5.75 — pH на 0.1 зсуває ≈ 0.066 mM сильної кислоти, а анод кислоту виробляє ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), script 67 Q6). Звідси заміна середовища й журнал pH у C — умова, не побажання. Число в лист не йде: лабораторії досить знати, що середовище слабко буферне.
+- ✅ **Рецептура — точка (⚖️ founder 2026-09-17):** оксалат прибрано, бо з мілімолярним Ca він пересичує оксалат кальцію в кожному куті колишніх діапазонів ([`SUMMARY §HW.3`](../ebfc/in_silico/SUMMARY.md)); решта — геометричні середини, фітосидерофори поза рецептурою. Перевірку партії на осад лист лишає — вона дешева й ловить помилку приготування.
 - 🔴 **Глюкози в рецепті немає, а анод без субстрату `j_max` не дає.** Специфікації середовища для coin-тесту канон не тримає: глюкоза в ньому стоїть лише умовою літературного виміру ([`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)) і сценаріями in-silico L4 ([`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md), `Km` там «Estimated»). Лист: концентрація «confirmed before the order» + опційна серія глюкози з ціною за точку, бо споживач даних (`40_validate_vs_experiment.py`) чекає `Km` саме із серії.
-- ⚠️ **Провенанс рецепта не звірено:** обидва джерела [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) без DOI, і пошук за точними назвами 2026-09-13 їх не знайшов. Це **не** доказ відсутності, але й не підстава подавати рецепт лабораторії як літературно валідований — тому в листі він «working composition». Виміряний склад соку *Pinus sylvestris* — робота біо-хабу ЧНУ ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
+- ⚠️ **Провенанс рецепта звірено лише наполовину:** pH має первинку (Tarvainen 2023), а концентрації іонів — середини діапазонів, чиї джерела пошуком за точними назвами не знайдено. Тому в листі рецепт і далі «working composition», не літературно валідований склад. Виміряний склад соку *Pinus sylvestris* — робота біо-хабу ЧНУ ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
 - **Мікробний ріст** у глюкозному середовищі за 30 днів канон не адресує → лист питає метод контролю, а добавки дозволяє лише за узгодженням.
 
 ---
@@ -101,14 +103,14 @@
 
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
-| pH соку: 5.0–5.5 ⊥ 4.5–5.5 | межа = обʼєднання · set-point «before the order» · ціна за pH-умову | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3 |
-| рецептура: Ca ⊥ оксалат — у діапазонах разом пересичені | несумісність названо як факт приготування · точна рецептура «before the order» · QC партії на осад | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.3 |
 | глюкоза: концентрація / серія | «before the order» + опційна серія з ціною за точку | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
 | часова база µg/см² | рівні названо, база — «still being fixed»; LOQ + обʼєм + площа + кумулятивні дані | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.3 |
 | матриця тестів: репліки · субстрат катодних купонів · послідовність C/D/E | ціна за одиницю + розкладку пропонує лабораторія | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 (пріоритети живить HW.36) |
 | хто наносить стек: (A) лабораторія ⊥ (B) ми / партнер | обидві опції з окремою ціною | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.5 |
 | «bare» у парі ZIF-стабілізації | прочитання «катод без нанозиму» названо вголос | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
-| реальний склад і pH соку *Pinus sylvestris* | «working composition» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
+| реальний склад соку *Pinus sylvestris* (pH — вже первинка) | «working composition» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
+
+✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)).
 
 ---
 
@@ -149,6 +151,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 - **Geometry:** flat disc **Ø16 mm × 1 mm** with a small tab or edge hole for the potentiostat clip. One face is the **active face (projected area 2.01 cm²)**; the tab lies outside it.
 - **Expose only the active face** — for example in a flat cell whose O-ring window defines the area. Current density and ion release are both normalised per unit of exposed area, so that area has to be known exactly and must not include the back face or the edge. If you propose full immersion instead, say so and state the total exposed area.
 - **Substrate alloys** (several replicate coupons each — please price per coupon): Ti-6Al-4V (control) · Ti-6Al-7Nb · CP-Ti Grade 4 · Ti-13Nb-13Zr (β-Ti) · tantalum · Ti-15Zr — plus, optionally, one titanium coupon with a thin **gold** coating on the active face, used as a best-case electron-transfer reference. Coupons may arrive in more than one batch; tell us whether a later batch can run as a separate campaign at the same unit prices.
+- **Uncoated coupons for an ion-release series:** in addition, **three coupons per alloy** with the same surface treatment but **no electrode layers**, immersed for the same 30 days in the medium at **pH 4.5** and analysed by ICP-MS only (F) — no potentiostat channels.
 - **Electrodes built on the coupons:**
   - *Anode:* FAD-dependent glucose dehydrogenase wired by an osmium redox polymer on functionalised carbon nanotubes, under a genipin-crosslinked chitosan / cellulose-nanocrystal hydrogel and a zwitterion-grafted Nafion membrane. The mediator's published formal potential is **+309 mV vs NHE** — given so you can set the potential window.
   - *Cathode:* laccase combined with a Co/Cu/Ce zeolitic-imidazolate-framework (ZIF) nanozyme on carbon nanotubes, working by direct electron transfer.
@@ -160,19 +163,17 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 
 ### Test medium
 
-**Synthetic xylem sap**, target species Scots pine (*Pinus sylvestris*). Working composition ranges:
+**Synthetic xylem sap**, target species Scots pine (*Pinus sylvestris*). Working composition:
 
-| Component | Concentration range |
+| Component | Concentration |
 |---|---|
-| Malic acid | 1–5 mM |
-| Oxalic acid | 0.5–2 mM |
-| KNO₃ | 2–5 mM |
-| CaCl₂ | 0.5–2 mM |
-| MgSO₄ | 0.2–1 mM |
-| Phytosiderophores (optional — tell us if you can source them) | 0.01–0.1 mM |
+| Malic acid | 2.2 mM |
+| KNO₃ | 3.2 mM |
+| CaCl₂ | 1.0 mM |
+| MgSO₄ | 0.45 mM |
+| KOH | to the pH set-point — record the amount added per batch |
 
-- **Exact recipe** (point values): **confirmed before the order.** Calcium and oxalate cannot both sit inside the ranges above — at those levels the medium exceeds the solubility of calcium oxalate — so the confirmed recipe will set calcium, oxalate or both well below their ranges. Quote medium preparation per batch.
-- **pH:** buffered by the recipe's own organic acids, not by an added buffer system. The set-point lies **within pH 4.5–5.5** and is **confirmed before the order**; please quote **per pH condition**, as we may add a second condition at the other end of that band. Tell us how you set and hold pH over 30 days and how often you log it.
+- **pH:** **5.75** for the electrode tests; **4.5** for the uncoated ion-release series. There is no added buffer system — malic acid is the only buffer and KOH sets the pH — so the medium is **weakly buffered at 5.75**: a small amount of acid moves its pH noticeably, and a working anode produces acid. Tell us how you set, hold and log pH over 30 days, and plan the medium replacement in C around it. Quote medium preparation per batch and per pH.
 - **Glucose** is added as the anode substrate; its concentration is **confirmed before the order**. As a separately priced option, quote a **glucose concentration series** (price per concentration point), from which an apparent Michaelis constant can be extracted.
 - **Cathode medium:** pH 4.5, air-exposed. Tell us how you keep it air-saturated and whether you log dissolved oxygen.
 - **Microbial growth:** a glucose-containing medium held for 30 days will support it, and growth would consume the substrate and confound the stability result — state how you prevent it (additives only by agreement, see Handling).
@@ -213,6 +214,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 **F. Ion release by ICP-MS**
 
 - Analyse a **medium blank** before exposure and the **exposure medium at the end of the 30-day test**; quote intermediate sampling as an option.
+- The **uncoated-coupon series at pH 4.5** (Specimens) runs through the same analysis — substrate elements only, since it carries no electrode layers.
 - **Elements:** Ti, V, Al, Nb, Zr, Ta from the substrate (as relevant per alloy) · Os from the anode mediator · Cu, Co, Ce from the cathode nanozyme.
 - Report concentrations (µg/L) together with the solution volume and the exposed area, so that release can be expressed per cm² of exposed face.
 - **Sensitivity:** the levels our comparison has to resolve are **V 0.02 µg/cm², Al 0.05 µg/cm² and Ti 0.1 µg/cm²** of exposed face. The exposure time those levels refer to is still being fixed on our side, so please state your limit of quantification per element **in this matrix** and the lowest per-cm² release it corresponds to at your proposed volume — lower is better.
@@ -259,7 +261,7 @@ We also plan a longer accelerated-ageing exposure of coupons in the same medium,
 
 ### Attachments
 
-Nothing is required from us for an initial quotation. On request we supply the written immobilisation protocol, the coupon drawing, and the medium recipe once confirmed.
+Nothing is required from us for an initial quotation. On request we supply the written immobilisation protocol, the coupon drawing, and the medium recipe with its preparation notes.
 
 ---
 

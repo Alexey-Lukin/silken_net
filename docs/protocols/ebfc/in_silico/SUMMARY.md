@@ -757,9 +757,10 @@ sets how much water is there to radiolyse.
 
 ## HW.3 — Does the Synthetic Xylem Sap Precipitate Its Own Chelator? (script 67)
 
-Spec home → [`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); decision → `00_07` HW.3.
+Spec home → [`01_02 §2.1`](../../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); decision ⚖️ founder 2026-09-17 — oxalate
+removed, the recipe is now a point (Q6). Q1–Q5 below price the ranges that point replaced and stay its ground.
 
-The recipe is written as ranges — malic acid 1–5, oxalic acid 0.5–2, KNO₃ 2–5, CaCl₂ 0.5–2, MgSO₄ 0.2–1 mM —
+The recipe was written as ranges until then — malic acid 1–5, oxalic acid 0.5–2, KNO₃ 2–5, CaCl₂ 0.5–2, MgSO₄ 0.2–1 mM —
 and two tests run in it: the Stage-2 coin electrochemistry (pH 4.5–5.5, 20–25 °C,
 [`01_03 §3.5`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md); the lab letter names the union of canon's two pH
 bands) and the 12-week accelerated corrosion test (pH 5.0–5.5, 20–40 °C cycle). A range is a claim about a
@@ -866,10 +867,26 @@ to: the apparent constants add ×1.01–1.03 and the I = 0 constants ×1.06–1.
 oxalate constants, end to end, moves it ×1.54–1.77 — **the missing constant matters less than the constants we
 already have**, so chasing it is not what would widen the recipe. No reading comes within an order of magnitude of the canon ranges.
 
-**Verdict** — 🔴 **The recipe as specified has no member that is a stable solution.** Every corner of both tests'
+**Q6 — the ratified point** (⚖️ founder 2026-09-17: oxalate out; malic acid 2.2 · KNO₃ 3.2 · CaCl₂ 1.0 · MgSO₄ 0.45 mM,
+each the geometric mid of its old range, asserted by the script; pH 5.75 — the measured *P. sylvestris* sap pH,
+Tarvainen et al. 2023 — with a pH 4.5 side series of uncoated coupons under ICP-MS only). Over every documented
+reading and every temperature of the tests each condition belongs to:
+
+| condition | KOH to reach it | K⁺ total | β at 25 °C | strong acid for −0.1 pH |
+|---|---|---|---|---|
+| pH 5.75 (both tests, 20–40 °C) | **4.09–4.15 mM** | 7.29–7.35 mM | **0.61 mM/pH** | 0.066 mM |
+| pH 4.5 (coin side series, 20–25 °C) | **2.57–2.72 mM** | 5.77–5.92 mM | **1.45 mM/pH** | 0.14 mM |
+
+Gypsum stays far from saturation (SI ≤ −2.2), and with oxalate gone no calcium oxalate hydrate can form. The
+number that matters is the last column: at the set-point a few hundredths of a millimole of acid move the pH by a
+tenth, and a working anode produces acid — the model does not say how fast, so the figure is a scale, not a drift
+prediction — which makes medium replacement and a pH log conditions of the test rather than good practice.
+
+**Verdict** — 🔴 **The pre-verdict recipe had no member that is a stable solution.** Every corner of both tests'
 bands is supersaturated to all three calcium oxalate hydrates, by a margin no documented constant closes. The
-hard-bound window is the machine half of HW.3; which ion to lower, and how far below the edge to prepare, is ⚖️
-(`00_07` HW.3), priced in Q2–Q4. (`chemistry/sap_recipe_saturation.json`)
+hard-bound window was the machine half of HW.3; which ion to lower was ⚖️, priced in Q2–Q4, and the founder
+removed oxalate on 2026-09-17 — its price is the buffering Q4 measures and the chelator the recipe no longer
+carries; what the chosen point takes is Q6. (`chemistry/sap_recipe_saturation.json`)
 
 ⚠️ **Hypothesis, not measurement** ([`00_06 §0`](../../../00_06_SSOT_Documentation_Standard.md)). Structurally
 blind to: precipitation kinetics and the metastable zone — a supersaturated flask that has not clouded yet is
@@ -880,6 +897,9 @@ the hard bound does not cover; and the Davies activity model, although the large
 0.030 mol/L, sits well inside its stated range. The MD sap profiles in `lib/xylem_sap.py` list the same
 calcium/oxalate pair at millimolar levels, but script 14 builds its box from a profile's pH and ionic strength alone,
 filling it with Na⁺/Cl⁻ — the pair never entered a simulation, and a profile is not a medium anyone can prepare.
+⚠️ Those profiles' seasonal pH course (winter 4.5 → summer 5.5) also runs OPPOSITE to the measured conifer course —
+sap turns more alkaline in winter (Pramsohler 2022; Losso 2018) — so any pH-dependent MD read off them inherits
+the inverted season; the recipe's set-point no longer rests on them (`01_02 §2.1`).
 
 ---
 

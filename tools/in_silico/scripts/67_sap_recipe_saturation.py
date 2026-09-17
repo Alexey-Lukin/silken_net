@@ -3,12 +3,14 @@
 """
 HW.3 — does the synthetic xylem sap precipitate its own chelator? Saturation verdict and admissible window.
 
-`01_02 §2.1` specifies the synthetic sap as RANGES — malic acid 1–5 mM, oxalic acid 0.5–2 mM, KNO3 2–5 mM,
-CaCl2 0.5–2 mM, MgSO4 0.2–1 mM — and two tests run in it under different conditions: the accelerated corrosion
-test of `01_02 §2` (pH 5.0–5.5, a 20–40 °C cycle) and the Stage-2 Ti-coin electrochemistry, whose letter mirrors
-the recipe at 20–25 °C (`01_03 §3.5`) and names the union pH 4.5–5.5 because canon holds two bands. A range is a
-claim about a SET of solutions, and calcium oxalate is among the least soluble salts in biology — so before a
-laboratory is asked to prepare a member of that set, the set has to be checked for members that exist.
+`01_02 §2.1` specified the synthetic sap as RANGES until 2026-09-17 — malic acid 1–5 mM, oxalic acid 0.5–2 mM,
+KNO3 2–5 mM, CaCl2 0.5–2 mM, MgSO4 0.2–1 mM — and two tests run in it under different conditions: the accelerated
+corrosion test of `01_02 §2` (then pH 5.0–5.5, a 20–40 °C cycle) and the Stage-2 Ti-coin electrochemistry, whose
+letter mirrored the recipe at 20–25 °C (`01_03 §3.5`) and named the union pH 4.5–5.5 because canon held two bands.
+A range is a claim about a SET of solutions, and calcium oxalate is among the least soluble salts in biology — so
+before a laboratory is asked to prepare a member of that set, the set has to be checked for members that exist.
+Q1–Q5 below priced that set and its two ways out; the verdict they priced (⚖️ founder 2026-09-17) replaced the
+ranges with a POINT, and Q6 is what that point takes to prepare.
 
   Q1  THE CANON CORNERS. Saturation index of the calcium oxalate hydrates at every corner of the recipe × the pH
       band × the temperature band of each test. Is ANY corner undersaturated — and if none is, how wrong would
@@ -22,6 +24,9 @@ laboratory is asked to prepare a member of that set, the set has to be checked f
       medium keeps when oxalate is cut to the window.
   Q5  CONSTANT SENSITIVITY. How far the window moves across the NEA spread of the oxalate constants and the malate
       readings — and what one pH set-point would do to it.
+  Q6  THE RATIFIED POINT. Oxalate out, the other four at the geometric mid of their range, pH 5.75 with a pH 4.5
+      side series: how much KOH each condition takes, the potassium total that makes, and how weakly the medium
+      buffers — the number that turns medium replacement from a courtesy into a condition of the test.
 
 THE CONSTANT THAT DOES NOT EXIST, and why the window does not need it. No open primary gives the calcium or
 magnesium malate complex at I = 0; the only measured values found are APPARENT constants in a Na+ medium at
@@ -80,10 +85,19 @@ KCAL_KJ = 4.184                     # thermochemical calorie — wateq4f.dat sta
 T_REF_K = 298.15
 SI_TOL = 1e-6                       # a window edge is accepted when no condition sits more than this above SI = 0
 
-# ── The canon recipe — mirror of 01_02 §2.1; test_doc_cache_sync reads that table and pins these ──
+# ── The PRE-VERDICT recipe — the ranges 01_02 §2.1 specified until 2026-09-17. Q1–Q5 run on them and stay the
+# ground of the verdict that replaced them; canon no longer specifies them, so nothing pins them to canon ──
 RECIPE_KEYS = ("malic", "oxalic", "kno3", "cacl2", "mgso4")
 RECIPE_RANGES_MM = {"malic": (1.0, 5.0), "oxalic": (0.5, 2.0), "kno3": (2.0, 5.0), "cacl2": (0.5, 2.0),
                     "mgso4": (0.2, 1.0)}
+# ── The RATIFIED recipe (⚖️ founder 2026-09-17) — canon 01_02 §2.1 specifies this POINT, and test_doc_cache_sync pins
+# that table to it. Oxalate is out (Q1–Q2: it does not coexist with millimolar calcium); the other four sit at the
+# geometric mid of their pre-verdict range to two significant figures, asserted in `ratified_point()` so the point
+# cannot drift from its own derivation. pH: the set-point is the measured Pinus sylvestris sap pH (Tarvainen et al.
+# 2023, New Phytol. 238:926, Table 1, control trees), for both tests; the side series is uncoated coupons under
+# ICP-MS only, in the coin test. ──
+RATIFIED_POINT_MM = {"malic": 2.2, "oxalic": 0.0, "kno3": 3.2, "cacl2": 1.0, "mgso4": 0.45}
+RATIFIED_PH = {"setpoint": (5.75, ("coin", "accelerated")), "side_series": (4.5, ("coin",))}
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
 TESTS = {
     "coin": {"label": "Stage-2 Ti-coin electrochemistry",
@@ -661,6 +675,47 @@ def buffer_capacity_mm_per_ph(tot: dict, ph: float, t_c: float = 25.0, d: float 
     return (speciate(m, tot, ph + d).base_mol_l - speciate(m, tot, ph - d).base_mol_l) / (2.0 * d) / MM
 
 
+# ─────────────────────────────────── Q6 — the ratified point ───────────────────────────────────
+def ratified_point() -> dict:
+    """The recipe canon specifies since 2026-09-17: the base it takes to reach each pH condition, and how weakly it
+    buffers there. Every documented reading at every temperature of the tests the condition belongs to — the hard
+    bound is an SI construct, not a reading, so it prices nothing here."""
+    for key, (lo, hi) in RECIPE_RANGES_MM.items():
+        if key != "oxalic":
+            assert RATIFIED_POINT_MM[key] == float(f"{math.sqrt(lo * hi):.2g}"), f"{key}: not the geometric mid"
+    assert RATIFIED_POINT_MM["oxalic"] == 0.0, "the verdict removed oxalate"
+    tot = totals_mm(RATIFIED_POINT_MM)
+    readings = [sc for sc in SCENARIOS if sc.key != "hard_bound"]
+    conditions_out = {}
+    for name, (ph, tests) in RATIFIED_PH.items():
+        temps = sorted({t for test in tests for t in TESTS[test]["t_c"]})
+        base, ionic, si_gypsum = [], [], []
+        for sc in readings:
+            for t_c in temps:
+                m = model_for(sc, t_c)
+                sol = speciate(m, tot, ph)
+                base.append(sol.base_mol_l / MM)
+                ionic.append(sol.ionic_strength)
+                si_gypsum.append(saturation_index(sol, m, GYPSUM))
+        m25 = model_for(SC["selected"], 25.0)
+        acid_tenth = (speciate(m25, tot, ph).base_mol_l - speciate(m25, tot, ph - 0.1).base_mol_l) / MM
+        kno3 = RATIFIED_POINT_MM["kno3"]
+        conditions_out[name] = {
+            "ph": ph, "tests": list(tests), "t_c": temps,
+            "base_koh_mM": [round(min(base), 3), round(max(base), 3)],
+            "potassium_total_mM": [round(min(base) + kno3, 3), round(max(base) + kno3, 3)],
+            "ionic_strength_mol_l": [round(min(ionic), 5), round(max(ionic), 5)],
+            "si_gypsum_max": round(max(si_gypsum), 3),
+            "buffer_capacity_mM_per_pH_25c": round(buffer_capacity_mm_per_ph(tot, ph), 4),
+            "strong_acid_mM_lowering_pH_by_0p1_25c": round(acid_tenth, 4)}
+    return {"recipe_mM": RATIFIED_POINT_MM, "home": "01_02 §2.1 (⚖️ founder 2026-09-17)",
+            "derivation": "oxalate removed; malic acid, KNO3, CaCl2 and MgSO4 at the geometric mid of their "
+                          "pre-verdict range, two significant figures",
+            "readings": [sc.key for sc in readings], "conditions": conditions_out,
+            "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the "
+                           "scale, not a prediction of the drift"}
+
+
 def figure(curves: dict) -> None:
     import matplotlib
     matplotlib.use("Agg")
@@ -830,6 +885,14 @@ def main() -> int:
             print(f"  malic {malic:.0f} mM, oxalate {label:<40s} β = "
                   + " · ".join(f"{b:.3f} (pH {p})" for p, b in beta.items()) + " mM/pH")
 
+    banner("Q6 — the ratified point (⚖️ 2026-09-17): base, buffer capacity")
+    q6 = ratified_point()
+    for name, c in q6["conditions"].items():
+        print(f"  {name} pH {c['ph']}: KOH {c['base_koh_mM'][0]:.3f}–{c['base_koh_mM'][1]:.3f} mM, K+ total "
+              f"{c['potassium_total_mM'][0]:.3f}–{c['potassium_total_mM'][1]:.3f} mM; β(25 °C) "
+              f"{c['buffer_capacity_mM_per_pH_25c']:.3f} mM/pH, strong acid for −0.1 pH "
+              f"{c['strong_acid_mM_lowering_pH_by_0p1_25c']:.4f} mM; SI(gypsum) ≤ {c['si_gypsum_max']:+.2f}")
+
     banner("Prices of the two directions")
     loss = []
     for malic in RECIPE_RANGES_MM["malic"]:
@@ -885,8 +948,9 @@ def main() -> int:
         return f"{x:.2f}".replace("-", "−")
 
     verdict = (
-        ("Every canon corner of the 01_02 §2.1 recipe is supersaturated to whewellite in both tests, under every constant "
-         "reading evaluated. " if all_super else "NOT every canon corner is supersaturated — see q1_corners. ")
+        ("Every corner of the PRE-VERDICT 01_02 §2.1 recipe (the ranges canon replaced with a point on 2026-09-17 — "
+         "q6_ratified_point) is supersaturated to whewellite in both tests, under every constant reading evaluated. "
+         if all_super else "NOT every pre-verdict corner is supersaturated — see q1_corners. ")
         + f"NEA-selected constants: SI {signed(sel['coin']['si_whewellite_min'])} … {signed(sel['coin']['si_whewellite_max'])} "
         f"(coin, pH 4.5–5.5, 20–25 °C) and {signed(sel['accelerated']['si_whewellite_min'])} … "
         f"{signed(sel['accelerated']['si_whewellite_max'])} (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented "
@@ -940,6 +1004,7 @@ def main() -> int:
         "q5_window_over_hard_bound": q5,
         "q5_malate_reading_over_selected": malate_over_selected,
         "q5_oxalate_spread_low_end_over_high_end": oxalate_spread,
+        "q6_ratified_point": q6,
         "prices": prices,
         "verdict": verdict,
         "caveats": [
@@ -950,7 +1015,7 @@ def main() -> int:
             "water.",
             "Varied: the oxalate constants (NEA spread) and the malate complexes (readings, sweep, limit). Single values: "
             "the malic-acid protonation, the sulfate ion pairs and Davies A(T).",
-            "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.5); pH is "
+            "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.75); pH is "
             "−log10 of the H+ activity.",
             "Complexes for which NEA selects no enthalpy — the calcium and magnesium oxalate complexes — keep their "
             "25 °C constants over 20–40 °C.",
@@ -969,8 +1034,8 @@ def main() -> int:
             f"KOH is taken as the base; NaOH moves SI by at most {base_na_gap:.4f} at any corner.",
         ],
         "not_modelled": [
-            {"item": "glucose", "why": "not part of the 01_02 §2.1 recipe"},
-            {"item": "phytosiderophores (optional, 0.01–0.1 mM)", "why": "no constants in the sources used",
+            {"item": "glucose", "why": "not part of the 01_02 §2.1 corrosion recipe; the coin test adds it (01_03 §3.5)"},
+            {"item": "phytosiderophores (a pre-verdict optional row, out of the recipe since 2026-09-17)", "why": "no constants in the sources used",
              "effect_of_omission": "not assessed"},
             {"item": "calcium malate as a solid", "why": "no solubility product in the sources used",
              "effect_of_omission": "a second precipitate the window does not check"},

@@ -844,11 +844,14 @@ CHECKS = [
 
 # ── HW.3: the recipe TABLE is script 67's premise, and its window is quoted slot by slot ──
 # ⛔ For the recipe rows the direction of truth is INVERTED and the failure message cannot say so: canon is
-# the source and the cache mirrors it — a recipe edit without a re-run of 67 leaves the verdict and the window
-# describing a medium nobody specifies any more. Each END is pinned on its own, because a range whose one end
-# moved still reads as a range; the window per SLOT, because three levels in one phrase can keep two current.
-_RECIPE_LABELS = {"malic": "Яблучна кислота (malic acid)", "oxalic": "Щавлева кислота (oxalic acid)",
-                  "kno3": "KNO₃ (K⁺)", "cacl2": "CaCl₂ (Ca²⁺)", "mgso4": "MgSO₄ (Mg²⁺)"}
+# the source and the cache mirrors it — a recipe edit without a re-run of 67 leaves Q6 pricing a medium nobody
+# specifies any more. Since 2026-09-17 (⚖️ founder) the table is a POINT, so each member and each pH condition is
+# pinned on its own; the pre-verdict RANGES are no longer canon and are pinned nowhere — they survive only as the
+# premise of Q1–Q5, whose verdict and window the canon note still quotes as the ground of the choice. The window
+# is pinned per SLOT, because three levels in one phrase can keep two current.
+_RECIPE_LABELS = {"malic": "Яблучна кислота (malic acid)", "kno3": "KNO₃ (K⁺)", "cacl2": "CaCl₂ (Ca²⁺)",
+                  "mgso4": "MgSO₄ (Mg²⁺)"}
+_Q6_CONDITIONS = (("setpoint", "5\\.75"), ("side_series", "4\\.5"))
 _LEVELS = ("0.5", "1", "2")
 
 
@@ -866,11 +869,51 @@ def _one_window(d, fixed: str, i: int) -> float:
 
 
 CHECKS += [
-    (f"01_02 §2.1 recipe {key} {end} (canon → script 67 premise: re-run 67 on a recipe change)",
-     METALLURGY,
-     rf"\| {re.escape(label)} \| {N}–[\d.]+ mM \|" if j == 0 else rf"\| {re.escape(label)} \| [\d.]+–{N} mM \|",
-     SAP, lambda d, k=key, j=j: d["recipe_ranges_mM"][k][j], 0.0)
-    for key, label in _RECIPE_LABELS.items() for j, end in enumerate(("floor", "ceiling"))
+    (f"01_02 §2.1 recipe {key} (canon → script 67 premise: re-run 67 on a recipe change)",
+     METALLURGY, rf"\| {re.escape(label)} \| {N} mM \|",
+     SAP, lambda d, k=key: d["q6_ratified_point"]["recipe_mM"][k], 0.0)
+    for key, label in _RECIPE_LABELS.items()
+] + [
+    ("01_02 §2.1 pH set-point (canon → script 67 premise: re-run 67 on a recipe change)",
+     METALLURGY, rf"\| pH \| \*\*{N}\*\* \(уставка\)",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["ph"], 0.0),
+    ("01_02 §2.1 pH side series (canon → script 67 premise: re-run 67 on a recipe change)",
+     METALLURGY, rf"бічна серія \*\*{N}\*\* \(лише ICP-MS",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["side_series"]["ph"], 0.0),
+] + [
+    (f"sap ratified point, {quantity} {end} at pH {ph_re.replace(chr(92), '')} → sap_recipe_saturation.json (01_02 §2.1)",
+     METALLURGY, pattern, SAP,
+     lambda d, c=cond, q=key, j=j: d["q6_ratified_point"]["conditions"][c][q][j], 0.006)
+    for cond, ph_re in _Q6_CONDITIONS
+    for quantity, key, pattern_of in (
+        ("KOH", "base_koh_mM", lambda lo, p: (rf"\*\*{N}–[\d.]+ mM\*\* при pH {p}" if lo
+                                             else rf"\*\*[\d.]+–{N} mM\*\* при pH {p}")),
+        ("K+ total", "potassium_total_mM", lambda lo, p: (rf"при pH {p} \(K⁺ сумарно \*\*{N}–[\d.]+ mM\*\*\)" if lo
+                                                          else rf"при pH {p} \(K⁺ сумарно \*\*[\d.]+–{N} mM\*\*\)")),
+    )
+    for j, end in enumerate(("low", "high"))
+    for pattern in (pattern_of(j == 0, ph_re),)
+] + [
+    ("sap ratified point, buffer capacity at the set-point → sap_recipe_saturation.json (01_02 §2.1)",
+     METALLURGY, rf"β ≈ {N} mM на одиницю pH при 5\.75",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["buffer_capacity_mM_per_pH_25c"], 0.006),
+    ("sap ratified point, strong acid for −0.1 pH at the set-point → sap_recipe_saturation.json (01_02 §2.1)",
+     METALLURGY, rf"pH на 0\.1 зсуває вже ≈ \*\*{N} mM\*\* сильної кислоти",
+     SAP, lambda d: d["q6_ratified_point"]["conditions"]["setpoint"]["strong_acid_mM_lowering_pH_by_0p1_25c"], 0.0006),
+] + [
+    (f"sap ratified point, {what} → sap_recipe_saturation.json (SUMMARY §HW.3 Q6)", SUMMARY, pattern, SAP,
+     lambda d, c=cond, q=key, j=j: d["q6_ratified_point"]["conditions"][c][q] if j is None
+     else d["q6_ratified_point"]["conditions"][c][q][j], tol)
+    for cond, row in (("setpoint", r"\| pH 5\.75 \(both tests, 20–40 °C\) \| "),
+                      ("side_series", r"\| pH 4\.5 \(coin side series, 20–25 °C\) \| "))
+    for what, key, j, pattern, tol in (
+        (f"{cond} KOH low", "base_koh_mM", 0, row + rf"\*\*{N}–[\d.]+ mM\*\*", 0.006),
+        (f"{cond} KOH high", "base_koh_mM", 1, row + rf"\*\*[\d.]+–{N} mM\*\*", 0.006),
+        (f"{cond} K+ total high", "potassium_total_mM", 1, row + rf"[^|]+\| [\d.]+–{N} mM \|", 0.006),
+        (f"{cond} buffer capacity", "buffer_capacity_mM_per_pH_25c", None, row + rf"(?:[^|]+\| ){{2}}\*\*{N} mM/pH\*\*", 0.006),
+        (f"{cond} strong acid for −0.1 pH", "strong_acid_mM_lowering_pH_by_0p1_25c", None,
+         row + rf"(?:[^|]+\| ){{3}}{N} mM \|", 0.006),
+    )
 ] + [
     (f"sap hard-bound window, {fixed} held at {level} mM → sap_recipe_saturation.json ({where})",
      doc_rel, pattern, SAP, lambda d, f=fixed, i=i: _one_window(d, f, i), 0.06)

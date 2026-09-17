@@ -65,7 +65,8 @@
 ## 3. Test battery + acceptance (дім — `01_03 §3.5`)
 
 На кожному функціоналізованому купоні (Gen 2.0 стек з [`ebfc_chem_rfq`](ebfc_chem_rfq.md)):
-- **CV/EIS** у синт. ксилемному соку *Pinus sylvestris* pH 4.5-5.5 ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)): j_max, k_s, DET-маржа.
+- **CV/EIS** у синт. ксилемному соку *Pinus sylvestris* pH 5.75 (рецептура й pH — [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)): j_max, k_s, DET-маржа.
+- **Бічна ICP-MS-серія:** по три **непокриті** купони на сплав (та сама обробка, без стеку) — занурення при pH 4.5 лише під ICP-MS ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), ⚖️ 2026-09-17); звідси 6 купонів на сплав у замовленні.
 - **ICP-MS** іон-release у сік: V≤0.02 / Al≤0.05 µg/cm² (4V/7Nb); Nb/Zr/Ta — informational (біоінертні). Predicted — `tools/in_silico` script 51.
 - **30-day stability** ≥80% retention · **chloride** 0.25M ramp · **UCST** −10→+25°C recovery (квантитативні пороги — дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - **Нано-індентор E** (post-coin) — модуль СУЦІЛЬНОГО сплаву купона (β-Ti dual-win check). ⛔ **Це НЕ перевірка ізоеластичності, і плутати два виміри дорого:** ізоеластичність є властивістю ҐРАТКИ, купон її не має, а порівнювати треба з ПОПЕРЕЧНИМ модулем деревини `E_R`/`E_T` ≈ 0.5–1.5 ГПа — анкер сидить поперек стовбура ([`01_01 §5.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)). Поздовжні 9–16 ГПа, що стояли тут, є ~вдесятеро завищеною ціллю. Апарентну жорсткість самої ґратки міряє voxel-FE (`dotnet run -- fea`, дім числа — [`01_01 §5.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)); фізичний метод для неї — ISO 13314 на друкованому зразку, не нано-індентор на купоні.
@@ -83,7 +84,7 @@
 
 ## 5. Dispatch checklist (👤)
 
-- [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ / EU medical AM-бюро: 3 репліки×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
+- [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ / EU medical AM-бюро: (3 репліки + 3 непокриті під ICP-MS)×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
 - [ ] 👤 **Tier-2 vendor-hunt** (∥): β-Ti — академ-колаб/спец-порошок; Ta — coating-вендор (Ti+Ta-thin); Ti-15Zr — спец-постачальник.
 - [ ] 👤 **Electrochem-CRO RFQ** — текст і чекліст відправки живуть в [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) (CV/EIS у синтетичному соку · 30-day · chloride · UCST · ICP-MS); адресат TBD — EL-CELL не підтверджений (↑).
 - [ ] 👤 Синт. сік — біо-хаб ЧНУ Спрягайло (рецептура, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
@@ -114,18 +115,18 @@ We are an R&D group and need a small batch of flat metal coupons produced by las
 ### Item specification
 
 - **Geometry:** flat disc, **Ø16 mm × 1 mm** thick, with a small tab or edge through-hole for a potentiostat clip. The tab must not encroach on the active face. Per-alloy STL and dimensioned DXF are attached and are the **dimensional authority**.
-- **Quantity: 3 replicates per alloy.** Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
+- **Quantity: 6 per alloy** — 3 for electrode testing and 3 for an uncoated ion-release series, all processed identically. Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
 
 - **Powder specification:** for each alloy, state the powder specification you would actually use (designation, ASTM/ISO spec, grade, particle size distribution, lot traceability). If your available powder differs from the standard cited below, quote your equivalent and tell us what it is — do not substitute silently.
 
 | # | Alloy | Standard cited | Qty |
 |---|---|---|---|
-| 1 | Ti-6Al-4V | ASTM F2924 — additive manufacturing, powder bed fusion | 3 |
-| 2 | Ti-6Al-7Nb | ASTM F1295 (UNS R56700) — wrought spec, cited for CHEMISTRY only | 3 |
-| 3 | CP-Ti Grade 4 | ASTM F67 Grade 4 (UNS R50700) — wrought spec, cited for CHEMISTRY only | 3 |
-| 4 | Ti-13Nb-13Zr (β-Ti) | ASTM F1713 (UNS R58130) — wrought spec, cited for CHEMISTRY only | 3 |
-| 5 | Tantalum | ASTM F560 (UNS R05200) — wrought spec, cited for CHEMISTRY only | 3 |
-| 6 | Ti-15Zr | **no ASTM or ISO standard exists** for binary Ti-Zr — attach your powder datasheet | 3 |
+| 1 | Ti-6Al-4V | ASTM F2924 — additive manufacturing, powder bed fusion | 6 |
+| 2 | Ti-6Al-7Nb | ASTM F1295 (UNS R56700) — wrought spec, cited for CHEMISTRY only | 6 |
+| 3 | CP-Ti Grade 4 | ASTM F67 Grade 4 (UNS R50700) — wrought spec, cited for CHEMISTRY only | 6 |
+| 4 | Ti-13Nb-13Zr (β-Ti) | ASTM F1713 (UNS R58130) — wrought spec, cited for CHEMISTRY only | 6 |
+| 5 | Tantalum | ASTM F560 (UNS R05200) — wrought spec, cited for CHEMISTRY only | 6 |
+| 6 | Ti-15Zr | **no ASTM or ISO standard exists** for binary Ti-Zr — attach your powder datasheet | 6 |
 
 > **The standard cited for rows 2–5 fixes the CHEMISTRY and nothing else** — each is a wrought-product specification and we are not buying wrought product. Row 1 is the only one where we cite an additive-manufacturing material spec (F2924). **We are NOT claiming that no AM standard covers rows 2–5** — we have not read the covered-grade table of ASTM F3302, so we are asking rather than asserting: tell us the specification you will actually print to (your own, the powder producer's, a company spec, or an AM standard we have missed), and if it differs from the chemistry cited, say how. Row 6 has no published standard at any process route we could find; attach the powder datasheet as the material reference.
 
@@ -151,7 +152,7 @@ Alloy strength and elastic modulus are background context for our own material c
 
 ### What we ask you to provide
 
-1. **Unit price per coupon per alloy** at 3 replicates, plus the price at a higher replicate count so we can see the break points.
+1. **Unit price per coupon per alloy** at 6 per alloy, plus the price at a higher count so we can see the break points.
 2. **Setup, build-plate and tooling charges itemised separately** from unit price, and stated per alloy — we understand the number of alloys, not the number of coupons, drives cost, and want that visible in the quote.
 3. **Price for HIP, etch activation, per-alloy etch development and the dehydrogenation bake as separate lines**, whether in-house or bought in.
 4. **Lead time from purchase order to shipment**, stating explicitly whether HIP, activation, bake and QC are inside that lead time or added to it.

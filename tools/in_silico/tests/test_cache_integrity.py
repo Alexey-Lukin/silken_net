@@ -723,8 +723,8 @@ def test_sap_recipe_saturation():
     """Script 67 (HW.3): calcium oxalate saturation of the `01_02 §2.1` synthetic sap.
 
     Sanity is STRUCTURAL — the headline numbers are pinned by test_doc_cache_sync, and only a subset of what the
-    docs quote is. Four things must hold:
-      1. the verdict: every canon corner supersaturated, in both tests, under every constant reading evaluated;
+    docs quote is. Five things must hold:
+      1. the verdict: every pre-verdict corner supersaturated, in both tests, under every constant reading evaluated;
       2. the window rests on the HARD BOUND, which needs no calcium or magnesium malate constant — so the margins
          the script computed must stay non-negative (they cover only the readings and the swept constants the
          script evaluates; a reading it never runs is invisible here), the sweep must still reach a strong
@@ -732,7 +732,10 @@ def test_sap_recipe_saturation():
       3. the window moves the right way: more of the held ion leaves less room for the other;
       4. the malic-acid equation coefficients in the cache still reproduce the 25 °C constants in the cache — two
          transcriptions checked against each other, so an error made the same way in both passes; only the page
-         image of the primary catches that.
+         image of the primary catches that;
+      5. the ratified point (Q6, ⚖️ 2026-09-17) is what its derivation says — no oxalate, the other four at the
+         geometric mid of the pre-verdict range — and prices a preparable medium: base positive and larger at the
+         higher pH, potassium = KNO3 + base, gypsum undersaturated, buffer capacity positive.
     """
     path = CHEMISTRY / "sap_recipe_saturation.json"
     if not path.exists():
@@ -759,6 +762,20 @@ def test_sap_recipe_saturation():
     malic, t_k = d["constants"]["malic_acid"], 298.15
     for (a3, a1, a2), k25 in zip((malic["pk1_equation"], malic["pk2_equation"]), malic["k_25c_printed"], strict=True):
         assert abs(a3 / t_k + a1 + a2 * t_k + math.log10(k25)) < 2e-3, "malic-acid equation ≠ its printed constant"
+    q6 = d["q6_ratified_point"]
+    assert q6["recipe_mM"]["oxalic"] == 0.0, "the verdict removed oxalate"
+    for key, (lo, hi) in d["recipe_ranges_mM"].items():
+        if key != "oxalic":
+            assert q6["recipe_mM"][key] == float(f"{math.sqrt(lo * hi):.2g}"), f"{key}: not the geometric mid"
+    for name, c in q6["conditions"].items():
+        base_lo, base_hi = c["base_koh_mM"]
+        assert 0.0 < base_lo <= base_hi, name
+        for k_total, base in zip(c["potassium_total_mM"], c["base_koh_mM"], strict=True):
+            assert abs(k_total - (base + q6["recipe_mM"]["kno3"])) < 2e-3, f"{name}: K+ total ≠ KNO3 + base"
+        assert c["si_gypsum_max"] < 0.0 and c["buffer_capacity_mM_per_pH_25c"] > 0.0, name
+    setpoint, side = q6["conditions"]["setpoint"], q6["conditions"]["side_series"]
+    assert setpoint["ph"] > side["ph"] and setpoint["base_koh_mM"][0] > side["base_koh_mM"][1], \
+        "more malic acid is dissociated at the higher pH, so it must take more base"
     assert (CHEMISTRY / "sap_recipe_saturation.png").stat().st_size > 10_000
 
 

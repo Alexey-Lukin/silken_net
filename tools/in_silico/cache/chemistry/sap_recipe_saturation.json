@@ -2489,6 +2489,83 @@
     1.54,
     1.766
   ],
+  "q6_ratified_point": {
+    "recipe_mM": {
+      "malic": 2.2,
+      "oxalic": 0.0,
+      "kno3": 3.2,
+      "cacl2": 1.0,
+      "mgso4": 0.45
+    },
+    "home": "01_02 §2.1 (⚖️ founder 2026-09-17)",
+    "derivation": "oxalate removed; malic acid, KNO3, CaCl2 and MgSO4 at the geometric mid of their pre-verdict range, two significant figures",
+    "readings": [
+      "selected",
+      "selected_guenzel_apparent",
+      "selected_guenzel_i0",
+      "spread_si_high",
+      "spread_si_low",
+      "si_lowest_documented",
+      "si_highest_documented"
+    ],
+    "conditions": {
+      "setpoint": {
+        "ph": 5.75,
+        "tests": [
+          "coin",
+          "accelerated"
+        ],
+        "t_c": [
+          20.0,
+          25.0,
+          30.0,
+          35.0,
+          40.0
+        ],
+        "base_koh_mM": [
+          4.087,
+          4.153
+        ],
+        "potassium_total_mM": [
+          7.287,
+          7.353
+        ],
+        "ionic_strength_mol_l": [
+          0.01225,
+          0.01381
+        ],
+        "si_gypsum_max": -2.234,
+        "buffer_capacity_mM_per_pH_25c": 0.6091,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.0664
+      },
+      "side_series": {
+        "ph": 4.5,
+        "tests": [
+          "coin"
+        ],
+        "t_c": [
+          20.0,
+          25.0
+        ],
+        "base_koh_mM": [
+          2.572,
+          2.717
+        ],
+        "potassium_total_mM": [
+          5.772,
+          5.917
+        ],
+        "ionic_strength_mol_l": [
+          0.01051,
+          0.01094
+        ],
+        "si_gypsum_max": -2.204,
+        "buffer_capacity_mM_per_pH_25c": 1.4465,
+        "strong_acid_mM_lowering_pH_by_0p1_25c": 0.1438
+      }
+    },
+    "not_covered": "the acid the working anode produces is not modelled — the strong-acid figure is the scale, not a prediction of the drift"
+  },
   "prices": {
     "cut_oxalate_keep_calcium": {
       "oxalate_max_uM_at_calcium_levels": {
@@ -2639,12 +2716,12 @@
       "potassium_total_mM_max_if_koh": 17.973
     }
   },
-  "verdict": "Every canon corner of the 01_02 §2.1 recipe is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the calcium and magnesium malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.3 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.4 / 4.7 / 3.3 µM — the same in both tests. The NEA-selected constants widen it ×1.40–1.58; the malate readings add at most ×1.19 on top of those. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
+  "verdict": "Every corner of the PRE-VERDICT 01_02 §2.1 recipe (the ranges canon replaced with a point on 2026-09-17 — q6_ratified_point) is supersaturated to whewellite in both tests, under every constant reading evaluated. NEA-selected constants: SI +1.19 … +2.49 (coin, pH 4.5–5.5, 20–25 °C) and +1.03 … +2.49 (accelerated, pH 5.0–5.5, 20–40 °C); the SI-lowest documented reading still leaves the least-supersaturated corner at SI +0.72. With every oxalate constant at its SI-lowering end, a corner turns undersaturated only if whewellite log Ks at 25 °C reaches −7.95 (NEA selects −8.73 ± 0.06), or calcium malate log K° reaches 3.98 — 1.09 above the strongest documented reading (2.90, itself derived here) — holding 90% of the calcium. Admissible window on the HARD BOUND, safe whatever the calcium and magnesium malate constants are: calcium held at 0.5 / 1 / 2 mM → total oxalate ≤ 7.3 / 4.7 / 3.3 µM; oxalate held at 0.5 / 1 / 2 mM → total calcium ≤ 7.4 / 4.7 / 3.3 µM — the same in both tests. The NEA-selected constants widen it ×1.40–1.58; the malate readings add at most ×1.19 on top of those. Which ion to lower is NOT decided here, and a window edge is the saturation point itself, not a margin.",
   "caveats": [
     "Hypothesis from literature constants, not measurement (00_06 §0). No prepared solution was analysed.",
     "Activity model: Davies. Its source states it works fairly well up to 0.1 mol/kg and does not use it in its reviews; the largest ionic strength met at any canon corner under any reading is 0.030 mol/L. Concentrations are molar, the constants molal; at these dilutions the two scales differ by the density of water.",
     "Varied: the oxalate constants (NEA spread) and the malate complexes (readings, sweep, limit). Single values: the malic-acid protonation, the sulfate ion pairs and Davies A(T).",
-    "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.5); pH is −log10 of the H+ activity.",
+    "Neutral species carry activity coefficient 1; OH- is not modelled (below 1e-8 mol/L at pH ≤ 5.75); pH is −log10 of the H+ activity.",
     "Complexes for which NEA selects no enthalpy — the calcium and magnesium oxalate complexes — keep their 25 °C constants over 20–40 °C.",
     "pH on a 0.5-unit grid and temperature on a 5 °C grid; every band end is a grid point.",
     "Günzel's malate constants are APPARENT (Na+ medium, pHa 7.4, no Na+/K+–malate pair separated out) and the I = 0 values are a Davies correction from I = 0.104 / 0.124, past that equation's stated range. They enter only the readings; the hard bound uses none of them — its magnesium half is a sequestration LIMIT.",
@@ -2656,10 +2733,10 @@
   "not_modelled": [
     {
       "item": "glucose",
-      "why": "not part of the 01_02 §2.1 recipe"
+      "why": "not part of the 01_02 §2.1 corrosion recipe; the coin test adds it (01_03 §3.5)"
     },
     {
-      "item": "phytosiderophores (optional, 0.01–0.1 mM)",
+      "item": "phytosiderophores (a pre-verdict optional row, out of the recipe since 2026-09-17)",
       "why": "no constants in the sources used",
       "effect_of_omission": "not assessed"
     },

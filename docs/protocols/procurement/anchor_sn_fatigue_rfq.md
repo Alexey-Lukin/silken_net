@@ -25,7 +25,7 @@
 | **Scope · service exposure** | план §0 · §1.1 · §5.1 | предмет — матеріал у стані процесу деталі, не деталь; «до порядку 10⁹ циклів» замість одного числа, бо бюджет до одного числа не звужується (HW.43); частоту служби названо ще не зафіксованою — канонна смуга [`01_02 §2.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) не має джерела (план §5.1 ⚠️) | що напруження деталі не пораховане ніде (план §1.3) — наша прогалина, не параметр методу |
 | **Base case** | план §10 п.7 · ревʼю в рамці тест-хаусу | базовий кейс ПРОПОНУЄ тест-хаус (одна серія, A, run-out 10⁷), усе інше — дельтами, щоб відповідь не стала прайсом; R = −1 — лише для ціни | — |
 | **Specimens we supply · series** | план §2 · §3 | серії описано тим, що тест-хаус мусить ОБРОБИТИ (середовище · обробка робочої частини · кількість орієнтацій), а не маршрутом; дві орієнтації й «three to five further conditions» (обидва прочитання ΔHIP · Δbake на обох температурах) — «confirmed before the order»; виробник, робоча частина «в розмір» і простежуваність — «we plan / we intend» | параметри маршруту (HIP · bake — ⚖️ HW.27) і що саме змінює кожна серія, яка різниться маршрутом (серії «в повітрі» й «з обробленою робочою частиною» свою мету називають самі) |
-| **Test medium** | план §7 → рецепт [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); форма — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) §2 | діапазони тієї самої таблиці й та сама несумісність Ca/оксалату, що в coin-листі; режим і уставка температури — «confirmed before the order»; O₂ · потенціал — опціями | число потенціалу: вікно стеку — висновок плану, не вимір |
+| **Test medium** | план §7 → рецепт [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); форма — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) §2 | точка тієї самої таблиці (⚖️ 2026-09-17: без оксалату, pH 5.75 через KOH) і те саме застереження про слабкий буфер, що в coin-листі; режим і уставка температури — «confirmed before the order»; O₂ · потенціал — опціями | число потенціалу: вікно стеку — висновок плану, не вимір |
 | **Test methods A–H · run-out** | план §5.3 · §6.2 | вісім маршрутів і три run-out — опції з ціною й часом каналу; матриця серій × маршрутів; сила-контроль лише на звичайних машинах, на ультразвуку — амплітуда з калібруванням напруження; частота A — «confirmed before the order»; потенціостат — лише на A; міст частот мотивовано тим, що опубліковані результати розходяться (план §5.2 а) | Arrhenius-оцінка стиску (план §5.2 в) |
 | **Stress levels** | план §4.2 | правило: якір — розтяг свідків, сітка на кожну серію; step-test зразки опцією; процедура узгоджується до випробувань | σ_e зі смугою (план §4.1) · SF · дерейт скрипта `55` |
 | **Stop criteria · fracture surfaces · fractography · statistics** | план §6 | критерій на кожній точці; «функція може бути втрачена до розділення» + ціна виявлення зародження на підмножині; збереження зламів; класи місця зародження без нашої гіпотези, критерії — до випробувань; медіана ⊥ P-S-N для двох прикладів пар (p, γ) | ланцюг «тріщина шару → відкол із ферментами» (план §6.1) · гіпотеза «після HIP загрози поверхневі» (план §5.2 а) |
@@ -131,20 +131,18 @@ One series — the production condition, tested in synthetic sap — on method A
 
 ### Test medium
 
-**Synthetic xylem sap**, target species Scots pine (*Pinus sylvestris*). Working composition ranges:
+**Synthetic xylem sap**, target species Scots pine (*Pinus sylvestris*). Working composition:
 
-| Component | Concentration range |
+| Component | Concentration |
 |---|---|
-| Malic acid | 1–5 mM |
-| Oxalic acid | 0.5–2 mM |
-| KNO₃ | 2–5 mM |
-| CaCl₂ | 0.5–2 mM |
-| MgSO₄ | 0.2–1 mM |
-| Phytosiderophores (optional — tell us whether, and at what cost, you can source them) | 0.01–0.1 mM |
+| Malic acid | 2.2 mM |
+| KNO₃ | 3.2 mM |
+| CaCl₂ | 1.0 mM |
+| MgSO₄ | 0.45 mM |
+| KOH | to the pH set-point — record the amount added per batch |
 
-- **Exact recipe** (point values): **confirmed before the order.** Calcium and oxalate cannot both sit inside the ranges above — at those levels the medium exceeds the solubility of calcium oxalate — so the confirmed recipe will set calcium, oxalate or both well below their ranges. A precipitate on the specimen would change both the medium and the surface under test. Quote medium preparation per batch.
-- **pH:** set-point **within pH 4.5–5.5**, **confirmed before the order**. Tell us how you set, hold and log pH over runs lasting days to months.
-- **No sugar** is in the recipe. Should the confirmed recipe add glucose, multi-week runs will support microbial growth — say how you would control it. Add **no preservative, biocide or inhibitor** to the medium without agreeing it with us: any additive changes the corrosion chemistry under test.
+- **pH: 5.75.** There is no added buffer system — malic acid is the only buffer and KOH sets the pH — so the medium is weakly buffered and small amounts of acid move its pH noticeably. Tell us how you set, hold and log pH over runs lasting days to months. A precipitate on the specimen would change both the medium and the surface under test, so check for one (Medium upkeep below). Quote medium preparation per batch.
+- **No sugar** is in the medium, but malate is itself a carbon source, so multi-week runs can still support microbial growth — say how you would control it. Add **no preservative, biocide or inhibitor** to the medium without agreeing it with us: any additive changes the corrosion chemistry under test.
 - **Temperature:** **constant or slowly cycled within 20–40 °C — confirmed before the order.** Quote a constant set-point and, as an option, a cycle within that range; state your control band, and whether a controlled temperature above ambient is possible in your fatigue cell.
 - **Dissolved oxygen:** in service the sap carries little oxygen, and a variable amount, so an air-saturated cell does not reproduce it. Tell us whether you can log dissolved oxygen, and quote controlling it (for example by gas purging) as an option.
 - **Electrochemical potential:** in service the metal is part of an electrochemical cell, so its potential need not be the free-corrosion potential. Quote, as an option **on method A only**, holding the specimen at a set potential during cycling (a potentiostat in the fatigue cell) — the potential is confirmed before the order — and tell us how the specimen is electrically isolated from grips and fixtures, and how a potential-drop crack-detection current, if you use one, would interact with it.
