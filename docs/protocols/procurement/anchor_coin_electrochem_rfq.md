@@ -52,7 +52,7 @@
 - ✅ **pH розсуджено (⚖️ founder 2026-09-17, дім [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)):** уставка **5.75** — виміряний pH соку *P. sylvestris* (Tarvainen 2023); бічна серія непокритих купонів лише під ICP-MS при **4.5**, бо вищий pH може занижувати вивільнення Al. Катодне середовище лишається pH 4.5 ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - 🔴 **Буфер слабкий, і лист мусить це сказати:** β ≈ 0.61 mM на одиницю pH при 5.75 — pH на 0.1 зсуває ≈ 0.066 mM сильної кислоти, а анод кислоту виробляє ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md), script 67 Q6). Звідси заміна середовища й журнал pH у C — умова, не побажання. Число в лист не йде: лабораторії досить знати, що середовище слабко буферне.
 - ✅ **Рецептура — точка (⚖️ founder 2026-09-17):** оксалат прибрано, бо з мілімолярним Ca він пересичує оксалат кальцію в кожному куті колишніх діапазонів ([`SUMMARY §HW.3`](../ebfc/in_silico/SUMMARY.md)); решта — геометричні середини, фітосидерофори поза рецептурою. Перевірку партії на осад лист лишає — вона дешева й ловить помилку приготування.
-- 🔴 **Глюкози в рецепті немає, а анод без субстрату `j_max` не дає.** Специфікації середовища для coin-тесту канон не тримає: глюкоза в ньому стоїть лише умовою літературного виміру ([`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)) і сценаріями in-silico L4 ([`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md), `Km` там «Estimated»). Лист: концентрація «confirmed before the order» + опційна серія глюкози з ціною за точку, бо споживач даних (`40_validate_vs_experiment.py`) чекає `Km` саме із серії.
+- ✅ **Глюкоза розсуджена (⚖️ founder 2026-09-17, дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)):** серія дня 0 **0/1/2/5/10/20/50 мМ** на кожному анодному купоні — із неї `K_m^app`, якого чекає `40_validate_vs_experiment.py` — плюс утримання **10 мМ**; без азиду; заміна середовища й журнал глюкози й pH (вимога C). Корозійна рецептура [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) глюкози не несе — її додає лише coin-середовище.
 - ⚠️ **Провенанс рецепта звірено лише наполовину:** pH має первинку (Tarvainen 2023), а концентрації іонів — середини діапазонів, чиї джерела пошуком за точними назвами не знайдено. Тому в листі рецепт і далі «working composition», не літературно валідований склад. Виміряний склад соку *Pinus sylvestris* — робота біо-хабу ЧНУ ([`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
 - **Мікробний ріст** у глюкозному середовищі за 30 днів канон не адресує → лист питає метод контролю, а добавки дозволяє лише за узгодженням.
 
@@ -103,14 +103,13 @@
 
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
-| глюкоза: концентрація / серія | «before the order» + опційна серія з ціною за точку | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
 | часова база µg/см² | рівні названо, база — «still being fixed»; LOQ + обʼєм + площа + кумулятивні дані | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.3 |
 | матриця тестів: репліки · субстрат катодних купонів · послідовність C/D/E | ціна за одиницю + розкладку пропонує лабораторія | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 (пріоритети живить HW.36) |
 | хто наносить стек: (A) лабораторія ⊥ (B) ми / партнер | обидві опції з окремою ціною | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.5 |
 | «bare» у парі ZIF-стабілізації | прочитання «катод без нанозиму» названо вголос | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
 | реальний склад соку *Pinus sylvestris* (pH — вже первинка) | «working composition» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
 
-✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)).
+✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) · глюкоза ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
 ---
 
@@ -174,7 +173,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 | KOH | to the pH set-point — record the amount added per batch |
 
 - **pH:** **5.75** for the electrode tests; **4.5** for the uncoated ion-release series. There is no added buffer system — malic acid is the only buffer and KOH sets the pH — so the medium is **weakly buffered at 5.75**: a small amount of acid moves its pH noticeably, and a working anode produces acid. Tell us how you set, hold and log pH over 30 days, and plan the medium replacement in C around it. Quote medium preparation per batch and per pH.
-- **Glucose** is added as the anode substrate; its concentration is **confirmed before the order**. As a separately priced option, quote a **glucose concentration series** (price per concentration point), from which an apparent Michaelis constant can be extracted.
+- **Glucose** is the anode substrate: **10 mM** in the medium for the 30-day hold and for every other test run at a single concentration. On **day 0**, characterise **every anode coupon at 0, 1, 2, 5, 10, 20 and 50 mM glucose** (A) — we extract an apparent Michaelis constant per coupon from that series — and quote it per concentration point.
 - **Cathode medium:** pH 4.5, air-exposed. Tell us how you keep it air-saturated and whether you log dissolved oxygen.
 - **Microbial growth:** a glucose-containing medium held for 30 days will support it, and growth would consume the substrate and confound the stability result — state how you prevent it (additives only by agreement, see Handling).
 - **Medium QC per batch:** pH with a calibrated meter, conductivity, verification of the major ions, and a check that the batch carries **no precipitate** — right after preparation and again at the end of the 30-day hold. State the methods and include the records in the report.
