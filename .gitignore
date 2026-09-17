@@ -145,6 +145,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# in-silico intermediate structures — same rule as the MD trajectories: only the JSON/PNG
+# summary in `cache/` is committed. Script 69 writes ~25 mutant PDBs (~15 MB) per run.
+tools/in_silico/cache/**/_*_work/
+
 # особисті вкладення, що потрапляють у корінь із чату — НЕ версіонуються
 image-*.jpg
 image-*.png
