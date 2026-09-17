@@ -86,7 +86,7 @@
 
 ## 5. Dispatch checklist (👤)
 
-- [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ · ALT print (АЛТ України) · Velta Medical (Дніпро) — усі три звірено desk-пошуком 2026-09-17, [`ua_vendor_map §1`](ua_vendor_map.md); ⛔ HIP в Україні як комерційної послуги немає (§2 карти) / EU medical AM-бюро: (3 репліки + 3 непокриті під ICP-MS)×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
+- [ ] 👤 **Tier-1 RFQ** (4V/7Nb/CP-Ti) → 3D Metal Tech Київ · ALT print (АЛТ України) · Velta Medical (Дніпро) — усі три звірено desk-пошуком 2026-09-17, [`ua_vendor_map §1`](ua_vendor_map.md); ⚠️ HIP в Україні як комерційної послуги «принесіть деталь» немає, але МАРШРУТ є ([`ua_vendor_map §2`](ua_vendor_map.md)): Інститут магнетизму (Київ, камера Ø32 приймає всю нашу номенклатуру) і Мотор Січ (Запоріжжя, наскрізний «друк → ГІП 1160 °C/160 МПа → вакуумна ТО 980 °C» на НАДРУКОВАНИХ зразках) — писати їм НАПРЯМУ окремим листом, а не питати друк-бюро «хто ваш HIP-партнер» / EU medical AM-бюро: (3 репліки + 3 непокриті під ICP-MS)×3 сплави, Ø16×1+вушко, HIP+EAAE+bake, SEM+ICP-MS acceptance. STL+DXF з `tools/cad` (`draw`).
 - [ ] 👤 **Tier-2 vendor-hunt** (∥): β-Ti — академ-колаб/спец-порошок; Ta — coating-вендор (Ti+Ta-thin); Ti-15Zr — спец-постачальник.
 - [ ] 👤 **Electrochem-CRO RFQ** — текст і чекліст відправки живуть в [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) (CV/EIS у синтетичному соку · 30-day · chloride · UCST · ICP-MS); адресат TBD — EL-CELL не підтверджений (↑).
 - [ ] 👤 Синт. сік — біо-хаб ЧНУ Спрягайло (рецептура, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md)).
