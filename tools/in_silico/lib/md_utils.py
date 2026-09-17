@@ -1,5 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Shared MD utility functions for L2 molecular dynamics scripts."""
+"""Shared MD utility functions for L2 molecular dynamics scripts.
+
+`prepare_protein` was de-duplicated out of five MD scripts (10/11/12/14/15) in the
+2026-06-06 hygiene batch. ⚠️ How that refactor was VERIFIED, recorded here because it
+is the only thing that says what the green actually covers (migrated from `00_07`
+HW.5.IS on 2026-09-17): topology, atom count and residue sequence were compared per
+script — NOT a bit-exact re-run. `PDBFixer.addMissingHydrogens` carries its own
+pre-existing hydrogen-placement non-determinism, orthogonal to this refactor and
+washed out by the first minimisation, so bit-equality was never available to assert.
+⛔ The PBC trajectory loader was deliberately left untouched: it is context-dependent
+and was out of that batch's scope — it is not covered by the verification above.
+"""
 from __future__ import annotations
 
 from datetime import datetime

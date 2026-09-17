@@ -268,7 +268,7 @@ O₂ + 4H⁺ + 4e⁻ → 2H₂O   (повне 4-електронне відно�
 | `docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb` | Канонічний PDB деглікозильованого GcGDH з FAD | L1 |
 | `docs/protocols/ebfc/in_silico/alphafold3/` | Raw AF3 output (5 ranked CIF + summaries) | L1 |
 | `docs/protocols/ebfc/in_silico/ligands/*.sdf` | Reference structures (FAD, genipin, …) для L2 | L2 |
-| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC) для 7 лігандів | L2 |
+| `tools/in_silico/cache/gaff_cache.json` | GAFF-2.11 параметри (AM1-BCC) для 7 лігандів — ⚠️ `antechamber`/`sqm` роблять geom-opt на AM1 **перед** BCC, тож сира AF3-геометрія не береться дослівно; опційний RDKit MMFF pre-opt оцінено як minor і свідомо НЕ зроблено (перевірено 2026-06-06) | L2 |
 
 > 🟢 **Скрипти L1–L4 + HW та їх статус — НЕ дублюються тут** (SSOT-політика, щоб не розсинхронізувати). Канонічні джерела:
 > • **опис кожного скрипта** + час виконання → [`tools/in_silico/README.md`](../tools/in_silico/README.md)
