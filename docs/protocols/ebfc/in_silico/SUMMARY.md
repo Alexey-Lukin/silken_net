@@ -903,6 +903,110 @@ the inverted season; the recipe's set-point no longer rests on them (`01_02 §2.
 
 ---
 
+## CHEM.11 — Can the Deglycosylation Hotspots Actually Be Compensated? (script 69)
+
+Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; decision → `00_07` HW.5.IS / CHEM.11.
+
+`L1 §2` has said since 2026-06-06 that "an in-house hydrophobic-SASA proxy flags 4 aggregation-prone sites
+(Gln71, Gln200, Gln258, Gln405)", and the recipe on top of it — Aggrescan3D plus compensating Asp/Ser near
+them — gates the dgrFAD-GDH gene freeze. ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
+canonised the conclusion and committed neither script nor cache, so the claim had no measurer for fifteen
+months. Script 69 is the measurer, and the first thing it had to do was ask whether a declared proxy
+re-selects the published four.
+
+**The declared proxy.** For each site, the solvent-exposed **apolar** (side-chain C/S) SASA carried by
+aggregation-prone side chains whose own centroid lies within a **7 Å contact shell** of the site's. The
+residue set is Kyte-Doolittle hydropathy > 0 (Kyte & Doolittle 1982, *J. Mol. Biol.* **157**(1):105-132,
+doi:10.1016/0022-2836(82)90515-0) **plus the aromatics W and Y** — the aromatic addition is ours, not
+theirs. A buried member contributes ≈ 0 area by construction, so members need no separate exposure filter,
+and no external maximum-ASA table enters: burial is computed here as `1 − SASA_in_protein / SASA_isolated`
+for the same side chain in the same conformation. Every other threshold is ours too and each carries a
+sweep in the cache.
+
+**It re-selects the four — inside a shell, and not outside it.**
+
+| # | site | patch (Å²) | burial | percentile of the protein's OWN 600 residues | pLDDT (CA) | d(FAD) Å | d(e⁻ path) Å |
+|---|---|---|---|---|---|---|---|
+| 1 | **Gln71** | **138.1** | 0.689 | 98.2 | 96.82 | 13.2 | 14.5 |
+| 2 | **Gln405** | **119.8** | 0.597 | 96.2 | 96.92 | 28.8 | 28.5 |
+| 3 | **Gln258** | **68.1** | 0.598 | 86.7 | 97.69 | 11.0 | **8.0** |
+| 4 | **Gln200** | **53.7** | **0.847** | 77.5 | 95.72 | 22.5 | 39.8 |
+| 5 | Gln100 | 33.6 | — | — | — | — | — |
+
+The 4th-to-5th gap is **20.1 Å²** and five of the eleven sites score exactly **0.0**, so the cut at four is
+not arbitrary. But membership is **radius-dependent**: the published set is reproduced at **6.5, 7.0 and
+7.5 Å only** — at 6 Å and at 8 Å and beyond, Gln100 displaces Gln200 — and **never** with the aromatics
+removed, because Gln200's patch is held up by Trp210. The four is one definition's answer.
+
+🔴 **And "hotspot" is a ranking among the eleven deglycosylation sites, not an absolute risk.** The same
+proxy over all 600 residues gives a median of 24.5 and a p90 of 77.6 Å², with a maximum of **282.9 Å² at
+Thr12** — **2.0×** Gln71's patch. Gln200 sits at the 77.5th percentile: some 135 residues of this protein
+present a larger apolar contact patch than the site the recipe wants compensated.
+
+**Compensation, built and measured.** Every candidate was mutated with `pdbfixer.applyMutations`, protonated
+at pH 4.5, and minimised **side chains only** (ff14SB + GBn2 implicit, backbone mass 0, 500 iterations); the
+FAD coordinates are re-attached afterwards, which is legitimate because the frozen backbone leaves the global
+frame untouched (measured CA drift **0.0000 Å**). The reference goes through the identical pipeline, so the
+Δ measures the mutation and not the relaxation. The noise floor comes from **four** reference replicates:
+two-run estimates of it gave 2.52 and 0.25 Å² on successive attempts, so a single pairwise difference was
+under-estimating its own spread.
+
+| hotspot | mutation | ΔSASA patch (Å²) | Δq surface | burial | DSSP | d(FAD) Å | d(e⁻ path) Å | recommended |
+|---|---|---|---|---|---|---|---|---|
+| Gln71 | **Leu80 → Asp** | **−78.4** | −1 | 0.618 | T | 12.1 | 18.6 | ✅ position — substitution OPEN |
+| Gln71 | **Leu80 → Ser** | **−78.4** | 0 | 0.618 | T | 12.1 | 18.6 | ✅ position — substitution OPEN |
+| Gln71 | **Ala70 → Ser** | **−59.6** | 0 | 0.511 | H | 17.4 | 18.3 | ✅ |
+| Gln71 | Ala70 → Asp | −59.4 | −1 | 0.511 | H | 17.4 | 18.3 | ❌ Asp in a helix |
+| Gln405 | **Ile401 → Ser** | **−100.9** | 0 | 0.503 | H | 29.3 | 27.9 | ✅ |
+| Gln405 | Ile401 → Asp | −100.5 | −1 | 0.503 | H | 29.3 | 27.9 | ❌ Asp in a helix |
+| Gln200 | Ala201 → Ser | −25.4 | 0 | **0.770** | H | 26.4 | 42.8 | ❌ burial 0.77 > 0.75 |
+| Gln200 | Trp210 → Ser | −17.4 | 0 | **0.908** | B | 19.7 | 37.2 | ❌ buried |
+| Gln258 | Leu257 → Ser | −39.6 | 0 | 0.804 | — | **9.7** | 10.3 | ❌ FAD pocket + buried |
+| Gln258 | Ala285 → Ser | −27.8 | 0 | 0.762 | T | **11.4** | 8.7 | ❌ FAD pocket + buried |
+
+**Three positions are admissible, and two of the four hotspots get nothing.**
+
+- **Gln71 → Leu80 and Ala70 → Ser.** 🔴 At **Leu80 the script refuses to choose between Asp and Ser**, and the
+  refusal is itself a measurement: the two remove the same area to within the noise floor, and the ranked
+  winner was observed **flipping Asp ↔ Ser between two runs of identical inputs**. What separates them is a
+  **charge**, and noise may not decide a charge — so the cache names the position with `to: null` and leaves
+  both in `admissible_substitutions`. The combined variant below had to be built from real residues, so it is
+  built as Ser (the option that commits no charge); that is a build choice, flagged as one, not a
+  recommendation.
+- **Gln405 → Ile401 → Ser**, the single largest gain available — Ile401 alone carries 100.9 Å² of exposed
+  apolar area, and the swap takes that patch from 119.8 to 18.9 Å². Asp is refused there by the declared
+  secondary-structure heuristic; Ser is not.
+- ⛔ **Gln258 — do not touch.** Its entire apolar neighbourhood lies inside the FAD-pocket and electron-exit
+  shells, and the site itself sits **8.0 Å from the Beratan-Onuchic tunnelling path** (loaded from script 28's
+  cache, not mirrored) **and 11.0 Å from FAD**. Aggregation margin there is bought with the MET architecture
+  of §5 — the whole cell.
+- ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **46 %** of that
+  patch and is refused by a burial of 0.770 against our declared ceiling of 0.75 — a margin of **0.020**, and
+  it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 32 % and is genuinely buried
+  (0.908, passing at neither swept value). The ceiling was left where it was declared;
+  `threshold_cost_measured` prices each refusal in Å² so the choice stays visible.
+
+**Priced as one sequence, because a freeze is a sequence.** The three recommendations built as a single
+variant take Gln71 from 140.1 to **2.9 Å²** and Gln405 from 119.8 to **18.9 Å²**; the largest non-additivity
+against the sum of the singles is **1.4 Å²** — measured on the built variant rather than assumed either way.
+The undecided position was built as Ser for this one variant, which the cache flags as a build choice.
+
+**Ceiling.** An exposed apolar patch is a static, single-molecule surface descriptor — **not** an aggregation
+prediction: no rate, no solubility, no critical concentration is computed anywhere here. **Aggrescan3D was
+NOT run** (external web server), so the first half of the `L1 §2` recipe stays OPEN. No sequence conservation
+was consulted, no mutant was run in MD, and no ΔΔG of folding was computed — burial and DSSP are geometric
+*proxies* for that risk. One AF3 model, one conformation. No catalytic-residue list exists in our canon for
+GcGDH, so catalysis is guarded only by the FAD-pocket shell, a geometric stand-in whose radius is ours. And
+the reference state is the **aglycosylated** mutant: what the removed glycans were shielding is not measured
+here, so the "newly exposed" framing of `L1 §2` is not tested by this script. The final choice of mutations is
+the founder's presumption; this is its evidence base.
+
+> 📐 **pLDDT convention.** Per-residue pLDDT is the **CA atom's** `B_iso` in the AF3 CIF — the statistic
+> `L1 §4` already publishes (Tyr90 CA = 98.71; the residue *mean* is 98.23). The canonical
+> `dgrGcGDH_AF3.pdb` is **not** a source for it: OpenMM wrote that file and zeroed the B-factor column.
+
+---
+
 ## Infrastructure
 
 | Component | Location |
