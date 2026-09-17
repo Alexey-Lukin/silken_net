@@ -46,7 +46,7 @@ SAP_PROFILES = {
         "Mg_mM": 0.5,
         "Cl_mM": 0.5,
         "resin_acids": True,
-        "notes": "Primary target species. pH 5.0-5.5 seasonally. Resin (abietic acid) significant.",
+        "notes": "Primary target species. pH 5.0-5.5 seasonally (ASSUMED species profile — NOT the corrosion set-point: canon §2.1 took the MEASURED sap pH 5.75, Tarvainen 2023 doi:10.1111/nph.18768, on 2026-09-17; this profile is the MD input and has no primary source of its own). Resin (abietic acid) significant.",
     },
     "pinus_sylvestris_winter": {
         "common_name": "Scots pine — winter dormancy",

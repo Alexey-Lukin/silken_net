@@ -284,7 +284,11 @@ MU_SWEEP = (0.2, 0.3, 0.4, 0.5)
 E_TI = 110e9          # Pa — Ti-6Al-4V Young's modulus (β-Ti lower, but E barely moves buckling here)
 # Endurance limit ≈ fatigue ratio × yield, then knocked down for AS-PRINTED SLM surface/porosity
 # (HIP + machining recovers most of it — the bus tip is gold-plated/finished anyway). Conservative.
-ENDURANCE_OVER_YIELD = 0.45   # wrought-Ti fatigue ratio — a BAND 0.40-0.50, not a constant, and the
+ENDURANCE_OVER_YIELD = 0.45   # ⚖️ founder 2026-09-17 RATIFIED the LOW end 0.40; the model still runs
+                              # at 0.45 and the re-run is queued (00_07 HW.34) — so every SF printed
+                              # below is an era-0.45 number, and «all six clear SF 2» is dead: at the
+                              # ratified end it is 5 of 6 (Ta 1.96). Below: why the band existed at all.
+                              # wrought-Ti fatigue ratio — a BAND 0.40-0.50, not a constant, and the
                               # band is written right here while only its MIDPOINT enters the model.
                               # ⚠️ Every SF scales LINEARLY with it: at 0.40 the binding link (Ta,
                               # welded, unsupported) reads 1.96, so the shipped verdict «all six clear

@@ -953,8 +953,8 @@ under-estimating its own spread.
 
 | hotspot | mutation | ΔSASA patch (Å²) | Δq surface | burial | DSSP | d(FAD) Å | d(e⁻ path) Å | recommended |
 |---|---|---|---|---|---|---|---|---|
-| Gln71 | **Leu80 → Asp** | **−78.4** | −1 | 0.618 | T | 12.1 | 18.6 | ✅ position — substitution OPEN |
-| Gln71 | **Leu80 → Ser** | **−78.4** | 0 | 0.618 | T | 12.1 | 18.6 | ✅ position — substitution OPEN |
+| Gln71 | **Leu80 → Asp** | **−78.4** | −1 | 0.618 | T | 12.1 | 18.6 | ✅ **TAKEN — ⚖️ founder 2026-09-17** |
+| Gln71 | **Leu80 → Ser** | **−78.4** | 0 | 0.618 | T | 12.1 | 18.6 | ⚫ not taken (tie broken by founder) |
 | Gln71 | **Ala70 → Ser** | **−59.6** | 0 | 0.511 | H | 17.4 | 18.3 | ✅ |
 | Gln71 | Ala70 → Asp | −59.4 | −1 | 0.511 | H | 17.4 | 18.3 | ❌ Asp in a helix |
 | Gln405 | **Ile401 → Ser** | **−100.9** | 0 | 0.503 | H | 29.3 | 27.9 | ✅ |
@@ -966,7 +966,7 @@ under-estimating its own spread.
 
 **Three positions are admissible, and two of the four hotspots get nothing.**
 
-- **Gln71 → Leu80 and Ala70 → Ser.** 🔴 At **Leu80 the script refuses to choose between Asp and Ser**, and the
+- **Gln71 → Leu80 and Ala70 → Ser.** ⚖️ **founder 2026-09-17 took `Leu80 → Asp`** — the measurement below is untouched and still says the two are a tie within noise; the verdict breaks a tie the computation declared unbreakable, it does not overturn it. 🔴 At **Leu80 the script refuses to choose between Asp and Ser**, and the
   refusal is itself a measurement: the two remove the same area to within the noise floor, and the ranked
   winner was observed **flipping Asp ↔ Ser between two runs of identical inputs**. What separates them is a
   **charge**, and noise may not decide a charge — so the cache names the position with `to: null` and leaves

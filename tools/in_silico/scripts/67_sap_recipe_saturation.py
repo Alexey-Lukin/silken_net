@@ -99,12 +99,16 @@ RECIPE_RANGES_MM = {"malic": (1.0, 5.0), "oxalic": (0.5, 2.0), "kno3": (2.0, 5.0
 RATIFIED_POINT_MM = {"malic": 2.2, "oxalic": 0.0, "kno3": 3.2, "cacl2": 1.0, "mgso4": 0.45}
 RATIFIED_PH = {"setpoint": (5.75, ("coin", "accelerated")), "side_series": (4.5, ("coin",))}
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
+# ⚠️ PRE-VERDICT, like RECIPE_RANGES_MM above: the pH bands below (and their `ph_home` strings) are the two canon
+# bands as they stood BEFORE 2026-09-17. Canon no longer carries either — §2.1 is a set-point (5.75) plus a side
+# series (4.5), so "the union of the two canon bands" names nothing that exists. Kept because Q1–Q5 price the
+# ranges the ratified point replaced; the live point is RATIFIED_PH / RATIFIED_POINT_MM and Q6 above.
 TESTS = {
     "coin": {"label": "Stage-2 Ti-coin electrochemistry",
-             "ph": (4.5, 5.0, 5.5), "ph_home": "01_03 §3.5 — 4.5–5.5; the letter names the union of the two canon bands",
+             "ph": (4.5, 5.0, 5.5), "ph_home": "pre-verdict band (retired 2026-09-17); live pH → RATIFIED_PH, 01_02 §2.1",
              "t_c": (20.0, 25.0), "t_home": "01_03 §3.5 — 20–25 °C"},
     "accelerated": {"label": "12-week accelerated corrosion test",
-                    "ph": (5.0, 5.5), "ph_home": "01_02 §2.1 — 5.0–5.5",
+                    "ph": (5.0, 5.5), "ph_home": "pre-verdict band (retired 2026-09-17); live pH → RATIFIED_PH, 01_02 §2.1",
                     "t_c": (20.0, 25.0, 30.0, 35.0, 40.0), "t_home": "01_02 §2.1 — 20–40 °C cycle"},
 }
 FIXED_LEVELS_MM = (0.5, 1.0, 2.0)   # both canon ranges (CaCl2 and oxalic acid) run 0.5–2 mM
