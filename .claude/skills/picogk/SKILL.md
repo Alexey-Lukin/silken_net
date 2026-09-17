@@ -16,7 +16,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 |----------|----------------|
 | `tools/cad/README.md` | Operational home: layout, local-verify recipe, the FULL gotcha list, license |
 | `docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md §6` | PicoGK stack (.NET 9, PicoGK 2.2 NuGet + ShapeKernel/LatticeLibrary submodules), Noyron methodology, real API, honest caveats — **and the engineering-drawing NORM**: why a drawing is derived from the CEM and not the mesh, the two readers (SVG clips, DXF does not), the loud-absence rule, what the acceptance contract must carry. The tools-local file below stays the RESEARCH + phase roster |
-| `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §5/§6` | Anchor geometry: gyroid 65% porosity, pore gradient 300→100µm, Gibson-Ashby isoelasticity, Ti-coin Stage-2 coupon (A=2cm²+eyelet) |
+| `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §5/§6` | Anchor geometry: gyroid 65% nominal porosity (60–70% acceptance), pore gradient 300→100µm, Gibson-Ashby C/n and the MEASURED apparent stiffness (the 13–15 GPa target was withdrawn 2026-09-17), Ti-coin Stage-2 coupon (A=2cm²+eyelet) |
 | `docs/00_07_Action_Plan_Tracker.md` HW.1 / **HW.33** | Build state + the anchor geometry audit (founder decisions: orientation-agnostic gyroid (б), Ø11; the June gaps are spent — PEEK/hole chain frozen, FEA-E measured — so the open set is its `**Стан:**`, split still-judged ⊥ ratified-but-unapplied) |
 | `docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md §6` | Cross-biome 5-SKU (pine/oak/broadleaf/mangrove/tropical) |
 | `docs/00_03_TRL_Matrix_HIL_and_Beyond.md §3.6` | Code-as-CAD vs generative-AI; In-Silico for the Hardware stream |

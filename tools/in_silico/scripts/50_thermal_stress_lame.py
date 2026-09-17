@@ -141,7 +141,7 @@ def alloy_comparative() -> dict:
     """Per-alloy comparative for the Stage-2 coin bake-off (01_02 §2.5). Two signals: (1) the
     worst-case Ti↔PEEK thermal stress driven by the alloy CTE mismatch with PEEK — the Ti CTE
     barely moves it (PEEK's 47e-6 dominates the mismatch), so this CONFIRMS the press-fit is
-    alloy-ROBUST; (2) the bulk E that sets the gyroid isoelasticity — the REAL bake-off lever, because
+    alloy-ROBUST; (2) the bulk E that sets the gyroid's apparent stiffness — the REAL bake-off lever, because
     the lattice's apparent stiffness scales with whatever alloy the bake-off picks.
     ⛔ The Gibson-Ashby form `E_gyroid ≈ E·(1−φ)^n` that stood here is NOT how we get that number any
     more: the shipped SKUs sit outside its domain (1.50–2.50 cells across the radial wall) — a worry

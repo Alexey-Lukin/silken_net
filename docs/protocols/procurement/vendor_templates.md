@@ -65,7 +65,7 @@
 | 2 | загальний AM-сертифікат · без lattice-досвіду · self-report QC |
 | 1 | без релевантної сертифікації або не тримає ≥60%-поруватість/точність |
 
-> Поруватість ≥60% = **vendor-кваліфікаційний поріг** (дзеркало [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md)); геометрія гіроїда й ізоеластичність-таргет — окремий дім [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (там пористість = CEM-параметр, не зафіксована константа). Точність тонкої стінки — picogk (voxel-dependent porosity — **MEASURE it**, не декларація). Vendor мусить показати як тримає wallParam на друці, не лише в STL.
+> Поруватість ≥60% = **vendor-кваліфікаційний поріг** (дзеркало [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md)); геометрія гіроїда й жорсткість ґратки (таргета більше немає — ⚖️ 2026-09-17) — окремий дім [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) (там пористість = CEM-параметр, не зафіксована константа). Точність тонкої стінки — picogk (voxel-dependent porosity — **MEASURE it**, не декларація). Vendor мусить показати як тримає wallParam на друці, не лише в STL.
 
 **C3 — Price-per-unit** (нижче = краще; нормувати на однакову geometry/сплав):
 | Бал | Умова |
@@ -568,7 +568,7 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`rfq_registry`](rfq_registry.md) | procurement-індекс · §4.B метал-constraint (hard-gate §A.4) · §3 IP/CDA/NDA-політика |
 | [`anchor_alloy_rfq`](anchor_alloy_rfq.md) | парний Ti-coupon RFQ (Grade-cert контекст — критерій C6 §A.2) · стиль-еталон |
 | [`01_02 §1.6/§1.7/§3.6`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | SLM≠EBM · HIP · dehydrogenation bake · ZnO-Ta-заборона (§A.4 дім) |
-| [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + ізоеластичність/пористість як CEM-параметр (C2 геометрія-дім) |
+| [`01_01 §5/§6`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | гіроїд-геометрія + жорсткість/пористість як CEM-параметр (C2 геометрія-дім) |
 | [`01_01 §1.4`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) | шина: канал Ø1.35 як первинний датум · вхід із радіусом · лайнер (зазор 50 мкм, вікно натягу) · тягнутий дріт — §Processing пп. 11/12 і лист постачальникові трубки |
 | [`02_06 §8.1.1`](../../02_06_Unit_Economics_and_BOM.md) | vendor-кваліфікаційні критерії DMLS-хабів (Gr5 baseline **І** V-free імплант-сплави · ≥60% пористості · ISO 13485) — дім порогів C2/C6, і він ⛔ забороняє звужувати вимогу до ELI |
 | [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md) / [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) | defensive-publication + ліцензійна матриця + trade-secret-scope (NDA §C дім) · Аблязов UA-юр-review |

@@ -8,7 +8,7 @@ vs SHE) so a BioRender / Illustrator pass has an exact, drift-free reference.
 
 Conveys the two patentable synergies (patent_claims_draft.md):
   A) one EBFC = power source AND zero-instrumental-noise sensor (delta_t → Lorenz)
-  B) one gyroid = xylem-integration + isoelastic match + metal-xylem EBFC electrode
+  B) one gyroid = xylem-integration + a smaller modulus gap (NOT an isoelastic match) + metal-xylem EBFC electrode
 
     mamba run -n silken_md python tools/in_silico/scripts/fig1_graphical_abstract_draft.py
 """
@@ -56,7 +56,7 @@ def main() -> int:
     box(ax, 1.55, 2.9, 1.5, 0.7, "Zone 1\nANODE\n(gyroid)", "#e7b7b7", 8)
     box(ax, 1.55, 2.0, 1.5, 0.7, "Zone 2\nseal/PEEK", "#e7e7c7", 8)
     box(ax, 1.55, 1.1, 1.5, 0.7, "Zone 3\nCATHODE", "#b7c7e7", 8)
-    ax.text(2.3, 0.75, "Ti-6Al-4V gyroid (65%)\nxylem + isoelastic + electrode",
+    ax.text(2.3, 0.75, "Ti-6Al-4V gyroid (65%)\nxylem + lower stiffness + electrode",
             ha="center", va="center", fontsize=7, style="italic")
 
     # ── CENTER: electron cascade (the paper's content) ──
