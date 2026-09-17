@@ -779,6 +779,125 @@ def test_sap_recipe_saturation():
     assert (CHEMISTRY / "sap_recipe_saturation.png").stat().st_size > 10_000
 
 
+def test_chem11_aggregation_compensation():
+    """Script 69 (CHEM.11): compensating surface-polar mutations for the aglycosylated dgrFAD-GDH.
+
+    This cache gates a GENE FREEZE, so the pins are about the integrity of the argument, not about
+    digits (the headline numbers are pinned doc↔cache by test_doc_cache_sync). What must hold:
+      1. the hotspot set is exactly the four L1 §2 publishes, and the cache SAYS whether its own
+         proxy re-selects them — a `reselects_published_set: false` must never pass silently;
+      2. the radius sensitivity DISCRIMINATES: there is at least one swept radius where the proxy
+         does NOT re-select the four. Without that row the sweep is a rubber stamp, and the whole
+         point of the sweep is that membership is radius-dependent;
+      3. no recommended mutation sits in a HARD keep-out (FAD pocket · electron path · buried ·
+         too little apolar area). These are the irreversible ones: they trade the MET architecture
+         or the fold for aggregation margin;
+      4. the secondary-structure rule is Asp-scoped BY CONSTRUCTION, so it is pinned on its own
+         scale: no recommended ASP sits in a regular element. Folding it into (3) would judge Ser
+         by a rule written for a carboxylate;
+      5. every recommended mutation measurably REDUCES its hotspot's apolar patch — Δ < 0 and
+         past the run's own measured noise floor, so the sign is a finding and not rounding;
+      6. the frozen backbone held (CA drift 0), which is what makes re-attaching the cofactor
+         coordinates legitimate; and the pLDDT convention still reproduces the canon Tyr90 value;
+      7. a hotspot with no admissible candidate is RECORDED as such with its reasons — the
+         absence is the finding for Gln200/Gln258 and must not decay into an empty list;
+      8. the candidate collection really reached past the primary radius, else the 12 Å
+         sensitivity row is a copy of the 10 Å one and only looks like a measurement.
+    """
+    path = CHEMISTRY / "chem11_aggregation_compensation.json"
+    if not path.exists():
+        pytest.skip("chem11_aggregation_compensation.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+
+    # 1 — the four sites, and the proxy's own verdict on itself
+    published = {71, 200, 258, 405}
+    assert {h["site"] for h in d["hotspots"]} == published, "hotspot set is no longer the L1 §2 four"
+    assert len(d["hotspots"]) == 4
+    assert d["provenance"]["reselects_published_set"] is True, \
+        "the declared proxy stopped re-selecting the published four — that is a canon conflict, not a test failure"
+
+    # 2 — the sweep must be able to disagree
+    sweep = d["proxy_sensitivity"]["radius"]
+    assert any(r["reselects_published_set"] for r in sweep)
+    assert any(not r["reselects_published_set"] for r in sweep), \
+        "no swept radius disagrees — the sensitivity cannot discriminate and proves nothing"
+    assert not any(row["reselects_published_set"]
+                   for s in d["proxy_sensitivity"]["residue_set"] if s["residue_set"] == "kyte_doolittle_positive"
+                   for row in s["rows"]), "the set without aromatics now reproduces the four — re-read the verdict"
+
+    # 3/4/5 — the recommended set
+    hard = ("fad_pocket", "electron_path", "buried", "too_little_apolar")
+    floor = d["controls"]["patch_sasa_noise_floor_A2"]
+    assert floor > 0.0, "a zero noise floor means it was not measured"
+    ss_risky = set(d["declared_parameters"]["ss_risky_for_asp"])
+    for rec in d["recommended"]:
+        where = rec["position_label"]
+        bad = [e for e in rec["excluded_by"] if e.startswith(hard)]
+        assert not bad, f"{where} is recommended from inside a hard keep-out: {bad}"
+        # Asp stays refused in a regular element whether it arrives as the pick, as one of the
+        # admissible pair, or as the residue the combined variant was built from.
+        if "ASP" in set(rec["admissible_substitutions"]) | {rec["to"], rec["built_as_for_the_combined_variant"]}:
+            assert rec["dssp"] not in ss_risky, \
+                f"{where}: Asp admitted inside a regular secondary-structure element ({rec['dssp']})"
+        # A tie the measurement cannot break must NOT be resolved into a recommendation: the ranked
+        # winner at such a position was measured flipping between identical runs, and the difference
+        # between Asp and Ser is a CHARGE.
+        if rec["substitution_undecided_by_this_measurement"]:
+            assert rec["to"] is None and rec["mutation"] is None, \
+                f"{where}: a tie inside the noise floor was silently resolved into {rec['to']}"
+            assert len(rec["admissible_substitutions"]) > 1
+        else:
+            assert rec["to"] in rec["admissible_substitutions"]
+        for sub, delta in rec["delta_patch_apolar_A2_by_substitution"].items():
+            if sub in rec["admissible_substitutions"]:
+                assert delta < -floor, f"{where}→{sub}: Δ {delta} does not clear the {floor} Å² floor"
+        assert rec["delta_patch_apolar_A2"] < -floor, \
+            f"{where}: Δ {rec['delta_patch_apolar_A2']} is inside the {floor} Å² noise floor"
+        assert rec["patch_mutant_A2"] < rec["patch_ref_A2"]
+    assert d["recommended"], "an empty recommended set needs a verdict change, not a silent pass"
+    for hotspot, n in d["recommended_per_hotspot"].items():
+        assert n <= 2, f"{hotspot}: {n} recommendations exceeds the declared cap of 2"
+
+    # 5b — the set as ONE sequence, because that is what a freeze is
+    if len(d["recommended"]) > 1:
+        combo = d["recommended_set_as_one_sequence"]
+        assert combo, "more than one recommendation and no combined variant — the singles do not add"
+        assert sorted(combo["mutations"]) == sorted(
+            f"{r['from']}{r['position']}{r['built_as_for_the_combined_variant']}" for r in d["recommended"])
+        assert sorted(combo["positions"]) == sorted(r["position_label"] for r in d["recommended"])
+        touched = {r["hotspot"] for r in d["recommended"]}
+        for hotspot in touched:
+            row = combo["per_hotspot"][hotspot]
+            assert row["delta_patch_apolar_A2"] < -floor, f"{hotspot}: combined variant does not reduce the patch"
+            assert row["n_recommended_here"] >= 1
+
+    # 6 — the controls
+    assert d["controls"]["n_reference_replicates"] >= 3, \
+        "fewer than 3 replicates: a two-run noise floor was MEASURED to swing 0.25 ↔ 2.52 Å²"
+    assert d["controls"]["patch_sasa_noise_floor_A2"] == max(
+        d["controls"]["patch_sasa_spread_over_replicates_A2"].values()), \
+        "the floor is not the widest replicate spread it claims to be"
+    assert d["controls"]["backbone_frozen_max_CA_drift_A"] == 0.0, \
+        "the backbone moved — re-attaching the cofactor coordinates is no longer valid"
+    assert abs(d["controls"]["plddt_reproduces_canon_Tyr90"] - d["controls"]["plddt_canon_value_L1_s4"]) < 0.01, \
+        "the pLDDT statistic no longer matches the one L1 §4 publishes"
+
+    # 7 — the absences are recorded, with their reasons
+    blocked = {nc["site"] for nc in d["no_admissible_candidate"]}
+    assert blocked | {r["position"] for r in d["recommended"]}, "neither recommendations nor refusals recorded"
+    for nc in d["no_admissible_candidate"]:
+        assert nc["candidates_in_radius"] > 0 and nc["exclusion_reasons_present"], \
+            f"Gln{nc['site']}: refusal carries no reason"
+    assert blocked.issubset(published)
+
+    # 8 — the candidate radius sensitivity is a measurement
+    rows = [r for rows in d["candidates"].values() for r in rows]
+    assert any(not r["in_primary_radius"] for r in rows), \
+        "collection never reached past the primary radius — the 12 Å sensitivity row is a copy"
+    widths = {r["candidate_radius_A"] for r in d["candidate_radius_sensitivity"]}
+    assert widths == {8.0, 10.0, 12.0}
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():
@@ -1054,6 +1173,7 @@ EXPECTED_SCRIPTS = [
     "66_gyroid_ligament_thickness.py",
     "67_sap_recipe_saturation.py",
     "68_bus_contact_equilibrium.py",
+    "69_chem11_aggregation_compensation.py",
 ]
 
 

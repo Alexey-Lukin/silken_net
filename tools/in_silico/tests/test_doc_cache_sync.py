@@ -79,6 +79,8 @@ BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland ge
 COAXIAL = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"  # anchor geometry; §1.4 bus + liner, owner = script 55
 METALLURGY = "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md"  # §2.1 synthetic sap + its saturation verdict, owner = script 67
 SAP = "chemistry/sap_recipe_saturation.json"
+L1 = "docs/protocols/ebfc/in_silico/L1_protein_architecture.md"  # §2 aggregation recipe, owner = script 69
+CHEM11 = "chemistry/chem11_aggregation_compensation.json"
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -840,6 +842,112 @@ CHECKS = [
         METALLURGY, rf"SI вевеліту \*\*\+[\d.]+…\+{N}\*\* на відібраних NEA константах",
         SAP, lambda d: max(t["selected"]["si_whewellite_max"] for t in d["q1_corners"]["per_test"].values()), 0.006,
     ),
+    # ── CHEM.11 (script 69): the four-site claim's instrument, and the numbers that decide a gene freeze ──
+    # Two classes of number live in this cache and they need different tolerances. The proxy scores and the
+    # geometry are read straight off the AF3 model → deterministic, tight tolerance. Anything downstream of
+    # the minimisation inherits pdbfixer's non-deterministic hydrogen placement, so its tolerance is the
+    # cache's OWN measured noise floor — quoting a tighter one would pin the noise, not the finding.
+    (
+        "CHEM.11 Gln71 proxy patch → chem11 (SUMMARY §CHEM.11 table, deterministic)",
+        SUMMARY, rf"\| \*\*Gln71\*\* \| \*\*{N}\*\*",
+        CHEM11, lambda d: named(d["hotspots"], "site", 71)["patch_apolar_A2"], 0.06,
+    ),
+    (
+        "CHEM.11 Gln200 proxy patch → chem11 (the weakest of the four)",
+        SUMMARY, rf"\| \*\*Gln200\*\* \| \*\*{N}\*\*",
+        CHEM11, lambda d: named(d["hotspots"], "site", 200)["patch_apolar_A2"], 0.06,
+    ),
+    (
+        "CHEM.11 Gln200 burial → chem11 (the reason it gets no compensation)",
+        SUMMARY, rf"\| \*\*Gln200\*\* \| \*\*[\d.]+\*\* \| \*\*{N}\*\*",
+        CHEM11, lambda d: named(d["hotspots"], "site", 200)["site_burial"], 0.0006,
+    ),
+    (
+        "CHEM.11 Gln258 distance to the electron path → chem11 (the MET-face refusal)",
+        SUMMARY, rf"\*\*{N} Å from the Beratan-Onuchic tunnelling path\*\*",
+        CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_electron_path_A"], 0.06,
+    ),
+    (
+        "CHEM.11 protein-wide largest patch → chem11 ('hotspot' is a ranking, not a risk)",
+        SUMMARY, rf"a maximum of \*\*{N} Å² at\s+Thr12\*\*",
+        CHEM11, lambda d: d["whole_surface_context"]["max_A2"], 0.06,
+    ),
+    (
+        # Deliberately duplicated with the generated table row below, and the point is the OWNER:
+        # this one resolves through `recommended`, the generated one through `mutants`. One quantity,
+        # two writers in one cache — pinning both is what catches them disagreeing.
+        "CHEM.11 Ile401→Ser ΔSASA via `recommended` → chem11 (two owners of one quantity must agree)",
+        SUMMARY, rf"\| Gln405 \| \*\*Ile401 → Ser\*\* \| \*\*{N}\*\*",
+        CHEM11, lambda d: named(d["recommended"], "mutation", "ILE401SER")["delta_patch_apolar_A2"],
+        None,   # resolved to controls.patch_sasa_noise_floor_A2 at run time
+    ),
+    # The combined sentence is the headline a freeze would be quoted on, so BOTH ends of each
+    # "from X to Y" are pinned: a range whose one end rotted still reads as a range.
+    (
+        "CHEM.11 combined variant, Gln71 reference → chem11 (a freeze is a SEQUENCE)",
+        SUMMARY, rf"take Gln71 from {N} to \*\*[\d.]+ Å²\*\*",
+        CHEM11, lambda d: d["recommended_set_as_one_sequence"]["per_hotspot"]["Gln71"]["patch_ref_A2"],
+        None,
+    ),
+    (
+        "CHEM.11 combined variant, Gln71 result → chem11 (not a sum of singles)",
+        SUMMARY, rf"take Gln71 from [\d.]+ to \*\*{N} Å²\*\*",
+        CHEM11, lambda d: d["recommended_set_as_one_sequence"]["per_hotspot"]["Gln71"]["patch_combined_A2"],
+        None,
+    ),
+    (
+        "CHEM.11 combined variant, Gln405 reference → chem11",
+        SUMMARY, rf"and Gln405 from {N} to \*\*[\d.]+ Å²\*\*",
+        CHEM11, lambda d: d["recommended_set_as_one_sequence"]["per_hotspot"]["Gln405"]["patch_ref_A2"],
+        None,
+    ),
+    (
+        "CHEM.11 combined variant, Gln405 result → chem11",
+        SUMMARY, rf"and Gln405 from [\d.]+ to \*\*{N} Å²\*\*",
+        CHEM11, lambda d: d["recommended_set_as_one_sequence"]["per_hotspot"]["Gln405"]["patch_combined_A2"],
+        None,
+    ),
+    (
+        "CHEM.11 largest non-additivity → chem11 (the reason the set is built, not summed)",
+        SUMMARY, rf"against the sum of the singles is \*\*{N} Å²\*\*",
+        CHEM11, lambda d: max(abs(v["non_additivity_A2"]) for v in
+                              d["recommended_set_as_one_sequence"]["per_hotspot"].values()),
+        None,
+    ),
+    (
+        "CHEM.11 Ala201 burial margin → chem11 (Gln200's refusal is OUR threshold's)",
+        SUMMARY, rf"a burial of {N} against our declared ceiling",
+        CHEM11, lambda d: named(d["threshold_cost_measured"]["entries"], "residue", "ALA201")["burial"],
+        0.0006,
+    ),
+    # L1 §2 is the recipe's home and quotes the four numbers its two refusals turn on. It is a
+    # doc target this guard did not read before — the workflow's path lists already cover the
+    # whole in_silico protocols subtree, so `test_every_doc_target_triggers_this_guard` stays green.
+    (
+        "CHEM.11 Gln258 d(e⁻ path) → chem11 (L1 §2 — why Gln258 is untouchable)",
+        L1, rf"\*\*{N} Å from the tunnelling path",
+        CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_electron_path_A"], 0.06,
+    ),
+    (
+        "CHEM.11 Gln258 d(FAD) → chem11 (L1 §2)",
+        L1, rf"tunnelling path and {N} Å from FAD\*\*",
+        CHEM11, lambda d: named(d["hotspots"], "site", 258)["d_cofactor_A"], 0.06,
+    ),
+    (
+        "CHEM.11 Gln200 burial → chem11 (L1 §2 — why Gln200 gets nothing)",
+        L1, rf"most buried of the 11\*\* \(burial {N}\)",
+        CHEM11, lambda d: named(d["hotspots"], "site", 200)["site_burial"], 0.0006,
+    ),
+    (
+        "CHEM.11 re-selection window, lower end → chem11 (L1 §2 — the claim's whole scope)",
+        L1, rf"but only at {N}–[\d.]+ Å",
+        CHEM11, lambda d: min(d["provenance"]["reselects_only_within"]), 0.06,
+    ),
+    (
+        "CHEM.11 re-selection window, upper end → chem11 (L1 §2)",
+        L1, rf"but only at [\d.]+–{N} Å",
+        CHEM11, lambda d: max(d["provenance"]["reselects_only_within"]), 0.06,
+    ),
 ]
 
 # ── HW.3: the recipe TABLE is script 67's premise, and its window is quoted slot by slot ──
@@ -927,6 +1035,58 @@ CHECKS += [
 ]
 
 
+# ── CHEM.11: every ΔSASA the SUMMARY §CHEM.11 table prints, row by row ──
+# ⛔ The table IS the argument: it shows what each declared threshold refused AND what that refusal would
+# have bought in Å². Pinning only the recommended rows would leave the refused ones — the half that decides
+# whether a threshold stays where it is — free to rot while still reading as a measurement. Every row's
+# tolerance is the cache's own measured noise floor (tol None), because the quantity is downstream of a
+# non-deterministic protonation step and cannot honestly be pinned tighter than that.
+_CHEM11_ROWS = (
+    # (hotspot, mutation label as the table prints it, cache mutation key, WT position, ΔSASA bolded?)
+    ("Gln71", "Leu80 → Asp", "LEU80ASP", "LEU80", True),
+    ("Gln71", "Leu80 → Ser", "LEU80SER", "LEU80", True),
+    ("Gln71", "Ala70 → Ser", "ALA70SER", "ALA70", True),
+    ("Gln71", "Ala70 → Asp", "ALA70ASP", "ALA70", False),
+    ("Gln405", "Ile401 → Ser", "ILE401SER", "ILE401", True),
+    ("Gln405", "Ile401 → Asp", "ILE401ASP", "ILE401", False),
+    ("Gln200", "Ala201 → Ser", "ALA201SER", "ALA201", False),
+    ("Gln200", "Trp210 → Ser", "TRP210SER", "TRP210", False),
+    ("Gln258", "Leu257 → Ser", "LEU257SER", "LEU257", False),
+    ("Gln258", "Ala285 → Ser", "ALA285SER", "ALA285", False),
+)
+
+
+def _chem11_candidate(d, hotspot: str, position: str, field: str):
+    """A candidate row, found in the hotspot it was collected under."""
+    return named(d["candidates"][hotspot], "residue", position)[field]
+
+
+def _chem11_cell(label: str, bold: bool, skip: int) -> str:
+    """Anchor the k-th numeric cell of a table row. `bold` is the ΔSASA column's own emphasis;
+    the columns skipped over are matched loosely because their own rows pin them."""
+    b = r"\*\*" if bold else ""
+    head = rf"\| {b}{re.escape(label)}{b} \| {b}{N}{b} \|" if skip == 0 else \
+        rf"\| {b}{re.escape(label)}{b} \|" + r"[^|]*\|" * skip + rf" \*?\*?{N}\*?\*? \|"
+    return head
+
+
+CHECKS += [
+    (f"CHEM.11 ΔSASA {mutation} on {hotspot} → chem11 (SUMMARY §CHEM.11 table, Å² column)",
+     SUMMARY, rf"\| {hotspot} " + _chem11_cell(label, bold, 0),
+     CHEM11,
+     lambda d, m=mutation, h=hotspot: named(d["mutants"], "mutation", m)["per_hotspot"][h]["delta_patch_apolar_A2"],
+     None)
+    for hotspot, label, mutation, position, bold in _CHEM11_ROWS
+] + [
+    # The burial column is the one that does the REFUSING for Gln200 and Gln258, so it is pinned
+    # beside the Å² it refuses. Deterministic (read off the AF3 model) → a tight tolerance.
+    (f"CHEM.11 burial of {position} ({hotspot} row) → chem11 (the refusing column)",
+     SUMMARY, rf"\| {hotspot} " + _chem11_cell(label, bold, 2),
+     CHEM11, lambda d, h=hotspot, p=position: _chem11_candidate(d, h, p, "burial"), 0.0006)
+    for hotspot, label, mutation, position, bold in _CHEM11_ROWS
+]
+
+
 # ── HW.34 / HW.23: script 68's table in SUMMARY §HW.34, cell by cell ──
 # ⛔ Every cell is pinned because the ROWS are the message: the same quantity at the insertion placeholder and at
 # the lock window differs by an order of magnitude, so a doc that kept one row current and let another rot would
@@ -964,6 +1124,13 @@ CHECKS += [
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
                          CHECKS, ids=[c[0] for c in CHECKS])
 def test_doc_matches_cache(label, doc_rel, pattern, cache_rel, resolver, tol):
+    if tol is None:
+        # A row whose quantity comes out of a stochastic step cannot be pinned tighter than that
+        # step's own reproducibility, and the owning cache MEASURES it. Reading the floor from the
+        # cache keeps the tolerance honest if the measurement's precision ever changes; a literal
+        # here would go stale silently. Deterministic rows must never use this — they pass a number.
+        tol = float(C(cache_rel)["controls"]["patch_sasa_noise_floor_A2"])
+        assert tol > 0.0, f"[{label}] the cache's measured noise floor is 0 — it was not measured"
     matches = re.findall(pattern, doc(doc_rel))
     assert matches, (
         f"[{label}] anchor not found in {doc_rel} — pattern {pattern!r} matched nothing. "
