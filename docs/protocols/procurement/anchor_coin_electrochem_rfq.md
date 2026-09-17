@@ -72,11 +72,11 @@
 | **C** | 30-day potentiostatic hold @ V_op, 20–25 °C | питаємо: V_op з CV дня 0 · графік повторних CV · обʼєм і заміну середовища | ≥ 80 % retention `j_max` | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **D** | Cl⁻ step-ramp до 0.25 М NaCl, катод | питаємо: кроки · як референс не додає Cl⁻ | не нижче −10 % (ціль +7.5 %) | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · ціль — таблиця «Катод» [`01_03 §1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) (⚠️ сам §3.5 відсилає за нею в §2.2, де числа немає) |
 | **E** | UCST −10 °C → +25 °C, анод із мембраною | задаємо: тест ВІДНОВЛЕННЯ при +25 °C, не вимір при холоді · питаємо: витримки | струм відновлюється до 100 % | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) · [`01_01 §6.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) |
-| **F** | ICP-MS середовища | задаємо: елементи й рівні, які метод мусить розділити · питаємо: LOQ у матриці · обʼєм | V ≤ 0.02 · Al ≤ 0.05 µg/см² (токсичні, 4V/7Nb); Nb/Zr/Ta informational; Os + метали ZIF | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
+| **F** | ICP-MS середовища | задаємо: елементи й рівні, які метод мусить розділити · питаємо: LOQ у матриці · обʼєм | V ≤ 0.02 · Al ≤ 0.05 µg/см² (токсичні, 4V/7Nb) — **кумулятив 30 діб: ранжування + ранній провал**, не pass/fail; Nb/Zr/Ta informational; Os + метали ZIF | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **F** | Ti у тому самому аліквоті | задаємо рівень | Ti < 0.1 µg/см² — ціль **прискореного** тесту, не coin-гейта | [`01_02 §2.4`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) |
 | **G опц.** | матриця: ±5 % strain @ 0.1 Гц, 10,000 циклів · мембрана: абієтинова кислота 10 мг/мл у соку, 7 днів | питаємо: in-house чи партнер | неелектрохімічні ноги того самого переліку | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 
-- ⚖️ **Часова база µg/см² не зафіксована.** Гейт [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) тривалості експозиції не називає; [`01_02 §2.4`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) формулює ціль як результат прискореного тесту, а [`01_02 §2.5`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) ділить на те саме 0.02 µg/см² річну швидкість (µg/см²/рік), тобто читає його як річну межу. Від прочитання залежить потрібний LOQ, тож лист рівні дає, а часову базу відкрито називає незафіксованою й просить LOQ у µg/л + обʼєм + площу — з цього обчислюється будь-яка база.
+- ✅ **Часову базу розсуджено (⚖️ founder 2026-09-17, дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)):** рівні F на coin — кумулятив за 30-денну експозицію на см² активної грані, для ранжування сплавів і раннього провалу; формальний pass/fail — прискорений тест [`01_02 §2.4`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md). LOQ у µg/л + обʼєм + площу лист і далі просить: з них обчислюється кумулятив, а нижче рівнів дані все одно ранжують.
 - ⊕ **Два методичні питання F — хімія методу, не наші числа, у каноні їх немає:** хлорид матриці утворює поліатомну інтерференцію на ізотопі V, що міряється ICP-MS (найсуворіший рівень таблиці сидить саме на V); Os втрачається летким оксидом під час окисної пробопідготовки (Os — вимір самого [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)). Обидва лист ПИТАЄ, способу не приписує.
 - ⚠️ **Послідовність руйнівних ніг канон не задає** — D і E на тих самих купонах, що й C, чи на окремих репліках. Від цього залежить кількість купонів, тож лист просить розкладку в лабораторії, а присуд лишається за нами (§6).
 
@@ -103,13 +103,12 @@
 
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
-| часова база µg/см² | рівні названо, база — «still being fixed»; LOQ + обʼєм + площа + кумулятивні дані | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.3 |
 | матриця тестів: репліки · субстрат катодних купонів · послідовність C/D/E | ціна за одиницю + розкладку пропонує лабораторія | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 (пріоритети живить HW.36) |
 | хто наносить стек: (A) лабораторія ⊥ (B) ми / партнер | обидві опції з окремою ціною | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.5 |
 | «bare» у парі ZIF-стабілізації | прочитання «катод без нанозиму» названо вголос | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 |
 | реальний склад соку *Pinus sylvestris* (pH — вже первинка) | «working composition» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
 
-✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) · глюкоза ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
+✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) · глюкоза і часова база ICP-MS ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
 ---
 
@@ -216,7 +215,7 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 - The **uncoated-coupon series at pH 4.5** (Specimens) runs through the same analysis — substrate elements only, since it carries no electrode layers.
 - **Elements:** Ti, V, Al, Nb, Zr, Ta from the substrate (as relevant per alloy) · Os from the anode mediator · Cu, Co, Ce from the cathode nanozyme.
 - Report concentrations (µg/L) together with the solution volume and the exposed area, so that release can be expressed per cm² of exposed face.
-- **Sensitivity:** the levels our comparison has to resolve are **V 0.02 µg/cm², Al 0.05 µg/cm² and Ti 0.1 µg/cm²** of exposed face. The exposure time those levels refer to is still being fixed on our side, so please state your limit of quantification per element **in this matrix** and the lowest per-cm² release it corresponds to at your proposed volume — lower is better.
+- **Sensitivity:** the levels our comparison has to resolve are **V 0.02 µg/cm², Al 0.05 µg/cm² and Ti 0.1 µg/cm²** of exposed face, as **cumulative release over the 30-day exposure**. Please state your limit of quantification per element **in this matrix** and the lowest cumulative per-cm² release it corresponds to at your proposed volume — lower is better: below those levels the data still rank the alloys.
 - **Two method points to address explicitly:** chloride in the medium forms a polyatomic interference on the vanadium isotope measured by ICP-MS — state how your method removes it (for example a collision/reaction cell); and osmium can be lost as a volatile oxide during oxidising sample preparation — state how you prevent that loss.
 - Include blanks, calibration, spike recovery in the sap matrix and dilution factors.
 
