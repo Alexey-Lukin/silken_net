@@ -47,8 +47,8 @@
 | **Формат** | ліофілізат або стабілізований буфер; CoA + QC-звіт |
 | **IP** | ген відкритий (defensive disclosure / L1); CRO лише експресує; CDA — §IP |
 
-> ⚠️ **Gate перед заморожуванням гена (sequence freeze ≠ now):** з двох in-silico кроків на dgr-мутанті відкритим лишається
-> CHEM.11 (CHEM.10 ✅ 2026-06-06 — Lys→Arg у L1 §2; рядок нижче лишено як опис того, що вже враховано) ([`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md), → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5.IS):
+> ⚠️ **Gate перед заморожуванням гена (sequence freeze ≠ now):** обидва in-silico кроки на dgr-мутанті пораховано — CHEM.10 ✅ 2026-06-06 (Lys→Arg) і CHEM.11 ✅ 2026-09-17 (script `69`, [`SUMMARY §CHEM.11`](../ebfc/in_silico/SUMMARY.md)).
+> **Freeze тепер тримають не розрахунки, а три рішення:** заміна в Leu80 (Asp ⊥ Ser — нічия всередині шум-підлоги, різниця це ЗАРЯД) · чи брати `Ile401→Ser` (найбільший ефект і найімовірніша хибна рекомендація: ΔΔG фолдингу не рахувався ніде) · чи прогонити Aggrescan3D, чи зняти цю половину рецепта з підставою ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5.IS) ([`L1 §2`](../ebfc/in_silico/L1_protein_architecture.md), → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5.IS):
 > - **CHEM.11 (anti-aggregation):** 11 знятих гліканів оголюють гідрофобну поверхню → 4 hotspots
 >   (Gln71/200/258/405). Перед CRO: Aggrescan3D + компенсаторні полярні мутації поруч.
 > - **CHEM.10 (genipin-shield):** Lys109/Lys262 на виході електрона → мутувати **Lys→Arg** (інертний до
