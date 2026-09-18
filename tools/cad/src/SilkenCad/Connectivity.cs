@@ -104,10 +104,11 @@ internal static class Connectivity
     public static Grid SampleBox(IImplicit sdf, float fExtentMm, float fStepMm = DefaultStepMm)
         => Sample(sdf, fExtentMm, fExtentMm, fExtentMm, fStepMm, static (_, _, _) => true, 0f, 0f, 0f);
 
-    // Sampling with a caller-supplied envelope AND an optional phase OVERRIDE — the door VoxelFea
-    // needs, because a body that is SDF-invisible (the monolithic bus rod, 01_01 §1.4) has to be
-    // forced solid rather than inferred from the field. Kept here, next to the flood-fill it feeds,
-    // so the grid has one home; `fnOverride` returning null means "let the SDF decide".
+    // Sampling with a caller-supplied envelope AND an optional phase OVERRIDE, kept here next to the
+    // flood-fill it feeds so the grid has one home; `fnOverride` returning null means "let the SDF decide".
+    // ⚠️ Every caller passes null today. The override was the door VoxelFea used to force the printed bus-rod
+    // core solid (SDF-invisible); that core left the anode with the welded branch (⚖️ 2026-09-18, 00_07 HW.1),
+    // and `fea --with-rod` with it.
     internal static Grid SampleRegion(
         IImplicit sdf, float fSizeX, float fSizeY, float fSizeZ, float fStepMm,
         Func<float, float, float, bool> fnInside, Func<float, float, float, Phase?> fnOverride,

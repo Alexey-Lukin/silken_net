@@ -13,9 +13,10 @@
 # at 0.2 %, and a calibration stated to nine decimals that the cache does not support. Both were
 # arithmetic ABOUT the cache, which is exactly the class a comparison can hold and prose cannot.
 #
-# WHAT IT CHECKS — SIX layers, in increasing distance from the raw data (⚠️ this line said "three"
-# for the hours between the fourth landing and this correction — a header is a claim about its own file,
-# and the edit that falsifies it is one section below, where nothing looks at the header):
+# WHAT IT CHECKS — the numbered layers below, in increasing distance from the raw data. ⛔ No count here on
+# purpose: this line said "three" while four stood, then "six" while seven stood — a header is a claim about its
+# own file, and the edit that falsifies it lands one section below, where nothing looks at the header. The list
+# IS the roster; a new layer adds a row to it.
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
 #   2. DERIVATION — the figures canon computes FROM those rows (Gibson-Ashby at the measured density,
 #      the two ratios to it, GPa at the reference solid modulus, the single-point readings, the spread).
@@ -27,6 +28,8 @@
 #      the zero row against the pinned step sweep FIELD FOR FIELD, which is the identity control itself.
 #   6. THE GRADED-POROSITY PAIR (§5.5) — graded part against its uniform twin at equal mass, recomputed from
 #      two cache families by the same log-log interpolation canon describes.
+#   7. THE CANONICAL PAIR (§5.2/§5.5) — the ratified lattice · axial · `/32` C/n wherever canon states it in prose,
+#      and the two E figures canon computes with it, re-derived at the tolerance each input actually carries.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS, never the prose around them. A row can match perfectly under a sentence that
@@ -309,7 +312,7 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   end
   # 🔴 THE ERA TIE, and it is TWO-WAY because the failure is symmetrical and both halves are silent
   # (2026-09-18). The welded branch (00_07 HW.1) took the printed core out of the anode, so the part these
-  # fits were measured on — an annulus around a Ø1.35 channel — cannot be produced by any verb in this tree
+  # fits were measured on — an annulus from the printed Ø1.0 rod surface to Ø11 — cannot be produced by any verb in this tree
   # any more. `with_bus_rod` survives here NOT as the rod question it was born asking (no fit was ever run
   # with the rod, so that read was dead the day it was written) but as the retired branch's own fingerprint:
   # a post-A run does not emit the key at all.
@@ -528,25 +531,52 @@ end
 # two numbers computed with it — the network flip of §5.2 and the 80 % example of §5.5 — that no layer derived, so
 # a re-run of the cube or a reworded sentence left them standing silently. Re-derived here from
 # `gibson_ashby_fit.network.s32.json` and the porosity each sentence itself quotes, at E_SOLID_GPA.
-# ⛔ DECLARED CEILING: the quoted porosity is an INPUT, not a cached value (the 50.2 % network run left no cache), so the
-# tolerance is the propagated rounding of the two quoted numbers, |dE/dρ|·½·10^-d(P) + ½·10^-d(E), and nothing wider.
+# ⊕ And the PAIR ITSELF where canon states it in prose — the ratified declaration and the §5.5 example both quote
+# `C`/`n`, and until 2026-09-18 the example's two numbers were MATCHED by `[0-9.]+` and never compared, so a re-run
+# of the cube could have moved the pair under a sentence that still printed the old one. (The fitted TABLE row of
+# the same pair is layer 4's.) Compared at the precision canon quotes, like layer 4.
+# ⛔ DECLARED CEILING on the E tolerance, and it is per SENTENCE, because the two porosities are different kinds of
+# input: the 50.2 % of the flip is a ROUNDED MEASUREMENT (the run left no cache), so its rounding propagates —
+# |dE/dρ|·½·10^-d(P) + ½·10^-d(E); the 80 % of «напр. 80%» is an EXACT example input, so only E's own rounding applies.
+# (Propagating an example's «rounding» used to widen that tolerance to ±0.214 GPa — 2.8, 3.0 and 3.1 all passed for 2.9.)
 pair_derivations = 0
+pair_quotes = 0
 pair_path = File.join(DILATION_DIR, "gibson_ashby_fit.network.s32.json")
 if File.exist?(pair_path)
   pair = JSON.parse(File.read(pair_path))
   c_pair, n_pair = pair["fit_c"], pair["fit_n"]
   decimals = ->(s) { s.include?(".") ? s.split(".").last.length : 0 }
+  at_quoted = ->(cached, quoted) { format("%.#{decimals.call(quoted)}f", cached) }
+  compare_pair = lambda do |what, c_q, n_q|
+    pair_quotes += 1
+    { "C" => [ c_pair, c_q ], "n" => [ n_pair, n_q ] }.each do |sym, (cached, quoted)|
+      rendered = at_quoted.call(cached, quoted)
+      flag(failures, "canonical pair #{sym} in #{what}", rendered, quoted) if rendered != quoted
+    end
+  end
+
+  if (m = canon.match(/Канонна пара — ґратка · осьова · `\/32`: `C` ([0-9.]+) · `n` ([0-9.]+)/))
+    compare_pair.call("the ratified declaration", *m.captures)
+  else
+    failures << "canonical pair: the ratified declaration («Канонна пара — ґратка · осьова · `/32`: `C` … · `n` …») is "\
+                "gone or reworded — it states the pair, fix its shape, do not drop this check"
+  end
+
   [
-    [ "§5.2 network flip", /network виходить на ([0-9.]+) % пористості.*?при канонній парі §5\.2 \(ґратка · осьова · `\/32` — ґраткова оцінка\) та сама густина дає ([0-9.]+)\)/m ],
-    [ "§5.5 80 % example", /напр\. ([0-9.]+)% → `C·ρ²` дає E ≈ [0-9.]+ ГПа, а при канонній парі `C` = [0-9.]+ \/ `n` = [0-9.]+ \(ґратка · осьова · `\/32` — ґраткова оцінка\) — ≈([0-9.]+)\)/ ]
-  ].each do |what, rx|
+    [ "§5.2 network flip", :measured,
+      /network виходить на ([0-9.]+) % пористості.*?при канонній парі §5\.2 \(ґратка · осьова · `\/32` — ґраткова оцінка\) та сама густина дає ([0-9.]+)\)/m ],
+    [ "§5.5 80 % example", :exact,
+      /напр\. ([0-9.]+)% → `C·ρ²` дає E ≈ [0-9.]+ ГПа, а при канонній парі `C` = ([0-9.]+) \/ `n` = ([0-9.]+) \(ґратка · осьова · `\/32` — ґраткова оцінка\) — ≈([0-9.]+)\)/ ]
+  ].each do |what, porosity_kind, rx|
     m = canon.match(rx)
     next failures << "canonical pair: the #{what} sentence is gone or reworded — fix its shape, do not drop this check" if m.nil?
 
-    por_q, e_q = m.captures
+    por_q, *pair_q, e_q = m.captures
+    compare_pair.call("the #{what} sentence", *pair_q) unless pair_q.empty?
     rho = 1.0 - (por_q.to_f / 100.0)
     e = c_pair * E_SOLID_GPA * (rho**n_pair)
-    tol = ((n_pair * e / rho) * 0.5 * (10.0**-(decimals.call(por_q) + 2))) + (0.5 * (10.0**-decimals.call(e_q)))
+    por_term = porosity_kind == :measured ? (n_pair * e / rho) * 0.5 * (10.0**-(decimals.call(por_q) + 2)) : 0.0
+    tol = por_term + (0.5 * (10.0**-decimals.call(e_q)))
     pair_derivations += 1
     flag(failures, "canonical-pair #{what} GPa (±#{tol.round(3)})", e.round(3), e_q) if (e - e_q.to_f).abs > tol
   end
@@ -557,7 +587,8 @@ end
 if failures.empty?
   puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
-       "zero row = the pinned sweep field for field, + the graded pair of §5.5, + #{pair_derivations} derivations of the canonical pair)"
+       "zero row = the pinned sweep field for field, + the graded pair of §5.5, + the canonical pair as quoted #{pair_quotes}× " \
+       "and #{pair_derivations} derivations with it)"
   exit 0
 end
 

@@ -446,8 +446,9 @@ internal static class Program
     // CEM → PNG via the PicoGK native viewer: build the voxels, apply a Ti-metallic material + a 3/4
     // presentation camera, screenshot. The enterprise render-as-code path (camera/material in code,
     // repeatable) — no external renderer. `section` (bSection) keeps the −X half (BoolIntersect a half-bbox
-    // box) so the camera looks at the cut face → reveals INTERNAL structure (e.g. the monolithic bus rod
-    // core inside the gyroid, 01_01 §1.4). Viewer-window-gated: needs a display (macOS desktop OK; CI = xvfb).
+    // box) so the camera looks at the cut face → reveals INTERNAL structure (e.g. the lattice running to the axis
+    // of the anode — no core since the welded branch, 2026-09-18 — or the welded bus wire along the stack,
+    // 01_01 §1.4). Viewer-window-gated: needs a display (macOS desktop OK; CI = xvfb).
     private static int Render(string strCemPath, bool bSection = false)
     {
         string strJson = File.ReadAllText(strCemPath);
@@ -469,10 +470,9 @@ internal static class Program
 
             if (bSection && strKind == "anchor_zone1")
             {
-                // Reveal the monolithic bus rod (01_01 §1.4): CUT both the gyroid and the rod to the −X
-                // half and point the camera at the +X cut face (Right view, deterministic — auto-frame
-                // won't). The SOLID rod core (gold) sits in the centre of the gyroid cross-section (silver),
-                // two opaque groups so it pops. BaseBox: Length=Z (grows +Z from frame), Width=X, Depth=Y.
+                // Reveal the lattice cross-section: CUT the gyroid to the −X half and point the camera at the
+                // +X cut face (Right view, deterministic — auto-frame won't). The lattice runs to the axis —
+                // there is no core to colour (⛔ below). BaseBox: Length=Z (grows +Z from frame), Width=X, Depth=Y.
                 AnchorCem acem = Cem.Parse<AnchorCem>(strJson);
                 Voxels voxGyroid = Zone1Anode.Anode(acem, Zone1Anode.Envelope(acem));
                 BBox3 bb = voxGyroid.oCalculateBoundingBox();
@@ -489,9 +489,10 @@ internal static class Program
             }
             else if (bSection && strKind == "anchor_axial_stack")
             {
-                // Reveal the FULL bus PATH: cut the assembled stack to the −X half + colour the through-rod
-                // gold → the monolithic bus runs from the anode bottom, up the PEEK gap, through the cathode
-                // channel, to the flange-top pogo pad (01_01 §1.4). Silver stack (zones) + gold through-rod.
+                // Reveal the FULL bus PATH: cut the assembled stack to the −X half + colour the bus wire
+                // gold → the welded wire runs from the anode's TOP face (the weld seam, 01_01 §3 step 1b), up
+                // the PEEK gap, through the cathode channel, to the flange-top pogo pad (01_01 §1.4). Silver
+                // stack (zones) + gold wire.
                 AxialStackVoxels s = AxialStack.Build(Cem.Parse<AnchorAxialStackCem>(strJson));
                 BBox3 bb = s.Merged.oCalculateBoundingBox();
                 Vector3 sz = bb.vecSize(), ctr = bb.vecCenter();
@@ -506,7 +507,7 @@ internal static class Program
                 if (s.Bus is { } voxBus)
                 {
                     voxBus.BoolIntersect(voxHalf);
-                    oV.SetGroupMaterial(1, new ColorFloat(1.0f, 0.72f, 0.05f), 0.25f, 0.7f);  // gold through-rod
+                    oV.SetGroupMaterial(1, new ColorFloat(1.0f, 0.72f, 0.05f), 0.25f, 0.7f);  // gold bus wire
                     oV.Add(voxBus, 1);
                 }
                 oV.qOrientation = oV.qOrientationRight;
@@ -826,7 +827,7 @@ internal static class Program
         // it is a minimum, so it is an upper bound with no tolerance in it, never a nominal.
         Console.WriteLine(
             $"  rim boss: socket band {Radome.SocketBandMm(cem):F2} (pocket r {Radome.SocketPocketInnerRMm(cem):F2}–{Radome.SocketPocketOuterRMm(cem):F2}, skin {Radome.SocketSkinMm(cem):F2}) · " +
-            $"seal land r {Radome.SealLandInnerRMm(cem):F3}–{Radome.SealLandOuterRMm(cem):F2} ({Radome.SealBandMm(cem):F3} wide; gland {cem.ORing.WidthMm:F3}×{cem.ORing.DepthMm:F3} at {cem.ORing.GlandFill:P0} fill, ⚖️ open) · " +
+            $"seal land r {Radome.SealLandInnerRMm(cem):F3}–{Radome.SealLandOuterRMm(cem):F2} ({Radome.SealBandMm(cem):F3} wide; gland {cem.ORing.WidthMm:F3}×{cem.ORing.DepthMm:F3} at {cem.ORing.GlandFill:P0} fill, ⚖️ ratified 2026-09-17) · " +
             $"rim cavity Ø{oM.RimCavityDiameterMm:F2} (ceiling → HW.9) · land solid over the rim face={oM.SealLandSolidFraction:P0} (outer edge strip {oM.SealLandEdgeSolidFraction:P0})");
 
         float fSocketSlot = cem.LugRadiusMm + cem.SlotClearanceMm;
@@ -953,8 +954,9 @@ internal static class Program
         Console.WriteLine(
             $"  render overlap: Zone1∩Zone2={oM.Zone1Zone2InterferenceMm3:F0} mm³ · sleeve∩capsule={oM.Zone2Zone3InterferenceMm3:F0} mm³ (flange shoulder on sleeve end, not the shank)");
         Console.WriteLine(
-            $"  insertion budget={oM.InsertionBudgetMm:F1} mm · embedded span={oM.OverallStackLengthMm:F1} mm · " +
-            $"bus-rod clears channel={oM.BusRodClears}");
+            $"  insertion budget={oM.InsertionBudgetMm:F1} mm · stack length={oM.OverallStackLengthMm:F1} mm (anode bottom → flange top; " +
+            $"embedded depth {AxialStack.OverallStackLengthMm(cem) - cem.Capsule.Flange.FlangeThicknessMm:F1} mm to the flange UNDERSIDE = " +
+            $"the bark line, ⚖️ HW.33 2026-09-18) · bus-rod clears channel={oM.BusRodClears}");
         // Zone-1 insertion beside the window its own lock admits (00_07 HW.26) — printed on every run, since
         // the conflict below is the standing state; an unnamed lock prints as loud absence, never a default.
         if (lockCem is null)
@@ -964,9 +966,12 @@ internal static class Program
         }
         else
         {
+            // ⚖️ 2026-09-18 (00_07 HW.26): the deep end is the end of the shank, groove or not — no ring is fitted as a
+            // backup, so a groove still in the geometry bounds nothing (the window lost its upper bound until G1/G3).
             MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
             Console.WriteLine($"  Zone-1 insertion={cem.Zone1InsertionMm:F1} mm · lock window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
-                              $"from the shank's free end ({cem.Zone1LockManifest}: PEEK-contact zone end → DIN-471 groove flank, " +
+                              $"from the shank's free end ({cem.Zone1LockManifest}: PEEK-contact zone end → end of the shank; " +
+                              $"{(MechanicalLock.HasGroove(lockCem) ? "its DIN-471 groove bounds nothing, no ring is fitted" : "no groove")} — 00_07 HW.26; " +
                               $"Ø{lockCem.ShankDiameterMm:F0} shank{(lockCem.BoreDiameterMm > 0f ? $" with a Ø{lockCem.BoreDiameterMm:F2} channel" : ", solid")})");
         }
         Console.WriteLine(

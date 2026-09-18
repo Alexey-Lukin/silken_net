@@ -29,6 +29,39 @@ public class CathodeFlangeTests
         Assert.Equal(cem.GrooveDepthMm, shank.GrooveDepthMm);
     }
 
+    // ⚖️ 2026-09-18 (00_07 HW.26): the Zone-3 groove left the geometry. cathode_flange.json says so with explicit
+    // zeros, but anchor_assembly*.json and anchor_axial_stack.json declare NO flange groove keys and build the flange
+    // from the record defaults — which kept cutting the retired 12 / 1.1 / 0.2 groove into every capsule and stack
+    // model after the verdict. So the roster is every shipped model that builds a flange, read as it is BUILT.
+    // MUTATION: restore any one CathodeFlangeCem groove default (12 / 1.1 / 0.2) ⇒ reds, naming every model that builds it.
+    [Fact]
+    public void No_Shipped_Model_Builds_The_Removed_Zone3_Groove__Not_Even_From_Record_Defaults()
+    {
+        var aFlanges = new List<(string Name, CathodeFlangeCem Cem)>();
+        foreach (string strPath in Cem.ManifestFiles(CemFixtures.Dir(), "*.json"))
+        {
+            string strJson = File.ReadAllText(strPath);
+            CathodeFlangeCem? flange = Cem.Kind(strJson) switch
+            {
+                "cathode_flange" => Cem.Parse<CathodeFlangeCem>(strJson),
+                "anchor_assembly" => Cem.Parse<AnchorAssemblyCem>(strJson).Flange,
+                "anchor_axial_stack" => Cem.Parse<AnchorAxialStackCem>(strJson).Capsule.Flange,
+                _ => null,
+            };
+            if (flange is not null) aFlanges.Add((Path.GetFileName(strPath), flange));
+        }
+        Assert.True(aFlanges.Count >= 5, "the roster must reach the flange, the capsule assemblies and the axial stack");
+
+        string[] aGrooved = [.. aFlanges
+            .Select(f => (f.Name, Shank: CathodeFlange.ShankCem(f.Cem)))
+            .Where(f => f.Shank.GrooveOffsetMm != 0f || f.Shank.GrooveWidthMm != 0f || f.Shank.GrooveDepthMm != 0f)
+            .Select(f => $"{f.Name} (groove {f.Shank.GrooveOffsetMm}/{f.Shank.GrooveWidthMm}/{f.Shank.GrooveDepthMm}, " +
+                         $"cut={MechanicalLock.HasGroove(f.Shank)})")];
+        Assert.True(aGrooved.Length == 0,
+            "the removed Zone-3 groove is back in the flange these models build — an absent key fills from the record " +
+            $"default (gotcha #0a), 00_07 HW.26:\n  {string.Join("\n  ", aGrooved)}");
+    }
+
     // The Zone-3 lock SHEET (cem/mechanical_lock.zone3.json, drawn and published) tells the shop that the flange
     // part already carries its shank — and the two manifests share no source: the flange holds its own copy of
     // the shank fields (`_provenance.json` calls them mirrors of one HW.8 reconcile). This is what keeps that

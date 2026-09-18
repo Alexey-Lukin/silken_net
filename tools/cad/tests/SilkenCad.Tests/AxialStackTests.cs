@@ -24,7 +24,8 @@ public class AxialStackTests
     public void Zone1_Sleeve_Is_Nominal_Line_To_Line__Press_Fit_Band_Is_Bench()
     {
         // Anode Ø11 into sleeve bore Ø11 ⇒ 0 nominal interference. The real +interference is the press-fit
-        // tolerance band (tens of µm; its class is open, 00_07 HW.3), set on the bench — not in the nominal CEM (01_01 §3).
+        // tolerance band (tens of µm; no ISO 286 table class is ratified — the band is solved from the Lamé window,
+        // ⚖️ 2026-09-18, 00_07 HW.3, only its inputs open), set on the bench — not in the nominal CEM (01_01 §3).
         AnchorAxialStackCem cem = new();
         Assert.Equal(0f, AxialStack.Zone1SleeveInterferenceMm(cem), 3);
     }
@@ -33,7 +34,8 @@ public class AxialStackTests
     public void Sleeve_Zone3_Is_A_Clearance_Not_A_Press_Fit__F1()
     {
         // F1 (the key finding): Zone-3 shank Ø9 (placeholder) in bore Ø11 ⇒ (9−11)/2 = −1.0 mm = 1 mm
-        // clearance per side. A press-fit needs +interference (tens of µm, ISO 286); this is off by ~50× → HW.8.
+        // clearance per side. A press-fit needs +interference (tens of µm, from the Lamé window — 00_07 HW.3); this is
+        // off by ~50× → HW.8.
         AnchorAxialStackCem cem = new();
         Assert.Equal(-1.0f, AxialStack.SleeveZone3InterferenceMm(cem), 3);
         Assert.True(AxialStack.SleeveZone3InterferenceMm(cem) < 0, "Zone-3 shank must NOT press-fit at the placeholder Ø");
@@ -53,7 +55,9 @@ public class AxialStackTests
     {
         // Datum: anode bottom z=0. Sleeve bottom = Zone-1 top (40) − insertion (30) = 10; sleeve top = 60;
         // capsule lifts so the flange shank (14) inserts into the sleeve top ⇒ lift = 60 − 14 = 46;
-        // embedded span = sleeve top 60 + flange thickness 3 = 63 (radome bayonets above, over the bark).
+        // overall stack length = sleeve top 60 + flange thickness 3 = 63 (anode bottom → flange top). The embedded
+        // depth is 60, not 63: the flange seats on the bark, so its UNDERSIDE is the bark line (⚖️ HW.33
+        // 2026-09-18); the radome bayonets above, over the bark.
         AnchorAxialStackCem cem = new();
         Assert.Equal(10f, AxialStack.SleeveBottomZMm(cem), 3);
         Assert.Equal(60f, AxialStack.SleeveTopZMm(cem), 3);
@@ -65,8 +69,8 @@ public class AxialStackTests
     public void A_Stack_Whose_Zone1_Declares_No_Rod_Fails_F3__Nothing_To_Check_The_Channel_Against()
     {
         // F3 checks the rod against the cathode channel (01_01 §1.4); a Zone 1 without a rod leaves nothing to
-        // check, so F3 must not pass vacuously on an empty rod. Whether the rod runs through the anode in the
-        // printed part is the render model of an open branch (00_07 HW.34), not something this test asserts.
+        // check, so F3 must not pass vacuously on an empty rod. (The rod is the welded WIRE — it starts at the
+        // anode's top face and never runs through the printed part, ⚖️ 2026-09-18, 00_07 HW.1; not asserted here.)
         AnchorAxialStackCem cem = new();
         Assert.Equal(0f, cem.Zone1.BusRodDiameterMm);
         Assert.False(AxialStack.BusRodClears(cem));
@@ -170,11 +174,14 @@ public class AxialStackTests
             File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
         MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
 
-        // The HW.8 placeholder VALUE, handed in explicitly — too deep: the groove is buried.
+        // The HW.8 placeholder VALUE, handed in explicitly — too deep: the mouth is past the end of the lock's shank.
+        // ⚖️ 2026-09-18 (HW.26): no longer "the groove is buried" — no ring is fitted, so the groove bounds nothing,
+        // and the retired reason must not come back as the named one.
         string? strAt30 = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = 30f }, lockCem);
         Assert.NotNull(strAt30);
         Assert.Contains("zone1_insertion_mm", strAt30);
-        Assert.Contains("DIN-471 groove", strAt30);
+        Assert.Contains("past the end of the lock's", strAt30);
+        Assert.DoesNotContain("DIN-471", strAt30);
         Assert.DoesNotContain("PEEK-contact zone", strAt30);
         Assert.Contains("HW.26 G1", strAt30);
 
@@ -182,7 +189,7 @@ public class AxialStackTests
         string? strShallow = AxialStack.Zone1InsertionConflict(new AnchorAxialStackCem { Zone1InsertionMm = w.MinMm - 1f }, lockCem);
         Assert.NotNull(strShallow);
         Assert.Contains("PEEK-contact zone", strShallow);
-        Assert.DoesNotContain("DIN-471 groove", strShallow);
+        Assert.DoesNotContain("past the end of the lock's", strShallow);
 
         Assert.Null(AxialStack.Zone1InsertionConflict(
             new AnchorAxialStackCem { Zone1InsertionMm = (w.MinMm + w.MaxMm) / 2f }, lockCem));
@@ -191,7 +198,7 @@ public class AxialStackTests
     // The shipped stack NAMES its Zone-1 lock instead of copying it, and the name must land on the right PART: a
     // solid shank of the Zone-1 shaft's own Ø — the Zone-3 lock has a channel, and its Ø is an HW.8 placeholder that
     // may yet become 11. A stack naming none gets no lock (never a default one), and a name resolving to another kind
-    // refuses rather than parsing into record defaults — whose contact zone and groove ARE the Zone-1 lock's.
+    // refuses rather than parsing into record defaults — whose contact zone and shank length ARE the Zone-1 lock's.
     // MUTATION: drop the json key · point it at mechanical_lock.zone3.json · fall back to `new MechanicalLockCem()` ·
     // remove the kind check ⇒ each reds.
     [Fact]

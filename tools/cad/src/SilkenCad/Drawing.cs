@@ -458,11 +458,14 @@ internal static class Drawing
         HDim(b, frontCx - rFlange, frontCx + rFlange, cy + rFlange + 24, $"Ø{N(cem.FlangeDiameterMm)}", cy + rFlange);
         // The pad is the concept «≈4–5» of 02_02 §1.3, not a feature of this part: canon §1.2 makes the anode contact the
         // END of the bus wire in the bore, and everything around the bore on this face is cathode metal — so a sheet that
-        // draws the pad as a contour hands the shop a gold spot at the wrong polarity. Which diameter holds is open (00_07
-        // HW.34, isolation in the pad plane); until then both readers call it absent, like the ring below.
+        // draws the pad as a contour hands the shop a gold spot at the wrong polarity. ⚖️ 2026-09-18 (00_07 HW.34, isolation
+        // in the pad plane): the pad is the Ø1.0 wire end with a PEEK ring Ø ≥ 4.0 around it; that geometry waits on the
+        // pogo pin P/N (HW.9), and until it lands both readers call the concept pad absent, like the ring below.
         b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad (concept) · NOT IN GEOMETRY", 9, "start", Dim));
         // The ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (the top face is solid Ti to the bore
-        // edge; how to meet it is an open verdict, 00_07 HW.34) — so the sheet labels it absent, never as a feature.
+        // edge). How to meet it is ratified (⚖️ 2026-09-18, 00_07 HW.34: a countersink with a flush PEEK ring Ø ≥ 4.0
+        // around the channel exit) but its geometry waits on the pogo pin P/N (HW.9) — so the sheet labels it absent,
+        // never as a feature.
         b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"iso ring ≥{N(cem.IsolationRingWidthMm)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
         b.AppendLine(Text(frontCx + lugOut - rLug, cy - lugOut - rLug - 3, $"{cem.BayonetLugs}× bayonet lug", 9, "middle", Dim));
 
@@ -760,8 +763,8 @@ internal static class Drawing
     }
 
 
-    // ── Zone-1 gyroid anode (01_01 §5, 01_02 §3.6) — the ENVELOPE CARD. Section A–A (Ø envelope + the
-    // monolithic bus-rod core) + side envelope + a lattice SPEC CALLOUT. This is the sheet that carries
+    // ── Zone-1 gyroid anode (01_01 §5, 01_02 §3.6) — the ENVELOPE CARD. Section A–A (the Ø envelope; no core since
+    // the welded branch, 2026-09-18) + side envelope + a lattice SPEC CALLOUT. This is the sheet that carries
     // the coating zone-map to the shop: until it existed the map had a SOURCE (the CEM notes, 2026-09-11)
     // and no CARRIER, so nothing conveyed it and the factory's default would have been ZnO-Ta everywhere.
     //
@@ -858,9 +861,9 @@ internal static class Drawing
     //   · the LATTICE lead — every value straight from the manifest, plus WHICH print floor is in force
     //     (the vendor's own number or the canon 01_01 §5.5 default), the same distinction `verify` prints.
     //     ⛔ `porosity_target` is quoted as a TARGET and explicitly denied as the acceptance band: canon
-    //     carries three different porosity numbers whose relation is an OPEN verdict (00_07 HW.33), so a
-    //     single number printed bare in the acceptance contract would settle by typography what nobody
-    //     has settled by judgement.
+    //     carries three different porosity numbers, and their relation is RATIFIED (2026-09-17, 00_07 HW.33 —
+    //     65 % nominal, the factory judged by 60–70 %, a graded part judged as a whole), so the generator's
+    //     goal printed bare in the acceptance contract would pass for the band it is not.
     //   · the COATING-BOUNDARY line, repeating in prose what the leader says on the view — the DXF has
     //     no leader geometry for it, and the two readers must not disagree about a refusal.
     private static List<string> AnchorNotes(AnchorCem cem)

@@ -101,6 +101,17 @@ public class MechanicalLockTests
         Assert.True(sdf.fSignedDistance(new Vector3(fRShank - cem.GrooveDepthMm - 0.1f, 0f, fZGroove)) < 0f, "below groove floor");
     }
 
+    // A zero-width groove with a positive depth is NO groove — HasGroove is false and Build cuts nothing — so the
+    // profile the verify sampler walks must not notch its closed band at z = offset either, or `verify` measures a
+    // groove the part does not have. MUTATION: drop the HasGroove gate in ProfileRadius ⇒ the notch returns ⇒ red.
+    [Fact]
+    public void A_Zero_Width_Groove_Cuts_Nothing_From_The_Profile()
+    {
+        MechanicalLockCem cem = MkCem() with { GrooveWidthMm = 0f };
+        Assert.False(MechanicalLock.HasGroove(cem));
+        Assert.Equal(cem.ShankDiameterMm / 2f, new MechanicalLockShank(cem).ProfileRadius(cem.GrooveOffsetMm), 5);
+    }
+
 // 🔴 The physical invariant, not a sign. Walking in from local z = 0 — the end that enters the PEEK
 // first — the first metal a tooth presents must rise over the LONG shallow ramp (α) and fall over the
 // SHORT steep one (β): that is "easy in, hard out" (01_01 §4.3 A). This is the test the ±1 knob never
@@ -176,27 +187,32 @@ public void No_Lock_Or_Flange_Manifest_Carries_A_Barb_Direction_Key()
 
 // ── Insertion window (00_07 HW.26) — MechanicalLock.InsertionWindowMm is the arithmetic's one home ──
 
-// The window the SHIPPED Zone-1 lock admits, from its free end: the end of its PEEK-contact zone to the near
-// flank of its DIN-471 groove. A regression pin on a DERIVED number read from the real manifest — it reds when
-// the lock geometry moves, which is the moment any insertion judged against it has to be judged again.
-// MUTATION: Min = contact_start alone · Max = groove_offset + groove_width ⇒ reds.
+// The window the SHIPPED Zone-1 lock admits, from its free end: the end of its PEEK-contact zone to the end of its
+// shank. ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the deep end USED to be the near flank of the DIN-471 groove (15.0) —
+// no ring is fitted as a backup any more, so the groove, still in the geometry until G1/G3, bounds nothing. A
+// regression pin on a DERIVED number read from the real manifest — it reds when the lock geometry moves, which is
+// the moment any insertion judged against it has to be judged again.
+// MUTATION: Min = contact_start alone · Max = groove_offset (the retired groove bound) ⇒ reds.
 [Fact]
-public void Zone1_Lock_Admits_Insertion_From_Its_Contact_Zone_End_To_Its_Groove_Flank()
+public void Zone1_Lock_Admits_Insertion_From_Its_Contact_Zone_End_To_The_End_Of_Its_Shank()
 {
     var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemFixtures.Dir(), "mechanical_lock.zone1.json")));
+    Assert.True(MechanicalLock.HasGroove(cem), "the Zone-1 groove stays in the geometry until HW.26 G1/G3 — and bounds nothing");
     MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(cem);
     Assert.Equal(14.0f, w.MinMm, 3);   // contact_start 2 + contact_length 12
-    Assert.Equal(15.0f, w.MaxMm, 3);   // groove_offset 15
+    Assert.Equal(18.0f, w.MaxMm, 3);   // shank_length 18 — NOT groove_offset 15
 }
 
 // What the window MEANS, walked on each part's own profile rather than re-derived from its fields: at any
-// insertion inside it, every sample of barb metal is on the PEEK side of the mouth and every sample of the
-// groove on the air side. Lock frame, z = 0 enters first (gotcha #15): a window measured from the other end
-// keeps plausible arithmetic and reds here. Roster = both lock manifests AND the shank the flange builds.
-// MUTATION: Min = contact_start alone ⇒ a barb lies past it · Max = groove_offset + groove_width ⇒ the groove
-// starts before it · Min/Max measured from z = shank_length ⇒ both.
+// insertion inside it, every sample of barb metal is on the PEEK side of the mouth, and the mouth never leaves
+// the shank. Lock frame, z = 0 enters first (gotcha #15): a window measured from the other end keeps plausible
+// arithmetic and reds here. Roster = both lock manifests AND the shank the flange builds. ⚖️ 2026-09-18 (00_07
+// HW.26): a groove is no longer a bound — no ring is fitted — so the walk asserts nothing about WHERE a groove
+// sits relative to the window, only that it meets one exactly on the ends that carry one.
+// MUTATION: Min = contact_start alone ⇒ a barb lies past it · Max = groove_offset ⇒ the deep end falls short of
+// the shank on Zone 1 · Min/Max measured from z = shank_length ⇒ both.
 [Fact]
-public void Inside_Its_Window_Every_Barb_Is_In_The_Peek_And_The_Groove_Is_Not()
+public void Inside_Its_Window_Every_Barb_Is_In_The_Peek_And_The_Deep_End_Is_The_Whole_Shank()
 {
     const float fStep = 0.005f;
     foreach ((string strName, MechanicalLockCem cem) in ShippedLockEnds())
@@ -219,17 +235,14 @@ public void Inside_Its_Window_Every_Barb_Is_In_The_Peek_And_The_Groove_Is_Not()
             else if (fR < fRShank - 1e-4f)
             {
                 nGroove++;
-                Assert.True(fZ >= w.MaxMm,
-                    $"{strName}: the groove at z = {fZ:F3} mm starts before the window's deep end {w.MaxMm:F3} mm — " +
-                    "at that insertion it is inside the PEEK");
             }
         }
-        // ⚖️ 2026-09-18 (00_07 HW.26): the Zone-3 ends carry no groove, so there the walk must meet NONE and the
-        // window's deep end is the whole shank; an end that still carries one must meet it.
+        // The Zone-3 ends carry no groove, so there the walk must meet NONE; an end that still carries one must meet it.
         bool bGroove = MechanicalLock.HasGroove(cem);
         Assert.True(nBarb > 0 && (bGroove ? nGroove > 0 : nGroove == 0),
             $"{strName}: the walk met {nBarb} barb and {nGroove} groove samples on an end that {(bGroove ? "carries" : "carries NO")} groove");
-        if (!bGroove) Assert.Equal(cem.ShankLengthMm, w.MaxMm, 3);
+        Assert.True(w.MinMm < w.MaxMm, $"{strName}: the window {w.MinMm:F3}–{w.MaxMm:F3} mm is empty");
+        Assert.Equal(cem.ShankLengthMm, w.MaxMm, 3);
     }
 }
 }

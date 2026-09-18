@@ -154,7 +154,8 @@ Dir.glob(File.join(CEM_DIR, "*.json")).sort.each do |path|
     #    can cover two DIFFERENT PARTS whose numbers have different provenance, and a kind-level record
     #    cannot say so. Live case — `mechanical_lock`: the Zone-1 shank Ø11 is a FROZEN founder dim
     #    (HW.33) while the Zone-3 shank Ø9 is an HW.8 PLACEHOLDER, and its bore is 0 (a sentinel for
-    #    «solid, the bus IS the core») against Zone-3's real Ø1.35 channel. Recording one class for both
+    #    «solid shank, no channel» — the anode carries no core since the welded branch, ⚖️ 2026-09-18,
+    #    and the bus wire is welded to its top face) against Zone-3's real Ø1.35 channel. Recording one class for both
     #    would have promoted a placeholder to a decision or demoted a freeze to a guess — in a manifest
     #    that PRINTS on the factory DXF. ⛔ So: `name` overrides `kind`, `kind` overrides `*`, and a
     #    kind-level record stays the right home wherever the two parts genuinely share a ground.

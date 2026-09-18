@@ -55,8 +55,9 @@ internal static class Resolution
         var a = new List<Feature>();
         // The lattice's own metal is the thinnest thing in this part and no field declares it.
         Add(a, strPrefix + "lattice_thickness", TopologyCrossChecks.LatticeThicknessMm(cem), dVoxelMm, bDerived: true);
-        // The core is the monolithic rod (Zone1Anode.InnerRadiusMm) — rod and lattice meet, there is no gap
-        // between them to resolve. `Add` skips a zero, so a coupon with no rod declares no core feature.
+        // The bus WIRE Ø: an assembly dimension since the welded branch (⚖️ 2026-09-18, 00_07 HW.1) — the anode is
+        // printed with no core (Zone1Anode.InnerRadiusMm = 0), and the stack renders the wire from this field, so
+        // it is carried on whichever grid reads it. `Add` skips a zero, so a coupon declaring no wire declares nothing.
         Add(a, strPrefix + "bus_rod_diameter_mm", cem.BusRodDiameterMm, dVoxelMm);
         return a;
     }

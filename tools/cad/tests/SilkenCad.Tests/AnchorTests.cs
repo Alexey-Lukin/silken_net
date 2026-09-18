@@ -213,12 +213,13 @@ public class AnchorTests
             "Declare it explicitly; the default exists for synthetic in-test coupons only.");
     }
 
-    // The core of every shipped anchor is the monolithic bus rod (01_01 §1.4), and AnchorCem has NO bore
-    // slot: `Cem.Parse` ignores unmapped members, so a `bore_diameter_mm` key written back into a manifest
-    // would parse cleanly and shape nothing — a number on the SSOT surface that the part does not carry.
-    // And a manifest that omits the rod does not fail to build: Zone1Anode.InnerRadiusMm reads 0 and the
-    // lattice reaches the axis, i.e. a factory STL with no conductor. Both are invisible after parsing, so
-    // this reads the RAW json, like the topology pin above.
+    // Every shipped anchor declares the bus WIRE (`bus_rod_diameter_mm`, 01_01 §1.4) — an ASSEMBLY dimension
+    // since the welded branch (⚖️ 2026-09-18, 00_07 HW.1): the part is printed with no core (the lattice runs to
+    // the axis for every manifest), and the stack builds the wire from this field, so a manifest that omits it
+    // leaves F3/F4 nothing to check. And AnchorCem has NO bore slot: `Cem.Parse` ignores unmapped members, so a
+    // `bore_diameter_mm` key written back into a manifest would parse cleanly and shape nothing — a number on the
+    // SSOT surface that the part does not carry. Both are invisible after parsing, so this reads the RAW json,
+    // like the topology pin above.
     // MUTATION: add `"bore_diameter_mm": 1.6,` to any cem/anchor_zone1.*.json · delete its
     // "bus_rod_diameter_mm" line ⇒ each reds naming that file.
     [Fact]
@@ -230,12 +231,11 @@ public class AnchorTests
             .Where(f => File.ReadAllText(Path.Combine(CemFixtures.Dir(), f)).Contains("\"bore_diameter_mm\""))];
 
         Assert.True(aNoRod.Length == 0,
-            $"{string.Join(", ", aNoRod)} declare no `bus_rod_diameter_mm` — the lattice would reach the axis, and " +
-            "F3 would have no rod to check the cathode channel against (01_01 §1.4; whether the rod runs through " +
-            "the anode is the render model of an open branch, 00_07 HW.34).");
+            $"{string.Join(", ", aNoRod)} declare no `bus_rod_diameter_mm` — the stack would build no welded wire, " +
+            "and F3/F4 would have nothing to check the cathode channel against (01_01 §1.4, 00_07 HW.1).");
         Assert.True(aBore.Length == 0,
             $"{string.Join(", ", aBore)} carry `bore_diameter_mm`, which AnchorCem has no slot for — the key " +
-            "evaporates on parse; the rod is the core.");
+            "evaporates on parse; the part has no core and no bore — the wire is welded to its top face.");
     }
 
     // The coating map of 01_02 §3.6 forbids ZnO-Ta, self-healing 8-HQ and biomimetic layers on the Zone-1

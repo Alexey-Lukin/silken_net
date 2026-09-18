@@ -39,7 +39,7 @@ internal static class AxialStack
     // The Zone-1 lock this stack NAMES (Cem.cs Zone1LockManifest), read from its own manifest beside this
     // one. null ⇔ the stack names none. A dangling name throws: a broken manifest, not an audit finding.
     // ⛔ The kind check is load-bearing: Cem.Parse fills absent members from record defaults, and the
-    //    MechanicalLockCem defaults carry the Zone-1 lock's contact zone and groove — a wrong file would
+    //    MechanicalLockCem defaults carry the Zone-1 lock's contact zone and shank length — a wrong file would
     //    print the right window.
     internal static MechanicalLockCem? Zone1Lock(AnchorAxialStackCem cem, string strStackManifestPath)
     {
@@ -57,6 +57,9 @@ internal static class AxialStack
     // the arithmetic's one home); otherwise the finding, naming the input and the feature it misplaces.
     // ⛔ A DETECTOR, not a cement: nothing here says what the insertion SHOULD be. Moving the placeholder is
     //    00_07 HW.26 G1's verdict, because the in-silico half carries the same value under its own names.
+    // ⚖️ 2026-09-18 (HW.26): the deep side is no longer "the groove is buried, no ring can be fitted" — no ring is
+    //    fitted at all — but "the mouth is past the end of the lock's shank", i.e. the stack presses deeper than the
+    //    geometry the lock manifest describes (the three-models conflict of G1), with nothing in the tree to stop it.
     public static string? Zone1InsertionConflict(AnchorAxialStackCem cem, MechanicalLockCem lockCem)
     {
         MechanicalLock.InsertionWindow w = MechanicalLock.InsertionWindowMm(lockCem);
@@ -65,7 +68,9 @@ internal static class AxialStack
         if (fIn < w.MinMm)
             aWhy.Add($"the PEEK-contact zone (barbs) ends {w.MinMm - fIn:F1} mm outside the sleeve");
         if (fIn > w.MaxMm)
-            aWhy.Add($"the DIN-471 groove's near flank sits {fIn - w.MaxMm:F1} mm inside the PEEK, where no ring can be fitted after the press");
+            aWhy.Add($"the sleeve mouth sits {fIn - w.MaxMm:F1} mm past the end of the lock's {w.MaxMm:F1} mm shank — deeper than " +
+                     "the geometry the lock manifest describes, and nothing in the tree stops Zone 1 moving deeper " +
+                     "(no ring is fitted; whether that end needs a stop is HW.26 G1/G3)");
         return aWhy.Count == 0
             ? null
             : $"zone1_insertion_mm = {fIn:F1} lies outside the Zone-1 lock's insertion window {w.MinMm:F1}–{w.MaxMm:F1} mm " +
@@ -84,8 +89,10 @@ internal static class AxialStack
     public static float CapsuleLiftZMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) - cem.Capsule.Flange.ShankLengthMm;
 
-    // Embedded span: anode bottom (z=0) → flange disc top (the bark line + flange shoulder). The radome
-    // bayonets ABOVE this (capsule side, over the bark) — F3 install-depth / DBH (CODIT, 01_04 §3).
+    // Overall stack length: anode bottom (z=0) → flange disc TOP (63 at the frozen dims). ⛔ NOT the embedded depth:
+    // the flange seats ON the bark — its underside is the bark line and the catalytic strip of its side face stands
+    // above it (⚖️ HW.33 2026-09-18) — so the depth in the wood is this minus the flange thickness (60, to the flange
+    // UNDERSIDE). The radome bayonets above both, over the bark — install depth / DBH (CODIT, 01_04 §3).
     public static float OverallStackLengthMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 

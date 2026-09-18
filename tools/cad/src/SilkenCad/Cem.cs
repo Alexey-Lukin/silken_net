@@ -134,8 +134,9 @@ internal sealed record TiCoinCem
     public NotesSpec? Notes { get; init; }                // drawing notes block (null ⇒ defaults)
 }
 
-// Zone-1 gyroid anode (01_01 §5): a cartesian-gyroid Ti rod with a central SOLID bus-rod core
-// (01_01 §1.4 monolithic; Ø11 founder 2026-06-20, HW.33). v2 = radially GRADED gyroid with three
+// Zone-1 gyroid anode (01_01 §5): a cartesian-gyroid Ti rod, Ø11 (founder 2026-06-20, HW.33), whose lattice runs
+// to the axis — NO core since the welded branch (⚖️ 2026-09-18, 00_07 HW.1: the bus is a drawn wire welded to the
+// top face, 01_01 §1.4 / §3 step 1b; its Ø is BusRodDiameterMm below). v2 = radially GRADED gyroid with three
 // INDEPENDENT, CEM-driven axes (the FEA/bio "which is best" answer is open, so none is hard-coded):
 //   • pore/cell size — GyroidPeriod{Mm core → RimMm} (biology: ingrowth core / transport rim)
 //   • porosity / E   — GyroidWallParam{ core → Rim }  (mechanics: HOLD or GRADE the porosity)
@@ -146,8 +147,9 @@ internal sealed record TiCoinCem
 //                       at the sheet-era 1.0 the network branch lands ~50 % porous, i.e. STIFFER than
 //                       the branch it replaced, so re-solve against the porosity target FIRST)
 // Core = axis (r=0), Rim = periphery (r=outer/2); an ABSENT *Rim* field ⇒ equals Core ⇒ v1 constant.
-// Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough
-// placeholder (founder 2026-06-21). ⚠️ The textbook Gibson-Ashby `n=2` for the network branch we ship is
+// Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal. 65 % itself was a rough placeholder
+// (founder 2026-06-21) and is the RATIFIED nominal since 2026-09-17 (00_07 HW.33) — the factory is judged by the
+// 60–70 % band, a graded part as a whole, never by this field. ⚠️ The textbook Gibson-Ashby `n=2` for the network branch we ship is
 // SUPERSEDED AXIALLY by measurement (2026-09-12): a wall_param sweep fits C and n on the lattice cube and
 // on the shipped part, and which member departs depends on the axis — the numbers, the literature
 // comparison and the declared ceiling live in 01_01 §5.2 only (verb `fea --fit`). Sheet remains the other
@@ -192,7 +194,7 @@ internal sealed record AnchorCem
     // A/B switch for the first-order field normalisation (00_07 HW.49). Default FALSE: every
     // shipped metric was measured on the raw field, so this must never flip by omission.
     public bool NormaliseField { get; init; }
-    public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — placeholder, FEA-gated (HW.33)
+    public float PorosityTarget { get; init; } = 0.65f;    // verify goal only — aims at the ratified 65 % nominal (2026-09-17, HW.33); acceptance is the 60–70 % band
 
     // Minimum printable wall of the machine + powder that will print THIS part — a VENDOR INPUT from the
     // DMLS RFQ, not a canon constant (⚖️ founder 2026-09-10, 00_07 HW.33: canon must not hardcode one
@@ -226,8 +228,9 @@ internal sealed record AnchorCem
 }
 
 // Mechanical-lock shank (01_01 §4.3 A/B) — the §4.3 BLOCKER-3 lock against PEEK cold-flow creep
-// (HW.26): annular ratchet barbs + a DIN-471 retaining groove on the solid Ti shank that press-fits
-// into the PEEK sleeve. Zone 1 (real Ø11) is a self-contained demo part — NOT yet integrated into the
+// (HW.26): annular ratchet barbs on the solid Ti shank that press-fits into the PEEK sleeve. The DIN-471
+// ring as a backup was removed on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26) and the Zone-3 groove with it; the
+// Zone-1 groove stays in the geometry until G1/G3 and bounds nothing. Zone 1 (real Ø11) is a self-contained demo part — NOT yet integrated into the
 // gyroid rod (separate session, 00_07); the Zone-3 set (placeholder Ø) is already the cathode flange's
 // shank (`CathodeFlange.ShankCem` → `MechanicalLock.Build`). Canon over-specifies the tooth (h, base,
 // α, β all fixed); a triangle has 2 free params, so we keep α/β + h and DERIVE base ≈ 2.1·h — verify
@@ -240,7 +243,7 @@ internal sealed record MechanicalLockCem
     public float VoxelSizeMm { get; init; } = 0.05f;       // barb-feature floor (h≈0.28 → ~6 voxels); exact tip = measured on the part (01_01 §4.3)
     public float ShankDiameterMm { get; init; } = 11f;     // Zone-1 anode Ø (founder, HW.33); Zone-3 = PLACEHOLDER (HW.8 dim-freeze)
     public float ShankLengthMm { get; init; } = 18f;
-    public float BoreDiameterMm { get; init; } = 1.35f;    // 0 ⇒ SOLID shank (monolithic anode, the bus IS the metal core, 01_01 §1.4); >0 ⇒ the cathode channel the bus rod threads (Ø1.35 since the clearance verdict, 00_07 HW.34)
+    public float BoreDiameterMm { get; init; } = 1.35f;    // 0 ⇒ SOLID shank (no channel: the anode is printed without a core and the bus is a wire welded to its TOP face, ⚖️ 2026-09-18, 01_01 §1.4 / §3 step 1b); >0 ⇒ the cathode channel the bus wire threads (Ø1.35 since the clearance verdict, 00_07 HW.34)
     public float ContactStartMm { get; init; } = 2f;       // z where PEEK contact begins
     public float ContactLengthMm { get; init; } = 12f;     // contact zone 8–15 mm (§4.3 A)
 
@@ -259,6 +262,8 @@ internal sealed record MechanicalLockCem
     //    rotating it, never by a sign.
 
     // DIN-471 retaining-ring groove (§4.3 B) — 1.1 × 0.25 deep for the Ø11 shank, near the outer (capsule-side) end.
+    // ⚖️ 2026-09-18 (00_07 HW.26): NO ring is fitted in it as a backup; it stays in the Zone-1 geometry only until G1/G3,
+    // and these defaults ARE that Zone-1 groove — which is why a Zone-3 manifest must declare its zeros explicitly.
     public float GrooveOffsetMm { get; init; } = 15f;
     public float GrooveWidthMm { get; init; } = 1.1f;   // DIN-471 для Ø11 shank (§4.3 B; «0.8×0.6» = off-spec, не штатне кільце)
     public float GrooveDepthMm { get; init; } = 0.25f;
@@ -323,9 +328,13 @@ internal sealed record CathodeFlangeCem
     public float TrailAngleDeg { get; init; } = 70f;
     public float ContactStartMm { get; init; } = 2f;
     public float ContactLengthMm { get; init; } = 9f;
-    public float GrooveOffsetMm { get; init; } = 12f;      // groove z (our choice); the groove = the DIN 471 row for Ø9
-    public float GrooveWidthMm { get; init; } = 1.1f;      // DIN 471 d1 = 9: m 1.1 (1.0 is the RING thickness s, not the groove)
-    public float GrooveDepthMm { get; init; } = 0.2f;      // d2 8.6 ⇒ depth 0.2
+    // ⚖️ 2026-09-18 HW.26: a missing key must not recreate the Zone-3 groove. The DIN-471 ring as a backup was removed
+    // on BOTH ends and this groove from the geometry; cathode_flange.json declares the zeros explicitly, but the
+    // assembly and stack manifests carry no flange block and build this record from its defaults — so these defaults
+    // ARE the verdict for every capsule and stack model (history: the Ø9 DIN 471 row, m 1.1 × d2 8.6 ⇒ 0.2, at z 12).
+    public float GrooveOffsetMm { get; init; }
+    public float GrooveWidthMm { get; init; }
+    public float GrooveDepthMm { get; init; }
 
     // Bayonet lugs (mate the Радом socket, фаза 2) — radial pins evenly spaced
     public int BayonetLugs { get; init; } = 3;
@@ -334,14 +343,15 @@ internal sealed record CathodeFlangeCem
     // Socket running clearance over the lug — the RADOME's socket field, mirrored here because the groove
     // below is positioned off the socket band (`lug radius + slot clearance`) and keeps one slot clearance of
     // seal land on each side, i.e. off the radome's radial layout (Radome.SealLand*). Pinned equal to
-    // RadomeCem.SlotClearanceMm by xUnit, as the lug radius already is. No canon ground (00_07 HW.48 → HW.33).
+    // RadomeCem.SlotClearanceMm by xUnit, as the lug radius already is. No canon ground, ON PURPOSE: it is a shop
+    // input (⚖️ 2026-09-18, 00_07 HW.48 — asked in the DMLS letter, item 11(d)).
     public float SlotClearanceMm { get; init; } = 0.3f;
 
     // The ONE O-ring groove (⚖️ 2026-09-10, applied 2026-09-14, 00_07 HW.33 branch (а)): a face-seal groove on
     // the flange TOP (capsule-side) face, closed by the FLAT rim of the radome's seal land. NOT the underside:
     // there is no elastomer under the flange. Depth and width are DERIVED from this spec
     // (CathodeFlange.ORingGroove*) — depth = CS·(1 − squeeze) = 1.344, width = ring area / (fill · depth) = 2.315
-    // at the 80 % fill the open ⚖️ designs to — and so is the radial position (inside the radome's seal land,
+    // at the 80 % fill ratified 2026-09-17 (00_07 HW.33) — and so is the radial position (inside the radome's seal land,
     // one slot clearance of land each side). Nothing about the groove is stored, so nothing can go stale.
     // 🔑 With the rim as a HARD DATUM on this face the squeeze is set by this depth ALONE — the bayonet no
     //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now.
@@ -353,7 +363,9 @@ internal sealed record CathodeFlangeCem
     public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, Hard Gold ENIG (4–5, HW.8)
     public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard) — a
                                                                // DRAWING annotation of a requirement: CathodeFlange.cs does not
-                                                               // model the ring (solid Ti top face; open, 00_07 HW.34)
+                                                               // model the ring (solid Ti top face). REQUIRED since ⚖️ 2026-09-18
+                                                               // (00_07 HW.34): a countersink with a flush PEEK ring Ø ≥ 4.0
+                                                               // around the channel exit — geometry waits on the pogo pin P/N (HW.9)
 
     public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (concentricity — coaxial stack)
     public NotesSpec? Notes { get; init; }                // drawing notes block
@@ -404,9 +416,10 @@ internal sealed record RadomeCem
 // the tree (CODIT <25 → DBH ≥38). Length 50 mm (axial
 // thermal break, §4.1). The bore is a plain round hole: anti-rotation is a hex/spline profile in canon
 // (§1 + §4.3 C, ≤0.05 mm clearance) but that is bench-gated and not needed for the mate-audit → deferred
-// (00_07). DIN-471 retaining grooves live on the Ti Zone-1/Zone-3 ends (§3 step 6), NOT the PEEK sleeve;
-// barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps 4–5) → the PEEK bore is smooth
-// here. The monolithic bus rod (01_01 §1.4) is the ANODE's own solid core, not in the sleeve (the sleeve bore Ø11 holds the Ti shaft).
+// (00_07). The DIN-471 groove lives on the Ti part, NOT the PEEK sleeve — on the Zone-1 end only since ⚖️ 2026-09-18,
+// with no ring fitted as a backup (00_07 HW.26); barbs are pressed INTO the bore by the Ti shanks at 150 °C (§3 steps
+// 4–5) → the PEEK bore is smooth here. The bus is a wire welded to the anode's TOP face (01_01 §1.4, §3 step 1b) that
+// crosses the PEEK gap inside this bore to the flange channel — no part of this record (the bore Ø11 holds the Ti shaft).
 internal sealed record Zone2SleeveCem
 {
     public string Kind { get; init; } = "zone2_sleeve";
@@ -487,7 +500,7 @@ internal sealed record AnchorAxialStackCem
 
     // The Zone-1 lock that insertion is judged against — a FILENAME beside this manifest, never a copy of
     // its numbers: the barb/groove geometry has one home, the lock manifest, and a nested MechanicalLockCem
-    // would fill every absent field from record defaults (gotcha #0a) — whose contact zone and groove ARE
+    // would fill every absent field from record defaults (gotcha #0a) — whose contact zone and shank length ARE
     // the Zone-1 lock's, so a wrong or empty copy would still print the right window. null ⇒ the window
     // prints as NOT SPECIFIED IN CEM. Resolved by AxialStack.Zone1Lock (00_07 HW.26).
     public string? Zone1LockManifest { get; init; }

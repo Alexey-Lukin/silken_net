@@ -288,10 +288,15 @@ internal static class Validation
         }
         if (bInTooth) { aBaseW.Add(dLastZ - dRunStart); nBarbs++; }
 
-        // Groove depth = deepest cut across the groove band.
+        // Groove depth = deepest cut across the groove band — sampled only on an end that CARRIES one
+        // (MechanicalLock.HasGroove, the same gate Build and ProfileRadius use): a zero-width band still visits
+        // z = offset once, and an end without a groove must report 0, never the depth of a notch nobody cut.
         double dGrooveMinR = fRShank;
-        for (float fZ = cem.GrooveOffsetMm; fZ <= cem.GrooveOffsetMm + cem.GrooveWidthMm; fZ += fDz)
-            dGrooveMinR = Math.Min(dGrooveMinR, oSdf.ProfileRadius(fZ));
+        if (MechanicalLock.HasGroove(cem))
+        {
+            for (float fZ = cem.GrooveOffsetMm; fZ <= cem.GrooveOffsetMm + cem.GrooveWidthMm; fZ += fDz)
+                dGrooveMinR = Math.Min(dGrooveMinR, oSdf.ProfileRadius(fZ));
+        }
 
         return oBase with
         {

@@ -8,7 +8,8 @@ namespace SilkenCad;
 // Zone 3 cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. A SOLID Ti
 // flange (Ø25 frozen) on the barbed Zone-3 shank that press-fits into the PEEK Zone-2 sleeve, with
 // radial bayonet lugs that mate the PEEK Radome (Деталь 4, фаза 2). Reuses the §4.3 mechanical lock
-// for the shank+barbs+DIN-471 groove (no duplication). Solid bodies come from ShapeKernel voxConstruct
+// for the shank + barbs (no duplication); the lock cuts a DIN-471 groove only where `MechanicalLock.HasGroove`
+// says one exists, and this end has none since ⚖️ 2026-09-18 (00_07 HW.26). Solid bodies come from ShapeKernel voxConstruct
 // (gotcha #9 — never an SDF field left open at the bbox caps); the thin barb ridges ride the MechanicalLock split.
 // Z: shank z∈[0,shankLen] (deep, into PEEK) → flange on top z∈[shankLen, shankLen+thickness] (capsule
 // side). Pogo pads sit on the top face (Hard Gold = coating, not geometry); the cathode catalytic zone
@@ -55,7 +56,8 @@ internal static class CathodeFlange
         float fFlangeR = cem.FlangeDiameterMm / 2f;
         float fThick = cem.FlangeThicknessMm;
 
-        // 1. Barbed Zone-3 shank (reuse §4.3 lock): solid Ø + barbs + DIN-471 groove + bus channel, z∈[0,shankLen].
+        // 1. Barbed Zone-3 shank (reuse §4.3 lock): solid Ø + barbs + bus channel, z∈[0,shankLen]; a groove only where
+        //    HasGroove — none on this end since ⚖️ 2026-09-18 (00_07 HW.26: zero groove fields, manifest AND defaults).
         Voxels voxPart = MechanicalLock.Build(ShankCem(cem));
 
         // 2. Solid Ø25 flange disc on top — a true filled cylinder (gotcha #9: voxConstruct, NOT the SDF ctor).

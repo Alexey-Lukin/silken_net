@@ -332,8 +332,9 @@ public class DrawingTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
-    // The isolation ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (solid Ti top face; open,
-    // 00_07 HW.34). A sheet that draws it as a feature hands the shop a part that does not exist, so both readers must
+    // The isolation ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (solid Ti top face; the form is
+    // ratified 2026-09-18 — countersink + flush PEEK ring Ø ≥ 4.0, 00_07 HW.34 — and its geometry waits on the pogo pin
+    // P/N, HW.9). A sheet that draws it as a feature hands the shop a part that does not exist, so both readers must
     // call it absent, and the DXF must keep its circle off the layer a CAD reader takes as a contour to machine.
     [Fact]
     public void Flange_Sheet_Labels_The_Unmodelled_Isolation_Ring_Absent_In_Both_Readers()
@@ -859,13 +860,15 @@ public class DrawingTests
         string svg = Drawing.AnchorZone1(cem, "test", "anchor_zone1.pine.json");
         Assert.Contains("topology network", FlattenSvgText(svg));
         Assert.Contains("SPEC, not drawn", FlattenSvgText(svg));
-        // Envelope + core + the two centre-cross dashes only: a sampled lattice contour would be hundreds.
+        // Envelope + the two centre-cross dashes only (no core circle since the welded branch, 2026-09-18): a sampled
+        // lattice contour would be hundreds.
         Assert.True(Regex.Matches(svg, "<circle").Count <= 4, "the lattice must not be drawn cell-by-cell (01_02 §6)");
     }
 
-    // The porosity TARGET is the generator's goal; canon carries three different porosity numbers whose
-    // relation is an open verdict (00_07 HW.33). Printing one bare on an acceptance contract would settle
-    // by typography what nobody has settled by judgement — so the sheet must deny it in the same breath.
+    // The porosity TARGET is the generator's goal; canon carries three different porosity numbers, and their
+    // relation is RATIFIED (2026-09-17, 00_07 HW.33): 65 % is the nominal, the factory is judged by 60–70 %, and a
+    // graded part is judged as a whole. The target is none of those, and printed bare on an acceptance contract it
+    // would pass for the band — so the sheet must deny it in the same breath.
     [Fact]
     public void Anchor_Sheet_Never_Prints_The_Porosity_Target_As_An_Acceptance_Band()
     {

@@ -5,11 +5,12 @@ using Leap71.ShapeKernel;
 
 namespace SilkenCad;
 
-// Annular ratchet barbs + a retaining-ring groove on a solid Ti shank — the 01_01 §4.3 mechanical
-// lock against PEEK cold-flow creep (BLOCKER-3, HW.26). The part is axisymmetric, so the whole shank
-// is one signed-distance field over the outer radius R(z): a base cylinder, asymmetric ratchet teeth
-// in the PEEK-contact zone, and a subtractive groove for the DIN-471 ring. Asymmetric = a RATCHET — a
-// shallow leading ramp (α, easy hot press-fit insert) and a steep trailing ramp (β, hard pull-out).
+// Annular ratchet barbs on a solid Ti shank — the 01_01 §4.3 mechanical lock against PEEK cold-flow creep
+// (BLOCKER-3, HW.26) — plus a DIN-471 groove on an end that still carries one: the ring as a backup was removed
+// on BOTH ends ⚖️ 2026-09-18 (00_07 HW.26), the Zone-3 groove with it, and the Zone-1 groove stays until G1/G3.
+// The part is axisymmetric, so the whole shank is one signed-distance field over the outer radius R(z): a base
+// cylinder, asymmetric ratchet teeth in the PEEK-contact zone, and a subtractive groove where HasGroove. Asymmetric
+// = a RATCHET — a shallow leading ramp (α, easy hot press-fit insert) and a steep trailing ramp (β, hard pull-out).
 //
 // The 4th from-scratch IImplicit in the house pattern (cf. the gyroid SDFs in Zone1Anode), chosen over
 // ShapeKernel BaseRevolve+LineModulation whose fixed nLengthSteps aliases the steep β edge: an analytic
@@ -19,9 +20,11 @@ internal sealed class MechanicalLockShank : IImplicit
 {
     private readonly float _fRShank, _fZ0, _fContactLen, _fPitch, _fH, _fLeadLen, _fTrailLen;
     private readonly float _fGrooveZ0, _fGrooveZ1, _fGrooveDepth;
+    private readonly bool _bGroove;
 
     public MechanicalLockShank(MechanicalLockCem cem)
     {
+        _bGroove = MechanicalLock.HasGroove(cem);
         _fRShank = cem.ShankDiameterMm / 2f;
         _fZ0 = cem.ContactStartMm;
         _fContactLen = cem.ContactLengthMm;
@@ -49,6 +52,9 @@ internal sealed class MechanicalLockShank : IImplicit
 
     // Outer radius profile R(z): base shank + barb ridge (contact zone) − groove notch. Exposed for the
     // golden-metrics sampler (Validation.MeasureLock) so barb count/height/base/groove are MEASURED.
+    // ⛔ The notch is gated by HasGroove, exactly like the Build that cuts it: the band is CLOSED, so a zero-width
+    //    groove with a positive depth still notched z = offset here while Build cut nothing — the profile, and every
+    //    metric sampled off it, would have described a groove the part does not have.
     internal float ProfileRadius(float fZ)
     {
         float fR = _fRShank;
@@ -57,7 +63,7 @@ internal sealed class MechanicalLockShank : IImplicit
             float fLocal = (fZ - _fZ0) - (MathF.Floor((fZ - _fZ0) / _fPitch) * _fPitch);  // t∈[0,pitch)
             fR += Ratchet(fLocal);
         }
-        if (fZ >= _fGrooveZ0 && fZ <= _fGrooveZ1) fR -= _fGrooveDepth;
+        if (_bGroove && fZ >= _fGrooveZ0 && fZ <= _fGrooveZ1) fR -= _fGrooveDepth;
         return fR;
     }
 
@@ -92,15 +98,16 @@ internal sealed class BarbRidges(MechanicalLockCem cem) : IImplicit
 // Builds the §4.3 shank. Zone 1 (real Ø11) is a self-contained demo part, not integrated into the gyroid rod
 // (separate session, 00_07); Zone 3 (placeholder Ø) is also the cathode flange's shank — `CathodeFlange.Build`
 // calls this. A SOLID cylinder (ShapeKernel) + barb ridges BoolAdd-ed
-// (thin SDF) − a retaining-groove ring BoolSubtract-ed. Self-supports printed gentle-ramp-down as a SEPARATE part
+// (thin SDF) − a retaining-groove ring BoolSubtract-ed where HasGroove. Self-supports printed gentle-ramp-down as a SEPARATE part
 // (01_01 §4.3 A); integrated into the anode, the anode's tip-down (01_02 §1.6) puts the steep face down — open,
 // 00_07 HW.26 G4 (external supports allowed — barbs are on the outer shank).
 internal static class MechanicalLock
 {
     // A lock end carries a DIN-471 groove only when both of its dimensions are positive. ⚖️ 2026-09-18 (00_07 HW.26)
     // removed the ring as a backup on BOTH ends and the Zone-3 groove from the geometry, so the Zone-3 manifests
-    // declare 0 × 0 at offset 0 — explicit zeros, never absent keys: an absent key would fill from the record
-    // default (gotcha #0a) and silently cut the Zone-1 groove into the flange.
+    // declare 0 × 0 at offset 0 — explicit zeros, never absent keys: an absent key fills from the record default
+    // (gotcha #0a), and MechanicalLockCem's defaults ARE the Zone-1 groove. (CathodeFlangeCem's are zero since the
+    // same day, because the assembly and stack manifests build their flange from defaults alone.)
     public static bool HasGroove(MechanicalLockCem cem) => cem.GrooveWidthMm > 0f && cem.GrooveDepthMm > 0f;
 
     public static Voxels Build(MechanicalLockCem cem)
@@ -123,8 +130,9 @@ internal static class MechanicalLock
             voxShank.BoolSubtract(voxRing);
         }
 
-        // 4. Central bore (01_01 §1.4): bore==0 ⇒ SOLID shank (monolithic anode — the bus is the metal core);
-        //    bore>0 ⇒ the cathode (Zone-3) channel the bus rod threads to the pogo pad.
+        // 4. Central bore (01_01 §1.4): bore==0 ⇒ SOLID shank (the Zone-1 end — the anode carries no core, the bus
+        //    is a wire welded to its TOP face, ⚖️ 2026-09-18); bore>0 ⇒ the cathode (Zone-3) channel the bus wire
+        //    threads to the pogo pad.
         if (cem.BoreDiameterMm > 0f)
             voxShank.BoolSubtract(new BaseCylinder(new LocalFrame(), cem.ShankLengthMm, cem.BoreDiameterMm / 2f).voxConstruct());
 
@@ -137,14 +145,18 @@ internal static class MechanicalLock
     // what must never be reused in the anode frame is the lock's GEOMETRY (G4), not this scalar.
     //   Min = end of the declared PEEK-contact zone: shallower, the last barbs and the PEEK that has to sit
     //         behind their steep faces are outside the sleeve (01_01 §4.3 A).
-    //   Max = near flank of the DIN-471 groove, on an end that still carries one (Zone 1): deeper, the groove is
-    //         inside the PEEK. ⚖️ 2026-09-18 (00_07 HW.26) no ring is fitted as a backup on either end and the
-    //         Zone-3 groove is gone, so on an end WITHOUT a groove there is no groove flank: its deepest insertion
-    //         is the whole shank (the shoulder stops it).
+    //   Max = the whole shank, on EVERY end. ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the window LOST its upper bound
+    //         until G1/G3. It used to be the near flank of the DIN-471 groove — deeper, the ring could not be fitted
+    //         once pressed — but no ring is fitted as a backup on either end any more, so a groove bounds nothing,
+    //         including the Zone-1 groove that stays in the geometry until G1/G3. What is left is the extent of the
+    //         lock itself: on Zone 3 the shoulder stops the press there; on Zone 1 nothing in the tree does (the
+    //         verdict's weakest link: whether that end needs a stop against moving DEEPER is G1/G3), so past it the
+    //         mouth leaves the geometry this manifest describes — which is exactly the G1 conflict to report.
     // ⛔ Declared ceiling: nominal dims only — no depth tolerance of a force-controlled press, no chamfer at
-    //    the mouth, and nothing about whether Zone 1 needs a stop against moving DEEPER (HW.26 G1/G3).
+    //    the mouth. And the Zone-1 `shank_length_mm` is the MODELLED length of the lock coupon, not a physical
+    //    shank length (that length IS G1), so its Max is a statement about this model, never about the anode.
     internal readonly record struct InsertionWindow(float MinMm, float MaxMm);
 
     public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)
-        => new(cem.ContactStartMm + cem.ContactLengthMm, HasGroove(cem) ? cem.GrooveOffsetMm : cem.ShankLengthMm);
+        => new(cem.ContactStartMm + cem.ContactLengthMm, cem.ShankLengthMm);
 }

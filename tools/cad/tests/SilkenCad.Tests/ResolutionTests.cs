@@ -40,16 +40,10 @@ public class ResolutionTests
         // the audit reads it. Each is above one voxel, so it exists in the grid and is merely coarse.
         ["anchor_axial_stack.json:zone1.lattice_thickness"] = "audit measures the envelope, not the lattice wall",
         ["anchor_axial_stack.json:capsule.flange.barb_height_mm"] = "axial retention, not a stack measurand",
-        ["anchor_axial_stack.json:capsule.flange.groove_depth_mm"] = "retaining-ring groove, not a stack measurand",
         ["anchor_axial_stack.json:capsule.radome.slot_clearance_mm"] = "bayonet entry slot, not a stack measurand",
         ["anchor_assembly.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
         ["anchor_assembly.inboard.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
         ["anchor_assembly.skirt.json:flange.barb_height_mm"] = "axial retention, not a capsule-end mate measurand",
-        // The Ø9 groove moved to its DIN 471 row (0.3 → 0.2 mm, 2026-09-14) and fell under the assembly grid
-        // (1.33 voxels at 0.15): the part manifest renders it at 4 voxels, and the mate audit never reads it.
-        ["anchor_assembly.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
-        ["anchor_assembly.inboard.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
-        ["anchor_assembly.skirt.json:flange.groove_depth_mm"] = "retaining-ring groove, not a capsule-end mate measurand",
         // The rim boss (00_07 HW.33, applied 2026-09-14) DECLARES the socket skin — `wall − slot radius` = 0.2 mm, the
         // pocket's outer wall that always stood there undeclared: exactly two voxels on the radome's own grid, under
         // it on both audit grids. The mates read the lift and the interference volume, never the skin.

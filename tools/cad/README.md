@@ -154,11 +154,13 @@ period-graded species SKU; skill `picogk` gotcha #8). ⚠ That calibration is SH
 network verdict landed (2026-09-11) no shipped SKU has two labyrinths to merge, so the shipped set no
 longer exercises the period/24 rule — its carrier is now a dedicated sheet-held pin (`picogk` #8).
 
-**Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** +
-a **DIN-471 retaining groove** on the Ti shank (`01_01 §4.3 A/B`, HW.26 — the lock against PEEK
-cold-flow creep): own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge `BoolAdd` +
-groove-ring `BoolSubtract` + a central bore (`0` ⇒ SOLID monolithic anode shank, `01_01 §1.4`; `Ø1.35` ⇒
-cathode channel the bus rod threads). Golden-metrics MEASURED off the profile (barb count /
+**Mechanical-lock barbs (shipped)** — `MechanicalLock.cs` adds annular asymmetric **ratchet barbs** on
+the Ti shank (`01_01 §4.3 A`, HW.26 — the lock against PEEK cold-flow creep) and, on an end that still
+carries one, a **DIN-471 groove** (`§4.3 B`): ⚖️ 2026-09-18 the ring as a backup was removed on BOTH ends
+and the Zone-3 groove from the geometry; the Zone-1 groove stays until G1/G3 and bounds nothing
+(`MechanicalLock.HasGroove`). Own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge
+`BoolAdd` + groove-ring `BoolSubtract` where `HasGroove` + a central bore (`0` ⇒ SOLID shank — the Zone-1
+end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wire threads, `01_01 §1.4`). Golden-metrics MEASURED off the profile (barb count /
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports printed leading-ramp-down as a SEPARATE part (Ti64 LPBF 60° downface, Sa≈15µm);
 on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep face down at 20° — open,
@@ -166,8 +168,8 @@ on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep 
 tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-spec 0.8×0.6).
 
 **Cathode flange / Деталь 3 (shipped)** — `cathode_flange` CEM → solid Ti flange Ø25 (frozen) reusing the
-§4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping, dir −1) + 3 radial **bayonet lugs**
-(`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the monolithic rod threads it) + the capsule's SINGLE O-ring groove on the top face (1.344 × 2.315 at r 8.085–10.4 — depth = CS·(1 − 0.245), width = ring section / (0.80 fill · depth), radii off the socket band; nothing stored, `00_07` HW.33 branch (а) applied 2026-09-14; the flange sheet draws it as geometry in both readers and its depth tolerance as loud absence). `verify` gates solidity (NOT hollow-shell,
+§4.3 lock for the barbed Zone-3 shank (`CathodeFlange.ShankCem` mapping — the same local ratchet profile; the ±1 direction knob was removed 2026-09-13, HW.26; no groove on this end since 2026-09-18) + 3 radial **bayonet lugs**
+(`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the welded bus wire threads it) + the capsule's one O-ring groove — its FACE seal; the second sealing element, the channel's own closure at its exit, is REQUIRED since 2026-09-18 and not in geometry (`00_07` HW.34) — on the top face (1.344 × 2.315 at r 8.085–10.4 — depth = CS·(1 − 0.245), width = ring section / (0.80 fill · depth), radii off the socket band; nothing stored, `00_07` HW.33 branch (а) applied 2026-09-14; the flange sheet draws it as geometry in both readers and its depth tolerance as loud absence). `verify` gates solidity (NOT hollow-shell,
 gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
 protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
 (O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
@@ -207,11 +209,12 @@ shanks at 150 °C (hex anti-rotation `§4.3 C` is bench-gated → deferred). `ve
 
 **Full axial stack / mate-audit (shipped)** — `AxialStack.cs` + `anchor_axial_stack` CEM brings ALL FOUR zones (anode
 → Zone-2 sleeve → flange → radome) into one axis and MEASURES the press-fit interfaces the capsule-end never touched:
-**Zone1↔Zone2 = 0.00 mm line-to-line** (real +interference = the H7/s6 band on bench, ISO 286) · **Zone2↔Zone3 = −1.0 mm
-= the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 6 mm · span 63 mm · bus continuous.
+**Zone1↔Zone2 = 0.00 mm line-to-line** (real +interference = the press-fit band on bench — no ISO 286 table class is ratified: the band is solved from the Lamé window, `00_07` HW.3, only its inputs open) · **Zone2↔Zone3 = −1.0 mm
+= the Ø9-in-Ø11 clearance (F1, shank Ø placeholder → HW.8.9)** · insertion budget 6 mm · overall stack length 63 mm (anode bottom → flange top; embedded depth 60 — to the flange UNDERSIDE = the bark line, ⚖️ HW.33 2026-09-18) · bus continuous.
 The Zone-1 insertion is also judged against the window its OWN lock admits: the stack names that lock by file
 (`zone1_lock_manifest`, never a copy of its numbers) and `MechanicalLock.InsertionWindowMm` derives the window from the
-shank's free end — PEEK-contact zone end → DIN-471 groove flank; `verify` prints it beside `zone1_insertion_mm` and
+shank's free end — PEEK-contact zone end → end of the shank (⚖️ 2026-09-18, HW.26: no ring is fitted as a backup, so the
+Zone-1 groove bounds nothing and the window lost its upper bound until G1/G3); `verify` prints it beside `zone1_insertion_mm` and
 flags an insertion outside it (the standing conflict → `00_07` HW.26 G1).
 An AUDIT table like the capsule-end — render-sanity exit only, findings asserted by `AxialStackTests`. Render uses the
 Zone-1 envelope (solid Ø11; a press-fit cares about OD, not porosity). The render overlap sleeve∩capsule (~8 mm³) is the
@@ -225,7 +228,7 @@ welded. ⛔ `BuildMonolithic`/`BusRod` were REMOVED with the printed-core branch
 them, because it measured a body the factory never receives. ⚠️ **The ratified fabrication is a WELD** (`00_07` HW.34, 2026-09-10: an as-printed rod carries `ENDURANCE_OVER_YIELD × AS_PRINTED_DERATE`, a welded cold-drawn wire does not), so the rod arrives as bought wire plus a weld and its tolerance/`Sa` come from a wire spec canon does not carry. Porosity is a property of
 the printed part, and since the core left it the reference envelope is the FULL cross-section — the golden
 baselines were re-measured 2026-09-18 and the sub-floor shares moved (`01_02 §1.3`). ⛔ The `verify` line that
-MEASURED the fused rod is gone with the rod. The wire runs anode-top→cathode-channel→flange pad; `AxialStack.BusRodClears` audits rod + 2·liner **<** channel — STRICT since 2026-09-11 (`00_07` HW.34): at `≤` the frozen trio `1.0 + 2×0.15 = 1.30` passed against a Ø1.30 bore, i.e. the gate blessed a ZERO nominal clearance — a true statement about the sum and a false one about the assembly. ⛔ Its declared ceiling did not change: it judges NOMINALS and a DIAMETER, so green here is not proof that a real pair mates, and it says nothing whatever about the liner's LENGTH or its ends. ⚠️ **That gap is no longer an open judgment: the axial extent was RATIFIED 2026-09-12** — the tube spans the whole Zone-3 channel, flush at the pogo face, the lower end protruding ≥ 1.0 mm into the PEEK gap, captured at ONE end only (`01_01 §1.4`, `00_07` HW.34). ✅ Both landed 2026-09-12: the tube has a body in `AxialStack` and a Z check of its own — **F4 `LinerCoversChannel`**, which exists because F3 compares a DIAMETER and therefore cannot see a tube shorter than the channel. What stays open is which end is fixed and whether the channel needs its own seal.
+MEASURED the fused rod is gone with the rod. The wire runs anode-top→cathode-channel→flange pad; `AxialStack.BusRodClears` audits rod + 2·liner **<** channel — STRICT since 2026-09-11 (`00_07` HW.34): at `≤` the frozen trio `1.0 + 2×0.15 = 1.30` passed against a Ø1.30 bore, i.e. the gate blessed a ZERO nominal clearance — a true statement about the sum and a false one about the assembly. ⛔ Its declared ceiling did not change: it judges NOMINALS and a DIAMETER, so green here is not proof that a real pair mates, and it says nothing whatever about the liner's LENGTH or its ends. ⚠️ **That gap is no longer an open judgment: the axial extent was RATIFIED 2026-09-12** — the tube spans the whole Zone-3 channel, flush at the pogo face, the lower end protruding ≥ 1.0 mm into the PEEK gap, captured at ONE end only (`01_01 §1.4`, `00_07` HW.34). ✅ Both landed 2026-09-12: the tube has a body in `AxialStack` and a Z check of its own — **F4 `LinerCoversChannel`**, which exists because F3 compares a DIAMETER and therefore cannot see a tube shorter than the channel. ⚖️ The two questions that stayed open here were RATIFIED 2026-09-18 (`00_07` HW.34): the tube is captured at the UPPER end (the pad plane), and the channel gets its own closure at its EXIT — the Ti↔PEEK path is not sealed by design, so that closure guards the capsule. Both are requirements in canon; their geometry waits on the pogo pin P/N (HW.9).
 
 **Engineering drawings + render (shipped)** — `draw <cem>` → SVG (human) + **DXF via netDxf** (factory-native, opens
 in AutoCAD/Fusion), pure-managed, consuming the CEM `ToleranceSpec`/`NotesSpec` (fits; GD&T datums;
@@ -234,7 +237,8 @@ coating-restriction; lattice-spec). §7/§8 DECIDED: DXF+SVG / ISO 1st-angle / C
 line used to state it as if it were the shipped reality.** It is not: `cem/zone2_sleeve.json`'s 5–34 µm is the ISO 286
 table (`tools/in_silico/lib/constants.py`), which Lamé consumes to compute a contact pressure rather than produces.
 The generator briefly hid that by appending a hard-coded «(Lamé, E_PEEK-aware)» to the line — invented PROVENANCE on a
-true value, removed — and the engineering verdict is open in `00_07` HW.3. **This tract prints QUANTITIES; where a
+true value, removed — and the engineering verdict is RATIFIED (2026-09-18, `00_07` HW.3): no table class; the band is solved
+from the Lamé window, and only its inputs are open. **This tract prints QUANTITIES; where a
 number came from is engineering text and belongs in the CEM.**
 ⛔ **The shipped-kind roster is `Program.Draw`'s `switch`, not this paragraph** — it carried one and went stale the day
 a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds (today: the radome, because its
@@ -252,7 +256,7 @@ redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are p
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
 **Deferred:** the raised-collar implementation (the rim BOSS is applied since 2026-09-14; the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ — two positive terms now that the O-ring face gap is zero under branch (а) — so the lug takes a Z of its own on a collar, `Assembly.RequiredLugZMm` = 20.5; ⚖️ 2026-09-14: designed under the Ø15.57 ceiling and handed to HW.9 as an INPUT, not gated on it — what holds the collar is its WALL, which no artefact sets (no bayonet load model), and a placeholder would print on the flange sheet as a decision; bench follows at HW.8.8) · the flat crown R5 (ratified 2026-09-11, waits on ⚖️ HW.30 — `hollow_fraction`'s reference solid and the `bell_*` floor-checks must move with it) · the shank-Ø
-press-fit reconcile (the Ø9 shank placeholder vs bore Ø11, HW.8.9; the fit class is open, HW.3) · a phase-correct strong continuous gradient (period-tensor/
+press-fit reconcile (the Ø9 shank placeholder vs bore Ø11, HW.8.9; no table class is ratified — the band comes from the Lamé window, HW.3) · a phase-correct strong continuous gradient (period-tensor/
 conformal). ⛔ The print-thickening parameter for the FE was listed here and **shipped 2026-09-14** as `fea --dilate` — removed; what it still cannot say (the printed excess per face orientation) is a vendor answer, `00_07` HW.51. ⛔ The C-vs-n porosity sweep was listed here and **shipped 2026-09-12** as `fea --fit` — removed. ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 
 ## License
