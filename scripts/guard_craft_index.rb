@@ -139,7 +139,19 @@ TARGETS = [
     floor: 23,
     open:  "<!-- WEB3-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /WEB3-GOTCHAS-INDEX -->" }
+    close: "<!-- /WEB3-GOTCHAS-INDEX -->" },
+  # Sixth target, 2026-09-18. 23 items, 59 749 B = 58% of a 104 kB skill loaded on every CAD
+  # session; the body was truncated after compaction, which is how the gallery rule it carried got
+  # broken on 2026-09-10. Items carry suffixes (0a · 0b · 4a · 9b) and four sat out of order — the
+  # move sorted them and never renumbered: the numbers are cited from the tracker, canon comments
+  # and the memory corpus.
+  { name:  "picogk",
+    skill: File.join(ROOT, ".claude/skills/picogk/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/picogk/gotchas.md"),
+    floor: 23,
+    open:  "<!-- PICOGK-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /PICOGK-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
