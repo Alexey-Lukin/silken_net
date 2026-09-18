@@ -49,7 +49,7 @@
     "delta_total_um": -1.724,
     "P_c_initial_MPa": 0.0,
     "press_fit_separates": true,
-    "note": "Hot + min-fit: \u03b4_total<0 \u2192 press-fit gaps open \u2192 P_c clamped to 0; O-ring is the only seal. 20-yr relaxation + O-ring-essential conclusion lives in script 50 / THERMAL_STRESS_REPORT \u00a72-3."
+    "note": "Hot + min-fit: \u03b4_total<0 \u2192 press-fit gaps open \u2192 P_c clamped to 0; an elastomer seal is REQUIRED here, and none is ratified on this path (the one O-ring is the top-face radome seal, 00_07 HW.33; which seal closes the path is open, 00_07 HW.34). 20-yr relaxation + seal-essential conclusion lives in script 50 / THERMAL_STRESS_REPORT \u00a72-3."
   },
   "sweep": {
     "min": [

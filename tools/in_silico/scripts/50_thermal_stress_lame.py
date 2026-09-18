@@ -214,7 +214,7 @@ def main() -> int:
         pc_max = relaxed_pressure(p0_max, y)
         holds = pc_min / 1e6 > P_SAP_MPa
         print(f"  {y:>3d} years: P_c = {pc_min/1e6:.2f}-{pc_max/1e6:.2f} MPa  "
-              f"(min {'> sap' if holds else '≤ sap → O-ring carries the seal'})")
+              f"(min {'> sap' if holds else '≤ sap → an elastomer seal is required on this path'})")
         relax_results.append({"years": y, "P_c_min_MPa": pc_min / 1e6, "P_c_max_MPa": pc_max / 1e6})
     pc_20_min = relax_results[-1]["P_c_min_MPa"]
     pc_20_max = relax_results[-1]["P_c_max_MPa"]
@@ -229,7 +229,8 @@ def main() -> int:
     print(f"  Δα = {(ALPHA_PEEK-ALPHA_TI)*1e6:.0f}e-6/K → INNER Ti↔PEEK interface TIGHTENS in cold (good).")
     print(f"  A hypothetical rigid OUTER Ti shell would lose r·Δα·|ΔT| = {loss*1e6:.1f} µm of interference,")
     print("  but the real outer surface is the wound (wood E≈PEEK + callus), so that is a conservative")
-    print("  artifact, not a seal path. Hermetic seal = the AXIAL O-ring at the flange (immune to this).")
+    print("  artifact, not a seal path. ⚠️ No ratified seal sits on the Ti↔PEEK path itself: the ONE O-ring")
+    print("  is the top-face radome seal (00_07 HW.33); which seal closes this path is open (00_07 HW.34).")
 
     alloy_cmp = alloy_comparative()
 
@@ -238,10 +239,11 @@ def main() -> int:
     print(f"  Press-fit P_c (H7/s6 band): {p0_min/1e6:.2f}-{p0_max/1e6:.2f} → {pc_20_min:.2f}-{pc_20_max:.2f} MPa over 20yr (semicrystalline floor)")
     seal_word = ">" if pc_20_min > P_SAP_MPa else "≤"
     print(f"  At MIN H7/s6 interference the relaxed P_c ({pc_20_min:.2f} MPa) {seal_word} sap ({P_SAP_MPa} MPa) →")
-    print("    the elastomer O-ring (NOT PEEK contact) is the ESSENTIAL hermetic seal — this is exactly why")
-    print("    it is the primary seal, not a redundancy. Barbs/retaining ring = AXIAL pull-out + anti-rotation")
+    print("    an elastomer seal (NOT PEEK contact) is ESSENTIAL on this path — a requirement, not a redundancy.")
+    print("    ⚠️ The ONE ratified O-ring is the top-face radome seal (00_07 HW.33), not on this path; which seal")
+    print("    closes it is open (00_07 HW.34). Barbs/retaining ring = AXIAL pull-out + anti-rotation")
     print("    ONLY (they do NOT seal). PEEK = structural/thermal isolator + (at max fit) a backup P_c.")
-    print(f"  ✅ Ti↔PEEK press-fit survives 20+ years (thermal {worst['safety_factor']:.1f}× margin; seal via O-ring).")
+    print(f"  ✅ Ti↔PEEK press-fit survives 20+ years (thermal {worst['safety_factor']:.1f}× margin); the seal of this path is open (HW.34).")
 
     # Plot
     _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -302,16 +304,16 @@ def main() -> int:
             "sap_pressure_MPa": P_SAP_MPa,
             "seal_holds_20yr_min_fit": bool(pc_20_min > P_SAP_MPa),
             "relaxation_series": relax_results,
-            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so the elastomer O-ring is the ESSENTIAL seal. relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 00_02 Стаття 2).",
+            "note": "P_c uses the bug-fixed contact radius b=R_INTERFACE (was R_INNER -> ~2.6x over-stated) + the H7/s6 band (was a 50um placeholder). At MIN fit the relaxed P_c may be <= sap, so an elastomer seal is ESSENTIAL on this path (none is ratified there - 00_07 HW.34). relax_floor/tau = interim literature-Prony (NOT Gusak-authoritative, 00_02 Стаття 2).",
         },
         "winter": {
             "dT_K": dT_cold,
             "outer_radius_mm": R_OUTER * 1e3,
             "inner_interface": "tightens in cold (PEEK grips the Ti shaft harder) -- good",
             "hypothetical_outer_shell_loss_um": loss * 1e6,
-            "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. Seal = axial O-ring at the flange.",
+            "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. No ratified seal sits on the Ti-PEEK path itself: the one O-ring is the top-face radome seal (00_07 HW.33); which seal closes this path is open (00_07 HW.34).",
         },
-        "sealing": "primary hermetic seal = elastomer O-ring (FKM/EPDM); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
+        "sealing": "an elastomer seal is REQUIRED on the Ti-PEEK path (at MIN fit the relaxed P_c <= sap) - but no ratified seal sits there: the one O-ring is the top-face radome seal (00_07 HW.33), and which seal closes this path is open (00_07 HW.34); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
         "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse)",
     }
     json_path = OUT_DIR / "thermal_stress_lame.json"

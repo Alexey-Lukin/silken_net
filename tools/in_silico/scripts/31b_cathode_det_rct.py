@@ -15,7 +15,7 @@ magnitude, so EIS cannot pin it a priori.
 
 over a grid of (k_DET scenario × Γ coverage). k_DET scenarios are loaded from the
 canon cache (drift-proof): the literature-λ borderline value and the FO-DFT margin
-range. Compared against the canon anode Rct (~130 Ω) for context.
+range. Compared against the canon anode Rct (read at run time from script 31's cache) for context.
 
 Run:  mamba run -n silken_md python tools/in_silico/scripts/31b_cathode_det_rct.py
 Cost: ~instant (analytical).

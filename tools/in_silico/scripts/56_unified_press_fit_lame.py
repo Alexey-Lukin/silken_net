@@ -119,15 +119,17 @@ def main() -> int:
 
     # ── Sealing corner (warmest + min fit → lowest P_c); 20-yr relaxation handled by script 50 ──
     # δ_total < 0 = the press-fit SEPARATES (thermal expansion exceeds the min mechanical interference);
-    # contact can't carry tension → clamp P_c to 0 (gap). This is exactly why the O-ring, not the
-    # press-fit, is the essential seal at the hot end.
+    # contact can't carry tension → clamp P_c to 0 (gap). This is exactly why an elastomer seal, not the
+    # press-fit, is REQUIRED at the hot end — and no ratified seal sits on this path (the one O-ring is the
+    # top-face radome seal, 00_07 HW.33; which seal closes the path is open, 00_07 HW.34).
     seal = min(grid["min"], key=lambda s: s["P_c"])
     gap = seal["delta_total_um"] < 0
     pc0 = max(seal["P_c"], 0.0)
     banner("Sealing corner (warm + min fit → lowest initial P_c)")
     if gap:
         print(f"  T={seal['T_C']:.0f}°C, fit=min: δ_total = {seal['delta_total_um']:.1f} µm < 0 → press-fit SEPARATES (gap); P_c = 0")
-        print("  Hot + min-fit opens the Ti↔PEEK joint → the axial O-ring is the ONLY seal here (script 50 / report §2-3).")
+        print("  Hot + min-fit opens the Ti↔PEEK joint → an elastomer seal is REQUIRED here, and none is ratified on")
+        print("  this path (the one O-ring is the top-face radome seal, HW.33; the path's seal is open, HW.34).")
     else:
         print(f"  T={seal['T_C']:.0f}°C, fit=min: δ_total = {seal['delta_total_um']:.1f} µm → P_c(0) = {pc0/MPA:.2f} MPa")
         print("  (20-yr stress relaxation toward the semicrystalline floor + O-ring-essential → script 50 / report §2)")
@@ -207,7 +209,7 @@ def main() -> int:
             "delta_total_um": round(seal["delta_total_um"], 3),
             "P_c_initial_MPa": round(pc0 / MPA, 3),
             "press_fit_separates": bool(gap),
-            "note": "Hot + min-fit: δ_total<0 → press-fit gaps open → P_c clamped to 0; O-ring is the only seal. 20-yr relaxation + O-ring-essential conclusion lives in script 50 / THERMAL_STRESS_REPORT §2-3.",
+            "note": "Hot + min-fit: δ_total<0 → press-fit gaps open → P_c clamped to 0; an elastomer seal is REQUIRED here, and none is ratified on this path (the one O-ring is the top-face radome seal, 00_07 HW.33; which seal closes the path is open, 00_07 HW.34). 20-yr relaxation + seal-essential conclusion lives in script 50 / THERMAL_STRESS_REPORT §2-3.",
         },
         "sweep": {fit: [slim(s) for s in grid[fit][::10]] for fit in ("min", "max")},
         "verdict": (

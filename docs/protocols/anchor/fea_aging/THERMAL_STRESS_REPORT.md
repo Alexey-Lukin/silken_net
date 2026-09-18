@@ -6,6 +6,8 @@
 
 ## Summary
 
+> ⚠️ **The O-ring this report counts on as the seal of the Ti↔PEEK path does not exist in the ratified design** (noted 2026-09-18). The ONE O-ring of the anchor is the face seal on the flange's TOP face — the radome joint (`00_07` HW.33 branch (а), 2026-09-10) — and it does not see this path. What stands is the REQUIREMENT this report derives: at MIN fit an elastomer seal is essential on the Ti↔PEEK path. Which seal meets it is open (`00_07` HW.34, the channel-seal leg). Read every «O-ring» below as «the required seal of this path».
+
 Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). 🔴 **This verdict is ALLOY-SPECIFIC and does NOT transfer** (noted 2026-09-08): every number below is Gr5's (α 8.6×10⁻⁶, E 110 GPa), Gr5 is the **baseline, not the chosen alloy** (`01_02 §2.5` six-alloy bake-off, `00_07` HW.24), and the candidates differ by exactly the properties this report divides by — Ta ≈ 6.3×10⁻⁶ / 186 GPa, Ti-13Nb-13Zr ≈ 79 GPa. **The SF 5.6× is not portable; re-run `56_unified_press_fit_lame.py` per alloy before quoting it for anything but Gr5.** (The sibling artifact already went per-alloy: `protocols/ebfc/in_silico/SUMMARY.md` §Per bake-off alloy.) The honest
 **combined** worst-case stress (−30 °C + s6-max, unified thick-wall Lamé) stays well below PEEK yield
 (**SF 5.6×**, von Mises 4.7×; thermal-only 14.6×) — the 2 mm wall is a **robust default, not stress-limited**
@@ -41,7 +43,7 @@ frozen, HW.33); the latent "thinner wall = smaller wound" lever is logged in `00
 >    **ISO 286 H7/s6 band** (Ø11 → 5-34 µm diametral). E_PEEK refined 3.6 → **4.0 GPa** (Victrex datasheet).
 >
 > Net: the headline P_c fell from a (buggy) **34.7 → 22.6 MPa** to an honest **0.49-3.32 → 0.32-2.16 MPa**.
-> The 20-year verdict still holds (thermal 3.4× margin + the O-ring seal), but the PEEK backup pressure is
+> The 20-year verdict still holds on the thermal margin (the seal of the path is open — ⚠️ above), but the PEEK backup pressure is
 > **marginal at min fit**, not comfortable — which is exactly why the O-ring is primary.
 >
 > ⚠️ **Correction C (unified thick-wall Lamé, 2026-06-22):** §1's thermal σ_t (29.7 MPa, SF 3.4×) comes
@@ -114,7 +116,7 @@ PEEK has 5.5× the CTE of Ti, so on cooling it shrinks more → at the **inner**
 the shaft **tighter** (good; interference increases). A *hypothetical* rigid outer Ti shell would lose
 ≈ 14 µm of interference at -30°C — but the frozen anchor's PEEK OD is the **wound in the tree** (compliant
 wood + callus), not a Ti shell, so the old "outer Ti cold-leak" was a **baseline modelling artifact**. The
-hermetic seal is the **axial O-ring at the flange** (immune to this).
+hermetic seal of the Ti↔PEEK path is a REQUIREMENT with no ratified carrier (⚠️ above — the one O-ring seals the radome joint).
 
 ### 4. Combined worst-case — unified thick-wall Lamé (−30 °C + s6-max fit)
 
@@ -132,7 +134,7 @@ linear in interference, so the two superpose exactly — the combined number is 
 
 The honest combined worst case is **comfortable** (SF > 4× even on von Mises), not the alarming 1.4×. At
 the hot end (+40 °C + min fit) the effective interference goes **negative** — the press-fit gaps open
-(P_c → 0), so the axial O-ring is the only seal there (consistent with §2-3). Cache:
+(P_c → 0), so the path needs its own seal there (consistent with §2-3) — and none is ratified on it (⚠️ above). Cache:
 `cache/kinetics/unified_press_fit_lame.json`.
 
 ## Conclusions
