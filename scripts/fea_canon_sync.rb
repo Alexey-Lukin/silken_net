@@ -13,7 +13,7 @@
 # at 0.2 %, and a calibration stated to nine decimals that the cache does not support. Both were
 # arithmetic ABOUT the cache, which is exactly the class a comparison can hold and prose cannot.
 #
-# WHAT IT CHECKS — FIVE layers, in increasing distance from the raw data (⚠️ this line said "three"
+# WHAT IT CHECKS — SIX layers, in increasing distance from the raw data (⚠️ this line said "three"
 # for the hours between the fourth landing and this correction — a header is a claim about its own file,
 # and the edit that falsifies it is one section below, where nothing looks at the header):
 #   1. TRANSCRIPTION — every cell of the two canon tables against the cached rows.
@@ -25,6 +25,8 @@
 #      family, which layers 1-3 do not read at all, plus that family's own provenance (specimen size).
 #   5. THE FACE-OFFSET SENSITIVITY TABLE — each row against its per-row `dilation_sensitivity.*` file, and
 #      the zero row against the pinned step sweep FIELD FOR FIELD, which is the identity control itself.
+#   6. THE GRADED-POROSITY PAIR (§5.5) — graded part against its uniform twin at equal mass, recomputed from
+#      two cache families by the same log-log interpolation canon describes.
 #
 # ⚠️ DECLARED CEILING, and it is wider than the usual one for a value guard:
 #   • It judges NUMBERS, never the prose around them. A row can match perfectly under a sentence that
@@ -242,10 +244,17 @@ FIT_ROWS = {
   # marked one were listed, dropping the caveat would red as "unknown specimen — add it to FIT_ROWS", which is
   # the one instruction that must NOT be followed: it invites re-adding the row with no era tie at all. Listing
   # both lets the CACHE decide which spelling is true and lets the message say so.
-  "деталь (кільцева зона Ø11×40)" =>
+  # The welded branch (00_07 HW.1) prints the anode WITHOUT a core, so the re-measured specimen is not an annulus
+  # at all — it carries its own name, and the name is what separates the two eras in the table.
+  "деталь (ґратка до осі Ø11×40)" =>
     { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" },
   "деталь (кільцева зона Ø11×40, знесена гілка)" =>
-    { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d", retired: true }
+    { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d", retired: true },
+  # ⛔ The annulus WITHOUT the caveat names a specimen no verb produces — listed only so that dropping the caveat
+  # reds with the right instruction (rename to the lattice-to-the-axis specimen) instead of «add it to FIT_ROWS».
+  "деталь (кільцева зона Ø11×40)" =>
+    { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d",
+      renamed_to: "деталь (ґратка до осі Ø11×40)" }
 }.freeze
 
 fit_rows_seen = 0
@@ -257,6 +266,10 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   specimen, div, axis, c_q, n_q, r2_q = Regexp.last_match.captures
   spec = FIT_ROWS[specimen.strip]
   next failures << "fit table names an unknown specimen '#{specimen.strip}' — add it to FIT_ROWS or fix canon" if spec.nil?
+  if spec[:renamed_to]
+    next failures << "fit row '#{specimen.strip}' /#{div} names the retired annulus as if it were current — a row "\
+                     "re-measured on the welded body is '#{spec[:renamed_to]}'; a row still on the old cache keeps «знесена гілка»"
+  end
 
   path = File.join(ROOT, format(spec[:glob], n: div.to_i))
   next failures << "fit row #{specimen.strip} #{div} quotes a cache that is not committed (#{spec[:glob] % { n: div.to_i }})" unless File.exist?(path)
@@ -307,8 +320,8 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
   measured_pre_a = f.key?("with_bus_rod")
   if spec[:retired] && !measured_pre_a
     failures << "fit row #{specimen.strip} /#{div}: #{File.basename(path)} no longer carries the retired branch's "\
-                "`with_bus_rod` fingerprint — it was re-measured on the welded body, so DROP «знесена гілка» from "\
-                "the specimen cell (and from FIT_ROWS) instead of leaving canon under-claiming a fresh number"
+                "`with_bus_rod` fingerprint — it was re-measured on the welded body, so the row is the lattice-to-the-axis "\
+                "specimen: rename the cell to «деталь (ґратка до осі Ø11×40)» instead of leaving canon under-claiming a fresh number"
   elsif !spec[:retired] && measured_pre_a
     failures << "fit row #{specimen.strip} /#{div}: #{File.basename(path)} still carries `with_bus_rod`, i.e. it was "\
                 "measured BEFORE the welded branch (00_07 HW.1) — the row must say «знесена гілка» or be re-run"
@@ -458,10 +471,61 @@ if anchors < EXPECTED_ANCHORS
               "DISARMED a comparison; find the reworded sentence, do not lower this number"
 end
 
+# ── 6. THE GRADED-POROSITY PAIR AT EQUAL MASS (01_01 §5.5, HW.33) ────────────────────────────────────
+#
+# 🔴 Added 2026-09-18, because these numbers had no machine tie at all and went stale in the one way prose cannot
+# notice: they lived in a CLOSED tracker leg, the welded branch re-measured the caches they cite, and the leg went on
+# quoting the annulus. The pair is a DERIVATION over two cache families — the graded part itself (`anchor_zone1_
+# graded_porosity.h<µm>um.json`) against its uniform twin, log-log interpolated to the part's own relative density
+# between the bracket walls −0.20/−0.10 of `gibson_ashby_fit.anchor_zone1_graded_porosity.h<µm>um.json` — so a
+# re-run that moves either family must red here instead of leaving §5.5 standing over new numbers.
+# ⛔ DECLARED CEILING: it pins the four percentages and the two porosities the sentence quotes, at the precision it
+# quotes them; the reading drawn from them (mechanics does not decide the fork) is a judgement and stays prose.
+graded_pair = lambda do |tag|
+  part_path = File.join(DILATION_DIR, "anchor_zone1_graded_porosity.#{tag}.json")
+  fit_path = File.join(DILATION_DIR, "gibson_ashby_fit.anchor_zone1_graded_porosity.#{tag}.json")
+  next nil unless File.exist?(part_path) && File.exist?(fit_path)
+
+  part = JSON.parse(File.read(part_path))["rows"].first
+  rows = JSON.parse(File.read(fit_path))["rows"]
+  lo = rows.find { |r| (r["wall_param"] + 0.2).abs < 1e-6 }
+  hi = rows.find { |r| (r["wall_param"] + 0.1).abs < 1e-6 }
+  next nil if lo.nil? || hi.nil?
+
+  rho = 1.0 - part["porosity"]
+  interp = lambda do |axis|
+    x0, x1 = Math.log(lo["relative_density"]), Math.log(hi["relative_density"])
+    y0, y1 = Math.log(lo["#{axis}_ratio"]), Math.log(hi["#{axis}_ratio"])
+    Math.exp(y0 + ((y1 - y0) * (Math.log(rho) - x0) / (x1 - x0)))
+  end
+  { porosity: part["porosity"] * 100.0,
+    axial: ((part["axial_ratio"] / interp.call("axial")) - 1.0) * 100.0,
+    radial: ((part["radial_ratio"] / interp.call("radial")) - 1.0) * 100.0 }
+end
+signed = ->(s) { s.tr("−", "-").delete("+").to_f }
+if (m = canon.match(/осьово \*\*([+−][0-9.]+) %\*\* · \*\*([+−][0-9.]+) %\*\* на кроках 0\.22 · 0\.183 мм.*?радіально \*\*([+−][0-9.]+) %\*\* · \*\*([+−][0-9.]+) %\*\*.*?пористості градієнтної деталі ([0-9.]+) · ([0-9.]+) %/m))
+  ax220, ax183, rad220, rad183, por220, por183 = m.captures
+  quoted = { "h220um" => [ ax220, rad220, por220 ], "h183um" => [ ax183, rad183, por183 ] }
+  quoted.each do |tag, (ax_q, rad_q, por_q)|
+    got = graded_pair.call(tag)
+    next failures << "graded pair #{tag}: the part or its bracket fit is not committed (or lacks the −0.20/−0.10 walls)" if got.nil?
+
+    { "axial %" => [ got[:axial], ax_q ], "radial %" => [ got[:radial], rad_q ], "porosity %" => [ got[:porosity], por_q ] }.each do |what, (cached, q)|
+      digits = q.include?(".") ? q.split(".").last.length : 0
+      next if (cached.round(digits) - signed.call(q)).abs < 1e-9
+
+      flag(failures, "graded pair #{tag} #{what}", format("%+.#{digits}f", cached), q)
+    end
+  end
+else
+  failures << "the graded-pair sentence of §5.5 is gone or reworded — its four percentages and two porosities have no "\
+              "other tie to the caches; fix the sentence shape, do not drop this check"
+end
+
 if failures.empty?
   puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
-       "zero row = the pinned sweep field for field)"
+       "zero row = the pinned sweep field for field, + the graded pair of §5.5)"
   exit 0
 end
 

@@ -1539,12 +1539,11 @@ internal static class Program
     // gap canon had called non-physical: the single-point C of the cube ITSELF wanders 0.71 / 0.80 /
     // 0.77 across grid steps, the FITTED exponents agree, and only C differs.
     // ✅ The two specimens were brought to ONE step on 2026-09-16 (part `--step-div 32`, cube
-    // `--steps-per-period 64`), and it split the formula in two: the EXPONENT agrees to 0.0002, so it is
-    // a property of the LATTICE rather than of the specimen, while C stays apart by +5.1 % — down from
-    // +8.8 % on mixed steps. ⛔ Read that 5.1 % as an UPPER bound: the cube has converged while the
-    // part's own ladder still descends and its core is the better-resolved of the two, so both open axes
-    // push the residual DOWN. Coefficients still do not cross between geometries; the ground for that is
-    // a MEASUREMENT now, no longer «not measured alike». Numbers live in 01_01 §5.2, never here.
+    // `--steps-per-period 64`), and it split the formula in two: the EXPONENT agrees, so it is a property
+    // of the LATTICE rather than of the specimen, while C stays apart — and that residual is an UPPER bound,
+    // because the cube has converged while the part's own ladder still descends. Coefficients do not cross
+    // between geometries; the ground for that is a MEASUREMENT, no longer «not measured alike». The numbers,
+    // and which specimen each row was measured on, live in 01_01 §5.2 only.
     private static int FeaFitPart(string[] args)
     {
         string strCemPath = args[1];
