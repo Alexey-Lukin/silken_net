@@ -6,9 +6,9 @@
 
 ## Summary
 
-> ⚠️ **The O-ring this report counts on as the seal of the Ti↔PEEK path does not exist in the ratified design** (noted 2026-09-18). The ONE O-ring of the anchor is the face seal on the flange's TOP face — the radome joint (`00_07` HW.33 branch (а), 2026-09-10) — and it does not see this path. And the requirement this report derived was answered on 2026-09-18 (`00_07` HW.34): **the Ti↔PEEK path is NOT sealed, by design** — the fit cannot seal at MIN fit, the PEEK gap is wet, and the capsule is guarded by the bus channel's own closure at its exit. Read every «O-ring … essential» below as «the fit does not seal, and is not asked to».
+> ⚠️ **The O-ring this report counts on as the seal of the Ti↔PEEK path does not exist in the ratified design** (noted 2026-09-18). The ONE O-ring of the anchor is the face seal on the flange's TOP face — the radome joint (`00_07` HW.33 branch (а), 2026-09-10) — and it does not see this path. And the requirement this report derived was answered on 2026-09-18 (`00_07` HW.34): **the Ti↔PEEK path is NOT sealed, by design** — the fit cannot seal at MIN fit, the PEEK gap is wet, and the capsule is to be guarded by the bus channel's own closure at its exit (required 2026-09-18; geometry after the pogo pin P/N, `00_07` HW.9 — not in any drawing yet). Read every «O-ring … essential» below as «the fit does not seal, and is not asked to».
 
-Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C). 🔴 **This verdict is ALLOY-SPECIFIC and does NOT transfer** (noted 2026-09-08): every number below is Gr5's (α 8.6×10⁻⁶, E 110 GPa), Gr5 is the **baseline, not the chosen alloy** (`01_02 §2.5` six-alloy bake-off, `00_07` HW.24), and the candidates differ by exactly the properties this report divides by — Ta ≈ 6.3×10⁻⁶ / 186 GPa, Ti-13Nb-13Zr ≈ 79 GPa. **The SF 5.6× is not portable; re-run `56_unified_press_fit_lame.py` per alloy before quoting it for anything but Gr5.** (The sibling artifact already went per-alloy: `protocols/ebfc/in_silico/SUMMARY.md` §Per bake-off alloy.) The honest
+Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-30°C to +40°C) — ⚠️ **as a STRESS verdict, i.e. at the band's MAX end** (noted 2026-09-18, `00_07` HW.3): at its MIN end the 5 µm interference opens to −3.45 µm at +40 °C (`gusak_degradation.json`), so the MIN of today's 5–34 µm band lies BELOW the window floor «the fit still holds at +40 °C»; ISO 286 is not ratified, and the band is to be solved from that window (`01_01 §4.2`, §2 below). 🔴 **This verdict is ALLOY-SPECIFIC and does NOT transfer** (noted 2026-09-08): every number below is Gr5's (α 8.6×10⁻⁶, E 110 GPa), Gr5 is the **baseline, not the chosen alloy** (`01_02 §2.5` six-alloy bake-off, `00_07` HW.24), and the candidates differ by exactly the properties this report divides by — Ta ≈ 6.3×10⁻⁶ / 186 GPa, Ti-13Nb-13Zr ≈ 79 GPa. **The SF 5.6× is not portable; re-run `56_unified_press_fit_lame.py` per alloy before quoting it for anything but Gr5.** (The sibling artifact already went per-alloy: `protocols/ebfc/in_silico/SUMMARY.md` §Per bake-off alloy.) The honest
 **combined** worst-case stress (−30 °C + s6-max, unified thick-wall Lamé) stays well below PEEK yield
 (**SF 5.6×**, von Mises 4.7×; thermal-only 14.6×) — the 2 mm wall is a **robust default, not stress-limited**
 (the former "CTE-limited / SF 3.4×" was an over-stated-denominator artifact, Correction C). The press-fit contact pressure is far
@@ -106,9 +106,12 @@ Polymers 2021 PMC8199459, two relaxing components — and kept **conservative**:
 PEEK relaxation is slow → real retention likely > 0.65, so this **under-states** residual P_c). The
 authoritative multi-term Maxwell-Wiechert fit stays with **школа Гусака** (`00_02 Стаття 2`).
 
-**The H7/s6 band is well-bounded:** at MIN fit the relaxed PEEK P_c (0.32 MPa) ≤ sap → the O-ring is
-essential; at MAX fit the press-fit hoop stress (script 51, thick-wall: σ_hoop ≈ **17.9 MPa** @ -30°C + max
-interference = the combined worst case, §4) stays well < PEEK yield (**SF 5.6×**). Both ends acceptable.
+**The H7/s6 band is bounded at its MAX end only** (⚠️ 2026-09-18, `00_07` HW.3): at MAX fit the press-fit hoop
+stress (script 51, thick-wall: σ_hoop ≈ **17.9 MPa** @ -30°C + max interference = the combined worst case, §4)
+stays well < PEEK yield (**SF 5.6×**) — acceptable. At MIN fit the relaxed PEEK P_c (0.32 MPa) ≤ sap, so the fit
+does not seal (and is not asked to — ⚠️ Summary), and at +40 °C the 5 µm minimum opens to −3.45 µm
+(`gusak_degradation.json`): the band's MIN lies BELOW the window floor «the fit still holds at +40 °C» — that end
+is NOT acceptable, and the band is to be solved from the Lamé window rather than read from ISO 286 (`01_01 §4.2`).
 
 ### 3. Winter behaviour — inner interface tightens; outer = tree
 
@@ -168,6 +171,6 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 
 - Coaxial topology + mechanical lock → `docs/01_01 §4.3`
 - Frozen dims + ΔCTE window (combined SF 5.6×) → `docs/01_01 §1` + `§4.2`
-- O-ring seal + Flush Mount → `docs/01_04 §3.1`
+- O-ring (the radome face seal) → `docs/02_02 §3.2`/`§3.5`; Flush Mount drilling + the flange seated on the bark, its catalytic strip above it → `docs/01_04 §3.1`
 - Prony-series / barb-FEA outsource boundary → `docs/00_03 §3.6`, `docs/00_02 Стаття 2` (школа Гусака)
 - Script → `tools/in_silico/scripts/50_thermal_stress_lame.py` + `51_…` + `56_unified_press_fit_lame.py` (core `lib/mechanics.py`) · Cache → `cache/kinetics/{thermal_stress_lame,gusak_degradation,unified_press_fit_lame}.json`
