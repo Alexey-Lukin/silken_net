@@ -373,9 +373,19 @@ def test_bus_mechanical_interference_window():
     #    INPUT: the tube's bore nominal is specified NOWHERE (canon freezes the wall and says the
     #    supplier holds ID/OD), so the sentinel must stay absent and the window must declare itself
     #    computed at an assumption. Typing a bore nominal in flips both and reds this.
-    assert iw["bore_nominal_specified_mm"] is None, "a bore nominal was typed in — it is NOT SPECIFIED"
-    assert iw["bore_nominal_is_assumed"] is True
-    assert iw["required_nominal_offset_diametral_um"] > 0.0
+    # ⚖️ 2026-09-18 (00_07 HW.34) the nominal was RATIFIED — bore = wire − 11.41 µm, wall 0.15, fitted hot —
+    #    so the honesty condition flips: the sentinel must now carry exactly the ratified value, and that
+    #    value must land INSIDE the window the block recomputes at that very bore. Reverting to None, or a
+    #    typed bore whose interference falls outside [floor, ceiling], reds this.
+    wire = iw["pair_mm"]["wire_dia"]
+    assert iw["bore_nominal_specified_mm"] == pytest.approx(wire - 11.41e-3, abs=1e-9), \
+        "the bore nominal is not the ratified wire − 11.41 µm"
+    assert iw["bore_nominal_is_assumed"] is False
+    nominal_radial_um = (wire - iw["bore_nominal_specified_mm"]) * 1e3 / 2.0
+    assert iw["floor"]["radial_um"] <= nominal_radial_um <= iw["ceiling"]["radial_um"], \
+        "the ratified nominal interference sits outside the window recomputed at its own bore"
+    assert iw["nominal_vs_window_centre_diametral_um"] == pytest.approx(
+        2.0 * nominal_radial_um - iw["required_nominal_offset_diametral_um"], abs=0.01)
 
 
 def test_gusak_press_fit_flags_follow_their_own_numbers():

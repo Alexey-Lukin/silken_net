@@ -368,8 +368,14 @@ WELD_KNOCKDOWN_MARKERS = (("joint as bad as an as-printed surface", AS_PRINTED_D
 #    nobody has specified the bore, therefore the fit is whatever the vendor's process happens to
 #    centre on. The block computes the window under a DECLARED assumption (bore = rod Ø, the only
 #    reading the tree supports) and says so in the cache instead of asserting a spec.
-LINER_BORE_SPECIFIED_MM = None     # NOT SPECIFIED — no canon row, no drawing (00_07 HW.34 RFQ leg)
-LINER_BORE_ASSUMED_MM = D_BUS      # the assumption the window is computed at, named as one
+# ⚖️ The two paragraphs above are the PRE-VERDICT state. RATIFIED founder 2026-09-18 (00_07 HW.34): the tube bore
+#    nominal = wire Ø − 11.41 µm — the window centre this block printed at bore = rod Ø — with the WALL kept at
+#    the ratified 0.15 (OD_nom = ID_nom + 2×0.15) and the tube fitted HOT (01_01 §3 step 4a; a cold slide at this
+#    interference would crush the tube). Typed as the ratified number, not re-derived at run time: the window
+#    moves by a fraction of a µm with the bore it is computed at, and a spec that followed it would move on every
+#    re-run. `nominal_vs_window_centre_diametral_um` in the cache reports how far the two sit apart.
+LINER_BORE_SPECIFIED_MM = D_BUS - 11.41e-3
+LINER_BORE_ASSUMED_MM = D_BUS      # the pre-verdict reading; kept as the reference the ratified offset is quoted from
 # ⛔ NOT MEASURED, and kept visibly absent for the same reason as WELD_KNOCKDOWN_MEASURED: there is no
 #    canon row, no vendor answer and no measurement for either band, so a plausible number typed here
 #    would be the FALLBACK species of fabrication (00_01 §1.1). What the model computes instead is the
@@ -1242,11 +1248,13 @@ def main() -> int:
     # zero, never that it be enough for anything.
     floor = -g_hot
     window = ceiling - floor
-    print(f"  Pair: wire Ø{D_BUS:.2f} in a tube bore Ø{2 * LINER_BORE_M / MM_M:.2f} (ASSUMED — not specified anywhere), wall "
-          f"{LINER_WALL_MM:.3f} ⇒ OD Ø{2 * LINER_OD_M / MM_M:.2f} (CEM-derived).")
-    print("  🔴 The tube's bore nominal is NOT SPECIFIED anywhere — canon freezes the WALL and says the")
-    print("     supplier holds ID/OD. So «tight on the wire» is not even a tolerance outcome yet: it is")
-    print("     whatever the vendor's process centres on. The window below assumes bore = rod Ø.")
+    bore_state = "RATIFIED 2026-09-18" if LINER_BORE_SPECIFIED_MM is not None else "ASSUMED — not specified anywhere"
+    print(f"  Pair: wire Ø{D_BUS:.2f} in a tube bore Ø{2 * LINER_BORE_M / MM_M:.5f} ({bore_state}), wall "
+          f"{LINER_WALL_MM:.3f} ⇒ OD Ø{2 * LINER_OD_M / MM_M:.5f} (CEM-derived).")
+    if LINER_BORE_SPECIFIED_MM is None:
+        print("  🔴 The tube's bore nominal is NOT SPECIFIED anywhere — canon freezes the WALL and says the")
+        print("     supplier holds ID/OD. So «tight on the wire» is not even a tolerance outcome yet: it is")
+        print("     whatever the vendor's process centres on. The window below assumes bore = rod Ø.")
     print(f"  Thermal on THIS interface (PEEK outside ⇒ cold grips): {g_cold * 1e6:+.2f} µm radial at "
           f"{T_FOREST_MIN_C:.0f} °C, {g_hot * 1e6:+.2f} µm at {T_FOREST_MAX_C:.0f} °C (ref {t_ref:.0f} °C).")
     print(f"  σ per µm of radial interference: P_c {per_um['P_c'] * 1e-12:.2f} · σ_t "
@@ -1256,27 +1264,43 @@ def main() -> int:
     print(f"    Ceiling = σ_vm at the bore hits PEEK yield {SIGMA_YIELD_PEEK_PA / 1e6:.0f} MPa at "
           f"{T_FOREST_MIN_C:.0f} °C ({d_yield_vm * 1e6:.2f} µm there, {d_yield_hoop * 1e6:.2f} on hoop alone);")
     print(f"    floor = the thermal loss at {T_FOREST_MAX_C:.0f} °C, i.e. the fit merely stays a fit.")
-    print(f"  ⛔ To land INSIDE that window the NOMINAL must move: the tube bore has to run "
-          f"{(floor + ceiling) / 2 * 2e6:.1f} µm under the wire")
-    print("     diametrally at mid-window. That is a ⚖️ (a nominal interference, or a graded/selected")
-    print("     fit, or a heated assembly — available only BEFORE enzyme functionalisation), not a")
-    print("     tolerance question, and it is NOT decided here.")
+    centre_um = (floor + ceiling) / 2 * 2e6
+    if LINER_BORE_SPECIFIED_MM is None:
+        print(f"  ⛔ To land INSIDE that window the NOMINAL must move: the tube bore has to run "
+              f"{centre_um:.1f} µm under the wire")
+        print("     diametrally at mid-window. That is a ⚖️ (a nominal interference, or a graded/selected")
+        print("     fit, or a heated assembly — available only BEFORE enzyme functionalisation), not a")
+        print("     tolerance question, and it is NOT decided here.")
+    else:
+        nominal_um = (D_BUS - LINER_BORE_SPECIFIED_MM) * 1e3
+        print(f"  ⚖️ Ratified nominal: bore {nominal_um:.2f} µm under the wire (diametral) against the recomputed "
+              f"window centre {centre_um:.2f} µm — {nominal_um - centre_um:+.2f} µm apart;")
+        print("     fitted hot (01_01 §3 step 4a); a sum of the two bands wider than the window → sort around the same target.")
 
     # The play the clearance table above treats as a constant — priced across the window.
+    # ⚖️ With the ratified nominal the interference comes from a SMALLER BORE at a fixed wall, so the free OD
+    #    is smaller by 2δ before the fit swells it back by the Lamé growth: play = play_zero + δ − growth. The
+    #    pre-verdict reading (bore = rod Ø) had no such term, and read the whole growth as lost play.
     play_nominal = (D_CHANNEL_MM - (D_BUS + 2.0 * LINER_WALL_MM)) / 2.0 * MM_M
+    bore_follows_fit = LINER_BORE_SPECIFIED_MM is not None
     play_rows = []
     for label, d in (("floor", floor), ("mid-window", 0.5 * (floor + ceiling)), ("ceiling", ceiling)):
         growth = liner_od_growth_m(per_um["P_c"] * d)
+        play = play_nominal + (d if bore_follows_fit else 0.0) - growth
         play_rows.append({"at": label, "interference_radial_um": round(d * 1e6, 2),
                           "od_growth_radial_um": round(growth * 1e6, 2),
-                          "channel_radial_play_um": round((play_nominal - growth) * 1e6, 2),
-                          "outer_surface_still_free": bool(growth < play_nominal)})
+                          "channel_radial_play_um": round(play * 1e6, 2),
+                          "outer_surface_still_free": bool(play > 0.0)})
         print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → OD +{growth * 1e6:>5.2f} µm radial → channel "
-              f"play {play_nominal * 1e6:.1f} → {(play_nominal - growth) * 1e6:>5.2f} µm")
-    print(f"  🔴 So the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the value at ZERO "
-          f"interference — the one fit the direction")
-    print("     verdict excludes. At the top of the window it is ~40 % smaller, which makes edge")
-    print("     bearing MORE likely, not less: the same geometry, read at the fit that ships.")
+              f"play {play_nominal * 1e6:.1f} → {play * 1e6:>5.2f} µm")
+    if bore_follows_fit:
+        print(f"  ✅ With the ratified nominal the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the LOWER end of the")
+        print("     window: the smaller bore pays for the Lamé growth, so edge bearing is read conservatively.")
+    else:
+        print(f"  🔴 So the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the value at ZERO "
+              f"interference — the one fit the direction")
+        print("     verdict excludes. At the top of the window it is ~40 % smaller, which makes edge")
+        print("     bearing MORE likely, not less: the same geometry, read at the fit that ships.")
 
     # Axial friction lock — does the wire hold the tube, or does the CAPTURED END hold it?
     a_tube = np.pi * (LINER_OD_M ** 2 - LINER_BORE_M ** 2)
@@ -1327,7 +1351,16 @@ def main() -> int:
                     "liner_length": LINER_LENGTH_MM},
         "bore_nominal_specified_mm": LINER_BORE_SPECIFIED_MM,
         "bore_nominal_is_assumed": bool(LINER_BORE_SPECIFIED_MM is None),
-        "nominal_finding": "the tube's bore nominal is SPECIFIED NOWHERE. Canon freezes the WALL "
+        "nominal_vs_window_centre_diametral_um": (None if LINER_BORE_SPECIFIED_MM is None else
+                                                  round((D_BUS - LINER_BORE_SPECIFIED_MM) * 1e3 - (floor + ceiling) * 1e6, 3)),
+        "nominal_finding": ("RATIFIED founder 2026-09-18 (00_07 HW.34): the bore nominal is wire - 11.41 um "
+                            "(the window centre at bore = rod diameter), the wall stays 0.15 so OD = ID + 0.30, "
+                            "and the tube is fitted hot (01_01 3 step 4a); a sum of the two vendor bands wider "
+                            "than the window is sorted around the same target. Before the verdict this key read "
+                            "'SPECIFIED NOWHERE' - the bought part was dimensioned by a quantity its process "
+                            "does not control, and the fit was whatever the vendor's process centred on"
+                            if LINER_BORE_SPECIFIED_MM is not None else
+                           "the tube's bore nominal is SPECIFIED NOWHERE. Canon freezes the WALL "
                            "(0.15) and states that the extruded-tube supplier holds ID and OD, i.e. "
                            "the bought part is dimensioned by a quantity its process does not "
                            "control; 'ID 1.00' lives only in an OPEN RFQ leg, never on a drawing. "
@@ -1338,7 +1371,7 @@ def main() -> int:
                            "nominal interference - a verdict (00_07 HW.34), not a tolerance. "
                            "CORRECTED 2026-09-12: this key used to assert the nominals as a SPEC "
                            "and compared D_BUS with itself, so the flag was identically true and "
-                           "could never falsify",
+                           "could never falsify"),
         "thermal": {"t_ref_c": t_ref, "t_min_c": T_FOREST_MIN_C, "t_max_c": T_FOREST_MAX_C,
                     "radial_gain_at_t_min_um": round(g_cold * 1e6, 3),
                     "radial_loss_at_t_max_um": round(g_hot * 1e6, 3),
@@ -1370,10 +1403,14 @@ def main() -> int:
                                              "to be selected, machined or heat-assembled"},
         "od_growth_eats_channel_play": {"nominal_radial_play_um": round(play_nominal * 1e6, 2),
                                         "rows": play_rows,
-                                        "note": "the 25 um the clearance table uses is the ZERO-"
-                                                "interference value, i.e. the one fit the direction "
-                                                "verdict excludes; at the ceiling it is ~40 % smaller, "
-                                                "which makes EDGE bearing more likely, not less"},
+                                        "note": ("with the RATIFIED nominal (2026-09-18) the interference comes from a smaller "
+                                                         "bore at a fixed wall, so play = play_zero + delta - OD growth: the 25 um the "
+                                                         "clearance table uses is the LOWER end across the window, i.e. conservative "
+                                                         "for edge bearing" if bore_follows_fit else
+                                                         "the 25 um the clearance table uses is the ZERO-"
+                                                         "interference value, i.e. the one fit the direction "
+                                                         "verdict excludes; at the ceiling it is ~40 % smaller, "
+                                                         "which makes EDGE bearing more likely, not less")},
         "axial_friction_lock": {"mu_is_swept_not_measured": True,
                                 "mu_sweep": list(MU_PEEK_TI_SWEEP),
                                 "tube_section_mm2": round(a_tube / (MM_M ** 2), 4),

@@ -590,7 +590,7 @@ CHECKS = [
     ),
     (
         "channel play at the window ceiling → bus_mechanical.json §od_growth_eats_channel_play",
-        COAXIAL, rf"люфт падає 25 → {N} мкм",
+        COAXIAL, rf"на стелі вікна люфт {N} мкм",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["interference_window"]["od_growth_eats_channel_play"]["rows"]
                        if r["at"] == "ceiling")["channel_radial_play_um"], 0.05,

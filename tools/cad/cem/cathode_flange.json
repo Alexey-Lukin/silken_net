@@ -61,7 +61,8 @@
       "02_02 1.2 requires a PEEK isolation ring >=1.5 mm centre<->outer (short-circuit guard); this geometry does NOT provide it - the top face is solid Ti to the bore edge (open, 00_07 HW.34)",
       "Shank O9 + thickness 3 = HW.8 placeholders — this drawing forces the reconcile",
       "Cathode catalytic = side/perimeter (Laccase/ZIF + PTFE-GDL); pogo = top face",
-      "O-ring groove on the top face = the capsule's SINGLE seal (02_02 3.2, 00_07 HW.33 branch (a), applied 2026-09-14); the radome rim is FLAT and closes it. The bayonet lugs still sit at mid-disc: the raised collar the Z-reconcile ratified (02_02 4.4) is not in this geometry - its wall is set by nothing yet"
+      "O-ring groove on the top face = the capsule's SINGLE seal (02_02 3.2, 00_07 HW.33 branch (a), applied 2026-09-14); the radome rim is FLAT and closes it. The bayonet lugs still sit at mid-disc: the raised collar the Z-reconcile ratified (02_02 4.4) is not in this geometry - its wall is set by nothing yet",
+      "Bus liner in the channel = a BOUGHT extruded PEEK tube, not this part: ID = wire O1.0 - 11.41 um, OD = ID + 0.30, fitted HOT onto the wire tip before this flange is pressed on (01_01 1.4, 01_01 3 step 4a); the channel O1.35 is sized for that OD"
     ]
   }
 }

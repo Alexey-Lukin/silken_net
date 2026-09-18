@@ -33,9 +33,9 @@
     ],
     "radial_plays_um": {
       "zero interference": 25.0,
-      "interference window floor": 24.66,
-      "interference window mid-window": 20.0,
-      "interference window ceiling": 15.33
+      "interference window floor": 25.05,
+      "interference window mid-window": 25.7,
+      "interference window ceiling": 26.36
     },
     "radial_play_source": "zero interference from the CEM diameters; the rest loaded from 55's cache interference_window.od_growth_eats_channel_play",
     "rod_dia_mm": 1.0,
@@ -223,55 +223,55 @@
       "geometry": "script 55 placeholder (HW.8)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
-      "touchdown_drag_N": 0.0328,
-      "rigid_wall_sigma_MPa_closed_form": 7.69,
+      "radial_play_um": 25.05,
+      "touchdown_drag_N": 0.0334,
+      "rigid_wall_sigma_MPa_closed_form": 7.81,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 7.69,
-          "sigma_root_MPa_bonded": 7.93,
+          "sigma_root_MPa_bare": 7.81,
+          "sigma_root_MPa_bonded": 8.06,
           "sigma_root_MPa_upper_end": 46.86,
           "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
-              "force_N": -0.1661,
+              "force_N": -0.1656,
               "station_mm": 23.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 7.69,
-          "sigma_root_MPa_bonded": 7.93,
-          "sigma_root_MPa_upper_end": 56.18,
+          "sigma_root_MPa_bare": 7.81,
+          "sigma_root_MPa_bonded": 8.06,
+          "sigma_root_MPa_upper_end": 56.31,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2661,
+              "force_N": -0.2656,
               "station_mm": 23.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 7.69,
-          "sigma_root_MPa_bonded": 7.93,
-          "sigma_root_MPa_upper_end": 56.18,
+          "sigma_root_MPa_bare": 7.81,
+          "sigma_root_MPa_bonded": 8.06,
+          "sigma_root_MPa_upper_end": 56.31,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3661,
+              "force_N": -0.3656,
               "station_mm": 23.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 7.69,
-          "sigma_root_MPa_bonded": 7.93,
-          "sigma_root_MPa_upper_end": 56.18,
+          "sigma_root_MPa_bare": 7.81,
+          "sigma_root_MPa_bonded": 8.06,
+          "sigma_root_MPa_upper_end": 56.31,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4661,
+              "force_N": -0.4656,
               "station_mm": 23.0
             }
           ]
@@ -282,55 +282,55 @@
       "geometry": "script 55 placeholder (HW.8)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window mid-window",
-      "radial_play_um": 20.0,
-      "touchdown_drag_N": 0.0266,
-      "rigid_wall_sigma_MPa_closed_form": 6.24,
+      "radial_play_um": 25.7,
+      "touchdown_drag_N": 0.0342,
+      "rigid_wall_sigma_MPa_closed_form": 8.02,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 6.24,
-          "sigma_root_MPa_bonded": 6.43,
+          "sigma_root_MPa_bare": 8.02,
+          "sigma_root_MPa_bonded": 8.27,
           "sigma_root_MPa_upper_end": 46.86,
           "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
-              "force_N": -0.1725,
+              "force_N": -0.1647,
               "station_mm": 23.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 6.24,
-          "sigma_root_MPa_bonded": 6.43,
-          "sigma_root_MPa_upper_end": 54.68,
+          "sigma_root_MPa_bare": 8.02,
+          "sigma_root_MPa_bonded": 8.27,
+          "sigma_root_MPa_upper_end": 56.52,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2725,
+              "force_N": -0.2647,
               "station_mm": 23.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 6.24,
-          "sigma_root_MPa_bonded": 6.43,
-          "sigma_root_MPa_upper_end": 54.68,
+          "sigma_root_MPa_bare": 8.02,
+          "sigma_root_MPa_bonded": 8.27,
+          "sigma_root_MPa_upper_end": 56.52,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3725,
+              "force_N": -0.3647,
               "station_mm": 23.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 6.24,
-          "sigma_root_MPa_bonded": 6.43,
-          "sigma_root_MPa_upper_end": 54.68,
+          "sigma_root_MPa_bare": 8.02,
+          "sigma_root_MPa_bonded": 8.27,
+          "sigma_root_MPa_upper_end": 56.52,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4725,
+              "force_N": -0.4647,
               "station_mm": 23.0
             }
           ]
@@ -341,55 +341,55 @@
       "geometry": "script 55 placeholder (HW.8)",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling",
-      "radial_play_um": 15.33,
-      "touchdown_drag_N": 0.0204,
-      "rigid_wall_sigma_MPa_closed_form": 4.78,
+      "radial_play_um": 26.36,
+      "touchdown_drag_N": 0.0351,
+      "rigid_wall_sigma_MPa_closed_form": 8.22,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 4.78,
-          "sigma_root_MPa_bonded": 4.93,
+          "sigma_root_MPa_bare": 8.22,
+          "sigma_root_MPa_bonded": 8.48,
           "sigma_root_MPa_upper_end": 46.86,
           "upper_end_is": "free cantilever — the drag cannot reach the Ti bore",
           "contacts_bonded": [
             {
-              "force_N": -0.179,
+              "force_N": -0.1638,
               "station_mm": 23.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 4.78,
-          "sigma_root_MPa_bonded": 4.93,
-          "sigma_root_MPa_upper_end": 53.18,
+          "sigma_root_MPa_bare": 8.22,
+          "sigma_root_MPa_bonded": 8.48,
+          "sigma_root_MPa_upper_end": 56.73,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.279,
+              "force_N": -0.2638,
               "station_mm": 23.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 4.78,
-          "sigma_root_MPa_bonded": 4.93,
-          "sigma_root_MPa_upper_end": 53.18,
+          "sigma_root_MPa_bare": 8.22,
+          "sigma_root_MPa_bonded": 8.48,
+          "sigma_root_MPa_upper_end": 56.73,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.379,
+              "force_N": -0.3638,
               "station_mm": 23.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 4.78,
-          "sigma_root_MPa_bonded": 4.93,
-          "sigma_root_MPa_upper_end": 53.18,
+          "sigma_root_MPa_bare": 8.22,
+          "sigma_root_MPa_bonded": 8.48,
+          "sigma_root_MPa_upper_end": 56.73,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.479,
+              "force_N": -0.4638,
               "station_mm": 23.0
             }
           ]
@@ -577,55 +577,55 @@
       "geometry": "lock window, near end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
-      "touchdown_drag_N": 0.0073,
-      "rigid_wall_sigma_MPa_closed_form": 2.82,
+      "radial_play_um": 25.05,
+      "touchdown_drag_N": 0.0074,
+      "rigid_wall_sigma_MPa_closed_form": 2.86,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.82,
-          "sigma_root_MPa_bonded": 2.84,
-          "sigma_root_MPa_upper_end": 20.09,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.14,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1927,
+              "force_N": -0.1926,
               "station_mm": 38.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.82,
-          "sigma_root_MPa_bonded": 2.84,
-          "sigma_root_MPa_upper_end": 20.09,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.14,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2927,
+              "force_N": -0.2926,
               "station_mm": 38.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.82,
-          "sigma_root_MPa_bonded": 2.84,
-          "sigma_root_MPa_upper_end": 20.09,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.14,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3927,
+              "force_N": -0.3926,
               "station_mm": 38.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.82,
-          "sigma_root_MPa_bonded": 2.84,
-          "sigma_root_MPa_upper_end": 20.09,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 20.14,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4927,
+              "force_N": -0.4926,
               "station_mm": 38.0
             }
           ]
@@ -636,55 +636,55 @@
       "geometry": "lock window, near end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window mid-window",
-      "radial_play_um": 20.0,
-      "touchdown_drag_N": 0.0059,
-      "rigid_wall_sigma_MPa_closed_form": 2.29,
+      "radial_play_um": 25.7,
+      "touchdown_drag_N": 0.0076,
+      "rigid_wall_sigma_MPa_closed_form": 2.94,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.29,
-          "sigma_root_MPa_bonded": 2.3,
-          "sigma_root_MPa_upper_end": 19.56,
+          "sigma_root_MPa_bare": 2.94,
+          "sigma_root_MPa_bonded": 2.96,
+          "sigma_root_MPa_upper_end": 20.21,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1941,
+              "force_N": -0.1924,
               "station_mm": 38.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.29,
-          "sigma_root_MPa_bonded": 2.3,
-          "sigma_root_MPa_upper_end": 19.56,
+          "sigma_root_MPa_bare": 2.94,
+          "sigma_root_MPa_bonded": 2.96,
+          "sigma_root_MPa_upper_end": 20.21,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2941,
+              "force_N": -0.2924,
               "station_mm": 38.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.29,
-          "sigma_root_MPa_bonded": 2.3,
-          "sigma_root_MPa_upper_end": 19.56,
+          "sigma_root_MPa_bare": 2.94,
+          "sigma_root_MPa_bonded": 2.96,
+          "sigma_root_MPa_upper_end": 20.21,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3941,
+              "force_N": -0.3924,
               "station_mm": 38.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.29,
-          "sigma_root_MPa_bonded": 2.3,
-          "sigma_root_MPa_upper_end": 19.56,
+          "sigma_root_MPa_bare": 2.94,
+          "sigma_root_MPa_bonded": 2.96,
+          "sigma_root_MPa_upper_end": 20.21,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4941,
+              "force_N": -0.4924,
               "station_mm": 38.0
             }
           ]
@@ -695,55 +695,55 @@
       "geometry": "lock window, near end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling",
-      "radial_play_um": 15.33,
-      "touchdown_drag_N": 0.0045,
-      "rigid_wall_sigma_MPa_closed_form": 1.75,
+      "radial_play_um": 26.36,
+      "touchdown_drag_N": 0.0078,
+      "rigid_wall_sigma_MPa_closed_form": 3.01,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 1.75,
-          "sigma_root_MPa_bonded": 1.76,
-          "sigma_root_MPa_upper_end": 19.02,
+          "sigma_root_MPa_bare": 3.01,
+          "sigma_root_MPa_bonded": 3.03,
+          "sigma_root_MPa_upper_end": 20.29,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1954,
+              "force_N": -0.1922,
               "station_mm": 38.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 1.75,
-          "sigma_root_MPa_bonded": 1.76,
-          "sigma_root_MPa_upper_end": 19.02,
+          "sigma_root_MPa_bare": 3.01,
+          "sigma_root_MPa_bonded": 3.03,
+          "sigma_root_MPa_upper_end": 20.29,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2954,
+              "force_N": -0.2922,
               "station_mm": 38.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 1.75,
-          "sigma_root_MPa_bonded": 1.76,
-          "sigma_root_MPa_upper_end": 19.02,
+          "sigma_root_MPa_bare": 3.01,
+          "sigma_root_MPa_bonded": 3.03,
+          "sigma_root_MPa_upper_end": 20.29,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3954,
+              "force_N": -0.3922,
               "station_mm": 38.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 1.75,
-          "sigma_root_MPa_bonded": 1.76,
-          "sigma_root_MPa_upper_end": 19.02,
+          "sigma_root_MPa_bare": 3.01,
+          "sigma_root_MPa_bonded": 3.03,
+          "sigma_root_MPa_upper_end": 20.29,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4954,
+              "force_N": -0.4922,
               "station_mm": 38.0
             }
           ]
@@ -931,55 +931,55 @@
       "geometry": "lock window, far end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
-      "touchdown_drag_N": 0.0067,
-      "rigid_wall_sigma_MPa_closed_form": 2.68,
+      "radial_play_um": 25.05,
+      "touchdown_drag_N": 0.0068,
+      "rigid_wall_sigma_MPa_closed_form": 2.72,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.68,
-          "sigma_root_MPa_bonded": 2.69,
-          "sigma_root_MPa_upper_end": 19.07,
+          "sigma_root_MPa_bare": 2.72,
+          "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.11,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1932,
+              "force_N": -0.1931,
               "station_mm": 39.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.68,
-          "sigma_root_MPa_bonded": 2.69,
-          "sigma_root_MPa_upper_end": 19.07,
+          "sigma_root_MPa_bare": 2.72,
+          "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.11,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2932,
+              "force_N": -0.2931,
               "station_mm": 39.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.68,
-          "sigma_root_MPa_bonded": 2.69,
-          "sigma_root_MPa_upper_end": 19.07,
+          "sigma_root_MPa_bare": 2.72,
+          "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.11,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3932,
+              "force_N": -0.3931,
               "station_mm": 39.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.68,
-          "sigma_root_MPa_bonded": 2.69,
-          "sigma_root_MPa_upper_end": 19.07,
+          "sigma_root_MPa_bare": 2.72,
+          "sigma_root_MPa_bonded": 2.73,
+          "sigma_root_MPa_upper_end": 19.11,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4932,
+              "force_N": -0.4931,
               "station_mm": 39.0
             }
           ]
@@ -990,55 +990,55 @@
       "geometry": "lock window, far end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window mid-window",
-      "radial_play_um": 20.0,
-      "touchdown_drag_N": 0.0055,
-      "rigid_wall_sigma_MPa_closed_form": 2.17,
+      "radial_play_um": 25.7,
+      "touchdown_drag_N": 0.007,
+      "rigid_wall_sigma_MPa_closed_form": 2.79,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 2.17,
-          "sigma_root_MPa_bonded": 2.18,
-          "sigma_root_MPa_upper_end": 18.56,
+          "sigma_root_MPa_bare": 2.79,
+          "sigma_root_MPa_bonded": 2.81,
+          "sigma_root_MPa_upper_end": 19.18,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1945,
+              "force_N": -0.1929,
               "station_mm": 39.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 2.17,
-          "sigma_root_MPa_bonded": 2.18,
-          "sigma_root_MPa_upper_end": 18.56,
+          "sigma_root_MPa_bare": 2.79,
+          "sigma_root_MPa_bonded": 2.81,
+          "sigma_root_MPa_upper_end": 19.18,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2945,
+              "force_N": -0.2929,
               "station_mm": 39.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 2.17,
-          "sigma_root_MPa_bonded": 2.18,
-          "sigma_root_MPa_upper_end": 18.56,
+          "sigma_root_MPa_bare": 2.79,
+          "sigma_root_MPa_bonded": 2.81,
+          "sigma_root_MPa_upper_end": 19.18,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3945,
+              "force_N": -0.3929,
               "station_mm": 39.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 2.17,
-          "sigma_root_MPa_bonded": 2.18,
-          "sigma_root_MPa_upper_end": 18.56,
+          "sigma_root_MPa_bare": 2.79,
+          "sigma_root_MPa_bonded": 2.81,
+          "sigma_root_MPa_upper_end": 19.18,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4945,
+              "force_N": -0.4929,
               "station_mm": 39.0
             }
           ]
@@ -1049,55 +1049,55 @@
       "geometry": "lock window, far end",
       "branch": "PEEK liner 0.15 mm",
       "play": "interference window ceiling",
-      "radial_play_um": 15.33,
-      "touchdown_drag_N": 0.0042,
-      "rigid_wall_sigma_MPa_closed_form": 1.66,
+      "radial_play_um": 26.36,
+      "touchdown_drag_N": 0.0072,
+      "rigid_wall_sigma_MPa_closed_form": 2.86,
       "coaxial_cap_bound": "LOWER end — rigid wall; a compliant polymer wall raises the root moment by 3EI·(R/k)/L², the Ti-bore stop or the free cantilever F·L is the UPPER end (sigma_root_MPa_upper_end per µ); the contact compliance that places the root in the bracket is measured nowhere",
       "by_mu": {
         "0.2": {
-          "sigma_root_MPa_bare": 1.66,
-          "sigma_root_MPa_bonded": 1.67,
-          "sigma_root_MPa_upper_end": 18.05,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 19.25,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.1958,
+              "force_N": -0.1928,
               "station_mm": 39.0
             }
           ]
         },
         "0.3": {
-          "sigma_root_MPa_bare": 1.66,
-          "sigma_root_MPa_bonded": 1.67,
-          "sigma_root_MPa_upper_end": 18.05,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 19.25,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.2958,
+              "force_N": -0.2928,
               "station_mm": 39.0
             }
           ]
         },
         "0.4": {
-          "sigma_root_MPa_bare": 1.66,
-          "sigma_root_MPa_bonded": 1.67,
-          "sigma_root_MPa_upper_end": 18.05,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 19.25,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.3958,
+              "force_N": -0.3928,
               "station_mm": 39.0
             }
           ]
         },
         "0.5": {
-          "sigma_root_MPa_bare": 1.66,
-          "sigma_root_MPa_bonded": 1.67,
-          "sigma_root_MPa_upper_end": 18.05,
+          "sigma_root_MPa_bare": 2.86,
+          "sigma_root_MPa_bonded": 2.88,
+          "sigma_root_MPa_upper_end": 19.25,
           "upper_end_is": "Ti-bore stop — the polymer wall fully yielded",
           "contacts_bonded": [
             {
-              "force_N": -0.4958,
+              "force_N": -0.4928,
               "station_mm": 39.0
             }
           ]
@@ -1220,7 +1220,7 @@
     {
       "geometry": "script 55 placeholder (HW.8)",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
+      "radial_play_um": 25.05,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1244,99 +1244,94 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 1.6,
-          "contacts": [
-            {
-              "force_N": 0.0255,
-              "station_mm": 6.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 24.5,
+          "sigma_root_MPa": 22.7,
           "contacts": [
             {
-              "force_N": 0.4006,
+              "force_N": 0.3713,
               "station_mm": 6.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 74.1,
+          "sigma_root_MPa": 71.7,
           "contacts": [
             {
-              "force_N": 1.3795,
+              "force_N": 1.3149,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.0436,
+              "force_N": -0.0369,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 130.0,
+          "sigma_root_MPa": 127.7,
           "contacts": [
             {
-              "force_N": 2.7447,
+              "force_N": 2.6802,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.1609,
+              "force_N": -0.1542,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 273.0,
+          "sigma_root_MPa": 270.2,
           "contacts": [
             {
-              "force_N": 6.4355,
+              "force_N": 6.3326,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.5614,
-              "station_mm": 20.2
+              "force_N": -0.5197,
+              "station_mm": 20.4
             },
             {
-              "force_N": -0.0206,
+              "force_N": -0.0377,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 427.8,
+          "sigma_root_MPa": 424.5,
           "contacts": [
             {
-              "force_N": 11.2917,
+              "force_N": 11.1293,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.3946,
+              "force_N": -0.1281,
               "station_mm": 15.8
             },
             {
-              "force_N": -1.1902,
-              "station_mm": 16.4
+              "force_N": -1.3988,
+              "station_mm": 16.5
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 5.683,
+      "secant_MPa_per_um": 5.74,
       "secant_between_um": [
-        25,
+        30,
         100
       ]
     },
     {
       "geometry": "script 55 placeholder (HW.8)",
       "play": "interference window mid-window",
-      "radial_play_um": 20.0,
+      "radial_play_um": 25.7,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1360,103 +1355,94 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 22.9,
-          "contacts": [
-            {
-              "force_N": 0.3751,
-              "station_mm": 6.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 46.4,
+          "sigma_root_MPa": 19.7,
           "contacts": [
             {
-              "force_N": 0.7855,
+              "force_N": 0.3226,
               "station_mm": 6.0
-            },
-            {
-              "force_N": -0.0067,
-              "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 102.4,
+          "sigma_root_MPa": 67.8,
           "contacts": [
             {
-              "force_N": 2.1508,
+              "force_N": 1.2073,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.124,
+              "force_N": -0.0257,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 158.3,
+          "sigma_root_MPa": 123.7,
           "contacts": [
             {
-              "force_N": 3.516,
+              "force_N": 2.5726,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.2413,
+              "force_N": -0.143,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 308.5,
+          "sigma_root_MPa": 265.6,
           "contacts": [
             {
-              "force_N": 7.8936,
+              "force_N": 6.1616,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.592,
-              "station_mm": 16.7
+              "force_N": -0.2632,
+              "station_mm": 20.6
             },
             {
-              "force_N": -0.4041,
-              "station_mm": 17.8
+              "force_N": -0.2536,
+              "station_mm": 21.6
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 469.6,
+          "sigma_root_MPa": 419.1,
           "contacts": [
             {
-              "force_N": 13.5171,
+              "force_N": 10.8848,
               "station_mm": 6.0
             },
             {
-              "force_N": -1.2118,
-              "station_mm": 13.9
+              "force_N": -1.3067,
+              "station_mm": 16.6
             },
             {
-              "force_N": -1.2439,
-              "station_mm": 14.6
+              "force_N": -0.1394,
+              "station_mm": 17.7
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 5.955,
+      "secant_MPa_per_um": 5.706,
       "secant_between_um": [
-        25,
+        30,
         100
       ]
     },
     {
       "geometry": "script 55 placeholder (HW.8)",
       "play": "interference window ceiling",
-      "radial_play_um": 15.33,
+      "radial_play_um": 26.36,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1475,110 +1461,92 @@
         },
         {
           "offset_um": 20,
-          "sigma_root_MPa": 21.4,
-          "contacts": [
-            {
-              "force_N": 0.3503,
-              "station_mm": 6.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 46.8,
-          "contacts": [
-            {
-              "force_N": 0.8758,
-              "station_mm": 6.0
-            },
-            {
-              "force_N": -0.0287,
-              "station_mm": 23.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 74.8,
+          "sigma_root_MPa": 16.7,
           "contacts": [
             {
-              "force_N": 1.5584,
+              "force_N": 0.2731,
               "station_mm": 6.0
-            },
-            {
-              "force_N": -0.0873,
-              "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 130.7,
+          "sigma_root_MPa": 63.8,
           "contacts": [
             {
-              "force_N": 2.9237,
+              "force_N": 1.0981,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.2046,
+              "force_N": -0.0143,
               "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 190.1,
+          "sigma_root_MPa": 119.7,
           "contacts": [
             {
-              "force_N": 4.5971,
+              "force_N": 2.4633,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.4648,
-              "station_mm": 19.2
+              "force_N": -0.1316,
+              "station_mm": 23.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 349.0,
+          "sigma_root_MPa": 260.9,
           "contacts": [
             {
-              "force_N": 9.957,
+              "force_N": 5.9951,
               "station_mm": 6.0
             },
             {
-              "force_N": -0.9256,
-              "station_mm": 14.1
+              "force_N": -0.1092,
+              "station_mm": 21.0
             },
             {
-              "force_N": -0.8395,
-              "station_mm": 14.8
+              "force_N": -0.3698,
+              "station_mm": 21.8
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 517.7,
+          "sigma_root_MPa": 413.8,
           "contacts": [
             {
-              "force_N": 16.7052,
+              "force_N": 10.6381,
               "station_mm": 6.0
             },
             {
-              "force_N": -2.3476,
-              "station_mm": 12.1
+              "force_N": -0.9908,
+              "station_mm": 16.7
             },
             {
-              "force_N": -1.6276,
-              "station_mm": 12.9
+              "force_N": -0.3742,
+              "station_mm": 17.8
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 6.204,
+      "secant_MPa_per_um": 5.672,
       "secant_between_um": [
-        20,
+        30,
         100
       ]
     },
@@ -1680,7 +1648,7 @@
     {
       "geometry": "lock window, near end",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
+      "radial_play_um": 25.05,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1704,106 +1672,11 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 0.1,
-          "contacts": [
-            {
-              "force_N": 0.0006,
-              "station_mm": 21.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 2.0,
-          "contacts": [
-            {
-              "force_N": 0.0093,
-              "station_mm": 21.0
-            }
-          ]
-        },
-        {
-          "offset_um": 40,
-          "sigma_root_MPa": 5.7,
-          "contacts": [
-            {
-              "force_N": 0.0268,
-              "station_mm": 21.0
-            }
-          ]
-        },
-        {
-          "offset_um": 50,
-          "sigma_root_MPa": 9.5,
-          "contacts": [
-            {
-              "force_N": 0.0443,
-              "station_mm": 21.0
-            }
-          ]
-        },
-        {
-          "offset_um": 75,
-          "sigma_root_MPa": 20.7,
-          "contacts": [
-            {
-              "force_N": 0.1345,
-              "station_mm": 21.0
-            },
-            {
-              "force_N": -0.021,
-              "station_mm": 38.0
-            }
-          ]
-        },
-        {
-          "offset_um": 100,
-          "sigma_root_MPa": 34.7,
-          "contacts": [
-            {
-              "force_N": 0.2979,
-              "station_mm": 21.0
-            },
-            {
-              "force_N": -0.075,
-              "station_mm": 38.0
-            }
-          ]
-        }
-      ],
-      "secant_MPa_per_um": 0.461,
-      "secant_between_um": [
-        25,
-        100
-      ]
-    },
-    {
-      "geometry": "lock window, near end",
-      "play": "interference window mid-window",
-      "radial_play_um": 20.0,
-      "by_offset": [
-        {
-          "offset_um": 0,
-          "sigma_root_MPa": 0.0,
-          "contacts": []
-        },
-        {
-          "offset_um": 10,
-          "sigma_root_MPa": 0.0,
-          "contacts": []
-        },
-        {
-          "offset_um": 15,
-          "sigma_root_MPa": 0.0,
-          "contacts": []
-        },
-        {
-          "offset_um": 20,
-          "sigma_root_MPa": 0.0,
-          "contacts": []
-        },
-        {
-          "offset_um": 25,
           "sigma_root_MPa": 1.9,
           "contacts": [
             {
@@ -1813,74 +1686,64 @@
           ]
         },
         {
-          "offset_um": 30,
-          "sigma_root_MPa": 3.7,
-          "contacts": [
-            {
-              "force_N": 0.0175,
-              "station_mm": 21.0
-            }
-          ]
-        },
-        {
           "offset_um": 40,
-          "sigma_root_MPa": 7.5,
+          "sigma_root_MPa": 5.6,
           "contacts": [
             {
-              "force_N": 0.035,
+              "force_N": 0.0261,
               "station_mm": 21.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 11.2,
+          "sigma_root_MPa": 9.3,
           "contacts": [
             {
-              "force_N": 0.0525,
+              "force_N": 0.0436,
               "station_mm": 21.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 24.7,
+          "sigma_root_MPa": 20.3,
           "contacts": [
             {
-              "force_N": 0.2017,
+              "force_N": 0.1289,
               "station_mm": 21.0
             },
             {
-              "force_N": -0.0476,
+              "force_N": -0.0188,
               "station_mm": 38.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 38.7,
+          "sigma_root_MPa": 34.3,
           "contacts": [
             {
-              "force_N": 0.365,
+              "force_N": 0.2922,
               "station_mm": 21.0
             },
             {
-              "force_N": -0.1017,
+              "force_N": -0.0728,
               "station_mm": 38.0
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 0.491,
+      "secant_MPa_per_um": 0.464,
       "secant_between_um": [
-        25,
+        30,
         100
       ]
     },
     {
       "geometry": "lock window, near end",
-      "play": "interference window ceiling",
-      "radial_play_um": 15.33,
+      "play": "interference window mid-window",
+      "radial_play_um": 25.7,
       "by_offset": [
         {
           "offset_um": 0,
@@ -1899,90 +1762,171 @@
         },
         {
           "offset_um": 20,
-          "sigma_root_MPa": 1.7,
-          "contacts": [
-            {
-              "force_N": 0.0082,
-              "station_mm": 21.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 3.6,
-          "contacts": [
-            {
-              "force_N": 0.0169,
-              "station_mm": 21.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 5.5,
+          "sigma_root_MPa": 1.6,
           "contacts": [
             {
-              "force_N": 0.0257,
+              "force_N": 0.0075,
               "station_mm": 21.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 9.2,
+          "sigma_root_MPa": 5.4,
           "contacts": [
             {
-              "force_N": 0.0432,
+              "force_N": 0.025,
               "station_mm": 21.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 14.7,
+          "sigma_root_MPa": 9.1,
           "contacts": [
             {
-              "force_N": 0.1057,
+              "force_N": 0.0425,
               "station_mm": 21.0
-            },
-            {
-              "force_N": -0.0203,
-              "station_mm": 38.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 28.8,
+          "sigma_root_MPa": 19.7,
           "contacts": [
             {
-              "force_N": 0.269,
+              "force_N": 0.1196,
               "station_mm": 21.0
             },
             {
-              "force_N": -0.0744,
+              "force_N": -0.015,
               "station_mm": 38.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 42.8,
+          "sigma_root_MPa": 33.8,
           "contacts": [
             {
-              "force_N": 0.4323,
+              "force_N": 0.2829,
               "station_mm": 21.0
             },
             {
-              "force_N": -0.1284,
+              "force_N": -0.0691,
               "station_mm": 38.0
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 0.513,
+      "secant_MPa_per_um": 0.46,
       "secant_between_um": [
-        20,
+        30,
+        100
+      ]
+    },
+    {
+      "geometry": "lock window, near end",
+      "play": "interference window ceiling",
+      "radial_play_um": 26.36,
+      "by_offset": [
+        {
+          "offset_um": 0,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 10,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 15,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 20,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 25,
+          "sigma_root_MPa": 0.0,
+          "contacts": []
+        },
+        {
+          "offset_um": 30,
+          "sigma_root_MPa": 1.4,
+          "contacts": [
+            {
+              "force_N": 0.0064,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 40,
+          "sigma_root_MPa": 5.1,
+          "contacts": [
+            {
+              "force_N": 0.0239,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 50,
+          "sigma_root_MPa": 8.8,
+          "contacts": [
+            {
+              "force_N": 0.0414,
+              "station_mm": 21.0
+            }
+          ]
+        },
+        {
+          "offset_um": 75,
+          "sigma_root_MPa": 19.2,
+          "contacts": [
+            {
+              "force_N": 0.11,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0113,
+              "station_mm": 38.0
+            }
+          ]
+        },
+        {
+          "offset_um": 100,
+          "sigma_root_MPa": 33.2,
+          "contacts": [
+            {
+              "force_N": 0.2734,
+              "station_mm": 21.0
+            },
+            {
+              "force_N": -0.0653,
+              "station_mm": 38.0
+            }
+          ]
+        }
+      ],
+      "secant_MPa_per_um": 0.455,
+      "secant_between_um": [
+        30,
         100
       ]
     },
@@ -2084,7 +2028,7 @@
     {
       "geometry": "lock window, far end",
       "play": "interference window floor",
-      "radial_play_um": 24.66,
+      "radial_play_um": 25.05,
       "by_offset": [
         {
           "offset_um": 0,
@@ -2108,83 +2052,78 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 0.1,
-          "contacts": [
-            {
-              "force_N": 0.0005,
-              "station_mm": 22.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 1.8,
+          "sigma_root_MPa": 1.7,
           "contacts": [
             {
-              "force_N": 0.0081,
+              "force_N": 0.0075,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 5.2,
+          "sigma_root_MPa": 5.1,
           "contacts": [
             {
-              "force_N": 0.0233,
+              "force_N": 0.0227,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 8.6,
+          "sigma_root_MPa": 8.5,
           "contacts": [
             {
-              "force_N": 0.0386,
+              "force_N": 0.038,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 18.5,
+          "sigma_root_MPa": 18.2,
           "contacts": [
             {
-              "force_N": 0.1104,
+              "force_N": 0.1052,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.0157,
+              "force_N": -0.0135,
               "station_mm": 39.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 31.4,
+          "sigma_root_MPa": 31.1,
           "contacts": [
             {
-              "force_N": 0.2572,
+              "force_N": 0.252,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.066,
+              "force_N": -0.0639,
               "station_mm": 39.0
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 0.417,
+      "secant_MPa_per_um": 0.42,
       "secant_between_um": [
-        25,
+        30,
         100
       ]
     },
     {
       "geometry": "lock window, far end",
       "play": "interference window mid-window",
-      "radial_play_um": 20.0,
+      "radial_play_um": 25.7,
       "by_offset": [
         {
           "offset_um": 0,
@@ -2208,83 +2147,78 @@
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 1.7,
-          "contacts": [
-            {
-              "force_N": 0.0076,
-              "station_mm": 22.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 3.4,
+          "sigma_root_MPa": 1.5,
           "contacts": [
             {
-              "force_N": 0.0152,
+              "force_N": 0.0065,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 6.8,
+          "sigma_root_MPa": 4.9,
           "contacts": [
             {
-              "force_N": 0.0304,
+              "force_N": 0.0218,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 10.2,
+          "sigma_root_MPa": 8.3,
           "contacts": [
             {
-              "force_N": 0.0456,
+              "force_N": 0.037,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 22.3,
+          "sigma_root_MPa": 17.7,
           "contacts": [
             {
-              "force_N": 0.1728,
+              "force_N": 0.0965,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.0413,
+              "force_N": -0.01,
               "station_mm": 39.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 35.2,
+          "sigma_root_MPa": 30.6,
           "contacts": [
             {
-              "force_N": 0.3195,
+              "force_N": 0.2433,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.0916,
+              "force_N": -0.0603,
               "station_mm": 39.0
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 0.447,
+      "secant_MPa_per_um": 0.416,
       "secant_between_um": [
-        25,
+        30,
         100
       ]
     },
     {
       "geometry": "lock window, far end",
       "play": "interference window ceiling",
-      "radial_play_um": 15.33,
+      "radial_play_um": 26.36,
       "by_offset": [
         {
           "offset_um": 0,
@@ -2303,90 +2237,76 @@
         },
         {
           "offset_um": 20,
-          "sigma_root_MPa": 1.6,
-          "contacts": [
-            {
-              "force_N": 0.0071,
-              "station_mm": 22.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 25,
-          "sigma_root_MPa": 3.3,
-          "contacts": [
-            {
-              "force_N": 0.0147,
-              "station_mm": 22.0
-            }
-          ]
+          "sigma_root_MPa": 0.0,
+          "contacts": []
         },
         {
           "offset_um": 30,
-          "sigma_root_MPa": 5.0,
+          "sigma_root_MPa": 1.2,
           "contacts": [
             {
-              "force_N": 0.0223,
+              "force_N": 0.0055,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 40,
-          "sigma_root_MPa": 8.4,
+          "sigma_root_MPa": 4.7,
           "contacts": [
             {
-              "force_N": 0.0375,
+              "force_N": 0.0208,
               "station_mm": 22.0
             }
           ]
         },
         {
           "offset_um": 50,
-          "sigma_root_MPa": 13.3,
+          "sigma_root_MPa": 8.1,
           "contacts": [
             {
-              "force_N": 0.0885,
+              "force_N": 0.036,
               "station_mm": 22.0
-            },
-            {
-              "force_N": -0.0165,
-              "station_mm": 39.0
             }
           ]
         },
         {
           "offset_um": 75,
-          "sigma_root_MPa": 26.1,
+          "sigma_root_MPa": 17.1,
           "contacts": [
             {
-              "force_N": 0.2352,
+              "force_N": 0.0877,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.0669,
+              "force_N": -0.0063,
               "station_mm": 39.0
             }
           ]
         },
         {
           "offset_um": 100,
-          "sigma_root_MPa": 39.0,
+          "sigma_root_MPa": 30.0,
           "contacts": [
             {
-              "force_N": 0.382,
+              "force_N": 0.2345,
               "station_mm": 22.0
             },
             {
-              "force_N": -0.1173,
+              "force_N": -0.0567,
               "station_mm": 39.0
             }
           ]
         }
       ],
-      "secant_MPa_per_um": 0.468,
+      "secant_MPa_per_um": 0.411,
       "secant_between_um": [
-        20,
+        30,
         100
       ]
     }
