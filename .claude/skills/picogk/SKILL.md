@@ -348,7 +348,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
   but `stepped` now declares it; `stepped` is a separate, already-decided THIRD branch (`ZonedGyroid`).
   🔴 **The live rule is that `wallParam` NEVER carries across a topology flip, and it is not cosmetic:**
   the param is a BAND on sheet (`|eq| < 0.5·w`) and a LEVEL on network (`eq < 0.5·(w−1)`), so the
-  sheet-era 1.0 lands network at 50.2 % porous / **≈23 GPa formula-only under the MEASURED `C` 0.983 · `n` 2.242 — ⚠️ a Gibson-Ashby prediction with NO axis: canon reports apparent stiffness per axis (×0.79 axial / ×0.56 radial, re-measured 2026-09-18 on the welded branch), and the 13–15 GPa requirement was withdrawn 2026-09-17, so never quote a bare GPa figure as a target
+  sheet-era 1.0 lands network at 50.2 % porous / **≈23 GPa formula-only under the canonical pair (lattice cube · AXIAL · `/32`: `C` 0.983 · `n` 2.242, ⚖️ ratified 2026-09-18, 01_01 §5.2 — an estimate that must be marked as one; the radial axis has no formula pair at all) — canon reports apparent stiffness per axis (×0.79 axial / ×0.56 radial, re-measured 2026-09-18 on the welded branch), and the 13–15 GPa requirement was withdrawn 2026-09-17, so never quote a bare GPa figure as a target
   (`01_01 §5.2`); the «~27» that stood here was the retired `C` = 1 · `n` = 2** — *stiffer* than the branch it replaced. Re-solve
   against the porosity target FIRST. Measured 2026-09-11: the network curve is `porosity ≈ 66.4 − 16.2·w`
   and it is a function of the LEVEL, not of the period — so one value, **0.10**, hits 65 % on all five

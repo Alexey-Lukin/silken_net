@@ -522,10 +522,42 @@ else
               "other tie to the caches; fix the sentence shape, do not drop this check"
 end
 
+# ── 7. THE CANONICAL PAIR AND ITS TWO DERIVED FIGURES (01_01 §5.2 / §5.5, HW.33) ─────────────────────────
+#
+# ⚖️ Ratified 2026-09-18: the formula pair canon may compute with is the LATTICE cube, AXIAL, at `/32`. Canon quotes
+# two numbers computed with it — the network flip of §5.2 and the 80 % example of §5.5 — that no layer derived, so
+# a re-run of the cube or a reworded sentence left them standing silently. Re-derived here from
+# `gibson_ashby_fit.network.s32.json` and the porosity each sentence itself quotes, at E_SOLID_GPA.
+# ⛔ DECLARED CEILING: the quoted porosity is an INPUT, not a cached value (the 50.2 % network run left no cache), so the
+# tolerance is the propagated rounding of the two quoted numbers, |dE/dρ|·½·10^-d(P) + ½·10^-d(E), and nothing wider.
+pair_derivations = 0
+pair_path = File.join(DILATION_DIR, "gibson_ashby_fit.network.s32.json")
+if File.exist?(pair_path)
+  pair = JSON.parse(File.read(pair_path))
+  c_pair, n_pair = pair["fit_c"], pair["fit_n"]
+  decimals = ->(s) { s.include?(".") ? s.split(".").last.length : 0 }
+  [
+    [ "§5.2 network flip", /network виходить на ([0-9.]+) % пористості.*?при канонній парі §5\.2 \(ґратка · осьова · `\/32` — ґраткова оцінка\) та сама густина дає ([0-9.]+)\)/m ],
+    [ "§5.5 80 % example", /напр\. ([0-9.]+)% → `C·ρ²` дає E ≈ [0-9.]+ ГПа, а при канонній парі `C` = [0-9.]+ \/ `n` = [0-9.]+ \(ґратка · осьова · `\/32` — ґраткова оцінка\) — ≈([0-9.]+)\)/ ]
+  ].each do |what, rx|
+    m = canon.match(rx)
+    next failures << "canonical pair: the #{what} sentence is gone or reworded — fix its shape, do not drop this check" if m.nil?
+
+    por_q, e_q = m.captures
+    rho = 1.0 - (por_q.to_f / 100.0)
+    e = c_pair * E_SOLID_GPA * (rho**n_pair)
+    tol = ((n_pair * e / rho) * 0.5 * (10.0**-(decimals.call(por_q) + 2))) + (0.5 * (10.0**-decimals.call(e_q)))
+    pair_derivations += 1
+    flag(failures, "canonical-pair #{what} GPa (±#{tol.round(3)})", e.round(3), e_q) if (e - e_q.to_f).abs > tol
+  end
+else
+  failures << "canonical pair: #{pair_path} is not committed — the ratified pair has no cache to derive from"
+end
+
 if failures.empty?
   puts "fea_canon_sync ✓ — 01_01 §5.2 matches tools/cad/cache/fea (transcription + #{anchors} derivation anchors + provenance " \
        "+ #{fit_rows_seen} fitted rows + #{dilation_rows_seen} sensitivity rows and #{dilation_anchors} of their derivations, " \
-       "zero row = the pinned sweep field for field, + the graded pair of §5.5)"
+       "zero row = the pinned sweep field for field, + the graded pair of §5.5, + #{pair_derivations} derivations of the canonical pair)"
   exit 0
 end
 
