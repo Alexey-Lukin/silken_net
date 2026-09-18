@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1351' viewBox='0 0 820 1351'>
-<rect x='0' y='0' width='820' height='1351' fill='white'/>
-<rect x='8' y='8' width='804' height='1335' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1407' viewBox='0 0 820 1407'>
+<rect x='0' y='0' width='820' height='1407' fill='white'/>
+<rect x='8' y='8' width='804' height='1391' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
 <circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -99,36 +99,40 @@
 <text x='20' y='1109' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a</text>
 <text x='20' y='1123' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather</text>
 <text x='20' y='1137' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
-<text x='20' y='1163' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<rect x='540' y='1197' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='1197' x2='630' y2='1213' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1208' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='1208' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
-<line x1='540' y1='1213' x2='790' y2='1213' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1213' x2='630' y2='1229' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1224' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='1224' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
-<line x1='540' y1='1229' x2='790' y2='1229' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1229' x2='630' y2='1245' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1240' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='1240' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
-<line x1='540' y1='1245' x2='790' y2='1245' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1245' x2='630' y2='1261' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1256' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='1256' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='1261' x2='790' y2='1261' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1261' x2='630' y2='1277' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1272' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1272' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>ff8caea1</text>
-<line x1='540' y1='1277' x2='790' y2='1277' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1277' x2='630' y2='1293' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1288' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='1288' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
-<line x1='540' y1='1293' x2='790' y2='1293' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1293' x2='630' y2='1309' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1304' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='1304' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>977a57b4b5d4537d83… → FOOTER</text>
-<text x='806' y='1325' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev ff8caea1 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
-<text x='806' y='1337' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 977a57b4b5d4537d83f11d855dae3bc6405b2b39a813590d4d1e938e63c215ee</text>
+<text x='20' y='1151' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>15. The bus wire's root (its axis at the weld on the top face) must line up with the cathode channel: its offset from this part's</text>
+<text x='20' y='1165' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   outer-diameter axis is a REQUIRED datum of the anchor stack, and its tolerance is NOT SPECIFIED until the insertion depth is decided</text>
+<text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (00_07 HW.26 G1, HW.34)</text>
+<text x='20' y='1205' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='1221' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='1235' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bus_root_offset_from_od_axis: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<rect x='540' y='1253' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='1253' x2='630' y2='1269' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
+<line x1='540' y1='1269' x2='790' y2='1269' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1269' x2='630' y2='1285' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
+<line x1='540' y1='1285' x2='790' y2='1285' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1285' x2='630' y2='1301' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
+<line x1='540' y1='1301' x2='790' y2='1301' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1301' x2='630' y2='1317' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1312' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='1312' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='1317' x2='790' y2='1317' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1317' x2='630' y2='1333' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1328' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='1328' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8fa69fef</text>
+<line x1='540' y1='1333' x2='790' y2='1333' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1333' x2='630' y2='1349' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1344' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='1344' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
+<line x1='540' y1='1349' x2='790' y2='1349' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1349' x2='630' y2='1365' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1360' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='1360' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>1084591d705c6ee9fc… → FOOTER</text>
+<text x='806' y='1381' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8fa69fef · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1393' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 1084591d705c6ee9fc8083fe6a2ff6674780d9754fc28d3fecc3dfed31ba02f1</text>
 </svg>
