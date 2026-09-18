@@ -79,7 +79,7 @@ description: "Use when working on the silken_net legal / business / academic-par
 | Параметричне страхування **клієнта** | [`00_04 §7`](../../../docs/00_04_Nature_as_a_Service_Contracts.md); політика-дім — [`05_05 §4`](../../../docs/05_05_Slashing_and_Risk_Policy.md) |
 | Яких юр/бізнес-артефактів бракує | [`00_04 §8`](../../../docs/00_04_Nature_as_a_Service_Contracts.md) |
 | Per-component BOM Soldier | [`02_01 §3`](../../../docs/02_01_Hardware_Architecture_and_BOM.md) — **не** `02_06 §1` (той агрегує rollup, не per-component spec) |
-| Node-rollup $ · cluster CAPEX · ROI-крива | [`02_06 §1.2`](../../../docs/02_06_Unit_Economics_and_BOM.md) · `§15.3` · `§17.3` (решта — дзеркала, правити в домі) |
+| Node-rollup $ · cluster CAPEX · ROI-крива | [`02_06 §1.2`](../../../docs/02_06_Unit_Economics_and_BOM.md) · [`02_06 §5.3`](../../../docs/02_06_Unit_Economics_and_BOM.md) · [`02_06 §7.3`](../../../docs/02_06_Unit_Economics_and_BOM.md) (решта — дзеркала, правити в домі) |
 | Виробничі хаби, EU-backup, Frame Agreement | [`02_06 §8`](../../../docs/02_06_Unit_Economics_and_BOM.md) |
 | Академ-реєстр 5 ВНЗ · план публікацій | [`00_02 §1`](../../../docs/00_02_Academic_Integration_and_IP.md) · `§2` |
 | IP-постава, ліцензійна матриця, межа «відкрито/утримуємо», правовий актор | [`00_01 §8`](../../../docs/00_01_Vision_Mission_and_Roadmap.md) — значення ліцензій = дзеркало `/LICENSE*` + `/NOTICE`; виконавчі IP-**інструменти** (TISC · ™ · юр-review) лишились у [`00_02 §4`](../../../docs/00_02_Academic_Integration_and_IP.md) |
