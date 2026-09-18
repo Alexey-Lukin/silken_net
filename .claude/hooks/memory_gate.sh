@@ -180,7 +180,11 @@ SELF=${BASH_SOURCE[0]:-$0}
 # рядка не діставши. Заплачено ДО бампу: власний гачок стиснуто 160 → 60 B, сусідній гачок того ж рядка
 # («черга cement-trim ПІДГОТОВЛЕНА, не виконана» → «cement-trim НЕ виконано») стиснуто без втрати змісту;
 # залишок = роутер нового дому.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25464}
+# 2026-09-18: 25464 → 25538 (+74) — новий дім `project_01_verdict_form_2026_09_18` (ноги §01 у формі присуду;
+# вимога ⊥ носій), hub-inline у той самий рядок «SSOT campaign history» поруч із 09-17, без власного рядка.
+# Заплачено ДО бампу: власний роутер без емодзі (79 → 74 B); сусідні гачки рядка вже мінімальні, чужих не
+# підрізано; залишок = роутер нового дому.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25538}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -333,7 +337,8 @@ rb_dark() {
 # підлогою так само, як решту.
 # 2026-09-17: 168 → 169 — `project_01a_root_vs_crown_2026_09_17`.
 # 2026-09-17: 169 → 170 — `feedback_verdict_question_form` (форма присуду: рекомендація + ціна).
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-170}
+# 2026-09-18: 170 → 171 — `project_01_verdict_form_2026_09_18` (вимога ⊥ носій; аркуш — вид класу).
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-171}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -455,7 +460,9 @@ index_reach_expected() {
 # тому, що журнал НЕ додає тригера відкликання — його дістають `[[strings]]`, не індекс.
 # 2026-09-14: 44939 → 45107 (+168) — вартість опису нового дому `project_deep_archival_01a_2026_09_14`.
 # Прецедент дотримано: власний опис стиснуто (317 → 224 B) ПЕРЕД бампом, чужих не підрізано.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-45107}
+# 2026-09-18: 45107 → 45215 (+108) — вартість опису нового дому `project_01_verdict_form_2026_09_18`.
+# Прецедент дотримано: власний опис стиснуто (185 → 130 B) ПЕРЕД бампом, чужих не підрізано.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-45215}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
