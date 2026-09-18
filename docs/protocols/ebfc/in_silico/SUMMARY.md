@@ -329,6 +329,17 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 **Conclusion:** BASELINE_DELTA_T_S = 60s is physically justified. EBFC discriminates healthy vs stressed trees. Diffusion NOT rate-limiting (j_kinetic ≪ j_diffusion).
 
+**pH bracket — printed BESIDE the table, never folded into it (⚖️ founder 2026-09-18).** Every delta_t above is a **pH-7.4 laboratory ceiling**; our sap setpoint is pH 5.75. Sygmund 2011 (*Microb. Cell Fact.* 10:106, Table 3 — free enzyme, ferrocenium 20 µM, 30 °C) gives the same enzyme at both pH values, and the correction is **[S]-dependent**, because k_cat falls (×0.43–0.47) while K_M also falls (×0.54–0.59) and the two partly cancel:
+
+| Scenario | ceiling (s) | ×wt | ×rec | delta_t at pH 5.5 (s) |
+|---|---|---|---|---|
+| Healthy summer | 19.9 | 0.68 | 0.58 | **29.3–34.5** |
+| Cold winter | 100.7 | 0.75 | 0.63 | **134.6–160.6** |
+| Active growth | 10.8 | 0.61 | 0.53 | 17.7–20.5 |
+| Severe stress | 205.9 | 0.79 | 0.66 | 260.8–313.3 |
+
+⚠️ The two ends are the **wild-type and recombinant forms of the same paper disagreeing** — that disagreement IS the bracket; electing one would manufacture precision the source does not carry. ⛔ And the pair was measured on the FREE enzyme with a small-molecule acceptor at 30 °C, so it is applied here as an indication for our immobilised Os-polymer electrode, not as its measurement; the 5 °C row additionally assumes a temperature-independent pH effect, which nobody measured.
+
 ### EIS Predictions (for Ti-coin Stage 2)
 
 | Parameter | Predicted | Literature Range |

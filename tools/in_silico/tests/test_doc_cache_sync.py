@@ -195,6 +195,21 @@ CHECKS = [
         "kinetics/delta_t_lookup.json",
         lambda d: named(d["reference_points"], "scenario", "healthy summer")["delta_t_s"], 0.1,
     ),
+    # pH bracket (⚖️ 2026-09-18): the ceiling rows above are the MODEL; these two pin the bracket
+    # published beside them, so that a re-run which moves the ceiling cannot leave the sap-side
+    # numbers standing. Both ends are pinned — a bracket with one end pinned is not a bracket.
+    (
+        "pH-bracket healthy-summer LOW end → delta_t_lookup.json §ph_bracket",
+        SUMMARY, r"\| Healthy summer \| 19\.9 \| [\d.]+ \| [\d.]+ \| \*\*([\d.]+)–[\d.]+\*\* \|",
+        "kinetics/delta_t_lookup.json",
+        lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_low_s"], 0.1,
+    ),
+    (
+        "pH-bracket healthy-summer HIGH end → delta_t_lookup.json §ph_bracket",
+        SUMMARY, r"\| Healthy summer \| 19\.9 \| [\d.]+ \| [\d.]+ \| \*\*[\d.]+–([\d.]+)\*\* \|",
+        "kinetics/delta_t_lookup.json",
+        lambda d: named(d["ph_bracket"]["rows"], "scenario", "healthy summer")["delta_t_ph55_high_s"], 0.1,
+    ),
     (
         "delta_t cold-winter → delta_t_lookup.json (§delta_t Predictions table)",
         SUMMARY, r"Cold winter \| 5 mM \| 5°C \| \*\*([\d.]+)\*\*",

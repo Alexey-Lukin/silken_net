@@ -1,5 +1,63 @@
 {
   "model": "Michaelis-Menten + Arrhenius + BQ25570 boost + EDLC charge",
+  "ph_bracket": {
+    "source": "Sygmund 2011, Microb. Cell Fact. 10:106, Table 3 (doi:10.1186/1475-2859-10-106)",
+    "measured": "free enzyme, ferrocenium 20 uM, 30 C, pH 5.5 vs 7.5 \u2014 NOT the immobilised Os electrode",
+    "applies_to": "our sap setpoint pH 5.75 against the model's pH-7.4 ceiling",
+    "ceiling_is_the_model": true,
+    "rows": [
+      {
+        "scenario": "healthy summer",
+        "glucose_mM": 10,
+        "temp_C": 25,
+        "delta_t_ceiling_s": 19.9,
+        "ratio_wt": 0.68,
+        "ratio_rec": 0.577,
+        "delta_t_ph55_low_s": 29.3,
+        "delta_t_ph55_high_s": 34.5
+      },
+      {
+        "scenario": "cold winter / stress",
+        "glucose_mM": 5,
+        "temp_C": 5,
+        "delta_t_ceiling_s": 100.7,
+        "ratio_wt": 0.748,
+        "ratio_rec": 0.627,
+        "delta_t_ph55_low_s": 134.6,
+        "delta_t_ph55_high_s": 160.6
+      },
+      {
+        "scenario": "active growth",
+        "glucose_mM": 20,
+        "temp_C": 30,
+        "delta_t_ceiling_s": 10.8,
+        "ratio_wt": 0.612,
+        "ratio_rec": 0.528,
+        "delta_t_ph55_low_s": 17.7,
+        "delta_t_ph55_high_s": 20.5
+      },
+      {
+        "scenario": "severe stress",
+        "glucose_mM": 3,
+        "temp_C": 0,
+        "delta_t_ceiling_s": 205.9,
+        "ratio_wt": 0.789,
+        "ratio_rec": 0.657,
+        "delta_t_ph55_low_s": 260.8,
+        "delta_t_ph55_high_s": 313.3
+      },
+      {
+        "scenario": "moderate spring",
+        "glucose_mM": 15,
+        "temp_C": 20,
+        "delta_t_ceiling_s": 21.2,
+        "ratio_wt": 0.639,
+        "ratio_rec": 0.548,
+        "delta_t_ph55_low_s": 33.1,
+        "delta_t_ph55_high_s": 38.7
+      }
+    ]
+  },
   "parameters": {
     "j_max_25C_uA_cm2": 881.0,
     "Km_mM": 13.9,

@@ -96,6 +96,22 @@ KM_GLUCOSE = 13.9            # mM — K_M^app of dgrGcGDH, Zafar 2012 Table 1 (1
 # ⚠️ It is an APPARENT constant of the immobilised electrode, not of the free enzyme — it carries the
 # hydrogel's mass-transfer resistance, which the paper says outright. Free-enzyme readings for GcGDH
 # run 10.1-19.0 mM (≈10 at pH 5.5), i.e. the same order, measured under other conditions (00_07 HW.5.IS).
+# ── pH bracket for the L4 anchor (⚖️ founder 2026-09-18, 00_07 HW.5.IS) ──
+# The anchor above is a pH-7.4 laboratory ceiling; our anode sits in sap at pH 5.75. The verdict was:
+# keep the model on the ceiling and publish the BRACKET beside it, because the correction is not a point.
+# Source — Sygmund et al. 2011, Microb. Cell Fact. 10:106 (doi:10.1186/1475-2859-10-106), Table 3:
+# apparent constants of GcGDH for D-glucose with ferrocenium at 20 µM, 30 °C, at two pH values.
+# ⚠️ FREE enzyme with a small-molecule acceptor — NOT our immobilised Os-polymer electrode; and the pair
+# was measured at 30 °C, so using it at 5 °C assumes the pH effect is temperature-independent, which
+# nobody measured. That is why it is a bracket printed BESIDE the model, never folded into it.
+PH_KINETICS_SYGMUND = {
+    # form: {pH: (K_m mM, k_cat s^-1)}
+    "wt":  {5.5: (10.2, 180.0), 7.5: (19.0, 380.0)},
+    "rec": {5.5: (10.1, 179.0), 7.5: (17.1, 418.0)},
+}
+# Why both forms are kept: they disagree (k_cat ratio 0.474 ⊥ 0.428, K_m ratio 0.537 ⊥ 0.591), and the
+# disagreement IS the bracket — electing one would manufacture a precision the source does not carry.
+
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =

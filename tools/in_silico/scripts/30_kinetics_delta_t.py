@@ -77,6 +77,7 @@ from lib.constants import (
     KINETICS_DIR,
     KM_GLUCOSE,
     N_ELECTRONS,
+    PH_KINETICS_SYGMUND,
     R_GAS,
     REPO_ROOT,
     TEMPERATURE_K,
@@ -121,6 +122,20 @@ def delta_t(glucose_mm: float, temp_c: float) -> float:
     p_ebfc = V_OP * j * A_ELECTRODE
     p_net = p_ebfc * ETA_BQ
     return E_CYCLE / p_net
+
+
+def ph_ratio(glucose_mm: float, form: str) -> float:
+    """Current ratio pH 5.5 / pH 7.5 at this glucose, from ONE enzyme form's own MM pair.
+
+    The ratio is [S]-dependent because both k_cat and K_M move with pH, and they move in
+    opposite directions for the current: k_cat falls, K_M falls too (higher affinity), so the
+    two partly cancel. Reporting a single factor would hide that.
+    """
+    km_lo, kcat_lo = PH_KINETICS_SYGMUND[form][5.5]
+    km_hi, kcat_hi = PH_KINETICS_SYGMUND[form][7.5]
+    v_lo = kcat_lo * glucose_mm / (km_lo + glucose_mm)
+    v_hi = kcat_hi * glucose_mm / (km_hi + glucose_mm)
+    return v_lo / v_hi
 
 
 def main() -> int:
@@ -221,6 +236,27 @@ def main() -> int:
         pairs = [(s["value"], str(s["delta_t_s"]) + "s") for s in sens]
         print(f"  {param}: {pairs}")
 
+    # ── 4b. pH bracket (⚖️ 2026-09-18) — printed BESIDE the ceiling, never folded into it ──
+    banner("pH bracket: the model runs at the pH-7.4 lab ceiling; sap is pH 5.75")
+    ph_rows = []
+    print(f"  {'scenario':<22s}  {'ceiling':>9s}  {'×wt':>6s}  {'×rec':>6s}  {'delta_t at pH 5.5':>20s}")
+    print("  " + "-" * 72)
+    for glu, tc, label in ref_points:
+        dt_ceiling = delta_t(glu, tc)
+        r_wt, r_rec = ph_ratio(glu, "wt"), ph_ratio(glu, "rec")
+        dt_wt, dt_rec = dt_ceiling / r_wt, dt_ceiling / r_rec
+        lo, hi = sorted((dt_wt, dt_rec))
+        print(f"  {label:<22s}  {dt_ceiling:>8.1f}s  {r_wt:>6.2f}  {r_rec:>6.2f}  {lo:>9.1f}–{hi:.1f}s")
+        ph_rows.append({
+            "scenario": label, "glucose_mM": glu, "temp_C": tc,
+            "delta_t_ceiling_s": round(dt_ceiling, 1),
+            "ratio_wt": round(r_wt, 3), "ratio_rec": round(r_rec, 3),
+            "delta_t_ph55_low_s": round(lo, 1), "delta_t_ph55_high_s": round(hi, 1),
+        })
+    print("  ⚠️  Source: Sygmund 2011 Table 3 — FREE enzyme, ferrocenium acceptor, 30 °C, pH 5.5 vs 7.5.")
+    print("      Not our immobilised Os-polymer electrode, and the 30 °C measurement is applied at every")
+    print("      temperature here, which assumes a temperature-independent pH effect nobody measured.")
+
     # ── 5. Heatmap ──
     banner("Generating delta_t heatmap")
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -263,6 +299,13 @@ def main() -> int:
     banner("Saving results")
     lookup = {
         "model": "Michaelis-Menten + Arrhenius + BQ25570 boost + EDLC charge",
+        "ph_bracket": {
+            "source": "Sygmund 2011, Microb. Cell Fact. 10:106, Table 3 (doi:10.1186/1475-2859-10-106)",
+            "measured": "free enzyme, ferrocenium 20 uM, 30 C, pH 5.5 vs 7.5 — NOT the immobilised Os electrode",
+            "applies_to": "our sap setpoint pH 5.75 against the model's pH-7.4 ceiling",
+            "ceiling_is_the_model": True,
+            "rows": ph_rows,
+        },
         "parameters": {
             "j_max_25C_uA_cm2": J_MAX_25C * 1e6,
             "Km_mM": KM_GLUCOSE,
