@@ -1,8 +1,8 @@
 {
   "model": "Michaelis-Menten + Arrhenius + BQ25570 boost + EDLC charge",
   "parameters": {
-    "j_max_25C_uA_cm2": 494.0,
-    "Km_mM": 20.0,
+    "j_max_25C_uA_cm2": 881.0,
+    "Km_mM": 13.9,
     "V_op_V": 0.5,
     "A_electrode_cm2": 2.0,
     "eta_BQ": 0.68,
@@ -16,35 +16,35 @@
     {
       "glucose_mM": 10,
       "temp_C": 25,
-      "delta_t_s": 44.7,
+      "delta_t_s": 19.9,
       "vs_baseline": "< baseline",
       "scenario": "healthy summer"
     },
     {
       "glucose_mM": 5,
       "temp_C": 5,
-      "delta_t_s": 237.5,
+      "delta_t_s": 100.7,
       "vs_baseline": "> baseline",
       "scenario": "cold winter / stress"
     },
     {
       "glucose_mM": 20,
       "temp_C": 30,
-      "delta_t_s": 22.8,
+      "delta_t_s": 10.8,
       "vs_baseline": "< baseline",
       "scenario": "active growth"
     },
     {
       "glucose_mM": 3,
       "temp_C": 0,
-      "delta_t_s": 499.7,
+      "delta_t_s": 205.9,
       "vs_baseline": "> baseline",
       "scenario": "severe stress"
     },
     {
       "glucose_mM": 15,
       "temp_C": 20,
-      "delta_t_s": 45.7,
+      "delta_t_s": 21.2,
       "vs_baseline": "< baseline",
       "scenario": "moderate spring"
     }
@@ -54,93 +54,93 @@
       {
         "value": 10,
         "unit": "mM",
-        "delta_t_s": 29.8
+        "delta_t_s": 16.7
       },
       {
-        "value": 15,
+        "value": 13.9,
         "unit": "mM",
-        "delta_t_s": 37.2
+        "delta_t_s": 19.9
       },
       {
         "value": 20,
         "unit": "mM",
-        "delta_t_s": 44.7
+        "delta_t_s": 25.0
       },
       {
         "value": 30,
         "unit": "mM",
-        "delta_t_s": 59.5
+        "delta_t_s": 33.4
       },
       {
         "value": 50,
         "unit": "mM",
-        "delta_t_s": 89.3
+        "delta_t_s": 50.1
       }
     ],
     "A_electrode": [
       {
         "value": 1,
         "unit": "cm\u00b2",
-        "delta_t_s": 89.3
+        "delta_t_s": 39.9
       },
       {
         "value": 2,
         "unit": "cm\u00b2",
-        "delta_t_s": 44.7
+        "delta_t_s": 19.9
       },
       {
         "value": 3,
         "unit": "cm\u00b2",
-        "delta_t_s": 29.8
+        "delta_t_s": 13.3
       },
       {
         "value": 5,
         "unit": "cm\u00b2",
-        "delta_t_s": 17.9
+        "delta_t_s": 8.0
       }
     ],
     "E_cycle": [
       {
         "value": 2,
         "unit": "mJ",
-        "delta_t_s": 17.9
+        "delta_t_s": 8.0
       },
       {
         "value": 5,
         "unit": "mJ",
-        "delta_t_s": 44.7
+        "delta_t_s": 19.9
       },
       {
         "value": 10,
         "unit": "mJ",
-        "delta_t_s": 89.3
+        "delta_t_s": 39.9
       },
       {
         "value": 20,
         "unit": "mJ",
-        "delta_t_s": 178.6
+        "delta_t_s": 79.8
       }
     ],
     "j_max": [
       {
         "value": 200,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 110.3
+        "delta_t_s": 87.9
       },
       {
         "value": 494,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 44.7
+        "delta_t_s": 35.6
       },
       {
-        "value": 700,
+        "value": 881,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 31.5
+        "delta_t_s": 19.9
       },
       {
-        "value": 1000,
+        "value": 1200,
         "unit": "\u00b5A/cm\u00b2",
-        "delta_t_s": 22.1
+        "delta_t_s": 14.6
       }
     ]
   }

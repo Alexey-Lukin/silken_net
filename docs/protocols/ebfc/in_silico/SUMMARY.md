@@ -17,7 +17,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
 | **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline — geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30), NOT the old ×10⁵ (see §Cathode) |
-| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 44.7s / Stressed 237.5s (η_BQ 0.68 post-HW.47) |
+| **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 19.9s / Stressed 100.7s (η_BQ 0.68 post-HW.47; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
 
@@ -309,8 +309,8 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
-| j_max(25°C) | 494 µA/cm² | Zafar 2012 (PMC3275720) |
-| Km(glucose) | 20 mM | Estimated (GcGDH) |
+| j_max(25°C) | 881 µA/cm² | Zafar 2012 (PMC3275720) Table 1, dgrGcGDH row — MM **asymptote** derived as 520 × (K_M+20)/20; a pH-7.4 graphite ceiling |
+| Km(glucose) | 13.9 mM | Same row, same fit (K_M^app 13.9 ± 3.1; apparent — carries the hydrogel's mass transfer) |
 | Ea | 40 kJ/mol | Typical FAD enzyme |
 | V_op | 0.5 V | EBFC under load |
 | A_electrode | 2 cm² | Conservative gyroid area |
@@ -321,11 +321,11 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 | Scenario | [glucose] | T(°C) | delta_t (s) | vs 60s baseline |
 |----------|-----------|-------|-------------|-----------------|
-| Healthy summer | 10 mM | 25°C | **44.7** | < 60s → GP↑ [E.63] |
-| Active growth | 20 mM | 30°C | **22.8** | < 60s → GP↑ [E.63] |
-| Moderate spring | 15 mM | 20°C | **45.7** | < 60s → GP↑ [E.63] |
-| Cold winter | 5 mM | 5°C | **237.5** | > 60s → GP↓ [E.63] |
-| Severe stress | 3 mM | 0°C | **499.7** | > 60s → GP↓ [E.63] |
+| Healthy summer | 10 mM | 25°C | **19.9** | < 60s → GP↑ [E.63] |
+| Active growth | 20 mM | 30°C | **10.8** | < 60s → GP↑ [E.63] |
+| Moderate spring | 15 mM | 20°C | **21.2** | < 60s → GP↑ [E.63] |
+| Cold winter | 5 mM | 5°C | **100.7** | > 60s → GP↓ [E.63] |
+| Severe stress | 3 mM | 0°C | **205.9** | > 60s → GP↓ [E.63] |
 
 **Conclusion:** BASELINE_DELTA_T_S = 60s is physically justified. EBFC discriminates healthy vs stressed trees. Diffusion NOT rate-limiting (j_kinetic ≪ j_diffusion).
 
@@ -333,13 +333,13 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 
 | Parameter | Predicted | Literature Range |
 |-----------|-----------|-----------------|
-| Rct (charge transfer) | 130 Ω | 100-500 Ω |
+| Rct (charge transfer) | 72.9 Ω | 100-500 Ω |
 | Rs (solution) | 100 Ω | 50-200 Ω |
 | Cdl (double layer) | 50 µF/cm² | 20-100 µF/cm² |
-| Time constant τ | 13 ms | — |
-| Warburg region | < 12 Hz | — |
+| Time constant τ | 7.3 ms | — |
+| Warburg region | < 21.8 Hz | — |
 
-The 130 Ω Rct above is the **anode** charge-transfer (enzyme→Os, from j_max; script 31). The
+The 72.9 Ω Rct above is the **anode** charge-transfer (enzyme→Os, from j_max; script 31). The
 **cathode** DET Rct is *not* a single value — script 31b (Laviron, surface-confined) gives a band
 **~0.002–230 Ω** across the borderline k_DET (λ/coupling-sensitive) × the unknown site coverage Γ
 (×10⁵ spread): the cathode arc can be negligible (fast/dense) or comparable to the anode (slow/sparse),
@@ -526,7 +526,7 @@ plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25
 | Pore the "≥ 1 m" criterion demands at θ 110° / 115° / 120° | **10.2 / 12.6 / 14.9 µm** |
 | Water-entry pressure at θ 110° — pore AND angle together, NOT a bubble point (that one runs in a wetting liquid and does not see θ) | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
 | θ at which the worst field load breaks through | **90.02 – 90.10°** |
-| O₂ transport margin at the canon's own lower bound (0.02 µm) | **8627×** |
+| O₂ transport margin at the canon's own lower bound (0.02 µm) | **4838×** |
 
 **Verdict** — 🟢 Spec sound and over-specified at both ends; ⚠️ the BENCH was aimed at the wrong
 target, and so was my first reading of the canon. The prose bound "no pores > 15 µm" is **not an

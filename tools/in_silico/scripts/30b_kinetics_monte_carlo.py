@@ -4,9 +4,12 @@
 L4b — Monte Carlo uncertainty analysis for delta_t predictions.
 
 Samples from parameter distributions instead of fixed values:
-  Km ~ Uniform(10, 50) mM
+  Km ~ Uniform(10, 50) mM — deliberately WIDER than the fitted K_M^app (13.9 ± 3.1 mM): the upper
+           end covers the case where the apparent constant is inflated by mass transfer in the
+           hydrogel. Narrowing it to the fit would make the model look more certain than it is
   Ea ~ Uniform(30, 50) kJ/mol
-  j_max ~ Normal(494, 50) µA/cm²
+  j_max ~ Normal(J_MAX_25C, J_MAX_25C_SD) µA/cm² — the asymptote and its 1σ are IMPORTED, never
+           typed here: both are derived in lib/constants.py from Zafar 2012's own error bars
   A_electrode ~ Uniform(1, 5) cm²
   E_cycle ~ Uniform(3, 10) mJ
 
@@ -33,6 +36,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
     BASELINE_DELTA_T_S,
     ETA_BQ,
+    J_MAX_25C,
+    J_MAX_25C_SD,
     KINETICS_DIR,
     R_GAS,
     REPO_ROOT,
@@ -64,8 +69,8 @@ def main() -> int:
 
     km = rng.uniform(10, 50, N_SAMPLES)           # mM
     ea = rng.uniform(30_000, 50_000, N_SAMPLES)   # J/mol
-    jmax = rng.normal(494e-6, 50e-6, N_SAMPLES)   # A/cm²
-    jmax = np.clip(jmax, 100e-6, 1000e-6)
+    jmax = rng.normal(J_MAX_25C, J_MAX_25C_SD, N_SAMPLES)   # A/cm², lib.constants (00_07 HW.5.IS)
+    jmax = np.clip(jmax, max(100e-6, J_MAX_25C - 4 * J_MAX_25C_SD), J_MAX_25C + 4 * J_MAX_25C_SD)
     a_el = rng.uniform(1, 5, N_SAMPLES)            # cm²
     e_cyc = rng.uniform(3e-3, 10e-3, N_SAMPLES)    # J
 

@@ -910,6 +910,7 @@ def test_constants_importable():
         GAFF_VERSION,
         HARTREE_TO_EV,
         J_MAX_25C,
+        J_MAX_25C_SD,
         KM_GLUCOSE,
         R_GAS,
     )
@@ -918,8 +919,16 @@ def test_constants_importable():
     assert abs(R_GAS - 8.314) < 0.01
     assert abs(HARTREE_TO_EV - 27.211) < 0.01
     assert BASELINE_DELTA_T_S == 60
-    assert abs(J_MAX_25C - 494e-6) < 1e-6
-    assert KM_GLUCOSE == 20.0
+    assert KM_GLUCOSE == 13.9
+    assert abs(J_MAX_25C - 881e-6) < 1e-6
+    # ⛔ These two are NOT independent literals, so do not pin them as such: the asymptote is DERIVED
+    # through K_M from the same Zafar 2012 Table-1 row (dgrGcGDH, 520 ± 20 µA/cm² at 20 mM). Pinning
+    # the RELATION reds when one is moved without re-deriving the other (00_07 HW.5.IS).
+    j_from_km = 520e-6 * (KM_GLUCOSE + 20.0) / 20.0
+    assert abs(J_MAX_25C - j_from_km) < 1e-6, (J_MAX_25C, j_from_km)
+    # …and its 1σ is propagated from the source's own error bars, not typed:
+    sd_propagated = (((KM_GLUCOSE + 20.0) / 20.0 * 20e-6) ** 2 + (520e-6 / 20.0 * 3.1) ** 2) ** 0.5
+    assert abs(J_MAX_25C_SD - sd_propagated) < 1e-6, (J_MAX_25C_SD, sd_propagated)
 
 
 # ── New cache files (scripts 21d, 24, 28) ──

@@ -57,20 +57,45 @@ ECP_OS = "lanl2dz"
 SOLVENT_EPS_WATER = 78.3553
 
 # ── EBFC parameters (from literature, 01_03 §1) ──
-J_MAX_25C = 494e-6           # A/cm² — Zafar 2012 (PMC3275720): NATIVE GcGDH + Os-polymer at 20 mM glucose
-# ⚠️ Attribution corrected 2026-09-13: 494 ± 17 is the native enzyme at an OPERATING POINT (20 mM, phosphate
-# pH 7.4, graphite, flow); the deglycosylated form measured 520 ± 20. `30` uses this value as the
-# Michaelis-Menten ASYMPTOTE, so under the source's own conditions it returns 247. Not recomputed here on
-# purpose — the whole L4 cascade moves as one re-run → 00_07 HW.5.IS.
+J_MAX_25C = 881e-6           # A/cm² — Michaelis-Menten ASYMPTOTE of dgrGcGDH + Os-polymer, Zafar 2012
+# (doi:10.1007/s00216-011-5650-7, PMC3275720). This is the enzyme FORM we build with — deglycosylated
+# recombinant GcGDH — and it has its own row in the paper's Table 1: K_M^app 13.9 ± 3.1 mM, I_max
+# 51.5 ± 2.6 µA, sensitivity 2.15 µA/mM, linear range 0.005-16 mM, R² 0.993.
+# DERIVATION (the model needs an asymptote, the paper publishes an operating point):
+#     j_max = j(20 mM) × (K_M^app + 20)/20 = 520 × 33.9/20 = 881 µA/cm²
+# where 520 ± 20 µA/cm² is the dgrGcGDH density at 20 mM (Fig. 4 of the same paper).
+# ⛔ The Table-1 `I_max` cannot be used directly: it is an ABSOLUTE current (µA) and the paper never
+# states the electrode area, so converting it needs a number that is not published. It serves as a
+# CONTROL instead — the area implied by each row (I_max/j ⇒ 0.058-0.067 cm²) is a graphite rod of
+# Ø2.7-2.9 mm, i.e. the electrode such a study uses, so the two routes are consistent.
+# ⚠️ CEILING, not our operating point: measured in 50 mM phosphate pH 7.4 on graphite under flow
+# (0.5 mL/min, +175 mV vs Ag|AgCl). Our medium is synthetic xylem sap at pH 5.75 (side series 4.5) on
+# etched Ti; a pH correction from the same enzyme's MCF data would be ×0.5-0.85 depending on
+# concentration and is deliberately NOT applied here — applying it is a modelling decision, not a
+# transcription → 00_07 HW.5.IS.
+# ⛔ Do NOT read `494 µA/cm²` from this paper as an asymptote wherever you meet it: that figure is the
+# NATIVE enzyme's density at an operating point (20 mM), and a model that uses it as the MM asymptote
+# returns 247 µA/cm² under the source's own conditions against the 494 it was handed — wrong form,
+# wrong role. The same applies to any density quoted without its [glucose] (00_07 HW.5.IS).
 # ⛔ This number is ALREADY Gen 2.0, and that closes an argument people keep reaching for. The
 # ratified network topology costs 1.88× of the electroactive area (00_07 HW.33, ⚖️ 2026-09-10), and
 # "we compensate the area with a better enzyme" is NOT available: since 30_kinetics_delta_t is
 # kinetics-limited across its whole range, area passes into current without saturating, so covering
-# 1.88× needs j_max to reach 929 µA/cm² — i.e. the compensation would have to be paid by the very
-# figure written above. Raise this constant only against a NEW measured couple, never to balance a
+# 1.88× needs j_max to reach 1656 µA/cm² — i.e. the compensation would have to be paid by the very
+# figure written above (the ratio prices the AREA decision, so it rides whatever asymptote is current:
+# 1.88 × 881). Raise this constant only against a NEW measured couple, never to balance a
 # geometry decision. [migrated from 00_07 HW.33 on 2026-09-11 — the break-even lived only in the
 #  tracker, while the constant it prices sits here, where a reader is tempted to "improve" it.]
-KM_GLUCOSE = 20.0            # mM — NO primary (read GcGDH values 10.1–19.0 mM, ≈10 at pH 5.5; 00_07 HW.5.IS)
+J_MAX_25C_SD = 87e-6         # A/cm² — 1σ of the asymptote above, PROPAGATED from the source's own error
+# bars rather than typed: j_max = j20 × (K_M + 20)/20 with j20 = 520 ± 20 µA/cm² and K_M = 13.9 ± 3.1 mM
+# ⇒ σ = √((∂/∂j20 · 20)² + (∂/∂K_M · 3.1)²) = √((1.695·20)² + (26·3.1)²) ≈ 87 µA/cm². The K_M term
+# dominates (80.6 of the 87), which is worth knowing: the asymptote is uncertain mostly because the
+# affinity is, not because the density is. Consumed by the Monte-Carlo sweep (`30b`).
+KM_GLUCOSE = 13.9            # mM — K_M^app of dgrGcGDH, Zafar 2012 Table 1 (13.9 ± 3.1), the SAME fit
+# that yields J_MAX_25C above: the pair must move together, since the asymptote is derived through it.
+# ⚠️ It is an APPARENT constant of the immobilised electrode, not of the free enzyme — it carries the
+# hydrogel's mass-transfer resistance, which the paper says outright. Free-enzyme readings for GcGDH
+# run 10.1-19.0 mM (≈10 at pH 5.5), i.e. the same order, measured under other conditions (00_07 HW.5.IS).
 EA_ENZYME = 40_000.0         # J/mol — Arrhenius activation energy (typical FAD enzyme)
 V_OP = 0.5                   # V — EBFC operating voltage under load
 A_ELECTRODE = 2.0            # cm² — ONE face of the Ø16×1 mm Ti-coin COUPON (π·8² =

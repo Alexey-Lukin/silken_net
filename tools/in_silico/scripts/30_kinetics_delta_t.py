@@ -16,9 +16,12 @@ which was reversed as economically null/inverted (00_07 E.63 / 03_04 §4.3).
 
 Key literature parameters
 -------------------------
-  j_max(25°C) = 494 µA/cm²    — Zafar 2012 (PMC3275720): NATIVE GcGDH at 20 mM glucose, i.e. an
-                                operating point used here as the asymptote (00_07 HW.5.IS)
-  Km ≈ 20 mM                  — no primary; the bracket it claims (Asp 87, Mucor 28) does not contain it
+  j_max(25°C) = 881 µA/cm²    — Michaelis-Menten ASYMPTOTE of dgrGcGDH + Os-polymer: derived from
+                                Zafar 2012 (PMC3275720) Table 1 row dgrGcGDH (K_M^app 13.9 mM) and
+                                its 520 µA/cm² at 20 mM. A LAB CEILING — pH 7.4 phosphate, graphite,
+                                flow; the pH correction toward sap is NOT applied (lib/constants.py)
+  Km = 13.9 mM                — K_M^app of that same row and the same fit, so the pair moves together.
+                                Apparent: it carries the hydrogel's mass-transfer resistance
   V_op = 0.5 V                — EBFC under load (OCV 0.6-0.8 V, 01_03 §1)
   η_bq = 0.68                 — BQ25570 boost efficiency @ P_EBFC≈15µW (docs/02_03 §9.1
                                  table is source of truth; TI SLUSBH2G gives no closed-form
@@ -37,8 +40,9 @@ it is for: the Stage-2 in-vitro coin is the body this model is meant to be compa
 against (01_01 §6). It is NOT the anchor. The Zone-1 gyroid anode is a different body by
 30-60× — CAD `SpecificSurface` puts it at 65-123 cm² against the coupon's 2.0 — and the
 scaling is not a rounding error: this model is KINETICS-limited across its whole range
-(j_kinetic 99-247 vs j_diffusion 965-3859 µA/cm²), so area passes into current without
-saturating and delta_t ∝ 1/A EXACTLY (A=1→89.3 s, 2→44.7, 3→29.8, 5→17.9).
+(j_kinetic 233-520 vs j_diffusion 965-3859 µA/cm² at 5-20 mM), so area passes into current
+without saturating and delta_t ∝ 1/A EXACTLY (A=1→39.9 s, 2→19.9, 3→13.3, 5→8.0 at 10 mM, 25°C).
+⚠️ Both rows move with J_MAX_25C — re-read them from the run, never from this docstring.
 
 So do not read a number from here as the anchor's recharge interval, and do not feed one
 into the DELTA_T_FAST_S / DELTA_T_SLOW_S calibration — those are per-deployment and wait
@@ -122,7 +126,7 @@ def delta_t(glucose_mm: float, temp_c: float) -> float:
 def main() -> int:
     banner("L4 EBFC kinetics — delta_t prediction")
     print(f"  j_max(25°C) = {J_MAX_25C*1e6:.0f} µA/cm²")
-    print(f"  Km = {KM_GLUCOSE:.0f} mM")
+    print(f"  Km = {KM_GLUCOSE:.1f} mM")
     print(f"  V_op = {V_OP} V, A = {A_ELECTRODE} cm²")
     print(f"  E_cycle = {E_CYCLE*1e3:.1f} mJ, η_BQ = {ETA_BQ}")
     print(f"  Ea = {EA_ENZYME/1000:.0f} kJ/mol")
@@ -181,10 +185,12 @@ def main() -> int:
     sensitivities = {}
 
     for param, values, label in [
-        ("Km", [10, 15, 20, 30, 50], "mM"),
+        ("Km", [10, 13.9, 20, 30, 50], "mM"),
         ("A_electrode", [1, 2, 3, 5], "cm²"),
         ("E_cycle", [2, 5, 10, 20], "mJ"),
-        ("j_max", [200, 494, 700, 1000], "µA/cm²"),
+        # 494 stays in the sweep on purpose: it is the density this model used to be anchored on
+        # (native GcGDH at 20 mM), so the row prices what the re-anchoring moved (00_07 HW.5.IS).
+        ("j_max", [200, 494, 881, 1200], "µA/cm²"),
     ]:
         sens = []
         for v in values:
@@ -283,7 +289,8 @@ def main() -> int:
     dt_healthy = delta_t(10, 25)
     dt_stress = delta_t(5, 5)
     print(f"     Healthy (10 mM, 25°C): delta_t = {dt_healthy:.1f}s | Stressed (5 mM, 5°C): {dt_stress:.1f}s")
-    print("  ⚠️  LAB-CEILING values (E_CYCLE=5mJ, j_max=494). The old 60s baseline +")
+    print(f"  ⚠️  LAB-CEILING values (E_CYCLE={E_CYCLE*1e3:.0f}mJ, j_max={J_MAX_25C*1e6:.0f} µA/cm²"
+          f" at pH 7.4 on graphite). The old 60s baseline +")
     print("      β-perturbation coupling was REVERSED in E.63 (delta_t→β was economically")
     print("      null/inverted). delta_t now drives growth_points DIRECTLY via")
     print("      metabolic_health(delta_t); FAST/SLOW thresholds are field-scale and")
