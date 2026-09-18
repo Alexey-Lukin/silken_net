@@ -4,7 +4,6 @@
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
 <circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
-<circle cx='130' cy='150' r='3' fill='none' stroke='#111' stroke-width='1'/>
 <line x1='93' y1='150' x2='167' y2='150' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
 <line x1='130' y1='113' x2='130' y2='187' stroke='#111' stroke-width='0.4' stroke-dasharray='6 3'/>
 <text x='130' y='223' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SECTION A–A</text>
@@ -16,13 +15,12 @@
 <line x1='163' y1='205' x2='159' y2='202.5' stroke='#1166cc' stroke-width='0.7'/>
 <line x1='163' y1='205' x2='159' y2='207.5' stroke='#1166cc' stroke-width='0.7'/>
 <text x='130' y='202' font-family='monospace' font-size='10' text-anchor='middle' fill='#1166cc' font-weight='normal'>Ø11</text>
-<text x='139' y='146' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>Ø1 bus rod (SOLID, monolithic §1.4)</text>
+<text x='136' y='146' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>NO central bore — lattice to the axis</text>
+<text x='97' y='241' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>bus wire Ø1 — WELDED to the top face, NOT printed (01_01 §3 step 1b)</text>
 <text x='97' y='107' font-family='monospace' font-size='9' text-anchor='start' fill='#1166cc' font-weight='normal'>gyroid lattice annulus — SPEC, not drawn</text>
 <line x1='106.57' y1='173.43' x2='67' y2='223' stroke='#111' stroke-width='0.4' stroke-dasharray='4 2'/>
 <text x='20' y='268' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>⚠ coating zone boundary: NOT SPECIFIED IN CEM — see COATING note</text>
 <rect x='300' y='117' width='240' height='66' fill='none' stroke='#111' stroke-width='1.2'/>
-<line x1='300' y1='147' x2='540' y2='147' stroke='#111' stroke-width='0.6' stroke-dasharray='6 3'/>
-<line x1='300' y1='153' x2='540' y2='153' stroke='#111' stroke-width='0.6' stroke-dasharray='6 3'/>
 <text x='420' y='223' font-family='monospace' font-size='10' text-anchor='middle' fill='#555' font-weight='normal'>SIDE (envelope)</text>
 <line x1='300' y1='183' x2='300' y2='205' stroke='#1166cc' stroke-width='0.5'/>
 <line x1='540' y1='183' x2='540' y2='205' stroke='#1166cc' stroke-width='0.5'/>
@@ -121,7 +119,7 @@
 <line x1='540' y1='1247' x2='790' y2='1247' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1247' x2='630' y2='1263' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1258' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1258' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>b885a55b</text>
+<text x='635' y='1258' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>59192e3d</text>
 <line x1='540' y1='1263' x2='790' y2='1263' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='1263' x2='630' y2='1279' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1274' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -130,6 +128,6 @@
 <line x1='630' y1='1279' x2='630' y2='1295' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='1290' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
 <text x='635' y='1290' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8e10a3614202d63762… → FOOTER</text>
-<text x='806' y='1311' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev b885a55b · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1311' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 59192e3d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
 <text x='806' y='1323' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 8e10a3614202d637628feeb1ed341598af35d73598c6c49ee4fcfd5d671e45fc</text>
 </svg>

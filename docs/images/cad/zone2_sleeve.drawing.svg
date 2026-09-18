@@ -90,7 +90,7 @@
 <line x1='540' y1='837' x2='790' y2='837' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='837' x2='630' y2='853' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0fa8170e-dirty</text>
+<text x='635' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>59192e3d</text>
 <line x1='540' y1='853' x2='790' y2='853' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='853' x2='630' y2='869' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='864' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -99,6 +99,6 @@
 <line x1='630' y1='869' x2='630' y2='885' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='880' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
 <text x='635' y='880' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f6f88f08c5bb3dc800… → FOOTER</text>
-<text x='806' y='901' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 0fa8170e-dirty · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<text x='806' y='901' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 59192e3d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
 <text x='806' y='913' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f6f88f08c5bb3dc800dd4b9d09e6008a795c2926f08c4f823143cd0187e9faad</text>
 </svg>

@@ -83,7 +83,7 @@
 <line x1='540' y1='776' x2='790' y2='776' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='776' x2='630' y2='792' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>37934748</text>
+<text x='635' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>59192e3d</text>
 <line x1='540' y1='792' x2='790' y2='792' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='792' x2='630' y2='808' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='803' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -92,6 +92,6 @@
 <line x1='630' y1='808' x2='630' y2='824' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
 <text x='635' y='819' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>0ff9adc96608b9e134… → FOOTER</text>
-<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 37934748 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
+<text x='806' y='840' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 59192e3d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/ti_coin.json</text>
 <text x='806' y='852' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 0ff9adc96608b9e1344dd11c985dfa92b3fd453a48181b85774cb4a51809ff33</text>
 </svg>
