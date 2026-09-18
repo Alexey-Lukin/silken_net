@@ -313,8 +313,6 @@ public class AnchorTests
     // ⚖️ founder 2026-09-18 (00_07 HW.1): the welded branch prints the anode WITHOUT a bus rod and welds a
     // drawn wire to its top face, so `bus_rod_diameter_mm` describes an ASSEMBLY part — the wire — and a
     // reader that turns it into a printed core would hand the factory the branch the founder removed.
-    // This pin replaces `Monolithic_Rod_Sets_The_Gyroid_Inner_Radius…`, whose subject (a rod-set inner
-    // radius) no longer exists.
     // MUTATION: make InnerRadiusMm return `cem.BusRodDiameterMm / 2f` again ⇒ this reds naming the radius.
     [Fact]
     public void The_Printed_Part_Carries_No_Core()
@@ -324,6 +322,47 @@ public class AnchorTests
         foreach (AnchorCem cem in aShipped)                        // …and none of it reaches the printed body
             Assert.Equal(0f, Zone1Anode.InnerRadiusMm(cem));
         Assert.Equal(0f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
+    }
+
+    // 🔴 A NOTE puts the core back too — and on the factory sheet, where the pin above cannot see it
+    // (00_07 HW.1). Every shipped anchor note said the model draws the rod «as a solid core through the
+    // annulus» and called that simplification OPEN; the welded branch closed it the other way, and the
+    // sentence went on printing on the published anchor sheet beside the sheet's own «NO central bore»
+    // (skill ssot-maintenance guard-craft #176: an artefact that names the condition of its own falsity
+    // outlives the condition firing, because nothing reads the condition). So the notes are tied to the
+    // fact the pin above reads: while the printed part has no core, no note of a shipped anchor describes
+    // one. When a verdict brings a core back this reds FIRST — rewrite the notes with the geometry.
+    // ⛔ Declared ceiling: the tokens are the two spellings the stale note used; the same claim in other
+    // words passes, and a note is judged only for what it says about a CORE, nothing else.
+    // MUTATION: put «annulus» back into any shipped anchor note ⇒ this reds naming the file and the field.
+    [Fact]
+    public void While_The_Part_Has_No_Core_No_Shipped_Note_Describes_One()
+    {
+        string[] aTokens = ["annulus", "solid core"];
+        var aHits = new List<string>();
+        foreach (string f in CemFixtures.AnchorFiles())
+        {
+            string strJson = File.ReadAllText(Path.Combine(CemFixtures.Dir(), f));
+            if (Zone1Anode.InnerRadiusMm(Cem.Parse<AnchorCem>(strJson)) > 0f) continue;   // a cored part may say so
+            using JsonDocument doc = JsonDocument.Parse(strJson);
+            if (!doc.RootElement.TryGetProperty("notes", out JsonElement notes)) continue;
+            foreach (JsonProperty field in notes.EnumerateObject())
+            {
+                IEnumerable<string> aText = field.Value.ValueKind switch
+                {
+                    JsonValueKind.String => [field.Value.GetString()!],
+                    JsonValueKind.Array => field.Value.EnumerateArray()
+                        .Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!),
+                    _ => [],
+                };
+                foreach (string s in aText)
+                    foreach (string tok in aTokens.Where(t => s.Contains(t, StringComparison.OrdinalIgnoreCase)))
+                        aHits.Add($"{f} notes.{field.Name}: «{tok}»");
+            }
+        }
+        Assert.True(aHits.Count == 0,
+            "a shipped anchor note describes a core the printed part does not have (Zone1Anode.InnerRadiusMm = 0; " +
+            $"the bus wire is WELDED on, 01_01 §3 step 1b) — the sheet would print it: {string.Join(" · ", aHits)}");
     }
 
     // 🔴 The convergence LADDER is a committed measurement, and its cache can go stale in a way nothing

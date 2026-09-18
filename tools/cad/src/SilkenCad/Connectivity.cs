@@ -80,9 +80,10 @@ internal static class Connectivity
     }
 
     // Anchor sampling: a cartesian box clipped to the envelope `build` cuts — inner ≤ r ≤ outer, the inner
-    // radius read from Zone1Anode.InnerRadiusMm (the monolithic rod surface when a rod is declared, else the
-    // hollow bore), never chosen here: every topology metric, the as-printed opening and the wall scan stand
-    // on this grid. The rod itself stays Outside (it is SDF-invisible), so the grid is the lattice annulus.
+    // radius read from Zone1Anode.InnerRadiusMm, never chosen here: every topology metric, the as-printed
+    // opening and the wall scan stand on this grid. Since the welded branch (2026-09-18) that radius is 0 —
+    // the part is printed without a core, the bus wire is an assembly part — so the grid is the whole lattice
+    // cross-section.
     // The gyroid SDF is periodic, so the absolute Z origin only shifts the phase, never the topology/porosity.
     public static Grid SampleAnchor(IImplicit sdf, AnchorCem cem, float fStepMm = 0f)
     {

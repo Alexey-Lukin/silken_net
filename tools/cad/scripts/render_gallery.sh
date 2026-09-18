@@ -54,9 +54,9 @@ for c in ti_coin cathode_flange anchor_zone1.pine anchor_assembly; do
   run render "cem/$c.json"
 done
 
-echo "▸ section reveals (monolithic bus rod, 01_01 §1.4)…"
-run section "cem/anchor_zone1.pine.json"      # anode close-up: rod core in the gyroid annulus
-run section "cem/anchor_axial_stack.json"     # full path: rod anode → cathode channel → flange-top pad
+echo "▸ section reveals (the welded bus wire, 01_01 §1.4)…"
+run section "cem/anchor_zone1.pine.json"      # anode close-up: the lattice to the axis — printed without a core
+run section "cem/anchor_axial_stack.json"     # full path: wire from the anode top face → cathode channel → flange-top pad
 
 echo "▸ TGA → PNG (presentation-sized 1600px)…"
 for t in out/*.tga; do

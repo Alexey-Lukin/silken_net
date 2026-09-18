@@ -297,8 +297,8 @@ internal static class Zone1Anode
     // the capsule sit above it), and 01_02 §1.6 prints the anode tip-DOWN, so the part grows away from z = 0: BD = +Z.
     // ⚖️ The orientation of the INTEGRATED Zone-1 body is an open verdict (00_07 HW.26 G4 · HW.23). Only a LOCAL reading
     //    of the downskin mode rides on this sign: on the infinite constant-period lattice a 2-fold screw of the gyroid
-    //    maps +Z onto −Z, so a GLOBAL curve barely moves with it — "barely", because the graded, clipped annulus is not
-    //    invariant under that screw (measured 2026-09-14, pine at period/12, downskin 0.45 mm: 48.646 % porous for +Z,
+    //    maps +Z onto −Z, so a GLOBAL curve barely moves with it — "barely", because the graded, clipped body is not
+    //    invariant under that screw (measured 2026-09-14 on the then-annular part, pine at period/12, downskin 0.45 mm: 48.646 % porous for +Z,
     //    48.613 % for −Z). Pinned by its physical consequence, never by its value (picogk #15).
     internal static readonly Vector3 BuildDirection = Vector3.UnitZ;
 
@@ -328,7 +328,7 @@ internal static class Zone1Anode
         return voxGyroid;
     }
 
-    // The full standalone part IS the gyroid annulus — nothing is added to it. `BusRod`/`BuildMonolithic`
+    // The full standalone part IS the gyroid lattice to the axis — nothing is added to it. `BusRod`/`BuildMonolithic`
     // were removed on 2026-09-18 with the branch they modelled (the printed core): keeping a rod body here
     // «for the render» would put the removed branch back on every sheet and every FE run that reads the part.
     public static Voxels Build(AnchorCem cem) => Anode(cem, Envelope(cem));

@@ -751,7 +751,7 @@ internal static class Drawing
     // with a reason: the gyroid is NOT drawn cell-by-cell, because over-drawing a PBF lattice promises a
     // precision nobody measures — acceptance is Archimedes + µCT (ISO/ASTM 52900), and GD&T of PBF
     // lattices is an open industrial problem. That research file's own header states canon wins on any
-    // disagreement, so the lattice here is a CALLOUT over a plain annulus, never a contour. The §4 row
+    // disagreement, so the lattice here is a CALLOUT over the plain envelope, never a contour. The §4 row
     // is the stale half → 00_07 HW.1.
     public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
@@ -771,8 +771,8 @@ internal static class Drawing
         b.AppendLine(Text(20, 30, "ZONE-1 ANODE  (gyroid — envelope card)", 15, "start", Stroke, "bold"));
         b.AppendLine(Text(20, 46, $"Деталь 1 — buried EBFC anode · {cem.Name} · 01_01 §5 · coating map 01_02 §3.6", 10, "start", "#555"));
 
-        // SECTION A–A — envelope Ø + the central core. The annulus between them is the lattice ZONE:
-        // marked by a callout, never drawn (see the ⚖️ above).
+        // SECTION A–A — the envelope Ø, and a core circle only if the part has one. What it bounds is the
+        // lattice ZONE: marked by a callout, never drawn (see the ⚖️ above).
         b.AppendLine(Circle(frontCx, cy, rOut, Stroke, 1.2));
         if (!bSolidCore)
             b.AppendLine(Circle(frontCx, cy, rIn, Stroke, 1.0));
@@ -785,7 +785,7 @@ internal static class Drawing
         b.AppendLine(Text(frontCx - rOut, cy + rOut + 58, cem.BusRodDiameterMm > 0f
             ? $"bus wire Ø{N(cem.BusRodDiameterMm)} — WELDED to the top face, NOT printed (01_01 §3 step 1b)"
             : $"bus wire: {NotSpecified}", 9, "start", Dim));
-        b.AppendLine(Text(frontCx - rOut, cy - rOut - 10, "gyroid lattice annulus — SPEC, not drawn", 9, "start", Dim));
+        b.AppendLine(Text(frontCx - rOut, cy - rOut - 10, "gyroid lattice — SPEC, not drawn", 9, "start", Dim));
 
         // 🔴 The loud absence this sheet exists for, placed ON the view rather than only in prose.
         // 01_02 §3.6 gives Zone 1 TWO rows with OPPOSITE permissions (gyroid wall in sap: every

@@ -145,12 +145,12 @@ internal sealed record TiCoinCem
 //                       third implemented branch. ⛔ A wallParam never carries across a topology flip:
 //                       at the sheet-era 1.0 the network branch lands ~50 % porous, i.e. STIFFER than
 //                       the branch it replaced, so re-solve against the porosity target FIRST)
-// Core = axis (r=bore/2), Rim = periphery (r=outer/2); an ABSENT *Rim* field ⇒ equals Core ⇒ v1 constant.
+// Core = axis (r=0), Rim = periphery (r=outer/2); an ABSENT *Rim* field ⇒ equals Core ⇒ v1 constant.
 // Porosity is MEASURED, never assumed: PorosityTarget is only a verify goal, and 65 % itself is a rough
 // placeholder (founder 2026-06-21). ⚠️ The textbook Gibson-Ashby `n=2` for the network branch we ship is
-// SUPERSEDED by measurement (2026-09-12): a wall_param sweep fits n = 2.24 on the lattice and 2.27 on the
-// shipped annulus, at C ≈ 1 rather than the 0.71 a single density suggested — numbers, the literature
-// comparison and the declared ceiling live in 01_01 §5.2 (verb `fea --fit`). Sheet remains the other
+// SUPERSEDED AXIALLY by measurement (2026-09-12): a wall_param sweep fits C and n on the lattice cube and
+// on the shipped part, and which member departs depends on the axis — the numbers, the literature
+// comparison and the declared ceiling live in 01_01 §5.2 only (verb `fea --fit`). Sheet remains the other
 // branch (n≈1.3 → higher E), and wood E is anisotropic (HW.33). Porosity is a parameter here, not a
 // frozen truth.
 internal sealed record AnchorCem
@@ -159,7 +159,7 @@ internal sealed record AnchorCem
     public string Name { get; init; } = "anchor_zone1";
     public float VoxelSizeMm { get; init; } = 0.1f;
     public float OuterDiameterMm { get; init; } = 11f;     // founder 2026-06-20 (HW.33)
-    public float BusRodDiameterMm { get; init; }           // monolithic SOLID bus rod Ø (01_01 §1.4) = the core of the gyroid annulus; 0 ⇒ no core, the lattice reaches the axis (synthetic in-test coupons only — every shipped SKU declares a rod, pinned by AnchorTests)
+    public float BusRodDiameterMm { get; init; }           // the bus WIRE Ø (01_01 §1.4) — an ASSEMBLY dimension: the wire is welded to the anode's top face (01_01 §3 step 1b), never printed, so it is no part of this record's geometry (Zone1Anode.InnerRadiusMm is 0 for every manifest; the wire body lives in AxialStack). Every shipped SKU declares it, pinned by AnchorTests
     public float LengthMm { get; init; } = 40f;            // Zone-1 30–50 mm
 
     // Cell-size (pore) axis — period at the core; RimMm tapers it toward the periphery.

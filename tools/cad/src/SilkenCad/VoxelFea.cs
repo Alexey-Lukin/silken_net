@@ -576,9 +576,10 @@ internal static class VoxelFea
     }
 
     /// <summary>
-    /// Radial stiffness of the annulus: a uniform inward radial displacement is imposed on the outer
-    /// boundary shell, the two end faces are held in the axial direction (plane-strain surrogate for
-    /// a part much longer than its wall), and the inward reaction is summed. Reported as an average
+    /// Radial stiffness of the part's cross-section (the whole disc since the welded branch removed the core):
+    /// a uniform inward radial displacement is imposed on the outer boundary shell, the two end faces are held
+    /// in the axial direction (plane-strain surrogate for a part much longer than its radius), and the inward
+    /// reaction is summed. Reported as an average
     /// radial pressure divided by diametral strain, in units of E_solid — the SAME test on the solid
     /// envelope is the normaliser, so no thick-cylinder inversion is needed and none is assumed.
     /// This is the load the press-fit and the tree's own swelling apply (01_01 §4.2).

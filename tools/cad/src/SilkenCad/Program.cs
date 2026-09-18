@@ -1046,7 +1046,8 @@ internal static class Program
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +
             "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
-            "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]");
+            "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]\n" +
+            "  fea <cem.json> --fit --walls <list>   the same fit on the shipped part  [--step-div N | --step-mm H | --with-radial]");
         return 0;
     }
 
@@ -1083,7 +1084,7 @@ internal static class Program
             return FeaDilation(args);
         }
         // ⚠️ `--fit` has TWO specimens and canon 01_01 §5.2 asks for BOTH: the lattice cube answers
-        //    "what are C and n for this material", the shipped annulus answers "does the part lie on
+        //    "what are C and n for this material", the shipped part answers "does the part lie on
         //    that curve at all". A coefficient measured on one is explicitly NOT transferable to the
         //    other until the two sweeps exist side by side.
         if (args.Contains("--fit"))
@@ -1451,7 +1452,7 @@ internal static class Program
     // on a network gyroid, and the level→density map is itself resolution-dependent, so reading density
     // off the input would fold the instrument into the result.
     //
-    // ⚠️ The specimen is the LATTICE CUBE, not the shipped annulus, and that is the point rather than a
+    // ⚠️ The specimen is the LATTICE CUBE, not the shipped part, and that is the point rather than a
     // shortcut: Gibson-Ashby is a statement about a cellular MATERIAL, so the fit must be measured on a
     // material-scale specimen. The part's own apparent stiffness is the other verb (`fea <cem>`), and
     // 01_01 §5.2 keeps the two columns apart deliberately.
@@ -1534,7 +1535,7 @@ internal static class Program
         return aRows.All(r => (bool)r["converged"]) ? 0 : 1;
     }
 
-    // The SAME sweep on the SHIPPED annulus. Run over both geometries on 2026-09-12 it DISSOLVED the
+    // The SAME sweep on the SHIPPED part. Run over both geometries on 2026-09-12 it DISSOLVED the
     // gap canon had called non-physical: the single-point C of the cube ITSELF wanders 0.71 / 0.80 /
     // 0.77 across grid steps, the FITTED exponents agree, and only C differs.
     // ✅ The two specimens were brought to ONE step on 2026-09-16 (part `--step-div 32`, cube
@@ -1554,7 +1555,18 @@ internal static class Program
         AnchorCem cemBase = Cem.Parse<AnchorCem>(strJson);
         bool bRadial = args.Contains("--with-radial");
         int nDiv = ArgInt(args, "--step-div", 12);
-        float[] aWalls = (ArgStr(args, "--walls", "-0.40,-0.15,0.10,0.35,0.60") ?? "").Split(',')
+        // ⛔ No default sweep, deliberately. The cache name carries the STEP (`.d<N>` / `.h<µm>um`) and not the
+        //    walls, and every part fit canon quotes was measured on ONE six-wall sweep — so a run on a pinned
+        //    divisor with any other sweep overwrites the pinned file with a DIFFERENT specimen, and
+        //    scripts/fea_canon_sync.rb then reds it as «canon drifted», sending the reader to edit canon instead
+        //    of re-running (skill picogk #14 — the same trap `--cells` sets on the cube). Naming the sweep is
+        //    the one move that makes a reproduction a reproduction.
+        string? strWalls = ArgStr(args, "--walls", null);
+        if (strWalls is null)
+            return Fail("fea <cem> --fit: name the wall sweep — the part rows canon quotes (01_01 §5.2) use " +
+                        "--walls -0.40,-0.20,0.00,0.20,0.40,0.60; the cache name carries the step and not the walls, " +
+                        "so an unnamed sweep would overwrite a pinned file with a different specimen");
+        float[] aWalls = strWalls.Split(',')
             .Select(s => float.Parse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
 
         float fPeriodMin = cemBase.GyroidPeriodRimMm > 0f
@@ -1565,7 +1577,7 @@ internal static class Program
         float fStep = fStepMmArg > 0f ? fStepMmArg : fPeriodMin / nDiv;
         string strStepArg = fStepMmArg > 0f ? $"--step-mm {fStep:0.####}" : $"--step-div {nDiv}";
 
-        Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED annulus swept over wall_param, step {fStep:F4} mm");
+        Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED part (lattice to the axis) swept over wall_param, step {fStep:F4} mm");
         Console.WriteLine("  envelope: the printed part — the gyroid lattice, comparable to the cube");
         int nLockCells = VoxelFea.PhaseLockCells(fStep, cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm);
         if (nLockCells > 0)
@@ -1646,7 +1658,7 @@ internal static class Program
         string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.{strResolution}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
-            ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
+            ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED part (the lattice to the axis), wall_param swept at one step. "
                       + "Pairs with the gibson_ashby_fit.network.s<steps>.json family (the material-scale cube): 01_01 §5.2 asks "
                       + "for both curves: they agree on the exponent n and differ in C, a gap measured to move with "
                       + "resolution — compare the two only at one step size (00_07 HW.33). Porosity is measured on the grid, never derived.",
