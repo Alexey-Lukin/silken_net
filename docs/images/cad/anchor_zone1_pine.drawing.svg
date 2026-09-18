@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1337' viewBox='0 0 820 1337'>
-<rect x='0' y='0' width='820' height='1337' fill='white'/>
-<rect x='8' y='8' width='804' height='1321' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1351' viewBox='0 0 820 1351'>
+<rect x='0' y='0' width='820' height='1351' fill='white'/>
+<rect x='8' y='8' width='804' height='1335' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
 <circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -94,40 +94,41 @@
 <text x='20' y='1039' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. The factory sheet EXISTS since 2026-09-11 (draw anchor_zone1 -&gt; SVG + DXF, 00_07 HW.1): these notes are both the SOURCE of the</text>
 <text x='20' y='1053' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance contract and, through that generator, its CARRIER. Re-run draw after editing any note - nothing re-runs the published gallery</text>
 <text x='20' y='1067' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   for you</text>
-<text x='20' y='1081' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is the MALE half of the Zone1&lt;-&gt;Zone2 press-fit, and its diametral band on the tolerance block is deliberately BLANK</text>
-<text x='20' y='1095' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   rather than absent: canon 01_01 4.2 requires those micrometres to come from the Lame interference window (E_PEEK-aware) and explicitly</text>
-<text x='20' y='1109' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   NOT from a blind ISO 286 H7/s6 lookup, and that window has not been solved into a band (00_07 HW.3). Quote your achievable as-printed</text>
-<text x='20' y='1123' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   band rather than reading a default into the blank</text>
-<text x='20' y='1149' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='1165' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<rect x='540' y='1183' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='1183' x2='630' y2='1199' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1194' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='1194' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
-<line x1='540' y1='1199' x2='790' y2='1199' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1199' x2='630' y2='1215' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1210' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='1210' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
-<line x1='540' y1='1215' x2='790' y2='1215' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1215' x2='630' y2='1231' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1226' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='1226' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
-<line x1='540' y1='1231' x2='790' y2='1231' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1231' x2='630' y2='1247' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1242' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='1242' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='1247' x2='790' y2='1247' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1247' x2='630' y2='1263' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1258' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1258' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>9e345799</text>
-<line x1='540' y1='1263' x2='790' y2='1263' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1263' x2='630' y2='1279' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1274' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='1274' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
-<line x1='540' y1='1279' x2='790' y2='1279' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1279' x2='630' y2='1295' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1290' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='1290' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2cd6efdc609d0f7109… → FOOTER</text>
-<text x='806' y='1311' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 9e345799 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
-<text x='806' y='1323' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 2cd6efdc609d0f7109dc1bd83e3a249c9c7f7b869f018e82df57d6b801ccc6ab</text>
+<text x='20' y='1081' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is NOT a press-fit surface: canon puts the Zone1&lt;-&gt;Zone2 contact band on the SOLID shank (01_01 4.2,</text>
+<text x='20' y='1095' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one.</text>
+<text x='20' y='1109' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a</text>
+<text x='20' y='1123' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather</text>
+<text x='20' y='1137' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
+<text x='20' y='1163' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<rect x='540' y='1197' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='1197' x2='630' y2='1213' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1208' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='1208' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
+<line x1='540' y1='1213' x2='790' y2='1213' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1213' x2='630' y2='1229' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1224' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='1224' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
+<line x1='540' y1='1229' x2='790' y2='1229' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1229' x2='630' y2='1245' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1240' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='1240' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
+<line x1='540' y1='1245' x2='790' y2='1245' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1245' x2='630' y2='1261' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1256' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='1256' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='1261' x2='790' y2='1261' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1261' x2='630' y2='1277' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1272' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='1272' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>ff8caea1</text>
+<line x1='540' y1='1277' x2='790' y2='1277' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1277' x2='630' y2='1293' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1288' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='1288' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
+<line x1='540' y1='1293' x2='790' y2='1293' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1293' x2='630' y2='1309' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1304' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='1304' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>977a57b4b5d4537d83… → FOOTER</text>
+<text x='806' y='1325' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev ff8caea1 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1337' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 977a57b4b5d4537d83f11d855dae3bc6405b2b39a813590d4d1e938e63c215ee</text>
 </svg>
