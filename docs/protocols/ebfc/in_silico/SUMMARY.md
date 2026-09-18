@@ -367,9 +367,9 @@ k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive
 |-----------|-------|
 | Worst-case stress | **combined** (−30°C + s6-max, unified thick-wall Lamé, script 56): σ_t **17.9 MPa**, SF **5.6×** (von Mises 4.7×); thermal-only 14.6× (frozen Ø11/2 mm) |
 | Press-fit P_c (H7/s6 band, bug-fixed) | **0.49-3.32 → 0.32-2.16 MPa** over 20 yr (was a buggy 34.7→22.6 — `THERMAL_STRESS_REPORT.md` Correction B) |
-| Sealing | an elastomer seal on the Ti↔PEEK path is **ESSENTIAL** (at MIN fit relaxed P_c ≤ sap 0.5) — ⚠️ but none is ratified there: the one O-ring is the top-face radome seal (`00_07` HW.33), and which seal closes this path is open (`00_07` HW.34); PEEK = isolator + backup P_c (max fit); barbs = axial only |
+| Sealing | the Ti↔PEEK fit cannot seal at MIN fit (relaxed P_c ≤ sap 0.5) and is not asked to: ⚖️ the path is NOT sealed by design (`00_07` HW.34, 2026-09-18) — wet PEEK gap, bus channel closed at its exit; the one O-ring seals the radome joint (`00_07` HW.33); PEEK = isolator + backup P_c (max fit); barbs = axial only |
 | Winter | inner interface tightens; outer = tree (not a Ti shell) → old cold-leak was a baseline artifact |
-| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years (combined SF 5.6× margin; **HW.3.IS unified Lamé 2026-06-22**) — the seal of this path is open (row above) |
+| **Verdict** | ✅ Ti↔PEEK press-fit survives 20+ years (combined SF 5.6× margin; **HW.3.IS unified Lamé 2026-06-22**) — the path is unsealed by design (row above) |
 
 ### Cyclic Strain (script 16, ±5% × 10 cycles)
 | Parameter | Value |
