@@ -22,7 +22,7 @@
           164.0,
           4670.0
         ],
-        "verdict": "FAILS by this framing (the budget is 164-4670x the manufacturer's rated full-stroke actuation life) \u2014 but this framing is almost certainly WRONG for our load case: the mfr spec is for full 1.5mm-travel plunge/mate cycles, and canon (01_01 \u00a72) already asserts the travel margin exists precisely so sway is absorbed as small residual contact micro-motion, not full-stroke actuation."
+        "verdict": "FAILS by this framing (the budget is 164-4670x the manufacturer's rated full-stroke actuation life) \u2014 but this framing is almost certainly WRONG for our load case: the mfr spec is for full-travel (1.40 mm nominal) plunge/mate cycles, and canon (01_01 \u00a72) already asserts the travel margin exists precisely so sway is absorbed as small residual contact micro-motion, not full-stroke actuation."
       },
       "framing_B_low_amplitude_stress_fatigue": {
         "anchor_points_MPa_cycles": [

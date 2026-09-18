@@ -88,7 +88,7 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "overrun_x": [round(ratio_lo, 0), round(ratio_hi, 0)],
             "verdict": (f"FAILS by this framing (the budget is {ratio_lo:.0f}-{ratio_hi:.0f}x the manufacturer's "
                         "rated full-stroke actuation life) — but this framing is almost certainly WRONG for our "
-                        "load case: the mfr spec is for full 1.5mm-travel plunge/mate cycles, and canon (01_01 §2) "
+                        "load case: the mfr spec is for full-travel (1.40 mm nominal) plunge/mate cycles, and canon (01_01 §2) "
                         "already asserts the travel margin exists precisely so sway is absorbed as small residual "
                         "contact micro-motion, not full-stroke actuation."),
         },

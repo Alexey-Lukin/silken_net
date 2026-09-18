@@ -4,7 +4,7 @@
 HW.8.7 — Axial Z-stack tolerance analysis (3-spring) for the Soldier capsule ↔ anchor blind-mate.
 
 The bayonet-closed Z-loop (Radome ↔ Zone 3) compresses THREE compliant elements simultaneously:
-  1. Pogo pins  (Mill-Max 0908, 1.52 mm travel)        — 50-70 % mid-stroke window (02_02 §2.2/§3.5)
+  1. Pogo pins  (Mill-Max 0906/0908, 1.40 mm nominal travel) — 50-70 % mid-stroke window (02_02 §2.2/§3.5)
   2. O-ring     (EPDM, CS 1.78 mm)                      — 15-30 % static squeeze (industry practice, NOT
                                                           Parker — Parker's face-seal window is 19-32 %; see ORING_WIN)
   3. Sil-Pad    (Bergquist 1500ST, ~1 mm, HW.30)        — acoustic-coupling contact, 20 yr creep
@@ -50,7 +50,8 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── Spring specs (canon) ──
-POGO_TRAVEL = 1.52   # mm — Mill-Max 0908/0909 full travel (02_02 §2.2)
+POGO_TRAVEL = 1.40   # mm — Mill-Max 0906/0908 datasheet NOMINAL travel, .055" ± .005" (02_02 §2.2, ⚖️ 2026-09-18 HW.43);
+                     # 1.52 (.060") is the UPPER end of that tolerance, not the nominal
 PAD_FREE = 1.0       # mm — Bergquist Sil-Pad 1500ST free thickness (02_01 §6, HW.30; range 0.5-1.0)
 ORING_CS = 1.78      # mm — EPDM O-ring cross-section (02_02 §3.2)
 
