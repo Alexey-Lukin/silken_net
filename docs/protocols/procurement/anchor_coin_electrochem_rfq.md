@@ -31,7 +31,7 @@
 | **Анод** | dgrFAD-GDH + Os-полімер на fMWCNT · genipin-chitosan-CNC · Nafion-g-PSBMA. E°(Os) = **+309 мВ vs NHE** — іде в лист як вікно потенціалів (опублікована властивість медіатора, не наш прогноз) | [`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **Катод** | Laccase + nCoCuCeZIF на MWCNT (DET) | [`01_03 §2.2`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
 | **Пара ZIF-стабілізації** | катод **без** нанозиму ⊥ катод **з** нанозимом, той самий 30-day протокол → різниця спаду струму ізолює стабілізацію ФЕРМЕНТУ. «bare» = катод без нанозиму — ⚖️ ратифіковано founder 2026-09-17 | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) |
-| **Хто наносить стек** | відкрите: (A) лабораторія — з наших матеріалів за нашим протоколом ⊥ (B) ми привозимо функціоналізовані купони. Лист просить ціну на обидві. ⚖️ **2026-09-18: один крок протоколу свідомо НЕ наш** — маршрут кріплення MWCNT до Ti декларує виконавець, приймання за 30-денним утриманням струму ([`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) п.2); лист передає йому дві куплені читанням межі (карбодіімід потребує аміну; аміносилан гідролізується при 40 °C) | §6 |
+| **Хто наносить стек** | ⚖️ **founder 2026-09-18 (HW.24): один виконавець на всі купони, за замовчуванням (A)** — лабораторія з наших матеріалів за нашим протоколом; (B) лист просить лише як альтернативу, бо виконавця для неї в дереві немає. Розкладка електродів по сплавах — [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md). ⚖️ **2026-09-18: один крок протоколу свідомо НЕ наш** — маршрут кріплення MWCNT до Ti декларує виконавець, приймання за 30-денним утриманням струму ([`01_03 §2.1`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) п.2); лист передає йому дві куплені читанням межі (карбодіімід потребує аміну; аміносилан гідролізується при 40 °C) | §6 |
 | **Поводження** | ⛔ EtO · автоклав · сухий жар на функціоналізованому купоні (денатурація ферментів); жодних консервантів у середовищі без узгодження | [`01_04 §6.2`](../../01_04_CODIT_and_Xylemointegration.md) |
 
 ---
@@ -104,9 +104,10 @@
 
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
-| матриця тестів: репліки · субстрат катодних купонів · послідовність C/D/E | ціна за одиницю й кількість каналів — від лабораторії; розкладку пропонуємо ми (лист її не просить) | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 (пріоритети живить HW.36) |
-| хто наносить стек: (A) лабораторія ⊥ (B) ми / партнер | обидві опції з окремою ціною | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.24 · HW.5 |
+| число реплік на плече | ціна за одиницю й кількість каналів — від лабораторії; лист каже «no comparison runs on a single replicate» і фіксує число після цін | [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md) розкладка (⚖️ 2026-09-18, HW.24) |
 | реальний склад соку *Pinus sylvestris* (pH — вже первинка) | «working composition» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
+
+✅ **Знято з таблиці 2026-09-18 — розсуджено founder (HW.24), дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md):** субстрат катодних купонів · послідовність C/D/E (D і E — на свіжих купонах 4V) · хто наносить стек (один виконавець, за замовчуванням A).
 
 ✅ **Знято з таблиці 2026-09-17 — розсуджено founder, дім присуду в каноні:** pH соку і рецептура ([`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md)) · глюкоза, часова база ICP-MS і прочитання «bare» у парі ZIF ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
@@ -149,12 +150,13 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 - **Geometry:** flat disc **Ø16 mm × 1 mm** with a small tab or edge hole for the potentiostat clip. One face is the **active face (projected area 2.01 cm²)**; the tab lies outside it.
 - **Expose only the active face** — for example in a flat cell whose O-ring window defines the area. Current density and ion release are both normalised per unit of exposed area, so that area has to be known exactly and must not include the back face or the edge. If you propose full immersion instead, say so and state the total exposed area.
 - **Substrate alloys** (several replicate coupons each — please price per coupon): Ti-6Al-4V (control) · Ti-6Al-7Nb · CP-Ti Grade 4 · Ti-13Nb-13Zr (β-Ti) · tantalum · Ti-15Zr — plus, optionally, one titanium coupon with a thin **gold** coating on the active face, used as a best-case electron-transfer reference. Coupons may arrive in more than one batch; tell us whether a later batch can run as a separate campaign at the same unit prices.
+- **Which electrodes on which alloy:** anodes on every alloy. Cathodes on Ti-6Al-4V (the matched cathode pair of test C and the chloride test D), on Ti-6Al-7Nb, Ti-13Nb-13Zr and Ti-15Zr (day-0 characterisation A and one anode/cathode pair B of the same alloy), and on tantalum and the gold-coated coupon (day 0 only, as the two ends of the oxide ↔ direct-electron-transfer comparison); CP-Ti Grade 4 carries no cathode. No comparison runs on a single replicate; we fix the number of replicates after your prices.
 - **Uncoated coupons for an ion-release series:** in addition, **three coupons per alloy** with the same surface treatment but **no electrode layers**, immersed for the same 30 days in the medium at **pH 4.5** and analysed by ICP-MS only (F) — no potentiostat channels.
 - **Electrodes built on the coupons:**
   - *Anode:* FAD-dependent glucose dehydrogenase wired by an osmium redox polymer on functionalised carbon nanotubes, under a genipin-crosslinked chitosan / cellulose-nanocrystal hydrogel and a zwitterion-grafted Nafion membrane. The mediator's published formal potential is **+309 mV vs NHE** — given so you can set the potential window.
   - *Cathode:* laccase combined with a Co/Cu/Ce zeolitic-imidazolate-framework (ZIF) nanozyme on carbon nanotubes, working by direct electron transfer.
   - *Matched cathode control:* the same cathode **without the nanozyme**, run through the identical stability protocol in parallel. The difference in current decay between the two isolates the stabilising effect of the nanozyme on the enzyme.
-- **Who applies the electrode layers — tell us which option you can offer:**
+- **Who applies the electrode layers — tell us which option you can offer** (our default is (A), with one party applying the layers to every coupon so that the route is the same across alloys; quote (B) as the alternative):
   - **(A)** you apply the layers to our coupons from materials we supply, following our written immobilisation protocol — quote protocol set-up as a development line, then a price per coupon. **One step of that protocol is deliberately yours: how the carbon-nanotube layer is bonded to the etched titanium.** We specify the RESULT — the layer must survive the 30-day stability run without losing current — and not the recipe, because the route is not reproducible between operators. Tell us what you would use and why. Two constraints we hand you rather than discover later: a carbodiimide coupling needs a primary amine, which bare titanium oxide does not have, and an aminosilane interlayer is known to hydrolyse in water at 40 °C, which is the top of our service envelope; or
   - **(B)** we deliver coupons already functionalised and you measure only — in that case state how you receive and store enzyme electrodes and how soon after receipt the first measurement starts, because the day-0 baseline is the reference for every later result.
 - **Handling:** do **not sterilise** functionalised coupons — no ethylene oxide, autoclave or dry heat, all of which denature the enzymes. Add **no preservative or antimicrobial agent** to any medium without agreeing it with us first: every additive has to be checked against the enzymes on the electrode. In particular, **do not use sodium azide** — it inhibits laccase at micromolar concentrations.
@@ -196,16 +198,17 @@ We deliberately send neither our pass/fail thresholds nor our model predictions:
 **C. 30-day stability — anode and cathode coupons, including the matched cathode control**
 
 - **Potentiostatic hold for 30 days.** Propose the hold potential from the day-0 CV and agree it with us before the hold starts.
+- **Channel order, if channels are fewer than coupons:** the anodes of every alloy first, then the matched cathode pair on Ti-6Al-4V, then the rest.
 - **Repeat the CV at intervals you propose** (price per check-point), so that retention of the maximum catalytic current can be tracked.
 - **Substrate depletion and acidification.** During the hold the anode consumes glucose and its oxidation product acidifies the medium, so a small fixed volume can fail a stability test through depletion alone. Either **replace the medium on a schedule** or use a volume large enough that glucose and pH stay near their set-points for the whole 30 days — propose which, with the volume per coupon and the schedule, and **log glucose concentration and pH at every replacement or sampling**. Keep every removed portion for ICP-MS (F), so that the release figure stays cumulative.
 - Quote per potentiostat **channel-day** and state how many channels you can dedicate at once.
 
-**D. Chloride tolerance — cathode coupons**
+**D. Chloride tolerance — separate, fresh Ti-6Al-4V cathode coupons, not those of C**
 
 - **Stepwise NaCl additions** to the cathode medium **up to 0.25 M**; propose the steps and report the catalytic current at each step relative to the chloride-free start.
 - State your reference electrode and how you keep its filling solution from adding chloride to the cell — chloride is itself one of the variables under test.
 
-**E. Freeze–thaw recovery — anode coupons carrying the membrane**
+**E. Freeze–thaw recovery — separate, fresh Ti-6Al-4V anode coupons carrying the membrane, not those of C**
 
 - One cycle: **freeze at −10 °C, thaw to +25 °C**, then measure the current against its pre-freeze value. This is a **recovery test at +25 °C**, not a measurement at the cold temperature. Propose the hold time at each temperature and whether the coupon is frozen in the medium.
 

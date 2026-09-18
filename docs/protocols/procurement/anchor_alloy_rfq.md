@@ -73,6 +73,8 @@
 - **30-day stability** ≥80% retention · **chloride** 0.25M ramp · **UCST** −10→+25°C recovery (квантитативні пороги — дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 - **Нано-індентор E** (post-coin) — модуль СУЦІЛЬНОГО сплаву купона (β-Ti dual-win check). ⛔ **Це НЕ перевірка жорсткості ҐРАТКИ, і плутати два виміри дорого:** апарентна жорсткість є властивістю ґратки, купон її не має, а порівнювати треба з ПОПЕРЕЧНИМ модулем деревини `E_R`/`E_T` ≈ 0.5–1.5 ГПа — анкер сидить поперек стовбура ([`01_01 §5.1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)). Поздовжні 9–16 ГПа, що стояли тут, є ~вдесятеро завищеною ціллю. Апарентну жорсткість самої ґратки міряє voxel-FE (`dotnet run -- fea`, дім числа — [`01_01 §5.2`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md)); фізичний метод для неї — ISO 13314 на друкованому зразку, не нано-індентор на купоні.
 
+- **Чому 4V у листі «at 6 and at 13»** (⚖️ розкладка founder 2026-09-18, дім [`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)): 4V єдиний несе пʼять електродних плечей — аноди · катоди з нанозимом · контроль без нанозиму · свіжі катоди під хлорид D · свіжі аноди з мембраною під E — і жодне порівняльне плече не стоїть на одній репліці: 5 × 2 + 3 непокриті = 13. Це точка ціни, не замовлення: число реплік фіксується після цін лабораторії, а решта сплавів поки лишається на 6.
+
 **Electrochem-CRO:** кандидат **EL-CELL (DE)** — ⚠️ не підтверджений: публічна сторінка його лабораторії описує тестування Li-ion батарей, а ICP-MS і ISO/IEC 17025 не згадує (звірено 2026-09-13); лист лабораторії — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md). Альт: ЧНУ/ЧМА co-pub ([`00_02 §1.2`](../../00_02_Academic_Integration_and_IP.md)).
 
 ---
@@ -117,7 +119,7 @@ We are an R&D group and need a small batch of flat metal coupons produced by las
 ### Item specification
 
 - **Geometry:** flat disc, **Ø16 mm × 1 mm** thick, with a small tab or edge through-hole for a potentiostat clip. The tab must not encroach on the active face. Per-alloy STL and dimensioned DXF are attached and are the **dimensional authority**.
-- **Quantity: 6 per alloy** — 3 for electrode testing and 3 for an uncoated ion-release series, all processed identically. Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
+- **Quantity: 6 per alloy** — 3 for electrode testing and 3 for an uncoated ion-release series, all processed identically. **Ti-6Al-4V will be ordered in a larger count than the rest**: it alone carries the cathode comparison and two further series on fresh coupons, so please quote it at 6 and at 13. Please quote **each alloy as a separate line item** — we may award a subset depending on powder availability, and we may repeat the order at the same setup.
 
 - **Powder specification:** for each alloy, state the powder specification you would actually use (designation, ASTM/ISO spec, grade, particle size distribution, lot traceability). If your available powder differs from the standard cited below, quote your equivalent and tell us what it is — do not substitute silently.
 
