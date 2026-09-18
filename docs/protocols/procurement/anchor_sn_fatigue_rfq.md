@@ -43,7 +43,6 @@
 |---|---|---|
 | маршрут випробування (план §5.3 A–H) · run-out · частота A | усі маршрути й три run-out — опції з ціною й часом каналу; частота A — «confirmed before the order» (тест-хаус називає діапазон, а не обирає: інакше обере найшвидшу) | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.23 (план §9 п.1) |
 | R | R = −1 лише для базового кейсу ціни; решта R — питанням; «confirmed before the order» | HW.23 (п.2) |
-| орієнтація: одна чи дві | «possibly in two» + ціна за орієнтацію | HW.23, нога орієнтації (п.3) |
 | прочитання ΔHIP · Δbake на обох температурах | «three to five further conditions … quote per series» | HW.23 (п.4) · HW.27 (п.5) |
 | температура bake · комірка bake × середовище | маршруту лист не несе; комірка — опція «one further condition in laboratory air» | HW.27 · HW.23 (п.5–6) |
 | сплав | Ti-6Al-4V зараз; другий — follow-on | HW.24 (п.7) |
@@ -115,7 +114,7 @@ One series — the production condition, tested in synthetic sap — on method A
   - whether a conventional and an ultrasonic test can run on **one** specimen geometry (see *D*);
   - your incoming inspection, the spare specimens per series you would want, and how you treat a failure outside the gauge — for example at the blend between an as-printed gauge and a machined grip: as an invalid test, and at whose cost.
 - **Series.** Each series is its own S-N curve. All are the same alloy; they differ in post-processing, in the finish of the gauge, in build orientation or in test environment:
-  - the **production condition, tested in synthetic sap** — possibly in **two build orientations** (specimen axis parallel and perpendicular to the build direction), confirmed before the order; please quote per orientation;
+  - the **production condition, tested in synthetic sap** — in **two build orientations** (specimen axis parallel and perpendicular to the build direction); please quote per orientation;
   - **three to five further conditions, tested in synthetic sap**, confirmed before the order — all with an as-printed gauge except one with a machined gauge; please quote per series;
   - the **production condition, tested in laboratory air** on the same machine type and at the same frequency as in sap;
   - *options:* one further condition tested in laboratory air, and one further condition tested in synthetic sap.
@@ -123,7 +122,7 @@ One series — the production condition, tested in synthetic sap — on method A
 
 | Series | Method | Environment | Run-out options | Phase |
 |---|---|---|---|---|
-| Production condition (one or two build orientations) | A | synthetic sap | 10⁷ | 1–2 |
+| Production condition (two build orientations) | A | synthetic sap | 10⁷ | 1–2 |
 | Further conditions (three to five) | A | synthetic sap | 10⁷ | 3 |
 | Production condition | A | laboratory air | 10⁷ | 3 |
 | Production condition — very-high-cycle extension | B · C · D · G | air (B, D) · sap (C, G) | 10⁸ · 10⁹ | 4 |
@@ -193,7 +192,7 @@ One series — the production condition, tested in synthetic sap — on method A
 
 0. **Phase 0**, if specimen design and planning are paid engineering for you: the specimen geometry, an alignment check on dummy specimens, a medium-stability run without specimens, and the agreed test matrix and procedures (levels, stop criteria, initiation-site classification).
 1. **Pilot** on the production condition — propose its size: tensile witnesses, first fatigue points and their fractography, before the full programme.
-2. **Production condition tested in sap** (one or two build orientations), with fractography.
+2. **Production condition tested in sap** (two build orientations), with fractography.
 3. **Further series** (one build orientation), including the air series.
 4. **Extensions** by the routes we select after your quote — tell us which of B–D and E–H you would recommend, and why.
 
