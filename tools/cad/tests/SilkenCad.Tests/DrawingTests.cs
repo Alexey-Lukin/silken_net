@@ -360,8 +360,8 @@ public class DrawingTests
     // the END of the bus wire in the bore, and everything around the bore on this face is cathode metal (00_07 HW.34).
     // A contour there hands the shop a gold spot at the wrong polarity, so both readers call it absent — and the manifest
     // must not ask for the plating either: 02_02 §1.3 withholds the plating map from the factory until its verdict.
-    // MUTATION: put the DXF circle back on GEOMETRY ⇒ the layer assert reds; restore «selective Hard-Gold ENIG on
-    // central GND pad» in the manifest ⇒ the post_process asserts red.
+    // MUTATION: put the DXF circle back on GEOMETRY ⇒ the layer assert reds; put «ENIG» back into ANY printed note field
+    // of the manifest (measured on the extra line alone) ⇒ the all-fields assert reds.
     [Fact]
     public void Flange_Sheet_Labels_The_Concept_Pad_Absent_And_The_Manifest_Does_Not_Ask_To_Plate_It()
     {
@@ -381,10 +381,15 @@ public class DrawingTests
         finally { if (File.Exists(path)) File.Delete(path); }
 
         var shipped = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
-        string? pp = shipped.Notes?.PostProcess;
-        Assert.False(string.IsNullOrWhiteSpace(pp));
-        Assert.Contains($"CONTACT PLATING: {Drawing.NotSpecified}", pp);
-        Assert.DoesNotContain("ENIG", pp);
+        var n = shipped.Notes;
+        Assert.Contains($"CONTACT PLATING: {Drawing.NotSpecified}", n?.PostProcess);
+        // EVERY printed field, not the one that says it: the plating map rode four of them at once (surface finish,
+        // inspection, an extra line with «ENIG >=0.76» verbatim, post-process), and a pin on one field left three.
+        var fields = new[] { n?.Material, n?.Process, n?.SurfaceFinish, n?.PostProcess, n?.CoatingRestriction,
+                             n?.LatticeSpec, n?.Inspection }.Concat(n?.Extra ?? [])
+                     .Where(v => !string.IsNullOrWhiteSpace(v)).ToArray();
+        Assert.NotEmpty(fields);
+        Assert.All(fields, v => Assert.DoesNotContain("ENIG", v));
     }
 
     // The capsule's ONE O-ring groove (00_07 HW.33 branch (а), applied 2026-09-14) is a machined contour on this
