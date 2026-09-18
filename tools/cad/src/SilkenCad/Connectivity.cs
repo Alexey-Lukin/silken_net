@@ -62,6 +62,11 @@ internal static class Connectivity
     // for the six sheet SKUs (tricontinuous, the topology fact above), 1 for `stepped`, which is
     // genuinely single-labyrinth at every resolution — and solid-disc drops to 0.001–0.028 %. The
     // thinnest shipped wall spans ~2.4 cells there.
+    // ✅ SECOND LEVEL MEASURED 2026-09-18 (`converge` verb, cache/topology/convergence.*.json, 00_07 HW.51):
+    // «the first divisor at which they agreed» is not convergence, so the count was re-taken one rung finer.
+    // It did not move — one labyrinth on every SKU on every rung. `broadleaf` hits the 0.06 mm floor of this
+    // very function and lands on an effective period/26.7, still a DIFFERENT grid; `stepped` clamps on BOTH
+    // rungs, so it is outside the claim by measurement (the verb prints SAME GRID rather than agreement).
     // ⚠ That measurement is HISTORICAL: those six sheet SKUs became network on 2026-09-11 (⚖️ HW.33), and
     // a network gyroid has ONE labyrinth by construction, so under-resolution has nothing left to weld —
     // re-measured the same day, /16 leaves the whole shipped Theory green. The RULE is unchanged (it is a

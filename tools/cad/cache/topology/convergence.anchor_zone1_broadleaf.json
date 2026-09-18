@@ -1,0 +1,42 @@
+{
+  "_note": "Topology-convergence ladder (00_07 HW.51). A probe, never a verification: no golden, no OK/FAILED. \u0060clamped_by_adaptive_floor\u0060 and \u0060same_grid_as_divisor\u0060 are what keep a repeated grid from reading as agreement.",
+  "cem": "anchor_zone1_broadleaf",
+  "topology": "network",
+  "finest_period_mm": 1.6,
+  "shipped_adaptive_step_mm": 0.06666667,
+  "rows": [
+    {
+      "step_divisor": 24,
+      "step_mm": 0.06666667,
+      "step_requested_mm": 0.06666667,
+      "clamped_by_adaptive_floor": false,
+      "same_grid_as_divisor": null,
+      "cells": 12825000,
+      "pore_cluster_count": 1,
+      "solid_disconnected_fraction": 0.00017833214165718925,
+      "open_porosity": 1,
+      "pore_percolates": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "step_divisor": 32,
+      "step_mm": 0.06,
+      "step_requested_mm": 0.05,
+      "clamped_by_adaptive_floor": true,
+      "same_grid_as_divisor": null,
+      "cells": 17681626,
+      "pore_cluster_count": 1,
+      "solid_disconnected_fraction": 5.400390010057432E-05,
+      "open_porosity": 1,
+      "pore_percolates": [
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "verdict": "the labyrinth count is STABLE across the distinct grids measured here"
+}

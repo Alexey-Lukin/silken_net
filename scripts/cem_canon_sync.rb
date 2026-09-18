@@ -71,8 +71,11 @@ CHECKS = [
   # (`00_07` HW.34). The ASSERT below was never wrong — it reads the number out of canon — so the gate
   # stayed green and true while the only stale text was the line a HUMAN reads before touching the dim.
   # Reflex: a guard's heading is documentation, not code, and nothing verifies it; move it with the value.
-  [ "bus rod Ø (§1.4)", "anchor_zone1.pine.json", "bus_rod_diameter_mm",
-   C1, /стрижень \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
+  # ⚠️ The anchor moved with the WELDED branch (2026-09-18): canon says «дріт шини» now, because the rod
+  # is no longer printed with the anode. The VALUE is unchanged — this row reads the wire Ø, which the
+  # stack still consumes (F3/F4) and the sheet still prints as an assembly dimension (00_07 HW.1).
+  [ "bus wire Ø (§1.4)", "anchor_zone1.pine.json", "bus_rod_diameter_mm",
+   C1, /дріт шини \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
   [ "cathode bus channel Ø (§1.4)", "cathode_flange.json", "bore_diameter_mm",
    C1, /катодний канал \*\*Ø([\d.]+) мм\*\*/, :eq, 0.001 ],
   [ "bus liner (§1.4)", "cathode_flange.json", "bus_liner_thickness_mm",

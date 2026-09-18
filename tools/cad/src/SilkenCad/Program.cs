@@ -27,9 +27,10 @@ internal static class Program
                     : Fail("usage: verify <cem.json> [--write-golden]"),
                 "sweep" => Sweep(),
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
+                "converge" => args.Length >= 2 ? Converge(args) : Fail("usage: converge <cem.json> [--divisors 24,32]"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
                 // Voxel-FE elasticity (VoxelFea.cs) — pure-managed like `draw`, no Library.Go.
-                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--with-rod] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder"),
+                "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
                 "section" => args.Length >= 2 ? Render(args[1], bSection: true) : Fail("usage: section <cem.json>"),
                 // Falsifiable probes of KERNEL assumptions (Probe.cs) — not of our geometry.
@@ -216,6 +217,99 @@ internal static class Program
     // wallParam critical-threshold scan (ARCH.25 / HW.33): sweep the gyroid wall band → the CEM working
     // window (the wallParam range that stays printable, open-pore and percolating). Pure (Connectivity is
     // display-less) → no Library.Go. Output → out/<name>.wallscan.json + a stdout table.
+    // ── `converge` — the TOPOLOGY-convergence ladder (00_07 HW.51, ⚖️ founder 2026-09-17) ───────────
+    // `Connectivity.AdaptiveStepMm` samples at period/24 because that is the FIRST divisor at which every
+    // shipped SKU read its intended labyrinth count — first, which is not the same as CONVERGED. GCI
+    // practice wants the next level to read the same, and that is what this verb measures: the same
+    // metrics at several divisors, side by side, with the count of the previous row beside each.
+    // 🔴 Two things it refuses to hide, because both turn a ladder into a rubber stamp:
+    //   · the ADAPTIVE step is clamped from below (0.06 mm). A divisor whose step falls under the clamp is
+    //     reported with its EFFECTIVE step — and when two rungs land on the same grid the verb says so by
+    //     name, since «the count did not change» there is a statement about the clamp, not about the mesh.
+    //     That is why ⚖️ 2026-09-17 took `stepped` OUT of the convergence claim: both its levels clamp.
+    //   · it never writes a golden and never reports OK/FAILED — a probe is not a verification.
+    private static int Converge(string[] args)
+    {
+        string strCemPath = args[1];
+        string strJson = File.ReadAllText(strCemPath);
+        if (Cem.Kind(strJson) != "anchor_zone1")
+            return Fail("converge needs an anchor_zone1 CEM");
+        AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
+
+        int[] aDivs = [.. (ArgStr(args, "--divisors", "24,32")!)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(int.Parse).OrderBy(n => n)];
+        float fPeriodMin = cem.GyroidPeriodRimMm > 0f
+            ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
+        float fAdaptive = Connectivity.AdaptiveStepMm(cem);
+
+        Console.WriteLine($"converge {cem.Name} — topology vs sampling step (finest period {fPeriodMin:F2} mm, "
+                          + $"shipped adaptive step {fAdaptive:F4} mm)");
+        Console.WriteLine($"{"divisor",8} {"step,mm",9} {"clamped",8} {"cells",13} {"pores",6} {"solid-disc",11} {"open",7}");
+
+        var aRows = new List<Dictionary<string, object?>>();
+        int? nPrevClusters = null;
+        var oSeenSteps = new Dictionary<float, int>();
+        foreach (int nDiv in aDivs)
+        {
+            float fWanted = fPeriodMin / nDiv;
+            // The clamp is the SHIPPED sampler's floor; a probe that silently ignored it would measure a
+            // grid the part never gets, so it is applied and REPORTED rather than bypassed.
+            float fStep = MathF.Max(fWanted, 0.06f);
+            bool bClamped = fStep > fWanted + 1e-6f;
+            Connectivity.Grid grid = Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStep);
+            ConnectivityMetrics m = Connectivity.Analyse(grid);
+            long nCells = (long)grid.Nx * grid.Ny * grid.Nz;
+            bool bSameGridAsEarlier = oSeenSteps.TryGetValue(fStep, out int nTwin);
+            oSeenSteps.TryAdd(fStep, nDiv);
+
+            Console.WriteLine($"{nDiv,8} {fStep,9:F4} {(bClamped ? "YES" : "no"),8} {nCells,13:N0} "
+                              + $"{m.PoreClusterCount,6} {m.SolidDisconnectedFraction,11:P3} {m.OpenPorosity,7:P1}"
+                              + (bSameGridAsEarlier ? $"   ⚠ SAME GRID as /{nTwin} — proves nothing" : "")
+                              + (nPrevClusters is { } n && n != m.PoreClusterCount ? "   ⚠ COUNT MOVED" : ""));
+
+            aRows.Add(new Dictionary<string, object?>
+            {
+                ["step_divisor"] = nDiv,
+                ["step_mm"] = fStep,
+                ["step_requested_mm"] = fWanted,
+                ["clamped_by_adaptive_floor"] = bClamped,
+                ["same_grid_as_divisor"] = bSameGridAsEarlier ? nTwin : null,
+                ["cells"] = nCells,
+                ["pore_cluster_count"] = m.PoreClusterCount,
+                ["solid_disconnected_fraction"] = m.SolidDisconnectedFraction,
+                ["open_porosity"] = m.OpenPorosity,
+                ["pore_percolates"] = m.PorePercolates,
+            });
+            nPrevClusters = m.PoreClusterCount;
+        }
+
+        bool bDistinct = aRows.Count(r => r["same_grid_as_divisor"] is null) > 1;
+        bool bStable = aRows.Select(r => (int)r["pore_cluster_count"]!).Distinct().Count() == 1;
+        string strVerdict = !bDistinct
+            ? "NOT A LADDER — every rung landed on the same grid (the adaptive floor), so this SKU is outside the convergence claim"
+            : bStable
+                ? "the labyrinth count is STABLE across the distinct grids measured here"
+                : "the labyrinth count MOVED — the coarser rung was under-resolved, not converged";
+
+        string strOut = Path.Combine("cache", "topology", $"convergence.{cem.Name}.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(strOut)!);
+        File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["_note"] = "Topology-convergence ladder (00_07 HW.51). A probe, never a verification: no golden, no OK/FAILED. "
+                        + "`clamped_by_adaptive_floor` and `same_grid_as_divisor` are what keep a repeated grid from reading as agreement.",
+            ["cem"] = cem.Name,
+            ["topology"] = cem.Topology,
+            ["finest_period_mm"] = fPeriodMin,
+            ["shipped_adaptive_step_mm"] = fAdaptive,
+            ["rows"] = aRows,
+            ["verdict"] = strVerdict,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"  {strVerdict}");
+        Console.WriteLine($"  → {strOut}");
+        return 0;
+    }
+
     private static int Scan(string strCemPath)
     {
         string strJson = File.ReadAllText(strCemPath);
@@ -388,13 +482,9 @@ internal static class Program
                 voxGyroid.BoolIntersect(voxHalf);
                 oV.SetGroupMaterial(0, new ColorFloat(0.72f, 0.74f, 0.78f), 0.85f, 0.35f);  // Ti-silver gyroid
                 oV.Add(voxGyroid, 0);
-                if (acem.BusRodDiameterMm > 0f)
-                {
-                    Voxels voxRod = Zone1Anode.BusRod(acem);
-                    voxRod.BoolIntersect(voxHalf);
-                    oV.SetGroupMaterial(1, new ColorFloat(1.0f, 0.72f, 0.05f), 0.25f, 0.7f);  // gold rod core
-                    oV.Add(voxRod, 1);
-                }
+                // ⛔ No rod is drawn with the anode: the welded branch prints the part WITHOUT a core
+                // (⚖️ 2026-09-10, CAD 2026-09-18). The wire belongs to the stack — `section anchor_axial_stack`
+                // shows it, in gold, starting at the weld seam on this part's top face.
                 oV.qOrientation = oV.qOrientationRight;   // look straight at the +X cut face
             }
             else if (bSection && strKind == "anchor_axial_stack")
@@ -558,21 +648,11 @@ internal static class Program
                 ? "✓ topology survives"
                 : "⚠ DIVERGES — the topology depends on walls thinner than the print floor"));
 
-        // Monolithic bus rod (01_01 §1.4) — MEASURE that the solid rod actually fused into the part
-        // (gotcha #4 — don't assume the BoolAdd landed). voxAnode (the gyroid) is done being measured, so
-        // fuse the rod onto it and re-measure: the rendered rod volume must be ≳ π(rod/2)²·L.
-        bool bRodOk = true;
-        if (cem.BusRodDiameterMm > 0f)
-        {
-            voxAnode.BoolAdd(Zone1Anode.BusRod(cem));
-            voxAnode.CalculateProperties(out float fMonoVol, out BBox3 _);
-            float fExpect = MathF.PI * MathF.Pow(cem.BusRodDiameterMm / 2f, 2f) * cem.LengthMm;
-            float fRod = fMonoVol - (float)oM.SolidVolumeMm3;
-            bRodOk = fRod > 0.5f * fExpect;
-            Console.WriteLine(
-                $"  monolithic bus rod Ø{cem.BusRodDiameterMm:F1}: +{fRod:F1} mm³ measured (expect ~{fExpect:F1}) → " +
-                $"part {fMonoVol:F1} mm³ {(bRodOk ? "✓" : "⚠ rod missing/undersized")}");
-        }
+        // ⛔ The rod-fusion MEASURE that stood here went out with the branch it measured (2026-09-18):
+        // the anode is printed WITHOUT a core, so there is no BoolAdd left to distrust. What the wire
+        // must still clear is an ASSEMBLY question and is gated there — `AxialStack.BusRodClears` (F3)
+        // and `LinerCoversChannel` (F4), reported by `verify anchor_axial_stack`.
+        const bool bRodOk = true;
 
         bool bSane = oM.SolidVolumeMm3 > 0 && oM.TriangleCount > 0 && oM.BboxSizeMm.All(d => d > 0);
         bool bFloor = oM.FinestPeriodMm is { } fFinest && fFinest >= PrintablePeriodFloorMm;
@@ -963,8 +1043,8 @@ internal static class Program
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
-            "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep | --with-rod]\n" +
-            "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H | --with-rod]\n" +
+            "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +
+            "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
             "  fea --fit         Gibson-Ashby C and n fitted over a wall_param sweep  [--walls | --cells | --steps-per-period | --period | --sheet]");
         return 0;
@@ -1018,7 +1098,6 @@ internal static class Program
             return Fail($"fea: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
 
         AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
-        bool bWithRod = args.Contains("--with-rod");
         int nDiv = ArgInt(args, "--step-div", 12);
         IImplicit sdf = Zone1Anode.Gyroid(cem);
 
@@ -1027,9 +1106,8 @@ internal static class Program
         float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
         int[] aDivs = fStepMmArg > 0f ? [0] : args.Contains("--sweep") ? [6, 8, 12, 16] : [nDiv];
         Console.WriteLine($"fea {cem.Name} — apparent stiffness / E_solid, ν = {VoxelFea.SolidPoissonRatio}");
-        Console.WriteLine(bWithRod
-            ? "  envelope: the full printed part (gyroid annulus + monolithic bus rod, 01_01 §1.4)"
-            : "  envelope: the gyroid annulus only (rod excluded — comparable to the canon lattice target)");
+        Console.WriteLine("  envelope: the printed part — the gyroid lattice to the axis. The bus wire is WELDED "
+                          + "on (01_01 §3 step 1b), not printed, so it is not part of this measurement.");
         Console.WriteLine($"{"step,mm",9} {"elements",10} {"poros.",8} {"axial-Z",9} {"radial",9} {"islands",8} {"CG it.",8}");
 
         var aRows = new List<Dictionary<string, object>>();
@@ -1040,7 +1118,7 @@ internal static class Program
                 ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
             float fStep = nDivisor > 0 ? fPeriodMin / nDivisor : fStepMmArg;
 
-            Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(sdf, cem, fStep, bWithRod);
+            Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(sdf, cem, fStep);
             // Checked BEFORE any solve: every row carries a radial column, and a divisor that does not divide the
             // diameter would spend minutes on axial first and then die inside RadialStiffness (VoxelFea.cs).
             double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(grid, cem.OuterDiameterMm / 2f);
@@ -1101,14 +1179,13 @@ internal static class Program
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
         string strOut = Path.Combine("cache", "fea",
-            $"{cem.Name}{(bWithRod ? ".with_rod" : "")}{(fStepMmArg > 0f ? $".h{MathF.Round(fStepMmArg * 1000f):0}um" : "")}.json");
+            $"{cem.Name}{(fStepMmArg > 0f ? $".h{MathF.Round(fStepMmArg * 1000f):0}um" : "")}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Voxel-FE apparent stiffness of the part as MODELLED, in units of E_solid. "
                       + "Declared ceiling lives in VoxelFea.cs; a single row is an UPPER bound, read the sweep.",
             ["cem"] = cem.Name,
             ["topology"] = cem.Topology,
-            ["with_bus_rod"] = bWithRod,
             ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
             ["rows"] = aRows,
         }, new JsonSerializerOptions { WriteIndented = true }));
@@ -1150,8 +1227,6 @@ internal static class Program
         if (aOffsets.Any(f => f < 0f || MathF.Abs((f * 1000f) - MathF.Round(f * 1000f)) > 1e-3f)
             || aOffsets.Select(f => MathF.Round(f * 1000f)).Distinct().Count() != aOffsets.Length)
             return Fail("fea --dilate: face offsets must be distinct, non-negative and whole micrometres — the cache name carries µm");
-
-        bool bWithRod = args.Contains("--with-rod");
         int nDiv = ArgInt(args, "--step-div", 12);
         float fStepMmArg = ArgFloat(args, "--step-mm", 0f);
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f
@@ -1165,11 +1240,9 @@ internal static class Program
             ? $"  element: a segment along the build direction {Zone1Anode.BuildDirection} (part frame) — the offset is its LENGTH: " +
               "a face facing straight down moves by it, vertical and upward faces do not"
             : "  element: a ball — the offset is its RADIUS: every face moves outward by it, a ligament thickens by twice it");
-        Console.WriteLine(bWithRod
-            ? "  envelope: gyroid annulus + monolithic bus rod (the rod is bought wire, so it seeds no dilation)"
-            : "  envelope: the gyroid annulus only (rod excluded — the subject of the pinned step sweep)");
+        Console.WriteLine("  envelope: the printed part — the gyroid lattice to the axis (the subject of the pinned step sweep)");
 
-        Connectivity.Grid gridIntent = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod);
+        Connectivity.Grid gridIntent = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep);
         double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(gridIntent, fROuter);
         if (dCentreOffset > VoxelFea.RadialCentreToleranceMm)
             return Fail($"fea --dilate: step {fStep:F4} mm puts the radial load centre {dCentreOffset * 1000.0:F1} µm off the part axis " +
@@ -1181,7 +1254,7 @@ internal static class Program
 
         // 🔴 The identity CONTROL runs whatever offsets were asked for: a wrapper that is not the identity at zero would
         //    shift every row by its own defect, and a curve cannot show that.
-        Connectivity.Grid gridZero = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, 0f), cem, fStep, bWithRod);
+        Connectivity.Grid gridZero = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, 0f), cem, fStep);
         if (!gridZero.Cells.SequenceEqual(gridIntent.Cells))
             return Fail("fea --dilate: the zero offset through the wrapper does NOT reproduce the intent grid — the identity control failed");
         Console.WriteLine("  identity control ✓ zero offset through the wrapper = the intent grid, cell for cell");
@@ -1193,7 +1266,7 @@ internal static class Program
             long nStart = System.Diagnostics.Stopwatch.GetTimestamp();
             int nSamples = DilatedField.Element(mode, fOffset, Zone1Anode.BuildDirection).Length;
             Connectivity.Grid grid = fOffset > 0f
-                ? VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, fOffset), cem, fStep, bWithRod)
+                ? VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, fOffset), cem, fStep)
                 : gridZero;
             long nAdded = 0, nRemoved = 0;
             for (int n = 0; n < grid.Cells.Length; n++)
@@ -1243,7 +1316,7 @@ internal static class Program
                 Console.WriteLine($"  ⚠ CG did not reach tolerance (axial residual {oAxial.Residual:E2}, radial {oRadial.Residual:E2}) — the row above is NOT a measurement");
 
             bool bZero = fOffset == 0f;
-            string strOut = Path.Combine("cache", "fea", DilationCacheName(cem.Name, mode, fOffset, nDiv, fStepMmArg, bWithRod));
+            string strOut = Path.Combine("cache", "fea", DilationCacheName(cem.Name, mode, fOffset, nDiv, fStepMmArg));
             // Written per row, so an interrupted sweep keeps what it finished. The zero row carries nothing of the
             // element: both wrappers are the identity there, so its file is the same bytes whichever sweep wrote it.
             File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object?>
@@ -1254,7 +1327,6 @@ internal static class Program
                           + "step is an UPPER bound.",
                 ["cem"] = cem.Name,
                 ["topology"] = cem.Topology,
-                ["with_bus_rod"] = bWithRod,
                 ["poisson_ratio"] = VoxelFea.SolidPoissonRatio,
                 ["dilation_element"] = bZero ? null : bDownskin ? "downskin" : "iso",
                 ["face_offset_mm"] = fOffset,
@@ -1299,12 +1371,12 @@ internal static class Program
     // another row nor on any file of the other `fea` families (picogk #14: the axis missing from a name is where an
     // overwrite goes quiet). The zero offset names no element: both wrappers are the identity there (pinned).
     internal static string DilationCacheName(
-        string strCemName, DilationMode mode, float fFaceOffsetMm, int nStepDivisor, float fStepMm, bool bWithRod)
+        string strCemName, DilationMode mode, float fFaceOffsetMm, int nStepDivisor, float fStepMm)
     {
         int nUm = (int)MathF.Round(fFaceOffsetMm * 1000f);
         string strElement = nUm == 0 ? "" : mode == DilationMode.Downskin ? "downskin." : "iso.";
         string strStep = fStepMm > 0f ? $"h{MathF.Round(fStepMm * 1000f):0}um" : $"d{nStepDivisor}";
-        return $"dilation_sensitivity.{strCemName}.{strElement}f{nUm}um.{strStep}{(bWithRod ? ".with_rod" : "")}.json";
+        return $"dilation_sensitivity.{strCemName}.{strElement}f{nUm}um.{strStep}.json";
     }
 
     // The MATERIAL-scale ladder: the same lattice in a plain cube of n periods a side, free lateral
@@ -1480,7 +1552,6 @@ internal static class Program
             return Fail($"fea --fit: only anchor_zone1 manifests carry a lattice; {strCemPath} is '{Cem.Kind(strJson)}'");
 
         AnchorCem cemBase = Cem.Parse<AnchorCem>(strJson);
-        bool bWithRod = args.Contains("--with-rod");
         bool bRadial = args.Contains("--with-radial");
         int nDiv = ArgInt(args, "--step-div", 12);
         float[] aWalls = (ArgStr(args, "--walls", "-0.40,-0.15,0.10,0.35,0.60") ?? "").Split(',')
@@ -1495,9 +1566,7 @@ internal static class Program
         string strStepArg = fStepMmArg > 0f ? $"--step-mm {fStep:0.####}" : $"--step-div {nDiv}";
 
         Console.WriteLine($"fea --fit {cemBase.Name} — the SHIPPED annulus swept over wall_param, step {fStep:F4} mm");
-        Console.WriteLine(bWithRod
-            ? "  envelope: gyroid annulus + monolithic bus rod"
-            : "  envelope: the gyroid annulus only (rod excluded — the lattice, comparable to the cube)");
+        Console.WriteLine("  envelope: the printed part — the gyroid lattice, comparable to the cube");
         int nLockCells = VoxelFea.PhaseLockCells(fStep, cemBase.GyroidPeriodMm, cemBase.GyroidPeriodRimMm);
         if (nLockCells > 0)
             Console.WriteLine($"  ⚠ phase-locked sampling: constant period, the sampled phase repeats every {nLockCells} cell(s) — " +
@@ -1516,7 +1585,7 @@ internal static class Program
                 GyroidWallParam = fWall,
                 GyroidWallParamRim = cemBase.GyroidWallParamRim.HasValue ? fWall : null,
             };
-            Connectivity.Grid gridWall = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cemWall), cemWall, fStep, bWithRod);
+            Connectivity.Grid gridWall = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cemWall), cemWall, fStep);
             // The radial fit is refused up front on a step that does not divide the diameter (VoxelFea.cs:
             // the load centre walks off the axis). The AXIAL fit is unaffected and still runs on any step.
             double dCentreOffset = VoxelFea.RadialLoadCentreOffsetMm(gridWall, cemWall.OuterDiameterMm / 2f);
@@ -1574,7 +1643,7 @@ internal static class Program
 
         Directory.CreateDirectory(Path.Combine("cache", "fea"));
         string strResolution = fStepMmArg > 0f ? $"h{MathF.Round(fStep * 1000f):0}um" : $"d{nDiv}";
-        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.{strResolution}{(bWithRod ? ".with_rod" : "")}.json");
+        string strOut = Path.Combine("cache", "fea", $"gibson_ashby_fit.{cemBase.Name}.{strResolution}.json");
         File.WriteAllText(strOut, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["_note"] = "Gibson-Ashby C and n fitted on the SHIPPED annulus, wall_param swept at one step. "
@@ -1583,7 +1652,6 @@ internal static class Program
                       + "resolution — compare the two only at one step size (00_07 HW.33). Porosity is measured on the grid, never derived.",
             ["cem"] = cemBase.Name,
             ["topology"] = cemBase.Topology,
-            ["with_bus_rod"] = bWithRod,
             ["step_mm"] = fStep,
             ["step_divisor"] = fStepMmArg > 0f ? null! : (object)nDiv,
             ["fit_axial_c"] = fitAxial.C,

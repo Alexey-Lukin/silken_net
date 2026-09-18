@@ -136,22 +136,10 @@ public class VoxelFeaTests
             "'size effect' must still appear here, because it is the DISCRETISATION artefact this pin exists to name");
     }
 
-    // The rod is invisible to the gyroid SDF (01_01 §1.4), so it can only enter by being forced
-    // solid. If that override were dropped the part would be measured without its own load path.
-    [Fact]
-    public void The_Monolithic_Rod_Enters_Only_Through_The_Override()
-    {
-        AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json");
-        Assert.True(cem.BusRodDiameterMm > 0f, "this fixture must declare a rod for the pin to mean anything");
-
-        Connectivity.Grid gridNoRod = VoxelFea.SampleAnchorAsBuilt(
-            Zone1Anode.Gyroid(cem), cem, 0.5f, bWithRod: false);
-        Connectivity.Grid gridRod = VoxelFea.SampleAnchorAsBuilt(
-            Zone1Anode.Gyroid(cem), cem, 0.5f, bWithRod: true);
-
-        Assert.True(Connectivity.Porosity(gridRod) < Connectivity.Porosity(gridNoRod),
-            "adding a solid core must lower the measured porosity of the sampled envelope");
-    }
+    // ⛔ The pin that stood here — «the monolithic rod enters only through the override» — went out with the
+    // override itself on 2026-09-18: the anode is printed WITHOUT a core (welded wire, ⚖️ 2026-09-10), so the
+    // configuration it guarded does not exist and a pin over it would be green on an empty subject.
+    // What replaced it as the live guard is AnchorTests.The_Printed_Part_Carries_No_Core.
 
     // 🔴 The radial load is centred on the GRID, and the grid sits on the part axis only when the step divides the
     // diameter: the FE sampler starts at −R and rounds the cell count UP, so on Ø11 at the pine rim period the odd
@@ -194,7 +182,7 @@ public class VoxelFeaTests
         AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 0.6f };
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f ? MathF.Min(cem.GyroidPeriodMm, cem.GyroidPeriodRimMm) : cem.GyroidPeriodMm;
         fOuterRadiusMm = cem.OuterDiameterMm / 2f;
-        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fPeriodMin / nDiv, bWithRod: false);
+        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fPeriodMin / nDiv);
     }
 
     // 🔴 Phase lock is a property of the STEP against a CONSTANT period: a whole number of steps per period locks every
@@ -247,7 +235,7 @@ public class VoxelFeaTests
             GyroidWallParam = fWall,
             GyroidWallParamRim = fWall,
         };
-        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStepMm, bWithRod: false);
+        return VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStepMm);
     }
 
     // 🔴 The Gibson-Ashby fit has a CLOSED FORM too, and it is the only kind of pin worth writing for
@@ -308,8 +296,8 @@ public class VoxelFeaTests
         DilationMode mode = bDownskin ? DilationMode.Downskin : DilationMode.Isotropic;
         AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 0.55f };
         float fStep = 2.0f / 12; // pine's finest period / 12 — the step of the committed dilation sweep
-        Connectivity.Grid gridIntent = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod: false);
-        Connectivity.Grid gridZero = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, 0f), cem, fStep, bWithRod: false);
+        Connectivity.Grid gridIntent = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep);
+        Connectivity.Grid gridZero = VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, 0f), cem, fStep);
 
         int kLast = gridIntent.Nz - 1;
         Assert.True((kLast + 0.5f) * fStep > cem.LengthMm, "counter-lamp: the grid's last layer must sit past the body end");
@@ -332,6 +320,9 @@ public class VoxelFeaTests
         AnchorCem cem = CemFixtures.Anchor("anchor_zone1.pine.json") with { LengthMm = 1.0f };
         const float fStep = 0.25f, fRadius = 0.225f; // 1.0 / 0.25 is exact: no layer is centred past the body end
         float fRInner = Zone1Anode.InnerRadiusMm(cem), fROuter = cem.OuterDiameterMm / 2f, fLength = cem.LengthMm;
+        // ⚠️ `fRInner` is 0 since the welded branch (2026-09-18): the part has no bore, so «outside the body»
+        // is the rim and the two end faces — three faces, not four. The bore clause stays in the field for
+        // the day a part declares a core again, and the face census below counts what actually exists.
         var oOutsideOnly = new FieldOf(v =>
         {
             float fR = MathF.Sqrt((v.X * v.X) + (v.Y * v.Y));
@@ -340,11 +331,11 @@ public class VoxelFeaTests
         Vector3[] aBall = DilatedField.Element(DilationMode.Isotropic, fRadius, Zone1Anode.BuildDirection);
 
         Connectivity.Grid gridClipped = VoxelFea.SampleAnchorAsBuilt(
-            new DilatedField(oOutsideOnly, Zone1Anode.Body(cem), aBall), cem, fStep, bWithRod: false);
+            new DilatedField(oOutsideOnly, Zone1Anode.Body(cem), aBall), cem, fStep);
         Assert.DoesNotContain(Phase.Solid, gridClipped.Cells);
 
         Connectivity.Grid gridUnclipped = VoxelFea.SampleAnchorAsBuilt(
-            new DilatedField(oOutsideOnly, _ => true, aBall), cem, fStep, bWithRod: false);
+            new DilatedField(oOutsideOnly, _ => true, aBall), cem, fStep);
         var aFacesReached = new HashSet<string>();
         for (int i = 0; i < gridUnclipped.Nx; i++)
             for (int j = 0; j < gridUnclipped.Ny; j++)
@@ -360,8 +351,10 @@ public class VoxelFeaTests
                     if (bBottom && !bRim && !bBore && !bTop) aFacesReached.Add("z = 0");
                     if (bTop && !bRim && !bBore && !bBottom) aFacesReached.Add("z = L");
                 }
-        Assert.True(aFacesReached.Count == 4,
-            $"counter-lamp: the unclipped ball must steal phantom metal at all four faces, reached only [{string.Join(", ", aFacesReached)}]");
+        int nFaces = fRInner > 0f ? 4 : 3;   // no bore ⇒ no bore face to steal from
+        Assert.True(aFacesReached.Count == nFaces,
+            $"counter-lamp: the unclipped ball must steal phantom metal at all {nFaces} faces of this part, " +
+            $"reached only [{string.Join(", ", aFacesReached)}]");
     }
 
     // 🔴 (в) Downskin puts metal on the −BD side of a down-facing face IN THE PART'S OWN FRAME — pinned by where the metal
@@ -386,7 +379,7 @@ public class VoxelFeaTests
         var oSlab = new FieldOf(v => v.Z >= fSlabLo && v.Z < fSlabHi ? -1f : 1f);
         Connectivity.Grid grid = VoxelFea.SampleAnchorAsBuilt(
             new DilatedField(oSlab, Zone1Anode.Body(cem), DilatedField.Element(DilationMode.Downskin, fLength, Zone1Anode.BuildDirection)),
-            cem, fStep, bWithRod: false);
+            cem, fStep);
 
         const float fLo = fSlabLo - fLength, fHi = fSlabHi; // the slab plus the band on its tip side
         for (int k = 0; k < grid.Nz; k++)
@@ -415,7 +408,7 @@ public class VoxelFeaTests
         float[] aOffsets = Program.DefaultFaceOffsetsMm(mode);
         Assert.Equal(0f, aOffsets[0]);
         double[] aPorosity = [.. aOffsets.Select(f => Connectivity.Porosity(
-            VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, f), cem, fStep, bWithRod: false)))];
+            VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Dilated(cem, mode, f), cem, fStep)))];
 
         Assert.True(aPorosity[1] < aPorosity[0],
             $"{mode}: a {aOffsets[1]} mm face offset left porosity at {aPorosity[1]:P3} (zero row {aPorosity[0]:P3}) — the sweep varied nothing");
@@ -483,11 +476,10 @@ public class VoxelFeaTests
             foreach (DilationMode mode in Enum.GetValues<DilationMode>())
                 foreach (float fOffset in aOffsets)
                     foreach ((int nDiv, float fStepMm) in aSteps)
-                        foreach (bool bRod in new[] { false, true })
                         {
-                            string strName = Program.DilationCacheName(strCem, mode, fOffset, nDiv, fStepMm, bRod);
+                            string strName = Program.DilationCacheName(strCem, mode, fOffset, nDiv, fStepMm);
                             Assert.DoesNotContain(strName, aPinned);
-                            string strRow = $"{strCem} · {(fOffset == 0f ? "no element" : mode)} · {fOffset} mm · /{nDiv} · {fStepMm} mm · rod {bRod}";
+                            string strRow = $"{strCem} · {(fOffset == 0f ? "no element" : mode)} · {fOffset} mm · /{nDiv} · {fStepMm} mm";
                             Assert.True(oRowOfName.TryAdd(strName, strRow) || oRowOfName[strName] == strRow,
                                 $"{strName} would be written by two different rows: {oRowOfName.GetValueOrDefault(strName)} and {strRow}");
                         }

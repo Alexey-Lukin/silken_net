@@ -1,0 +1,42 @@
+{
+  "_note": "Topology-convergence ladder (00_07 HW.51). A probe, never a verification: no golden, no OK/FAILED. \u0060clamped_by_adaptive_floor\u0060 and \u0060same_grid_as_divisor\u0060 are what keep a repeated grid from reading as agreement.",
+  "cem": "anchor_zone1_stepped",
+  "topology": "stepped",
+  "finest_period_mm": 1.3,
+  "shipped_adaptive_step_mm": 0.06,
+  "rows": [
+    {
+      "step_divisor": 24,
+      "step_mm": 0.06,
+      "step_requested_mm": 0.054166663,
+      "clamped_by_adaptive_floor": true,
+      "same_grid_as_divisor": null,
+      "cells": 22581952,
+      "pore_cluster_count": 1,
+      "solid_disconnected_fraction": 2.088234762509522E-05,
+      "open_porosity": 0.9999900113668966,
+      "pore_percolates": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "step_divisor": 32,
+      "step_mm": 0.06,
+      "step_requested_mm": 0.040625,
+      "clamped_by_adaptive_floor": true,
+      "same_grid_as_divisor": 24,
+      "cells": 22581952,
+      "pore_cluster_count": 1,
+      "solid_disconnected_fraction": 2.088234762509522E-05,
+      "open_porosity": 0.9999900113668966,
+      "pore_percolates": [
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "verdict": "NOT A LADDER \u2014 every rung landed on the same grid (the adaptive floor), so this SKU is outside the convergence claim"
+}

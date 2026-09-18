@@ -227,22 +227,32 @@ internal sealed class ZonedGyroid(float fRMidMm, float fPeriodCoreMm, float fPer
     }
 }
 
-// Zone-1 gyroid anode (01_01 §5): a gyroid Ti rod (Ø per CEM, founder Ø11) with a central SOLID
-// bus-rod core (01_01 §1.4 monolithic — BuildMonolithic) inside the gyroid annulus, clipped from a
-// BasePipe envelope. Bicontinuous, orientation-
+// Zone-1 gyroid anode (01_01 §5): a gyroid Ti rod (Ø per CEM, founder Ø11), clipped from a
+// BasePipe envelope. ⛔ The bus rod is NOT part of this printed body and has not been since the
+// welded-wire verdict (⚖️ 2026-09-10, CAD applied 2026-09-18 — 00_07 HW.1/HW.34): canon 01_01 §3
+// step 1 prints the anode WITHOUT a central rod and welds a drawn wire to its TOP FACE as its own
+// operation, so a printed core here would be an STL describing a branch the founder removed.
+// The wire lives in the ASSEMBLY (AxialStack), never in the part. Bicontinuous, orientation-
 // agnostic (founder decision (б), HW.33). v2 = radially graded (period + porosity + topology),
 // CEM-driven; a constant CEM (no Rim fields, sheet) renders the v1 uniform gyroid. Barbs
 // (01_01 §4.3 A) are NOT integrated here yet — open leg 00_07 HW.26 (gated G1–G4).
 internal static class Zone1Anode
 {
-    // The gyroid-annulus inner radius: the monolithic bus-rod surface (01_01 §1.4). With no rod declared the
-    // lattice reaches the axis — a synthetic in-test coupon, never a shipped part. Shared by the envelope
-    // (porosity ref + clip) and the gyroid gradient core so the lattice annulus and the solid rod meet exactly.
-    internal static float InnerRadiusMm(AnchorCem cem)
-        => cem.BusRodDiameterMm > 0f ? cem.BusRodDiameterMm / 2f : 0f;
+    // The radius `build` cuts from: **0 — the lattice reaches the axis**. It was the bus-rod surface until
+    // 2026-09-18, when the welded branch was applied: nothing is printed in the core, and a Ø1.0 bore would
+    // be a functionless through-hole (trapped powder) that no verdict asks for — ⚖️ founder 2026-09-18 chose
+    // «lattice to the axis» over «keep the bore» for exactly that reason (00_07 HW.1).
+    // ⛔ The function stays — the envelope, the porosity reference, the gradient core, the topology grid, the
+    // FE sampler, the per-shell radii and the drawing all read it, and the pin that they agree with what
+    // `build` cuts is what keeps a reader from re-introducing a core privately. ⚠️ Declared ceiling: while it
+    // returns a CONSTANT, that pin judges agreement on a constant — it guards the future divergence, not a
+    // present one, and `cem` stays in the signature because the day a part declares a bore it must come from
+    // the manifest, never from a second formula.
+    internal static float InnerRadiusMm(AnchorCem cem) => 0f;
 
-    // Solid pipe envelope (outer Ø + inner Ø) — also the porosity reference volume (the gyroid annulus only;
-    // the solid bus rod is added in BuildMonolithic and is NOT part of the porosity measurement).
+    // Solid pipe envelope (outer Ø + inner Ø = 0 ⇒ a full cylinder) — also the porosity reference volume.
+    // ⚠️ Since 2026-09-18 it is the WHOLE cross-section: the bus rod left the part, so there is no core to
+    // exclude and porosity is measured against the full Ø, not against an annulus.
     public static Voxels Envelope(AnchorCem cem)
     {
         BasePipe oPipe = new(new LocalFrame(), cem.LengthMm, InnerRadiusMm(cem), cem.OuterDiameterMm / 2f);
@@ -318,23 +328,8 @@ internal static class Zone1Anode
         return voxGyroid;
     }
 
-    // The full standalone part = the gyroid annulus (porosity-measured separately, via Anode) PLUS the
-    // solid monolithic bus-rod core (01_01 §1.4). The rod is a SOLID body → ShapeKernel voxConstruct +
-    // BoolAdd (gotcha #9 — never an SDF field left open at the bbox caps; the same split as MechanicalLock's solid shank).
-    // A rod-less CEM (BusRodDiameterMm==0) returns the bare gyroid → back-compat with the v1 manifests.
-    // The solid monolithic bus-rod core as voxels (01_01 §1.4) — ShapeKernel voxConstruct (gotcha #9,
-    // never an open SDF field for a solid). Shared by BuildMonolithic (the part) + the verify
-    // rod-presence MEASURE (gotcha #4 — don't assume the BoolAdd landed; measure it).
-    public static Voxels BusRod(AnchorCem cem)
-        => new BaseCylinder(new LocalFrame(), cem.LengthMm, cem.BusRodDiameterMm / 2f).voxConstruct();
-
-    public static Voxels BuildMonolithic(AnchorCem cem)
-    {
-        Voxels voxAnode = Anode(cem, Envelope(cem));
-        if (cem.BusRodDiameterMm > 0f)
-            voxAnode.BoolAdd(BusRod(cem));
-        return voxAnode;
-    }
-
-    public static Voxels Build(AnchorCem cem) => BuildMonolithic(cem);
+    // The full standalone part IS the gyroid annulus — nothing is added to it. `BusRod`/`BuildMonolithic`
+    // were removed on 2026-09-18 with the branch they modelled (the printed core): keeping a rod body here
+    // «for the render» would put the removed branch back on every sheet and every FE run that reads the part.
+    public static Voxels Build(AnchorCem cem) => Anode(cem, Envelope(cem));
 }

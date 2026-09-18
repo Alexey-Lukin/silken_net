@@ -684,10 +684,12 @@ internal static class VoxelFea
     /// Sample the anchor for FE on the RENDERED envelope — inner radius = Zone1Anode.InnerRadiusMm, the
     /// surface `build` actually cuts and the same one Connectivity.SampleAnchor clips the topology grid
     /// to, so the FE stands on the geometry the factory would receive and on the grid every topology
-    /// metric reads. `bWithRod` adds the solid core, turning "the lattice annulus" into "the part as printed".
+    /// metric reads. ⛔ The `bWithRod` override that stood here was REMOVED on 2026-09-18 with the branch it
+    /// modelled: the bus rod is no longer printed with the anode (welded wire, ⚖️ 2026-09-10), so forcing a
+    /// solid core would measure a body the factory never receives — and canon quoted its «+9 % axial» as a
+    /// property of the part. What the wire does to the ASSEMBLY is a beam question and lives in-silico (`55`).
     /// </summary>
-    internal static Connectivity.Grid SampleAnchorAsBuilt(
-        IImplicit sdf, AnchorCem cem, float fStepMm, bool bWithRod)
+    internal static Connectivity.Grid SampleAnchorAsBuilt(IImplicit sdf, AnchorCem cem, float fStepMm)
     {
         float fROuter = cem.OuterDiameterMm / 2f;
         float fRInner = Zone1Anode.InnerRadiusMm(cem);
@@ -696,14 +698,9 @@ internal static class VoxelFea
             (x, y, _) =>
             {
                 float fR = MathF.Sqrt((x * x) + (y * y));
-                return bWithRod ? fR <= fROuter : fR >= fRInner && fR <= fROuter;
+                return fR >= fRInner && fR <= fROuter;
             },
-            (x, y, _) =>
-            {
-                if (!bWithRod) return (Phase?)null;
-                float fR = MathF.Sqrt((x * x) + (y * y));
-                return fR < fRInner ? Phase.Solid : null; // the rod is SDF-invisible; force it solid
-            },
+            (_, _, _) => (Phase?)null,
             fXMin: -fROuter, fYMin: -fROuter, fZMin: 0f);
     }
 

@@ -14,7 +14,7 @@
       },
       "bus_rod_diameter_mm": {
         "class": "design",
-        "from": "01_01 §1.4 морозить стрижень Ø1.0; один дім значення — tools/in_silico/lib/constants.py D_BUS_ROD_MM"
+        "from": "01_01 §1.4 морозить дріт шини Ø1.0; один дім значення — tools/in_silico/lib/constants.py D_BUS_ROD_MM. ⚠️ Із 2026-09-18 це розмір ПРИВАРЕНОГО дроту (деталь збірки), а НЕ друкованої фічі анода: анод друкується без осердя (⚖️ 2026-09-10, застосовано в CAD — 00_07 HW.1), тож поле годує F3/F4 стека й аркуш як assembly-розмір, і Zone1Anode.InnerRadiusMm його НЕ читає"
       },
       "length_mm": {
         "class": "design",

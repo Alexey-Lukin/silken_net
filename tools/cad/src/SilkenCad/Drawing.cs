@@ -756,12 +756,13 @@ internal static class Drawing
     public static string AnchorZone1(AnchorCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rOut = cem.OuterDiameterMm / 2.0 * Px;
-        // The inner circle is read from Zone1Anode.InnerRadiusMm — the monolithic bus rod (01_01 §1.4) —
-        // because a second formula for one radius is how the drawing and the part diverge. `bRod` only picks
-        // the label, and a manifest without a rod gets a loud absence rather than a plausible core.
-        bool bRod = cem.BusRodDiameterMm > 0f;
-        double dInnerMm = Zone1Anode.InnerRadiusMm(cem);
-        double rIn = dInnerMm * Px;
+        // The core radius is read from Zone1Anode.InnerRadiusMm — never re-derived here, because a second
+        // formula for one radius is how the drawing and the part diverge. Since the welded branch was applied
+        // (2026-09-18) it is 0: this part is printed WITHOUT a core, so the sheet draws none. ⛔ The wire's Ø
+        // is still declared in the manifest — it is an ASSEMBLY dimension (the welded drawn wire), and the
+        // sheet says so rather than letting a shop read it as a feature to print.
+        double rIn = Zone1Anode.InnerRadiusMm(cem) * Px;
+        bool bSolidCore = rIn <= 0.0;
         double frontCx = 130, cy = 150;
         double sideX = 300, shL = cem.LengthMm * Px;
         double sideTop = cy - rOut, sideBot = cy + rOut;
@@ -773,13 +774,17 @@ internal static class Drawing
         // SECTION A–A — envelope Ø + the central core. The annulus between them is the lattice ZONE:
         // marked by a callout, never drawn (see the ⚖️ above).
         b.AppendLine(Circle(frontCx, cy, rOut, Stroke, 1.2));
-        b.AppendLine(Circle(frontCx, cy, rIn, Stroke, 1.0));
+        if (!bSolidCore)
+            b.AppendLine(Circle(frontCx, cy, rIn, Stroke, 1.0));
         b.AppendLine(Centre(frontCx, cy, rOut, b));
         b.AppendLine(Text(frontCx, cy + rOut + 40, "SECTION A–A", 10, "middle", "#555"));
         HDim(b, frontCx - rOut, frontCx + rOut, cy + rOut + 22, $"Ø{N(cem.OuterDiameterMm)}", cy + rOut);
-        b.AppendLine(Text(frontCx + rIn + 6, cy - 4, bRod
-            ? $"Ø{N(cem.BusRodDiameterMm)} bus rod (SOLID, monolithic §1.4)"
-            : $"bus rod: {NotSpecified}", 9, "start", Dim));
+        b.AppendLine(Text(frontCx + rIn + 6, cy - 4, bSolidCore
+            ? "NO central bore — lattice to the axis"
+            : $"core Ø{N(2.0 * Zone1Anode.InnerRadiusMm(cem))}", 9, "start", Dim));
+        b.AppendLine(Text(frontCx - rOut, cy + rOut + 58, cem.BusRodDiameterMm > 0f
+            ? $"bus wire Ø{N(cem.BusRodDiameterMm)} — WELDED to the top face, NOT printed (01_01 §3 step 1b)"
+            : $"bus wire: {NotSpecified}", 9, "start", Dim));
         b.AppendLine(Text(frontCx - rOut, cy - rOut - 10, "gyroid lattice annulus — SPEC, not drawn", 9, "start", Dim));
 
         // 🔴 The loud absence this sheet exists for, placed ON the view rather than only in prose.
@@ -792,10 +797,13 @@ internal static class Drawing
         b.AppendLine(Line(frontCx - (rOut * 0.71), cy + (rOut * 0.71), frontCx - rOut - 30, cy + rOut + 40, Stroke, 0.4, "4 2"));
         b.AppendLine(Text(20, cy + rOut + 85, $"⚠ coating zone boundary: {NotSpecified} — see COATING note", 9, "start", Stroke, "bold"));
 
-        // SIDE — the envelope silhouette; the rod runs its whole length inside (hidden lines).
+        // SIDE — the envelope silhouette. ⛔ No hidden core lines: nothing runs inside this part.
         b.AppendLine(Rect(sideX, sideTop, shL, 2 * rOut, Stroke, 1.2));
-        b.AppendLine(Line(sideX, cy - rIn, sideX + shL, cy - rIn, Stroke, 0.6, "6 3"));
-        b.AppendLine(Line(sideX, cy + rIn, sideX + shL, cy + rIn, Stroke, 0.6, "6 3"));
+        if (!bSolidCore)
+        {
+            b.AppendLine(Line(sideX, cy - rIn, sideX + shL, cy - rIn, Stroke, 0.6, "6 3"));
+            b.AppendLine(Line(sideX, cy + rIn, sideX + shL, cy + rIn, Stroke, 0.6, "6 3"));
+        }
         b.AppendLine(Text(sideX + (shL / 2), cy + rOut + 40, "SIDE (envelope)", 10, "middle", "#555"));
         HDim(b, sideX, sideX + shL, cy + rOut + 22, $"{N(cem.LengthMm)}", cy + rOut);
         VDim(b, sideTop, sideBot, sideX + shL + 26, $"Ø{N(cem.OuterDiameterMm)}", sideX + shL);
@@ -872,7 +880,11 @@ internal static class Drawing
         double cx = 0, cy = 0;
 
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rO) { Layer = geo });
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rI) { Layer = geo });
+        // ⛔ The core circle is drawn only if the part HAS a core. Since the welded branch was applied
+        // (2026-09-18) `rI` is 0, and a zero-radius circle is a DEFECT in the factory reader rather than
+        // a null: netDxf writes it, the CAD shows a dot on the axis, a shop reads a centre feature.
+        if (rI > 0.0)
+            doc.Entities.Add(new Circle(new Vector2(cx, cy), rI) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx - rO - 2, cy), new Vector2(cx + rO + 2, cy)) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx, cy - rO - 2), new Vector2(cx, cy + rO + 2)) { Layer = geo });
         DxfHDim(doc, dmn, cx - rO, cx + rO, cy - rO - 5, $"%%c{N(cem.OuterDiameterMm)}");
@@ -881,8 +893,11 @@ internal static class Drawing
         double sx = rO + 16, top = cy - rO, bot = cy + rO;
         var env = new[] { new Vector2(sx, top), new Vector2(sx + cem.LengthMm, top), new Vector2(sx + cem.LengthMm, bot), new Vector2(sx, bot) };
         for (int i = 0; i < 4; i++) doc.Entities.Add(new Line(env[i], env[(i + 1) % 4]) { Layer = geo });
-        doc.Entities.Add(new Line(new Vector2(sx, cy - rI), new Vector2(sx + cem.LengthMm, cy - rI)) { Layer = geo });
-        doc.Entities.Add(new Line(new Vector2(sx, cy + rI), new Vector2(sx + cem.LengthMm, cy + rI)) { Layer = geo });
+        if (rI > 0.0)   // no hidden core lines on a part without a core
+        {
+            doc.Entities.Add(new Line(new Vector2(sx, cy - rI), new Vector2(sx + cem.LengthMm, cy - rI)) { Layer = geo });
+            doc.Entities.Add(new Line(new Vector2(sx, cy + rI), new Vector2(sx + cem.LengthMm, cy + rI)) { Layer = geo });
+        }
         DxfHDim(doc, dmn, sx, sx + cem.LengthMm, bot + 5, N(cem.LengthMm));
         doc.Entities.Add(new Text("SIDE (envelope)", new Vector2(sx, top - 11), 2.0) { Layer = nte });
 

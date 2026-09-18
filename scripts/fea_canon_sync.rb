@@ -57,7 +57,11 @@ canon = File.read(CANON)
 # ── 3. PROVENANCE ────────────────────────────────────────────────────────────────────────────────
 failures << "sweep cache is not the pine SKU (#{sweep['cem']})" unless sweep["cem"] == "anchor_zone1_pine"
 failures << "sweep cache is not the network branch (#{sweep['topology']})" unless sweep["topology"] == "network"
-failures << "sweep cache now INCLUDES the bus rod — canon says the rod is excluded" if sweep["with_bus_rod"]
+# ERA, not the rod question it used to ask — same vocabulary as layers 4 and 5, mechanism documented at layer 4.
+# The old read (`if sweep["with_bus_rod"]`) went degenerate the day the welded branch stopped emitting the key:
+# nil is falsy, so it could never fire again. Absence is the live discriminator now.
+failures << "sweep cache carries `with_bus_rod` — it predates the welded branch (00_07 HW.1), and the whole "\
+            "step sweep canon quotes must be the body canon describes" if sweep.key?("with_bus_rod")
 failures << "a sweep row did not converge — canon must not quote it" unless sweep["rows"].all? { |r| r["converged"] }
 failures << "a ladder rung did not converge" unless ladder["rows"].all? { |r| r["converged"] }
 
@@ -77,6 +81,36 @@ sweep["rows"].each do |row|
   axial, radial = cells[1].to_f, cells[2].to_f
   flag(failures, "sweep період/#{div} axial", row["axial_ratio"].round(4), axial) if (axial - row["axial_ratio"]).abs > 5e-5
   flag(failures, "sweep період/#{div} radial", row["radial_ratio"].round(4), radial) if (radial - row["radial_ratio"]).abs > 5e-5
+end
+
+# ── 1. TRANSCRIPTION — the POROSITY column of the sweep, which lives in PROSE, not in the table ───
+# 🔴 Added 2026-09-18 because it was caught by hand, not by this guard. §5.2 clears a named suspicion —
+# "is the extrapolation poisoned by voxel-dependent porosity (HW.49)?" — by quoting the porosity of all
+# four sweep rows; the table above carries only axial and radial, so those four numbers had no machine
+# tie at all. The welded branch (00_07 HW.1) moved every one of them, and the sentence went on standing
+# over a retired specimen while layers 1–5 stayed green. ⛔ DECLARED CEILING: it pins the four numbers
+# and the ORDER the sentence itself names, never the verdict drawn from them — that a 0.15 pp band is
+# small enough to clear the suspicion is a judgement, and judgements do not go in guards.
+if (m = canon.match(/\*\*([0-9.]+(?: · [0-9.]+)+) %\*\* на `(період\/[^`]+)`/))
+  anchors_porosity = m[1].split(" · ")
+  divisors = m[2].scan(/\d+/).map(&:to_i)
+  if anchors_porosity.size != divisors.size
+    failures << "the sweep-porosity sentence quotes #{anchors_porosity.size} values for #{divisors.size} divisors"
+  elsif divisors.size != sweep["rows"].size
+    failures << "the sweep-porosity sentence names #{divisors.size} divisors but the cache carries "\
+                "#{sweep['rows'].size} rows — a row was added or dropped and the sentence did not follow"
+  else
+    divisors.each_with_index do |div, i|
+      row = sweep["rows"].find { |r| r["step_divisor"] == div }
+      next failures << "the sweep-porosity sentence names період/#{div}, which the cache does not carry" if row.nil?
+
+      rendered = format("%.2f", row["porosity"] * 100.0)
+      flag(failures, "sweep porosity період/#{div}", rendered, anchors_porosity[i]) if rendered != anchors_porosity[i]
+    end
+  end
+else
+  failures << "the sweep-porosity sentence is gone or reworded — §5.2 clears the HW.49 suspicion with those "\
+              "four numbers, and without them the clearance is prose over nothing; fix the sentence shape"
 end
 
 # ── 1. TRANSCRIPTION — the ladder table ──────────────────────────────────────────────────────────
@@ -157,11 +191,19 @@ if (m = canon[/повний розкид по всіх шести рунгах (
   flag(failures, "ladder full spread", spread_pct.round(2), m.to_f) if (m.to_f - spread_pct).abs > 0.01
 end
 
-# ── The WITH-ROD run: a second cache file, and canon quotes it in prose rather than a table. ─────
-# ⚠️ It is pinned here rather than left to prose because it is the number a reader will reach for when
-# they say "the part": the rod moves the axial figure by ~9 % and the radial by nothing, so quoting the
-# wrong one of the two is a silent 9 % error in exactly the direction that flatters us.
+# ── The WITH-ROD run: the RECORD of a branch that no longer exists. ──────────────────────────────
+# ⚠️ Pinned rather than left to prose because it is the number a reader reaches for when they say "the
+# part": the printed rod moved the axial figure by ~9 % and the radial by nothing.
+# 🔴 Since 2026-09-18 BOTH sides of that comparison are FROZEN EVIDENCE, not live measurements: the
+# welded branch removed the printed core from the anode and `fea --with-rod` with it (00_07 HW.1), so
+# neither the with-rod row nor the annulus baseline it is quoted against can be re-measured by any verb
+# in this tree. The baseline therefore reads from the FROZEN pre-A sweep, never from the live one — a
+# comparison against today's sweep would be two different specimens wearing one sentence.
 rod_path = File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.with_rod.json")
+frozen_path = File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.printed_core_branch.json")
+frozen = File.exist?(frozen_path) ? JSON.parse(File.read(frozen_path)) : nil
+failures << "the frozen printed-core sweep is missing — canon quotes its baseline, so it must be committed" if frozen.nil?
+frozen_finest = frozen && frozen["rows"].min_by { |r| r["step_mm"] }
 if File.exist?(rod_path)
   rod = JSON.parse(File.read(rod_path))
   failures << "with-rod cache does NOT include the rod — the file contradicts its own name" unless rod["with_bus_rod"]
@@ -172,11 +214,11 @@ if File.exist?(rod_path)
   if (m = canon.match(/\*\*осьова (?<a>[0-9.]+)\*\* \(проти (?<base>[0-9.]+) самої кільцевої зони, тобто монолітний Ø1\.0 додає \*\*\+(?<g>[0-9]+) %\*\*\) і \*\*радіальна (?<r>[0-9.]+)\*\*/))
     anchors += 1
     a_q, gain_q, r_q = m[:a].to_f, m[:g].to_f, m[:r].to_f
-    flag(failures, "with-rod baseline (the annulus figure it is compared against)",
-         finest["axial_ratio"].round(4), m[:base].to_f) if (m[:base].to_f - finest["axial_ratio"]).abs > 5e-5
+    flag(failures, "with-rod baseline (the FROZEN pre-A annulus it is compared against)",
+         frozen_finest["axial_ratio"].round(4), m[:base].to_f) if frozen_finest && (m[:base].to_f - frozen_finest["axial_ratio"]).abs > 5e-5
     flag(failures, "with-rod axial", rod_row["axial_ratio"].round(4), a_q) if (a_q - rod_row["axial_ratio"]).abs > 5e-5
     flag(failures, "with-rod radial", rod_row["radial_ratio"].round(4), r_q) if (r_q - rod_row["radial_ratio"]).abs > 5e-5
-    gain = (rod_row["axial_ratio"] / finest["axial_ratio"] - 1.0) * 100.0
+    gain = frozen_finest ? ((rod_row["axial_ratio"] / frozen_finest["axial_ratio"] - 1.0) * 100.0) : gain_q
     flag(failures, "rod axial gain %", gain.round, gain_q) if (gain_q - gain).abs > 0.6
   end
 else
@@ -196,7 +238,14 @@ end
 # only by the FE solver's own pins (VoxelFeaTests), not by canon.
 FIT_ROWS = {
   "ґратка (куб 2 комірки)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.network.s%<n>d.json", label: "період/%<n>d", cells: 2 },
-  "деталь (кільцева зона Ø11×40)" => { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" }
+  # ⚠️ BOTH spellings are known on purpose, and the pair is what makes the era tie below readable. If only the
+  # marked one were listed, dropping the caveat would red as "unknown specimen — add it to FIT_ROWS", which is
+  # the one instruction that must NOT be followed: it invites re-adding the row with no era tie at all. Listing
+  # both lets the CACHE decide which spelling is true and lets the message say so.
+  "деталь (кільцева зона Ø11×40)" =>
+    { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d" },
+  "деталь (кільцева зона Ø11×40, знесена гілка)" =>
+    { glob: "tools/cad/cache/fea/gibson_ashby_fit.anchor_zone1_pine.d%<n>d.json", label: "період/%<n>d", retired: true }
 }.freeze
 
 fit_rows_seen = 0
@@ -245,7 +294,25 @@ canon.scan(/^\| \*{0,2}([^|*]+?)\*{0,2} \| \*{0,2}період\/(\d+)\*{0,2} \| 
                 "not #{spec[:cells]} — a bare `fea --fit` defaults to --cells 3 and OVERWRITES this file; "\
                 "re-run with the full flag set" unless f["cells_per_side"] == spec[:cells]
   end
-  failures << "fit cache #{File.basename(path)} INCLUDES the bus rod — the quoted row is the lattice" if f["with_bus_rod"]
+  # 🔴 THE ERA TIE, and it is TWO-WAY because the failure is symmetrical and both halves are silent
+  # (2026-09-18). The welded branch (00_07 HW.1) took the printed core out of the anode, so the part these
+  # fits were measured on — an annulus around a Ø1.35 channel — cannot be produced by any verb in this tree
+  # any more. `with_bus_rod` survives here NOT as the rod question it was born asking (no fit was ever run
+  # with the rod, so that read was dead the day it was written) but as the retired branch's own fingerprint:
+  # a post-A run does not emit the key at all.
+  #   · cache carries it, row does not say «знесена гілка» → canon quotes a retired specimen as current;
+  #   · cache has dropped it, row still says it → the re-run landed and the caveat outlived it, so canon now
+  #     under-claims its own fresh numbers. That second half is the one prose never catches, because nobody
+  #     re-reads a caveat looking for a reason to delete it.
+  measured_pre_a = f.key?("with_bus_rod")
+  if spec[:retired] && !measured_pre_a
+    failures << "fit row #{specimen.strip} /#{div}: #{File.basename(path)} no longer carries the retired branch's "\
+                "`with_bus_rod` fingerprint — it was re-measured on the welded body, so DROP «знесена гілка» from "\
+                "the specimen cell (and from FIT_ROWS) instead of leaving canon under-claiming a fresh number"
+  elsif !spec[:retired] && measured_pre_a
+    failures << "fit row #{specimen.strip} /#{div}: #{File.basename(path)} still carries `with_bus_rod`, i.e. it was "\
+                "measured BEFORE the welded branch (00_07 HW.1) — the row must say «знесена гілка» or be re-run"
+  end
   # ⚠️ Compare at the PRECISION CANON QUOTES, not at a fixed epsilon: a fixed 5e-4 sits exactly on the
   # rounding boundary for a 3-decimal quote (1.1695 → "1.170" differs by 0.0005 in binary floating
   # point and reds a CORRECT transcription). Rounding the cache to the quoted decimals makes the
@@ -297,7 +364,16 @@ canon.scan(/^\| \*{0,2}(нуль крізь обгортку|downskin|iso)\*{0,2
   dilation_rows_seen += 1
   f = JSON.parse(File.read(path))
   what = "sensitivity #{element} #{offset_q} мм /#{div}"
-  failures << "#{what}: the file is not the pine network annulus" unless f["cem"] == "anchor_zone1_pine" && f["topology"] == "network" && f["with_bus_rod"] == false
+  failures << "#{what}: the file is not the pine network part" unless f["cem"] == "anchor_zone1_pine" && f["topology"] == "network"
+  # The ERA half of the provenance, in the same vocabulary layer 4 uses — read the comment there for the mechanism.
+  # This family is the MIRROR case: every row was re-measured on the welded body 2026-09-18, so the absence of
+  # `with_bus_rod` is what makes it current. ⚠️ The check used to read `== false`, which was the RIGHT question while
+  # both branches could be built and became unsatisfiable the moment one could not — a guard whose subject stopped
+  # existing does not go quiet, it goes red on correct files and sends the reader to re-run a measurement that is
+  # already fresh. Asserting ABSENCE keeps the same discrimination pointed at the case that can still happen: a
+  # pre-A row quoted into this table.
+  failures << "#{what}: the file carries `with_bus_rod`, i.e. it predates the welded branch (00_07 HW.1) — "\
+              "the sensitivity curve must be measured on the body canon describes" if f.key?("with_bus_rod")
   failures << "#{what}: the file names element #{f['dilation_element'].inspect}" unless f["dilation_element"] == (zero ? nil : element)
   failures << "#{what}: the file carries offset #{f['face_offset_mm']} mm and step /#{f['step_divisor']}" unless (f["face_offset_mm"] * 1000).round == microns && f["step_divisor"] == div.to_i
   failures << "#{what}: the dilation was not clipped to the part body" unless f["clipped_to_part_body"] == true

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Numerics;
+using System.Text.Json;
 using PicoGK;
 
 namespace SilkenCad.Tests;
@@ -308,15 +309,52 @@ public class AnchorTests
             "absent section rather than an open question.");
     }
 
+    // 🔴 THE printed part carries NO core, and the manifest's own rod field must not put one back.
+    // ⚖️ founder 2026-09-18 (00_07 HW.1): the welded branch prints the anode WITHOUT a bus rod and welds a
+    // drawn wire to its top face, so `bus_rod_diameter_mm` describes an ASSEMBLY part — the wire — and a
+    // reader that turns it into a printed core would hand the factory the branch the founder removed.
+    // This pin replaces `Monolithic_Rod_Sets_The_Gyroid_Inner_Radius…`, whose subject (a rod-set inner
+    // radius) no longer exists.
+    // MUTATION: make InnerRadiusMm return `cem.BusRodDiameterMm / 2f` again ⇒ this reds naming the radius.
     [Fact]
-    public void Monolithic_Rod_Sets_The_Gyroid_Inner_Radius__No_Rod_Means_No_Core()
+    public void The_Printed_Part_Carries_No_Core()
     {
-        // 01_01 §1.4: with a solid bus rod the gyroid annulus starts at the rod surface (rod/2); a coupon that
-        // declares no rod has no core and the lattice reaches the axis. The solid rod core itself is
-        // voxConstruct-added in BuildMonolithic — render-verified by `verify` (Voxels need Library.Go), not
-        // unit-tested here.
-        Assert.Equal(0.5f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
-        Assert.Equal(0f, Zone1Anode.InnerRadiusMm(new AnchorCem()));
+        AnchorCem[] aShipped = [.. CemFixtures.AnchorFiles().Select(CemFixtures.Anchor)];
+        Assert.Contains(aShipped, c => c.BusRodDiameterMm > 0f);   // counter-lamp: the wire IS declared…
+        foreach (AnchorCem cem in aShipped)                        // …and none of it reaches the printed body
+            Assert.Equal(0f, Zone1Anode.InnerRadiusMm(cem));
+        Assert.Equal(0f, Zone1Anode.InnerRadiusMm(new AnchorCem { BusRodDiameterMm = 1.0f }));
+    }
+
+    // 🔴 The convergence LADDER is a committed measurement, and its cache can go stale in a way nothing
+    // else here would notice: the ladder's own floor lives in `Connectivity.AdaptiveStepMm`, so lowering
+    // the clamp (or changing the /24 divisor) silently turns every committed rung into a statement about
+    // a grid the sampler no longer uses — while the JSON stays internally perfect. This pin recomputes
+    // the shipped step from the code and compares it to what each cache says it measured.
+    // ⛔ Declared ceiling: it judges the cache's PROVENANCE, never its topology numbers — those come from
+    // a run, and re-running the ladder inside the suite would add ~20 s to a 14 s suite for a probe.
+    // MUTATION: change the 0.06f floor or the 24f divisor in Connectivity.AdaptiveStepMm ⇒ this reds
+    // naming every SKU whose ladder must be re-run (00_07 HW.51).
+    [Fact]
+    public void Every_Committed_Convergence_Ladder_Was_Measured_On_Todays_Sampler()
+    {
+        string dir = Path.Combine(Directory.GetParent(CemFixtures.Dir())!.FullName, "cache", "topology");
+        Assert.True(Directory.Exists(dir), $"no convergence ladders committed at {dir} — the claim in " +
+                                           "Connectivity.cs and 01_02 §1.3 would have no measurer (00_07 HW.51)");
+        var aStale = new List<string>();
+        foreach (AnchorCem cem in CemFixtures.AnchorFiles().Select(CemFixtures.Anchor))
+        {
+            string path = Path.Combine(dir, $"convergence.{cem.Name}.json");
+            if (!File.Exists(path)) { aStale.Add($"{cem.Name}: no ladder"); continue; }
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
+            double dSaid = doc.RootElement.GetProperty("shipped_adaptive_step_mm").GetDouble();
+            double dNow = Connectivity.AdaptiveStepMm(cem);
+            if (Math.Abs(dSaid - dNow) > 1e-6)
+                aStale.Add($"{cem.Name}: ladder measured at {dSaid:F4} mm, sampler now says {dNow:F4} mm");
+        }
+        Assert.True(aStale.Count == 0,
+            "the committed convergence ladders no longer describe the shipped sampler — re-run " +
+            $"`converge <cem> --divisors 24,32`: {string.Join(" · ", aStale)}");
     }
 
     // 🔴 ONE part, ONE inner envelope (00_07 HW.33). A reader that samples from any radius other than the one
@@ -330,20 +368,37 @@ public class AnchorTests
     // still red.
     // ⛔ Declared ceiling: MeasureAnchor's shell loop needs voxels, so what is pinned is its pure seam
     // (ShellBoundariesMm), not the loop itself; a reader that grows its own sampler is outside this pin.
+    // 🔴 SECOND declared ceiling, since 2026-09-18: the cut radius is now 0 for every shipped part (the
+    // welded branch — the anode has no printed core), so the NUMERIC half of this pin compares zeros. It
+    // still reds on a reader that invents a nonzero radius, and nothing else. The half that stayed alive
+    // is the SOURCE half below: each reader must take the radius from the one home rather than compute it,
+    // which is the divergence the numeric half used to catch on its own.
     // MUTATION (2026-09-13, each alone): cut at r = 0 — ignore the rod — in Connectivity.SampleAnchor ·
     // in Validation.ShellBoundariesMm · in VoxelFea.SampleAnchorAsBuilt ⇒ each reds naming its own reader.
+    // MUTATION (2026-09-18, source half): replace `Zone1Anode.InnerRadiusMm(cem)` with a literal in any of
+    // the three readers ⇒ this reds naming that file.
     [Fact]
     public void Every_Anchor_Reader_Samples_The_Inner_Radius_Build_Cuts()
     {
         const float fStep = 0.05f;
+        // The SOURCE half: every reader takes the radius from the one home. Checked as text because the
+        // numeric half can no longer discriminate — the cut is 0 on every shipped part since the welded
+        // branch, so a reader that hardcoded 0 would agree with the home by accident.
+        string src = Path.Combine(Directory.GetParent(CemFixtures.Dir())!.FullName, "src", "SilkenCad");
+        foreach (string strReader in new[] { "Connectivity.cs", "VoxelFea.cs", "Validation.cs" })
+        {
+            string strCode = File.ReadAllText(Path.Combine(src, strReader));
+            Assert.True(strCode.Contains("Zone1Anode.InnerRadiusMm("),
+                $"{strReader} no longer reads the inner radius from its one home (Zone1Anode.InnerRadiusMm) — " +
+                "a second formula for one radius is how the drawing, the FE and the part diverge (00_07 HW.33)");
+        }
+
         // A ten-cell slab of each real manifest: the radius does not depend on length, the runtime does.
         AnchorCem[] aRodBearing = [.. CemFixtures.AnchorFiles()
             .Select(CemFixtures.Anchor)
             .Where(c => c.BusRodDiameterMm > 0f)
             .Select(c => c with { LengthMm = 10 * fStep })];
-        // Counter-lamp: the pin only means something where the cut hole spans cells the grid can resolve — a
-        // reader that ignores the rod and samples from the axis must land at least two cells off the cut.
-        Assert.Contains(aRodBearing, c => Zone1Anode.InnerRadiusMm(c) >= 2 * fStep);
+        Assert.NotEmpty(aRodBearing);   // counter-lamp: the wire is still declared by the shipped manifests
 
         foreach (AnchorCem cem in aRodBearing)
         {
@@ -351,7 +406,7 @@ public class AnchorTests
             AssertInnerBoundary("Connectivity.SampleAnchor",
                 Connectivity.SampleAnchor(Zone1Anode.Gyroid(cem), cem, fStep), cem, fCut);
             AssertInnerBoundary("VoxelFea.SampleAnchorAsBuilt",
-                VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep, bWithRod: false), cem, fCut);
+                VoxelFea.SampleAnchorAsBuilt(Zone1Anode.Gyroid(cem), cem, fStep), cem, fCut);
 
             float fShellInner = Validation.ShellBoundariesMm(cem, 5)[0];
             Assert.True(MathF.Abs(fShellInner - fCut) < 1e-6f,

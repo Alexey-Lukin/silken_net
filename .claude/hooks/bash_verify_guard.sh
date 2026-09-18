@@ -174,6 +174,21 @@ body with `01_02:177` inside"'
   t "smoke: \$? after pipe warns (rule B)" warn \
     'ruby x.rb | tail -1; echo "EXIT=$?"'
 
+  # ── rule G · both arms ──
+  # The negative arm is the load-bearing one: `pgrep -x` and a pgrep OUTSIDE any
+  # loop are the two idioms this must never touch, and a detector anchored on the
+  # word `pgrep` alone would swallow both.
+  t "G: until-loop on pgrep -f warns" warn \
+    $'until ! pgrep -f \'SilkenCad.*fea\' >/dev/null; do sleep 20; done; echo DONE'
+  t "G: while-loop on pgrep -f warns" warn \
+    'while pgrep -f "docs_band.rb" >/dev/null; do sleep 5; done'
+  t "G: pgrep -x in a loop stays silent" silent \
+    'until ! pgrep -x dotnet >/dev/null; do sleep 5; done'
+  t "G: bare pgrep -f outside a loop stays silent" silent \
+    'pgrep -fl "SilkenCad" | head -3'
+  t "G: artifact-wait (the sanctioned form) stays silent" silent \
+    'until grep -q "ALL DONE" /tmp/run.log; do sleep 10; done'
+
   # ── rule D · all four arms ──
   # This detector reads git STATE, not the command text, so a case built from a
   # string alone is vacuous: on a clean tree the deny arm is unreachable and the
@@ -572,6 +587,30 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+(commit|push)\b'; then
       exit 0
     fi
   fi
+fi
+
+# ── G · WARN · a wait-LOOP polling `pgrep -f <literal>` (25 in 42,305) ───────
+# The loop text itself carries the pattern, so ANY second process whose command
+# line also carries it keeps every one of them alive forever — and the commonest
+# such process is another copy of the same waiter. The Bash tool's own detached
+# shells are the supply: they linger past the call that made them, and `ps` shows
+# their full script, so three stacked waiters on `SilkenCad.*fea` held a QUEUED
+# job at 0% CPU for ten minutes on 2026-09-18 while every poll read "RUNNING".
+#
+# ⚠️ WARN, not block, and the reason is a measurement that OVERTURNED the rule as
+# memory had written it. Memory said the loop "matches its OWN command line" and
+# therefore never exits; measured here, a LONE loop exits correctly — macOS pgrep
+# does not match the ancestor shell (probe: a marker inside `bash -c` is invisible
+# to a pgrep run from inside that same `bash -c`, and plainly visible to one run
+# from outside). So the idiom is sound alone and fails only in COMPANY, which is
+# exactly why it kept passing and kept relapsing: four documented relapses, the
+# last of them this block's own author.
+#
+# `pgrep -x` (34 calls) is the safe sibling and stays silent: it matches the
+# executable NAME, which a shell script's text is not.
+if printf '%s' "$cmd" | grep -qE '(^|[;&|(]|[[:space:]])(until|while)[[:space:]]' &&
+   printf '%s' "$cmd" | grep -qE '\bp(grep|kill)[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*[[:space:]]+["'"'"']?[^"'"'"'$[:space:]]'; then
+  warn pgrep-wait-loop '[bash-guard] A wait-loop polls `pgrep -f <literal>`. The loop'"'"'s own command line contains that literal, so a SECOND process carrying it — most often another copy of this waiter, and the detached shells of earlier Bash calls linger — keeps them all alive forever, while each poll reads as "still running". Wait on the ARTIFACT instead (`until grep -q "<verdict>" out.log; do sleep N; done`), or match the executable name with `pgrep -x`. Measured: a lone loop DOES exit; the failure needs company. (Fires once per session.)'
 fi
 
 exit 0

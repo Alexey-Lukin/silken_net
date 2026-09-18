@@ -89,6 +89,15 @@ internal static class AxialStack
     public static float OverallStackLengthMm(AnchorAxialStackCem cem)
         => SleeveTopZMm(cem) + cem.Capsule.Flange.FlangeThicknessMm;
 
+    // ── The welded bus WIRE, in stack-frame Z (01_01 §1.4 + §3 step 1b) ──
+    // Its lower end is the weld seam on the anode's top face; its upper end is the pogo pad on the
+    // flange's top face. ⛔ Both ends are GEOMETRY, not a choice: the seam position follows from the
+    // anode's own length and the pad from the stack, so neither is a number this file may pick.
+    public static float BusWireBottomZMm(AnchorAxialStackCem cem) => cem.Zone1.LengthMm;
+
+    public static float BusWireLengthMm(AnchorAxialStackCem cem)
+        => OverallStackLengthMm(cem) - BusWireBottomZMm(cem);
+
     // ── The cathode CHANNEL and the liner that lines it, in stack-frame Z (01_01 §1.4) ──
     // The channel is THROUGH: it runs the whole flange, shank face → pogo face, and the pad IS the rod's
     // end face. ⛔ Not a blind bore — that word travelled from an in-silico comment into five doc homes
@@ -160,8 +169,10 @@ internal static class AxialStack
     // ── Render: bring all zones into the stack frame for the merged STL + interference measurement ──
     public static AxialStackVoxels Build(AnchorAxialStackCem cem)
     {
-        // Zone-1 ENVELOPE (solid Ø11 rod; the monolithic bus is the solid core, not a bore) — OD is what press-fits; porosity lives
-        // in anchor_zone1. Built z∈[0, LengthMm] from the origin frame (BasePipe, as Zone1Anode.Envelope).
+        // Zone-1 ENVELOPE (solid Ø11 rod) — OD is what press-fits; porosity lives in anchor_zone1.
+        // Built z∈[0, LengthMm] from the origin frame (BasePipe, as Zone1Anode.Envelope). ⚠️ Since the
+        // welded branch was applied (2026-09-18) the anode carries NO core: the envelope is a full
+        // cylinder and the bus wire below starts at its TOP FACE.
         Voxels voxZone1 = Zone1Anode.Envelope(cem.Zone1);
 
         // Zone-2 sleeve lifted so its bore overlaps the Zone-1 top end by Zone1InsertionMm.
@@ -179,14 +190,18 @@ internal static class AxialStack
         voxMerged.BoolAdd(voxZone2);
         voxMerged.BoolAdd(voxCapsule);
 
-        // The FULL monolithic bus rod (01_01 §1.4): a Ø(bus) core from the anode bottom (z=0) up through
-        // the PEEK gap + the cathode channel to the flange-top pogo pad — the actual anode V−/GND path to
-        // the capsule. It is the solid core inside the Ø11 anode, then a free rod threading the cathode
-        // channel (Ø1.35, isolated by the liner). voxConstruct (gotcha #9). Kept apart for the section colour.
+        // The WELDED bus wire (01_01 §1.4 + §3 step 1b): a Ø(bus) drawn wire that starts AT THE ANODE'S
+        // TOP FACE — where it is welded, so the seam and the cantilever root coincide (00_07 HW.34) — and
+        // runs up through the PEEK gap and the cathode channel (Ø1.35, isolated by the liner) to the
+        // flange-top pogo pad, which IS its end face (02_02 §1.2). ⛔ It does NOT run inside the anode:
+        // that was the printed-core branch, removed ⚖️ 2026-09-10 and taken out of the CAD 2026-09-18.
+        // voxConstruct (gotcha #9). Kept apart for the section colour.
         Voxels? voxBus = null;
         if (cem.Zone1.BusRodDiameterMm > 0f)
         {
-            voxBus = new BaseCylinder(new LocalFrame(), OverallStackLengthMm(cem), cem.Zone1.BusRodDiameterMm / 2f).voxConstruct();
+            voxBus = MeshUtility.voxApplyTransformation(
+                new BaseCylinder(new LocalFrame(), BusWireLengthMm(cem), cem.Zone1.BusRodDiameterMm / 2f).voxConstruct(),
+                v => v + new Vector3(0f, 0f, BusWireBottomZMm(cem)));
             voxMerged.BoolAdd(voxBus);
         }
         // The LINER (⚖️ 2026-09-12): a PEEK tube on the rod, covering the channel end to end and
