@@ -22,7 +22,7 @@ count beside a growing folder is right the day it is written and quietly narrowe
 |---|---|---|
 | [`ti_coin.drawing.svg`](ti_coin.drawing.svg) | Stage-2 coupon engineering drawing (Ø16 disc + eyelet + A≈2 cm², `01_01 §6.1`) | `draw cem/ti_coin.json` |
 | `ti_coin.png` | Ti-coin 3D render (disc + potentiostat eyelet) | `render cem/ti_coin.json` |
-| [`cathode_flange.drawing.svg`](cathode_flange.drawing.svg) | Деталь 3 cathode flange drawing (Ø25 + GND pad + 3× bayonet; the PEEK iso-ring `02_02 §1.2` asks for is labelled NOT IN GEOMETRY — open, HW.34) | `draw cem/cathode_flange.json` |
+| [`cathode_flange.drawing.svg`](cathode_flange.drawing.svg) | Деталь 3 cathode flange drawing (Ø25 + 3× bayonet; the PEEK iso-ring `02_02 §1.2` asks for and the concept Ø4.5 GND pad are both labelled NOT IN GEOMETRY — the anode contact is the bus-wire end in the bore; open, HW.34) | `draw cem/cathode_flange.json` |
 | `cathode_flange.png` | Cathode flange 3D render — ⚠️ rendered 2026-06-21, before the Zone-3 ratchet fix of 2026-09-13: the barbs on it lean the WRONG way (re-render needs the PicoGK viewer) | `render cem/cathode_flange.json` |
 | [`mechanical_lock_zone1.drawing.svg`](mechanical_lock_zone1.drawing.svg) | §4.3 ratchet shank, Zone-1 anchor end — barb envelope + DIN-471 groove (`01_01 §4.3`, HW.26) | `draw cem/mechanical_lock.zone1.json` |
 | [`mechanical_lock_zone3.drawing.svg`](mechanical_lock_zone3.drawing.svg) | §4.3 ratchet shank, Zone-3 flange end — same generator, same local ratchet profile (the lean looks opposite only in the assembled view) | `draw cem/mechanical_lock.zone3.json` |

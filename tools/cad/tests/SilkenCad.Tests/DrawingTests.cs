@@ -296,7 +296,7 @@ public class DrawingTests
         Assert.StartsWith("<svg", svg);
         Assert.Contains("</svg>", svg);
         Assert.Contains("Ø25", svg);                 // frozen flange Ø (01_01 §1, HW.8 axial freeze)
-        Assert.Contains("Ø4.5 GND pad", svg);        // Hard-Gold ENIG pad (02_02 §1.2)
+        Assert.Contains("Ø4.5 GND pad (concept)", svg);   // drawn, but as absent — the pin below
         Assert.Contains("3× bayonet lug", svg);      // lug count straight from the CEM
         Assert.Contains("rev test", svg);
         Assert.DoesNotContain("NaN", svg);
@@ -339,12 +339,14 @@ public class DrawingTests
     public void Flange_Sheet_Labels_The_Unmodelled_Isolation_Ring_Absent_In_Both_Readers()
     {
         var cem = new CathodeFlangeCem();
-        Assert.Contains("NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
+        // The ring's OWN label, not the bare phrase: the concept pad below prints «NOT IN GEOMETRY» too, and a bare
+        // match would stay green on the pad's label with the ring's gone.
+        Assert.Contains("REQUIRED · NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
         string path = Path.Combine(Path.GetTempPath(), $"flange_iso_{Guid.NewGuid():N}.dxf");
         try
         {
             Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
-            Assert.Contains("NOT IN GEOMETRY", File.ReadAllText(path));
+            Assert.Contains("REQUIRED - NOT IN GEOMETRY", File.ReadAllText(path));
             var doc = netDxf.DxfDocument.Load(path);
             double rIso = cem.CentralPadDiameterMm / 2.0 + cem.IsolationRingWidthMm;
             var ring = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rIso) < 1e-3).ToArray();
@@ -352,6 +354,37 @@ public class DrawingTests
             Assert.All(ring, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
         }
         finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    // The central pad is the concept «≈4–5» of 02_02 §1.3, not a feature of this part: canon §1.2 makes the anode contact
+    // the END of the bus wire in the bore, and everything around the bore on this face is cathode metal (00_07 HW.34).
+    // A contour there hands the shop a gold spot at the wrong polarity, so both readers call it absent — and the manifest
+    // must not ask for the plating either: 02_02 §1.3 withholds the plating map from the factory until its verdict.
+    // MUTATION: put the DXF circle back on GEOMETRY ⇒ the layer assert reds; restore «selective Hard-Gold ENIG on
+    // central GND pad» in the manifest ⇒ the post_process asserts red.
+    [Fact]
+    public void Flange_Sheet_Labels_The_Concept_Pad_Absent_And_The_Manifest_Does_Not_Ask_To_Plate_It()
+    {
+        var cem = new CathodeFlangeCem();
+        Assert.Contains("GND pad (concept) · NOT IN GEOMETRY", Drawing.CathodeFlange(cem, "test"));
+        string path = Path.Combine(Path.GetTempPath(), $"flange_pad_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.CathodeFlangeDxf(cem, "test", path));
+            Assert.Contains("(concept) - NOT IN GEOMETRY", File.ReadAllText(path));
+            var doc = netDxf.DxfDocument.Load(path);
+            double rPad = cem.CentralPadDiameterMm / 2.0;
+            var pad = doc.Entities.Circles.Where(c => Math.Abs(c.Radius - rPad) < 1e-3).ToArray();
+            Assert.NotEmpty(pad);
+            Assert.All(pad, c => Assert.NotEqual("GEOMETRY", c.Layer.Name));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+
+        var shipped = Cem.Parse<CathodeFlangeCem>(File.ReadAllText(Path.Combine(CemDir(), "cathode_flange.json")));
+        string? pp = shipped.Notes?.PostProcess;
+        Assert.False(string.IsNullOrWhiteSpace(pp));
+        Assert.Contains($"CONTACT PLATING: {Drawing.NotSpecified}", pp);
+        Assert.DoesNotContain("ENIG", pp);
     }
 
     // The capsule's ONE O-ring groove (00_07 HW.33 branch (а), applied 2026-09-14) is a machined contour on this

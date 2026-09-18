@@ -425,7 +425,7 @@ internal static class Drawing
     }
 
     // ── Cathode flange (Деталь 3, 01_01 §1 + 02_02 §1.2) — the capsule-side anchor end. FRONT (pogo
-    // face: flange Ø + GND pad + PEEK isolation ring + bore + bayonet lugs) + SIDE (flange↦shank
+    // face: flange Ø + concept GND pad + PEEK isolation ring + bore + bayonet lugs) + SIDE (flange↦shank
     // T-profile, axis horizontal). Same CEM-native pipeline as the Ti-coin; reuses every primitive. ──
     public static string CathodeFlange(CathodeFlangeCem cem, string sha, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
@@ -443,7 +443,7 @@ internal static class Drawing
         b.AppendLine(Text(20, 30, "CATHODE FLANGE  (Деталь 3 · Zone 3)", 15, "start", Stroke, "bold"));
         b.AppendLine(Text(20, 46, "Capsule-side anchor end · pogo face + bayonet · 01_01 §1 · 02_02 §1.2", 10, "start", "#555"));
 
-        // FRONT — bayonet lugs (behind) → flange → PEEK iso ring (dashed) → GND pad → bore → centre
+        // FRONT — bayonet lugs (behind) → flange → PEEK iso ring (dashed) → concept GND pad (dashed) → bore → centre
         for (int i = 0; i < cem.BayonetLugs; i++)
         {
             double ang = (Math.PI * 2 * i / cem.BayonetLugs) - Math.PI / 2;     // first lug at top
@@ -451,12 +451,16 @@ internal static class Drawing
         }
         b.AppendLine(Circle(frontCx, cy, rFlange, Stroke, 1.2));
         b.AppendLine(Circle(frontCx, cy, rIso, Dim, 0.8, "4 2"));
-        b.AppendLine(Circle(frontCx, cy, rPad, Stroke, 1.0));
+        b.AppendLine(Circle(frontCx, cy, rPad, Dim, 0.8, "4 2"));
         b.AppendLine(Circle(frontCx, cy, rBore, Stroke, 0.8));
         b.AppendLine(Centre(frontCx, cy, rFlange, b));
         b.AppendLine(Text(frontCx, cy + rFlange + 46, "FRONT (pogo face)", 10, "middle", "#555"));
         HDim(b, frontCx - rFlange, frontCx + rFlange, cy + rFlange + 24, $"Ø{N(cem.FlangeDiameterMm)}", cy + rFlange);
-        b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad", 9, "start", Dim));
+        // The pad is the concept «≈4–5» of 02_02 §1.3, not a feature of this part: canon §1.2 makes the anode contact the
+        // END of the bus wire in the bore, and everything around the bore on this face is cathode metal — so a sheet that
+        // draws the pad as a contour hands the shop a gold spot at the wrong polarity. Which diameter holds is open (00_07
+        // HW.34, isolation in the pad plane); until then both readers call it absent, like the ring below.
+        b.AppendLine(Text(frontCx + rPad + 5, cy - 3, $"Ø{N(cem.CentralPadDiameterMm)} GND pad (concept) · NOT IN GEOMETRY", 9, "start", Dim));
         // The ring is a 02_02 §1.2 REQUIREMENT that CathodeFlange.cs does not model (the top face is solid Ti to the bore
         // edge; how to meet it is an open verdict, 00_07 HW.34) — so the sheet labels it absent, never as a feature.
         b.AppendLine(Text(frontCx + rIso + 5, cy + 12, $"iso ring ≥{N(cem.IsolationRingWidthMm)} REQUIRED · NOT IN GEOMETRY", 9, "start", Dim));
@@ -546,7 +550,9 @@ internal static class Drawing
         // reader takes a GEOMETRY-layer circle as a contour to machine.
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rIso) { Layer = nte });
         doc.Entities.Add(new Text($"iso ring >={N(cem.IsolationRingWidthMm)} REQUIRED - NOT IN GEOMETRY", new Vector2(cx + rIso + 1, cy + 1), 1.2) { Layer = nte });
-        doc.Entities.Add(new Circle(new Vector2(cx, cy), rP) { Layer = geo });
+        // NOTES too: the concept pad is no contour of this part (the anode contact is the wire end in the bore, 00_07 HW.34).
+        doc.Entities.Add(new Circle(new Vector2(cx, cy), rP) { Layer = nte });
+        doc.Entities.Add(new Text($"GND pad %%c{N(cem.CentralPadDiameterMm)} (concept) - NOT IN GEOMETRY", new Vector2(cx + rP + 1, cy - 2), 1.2) { Layer = nte });
         doc.Entities.Add(new Circle(new Vector2(cx, cy), rB) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx - rF - 2, cy), new Vector2(cx + rF + 2, cy)) { Layer = geo });
         doc.Entities.Add(new Line(new Vector2(cx, cy - rF - 2), new Vector2(cx, cy + rF + 2)) { Layer = geo });

@@ -74,8 +74,9 @@ ORING_SQUEEZE_RATIFIED = 0.245   # ⚖️ founder-proxy 2026-09-10 — centre of
 # elastomer it displaces, so the ring extrudes or the faces are held apart. ⚠️ 00_06 §0: the ceiling
 # below is CITED industry practice (Parker's own design rule is a groove ~25 % larger than the ring,
 # i.e. ~80 % fill), NOT a computed physical fact — the verdict here is deliberately reported against all
-# three so it does not rest on the choice. ⚖️ WHICH fill the part is cut to is an OPEN verdict (00_07
-# HW.33): the CAD designs to the 80 % rule until then, and that choice is read back off the manifests.
+# three so it does not rest on the choice. ⚖️ The part is cut to 80 % — RATIFIED founder 2026-09-17 (00_07
+# HW.33), review trigger a board outline wider than the rim-cavity ceiling (HW.9) — and the fill is read back
+# off the manifests, never typed here.
 GLAND_FILL_CEILINGS = (0.80, 0.85, 0.90)
 GLAND_FILL_DESIGN_TO = 0.80
 

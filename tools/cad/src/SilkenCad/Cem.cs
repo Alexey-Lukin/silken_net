@@ -281,9 +281,10 @@ internal sealed record ORingGlandCem
     // Ratified nominal squeeze (⚖️ 2026-09-10): the centre of the 19–30 % intersection of industry practice
     // (15–30 %) and the Parker face-seal window (19–32 %), 02_02 §3.5. A FRACTION, not a percent.
     public float Squeeze { get; init; } = 0.245f;
-    // Gland fill ceiling = ring section / groove section. ⚖️ OPEN (00_07 HW.33): designed to 80 % — the
-    // industry rule script 52 cites (a groove ~25 % larger than the ring) — until the verdict; raising it to
-    // 85 / 90 % is the cheapest lever on the rim-cavity ceiling (+0.27 / +0.52 mm Ø) and is NOT taken here.
+    // Gland fill ceiling = ring section / groove section. ⚖️ RATIFIED 80 % (founder 2026-09-17, 00_07 HW.33) —
+    // the industry rule script 52 cites (a groove ~25 % larger than the ring). Raising it to 85 / 90 % is the
+    // cheapest lever on the rim-cavity ceiling (+0.27 / +0.52 mm Ø); its review trigger is a board outline
+    // wider than that ceiling (HW.9), not a preference.
     public float GlandFill { get; init; } = 0.80f;
 
     public float DepthMm => CsMm * (1f - Squeeze);                    // 1.344 at 24.5 %
