@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='927' viewBox='0 0 820 927'>
-<rect x='0' y='0' width='820' height='927' fill='white'/>
-<rect x='8' y='8' width='804' height='911' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='941' viewBox='0 0 820 941'>
+<rect x='0' y='0' width='820' height='941' fill='white'/>
+<rect x='8' y='8' width='804' height='925' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-2 SLEEVE  (PEEK thermal break)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 2 — zone2_sleeve · 01_01 §1 / §4.1 / §4.2</text>
 <circle cx='130' cy='150' r='45' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -58,47 +58,48 @@
 <text x='20' y='531' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   of the 5-34 um band (an H7/r6 read - see fit) the relaxed P_c &lt;= sap -&gt; the O-ring is the essential seal (PEEK backup marginal)</text>
 <text x='20' y='545' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. OD O15 = wound in tree (CODIT &lt;25 -&gt; DBH &gt;=38); wall 2.0 = robust default, NOT CTE-limited (unified Lame 4.2: combined SF 5.6x,</text>
 <text x='20' y='559' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   thermal-only 14.6x)</text>
-<text x='20' y='573' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. Mechanical retention (barbs + DIN-471) is on the Ti ends, not this PEEK bore (4.3)</text>
-<text x='20' y='587' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. The factory sheet EXISTS since 2026-09-11 (draw zone2_sleeve -&gt; SVG + DXF, 00_07 HW.1). This part goes to a DIFFERENT shop from every</text>
-<text x='20' y='601' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   other one in the family - PEEK CNC, not SLM - so its sheet is the only carrier those instructions have. Re-run draw after editing any</text>
-<text x='20' y='615' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   note: nothing re-runs the published gallery for you</text>
-<text x='20' y='641' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='657' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: CLASS NOT SETTLED - canon 01_01 4.2 names H7/s6, but the 5-34 um diametral band on this block is the ISO 286 H7/r6 read on O11 (r6</text>
-<text x='20' y='671' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   +23/+34); H7/s6 there gives 10-39 um (s6 +28/+39). Which class, or a band solved from the Lame window instead of either, is an open</text>
-<text x='20' y='685' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   verdict (00_07 HW.3); 5-34 stays the tree's working input until then</text>
-<text x='20' y='699' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Interference: 5–34 µm diametral</text>
-<text x='20' y='713' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Clearance: ≤0.05 mm</text>
-<text x='20' y='727' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<text x='20' y='741' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
-<text x='20' y='755' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
-<rect x='540' y='773' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='773' x2='630' y2='789' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='784' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='784' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-2 sleeve (PEEK)</text>
-<line x1='540' y1='789' x2='790' y2='789' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='789' x2='630' y2='805' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='800' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='800' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>PEEK 450G (Victrex … → NOTES</text>
-<line x1='540' y1='805' x2='790' y2='805' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='805' x2='630' y2='821' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='816' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='816' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>CNC from rod; annea… → NOTES</text>
-<line x1='540' y1='821' x2='790' y2='821' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='821' x2='630' y2='837' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='832' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='832' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='837' x2='790' y2='837' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='837' x2='630' y2='853' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='848' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>59192e3d</text>
-<line x1='540' y1='853' x2='790' y2='853' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='853' x2='630' y2='869' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='864' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='864' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/zone2_sleeve.json</text>
-<line x1='540' y1='869' x2='790' y2='869' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='869' x2='630' y2='885' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='880' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='880' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f6f88f08c5bb3dc800… → FOOTER</text>
-<text x='806' y='901' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 59192e3d · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
-<text x='806' y='913' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f6f88f08c5bb3dc800dd4b9d09e6008a795c2926f08c4f823143cd0187e9faad</text>
+<text x='20' y='573' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. Mechanical retention (the barbs; what the DIN-471 groove does in the assembled stack is an open decision, 00_07 HW.26) is on the Ti</text>
+<text x='20' y='587' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ends, not this PEEK bore (4.3)</text>
+<text x='20' y='601' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. The factory sheet EXISTS since 2026-09-11 (draw zone2_sleeve -&gt; SVG + DXF, 00_07 HW.1). This part goes to a DIFFERENT shop from every</text>
+<text x='20' y='615' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   other one in the family - PEEK CNC, not SLM - so its sheet is the only carrier those instructions have. Re-run draw after editing any</text>
+<text x='20' y='629' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   note: nothing re-runs the published gallery for you</text>
+<text x='20' y='655' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='671' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Fit: CLASS NOT SETTLED - canon 01_01 4.2 names H7/s6, but the 5-34 um diametral band on this block is the ISO 286 H7/r6 read on O11 (r6</text>
+<text x='20' y='685' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   +23/+34); H7/s6 there gives 10-39 um (s6 +28/+39). Which class, or a band solved from the Lame window instead of either, is an open</text>
+<text x='20' y='699' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   verdict (00_07 HW.3); 5-34 stays the tree's working input until then</text>
+<text x='20' y='713' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Interference: 5–34 µm diametral</text>
+<text x='20' y='727' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Clearance: ≤0.05 mm</text>
+<text x='20' y='741' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bore: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='755' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Datum A: bore axis</text>
+<text x='20' y='769' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>Concentricity: ⌀0.05 (A)</text>
+<rect x='540' y='787' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='787' x2='630' y2='803' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='798' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='798' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-2 sleeve (PEEK)</text>
+<line x1='540' y1='803' x2='790' y2='803' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='803' x2='630' y2='819' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='814' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='814' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>PEEK 450G (Victrex … → NOTES</text>
+<line x1='540' y1='819' x2='790' y2='819' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='819' x2='630' y2='835' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='830' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='830' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>CNC from rod; annea… → NOTES</text>
+<line x1='540' y1='835' x2='790' y2='835' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='835' x2='630' y2='851' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='846' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='846' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='851' x2='790' y2='851' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='851' x2='630' y2='867' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='862' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='862' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e58926ac</text>
+<line x1='540' y1='867' x2='790' y2='867' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='867' x2='630' y2='883' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='878' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='878' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/zone2_sleeve.json</text>
+<line x1='540' y1='883' x2='790' y2='883' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='883' x2='630' y2='899' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='894' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='894' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>67f662a64c0e9521fd… → FOOTER</text>
+<text x='806' y='915' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e58926ac · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/zone2_sleeve.json</text>
+<text x='806' y='927' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 67f662a64c0e9521fd7d6f047f4274938a57ea1db9437cd861f89a04114320b6</text>
 </svg>
