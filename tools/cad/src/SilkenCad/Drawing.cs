@@ -617,6 +617,9 @@ internal static class Drawing
     // does not exist on disk. A false SSOT pointer is exactly the class of fabricated instruction gotcha #11
     // exists to prevent, so the caller (`Program.Draw`, which already holds the real invoked path) passes
     // the actual file name in explicitly.
+    // What a lock end without a groove prints in place of the notch: the absence is the fact to state, not a blank.
+    internal const string NoGrooveNote = "NO DIN-471 groove on this end — the ring as a backup was removed (§4.3 B)";
+
     public static string MechanicalLock(MechanicalLockCem cem, string sha, string strCemFile, DrawingStandard std = DrawingStandard.Iso, string? cemSha256 = null)
     {
         double rShank = cem.ShankDiameterMm / 2.0 * Px;
@@ -627,7 +630,9 @@ internal static class Drawing
         double sideTop = cy - (shD / 2.0), sideBot = cy + (shD / 2.0);
         var b = new StringBuilder();
 
-        b.AppendLine(Text(20, 30, "MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)", 15, "start", Stroke, "bold"));
+        bool bGroove = SilkenCad.MechanicalLock.HasGroove(cem);
+        b.AppendLine(Text(20, 30, bGroove ? "MECHANICAL LOCK  (§4.3 shank — ratchet barbs + DIN-471 groove)"
+                                          : "MECHANICAL LOCK  (§4.3 shank — ratchet barbs; NO groove on this end)", 15, "start", Stroke, "bold"));
         b.AppendLine(Text(20, 46, $"Anchor retention (BLOCKER-3, HW.26) · {cem.Name} · 01_01 §4.3", 10, "start", "#555"));
 
         // FRONT — shank Ø (+ the Zone-3 bus/cathode channel bore, if this end is hollow; Zone-1 bore=0 ⇒ solid)
@@ -652,10 +657,15 @@ internal static class Drawing
         // B. DIN-471 groove — THE feature this drawing exists for (HW.26): a real notch cut at the CEM's
         // own offset/width/depth. This is the number `cem_canon_sync` pins against canon §4.3 B, so the
         // number a human reviewer reads here is the same one a drift would show up on.
-        double gz0 = sideX + (cem.GrooveOffsetMm * Px), gzW = cem.GrooveWidthMm * Px, gzD = cem.GrooveDepthMm * Px;
-        b.AppendLine(Rect(gz0, sideTop, gzW, gzD, Stroke, 1.0));
-        b.AppendLine(Rect(gz0, sideBot - gzD, gzW, gzD, Stroke, 1.0));
-        b.AppendLine(Text(gz0, sideBot + 14, $"groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} DIN-471 (§4.3 B)", 9, "start", Dim));
+        if (bGroove)
+        {
+            double gz0 = sideX + (cem.GrooveOffsetMm * Px), gzW = cem.GrooveWidthMm * Px, gzD = cem.GrooveDepthMm * Px;
+            b.AppendLine(Rect(gz0, sideTop, gzW, gzD, Stroke, 1.0));
+            b.AppendLine(Rect(gz0, sideBot - gzD, gzW, gzD, Stroke, 1.0));
+            b.AppendLine(Text(gz0, sideBot + 14, $"groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} DIN-471 (§4.3 B)", 9, "start", Dim));
+        }
+        else
+            b.AppendLine(Text(sideX, sideBot + 14, NoGrooveNote, 9, "start", Dim));
 
         b.AppendLine(Text(sideX + (shL / 2), sideBot + 58, "SIDE", 10, "middle", "#555"));
         HDim(b, sideX, sideX + shL, sideBot + 36, $"{N(cem.ShankLengthMm)}", sideBot);
@@ -666,7 +676,8 @@ internal static class Drawing
         // base (DERIVED = h·(cotα+cotβ), §4.3 A — a triangle has 2 free params, not 4; `Cem.cs`/`Validation.
         // MeasureLock` carry the same formula).
         double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
-        string lead = $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (§4.3 B); " +
+        string lead = (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}×{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (§4.3 B); "
+                               : $"{NoGrooveNote}; ") +
                       $"barb base≈{N(baseMm)} mm (derived h·(cotα+cotβ), §4.3 A)";
         const double w = 820;
         double bottom = NotesAndTolerances(b, 20, sideBot + 82, (int)((w - 40) / Glyph9),
@@ -719,11 +730,15 @@ internal static class Drawing
         doc.Entities.Add(new Line(new Vector2(bz0, top), new Vector2(bz0, bot)) { Layer = dmn });
         doc.Entities.Add(new Line(new Vector2(bz1, top), new Vector2(bz1, bot)) { Layer = dmn });
 
-        double gz0 = sx + cem.GrooveOffsetMm, gz1 = gz0 + cem.GrooveWidthMm;
-        var grooveTop = new[] { new Vector2(gz0, top), new Vector2(gz0, top - cem.GrooveDepthMm), new Vector2(gz1, top - cem.GrooveDepthMm), new Vector2(gz1, top) };
-        for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveTop[i], grooveTop[i + 1]) { Layer = geo });
-        var grooveBot = new[] { new Vector2(gz0, bot), new Vector2(gz0, bot + cem.GrooveDepthMm), new Vector2(gz1, bot + cem.GrooveDepthMm), new Vector2(gz1, bot) };
-        for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveBot[i], grooveBot[i + 1]) { Layer = geo });
+        bool bGroove = SilkenCad.MechanicalLock.HasGroove(cem);
+        if (bGroove)
+        {
+            double gz0 = sx + cem.GrooveOffsetMm, gz1 = gz0 + cem.GrooveWidthMm;
+            var grooveTop = new[] { new Vector2(gz0, top), new Vector2(gz0, top - cem.GrooveDepthMm), new Vector2(gz1, top - cem.GrooveDepthMm), new Vector2(gz1, top) };
+            for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveTop[i], grooveTop[i + 1]) { Layer = geo });
+            var grooveBot = new[] { new Vector2(gz0, bot), new Vector2(gz0, bot + cem.GrooveDepthMm), new Vector2(gz1, bot + cem.GrooveDepthMm), new Vector2(gz1, bot) };
+            for (int i = 0; i < 3; i++) doc.Entities.Add(new Line(grooveBot[i], grooveBot[i + 1]) { Layer = geo });
+        }
 
         DxfHDim(doc, dmn, sx, sx + cem.ShankLengthMm, bot + 5, N(cem.ShankLengthMm));
         doc.Entities.Add(new Text("SIDE", new Vector2(sx, top - 11), 2.0) { Layer = nte });
@@ -731,7 +746,8 @@ internal static class Drawing
         // NOTES + TOLERANCES stacked below — same lead line as the SVG (the groove w×d + derived barb base)
         double baseMm = cem.BarbHeightMm * ((1.0 / Math.Tan(cem.LeadAngleDeg * Math.PI / 180.0)) + (1.0 / Math.Tan(cem.TrailAngleDeg * Math.PI / 180.0)));
         var lines = new List<string> { "NOTES:" };
-        var nl = NotesLines(cem.Notes, $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (sec. 4.3 B); barb base~{N(baseMm)} mm (derived, sec. 4.3 A)");
+        var nl = NotesLines(cem.Notes, (bGroove ? $"DIN-471 groove {N(cem.GrooveWidthMm)}x{N(cem.GrooveDepthMm)} mm at z={N(cem.GrooveOffsetMm)} (sec. 4.3 B); "
+                                                : $"{DxfSafe(NoGrooveNote)}; ") + $"barb base~{N(baseMm)} mm (derived, sec. 4.3 A)");
         for (int i = 0; i < nl.Count; i++) lines.Add($"{i + 1}. {nl[i]}");
         var tl = ToleranceLines(cem.Tolerances);
         if (tl.Count > 0) { lines.Add("TOLERANCES / GD&T:"); lines.AddRange(tl); }

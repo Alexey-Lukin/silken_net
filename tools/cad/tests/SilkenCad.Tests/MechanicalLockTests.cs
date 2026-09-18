@@ -224,8 +224,12 @@ public void Inside_Its_Window_Every_Barb_Is_In_The_Peek_And_The_Groove_Is_Not()
                     "at that insertion it is inside the PEEK");
             }
         }
-        Assert.True(nBarb > 0 && nGroove > 0,
-            $"{strName}: the walk met {nBarb} barb and {nGroove} groove samples — one that meets neither measures nothing");
+        // ⚖️ 2026-09-18 (00_07 HW.26): the Zone-3 ends carry no groove, so there the walk must meet NONE and the
+        // window's deep end is the whole shank; an end that still carries one must meet it.
+        bool bGroove = MechanicalLock.HasGroove(cem);
+        Assert.True(nBarb > 0 && (bGroove ? nGroove > 0 : nGroove == 0),
+            $"{strName}: the walk met {nBarb} barb and {nGroove} groove samples on an end that {(bGroove ? "carries" : "carries NO")} groove");
+        if (!bGroove) Assert.Equal(cem.ShankLengthMm, w.MaxMm, 3);
     }
 }
 }

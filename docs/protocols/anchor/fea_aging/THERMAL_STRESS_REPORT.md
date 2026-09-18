@@ -15,9 +15,9 @@ Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-3
 lower than previously reported (see the 2026-06-21 correction): at the **minimum** H7/s6 interference the
 relaxed P_c can fall **at or below** the sap pressure — so the **elastomer O-ring is the ESSENTIAL hermetic
 seal**, not a redundancy. PEEK is a structural/thermal isolator + (at max fit) a backup contact pressure;
-barbs/retaining ring handle axial pull-out + anti-rotation only (⚠️ the retaining-ring half is an open ⚖️,
-`00_07` HW.26: in the shipped stack the Zone-3 groove ends up inside the PEEK (near flank 2.0 mm deep), inaccessible, and the
-Zone-1 ring stops motion deeper into the sleeve, not pull-out).
+barbs handle axial pull-out + anti-rotation only — the retaining ring as a backup was removed on both ends
+2026-09-18 (`00_07` HW.26): in the shipped stack the Zone-3 groove ended up inside the PEEK (near flank 2.0 mm deep), and the
+Zone-1 ring would only stop motion deeper into the sleeve, not pull-out.
 
 **Unified thick-wall Lamé (2026-06-22, script 56).** The press-fit and the thermal stress are the
 SAME interference and now go through ONE rigid-inner / free-outer thick-wall Lamé. The honest
@@ -145,8 +145,8 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 2. **Press-fit relaxes, not creeps** — P_c decays toward a semicrystalline floor. But the honest frozen P_c
    (0.49-3.32 → 0.32-2.16 MPa) is **far lower** than the old buggy 34.7→22.6; at MIN fit relaxed P_c ≤ sap.
 3. **Sealing = elastomer O-ring** (FKM/EPDM) — **essential**, not redundant (PEEK backup is marginal at min fit).
-4. **Barbs/retaining ring = axial pull-out + anti-rotation only** — they do not seal. ⚠️ Whether the ring does
-   even that in the shipped stack is an open ⚖️ (`00_07` HW.26 — see Summary).
+4. **Barbs = axial pull-out + anti-rotation only** — they do not seal; the retaining ring as a backup was
+   removed 2026-09-18 (`00_07` HW.26 — see Summary).
 5. **Winter:** inner interface tightens; the "outer interface" is the tree, not a Ti shell (artifact dropped).
 6. **No mesh-FEA** for the axisymmetric stress (analytic Lamé); barb-tip stress-concentration → Гусак.
 

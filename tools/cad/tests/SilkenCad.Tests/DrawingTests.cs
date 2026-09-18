@@ -562,7 +562,6 @@ public class DrawingTests
 
     [Theory]
     [InlineData("mechanical_lock.zone1.json", 11f, "1.1×0.25", "4× barb")]
-    [InlineData("mechanical_lock.zone3.json", 9f, "1.1×0.2", "3× barb")]
     public void MechanicalLock_Drawing_Carries_The_Shipped_Cem_Groove_Width_And_Depth(
         string strFile, float fExpectShankDia, string strExpectGroove, string strExpectBarb)
     {
@@ -571,6 +570,33 @@ public class DrawingTests
         string svg = Drawing.MechanicalLock(cem, "test", strFile);
         Assert.Contains($"groove {strExpectGroove} DIN-471", svg);
         Assert.Contains(strExpectBarb, svg);
+    }
+
+    // ⚖️ 2026-09-18 (00_07 HW.26): the DIN-471 ring as a backup was removed on BOTH ends and the Zone-3 groove from the
+    // geometry. The Zone-3 manifests declare it as explicit zeros (an absent key would fill from the record default and
+    // cut the Zone-1 groove into the flange, gotcha #0a); this pins that the lock cuts nothing there and that both sheet
+    // readers state the absence instead of drawing a 0×0 notch labelled DIN-471.
+    // MUTATION: restore `groove_width_mm` 1.1 and `groove_depth_mm` 0.2 in the zone3 lock ⇒ HasGroove turns true and
+    // every absence assert reds.
+    [Fact]
+    public void Zone3_Lock_Carries_No_Groove_And_Both_Sheet_Readers_Say_So()
+    {
+        var cem = Cem.Parse<MechanicalLockCem>(File.ReadAllText(Path.Combine(CemDir(), "mechanical_lock.zone3.json")));
+        Assert.False(MechanicalLock.HasGroove(cem));
+        string svg = Drawing.MechanicalLock(cem, "test", "mechanical_lock.zone3.json");
+        Assert.Contains("NO DIN-471 groove on this end", svg);
+        Assert.Contains("NO groove on this end", svg);
+        Assert.DoesNotContain("× DIN-471", svg);
+        Assert.DoesNotContain("0×0", svg);
+        string path = Path.Combine(Path.GetTempPath(), $"lock_nogroove_{Guid.NewGuid():N}.dxf");
+        try
+        {
+            Assert.True(Drawing.MechanicalLockDxf(cem, "test", "mechanical_lock.zone3.json", path));
+            string dxf = File.ReadAllText(path);
+            Assert.Contains("NO DIN-471 groove on this end", dxf);
+            Assert.DoesNotContain("0x0 mm", dxf);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
     }
 
     // 🔴 The InlineData roster from the coin's own comment: a hand-written list beside a growing

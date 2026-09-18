@@ -97,6 +97,12 @@ internal sealed class BarbRidges(MechanicalLockCem cem) : IImplicit
 // 00_07 HW.26 G4 (external supports allowed — barbs are on the outer shank).
 internal static class MechanicalLock
 {
+    // A lock end carries a DIN-471 groove only when both of its dimensions are positive. ⚖️ 2026-09-18 (00_07 HW.26)
+    // removed the ring as a backup on BOTH ends and the Zone-3 groove from the geometry, so the Zone-3 manifests
+    // declare 0 × 0 at offset 0 — explicit zeros, never absent keys: an absent key would fill from the record
+    // default (gotcha #0a) and silently cut the Zone-1 groove into the flange.
+    public static bool HasGroove(MechanicalLockCem cem) => cem.GrooveWidthMm > 0f && cem.GrooveDepthMm > 0f;
+
     public static Voxels Build(MechanicalLockCem cem)
     {
         float fRShank = cem.ShankDiameterMm / 2f;
@@ -107,11 +113,15 @@ internal static class MechanicalLock
         // 2. Barb ridges — a thin annular shell, fused onto the shank.
         voxShank.BoolAdd(new Voxels(new BarbRidges(cem), voxShank.oCalculateBoundingBox()));
 
-        // 3. Retaining groove (§4.3 B) — subtract an annular ring (depth grooveDepth) over the groove width.
-        LocalFrame oGroove = new(new Vector3(0f, 0f, cem.GrooveOffsetMm));
-        Voxels voxRing = new BaseCylinder(oGroove, cem.GrooveWidthMm, fRShank + cem.BarbHeightMm).voxConstruct();
-        voxRing.BoolSubtract(new BaseCylinder(oGroove, cem.GrooveWidthMm, fRShank - cem.GrooveDepthMm).voxConstruct());
-        voxShank.BoolSubtract(voxRing);
+        // 3. Retaining groove (§4.3 B) — subtract an annular ring (depth grooveDepth) over the groove width;
+        //    skipped on an end that carries none (a zero-length cylinder is not a groove, it is a degenerate solid).
+        if (HasGroove(cem))
+        {
+            LocalFrame oGroove = new(new Vector3(0f, 0f, cem.GrooveOffsetMm));
+            Voxels voxRing = new BaseCylinder(oGroove, cem.GrooveWidthMm, fRShank + cem.BarbHeightMm).voxConstruct();
+            voxRing.BoolSubtract(new BaseCylinder(oGroove, cem.GrooveWidthMm, fRShank - cem.GrooveDepthMm).voxConstruct());
+            voxShank.BoolSubtract(voxRing);
+        }
 
         // 4. Central bore (01_01 §1.4): bore==0 ⇒ SOLID shank (monolithic anode — the bus is the metal core);
         //    bore>0 ⇒ the cathode (Zone-3) channel the bus rod threads to the pogo pad.
@@ -127,13 +137,14 @@ internal static class MechanicalLock
     // what must never be reused in the anode frame is the lock's GEOMETRY (G4), not this scalar.
     //   Min = end of the declared PEEK-contact zone: shallower, the last barbs and the PEEK that has to sit
     //         behind their steep faces are outside the sleeve (01_01 §4.3 A).
-    //   Max = near flank of the DIN-471 groove: deeper, the groove is inside the PEEK and the ring fitted
-    //         AFTER the press (01_01 §3 step 6) has nowhere to go (§4.3 B).
+    //   Max = near flank of the DIN-471 groove, on an end that still carries one (Zone 1): deeper, the groove is
+    //         inside the PEEK. ⚖️ 2026-09-18 (00_07 HW.26) no ring is fitted as a backup on either end and the
+    //         Zone-3 groove is gone, so on an end WITHOUT a groove there is no groove flank: its deepest insertion
+    //         is the whole shank (the shoulder stops it).
     // ⛔ Declared ceiling: nominal dims only — no depth tolerance of a force-controlled press, no chamfer at
-    //    the mouth, and nothing about which motion the fitted ring then blocks (an open ⚖️, 00_07 HW.26).
-    //    The upper bound exists only because this lock carries a groove.
+    //    the mouth, and nothing about whether Zone 1 needs a stop against moving DEEPER (HW.26 G1/G3).
     internal readonly record struct InsertionWindow(float MinMm, float MaxMm);
 
     public static InsertionWindow InsertionWindowMm(MechanicalLockCem cem)
-        => new(cem.ContactStartMm + cem.ContactLengthMm, cem.GrooveOffsetMm);
+        => new(cem.ContactStartMm + cem.ContactLengthMm, HasGroove(cem) ? cem.GrooveOffsetMm : cem.ShankLengthMm);
 }
