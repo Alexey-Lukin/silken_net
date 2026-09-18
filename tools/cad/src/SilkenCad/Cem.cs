@@ -416,7 +416,7 @@ internal sealed record Zone2SleeveCem
     public float WallThicknessMm { get; init; } = 2f;     // frozen §1 — robust default, NOT CTE-limited (§4.2)
     public float LengthMm { get; init; } = 50f;           // axial thermal break (§4.1), frozen
     // OD = bore + 2·wall = Ø15 = the wound diameter in the tree (derived in Zone2Sleeve.OuterR, not stored).
-    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit µm band — an ISO 286 read today; the Lamé window is open, 00_07 HW.3 · hex clearance)
+    public ToleranceSpec? Tolerances { get; init; }       // drawing PMI (press-fit µm band — an ISO 286 read today; the band is to come from the Lamé window, 00_07 HW.3, inputs open · hex clearance)
     public NotesSpec? Notes { get; init; }                // drawing notes block
 }
 

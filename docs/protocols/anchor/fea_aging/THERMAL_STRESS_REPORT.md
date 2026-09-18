@@ -13,8 +13,8 @@ Ti-6Al-4V ↔ PEEK 450G press-fit survives **20+ years** of seasonal cycling (-3
 (**SF 5.6×**, von Mises 4.7×; thermal-only 14.6×) — the 2 mm wall is a **robust default, not stress-limited**
 (the former "CTE-limited / SF 3.4×" was an over-stated-denominator artifact, Correction C). The press-fit contact pressure is far
 lower than previously reported (see the 2026-06-21 correction): at the **minimum** H7/s6 interference the
-relaxed P_c can fall **at or below** the sap pressure — so the **elastomer O-ring is the ESSENTIAL hermetic
-seal**, not a redundancy. PEEK is a structural/thermal isolator + (at max fit) a backup contact pressure;
+relaxed P_c can fall **at or below** the sap pressure — so this fit **cannot seal the Ti↔PEEK path, and by
+design it is not asked to** (`00_07` HW.34, 2026-09-18 — ⚠️ above). PEEK is a structural/thermal isolator whose contact pressure holds the fit;
 barbs handle axial pull-out + anti-rotation only — the retaining ring as a backup was removed on both ends
 2026-09-18 (`00_07` HW.26): in the shipped stack the Zone-3 groove ended up inside the PEEK (near flank 2.0 mm deep), and the
 Zone-1 ring would only stop motion deeper into the sleeve, not pull-out.
@@ -43,8 +43,8 @@ frozen, HW.33); the latent "thinner wall = smaller wound" lever is logged in `00
 >    **ISO 286 H7/s6 band** (Ø11 → 5-34 µm diametral). E_PEEK refined 3.6 → **4.0 GPa** (Victrex datasheet).
 >
 > Net: the headline P_c fell from a (buggy) **34.7 → 22.6 MPa** to an honest **0.49-3.32 → 0.32-2.16 MPa**.
-> The 20-year verdict still holds on the thermal margin (the path is unsealed by design — ⚠️ above), but the PEEK backup pressure is
-> **marginal at min fit**, not comfortable — which is exactly why the O-ring is primary.
+> The 20-year verdict still holds on the thermal margin (the path is unsealed by design — ⚠️ above), but the PEEK contact pressure is
+> **marginal at min fit**, not comfortable — which is why the fit is not asked to seal the path (⚠️ above).
 >
 > ⚠️ **Correction C (unified thick-wall Lamé, 2026-06-22):** §1's thermal σ_t (29.7 MPa, SF 3.4×) comes
 > from `50 lame_interface_stress`, which divides by `(k²−1)` ≈ 0.86 — a residual of the dropped rigid-outer-
@@ -144,7 +144,9 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
    denominator (**Correction C**) — **fixed at source 2026-06-22**; `01_01 §4.2` rationale corrected (wall = robust default, not stress-limited).
 2. **Press-fit relaxes, not creeps** — P_c decays toward a semicrystalline floor. But the honest frozen P_c
    (0.49-3.32 → 0.32-2.16 MPa) is **far lower** than the old buggy 34.7→22.6; at MIN fit relaxed P_c ≤ sap.
-3. **Sealing = elastomer O-ring** (FKM/EPDM) — **essential**, not redundant (PEEK backup is marginal at min fit).
+3. **The Ti↔PEEK path is not sealed, by design** (`00_07` HW.34, 2026-09-18) — the fit is marginal at min fit and is not
+   asked to seal; the capsule's one seal is the face O-ring at the radome joint, and the bus channel gets its own closure
+   at its exit (geometry after the pogo pin P/N, `00_07` HW.9).
 4. **Barbs = axial pull-out + anti-rotation only** — they do not seal; the retaining ring as a backup was
    removed 2026-09-18 (`00_07` HW.26 — see Summary).
 5. **Winter:** inner interface tightens; the "outer interface" is the tree, not a Ti shell (artifact dropped).

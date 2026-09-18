@@ -984,7 +984,7 @@ internal static class Program
         if (oM.SleeveZone3InterferenceMm is { } dS && dS < 0)
             Console.WriteLine($"  ⚠ press-fit F1: Zone-3 shank Ø{cem.Capsule.Flange.ShankDiameterMm:F0} in bore Ø{cem.Zone2.BoreDiameterMm:F0} = {-dS:F1} mm clearance/side — NO press-fit (shank Ø placeholder → HW.8)");
         if (oM.Zone1SleeveInterferenceMm is { } dZ && dZ <= 0)
-            Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the press-fit band (class open: 00_07 HW.3)");
+            Console.WriteLine($"  ℹ Zone-1↔Zone-2 nominal line-to-line ({dZ:F2} mm) — real +interference is the press-fit band (from the Lamé window, inputs open: 00_07 HW.3)");
         if (oM.InsertionBudgetMm is { } dB && dB < 0)
             Console.WriteLine($"  ⚠ press-fit F2: insertion budget {dB:F1} mm < 0 — Zone-1 + Zone-3 shanks collide inside the {cem.Zone2.LengthMm:F0} mm bore");
         if (lockCem is not null && AxialStack.Zone1InsertionConflict(cem, lockCem) is { } strConflict)
