@@ -195,7 +195,7 @@
 ## C. Mutual CDA / NDA — ВНЗ-MoU (DRAFT)
 
 > ⚠️ **DRAFT — потребує UA-юр-review ДО підпису.** Counterparty-юрист: **Аблязов Д.Е.** (СЄУ, к.ю.н., господарське/комерційне право) + профільний IP-юрист — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md) · **UNI.14**. Це шаблон-каркас, не готовий до підпису інструмент.
-> **Мета:** розблокувати лаб-доступ ЧНУ/ЧДТУ (**UNI.2**, passive-гейт) через **mutual** confidentiality у рамках MoU.
+> **Мета:** розблокувати лаб-доступ ЧНУ/ЧДТУ (ЧНУ — **UNI.18** ⚫ passive, ЧДТУ — **UNI.10**) через **mutual** confidentiality у рамках MoU.
 > **Governing law:** Україна (ЦК України · ЗУ «Про захист від недобросовісної конкуренції» — комерційна таємниця).
 > 🔑 **Ядро-принцип (defensive-publication, [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md)):** цей NDA покриває **ЛИШЕ нерозкрите**. **Технологія (код під open-source-ліцензіями · доки CC-BY-SA · defensive-published ядро) — вже public → carve-out §C.2, НЕ конфіденційне.** MoU **не embargo-їть** технологію (сам [`00_01 §8`](../../00_01_Vision_Mission_and_Roadmap.md): «MoU з ВНЗ містять open-license + co-authorship, **не** embargo/NDA на технологію»).
 
@@ -578,6 +578,6 @@ Nothing is needed from you to answer this pre-qualification beyond the documents
 | [`01_01 §1`](../../01_01_Coaxial_Gyroid_Topology_and_PEEK.md) · [`02_02 §3.2`](../../02_02_Blind_Mate_Pogo_Pin_Interface.md) · [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) | фланець Ø25 (`cathode_flange.json` §`flange_diameter_mm`) · EPDM 70 Shore A · робочий склад синтетичного соку |
 | [`SUMMARY.md`](../ebfc/in_silico/SUMMARY.md) §HW.22 · §HW.25 | межа desk-присуду ZIF (Co-60; сліпий до потужності дози) · інверсія Young–Laplace під числами §5.6 — підстави питань, у листи НЕ йдуть |
 | [`00_06 §2`](../../00_06_SSOT_Documentation_Standard.md) | One-Home — реєстрація артефакту (промоція → registry §1) |
-| [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.2 (лаб-доступ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 · HW.22 (стерилізація) · HW.25 (PTFE-мембрана) · HW.3 (присуд pH соку) |
+| [`00_07`](../../00_07_Action_Plan_Tracker.md) | **BIZ.17** (procurement RFQ-layer) · UNI.18 ⚫ / UNI.10 (лаб-доступ ЧНУ / ЧДТУ) · UNI.14 (CDA/NDA legal) · BIZ.6/BIZ.20 · HW.22 (стерилізація) · HW.25 (PTFE-мембрана) · HW.3 (присуд pH соку) |
 
 > **Статус-нагадування:** 🟡 draft-шаблони. Ваги/пороги (§A.1/§A.3/§B.2) + NDA-поля (§C) — `PLACEHOLDER` під founder/юр-рішення, **не** вигадані. NDA — **draft, юр-review обов'язковий** (§C.7).
