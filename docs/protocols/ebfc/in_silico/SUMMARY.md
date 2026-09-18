@@ -985,7 +985,10 @@ under-estimating its own spread.
   built as Ser (the option that commits no charge); that is a build choice, flagged as one, not a
   recommendation.
 - **Gln405 → Ile401 → Ser**, the single largest gain available — Ile401 alone carries 100.9 Å² of exposed
-  apolar area, and the swap takes that patch from 119.8 to 18.9 Å². Asp is refused there by the declared
+  apolar area, and the swap takes that patch from 119.8 to 18.9 Å². ⚖️ **founder 2026-09-18 TOOK it**, after the
+  hold's own question — is position 401 conserved — was measured and answered no (Ile 3.6 % vs Ser 15.7 % over 332
+  homologs; the catalytic His537 control reads 98.8 %). Numbers, sampling and the method's ceiling live in
+  `00_07` HW.5.IS until the instrument is in the tree; the design verdict lives in `L1 §2`. Asp is refused there by the declared
   secondary-structure heuristic; Ser is not.
 - ⛔ **Gln258 — do not touch.** Its entire apolar neighbourhood lies inside the FAD-pocket and electron-exit
   shells, and the site itself sits **8.0 Å from the Beratan-Onuchic tunnelling path** (loaded from script 28's
