@@ -13,7 +13,8 @@
   "porosity_target": 0.65,
   "tolerances": {
     "features": [
-      { "feature": "outer_dia" }
+      { "feature": "outer_dia" },
+      { "feature": "bus_root_offset_from_od_axis" }
     ]
   },
   "notes": {
@@ -29,7 +30,8 @@
       "The bus wire (01_01 1.4) is NOT printed with this part: it is a cold-drawn wire of the same alloy, welded to the anode's top face (01_01 3 step 1b). This part is printed WITHOUT a core - the gyroid lattice runs to the axis - and bus_rod_diameter_mm declares the WIRE diameter, an assembly dimension, not a feature to print. The porosity and connectivity gates therefore measure the whole lattice cross-section",
       "slm_min_wall_mm is a VENDOR input (ratified 2026-09-10): absent means the canon 200 um default of 01_01 5.5 (a DEFAULT, not a constant - and a different quantity from the 0.3 mm gyroid wall floor of 01_02 1.7), and the same number also sets the measurement grid - a finer vendor floor costs about an order of magnitude more run time",
       "The factory sheet EXISTS since 2026-09-11 (draw anchor_zone1 -> SVG + DXF, 00_07 HW.1): these notes are both the SOURCE of the acceptance contract and, through that generator, its CARRIER. Re-run draw after editing any note - nothing re-runs the published gallery for you",
-      "The envelope O is NOT a press-fit surface: canon puts the Zone1<->Zone2 contact band on the SOLID shank (01_01 4.2, cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one. That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank"
+      "The envelope O is NOT a press-fit surface: canon puts the Zone1<->Zone2 contact band on the SOLID shank (01_01 4.2, cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one. That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank",
+      "The bus wire's root (its axis at the weld on the top face) must line up with the cathode channel: its offset from this part's outer-diameter axis is a REQUIRED datum of the anchor stack, and its tolerance is NOT SPECIFIED until the insertion depth is decided (00_07 HW.26 G1, HW.34)"
     ]
   }
 }
