@@ -1,6 +1,6 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1407' viewBox='0 0 820 1407'>
-<rect x='0' y='0' width='820' height='1407' fill='white'/>
-<rect x='8' y='8' width='804' height='1391' fill='none' stroke='#111' stroke-width='1.2'/>
+<svg xmlns='http://www.w3.org/2000/svg' width='820' height='1421' viewBox='0 0 820 1421'>
+<rect x='0' y='0' width='820' height='1421' fill='white'/>
+<rect x='8' y='8' width='804' height='1405' fill='none' stroke='#111' stroke-width='1.2'/>
 <text x='20' y='30' font-family='monospace' font-size='15' text-anchor='start' fill='#111' font-weight='bold'>ZONE-1 ANODE  (gyroid — envelope card)</text>
 <text x='20' y='46' font-family='monospace' font-size='10' text-anchor='start' fill='#555' font-weight='normal'>Деталь 1 — buried EBFC anode · anchor_zone1_pine · 01_01 §5 · coating map 01_02 §3.6</text>
 <circle cx='130' cy='150' r='33' fill='none' stroke='#111' stroke-width='1.2'/>
@@ -69,70 +69,71 @@
 <text x='20' y='689' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>8. Lattice: Gyroid, NETWORK topology (ratified founder 2026-09-10, 00_07 HW.33) - ONE through pore labyrinth by construction. Cell period is</text>
 <text x='20' y='703' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   graded core-&gt;rim by this manifest's own fields; read them, not prose. Porosity: canon carries THREE numbers and they are not</text>
 <text x='20' y='717' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   interchangeable - nominal 65% (01_01 5.2), verification 65 +/-2% (01_01 5.5, scoped by canon to the constant-porosity branch), factory</text>
-<text x='20' y='731' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance band 60-70% (01_02 1.2). How they relate is an OPEN verdict (00_07 HW.33), so all three are quoted and none is dropped. Verify</text>
-<text x='20' y='745' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   by Archimedes open porosity + uCT connectivity (01_02 1.2)</text>
-<text x='20' y='759' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Inspect: SEM before shipment at x500 (gyroid macro-pores), x5,000 (micro-roughness: report the AREAL Sa of the 01_02 1.2 acceptance row,</text>
-<text x='20' y='773' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   not a profile Ra) and x50,000 (nano-pores Sv) - all three frames apply to THIS part because it has the macro-pore geometry the x500 frame</text>
-<text x='20' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is for; if nano-pores are not visible at x50,000 the etch is insufficient and EAAE is repeated (01_02 1.5). ATTENTION: the batch-level</text>
-<text x='20' y='801' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   SEM ACCEPTANCE CRITERION - what morphology passes, as opposed to which frames to shoot - does not exist in canon yet and is an open leg</text>
-<text x='20' y='815' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (00_07 HW.1); do not read its absence as a pass. uCT pore-gradient verification in the PRINTED range (acceptance targets set by 00_07</text>
-<text x='20' y='829' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   HW.33, not by this line). The uCT order must NAME its processing, because a pore size is an output of the algorithm chosen: report local</text>
-<text x='20' y='843' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   thickness by maximal inscribed sphere for BOTH phases (pore and metal ligament) - the measure our design instruments use (01_01 5.5), so</text>
-<text x='20' y='857' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the two compare - and mean chord length separately, labelled, never merged into one 'pore size'. Report (1) global porosity,</text>
-<text x='20' y='871' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cross-checked against Archimedes; (2) the radial profile of both thickness distributions, in shells outward from the part axis; (3)</text>
-<text x='20' y='885' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   topological integrity - disconnected metal islands, wall breaks, closed pores; plus the scan voxel size and the segmentation-threshold</text>
-<text x='20' y='899' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   method. Archimedes open porosity. LECO RH404 H&lt;100 ppm per batch or rejected. ICP-MS of the rinse water, Al&lt;1 ppb - confirms no corundum</text>
-<text x='20' y='913' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   residue (01_02 1.2, 1.5)</text>
-<text x='20' y='927' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Zone 1 = the buried anode: gyroid walls in xylem sap (01_01 1)</text>
-<text x='20' y='941' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. The bus wire (01_01 1.4) is NOT printed with this part: it is a cold-drawn wire of the same alloy, welded to the anode's top face (01_01</text>
-<text x='20' y='955' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   3 step 1b). This part is printed WITHOUT a core - the gyroid lattice runs to the axis - and bus_rod_diameter_mm declares the WIRE</text>
-<text x='20' y='969' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diameter, an assembly dimension, not a feature to print. The porosity and connectivity gates therefore measure the whole lattice</text>
-<text x='20' y='983' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cross-section</text>
-<text x='20' y='997' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. slm_min_wall_mm is a VENDOR input (ratified 2026-09-10): absent means the canon 200 um default of 01_01 5.5 (a DEFAULT, not a constant -</text>
-<text x='20' y='1011' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   and a different quantity from the 0.3 mm gyroid wall floor of 01_02 1.7), and the same number also sets the measurement grid - a finer</text>
-<text x='20' y='1025' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   vendor floor costs about an order of magnitude more run time</text>
-<text x='20' y='1039' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. The factory sheet EXISTS since 2026-09-11 (draw anchor_zone1 -&gt; SVG + DXF, 00_07 HW.1): these notes are both the SOURCE of the</text>
-<text x='20' y='1053' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance contract and, through that generator, its CARRIER. Re-run draw after editing any note - nothing re-runs the published gallery</text>
-<text x='20' y='1067' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   for you</text>
-<text x='20' y='1081' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is NOT a press-fit surface: canon puts the Zone1&lt;-&gt;Zone2 contact band on the SOLID shank (01_01 4.2,</text>
-<text x='20' y='1095' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one.</text>
-<text x='20' y='1109' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a</text>
-<text x='20' y='1123' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather</text>
-<text x='20' y='1137' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
-<text x='20' y='1151' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>15. The bus wire's root (its axis at the weld on the top face) must line up with the cathode channel: its offset from this part's</text>
-<text x='20' y='1165' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   outer-diameter axis is a REQUIRED datum of the anchor stack, and its tolerance is NOT SPECIFIED until the insertion depth is decided</text>
-<text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (00_07 HW.26 G1, HW.34)</text>
-<text x='20' y='1205' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
-<text x='20' y='1221' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<text x='20' y='1235' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bus_root_offset_from_od_axis: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
-<rect x='540' y='1253' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
-<line x1='630' y1='1253' x2='630' y2='1269' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
-<text x='635' y='1264' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
-<line x1='540' y1='1269' x2='790' y2='1269' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1269' x2='630' y2='1285' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
-<text x='635' y='1280' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
-<line x1='540' y1='1285' x2='790' y2='1285' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1285' x2='630' y2='1301' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
-<text x='635' y='1296' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
-<line x1='540' y1='1301' x2='790' y2='1301' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1301' x2='630' y2='1317' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1312' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
-<text x='635' y='1312' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
-<line x1='540' y1='1317' x2='790' y2='1317' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1317' x2='630' y2='1333' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1328' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='1328' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8fa69fef</text>
-<line x1='540' y1='1333' x2='790' y2='1333' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1333' x2='630' y2='1349' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1344' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
-<text x='635' y='1344' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
-<line x1='540' y1='1349' x2='790' y2='1349' stroke='#111' stroke-width='0.5'/>
-<line x1='630' y1='1349' x2='630' y2='1365' stroke='#111' stroke-width='0.5'/>
-<text x='545' y='1360' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='1360' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>1084591d705c6ee9fc… → FOOTER</text>
-<text x='806' y='1381' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8fa69fef · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
-<text x='806' y='1393' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 1084591d705c6ee9fc8083fe6a2ff6674780d9754fc28d3fecc3dfed31ba02f1</text>
+<text x='20' y='731' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance band 60-70% (01_02 1.2). Their relation was RATIFIED 2026-09-17 (00_07 HW.33): 65% is the nominal, 60-70% is what the factory</text>
+<text x='20' y='745' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is judged by, and a graded part is judged as a whole (shells report only); all three stay quoted, none is dropped. Verify by Archimedes</text>
+<text x='20' y='759' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   open porosity + uCT connectivity (01_02 1.2)</text>
+<text x='20' y='773' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>9. Inspect: SEM before shipment at x500 (gyroid macro-pores), x5,000 (micro-roughness: report the AREAL Sa of the 01_02 1.2 acceptance row,</text>
+<text x='20' y='787' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   not a profile Ra) and x50,000 (nano-pores Sv) - all three frames apply to THIS part because it has the macro-pore geometry the x500 frame</text>
+<text x='20' y='801' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   is for; if nano-pores are not visible at x50,000 the etch is insufficient and EAAE is repeated (01_02 1.5). ATTENTION: the batch-level</text>
+<text x='20' y='815' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   SEM ACCEPTANCE CRITERION - what morphology passes, as opposed to which frames to shoot - does not exist in canon yet and is an open leg</text>
+<text x='20' y='829' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (00_07 HW.1); do not read its absence as a pass. uCT pore-gradient verification in the PRINTED range (acceptance targets set by 00_07</text>
+<text x='20' y='843' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   HW.33, not by this line). The uCT order must NAME its processing, because a pore size is an output of the algorithm chosen: report local</text>
+<text x='20' y='857' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   thickness by maximal inscribed sphere for BOTH phases (pore and metal ligament) - the measure our design instruments use (01_01 5.5), so</text>
+<text x='20' y='871' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the two compare - and mean chord length separately, labelled, never merged into one 'pore size'. Report (1) global porosity,</text>
+<text x='20' y='885' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cross-checked against Archimedes; (2) the radial profile of both thickness distributions, in shells outward from the part axis; (3)</text>
+<text x='20' y='899' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   topological integrity - disconnected metal islands, wall breaks, closed pores; plus the scan voxel size and the segmentation-threshold</text>
+<text x='20' y='913' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   method. Archimedes open porosity. LECO RH404 H&lt;100 ppm per batch or rejected. ICP-MS of the rinse water, Al&lt;1 ppb - confirms no corundum</text>
+<text x='20' y='927' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   residue (01_02 1.2, 1.5)</text>
+<text x='20' y='941' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>10. Zone 1 = the buried anode: gyroid walls in xylem sap (01_01 1)</text>
+<text x='20' y='955' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>11. The bus wire (01_01 1.4) is NOT printed with this part: it is a cold-drawn wire of the same alloy, welded to the anode's top face (01_01</text>
+<text x='20' y='969' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   3 step 1b). This part is printed WITHOUT a core - the gyroid lattice runs to the axis - and bus_rod_diameter_mm declares the WIRE</text>
+<text x='20' y='983' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   diameter, an assembly dimension, not a feature to print. The porosity and connectivity gates therefore measure the whole lattice</text>
+<text x='20' y='997' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cross-section</text>
+<text x='20' y='1011' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>12. slm_min_wall_mm is a VENDOR input (ratified 2026-09-10): absent means the canon 200 um default of 01_01 5.5 (a DEFAULT, not a constant -</text>
+<text x='20' y='1025' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   and a different quantity from the 0.3 mm gyroid wall floor of 01_02 1.7), and the same number also sets the measurement grid - a finer</text>
+<text x='20' y='1039' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   vendor floor costs about an order of magnitude more run time</text>
+<text x='20' y='1053' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>13. The factory sheet EXISTS since 2026-09-11 (draw anchor_zone1 -&gt; SVG + DXF, 00_07 HW.1): these notes are both the SOURCE of the</text>
+<text x='20' y='1067' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   acceptance contract and, through that generator, its CARRIER. Re-run draw after editing any note - nothing re-runs the published gallery</text>
+<text x='20' y='1081' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   for you</text>
+<text x='20' y='1095' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>14. The envelope O is NOT a press-fit surface: canon puts the Zone1&lt;-&gt;Zone2 contact band on the SOLID shank (01_01 4.2,</text>
+<text x='20' y='1109' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   cem/mechanical_lock.zone1.json), not on this lattice, so the Lame interference window of 01_01 4.2 sets the shank's band, not this one.</text>
+<text x='20' y='1123' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   That holds only while Zone 1 enters the sleeve no deeper than the shank - the insertion depth is itself open (00_07 HW.26 G1), and a</text>
+<text x='20' y='1137' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   deeper one would put this lattice into the bore and reopen the question. The diametral band of the envelope is therefore BLANK rather</text>
+<text x='20' y='1151' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   than absent: canon does not specify it, so quote your achievable as-printed band rather than reading a default into the blank</text>
+<text x='20' y='1165' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>15. The bus wire's root (its axis at the weld on the top face) must line up with the cathode channel: its offset from this part's</text>
+<text x='20' y='1179' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   outer-diameter axis is a REQUIRED datum of the anchor stack, and its tolerance is NOT SPECIFIED until the insertion depth is decided</text>
+<text x='20' y='1193' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   (00_07 HW.26 G1, HW.34)</text>
+<text x='20' y='1219' font-family='monospace' font-size='10' text-anchor='start' fill='#111' font-weight='bold'>TOLERANCES / GD&amp;T:</text>
+<text x='20' y='1235' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>outer_dia: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<text x='20' y='1249' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>bus_root_offset_from_od_axis: NOT SPECIFIED IN CEM / NOT SPECIFIED IN CEM mm</text>
+<rect x='540' y='1267' width='250' height='112' fill='none' stroke='#111' stroke-width='1'/>
+<line x1='630' y1='1267' x2='630' y2='1283' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1278' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PART</text>
+<text x='635' y='1278' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>Zone-1 anode (gyroid)</text>
+<line x1='540' y1='1283' x2='790' y2='1283' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1283' x2='630' y2='1299' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1294' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>MATERIAL</text>
+<text x='635' y='1294' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>V-free Ti alloy (01… → NOTES</text>
+<line x1='540' y1='1299' x2='790' y2='1299' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1299' x2='630' y2='1315' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1310' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>PROCESS</text>
+<text x='635' y='1310' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>SLM/LPBF MANDATORY … → NOTES</text>
+<line x1='540' y1='1315' x2='790' y2='1315' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1315' x2='630' y2='1331' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1326' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>UNITS / SCALE</text>
+<text x='635' y='1326' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>mm / 6:1</text>
+<line x1='540' y1='1331' x2='790' y2='1331' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1331' x2='630' y2='1347' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1342' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
+<text x='635' y='1342' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>6781ff64</text>
+<line x1='540' y1='1347' x2='790' y2='1347' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1347' x2='630' y2='1363' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1358' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
+<text x='635' y='1358' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>cem/anchor_zone1.pine.json</text>
+<line x1='540' y1='1363' x2='790' y2='1363' stroke='#111' stroke-width='0.5'/>
+<line x1='630' y1='1363' x2='630' y2='1379' stroke='#111' stroke-width='0.5'/>
+<text x='545' y='1374' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
+<text x='635' y='1374' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>82c1d27fc7a6ec9a2b… → FOOTER</text>
+<text x='806' y='1395' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 6781ff64 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/anchor_zone1.pine.json</text>
+<text x='806' y='1407' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 82c1d27fc7a6ec9a2bc2e35f2176cb4c71d9c257edb048830b2390c36bc3ad23</text>
 </svg>
