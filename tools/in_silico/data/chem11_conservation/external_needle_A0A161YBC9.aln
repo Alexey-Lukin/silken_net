@@ -1,0 +1,86 @@
+########################################
+# Program: needle
+# Rundate: Fri 18 Sep 2026 07:03:09
+# Commandline: needle
+#    -auto
+#    -stdout
+#    -asequence emboss_needle-R20260918-070304-0265-99399309-p2m.asequence
+#    -bsequence emboss_needle-R20260918-070304-0265-99399309-p2m.bsequence
+#    -gapopen 10.0
+#    -gapextend 0.5
+#    -aformat3 pair
+#    -sprotein1
+#    -sprotein2
+# Align_format: pair
+# Report_file: stdout
+########################################
+
+#=======================================
+#
+# Aligned_sequences: 2
+# 1: G8E4B5_COLGL
+# 2: A0A161YBC9_COLIC
+# Matrix: EBLOSUM62
+# Gap_penalty: 10.0
+# Extend_penalty: 0.5
+#
+# Length: 600
+# Identity:     378/600 (63.0%)
+# Similarity:   466/600 (77.7%)
+# Gaps:          12/600 ( 2.0%)
+# Score: 1962.0
+# 
+#
+#=======================================
+
+G8E4B5_COLGL       1 MKNLIPLSLLATTVAARPGSAPRDQAAATAYDYIVIGGGTSGLVVANRLS     50
+                     |:..:..|.|.:..||   :|.|...:...:|||::|||||||.:|||||
+A0A161YBC9_CO      1 MRGFLTTSALLSGAAA---AAVRFTNSTNNHDYIIVGGGTSGLALANRLS     47
+
+G8E4B5_COLGL      51 EDASVSVLVIEAGDSVLNNANVTNANGYGLAFGTDIDYAYQTTAQTYANN    100
+                     ||.:||||:||||.||.:|.||||.||||||||||||:|:|||.|||...
+A0A161YBC9_CO     48 EDPAVSVLIIEAGGSVFDNVNVTNPNGYGLAFGTDIDFAFQTTNQTYGGG     97
+
+G8E4B5_COLGL     101 ASTTLRAAKALGGTSTINGMAYTRAEASQIDAWETVGNEGWNWDALLPYY    150
+                     ...|:|||||||||||||||||||||||||||||.:||:||||:||.|||
+A0A161YBC9_CO     98 LVQTMRAAKALGGTSTINGMAYTRAEASQIDAWEQLGNQGWNWNALFPYY    147
+
+G8E4B5_COLGL     151 LKSETFQAPDAERSIKGHISYESDVHGHDGPLYTAYAYGSTNDSYPTSLN    200
+                     ||||.||.|:..|.:.||:.||..:||.||||.|.:.||.||.:.||.||
+A0A161YBC9_CO    148 LKSEHFQIPEPARQVAGHLDYEPKLHGEDGPLLTGWTYGQTNGTIPTVLN    197
+
+G8E4B5_COLGL     201 ATYQALNVPWKEDIAGGSMVGFASYPKTLNQDLNIRWDAARAYYFPYENR    250
+                     :|:|.|.:.|.||:.||.||||:.:|:|::|:..:|.||||||||||:||
+A0A161YBC9_CO    198 STFQNLGLHWNEDVNGGDMVGFSVFPRTVDQEEAVREDAARAYYFPYQNR    247
+
+G8E4B5_COLGL     251 TNLKVVLNTTAKKLTWASATNGTDATASGVEITAADGTTSVVTANKEVII    300
+                     |||||:|||:|:||||   .|.|..||.||||.:|||::|||.|.||||:
+A0A161YBC9_CO    248 TNLKVLLNTSAQKLTW---KNATVPTAEGVEIVSADGSSSVVKARKEVIL    294
+
+G8E4B5_COLGL     301 SAGALVSPLLLELSGVGNPAWLSQYGIETVVELPTVGENLQDQINNELIY    350
+                     |||||||||||||||:|.|..|.|:||||||.|||||||||||:||.|.:
+A0A161YBC9_CO    295 SAGALVSPLLLELSGIGRPTVLKQHGIETVVNLPTVGENLQDQMNNGLSF    344
+
+G8E4B5_COLGL     351 SPPTNFTSTYDSGVGAFVAYPSASHVFGTNESSASEELKSQLTAYADTVA    400
+                     ....:   |.| |....|||||.:|:| .|....::::|..|.|||.|||
+A0A161YBC9_CO    345 DMRNH---TVD-GTLTTVAYPSVAHIF-DNAEEVADQIKEALPAYAATVA    389
+
+G8E4B5_COLGL     401 IANGNVTKASDLLDFFQLQYDLIFKDQVPFAEVLIYIAKGSWGAEYWGLL    450
+                     ..|||||:|:|||:||::|:.|||:.|:|.||||:..|:|:|.:||||||
+A0A161YBC9_CO    390 SVNGNVTRAADLLEFFEMQWSLIFQSQIPIAEVLVNAAEGTWSSEYWGLL    439
+
+G8E4B5_COLGL     451 PFSRGSIHISQANSTAGALINPNYFMLDYDVELQVATAKFIRSVFGTGPF    500
+                     ||:||||||.: :||:.|:||||||:||:|:..||.||||||.::||.||
+A0A161YBC9_CO    440 PFARGSIHIGE-SSTSNAVINPNYFLLDWDLLEQVQTAKFIRKLYGTAPF    488
+
+G8E4B5_COLGL     501 ASVAGTETTPGFDVIPADADEATWKSWATKEYRSNFHPVATAAMLPKEKG    550
+                     ::.|||||.||.||:..|||...|:|:....||||||||.||||:|:|||
+A0A161YBC9_CO    489 SNFAGTETRPGLDVVAEDADIEGWESYIKGNYRSNFHPVGTAAMMPREKG    538
+
+G8E4B5_COLGL     551 GVVDAQLKVYGTTNVRVVDASVLPFQVCGHLVSTLYAVAEKASDLIKAAA    600
+                     |||||.||||||:|||||||||||||||||||||||||||:|:|||..::
+A0A161YBC9_CO    539 GVVDANLKVYGTSNVRVVDASVLPFQVCGHLVSTLYAVAERAADLISKSS    588
+
+
+#---------------------------------------
+#---------------------------------------

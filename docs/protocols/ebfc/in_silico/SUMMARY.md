@@ -400,14 +400,16 @@ free at µA (Ti 11.3 µV at 100 µA, 4×10⁴ below the 500 mV reference).
 fabrication verdict it reports **two branches**: `printed` (superseded) and `welded` (SHIPPED, ⚖️
 2026-09-10, cold-drawn wire, no as-built knockdown). Buckling SF **25×** (1 N pogo) even unsupported →
 still a non-issue in both. Sway fatigue: the bore **liner** (= the short-circuit insulation) doubles as
-lateral support → infinite life for **every** alloy in both branches (SF 4.2–11.7× printed, 8.5–23.3×
+lateral support → infinite life for **every** alloy in both branches (SF 3.8–10.4× printed, 7.5–20.7×
 welded — ⚠️ on the 6 mm «supported» idealisation, which overstates the coaxial root stress against a
 RIGID wall, sits inside the compliant bracket (§equilibrium below), and says nothing about a channel offset). 🔴 **Bare, the fabrication choice decides — and it decides two different verdicts.** Printed:
-infinite life for **4 of 6** (SF 1.10–3.04×), predicted fatigue failure for **none**, with Ta (**1.10**)
-and CP-Ti (**1.54**) marginal. Welded: every SF doubles → infinite life for **6 of 6** (SF 2.21–6.08×),
-the binding candidate Ta clearing the SF-2 line at **2.21**. ⚠️ **Both columns are the MIDPOINT of the
-`σ_e/σ_y` band, not the band** — at its low end Ta reads **1.96** and the welded row is 5 of 6, so «6 of
-6» may not be quoted without that tail (`§endurance_ratio_band`, swept 2026-09-12). Per-alloy margin tracks yield = SAME
+infinite life for **4 of 6** (SF 0.98–2.70×), **Ta (0.98) now a predicted fatigue failure** and CP-Ti
+(**1.37**) marginal. Welded: every SF doubles → infinite life for **5 of 6** (SF 1.96–5.41×), with the
+binding candidate **Ta at 1.96, below the SF-2 line**. ⚖️ **Both columns are the RATIFIED LOW END of the
+`σ_e/σ_y` band since 2026-09-18** (founder 2026-09-17, `00_07` HW.34) — at the midpoint they read 4 of 6
+and 6 of 6 (Ta 1.10 / 2.21), which is what this page carried until the re-run; the shipped LINED
+configuration is unaffected in verdict and moves 2.76 → **2.45** at its binding corner
+(`§endurance_ratio_band`, swept 2026-09-12, model moved 2026-09-18). Per-alloy margin tracks yield = SAME
 ranking as the thermal side → leading HW.24 candidates win on both. (`mechanical/bus_mechanical.json`)
 > ⚖️ **Re-run landed 2026-09-10 at the canon rod Ø1.0** (`00_07` HW.34) — and here the diameter move changed the CONCLUSION, not just the digits (σ ∝ 1/d³, SFs fall ×2.2). The unsupported branch did not thin out, it crossed the line: Ta 1.55 → **0.71**, CP-Ti 2.16 → **0.98**, and the four alloyed Ti dropped 3.8–4.3 → **1.74–1.94**, i.e. `unsupported_infinite_life` went **true → false for all six** (⚠️ that per-alloy boolean is now branch-suffixed — `unsupported_infinite_life_printed` / `_welded`; the bare name survives in `fabrication_branches` but as a LIST of alloys, so it resolves and no longer means the same thing). 🔑 **So lateral support is not a soft-alloy mitigation, it is a requirement for every candidate** (⚠️ an L_FREE_UNSUP = 36 mm-era reading, before the welded-wire verdict and the 23 mm CEM-derived span — the live per-branch answer is the table below) — which is the input the open HW.34 lining verdict was missing: a film that does not touch the rod (Parylene ~10 µm, anodised TiO₂ ≤10 µm in a sub-mm channel) insulates without supporting. ⚠️ The clause that stood here — «the model has no liner stiffness to give it credit for» — was true of that day's model and is not true now: since the clearance verdict the script computes the rod-plus-tube composite EI and reports both bounds, so a branch is no longer credited or denied support by omission.
 > ⚖️ **Fabrication branch added 2026-09-11** (`00_07` HW.34) — the welded verdict re-opened the lining one, so the script now emits both columns. **The re-run narrowed the support motive without retiring it:** dropping the as-printed derate lifts Ta and CP-Ti out of predicted failure (0.71→1.41, 0.98→1.96) and **not** over the infinite-life line, so bare-rod infinite life goes 0/6 → **4/6**, not 6/6 (⚠️ the same 36 mm era). 🔴 **The tracker verdict's stated ground said "all six" and its own adjacent table did not** — the arithmetic there was right (every SF doubles) and only the conclusion was wrong; corrected in `00_07`. ⛔ And the doubling belongs to the WIRE: the model is a homogeneous cantilever, while the ratified joint sits at the root of the modelled cantilever (⛔ not at the peak moment of the real overhang — that is the bore mouth, corrected 2026-09-12). ⚠️ That sentence stays true about the wire; what changed 2026-09-12 is that the seam is no longer UNPRICED — see the next note, and read `fatigue_model.weld_seam_geometry_modelled` beside `…_sensitivity_modelled` rather than the single boolean this line used to cite.
@@ -429,11 +431,11 @@ ranking as the thermal side → leading HW.24 candidates win on both. (`mechanic
 
 | `σ_e/σ_y` | bare: ∞-life | binding `Ta` SF |
 |---|---|---|
-| 0.40 | 5 / 6 | **1.96** |
-| 0.45 (model) | 6 / 6 | 2.21 |
+| **0.40 (model, ⚖️ ratified)** | **5 / 6** | **1.96** |
+| 0.45 (former model point) | 6 / 6 | 2.21 |
 | 0.50 | 6 / 6 | 2.45 |
 
-🔴 **«All six clear SF 2» FLIPS inside the band — at 0.40 `Ta` reads 1.96.** ⚠️ Until 2026-09-14 this table carried a second column — the seam's break-even `k` at each ratio (0.624 / 0.554 / 0.499) and whether our 0.50 marker covered it, a tie of 0.001 at the friendliest end. That column was priced on the retired drift-picture stress and no seam `k` exists to sweep since (`weld_seam.break_even_k_not_derived_because`), so the band now measures the bare-rod verdict only. ⛔ Which end to stand on is a ⚖️ (`00_07` HW.34) — the block measures, it does not choose, and the band ends are the constant's own comment, not a measurement of our alloys.
+🔴 **«All six clear SF 2» FLIPS inside the band — at 0.40 `Ta` reads 1.96, and since 2026-09-18 that end IS the model** (⚖️ founder 2026-09-17): the sweep measured the flip, the founder chose the end, and the page above now quotes it. ⚠️ Until 2026-09-14 this table carried a second column — the seam's break-even `k` at each ratio (0.624 / 0.554 / 0.499) and whether our 0.50 marker covered it, a tie of 0.001 at the friendliest end. That column was priced on the retired drift-picture stress and no seam `k` exists to sweep since (`weld_seam.break_even_k_not_derived_because`), so the band now measures the bare-rod verdict only. ⛔ Which end to stand on is a ⚖️ (`00_07` HW.34) — the block measures, it does not choose, and the band ends are the constant's own comment, not a measurement of our alloys.
 
 🔬 **WEAR BOUNDED 2026-09-12, RE-STATIONED 2026-09-14 — the ground the liner actually stands on stopped being an assertion, and now stands at the contact the equilibrium finds.** ⚖️ 2026-09-11 replaced the liner's fatigue ground with WEAR, and for a day nothing computed it: every `wear`/`fretting` mention in script `55` was prose, one of them literally «The discriminating costs are NOT computed here», so «rated for 20 years» had no instrument while [`fmea_fmeca_register.md`](../../hardware/fmea_fmeca_register.md) `#21` — RPN 288, second only to `#4` — asserted wear-through with none either. Same inversion as the seam input and the fit, third time: the specific wear rate of PEEK on Ti is in **no** canon row, **no** vendor answer and **no** experiment, so `wear_budget.specific_wear_rate_measured` stays `null` and the model prices the BUDGET. Chain, each link attackable on its own: **duty** = the sway-cycle count LOADED from script `62`'s real-wind cache (never retyped) × the slip per cycle at the station; **load** = the station's wall reaction from the contact equilibrium; **budget** = wear-through volume ÷ (load × duty). Two stations now, both from the solver: the **EXIT** under coaxial drag (reaction = drag − touchdown drag) and the **MOUTH** under a channel offset (a sustained reaction the reversing drag rotates the rod about; swept offsets, never measured). Shipped branch at its worst corner — the coaxial exit on the placeholder, µ 0.5, at the cycle ceiling script `62` writes (§HW.43):
 
@@ -1005,10 +1007,44 @@ variant take Gln71 from 140.1 to **2.9 Å²** and Gln405 from 119.8 to **18.9 Å
 against the sum of the singles is **1.4 Å²** — measured on the built variant rather than assumed either way.
 The undecided position was built as Ser for this one variant, which the cache flags as a build choice.
 
+### Conservation of the three positions (script 70) — the hold that gated `I401S`
+
+The patch score above says how much apolar area a swap removes; it says nothing about whether the position
+is allowed to change. That second question held `Ile401 → Ser` back, and its answer arrived on 2026-09-18
+from scripts in a session scratchpad — the same shape as the missing proxy this whole section is about.
+Script 70 is that answer in the tree: **332** homologs from **98** genera (four committed FASTA sources →
+quality filter → 90 % de-duplication, all re-run from the inputs), a query-anchored Gotoh/BLOSUM62
+projection, and the catalytic His537 as the instrument's own control.
+
+| position | query residue | frequency of it | Ser | anchored subset | anchored: query ⊥ Ser |
+|---|---|---|---|---|---|
+| **401** (compensates Gln405) | Ile | **3.6 %** | **15.7 %** | n = 103 | **6.8 % ⊥ 39.8 %** |
+| 70 (ratified `A70S`) | Ala | 14.2 % | 5.1 % | n = 266 | 15.0 % ⊥ 5.3 % |
+| 80 (ratified `L80D`) | Leu | 41.9 % | 2.1 % | n = 244 | 47.1 % ⊥ 1.2 % |
+| **537 — positive control** | His | **98.8 %** | 0 % | n = 241 | **100 % ⊥ 0 %** |
+| 580 — second control | His | 91.9 % | 0 % | n = 294 | 98.0 % ⊥ 0 % |
+
+**What the instrument added that the hold's answer did not carry.** The four homologs closest to us all
+keep Ile — *C. gloeosporioides* `G8E4B4` (99.8 %) and three *Cytospora* spp. (79.0–81.3 %), each at a 90 %
+local anchor — while the Ser carriers begin one step further out (*Gnomoniopsis smithogilvyi* 75.9 %, then
+the *Colletotrichum* set at ≈ 62–64 %). So «variable» is a statement about the family; our immediate
+neighbourhood keeps the residue being replaced. The verdict stands, its ground is narrower than it read.
+
+**Independence, measured rather than asserted.** The same column read from an EXTERNAL Clustal Omega
+alignment (EBI job, 85 accessions committed with the data) gives **61.9 % gaps** — the 398–406 stretch is
+indel-rich — and per-sequence agreement with our aligner of **33.3 %** raw, **71.8 %** once the cells where
+the external alignment places no residue at all are excluded (45 of 84 are exactly that; 9 more carry a
+residue in both and differ). The finding survives the gap-penalty sweep in direction (Ser 15.7–17.5 % against
+the query residue's 3.6–5.1 %), and the one external PAIRWISE alignment in the tree (EMBOSS Needle,
+*C. incanum*) agrees residue-for-residue. ⛔ Frequency is not consequence, there is no phylogeny and no
+tree-aware weighting here, and the 85-accession external subset is a curated sample whose selection rule was
+never recorded — all three are named in the cache's own `caveats`.
+
 **Ceiling.** An exposed apolar patch is a static, single-molecule surface descriptor — **not** an aggregation
 prediction: no rate, no solubility, no critical concentration is computed anywhere here. **Aggrescan3D was
-NOT run** (external web server), so the first half of the `L1 §2` recipe stays OPEN. No sequence conservation
-was consulted, no mutant was run in MD, and no ΔΔG of folding was computed — burial and DSSP are geometric
+NOT run** (external web server), so the first half of the `L1 §2` recipe stays OPEN. Sequence conservation is
+NOT consulted by THIS script — it is measured separately (script 70, below) and read beside this score, never
+merged into it — no mutant was run in MD, and no ΔΔG of folding was computed — burial and DSSP are geometric
 *proxies* for that risk. One AF3 model, one conformation. No catalytic-residue list exists in our canon for
 GcGDH, so catalysis is guarded only by the FAD-pocket shell, a geometric stand-in whose radius is ours. And
 the reference state is the **aglycosylated** mutant: what the removed glycans were shielding is not measured

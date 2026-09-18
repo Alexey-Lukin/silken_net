@@ -40,7 +40,9 @@ WHAT IS **NOT** COMPUTED — and each of these is absent, not merely undiscussed
     descriptor; aggregation is a multi-molecule, concentration-, pH- and shear-dependent
     kinetic process. Nothing here computes a rate, a solubility or a critical concentration.
   · No sequence conservation / phylogeny. A position may be catalytically or structurally
-    load-bearing for reasons invisible to geometry, and no alignment was consulted.
+    load-bearing for reasons invisible to geometry, and no alignment is consulted HERE — that
+    axis has its own instrument since 2026-09-18 (script 70), and its output is NOT an input to
+    this score: the two are read side by side, never merged.
   · No MD of any mutant, no ΔΔG of folding, no pKa model. The minimisation relaxes side
     chains in an implicit solvent for a few hundred steps; it does not judge stability.
   · No catalytic-residue list exists in our canon for GcGDH, so "catalytic" is approximated

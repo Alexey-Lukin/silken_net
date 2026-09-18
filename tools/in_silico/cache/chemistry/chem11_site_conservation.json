@@ -1,0 +1,1709 @@
+{
+  "script": "70_chem11_site_conservation.py",
+  "generated_utc": "2026-09-18T07:57:20Z",
+  "runtime_s": 10.1,
+  "question": "Is position 401 of dgrGcGDH conserved? (the hold that gated I401S in the ordered gene)",
+  "query": {
+    "accession": "G8E4B5",
+    "header": "tr|G8E4B5|G8E4B5_COLGL Glucose dehydrogenase OS=Colletotrichum gloeosporioides OX=474922 GN=gdh PE=2 SV=1",
+    "length": 600,
+    "residues_at_positions": {
+      "70": "A",
+      "80": "L",
+      "401": "I",
+      "405": "N",
+      "537": "H",
+      "580": "H"
+    },
+    "numbering_controls": {
+      "70": "A",
+      "80": "L",
+      "401": "I",
+      "405": "N",
+      "537": "H",
+      "580": "H"
+    }
+  },
+  "selection": {
+    "sources": {
+      "blast": {
+        "file": "homologs_blast.fasta",
+        "records": 500
+      },
+      "gmc_reviewed": {
+        "file": "homologs_gmc_reviewed.fasta",
+        "records": 32
+      },
+      "uniref50": {
+        "file": "homologs_uniref50.fasta",
+        "records": 36
+      },
+      "genus_scan": {
+        "file": "homologs_genus_scan.fasta",
+        "records": 46
+      }
+    },
+    "unique_accessions": 574,
+    "quality_filter": {
+      "pid_min_pct": 25.0,
+      "aligned_cols_min": 450,
+      "passed": 568
+    },
+    "dedup": {
+      "identity_max_pct": 90.0,
+      "min_overlap_positions": 300,
+      "kept": 332,
+      "genera": 98,
+      "genera_list": [
+        "Agaricus",
+        "Alternaria",
+        "Apiospora",
+        "Aplosporella",
+        "Apodospora",
+        "Aspergillus",
+        "Aureobasidium",
+        "Beauveria",
+        "Botryosphaeria",
+        "Botrytis",
+        "Brevibacterium",
+        "Candida",
+        "Cercospora",
+        "Coleophoma",
+        "Colletotrichum",
+        "Conoideocrella",
+        "Cordyceps",
+        "Crepidotus",
+        "Cudoniella",
+        "Curvularia",
+        "Cytospora",
+        "Didymella",
+        "Diplocarpon",
+        "Diplodia",
+        "Dothistroma",
+        "Drosophila",
+        "Elasticomyces",
+        "Elsinoe",
+        "Emericellopsis",
+        "Epicoccum",
+        "Escherichia",
+        "Exserohilum",
+        "Glonium",
+        "Gnomoniopsis",
+        "Gomphillus",
+        "Helicocarpus",
+        "Homo",
+        "Hortaea",
+        "Hymenoscyphus",
+        "Immersiella",
+        "Komagataella",
+        "Lachnellula",
+        "Lasiodiplodia",
+        "Lasiosphaeria",
+        "Lecanosticta",
+        "Lindgomyces",
+        "Macrophomina",
+        "Macropsalliota",
+        "Marssonina",
+        "Metarhizium",
+        "Methylovorus",
+        "Microdochium",
+        "Mollisia",
+        "Monascus",
+        "Monilinia",
+        "Myriangium",
+        "Mytilinidion",
+        "Neoarthrinium",
+        "Neodothiora",
+        "Neofusicoccum",
+        "Ophiocordyceps",
+        "Paecilomyces",
+        "Parachaetomium",
+        "Penicilliopsis",
+        "Penicillium",
+        "Periconia",
+        "Pestalotiopsis",
+        "Petromyces",
+        "Phanerodontia",
+        "Phialocephala",
+        "Phlyctema",
+        "Phyllosticta",
+        "Pichia",
+        "Polychaeton",
+        "Polyplosphaeria",
+        "Prunus",
+        "Pseudocercospora",
+        "Pseudogymnoascus",
+        "Pseudomassariella",
+        "Pyronema",
+        "Rasamsonia",
+        "Rosellinia",
+        "Saccharata",
+        "Sclerotinia",
+        "Septoria",
+        "Sphaerulina",
+        "Stachybotrys",
+        "Stemphylium",
+        "Talaromyces",
+        "Teratosphaeria",
+        "Thermoascus",
+        "Thyridium",
+        "Truncatella",
+        "Venturia",
+        "Venustampulla",
+        "Viridothelium",
+        "Zasmidium",
+        "Zopfia"
+      ]
+    },
+    "anchor_rule": {
+      "window_half_width_cols": 10,
+      "local_identity_min_pct": 40.0
+    },
+    "aligner": {
+      "algorithm": "Gotoh affine-gap, free end gaps (overlap)",
+      "matrix": "BLOSUM62",
+      "gap_open": -11.0,
+      "gap_extend": -1.0,
+      "implementation": "this script (numpy only)"
+    }
+  },
+  "positions": {
+    "70": {
+      "query_residue": "A",
+      "role": "freeze",
+      "deduped": {
+        "n": 332,
+        "identical": 47,
+        "identical_pct": 14.2,
+        "ser": 17,
+        "ser_pct": 5.1,
+        "gap_or_uncovered": 1,
+        "gap_or_uncovered_pct": 0.3,
+        "distribution": {
+          "P": 103,
+          "A": 47,
+          "T": 32,
+          "V": 29,
+          "E": 18,
+          "S": 17,
+          "K": 17,
+          "I": 12,
+          "F": 12,
+          "L": 9,
+          "H": 9,
+          "D": 7,
+          "G": 6,
+          "Y": 5,
+          "R": 3,
+          "Q": 3,
+          "N": 2,
+          "-": 1
+        }
+      },
+      "anchored": {
+        "n": 266,
+        "identical": 40,
+        "identical_pct": 15.0,
+        "ser": 14,
+        "ser_pct": 5.3,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "P": 91,
+          "A": 40,
+          "V": 28,
+          "T": 22,
+          "E": 15,
+          "S": 14,
+          "F": 12,
+          "K": 12,
+          "H": 9,
+          "I": 8,
+          "Y": 5,
+          "D": 3,
+          "R": 3,
+          "L": 2,
+          "N": 1,
+          "Q": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 83,
+        "identical_pct": 14.6,
+        "ser": 30,
+        "ser_pct": 5.3,
+        "gap_or_uncovered": 3,
+        "gap_or_uncovered_pct": 0.5,
+        "distribution": {
+          "P": 169,
+          "A": 83,
+          "V": 73,
+          "T": 50,
+          "F": 38,
+          "E": 31,
+          "S": 30,
+          "K": 20,
+          "I": 19,
+          "H": 11,
+          "L": 9,
+          "D": 8,
+          "Y": 8,
+          "G": 6,
+          "N": 4,
+          "-": 3,
+          "R": 3,
+          "Q": 3
+        }
+      }
+    },
+    "80": {
+      "query_residue": "L",
+      "role": "freeze",
+      "deduped": {
+        "n": 332,
+        "identical": 139,
+        "identical_pct": 41.9,
+        "ser": 7,
+        "ser_pct": 2.1,
+        "gap_or_uncovered": 6,
+        "gap_or_uncovered_pct": 1.8,
+        "distribution": {
+          "L": 139,
+          "K": 53,
+          "R": 32,
+          "N": 18,
+          "T": 15,
+          "A": 15,
+          "Y": 13,
+          "V": 8,
+          "S": 7,
+          "-": 6,
+          "Q": 6,
+          "M": 4,
+          "F": 3,
+          "I": 3,
+          "E": 3,
+          "P": 2,
+          "G": 2,
+          "D": 2,
+          "H": 1
+        }
+      },
+      "anchored": {
+        "n": 244,
+        "identical": 115,
+        "identical_pct": 47.1,
+        "ser": 3,
+        "ser_pct": 1.2,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "L": 115,
+          "K": 40,
+          "R": 29,
+          "N": 14,
+          "T": 10,
+          "A": 10,
+          "V": 6,
+          "Q": 5,
+          "Y": 3,
+          "S": 3,
+          "E": 2,
+          "F": 1,
+          "I": 1,
+          "M": 1,
+          "H": 1,
+          "P": 1,
+          "G": 1,
+          "D": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 264,
+        "identical_pct": 46.5,
+        "ser": 8,
+        "ser_pct": 1.4,
+        "gap_or_uncovered": 8,
+        "gap_or_uncovered_pct": 1.4,
+        "distribution": {
+          "L": 264,
+          "K": 90,
+          "T": 45,
+          "R": 45,
+          "N": 28,
+          "Y": 23,
+          "A": 19,
+          "Q": 9,
+          "V": 9,
+          "S": 8,
+          "-": 8,
+          "M": 4,
+          "F": 3,
+          "I": 3,
+          "E": 3,
+          "P": 2,
+          "G": 2,
+          "D": 2,
+          "H": 1
+        }
+      }
+    },
+    "401": {
+      "query_residue": "I",
+      "role": "freeze",
+      "deduped": {
+        "n": 332,
+        "identical": 12,
+        "identical_pct": 3.6,
+        "ser": 52,
+        "ser_pct": 15.7,
+        "gap_or_uncovered": 11,
+        "gap_or_uncovered_pct": 3.3,
+        "distribution": {
+          "A": 64,
+          "S": 52,
+          "N": 40,
+          "K": 38,
+          "E": 23,
+          "V": 21,
+          "Q": 13,
+          "I": 12,
+          "-": 11,
+          "L": 10,
+          "D": 10,
+          "T": 10,
+          "F": 7,
+          "G": 7,
+          "Y": 6,
+          "R": 5,
+          "H": 2,
+          "P": 1
+        }
+      },
+      "anchored": {
+        "n": 103,
+        "identical": 7,
+        "identical_pct": 6.8,
+        "ser": 41,
+        "ser_pct": 39.8,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "S": 41,
+          "A": 24,
+          "K": 11,
+          "I": 7,
+          "N": 6,
+          "V": 4,
+          "T": 4,
+          "E": 2,
+          "D": 2,
+          "L": 1,
+          "Q": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 14,
+        "identical_pct": 2.5,
+        "ser": 132,
+        "ser_pct": 23.2,
+        "gap_or_uncovered": 11,
+        "gap_or_uncovered_pct": 1.9,
+        "distribution": {
+          "S": 132,
+          "A": 105,
+          "N": 62,
+          "K": 53,
+          "E": 42,
+          "V": 37,
+          "Q": 31,
+          "D": 18,
+          "I": 14,
+          "Y": 13,
+          "T": 13,
+          "L": 11,
+          "-": 11,
+          "G": 8,
+          "R": 7,
+          "F": 7,
+          "H": 2,
+          "M": 1,
+          "P": 1
+        }
+      }
+    },
+    "405": {
+      "query_residue": "N",
+      "role": "freeze",
+      "deduped": {
+        "n": 332,
+        "identical": 118,
+        "identical_pct": 35.5,
+        "ser": 17,
+        "ser_pct": 5.1,
+        "gap_or_uncovered": 14,
+        "gap_or_uncovered_pct": 4.2,
+        "distribution": {
+          "G": 119,
+          "N": 118,
+          "S": 17,
+          "-": 14,
+          "D": 11,
+          "T": 9,
+          "H": 9,
+          "A": 8,
+          "I": 5,
+          "Y": 4,
+          "P": 4,
+          "V": 3,
+          "R": 3,
+          "Q": 2,
+          "L": 2,
+          "E": 2,
+          "F": 1,
+          "K": 1
+        }
+      },
+      "anchored": {
+        "n": 109,
+        "identical": 82,
+        "identical_pct": 75.2,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "N": 82,
+          "G": 20,
+          "V": 2,
+          "A": 2,
+          "H": 2,
+          "Y": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 215,
+        "identical_pct": 37.9,
+        "ser": 26,
+        "ser_pct": 4.6,
+        "gap_or_uncovered": 30,
+        "gap_or_uncovered_pct": 5.3,
+        "distribution": {
+          "N": 215,
+          "G": 214,
+          "-": 30,
+          "S": 26,
+          "A": 13,
+          "H": 12,
+          "D": 12,
+          "V": 11,
+          "T": 9,
+          "I": 5,
+          "P": 5,
+          "Y": 4,
+          "R": 4,
+          "Q": 2,
+          "L": 2,
+          "E": 2,
+          "F": 1,
+          "K": 1
+        }
+      }
+    },
+    "537": {
+      "query_residue": "H",
+      "role": "catalytic_control",
+      "deduped": {
+        "n": 332,
+        "identical": 328,
+        "identical_pct": 98.8,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 3,
+        "gap_or_uncovered_pct": 0.9,
+        "distribution": {
+          "H": 328,
+          "-": 3,
+          "A": 1
+        }
+      },
+      "anchored": {
+        "n": 241,
+        "identical": 241,
+        "identical_pct": 100.0,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "H": 241
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 562,
+        "identical_pct": 98.9,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 3,
+        "gap_or_uncovered_pct": 0.5,
+        "distribution": {
+          "H": 562,
+          "-": 3,
+          "L": 1,
+          "F": 1,
+          "A": 1
+        }
+      }
+    },
+    "580": {
+      "query_residue": "H",
+      "role": "catalytic_control",
+      "deduped": {
+        "n": 332,
+        "identical": 305,
+        "identical_pct": 91.9,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 1,
+        "gap_or_uncovered_pct": 0.3,
+        "distribution": {
+          "H": 305,
+          "N": 21,
+          "P": 1,
+          "A": 1,
+          "Q": 1,
+          "R": 1,
+          "Y": 1,
+          "-": 1
+        }
+      },
+      "anchored": {
+        "n": 294,
+        "identical": 288,
+        "identical_pct": 98.0,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "H": 288,
+          "N": 3,
+          "P": 1,
+          "A": 1,
+          "Q": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 539,
+        "identical_pct": 94.9,
+        "ser": 0,
+        "ser_pct": 0.0,
+        "gap_or_uncovered": 3,
+        "gap_or_uncovered_pct": 0.5,
+        "distribution": {
+          "H": 539,
+          "N": 21,
+          "-": 3,
+          "P": 1,
+          "A": 1,
+          "Q": 1,
+          "R": 1,
+          "Y": 1
+        }
+      }
+    }
+  },
+  "focus_position": 401,
+  "clade_locality": {
+    "position": 401,
+    "by_genus": {
+      "Aspergillus": {
+        "K": 12,
+        "N": 9,
+        "S": 8,
+        "V": 7,
+        "Q": 5,
+        "E": 4,
+        "R": 4,
+        "A": 3,
+        "F": 3,
+        "D": 2,
+        "T": 2,
+        "-": 2,
+        "G": 1
+      },
+      "Penicillium": {
+        "S": 21,
+        "N": 14,
+        "K": 6,
+        "E": 3,
+        "V": 3,
+        "A": 2,
+        "I": 2,
+        "Q": 1,
+        "H": 1,
+        "D": 1,
+        "G": 1,
+        "T": 1
+      },
+      "Colletotrichum": {
+        "S": 8,
+        "Y": 3,
+        "I": 2,
+        "L": 2,
+        "E": 1,
+        "R": 1,
+        "V": 1
+      },
+      "Botrytis": {
+        "A": 4,
+        "L": 2,
+        "P": 1,
+        "V": 1,
+        "I": 1,
+        "-": 1,
+        "T": 1,
+        "Y": 1,
+        "E": 1,
+        "K": 1
+      },
+      "Talaromyces": {
+        "K": 3,
+        "F": 2,
+        "T": 1,
+        "I": 1,
+        "V": 1,
+        "Y": 1
+      },
+      "Aureobasidium": {
+        "E": 6,
+        "Q": 2,
+        "D": 1
+      },
+      "Lachnellula": {
+        "A": 6,
+        "L": 1
+      },
+      "Diplodia": {
+        "A": 4,
+        "V": 2
+      },
+      "Neofusicoccum": {
+        "A": 4,
+        "E": 1
+      },
+      "Phyllosticta": {
+        "A": 2,
+        "Q": 1,
+        "K": 1,
+        "S": 1
+      },
+      "Cytospora": {
+        "I": 4
+      },
+      "Apiospora": {
+        "S": 3,
+        "A": 1
+      },
+      "Lasiodiplodia": {
+        "A": 2,
+        "V": 1,
+        "S": 1
+      },
+      "Sclerotinia": {
+        "A": 4
+      },
+      "Macrophomina": {
+        "A": 2,
+        "K": 1,
+        "T": 1
+      },
+      "Saccharata": {
+        "A": 3,
+        "I": 1
+      },
+      "Venturia": {
+        "Q": 2,
+        "V": 1,
+        "A": 1
+      },
+      "Zasmidium": {
+        "S": 2,
+        "A": 2
+      },
+      "Paecilomyces": {
+        "K": 2,
+        "S": 1
+      },
+      "Metarhizium": {
+        "E": 2,
+        "K": 1
+      },
+      "Aplosporella": {
+        "A": 2,
+        "N": 1
+      },
+      "Alternaria": {
+        "N": 2,
+        "L": 1
+      },
+      "Macropsalliota": {
+        "K": 1,
+        "-": 1,
+        "G": 1
+      },
+      "Agaricus": {
+        "G": 2,
+        "K": 1
+      },
+      "Drosophila": {
+        "-": 1,
+        "A": 1,
+        "G": 1
+      },
+      "Stachybotrys": {
+        "S": 1,
+        "F": 1
+      },
+      "Phialocephala": {
+        "N": 1,
+        "A": 1
+      },
+      "Teratosphaeria": {
+        "A": 2
+      },
+      "Coleophoma": {
+        "A": 1,
+        "T": 1
+      },
+      "Phlyctema": {
+        "A": 1,
+        "D": 1
+      },
+      "Mollisia": {
+        "N": 1,
+        "A": 1
+      },
+      "Diplocarpon": {
+        "N": 2
+      },
+      "Cudoniella": {
+        "N": 1,
+        "A": 1
+      },
+      "Didymella": {
+        "K": 1,
+        "N": 1
+      },
+      "Botryosphaeria": {
+        "A": 2
+      },
+      "Periconia": {
+        "N": 2
+      },
+      "Hortaea": {
+        "K": 2
+      },
+      "Cercospora": {
+        "T": 1,
+        "A": 1
+      },
+      "Crepidotus": {
+        "Q": 2
+      },
+      "Elsinoe": {
+        "D": 2
+      },
+      "Gnomoniopsis": {
+        "S": 1
+      },
+      "Pseudomassariella": {
+        "A": 1
+      },
+      "Microdochium": {
+        "S": 1
+      },
+      "Pestalotiopsis": {
+        "S": 1
+      },
+      "Monilinia": {
+        "A": 1
+      },
+      "Petromyces": {
+        "V": 1
+      },
+      "Hymenoscyphus": {
+        "E": 1
+      },
+      "Polychaeton": {
+        "A": 1
+      },
+      "Thermoascus": {
+        "E": 1
+      },
+      "Rasamsonia": {
+        "N": 1
+      },
+      "Marssonina": {
+        "K": 1
+      },
+      "Dothistroma": {
+        "A": 1
+      },
+      "Truncatella": {
+        "S": 1
+      },
+      "Epicoccum": {
+        "N": 1
+      },
+      "Penicilliopsis": {
+        "T": 1
+      },
+      "Septoria": {
+        "N": 1
+      },
+      "Curvularia": {
+        "N": 1
+      },
+      "Sphaerulina": {
+        "D": 1
+      },
+      "Lecanosticta": {
+        "E": 1
+      },
+      "Elasticomyces": {
+        "V": 1
+      },
+      "Exserohilum": {
+        "N": 1
+      },
+      "Pseudocercospora": {
+        "E": 1
+      },
+      "Monascus": {
+        "K": 1
+      },
+      "Neodothiora": {
+        "N": 1
+      },
+      "Glonium": {
+        "A": 1
+      },
+      "Venustampulla": {
+        "A": 1
+      },
+      "Pseudogymnoascus": {
+        "V": 1
+      },
+      "Neoarthrinium": {
+        "K": 1
+      },
+      "Viridothelium": {
+        "A": 1
+      },
+      "Zopfia": {
+        "S": 1
+      },
+      "Mytilinidion": {
+        "S": 1
+      },
+      "Gomphillus": {
+        "A": 1
+      },
+      "Myriangium": {
+        "E": 1
+      },
+      "Lindgomyces": {
+        "L": 1
+      },
+      "Thyridium": {
+        "D": 1
+      },
+      "Rosellinia": {
+        "A": 1
+      },
+      "Helicocarpus": {
+        "K": 1
+      },
+      "Homo": {
+        "F": 1
+      },
+      "Apodospora": {
+        "K": 1
+      },
+      "Candida": {
+        "-": 1
+      },
+      "Parachaetomium": {
+        "K": 1
+      },
+      "Lasiosphaeria": {
+        "A": 1
+      },
+      "Escherichia": {
+        "-": 1
+      },
+      "Conoideocrella": {
+        "G": 1
+      },
+      "Pyronema": {
+        "-": 1
+      },
+      "Pichia": {
+        "L": 1
+      },
+      "Ophiocordyceps": {
+        "V": 1
+      },
+      "Komagataella": {
+        "A": 1
+      },
+      "Stemphylium": {
+        "L": 1
+      },
+      "Immersiella": {
+        "-": 1
+      },
+      "Prunus": {
+        "I": 1
+      },
+      "Cordyceps": {
+        "H": 1
+      },
+      "Polyplosphaeria": {
+        "L": 1
+      },
+      "Methylovorus": {
+        "-": 1
+      },
+      "Beauveria": {
+        "T": 1
+      },
+      "Emericellopsis": {
+        "D": 1
+      },
+      "Phanerodontia": {
+        "Y": 1
+      },
+      "Brevibacterium": {
+        "-": 1
+      }
+    },
+    "ser_carrying_homologs": [
+      {
+        "acc": "A0A9W8Z4G1",
+        "organism": "Gnomoniopsis smithogilvyi",
+        "identity_to_query_pct": 75.9,
+        "local_window_identity_pct": 76.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A161YBC9",
+        "organism": "Colletotrichum incanum",
+        "identity_to_query_pct": 64.3,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0AAJ0ES17",
+        "organism": "Colletotrichum godetiae",
+        "identity_to_query_pct": 64.2,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A8H6N132",
+        "organism": "Colletotrichum plurivorum",
+        "identity_to_query_pct": 64.1,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5Q4BTX3",
+        "organism": "Colletotrichum shisoi",
+        "identity_to_query_pct": 63.4,
+        "local_window_identity_pct": 71.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A066XAU2",
+        "organism": "Colletotrichum sublineola",
+        "identity_to_query_pct": 63.2,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0AAD8PX48",
+        "organism": "Colletotrichum navitas",
+        "identity_to_query_pct": 63.0,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A1G4ASF8",
+        "organism": "Colletotrichum orchidophilum",
+        "identity_to_query_pct": 62.6,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ABR1VZS7",
+        "organism": "Apiospora phragmitis",
+        "identity_to_query_pct": 62.1,
+        "local_window_identity_pct": 48.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ABR1PRG0",
+        "organism": "Apiospora aurea",
+        "identity_to_query_pct": 61.1,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A8K0SNZ5",
+        "organism": "Stachybotrys elegans",
+        "identity_to_query_pct": 59.9,
+        "local_window_identity_pct": 57.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0AAW0R2V2",
+        "organism": "Apiospora kogelbergensis",
+        "identity_to_query_pct": 59.7,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9P8XUV9",
+        "organism": "Microdochium trichocladiopsis",
+        "identity_to_query_pct": 59.2,
+        "local_window_identity_pct": 57.0,
+        "source": "blast"
+      },
+      {
+        "acc": "W3X8K5",
+        "organism": "Pestalotiopsis fici (strain W106-1 / CGMCC3.15140)",
+        "identity_to_query_pct": 59.2,
+        "local_window_identity_pct": 57.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9GKK8",
+        "organism": "Penicillium atrosanguineum",
+        "identity_to_query_pct": 59.1,
+        "local_window_identity_pct": 71.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ABQ8WJ40",
+        "organism": "Penicillium chrysogenum",
+        "identity_to_query_pct": 59.1,
+        "local_window_identity_pct": 76.0,
+        "source": "blast"
+      },
+      {
+        "acc": "K9GES0",
+        "organism": "Penicillium digitatum (strain PHI26 / CECT 20796)",
+        "identity_to_query_pct": 59.0,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9FUW9",
+        "organism": "Penicillium angulare",
+        "identity_to_query_pct": 58.8,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ACD9KSI5",
+        "organism": "Penicillium viridicatum",
+        "identity_to_query_pct": 58.6,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A135LYG9",
+        "organism": "Penicillium patulum",
+        "identity_to_query_pct": 58.4,
+        "local_window_identity_pct": 71.0,
+        "source": "blast"
+      },
+      {
+        "acc": "W6PYC7",
+        "organism": "Penicillium roqueforti (strain FM164)",
+        "identity_to_query_pct": 58.2,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A1V6PI54",
+        "organism": "Penicillium decumbens",
+        "identity_to_query_pct": 58.1,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9X0BAM3",
+        "organism": "Penicillium cosmopolitanum",
+        "identity_to_query_pct": 58.1,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9LME5",
+        "organism": "Penicillium capsulatum",
+        "identity_to_query_pct": 58.0,
+        "local_window_identity_pct": 76.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A7R7ZK31",
+        "organism": "Aspergillus chevalieri",
+        "identity_to_query_pct": 57.8,
+        "local_window_identity_pct": 76.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9NZT7",
+        "organism": "Penicillium chermesinum",
+        "identity_to_query_pct": 57.6,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9XPL7",
+        "organism": "Penicillium fimorum",
+        "identity_to_query_pct": 57.5,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9FDL2",
+        "organism": "Penicillium argentinense",
+        "identity_to_query_pct": 57.4,
+        "local_window_identity_pct": 57.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9JEF6",
+        "organism": "Penicillium cinerascens",
+        "identity_to_query_pct": 57.4,
+        "local_window_identity_pct": 71.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A1V6TZE4",
+        "organism": "Penicillium steckii",
+        "identity_to_query_pct": 57.2,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0AAD6CZA8",
+        "organism": "Penicillium frequentans",
+        "identity_to_query_pct": 57.2,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9QQZ9",
+        "organism": "Penicillium brevicompactum",
+        "identity_to_query_pct": 57.1,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ACD9LTK9",
+        "organism": "Penicillium glandicola",
+        "identity_to_query_pct": 57.1,
+        "local_window_identity_pct": 57.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A1V6V205",
+        "organism": "Penicillium coprophilum",
+        "identity_to_query_pct": 57.0,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9HXZ3",
+        "organism": "Penicillium canariense",
+        "identity_to_query_pct": 56.7,
+        "local_window_identity_pct": 67.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A2G7FLC9",
+        "organism": "Aspergillus arachidicola",
+        "identity_to_query_pct": 55.3,
+        "local_window_identity_pct": 62.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A319E6W2",
+        "organism": "Aspergillus sclerotiicarbonarius (strain CBS 121057 / IBT 28362)",
+        "identity_to_query_pct": 53.5,
+        "local_window_identity_pct": 24.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9P8RL40",
+        "organism": "Truncatella angustata",
+        "identity_to_query_pct": 53.5,
+        "local_window_identity_pct": 48.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A6A6C739",
+        "organism": "Zasmidium cellare ATCC 36951",
+        "identity_to_query_pct": 52.3,
+        "local_window_identity_pct": 52.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A9W9PPB6",
+        "organism": "Penicillium atrosanguineum",
+        "identity_to_query_pct": 51.9,
+        "local_window_identity_pct": 29.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ABR1YR49",
+        "organism": "Phyllosticta capitalensis",
+        "identity_to_query_pct": 47.7,
+        "local_window_identity_pct": 48.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A6A6EE17",
+        "organism": "Zopfia rhizophila CBS 207.26",
+        "identity_to_query_pct": 47.5,
+        "local_window_identity_pct": 29.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A6A6CFC4",
+        "organism": "Zasmidium cellare ATCC 36951",
+        "identity_to_query_pct": 47.4,
+        "local_window_identity_pct": 43.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5N6JF22",
+        "organism": "Aspergillus minisclerotigenes",
+        "identity_to_query_pct": 47.1,
+        "local_window_identity_pct": 33.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A6A6Z821",
+        "organism": "Mytilinidion resinicola",
+        "identity_to_query_pct": 47.0,
+        "local_window_identity_pct": 29.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0ABQ6WN99",
+        "organism": "Aspergillus pseudocaelatus",
+        "identity_to_query_pct": 46.9,
+        "local_window_identity_pct": 48.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5N7ATC9",
+        "organism": "Aspergillus bertholletiae",
+        "identity_to_query_pct": 46.8,
+        "local_window_identity_pct": 33.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5N5D701",
+        "organism": "Lasiodiplodia theobromae",
+        "identity_to_query_pct": 46.7,
+        "local_window_identity_pct": 10.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5N6XGU9",
+        "organism": "Aspergillus sergii",
+        "identity_to_query_pct": 46.0,
+        "local_window_identity_pct": 29.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0A5N6T958",
+        "organism": "Aspergillus pseudotamarii",
+        "identity_to_query_pct": 45.9,
+        "local_window_identity_pct": 29.0,
+        "source": "blast"
+      },
+      {
+        "acc": "A0AAE0D9Z9",
+        "organism": "Colletotrichum kahawae",
+        "identity_to_query_pct": 31.8,
+        "local_window_identity_pct": 29.0,
+        "source": "genus_scan"
+      },
+      {
+        "acc": "V5FBY2",
+        "organism": "Paecilomyces variotii (strain NBRC 109023 / No. 5)",
+        "identity_to_query_pct": 27.4,
+        "local_window_identity_pct": 5.0,
+        "source": "genus_scan"
+      }
+    ],
+    "nearest_homologs_by_identity": [
+      {
+        "rank": 1,
+        "acc": "G8E4B4",
+        "organism": "Colletotrichum gloeosporioides",
+        "identity_to_query_pct": 99.8,
+        "residue_at_401": "I",
+        "local_window_identity_pct": 100.0
+      },
+      {
+        "rank": 2,
+        "acc": "A0A423WKH1",
+        "organism": "Cytospora schulzeri",
+        "identity_to_query_pct": 81.3,
+        "residue_at_401": "I",
+        "local_window_identity_pct": 90.0
+      },
+      {
+        "rank": 3,
+        "acc": "A0A423WL33",
+        "organism": "Cytospora chrysosperma",
+        "identity_to_query_pct": 80.3,
+        "residue_at_401": "I",
+        "local_window_identity_pct": 90.0
+      },
+      {
+        "rank": 4,
+        "acc": "A0A423XKX8",
+        "organism": "Cytospora leucostoma",
+        "identity_to_query_pct": 79.0,
+        "residue_at_401": "I",
+        "local_window_identity_pct": 90.0
+      },
+      {
+        "rank": 5,
+        "acc": "A0A9W8Z4G1",
+        "organism": "Gnomoniopsis smithogilvyi",
+        "identity_to_query_pct": 75.9,
+        "residue_at_401": "S",
+        "local_window_identity_pct": 76.0
+      },
+      {
+        "rank": 6,
+        "acc": "A0ACN3DVJ5",
+        "organism": "Cytospora mali",
+        "identity_to_query_pct": 74.0,
+        "residue_at_401": "I",
+        "local_window_identity_pct": 81.0
+      },
+      {
+        "rank": 7,
+        "acc": "A0A161YBC9",
+        "organism": "Colletotrichum incanum",
+        "identity_to_query_pct": 64.3,
+        "residue_at_401": "S",
+        "local_window_identity_pct": 67.0
+      },
+      {
+        "rank": 8,
+        "acc": "A0AAJ0ES17",
+        "organism": "Colletotrichum godetiae",
+        "identity_to_query_pct": 64.2,
+        "residue_at_401": "S",
+        "local_window_identity_pct": 67.0
+      },
+      {
+        "rank": 9,
+        "acc": "A0A8H6N132",
+        "organism": "Colletotrichum plurivorum",
+        "identity_to_query_pct": 64.1,
+        "residue_at_401": "S",
+        "local_window_identity_pct": 62.0
+      },
+      {
+        "rank": 10,
+        "acc": "A0A1Y2E825",
+        "organism": "Pseudomassariella vexata",
+        "identity_to_query_pct": 64.0,
+        "residue_at_401": "A",
+        "local_window_identity_pct": 62.0
+      }
+    ],
+    "identity_bins": [
+      {
+        "identity_range_pct": [
+          70.0,
+          101.0
+        ],
+        "n": 6,
+        "distribution": {
+          "I": 5,
+          "S": 1
+        },
+        "anchored_n": 6,
+        "anchored_distribution": {
+          "I": 5,
+          "S": 1
+        }
+      },
+      {
+        "identity_range_pct": [
+          50.0,
+          70.0
+        ],
+        "n": 191,
+        "distribution": {
+          "S": 39,
+          "A": 36,
+          "N": 33,
+          "K": 27,
+          "E": 14,
+          "V": 10,
+          "Q": 7,
+          "D": 6,
+          "T": 4,
+          "R": 4,
+          "I": 4,
+          "Y": 2,
+          "F": 2,
+          "L": 1,
+          "H": 1,
+          "G": 1
+        },
+        "anchored_n": 89,
+        "anchored_distribution": {
+          "S": 37,
+          "A": 21,
+          "K": 11,
+          "N": 5,
+          "V": 4,
+          "T": 3,
+          "E": 2,
+          "I": 2,
+          "D": 2,
+          "L": 1,
+          "Q": 1
+        }
+      },
+      {
+        "identity_range_pct": [
+          40.0,
+          50.0
+        ],
+        "n": 69,
+        "distribution": {
+          "A": 24,
+          "S": 10,
+          "E": 8,
+          "N": 7,
+          "Q": 6,
+          "K": 5,
+          "T": 3,
+          "D": 3,
+          "V": 1,
+          "R": 1,
+          "L": 1
+        },
+        "anchored_n": 8,
+        "anchored_distribution": {
+          "A": 3,
+          "S": 3,
+          "N": 1,
+          "T": 1
+        }
+      },
+      {
+        "identity_range_pct": [
+          33.0,
+          40.0
+        ],
+        "n": 23,
+        "distribution": {
+          "V": 8,
+          "-": 4,
+          "K": 3,
+          "G": 3,
+          "P": 1,
+          "I": 1,
+          "F": 1,
+          "T": 1,
+          "L": 1
+        },
+        "anchored_n": 0,
+        "anchored_distribution": {}
+      },
+      {
+        "identity_range_pct": [
+          25.0,
+          33.0
+        ],
+        "n": 43,
+        "distribution": {
+          "L": 7,
+          "-": 7,
+          "Y": 4,
+          "A": 4,
+          "F": 4,
+          "K": 3,
+          "G": 3,
+          "I": 2,
+          "S": 2,
+          "V": 2,
+          "T": 2,
+          "E": 1,
+          "H": 1,
+          "D": 1
+        },
+        "anchored_n": 0,
+        "anchored_distribution": {}
+      }
+    ]
+  },
+  "gap_penalty_robustness": [
+    {
+      "gap_open": -11.0,
+      "gap_extend": -1.0,
+      "n": 332,
+      "identical_pct": 3.6,
+      "ser_pct": 15.7,
+      "anchored_n": 103,
+      "anchored_identical_pct": 6.8,
+      "anchored_ser_pct": 39.8
+    },
+    {
+      "gap_open": -14.0,
+      "gap_extend": -2.0,
+      "n": 332,
+      "identical_pct": 5.1,
+      "ser_pct": 15.7,
+      "anchored_n": 95,
+      "anchored_identical_pct": 7.4,
+      "anchored_ser_pct": 41.1
+    },
+    {
+      "gap_open": -8.0,
+      "gap_extend": -1.0,
+      "n": 332,
+      "identical_pct": 4.5,
+      "ser_pct": 17.5,
+      "anchored_n": 119,
+      "anchored_identical_pct": 5.9,
+      "anchored_ser_pct": 37.8
+    }
+  ],
+  "external_msa": {
+    "tool": "Clustal Omega",
+    "provider": "EBI Job Dispatcher REST",
+    "job_id": "clustalo-R20260918-064814-0951-10344109-p1m",
+    "input_file": "external_msa_input.fasta",
+    "alignment_file": "external_msa_clustalo.fasta",
+    "sequences_in_alignment": 85,
+    "column_0based": 785,
+    "counts_excluding_query": {
+      "-": 52,
+      "S": 9,
+      "L": 5,
+      "N": 5,
+      "R": 3,
+      "K": 3,
+      "I": 3,
+      "M": 1,
+      "T": 1,
+      "Q": 1,
+      "A": 1
+    },
+    "n": 84,
+    "gap_pct": 61.9,
+    "ser_pct": 10.7,
+    "identical_pct": 3.6,
+    "our_reading_on_the_same_accessions": {
+      "n": 84,
+      "counts": {
+        "S": 11,
+        "V": 10,
+        "K": 9,
+        "-": 9,
+        "L": 8,
+        "I": 6,
+        "G": 6,
+        "F": 6,
+        "A": 4,
+        "Y": 4,
+        "N": 3,
+        "T": 2,
+        "Q": 1,
+        "R": 1,
+        "H": 1,
+        "D": 1,
+        "E": 1,
+        "P": 1
+      },
+      "ser_pct": 13.1,
+      "identical_pct": 7.1
+    },
+    "per_sequence_agreement_pct": 33.3,
+    "per_sequence_agreement_where_msa_places_a_residue_pct": 71.8,
+    "disagreement_kinds": {
+      "msa_gap_vs_our_residue": 45,
+      "same": 28,
+      "both_residue_but_different": 9,
+      "our_gap_vs_msa_residue": 2
+    },
+    "subset_selection_rule": "NOT RECORDED — the 85 accessions were chosen in the session that submitted the job; the input file is committed, so the set is inspectable, but it is a CURATED sample, not a defined stratum"
+  },
+  "external_pairwise": [
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260918-070304-0265-99399309-p2m",
+      "alignment_file": "external_needle_A0A161YBC9.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A161YBC9_COLIC",
+      "target_acc": "A0A161YBC9",
+      "target_organism": "Colletotrichum incanum",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true
+    }
+  ],
+  "controls": {
+    "numbering_asserted_against": "UniProt G8E4B5 (600 aa, ACT_SITE 537/580) — the script exits if any position does not carry its expected residue",
+    "self_alignment": {
+      "pid_pct": 100.0,
+      "aligned_cols": 600,
+      "positions_recovered": true
+    },
+    "positive_control_positions": [
+      537,
+      580
+    ]
+  },
+  "verdict": "Position 401 (I) is VARIABLE in this set: the query residue occurs in 3.6 % of 332 de-duplicated homologs (98 genera) and Ser in 15.7 %; in the anchored subset (n=103) it is 6.8 % vs 39.8 % Ser. The catalytic control His537 reads 98.8 % on the same instrument (100.0 % anchored, Ser 0.0 %), so the instrument separates an invariant position from a variable one. The external MSA (Clustal Omega, 84 sequences) reads the same column as 10.7 % Ser / 3.6 % I with 61.9 % gaps: the direction agrees, the magnitudes do not, and the gap fraction is why — per sequence the two aligners agree on 33.3 % of the shared accessions, rising to 71.8 % once the cells where the external alignment places NO residue are excluded (45 of 84 cells). The one external PAIRWISE alignment in the tree (Colletotrichum incanum, EMBOSS Needle) reads S and agrees with ours.",
+  "caveats": [
+    "A frequency in a selected set is not a conservation SCORE: there is no phylogeny and no tree-aware weighting here, and the 90 % de-duplication is a crude bias correction.",
+    "The external MSA covers a CURATED 85-accession subset whose selection rule was never recorded; it is committed, so the set can be inspected, but it is not a defined stratum.",
+    "The 398–406 stretch is indel-rich: the external MSA puts 61.9 % gaps in this column, so a column-based reading there is weaker than the same reading at a well-anchored position — which is exactly why the anchored subset and the gap-penalty sweep are reported beside the headline.",
+    "The two aligners' raw per-sequence agreement (33.3 %) is NOT a measure of how much they disagree about the residue: 45 of the 84 shared cells are the external alignment placing a GAP where ours places a residue, i.e. it makes no claim there. The number to read is the conditional one (71.8 %), and even that leaves 9 cells where both place a residue and the two differ.",
+    "Of the eight Ser-carrying homologs named in canon, ONE has an external pairwise alignment in the tree (C. incanum); the rest are this aligner's reading only.",
+    "Frequency says nothing about consequence: that a residue is common at a position is not evidence that putting it there is safe for folding, activity or expression."
+  ],
+  "declared_ceilings": [
+    "No structural, kinetic or stability consequence of any substitution is computed here.",
+    "The homolog pool is what four named queries returned on 2026-09-18; a re-fetch would return a different pool, and the committed FASTAs are what makes THIS number re-runnable.",
+    "Sequences are read as annotated in UniProt: signal peptides, isoforms and mis-annotated fragments are filtered only by the pid / aligned-column thresholds above."
+  ]
+}

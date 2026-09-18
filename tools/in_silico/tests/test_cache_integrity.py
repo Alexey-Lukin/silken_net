@@ -898,6 +898,91 @@ def test_chem11_aggregation_compensation():
     assert widths == {8.0, 10.0, 12.0}
 
 
+def test_chem11_site_conservation():
+    """Script 70 (CHEM.11): is position 401 conserved? — the hold that gated `I401S` in the ORDERED gene.
+
+    The headline percentages are pinned doc↔cache by `test_doc_cache_sync`; what is pinned HERE is
+    the integrity of the argument, i.e. the four things without which those percentages mean
+    nothing:
+      1. the counts are internally consistent — every distribution sums to its own `n`, `identical`
+         really is the query residue's count, and the anchored subset is a SUBSET. A frequency whose
+         denominator drifted from its numerator would read exactly like biology;
+      2. the POSITIVE CONTROL discriminates: the catalytic His537 must read far above the position
+         under test. This is the instrument's licence — if an invariant catalytic residue ever
+         reads as variable as a surface loop, the verdict it produced is void, not merely noisy.
+         ⛔ Deliberately a RELATION (control ≫ focus), never a corpus threshold: a pin on «98.8 %»
+         would red when a new homolog joins the pool, which is the corpus improving;
+      3. the gap-penalty sweep really varies the alignment (it is the one knob that decides an
+         indel-rich column) AND the finding survives it in DIRECTION: Ser stays the majority
+         alternative at 401 under every setting;
+      4. the INDEPENDENT legs are present and are not silently empty — an external MSA reading of
+         the same column, our reading of the SAME accessions beside it, the disagreement split by
+         KIND (a gap in the external alignment is not a disagreement about a residue), and the one
+         external pairwise alignment that agrees residue-for-residue.
+    """
+    path = CHEMISTRY / "chem11_site_conservation.json"
+    if not path.exists():
+        pytest.skip("chem11_site_conservation.json not computed")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    focus = str(d["focus_position"])
+
+    # 1 — the counts have to be arithmetic before they can be evidence
+    kept = d["selection"]["dedup"]["kept"]
+    assert d["selection"]["quality_filter"]["passed"] >= kept > 0
+    assert d["selection"]["dedup"]["genera"] == len(d["selection"]["dedup"]["genera_list"])
+    for pos, block in d["positions"].items():
+        qr = block["query_residue"]
+        assert d["query"]["residues_at_positions"][pos] == qr
+        assert d["query"]["numbering_controls"][pos] == qr, f"pos {pos}: control residue ≠ query residue"
+        for scope in ("deduped", "anchored", "all_quality_filtered"):
+            row = block[scope]
+            assert sum(row["distribution"].values()) == row["n"], f"pos {pos}/{scope}: distribution ≠ n"
+            assert row["identical"] == row["distribution"].get(qr, 0), f"pos {pos}/{scope}: identical ≠ count of {qr}"
+            assert row["ser"] == row["distribution"].get("S", 0)
+        assert block["deduped"]["n"] == kept
+        assert block["anchored"]["n"] <= block["deduped"]["n"], f"pos {pos}: anchored subset is larger than the set"
+
+    # 2 — the control's licence, as a relation
+    control_pos = str(d["controls"]["positive_control_positions"][0])
+    control = d["positions"][control_pos]
+    assert control["role"] == "catalytic_control"
+    assert control["deduped"]["identical_pct"] > 5.0 * d["positions"][focus]["deduped"]["identical_pct"], (
+        "the catalytic control no longer reads as far more conserved than the position under test — "
+        "the instrument stopped discriminating, so its verdict is void"
+    )
+    assert control["anchored"]["ser"] == 0, "Ser appears at the catalytic His — read the alignment, not the percentage"
+    assert d["controls"]["self_alignment"]["pid_pct"] == 100.0
+    assert d["controls"]["self_alignment"]["positions_recovered"] is True
+
+    # 3 — the sweep varies something, and the direction survives it
+    sweep = d["gap_penalty_robustness"]
+    assert len({(r["gap_open"], r["gap_extend"]) for r in sweep}) == len(sweep) >= 3
+    assert len({r["anchored_n"] for r in sweep}) > 1, "the gap penalties change nothing — the sweep proves nothing"
+    for row in sweep:
+        assert row["ser_pct"] > row["identical_pct"], (
+            f"at gap ({row['gap_open']}, {row['gap_extend']}) the query residue is no longer the minority — "
+            "the finding does not survive its own robustness sweep"
+        )
+
+    # 4 — the independent legs, and the disagreement split by kind
+    ext = d["external_msa"]
+    assert ext["n"] > 0 and ext["sequences_in_alignment"] > ext["n"]      # the query is excluded from the counts
+    kinds = ext["disagreement_kinds"]
+    ours = ext["our_reading_on_the_same_accessions"]
+    assert sum(kinds.values()) == ours["n"], "the disagreement kinds do not partition the shared accessions"
+    placed = ours["n"] - kinds.get("msa_gap_vs_our_residue", 0)
+    assert abs(ext["per_sequence_agreement_where_msa_places_a_residue_pct"]
+               - 100.0 * kinds.get("same", 0) / placed) < 0.06, \
+        "the conditional agreement is not derived from the kinds it claims to exclude"
+    assert ext["gap_pct"] > 0, "a gap-free external column would make the indel caveat a fabrication"
+    assert d["external_pairwise"], "the external pairwise leg is empty — the only non-our-aligner residue read is gone"
+    for pw in d["external_pairwise"]:
+        assert pw[f"residue_at_query_{focus}"] == pw["our_reading"] and pw["agrees"] is True, (
+            f"{pw['target_acc']}: the external pairwise alignment disagrees with ours at {focus} — "
+            "that is a finding about the aligner, not a test to relax"
+        )
+
+
 # ── Constants consistency ──
 
 def test_constants_importable():

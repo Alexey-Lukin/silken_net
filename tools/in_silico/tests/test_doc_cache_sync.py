@@ -81,6 +81,7 @@ METALLURGY = "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md"  # §2.1 synthetic sa
 SAP = "chemistry/sap_recipe_saturation.json"
 L1 = "docs/protocols/ebfc/in_silico/L1_protein_architecture.md"  # §2 aggregation recipe, owner = script 69
 CHEM11 = "chemistry/chem11_aggregation_compensation.json"
+CONSERVATION = "chemistry/chem11_site_conservation.json"  # §2 conservation block, owner = script 70
 
 # Each check: (label, doc-path, regex with ONE capture group = the doc number,
 #             cache-file, resolver(cache)->float, tolerance).
@@ -618,7 +619,7 @@ CHECKS = [
     # picture on 2026-09-14; the bare-rod sweep is what remains.)
     (
         "endurance band, binding Ta SF at the low end → bus_mechanical.json §endurance_ratio_band",
-        SUMMARY, rf"\| 0\.40 \| 5 / 6 \| \*\*{N}\*\* \|",
+        SUMMARY, rf"\| \*\*0\.40 \(model, ⚖️ ratified\)\*\* \| \*\*5 / 6\*\* \| \*\*{N}\*\* \|",
         "mechanical/bus_mechanical.json",
         lambda d: next(r for r in d["endurance_ratio_band"]["rows"]
                        if r["endurance_over_yield"] == 0.40)["binding_sf_unsupported"], 0.005,
@@ -963,6 +964,93 @@ CHECKS = [
         L1, rf"but only at [\d.]+–{N} Å",
         CHEM11, lambda d: max(d["provenance"]["reselects_only_within"]), 0.06,
     ),
+    # ── CHEM.11 conservation (script 70): the numbers that LIFTED the I401S hold ──
+    # These decide a gene that gets ORDERED, and until 2026-09-18 they had no measurer in the tree
+    # at all (00_07 HW.5.IS). Every one of them is quoted in the L1 §2 conservation block, so every
+    # one gets a row here: an unpinned number in that block is the exact shape the port removed.
+    (
+        "CHEM.11 pool size → conservation (L1 §2 — the denominator of every frequency below)",
+        L1, rf"\({N} homologs from [\d.]+ genera",
+        CONSERVATION, lambda d: d["selection"]["dedup"]["kept"], 0.6,
+    ),
+    (
+        "CHEM.11 genera count → conservation (L1 §2 — sampling breadth)",
+        L1, rf"homologs from {N} genera",
+        CONSERVATION, lambda d: d["selection"]["dedup"]["genera"], 0.6,
+    ),
+    (
+        "CHEM.11 Ile401 frequency → conservation (L1 §2 — the residue being replaced)",
+        L1, rf"\*\*Ile {N} % · Ser [\d.]+ %\*\*",
+        CONSERVATION, lambda d: d["positions"]["401"]["deduped"]["identical_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 Ser401 frequency → conservation (L1 §2 — the residue being put there)",
+        L1, rf"\*\*Ile [\d.]+ % · Ser {N} %\*\*",
+        CONSERVATION, lambda d: d["positions"]["401"]["deduped"]["ser_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 anchored subset size → conservation (L1 §2 — the reading with an alignment behind it)",
+        L1, rf"local window identity ≥ 40 %, n = {N}\)",
+        CONSERVATION, lambda d: d["positions"]["401"]["anchored"]["n"], 0.6,
+    ),
+    (
+        "CHEM.11 anchored Ser → conservation (L1 §2)",
+        L1, rf"\*\*Ser {N} % vs Ile [\d.]+ %\*\*",
+        CONSERVATION, lambda d: d["positions"]["401"]["anchored"]["ser_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 anchored Ile → conservation (L1 §2)",
+        L1, rf"\*\*Ser [\d.]+ % vs Ile {N} %\*\*",
+        CONSERVATION, lambda d: d["positions"]["401"]["anchored"]["identical_pct"], 0.06,
+    ),
+    (
+        # The instrument's licence to be believed at all — pinned like any other headline.
+        "CHEM.11 positive control His537 → conservation (L1 §2 — the instrument's licence)",
+        L1, rf"\*\*His537 reads {N} %\*\*",
+        CONSERVATION, lambda d: d["positions"]["537"]["deduped"]["identical_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 Ala70 frequency → conservation (L1 §2 — calibration against a ratified position)",
+        L1, rf"LESS conserved than Ala70 \({N} %\)",
+        CONSERVATION, lambda d: d["positions"]["70"]["deduped"]["identical_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 Leu80 frequency → conservation (L1 §2 — calibration)",
+        L1, rf"and Leu80 \({N} %\)",
+        CONSERVATION, lambda d: d["positions"]["80"]["deduped"]["identical_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 Asp-at-80 natural frequency → conservation (L1 §2 — what the OTHER ratified swap places)",
+        L1, rf"natural frequency at its own position is {N} %",
+        CONSERVATION, lambda d: round(100.0 * d["positions"]["80"]["deduped"]["distribution"].get("D", 0)
+                                      / d["positions"]["80"]["deduped"]["n"], 1), 0.06,
+    ),
+    (
+        "CHEM.11 external-MSA gap fraction → conservation (L1 §2 — why the column is weak)",
+        L1, rf"puts \*\*{N} % gaps\*\* in that column",
+        CONSERVATION, lambda d: d["external_msa"]["gap_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 aligner agreement, raw → conservation (L1 §2 — the number a reader would compute)",
+        L1, rf"agree per sequence on \*\*{N} %\*\* raw",
+        CONSERVATION, lambda d: d["external_msa"]["per_sequence_agreement_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 aligner agreement, conditional → conservation (L1 §2 — the number that means something)",
+        L1, rf"\*\*{N} %\*\* once the cells where the external",
+        CONSERVATION, lambda d: d["external_msa"]["per_sequence_agreement_where_msa_places_a_residue_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 closest Ser carrier → conservation (L1 §2 — Gnomoniopsis, the fifth-closest homolog)",
+        L1, rf"\*Gnomoniopsis smithogilvyi\* \({N} % identity",
+        CONSERVATION, lambda d: d["clade_locality"]["ser_carrying_homologs"][0]["identity_to_query_pct"], 0.06,
+    ),
+    (
+        "CHEM.11 weak-anchor 8th carrier → conservation (L1 §2 — why canon says SEVEN species)",
+        L1, rf"\*C. kahawae\*, carries Ser at only {N} % identity",
+        CONSERVATION, lambda d: min(h["identity_to_query_pct"] for h in d["clade_locality"]["ser_carrying_homologs"]
+                                    if h["organism"].startswith("Colletotrichum")), 0.06,
+    ),
 ]
 
 # ── HW.3: the recipe TABLE is script 67's premise, and its window is quoted slot by slot ──
@@ -1133,6 +1221,43 @@ CHECKS += [
      r"\| " + re.escape(doc_row) + _bus68_cell(k), _BUS68, lambda d, g=geo, fn=fn: fn(d, g), tol)
     for doc_row, geo in _BUS68_ROWS
     for k, (col, tol, fn) in enumerate(_BUS68_COLUMNS)
+]
+
+# ── CHEM.11 conservation: every cell of the SUMMARY table, row by row ──
+# The control rows are pinned exactly like the studied ones ON PURPOSE: the control is what licenses
+# the whole table, so a control cell that rots unnoticed would leave the instrument's credibility
+# resting on a number nothing checks. Deterministic pipeline (no stochastic step), so the tolerance
+# is the display digit, never a noise floor.
+_CONS_ROWS = (
+    # (position, the row label exactly as the table prints it)
+    ("401", r"\*\*401\*\* \(compensates Gln405\)"),
+    ("70", r"70 \(ratified `A70S`\)"),
+    ("80", r"80 \(ratified `L80D`\)"),
+    ("537", r"\*\*537 — positive control\*\*"),
+    ("580", r"580 — second control"),
+)
+_CONS_COLUMNS = (
+    # (column label, cells to skip after the query-residue column, resolver)
+    ("frequency of the query residue", 1, lambda b: b["deduped"]["identical_pct"]),
+    ("Ser %", 2, lambda b: b["deduped"]["ser_pct"]),
+    ("anchored n", 3, lambda b: b["anchored"]["n"]),
+)
+
+CHECKS += [
+    (f"CHEM.11 conservation, pos {pos} — {col} → conservation (SUMMARY table)",
+     SUMMARY, r"\| " + label + r" \|" + r"[^|]*\|" * skip + rf" \*?\*?(?:n = )?{N}\s?%?\*?\*? \|",
+     CONSERVATION, lambda d, p=pos, fn=fn: fn(d["positions"][p]), 0.6)
+    for pos, label in _CONS_ROWS
+    for col, skip, fn in _CONS_COLUMNS
+] + [
+    (f"CHEM.11 conservation, pos {pos} — anchored {what} → conservation (SUMMARY table, last column)",
+     SUMMARY, r"\| " + label + r" \|" + r"[^|]*\|" * 4 + rf" \*?\*?{first}{N}{second}\s?%\*?\*? \|",
+     CONSERVATION, lambda d, p=pos, k=key: d["positions"][p]["anchored"][k], 0.06)
+    for pos, label in _CONS_ROWS
+    for what, key, first, second in (
+        ("query residue", "identical_pct", "", r" % ⊥ [\d.]+"),
+        ("Ser", "ser_pct", r"[\d.]+ % ⊥ ", ""),
+    )
 ]
 
 
