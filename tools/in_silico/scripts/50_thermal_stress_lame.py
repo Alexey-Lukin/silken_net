@@ -14,8 +14,9 @@ temperature range -30°C to +40°C (Cherkasy forest extremes).
 Press-fit long-term integrity is modelled as STRESS RELAXATION (constant
 strain), NOT creep (constant stress): a press-fit fixes the interference
 geometrically, so the contact pressure decays toward a semicrystalline
-floor — it does not "open a gap". Failure metric = residual contact
-pressure P_c(t) vs xylem sap pressure. Also computes the winter cold-leak
+floor — it does not "open a gap". Reported metric = residual contact
+pressure P_c(t) vs xylem sap pressure (the Ti<->PEEK path is not asked to seal - 00_07 HW.34;
+the window floor is retention at +40 C - 00_07 HW.3). Also computes the winter cold-leak
 at the OUTER interface (PEEK shrinks away from the outer Ti shell).
 
 No FEA needed — axisymmetric Lamé equations have closed-form solution.
@@ -76,11 +77,11 @@ T_ASSEMBLY = T_ASSEMBLY_C            # °C — assembly temperature
 T_RANGE = np.linspace(-30, 40, 71)   # °C sweep
 
 # Press-fit H7/s6 band — diametral 5-34 µm (lib.constants). Radial interference = diametral / 2.
-I_DIA_MIN_UM = H7S6_INTERF_DIA_MIN_UM   # µm — min diametral (governs sealing)
+I_DIA_MIN_UM = H7S6_INTERF_DIA_MIN_UM   # µm — min diametral (governs the window floor)
 I_DIA_MAX_UM = H7S6_INTERF_DIA_MAX_UM   # µm — max diametral (governs hoop stress)
 DELTA_RADIAL_MIN = I_DIA_MIN_UM * 1e-6 / 2.0   # m — radial = diametral / 2
 DELTA_RADIAL_MAX = I_DIA_MAX_UM * 1e-6 / 2.0   # m
-P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap pressure (seal must exceed)
+P_SAP_MPa = 0.5              # MPa — conservative xylem positive/capillary sap pressure (the fit would have to exceed it to seal; it is not asked to, 00_07 HW.34)
 
 # PEEK stress relaxation under CONSTANT STRAIN (press-fit), NOT creep. Semicrystalline PEEK retains a
 # substantial relaxed (equilibrium) modulus — the crystalline phase forms a permanent elastic network, so
@@ -201,9 +202,9 @@ def main() -> int:
     # --- Press-fit contact pressure + STRESS RELAXATION (constant strain) ---
     # Lamé interference fit, rigid Ti shaft: contact radius b = R_INTERFACE (the shaft surface where PEEK
     # grips), NOT R_INNER. HW.3.IS bug-fix 2026-06-21: the old call passed R_INNER (the gyroid bus bore),
-    # over-stating P_c ~2.6×. P_c spans the H7/s6 interference band; MIN interference governs sealing.
+    # over-stating P_c ~2.6×. P_c spans the H7/s6 interference band; MIN interference governs the window floor.
     banner("Press-fit contact pressure & stress relaxation (constant strain)")
-    p0_min = contact_pressure(DELTA_RADIAL_MIN, R_INTERFACE, R_OUTER)  # Pa — worst case for sealing
+    p0_min = contact_pressure(DELTA_RADIAL_MIN, R_INTERFACE, R_OUTER)  # Pa — worst case for the window floor
     p0_max = contact_pressure(DELTA_RADIAL_MAX, R_INTERFACE, R_OUTER)  # Pa — worst case for hoop stress
     print(f"  H7/s6 interference: {I_DIA_MIN_UM:.0f}-{I_DIA_MAX_UM:.0f} µm diametral (Ø11) → P_c(0) = {p0_min/1e6:.2f}-{p0_max/1e6:.2f} MPa")
     print(f"  Model: stress relaxation (NOT creep) — P_c decays to {PEEK_RELAX_FLOOR*100:.0f}% floor (semicrystalline)")
@@ -230,7 +231,8 @@ def main() -> int:
     print(f"  A hypothetical rigid OUTER Ti shell would lose r·Δα·|ΔT| = {loss*1e6:.1f} µm of interference,")
     print("  but the real outer surface is the wound (wood E≈PEEK + callus), so that is a conservative")
     print("  artifact, not a seal path. ⚖️ The Ti↔PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18):")
-    print("  the PEEK gap is wet, and the capsule is guarded by the bus channel's own closure at its exit.")
+    print("  the PEEK gap is wet, and the capsule is to be guarded by the bus channel's own closure at its exit")
+    print("  (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet).")
 
     alloy_cmp = alloy_comparative()
 
@@ -240,10 +242,13 @@ def main() -> int:
     seal_word = ">" if pc_20_min > P_SAP_MPa else "≤"
     print(f"  At MIN H7/s6 interference the relaxed P_c ({pc_20_min:.2f} MPa) {seal_word} sap ({P_SAP_MPa} MPa) →")
     print("    the fit cannot seal at MIN — and it is not asked to: ⚖️ the path is NOT sealed by design (00_07 HW.34,")
-    print("    2026-09-18) — wet PEEK gap, channel closed at its exit; the ONE O-ring seals the radome joint (HW.33).")
+    print("    2026-09-18) — wet PEEK gap, channel to be closed at its exit (required; geometry after the pogo pin")
+    print("    P/N, HW.9; not in any drawing yet); the ONE O-ring seals the radome joint (HW.33).")
     print("    Barbs/retaining ring = AXIAL pull-out + anti-rotation")
     print("    ONLY (they do NOT seal). PEEK = structural/thermal isolator + (at max fit) a backup P_c.")
     print(f"  ✅ Ti↔PEEK press-fit survives 20+ years (thermal {worst['safety_factor']:.1f}× margin); the path is unsealed by design (HW.34).")
+    print("  ⚠️ But at the band's MIN the fit separates at +40 °C (script 56 `press_fit_separates`) — 5–34's MIN")
+    print("    lies below the window floor (00_07 HW.3).")
 
     # Plot
     _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -311,10 +316,10 @@ def main() -> int:
             "outer_radius_mm": R_OUTER * 1e3,
             "inner_interface": "tightens in cold (PEEK grips the Ti shaft harder) -- good",
             "hypothetical_outer_shell_loss_um": loss * 1e6,
-            "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. The Ti-PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18): the PEEK gap is wet, and the capsule is guarded by the bus channel's closure at its exit; the one O-ring seals the radome joint (00_07 HW.33).",
+            "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. The Ti-PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18): the PEEK gap is wet, and the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet); the one O-ring seals the radome joint (00_07 HW.33).",
         },
-        "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is guarded by the bus channel's closure at its exit, and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
-        "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse)",
+        "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet), and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
+        "verdict": "Ti↔PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse); but at the band's MIN the fit separates at +40 °C (script 56 press_fit_separates) - 5-34's MIN lies below the window floor (00_07 HW.3)",
     }
     json_path = OUT_DIR / "thermal_stress_lame.json"
     json_path.write_text(json.dumps(output, indent=2))

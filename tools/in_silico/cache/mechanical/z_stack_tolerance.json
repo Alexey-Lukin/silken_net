@@ -524,7 +524,7 @@
       }
     ],
     "missing_datum": "collar wall thickness \u2014 no CEM field, no canon row, no bayonet retention FORCE in canon to size it against; owner = the collar implementation leg (00_07 HW.33) and the lug/Z redesign (HW.8)",
-    "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also needs a running clearance inside its socket \u2014 nothing states it \u2014 the ceiling drops by 2*slot_clearance more (second column). The print floor applies to the SLM branch only: the flange route is open (00_07 HW.23)."
+    "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also needs a running clearance inside its socket \u2014 nothing states it \u2014 the ceiling drops by 2*slot_clearance more (second column). The flange route is CNC-from-bar or SLM + mandatory HIP (ratified 2026-09-18, 00_07 HW.23), so this print floor binds the SLM route only."
   },
   "vertical_stack_budget": {
     "inputs_mm": {

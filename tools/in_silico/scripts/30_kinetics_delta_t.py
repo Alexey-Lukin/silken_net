@@ -19,7 +19,8 @@ Key literature parameters
   j_max(25°C) = 881 µA/cm²    — Michaelis-Menten ASYMPTOTE of dgrGcGDH + Os-polymer: derived from
                                 Zafar 2012 (PMC3275720) Table 1 row dgrGcGDH (K_M^app 13.9 mM) and
                                 its 520 µA/cm² at 20 mM. A LAB CEILING — pH 7.4 phosphate, graphite,
-                                flow; the pH correction toward sap is NOT applied (lib/constants.py)
+                                flow; the pH correction toward sap is not folded in — the bracket is
+                                printed beside the ceiling, ⚖️ 2026-09-18 (§4b; lib/constants.py)
   Km = 13.9 mM                — K_M^app of that same row and the same fit, so the pair moves together.
                                 Apparent: it carries the hydrogel's mass-transfer resistance
   V_op = 0.5 V                — EBFC under load (OCV 0.6-0.8 V, 01_03 §1)

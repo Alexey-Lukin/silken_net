@@ -63,7 +63,7 @@ B = R_INTERFACE_M
 C = R_OUTER_M
 ALPHA_TI_1K = ALLOY_PROPERTIES[ALLOY_BASELINE]["alpha_1K"]   # Ti baseline α — One-Home alloy table
 DELTA_MECH = {
-    "min": H7S6_INTERF_DIA_MIN_UM * 1e-6 / 2.0,   # radial = diametral / 2 (sealing-governing)
+    "min": H7S6_INTERF_DIA_MIN_UM * 1e-6 / 2.0,   # radial = diametral / 2 (window-floor-governing)
     "max": H7S6_INTERF_DIA_MAX_UM * 1e-6 / 2.0,   # radial (hoop-governing)
 }
 
@@ -121,18 +121,24 @@ def main() -> int:
     # δ_total < 0 = the press-fit SEPARATES (thermal expansion exceeds the min mechanical interference);
     # contact can't carry tension → clamp P_c to 0 (gap). This is exactly why an elastomer seal, not the
     # press-fit, would be needed to seal the hot end — and the path is NOT sealed by design (00_07 HW.34,
-    # 2026-09-18): the PEEK gap is wet, and the capsule is guarded by the bus channel's closure at its exit.
+    # 2026-09-18): the PEEK gap is wet, and the capsule is to be guarded by the bus channel's closure at its
+    # exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet). The OPENING itself is
+    # not by design: it is why the band's MIN lies below the window floor (00_07 HW.3).
     seal = min(grid["min"], key=lambda s: s["P_c"])
     gap = seal["delta_total_um"] < 0
     pc0 = max(seal["P_c"], 0.0)
     banner("Sealing corner (warm + min fit → lowest initial P_c)")
     if gap:
         print(f"  T={seal['T_C']:.0f}°C, fit=min: δ_total = {seal['delta_total_um']:.1f} µm < 0 → press-fit SEPARATES (gap); P_c = 0")
-        print("  Hot + min-fit opens the Ti↔PEEK joint — and that is by design: the path is NOT sealed (HW.34,")
-        print("  2026-09-18); the capsule is guarded by the bus channel's closure at its exit.")
+        print("  Hot + min-fit opens the Ti↔PEEK joint — the path is unsealed by design (HW.34), but the OPENING")
+        print("  is not: it is why the band's MIN lies BELOW the window floor (00_07 HW.3, 2026-09-18). The capsule is")
+        print("  to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N,")
+        print("  HW.9; not in any drawing yet).")
     else:
         print(f"  T={seal['T_C']:.0f}°C, fit=min: δ_total = {seal['delta_total_um']:.1f} µm → P_c(0) = {pc0/MPA:.2f} MPa")
-        print("  (20-yr stress relaxation toward the semicrystalline floor + O-ring-essential → script 50 / report §2)")
+        print("  (20-yr stress relaxation toward the semicrystalline floor → script 50 / report §2)")
+        print("  — the Ti<->PEEK path is not sealed by design (00_07 HW.34); the window FLOOR bounds the band MIN")
+        print("  (the fit must still hold at +40 C, HW.3)")
 
     banner("Verdict")
     sf = worst["SF_t"]
@@ -209,7 +215,7 @@ def main() -> int:
             "delta_total_um": round(seal["delta_total_um"], 3),
             "P_c_initial_MPa": round(pc0 / MPA, 3),
             "press_fit_separates": bool(gap),
-            "note": "Hot + min-fit: δ_total<0 → press-fit gaps open → P_c clamped to 0; that is by design - the path is NOT sealed (00_07 HW.34, 2026-09-18): the PEEK gap is wet and the capsule is guarded by the bus channel's closure at its exit. 20-yr relaxation lives in script 50 / THERMAL_STRESS_REPORT §2-3.",
+            "note": "Hot + min-fit: δ_total<0 → press-fit gaps open → P_c clamped to 0; the path is unsealed by design (HW.34), but the OPENING is not: it is why the band's MIN lies BELOW the window floor (00_07 HW.3, 2026-09-18). The PEEK gap is wet and the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet). 20-yr relaxation lives in script 50 / THERMAL_STRESS_REPORT §2-3.",
         },
         "sweep": {fit: [slim(s) for s in grid[fit][::10]] for fit in ("min", "max")},
         "verdict": (

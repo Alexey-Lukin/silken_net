@@ -361,11 +361,28 @@ def test_bus_mechanical_interference_window():
     # 3. The free-outer premise of the Lamé model, CHECKED rather than assumed: the tube's OD grows
     #    under the fit, and if that growth ever closed the channel play the whole model would be the
     #    wrong one (a contained cylinder, not a free-outer sleeve).
-    rows = iw["od_growth_eats_channel_play"]["rows"]
+    #    ⚠️ Honest about when this can fire (adversarial read 2026-09-18): on the BORE-carried rows the play
+    #    never falls below play_zero (k < 1), so those rows cannot red it; the WIRE-carried rows can — they are
+    #    the ones where the growth is not paid back — and they are why this assertion is not vacuous.
+    play = iw["od_growth_eats_channel_play"]
+    rows = play["rows"]
     assert rows, "the play coupling lost its rows"
     assert all(r["outer_surface_still_free"] for r in rows), \
         "OD growth closed the channel play — free-outer Lamé no longer describes this pair"
     assert all(r["channel_radial_play_um"] > 0.0 for r in rows)
+    # 3a. BOTH attributions of the interference are published, and they bracket the zero-interference play
+    #     the way the physics says: k in (0, 1); the bore-carried ceiling ABOVE play_zero, the wire-carried
+    #     ceiling BELOW it; the published range is the rows' own extremes. Dropping the wire rows (the
+    #     one-sided reading that shipped first) or flipping a sign reds here.
+    k = play["k_od_growth_per_interference"]
+    assert 0.0 < k < 1.0, f"k = {k}: a free-outer sleeve pays back less than all of a bore-carried interference"
+    by_at = {r["at"]: r["channel_radial_play_um"] for r in rows}
+    assert {"ceiling", "ceiling (wire carries)", "floor (wire carries)"} <= set(by_at), \
+        "one attribution of the interference is missing — the play is set mostly by the WIRE"
+    p0 = play["nominal_radial_play_um"]
+    assert by_at["ceiling"] > p0 > by_at["ceiling (wire carries)"], \
+        "the two attributions must bracket play_zero at the window ceiling"
+    assert play["play_range_radial_um"] == [min(by_at.values()), max(by_at.values())]
     # 4. 🔴 The headline — and this REPLACED a tautology (adversarial review 2026-09-12). It used to
     #    read `nominal_fit_is_zero_interference is True`, computed as `abs(x - x) < 1e-9` from a
     #    constant defined AS the rod diameter: identically true, unfalsifiable from the model side,
@@ -384,6 +401,8 @@ def test_bus_mechanical_interference_window():
     nominal_radial_um = (wire - iw["bore_nominal_specified_mm"]) * 1e3 / 2.0
     assert iw["floor"]["radial_um"] <= nominal_radial_um <= iw["ceiling"]["radial_um"], \
         "the ratified nominal interference sits outside the window recomputed at its own bore"
+    # ⚠️ The next line is an ARITHMETIC-CONSISTENCY check between two cache keys computed from the same
+    #    variables — it cannot catch a modelling error, only a mis-wired key (adversarial read 2026-09-18).
     assert iw["nominal_vs_window_centre_diametral_um"] == pytest.approx(
         2.0 * nominal_radial_um - iw["required_nominal_offset_diametral_um"], abs=0.01)
 

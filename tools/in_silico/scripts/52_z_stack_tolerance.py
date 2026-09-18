@@ -527,8 +527,8 @@ def collar_radial_budget(boss: dict) -> dict:
                          "lug/Z redesign (HW.8)",
         "readings": "the verdict says the ceiling shrinks by the WALL (column ceiling_mm). If the collar also "
                     "needs a running clearance inside its socket — nothing states it — the ceiling drops by "
-                    "2*slot_clearance more (second column). The print floor applies to the SLM branch only: "
-                    "the flange route is open (00_07 HW.23).",
+                    "2*slot_clearance more (second column). The flange route is CNC-from-bar or SLM + mandatory "
+                    "HIP (ratified 2026-09-18, 00_07 HW.23), so this print floor binds the SLM route only.",
     }
 
 

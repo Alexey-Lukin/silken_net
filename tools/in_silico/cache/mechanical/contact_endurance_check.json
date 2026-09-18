@@ -8,7 +8,7 @@
   "budget_basis": "20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
   "parts": {
     "pogo_spring": {
-      "part": "pogo spring (Mill-Max 0906, BeCu C17200)",
+      "part": "pogo spring (BeCu C17200; Mill-Max 0906 data \u2014 the series, 0906 or 0908, is 00_07 HW.9's pick)",
       "framing_A_full_stroke_actuation": {
         "mfr_rated_life_cycles": [
           100000.0,
@@ -22,7 +22,7 @@
           164.0,
           4670.0
         ],
-        "verdict": "FAILS by this framing (the budget is 164-4670x the manufacturer's rated full-stroke actuation life) \u2014 but this framing is almost certainly WRONG for our load case: the mfr spec is for full-travel (1.40 mm nominal) plunge/mate cycles, and canon (01_01 \u00a72) already asserts the travel margin exists precisely so sway is absorbed as small residual contact micro-motion, not full-stroke actuation."
+        "verdict": "FAILS by this framing (the budget is 164-4670x the manufacturer's rated full-stroke actuation life) \u2014 but this framing is almost certainly WRONG for our load case: the mfr spec rates plunge/mate cycles, quoted at mid-stroke of the 1.40 mm nominal travel (00_07 HW.43), and canon (01_01 \u00a72) already asserts the travel margin exists precisely so sway is absorbed as small residual contact micro-motion, not full-stroke actuation."
       },
       "framing_B_low_amplitude_stress_fatigue": {
         "anchor_points_MPa_cycles": [
@@ -37,11 +37,11 @@
         ],
         "vhcf_caveat": "C17200 shows NO strict flat endurance limit in VHCF (>1e7) \u2014 stress continues to matter at very-high-cycle counts, unlike a classic steel fatigue limit.",
         "anchor_covers_budget_ceiling": true,
-        "verdict": "PARTIAL \u2014 physically the right model (micro-motion, not full-stroke), and the 240 MPa -> 1e10-cycle anchor covers the 4.67e+08-cycle budget ceiling IF the true working stress stays near or below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip is not computed anywhere in canon \u2014 missing datum: spring wire diameter / rate + measured (or bench-derived) micro-deflection amplitude during sway, not the full 1.5mm design travel."
+        "verdict": "PARTIAL \u2014 physically the right model (micro-motion, not full-stroke), and the 240 MPa -> 1e10-cycle anchor covers the 4.67e+08-cycle budget ceiling IF the true working stress stays near or below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip is not computed anywhere in canon \u2014 missing datum: spring wire diameter / rate + measured (or bench-derived) micro-deflection amplitude during sway, not the 1.40 mm nominal travel (1.40 +/- 0.13, 00_07 HW.43)."
       },
       "closed": false,
       "verdict": "TWO mismatched framings, neither closed \u2014 see framing_A (fails, likely wrong model) and framing_B (physically right, needs one missing datum) above.",
-      "missing_datum": "spring wire diameter/rate (Mill-Max 0906 full mechanical dwg) + actual sway-induced micro-deflection amplitude at the pogo contact (bench/field, not the 1.5mm design travel) \u2014 without it, framing B cannot be closed to a number."
+      "missing_datum": "spring wire diameter/rate (the chosen series' full mechanical dwg, 00_07 HW.9) + actual sway-induced micro-deflection amplitude at the pogo contact (bench/field, not the 1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43) \u2014 without it, framing B cannot be closed to a number."
     },
     "peek_barb_cyclic": {
       "part": "PEEK mechanical-lock barb (HW.26) \u2014 CYCLIC fatigue axis, distinct from HW.26's already-tracked STATIC cold-flow creep (time-based, not cycle-based \u2014 orthogonal failure mode, both need checking separately)",

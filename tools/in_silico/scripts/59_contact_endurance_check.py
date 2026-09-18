@@ -81,14 +81,15 @@ def pogo_spring_verdict(budget: dict) -> dict:
     ratio_hi = budget["ceiling"] / mfr_life_lo
     anchor_covers = becu_anchor_MPa_cycles[-1][1] >= budget["ceiling"]
     return {
-        "part": "pogo spring (Mill-Max 0906, BeCu C17200)",
+        "part": "pogo spring (BeCu C17200; Mill-Max 0906 data — the series, 0906 or 0908, is 00_07 HW.9's pick)",
         "framing_A_full_stroke_actuation": {
             "mfr_rated_life_cycles": [mfr_life_lo, mfr_life_hi],
             "budget_cycles": [budget["floor"], budget["ceiling"]],
             "overrun_x": [round(ratio_lo, 0), round(ratio_hi, 0)],
             "verdict": (f"FAILS by this framing (the budget is {ratio_lo:.0f}-{ratio_hi:.0f}x the manufacturer's "
                         "rated full-stroke actuation life) — but this framing is almost certainly WRONG for our "
-                        "load case: the mfr spec is for full-travel (1.40 mm nominal) plunge/mate cycles, and canon (01_01 §2) "
+                        "load case: the mfr spec rates plunge/mate cycles, quoted at mid-stroke of the 1.40 mm nominal "
+                        "travel (00_07 HW.43), and canon (01_01 §2) "
                         "already asserts the travel margin exists precisely so sway is absorbed as small residual "
                         "contact micro-motion, not full-stroke actuation."),
         },
@@ -102,15 +103,16 @@ def pogo_spring_verdict(budget: dict) -> dict:
                         f"{budget['ceiling']:.2e}-cycle budget ceiling IF the true working stress stays near or "
                         "below that. But the actual stress at the REAL sway deflection amplitude at the pogo tip "
                         "is not computed anywhere in canon — missing datum: spring wire diameter / rate + measured "
-                        "(or bench-derived) micro-deflection amplitude during sway, not the full 1.5mm design "
-                        "travel."),
+                        "(or bench-derived) micro-deflection amplitude during sway, not the 1.40 mm nominal "
+                        "travel (1.40 +/- 0.13, 00_07 HW.43)."),
         },
         "closed": False,
         "verdict": "TWO mismatched framings, neither closed — see framing_A (fails, likely wrong model) "
                    "and framing_B (physically right, needs one missing datum) above.",
-        "missing_datum": "spring wire diameter/rate (Mill-Max 0906 full mechanical dwg) + actual sway-"
+        "missing_datum": "spring wire diameter/rate (the chosen series' full mechanical dwg, 00_07 HW.9) + actual sway-"
                           "induced micro-deflection amplitude at the pogo contact (bench/field, not the "
-                          "1.5mm design travel) — without it, framing B cannot be closed to a number.",
+                          "1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43) — without it, framing B cannot be "
+                          "closed to a number.",
     }
 
 

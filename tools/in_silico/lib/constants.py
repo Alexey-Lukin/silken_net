@@ -71,8 +71,8 @@ J_MAX_25C = 881e-6           # A/cm² — Michaelis-Menten ASYMPTOTE of dgrGcGDH
 # ⚠️ CEILING, not our operating point: measured in 50 mM phosphate pH 7.4 on graphite under flow
 # (0.5 mL/min, +175 mV vs Ag|AgCl). Our medium is synthetic xylem sap at pH 5.75 (side series 4.5) on
 # etched Ti; a pH correction from the same enzyme's MCF data would be ×0.5-0.85 depending on
-# concentration and is deliberately NOT applied here — applying it is a modelling decision, not a
-# transcription → 00_07 HW.5.IS.
+# concentration and is not folded into the model — ⚖️ 2026-09-18 keeps the ceiling and prints the
+# bracket BESIDE it (see PH_KINETICS_SYGMUND below; 30 §4b) → 00_07 HW.5.IS.
 # ⛔ Do NOT read `494 µA/cm²` from this paper as an asymptote wherever you meet it: that figure is the
 # NATIVE enzyme's density at an operating point (20 mM), and a model that uses it as the MM asymptote
 # returns 247 µA/cm² under the source's own conditions against the 494 it was handed — wrong form,
@@ -243,13 +243,14 @@ R_INTERFACE_M = 5.5e-3          # m — Ti↔PEEK press-fit contact radius (Ø11
 R_OUTER_M = 7.5e-3             # m — PEEK sleeve outer radius (Ø15 wound / 2)
 T_ASSEMBLY_C = 20.0            # °C — press-fit assembly temperature
 T_FOREST_MIN_C = -30.0         # °C — Cherkasy winter extreme (worst case for PEEK hoop)
-T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for sealing)
+T_FOREST_MAX_C = 40.0          # °C — summer extreme (worst case for the window floor, 00_07 HW.3)
 
 # H7/s6 interference band (ISO 286, Ø11 in the 10-18 mm size band: H7 0/+18 µm, s6 +23/+34 µm
 # ⚠️ +23/+34 µm are the r6 deviations; s6 for 10-18 mm is +28/+39 µm, so the band below is H7/r6 and
-# H7/s6 would be 10-39 µm. Not moved here: it feeds 50/56 and the lock notes — 00_07 HW.3 verdict leg.
+# H7/s6 would be 10-39 µm. Not moved here: it feeds 50/56 and the lock notes; no table class is ratified — the band is to be
+# solved from the Lamé window (00_07 HW.3, 2026-09-18) and moves in ONE commit when the window's inputs arrive.
 # → 5-34 µm DIAMETRAL). The Lamé contact pressure takes RADIAL interference = diametral / 2.
-H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs sealing)
+H7S6_INTERF_DIA_MIN_UM = 5.0    # µm — min diametral interference (governs the window floor)
 H7S6_INTERF_DIA_MAX_UM = 34.0   # µm — max diametral interference (governs hoop stress)
 
 # Central bus rod (HW.34) — the monolithic conductor that threads the PEEK break to the pogo pad.
@@ -265,8 +266,9 @@ D_BUS_ROD_MM = 1.0              # mm — 01_01 §1.4 frozen dims (mirror: cem/an
 # SLM minimum printable wall — a DEFAULT, not a constant: the real number is a property of the vendor's
 # machine and powder and arrives through the RFQ (`slm_min_wall_mm` in the anchor CEMs). Home of the
 # default: 01_01 §5.5. C# twin: `TopologyCrossChecks.CanonSlmMinWallMm`. ⚠️ It is a printability
-# floor ONLY — on a load-carrying feature it bounds nothing structural, and on a part whose route is
-# still open (the Zone-3 flange: SLM ⊥ EBM ⊥ CNC, 00_07 HW.23) it is a floor for one branch only.
+# floor ONLY — on a load-carrying feature it bounds nothing structural, and on the Zone-3 flange, whose
+# route is ratified as CNC-from-bar ⊥ SLM + mandatory HIP (01_02 §1.7, 00_07 HW.23, 2026-09-18), it is
+# a floor for the SLM route only.
 SLM_MIN_WALL_DEFAULT_MM = 0.2   # mm — 01_01 §5.5 canon default
 
 # Trunk sway — the frequency every cycle count of the anchor stack is built from (00_07 HW.43; canon 01_02 §2.2,

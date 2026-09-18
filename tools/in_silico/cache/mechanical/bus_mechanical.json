@@ -1301,7 +1301,7 @@
           "exit_protrusion_specified_mm": null
         }
       ],
-      "note": "the mouth is a contact station only when the channel axis sits off the root axis by more than the play \u2014 swept, never measured; coaxially the drag contact is the exit. Geometric conditions only: no notch factor and no contact model exists in this tree. Input to the axial-extent and entry-radius verdicts and to the open coaxiality \u2696\ufe0f (00_07 HW.34)"
+      "note": "the mouth is a contact station only when the channel axis sits off the root axis by more than the play \u2014 swept, never measured; coaxially the drag contact is the exit. Geometric conditions only: no notch factor and no contact model exists in this tree. Input to the axial-extent and entry-radius verdicts and to the coaxiality requirement (ratified as a FORM 2026-09-18, its number after 00_07 HW.26 G1)"
     },
     "play_reduction": {
       "conformal_worst_radial_play_mm": 0.17,
@@ -1402,7 +1402,7 @@
     "knockdown_k_measured": null,
     "knockdown_k_source": "NOT MEASURED \u2014 no canon row, no vendor answer, no experiment in this tree. A value is an RFQ/literature input and enters through the Validation Gate (00_06 \u00a70), not through this constant",
     "break_even_k": null,
-    "break_even_k_not_derived_because": "SF_seam = k\u00b7SF_wire needs ONE fully-reversed stress at the root. The equilibrium gives the root two regimes: on a coaxial channel the drag is fully reversed with an amplitude that is a BRACKET (rigid wall = LOWER end, Ti-bore stop = upper, the contact compliance between them unmeasured); a channel off the root axis by more than the play puts a STATIC mean on the same section with the drag as amplitude. No mean-stress correction exists in this file, so the offset regime cannot be priced, and a k inverted from the rigid-wall end of the coaxial bracket alone would silently assume both a coaxiality the stack carries nowhere (00_07 HW.34) and a rigid wall. Until 2026-09-14 a k was inverted from a stress no equilibrium configuration produces",
+    "break_even_k_not_derived_because": "SF_seam = k\u00b7SF_wire needs ONE fully-reversed stress at the root. The equilibrium gives the root two regimes: on a coaxial channel the drag is fully reversed with an amplitude that is a BRACKET (rigid wall = LOWER end, Ti-bore stop = upper, the contact compliance between them unmeasured); a channel off the root axis by more than the play puts a STATIC mean on the same section with the drag as amplitude. No mean-stress correction exists in this file, so the offset regime cannot be priced, and a k inverted from the rigid-wall end of the coaxial bracket alone would silently assume both a coaxiality the stack carries only as a NOT-SPECIFIED requirement (ratified 2026-09-18, its number after 00_07 HW.26 G1) and a rigid wall. Until 2026-09-14 a k was inverted from a stress no equilibrium configuration produces",
     "root_section_loading": [
       {
         "geometry": "script 55 placeholder (HW.8)",
@@ -1665,10 +1665,11 @@
     "bare_infinite_life_for_all_is_invariant": false
   },
   "interference_window": {
-    "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon states no interference for that pair exists anywhere (01_01 1.4). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
+    "question": "00_07 HW.34 \u2014 the 2026-09-11 direction verdict asserts the tube is TIGHT on the wire; canon carried no nominal for that pair until 2026-09-18 (now 01_01 1.4: bore = wire - 11.41 um, fitted hot). This block derives the window the geometry allows, so a vendor tolerance becomes judgeable instead of being read into a blank",
     "pair_mm": {
       "wire_dia": 1.0,
-      "liner_bore_assumed": 1.0,
+      "liner_bore": 0.98859,
+      "liner_bore_is_ratified": true,
       "liner_wall": 0.15,
       "liner_od_nominal": 1.289,
       "liner_length": 18.0
@@ -1709,13 +1710,23 @@
     "vendor_inputs_measured": {
       "liner_bore_tolerance_um": null,
       "wire_od_tolerance_um": null,
-      "source": "NOT MEASURED - zero data in this tree for either band (00_07 HW.34, two open RFQ legs). The diametral window above is what their SUM may occupy; a quoted band wider than it means the ratified fit cannot be bought, it has to be selected, machined or heat-assembled"
+      "source": "NOT MEASURED - zero data in this tree for either band (00_07 HW.34, two open RFQ legs). The diametral window above is what their SUM may occupy; a quoted band wider than it is sorted around the ratified target, and the tube is fitted hot regardless (01_01 3 step 4a)"
     },
     "od_growth_eats_channel_play": {
       "nominal_radial_play_um": 25.0,
+      "k_od_growth_per_interference": 0.8752,
+      "play_sensitivity_um_per_um": {
+        "bore_under_nominal": 0.1248,
+        "wire_over_nominal": -0.8752
+      },
+      "play_range_radial_um": [
+        21.17,
+        30.37
+      ],
       "rows": [
         {
           "at": "floor",
+          "carried_by": "bore",
           "interference_radial_um": 0.38,
           "od_growth_radial_um": 0.33,
           "channel_radial_play_um": 25.05,
@@ -1723,6 +1734,7 @@
         },
         {
           "at": "mid-window",
+          "carried_by": "bore",
           "interference_radial_um": 5.64,
           "od_growth_radial_um": 4.93,
           "channel_radial_play_um": 25.7,
@@ -1730,13 +1742,32 @@
         },
         {
           "at": "ceiling",
+          "carried_by": "bore",
           "interference_radial_um": 10.89,
           "od_growth_radial_um": 9.53,
           "channel_radial_play_um": 26.36,
           "outer_surface_still_free": true
+        },
+        {
+          "at": "floor (wire carries)",
+          "carried_by": "wire, bore at the ratified nominal",
+          "interference_radial_um": 0.38,
+          "wire_over_nominal_radial_um": -5.33,
+          "od_growth_radial_um": 0.33,
+          "channel_radial_play_um": 30.37,
+          "outer_surface_still_free": true
+        },
+        {
+          "at": "ceiling (wire carries)",
+          "carried_by": "wire, bore at the ratified nominal",
+          "interference_radial_um": 10.89,
+          "wire_over_nominal_radial_um": 5.19,
+          "od_growth_radial_um": 9.53,
+          "channel_radial_play_um": 21.17,
+          "outer_surface_still_free": true
         }
       ],
-      "note": "with the RATIFIED nominal (2026-09-18) the interference comes from a smaller bore at a fixed wall, so play = play_zero + delta - OD growth: the 25 um the clearance table uses is the LOWER end across the window, i.e. conservative for edge bearing"
+      "note": "WHO carries the interference sets the direction (adversarial read 2026-09-18): play = play_zero + delta_bore - k*(delta_bore + e_wire). Carried by the bore the play grows slightly across the window; with the bore AT the ratified nominal a wire over nominal eats it (ceiling, wire carries) and a wire under nominal widens it (floor, wire carries). The 25 um zero-interference value the clearance table uses is NOT a lower bound, and the wire OD band is NOT MEASURED (00_07 HW.34)"
     },
     "axial_friction_lock": {
       "mu_is_swept_not_measured": true,
@@ -1816,7 +1847,7 @@
       "locked_over_whole_window": false,
       "locked_below_ceiling_on_every_mu": true,
       "not_modelled": "the thermal SIGN coupling, and it bites at the floor: the floor is DEFINED as the interference that just survives +40 C, so AT the floor at the hot extreme the interference is 0 and so is the grip - for every mu. The grip here is priced from P_c at the 20 C reference while loading a 40-80 K excursion, so `floor_is_locked` describes the reference state, never the end of the excursion that removes it. Anywhere above the floor the coupling is second-order; at the floor it is the whole answer (adversarial review 2026-09-12)",
-      "consequence": "above a fraction of a micrometre the WIRE is the second capture, so the differential axial stress is incurred whichever end is mechanically fixed. The ratified ground for one-end capture (20 yr creep under sustained compression) therefore does not discriminate except at the window FLOOR, where the tube slips and relieves instead - and nothing specifies which of the two ships (00_07 HW.34)"
+      "consequence": "above a fraction of a micrometre the WIRE is the second capture, so the differential axial stress is incurred whichever end is mechanically fixed. The ratified ground for one-end capture (20 yr creep under sustained compression) therefore does not discriminate except at the window FLOOR, where the tube slips and relieves instead - and the ratified nominal (window centre, fitted hot) ships the wire-gripped regime (00_07 HW.34, 2026-09-18)"
     },
     "not_modelled": {
       "creep_relaxation": "PEEK relaxes under sustained hoop stress, so over 20 yr the real floor RISES (grip decays) and the real ceiling FALLS (sustained stress limit < yield). The true window is NARROWER than this on BOTH sides. 01_01 4.3 tabulates relaxation and nothing reads it into this chain",
@@ -2046,7 +2077,7 @@
       "films_stricter_on_bounds_anywhere": false,
       "note": "on the rigid-wall figures the conformal films demand a stricter rate than the shipped liner at every swept \u00b5 where both touch down; on the BOUND they do not \u2014 at the Ti-bore stop the in-contact sliding is 6\u00b7r\u00b7t/L, proportional to the polymer's own wall, so a thick wall buys allowance and spends it on sliding in equal measure, and the tight end stops depending on the wall. The wear budget therefore discriminates the branches ONLY against a rigid wall; on the bracket it does not, and which reading applies is set by the contact compliance, measured nowhere"
     },
-    "second_interface_not_priced": "at the FLOOR of the interference window \u00a76 shows the tube slips on the WIRE instead, which puts a second sliding pair inside the same part. Nothing specifies which of the two ships, and this block prices only the ratified one",
+    "second_interface_not_priced": "at the FLOOR of the interference window \u00a76 shows the tube slips on the WIRE instead, which puts a second sliding pair inside the same part. The ratified nominal (window centre, fitted hot) ships the wire-gripped regime, so that second pair returns only at the window floor; this block prices only the ratified one",
     "duty_source": "tools/in_silico/cache/mechanical/wind_duty_cycle.json",
     "duty_anchors": [
       {
@@ -5559,5 +5590,5 @@
     "note": "radial_play answers ASSEMBLY, the coaxial cap and touchdown answer SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
   "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 7.5-20.7x (infinite life, all alloys) on the 6 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 5 of 6 alloys (SF 2.0-5.4x, placeholder span); short of the SF-2 line: Ta; none is predicted to fail. On the superseded PRINTED branch 4 of 6 reach infinite life bare (CP-Ti-Gr4 short of the SF-2 line), predicted failure: Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in script 55 placeholder (HW.8) [8.04, 56.3] MPa / lock window, near end [2.88, 20.1] MPa / lock window, far end [2.73, 19.1] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); script 55 placeholder (HW.8): forced PEEK liner 0.15 mm, partly conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, free none; lock window, near end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, far end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
-  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both window ends, the \u00a71-\u00a73 tables the placeholder only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The headline is not the width but the nominal: the tube's bore nominal is SPECIFIED NOWHERE ('ID 1.00' lives only in an open RFQ leg), so the ratified 'tight on the wire' is not a tolerance outcome yet, and landing in the window needs a nominal interference - a verdict, not a tolerance. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
+  "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both window ends, the \u00a71-\u00a73 tables the placeholder only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, 01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
 }

@@ -121,8 +121,8 @@
     "outer_radius_mm": 7.5,
     "inner_interface": "tightens in cold (PEEK grips the Ti shaft harder) -- good",
     "hypothetical_outer_shell_loss_um": 14.399999999999999,
-    "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. The Ti-PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18): the PEEK gap is wet, and the capsule is guarded by the bus channel's closure at its exit; the one O-ring seals the radome joint (00_07 HW.33)."
+    "note": "frozen anchor PEEK OD (O15) sits in the TREE (compliant wood + callus), NOT a rigid outer Ti shell -> the old outer-Ti cold-leak was a baseline artifact. The Ti-PEEK path is NOT sealed, by design (00_07 HW.34, 2026-09-18): the PEEK gap is wet, and the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet); the one O-ring seals the radome joint (00_07 HW.33)."
   },
-  "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is guarded by the bus channel's closure at its exit, and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
-  "verdict": "Ti\u2194PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse)"
+  "sealing": "the Ti-PEEK fit cannot seal at MIN fit (relaxed P_c <= sap) and is not asked to: the path is NOT sealed by design (00_07 HW.34, 2026-09-18) - the PEEK gap is wet, the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet), and the one O-ring seals the radome joint (00_07 HW.33); PEEK = structural isolator + residual P_c; barbs = axial pull-out + anti-rotation only (NOT sealing)",
+  "verdict": "Ti\u2194PEEK press-fit survives 20+ years seasonal cycling (stress relaxation to semicrystalline floor, not creep collapse); but at the band's MIN the fit separates at +40 \u00b0C (script 56 press_fit_separates) - 5-34's MIN lies below the window floor (00_07 HW.3)"
 }

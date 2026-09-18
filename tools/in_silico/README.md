@@ -87,6 +87,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 67 | `67_sap_recipe_saturation.py` | HW.3: calcium oxalate saturation of the `01_02 §2.1` synthetic sap — corner scan per test band, admissible Ca × oxalate window on a constant-free hard bound, base and buffer prices | ~13 s |
 | 68 | `68_bus_contact_equilibrium.py` | HW.34 / HW.23: bus rod in the cathode channel solved as unilateral contact (FE + active set) — where the wall is met under pogo drag, and what a channel off the root axis costs, swept over the Zone-1 insertion placeholder and lock window | ~10 s |
 | 69 | `69_chem11_aggregation_compensation.py` | CHEM.11: the hydrophobic-SASA proxy `L1 §2` cites but never had — declared, swept over radius and residue set, and read against the whole protein surface; then per hotspot the admissible Asp/Ser compensations, each built with pdbfixer and minimised side-chain-only, with the FAD-pocket / electron-path / burial / DSSP refusals priced in Å² | ~9 min |
+| 70 | `70_chem11_site_conservation.py` | CHEM.11: residue conservation at the freeze positions (70 · 80 · 401 · 405) of the aglycosylated dgrFAD-GDH over a committed homolog selection — the catalytic His537/His580 as the instrument's positive control, the 401 reading checked for clade locality, gap-penalty robustness and against an external MSA | ~10 s |
 
 Numeric prefixes encode the pipeline DAG and group: 02-08 prep (GAFF),
 10-16 L2 MD, 20-35 L3 DFT (23-25 + 24b L3b cathode DET; 27-35 advanced L3 —

@@ -49,7 +49,7 @@
     "delta_total_um": -1.724,
     "P_c_initial_MPa": 0.0,
     "press_fit_separates": true,
-    "note": "Hot + min-fit: \u03b4_total<0 \u2192 press-fit gaps open \u2192 P_c clamped to 0; that is by design - the path is NOT sealed (00_07 HW.34, 2026-09-18): the PEEK gap is wet and the capsule is guarded by the bus channel's closure at its exit. 20-yr relaxation lives in script 50 / THERMAL_STRESS_REPORT \u00a72-3."
+    "note": "Hot + min-fit: \u03b4_total<0 \u2192 press-fit gaps open \u2192 P_c clamped to 0; the path is unsealed by design (HW.34), but the OPENING is not: it is why the band's MIN lies BELOW the window floor (00_07 HW.3, 2026-09-18). The PEEK gap is wet and the capsule is to be guarded by the bus channel's closure at its exit (required; geometry after the pogo pin P/N, HW.9; not in any drawing yet). 20-yr relaxation lives in script 50 / THERMAL_STRESS_REPORT \u00a72-3."
   },
   "sweep": {
     "min": [

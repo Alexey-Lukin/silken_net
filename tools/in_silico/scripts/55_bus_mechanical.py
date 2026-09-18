@@ -529,9 +529,10 @@ def liner_thermal_interference_m(t_c: float, t_ref_c: float = T_ASSEMBLY_C) -> f
 def liner_od_growth_m(p_c_Pa: float) -> float:
     """Radial growth of the liner OD under bore pressure `p_c` — Lamé, free outer surface.
 
-    u(c) = (c/E)·σ_θ(c) with σ_θ(c) = 2·P_c·b²/(c²−b²). This is what EATS the channel play the
-    clearance table above treats as a constant 25 µm: that figure is only true at ZERO interference,
-    i.e. at exactly the fit the direction verdict rules out.
+    u(c) = (c/E)·σ_θ(c) with σ_θ(c) = 2·P_c·b²/(c²−b²), linear in δ: growth = k·δ. What it does to the
+    channel play depends on WHO carries δ (adversarial read 2026-09-18): interference carried by a bore under
+    nominal is mostly paid back (the free OD shrank by δ first), interference carried by a wire over nominal
+    is not — so the play the clearance table treats as a constant 25 µm is NOT a lower bound.
     """
     b2, c2 = LINER_BORE_M ** 2, LINER_OD_M ** 2
     return 2.0 * p_c_Pa * b2 * LINER_OD_M / (E_PEEK_PA * (c2 - b2))
@@ -873,7 +874,7 @@ def main() -> int:
           f"at 40 K ({axial_thermal['constrained_stress_MPa_at_80K']:.1f} at 80 K) of axial compression —")
     print("    a few per cent of PEEK yield, so it is NOT an impossibility. ⛔ What argues against")
     print("    both-end capture is 20 yr of creep/relaxation ratcheting, which this file does NOT")
-    print("    model; which end is fixed is a geometry verdict either way (00_07 HW.34).")
+    print("    model; which end is fixed is RATIFIED — the UPPER end, pad plane (00_07 HW.34, 2026-09-18).")
 
 
     # ── 4b. The MOUTH as a contact station — a channel OFF the root axis (00_07 HW.34) ────────────
@@ -959,7 +960,8 @@ def main() -> int:
     }
     # The OTHER end, which the drift picture never saw: coaxially the drag is reacted at the EXIT, where the
     # tube ends flush with the pogo face — the bore's exit edge meets the tube's end corner, edge on edge,
-    # the very form the ≥ 1.0 mm protrusion avoids at the mouth. Nothing specifies an exit radius.
+    # the very form the ≥ 1.0 mm protrusion avoids at the mouth. The exit edge FORM is ratified — a radius, not a
+    # chamfer, mirroring the entry (00_07 HW.34, 2026-09-18); its VALUE is NOT SPECIFIED.
     exit_contact = []
     for geo in GEOMETRIES:
         rows = [r for r in regimes if r["geometry"] == geo.label and r["play_side"] == "channel"]
@@ -974,7 +976,7 @@ def main() -> int:
                              "exit_radius_specified_mm": None, "exit_protrusion_specified_mm": None})
     print(f"  → Exit contact (coaxial drag): edge on edge at the tube's flush end, landing at "
           f"{exit_contact[0]['landing_angle_deg_rigid_wall']:.3f}° with at most {exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][0]:.2f}–"
-          f"{exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][1]:.2f} N (rigid wall) on the placeholder; no exit radius is specified anywhere.")
+          f"{exit_contact[0]['reaction_N_over_swept_mu_upper_rigid_wall'][1]:.2f} N (rigid wall) on the placeholder; the exit radius is ratified as a FORM (not a chamfer), its value NOT SPECIFIED.")
 
     # ── 4c. The §2 «supported» column against the equilibrium ────────────────────────────────────
     # The §2 table prices the liner-supported rod as a 6 mm cantilever (the placeholder's PEEK gap) propped
@@ -1077,7 +1079,8 @@ def main() -> int:
     #             amplitude on top.
     # ⛔ No k is derived from either. This file has no mean-stress correction, so the offset regime cannot be
     #    priced; and a k inverted from the rigid-wall end of the coaxial bracket alone would silently assume
-    #    both a coaxiality the stack carries nowhere (00_07 HW.34 ⚖️) and a rigid wall. What a seam acceptance
+    #    both a coaxiality the stack carries only as a NOT-SPECIFIED requirement (ratified FORM 2026-09-18, its
+    #    number after HW.26 G1) and a rigid wall. What a seam acceptance
     #    needs is given instead: the amplitude and mean at the root per regime and geometry, with their signs,
     #    on the same solver and the same offset points as script 68's sweep.
     banner("Weld seam at the root — the inputs a seam acceptance needs (no break-even k is derived)")
@@ -1157,7 +1160,8 @@ def main() -> int:
                                             "same section with the drag as amplitude. No mean-stress correction exists in "
                                             "this file, so the offset regime cannot be priced, and a k inverted from the "
                                             "rigid-wall end of the coaxial bracket alone would silently assume both a "
-                                            "coaxiality the stack carries nowhere (00_07 HW.34) and a rigid wall. Until "
+                                            "coaxiality the stack carries only as a NOT-SPECIFIED requirement (ratified 2026-09-18, its number "
+                                            "after 00_07 HW.26 G1) and a rigid wall. Until "
                                             "2026-09-14 a k was inverted from a stress no equilibrium configuration produces",
         "root_section_loading": root_loading,
         "what_a_seam_acceptance_needs": ["the joint's fatigue class / knockdown k from the vendor (weld class, WPS, "
@@ -1278,24 +1282,47 @@ def main() -> int:
         print("     fitted hot (01_01 §3 step 4a); a sum of the two bands wider than the window → sort around the same target.")
 
     # The play the clearance table above treats as a constant — priced across the window.
-    # ⚖️ With the ratified nominal the interference comes from a SMALLER BORE at a fixed wall, so the free OD
-    #    is smaller by 2δ before the fit swells it back by the Lamé growth: play = play_zero + δ − growth. The
-    #    pre-verdict reading (bore = rod Ø) had no such term, and read the whole growth as lost play.
+    # ⚖️ WHO carries the interference decides the direction (adversarial read 2026-09-18 — the first application
+    #    of the ratified nominal priced only one of the two and called it «the lower end»). At a FIXED wall a bore
+    #    that sits δ_b under the wire shrinks the free OD by δ_b before the fit swells it back by k·δ, while a wire
+    #    that sits e_w over nominal swells the OD by k·e_w with nothing to pay for it:
+    #        play = play_zero + δ_b − k·(δ_b + e_w),   k = growth/δ (Lamé, linear, free outer surface).
+    #    So the play moves +(1 − k) per µm of bore under nominal and −k per µm of wire over nominal: it is set
+    #    mostly by the WIRE, whose band is NOT MEASURED. The rows publish the two attributions that bracket the
+    #    window — all of δ on the bore, and the bore AT the ratified nominal with the wire carrying the rest.
     play_nominal = (D_CHANNEL_MM - (D_BUS + 2.0 * LINER_WALL_MM)) / 2.0 * MM_M
     bore_follows_fit = LINER_BORE_SPECIFIED_MM is not None
+    delta_bore_nominal = ((D_BUS - LINER_BORE_SPECIFIED_MM) / 2.0 * MM_M) if bore_follows_fit else 0.0
+    k_growth = liner_od_growth_m(per_um["P_c"] * ceiling) / ceiling
     play_rows = []
     for label, d in (("floor", floor), ("mid-window", 0.5 * (floor + ceiling)), ("ceiling", ceiling)):
         growth = liner_od_growth_m(per_um["P_c"] * d)
         play = play_nominal + (d if bore_follows_fit else 0.0) - growth
-        play_rows.append({"at": label, "interference_radial_um": round(d * 1e6, 2),
+        play_rows.append({"at": label, "carried_by": "bore" if bore_follows_fit else "wire (bore = rod dia)",
+                          "interference_radial_um": round(d * 1e6, 2),
                           "od_growth_radial_um": round(growth * 1e6, 2),
                           "channel_radial_play_um": round(play * 1e6, 2),
                           "outer_surface_still_free": bool(play > 0.0)})
         print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → OD +{growth * 1e6:>5.2f} µm radial → channel "
-              f"play {play_nominal * 1e6:.1f} → {play * 1e6:>5.2f} µm")
+              f"play {play_nominal * 1e6:.1f} → {play * 1e6:>5.2f} µm   (δ carried by the bore)")
     if bore_follows_fit:
-        print(f"  ✅ With the ratified nominal the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the LOWER end of the")
-        print("     window: the smaller bore pays for the Lamé growth, so edge bearing is read conservatively.")
+        for label, d in (("floor", floor), ("ceiling", ceiling)):
+            growth = liner_od_growth_m(per_um["P_c"] * d)
+            play = play_nominal + delta_bore_nominal - growth
+            play_rows.append({"at": f"{label} (wire carries)", "carried_by": "wire, bore at the ratified nominal",
+                              "interference_radial_um": round(d * 1e6, 2),
+                              "wire_over_nominal_radial_um": round((d - delta_bore_nominal) * 1e6, 2),
+                              "od_growth_radial_um": round(growth * 1e6, 2),
+                              "channel_radial_play_um": round(play * 1e6, 2),
+                              "outer_surface_still_free": bool(play > 0.0)})
+            print(f"    {label:<11s} δ {d * 1e6:>5.2f} µm → wire {(d - delta_bore_nominal) * 1e6:+.2f} µm over nominal, bore at "
+                  f"nominal → play {play * 1e6:>5.2f} µm   (δ carried by the wire)")
+        wire_rows = [r for r in play_rows if r["carried_by"].startswith("wire")]
+        print(f"  ⚠️ k = {k_growth:.3f}: the play moves +{1 - k_growth:.3f} µm per µm of bore under nominal and "
+              f"−{k_growth:.3f} per µm of wire over nominal — set mostly by the WIRE.")
+        print(f"     Bore at the ratified nominal: {wire_rows[-1]['channel_radial_play_um']:.2f} µm with the wire at the "
+              f"window ceiling … {wire_rows[0]['channel_radial_play_um']:.2f} µm at the floor. The "
+              f"{play_nominal * 1e6:.0f} µm zero-interference value is NOT a lower bound, and the wire's OD band is NOT MEASURED.")
     else:
         print(f"  🔴 So the {play_nominal * 1e6:.0f} µm radial play §2 and §4 use is the value at ZERO "
               f"interference — the one fit the direction")
@@ -1334,19 +1361,20 @@ def main() -> int:
                              for r in lock_rows for v in r["by_mu"].values())
     print(f"\n  → Locked over the WHOLE window including its floor, on every swept µ: {locked_everywhere}.")
     print(f"    Locked somewhere below the ceiling on every swept µ: {locked_above_floor}.")
-    print("  🔴 Consequence for the OPEN ⚖️ «which end is fixed»: above a fraction of a micrometre the")
+    print("  ⚖️ Consequence for «which end is fixed» (RATIFIED 2026-09-18: the UPPER end, pad plane): above a fraction of a micrometre the")
     print("     WIRE is the second capture, so the differential stress §4 prices is incurred whichever")
     print("     end is mechanically fixed — the ratified ground («both-end capture is what 20 yr of")
     print("     creep forbids») does not discriminate there. It discriminates ONLY at the very floor,")
-    print("     where the tube slips and relieves. ⛔ Which of the two ships is set by a number no")
-    print("     drawing carries, so this is an input to that verdict, not an answer to it.")
+    print("     where the tube slips and relieves. The ratified nominal (window centre, fitted hot) ships the")
+    print("     wire-gripped regime; the floor case returns only if relaxation above T_g (unmodelled) drops the fit.")
 
     interference_window = {
         "question": "00_07 HW.34 — the 2026-09-11 direction verdict asserts the tube is TIGHT on the "
-                    "wire; canon states no interference for that pair exists anywhere (01_01 1.4). "
-                    "This block derives the window the geometry allows, so a vendor tolerance becomes "
-                    "judgeable instead of being read into a blank",
-        "pair_mm": {"wire_dia": D_BUS, "liner_bore_assumed": LINER_BORE_ASSUMED_MM,
+                    "wire; canon carried no nominal for that pair until 2026-09-18 (now 01_01 1.4: bore = "
+                    "wire - 11.41 um, fitted hot). This block derives the window the geometry allows, so a "
+                    "vendor tolerance becomes judgeable instead of being read into a blank",
+        "pair_mm": {"wire_dia": D_BUS, "liner_bore": LINER_BORE_SPECIFIED_MM or LINER_BORE_ASSUMED_MM,
+                    "liner_bore_is_ratified": bool(LINER_BORE_SPECIFIED_MM is not None),
                     "liner_wall": LINER_WALL_MM, "liner_od_nominal": round(2 * LINER_OD_M / MM_M, 3),
                     "liner_length": LINER_LENGTH_MM},
         "bore_nominal_specified_mm": LINER_BORE_SPECIFIED_MM,
@@ -1399,14 +1427,22 @@ def main() -> int:
                                    "source": "NOT MEASURED - zero data in this tree for either band "
                                              "(00_07 HW.34, two open RFQ legs). The diametral window "
                                              "above is what their SUM may occupy; a quoted band wider "
-                                             "than it means the ratified fit cannot be bought, it has "
-                                             "to be selected, machined or heat-assembled"},
+                                             "than it is sorted around the ratified target, and the tube is "
+                                             "fitted hot regardless (01_01 3 step 4a)"},
         "od_growth_eats_channel_play": {"nominal_radial_play_um": round(play_nominal * 1e6, 2),
+                                        "k_od_growth_per_interference": round(k_growth, 4),
+                                        "play_sensitivity_um_per_um": {"bore_under_nominal": round(1.0 - k_growth, 4),
+                                                                       "wire_over_nominal": round(-k_growth, 4)},
+                                        "play_range_radial_um": [round(min(r["channel_radial_play_um"] for r in play_rows), 2),
+                                                                 round(max(r["channel_radial_play_um"] for r in play_rows), 2)],
                                         "rows": play_rows,
-                                        "note": ("with the RATIFIED nominal (2026-09-18) the interference comes from a smaller "
-                                                         "bore at a fixed wall, so play = play_zero + delta - OD growth: the 25 um the "
-                                                         "clearance table uses is the LOWER end across the window, i.e. conservative "
-                                                         "for edge bearing" if bore_follows_fit else
+                                        "note": ("WHO carries the interference sets the direction (adversarial read 2026-09-18): "
+                                                         "play = play_zero + delta_bore - k*(delta_bore + e_wire). Carried by the bore "
+                                                         "the play grows slightly across the window; with the bore AT the ratified "
+                                                         "nominal a wire over nominal eats it (ceiling, wire carries) and a wire under "
+                                                         "nominal widens it (floor, wire carries). The 25 um zero-interference value the "
+                                                         "clearance table uses is NOT a lower bound, and the wire OD band is NOT MEASURED "
+                                                         "(00_07 HW.34)" if bore_follows_fit else
                                                          "the 25 um the clearance table uses is the ZERO-"
                                                          "interference value, i.e. the one fit the direction "
                                                          "verdict excludes; at the ceiling it is ~40 % smaller, "
@@ -1433,8 +1469,9 @@ def main() -> int:
                                                "ratified ground for one-end capture (20 yr creep "
                                                "under sustained compression) therefore does not "
                                                "discriminate except at the window FLOOR, where the "
-                                               "tube slips and relieves instead - and nothing "
-                                               "specifies which of the two ships (00_07 HW.34)"},
+                                               "tube slips and relieves instead - and the ratified "
+                                               "nominal (window centre, fitted hot) ships the wire-gripped "
+                                               "regime (00_07 HW.34, 2026-09-18)"},
         "not_modelled": {"creep_relaxation": "PEEK relaxes under sustained hoop stress, so over 20 yr "
                                              "the real floor RISES (grip decays) and the real ceiling "
                                              "FALLS (sustained stress limit < yield). The true window "
@@ -1893,7 +1930,7 @@ def main() -> int:
                                      "axis by more than the play — swept, never measured; coaxially the drag contact "
                                      "is the exit. Geometric conditions only: no notch factor and no contact model "
                                      "exists in this tree. Input to the axial-extent and entry-radius verdicts and "
-                                     "to the open coaxiality ⚖️ (00_07 HW.34)"},
+                                     "to the coaxiality requirement (ratified as a FORM 2026-09-18, its number after 00_07 HW.26 G1)"},
             "play_reduction": play_reduction,
             "axial_thermal": axial_thermal,
             "supported_column_vs_equilibrium": supported_check,
@@ -1952,8 +1989,9 @@ def main() -> int:
             "branch_discrimination": branch_discrimination,
             "second_interface_not_priced": "at the FLOOR of the interference window §6 shows the tube "
                                            "slips on the WIRE instead, which puts a second sliding "
-                                           "pair inside the same part. Nothing specifies which of the "
-                                           "two ships, and this block prices only the ratified one",
+                                           "pair inside the same part. The ratified nominal (window centre, fitted "
+                                           "hot) ships the wire-gripped regime, so that second pair returns only at "
+                                           "the window floor; this block prices only the ratified one",
             "duty_source": str(WIND_CACHE.relative_to(REPO_ROOT)) if wind else None,
             "duty_anchors": duty_anchors,
             "duty_note": ("cycle counts are LOADED from script 62 (ten years of real NASA POWER wind "
@@ -2075,10 +2113,9 @@ def main() -> int:
                    "(weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. "
                    "THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since "
                    "2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The "
-                   "headline is not the width but the nominal: the tube's bore nominal is SPECIFIED NOWHERE "
-                   "('ID 1.00' lives only in an open RFQ leg), so the ratified 'tight on the wire' is not a "
-                   "tolerance outcome yet, and landing in the window needs a nominal interference - a verdict, "
-                   "not a tolerance. "
+                   "nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, "
+                   "01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire "
+                   "over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. "
                    "Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. "
                    "WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the "
                    "equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the "

@@ -298,12 +298,15 @@ def press_fit_window():
 
     # Interference band (diametral µm) — READ from lib.constants, never re-typed. ⛔ A local copy of the
     # ISO 286 deviations stood here, and it repeated the table read that constants.py flags: +23/+34 is the
-    # r6 row, so the band is H7/r6 under an H7/s6 label (s6 on Ø11 gives 10–39). Which class is meant is an
-    # open verdict (00_07 HW.3); until it lands the band stays the tree's working input, labelled as such.
-    I_MIN = H7S6_INTERF_DIA_MIN_UM   # governs sealing
+    # r6 row, so the band is H7/r6 under an H7/s6 label (s6 on Ø11 gives 10–39). No table class is
+    # ratified — the band is to be solved from the Lamé window (00_07 HW.3, ⚖️ 2026-09-18), and 5-34's MIN
+    # lies below its floor; until the window's inputs land the band stays the tree's working input,
+    # labelled as such.
+    I_MIN = H7S6_INTERF_DIA_MIN_UM   # governs the window floor
     I_MAX = H7S6_INTERF_DIA_MAX_UM   # governs hoop
 
-    print(f"  Shaft: ∅{D_SHAFT:.0f} mm — band labelled H7/s6, read from the r6 row (class open, 00_07 HW.3)")
+    print(f"  Shaft: ∅{D_SHAFT:.0f} mm — band labelled H7/s6, read from the r6 row (no table class ratified — the")
+    print("  band is to be solved from the Lamé window, HW.3 2026-09-18; 5-34's MIN lies below its floor)")
     print(f"  Interference: {I_MIN:.0f}–{I_MAX:.0f} µm diametral")
     print(f"  ΔCTE: {(ALPHA_PEEK - ALPHA_TI)*1e6:.1f}×10⁻⁶ /K")
     print()
@@ -349,8 +352,8 @@ def press_fit_window():
     print(f"  {'✅' if all(r['hoop_below_peek_yield'] for r in results.values()) else '❌'} hoop stress "
           f"{'below' if all(r['hoop_below_peek_yield'] for r in results.values()) else 'ABOVE'} PEEK yield "
           "over the whole range (the band MAX governs it)")
-    print(f"  {'⚠️ the band MIN opens to a CLEARANCE at ' + ', '.join(f'{t} °C' for t in opens) if opens else '✅ the band MIN keeps interference everywhere'}"
-          " — the fit alone does not seal; the O-ring is the seal (scripts 50/56)")
+    print(f"  {'⚠️ the band MIN opens to a CLEARANCE at ' + ', '.join(f'{t} °C' for t in opens) + ' (below the window floor, 00_07 HW.3)' if opens else '✅ the band MIN keeps interference everywhere'}"
+          " — the Ti<->PEEK path is not sealed by design (00_07 HW.34)")
 
     return results
 

@@ -588,6 +588,30 @@ CHECKS = [
         "mechanical/bus_mechanical.json",
         lambda d: d["interference_window"]["required_nominal_offset_diametral_um"], 0.05,
     ),
+    # ⚖️ 2026-09-18 — the first application of the ratified liner nominal published ONE attribution of the
+    # interference (all of it on the bore) and called it «the lower end»; an adversarial read showed the play is
+    # set mostly by the WIRE. These two pin the correction where it is quoted, so a revert to the one-sided
+    # reading reds here rather than surviving as prose.
+    (
+        "channel-play sensitivity k → bus_mechanical.json §od_growth_eats_channel_play",
+        SUMMARY, rf"with \*\*k = {N}\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: d["interference_window"]["od_growth_eats_channel_play"]["k_od_growth_per_interference"], 0.0005,
+    ),
+    (
+        "wire-carried play at the window ceiling → bus_mechanical.json §od_growth_eats_channel_play",
+        SUMMARY, rf"a wire over nominal eats it — \*\*{N} µm\*\* at the ceiling",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["interference_window"]["od_growth_eats_channel_play"]["rows"]
+                       if r["at"] == "ceiling (wire carries)")["channel_radial_play_um"], 0.05,
+    ),
+    (
+        "wire-carried play at the window ceiling (canon) → bus_mechanical.json §od_growth_eats_channel_play",
+        COAXIAL, rf"а дріт понад номінал — \*\*{N} мкм\*\* на стелі",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["interference_window"]["od_growth_eats_channel_play"]["rows"]
+                       if r["at"] == "ceiling (wire carries)")["channel_radial_play_um"], 0.05,
+    ),
     (
         "channel play at the window ceiling → bus_mechanical.json §od_growth_eats_channel_play",
         COAXIAL, rf"на стелі вікна люфт {N} мкм",
