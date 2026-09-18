@@ -55,7 +55,7 @@ Silken Net is designed for the inverse outcome — **xylemointegration**, the bo
 
 Two physical details make this possible:
 
-- **Flush Mount + Microfrezing surgical installation:** the cathode flange is recessed flush with the bark surface using step-drilled microfresing — not auger-bit drilling. Augers *tear* the cambium and trigger massive resinosis; precision microfresing *cuts*, preserving the living tissue layer. The cambium is never compromised, and there is no protruding hardware to act as a moment arm in high wind.
+- **Flush Mount + Microfrezing surgical installation:** the anchor is set by step-drilled microfresing so that only the cathode flange rises above the bark — its catalytic side strip stands above the bark surface and breathes sideways, since the radome covers its top face — not auger-bit drilling. Augers *tear* the cambium and trigger massive resinosis; precision microfresing *cuts*, preserving the living tissue layer. The cambium is never compromised, and there is no protruding hardware to act as a moment arm in high wind.
 - **Anti-overgrowth shield over the cathode:** Zone 1 (the anode) must be overgrown — that is how sap reaches the enzymes. Zone 3 (the cathode), however, requires permanent atmospheric O₂ access for the four-electron ORR reaction. A physical anti-overgrowth shield prevents callus from sealing the gas-diffusion layer. The forest grows around the implant, but never closes the window.
 
 This is what we mean when we say the architecture is **symbiotic** rather than **invasive**: we are not extracting from the tree. We are joining its vascular system on terms it accepts.
