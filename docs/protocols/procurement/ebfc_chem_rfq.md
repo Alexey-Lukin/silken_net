@@ -157,7 +157,7 @@
 
 | Поле | Специфікація (дзеркало `01_03 §2.1` Шар 2 · `§2.2` п.1) |
 |---|---|
-| **Продукт** | багатостінні вуглецеві нанотрубки з групами -COOH — під EDC/NHS-зшивку з TiO₂ |
+| **Продукт** | багатостінні вуглецеві нанотрубки з групами -COOH; кріплення до Ti декларує виконавець функціоналізації (⚖️ 2026-09-18) |
 | **Геометрія й функціоналізація** | діаметр · довжина · вміст -COOH канон числами не задає — вендор декларує марку, обираємо ми |
 | **🔴 Залишковий каталізатор** | вендор декларує вміст **Co/Ni/Fe** (TGA-залишок + ICP): Co стоїть у панелі ICP-MS coin-тесту як метал нанозиму, тож незадекларований кобальт трубок читався б як вимивання нанозиму |
 | **QC / acceptance** | TEM/SEM · Raman (I_D/I_G) · XPS або титрування (-COOH) · TGA · CoA |
@@ -283,7 +283,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 
 **I — carboxyl-functionalised multi-walled carbon nanotubes**
 
-- Product: MWCNT carrying carboxyl groups, for EDC/NHS coupling to a titanium oxide surface. We do not fix diameter, length or carboxyl content — state the grades you offer with those values.
+- Product: MWCNT carrying carboxyl groups. We do not fix diameter, length or carboxyl content — state the grades you offer with those values.
 - **Declare the residual catalyst metals (cobalt, nickel, iron)** by TGA residue and ICP: our ion-release analysis measures cobalt, and undeclared cobalt from the tubes would be misread.
 - QC / acceptance: TEM or SEM · Raman (I_D/I_G) · carboxyl content (XPS or titration) · TGA · CoA.
 - Quantity: gram scale.
