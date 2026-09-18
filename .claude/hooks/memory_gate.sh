@@ -184,7 +184,10 @@ SELF=${BASH_SOURCE[0]:-$0}
 # вимога ⊥ носій), hub-inline у той самий рядок «SSOT campaign history» поруч із 09-17, без власного рядка.
 # Заплачено ДО бампу: власний роутер без емодзі (79 → 74 B); сусідні гачки рядка вже мінімальні, чужих не
 # підрізано; залишок = роутер нового дому.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25538}
+# 2026-09-18: 25538 → 25526 (−12) — храповик опущено до факту після злиття ланцюжка §01 (п'ять посилань
+# рядка «SSOT campaign history» → один рядок `project_01_anchor_campaign`) і зняття стаба picogk; зекономлене
+# не стає запасом. Новий рефлекс «після компакції перечитай гочі з файлу» сплачено з того ж зрізу.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-25526}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -338,7 +341,14 @@ rb_dark() {
 # 2026-09-17: 168 → 169 — `project_01a_root_vs_crown_2026_09_17`.
 # 2026-09-17: 169 → 170 — `feedback_verdict_question_form` (форма присуду: рекомендація + ціна).
 # 2026-09-18: 170 → 171 — `project_01_verdict_form_2026_09_18` (вимога ⊥ носій; аркуш — вид класу).
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-171}
+# 2026-09-18: 171 → 166 (−5) — ЗЛИТТЯ, не втрата; бездомне перенесено в доми класу ДО видалення. П'ять
+# епізодів §01 (`project_verdict_sweep_2026_09_10` · `project_deep_archival_01a_2026_09_14` ·
+# `project_01a_tasks_2026_09_14` · `project_01a_root_vs_crown_2026_09_17` · `project_01_verdict_form_2026_09_18`)
+# → `project_01_anchor_campaign`; `feedback_verdict_question_form` → `feedback_verdict_lifecycle` (+ половина
+# «застосувати»); `project_bus_monolithic_onehome` → `project_anchor_bus`; `project_procurement_rfq_layer` →
+# `project_procurement`; стаб `reference_picogk_skill` знято (підстава зникла 2026-08-08, урок про компакцію —
+# в операційному мануалі індексу).
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -462,7 +472,9 @@ index_reach_expected() {
 # Прецедент дотримано: власний опис стиснуто (317 → 224 B) ПЕРЕД бампом, чужих не підрізано.
 # 2026-09-18: 45107 → 45215 (+108) — вартість опису нового дому `project_01_verdict_form_2026_09_18`.
 # Прецедент дотримано: власний опис стиснуто (185 → 130 B) ПЕРЕД бампом, чужих не підрізано.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-45215}
+# 2026-09-18: 45215 → 44148 (−1067) — храповик опущено до факту після того самого злиття (вісім описів
+# пішли, три нові короткі прийшли); зекономлене не стає запасом.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-44148}
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
