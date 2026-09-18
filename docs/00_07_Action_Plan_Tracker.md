@@ -104,8 +104,8 @@
 #### DOC-T.111 — Скіли-важковаговики: розщеплення й зріз гнилого (in-silico · deploy · ssot-maintenance · dependency-update · legal-business)
 - **P3** · 🤖 · 🟡 · → [`00_06 §3`](00_06_SSOT_Documentation_Standard)
 - **Стан:** Тіло скіла вантажиться при кожному виклику й обрізається після компакції — так 2026-09-10 зламалось правило галереї picogk, яке скіл сам і ніс. Вимір тіл `SKILL.md` 2026-09-18: deploy 142.6 kB · ssot-maintenance 102.8 kB (уже розщеплений, тіло наросло знову) · dependency-update 69.8 kB · in-silico 58.1 kB · legal-business 53.6 kB; розщеплені тримають тіло в 17–37 kB. Механізм і обовʼязки розколу — шапка `scripts/guard_craft_index.rb` (критерій — не розмір: секція понад половину файлу, що стріляє в під-режимі; «розкол не потрібен» — валідний вердикт). Черга — присуд founder-а 2026-09-18.
-- [x] 🤖 picogk — гочі → `gotchas.md`, опис 2.6 → 1.5 kB (`4ef4cd66`)
-- [x] 🤖 in-silico — дві шкали (Critical Rules · When Modifying) → дві цілі рушія, тіло 58.1 → 21.9 kB (`c6476718`); зріз гнилого в тілах — окремо
+- [x] 🤖 picogk — гочі → `gotchas.md`, опис 2.6 → 1.5 kB (`4ef4cd66`); зріз гнилого 107.8 → 86.3 kB разом (`47a520d0`)
+- [x] 🤖 in-silico — дві шкали (Critical Rules · When Modifying) → дві цілі рушія, тіло 58.1 → 21.9 kB (`c6476718`); зріз гнилого 65.0 → 47.9 kB разом (`3c794bcf`)
 - [ ] 🤖 deploy — виміряти домінантну секцію; розщепити або записати «не потрібен»
 - [ ] 🤖 ssot-maintenance — тіло поза `guard-craft.md` знову 103 kB: знайти, що наросло
 - [ ] 🤖 dependency-update · legal-business — той самий вимір
