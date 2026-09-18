@@ -151,7 +151,27 @@ TARGETS = [
     floor: 23,
     open:  "<!-- PICOGK-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /PICOGK-GOTCHAS-INDEX -->" }
+    close: "<!-- /PICOGK-GOTCHAS-INDEX -->" },
+  # Seventh and eighth targets, 2026-09-18 — ONE skill, TWO scales, hence two rows (the header's
+  # own prescription for a file with two independent sequences). §Critical Rules (0–10, cited from
+  # the tracker and memory as «in-silico #9») and §When Modifying (25 bullets, UNNUMBERED before the
+  # split, so the numbers were assigned on split day in the existing order — no citation could be
+  # orphaned). Together 41.4 kB of a 58 kB skill; each citation must now name its section, which the
+  # memory gate's AMBIG check enforces.
+  { name:  "in-silico (Critical Rules)",
+    skill: File.join(ROOT, ".claude/skills/in-silico/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/in-silico/rules.md"),
+    floor: 11,
+    open:  "<!-- INSILICO-RULES-INDEX:AUTO — generated from rules.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /INSILICO-RULES-INDEX -->" },
+  { name:  "in-silico (When Modifying)",
+    skill: File.join(ROOT, ".claude/skills/in-silico/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/in-silico/modifying.md"),
+    floor: 25,
+    open:  "<!-- INSILICO-MODIFYING-INDEX:AUTO — generated from modifying.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /INSILICO-MODIFYING-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів

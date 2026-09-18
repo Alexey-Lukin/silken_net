@@ -101,7 +101,7 @@ GAP_OR_PRE_BRANCH_A = ORING_CS * (1.0 - 0.20)   # the 20 % chain before ⚖️ 2
 # two-deck board stack, i.e. a design point mirrored here as a floor. The same mirror sits in the
 # other machine half (tools/cad Cem.RfClearanceMinMm). Which number is the acceptance floor is an
 # open verdict (00_07 HW.33); the measurement that settles it is the UNI.10 VNA sweep of 5/8/12.
-# Rule this violates, and it is ours: skill in-silico #9 — if canon gives a RANGE, say which END you
+# Rule this violates, and it is ours: skill in-silico §Critical Rules #9 — if canon gives a RANGE, say which END you
 # took; if the number is not an end, say what it IS and whose. [2026-09-11]
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
 
