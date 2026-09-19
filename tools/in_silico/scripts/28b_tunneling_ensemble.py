@@ -43,10 +43,9 @@ except ImportError as e:
     sys.exit(f"need mdtraj+networkx+scipy: {e}")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, REPO_ROOT
+from lib.constants import DFT_CACHE, REPO_ROOT, RUNS_DIR
 from lib.utils import banner
 
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
 OUT = DFT_CACHE / "tunneling_ensemble.json"
 
 # Beratan-Onuchic params — identical to script 28 (the single-snapshot owner)

@@ -139,8 +139,8 @@ public class DrawingTests
     }
 
     // ── The round-trip that closes the whole class ──────────────────────────────────────────────
-    // 🔴 Every other test in this file feeds an INLINE literal CEM, so none of them can see what the
-    // shipped manifests actually produce — and CI runs `verify` only, never `draw`. That gap is why a
+    // 🔴 A test fed an INLINE literal CEM cannot see what the shipped manifests actually produce —
+    // and CI runs `verify` only, never `draw`. That gap is why a
     // silent drop and a silent invention coexisted here for weeks while the suite stayed green.
     // This test reads the REAL cem/*.json and asserts every non-empty note reaches the DXF verbatim
     // (through DxfSafe, the writer's own mapping). It catches drop, fallback, truncation and escaping
@@ -879,8 +879,8 @@ public class DrawingTests
     }
 
     // 🔴 The interference line used to append a hard-coded "(Lamé, E_PEEK-aware)" to a number the CEM
-    // supplies — while zone2_sleeve.json's own `fit` string says the same 5–34 µm is ISO 286, which is the
-    // truth (lib/constants.py: H7 0/+18 + r6 +23/+34 — an r6 read under the s6 label, 00_07 HW.3). Canon 01_01 §4.2 requires the drawing's µm to come
+    // supplies — while zone2_sleeve.json's own `fit` string names the same 5–34 µm as an ISO 286 read and
+    // claims NO table class, which is the truth (lib/constants.py: H7 0/+18 + r6 +23/+34, 00_07 HW.3). Canon 01_01 §4.2 requires the drawing's µm to come
     // from the Lamé window and NOT from a blind ISO 286 lookup, so the sheet was printing the rejected
     // source under the required source's name. It hid because zone2_sleeve is the only manifest filling
     // these fields and had no `draw` kind. Invention of PROVENANCE, the third member of gotcha #11's class.

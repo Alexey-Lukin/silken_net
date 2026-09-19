@@ -21,7 +21,7 @@ in the spirit of LEAP 71 **Noyron** — an algorithm, not generative ML.
         │                                                      │
         ▼  build                                               ▼  verify
    out/<name>.stl  (artifact, gitignored)         out/<name>.metrics.json
-                                                   (porosity, bbox, tris — golden-metrics)
+                                                   (porosity, bbox, tris — measured metrics)
 ```
 
 An agent **writes the generator** (reviewable `.cs`); the generator **computes the
@@ -44,7 +44,7 @@ geometry** deterministically. Parity is on derived metrics, never the raw STL by
 | `src/SilkenCad/VoxelFea.cs` | voxel finite-element elasticity — trilinear hexes on the Connectivity grid, matrix-free element-by-element, 8-colour parallel, Jacobi-CG; apparent stiffness in units of `E_solid`. Declared ceiling in the class header |
 | `src/SilkenCad/Resolution.cs` | resolution adequacy — does a declared or DERIVED feature fit the voxel its own assembly asks for (`2·voxel` represented / `4·voxel` volume-honest); walks the parsed record tree, not the JSON |
 | `src/SilkenCad/WallScan.cs` | wallParam critical-threshold scan → the CEM working window (printable + open-pore + percolating); pure-managed, no render |
-| `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb + DIN-471 groove SDF on the shank (Zone-1 solid monolithic / Zone-3 channelled) + self-support metric |
+| `src/SilkenCad/MechanicalLock.cs` | §4.3 mechanical lock — `MechanicalLockShank` ratchet-barb SDF on the shank (Zone-1 solid, no channel / Zone-3 channelled) + a DIN-471 groove only where `MechanicalLock.HasGroove` + self-support metric |
 | `src/SilkenCad/CathodeFlange.cs` | Деталь 3 — Zone-3 cathode flange (Ø25): reuses the §4.3 shank/barbs + radial bayonet lugs + bus channel + the capsule's SINGLE face-seal O-ring groove (depth · width · radii DERIVED from the `o_ring` block + the socket band — `00_07` HW.33 branch (а), applied 2026-09-14) |
 | `src/SilkenCad/Radome.cs` | Деталь 4 — PEEK radome v2c (Ø25): hollow dome + shield bell + a local internal RIM BOSS (socket band outside ⊥ seal land inside; rim cavity ≤ Ø15.57 at the 80 % gland fill, the ceiling HW.9 takes as an input) + bayonet socket (cut in the outer band only) + PCB cavity; the rim is FLAT — the O-ring groove is the flange's |
 | `src/SilkenCad/Assembly.cs` | Capsule-end mate-audit (Деталь 3↔4, 02_02 §4.4): bayonet datum + Z/MATE-Ø/RF mismatch + skirt/inboard candidates |
@@ -74,7 +74,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 
 - **Headless:** run inside `Library.Go(voxel, task, bEndAppWithTask:true)`. The v1.6
   `new Library()` headless pattern is stale in v2.2 (runtime aborts: "relies on
-  Library::Go"). `bEndAppWithTask:true` exits with the task → no viewer block → CI-able.
+  Library::Go"). `bEndAppWithTask:true` exits with the task → no viewer block. ⛔ Not CI-able on a hosted runner: `Library.Go` SIGSEGVs (139) there — see CI below.
 - **Render lattices via `new Voxels(IImplicit, BBox3)` + `BoolIntersect`**, *not*
   `voxBounding.voxIntersectImplicit(...)`: the latter yields a malformed (background-0)
   OpenVDB level set at fine voxel on thin bored parts → an **uncatchable native abort**
@@ -124,7 +124,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 - **`logic` (ubuntu)** — `dotnet build` + the full xUnit suite. The suite is PicoGK-runtime-free
   (CEM parse, gyroid/mate SDF math, connectivity flood-fill — no `Library.Go`), so it runs on a
   cheap fast Linux runner as the **HARD** regression gate.
-- **`render` (macos-14)** — `dotnet build` (hard, both OSes) + `verify` golden-metrics (best-effort:
+- **`render` (macos-14)** — `dotnet build` (hard, both OSes) + `verify` metrics (best-effort:
   `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
   CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
 
@@ -140,9 +140,9 @@ macOS-with-display runner would re-arm render-verify as a hard gate.
 - **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
 - **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
   constant porosity. Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded
-  Z-demo + the LatticeLibrary submodule is ~1 yr stale).
+  Z-demo; LatticeLibrary upstream is dormant and our pin is its `HEAD main` — check that with `git ls-remote`, never by age).
 
-5-SKU per-species sweep + a porosity-gradient demo + a stepped demo (7 SKU total).
+5-SKU per-species sweep (pine · oak · broadleaf · mangrove · tropical) + the `graded_porosity` and `stepped` demos — the roster is `ls cem/anchor_zone1.*`.
 
 **ARCH.25 connectivity (shipped)** — `Connectivity.cs` adds a two-phase topological audit
 (open-pore↔Archimedes · percolation↔EAAE flow-through · solid-island↔AM/electrical · closed-pore↔trapped-powder · specific-surface
@@ -160,7 +160,7 @@ carries one, a **DIN-471 groove** (`§4.3 B`): ⚖️ 2026-09-18 the ring as a b
 and the Zone-3 groove from the geometry; the Zone-1 groove stays until G1/G3 and bounds nothing
 (`MechanicalLock.HasGroove`). Own SDF (4th, ratchet `R(z)`), solid `BaseCylinder` + thin barb-ridge
 `BoolAdd` + groove-ring `BoolSubtract` where `HasGroove` + a central bore (`0` ⇒ SOLID shank — the Zone-1
-end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wire threads, `01_01 §1.4`). Golden-metrics MEASURED off the profile (barb count /
+end, whose anode carries no core; `Ø1.35` ⇒ cathode channel the welded bus wire threads, `01_01 §1.4`). Metrics MEASURED off the profile (barb count /
 height / base, groove depth) + a **self-support face angle** (Noyron manufacturing-awareness): the
 ratchet self-supports printed leading-ramp-down as a SEPARATE part (Ti64 LPBF 60° downface, Sa≈15µm);
 on the integrated Zone-1 body the anode's `01_02 §1.6` tip-down puts the steep face down at 20° — open,
@@ -172,7 +172,7 @@ tooth over-spec resolved at h=0.28; DIN-471 groove = real shaft dims (was off-sp
 (`LocalFrame(pos, radialZ)`) + Ø1.35 bus channel (the welded bus wire threads it) + the capsule's one O-ring groove — its FACE seal; the second sealing element, the channel's own closure at its exit, is REQUIRED since 2026-09-18 and not in geometry (`00_07` HW.34) — on the top face (1.344 × 2.315 at r 8.085–10.4 — depth = CS·(1 − 0.245), width = ring section / (0.80 fill · depth), radii off the socket band; nothing stored, `00_07` HW.33 branch (а) applied 2026-09-14; the flange sheet draws it as geometry in both readers and its depth tolerance as loud absence). `verify` gates solidity (NOT hollow-shell,
 gotcha #9), Ø25, lugs-fused (bbox extent past the rim — 3 lugs @120° are asymmetric → span ≈ flangeD +
 protrusion), barb-count. Top face = pogo pads (coating, not geometry); side/perimeter = cathode catalytic
-(O₂ ingress, 02_02 §1.2). **Деталь 4 radome v2c = next phase** (dome + shield bell + bayonet socket + cavity).
+(O₂ ingress, 02_02 §1.2).
 
 **Ti-coin A_electrode (shipped)** — `ti_coin` CEM → Ø16 disc, 1 face ≈ 2 cm² (01_03 §3.5); `verify` gates
 the projected `active_electrode_area_cm2` (|A−2.0|≤0.1) + an optional `active_window_diameter_mm` (an
@@ -227,7 +227,7 @@ to the axis) and the wire body lives only in `AxialStack`, starting at the anode
 welded. ⛔ `BuildMonolithic`/`BusRod` were REMOVED with the printed-core branch; `fea --with-rod` went with
 them, because it measured a body the factory never receives. ⚠️ **The ratified fabrication is a WELD** (`00_07` HW.34, 2026-09-10: an as-printed rod carries `ENDURANCE_OVER_YIELD × AS_PRINTED_DERATE`, a welded cold-drawn wire does not), so the rod arrives as bought wire plus a weld and its tolerance/`Sa` come from a wire spec canon does not carry. Porosity is a property of
 the printed part, and since the core left it the reference envelope is the FULL cross-section — the golden
-baselines were re-measured 2026-09-18 and the sub-floor shares moved (`01_02 §1.3`). ⛔ The `verify` line that
+baselines were re-measured 2026-09-18 and the sub-floor shares moved (`01_02 §6`). ⛔ The `verify` line that
 MEASURED the fused rod is gone with the rod. The wire runs anode-top→cathode-channel→flange pad; `AxialStack.BusRodClears` audits rod + 2·liner **<** channel — STRICT since 2026-09-11 (`00_07` HW.34): at `≤` the frozen trio `1.0 + 2×0.15 = 1.30` passed against a Ø1.30 bore, i.e. the gate blessed a ZERO nominal clearance — a true statement about the sum and a false one about the assembly. ⛔ Its declared ceiling did not change: it judges NOMINALS and a DIAMETER, so green here is not proof that a real pair mates, and it says nothing whatever about the liner's LENGTH or its ends. ⚠️ **That gap is no longer an open judgment: the axial extent was RATIFIED 2026-09-12** — the tube spans the whole Zone-3 channel, flush at the pogo face, the lower end protruding ≥ 1.0 mm into the PEEK gap, captured at ONE end only (`01_01 §1.4`, `00_07` HW.34). ✅ Both landed 2026-09-12: the tube has a body in `AxialStack` and a Z check of its own — **F4 `LinerCoversChannel`**, which exists because F3 compares a DIAMETER and therefore cannot see a tube shorter than the channel. ⚖️ The two questions that stayed open here were RATIFIED 2026-09-18 (`00_07` HW.34): the tube is captured at the UPPER end (the pad plane), and the channel gets its own closure at its EXIT — the Ti↔PEEK path is not sealed by design, so that closure guards the capsule. Both are requirements in canon; their geometry waits on the pogo pin P/N (HW.9).
 
 **Engineering drawings + render (shipped)** — `draw <cem>` → SVG (human) + **DXF via netDxf** (factory-native, opens

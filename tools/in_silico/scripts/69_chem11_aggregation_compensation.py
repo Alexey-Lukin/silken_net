@@ -474,7 +474,7 @@ def main() -> int:
               f"clear of every filter")
 
     # mutants are built for every candidate that has apolar area worth removing — including
-    # the excluded ones, so the founder sees the number he is declining, not only the label.
+    # the excluded ones, so the founder sees the number being declined, not only the label.
     to_build = [(s, row) for s, rows in candidates.items() for row in rows
                 if row["exposed_apolar_A2"] >= CAND_APOLAR_MIN_A2]
     positions = sorted({row["position"] for _, row in to_build})
@@ -916,9 +916,10 @@ def main() -> int:
             "surface_charge_scope": "an ionisable residue counts toward the surface charge only "
                                     "when its side-chain SASA clears that floor; the whole-chain "
                                     "figure is reported beside it under its own name",
-            "formal_charge_caveat": f"at the matrix pH of {PH} an introduced carboxylate is only "
-                                    "partly deprotonated, so −1 is an UPPER BOUND on delivered "
-                                    "charge; no pKa model was used",
+            "formal_charge_caveat": f"protonation is assigned by OpenMM's rule table at pH {PH}, "
+                                    "not by a pKa model, so −1 per introduced carboxylate is an "
+                                    "UPPER BOUND on delivered charge; the sap set-point assigns "
+                                    "the same states (header of `PH` in lib/constants.py)",
             "threshold_ownership": "every threshold above is OURS except the Kyte-Doolittle set; "
                                    "none is an industry standard and none is quoted as one",
         },
@@ -996,9 +997,9 @@ def main() -> int:
             "solubility or critical concentration is computed here.",
             "Aggrescan3D was NOT run. It is an external web server and the first half of the L1 §2 "
             "recipe stays OPEN; nothing in this cache substitutes for it.",
-            "No sequence conservation was consulted. A position that geometry calls free may be "
-            "conserved for a reason this script cannot see, and for a gene freeze that is the "
-            "cheapest remaining check.",
+            "Sequence conservation is NOT an input to this score. It is measured separately "
+            "(script 70) and read beside it, never merged — for Ile401 that reading is what lifted "
+            "the hold (⚖️ founder 2026-09-18).",
             "No MD of any mutant and no ΔΔG of folding. A few hundred steps of side-chain "
             "minimisation in implicit solvent cannot tell whether a substitution destabilises the "
             "fold; the burial and DSSP columns are geometric PROXIES for that risk, not a verdict.",
@@ -1019,21 +1020,25 @@ def main() -> int:
             f"{noise_floor} Å². The gap survives the noise, but it is not a wide margin, and the "
             "membership of the four is radius-dependent (see proxy_sensitivity).",
         ],
+        "founder_decisions_taken": [
+            "The frozen gene carries Leu80→Asp and Ala70→Ser (⚖️ founder 2026-09-17) and "
+            "Ile401→Ser (⚖️ founder 2026-09-18, after script 70 measured the position) — home L1 §2. "
+            "This script recommends; the choice was the founder's.",
+            f"The Leu80 Asp/Ser tie inside the {noise_floor} Å² noise floor was decided by CHARGE: "
+            "Asp. This script still BUILDS the tie as Ser (`substitution_undecided_by_this_measurement`), "
+            "so `recommended_set_as_one_sequence` is not the ratified gene and the Asp build is unmeasured.",
+            "Gln258 and Gln200 stay un-compensated — the ratified gene carries no lever for either; "
+            "Gln200's refusal is our BURIAL threshold's, not the measurement's: see "
+            "`threshold_cost_measured`.",
+        ],
         "founder_decision_open": [
-            "Which admissible substitution enters the frozen gene, if any: the recommended set is "
-            "evidence, and the choice is the founder's presumption, not this script's.",
             f"Whether the {FAD_POCKET_EXCL_A} Å FAD shell is the right conservatism. Relaxing it to "
             f"{FAD_POCKET_EXCL_SENSITIVITY_A} Å would admit "
-            f"{[p['residue'] for p in relaxed] or 'nothing'} — each still on the electron-exit face.",
-            "Whether Gln258 and Gln200 are accepted as un-compensated, which is what this compute "
-            "says they are — and note that Gln200's refusal is our BURIAL threshold's, not the "
-            "measurement's: see `threshold_cost_measured`.",
-            f"Where the Asp/Ser choice is a tie inside the {noise_floor} Å² noise floor, the "
-            "discriminator is charge, not area, and this script does not pick it: see "
-            "`substitution_undecided_by_this_measurement`.",
+            f"{[p['residue'] for p in relaxed] or 'nothing'} — each still on the electron-exit face. "
+            "The ratified gene was chosen under the declared value; it was never re-judged.",
             f"Whether the burial ceiling stays at {CAND_BURIAL_MAX}. Its sensitivity values are "
             f"{list(CAND_BURIAL_MAX_SENSITIVITY)} and `threshold_cost_measured` prices the "
-            "difference in Å² actually removed.",
+            "difference in Å² actually removed. Same standing as the shell: declared, never re-judged.",
         ],
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)

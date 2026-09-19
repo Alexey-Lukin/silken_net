@@ -77,7 +77,8 @@ OS_O_AQUA = 2.10          # Å, Os–OH₂ (vertical, both oxidation states; scr
 OH = 0.9572               # Å, water O–H
 HOH = np.radians(104.52)  # water bond angle
 HB_O_X = 3.10             # Å, donor-O ⋯ acceptor distance for an O–H⋯X H-bond
-FADH2_HOMO_EV = -5.137    # B3LYP cache (dft/lumiflavin.json red) — cascade donor level
+# Cascade donor level — FADH₂ HOMO (B3LYP), LOADED from 20's cache, never a typed mirror.
+FADH2_HOMO_EV = json.loads((DFT_CACHE / "lumiflavin.json").read_text(encoding="utf-8"))["red"]["HOMO_eV"]
 
 
 def _unit(v):

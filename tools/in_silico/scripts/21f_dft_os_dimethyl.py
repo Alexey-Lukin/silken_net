@@ -42,7 +42,8 @@ TIERS = {
     "b3lyp": ("b3lyp", "6-31g(d)", 0.0, "os_complex.json", 1e-6),
     "wb97x": ("wb97x", "def2-tzvp", 0.3, "os_complex_wb97xd_dmbpy.json", 1e-6),
 }
-FADH2_HOMO_B3LYP_EV = -5.137   # dft/lumiflavin.json red (cascade donor, B3LYP) — for the Koopmans note
+# Cascade donor (FADH₂ HOMO, B3LYP) for the Koopmans note — LOADED from 20's cache, never a typed mirror.
+FADH2_HOMO_B3LYP_EV = json.loads((DFT_CACHE / "lumiflavin.json").read_text(encoding="utf-8"))["red"]["HOMO_eV"]
 
 
 def main(argv) -> int:

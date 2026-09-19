@@ -89,32 +89,7 @@
 
 ## Dependency Graph
 
-```
-Parameterization (CPU, done):
-  02 (FAD) ──┐
-  03 (GEN) ──┼── 10 (baseline MD) ──→ results
-  04 (CSO) ──┼── 11 (full matrix MD) ──→ results
-  05 (CLB) ──┘   12 (temp sweep) ──→ results
-  06 (PPy) ──────── future: PPy steric test
-  07 (PVI) ──────── future: PVI coverage test
-  08 (SBMA) ─── 13 (PSBMA diffusion) ──→ D_eff
-                14 (xylem sap sweep) ──→ species stability
-
-DFT (CPU, done):
-  20 (FAD HOMO/LUMO) ──┐
-  21f (Os dimethyl) ───┼── 22 (cascade comparison) ──→ verdict
-                       │
-  23 (ZIF clusters) ───┤
-  24 (hopping ΔSCF) ───┘── L3b verdict (geom-fixed t_ij; k_DET borderline, λ-sensitive — scripts 25/35)
-
-Kinetics (CPU, done):
-  30 (delta_t) ──→ 45s healthy / 238s stressed (η_BQ 0.68 post-HW.47; E.63-revised; field-derated higher)
-  30b (Monte Carlo) ──→ 90% CI
-  31 (EIS) ──→ Nyquist predictions
-
-Validation:
-  40 (vs experiment) ──→ ready for Ti-coin data
-```
+Не тут. Граф — операційне ЯК (хто читає чий кеш і що перепрогнати після зміни), і його дім — скіл `in-silico` §Script Dependency Graph (`.claude/skills/in-silico/SKILL.md`), де він тримається в формі «лише ребра». ⛔ Копію сюди не відбудовувати: друга копія графа розходиться з першою мовчки — жоден гейт їх не звіряє. Стан кожного скрипта — таблиця вгорі, результати — [`SUMMARY.md`](SUMMARY.md).
 
 ---
 
@@ -129,7 +104,7 @@ Validation:
 | Does the electron cascade flow? | ✅ YES (verified) | +574 mV / −0.574 eV downhill (verified E°s, Os +309 / FAD −265); raw DFT uphill = method limit (②) |
 | Is cathode DET fast enough? | 🟡 BORDERLINE | L3b geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30, NOT the old ×10⁵); SUMMARY §Cathode |
 | Is delta_t physically meaningful? | 🟡 recharge-model OK; coupling REVISED | L4 recharge-kinetics sound але lab-ceiling (E_CYCLE=5mJ); [E.63] β-coupling reversed → delta_t now drives growth_points directly, FAST/SLOW calib-pending (00_07 E.63) |
-| Can we predict EIS results? | ✅ YES | L4c: Rct=130Ω, Cdl=50µF/cm² |
+| Can we predict EIS results? | ✅ YES | L4c: `Rct` і `Cdl` — рядок `31` таблиці вгорі (лаб-стеля, pH 7.4) |
 
 **Verdict: ✅ YES — sufficient to order Ti-coins.** Anode thermodynamic + kinetic proofs pass. Remaining in-silico items now done (L3b geom-fixed, genipin/deprotonation rerun, species sweep). The cathode-DET **borderline** finding (§Cathode) refines confidence — it does NOT block Ti-coins; rather it makes the Ti-coin **EIS the decisive empirical test** of the real cathode margin.
 

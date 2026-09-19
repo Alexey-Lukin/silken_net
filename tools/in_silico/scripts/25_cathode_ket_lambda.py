@@ -23,9 +23,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.constants import DFT_CACHE as CACHE
 from lib.dft_utils import marcus_rate
 
-CACHE = Path(__file__).resolve().parents[1] / "cache" / "dft"
 TURNOVER_S = 1.0e3  # enzymatic turnover ~10³ s⁻¹ (the rate the cathode must beat)
 
 # Literature self-exchange reorganization energies (eV) for the aqua/ammine couples

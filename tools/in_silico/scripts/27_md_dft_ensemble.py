@@ -20,10 +20,9 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT
+from lib.constants import DFT_CACHE, HARTREE_TO_EV, REPO_ROOT, RUNS_DIR
 from lib.utils import banner
 
-RUNS_DIR = REPO_ROOT / "tools/in_silico/cache/runs"
 OUT_JSON = DFT_CACHE / "md_dft_ensemble.json"
 
 SAMPLE_TIMES_NS = [2, 4, 6, 8, 10]

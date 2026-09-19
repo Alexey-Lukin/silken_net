@@ -13,7 +13,7 @@
 ## 0. Як користуватись + cover-note
 
 1. Купон = плоский диск **Ø16×1 мм**, 1 грань = π·8² = **2.01 см² ≈ A_electrode** ([`01_03 §3.5`](../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)); `j` нормують на **проєкційну** площу. **«Вушко»** (отвір/виступ на краю) під потенціостат-кліпсу, не псуючи активну грань.
-2. **CEM-SSOT + креслення:** геометрія — `tools/cad/cem/ti_coin.<alloy>.json`; STL+DXF регенерувати `dotnet run --project tools/cad/src/SilkenCad -- draw cem/ti_coin.<alloy>.json` (per-alloy title-block).
+2. **CEM-SSOT + креслення:** геометрія — `tools/cad/cem/ti_coin.<alloy>.json`; STL — `dotnet run --project tools/cad/src/SilkenCad -- build cem/ti_coin.<alloy>.json`, DXF (+SVG) — той самий виклик із `draw` (per-alloy title-block). ⛔ Перебудовувати В ДЕНЬ відправки й звіряти bbox STL із маніфестом: `tools/cad/out/` під `.gitignore`, і копію, що їде вендору, не стереже жоден гейт (скіл `picogk` #17).
 3. **Cost-driver = к-сть СПЛАВІВ** (порошок/SLM-сетап), не монет → ~3 репліки/сплав дешеві. Замовляти Tier-1 одразу; Tier-2 — паралельний vendor-hunt (не блокує TRL-4).
 4. **Дерево-first:** down-select за CV/EIS + ICP-MS у **синтетичному ксилемному соку** (не PBS); Al³⁺ теж фітотоксичний → zero-Al кандидати дерево-чистіші ([`01_04 §4.2`](../../01_04_CODIT_and_Xylemointegration.md)).
 

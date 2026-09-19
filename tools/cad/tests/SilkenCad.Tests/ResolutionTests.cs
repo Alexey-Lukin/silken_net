@@ -21,12 +21,12 @@ public class ResolutionTests
     {
         // The one PART manifest on the list, and it is a finding rather than an accommodation:
         // `stepped` is the single SKU left on the retired sheet branch, whose 1.3 mm rim period gives
-        // a 0.157 mm wall. It was already known to be below the 200 µm SLM floor (71.0 % sub-floor
-        // metal); what this adds is that it is also below its OWN declared grid, i.e. every metric we
-        // hold for `stepped` is measured where the wall cannot be represented. Feeds the open verdict
-        // on whether `stepped` remains a candidate at all — 00_07 HW.33.
+        // a 0.157 mm wall. It was already known to be below the 200 µm SLM floor (most of its lattice
+        // metal is sub-floor — share: its golden, 01_02 §6); what this adds is that it is also below its
+        // OWN declared grid, i.e. every metric we hold for `stepped` is measured where the wall cannot be
+        // represented. It stands beside the ratified verdict: `stepped` is µ-LPBF only (01_01 §5.5).
         ["anchor_zone1.stepped.json:lattice_thickness"] =
-            "sheet-branch rim wall 0.157 mm, below both the SLM floor and its own voxel — 00_07 HW.33 ⚖️",
+            "sheet-branch rim wall 0.157 mm, below both the SLM floor and its own voxel — µ-LPBF only (01_01 §5.5)",
 
         // The liner incident itself (00_07 HW.34, measured 2026-09-12). The clearance VERDICT is
         // nominal arithmetic (`AxialStack.BusRodClears`), never a rendered measurement, so the audit's

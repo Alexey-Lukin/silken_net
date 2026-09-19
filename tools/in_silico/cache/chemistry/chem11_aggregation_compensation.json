@@ -2,8 +2,8 @@
   "script": "69_chem11_aggregation_compensation.py",
   "tracker": "00_07 HW.5.IS — CHEM.11",
   "canon_home": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2",
-  "generated_utc": "2026-09-17T16:58:05Z",
-  "runtime_s": 527.8,
+  "generated_utc": "2026-09-19T05:54:16Z",
+  "runtime_s": 472.4,
   "inputs": {
     "structure": "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb",
     "plddt_source": "docs/protocols/ebfc/in_silico/alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif",
@@ -86,7 +86,7 @@
     },
     "surface_charge_sidechain_sasa_min_A2": 10.0,
     "surface_charge_scope": "an ionisable residue counts toward the surface charge only when its side-chain SASA clears that floor; the whole-chain figure is reported beside it under its own name",
-    "formal_charge_caveat": "at the matrix pH of 4.5 an introduced carboxylate is only partly deprotonated, so −1 is an UPPER BOUND on delivered charge; no pKa model was used",
+    "formal_charge_caveat": "protonation is assigned by OpenMM's rule table at pH 4.5, not by a pKa model, so −1 per introduced carboxylate is an UPPER BOUND on delivered charge; the sap set-point assigns the same states (header of `PH` in lib/constants.py)",
     "threshold_ownership": "every threshold above is OURS except the Kyte-Doolittle set; none is an industry standard and none is quoted as one"
   },
   "plddt": {
@@ -1330,30 +1330,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 80.8,
-          "delta_patch_apolar_A2": -59.4,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 81.0,
+          "delta_patch_apolar_A2": -58.9,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.0,
-          "delta_patch_apolar_A2": -0.9,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.7,
+          "delta_patch_apolar_A2": 0.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 71.5,
-          "delta_patch_apolar_A2": 3.3,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 70.6,
+          "delta_patch_apolar_A2": -0.6,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.5,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_mutant_A2": 119.3,
+          "delta_patch_apolar_A2": -0.5,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1372,30 +1372,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 80.5,
-          "delta_patch_apolar_A2": -59.6,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 81.0,
+          "delta_patch_apolar_A2": -58.9,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 56.1,
-          "delta_patch_apolar_A2": 1.3,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.8,
+          "delta_patch_apolar_A2": 0.8,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.2,
-          "delta_patch_apolar_A2": -1.0,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 67.7,
+          "delta_patch_apolar_A2": -3.5,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 120.0,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_mutant_A2": 118.9,
+          "delta_patch_apolar_A2": -0.9,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1414,30 +1414,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
+          "patch_ref_A2": 139.9,
           "patch_mutant_A2": 61.8,
-          "delta_patch_apolar_A2": -78.4,
+          "delta_patch_apolar_A2": -78.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.1,
-          "delta_patch_apolar_A2": -0.8,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.7,
+          "delta_patch_apolar_A2": -0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 70.2,
-          "delta_patch_apolar_A2": 2.0,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 71.3,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 120.0,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_mutant_A2": 119.3,
+          "delta_patch_apolar_A2": -0.5,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1456,30 +1456,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
+          "patch_ref_A2": 139.9,
           "patch_mutant_A2": 61.8,
-          "delta_patch_apolar_A2": -78.4,
+          "delta_patch_apolar_A2": -78.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.6,
-          "delta_patch_apolar_A2": 0.8,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.0,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.6,
-          "delta_patch_apolar_A2": -0.6,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 71.6,
+          "delta_patch_apolar_A2": 0.4,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.5,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1498,30 +1498,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.0,
-          "delta_patch_apolar_A2": -0.1,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.1,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.3,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.7,
+          "delta_patch_apolar_A2": 0.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 69.1,
-          "delta_patch_apolar_A2": 0.9,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 70.3,
+          "delta_patch_apolar_A2": -0.9,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.9,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_mutant_A2": 120.0,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1540,30 +1540,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.5,
-          "delta_patch_apolar_A2": 0.4,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.9,
+          "delta_patch_apolar_A2": 1.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.7,
-          "delta_patch_apolar_A2": -0.1,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.8,
+          "delta_patch_apolar_A2": 0.8,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 68.7,
-          "delta_patch_apolar_A2": 0.5,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 68.3,
+          "delta_patch_apolar_A2": -2.9,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 120.0,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1582,30 +1582,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.5,
-          "delta_patch_apolar_A2": -0.6,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.4,
+          "delta_patch_apolar_A2": -0.5,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 56.2,
-          "delta_patch_apolar_A2": 1.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.6,
+          "delta_patch_apolar_A2": -0.5,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.8,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 69.1,
+          "delta_patch_apolar_A2": -2.1,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.4,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_mutant_A2": 119.8,
+          "delta_patch_apolar_A2": 0.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1624,30 +1624,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 141.5,
-          "delta_patch_apolar_A2": 1.4,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 141.1,
+          "delta_patch_apolar_A2": 1.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.2,
-          "delta_patch_apolar_A2": 0.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.0,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.7,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 67.9,
+          "delta_patch_apolar_A2": -3.3,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.5,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1666,30 +1666,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.4,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.0,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 26.4,
-          "delta_patch_apolar_A2": -28.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 26.8,
+          "delta_patch_apolar_A2": -27.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 68.3,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 67.9,
+          "delta_patch_apolar_A2": -3.3,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.4,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_mutant_A2": 120.0,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1708,30 +1708,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.4,
-          "delta_patch_apolar_A2": -0.8,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.8,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 29.4,
-          "delta_patch_apolar_A2": -25.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 28.4,
+          "delta_patch_apolar_A2": -25.7,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.9,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 70.3,
+          "delta_patch_apolar_A2": -0.9,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_mutant_A2": 120.0,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1750,30 +1750,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
+          "patch_ref_A2": 139.9,
           "patch_mutant_A2": 139.9,
-          "delta_patch_apolar_A2": -0.3,
+          "delta_patch_apolar_A2": 0.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.3,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.7,
+          "delta_patch_apolar_A2": -0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 68.2,
-          "delta_patch_apolar_A2": 0.0,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 69.7,
+          "delta_patch_apolar_A2": -1.5,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.4,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1792,30 +1792,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.9,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.3,
+          "delta_patch_apolar_A2": 0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.1,
-          "delta_patch_apolar_A2": -0.8,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.8,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 68.4,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 69.2,
+          "delta_patch_apolar_A2": -2.0,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.9,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_mutant_A2": 119.6,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1834,30 +1834,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.9,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.5,
+          "delta_patch_apolar_A2": -0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 34.7,
-          "delta_patch_apolar_A2": -20.1,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 34.1,
+          "delta_patch_apolar_A2": -20.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.3,
-          "delta_patch_apolar_A2": -0.9,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 69.2,
+          "delta_patch_apolar_A2": -2.0,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.3,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1876,23 +1876,23 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.6,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.3,
+          "delta_patch_apolar_A2": 0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 37.5,
-          "delta_patch_apolar_A2": -17.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 38.1,
+          "delta_patch_apolar_A2": -16.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 69.6,
-          "delta_patch_apolar_A2": 1.4,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 67.3,
+          "delta_patch_apolar_A2": -3.9,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
@@ -1918,30 +1918,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.8,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.6,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.3,
-          "delta_patch_apolar_A2": 0.5,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 56.5,
+          "delta_patch_apolar_A2": 2.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.7,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 71.7,
+          "delta_patch_apolar_A2": 0.5,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -1960,30 +1960,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.0,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.8,
           "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 53.6,
-          "delta_patch_apolar_A2": -1.3,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 56.0,
+          "delta_patch_apolar_A2": 1.9,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 68.4,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 68.7,
+          "delta_patch_apolar_A2": -2.5,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 120.1,
-          "delta_patch_apolar_A2": 0.4,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2002,30 +2002,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
+          "patch_ref_A2": 139.9,
           "patch_mutant_A2": 140.1,
-          "delta_patch_apolar_A2": -0.0,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.0,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.0,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 28.6,
-          "delta_patch_apolar_A2": -39.6,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 28.7,
+          "delta_patch_apolar_A2": -42.5,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -2
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_mutant_A2": 119.1,
+          "delta_patch_apolar_A2": -0.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2044,30 +2044,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.1,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.5,
+          "delta_patch_apolar_A2": -0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 53.3,
-          "delta_patch_apolar_A2": -1.5,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.8,
+          "delta_patch_apolar_A2": 0.8,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
+          "patch_ref_A2": 71.2,
           "patch_mutant_A2": 28.6,
-          "delta_patch_apolar_A2": -39.6,
+          "delta_patch_apolar_A2": -42.6,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_mutant_A2": 119.5,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2086,23 +2086,23 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
+          "patch_ref_A2": 139.9,
           "patch_mutant_A2": 139.9,
-          "delta_patch_apolar_A2": -0.3,
+          "delta_patch_apolar_A2": 0.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.2,
-          "delta_patch_apolar_A2": 0.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 56.7,
+          "delta_patch_apolar_A2": 2.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 65.2,
-          "delta_patch_apolar_A2": -3.0,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 65.8,
+          "delta_patch_apolar_A2": -5.4,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
@@ -2128,30 +2128,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.9,
-          "delta_patch_apolar_A2": -0.3,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.1,
+          "delta_patch_apolar_A2": 0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 54.5,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.0,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 67.8,
-          "delta_patch_apolar_A2": -0.4,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 67.6,
+          "delta_patch_apolar_A2": -3.6,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_mutant_A2": 119.9,
+          "delta_patch_apolar_A2": 0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2170,30 +2170,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 139.6,
-          "delta_patch_apolar_A2": -0.5,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.8,
+          "delta_patch_apolar_A2": -0.1,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.1,
-          "delta_patch_apolar_A2": 0.3,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.5,
+          "delta_patch_apolar_A2": -0.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 41.0,
-          "delta_patch_apolar_A2": -27.2,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 40.3,
+          "delta_patch_apolar_A2": -30.9,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -2
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
           "patch_mutant_A2": 119.8,
-          "delta_patch_apolar_A2": -0.0,
+          "delta_patch_apolar_A2": 0.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2212,23 +2212,23 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.3,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.6,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 55.0,
-          "delta_patch_apolar_A2": 0.1,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 53.8,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 40.4,
-          "delta_patch_apolar_A2": -27.8,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 39.4,
+          "delta_patch_apolar_A2": -31.8,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
@@ -2254,23 +2254,23 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.1,
-          "delta_patch_apolar_A2": -0.0,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 140.3,
+          "delta_patch_apolar_A2": 0.4,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 56.1,
-          "delta_patch_apolar_A2": 1.3,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 54.7,
+          "delta_patch_apolar_A2": 0.6,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 70.9,
-          "delta_patch_apolar_A2": 2.8,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 69.1,
+          "delta_patch_apolar_A2": -2.1,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
@@ -2296,30 +2296,30 @@
       "backbone_CA_drift_A": 0.0,
       "per_hotspot": {
         "Gln71": {
-          "patch_ref_A2": 140.1,
-          "patch_mutant_A2": 140.0,
-          "delta_patch_apolar_A2": -0.1,
+          "patch_ref_A2": 139.9,
+          "patch_mutant_A2": 139.6,
+          "delta_patch_apolar_A2": -0.3,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln200": {
-          "patch_ref_A2": 54.8,
-          "patch_mutant_A2": 53.6,
-          "delta_patch_apolar_A2": -1.3,
+          "patch_ref_A2": 54.1,
+          "patch_mutant_A2": 56.0,
+          "delta_patch_apolar_A2": 1.9,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         },
         "Gln258": {
-          "patch_ref_A2": 68.2,
-          "patch_mutant_A2": 70.8,
-          "delta_patch_apolar_A2": 2.6,
+          "patch_ref_A2": 71.2,
+          "patch_mutant_A2": 71.2,
+          "delta_patch_apolar_A2": 0.0,
           "patch_surface_net_formal_charge_ref": -1,
           "patch_surface_net_formal_charge_mutant": -1
         },
         "Gln405": {
           "patch_ref_A2": 119.8,
-          "patch_mutant_A2": 18.9,
-          "delta_patch_apolar_A2": -100.9,
+          "patch_mutant_A2": 18.7,
+          "delta_patch_apolar_A2": -101.0,
           "patch_surface_net_formal_charge_ref": 0,
           "patch_surface_net_formal_charge_mutant": 0
         }
@@ -2330,7 +2330,7 @@
   "recommendation_rule": {
     "1_position_clear_of_hard_keepouts": "excluded_by contains no fad_pocket / electron_path / buried / too_little_apolar entry",
     "2_substitution_allowed": "Asp is blocked where DSSP ∈ ['B', 'E', 'G', 'H', 'I']; Ser is never blocked by DSSP",
-    "3_measurably_reduces_the_patch": "delta_patch_apolar_A2 < −noise_floor (-3.27 Å², measured this run)",
+    "3_measurably_reduces_the_patch": "delta_patch_apolar_A2 < −noise_floor (-3.77 Å², measured this run)",
     "4_one_substitution_per_position": "the larger |delta| of the admissible Asp/Ser pair — UNLESS the two differ by less than the noise floor, in which case this script does NOT pick: `to` is null and both stay in `admissible_substitutions`",
     "4a_why_not_pick_on_a_tie": "measured: the ranked winner at Leu80 flipped Asp↔Ser between two runs of identical inputs. The difference is noise, the consequence is a CHARGE, and noise may not decide a charge",
     "5_cap": "at most 2 per hotspot",
@@ -2349,14 +2349,14 @@
         "SER"
       ],
       "delta_patch_apolar_A2_by_substitution": {
-        "ASP": -78.4,
-        "SER": -78.4
+        "ASP": -78.1,
+        "SER": -78.1
       },
-      "delta_patch_apolar_A2": -78.4,
+      "delta_patch_apolar_A2": -78.1,
       "substitution_undecided_by_this_measurement": true,
       "substitution_discriminator_if_tied": "net charge: Asp delivers at most −1, Ser 0. A founder decision, not a SASA one — the area difference here is inside the noise floor",
       "built_as_for_the_combined_variant": "SER",
-      "patch_ref_A2": 140.1,
+      "patch_ref_A2": 139.9,
       "patch_mutant_A2": 61.8,
       "delta_surface_net_formal_charge": 0,
       "patch_surface_net_formal_charge_ref": 0,
@@ -2380,15 +2380,15 @@
         "SER"
       ],
       "delta_patch_apolar_A2_by_substitution": {
-        "ASP": -59.4,
-        "SER": -59.6
+        "ASP": -58.9,
+        "SER": -58.9
       },
-      "delta_patch_apolar_A2": -59.6,
+      "delta_patch_apolar_A2": -58.9,
       "substitution_undecided_by_this_measurement": false,
       "substitution_discriminator_if_tied": null,
       "built_as_for_the_combined_variant": "SER",
-      "patch_ref_A2": 140.1,
-      "patch_mutant_A2": 80.5,
+      "patch_ref_A2": 139.9,
+      "patch_mutant_A2": 81.0,
       "delta_surface_net_formal_charge": 0,
       "patch_surface_net_formal_charge_ref": 0,
       "patch_surface_net_formal_charge_mutant": 0,
@@ -2414,14 +2414,14 @@
       ],
       "delta_patch_apolar_A2_by_substitution": {
         "ASP": -100.5,
-        "SER": -100.9
+        "SER": -101.0
       },
-      "delta_patch_apolar_A2": -100.9,
+      "delta_patch_apolar_A2": -101.0,
       "substitution_undecided_by_this_measurement": false,
       "substitution_discriminator_if_tied": null,
       "built_as_for_the_combined_variant": "SER",
       "patch_ref_A2": 119.8,
-      "patch_mutant_A2": 18.9,
+      "patch_mutant_A2": 18.7,
       "delta_surface_net_formal_charge": 0,
       "patch_surface_net_formal_charge_ref": 0,
       "patch_surface_net_formal_charge_mutant": 0,
@@ -2461,35 +2461,35 @@
     "surface_net_formal_charge_mutant": -15,
     "per_hotspot": {
       "Gln71": {
-        "patch_ref_A2": 140.1,
+        "patch_ref_A2": 139.9,
         "patch_combined_A2": 2.9,
-        "delta_patch_apolar_A2": -137.2,
-        "sum_of_singles_A2": -138.0,
-        "non_additivity_A2": 0.8,
+        "delta_patch_apolar_A2": -137.0,
+        "sum_of_singles_A2": -137.0,
+        "non_additivity_A2": 0.0,
         "n_recommended_here": 2
       },
       "Gln200": {
-        "patch_ref_A2": 54.8,
-        "patch_combined_A2": 56.2,
-        "delta_patch_apolar_A2": 1.4,
+        "patch_ref_A2": 54.1,
+        "patch_combined_A2": 55.0,
+        "delta_patch_apolar_A2": 0.9,
         "sum_of_singles_A2": 0,
-        "non_additivity_A2": 1.4,
+        "non_additivity_A2": 0.9,
         "n_recommended_here": 0
       },
       "Gln258": {
-        "patch_ref_A2": 68.2,
-        "patch_combined_A2": 67.9,
-        "delta_patch_apolar_A2": -0.3,
+        "patch_ref_A2": 71.2,
+        "patch_combined_A2": 68.1,
+        "delta_patch_apolar_A2": -3.1,
         "sum_of_singles_A2": 0,
-        "non_additivity_A2": -0.3,
+        "non_additivity_A2": -3.1,
         "n_recommended_here": 0
       },
       "Gln405": {
         "patch_ref_A2": 119.8,
-        "patch_combined_A2": 18.9,
-        "delta_patch_apolar_A2": -100.9,
-        "sum_of_singles_A2": -100.9,
-        "non_additivity_A2": 0.0,
+        "patch_combined_A2": 19.4,
+        "delta_patch_apolar_A2": -100.4,
+        "sum_of_singles_A2": -101.0,
+        "non_additivity_A2": 0.6,
         "n_recommended_here": 1
       }
     },
@@ -2502,11 +2502,11 @@
         "hotspot": "Gln200",
         "residue": "ALA201",
         "excluded_by_only": "buried(0.77>0.75)",
-        "best_measured_delta_patch_apolar_A2": -25.4,
+        "best_measured_delta_patch_apolar_A2": -25.7,
         "best_substitution": "SER",
         "best_substitution_scope": "the best substitution that every OTHER declared filter still allows, so this is what relaxing the named one would actually buy",
-        "patch_ref_A2": 54.8,
-        "fraction_of_patch_it_would_remove": 0.46,
+        "patch_ref_A2": 54.1,
+        "fraction_of_patch_it_would_remove": 0.48,
         "asp_also_blocked_by_ss": true,
         "burial": 0.77,
         "dssp": "H",
@@ -2521,11 +2521,11 @@
         "hotspot": "Gln200",
         "residue": "TRP210",
         "excluded_by_only": "buried(0.91>0.75)",
-        "best_measured_delta_patch_apolar_A2": -17.4,
+        "best_measured_delta_patch_apolar_A2": -16.0,
         "best_substitution": "SER",
         "best_substitution_scope": "the best substitution that every OTHER declared filter still allows, so this is what relaxing the named one would actually buy",
-        "patch_ref_A2": 54.8,
-        "fraction_of_patch_it_would_remove": 0.32,
+        "patch_ref_A2": 54.1,
+        "fraction_of_patch_it_would_remove": 0.3,
         "asp_also_blocked_by_ss": true,
         "burial": 0.908,
         "dssp": "B",
@@ -2543,140 +2543,140 @@
         "residue": "PHE82",
         "to": "ASP",
         "burial": 0.86,
-        "delta_patch_apolar_A2": -0.1,
+        "delta_patch_apolar_A2": 0.3,
         "within_noise_floor": true
       },
       {
         "residue": "PHE82",
         "to": "SER",
         "burial": 0.86,
-        "delta_patch_apolar_A2": 0.4,
+        "delta_patch_apolar_A2": 1.0,
         "within_noise_floor": true
       },
       {
         "residue": "ILE86",
         "to": "ASP",
         "burial": 0.892,
-        "delta_patch_apolar_A2": -0.6,
+        "delta_patch_apolar_A2": -0.5,
         "within_noise_floor": true
       },
       {
         "residue": "ILE86",
         "to": "SER",
         "burial": 0.892,
-        "delta_patch_apolar_A2": 1.4,
+        "delta_patch_apolar_A2": 1.3,
         "within_noise_floor": true
       },
       {
         "residue": "ALA201",
         "to": "ASP",
         "burial": 0.77,
-        "delta_patch_apolar_A2": -28.4,
+        "delta_patch_apolar_A2": -27.3,
         "within_noise_floor": false
       },
       {
         "residue": "ALA201",
         "to": "SER",
         "burial": 0.77,
-        "delta_patch_apolar_A2": -25.4,
+        "delta_patch_apolar_A2": -25.7,
         "within_noise_floor": false
       },
       {
         "residue": "ALA205",
         "to": "ASP",
         "burial": 0.797,
-        "delta_patch_apolar_A2": -0.5,
+        "delta_patch_apolar_A2": -0.4,
         "within_noise_floor": true
       },
       {
         "residue": "ALA205",
         "to": "SER",
         "burial": 0.797,
-        "delta_patch_apolar_A2": -0.8,
+        "delta_patch_apolar_A2": -0.3,
         "within_noise_floor": true
       },
       {
         "residue": "TRP210",
         "to": "ASP",
         "burial": 0.908,
-        "delta_patch_apolar_A2": -20.1,
+        "delta_patch_apolar_A2": -20.0,
         "within_noise_floor": false
       },
       {
         "residue": "TRP210",
         "to": "SER",
         "burial": 0.908,
-        "delta_patch_apolar_A2": -17.4,
+        "delta_patch_apolar_A2": -16.0,
         "within_noise_floor": false
       },
       {
         "residue": "LEU257",
         "to": "ASP",
         "burial": 0.804,
-        "delta_patch_apolar_A2": -39.6,
+        "delta_patch_apolar_A2": -42.5,
         "within_noise_floor": false
       },
       {
         "residue": "LEU257",
         "to": "SER",
         "burial": 0.804,
-        "delta_patch_apolar_A2": -39.6,
+        "delta_patch_apolar_A2": -42.6,
         "within_noise_floor": false
       },
       {
         "residue": "ALA285",
         "to": "ASP",
         "burial": 0.762,
-        "delta_patch_apolar_A2": -27.2,
+        "delta_patch_apolar_A2": -30.9,
         "within_noise_floor": false
       },
       {
         "residue": "ALA285",
         "to": "SER",
         "burial": 0.762,
-        "delta_patch_apolar_A2": -27.8,
+        "delta_patch_apolar_A2": -31.8,
         "within_noise_floor": false
       },
       {
         "residue": "ALA284",
         "to": "ASP",
         "burial": 0.781,
-        "delta_patch_apolar_A2": -3.0,
-        "within_noise_floor": true
+        "delta_patch_apolar_A2": -5.4,
+        "within_noise_floor": false
       },
       {
         "residue": "ALA284",
         "to": "SER",
         "burial": 0.781,
-        "delta_patch_apolar_A2": -0.4,
+        "delta_patch_apolar_A2": -3.6,
         "within_noise_floor": true
       },
       {
         "residue": "VAL256",
         "to": "ASP",
         "burial": 0.873,
-        "delta_patch_apolar_A2": -0.5,
+        "delta_patch_apolar_A2": 0.5,
         "within_noise_floor": true
       },
       {
         "residue": "VAL256",
         "to": "SER",
         "burial": 0.873,
-        "delta_patch_apolar_A2": 0.3,
+        "delta_patch_apolar_A2": -2.5,
         "within_noise_floor": true
       },
       {
         "residue": "ILE86",
         "to": "ASP",
         "burial": 0.892,
-        "delta_patch_apolar_A2": -0.4,
+        "delta_patch_apolar_A2": -2.1,
         "within_noise_floor": true
       },
       {
         "residue": "ILE86",
         "to": "SER",
         "burial": 0.892,
-        "delta_patch_apolar_A2": -0.5,
+        "delta_patch_apolar_A2": -3.3,
         "within_noise_floor": true
       }
     ]
@@ -2717,38 +2717,38 @@
     "note": "these fail ONLY the FAD-pocket shell at its declared 12 Å. They are reported so the cost of that threshold is visible; they are NOT recommended, because each still sits on the electron-exit face that L1 §5 makes load-bearing"
   },
   "controls": {
-    "patch_sasa_noise_floor_A2": 3.27,
+    "patch_sasa_noise_floor_A2": 3.77,
     "patch_sasa_spread_over_replicates_A2": {
-      "Gln71": 0.63,
-      "Gln200": 2.26,
-      "Gln258": 3.27,
+      "Gln71": 0.5,
+      "Gln200": 0.75,
+      "Gln258": 3.77,
       "Gln405": 0.13
     },
     "n_reference_replicates": 4,
     "patch_per_replicate_A2": {
       "Gln71": [
-        140.14,
-        140.14,
         139.88,
-        139.51
+        140.14,
+        139.76,
+        139.63
       ],
       "Gln200": [
-        54.85,
-        53.97,
+        54.09,
+        53.84,
         53.34,
-        55.6
+        54.09
       ],
       "Gln258": [
-        68.18,
-        69.82,
-        71.45,
-        71.07
+        71.2,
+        67.43,
+        70.7,
+        67.43
       ],
       "Gln405": [
         119.76,
         119.76,
-        119.76,
-        119.63
+        119.88,
+        119.76
       ]
     },
     "reference_for_every_delta": "replicate 0",
@@ -2759,32 +2759,34 @@
     "plddt_reproduces_canon_Tyr90": 98.71,
     "plddt_canon_value_L1_s4": 98.71,
     "reference_minimisation_moves_the_surface_A2": {
-      "Gln71": 2.0,
-      "Gln200": 1.1,
-      "Gln258": 0.1,
-      "Gln405": 0.0
+      "Gln71": 1.8,
+      "Gln200": 0.4,
+      "Gln258": 3.1,
+      "Gln405": -0.0
     },
     "reference_minimisation_note": "the minimised reference differs from the raw AF3 model by about the noise floor, so the proxy is reading the AF3 geometry and not the force field",
     "what_these_controls_cannot_catch": "none of them tests the PHYSICS: a proxy that is reproducible, frozen-frame and low-noise can still be the wrong descriptor for aggregation"
   },
-  "verdict": "1. The L1 §2 four-site claim now has an instrument, and it holds only inside a contact shell: at R = 7.0 Å with aromatics in the residue set the proxy re-selects {Gln71, Gln200, Gln258, Gln405} exactly, the 4th-to-5th gap is 20.1 Å², and 5 of the 11 sites score exactly zero. It re-selects at [6.5, 7.0, 7.5] Å and at no other swept radius, and never without the aromatics. 2. Read against the protein's own surface the four are not its worst patches: percentiles Gln71 98.2 · Gln200 77.5 · Gln258 86.7 · Gln405 96.2, against a protein-wide maximum of 282.9 Å² at THR12 — 2.0× the largest deglycosylation-site patch. 'Hotspot' is a ranking among the 11 sites, not an absolute aggregation risk. 3. Compensation is admissible at 3 position(s): Leu80→(Asp|Ser), Ala70→(Ser), Ile401→(Ser) — and at Leu80→(Asp|Ser) the Asp/Ser choice is a TIE inside the noise floor, so this script does not make it: the difference there is a charge, and the ranked winner was measured flipping between identical runs. 4. It is NOT admissible at Gln200, Gln258 — Gln258 because its entire apolar neighbourhood lies inside the FAD pocket and the electron-exit shell (the site itself sits 8.0 Å from the path and 11.0 Å from FAD), so buying aggregation margin there spends the MET architecture; and Gln200 because it is the most buried of the 11 sites (burial 0.847) and every neighbour is buried too — a surface-polar compensation there has no surface to act on. 5. Priced as ONE sequence, which is what a freeze is: Gln71 140.1 → 2.9 Å² and Gln405 119.8 → 18.9 Å². Largest non-additivity against the sum of singles: 1.4 Å² — measured on the built variant, not assumed either way. 6. 2 further position(s) are refused by exactly one of OUR declared filters while measurably reducing a patch — the refusal is the threshold's, not the physics': ALA201→Ser would remove 46% of Gln200's patch (-25.4 Å²), refused by buried(0.77>0.75); TRP210→Ser would remove 32% of Gln200's patch (-17.4 Å²), refused by buried(0.91>0.75). The values stay where they were declared; moving one is a founder call. 7. Every number is an AF3 single-model surface descriptor, and the deciding quantity — whether this enzyme aggregates at expression concentration — is not computed anywhere in this script.",
+  "verdict": "1. The L1 §2 four-site claim now has an instrument, and it holds only inside a contact shell: at R = 7.0 Å with aromatics in the residue set the proxy re-selects {Gln71, Gln200, Gln258, Gln405} exactly, the 4th-to-5th gap is 20.1 Å², and 5 of the 11 sites score exactly zero. It re-selects at [6.5, 7.0, 7.5] Å and at no other swept radius, and never without the aromatics. 2. Read against the protein's own surface the four are not its worst patches: percentiles Gln71 98.2 · Gln200 77.5 · Gln258 86.7 · Gln405 96.2, against a protein-wide maximum of 282.9 Å² at THR12 — 2.0× the largest deglycosylation-site patch. 'Hotspot' is a ranking among the 11 sites, not an absolute aggregation risk. 3. Compensation is admissible at 3 position(s): Leu80→(Asp|Ser), Ala70→(Ser), Ile401→(Ser) — and at Leu80→(Asp|Ser) the Asp/Ser choice is a TIE inside the noise floor, so this script does not make it: the difference there is a charge, and the ranked winner was measured flipping between identical runs. 4. It is NOT admissible at Gln200, Gln258 — Gln258 because its entire apolar neighbourhood lies inside the FAD pocket and the electron-exit shell (the site itself sits 8.0 Å from the path and 11.0 Å from FAD), so buying aggregation margin there spends the MET architecture; and Gln200 because it is the most buried of the 11 sites (burial 0.847) and every neighbour is buried too — a surface-polar compensation there has no surface to act on. 5. Priced as ONE sequence, which is what a freeze is: Gln71 139.9 → 2.9 Å² and Gln405 119.8 → 19.4 Å². Largest non-additivity against the sum of singles: 3.1 Å² — measured on the built variant, not assumed either way. 6. 2 further position(s) are refused by exactly one of OUR declared filters while measurably reducing a patch — the refusal is the threshold's, not the physics': ALA201→Ser would remove 48% of Gln200's patch (-25.7 Å²), refused by buried(0.77>0.75); TRP210→Ser would remove 30% of Gln200's patch (-16.0 Å²), refused by buried(0.91>0.75). The values stay where they were declared; moving one is a founder call. 7. Every number is an AF3 single-model surface descriptor, and the deciding quantity — whether this enzyme aggregates at expression concentration — is not computed anywhere in this script.",
   "caveats": [
     "A SASA proxy is NOT an aggregation prediction. Exposed apolar area is a static single-molecule surface descriptor; aggregation is a multi-molecule kinetic process that depends on concentration, pH, ionic strength, temperature and shear. No rate, solubility or critical concentration is computed here.",
     "Aggrescan3D was NOT run. It is an external web server and the first half of the L1 §2 recipe stays OPEN; nothing in this cache substitutes for it.",
-    "No sequence conservation was consulted. A position that geometry calls free may be conserved for a reason this script cannot see, and for a gene freeze that is the cheapest remaining check.",
+    "Sequence conservation is NOT an input to this score. It is measured separately (script 70) and read beside it, never merged — for Ile401 that reading is what lifted the hold (⚖️ founder 2026-09-18).",
     "No MD of any mutant and no ΔΔG of folding. A few hundred steps of side-chain minimisation in implicit solvent cannot tell whether a substitution destabilises the fold; the burial and DSSP columns are geometric PROXIES for that risk, not a verdict.",
     "One AF3 model, one conformation. Side-chain SASA on a predicted structure carries the prediction's error; the pLDDT columns bound the backbone confidence only.",
     "No catalytic-residue list exists in our canon for GcGDH, so catalysis is guarded only by the FAD-pocket shell — a geometric stand-in whose radius is ours.",
     "The reference state is the AGLYCOSYLATED N→Q mutant, not the glycosylated wild type. Nothing here measures what the removed glycans were actually shielding; the 'newly exposed' framing in L1 §2 is not tested by this script.",
     "Only apolar→{Asp, Ser} substitutions are scored. A pure charge addition at an already polar position is a different lever and is not scored.",
     "Every per-mutation Δ is a SINGLE substitution, and a freeze is a SEQUENCE. Two substitutions in one patch can remove overlapping area, so `recommended_set_as_one_sequence` carries the set built as one variant and `non_additivity_A2` reports the measured difference rather than assuming either way.",
-    "The 4th-to-5th ranking gap is 20.1 Å² against a measured noise floor of 3.27 Å². The gap survives the noise, but it is not a wide margin, and the membership of the four is radius-dependent (see proxy_sensitivity)."
+    "The 4th-to-5th ranking gap is 20.1 Å² against a measured noise floor of 3.77 Å². The gap survives the noise, but it is not a wide margin, and the membership of the four is radius-dependent (see proxy_sensitivity)."
+  ],
+  "founder_decisions_taken": [
+    "The frozen gene carries Leu80→Asp and Ala70→Ser (⚖️ founder 2026-09-17) and Ile401→Ser (⚖️ founder 2026-09-18, after script 70 measured the position) — home L1 §2. This script recommends; the choice was the founder's.",
+    "The Leu80 Asp/Ser tie inside the 3.77 Å² noise floor was decided by CHARGE: Asp. This script still BUILDS the tie as Ser (`substitution_undecided_by_this_measurement`), so `recommended_set_as_one_sequence` is not the ratified gene and the Asp build is unmeasured.",
+    "Gln258 and Gln200 stay un-compensated — the ratified gene carries no lever for either; Gln200's refusal is our BURIAL threshold's, not the measurement's: see `threshold_cost_measured`."
   ],
   "founder_decision_open": [
-    "Which admissible substitution enters the frozen gene, if any: the recommended set is evidence, and the choice is the founder's presumption, not this script's.",
-    "Whether the 12.0 Å FAD shell is the right conservatism. Relaxing it to 8.0 Å would admit nothing — each still on the electron-exit face.",
-    "Whether Gln258 and Gln200 are accepted as un-compensated, which is what this compute says they are — and note that Gln200's refusal is our BURIAL threshold's, not the measurement's: see `threshold_cost_measured`.",
-    "Where the Asp/Ser choice is a tie inside the 3.27 Å² noise floor, the discriminator is charge, not area, and this script does not pick it: see `substitution_undecided_by_this_measurement`.",
-    "Whether the burial ceiling stays at 0.75. Its sensitivity values are [0.65, 0.85] and `threshold_cost_measured` prices the difference in Å² actually removed."
+    "Whether the 12.0 Å FAD shell is the right conservatism. Relaxing it to 8.0 Å would admit nothing — each still on the electron-exit face. The ratified gene was chosen under the declared value; it was never re-judged.",
+    "Whether the burial ceiling stays at 0.75. Its sensitivity values are [0.65, 0.85] and `threshold_cost_measured` prices the difference in Å² actually removed. Same standing as the shell: declared, never re-judged."
   ]
 }

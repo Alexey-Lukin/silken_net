@@ -33,7 +33,7 @@ Parameterization (CPU) → L2 MD (GPU), via ligand SDF + gaff_cache:
   lib/md_utils.prepare_protein → 10 · 11 · 12 · 14 · 15      lib/xylem_sap → 14
 
 L3 DFT anode (CPU):
-  20 (FAD, lumiflavin.json) → 21b · 21c · 21e · 22 · 32
+  20 (FAD, lumiflavin.json) → 21b · 21c · 21e · 21f · 22 · 32 · 34
   21f (Os dimethyl; SOLE owner of os_complex.json) → 22 (cascade) → 21d (ωB97X; reads comparison.json)
   21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check)

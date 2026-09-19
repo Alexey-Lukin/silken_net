@@ -923,8 +923,8 @@ Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; de
 `L1 §2` has said since 2026-06-06 that "an in-house hydrophobic-SASA proxy flags 4 aggregation-prone sites
 (Gln71, Gln200, Gln258, Gln405)", and the recipe on top of it — Aggrescan3D plus compensating Asp/Ser near
 them — gates the dgrFAD-GDH gene freeze. ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
-canonised the conclusion and committed neither script nor cache, so the claim had no measurer for fifteen
-months. Script 69 is the measurer, and the first thing it had to do was ask whether a declared proxy
+canonised the conclusion and committed neither script nor cache, so the claim had no measurer until
+2026-09-17. Script 69 is the measurer, and the first thing it had to do was ask whether a declared proxy
 re-selects the published four.
 
 **The declared proxy.** For each site, the solvent-exposed **apolar** (side-chain C/S) SASA carried by
@@ -966,16 +966,16 @@ under-estimating its own spread.
 
 | hotspot | mutation | ΔSASA patch (Å²) | Δq surface | burial | DSSP | d(FAD) Å | d(e⁻ path) Å | recommended |
 |---|---|---|---|---|---|---|---|---|
-| Gln71 | **Leu80 → Asp** | **−78.4** | −1 | 0.618 | T | 12.1 | 18.6 | ✅ **TAKEN — ⚖️ founder 2026-09-17** |
-| Gln71 | **Leu80 → Ser** | **−78.4** | 0 | 0.618 | T | 12.1 | 18.6 | ⚫ not taken (tie broken by founder) |
-| Gln71 | **Ala70 → Ser** | **−59.6** | 0 | 0.511 | H | 17.4 | 18.3 | ✅ |
-| Gln71 | Ala70 → Asp | −59.4 | −1 | 0.511 | H | 17.4 | 18.3 | ❌ Asp in a helix |
-| Gln405 | **Ile401 → Ser** | **−100.9** | 0 | 0.503 | H | 29.3 | 27.9 | ✅ |
+| Gln71 | **Leu80 → Asp** | **−78.1** | −1 | 0.618 | T | 12.1 | 18.6 | ✅ **TAKEN — ⚖️ founder 2026-09-17** |
+| Gln71 | **Leu80 → Ser** | **−78.1** | 0 | 0.618 | T | 12.1 | 18.6 | ⚫ not taken (tie broken by founder) |
+| Gln71 | **Ala70 → Ser** | **−58.9** | 0 | 0.511 | H | 17.4 | 18.3 | ✅ |
+| Gln71 | Ala70 → Asp | −58.9 | −1 | 0.511 | H | 17.4 | 18.3 | ❌ Asp in a helix |
+| Gln405 | **Ile401 → Ser** | **−101.0** | 0 | 0.503 | H | 29.3 | 27.9 | ✅ |
 | Gln405 | Ile401 → Asp | −100.5 | −1 | 0.503 | H | 29.3 | 27.9 | ❌ Asp in a helix |
-| Gln200 | Ala201 → Ser | −25.4 | 0 | **0.770** | H | 26.4 | 42.8 | ❌ burial 0.77 > 0.75 |
-| Gln200 | Trp210 → Ser | −17.4 | 0 | **0.908** | B | 19.7 | 37.2 | ❌ buried |
-| Gln258 | Leu257 → Ser | −39.6 | 0 | 0.804 | — | **9.7** | 10.3 | ❌ FAD pocket + buried |
-| Gln258 | Ala285 → Ser | −27.8 | 0 | 0.762 | T | **11.4** | 8.7 | ❌ FAD pocket + buried |
+| Gln200 | Ala201 → Ser | −25.7 | 0 | **0.770** | H | 26.4 | 42.8 | ❌ burial 0.77 > 0.75 |
+| Gln200 | Trp210 → Ser | −16.0 | 0 | **0.908** | B | 19.7 | 37.2 | ❌ buried |
+| Gln258 | Leu257 → Ser | −42.6 | 0 | 0.804 | — | **9.7** | 10.3 | ❌ FAD pocket + buried |
+| Gln258 | Ala285 → Ser | −31.8 | 0 | 0.762 | T | **11.4** | 8.7 | ❌ FAD pocket + buried |
 
 **Three positions are admissible, and two of the four hotspots get nothing.**
 
@@ -986,8 +986,8 @@ under-estimating its own spread.
   both in `admissible_substitutions`. The combined variant below had to be built from real residues, so it is
   built as Ser (the option that commits no charge); that is a build choice, flagged as one, not a
   recommendation.
-- **Gln405 → Ile401 → Ser**, the single largest gain available — Ile401 alone carries 100.9 Å² of exposed
-  apolar area, and the swap takes that patch from 119.8 to 18.9 Å². ⚖️ **founder 2026-09-18 TOOK it**, after the
+- **Gln405 → Ile401 → Ser**, the single largest gain available — Ile401 alone carries 101.0 Å² of exposed
+  apolar area, and the swap takes that patch from 119.8 to 19.4 Å². ⚖️ **founder 2026-09-18 TOOK it**, after the
   hold's own question — is position 401 conserved — was measured and answered no (Ile 3.6 % vs Ser 15.7 % over 332
   homologs; the catalytic His537 control reads 98.8 %). Numbers, sampling and the method's ceiling live in
   script `70` and its cache (`chem11_site_conservation.json`); the design verdict lives in `L1 §2`. Asp is refused there by the declared
@@ -996,15 +996,15 @@ under-estimating its own spread.
   shells, and the site itself sits **8.0 Å from the Beratan-Onuchic tunnelling path** (loaded from script 28's
   cache, not mirrored) **and 11.0 Å from FAD**. Aggregation margin there is bought with the MET architecture
   of §5 — the whole cell.
-- ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **46 %** of that
+- ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **48 %** of that
   patch and is refused by a burial of 0.770 against our declared ceiling of 0.75 — a margin of **0.020**, and
-  it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 32 % and is genuinely buried
+  it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 30 % and is genuinely buried
   (0.908, passing at neither swept value). The ceiling was left where it was declared;
   `threshold_cost_measured` prices each refusal in Å² so the choice stays visible.
 
 **Priced as one sequence, because a freeze is a sequence.** The three recommendations built as a single
-variant take Gln71 from 140.1 to **2.9 Å²** and Gln405 from 119.8 to **18.9 Å²**; the largest non-additivity
-against the sum of the singles is **1.4 Å²** — measured on the built variant rather than assumed either way.
+variant take Gln71 from 139.9 to **2.9 Å²** and Gln405 from 119.8 to **19.4 Å²**; the largest non-additivity
+against the sum of the singles is **3.1 Å²** — measured on the built variant rather than assumed either way.
 The undecided position was built as Ser for this one variant, which the cache flags as a build choice.
 
 ### Conservation of the three positions (script 70) — the hold that gated `I401S`

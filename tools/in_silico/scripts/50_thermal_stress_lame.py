@@ -151,9 +151,10 @@ def alloy_comparative() -> dict:
     stands next to the assumed 1 (01_01 §5.2, verb `fea --fit`). Either way the
     knockdown is MEASURED by voxel-FE on the real part — `tools/cad`, `dotnet run -- fea` — and its
     home is 01_01 §5.2. This column supplies only the E it multiplies.
-    ⛔ And the comparison target is the TRANSVERSE wood modulus E_R/E_T ≈ 0.5–1.5 GPa, not the
-    longitudinal 9–16 GPa that stood here: the anchor sits across the trunk (01_01 §5.1). Both this
-    docstring and the printed line below said 9–16, i.e. a target ~10x too high, on every run.
+    ⛔ Wood is compared on the TRANSVERSE modulus E_R/E_T ≈ 0.5–1.5 GPa, never the longitudinal
+    9–16 GPa: the anchor sits across the trunk (01_01 §5.1). And that is a COMPARISON, not a target —
+    canon carries no stiffness requirement on the load-bearing radial axis until bio-data exists
+    (⚖️ 2026-09-17), so the lattice only NARROWS the modulus gap to solid Ti.
     Numbers compare against the coin nano-indentation (criterion 4) when in-vitro data lands."""
     banner("Alloy comparative (Stage-2 bake-off) — CTE-mismatch stress + gyroid-E lever")
     print(f"  {'alloy':>20s}  {'E (GPa)':>8s}  {'a (1e-6/K)':>11s}  {'sig_t @-30C':>13s}  {'note':>6s}")
@@ -174,9 +175,9 @@ def alloy_comparative() -> dict:
         print(f"  {alloy:>20s}  {props['E_GPa']:>8.0f}  {alpha*1e6:>11.1f}  {sigma_t/1e6:>11.2f} MPa  {flag:>6s}")
     print()
     print("  Press-fit is alloy-ROBUST (PEEK CTE 47e-6 dominates). The E column is the bake-off signal:")
-    print("  beta-Ti 80 GPa lowers the gyroid's apparent E; the target is TRANSVERSE wood 0.5-1.5 GPa,")
-    print("  not the longitudinal 9-16 (01_01 5.1). Lattice knockdown is measured, not Gibson-Ashby:")
-    print("  tools/cad `dotnet run -- fea`, home 01_01 5.2.")
+    print("  beta-Ti 80 GPa lowers the gyroid's apparent E. Wood compares TRANSVERSE (0.5-1.5 GPa), not")
+    print("  longitudinal 9-16 — a comparison, NOT a target: canon sets no stiffness target (01_01 5.1).")
+    print("  Lattice knockdown is measured, not Gibson-Ashby: tools/cad `dotnet run -- fea`, home 01_01 5.2.")
     return out
 
 

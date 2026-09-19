@@ -33,7 +33,12 @@ R_GAS = 8.31446261815324     # J/(mol·K) — gas constant
 HARTREE_TO_EV = 27.211386245988
 BOHR_TO_ANG = 0.529177249
 
-# ── Xylem environment (01_03 §3.5) ──
+# ── MD water box (01_03 §3.4) ──
+# PH is the PROTONATION pH of every committed L2 run — not the sap set-point, which is the measured 5.75
+# (01_02 §2.1). Measured 2026-09-19 against OpenMM 8.5.1 `app/data/hydrogens.xml`: Asp/Glu take their
+# proton only at pH ≤ 4.4 and His stays doubly protonated up to 6.5, so 4.5 and 5.75 assign IDENTICAL
+# states and the L2 verdicts stand for the set-point as they are. ⚠️ 4.5 sits 0.1 above the Asp/Glu
+# threshold: a value at or below 4.4 flips every carboxylate, i.e. a different model, not a nudge.
 PH = 4.5
 IONIC_STRENGTH = 0.05        # M — NaCl
 TEMPERATURE_K = 298.15       # K — reference temperature

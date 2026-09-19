@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .constants import RUNS_DIR
+from .constants import PH, RUNS_DIR
 
 
 def create_run_dir(prefix: str = "") -> tuple[str, Path]:
@@ -31,7 +31,7 @@ def create_run_dir(prefix: str = "") -> tuple[str, Path]:
     return run_id, run_dir
 
 
-def prepare_protein(pdb_path: Path | str, ph: float = 4.5):
+def prepare_protein(pdb_path: Path | str, ph: float = PH):
     """Load PDB, strip heterogens, fix missing atoms, protonate at given pH.
 
     Returns (topology, positions) ready for Modeller.
