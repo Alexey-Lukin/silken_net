@@ -266,11 +266,11 @@ env:
     # 200, тож ніщо не червоніє). Перевірено обидві форми: гола, без `/version/…`,
     # віддає `{"message":"Not found"}`.
     # ⚠️ Дім = `env.clear` СВІДОМО: Studio-dev endpoint keyless (запитаний без
-    # авторизації), а `deploy_secret_scan` SECRET_NAME ловить `_RPC_URL`/`REDIS_URL`,
-    # не голий `_URL`. ⛔ І це ТРЕТІЙ екземпляр сліпої зони, під яку писався інваріант F:
-    # публікація в децентралізовану мережу дасть URL З КЛЮЧЕМ під ЦИМ САМИМ іменем, і
-    # гейт його не побачить — тоді змінна мусить переїхати в `env.secret` під
-    # `_TOKEN`/`_API_KEY`-суфіксом, а не лишитись тут «бо вже стояла».
+    # авторизації). Публікація в децентралізовану мережу дасть URL З КЛЮЧЕМ під ЦИМ САМИМ
+    # іменем (`gateway.thegraph.com/api/<key>/…`) — і тоді червоніє інваріант F2
+    # `deploy_secret_scan` (форма ключа в будь-якому голому `*_URL`), а змінна мусить
+    # переїхати в `env.secret` під `_TOKEN`/`_API_KEY`-суфіксом, а не лишитись тут
+    # «бо вже стояла».
     THE_GRAPH_API_URL: "https://api.studio.thegraph.com/query/1758737/silkennet-amoy/version/latest"
     # ⛔ Never "fill" ETHEREUM_ANCHOR_CONTRACT with the Amoy StateRootAnchor: a well-formed
     # address on the WRONG chain is the silent class INF.27 Q2 names, and it would ride straight
