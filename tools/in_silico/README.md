@@ -6,7 +6,7 @@ in-silico validation pipeline described in
 
 | Level | Tool | What we model |
 |-------|------|---------------|
-| **L1** | AlphaFold 3 / ESMFold | Protein architecture — ✅ Passed 2026-05-24 (`d_FAD = 15.998 Å`) |
+| **L1** | AlphaFold 3 (ESMFold — only if the AF3 licence position changes, `/NOTICE`) | Protein architecture — ✅ Passed 2026-05-24 (`d_FAD = 15.998 Å`) |
 | **L2** | **OpenMM** (Python API) | Molecular dynamics — water box, pH 4.5, genipin/Os-polymer/CNC stability |
 | **L3** | PySCF | DFT — HOMO/LUMO of Os redox polymer vs FAD cofactor + cathode DET hopping |
 | **L4** | Python (scipy/numpy) | Reaction kinetics + EIS impedance → `delta_t` + Nyquist predictions |
@@ -62,7 +62,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 34 | `34_dft_microsolvation.py` | L3 ②: cluster-continuum micro-solvation + speciation (chloro/aqua/bis-Im + [Os(H₂O)₆] benchmark) → decompose the PCM cascade gap | ~hours |
 | 34b | `34b_wb97x_speciation.py` | L3: ωB97X ΔSCF cross-check of the ② speciation trend (functional-robustness) | ~hours |
 | 35 | `35_dft_metal_reorganization.py` | L3b ③: computed inner-sphere λ for the ZIF metal hops (Nelsen 4-point on [M(H₂O)₆]) | ~hours |
-| 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) for Lorenz attractor | ~1 s |
+| 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) → growth_points directly (NOT β-perturbation — reversed, 00_07 E.63) | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (borderline k_DET × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |

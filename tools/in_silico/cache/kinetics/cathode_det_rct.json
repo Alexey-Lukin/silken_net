@@ -15,7 +15,7 @@
     "monolayer 1e-11": 1e-11,
     "dense 1e-10": 1e-10
   },
-  "anode_rct_ohm_context": 130.0,
+  "anode_rct_ohm_context": 72.9,
   "grid": [
     {
       "k_label": "lit-\u03bb borderline (\u00d71.4)",
@@ -106,5 +106,5 @@
     0.0018201037165854873,
     225.66509656261863
   ],
-  "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.0018\u20132.3e+02 \u03a9 across the borderline k_DET (\u03bb/coupling-sensitive) AND the unknown coverage \u0393. It can be negligible (fast/dense) or comparable to the anode arc (~130 \u03a9, slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET ~ turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
+  "verdict": "the cathode DET R_ct is NOT a single value \u2014 it spans 0.0018\u20132.3e+02 \u03a9 across the borderline k_DET (\u03bb/coupling-sensitive) AND the unknown coverage \u0393. It can be negligible (fast/dense) or comparable to the anode arc (~73 \u03a9, slow/sparse). \u2192 an EIS cathode arc cannot be predicted a priori; the robust statement stays the KINETIC COMPETITION k_DET ~ turnover (SUMMARY \u00a7Cathode). The decisive test is the measured Ti-coin cathode EIS."
 }

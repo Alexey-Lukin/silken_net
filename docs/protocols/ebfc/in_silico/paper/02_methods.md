@@ -9,7 +9,9 @@
 
 The deglycosylated FAD-dependent glucose dehydrogenase (*Glomerella cingulata*, GcGDH) was
 modelled with **AlphaFold 3**, with the eleven N-glycosylation sequons (N–X–S/T, X≠P) mutated
-to glutamine to give the aglycosylated production variant used throughout. The FAD cofactor was
+to glutamine to give the aglycosylated variant used throughout. (The gene ordered for expression
+carries three further surface substitutions chosen after this modelling; the structure and every
+number below stand on the eleven-substitution sequence as modelled.) The FAD cofactor was
 placed from the AF3 complex prediction; the cofactor-to-surface depth and the electron-exit
 region were measured in ChimeraX. Active-site clusters for the redox and proton-coupled
 calculations were carved from the predicted structure (isoalloxazine ring plus the H-bonding and

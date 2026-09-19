@@ -313,7 +313,7 @@ The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not
 | Km(glucose) | 13.9 mM | Same row, same fit (K_M^app 13.9 ± 3.1; apparent — carries the hydrogel's mass transfer) |
 | Ea | 40 kJ/mol | Typical FAD enzyme |
 | V_op | 0.5 V | EBFC under load |
-| A_electrode | 2 cm² | Conservative gyroid area |
+| A_electrode | 2 cm² | ONE face of the Ø16 Ti-coin COUPON — never the anchor (`lib/constants.py A_ELECTRODE`; the gyroid anode differs by 30–60×) |
 | η_BQ | 0.68 | BQ25570 datasheet (SLUSBH2G Fig.6-7, low-I_IN; [HW.47]) |
 | E_cycle | 5 mJ | STM32 sense+LoRa TX |
 
@@ -924,7 +924,9 @@ Spec home → [`L1_protein_architecture.md`](L1_protein_architecture.md) §2; de
 
 `L1 §2` has said since 2026-06-06 that "an in-house hydrophobic-SASA proxy flags 4 aggregation-prone sites
 (Gln71, Gln200, Gln258, Gln405)", and the recipe on top of it — Aggrescan3D plus compensating Asp/Ser near
-them — gates the dgrFAD-GDH gene freeze. ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
+them — gated the dgrFAD-GDH gene freeze. Since 2026-09-18 the compensations are ratified and written
+into the order (three positions, all taken); what still gates the freeze is the recipe's OTHER half,
+the Aggrescan3D run. ⚠️ **That proxy existed nowhere in the tree.** Commit `2e607abc`
 canonised the conclusion and committed neither script nor cache, so the claim had no measurer until
 2026-09-17. Script 69 is the measurer, and the first thing it had to do was ask whether a declared proxy
 re-selects the published four.

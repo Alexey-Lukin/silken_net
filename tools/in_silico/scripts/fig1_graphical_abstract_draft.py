@@ -6,7 +6,8 @@ NOT the final art: a matplotlib block diagram that fixes the LAYOUT, the element
 the arrows and the canon numbers (cascade +574 mV; E°(Os) +309, E°(FAD-GDH) −265
 vs SHE) so a BioRender / Illustrator pass has an exact, drift-free reference.
 
-Conveys the two patentable synergies (patent_claims_draft.md):
+Conveys the two synergies the defensive publication protects (docs/00_01 §8 — the patent
+path was rejected 2026-06-07; no claims draft exists, and one must not be re-invented here):
   A) one EBFC = power source AND zero-instrumental-noise sensor (delta_t → Lorenz)
   B) one gyroid = xylem-integration + a smaller modulus gap (NOT an isoelastic match) + metal-xylem EBFC electrode
 

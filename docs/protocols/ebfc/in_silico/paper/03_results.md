@@ -18,7 +18,7 @@ transfer the architecture requires. The exit residues are well-ordered in the pr
 so the path is a structural feature, not a disordered artefact. Replayed over a 15-frame
 molecular-dynamics ensemble the decay is essentially unchanged (β·d = 2.02 ± 0.13; conformational-gating
 factor 1.03×), confirming that the single-structure pathway is representative of the thermal ensemble
-rather than a fortuitous static geometry (Fig S1). The deglycosylated production variant (eleven N→Q
+rather than a fortuitous static geometry (Fig S1). The deglycosylated variant modelled here (eleven N→Q
 substitutions) preserves this geometry.
 
 ## 3.2 Anode PCET: the FAD redox potential

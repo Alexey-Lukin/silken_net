@@ -75,8 +75,9 @@ J_MAX_25C = 881e-6           # A/cm² — Michaelis-Menten ASYMPTOTE of dgrGcGDH
 # Ø2.7-2.9 mm, i.e. the electrode such a study uses, so the two routes are consistent.
 # ⚠️ CEILING, not our operating point: measured in 50 mM phosphate pH 7.4 on graphite under flow
 # (0.5 mL/min, +175 mV vs Ag|AgCl). Our medium is synthetic xylem sap at pH 5.75 (side series 4.5) on
-# etched Ti; a pH correction from the same enzyme's MCF data would be ×0.5-0.85 depending on
-# concentration and is not folded into the model — ⚖️ 2026-09-18 keeps the ceiling and prints the
+# etched Ti; a pH correction from the same enzyme's MCF data is [S]-DEPENDENT, not a single factor
+# (the measured pair is below: k_cat ×0.43-0.47 while K_M also falls ×0.54-0.59, so the two partly
+# cancel), and is not folded into the model — ⚖️ 2026-09-18 keeps the ceiling and prints the
 # bracket BESIDE it (see PH_KINETICS_SYGMUND below; 30 §4b) → 00_07 HW.5.IS.
 # ⛔ Do NOT read `494 µA/cm²` from this paper as an asymptote wherever you meet it: that figure is the
 # NATIVE enzyme's density at an operating point (20 mM), and a model that uses it as the MM asymptote

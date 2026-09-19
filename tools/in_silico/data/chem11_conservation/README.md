@@ -6,7 +6,7 @@ are committed for one reason: the numbers they produce decide a **gene that gets
 UniProt returns a *different* pool every month, so a re-runnable verdict needs the pool it was
 computed on to sit in git — not a recipe for getting a similar one.
 
-Canon home of the result: [`L1 §2`](../../../protocols/ebfc/in_silico/L1_protein_architecture.md)
+Canon home of the result: [`L1 §2`](../../../../docs/protocols/ebfc/in_silico/L1_protein_architecture.md)
 («Conservation of position 401»). Cache: `tools/in_silico/cache/chemistry/chem11_site_conservation.json`.
 
 | File | What it is | Provenance |

@@ -1,6 +1,6 @@
 # In-Silico Pipeline — Operational Status & Dependencies
 
-> **Last updated:** 2026-06-19 (OS-RECOMPUTE closed — dimethyl mediator +309 mV, ② chloro-bracket; B1/B2/B4 ωB97X dimethyl ✅, adiabatic ΔSCF +1.03 eV, PCET cascade +1.627 eV; pytest 86 ✅)
+> **Last updated:** 2026-09-19 (L4 re-anchored 2026-09-18 — `J_MAX_25C` 881 µA/cm², `K_M` 13.9 mM, pH-bracket beside the ceiling; earlier: OS-RECOMPUTE — dimethyl mediator +309 mV, ② chloro-bracket, adiabatic ΔSCF +1.03 eV, PCET cascade +1.627 eV). Suite count is not quoted here — run `python -m pytest tests -q` in `tools/in_silico/`
 > **TRL 3→4 Gate:** ✅ PASSED (2026-05-25)
 
 ---
@@ -126,9 +126,9 @@
 
 **Verdict: ✅ YES.** SUMMARY.md has all numbers. Key claims:
 - "EBFC Gen 2.0 validated in silico across 4 levels"
-- "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 14-120s)"
+- "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 10-84s, re-anchored 2026-09-18)"
 - "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2023); raw DFT uphill = method limit decomposed by ②"
-- "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a clear low-λ-metal (Ru) / conductive-MOF improvement path"
+- "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a low-λ-metal (Ru) improvement path; which lever is taken is READ from the ratified rule (0)–(3) after the coin EIS, and the conductive-MOF branch is chosen by none of them (01_03 §3.2)"
 
 ### ✅ Sufficient for external QM/MM collaborator?
 

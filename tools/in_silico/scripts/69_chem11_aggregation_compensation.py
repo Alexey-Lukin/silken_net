@@ -10,7 +10,7 @@ mutations (Asp/Ser) near them". This script is the instrument for the second hal
 
 ⚠️ THE PROXY DID NOT EXIST IN THE TREE. Neither a script nor a cache defined it — the
 2026-06-06 commit (2e607abc) wrote the four-site CONCLUSION into canon and committed no
-measurer, so for fifteen months the freeze-gating claim was prose. This script therefore
+measurer, so from then until 2026-09-17 the freeze-gating claim was prose. This script therefore
 DECLARES a proxy (below) and then asks whether it re-selects the published four. It does,
 but only inside a contact shell: see `proxy_sensitivity`. Outside 6.5–7.5 Å the set changes
 membership, and without the aromatics in the residue set it never reproduces at all. So the
