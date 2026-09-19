@@ -699,8 +699,9 @@ class BlockchainTransaction < ApplicationRecord
   # Ідемпотентний: клампимо до поточного locked_balance (частковий rollback уже міг звільнити
   # частину) і виходимо, якщо звільняти нічого. Викликається ЛИШЕ з fail-after при переході
   # НЕ-з-:failed (guard у події) → подвійного звільнення на retry-fail не буде.
-  # ⚠️ Колонку `locked_points` метод НЕ обнуляє: на `:failed`-рядку вона — провенанс (скільки
-  # було заблоковано), а не живе блокування; живий стан — `wallets.locked_balance`.
+  # ⚠️ Колонку `locked_points` метод НЕ обнуляє, тож її значення на `:failed`-рядку НЕ каже,
+  # чи лок живий: після звільнення це провенанс, а без гаманця чи при збої нижче лок лишається.
+  # Живий стан читають із `wallets.locked_balance`, не з цієї колонки.
   def release_locked_points_on_fail!
     return if locked_points.blank? || locked_points.zero?
     return unless wallet

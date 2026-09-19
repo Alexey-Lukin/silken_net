@@ -109,10 +109,11 @@ Rails.application.configure do
   # chain by putting a non-secret into the secrets path, which `deploy_secret_scan`
   # exists to prevent. Flipping is a one-token manifest edit plus a deploy — and it
   # is reviewable in git precisely BECAUSE the value is clear rather than secret.
-  # ⚠️ No gate sees this reader: `env_fetch_declaration_spec` judges `ENV.fetch` without a
-  # default in `app/`+`lib/`, and this is `ENV[…]` in `config/initializers/` — its declared
-  # ceiling. The value lives only in `env.clear` of both manifests; this comment is the carrier.
+  # ⚠️ No gate sees this reader: `env_fetch_declaration_spec` scans only `ENV.fetch` without a
+  # default in `app/`+`lib/` (its code scope), and this is `ENV[…]` in `config/initializers/`.
+  # The value lives only in `env.clear` of both manifests; this comment is the carrier.
   # ⛔ Flip canopy FIRST and in its OWN commit: one commit for both slots makes the rehearsal
-  # share production's verdict, i.e. stop being a rehearsal (⚖️ founder 2026-09-07, 06_01 Фаза 5).
+  # share production's verdict (06_01 §DEPLOY-DAY Фаза 5; the founder's ⚖️ 2026-09-07 is the
+  # manual-smoke variant (b), the order is the reasoning recorded with it in 819ec279).
   config.content_security_policy_report_only = ENV["CSP_ENFORCE"] != "true"
 end
