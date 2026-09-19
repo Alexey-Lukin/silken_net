@@ -163,7 +163,7 @@ internal sealed class DilatedField(IImplicit oInner, Func<Vector3, bool> fnInBod
 // the core (r=rCore, the rod axis) to the rim (r=rRim, the outer wall): period (cell/pore size)
 // and wallParam (porosity/E). Per the FGS method s=p/(1−ρ), at constant porosity a linear pore
 // gradient IS a linear cell-size (period) gradient; wallParam(r) can instead GRADE the porosity
-// (founder 2026-06-21 — constant-vs-graded is an open, FEA-gated choice). Phase uses the LEAP-style
+// (founder 2026-06-21; the constant-vs-graded fork has a BIOLOGICAL criterion, ⚖️ 2026-09-17 — 01_01 §5.5). Phase uses the LEAP-style
 // coord/period(r): a spatially-varying frequency is not strictly periodic (cells distort slightly
 // across the gradient) but stays bicontinuous → porosity is MEASURED per radial shell, never derived
 // (gotcha #4). Topology: sheet = a wall around the minimal surface (|eq|; stretch-dominated, more

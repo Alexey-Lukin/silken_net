@@ -110,7 +110,7 @@ internal sealed record NotesSpec
     public string? SurfaceFinish { get; init; }        // "micro Sa 0.5–5 µm + nano Sv 50–500 nm (EAAE, 01_02 §1.2)"
     public string? PostProcess { get; init; }          // "HIP (01_02 §1.7) · dehydrogenation bake · build tip-down §1.6"
     public string? CoatingRestriction { get; init; }   // "ZnO-Ta/HAp/RGD FORBIDDEN on Zone-1 gyroid (blocks DET) — 01_02 §3.6"
-    public string? LatticeSpec { get; init; }          // "porosity 65±2 % / period … / topology … — inspect Archimedes+µCT (ISO/ASTM 52900)"
+    public string? LatticeSpec { get; init; }          // "porosity 65 % nominal, 60–70 % band on the whole part / period … / topology … — inspect Archimedes+µCT (ISO/ASTM 52900)"
     public string? Inspection { get; init; }           // "SEM ×500/5000/50000 · ICP-MS Al<1 ppb (01_02 §1.5)"
     public string[]? Extra { get; init; }              // free lines (Ti-coin active-area, RF keep-out, …)
 }
@@ -375,7 +375,7 @@ internal sealed record CathodeFlangeCem
 // Zone-3 cathode flange (Деталь 3) and caps the PCB. A HOLLOW PEEK shell (Ø25): a rounded shield bell
 // (≥3 mm over bark, R≥5 — anti-overgrowth, no callus-grip edge; ⛔ neither field DRIVES the geometry —
 // the cap rise and edge radius are both the dome radius, and these two are floor-checks only) + an
-// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — 00_07 HW.33) + a LOCAL INTERNAL RIM BOSS whose
+// internal PCB cavity (⛔ cavity height ≠ antenna↔Ti clearance — Assembly.RfClearanceMm) + a LOCAL INTERNAL RIM BOSS whose
 // outer band carries the bayonet socket (L-slot mating the Деталь-3 lugs) and whose inner band is the seal land
 // that closes the flange's single O-ring groove — the rim itself is FLAT (Radome.cs). The cathode is NOT
 // sealed under the dome — it breathes O₂ from the SIDE/perimeter (02_02 §1.2; gas-phase 5–10× vs dissolved).
@@ -386,7 +386,7 @@ internal sealed record RadomeCem
     public float VoxelSizeMm { get; init; } = 0.1f;        // dome ~Ø25, no sub-mm features → 0.1 ok
     public float DomeDiameterMm { get; init; } = 25f;      // frozen (= Zone-3 flange Ø, 02_02 §1.3)
     public float WallThicknessMm { get; init; } = 2f;      // 1.5–2.0 (RF vs strength, 02_01 §5.2)
-    public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF). ⛔ NOT antenna↔Ti: that is cavityH − lockGrooveZ − t/2 = 8.0 here, and the ≥12 floor is OURS (canon asks ≥8) — 00_07 HW.33
+    public float CavityHeightMm { get; init; } = 13f;      // PCB stack (Power+B2B+RF). ⛔ NOT antenna↔Ti: that is cavityH − lockGrooveZ − t/2 = 8.0 here, and the ≥12 floor is OURS (canon asks ≥8; acceptance is a mock-up's call, 02_01 §5.3)
     public float BellRiseMm { get; init; } = 3f;           // rounded top over the body (≥3, 01_04 §5.5)
     public float BellRadiusMm { get; init; } = 5f;         // top edge round (≥5 — no callus-grip edge)
 
@@ -461,8 +461,8 @@ internal sealed record AnchorAssemblyCem
     // makes HFSS mandatory below 10. Its only 12 is the OUTCOME of a proposed two-deck board stack
     // (standoff 8-10 over a Power Deck sitting ~2 over the flange), i.e. a design point mirrored here
     // as if it were a floor. Same mirror in 52_z_stack_tolerance.RF_ANT_TI_CLEARANCE_MIN.
-    // Which number is the acceptance floor is an open verdict (00_07 HW.33); the measurement that
-    // settles it is the UNI.10 VNA sweep of Z-clearance 5/8/12. [2026-09-11]
+    // Which number is the acceptance floor a MEASUREMENT settles, and ⚖️ 2026-09-17 named which one:
+    // a mock-up — LoRa 868 eval board + PEEK plates at Z 5/8/12, RSSI/PER (02_01 §5.3). [2026-09-11]
     public float RfClearanceMinMm { get; init; } = 12f;   // antenna↔Ti min Z for VSWR (02_01 §5.3 — read the ⛔ above)
     public float SkirtClearanceMm { get; init; } = 0.5f;  // skirt OD = lug-tip Ø + 2·clearance
 

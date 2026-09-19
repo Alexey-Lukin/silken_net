@@ -429,8 +429,9 @@ internal static class Program
             default:
                 // ⛔ `radome` is deliberately absent, and the reason is not effort: its cap is still the full
                 // hemisphere while ⚖️ 2026-09-11 ratified a FLAT CROWN R5 whose application waits on ⚖️ HW.30
-                // (piezo placement, 00_07 HW.33) — a sheet issued from today's generator would print the
-                // rejected cap the moment it printed. (The flat rim and the rim boss ARE applied, 2026-09-14.)
+                // (piezo placement), and its socket will be reshaped by the collar leg — a sheet issued from
+                // today's generator would print the rejected cap the moment it printed, so it ships with the
+                // LAST of those two changes (00_07 HW.33). (The flat rim and the rim boss ARE applied, 2026-09-14.)
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 
@@ -593,8 +594,8 @@ internal static class Program
     // period yields a ligament of ~0.36 mm, so this threshold is ~3x STRICTER than its own
     // rationale and already clears the SLM floor of 0.2 mm. It is therefore conservative, not
     // leaky — and it rejects periods 0.28-1.0 mm that network can in fact print. Left unchanged
-    // on purpose: moving it decides which geometry ships, which is a founder judgment (00_07
-    // HW.33). Thickness-per-topology + its ceilings: 01_01 §5.5.
+    // on purpose: moving it decides which geometry ships — a product-geometry verdict, taken the day a
+    // SKU asks for a sub-1 mm period on network (01_02 §6). Thickness-per-topology + its ceilings: 01_01 §5.5.
     private const float PrintablePeriodFloorMm = 1.0f;
 
     // Anchor verify: graded-aware golden metrics (per-shell porosity + finest period) → metrics.json,
@@ -802,8 +803,8 @@ internal static class Program
     //     antenna on the cavity CEILING by assumption (Validation.cs), i.e. on a board stack nobody froze.
     //  2. THE 12 IS OURS, NOT CANON'S. 02_01 §5.3 asks for ≥ 8 mm (10–15 desirable) on the λ/40 = 8.6
     //     ground and makes HFSS mandatory below 10; its only 12 is the OUTCOME of a proposed two-deck
-    //     layout. Which number is the acceptance floor is an OPEN verdict (00_07 HW.33), settled by the
-    //     UNI.10 VNA sweep — so this stays a working floor on the CEM dimension, not an RF claim.
+    //     layout. Which number is the acceptance floor a mock-up measurement settles (⚖️ 2026-09-17,
+    //     02_01 §5.3) — so this stays a working floor on the CEM dimension, not an RF claim.
     //  ⊕ Same mirror family as Cem.RfClearanceMinMm and 52_z_stack_tolerance.RF_ANT_TI_CLEARANCE_MIN;
     //     all three cite one canon row, and one date is ONE witness (00_05 §5).
     private static int ReportRadome(RadomeCem cem, Voxels voxRadome)
@@ -843,9 +844,9 @@ internal static class Program
 
         if (!bHollow) Console.WriteLine($"  ⚠ hollow fraction {oM.HollowFraction:P0} ≤ 50 % — radome rendered solid (cavity subtract failed)");
         if (!bBell) Console.WriteLine($"  ⚠ bell rise {oM.BellRiseMm:F1} < {cem.BellRiseMm:F1} mm (01_04 §5.5 anti-overgrowth)");
-        if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — OUR working floor, NOT the canon RF minimum (02_01 §5.3 asks ≥8); antenna↔Ti is cavityH − lockGrooveZ − t/2, see 00_07 HW.33");
+        if (!bCavity) Console.WriteLine($"  ⚠ cavity height {cem.CavityHeightMm:F0} < 12 mm — OUR working floor, NOT the canon RF minimum (02_01 §5.3 asks ≥8); antenna↔Ti is cavityH − lockGrooveZ − t/2, see Assembly.RfClearanceMm");
         if (!bMate) Console.WriteLine($"  ⚠ socket slot {fSocketSlot:F1} < lug {cem.LugRadiusMm:F1} + clearance — bayonet mate-fit");
-        if (!bLand) Console.WriteLine($"  ⚠ seal land only {oM.SealLandSolidFraction:P0} solid over the rim face (outer edge strip {oM.SealLandEdgeSolidFraction:P0}) — the flat rim is cut where the O-ring must be backed (a counter-groove, a missing boss, or an entry slot reaching the land; 00_07 HW.33)");
+        if (!bLand) Console.WriteLine($"  ⚠ seal land only {oM.SealLandSolidFraction:P0} solid over the rim face (outer edge strip {oM.SealLandEdgeSolidFraction:P0}) — the flat rim is cut where the O-ring must be backed (a counter-groove, a missing boss, or an entry slot reaching the land; 02_02 §3.5)");
 
         bool bOk = bSane && bHollow && bBell && bCavity && bMate && bLand;
         Console.WriteLine(bOk ? "VERIFY OK" : "VERIFY FAILED");
@@ -886,12 +887,12 @@ internal static class Program
         if (oM.MateInterferenceMm3 is > 5.0)
             Console.WriteLine($"  ⚠ MATE-Ø: parts foul ({oM.MateInterferenceMm3:F0} mm³ overlap) — Ø25 disc inside the dome (rim cavity Ø{Radome.RimCavityDiameterMm(cem.Radome):F2} under the boss, Ø{cem.Radome.DomeDiameterMm - (2f * cem.Radome.WallThicknessMm):F0} above it) because the bayonet Z seats the rim {oM.BayonetZMismatchMm:F1} mm below the flange face, and/or Ø29 lugs (inboard clamps only the lugs; the collar leg owns Z — 00_07 HW.33)");
         if (oM.RfClearanceMm is { } dRf && dRf < cem.RfClearanceMinMm)
-            Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm (OUR floor, not canon's — 02_01 §5.3 asks ≥8, HFSS below 10; 00_07 HW.33) at the bayonet datum — Z-stack pulls the cavity onto the flange");
+            Console.WriteLine($"  ⚠ RF: antenna↔Ti {dRf:F1} < {cem.RfClearanceMinMm:F0} mm (OUR floor, not canon's — 02_01 §5.3 asks ≥8, HFSS below 10, acceptance is a mock-up's call) at the bayonet datum — Z-stack pulls the cavity onto the flange");
         if (oM.BayonetZMismatchMm is { } dBz && dBz > 2f * cem.VoxelSizeMm)
-            Console.WriteLine($"  ⚠ bayonet-Z: rim lands {dBz:F2} mm off the O-ring target — Деталь3 lug-Z ↔ Деталь4 lock-groove-Z un-reconciled (HW.8)");
+            Console.WriteLine($"  ⚠ bayonet-Z: rim lands {dBz:F2} mm off the O-ring target — Деталь3 lug-Z ↔ Деталь4 lock-groove-Z un-reconciled until the ratified raised collar is built (02_02 §4.4)");
 
         Console.WriteLine(bSane
-            ? "AUDIT OK — assembly rendered; mate findings above → HW.17 / HW.8 reconcile"
+            ? "AUDIT OK — assembly rendered; mate findings above → collar leg (00_07 HW.33) · bench HW.8.8"
             : "AUDIT FAILED — merge did not render (broken transform / Bool)");
         return bSane ? 0 : 1;
     }

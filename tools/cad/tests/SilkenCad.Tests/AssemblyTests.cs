@@ -56,8 +56,8 @@ public class AssemblyTests
         Assert.Equal(5.0, Assembly.BayonetZMismatchMm(cem), 3);     // |12 − 17|
         Assert.Equal(8.0f, Assembly.RfClearanceMm(cem), 3);          // (12 + 13) − 17
         // ⛔ "below OUR 12", not "below canon's floor": 02_01 §5.3 asks ≥ 8 (10-15 desirable, HFSS below
-        // 10), so 8.0 does not violate canon — which number is acceptance is an open verdict (00_07
-        // HW.33). This pin regresses the ARITHMETIC against the CEM constant, nothing more. [2026-09-11]
+        // 10), so 8.0 does not violate canon — which number is acceptance a mock-up measurement settles
+        // (⚖️ 2026-09-17, 02_01 §5.3). This pin regresses the ARITHMETIC against the CEM constant, nothing more. [2026-09-11]
         Assert.True(Assembly.RfClearanceMm(cem) < cem.RfClearanceMinMm, "RF clearance must fall below the CEM's 12 mm working floor here");
     }
 

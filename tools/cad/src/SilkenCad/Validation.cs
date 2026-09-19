@@ -91,7 +91,7 @@ internal sealed record GeometryMetrics
     public double? SealLandEdgeSolidFraction { get; init; }   // a two-voxel strip just inside the land's outer edge — where an entry slot would bite first
 
     // Capsule-end assembly mate-audit (Деталь 3↔4, 02_02 §4, null for non-assembly). See MeasureAssembly.
-    public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (Z-stack reconcile, HW.8)
+    public double? BayonetZMismatchMm { get; init; }        // |radome-rim landing − O-ring target| at the bayonet datum (closed by the ratified raised collar, 02_02 §4.4)
     public double? MateRadialGapMm { get; init; }           // radome inner-cavity R − flange R; <0 = the Ø25 disc fouls the cavity (MATE-Ø)
     // antenna(cavity top)↔Ti(flange face) at the datum. ⛔ Judged against Cem.RfClearanceMinMm, which is
     // OUR 12, not canon's: 02_01 §5.3 asks for ≥ 8 (10-15 desirable, HFSS below 10) — read the ⛔ at that

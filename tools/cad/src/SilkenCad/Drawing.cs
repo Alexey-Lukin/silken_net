@@ -861,8 +861,8 @@ internal static class Drawing
     //   · the LATTICE lead — every value straight from the manifest, plus WHICH print floor is in force
     //     (the vendor's own number or the canon 01_01 §5.5 default), the same distinction `verify` prints.
     //     ⛔ `porosity_target` is quoted as a TARGET and explicitly denied as the acceptance band: canon
-    //     carries three different porosity numbers, and their relation is RATIFIED (2026-09-17, 00_07 HW.33 —
-    //     65 % nominal, the factory judged by 60–70 %, a graded part judged as a whole), so the generator's
+    //     carries two porosity numbers, ratified 2026-09-17 (01_01 §5.2) — 65 % nominal, the factory judged
+    //     by 60–70 % on the whole part (a 65 ± 2 % has no home, 01_01 §5.5) — so the generator's
     //     goal printed bare in the acceptance contract would pass for the band it is not.
     //   · the COATING-BOUNDARY line, repeating in prose what the leader says on the view — the DXF has
     //     no leader geometry for it, and the two readers must not disagree about a refusal.

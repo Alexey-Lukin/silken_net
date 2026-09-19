@@ -93,7 +93,7 @@ internal static class Assembly
     // lock-groove Z, and flange thickness. ⛔ And the sign of the middle one is the opposite of the
     // intuitive reading: RAISING `lock_groove_z_mm` LOWERS the antenna (it shortens the lift), so
     // "lift the radome by raising the lock groove" runs backwards. Reaching OUR 12 mm working floor
-    // (02_01 §5.3 asks ≥ 8; which number is the floor is open, 00_07 HW.33) from today's 8.0 would need
+    // (02_01 §5.3 asks ≥ 8; which number is acceptance, a mock-up settles — ⚖️ 2026-09-17) from today's 8.0 would need
     // +4 on `cavityH` (13 → 17); on the groove alone −0.5, i.e. a groove above the rim. Cavity height is
     // the one term here that does NOT move the rim — an algebraic fact about this function, ⛔ not a
     // recommendation: «raise the cavity to 15–17» is a REMOVED branch, because the ratified flat crown moves

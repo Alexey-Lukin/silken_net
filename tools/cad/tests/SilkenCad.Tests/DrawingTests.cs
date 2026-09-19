@@ -865,9 +865,8 @@ public class DrawingTests
         Assert.True(Regex.Matches(svg, "<circle").Count <= 4, "the lattice must not be drawn cell-by-cell (01_02 §6)");
     }
 
-    // The porosity TARGET is the generator's goal; canon carries three different porosity numbers, and their
-    // relation is RATIFIED (2026-09-17, 00_07 HW.33): 65 % is the nominal, the factory is judged by 60–70 %, and a
-    // graded part is judged as a whole. The target is none of those, and printed bare on an acceptance contract it
+    // The porosity TARGET is the generator's goal; canon carries two porosity numbers, ratified 2026-09-17
+    // (01_01 §5.2): 65 % is the nominal, the factory is judged by 60–70 %, and a graded part is judged as a whole. The target is none of those, and printed bare on an acceptance contract it
     // would pass for the band — so the sheet must deny it in the same breath.
     [Fact]
     public void Anchor_Sheet_Never_Prints_The_Porosity_Target_As_An_Acceptance_Band()

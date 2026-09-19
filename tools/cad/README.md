@@ -103,7 +103,7 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
 - **Continuous radial gradient distorts above ~0.8× period ratio:** a spatially-varying
   frequency makes the SDF non-Eikonal (`|∇eq| ∝ f`); the parasitic `∇f·coord` term collapses
   porosity (measured 67→42 % at period 2.5→1.3 mm). Keep continuous gradients gentle. For a
-  STRONG pore contrast use `topology: stepped` (constant-period zones → distortion only at the
+  STRONG pore contrast use `topology: stepped` (µ-LPBF only, not an SLM candidate — `01_01 §5.5`; constant-period zones → distortion only at the
   thin boundary ring). A phase-correct strong continuous gradient needs period-tensor/conformal
   (Noyron/nTop-level), beyond this demo. **Per-shell porosity uses cumulative-diff** (thin rings
   under-count metal on distorted geometry).
@@ -133,13 +133,14 @@ macOS-with-display runner would re-arm render-verify as a hard gate.
 
 ## Status & deferred
 
-**v2 graded anode shipped** — three CEM-driven grading strategies, all MEASURED and FEA/bio-gated
-(the "which is best" answer is open; the generator is unbiased, not opinionated):
+**v2 graded anode shipped** — three CEM-driven grading strategies, all MEASURED (the "which is best"
+answer is open, and on the porosity axis it is BIOLOGY's to give — ⚖️ 2026-09-17, `01_01 §5.5`; the
+generator is unbiased, not opinionated):
 - **continuous cell-size** (`GyroidPeriodRimMm`): gentle only (phase-distortion-limited ~0.8×) —
   flat porosity, smooth pore taper.
 - **porosity gradient** (`GyroidWallParamRim`): clean monotone profile (the "softer rim").
 - **stepped heterostructure** (`Topology: stepped`, `ZonedGyroid`): strong ~2× pore contrast at
-  constant porosity. Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded
+  constant porosity — µ-LPBF only: ⚖️ 2026-09-17 it is NOT an SLM candidate (`01_01 §5.5`). Own SDF, not LEAP `ImplicitModular` (`FunctionalScaleTrafo` is a hard-coded
   Z-demo; LatticeLibrary upstream is dormant and our pin is its `HEAD main` — check that with `git ls-remote`, never by age).
 
 5-SKU per-species sweep (pine · oak · broadleaf · mangrove · tropical) + the `graded_porosity` and `stepped` demos — the roster is `ls cem/anchor_zone1.*`.
@@ -189,7 +190,7 @@ managed (no Library.Go), `WallScan.cs` under xUnit.
 
 **Radome / Деталь 4 (shipped)** — `radome` CEM → hollow PEEK dome Ø25 (gotcha #9 INVERTED: the hollow IS
 intended → the gate checks the wall, not solidity) + a rounded shield bell (≥3/R≥5, anti-overgrowth) +
-bayonet socket (L-slot, mate the Деталь-3 lugs — cut in the OUTER band of the rim boss only) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — 00_07 HW.33) + a LOCAL INTERNAL RIM BOSS (`Radome.Boss*`: socket band `lug + clearance` = 1.8 outside, seal land `gland width + 2·clearance` = 2.915 inside, rim cavity ≤ Ø15.57 at the 80 % gland fill — every term a minimum, so a CEILING handed to HW.9 as an input, ⚖️ 2026-09-14) with a FLAT rim: the single O-ring groove is the flange's, and the land here closes it. `verify`
+bayonet socket (L-slot, mate the Деталь-3 lugs — cut in the OUTER band of the rim boss only) + PCB cavity (⛔ its ≥12 floor is OURS on the CEM dim, NOT antenna↔Ti and NOT the canon ≥8 — `02_01 §5.3`) + a LOCAL INTERNAL RIM BOSS (`Radome.Boss*`: socket band `lug + clearance` = 1.8 outside, seal land `gland width + 2·clearance` = 2.915 inside, rim cavity ≤ Ø15.57 at the 80 % gland fill — every term a minimum, so a CEILING handed to HW.9 as an input, ⚖️ 2026-09-14) with a FLAT rim: the single O-ring groove is the flange's, and the land here closes it. `verify`
 gates hollow-fraction / bell-rise / cavity / mate-fit / **seal land solid over the full rim face** (a rendered slab measurement, `SealLandSolidFraction` > 95 % — flat rim, no counter-groove, no entry slot in the land). **🏁 Anchor-CAD family complete** (coin→anode-v2→
 ARCH.25→barbs→Деталь3→Деталь4). ⚖️ MATE-Ø radial: RATIFIED 2026-09-10, boss APPLIED 2026-09-14 — Ø25 stays, lugs go inboard, and the rim boss carries both the bayonet socket and the seal land; the enclosing `skirt` is WITHDRAWN because it cuts the lower cavity past the flange rim and so deletes the face the ratified O-ring seals against. ⚖️ The bayonet-Z half was RATIFIED 2026-09-11 (`02_02 §4.4`): the lugs move to a RAISED COLLAR above the sealing face, at the Z `Assembly.RequiredLugZMm` derives (20.5) — NOT modelled: nothing sets the collar's wall, and a placeholder would print on the flange sheet as a decision; the flat crown R5 waits on ⚖️ HW.30 (the cap is still a hemisphere, which is why `draw radome` is refused).
 
