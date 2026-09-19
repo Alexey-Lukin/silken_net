@@ -11,7 +11,9 @@
 > and truncated after compaction. What fires at the moment of action is the skill's description and the
 > `CLAUDE.md §2` event row, and both name these events. **Declared price:** a docs-only session no longer
 > sees the leads, so a shape that bites during ordinary doc editing reaches you only if you recognise the
-> event. ⛔ Do not move the index back to buy that serendipity — reopen this verdict instead. The recipe «Add a new drift
+> event. ⚠️ The ground is the MOMENT, not rarity: `guard-craft.md` is edited on almost every working
+> day (measured 2026-09-19), so few sessions never touch gate work — the move saves the start-ritual read,
+> not the lookup. ⛔ Do not move the index back to buy that serendipity — reopen this verdict instead. The recipe «Add a new drift
 > guard» moved here the same day on the same ground (⚖️ founder 2026-09-19): it fires on the same event.
 
 ## Add a new drift guard — the recipe
