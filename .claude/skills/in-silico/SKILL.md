@@ -18,7 +18,7 @@ description: "Use when working on the silken_net in-silico surface — the EBFC 
 | `docs/00_02_Academic_Integration_and_IP.md` §1 | Partner registry: Мінаєв = spin-forbidden O₂-activation kinetics, NOT DFT-redox (that is self-owned; an explicit-water collaborator is TBD) · ЧМА Бушуєва = gel-matrix stabilisation · xylem-sap composition = ЧНУ bio hub |
 | `docs/00_02_Academic_Integration_and_IP.md` §2 | Publication plan — Стаття 1 |
 | `docs/00_07_Action_Plan_Tracker.md` | HW.5.IS section — operational task status |
-| `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon + verdict homes: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
+| `01_01 §1.4` / `01_01 §4.2` · `02_02 §2.2` / `02_02 §3.5` · `01_02 §2.2` · `00_07` HW.3 / HW.33 / HW.34 / HW.43 | Anchor-mechanics canon (ratified verdicts live THERE) + the open-work items: `50`/`51`/`56` → the Zone1↔2 band window (§4.2, HW.3) · `55`/`68` → the bus wire and its liner (§1.4, HW.34) · `52` → the Z-stack and the O-ring gland (`02_02 §3.5`, HW.33) · `59` → contact-part endurance (`02_02 §2.2` + `01_02 §2.2`, HW.43) |
 | `tools/in_silico/README.md` | Setup, quickstart, GPU notes, GAFF explanation |
 
 ## Script Dependency Graph
