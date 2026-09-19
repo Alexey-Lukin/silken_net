@@ -8,20 +8,10 @@ RSpec.describe Api::V1::TreesController, type: :request do
     silence_broadcasts!(:tree_map)
   end
 
-  def build_chronicle_pagy(page: 1, limit: 20, count: 2, pages: 1)
-    OpenStruct.new(
-      page: page,
-      limit: limit,
-      count: count,
-      last: pages,
-      from: 1,
-      to: count,
-      previous: page > 1 ? page - 1 : nil,
-      next: page < pages ? page + 1 : nil,
-      vars: { items: limit }
-    ).tap do |pagy|
-      pagy.define_singleton_method(:series) { (1..last).to_a }
-    end
+  # Справжній Pagy, не OpenStruct-двійник: той дописував `vars` і публічний `series`,
+  # а `last` брав незалежно від `count` — клас TEST.12 (`pagy_fixture_is_real_spec.rb`).
+  def build_chronicle_pagy(page: 1, limit: 20, count: 2)
+    Pagy::Offset.new(count: count, page: page, limit: limit)
   end
 
   def build_chronicle_entry(title:, date:, **attributes)
@@ -153,7 +143,7 @@ RSpec.describe Api::V1::TreesController, type: :request do
   end
 
   describe "GET /trees/:id/chronicle" do
-    let(:chronicle_pagy) { build_chronicle_pagy(page: 2, count: 21, pages: 2) }
+    let(:chronicle_pagy) { build_chronicle_pagy(page: 2, count: 21) }
     let(:dated_entry) do
       build_chronicle_entry(
         title: "Telemetry Logged",
