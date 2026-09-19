@@ -37,13 +37,13 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 <!-- DEPLOY-INVARIANTS-INDEX:AUTO — generated from invariants.md by `ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->
 
 1. Redis має два доми за слотом — production = Upstash, canopy = Kamal-accessory на app-хості — і Free-межа Upstash рахує КОМАНДИ, тож її зʼїдає навіть порожній Sidekiq
-2. `gcloud` — передумова ШЕСТИ кроків дня, а не першого; і до 2026-08-31 її не називала ЖОДНА фаза
+2. `gcloud` — передумова ШЕСТИ кроків дня, а не першого: Фаза −1 перелічує АКАУНТИ, а рунбук говорить із CLI
 3. `§Quickstart` у `06_01` БІЛЬШЕ НЕ ІСНУЄ — не шли туди нікого
 4. CoAP-інтейк: PRIMARY = демон на Ingress Anchor, а Kamal-роль `coap` — лише дормантний fallback
 5. Cloud SQL Auth Proxy авторизує через Google API — це ОРТОГОНАЛЬНО мережевій досяжності, не заміняє її
 6. `deletion_protection` — ДВА РІЗНІ ЗАХИСТИ ПІД ОДНИМ СЛОВОМ, і на Cloud SQL стояв лише один
 7. Observability = Alloy → Grafana Cloud SaaS; self-hosted Prometheus НЕ потрібен (OBS.1)
-8. ALLOY-КОНТЕЙНЕР ОДИН НА ДВА СЛОТИ — тож `accessory boot` НІКОЛИ не беруть із `-d <destination>`
+8. ALLOY-КОНТЕЙНЕР ОДИН НА ДВА СЛОТИ — тож `accessory boot alloy` НІКОЛИ не беруть із `-d <destination>` (canopy-only accessory — навпаки, ЛИШЕ з `-d canopy`, #1)
 9. `BOOT_CRITICAL` — це єдине місце, де порожній секрет стає ГУЧНИМ; ланцюг `secrets-common` + workflow-`env:` доводить лише, що ІМʼЯ резолвиться
 10. Що метрика ОЗНАЧАЄ, вирішує її СПОЖИВАЧ, а не докстрінг
 11. Перш ніж лагодити підозрілу метрику, спитай не «чи форма підозріла», а «що ця величина МОЖЕ виражати» — двічі поспіль відповідь дала СХЕМА, а не код
@@ -61,7 +61,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 23. Додав boot-гард на ENV — мусиш пройти фан-аут поверхонь нижче і ДВА процеси, інакше ти щойно зробив деплой неможливим
 24. Money/signing-п'ятірка = JOB-ONLY: ключі підпису живуть лише в job-ролі, ніколи в глобальному `env.secret`
 25. SEC.22 latch: at-rest ≠ runtime — провайдер читає `/proc/environ`, тож жоден секрет не сміє жити лише за `RAILS_MASTER_KEY`-vault у runtime
-26. Secrets-at-rest = три ЖИВІ ISOLATED KMS-keyring'и — і ЧЕТВЕРТИЙ спроєктований
+26. Secrets-at-rest = ISOLATED KMS-keyring'и з key-level IAM, НЕ generic keyring (merge-trap); які живі, а які лише спроєктовані — таблиця `06_04 §5.6`, не число тут
 27. Deploy/release ланцюг: Canopy = continuous push у `main` після CI; Production = GitHub Release
 28. GH Environment `production` = дім money-п'ятірки (INF.22) — environment-scoped, НЕ repo-level
 
@@ -91,7 +91,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 2. `SENTRY_DSN` задається at deploy time, і без нього Sentry інертний — нуль crash-репортів
 3. Старт через Thruster — дефолт, і він overridable at runtime
 4. WIF рантайм = ТРИ GCP API, і `sts` та `iamcredentials` вмикаються лише ЯВНО
-5. keyless AUTH ≠ terraform-apply CAPABILITY — CI імперсонує least-privilege deploy-SA БЕЗ IAM/WIF/serviceusage-admin, тож рефреш IAM/WIF-ресурсів дає 403
+5. keyless AUTH ≠ terraform-apply CAPABILITY — CI імперсонує least-privilege deploy-SA БЕЗ IAM/WIF/serviceusage-ADMIN, тож apply IAM/WIF-ресурсів із CI неможливий; рефреш — можливий (read-ґранти в `terraform/iam.tf` з 2026-09-08)
 6. `gh run watch --exit-status` бреше (exit 0 on fail / 1 on empty) — щоб перевірити, чи Deploy·Canopy/Production реально пройшов, довіряй `gh run view --json conclusion`, не `watch`
 6a. `conclusion: failure` теж бреше — не про факт, а про ПРИЧИНУ, і саме ця брехня маскує справжній червоний
 7. `gh attestation verify` рендерить TTY-only → piped/`tail`/`grep` захоплюють ПОРОЖНЄ; довіряй EXIT=0 або `--format json`

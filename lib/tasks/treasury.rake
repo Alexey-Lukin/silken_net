@@ -26,8 +26,10 @@
 #
 # ⚠️ Мережу задає СЕРЕДОВИЩЕ, не прапорець: ті самі імена ENV на обох слотах, а
 # canopy підмінює їх на testnet у `.kamal/secrets.canopy`. Тож на canopy запускати
-# в job-контейнері (там і живуть три підписантські ключі):
-#   kamal app exec -d canopy -r job "bin/rails treasury:balances"
+# в job-контейнері (там і живуть три підписантські ключі). З ноутбука — IAP-тунелем
+# (`kamal app exec` звідти падає на posix-акаунті SA; він лише для CI — `06_01` §Kamal):
+#   gcloud compute ssh silken-net-app --tunnel-through-iap … \
+#     -- sudo docker exec <job-контейнер> bin/rails treasury:balances
 #
 # ⚠️ Дормантні (activation-gated) ролі пропускаються ГУЧНО — рядком, а не тишею:
 # «нема ключа» і «є ключ, нема монет» є різними станами, і зонд, що зливає їх у
