@@ -207,7 +207,26 @@ TARGETS = [
     floor: 46,
     open:  "<!-- DEPUPDATE-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /DEPUPDATE-GOTCHAS-INDEX -->" }
+    close: "<!-- /DEPUPDATE-GOTCHAS-INDEX -->" },
+  # Split 2026-09-19 (DOC-T.111). The criterion held cleanly for both: §Gotchas was
+  # 63.8 % of firmware and 92.2 % of telemetry-pipeline, and the numbers were already
+  # cited from outside (CLAUDE.md «firmware-скіл #9» · «telemetry-pipeline #6»), so
+  # the split kept them. Leads that were LABELS («Cold-TX deferral», «oracle_status
+  # prefix») were widened in the source, per obligation 3.
+  { name:  "firmware",
+    skill: File.join(ROOT, ".claude/skills/firmware/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/firmware/gotchas.md"),
+    floor: 16,
+    open:  "<!-- FIRMWARE-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /FIRMWARE-GOTCHAS-INDEX -->" },
+  { name:  "telemetry-pipeline",
+    skill: File.join(ROOT, ".claude/skills/telemetry-pipeline/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/telemetry-pipeline/gotchas.md"),
+    floor: 18,
+    open:  "<!-- TELEMETRY-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /TELEMETRY-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
