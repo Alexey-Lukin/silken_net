@@ -171,7 +171,27 @@ TARGETS = [
     floor: 25,
     open:  "<!-- INSILICO-MODIFYING-INDEX:AUTO — generated from modifying.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /INSILICO-MODIFYING-INDEX -->" }
+    close: "<!-- /INSILICO-MODIFYING-INDEX -->" },
+  # Ninth and tenth targets, 2026-09-19 — ONE skill, TWO scales again. `deploy` was the heaviest
+  # SKILL.md in the tree (142.6 kB) and no single section passed half of it: §Несучі інваріанти 43 %
+  # and §Gotchas 46 %, 90 % together, loaded on every deploy session — the in-silico precedent, two
+  # rows. The invariants were UNNUMBERED bullets, numbered on split day in the existing order; the
+  # gotchas kept their numbers (`6a` included). Bare `deploy #N` is ambiguous from here on — the
+  # memory gate's AMBIG check enforces naming the section.
+  { name:  "deploy (Інваріанти)",
+    skill: File.join(ROOT, ".claude/skills/deploy/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/deploy/invariants.md"),
+    floor: 28,
+    open:  "<!-- DEPLOY-INVARIANTS-INDEX:AUTO — generated from invariants.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /DEPLOY-INVARIANTS-INDEX -->" },
+  { name:  "deploy (Gotchas)",
+    skill: File.join(ROOT, ".claude/skills/deploy/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/deploy/gotchas.md"),
+    floor: 29,
+    open:  "<!-- DEPLOY-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /DEPLOY-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
