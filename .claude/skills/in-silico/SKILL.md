@@ -39,6 +39,8 @@ L3 DFT anode (CPU):
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check)
   29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
   28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)      11 (DCD) → 27 · 28b
+  70 (CHEM.11 site conservation) standalone — reads committed alignments in `data/chem11_conservation/`,
+     never the network; it is the SECOND axis of CHEM.11 and is never merged into 69's patch score
   21 · 21b · 21c write their own caches; nothing downstream reads them
 
 L3b DFT cathode (CPU):
