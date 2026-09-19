@@ -45,10 +45,10 @@ jobs:
         with:
           filters: |
             docs:
-              # Source trees are doc-relevant on purpose: two gates scan them
-              # tree-wide — external doc-path drift (stale docs/NN_NN refs in
-              # code comments) + code_tracker_id_check (phantom tracker-IDs) —
-              # and the canonical-pin/model-sync/FIELDS gates read specific
+              # Source trees are doc-relevant on purpose: several gates scan them
+              # tree-wide (e.g. external doc-path drift, code_tracker_id_check,
+              # homoglyph_check — each perimeter lives in its own script, never
+              # counted here), and the canonical-pin/model-sync/FIELDS gates read specific
               # files inside them. A gate whose input is outside this filter
               # is decorative (the bio_contract.rb hole, DOC-T.40 CHECK D).
               - 'docs/**'
