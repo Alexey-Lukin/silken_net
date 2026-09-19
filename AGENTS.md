@@ -20,4 +20,4 @@
 - **Polyglot discipline:** firmware-C ≠ Rails-Ruby ≠ Solidity ≠ Python — distinct domains with distinct budgets (energy/RAM/Flash · gas · request-latency); don't carry assumptions between them.
 - **Before editing a widely-used symbol,** trace its callers / blast-radius first (auth and money paths = highest risk); **before committing,** verify the diff scope matches intent, and don't rename by blind find-and-replace.
 - **Honesty about hardware is load-bearing:** the platform ≠ the spec ideal (the clock drifts, the sensor lies, in-silico ≠ a physical TRL). Keep that honesty in code, comments, and docs.
-- SSOT docs (`docs/NN_NN_*.md`), drift-hunts, and wiki-sync go through the `ssot-maintenance` skill; the exact gotchas per domain live in `CLAUDE.md` §6.
+- SSOT docs (`docs/NN_NN_*.md`), drift-hunts, and wiki-sync go through the `ssot-maintenance` skill; cross-domain traps live in `CLAUDE.md` §6, per-domain gotchas in each skill's `gotchas.md`.

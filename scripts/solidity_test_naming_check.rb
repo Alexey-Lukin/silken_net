@@ -22,7 +22,7 @@
 #      парсеру стану без жодного улову.
 #   3. Гейт мовчить про НЕ-`test_` номенклатури (`testFuzz_`, `check_`, `property_`,
 #      `invariant_`, хелпери). Це свідомо: fuzz/symbolic/property-функція має власну
-#      конвенцію CLAUDE.md §8, і revert усередині неї легітимний. Сьогодні таких із
+#      конвенцію (04_06 §B.2 п.6), і revert усередині неї легітимний. Сьогодні таких із
 #      expectRevert нуль — тобто виняток порожній, але він структурний, не історичний.
 #   4. Улов на момент відвантаження — НУЛЬ (усі 22 порушники вирівняні тим самим пакетом).
 #      Це батарея, не worklist: вона пінить інваріант, який дерево вже тримає.
@@ -107,7 +107,7 @@ end
 unless violations.empty?
   warn "::error::solidity_test_naming: revert-тест із happy-path-іменем:"
   violations.each { |v| warn "  #{v}" }
-  warn "Перейменуй на testRevert_* (CLAUDE.md §8). ⚠️ Ім'я ключує contracts/.gas-snapshot, " \
+  warn "Перейменуй на testRevert_* (04_06 §B.2 п.6). ⚠️ Ім'я ключує contracts/.gas-snapshot, " \
        "тож перейменування вимагає forge snapshot --no-match-test \"invariant_|testFuzz_\" тим самим комітом."
   exit 1
 end

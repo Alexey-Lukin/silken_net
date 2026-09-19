@@ -81,7 +81,7 @@ end
 unless violations.empty?
   warn "::error::solidity_expect_revert_subject: реверт-очікування без предмета:"
   violations.each { |v| warn "  #{v}" }
-  warn "Назви предмет (CLAUDE.md §8). Ідіом залежить від ДЖЕРЕЛА реверту: наш " \
+  warn "Назви предмет (04_06 §B.2 п.6). Ідіом залежить від ДЖЕРЕЛА реверту: наш " \
        "`require(cond, \"рядок\")` → vm.expectRevert(\"exact error string\"); OZ 5.7 кидає " \
        "custom errors → vm.expectRevert(abi.encodeWithSelector(IAccessControl.\
 AccessControlUnauthorizedAccount.selector, actor, role)); непередбачуваний аргумент → " \

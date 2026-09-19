@@ -1,6 +1,6 @@
 ---
 name: firmware
-description: "Use when working on the silken_net STM32 firmware — Soldier (sense→TinyML→Lorenz→encrypt→TX, STOP2 loop) and Queen (LoRa RX→CIFO dedup→CoAP flush, OTA) in firmware/{soldier,queen}/main.c, the mruby bio_contract.rb, and the header-only One-Home libs in firmware/common/ (silken_sha256, lorenz_seed, lora_ccm, silken_crc, queen_attest). Knows the non-obvious gotchas — ECB-restore after CBC, Load_AES_Key before MX_CRYP_Init, RTC DR0..DR19 budget (DR7 freed by FW.54), post-FW.29 StatusByte bit-layout, Lorenz continuation vs cold-start, HAL_GetTick frozen in STOP2 (wall-seconds instead — HAL-free arithmetic in wall_time.h, the RTC read in soldier/main.c), vcap = VDDA-mV not EDLC-Vcap, gated CCM vs live ECB — and the host-test parity discipline (make -C firmware/test). Routes to CLAUDE.md §3 + the 03_01..03_06 canon, does not restate. Examples: \"add a sensor field\", \"change Lorenz params\", \"modify AES / CRYP init\", \"touch RTC-persisted state\", \"why do LoRa decrypts fail after a flush\", \"edit the seed / cold-start crypto\"."
+description: "Use when working on the silken_net STM32 firmware — Soldier (sense→TinyML→Lorenz→encrypt→TX, STOP2 loop) and Queen (LoRa RX→CIFO dedup→CoAP flush, OTA) in firmware/{soldier,queen}/main.c, the mruby bio_contract.rb, and the header-only One-Home libs in firmware/common/ (silken_sha256, lorenz_seed, lora_ccm, silken_crc, queen_attest). Knows the non-obvious gotchas — ECB-restore after CBC, Load_AES_Key before MX_CRYP_Init, RTC DR0..DR19 budget (DR7 freed by FW.54), post-FW.29 StatusByte bit-layout, Lorenz continuation vs cold-start, HAL_GetTick frozen in STOP2 (wall-seconds instead — HAL-free arithmetic in wall_time.h, the RTC read in soldier/main.c), vcap = VDDA-mV not EDLC-Vcap, gated CCM vs live ECB — and the host-test parity discipline (make -C firmware/test). Routes to CLAUDE.md §5 + the 03_01..03_06 canon, does not restate. Examples: \"add a sensor field\", \"change Lorenz params\", \"modify AES / CRYP init\", \"touch RTC-persisted state\", \"why do LoRa decrypts fail after a flush\", \"edit the seed / cold-start crypto\"."
 ---
 
 # Firmware (Soldier + Queen)
@@ -12,7 +12,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 
 | Document | What it covers |
 |----------|---------------|
-| `CLAUDE.md §3` | High-level architecture, AES table, OTA, Lorenz (summary — for exact packet/Status-byte bit-layout trust the canon docs below, not the summary) |
+| `CLAUDE.md §1` + `§5` | High-level architecture, AES table, OTA, Lorenz (summary — for exact packet/Status-byte bit-layout trust the canon docs below, not the summary) |
 | `docs/03_01_Firmware_Lifecycle_and_DMA.md` | Soldier/Queen lifecycle, STOP2 phases, ISR map, **RTC Backup Register Map §2 (canonical DR0..DR19 + magic markers)**, binary packet format §8, mesh-relay + rendezvous ladder §1.9 (CCM-era star-only; single-Queen scale ceiling §1.9.1) |
 | `docs/03_02_Queen_Gateway_Firmware.md` | Queen: LoRa RX → CIFO dedup → CoAP flush, OTA broadcast, AES mode transitions |
 | `docs/03_03_TinyML_Acoustic_Inference.md` | Audio DMA, TinyML INT8 forward-pass (NOT CMSIS-NN), decision logic, confidence thresholds (DR13/DR14) |

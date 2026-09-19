@@ -27,8 +27,8 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 - **Partitioned models are THREE, and their One-Home helper DIFFERS** (`TelemetryLog` · `GatewayTelemetryLog` · `BlockchainTransaction`; exactly ONE — `GatewayTelemetryLog` — has no helper, deliberately) → always pass `created_at_iso`, but never guess the method — take it from `§6`. ⚠️ Corrected 2026-09-01: this mirror said FOUR / "two have none", both wrong, while `CLAUDE.md` and `.cursorrules` already carried the right numbers — a mirror drifting alone is exactly what this tier is prone to, so verify against `grep -rl 'self.primary_key = "id"' app/models/`, not against a sibling mirror.
 - **AES keys never leave the Ruby process** (`HardwareKey#cached_binary_key`, in-process LRU; no Redis-serialize).
 - **`oracle_status`** has a prefix → `oracle_status_fulfilled?` (NOT `fulfilled?`).
-- **`TelemetryLog` has no AR validations** (KENOSIS) — checks only in `TelemetryUnpackerService.valid_sensor_data?`; don't add them back → `§6`.
-- **Frontend = design-tokens only** (`bg-gaia-surface`…), `tokens(...)`, no DB in Phlex `initialize`, `focus-visible:` — take the boundary where raw palette is still legal from `§6` (it narrowed 2026-08-07; do not keep a copy here).
+- **`TelemetryLog` has no AR validations** (KENOSIS) — checks only in `TelemetryUnpackerService.valid_sensor_data?`; don't add them back → `§4`.
+- **Frontend = design-tokens only** (`bg-gaia-surface`…), `tokens(...)`, no DB in Phlex `initialize`, `focus-visible:` — take the boundary where raw palette is still legal from the `frontend` skill (it narrowed 2026-08-07; do not keep a copy here).
 - **Minting guard-clauses** (oracle-гілка Path 1 + KYC бенефіціара на всіх шляхах) + `WEB3_STRICT_MODE`; Web3 logic only in service namespaces → `§6`.
 - **TRL honesty:** anchor/EBFC = TRL 3 (in-silico ≠ TRL 4); don't overclaim → `§1`. Style: lazy-senior / YAGNI-first → `§4`.
 
@@ -39,6 +39,6 @@ Not a restatement of facts (those live in `CLAUDE.md`) — just the traps + wher
 - Sidekiq 9-queue strict order → `CLAUDE.md §5`.
 - 11-chain Web3 topology + roles → `docs/05_01` + `web3-pipeline` skill.
 - Where business logic lives (services/workers map) → `docs/04_02`.
-- Solidity/Foundry conventions + invariant-gates (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`) → `CLAUDE.md §8`; contract spec → `docs/05_03`; test methodology → `docs/04_06 §B`.
+- Solidity/Foundry conventions + invariant-gates (`test_pause_allowsSlash`, admin-last-guard, `totalSupply<=MAX`) → `docs/04_06 §B.2` (money key split — `CLAUDE.md §8`); contract spec → `docs/05_03`; test methodology → `docs/04_06 §B`.
 - Open work / active blockers → `docs/00_07`.
 - SSOT doc work / wiki-sync / doc-linters → skill `ssot-maintenance`.

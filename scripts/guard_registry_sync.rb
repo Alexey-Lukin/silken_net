@@ -186,7 +186,7 @@ CANON_CODE_GATES_OUTSIDE_DOCS = {
   ],
   "ml_smoke.yml"        => [ "emit_c --check", "check_model_header.py" ],
   "in_silico_smoke.yml" => [ "test_doc_cache_sync.py", "conda-lock lock --check-input-hash" ],
-  # TEST.14: конвенція `testRevert_*` живе в CLAUDE.md §8 — тобто це canon↔code
+  # TEST.14: конвенція `testRevert_*` живе в `04_06 §B.2` п.6 — тобто це canon↔code
   # дзеркало, а не build/test-крок, і саме тому воно тут. ⚠️ Сусідній last-admin
   # гейт того ж job'а свідомо лишається ПОЗА мапою: він inline-shell без власного
   # файлу, тож «cmd, що мусить бігти» для нього не має стабільної цитати.
