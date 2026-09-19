@@ -12,14 +12,14 @@
 | **Time-series / Metrics** | Prometheus (`prometheus-client`) + Grafana Alloy | ✅ `/metrics` endpoint існує, ✅ Alloy scrapes + remote_write → Grafana Cloud |
 | **Logs** | GCP Cloud Logging + Structured JSON | ✅ GCP/Kamal-шлях (Cloud Logging, WARNING+, JSON+Sentry correlation); ⊕ **[OPS.37] Друга гілка знята разом із платформою:** мотив Rails-push у Loki був саме «ефемерний lease-log»; на GCP-VM stdout тече в Cloud Logging штатно, тож питання Loki звузилось до ретенції й пошуку ([`INF.22`](00_07_Action_Plan_Tracker)) |
 | **Visualization** | Grafana Cloud | ✅ **Імпортовано 2026-08-29** — дашборд `silkennet-overview-v1` у стеку (folder `SilkenNet`) |
-| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29** (⚠️ стек `violetmamba3330.grafana.net` — free trial 14 днів від 2026-08-30, далі ліміти free-тарифу: єдиний годинник, що цокає БЕЗ нашого коміту; ліміт правил проти імпортованого ЗВІРЕНО 2026-09-02 — §2.9 📏: Free = 500 правил, наших — десятки (лічбу друкує `import.rb --verify`), запас майже на порядок; дата кінця trial — ОДИН дім, §2.9 📏, тут свідомо не дублюється: рядок несе маркер завершення, тож майбутня дата в ньому непредставна за оголошеною стелею `no_future_dated_claims_spec`); ✅ **contact point (Email) + route `slot=canopy` задротовано 2026-08-30** — production-правила доставляються founder-у, а `slot=canopy` маршрутизовано в заглушку `empty` (виміряно 2026-09-07, [`00_07`](00_07_Action_Plan_Tracker) INF.22), тож canopy горить у СТАНІ, нікого не будячи; заміна адресата на `ops@` потребує вхідної скриньки на домені, не ESP. Відкрите — [`00_07`](00_07_Action_Plan_Tracker) S2.4 (переімпорт дрейфу описів · зняття silence · SLO-пороги · подієві штампи писачів, §2.9) |
+| **Alerting** | Grafana Cloud Alerting | ✅ **Імпортовано 2026-08-29** (⚠️ стек `violetmamba3330.grafana.net` — free trial 14 днів від 2026-08-30, далі ліміти free-тарифу: єдиний годинник, що цокає БЕЗ нашого коміту; ліміт правил проти імпортованого ЗВІРЕНО 2026-09-02 — §2.9 📏: Free = 500 правил, наших — десятки (лічбу друкує `import.rb --verify`), запас майже на порядок; дата кінця trial — ОДИН дім, §2.9 📏, тут свідомо не дублюється: рядок несе маркер завершення, тож майбутня дата в ньому непредставна за оголошеною стелею `no_future_dated_claims_spec`); ✅ **contact point (Email) + route `slot=canopy` задротовано 2026-08-30** — production-правила доставляються founder-у, а `slot=canopy` маршрутизовано в заглушку `empty` (виміряно 2026-09-07, [`00_07`](00_07_Action_Plan_Tracker) INF.22), тож canopy горить у СТАНІ, нікого не будячи; заміна адресата на `ops@` потребує вхідної скриньки на домені, не ESP. Відкрите — [`00_07`](00_07_Action_Plan_Tracker) S2.4 (зняття silence · SLO-пороги · подієві штампи писачів, §2.9 · адресат `ops@`) |
 
 ---
 
 ## ✅ Статус
 
 - **Поточний TRL:** TRL 6 — бібліотеки встановлені, кастомні метрики реалізовані та інструментовані (повний реєстр — §2.8; парність реєстру з кодом тримає гейт, не лічильник у прозі), структуровані JSON-логи активні; Grafana Alloy sidecar налаштований для scrape + remote_write до Grafana Cloud (Grafana Cloud SaaS, OBS.1); TRL 7 підтверджується після першого реального деплою з метриками в Grafana Cloud
-- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7). ⊕ **Імпорт дашборда й правил ЗРОБЛЕНО 2026-08-29; канал доставки задротовано 2026-08-30** (Email founder-а + route `slot=canopy`); переімпорт і звірка живого стека робились 2026-09-06 (`import.rb --verify` — осі й стелі в шапці режиму); звірка ручна, у CI лише `--dry-run`, тож дрейф стеку між запусками мовчить. Відкрите по спостережуваності → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.4).
+- **Відкрите:** перший деплой з метриками в Grafana Cloud (TRL 6→7). ⊕ **Імпорт дашборда й правил ЗРОБЛЕНО 2026-08-29; канал доставки задротовано 2026-08-30** (Email founder-а + route `slot=canopy`); останні переімпорт і звірка живого стека — 2026-09-19 (`import.rb --verify` — осі й стелі в шапці режиму); звірка ручна, у CI лише `--dry-run`, тож дрейф стеку між запусками мовчить. Відкрите по спостережуваності → [`00_07`](00_07_Action_Plan_Tracker) (OBS.1, S2.4).
 
 ---
 
@@ -29,7 +29,7 @@
 |---|---|
 | [`06_01` — Deployment Kamal Terraform](06_01_Deployment_Kamal_Terraform) | Розгортання (Kamal/Terraform) |
 | [`04_02` — Business Logic and Services](04_02_Business_Logic_and_Services) | Бізнес-логіка (інструментовані метрики) |
-| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.4 (переімпорт дрейфу описів · silence до production-рендера · SLO-пороги · штампи писачів — §2.9 · адресат `ops@`) |
+| [`00_07` — Action Plan Tracker](00_07_Action_Plan_Tracker) | OBS.1 (Grafana Cloud), S2.4 (silence до production-рендера · SLO-пороги · штампи писачів — §2.9 · адресат `ops@`) |
 
 ## 📑 Зміст
 
