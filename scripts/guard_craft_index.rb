@@ -191,7 +191,17 @@ TARGETS = [
     floor: 29,
     open:  "<!-- DEPLOY-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
-    close: "<!-- /DEPLOY-GOTCHAS-INDEX -->" }
+    close: "<!-- /DEPLOY-GOTCHAS-INDEX -->" },
+  # Eleventh target, 2026-09-19. §Hard-won gotchas was 50.7 kB = 73 % of a 70 kB skill — the
+  # clean single-dominant case of the header's criterion. 45 UNNUMBERED bullets, numbered on split
+  # day in the existing order, so no citation could be orphaned.
+  { name:  "dependency-update",
+    skill: File.join(ROOT, ".claude/skills/dependency-update/SKILL.md"),
+    aux:   File.join(ROOT, ".claude/skills/dependency-update/gotchas.md"),
+    floor: 45,
+    open:  "<!-- DEPUPDATE-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
+           "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
+    close: "<!-- /DEPUPDATE-GOTCHAS-INDEX -->" }
 ].freeze
 
 # Curated constants — бамп кожної є ВИДИМОЮ правкою в git, як і решта порогів
