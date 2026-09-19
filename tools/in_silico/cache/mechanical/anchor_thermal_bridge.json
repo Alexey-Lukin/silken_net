@@ -625,6 +625,6 @@
     "none": 35.5,
     "pocket_C_J_K": 38.1
   },
-  "verdict": "Cu bus dominates the axial cold path (~9x the Ti-bus anchor) and drives the Zone-1 anode pocket ~12C colder than a Ti bus (into a freeze), which is itself thermally invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus monolithic with the anode (also kills the Ti-Cu galvanic joint). Material = founder call, 00_07 HW.34.",
+  "verdict": "Cu bus dominates the axial cold path (~9x the Ti-bus anchor) and drives the Zone-1 anode pocket ~12C colder than a Ti bus (into a freeze), which is itself thermally invisible. Swap is electrically free at uA. The bus is the anode alloy, ratified 2026-09-10 as a cold-drawn wire welded to the anode (01_01 \u00a71.4), which also kills the Ti-Cu galvanic joint; which alloy = the HW.24 bake-off (per_alloy block).",
   "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir (lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. Conjugate 3D FEA + bench validation (Cherkasy winter) refine the absolute numbers. DIAMETER: bus_dia_bottleneck is the canon ROD O1.0 (01_01 1.4, lib D_BUS_ROD_MM), not the O1.35 cathode channel it threads. Substituting the channel would overstate the bus area x1.69 (A ~ d^2) - conservative for the thermal verdicts, ANTI-conservative for the electrical one (R ~ 1/A). Opposite direction to script 55."
 }

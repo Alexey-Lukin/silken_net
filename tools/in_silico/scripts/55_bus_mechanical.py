@@ -11,9 +11,10 @@ A monolithic Ti bus rises from the anode shank, through the PEEK gap and the cat
    clearance verdict, 00_07 HW.34, 2026-09-11). D_BUS here is the ROD, imported from
    lib.constants (one home). Substituting the channel inflates every fatigue SF ×2.46 (σ ∝ 1/d³) and
    flips the load-bearing conclusion: at the channel Ø the unsupported branch reads 'marginal for the soft
-   alloys', at Ø1.0 it is a predicted FAILURE for Ta and CP-Ti and infinite life for NOBODY — ⚠️ and
-   that last sentence is the PRINTED branch, superseded as the shipped route by the welded verdict
-   (2026-09-10); on the welded branch four of six clear it bare. ⛔ Do NOT quote either number as the
+   alloys', at Ø1.0 the PRINTED branch predicts a FAILURE for Ta — and the printed branch is superseded
+   as the shipped route by the welded verdict (2026-09-10). How many alloys clear it bare on each branch
+   is the cache's to say (`fabrication_branches`), not this docstring's: the tally written here went
+   stale twice (the 36 mm span, then the σ_e/σ_y end). ⛔ Do NOT quote either number as the
    reason the liner is needed: that ground was RETIRED 2026-09-11, not narrowed (§4 below + the
    verdict). The diameter warning itself stands — it is about σ ∝ 1/d³, not about the liner.
 
@@ -44,8 +45,9 @@ liner, and the 6 mm «supported span» they use is an idealisation §4c measures
 FABRICATION BRANCH — the second thing that moves every SF, and it is a VERDICT, not a parameter.
   ⚖️ 2026-09-10 (00_07 HW.34) ratified the rod as a WELDED cold-drawn wire, so the as-built knockdown
   `AS_PRINTED_DERATE` no longer applies to the shipped part. Both columns are printed side by side —
-  `printed` (superseded) and `welded` (shipped) — because the fabrication choice is what moves the
-  still-open LINING verdict, and a reader handed one column cannot see that it moved.
+  `printed` (superseded) and `welded` (shipped) — because the fabrication choice is what moved the
+  LINING verdict (re-opened 2026-09-10, re-grounded on WEAR 2026-09-11), and a reader handed one
+  column cannot see that it moved.
   ⛔ THE MODEL STILL HAS NO WELD-SEAM GEOMETRY. It is a homogeneous cantilever, while the ratified rod
   carries a heat-affected zone at the ROOT — and the root IS the peak-moment section in every drag and
   offset configuration the equilibrium computes (DERIVED per solve, `lib.beam_contact` moment field; the
@@ -1185,10 +1187,11 @@ def main() -> int:
 
     # ── 5b. The OTHER coefficient the model took a single POINT of (00_07 HW.34) ─────────────────
     # 🔴 `ENDURANCE_OVER_YIELD` is a BAND, written beside the constant since the file was born, and
-    # only its MIDPOINT ever entered the model. Every SF scales LINEARLY with it, so «all six clear
-    # SF 2» was a claim about one point of an unmeasured band wearing the clothes of a claim about
-    # the band. ⛔ This block does NOT choose an end and does NOT re-verdict: it reports whether the
-    # STANDING conclusion survives the band — the measurement the open ⚖️ was missing. It sweeps the
+    # until 2026-09-18 only its MIDPOINT entered the model. Every SF scales LINEARLY with it, so «all six
+    # clear SF 2» was a claim about one point of an unmeasured band wearing the clothes of a claim about
+    # the band. The founder then chose the LOW end (0.40, ⚖️ 2026-09-17) and the model runs there.
+    # ⛔ This block still does NOT choose an end and does NOT re-verdict: it reports whether the
+    # STANDING conclusion survives the band — the measurement that verdict was missing. It sweeps the
     # §2 free-cantilever column only: the seam column it used to carry was priced on the retired
     # drift-picture stress, and no seam k exists to sweep.
     banner("Endurance-ratio band — does the standing bare-rod verdict survive it? (00_07 HW.34, sweep only)")
@@ -1225,7 +1228,7 @@ def main() -> int:
     band_all_clear = {r["unsupported_infinite_life_for_all"] for r in ratio_rows}
     print(f"\n  → «bare rod reaches infinite life for EVERY alloy» is "
           f"{'INVARIANT across the band' if len(band_all_clear) == 1 else 'NOT invariant — it FLIPS inside the band'}.")
-    print("  ⛔ Which end to stand on is a ⚖️ (00_07 HW.34); this block measures, it does not choose.")
+    print(f"  ⚖️ The founder chose the end (2026-09-17); the model runs at {ENDURANCE_OVER_YIELD:.2f}. This block measures, it does not choose.")
 
     # ── 6. The liner↔wire FIT — the interference the ratified direction asserts (00_07 HW.34) ────
     # 🔴 §2–§5 all stand on one sentence of the 2026-09-11 direction verdict: «the tube is tight on
@@ -1815,10 +1818,10 @@ def main() -> int:
     print("  6. Per-alloy fatigue margin tracks yield (β-Ti/15Zr/4V > CP-Ti > Ta) — SAME ranking as the")
     print("     thermal bridge → the leading bake-off candidates (HW.24) win on both axes, no tension.")
     _r_flip = [r["endurance_over_yield"] for r in ratio_rows if not r["unsupported_infinite_life_for_all"]]
-    print("  6b. THE ENDURANCE BAND (§5b) — the model runs at the MIDPOINT of an unmeasured band. «Bare rod: infinite")
+    print(f"  6b. THE ENDURANCE BAND (§5b) — the model runs at {ENDURANCE_OVER_YIELD:.2f} of an unmeasured band. «Bare rod: infinite")
     print(f"     life for every alloy» {'FLIPS' if _r_flip else 'holds'}"
           + (f" at ratio {', '.join(f'{r:.2f}' for r in _r_flip)}." if _r_flip else " across the whole band.")
-          + " ⛔ Which end to stand on is a ⚖️ (00_07 HW.34); §5b measures, it does not choose.")
+          + " ⚖️ The end is the founder's (2026-09-17); §5b measures, it does not choose.")
     # ⛔ DERIVED from §6, never typed. The point is not the width but WHERE the nominals sit: the
     # verdict every other section leans on («tight on the wire») is not produced by the drawing.
     _iw = interference_window
@@ -1841,7 +1844,7 @@ def main() -> int:
         print(f"     keeps the wall whatever the contact compliance if k < {_bw['k_bound_edge_mm3_per_Nm']:.2e} mm³/(N·m) on the "
               f"material-bounded patch, k < {_bw['k_bound_conformal_mm3_per_Nm']:.2e} worn in")
         print(f"     (rigid-wall figures {_bw['k_rigid_wall_figure_edge_mm3_per_Nm']:.2e} / {_bw['k_rigid_wall_figure_conformal_mm3_per_Nm']:.2e} bound nothing) — "
-              f"a {binding_wear['k_span_ratio']:.0f}× span decided by CONTACT GEOMETRY, our own open ⚖️.")
+              f"a {binding_wear['k_span_ratio']:.0f}× span decided by CONTACT GEOMETRY — the edge radius has a form, no value, and no contact model to give one.")
         print(f"     Films stricter than the liner: on the rigid-wall figures {branch_discrimination['films_stricter_on_rigid_wall_figures']}, "
               f"on the bounds {branch_discrimination['films_stricter_on_bounds']} — the wear axis discriminates the branches only "
               "against a rigid wall.")
@@ -1938,7 +1941,8 @@ def main() -> int:
         "weld_seam": weld_seam,
         "endurance_ratio_band": {
             "question": "00_07 HW.34 — ENDURANCE_OVER_YIELD is a BAND written beside the constant "
-                        "since this file was born, and only its MIDPOINT ever entered the model. "
+                        "since this file was born, and until 2026-09-18 only its MIDPOINT entered the "
+                        "model; the founder then ratified the LOW end (0.40) and the model runs there. "
                         "Every SF scales linearly with it, so a standing conclusion may be a "
                         "statement about one point wearing the clothes of a statement about the "
                         "band. This block sweeps it and reports INVARIANCE; it chooses no end",
@@ -2093,7 +2097,7 @@ def main() -> int:
                     + ". A channel off the root axis by more than the play makes the MOUTH a contact station and puts a "
                     "static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is "
                     "geometrically forced on every swept µ, and wear-through is a ~0.5 V anode-cathode short. Liner = "
-                    "insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). The seam is NOT priced: "
+                    "insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, ⚖️ 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: "
                     "no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same "
                     "ranking as thermal -> leading HW.24 candidates win on both. " + wear_verdict_sentence),
         "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum "

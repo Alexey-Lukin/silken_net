@@ -1577,7 +1577,7 @@
     }
   },
   "endurance_ratio_band": {
-    "question": "00_07 HW.34 \u2014 ENDURANCE_OVER_YIELD is a BAND written beside the constant since this file was born, and only its MIDPOINT ever entered the model. Every SF scales linearly with it, so a standing conclusion may be a statement about one point wearing the clothes of a statement about the band. This block sweeps it and reports INVARIANCE; it chooses no end",
+    "question": "00_07 HW.34 \u2014 ENDURANCE_OVER_YIELD is a BAND written beside the constant since this file was born, and until 2026-09-18 only its MIDPOINT entered the model; the founder then ratified the LOW end (0.40) and the model runs there. Every SF scales linearly with it, so a standing conclusion may be a statement about one point wearing the clothes of a statement about the band. This block sweeps it and reports INVARIANCE; it chooses no end",
     "band": [
       0.4,
       0.45,
@@ -2137,40 +2137,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 437.5,
             "duty_N_m_upper": 35.1,
-            "k_bound_edge_mm3_per_Nm": 7.619044813575715e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.004935774734772213,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.6176029174772414e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00029913786272374357
+            "k_bound_edge_mm3_per_Nm": 7.619044771068373e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.004935774707235078,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.617602891715203e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00029913786105482547
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 154.3,
             "duty_N_m_upper": 12.4,
-            "k_bound_edge_mm3_per_Nm": 2.160612880731493e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.01399689689360551,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623520034634e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008482967814597779
+            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.01399689681551555,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978507e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000848296776727051
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 21.6,
             "duty_N_m_upper": 1.7,
-            "k_bound_edge_mm3_per_Nm": 1.5427627441479303e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.09994335983882358,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077237581382e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006057173323773144
+            "k_bound_edge_mm3_per_Nm": 1.542762735540717e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.09994335928123049,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006057173289979607
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 621.4,
             "duty_N_m_upper": 49.9,
-            "k_bound_edge_mm3_per_Nm": 5.364407871740154e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.003475174314918092,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562860148076e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00021061662515378616
+            "k_bound_edge_mm3_per_Nm": 5.364407841811634e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0034751742955297783,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562678763034e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00021061662397873636
           }
         ],
         "k_span_ratio": 64782.1
@@ -2205,40 +2205,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 437.5,
             "duty_N_m_upper": 78.9,
-            "k_bound_edge_mm3_per_Nm": 7.619044813575717e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002198240217427669,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.6176029174772414e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00013322667984867783
+            "k_bound_edge_mm3_per_Nm": 7.619044771068373e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.002198240205163487,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.6176028917152025e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001332266791053937
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 154.3,
             "duty_N_m_upper": 27.8,
-            "k_bound_edge_mm3_per_Nm": 2.160612880731493e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.006233781589331795,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623520034634e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00037780494482096596
+            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.00623378155455296,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978505e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00037780494271315686
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 21.6,
             "duty_N_m_upper": 3.9,
-            "k_bound_edge_mm3_per_Nm": 1.54276274414793e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.04451165721052431,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077237581382e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0026976761946699026
+            "k_bound_edge_mm3_per_Nm": 1.5427627355407167e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.044511656962189734,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0026976761796193146
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 621.4,
             "duty_N_m_upper": 112.0,
-            "k_bound_edge_mm3_per_Nm": 5.3644078717401535e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0015477343177366766,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.251156286014808e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.38020798660512e-05
+            "k_bound_edge_mm3_per_Nm": 5.364407841811634e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.001547734309101726,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562678763034e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.380207934272063e-05
           }
         ],
         "k_span_ratio": 28851.9
@@ -2273,40 +2273,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 437.5,
             "duty_N_m_upper": 122.6,
-            "k_bound_edge_mm3_per_Nm": 7.619044813575717e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0014139946885558643,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.6176029174772414e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.569664779420839e-05
+            "k_bound_edge_mm3_per_Nm": 7.619044771068374e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0014139946806670594,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.617602891715203e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.569664731609877e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 154.3,
             "duty_N_m_upper": 43.2,
-            "k_bound_edge_mm3_per_Nm": 2.160612880731493e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004009813844297262,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623520034634e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00024301902087484894
+            "k_bound_edge_mm3_per_Nm": 2.1606128686772368e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004009813821926145,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3094623446978507e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00024301901951902314
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 21.6,
             "duty_N_m_upper": 6.1,
-            "k_bound_edge_mm3_per_Nm": 1.5427627441479303e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.028631651070487093,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077237581382e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.001735251580089131
+            "k_bound_edge_mm3_per_Nm": 1.542762735540717e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.028631650910748516,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 9.350077185416425e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.001735251570408
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 621.4,
             "duty_N_m_upper": 174.2,
-            "k_bound_edge_mm3_per_Nm": 5.3644078717401535e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0009955636728074305,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.2511562860148076e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.0337192293432136e-05
+            "k_bound_edge_mm3_per_Nm": 5.3644078418116346e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0009955636672530903,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.251156267876304e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.033719195680532e-05
           }
         ],
         "k_span_ratio": 18558.7
@@ -2356,40 +2356,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 216.6,
             "duty_N_m_upper": 16.0,
-            "k_bound_edge_mm3_per_Nm": 7.69448089992724e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.005377784411875876,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826179771196e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001581701297856193
+            "k_bound_edge_mm3_per_Nm": 7.69448085699895e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0053777843818726715,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.26308260535117e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015817012890317336
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 76.4,
             "duty_N_m_upper": 5.6,
-            "k_bound_edge_mm3_per_Nm": 2.1820050872128953e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.015250350344957427,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417662022211072e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004485397160978186
+            "k_bound_edge_mm3_per_Nm": 2.182005075039268e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.015250350259874175,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406337e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004485397135953737
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 10.7,
             "duty_N_m_upper": 0.8,
-            "k_bound_edge_mm3_per_Nm": 1.5580376226182718e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.10889351145327975,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.5824635966477584e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003202750337358562
+            "k_bound_edge_mm3_per_Nm": 1.5580376139258217e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.10889351084575179,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081766e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0032027503194901187
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 307.6,
             "duty_N_m_upper": 22.7,
-            "k_bound_edge_mm3_per_Nm": 5.417520820323463e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.003786383954611419,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5933884768131805e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011136423397645444
+            "k_bound_edge_mm3_per_Nm": 5.417520790098564e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.003786383933486798,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5933884679235174e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011136423335514298
           }
         ],
         "k_span_ratio": 69891.5
@@ -2424,40 +2424,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 216.6,
             "duty_N_m_upper": 37.6,
-            "k_bound_edge_mm3_per_Nm": 7.694480899927237e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002281765752189131,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826179771187e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.71107574277498e-05
+            "k_bound_edge_mm3_per_Nm": 7.694480856998947e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0022817657394589284,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826053511695e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.711075705333262e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 76.4,
             "duty_N_m_upper": 13.3,
-            "k_bound_edge_mm3_per_Nm": 2.1820050872128948e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.006470643756035477,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.4176620222110706e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00019031305167765822
+            "k_bound_edge_mm3_per_Nm": 2.1820050750392674e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0064706437199351,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406335e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00019031305061588394
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 10.7,
             "duty_N_m_upper": 1.9,
-            "k_bound_edge_mm3_per_Nm": 1.5580376226182716e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.04620294642548485,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463596647758e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0013589101891958897
+            "k_bound_edge_mm3_per_Nm": 1.5580376139258215e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.04620294616771392,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081765e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0013589101816144028
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 307.6,
             "duty_N_m_upper": 53.4,
-            "k_bound_edge_mm3_per_Nm": 5.4175208203234624e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0016065428753878042,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.59338847681318e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.725126104815597e-05
+            "k_bound_edge_mm3_per_Nm": 5.4175207900985634e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0016065428664247382,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.593388467923517e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.725126078453677e-05
           }
         ],
         "k_span_ratio": 29654.6
@@ -2492,40 +2492,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 216.6,
             "duty_N_m_upper": 59.3,
-            "k_bound_edge_mm3_per_Nm": 7.694480899927237e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.00144809174700494,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.263082617977119e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.259093374205386e-05
+            "k_bound_edge_mm3_per_Nm": 7.694480856998948e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0014480917389258893,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2630826053511695e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.2590933504435065e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 76.4,
             "duty_N_m_upper": 20.9,
-            "k_bound_edge_mm3_per_Nm": 2.182005087212895e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004106506468481412,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417662022211071e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012077960203291646
+            "k_bound_edge_mm3_per_Nm": 2.1820050750392674e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004106506445570796,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.417661986406335e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012077960135907577
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 10.7,
             "duty_N_m_upper": 2.9,
-            "k_bound_edge_mm3_per_Nm": 1.5580376226182714e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.029322074512629585,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463596647758e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008624139563877458
+            "k_bound_edge_mm3_per_Nm": 1.5580376139258215e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.029322074349038756,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.582463571081765e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008624139515762578
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 307.6,
             "duty_N_m_upper": 84.2,
-            "k_bound_edge_mm3_per_Nm": 5.4175208203234624e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010195706885453475,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.59338847681318e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 2.9987373197167308e-05
+            "k_bound_edge_mm3_per_Nm": 5.4175207900985634e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.001019570682857059,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5933884679235172e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 2.998737302986495e-05
           }
         ],
         "k_span_ratio": 18819.9
@@ -2567,40 +2567,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 6670.0,
             "duty_N_m_upper": 1105.2,
-            "k_bound_edge_mm3_per_Nm": 7.496240616605173e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002999401043336892,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236600611166e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01447726183838576
+            "k_bound_edge_mm3_per_Nm": 7.496240926454135e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.002999401167313876,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236450636095e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01447726177837763
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 2352.1,
             "duty_N_m_upper": 389.7,
-            "k_bound_edge_mm3_per_Nm": 2.125787999624392e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.008505717825896028,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578375081904e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.041054698024618606
+            "k_bound_edge_mm3_per_Nm": 2.1257880874915298e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.008505718177470636,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578332551893e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.04105469785444722
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 329.4,
             "duty_N_m_upper": 54.6,
-            "k_bound_edge_mm3_per_Nm": 1.517896406628353e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.060734177283922636,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457317576957e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2931467230871166
+            "k_bound_edge_mm3_per_Nm": 1.5178964693689518e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.060734179794303865,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2931467218720259
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 9473.4,
             "duty_N_m_upper": 1569.7,
-            "k_bound_edge_mm3_per_Nm": 5.277944041032963e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0021118146645774617,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145452831553e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010193133032726204
+            "k_bound_edge_mm3_per_Nm": 5.2779442591910456e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.002111814751867027,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010193132990475752
           }
         ],
         "k_span_ratio": 40012.1
@@ -2635,40 +2635,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 8291.4,
             "duty_N_m_upper": 2203.0,
-            "k_bound_edge_mm3_per_Nm": 6.030372766793889e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0015047561702613281,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236600611166e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009028537021529998
+            "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0015047561640241269,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009028536984106786
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 2923.8,
             "duty_N_m_upper": 776.9,
-            "k_bound_edge_mm3_per_Nm": 1.7100963958541764e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00426719574878178,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578375081904e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.025603174492582998
+            "k_bound_edge_mm3_per_Nm": 1.7100963887658416e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.00426719573109429,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02560317438645805
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 409.5,
             "duty_N_m_upper": 108.8,
-            "k_bound_edge_mm3_per_Nm": 1.2210762196012948e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.03046945929979896,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457317576957e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.18281675579802492
+            "k_bound_edge_mm3_per_Nm": 1.2210762145399443e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.03046945917350331,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.182816755040251
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 11776.2,
             "duty_N_m_upper": 3128.9,
-            "k_bound_edge_mm3_per_Nm": 4.245857575489782e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010594669072449099,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145452831553e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006356801443442725
+            "k_bound_edge_mm3_per_Nm": 4.24585755789074e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010594669028534287,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006356801417093835
           }
         ],
         "k_span_ratio": 24953.0
@@ -2703,40 +2703,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 8291.4,
             "duty_N_m_upper": 3032.2,
-            "k_bound_edge_mm3_per_Nm": 6.030372766793888e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010932833317977436,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.618223660061116e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006559699990758874
+            "k_bound_edge_mm3_per_Nm": 6.030372741798046e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010932833272660938,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.618223645063609e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.006559699963568972
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 2923.8,
             "duty_N_m_upper": 1069.2,
-            "k_bound_edge_mm3_per_Nm": 1.710096395854176e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0031003388308759056,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578375081902e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.018602032985177198
+            "k_bound_edge_mm3_per_Nm": 1.710096388765841e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0031003388180250277,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.018602032908071928
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 409.5,
             "duty_N_m_upper": 149.7,
-            "k_bound_edge_mm3_per_Nm": 1.2210762196012946e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.022137641060860223,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457317576955e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1328258463646027
+            "k_bound_edge_mm3_per_Nm": 1.2210762145399443e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.02213764096909989,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208851e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1328258458140407
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 11776.2,
             "duty_N_m_upper": 4306.6,
-            "k_bound_edge_mm3_per_Nm": 4.2458575754897815e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.000769757608025629,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.547514545283155e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00461854564813435
+            "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0007697576048349904,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.547514534723728e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.004618545628990517
           }
         ],
         "k_span_ratio": 18129.6
@@ -2771,40 +2771,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 8291.4,
             "duty_N_m_upper": 3861.3,
-            "k_bound_edge_mm3_per_Nm": 6.030372766793889e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0008585220408813289,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236600611166e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00515113224526631
+            "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0008585220373227625,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005151132223914909
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 2923.8,
             "duty_N_m_upper": 1361.6,
-            "k_bound_edge_mm3_per_Nm": 1.7100963958541762e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0024346014826096603,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578375081904e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608895596525
+            "k_bound_edge_mm3_per_Nm": 1.7100963887658413e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0024346014725182582,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608835048108
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 409.5,
             "duty_N_m_upper": 190.7,
-            "k_bound_edge_mm3_per_Nm": 1.2210762196012948e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.017384014034693116,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457317576955e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408420772003
+            "k_bound_edge_mm3_per_Nm": 1.221076214539944e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.017384013962636526,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408377538047
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 11776.2,
             "duty_N_m_upper": 5484.2,
-            "k_bound_edge_mm3_per_Nm": 4.245857575489782e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0006044671618101193,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145452831553e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029708454623
+            "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0006044671593046082,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029558123942
           }
         ],
         "k_span_ratio": 14236.6
@@ -2842,32 +2842,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 291.8,
             "duty_N_m": 199.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7136073723169284e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.016644032930649335
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.713607391541606e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01664403311737599
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 102.9,
             "duty_N_m": 70.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.85945712584252e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.04719923929729843
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.859457180359966e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0471992398268189
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 14.4,
             "duty_N_m": 9.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.4698438935511004e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.3370211692681482
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.469843932478705e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.337021173049133
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 414.4,
             "duty_N_m": 282.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.206514609383789e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011718710606818814
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.206514622919477e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011718710738289092
           }
         ],
         "k_span_ratio": 9712.9
@@ -2905,32 +2905,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 269.9,
             "duty_N_m": 552.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522557988231724e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005996609183162085
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522558044615472e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005996609201416114
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 95.2,
             "duty_N_m": 194.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637089384374e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01700521700406192
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637105373708e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.017005217055826794
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 13.3,
             "duty_N_m": 27.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.750589882296872e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.12142395097235345
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.7505898937138866e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.12142395134197506
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 383.4,
             "duty_N_m": 785.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3041340260893096e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.004222085352298512
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3041340300591694e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.004222085365150786
           }
         ],
         "k_span_ratio": 3237.5
@@ -2968,32 +2968,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 269.9,
             "duty_N_m": 921.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522557988424897e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0035980357875027708
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.8522558044726404e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003598035798439426
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 95.2,
             "duty_N_m": 324.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637089439153e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010203329496053907
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.252637105405166e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010203329527068134
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 13.3,
             "duty_N_m": 45.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.750589882335987e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.07285579361837508
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.7505898937363486e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.07285579383982888
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 383.4,
             "duty_N_m": 1308.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.3041340261029106e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.002533300692350736
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.30413403006698e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0025333007000510025
           }
         ],
         "k_span_ratio": 1942.5
@@ -3031,32 +3031,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 40.4,
             "duty_N_m": 257.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2385716746723856e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0128857944090855
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2385713710740155e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.012885791250522891
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 14.2,
             "duty_N_m": 90.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.512348305443837e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03654160601486441
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.5123474444979244e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03654159705779535
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 2.0,
             "duty_N_m": 12.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.00025079551077541095,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.26092146757904416
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.0002507954493004799,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2609214036220412
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 57.3,
             "duty_N_m": 365.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.720520490295843e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009072614566927902
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.720518352724106e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009072612343050956
           }
         ],
         "k_span_ratio": 1040.4
@@ -3094,32 +3094,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 56.7,
             "duty_N_m": 632.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.821566925177282e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005242742673221588
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.821566793276874e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005242742594831898
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 20.0,
             "duty_N_m": 223.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5016247565326816e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014867398246483155
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5016247191282924e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01486739802418525
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 2.8,
             "duty_N_m": 31.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.00017862586623616363,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10615908255309033
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 0.00017862586356534287,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10615908096579567
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 80.5,
             "duty_N_m": 898.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.211078187935548e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003691303930333341
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.211078095067269e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036913038751408235
           }
         ],
         "k_span_ratio": 594.3
@@ -3154,40 +3154,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 264.8,
             "duty_N_m_upper": 40.1,
-            "k_bound_edge_mm3_per_Nm": 1.2587988706812445e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004328005105937762,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084067338062e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0002623033398433087
+            "k_bound_edge_mm3_per_Nm": 1.258798885672299e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0043280051574800405,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084158192947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00026230334296708336
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 93.4,
             "duty_N_m_upper": 14.1,
-            "k_bound_edge_mm3_per_Nm": 3.569708698127116e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.012273380467717952,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598177849677e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0007438412407215732
+            "k_bound_edge_mm3_per_Nm": 3.5697087406388317e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.012273380613881826,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598435496453e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0007438412495799905
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 13.1,
             "duty_N_m_upper": 2.0,
-            "k_bound_edge_mm3_per_Nm": 2.5489126886380565e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.08763677333969049,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955693986752e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0053113195981572435
+            "k_bound_edge_mm3_per_Nm": 2.5489127189930966e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.08763677438335815,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955877956707e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005311319661409834
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 376.1,
             "duty_N_m_upper": 56.9,
-            "k_bound_edge_mm3_per_Nm": 8.862935887695545e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0030472566085784684,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.371476297405949e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001846822187647439
+            "k_bound_edge_mm3_per_Nm": 8.862935993244382e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0030472566448682932,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.371476361374947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001846822209641274
           }
         ],
         "k_span_ratio": 34382.0
@@ -3222,40 +3222,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 264.8,
             "duty_N_m_upper": 66.5,
-            "k_bound_edge_mm3_per_Nm": 1.2587988706812445e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0026057587446413977,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084067338066e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015792477245639715
+            "k_bound_edge_mm3_per_Nm": 1.2587988856722994e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.002605758775673418,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084158192949e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001579247743371258
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 93.4,
             "duty_N_m_upper": 23.5,
-            "k_bound_edge_mm3_per_Nm": 3.569708698127117e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.007389424849843715,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.163459817784968e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00044784393044637486
+            "k_bound_edge_mm3_per_Nm": 3.569708740638832e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.007389424937844489,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.163459843549646e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004478439357797555
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 13.1,
             "duty_N_m_upper": 3.3,
-            "k_bound_edge_mm3_per_Nm": 2.548912688638057e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.052763405516494895,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955693986757e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003197782153606012
+            "k_bound_edge_mm3_per_Nm": 2.548912718993097e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.052763406144855106,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955877956707e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003197782191688451
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 376.1,
             "duty_N_m_upper": 94.5,
-            "k_bound_edge_mm3_per_Nm": 8.862935887695547e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0018346594702663042,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.37147629740595e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011119148308438418
+            "k_bound_edge_mm3_per_Nm": 8.862935993244383e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0018346594921152912,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.371476361374948e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011119148440856536
           }
         ],
         "k_span_ratio": 20700.4
@@ -3290,40 +3290,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 264.8,
             "duty_N_m_upper": 93.0,
-            "k_bound_edge_mm3_per_Nm": 1.2587988706812445e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0018640113080796565,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084067338062e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001129703823464065
+            "k_bound_edge_mm3_per_Nm": 1.258798885672299e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0018640113302781955,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084158192947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011297038369177259
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 93.4,
             "duty_N_m_upper": 32.8,
-            "k_bound_edge_mm3_per_Nm": 3.5697086981271157e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.005285973426603262,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598177849677e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0003203620259640593
+            "k_bound_edge_mm3_per_Nm": 3.569708740638831e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.005285973489553999,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598435496457e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0003203620297792558
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 13.1,
             "duty_N_m_upper": 4.6,
-            "k_bound_edge_mm3_per_Nm": 2.5489126886380565e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.037743933408184376,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955693986754e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0022875111164280984
+            "k_bound_edge_mm3_per_Nm": 2.548912718993096e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.03774393385767745,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955877956707e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0022875111436701048
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 376.1,
             "duty_N_m_upper": 132.1,
-            "k_bound_edge_mm3_per_Nm": 8.862935887695544e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001312410830850903,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.3714762974059486e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.954005038174138e-05
+            "k_bound_edge_mm3_per_Nm": 8.862935993244382e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0013124108464804233,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.371476361374947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.954005132898513e-05
           }
         ],
         "k_span_ratio": 14807.9
@@ -3358,40 +3358,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 264.8,
             "duty_N_m_upper": 119.5,
-            "k_bound_edge_mm3_per_Nm": 1.2587988706812445e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0014509797751570649,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084067338062e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.793816822134413e-05
+            "k_bound_edge_mm3_per_Nm": 1.258798885672299e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0014509797924368048,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.629084158192947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.793816926860118e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 93.4,
             "duty_N_m_upper": 42.1,
-            "k_bound_edge_mm3_per_Nm": 3.569708698127116e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004114696354455409,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598177849677e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00024937553671875476
+            "k_bound_edge_mm3_per_Nm": 3.569708740638831e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.00411469640345739,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1634598435496453e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000249375539688572
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 13.1,
             "duty_N_m_upper": 5.9,
-            "k_bound_edge_mm3_per_Nm": 2.5489126886380565e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.029380553526025192,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955693986752e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0017806396082454927
+            "k_bound_edge_mm3_per_Nm": 2.548912718993096e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.029380553875918654,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5447955877956704e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0017806396294511586
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 376.1,
             "duty_N_m_upper": 169.7,
-            "k_bound_edge_mm3_per_Nm": 8.862935887695545e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001021604087919172,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.3714762974059486e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.191539928895579e-05
+            "k_bound_edge_mm3_per_Nm": 8.862935993244383e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010216041000854705,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.371476361374947e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.191540002630728e-05
           }
         ],
         "k_span_ratio": 11526.7
@@ -3433,40 +3433,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 131.1,
             "duty_N_m_upper": 19.6,
-            "k_bound_edge_mm3_per_Nm": 1.2712622261213325e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004371342941756332,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.7390065477916396e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012856891006458437
+            "k_bound_edge_mm3_per_Nm": 1.2712622412608055e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004371342993814693,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.739006592319529e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001285689115957136
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 46.2,
             "duty_N_m_upper": 6.9,
-            "k_bound_edge_mm3_per_Nm": 3.60505234941134e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.012396278138730184,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095146393607e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00036459641588166544
+            "k_bound_edge_mm3_per_Nm": 3.6050523923439395e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.012396278286357568,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095272666038e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00036459642022365006
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.5,
             "duty_N_m_upper": 1.0,
-            "k_bound_edge_mm3_per_Nm": 2.574149448508245e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.08851431114329755,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027790491396e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.002603362092711695
+            "k_bound_edge_mm3_per_Nm": 2.5741494791638133e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.08851431219741525,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027880654889e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0026033621237151762
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 186.2,
             "duty_N_m_upper": 27.9,
-            "k_bound_edge_mm3_per_Nm": 8.950687730173194e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0030777698596877257,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.632555215021524e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.052264294109393e-05
+            "k_bound_edge_mm3_per_Nm": 8.95068783676701e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.003077769896340913,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.632555246372666e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.052264401912955e-05
           }
         ],
         "k_span_ratio": 34385.8
@@ -3501,40 +3501,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 131.1,
             "duty_N_m_upper": 32.7,
-            "k_bound_edge_mm3_per_Nm": 1.2712622261213327e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.002621405815352676,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.73900654779164e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.710017104753699e-05
+            "k_bound_edge_mm3_per_Nm": 1.2712622412608055e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0026214058465710206,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.73900659231953e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.710017196572416e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 46.2,
             "duty_N_m_upper": 11.5,
-            "k_bound_edge_mm3_per_Nm": 3.605052349411341e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.007433796898245723,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095146393609e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00021864108526450552
+            "k_bound_edge_mm3_per_Nm": 3.6050523923439406e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.007433796986774875,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.060309527266604e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00021864108786830573
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.5,
             "duty_N_m_upper": 1.6,
-            "k_bound_edge_mm3_per_Nm": 2.5741494485082455e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.053080239428606776,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027790491397e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0015611835127630578
+            "k_bound_edge_mm3_per_Nm": 2.5741494791638137e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.05308024006073981,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027880654889e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0015611835313552175
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 186.2,
             "duty_N_m_upper": 46.5,
-            "k_bound_edge_mm3_per_Nm": 8.950687730173196e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001845676240917619,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.6325552150215242e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.4284595326564735e-05
+            "k_bound_edge_mm3_per_Nm": 8.950687836767013e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0018456762628977935,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.632555246372667e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.428459597304086e-05
           }
         ],
         "k_span_ratio": 20620.5
@@ -3569,40 +3569,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 131.1,
             "duty_N_m_upper": 45.9,
-            "k_bound_edge_mm3_per_Nm": 1.2712622261213325e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.001872004495926525,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.73900654779164e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.505895576808102e-05
+            "k_bound_edge_mm3_per_Nm": 1.2712622412608055e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.001872004518220243,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.739006592319529e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.5058956423779e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 46.2,
             "duty_N_m_upper": 16.2,
-            "k_bound_edge_mm3_per_Nm": 3.6050523494113403e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0053086405522635265,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095146393607e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015613648684697964
+            "k_bound_edge_mm3_per_Nm": 3.60505239234394e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.005308640615484173,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.060309527266604e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015613648870641157
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.5,
             "duty_N_m_upper": 2.3,
-            "k_bound_edge_mm3_per_Nm": 2.5741494485082455e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.03790578561825607,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027790491397e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.001114876047707867
+            "k_bound_edge_mm3_per_Nm": 2.5741494791638133e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.0379057860696764,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027880654889e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0011148760609849438
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 186.2,
             "duty_N_m_upper": 65.1,
-            "k_bound_edge_mm3_per_Nm": 8.950687730173194e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0013180386648977166,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.6325552150215234e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.876584308912484e-05
+            "k_bound_edge_mm3_per_Nm": 8.950687836767013e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0013180386805942506,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.6325552463726666e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.87658435507879e-05
           }
         ],
         "k_span_ratio": 14725.6
@@ -3637,40 +3637,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 131.1,
             "duty_N_m_upper": 59.0,
-            "k_bound_edge_mm3_per_Nm": 1.2712622261213327e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0014558185252892364,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.73900654779164e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.281819192457701e-05
+            "k_bound_edge_mm3_per_Nm": 1.2712622412608055e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0014558185426265919,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.73900659231953e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.281819243449955e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 46.2,
             "duty_N_m_upper": 20.8,
-            "k_bound_edge_mm3_per_Nm": 3.6050523494113403e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00412841810845216,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095146393607e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012142406202550795
+            "k_bound_edge_mm3_per_Nm": 3.60505239234394e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004128418157617527,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0603095272666041e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012142406347154908
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.5,
             "duty_N_m_upper": 2.9,
-            "k_bound_edge_mm3_per_Nm": 2.5741494485082455e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.029478532257149786,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027790491397e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008670156547092305
+            "k_bound_edge_mm3_per_Nm": 2.5741494791638137e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.029478532608209883,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.571027880654889e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008670156650345339
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 186.2,
             "duty_N_m_upper": 83.8,
-            "k_bound_edge_mm3_per_Nm": 8.950687730173196e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001025010949269056,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.632555215021524e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.0147380863885885e-05
+            "k_bound_edge_mm3_per_Nm": 8.950687836767013e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010250109614759202,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.632555246372667e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.0147381222911533e-05
           }
         ],
         "k_span_ratio": 11451.8
@@ -3712,40 +3712,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 5024.4,
             "duty_N_m_upper": 967.7,
-            "k_bound_edge_mm3_per_Nm": 9.951534749131248e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.00342568408030842,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920849554568e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02055410448211152
+            "k_bound_edge_mm3_per_Nm": 9.951534657516552e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.003425684048771274,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920794585751e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.020554104292888644
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1771.8,
             "duty_N_m_upper": 341.2,
-            "k_bound_edge_mm3_per_Nm": 2.8220616478995515e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.009714573585448612,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369887612311e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05828744151343179
+            "k_bound_edge_mm3_per_Nm": 2.8220616219194056e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0097145734960154,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369731731442e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05828744097683254
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 248.1,
             "duty_N_m_upper": 47.8,
-            "k_bound_edge_mm3_per_Nm": 2.0150632308524135e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.06936588380348652,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2090379385268004e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.4161953028262039
+            "k_bound_edge_mm3_per_Nm": 2.0150632123015657e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.06936588316489814,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.209037927396292e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.4161952989946738
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 7136.1,
             "duty_N_m_upper": 1374.4,
-            "k_bound_edge_mm3_per_Nm": 7.006664568899089e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0024119515104777237,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.2039987413928356e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014471709063050104
+            "k_bound_edge_mm3_per_Nm": 7.006664504395124e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.002411951488273088,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.2039987026904576e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014471708929822294
           }
         ],
         "k_span_ratio": 34423.7
@@ -3780,40 +3780,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 5024.4,
             "duty_N_m_upper": 1470.1,
-            "k_bound_edge_mm3_per_Nm": 9.951534749131248e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.002254910300298707,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920849554568e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01352946180196404
+            "k_bound_edge_mm3_per_Nm": 9.95153465751655e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.002254910279539806,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920794585751e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.013529461677410638
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1771.8,
             "duty_N_m_upper": 518.4,
-            "k_bound_edge_mm3_per_Nm": 2.822061647899551e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00639448691919823,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369887612311e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03836692151567656
+            "k_bound_edge_mm3_per_Nm": 2.8220616219194056e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.006394486860330027,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369731731442e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03836692116246734
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 248.1,
             "duty_N_m_upper": 72.6,
-            "k_bound_edge_mm3_per_Nm": 2.015063230852413e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.045659156597920365,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2090379385268002e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.27395493959100087
+            "k_bound_edge_mm3_per_Nm": 2.0150632123015657e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.045659156177578195,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.209037927396292e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2739549370689479
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 7136.1,
             "duty_N_m_upper": 2088.0,
-            "k_bound_edge_mm3_per_Nm": 7.006664568899089e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0015876345212508872,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.203998741392835e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00952580712762628
+            "k_bound_edge_mm3_per_Nm": 7.006664504395124e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0015876345066349854,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.2039987026904576e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009525807039930874
           }
         ],
         "k_span_ratio": 22658.9
@@ -3848,40 +3848,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 5024.4,
             "duty_N_m_upper": 1972.6,
-            "k_bound_edge_mm3_per_Nm": 9.951534749131248e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0016805571927340848,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920849554567e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010083343156532547
+            "k_bound_edge_mm3_per_Nm": 9.95153465751655e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0016805571772627289,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920794585751e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010083343063704413
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1771.8,
             "duty_N_m_upper": 695.6,
-            "k_bound_edge_mm3_per_Nm": 2.822061647899551e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0047657332464528844,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369887612313e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.028594399479080393
+            "k_bound_edge_mm3_per_Nm": 2.8220616219194056e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004765733202579129,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369731731442e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.028594399215837868
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 248.1,
             "duty_N_m_upper": 97.4,
-            "k_bound_edge_mm3_per_Nm": 2.0150632308524135e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.034029213501150034,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2090379385268004e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.20417528100949278
+            "k_bound_edge_mm3_per_Nm": 2.0150632123015657e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.03402921318787412,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.209037927396292e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.20417527912983738
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 7136.1,
             "duty_N_m_upper": 2801.6,
-            "k_bound_edge_mm3_per_Nm": 7.006664568899089e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0011832446788538197,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.2039987413928356e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.007099468073213066
+            "k_bound_edge_mm3_per_Nm": 7.006664504395124e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0011832446679607659,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.2039987026904576e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.007099468007854747
           }
         ],
         "k_span_ratio": 16887.4
@@ -3916,40 +3916,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 5024.4,
             "duty_N_m_upper": 2475.0,
-            "k_bound_edge_mm3_per_Nm": 9.951534749131246e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0013393965770755211,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.970920849554567e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.008036379462555173
+            "k_bound_edge_mm3_per_Nm": 9.95153465751655e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0013393965647449195,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.97092079458575e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.008036379388571565
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1771.8,
             "duty_N_m_upper": 872.8,
-            "k_bound_edge_mm3_per_Nm": 2.822061647899551e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0037982681131900173,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.693236988761231e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02278960867942948
+            "k_bound_edge_mm3_per_Nm": 2.8220616219194056e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.00379826807822283,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6932369731731442e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.022789608469626365
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 248.1,
             "duty_N_m_upper": 122.2,
-            "k_bound_edge_mm3_per_Nm": 2.0150632308524135e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.027121131182605566,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2090379385268002e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1627267870976997
+            "k_bound_edge_mm3_per_Nm": 2.0150632123015657e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.02712113093292607,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.209037927396292e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.16272678559962275
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 7136.1,
             "duty_N_m_upper": 3515.2,
-            "k_bound_edge_mm3_per_Nm": 7.006664568899088e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0009430407245594998,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.203998741392835e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005658244347428847
+            "k_bound_edge_mm3_per_Nm": 7.006664504395124e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0009430407158777848,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.203998702690457e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005658244295338557
           }
         ],
         "k_span_ratio": 13459.2
@@ -3987,32 +3987,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 668.8,
             "duty_N_m": 21.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.476428022098518e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.15158629292511674
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.47642803121028e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.15158629310985983
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 235.8,
             "duty_N_m": 7.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.120169533276023e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.42986923564587265
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1201695358599415e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.429869236169768
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 33.0,
             "duty_N_m": 1.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5138846002382242e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.0694357491068587
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5138846020832437e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.069435752847678
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 949.8,
             "duty_N_m": 31.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.263994413417999e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10672869407021816
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.263994419833398e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10672869420029184
           }
         ],
         "k_span_ratio": 202752.3
@@ -4050,32 +4050,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 650.0,
             "duty_N_m": 63.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.691874178309131e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.052037883471621985
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.691874179581745e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.052037883480231605
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 229.2,
             "duty_N_m": 22.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1812658716757283e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.14756931356336817
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.1812658720366173e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1475693135877834
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 32.1,
             "duty_N_m": 3.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.557509793593088e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 1.0537030542369563
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5575097938507767e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 1.0537030544112906
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 923.2,
             "duty_N_m": 90.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.415685482914408e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03663877015481891
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.41568548381043e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03663877016088077
           }
         ],
         "k_span_ratio": 67653.1
@@ -4113,32 +4113,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 631.3,
             "duty_N_m": 103.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.920105670515219e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03215572602297361
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.920105663016743e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03215572599252971
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 222.6,
             "duty_N_m": 36.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2459878826252366e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.09118738310964679
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2459878804988146e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.09118738302331379
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 31.2,
             "duty_N_m": 5.1,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.603723860032158e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.6511138513174041
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.603723858513809e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.6511138507009524
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 896.6,
             "duty_N_m": 146.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.576378436339202e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.022640164747660084
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.576378431059685e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.022640164726225175
           }
         ],
         "k_span_ratio": 40600.1
@@ -4176,32 +4176,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 621.6,
             "duty_N_m": 203.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.043144737511015e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.016327633070942447
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.043144774703313e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01632763314644304
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 219.2,
             "duty_N_m": 71.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.280879368302106e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0463019908507133
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2808793788491188e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.046301991064818304
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 30.7,
             "duty_N_m": 10.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6286377558393607e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.3306144617640833
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6286377633703435e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.33061446329287747
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 882.9,
             "duty_N_m": 288.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.663007634050149e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011495940175674369
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.663007660236459e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011495940228832739
           }
         ],
         "k_span_ratio": 20300.1
@@ -4239,32 +4239,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 621.6,
             "duty_N_m": 304.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.043144737751846e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01088286726761117
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 8.043144775021741e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010882867318039622
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 219.2,
             "duty_N_m": 107.4,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.280879368370401e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.030861694310807673
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.280879378939418e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03086169445381294
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 30.7,
             "duty_N_m": 15.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.6286377558881264e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.22036465962323015
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.628637763434821e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.22036466064434415
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 882.9,
             "duty_N_m": 432.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.663007634219713e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.007662396043852387
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.663007660460656e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.007662396079357989
           }
         ],
         "k_span_ratio": 13530.6
@@ -4299,40 +4299,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 258.0,
             "duty_N_m_upper": 40.0,
-            "k_bound_edge_mm3_per_Nm": 1.291925174618787e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.00433866672586632,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849545958353e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0002629494986318615
+            "k_bound_edge_mm3_per_Nm": 1.291925190775028e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004338666780123754,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849643874935e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0002629495019201899
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 91.0,
             "duty_N_m_upper": 14.1,
-            "k_bound_edge_mm3_per_Nm": 3.663648451376698e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.012303614747618841,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930016324114e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0007456736213358169
+            "k_bound_edge_mm3_per_Nm": 3.663648497192655e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.012303614901482369,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930293996493e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0007456736306608764
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 12.7,
             "duty_N_m_upper": 2.0,
-            "k_bound_edge_mm3_per_Nm": 2.6159893745174997e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.08785265801316999,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481063380195e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005324403517863382
+            "k_bound_edge_mm3_per_Nm": 2.615989407231898e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.08785265911181622,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481261649223e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005324403584447982
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 366.5,
             "duty_N_m_upper": 56.8,
-            "k_bound_edge_mm3_per_Nm": 9.096171168432542e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0030547632290630136,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.512831013152648e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00018513716546430002
+            "k_bound_edge_mm3_per_Nm": 9.09617128218521e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0030547632672645233,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.512831082093638e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001851371677795423
           }
         ],
         "k_span_ratio": 33583.0
@@ -4367,40 +4367,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 258.0,
             "duty_N_m_upper": 65.8,
-            "k_bound_edge_mm3_per_Nm": 1.2919251746187873e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0026365613018308866,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849545958353e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001597915941077887
+            "k_bound_edge_mm3_per_Nm": 1.291925190775028e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0026365613348025485,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849643874937e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015979159610607068
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 91.0,
             "duty_N_m_upper": 23.2,
-            "k_bound_edge_mm3_per_Nm": 3.6636484513766986e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.007476774909400386,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930016324114e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004531378734598589
+            "k_bound_edge_mm3_per_Nm": 3.6636484971926546e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.007476775002901604,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930293996493e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0004531378791265977
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 12.7,
             "duty_N_m_upper": 3.2,
-            "k_bound_edge_mm3_per_Nm": 2.6159893745175e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.053387119365398326,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481063380198e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.003235582993005248
+            "k_bound_edge_mm3_per_Nm": 2.615989407231898e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.053387120033033864,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481261649223e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0032355830334679972
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 366.5,
             "duty_N_m_upper": 93.4,
-            "k_bound_edge_mm3_per_Nm": 9.096171168432544e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0018563468975357428,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.512831013152648e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011250587261836043
+            "k_bound_edge_mm3_per_Nm": 9.09617128218521e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0018563469207503907,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.512831082093638e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011250587402530835
           }
         ],
         "k_span_ratio": 20408.0
@@ -4435,40 +4435,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 258.0,
             "duty_N_m_upper": 91.6,
-            "k_bound_edge_mm3_per_Nm": 1.291925174618787e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0018936587090354832,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849545958353e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011476719452824838
+            "k_bound_edge_mm3_per_Nm": 1.291925190775028e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0018936587327167361,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849643874937e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00011476719596347538
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 91.0,
             "duty_N_m_upper": 32.3,
-            "k_bound_edge_mm3_per_Nm": 3.6636484513766986e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0053700476878167334,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930016324117e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00032545743574223176
+            "k_bound_edge_mm3_per_Nm": 3.6636484971926546e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.005370047754972159,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930293996496e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0003254574398122563
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 12.7,
             "duty_N_m_upper": 4.5,
-            "k_bound_edge_mm3_per_Nm": 2.6159893745174997e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.038344256765962335,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481063380195e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.002323894350287511
+            "k_bound_edge_mm3_per_Nm": 2.615989407231898e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.03834425724547854,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481261649223e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.002323894379349091
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 366.5,
             "duty_N_m_upper": 130.1,
-            "k_bound_edge_mm3_per_Nm": 9.096171168432542e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0013332849371142882,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.5128310131526476e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.080514773293906e-05
+            "k_bound_edge_mm3_per_Nm": 9.09617128218521e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0013332849537877561,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.5128310820936385e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.080514874345197e-05
           }
         ],
         "k_span_ratio": 14657.7
@@ -4503,40 +4503,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 258.0,
             "duty_N_m_upper": 117.4,
-            "k_bound_edge_mm3_per_Nm": 1.2919251746187868e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.001477378491617263,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849545958351e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.953809043322784e-05
+            "k_bound_edge_mm3_per_Nm": 1.291925190775028e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0014773785100927008,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.829849643874935e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 8.9538091552951e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 91.0,
             "duty_N_m_upper": 41.4,
-            "k_bound_edge_mm3_per_Nm": 3.6636484513766975e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004189557978470341,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2203930016324114e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000253912604847039
+            "k_bound_edge_mm3_per_Nm": 3.663648497192654e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0041895580308630885,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.220393029399649e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000253912608022356
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 12.7,
             "duty_N_m_upper": 5.8,
-            "k_bound_edge_mm3_per_Nm": 2.6159893745174997e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.02991509502360966,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5854481063380195e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0018130360626885862
+            "k_bound_edge_mm3_per_Nm": 2.615989407231898e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.029915095397714513,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.585448126164922e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0018130360853616015
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 366.5,
             "duty_N_m_upper": 166.7,
-            "k_bound_edge_mm3_per_Nm": 9.096171168432541e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010401908643259195,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.5128310131526476e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.304187058786563e-05
+            "k_bound_edge_mm3_per_Nm": 9.09617128218521e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010401908773340837,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.512831082093637e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 6.304187137623895e-05
           }
         ],
         "k_span_ratio": 11435.5
@@ -4578,40 +4578,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 127.7,
             "duty_N_m_upper": 19.6,
-            "k_bound_edge_mm3_per_Nm": 1.304716513289275e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004375387213511104,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.8374015100807025e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012868785923454232
+            "k_bound_edge_mm3_per_Nm": 1.3047165296054787e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004375387268227748,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.837401558069524e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012868786084385494
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 45.0,
             "duty_N_m_upper": 6.9,
-            "k_bound_edge_mm3_per_Nm": 3.6999221992932495e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.012407746906614277,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0882124116720752e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00036493373258612367
+            "k_bound_edge_mm3_per_Nm": 3.699922245562829e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.012407747061780034,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.088212425280771e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00036493373714982107
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.3,
             "duty_N_m_upper": 1.0,
-            "k_bound_edge_mm3_per_Nm": 2.6418902600372244e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.08859620266570147,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265471520555e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0026057706669142177
+            "k_bound_edge_mm3_per_Nm": 2.6418902930755277e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.08859620377364612,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265568692008e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.002605770699500816
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 181.4,
             "duty_N_m_upper": 27.9,
-            "k_bound_edge_mm3_per_Nm": 9.186232271278133e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.003080617345661046,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.7018330212502688e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.060639252903734e-05
+            "k_bound_edge_mm3_per_Nm": 9.186232386157063e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.003080617384185875,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.70183305503818e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 9.060639366212023e-05
           }
         ],
         "k_span_ratio": 33535.2
@@ -4646,40 +4646,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 127.7,
             "duty_N_m_upper": 32.4,
-            "k_bound_edge_mm3_per_Nm": 1.3047165132892752e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0026500767980887447,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.837401510080703e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.794343524615813e-05
+            "k_bound_edge_mm3_per_Nm": 1.304716529605479e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.002650076831229425,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.837401558069524e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 7.794343622088374e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 45.0,
             "duty_N_m_upper": 11.4,
-            "k_bound_edge_mm3_per_Nm": 3.6999221992932495e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.007515102227349971,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0882124116720752e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00022103241847487614
+            "k_bound_edge_mm3_per_Nm": 3.699922245562829e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.007515102321330494,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0882124252807711e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00022103242123900835
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.3,
             "duty_N_m_upper": 1.6,
-            "k_bound_edge_mm3_per_Nm": 2.6418902600372244e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.05366079151992012,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265471520555e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0015782585742824284
+            "k_bound_edge_mm3_per_Nm": 2.6418902930755273e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.05366079219097808,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265568692008e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0015782585940194217
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 181.4,
             "duty_N_m_upper": 46.0,
-            "k_bound_edge_mm3_per_Nm": 9.186232271278133e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0018658628718199394,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.7018330212502688e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.487831976522135e-05
+            "k_bound_edge_mm3_per_Nm": 9.186232386157063e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0018658628951535895,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.70183305503818e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.4878320451505e-05
           }
         ],
         "k_span_ratio": 20311.5
@@ -4714,40 +4714,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 127.7,
             "duty_N_m_upper": 45.2,
-            "k_bound_edge_mm3_per_Nm": 1.3047165132892752e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0019006206900319728,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.8374015100807025e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.590060853627178e-05
+            "k_bound_edge_mm3_per_Nm": 1.3047165296054787e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0019006207138002886,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.837401558069524e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 5.590060923533969e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 45.0,
             "duty_N_m_upper": 15.9,
-            "k_bound_edge_mm3_per_Nm": 3.699922199293249e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.005389790511470454,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0882124116720752e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015852325035415325
+            "k_bound_edge_mm3_per_Nm": 3.699922245562829e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.005389790578872775,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.088212425280771e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00015852325233657385
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.3,
             "duty_N_m_upper": 2.2,
-            "k_bound_edge_mm3_per_Nm": 2.641890260037224e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.03848522830727302,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265471520555e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0011319184797455423
+            "k_bound_edge_mm3_per_Nm": 2.6418902930755273e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.03848522878855215,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265568692007e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0011319184939008067
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 181.4,
             "duty_N_m_upper": 64.2,
-            "k_bound_edge_mm3_per_Nm": 9.186232271278132e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001338186720287151,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.7018330212502688e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.935843295378997e-05
+            "k_bound_edge_mm3_per_Nm": 9.186232386157064e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0013381867370219184,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.7018330550381806e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.935843344598888e-05
           }
         ],
         "k_span_ratio": 14567.3
@@ -4782,40 +4782,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 127.7,
             "duty_N_m_upper": 57.9,
-            "k_bound_edge_mm3_per_Nm": 1.3047165132892747e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0014816126014005854,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.8374015100807025e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.357684122227888e-05
+            "k_bound_edge_mm3_per_Nm": 1.3047165296054784e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.001481612619928973,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 3.837401558069523e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 4.3576841767231295e-05
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 45.0,
             "duty_N_m_upper": 20.4,
-            "k_bound_edge_mm3_per_Nm": 3.6999221992932484e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004201565090070442,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0882124116720749e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00012357544383868736
+            "k_bound_edge_mm3_per_Nm": 3.699922245562828e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004201565142613345,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.088212425280771e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0001235754453840664
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 6.3,
             "duty_N_m_upper": 2.9,
-            "k_bound_edge_mm3_per_Nm": 2.641890260037224e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.030000830532301022,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265471520554e-08,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0008823773686905287
+            "k_bound_edge_mm3_per_Nm": 2.641890293075527e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.030000830907478043,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770265568692005e-08,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.000882377379725144
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 181.4,
             "duty_N_m_upper": 82.3,
-            "k_bound_edge_mm3_per_Nm": 9.18623227127813e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0010431720112291372,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.7018330212502688e-09,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.0681529745282485e-05
+            "k_bound_edge_mm3_per_Nm": 9.186232386157061e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0010431720242745819,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.70183305503818e-09,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.068153012897193e-05
           }
         ],
         "k_span_ratio": 11355.8
@@ -4857,40 +4857,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 4896.6,
             "duty_N_m_upper": 945.5,
-            "k_bound_edge_mm3_per_Nm": 1.0211158272523023e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.003505954393932038,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.126694963595789e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.021035726363873686
+            "k_bound_edge_mm3_per_Nm": 1.021115840412252e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.003505954439116122,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.126695042555491e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0210357266349782
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1726.7,
             "duty_N_m_upper": 333.4,
-            "k_bound_edge_mm3_per_Nm": 2.8956858281618407e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.009942204578308134,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374114969203516e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.059653227470646976
+            "k_bound_edge_mm3_per_Nm": 2.895685865480898e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.009942204706441405,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374115193117865e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05965322823944664
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 241.8,
             "duty_N_m_upper": 46.7,
-            "k_bound_edge_mm3_per_Nm": 2.0676337970052156e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.0709912587992987,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802782197288e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.42594755280149155
+            "k_bound_edge_mm3_per_Nm": 2.067633823652493e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.07099125971422078,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802942080957e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.4259475582910241
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 6954.6,
             "duty_N_m_upper": 1342.9,
-            "k_bound_edge_mm3_per_Nm": 7.189459985732727e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0024684681359610555,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.313675991497355e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01481080881596451
+            "k_bound_edge_mm3_per_Nm": 7.189460078389143e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0024684681677742113,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.3136760470912055e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014810809006843445
           }
         ],
         "k_span_ratio": 34334.5
@@ -4925,40 +4925,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 4896.6,
             "duty_N_m_upper": 1435.2,
-            "k_bound_edge_mm3_per_Nm": 1.0211158272523022e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0023097911752585345,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.126694963595788e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.013858747051736635
+            "k_bound_edge_mm3_per_Nm": 1.0211158404122517e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0023097912050266903,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.12669504255549e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.013858747230345582
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1726.7,
             "duty_N_m_upper": 506.1,
-            "k_bound_edge_mm3_per_Nm": 2.89568582816184e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.006550118403518595,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374114969203513e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03930071042163743
+            "k_bound_edge_mm3_per_Nm": 2.8956858654808974e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.006550118487935296,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.737411519311786e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.039300710928137646
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 241.8,
             "duty_N_m_upper": 70.9,
-            "k_bound_edge_mm3_per_Nm": 2.067633797005215e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.04677042672857243,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802782197286e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2806225603751894
+            "k_bound_edge_mm3_per_Nm": 2.067633823652493e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.046770427331340944,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802942080955e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.2806225639918005
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 6954.6,
             "duty_N_m_upper": 2038.4,
-            "k_bound_edge_mm3_per_Nm": 7.189459985732727e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.001626274981419583,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.313675991497354e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009757649888648058
+            "k_bound_edge_mm3_per_Nm": 7.189460078389142e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.001626275002378711,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.313676047091205e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.009757650014402828
           }
         ],
         "k_span_ratio": 22620.3
@@ -4993,40 +4993,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 4896.6,
             "duty_N_m_upper": 1924.9,
-            "k_bound_edge_mm3_per_Nm": 1.0211158272523023e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.0017222075641523187,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.126694963595789e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01033324538505217
+            "k_bound_edge_mm3_per_Nm": 1.021115840412252e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.0017222075863478075,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.12669504255549e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.010333245518225108
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1726.7,
             "duty_N_m_upper": 678.8,
-            "k_bound_edge_mm3_per_Nm": 2.8956858281618407e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.004883845596721701,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374114969203513e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.029303073580722285
+            "k_bound_edge_mm3_per_Nm": 2.895685865480898e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.004883845659663789,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374115193117863e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.029303073958374826
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 241.8,
             "duty_N_m_upper": 95.1,
-            "k_bound_edge_mm3_per_Nm": 2.0676337970052156e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.034872582228808395,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802782197288e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.20923549337565003
+            "k_bound_edge_mm3_per_Nm": 2.0676338236524935e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.034872582678239714,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802942080955e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.20923549607223796
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 6954.6,
             "duty_N_m_upper": 2733.9,
-            "k_bound_edge_mm3_per_Nm": 7.189459985732728e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0012125698220658353,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.3136759914973547e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00727541893249236
+            "k_bound_edge_mm3_per_Nm": 7.189460078389143e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.0012125698376932083,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.3136760470912055e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.007275419026256599
           }
         ],
         "k_span_ratio": 16865.9
@@ -5061,40 +5061,40 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m_upper": 4896.6,
             "duty_N_m_upper": 2414.5,
-            "k_bound_edge_mm3_per_Nm": 1.0211158272523025e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.001372946245119198,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.12669496359579e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.008237677470825407
+            "k_bound_edge_mm3_per_Nm": 1.0211158404122521e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.001372946262813472,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 6.126695042555491e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.008237677576991056
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m_upper": 1726.7,
             "duty_N_m_upper": 851.4,
-            "k_bound_edge_mm3_per_Nm": 2.895685828161841e-07,
-            "k_bound_conformal_mm3_per_Nm": 0.003893408444679174,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374114969203516e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02336045066838761
+            "k_bound_edge_mm3_per_Nm": 2.895685865480898e-07,
+            "k_bound_conformal_mm3_per_Nm": 0.003893408494856693,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.7374115193117867e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.02336045096945274
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m_upper": 241.8,
             "duty_N_m_upper": 119.2,
-            "k_bound_edge_mm3_per_Nm": 2.0676337970052156e-06,
-            "k_bound_conformal_mm3_per_Nm": 0.027800470643164835,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802782197288e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1668028238612209
+            "k_bound_edge_mm3_per_Nm": 2.067633823652494e-06,
+            "k_bound_conformal_mm3_per_Nm": 0.027800471001452106,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.2405802942080957e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1668028260109445
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m_upper": 6954.6,
             "duty_N_m_upper": 3429.3,
-            "k_bound_edge_mm3_per_Nm": 7.189459985732728e-08,
-            "k_bound_conformal_mm3_per_Nm": 0.0009666623343218006,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.313675991497356e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005799974006008409
+            "k_bound_edge_mm3_per_Nm": 7.189460078389145e-08,
+            "k_bound_conformal_mm3_per_Nm": 0.000966662346779964,
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 4.313676047091206e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005799974080757391
           }
         ],
         "k_span_ratio": 13445.5
@@ -5132,32 +5132,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 663.8,
             "duty_N_m": 19.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.532583282821433e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1698674393370956
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.532583263798769e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.16986743890811512
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 234.1,
             "duty_N_m": 6.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.136094072717316e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.4817110102760479
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.136094067322859e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.4817110090595427
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 32.8,
             "duty_N_m": 1.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5252553489673642e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.4396064502223216
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5252553451155093e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 3.4396064415359957
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 942.8,
             "duty_N_m": 27.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.303532141575848e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1196000615600268
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.303532128182394e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.11960006125799073
           }
         ],
         "k_span_ratio": 225510.2
@@ -5195,32 +5195,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 653.6,
             "duty_N_m": 57.6,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.649538309609453e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.057566900105233465
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.649538297555413e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05756690001452031
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 230.5,
             "duty_N_m": 20.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.169260242956168e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.1632485290669625
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.169260239537877e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.16324852880971766
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 32.3,
             "duty_N_m": 2.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5489373015590963e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 1.1656588319338037
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5489372991183018e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 1.1656588300969741
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 928.4,
             "duty_N_m": 81.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.385877695604267e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.04053163350948501
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.385877687117273e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.040531633445615806
           }
         ],
         "k_span_ratio": 75255.4
@@ -5258,32 +5258,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 643.5,
             "duty_N_m": 94.5,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770182431459137e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.035092853896848825
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.770182426677137e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.03509285387525164
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 226.9,
             "duty_N_m": 33.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2034725687832206e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.09951650634218495
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2034725674271387e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.09951650628093957
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 31.8,
             "duty_N_m": 4.7,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5733662504686104e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.7105870736108233
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.573366249500314e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.7105870731735069
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 913.9,
             "duty_N_m": 134.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.470820663228826e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.024708134194282774
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.470820659861921e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.024708134179076652
           }
         ],
         "k_span_ratio": 45163.5
@@ -5321,32 +5321,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 636.4,
             "duty_N_m": 186.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.856447006089074e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01774727211256237
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.856446997693198e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01774727209359656
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 224.4,
             "duty_N_m": 65.9,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.22793552387231e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05032781098219221
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.227935521491403e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.05032781092840886
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 31.4,
             "duty_N_m": 9.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5908337644595637e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.359360404032944
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5908337627595018e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.3593604036489096
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 903.9,
             "duty_N_m": 265.3,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.53155772076294e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.012495477917771136
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.53155771485158e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.012495477904417709
           }
         ],
         "k_span_ratio": 22589.4
@@ -5384,32 +5384,32 @@
             "n_cycles": 328840000.0,
             "sliding_distance_m": 636.4,
             "duty_N_m": 280.2,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.856447006411998e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.01183017116795629
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 7.856446997781594e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.011830171154960703
           },
           {
             "anchor": "Beaufort 4 (small branches move)",
             "n_cycles": 115960000.0,
             "sliding_distance_m": 224.4,
             "duty_N_m": 98.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.2279355239638855e-06,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.033548063874359664
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 2.227935521516471e-06,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.033548063837506706
           },
           {
             "anchor": "Beaufort 5 (small trees begin to sway)",
             "n_cycles": 16240000.0,
             "sliding_distance_m": 31.4,
             "duty_N_m": 13.8,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5908337645249515e-05,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.23954639697479968
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 1.5908337627774016e-05,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.23954639671165506
           },
           {
             "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
             "n_cycles": 467050000.0,
             "sliding_distance_m": 903.9,
             "duty_N_m": 398.0,
-            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.531557720990304e-07,
-            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00832937263006262
+            "k_rigid_wall_figure_edge_mm3_per_Nm": 5.53155771491382e-07,
+            "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.008329372620912703
           }
         ],
         "k_span_ratio": 15057.9
@@ -5475,40 +5475,40 @@
           "n_cycles": 328840000.0,
           "sliding_distance_m_upper": 8291.4,
           "duty_N_m_upper": 3861.3,
-          "k_bound_edge_mm3_per_Nm": 6.030372766793889e-08,
-          "k_bound_conformal_mm3_per_Nm": 0.0008585220408813289,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 3.6182236600611166e-07,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.00515113224526631
+          "k_bound_edge_mm3_per_Nm": 6.030372741798048e-08,
+          "k_bound_conformal_mm3_per_Nm": 0.0008585220373227625,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 3.61822364506361e-07,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.005151132223914909
         },
         {
           "anchor": "Beaufort 4 (small branches move)",
           "n_cycles": 115960000.0,
           "sliding_distance_m_upper": 2923.8,
           "duty_N_m_upper": 1361.6,
-          "k_bound_edge_mm3_per_Nm": 1.7100963958541762e-07,
-          "k_bound_conformal_mm3_per_Nm": 0.0024346014826096603,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 1.0260578375081904e-06,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608895596525
+          "k_bound_edge_mm3_per_Nm": 1.7100963887658413e-07,
+          "k_bound_conformal_mm3_per_Nm": 0.0024346014725182582,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 1.026057833255189e-06,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.014607608835048108
         },
         {
           "anchor": "Beaufort 5 (small trees begin to sway)",
           "n_cycles": 16240000.0,
           "sliding_distance_m_upper": 409.5,
           "duty_N_m_upper": 190.7,
-          "k_bound_edge_mm3_per_Nm": 1.2210762196012948e-06,
-          "k_bound_conformal_mm3_per_Nm": 0.017384014034693116,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457317576955e-06,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408420772003
+          "k_bound_edge_mm3_per_Nm": 1.221076214539944e-06,
+          "k_bound_conformal_mm3_per_Nm": 0.017384013962636526,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 7.326457287208852e-06,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.10430408377538047
         },
         {
           "anchor": "ceiling: 20 yr of continuous sway at the high f0 reading 0.74 Hz (Schindler & Kolbe 2020) \u2014 the ceiling of the frequency x time form, script 62",
           "n_cycles": 467050000.0,
           "sliding_distance_m_upper": 11776.2,
           "duty_N_m_upper": 5484.2,
-          "k_bound_edge_mm3_per_Nm": 4.245857575489782e-08,
-          "k_bound_conformal_mm3_per_Nm": 0.0006044671618101193,
-          "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145452831553e-07,
-          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029708454623
+          "k_bound_edge_mm3_per_Nm": 4.245857557890739e-08,
+          "k_bound_conformal_mm3_per_Nm": 0.0006044671593046082,
+          "k_rigid_wall_figure_edge_mm3_per_Nm": 2.5475145347237286e-07,
+          "k_rigid_wall_figure_conformal_mm3_per_Nm": 0.0036268029558123942
         }
       ],
       "k_span_ratio": 14236.6
@@ -5589,6 +5589,6 @@
     ],
     "note": "radial_play answers ASSEMBLY, the coaxial cap and touchdown answer SUPPORT \u2014 different questions, same row. Geometry does not discriminate (\u0431)/(\u0432)/(\u0433): all three land 25 \u00b5m radial. The discriminating costs are NOT computed here \u2014 wear allowance (\u0431), re-spec of the primary datum (\u0432), fatigue \u03c3 \u221d 1/d\u00b3 (\u0433)."
   },
-  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 7.5-20.7x (infinite life, all alloys) on the 6 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 5 of 6 alloys (SF 2.0-5.4x, placeholder span); short of the SF-2 line: Ta; none is predicted to fail. On the superseded PRINTED branch 4 of 6 reach infinite life bare (CP-Ti-Gr4 short of the SF-2 line), predicted failure: Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in script 55 placeholder (HW.8) [8.04, 56.3] MPa / lock window, near end [2.88, 20.1] MPa / lock window, far end [2.73, 19.1] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); script 55 placeholder (HW.8): forced PEEK liner 0.15 mm, partly conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, free none; lock window, near end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, far end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34 sub-2). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
+  "verdict": "Monolithic bus at the canon rod O1.0 (01_01 1.4), SHIPPED fabrication = welded (welded cold-drawn wire, ratified 2026-09-10): buckling non-issue (SF 25x); the bore liner doubles as lateral support -> fatigue SF 7.5-20.7x (infinite life, all alloys) on the 6 mm supported idealisation, which OVERSTATES the coaxial equilibrium root stress. BARE, the drawn wire reaches infinite life for 5 of 6 alloys (SF 2.0-5.4x, placeholder span); short of the SF-2 line: Ta; none is predicted to fail. On the superseded PRINTED branch 4 of 6 reach infinite life bare (CP-Ti-Gr4 short of the SF-2 line), predicted failure: Ta. BUT the fatigue ground for the liner is RETIRED, not narrowed (verdict 2026-09-11), and since 2026-09-14 the contact is an EQUILIBRIUM, not a free-shape reading: on a coaxial channel the shipped liner touches down at the EXIT on every swept \u00b5 on every geometry (True), the mouth is never reached, and the root stress at worst \u00b5 lies in script 55 placeholder (HW.8) [8.04, 56.3] MPa / lock window, near end [2.88, 20.1] MPa / lock window, far end [2.73, 19.1] MPa (rigid wall = LOWER end, Ti-bore stop or free cantilever = UPPER end, bonded, zero-interference play; the contact compliance that places it is measured nowhere); script 55 placeholder (HW.8): forced PEEK liner 0.15 mm, partly conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, free none; lock window, near end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none; lock window, far end: forced conformal 10 \u00b5m film, conformal TiO2 ~5 \u00b5m, PEEK liner 0.15 mm, partly none, free none. A channel off the root axis by more than the play makes the MOUTH a contact station and puts a static MEAN on the root (swept, never measured). What the liner carries is WEAR - the exit contact is geometrically forced on every swept \u00b5, and wear-through is a ~0.5 V anode-cathode short. Liner = insulation + wear surface + lateral support; NOT a fatigue fix (HW.34, \u2696\ufe0f 2026-09-11: the liner's ground is WEAR). The seam is NOT priced: no break-even k (weld_seam.break_even_k_not_derived_because). Per-alloy margin tracks yield = same ranking as thermal -> leading HW.24 candidates win on both. WEAR is BOUNDED (wear_budget) at the EQUILIBRIUM stations since 2026-09-14 - the exit under coaxial drag, the mouth under a channel offset: the rate is not measured anywhere, so the block prices the BUDGET as a BOUND over the contact-compliance bracket (a rigid point contact slides zero, a compliant one rotates in contact up to the Ti-bore stop; the rigid-wall figures bound nothing), and the two ends are set by the CONTACT GEOMETRY - an open verdict of ours - not by tribology. The wear axis re-earns the rejection of the conformal branches against a RIGID wall only; on the bound it does not discriminate them, because the in-contact sliding scales with the polymer's own wall.",
   "caveats": "cyclic-load amplitude (pogo friction + PEEK flex) is an estimate; real sway spectrum is bench/field (00_02). Comparative supported-vs-unsupported + per-alloy ranking robust. GEOMETRY: the unsupported PEEK gap comes from Z1_INSERTION_MM = 30, an HW.8 placeholder outside the Zone-1 lock window (00_07 HW.26 G1); the contact blocks carry the placeholder AND both window ends, the \u00a71-\u00a73 tables the placeholder only. CONTACT: rigid frictionless wall, perfect clamp, small deflection. The SIGN of the rigid-wall figure differs by regime: under coaxial drag it is the LOWER end of the root stress (a compliant polymer wall raises the root moment by 3EI\u00b7(R/k)/L\u00b2, the Ti-bore stop or free cantilever is the upper end), under a channel offset it is an UPPER bound (a compliant mouth relieves a displacement-driven load); the contact compliance is measured nowhere, and the channel offset, tilt and the fit's play are SWEPT. WELD SEAM: its geometry is still NOT modelled (homogeneous cantilever), and the wrought derate still describes the WIRE, not the JOINT. No break-even knockdown k is derived (the root sees a fully-reversed coaxial cap OR a static mean from an offset, and no mean-stress correction exists here); what IS given is the root amplitude and mean per regime and geometry (weld_seam.root_section_loading). k itself is NOT MEASURED and is not assumed here. THE FIT: the liner-wire interference the direction verdict asserts is BOUNDED since 2026-09-12 (interference_window), and its two vendor bands stay NOT MEASURED. The nominal is RATIFIED 2026-09-18 (00_07 HW.34: bore = wire - 11.41 um, OD = ID + 0.30, fitted hot, 01_01 3 step 4a); the channel play it leaves is set mostly by the WIRE's band (k per um of wire over nominal, interference_window.od_growth_eats_channel_play), and that band is NOT MEASURED. Creep is modelled NOWHERE, so the real window is narrower on BOTH sides. WEAR: the specific wear rate stays NOT MEASURED; what is computed is the BUDGET at the equilibrium stations (exit under coaxial drag, mouth under an offset) as a BOUND over the contact-compliance bracket, its span set by the contact AREA bracketed between a flow-pressure bound and the full projected run. The coaxial in-contact sliding lies in [0 (rigid wall), the rotation to the Ti-bore stop]; the rigid-wall rotation figure bounds nothing, and against a rigid wall the driver is the reversing normal load. On the bound the wear axis does NOT discriminate the shipped liner from a conformal film (branch_discrimination). Archard assumes GROSS slip - at these amplitudes a real pair may be in partial slip, which removes less material and fails by fretting FATIGUE instead, a mode nothing here models. Third-body debris, the titanium side of the pair and the whole -30..+40 C dependence are outside the bound. Three seam mechanisms stay outside any bound, and their signs differ: bead section RELIEVES nominal stress, weld-toe notch AGGRAVATES it, and weld residual TENSION is a mean stress this file never carries."
 }

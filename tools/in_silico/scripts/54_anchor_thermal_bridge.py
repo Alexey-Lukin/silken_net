@@ -298,7 +298,8 @@ def main() -> int:
           f"{min(dts):.1f} … {max(dts):.1f}°C colder with Cu (always negative = Cu always worse).")
 
     # ── 3b. Per-alloy MONOLITHIC bus (bus λ = the anode alloy; the bus decision dissolves into HW.24) ──
-    # If the bus is printed monolithic with the anode, its material is NOT a free choice — it IS whatever
+    # The bus is the anode alloy (a welded cold-drawn wire, ratified 2026-09-10 — not printed with the
+    # anode), so its material is NOT a free choice — it IS whatever
     # the Stage-2 coin bake-off (HW.24) picks. So the thermal bridge is a (secondary) per-alloy input.
     banner("Per-alloy monolithic bus — bus λ = anode alloy (ties HW.34 ↔ HW.24 bake-off)")
     print(f"  {'anode alloy (= bus)':<22s} {'λ':>6s} {'G_anchor':>10s} {'T_anode':>8s} {'Δ<core':>7s} {'risk':>6s}")
@@ -357,9 +358,9 @@ def main() -> int:
     print(f"  2. A Ti(-6Al-4V) bus is thermally INVISIBLE — anode pocket within "
           f"{abs(t_base['Ti']-t_base['none']):.1f}°C of bare; Cu drives it {t_base['none']-t_base['Cu']:.0f}°C colder (into a freeze).")
     print("  3. Electrically the swap is FREE (µA → sub-mV IR-drop even for Ti's 100× resistivity).")
-    print("  4. RECOMMENDATION: a Ti-6Al-4V bus printed MONOLITHIC with the Zone-1 anode (same SLM) —")
-    print("     kills the thermal bridge AND the bottom Ti↔Cu galvanic joint (02_02 §1.2) in one move.")
-    print("     (Material is a founder call → 00_07 HW.34, not baseline canon; no-premature-canon.)")
+    print("  4. RATIFIED (01_01 §1.4): the bus IS the anode alloy — a cold-drawn wire WELDED to the anode")
+    print("     (2026-09-10; not printed with it) — which kills the thermal bridge AND the bottom Ti↔Cu")
+    print("     galvanic joint (02_02 §1.2) in one move. Which alloy = the HW.24 bake-off (block 3b above).")
     print("  5. Caveat: 1D lumped ladder, steady state; absolute T_anode depends on the swept wood")
     print("     reservoir. The Cu≫Ti ranking is robust to all of it. Conjugate FEA = bench-side.")
 
@@ -429,9 +430,9 @@ def main() -> int:
                               "pocket_C_J_K": round(c_pocket, 1)},
         "verdict": ("Cu bus dominates the axial cold path (~{:.0f}x the Ti-bus anchor) and drives the "
                     "Zone-1 anode pocket ~{:.0f}C colder than a Ti bus (into a freeze), which is itself "
-                    "thermally invisible. Swap is electrically free at uA. Recommend Ti-6Al-4V bus "
-                    "monolithic with the anode (also kills the Ti-Cu galvanic joint). Material = founder "
-                    "call, 00_07 HW.34."
+                    "thermally invisible. Swap is electrically free at uA. The bus is the anode alloy, "
+                    "ratified 2026-09-10 as a cold-drawn wire welded to the anode (01_01 §1.4), which also "
+                    "kills the Ti-Cu galvanic joint; which alloy = the HW.24 bake-off (per_alloy block)."
                     ).format(cu_vs_ti, t_base["Ti"] - t_base["Cu"]),
         "caveats": "1D lumped ladder + steady state; absolute T_anode depends on the swept wood reservoir "
                    "(lambda_wood, R_res, T_deep). The Cu>>Ti ranking is robust across the whole grid. "
