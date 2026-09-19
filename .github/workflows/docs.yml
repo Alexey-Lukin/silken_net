@@ -386,6 +386,11 @@ jobs:
         # Сіблінг-half = docker_smoke у ci.yml (повний build без push).
         run: ruby scripts/ruby_version_sync.rb
 
+      - name: CLAUDE.md byte ceiling (prepend layer — every byte is paid on every prompt)
+        # ⚖️ founder 2026-09-19: an addition to the prepend must EVICT something (criterion —
+        # CLAUDE.md §6 header). Judges BYTES, never truth; ceiling and its ground — script header.
+        run: ruby scripts/claude_md_ceiling.rb
+
       - name: Phantom tracker-ID gate (code ⟷ 00_07 ID-set)
         # Pure Ruby, no Rails — every tracker-ID cited in code/workflow text
         # must resolve against 00_07 (items + archive + verbatim facet tags).
