@@ -58,8 +58,8 @@
 <text x='20' y='491' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   ATTENTION - what ACCEPTANCE applies here is OPEN, and do not read the gyroid band onto it: 01_02 1.2 writes the dual-scale Sa/Sv row for</text>
 <text x='20' y='505' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   the catalytic wall, whose duty is surface area, while this is a mating face of an interference fit. The question the inversion OPENED,</text>
 <text x='20' y='519' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   and which nothing has measured, is the mirror of the old one: whether an etched surface survives the press-fit at all, and what the etch</text>
-<text x='20' y='533' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   takes off the 2t of interference (00_07 HW.34/HW.26). Until that is answered this note states the STATE of the surface, never a</text>
-<text x='20' y='547' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   requirement for it.</text>
+<text x='20' y='533' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   takes off the 2t of interference (00_07 HW.26). Until that is answered this note states the STATE of the surface, never a requirement for</text>
+<text x='20' y='547' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   it.</text>
 <text x='20' y='561' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>5. Post-process: HIP (01_02 §1.7); DIN-471 groove — CNC post-DMLS (§4.3 B, +15 min/anchor); NO ring is fitted as a backup (removed</text>
 <text x='20' y='575' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>   2026-09-18, 00_07 HW.26) - the groove stays only until HW.26 G1/G3 decides whether this end needs a stop against moving deeper</text>
 <text x='20' y='589' font-family='monospace' font-size='9' text-anchor='start' fill='#333' font-weight='normal'>6. Coating: NOT SPECIFIED, and deliberately so: the 01_02 3.6 map has a row for the Zone-1 gyroid wall and a row for the callus-contact</text>
@@ -101,7 +101,7 @@
 <line x1='540' y1='937' x2='790' y2='937' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='937' x2='630' y2='953' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='635' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>8fa69fef</text>
+<text x='635' y='948' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3618e7b</text>
 <line x1='540' y1='953' x2='790' y2='953' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='953' x2='630' y2='969' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='964' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -109,7 +109,7 @@
 <line x1='540' y1='969' x2='790' y2='969' stroke='#111' stroke-width='0.5'/>
 <line x1='630' y1='969' x2='630' y2='985' stroke='#111' stroke-width='0.5'/>
 <text x='545' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='635' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>2e681f0517e3276763… → FOOTER</text>
-<text x='806' y='1001' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 8fa69fef · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
-<text x='806' y='1013' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 2e681f0517e32767636b33e62df5e86e68f169e9f19ed214f27993c5e747024d</text>
+<text x='635' y='980' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>f9833d8014460ff72a… → FOOTER</text>
+<text x='806' y='1001' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3618e7b · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/mechanical_lock.zone1.json</text>
+<text x='806' y='1013' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): f9833d8014460ff72a23363e14d905d4bf4121d5f6f44ebe6cf626c80bbfe2f1</text>
 </svg>

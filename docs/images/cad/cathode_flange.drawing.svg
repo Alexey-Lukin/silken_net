@@ -175,7 +175,7 @@
 <line x1='620' y1='1729' x2='870' y2='1729' stroke='#111' stroke-width='0.5'/>
 <line x1='710' y1='1729' x2='710' y2='1745' stroke='#111' stroke-width='0.5'/>
 <text x='625' y='1740' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>REV</text>
-<text x='715' y='1740' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>6781ff64</text>
+<text x='715' y='1740' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e3618e7b</text>
 <line x1='620' y1='1745' x2='870' y2='1745' stroke='#111' stroke-width='0.5'/>
 <line x1='710' y1='1745' x2='710' y2='1761' stroke='#111' stroke-width='0.5'/>
 <text x='625' y='1756' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>SSOT</text>
@@ -183,7 +183,7 @@
 <line x1='620' y1='1761' x2='870' y2='1761' stroke='#111' stroke-width='0.5'/>
 <line x1='710' y1='1761' x2='710' y2='1777' stroke='#111' stroke-width='0.5'/>
 <text x='625' y='1772' font-family='monospace' font-size='9' text-anchor='start' fill='#555' font-weight='normal'>CEM SHA-256</text>
-<text x='715' y='1772' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>e0332425cf2d2737b4… → FOOTER</text>
-<text x='886' y='1793' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev 6781ff64 · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
-<text x='886' y='1805' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): e0332425cf2d2737b4afcb5ea6ad8d6672727532febed3b89e31893245a03a6e</text>
+<text x='715' y='1772' font-family='monospace' font-size='9' text-anchor='start' fill='#111' font-weight='bold'>9cce2f7850d5bca37c… → FOOTER</text>
+<text x='886' y='1793' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>SilkenNet · CEM-native drawing · rev e3618e7b · units mm · scale 6:1 · first-angle (ISO 128/5456 · GD&amp;T ISO 1101) · SSOT cem/cathode_flange.json</text>
+<text x='886' y='1805' font-family='monospace' font-size='8' text-anchor='end' fill='#888' font-weight='normal'>CEM SHA-256 (sha256sum of the SSOT manifest file): 9cce2f7850d5bca37c034a137b7abf380131a07354705b058fd465794709078e</text>
 </svg>
