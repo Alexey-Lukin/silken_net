@@ -28,8 +28,8 @@ RSpec.describe Sentry do
     end
   end
 
-  # [OPS.22, ⚖️ founder 2026-09-05] 7.0 made logs and metrics default-on and removed their
-  # flags, so the ratified "declared off" posture is three initializer lines — and deleting
+  # [OPS.22, ⚖️ founder 2026-09-05] 7.0 made logs default-on (metrics since 6.3.0) and removed
+  # both flags, so the ratified "declared off" posture is three initializer lines — and deleting
   # them would change what reaches a named subprocessor without reddening anything else.
   describe "data categories beyond errors and traces" do
     it "stops Rails structured logging at its source" do
