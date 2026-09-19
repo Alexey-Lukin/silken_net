@@ -10,6 +10,12 @@
 # роботі з гейтом, а вантажаться завжди. Тіло переїхало в `guard-craft.md`
 # (читається на вимогу); тут лишається ОДИН рядок на пункт — і цей рядок є
 # НОСІЄМ: він мусить спинити читача в момент, коли той збирається порушити.
+# ⚖️ Для `ssot-maintenance` (founder 2026-09-19) індекс виїхав і з SKILL.md — у
+# companion `guard-craft-index.md`: він належить ПОДІЇ (будуєш гейт · масово
+# видаляєш · звужуєш правило), а SKILL.md вантажиться з ДОМЕНОМ, тобто на кожній
+# сесії доків і в стартовому ритуалі, за години до дії. У мить дії стріляють опис
+# скіла й рядок подій `CLAUDE.md §2`. Ціна оголошена в шапці того файлу. Решта
+# цілей лишає індекс у SKILL.md: їхні гочі стріляють усередині ДОМЕНУ.
 #
 # 🔴 ЧОМУ ГЕНЕРАЦІЯ, А НЕ РУКА. Рукописний індекс — це другий дім тих самих
 # цих правил, тобто ще один дзеркальний шар у корпусі, який уже виміряв, чим це
@@ -85,7 +91,7 @@ ROOT = File.expand_path("..", __dir__)
 #   per-number pin — see the ITEM_FLOOR note below.
 TARGETS = [
   { name:  "ssot-maintenance",
-    skill: File.join(ROOT, ".claude/skills/ssot-maintenance/SKILL.md"),
+    skill: File.join(ROOT, ".claude/skills/ssot-maintenance/guard-craft-index.md"),
     aux:   File.join(ROOT, ".claude/skills/ssot-maintenance/guard-craft.md"),
     floor: 42,
     open:  "<!-- GUARD-CRAFT-INDEX:AUTO — generated from guard-craft.md by " \

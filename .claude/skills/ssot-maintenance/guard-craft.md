@@ -3,8 +3,8 @@
 > **Auxiliary file of the `ssot-maintenance` skill. Read this when you are building,
 > hardening or DEBUGGING a gate — and also when writing a spec, doing a mass delete,
 > narrowing a rule, running a campaign, or shipping anything a human executes by hand:
-> roughly half of these fire outside gate-work.** `SKILL.md` carries only the generated
-> one-line index of these items; this file is the source, and the index is regenerated
+> roughly half of these fire outside gate-work.** `guard-craft-index.md` carries the generated
+> one-line index of these items (with the thesis and design rules); this file is the source, and the index is regenerated
 > from it (`ruby scripts/guard_craft_index.rb --write`). Edit rules HERE, never in the
 > index — a hand-edited index is a second home, and #31 is what that costs.
 >
