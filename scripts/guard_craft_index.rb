@@ -198,7 +198,7 @@ TARGETS = [
   { name:  "dependency-update",
     skill: File.join(ROOT, ".claude/skills/dependency-update/SKILL.md"),
     aux:   File.join(ROOT, ".claude/skills/dependency-update/gotchas.md"),
-    floor: 45,
+    floor: 46,
     open:  "<!-- DEPUPDATE-GOTCHAS-INDEX:AUTO — generated from gotchas.md by " \
            "`ruby scripts/guard_craft_index.rb --write`; edit rules THERE, never here -->",
     close: "<!-- /DEPUPDATE-GOTCHAS-INDEX -->" }
