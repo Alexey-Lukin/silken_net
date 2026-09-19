@@ -137,7 +137,7 @@ namespace :tracker do
     if labour.empty?
       puts "  labour-split lead: no Стан-lead opens with the division of labour ✓"
     else
-      puts "  labour-split leads (#{labour.size}) — lead with the verdict/root, not «machine-half» (deep_archival.md, founder 2026-07-05):"
+      puts "  labour-split leads (#{labour.size}) — lead with the verdict/root, not «machine-half» (item_cementation.md, founder 2026-07-05):"
       labour.each { |r| puts "    - #{r}" }
     end
     # [DOC-T.23, founder 2026-06-14] meta-line form — WHO ∈ {🤖,👤,🤖+👤} + no tail after

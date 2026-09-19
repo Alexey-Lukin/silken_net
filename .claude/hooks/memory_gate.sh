@@ -1579,7 +1579,7 @@ puts "   later clause reported anyway. On a disciplined journal a share of these
 puts "   CONSTRUCTION. A per-file exemption was considered and REFUSED: a blanket silently"
 puts "   un-checks every other address in that file (the sibling gate learned that the hard way)."
 puts "── And it is a LEVEL, not a front: the moment this is actually cheap to get right is the"
-puts "   archival itself — `deep_archival.md` Фаза 5 — not a later sweep of the corpus."
+puts "   archival itself — `item_cementation.md` Фаза 5 — not a later sweep of the corpus."
 RUBY
 }
 

@@ -706,7 +706,7 @@ DOC_SECTION_REF   = %r{(\d\d_\d\d)(?:_[A-Za-z][A-Za-z0-9_]*)?(?:\.md)?`?\s*((?:�
     # the human, so the mantra spends the one position that has to carry the most.
     #
     # Why a gate and not the written rule: the ban was ruled AND the corpus swept in one commit
-    # (c9ebbe9e, 2026-07-05, which also wrote it into .claude/prompts/deep_archival.md) — and
+    # (c9ebbe9e, 2026-07-05, which also wrote it into .claude/prompts/item_cementation.md) — and
     # the form returned the SAME day, twice more inside three days, then five times in Ukrainian
     # over the next three weeks. A rule nobody can violate while remembering it is not the
     # problem; a rule that only exists in prose is.

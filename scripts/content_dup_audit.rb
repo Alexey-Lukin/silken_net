@@ -22,7 +22,7 @@
 #    00_07 tracker IDs for one idea — E.13=ARCH.20) and (b) cross-language EN↔UK dups
 #    (different tokens). Those are MANUAL: per-ID whole-project `grep -F` + shared
 #    distinctive-noun hunt (person/source/tech-noun). See memory feedback_dedup_id_search
-#    + the deep_archival orphan-sweep.
+#    + the item_cementation orphan-sweep.
 
 MIN  = (i = ARGV.index("--min")) ? ARGV[i + 1].to_i : 2
 ALL  = ARGV.delete("--all")

@@ -14,7 +14,7 @@
 # steps of the lane, though — the hint text says so and points at
 # `docs_band.rb`, because reading its green as a verdict about the whole Docs
 # lane is exactly what reddened `main` three times (OPS.25). What no gate
-# can see is a red line `deep_archival.md` itself flags as ungated (one of
+# can see is a red line `item_cementation.md` itself flags as ungated (one of
 # several — the sentence below already says "plus the ordering rule"): the
 # zero-loss set-diff is grep-based, so a fact that is present-by-token but
 # gutted-in-substance passes GREEN. That is the only thing worth interrupting
@@ -60,7 +60,7 @@ else
 2. **Перед архівацією — verify-canon.** Інбаунд-рефи по ID (канон/код/скіли) мусять лишитись живими: архівний рядок і є їхній дім. Спершу перевір, що присуд і design-justification вже в каноні — інакше зріжеш незбережене.
 3. **WHO meta-line = обʼєднання ВІДКРИТИХ виконавців** (закрита половина не рахується); `⚖️` — завжди trailing у комбо; перший канон-реф мусить бути модуля своєї §-секції.
 
-Метод цілком — `.claude/prompts/deep_archival.md`.
+Метод цілком — `.claude/prompts/item_cementation.md`.
 EOF
 fi
 

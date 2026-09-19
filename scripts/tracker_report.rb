@@ -16,7 +16,7 @@
 #   · **`🚦 Critical Path`.** Сира точність «архівний ID у рядку Critical Path» — 4 з 14
 #     (29%); звужена форма давала 80%, але exclusion-лист виведено ІЗ ТИХ САМИХ 14, тобто
 #     in-sample, і числу вірити не можна. Носій лишається advisory + правило в
-#     `.claude/prompts/deep_archival.md` («архівуючи ID, грепни його в `🚦`»).
+#     `.claude/prompts/item_cementation.md` («архівуючи ID, грепни його в `🚦`»).
 #
 # 🔴 **КОЖЕН режим друкує ВЛАСНУ сліпоту ПЕРЕД результатом, і це не ввічливість.**
 # Звіт, чиї числа правдиві над КУРОВАНОЮ множиною, є палантіром (`00_05 §7`): Саурон не
@@ -387,7 +387,7 @@ def critical_path_report(markdown)
   puts "    ПРОВЕНАНС («ex-…», «поглинув …»), і це не борг."
   puts "  · звужену форму (80%) відхилено, бо exclusion-лист був виведений із ТІЄЇ САМОЇ"
   puts "    чотирнадцятки — in-sample, тобто число описує підгонку, а не точність."
-  puts "  · тому це advisory назавжди; правило-носій живе в `.claude/prompts/deep_archival.md`."
+  puts "  · тому це advisory назавжди; правило-носій живе в `.claude/prompts/item_cementation.md`."
   puts
 
   hits = in_cp.select { |id| archived.include?(id) }.sort
