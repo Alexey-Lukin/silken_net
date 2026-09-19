@@ -35,6 +35,9 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
               security-advisories`): GitPython 3.1.59 closed all five open
               alerts and was itself hit by four advisories upstream had already
               published — one of them on 3.1.59 alone [OPS.22, 2026-09-13].
+              🔴 Default gems (`resolv`, `json`, `erb`, `net-*` …) are in NEITHER
+              channel until pinned in the Gemfile — read the ruby-lang security
+              news by hand: `resolv` CVEs sat 23 days with zero alerts (`#47`).
 1. INVENTORY  what's behind: the domain's "outdated" command (table below).
 2. RESEARCH   read THIS version's changelog/release-notes (web/gh). Classify:
               security(CVE) · breaking · behavior/default · feature · routine/regen.
@@ -143,6 +146,7 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 44. Enumerate payload pins from source with one grep, and draw a hardening perimeter by WHO INSTALLS the tool (workflow ⊥ action image ⊥ action input), never by which job it runs in
 45. The `slither-version` pin and the leaflet version are dated upstream NEGATIVES — re-check each with two HTTP calls before re-deriving either
 46. Ask a transitive advisory whether it names the API our consumer ACTUALLY calls — non-applicability outlives the upstream fix
+47. A DEFAULT gem is invisible to BOTH advisory channels until it is pinned in the `Gemfile` — so step 0 must read the ruby-lang security feed by hand
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 

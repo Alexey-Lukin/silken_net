@@ -47,9 +47,10 @@ Sentry.init do |config|
   config.send_default_pii = false
 
   # 🔒 [OPS.22, ⚖️ founder 2026-09-05] Logs and metrics are declared OFF here, not inherited:
-  # 7.0 made LOGS default-on (metrics already were since 6.3.0, active once `Sentry.metrics`
-  # is called) and REMOVED both `enable_logs`/`enable_metrics`, so writing those setters
-  # now raises NoMethodError at boot. Rails structured logging — the category 7.0
+  # 7.0 made LOGS default-on (metrics already were since 6.3.0 — `self.enable_metrics = true`
+  # in 6.3–6.7 `configuration.rb`, active once `Sentry.metrics` is called; the 7.0 CHANGELOG
+  # line «Metrics are now enabled by default» describes the removed switch) and REMOVED both
+  # `enable_logs`/`enable_metrics`, so writing those setters now raises NoMethodError at boot. Rails structured logging — the category 7.0
   # ships unasked, one log per request — is stopped at its source; the two callbacks drop
   # items from any other emitter, including SDK-emitted metrics a later 7.x may start sending.
   config.rails.structured_logging.enabled = false
