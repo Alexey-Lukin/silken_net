@@ -20,8 +20,8 @@ hard-stop touches it. 02_02 §3.5 models only pogo+O-ring; the acoustic pad is t
 DMLS Ti ±0.3 mm dominates the budget; raw RSS exceeds the (narrow) windows → a robot-selected 0.1 mm
 spacer (off the measured DMLS+PCB stack) is the mitigation. RF antenna Z-clearance is enforced here as
 a GEOMETRIC constraint at OUR 12 mm working floor (02_01 §5.3 itself asks ≥ 8 mm, 10-15 desirable — see
-RF_ANT_TI_CLEARANCE_MIN); the VNA/HFSS validation is lab-side
-(Гончаров, 00_02 §1.2 — currently unresponsive, so the geometry is self-owned, not blocked on him).
+RF_ANT_TI_CLEARANCE_MIN); which number is ACCEPTANCE is settled by a mock-up measurement (⚖️ 2026-09-17,
+02_01 §5.3), neither by this script nor by a lab VNA session — the geometry is self-owned, blocked on no one.
 
 1D linear tolerance chain — closed-form RSS + worst-case, no FEA / numpy.
 
@@ -30,7 +30,7 @@ the O-ring squeeze and therefore the groove DEPTH, but an O-ring displaces a fix
 so the depth implies a WIDTH — and the width has to live inside the flat face that closes on it. That
 face is the bottom annulus of the PEEK dome wall, i.e. its width IS the wall thickness, and the three
 MATE-Ø candidates disagree on whether it exists at all. The section also derives the depth-tolerance
-BUDGET (the input the open ⚖️ lacks) and settles, by inversion, whether a PEEK rim may be treated as a
+BUDGET (the requirement the shop's answer must fit) and settles, by inversion, whether a PEEK rim may be treated as a
 rigid datum for twenty years. Geometry is read from `tools/cad/cem/*.json` at RUNTIME — the two machine
 halves share no identifier vocabulary, so a mirrored dimension is findable only by grepping its value.
 """
@@ -94,13 +94,14 @@ POGO_FREE = GAP_PZ + 0.60 * POGO_TRAVEL    # protrusion so pogo sits at 60 % at 
 GAP_OR = ORING_CS * (1.0 - ORING_SQUEEZE_RATIFIED)
 GAP_OR_PRE_BRANCH_A = ORING_CS * (1.0 - 0.20)   # the 20 % chain before ⚖️ 2026-09-10 — history, not an input
 
-# ── RF constraint (02_01 §5.3) — geometric, self-owned (Гончаров VNA pending) ──
+# ── RF constraint (02_01 §5.3) — geometric, self-owned (acceptance: a mock-up measurement, ⚖️ 2026-09-17) ──
 # ⛔ This 12 is OURS, not canon's — do NOT "correct" a measured 8.0 upward to meet it, and do not
 # quote it as a requirement. 02_01 §5.3's normative table asks for >= 8 mm (10-15 desirable), grounds
 # it on lambda/40 = 8.6, and makes HFSS mandatory below 10. Its only 12 is the OUTCOME of a proposed
 # two-deck board stack, i.e. a design point mirrored here as a floor. The same mirror sits in the
-# other machine half (tools/cad Cem.RfClearanceMinMm). Which number is the acceptance floor is an
-# open verdict (00_07 HW.33); the measurement that settles it is the UNI.10 VNA sweep of 5/8/12.
+# other machine half (tools/cad Cem.RfClearanceMinMm). Which number is the acceptance floor a
+# MEASUREMENT settles, not a verdict — and ⚖️ 2026-09-17 named which one: a mock-up (LoRa 868 eval board
+# + PEEK plates at Z 5/8/12, RSSI/PER), independent of the board layout (02_01 §5.3; the leg: 00_07 HW.33).
 # Rule this violates, and it is ours: skill in-silico §Critical Rules #9 — if canon gives a RANGE, say which END you
 # took; if the number is not an end, say what it IS and whose. [2026-09-11]
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
@@ -327,7 +328,7 @@ def rim_boss_radial_budget() -> dict:
         "ceiling": "⛔ every term is a MINIMUM, so this is an upper bound with no tolerance in it; "
                    "the boss is cut in CAD at exactly these minima (2026-09-14), so nothing has grown yet. Diameter is ONE of three gates — "
                    "the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds "
-                   "its radius, 00_07 HW.33) and the antenna↔Ti clearance are separate and are NOT judged here.",
+                   "its radius, 01_04 §5.5) and the antenna↔Ti clearance are separate and are NOT judged here.",
     }
 
 
@@ -409,8 +410,8 @@ def depth_tolerance_budget() -> dict:
     """After branch (а) ONE machined depth sets the squeeze — so how tight must it be?
 
     This does not invent the tolerance the CEM lacks (that number belongs to whoever machines the
-    part). It derives the BUDGET the tolerance has to fit inside, which is the input the open ⚖️ is
-    actually missing: a requirement, not a guess.
+    part). It derives the BUDGET the tolerance has to fit inside, which is what the shop question
+    («do you hold ±0.05?») is judged against: a requirement, not a guess.
     """
     lo = max(ORING_WIN[0], ORING_WIN_PARKER_FACE[0])
     hi = min(ORING_WIN[1], ORING_WIN_PARKER_FACE[1])
@@ -655,8 +656,8 @@ def vertical_stack_budget(boss: dict) -> dict:
                          "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
                          "bottom-side contents inside the B2B gap (not judged here)",
         "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — not the B2B gap's own "
-                   "contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (open ⚖️ "
-                   "00_07 HW.33, VNA UNI.10); the piezo placement is an open question, not a choice made here.",
+                   "contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
+                   "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3); the piezo placement is an open question, not a choice made here.",
     }
 
 
@@ -846,7 +847,7 @@ def main() -> int:
     print("  🔑 Bayonet (not thread) hard-stop halves the CNC residual on the SHARED gap; the O-ring no longer rides it —")
     print("     its Z is the flat rim ON the flange face (branch (а)), so the seal holds on the machined depth alone.")
     print(f"  RF: antenna↔Ti ≥ {RF_ANT_TI_CLEARANCE_MIN:.0f} mm = OUR working floor, NOT a canon requirement "
-          "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; open verdict 00_07 HW.33, VNA sweep 5/8/12 = UNI.10).")
+          "(02_01 §5.3 asks ≥8, 10-15 desirable, HFSS below 10; acceptance = a mock-up at Z 5/8/12, ⚖️ 2026-09-17).")
 
     out = {
         "method": "1D linear tolerance chain (RSS + worst-case), 3-spring blind-mate Z-stack",
@@ -897,7 +898,8 @@ def main() -> int:
         "collar_radial_budget": collar,
         "vertical_stack_budget": vert,
         "rf_constraint": {"antenna_ti_clearance_min_mm": RF_ANT_TI_CLEARANCE_MIN,
-                          "note": "geometric (self-owned); VNA/HFSS lab-side Гончаров 00_02 §1.2, unresponsive"},
+                          "note": "geometric (self-owned); a design point, not the acceptance floor — that is "
+                                  "settled by a mock-up measurement (⚖️ 2026-09-17, 02_01 §5.3)"},
         "verdict": (f"3-spring Z-stack holds at '{final_label}' incl. 20yr pad creep"
                     if mit_ok else "no ladder level holds — widen O-ring CS / bigger pogo travel"),
     }

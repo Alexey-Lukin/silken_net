@@ -20,8 +20,9 @@
 #   • the same axis has a THIRD home this guard does NOT reach: where a manifest omits a field, the
 #     EFFECTIVE geometry is the C#-record default in Cem.cs, bound to canon by nothing. Measured
 #     2026-09-09: 14 such fields, all in the assembly-level manifests, and the sharpest are the ones
-#     that cross machine halves — o_ring_gap_mm 1.424f is DERIVED from in-silico script 52
-#     (ORING_CS 1.78 × 0.80), rf_clearance_min_mm 12f mirrors 02_01 §5.3, and zone1_insertion_mm 30
+#     that cross machine halves — o_ring_gap_mm 1.424f was DERIVED from in-silico script 52
+#     (ORING_CS 1.78 × 0.80; the field left the record with branch (а), 2026-09-14),
+#     rf_clearance_min_mm 12f mirrors 02_01 §5.3, and zone1_insertion_mm 30
 #     carries no provenance comment at all.
 #     🔴 «All correct today» stood here as the GROUND of the refusal and FELL 2026-09-11 on that very
 #     example: 02_01 §5.3 requires ≥ 8 mm (10–15 desirable, λ/40 = 8.6, HFSS mandatory below 10), and
@@ -35,7 +36,7 @@
 #     pin on this note alone. What DID change is the price: it is no longer «a hypothetical future
 #     copy reds nothing» but «a live one already did», so the carriers (picogk + in-silico skills,
 #     both patched 2026-09-11) are now load-bearing rather than precautionary, and re-opening the
-#     verdict is founder's call — 00_07 HW.33 holds the measurement.
+#     verdict is founder's call — the measurement lives in 02_01 §5.3 (the 2026-09-11 limitation note).
 #   • DocsLinter.anchor_dimension_drift only catches prose RANGES (20-30 flange / 40-60 Zone-2), never a
 #     cem value.  • bell_radius_mm=5.0 had NO assert anywhere.
 # So a shipped cem number could drift from canon with zero gate. This closes that.
@@ -92,12 +93,15 @@ CHECKS = [
    C1, /width ≈ 1\.1 mm × depth ≈ ([\d.]+) mm/, :eq, 0.001 ],
   # ── 02_02 §3.2 O-ring gland (branch (а), applied 2026-09-14): the cord and the ratified squeeze the flange
   #    groove is DERIVED from. Pinned on the flange (it cuts the groove); the radome's copy is pinned equal to it
-  #    by xUnit (RadomeTests), so one canon anchor covers both halves. The gland FILL is deliberately NOT pinned:
-  #    it is an open ⚖️ with no canon number (00_07 HW.33) — canon would only be quoting the manifest back. ──
+  #    by xUnit (RadomeTests), so one canon anchor covers both halves. The gland FILL joined 2026-09-19: until
+  #    ⚖️ 2026-09-17 it was deliberately NOT pinned, because canon carried no number of its own and would only
+  #    have quoted the manifest back; the verdict gave canon the number, and with it the reason for the pin. ──
   [ "O-ring cord CS (§3.2)", "cathode_flange.json", "o_ring.cs_mm",
    C22, /Переріз \(CS\) \| \*\*([\d.]+) мм\*\*/, :eq, 0.001 ],
   [ "O-ring ratified squeeze nominal (§3.2 mirror of §3.5)", "cathode_flange.json", "o_ring.squeeze",
-   C22, /Ступінь стиснення \| [^|]*номінал \*\*([\d.]+) %\*\*/, :eq, 0.01, 100.0 ]
+   C22, /Ступінь стиснення \| [^|]*номінал \*\*([\d.]+) %\*\*/, :eq, 0.01, 100.0 ],
+  [ "O-ring ratified gland fill (§3.2)", "cathode_flange.json", "o_ring.gland_fill",
+   C22, /заповнення \*\*([\d.]+) %\*\* — ⚖️ РАТИФІКОВАНО/, :eq, 0.01, 100.0 ]
 ]
 
 failures = []

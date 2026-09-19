@@ -397,7 +397,7 @@
         "price": "moves the SSOT cross-section 02_02 \u00a73.2"
       }
     },
-    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is cut in CAD at exactly these minima (2026-09-14), so nothing has grown yet. Diameter is ONE of three gates \u2014 the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds its radius, 00_07 HW.33) and the antenna\u2194Ti clearance are separate and are NOT judged here."
+    "ceiling": "\u26d4 every term is a MINIMUM, so this is an upper bound with no tolerance in it; the boss is cut in CAD at exactly these minima (2026-09-14), so nothing has grown yet. Diameter is ONE of three gates \u2014 the internal HEIGHT above the flange face (not cavity_height_mm alone: the inner cap adds its radius, 01_04 \u00a75.5) and the antenna\u2194Ti clearance are separate and are NOT judged here."
   },
   "applied_gland": {
     "applied": "2026-09-14 \u2014 branch (\u0430) in CathodeFlange.cs / Radome.cs; read back off cem/cathode_flange.json + cem/radome.json",
@@ -1290,11 +1290,11 @@
       }
     },
     "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap (not judged here)",
-    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 not the B2B gap's own contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (open \u2696\ufe0f 00_07 HW.33, VNA UNI.10); the piezo placement is an open question, not a choice made here."
+    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 not the B2B gap's own contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a mock-up measurement, \u2696\ufe0f 2026-09-17, 02_01 \u00a75.3); the piezo placement is an open question, not a choice made here."
   },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,
-    "note": "geometric (self-owned); VNA/HFSS lab-side \u0413\u043e\u043d\u0447\u0430\u0440\u043e\u0432 00_02 \u00a71.2, unresponsive"
+    "note": "geometric (self-owned); a design point, not the acceptance floor \u2014 that is settled by a mock-up measurement (\u2696\ufe0f 2026-09-17, 02_01 \u00a75.3)"
   },
   "verdict": "3-spring Z-stack holds at 'L1 spacer only' incl. 20yr pad creep"
 }

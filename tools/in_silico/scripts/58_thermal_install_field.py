@@ -28,7 +28,12 @@ to fix what the record describes. We reproduce it, name it, and let the 2D model
 
 MODEL. Axisymmetric (r, z) finite-volume, explicit (FTCS) time march, variable properties,
 harmonic-mean face conductivities. z = 0 is the outer bark surface (= flush flange top face),
-z increases INTO the trunk; r = 0 is the anchor axis. Regions: Ti flange (Ø25 x 3, seated in
+z increases INTO the trunk; r = 0 is the anchor axis. ⚠️ PRE-VERDICT PREMISE, kept as the record
+of what was measured: ⚖️ 2026-09-18 seats the flange ON the inner bark with its catalytic band
+above the outer surface (01_04 §3.1), i.e. its floor sits CLOSER to the cambium than the z = T_FLANGE
+floor here — the flange->cambium path is under-estimated, which only strengthens the rejection this
+model fed (01_04 §3.5). Not re-run: the procedure is gone, and its first ground has no geometry in it.
+Regions: Ti flange (Ø25 x 3, seated in
 the periderm counterbore) / Ti Zone-3 shank / air annulus / PEEK sleeve / bus rod / Ti Zone-1
 shank / gyroid (effective lambda) / dead bark / living inner bark / sapwood. The cambium is the
 plane between inner bark and sapwood; the drill destroyed it inside r = r_wound, so the question
@@ -129,7 +134,7 @@ L_SLEEVE = 50.0          # PEEK thermal-break length (frozen)
 L_A_INSERT = 30.0        # Zone-1 shank insertion into the sleeve (HW.8 placeholder, script 54)
 L_C_INSERT = 14.0        # Zone-3 shank insertion (HW.8 placeholder, script 54)
 L_GYROID = 40.0          # Zone-1 gyroid in sapwood — cem/anchor_zone1.pine.json (canon 30-50)
-POROSITY_GYROID = 0.65   # 01_01 §5.2 (first-pass CEM parameter, 65 +/- 2 %)
+POROSITY_GYROID = 0.65   # 01_01 §5.2 nominal (⚖️ 2026-09-17; the shop band is 60-70 %, judged on the whole part)
 
 # Tree structure (NO SSOT home in the corpus — swept; see DECLARED CEILINGS)
 T_BARK_DEAD = 8.0        # periderm / dead outer bark thickness, Pinus sylvestris at DBH >= 38 cm
