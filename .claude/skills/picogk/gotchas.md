@@ -48,7 +48,7 @@
 
 5. **Voxel-resolution floor + gradient distortion — the grid's floor and the printer's floor are different ceilings, and the printable one depends on topology** — sub-100µm pores need voxel ~0.03mm →
    ~10⁹-voxel grids. The Ø11 anode renders cleanly at 0.1mm (pores ~2.5mm); realistic 300→100µm
-   pores are the HW.33 ceiling. 🔴 **The printability half of that ceiling is TOPOLOGY-dependent**
+   pores are the `01_01 §5.5` ceiling. 🔴 **The printability half of that ceiling is TOPOLOGY-dependent**
    (measured by `tools/in_silico/scripts/66_gyroid_ligament_thickness.py`): at equal porosity a network
    LIGAMENT is about three times as thick as a sheet WALL, so the minimum printable pore at the SLM floor
    is far smaller on the shipped network branch than the old sheet figure. The ratios are NAMED

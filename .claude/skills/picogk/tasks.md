@@ -15,7 +15,7 @@
   SKU also needs its baseline (`verify --write-golden` — without a golden it passes unpinned) and meets the
   `AnchorTests` shipped-manifest pins (topology · bus-rod field · coating restriction · tolerance block).
 - **Change anchor geometry**: edit `cem/anchor_zone1.*.json` (Ø, period, wallParam — and `bus_rod_diameter_mm`, which declares the WELDED WIRE, an assembly part: the anode is printed with NO core and `Zone1Anode.InnerRadiusMm` returns 0 for every manifest, pinned by `AnchorTests.The_Printed_Part_Carries_No_Core`. The wire field still has to BE there — `Every_Shipped_Anchor_Cem_Declares_Its_Bus_Rod_And_No_Bore` reds on a manifest that omits it or carries a bore key, which would otherwise evaporate on parse).
-  Geometry numbers are owned in `01_01 §5` + founder decisions in `00_07 HW.33`; **MEASURE
+  Geometry numbers and the founder decisions on them are owned in canon (`01_01 §5`); the open anchor-geometry legs live in `00_07` HW.33; **MEASURE
   porosity after** (gotcha #4). Render via `Zone1Anode.Anode` (the ctor route, gotcha #1).
   ⚖️ **Topology = `network`** — every shipped `anchor_zone1.*` but `stepped` declares it; `stepped` is a
   separate, already-decided THIRD branch (`ZonedGyroid`).
@@ -26,7 +26,7 @@
   the radial axis has no formula pair) is an estimate that must be marked as one — never quote a bare GPa
   figure as a target. Re-solve against the
   porosity target FIRST: on network the porosity is a function of the LEVEL, not of the period, so one
-  `wallParam` serves every species SKU (curve and working point: `00_07` HW.33; per-SKU values: the goldens).
+  `wallParam` serves every species SKU (curve and working point: `01_02 §6`; per-SKU values: the goldens).
   🔴 **Two traps this branch arms, both silent.** (a) The `graded_porosity` SKU grades
   the wall itself, and on network its rim needs a NEGATIVE level; the old
   `GyroidWallParamRim > 0f` sentinel swallowed that back to the core value, i.e. the manifest would state
@@ -34,7 +34,7 @@
   general form is the lesson: **a `> 0` sentinel encodes «≤ 0 is meaningless», and a topology change can
   make ≤ 0 ordinary.** (b) The CLI `scan` swept `wallParam` from 0.2, so the ratified working point sat
   OUTSIDE the sweep and the command would have answered "no working window" on a sound part; the bounds
-  are topology-dependent now (`WallScan`; the measured network window: `00_07` HW.33).
+  are topology-dependent now (`WallScan`; the measured network window: `tools/cad/README.md`).
   📐 The specific-surface price of network is measured per SKU (`01_01 §5.5`) — quote that, not the rounded «~2×».
 - **Welded bus wire (`01_01 §1.4` + `§3` step 1b, HW.1/HW.34, SHIPPED)**: `bus_rod_diameter_mm` declares the WIRE. ⛔ **It is NOT printed with the anode** — ⚖️ founder 2026-09-18 applied the welded branch in CAD: the part has no core (lattice to the axis), `Zone1Anode.BuildMonolithic`/`BusRod` and `fea --with-rod` are REMOVED (gotcha #14), `Zone1Anode.Build` is the gyroid alone, and the wire body lives in `AxialStack` starting at the anode's TOP FACE (`BusWireBottomZMm`), where the weld seam and the cantilever root coincide. The golden baselines and the sub-floor shares were re-measured on the welded body (`01_02 §6`). ⚠️ **Why the route matters even though the CAD now only models the RESULT:**
   the ratified fabrication is a WELD (⚖️ 2026-09-10 — an as-printed rod carries `ENDURANCE_OVER_YIELD ×
