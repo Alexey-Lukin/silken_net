@@ -3,7 +3,8 @@
 
 require "rails_helper"
 
-# [ARCH.61] /sidekiq за admin-only route-constraint — єдиний шлюз до
+# [ARCH.61] /sidekiq за `super_admin`-only route-constraint (⚖️ founder 2026-09-05;
+# підстава — коментар над `mount` у `config/routes.rb`) — єдиний шлюз до
 # Sidekiq::Web (Rack-app, BaseController-auth не діє). Unmatched → 404.
 RSpec.describe "Sidekiq Web UI mount", type: :request do
   let(:organization) { create(:organization) }
