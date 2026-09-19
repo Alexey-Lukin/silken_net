@@ -116,6 +116,21 @@ variable "compute_desired_status" {
   }
 }
 
+# ⏳ Строк повернення зупинки (амана, 00_05 §7): пауза без строку стає майном — і тишею, бо
+# червоний деплой у зупинену VM був єдиним нагадуванням, що стек стоїть. Terraform цю змінну
+# НЕ споживає: її читає детектор `Deploy · Canopy` (крок `decide` у .github/workflows/deploy.yml).
+# ⛔ Дефолт порожній — і це БЕЗПЕЧНИЙ бік: без дати пропуску немає, червоне лишається гучним.
+variable "duty_cycle_review_by" {
+  description = "Phase-zero review date (YYYY-MM-DD). While compute_desired_status is TERMINATED, the canopy deploy is skipped ONLY before this date; after it (or when empty) the deploy runs and fails loudly, forcing a re-ask. Read by CI, not by any resource."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.duty_cycle_review_by == "" || can(regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", var.duty_cycle_review_by))
+    error_message = "duty_cycle_review_by must be empty or a YYYY-MM-DD date."
+  }
+}
+
 variable "db_read_replica_count" {
   description = "Number of Cloud SQL read replicas (0 to disable)"
   type        = number

@@ -87,6 +87,25 @@ jobs:
           if [ "${{ github.event_name }}" != "workflow_run" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
+          # ⏳ [Фаза ∅ · амана, 2026-09-19] A deliberately STOPPED stack (06_01 §Фаза ∅) is not an
+          # incident: from 2026-09-15 every push went red on an IAP tunnel into a TERMINATED VM, and
+          # three days later that noise was read as a GCP outage. The decision already has a carrier —
+          # the committed posture file — so the detector reads it (as DATA, via the API, never a
+          # checkout of head_sha). ⛔ But a skip WITHOUT a term would turn the red, the only reminder
+          # that the stack is down, into permanent silence: it skips only BEFORE
+          # `duty_cycle_review_by`; on that date (or with no date) the deploy runs and fails loudly,
+          # forcing the re-ask. An unreadable posture falls through — ambiguity deploys, as below.
+          posture=$(gh api -H "Accept: application/vnd.github.raw" "repos/${{ github.repository }}/contents/terraform/posture.auto.tfvars?ref=${HEAD_SHA}" 2>/dev/null || true)
+          status=$(printf '%s\n' "$posture" | sed -nE 's/^compute_desired_status[[:space:]]*=[[:space:]]*"([A-Z]+)".*/\1/p')
+          review=$(printf '%s\n' "$posture" | sed -nE 's/^duty_cycle_review_by[[:space:]]*=[[:space:]]*"([0-9-]*)".*/\1/p')
+          if [ "$status" = "TERMINATED" ]; then
+            today=$(date -u +%F)
+            if [ -n "$review" ] && [[ "$today" < "$review" ]]; then
+              echo "::notice::Фаза ∅: compute TERMINATED by the committed posture until review ${review} — canopy deploy skipped, not failed."
+              echo "deploy=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            echo "::warning::Фаза ∅ posture is TERMINATED but its review date '${review:-<none>}' has passed or is unset — deploying into a stopped VM WILL fail. Re-ask: raise the stack (RUNNING + apply) or move duty_cycle_review_by."
+          fi
           # 🔴 [2026-09-02] The base of the diff is NOT the parent commit. `commits/${HEAD_SHA}`
           # lists the files of ONE commit, so a multi-commit push whose last commit is docs-only
           # (push bef5f653..b51e5fc4: three code fixes + one docs commit) reported "No
