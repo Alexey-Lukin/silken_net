@@ -942,7 +942,9 @@ CoAP DNS-only; firmware Queen хардкодить саме його, `COAP_SERV
 **незалежного реєстратора, НЕ Cloudflare Registrar** (⚖️ INF.4 2026-08-30: CF Registrar не
 дозволяє чужі NS, тож TLS-fallback §вище був би неможливий), Cloudflare підключити як
 DNS/proxy поверх · Grafana Cloud
-stack (remote_write URL/user/token) · Sentry project (DSN) · Alchemy (Polygon+ETH) +
+stack (remote_write URL/user/token) · Sentry project (DSN) ·
+🔴 **ESP (пошта) — акаунт будь-якого SMTP-вендора** (вендор-агностично, [`06_04 §2.1`](06_04_Secrets_Checklist)) → `MAIL_FROM` + `SMTP_*` **ПЛЮС SPF/DKIM DNS на домені відправника**. Це НЕ пост-підйомна перевірка Фази 5: без `MAIL_FROM`+`SMTP_ADDRESS` boot-гард `mail_transport_check.rb` відмовляє проду в СТАРТІ ([`00_07`](00_07_Action_Plan_Tracker) ARCH.60), а `config/deploy.yml` везе обидва як `REQUIRED_SECRET_NOT_SET`, який форматна половина гарда відкидає; DNS-записи ще й мають лаг поширення — тобто рядок належить саме «за дні ДО» ·
+Alchemy (Polygon+ETH) +
 Helius/QuickNode (Solana mainnet) RPC · 4+ Web3-гаманці (oracle/minter/slasher/anchor
 + опц. celo) + газ MATIC/ETH/SOL/CELO · SSH ed25519 keypair · згенерувати
 `SECRET_KEY_BASE`-бекап + `PROVISIONING_MASTER_KEY` → **vault + offline-копія (DR.1; `RAILS_MASTER_KEY` з 09-02 незамінним не є — SEC.22 Phase-2)** ·
