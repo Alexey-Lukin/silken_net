@@ -295,7 +295,10 @@ internal static class Zone1Anode
 
     // Build direction in the anode's OWN frame. z = 0 is the tree-side tip (AxialStack's datum: the Zone-2 sleeve and
     // the capsule sit above it), and 01_02 §1.6 prints the anode tip-DOWN, so the part grows away from z = 0: BD = +Z.
-    // ⚖️ The orientation of the INTEGRATED Zone-1 body is an open verdict (00_07 HW.26 G4 · HW.23). Only a LOCAL reading
+    // ⚖️ The orientation of the INTEGRATED Zone-1 body is an open verdict — and its ONE home is 00_07 HW.26 G4.
+    //    ⛔ Do not read HW.23 as a second home for it: that item RATIFIED and APPLIED its own orientation verdict on
+    //    2026-09-18 (fatigue SPECIMENS in two build orientations; 01_02 §1.6 lost the "axial wind loads" ground), so
+    //    what is open there is nothing about this sign. Only a LOCAL reading
     //    of the downskin mode rides on this sign: on the infinite constant-period lattice a 2-fold screw of the gyroid
     //    maps +Z onto −Z, so a GLOBAL curve barely moves with it — "barely", because the graded, clipped body is not
     //    invariant under that screw (measured 2026-09-14 on the then-annular part, pine at period/12, downskin 0.45 mm: 48.646 % porous for +Z,
