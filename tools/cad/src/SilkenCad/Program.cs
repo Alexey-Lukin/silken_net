@@ -228,6 +228,13 @@ internal static class Program
     //     name, since «the count did not change» there is a statement about the clamp, not about the mesh.
     //     That is why ⚖️ 2026-09-17 took `stepped` OUT of the convergence claim: both its levels clamp.
     //   · it never writes a golden and never reports OK/FAILED — a probe is not a verification.
+    // 🔴 ONE HOME for the ladder the canon cites (01_02 §6 «/24 ⊥ /32», 00_07 HW.51): the verb's DEFAULT
+    //    and the pin that judges a committed cache read the SAME constant. Without it the cache name carries
+    //    no divisors, so a run at another `--divisors` overwrote the committed ladder and
+    //    `AnchorTests.Every_Committed_Convergence_Ladder_Was_Measured_On_Todays_Sampler` stayed green — it
+    //    judges the SAMPLER STEP, which a different ladder does not move.
+    internal static readonly int[] CanonConvergenceDivisors = [24, 32];
+
     private static int Converge(string[] args)
     {
         string strCemPath = args[1];
@@ -236,7 +243,7 @@ internal static class Program
             return Fail("converge needs an anchor_zone1 CEM");
         AnchorCem cem = Cem.Parse<AnchorCem>(strJson);
 
-        int[] aDivs = [.. (ArgStr(args, "--divisors", "24,32")!)
+        int[] aDivs = [.. (ArgStr(args, "--divisors", string.Join(',', CanonConvergenceDivisors))!)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(int.Parse).OrderBy(n => n)];
         float fPeriodMin = cem.GyroidPeriodRimMm > 0f

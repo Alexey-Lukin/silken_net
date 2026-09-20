@@ -370,10 +370,18 @@ public class AnchorTests
     // the clamp (or changing the /24 divisor) silently turns every committed rung into a statement about
     // a grid the sampler no longer uses — while the JSON stays internally perfect. This pin recomputes
     // the shipped step from the code and compares it to what each cache says it measured.
+    // 🔴 SECOND axis since 2026-09-20 — the RUNGS, because the step alone let a whole different ladder in
+    // silently: the cache file is named after the CEM only, so `converge <cem> --divisors 8,12` overwrites
+    // the committed ladder, and the step check above stays green (another divisor set does not move the
+    // SAMPLER step it compares). The canon claim is a ladder of NAMED rungs — /24 ⊥ /32 (01_02 §6) — so the
+    // pin requires the committed rows to CONTAIN `Program.CanonConvergenceDivisors`, the same constant the
+    // verb defaults to. A wider ladder (24,32,48) is legitimate and passes; a substituted one reds.
     // ⛔ Declared ceiling: it judges the cache's PROVENANCE, never its topology numbers — those come from
-    // a run, and re-running the ladder inside the suite would add ~20 s to a 14 s suite for a probe.
+    // a run, and re-running the ladder inside the suite would add ~20 s to a 14 s suite for a probe. ⊕ And
+    // it cannot see whether the rows came from ONE run: a hand-merged cache with both rungs present passes.
     // MUTATION: change the 0.06f floor or the 24f divisor in Connectivity.AdaptiveStepMm ⇒ this reds
-    // naming every SKU whose ladder must be re-run (00_07 HW.51).
+    // naming every SKU whose ladder must be re-run; drop a rung from a committed cache (or re-run one SKU
+    // at other divisors) ⇒ this reds naming that SKU and the missing rung (00_07 HW.51).
     [Fact]
     public void Every_Committed_Convergence_Ladder_Was_Measured_On_Todays_Sampler()
     {
@@ -390,10 +398,16 @@ public class AnchorTests
             double dNow = Connectivity.AdaptiveStepMm(cem);
             if (Math.Abs(dSaid - dNow) > 1e-6)
                 aStale.Add($"{cem.Name}: ladder measured at {dSaid:F4} mm, sampler now says {dNow:F4} mm");
+            int[] aCommitted = [.. doc.RootElement.GetProperty("rows").EnumerateArray()
+                .Select(r => r.GetProperty("step_divisor").GetInt32())];
+            int[] aMissing = [.. Program.CanonConvergenceDivisors.Where(n => !aCommitted.Contains(n))];
+            if (aMissing.Length > 0)
+                aStale.Add($"{cem.Name}: committed rungs /{string.Join(" /", aCommitted)} — the canon ladder " +
+                           $"is missing /{string.Join(" /", aMissing)}");
         }
         Assert.True(aStale.Count == 0,
-            "the committed convergence ladders no longer describe the shipped sampler — re-run " +
-            $"`converge <cem> --divisors 24,32`: {string.Join(" · ", aStale)}");
+            "the committed convergence ladders no longer describe the shipped sampler or the canon ladder — re-run " +
+            $"`converge <cem> --divisors {string.Join(',', Program.CanonConvergenceDivisors)}`: {string.Join(" · ", aStale)}");
     }
 
     // 🔴 ONE part, ONE inner envelope (00_07 HW.33). A reader that samples from any radius other than the one

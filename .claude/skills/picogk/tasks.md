@@ -89,10 +89,12 @@
   and writes a committed cache under `tools/cad/cache/topology/`. A probe, never a
   verification — no golden, no OK/FAILED; a rung clamped onto the adaptive floor prints «SAME GRID … proves nothing» and
   a SKU whose rungs all land there prints «NOT A LADDER». Pin `AnchorTests.Every_Committed_Convergence_Ladder_Was_Measured_On_Todays_Sampler`
-  recomputes the sampler step from the CODE. ⚠️ Its ceiling is the trap: the cache name carries the SKU only and the pin
-  judges only the step, so a run with other `--divisors` silently replaces the committed ladder — pass the committed
-  divisors and read `git diff tools/cad/cache/topology/` before committing (gotcha #14's class). Numbers → the cache /
-  `00_07` HW.51, never here.
+  recomputes the sampler step from the CODE **and, since 2026-09-20, requires the committed rows to carry the canon
+  rungs** (`Program.CanonConvergenceDivisors`, the same constant the verb defaults to) — so a run at other `--divisors`
+  now reds naming the SKU and the missing rung instead of silently replacing the ladder. A WIDER ladder passes. ⛔ The
+  remaining ceiling: the cache name still carries the SKU only, and the pin cannot tell whether the rows came from ONE
+  run — a hand-merged cache with both rungs present passes, so still read `git diff tools/cad/cache/topology/` before
+  committing (gotcha #14's class). Numbers → the cache / `00_07` HW.51, never here.
 - **Capsule-end assembly (`Assembly.cs`, SHIPPED)**: brings Деталь 3 ↔ Деталь 4 into one frame at the
   bayonet datum (radome lock-groove ↔ flange lugs) via `MeshUtility.voxApplyTransformation` (lift; the
   per-part `Build`s stay untouched) and MEASURES the residual mismatch (radial / bayonet-Z / RF) + models
