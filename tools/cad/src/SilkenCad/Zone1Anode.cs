@@ -248,6 +248,16 @@ internal static class Zone1Anode
     // returns a CONSTANT, that pin judges agreement on a constant — it guards the future divergence, not a
     // present one, and `cem` stays in the signature because the day a part declares a bore it must come from
     // the manifest, never from a second formula.
+    // 🔴 MOVING THIS VALUE IS NOT A CLIPPING CHANGE — IT RESHAPES THE LATTICE EVERYWHERE, and the 2026-09-18
+    //    application proved it by accident (mechanism measured 2026-09-20, 00_07 HW.1 → canon 01_02 §6). It is
+    //    the LEFT EDGE of the radial map in BOTH generators: `GradedCartesianGyroid` normalises by
+    //    (r − r_core)/(r_rim − r_core), so every physical radius re-maps to a different PERIOD, and
+    //    `ZonedGyroid` takes its zone boundary as (r_core + R)/2, which moved 3.00 → 2.75 mm. Measured
+    //    consequence of 0.5 → 0: six network SKUs' specific surface fell 0.4–1.1 %, and `stepped`'s sub-floor
+    //    share ROSE 71.0 → 75.4 % — the rim zone (whose sheet wall is below the print floor) simply got bigger.
+    //    ⛔ So a verdict about the PART (no printed core) silently re-decided the pore-gradient profile of all
+    //    seven SKUs (01_01 §5.5). Change it only WITH a re-measure of every golden and a line saying which
+    //    profile the new map produces.
     internal static float InnerRadiusMm(AnchorCem cem) => 0f;
 
     // Solid pipe envelope (outer Ø + inner Ø = 0 ⇒ a full cylinder) — also the porosity reference volume.
