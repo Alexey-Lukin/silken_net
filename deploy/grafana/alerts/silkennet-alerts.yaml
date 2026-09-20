@@ -2689,7 +2689,7 @@ groups:
         annotations:
           summary: "Найбільша RANGE-таблиця тримає {{ $values.B.Value | printf \"%.0f\" }} листових партицій (>24), і жодна ще не дропалась. ⚠️ Це НЕ число місяців історії: серед листів завжди DEFAULT і створений наперед наступний місяць, тобто місяців на 1-2 менше."
           description: "Автоматичного дропу партицій у коді немає (`app/`/`lib/` — нуль; рунбук 06_06 §5.5 виконує DETACH вручну), тож ретеншн сирої телеметрії фактично нескінченний. Дія: ухвалити ⚖️ ширини вікна — РАЗОМ із двома сусідніми осями, бо жодна з трьох не бачить інших: retention-періоди PII (SEC.18) і комерційна обіцянка SLA §3.3. ⛔ Перед першим дропом закрити три передумови ARCH.70 (lineage-діагноз · глибина черги `low` під архівний пін · незакритий `oracle_status: dispatched`). 04_01 §3 картка TelemetryLog, дім DOC.8."
-          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md#arch70--ретеншн-партицій-і-драбинка-data-lake-ширина-вікна--механізм-дропу--default-лист"
         labels:
           severity: info
           component: database
@@ -2736,7 +2736,7 @@ groups:
         annotations:
           summary: "Три RANGE-таблиці займають {{ $values.B.Value | printf \"%.0f\" }} Б (>30 ГБ) — 60% початкового сайзингу диска йде на саму лише сиру телеметрію."
           description: "Crash тут НЕ загрожує: `disk_autoresize = true`. Ціна тиха — PD_SSD за ГБ, розмір 30 утримуваних бекапів і час DR-відновлення (06_06). Дія: звірити з ⚖️ ширини вікна дропу (ARCH.70) і з ⚖️ двигуна E.37 — осі різні (cold-history vs hot-OLAP), але ClickHouse потенційно закриває обидві. terraform/variables.tf `db_disk_size_gb`."
-          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md#arch70--ретеншн-партицій-і-драбинка-data-lake-ширина-вікна--механізм-дропу--default-лист"
         labels:
           severity: info
           component: database
@@ -2801,7 +2801,7 @@ groups:
         annotations:
           summary: "Семпл росту партицій не оновлювався {{ $values.B.Value | printf \"%.0f\" }} с (>48 год) — обидва ARCH.70-алерти зараз читають ЗАМЕРЗЛЕ значення."
           description: "PartitionMaintenanceWorker (cron `30 0 * * *`, config/sidekiq.yml) або не запускається, або падає до кроку вимірювання. Наслідок тихий: партиції накопичуються далі, а `silkennet_partitions` показує старе число — тобто `sn-alert-partition-count-unbounded` не спрацює. Перевірити cron-планувальник (особливо після зміни платформи деплою) і `sn-alert-partition-maintenance-failed`. 00_07 ARCH.70."
-          runbook_url: "docs/00_07_Action_Plan_Tracker.md"
+          runbook_url: "docs/00_07_Action_Plan_Tracker.md#arch70--ретеншн-партицій-і-драбинка-data-lake-ширина-вікна--механізм-дропу--default-лист"
         labels:
           severity: info
           component: database
