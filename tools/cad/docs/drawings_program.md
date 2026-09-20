@@ -110,7 +110,7 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 
 - **Envelope + critical mating dims** with **tolerances**: the press-fit Ø11 bore / Ø15 OD, flange
   Ø25, bayonet. ⚠️ **`H7/s6` is the ISO 286 _metal_ hole/shaft table; our press-fits are a Ti shaft
-  in a _PEEK_ bore (E≈4 vs Ti≈114 GPa)** → the same geometric interference gives a different contact
+  in a _PEEK_ bore (E≈4 vs Ti≈110-120 GPa — canon baseline; the Zone-1 alloy is bake-off-gated)** → the same geometric interference gives a different contact
   pressure. The CEM carries the band in **µm** (`tools/in_silico/lib/constants.py`), with
   🔴 **a provenance correction, 2026-09-11 (`00_07` HW.3): this line said «Lamé-computed µm» and that is wrong about the SOURCE.** 5–34 µm is a plain ISO 286 table read (H7 0/+18 + r6 +23/+34 on Ø11 — read under the s6 label; s6 there gives 10–39, and no table class is ratified, `00_07` HW.3); Lamé CONSUMES that band to compute a contact pressure and does not produce it. The sharpness is that `01_01 §4.2` REQUIRES the drawing's micrometres to come from the Lamé interference window and explicitly rejects a blind ISO 286 lookup — so the old wording dressed the rejected source in the required source's name, in the one file that tells a future author what the CEM is for. ⚖️ Re-deriving the band was RATIFIED 2026-09-18 (`00_07` HW.3): it is solved from the window — floor: the fit still holds at +40 °C; ceiling: PEEK von Mises at −30 °C — and waits on its inputs only; at its MIN the 5–34 band lies below that floor, so the number will move.
   Beyond that,
