@@ -90,7 +90,7 @@ NaaS — це модель підписки, де клієнти (Організ
 - Роль `User.role = :subscriber` або `User.role = :forester`.
 - `Wallet` автоматично створюється при реєстрації Tree-вузла.
 
-**Поточний стан:** Бекенд-інфраструктура (онбординг / Wallet / rewards) готова; on-chain SCC-мінт gated на деплой контрактів (SEC.1) + securities-присуд (BIZ.22). Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
+**Поточний стан:** Бекенд-інфраструктура (онбординг / Wallet / rewards) готова; on-chain SCC-мінт gated на деплой контрактів (SEC.1) + securities-**ВИСНОВОК** крипто-юриста перед першим live-mint ([`00_07`](00_07_Action_Plan_Tracker) BIZ.22, канал UNI.16). ⚠️ Гейтом є висновок, а не присуд: **напрямок** (сервісна модель, ERC-3643 відхилено) ратифіковано ⚖️ 2026-08-28 — той самий дискримінатор, який [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) уже застосував до token/value-контуру. Публічного B2C онбординг-флоу (лендинг, ToS, Privacy Policy) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 (B2C ToS/Privacy).
 
 ---
 
@@ -312,7 +312,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | SFC vote-escrow у вікні breach→slash | [`00_07`](00_07_Action_Plan_Tracker) BIZ.14 |
 | Customer-facing availability-SLA (≠ `§2` — та таблиця про юр-подію→tx) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.18 |
 | Company-level E&O / liability (≠ INS.1 — той страхує КЛІЄНТА) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.21 |
-| Продукт описаний мовою інвестдоговору — securities fact-pattern | [`00_07`](00_07_Action_Plan_Tracker) BIZ.22 |
+| Securities fact-pattern: **мову й механіку знято**, відкритий — висновок крипто-юриста на as-built перед першим live-mint | [`00_07`](00_07_Action_Plan_Tracker) BIZ.22 |
 
 🔴 **Чому дублювання тут було небезпечнішим за звичайний drift, і це доказ, а не побоювання.** Дві заяви цієї секції встигли розійтися з трекером у бік, який шкодить: (1) вона називала підставою RWA-пілоту «двосторонній меморандум ЧНУ + СЄУ» — документ, що не підписаний, не планується і не міг би дати прав на ділянку ПЗФ, бо обидві сторони є ВНЗ, а не розпорядниками лісу; (2) вона оцінювала вікно vote-escrow у «1–5 хв», тоді як звірка з кодом показала, що бекенд-автоматизації SFC-slash **не існує взагалі**, тобто вікно невизначене. Обидві виправлені у своїх домах. **Правило, куплене цим:** сторінка, що специфікує ВІДКРИТЕ, застаріває швидше за сторінку, що описує ЗБУДОВАНЕ, — тож відкрите живе в трекері, а канон на нього вказує.
 
@@ -340,7 +340,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Аспект | Поточний стан |
 |---|---|
 | **Бізнес-логіка (код)** | ✅ Реалізована: lifecycle, slashing, early exit. Insurance-механіка (oracle/payout) є, але **INERT** — kill-switch off, без prod creation-path полісів |
-| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-присуд) |
+| **On-chain механіка** | 🟡 Контракти **code-complete + CI-audited** (Slither/Aderyn/Halmos/Medusa), але на MAINNET **ще не задеплоєно** (testnet-двійники Amoy/Sepolia живі з 2026-09-01/02 — DEPLOY-1 Фаза 2t, адреси в [`06_01 §DEPLOY-DAY`](06_01_Deployment_Kamal_Terraform)); mainnet-deploy gated на SEC.1 (Safe/Timelock) + BIZ.22 (securities-**висновок** юриста перед першим live-mint; напрямок ратифіковано 2026-08-28, гейтом лишається консультація) |
 | **D-MRV підкріплення** | peaq DID + IoTeX ZK + The Graph (живі); Chainlink oracle PATH 1 = **latent** (unwired local-marker, ARCH.53) |
 | **B2B продажі** | 🔴 Заблоковано: MSA, SLA, KYC відсутні |
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |

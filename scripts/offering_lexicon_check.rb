@@ -57,16 +57,28 @@
 #               one belonging to a NAMED class — and after the 2026-09-10 sweep the
 #               remaining set is exactly two such classes, nothing loose:
 #                 · ratified ⛔ sites (the fee rendered from a record, and its seed);
-#                 · the biological `yield` — and its triage is sharper than "homonym".
-#                   Of those hits only THREE are response keys at all (`yield_impact`,
-#                   `biomass_yield_kg` ×2) and all three mean the CROP, not a return.
+#                 · the `yield` class — and its triage is sharper than "homonym",
+#                   sharper too than the label "biological" this line used to carry.
+#                   RESPONSE KEYS among those hits are exactly TWO: `yield_impact`
+#                   (ai_insight_blueprint) and `biomass_yield_kg`
+#                   (maintenance_record_blueprint) — both mean the CROP, not a return.
+#                   A third candidate is the controller `permit` list, i.e. a REQUEST
+#                   key; counting it as a response key repeats the very overshoot this
+#                   paragraph names (re-measured 2026-09-20; 00_07 BIZ.22 said TWO and
+#                   was right, this header said THREE and was not).
 #                   The rest are internal identifiers, a cache key and a comment that
 #                   never reach a client — i.e. the regex overshoots this gate's own
 #                   declared subject ("response keys"), scanning whole lines instead.
+#                   ⚠️ And "biological" under-describes them: the widest sub-group is
+#                   `oracle_visions_controller`'s `@scc_yield` / `calculate_expected_yield`
+#                   — EXPECTED SCC EMISSION, not a harvest. It stays out of scope for the
+#                   right reason (the response key is `emission_forecast`, so no client
+#                   ever sees the word), NOT because it is agronomy. Do not amnesty a
+#                   profit-expectation identifier by filing it under crops.
 #               Which of the two classes becomes a declared exemption is a ⚖️, and it
 #               is the ONLY thing between this scope and HARD.
 #
-# NAMED CEILINGS [BIZ.22], all three because a regex cannot read intent:
+# NAMED CEILINGS [BIZ.22] — a regex cannot read intent, so each is named, not fixed:
 #   (1) HOMONYM terms are gated only inside locale values, so investment framing in
 #       engineering prose stays a manual-sweep concern — the ceiling DOC-T.41 already
 #       accepted for the manifest, for the same reason.
@@ -81,8 +93,29 @@
 #       across ~250 sites for zero gain (home: 00_07 BIZ.22). The ceiling is therefore
 #       permanent, not transitional: canon prose naming the ABI symbol is CORRECT, and a
 #       future sweep must not read this exemption as an invitation to "finish the job".
+#       ⛔ BUT THE EXEMPTION IS NARROWER THAN THE WORD. It covers the ABI symbol
+#       `address investor`; it does NOT cover Ruby that merely shares the noun.
+#       `05_01` names `verify_investor!` — a Ruby method, not the ABI parameter — and
+#       that method plus its caller (`HadronKycVerificationWorker`, and the Polygon
+#       compliance service) are REAL remaining code-layer debt, not exempt symbols.
+#       Read "the ABI stays" as being about `.sol`/subgraph/ABI only; anything else
+#       carrying the noun is triaged on its own merits.
 #   (3) Ruby comments are skipped: internal engineering notes are not what a customer
 #       receives, and they were a third of the first advisory run.
+#   (4) OFFERING matches `early[\s_-]?exit[\s_-]?fee` and therefore does NOT catch
+#       "Early Termination Fee" / "Early Termination Charge". This is load-bearing,
+#       not an oversight: MSA Option 2 (the fallback fee, `msa_skeleton §B.6.3`) would
+#       pass this gate GREEN if a lawyer ever restores it. ⛔ Sharpening the terms onto
+#       fee/refund vocabulary was CONSIDERED AND REFUSED 2026-08-30 (00_07 BIZ.22),
+#       on three grounds: a silent return is already covered twice NON-lexically (the
+#       refund/fee code is gone, and a negative pin guards the absence of money keys in
+#       the termination result); a lawful roll-back to Option 2 is deliberately kept
+#       git-cheap, and a lexical gate would make exactly that noisy; and the price of
+#       refusing is bounded — fee prose outside `msa_skeleton` will not red, but without
+#       code and without an MSA clause such prose does not constitute Option 2.
+#       ⚠️ This ceiling was declared in the tracker for weeks while this header listed
+#       only three — a gate's ceilings live HERE (00_06 §3), so a fourth one known only
+#       to 00_07 is a ceiling nobody reads at the moment of writing a term.
 # The enum value was RENAMED `investor` → `subscriber` on 2026-08-28 (BIZ.22 verdict
 # ratified: service model, ERC-3643 declined), so this gate no longer has to stay silent
 # about a pending decision. It still does not scan Ruby comments or canon prose (2)-(3).

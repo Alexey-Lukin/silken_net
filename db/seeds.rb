@@ -398,6 +398,13 @@ naas_contract = NaasContract.create!(
   start_date: Time.current,
   end_date: 1.year.from_now,
   status: :active,
+  # ⛔ [BIZ.22] `burn_accrued_points` лишається `false` — ⚖️ 2026-09-10: сід не вмикає того,
+  # чого продукт не обіцяє. Прапор є ОПЦІЄЮ контракту, і `ContractTerminationService` ставить
+  # burn у чергу лише за ним; увімкнувши тут «реалістичніші» демо-дані, ти робиш форфейтуру
+  # видимою поведінкою продукту рівно тоді, коли `msa_skeleton §B.6.4` її забороняє як
+  # звичайний termination-remedy. ⚠️ Сусід `early_exit_fee_percent: 15` — той самий клас
+  # і СВІДОМО не чіпаний без слова founder'а (Опція 1 MSA зняла fee з коду, але демо-запис
+  # усе ще РЕНДЕРИТЬ умову клієнтові — `contracts/show`).
   cancellation_terms: { "early_exit_fee_percent" => 15, "burn_accrued_points" => false, "min_days_before_exit" => 30 }
 )
 
