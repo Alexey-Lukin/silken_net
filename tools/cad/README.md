@@ -128,8 +128,12 @@ dotnet run --project src/SilkenCad -- render cem/anchor_zone1.pine.json     # �
   `Library.Go` SIGSEGVs / exit 139 on the headless hosted runner — no Metal/display context,
   CI-confirmed 2026-06-20) + a CycloneDX SBOM + metrics artifacts.
 
-Local `dotnet run -- verify` stays the PRIMARY metrics gate (`00_07` HW.1); a self-hosted
-macOS-with-display runner would re-arm render-verify as a hard gate.
+**Local `dotnet run -- verify` stays the PRIMARY metrics gate, and THIS LINE IS ITS HOME.**
+A self-hosted macOS-with-display runner would re-arm render-verify as a hard gate; until
+then CI mirrors the local run and cannot replace it (the reason is above: `Library.Go`
+SIGSEGVs headless). ⛔ Do not cite `00_07` HW.1 for this: that item is about the anchor
+CAD→factory route and says nothing about which gate is primary — two files pointed at it
+for this sentence, so the claim was circular and lived nowhere.
 
 ## Status & deferred
 
