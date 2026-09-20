@@ -839,7 +839,14 @@ class TelemetryUnpackerService < ApplicationService
     # (per-tree алерт · per-cluster ентропія · ML-фіча). Тут не «здоровʼя», а
     # ЧЛЕНСТВО У СМУЗІ: обидві сторони кажуть лише «моє Z впало в очікуваний
     # інтервал», і збіг цих двох тверджень є печаткою DCI, не діагнозом.
-    # ⛔ Не повертати «healthy» у жодну змінну на цьому шляху.
+    # ⛔ Не повертати «healthy» у жодну змінну на цьому шляху — ⊕ і в жоден РЯДОК,
+    # який бачить людина. Заборона, ключована на слові «змінна», свій же периметр
+    # і проминула: варн нижче друкував `healthy_range=` аж до 2026-09-20, тобто
+    # епітет доїхав до операторського екрана тим каналом, якого припис не називав.
+    # ⚠️ Друга половина того ж інциденту була гіршою за словникову: рядок друкував
+    # СИРИЙ `thresholds[:max]`, тоді як вирок ухвалює `ceiling` ↑ — тож черговий по
+    # `🔴 Telemetry fraud detected` читав межу, яка вироку не виносила (у теплу
+    # погоду ρ-стеля вища за 45). **Друкуй ту величину, яка СУДИЛА.**
     server_in_band = server_z >= thresholds[:min] && server_z <= ceiling
     device_in_band = device_bio_status == :homeostasis
 
@@ -875,7 +882,7 @@ class TelemetryUnpackerService < ApplicationService
 
       Rails.logger.warn(
         "🔍 [Z Divergence] DID #{tree.did}: device=#{device_bio_status}, " \
-        "server_z=#{server_z}, healthy_range=#{thresholds[:min]}..#{thresholds[:max]}. " \
+        "server_z=#{server_z}, band=#{thresholds[:min]}..#{ceiling}. " \
         "Dual Computation Integrity mismatch."
       )
       SilkenNet::Metrics::TELEMETRY_FRAUD_DETECTED_TOTAL.increment
