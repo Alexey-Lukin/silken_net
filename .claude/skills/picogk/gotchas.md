@@ -197,6 +197,7 @@
     run. The sub-floor share tracks the rim wall; per-SKU values are pinned in `cem/*.golden.json`
     (`print_fidelity_sub_floor_solid_fraction`) and narrated in `01_02 §6` — read them there, never from
     prose here.
+    🔴 **On `stepped` the share is not a wall property but a ZONE-VOLUME property, and that is why it moves with things that look unrelated** (measured 2026-09-20, `00_07` HW.1 → `01_02 §6`): its rim zone's sheet wall sits BELOW the floor while its core zone's clears it, so the sub-floor share ≈ the rim zone's volume fraction. `ZonedGyroid` takes the boundary as `(InnerRadiusMm + R)/2` — so a change to the INNER radius, which reads like a clipping change, resizes the zones and moves the share several points (0.5 → 0 mm: boundary 3.00 → 2.75 mm, share 71.0 → 75.4 %, predicted 70.8 → 75.0 % from volumes alone).
     🔴 **The golden tolerance on this field (±0.003) is NARROWER than the instrument's own grid-phase scatter on `stepped` (≈0.006 across grid-origin shifts)** — so a change that only moves the sampler's ORIGIN reds `stepped`'s golden with no change in geometry. Read such a red as the instrument first; a real geometry change shows up as a Δ that is STABLE across phases, which is how the two were told apart.
     🔴 **Read `print_fidelity_matches` only WITH `print_fidelity_sub_floor_solid_fraction`:** the boolean
     compares topology CLASS — `stepped` reads ✓ while losing the most metal, and a sheet SKU reads ⚠

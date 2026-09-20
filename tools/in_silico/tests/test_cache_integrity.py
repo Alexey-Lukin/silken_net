@@ -1082,6 +1082,14 @@ def test_b2_adiabatic_dscf_cache():
     assert d["geom_opt_converged"]["FADH2"] and d["geom_opt_converged"]["FADH2_cation"]
     assert 0.5 < d["dG_adiabatic_eV"] < 1.5, "adiabatic ΔG out of physical range"
     assert d["dG_vertical_eV"] > d["dG_adiabatic_eV"], "vertical must exceed adiabatic"
+    # 🔴 IDENTITY, not range: `21g --plain` writes the plain-bpy REFERENCE into this SAME path, and the
+    # two mediators sit ~0.3 eV apart — inside every range asserted above, so a reference run would pass
+    # while two doc↔cache pins quote it as the DEVICE number. The file names itself; nothing read that.
+    # (Same shape as the sibling guard on os_complex.json above, and as `converge`'s ladder — a cache whose
+    # FILENAME carries no discriminator needs the discriminator pinned from inside, skill picogk #14.)
+    assert d.get("mediator", "").startswith("4,4'-dimethyl"), (
+        f"delta_scf_corrections.json mediator={d.get('mediator')!r} — expected the dimethyl device "
+        "mediator; a `21g --plain` reference run overwrote it, re-run 21g without --plain")
 
 
 def test_b4_speciation_dmbpy_bracket():
