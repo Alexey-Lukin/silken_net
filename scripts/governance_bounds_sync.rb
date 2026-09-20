@@ -23,9 +23,13 @@
 # holding 22 / 13). Three silent-failure classes this closes:
 #
 #   1. a bounds drift — seeds floor edited but not PARAMETER_MAP (or vice-versa):
-#      the E.64 class, review-caught 2026-07-11 (stress_threshold min 0.5 in
+#      review-caught 2026-07-11 while working E.64 (stress_threshold min 0.5 in
 #      seeds vs 0.65 in the map) — a governance vote could then land a value the
-#      OTHER mirror would have rejected, and the dev default disagrees with prod;
+#      OTHER mirror would have rejected, and the dev default disagrees with prod.
+#      ⚠️ E.64 is the DATE-STAMP of that incident, not its home: the tracker item
+#      is about the Lorenz/bio→economy axis and carries nothing on bounds. This
+#      header and the GOV.3 §🗄️ row are the only records — do not follow the ID
+#      expecting more, and do not "restore" the reference by writing it there;
 #   2. a value_type/category drift — the worker converts on-chain fixed-point BY
 #      value_type (integer truncates, float/decimal keep fraction) and writes the
 #      category; a "float"-in-map vs "integer"-in-seeds mismatch silently
@@ -123,7 +127,7 @@ param_rows.each do |key, pm|
       errors << "`#{key}` #{field}: db/seeds.rb=#{seed[field].inspect} PARAMETER_MAP=#{pm[field].inspect} — межа відсутня з одного боку"
     elsif num(seed[field]) != num(pm[field])
       errors << "`#{key}` #{field}: db/seeds.rb=#{seed[field]} ≠ PARAMETER_MAP=#{pm[field]} " \
-                "— bounds-drift (клас E.64: одне дзеркало правлене, друге ні)"
+                "— bounds-drift: одне дзеркало правлене, друге ні"
     end
   end
 end

@@ -89,7 +89,13 @@ prometheus.relabel "cardinality_budget" {
   // "no per-identity labels" design at the write boundary. The registry
   // (06_03 §2.8) is intentionally bounded: every label is low-cardinality
   // (network / queue / reason / status / database …) except `cluster_id`
-  // (per-forest) — the single legitimate growth axis, kept as-is.
+  // — the single legitimate growth axis, kept as-is. ⚠️ Its OWNER is
+  // `silkennet_cluster_tree_count_drift` (SLASH-1 — the slashing-trigger
+  // denominator). ⛔ Do NOT justify this axis by per-forest entropy: that
+  // whole tract (gauge, workers, service, cron, alert, panel) was removed
+  // 2026-09-05 (E.64 — 06_03 §2.6), so the axis is live and that reason is
+  // not. A dead justification beside a live rule reads as proof the rule
+  // was reviewed, and no gate reds on it.
   //
   // Grafana Cloud bills by active series / DPM, so a per-device or per-tx
   // label would explode cost the moment it shipped. `labeldrop` strips any

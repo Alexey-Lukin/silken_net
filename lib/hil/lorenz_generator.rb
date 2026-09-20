@@ -29,11 +29,23 @@ module Hil
   # is byte-identical to the server-side Lorenz mirror that backs Dual
   # Computation Integrity (SEC.11).
   #
-  # Targeted Z bands (rejection sampling):
+  # Targeted Z bands:
   #
-  #   :homeostasis — z ∈ (critical_z_min .. critical_z_max)
-  #   :stress      — z <  critical_z_min
-  #   :anomaly     — z >  critical_z_max
+  #   :homeostasis — z ∈ [critical_z_min .. critical_z_max]  (rejection sampling)
+  #   :stress      — z <  critical_z_min                      (synthesised)
+  #   :anomaly     — z >  Attractor.anomaly_ceiling(temp, max) (synthesised)
+  #
+  # 🔴 [E.64] The two ceilings are NOT the same number and the difference is
+  # load-bearing. The shipped classifier (`SilkenNet::Attractor.homeostatic?`)
+  # judges the top edge ρ-RELATIVELY — ρ(temp) + (max − BASE_RHO) — so ambient
+  # heat can no longer fake an anomaly. `#synthesize` therefore asks Attractor
+  # for it (see `forced_z_for`). The `:homeostasis` rejection target keeps the
+  # ABSOLUTE family max on purpose: while `temperature_c ≥ 0` (ρ ≥ BASE_RHO)
+  # the absolute band is a SUBSET of the shipped envelope, so a fixture that
+  # lands in it is homeostatic by both rules, and callers asking for a
+  # family-band fixture get exactly that. ⚠️ An explicit sub-zero
+  # `temperature_c:` override inverts the inclusion — that is the one way to
+  # get a `:homeostasis` fixture the classifier would call an anomaly.
   #
   # Acoustic presets are WIRE REGIMES, not TinyML classes — see the
   # constant below for why the two cannot be mapped onto each other.
@@ -152,7 +164,7 @@ module Hil
         raise ArgumentError, "unknown state #{state.inspect}; one of #{STATE_PROFILES.keys.inspect}"
       end
       result = build_sample(profile, state: state, overrides: overrides)
-      result[:z_value] = forced_z_for(state)
+      result[:z_value] = forced_z_for(state, result[:temperature_c])
       result[:z_final] = result[:z_value]
       result[:synthetic] = true
       result
@@ -253,13 +265,21 @@ module Hil
       end
     end
 
-    # Pick a forced Z value just inside the target band so synthesised
+    # Pick a forced Z value just outside the target band so synthesised
     # samples are unambiguously classified by downstream consumers.
-    def forced_z_for(state)
+    #
+    # 🔴 [E.64] The anomaly ceiling is ρ-RELATIVE, so it has to be asked for
+    # per-sample: `SilkenNet::Attractor.anomaly_ceiling(temp, max)` =
+    # ρ(temp) + (max − BASE_RHO). A flat `max + 1.5` labelled a sample
+    # `:anomaly` that the shipped classifier calls homeostasis — at this
+    # profile's own 55..80 °C, ρ lands at 39..44 and the real ceiling at
+    # 56..61, i.e. 46.5 sat well INSIDE the envelope. The stress floor stays
+    # absolute because `Attractor.homeostatic?` compares it that way.
+    def forced_z_for(state, temp)
       min, max = z_thresholds
       case state
       when :stress  then [ min - 1.5, 1.0 ].max
-      when :anomaly then max + 1.5
+      when :anomaly then SilkenNet::Attractor.anomaly_ceiling(temp, max) + 1.5
       else
         raise ArgumentError, "synthesize() only supports :stress or :anomaly, got #{state.inspect}"
       end

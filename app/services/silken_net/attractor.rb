@@ -217,8 +217,16 @@ module SilkenNet
     # Спільне ядро ітерацій Лоренца.
     # [FIX FW.7] Float арифметика без round() між ітераціями — ідентично firmware mruby.
     # mruby на MCU виконує x += dx * DT без будь-якого округлення між ітераціями.
-    # Overflow bounded: з clamped σ∈[5,30] та ρ∈[10,50] → |x|<25, |y|<35, |z|<50
-    # після 250 ітерацій — далеко від Float64 overflow.
+    # Overflow bounded: з clamped σ∈[5,30] та ρ∈[10,50] траєкторія лишається на
+    # порядки нижче Float64 overflow — це і є єдине твердження, яке тут несуче.
+    # ⛔ Не вписувати сюди «точних» меж |x|/|y|/|z|: тут стояли 25/35/50, і вимір
+    # їх спростував на ВСІХ трьох осях (при ρ=50 — 32.3 / 37.8 / 83.8 на 1500
+    # cold-start зернах). Число, поставлене поруч із висновком, читається як його
+    # виведення, тож хибна межа тут спокушає обрізати діапазони, що з неї ростуть
+    # (u16 device_z q=2⁻⁹ — `03_04 §7.1`). Треба межа — ЗМІРЯЙ:
+    #   bin/rails runner 'require "securerandom"; p 1500.times.map { s=SecureRandom.bytes(32);
+    #     x,y,z=SilkenNet::SeedDerivation.initial_state(s)
+    #     SilkenNet::Attractor.calculate_z_from_state(x,y,z,110.0,255,15,3300)[3].abs }.max'
     private_class_method def self.iterate_lorenz(x, y, z, local_sigma, local_rho, local_beta)
       ITERATIONS.times do
         dx = local_sigma * (y - x)

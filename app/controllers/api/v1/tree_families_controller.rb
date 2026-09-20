@@ -5,12 +5,23 @@ module Api
   module V1
     class TreeFamiliesController < BaseController
       before_action :authorize_admin!
-      # [SEC]: TreeFamily = ГЛОБАЛЬНА довідкова таблиця (не org-scoped), її поля
-      # живлять money+fraud-математику (carbon_sequestration_coefficient → mint;
-      # critical_z_min/max → anti-fraud смуга). Мутація будь-яким org-admin
-      # інфлейтила б мінтинг / послаблювала fraud-детект для ВСІХ org → мутації
-      # лише super_admin (on-chain параметри вже Timelock-governed, off-chain
-      # константи заслуговують на еквівалентний захист).
+      # [SEC]: TreeFamily = ГЛОБАЛЬНА довідкова таблиця (не org-scoped), і її
+      # поля мутує super_admin, бо радіус вибуху глобальний. ДВА поля, ДВА
+      # різні радіуси — не злипати:
+      #   • `carbon_sequestration_coefficient` → `Wallet#credit!` → mint. Гроші,
+      #     живі сьогодні, для ВСІХ org.
+      #   • `critical_z_min/max` → ⛔ [E.64 ⚖️ 2026-09-05] НЕ називати це
+      #     anti-fraud смугою. Anti-fraud = DCI, а той судить за
+      #     `Tree#device_lorenz_thresholds` (зашиті глобальні
+      #     2.0/45.0 — прошивку per-species значеннями не провіжинять, FW.8);
+      #     біо-вердикт на Z знято цілком (Z є DCI-only, `05_05 §8.1`). Живий
+      #     споживач родинної пари один і СПЛЯЧИЙ — ланцюг
+      #     `Tree#effective_lorenz_thresholds` → `OtaPackagerService`
+      #     (`CMD_SET_THRESHOLDS 0x9A`), тобто «що слати вузлові». Захист
+      #     лишається, бо ПІСЛЯ FW.8 ця пара стане смугою, за якою судить сам
+      #     пристрій; підстава — майбутній радіус, не сьогоднішній детект.
+      # (on-chain параметри вже Timelock-governed, off-chain константи
+      # заслуговують на еквівалентний захист.)
       before_action :authorize_super_admin!, only: [ :new, :create, :edit, :update ]
       before_action :set_family, only: [ :show, :edit, :update ]
 

@@ -131,9 +131,19 @@ RSpec.describe Hil::LorenzGenerator do
       expect(sample[:synthetic]).to be true
     end
 
-    it "forces :anomaly samples above z_max" do
+    # 🔴 [E.64] Пін стоїть на ρ-ВІДНОСНІЙ стелі, не на `DEFAULT_Z_MAX`, і саме
+    # ця різниця несуча: абсолютний поріг був зеленим на `max + 1.5` = 46.5,
+    # тоді як при власному профілі аномалії (55..80 °C) стеля = 56..61, тобто
+    # фікстура з міткою «аномалія» класифікувалась відвантаженим ядром як
+    # ГОМЕОСТАЗ. Мітка ⊥ класифікація — і жоден гейт цього не бачив, бо обидва
+    # числа валідні поодинці.
+    it "forces :anomaly samples above the ρ-relative ceiling the classifier uses" do
       sample = generator.synthesize(state: :anomaly)
-      expect(sample[:z_value]).to be > described_class::DEFAULT_Z_MAX
+      ceiling = SilkenNet::Attractor.anomaly_ceiling(
+        sample[:temperature_c], described_class::DEFAULT_Z_MAX
+      )
+
+      expect(sample[:z_value]).to be > ceiling
       expect(sample[:synthetic]).to be true
     end
 
