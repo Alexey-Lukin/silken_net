@@ -284,7 +284,7 @@ DPO обов'язковий (Art. 37) лише за: (а) публічний о�
 | §A.1 / §B.1 Хто ми / controller | operational-vehicle тришар (entity/IP/token контури); чи operational-vehicle = B2C data controller — НЕ підтверджено | `BIZ.20` (тришар) → [`entity_structure`](entity_structure.md) |
 | §A.3 2FA | 2FA доступна: TOTP + verify-on-login живі, recovery-набір показується рівно раз (клауза переписана 2026-08-20 вслід за білдом; історія інверсій: 08-17 «не надається» ← доти хибно стверджувала підтримку) | `S6.21` |
 | §A.4 Онбординг дерева | Company-level E&O/GL страхування ще не закуплено | `BIZ.21` |
-| §A.5 Нагороди/токени | securities-класифікація SCC/SFC — консультація ще не відбулась + product-присуд/redesign гейтить перший live-mint | `UNI.16` (консультація) + `BIZ.22` (присуд) → [`securities_review`](securities_review.md) |
+| §A.5 Нагороди/токени | securities-класифікація SCC/SFC — консультація ще не відбулась; перший live-mint гейтить саме ВИСНОВОК юриста плюс залишок product-redesign (напрямок ратифіковано 2026-08-28, присудом більше не блокується — той самий клас, що виправлено в §Governing law цього ж файла 2026-09-06) | `UNI.16` (консультація) + `BIZ.22` (висновок + залишок) → [`securities_review`](securities_review.md) |
 | §A.7 ™ | trademark-заявка УкрНОІВІ ще подається | `UNI.15` / `UNI.3` |
 | §A.11 Застосовне право | token-контур юрисдикція (Phase-2) gated на securities-ВИСНОВОК юриста (не на присуд — той ухвалено 08-28) | `UNI.16`; entity-вісь → `BIZ.20` |
 | §B.7 Anchor-геолокація | re-identification власника через кадастр — design-review відкритий | `SEC.18` (деталь → «Compliance-gaps» нижче) |

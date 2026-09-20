@@ -103,7 +103,8 @@ class NaasContract < ApplicationRecord
   # → damage_ratio 1.0), не бали. Одиниця не видна з імені прапорця — `CLAUDE.md §6`.
   # Саме ІМʼЯ не чіпаємо: це JSONB-ключ ДАНИХ, тож перейменування = міграція рядків плюс
   # канон-доми й спек-сайти. ⛔ Підстава — ПОРЯДОК величини роботи, НЕ лічба домів (вона
-  # дрейфує); дім won't-do з повною підставою — `04_01 §cancellation_terms`.
+  # дрейфує); дім won't-do з повною підставою — `04_01`, картка `NaasContract`,
+  # рядок таблиці `cancellation_terms` (це РЯДОК, не секція — §-рефа тут не існує).
   store_accessor :cancellation_terms, :early_exit_fee_percent, :burn_accrued_points, :min_days_before_exit
 
   # --- СКОУПИ ---

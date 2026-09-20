@@ -413,8 +413,10 @@ jobs:
       - name: Offering-lexicon gate (BIZ.22 — investment wording on customer-facing surfaces)
         # Pure Ruby, no Rails. HARD on the storefront (locale VALUES, manifest,
         # README) — the surfaces the 2026-07-25 sweep cleaned and nothing kept
-        # clean; ADVISORY (never fatal) on the response layer still awaiting the
-        # securities verdict. Its inputs — config/**, app/**, **.md — are all
+        # clean; ADVISORY (never fatal) on the code layer, which is no longer
+        # gated on a ruling — the securities VERDICT landed 2026-08-28 (direction
+        # = service model) and what remains is the lawyer's OPINION plus mechanics
+        # (00_07 BIZ.22). Its inputs — config/**, app/**, **.md — are all
         # inside this workflow's `changes` filter, so the gate is not decorative.
         run: ruby scripts/offering_lexicon_check.rb
 

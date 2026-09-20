@@ -90,14 +90,17 @@
 #       that prose with it — canon prose is downstream of the rename, not separate work",
 #       which PRESUMED a rename that was in fact REFUSED. ⚖️ won't-do, ratified 2026-07-25:
 #       `address investor` in `.sol`/subgraph/ABI stays — renaming it is a subgraph migration
-#       across ~250 sites for zero gain (home: 00_07 BIZ.22). The ceiling is therefore
+#       across ~250 sites for zero gain (home: 00_07 BIZ.22). ⚠️ That figure is the
+#       2026-07-25 verdict's ORDER-OF-MAGNITUDE estimate, not a re-measured count —
+#       the inventory command is `grep -rn "address investor" contracts/ docs/`. The ceiling is therefore
 #       permanent, not transitional: canon prose naming the ABI symbol is CORRECT, and a
 #       future sweep must not read this exemption as an invitation to "finish the job".
 #       ⛔ BUT THE EXEMPTION IS NARROWER THAN THE WORD. It covers the ABI symbol
 #       `address investor`; it does NOT cover Ruby that merely shares the noun.
 #       `05_01` names `verify_investor!` — a Ruby method, not the ABI parameter — and
-#       that method plus its caller (`HadronKycVerificationWorker`, and the Polygon
-#       compliance service) are REAL remaining code-layer debt, not exempt symbols.
+#       that method (declared in the Polygon compliance service) plus its single
+#       production caller `HadronKycVerificationWorker` are REAL remaining
+#       code-layer debt, not exempt symbols.
 #       Read "the ABI stays" as being about `.sol`/subgraph/ABI only; anything else
 #       carrying the noun is triaged on its own merits.
 #   (3) Ruby comments are skipped: internal engineering notes are not what a customer
