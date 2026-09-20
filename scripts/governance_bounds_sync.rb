@@ -27,8 +27,9 @@
 #      seeds vs 0.65 in the map) — a governance vote could then land a value the
 #      OTHER mirror would have rejected, and the dev default disagrees with prod.
 #      ⚠️ E.64 is the DATE-STAMP of that incident, not its home: the tracker item
-#      is about the Lorenz/bio→economy axis and carries nothing on bounds. This
-#      header and the GOV.3 §🗄️ row are the only records — do not follow the ID
+#      is about the Lorenz/bio→economy axis and carries nothing on bounds. Outside
+#      the generated release history (CHANGELOG.md keeps its own two lines), this
+#      header and the GOV.3 §🗄️ row are the whole record — do not follow the ID
 #      expecting more, and do not "restore" the reference by writing it there;
 #   2. a value_type/category drift — the worker converts on-chain fixed-point BY
 #      value_type (integer truncates, float/decimal keep fraction) and writes the

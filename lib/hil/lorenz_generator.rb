@@ -43,9 +43,20 @@ module Hil
   # ABSOLUTE family max on purpose: while `temperature_c ≥ 0` (ρ ≥ BASE_RHO)
   # the absolute band is a SUBSET of the shipped envelope, so a fixture that
   # lands in it is homeostatic by both rules, and callers asking for a
-  # family-band fixture get exactly that. ⚠️ An explicit sub-zero
-  # `temperature_c:` override inverts the inclusion — that is the one way to
-  # get a `:homeostasis` fixture the classifier would call an anomaly.
+  # family-band fixture get exactly that.
+  #
+  # ⚠️ DECLARED CEILING — the subset argument covers the REJECTION TARGET only
+  # (`#sample_in_state`, `#batch(in_band: true)`). `#sample` and the default
+  # `#batch(in_band: false)` do NOT filter: they stamp `state: :homeostasis` on
+  # whatever Z falls out. Measured on the profile's own 15..30 °C, acoustic 0,
+  # 20 000 draws: max z = 64.4, and **0.11 %** sit above the ρ-ceiling (e.g.
+  # 30 °C → z 52.45 vs ceiling 51.0) — no sub-zero override needed. So a CSV
+  # from `batch(state: :homeostasis, count: N)` carries roughly one row per
+  # thousand whose LABEL and whose shipped classification disagree. Read the
+  # `state` column as «which profile generated it», never as a verdict; when a
+  # consumer needs the verdict, ask `Attractor.homeostatic?(z, family, temp)`.
+  # (A sub-zero `temperature_c:` override additionally inverts the inclusion
+  # for the rejection target itself.)
   #
   # Acoustic presets are WIRE REGIMES, not TinyML classes — see the
   # constant below for why the two cannot be mapped onto each other.
@@ -275,6 +286,15 @@ module Hil
     # profile's own 55..80 °C, ρ lands at 39..44 and the real ceiling at
     # 56..61, i.e. 46.5 sat well INSIDE the envelope. The stress floor stays
     # absolute because `Attractor.homeostatic?` compares it that way.
+    #
+    # ⚠️ NAME THE FRAME, because the two sides of this method answer to
+    # different bands. Everything here is the FAMILY band (`DEFAULT_Z_MIN` 5.0
+    # / a `TreeFamily`'s own pair). The band that judges in PRODUCTION is the
+    # DEVICE one — `Tree#device_lorenz_thresholds` = 2.0/45.0, mirroring
+    # `BioContract::CRITICAL_Z_MIN` — and DCI compares against that [FW.8].
+    # So a `:stress` fixture at `5.0 − 1.5 = 3.5` is stress by the family band
+    # and HOMEOSTASIS by the device band. That is correct for a family-band
+    # fixture and wrong the moment someone feeds it to a device-band consumer.
     def forced_z_for(state, temp)
       min, max = z_thresholds
       case state

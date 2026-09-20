@@ -377,7 +377,8 @@ jobs:
         # PARAMETER_MAP key needs a seed with identical config. Closes the drift
         # review caught by hand while working E.64 (stress floor 0.5 seed vs
         # 0.65 map) — ⚠️ E.64 date-stamps that incident, it is not its home; the
-        # full record is the script header + 00_07 GOV.3 §🗄️.
+        # record is the script header + 00_07 GOV.3 §🗄️ (plus CHANGELOG's own
+        # generated lines, which are release history, not a home).
         run: ruby scripts/governance_bounds_sync.rb
 
       - name: Ruby-version parity across дзеркала (OPS.13)
