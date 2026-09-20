@@ -65,7 +65,7 @@ internal static class Cem
 internal sealed record ToleranceSpec
 {
     // Fit / press-fit interference. ⚠ For a Ti shaft in a PEEK bore, `H7/s6` is only the NOMINAL class
-    // label — PEEK E≈4 vs Ti≈114 GPa, so the same geometric interference gives a different contact
+    // label — PEEK E≈4 vs Ti≈110-120 GPa (canon baseline; alloy is bake-off-gated), so the same geometric interference gives a different contact
     // pressure. The REAL band is the Lamé-computed µm (01_01 §4.2, script 50, HW.3.IS), NOT a blind
     // ISO-286 metal-table lookup → put it in InterferenceMin/MaxUm.
     public string? Fit { get; init; }                  // nominal class label, e.g. "H7/s6"
