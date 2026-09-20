@@ -48,6 +48,11 @@ SWEEP = File.join(ROOT, "tools/cad/cache/fea/anchor_zone1_pine.json")
 LADDER = File.join(ROOT, "tools/cad/cache/fea/size_effect_ladder.network.json")
 
 # Canon's reference solid modulus for the GPa column (01_01 §5.2 table: Ti-6Al-4V ~110–120 GPa).
+# ⚠️ This is a canon BASELINE, not a property of any run: the Zone-1 alloy is bake-off-gated
+# (00_07 HW.24; coupons specified by HW.27), and every anchor CEM manifest says so in its
+# `material` note. If canon re-bases it, this guard must be TOLD — it cannot infer it, and the
+# dimensionless ratios it also checks would survive the change while these GPa would not
+# (the standing obligation lives in 00_07 HW.33).
 E_SOLID_GPA = 110.0
 
 failures = []

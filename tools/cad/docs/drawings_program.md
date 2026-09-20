@@ -169,6 +169,15 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 Derived from the canon shops (Київ **3D Metal Tech** ISO 13485 / Дніпро **ALT Ukraine** / EU backup
 hubs — `02_06 §8.1`) + web-grounding (sources below).
 
+0. **ASME Y14.46-2022 (product definition for AM) — NOT NOW** (⚖️ founder 2026-09-17; migrated from
+   `00_07` HW.51 on 2026-09-20, since this file is the home of the drawing tract's decisions). The
+   standard is written exactly for what we do — lattices, print orientation as a requirement, zones of
+   differing specification on one part — but we hand out no part-RFQ today, and the agent that raised it
+   had **not read it** and said plainly that it gives no guarantee of symbology under TPMS. So this is
+   RECONNAISSANCE, not a guarantee; it buys an external ground under a verdict we already hold
+   («the lattice is a note, not a contour»). **Named trigger: the first draft part-RFQ.**
+   **Price of waiting, stated:** until then our sheets stay on our own convention, and if a vendor asks
+   for Y14.46 conformance, the purchase becomes a precondition rather than an improvement.
 1. **Deliverable format** — **DXF (netDxf) + SVG + STL**. No STEP for now: AM shops print from
    STL/3D, and the drawing is for **GD&T/CMM acceptance**, not the print. STEP = deferred path B if a
    shop contractually requires it.
