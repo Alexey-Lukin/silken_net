@@ -130,7 +130,7 @@
 - **Argon2id** — memory-hard пароль-хешування (Password Hashing Competition winner), стійкий до GPU/ASIC-атак.
 - **AR-encryption at-rest** — `hardware_keys`, `users.otp_secret`; ключі з ENV (`ACTIVE_RECORD_ENCRYPTION_*`), **не** `credentials.yml.enc` (SEC.22 — інакше вертає runtime-залежність від `RAILS_MASTER_KEY`).
 - **`filter_parameters`** — PII-скраб логів: `email`/`push_token`/`first_name`/`last_name`/`recovery_codes` (+ `phone_number` і `telegram_chat_id` як defense-in-depth після зняття їхніх колонок) (+ секрети/ключі), той самий список успадковує Sentry.
-- **Sentry** — `send_default_pii = false` + defense-in-depth редакція секретів/PII у breadcrumbs і stack-trace (`config/initializers/sentry.rb`).
+- **Sentry** — `send_default_pii = false` + defense-in-depth редакція секретів/PII у breadcrumbs і stack-trace (`config/initializers/sentry.rb`). 🔴 **⛔ Цього переліку TOM НЕ досить, і це виміряно (`00_07` SEC.23, 2026-09-13):** попри вимкнений прапорець назовні йдуть `User-Agent` субʼєкта **дослівно**, `args` Sidekiq-джоби (`contexts.sidekiq`) і **текст SQL** у breadcrumb `sql.active_record` із підставленими літералами. Для Art.30(1)(g) це означає, що названий тут захід описує НЕ весь потік — ⚖️ форма ліку (глушник `before_send` ⊥ переписати опис) відкрита в `00_07` SEC.23. ⚠️ Запис до наглядового органу не має стверджувати захід ширше, ніж він міряний.
 - **Zero-Network-Exposure ключів** — апаратні AES-ключі не покидають Ruby-процес (`HardwareKey#cached_binary_key`, in-process LRU, без Redis-serialize).
 - **Salt-bound сесії** — `session[:ps]` (хвіст `password_salt`) знецінює всі активні сесії при зміні пароля.
 - **Сесійний cookie** — httponly + secure(prod) + `SameSite=Lax`, 14-денний TTL.
