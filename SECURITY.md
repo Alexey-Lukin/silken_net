@@ -20,8 +20,9 @@ minimum — the anchor is designed for a 20–25 year deployment.
 Five years is the floor set for products with digital elements by the EU Cyber
 Resilience Act (Regulation (EU) 2024/2847, Art. 13(8)). SilkenNet has **not been
 placed on any market yet**, so this is a stated policy, not a conformity
-declaration; the regulatory perimeter itself is tracked openly as `BIZ.24` in
-`docs/00_07`.
+declaration; the regulatory perimeter itself is documented openly in
+`docs/protocols/legal/eu_market_entry.md`, and the decisions still open on it
+are tracked as `BIZ.24` in `docs/00_07`.
 
 ## Credit
 
