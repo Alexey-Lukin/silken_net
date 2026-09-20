@@ -226,6 +226,13 @@ RSpec.describe SilkenNet::Attractor do
       )
     end
 
+    # ⛔ ОГОЛОШЕНА СТЕЛЯ [ARCH.8, 2026-09-09]: межа береться СИМВОЛЬНО
+    # (`DELTA_T_SLOW_S`), тож діапазон поїде слідом, якщо відкрита ⚖️-розвилка
+    # ARCH.8 підніме константу — але це купує ЗАХИСТ ВІД ДРЕЙФУ, не покриття.
+    # Саторований режим `m = 0` сьогодні НЕ пінується: з `DELTA_T_SLOW_S = 7200`
+    # фіксований сід дає max delta_t = 7161, і ні 7200, ні CCM-точка 7884 з нього
+    # не витягуються жодного разу. Тобто зелений тут означає «більше не
+    # задрейфує мовчки», а НЕ «підлога GP перевірена».
     it "matches the backend Z + bio_status on a 200-case fuzz sweep (real contract, not a mirror)" do
       fw_family = Struct.new(:critical_z_min, :critical_z_max).new(2.0, 45.0)
       rng = Random.new(20_260_502)
