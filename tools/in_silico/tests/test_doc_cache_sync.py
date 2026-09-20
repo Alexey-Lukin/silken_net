@@ -1220,7 +1220,7 @@ CHECKS += [
 # still read as a sweep while having stopped being one.
 _BUS68 = "mechanical/bus_contact_equilibrium.json"
 _BUS68_ROWS = (("30 mm — script 55 placeholder", "script 55 placeholder (HW.8)"),
-               ("15 mm — lock window near end", "lock window, near end"),
+               ("18 mm — lock window near end", "lock window, near end"),
                ("14 mm — lock window far end", "lock window, far end"))
 
 

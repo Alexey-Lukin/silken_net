@@ -205,10 +205,19 @@ class Geometry:
 
 
 def lock_insertion_window_mm() -> tuple[float, float]:
-    """Zone-1 lock insertion window from the lock manifest: end of the PEEK contact zone -> near flank of
-    the DIN-471 groove."""
+    """Zone-1 lock insertion window from the lock manifest: end of the PEEK contact zone -> the WHOLE shank.
+
+    ⚖️ 2026-09-18 (00_07 HW.26, «Ціна»): the upper end used to be the near flank of the DIN-471 groove —
+    deeper, the ring could not be fitted once pressed — but NO ring is fitted as a backup on either end any
+    more, so a groove bounds nothing, including the Zone-1 groove that stays in the geometry until G1/G3.
+    What is left is the extent of the lock itself, and on Zone 1 nothing in the tree stops the mouth there:
+    past it the mouth leaves the geometry this manifest describes, which IS the G1 conflict to report.
+    ⛔ `shank_length_mm` is the MODELLED length of the lock coupon, never a physical shank length (that
+    length is G1) — so the upper end is a statement about this model. Mirrors `MechanicalLock.InsertionWindowMm`
+    (tools/cad) BY VALUE: the formula's one home is there, pinned by `MechanicalLockTests`, and nothing binds
+    this line to it."""
     lock = cem("mechanical_lock.zone1")
-    return (float(lock["contact_start_mm"]) + float(lock["contact_length_mm"]), float(lock["groove_offset_mm"]))
+    return (float(lock["contact_start_mm"]) + float(lock["contact_length_mm"]), float(lock["shank_length_mm"]))
 
 
 def geometries() -> list[Geometry]:
