@@ -150,7 +150,7 @@ class ParametricInsurance < ApplicationRecord
 
     # Аномальні дерева у вікні критичного стану. Insurance-поріг 0.8 свідомо ШИРШИЙ за
     # slash-поріг 0.83 — РІЗНІ концепти (кандидат на виплату vs slash-тригер), не
-    # дублікат значення (00_07 SLASH-1 — задокументований spread).
+    # дублікат значення (04_02, картка `DailyHealthRouter` — задокументований spread).
     anomalous_insights = router.insights.where(stress_index: 0.8..1.0)
 
     # =========================================================================

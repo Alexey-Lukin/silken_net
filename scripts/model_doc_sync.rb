@@ -15,6 +15,9 @@
 #   4. Every app/services/** + app/workers/** class is mentioned somewhere in
 #      04_02 (weaker than 1:1 — services/workers spread across prose/§11 queues —
 #      but catches a service/worker file entirely absent from the registry).
+#   5. `EwsAlert` `enum :alert_type` values ⟷ mentioned in 04_01 [SLASH-1] — an
+#      undocumented alert type is an undocumented input to the irreversible slash().
+#      NAMED CEILING: judges MENTION of the key, never the correctness of its reason.
 #
 # Pure Ruby (no Rails / no bundle). Run: ruby scripts/model_doc_sync.rb
 # Exit 0 = in sync; exit 1 = drift (lists the divergence). Method/why → docs/00_06 §3.
