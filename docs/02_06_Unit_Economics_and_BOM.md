@@ -280,6 +280,8 @@
 | 1 дерево / рік (~8 SCC) | **~4 кг CO₂** |
 | Кластер 100 дерев / рік (~800 SCC) | **~0.4 tCO₂** |
 
+> 🔴 **УСЯ таблиця вище — ECB-ера (кадр 16 Б), тобто те, що відвантажено сьогодні; мітка стоїть тут, бо врізка над таблицею її має, а сама таблиця не мала — і читач бере ХІД із таблиці.** Під CCM-кадром 30 Б каденс іде на ≈2.19 год, метаболічна `m` насичується на нулі ще до тієї точки, і wire GP падає на підлогу `GP_HOMEO_MIN = 5`: **~8 → ~4 SCC/дерево/рік (≈−49 %)**, а з ними вдвічі й рядки CO₂ нижче. Вимір і три важелі розвилки — [`00_07`](00_07_Action_Plan_Tracker) ARCH.8 (там же ⛔ «не відвантажувати CCM, доки розвилка відкрита»); прогін на CCM-точці обидві сусідні моделі відхиляють за побудовою (`scc_rate.rb variant_c_s=7884 --assert` → exit 1).
+
 > **CO₂ еквівалент [BIZ.1]:** `2000 SCC = 1 тонна поглиненого CO₂`. **SSOT:** [`05_03`](05_03_Tokenomics_SCC_and_SFC) + [`00_04 §3`](00_04_Nature_as_a_Service_Contracts) (on-chain `ProtocolParameters.sol#sccPerTonneCo2()` + `SystemParameter(:scc_per_tonne_co2)`) — значення в таблиці вище **дзеркало SSOT**, при зміні правити там, не тут.
 
 > **SCC-rate модель (single-source):** `tools/firmware/scc_rate.rb` (`--assert` docs-гейт — виводить packets×GP з ОДНОГО `delta_t`, self-consistency + anti-over-mint стеля; magnitude calibration-pending [E.63]). Канон посилається сюди, не restate'ить.
