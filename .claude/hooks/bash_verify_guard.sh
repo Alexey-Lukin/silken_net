@@ -174,6 +174,15 @@ body with `01_02:177` inside"'
   t "smoke: \$? after pipe warns (rule B)" warn \
     'ruby x.rb | tail -1; echo "EXIT=$?"'
 
+  # ── OPS.39 · the exception must not swallow its own defect ──
+  # Uppercase PIPESTATUS is empty in zsh, so it is NOT "already reading the status";
+  # lowercase $pipestatus IS, and must still silence the rule. Both arms, or the fix
+  # is untestable: a case that passes before and after the patch pins nothing.
+  t "OPS.39: uppercase PIPESTATUS no longer silences rule A" warn \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5; echo "EXIT=${PIPESTATUS[0]}"'
+  t "OPS.39: zsh \$pipestatus (the correct idiom) stays silent" silent \
+    'bin/rspec spec/foo_spec.rb 2>&1 | tail -5; echo "EXIT=$pipestatus[1]"'
+
   # ── rule G · both arms ──
   # The negative arm is the load-bearing one: `pgrep -x` and a pgrep OUTSIDE any
   # loop are the two idioms this must never touch, and a detector anchored on the
@@ -372,7 +381,7 @@ warn() {
 
 # The verdict-emitting gate vocabulary — shared by rule A (a gate truncated
 # into head/tail) and rule E (a gate laundered past git commit/push), so it is
-# defined OUTSIDE the PIPESTATUS conditional below: a command that merely
+# defined OUTSIDE the pipestatus/pipefail conditional below: a command that merely
 # mentions `pipefail` skips A/B, and rule E must still see the list.
 # Report generators are deliberately absent: stan_audit.rb and mem_find.rb have
 # no `exit 1` path at all, so slicing them is querying, not truncating a verdict.
@@ -380,7 +389,15 @@ gate='(bin/rspec|bundle exec rspec|bin/rubocop|bundle exec rubocop|bin/brakeman|
 
 # Already reading the pipeline's real status → silent. 222 calls do this, and
 # three of the first five false positives measured were exactly this case.
-if ! printf '%s' "$cmd" | grep -qE 'PIPESTATUS|pipestatus|pipefail'; then
+# 🔴 `PIPESTATUS` (UPPERCASE) sat in this list until 2026-09-21 and never belonged:
+# it is a bash-ism that expands to EMPTY in zsh — i.e. the very defect rules A and B
+# exist to catch — so the exception was reading the DEFECT as proof of correctness.
+# Shape: guard-craft #102, an exception argued per-MEMBER and applied per-CONTAINER.
+# Perimeter measured BEFORE flipping it (00_07 OPS.39): 6 uppercase uses across
+# 51,117 calls / 181 sessions, and all six were the token as a SEARCH STRING rather
+# than as a variable — so this narrowing costs ~0 live firings. ⛔ Do not re-add it:
+# both warn texts below already tell the reader the uppercase form expands to empty.
+if ! printf '%s' "$cmd" | grep -qE 'pipestatus|pipefail'; then
 
   # ── A · a GATE truncated into head/tail (9.09% naive→scoped, ~97% precise) ──
   # The discriminator is the PRODUCER, not the pipe: of 11,712 head/tail
