@@ -228,9 +228,17 @@ SELF=${BASH_SOURCE[0]:-$0}
 # два бездомні уроки поїхали в `item_cementation` (git, момент дії = згортання секції), обидві
 # вхідні струни переточено, рядок індексу злито, файл ВИДАЛЕНО, CORPUS_FLOOR 167 → 166.
 # Чистий підсумок корпусу −9.6 kB; +23 B в індексі — ціна того, що урок лишився в рядку.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26675}
+# ⊕ 26675 → 26721 (+46) — та сама подія, що підняла FILE_WARN нижче: 24 слаги в індексі стали довшими
+#   на 3 B кожен (конвенція DOC-T.118). Чистий приріст був би +72, але консолідація tooling-родини того ж
+#   проходу зняла два рядки-лінки — тобто ратчет фіксує РІЗНИЦЮ, а не дозвіл рости.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26721}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
-FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
+FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
+# 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
+# renamed address by 3 B, and a saturated home carries dozens of them (measured worst case: +78 B in one
+# file). That growth is ADDRESSES, not the genre disease this ceiling is calibrated against — so shaving
+# rule-dense prose to pay for it would be exactly the byte-golfing the playbook forbids. The band moved
+# structurally once; the ceiling moves with it once. ⛔ Not a licence to raise it again for ordinary growth.
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
 ONEWAY_MIN=${MEMORY_GATE_ONEWAY_MIN:-2}          # homes citing a source that ignores them, before it is worth a router
 
@@ -386,7 +394,7 @@ rb_dark() {
 # епізодів §01 (`project_verdict_sweep_2026_09_10` · `project_deep_archival_01a_2026_09_14` ·
 # `project_01a_tasks_2026_09_14` · `project_01a_root_vs_crown_2026_09_17` · `project_01_verdict_form_2026_09_18`)
 # → `project_01_anchor_campaign`; `feedback_verdict_question_form` → `feedback_verdict_lifecycle` (+ половина
-# «застосувати»); `project_bus_monolithic_onehome` → `project_anchor_bus`; `project_procurement_rfq_layer` →
+# «застосувати»); `project_bus_monolithic_onehome` → `project_01_anchor_bus`; `project_procurement_rfq_layer` →
 # `project_procurement`; стаб `reference_picogk_skill` знято (підстава зникла 2026-08-08, урок про компакцію —
 # в операційному мануалі індексу).
 # 2026-09-18: 166 → 167 — `log_crown_roots` (тіла вимірів і застосувань рамки «крона ⊥ корінь», евакуйовані
@@ -507,7 +515,7 @@ index_reach_expected() {
 # видима в diff); другий написано вже коротким. Чужих описів не підрізано — 261 B
 # для двох нових класів-домів дешевше за більшість одиничних бампів вище.
 # 2026-09-12: 44801 → 44939 (+138) — вартість ОДНОГО нового журналу `log_picogk_cad`,
-# заведеного не заради нового класу, а тому що `project_picogk_code_as_cad` уперся в робочу
+# заведеного не заради нового класу, а тому що `project_01_picogk_code_as_cad` уперся в робочу
 # стелю й метод приписує евікцію ТІЛ у близнюк. Прецедент дотримано: власний опис стиснуто
 # (163 → 103 B) ПЕРЕД бампом, чужих не підрізано. ⊕ Найдешевший бамп у цьому переліку, і саме
 # тому, що журнал НЕ додає тригера відкликання — його дістають `[[strings]]`, не індекс.
@@ -517,7 +525,7 @@ index_reach_expected() {
 # Прецедент дотримано: власний опис стиснуто (185 → 130 B) ПЕРЕД бампом, чужих не підрізано.
 # 2026-09-18: 45215 → 44148 (−1067) — храповик опущено до факту після того самого злиття (вісім описів
 # пішли, три нові короткі прийшли); зекономлене не стає запасом.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43262}
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43277}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link

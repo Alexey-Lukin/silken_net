@@ -52,7 +52,7 @@ algorithm*, not generative ML — an agent writes the generator, the generator c
 
 > Voxel/triangle counts, porosity AND the FE stiffness ratio all drift with voxel size — don't hardcode them ([[feedback_no_volatile_counts]]); MEASURE via `verify` (geometry) or `fea --sweep` / `fea --fit` (stiffness AND the Gibson-Ashby coefficients — a single row is an UPPER bound by construction, and the FITTED `C` itself still moves with the step (the `01_01 §5.2` table), so nothing is quoted without its convergence ladder).
 
-**State** lives in `00_07` (the items in the table above), not here; memory keeps the router `[[project_picogk_code_as_cad]]` (⊕ its journal twin `[[log_picogk_cad]]` — the BODIES, with their numbers), and the curator lessons born in CAD sit in their class homes (applying a ratified verdict → `[[feedback_verdict_lifecycle]]`) · `[[project_anchor_bus]]` (bus router + the PEEK-liner trap, gotcha #0) · `[[project_coin_bakeoff_trl4]]` (the Ti-coin keystone this CAD feeds).
+**State** lives in `00_07` (the items in the table above), not here; memory keeps the router `[[project_01_picogk_code_as_cad]]` (⊕ its journal twin `[[log_picogk_cad]]` — the BODIES, with their numbers), and the curator lessons born in CAD sit in their class homes (applying a ratified verdict → `[[feedback_verdict_lifecycle]]`) · `[[project_01_anchor_bus]]` (bus router + the PEEK-liner trap, gotcha #0) · `[[project_01_coin_bakeoff_trl4]]` (the Ti-coin keystone this CAD feeds).
 
 ## Gotchas Not Obvious From Docs
 
