@@ -71,6 +71,8 @@ Memory is a ROUTER, not a second copy: the absolute context is re-assembled from
 | live state · cross-domain trap · lesson · the founder's "why" | **memory** |
 | a portable rule about how the WORK gets done | the **playbook** someone reads before doing it |
 
+**Імʼя файлу теж роутить — конвенція `<тип>_[<NN>[<під>]_]<предмет>`** (⚖️ founder 2026-09-21, DOC-T.118). Коли памʼять строго привʼязана до модуля чи до КОНКРЕТНОЇ канон-сторінки, координата стоїть у слагу — вже діючі взірці `project_01_anchor_campaign` · `project_vilize_03a_firmware` · `project_vilize_04_backend`. 🔴 **Позиція не догма, несе саме наявність координати** («не обовʼязково префікс, головне щоб в імені було видно» — founder); тип-префікс при цьому НЕ замінюється, бо на ньому стоять групування індексу й `--stops`, що виключає `user_*`. ⛔ **Не давати памʼяті голе `NN_NN`-імʼя**, тотожне канонному: лінтери читають `NN_NN` як канон-адресу, і `04_06_*` у памʼяті почне читатись як `docs/04_06_*`. ⚠️ Перейменування — масова кампанія, а не правка: слаг є адресою у ТРЬОХ реєстрах (`[[струни]]` · рядок індексу · git→memory маршрути, які судить `--routes`), плюс гейтований інваріант `name:` ≡ filename. Інвентар і хід — `00_07` DOC-T.118.
+
 Two halves make this operational rather than decorative.
 
 **Elevate, then point.** A meta-lesson recurring across domains gets ONE home and every instance points at it. The failure mode is not a missing home but a SECOND one — both links resolve, only the prose disagrees, so no gate can see it. Before building a home, ask which part is actually homeless — instance, mechanism, remedy, or FRAME — because it is nearly always the frame, and grep finds instances (trap 6).
