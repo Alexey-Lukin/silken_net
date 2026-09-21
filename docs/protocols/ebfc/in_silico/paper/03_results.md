@@ -85,9 +85,16 @@ possibly co-limiting cathode whose three design levers — a low-λ metal, condu
 or an acid-stable enzyme-free single-atom catalyst — are set out and ranked by their viability at the
 acidic Zone 3 (pH ≈ 4.5).
 
-Two model caveats frame this. The coupling is computed on a clash-corrected programmatic cluster, not a
-DFT-relaxed geometry — these flat-PES metal clusters resist geometry optimisation (as the osmium complex
-did), so t_ij is geometry-bounded. And the single-hop bottleneck is a conservative estimate: the ZIF is
+Three model caveats frame this. First, the calculation places the enzyme's electron-entry site
+adjacent to the framework node. That adjacency is what an *oriented* immobilisation would deliver — a
+His/Cys anchor tethering laccase to the ZIF vertex — and it is an assumption of the model, not an
+outcome of it. A randomly adsorbed, arbitrarily oriented laccase does not deliver it: the T1 copper
+lies several ångström below the protein surface, so with the orientational average the donor–acceptor
+separation is of order 15–20 Å, and because the coupling decays exponentially with distance, t_ij — and
+with it the whole margin reported above — goes to zero. **The margin is therefore conditional on
+oriented immobilisation; it is not a property of the nanozyme alone.** Second, the coupling is computed
+on a clash-corrected programmatic cluster, not a DFT-relaxed geometry — these flat-PES metal clusters resist geometry optimisation (as the osmium complex
+did), so t_ij is geometry-bounded. Third, the single-hop bottleneck is a conservative estimate: the ZIF is
 a wide-gap insulator, so charge transport proceeds by the discrete Marcus hops we model rather than band
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
 transport would require a conductive MOF (one of the levers above). A predicted cathode

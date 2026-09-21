@@ -61,6 +61,20 @@ BASIS_OS = "lanl2dz"
 ECP_OS = "lanl2dz"
 SOLVENT_EPS_WATER = 78.3553
 
+# ── CHEM.11 — the three compensating substitutions of the ORDERED gene (mirror of L1 §2) ──
+# The frozen dgrFAD-GDH sequence is `600 aa · 11 N→Q` PLUS these three: ⚖️ founder 2026-09-17
+# (`L80D`, `A70S`) and 2026-09-18 (`I401S`, after script 70 measured the conservation of 401).
+# One-letter codes, exactly as canon writes them.
+# ⚠️ This is a MIRROR, not the home. The home is
+#   docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2 (the sequence owner; the order sheet
+#   docs/protocols/procurement/ebfc_chem_rfq.md Spec A points there rather than restating it).
+# Pinned doc↔code by tools/in_silico/tests/test_doc_cache_sync.py::test_ratified_gene_mirrors_canon,
+# which reads BOTH docs and fails if either stops naming exactly this set.
+# ⛔ The AF3 input sequence is NOT rewritten by these three (L1 §2): the shipped model, the MD runs
+# and every SASA number stand on the `11 N→Q` string. Re-predicting on the compensated sequence is a
+# separate run with its own provenance.
+RATIFIED_GENE_COMPENSATIONS = ("L80D", "A70S", "I401S")
+
 # ── EBFC parameters (from literature, 01_03 §1) ──
 J_MAX_25C = 881e-6           # A/cm² — Michaelis-Menten ASYMPTOTE of dgrGcGDH + Os-polymer, Zafar 2012
 # (doi:10.1007/s00216-011-5650-7, PMC3275720). This is the enzyme FORM we build with — deglycosylated

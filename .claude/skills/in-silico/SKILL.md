@@ -38,7 +38,10 @@ L3 DFT anode (CPU):
   21f · 21d (the ωB97X Os caches) → 21g (adiabatic ΔSCF) · 33 (PCET cascade)
   lib/os_geometry.build_os_complex → 21e (Hammett ①) · 21f · 34 (cluster-continuum ②) · 34b (ωB97X ② cross-check)
   29 (Nelsen λ) standalone · 29b (semiquinone λ) → 29c (outer-sphere λ)
-  28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)      11 (DCD) → 27 · 28b
+  28 (tunneling, PDB only) → 28b (CHEM.16) · 69 (CHEM.11)
+  11 (DCD) → 27 · 28b
+  69 → `69 --ratified` (own out-path, own reference sample; reads 69's OWN cache for the
+     tie-built twin, so the ordered gene and the published build sit in ONE sample)
   70 (CHEM.11 site conservation) standalone — reads committed alignments in `data/chem11_conservation/`,
      never the network; it is the SECOND axis of CHEM.11 and is never merged into 69's patch score
   21 · 21b · 21c write their own caches; nothing downstream reads them
@@ -154,5 +157,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 23. A new MD script imports `lib.constants` + `lib.geometry` + `lib.utils`, protonates through `lib.md_utils.prepare_protein` and follows Critical Rule #6 for minimisation, pre-relax and ramp
 24. New script — the number is a shared namespace (take the next free N from `ls scripts/`, never a remembered range), and the lattice's elastic knockdown is not this half's to compute
 25. A model-feeding FORMULA can be wrong, not just a stale mirror
+26. In a stochastic pipeline the noise floor measured from REFERENCE replicates under-estimates the pipeline's own scatter — and the cheapest independent estimate sits where the perturbation does NOT act
 
 <!-- /INSILICO-MODIFYING-INDEX -->

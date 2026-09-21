@@ -1005,13 +1005,51 @@ under-estimating its own spread.
   it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 30 % and is genuinely buried
   (0.908, passing at neither swept value). The ceiling was left where it was declared;
   `threshold_cost_measured` prices each refusal in Å² so the choice stays visible.
+  🔬 **And the second axis was measured 2026-09-21 — it does NOT support the refusal.** `I401S`'s hold was
+  lifted by conservation, so refusing `Ala201` on geometry alone would judge the two positions by different
+  evidence; script 70 now carries 201 as a `refused_candidate`. It reads **Ala 22.0 % ⊥ Ser 8.7 %** over the
+  same 332 homologs (anchored n = 74: 29.7 % ⊥ 10.8 %) — more conserved than the **ratified** `A70S` position
+  (14.2 % ⊥ 5.1 %) but nowhere near the His537 control's 98.8 %, and Ser is a real occupant of the column.
+  **So the refusal of Ala201 rests on the burial ceiling alone**, a declared value of ours with a 0.020
+  margin; the conservation axis is neutral-to-mildly-cautionary, not a second leg. The threshold's standing
+  and the decision it gates live in [`L1_protein_architecture.md`](L1_protein_architecture.md) §2.
 
 **Priced as one sequence, because a freeze is a sequence.** The three recommendations built as a single
 variant take Gln71 from 139.9 to **2.9 Å²** and Gln405 from 119.8 to **19.4 Å²**; the largest non-additivity
 against the sum of the singles is **3.1 Å²** — measured on the built variant rather than assumed either way.
 The undecided position was built as Ser for this one variant, which the cache flags as a build choice.
 
-### Conservation of the three positions (script 70) — the hold that gated `I401S`
+**And the ORDERED gene itself, measured 2026-09-21** (`69 --ratified` → `chem11_ratified_gene.json`).
+The row above is the **Ser** build; the sequence the CRO receives carries `L80D`. Because
+`addMissingHydrogens` is non-deterministic, a number from one run and a number from another are two
+samples — so this mode takes its **own** four reference replicates and builds **both** variants inside
+that one sample, and only their difference is read across.
+
+🔑 **A hotspot answers the question only if a mutated position lies inside its patch.** The two builds
+differ at position **80** alone, so Gln71 (positions 70 · 80) and Gln405 (position 401) measure the
+*substitution*, while Gln200 and Gln258 — which neither build compensates — measure the *pipeline*.
+The table keeps them apart, because a difference at an untouched patch read as «the cost of the
+substitution» is a mis-attribution, not a finding.
+
+| build | **Gln71** (acts) | **Gln405** (acts) | Gln200 (idle) | Gln258 (idle) | surface net formal charge |
+|---|---|---|---|---|---|
+| reference (this run) | 140.0 | 119.8 | 56.4 | 70.8 | **−15** |
+| **ratified `L80D · A70S · I401S`** | **2.9** | **18.9** | 56.5 | 71.2 | **−16** |
+| published build `L80S · A70S · I401S` | 2.9 | 18.9 | 54.0 | 67.9 | −15 |
+| ratified − published (ΔΔ) | **+0.0** | **+0.0** | +2.5 | +3.3 | **−1** |
+
+**Both acting hotspots come out at ΔΔ = 0.0 Å² — the two builds are indistinguishable exactly where
+the substitution acts.** The idle pair spreads by up to **3.3 Å²**, and that spread is the honest
+yardstick: it exceeds this run's **2.52 Å²** four-replicate floor, so *the replicate floor
+under-estimates this pipeline's own scatter* and the cache says so in `spread_estimates`. 🔑 **So the
+substitution the founder chose by charge costs no measurable apolar area, and the only axis on which
+the two builds differ is the charge itself (−15 → −16)** — precisely the quantity the tie was decided
+on. The headline «Gln71 → 2.9 Å²» is therefore true of the gene that was ordered, not only of the
+variant that was convenient to build. ⚠️ Absolute Å² across the two caches are **not** comparable cell
+by cell (different samples); backbone CA drift is 0.0000 Å in both builds. ⛔ This says the Asp build
+removes the same area — **not** that it folds, expresses or yields the same: no MD, no ΔΔG of folding.
+
+### Conservation at the freeze positions (script 70) — the hold that gated `I401S`
 
 The patch score above says how much apolar area a swap removes; it says nothing about whether the position
 is allowed to change. That second question held `Ile401 → Ser` back, and its answer arrived on 2026-09-18
@@ -1025,6 +1063,7 @@ projection, and the catalytic His537 as the instrument's own control.
 | **401** (compensates Gln405) | Ile | **3.6 %** | **15.7 %** | n = 103 | **6.8 % ⊥ 39.8 %** |
 | 70 (ratified `A70S`) | Ala | 14.2 % | 5.1 % | n = 266 | 15.0 % ⊥ 5.3 % |
 | 80 (ratified `L80D`) | Leu | 41.9 % | 2.1 % | n = 244 | 47.1 % ⊥ 1.2 % |
+| **201** — refused candidate (Gln200's only lever) | Ala | 22.0 % | 8.7 % | n = 74 | 29.7 % ⊥ 10.8 % |
 | **537 — positive control** | His | **98.8 %** | 0 % | n = 241 | **100 % ⊥ 0 %** |
 | 580 — second control | His | 91.9 % | 0 % | n = 294 | 98.0 % ⊥ 0 % |
 

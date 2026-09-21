@@ -69,7 +69,13 @@ OUT_JSON = CACHE_DIR / "chemistry" / "chem11_site_conservation.json"
 # catalytic pair UniProt G8E4B5 annotates as ACT_SITE, and they are the instrument's control.
 FREEZE_POSITIONS = (70, 80, 401, 405)
 CONTROL_POSITIONS = (537, 580)
-POSITIONS = FREEZE_POSITIONS + CONTROL_POSITIONS
+# Positions the patch score (69) found admissible on area and REFUSED on a declared threshold. They
+# are not in the gene and not controls — they are the price of a threshold, and the threshold is
+# judged by the founder. 201 (Ala201→Ser, Gln200's only lever) is refused by burial 0.770 against
+# our declared ceiling of 0.75: a margin of 0.020. The I401S hold was lifted by exactly this axis,
+# so refusing 201 on geometry ALONE would leave the two positions judged by different evidence.
+REFUSED_CANDIDATE_POSITIONS = (201,)
+POSITIONS = FREEZE_POSITIONS + CONTROL_POSITIONS + REFUSED_CANDIDATE_POSITIONS
 FOCUS = 401  # the position whose hold this script was written to settle
 
 # Numbering asserts: the residue our numbering must find at each position. A one-off shift
@@ -80,7 +86,7 @@ FOCUS = 401  # the position whose hold this script was written to settle
 # this file asserts **N**, not Q, and the frequency reported there is Asn's. Asserting Q was
 # the author's first guess and this control caught it: the homologs are aligned against the
 # wild-type string, so the wild-type residue is the only one the numbering can be checked on.
-EXPECTED_RESIDUES = {70: "A", 80: "L", 401: "I", 405: "N", 537: "H", 580: "H"}
+EXPECTED_RESIDUES = {70: "A", 80: "L", 401: "I", 405: "N", 537: "H", 580: "H", 201: "A"}
 QUERY_LENGTH = 600
 
 # ── selection thresholds (declared, not tuned per answer) ──
@@ -416,7 +422,9 @@ def main() -> int:
         all_quality = distribution(passed, pos, qr)
         positions_out[str(pos)] = {
             "query_residue": qr,
-            "role": "freeze" if pos in FREEZE_POSITIONS else "catalytic_control",
+            "role": ("freeze" if pos in FREEZE_POSITIONS
+                     else "refused_candidate" if pos in REFUSED_CANDIDATE_POSITIONS
+                     else "catalytic_control"),
             "deduped": whole,
             "anchored": anchored,
             "all_quality_filtered": all_quality,
@@ -635,6 +643,12 @@ def main() -> int:
             "self_alignment": {"pid_pct": round(self_pid, 1), "aligned_cols": self_cols,
                                "positions_recovered": True},
             "positive_control_positions": list(CONTROL_POSITIONS),
+            "refused_candidate_positions": list(REFUSED_CANDIDATE_POSITIONS),
+            "refused_candidate_scope": "positions script 69 found admissible on apolar area and "
+                                       "refused on a declared threshold. Reported so the refusal is "
+                                       "judged on the SAME axis that lifted the I401S hold; this "
+                                       "script says how often the residue varies, never what the "
+                                       "swap would do to folding, activity or yield",
         },
         "verdict": verdict,
         "caveats": [

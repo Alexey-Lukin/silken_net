@@ -54,10 +54,18 @@ WHAT IS **NOT** COMPUTED — and each of these is absent, not merely undiscussed
 
 Runtime ~9 min (CPU): 24 mutants + 4 reference replicates + the combined variant, ~17 s each.
 Output: tools/in_silico/cache/chemistry/chem11_aggregation_compensation.json
+
+  --ratified   measures the ORDERED gene instead (L1 §2: `11 N→Q + L80D + A70S + I401S`). The
+               combined variant above builds the Leu80 tie as Ser, so it is NOT the sequence the
+               CRO receives; this mode builds that sequence AND the tie-built twin in one sample,
+               against its own reference replicates. Own cache, because a flag that swaps the
+               model swaps the out-path. ~2 min (CPU): 4 replicates + 2 variants.
+               Output: tools/in_silico/cache/chemistry/chem11_ratified_gene.json
 """
 from __future__ import annotations
 
 import json
+import re
 import statistics
 import sys
 import time
@@ -76,13 +84,16 @@ except ImportError:
     sys.exit("openmm + pdbfixer required (silken_md env)")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import AF3_PDB, CACHE_DIR, DFT_CACHE, PH, REPO_ROOT, TEMPERATURE_K
+from lib.constants import AF3_PDB, CACHE_DIR, DFT_CACHE, PH, RATIFIED_GENE_COMPENSATIONS, REPO_ROOT, TEMPERATURE_K
 from lib.utils import banner
 
 AF3_CIF = REPO_ROOT / "docs/protocols/ebfc/in_silico/alphafold3/fold_dgrgcgdh_fad_v1_model_0.cif"
 TUNNELING_JSON = DFT_CACHE / "tunneling_pathway.json"
 OUT_DIR = CACHE_DIR / "chemistry"
 OUT_JSON = OUT_DIR / "chem11_aggregation_compensation.json"
+# `--ratified` measures a DIFFERENT model (the ordered gene, not the recommended set), so it
+# writes its own cache — a flag that swaps the model swaps the out-path (§When Modifying #17).
+RATIFIED_JSON = OUT_DIR / "chem11_ratified_gene.json"
 
 # ─────────────────────────── declared parameters ───────────────────────────
 # Every threshold below is OURS unless a source is named on its line. None of them is
@@ -959,9 +970,17 @@ def main() -> int:
         "relaxed_fad_shell_would_admit": {
             "relaxed_to_A": FAD_POCKET_EXCL_SENSITIVITY_A,
             "positions": relaxed,
-            "note": "these fail ONLY the FAD-pocket shell at its declared 12 Å. They are reported "
-                    "so the cost of that threshold is visible; they are NOT recommended, because "
-                    "each still sits on the electron-exit face that L1 §5 makes load-bearing",
+            # A note that describes the members of a set says nothing when the set is empty — and
+            # an EMPTY result here is the stronger statement (the threshold refuses nothing), so it
+            # gets its own sentence rather than inheriting one written for members.
+            "note": ("no candidate fails ONLY the FAD-pocket shell, so relaxing it from "
+                     f"{FAD_POCKET_EXCL_A} Å to {FAD_POCKET_EXCL_SENSITIVITY_A} Å would admit "
+                     "nothing at this geometry — the threshold is refusing no measured area"
+                     if not relaxed else
+                     "these fail ONLY the FAD-pocket shell at its declared "
+                     f"{FAD_POCKET_EXCL_A} Å. They are reported so the cost of that threshold is "
+                     "visible; they are NOT recommended, because each still sits on the "
+                     "electron-exit face that L1 §5 makes load-bearing"),
         },
         "controls": {
             "patch_sasa_noise_floor_A2": noise_floor,
@@ -1025,21 +1044,33 @@ def main() -> int:
             "Ile401→Ser (⚖️ founder 2026-09-18, after script 70 measured the position) — home L1 §2. "
             "This script recommends; the choice was the founder's.",
             f"The Leu80 Asp/Ser tie inside the {noise_floor} Å² noise floor was decided by CHARGE: "
-            "Asp. This script still BUILDS the tie as Ser (`substitution_undecided_by_this_measurement`), "
-            "so `recommended_set_as_one_sequence` is not the ratified gene and the Asp build is unmeasured.",
+            "Asp. This run still BUILDS the tie as Ser (`substitution_undecided_by_this_measurement`), "
+            "so `recommended_set_as_one_sequence` is the tie-built variant and NOT the ordered gene. "
+            "The ordered gene is a different model and has its own cache: run this script with "
+            f"`--ratified` → `{RATIFIED_JSON.name}`, which builds both variants in one sample so the "
+            "Asp↔Ser difference is not a difference of two protonation samples.",
             "Gln258 and Gln200 stay un-compensated — the ratified gene carries no lever for either; "
             "Gln200's refusal is our BURIAL threshold's, not the measurement's: see "
             "`threshold_cost_measured`.",
         ],
-        "founder_decision_open": [
-            f"Whether the {FAD_POCKET_EXCL_A} Å FAD shell is the right conservatism. Relaxing it to "
-            f"{FAD_POCKET_EXCL_SENSITIVITY_A} Å would admit "
-            f"{[p['residue'] for p in relaxed] or 'nothing'} — each still on the electron-exit face. "
-            "The ratified gene was chosen under the declared value; it was never re-judged.",
-            f"Whether the burial ceiling stays at {CAND_BURIAL_MAX}. Its sensitivity values are "
-            f"{list(CAND_BURIAL_MAX_SENSITIVITY)} and `threshold_cost_measured` prices the "
-            "difference in Å² actually removed. Same standing as the shell: declared, never re-judged.",
-        ],
+        # ⛔ This block raises the QUESTIONS and prices them; it does NOT report their standing.
+        # A script cannot know whether a threshold has since been ratified, and a sentence like
+        # «never re-judged» becomes a lie on the day it is — silently, because nothing re-reads a
+        # generated cache. One home for the standing: L1 §2.
+        "founder_decision_questions": {
+            "standing_lives_in": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2 — "
+                                 "this cache prices the questions, canon records the rulings",
+            "questions": [
+                f"Is the {FAD_POCKET_EXCL_A} Å FAD shell the right conservatism? Measured price of "
+                f"keeping it: relaxing to {FAD_POCKET_EXCL_SENSITIVITY_A} Å would admit "
+                f"{[p['residue'] for p in relaxed] or 'nothing'}"
+                + ("" if relaxed else " — so at this geometry it refuses no measured area"),
+                f"Does the burial ceiling stay at {CAND_BURIAL_MAX}? Its swept values are "
+                f"{list(CAND_BURIAL_MAX_SENSITIVITY)}; `threshold_cost_measured` prices in Å² what "
+                "the declared value refuses. ⚠️ The real subject is not the number but whether the "
+                "gene takes a FURTHER compensation — a continuation of a ratified list",
+            ],
+        },
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
@@ -1050,5 +1081,300 @@ def main() -> int:
     return 0
 
 
+# ─────────────────────── the RATIFIED gene, measured as ONE sequence ───────────────────────
+# `main()` builds the recommended set with the Leu80 tie resolved to Ser, because a tie inside the
+# noise floor may not decide a charge. The founder decided it by CHARGE (Asp, ⚖️ 2026-09-17), so the
+# sequence that goes to the CRO is NOT the one `recommended_set_as_one_sequence` measures — and until
+# this mode existed, nobody had built it. L1 §2 says so in prose; this says so in numbers.
+#
+# Why a mode and not a re-run of `main()`: `addMissingHydrogens` is non-deterministic, so a full
+# re-run is a NEW SAMPLE and every published Å² moves within the floor (§When Modifying #15). This
+# mode takes its own reference replicates and builds BOTH variants in that one sample, so the
+# Asp↔Ser difference — the open question — is a within-run comparison, and the published table is
+# left alone.
+
+THREE_LETTER = {"A": "ALA", "C": "CYS", "D": "ASP", "E": "GLU", "F": "PHE", "G": "GLY",
+                "H": "HIS", "I": "ILE", "K": "LYS", "L": "LEU", "M": "MET", "N": "ASN",
+                "P": "PRO", "Q": "GLN", "R": "ARG", "S": "SER", "T": "THR", "V": "VAL",
+                "W": "TRP", "Y": "TYR"}
+
+
+def parse_compensation(code: str) -> tuple[str, int, str]:
+    """`L80D` → `("LEU", 80, "ASP")`. Canon writes one-letter codes; pdbfixer takes three."""
+    m = re.fullmatch(r"([A-Z])(\d+)([A-Z])", code)
+    if not m:
+        raise ValueError(f"not a substitution code: {code!r}")
+    wt, pos, new = m.groups()
+    return THREE_LETTER[wt], int(pos), THREE_LETTER[new]
+
+
+def run_ratified() -> int:
+    """Build and measure the ratified gene, with the published build beside it in one sample.
+
+    Controls here, and what each CAN and CANNOT catch:
+      · wild-type check — the canon mirror must name the residue the AF3 model actually carries at
+        each position. CATCHES a mirror that drifted from the structure (a renumbering, a wrong
+        one-letter code); CANNOT catch a mirror that drifted from canon — that is the doc↔code pin's
+        job, and it runs in pytest, not here.
+      · position-set check — the twin is the published build read from the main cache, so the two
+        variants must occupy the SAME positions or the difference is not about the substitution.
+        CATCHES a main-cache whose recommended positions have moved; CANNOT catch two runs whose
+        positions agree while their samples do not — which is exactly why both are built here.
+      · frozen-backbone CA drift — CATCHES a broken freeze, which would invalidate re-attaching the
+        cofactor coordinates; CANNOT say anything about side-chain quality.
+      · noise floor over replicates — CATCHES a difference too small to be a finding; CANNOT tell a
+        real surface change from a force-field artefact, because both move the same number.
+    ⛔ None of them tests the physics: this is a static apolar-area proxy, not aggregation.
+    """
+    t_start = time.time()
+    workdir = OUT_DIR / "_chem11_ratified_work"
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    banner("CHEM.11 — the RATIFIED gene as ONE sequence (L1 §2)")
+    raw = md.load(str(AF3_PDB))
+    cofactor = raw.atom_slice(raw.topology.select("chainid 1"))
+    af3 = Surface(raw)
+
+    # ── the mirror, checked against the structure it will be built on ──
+    spec_ratified, wt_seen = [], {}
+    for code in RATIFIED_GENE_COMPENSATIONS:
+        wt, pos, new = parse_compensation(code)
+        model_wt = af3.name.get(pos)
+        wt_seen[code] = f"{model_wt}{pos}" if model_wt else None
+        if model_wt != wt:
+            sys.exit(f"{code}: the AF3 model carries {model_wt}{pos}, canon says {wt}{pos} — "
+                     f"the mirror and the structure disagree, refusing to build")
+        spec_ratified.append(f"{wt}-{pos}-{new}")
+    print(f"  ratified compensations (mirror of L1 §2): "
+          f"{' · '.join(RATIFIED_GENE_COMPENSATIONS)}")
+
+    # ── the twin: the build the published table measured, LOADED from its cache, never re-derived ──
+    if not OUT_JSON.exists():
+        sys.exit(f"{OUT_JSON.relative_to(REPO_ROOT)} missing — run the script without --ratified "
+                 f"first; this mode measures the ratified gene AGAINST that build")
+    main_cache = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+    published = main_cache.get("recommended_set_as_one_sequence") or {}
+    spec_twin = list(published.get("pdbfixer_spec") or [])
+    if not spec_twin:
+        sys.exit("the main cache carries no `recommended_set_as_one_sequence.pdbfixer_spec` — "
+                 "nothing to compare the ratified build against")
+    by_pos_ratified = {int(x.split("-")[1]): x.split("-")[2] for x in spec_ratified}
+    by_pos_twin = {int(x.split("-")[1]): x.split("-")[2] for x in spec_twin}
+    if sorted(by_pos_ratified) != sorted(by_pos_twin):
+        sys.exit(f"position sets differ — ratified {sorted(by_pos_ratified)} vs published "
+                 f"{sorted(by_pos_twin)}. The two builds would not differ by a substitution alone; "
+                 f"refusing a false comparison")
+    differs_at = sorted(pos for pos, new_res in by_pos_ratified.items()
+                        if by_pos_twin[pos] != new_res)
+    print(f"  published build (from the main cache): {' · '.join(spec_twin)}")
+    print(f"  they differ at position(s): {differs_at or 'none'}")
+
+    # ── reference replicates: this run's own noise floor ──
+    banner(f"Reference: {N_REF_REPLICATES} identical replicates ({MIN_ITERATIONS} iterations)")
+    refs = [surface_of(build_and_minimise([], f"rref_{i}", workdir), cofactor, workdir, f"rref_{i}")
+            for i in range(N_REF_REPLICATES)]
+    ref_a = refs[0]
+    replicate_patches = {f"Gln{s}": [round(r.patch(s), 2) for r in refs]
+                         for s in PUBLISHED_HOTSPOTS}
+    noise = {f"Gln{s}": round(max(v) - min(v), 2)
+             for s, v in ((s, [r.patch(s) for r in refs]) for s in PUBLISHED_HOTSPOTS)}
+    noise_floor = max(noise.values())
+    ref_patch = {s: ref_a.patch(s) for s in PUBLISHED_HOTSPOTS}
+    ref_surface_charge = ref_a.surface_net_formal_charge()
+    print(f"  per-hotspot spread over replicates: {noise} → floor {noise_floor} Å²")
+    print(f"  reference surface net formal charge: {ref_surface_charge}")
+
+    # ── the two variants, same sample ──
+    variants, max_drift = {}, 0.0
+    for label, spec in (("ratified", spec_ratified), ("published_build", spec_twin)):
+        banner(f"Variant: {label} — {' · '.join(spec)}")
+        tag = label + "_" + "_".join(m.replace("-", "") for m in spec)
+        surf = surface_of(build_and_minimise(list(spec), tag, workdir), cofactor, workdir, tag)
+        drift = ca_drift(ref_a, surf)
+        max_drift = max(max_drift, drift)
+        rows = {}
+        for s in PUBLISHED_HOTSPOTS:
+            rows[f"Gln{s}"] = {
+                "patch_ref_A2": round(ref_patch[s], 1),
+                "patch_variant_A2": round(surf.patch(s), 1),
+                "delta_patch_apolar_A2": round(surf.patch(s) - ref_patch[s], 1),
+            }
+            print(f"  Gln{s}: {ref_patch[s]:.1f} → {surf.patch(s):.1f} Å² "
+                  f"({surf.patch(s) - ref_patch[s]:+.1f})")
+        variants[label] = {
+            "mutations": [m.replace("-", "") for m in spec],
+            "pdbfixer_spec": list(spec),
+            "backbone_CA_drift_A": round(drift, 4),
+            "surface_net_formal_charge": surf.surface_net_formal_charge(),
+            "net_formal_charge_whole_chain": surf.net_formal_charge(),
+            "per_hotspot": rows,
+        }
+
+    # ── the comparison this mode exists for ──
+    # ⛔ A hotspot only answers the question if a substitution ACTS on it. The two builds differ at
+    # one position, so at a hotspot whose patch contains no mutated position the ΔΔ measures the
+    # PIPELINE, not the substitution — and calling that «the cost of the substitution» is a
+    # mis-attribution the verdict would carry into the docs. The partition is computed from the
+    # geometry (is any mutated position inside the patch shell?), never declared in prose.
+    banner("Ratified (Asp) vs the published build (Ser), same sample")
+    mutated_positions = set(by_pos_ratified) | set(by_pos_twin)
+    comparison, acting, idle = {}, [], []
+    for s in PUBLISHED_HOTSPOTS:
+        h = f"Gln{s}"
+        in_patch = sorted(mutated_positions & ref_a.within(s, PATCH_RADIUS_A))
+        d_rat = variants["ratified"]["per_hotspot"][h]["delta_patch_apolar_A2"]
+        d_pub = variants["published_build"]["per_hotspot"][h]["delta_patch_apolar_A2"]
+        diff = round(d_rat - d_pub, 1)
+        comparison[h] = {
+            "delta_ratified_A2": d_rat,
+            "delta_published_build_A2": d_pub,
+            "ratified_minus_published_A2": diff,
+            "inside_this_run_noise_floor": abs(diff) <= noise_floor,
+            "mutated_positions_inside_the_patch": in_patch,
+            "measures": ("the substitution" if in_patch else
+                         "the build pipeline — no mutated position lies inside this patch"),
+        }
+        (acting if in_patch else idle).append(h)
+        print(f"  {h}: ratified {d_rat:+.1f} ⊥ published {d_pub:+.1f} → "
+              f"difference {diff:+.1f} Å² "
+              f"({'inside' if abs(diff) <= noise_floor else 'OUTSIDE'} the {noise_floor} Å² floor)"
+              f"  [{'acts here: ' + ','.join(map(str, in_patch)) if in_patch else 'NO substitution here'}]")
+
+    # The idle hotspots are a SECOND, independent estimate of the same spread — one that includes
+    # the whole mutate→minimise→measure path rather than only the reference replicates. Where it
+    # exceeds the replicate floor, the floor is under-estimating, and that is worth saying out loud
+    # rather than letting a verdict lean on the smaller number.
+    idle_spread = round(max((abs(comparison[h]["ratified_minus_published_A2"]) for h in idle),
+                            default=0.0), 2)
+    floor_understates = idle_spread > noise_floor
+    print(f"  idle-hotspot spread (no substitution acts there): {idle_spread} Å² vs replicate floor "
+          f"{noise_floor} Å² → floor {'UNDER-estimates' if floor_understates else 'holds'}")
+    charge_delta = (variants["ratified"]["surface_net_formal_charge"]
+                    - variants["published_build"]["surface_net_formal_charge"])
+    print(f"  surface net formal charge: ratified {variants['ratified']['surface_net_formal_charge']} "
+          f"⊥ published {variants['published_build']['surface_net_formal_charge']} "
+          f"({charge_delta:+d})")
+
+    # The yardstick is the LARGER of the two spread estimates. The replicate floor sees only the
+    # reference path; the idle hotspots see the whole mutate→minimise→measure path with no signal
+    # in it. Leaning on the smaller one lets the pipeline's own scatter be read as a finding.
+    yardstick = max(noise_floor, idle_spread)
+    acting_outside = [h for h in acting
+                      if abs(comparison[h]["ratified_minus_published_A2"]) > yardstick]
+    verdict = (
+        f"The ratified gene ({' · '.join(RATIFIED_GENE_COMPENSATIONS)}) was built as one sequence "
+        "and measured against this run's own reference. At the hotspots a substitution actually "
+        "acts on it takes "
+        + "; ".join(
+            f"{h} {variants['ratified']['per_hotspot'][h]['patch_ref_A2']} → "
+            f"{variants['ratified']['per_hotspot'][h]['patch_variant_A2']} Å²" for h in acting)
+        + f". The two builds differ at position(s) {differs_at}, and a hotspot answers the question "
+        f"only if a mutated position lies inside its patch: true at {', '.join(acting)}, false at "
+        f"{', '.join(idle) or 'no hotspot'}. The yardstick is {yardstick} Å² — the larger of the "
+        f"{noise_floor} Å² replicate floor and the {idle_spread} Å² spread measured where NO "
+        "substitution acts"
+        + (", and the idle spread EXCEEDS the replicate floor, so four replicates under-estimate "
+           "this pipeline's own scatter" if floor_understates else "")
+        + ". Against that yardstick the ratified-minus-published difference at "
+        + (f"{', '.join(acting)} is inside it" if not acting_outside
+           else f"{', '.join(acting_outside)} is OUTSIDE it")
+        + ", so the substitution the founder chose by charge costs "
+        + ("no measurable apolar area" if not acting_outside else "measurable apolar area")
+        + ". What it does deliver is the charge itself: surface net formal charge "
+        f"{ref_surface_charge} (reference) → "
+        f"{variants['ratified']['surface_net_formal_charge']} ({charge_delta:+d} against the "
+        f"published build's {variants['published_build']['surface_net_formal_charge']}), which is "
+        "the quantity the tie was decided on."
+    )
+
+    out = {
+        "script": Path(__file__).name + " --ratified",
+        "tracker": "00_07 HW.5.IS — CHEM.11",
+        "canon_home": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2",
+        "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "runtime_s": round(time.time() - t_start, 1),
+        "question": "The ordered gene carries L80D; the published table measured the L80S build. "
+                    "Does the substitution the founder chose by charge change the apolar area the "
+                    "compensation removes?",
+        "inputs": {
+            "structure": str(AF3_PDB.relative_to(REPO_ROOT)),
+            "published_build_source": str(OUT_JSON.relative_to(REPO_ROOT)),
+            "published_build_generated_utc": main_cache.get("generated_utc"),
+            "structure_note": "AF3 model_0 of the AGLYCOSYLATED N→Q mutant — the reference state "
+                              "here is that mutant, NOT the glycosylated wild type",
+        },
+        "declared": {
+            "ratified_compensations": list(RATIFIED_GENE_COMPENSATIONS),
+            "ratified_compensations_source": "tools/in_silico/lib/constants.py "
+                                             "RATIFIED_GENE_COMPENSATIONS — a MIRROR of L1 §2, "
+                                             "pinned doc↔code in tests/test_doc_cache_sync.py",
+            "wild_type_residues_in_the_model": wt_seen,
+            "published_build_is_loaded_not_mirrored": True,
+            "positions_differing_between_the_two_builds": differs_at,
+            "patch_radius_A": PATCH_RADIUS_A,
+            "n_reference_replicates": N_REF_REPLICATES,
+        },
+        "variants": variants,
+        "ratified_vs_published_build": comparison,
+        "spread_estimates": {
+            "replicate_floor_A2": noise_floor,
+            "idle_hotspot_spread_A2": idle_spread,
+            "idle_hotspots": idle,
+            "acting_hotspots": acting,
+            "yardstick_A2": yardstick,
+            "yardstick_rule": "the LARGER of the two — the replicate floor sees only the "
+                              "reference path, the idle hotspots see the whole "
+                              "mutate→minimise→measure path with no signal in it",
+            "replicate_floor_under_estimates": floor_understates,
+        },
+        "surface_net_formal_charge_delta": charge_delta,
+        "controls": {
+            "patch_sasa_noise_floor_A2": noise_floor,
+            "patch_sasa_spread_over_replicates_A2": noise,
+            "patch_per_replicate_A2": replicate_patches,
+            "reference_for_every_delta": "replicate 0 of THIS run",
+            # ⛔ Measured on the REFERENCE, not inherited from the neutral variant. The two coincide
+            # here (Ser commits no charge), and a cell taken from a neighbour because its number
+            # happened to match reads exactly like a measurement — which is how it gets quoted.
+            "reference_surface_net_formal_charge": ref_surface_charge,
+            "backbone_frozen_max_CA_drift_A": round(max_drift, 4),
+            "backbone_frozen_expectation": "0.0 — a non-zero value invalidates re-attaching the "
+                                           "cofactor coordinates, and this control would catch it",
+            "why_both_builds_are_re-measured_here": "pdbfixer's addMissingHydrogens is "
+                                                    "non-deterministic, so a number from the main "
+                                                    "cache and a number from this run are two "
+                                                    "samples. Both variants are rebuilt in ONE "
+                                                    "sample so their difference is not a sample "
+                                                    "difference wearing a substitution's name",
+            "what_these_controls_cannot_catch": "the physics. A reproducible, frozen-frame, "
+                                                "low-noise apolar-area proxy can still be the "
+                                                "wrong descriptor for aggregation",
+        },
+        "verdict": verdict,
+        "caveats": [
+            "Absolute Å² here are NOT comparable cell-by-cell with the main cache's table: that "
+            "table is a different protonation sample. What IS comparable is the pair measured in "
+            "this run against each other and against this run's reference.",
+            "A SASA proxy is not an aggregation prediction — no rate, solubility or critical "
+            "concentration is computed. Same ceiling as the main cache.",
+            "The charge column is a formal-charge count at pH 4.5 assigned by OpenMM's rule table, "
+            "not a pKa model, so −1 per introduced carboxylate is an UPPER BOUND on delivered "
+            "charge.",
+            "No MD, no ΔΔG of folding: this says the Asp build removes the same area, not that it "
+            "folds or expresses as well.",
+        ],
+    }
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    RATIFIED_JSON.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+    banner("Verdict")
+    print(f"  {verdict}")
+    banner(f"Saved {RATIFIED_JSON.relative_to(REPO_ROOT)} ({out['runtime_s']:.0f} s)")
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    args = sys.argv[1:]
+    unknown = [a for a in args if a != "--ratified"]
+    if unknown:
+        sys.exit(f"unknown argument(s): {unknown}. The only flag is --ratified")
+    raise SystemExit(run_ratified() if "--ratified" in args else main())

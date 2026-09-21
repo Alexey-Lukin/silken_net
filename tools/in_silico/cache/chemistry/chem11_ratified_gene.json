@@ -1,0 +1,212 @@
+{
+  "script": "69_chem11_aggregation_compensation.py --ratified",
+  "tracker": "00_07 HW.5.IS — CHEM.11",
+  "canon_home": "docs/protocols/ebfc/in_silico/L1_protein_architecture.md §2",
+  "generated_utc": "2026-09-21T07:17:54Z",
+  "runtime_s": 103.0,
+  "question": "The ordered gene carries L80D; the published table measured the L80S build. Does the substitution the founder chose by charge change the apolar area the compensation removes?",
+  "inputs": {
+    "structure": "docs/protocols/ebfc/in_silico/dgrGcGDH_AF3.pdb",
+    "published_build_source": "tools/in_silico/cache/chemistry/chem11_aggregation_compensation.json",
+    "published_build_generated_utc": "2026-09-19T05:54:16Z",
+    "structure_note": "AF3 model_0 of the AGLYCOSYLATED N→Q mutant — the reference state here is that mutant, NOT the glycosylated wild type"
+  },
+  "declared": {
+    "ratified_compensations": [
+      "L80D",
+      "A70S",
+      "I401S"
+    ],
+    "ratified_compensations_source": "tools/in_silico/lib/constants.py RATIFIED_GENE_COMPENSATIONS — a MIRROR of L1 §2, pinned doc↔code in tests/test_doc_cache_sync.py",
+    "wild_type_residues_in_the_model": {
+      "L80D": "LEU80",
+      "A70S": "ALA70",
+      "I401S": "ILE401"
+    },
+    "published_build_is_loaded_not_mirrored": true,
+    "positions_differing_between_the_two_builds": [
+      80
+    ],
+    "patch_radius_A": 7.0,
+    "n_reference_replicates": 4
+  },
+  "variants": {
+    "ratified": {
+      "mutations": [
+        "LEU80ASP",
+        "ALA70SER",
+        "ILE401SER"
+      ],
+      "pdbfixer_spec": [
+        "LEU-80-ASP",
+        "ALA-70-SER",
+        "ILE-401-SER"
+      ],
+      "backbone_CA_drift_A": 0.0,
+      "surface_net_formal_charge": -16,
+      "net_formal_charge_whole_chain": -26,
+      "per_hotspot": {
+        "Gln71": {
+          "patch_ref_A2": 140.0,
+          "patch_variant_A2": 2.9,
+          "delta_patch_apolar_A2": -137.1
+        },
+        "Gln200": {
+          "patch_ref_A2": 56.4,
+          "patch_variant_A2": 56.5,
+          "delta_patch_apolar_A2": 0.1
+        },
+        "Gln258": {
+          "patch_ref_A2": 70.8,
+          "patch_variant_A2": 71.2,
+          "delta_patch_apolar_A2": 0.4
+        },
+        "Gln405": {
+          "patch_ref_A2": 119.8,
+          "patch_variant_A2": 18.9,
+          "delta_patch_apolar_A2": -100.9
+        }
+      }
+    },
+    "published_build": {
+      "mutations": [
+        "LEU80SER",
+        "ALA70SER",
+        "ILE401SER"
+      ],
+      "pdbfixer_spec": [
+        "LEU-80-SER",
+        "ALA-70-SER",
+        "ILE-401-SER"
+      ],
+      "backbone_CA_drift_A": 0.0,
+      "surface_net_formal_charge": -15,
+      "net_formal_charge_whole_chain": -25,
+      "per_hotspot": {
+        "Gln71": {
+          "patch_ref_A2": 140.0,
+          "patch_variant_A2": 2.9,
+          "delta_patch_apolar_A2": -137.1
+        },
+        "Gln200": {
+          "patch_ref_A2": 56.4,
+          "patch_variant_A2": 54.0,
+          "delta_patch_apolar_A2": -2.4
+        },
+        "Gln258": {
+          "patch_ref_A2": 70.8,
+          "patch_variant_A2": 67.9,
+          "delta_patch_apolar_A2": -2.9
+        },
+        "Gln405": {
+          "patch_ref_A2": 119.8,
+          "patch_variant_A2": 18.9,
+          "delta_patch_apolar_A2": -100.9
+        }
+      }
+    }
+  },
+  "ratified_vs_published_build": {
+    "Gln71": {
+      "delta_ratified_A2": -137.1,
+      "delta_published_build_A2": -137.1,
+      "ratified_minus_published_A2": 0.0,
+      "inside_this_run_noise_floor": true,
+      "mutated_positions_inside_the_patch": [
+        70,
+        80
+      ],
+      "measures": "the substitution"
+    },
+    "Gln200": {
+      "delta_ratified_A2": 0.1,
+      "delta_published_build_A2": -2.4,
+      "ratified_minus_published_A2": 2.5,
+      "inside_this_run_noise_floor": true,
+      "mutated_positions_inside_the_patch": [],
+      "measures": "the build pipeline — no mutated position lies inside this patch"
+    },
+    "Gln258": {
+      "delta_ratified_A2": 0.4,
+      "delta_published_build_A2": -2.9,
+      "ratified_minus_published_A2": 3.3,
+      "inside_this_run_noise_floor": false,
+      "mutated_positions_inside_the_patch": [],
+      "measures": "the build pipeline — no mutated position lies inside this patch"
+    },
+    "Gln405": {
+      "delta_ratified_A2": -100.9,
+      "delta_published_build_A2": -100.9,
+      "ratified_minus_published_A2": 0.0,
+      "inside_this_run_noise_floor": true,
+      "mutated_positions_inside_the_patch": [
+        401
+      ],
+      "measures": "the substitution"
+    }
+  },
+  "spread_estimates": {
+    "replicate_floor_A2": 2.52,
+    "idle_hotspot_spread_A2": 3.3,
+    "idle_hotspots": [
+      "Gln200",
+      "Gln258"
+    ],
+    "acting_hotspots": [
+      "Gln71",
+      "Gln405"
+    ],
+    "yardstick_A2": 3.3,
+    "yardstick_rule": "the LARGER of the two — the replicate floor sees only the reference path, the idle hotspots see the whole mutate→minimise→measure path with no signal in it",
+    "replicate_floor_under_estimates": true
+  },
+  "surface_net_formal_charge_delta": -1,
+  "controls": {
+    "patch_sasa_noise_floor_A2": 2.52,
+    "patch_sasa_spread_over_replicates_A2": {
+      "Gln71": 0.63,
+      "Gln200": 2.39,
+      "Gln258": 2.52,
+      "Gln405": 0.13
+    },
+    "patch_per_replicate_A2": {
+      "Gln71": [
+        140.01,
+        140.01,
+        139.51,
+        140.14
+      ],
+      "Gln200": [
+        56.36,
+        53.97,
+        54.85,
+        54.59
+      ],
+      "Gln258": [
+        70.82,
+        68.68,
+        71.2,
+        68.81
+      ],
+      "Gln405": [
+        119.76,
+        119.76,
+        119.63,
+        119.63
+      ]
+    },
+    "reference_for_every_delta": "replicate 0 of THIS run",
+    "reference_surface_net_formal_charge": -15,
+    "backbone_frozen_max_CA_drift_A": 0.0,
+    "backbone_frozen_expectation": "0.0 — a non-zero value invalidates re-attaching the cofactor coordinates, and this control would catch it",
+    "why_both_builds_are_re-measured_here": "pdbfixer's addMissingHydrogens is non-deterministic, so a number from the main cache and a number from this run are two samples. Both variants are rebuilt in ONE sample so their difference is not a sample difference wearing a substitution's name",
+    "what_these_controls_cannot_catch": "the physics. A reproducible, frozen-frame, low-noise apolar-area proxy can still be the wrong descriptor for aggregation"
+  },
+  "verdict": "The ratified gene (L80D · A70S · I401S) was built as one sequence and measured against this run's own reference. At the hotspots a substitution actually acts on it takes Gln71 140.0 → 2.9 Å²; Gln405 119.8 → 18.9 Å². The two builds differ at position(s) [80], and a hotspot answers the question only if a mutated position lies inside its patch: true at Gln71, Gln405, false at Gln200, Gln258. The yardstick is 3.3 Å² — the larger of the 2.52 Å² replicate floor and the 3.3 Å² spread measured where NO substitution acts, and the idle spread EXCEEDS the replicate floor, so four replicates under-estimate this pipeline's own scatter. Against that yardstick the ratified-minus-published difference at Gln71, Gln405 is inside it, so the substitution the founder chose by charge costs no measurable apolar area. What it does deliver is the charge itself: surface net formal charge -15 (reference) → -16 (-1 against the published build's -15), which is the quantity the tie was decided on.",
+  "caveats": [
+    "Absolute Å² here are NOT comparable cell-by-cell with the main cache's table: that table is a different protonation sample. What IS comparable is the pair measured in this run against each other and against this run's reference.",
+    "A SASA proxy is not an aggregation prediction — no rate, solubility or critical concentration is computed. Same ceiling as the main cache.",
+    "The charge column is a formal-charge count at pH 4.5 assigned by OpenMM's rule table, not a pKa model, so −1 per introduced carboxylate is an UPPER BOUND on delivered charge.",
+    "No MD, no ΔΔG of folding: this says the Asp build removes the same area, not that it folds or expresses as well."
+  ]
+}

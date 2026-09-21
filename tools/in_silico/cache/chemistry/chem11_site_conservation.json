@@ -1,6 +1,6 @@
 {
   "script": "70_chem11_site_conservation.py",
-  "generated_utc": "2026-09-18T07:57:20Z",
+  "generated_utc": "2026-09-21T06:54:09Z",
   "runtime_s": 10.1,
   "question": "Is position 401 of dgrGcGDH conserved? (the hold that gated I401S in the ordered gene)",
   "query": {
@@ -13,7 +13,8 @@
       "401": "I",
       "405": "N",
       "537": "H",
-      "580": "H"
+      "580": "H",
+      "201": "A"
     },
     "numbering_controls": {
       "70": "A",
@@ -21,7 +22,8 @@
       "401": "I",
       "405": "N",
       "537": "H",
-      "580": "H"
+      "580": "H",
+      "201": "A"
     }
   },
   "selection": {
@@ -615,6 +617,89 @@
           "Q": 1,
           "R": 1,
           "Y": 1
+        }
+      }
+    },
+    "201": {
+      "query_residue": "A",
+      "role": "refused_candidate",
+      "deduped": {
+        "n": 332,
+        "identical": 73,
+        "identical_pct": 22.0,
+        "ser": 29,
+        "ser_pct": 8.7,
+        "gap_or_uncovered": 7,
+        "gap_or_uncovered_pct": 2.1,
+        "distribution": {
+          "A": 73,
+          "E": 63,
+          "Q": 43,
+          "S": 29,
+          "R": 29,
+          "T": 25,
+          "D": 18,
+          "K": 18,
+          "G": 10,
+          "-": 7,
+          "N": 6,
+          "L": 3,
+          "I": 2,
+          "M": 2,
+          "F": 2,
+          "V": 1,
+          "P": 1
+        }
+      },
+      "anchored": {
+        "n": 74,
+        "identical": 22,
+        "identical_pct": 29.7,
+        "ser": 8,
+        "ser_pct": 10.8,
+        "gap_or_uncovered": 0,
+        "gap_or_uncovered_pct": 0.0,
+        "distribution": {
+          "A": 22,
+          "E": 11,
+          "T": 11,
+          "S": 8,
+          "Q": 8,
+          "D": 5,
+          "G": 5,
+          "N": 1,
+          "K": 1,
+          "I": 1,
+          "R": 1
+        }
+      },
+      "all_quality_filtered": {
+        "n": 568,
+        "identical": 124,
+        "identical_pct": 21.8,
+        "ser": 67,
+        "ser_pct": 11.8,
+        "gap_or_uncovered": 7,
+        "gap_or_uncovered_pct": 1.2,
+        "distribution": {
+          "A": 124,
+          "Q": 93,
+          "E": 84,
+          "S": 67,
+          "R": 62,
+          "T": 42,
+          "D": 32,
+          "K": 24,
+          "G": 10,
+          "N": 9,
+          "-": 7,
+          "V": 3,
+          "L": 3,
+          "I": 2,
+          "M": 2,
+          "F": 2,
+          "H": 1,
+          "P": 1
         }
       }
     }
@@ -1690,7 +1775,11 @@
     "positive_control_positions": [
       537,
       580
-    ]
+    ],
+    "refused_candidate_positions": [
+      201
+    ],
+    "refused_candidate_scope": "positions script 69 found admissible on apolar area and refused on a declared threshold. Reported so the refusal is judged on the SAME axis that lifted the I401S hold; this script says how often the residue varies, never what the swap would do to folding, activity or yield"
   },
   "verdict": "Position 401 (I) is VARIABLE in this set: the query residue occurs in 3.6 % of 332 de-duplicated homologs (98 genera) and Ser in 15.7 %; in the anchored subset (n=103) it is 6.8 % vs 39.8 % Ser. The catalytic control His537 reads 98.8 % on the same instrument (100.0 % anchored, Ser 0.0 %), so the instrument separates an invariant position from a variable one. The external MSA (Clustal Omega, 84 sequences) reads the same column as 10.7 % Ser / 3.6 % I with 61.9 % gaps: the direction agrees, the magnitudes do not, and the gap fraction is why — per sequence the two aligners agree on 33.3 % of the shared accessions, rising to 71.8 % once the cells where the external alignment places NO residue are excluded (45 of 84 cells). The one external PAIRWISE alignment in the tree (Colletotrichum incanum, EMBOSS Needle) reads S and agrees with ours.",
   "caveats": [

@@ -1257,6 +1257,7 @@ _CONS_ROWS = (
     ("401", r"\*\*401\*\* \(compensates Gln405\)"),
     ("70", r"70 \(ratified `A70S`\)"),
     ("80", r"80 \(ratified `L80D`\)"),
+    ("201", r"\*\*201\*\* — refused candidate \(Gln200's only lever\)"),
     ("537", r"\*\*537 — positive control\*\*"),
     ("580", r"580 — second control"),
 )
@@ -1283,6 +1284,216 @@ CHECKS += [
         ("Ser", "ser_pct", r"[\d.]+ % ⊥ ", ""),
     )
 ]
+
+
+# ── CHEM.11: the 201 reading in PROSE, not only in the table ──
+# ⛔ Separate rows on purpose. The table and the paragraph are two copies, written for two questions,
+# and the swipe discipline is that a corrected table reads as a corrected file while the sentence
+# beside it keeps the old number. This paragraph is the ARGUMENT of an open founder verdict, so each
+# of its numbers is pinned to the cell it came from.
+_C201 = lambda d, scope, key: d["positions"]["201"][scope][key]  # noqa: E731
+CHECKS += [
+    ("CHEM.11 conservation prose · Ala at 201 (deduped) → conservation",
+     SUMMARY, rf"\*\*Ala {N} % ⊥ Ser [\d.]+ %\*\*",
+     CONSERVATION, lambda d: _C201(d, "deduped", "identical_pct"), 0.06),
+    ("CHEM.11 conservation prose · Ser at 201 (deduped) → conservation",
+     SUMMARY, rf"\*\*Ala [\d.]+ % ⊥ Ser {N} %\*\*",
+     CONSERVATION, lambda d: _C201(d, "deduped", "ser_pct"), 0.06),
+    ("CHEM.11 conservation prose · the denominator behind those two → conservation",
+     SUMMARY, rf"same {N} homologs",
+     CONSERVATION, lambda d: _C201(d, "deduped", "n"), 0.5),
+    ("CHEM.11 conservation prose · anchored subset size at 201 → conservation",
+     SUMMARY, rf"anchored n = {N}:",
+     CONSERVATION, lambda d: _C201(d, "anchored", "n"), 0.5),
+    ("CHEM.11 conservation prose · anchored Ala at 201 → conservation",
+     SUMMARY, rf"anchored n = [\d.]+: {N} % ⊥",
+     CONSERVATION, lambda d: _C201(d, "anchored", "identical_pct"), 0.06),
+    ("CHEM.11 conservation prose · anchored Ser at 201 → conservation",
+     SUMMARY, rf"anchored n = [\d.]+: [\d.]+ % ⊥ {N} %\)",
+     CONSERVATION, lambda d: _C201(d, "anchored", "ser_pct"), 0.06),
+    ("CHEM.11 conservation prose · the ratified A70S comparison → conservation (the calibration)",
+     SUMMARY, rf"\(\s*{N} % ⊥ [\d.]+ %\) but nowhere near",
+     CONSERVATION, lambda d: d["positions"]["70"]["deduped"]["identical_pct"], 0.06),
+    ("CHEM.11 conservation prose · the ratified A70S Ser column → conservation",
+     SUMMARY, rf"\(\s*[\d.]+ % ⊥ {N} %\) but nowhere near",
+     CONSERVATION, lambda d: d["positions"]["70"]["deduped"]["ser_pct"], 0.06),
+    ("CHEM.11 conservation prose · His537 control quoted beside 201 → conservation",
+     SUMMARY, rf"His537 control's {N} %",
+     CONSERVATION, lambda d: d["positions"]["537"]["deduped"]["identical_pct"], 0.06),
+]
+
+
+# ── CHEM.11: the ORDERED gene, measured as one sequence (script 69 --ratified) ──
+# ⛔ Tight tolerances here, NOT the noise floor: doc and cache come from the SAME run, so every
+# number in the SUMMARY table is a verbatim copy. Letting these drift by the floor would let the
+# table say something the run did not. The floor itself is pinned as a number, because the whole
+# reading ("every ΔΔ is inside it") is an inequality against it.
+RATIFIED = "chemistry/chem11_ratified_gene.json"
+_RATIFIED_ROWS = ("Gln71", "Gln405", "Gln200", "Gln258")
+
+
+# The ΔΔ row prints an explicit sign on BOTH directions (`+0.0`, `−0.1`), which `N` does not allow:
+# the sign is the message there, so the class is widened rather than the doc flattened.
+NS = rf"([+{_DASHES}\-]?[\d.]+)"
+
+
+def _rat_cell(row_label: str, col: int) -> str:
+    """The col-th numeric cell of a named row of the ratified-gene table (0-based)."""
+    return rf"\| {re.escape(row_label)} \|" + r"[^|]*\|" * col + rf" \*?\*?{NS}\*?\*? \|"
+
+
+CHECKS += [
+    (f"CHEM.11 ratified table · reference {h} → ratified cache (this run's own reference)",
+     SUMMARY, _rat_cell("reference (this run)", i),
+     RATIFIED, lambda d, h=h: d["variants"]["ratified"]["per_hotspot"][h]["patch_ref_A2"], 0.06)
+    for i, h in enumerate(_RATIFIED_ROWS)
+] + [
+    (f"CHEM.11 ratified table · ORDERED gene {h} → ratified cache (the sequence the CRO receives)",
+     SUMMARY, _rat_cell("**ratified `L80D · A70S · I401S`**", i),
+     RATIFIED, lambda d, h=h: d["variants"]["ratified"]["per_hotspot"][h]["patch_variant_A2"], 0.06)
+    for i, h in enumerate(_RATIFIED_ROWS)
+] + [
+    (f"CHEM.11 ratified table · published build {h} → ratified cache (the Ser twin, same sample)",
+     SUMMARY, _rat_cell("published build `L80S · A70S · I401S`", i),
+     RATIFIED, lambda d, h=h: d["variants"]["published_build"]["per_hotspot"][h]["patch_variant_A2"],
+     0.06)
+    for i, h in enumerate(_RATIFIED_ROWS)
+] + [
+    (f"CHEM.11 ratified table · ΔΔ {h} → ratified cache (the row that carries the verdict)",
+     SUMMARY, _rat_cell("ratified − published (ΔΔ)", i),
+     RATIFIED, lambda d, h=h: d["ratified_vs_published_build"][h]["ratified_minus_published_A2"],
+     0.06)
+    for i, h in enumerate(_RATIFIED_ROWS)
+] + [
+    (
+        "CHEM.11 ratified · four-replicate floor → ratified cache (the WEAKER of two spread estimates)",
+        SUMMARY, rf"this run's \*\*{N} Å²\*\* four-replicate floor",
+        RATIFIED, lambda d: d["controls"]["patch_sasa_noise_floor_A2"], 0.005,
+    ),
+    (
+        "CHEM.11 ratified · idle-hotspot spread → ratified cache (the yardstick the verdict uses)",
+        SUMMARY, rf"idle pair spreads by up to \*\*{N} Å²\*\*",
+        RATIFIED, lambda d: d["spread_estimates"]["idle_hotspot_spread_A2"], 0.06,
+    ),
+    ("CHEM.11 ratified table · reference surface charge → ratified cache (measured ON the "
+     "reference, not inherited from the neutral variant whose number coincides)",
+     SUMMARY, _rat_cell("reference (this run)", 4),
+     RATIFIED, lambda d: d["controls"]["reference_surface_net_formal_charge"], 0.5),
+    (
+        "CHEM.11 ratified · surface charge BEFORE the tie's substitution → ratified cache",
+        SUMMARY, rf"charge itself \({N} →",
+        RATIFIED, lambda d: d["variants"]["published_build"]["surface_net_formal_charge"], 0.5,
+    ),
+    (
+        "CHEM.11 ratified · surface charge of the ORDERED gene → ratified cache (the tie's own axis)",
+        SUMMARY, rf"charge itself \([^)]*→ {N}\)",
+        RATIFIED, lambda d: d["variants"]["ratified"]["surface_net_formal_charge"], 0.5,
+    ),
+    # L1 §2 is the sequence OWNER, so the two headline pairs are pinned there too — a reader who
+    # opens the owner and not the SUMMARY must see the same run.
+    (
+        "CHEM.11 ratified · L1 §2 Gln71 reference → ratified cache",
+        L1, rf"the Asp build takes \*\*Gln71 {N} →",
+        RATIFIED, lambda d: d["variants"]["ratified"]["per_hotspot"]["Gln71"]["patch_ref_A2"], 0.06,
+    ),
+    (
+        "CHEM.11 ratified · L1 §2 Gln71 result → ratified cache",
+        L1, rf"the Asp build takes \*\*Gln71 [\d.]+ → {N} Å²\*\*",
+        RATIFIED, lambda d: d["variants"]["ratified"]["per_hotspot"]["Gln71"]["patch_variant_A2"],
+        0.06,
+    ),
+    (
+        "CHEM.11 ratified · L1 §2 Gln405 reference → ratified cache",
+        L1, rf"\*\*Gln405 {N} → [\d.]+ Å²\*\*",
+        RATIFIED, lambda d: d["variants"]["ratified"]["per_hotspot"]["Gln405"]["patch_ref_A2"], 0.06,
+    ),
+    (
+        "CHEM.11 ratified · L1 §2 Gln405 result → ratified cache",
+        L1, rf"\*\*Gln405 [\d.]+ → {N} Å²\*\*",
+        RATIFIED, lambda d: d["variants"]["ratified"]["per_hotspot"]["Gln405"]["patch_variant_A2"],
+        0.06,
+    ),
+    (
+        "CHEM.11 ratified · L1 §2 noise floor → ratified cache",
+        L1, rf"that run's \*\*{N} Å²\*\*\s+four-replicate floor",
+        RATIFIED, lambda d: d["controls"]["patch_sasa_noise_floor_A2"], 0.005,
+    ),
+    (
+        "CHEM.11 ratified · L1 §2 idle-hotspot spread → ratified cache",
+        L1, rf"idle pair spreads by up to\s+\*\*{N} Å²\*\*",
+        RATIFIED, lambda d: d["spread_estimates"]["idle_hotspot_spread_A2"], 0.06,
+    ),
+]
+
+
+# ── doc↔code: the ratified gene is MIRRORED into lib/constants.py, and a mirror needs a pin ──
+
+RFQ = "docs/protocols/procurement/ebfc_chem_rfq.md"
+CONSTANTS = "tools/in_silico/lib/constants.py"
+# Each entry: (doc, regex capturing the declared list, the separator inside it).
+_RATIFIED_GENE_DECLARATIONS = (
+    (L1, r"The gene ordered from the CRO carries `11 N→Q \+ ([^`]+)`", " + "),
+    (RFQ, r"600 aa · 11 N→Q · ([^*]+)\*\*", " · "),
+)
+
+
+MIRROR_SYMBOL = "RATIFIED_GENE_COMPENSATIONS"
+
+
+def _mirror_in_code() -> tuple[str, ...]:
+    """`RATIFIED_GENE_COMPENSATIONS` read from the SOURCE with `ast`, never imported.
+
+    ⛔ The obvious implementation — `spec_from_file_location` + `exec_module` — was written first
+    and MEASURED WRONG on 2026-09-21. CPython validates a `__pycache__` entry against the pair
+    (source mtime **in whole seconds**, source size). Flipping one letter of a substitution code
+    (`L80D` → `L80E`) changes neither, so a mutate-test-restore cycle inside one second handed the
+    pin the MUTATED bytecode while the source on disk was correct — the gate reported drift that
+    did not exist. The mirror direction is the dangerous one: the same collision can serve a STALE
+    value while the source has really drifted, and the pin would stay green.
+    `ast` executes nothing and consults no cache, so the file on disk is the only input.
+    CAN catch: a changed membership or letter in the mirror.
+    CANNOT catch: a mirror that stops being a literal (computed, imported, or built at runtime) —
+    that raises here by name rather than passing quietly.
+    """
+    import ast
+    tree = ast.parse((REPO / CONSTANTS).read_text(encoding="utf-8"), filename=CONSTANTS)
+    for node in tree.body:
+        targets = getattr(node, "targets", [])
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == MIRROR_SYMBOL for t in targets):
+            return tuple(ast.literal_eval(node.value))
+    raise AssertionError(
+        f"{CONSTANTS} has no module-level literal `{MIRROR_SYMBOL}` — either it was renamed or it "
+        f"stopped being a literal; this pin reads the source, so it cannot follow a computed value.")
+
+
+@pytest.mark.parametrize("doc_rel,pattern,sep", _RATIFIED_GENE_DECLARATIONS,
+                         ids=[d[0].rsplit("/", 1)[-1] for d in _RATIFIED_GENE_DECLARATIONS])
+def test_ratified_gene_mirrors_canon(doc_rel, pattern, sep):
+    """The ordered gene's compensations must read the same in canon and in the code that builds it.
+
+    WHY a pin and not a habit: `69 --ratified` builds the sequence the CRO receives from a MIRROR
+    (`lib/constants.py RATIFIED_GENE_COMPENSATIONS`). If canon ever takes a FOURTH compensation —
+    the live candidate is `Ala201 → Ser`, held out only by our declared burial ceiling — the mirror
+    would keep building the old three and its cache would still say «the ratified gene», measuring
+    a sequence nobody ordered. Both directions fail here: a code-only change and a canon-only one.
+
+    CAN catch: a set that differs in membership or in a substitution letter, in either document.
+    CANNOT catch: a canon edit that REWORDS the declaration out of the anchor — that shows up as
+    «anchor not found», which is the same red and the same fix (re-read both, then re-anchor).
+    CANNOT catch: whether the sequence is right. That is a founder verdict, home L1 §2.
+    """
+    m = re.search(pattern, doc(doc_rel))
+    assert m, (
+        f"{doc_rel}: the ratified-gene declaration did not match {pattern!r}. Either it was "
+        f"reworded (re-anchor this pin) or it was removed (then {CONSTANTS} mirrors nothing).")
+    declared = tuple(x.strip().strip("`") for x in m.group(1).split(sep))
+    mirror = _mirror_in_code()
+    assert set(declared) == set(mirror), (
+        f"RATIFIED GENE DRIFT: {doc_rel} declares {declared}, {CONSTANTS} mirrors {mirror}. "
+        f"Canon is the home (L1 §2) — fix the mirror, then re-run "
+        f"`69_chem11_aggregation_compensation.py --ratified`, because its cache measures the "
+        f"sequence the mirror names.")
 
 
 @pytest.mark.parametrize("label,doc_rel,pattern,cache_rel,resolver,tol",
@@ -1346,8 +1557,19 @@ def _quoted_list_after(text: str, key_regex: str) -> list[str]:
     return []
 
 
+def _doc_targets() -> set[str]:
+    """Every doc THIS FILE reads — CHECKS rows plus the doc↔code pins.
+
+    ⛔ Not `{row[1] for row in CHECKS}`: on 2026-09-21 this file grew a pin that reads a doc no
+    CHECKS row names (`ebfc_chem_rfq.md`, the order sheet), so a CHECKS-only perimeter would have
+    declared full coverage while that doc could drift from the code mirror unwatched. The set is
+    taken from every source of doc-reads in the file, and a new source belongs here the same day.
+    """
+    return {row[1] for row in CHECKS} | {d[0] for d in _RATIFIED_GENE_DECLARATIONS}
+
+
 def test_every_doc_target_triggers_this_guard():
-    """Every doc a CHECKS row reads must sit inside BOTH path lists of the workflow that runs it.
+    """Every doc this guard reads must sit inside BOTH path lists of the workflow that runs it.
 
     This file runs in exactly one place — the `cache_doc_sync` job of `in_silico_smoke.yml` — and
     that job is gated twice: the push trigger's `paths:` and the `changes` job's paths-filter. A
@@ -1368,7 +1590,7 @@ def test_every_doc_target_triggers_this_guard():
         assert patterns, f"read no {name} list from {WORKFLOW} — the parser is wrong, not the tree"
     missing = [
         f"{target}  ∉  {name}"
-        for target in sorted({row[1] for row in CHECKS})
+        for target in sorted(_doc_targets())
         for name, patterns in lists.items()
         if not any(fnmatch.fnmatchcase(target, p) for p in patterns)
     ]
