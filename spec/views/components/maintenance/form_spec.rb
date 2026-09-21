@@ -225,6 +225,28 @@ RSpec.describe Maintenance::Form do
       expect(html).to include('role="alert"')
     end
 
+    # 🔴 [I18N.1] Носій осі, що лишився БЕЗ ДОМУ, коли зняли форму налаштувань
+    # [ARCH.60]: імʼя поля у `full_messages` мусить приходити з
+    # `activerecord.attributes.*`, а не з `String#humanize` — інакше воно
+    # лишається англійським у ВСІХ локалях, хоч би як був перекладений сам текст
+    # помилки, і користувач бачить наполовину українське речення з англійським
+    # підметом.
+    # ⚠️ **Пін мусить стояти на атрибуті, що МАЄ локалізоване імʼя, інакше він
+    # вакуумний за побудовою** — і саме тут успадкований рецепт помилявся:
+    # пункт називав кандидатами форми `tree_families`/`firmwares`, а в
+    # `config/locales/attributes/*.yml` записана єдина модель — ця. На `:base`
+    # імені немає взагалі, а модель без запису віддасть те саме слово обома
+    # шляхами, тож приклад був би зеленим і на зламаному резолвері.
+    it "takes the attribute name in full_messages from the locale, not from humanize" do
+      rec = build(:maintenance_record)
+      rec.errors.add(:maintainable, :blank)
+
+      uk_html = I18n.with_locale(:uk) { render_component(record: rec) }
+
+      expect(uk_html).to include("Ціль")
+      expect(uk_html).not_to include("Maintainable")
+    end
+
     def html_with_errors(rec)
       rec.errors.add(:notes, "can't be blank") if rec.errors[:notes].empty?
       render_component(record: rec)
