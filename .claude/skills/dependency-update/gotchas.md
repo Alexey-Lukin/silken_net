@@ -293,6 +293,18 @@
   Push → CI does the rest; judge the run by `gh run view <id> --json conclusion`, never by `gh run watch
   --exit-status` (it lies — `deploy` §Gotchas #6). mruby/CMSIS-FFT bumps risk the ARM↔x86 bit-parity /
   log-mel parity — keep `evm_version`/float flags pinned, lean on the parity gates.
+  🔴 **І дзеркальна половина, куплена червоним `main` 2026-09-22: локально ганяється БІЛЬШЕ, ніж ти
+  памʼятаєш, і все одно МЕНШЕ, ніж ганяє гейт.** Бамп `forge` пройшов `forge test` (усі інваріанти
+  PASS) і `forge fmt --check` — дві осі з трьох, і це читалось як повна валідація. Третьою був
+  **gas snapshot check**, а нова мінорна версія рахує газ інакше: на НЕЗМІННОМУ коді снапшот
+  розʼїхався від +23% до +178% і поклав required-гейт. 🔑 **Рефлекс перед бампом будь-якого
+  інструмента, що стоїть за required-чеком: периметр валідації бери з КРОКІВ його workflow
+  (`grep -n "run:" <workflow>`), а не з памʼяті про команду** — «я прогнав інструмент» і «я прогнав
+  те, що ганяє гейт» є різними твердженнями, і друге вужче рівно на ті кроки, яких ти не назвав.
+  ⊕ Сиблінг того ж проходу, протилежного знаку: та сама версія агрегувала інваріант-сюїту в ОДИН
+  прогін, тож лічба тестів упала 242→237 при незмінному покритті — **зміна ОДИНИЦІ лічби виглядає
+  як втрата, а зміна ОБЛІКУ газу виглядає як регресія; обидві судяться перелічуванням ЧЛЕНІВ
+  (які саме інваріанти PASS, які саме рядки снапшоту), ніколи підсумком.**
 39. **Terraform provider majors are big breaking migrations — read the per-major upgrade guide, never blind-bump** (e.g. `google` 5→7 = renamed/removed
   args across Cloud SQL/GCE/VPC/IAM). Read the per-major upgrade guide; bump the `~>` constraint,
   refresh the lock (below), then `terraform plan` against real state — never a blind sweep bump.
