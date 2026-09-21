@@ -61,8 +61,12 @@ Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were obtained from
 clash-free cluster geometries (a bridging imidazole that had collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). With reorganisation energies
 computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck** (Fig 4a; Table 3), and
-its rate sits at **~enzymatic turnover** — a margin of order ×1–30, not the orders of magnitude an
-earlier (geometry- and λ-) artefact had suggested.
+its rate sits at **~enzymatic turnover** — a margin of order ×1–30 *at zero driving force*, not the orders
+of magnitude an earlier (geometry- and λ-) artefact had suggested. That qualifier is load-bearing: the
+Marcus rate is exponentially sensitive to ΔG as well as to λ, and the computed **0.183 eV** Cu–Co
+site-energy gap (below) turns the literature-λ figure into a bracket of **×0.032 to ×40** across the gap's
+sign. On the adverse reading the cathode is therefore not borderline but rate-limiting, and we quote the
+adverse end throughout.
 
 A two-state FO-DFT diabatisation (Mulliken–Hush localisation of the metal-d frontier pair) confirms the
 bottleneck is robust to the coupling method, not an artefact of the crude state-energy ΔSCF: it returns
@@ -75,7 +79,9 @@ This is a finding, not a failure, and we present it with its sensitivity. The ra
 exponentially on λ: at the literature first-row values the Cu–Co hop is borderline (≈ ×1.4 over
 turnover, Fig 4b); B3LYP over-estimates the first-row λ (the Co couple by ≈ 2×, a spin-crossover artefact),
 which would push it lower; and a low-λ metal removes the limitation entirely — replacing Co by **Ru**
-(computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin from the reorganisation energy alone. (We also
+(computed λ 0.78 eV vs Co ≈ 3 eV) restores a ~×31 margin from the reorganisation energy alone — a
+zero-driving-force figure, because the minimal cluster yields no physical Cu–Ru diabatic pair and hence
+no site-energy gap for that node. (We also
 probed whether Ru's diffuse 4d orbitals additionally raise the coupling: at the fixed cluster geometry
 both a crude ΔSCF and an FO-DFT diabatisation returned a large t_ij but failed their physicality check —
 the frontier orbitals localise entirely on Ru with no copper partner, so the minimal cluster cannot form
@@ -195,10 +201,13 @@ cycling).
 electronic couplings |t_ij| (log scale) from charge-localised ΔSCF on clash-free cluster geometries; the
 Cu–Co hop is the bottleneck, confirmed by a two-state FO-DFT Mulliken–Hush diabatisation (0.0055 eV,
 ~4× the crude ΔSCF value). *(b)* Marcus k_DET margin of the Cu–Co bottleneck relative to enzymatic
-turnover (10³ s⁻¹, dashed) across reorganisation-energy scenarios; at literature first-row λ the margin is
-borderline (×1.4). The FO-DFT range (×0.6–732 across the ΔG sign, ×25 at ΔG = 0) brackets the rigorous
-result; the earlier ×10⁵ margin (broken geometry + assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A
-low-λ metal (Co→Ru, computed λ 0.78 eV) restores a ~×31 margin.
+turnover (10³ s⁻¹, dashed) across reorganisation-energy scenarios **at ΔG = 0**; on that basis the
+literature first-row λ gives ×1.4. Carrying the computed site-energy gap turns each scenario into a bracket
+over the gap's sign — ×0.032 to ×40 at literature λ — and the FO-DFT range (×0.6–732 across the ΔG sign,
+×25 at ΔG = 0) brackets the rigorous-coupling result the same way; the earlier ×10⁵ margin (broken geometry
++ assumed λ = 0.7 eV — "canon λ=0.7") is withdrawn. A low-λ metal (Co→Ru, computed λ 0.78 eV) restores a
+~×31 margin — a ΔG = 0 figure, since the minimal cluster does not yield a physical Cu–Ru diabatic pair and
+hence no site-energy gap for that node (§3.4).
 
 ![Figure 5](figures/fig5_solvation_pcm.png)
 

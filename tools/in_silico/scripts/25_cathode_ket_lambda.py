@@ -69,6 +69,33 @@ def main() -> int:
         print(f"  {h:8s} t_ij = {t:.5f} eV")
 
     # Each scenario maps a hop → its two-sphere λ. The Ru-swap replaces the Co node.
+    # ── driving force: what is MEASURED, what is a default wearing a measurement's clothes ──
+    # `marcus_rate`'s dG defaults to 0. Until 2026-09-21 every scenario row below took that
+    # default while the FO-DFT block at the bottom of this same script already knew a computed
+    # Cu-Co site-energy gap — so the headline margins quoted by canon, SUMMARY, PIPELINE_STATUS,
+    # L3 and the paper were ΔG = 0 READINGS, not measurements. They are now brackets.
+    fo = json.loads((CACHE / "fodft_coupling.json").read_text())
+    ru_fo = json.loads((CACHE / "cu_ru_fodft.json").read_text())
+    # MAGNITUDE only. The Mulliken-Hush diabatisation returns |ΔE| between two diabatic states;
+    # which of them is the donor on the cathode's electron path is NOT fixed by that calculation,
+    # so the sign stays unmeasured and both ends are carried (§When Modifying #11).
+    GAP_EV = {"Cu-Co": float(fo["site_energy_gap_eV"])}
+    GAP_SOURCE = {"Cu-Co": "fodft_coupling.json (24b) · site_energy_gap_eV"}
+    # ⛔ The Ru node's gap is NOT unmeasured-yet, it is unmeasurable at this cluster level: 24d
+    # returns a number AND self-flags it non-physical (both diabatic orbitals sit on Ru, pop(Cu)=0)
+    # — the same failure that disqualified its t_ij, so it disqualifies its gap too.
+    RU_GAP_REFUSED = {
+        "pair": ru_fo["pair"], "gap_eV_reported": float(ru_fo["site_energy_gap_eV"]),
+        "usable": False,
+        "reason": "24d self-flags localised=False / physically_reasonable=False — the minimal "
+                  "cluster cannot form a clean Cu↔Ru diabatic pair, so its site-energy gap is not "
+                  "a measurement any more than its t_ij was",
+    }
+
+    # Each scenario maps a hop → its two-sphere λ. The Ru-swap replaces the Co node.
+    # ⚠️ The Ru-swap REUSES the "Cu-Co" / "Co-Ce" keys for what are physically the Cu-Ru / Ru-Ce
+    # nodes, so `node_identity` says what each slot really is — without it the Cu-Co gap would be
+    # applied to a pair it was never measured on.
     scenarios = {
         "canon λ=0.7 (old assumption)": {
             "Cu-Co": 0.7, "Co-Ce": 0.7, "Ce-C": 0.7},
@@ -85,27 +112,85 @@ def main() -> int:
             "Co-Ce": _two_sphere(lam_c["Ru"], lam_c["Ce"]),   # Ru–Ce node
             "Ce-C": lam_c["Ce"]},
     }
+    NODE_IDENTITY = {
+        "Ru-swap (Co→Ru, computed)": {"Cu-Co": "Cu-Ru", "Co-Ce": "Ru-Ce", "Ce-C": "Ce-C"},
+    }
+
+    def _dg(scenario: str, branch: str) -> dict[str, float]:
+        """ΔG per hop for one branch. A hop whose node has no USABLE measured gap gets 0.0 —
+        and the caller records that as an assumption, never as a measurement."""
+        ident = NODE_IDENTITY.get(scenario, {})
+        out_dg = {}
+        for hop in tij:
+            node = ident.get(hop, hop)
+            mag = GAP_EV.get(node)
+            out_dg[hop] = 0.0 if (mag is None or branch == "zero") else (
+                +mag if branch == "adverse" else -mag)
+        return out_dg
+
+    def _measured_hops(scenario: str) -> list[str]:
+        ident = NODE_IDENTITY.get(scenario, {})
+        return [h for h in tij if ident.get(h, h) in GAP_EV]
+
+    BRANCHES = ("adverse (+gap, uphill)", "dG=0 (ASSUMPTION)", "favourable (−gap, downhill)")
+    _BRANCH_KEY = {BRANCHES[0]: "adverse", BRANCHES[1]: "zero", BRANCHES[2]: "favourable"}
 
     out = {"t_ij_eV": tij, "lambda_computed_eV": lam_c,
-           "lambda_lit_eV": LAMBDA_LIT, "turnover_s": TURNOVER_S, "scenarios": {}}
-    print(f"\n  {'scenario':32s} {'k(Cu-Co)':>10} {'k(Co-Ce)':>10} {'k(Ce-C)':>10}"
-          f" {'BOTTLENECK':>11} {'vs turnover':>12}")
-    for name, lam in scenarios.items():
-        ks = {h: marcus_rate(t, lambda_reorg=lam[{"Cu-Co": "Cu-Co", "Co-Ce": "Co-Ce",
-                                                   "Ce-C": "Ce-C"}[h]])
-              for h, t in tij.items()}
-        bottleneck = min(ks.values())
-        margin = bottleneck / TURNOVER_S
-        out["scenarios"][name] = {"lambda_hop_eV": lam, "k_ET_per_s": ks,
-                                  "bottleneck_s": bottleneck, "margin_vs_turnover": margin}
-        print(f"  {name:32s} {ks['Cu-Co']:10.2e} {ks['Co-Ce']:10.2e} {ks['Ce-C']:10.2e}"
-              f" {bottleneck:11.2e} {'×'+format(margin, '.1e'):>12}")
+           "lambda_lit_eV": LAMBDA_LIT, "turnover_s": TURNOVER_S,
+           "driving_force": {
+               "measured_magnitude_eV": GAP_EV, "measured_source": GAP_SOURCE,
+               "sign_is_unmeasured": True,
+               "sign_convention": "marcus_rate takes dG in eV; NEGATIVE is downhill and faster "
+                                  "for |dG| < 2λ, so the ADVERSE end is +|gap|",
+               "hops_without_a_usable_gap": {
+                   h: "no FO-DFT diabatisation exists for this pair" for h in tij
+                   if h not in GAP_EV},
+               "unmeasured_treatment": "dG = 0, recorded per scenario as an ASSUMPTION "
+                                       "(`driving_force_measured_for_bottleneck`), because a "
+                                       "default that reads like a measurement is how the headline "
+                                       "margins came to be quoted as if ΔG were known",
+               "ru_node_gap_refused": RU_GAP_REFUSED,
+           },
+           "consumer_rule": "take `margin_vs_turnover_adverse` — a bracket's consumer ceiling is "
+                            "the ADVERSE reading, cited (in-silico §When Modifying #11). "
+                            "`margin_vs_turnover_at_dG0` is kept so the pre-2026-09-21 published "
+                            "number stays traceable, NOT so it can be quoted",
+           "scenarios": {}}
 
-    # FO-DFT rigor (script 24b): the Cu-Co bottleneck with the two-state coupling t_ij + the computed
-    # site-energy gap, vs the crude ΔSCF t_ij. t_ij is ~4× crude (k ~18×), but the 0.18 eV site-gap
-    # swings the margin by its sign → the borderline/sensitive verdict is robust to the coupling
-    # method (not a crude-t_ij artifact); the old ~10⁵× is firmly excluded either way.
-    fo = json.loads((CACHE / "fodft_coupling.json").read_text())
+    print(f"\n  {'scenario':32s} {'BOTTLENECK':>11} {'adverse':>11} {'ΔG=0':>11} {'favourable':>11}")
+    for name, lam in scenarios.items():
+        per_branch, ident = {}, NODE_IDENTITY.get(name, {})
+        for label in BRANCHES:
+            dg = _dg(name, _BRANCH_KEY[label])
+            ks = {h: marcus_rate(t, lam[h], dg[h]) for h, t in tij.items()}
+            hop = min(ks, key=ks.get)
+            per_branch[label] = {
+                "dG_eV": dg, "k_ET_per_s": ks, "bottleneck_hop": ident.get(hop, hop),
+                "bottleneck_s": ks[hop], "margin_vs_turnover": ks[hop] / TURNOVER_S}
+        measured = _measured_hops(name)
+        adverse, zero, fav = (per_branch[b] for b in BRANCHES)
+        out["scenarios"][name] = {
+            "lambda_hop_eV": lam,
+            "node_identity": {h: ident.get(h, h) for h in tij},
+            "hops_with_a_measured_gap": measured,
+            "driving_force_measured_for_bottleneck": adverse["bottleneck_hop"] in
+            [ident.get(h, h) for h in measured],
+            "by_dG": per_branch,
+            "margin_vs_turnover_adverse": adverse["margin_vs_turnover"],
+            "margin_vs_turnover_at_dG0": zero["margin_vs_turnover"],
+            "margin_vs_turnover_favourable": fav["margin_vs_turnover"],
+            "bottleneck_hop_is_branch_invariant":
+                len({b["bottleneck_hop"] for b in per_branch.values()}) == 1,
+        }
+        flag = "" if measured else "   [no measured ΔG on any hop — all three columns are ΔG=0]"
+        print(f"  {name:32s} {adverse['bottleneck_hop']:>11}"
+              f" {'×' + format(adverse['margin_vs_turnover'], '.2g'):>11}"
+              f" {'×' + format(zero['margin_vs_turnover'], '.2g'):>11}"
+              f" {'×' + format(fav['margin_vs_turnover'], '.2g'):>11}{flag}")
+
+    # FO-DFT rigor (script 24b): the same bottleneck with the two-state coupling instead of the
+    # crude ΔSCF one. Kept as its own block because it answers a DIFFERENT question — whether the
+    # verdict survives the coupling METHOD — while the table above answers it across λ.
     t_fo, dg_fo = fo["t_ij_eV"], fo["site_energy_gap_eV"]
     lam_lit = _two_sphere(LAMBDA_LIT["Cu"], LAMBDA_LIT["Co"])
     fo_margin = {tag: marcus_rate(t_fo, lam_lit, dg) / TURNOVER_S
@@ -119,11 +204,35 @@ def main() -> int:
     for tag, m in fo_margin.items():
         print(f"    {tag:9s} ×{m:.2g}")
 
+    # ⛔ Built from the numbers above, never typed: this string is what the docs quote, and the
+    # sentence it replaced ("borderline ×1–30") was true only of the ΔG = 0 column.
+    lit = out["scenarios"]["literature λ"]
+    ru = out["scenarios"]["Ru-swap (Co→Ru, computed)"]
+    invariant = all(sc["bottleneck_hop_is_branch_invariant"] for sc in out["scenarios"].values())
+    verdict = (
+        f"The bottleneck is {lit['by_dG'][BRANCHES[1]]['bottleneck_hop']} (smallest t_ij after the "
+        f"geometry fix)"
+        + (", and it stays the bottleneck in every ΔG branch of every scenario"
+           if invariant else ", but which hop limits DEPENDS on the ΔG branch — read per row")
+        + f". At literature λ the margin is a BRACKET over the sign of the measured "
+        f"{GAP_EV['Cu-Co']} eV site-energy gap: "
+        f"×{lit['margin_vs_turnover_adverse']:.2g} (adverse, uphill) … "
+        f"×{lit['margin_vs_turnover_favourable']:.2g} (favourable, downhill), with "
+        f"×{lit['margin_vs_turnover_at_dG0']:.2g} at ΔG = 0 — and ΔG = 0 is the function's DEFAULT, "
+        "not a measurement, which is how it came to be published as the margin. ⚠️ The adverse "
+        "reading puts the cathode BELOW enzymatic turnover rather than above it — rate-limiting, "
+        "not borderline; it is quoted as a margin (×0.032) and never as its reciprocal, because "
+        "the reciprocal collides numerically with the Ru-swap margin below and means the opposite. "
+        f"The Ru-swap mitigation reads ×{ru['margin_vs_turnover_at_dG0']:.2g}, but on ALL THREE "
+        "columns alike, because no usable gap exists for the "
+        f"{RU_GAP_REFUSED['pair']} node: {RU_GAP_REFUSED['reason']}. So the Ru lever's driving "
+        "force is unmeasured by construction, and its margin is a ΔG = 0 reading."
+    )
+    out["verdict"] = verdict
     (CACHE / "cathode_ket_lambda.json").write_text(json.dumps(out, indent=2))
-    print("\n  bottleneck hop = Cu-Co (smallest t_ij after the geometry fix).")
-    print("  → the old ~10⁵× margin was a geometry+λ artifact; realistic λ leaves the")
-    print("    cathode borderline (×1–30) — possibly co-limiting. Mitigation: low-λ metal")
-    print("    (Ru), conductive-MOF band transport (CHEM.31), or enzyme-free SAC (CHEM.6).")
+    print("\n  " + verdict.replace(". ", ".\n  "))
+    print("\n  Mitigations (unchanged in kind): low-λ metal (Ru), conductive-MOF band transport")
+    print("  (CHEM.31), or enzyme-free SAC (CHEM.6).")
     print("  saved → cache/dft/cathode_ket_lambda.json")
     return 0
 

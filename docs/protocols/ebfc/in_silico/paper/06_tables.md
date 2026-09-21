@@ -41,7 +41,7 @@
 | canon λ=0.7 (old, withdrawn) | ×3.63e+04 |
 | **literature λ** (Cu 2.0/Co 1.4/Ce 1.0) | **×1.38** (borderline) |
 | computed λ (B3LYP, Co over-est) | ×0.000298 |
-| Ru-swap (Co→Ru, computed λ 0.78) | ×31 |
+| Ru-swap (Co→Ru, computed λ 0.78) | ×31 *(ΔG = 0; the Cu–Ru site gap is not obtainable from the minimal cluster)* |
 | FO-DFT rigorous (ΔG −/0/+gap) | ×0.59 – ×732 (×25 at ΔG=0) |
 
 *Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35); B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. Cathode is borderline / possibly co-limiting (k_DET ~ turnover).*

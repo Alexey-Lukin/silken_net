@@ -16,7 +16,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
-| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline — geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30), NOT the old ×10⁵ (see §Cathode) |
+| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline at ΔG = 0 (×1–30), 🔴 **below turnover on the adverse driving-force reading** (lit-λ bracket ×0.032…×40) — NOT the old ×10⁵ (see §Cathode) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 19.9s / Stressed 100.7s (η_BQ 0.68 post-HW.47; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
@@ -286,18 +286,35 @@ Details → [`L3_quantum_chemistry.md`](L3_quantum_chemistry.md).
 
 The geometry fix shrank Cu-Co t_ij **25×** → **Cu-Co is the bottleneck**, not Co-Ce.
 
-**k_DET vs λ (script 25) — margin is λ-sensitive:**
+**k_DET vs λ AND vs the driving force (script 25) — the margin is sensitive to both:**
 
-| λ scenario | bottleneck k(Cu-Co) | vs turnover (10³ s⁻¹) |
-|---|---|---|
-| canon λ=0.7 (old assumption) | 3.6×10⁷ | ×3.6×10⁴ |
-| **literature λ** (Cu 2.0 / Co 1.4 / Ce 1.0) | **1.4×10³** | **×1.4 — borderline** |
-| computed λ (B3LYP, Co spin-crossover ~2× over-est) | 0.3 | ×3×10⁻⁴ |
-| Co→Ru swap (computed λ_Ru = 0.78) | 3.1×10⁴ | ×31 |
+🔴 **Until 2026-09-21 this table was computed at ΔG = 0 — the Marcus helper's DEFAULT, not a
+measurement** — while the FO-DFT block below already carried a computed **0.183 eV** Cu–Co
+site-energy gap. The gap's *magnitude* is measured; its *sign* is not (a Mulliken–Hush
+diabatisation returns |ΔE| and does not say which site is the donor on the cathode's path), so
+every row is now a **bracket**, and the consumer's ceiling is the **adverse** end, cited
+(`in-silico` §When Modifying #11).
 
-**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET is **borderline / possibly co-limiting**, not comfortably fast. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4). **FO-DFT rigorous coupling (script 24b, CHEM.14)** now confirms this is not a crude-t_ij artifact: a two-state Mulliken-Hush diabatisation gives t_ij(Cu-Co) = **0.00546 eV** (~4× the crude ΔSCF 0.00128, still meV-scale) + a **0.18 eV computed site-energy gap** the crude assumed away → the Cu-Co margin spans **×0.6 (uphill) to ×730 (downhill), ×25 at ΔG=0** — so the **borderline/sensitive verdict is robust to the coupling method**, and the old ×10⁵ is firmly excluded. Remaining closure = experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / CHEM.31), or enzyme-free SAC (CHEM.6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
+| λ scenario | bottleneck | **adverse (+gap)** | ΔG = 0 (assumption) | favourable (−gap) |
+|---|---|---|---|---|
+| canon λ=0.7 (old assumption) | Cu-Co | **×647** | ×3.6×10⁴ | ×8.0×10⁵ |
+| **literature λ** (Cu 2.0 / Co 1.4 / Ce 1.0) | Cu-Co | **×0.032** | ×1.4 | ×40 |
+| computed λ (B3LYP, Co spin-crossover ~2× over-est) | Cu-Co | **×7.4×10⁻⁶** | ×3.0×10⁻⁴ | ×9.2×10⁻³ |
+| Co→Ru swap (computed λ_Ru = 0.78) | **Cu-Ru** | ×31 | ×31 | ×31 |
 
-**Ru lever — the t_ij "double-whammy" is NOT confirmed (CHEM.32, scripts 24c/24d).** The Co→Ru ×31 above is the **λ** benefit alone (λ_Ru 0.78). We tested whether Ru's diffuse 4d *also* raises the coupling: at the canon cluster geometry with Co→Ru (identical coordinates; control Cu-Co reproduces canon t_ij 0.00128 ✅), the crude ΔSCF gave a large splitting (×81, t_ij 0.10 eV) and the FO-DFT diabatisation gave t_ij 0.105 eV — **but both FAIL the physicality check**: the frontier MOs localize entirely on Ru with **no Cu-d partner** in the window (24d self-flags non-physical — both diabatic orbitals pop(Ru) ≈ 0.86, pop(Cu) = 0.00). The minimal cluster's Cu-d and Ru-d manifolds are too energy-mismatched to form a clean Cu↔Ru diabatic pair (unlike Cu-Co). So the coupling boost is **plausible but unvalidated by this approach** — a rigorous Cu-Ru t_ij needs **CDFT constrained diabatic states** (a follow-up capstone: PyCDFT in-house or a specialist collaboration). The Ru lever stands on its **λ** advantage; its coupling advantage is a hypothesis, not a result. Caches: `dft/cu_ru_coupling.json` + `dft/cu_ru_fodft.json`.
+⚠️ **Read the last row differently from the others: its three columns are identical because the
+Cu–Ru node has NO usable gap** — script 24d returns 0.128 eV and *self-flags it non-physical*
+(`localised: false`, `physically_reasonable: false`: both diabatic orbitals sit on Ru, pop(Cu) = 0),
+the same failure that disqualified its t_ij. So **the Ru lever's driving force is unmeasured by
+construction, and its ×31 is a ΔG = 0 reading**, not a bracket that happened to be flat.
+⊕ The bottleneck hop is **branch-invariant**: Cu–Co (or Cu–Ru) limits in every ΔG branch of every
+scenario, so the sign question moves the margin, never the identity of what limits.
+⚠️ The adverse literature-λ figure is quoted as **×0.032** and never as its reciprocal — the
+reciprocal collides numerically with the Ru row's ×31 and means the opposite thing.
+
+**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ **and ΔG = 0**, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET reads **borderline / possibly co-limiting**, not comfortably fast. 🔴 **Carrying the measured site-energy gap into that table moves the honest reading further: at literature λ the adverse end is ×0.032, i.e. BELOW turnover — rate-limiting rather than borderline.** The ×1–30 band is the ΔG = 0 column of a bracket, and it stays in this page only as the traceable predecessor of the figures above. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4). **FO-DFT rigorous coupling (script 24b, CHEM.14)** now confirms this is not a crude-t_ij artifact: a two-state Mulliken-Hush diabatisation gives t_ij(Cu-Co) = **0.00546 eV** (~4× the crude ΔSCF 0.00128, still meV-scale) + a **0.18 eV computed site-energy gap** the crude assumed away → the Cu-Co margin spans **×0.6 (uphill) to ×730 (downhill), ×25 at ΔG=0** — so the **borderline/sensitive verdict is robust to the coupling method**, and the old ×10⁵ is firmly excluded. Remaining closure = experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / CHEM.31), or enzyme-free SAC (CHEM.6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
+
+**Ru lever — the t_ij "double-whammy" is NOT confirmed (CHEM.32, scripts 24c/24d).** The Co→Ru ×31 above is a **ΔG = 0 reading** (table note) and is the **λ** benefit alone (λ_Ru 0.78). We tested whether Ru's diffuse 4d *also* raises the coupling: at the canon cluster geometry with Co→Ru (identical coordinates; control Cu-Co reproduces canon t_ij 0.00128 ✅), the crude ΔSCF gave a large splitting (×81, t_ij 0.10 eV) and the FO-DFT diabatisation gave t_ij 0.105 eV — **but both FAIL the physicality check**: the frontier MOs localize entirely on Ru with **no Cu-d partner** in the window (24d self-flags non-physical — both diabatic orbitals pop(Ru) ≈ 0.86, pop(Cu) = 0.00). The minimal cluster's Cu-d and Ru-d manifolds are too energy-mismatched to form a clean Cu↔Ru diabatic pair (unlike Cu-Co). So the coupling boost is **plausible but unvalidated by this approach** — a rigorous Cu-Ru t_ij needs **CDFT constrained diabatic states** (a follow-up capstone: PyCDFT in-house or a specialist collaboration). The Ru lever stands on its **λ** advantage; its coupling advantage is a hypothesis, not a result. Caches: `dft/cu_ru_coupling.json` + `dft/cu_ru_fodft.json`.
 
 **Model caveats** (frame the borderline — *not* a margin-chase): t_ij is **geometry-bounded** — a clash-corrected programmatic cluster, not DFT-relaxed (these flat-PES metal clusters resist geom-opt, cf. script 21c); and the single-hop bottleneck is **conservative** — the ZIF is a wide-gap **insulator**, so transport is the discrete Marcus hops modelled (not bands), and the 3D framework offers **parallel** instances of the bottleneck hop (band-like transport = the cMOF lever, CHEM.31).
 

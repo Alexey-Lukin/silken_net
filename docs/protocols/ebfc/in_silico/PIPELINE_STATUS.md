@@ -35,11 +35,11 @@
 | 21e | `dft_os_mediator_series` | **① Hammett LFER** slope ≈ −0.92 eV/σ (r²=1.00, computed→`lfer` block); realistic optimum **SO₂CF₃** (cascade −0.227, inert) > NO₂ (degrades on cycling) | `dft/os_mediator_series.json` |
 | 22 | `compare_homo_lumo` | cascade Δε = **-1.05 raw** (dimethyl, uphill); verified **−0.574 eV** (→ SUMMARY) | `dft/comparison.json` |
 | 23 | `build_zif_clusters` | 3 ZIF cluster XYZ | `ligands/` |
-| 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 (λ-sensitive, scripts 25/35) | `dft/zif_hopping.json` |
+| 24 | `dft_hopping_integrals` | **3/3 pairs ✅** (geom-fixed) → k_DET **borderline** ×1–30 **at ΔG = 0** (λ- AND ΔG-sensitive, scripts 25/35) | `dft/zif_hopping.json` |
 | 24b | `fodft_coupling` | **FO-DFT rigor** (CHEM.14): two-state Mulliken-Hush t_ij(Cu-Co) **0.00546 eV** (~4× crude) + 0.18 eV site-gap → margin ×0.6–730 (sign/λ-sensitive) → borderline **robust to coupling method**, ×10⁵ excluded | `dft/fodft_coupling.json` |
 | 24c | `cu_ru_coupling` | **CHEM.32** Cu-Ru crude ΔSCF (Co→Ru @identical geom; control Cu-Co=canon 0.00128 ✅) → t_ij 0.10 (×81) **but non-physical** (see 24d) | `dft/cu_ru_coupling.json` |
 | 24d | `cu_ru_fodft` | **CHEM.32** Cu-Ru FO-DFT → t_ij 0.105 **NON-PHYSICAL** (frontier MOs all-Ru, no Cu-d partner → no clean Cu↔Ru diabatic pair; Cu-d/Ru-d energy-mismatched). t_ij-boost UNvalidated → CDFT capstone; λ↓ benefit stands (CHEM.29) | `dft/cu_ru_fodft.json` |
-| 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ → Cu-Co bottleneck borderline **×1.4** (lit-λ); Ru-swap restores **×31**; + FO-DFT margin band | `dft/cathode_ket_lambda.json` |
+| 25 | `cathode_ket_lambda` | **③** Marcus k_DET vs **computed** λ **and vs the measured driving force** → every row a bracket over the 0.183 eV site-gap's sign; lit-λ Cu-Co **×0.032 adverse** (×1.4 at ΔG=0, the old default); Ru-swap **×31 on all three columns — its node gap is unmeasurable (24d non-physical)**; + FO-DFT margin band | `dft/cathode_ket_lambda.json` |
 | 27 | `md_dft_ensemble` | FAD HOMO **-5.589 ± 0.058 eV** (thermally robust, σ≪0.3) | `dft/md_dft_ensemble.json` |
 | 28 | `electron_tunneling_pathway` | Beratan-Onuchic FAD→THR288, **β·d=2.05** (feasible) | `dft/tunneling_pathway.json` |
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
@@ -102,7 +102,7 @@
 | Does the enzyme fold correctly? | ✅ YES | L1: d_FAD = 15.998 Å < tunneling 18-20 Å |
 | Does the matrix denature the protein? | ✅ NO (qualified) | L2 100ps: RMSD 1.11 Å. L2 10ns: RMSD 4.02 Å but **Rg stable** (-0.1%) → conformational relaxation from AF3, not denaturation. Needs 20-50 ns for full equilibration. |
 | Does the electron cascade flow? | ✅ YES (verified) | +574 mV / −0.574 eV downhill (verified E°s, Os +309 / FAD −265); raw DFT uphill = method limit (②) |
-| Is cathode DET fast enough? | 🟡 BORDERLINE | L3b geom-fixed t_ij + realistic λ → Cu-Co bottleneck ~turnover (×1–30, NOT the old ×10⁵); SUMMARY §Cathode |
+| Is cathode DET fast enough? | 🟡 BORDERLINE→🔴 ON THE ADVERSE READING | L3b geom-fixed t_ij + realistic λ put Cu-Co at ~turnover (×1–30) **at ΔG = 0**; carrying the measured site-gap makes lit-λ a bracket ×0.032…×40, i.e. BELOW turnover at the adverse end; SUMMARY §Cathode |
 | Is delta_t physically meaningful? | 🟡 recharge-model OK; coupling REVISED | L4 recharge-kinetics sound але lab-ceiling (E_CYCLE=5mJ); [E.63] β-coupling reversed → delta_t now drives growth_points directly, FAST/SLOW calib-pending (00_07 E.63) |
 | Can we predict EIS results? | ✅ YES | L4c: `Rct` і `Cdl` — рядок `31` таблиці вгорі (лаб-стеля, pH 7.4) |
 
@@ -115,7 +115,7 @@
 | L1 protein architecture | ✅ Complete | — |
 | L2 stability MD | ✅ Complete | Genipin ✅, temp sweep ✅ (4/4), PSBMA ✅, xylem sap ✅ (6/6), PVI ✅, strain ✅ |
 | L3 anode DFT | ✅ Complete | ωB97X/def2-TZVP ✅ (adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain); tunneling ✅; MD ensemble HOMO robust ✅ |
-| L3b cathode DET | ✅ Complete (geom-fixed) | k_DET borderline (×1–30, λ-sensitive — a real finding, motivates Ru/cMOF/enzyme-free) |
+| L3b cathode DET | ✅ Complete (geom-fixed) | k_DET λ-sensitive AND driving-force-sensitive: ×1–30 is the ΔG=0 column, the lit-λ bracket is ×0.032…×40 — a real finding, motivates Ru/cMOF/enzyme-free |
 | L4 kinetics | ✅ Complete | — |
 | L4b Monte Carlo | ✅ Complete | — |
 | L4c EIS | ✅ Complete | — |
@@ -153,7 +153,7 @@
 - ✅ ~~PSBMA diffusion (script 13)~~ — DONE (model limitation noted)
 - ✅ ~~Xylem sap sweep (script 14)~~ — DONE 6/6 profiles (pH 4.2-6.0 all stable; pH tolerance, not cross-species validation — SUMMARY §Xylem Sap)
 - ✅ ~~ωB97X DFT (scripts 21d/21f/21g)~~ — DONE. **dimethyl recompute B1/B2 ✅**. Koopmans Δε=−6.02 eV dimethyl (RSH artifact). Adiabatic ΔSCF +1.03 eV dimethyl / +0.884 plain (uphill; verified cascade +574 mV → SUMMARY).
-- ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30, scripts 24/25/35)
+- ✅ ~~L3b Co-Ce + Ce-graphene (script 24)~~ — DONE (geom-fixed t_ij; k_DET borderline ×1–30 at ΔG = 0 — the lit-λ bracket over the measured gap is ×0.032…×40, scripts 24/25/35)
 - ✅ ~~PCET potential + cascade (scripts 32, 33)~~ — DONE (potential -158 mV valid; cascade does not flip — PCM limit)
 
 ### Future (publication-grade, needs external compute / collaboration):

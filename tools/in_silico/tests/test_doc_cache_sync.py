@@ -66,10 +66,25 @@ def xylem_rows(d):
 _DASHES = "−–—‐‑－"
 
 
+# Superscript digits, so a doc cell written as `3.6×10⁴` is pinnable like a plain decimal. Without
+# this the harness parses only the convenient half of a table, and a pin that covers half a table
+# reads like a pin that covers the table.
+# ⁻ is U+207B SUPERSCRIPT MINUS — a different codepoint from every dash in `_DASHES`, so it has to
+# be named here; omitting it made `7.4×10⁻⁶` raise instead of parse (caught on the first probe).
+_SUP_MINUS = "⁻"
+_SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+_SUP_MAP = ({c: str(i) for i, c in enumerate(_SUP)}
+            | dict.fromkeys(_DASHES, "-") | {_SUP_MINUS: "-"})
+
+
 def _to_float(s: str) -> float:
     for d in _DASHES:
         s = s.replace(d, "-")
-    return float(s.replace(" ", ""))
+    s = s.replace(" ", "")
+    if "×10" in s:
+        mant, _, exp = s.partition("×10")
+        return float(mant) * 10 ** int("".join(_SUP_MAP.get(c, c) for c in exp))
+    return float(s)
 
 
 SUMMARY = "docs/protocols/ebfc/in_silico/SUMMARY.md"
@@ -79,6 +94,7 @@ BLIND_MATE = "docs/02_02_Blind_Mate_Pogo_Pin_Interface.md"  # Z-stack + gland ge
 COAXIAL = "docs/01_01_Coaxial_Gyroid_Topology_and_PEEK.md"  # anchor geometry; §1.4 bus + liner, owner = script 55
 METALLURGY = "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md"  # §2.1 synthetic sap + its saturation verdict, owner = script 67
 SAP = "chemistry/sap_recipe_saturation.json"
+PAPER_RESULTS = "docs/protocols/ebfc/in_silico/paper/03_results.md"  # §3.4 cathode DET, owner = script 25
 L1 = "docs/protocols/ebfc/in_silico/L1_protein_architecture.md"  # §2 aggregation recipe, owner = script 69
 CHEM11 = "chemistry/chem11_aggregation_compensation.json"
 CONSERVATION = "chemistry/chem11_site_conservation.json"  # §2 conservation block, owner = script 70
@@ -87,6 +103,7 @@ CONSERVATION = "chemistry/chem11_site_conservation.json"  # §2 conservation blo
 #             cache-file, resolver(cache)->float, tolerance).
 # Number class allows an optional leading dash of any flavour.
 N = rf"([{_DASHES}\-]?[\d.]+)"
+NSCI = rf"([{_DASHES}\-]?[\d.]+(?:×10[{_SUP_MINUS}]?[{_SUP}]+)?)"
 CHECKS = [
     # ── PRIMARY: the provenance-mix the guard exists to catch ──
     (
@@ -1320,6 +1337,71 @@ CHECKS += [
     ("CHEM.11 conservation prose · His537 control quoted beside 201 → conservation",
      SUMMARY, rf"His537 control's {N} %",
      CONSERVATION, lambda d: d["positions"]["537"]["deduped"]["identical_pct"], 0.06),
+]
+
+
+# ── L3b cathode DET: the k_DET table had SIX documents quoting it and ZERO pins until 2026-09-21 ──
+# ⛔ Every cell, not just the convenient ones: the table's message IS the spread, so a half-pinned
+# table would keep reading as a bracket while one end rotted. The tolerance is the doc's display
+# digit — this pipeline is deterministic (it reads caches and runs no DFT), so no noise floor.
+KET = "dft/cathode_ket_lambda.json"
+_KET_ROWS = (
+    # (row label as SUMMARY prints it, scenario key in the cache)
+    (r"canon λ=0\.7 \(old assumption\)", "canon λ=0.7 (old assumption)"),
+    (r"\*\*literature λ\*\* \(Cu 2\.0 / Co 1\.4 / Ce 1\.0\)", "literature λ"),
+    (r"computed λ \(B3LYP, Co spin-crossover ~2× over-est\)", "computed λ (B3LYP, Co over-est)"),
+    (r"Co→Ru swap \(computed λ_Ru = 0\.78\)", "Ru-swap (Co→Ru, computed)"),
+)
+_KET_COLS = (
+    ("adverse", 1, "margin_vs_turnover_adverse"),
+    ("ΔG=0", 2, "margin_vs_turnover_at_dG0"),
+    ("favourable", 3, "margin_vs_turnover_favourable"),
+)
+
+
+def _ket_cell(label: str, skip: int) -> str:
+    """The skip-th numeric cell after the row label (0 = the bottleneck column, which is text)."""
+    return rf"\| {label} \|" + r"[^|]*\|" * skip + rf" \*?\*?×{NSCI}\*?\*? \|"
+
+
+def _ket_tol(value: float) -> float:
+    """One unit in the doc's last displayed digit — the doc prints two significant figures."""
+    return abs(value) * 0.05 + 1e-12
+
+
+CHECKS += [
+    (f"L3b k_DET · {scen} · {col} → cathode_ket_lambda (the table's message IS the spread)",
+     SUMMARY, _ket_cell(label, skip),
+     KET, lambda d, s=scen, f=field: d["scenarios"][s][f],
+     _ket_tol(C(KET)["scenarios"][scen][field]))
+    for label, scen in _KET_ROWS
+    for col, skip, field in _KET_COLS
+] + [
+    (
+        "L3b k_DET · the measured Cu-Co site-energy gap → cathode_ket_lambda (the bracket's cause)",
+        SUMMARY, rf"carried a computed \*\*{N} eV\*\* Cu–Co",
+        KET, lambda d: d["driving_force"]["measured_magnitude_eV"]["Cu-Co"], 0.0006,
+    ),
+    (
+        "L3b k_DET · the REFUSED Cu-Ru gap → cathode_ket_lambda (a number that is not a measurement)",
+        SUMMARY, rf"script 24d returns {N} eV and \*self-flags it non-physical\*",
+        KET, lambda d: d["driving_force"]["ru_node_gap_refused"]["gap_eV_reported"], 0.0006,
+    ),
+    (
+        "L3b k_DET · paper §3.4 adverse end → cathode_ket_lambda (the figure the paper now quotes)",
+        PAPER_RESULTS, rf"turns the literature-λ figure into a bracket of \*\*×{N} to",
+        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.0006,
+    ),
+    (
+        "L3b k_DET · paper §3.4 favourable end → cathode_ket_lambda",
+        PAPER_RESULTS, rf"bracket of \*\*×[\d.]+ to ×{N}\*\*",
+        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_favourable"], 0.6,
+    ),
+    (
+        "L3b k_DET · paper §3.4 site-energy gap → cathode_ket_lambda",
+        PAPER_RESULTS, rf"the computed \*\*{N} eV\*\* Cu–Co\nsite-energy gap",
+        KET, lambda d: d["driving_force"]["measured_magnitude_eV"]["Cu-Co"], 0.0006,
+    ),
 ]
 
 
