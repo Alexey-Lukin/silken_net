@@ -1129,6 +1129,36 @@ def test_zif_hopping_all_pairs():
     assert data["k_total_per_s"] > 1e6
 
 
+def test_zif_bridge_span_is_linker_invariant():
+    """The premise under the FIXED `ZIF_NODE_DIST` in script 23.
+
+    Swapping a linker is only allowed to leave the metal···metal distance alone while
+    the bridge N···N span does. CHEM.35's canon caveat — "a bigger ligand pushes the
+    metals apart" — is a claim about exactly this number, and here it is measured
+    rather than assumed: a ring FUSED at the back grows the ligand footprint without
+    touching the N–C–N bridge.
+
+    CAN catch: a library entry whose bridge genuinely lengthens, which would make the
+    fixed node distance an unstated assumption for it (script 23 then refuses the run).
+    CANNOT catch a change in the M–N–C angles or in the framework topology — both also
+    move M···M, and neither is modelled, because `ZIF_NODE_DIST` is an input rather than
+    a solved geometry.
+    """
+    path = DFT / "zif_bridge_geometry.json"
+    if not path.exists():
+        pytest.skip("bridge geometry not built")
+    data = json.loads(path.read_text())
+    spans = data["bridge_span_nn_A"]
+    ref_key = data["reference_linker"]
+    ref, tol = spans[ref_key], data["span_tolerance_A"]
+    assert set(spans) >= {"meim", "bzim"}, "library must carry both the shipped and the lever linker"
+    for linker, span in spans.items():
+        assert abs(span - ref) <= tol, (
+            f"{linker} bridge span {span} Å vs reference {ref_key} {ref} Å exceeds {tol} Å — "
+            "the fixed ZIF_NODE_DIST is no longer justified for it"
+        )
+
+
 def test_md_dft_ensemble_thermally_robust():
     """FAD frontier orbital must be stable across MD snapshots (σ < 0.3 eV)."""
     path = DFT / "md_dft_ensemble.json"

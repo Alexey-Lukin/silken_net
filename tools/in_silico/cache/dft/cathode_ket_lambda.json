@@ -10,6 +10,12 @@
     "Ce": 0.8684,
     "Ru": 0.7806
   },
+  "lambda_computed_provenance": {
+    "Cu": "LITERATURE, NOT COMPUTED \u2014 script 35 has no Cu row (Cu(I) d\u00b9\u2070 hexa-aqua optimisation is unphysical); this is LAMBDA_LIT['Cu']",
+    "Co": "computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)",
+    "Ce": "computed \u2014 script 35 row `ce`",
+    "Ru": "computed \u2014 script 35 row `ru`"
+  },
   "lambda_lit_eV": {
     "Cu": 2.0,
     "Co": 1.4,
@@ -317,6 +323,12 @@
       "dG=+gap": 0.59,
       "dG=-gap": 731.51
     }
+  },
+  "coupling_gain_to_reach_turnover": {
+    "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic turnover at the consumer-rule (adverse) end; k_ET \u221d |t_ij|\u00b2, so 1/\u221amargin. A COUPLING lever only.",
+    "at_literature_lambda_crude_t": 5.55,
+    "at_literature_lambda_fodft_t": 1.302,
+    "judge_against": "at_literature_lambda_fodft_t \u2014 the rigorous coupling, and the scale the canon quotes; the crude row exists so each published t_ij scale carries its OWN acceptance number instead of one being read onto the other"
   },
   "verdict": "The bottleneck is Cu-Co (smallest t_ij after the geometry fix), and it stays the bottleneck in every \u0394G branch of every scenario. At literature \u03bb the margin is a BRACKET over the sign of the measured 0.183 eV site-energy gap: \u00d70.032 (adverse, uphill) \u2026 \u00d740 (favourable, downhill), with \u00d71.4 at \u0394G = 0 \u2014 and \u0394G = 0 is the function's DEFAULT, not a measurement, which is how it came to be published as the margin. \u26a0\ufe0f The adverse reading puts the cathode BELOW enzymatic turnover rather than above it \u2014 rate-limiting, not borderline; it is quoted as a margin (\u00d70.032) and never as its reciprocal, because the reciprocal collides numerically with the Ru-swap margin below and means the opposite. The Ru-swap mitigation reads \u00d731, but on ALL THREE columns alike, because no usable gap exists for the Cu-Ru (CHEM.32, Co\u2192Ru swap) node: 24d self-flags localised=False / physically_reasonable=False \u2014 the minimal cluster cannot form a clean Cu\u2194Ru diabatic pair, so its site-energy gap is not a measurement any more than its t_ij was. So the Ru lever's driving force is unmeasured by construction, and its margin is a \u0394G = 0 reading."
 }

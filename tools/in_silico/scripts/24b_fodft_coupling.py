@@ -27,6 +27,7 @@ other two hops are far from limiting and keep their script-24 ΔSCF t_ij.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -39,9 +40,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import BASIS_LIGHT, DFT_CACHE, HARTREE_TO_EV, LIGANDS_DIR, REPO_ROOT
 from lib.utils import banner
 
-OUT = DFT_CACHE / "fodft_coupling.json"
-XYZ = LIGANDS_DIR / "cu_co_zif.xyz"
+# One cache per MODEL (§When Modifying #17): a geometry change takes its own out-path,
+# so a variant run can never silently replace the shipped verdict.
+GEOMETRIES: dict[str, tuple[str, str, str]] = {
+    "shipped": ("cu_co_zif.xyz", "fodft_coupling.json",
+                "legacy centre-of-mass bridge orientation, 2-methylimidazolate — "
+                "the shipped cathode stack"),
+    # ⛔ REFUSED geometry, kept buildable on purpose: script 23 exits 1 on it because the
+    # metals sit 0.70 / 1.37 Å off their own bridge-ring plane. It is here to MEASURE how
+    # far the coupling rides on a ring roll nobody has determined — a sensitivity probe,
+    # never a candidate. Build it with `23 --solve-bridge --roll perpendicular`.
+    "offplane": ("cu_co_zif_solved_perp.xyz", "fodft_coupling_offplane.json",
+                 "REFUSED probe — bridge ring rolled out of the metals' coordination "
+                 "plane; prices the model's geometric freedom, not a better cluster"),
+}
 CHARGE, SPIN = 1, 2                       # clash-free Cu-Co cluster (script 23/24)
+# ⚠️ Both are hardcoded, and script 23 prints the electron count precisely so a
+# geometry whose parity flips is caught by the reader rather than by a wrong answer.
 BASIS_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz"}
 ECP_METALS = {"Cu": "lanl2dz", "Co": "lanl2dz"}
 
@@ -69,11 +84,19 @@ def mo_metal_pop(mol, C, S, metal_idx):
 
 
 def main() -> int:
-    banner("FO-DFT coupling — Cu-Co ZIF hop (two-state diabatisation)")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--geometry", choices=sorted(GEOMETRIES), default="shipped",
+                    help="which script-23 cluster to couple")
+    args = ap.parse_args()
+    xyz_name, out_name, geom_label = GEOMETRIES[args.geometry]
+    xyz = LIGANDS_DIR / xyz_name
+    out = DFT_CACHE / out_name
+
+    banner(f"FO-DFT coupling — Cu-Co ZIF hop ({geom_label})")
     t0 = time.time()
-    if not XYZ.exists():
-        sys.exit(f"Missing {XYZ}. Run script 23 first.")
-    atoms = read_xyz(XYZ)
+    if not xyz.exists():
+        sys.exit(f"Missing {xyz}. Run script 23 first (the flag that builds it is in its --help).")
+    atoms = read_xyz(xyz)
 
     basis = dict(BASIS_METALS)
     basis["default"] = BASIS_LIGHT
@@ -141,20 +164,24 @@ def main() -> int:
     print(f"  localised onto distinct metals: {localised} · |t_ij| in 1e-5–1 eV: {1e-5 < t_ij < 1.0}")
     print(f"  → {'✅ physical coupling' if physical else '⚠️ inspect — non-localised or out-of-band'}")
 
-    OUT.write_text(json.dumps({
+    out.write_text(json.dumps({
+        "geometry": args.geometry,
+        "geometry_note": geom_label,
+        "xyz": xyz_name,
         "method": "FO-DFT two-state diabatisation (single UKS dimer SCF, manual 2×2 Mulliken-Hush "
                   "population diabatisation of the 2 metal-d frontier MOs, off-diagonal Fock = t_ij); "
                   "B3LYP/6-31G(d)+LANL2DZ",
         "pair": "Cu-Co (rate-limiting hop)",
         "t_ij_eV": round(t_ij, 6),
         "t_ij_crude_script24_eV": round(crude, 6),
+        "crude_is_shipped_geometry_only": args.geometry != "shipped",
         "site_energy_gap_eV": round(dG_site, 4),
         "frontier_MOs": [int(i), int(j)],
         "localised": bool(localised),
         "physically_reasonable": bool(physical),
         "wall_seconds": round(time.time() - t0, 1),
     }, indent=2))
-    banner(f"✅ Saved {OUT.relative_to(REPO_ROOT)}")
+    banner(f"✅ Saved {out.relative_to(REPO_ROOT)}")
     return 0
 
 

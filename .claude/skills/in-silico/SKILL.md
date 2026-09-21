@@ -159,5 +159,6 @@ append-only since — cite `in-silico §When Modifying #N`.
 24. New script — the number is a shared namespace (take the next free N from `ls scripts/`, never a remembered range), and the lattice's elastic knockdown is not this half's to compute
 25. A model-feeding FORMULA can be wrong, not just a stale mirror
 26. In a stochastic pipeline the noise floor measured from REFERENCE replicates under-estimates the pipeline's own scatter — and the cheapest independent estimate sits where the perturbation does NOT act
+27. A cluster BUILDER can orient a ligand by a quantity that is not the bond it must form — the accident holds only for the ligand it was tuned on, and CORRECTING it is where the real damage happens
 
 <!-- /INSILICO-MODIFYING-INDEX -->

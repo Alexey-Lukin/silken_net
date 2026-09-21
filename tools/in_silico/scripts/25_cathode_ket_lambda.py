@@ -44,17 +44,33 @@ def _load_tij() -> dict[str, float]:
     return out
 
 
-def _load_lambda_computed() -> dict[str, float]:
-    """Computed λ per metal (script 35). Co = ammine (co_nh3) as the ZIF N-donor
-    analogue; Cu absent (Cu(I) d¹⁰ hexa-aqua opt is unphysical → use literature)."""
+def _load_lambda_computed() -> tuple[dict[str, float], dict[str, str]]:
+    """λ per metal for the "computed" scenarios, WITH per-metal provenance.
+
+    Not every entry is computed, and the key name alone says the opposite. Script 35
+    has no Cu row — Cu(I) d¹⁰ hexa-aqua optimisation is unphysical — so Cu falls back
+    to `LAMBDA_LIT`. The docstring knew that; the emitted cache did not, and the cache
+    is what the canon quotes. The returned provenance map rides beside the numbers so
+    a reader of the JSON sees which half is a measurement (the absence is DRAWN, not
+    left to a default that reads like a result).
+    """
     res = json.loads((CACHE / "metal_reorganization.json").read_text())["results"]
     by_name = {r["name"]: float(r["lambda_use_eV"]) for r in res}
-    return {
-        "Cu": LAMBDA_LIT["Cu"],                       # not computed (see docstring)
-        "Co": by_name.get("co_nh3", by_name.get("co")),
-        "Ce": by_name.get("ce"),
-        "Ru": by_name.get("ru"),
+    co_row = "co_nh3" if "co_nh3" in by_name else "co"
+    values = {
+        "Cu": LAMBDA_LIT["Cu"],
+        "Co": by_name[co_row],
+        "Ce": by_name["ce"],
+        "Ru": by_name["ru"],
     }
+    provenance = {
+        "Cu": "LITERATURE, NOT COMPUTED — script 35 has no Cu row (Cu(I) d¹⁰ hexa-aqua "
+              "optimisation is unphysical); this is LAMBDA_LIT['Cu']",
+        "Co": f"computed — script 35 row `{co_row}` (ammine = the ZIF N-donor analogue)",
+        "Ce": "computed — script 35 row `ce`",
+        "Ru": "computed — script 35 row `ru`",
+    }
+    return values, provenance
 
 
 def _two_sphere(la: float, lb: float) -> float:
@@ -63,7 +79,10 @@ def _two_sphere(la: float, lb: float) -> float:
 
 def main() -> int:
     tij = _load_tij()
-    lam_c = _load_lambda_computed()
+    lam_c, lam_prov = _load_lambda_computed()
+    print("=== λ per metal (script 35 where it exists) ===")
+    for m, v in lam_c.items():
+        print(f"  {m:3s} λ = {v:.4f} eV — {lam_prov[m]}")
     print("=== geometry-corrected t_ij (script 24, clash-free cluster) ===")
     for h, t in tij.items():
         print(f"  {h:8s} t_ij = {t:.5f} eV")
@@ -136,6 +155,7 @@ def main() -> int:
     _BRANCH_KEY = {BRANCHES[0]: "adverse", BRANCHES[1]: "zero", BRANCHES[2]: "favourable"}
 
     out = {"t_ij_eV": tij, "lambda_computed_eV": lam_c,
+           "lambda_computed_provenance": lam_prov,
            "lambda_lit_eV": LAMBDA_LIT, "turnover_s": TURNOVER_S,
            "driving_force": {
                "measured_magnitude_eV": GAP_EV, "measured_source": GAP_SOURCE,
@@ -204,9 +224,30 @@ def main() -> int:
     for tag, m in fo_margin.items():
         print(f"    {tag:9s} ×{m:.2g}")
 
+    lit = out["scenarios"]["literature λ"]
+
+    # A COUPLING lever (bridge π-system, pore guest, metal-d swap) buys k ∝ |t_ij|², so the
+    # multiplier it must deliver to lift the consumer-rule (ADVERSE) reading to enzymatic turnover
+    # is 1/√margin. Derived here rather than inside whichever lever is being priced, because the
+    # acceptance number belongs to the BOTTLENECK, not to the lever.
+    # ⛔ Does NOT apply to a λ lever (Co→Ru): λ sits in the Marcus exponent, not in the prefactor,
+    # so a λ gain does not convert into a coupling multiplier and this number must not be read onto it.
+    out["coupling_gain_to_reach_turnover"] = {
+        "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic "
+                      "turnover at the consumer-rule (adverse) end; k_ET ∝ |t_ij|², so 1/√margin. "
+                      "A COUPLING lever only.",
+        "at_literature_lambda_crude_t": round(lit["margin_vs_turnover_adverse"] ** -0.5, 3),
+        "at_literature_lambda_fodft_t": round(fo_margin["dG=+gap"] ** -0.5, 3),
+        "judge_against": "at_literature_lambda_fodft_t — the rigorous coupling, and the scale the "
+                         "canon quotes; the crude row exists so each published t_ij scale carries "
+                         "its OWN acceptance number instead of one being read onto the other",
+    }
+    print("\n  coupling gain needed to reach turnover (adverse end, k ∝ |t|²):")
+    for k in ("at_literature_lambda_crude_t", "at_literature_lambda_fodft_t"):
+        print(f"    {k:32s} ×{out['coupling_gain_to_reach_turnover'][k]}")
+
     # ⛔ Built from the numbers above, never typed: this string is what the docs quote, and the
     # sentence it replaced ("borderline ×1–30") was true only of the ΔG = 0 column.
-    lit = out["scenarios"]["literature λ"]
     ru = out["scenarios"]["Ru-swap (Co→Ru, computed)"]
     invariant = all(sc["bottleneck_hop_is_branch_invariant"] for sc in out["scenarios"].values())
     verdict = (

@@ -1,0 +1,15 @@
+{
+  "method": "RDKit ETKDG (seed 42) + MMFF94s; span = distance between the two ring N",
+  "purpose": "the premise under the FIXED ZIF_NODE_DIST — does a linker swap move the metals?",
+  "zif_node_dist_A": 6.0,
+  "span_tolerance_A": 0.05,
+  "reference_linker": "meim",
+  "bridge_span_nn_A": {
+    "meim": 2.2128,
+    "bzim": 2.2181
+  },
+  "linkers": {
+    "meim": "2-methylimidazolate — ZIF-8, shipped cathode stack",
+    "bzim": "benzimidazolate — ZIF-7/11, CHEM.35 lever"
+  }
+}

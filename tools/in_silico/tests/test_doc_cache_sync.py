@@ -201,6 +201,31 @@ CHECKS = [
         SUMMARY, r"t_ij\(Cu-Co\) = \*\*([\d.]+) eV",
         "dft/fodft_coupling.json", lambda d: d["t_ij_eV"], 2e-5,
     ),
+    # ── Bridge geometry: the premise under the FIXED ZIF_NODE_DIST, and the acceptance
+    #    threshold any COUPLING lever has to beat. Both are what CHEM.35 turned on.
+    (
+        "bridge N···N span, methylimidazolate → zif_bridge_geometry.json",
+        SUMMARY, r"2-methylimidazolate ⊥ benzimidazolate \| \*\*([\d.]+) ⊥ [\d.]+ Å",
+        "dft/zif_bridge_geometry.json", lambda d: d["bridge_span_nn_A"]["meim"], 5e-4,
+    ),
+    (
+        "bridge N···N span, benzimidazolate → zif_bridge_geometry.json",
+        SUMMARY, r"2-methylimidazolate ⊥ benzimidazolate \| \*\*[\d.]+ ⊥ ([\d.]+) Å",
+        "dft/zif_bridge_geometry.json", lambda d: d["bridge_span_nn_A"]["bzim"], 5e-4,
+    ),
+    (
+        # The ×24 geometry sensitivity. Pinned because it is now a DECLARED ceiling on ③:
+        # the doc may not drift from the probe that measured it.
+        "off-plane bridge t_ij (the ×24 probe) → fodft_coupling_offplane.json",
+        SUMMARY, r"moves the FO-DFT coupling \*\*[\d.]+ → ([\d.]+) eV",
+        "dft/fodft_coupling_offplane.json", lambda d: d["t_ij_eV"], 1e-4,
+    ),
+    (
+        "coupling gain to reach turnover (FO-DFT scale) → cathode_ket_lambda.json",
+        SUMMARY, r"needs \*\*×([\d.]+)\*\* on the FO-DFT t_ij",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["coupling_gain_to_reach_turnover"]["at_literature_lambda_fodft_t"], 5e-4,
+    ),
     # ── L4 kinetics + EIS ──
     (
         "Rct (anode charge-transfer) → eis_model.json",
