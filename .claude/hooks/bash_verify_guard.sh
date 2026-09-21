@@ -11,12 +11,21 @@
 # strictly worse than today. So every detector is anchored narrowly and every
 # known-legitimate idiom is excluded, even at the cost of missing real instances.
 #
-# One rule was MEASURED AND DROPPED and stays dropped:
+# Two rules were MEASURED AND DROPPED and stay dropped:
 #   · `cd` persistence — real, but the harness ALREADY carries it: 95.7% of calls
 #     ending outside the repo print "Shell cwd was reset to …". A hook here would
 #     duplicate a live carrier and add ~1,272 firings of pure noise.
+#   · widening the GATE VOCABULARY below to our own verdict-emitting scripts
+#     (`ruby scripts/docs_check.rb`, `scripts/docs_band.rb`). The blindness is
+#     REAL — both return a verdict by exit code (`exit overall` and `exit 1`), so
+#     rule A does not see them truncated — and it was refused anyway, ⚖️ founder
+#     2026-09-21: 292 of their calls pipe into head/tail across 181 sessions,
+#     i.e. ~1.6 new naggings per session against a stance that buys its
+#     credibility with silence. ⛔ The refusal is about the RATE, not about the
+#     blindness, so do not re-open it on the blindness alone — re-open it on a
+#     NEW measurement of that rate. Provenance: 00_07 OPS.39 §🗄️.
 #
-# A second was dropped and then OVERTURNED, and the reversal is the more useful
+# A THIRD was dropped and then OVERTURNED, and the reversal is the more useful
 # record than either verdict. The refusal read: "whether a bare `$var` is a bug
 # depends on the variable's runtime CONTENT, which no regex sees." That is true
 # of the BROAD form and false of a narrow one — `for x in $list` and
