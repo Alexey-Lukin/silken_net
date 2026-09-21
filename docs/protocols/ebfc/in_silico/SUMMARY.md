@@ -1121,8 +1121,11 @@ alignment (EBI job, 85 accessions committed with the data) gives **61.9 % gaps**
 indel-rich — and per-sequence agreement with our aligner of **33.3 %** raw, **71.8 %** once the cells where
 the external alignment places no residue at all are excluded (45 of 84 are exactly that; 9 more carry a
 residue in both and differ). The finding survives the gap-penalty sweep in direction (Ser 15.7–17.5 % against
-the query residue's 3.6–5.1 %), and the one external PAIRWISE alignment in the tree (EMBOSS Needle,
-*C. incanum*) agrees residue-for-residue. ⛔ Frequency is not consequence, there is no phylogeny and no
+the query residue's 3.6–5.1 %), and **all eight** external PAIRWISE alignments in the tree (EMBOSS Needle,
+completed 2026-09-21) agree residue-for-residue — **8 of 8 read Ser at query 401**. The eight are exactly the
+anchored Ser-carriers of our own clade (seven *Colletotrichum* + *G. smithogilvyi*), and **not one of them sits
+in the curated 85-accession MSA subset**, so each is an independent reading rather than a second look at the
+same cell — which is what makes them a real check on the 61.9 % gap fraction above. ⛔ Frequency is not consequence, there is no phylogeny and no
 tree-aware weighting here, and the 85-accession external subset is a curated sample whose selection rule was
 never recorded — all three are named in the cache's own `caveats`.
 

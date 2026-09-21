@@ -1,7 +1,7 @@
 {
   "script": "70_chem11_site_conservation.py",
-  "generated_utc": "2026-09-21T06:54:09Z",
-  "runtime_s": 10.1,
+  "generated_utc": "2026-09-21T10:48:26Z",
+  "runtime_s": 9.9,
   "question": "Is position 401 of dgrGcGDH conserved? (the hold that gated I401S in the ordered gene)",
   "query": {
     "accession": "G8E4B5",
@@ -1762,7 +1762,106 @@
       "target_organism": "Colletotrichum incanum",
       "residue_at_query_401": "S",
       "our_reading": "S",
-      "agrees": true
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260918-070301-0914-9312139-p1m",
+      "alignment_file": "external_needle_A0A9W8Z4G1.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A9W8Z4G1_9PEZI",
+      "target_acc": "A0A9W8Z4G1",
+      "target_organism": "Gnomoniopsis smithogilvyi",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114618-0460-66964301-p1m",
+      "alignment_file": "external_needle_A0AAJ0ES17.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0AAJ0ES17",
+      "target_acc": "A0AAJ0ES17",
+      "target_organism": "Colletotrichum godetiae",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114621-0111-15641806-p1m",
+      "alignment_file": "external_needle_A0A8H6N132.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A8H6N132",
+      "target_acc": "A0A8H6N132",
+      "target_organism": "Colletotrichum plurivorum",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114623-0526-87193400-p1m",
+      "alignment_file": "external_needle_A0A5Q4BTX3.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A5Q4BTX3",
+      "target_acc": "A0A5Q4BTX3",
+      "target_organism": "Colletotrichum shisoi",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114626-0222-73480118-p1m",
+      "alignment_file": "external_needle_A0A066XAU2.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A066XAU2",
+      "target_acc": "A0A066XAU2",
+      "target_organism": "Colletotrichum sublineola",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114628-0618-77563113-p1m",
+      "alignment_file": "external_needle_A0AAD8PX48.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0AAD8PX48",
+      "target_acc": "A0AAD8PX48",
+      "target_organism": "Colletotrichum navitas",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
+    },
+    {
+      "tool": "EMBOSS Needle",
+      "provider": "EBI Job Dispatcher REST",
+      "job_id": "emboss_needle-R20260921-114631-0683-23158585-p1m",
+      "alignment_file": "external_needle_A0A1G4ASF8.aln",
+      "query_name": "G8E4B5_COLGL",
+      "target_name": "A0A1G4ASF8",
+      "target_acc": "A0A1G4ASF8",
+      "target_organism": "Colletotrichum orchidophilum",
+      "residue_at_query_401": "S",
+      "our_reading": "S",
+      "agrees": true,
+      "in_external_msa": false
     }
   ],
   "controls": {
@@ -1781,7 +1880,7 @@
     ],
     "refused_candidate_scope": "positions script 69 found admissible on apolar area and refused on a declared threshold. Reported so the refusal is judged on the SAME axis that lifted the I401S hold; this script says how often the residue varies, never what the swap would do to folding, activity or yield"
   },
-  "verdict": "Position 401 (I) is VARIABLE in this set: the query residue occurs in 3.6 % of 332 de-duplicated homologs (98 genera) and Ser in 15.7 %; in the anchored subset (n=103) it is 6.8 % vs 39.8 % Ser. The catalytic control His537 reads 98.8 % on the same instrument (100.0 % anchored, Ser 0.0 %), so the instrument separates an invariant position from a variable one. The external MSA (Clustal Omega, 84 sequences) reads the same column as 10.7 % Ser / 3.6 % I with 61.9 % gaps: the direction agrees, the magnitudes do not, and the gap fraction is why — per sequence the two aligners agree on 33.3 % of the shared accessions, rising to 71.8 % once the cells where the external alignment places NO residue are excluded (45 of 84 cells). The one external PAIRWISE alignment in the tree (Colletotrichum incanum, EMBOSS Needle) reads S and agrees with ours.",
+  "verdict": "Position 401 (I) is VARIABLE in this set: the query residue occurs in 3.6 % of 332 de-duplicated homologs (98 genera) and Ser in 15.7 %; in the anchored subset (n=103) it is 6.8 % vs 39.8 % Ser. The catalytic control His537 reads 98.8 % on the same instrument (100.0 % anchored, Ser 0.0 %), so the instrument separates an invariant position from a variable one. The external MSA (Clustal Omega, 84 sequences) reads the same column as 10.7 % Ser / 3.6 % I with 61.9 % gaps: the direction agrees, the magnitudes do not, and the gap fraction is why — per sequence the two aligners agree on 33.3 % of the shared accessions, rising to 71.8 % once the cells where the external alignment places NO residue are excluded (45 of 84 cells). The external PAIRWISE alignments in the tree (EMBOSS Needle, n=8: Colletotrichum incanum → S; Gnomoniopsis smithogilvyi → S; Colletotrichum godetiae → S; Colletotrichum plurivorum → S; Colletotrichum shisoi → S; Colletotrichum sublineola → S; Colletotrichum navitas → S; Colletotrichum orchidophilum → S) agree with our reading in 8 of 8.",
   "caveats": [
     "A frequency in a selected set is not a conservation SCORE: there is no phylogeny and no tree-aware weighting here, and the 90 % de-duplication is a crude bias correction.",
     "The external MSA covers a CURATED 85-accession subset whose selection rule was never recorded; it is committed, so the set can be inspected, but it is not a defined stratum.",

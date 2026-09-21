@@ -550,25 +550,54 @@ def main() -> int:
           f"({external_msa['per_sequence_agreement_where_msa_places_a_residue_pct']}% where the MSA places a residue)")
     print(f"  disagreement kinds: {external_msa['disagreement_kinds']}")
 
-    needle_path = DATA / "external_needle_A0A161YBC9.aln"
-    name_a, name_b, gq, gt = parse_needle_pair(needle_path)
-    needle_residue = residue_at_query_position(gq, gt, FOCUS)
-    ours_for_needle = next((r for r in rows if r["acc"] == "A0A161YBC9"), None)
-    external_pairwise = [{
-        "tool": "EMBOSS Needle",
-        "provider": "EBI Job Dispatcher REST",
-        "job_id": "emboss_needle-R20260918-070304-0265-99399309-p2m",
-        "alignment_file": needle_path.name,
-        "query_name": name_a,
-        "target_name": name_b,
-        "target_acc": "A0A161YBC9",
-        "target_organism": "Colletotrichum incanum",
-        f"residue_at_query_{FOCUS}": needle_residue,
-        "our_reading": ours_for_needle["residues"][FOCUS] if ours_for_needle else None,
-        "agrees": bool(ours_for_needle and ours_for_needle["residues"][FOCUS] == needle_residue),
-    }]
-    print(f"  external Needle ({name_b}): {FOCUS} → {needle_residue} "
-          f"(ours: {external_pairwise[0]['our_reading']})")
+    # Each entry is ONE committed EMBOSS Needle job. Canon names eight Ser-carrying homologs near
+    # our clade, so this list is a growing subset, never the set — `pairwise_n` below reports its
+    # size from the data so no prose can claim a count the tree does not hold.
+    NEEDLE_JOBS = [
+        ("A0A161YBC9", "Colletotrichum incanum",
+         "emboss_needle-R20260918-070304-0265-99399309-p2m"),
+        ("A0A9W8Z4G1", "Gnomoniopsis smithogilvyi",
+         "emboss_needle-R20260918-070301-0914-9312139-p1m"),
+        ("A0AAJ0ES17", "Colletotrichum godetiae",
+         "emboss_needle-R20260921-114618-0460-66964301-p1m"),
+        ("A0A8H6N132", "Colletotrichum plurivorum",
+         "emboss_needle-R20260921-114621-0111-15641806-p1m"),
+        ("A0A5Q4BTX3", "Colletotrichum shisoi",
+         "emboss_needle-R20260921-114623-0526-87193400-p1m"),
+        ("A0A066XAU2", "Colletotrichum sublineola",
+         "emboss_needle-R20260921-114626-0222-73480118-p1m"),
+        ("A0AAD8PX48", "Colletotrichum navitas",
+         "emboss_needle-R20260921-114628-0618-77563113-p1m"),
+        ("A0A1G4ASF8", "Colletotrichum orchidophilum",
+         "emboss_needle-R20260921-114631-0683-23158585-p1m"),
+    ]
+    external_pairwise = []
+    for acc, organism, job_id in NEEDLE_JOBS:
+        needle_path = DATA / f"external_needle_{acc}.aln"
+        name_a, name_b, gq, gt = parse_needle_pair(needle_path)
+        needle_residue = residue_at_query_position(gq, gt, FOCUS)
+        ours_for_needle = next((r for r in rows if r["acc"] == acc), None)
+        # ⚠️ `in_external_msa` is not decoration: an accession absent from the curated 85 makes its
+        # pairwise an INDEPENDENT reading rather than a second look at the same cell.
+        external_pairwise.append({
+            "tool": "EMBOSS Needle",
+            "provider": "EBI Job Dispatcher REST",
+            "job_id": job_id,
+            "alignment_file": needle_path.name,
+            "query_name": name_a,
+            "target_name": name_b,
+            "target_acc": acc,
+            "target_organism": organism,
+            f"residue_at_query_{FOCUS}": needle_residue,
+            "our_reading": ours_for_needle["residues"][FOCUS] if ours_for_needle else None,
+            "agrees": bool(ours_for_needle and ours_for_needle["residues"][FOCUS] == needle_residue),
+            "in_external_msa": acc in msa,
+        })
+        print(f"  external Needle ({name_b}): {FOCUS} → {needle_residue} "
+              f"(ours: {external_pairwise[-1]['our_reading']}"
+              f"{'' if external_pairwise[-1]['in_external_msa'] else ', outside the curated MSA'})")
+    pairwise_n = len(external_pairwise)
+    pairwise_agreeing = sum(1 for e in external_pairwise if e["agrees"])
 
     focus = positions_out[str(FOCUS)]
     control = positions_out[str(CONTROL_POSITIONS[0])]
@@ -588,9 +617,11 @@ def main() -> int:
         f"{external_msa['per_sequence_agreement_pct']} % of the shared accessions, rising to "
         f"{external_msa['per_sequence_agreement_where_msa_places_a_residue_pct']} % once the cells where "
         f"the external alignment places NO residue are excluded "
-        f"({kinds['msa_gap_vs_our_residue']} of {ours_n} cells). The one external PAIRWISE alignment in "
-        f"the tree ({external_pairwise[0]['target_organism']}, EMBOSS Needle) reads "
-        f"{external_pairwise[0][f'residue_at_query_{FOCUS}']} and agrees with ours."
+        f"({kinds['msa_gap_vs_our_residue']} of {ours_n} cells). The external PAIRWISE alignments in "
+        f"the tree (EMBOSS Needle, n={pairwise_n}: "
+        + "; ".join(f"{e['target_organism']} → {e[f'residue_at_query_{FOCUS}']}"
+                    for e in external_pairwise)
+        + f") agree with our reading in {pairwise_agreeing} of {pairwise_n}."
     )
 
     out = {
