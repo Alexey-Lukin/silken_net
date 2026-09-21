@@ -51,6 +51,13 @@ DECLARED CEILINGS:
   * `J_MAX_25C` in lib.constants is the ANODE pair's literature current density (Zafar 2012).
     Using it as the cathode's demand is legitimate only because the cell is in series and the
     current is shared — it is not an independent cathode measurement.
+  * And it is a **pH-7.4 laboratory ceiling**, while our medium is sap at pH 5.75 — so the SIGN
+    matters and is named rather than assumed: the real current is LOWER there (`lib.kinetics.ph_current_ratio_bounds`
+    proves the ratio stays strictly below 1 over ALL glucose), which makes the O2 DEMAND lower and the
+    supply margin below LARGER. The ceiling is therefore the conservative input for this question,
+    and the margin conclusion is strengthened by it, not exposed to it. ⛔ The opposite would hold
+    for any question where the current is the OUTPUT (`30`/`30b`/`31`), which is why those carry the
+    bracket and this one carries a sign (§When Modifying #10).
 """
 from __future__ import annotations
 
@@ -61,6 +68,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import F_CONST, J_MAX_25C, KINETICS_DIR, R_GAS, REPO_ROOT, TEMPERATURE_K
+from lib.kinetics import ph_current_ratio_bounds
 from lib.utils import banner
 
 OUT_JSON = KINETICS_DIR / "gdl_breakthrough.json"
@@ -237,6 +245,13 @@ def main() -> int:
     # therefore holds for coupon and anchor alike. [E.63, 2026-09-11]
     print(f"  peak current density {J_MAX_25C * 1e6:.0f} uA/cm2 (lib.constants J_MAX_25C) "
           f"-> O2 demand {demand:.3e} mol/m2/s (per unit area, body-independent)")
+    # The ceiling is a pH-7.4 figure; sap lowers the current, hence the demand, hence RAISES every
+    # margin below. Named so the robustness is a stated direction, not an accident of which input
+    # happened to be handy.
+    bounds = [b for f in ("wt", "rec") for b in ph_current_ratio_bounds(f)]
+    print(f"  ^ pH-7.4 lab ceiling; at sap pH 5.5 the same enzyme runs x{min(bounds):.2f}-"
+          f"{max(bounds):.2f} over ALL glucose (analytic limits, lib.kinetics — no window assumed), "
+          f"strictly below 1, so demand FALLS and every margin below is a LOWER bound")
     print(f"  air-side O2 concentration {c_o2:.2f} mol/m3 at {TEMPERATURE_K:.2f} K")
     print(f"\n  {'pore (um)':>10s} {'D_Knudsen':>12s} {'D_Bosanquet':>13s} {'D_eff':>11s} "
           f"{'flux @50um':>13s} {'margin':>10s}")

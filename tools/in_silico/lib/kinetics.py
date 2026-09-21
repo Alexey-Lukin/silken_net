@@ -31,3 +31,19 @@ def ph_current_ratio(glucose_mM: float, form: str) -> float:
     km_lo, kcat_lo = PH_KINETICS_SYGMUND[form][5.5]
     km_hi, kcat_hi = PH_KINETICS_SYGMUND[form][7.5]
     return mm_velocity(kcat_lo, km_lo, glucose_mM) / mm_velocity(kcat_hi, km_hi, glucose_mM)
+
+
+def ph_current_ratio_bounds(form: str) -> tuple[float, float]:
+    """The ratio's two analytic limits over ALL glucose — so a consumer can state a SIGN.
+
+    `ratio(S) = (k_cat_lo/k_cat_hi) · (K_M_hi + S)/(K_M_lo + S)`, and since the source has
+    `K_M_hi > K_M_lo` the second factor falls monotonically from `K_M_hi/K_M_lo` toward 1. So the
+    ratio is monotone in [S] and its extremes are the two limits — no glucose window has to be
+    chosen, and none is: a window would be an assumption where the algebra already gives a bound.
+
+    Returns `(at_infinite_S, at_zero_S)` = `(low, high)`.
+    """
+    km_lo, kcat_lo = PH_KINETICS_SYGMUND[form][5.5]
+    km_hi, kcat_hi = PH_KINETICS_SYGMUND[form][7.5]
+    at_inf = kcat_lo / kcat_hi
+    return at_inf, at_inf * (km_hi / km_lo)
