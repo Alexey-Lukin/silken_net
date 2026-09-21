@@ -93,7 +93,7 @@ jobs:
 # ⚠️ Бампера НЕМА: Dependabot читає `uses:`, але не `version:` — підняття є
 # ручним кроком рецепту скіла `dependency-update`, і це названо, щоб пін не
 # старів мовчки.
-          version: v1.8.3
+          version: v1.7.1
 
       - name: Install contract dependencies
         run: npm ci
@@ -301,7 +301,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
-          version: v1.8.3
+          version: v1.7.1
 
       - name: Install contract dependencies
         run: npm ci
@@ -366,7 +366,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
-          version: v1.8.3
+          version: v1.7.1
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -466,7 +466,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           # 🔒 [OPS.21] пін, не `stable` — підстава при першому вжитку в цьому файлі; бамп ручний
-          version: v1.8.3
+          version: v1.7.1
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
