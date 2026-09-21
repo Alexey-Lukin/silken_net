@@ -224,6 +224,36 @@ def main() -> int:
     for tag, m in fo_margin.items():
         print(f"    {tag:9s} ×{m:.2g}")
 
+    # 🔴 GEOMETRY SENSITIVITY — the term nothing declared until 2026-09-21, and it is NOT
+    # ×|t|²: the refused off-plane bridge moves the site-energy gap as well as the coupling,
+    # and both come out of the SAME diabatisation of the SAME cluster. Quoting the |t|² part
+    # alone understates it ~25× and misdescribes it in kind, so the margin is recomputed here
+    # end-to-end. ⛔ The off-plane geometry is REFUSED by script 23 (metals 0.70 / 1.37 Å out
+    # of their own bridge-ring plane — a nitrogen binds through an IN-plane lone pair), so this
+    # is the cost of building it WRONG, never a two-sided uncertainty on the shipped number.
+    off_path = CACHE / "fodft_coupling_offplane.json"
+    if off_path.exists():
+        off = json.loads(off_path.read_text())
+        off_margin = {tag: marcus_rate(off["t_ij_eV"], lam_lit, dg) / TURNOVER_S
+                      for tag, dg in (("dG=0", 0.0), ("dG=+gap", off["site_energy_gap_eV"]))}
+        out["geometry_sensitivity_refused_offplane"] = {
+            "what": "bridge ring rolled out of the metals' coordination plane; REFUSED by "
+                    "script 23 (`bridge_out_of_plane` > `PLANARITY_TOL_A`) — a probe, not a candidate",
+            "t_ij_eV": off["t_ij_eV"], "site_gap_eV": off["site_energy_gap_eV"],
+            "t_ij_ratio_vs_shipped": round(off["t_ij_eV"] / t_fo, 2),
+            "margin_adverse": round(off_margin["dG=+gap"], 1),
+            "margin_adverse_shipped": round(fo_margin["dG=+gap"], 3),
+            "margin_ratio": round(off_margin["dG=+gap"] / fo_margin["dG=+gap"], 0),
+            "flips_the_verdict": bool(
+                (fo_margin["dG=+gap"] < 1.0) != (off_margin["dG=+gap"] < 1.0)),
+            "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of "
+                                 "the coupling ratio — quoting |t|² alone understates it",
+        }
+        g = out["geometry_sensitivity_refused_offplane"]
+        print(f"\n  geometry sensitivity (REFUSED off-plane probe): t_ij ×{g['t_ij_ratio_vs_shipped']}, "
+              f"margin ×{g['margin_adverse_shipped']} → ×{g['margin_adverse']} "
+              f"(×{g['margin_ratio']:.0f}); flips the verdict: {g['flips_the_verdict']}")
+
     lit = out["scenarios"]["literature λ"]
 
     # A COUPLING lever (bridge π-system, pore guest, metal-d swap) buys k ∝ |t_ij|², so the

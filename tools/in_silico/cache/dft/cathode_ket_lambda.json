@@ -324,6 +324,17 @@
       "dG=-gap": 731.51
     }
   },
+  "geometry_sensitivity_refused_offplane": {
+    "what": "bridge ring rolled out of the metals' coordination plane; REFUSED by script 23 (`bridge_out_of_plane` > `PLANARITY_TOL_A`) \u2014 a probe, not a candidate",
+    "t_ij_eV": 0.132733,
+    "site_gap_eV": 0.0264,
+    "t_ij_ratio_vs_shipped": 24.3,
+    "margin_adverse": 8855.1,
+    "margin_adverse_shipped": 0.59,
+    "margin_ratio": 15008.0,
+    "flips_the_verdict": true,
+    "why_not_t_squared": "the gap moves too, so the margin ratio is NOT the square of the coupling ratio \u2014 quoting |t|\u00b2 alone understates it"
+  },
   "coupling_gain_to_reach_turnover": {
     "definition": "|t_ij| multiplier the bottleneck hop needs for k_ET to reach enzymatic turnover at the consumer-rule (adverse) end; k_ET \u221d |t_ij|\u00b2, so 1/\u221amargin. A COUPLING lever only.",
     "at_literature_lambda_crude_t": 5.55,

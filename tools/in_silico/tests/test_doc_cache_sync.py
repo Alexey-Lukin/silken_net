@@ -221,6 +221,14 @@ CHECKS = [
         "dft/fodft_coupling_offplane.json", lambda d: d["t_ij_eV"], 1e-4,
     ),
     (
+        # The margin the REFUSED geometry reads — the number that says the criterion is
+        # load-bearing (it crosses turnover), not that ③ carries a band that wide.
+        "off-plane margin (crosses turnover) → cathode_ket_lambda.json",
+        SUMMARY, r"margin goes \*\*×[\d.]+ → ×([\d]+) — a factor",
+        "dft/cathode_ket_lambda.json",
+        lambda d: d["geometry_sensitivity_refused_offplane"]["margin_adverse"], 1.0,
+    ),
+    (
         "coupling gain to reach turnover (FO-DFT scale) → cathode_ket_lambda.json",
         SUMMARY, r"needs \*\*×([\d.]+)\*\* on the FO-DFT t_ij",
         "dft/cathode_ket_lambda.json",
