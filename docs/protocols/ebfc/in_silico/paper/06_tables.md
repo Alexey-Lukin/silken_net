@@ -44,7 +44,7 @@
 | Ru-swap (Co→Ru, computed λ 0.78) | ×31 *(ΔG = 0; the Cu–Ru site gap is not obtainable from the minimal cluster)* |
 | FO-DFT rigorous (ΔG −/0/+gap) | ×0.59 – ×732 (×25 at ΔG=0) |
 
-*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35); B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. Cathode is borderline / possibly co-limiting (k_DET ~ turnover).*
+*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35) for Co, Ce and Ru; λ(Cu) is the literature value, a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. Cathode is borderline / possibly co-limiting (k_DET ~ turnover).*
 
 ## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)
 

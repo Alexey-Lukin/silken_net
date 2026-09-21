@@ -66,7 +66,9 @@ rate is the series combination of the three hops.
 
 **Reorganisation energies (Nelsen 4-point).** Inner-sphere λ was computed by the four-point method
 (two relaxed geometries + two cross single-points seeded from the diagonal density). For the
-cathode this was applied to the well-behaved mixed-valence metal couples; for the anode the
+cathode this was applied to the well-behaved mixed-valence metal couples — **Co, Ce and Ru; Cu(II/I)
+was not computed**, a d¹⁰ Cu(I) hexa-aqua optimisation being unphysical in implicit solvent, so λ(Cu)
+enters as the literature value and λ_hop(Cu–Co) is half computed and half cited; for the anode the
 physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used — the naïve
 FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in implicit solvent and does not yield
 a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.

@@ -11,7 +11,7 @@ physically correct deprotonated semiquinone couple rather than assumed. A **Hamm
 rule** for the osmium mediator gives a predictive, transferable design handle and rationalises the
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a
-clash-free geometry with computed reorganisation energies and with the enzyme's T1 site oriented
+clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with the enzyme's T1 site oriented
 toward the framework node, a *borderline* process at zero driving force and a *rate-limiting* one on the
 adverse reading of the computed site-energy gap — limited by reorganisation energy and by driving force
 together, a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy

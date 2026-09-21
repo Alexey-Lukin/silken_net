@@ -60,7 +60,9 @@ optimum (~+309 mV) balances driving force against overpotential.
 Inter-metal couplings in the bimetallic Cu–Co–Ce nanozyme were obtained from charge-localised ΔSCF on
 clash-free cluster geometries (a bridging imidazole that had collided with the second metal was
 deprotonated to the imidazolate, restoring physical coordination). With reorganisation energies
-computed by the two-sphere Nelsen method rather than assumed, the **Cu–Co hop is the bottleneck** (Fig 4a; Table 3), and
+from the two-sphere Nelsen construction rather than assumed — computed for Co, Ce and Ru, while λ(Cu) is
+the literature value, a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so that λ_hop(Cu–Co) is half
+computed and half cited — the **Cu–Co hop is the bottleneck** (Fig 4a; Table 3), and
 its rate sits at **~enzymatic turnover** — a margin of order ×1–30 *at zero driving force*, not the orders
 of magnitude an earlier (geometry- and λ-) artefact had suggested. That qualifier is load-bearing: the
 Marcus rate is exponentially sensitive to ΔG as well as to λ, and the computed **0.183 eV** Cu–Co
@@ -100,7 +102,15 @@ separation is of order 15–20 Å, and because the coupling decays exponentially
 with it the whole margin reported above — goes to zero. **The margin is therefore conditional on
 oriented immobilisation; it is not a property of the nanozyme alone.** Second, the coupling is computed
 on a clash-corrected programmatic cluster, not a DFT-relaxed geometry — these flat-PES metal clusters resist geometry optimisation (as the osmium complex
-did), so t_ij is geometry-bounded. Third, the single-hop bottleneck is a conservative estimate: the ZIF is
+did), so t_ij is geometry-bounded — and we quantify that bound rather than assert it. The bridge ring's
+roll about its own N···N axis is a degree of freedom the cluster construction does not fix by energy;
+rolling it out of the metals' coordination plane (Cu 0.70 Å, Co 1.37 Å off-plane, everything else held)
+raises t_ij 24-fold *and* shrinks the site-energy gap to 0.026 eV, moving the adverse margin from ×0.59
+to ×8.9×10³ — i.e. across enzymatic turnover. That configuration is rejected on chemical grounds, since
+a coordinating nitrogen binds through a lone pair lying **in** the ring plane and our cluster places the
+metals 0.000 Å from it; we report the number because it shows the cathode verdict rests on that single
+geometric criterion rather than on a tolerance band, and because the residual spread *within* the
+in-plane family (M–N–C angles, in-plane tilt) remains unquantified. Third, the single-hop bottleneck is a conservative estimate: the ZIF is
 a wide-gap insulator, so charge transport proceeds by the discrete Marcus hops we model rather than band
 conduction, and the 3D framework presents parallel instances of the bottleneck hop — genuine band-like
 transport would require a conductive MOF (one of the levers above). A predicted cathode
