@@ -23,7 +23,7 @@
 | Розділ листа (EN) | Дім | Як подано | Прибрано (§0 п.3) |
 |---|---|---|---|
 | **Scope · service exposure** | план §0 · §1.1 · §5.1 | предмет — матеріал у стані процесу деталі, не деталь; «до порядку 10⁹ циклів» замість одного числа, бо бюджет до одного числа не звужується (HW.43); частоту служби названо ще не зафіксованою — канонна смуга [`01_02 §2.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) не має джерела (план §5.1 ⚠️) | що напруження деталі не пораховане ніде (план §1.3) — наша прогалина, не параметр методу |
-| **Base case** | план §10 п.7 · ревʼю в рамці тест-хаусу | базовий кейс ПРОПОНУЄ тест-хаус (одна серія, A, run-out 10⁷), усе інше — дельтами, щоб відповідь не стала прайсом; R = −1 — лише для ціни | — |
+| **Base case** | план §10 п.7 · ревʼю в рамці тест-хаусу | базовий кейс ПРОПОНУЄ тест-хаус (одна серія, A, run-out 10⁷), усе інше — дельтами, щоб відповідь не стала прайсом; R = −1 — чинний для всіх серій першої програми (⚖️ 2026-09-21), не лише для ціни | — |
 | **Specimens we supply · series** | план §2 · §3 | серії описано тим, що тест-хаус мусить ОБРОБИТИ (середовище · обробка робочої частини · кількість орієнтацій), а не маршрутом; дві орієнтації — ратифіковано ⚖️ 2026-09-18 («quote per orientation», без «confirmed»); «three to five further conditions» (обидва прочитання ΔHIP · Δbake на обох температурах) — «confirmed before the order»; виробник, робоча частина «в розмір» і простежуваність — «we plan / we intend» | параметри маршруту (HIP · bake — ⚖️ HW.27) і що саме змінює кожна серія, яка різниться маршрутом (серії «в повітрі» й «з обробленою робочою частиною» свою мету називають самі) |
 | **Test medium** | план §7 → рецепт [`01_02 §2.1`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md); форма — [`anchor_coin_electrochem_rfq`](anchor_coin_electrochem_rfq.md) §2 | точка тієї самої таблиці (⚖️ 2026-09-17: без оксалату, pH 5.75 через KOH) і те саме застереження про слабкий буфер, що в coin-листі; режим і уставка температури — «confirmed before the order»; O₂ · потенціал — опціями | число потенціалу: вікно стеку — висновок плану, не вимір |
 | **Test methods A–H · run-out** | план §5.3 · §6.2 | вісім маршрутів і три run-out — опції з ціною й часом каналу; матриця серій × маршрутів; сила-контроль лише на звичайних машинах, на ультразвуку — амплітуда з калібруванням напруження; частота A — «confirmed before the order»; потенціостат — лише на A; міст частот мотивовано тим, що опубліковані результати розходяться (план §5.2 а) | Arrhenius-оцінка стиску (план §5.2 в) |
@@ -42,9 +42,9 @@
 | Відкрите | Як лист лишається чинним | Дім присуду |
 |---|---|---|
 | маршрут випробування (план §5.3 A–H) · run-out · частота A | усі маршрути й три run-out — опції з ціною й часом каналу; частота A — «confirmed before the order» (тест-хаус називає діапазон, а не обирає: інакше обере найшвидшу) | [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.23 (план §9 п.1) |
-| R | R = −1 лише для базового кейсу ціни; решта R — питанням; «confirmed before the order» | HW.23 (п.2) |
-| прочитання ΔHIP · Δbake на обох температурах | «three to five further conditions … quote per series» | HW.23 (п.4) · HW.27 (п.5) |
-| температура bake · комірка bake × середовище | маршруту лист не несе; комірка — опція «one further condition in laboratory air» | HW.27 · HW.23 (п.5–6) |
+| R | ✅ ⚖️ делеговано 2026-09-21 (план §9.1 №2): **R = −1 для ВСІХ серій першої програми**, не лише для ціни — один R тримає A, B/C і D на одній кривій. Другий R — лише коли стане відомим середнє напруження деталі | HW.23 (п.2) |
+| прочитання ΔHIP · Δbake на обох температурах | «three to five further conditions … quote per series». ⚖️ **ΔHIP переведено в опційні діагностичні** (делеговано 2026-09-21, план §9.1 №4) — воно більше не живить жодного рішення, тож серед «further conditions» стоїть як опція, а не як плече; якщо купувати — прочитання (i). Δbake на обох температурах лишається живим: його температуру закриє пара LECO + XRD | HW.23 (п.4) · HW.27 (п.5) |
+| температура bake · комірка bake × середовище | маршруту лист не несе. ⛔ Комірку bake × середовище **НЕ замовляємо** (⚖️ делеговано 2026-09-21, план §9.1 №6), тож опцію «one further condition in laboratory air» з листа знято; опція в соку лишається | HW.27 · HW.23 (п.5–6) |
 | сплав | Ti-6Al-4V зараз; другий — follow-on | HW.24 (п.7) |
 | pH · глюкоза · температура · O₂ · потенціал | межі + «confirmed before the order» (для температури — і режим: стала ⊥ цикл, цикл опцією); O₂ і потенціал — опції | HW.3 · HW.24 · HW.23 (п.8) |
 | критерій відмови | критерій на кожній точці + ціна виявлення зародження | HW.23 (п.9) |
@@ -72,7 +72,7 @@
   - Ультразвукової VHCF в Україні пошук не знайшов. ⚠️ Інститути НАН працюють із зовнішніми замовниками договором НДР під технічне завдання — для них потрібен не EN-лист, а **ТЗ українською** з того самого змісту.
 - [ ] 👤 **Зразки йдуть DMLS-листом, і його пп. 2–4 та 14 не поширюються на серії, що від них відходять** (пп. 2 · 4 · 14 — HIP · bake · активація — «mandatory»; п.3, орієнтація, — з 2026-09-17 питання, не вимога). Питання вже стоїть у pre-qual листі ([`vendor_templates`](vendor_templates.md) §Processing п.16, разом із ціною свідків на розтяг кожної серії) — перевірити, що воно поїхало тим самим листом; сам рядок замовлення зразків пишеться після ⚖️ «хто виготовляє зразки» (план §9 п.15). ⚠️ Статус bake серій кодується (⚖️ 2026-09-17) — тож посилка йде через нас, без сертифіката вендора всередині.
 - [ ] 👤 **CDA — на комерційній стадії, не перед запитом:** лист сам каже, що для обговорення відкритої специфікації угода не потрібна; стандартний взаємний CDA — при замовленні ([`rfq_registry`](rfq_registry.md) §3).
-- [ ] 👤 **Після відповіді:** висновок (не чужі ціни й внутрішні факти) → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.23; маршрут, run-out і `n` — у присуди плану §9.
+- [ ] 👤 **Після відповіді:** висновок (не чужі ціни й внутрішні факти) → [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.23; `n` і статистика — у присуди плану §9 (№10, відкрите). ⚠️ **Маршрут і run-out сюди більше НЕ йдуть — їх ухвалено** ⚖️ делеговано 2026-09-21 (план §9.1 №1: дельти A@10⁷, P до 10⁹ + міст D); відповідь тест-хаусу їх ПЕРЕВІРЯЄ на здійсненність, а не обирає.
 
 ---
 
@@ -102,7 +102,7 @@ We send no estimate of the fatigue strength and no model predictions: we want th
 
 ### Base case — please price this first
 
-One series — the production condition, tested in synthetic sap — on method A at a frequency you propose, fully reversed loading (R = −1, the base case for pricing only), run-out at 10⁷ cycles, one constant temperature and one pH within the ranges below, your recommended number of specimens for a median S-N curve with a staircase at the run-out, tensile witnesses, SEM fractography of every failed specimen, and the report. State the machine-channel time the base case occupies. Price every other series, method, run-out and option below as a delta on it.
+One series — the production condition, tested in synthetic sap — on method A at a frequency you propose, fully reversed loading (R = −1 — the ratio for every series in this first programme, not only for pricing), run-out at 10⁷ cycles, one constant temperature and one pH within the ranges below, your recommended number of specimens for a median S-N curve with a staircase at the run-out, tensile witnesses, SEM fractography of every failed specimen, and the report. State the machine-channel time the base case occupies. Price every other series, method, run-out and option below as a delta on it.
 
 ### Specimens we supply
 
@@ -118,8 +118,10 @@ One series — the production condition, tested in synthetic sap — on method A
   - the **production condition, tested in synthetic sap** — in **two build orientations** (specimen axis parallel and perpendicular to the build direction); please quote per orientation;
   - **three to five further conditions, tested in synthetic sap**, confirmed before the order — all with an as-printed gauge except one with a machined gauge; please quote per series;
   - the **production condition, tested in laboratory air** on the same machine type and at the same frequency as in sap;
-  - *options:* one further condition tested in laboratory air, and one further condition tested in synthetic sap.
+  - *option:* one further condition tested in synthetic sap.
 - **Same-build witnesses, per series** (per build, if a series spans builds): tensile specimens (yield strength, ultimate tensile strength, elongation) — quote per specimen; and the surface roughness of the gauge per series, stated as named parameters together with the instrument, including a **valley parameter** (for example Sv, Sz or Rv) besides an average one.
+
+**Which of these we intend to buy, so that the quote can be a plan and not a price list.** Our programme is decided: the single-factor delta series run on **method A in synthetic sap with run-out at 10⁷** — they measure the *difference* between conditions, so a flat limit beyond 10⁷ does not affect them — and the **production condition additionally runs to 10⁹** (method B or C, whichever your capability makes sound) **plus the frequency bridge D**, because 10⁹ is the only requested level that covers the service exposure stated above — which does not narrow to a single number on our side — and because the sign of the frequency effect on an as-built surface is unknown and the bridge measures it rather than assuming it. Methods **E · F · G · H stay in the table as priced alternates**: we ask their price so that we have a route if you tell us the intended one is not sound on your machines. The stress ratio is R = −1 throughout.
 
 | Series | Method | Environment | Run-out options | Phase |
 |---|---|---|---|---|
@@ -128,7 +130,7 @@ One series — the production condition, tested in synthetic sap — on method A
 | Production condition | A | laboratory air | 10⁷ | 3 |
 | Production condition — very-high-cycle extension | B · C · D · G | air (B, D) · sap (C, G) | 10⁸ · 10⁹ | 4 |
 | Production condition — time dependence in the medium | E · F · H | synthetic sap | see each method | 4 |
-| Options: one further condition in air, one in sap | A | as named | 10⁷ | 3 |
+| Option: one further condition in sap | A | synthetic sap | 10⁷ | 3 |
 
 ### Test medium
 
@@ -151,7 +153,7 @@ One series — the production condition, tested in synthetic sap — on method A
 
 ### Test methods — please quote each as a delta on the base case
 
-**General conditions.** Constant-amplitude axial loading — force-controlled on conventional machines; on ultrasonic machines, displacement-amplitude-controlled with the stress calibration stated. The stress ratio is **confirmed before the order**: tell us which ratios your machines and the specimen geometry support besides R = −1 — on an ultrasonic machine a ratio other than −1 needs an added static load.
+**General conditions.** Constant-amplitude axial loading — force-controlled on conventional machines; on ultrasonic machines, displacement-amplitude-controlled with the stress calibration stated. The stress ratio is **R = −1 for every series in this programme** — fully reversed axial loading, so that the conventional, ultrasonic and frequency-bridge series all sit on one curve. Tell us if your machines or the specimen geometry cannot hold R = −1 on any method, and what you would run instead; a second stress ratio is not part of this programme. tell us which ratios your machines and the specimen geometry support besides R = −1 — on an ultrasonic machine a ratio other than −1 needs an added static load.
 
 **A. Conventional axial machine, to 10⁷ cycles** — in synthetic sap, and in laboratory air for the air series. State the frequency range you can run in each environment (the test frequency is confirmed before the order), the channels available, the cell type (immersion or flow) and the machine-channel time per specimen.
 
