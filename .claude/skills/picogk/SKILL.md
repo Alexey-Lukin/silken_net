@@ -86,6 +86,7 @@ append-only (`0a` · `0b` · `4a` · `9b` are items of their own).
 16. A constant-period lattice sampled at a step that divides its period is PHASE-LOCKED — and `--step-div N` takes the step FROM the period, so on a constant-period part EVERY divisor is such a step, by definition
 17. `out/` is OUTSIDE every gate we own, and that is where the VENDOR's copy lives
 18. A mutation probe that restores a `.cs` with an OLDER mtime is not restored for MSBuild — and the next probe's red is the previous probe's leftover
+19. Editing a `cem/*.json` through a JSON PARSER rewrites the whole file, and the reformat hides the one line you meant to change
 
 <!-- /PICOGK-GOTCHAS-INDEX -->
 
