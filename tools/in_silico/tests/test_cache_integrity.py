@@ -1200,15 +1200,64 @@ def test_psbma_diffusion_results():
 # ── Constants vs documentation consistency ──
 
 def test_constants_match_kinetics_output():
-    """Verify constants.py values are used in kinetics output."""
+    """Verify constants.py values are used in kinetics output.
+
+    ⚠️ Says what it CAN and CANNOT catch (in-silico §When Modifying #8). CATCHES: a constant
+    edited in `lib/constants.py` while the committed cache still carries the value the script
+    computed from the OLD one — i.e. an edit without the re-run its consumers need. Does NOT
+    catch a value that is arithmetically right but bound to the WRONG REFERENT (`HW.45`), and
+    does NOT judge the canon: doc↔cache is `test_doc_cache_sync`'s axis, a different pin.
+    """
     import sys
     sys.path.insert(0, str(REPO / "tools/in_silico"))
-    from lib.constants import BASELINE_DELTA_T_S, J_MAX_25C, KM_GLUCOSE
+    from lib.constants import BASELINE_DELTA_T_S, ETA_BQ, J_MAX_25C, KM_GLUCOSE
 
     data = json.loads((KINETICS / "delta_t_lookup.json").read_text())
     assert data["parameters"]["j_max_25C_uA_cm2"] == J_MAX_25C * 1e6
     assert data["parameters"]["Km_mM"] == KM_GLUCOSE
     assert data["parameters"]["BASELINE_DELTA_T_S"] == BASELINE_DELTA_T_S
+    # η_boost feeds `p_net = p_ebfc * ETA_BQ`, so every delta_t in this cache is downstream of it.
+    # The field sat in the same `parameters` block as the three above and was the only one unpinned
+    # (00_07 DOC-T.117, measured by mutation 2026-09-21: the edit was green across the whole suite).
+    assert data["parameters"]["eta_BQ"] == ETA_BQ
+
+
+def test_constants_match_mechanical_output():
+    """Pin the mechanical caches to the constants their scripts were run from.
+
+    Same axis as `test_constants_match_kinetics_output` and the same declared limits. Born of the
+    2026-09-21 mutation measurement (00_07 DOC-T.117): each of these constants reaches a committed
+    cache field and each cache is densely pinned to canon by `test_doc_cache_sync` — yet editing the
+    constant reddened NOTHING, because a doc↔cache pin cannot see a cache that was never re-run.
+
+    ⛔ `D_BUS_ROD_MM` is deliberately ABSENT and must stay absent: pinning the frozen anchor geometry
+    mirrored in this file was MEASURED and REFUSED (⚖️ founder 2026-09-09, `HW.45`, `00_06 §2`) —
+    both live discrepancies of that class carried a TRUE canon number under a foreign referent, so
+    every form of the pin is green on them. Adding it here rebuilds what was declined.
+    """
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import (
+        SLM_MIN_WALL_DEFAULT_MM,
+        SWAY_F0_HZ_HIGH_READING,
+        SWAY_F0_HZ_LOW_READING,
+    )
+
+    # The two named readings are a BRACKET, and both ends carry the cycle budget (in-silico
+    # §When Modifying #11) — pinning one end would turn a bracket into a point in disguise.
+    wind = json.loads((MECHANICAL / "wind_duty_cycle.json").read_text())
+    assert tuple(wind["sway_frequency"]["low_reading_hz"]) == tuple(SWAY_F0_HZ_LOW_READING)
+    assert wind["sway_frequency"]["high_reading_hz"] == SWAY_F0_HZ_HIGH_READING
+
+    # One constant, TWO units in two caches: `52` writes it in mm, `66` writes it ×1000 in µm.
+    # That split is exactly what this pin is for — a unit drifting on one side only.
+    z_stack = json.loads((MECHANICAL / "z_stack_tolerance.json").read_text())
+    assert z_stack["collar_radial_budget"]["printability_floor_mm"] == SLM_MIN_WALL_DEFAULT_MM
+    ligament = json.loads((MECHANICAL / "gyroid_ligament.json").read_text())
+    for topology in ("sheet", "network"):
+        assert ligament["floor_inversion"][topology]["slm_default"]["floor_um"] == (
+            SLM_MIN_WALL_DEFAULT_MM * 1000.0
+        ), topology
 
 
 def test_dft_os_redox_pair_ordering():
