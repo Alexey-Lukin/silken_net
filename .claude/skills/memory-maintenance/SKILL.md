@@ -15,6 +15,20 @@ Full step-by-step playbook + founder's principles + the zero-loss scripts → **
 
 **Three modes:** (1) *housekeeping* (this skill + the prompt — de-cruft, structure, stale-hooks, action-items→00_07); (2) *4-way memory-sync* — a per-section pass bringing memory ↔ domain-skill ↔ canon ↔ 00_07 to one truth (ROUTE-not-restate, fix drift on BOTH surfaces, write gaps). The sync recipe (fan-out READ-ONLY agents + fable-holistic) lives in `[[project_memory_sync_program]]`; the §00–§08 cycle closed 2026-07-18. (3) **class-home consolidation** — a theme scattered as a side-note across 15–35 files, each time in a DIFFERENT vocabulary, gets one home; grep cannot find it *by construction*, so the inventory is READ-based fan-out. Built in waves, each one paying part of the previous wave's phase-2 debt; the **7-step recipe, its traps and the ledger of still-PARTIAL classes all live in `[[log_perimeter_prep]]` — read it BEFORE consolidating another**. Never keep that tally here, and no longer look for it in the tracker: DOC-T.59 carried it until 2026-08-04, when the item closed, its body was collapsed and the ID went to `§🗄️`.
 
+### Консолідація ЕПІЗОД-РОДИНИ в роутер — окрема операція від class-home (⚖️ founder 2026-09-18…21, `00_07` DOC-T.118)
+
+⊥ Class-home consolidation бере клас, **розсіяний side-note'ами** по 15–35 файлах. Тут інше: **кампанія наплодила родину епізод-файлів**, вони зливаються в ОДИН роутер, а решта **ВИДАЛЯЄТЬСЯ**. Форму ратифіковано на §01 і виміряно: за період знято 10 файлів; перший прохід наступної хвилі — `−9.6 kB` з одного файлу.
+
+1. **Кандидат** — епізод-файл із малим inbound (1–2 струни) при живому роутері родини; вага не критерій.
+2. **Тріаж КОЖНОЇ клаузи** на три стани: уже шле в дім (нічого) ⊥ дім є, але клауза його переказує (лишити самий SEND) ⊥ бездомна (крок 3).
+3. **Бездомне їде в git** — скіл, плейбук чи канон, — **не в інший файл памʼяті**: там його тримає гейт і CI. Дім обирає **МОМЕНТ ДІЇ**, не тема: урок про згортання секції → плейбук цементації, навіть якщо тематично він «про памʼять».
+4. **Зрізати:** хибне-нині · лічильники · опис шару, що вже живе деінде (реєстр/канон/скіл).
+5. **Переточити ВСІ вхідні струни** — і з памʼяті, і **з боку репо**: другі невидимі зсередини корпусу, їх віддає `--routes`, і в першому ж проході саме він знайшов пропущену адресу.
+6. **Злити рядок індексу** — урок лишається текстом, лінк іде.
+7. **`git rm` + опустити `CORPUS_FLOOR` на одиницю** — інакше гейт червонить, а головне: зниження робить втрату git-видимою.
+
+⚠️ **Три пастки, куплені першим проходом.** (а) «Дім є» ставить READ, ніколи греп — на цьому корпусі греп збрехав ТРИЧІ за одну сесію (механічне імʼя журналу · регістр кирилиці ×2). (б) Інвентар «модуль-звʼязаності» по канон-рефах брехатиме, доки не виключиш `00_01`/`00_03`/`00_05`/`00_06`/`00_07` — їх цитує ВСЕ, і прилад починає міряти «цитує Фундамент». (в) Корпус версіонований, тож політика тут «сумніваєшся — ріж і лиши коміт» — але ⊥ відкотність ≠ правильність: revert рятує лише ВИМІЧЕНУ втрату.
+
 ### Traps before you consolidate — each one cost a wave
 
 **Bodies live in `traps.md` (read it before any curation VERDICT — consolidating a class,
