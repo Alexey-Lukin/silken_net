@@ -1003,8 +1003,10 @@ under-estimating its own spread.
 - ⚖️ **Gln200 — refused by OUR threshold, not by the physics.** Ala201 → Ser would remove **48 %** of that
   patch and is refused by a burial of 0.770 against our declared ceiling of 0.75 — a margin of **0.020**, and
   it would pass at the sweep's relaxed value of 0.85. Trp210 → Ser would remove 30 % and is genuinely buried
-  (0.908, passing at neither swept value). The ceiling was left where it was declared;
-  `threshold_cost_measured` prices each refusal in Å² so the choice stays visible.
+  (0.908, passing at neither swept value). ⚖️ **The ceiling was RATIFIED at 0.75 by the founder on
+  2026-09-21**, so the gene does not take a fourth compensation; `threshold_cost_measured` keeps
+  pricing each refusal in Å² so the choice stays visible, and the ruling with its ground, its
+  named price and its weakest link lives in [`L1_protein_architecture.md`](L1_protein_architecture.md) §2.
   🔬 **And the second axis was measured 2026-09-21 — it does NOT support the refusal.** `I401S`'s hold was
   lifted by conservation, so refusing `Ala201` on geometry alone would judge the two positions by different
   evidence; script 70 now carries 201 as a `refused_candidate`. It reads **Ala 22.0 % ⊥ Ser 8.7 %** over the

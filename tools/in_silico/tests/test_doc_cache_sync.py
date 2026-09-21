@@ -1473,10 +1473,12 @@ def test_ratified_gene_mirrors_canon(doc_rel, pattern, sep):
     """The ordered gene's compensations must read the same in canon and in the code that builds it.
 
     WHY a pin and not a habit: `69 --ratified` builds the sequence the CRO receives from a MIRROR
-    (`lib/constants.py RATIFIED_GENE_COMPENSATIONS`). If canon ever takes a FOURTH compensation —
-    the live candidate is `Ala201 → Ser`, held out only by our declared burial ceiling — the mirror
-    would keep building the old three and its cache would still say «the ratified gene», measuring
-    a sequence nobody ordered. Both directions fail here: a code-only change and a canon-only one.
+    (`tools/in_silico/lib/constants.py RATIFIED_GENE_COMPENSATIONS`). If canon ever takes a FOURTH
+    compensation, the mirror would keep building the old three and its cache would still say «the
+    ratified gene», measuring a sequence nobody ordered. Both directions fail here: a code-only
+    change and a canon-only one. ⚠️ The nearest candidate, `Ala201 → Ser`, is NOT pending: the
+    burial ceiling that refuses it was ratified at 0.75 (⚖️ founder 2026-09-21, home L1 §2). This
+    pin guards the mirror, it does not track an open question.
 
     CAN catch: a set that differs in membership or in a substitution letter, in either document.
     CANNOT catch: a canon edit that REWORDS the declaration out of the anchor — that shows up as
