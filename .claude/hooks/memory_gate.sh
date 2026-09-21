@@ -223,7 +223,12 @@ SELF=${BASH_SOURCE[0]:-$0}
 # Заплачено: перевірено дедуп між рядками — НУЛЬ повторів, безкоштовної оплати не лишилось;
 # борг цієї хвилі віддано ПОЗА індексом (test12 −1046, stream_scope −642, чотири хибні
 # пост-роздачні координати виправлено, протухлі числа запасу замінено на прогін).
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26652}
+# ⊕ 26652 → 26675 (+23) — консолідація `project_doc_t98_perimeter_sweep` (9651 B, ОДНА струна) за рецептом
+# вихідних (`6f634ed`: «роутер замість шару-епізоду»): сім із девʼяти клауз уже слали в доми,
+# два бездомні уроки поїхали в `item_cementation` (git, момент дії = згортання секції), обидві
+# вхідні струни переточено, рядок індексу злито, файл ВИДАЛЕНО, CORPUS_FLOOR 167 → 166.
+# Чистий підсумок корпусу −9.6 kB; +23 B в індексі — ціна того, що урок лишився в рядку.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26675}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36000}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 GENRE_MIN=${MEMORY_GATE_GENRE_MIN:-4}            # dated blocks, summed across all three costumes
@@ -386,7 +391,7 @@ rb_dark() {
 # в операційному мануалі індексу).
 # 2026-09-18: 166 → 167 — `log_crown_roots` (тіла вимірів і застосувань рамки «крона ⊥ корінь», евакуйовані
 # дослівно з `feedback_crown_bounded_by_roots` 33.7 → ~10 kB). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
