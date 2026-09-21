@@ -1340,6 +1340,58 @@ CHECKS += [
 ]
 
 
+# ── L4b Monte-Carlo: the CI and the medium it is conditional on ──
+# ⛔ Both halves of every row are pinned. The left half is the number people quote; the right half
+# is the one that says which medium it belongs to, and a right half free to rot would let the left
+# half go back to reading as unconditional — which is exactly the defect this table was built to fix.
+MC = "kinetics/monte_carlo.json"
+_MC_ROWS = ("Healthy summer", "Active growth", "Cold winter", "Severe stress")
+
+
+def _mc(d, label: str):
+    return next(s for s in d["scenarios"] if s["label"] == label)
+
+
+def _mc_ph(d, label: str, key: str, fn):
+    row = _mc(d, label)["ph55_bracket"]
+    return fn(row[f][key] for f in row)
+
+
+# ⛔ Scenario labels are NOT unique in this file — the deterministic pH table of script `30` carries
+# the same four, so an unscoped row pattern matches two tables and the guard reports «ambiguous»
+# instead of drifting silently. Every MC row is therefore anchored on ITS OWN table header.
+_MC_TABLE = r"90 % CI at pH 5\.5 \(s\)[\s\S]{0,900}?"
+
+
+def _mc_cell(label: str, skip: int, end: str, bold: bool = False) -> str:
+    """One end of a `lo–hi` cell (or a plain cell when `end` is 'only'), inside the MC table."""
+    b = r"\*\*" if bold else ""
+    body = {"lo": rf"{b}{N}–[\d.]+{b}", "hi": rf"{b}[\d.]+–{N}{b}", "only": rf"{b}{N}{b}"}[end]
+    return _MC_TABLE + rf"\| {re.escape(label)} \|" + r"[^|]*\|" * skip + rf" {body} \|"
+
+
+CHECKS += [
+    (f"L4b MC · {lab} · {name} → monte_carlo (the CI and its medium are pinned together)",
+     SUMMARY, _mc_cell(lab, skip, end, bold), MC, resolver, 0.06)
+    for lab in _MC_ROWS
+    for name, skip, end, bold, resolver in (
+        ("ceiling CI low", 0, "lo", False, lambda d, sc=lab: _mc(d, sc)["p5_s"]),
+        ("ceiling CI high", 0, "hi", False, lambda d, sc=lab: _mc(d, sc)["p95_s"]),
+        ("ceiling median", 1, "only", False, lambda d, sc=lab: _mc(d, sc)["median_s"]),
+        ("pH5.5 CI low", 2, "lo", True, lambda d, sc=lab: _mc_ph(d, sc, "p5_s", min)),
+        ("pH5.5 CI high", 2, "hi", True, lambda d, sc=lab: _mc_ph(d, sc, "p95_s", max)),
+        ("pH5.5 median low", 3, "lo", False, lambda d, sc=lab: _mc(d, sc)["ph55_median_low_s"]),
+        ("pH5.5 median high", 3, "hi", False, lambda d, sc=lab: _mc(d, sc)["ph55_median_high_s"]),
+    )
+] + [
+    (
+        "L4b MC · the upper-decile claim in prose → monte_carlo (the sentence that names the cost)",
+        SUMMARY, rf"moves from 84 s to about {N} s",
+        MC, lambda d: _mc_ph(d, "Healthy summer", "p95_s", max), 0.6,
+    ),
+]
+
+
 # ── L3b cathode DET: the k_DET table had SIX documents quoting it and ZERO pins until 2026-09-21 ──
 # ⛔ Every cell, not just the convenient ones: the table's message IS the spread, so a half-pinned
 # table would keep reading as a bracket while one end rotted. The tolerance is the doc's display

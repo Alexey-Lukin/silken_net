@@ -357,6 +357,30 @@ reciprocal collides numerically with the Ru row's ×31 and means the opposite th
 
 ⚠️ The two ends are the **wild-type and recombinant forms of the same paper disagreeing** — that disagreement IS the bracket; electing one would manufacture precision the source does not carry. ⛔ And the pair was measured on the FREE enzyme with a small-molecule acceptor at 30 °C, so it is applied here as an indication for our immobilised Os-polymer electrode, not as its measurement; the 5 °C row additionally assumes a temperature-independent pH effect, which nobody measured.
 
+**The Monte-Carlo band carries the same condition — applied 2026-09-21, and it had been missing.**
+`30b` samples Km, Ea, j_max, area and E_cycle and reports a 90 % CI. 🔴 **That CI is also a
+pH-7.4 figure**, because the sampled j_max is centred on the same laboratory ceiling — and until
+2026-09-21 nothing in `30b` said so, while its sibling `30` had carried the ratified «print the
+bracket beside» shape since ⚖️ 2026-09-18. A verdict ratified for one leg does not reach its sister
+by itself ([`00_05 §4`](../../../00_05_AI_Native_Operating_Model)); this is that transfer.
+
+| Scenario | 90 % CI at the ceiling (s) | median | **90 % CI at pH 5.5 (s)** | median at pH 5.5 | vs 60 s baseline |
+|---|---|---|---|---|---|
+| Healthy summer | 10.0–84.3 | 28.4 | **14.7–146.0** | 41.8–49.3 | < baseline |
+| Active growth | 5.1–39.8 | 13.7 | **8.4–75.4** | 22.5–26.0 | < baseline |
+| Cold winter | 51.0–489.4 | 157.0 | **68.2–780.9** | 209.9–250.5 | > baseline |
+| Severe stress | 103.5–1086.8 | 337.5 | **131.2–1654.1** | 427.6–513.7 | > baseline |
+
+⚠️ The right-hand columns are the **same distribution transported**, not a wider CI: each percentile
+is divided by the [S]-dependent current ratio, so the band moves rather than spreads. The ratio
+carries the *source's* K_M shift while the sampled `km` spread is about *our* apparent constant —
+related axes, deliberately not summed (`conditional_on` in the cache says so).
+🔑 **What the transport does and does not change:** no scenario crosses the 60 s baseline — healthy
+and active stay under it, cold and stressed stay over it — so the *discrimination* the baseline
+exists for survives the sap-pH penalty. What does not survive unqualified is the **upper decile** of
+the healthy band, which moves from 84 s to about 146 s; a claim that quotes 10–84 s without naming
+pH 7.4 is quoting a medium we do not deploy in.
+
 ### EIS Predictions (for Ti-coin Stage 2)
 
 | Parameter | Predicted | Literature Range |

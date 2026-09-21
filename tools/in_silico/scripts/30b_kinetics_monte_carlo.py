@@ -44,6 +44,7 @@ from lib.constants import (
     TEMPERATURE_K,
     V_OP,
 )
+from lib.kinetics import ph_current_ratio
 from lib.utils import banner
 
 OUT_DIR = KINETICS_DIR
@@ -81,10 +82,38 @@ def main() -> int:
         ("Severe stress", 3, 0),
     ]
 
-    results = {"n_samples": N_SAMPLES, "scenarios": []}
+    # 🔴 The five axes above are NOT the whole uncertainty, and until 2026-09-21 nothing here said
+    # so. `J_MAX_25C` is a pH-7.4 LABORATORY CEILING (constants.py); our anode sits in sap at
+    # pH 5.75, and a quantified bracket for that shift has existed since ⚖️ 2026-09-18. Script `30`
+    # obeyed that verdict and printed the bracket beside its table — its SIBLING here never did, so
+    # a CI conditional on the wrong medium was reading as the CI. The verdict is applied here now,
+    # in its ratified shape: printed BESIDE, never folded in (00_05 §4 — a rule ratified for one leg
+    # does not reach its sister by itself).
+    results = {
+        "n_samples": N_SAMPLES,
+        "conditional_on": {
+            "medium": "the sampled j_max is centred on the pH-7.4 laboratory ceiling "
+                      "(J_MAX_25C, constants.py) — the percentiles below are a CI AT THAT CEILING",
+            "not_sampled": ["the pH-driven k_cat/K_M shift toward sap pH 5.75"],
+            "why_not_folded_in": "⚖️ founder 2026-09-18: the correction is not a point, so the "
+                                 "model stays on the ceiling and the bracket is printed beside it",
+            "bracket_source": "Sygmund 2011 Table 3 via lib.kinetics.ph_current_ratio — FREE enzyme, "
+                              "ferrocenium acceptor, 30 °C; both enzyme forms are kept because they "
+                              "disagree, and the disagreement IS the bracket",
+            "bracket_is_a_transport_not_an_added_variance": "each percentile is divided by the "
+                                                            "[S]-dependent current ratio, i.e. the "
+                                                            "whole distribution is moved to pH 5.5; "
+                                                            "the ratio carries the SOURCE's K_M "
+                                                            "shift while the sampled `km` spread is "
+                                                            "about OUR apparent constant — related "
+                                                            "axes, deliberately not summed",
+        },
+        "scenarios": [],
+    }
 
-    print(f"\n  {'Scenario':<20s}  {'Median':>8s}  {'5%':>8s}  {'95%':>8s}  {'vs 60s':>10s}")
-    print("  " + "-" * 62)
+    print(f"\n  {'Scenario':<20s}  {'Median':>8s}  {'5%':>8s}  {'95%':>8s}  {'vs 60s':>10s}"
+          f"  {'median at pH 5.5':>18s}")
+    print("  " + "-" * 82)
 
     for label, glu, tc in scenarios:
         dt = delta_t(glu, tc, km, ea, jmax, a_el, e_cyc)
@@ -93,13 +122,31 @@ def main() -> int:
         p5, p50, p95 = np.percentile(dt, [5, 50, 95])
         status = "< baseline" if p50 < BASELINE else "> baseline"
 
-        print(f"  {label:<20s}  {p50:>7.1f}s  {p5:>7.1f}s  {p95:>7.1f}s  {status:>10s}")
+        # The pH bracket: transport each percentile by the [S]-dependent current ratio.
+        # delta_t ∝ 1/current, so a ratio < 1 (slower enzyme at pH 5.5) LENGTHENS delta_t.
+        ratios = {f: ph_current_ratio(glu, f) for f in ("wt", "rec")}
+        ph_band = {f: {"ratio": round(r, 3),
+                       "p5_s": round(p5 / r, 1), "median_s": round(p50 / r, 1),
+                       "p95_s": round(p95 / r, 1)}
+                   for f, r in ratios.items()}
+        med_lo, med_hi = sorted(ph_band[f]["median_s"] for f in ratios)
+        ph_status = "< baseline" if med_hi < BASELINE else (
+            "> baseline" if med_lo > BASELINE else "straddles baseline")
+
+        print(f"  {label:<20s}  {p50:>7.1f}s  {p5:>7.1f}s  {p95:>7.1f}s  {status:>10s}"
+              f"  {med_lo:>8.1f}–{med_hi:.1f}s")
 
         results["scenarios"].append({
             "label": label, "glucose_mM": glu, "temp_C": tc,
             "p5_s": round(p5, 1), "median_s": round(p50, 1), "p95_s": round(p95, 1),
             "vs_baseline": status,
+            "ph55_bracket": ph_band,
+            "ph55_median_low_s": med_lo, "ph55_median_high_s": med_hi,
+            "ph55_vs_baseline": ph_status,
         })
+    print("  ⚠️  The last column is the SAME distribution transported to pH 5.5, not a wider CI —")
+    print("      it says where the whole band sits if the sap-pH penalty is real, and its source is")
+    print("      a free-enzyme measurement at 30 °C applied at every temperature here.")
 
     # Heatmap: P(delta_t < 60s) as function of glucose × temp
     banner("Computing P(delta_t < 60s) heatmap")
@@ -122,7 +169,7 @@ def main() -> int:
     ax.clabel(cs, fmt={0.5: "50%"}, fontsize=9)
     ax.set_xlabel("[glucose] (mM)")
     ax.set_ylabel("Temperature (°C)")
-    ax.set_title("P(delta_t < 60s) — old-baseline fraction (lab-scale; E.63: GP now field-scale)")
+    ax.set_title("P(delta_t < 60s) at the pH-7.4 ceiling — old-baseline fraction\n(lab-scale; E.63: GP now field-scale; sap-pH bracket in the table, not here)", fontsize=10)
     fig.colorbar(im, ax=ax, label="Probability")
 
     # Distribution at reference condition (10 mM, 25°C)

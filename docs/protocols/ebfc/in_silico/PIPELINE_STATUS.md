@@ -45,7 +45,7 @@
 | 28b | `tunneling_ensemble` | **CHEM.16** Beratan-Onuchic over MD ensemble → β·d **2.02±0.13** (gating 1.03×, thermally robust; image_molecules PBC) | `dft/tunneling_ensemble.json` |
 | 29c | `outer_sphere_lambda` | anode outer-sphere λ_o (Marcus two-sphere, analytical) → total anode λ 0.76–0.86 eV phys-end (confirms lit 0.7–0.8); radius/ε-DOMINATED → INDICATIVE | `dft/outer_sphere_lambda.json` |
 | 30 | `kinetics_delta_t` | delta_t = 20s healthy / 101s stressed (η_BQ 0.68 post-[HW.47]; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) | `kinetics/delta_t_lookup.json` |
-| 30b | `kinetics_monte_carlo` | 90% CI: 10–84s healthy (j_max sampled at its PROPAGATED 1σ, not a typed one) | `kinetics/monte_carlo.json` |
+| 30b | `kinetics_monte_carlo` | 90% CI: 10–84s healthy **at the pH-7.4 ceiling** (j_max sampled at its PROPAGATED 1σ, not a typed one); transported to sap pH 5.5 the same band sits at **15–146s** — printed beside, never folded in (⚖️ 2026-09-18) | `kinetics/monte_carlo.json` |
 | 31 | `eis_impedance_model` | Rct=72.9Ω, Rs=100Ω | `kinetics/eis_model.json` |
 | 31b | `cathode_det_rct` | ③ cathode DET R_ct band ~0.002–230 Ω (borderline k_DET × unknown Γ, ×10⁵) → kinetic competition, not a fixed Rct; INDICATIVE | `kinetics/cathode_det_rct.json` |
 | 32 | `pcet_redox_potential` | E°(FAD/FADH₂) **-158 mV** (Δ50 mV vs free-flavin exp) — PCET valid w/ implicit solvent | `dft/pcet_redox_potential.json` |
@@ -126,7 +126,7 @@
 
 **Verdict: ✅ YES.** SUMMARY.md has all numbers. Key claims:
 - "EBFC Gen 2.0 validated in silico across 4 levels"
-- "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 10-84s, re-anchored 2026-09-18)"
+- "BASELINE_DELTA_T_S = 60s physically justified (Monte Carlo 90% CI: 10-84s **at the pH-7.4 laboratory ceiling**, re-anchored 2026-09-18). ⚠️ Transported to the sap set-point the same band is **15-146s**, so the healthy MEDIAN stays under 60 s but the upper decile does not — quote the medium with the number"
 - "Electrode cascade E°(Os) − E°(FAD-GDH) = +574 mV (verified E°s, Zafar 2012 + Schachinger 2023); raw DFT uphill = method limit decomposed by ②"
 - "ZIF cathode DET computed at the electronic-structure level — borderline at realistic λ, with a low-λ-metal (Ru) improvement path; which lever is taken is READ from the ratified rule (0)–(3) after the coin EIS, and the conductive-MOF branch is chosen by none of them (01_03 §3.2)"
 

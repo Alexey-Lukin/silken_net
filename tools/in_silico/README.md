@@ -63,7 +63,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 34b | `34b_wb97x_speciation.py` | L3: ωB97X ΔSCF cross-check of the ② speciation trend (functional-robustness) | ~hours |
 | 35 | `35_dft_metal_reorganization.py` | L3b ③: computed inner-sphere λ for the ZIF metal hops (Nelsen 4-point on [M(H₂O)₆]) | ~hours |
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) → growth_points directly (NOT β-perturbation — reversed, 00_07 E.63) | ~1 s |
-| 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t | ~1 s |
+| 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t **at the pH-7.4 ceiling**, with the sap-pH 5.5 band printed beside it (⚖️ 2026-09-18 shape, applied here 2026-09-21) | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
 | 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (borderline k_DET × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |

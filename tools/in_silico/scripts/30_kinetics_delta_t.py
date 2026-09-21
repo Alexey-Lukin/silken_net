@@ -78,7 +78,6 @@ from lib.constants import (
     KINETICS_DIR,
     KM_GLUCOSE,
     N_ELECTRONS,
-    PH_KINETICS_SYGMUND,
     R_GAS,
     REPO_ROOT,
     TEMPERATURE_K,
@@ -87,6 +86,7 @@ from lib.constants import (
 
 T_REF = TEMPERATURE_K
 D_EFF = D_EFF_GLUCOSE
+from lib.kinetics import ph_current_ratio
 from lib.utils import banner
 
 OUT_DIR = KINETICS_DIR
@@ -123,20 +123,6 @@ def delta_t(glucose_mm: float, temp_c: float) -> float:
     p_ebfc = V_OP * j * A_ELECTRODE
     p_net = p_ebfc * ETA_BQ
     return E_CYCLE / p_net
-
-
-def ph_ratio(glucose_mm: float, form: str) -> float:
-    """Current ratio pH 5.5 / pH 7.5 at this glucose, from ONE enzyme form's own MM pair.
-
-    The ratio is [S]-dependent because both k_cat and K_M move with pH, and they move in
-    opposite directions for the current: k_cat falls, K_M falls too (higher affinity), so the
-    two partly cancel. Reporting a single factor would hide that.
-    """
-    km_lo, kcat_lo = PH_KINETICS_SYGMUND[form][5.5]
-    km_hi, kcat_hi = PH_KINETICS_SYGMUND[form][7.5]
-    v_lo = kcat_lo * glucose_mm / (km_lo + glucose_mm)
-    v_hi = kcat_hi * glucose_mm / (km_hi + glucose_mm)
-    return v_lo / v_hi
 
 
 def main() -> int:
@@ -244,7 +230,7 @@ def main() -> int:
     print("  " + "-" * 72)
     for glu, tc, label in ref_points:
         dt_ceiling = delta_t(glu, tc)
-        r_wt, r_rec = ph_ratio(glu, "wt"), ph_ratio(glu, "rec")
+        r_wt, r_rec = ph_current_ratio(glu, "wt"), ph_current_ratio(glu, "rec")
         dt_wt, dt_rec = dt_ceiling / r_wt, dt_ceiling / r_rec
         lo, hi = sorted((dt_wt, dt_rec))
         print(f"  {label:<22s}  {dt_ceiling:>8.1f}s  {r_wt:>6.2f}  {r_rec:>6.2f}  {lo:>9.1f}–{hi:.1f}s")

@@ -1,5 +1,14 @@
 {
   "n_samples": 10000,
+  "conditional_on": {
+    "medium": "the sampled j_max is centred on the pH-7.4 laboratory ceiling (J_MAX_25C, constants.py) \u2014 the percentiles below are a CI AT THAT CEILING",
+    "not_sampled": [
+      "the pH-driven k_cat/K_M shift toward sap pH 5.75"
+    ],
+    "why_not_folded_in": "\u2696\ufe0f founder 2026-09-18: the correction is not a point, so the model stays on the ceiling and the bracket is printed beside it",
+    "bracket_source": "Sygmund 2011 Table 3 via lib.kinetics.ph_current_ratio \u2014 FREE enzyme, ferrocenium acceptor, 30 \u00b0C; both enzyme forms are kept because they disagree, and the disagreement IS the bracket",
+    "bracket_is_a_transport_not_an_added_variance": "each percentile is divided by the [S]-dependent current ratio, i.e. the whole distribution is moved to pH 5.5; the ratio carries the SOURCE's K_M shift while the sampled `km` spread is about OUR apparent constant \u2014 related axes, deliberately not summed"
+  },
   "scenarios": [
     {
       "label": "Healthy summer",
@@ -8,7 +17,24 @@
       "p5_s": 10.0,
       "median_s": 28.4,
       "p95_s": 84.3,
-      "vs_baseline": "< baseline"
+      "vs_baseline": "< baseline",
+      "ph55_bracket": {
+        "wt": {
+          "ratio": 0.68,
+          "p5_s": 14.7,
+          "median_s": 41.8,
+          "p95_s": 124.0
+        },
+        "rec": {
+          "ratio": 0.577,
+          "p5_s": 17.3,
+          "median_s": 49.3,
+          "p95_s": 146.0
+        }
+      },
+      "ph55_median_low_s": 41.8,
+      "ph55_median_high_s": 49.3,
+      "ph55_vs_baseline": "< baseline"
     },
     {
       "label": "Active growth",
@@ -17,7 +43,24 @@
       "p5_s": 5.1,
       "median_s": 13.7,
       "p95_s": 39.8,
-      "vs_baseline": "< baseline"
+      "vs_baseline": "< baseline",
+      "ph55_bracket": {
+        "wt": {
+          "ratio": 0.612,
+          "p5_s": 8.4,
+          "median_s": 22.5,
+          "p95_s": 65.0
+        },
+        "rec": {
+          "ratio": 0.528,
+          "p5_s": 9.7,
+          "median_s": 26.0,
+          "p95_s": 75.4
+        }
+      },
+      "ph55_median_low_s": 22.5,
+      "ph55_median_high_s": 26.0,
+      "ph55_vs_baseline": "< baseline"
     },
     {
       "label": "Cold winter",
@@ -26,7 +69,24 @@
       "p5_s": 51.0,
       "median_s": 157.0,
       "p95_s": 489.4,
-      "vs_baseline": "> baseline"
+      "vs_baseline": "> baseline",
+      "ph55_bracket": {
+        "wt": {
+          "ratio": 0.748,
+          "p5_s": 68.2,
+          "median_s": 209.9,
+          "p95_s": 654.4
+        },
+        "rec": {
+          "ratio": 0.627,
+          "p5_s": 81.4,
+          "median_s": 250.5,
+          "p95_s": 780.9
+        }
+      },
+      "ph55_median_low_s": 209.9,
+      "ph55_median_high_s": 250.5,
+      "ph55_vs_baseline": "> baseline"
     },
     {
       "label": "Severe stress",
@@ -35,7 +95,24 @@
       "p5_s": 103.5,
       "median_s": 337.5,
       "p95_s": 1086.8,
-      "vs_baseline": "> baseline"
+      "vs_baseline": "> baseline",
+      "ph55_bracket": {
+        "wt": {
+          "ratio": 0.789,
+          "p5_s": 131.2,
+          "median_s": 427.6,
+          "p95_s": 1376.7
+        },
+        "rec": {
+          "ratio": 0.657,
+          "p5_s": 157.6,
+          "median_s": 513.7,
+          "p95_s": 1654.1
+        }
+      },
+      "ph55_median_low_s": 427.6,
+      "ph55_median_high_s": 513.7,
+      "ph55_vs_baseline": "> baseline"
     }
   ]
 }
