@@ -38,7 +38,7 @@ RSpec.describe Polygon::HadronComplianceService do
     end
   end
 
-  describe "#verify_investor!" do
+  describe "#verify_wallet!" do
     let(:tree) { create(:tree) }
     let(:wallet) { tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40, hadron_kyc_status: "pending") } }
 
@@ -51,7 +51,7 @@ RSpec.describe Polygon::HadronComplianceService do
         wallet.update!(crypto_public_address: nil)
 
         expect {
-          described_class.new.verify_investor!(wallet)
+          described_class.new.verify_wallet!(wallet)
         }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /crypto_public_address/)
       end
     end
@@ -62,7 +62,7 @@ RSpec.describe Polygon::HadronComplianceService do
       end
 
       it "approves the wallet KYC status" do
-        result = described_class.new.verify_investor!(wallet)
+        result = described_class.new.verify_wallet!(wallet)
 
         expect(result).to eq("approved")
         expect(wallet.reload.hadron_kyc_status).to eq("approved")
@@ -78,7 +78,7 @@ RSpec.describe Polygon::HadronComplianceService do
 
       it "raises ComplianceError instead of running the simulator" do
         expect {
-          described_class.new.verify_investor!(wallet)
+          described_class.new.verify_wallet!(wallet)
         }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /WEB3_STRICT_MODE/)
       end
     end
@@ -95,7 +95,7 @@ RSpec.describe Polygon::HadronComplianceService do
 
       it "raises instead of simulating (production alone is fail-closed)" do
         expect {
-          described_class.new.verify_investor!(wallet)
+          described_class.new.verify_wallet!(wallet)
         }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /production/)
       end
     end
@@ -107,7 +107,7 @@ RSpec.describe Polygon::HadronComplianceService do
       end
 
       it "sets wallet status to approved" do
-        result = described_class.new.verify_investor!(wallet)
+        result = described_class.new.verify_wallet!(wallet)
 
         expect(result).to eq("approved")
         expect(wallet.reload.hadron_kyc_status).to eq("approved")
@@ -121,7 +121,7 @@ RSpec.describe Polygon::HadronComplianceService do
       end
 
       it "sets wallet status to rejected" do
-        result = described_class.new.verify_investor!(wallet)
+        result = described_class.new.verify_wallet!(wallet)
 
         expect(result).to eq("rejected")
         expect(wallet.reload.hadron_kyc_status).to eq("rejected")
@@ -137,7 +137,7 @@ RSpec.describe Polygon::HadronComplianceService do
 
       it "raises ComplianceError" do
         expect {
-          described_class.new.verify_investor!(wallet)
+          described_class.new.verify_wallet!(wallet)
         }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Timeout/)
       end
     end
@@ -307,7 +307,7 @@ RSpec.describe Polygon::HadronComplianceService do
         wallet_local = tree_local.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "c" * 40) }
 
         expect {
-          described_class.new.verify_investor!(wallet_local)
+          described_class.new.verify_wallet!(wallet_local)
         }.to raise_error(Polygon::HadronComplianceService::ComplianceError, /Invalid JSON response/)
       end
     end

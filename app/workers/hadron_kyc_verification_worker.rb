@@ -22,7 +22,7 @@ class HadronKycVerificationWorker
           Rails.logger.info "🛡️ [Hadron] Wallet ##{subject_id} has no own address (custodial — org-KYC governs), skipping"
           next
         end
-        Polygon::HadronComplianceService.new.verify_investor!(subject)
+        Polygon::HadronComplianceService.new.verify_wallet!(subject)
       when Organization
         Polygon::HadronComplianceService.new.verify_organization!(subject)
       end

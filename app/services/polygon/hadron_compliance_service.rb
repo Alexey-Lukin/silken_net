@@ -6,11 +6,19 @@ module Polygon
   # 🛡️ HADRON COMPLIANCE SERVICE (Юридичний Щит RWA)
   # =========================================================================
   # Інтегрує Polygon Hadron для забезпечення відповідності RWA (Real World Assets).
-  # Перевіряє KYC/KYB статус інвесторів та реєструє фізичні лісові ділянки
+  # Перевіряє KYC/KYB статус ВЛАСНИКА адреси (гаманець із власною адресою ⊥
+  # організація-бенефіціар custodial-гаманця) та реєструє фізичні лісові ділянки
   # як регульовані активи на платформі Hadron перед мінтингом ERC-3643.
   #
+  # ⛔ [BIZ.22, 2026-09-22] Пара методів іменується СУБʼЄКТОМ, якого перевіряє, а
+  # не роллю, яку йому приписують: `verify_wallet!` ⊥ `verify_organization!`.
+  # Дві підстави, і друга переживе першу: ім'я-роль несе інвест-лексику, яку
+  # присуд 2026-08-28 зняв із продукту (`00_07` BIZ.22), і воно ж розходиться
+  # із сиблінгом, що свій аргумент називає чесно — асиметрія в парі читається
+  # як різниця предметів там, де її немає.
+  #
   # Два потоки:
-  #   1. verify_investor!(wallet)  — перевірка KYC через Hadron Identity
+  #   1. verify_wallet!(wallet)  — перевірка KYC через Hadron Identity
   #   2. register_asset!(contract) — реєстрація лісової ділянки як RWA
   # =========================================================================
   class HadronComplianceService
@@ -46,7 +54,7 @@ module Polygon
 
     # Перевіряє KYC статус гаманця через Polygon Hadron Identity.
     # Оновлює wallet.hadron_kyc_status на 'approved' або 'rejected'.
-    def verify_investor!(wallet)
+    def verify_wallet!(wallet)
       raise ComplianceError, "Wallet must have a crypto_public_address" if wallet.crypto_public_address.blank?
 
       response = check_kyc_status(wallet.crypto_public_address)

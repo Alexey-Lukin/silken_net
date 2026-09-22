@@ -79,6 +79,35 @@ RSpec.describe MintingRollbackService do
       expect(wallet.locked_balance).to eq(0)
     end
 
+    # 🔴 [BIZ.22-сиблінг, 2026-09-22] Нотатка rollback'у лягає в money-path audit-trail,
+    # тож вона мусить називати РОЗБЛОКОВАНЕ, а не ЗАБОРГОВАНЕ. Дві гілки з трьох
+    # розходяться, і доти їх не пінив ніхто: сусідній приклад «handles partial
+    # locked_balance» судив лише баланс, тому фабрикація числа проходила зеленою.
+    it "names the amount it ACTUALLY released when the hold is short, not the amount owed" do
+      wallet.update!(balance: 20_000, locked_balance: 3_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+
+      described_class.call(
+        telemetry_log_id: telemetry_log.id_value,
+        created_at_iso: telemetry_log.created_at.iso8601(6)
+      )
+
+      expect(tx.reload.notes).to include("Розблоковано 3000 балів").and include("недобір 7000")
+      expect(tx.notes).not_to include("Розблоковано 10000")
+    end
+
+    it "claims zero — not the owed amount — when there is no hold left to release" do
+      wallet.update!(balance: 20_000, locked_balance: 0)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+
+      described_class.call(
+        telemetry_log_id: telemetry_log.id_value,
+        created_at_iso: telemetry_log.created_at.iso8601(6)
+      )
+
+      expect(tx.reload.notes).to include("Розблоковано 0 балів").and include("недобір 10000")
+    end
+
     it "does nothing when telemetry_log not found" do
       wallet.update!(balance: 20_000, locked_balance: 10_000)
       create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000)

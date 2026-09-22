@@ -212,6 +212,29 @@ RSpec.describe OfferingLexicon do
         expect(described_class.audit(root)[:hard].size).to eq(1)
       end
     end
+
+    # Perimeter widened to the whole app + lib tree once the 14 hits that priced it were
+    # worked off (ceiling 5). These pin the two trees that carry the money path.
+    it "reaches the service and model trees, not just the response surfaces" do
+      with_tree(
+        "app/services/some_payout_service.rb" => %(DIVIDEND = 1\n),
+        "lib/tasks/payout.rake" => %(desc "investor report"\n),
+        "app/models/thing.rb" => %(REFUND_WINDOW = 7\n)
+      ) do |root|
+        expect(described_class.audit(root)[:hard].size).to eq(3)
+      end
+    end
+
+    it "exempts the ABI signature but not other offering lexicon in the same file" do
+      with_tree("app/services/blockchain_burning_service.rb" => <<~RB) do |root|
+        "inputs" => [ { "internalType" => "address", "name" => "investor" } ],
+        REFUND_ON_SLASH = false
+      RB
+        hard = described_class.audit(root)[:hard]
+        expect(hard.size).to eq(1)
+        expect(hard.first).to include("refund promise")
+      end
+    end
   end
 
   describe ".dead_exemptions" do

@@ -278,7 +278,7 @@ class BlockchainBurningService < ApplicationService
     contract_address = ENV.fetch("CARBON_COIN_CONTRACT_ADDRESS")
     contract = Eth::Contract.from_abi(name: "SilkenCarbonCoin", address: contract_address, abi: CONTRACT_ABI)
 
-    investor_address = @organization.crypto_public_address
+    holder_address = @organization.crypto_public_address
 
     # [SLASH.2] Pre-read on-chain балансу: (1) tripwire на ПОВНЕ виведення (нема чого палити →
     # escalate, НЕ транслюємо приречену `slashUpTo`-revert tx + не лишаємо :breached-брехню);
@@ -286,10 +286,10 @@ class BlockchainBurningService < ApplicationService
     # а не pre-tax БД-суму (яка > балансу). Сам burn робить slashUpTo(maxAmount) — clamp до
     # balanceOf АТОМАРНО, тож дрейф балансу між цим читанням і виконанням лише зменшує спалене
     # (без revert; TOCTOU-safe). Floor до цілих SCC (dust < 1 SCC не істотний, консервативно).
-    investor_balance_wei = client.call(contract, "balanceOf", investor_address)
-    return escalate_evasion!(burn_amount) if investor_balance_wei.zero?
+    holder_balance_wei = client.call(contract, "balanceOf", holder_address)
+    return escalate_evasion!(burn_amount) if holder_balance_wei.zero?
 
-    balance_whole = investor_balance_wei / (10**TOKEN_DECIMALS)
+    balance_whole = holder_balance_wei / (10**TOKEN_DECIMALS)
     effective_burn = [ burn_amount, balance_whole ].min
     return escalate_evasion!(burn_amount) if effective_burn.zero? # балансу < 1 SCC — теж evasion
 
@@ -358,7 +358,7 @@ class BlockchainBurningService < ApplicationService
         # on-chain подію прямо до BlockchainTransaction (manual DAO-slash емітить нуль).
         context_hash = "0x" + audit.id.to_i.to_s(16).rjust(64, "0")
         tx_hash = signer.transact(
-          client, contract, "slashUpTo", investor_address, amount_in_wei, context_hash,
+          client, contract, "slashUpTo", holder_address, amount_in_wei, context_hash,
           legacy: false
         )
       end

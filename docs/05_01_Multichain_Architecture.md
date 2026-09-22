@@ -254,7 +254,7 @@ did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}  
 | **Спека** | `spec/services/polygon/hadron_compliance_service_spec.rb` |
 
 **Два потоки:**
-1. `verify_investor!(wallet)` — перевірка KYC через Hadron Identity Platform → `wallet.hadron_kyc_status`
+1. `verify_wallet!(wallet)` — перевірка KYC через Hadron Identity Platform → `wallet.hadron_kyc_status`
 2. `register_asset!(naas_contract)` — реєстрація лісової ділянки як Real World Asset (RWA) → `naas_contract.hadron_asset_id`
 
 > **Режими роботи:** `WEB3_STRICT_MODE=true` → raises `ComplianceError` при відсутності credentials (Production). Без strict mode — simulation fallback для dev/test.

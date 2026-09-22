@@ -188,21 +188,34 @@ class MintingRollbackService < ApplicationService
       tx.wallet.with_lock do
         # Legacy-fallback (rows до locked_points-ери мінтились на 10k-дефолті) —
         # свідомо КОНСТАНТА-дефолт, не DAO-live значення (GOV.1): governance-зміна
-        # порогу не має переоцінювати історичний refund.
-        refund_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
+        # порогу не має переоцінювати історичне розблокування.
+        owed_points = tx.locked_points || (tx.amount * TokenomicsEvaluatorWorker::EMISSION_THRESHOLD).to_i
 
-        if tx.wallet.locked_balance >= refund_points
-          tx.wallet.release_locked_funds!(refund_points)
-        elsif tx.wallet.locked_balance > 0
-          tx.wallet.release_locked_funds!(tx.wallet.locked_balance)
-        end
+        # 🔴 [ARCH.101-сиблінг] Нотатка каже, скільки балів РОЗБЛОКОВАНО, тож брати
+        # для неї `owed_points` можна лише в першій гілці: у другій звільняється
+        # менше (весь наявний холд), а в третій — НІЧОГО. Доти всі три друкували
+        # `owed_points`, тобто запис у грошовому audit-trail стверджував величину,
+        # якої система не рухала (`00_01 §1.1` — «а звідки ти це знаєш?»).
+        released_points =
+          if tx.wallet.locked_balance >= owed_points
+            tx.wallet.release_locked_funds!(owed_points)
+            owed_points
+          elsif tx.wallet.locked_balance > 0
+            tx.wallet.locked_balance.tap { |held| tx.wallet.release_locked_funds!(held) }
+          else
+            0
+          end
 
         # [SAFE NAVIGATION]: Захист від nil-рефренсу при видаленому дереві
         tree_did = tx.wallet.tree&.did || "N/A"
-        tx.update!(
-          status: :failed,
-          notes: "Rollback: Постійний збій RPC. Розблоковано #{refund_points} балів для DID: #{tree_did}"
-        )
+        # Бали цілі за конструкцією (`locked_points` — integer; legacy-гілка `.to_i`),
+        # а `locked_balance` приходить BigDecimal — звідси `.to_i` у ЗВІТІ, не у
+        # звільненні: холд знімається точно, а нотатка ніколи не завищує.
+        released = released_points.to_i
+        shortfall = owed_points.to_i - released
+        notes = "Rollback: Постійний збій RPC. Розблоковано #{released} балів для DID: #{tree_did}"
+        notes += " (недобір #{shortfall} — холду на момент відкату не вистачало)" if shortfall.positive?
+        tx.update!(status: :failed, notes:)
       end
     end
 

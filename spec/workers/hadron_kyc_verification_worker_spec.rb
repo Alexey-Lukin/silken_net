@@ -30,11 +30,11 @@ RSpec.describe HadronKycVerificationWorker, type: :worker do
     it "verifies a Wallet with its own address" do
       tree = create(:tree)
       wallet = tree.wallet.tap { |w| w.update!(crypto_public_address: "0x" + "b" * 40) }
-      allow(service).to receive(:verify_investor!)
+      allow(service).to receive(:verify_wallet!)
 
       worker.perform("Wallet", wallet.id)
 
-      expect(service).to have_received(:verify_investor!).with(wallet)
+      expect(service).to have_received(:verify_wallet!).with(wallet)
     end
 
     it "skips a custodial wallet without its own address (org-KYC governs)" do

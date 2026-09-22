@@ -414,8 +414,9 @@ jobs:
         # Pure Ruby, no Rails. HARD on the storefront (locale VALUES, manifest,
         # README) — the surfaces the 2026-07-25 sweep cleaned and nothing kept
         # clean — AND, since ⚖️ 2026-09-22, HARD on the OFFERING term set across the
-        # code layer, with a site-keyed allowlist for the two ratified ⛔ sites (a
-        # DEAD allowlist entry fails too, so an exemption cannot outlive its verdict).
+        # whole app/lib/config tree, with a site-keyed allowlist for the ratified ⛔
+        # sites (a DEAD allowlist entry fails too, so an exemption cannot outlive its
+        # verdict; and an exemption is never granted for a line a regex misreads).
         # The HOMONYM set stays ADVISORY deliberately — `yield` is a core domain noun
         # here, and the label a customer reads is already HARD one tier up (00_07
         # BIZ.22). Its inputs — config/**, app/**, **.md — are all

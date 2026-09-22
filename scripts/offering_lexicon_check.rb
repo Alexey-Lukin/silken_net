@@ -40,9 +40,11 @@
 # TIERS.
 #   HARD      — the storefront, verified at zero when this gate landed: locale VALUES,
 #               docs/manifest.md, README.md. Drift here fails CI.
-#   HARD (code) — OFFERING terms across app/controllers/api/**, app/blueprints/**,
-#               app/views/**, db/seeds.rb. ⚖️ **Flipped advisory → HARD 2026-09-22**
-#               (delegated ratification, 00_07 BIZ.22). The question posed to the founder
+#   HARD (code) — OFFERING terms across app/**, db/seeds.rb and lib/**. ⚖️ Flipped
+#               advisory → HARD 2026-09-22 on the response surfaces, and widened to the
+#               whole app + lib tree later the same day once the 14 hits that priced the
+#               wider perimeter were worked off — see ceiling (5).
+#               (Delegated ratification, 00_07 BIZ.22.) The question posed to the founder
 #               was "which of the two surviving classes becomes the declared exemption";
 #               the measurement dissolved it, because the two classes are not two
 #               candidates for one tier — they are the gate's TWO TERM SETS, with
@@ -137,26 +139,40 @@
 #       ⚠️ This ceiling was declared in the tracker for weeks while this header listed
 #       only three — a gate's ceilings live HERE (00_06 §3), so a fourth one known only
 #       to 00_07 is a ceiling nobody reads at the moment of writing a term.
-#   (5) The HARD code tier does NOT cover app/models, app/services, app/workers,
-#       app/mailers, app/policies or lib — and that boundary is MEASURED, not assumed.
-#       Priced 2026-09-22 before the flip (00_05 §5, «ціна периметра міряється ДО
-#       вмикання»): extending OFFERING to those trees yields **14 hits**, and reading
-#       them shows most are legitimate, so the extension is work first and a gate second.
-#       The composition, because it is the useful half of the number:
-#         · six in `blockchain_burning_service` — the ABI blob plus Ruby locals named
-#           after its `address investor` parameter (`investor_address`,
-#           `investor_balance_wei`). The ABI itself is ⚖️ won't-do-rename (2026-07-25);
-#           its Ruby shadows are the debt ceiling (2) already names;
-#         · four in `minting_rollback_service` — `refund_points`, an INTERNAL release of
-#           locked points, not a promise to a customer. A homonym OFFERING cannot read;
-#         · `verify_investor!` + its single production caller — the real remaining debt
-#           this header names under (2);
-#         · one Ukrainian log line, and the `store_accessor` that declares the very
-#           column the ratified ⛔ view renders.
-#       ⛔ So do not "finish the job" by widening the globs: none of these reaches a
-#       customer, and a tier that reds on the ABI would be off within a week. What WOULD
-#       justify revisiting: `verify_investor!` renamed away, after which the service trees
-#       drop to the ABI shadows alone.
+#   (5) ✅ CLOSED 2026-09-22 — the HARD code tier now covers app/**, db/seeds.rb and
+#       lib/**. This entry stays because the way it closed corrects its own prediction.
+#       Priced first (00_05 §5, «ціна периметра міряється ДО вмикання»): the wider globs
+#       carried **14 OFFERING hits**, most of them legitimate, so the extension was work
+#       first and a gate second. The work was done, the perimeter re-measured at **3 new
+#       hits** (7 including the already-exempt fee sites), and the globs widened.
+#       🔴 What the prediction got WRONG, stated because a guessed cause reads exactly
+#       like a measured one (00_05 §4): it named ONE lever — «rename `verify_investor!`,
+#       after which the service trees drop to the ABI shadows alone». Renaming that one
+#       method would have moved 2 hits of 14. Three renames were needed, and each was an
+#       ACCURACY fix before it was a lexicon fix — which is why they were safe to make:
+#         · `verify_investor!` → `verify_wallet!` — the sibling `verify_organization!`
+#           already named its subject; the pair was asymmetric, not just loaded;
+#         · `investor_address` / `investor_balance_wei` → `holder_*` — the value assigned
+#           is `@organization.crypto_public_address`, i.e. the name was wrong about the
+#           ENTITY, not only about the noun;
+#         · `refund_points` → `owed_points`/`released_points` — the operation beside it is
+#           `release_locked_funds!`; and pinning the difference exposed a live money-path
+#           defect (the audit note claimed the owed amount in branches that released less
+#           or nothing).
+#       And the residue is NOT «ABI shadows alone»: it is the ABI blob, the `store_accessor`
+#       that declares the ratified ⛔ column, and a Ukrainian log line — see (6).
+#   (6) A regex cannot read NEGATION, so a line that DENIES a fee reds exactly like one
+#       that promises it. Measured on itself 2026-09-22: `ContractTerminationService`
+#       logs the ratified Option-1 terms, and stating them in full («early-exit-fee
+#       немає») turned a green line red. ⛔ The lick is NOT an exemption — that file is
+#       precisely where a genuine refund promise would appear if Option 2 were ever
+#       restored, so blinding it would cost the one site this gate most needs to watch.
+#       The lick is to say it in ONE language: a Ukrainian log line has no business
+#       carrying an English term of art, and «плати за дострокове розірвання немає» is
+#       both the same statement and better prose. ⚠️ When that trade is NOT available —
+#       a denial that can only be written with the term — take the red and argue it
+#       here; do not add the path to RATIFIED_CODE_SITES, which is reserved for sites a
+#       VERDICT protects, never for sites a regex misreads.
 # The enum value was RENAMED `investor` → `subscriber` on 2026-08-28 (BIZ.22 verdict
 # ratified: service model, ERC-3643 declined), so this gate no longer has to stay silent
 # about a pending decision. It still does not scan Ruby comments or canon prose (2)-(3).
@@ -227,8 +243,10 @@ module OfferingLexicon
   #     DOMAIN NOUN for a forest-monitoring platform (biomass yield, crop yield); a HARD
   #     tier would tax every honest use of it forever, and the risk it guards — a label a
   #     customer READS — is already HARD one tier up, in locale VALUES.
-  CODE_OFFERING_SCOPE = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb
-                           app/views/**/*.rb app/views/**/*.erb db/seeds.rb].freeze
+  # `lib/**/*.rake` and `config/**/*.rb` were priced at ZERO hits before inclusion
+  # (2026-09-22), i.e. they are free coverage — not a hope that nothing is there.
+  CODE_OFFERING_SCOPE = %w[app/**/*.rb app/**/*.erb db/seeds.rb
+                           lib/**/*.rb lib/**/*.rake config/**/*.rb].freeze
   CODE_HOMONYM_SCOPE  = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb].freeze
 
   # ⛔ RATIFIED EXEMPTIONS — keyed to the SITE, never to the term. A third file carrying
@@ -239,12 +257,21 @@ module OfferingLexicon
   #     (⛔ 00_07 BIZ.22; the fee itself was removed from the product by ⚖️ Option 1,
   #     founder 2026-08-29, msa_skeleton §B.6.3).
   #   · db/seeds.rb — the sibling seed value, held pending a founder's word (00_07 BIZ.22).
+  #   · app/models/naas_contract.rb — the `store_accessor` that DECLARES that column. It is
+  #     the data source the view above renders, so exempting one without the other would
+  #     make the ⛔ unreachable rather than honoured.
+  #   · app/services/blockchain_burning_service.rb — the `slashUpTo(investor, …)` ABI blob.
+  #     ⚖️ won't-do rename 2026-07-25 (a subgraph migration for zero gain); the Ruby that
+  #     merely SHADOWED that noun was renamed away 2026-09-22, so what is left here is the
+  #     contract's own signature and nothing else.
   # A DEAD entry here is FATAL, not tidied away: an exemption that outlives its verdict is
   # how a gate goes quietly green over work nobody re-read (00_05 §4, «гейт, який ти щойно
   # збудував: на чому він упаде хибно»).
   RATIFIED_CODE_SITES = {
-    "app/views/components/contracts/show.rb" => [ "early-exit fee framing" ],
-    "db/seeds.rb"                            => [ "early-exit fee framing" ]
+    "app/views/components/contracts/show.rb"          => [ "early-exit fee framing" ],
+    "db/seeds.rb"                                     => [ "early-exit fee framing" ],
+    "app/models/naas_contract.rb"                     => [ "early-exit fee framing" ],
+    "app/services/blockchain_burning_service.rb"      => [ "investor/investment framing" ]
   }.freeze
 
   # `hit` is "path:lineno — label: text" as `scan` builds it.
@@ -363,7 +390,7 @@ if __FILE__ == $PROGRAM_NAME
 
   if r[:hard].empty?
     puts "offering_lexicon_check ✓ — storefront clean and code layer free of offering " \
-         "lexicon outside the two ratified sites (BIZ.22)."
+         "lexicon outside the ratified sites named in RATIFIED_CODE_SITES (BIZ.22)."
     exit 0
   else
     warn "offering_lexicon_check ✗ — offering lexicon returned to a customer-facing surface (BIZ.22):"

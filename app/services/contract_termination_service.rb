@@ -34,7 +34,14 @@ class ContractTerminationService < ApplicationService
         Rails.logger.warn "🔥 [NaasContract] Контракт ##{@contract.id} розірвано. Нараховані SCC-МОНЕТИ кластера спалюються (contractual forfeiture)."
       end
 
-      Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково (Опція 1: без повернення коштів)."
+      # Формулювання — з дому присуду (`msa_skeleton §B.6.3`, ⚖️ founder 2026-08-29):
+      # Опція 1 має ДВІ половини, і лог доти називав лише одну. ⛔ Обидві пишемо
+      # УКРАЇНСЬКОЮ, без англійського терміна: `offering_lexicon_check` не вміє
+      # читати заперечення, тож рядок, який плату ЗАПЕРЕЧУЄ, червонів би так само,
+      # як той, що її обіцяє (оголошена стеля (6) у шапці гейта).
+      Rails.logger.info "📜 [NaasContract] Контракт ##{@contract.id} розірвано достроково " \
+                        "(Опція 1: сплачені Service Fee за поточний Service Term не повертаються, " \
+                        "плати за дострокове розірвання немає)."
     end
 
     # [P0 FIX]: Enqueue burn job ПІСЛЯ успішного commit транзакції.
