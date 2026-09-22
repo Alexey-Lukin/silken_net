@@ -467,7 +467,7 @@ public class DrawingTests
 
     // 🔴 HW.2: the flange goes to acceptance with a Sa/Sv row, not an empty one. The shipped manifest
     // must state the finish PER SURFACE — the catalytic face keeps the EAAE roughness that makes the
-    // ECSA, the outer jacket alone gets the PEP smoothing (01_02 §1.3 Крок 7). One blanket finish on
+    // ECSA, the outer jacket alone is smoothed (01_02 §1.3 Крок 7). One blanket finish on
     // this part polishes away the very surface the laccase needs.
     [Fact]
     public void Shipped_Cathode_Flange_States_A_Per_Surface_Finish_Not_A_Blanket_One()
@@ -485,6 +485,14 @@ public class DrawingTests
         // this pin demands BOTH halves: the effect-keyed prohibition, and PEP enumerated inside it.
         Assert.Contains("NO SMOOTHING OR POLISHING", sf!);
         Assert.Contains("PEP", sf!);
+        // 🔴 The SECOND half of the same field, and the same measurement bought it: the 2026-09-22 check
+        // moved the PROHIBITION onto the effect and left the PERMISSION standing on the process NAME —
+        // «outer jacket = PEP smoothing» — i.e. the sheet went on prescribing to the shop a name our own
+        // check had put in doubt. A canon table may cite «§1.3 Крок 7» and be read safely, because its
+        // reader can open that section and meet the caveat; a DXF/SVG sheet renders the same «(Step 7)»
+        // to a vendor for whom it is a dead address, so the caveat is unreachable BY CONSTRUCTION there.
+        // The requirement is therefore the roughness, and the process is a loud absence (gotcha #11).
+        Assert.Contains("PROCESS is NOT SPECIFIED IN CEM", sf!);
     }
 
     // ⚖️ 00_07 HW.34 (delegated verdict 2026-09-12): the bus-channel ENTRY edge carries a RADIUS, not a chamfer,
