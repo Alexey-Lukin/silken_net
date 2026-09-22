@@ -123,6 +123,7 @@
 | **Продукт** | [Os(4,4'-dimethyl-2,2'-bipyridine)₂(poly(1-vinylimidazole))Cl]⁺/²⁺ — «Os(dmbpy)₂(PVI)Cl» |
 | **Редокс-потенціал** | E°' = **+21 мВ vs Ag/AgCl (0.1 M KCl)** ≈ **+309 мВ vs NHE** (Zafar 2012, *Anal. Chem.* 84, 334) — ідентифікаційна властивість сполуки, не наш прогноз |
 | **Не специфіковано в каноні** | співвідношення Os : імідазол (завантаження) · MW PVI · форма поставки (розчин ⊥ тверде) — вендор декларує, ми підтверджуємо до замовлення |
+| **🔴 Питання №1 листа** | **чи адресат ВЗАГАЛІ береться за кастомний синтез цього роду** — додано 2026-09-22 дзеркально до Spec D. Підстава: [`ua_vendor_map §3`](ua_vendor_map.md) називає вузьким місцем саме ВИКОНАВЦЯ («прекурсор купується тривіально»), а лист доти питав тільки ціну й QC — тобто поїхав би, не спитавши того, на що чекає нога [`HW.5`](../../00_07_Action_Plan_Tracker.md). ⛔ У сам лист НЕ пишемо, що заявленого постачальника ми не знайшли: це price-anchor проти нас (§Dispatch-нота) |
 | **QC / acceptance** | CV з назвою електроліту й референсу (E°') · вміст Os (ICP-OES/MS) · ідентичність комплексу (UV-Vis MLCT; ЯМР прекурсора) · MW/дисперсність PVI (GPC) · CoA |
 | **Безпека** | сполуки осмію; окиснення може дати летючий токсичний OsO₄ — вендор декларує поводження, пакування, SDS |
 | **Кількість** | мг — сотні мг на пілот Stage 2; уточнити після квоти |
@@ -174,7 +175,7 @@
 ## 6. RFQ dispatch checklist + послідовність (критичний шлях першим)
 
 - [ ] 👤 **CDA — на комерційній стадії, не перед запитом:** стандартний взаємний CDA вендора на комерц-умови (§IP; [`rfq_registry`](rfq_registry.md) §3).
-- [ ] 👤 **Адресати — [`ua_vendor_map §3`](ua_vendor_map.md)** (Spec A: ІБК НАН Львів ⊥ Bienta/Enamine — питання №1 «Pichia, не E. coli»; Os-полімер — найслабша ланка, виконавця немає; приймання ZIF — ЦККНО Львівської політехніки). ⚠️ ІБК НАН — інститут НАН: лист туди йде проєктом ТЗ українською під договір НДР ⊥ послугу (прецедент — [`anchor_hip_rfq`](anchor_hip_rfq.md)), не EN-аркушем.
+- [ ] 👤 **Адресати — [`ua_vendor_map §3`](ua_vendor_map.md)** (Spec A: ІБК НАН Львів ⊥ Bienta/Enamine — питання №1 «Pichia, не E. coli»; Os-полімер — **дві адреси є** (ІЗНХ ім. Вернадського ⊥ Enamine на полімерну половину), вузьке місце — не сировина й не лист, а те, чи ХТОСЬ береться: питання №1 §5a; приймання ZIF — ЦККНО Львівської політехніки). ⚠️ ІБК НАН — інститут НАН: лист туди йде проєктом ТЗ українською під договір НДР ⊥ послугу (прецедент — [`anchor_hip_rfq`](anchor_hip_rfq.md)), не EN-аркушем.
 - [ ] 👤 **Spec A (dgrFAD-GDH)** — RFQ на квоту/строки **зараз** (🔴 4–8 тиж тримає весь Stage 2). Sequence freeze — після Aggrescan3D (CHEM.10 ✅; машинна половина CHEM.11 ✅ 2026-09-17, три компенсації вже у Spec A).
 - [ ] 👤 **Spec F (Os-полімер)** — RFQ кастомного синтезу **разом зі Spec A**: без медіатора анод не працює, а строк синтезу невідомий.
 - [ ] 👤 **Spec C (геніпін)** — закупка паралельно (найшвидше).
@@ -266,6 +267,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 **F — osmium redox polymer (anode mediator), custom synthesis**
 
 - Product: **[Os(4,4'-dimethyl-2,2'-bipyridine)₂(poly(1-vinylimidazole))Cl]⁺/²⁺**. Its published formal potential is **+21 mV vs Ag/AgCl (0.1 M KCl)**, about **+309 mV vs NHE** — given to identify the compound.
+- **Required capability:** this is a custom synthesis rather than a catalogue item — please state whether you undertake work of this type, and describe your prior hands-on experience with osmium polypyridyl complexes and with anchoring a metal complex to a polymer backbone, as this governs feasibility. Quote development effort separately from material.
 - Not fixed on our side — please propose and declare: the Os : imidazole loading, the molecular weight of the poly(1-vinylimidazole), and the delivery form (solution or solid).
 - QC / acceptance: cyclic voltammetry with the electrolyte and reference stated · osmium content (ICP-OES or ICP-MS) · identity of the complex (UV-Vis MLCT band; NMR of the precursor) · molecular weight and dispersity of the polymer (GPC) · CoA.
 - Safety: oxidation of osmium compounds can release volatile OsO₄ — state your handling and packaging, with SDS.
