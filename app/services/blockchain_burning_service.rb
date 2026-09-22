@@ -437,7 +437,7 @@ class BlockchainBurningService < ApplicationService
   # Slashing::CauseEvidence (фаза-1 = tamper). source_tree пробрасується для майбутнього
   # per-tree звуження.
   def positive_a_evidence?
-    Slashing::CauseEvidence.new(@cluster, source_tree: @source_tree).positive_a?
+    Slashing::CauseEvidence.new(@cluster, contract: @naas_contract, source_tree: @source_tree).positive_a?
   end
 
   # [SLASH-1 §3.2] Freeze (Категорія C) — спалення заблоковано, бо немає прямого доказу A.
@@ -789,9 +789,12 @@ class BlockchainBurningService < ApplicationService
   def critical_unmaintained?
     # [SLASH-1 gap-D] Виключаємо :field_audit — наш власний audit-виклик «слухай» без
     # MaintenanceRecord ≠ операторська недбалість; рахуємо лише реальні tree/hardware-алерти.
-    # [P1-3] Виключаємо і :vandalism_breach — коли він дав `positive_a?` (єдиний шлях до Cat-A
-    # slash), «не виїхав на tamper» вже покарано НЕОБОРОТНИМ slash → накручувати penalty на тому
-    # самому алерті = self-ref подвійне. Незалежна фізична недбалість = реальні tree/hardware-алерти.
+    # [P1-3] Виключаємо і доказ Кат-A (`EwsAlert::CATEGORY_A_EVIDENCE_TYPES`, сьогодні
+    # `vandalism_breach`) — коли він дав `positive_a?` (єдиний шлях до Cat-A slash), «не виїхав
+    # на tamper» вже покарано НЕОБОРОТНИМ slash → накручувати penalty на тому самому алерті =
+    # self-ref подвійне. Перелік читається звідти, а не пишеться тут: новий тип A-сету інакше
+    # відчинив би ворота й водночас повернув подвійний штраф. Незалежна фізична недбалість =
+    # реальні tree/hardware-алерти.
     # [SLASH-1] І :firmware_fault — софт-збій прошивки vendor-attributable (наш баг,
     # лікується OTA з бекенду): «не виїхав на mruby-crash» ≠ фізична недбалість оператора.
     # [SEC.20] І :firmware_reverted — той самий vendor-клас, але ТЕРМІНАЛЬНИЙ (не
@@ -824,7 +827,7 @@ class BlockchainBurningService < ApplicationService
     # відповідь (НЕВІДОМО), і при незворотному burn вона падає на той самий бік,
     # що й «ми» — асиметрія §3.2 забороняє карати за невизначеність.
     stale_critical = @cluster.ews_alerts.severity_critical
-                             .where.not(alert_type: [ :field_audit, :vandalism_breach, :firmware_fault,
+                             .where.not(alert_type: [ :field_audit, *EwsAlert::CATEGORY_A_EVIDENCE_TYPES, :firmware_fault,
                                                       :firmware_reverted, :firmware_canary_trip,
                                                       :actuator_stuck, :emergency_response_undeliverable,
                                                       :slash_dispatch_failed,

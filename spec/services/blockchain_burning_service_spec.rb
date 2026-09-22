@@ -811,6 +811,38 @@ end
 
       expect(mock_client).to have_received(:transact)
     end
+
+    # 🔒 [SLASH-1, ⚖️ делеговано 2026-09-22] Наскрізно, СПРАВЖНІМИ воротами (без стаба
+    # `positive_a?`): доказ закриває лише платформа, тож відкритий доказ живе довше за свій
+    # договір, і межею служить термін договору. Пара — взаємні мутації: без межі перший
+    # приклад спалює, з перевернутою — другий морозить.
+    context "with a real Category-A evidence row" do
+      before do
+        allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_call_original
+      end
+
+      it "FREEZES the next contract on evidence recorded before it was signed" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :vandalism_breach,
+                           status: :active, created_at: naas_contract.start_date - 1.day)
+
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(result).to eq(:frozen)
+        expect(mock_client).not_to have_received(:transact)
+        expect(naas_contract.reload.status).not_to eq("breached")
+      end
+
+      it "SLASHES the contract in force when fresh evidence was recorded" do
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :vandalism_breach,
+                           status: :active, created_at: 1.hour.ago)
+
+        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+
+        expect(result).to eq(:slashed)
+        expect(mock_client).to have_received(:transact)
+        expect(naas_contract.reload.status).to eq("breached")
+      end
+    end
   end
 
   # [SLASH-1] Спека сідає в ТОЧКУ ДІЇ — на сам шов між двома писачами термінального
@@ -967,6 +999,16 @@ end
     it "але рахує ТУ САМУ подію, якщо вона лишилась у спільному кошику" do
       stale_alert!(:system_fault)
       expect(service.send(:critical_unmaintained?)).to be(true)
+    end
+
+    # [P1-3 · SLASH-1, 2026-09-22] Перелік доказу Кат-A має ОДИН дім (`EwsAlert`), і
+    # uplift читає його звідти: тип, доданий в A-сет, мусить разом відчинити ворота й
+    # вийти з «недбалості», інакше той самий доказ удруге накрутить множник. Пін — на
+    # ЧИТАННЯ переліку: `system_fault`, який рахується рядком вище, тут стає доказом.
+    it "виключає з недбалості кожен тип доказу Кат-A — перелік читається з EwsAlert" do
+      stub_const("EwsAlert::CATEGORY_A_EVIDENCE_TYPES", %w[vandalism_breach system_fault])
+      stale_alert!(:system_fault)
+      expect(service.send(:critical_unmaintained?)).to be(false)
     end
 
     # [SLASH-1 ⚖️ 2026-09-04] Друга родина того ж розколу: `hardware_fault` несе

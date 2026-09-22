@@ -79,6 +79,7 @@ en:
       tree_returned: Node %{did} is back on the air (%{seen_at}).
     row:
       acknowledge: Acknowledge & Resolve →
+      evidence_locked: "🔒 Category A evidence — the platform closes it"
       resolve_aria: 'Resolve alert #%{id}'
       resolve_confirm: 'Confirm threat localisation for alert #%{id}?'
       resolved: "✓ Resolved"

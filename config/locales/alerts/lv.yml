@@ -79,6 +79,7 @@ lv:
       tree_returned: Mezgls %{did} atkal ēterā (%{seen_at}).
     row:
       acknowledge: Apstiprināt un atrisināt →
+      evidence_locked: "🔒 A kategorijas pierādījums — to slēdz platforma"
       resolve_aria: 'Atrisināt brīdinājumu #%{id}'
       resolve_confirm: 'Apstiprināt draudu lokalizāciju brīdinājumam #%{id}?'
       resolved: "✓ Atrisināts"

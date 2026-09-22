@@ -164,6 +164,27 @@ RSpec.describe Alerts::Row do
       expect(html).to include("Carpathian-7")
       expect(html).not_to include("Acknowledge")
     end
+
+    # [SLASH-1, 2026-09-22] Доказ Кат-A закриває лише платформа (`EwsAlert#closable_by?`):
+    # кнопка для лісника бенефіціара обіцяла б дію, яку модель відхилить 403-м.
+    context "when the alert is Category A evidence" do
+      def render_evidence_for(actor)
+        render_component(alert: build_alert(status: :active, severity: :critical, alert_type: :vandalism_breach,
+                                            message_key: "field_audit_escalated_c_to_a", message_params: {}),
+                         current_user: actor)
+      end
+
+      it "лісник бачить статус «закриває платформа», а не кнопку" do
+        html = render_evidence_for(build_stubbed(:user, :forester))
+
+        expect(html).to include("Category A evidence")
+        expect(html).not_to include("Acknowledge")
+      end
+
+      it "платформа (super_admin) кнопку бачить — рецепт відкликання 06_08 §4.6" do
+        expect(render_evidence_for(build_stubbed(:user, :super_admin))).to include("Acknowledge")
+      end
+    end
   end
 
   # ⚠️ [TEST.12] Вхід НЕДОСЯЖНИЙ, і це оголошено, а не замовчано: `enum :severity`

@@ -10,6 +10,7 @@ en:
       already_assigned: 'Alert #%{id} is already taken by another forester.'
       already_resolved: 'Alert #%{id} was already resolved.'
       claimed: 'Alert #%{id} is now yours.'
+      evidence_locked: 'Alert #%{id} is Category A evidence — only the platform may withdraw it.'
       invalid_severity: 'Invalid severity filter: %{value}.'
       invalid_status: 'Invalid status filter: %{value}.'
       not_assignee: Only the assigned forester (or an admin) can release this alert.

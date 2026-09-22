@@ -120,6 +120,43 @@ RSpec.describe Api::V1::AlertsController, type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-22] Другі двері, яких меню ноги не називало: лісник
+    # організації-БЕНЕФІЦІАРА гасив доказ Кат-A однією кнопкою. Відмова — 403, бо це
+    # питання ПРАВА на дію, а не конфлікт стану (той — 409 нижче).
+    context "when the alert is Category-A evidence" do
+      let!(:evidence) do
+        create(:ews_alert, cluster: own_cluster, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active)
+      end
+
+      it "refuses the beneficiary's forester with 403 and leaves the evidence live" do
+        patch resolve_alert_path(evidence), headers: headers, as: :json
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response.parsed_body["error"]).to be_present
+        expect(evidence.reload).not_to be_status_resolved
+      end
+
+      it "from the browser redirects back to the alert with an error, not a success" do
+        patch resolve_alert_path(evidence), headers: headers.merge("Accept" => "text/html")
+
+        expect(response).to redirect_to(alert_path(evidence))
+        expect(flash[:error]).to be_present
+        expect(flash[:success]).to be_nil
+        expect(evidence.reload).not_to be_status_resolved
+      end
+
+      it "lets the platform (super_admin) withdraw it" do
+        admin = create(:user, :super_admin, organization: organization)
+
+        patch resolve_alert_path(evidence),
+              headers: { "Authorization" => "Bearer #{admin.generate_token_for(:api_access)}" }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(evidence.reload).to be_status_resolved
+      end
+    end
+
     # 🔴 Тут стояло `allow(...).to receive(:resolve!).and_return(false)` + очікування 422.
     # Приклад був ВАКУУМНИЙ: `EwsAlert#resolve!` завершується літеральним `true`, а
     # `mark_resolved!` і `whiny_persistence: true` не повертають `false` — вони КИДАЮТЬ.

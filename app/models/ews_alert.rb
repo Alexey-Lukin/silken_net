@@ -296,6 +296,13 @@ class EwsAlert < ApplicationRecord
             uniqueness: { scope: [ :tree_id, :status ], message: "вже є активним для цього вузла" },
             if: -> { tree_id.present? && status_active? }
 
+  # 🔒 [SLASH-1, 2026-09-22] Бекстоп замка доказу Кат-A — на ПЕРСИСТЕНЦІЇ, а не лише в
+  # `resolve!`: `ignore!`, голий `mark_resolved!` чи `update!(status:)` так само виводять
+  # доказ з-під воріт (`critical` = `unresolved`), і сьогодні їх просто ніхто не кличе.
+  # `resolve!` лишає власну відмову (`EvidenceLocked`): вона падає ДО побічних дій і дає
+  # контролеру 403. Тут — дно для дверей, яких іще не існує.
+  validate :category_a_evidence_leaves_only_by_platform, on: :update
+
   # --- ПРОЗА АЛЕРТА: ключ + параметри, рендер у момент ПОКАЗУ ---
   # Алерти народжуються у воркерах, де локалі глядача не існує. Готовий рядок,
   # записаний там, замерзав однією мовою назавжди. Тому в БД лежить те, що від
@@ -510,6 +517,23 @@ class EwsAlert < ApplicationRecord
   class NotAssignee < StandardError; end
   class AlertClosed < StandardError; end
 
+  # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-22] ДОКАЗ КАТЕГОРІЇ A — не тривога для «ack».
+  # `Slashing::CauseEvidence#positive_a?` пропускає НЕЗВОРОТНИЙ `slash()` лише на
+  # незакритому доказі, а доказ звинувачує ОРГАНІЗАЦІЮ-бенефіціара — тож гасити його не
+  # сміє жоден її актор. Доти дверей було ДВОЄ: привʼязка ремонту (`EcosystemHealingWorker`
+  # резолвив тривогу будь-якого типу) і кнопка «Вирішити» (`alerts#resolve` за
+  # `authorize_forester!`). Предикат uplift від «одного кліку» вже боронився
+  # (`severity_critical` без `.unresolved`), а ворота незворотного burn — ні.
+  # Закриває лише ПЛАТФОРМА (`super_admin`, рецепт `06_08 §4.6`); машинний `resolve!`
+  # (`user: nil`) теж відхиляється — жоден авто-резолвер цього типу не має права.
+  # Чому доказ не палить НАСТУПНИЙ договір кластера, хоч живе, доки його не закрили, —
+  # часова межа в `CauseEvidence`, не запис сюди.
+  # ⚠️ Найслабша ланка названа: `super_admin` — це платформа, тобто та сама сторона, що
+  # мінтить. Незалежного аудитора як ролі в коді немає, тож важіль відкликання стоїть у
+  # неї — стояче повноваження, не «нейтральний» дефолт.
+  CATEGORY_A_EVIDENCE_TYPES = %w[vandalism_breach].freeze
+  class EvidenceLocked < StandardError; end
+
   # Узяти тривогу на себе. Претензія ЛИШЕ на нічию: перехоплення чужої — це
   # диспетчерська дія, і вона свідомо не будується (residual `00_07` E.20).
   #
@@ -545,6 +569,10 @@ class EwsAlert < ApplicationRecord
   # резолвера: доти "Закрито системою" (укр. проза в БД) діставав і оператор,
   # що лишив поле порожнім, — тобто дефолт брехав про АГЕНТА закриття.
   def resolve!(user: nil, notes: nil, key: nil, params: {})
+    unless closable_by?(user)
+      raise EvidenceLocked, "Alert ##{id} is Category-A evidence — only the platform may withdraw it (06_08 §4.6)"
+    end
+
     # Знімаємо "режим тиші", щоб Оракул знову міг слухати це дерево після його
     # відновлення. ⚠️ Стор тут — `Rails.cache`, тобто Solid Cache (PostgreSQL) у
     # проді, НЕ Redis: заголовок цього коментаря казав інакше й посилав читача
@@ -560,9 +588,23 @@ class EwsAlert < ApplicationRecord
     mark_resolved!
 
     # [SELF-HEALING]: Атомарно закриваємо MaintenanceRecord
-    close_associated_maintenance!
+    # ⛔ [SLASH-1] Але не під доказом Кат-A: записи, привʼязані до нього, належать
+    # звинуваченій організації (ремонт, заперечення), і `update_all` нижче переписав би
+    # їхні `notes`/`performed_at` у мить, коли платформа закриває доказ.
+    close_associated_maintenance! unless category_a_evidence?
 
     true
+  end
+
+  def category_a_evidence?
+    alert_type.to_s.in?(CATEGORY_A_EVIDENCE_TYPES)
+  end
+
+  # Чи може ЦЕЙ актор закрити тривогу: звичайну — будь-хто, кого пустив контролер
+  # (resolve ≡ ack); доказ Кат-A — лише платформа. Читають модель і рядок UI, щоб
+  # кнопка не обіцяла дії, яку модель відхилить.
+  def closable_by?(user)
+    !category_a_evidence? || user&.role_super_admin? || false
   end
 
   # Додає запис у `resolution_log` (НЕ зберігає — викликач сам робить save/update!,
@@ -628,6 +670,13 @@ class EwsAlert < ApplicationRecord
   end
 
   private
+
+  def category_a_evidence_leaves_only_by_platform
+    return unless category_a_evidence? && will_save_change_to_status? && !status_active?
+    return if resolver&.role_super_admin?
+
+    errors.add(:status, "доказ Категорії A закриває лише платформа (06_08 §4.6)")
+  end
 
   # Обидва читачі прози (`#message`, `#resolution_texts`) конвертують named-
   # параметри в мітки ТУТ — на межі, де видно і сирий вимір, і локаль глядача.

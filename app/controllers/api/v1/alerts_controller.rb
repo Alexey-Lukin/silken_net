@@ -125,6 +125,18 @@ module Api
             end
           format.html { redirect_to alerts_path, success: I18n.t("flash.alerts.resolved") }
         end
+      rescue EwsAlert::EvidenceLocked
+        # [SLASH-1, 2026-09-22] Доказ Кат-A гасить не лісник організації, яку він
+        # звинувачує, — лише платформа (`06_08 §4.6`). 403, бо це питання ПРАВА на дію,
+        # а не конфлікт стану (той — 409 нижче).
+        respond_to do |format|
+          format.json do
+            render json: { error: I18n.t("flash.alerts.evidence_locked", id: @alert.id) }, status: :forbidden
+          end
+          format.html do
+            redirect_to alert_path(@alert), error: I18n.t("flash.alerts.evidence_locked", id: @alert.id)
+          end
+        end
       rescue AASM::InvalidTransition
         # Тривогу вже закрито — типово другим кліком по кнопці, поки перший ще летів
         # (див. тротл броадкасту вище). Це НЕ помилка сервера: 409 замість 500, і

@@ -79,6 +79,7 @@ lt:
       tree_returned: Mazgas %{did} vėl eteryje (%{seen_at}).
     row:
       acknowledge: Patvirtinti ir išspręsti →
+      evidence_locked: "🔒 A kategorijos įrodymas — uždaro platforma"
       resolve_aria: 'Išspręsti įspėjimą #%{id}'
       resolve_confirm: 'Patvirtinti grėsmės lokalizavimą įspėjimui #%{id}?'
       resolved: "✓ Išspręsta"

@@ -10,6 +10,7 @@ uk:
       already_assigned: 'Тривогу #%{id} уже взяв інший лісник.'
       already_resolved: 'Тривогу #%{id} вже закрито.'
       claimed: 'Тривога #%{id} — на вас.'
+      evidence_locked: 'Тривога #%{id} — доказ Категорії A: відкликати її може лише платформа.'
       invalid_severity: 'Невірний фільтр severity: %{value}.'
       invalid_status: 'Невірний фільтр status: %{value}.'
       not_assignee: Відпустити тривогу може лише її виконавець або адміністратор.

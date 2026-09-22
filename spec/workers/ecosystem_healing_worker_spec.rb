@@ -147,6 +147,30 @@ RSpec.describe EcosystemHealingWorker, type: :worker do
       end
     end
 
+    # 🔴 [SLASH-1, 2026-09-22] Привʼязка ремонту до тривоги гасила її БУДЬ-ЯКОГО типу, а
+    # `positive_a?` бачить `vandalism_breach` лише незакритим — тож штатний лісник
+    # організації-БЕНЕФІЦІАРА «Оглядом» повертав необоротний `slash()` у freeze.
+    # Пін — за ТИПОМ, не за автором: навіть платформа, що документує виїзд на tamper,
+    # не мусить мимохідь відкликати власний доказ записом.
+    context "when the bound alert is Category-A evidence (vandalism_breach)" do
+      [ :forester, :super_admin ].each do |role|
+        it "не гасить доказ, коли запис подав #{role} — звʼязок запис ↔ тривога живий" do
+          tree = create(:tree)
+          alert = create(:ews_alert, cluster: tree.cluster, tree: tree, status: :active,
+                                     severity: :critical, alert_type: :vandalism_breach)
+          record = build(:maintenance_record, :repair, maintainable: tree, ews_alert: alert,
+                                                       user: create(:user, role))
+          record.photos.attach(io: StringIO.new("fake"), filename: "photo.jpg", content_type: "image/jpeg")
+          record.save!
+
+          described_class.new.perform(record.id)
+
+          expect(alert.reload).not_to be_status_resolved
+          expect(record.reload.ews_alert).to eq(alert)
+        end
+      end
+    end
+
     context "when alert is already resolved" do
       it "does not re-resolve" do
         tree = create(:tree)

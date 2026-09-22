@@ -79,6 +79,7 @@ uk:
       tree_returned: Вузол %{did} знову в ефірі (%{seen_at}).
     row:
       acknowledge: Підтвердити та локалізувати →
+      evidence_locked: "🔒 Доказ Категорії A — закриває платформа"
       resolve_aria: Локалізувати тривогу №%{id}
       resolve_confirm: Підтверджуєте локалізацію загрози №%{id}?
       resolved: "✓ Локалізовано"

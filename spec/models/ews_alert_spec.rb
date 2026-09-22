@@ -539,6 +539,68 @@ RSpec.describe EwsAlert, type: :model do
       expect(alert.resolve!).to be true
     end
 
+    # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-22] Доказ Кат-A звинувачує ОРГАНІЗАЦІЮ-бенефіціара,
+    # тож гасити його не може жоден її актор: `positive_a?` читає лише незакритий доказ, і
+    # «Вирішити» лісника або привʼязка ремонту повертали незворотний `slash()` у freeze.
+    # Відкликання — платформа (`06_08 §4.6`).
+    context "when the alert is Category-A evidence" do
+      let(:tree) { create(:tree) }
+      let(:alert) do
+        create(:ews_alert, cluster: tree.cluster, tree: tree, severity: :critical,
+                           alert_type: :vandalism_breach, status: :active)
+      end
+
+      it "refuses a forester of the beneficiary organization — the evidence stays live" do
+        expect { alert.resolve!(user: create(:user, :forester)) }
+          .to raise_error(EwsAlert::EvidenceLocked)
+        expect(alert.reload).not_to be_status_resolved
+      end
+
+      it "refuses a machine resolve without a user" do
+        expect { alert.resolve! }.to raise_error(EwsAlert::EvidenceLocked)
+        expect(alert.reload).not_to be_status_resolved
+      end
+
+      it "lets the platform (super_admin) withdraw it — the 06_08 §4.6 recipe" do
+        alert.resolve!(user: create(:user, :super_admin), notes: "Акт не підтвердився")
+        expect(alert.reload).to be_status_resolved
+      end
+
+      # Записи, привʼязані до доказу, належать звинуваченій організації — закриття доказу
+      # платформою не сміє переписати її ремонт чи заперечення. Позитивний контроль нижче
+      # доводить, що на звичайній тривозі той самий крок їх таки переписує.
+      it "leaves the accused organization's linked records untouched when the platform closes it" do
+        record = create(:maintenance_record, maintainable: tree, ews_alert: alert, notes: "Заперечення лісника")
+
+        alert.resolve!(user: create(:user, :super_admin), notes: "Акт не підтвердився")
+
+        expect(record.reload.notes).to eq("Заперечення лісника")
+      end
+
+      # Замок стоїть на ПЕРСИСТЕНЦІЇ, не лише в `resolve!`: інші переходи з `:active` так
+      # само виводять доказ з-під воріт, і сьогодні їх просто ніхто не кличе.
+      it "refuses ignore! and a bare status write — the backstop covers doors resolve! does not" do
+        expect { alert.ignore! }.to raise_error(ActiveRecord::RecordInvalid, /платформа/)
+        expect { alert.update!(status: :resolved) }.to raise_error(ActiveRecord::RecordInvalid)
+        expect(alert.reload).to be_status_active
+      end
+
+      it "(positive control) ignore! still works on an ordinary alert" do
+        ordinary = create(:ews_alert, :drought)
+        expect { ordinary.ignore! }.to change { ordinary.reload.status }.to("ignored")
+      end
+
+      it "(positive control) an ordinary alert still auto-closes its linked records" do
+        ordinary = create(:ews_alert, cluster: tree.cluster, tree: tree, severity: :critical,
+                                      alert_type: :fire_detected, status: :active)
+        record = create(:maintenance_record, maintainable: tree, ews_alert: ordinary, notes: "Звіт лісника")
+
+        ordinary.resolve!(user: create(:user, :forester))
+
+        expect(record.reload.notes).not_to eq("Звіт лісника")
+      end
+    end
+
     it "clears the Redis silence filter" do
       alert = create(:ews_alert, :fire)
       silence_key = "ews_silence:#{alert.tree_id}:#{alert.alert_type}"

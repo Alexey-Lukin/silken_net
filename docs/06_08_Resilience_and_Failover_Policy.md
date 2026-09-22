@@ -397,7 +397,7 @@ tx.fail!
 
 ### 4.6 Field-Audit ескалація C→A (console-рецепт — відкриває ворота необоротного slash)
 
-> [SLASH-1] **Єдиний живий шлях до positive-A.** Автоматичного writer'а `vandalism_breach` немає за дизайном (wire status=3 = `vm_error` → `firmware_fault`; пилка → `chainsaw_detected`, поза A-сетом до field-validation) — тож доки людина не ескалює, КОЖЕН slash-тригер іде freeze/Field-Audit (`Slashing::CauseEvidence#positive_a?` = tamper-only). Політика + межі A-сету — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy); процедура Кат-C peer-review — [`05_05 §5`](05_05_Slashing_and_Risk_Policy). ⚠️ Крок незворотний за наслідком: після нього наступний `BurnCarbonTokensWorker` по цьому кластеру палить, а не морозить.
+> [SLASH-1] **Єдиний живий шлях до positive-A.** Автоматичного writer'а `vandalism_breach` немає за дизайном (wire status=3 = `vm_error` → `firmware_fault`; пилка → `chainsaw_detected`, поза A-сетом до field-validation) — тож доки людина не ескалює, КОЖЕН slash-тригер іде freeze/Field-Audit (`Slashing::CauseEvidence#positive_a?` = tamper-only). Політика + межі A-сету — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy); процедура Кат-C peer-review — [`05_05 §5`](05_05_Slashing_and_Risk_Policy). ⚠️ Крок незворотний за наслідком: після нього `BurnCarbonTokensWorker` по кожному ЧИННОМУ договору цього кластера, у термін якого потрапила ескалація, палить, а не морозить — протягом `slash_evidence_validity_hours` від запису (дефолт — тиждень). Договір, підписаний пізніше чи вже прострочений, на цьому доказі не горить, і не горить жоден договір після строку дії — межі в `Slashing::CauseEvidence` ([SLASH-1](00_07_Action_Plan_Tracker), 2026-09-22).
 
 **Передумова:** прямий ФІЗИЧНИЙ доказ втручання, зафіксований людиною на місці (розкритий корпус, зрізаний/викопаний анкер) — з актом і фото. Непрямий сигнал (тиша, divergence, аномалія Z, акустика без field-validation) Кат-A **не дає** — [`05_05 §6`](05_05_Slashing_and_Risk_Policy) вимагає прямого некорельованого підтвердження.
 
@@ -420,10 +420,18 @@ EwsAlert.create!(
   message_params: { date: "<дата>", uid: "<uid вузла>", act: "<N>", photo: "<ref>" }
 )
 
-Slashing::CauseEvidence.new(cluster).positive_a?   # → true (ворота відчинені)
+# Ворота судять ДОГОВІР, не кластер: доказ служить чинному договору, у термін якого його записано.
+Slashing::CauseEvidence.new(cluster, contract: <NaasContract>).positive_a?   # → true (ворота відчинені)
+
+# Прожени вирок ІНЦИДЕНТУ зараз — для кожного договору, який цей інцидент заморозив.
+# Не чекай «наступного тригера»: після строку дії доказ ворота вже не відчиняє, а тригер,
+# що прийде раніше, може бути про ІНШУ подію — ворота не знають, який інцидент довів доказ.
+BurnCarbonTokensWorker.perform_async(cluster.organization_id, <contract.id>, <tree_id|nil>)
 ```
 
-**Відкликання** (доказ не підтвердився): `alert.resolve!(user: <auditor>, notes: "...")` → гейт знову закритий (`positive_a?` читає лише unresolved). ⚠️ `resolve!` **з `user:`** — машинний resolve (`resolved_by` NULL) зарезервовано за sweeper'ом і має окремий сенс у penalty-тракті (gap-E, [`05_05 §6`](05_05_Slashing_and_Risk_Policy)).
+**Відкликання** (доказ не підтвердився): `alert.resolve!(user: <auditor>, notes: "...")` → гейт знову закритий (`positive_a?` читає лише unresolved). 🔒 `<auditor>` мусить бути ПЛАТФОРМОЮ (`super_admin`): будь-кого іншого, і машинний `resolve!` без `user:`, модель відхиляє `EwsAlert::EvidenceLocked` — ні лісник організації, яку доказ звинувачує, ні привʼязка запису обслуговування доказ не гасять, а привʼязані записи організації при закритті не переписуються (SLASH-1, ⚖️ делеговано 2026-09-22; політика — [`05_05 §3.2`](05_05_Slashing_and_Risk_Policy)).
+
+**Після слешу** доказ сам не закривається: закрий його тим самим рецептом (`notes:` з номером slash-транзакції), але лише коли вона `:confirmed`. Раніше — не можна: revert на ланцюгу лишає договір `:breached` без спалення, автоматичного повтору немає, і лише РУЧНИЙ повторний прохід з відкритим доказом дійде до burn, а не до freeze. Закриття не обовʼязкове для безпеки наступного договору — його береже часова межа, — але поки доказ відкритий, він висить на панелі організації й досі відчиняє ворота для ІНШОГО договору того ж кластера, що діяв у мить ескалації (кратність, відкрита в [SLASH-1](00_07_Action_Plan_Tracker)).
 
 Після ескалації: запис в `AuditLog` (`action: "field_audit_escalated_c_to_a"`, metadata: cluster_id + акт + фото-ref) — tamper-evident слід для MRV-аудитора ([MRV.1]). `vandalism_breach` свідомо виключений з `comms_no_ack?`/`critical_unmaintained?` (P1-3 self-ref: доказ A не має ще й накручувати penalty на собі).
 

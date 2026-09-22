@@ -26,12 +26,20 @@ module Slashing
   # DCI-divergence / fraud-алерт (`system_fault`) НЕ є самостійним сигналом A — `05_05 §6`
   # (divergence сам ≠ burn; потрібен 2-й некорельований сигнал).
   class CauseEvidence
+    # Строк дії доказу за замовчуванням: тиждень покриває ретраї вироку, прогнаного одразу
+    # після ескалації, і не тягне доказ на події, про які він нічого не каже. DAO-live.
+    DEFAULT_EVIDENCE_VALIDITY_HOURS = 168
+
     # @param cluster [Cluster] кластер під оцінкою
+    # @param contract [NaasContract] договір, під яким стоїть вирок. Обовʼязковий свідомо:
+    #   без нього доказ не мав би часової межі, і пропущений аргумент мовчки обирав би
+    #   гілку «палити», а не «морозити».
     # @param source_tree [Tree, nil] дерево-джерело (tree-death шлях) — резерв під
     #   майбутнє per-tree звуження; фаза-1 оцінює на рівні кластера (tamper-алерт
     #   несе cluster_id, тож cluster-scope його ловить).
-    def initialize(cluster, source_tree: nil)
+    def initialize(cluster, contract:, source_tree: nil)
       @cluster = cluster
+      @contract = contract
       @source_tree = source_tree
     end
 
@@ -52,8 +60,43 @@ module Slashing
     # [SLASH-1 P0] Автоматичний writer знято (wire status=3 = vm_error, не tamper);
     # алерт створює лише людина (Field-Audit C→A, `06_08 §4.6`) або майбутнє
     # validated-джерело — див. шапку класу.
+    #
+    # 🔒 [SLASH-1, ⚖️ делеговано 2026-09-22] Закривати доказ тепер може тільки платформа
+    # (`EwsAlert#closable_by?`), тож відкритий він живе, доки його не закриють. Звідси ДВІ
+    # межі, і обидві несучі:
+    #   · ТЕРМІН ДОГОВОРУ — доказ записано, поки ЦЕЙ договір був чинним (`start_date …
+    #     cancelled_at || end_date`, і сам договір `active`). Без неї доказ спалив би договір,
+    #     підписаний після інциденту, — і прострочений: `fulfill` не має викликача, тож
+    #     договір по `end_date` лишається `active` і отримує тригери далі.
+    #   · СТРОК ДІЇ — `slash_evidence_validity_hours` від запису. Ворота не знають, ЯКИЙ
+    #     інцидент довів доказ, тож без строку він відчиняв би їх для будь-якого пізнішого,
+    #     не повʼязаного тригера (природна посуха через пів року → незворотний слеш).
+    #     Рецепт `06_08 §4.6` проганяє вирок інциденту одразу після ескалації.
+    # Одноразовість усередині договору тримає не доказ, а РЕЄСТР: `BurnCarbonTokensWorker`
+    # мовчить на `:sent`/`:confirmed` burn-інтенті без горизонту, сервіс — на `:manual_review`.
+    # Хибний або відсутній вхід (нема дат, строк 0) дає «доказу немає» → freeze, ніколи burn.
+    # ⚠️ Стеля: `created_at` — мить ЗАПИСУ доказу аудитором, не інциденту; інцидент під
+    # договором, що встиг скінчитись до запису, ляже на договір, чинний у мить запису, а сам
+    # скінчений не горить.
     def tamper_breach?
-      @cluster.ews_alerts.critical.alert_type_vandalism_breach.exists?
+      window = evidence_window
+      return false unless window
+
+      @cluster.ews_alerts.critical
+              .where(alert_type: EwsAlert::CATEGORY_A_EVIDENCE_TYPES)
+              .where(created_at: window)
+              .exists?
+    end
+
+    def evidence_window
+      return unless @contract.status_active?
+
+      term_end = @contract.cancelled_at || @contract.end_date
+      return if @contract.start_date.nil? || term_end.nil?
+
+      validity = SystemParameter.current(:slash_evidence_validity_hours,
+                                         default: DEFAULT_EVIDENCE_VALIDITY_HOURS).to_i.hours
+      [ @contract.start_date, validity.ago ].max..[ term_end, Time.current ].min
     end
   end
 end

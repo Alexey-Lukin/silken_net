@@ -105,6 +105,14 @@ module Alerts
         # turbo-submission помирала в JSON-403 без жодного пояснення.
         return unless @current_user&.forest_commander?
 
+        # [SLASH-1, 2026-09-22] Доказ Кат-A закриває лише платформа: кнопка, яку модель
+        # відхилить (`EwsAlert#closable_by?`), була б обіцянкою дії без механізму.
+        unless @alert.closable_by?(@current_user)
+          return span(class: "text-gaia-text-muted text-mini uppercase tracking-widest", role: "status") do
+            t(".evidence_locked")
+          end
+        end
+
         # Acknowledge form posts via Turbo Stream — single-row replace.
         button_to(
           t(".acknowledge"),
