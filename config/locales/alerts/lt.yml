@@ -32,7 +32,7 @@ lt:
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slenkstis: %{fire_limit}). Gaisro rizika!"
       firmware_fault: "⚙️ PROGRAMINĖS ĮRANGOS GEDIMAS: mruby VM klaida / įrenginys neaprūpintas — reikalingas re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ PROGRAMINĖ ĮRANGA ATSTATYTA: mazgas ant embedded bazės, OTA versija %{burned_version} sudeginta per fallback — pakartotinis išleidimas tik su aukštesne versija. DID: %{did}"
-      fraud_telemetry_detected: "🚨 SUKČIAVIMAS: aptikta apgaulinga telemetrija už %{target_date}."
+      fraud_telemetry_detected: "⚠️ DCI NEATITIKIMAS: įrenginio ir serverio Lorenzo būsena nesutapo už %{target_date}. Tai signalas patikrinti, o ne sukčiavimo verdiktas."
       gateway_freezing: "❄️ UŽŠALIMAS: Queen %{uid} (%{temperature_c}°C). LiFePO4 neprisijungimo rizika — įkrovimas žemiau 0°C pavojingas."
       gateway_hardware_fault: "🛠️ Queen %{uid} aparatinės įrangos gedimas. Reikalinga apžiūra."
       gateway_overheat: "🔥 PERKAITIMAS: Queen %{uid} (%{temperature_c}°C). SIM7070G degradacijos rizika."
@@ -62,6 +62,7 @@ lt:
       slash_frozen_indeterminate_tree: 'Slashing užblokuotas (medis %{tree_did}): A kategorijos įrodymas yra, bet žalos MASTAS neapibrėžtas (nėra AiInsight duomenų tai datai). Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing užblokuotas (klasteris #%{cluster_id}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing užblokuotas (medis %{tree_did}): nėra tiesioginio A kategorijos įrodymo. Nieko nesudeginta — reikalingas Field Audit (C kategorija, 05_05 §3.2/§5).'
+      telemetry_divergence_detected: "⚠️ DCI NEATITIKIMAS: įrenginio ir serverio Lorenzo būsena nesutapo už %{target_date}. Tai signalas patikrinti, o ne sukčiavimo verdiktas."
       tree_silent: "🌳 Mazgas %{did} tyli ~%{silent_for_h} h (paskutinis siuntimas %{last_seen_at}, slenkstis %{threshold_h} h). Tyli sveikata ir mirtis/vagystė neatskiriamos iki heartbeat — reikia išvykti klausytis."
     resolutions:
       gateway_returned: Šliuzas %{uid} vėl eteryje (%{seen_at}).

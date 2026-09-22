@@ -32,7 +32,7 @@ en:
       fire_detected: "🔥 CATASTROPHE: Temperature %{temperature_c}°C (threshold: %{fire_limit}). Fire risk!"
       firmware_fault: "⚙️ FIRMWARE FAULT: mruby VM error / device unprovisioned — re-flash/OTA required. DID: %{did}"
       firmware_reverted: "⏮️ FIRMWARE REVERTED: node on embedded baseline, OTA version %{burned_version} burned by fallback — re-issue only with a version above it. DID: %{did}"
-      fraud_telemetry_detected: "🚨 FRAUD: fraudulent telemetry detected for %{target_date}."
+      fraud_telemetry_detected: "⚠️ DCI DIVERGENCE: device and server Lorenz state disagreed for %{target_date}. A signal to investigate, not a fraud verdict."
       gateway_freezing: "❄️ FREEZING: Queen %{uid} (%{temperature_c}°C). LiFePO4 offline risk — charging below 0°C is unsafe."
       gateway_hardware_fault: "🛠️ Hardware fault on Queen %{uid}. Inspection required."
       gateway_overheat: "🔥 OVERHEAT: Queen %{uid} (%{temperature_c}°C). Risk of SIM7070G degradation."
@@ -62,6 +62,7 @@ en:
       slash_frozen_indeterminate_tree: 'Slashing blocked (tree %{tree_did}): Category A evidence exists, but the MAGNITUDE of the damage is indeterminate (no AiInsight data for the date). Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing blocked (cluster #%{cluster_id}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing blocked (tree %{tree_did}): no direct Category A evidence. Nothing burned — Field Audit required (Category C, 05_05 §3.2/§5).'
+      telemetry_divergence_detected: "⚠️ DCI DIVERGENCE: device and server Lorenz state disagreed for %{target_date}. A signal to investigate, not a fraud verdict."
       tree_silent: "🌳 Node %{did} has been silent for ~%{silent_for_h} h (last transmission %{last_seen_at}, threshold %{threshold_h} h). Silent health and death/theft are indistinguishable until a heartbeat — go and listen."
     resolutions:
       gateway_returned: Queen %{uid} is back on the air (%{seen_at}).

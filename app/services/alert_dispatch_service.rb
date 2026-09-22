@@ -133,9 +133,15 @@ class AlertDispatchService
     end
   end
 
-  # [FIX]: Публічний метод для створення fraud-алертів з InsightGeneratorService.
-  # Окремий від create_and_dispatch_alert!, бо fraud вимагає manual review
-  # і не повинен тригерити автоматичну EmergencyResponseService.
+  # Публічний метод для DCI-розбіжності з InsightGeneratorService. Окремий від
+  # create_and_dispatch_alert!, бо розбіжність вимагає людської перевірки й не повинна
+  # тригерити автоматичну EmergencyResponseService.
+  # ⚖️ [SLASH-1, делеговано 2026-09-22] Ключ — СПОСТЕРЕЖЕННЯ, не вердикт: `05_05 §6`
+  # прямо відмовляє самостійній divergence у статусі доведеного шахрайства (категорія C),
+  # а ключ `fraud_telemetry_detected` друкував «ФРОД» на операторському екрані й віддавав
+  # слово в API. ⛔ Legacy-ключ у локалях НЕ знімати: рендер читає `message_key` з даних
+  # (`EwsAlert#message`), тож історичні рядки без нього впали б на `humanize`-фолбек —
+  # тобто знову «Fraud telemetry detected». Він несе той самий чесний текст, писача не має.
   # Приймає ДАТУ, а не готовий рядок. Сигнатура «будь-який текст» була ширшою
   # за реальність (єдиний продовий викликач передавав фіксований шаблон із
   # датою) — і саме та ширина впускала прозу: сирий український рядок сідав
@@ -149,12 +155,12 @@ class AlertDispatchService
     alert = EwsAlert.create!(
       cluster: cluster, tree: tree, severity: :critical,
       alert_type: :telemetry_divergence,
-      message_key: "fraud_telemetry_detected", message_params: { target_date: target_date.to_s }
+      message_key: "telemetry_divergence_detected", message_params: { target_date: target_date.to_s }
     )
 
     Rails.cache.write(silence_key, true, expires_in: 30.minutes)
     Organization.invalidate_expected_yield_cache(cluster&.organization_id)
-    Rails.logger.warn "🚨 [FRAUD ALERT] #{tree.did}: фрод-телеметрія за #{target_date}"
+    Rails.logger.warn "⚠️ [DCI DIVERGENCE] #{tree.did}: стан пристрою ≠ сервера за #{target_date} (сигнал, не вирок)"
 
     # [A-1 FIX: Transactional Outbox — Wiki 04_02 §2 AlertDispatchService]
     # AlertNotificationWorker.perform_async видалено.

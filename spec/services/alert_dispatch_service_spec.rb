@@ -590,13 +590,33 @@ end
 
       alert = EwsAlert.last
       expect(alert.severity).to eq("critical")
-      # [SLASH-1 2026-09-04] Тип описує СПОСТЕРЕЖЕННЯ (розбіжність), не вердикт:
-      # канон 05_05 §6 відмовляє самостійній divergence у статусі доведеного
-      # шахрайства й виносить її в Кат-C. `message_key` лишається як є.
+      # [SLASH-1] Тип і КЛЮЧ описують СПОСТЕРЕЖЕННЯ (розбіжність), не вердикт: канон
+      # 05_05 §6 відмовляє самостійній divergence у статусі доведеного шахрайства й
+      # виносить її в Кат-C. Ключ перейменовано 2026-09-22 (⚖️ делеговано) — доти він
+      # друкував «ФРОД» на операторському екрані й віддавав це слово в API.
       expect(alert.alert_type).to eq("telemetry_divergence")
-      expect(alert.message_key).to eq("fraud_telemetry_detected")
-      I18n.with_locale(:uk) { expect(alert.message).to include("ФРОД").and include("2026-03-14") }
+      expect(alert.message_key).to eq("telemetry_divergence_detected")
+      I18n.with_locale(:uk) do
+        expect(alert.message).to include("РОЗБІЖНІСТЬ").and include("2026-03-14")
+        expect(alert.message).not_to include("ФРОД")
+      end
       expect(alert.tree).to eq(tree)
+    end
+
+    # Історичні рядки несуть СТАРИЙ ключ, а рендер читає його з даних: без запису в
+    # локалях `EwsAlert#message` упав би на `humanize`-фолбек, тобто знову «Fraud …».
+    it "legacy-ключ історичного рядка рендериться чесно в кожній локалі" do
+      alert = create(:ews_alert, cluster: tree.cluster, tree: tree, severity: :critical,
+                                 alert_type: :telemetry_divergence,
+                                 message_key: "fraud_telemetry_detected",
+                                 message_params: { target_date: "2026-03-14" })
+
+      %i[en uk lt lv].each do |locale|
+        I18n.with_locale(locale) do
+          expect(alert.message).to include("DCI").and include("2026-03-14")
+          expect(alert.message).not_to match(/FRAUD:|Fraud telemetry|fraudulent|ФРОД:|фрод-телеметр|SUKČIAVIMAS:|apgaulinga|KRĀPŠANA:|krāpnieciska/)
+        end
+      end
     end
 
     it "is silenced by cache on second call within 30 minutes" do

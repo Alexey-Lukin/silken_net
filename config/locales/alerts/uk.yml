@@ -32,7 +32,7 @@ uk:
       fire_detected: "🔥 КАТАСТРОФА: Температура %{temperature_c}°C (поріг: %{fire_limit}). Ризик пожежі!"
       firmware_fault: "⚙️ ЗБІЙ ПРОШИВКИ: mruby VM error / device unprovisioned — потрібен re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ ВІДКАТ ПРОШИВКИ: вузол на embedded baseline, OTA-версія %{burned_version} спалена fallback’ом — re-issue лише вищою версією. DID: %{did}"
-      fraud_telemetry_detected: "🚨 ФРОД: Виявлено фрод-телеметрію за %{target_date}."
+      fraud_telemetry_detected: "⚠️ DCI-РОЗБІЖНІСТЬ: стан Лоренца пристрою й сервера не збігся за %{target_date}. Це сигнал для перевірки, а не вирок про фрод."
       gateway_freezing: "❄️ ЗАМЕРЗАННЯ: Королева %{uid} (%{temperature_c}°C). LiFePO4 offline-ризик — заряд <0°C небезпечний."
       gateway_hardware_fault: "🛠️ Апаратний збій Королеви %{uid}. Потрібен огляд."
       gateway_overheat: "🔥 ПЕРЕГРІВ: Королева %{uid} (%{temperature_c}°C). Ризик деградації SIM7070G."
@@ -62,6 +62,7 @@ uk:
       slash_frozen_indeterminate_tree: 'Слешинг заблоковано (дерево %{tree_did}): доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату). Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Слешинг заблоковано (кластер #%{cluster_id}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Слешинг заблоковано (дерево %{tree_did}): немає прямого доказу Категорії A. Нічого не спалено — потрібен Field Audit (Категорія C, 05_05 §3.2/§5).'
+      telemetry_divergence_detected: "⚠️ DCI-РОЗБІЖНІСТЬ: стан Лоренца пристрою й сервера не збігся за %{target_date}. Це сигнал для перевірки, а не вирок про фрод."
       tree_silent: "🌳 Вузол %{did} мовчить ~%{silent_for_h} год (останній ефір %{last_seen_at}, поріг %{threshold_h} год). Мовчазне здоров’я і смерть/крадіжка нерозрізнимі до heartbeat — виїхати слухати."
     resolutions:
       gateway_returned: Королева %{uid} повернулась в ефір (%{seen_at}).

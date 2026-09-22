@@ -32,7 +32,7 @@ lv:
       fire_detected: "🔥 KATASTROFA: Temperatūra %{temperature_c}°C (slieksnis: %{fire_limit}). Ugunsgrēka risks!"
       firmware_fault: "⚙️ PROGRAMMAPARATŪRAS KĻŪME: mruby VM kļūda / ierīce nav nodrošināta — nepieciešams re-flash/OTA. DID: %{did}"
       firmware_reverted: "⏮️ PROGRAMMAPARATŪRA ATGRIEZTA: mezgls uz embedded bāzes, OTA versija %{burned_version} sadedzināta ar fallback — atkārtota izdošana tikai ar augstāku versiju. DID: %{did}"
-      fraud_telemetry_detected: "🚨 KRĀPŠANA: konstatēta krāpnieciska telemetrija par %{target_date}."
+      fraud_telemetry_detected: "⚠️ DCI NESAKRITĪBA: ierīces un servera Lorenca stāvoklis nesakrita par %{target_date}. Tas ir signāls pārbaudei, nevis krāpšanas spriedums."
       gateway_freezing: "❄️ SASALŠANA: Queen %{uid} (%{temperature_c}°C). LiFePO4 bezsaistes risks — uzlāde zem 0°C ir bīstama."
       gateway_hardware_fault: "🛠️ Queen %{uid} aparatūras kļūme. Nepieciešama apskate."
       gateway_overheat: "🔥 PĀRKARŠANA: Queen %{uid} (%{temperature_c}°C). SIM7070G degradācijas risks."
@@ -62,6 +62,7 @@ lv:
       slash_frozen_indeterminate_tree: 'Slashing bloķēts (koks %{tree_did}): A kategorijas pierādījums pastāv, bet kaitējuma APJOMS nav nosakāms (nav AiInsight datu par datumu). Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_cluster: 'Slashing bloķēts (klasteris #%{cluster_id}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
       slash_frozen_no_evidence_tree: 'Slashing bloķēts (koks %{tree_did}): nav tieša A kategorijas pierādījuma. Nekas nav sadedzināts — nepieciešams Field Audit (C kategorija, 05_05 §3.2/§5).'
+      telemetry_divergence_detected: "⚠️ DCI NESAKRITĪBA: ierīces un servera Lorenca stāvoklis nesakrita par %{target_date}. Tas ir signāls pārbaudei, nevis krāpšanas spriedums."
       tree_silent: "🌳 Mezgls %{did} klusē ~%{silent_for_h} h (pēdējā pārraide %{last_seen_at}, slieksnis %{threshold_h} h). Klusa veselība un nāve/zādzība nav atšķiramas līdz heartbeat — jāizbrauc klausīties."
     resolutions:
       gateway_returned: Vārteja %{uid} atkal ēterā (%{seen_at}).
