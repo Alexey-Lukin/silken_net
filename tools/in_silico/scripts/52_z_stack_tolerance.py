@@ -848,7 +848,7 @@ def main() -> int:
           f"{ih['hemisphere_centre_today']:.2f} under today's hemisphere)")
     print("      tolerance readings: " + " · ".join(f"{k} ±{v:.2f}" for k, v in tr.items()))
     print(f"      FR4 {FR4_THICKNESS_MM:.1f} (BOM) rows — RF-deck top over the flange · room over it · after ±{tr[rss_key]:.2f} · "
-          f"tallest BOM part ({RF_DECK_TALLEST_BOM_PART_MM:.1f}) on top  [* = the BOM's named B2B alternative]")
+          f"LoRa module ({RF_DECK_TALLEST_BOM_PART_MM:.1f}) on top  [* = the BOM's named B2B alternative]")
     for r in vert["rows"]:
         if not r["fr4_is_bom"]:
             continue
@@ -861,9 +861,22 @@ def main() -> int:
     s = vert["summary"]
     print(f"  → no candidate piezo fits under the board at GAP_PZ {GAP_PZ:.2f}: "
           f"{not s['piezo_fits_in_gap_pz_any_candidate']} — the two placements are the open question, not a choice here")
-    print(f"  → tallest BOM part on the RF-deck TOP, any BOM row: pad_beside_piezo "
+    print(f"  → LoRa module on the RF-deck TOP, any BOM row: pad_beside_piezo "
           f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_beside_piezo']} · pad_under_piezo "
           f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_under_piezo']}")
+    # ⛔ The module is NOT the tallest part any more — the antenna verdict is open and one of its candidates is
+    # taller (00_07 HW.17). Printing only the module would repeat, on the operator's screen, exactly the
+    # substitution this axis was added to end.
+    bom_rows = [r for r in vert["rows"] if r["fr4_is_bom"]]
+    for part, h in RF_DECK_TOP_PART_MM.items():
+        ok = [r for r in bom_rows if r["rf_deck_top_part_fits"][part][rss_key]]
+        where = "no BOM row" if not ok else (
+            "every BOM row" if len(ok) == len(bom_rows) else
+            " / ".join(sorted({f"{r['placement']} B2B {r['b2b_mm']:g}" for r in ok})))
+        print(f"      on-top candidate {part:<38s} {h:>4.1f} mm → fits in: {where}")
+    print("      B2B gap occupants (EDLC, 00_07 HW.37): " + " · ".join(
+        f"{k} {'fits' if all(r['edlc_fits_in_b2b_gap'][k] for r in bom_rows) else 'NO (some rows)'}"
+        for k in EDLC_HEIGHT_MM))
     if s["pad_under_piezo_rows_that_do_not_close_at_all"]:
         print(f"  → pad_under_piezo rows with NEGATIVE room before any tolerance: "
               f"{', '.join(s['pad_under_piezo_rows_that_do_not_close_at_all'])}")
