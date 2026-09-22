@@ -58,7 +58,9 @@ Paper: 60 (figures) · 61 (tables) read the L3/L3b caches — re-run them after 
 
 Anchor mechanics (CPU):
   lib/mechanics → 50 · 51 · 55 · 56      lib/beam_contact (ONE contact solver) → 55 · 68 — a solver change re-runs BOTH
-  tools/cad/cem → 52 (o_ring of cathode_flange + radome; refuses a mismatch) · 54 · 55 (spans read at runtime)
+  tools/cad/cem → 52 (o_ring of cathode_flange + radome; refuses a mismatch — ⊕ since 2026-09-22 also the
+     radome's `bell_radius_mm`, the SAME field that DRIVES the CAD crown, so the two machine halves share one
+     number instead of each typing it) · 54 · 55 (spans read at runtime)
   55 → 68 (importlib + bus_mechanical.json)      54 → 64 (importlib + anchor_thermal_bridge.json)
   62 → wind_duty_cycle.json → 55 · 59 (cycle budget; 55 prints NOT COMPUTED without it)
   66 → tools/cad TopologyCrossChecks (a C# consumer: no Python re-run reaches it)
