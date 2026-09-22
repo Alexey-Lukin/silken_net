@@ -347,7 +347,9 @@ class BlockchainBurningService < ApplicationService
       # 🔴 [ARCH.62, 2026-09-11] «~1-3s» рахувалось як ОДИН round-trip, а `transact`
       # їх робить ШІСТЬ (освіження fee ×2 · estimate · balance · nonce · sendRaw),
       # тож тут запас під 30-секундним локом вужчий, ніж каже рядок вище — і це
-      # шлях СЛЕШИНГУ. Перевимір + вибір числа — `00_07` ARCH.62.
+      # шлях СЛЕШИНГУ. ⚖️ Число не є грошовим параметром (`00_07` ARCH.62, присуд
+      # «ЖОДНОГО» 2026-09-22): подвійне спалення тримає СТАН — per-contract claim
+      # `slash:claim:{id}` + інтент-гард, — а цей TTL лише серіалізує nonce підписанта.
       # Попередній 60s лок був для transact_and_wait, який чекав підтвердження блоку.
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість

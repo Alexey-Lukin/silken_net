@@ -8,8 +8,10 @@ module Web3
   # 🔎 ERC-20 READER (One-Home for on-chain balanceOf reads)
   # =========================================================================
   # Колапсує `balanceOf` ABI + client-build + Timeout + cache, що
-  # BlockchainMintingService / Insurance::ReserveGate / BlockchainBurningService
-  # кожен re-implement-ив (ABI-літерал жив у 4 файлах). Повертає raw wei (Integer) —
+  # BlockchainMintingService / Insurance::ReserveGate кожен re-implement-ив
+  # (ABI-літерал жив у 4 файлах). ⛔ `BlockchainBurningService` свідомо лишився ПОЗА
+  # [SLASH.2]: його pre-read мусить бути СВІЖИМ, а тут — кешоване вікно, тоді як на
+  # тому читанні стоять tripwire ухилення й `effective_burn`. Повертає raw wei (Integer) —
   # виклик конвертує одиниці. Спільний `cache_key` між читачами ТОГО САМОГО holder →
   # один RPC на вікно (а не один на фічу).
   # =========================================================================
