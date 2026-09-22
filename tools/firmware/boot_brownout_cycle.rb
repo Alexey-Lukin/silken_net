@@ -41,6 +41,9 @@
 #   • TX-енергії (ECB 16Б / CCM 30Б) — season-independent фіксовані навантаження з §9.4/§9.6;
 #     CCM-число несе застереження ARCH.8 (той самий перерахунок, інша споживана величина).
 
+require_relative "lib/energy_chain"
+EC = SilkenEnergyChain
+
 PARAMS = {
   # ── VBAT_OK гістерезис (02_03 §4.Г, verified Eq.3/Eq.4) ───────────────────
   c_vstor_f: 0.47,          # EDLC на VSTOR (02_03 §8 BOM)
@@ -80,23 +83,26 @@ def cap_energy_mj(c_f, v) = 0.5 * c_f * (v**2) * 1000.0
 
 def window_mj(p) = cap_energy_mj(p[:c_vstor_f], p[:v_ok_on]) - cap_energy_mj(p[:c_vstor_f], p[:v_ok_off])
 
+# ⛔ Чотири формули нижче живуть у спільному `lib/energy_chain.rb` (ARCH.8) — той
+# самий ланцюг рахує й `tx_cadence_budget.rb` під питання річної каденції.
+# Прилади свідомо НЕ злиті (різні питання, різні стелі), злито рівно арифметику;
+# зимовий ККД boost'а лишається ТУТ і подається іменованим аргументом, щоб
+# річна точка 0.68 не могла заїхати сюди мовчки.
 def active_cycle_from_vstor_mj(p, wire:)
   tx = wire == :ccm ? p[:tx_ccm_mj] : p[:tx_ecb_mj]
-  (p[:tinyml_mj] + p[:lorenz_mj] + tx) / p[:eta_buck_active]
+  EC.active_cycle_from_vstor_mj(tinyml_mj: p[:tinyml_mj], lorenz_mj: p[:lorenz_mj],
+                                tx_mj: tx, eta_buck_active: p[:eta_buck_active])
 end
 
-# Сон-стік VSTOR (µW): buck-гілка (STM32 STOP2) + пряма BQ-квієсцентна гілка.
-# Відтворює 02_03 §9.3 крок-у-крок — асерт нижче звіряє з надрукованими там числами.
 def sleep_drain_uw(p)
-  p_stm32_sleep_uw = (p[:i_stm32_sleep_na] / 1000.0) * p[:v_out]
-  p_drawn_from_vstor_uw = p_stm32_sleep_uw / p[:eta_buck_sleep]
-  p_bq_q_uw = (p[:i_bq_quiescent_na] / 1000.0) * p[:v_vstor_avg]
-  p_drawn_from_vstor_uw + p_bq_q_uw
+  EC.sleep_drain_uw(i_stm32_sleep_na: p[:i_stm32_sleep_na], v_out: p[:v_out],
+                    eta_buck_sleep: p[:eta_buck_sleep],
+                    i_bq_quiescent_na: p[:i_bq_quiescent_na], v_vstor_avg: p[:v_vstor_avg])
 end
 
-def sleep_mj_per_hour(p) = sleep_drain_uw(p) * 3600.0 / 1000.0
+def sleep_mj_per_hour(p) = EC.mj_per_hour(sleep_drain_uw(p))
 
-def gen_mj_per_hour(p, p_gen_uw) = p_gen_uw * 3600.0 / 1000.0 * p[:eta_boost_winter]
+def gen_mj_per_hour(p, p_gen_uw) = EC.gen_mj_per_hour(p_gen_uw: p_gen_uw, eta_boost: p[:eta_boost_winter])
 
 # Headline: чиста 3-циклова ціна (робастна — не залежить від interval_h).
 def headline_3cycle_mj(p, wire:) = p[:ema_warmup_cycles] * active_cycle_from_vstor_mj(p, wire: wire)

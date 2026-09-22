@@ -58,6 +58,9 @@
 #     файл їх НАЗИВАЄ в `--levers` (друкує команду), а не кличе й не переписує — ⚠️ поправка
 #     2026-09-12: доти шапка казала «КЛИЧЕ», і це було твердженням про механізм, якого немає.
 
+require_relative "lib/energy_chain"
+EC = SilkenEnergyChain
+
 CANON_DOC = File.expand_path("../../docs/02_03_BQ25570_MPPT_Nano_Power.md", __dir__)
 
 PARAMS = {
@@ -99,17 +102,22 @@ end
 
 def e_tx_mj(p, t_air_ms) = p[:i_tx_ma] * p[:v_out] * t_air_ms / 1000.0
 
+# ⛔ Чотири формули нижче живуть у спільному `lib/energy_chain.rb` (ARCH.8) — той
+# самий ланцюг рахує й `boot_brownout_cycle.rb` під питання HW.44. Прилади
+# свідомо НЕ злиті (різні питання, різні стелі), злито рівно арифметику.
 def e_active_from_vstor_mj(p, t_air_ms)
-  (p[:tinyml_mj] + p[:lorenz_mj] + e_tx_mj(p, t_air_ms)) / p[:eta_buck_active]
+  EC.active_cycle_from_vstor_mj(tinyml_mj: p[:tinyml_mj], lorenz_mj: p[:lorenz_mj],
+                                tx_mj: e_tx_mj(p, t_air_ms), eta_buck_active: p[:eta_buck_active])
 end
 
 def sleep_drain_uw(p)
-  p[:i_stm32_sleep_na] * 1e-9 * p[:v_out] / p[:eta_buck_sleep] * 1e6 +
-    p[:i_bq_quiescent_na] * 1e-9 * p[:v_vstor_avg] * 1e6
+  EC.sleep_drain_uw(i_stm32_sleep_na: p[:i_stm32_sleep_na], v_out: p[:v_out],
+                    eta_buck_sleep: p[:eta_buck_sleep],
+                    i_bq_quiescent_na: p[:i_bq_quiescent_na], v_vstor_avg: p[:v_vstor_avg])
 end
 
-def e_sleep_mj_h(p) = sleep_drain_uw(p) * 3600.0 / 1000.0
-def e_gen_mj_h(p) = p[:p_gen_uw] * 3600.0 * p[:eta_boost] / 1000.0
+def e_sleep_mj_h(p) = EC.mj_per_hour(sleep_drain_uw(p))
+def e_gen_mj_h(p) = EC.gen_mj_per_hour(p_gen_uw: p[:p_gen_uw], eta_boost: p[:eta_boost])
 def net_mj_h(p) = e_gen_mj_h(p) - e_sleep_mj_h(p)
 
 # H — інтервал між пакетами, за якого баланс рівно нульовий. ⚠️ Це БЕЗЗАПАСНА
