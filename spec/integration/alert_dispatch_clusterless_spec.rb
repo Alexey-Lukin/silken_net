@@ -85,7 +85,11 @@ RSpec.describe "AlertDispatchService with clusterless trees" do
         .to change(EwsAlert, :count).by(1)
 
       alert = EwsAlert.last
-      I18n.with_locale(:uk) { expect(alert.message).to include("ФРОД") }
+      # [SLASH-1, 2026-09-22] Ключ DCI-розбіжності — спостереження, не вердикт про фрод.
+      I18n.with_locale(:uk) do
+        expect(alert.message).to include("РОЗБІЖНІСТЬ")
+        expect(alert.message).not_to include("ФРОД")
+      end
       expect(alert.severity).to eq("critical")
     end
 
