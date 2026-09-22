@@ -106,12 +106,24 @@ GAP_OR_PRE_BRANCH_A = ORING_CS * (1.0 - 0.20)   # the 20 % chain before ⚖️ 2
 # took; if the number is not an end, say what it IS and whose. [2026-09-11]
 RF_ANT_TI_CLEARANCE_MIN = 12.0   # mm — antenna <-> Ti flange Z-clearance, OUR working floor
 
-# The stress level below which 20-yr PEEK stress-relaxation is not worth a model. Anchored INSIDE our
-# own canon rather than on an outside datasheet: 01_01 §4.3 tabulates PEEK relaxation on the press-fit
-# joint at 25-30 MPa contact pressure, so a tenth of that — of its LOWER end, the conservative reading —
-# is the floor for "negligible". ⛔ 10.0 stood here under this same sentence: a THIRD of the table, and
-# the table's own 20-yr column still relaxes at ~8-12 MPa, i.e. that floor sat inside the regime it
-# was meant to stay below.
+# The stress level below which 20-yr PEEK stress-relaxation is not worth a model. It was anchored on
+# 01_01 §4.3, which tabulates PEEK relaxation on a press-fit joint at 25-30 MPa contact pressure: a
+# tenth of its LOWER end was taken as the floor for "negligible".
+# 🔴 THAT ANCHOR IS DEAD AS OF 2026-09-22 (01_01 §4.3, the reconciliation box), and the number below is
+# deliberately NOT re-derived here — re-anchoring it would be wrong TWICE OVER:
+#   (a) the 25-30 MPa row does not describe OUR fit at all. Reaching it on this geometry needs 256-308 µm
+#       of diametral interference against a ratified band of 5-34 µm, and at 30 MPa PEEK's von Mises
+#       reaches 117.7 MPa — PAST its 100 MPa yield. So a tenth of it anchors on a joint we cannot build.
+#   (b) the FORM does not follow from the other model either. 01_01 §4.2 relaxation is MULTIPLICATIVE and
+#       stress-independent (P_c(t) = P_c(0)·[0.65 + 0.35·exp(−t/τ)]) — under it there is no stress below
+#       which relaxation is negligible, because everything relaxes by the same 35 %. Re-anchoring on §4.2
+#       (≈0.05-0.33 MPa) would flip `rim_datum_creep` from a 3.8x margin to a shortfall, i.e. invert a
+#       verdict on a premise that is itself the wrong shape.
+# ⛔ What the rim actually asks is DIMENSIONAL, not a stress threshold: the bayonet is a hard-stop, so the
+# rim sits at constant STRAIN, and constant strain is exactly the case where stress decays and geometry
+# does NOT move (01_01 §4.2, Correction A). Re-deriving this constant in that frame is the open leg —
+# 00_07 HW.33 («поріг режиму релаксації PEEK для обода»). Until then the value stands UNCHANGED so that
+# nothing downstream moves on a dead anchor, and this comment is the only thing that changed.
 PEEK_RELAX_REGIME_MPA = 2.5
 POGO_SPRING_FORCE_N = 0.96       # N per pin at FULL travel (02_02 §2.2) — an upper bound at 50-70 %
 POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
