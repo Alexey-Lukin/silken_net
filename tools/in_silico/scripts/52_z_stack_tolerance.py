@@ -154,8 +154,13 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # three grounds — W3013 closes in exactly ONE of the twelve BOM-FR4 rows, and that row needs both the B2B
 # alternative 6.0 (reopening HW.29) and `pad_beside_piezo` (an open branch of HW.30). W3013 STAYS in this
 # dict deliberately: it is the EVIDENCE the verdict stands on, and the re-measure trigger is a different
-# VERIFIED 868 MHz ceramic part, not this one changing. NN03-310 (1.0) is SHORTER than the module, so the
-# carrier branch hands the vertical budget back to what it was before the P/N audit.
+# VERIFIED 868 MHz ceramic part, not this one changing.
+# 🔴 2026-09-22, same day: the CARRIER half of that verdict fell to a primary-source read — NN03-310 is
+# 30.0 ± 0.20 mm LONG (UM §2.1), i.e. longer than the Ø25 flange, so it cannot sit on this board at all
+# (00_07 HW.17; 02_01 §5.2). Its 1.0 mm row STAYS as the evidence that half stood on. The VERTICAL verdict
+# does not move: both dimensionally possible family members (NN02-201 at 1.0, NN02-224 at 2.4) are shorter
+# than the module, so «the module is the tallest» holds for every live candidate — but it now holds
+# WITHOUT a named carrier, and the open question moved to the GROUND PLANE size (02_01 §5.3).
 RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
                        "antenna W3013 (ceramic SMD)": 4.0,
                        "antenna NN03-310 (Virtual Antenna)": 1.0}
@@ -700,10 +705,12 @@ def vertical_stack_budget(boss: dict) -> dict:
                                        "shorter than the gap», never «it fits the layout» (00_07 HW.37)"},
         "rf_deck_top_parts": {"heights_mm": dict(RF_DECK_TOP_PART_MM),
                               "ceiling": "the ceramic-SMD branch is REJECTED (⚖️ 2026-09-22, 02_01 §5.2), so the "
-                                         "part that actually stands there is the LoRa module (2.5) — the carrier "
-                                         "antenna NN03-310 is SHORTER (1.0). The W3013 row is kept as the evidence "
-                                         "the verdict stands on, NOT as a live option; `tallest_bom_part_fits_on_top` "
-                                         "above reads the MODULE, which is now also the maximum (00_07 HW.17)"},
+                                         "part that actually stands there is the LoRa module (2.5). ⛔ The CARRIER half "
+                                         "of that same verdict fell the same day: NN03-310 is 30.0 mm LONG, longer than "
+                                         "the Ø25 flange, so there is no named carrier today (00_07 HW.17, 02_01 §5.2). "
+                                         "This row is unaffected because every dimensionally possible family member "
+                                         "(1.0 and 2.4 mm) is shorter than the module — the vertical answer survives its "
+                                         "own premise. Both antenna rows are kept as EVIDENCE, neither is a live option"},
         "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — of the B2B gap's own "
                    "contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
                    "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3); the piezo placement is an open question, not a choice made here.",
