@@ -584,6 +584,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -613,6 +634,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -642,6 +684,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -671,6 +734,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -700,6 +784,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -729,6 +834,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -758,6 +884,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -787,6 +934,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -816,6 +984,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -845,6 +1034,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -874,6 +1084,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -903,6 +1134,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -932,6 +1184,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -961,6 +1234,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -990,6 +1284,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1019,6 +1334,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1048,6 +1384,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1077,6 +1434,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1106,6 +1484,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1135,6 +1534,27 @@
           "tol_pz_rss_as_quoted_02_02": false,
           "top_chain_rss_flange_face_datum": false,
           "tol_pz_worst_case": false
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": false
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1164,6 +1584,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1193,6 +1634,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": false,
+            "top_chain_rss_flange_face_datum": false,
+            "tol_pz_worst_case": false
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1222,6 +1684,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       },
       {
@@ -1251,6 +1734,27 @@
           "tol_pz_rss_as_quoted_02_02": true,
           "top_chain_rss_flange_face_datum": true,
           "tol_pz_worst_case": true
+        },
+        "rf_deck_top_part_fits": {
+          "LoRa-E5 module": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna W3013 (ceramic SMD)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          },
+          "antenna NN03-310 (Virtual Antenna)": {
+            "tol_pz_rss_as_quoted_02_02": true,
+            "top_chain_rss_flange_face_datum": true,
+            "tol_pz_worst_case": true
+          }
+        },
+        "edlc_fits_in_b2b_gap": {
+          "KR-5R5H474-R (horizontal)": true,
+          "KEMET FG0H474ZF (vertical, \u00d814.5)": false
         }
       }
     ],
@@ -1289,8 +1793,23 @@
         "below_hfss_trigger_pad_beside_piezo": true
       }
     },
-    "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap (not judged here)",
-    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 not the B2B gap's own contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a mock-up measurement, \u2696\ufe0f 2026-09-17, 02_01 \u00a75.3); the piezo placement is an open question, not a choice made here."
+    "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); which side of the RF deck carries the module; the Power-Deck top-side and RF-deck bottom-side contents inside the B2B gap \u2014 judged ONLY for the EDLC candidates the tree names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
+    "edlc_in_b2b_gap": {
+      "heights_mm": {
+        "KR-5R5H474-R (horizontal)": 5.2,
+        "KEMET FG0H474ZF (vertical, \u00d814.5)": 18.0
+      },
+      "ceiling": "the gap height itself; no tolerance subtracted and no mounting standoff, solder or clearance-to-neighbour modelled \u2014 a True here means \u00abthe part is shorter than the gap\u00bb, never \u00abit fits the layout\u00bb (00_07 HW.37)"
+    },
+    "rf_deck_top_parts": {
+      "heights_mm": {
+        "LoRa-E5 module": 2.5,
+        "antenna W3013 (ceramic SMD)": 4.0,
+        "antenna NN03-310 (Virtual Antenna)": 1.0
+      },
+      "ceiling": "which part actually stands there follows the OPEN antenna verdict (00_07 HW.17); the ceramic SMD candidate is taller than the LoRa module, so `tallest_bom_part_fits_on_top` above reads the MODULE, not the maximum"
+    },
+    "ceiling": "\u26d4 judges the block OVER the flange face under the ratified crown only \u2014 of the B2B gap's own contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a mock-up measurement, \u2696\ufe0f 2026-09-17, 02_01 \u00a75.3); the piezo placement is an open question, not a choice made here."
   },
   "rf_constraint": {
     "antenna_ti_clearance_min_mm": 12.0,

@@ -133,6 +133,18 @@ PIEZO_HEIGHT_MM = {"Mallory AST1240MLTRQ": 3.3, "Mallory AST1109MLTRQ": 2.0, "Mu
 # https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.5
+# 🔴 That constant is the LoRa-E5 module and WAS the tallest only because the BOM's antenna row named a
+# 1.6 × 0.8 mm part that does not exist at 868 MHz (00_07 HW.17, verified 2026-09-22). The verified ceramic
+# SMD candidate is 4 mm — TALLER than the module — while the Virtual-Antenna candidate is 1 mm, so «what
+# stands on top of the RF deck» is a CONSEQUENCE of the open antenna verdict, not a fixed number. Heights
+# per 02_01 §3 pos. 4; the module row stays as it was, so no pinned figure moves.
+RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
+                       "antenna W3013 (ceramic SMD)": 4.0,
+                       "antenna NN03-310 (Virtual Antenna)": 1.0}
+# EDLC candidate heights (00_07 HW.37, datasheets compared 2026-09-14). The part rides INSIDE the B2B gap,
+# which this budget used to declare «not judged here» — so the gap is now judged for the one class of
+# occupant the tree actually names. Vendor figures, not re-verified here.
+EDLC_HEIGHT_MM = {"KR-5R5H474-R (horizontal)": 5.2, "KEMET FG0H474ZF (vertical, Ø14.5)": 18.0}
 RF_Z_CANON_FLOOR_MM = 8.0        # 02_01 §5.3 normative row «≥ 8» (λ/40 = 8.6 in the same row)
 RF_Z_HFSS_TRIGGER_MM = 10.0      # 02_01 §5.3, same row: HFSS mandatory below 10
 
@@ -611,6 +623,13 @@ def vertical_stack_budget(boss: dict) -> dict:
             "room_over_rf_deck_at_board_edge_mm": round(h["crown_at_board_ceiling_edge"] - rf_top, 3),
             "room_after_tolerance_mm": after,
             "tallest_bom_part_fits_on_top": {k: bool(v >= RF_DECK_TALLEST_BOM_PART_MM) for k, v in after.items()},
+            # Per-candidate, because the antenna verdict is open (00_07 HW.17) and the two branches differ
+            # by 3 mm — reading one number for «the tallest part» hid exactly that spread.
+            "rf_deck_top_part_fits": {part: {k: bool(v >= h) for k, v in after.items()}
+                                      for part, h in RF_DECK_TOP_PART_MM.items()},
+            # The B2B gap's own occupant (00_07 HW.37): the EDLC sits between the decks, so the gap height
+            # IS its ceiling. No tolerance is subtracted — the gap is set by the connector stack itself.
+            "edlc_fits_in_b2b_gap": {part: bool(h <= b2b) for part, h in EDLC_HEIGHT_MM.items()},
         }
 
     rows = []
@@ -654,9 +673,18 @@ def vertical_stack_budget(boss: dict) -> dict:
         },
         "missing_datum": "piezo height TOLERANCE and solder standoff (pad_under_piezo adds both to the stack); "
                          "which side of the RF deck carries the module; the Power-Deck top-side and RF-deck "
-                         "bottom-side contents inside the B2B gap (not judged here)",
-        "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — not the B2B gap's own "
-                   "contents, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
+                         "bottom-side contents inside the B2B gap — judged ONLY for the EDLC candidates the tree "
+                         "names (edlc_fits_in_b2b_gap), every other occupant of that gap is still unjudged",
+        "edlc_in_b2b_gap": {"heights_mm": dict(EDLC_HEIGHT_MM),
+                            "ceiling": "the gap height itself; no tolerance subtracted and no mounting standoff, "
+                                       "solder or clearance-to-neighbour modelled — a True here means «the part is "
+                                       "shorter than the gap», never «it fits the layout» (00_07 HW.37)"},
+        "rf_deck_top_parts": {"heights_mm": dict(RF_DECK_TOP_PART_MM),
+                              "ceiling": "which part actually stands there follows the OPEN antenna verdict "
+                                         "(00_07 HW.17); the ceramic SMD candidate is taller than the LoRa module, "
+                                         "so `tallest_bom_part_fits_on_top` above reads the MODULE, not the maximum"},
+        "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — of the B2B gap's own "
+                   "contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
                    "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3); the piezo placement is an open question, not a choice made here.",
     }
 
