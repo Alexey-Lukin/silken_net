@@ -193,6 +193,19 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **E° LFER:** ΔE_red linear in σ over OMe→NO₂ (slope ≈ −0.92 eV/σ, r²=1.00) with **donor-saturation at NMe₂/NH₂** (plateau ~−3.91 eV, σ_para⁻ regime) — strict E°-monotonicity breaks only at that 4-meV pair (expected resonance saturation, not error).
 
+🔬 **Functional sensitivity of the LFER — bounded 2026-09-22 from CACHES ALREADY ON DISK, no new compute** (`00_07` HW.5.IS). ωB97X exists on exactly two points of this σ-axis, and both are also in the B3LYP series, so the slope can be compared directly:
+
+| 4,4'-X | σ_para | B3LYP/6-31G(d) ΔE_red | ωB97X/def2-TZVP ΔE_red | ω−B3 |
+|---|---|---|---|---|
+| Me (dmbpy) | −0.17 | −4.3808 (`os_complex.json`, = the series row) | −4.243 (`os_complex_wb97xd_dmbpy.json`) | **+0.1378** |
+| H (bpy) | 0.00 | −4.5297 (series row) | −4.392 (`os_complex_wb97xd.json` → `delta_scf_correct.EA_Os3_eV`, `= −ΔE_red`) | **+0.1377** |
+
+Local slope over that pair: **B3LYP −0.8756 ⊥ ωB97X −0.8765 eV/σ — 0.10 % apart**, i.e. the functional moves the INTERCEPT by a rigid ≈ +0.138 eV and leaves the local slope where it was.
+
+⚠️ **Four limits, and each is load-bearing.** (1) The agreement (0.0008 eV/σ) is **BELOW the resolution the caches carry** — ωB97X values are stored to 3 dp, so ±0.001 eV over Δσ = 0.17 is ±0.0059 eV/σ; the honest claim is «agree to within the precision on disk», never «identical». (2) Δσ = 0.17 is a **short lever near σ ≈ −0.1** — it constrains the slope THERE and says nothing about curvature at either end, and this series already HAS curvature (donor saturation at NMe₂/NH₂, excluded from the fit). (3) The +0.138 offset conflates the functional change with the basis change (6-31G(d) → def2-TZVP); what carries the argument is its CONSTANCY across the pair, not its value. (4) Both quantities are **vertical** ΔSCF on one geometry — verified in `21f` (a single `atoms` object, two `dft_singlepoint` calls at charge 1 and 2), not assumed from the field names.
+
+🔑 **What this does to the open ① ωB97X series run:** it does not replace it, it **narrows its question** — from «is the LFER functional-robust» (locally answered: yes) to «does the functional move the DONOR-SATURATION plateau and the acceptor-end slope», i.e. the extremes (NMe₂/NH₂ and NO₂/SO₂CF₃), ~2–3 points instead of 9.
+
 **Honest:** raw B3LYP-Koopmans cascade stays slightly uphill even for NO₂ (−0.23 eV) — same ~1 eV PCM differential-solvation bias (→ ② micro-solvation); the *trend/design rule* is the robust, transferable result. Numbers: `dft/os_mediator_series.json`.
 
 ### Cluster-Continuum Micro-Solvation & Speciation (② — script 34; dimethyl recompute OS-RECOMPUTE 2026-06-17)
