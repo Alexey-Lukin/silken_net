@@ -629,7 +629,7 @@ H = E_active / (E_gen − E_sleep) = 57.75 / (36.7 − 33.3) = 17 годин
 
 #### Сценарій B — Знизити TX power з +22 до +14 dBm
 SX1262 @ +14 dBm: I_TX ≈ 40 mA (datasheet, vs 118 mA @ +22 dBm).
-**Trade-off:** -8 dB TX power → -8 dB link margin → знижене покриття. Компенсація: підняти SF (з SF7 на SF9-SF10) → +5 dB sensitivity на gateway, що частково компенсує. Air-time зростає (SF9 ≈ 165 ms замість 110 ms @ SF7).
+**Trade-off:** -8 dB TX power → -8 dB link margin → знижене покриття. Компенсація: підняти SF (з SF7 на SF9-SF10) → +5 dB sensitivity на gateway, що частково компенсує. Air-time зростає (SF9 ≈ 165 ms замість 110 ms @ SF7). ⚠️ **З 2026-09-22 ця компенсація САМА стала важелем розвилки** [`00_07` ARCH.8](00_07_Action_Plan_Tracker): SF9 коштує ефіру рівно стільки, скільки бракує CCM-кадрові, а накладено компенсацію на запас, що в [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM) рахується як +47 дБ у найгіршому випадку при SF7. ⛔ Обидва числа десктопні — судить польовий вимір (RF-макет на ДВОХ SF, нога [`00_07` HW.33](00_07_Action_Plan_Tracker)); ціна в ефірі — `ruby tools/firmware/lora_airtime.rb sf-sweep=30`.
 
 ```
 E_TX_+14dBm = 40 mA × 3.3 V × 0.165 s = 21.78 мДж  (SF9 air-time)
