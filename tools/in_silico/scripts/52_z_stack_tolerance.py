@@ -163,8 +163,10 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # 🔴 2026-09-22, same day: the CARRIER half of that verdict fell to a primary-source read — NN03-310 is
 # 30.0 ± 0.20 mm LONG (UM §2.1), i.e. longer than the Ø25 flange, so it cannot sit on this board at all
 # (00_07 HW.17; 02_01 §5.2). Its 1.0 mm row STAYS as the evidence that half stood on. The VERTICAL verdict
-# does not move: both dimensionally possible family members (NN02-201 at 1.0, NN02-224 at 2.4) are shorter
-# than the module, so «the module is the tallest» holds for every live candidate — but it now holds
+# does not move: of the SEVEN mXTEND families the vendor's product page lists, the two that fit a ≤Ø15.57
+# outline (NN02-201 at 1.0, NN02-224 at 2.4) are shorter than the module. ⚠ Perimeter named on purpose —
+# «every family member» would be a claim about a catalogue this pass never opened. So «the module is the
+# tallest» holds for every candidate we have READ — but it now holds
 # WITHOUT a named carrier, and the open question moved to the GROUND PLANE size (02_01 §5.3).
 RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
                        "antenna W3013 (ceramic SMD)": 4.0,
@@ -714,7 +716,8 @@ def vertical_stack_budget(boss: dict) -> dict:
                                          "part that actually stands there is the LoRa module (2.5). ⛔ The CARRIER half "
                                          "of that same verdict fell the same day: NN03-310 is 30.0 mm LONG, longer than "
                                          "the Ø25 flange, so there is no named carrier today (00_07 HW.17, 02_01 §5.2). "
-                                         "This row is unaffected because every dimensionally possible family member "
+                                         "This row is unaffected because the two candidates that fit a ≤Ø15.57 outline — among the SEVEN families "
+                                         "the vendor's product page lists, the perimeter this pass read — "
                                          "(1.0 and 2.4 mm) is shorter than the module — the vertical answer survives its "
                                          "own premise. Both antenna rows are kept as EVIDENCE, neither is a live option"},
         "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — of the B2B gap's own "
