@@ -191,6 +191,18 @@
     report conclusion — never by the tracker ID nor by the raising script's words: «axial O-ring at the
     flange» was swept while «the O-ring is the essential seal (PEEK backup marginal)» kept printing on the
     Zone-2 sheet. The batch form — grep the PRINTED sheets after a day of verdicts — is #18.
+    ⊕ **Fifth half, and it is not a verdict at all — a MEASUREMENT moved one half of a field and left the
+    other standing** (2026-09-22, `00_07` HW.2). The same check that re-keyed the smoothing PROHIBITION onto
+    the EFFECT («no process: PEP, electropolishing, tumbling, abrasive-flow, vibratory») left the PERMISSION
+    in the very same `surface_finish` still keyed to the NAME — «outer jacket = PEP smoothing» — i.e. the sheet
+    went on PRESCRIBING to the shop a process name our own check had put in doubt, one sentence away from a ban
+    that no longer trusted it. The pin had been rewritten for the banned half only, so nothing reddened.
+    🔑 **Reflex: having moved a ban onto the effect, RE-READ THE PERMISSION in the same field — nobody rewrites
+    it with you**; and the discriminator for WHERE to fix it is the reader's reach: a canon table may cite
+    «§1.3 Крок 7» safely because its reader can open that section and meet the caveat, while a DXF/SVG sheet
+    renders the same «(Step 7)» to a vendor for whom it is a dead address — there the caveat is unreachable BY
+    CONSTRUCTION. **The sheet is EXECUTED, the canon is READ.** The same pass showed the class rides FOUR fields,
+    not one (`surface_finish` · `inspection` · the tail of seven sibling manifests) — the #18 ⊕ lesson, paid again.
 
 12. **`TopologyCrossChecks.cs` (ARCH.25 third phase, 2026-09-09) — Euler-χ / tortuosity / as-printed
     cross-checks, wired into `verify` as `[nice-to-have]` INFORMATIONAL lines, not the `VERIFY OK/FAILED`
