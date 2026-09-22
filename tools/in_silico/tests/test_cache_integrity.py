@@ -186,8 +186,10 @@ def test_gusak_degradation_multi_alloy():
 
 
 def test_edlc_endurance_hours_hw37():
-    """Script 51 (HW.37) outputs EDLC endurance-hours life for both canon-cited SKUs
-    (Eaton KR-5R5H474-R, KEMET FG0H474ZF — `02_01 §3` поз.3). Sanity: confirms the
+    """Script 51 (HW.37) outputs EDLC endurance-hours life for both SKUs the canon has
+    weighed (Eaton KR-5R5H474-R, KEMET FG0H474ZF — `02_01 §3` поз.3; the KEMET one is
+    geometrically EXCLUDED since ⚖️ 2026-09-22, kept because this electrical equivalence
+    is what let geometry decide). Sanity: confirms the
     2026-09-09 hand-calc (00_07 HW.37) — life@25°C ≈ 2.6 yr / life@10°C ≈ 7.3 yr at
     full 5.5V — and that the voltage-derating bracket's optimistic coefficient always
     yields MORE years than the conservative one (smaller dV-per-doubling accelerates

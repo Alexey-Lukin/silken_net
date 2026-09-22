@@ -129,8 +129,12 @@ def capacitor_life_hours(
 
 def edlc_endurance_hours():
     """HW.37 — EDLC calendar-life via temperature+voltage endurance-hours doubling,
-    for the two canon-cited SKUs (`02_01 §3` поз.3): Eaton KR-5R5H474-R and KEMET
-    FG0H474ZF, both rated 1000 h @ 70°C @ 5.5 V (00_07 HW.37). Confirms the
+    for both SKUs the canon has weighed (`02_01 §3` поз.3): Eaton KR-5R5H474-R and
+    KEMET FG0H474ZF, both rated 1000 h @ 70°C @ 5.5 V (00_07 HW.37).
+    ⚖️ 2026-09-22: the KEMET part is GEOMETRICALLY EXCLUDED (H 18.0 mm fits no
+    configuration) and the Eaton one is the surviving SKU. Its row STAYS here on
+    purpose — the electrical equivalence computed below is precisely WHY geometry
+    got to decide, so deleting it would erase the verdict's own ground. Confirms the
     2026-09-09 hand-calc through the ACTUAL pipeline (it was hand-computed once,
     not previously reused as code) and extends it to KEMET, whose OWN voltage
     coefficient is not published — reported as a sensitivity bracket across the
