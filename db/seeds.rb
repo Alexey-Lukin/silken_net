@@ -641,6 +641,7 @@ PINE_SHARE_IN_MIX = 0.69
   # денормалізований `trees.latest_voltage_mv`): два літерали розійшлись би тихо, і база
   # суперечила б сама собі про ОДИН вимір.
   packet_voltage_mv = is_anomaly ? 3100 : 3800
+  packet_metabolism_s = 15 # той самий принцип: `metabolism_s` і GP-дзеркало нижче читають ОДИН вираз
 
   # [СИНХРОНІЗОВАНО]: Сира телеметрія (Uplink Pulse).
   # Z values відповідають реальному діапазону Lorenz attractor:
@@ -679,8 +680,14 @@ PINE_SHARE_IN_MIX = 0.69
     voltage_mv: packet_voltage_mv,
     temperature_c: is_anomaly ? 41.0 : 22.0,
     acoustic_events: is_anomaly ? 150 : 5,
-    metabolism_s: 15,
-    growth_points: is_anomaly ? 0 : 5,
+    metabolism_s: packet_metabolism_s,
+    # [E.64] ДЗЕРКАЛО формули, не літерал: stored = wire × 2 (`emission_eligible_growth_points`),
+    # а wire-GP при гомеостазі = `expected_homeostasis_gp(metabolism_s)` ∈ 5..31 — тобто
+    # stored ЗАВЖДИ парне й ∈ 10..62. Колишні `5`/`4` жодна прошивка не спакувала б (той
+    # самий клас, що `rand` симулятора й 48.5-«аномалія»). ⚠️ `metabolism_s` демо стоїть на
+    # placeholder-порогах `DELTA_T_FAST/SLOW_S` (E.63), тож дзеркало тримає ПАРНІСТЬ
+    # із формулою, а не «правильне» число. Anomaly — 0: GP не емісійний поза гомеостазом.
+    growth_points: is_anomaly ? 0 : SilkenNet::Attractor.expected_homeostasis_gp(packet_metabolism_s) * 2,
     mesh_ttl: 5,
     bio_status: status,
     z_value: is_anomaly ? 55.0 : 28.5,
@@ -735,6 +742,9 @@ end
 puts "🌴 Висаджуємо 20 Солдатів у Amazon Sector..."
 # Один вираз напруги на два записи — дзеркало сіда Черкас (див. `packet_voltage_mv`).
 amazon_packet_voltage_mv = 3600
+# Той самий принцип для `metabolism_s`: один вираз на колонку й на GP-дзеркало [E.64]
+# (Amazon і Кодекс-ліси нижче).
+demo_metabolism_s = 20
 20.times do |i|
   family = oak
   did = "SNET-#{format('%08X', 200 + i)}"
@@ -761,8 +771,8 @@ amazon_packet_voltage_mv = 3600
     voltage_mv: amazon_packet_voltage_mv,
     temperature_c: 32.0,
     acoustic_events: 3,
-    metabolism_s: 20,
-    growth_points: 4,
+    metabolism_s: demo_metabolism_s,
+    growth_points: SilkenNet::Attractor.expected_homeostasis_gp(demo_metabolism_s) * 2, # [E.64] дзеркало — див. перший TelemetryLog сіду
     mesh_ttl: 5,
     bio_status: :homeostasis,
     z_value: 24.0,
@@ -846,8 +856,8 @@ codex_forests.each_with_index do |(slug, family), idx|
       voltage_mv: 3800,
       temperature_c: 18.0,
       acoustic_events: 2,
-      metabolism_s: 20,
-      growth_points: 4,
+      metabolism_s: demo_metabolism_s,
+      growth_points: SilkenNet::Attractor.expected_homeostasis_gp(demo_metabolism_s) * 2, # [E.64] дзеркало — див. перший TelemetryLog сіду
       mesh_ttl: 5,
       bio_status: :homeostasis,
       z_value: family == pine ? 29.0 : 24.0,
