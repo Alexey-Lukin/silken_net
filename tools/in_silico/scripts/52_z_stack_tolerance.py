@@ -131,9 +131,14 @@ POGO_PIN_COUNT = 2               # centre (GND) + outer ring (V+), 02_02 §1.2
 # ── Board budget inputs handed to HW.9 (00_07 HW.33 leg, 2026-09-14) ──
 # Canon rows, each named beside its number; nothing about the board LAYOUT is typed, because the layout
 # does not exist yet — what is computed is the envelope a layout must fit.
-CROWN_EDGE_R_RATIFIED_MM = 5.0   # ⚖️ founder 2026-09-11 (00_07 HW.33): a flat crown with an R5 edge round
-#                                  replaces the full hemisphere, rise = R (a quarter round). Canon floor R ≥ 5
-#                                  (01_04 §5.5). NOT applied in CAD — `radome.json` carries no crown field yet.
+# ⚖️ founder 2026-09-11 (00_07 HW.33): a flat crown with an R edge round replaces the full hemisphere,
+# rise = R (a quarter round). Canon floor R ≥ 5 (01_04 §5.5); the verdict ratified exactly 5.
+# ✅ APPLIED IN CAD 2026-09-22 (Radome.Build), and the number is no longer typed here: the manifest field
+# `bell_radius_mm` DRIVES the CAD edge round, so this half reads the SAME field at runtime — the two machine
+# halves share no identifier vocabulary, and a hand-copied 5.0 here would only ever be found by grepping the
+# VALUE (the class this file already guards against for every other CEM dimension).
+def crown_edge_r_mm(radome: dict) -> float:
+    return float(radome["bell_radius_mm"])
 FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари, 1.6 мм», both decks
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FTSH/CLT board-to-board stack height 8–10
@@ -569,7 +574,7 @@ def collar_radial_budget(boss: dict) -> dict:
 
 
 def crown_inner_height_mm(r_mm: float, radome: dict, crown: bool) -> float:
-    """Internal height over the rim plane at radius r — under today's hemisphere or the RATIFIED flat crown.
+    """Internal height over the rim plane at radius r — under the SHIPPED flat crown or the retired hemisphere.
 
     The cavity is a cylinder of `cavity_height_mm` under a cap; the cap's inner surface is the outer one
     offset by the wall, so the crown's inner edge round is R − wall, centred on the outer round's radius.
@@ -581,8 +586,9 @@ def crown_inner_height_mm(r_mm: float, radome: dict, crown: bool) -> float:
     if not crown:
         r_in = dome_r - wall
         return cav + math.sqrt(max(r_in * r_in - r_mm * r_mm, 0.0))
-    round_in = CROWN_EDGE_R_RATIFIED_MM - wall
-    d = r_mm - (dome_r - CROWN_EDGE_R_RATIFIED_MM)
+    crown_r = crown_edge_r_mm(radome)
+    round_in = crown_r - wall
+    d = r_mm - (dome_r - crown_r)
     if d <= 0.0:
         return cav + round_in
     return cav + math.sqrt(max(round_in * round_in - d * d, 0.0))
@@ -676,7 +682,7 @@ def vertical_stack_budget(boss: dict) -> dict:
         "inputs_mm": {"gap_pz": GAP_PZ, "fr4_bom": FR4_THICKNESS_MM, "fr4_unsourced_contrast": FR4_THICKNESS_UNSOURCED_MM,
                       "b2b_bom": list(B2B_STACK_MM), "b2b_named_alternative": B2B_STACK_ALT_MM,
                       "piezo_heights": dict(PIEZO_HEIGHT_MM), "tallest_rf_deck_bom_part": RF_DECK_TALLEST_BOM_PART_MM,
-                      "crown_edge_r_ratified": CROWN_EDGE_R_RATIFIED_MM, "board_ceiling_radius": round(r_edge, 3)},
+                      "crown_edge_r_shipped": crown_edge_r_mm(radome), "board_ceiling_radius": round(r_edge, 3)},
         "internal_height_mm": {k: round(v, 3) for k, v in h.items()},
         "tolerance_readings_mm": {k: round(v, 3) for k, v in tol.items()},
         "rows": rows,

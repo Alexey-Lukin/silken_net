@@ -340,13 +340,23 @@ internal static class Validation
 
     // Radome golden metrics (Деталь 4, 02_01 §5.2): the part is a HOLLOW shell, so the gate is INVERTED —
     // a high hollow fraction is REQUIRED (not solidity). Hollow fraction = 1 − solidVol / solid-dome vol
-    // (cylinder body + hemispherical cap); bell rise = bbox Z over the cavity height (the shield cap).
+    // (cylinder body + the CROWN as a solid of revolution); bell rise = bbox Z over the cavity height.
+    // 🔴 The reference solid is recomputed here IN THE SAME COMMIT as the crown (⚖️ 2026-09-11, applied
+    // 2026-09-22) and that is not tidiness: the old denominator added a HEMISPHERE (2/3·π·fR³ = 4091 mm³
+    // against the crown's 2071), so leaving it would have kept a phantom cap in the denominator while the
+    // numerator fell — `hollow_fraction` would have RISEN on a part that got less hollow, and the `>50 %`
+    // gate would have gone greener on the change. A gate that moves the right way for the wrong reason is
+    // the failure this file exists to prevent (00_07 HW.33 named it before the change was made).
+    // Crown volume, exact: ∫₀^Rb π·(a + √(Rb²−t²))² dt = π·[a²·Rb + π·a·Rb²/2 + 2·Rb³/3], a = fR − Rb.
     public static GeometryMetrics MeasureRadome(RadomeCem cem, Voxels voxRadome)
     {
         GeometryMetrics oBase = Measure(cem.Name, cem.VoxelSizeMm, voxRadome, null);
 
         float fR = cem.DomeDiameterMm / 2f;
-        double dSolidDome = (Math.PI * fR * fR * cem.CavityHeightMm) + ((2.0 / 3.0) * Math.PI * fR * fR * fR);
+        double dRb = cem.BellRadiusMm;
+        double dA = fR - dRb;
+        double dCrown = Math.PI * ((dA * dA * dRb) + (Math.PI * dA * dRb * dRb / 2.0) + (2.0 * dRb * dRb * dRb / 3.0));
+        double dSolidDome = (Math.PI * fR * fR * cem.CavityHeightMm) + dCrown;
         double dHollow = dSolidDome > 0 ? 1.0 - (oBase.SolidVolumeMm3 / dSolidDome) : 0.0;
 
         // Seal-land continuity, MEASURED on the render (00_07 HW.33 branch (а)): a slab of a land annulus — a few

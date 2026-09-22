@@ -434,11 +434,11 @@ internal static class Program
                 break;
             }
             default:
-                // ⛔ `radome` is deliberately absent, and the reason is not effort: its cap is still the full
-                // hemisphere while ⚖️ 2026-09-11 ratified a FLAT CROWN R5 whose application waits on ⚖️ HW.30
-                // (piezo placement), and its socket will be reshaped by the collar leg — a sheet issued from
-                // today's generator would print the rejected cap the moment it printed, so it ships with the
-                // LAST of those two changes (00_07 HW.33). (The flat rim and the rim boss ARE applied, 2026-09-14.)
+                // ⛔ `radome` is deliberately absent, and the reason is not effort. It USED to be two grounds;
+                // since 2026-09-22 it is ONE: the flat crown R5 (⚖️ 2026-09-11) is APPLIED — its gate ⚖️ HW.30
+                // settled the pad BESIDE the piezo — but the socket is still reshaped by the collar leg, so a
+                // sheet issued from today's generator would print a socket about to change. It ships with the
+                // LAST of the two changes (00_07 HW.33). (Flat rim + rim boss applied 2026-09-14, crown 09-22.)
                 return Fail($"draw: supports ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve (got '{strKind}') — roadmap in tools/cad/docs/drawings_program.md");
         }
 

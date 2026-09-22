@@ -542,7 +542,7 @@
         "Murata PKMCS0909E4000-R1": 1.9
       },
       "tallest_rf_deck_bom_part": 2.5,
-      "crown_edge_r_ratified": 5.0,
+      "crown_edge_r_shipped": 5.0,
       "board_ceiling_radius": 7.785
     },
     "internal_height_mm": {

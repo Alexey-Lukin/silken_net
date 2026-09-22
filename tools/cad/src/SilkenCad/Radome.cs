@@ -23,8 +23,11 @@ namespace SilkenCad;
 //    decision), so the flange still carries its lugs at mid-disc and the capsule-end audit still reports the
 //    bayonet-Z deficit. The socket keeps today's L-slot shape, clipped to the outer band, until that leg reshapes
 //    it — socket and collar are the female and male halves of one band;
-//  • the FLAT CROWN (R5, ratified 2026-09-11) waits on ⚖️ HW.30 (piezo placement decides the height it fixes) —
-//    the cap is still a hemisphere, which is why `draw radome` is refused: a sheet would print the rejected cap.
+//  • the FLAT CROWN (R5, ratified 2026-09-11) is APPLIED since 2026-09-22 — its gate was ⚖️ HW.30, and that
+//    verdict put the pad BESIDE the piezo (02_01 §6), which leaves the board stack under the 16.0 mm the
+//    crown fixes. `BellRadiusMm` now DRIVES the edge round; `BellRiseMm` stays the canon floor verify
+//    checks against. ⛔ `draw radome` is STILL refused, and for the OTHER reason: the socket is reshaped
+//    by the collar leg, so the sheet waits on the LAST of the two changes, never on this one alone.
 // ⚠ MATE-Ø: the flange lugs still protrude to ~Ø29 (asis); `inboard` clamps them — the collar leg owns the mate.
 internal static class Radome
 {
@@ -69,16 +72,38 @@ internal static class Radome
         float fCavH = cem.CavityHeightMm;
         float fInnerR = fR - fWall;
 
-        // 1. Outer dome — cylinder body + hemispherical cap (rounded shield bell): smooth, no callus-grip
-        //    edge. Cap rise = fR ≥ BellRiseMm (gated in verify); cap edge radius = fR ≥ BellRadiusMm
-        //    (pinned ≥ canon §5.5 by scripts/cem_canon_sync.rb — no C# verify assert on the radius).
-        //    ⚖️ The ratified flat crown R5 (2026-09-11) is NOT applied — it waits on HW.30 (header).
+        // 1. Outer dome — cylinder body + FLAT CROWN with an R-round edge (⚖️ 2026-09-11, 01_04 §5.5;
+        //    applied 2026-09-22 once ⚖️ HW.30 placed the pad BESIDE the piezo, 02_01 §6). The crown is a
+        //    quarter-round from the body OD up to a flat top: a torus of minor radius `BellRadiusMm` whose
+        //    major circle sits at r = fR − Rb in the plane z = fCavH, plus the flat core cylinder inside it.
+        //    🔑 The rise is NOT a second number — by construction it EQUALS the edge round, so `BellRadiusMm`
+        //    is the one DRIVER and `BellRiseMm` stays what it always was: the canon FLOOR that verify checks
+        //    the measured rise against (≥3, 01_04 §5.5 — measured 5.0 here, 2.2 mm of margin).
+        //    ⛔ The hemisphere it replaces was NOT a canon requirement: §5.5 asks for a rounded top EDGE, and
+        //    the sphere gave rise 12.5 = fR, i.e. an excess the verdict removed (canon: rise 12.5 → 5.0,
+        //    height over bark 25.5 → 18.0, internal height 23.5 → 16.0 = cavity 13.0 + inner round 3.0).
+        //    The torus reaches BELOW z = fCavH (down to fCavH − Rb, radially [fR−2Rb, fR]) and that half lies
+        //    inside the body cylinder — an overlap, never a touching seam (step 3 records what a seam costs).
+        float fRb = cem.BellRadiusMm;
+        float fCrownCoreR = fR - fRb;
+        LocalFrame oCrown = new(new Vector3(0f, 0f, fCavH));
         Voxels voxDome = new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fR).voxConstruct();
-        voxDome.BoolAdd(new BaseSphere(new LocalFrame(new Vector3(0f, 0f, fCavH)), fR).voxConstruct());
+        voxDome.BoolAdd(new BaseRing(oCrown, fCrownCoreR, fRb).voxConstruct());
+        voxDome.BoolAdd(new BaseCylinder(oCrown, fRb, fCrownCoreR).voxConstruct());
 
-        // 2. Hollow it — subtract the inner cavity (cylinder + inner cap), open at the rim (z=0). Wall = fWall.
-        voxDome.BoolSubtract(new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fInnerR).voxConstruct());
-        voxDome.BoolSubtract(new BaseSphere(new LocalFrame(new Vector3(0f, 0f, fCavH)), fInnerR).voxConstruct());
+        // 2. Hollow it — subtract the inner cavity, open at the rim (z=0). Wall = fWall everywhere, INCLUDING
+        //    under the crown: offsetting the crown surface inward by the wall keeps the round's CENTRE circle
+        //    where it is and shrinks its radius to Rb − wall, so the inner flat top lands at fCavH + (Rb − wall)
+        //    and the inner round meets the bore exactly at fInnerR = fR − wall (no step, no seam).
+        //    ⚠ A uniform wall under the crown is the READING of «стінка купола лишається 2.0» (02_02 §3.5) —
+        //    the verdict names the wall over the antenna, and script 52 takes the same reading (§crown).
+        //    🔑 Built as ONE body and subtracted ONCE: its three parts overlap substantially, so the cavity
+        //    carries no sub-voxel seam into the wall it defines.
+        float fRbIn = fRb - fWall;
+        Voxels voxCavity = new BaseCylinder(new LocalFrame(Vector3.Zero), fCavH, fInnerR).voxConstruct();
+        voxCavity.BoolAdd(new BaseRing(oCrown, fCrownCoreR, fRbIn).voxConstruct());
+        voxCavity.BoolAdd(new BaseCylinder(oCrown, fRbIn, fCrownCoreR).voxConstruct());
+        voxDome.BoolSubtract(voxCavity);
 
         // 3. Rim BOSS — a local internal annulus from the seal-land inner R out to the socket pocket's outer R,
         //    from the rim up to the socket's top. It thickens the RIM only (the dome wall over the antenna stays

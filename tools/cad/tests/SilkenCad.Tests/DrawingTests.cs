@@ -217,8 +217,9 @@ public class DrawingTests
     private const string CemIdentityLabel = "CEM SHA-256 (sha256sum of the SSOT manifest file): ";
 
     // The EXEMPTION list, not the roster: kinds `draw` refuses on purpose, each with its ground in
-    // tools/cad/docs/drawings_program.md §7 (radome = its cap is still the hemisphere the ratified flat crown
-    // rejects, waiting on ⚖️ HW.30, HW.33 · the two assemblies = Phase-2 step 5, no factory contract). Any other kind must draw and carry its hash, so a new
+    // tools/cad/docs/drawings_program.md §7 (radome = its socket is reshaped by the collar leg, so the
+    // sheet waits on the LAST of the two radome changes — the crown half landed 2026-09-22, 00_07 HW.33 ·
+    // the two assemblies = Phase-2 step 5, no factory contract). Any other kind must draw and carry its hash, so a new
     // kind that `draw` refuses reds here until its refusal is NAMED.
     private static readonly string[] KindsDrawDeliberatelyRefuses = ["radome", "anchor_assembly", "anchor_axial_stack"];
 

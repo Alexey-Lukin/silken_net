@@ -246,8 +246,8 @@ true value, removed — and the engineering verdict is RATIFIED (2026-09-18, `00
 from the Lamé window, and only its inputs are open. **This tract prints QUANTITIES; where a
 number came from is engineering text and belongs in the CEM.**
 ⛔ **The shipped-kind roster is `Program.Draw`'s `switch`, not this paragraph** — it carried one and went stale the day
-a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds (today: the radome, because its
-cap is still the hemisphere the ratified flat crown rejects — ⚖️ HW.30, HW.33), live in `docs/drawings_program.md §7`.
+a kind landed. Phasing, and the kinds deliberately NOT drawn with their grounds (today: the radome, because its socket
+is reshaped by the collar leg — the crown half of that deferral was spent 2026-09-22, ⚖️ HW.33), live in `docs/drawings_program.md §7`.
 The NORM — why the drawing comes from the CEM and not the mesh, the two readers, the loud-absence rule, what the
 acceptance contract must carry — is canon `01_02 §6`; `docs/drawings_program.md` stays the research + phase roster.
 `render` / `section <cem>` → PicoGK native-viewer PNG (presentation gallery `docs/images/cad/`, rebuilt by
@@ -260,7 +260,7 @@ if a published sheet no longer names the manifest shipped today, so any byte cha
 redraw (ceiling: not the sheet's own layout bytes, not its `rev`; the PNGs are pinned by nothing).
 LEAP 71 ships metal engines WITHOUT 2D drawings — code is the engineering intent.
 
-**Deferred:** the raised-collar implementation (the rim BOSS is applied since 2026-09-14; the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ — two positive terms now that the O-ring face gap is zero under branch (а) — so the lug takes a Z of its own on a collar, `Assembly.RequiredLugZMm` = 20.5; ⚖️ 2026-09-14: designed under the Ø15.57 ceiling and handed to HW.9 as an INPUT, not gated on it — what holds the collar is its WALL, which no artefact sets (no bayonet load model), and a placeholder would print on the flange sheet as a decision; bench follows at HW.8.8) · the flat crown R5 (ratified 2026-09-11, waits on ⚖️ HW.30 — `hollow_fraction`'s reference solid and the `bell_*` floor-checks must move with it) · the shank-Ø
+**Deferred:** the raised-collar implementation (the rim BOSS is applied since 2026-09-14; the bayonet-Z reconcile itself is RATIFIED 2026-09-11, `02_02 §4.4`: the mismatch is t/2 + lockGrooveZ — two positive terms now that the O-ring face gap is zero under branch (а) — so the lug takes a Z of its own on a collar, `Assembly.RequiredLugZMm` = 20.5; ⚖️ 2026-09-14: designed under the Ø15.57 ceiling and handed to HW.9 as an INPUT, not gated on it — what holds the collar is its WALL, which no artefact sets (no bayonet load model), and a placeholder would print on the flange sheet as a decision; bench follows at HW.8.8) · ~~the flat crown R5~~ **APPLIED 2026-09-22** (⚖️ 2026-09-11; its gate ⚖️ HW.30 settled the pad BESIDE the piezo): `bell_radius_mm` now DRIVES the edge round, `bell_rise_mm` stays the canon floor-check, and `hollow_fraction`'s reference solid was recomputed in the SAME commit — measured bbox 25.0 × 25.0 × 18.0, rise 5.0, internal height 16.0 · the shank-Ø
 press-fit reconcile (the Ø9 shank placeholder vs bore Ø11, HW.8.9; no table class is ratified — the band comes from the Lamé window, HW.3) · a phase-correct strong continuous gradient (period-tensor/
 conformal). ⛔ The print-thickening parameter for the FE was listed here and **shipped 2026-09-14** as `fea --dilate` — removed; what it still cannot say (the printed excess per face orientation) is a vendor answer, `00_07` HW.51. ⛔ The C-vs-n porosity sweep was listed here and **shipped 2026-09-12** as `fea --fit` — removed. ⛔ Euler-χ / tortuosity cross-checks were listed here as deferred and **shipped 2026-09-09** as `TopologyCrossChecks.cs` — removed.
 
