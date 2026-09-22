@@ -40,12 +40,27 @@
 # TIERS.
 #   HARD      — the storefront, verified at zero when this gate landed: locale VALUES,
 #               docs/manifest.md, README.md. Drift here fails CI.
-#   ADVISORY  — the code layer still carrying the wording. The securities verdict
-#               LANDED 2026-08-28 (direction = service model, 00_07 BIZ.22), so
-#               this layer is no longer gated on a ruling — what remains is
-#               mechanics: response keys in app/controllers/api/**
-#               and app/blueprints/**, rendered strings in app/views/**, db/seeds.rb.
-#               Reported, never fatal.
+#   HARD (code) — OFFERING terms across app/controllers/api/**, app/blueprints/**,
+#               app/views/**, db/seeds.rb. ⚖️ **Flipped advisory → HARD 2026-09-22**
+#               (delegated ratification, 00_07 BIZ.22). The question posed to the founder
+#               was "which of the two surviving classes becomes the declared exemption";
+#               the measurement dissolved it, because the two classes are not two
+#               candidates for one tier — they are the gate's TWO TERM SETS, with
+#               different exemption economics, and the code already scanned them
+#               separately. So the flip is per TERM SET, not per scope:
+#                 · OFFERING had exactly FOUR hits, all of them the one ratified ⛔ class
+#                   (the fee rendered from a record, plus its seed). Cost of HARD = one
+#                   site-keyed allowlist; benefit = `investor`/`refund`/`dividend`/`APY`
+#                   can no longer enter app/ silently. Taken.
+#                 · HOMONYM_CODE stays ADVISORY **by verdict, not by backlog** — see below.
+#               ⛔ PRICE, stated: a lawful roll-back to MSA Option 2 (the fallback fee)
+#               now costs an allowlist entry, not just a commit. That is deliberate — the
+#               entry is where the verdict gets re-read.
+#   ADVISORY  — HOMONYM_CODE over the response surfaces. ⛔ This tier is NOT a backlog and
+#               must not be "cleared": `yield` is a CORE DOMAIN NOUN for a platform whose
+#               subject is forest growth (biomass yield, crop yield), so a HARD tier would
+#               tax every honest use of it forever, while the risk it actually guards —
+#               a label a CUSTOMER READS — is already HARD one tier up, in locale VALUES.
 #               🔴 "FLIP A SCOPE TO HARD ONCE IT REACHES ZERO" STOOD HERE AND IS
 #               UNREACHABLE AS WRITTEN — measured 2026-09-10, and the reason is two
 #               RATIFIED verdicts sitting inside the scope, not unfinished work.
@@ -75,8 +90,11 @@
 #                   right reason (the response key is `emission_forecast`, so no client
 #                   ever sees the word), NOT because it is agronomy. Do not amnesty a
 #                   profit-expectation identifier by filing it under crops.
-#               Which of the two classes becomes a declared exemption is a ⚖️, and it
-#               is the ONLY thing between this scope and HARD.
+#               ⚖️ RESOLVED 2026-09-22: the ratified ⛔ sites became the declared
+#               exemption (RATIFIED_CODE_SITES below, keyed to the PATH so a third file
+#               carrying the same wording still fails), and the `yield` class became the
+#               declared REASON this tier stays advisory. Both classes were answered, not
+#               one — because they were never competing for the same tier.
 #
 # NAMED CEILINGS [BIZ.22] — a regex cannot read intent, so each is named, not fixed:
 #   (1) HOMONYM terms are gated only inside locale values, so investment framing in
@@ -119,6 +137,26 @@
 #       ⚠️ This ceiling was declared in the tracker for weeks while this header listed
 #       only three — a gate's ceilings live HERE (00_06 §3), so a fourth one known only
 #       to 00_07 is a ceiling nobody reads at the moment of writing a term.
+#   (5) The HARD code tier does NOT cover app/models, app/services, app/workers,
+#       app/mailers, app/policies or lib — and that boundary is MEASURED, not assumed.
+#       Priced 2026-09-22 before the flip (00_05 §5, «ціна периметра міряється ДО
+#       вмикання»): extending OFFERING to those trees yields **14 hits**, and reading
+#       them shows most are legitimate, so the extension is work first and a gate second.
+#       The composition, because it is the useful half of the number:
+#         · six in `blockchain_burning_service` — the ABI blob plus Ruby locals named
+#           after its `address investor` parameter (`investor_address`,
+#           `investor_balance_wei`). The ABI itself is ⚖️ won't-do-rename (2026-07-25);
+#           its Ruby shadows are the debt ceiling (2) already names;
+#         · four in `minting_rollback_service` — `refund_points`, an INTERNAL release of
+#           locked points, not a promise to a customer. A homonym OFFERING cannot read;
+#         · `verify_investor!` + its single production caller — the real remaining debt
+#           this header names under (2);
+#         · one Ukrainian log line, and the `store_accessor` that declares the very
+#           column the ratified ⛔ view renders.
+#       ⛔ So do not "finish the job" by widening the globs: none of these reaches a
+#       customer, and a tier that reds on the ABI would be off within a week. What WOULD
+#       justify revisiting: `verify_investor!` renamed away, after which the service trees
+#       drop to the ABI shadows alone.
 # The enum value was RENAMED `investor` → `subscriber` on 2026-08-28 (BIZ.22 verdict
 # ratified: service model, ERC-3643 declined), so this gate no longer has to stay silent
 # about a pending decision. It still does not scan Ruby comments or canon prose (2)-(3).
@@ -178,10 +216,43 @@ module OfferingLexicon
     b("market_value")                    => "`market value` in a response key / serialized field"
   }.freeze
 
-  HARD_DOCS     = %w[docs/manifest.md README.md].freeze
-  ADVISORY_CODE = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb
-                     app/views/**/*.rb app/views/**/*.erb db/seeds.rb].freeze
-  RESPONSE_CODE = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb].freeze
+  HARD_DOCS = %w[docs/manifest.md README.md].freeze
+
+  # The code layer, split by TERM SET — because the two sets have different exemption
+  # economics, and that is what decided the tier (⚖️ 2026-09-22, 00_07 BIZ.22).
+  #   OFFERING over CODE_OFFERING_SCOPE  — HARD. These words have no legitimate
+  #     non-financial reading here, and the measured population is two RATIFIED sites
+  #     and nothing loose, so the tier costs one allowlist and buys a guarantee.
+  #   HOMONYM_CODE over CODE_HOMONYM_SCOPE — ADVISORY, deliberately. `yield` is a CORE
+  #     DOMAIN NOUN for a forest-monitoring platform (biomass yield, crop yield); a HARD
+  #     tier would tax every honest use of it forever, and the risk it guards — a label a
+  #     customer READS — is already HARD one tier up, in locale VALUES.
+  CODE_OFFERING_SCOPE = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb
+                           app/views/**/*.rb app/views/**/*.erb db/seeds.rb].freeze
+  CODE_HOMONYM_SCOPE  = %w[app/controllers/api/**/*.rb app/blueprints/**/*.rb].freeze
+
+  # ⛔ RATIFIED EXEMPTIONS — keyed to the SITE, never to the term. A third file carrying
+  # the same wording still fails, which is the whole point: the verdicts below are about
+  # these two places, not about the word.
+  #   · app/views/components/contracts/show.rb — renders `early_exit_fee_percent` FROM
+  #     THE RECORD, because a historical contract must show the term it was signed under
+  #     (⛔ 00_07 BIZ.22; the fee itself was removed from the product by ⚖️ Option 1,
+  #     founder 2026-08-29, msa_skeleton §B.6.3).
+  #   · db/seeds.rb — the sibling seed value, held pending a founder's word (00_07 BIZ.22).
+  # A DEAD entry here is FATAL, not tidied away: an exemption that outlives its verdict is
+  # how a gate goes quietly green over work nobody re-read (00_05 §4, «гейт, який ти щойно
+  # збудував: на чому він упаде хибно»).
+  RATIFIED_CODE_SITES = {
+    "app/views/components/contracts/show.rb" => [ "early-exit fee framing" ],
+    "db/seeds.rb"                            => [ "early-exit fee framing" ]
+  }.freeze
+
+  # `hit` is "path:lineno — label: text" as `scan` builds it.
+  def ratified?(hit)
+    path, rest = hit.split(":", 2)
+    labels = RATIFIED_CODE_SITES[path] or return false
+    labels.any? { |l| rest.to_s.include?(" — #{l}:") }
+  end
 
   # Documents that must stay free to name the risk, plus this gate's own files.
   def exempt?(rel)
@@ -226,7 +297,7 @@ module OfferingLexicon
     end
   end
 
-  # Returns { hard: [...], advisory: [...] }.
+  # Returns { hard: [...], advisory: [...], dead_exemptions: [...] }.
   def audit(root = ROOT)
     hard = []
     advisory = []
@@ -237,10 +308,28 @@ module OfferingLexicon
     end
     files(root, *HARD_DOCS).each { |rel| hard.concat(scan(rel, numbered(root, rel), OFFERING)) }
 
-    files(root, *ADVISORY_CODE).each { |rel| advisory.concat(scan(rel, code_lines(root, rel), OFFERING)) }
-    files(root, *RESPONSE_CODE).each { |rel| advisory.concat(scan(rel, code_lines(root, rel), HOMONYM_CODE)) }
+    code_offering = files(root, *CODE_OFFERING_SCOPE)
+                      .flat_map { |rel| scan(rel, code_lines(root, rel), OFFERING) }
+    hard.concat(code_offering.reject { |h| ratified?(h) })
 
-    { hard:, advisory: }
+    files(root, *CODE_HOMONYM_SCOPE).each { |rel| advisory.concat(scan(rel, code_lines(root, rel), HOMONYM_CODE)) }
+
+    # ⚠️ Only for the real repository. A fixture tree never contains the ratified sites,
+    # so asking this of one would report every exemption dead on every spec run — the
+    # «gate that constructs the defect it then reports» shape.
+    dead = root == ROOT ? dead_exemptions(code_offering) : []
+
+    { hard:, advisory:, dead_exemptions: dead }
+  end
+
+  # An exemption that matches nothing is an exemption whose verdict has been superseded —
+  # report it BY NAME so the same commit removes it. Pure over a hit-list, so it is
+  # testable without a tree.
+  def dead_exemptions(code_offering_hits)
+    RATIFIED_CODE_SITES.flat_map do |path, labels|
+      labels.reject { |l| code_offering_hits.any? { |h| h.start_with?("#{path}:") && h.include?(" — #{l}:") } }
+            .map { |l| "#{path} — «#{l}»" }
+    end
   end
 end
 
@@ -252,8 +341,10 @@ if __FILE__ == $PROGRAM_NAME
     # time is how a report stops being read. One row per file says "still open"; the
     # lines are one --verbose away.
     by_file = r[:advisory].group_by { |a| a[/\A[^:]+/] }
-    puts "offering_lexicon_check — ADVISORY: #{r[:advisory].size} hit(s) in " \
-         "#{by_file.size} file(s), code layer not yet swept post-verdict (00_07 BIZ.22):"
+    puts "offering_lexicon_check — ADVISORY: #{r[:advisory].size} homonym hit(s) in " \
+         "#{by_file.size} file(s). This tier is advisory BY VERDICT, not by backlog " \
+         "(⚖️ 2026-09-22, 00_07 BIZ.22): `yield` is a core domain noun here, and the " \
+         "label a customer reads is guarded HARD one tier up. Read them, do not clear them:"
     by_file.sort.each do |file, hits|
       puts "  · #{file} — #{hits.size} (lines #{hits.map { |h| h[/:(\d+) —/, 1] }.join(',')})"
     end
@@ -261,15 +352,25 @@ if __FILE__ == $PROGRAM_NAME
     puts
   end
 
+  unless r[:dead_exemptions].empty?
+    warn "offering_lexicon_check ✗ — a RATIFIED exemption matched nothing (00_07 BIZ.22):"
+    r[:dead_exemptions].each { |d| warn "  ✗ #{d}" }
+    warn "\nThe site this exemption was written for is gone, so the exemption now shields " \
+         "nothing and would silently shield the NEXT thing put there. Remove the entry from " \
+         "RATIFIED_CODE_SITES in the same commit that removed the site."
+    exit 1
+  end
+
   if r[:hard].empty?
-    puts "offering_lexicon_check ✓ — storefront clean: locale values, manifest and " \
-         "README carry no offering lexicon (BIZ.22)."
+    puts "offering_lexicon_check ✓ — storefront clean and code layer free of offering " \
+         "lexicon outside the two ratified sites (BIZ.22)."
     exit 0
   else
     warn "offering_lexicon_check ✗ — offering lexicon returned to a customer-facing surface (BIZ.22):"
     r[:hard].each { |h| warn "  ✗ #{h}" }
     warn "\nThese surfaces are what the acquirer receives. Use service wording " \
-         "(contracted / service fee / emission / cluster health) — canon 00_04 §1."
+         "(contracted / service fee / emission / cluster health) — canon 00_04 §1. " \
+         "A ratified ⛔ site is exempted BY PATH in RATIFIED_CODE_SITES, never by term."
     exit 1
   end
 end

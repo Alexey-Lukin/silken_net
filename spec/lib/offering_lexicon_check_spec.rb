@@ -172,5 +172,59 @@ RSpec.describe OfferingLexicon do
         expect(described_class.audit(root)[:advisory]).not_to be_empty
       end
     end
+
+    it "keeps a homonym in a response key ADVISORY even though its scope is also HARD for OFFERING" do
+      with_tree("app/blueprints/ai_insight_blueprint.rb" => "field :yield_impact\n") do |root|
+        r = described_class.audit(root)
+        expect(r[:advisory]).not_to be_empty
+        expect(r[:hard]).to be_empty
+      end
+    end
+  end
+
+  # ⚖️ 2026-09-22 (00_07 BIZ.22): OFFERING went HARD in the code layer with a site-keyed
+  # allowlist. These cases exist because the allowlist is the only thing that can make
+  # this tier lie — and it lies in two directions, so both are pinned.
+  describe "HARD tier — the code layer (OFFERING)" do
+    it "fails on offering lexicon anywhere in the guarded code scope" do
+      with_tree("app/blueprints/tree_blueprint.rb" => %(DIVIDEND_RATE = 1\n)) do |root|
+        expect(described_class.audit(root)[:hard].size).to eq(1)
+      end
+    end
+
+    it "does NOT fail on the two ratified ⛔ sites" do
+      with_tree(
+        "app/views/components/contracts/show.rb" => %(t(".legal.early_exit_fee")\n),
+        "db/seeds.rb" => %(cancellation_terms: { "early_exit_fee_percent" => 15 }\n)
+      ) do |root|
+        expect(described_class.audit(root)[:hard]).to be_empty
+      end
+    end
+
+    it "still fails when the SAME wording appears at a THIRD site — the exemption is keyed to the PATH" do
+      with_tree("app/blueprints/tree_blueprint.rb" => %(EARLY_EXIT_FEE = 15\n)) do |root|
+        expect(described_class.audit(root)[:hard].size).to eq(1)
+      end
+    end
+
+    it "does NOT amnesty a different offering term at a ratified site" do
+      with_tree("db/seeds.rb" => %(investor_id: 1\n)) do |root|
+        expect(described_class.audit(root)[:hard].size).to eq(1)
+      end
+    end
+  end
+
+  describe ".dead_exemptions" do
+    it "names an exemption that matched nothing, so it cannot outlive its verdict" do
+      expect(described_class.dead_exemptions([]))
+        .to include(a_string_including("db/seeds.rb", "early-exit fee framing"))
+    end
+
+    it "stays silent once every declared exemption has a live hit" do
+      live = described_class::RATIFIED_CODE_SITES.flat_map do |path, labels|
+        labels.map { |l| "#{path}:1 — #{l}: whatever" }
+      end
+      expect(described_class.dead_exemptions(live)).to be_empty
+    end
   end
 end

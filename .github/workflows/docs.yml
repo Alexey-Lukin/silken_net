@@ -413,10 +413,12 @@ jobs:
       - name: Offering-lexicon gate (BIZ.22 — investment wording on customer-facing surfaces)
         # Pure Ruby, no Rails. HARD on the storefront (locale VALUES, manifest,
         # README) — the surfaces the 2026-07-25 sweep cleaned and nothing kept
-        # clean; ADVISORY (never fatal) on the code layer, which is no longer
-        # gated on a ruling — the securities VERDICT landed 2026-08-28 (direction
-        # = service model) and what remains is the lawyer's OPINION plus mechanics
-        # (00_07 BIZ.22). Its inputs — config/**, app/**, **.md — are all
+        # clean — AND, since ⚖️ 2026-09-22, HARD on the OFFERING term set across the
+        # code layer, with a site-keyed allowlist for the two ratified ⛔ sites (a
+        # DEAD allowlist entry fails too, so an exemption cannot outlive its verdict).
+        # The HOMONYM set stays ADVISORY deliberately — `yield` is a core domain noun
+        # here, and the label a customer reads is already HARD one tier up (00_07
+        # BIZ.22). Its inputs — config/**, app/**, **.md — are all
         # inside this workflow's `changes` filter, so the gate is not decorative.
         run: ruby scripts/offering_lexicon_check.rb
 
