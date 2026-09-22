@@ -32,9 +32,8 @@ The canon lives in [`docs/`](docs/) as SSOT documents grouped into modules 00–
 
 > **Start at [`docs/00_00` — SSOT Index](docs/00_00_SSOT_Index.md):** reading order, the eight-layer system map, and a one-line description of every document. That index is the **single home of the list** — it is deliberately not restated here, so it cannot drift in two places.
 
-- **Module 00 — foundation** (read first): vision and roadmap · AI-native method and NASA TRL · the TRL matrix with HIL simulators · the SSOT documentation standard · the beyond-TRL-9 agenda
-- **Modules 01–06 — the system:** anchor and biofuel cell · capsule and gateway hardware · firmware and edge AI · the Rails core · Web3 and economics · deploy and observability
-- **Module 07 — the programme:** Nature-as-a-Service contracts · unit economics · academic integration and IP posture
+- **Module 00 — foundation** (read first): vision and roadmap · AI-native method and NASA TRL · the TRL matrix with HIL simulators · the SSOT documentation standard · academic integration and the IP posture · Nature-as-a-Service contract terms · the beyond-TRL-9 agenda
+- **Modules 01–06 — the system:** anchor and biofuel cell · capsule and gateway hardware (with the unit economics and BOM) · firmware and edge AI · the Rails core · Web3 and economics · deploy and observability
 
 🔴 **Everything still unfinished — including the honest blockers — lives in [`docs/00_07` — Action Plan Tracker](docs/00_07_Action_Plan_Tracker.md).** It is a working document, not a highlight reel: open defects, refused proposals and named ceilings are in it on purpose.
 

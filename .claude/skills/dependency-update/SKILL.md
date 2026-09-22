@@ -65,7 +65,35 @@ the per-domain recipes**; it does **not** restate versions or track which bump s
               concerns into separate commits where sensible.
 ```
 
+## Ripe-merge loop (draining the OPEN Dependabot PR queue)
+
+The loop above bumps ONE dependency; this one drains the queue someone else opened. ⚖️ **Cadence is a founder decision: a MANUAL pass — never cron, never a cloud agent.** Quarantine and cap judgement do not automate, and a handful of low-value PRs does not pay for auto-merge infrastructure. Do not propose a cron for it.
+
+```
+1. gh pr list --state open --label type:deps     re-confirm the open set.
+                                                 ⛔ NOT the whole queue: lock-only
+                                                 transitives never get a PR (`#48`).
+2. STALE BASE → `@dependabot rebase` FIRST       green on an old base proves nothing (`#17`).
+3. FIVE per-PR gates, all of them:
+     · release-age ≥7 d measured AFTER the rebase (`#4`, `#5`)
+     · CI green LIVE-verified — `gh pr checks`, read the `CI passed` line;
+       ⛔ NEVER `| tail`, it hides a FAILED header. Judge by STATE, not colour (`#25`)
+     · changelog read BY VERSION, not by gem (`#20`)
+     · the diff dated LINE BY LINE — a ripe title can carry a 3-day passenger (`#11`)
+     · SHA pin == tag (`#30`)
+4. gh pr merge <n> --squash --delete-branch
+4a. A HELD package goes back in the queue WITH ITS VERDICT, not just its ripen date:
+     a date, once passed, reads as a MANDATE, so the next pass takes the package
+     «because it ripened» and does sincere work worth nothing. Write the REFUSAL
+     beside the date (transitive · ceiling satisfied by the old version · no gain),
+     and ⛔ never a COUNT of held packages — the queue grows (`no-volatile-counts`).
+5. CANON SWEEP — re-grep the OLD version literals for every gem/action the docs quote (`#42`).
+   No gate compares a `@vN` written in prose against `.github/`; this step is the only carrier.
+```
+
 ## Domains — inventory + validation recipes
+
+⚙️ **What Dependabot watches, and what it deliberately does NOT** (`.github/dependabot.yml` is the SSOT — read it, this is the shape): **five automated ecosystems** (bundler · docker · github-actions incl. the composite dir · npm in `contracts` · terraform) and **two kept MANUAL on purpose** — **conda**, because `conda-lock.yml` exists for reproducibility and a bot bump would defeat it, and the **firmware submodules**, whose cadence is the bench and whose validation is QEMU-parity. ⛔ A domain absent from that file is not "unwatched by oversight": several here have no ecosystem at all (NuGet/.NET, `#44`'s payload pins), so the inventory perimeter is the table below, never the bot's config.
 
 | Domain | Manifest(s) | "What's behind" | Validate (+ linter) |
 |---|---|---|---|
@@ -147,6 +175,11 @@ the pre-split order, append-only since — cite `dependency-update #N`.
 45. The `slither-version` pin and the leaflet version are dated upstream NEGATIVES — re-check each with two HTTP calls before re-deriving either
 46. Ask a transitive advisory whether it names the API our consumer ACTUALLY calls — non-applicability outlives the upstream fix
 47. A DEFAULT gem is invisible to BOTH advisory channels until it is pinned in the `Gemfile` — so step 0 must read the ruby-lang security feed by hand
+48. A DAILY-release gem makes `latest` almost never ripe — and `bundle update --conservative` fetches exactly `latest`
+49. Before "update the tool", ask whether the needed version is ALREADY in the tree by another path
+50. A ZERO from an inventory command is a claim about the INSTRUMENT until a positive control says otherwise
+51. `pip-compile` resolves markers for the platform that COMPILES, and a flag that names a target may bound nothing
+52. "How many vulnerabilities do we have" is a choice of INSTRUMENT, not a fact — and severity is the wrong third axis
 
 <!-- /DEPUPDATE-GOTCHAS-INDEX -->
 
