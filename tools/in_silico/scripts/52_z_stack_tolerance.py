@@ -136,8 +136,14 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # 🔴 That constant is the LoRa-E5 module and WAS the tallest only because the BOM's antenna row named a
 # 1.6 × 0.8 mm part that does not exist at 868 MHz (00_07 HW.17, verified 2026-09-22). The verified ceramic
 # SMD candidate is 4 mm — TALLER than the module — while the Virtual-Antenna candidate is 1 mm, so «what
-# stands on top of the RF deck» is a CONSEQUENCE of the open antenna verdict, not a fixed number. Heights
-# per 02_01 §3 pos. 4; the module row stays as it was, so no pinned figure moves.
+# stands on top of the RF deck» was a CONSEQUENCE of the antenna branch, not a fixed number. Heights per
+# 02_01 §3 pos. 4; the module row stays as it was, so no pinned figure moves.
+# ⚖️ 2026-09-22 (delegated, 02_01 §5.2): the ceramic-SMD branch is REJECTED, and this budget is one of its
+# three grounds — W3013 closes in exactly ONE of the twelve BOM-FR4 rows, and that row needs both the B2B
+# alternative 6.0 (reopening HW.29) and `pad_beside_piezo` (an open branch of HW.30). W3013 STAYS in this
+# dict deliberately: it is the EVIDENCE the verdict stands on, and the re-measure trigger is a different
+# VERIFIED 868 MHz ceramic part, not this one changing. NN03-310 (1.0) is SHORTER than the module, so the
+# carrier branch hands the vertical budget back to what it was before the P/N audit.
 RF_DECK_TOP_PART_MM = {"LoRa-E5 module": 2.5,
                        "antenna W3013 (ceramic SMD)": 4.0,
                        "antenna NN03-310 (Virtual Antenna)": 1.0}
@@ -623,8 +629,9 @@ def vertical_stack_budget(boss: dict) -> dict:
             "room_over_rf_deck_at_board_edge_mm": round(h["crown_at_board_ceiling_edge"] - rf_top, 3),
             "room_after_tolerance_mm": after,
             "tallest_bom_part_fits_on_top": {k: bool(v >= RF_DECK_TALLEST_BOM_PART_MM) for k, v in after.items()},
-            # Per-candidate, because the antenna verdict is open (00_07 HW.17) and the two branches differ
-            # by 3 mm — reading one number for «the tallest part» hid exactly that spread.
+            # Per-candidate, because the two antenna branches differ by 3 mm and reading one number for
+            # «the tallest part» hid exactly that spread. Kept per-candidate AFTER the ⚖️ 2026-09-22
+            # rejection too: the rejected row is what makes the verdict re-measurable (00_07 HW.17).
             "rf_deck_top_part_fits": {part: {k: bool(v >= h) for k, v in after.items()}
                                       for part, h in RF_DECK_TOP_PART_MM.items()},
             # The B2B gap's own occupant (00_07 HW.37): the EDLC sits between the decks, so the gap height
@@ -680,9 +687,11 @@ def vertical_stack_budget(boss: dict) -> dict:
                                        "solder or clearance-to-neighbour modelled — a True here means «the part is "
                                        "shorter than the gap», never «it fits the layout» (00_07 HW.37)"},
         "rf_deck_top_parts": {"heights_mm": dict(RF_DECK_TOP_PART_MM),
-                              "ceiling": "which part actually stands there follows the OPEN antenna verdict "
-                                         "(00_07 HW.17); the ceramic SMD candidate is taller than the LoRa module, "
-                                         "so `tallest_bom_part_fits_on_top` above reads the MODULE, not the maximum"},
+                              "ceiling": "the ceramic-SMD branch is REJECTED (⚖️ 2026-09-22, 02_01 §5.2), so the "
+                                         "part that actually stands there is the LoRa module (2.5) — the carrier "
+                                         "antenna NN03-310 is SHORTER (1.0). The W3013 row is kept as the evidence "
+                                         "the verdict stands on, NOT as a live option; `tallest_bom_part_fits_on_top` "
+                                         "above reads the MODULE, which is now also the maximum (00_07 HW.17)"},
         "ceiling": "⛔ judges the block OVER the flange face under the ratified crown only — of the B2B gap's own "
                    "contents ONLY the named EDLC candidates, not the radial fit (collar_radial_budget), not the RF acceptance floor (settled by a "
                    "mock-up measurement, ⚖️ 2026-09-17, 02_01 §5.3); the piezo placement is an open question, not a choice made here.",
@@ -864,9 +873,9 @@ def main() -> int:
     print(f"  → LoRa module on the RF-deck TOP, any BOM row: pad_beside_piezo "
           f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_beside_piezo']} · pad_under_piezo "
           f"{s['tallest_bom_part_fits_on_top_any_bom_row_rss_as_quoted']['pad_under_piezo']}")
-    # ⛔ The module is NOT the tallest part any more — the antenna verdict is open and one of its candidates is
-    # taller (00_07 HW.17). Printing only the module would repeat, on the operator's screen, exactly the
-    # substitution this axis was added to end.
+    # ⛔ Print every candidate, not just the module. The ceramic branch is rejected (⚖️ 2026-09-22), but the
+    # rejected row is what makes the verdict re-measurable, and printing only the module would repeat, on the
+    # operator's screen, exactly the substitution this axis was added to end (00_07 HW.17).
     bom_rows = [r for r in vert["rows"] if r["fr4_is_bom"]]
     for part, h in RF_DECK_TOP_PART_MM.items():
         ok = [r for r in bom_rows if r["rf_deck_top_part_fits"][part][rss_key]]
