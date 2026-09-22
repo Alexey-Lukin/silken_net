@@ -117,12 +117,11 @@
 #       future sweep must not read this exemption as an invitation to "finish the job".
 #       ⛔ BUT THE EXEMPTION IS NARROWER THAN THE WORD. It covers the ABI symbol
 #       `address investor`; it does NOT cover Ruby that merely shares the noun.
-#       `05_01` names `verify_investor!` — a Ruby method, not the ABI parameter — and
-#       that method (declared in the Polygon compliance service) plus its single
-#       production caller `HadronKycVerificationWorker` are REAL remaining
-#       code-layer debt, not exempt symbols.
-#       Read "the ABI stays" as being about `.sol`/subgraph/ABI only; anything else
-#       carrying the noun is triaged on its own merits.
+#       The Ruby that shadowed it — a compliance method and the locals in the burning
+#       service — was RENAMED 2026-09-22, not exempted (ceiling 5), which is what the
+#       narrowness is FOR. Read "the ABI stays" as being about `.sol`/subgraph/ABI only;
+#       anything else carrying the noun is triaged on its own merits, and today the
+#       triage leaves exactly the ABI blob.
 #   (3) Ruby comments are skipped: internal engineering notes are not what a customer
 #       receives, and they were a third of the first advisory run.
 #   (4) OFFERING matches `early[\s_-]?exit[\s_-]?fee` and therefore does NOT catch
