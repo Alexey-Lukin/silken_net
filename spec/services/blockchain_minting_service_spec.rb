@@ -1732,15 +1732,14 @@ end
       )
     end
 
-    # [ARCH.106] Величина, а не лише ідентичність. Лок є авто-релізним, тож TTL,
-    # МЕНШИЙ за найдовший легальний прохід, відпускає підписанта, поки холдер ще
-    # працює — і повертає рівно той double-mint, заради якого його підіймали з
-    # 30 с. Worst case задокументовано на місці виклику: dry-run (~5 с) +
-    # binary-search до 6 рівнів × 2 eth_call (~36 с) + fallback individual mints
-    # (~90 с) ≈ 130 с.
-    it "holds the signer lock LONGER than the documented worst-case batch (~130s)" do
-      documented_worst_case = 130.seconds
-      expect(described_class::MINT_LOCK_TTL).to be > documented_worst_case
+    # [ARCH.62, 2026-09-22] Доти тут стояв пін «TTL > задокументований worst case
+    # (~130 с)» — порівняння константи з ЛІТЕРАЛОМ, тобто сліпе до роботи всередині
+    # локу, а сам кошторис був хибний (worst case не обмежений жодним TTL). Гарантію
+    # від подвійного мінту тепер тримає claim (група «row ownership» нижче), а тут
+    # лишається єдине, що в величини TTL може зламатись МОВЧКИ: `Kredis.lock` обрізає
+    # усе понад стелю, тож «підняли до 600» дало б 300 без жодного сліду.
+    it "keeps MINT_LOCK_TTL within the lock primitive's silent ceiling" do
+      expect(described_class::MINT_LOCK_TTL.to_i).to be <= Kredis::MAX_LOCK_TTL
     end
 
     it "raises when lock cannot be acquired (concurrent minting prevention)" do
@@ -2152,11 +2151,17 @@ end
                            .update_all(status: BlockchainTransaction.statuses[:sent] || "sent",
                                        tx_hash: "0x" + "d" * 64, sent_at: Time.current)
       allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+      locked_before = txs.last.wallet.reload.locked_balance
 
       expect { described_class.call_batch(txs.map(&:id)) }.to raise_error(Kredis::LockTimeout)
 
-      expect(txs.first.reload.status).to eq("sent")   # НЕ клобернуто у failed
-      expect(txs.last.reload.status).to eq("failed")  # чистий pending → safe fail!
+      expect(txs.first.reload.status).to eq("sent") # НЕ клобернуто у failed
+      # 🔴 [ARCH.62] Доти тут стояло «чистий pending → safe fail!», і це цементувало
+      # дефект як норму: джоб без локу НЕ ВОЛОДІЄ жодним рядком (флип у `:processing`
+      # живе ВСЕРЕДИНІ локу з E.60), тож цей `:pending` належить тому, хто його ще
+      # диспатчитиме, — а `fail!` звільнив би його бали під майбутнім мінтом.
+      expect(txs.last.reload.status).to eq("pending")
+      expect(txs.last.wallet.reload.locked_balance).to eq(locked_before)
     end
 
     # Bisect-гілки несуть РЕАЛЬНИЙ root підгрупи (N:1) — не zero32.
@@ -2180,6 +2185,140 @@ end
       expect(roots).to eq([ "0x#{batch.archive_root}" ] * 2)
       expect(batch.archive_root).not_to eq("0" * 64)
       txs.each { |tx| expect(tx.reload.status).to eq("sent") }
+    end
+  end
+
+  # 🔴 [ARCH.62, 2026-09-22] Гарантію «ніхто двічі не мінтить рядок» тримав ЧАС (TTL
+  # локу), а вимір показав, що жоден TTL її не тримає: стеля ОДНОГО RPC — 60 с
+  # (HTTPX-дефолт), найгірший легальний прохід — увесь батч поштучно, а `Kredis.lock`
+  # обрізає TTL до 300 с. Тож гарантія переїхала на СТАН: рядок мінтить лише той, хто
+  # його АТОМАРНО взяв. Кожен приклад нижче — окрема форма «чіпає чуже»; усі червоні
+  # на коді до фіксу, тож вакуумними не є.
+  describe "row ownership — claim at dispatch, not the lock TTL [ARCH.62]" do
+    def growth_tx!(nibble)
+      wallet = create(:tree).wallet
+      wallet.update!(balance: 5000, crypto_public_address: "0x" + nibble * 40,
+                     hadron_kyc_status: "approved")
+      wallet.lock_and_mint!(500, 100)
+    end
+
+    def force_status!(tx, status)
+      BlockchainTransaction.where(id: tx.id, created_at: tx.created_at)
+                           .update_all(status: BlockchainTransaction.statuses[status])
+    end
+
+    it "LockTimeout не чіпає :processing рядок конкурента й не звільняє його бали" do
+      tx = growth_tx!("a")
+      locked_before = tx.wallet.reload.locked_balance
+      expect(locked_before).to be_positive, "фікстура без живого локу — пін був би вакуумним"
+      force_status!(tx, :processing) # конкурент узяв рядок і зараз підписує його під локом
+      allow(Kredis).to receive(:lock).and_raise(Kredis::LockTimeout)
+
+      expect { described_class.call_batch([ tx.id ]) }.to raise_error(Kredis::LockTimeout)
+
+      expect(tx.reload.status).to eq("processing")
+      expect(tx.wallet.reload.locked_balance).to eq(locked_before)
+    end
+
+    it "джоб із застарілим :pending у памʼяті НЕ мінтить рядок, який уже взяв інший (TTL протух)" do
+      tx = growth_tx!("b")
+      stale = described_class.new([ tx.id ]) # завантажив рядок як :pending
+      force_status!(tx, :processing)         # інший джоб його взяв; лок того джоба вже спливув
+
+      stale.perform
+
+      expect(mock_client).not_to have_received(:transact)
+      expect(tx.reload.status).to eq("processing")
+    end
+
+    it "НЕ мінтить :failed рядок, чиї бали вже повернуто гаманцеві" do
+      tx = growth_tx!("c")
+      stale = described_class.new([ tx.id ])
+      BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at).fail!("pre-broadcast у сусіда")
+
+      stale.perform
+      described_class.call(tx.id) # і прямий виклик на той самий рядок
+
+      expect(mock_client).not_to have_received(:transact)
+      expect(tx.reload.status).to eq("failed")
+    end
+
+    # Позитивний контроль: без нього три приклади вище зелені й на claim, що не бере
+    # НІЧОГО. `:failed` без балів (страхова / службова емісія) лишається диспатчабельним.
+    it "бере :failed рядок БЕЗ балів — його повторний мінт не подвоює нічого" do
+      wallet = create(:tree).wallet
+      wallet.update!(crypto_public_address: "0x" + "e" * 40, hadron_kyc_status: "approved")
+      tx = wallet.blockchain_transactions.create!(
+        amount: 10.0, token_type: :carbon_coin, status: :failed, to_address: wallet.crypto_public_address
+      )
+
+      described_class.call(tx.id)
+
+      expect(mock_client).to have_received(:transact).once
+      expect(tx.reload.status).to eq("sent")
+    end
+
+    # MRV.1: кожен money-перехід їде в AuditLog-ланцюг через `saved_change_to_status?`,
+    # тож claim СИРИМ `update_all` мовчки вибив би `pending→processing` із ланцюга.
+    # Без системного актора хук скіпається з WARN — тому він тут створений явно.
+    it "claim пише перехід через модель — аудит-ланцюг бачить pending→processing" do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
+                                  first_name: "Oracle", last_name: "Executioner")
+      tx = growth_tx!("d")
+
+      described_class.call(tx.id)
+
+      expect(tx.reload.status).to eq("sent")
+      transitions = AuditLogWorker.jobs.map { |j| j["args"].first }
+                                  .select { |a| a["auditable_id"] == tx.id }
+                                  .map { |a| a["metadata"].values_at("from", "to") }
+      expect(transitions).to include([ "pending", "processing" ], [ "processing", "sent" ])
+    end
+
+    # Пін саме на те, заради чого стоїть `clear_attribute_changes`: без нього аудит
+    # ніс би ЗАСТАРІЛИЙ from-стан із памʼяті (`pending`), а не той, що claim прочитав
+    # під row-lock.
+    it "аудит несе СВІЖИЙ from-стан, а не той, що був у памʼяті" do
+      create(:user, :super_admin, email_address: "oracle.executioner@system.silkennet.com",
+                                  first_name: "Oracle", last_name: "Executioner")
+      wallet = create(:tree).wallet
+      wallet.update!(crypto_public_address: "0x" + "f" * 40, hadron_kyc_status: "approved")
+      tx = wallet.blockchain_transactions.create!(
+        amount: 10.0, token_type: :carbon_coin, status: :pending, to_address: wallet.crypto_public_address
+      )
+      stale = described_class.new([ tx.id ]) # у памʼяті :pending
+      force_status!(tx, :failed)             # у БД — :failed без балів (claimable)
+
+      stale.perform
+
+      froms = AuditLogWorker.jobs.map { |j| j["args"].first }
+                            .select { |a| a["auditable_id"] == tx.id }
+                            .map { |a| a["metadata"].values_at("from", "to") }
+      expect(froms).to include([ "failed", "processing" ])
+      expect(froms).not_to include([ "pending", "processing" ])
+    end
+
+    # ⛔ Слеш-інтент народжується `carbon_coin · :pending · evm · адреса організації` —
+    # саме те, що відбирає колектор. Без фільтра `direction: :mint` слеш, що впав між
+    # інтентом і `transact`, ЗМІНТИВ би суму вироку тій самій організації.
+    it "НЕ мінтить слеш-інтент, хоч він і :pending на адресу організації" do
+      tx = growth_tx!("1")
+      force_status!(tx, :pending)
+      BlockchainTransaction.where(id: tx.id, created_at: tx.created_at).update_all(direction: "burn")
+
+      described_class.call(tx.id)
+
+      expect(mock_client).not_to have_received(:transact)
+      expect(tx.reload.status).to eq("pending")
+    end
+
+    it "НЕ мінтить на Polygon рядок іншої мережі (auto-discovery мережі не фільтрує)" do
+      tx = growth_tx!("2")
+      BlockchainTransaction.where(id: tx.id, created_at: tx.created_at).update_all(blockchain_network: "celo")
+
+      described_class.call(tx.id)
+
+      expect(mock_client).not_to have_received(:transact)
     end
   end
 

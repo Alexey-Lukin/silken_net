@@ -83,13 +83,24 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(BlockchainMintingService).to have_received(:call_batch).twice
     end
 
-    it "resets transactions to pending on RPC failure" do
+    # 🔴 [ARCH.62, 2026-09-22] Доти rescue сирим `update_all` повертав `:processing →
+    # :pending` для всіх id свого батча. Флип у `:processing` робить лише мінт-сервіс
+    # ПІД локом (claim), тож `:processing`, який бачить цей rescue, — ЧУЖИЙ: інший джоб
+    # його саме підписує, і reset віддав би рядок наступному claim'у → подвійний мінт.
+    it "на збої НЕ знімає чужий claim (:processing лишається власнику)" do
       tx = create(:blockchain_transaction, wallet: wallet, status: :pending)
-      allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC Error")
+      allow(BlockchainMintingService).to receive(:call_batch) do
+        # інший джоб устиг узяти рядок, а цей отримав збій
+        BlockchainTransaction.where(id: tx.id, created_at: tx.created_at)
+                             .update_all(status: BlockchainTransaction.statuses[:processing])
+        raise StandardError, "RPC Error"
+      end
 
       expect {
         described_class.new.perform
       }.to raise_error(StandardError, "RPC Error")
+
+      expect(tx.reload.status).to eq("processing")
     end
   end
 
@@ -137,18 +148,25 @@ RSpec.describe MintCarbonCoinWorker, type: :worker do
       expect(wallet.locked_balance).to eq(original_locked)
     end
 
+    # 🔴 [ARCH.62, 2026-09-22] Доти тут стояло «finds all pending/processing transactions»
+    # і пінило rollback ГЛОБАЛЬНОГО набору (`limit(1000)`, будь-чиї рядки) як норму.
+    # Джоб без аргументів не володіє жодним рядком: мінт-сервіс сам вирішує долю кожної
+    # взятої групи, а чужий `:processing` — це рядок, який інший джоб саме підписує;
+    # `fail` на ньому звільняє бали під живим мінтом. `:pending` підбере колектор,
+    # застряглий `:processing` — sweeper.
     context "with auto-discovery flow (nil telemetry_log_id)" do
-      it "finds all pending/processing transactions when telemetry_log_id is nil" do
-        tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
-        wallet.update!(balance: 5_000, locked_balance: 5_000)
+      it "не чіпає жодного рядка — власника в хука немає" do
+        wallet.update!(balance: 10_000, locked_balance: 10_000)
+        pending = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 5_000, tx_hash: nil)
+        in_flight = create(:blockchain_transaction, wallet: wallet, status: :processing, locked_points: 5_000, tx_hash: nil)
 
         job = { "args" => [ nil, nil ], "error_message" => "Permanent failure" }
 
         described_class.sidekiq_retries_exhausted_block.call(job, StandardError.new)
 
-        tx.reload
-        expect(tx.status).to eq("failed")
-        expect(tx.notes).to include("Rollback")
+        expect(pending.reload.status).to eq("pending")
+        expect(in_flight.reload.status).to eq("processing")
+        expect(wallet.reload.locked_balance).to eq(10_000)
       end
     end
 

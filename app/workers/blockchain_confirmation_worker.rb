@@ -22,8 +22,8 @@ class BlockchainConfirmationWorker
   #   - Підтверджує on-chain якщо receipt з'явився
   #   - Ескалює до manual_review якщо receipt все ще pending/unknown
   # [ARCH.52] tx_hash-query + created_at LOWER-bound → partition-prune (RANGE по created_at).
-  # batchMint групує pending tx БЕЗ верхньої age-межі (urgent-batch span необмежений — reset-to-
-  # pending тримає старий created_at) одним tx_hash → рядки мають РІЗНІ created_at у [earliest,
+  # batchMint групує pending tx БЕЗ верхньої age-межі (urgent-batch span необмежений — рядок
+  # буває довго :pending: KYC-skip, HOLD) одним tx_hash → рядки мають РІЗНІ created_at у [earliest,
   # broadcast]. `created_at >= earliest-1h` покриває ВСІ рядки батчу (всі ≥ earliest) і прунить
   # партиції, старші за earliest-1h. ⚠️ Симетричне ±1h ВИКЛЮЧИЛО б рядки >1h новіші за earliest →
   # stuck :sent. Дзеркало CeloConfirmationWorker/ARCH.50 (по tx_hash, не id — batch ділить хеш;

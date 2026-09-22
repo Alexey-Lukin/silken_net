@@ -74,7 +74,29 @@ class MintingRollbackService < ApplicationService
     if tx.tx_hash.present?
       handle_transaction_with_hash(tx)
     else
-      perform_safe_rollback(tx)
+      rollback_unbroadcast!(tx)
+    end
+  end
+
+  # 🔴 [ARCH.62, 2026-09-22] Рядок БЕЗ хеша відкочуємо лише тоді, коли він ДОСІ `:pending`
+  # під row-lock, — бо без хеша «нічого не відправлено» ще не означає «нічий». `:processing`
+  # без хеша — це або ЖИВИЙ claim мінт-сервісу посеред підпису, або сирота, яку ескалює
+  # sweeper; відкат тут звільнив би бали під живою трансляцією (власник потім перепише
+  # `:failed` на `:sent`) → подвійне зарахування. Row-lock той самий, яким бере claim
+  # (`BlockchainMintingService#claim_for_dispatch`), тож рядок, узятий між нашим SELECT-ом і
+  # записом, ми побачимо вже `:processing`. Порядок локів — рядок → гаманець, як у `fail`.
+  # ⛔ Слеш-інтент без хеша — теж не наш: його тримає слешер між `create_slash_intent!` і
+  # `mark_as_sent!`, а сирота такого інтенту однаково «повтор слешингу не автоматизовано».
+  def rollback_unbroadcast!(tx)
+    return if tx.burn?
+
+    ActiveRecord::Base.transaction do
+      fresh = BlockchainTransaction.where(id: tx.id, created_at: tx.created_at).lock.pick(:status)
+      if fresh == "pending"
+        perform_safe_rollback(tx)
+      else
+        Rails.logger.warn "⏭️ [Web3] Rollback ##{tx.id} пропущено: рядок #{fresh} (живий claim або сирота sweeper-а)."
+      end
     end
   end
 

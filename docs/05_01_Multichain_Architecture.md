@@ -232,7 +232,7 @@ did:peaq:0x{SHA256("<hardware_identifier>:<tree_id>:<created_at.to_i>")[0:40]}  
 2. `oracle_status_fulfilled?` (enum method, prefix) — Chainlink Oracle підтвердив (**лише Path 1**)
 3. `wallet.kyc_approved_for_minting?` [KYC.1] — KYC бенефіціара адреси (власна → власний статус; custodial → успадковує org), **усі шляхи**; non-approved → per-tx SKIP
 4. Oracle balance ≥ `0.05 MATIC` (default; `oracle_min_balance_matic` — governance-aware [INF.22]) — достатньо газу
-5. Kredis distributed lock (**120s** expiration — покриває dry-run + binary-search worst-case ~130s, [S6.5]) — запобігає подвійному мінтингу
+5. Kredis distributed lock `lock:web3:oracle:<addr>` (`MINT_LOCK_TTL`, стеля `Kredis::MAX_LOCK_TTL` [S6.5]) — серіалізує nonce підписанта. Від подвійного мінту рядка захищає НЕ TTL, а claim під `FOR UPDATE` [ARCH.62]: найгірший легальний прохід не обмежений жодним TTL
 6. **[ARCH.62]** per-token circuit-break — `mint_circuit_broken?(token_type)` (Kredis `mint:circuit_broken:<token>`, ставить `Treasury::MonitorService` при volume-аномалії за `:mint_circuit_breaker_enabled`); tripped → HOLD того токена у `:pending` (re-runnable, **НЕ** escalate), fail-open на Redis-збої. Inert default → [`00_07` ARCH.62](00_07_Action_Plan_Tracker)
 
 **HYBRID PROTOCOL GAIA:** 2% Dynamic Tax на carbon\_coin мінтинг, коли insurance pool потребує поповнення: бенефіціар отримує `amount − tax`, а податок їде ОДНИМ агрегованим `DAO_TREASURY`-записом на підбатч (`TAX_BATCH_*`), не по одному запису на транзакцію. ⚠️ Окремого отримувача-форестера в цьому тракті НЕМАЄ — `forester_share_amount` живе на `NaasContract` і диспенс-шляху не має ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)).

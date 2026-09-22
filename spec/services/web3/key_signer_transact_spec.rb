@@ -301,4 +301,45 @@ RSpec.describe Web3::KeySigner, "#transact" do
       end
     end
   end
+
+  # 🔴 [ARCH.62, 2026-09-22] `Web3::ResilientClient#method_missing` проксює й `transact`,
+  # а `Eth::Client::RpcError < IOError` стоїть у його `RETRIABLE_ERRORS` — тож відповідь-
+  # ПОМИЛКА шлюзу, що вже переслав tx (агрегатор, upstream-таймаут), повторює ЗАПИС на
+  # фолбеку. Гем без `nonce:` бере там `get_nonce(pending)`, і фолбек, що вже бачить першу
+  # tx, дає nonce+1 — тобто ДРУГУ транзакцію з тими самими рядками. Сервісний M6-гард
+  # («ambiguous → escalate, ніколи сліпий re-mint») тут не діє: повтор стається ДО нього.
+  describe "каскад повторює ЗАПИС — nonce закріплено ДО нього" do
+    let(:primary_url)  { "https://primary.example" }
+    let(:fallback_url) { "https://fallback.example" }
+    let(:primary)      { instance_double(Eth::Client) }
+    let(:fallback)     { instance_double(Eth::Client) }
+    let(:cascade)      { Web3::ResilientClient.new([ primary_url, fallback_url ]) }
+    let(:sent_nonces)  { [] }
+
+    before do
+      allow(Eth::Client).to receive(:create).with(primary_url).and_return(primary)
+      allow(Eth::Client).to receive(:create).with(fallback_url).and_return(fallback)
+      allow(primary).to receive_messages(eth_estimate_gas: { "result" => "0x5208" }, get_nonce: 7)
+      allow(fallback).to receive(:get_nonce).and_return(8) # уже бачить першу tx у своєму mempool
+      allow(primary).to receive(:transact)
+        .and_raise(Eth::Client::RpcError.new("upstream request timeout", nil, -32_603))
+      allow(fallback).to receive(:transact) do |*, **kw|
+        sent_nonces << kw[:nonce]
+        "0x#{'e' * 64}"
+      end
+    end
+
+    it "повтор на фолбеку підписує ТОЙ САМИЙ слот — другої tx із тими самими рядками не буде" do
+      signer.transact(cascade, contract, "mint", "0x#{'b' * 40}", 1)
+
+      expect(sent_nonces).to eq([ 7 ])
+    end
+
+    it "явний `nonce:` викликача БʼЄ закріплення — L1-якір несе персистований слот" do
+      signer.transact(cascade, contract, "anchor", "0x#{'b' * 40}", nonce: 42)
+
+      expect(sent_nonces).to eq([ 42 ])
+      expect(primary).not_to have_received(:get_nonce)
+    end
+  end
 end

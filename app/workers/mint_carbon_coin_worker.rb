@@ -25,10 +25,15 @@ class MintCarbonCoinWorker
         created_at_iso: created_at_iso
       )
     else
-      # [S6.16] status-скан — свідомо без `created_at`-межі (підстава там сама, що
-      # в `process_pending_transactions`: reset-to-pending тримає старий created_at).
-      txs = BlockchainTransaction.where(status: [ :pending, :processing ]).limit(1000)
-      MintingRollbackService.call(transactions: txs)
+      # 🔴 [ARCH.62, 2026-09-22] Джоб без аргументів НЕ ВОЛОДІЄ жодним рядком, тож і
+      # відкочувати йому нічого. Доти тут стояв rollback ГЛОБАЛЬНОГО `pending/processing`
+      # (`limit(1000)`) — тобто будь-чиїх рядків, включно з `:processing`, який інший
+      # джоб саме підписує: `fail` звільнив би бали під живим мінтом. Долю кожної ВЗЯТОЇ
+      # групи вже вирішив мінт-сервіс (fail/escalate); `:pending` підбере колектор,
+      # застряглий `:processing` — sweeper. ⛔ Не повертати глобальний rollback «щоб
+      # кошти не зависли»: не зависають — у них є власники.
+      Rails.logger.error "🛑 [Web3] MintCarbonCoinWorker (auto-discovery) вичерпав ретраї: " \
+                         "#{msg['error_message']} — рядків не чіпаю (власник — колектор/sweeper)."
     end
   end
 
@@ -86,11 +91,12 @@ class MintCarbonCoinWorker
   # [FALLBACK]: Auto-discovery pending транзакцій (cron або ручний запуск).
   # Працює без telemetry_log — для існуючого TokenomicsEvaluatorWorker flow.
   # [S6.16 / ARCH.52] Цей скан свідомо БЕЗ `created_at`-межі, і це не недогляд:
-  # reset-to-pending робить raw `update_all :processing→:pending`, лишаючи СТАРИЙ
-  # `created_at`, тож нижня межа осиротила б саме застряглі кошти. Правильний
-  # важіль для status-скану — partial index (`(status, created_at) WHERE status
-  # IN (0,1)`), він уже стоїть. Прунимо натомість усе, що ПІСЛЯ нього: там id
-  # уже відомі, тож несемо їхній `created_at`-span далі.
+  # `:pending`-рядок буває як завгодно старим (KYC-skip, circuit-HOLD, накопичення
+  # колектора, `LockTimeout` — усі лишають його `:pending`), тож нижня межа
+  # осиротила б саме застряглі кошти. Правильний важіль для status-скану — partial
+  # index (`(status, created_at) WHERE status IN (0,1)`), він уже стоїть. Прунимо
+  # натомість усе, що ПІСЛЯ нього: там id уже відомі, тож несемо їхній
+  # `created_at`-span далі.
   def process_pending_transactions
     rows = BlockchainTransaction.status_pending.limit(1000).pluck(:id, :created_at)
     return if rows.empty?
@@ -101,8 +107,8 @@ class MintCarbonCoinWorker
   end
 
   def process_batch(batch_ids, span)
-    # [Idempotency & Race Condition Guard]
-    # Використовуємо спливаючий статус :processing для блокування батчу
+    # Фільтр лише звужує кандидатів; власність рядка встановлює claim мінт-сервісу
+    # під локом (`BlockchainMintingService#claim_for_dispatch`), не цей SELECT.
     txs = pruned_batch(batch_ids, span).where(status: :pending)
     return if txs.empty?
 
@@ -116,10 +122,12 @@ class MintCarbonCoinWorker
     end
 
   rescue StandardError => e
-    # Якщо сталася помилка на рівні підключення до RPC, повертаємо статус у Pending,
-    # щоб наступний ретрай Sidekiq спробував знову.
-    pruned_batch(batch_ids, span).where(status: :processing)
-                                 .update_all(status: :pending, notes: "Retry: #{e.message.truncate(150)}")
+    # 🔴 [ARCH.62, 2026-09-22] Статусів тут НЕ чіпаємо. Флип у `:processing` робить лише
+    # мінт-сервіс під локом (claim), і долю кожної взятої групи він вирішує сам — тож
+    # `:processing`, який побачив би цей rescue, ЧУЖИЙ. Доти тут стояв сирий reset
+    # `:processing → :pending` на всі id батча: він знімав claim іншого джоба посеред
+    # підпису й віддавав рядок наступному claim'у → подвійний мінт. `:pending` і так
+    # лишається `:pending` — наступний ретрай його підбере.
 
     # Оповіщаємо UI про поточну спробу, щоб користувач бачив прогрес у реальному часі
     pruned_batch(batch_ids, span).each do |tx|

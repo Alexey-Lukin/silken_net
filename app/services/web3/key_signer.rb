@@ -115,6 +115,7 @@ module Web3
         kwargs = kwargs.merge(gas_limit: estimated) if estimated
       end
       assert_gas_reserve!(client, kwargs[:gas_limit], kwargs[:value])
+      kwargs = pin_nonce(client, kwargs)
       client.transact(contract, function, *args, sender_key: @key, **kwargs)
     end
 
@@ -204,6 +205,33 @@ module Web3
       raise
     rescue StandardError => e
       Rails.logger.warn("⚠️ [gas] резерв не перевірено (#{e.class}: #{e.message}) — вирок НЕ виноситься, транзакція йде")
+    end
+
+    # =====================================================================
+    # 🔢 NONCE ЗАКРІПЛЮЄТЬСЯ ДО КАСКАДУ [ARCH.62, 2026-09-22]
+    # =====================================================================
+    # `Web3::ResilientClient#method_missing` проксює й `transact`, а
+    # `Eth::Client::RpcError < IOError` стоїть у його `RETRIABLE_ERRORS`. Отже
+    # відповідь-ПОМИЛКА шлюзу, що вже ПЕРЕСЛАВ tx (агрегатор, upstream-таймаут),
+    # повторює ЗАПИС на фолбеку, а гем без `nonce:` бере там `get_nonce(pending)`:
+    # фолбек, що вже бачить першу tx, дає nonce+1 — друга транзакція з ТИМИ САМИМИ
+    # рядками. Сервісний M6-гард («ambiguous → escalate, ніколи сліпий re-mint») тут
+    # безсилий: повтор стається всередині клієнта, ДО того, як виняток його дістане.
+    #
+    # 🔑 Лік — не забороняти каскад (маршрут запису на фолбек ратифікований, ⚖️ founder
+    # 2026-09-02, шапка `ResilientClient`), а зробити повтор ТИМ САМИМ слотом: ланцюг
+    # сам гарантує, що з одним nonce відправника включиться НЕ БІЛЬШЕ однієї tx. Тоді
+    # повтор або доставляє ту саму транзакцію, або отримує «already known / nonce too
+    # low / replacement underpriced» — і ці відповіді вже класифікуються як ambiguous.
+    # ⚠️ Лише для каскаду: у голого `Eth::Client` повтору немає, тож і закріплювати
+    # нічого — а пін-спеки pass-through (`kms_signer_spec`, `local_env_signer_spec`)
+    # стережуть саме недоторкані kwargs. Явний `nonce:` викликача (L1-якір несе
+    # персистований слот, ARCH.66) бʼє закріплення.
+    def pin_nonce(client, kwargs)
+      return kwargs if kwargs.key?(:nonce)
+      return kwargs unless client.is_a?(Web3::ResilientClient)
+
+      kwargs.merge(nonce: client.get_nonce(address))
     end
 
     public

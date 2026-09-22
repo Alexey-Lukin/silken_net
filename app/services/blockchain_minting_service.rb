@@ -31,11 +31,13 @@ class BlockchainMintingService < ApplicationService
   TREASURY_CACHE_TTL = 15.minutes
   TREASURY_RPC_TIMEOUT = 10
 
-  # [ARCH.106] Авто-релізний TTL локу підписанта. Число мусить ПЕРЕКРИВАТИ
-  # задокументований worst case батча — інакше лок відпускається, поки холдер ще
-  # працює, і повертає рівно той double-mint, заради якого його й підіймали з 30 с.
-  # Розклад worst case живе на місці виклику (dry-run + binary-search + fallback
-  # individual mints ≈ 130 с); тут — він плюс запас на RPC-джитер.
+  # Авто-релізний TTL локу підписанта. ⚖️ [ARCH.62, делеговано 2026-09-22] Це НЕ
+  # грошовий параметр: «ніхто двічі не мінтить рядок» тримає claim (`claim_for_dispatch`),
+  # а TTL лише серіалізує nonce одного підписанта. Його протухання посеред проходу
+  # коштує nonce-колізії → ambiguous → `manual_review` (видно на depth-gauge), а не
+  # подвійного мінту. Тому число не підганяється під worst case — worst case не
+  # обмежений жодним TTL (підстава й вимір — шапка `claim_for_dispatch`).
+  # ⛔ Понад `Kredis::MAX_LOCK_TTL` число ТИХО обрізається — пін у спеці.
   MINT_LOCK_TTL = 180.seconds
 
   # ABI оновлено для підтримки поштучного mint та пакетного batchMint.
@@ -277,50 +279,33 @@ class BlockchainMintingService < ApplicationService
     # а retry сліпо re-мінтив би їх = double-mint). safe_fail якоїсь підгрупи
     # re-raise'иться ПІСЛЯ проходу всіх груп; safe-failed tx одужують через
     # СВІЖІ tokenomics-tx (усі growth-викликачі переобирають лише :pending),
-    # retry-сигнал лише повертає джоб у чергу; sent/manual_review захищені
-    # dispatchable-фільтром у dispatch.
+    # retry-сигнал лише повертає джоб у чергу; чужі рядки захищає claim у dispatch.
     safe_fail_error = nil
     begin
-      # [S6.5 FIX]: Збільшено lock timeout з 30s до 120s для batch operations.
-      # Хоча ми не чекаємо підтвердження блоку (fire-and-forget), batch minting може включати:
-      #   - Dry-run eth_call (~3-5s)
-      #   - Binary Search Isolation при revert: до MAX_BINARY_SEARCH_DEPTH=6 рівнів × 2 eth_call = ~36s
-      #   - Fallback individual mints для poisoned records: до ~30 × transact() = ~90s
-      # Загальний worst case: ~130s. З 30s lock виникає double-mint ризик при RPC congestion.
-      # 🔴 [ARCH.62, 2026-09-11] ЦЕЙ БЮДЖЕТ РОЗМІРЯЛИ ПРОТИ transact-у на ЧОТИРИ
-      # RPC (estimate · balance · nonce · sendRaw), А ЇХ ТЕПЕР ШІСТЬ: освіження fee
-      # додало `eth_maxPriorityFeePerGas` + `eth_getBlockByNumber` на КОЖЕН підпис.
-      # Отже «~90s» на 30 індивідуальних мінтів масштабується ×1.5, і запас під
-      # 180-секундною стелею з'їдається майже повністю. ⚠️ Пін ARCH.106 цього НЕ
-      # побачить за побудовою — він порівнює константу з ЛІТЕРАЛОМ `130.seconds`,
-      # а не з роботою всередині локу. Перевимір + вибір числа — `00_07` ARCH.62.
-      # 🔴 [ARCH.106] Доти тут стояло `120.seconds` — МЕНШЕ за власний worst case
-      # рядком вище, тобто лок авто-відпускався за ~10 с до кінця найдовшого
-      # легального проходу й пускав другого воркера на того самого підписанта.
-      # Дефект був невидимий, бо число й розрахунок стояли поруч і обидва
-      # виглядали обдуманими; TTL тепер константа, що ПЕРЕКРИВАЄ розрахунок.
+      # Лок серіалізує NONCE підписанта, не власність рядків — див. `MINT_LOCK_TTL`.
+      # ⚠️ Кошторис «dry-run ~5 с + bisect ~36 с + ~30 × transact ≈ 130 с», що тут
+      # стояв, був хибний двічі: «30» — це поріг отруйності 30%, а не кількість (за
+      # ним `isolate_poisoned_records` шле ВЕСЬ залишок поштучно), і кожен `transact`
+      # робить не одне звернення, а шість (шов `Web3::KeySigner#transact`).
       Kredis.lock(lock_key, expires_in: MINT_LOCK_TTL, after_timeout: :raise) do
         archive_groups.each do |group|
           safe_fail_error ||= dispatch_archive_group(client, contract, signer, token_type, group)
         end
       end
     rescue Kredis::LockTimeout => e
-      # Лок не взято — ЦЕЙ джоб нічого не бродкастив. АЛЕ in-memory статуси
-      # можуть бути stale: конкурентний джоб (той, що тримав лок >120s) міг уже
-      # змінтити спільні tx → пере-читання + той самий sent/manual_review-guard, що й
-      # у dispatch (сліпий fail! клоберив би :sent → release locked_points при
-      # токенах on-chain = double-credit; lock_version на партиційованій таблиці
-      # немає — optimistic-lock не рятує).
-      # [S6.16] Пере-читання — через One-Home: голий `.reload` б'є по самому PK і
-      # сканує ВСІ партиції, хоч `created_at` уже в пам'яті з SELECT'а. Прецедент
-      # форми — CeloRewardReconcileWorker.
-      txs.each do |tx|
-        fresh = BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at)
-        next if fresh.status_sent? || fresh.status_manual_review? || fresh.status_confirmed?
-
-        fresh.fail!(e.message.truncate(200))
-      end
-      Rails.logger.error "🛑 [Web3 Failure] Lock timeout (#{token_type}): #{e.message}"
+      # 🔴 [ARCH.62, 2026-09-22] Лок не взято → цей джоб НЕ ВОЛОДІЄ ЖОДНИМ рядком, тож
+      # не чіпає жодного. Claim (флип у `:processing`) живе ВСЕРЕДИНІ локу, тобто його
+      # тут не було. Доти ця гілка перечитувала рядки й робила `fail!` усім, крім
+      # sent/manual_review/confirmed, — і це була ОСТАННЯ жива частина форми до E.60,
+      # коли джоб флипав рядки ДО локу й на таймауті валив СВОЇ. Після переносу флипу
+      # `fail!` бив по ЧУЖИХ: `:processing` конкурента, що саме підписує (а `fail`
+      # звільняє `locked_points` → бали знову мінтабельні при вже змінтованих токенах),
+      # і `:pending`, які інший живий джоб ще диспатчитиме. Досяжність — перекриття
+      # колектора з самим собою (`lock: :until_executed` без `sidekiq-unique-jobs` не
+      # діє). ⛔ Не повертати `fail!` «щоб рядки не висіли»: `:pending` підбере
+      # наступний цикл, а чужий `:processing` доведе до кінця його власник.
+      Rails.logger.error "🛑 [Web3 Failure] Lock timeout (#{token_type}): #{e.message} — " \
+                         "#{txs.size} tx не чіпаю (власник або наступний цикл)."
       raise e
     end
 
@@ -332,24 +317,18 @@ class BlockchainMintingService < ApplicationService
   # broadcast (прецедент — send_clean_batch у тому ж локу). Повертає safe_fail-
   # помилку для re-raise (Sidekiq-retry) або nil (успіх / ambiguous-ескалація).
   def dispatch_archive_group(client, contract, signer, token_type, group)
-    # Диспатчабельні = НЕ sent/manual_review/processing: retry після часткової
-    # multi-групової відмови (і direct .call на recovered-orphan) НЕ сміє сліпо
-    # флипати їх у :processing — обхід double-spend hold. :processing-orphan
-    # (crash між transact і mark_as_sent) — справа sweeper'а (escalate за 15хв),
-    # не сліпого re-mint'а.
-    txs = group.txs.reject { |tx| tx.status_sent? || tx.status_manual_review? || tx.status_processing? }
+    # Мінтимо ЛИШЕ те, що цей джоб атомарно взяв (`claim_for_dispatch`): sent/
+    # manual_review/processing чужі за визначенням, `:failed` з балами вже оплачений.
+    # :processing-orphan (crash між transact і mark_as_sent) — справа sweeper'а
+    # (escalate за 15хв), не сліпого re-mint'а.
+    txs = claim_for_dispatch(group.txs)
     skipped = group.txs.size - txs.size
     if skipped.positive?
-      Rails.logger.warn "🚫 [Web3] #{skipped} tx підгрупи в sent/manual_review/processing — skip (double-mint guard)."
+      Rails.logger.warn "🚫 [Web3] #{skipped} tx підгрупи не взято (чужі або вже оплачені) — skip (double-mint guard)."
     end
     return nil if txs.empty?
 
     root_arg = bytes32_arg(group.root)
-
-    # Переводимо транзакції підгрупи в статус обробки
-    txs.each do |tx|
-      tx.update!(status: :processing)
-    end
 
     if txs.size == 1
       # Одиночний мінтинг (Fire-and-Forget): root ПІДГРУПИ — для генуїнно-1-tx
@@ -395,6 +374,12 @@ class BlockchainMintingService < ApplicationService
     end
     nil
   rescue StandardError => e
+    # Збій САМОГО claim'у: нічого не відправлено, тож вирішувати тут нічого — хай джоб
+    # повторить. Рядки, взяті до збою, лишаються `:processing` (сирота → sweeper → manual_review,
+    # бали не звільняються). Без цього рядка rescue впав би на `nil.each` і `NoMethodError`
+    # замаскував би справжню помилку.
+    raise if txs.nil?
+
     # [P0-1/M6] Стан-обізнаний rescue ЦІЄЇ підгрупи (дзеркало
     # send_clean_batch M6 + burn ARCH.48) — сусідні підгрупи недоторкані:
     #   :sent (finalize-крах ПІСЛЯ mark_as_sent У ЦІЙ групі) → escalate, НЕ fail!;
@@ -425,6 +410,75 @@ class BlockchainMintingService < ApplicationService
   # (прецедент Ethereum::StateAnchorService#anchor_to_l1! root_bytes).
   def bytes32_arg(root_hex)
     "0x#{root_hex}"
+  end
+
+  # =========================================================================
+  # 🔒 CLAIM — рядок мінтить лише той, хто його АТОМАРНО взяв [ARCH.62, 2026-09-22]
+  # =========================================================================
+  # Гарантію «ніхто двічі не мінтить рядок» доти тримав ЧАС: лок підписанта мав
+  # пережити найдовший легальний прохід, а рядки флипались у `:processing` за
+  # статусом ІЗ ПАМʼЯТІ. Вимір показав, що жоден TTL цієї гарантії не тримає:
+  #   · стеля ОДНОГО RPC — 60 с (HTTPX-дефолт `read_timeout`, загального таймауту
+  #     запиту гем не ставить), а каскад фолбеків множить її на кількість провайдерів;
+  #   · найгірший легальний прохід — увесь батч поштучно (понад поріг отруйності
+  #     `isolate_poisoned_records` віддає ВЕСЬ залишок у `mint_individual`), по шість
+  #     RPC на кожен `transact`;
+  #   · `Kredis.lock` обрізає TTL до `Kredis::MAX_LOCK_TTL` мовчки.
+  # Отже після протухання другий джоб зі ЗАСТАРІЛИМ `:pending` у памʼяті флипав і
+  # мінтив рядок, який перший ще підписував. Тепер гарантія стоїть на СТАНІ: під
+  # `FOR UPDATE` читаємо свіжий статус і беремо лише те, що справді вільне.
+  #
+  # 🔴 Перехід пишеться `update!` на ТОМУ САМОМУ обʼєкті (прелоад `wallet → tree`
+  # лишається для `identifier_for`), а не `update_all`: MRV.1-ланцюг ключується на
+  # `saved_change_to_status?`, тож сирий UPDATE мовчки вибив би `pending→processing`
+  # з аудиту. `clear_attribute_changes` робить from-стан СВІЖИМ, а не застарілим.
+  # ⛔ Фільтр `direction: :mint` · `blockchain_network: "evm"` — несучий: колектор відбирає
+  # `pending · evm · to_address`, а слеш-інтент (`create_slash_intent!`) народжується саме
+  # таким — `carbon_coin`, `:pending`, адреса ОРГАНІЗАЦІЇ. Слеш, що впав між інтентом і
+  # `transact`, інакше наступним проходом ЗМІНТИВ би суму вироку тій самій організації;
+  # не-EVM рядок (auto-discovery мережі не фільтрує) мінтився б на Polygon.
+  # ⚠️ Стеля названа: ОДНА транзакція на групу (один SELECT … FOR UPDATE, без N+1 на
+  # знаменнику флоту), тож виняток з `after_update_commit` аудиту (пуш у Sidekiq) пропускає
+  # колбеки решти рядків — вони лишаються `:processing` без сліду `pending→processing` у
+  # MRV.1 (сирота → sweeper → manual_review, бали не звільняються). Вікно вузьке: Sidekiq і
+  # Kredis-лок сидять на ОДНОМУ Redis, тож він мав би впасти між взяттям локу й комітом.
+  # ⚠️ Гарантія чинна, лише доки ніхто інший не ЗНІМАЄ claim: сирий reset
+  # `:processing→:pending` чи rollback на чужому наборі повернув би рядок у вільні
+  # під живим підписом. Такі писачі 2026-09-22 зняті або звужені до `:pending` під
+  # row-lock (`MintCarbonCoinWorker` · `MintingRollbackService#rollback_unbroadcast!`);
+  # ⛔ новий писач `status` на рядку, якого він не брав, повертає клас цілком.
+  def claim_for_dispatch(candidates)
+    return [] if candidates.empty?
+
+    BlockchainTransaction.transaction do
+      fresh = BlockchainTransaction
+                .where_ids_pruned(candidates.map(&:id), candidates.map(&:created_at),
+                                  metric_caller: "BlockchainMintingService#claim")
+                .where(direction: :mint, blockchain_network: "evm")
+                .order(:id).lock
+                .pluck(:id, :status, :locked_points)
+                .to_h { |id, status, points| [ id, [ status, points ] ] }
+
+      candidates.select do |tx|
+        status, points = fresh[tx.id]
+        next false unless claimable?(status, points)
+
+        tx.status = status
+        tx.clear_attribute_changes([ :status ])
+        tx.update!(status: :processing)
+        true
+      end
+    end
+  end
+
+  # `:pending` — вільний. `:failed` — лише БЕЗ балів (страхова / службова емісія):
+  # `fail` уже повернув `locked_points` гаманцеві, тож повторний мінт такого рядка
+  # мінтить бали, що знову мінтабельні, — подвійна емісія. Одужання growth-рядка —
+  # СВІЖА tokenomics-tx, не воскресіння старої.
+  def claimable?(status, locked_points)
+    return true if status == "pending"
+
+    status == "failed" && locked_points.to_i.zero?
   end
 
   # [DRY-RUN GUARD]: Симуляція batchMint через eth_call (zero-gas execution).

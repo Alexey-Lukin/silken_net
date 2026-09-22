@@ -273,7 +273,7 @@ RSpec.describe "Blockchain minting and burning pipeline" do
       expect(BlockchainMintingService).not_to have_received(:call_batch)
     end
 
-    it "resets to pending on RPC error for retry (auto-discovery)" do
+    it "re-raises on RPC error so Sidekiq retries (auto-discovery; statuses untouched — ARCH.62)" do
       allow(BlockchainMintingService).to receive(:call_batch).and_raise(StandardError, "RPC timeout")
 
       expect {

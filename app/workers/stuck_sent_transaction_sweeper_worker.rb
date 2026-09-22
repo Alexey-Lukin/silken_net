@@ -25,7 +25,8 @@
 # crons — out of scope here (see 00_07 ARCH.55).
 #
 # [sent_at, NOT created_at] The threshold keys on broadcast time (sent_at),
-# because a reset-to-pending tx keeps an OLD created_at (ARCH.52 trap) — a
+# because a tx can sit :pending for a long time before it is broadcast (KYC skip,
+# circuit HOLD, collector accumulation — ARCH.52) — a
 # created_at window would MISS a genuinely-stuck tx whose pending wait was long.
 # created_at is still passed to ConfirmationWorker for partition-pruning.
 #
@@ -105,8 +106,14 @@ class StuckSentTransactionSweeperWorker
   # (double-mint неможливий), але баланс форестера висить у locked. Політика
   # ARCH.48/M6: ambiguous → :manual_review (людська звірка на Polygonscan),
   # НІКОЛИ blind re-mint. Ключ = updated_at (state-перехід бампає; created_at
-  # труїть reset-to-pending — ARCH.52 trap). Живий batch тримає :processing
-  # секунди — 15min відсіює лише трупи.
+  # — момент НАМІРУ, а рядок буває довго :pending, ARCH.52). Живий batch тримає
+  # :processing на весь прохід ГРУПИ — зазвичай секунди, але найгірший легальний
+  # прохід (увесь батч поштучно, 6 RPC на кожен transact — ARCH.62) не обмежений
+  # нічим. 15 хв відсіює трупи; прохід, довший за поріг, ескалює й ЖИВІ рядки —
+  # money-safe (бали лишаються locked), ціна — ручна звірка. ⛔ Саме тому рецепт
+  # 06_08 §4.4 (г) забороняє оператору fail! без двох перевірок: власник, що пережив
+  # ескалацію, допише `:sent` поверх `:manual_review`, а бали, звільнені передчасним
+  # fail!, стали б подвійним зарахуванням.
   def escalate_stuck_processing!(cutoff)
     orphans = BlockchainTransaction.status_processing
                                    .where(updated_at: ...cutoff)
@@ -127,7 +134,7 @@ class StuckSentTransactionSweeperWorker
       fresh = BlockchainTransaction.find_with_partition_pruning(tx.id, tx.created_at)
       next unless fresh.status_processing?
 
-      fresh.escalate_to_review!("[ARCH.45] :processing-orphan >#{STUCK_THRESHOLD.inspect} — крах між transact і mark_as_sent; мінт міг landed → звір на Polygonscan, НЕ re-mint.")
+      fresh.escalate_to_review!("[ARCH.45] :processing-orphan >#{STUCK_THRESHOLD.inspect} без tx_hash — завис між claim і mark_as_sent: крах АБО ще живий прохід (ARCH.62). ⛔ Не fail! і не re-mint наосліп — рецепт 06_08 §4.4 (г).")
       escalated += 1
     end
 

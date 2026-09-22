@@ -50,6 +50,12 @@ Kredis.global_namespace = "silken"
 module Kredis
   class LockTimeout < StandardError; end
 
+  # 🔴 Стеля TTL, і вона МОВЧАЗНА: `expires_in` понад неї обрізається без жодного
+  # сліду, тож «підняти TTL до 600» дає 300 і виглядає виконаним. Названа константою,
+  # щоб її можна було запінити там, де TTL несе сенс (`BlockchainMintingService`,
+  # ARCH.62), а не вгадувати з тіла методу.
+  MAX_LOCK_TTL = 300
+
   # Acquire a distributed lock and yield, releasing it on completion.
   #
   # @param key [String]           Logical lock name (auto-namespaced by Kredis)
@@ -64,7 +70,7 @@ module Kredis
     redis = Kredis.redis(config: config)
     full_key = Kredis.namespaced_key(key)
     token = SecureRandom.uuid
-    ttl = expires_in.to_i.clamp(1, 300)
+    ttl = expires_in.to_i.clamp(1, MAX_LOCK_TTL)
 
     acquired = redis.set(full_key, token, nx: true, ex: ttl)
 

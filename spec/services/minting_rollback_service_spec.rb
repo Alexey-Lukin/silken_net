@@ -165,8 +165,37 @@ RSpec.describe MintingRollbackService do
       described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
 
       expect(wallet.reload.locked_balance).to eq(5_000)
-      expect(tx.reload.status).to eq("failed")
-      expect(tx.notes).to include("Спалення НЕ виконано")
+      # [ARCH.62, 2026-09-22] Статус лишається `:pending`: слеш-інтент без хеша тримає
+      # СЛЕШЕР між `create_slash_intent!` і `mark_as_sent!`, а `fail!` під живим слешем
+      # відкрив би in-flight guard для другого спалення. Несуча половина ARCH.101 —
+      # баланс не чіпається — стоїть як стояла.
+      expect(tx.reload.status).to eq("pending")
+    end
+
+    # 🔴 [ARCH.62, 2026-09-22] `:processing` без хеша — ЖИВИЙ claim мінт-сервісу (або
+    # сирота sweeper-а), не наш. Відкат звільнив би бали під трансляцією, а власник потім
+    # переписав би `:failed` на `:sent` — подвійне зарахування.
+    it "не відкочує :processing рядок без хеша — його тримає живий claim" do
+      wallet.update!(balance: 10_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :processing, locked_points: 10_000, tx_hash: nil)
+
+      described_class.call(transactions: BlockchainTransaction.where(id: tx.id))
+
+      expect(tx.reload.status).to eq("processing")
+      expect(wallet.reload.locked_balance).to eq(10_000)
+    end
+
+    it "відкочує рядок, прочитаний як :pending, лише якщо він ДОСІ :pending під row-lock" do
+      wallet.update!(balance: 10_000, locked_balance: 10_000)
+      tx = create(:blockchain_transaction, wallet: wallet, status: :pending, locked_points: 10_000, tx_hash: nil)
+      stale = BlockchainTransaction.where(id: tx.id).to_a # rollback-набір прочитано...
+      BlockchainTransaction.where(id: tx.id, created_at: tx.created_at)
+                           .update_all(status: BlockchainTransaction.statuses[:processing]) # ...а claim устиг
+
+      described_class.call(transactions: stale)
+
+      expect(tx.reload.status).to eq("processing")
+      expect(wallet.reload.locked_balance).to eq(10_000)
     end
   end
 
