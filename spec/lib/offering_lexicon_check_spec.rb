@@ -195,7 +195,7 @@ RSpec.describe OfferingLexicon do
     it "does NOT fail on the two ratified ⛔ sites" do
       with_tree(
         "app/views/components/contracts/show.rb" => %(t(".legal.early_exit_fee")\n),
-        "db/seeds.rb" => %(cancellation_terms: { "early_exit_fee_percent" => 15 }\n)
+        "app/models/naas_contract.rb" => %(store_accessor :cancellation_terms, :early_exit_fee_percent\n)
       ) do |root|
         expect(described_class.audit(root)[:hard]).to be_empty
       end
@@ -208,7 +208,7 @@ RSpec.describe OfferingLexicon do
     end
 
     it "does NOT amnesty a different offering term at a ratified site" do
-      with_tree("db/seeds.rb" => %(investor_id: 1\n)) do |root|
+      with_tree("app/models/naas_contract.rb" => %(investor_id: 1\n)) do |root|
         expect(described_class.audit(root)[:hard].size).to eq(1)
       end
     end
@@ -240,7 +240,7 @@ RSpec.describe OfferingLexicon do
   describe ".dead_exemptions" do
     it "names an exemption that matched nothing, so it cannot outlive its verdict" do
       expect(described_class.dead_exemptions([]))
-        .to include(a_string_including("db/seeds.rb", "early-exit fee framing"))
+        .to include(a_string_including("app/models/naas_contract.rb", "early-exit fee framing"))
     end
 
     it "stays silent once every declared exemption has a live hit" do

@@ -255,7 +255,6 @@ module OfferingLexicon
   #     THE RECORD, because a historical contract must show the term it was signed under
   #     (⛔ 00_07 BIZ.22; the fee itself was removed from the product by ⚖️ Option 1,
   #     founder 2026-08-29, msa_skeleton §B.6.3).
-  #   · db/seeds.rb — the sibling seed value, held pending a founder's word (00_07 BIZ.22).
   #   · app/models/naas_contract.rb — the `store_accessor` that DECLARES that column. It is
   #     the data source the view above renders, so exempting one without the other would
   #     make the ⛔ unreachable rather than honoured.
@@ -268,7 +267,6 @@ module OfferingLexicon
   # збудував: на чому він упаде хибно»).
   RATIFIED_CODE_SITES = {
     "app/views/components/contracts/show.rb"          => [ "early-exit fee framing" ],
-    "db/seeds.rb"                                     => [ "early-exit fee framing" ],
     "app/models/naas_contract.rb"                     => [ "early-exit fee framing" ],
     "app/services/blockchain_burning_service.rb"      => [ "investor/investment framing" ]
   }.freeze
