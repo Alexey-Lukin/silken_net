@@ -22,14 +22,20 @@ HS) · Ce⁴⁺/Ce³⁺ (f⁰/f¹). B3LYP/6-31G(d)+lanl2dz(Cu,Co)/stuttgart_rsc(
 cross-SPs seeded from the diagonal density (prevents SCF collapse, script 29 pattern).
 
 HONEST LIMITS (I own these): aquo ≠ the exact ZIF-N shell; Cu(I) prefers low
-coordination and Ce has an f-electron → those geom-opts can misbehave. Each metal
+coordination and Ce has an f-electron → those geom-opts can misbehave. ⚠️ That is
+not hypothetical for Cu: the shipped cache carries NO Cu row, and the consumer
+(script 25) hard-codes the literature λ(Cu) instead. A full run of this script
+WILL emit one (`which = … or list(METALS)`), and the unphysical branch still
+writes a row with `lambda_use_eV` = lit — so 25 derives its Cu provenance line
+FROM this cache rather than asserting the absence, and announces a physical Cu
+row as a stale fallback. Read 25's provenance output after any run here. Each metal
 reports a physicality check; where the 4-point is unphysical, the literature
 self-exchange λ is used as fallback (flagged). Rigorous λ + diabatic coupling = CDFT
 capstone (школа Мінаєва). Sequential, no density_fit (feedback_*). Cache-skip via
 metal_reorganization.json.
 
 Run:  python tools/in_silico/scripts/35_dft_metal_reorganization.py co   # pre-check one metal
-      python tools/in_silico/scripts/35_dft_metal_reorganization.py        # all three
+      python tools/in_silico/scripts/35_dft_metal_reorganization.py        # every key in METALS
 """
 from __future__ import annotations
 

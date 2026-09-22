@@ -11,7 +11,7 @@
     "Ru": 0.7806
   },
   "lambda_computed_provenance": {
-    "Cu": "LITERATURE, NOT COMPUTED \u2014 script 35 has no Cu row (Cu(I) d\u00b9\u2070 hexa-aqua optimisation is unphysical); this is LAMBDA_LIT['Cu']",
+    "Cu": "LITERATURE, NOT COMPUTED \u2014 script 35 emitted no Cu row (Cu(I) d\u00b9\u2070 hexa-aqua optimisation is unphysical); this is LAMBDA_LIT['Cu']",
     "Co": "computed \u2014 script 35 row `co_nh3` (ammine = the ZIF N-donor analogue)",
     "Ce": "computed \u2014 script 35 row `ce`",
     "Ru": "computed \u2014 script 35 row `ru`"

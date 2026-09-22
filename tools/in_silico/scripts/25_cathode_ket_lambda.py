@@ -47,12 +47,21 @@ def _load_tij() -> dict[str, float]:
 def _load_lambda_computed() -> tuple[dict[str, float], dict[str, str]]:
     """λ per metal for the "computed" scenarios, WITH per-metal provenance.
 
-    Not every entry is computed, and the key name alone says the opposite. Script 35
-    has no Cu row — Cu(I) d¹⁰ hexa-aqua optimisation is unphysical — so Cu falls back
-    to `LAMBDA_LIT`. The docstring knew that; the emitted cache did not, and the cache
-    is what the canon quotes. The returned provenance map rides beside the numbers so
-    a reader of the JSON sees which half is a measurement (the absence is DRAWN, not
-    left to a default that reads like a result).
+    Not every entry is computed, and the key name alone says the opposite. Cu falls
+    back to `LAMBDA_LIT` — a Cu(I) d¹⁰ hexa-aqua optimisation is unphysical. The
+    docstring knew that; the emitted cache did not, and the cache is what the canon
+    quotes. The returned provenance map rides beside the numbers so a reader of the
+    JSON sees which half is a measurement (the absence is DRAWN, not left to a
+    default that reads like a result).
+
+    🔴 The Cu provenance line is DERIVED from the cache, never typed. It used to state
+    «script 35 has no Cu row» as a fact about ANOTHER artefact — true on the day it was
+    written, and false after the first full run of 35, whose `which = … or list(METALS)`
+    includes `cu` and whose unphysical branch still emits a row (with `lambda_use_eV`
+    = lit). The number here is safe either way, because this fallback is hard-coded;
+    what was not safe is the SENTENCE, and nothing could have reddened it. A third
+    state — 35 emitting a Cu row that PASSES its physicality check — makes this
+    hard-coded fallback stale, so it is announced loudly rather than absorbed.
     """
     res = json.loads((CACHE / "metal_reorganization.json").read_text())["results"]
     by_name = {r["name"]: float(r["lambda_use_eV"]) for r in res}
@@ -63,9 +72,21 @@ def _load_lambda_computed() -> tuple[dict[str, float], dict[str, str]]:
         "Ce": by_name["ce"],
         "Ru": by_name["ru"],
     }
+    cu_row = next((r for r in res if r.get("name") == "cu"), None)
+    if cu_row is None:
+        cu_prov = ("LITERATURE, NOT COMPUTED — script 35 emitted no Cu row (Cu(I) d¹⁰ "
+                   "hexa-aqua optimisation is unphysical); this is LAMBDA_LIT['Cu']")
+    elif not cu_row.get("physical"):
+        cu_prov = ("LITERATURE, NOT COMPUTED — script 35 DID emit a Cu row and flagged it "
+                   f"unphysical (λ_computed = {cu_row.get('lambda_computed_eV')} eV); "
+                   "this is LAMBDA_LIT['Cu']")
+    else:
+        cu_prov = ("⚠️ STALE FALLBACK — script 35 now emits a PHYSICAL Cu row "
+                   f"(λ_computed = {cu_row.get('lambda_computed_eV')} eV), so this "
+                   "hard-coded LAMBDA_LIT['Cu'] no longer reflects the pipeline and the "
+                   "bottleneck λ must be re-judged (00_07 HW.5.IS)")
     provenance = {
-        "Cu": "LITERATURE, NOT COMPUTED — script 35 has no Cu row (Cu(I) d¹⁰ hexa-aqua "
-              "optimisation is unphysical); this is LAMBDA_LIT['Cu']",
+        "Cu": cu_prov,
         "Co": f"computed — script 35 row `{co_row}` (ammine = the ZIF N-donor analogue)",
         "Ce": "computed — script 35 row `ce`",
         "Ru": "computed — script 35 row `ru`",
