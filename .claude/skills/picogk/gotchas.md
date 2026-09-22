@@ -137,6 +137,13 @@
     title-block cells cut at a measured budget **and say `… → NOTES`** — silent truncation and silent
     overflow were the same defect in opposite directions; and `DxfSafe` escaping covers the non-ASCII
     glyphs the shipped manifests carry.
+    ⊕ **Операційна половина того ж плейсхолдера, і вона вказує ГЕТЬ від причини** (2026-09-22): рядок
+    `UNTRACKED (set CAD_REV=…)` ДОВШИЙ за `rev <sha>`, тож перегенерація аркуша галереї без `CAD_REV`
+    валить пін `AssertEveryLineIsInsideTheFrame` — «runs off the 820-wide frame». Повідомлення називає
+    РАМКУ, тобто читається як «нота, яку ти щойно дописав, не влізла», і посилає правити текст, що
+    цілком невинний. **Рефлекс: перед `draw` будь-якого аркуша, що піде в `docs/images/cad/`, —
+    `export CAD_REV=$(git rev-parse --short HEAD)`**; діагностика, коли вже червоне: грепни `rev ` у
+    згенерованому SVG, і якщо там `UNTRACKED`, текст ні до чого.
     ⚠️ Cyrillic stays escaped as `\U+XXXX` **deliberately** — that is standard DXF Unicode encoding,
     not corruption, and transliterating a part name would lose meaning for cosmetics.
     🔑 **The pin that closes the whole class is the ROUND-TRIP one** (`Shipped_Cem_Notes_Reach_The_Dxf_Verbatim`):

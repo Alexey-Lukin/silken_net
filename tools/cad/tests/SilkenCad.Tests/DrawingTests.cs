@@ -478,7 +478,13 @@ public class DrawingTests
         Assert.Contains("Sa 0.5-5 um", sf);        // EAAE micro scale (01_02 §1.2)
         Assert.Contains("Sv 50-500 nm", sf);       // EAAE nano scale
         Assert.Contains("outer jacket", sf!);      // the PEP surface is NAMED, not implied
-        Assert.Contains("NO PEP", sf!);            // …and the catalytic face is fenced off from it
+        // 🔴 2026-09-22 (00_07 HW.2): this line asserted the literal "NO PEP", i.e. it was keyed to the
+        // same PROCESS NAME the instruction was — so it did not merely allow the narrow form, it PINNED
+        // it, and a ban named after one process leaves electropolishing, tumbling and abrasive-flow
+        // formally permitted on a face whose whole point is ECSA. The ban now stands on the EFFECT, and
+        // this pin demands BOTH halves: the effect-keyed prohibition, and PEP enumerated inside it.
+        Assert.Contains("NO SMOOTHING OR POLISHING", sf!);
+        Assert.Contains("PEP", sf!);
     }
 
     // ⚖️ 00_07 HW.34 (delegated verdict 2026-09-12): the bus-channel ENTRY edge carries a RADIUS, not a chamfer,
