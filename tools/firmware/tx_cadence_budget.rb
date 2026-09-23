@@ -11,7 +11,7 @@
 #
 # Pure Ruby (no Rails / no bundle). Виклик:
 #   ruby tools/firmware/tx_cadence_budget.rb            # H для обох ер кадру + смуга m(Δt)
-#   ruby tools/firmware/tx_cadence_budget.rb --levers   # ціна трьох важелів розвилки ARCH.8
+#   ruby tools/firmware/tx_cadence_budget.rb --levers   # ціна чотирьох важелів розвилки ARCH.8
 #   ruby tools/firmware/tx_cadence_budget.rb --assert   # гейт: модель відтворює надруковані числа
 #   ruby tools/firmware/tx_cadence_budget.rb p_gen_uw=17.13   # override будь-якого параметра
 #
