@@ -53,7 +53,9 @@
 #    кожна окремою посадкою дефекту в реальний маніфест і відкотом:
 #      · поле без запису · невідомий клас · порожній `from:` (для ВСІХ класів, не лише `derived`:
 #        підстава без джерела є голим твердженням) · канон-адреса, що не резолвиться ·
-#        `canon_ground: false` без пункту-власника.
+#        `canon_ground: false` без пункту-власника · ⊕ число, записане РЯДКОМ (2026-09-23, HW.34):
+#        до правки гейт зелений над трьома такими полями, після — RED рівно на них, з іменами, після
+#        записів — GREEN; рядок-ярлик посадки (`fit`) у числа не потрапляє.
 #    ⛔ І шостою віссю доти помилково називали «знятий запис яруса `name`» — це не вісь, а ЧАСТКОВЕ
 #    спрацювання першої, причому в найгіршу сторону: зняття `name`-запису червонить лише ті поля,
 #    що стояли САМЕ на ньому, а поля, які мають ще й запис на `kind`, мовчки падають на чужу
@@ -92,6 +94,16 @@ SKIP_KEYS = %w[kind name].freeze
 #    OWN perimeter. That is the self-answering perimeter `00_06 §3` warns about, committed inside
 #    the instrument built against it. ⛔ Index the element by `[i]` so a record addresses one
 #    feature, not the array.
+# 🔴 THE SAME BLINDNESS A SECOND TIME, on the TYPE axis (2026-09-23, `00_07` HW.34): a number written as a
+#    JSON STRING is not `Numeric`, so it fell through every branch in silence. Live instances — exactly the
+#    GD&T values `Drawing.cs` prints as `Concentricity: ⌀…` / `Runout: …`: the schema types them `string?`,
+#    so the flange and the sleeve printed a concentricity no record grounded, and the one live `from:` that
+#    described it sat on a NEIGHBOURING field with the same digits. ⛔ Only a string that IS a bare number
+#    is taken — a fit label or a prose note is text, and must stay out of a gate about numbers.
+NUMERIC_STRING = /\A[-+]?\d+(?:\.\d+)?\z/
+
+def number_like?(v) = v.is_a?(Numeric) || (v.is_a?(String) && v.match?(NUMERIC_STRING))
+
 def numeric_fields(obj, prefix = "")
   obj.each_with_object({}) do |(k, v), acc|
     next if k.start_with?("_") || SKIP_KEYS.include?(k)
@@ -101,12 +113,11 @@ def numeric_fields(obj, prefix = "")
     when Hash then acc.merge!(numeric_fields(v, "#{path}."))
     when Array
       v.each_with_index do |el, i|
-        case el
-        when Hash then acc.merge!(numeric_fields(el, "#{path}[#{i}]."))
-        when Numeric then acc["#{path}[#{i}]"] = el
+        if el.is_a?(Hash) then acc.merge!(numeric_fields(el, "#{path}[#{i}]."))
+        elsif number_like?(el) then acc["#{path}[#{i}]"] = el
         end
       end
-    when Numeric then acc[path] = v
+    else acc[path] = v if number_like?(v)
     end
   end
 end

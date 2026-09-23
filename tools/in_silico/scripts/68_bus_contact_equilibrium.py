@@ -13,8 +13,10 @@ since: it lives in `lib.beam_contact` (one home) and both scripts import it.
 
 WHAT STAYS HERE. The sweeps that price what script 55 does not model: a static RADIAL OFFSET and a
 TILT of the channel axis relative to the root axis, an off-axis pogo contact, the fit's play. Both
-offset and tilt are tolerance-stack quantities (each of cem/cathode_flange.json and cem/zone2_sleeve.json
-declares its own concentricity), and neither is computed anywhere in the tree.
+offset and tilt are tolerance-stack quantities, and neither is computed anywhere in the tree. The one
+stack member that has a number is the flange's own: ⌀0.05 concentricity (a Ø-zone as printed, so an
+axis offset ≤ 25 µm — the WHOLE nominal radial play of the channel by itself) with no ground behind it
+(cem/_provenance.json, 00_07 HW.34). The sleeve's ⌀0.05 is not a member: its datum is its own bore.
 
 ⚠️ READ THE GEOMETRY AXIS BEFORE ANY NUMBER. The unsupported PEEK gap — which sets both the mouth
 station and the rod length — is derived in script 55 from `Z1_INSERTION_MM = 30`, an HW.8 PLACEHOLDER

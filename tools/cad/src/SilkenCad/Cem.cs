@@ -84,7 +84,11 @@ internal sealed record ToleranceSpec
     // mating bore/flange; the lattice bulk gets no GD&T).
     public string? PrimaryDatum { get; init; }         // e.g. "bore axis"
     public string? SecondaryDatum { get; init; }       // e.g. "flange face"
-    public string? ConcentricityMm { get; init; }      // e.g. "0.05"
+    // ⚠️ READ AS PRINTED, because the sheet is what the shop executes: `Drawing` prefixes concentricity with
+    // `⌀` — an ISO 1101 zone DIAMETER, so the axis offset it allows is HALF the value — and prints runout
+    // bare, a full indicator movement (FIM = 2e for pure eccentricity, again half). Both are STRINGS, and a
+    // number in a string is still a number: `scripts/cem_provenance.rb` demands a ground for it (00_07 HW.34).
+    public string? ConcentricityMm { get; init; }
     public string? RunoutMm { get; init; }
 }
 

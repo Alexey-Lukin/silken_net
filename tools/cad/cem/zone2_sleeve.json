@@ -10,7 +10,6 @@
     "fit": "NO TABLE CLASS - canon 01_01 4.2 names H7/s6, but the 5-34 um diametral band on this block is the ISO 286 H7/r6 read on O11 (r6 +23/+34); H7/s6 there gives 10-39 um (s6 +28/+39). Neither is ratified: the band is to be solved from the Lame window (2026-09-18, 00_07 HW.3 - floor: the fit still holds at +40 C; ceiling: PEEK von Mises at -30 C) and only its inputs are open; 5-34 stays the tree's working input until then, although at its MIN it lies BELOW that floor",
     "interference_min_um": 5,
     "interference_max_um": 34,
-    "clearance_mm": 0.05,
     "features": [
       { "feature": "bore" }
     ],
