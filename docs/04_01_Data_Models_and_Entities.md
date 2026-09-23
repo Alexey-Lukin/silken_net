@@ -1387,7 +1387,7 @@ active/draft ──cancel──► cancelled
 | `inspection` | 1 | Плановий огляд |
 | `cleaning` | 2 | Очищення панелей і датчиків |
 | `repair` | 3 | Ремонт обладнання |
-| `decommissioning` | 4 | Демонтаж |
+| `decommissioning` | 4 | Демонтаж. ⚠️ **Одна рука, і це вихід дерева з флоту:** `EcosystemHealingWorker` робить дерево `removed` уже при СТВОРЕННІ запису — без підпису й без фото (фото вимагають лише `repair`/`installation`, `#evidence_backed?`), а гілка смерті слешингу рахує `removed` поруч із `deceased` ([`05_05 §3`](05_05_Slashing_and_Risk_Policy)). Ризик у бік заниження (бенефіціарові шкодити собі невигідно); чия друга рука оформлює смерть, що прийшла тишею, — [`00_07`](00_07_Action_Plan_Tracker) SLASH-1 (виміряно 2026-09-23) |
 | `biomass_extraction` | 5 | Вилучення біомаси (Puro.earth Biochar) |
 
 **Ключові поля:**
