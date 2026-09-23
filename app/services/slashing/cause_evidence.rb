@@ -43,17 +43,53 @@ module Slashing
       @source_tree = source_tree
     end
 
-    # ≥1 прямий доказ Категорії A. Сьогодні = tamper (розкриття корпусу).
+    # ≥1 прямий доказ Категорії A, ще не відпрацьований слешем сусіда. Сьогодні = tamper.
     def positive_a?
-      tamper_breach?
+      live_evidence&.exists? || false
+    end
+
+    # Доказ у межах Є, але після кожного вже записано спалення за СИБЛІНГОВИМ договором цього
+    # кластера → вирок морозиться з власною причиною, а не «доказу немає» (той збрехав би).
+    def spent?
+      evidence&.exists? && !positive_a? || false
     end
 
     # Символ-причина для аудиту/логу (nil, якщо доказу A немає).
     def reason
-      :tamper if tamper_breach?
+      :tamper if positive_a?
     end
 
     private
+
+    # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-23] ОДНА ШКОДА — ОДИН СЛЕШ НА КЛАСТЕР. Тригери смерті
+    # дерева, dClimate і добовий health-check ставлять burn на КОЖЕН чинний договір кластера,
+    # а база слешингу-за-провину — увесь кластер без вікна; тож два договори на одному доказі
+    # спалювали ті самі монети двічі (одночасно — з тієї самої бази, послідовно — з уже
+    # зменшеної, `r·(B − r·B)`). Доказ «витрачено», щойно в реєстрі є не-`:failed` слеш-інтент
+    # сусіднього договору, СТВОРЕНИЙ ПІСЛЯ нього. Це ПОХІДНЕ з реєстру, а не запис:
+    # «споживання» записом у тривогу відкинуто 2026-09-22 (`05_05 §3.2`), а тут revert
+    # сусіда (`:failed`) повертає доказ до життя сам. Свої інтенти договору не рахуються —
+    # їх тримає in-flight гард сервісу (відновлення ARCH.45/48).
+    # ⚠️ Несуче МІСЦЕ читання: авторитетно предикат читається в ОДНІЙ транзакції зі
+    # створенням інтенту під рядковим локом кластера (`BlockchainBurningService#claim_verdict!`),
+    # інакше два договори проходять ворота раніше, ніж хтось створить інтент. ⚠️ Стеля: ідентичність шкоди = мить ЗАПИСУ доказу — новий
+    # запис після слешу знову відчиняє ворота сусідам.
+    def live_evidence
+      scope = evidence
+      return unless scope
+
+      spent_at = sibling_slash_at(@evidence_window.begin)
+      spent_at ? scope.where("ews_alerts.created_at > ?", spent_at) : scope
+    end
+
+    def sibling_slash_at(since)
+      BlockchainTransaction
+        .where(sourceable_type: BlockchainTransaction::BURN_SOURCEABLE_TYPE,
+               sourceable_id: @cluster.naas_contracts.where.not(id: @contract.id).select(:id),
+               direction: :burn, created_at: since..)
+        .where("blockchain_transactions.status IS DISTINCT FROM ?", BlockchainTransaction.statuses[:failed])
+        .maximum(:created_at)
+    end
 
     # Tamper / розкриття корпусу: живий critical-алерт `vandalism_breach` — однозначна
     # ознака людського втручання (Категорія A, `05_05 §6` hardware tamper → авто-A).
@@ -72,20 +108,20 @@ module Slashing
     #     інцидент довів доказ, тож без строку він відчиняв би їх для будь-якого пізнішого,
     #     не повʼязаного тригера (природна посуха через пів року → незворотний слеш).
     #     Рецепт `06_08 §4.6` проганяє вирок інциденту одразу після ескалації.
-    # Одноразовість усередині договору тримає не доказ, а РЕЄСТР: `BurnCarbonTokensWorker`
-    # мовчить на `:sent`/`:confirmed` burn-інтенті без горизонту, сервіс — на `:manual_review`.
+    # Одноразовість тримає не доказ, а РЕЄСТР: усередині договору — `BurnCarbonTokensWorker`
+    # мовчить на `:sent`/`:confirmed` burn-інтенті без горизонту, сервіс — на `:manual_review`;
+    # між договорами кластера — `live_evidence` вище.
     # Хибний або відсутній вхід (нема дат, строк 0) дає «доказу немає» → freeze, ніколи burn.
     # ⚠️ Стеля: `created_at` — мить ЗАПИСУ доказу аудитором, не інциденту; інцидент під
     # договором, що встиг скінчитись до запису, ляже на договір, чинний у мить запису, а сам
     # скінчений не горить.
-    def tamper_breach?
-      window = evidence_window
-      return false unless window
+    def evidence
+      window = (@evidence_window ||= evidence_window)
+      return unless window
 
       @cluster.ews_alerts.critical
               .where(alert_type: EwsAlert::CATEGORY_A_EVIDENCE_TYPES)
               .where(created_at: window)
-              .exists?
     end
 
     def evidence_window

@@ -73,6 +73,15 @@ RSpec.describe "Cluster-level field_audit key registry", type: :model do
       "внеси кожен у SILENCE_ASSERTING_KEYS або VERDICT_HELD_KEYS (ews_alert.rb)"
   end
 
+  # Стеля (1) гейта вище — динамічні ключі статично не видно — тут закрита ПЕРЕЛІКОМ:
+  # розгортки `BlockchainBurningService#freeze_for_field_audit!` (привід × субʼєкт) і
+  # `#escalate_evasion!` ескалюються на рівні кластера, тож класифіковані мусять бути ВСІ.
+  it "класифікує кожну розгортку динамічних slash-ключів" do
+    frozen = %w[no_evidence indeterminate evidence_spent].product(%w[cluster tree])
+                                                          .map { |magnitude, subject| "slash_frozen_#{magnitude}_#{subject}" }
+    expect(EwsAlert::VERDICT_HELD_KEYS).to include(*frozen, "slash_evasion_cluster", "slash_evasion_tree")
+  end
+
   it "кожен ключ реєстру має текст у КОЖНІЙ локалі" do
     missing = I18n.available_locales.flat_map { |locale|
       registry.filter_map { |key|

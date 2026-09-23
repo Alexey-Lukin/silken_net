@@ -244,7 +244,8 @@ class BlockchainTransaction < ApplicationRecord
   # розміру — [`05_05 §3`](../../docs/05_05_Slashing_and_Risk_Policy.md)). Рід
   # операції ⊥ її причина: `slash` і `esg_retirement` обидва `direction: :burn`,
   # але лише перший несе `sourceable: NaasContract`.
-  # Живий споживач один — інваріант `slash_intent_must_be_a_burn` нижче.
+  # Живих споживачів два — інваріант `slash_intent_must_be_a_burn` нижче й межа «одна
+  # шкода — один слеш на кластер» у `Slashing::CauseEvidence`.
   BURN_SOURCEABLE_TYPE = "NaasContract"
 
   # [ARCH.95 ⚖️ 2026-08-25] Напрямок руху коштів — ЯВНА колонка, не деривація.
@@ -422,8 +423,8 @@ class BlockchainTransaction < ApplicationRecord
   #
   # Ціна названа: писач, що забуде `direction: :burn` на slash-шляху, дістане ГУЧНУ
   # відмову замість тихого завищення емісії — а завищення тут годує L1-якір і базу
-  # розміру спалення. Це також єдиний живий споживач `BURN_SOURCEABLE_TYPE` після
-  # того, як напрямок переїхав у колонку.
+  # розміру спалення. Це також один із двох живих споживачів `BURN_SOURCEABLE_TYPE` після
+  # того, як напрямок переїхав у колонку (другий — `Slashing::CauseEvidence`).
   validate :slash_intent_must_be_a_burn
 
   def slash_intent_must_be_a_burn

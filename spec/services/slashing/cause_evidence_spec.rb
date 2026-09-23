@@ -119,6 +119,76 @@ RSpec.describe Slashing::CauseEvidence do
     end
   end
 
+  # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-23] ОДНА ШКОДА — ОДИН СЛЕШ НА КЛАСТЕР. Доказ «витрачено»
+  # похідно з реєстру: не-`:failed` слеш-інтент СУСІДНЬОГО договору, створений після доказу.
+  describe "one harm — one slash per cluster" do
+    let(:sibling) { create(:naas_contract, cluster: cluster, organization: cluster.organization, start_date: 1.month.ago) }
+    let!(:tamper) do
+      create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :vandalism_breach,
+                         status: :active, created_at: 3.hours.ago)
+    end
+
+    def slash_intent(on:, status:, at:)
+      create(:blockchain_transaction, wallet: nil, cluster: cluster, sourceable: on, direction: :burn,
+                                      token_type: :carbon_coin, amount: 10, status: status, created_at: at,
+                                      tx_hash: (status.in?(%i[sent confirmed]) ? "0x#{SecureRandom.hex(32)}" : nil))
+    end
+
+    %i[pending sent confirmed manual_review].each do |status|
+      it "is SPENT by a sibling's #{status} slash intent recorded after the evidence" do
+        slash_intent(on: sibling, status: status, at: 1.hour.ago)
+
+        expect(evidence.positive_a?).to be(false)
+        expect(evidence.spent?).to be(true)
+      end
+    end
+
+    # Негативний пін ліку: revert сусіда (`:failed`) повертає доказ до життя сам — без запису.
+    it "is ALIVE again when the sibling's slash failed (revert revives the evidence)" do
+      slash_intent(on: sibling, status: :failed, at: 1.hour.ago)
+
+      expect(evidence.positive_a?).to be(true)
+      expect(evidence.spent?).to be(false)
+    end
+
+    # Нижня межа скану реєстру — початок вікна доказу, не «нещодавно»: інтент через добу-дві
+    # після ескалації однаково витрачає її.
+    it "is SPENT by a sibling intent recorded days after the evidence (scan bound = evidence window)" do
+      tamper.update_column(:created_at, 100.hours.ago)
+      slash_intent(on: sibling, status: :confirmed, at: 99.hours.ago)
+
+      expect(evidence.spent?).to be(true)
+    end
+
+    it "is ALIVE for evidence recorded AFTER the sibling's slash (a new record reopens the gate)" do
+      slash_intent(on: sibling, status: :confirmed, at: 4.hours.ago)
+
+      expect(evidence.positive_a?).to be(true)
+    end
+
+    # Свої інтенти тримає in-flight гард сервісу (відновлення ARCH.45/48), не ворота.
+    it "ignores this contract's OWN slash intent" do
+      slash_intent(on: contract, status: :pending, at: 1.hour.ago)
+
+      expect(evidence.positive_a?).to be(true)
+    end
+
+    it "ignores a slash under a contract of ANOTHER cluster" do
+      other = create(:cluster, organization: cluster.organization)
+      foreign = create(:naas_contract, cluster: other, organization: cluster.organization, start_date: 1.month.ago)
+      slash_intent(on: foreign, status: :confirmed, at: 1.hour.ago)
+
+      expect(evidence.positive_a?).to be(true)
+    end
+
+    it "is not SPENT when there is no evidence at all (the freeze says «no evidence», not «spent»)" do
+      tamper.update_column(:status, EwsAlert.statuses[:resolved])
+      slash_intent(on: sibling, status: :confirmed, at: 1.hour.ago)
+
+      expect(evidence.spent?).to be(false)
+    end
+  end
+
   describe "#reason" do
     it "is :tamper when tamper evidence is present" do
       create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :vandalism_breach, status: :active)

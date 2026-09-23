@@ -431,8 +431,13 @@ class EwsAlert < ApplicationRecord
   VERDICT_HELD_KEYS = %w[
     cluster_small_sample_degradation
     slash_frozen_indeterminate_cluster
+    slash_frozen_indeterminate_tree
     slash_frozen_no_evidence_cluster
+    slash_frozen_no_evidence_tree
+    slash_frozen_evidence_spent_cluster
+    slash_frozen_evidence_spent_tree
     slash_evasion_cluster
+    slash_evasion_tree
     insurance_candidate_armed
     obscured_critical_fire
     non_fire_peril

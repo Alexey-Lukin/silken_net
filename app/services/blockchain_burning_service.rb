@@ -39,11 +39,15 @@ class BlockchainBurningService < ApplicationService
   # подвійний необоротний slashUpTo. Партиційний partial-UNIQUE-index неможливий
   # (PARTITION BY RANGE(created_at) вимагає partition-key в unique — вбиває dedup-семантику),
   # `unique_for` = Sidekiq Enterprise (шим no-op, 04_02 DOC-R.10 — познач залежність,
-  # не костиль). Тому non-blocking per-contract claim через Kredis.lock (SET NX + UUID-токен
+  # не костиль). Тому non-blocking claim через Kredis.lock (SET NX + UUID-токен
   # + CAS-release — безумовний delete після TTL-експірі знімав би ЧУЖИЙ claim) навколо
   # вікна guard→transact→mark_as_sent; конкурент → Kredis::LockTimeout → Sidekiq-retry,
   # який уже бачить інтент переможця (:sent → re-arm; stale :pending → supersede).
   # TTL страхує hard-kill; CAS-release не блокує легітимний наступний прохід.
+  # ⚠️ Стеля claim'а — TTL: RPC усередині вікна (`balanceOf`, KMS, fee) можуть висіти довше.
+  # Тож «одна шкода — один слеш» МІЖ договорами кластера на нього НЕ спирається — її тримає
+  # СТАН (`#claim_verdict!`: перевірка воріт і створення інтенту в одній транзакції під
+  # рядковим локом кластера), рівно за присудом ARCH.62 «гарантія — стан, не час».
   SLASH_CLAIM_TTL = 2.minutes
 
   # [05_05 §3 Slashing curve — DAO-governed via SystemParameter ← ProtocolParameters.sol (05_03)]
@@ -195,13 +199,14 @@ class BlockchainBurningService < ApplicationService
     # Необоротний slash() лише за прямого доказу Кат-A (tamper); інакше freeze (Field Audit,
     # Кат-C) — відновлює канон-дефолт §2 «freeze-поки-не-A», а не палить-поки-не-відведено.
     # Контрактна форфейтура (early-exit) — свідомий виняток. Freeze дзеркалить flag_data_blackout!.
-    unless @contractual || positive_a_evidence?
-      return freeze_for_field_audit!
-    end
+    missing = missing_category_a
+    return freeze_for_field_audit!(reason: missing) if missing
 
     # [ARCH.53 TOCTOU] Non-blocking claim НАВКОЛО вікна guard→transact→mark_as_sent (шапка
     # класу). Конфлікт → Kredis::LockTimeout ЗВІДСИ (поза step-3 begin/rescue) → без
     # audit-сміття і хибного system_fault, чистий Sidekiq-retry.
+    # 🔴 [SLASH-1] Ворота вище — лише швидкий шлях freeze. Авторитетне читання — у
+    # `#claim_verdict!`, упритул до створення інтенту.
     Kredis.lock("slash:claim:#{@naas_contract.id}", expires_in: SLASH_CLAIM_TTL) do
       execute_slash!(total_minted_amount)
     end
@@ -295,6 +300,26 @@ class BlockchainBurningService < ApplicationService
 
     amount_in_wei = Web3::WeiConverter.to_wei(effective_burn, TOKEN_DECIMALS)
 
+    # 🔴 [SLASH-1] Цей рядок їде в `notes` ГРОШОВОГО рядка, який рендериться КЛІЄНТОВІ,
+    # тож вердикт читається першим. Доти обидві гілки писали «🚨 SLASHING … порушення»
+    # навіть за добровільний early-exit — тобто платформа звинувачувала замовника в
+    # його ж власному рішенні, на поверхні, яку він бачить. Дискримінатор `@contractual`
+    # уже стояв за кілька рядків вище (у `verdict:` audit-ланцюга) і сюди не доїжджав.
+    reason = if @contractual
+               "дострокове завершення за ініціативою замовника (погоджена умова договору)"
+    elsif @source_tree
+               "загибель дерева #{@source_tree.did}"
+    else
+               "порушення умов кластера"
+    end
+
+    # [ARCH.45] Durable intent-marker (:pending, sourceable: contract) ПЕРЕД on-chain slash —
+    # і ПІСЛЯ усіх RPC вироку: авторитетне читання воріт стоїть упритул до нього (`#claim_verdict!`).
+    # На краху retry бачить інтент через in-flight guard (вгорі) і не палить удруге.
+    # [SLASH.2] Записуємо effective_burn (on-chain-реалістичний), не pre-tax burn_amount.
+    audit, missing = claim_verdict!(effective_burn, reason)
+    return freeze_for_field_audit!(reason: missing) if missing
+
     # [ARCH.57] Slash-вердикт (ПРИЧИНА) в audit-ланцюг: MRV.1 логує лише tx-переходи (РУХ
     # коштів), а тут фіксується ЧОМУ — contractual vs positive-A + розміри. ДО broadcast:
     # вирок зафіксований незалежно від долі транзакції (її життя доскаже MRV.1).
@@ -315,30 +340,12 @@ class BlockchainBurningService < ApplicationService
     # 3. ВИКОНАННЯ (The Verdict)
     lock_key = "lock:web3:oracle:#{signer.address}"
 
-    audit = nil
     begin
       tx_hash = nil
       outcome = nil
-      # 🔴 [SLASH-1] Цей рядок їде в `notes` ГРОШОВОГО рядка, який рендериться КЛІЄНТОВІ,
-      # тож вердикт читається першим. Доти обидві гілки писали «🚨 SLASHING … порушення»
-      # навіть за добровільний early-exit — тобто платформа звинувачувала замовника в
-      # його ж власному рішенні, на поверхні, яку він бачить. Дискримінатор `@contractual`
-      # уже стояв за кілька рядків вище (у `verdict:` audit-ланцюга) і сюди не доїжджав.
-      reason = if @contractual
-                 "дострокове завершення за ініціативою замовника (погоджена умова договору)"
-      elsif @source_tree
-                 "загибель дерева #{@source_tree.did}"
-      else
-                 "порушення умов кластера"
-      end
-
       clamp_note = effective_burn < burn_amount ? " (clamp з #{burn_amount} до on-chain балансу)" : ""
       Rails.logger.warn "🔥 [Slashing] Вилучення #{effective_burn}/#{total_minted_amount} SCC#{clamp_note} (damage #{(damage_ratio * 100).round(1)}% → slash #{(slash_ratio * 100).round(1)}%, 05_05 §3 γ=#{slash_gamma}) у #{@organization.name}. Причина: #{reason}."
 
-      # [ARCH.45] Durable intent-marker (:pending, sourceable: contract) ПЕРЕД on-chain slash.
-      # На краху retry бачить його через in-flight guard (вгорі) і не палить удруге.
-      # [SLASH.2] Записуємо effective_burn (on-chain-реалістичний), не pre-tax burn_amount.
-      audit = create_slash_intent!(effective_burn, reason)
       SilkenNet::Metrics::SLASH_ATTEMPTS_TOTAL.increment
 
       # [ВИПРАВЛЕНО: Lock Duration]: 30 секунд достатньо для transact() (fire-and-forget,
@@ -348,8 +355,8 @@ class BlockchainBurningService < ApplicationService
       # їх робить ШІСТЬ (освіження fee ×2 · estimate · balance · nonce · sendRaw),
       # тож тут запас під 30-секундним локом вужчий, ніж каже рядок вище — і це
       # шлях СЛЕШИНГУ. ⚖️ Число не є грошовим параметром (`00_07` ARCH.62, присуд
-      # «ЖОДНОГО» 2026-09-22): подвійне спалення тримає СТАН — per-contract claim
-      # `slash:claim:{id}` + інтент-гард, — а цей TTL лише серіалізує nonce підписанта.
+      # «ЖОДНОГО» 2026-09-22): подвійне спалення тримає СТАН — інтент-гард договору і
+      # `#claim_verdict!` між договорами кластера, — а цей TTL лише серіалізує nonce підписанта.
       # Попередній 60s лок був для transact_and_wait, який чекав підтвердження блоку.
       Kredis.lock(lock_key, expires_in: 30.seconds, after_timeout: :raise) do
         # [ВИПРАВЛЕНО: The 429 Trap]: Використовуємо transact (fire-and-forget) замість
@@ -403,14 +410,12 @@ class BlockchainBurningService < ApplicationService
       # Саме той мовчазний-abort, який ARCH.48 лікує: раніше rescue breach-ив контракт, а worker-guard
       # `return if status_breached?` глушив кожен retry → on-chain `slash()` ніколи не транслювався.
       # Тепер контракт лишається `:active`, intent → :failed (НЕ in-flight) → re-raise → Sidekiq retry re-slash-ить.
-      # audit гарантовано створено (ПЕРЕД локом) і `:pending` (transact не виконувався).
-      # `audit&.` else dead: LockTimeout лише з Kredis.lock (після create_slash_intent!) →
-      # audit non-nil; `&.` = захист від reorder create-vs-lock (§B.4 leave).
-      audit&.fail!("Slash lock-timeout: #{e.message}")
+      # audit гарантовано створено (`#claim_verdict!` ДО `begin`) і `:pending` (transact не виконувався).
+      audit.fail!("Slash lock-timeout: #{e.message}")
       handle_slashing_failure(e.message, total_minted_amount)
       raise e
     rescue StandardError => e
-      if audit&.status_sent?
+      if audit.status_sent?
         # [ARCH.45] Broadcast УЖЕ стався (tx_hash отримано) — крах ПІСЛЯ `mark_as_sent` (ConfirmationWorker
         # / breach-update). Slash потрапить у ланцюг → контракт МАЄ бути `:breached` (як і раніше); re-arm
         # confirmation (`:sent` ⇒ tx_hash присутній — model-validated). Retry безпечний — guard побачить :sent.
@@ -429,20 +434,42 @@ class BlockchainBurningService < ApplicationService
       # необоротний slash). ARCH.45-інваріант: ескалюй у manual_review, НІКОЛИ не re-attempt наосліп.
       # Контракт лишається `:active` (НЕ :breached); :manual_review блокує re-slash (in-flight guard вгорі).
       # НЕ raise → без Sidekiq retry; повертаємо :manual_review → людська звірка на Polygonscan.
-      audit&.escalate_to_review!("Slash міг піти в мемпул до збою — звір на Polygonscan ПЕРЕД повтором: #{e.message}")
+      audit.escalate_to_review!("Slash міг піти в мемпул до збою — звір на Polygonscan ПЕРЕД повтором: #{e.message}")
       handle_slashing_failure(e.message, total_minted_amount, ambiguous: true)
       :manual_review
     end
   end
 
-  # [SLASH-1 §3.2] Чи є прямий доказ Категорії A для цього кластера. Дім сигналів —
-  # Slashing::CauseEvidence (фаза-1 = tamper). source_tree пробрасується для майбутнього
-  # per-tree звуження.
-  def positive_a_evidence?
-    Slashing::CauseEvidence.new(@cluster, contract: @naas_contract, source_tree: @source_tree).positive_a?
+  # 🔴 [SLASH-1, ⚖️ делеговано 2026-09-23] ОДНА ШКОДА — ОДИН СЛЕШ НА КЛАСТЕР, і тримає це СТАН.
+  # Авторитетне читання воріт і створення інтенту — ОДНА транзакція під рядковим локом
+  # кластера, упритул, без RPC між ними: сусідній договір або вже створив інтент (тоді цей
+  # бачить доказ витраченим і морозиться), або чекає на лок і побачить інтент цього.
+  # ⛔ Не переносити перевірку назад під Kredis-claim: його TTL спливає, поки RPC вироку
+  # висять (`balanceOf`, KMS) — той самий клас, що присуд ARCH.62 «ЖОДНОГО» виміряв для
+  # signer-локів (адверсарне ревʼю 2026-09-23 знайшло саме цю форму в першій редакції).
+  # @return [Array] `[intent, nil]` або `[nil, причина freeze]`
+  def claim_verdict!(amount, reason)
+    @cluster.with_lock do
+      missing = missing_category_a
+      next [ nil, missing ] if missing
+
+      [ create_slash_intent!(amount, reason), nil ]
+    end
   end
 
-  # [SLASH-1 §3.2] Freeze (Категорія C) — спалення заблоковано, бо немає прямого доказу A.
+  # [SLASH-1 §3.2] nil — живий прямий доказ Категорії A є (або вирок контрактний і доказу не
+  # потребує); інакше — причина freeze. Дім сигналів — Slashing::CauseEvidence (фаза-1 =
+  # tamper); source_tree пробрасується для майбутнього per-tree звуження.
+  def missing_category_a
+    return if @contractual
+
+    evidence = Slashing::CauseEvidence.new(@cluster, contract: @naas_contract, source_tree: @source_tree)
+    return if evidence.positive_a?
+
+    evidence.spent? ? :evidence_spent : :no_category_a_evidence
+  end
+
+  # [SLASH-1 §3.2] Freeze (Категорія C) — спалення заблоковано: живого прямого доказу A немає.
   # Дзеркалить ContractHealthCheckService#flag_data_blackout!: піднімає critical Field-Audit
   # алерт (system_fault), НЕ палить і НЕ breach-ить контракт (лишається :active до людської
   # класифікації A/B/C). Burn необоротний, freeze — ні (05_05 §3.2 асиметрія). Повертає :frozen.
@@ -451,13 +478,18 @@ class BlockchainBurningService < ApplicationService
     # інакше — кластер. Дає Field-Audit з чого почати C→A класифікацію.
     context = @source_tree ? "дерево #{@source_tree.did}" : "кластер ##{@cluster.id}"
 
-    # [ARCH.46] Два приводи для freeze (обидва → Кат-C, no burn/breach): немає прямого доказу A
-    # (positive-A gate) АБО доказ A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних). Меседж
-    # диференціюємо, щоб Field-Audit мав чіткий triage-контекст (дедуп — 00_07 SLASH-1).
-    detail = if reason == :indeterminate_magnitude
-               "доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату)"
+    # [ARCH.46] Три приводи для freeze (усі → Кат-C, no burn/breach): немає прямого доказу A
+    # (positive-A gate) · після доказу A вже записано спалення за СУСІДНІМ договором кластера (одна
+    # шкода — один слеш; чи шкода окрема, вирішує людина) · доказ A є, але РОЗМІР шкоди
+    # невизначений (нема AiInsight-даних). Меседж диференціюємо, щоб Field-Audit мав чіткий
+    # triage-контекст (дедуп — 00_07 SLASH-1).
+    detail = case reason
+    when :indeterminate_magnitude
+      "доказ Категорії A є, але РОЗМІР шкоди невизначений (нема AiInsight-даних за дату)"
+    when :evidence_spent
+      "після доказу Категорії A вже записано спалення за іншим договором цього кластера — одна шкода, один слеш"
     else
-               "немає прямого доказу Категорії A"
+      "немає прямого доказу Категорії A"
     end
 
     # Ключ несе ОБИДВІ осі (привід × суб'єкт), бо і привід, і слово «дерево»/
@@ -466,7 +498,7 @@ class BlockchainBurningService < ApplicationService
     # читав «Slashing blocked (дерево SNET-…): немає прямого доказу…».
     # `context`/`detail` вище лишаються — вони для логу оператора, не для UI.
     subject = @source_tree ? "tree" : "cluster"
-    magnitude = reason == :indeterminate_magnitude ? "indeterminate" : "no_evidence"
+    magnitude = { indeterminate_magnitude: "indeterminate", evidence_spent: "evidence_spent" }.fetch(reason, "no_evidence")
     audit_key = "slash_frozen_#{magnitude}_#{subject}"
     audit_params = @source_tree ? { tree_did: @source_tree.did } : { cluster_id: @cluster.id }
 

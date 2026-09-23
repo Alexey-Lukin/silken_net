@@ -577,17 +577,18 @@ end
         expect(mock_client).to have_received(:transact).once # only the first (failed) call
       end
 
-      # [ARCH.51-family] If the durable intent INSERT (create_slash_intent!) itself raises, `audit`
-      # stays nil → the StandardError rescue must degrade gracefully via the `audit&.`-nil guards:
-      # no breach, nothing broadcast, return :manual_review. Mirrors the Celo/insurance
-      # intent-creation-failure path; this is the previously-untested audit-nil branch.
-      it "returns :manual_review without breaching when the slash intent INSERT fails (audit nil)" do
+      # [ARCH.51-family] If the durable intent INSERT (create_slash_intent!) itself raises, nothing
+      # was broadcast, so the honest outcome is a RAISE → Sidekiq retry (the Celo form: intent nil →
+      # re-raise), not a :manual_review with no row behind it. [SLASH-1 2026-09-23] The INSERT now
+      # runs in `#claim_verdict!` before `begin`, so this is also the only path the INSERT can fail on.
+      it "raises (→ Sidekiq retry) without breaching when the slash intent INSERT fails" do
         allow_any_instance_of(described_class).to receive(:create_slash_intent!)
           .and_raise(ActiveRecord::StatementInvalid, "intent insert failed")
 
-        result = described_class.call(organization.id, naas_contract.id, source_tree: tree)
+        expect {
+          described_class.call(organization.id, naas_contract.id, source_tree: tree)
+        }.to raise_error(ActiveRecord::StatementInvalid, /intent insert failed/)
 
-        expect(result).to eq(:manual_review)
         expect(naas_contract.reload.status).to eq("active") # not breached — nothing reached the chain
         expect(mock_client).not_to have_received(:transact) # failed before the lock/broadcast
       end
@@ -1691,6 +1692,75 @@ end
 
       expect(Kredis).to have_received(:lock)
         .with("slash:claim:#{naas_contract.id}", expires_in: described_class::SLASH_CLAIM_TTL)
+    end
+
+    # Справжні ворота (без стаба `positive_a?`) і ДВА чинні договори одного кластера на одному
+    # доказі — тригери смерті дерева / dClimate / health-check ставлять burn на кожен із них.
+    context "with two contracts in force on one Category-A evidence (one harm — one slash)" do
+      let!(:sibling) { create(:naas_contract, organization: organization, cluster: cluster) }
+
+      before do
+        allow_any_instance_of(Slashing::CauseEvidence).to receive(:positive_a?).and_call_original
+        create(:ews_alert, cluster: cluster, severity: :critical, alert_type: :vandalism_breach,
+                           status: :active, created_at: 1.hour.ago)
+      end
+
+      it "slashes the first and FREEZES the second as evidence_spent — one transact" do
+        expect(described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)).to eq(:slashed)
+
+        result = nil
+        expect {
+          result = described_class.call(organization.id, sibling.id, source_tree: tree_claim)
+        }.to change { EwsAlert.where(message_key: "slash_frozen_evidence_spent_tree").count }.by(1)
+
+        expect(result).to eq(:frozen)
+        expect(mock_client).to have_received(:transact).once
+        expect(sibling.reload.status).not_to eq("breached")
+      end
+
+      # Негативний пін ліку: revert першого (`:failed`) повертає доказ сусідові сам.
+      it "lets the second slash once the first slash FAILED (revert revives the evidence)" do
+        described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)
+        BlockchainTransaction.where(sourceable: naas_contract).find_each { |tx| tx.update_column(:status, "failed") }
+
+        expect(described_class.call(organization.id, sibling.id, source_tree: tree_claim)).to eq(:slashed)
+        expect(mock_client).to have_received(:transact).twice
+      end
+
+      # 🔴 Несуче МІСЦЕ читання — упритул до інтенту, ПІСЛЯ усіх RPC вироку. Сусід проходить
+      # увесь вирок, поки цей висить у `balanceOf` (Kredis застаблено в `yield`, тобто будь-який
+      # claim тут уже «сплив»): гарантія мусить триматися на СТАНІ, не на TTL (адверсарне ревʼю
+      # 2026-09-23 знайшло саме цю форму в першій редакції — читання стояло ДО RPC-фази).
+      it "holds one slash per cluster across the RPC window — state, not the claim TTL" do
+        raced = false
+        allow(mock_client).to receive(:call) do
+          unless raced
+            raced = true
+            expect(described_class.call(organization.id, sibling.id, source_tree: tree_claim)).to eq(:slashed)
+          end
+          10_000 * (10**18)
+        end
+
+        expect(described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)).to eq(:frozen)
+        expect(mock_client).to have_received(:transact).once
+      end
+
+      it "freezes a cluster-level trigger on spent evidence with the _cluster key" do
+        described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)
+
+        expect {
+          expect(described_class.call(organization.id, sibling.id)).to eq(:frozen)
+        }.to change { EwsAlert.where(message_key: "slash_frozen_evidence_spent_cluster").count }.by(1)
+      end
+
+      # Власний ambiguous-слеш ворота НЕ витрачає — його тримає in-flight гард (ARCH.48).
+      it "still answers :manual_review for this contract's OWN ambiguous slash" do
+        create(:blockchain_transaction, wallet: nil, cluster: cluster, sourceable: naas_contract,
+                                        direction: :burn, token_type: :carbon_coin, amount: 10, status: :manual_review)
+
+        expect(described_class.call(organization.id, naas_contract.id, source_tree: tree_claim)).to eq(:manual_review)
+        expect(mock_client).not_to have_received(:transact)
+      end
     end
 
     it "raises (→ Sidekiq retry) and creates NO intent when another worker holds the claim" do
