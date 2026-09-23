@@ -121,7 +121,8 @@ Methods → Results → Introduction → Discussion/Conclusions → Abstract + T
   protection — it fixes prior art (see [`00_01 §8`](../../../../00_01_Vision_Mission_and_Roadmap.md)
   and `protocols/anchor/prior_art_landscape.md`). Submit freely; no gate.
 - **Authorship/CRediT:** agree this *before* drafting (OUTLINE §0): you (Conceptualization, Methodology,
-  Software, Investigation, Writing-original) + an external computational-electrochemistry collaborator TBD (the QM/MM upgrade, Writing-review).
+  Software, Investigation, Writing-original). No external collaborator (⚖️ founder 2026-09-23) — the QM/MM
+  upgrade is a named method limit and a follow-up, not a co-author's section.
 - **Cover letter:** 1 paragraph — what's new, why JPCB, why now. Suggest 3–4 reviewers (not collaborators).
 - **Peer review = the PR review:** expect "major revision". Respond to **every** comment in a point-by-point
   letter ("Comment → Response → change made, page X"). Politeness + thoroughness win; never ignore a point.

@@ -25,5 +25,6 @@ This study used artificial-intelligence tools, disclosed here for transparency:
   Information / repository (publish-to-protect, `00_01 §8`). [finalise — repository DOI]
 - **Competing Interests.** [finalise]
 - **Funding.** [finalise — see funding-statement guidance]
-- **Author Contributions (CRediT).** [finalise — Architect (Silken Net): in-silico baseline, drafting;
-  external computational-electrochemistry collaborator (TBD): explicit-water QM/MM section, added pre-submission per `00_02 §2.1` Стаття 1]
+- **Author Contributions (CRediT).** [finalise — Architect (Silken Net): in-silico baseline, drafting.
+  No external collaborator and no pre-submission QM/MM section (founder 2026-09-23, `00_02 §2.1` Стаття 1):
+  explicit-water QM/MM is a stated method limit. Author list and corresponding author — founder's call]

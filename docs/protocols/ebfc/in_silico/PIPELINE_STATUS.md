@@ -137,7 +137,7 @@
 2. Full bpy model (54 atoms) closes π-backbonding gap ✅; ωB97X/def2-TZVP adiabatic ΔSCF **done ourselves** (+1.03 eV dimethyl / +0.884 plain)
 3. **Ask:** QM/MM with explicit solvation shell to overcome the **~1 eV PCM differential-solvation limit** we established via ωB97X adiabatic ΔSCF (raw DOWNHILL is unreachable with implicit solvent — proven, not pending)
 4. **Ask:** CDFT hopping integrals for the full periodic ZIF lattice (our 24 used cluster ΔSCF; multi-week project)
-5. Co-authored Q1 paper → 00_02 Стаття 1 (title home; "Computational Electron-Transfer Energetics…") — incl. a "limitations of implicit solvation" section (λ + cascade)
+5. Co-authored FOLLOW-UP paper on the closure — ⛔ NOT Стаття 1: ⚖️ founder 2026-09-23, Стаття 1 goes without an external collaborator and states the implicit-solvation limit (λ + cascade) as its own section (00_02 Стаття 1)
 
 ---
 

@@ -11,7 +11,7 @@
 - **Working title (EN):** *"Computational Electron-Transfer Energetics of a FAD–Osmium Enzymatic Biofuel Cell: PCET Redox Potentials, Mediator Structure–Activity, ZIF-Nanozyme Direct Electron Transfer, and the Limits of Implicit-Solvation DFT."* (base = 00_02 canon title; the **"Mediator Structure–Activity"** clause is **new**, earned by ①'s Hammett LFER — if kept, update 00_02 too.)
 - **Type:** purely computational quantum-chemistry paper (no wet experiment yet — Ti-coin = Stage 2). Sells on **mechanistic + methodological** novelty, NOT "validation."
 - **Target:** *J. Phys. Chem. B* (primary) · *PCCP* (fallback) · *Bioelectrochemistry* (applied backup). IMRaD identical across the first two.
-- **Authors / CRediT:** Architect (Silken Net) — Conceptualization, Methodology, Software, Investigation, Writing-original-draft. External computational-electrochemistry collaborator (TBD) — Methodology (explicit-water QM/MM, §3.5 upgrade), Investigation, Writing-review. Corresponding = founder's call.
+- **Authors / CRediT:** Architect (Silken Net) — Conceptualization, Methodology, Software, Investigation, Writing-original-draft. ⚖️ **No external collaborator** (founder 2026-09-23, `00_02 §2.1`): explicit-water QM/MM stays the named limit of §3.5, not a pre-submission section; closing it is a follow-up. Corresponding = founder's call.
 - **✅ IP — defensive publication** (00_01 §8): **публікація = захист** (prior art) → submission-ready, без патентного гейту. Prior-art landscape: `protocols/anchor/prior_art_landscape.md`.
 
 ## 1. Thesis (honest, one paragraph)
