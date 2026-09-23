@@ -144,7 +144,8 @@ FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no 
 B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FTSH/CLT board-to-board stack height 8–10
 B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40, 6 mm stack) — priced, not chosen
 # The three live piezo candidates with the heights 02_01 §6 quotes for them (vendor figures, not re-verified
-# here). Canon mounts the piezo on the UNDERSIDE of the Power Deck, inside the gap `GAP_PZ` models.
+# here). Canon puts the piezo BESIDE the pad, not inside the gap `GAP_PZ` models (⚖️ 2026-09-22, delegated —
+# 02_01 §6, HW.30); the heights stay because the rejected `pad_under_piezo` rows are that verdict's evidence.
 PIEZO_HEIGHT_MM = {"Mallory AST1240MLTRQ": 3.3, "Mallory AST1109MLTRQ": 2.0, "Murata PKMCS0909E4000-R1": 1.9}
 # The tallest part named in the BOM for the RF deck: Seeed LoRa-E5 module (02_01 §3.1 pos. 1), 12×12×2.5 mm per
 # https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
@@ -157,7 +158,7 @@ RF_DECK_TALLEST_BOM_PART_MM = 2.5
 # 02_01 §3 pos. 4; the module row stays as it was, so no pinned figure moves.
 # ⚖️ 2026-09-22 (delegated, 02_01 §5.2): the ceramic-SMD branch is REJECTED, and this budget is one of its
 # three grounds — W3013 closes in exactly ONE of the twelve BOM-FR4 rows, and that row needs both the B2B
-# alternative 6.0 (reopening HW.29) and `pad_beside_piezo` (an open branch of HW.30). W3013 STAYS in this
+# alternative 6.0 (reopening HW.29) and `pad_beside_piezo` (then open; HW.30 ratified it later that day). W3013 STAYS in this
 # dict deliberately: it is the EVIDENCE the verdict stands on, and the re-measure trigger is a different
 # VERIFIED 868 MHz ceramic part, not this one changing.
 # 🔴 2026-09-22, same day: the CARRIER half of that verdict fell to a primary-source read — NN03-310 is
@@ -601,15 +602,18 @@ def vertical_stack_budget(boss: dict) -> dict:
 
     The block over the flange face is (what stands under the Power Deck) + FR4 + B2B + FR4 + whatever
     stands on top of the RF deck.
-    🔴 «As the BOM specifies it» carries a term the Z-chain above never had. Canon mounts the SMD piezo on
-    the UNDERSIDE of the Power Deck with the Sil-Pad sandwiched between it and the flange (02_01 §6), while
-    `GAP_PZ` models the pad spanning the whole board↔flange gap — as if nothing stood under the board. A
-    1.9–3.3 mm part cannot live in a 0.65 mm gap, so exactly one of two placements is physical, and they
-    price differently; both are reported, neither is chosen:
-      • pad_beside_piezo — the pad spans board↔flange as `GAP_PZ` models it; the piezo then needs a pocket
-        in the flange face or the other side of the board, and no CEM or canon row carries either;
-      • pad_under_piezo — the reading of 02_01 §6: the board stands h_piezo higher, the pogo protrusion
-        grows by h_piezo, and pad and pogo stop sharing one gap (the 3-spring model above splits).
+    🔴 «As the BOM specifies it» carried a term the Z-chain above never had: 02_01 §6 mounted the SMD piezo
+    on the UNDERSIDE of the Power Deck with the Sil-Pad sandwiched under it, while `GAP_PZ` models the pad
+    spanning the whole board↔flange gap. A 1.9–3.3 mm part cannot live in a 0.65 mm gap, so exactly one of
+    two placements is physical, and they price differently. ⚖️ 2026-09-22 (delegated, 02_01 §6, HW.30):
+    `pad_beside_piezo` is RATIFIED on this very budget — it closes under the crown at canonical B2B 8, while
+    `pad_under_piezo` closes in no canonical B2B row. Both are still REPORTED: the rejected rows are the
+    evidence the verdict stands on, and its re-measure trigger is the crown or `cavity_height_mm` moving:
+      • pad_beside_piezo — RATIFIED: the pad spans board↔flange as `GAP_PZ` models it; the piezo stands on
+        the board beside it — top side (sub-branch (а-2), the starting one) or over a pocket in the flange
+        face ((а-1), the named fallback, which no CEM row carries yet); which one, the bench decides;
+      • pad_under_piezo — REJECTED: the board stands h_piezo higher, the pogo protrusion grows by h_piezo,
+        and pad and pogo stop sharing one gap (the 3-spring model above splits).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the
     spacer holds the BOTTOM gap, so the top absorbs the stack's own variation, and whether the flange DMLS
     term enters depends on whether crown and spacer share the flange face as datum (branch (а) flat rim says
