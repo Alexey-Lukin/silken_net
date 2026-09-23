@@ -119,8 +119,8 @@ A useful drawing here is **not** a full geometric dump — it's the **acceptance
 - **GD&T datums** on mating features (bore axis, flange face, bayonet) — concentricity/runout matter
   for the coaxial stack; lattice bulk does not get GD&T.
 - **Post-process notes** (the AM-specific half the shop needs): HIP (`01_02 §1.7` / HW.23),
-  EAAE + **dehydrogenation bake** (`01_02 §1.3`, HW.27), selective Hard-Gold ENIG map (`02_02 §1.2`,
-  HW.8.2), build orientation (`01_02 §1.6`). These belong in the drawing's notes block.
+  EAAE + **dehydrogenation bake** (`01_02 §1.3`, HW.27), selective hard-gold map (`02_02 §1.2`; the process is the plater's —
+  ⚖️ `02_02 §1.3` carries the REQUIREMENT and removed the name «ENIG», HW.8.2), build orientation (`01_02 §1.6`). These belong in the drawing's notes block.
 - **Lattice spec callout** (not geometry): porosity — ⛔ **the sheet must NOT print one number**, because canon carries two that are not interchangeable — RATIFIED 2026-09-17 (`01_01 §5.2`): 65 % is the nominal, the factory is judged by 60–70 %, a graded part as a whole (a 65 ± 2 % has no home, `01_01 §5.5`); the shipped generator prints the manifest's TARGET and denies it as an acceptance band in the same breath, pinned by `DrawingTests.Anchor_Sheet_Never_Prints_The_Porosity_Target_As_An_Acceptance_Band` — pore period, topology (⚖️ 2026-09-10 → network
   for every shipped anchor; `stepped` is the one exception — the sheet formulation,
   and since ⚖️ 2026-09-17 not an SLM candidate, `01_01 §5.5`), "inspect by Archimedes + µCT" — per ISO/ASTM 52900 lattice-as-spec.

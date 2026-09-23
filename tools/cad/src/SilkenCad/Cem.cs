@@ -357,10 +357,10 @@ internal sealed record CathodeFlangeCem
     //    longer sets Z for the seal — which is why script 52's O-ring chain is ONE machined dimension now.
     public ORingGlandCem ORing { get; init; } = new();
 
-    // Pogo-pad features (02_02 §1.2) — the central GND bus pad (Hard Gold ENIG = the Ti↔Au galvanic-trap
-    // fix) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
+    // Pogo-pad features (02_02 §1.2) — the central GND bus pad (hard gold = the Ti↔Au galvanic-trap fix;
+    // the process is the plater's, not «ENIG» — 02_02 §1.3) + the PEEK isolation ring guarding the centre↔outer short. Ø = HW.8 placeholders (canon says
     // «точні Ø фланця/площадки потребують CAD → HW.8»; the flange drawing is that forcing function, §F).
-    public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, Hard Gold ENIG (4–5, HW.8)
+    public float CentralPadDiameterMm { get; init; } = 4.5f;   // GND bus-exit pad, hard gold (4–5 concept, HW.8)
     public float IsolationRingWidthMm { get; init; } = 1.5f;   // PEEK ring centre↔outer (≥1.5, short-circuit guard) — a
                                                                // DRAWING annotation of a requirement: CathodeFlange.cs does not
                                                                // model the ring (solid Ti top face). REQUIRED since ⚖️ 2026-09-18
