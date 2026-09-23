@@ -132,14 +132,17 @@ class BlockchainConfirmationWorker
         end
 
         reason = "EVM Revert: Транзакція відхилена мережею (можливо, Gas Limit або логіка контракту)."
+        fresh = actionable.reject(&:status_failed?)
         actionable.each { |tx| tx.fail!(reason) }
         # [SLASH-1, ⚖️ founder 2026-09-23] Revert СЛЕШУ лишає договір `:breached` без спалення, і
         # повторювати його машина свідомо не вміє — будить людину лічильник, рецепт `06_08 §4.6`.
-        # Один інкремент на квитанцію: батч ділить хеш, тож рядків може бути сотня, а подія одна.
-        sample = txs.first
-        SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL.increment(
-          labels: { direction: sample.direction.to_s, token_type: sample.token_type.to_s }
-        )
+        # Один інкремент на квитанцію: батч ділить хеш і ставить по джобі на РЯДОК (`unique_for`
+        # у OSS Sidekiq не діє), тож рахує лише прохід, що ЗАСТАВ свіжі рядки.
+        if fresh.any?
+          SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL.increment(
+            labels: { direction: fresh.first.direction.to_s, token_type: fresh.first.token_type.to_s }
+          )
+        end
 
         # [КРИТИЧНО]: Якщо батч впав, це потребує негайного аудиту
         Rails.logger.error "🚨 [Web3 Critical] Провал транзакції в Polygon: #{tx_hash}"

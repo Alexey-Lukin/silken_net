@@ -299,6 +299,25 @@ RSpec.describe MintingRollbackService do
         expect(wallet.locked_balance).to eq(0) # Safely released
       end
 
+      # [SLASH-1] Другий писач лічильника revert'ів: поллер вичерпав ретраї, revert знайшовся
+      # тут — без інкременту алерт його не бачив би. Один раз на ХЕШ, не на рядок батчу.
+      it "counts a revert it finds once per receipt, not once per batch row" do
+        wallet.update!(balance: 40_000, locked_balance: 20_000)
+        shared_hash = "0x" + SecureRandom.hex(32)
+        rows = Array.new(2) do
+          create(:blockchain_transaction, wallet: wallet, status: :sent, tx_hash: shared_hash, locked_points: 10_000)
+        end
+        mock_client = instance_double(Eth::Client)
+        allow(Web3::RpcConnectionPool).to receive(:client_for).and_return(mock_client)
+        allow(mock_client).to receive(:eth_get_transaction_receipt).and_return({ "status" => "0x0" })
+        allow(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to receive(:increment)
+
+        described_class.call(transactions: BlockchainTransaction.where(id: rows.map(&:id)))
+
+        expect(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to have_received(:increment).once
+          .with(labels: { direction: "mint", token_type: "carbon_coin" })
+      end
+
       it "escalates to manual_review when RPC throws error" do
         wallet.update!(balance: 20_000, locked_balance: 10_000)
         tx = create(:blockchain_transaction, wallet: wallet, status: :sent,

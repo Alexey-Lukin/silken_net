@@ -87,6 +87,18 @@ class MintingRollbackService < ApplicationService
   # записом, ми побачимо вже `:processing`. Порядок локів — рядок → гаманець, як у `fail`.
   # ⛔ Слеш-інтент без хеша — теж не наш: його тримає слешер між `create_slash_intent!` і
   # `mark_as_sent!`, а сирота такого інтенту однаково «повтор слешингу не автоматизовано».
+  # [SLASH-1] Другий писач `silkennet_blockchain_tx_reverted_total`: revert, який поллер не
+  # дочитав (вичерпав ретраї), знаходиться тут — і без інкременту алерт його не бачив би.
+  # Один раз на хеш у межах проходу: рядки батчу ділять квитанцію.
+  def count_revert_once(tx)
+    @counted_revert_hashes ||= Set.new
+    return unless @counted_revert_hashes.add?(tx.tx_hash)
+
+    SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL.increment(
+      labels: { direction: tx.direction.to_s, token_type: tx.token_type.to_s }
+    )
+  end
+
   def rollback_unbroadcast!(tx)
     return if tx.burn?
 
@@ -113,6 +125,7 @@ class MintingRollbackService < ApplicationService
     when :reverted
       # Транзакція відхилена EVM — безпечно робити rollback
       Rails.logger.warn "↩️ [Web3] Транзакція ##{tx.id} (#{tx.tx_hash}) reverted on-chain. Виконуємо rollback."
+      count_revert_once(tx)
       perform_safe_rollback(tx)
     else
       # :pending або :unknown — ескалюємо до manual_review

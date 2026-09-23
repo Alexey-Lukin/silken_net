@@ -2503,10 +2503,10 @@ groups:
       # -----------------------------------------------------------------------
       # P2: EVM MONEY tx (mint / burn-slash) REVERTED on-chain. [SLASH-1, ⚖️ founder 2026-09-23]
       # Для слешу це не «пізніше повторить»: договір лишається `:breached` без спалення, а
-      # машинного повтору свідомо немає — людина мусить усунути причину (пауза · SLASHER_ROLE ·
-      # газ) і пройти рецепт 06_08 §4.6. Мінт після revert перемінчується сам наступним циклом,
-      # але revert мінту теж аномалія (роль · пауза · газ). ⚠️ Стеля: лише EVM-рядки
-      # `BlockchainConfirmationWorker` — Celo/Solana мають власні шляхи й сюди не рахуються.
+      # машинного повтору свідомо немає — людина мусить усунути причину (SLASHER_ROLE · газ;
+      # нульовий баланс = ухиляння) і пройти рецепт 06_08 §4.6. Пауза слеш НЕ блокує [B-07].
+      # ⚠️ Стеля: Polygon-рядки поллера й MintingRollbackService — Celo/Solana мають власні
+      # шляхи й сюди не рахуються.
       # -----------------------------------------------------------------------
       - uid: sn-alert-money-tx-reverted
         title: "⚠️ Money tx reverted on-chain (mint / slash)"
@@ -2541,7 +2541,7 @@ groups:
         for: 0m
         annotations:
           summary: "Грошова tx ({{ $labels.direction }}) ревертнулась on-chain ({{ $values.B.Value | printf \"%.0f\" }} за годину)."
-          description: "Квитанція money-tx прийшла зі статусом revert, рядки → :failed. direction=burn (СЛЕШ): договір лишився :breached БЕЗ спалення, повтору машина свідомо не робить — усунь причину (пауза контракту · відкликана SLASHER_ROLE · газ), поверни договір у :active з консолі й прожени вирок (і сусідам кластера, яким revert повернув доказ) — рецепт 06_08 §4.6. direction=mint: рядки перемінтяться самі наступним циклом, але причина (роль · пауза · газ) лишається — звір BlockchainTransaction.error_message. SLASH-1 / 06_08 §4.6."
+          description: "Квитанція money-tx прийшла зі статусом revert, рядки → :failed. direction=burn: рецепт 06_08 §4.6 — ЛИШЕ для договору :breached (слеш positive-A): причина — відкликана SLASHER_ROLE або газ (пауза слеш НЕ блокує; нульовий баланс у мить включення = ухиляння, повторний прохід сам піде в escalate_evasion!); повтору машина свідомо не робить. Форфейтура (договір :cancelled) — перезапуск з contractual=true, статус не чіпати; ESG-погашення договору не має. direction=mint: бали росту повертаються й перемінчуються НОВИМ рядком наступним циклом (лише active-дерева); страхова виплата (sourceable ParametricInsurance) сама НЕ повторюється — повтори вручну. error_message причини не несе — дивись квитанцію (gasUsed/gasLimit) або replay tx. SLASH-1 / 06_08 §4.6."
           runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
         labels:
           severity: warning

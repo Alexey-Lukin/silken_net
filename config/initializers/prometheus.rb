@@ -623,11 +623,19 @@ module SilkenNet
     # `BlockchainConfirmationWorker` доти лише писала лог. Несуче для слешу — revert лишає договір
     # `:breached` без спалення, машинного повтору свідомо немає (рецепт `06_08 §4.6`), тож без
     # лічильника людина про нього не дізнається. Один інкремент на КВИТАНЦІЮ, не на рядок батчу.
+    # Писачів ДВА — поллер і `MintingRollbackService` (revert, знайдений після вичерпання
+    # ретраїв поллера); ⚠️ Celo-рядки сюди не рахуються — власний шлях.
     BLOCKCHAIN_TX_REVERTED_TOTAL = REGISTRY.counter(
       :silkennet_blockchain_tx_reverted_total,
-      docstring: "EVM money txs (mint/burn) whose receipt reverted on-chain (SLASH-1)",
+      docstring: "Polygon money txs (mint/burn) whose receipt reverted on-chain, one per receipt (SLASH-1)",
       labels: [ :direction, :token_type ]
     )
+    # Лічильник з мітками не існує до першого інкременту, тож серія народилась би зі значенням 1,
+    # і `increase()` алерту не побачив би ПЕРШОГО revert після рестарту — а для рідкісного слешу
+    # саме він найімовірніший. Серії засіваються нулем.
+    %w[mint burn].product(%w[carbon_coin forest_coin]).each do |direction, token_type|
+      BLOCKCHAIN_TX_REVERTED_TOTAL.init_label_set(direction: direction, token_type: token_type)
+    end
 
     # [GOV.1] Governance-параметр відхилено bounds-валідацією sync-воркера
     # (мис-скейл / нонсенс-голос). Ненульове = DAO проголосував значення поза

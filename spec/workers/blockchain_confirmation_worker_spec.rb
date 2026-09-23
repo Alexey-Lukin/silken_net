@@ -160,6 +160,25 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
           .with(labels: { direction: transaction.reload.direction.to_s, token_type: transaction.token_type.to_s })
       end
 
+      # batchMint ставить по джобі на РЯДОК, а `unique_for` в OSS Sidekiq не діє — тож рахує лише
+      # прохід, що ЗАСТАВ свіжі рядки; дубль на вже-`:failed` мовчить.
+      it "does not count again when a duplicate job meets rows already failed by the first" do
+        allow(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to receive(:increment)
+
+        2.times { described_class.new.perform(tx_hash) }
+
+        expect(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to have_received(:increment).once
+      end
+
+      # Серія з мітками не існує до першого інкременту — `increase()` не побачив би першого
+      # revert після рестарту. Засіяні нулем серії мусять існувати ДО будь-якого revert.
+      it "has its label sets seeded at zero so the first revert after a restart is visible" do
+        %w[mint burn].product(%w[carbon_coin forest_coin]).each do |direction, token_type|
+          expect(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL.values)
+            .to have_key({ direction: direction, token_type: token_type })
+        end
+      end
+
       # 🔴 [2026-09-07] Друга половина ліку, і вона НЕ дзеркало першої: у гілці успіху
       # вже-`confirmed` рядок є ПОВТОРНИМ ПРОГОНОМ і мовчки пропускається, а тут той
       # самий рядок є РОЗБІЖНІСТЮ між нашим станом і ланцюгом (reorg або наша помилка).
