@@ -352,7 +352,7 @@ E(0.47Ф до 3.4В)=½·0.47·3.4²=2.71 Дж → t=2.71/1µВт≈31 доба
 | Панель | Monocrystalline **50 W** | 10 W відхилено (−4.4 Вт·год/добу взимку під кронами) |
 | MPPT | **Victron SmartSolar 75/15** | 🔴 **LiFePO4-пресет** (не lead-acid); quiescent 20 мА = найбільший сток |
 | Акумулятор | LiFePO4 **12 В / 20 Ah** | заряд лише 0…+45 °C → charge-protect (нижче) |
-| BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET субсумує charge-protect |
+| BMS | JBD/Jiabaida-клас **20 А cont / 50 А peak** (SKU 👤) | має витримати 2 А burst; JBD з NTC+charge-FET **може** субсумувати charge-protect — перевіряється при виборі SKU ([`00_07`](00_07_Action_Plan_Tracker) HW.16) |
 | Buck 12→3.7 В | ≥3 А cont / ≥5 А peak (MP1584/LM2596-клас, part# 👤) | живить модем; сам не рятує від burst — треба tank ↓ |
 | Buck 12→3.3 В | ≥500 мА | живить STM32 |
 
