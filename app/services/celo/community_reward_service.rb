@@ -79,13 +79,11 @@ module Celo
     # Клас — `web3-pipeline` #11: захардкоджена константа на DAO-керованому шляху вже хибна.
     DEFAULT_MIN_ORACLE_BALANCE_CELO = 0.05
 
-    # [ARCH.50] eth-gem error messages that mean the node DEFINITELY rejected the tx —
-    # it never entered the mempool → safe to fail the intent and re-pay next cycle.
-    REJECTED_PATTERNS = /execution reverted|insufficient funds|intrinsic gas|gas required exceeds|invalid sender|out of gas/i
-
-    # Messages that mean a tx with this nonce was ALREADY submitted (the prior attempt
-    # MAY have broadcast) → AMBIGUOUS: do NOT re-pay, leave the intent for reconcile.
-    AMBIGUOUS_PATTERNS = /nonce too low|already known|replacement transaction underpriced|already imported/i
+    # [ARCH.50] Вузол ТОЧНО відхилив tx (у мемпул не потрапила) → інтент безпечно fail і
+    # перевиплатити наступним циклом ⊥ tx із цим nonce УЖЕ подано → AMBIGUOUS: не
+    # перевиплачувати, лишити reconcile. Дім обох множин — `Web3::NodeAnswer` [ARCH.62].
+    REJECTED_PATTERNS = Web3::NodeAnswer::REJECTED
+    AMBIGUOUS_PATTERNS = Web3::NodeAnswer::ALREADY_SUBMITTED
 
     def initialize(cluster, target_date)
       @cluster = cluster
@@ -307,19 +305,21 @@ module Celo
 
       msg = "#{error.message} #{error.cause&.message}".downcase
 
-      if msg.match?(REJECTED_PATTERNS)
+      # [ARCH.62] Неоднозначність перевіряється ПЕРШОЮ: текст, що збігся б з обома множинами,
+      # мусить лишити інтент `:pending` (могла полетіти), а не перевиплатити.
+      if msg.match?(AMBIGUOUS_PATTERNS)
+        # Tx із цим nonce вже подавався → попередня спроба МОГЛА broadcast → AMBIGUOUS.
+        # Лишаємо intent `:pending` (dedup блокує re-pay); стале :pending → ARCH.64
+        # CeloRewardReconcileWorker → :manual_review. НЕ re-raise.
+        Rails.logger.warn "⚠️ [Celo ReFi] Ambiguous tx-стан (intent ##{intent.id} :pending — можливо-landed, без re-pay): #{error.message}"
+        nil
+      elsif msg.match?(REJECTED_PATTERNS)
         # Node відхилив tx (НЕ в мемпулі) → fail intent (re-payable). НЕ re-raise: детермінований
         # RpcError (`< IOError`) інакше рахується shared-breaker'ом і відкриває його (#4).
         # `if status_pending?` — intent тут завжди :pending (свіжо-створений перед transact;
         # nil відсіяно вище); guard захищає fail! від нелегального AASM-переходу, else dead (§B.4 leave).
         intent.fail!("Celo rejected: #{error.message}".truncate(500)) if intent.status_pending?
         Rails.logger.error "🛑 [Celo ReFi] Tx відхилено мережею (intent ##{intent.id} → :failed, re-payable): #{error.message}"
-        nil
-      elsif msg.match?(AMBIGUOUS_PATTERNS)
-        # Tx із цим nonce вже подавався → попередня спроба МОГЛА broadcast → AMBIGUOUS.
-        # Лишаємо intent `:pending` (dedup блокує re-pay); стале :pending → ARCH.64
-        # CeloRewardReconcileWorker → :manual_review. НЕ re-raise.
-        Rails.logger.warn "⚠️ [Celo ReFi] Ambiguous tx-стан (intent ##{intent.id} :pending — можливо-landed, без re-pay): #{error.message}"
         nil
       else
         # Справжній transient transport (timeout/connection) → intent `:pending` (dedup блокує

@@ -187,6 +187,26 @@ RSpec.describe Celo::CommunityRewardService do
       expect(intent.status).to eq("failed")
     end
 
+    # 🔴 [ARCH.62, 2026-09-23] Газ-лімітну родину 2026-09-05 вивчив лише класифікатор МІНТУ;
+    # тут вона не збігалась ні з REJECTED, ні з AMBIGUOUS → raise → breaker + retry + вічний
+    # `:pending` → reconcile → `manual_review`. Один дім (`Web3::NodeAnswer`) — одна відповідь.
+    it "fails the intent on a gas-limit VALIDATION rejection (Amoy verbatim) instead of limbo" do
+      allow(client).to receive(:transact).and_raise(StandardError, "Transaction gas limit is too low, try 74494!")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to raise_error
+      expect(BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last.status).to eq("failed")
+    end
+
+    # 💰 [ARCH.62] Текст, що збігається з ОБОМА множинами, мусить лишити інтент `:pending`:
+    # неоднозначність перевіряється першою, інакше слот, що вже міг полетіти, перевиплатили б.
+    it "keeps the intent :pending when the text matches BOTH ambiguous and rejected families" do
+      allow(client).to receive(:transact)
+        .and_raise(StandardError, "replacement transaction underpriced: insufficient funds for gas * price + value")
+
+      expect { described_class.new(cluster, target_date).reward_community! }.not_to raise_error
+      expect(BlockchainTransaction.where(sourceable: cluster, token_type: :cusd).last.status).to eq("pending")
+    end
+
     # [ARCH.50] an AMBIGUOUS error (nonce too low — a prior tx may have broadcast) → leave :pending,
     # do NOT re-pay, do NOT re-raise.
     it "leaves the intent :pending and does NOT re-raise on an ambiguous (nonce) error" do

@@ -54,8 +54,8 @@ module Ethereum
     # [ARCH.66 companion] Node-помилки, що доводять: tx під нашим nonce уже досяг мережі (mined
     # або мемпул), тож same-nonce re-broadcast відхилено. На resume (`:pending` з персистованим
     # nonce) → перший broadcast landed, tx_hash втрачено у crash → escalate людині, не blind-retry.
-    # Дзеркало money-path AMBIGUOUS-класу (celo `AMBIGUOUS_PATTERNS` / mint pre-broadcast whitelist).
-    AMBIGUOUS_ALREADY_LANDED = /nonce too low|already known|replacement transaction underpriced|already imported/i
+    # Дім множини — `Web3::NodeAnswer::ALREADY_SUBMITTED` [ARCH.62], спільний із money-path.
+    AMBIGUOUS_ALREADY_LANDED = Web3::NodeAnswer::ALREADY_SUBMITTED
 
     # [ARCH.12] Верхня межа вікна = now − GRACE: рядок телеметрії, що комітиться ПІД ЧАС
     # repeatable_read-снапшота (created_at уже поставлено, commit ще ні), інакше випав би

@@ -140,6 +140,34 @@ RSpec.describe Web3CircuitBreaker do
       end
     end
 
+    # 🗣️ [ARCH.62, 2026-09-23] Ключ спільний між процесами: відповідь вузла про НАШ запит,
+    # порахована збоєм, п'ятьма поспіль закривала б `polygon_rpc` — тобто мінт — усьому флоту.
+    context "when the node ANSWERS about our request (Web3::NodeAnswer)" do
+      let(:answer) { Eth::Client::RpcError.new("insufficient funds for gas * price + value") }
+
+      it "does not count a direct node answer as a circuit failure" do
+        expect { instance.test_call(service_name) { raise answer } }.to raise_error(Eth::Client::RpcError)
+        expect(Rails.cache.read("circuit_breaker:#{service_name}:failures")).to be_nil
+      end
+
+      it "does not count a node answer hidden in a wrapper's cause" do
+        wrapped = lambda do
+          raise answer
+        rescue Eth::Client::RpcError
+          raise StandardError, "DispatchError"
+        end
+
+        expect { instance.test_call(service_name) { wrapped.call } }.to raise_error(StandardError, "DispatchError")
+        expect(Rails.cache.read("circuit_breaker:#{service_name}:failures")).to be_nil
+      end
+
+      it "still counts an unknown JSON-RPC error as a provider failure" do
+        expect { instance.test_call(service_name) { raise Eth::Client::RpcError, "header not found" } }
+          .to raise_error(Eth::Client::RpcError)
+        expect(Rails.cache.read("circuit_breaker:#{service_name}:failures")).to eq(1)
+      end
+    end
+
     context "with independent services" do
       it "maintains separate circuits per service" do
         Web3CircuitBreaker::FAILURE_THRESHOLD.times do

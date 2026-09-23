@@ -186,6 +186,22 @@ RSpec.describe ApplicationWeb3Worker do
       end
     end
 
+    # 🗣️ [ARCH.62] Другий писач `silkennet_rpc_errors_total`: відповідь вузла про НАШ запит
+    # (`Eth::Client::RpcError < IOError`) — не обрив зʼєднання, метрика мовчить.
+    context "when the node ANSWERS about our request (Web3::NodeAnswer)" do
+      it "re-raises without counting it as a connection error" do
+        allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment)
+
+        expect {
+          worker.with_web3_error_handling("Polygon") do
+            raise Eth::Client::RpcError, "insufficient funds for gas * price + value"
+          end
+        }.to raise_error(Eth::Client::RpcError)
+
+        expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).not_to have_received(:increment)
+      end
+    end
+
     context "when IOError is raised" do
       it "logs and re-raises as connection error" do
         allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment)

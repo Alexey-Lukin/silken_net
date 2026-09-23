@@ -46,6 +46,9 @@ module Web3
       SocketError
     ].freeze
 
+    # Єдиний запис, що йде крізь каскад, — `Web3::KeySigner#transact` (шов підписанта).
+    WRITE_METHODS = %i[transact].freeze
+
     def initialize(rpc_urls)
       @rpc_urls = Array(rpc_urls).compact.reject(&:empty?)
       raise ArgumentError, "At least one RPC URL is required" if @rpc_urls.empty?
@@ -114,6 +117,22 @@ module Web3
     # ⚠️ Клас той самий, що описано двома абзацами вище про fee-атрибути: **`method_missing`
     # передає не все, що виглядає переданим.** Перш ніж класти сюди ще один метод — спитай
     # не «чи він делегується», а «що саме з нього доходить».
+    #
+    # 🗣️ [ARCH.62, 2026-09-23] Відповідь ВУЗЛА про наш запит (`Web3::NodeAnswer.answered?`)
+    # — не збій провайдера: лічильник breaker'а й `silkennet_rpc_errors_total` її не бачать.
+    # ЧИТАННЯ з такою відповіддю raise-иться одразу. ⚠️ Стеля: відповідь залежить від стану
+    # вузла (відсталий реверт `eth_estimate_gas`, власний `--rpc.gascap`), тож свіжіший фолбек
+    # її не переперевіряє — ціна лягає ДО мемпулу (оцінка → nil → відмова валідації → `fail!`).
+    # ⛔ ЗАПИС каскадується далі (маршрут ратифікований, повтор безпечний закріпленим `nonce`),
+    # і дві межі тут несучі, бо помилка, що спливе, СУДИТЬ долю грошей у викликача:
+    #   · REJECTED зупиняє каскад — «шопінг» вузла, що прийме після чесної відмови, дає лише
+    #     лімб (відсталий вузол узяв tx, яка не замайниться → вічний `:sent`);
+    #   · НЕОДНОЗНАЧНІСТЬ ДОМІНУЄ: раніша не-REJECTED помилка (шлюз уже міг переслати tx)
+    #     спливає замість пізнішої REJECTED — інакше мінт прочитав би «не полетіла», зробив
+    #     `fail!` і перемінтив новим `nonce` (double-mint), а Celo перевиплатив би.
+    # ⚠️ «Та сама підписана tx» на фолбеку правдива лише для детермінованого підпису
+    # (`LocalEnvSigner`, RFC 6979): кожен хоп ПЕРЕПІДПИСУЄ, і HSM (`KmsSigner`) дасть двійника
+    # з іншим хешем — один слот, тож включиться одна, але записаний хеш може не бути нею.
     def method_missing(method_name, *args, **kwargs, &block)
       last_error = nil
 
@@ -123,7 +142,13 @@ module Web3
         record_success(url)
         return result
       rescue *RETRIABLE_ERRORS => e
-        record_failure(url, e)
+        answered = Web3::NodeAnswer.answered?(e)
+        record_failure(url, e) unless answered
+        if WRITE_METHODS.include?(method_name)
+          raise(last_error || e) if answered && Web3::NodeAnswer.rejected?(e)
+        elsif answered
+          raise
+        end
         last_error = e
       rescue StandardError => e
         # HTTP 429 може бути обгорнутий у різні exception-класи залежно від gem

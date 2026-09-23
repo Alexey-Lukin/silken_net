@@ -86,7 +86,11 @@ module ApplicationWeb3Worker
     log_web3_error("⏱️", chain_name, "RPC Timeout", resource_info, e)
     raise
   rescue Errno::ECONNREFUSED, Errno::ECONNRESET, IOError => e
-    SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "connection" })
+    # [ARCH.62] `RpcError < IOError`: відповідь вузла про НАШ запит — не обрив зʼєднання;
+    # метрика другого писача мусить мовчати на ній так само, як `ResilientClient#record_failure`.
+    unless Web3::NodeAnswer.answered?(e)
+      SilkenNet::Metrics::RPC_ERRORS_TOTAL.increment(labels: { network: chain_name, error_type: "connection" })
+    end
     log_web3_error("🔌", chain_name, "RPC Connection Error", resource_info, e)
     raise
   end

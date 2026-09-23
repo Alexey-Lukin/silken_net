@@ -108,6 +108,74 @@ RSpec.describe Web3::ResilientClient do
         expect { client.eth_block_number }.to raise_error(ArgumentError, "bad args")
       end
     end
+
+    # 🗣️ [ARCH.62, 2026-09-23] `Eth::Client::RpcError < IOError`: доти відповідь ВУЗЛА про наш
+    # запит рахувалась збоєм провайдера на КОЖНОМУ вузлі каскаду — три поспіль, і breaker
+    # відкритий на здоровій інфраструктурі, а `sn-alert-circuit-breaker` будить оператора.
+    context "when the node ANSWERS about our request (Web3::NodeAnswer)" do
+      let(:revert) { Eth::Client::RpcError.new("execution reverted", "0x", 3) }
+
+      before { allow(SilkenNet::Metrics::RPC_ERRORS_TOTAL).to receive(:increment) }
+
+      it "raises a READ answer at once — no cascade, no breaker failure, no provider-error metric" do
+        allow(primary_eth_client).to receive(:eth_estimate_gas).and_raise(revert)
+        allow(secondary_eth_client).to receive(:eth_estimate_gas)
+
+        (described_class::MAX_FAILURES + 1).times do
+          expect { client.eth_estimate_gas({}) }.to raise_error(Eth::Client::RpcError, "execution reverted")
+        end
+
+        expect(secondary_eth_client).not_to have_received(:eth_estimate_gas)
+        expect(client.provider_health).to all(include(failures: 0, circuit_open: false))
+        expect(SilkenNet::Metrics::RPC_ERRORS_TOTAL).not_to have_received(:increment)
+      end
+
+      # ⛔ Маршрут запису ратифікований (⚖️ 2026-09-02), повтор безпечний закріпленим nonce:
+      # інший вузол може прийняти ТУ САМУ підписану tx і повернути хеш.
+      it "still cascades a WRITE, without counting the answer as a provider failure" do
+        allow(primary_eth_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("already known"))
+        allow(secondary_eth_client).to receive(:transact).and_return("0xhash")
+
+        expect(client.transact("contract", "mint", nonce: 7)).to eq("0xhash")
+        expect(client.provider_health).to all(include(failures: 0))
+      end
+
+      # Чесна відмова зупиняє каскад запису: «шопінг» вузла, що прийме після неї, дає лише лімб.
+      it "stops a WRITE cascade at a REJECTED answer — no shopping for a node that accepts" do
+        allow(primary_eth_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("insufficient funds for gas * price + value"))
+        allow(secondary_eth_client).to receive(:transact).and_return("0xhash")
+
+        expect { client.transact("contract", "mint", nonce: 7) }.to raise_error(Eth::Client::RpcError, /insufficient funds/)
+        expect(secondary_eth_client).not_to have_received(:transact)
+      end
+
+      # 💰 Шлюз уже міг переслати tx і відповів невідомою помилкою; відсталий фолбек чесно
+      # відмовив. Спливти мусить НЕОДНОЗНАЧНЕ — інакше мінт прочитав би «не полетіла» й
+      # перемінтив новим nonce (double-mint), а Celo перевиплатив би.
+      it "lets an earlier AMBIGUOUS write error dominate a later REJECTED answer" do
+        allow(primary_eth_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("upstream request timeout"))
+        allow(secondary_eth_client).to receive(:transact).and_raise(Eth::Client::RpcError.new("insufficient funds for gas * price + value"))
+
+        raised = nil
+        begin
+          client.transact("contract", "mint", nonce: 7)
+        rescue Eth::Client::RpcError => e
+          raised = e
+        end
+
+        expect(raised.message).to eq("upstream request timeout")
+        expect(Web3::NodeAnswer.rejected?(raised)).to be false
+      end
+
+      # Allowlist: невідома JSON-RPC-помилка лишається провайдерською — рівно так, як доти.
+      it "keeps counting an UNKNOWN JSON-RPC error as a provider failure and cascading" do
+        allow(primary_eth_client).to receive(:eth_estimate_gas).and_raise(Eth::Client::RpcError.new("upstream request timeout"))
+        allow(secondary_eth_client).to receive(:eth_estimate_gas).and_return({ "result" => "0x5208" })
+
+        expect(client.eth_estimate_gas({})).to eq({ "result" => "0x5208" })
+        expect(client.provider_health.find { |h| h[:provider].include?("alchemy") }[:failures]).to eq(1)
+      end
+    end
   end
 
   describe "circuit breaker" do

@@ -75,13 +75,16 @@ module Web3CircuitBreaker
   rescue CircuitOpenError
     raise # Re-raise circuit open errors без зміни стану
   rescue *CIRCUIT_BREAKER_ERRORS => e
-    record_failure!(service_name)
+    # 🗣️ [ARCH.62] `Eth::Client::RpcError < IOError`: відповідь вузла про НАШ запит
+    # («insufficient funds», реверт, «nonce too low») — не недоступність сервісу. Ключ
+    # тут спільний між процесами, тож пʼять таких поспіль закривали б мінт усьому флоту.
+    record_failure!(service_name) unless Web3::NodeAnswer.answered?(e)
     raise e
   rescue StandardError => e
     # Перевіряємо, чи оригінальна помилка (cause) є transient.
     # Сервіси часто обгортають RPC-помилки у свої custom errors
     # (DispatchError, VerificationError), але root cause — transient.
-    if transient_cause?(e)
+    if transient_cause?(e) && !Web3::NodeAnswer.answered?(e)
       record_failure!(service_name)
     end
     raise e

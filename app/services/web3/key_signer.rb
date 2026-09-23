@@ -57,11 +57,11 @@ module Web3
     # покриття було б гірше за відмову.
     #
     # 🔑 **Текст винятку НЕСЕ англійський маркер `insufficient funds`, і це КОНТРАКТ,
-    # не стиль.** Три незалежні доми класифікують саме цей рядок, і всі троє мусять
-    # прочитати наш вирок так само, як прочитали б вирок ноди:
-    #   · `BlockchainMintingService#transact_error_pre_broadcast?` → `fail!`+retry,
-    #     а НЕ `manual_review` (інакше ми самі створювали б лімб, з якого виходу нема);
-    #   · `Celo::CommunityRewardService::REJECTED_PATTERNS`;
+    # не стиль.** Два доми класифікують саме цей рядок, і обидва мусять прочитати наш
+    # вирок так само, як прочитали б вирок ноди:
+    #   · `Web3::NodeAnswer.rejected?` — читають `BlockchainMintingService#transact_error_pre_broadcast?`
+    #     (`fail!`+retry, а НЕ `manual_review` — інакше ми самі створювали б лімб, з якого
+    #     виходу нема) і Celo (`REJECTED_PATTERNS`); ⛔ тому предикат судить ТЕКСТ, не клас;
     #   · `Web3::TransactionErrorClassifier` → код `:insufficient_funds` (той їде в
     #     незворотний IPFS-пін, тож клас мусить бути названий, а не `:unknown`).
     # ⚠️ Звʼязок доведено ПІНОМ (`key_signer_transact_spec`), не цим абзацом —
