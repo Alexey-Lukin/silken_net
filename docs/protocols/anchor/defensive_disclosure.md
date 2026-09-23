@@ -1,7 +1,7 @@
 # Defensive Disclosure — SilkenNet self-powered tree-health monitor (prior art)
 
 > **Author / discloser:** Oleksii Lukin (SilkenNet) · **Public repository:** `github.com/Alexey-Lukin/silken_net`
-> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-09-05
+> **First published in the public repository:** 2026-06-07 (commit `b0546460`) · **This revision:** 2026-09-12
 > **Status:** disclosure-ready for submission to Technical Disclosure Commons.
 >
 > **What this is:** a deliberate **public technical disclosure** of the inventive core of SilkenNet,
