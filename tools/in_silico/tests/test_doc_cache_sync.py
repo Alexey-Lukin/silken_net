@@ -548,8 +548,8 @@ CHECKS = [
         lambda d: d["vertical_stack_budget"]["internal_height_mm"]["crown_centre"], 0.05,
     ),
     (
-        "today's hemisphere headroom (the contrast) → z_stack_tolerance.json §vertical_stack_budget",
-        BLIND_MATE, rf"\(сьогоднішня півсфера — {N}\)",
+        "the former hemisphere headroom (the contrast; the crown was applied 2026-09-22) → z_stack_tolerance.json §vertical_stack_budget",
+        BLIND_MATE, rf"\(колишня півсфера — {N}\)",
         "mechanical/z_stack_tolerance.json",
         lambda d: d["vertical_stack_budget"]["internal_height_mm"]["hemisphere_centre_today"], 0.05,
     ),
