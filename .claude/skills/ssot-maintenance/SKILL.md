@@ -115,6 +115,9 @@ CI: `docs.yml` is the home of the doc-gate RAKE PAIR. ⚠️ Not of every doc ga
 - [ ] ruby scripts/docs_check.rb   → green — but it is TWO steps of the `docs_check` job, never the band
 - [ ] ruby scripts/docs_band.rb    → green — the WHOLE `CI · Docs` lane, step list read from `docs.yml`
       itself. ⛔ A roster of gates rots by construction — never re-add one here.
+- [ ] the band is NOT every lane that reads docs: `grep -l '<edited doc>' .github/workflows/*.yml`
+      — a hit outside `docs.yml` is your lane too (2026-09-23: a 02_02 prose edit, band green,
+      reddened `Smoke · In-silico L2` → local `pytest tools/in_silico/tests/test_doc_cache_sync.py`).
 - [ ] bin/rails docs:toc           → run if headings changed, then re-check green (regen, not in the band)
 - [ ] fact edited ONLY at its home (`00_06 §2`); mirrors labelled
 - [ ] no volatile counts · no blocker section in canon · Cross-references at top
