@@ -25,7 +25,7 @@ SSOT One-Home: цей skill лише **маршрутизує**; факти жи
 | **Puma 8** config + cluster hooks + runbook'и | `06_05` |
 | **Disaster Recovery** / backup / RTO-RPO / master-key | `06_06` (config SSOT = `terraform/database.tf`) |
 | **CI/CD** workflows + єдиний operations runbook-індекс | `06_07` |
-| **Resilience** — Queen failover (4 рівні) + Per-Chain Fallback Matrix (✅ **у маніфестах з 2026-09-02, виміряно на canopy** — keyless публічні фолбеки PublicNode/dRPC/офіційний Solana в `env.clear` обох маніфестів, canopy — testnet-двійники; чейн фолбеків судить гард `RPC_FALLBACK_URL_ENVS`; `ARCH.114` ⚖️ founder: акаунтний вендор лише якщо вкусять rate-limit-и) + **топологія черг Sidekiq** (`§2.5` — anti-starvation через ізоляцію ПРОЦЕСІВ, не перестановку черг; flip = `sidekiq -q`-прапори в deploy-конфізі, тобто deploy-рішення, НЕ код) | `06_08` |
+| **Resilience** — Queen failover (4 рівні) + Per-Chain Fallback Matrix (✅ **у маніфестах з 2026-09-02, виміряно на canopy** — ⚠️ виміряно ЗАВЕДЕННЯ й інстанціювання, не перемикання: на EVM-шляху транспортний обрив долітає `NoMethodError` і на фолбек не каскадиться, `00_07` INF.22; keyless публічні фолбеки PublicNode/dRPC/офіційний Solana в `env.clear` обох маніфестів, canopy — testnet-двійники; чейн фолбеків судить гард `RPC_FALLBACK_URL_ENVS`; `ARCH.114` ⚖️ founder: акаунтний вендор лише якщо вкусять rate-limit-и) + **топологія черг Sidekiq** (`§2.5` — anti-starvation через ізоляцію ПРОЦЕСІВ, не перестановку черг; flip = `sidekiq -q`-прапори в deploy-конфізі, тобто deploy-рішення, НЕ код) | `06_08` |
 
 ## Несучі інваріанти (не очевидні з коду)
 
