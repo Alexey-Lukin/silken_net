@@ -148,6 +148,18 @@ RSpec.describe BlockchainConfirmationWorker, type: :worker do
         expect(transaction.error_message).to include("EVM Revert")
       end
 
+      # [SLASH-1, ⚖️ founder 2026-09-23] Revert слешу лишає договір `:breached` без спалення,
+      # машинного повтору свідомо немає — будить людину саме цей лічильник (один на квитанцію).
+      it "counts the revert once per receipt, labelled by direction and currency" do
+        create(:blockchain_transaction, wallet: wallet, tx_hash: tx_hash, status: :sent)
+        allow(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to receive(:increment)
+
+        described_class.new.perform(tx_hash)
+
+        expect(SilkenNet::Metrics::BLOCKCHAIN_TX_REVERTED_TOTAL).to have_received(:increment).once
+          .with(labels: { direction: transaction.reload.direction.to_s, token_type: transaction.token_type.to_s })
+      end
+
       # 🔴 [2026-09-07] Друга половина ліку, і вона НЕ дзеркало першої: у гілці успіху
       # вже-`confirmed` рядок є ПОВТОРНИМ ПРОГОНОМ і мовчки пропускається, а тут той
       # самий рядок є РОЗБІЖНІСТЮ між нашим станом і ланцюгом (reorg або наша помилка).

@@ -257,6 +257,13 @@ end
     end
   end
 
+  # [SLASH-1, ⚖️ founder 2026-09-23] Revert слешу лишає договір `:breached` без спалення, а
+  # машинного повтору свідомо немає — лічильник без правила означав би, що не будить НІЩО.
+  it "the SLASH-1 money-revert counter is wired to an alert" do
+    expect(referenced).to include("silkennet_blockchain_tx_reverted_total"),
+      "silkennet_blockchain_tx_reverted_total втратив alert-правило (SLASH-1 регресія)"
+  end
+
   it "the S6.1 Redis→DB nonce-fallback counters are wired to an alert" do
     %w[
       silkennet_m2m_nonce_fallback_total

@@ -619,6 +619,15 @@ module SilkenNet
       :silkennet_ethereum_anchor_reverted_total,
       docstring: "EthereumAnchor storeStateRoot txs that reverted on-chain (ARCH.66)"
     )
+    # [SLASH-1, ⚖️ founder 2026-09-23] Сестра рядка вище для ГРОШОВИХ рядків: revert-квитанція
+    # `BlockchainConfirmationWorker` доти лише писала лог. Несуче для слешу — revert лишає договір
+    # `:breached` без спалення, машинного повтору свідомо немає (рецепт `06_08 §4.6`), тож без
+    # лічильника людина про нього не дізнається. Один інкремент на КВИТАНЦІЮ, не на рядок батчу.
+    BLOCKCHAIN_TX_REVERTED_TOTAL = REGISTRY.counter(
+      :silkennet_blockchain_tx_reverted_total,
+      docstring: "EVM money txs (mint/burn) whose receipt reverted on-chain (SLASH-1)",
+      labels: [ :direction, :token_type ]
+    )
 
     # [GOV.1] Governance-параметр відхилено bounds-валідацією sync-воркера
     # (мис-скейл / нонсенс-голос). Ненульове = DAO проголосував значення поза

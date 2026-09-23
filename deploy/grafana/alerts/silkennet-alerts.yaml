@@ -2501,6 +2501,54 @@ groups:
           team: ops
 
       # -----------------------------------------------------------------------
+      # P2: EVM MONEY tx (mint / burn-slash) REVERTED on-chain. [SLASH-1, ⚖️ founder 2026-09-23]
+      # Для слешу це не «пізніше повторить»: договір лишається `:breached` без спалення, а
+      # машинного повтору свідомо немає — людина мусить усунути причину (пауза · SLASHER_ROLE ·
+      # газ) і пройти рецепт 06_08 §4.6. Мінт після revert перемінчується сам наступним циклом,
+      # але revert мінту теж аномалія (роль · пауза · газ). ⚠️ Стеля: лише EVM-рядки
+      # `BlockchainConfirmationWorker` — Celo/Solana мають власні шляхи й сюди не рахуються.
+      # -----------------------------------------------------------------------
+      - uid: sn-alert-money-tx-reverted
+        title: "⚠️ Money tx reverted on-chain (mint / slash)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: ${DATASOURCE_UID}
+            model:
+              expr: sum by (slot, direction) (increase(silkennet_blockchain_tx_reverted_total[1h]))
+              refId: A
+          - refId: B
+            datasourceUid: "__expr__"
+            model:
+              type: reduce
+              refId: B
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: "__expr__"
+            model:
+              type: threshold
+              refId: C
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+        noDataState: OK
+        execErrState: Error
+        for: 0m
+        annotations:
+          summary: "Грошова tx ({{ $labels.direction }}) ревертнулась on-chain ({{ $values.B.Value | printf \"%.0f\" }} за годину)."
+          description: "Квитанція money-tx прийшла зі статусом revert, рядки → :failed. direction=burn (СЛЕШ): договір лишився :breached БЕЗ спалення, повтору машина свідомо не робить — усунь причину (пауза контракту · відкликана SLASHER_ROLE · газ), поверни договір у :active з консолі й прожени вирок (і сусідам кластера, яким revert повернув доказ) — рецепт 06_08 §4.6. direction=mint: рядки перемінтяться самі наступним циклом, але причина (роль · пауза · газ) лишається — звір BlockchainTransaction.error_message. SLASH-1 / 06_08 §4.6."
+          runbook_url: "docs/06_08_Resilience_and_Failover_Policy.md"
+        labels:
+          severity: warning
+          component: web3
+          team: ops
+
+      # -----------------------------------------------------------------------
       # P2: Ethereum L1 anchor storeStateRoot REVERTED on-chain. [ARCH.66] Детермінований
       # contract-revert «фінальної печатки» (root-колізія / <6-денний MIN_ANCHOR_INTERVAL /
       # bad-ABI / gas) = реальна аномалія, інакше видима лише через 8-денний missed-weeks-лаг.
