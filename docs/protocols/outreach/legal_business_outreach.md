@@ -53,7 +53,7 @@
 
 - **P1 — ™-подача** (повірений УкрНОІВІ): єдиний зовнішній крок без передумов; пріоритет-дата страхує весь подальший публічний трек (splash, Стаття 1).
 - **P2 — UNI.14-контакт СЄУ** (лист Аблязову): відкриває хаб п.2 — без нього стоять 5 items.
-- **P3 — scouting крипто/securities-юриста**: пошук кандидата ≠ консультація; можна вести паралельно з P2.
+- **P3 — scouting крипто/securities-юриста**: пошук кандидата ≠ консультація; можна вести паралельно з P2. Машинний шортлист із межею звірки — §4.1; вибір і контакт — 👤.
 - **P4 — запит нац-focal-point Міндовкілля** (Article-6/double-count): ⛔ **ВІДКЛАДЕНО з тригером, ⚖️ founder 2026-08-29** — не «черга не дійшла», а присуд. «0 грн» правдиве лише в грошах: звернення від проєкту на TRL 3 створює ранній слід у регулятора, три з чотирьох питань належать ОПЕРАТОРУ (ми dMRV-провайдер, не емітент), а дворічний pilot framework протухне раніше за наш реальний ліс. Тригер — **реальний ліс АБО контрагент-оператор**. Пакет написано наперед: [`mindovkillia_article6_request.md`](mindovkillia_article6_request.md).
 - **P5 — internal-хвости**: DCO `CONTRIBUTING` (🤖) · чернетка carve-out угоди до воркшопу.
 
@@ -73,7 +73,7 @@
 
 | Роль (немає людини) | Що гейтить | Стан |
 |---|---|---|
-| **Крипто/securities-юрист** | BIZ.22 (= гейт Web3 mainnet) · UNI.16 Блоки 1+5 · Phase-2 token-контур | 🔴 TBD, не контактовано — **найгостріша вакансія пакета** |
+| **Крипто/securities-юрист** | BIZ.22 (= гейт Web3 mainnet) · UNI.16 Блоки 1+5 · Phase-2 token-контур · EU-половина KYC/AML BIZ.20 ([`owner_meeting_briefs`](owner_meeting_briefs.md), KYC/AML-блок п.6–9) | 🔴 TBD, не контактовано — **найгостріша вакансія пакета**; публічні кандидати — §4.1 |
 | **Податковий фахівець** | UNI.14 (нога «ПОДАТКОВА постава + 90%-тест» — ⚠️ НЕ ноги-sit-down: ті мають адресатів, Гедза й Аблязова) · BIZ.20 90%-тест · ПДВ-режим carbon-послуги | 🔴 TBD, не контактовано — вакансію канонізовано 2026-09-22 ([`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md)); доти пакет адресувався обліковцям. ⊕ ПДВ-половина має обхід без фахівця — власна ІПК ДПС |
 | **Страховий брокер** (ліцензований) | BIZ.21 → підписання BIZ.2 | TBD, не контактовано |
 | **Повірений УкрНОІВІ** | UNI.15 (™-подача) | роль канонізована ([`00_02 §4.1`](../../00_02_Academic_Integration_and_IP.md)), особа не обрана |
@@ -83,3 +83,24 @@
 | **Заслужений юрист** (Legal Wrapper SCC) | STK.3 | кандидата немає; канал пошуку = Спрягайло + Аблязов |
 
 NB: Аблязов, Гедз, Ус — адресати за каноном ([`00_02 §1.5`](../../00_02_Academic_Integration_and_IP.md)), але UNI.14 — КОНТАКТУ не було (⚠️ STAGE пункту `🟡`, бо машинна половина зроблена; «Не почато» тут про зустріч, не про пункт): жодної зустрічі/згоди ще немає. Біохімічна вісь (ЧМА) — поза цим пакетом: §07-артефакти біохіміку не адресовані.
+
+### 4.1 Крипто/securities-юрист — публічний шортлист (`BIZ.22`) · ⏳ звірено 2026-09-23
+
+> ⚠️ **Машинний шортлист із публічних джерел — НЕ професійна рекомендація.** Жодну фірму **не контактовано**. Ціни невідомі: жодна з відкритих сторінок їх не публікує. Рейтинг міряє ринкову репутацію, а не придатність до НАШОГО кейсу: ми pre-revenue й solo, і питання звучить «чи ми взагалі VASP/CASP». Публічні ж кейси фірм — про отримання ліцензії для клієнта, який уже знає, що він CASP. Вибір і контакт — 👤 ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.22); роль — [`00_02 §4.2`](../../00_02_Academic_Integration_and_IP.md).
+>
+> **Чому ці юрисдикції:** UA — operational-vehicle ([`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.20). LT/LV — інтерфейс несе локалі `lt` і `lv` (`config/application.rb`, `available_locales`), а мова вітрини є сигналом наміру пропонувати послугу в ЄС (скіл `legal-business`, п.11). ⊥ Фінляндія (registry-export у Puro.earth, [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.22) цим проходом **не шукалась** — це прогалина периметра, не висновок.
+
+| Фірма | Юрисдикція | Що публічно заявлено (крипто · securities · MiCA · AML) | Джерело (відкрито 2026-09-23) | Межа звірки |
+|---|---|---|---|---|
+| **CMS** (київський офіс) | UA (мережа — також EU) | Розділ «Ukraine» гайда *CMS Expert Guide to Crypto Regulation*, оновлено 3.09.2026; контакт-партнера названо в самому гайді. Описує AML/CTF-вимоги й статус ЗУ 2074-IX («adopted… not yet in force» — збігається з нашою первинкою). Legal 500 UA «Banking, finance and capital markets» — Tier 1 | https://cms.law/en/int/expert-guides/cms-expert-guide-to-crypto-regulation/ukraine · https://www.legal500.com/c/ukraine/banking-finance-and-capital-markets | Гайд прочитано через фетч-переказ, не сирим HTML. EU-розділи того ж гайда не відкривались |
+| **Sayenko Kharenko** | UA | Двоє партнерів — «Global Leaders» у *Who's Who Legal: Fintech & Blockchain* 2023 (сайт фірми, 5.10.2023) і 2024 (переказ EBA, 27.09.2024). Legal 500 UA BF&CM — Tier 1. «Юридична практика» (Ukrainian Law Firms): «Leading firms» у Banking & Finance, Capital Markets, and Fintech | https://sk.ua/sayenko-kharenko-dominates-who-s-who-legal-fintech-blockchain-2023-with-the-highest-number-of-recognised-lawyers-in-ukraine/ · https://eba.com.ua/en/podvijne-vyznannya-sayenko-kharenko-u-rejtyngu-who-s-who-legal-fintech-blockchain-2024/ · https://ukrainianlawfirms.com/whoiswho/banking-finance/ | Визнання — рейтинг ОСІБ, не практики ВА; про MiCA-роботу публічно нічого не знайдено. Сторінка ULF сама каже: «The research period is the year 2021» — дані застарілі |
+| **Dentons** (київський офіс) | UA (мережа — також EU) | Legal 500 UA BF&CM — Tier 2. Опис практики: «regulatory development and legislative alignment for innovative sectors, including fintech and digital assets» | https://www.legal500.com/rankings/ranking/c-ukraine/banking-finance-and-capital-markets/895-dentons | Одне речення редакції Legal 500, не заява фірми. Сторінку практики на власному домені не відкривали |
+| **Gramatskiy & Partners** | UA | ⚠️ **Лише для UA-AML-половини** (п.1–3 KYC/AML-блоку в [`owner_meeting_briefs`](owner_meeting_briefs.md)), не для крипто/MiCA. Legal 500 UA BF&CM — Tier 3. Співкерівник практики — «banking compliance and anti-money laundering» | https://www.legal500.com/rankings/ranking/c-ukraine/banking-finance-and-capital-markets/15186-gramatskiypartners | Сирий HTML сторінки слів «crypto»/«virtual assets» не містить. Пошуковий сніпет казав інакше — довіряли сторінці |
+| **Ellex Valiunas** | LT (Ellex — також LV/EE) | Legal 500 Lithuania «Fintech» — Tier 1. Профіль: регуляторна команда з AML-фокусом; «Advised Robinhood on obtainment of MiCA and MiFID licences». Сайт фірми (2.07.2025): консультувала щодо CASP-ліцензії за MiCA від Bank of Lithuania. Партнерів практики названо на сторінці фірми | https://www.legal500.com/c/lithuania/fintech · https://www.legal500.com/rankings/ranking/c-lithuania/fintech/12055-ellex-valiunas · https://ellex.legal/ellex-europe-robinhood/ | UA-права не покриває. Кейс — великий клієнт, що вже є CASP; наш кейс інший |
+| **Sorainen** | LV / LT | Legal 500 Lithuania «Fintech» — Tier 1. Сайт фірми (4.12.2025): супровід першої в Латвії MiCA-ліцензії (BlockBen, Latvijas Banka: custody and administration, exchange, placing and transfer services). Партнерів практики названо на сторінці фірми | https://www.sorainen.com/deals/blockben-makes-history-as-the-first-mica-licensed-company-in-latvia-and-one-of-the-first-in-our-region/ · https://www.legal500.com/rankings/ranking/c-lithuania/fintech/14138-sorainen | Профіль Legal 500 крипто не згадує, лише fintech-ліцензування. UA-права не покриває |
+
+**Периметр пошуку.** Відкрито: Legal 500 Ukraine «Banking, finance and capital markets» (перелік тирів + два профілі); Legal 500 Lithuania «Fintech» (перелік тирів + три профілі; тири звірено сирим HTML, бо пошуковий сніпет хибно ставив WALLESS у Tier 2); «Юридична практика» / Ukrainian Law Firms, Banking & Finance, Capital Markets, and Fintech; власні домени фірм. **Не відкрито:** Chambers (Europe · FinTech). Окремої сторінки «Fintech» Legal 500 для Ukraine й Latvia за типовою адресою немає (404) — категорії може не бути або вона живе під іншою адресою.
+
+**Переглянуто й до шортлиста не взято** ще кілька фірм — за критерієм «публічна практика ВА/MiCA на власному домені станом на дату»; їхній перелік у публічному репо не ведемо (негатив про названу третю особу — не наш факт).
+
+«Не знайшли» тут означає стелю цього проходу, а не відсутність.

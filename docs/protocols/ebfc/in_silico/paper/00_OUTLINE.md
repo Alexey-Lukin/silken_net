@@ -60,6 +60,8 @@ L1 (distance/path) + L3 (anode) + L3b (cathode) + mediator series + solvation me
 
 ## 6. Introduction reference scaffold (key anchors; expand to ~40–60)
 
+> The numbered, Crossref-verified list for the whole paper (ACS, by first appearance) is [`09_references.md`](09_references.md); this scaffold is the planning record it grew from.
+
 - **EBFC reviews / field + challenges:** Pak et al. 2025 *Adv. Funct. Mater.* 10.1002/adfm.202415933; *Biosensors* 2025 (implantable EBFCs) 10.3390/bios15040218; Kundu 2026 *Fuel Cells*; "Tackling the Challenges of Enzymatic (Bio)Fuel Cells" *Chem. Rev.* 10.1021/acs.chemrev.9b00115.
 - **Os-mediated FAD-GDH (experimental anchor):** Degani & Heller 1987 → GcGDH Os-polymer window **+15…+489 mV vs NHE** = **Zafar, Wang, Sygmund, Ludwig, Leech, Gorton, *Anal. Chem.* 2012, 84, 334, doi:10.1021/ac202647z** (the "Electron-Transfer Studies… Os polymers of different redox potentials" paper). **E°(Os) = +309 mV vs NHE** = the device mediator `[Os(4,4'-dimethyl-2,2'-bipyridine)₂(PVI)₁₀Cl]⁺` — the best-performing of the six (E°'=+21 mV vs Ag/AgCl 0.1 M KCl + the paper's +288 mV conversion); driving force +574 mV. (Old +200 mV was an under-specified early anchor with no standalone source — superseded by the verified value.) Mao 2003 = electron-transport, not the potential range.
 - **Mediator design precedent (genre):** JPCB 10.1021/acs.jpcb.3c03740 (model-driven redox-mediator design, GOx).

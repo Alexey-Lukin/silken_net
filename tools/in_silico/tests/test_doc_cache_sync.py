@@ -807,6 +807,31 @@ CHECKS = [
         "mechanical/wind_duty_cycle.json",
         lambda d: d["budget_cycles_upper_bound"] / 1e8, 0.005,
     ),
+    # ── Accelerated-test equivalence (canon 01_02 §2 «Концепція»), owner = script 51 ──
+    # ⛔ The canon block printed «≈ 1 рік» and «≈ 3–5 років» with no owner beside it while script 51
+    # already cached the isotherm — and neither end matched the cache. Both ends of both rows are pinned,
+    # because a bracket quoted as its middle is exactly how that drift read. It is the 40 °C ISOTHERM;
+    # the protocol's 20–40 °C cycle has no computed equivalence anywhere (00_07 HW.3 ⚖️).
+    (
+        "accelerated test, 4 weeks @ 40 °C, Ea low end → gusak_degradation.json §arrhenius_aging",
+        METALLURGY, rf"4 тижні @ 40°C ≈ {N}–",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_aging"]["0.7"]["4"], 0.05,
+    ),
+    (
+        "accelerated test, 4 weeks @ 40 °C, Ea high end → gusak_degradation.json §arrhenius_aging",
+        METALLURGY, rf"4 тижні @ 40°C ≈ [\d.]+–{N} року",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_aging"]["1.0"]["4"], 0.05,
+    ),
+    (
+        "accelerated test, 12 weeks @ 40 °C, Ea low end → gusak_degradation.json §arrhenius_aging",
+        METALLURGY, rf"12 тижнів @ 40°C ≈ {N}–",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_aging"]["0.7"]["12"], 0.05,
+    ),
+    (
+        "accelerated test, 12 weeks @ 40 °C, Ea high end → gusak_degradation.json §arrhenius_aging",
+        METALLURGY, rf"12 тижнів @ 40°C ≈ [\d.]+–{N} року",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_aging"]["1.0"]["12"], 0.05,
+    ),
     # ⛔ The four rows below pin a table whose WHOLE POINT is that the two topologies differ. The
     # defect they exist against is not drift in one number but a SWAP: quoting the sheet factor for
     # a network part is exactly what canon did for three months after the topology was ratified, and

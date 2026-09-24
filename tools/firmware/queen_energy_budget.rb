@@ -29,7 +29,7 @@ PARAMS = {
   tx_sessions_per_day: 24, # CoAP flush 1×/год
   tx_session_s: 30.0,      # LTE-M сесія з RRC-хвостом, не чиста TX-мить
   tx_session_ma: 150.0,    # avg за сесію (peak 2A — то HW.15/BMS, не бюджет)
-  quiescent_ma: 20.0,      # MPPT+BMS self-consumption @12V: Victron 75/15 research
+  quiescent_ma: 20.0,      # Victron 75/15 self-consumption @12V ONLY (manual Rev 10 p.66) — the BMS row is NOT in this model yet (00_07 HW.15)
   # (HW.15, 2026-07-03); стара таблиця брала 5 мА — 4× оптимізм
   quiescent_v: 12.0,
   dcdc_eff: 0.95,          # buck 12V→3.7/3.3V
@@ -70,7 +70,7 @@ def consumption_rows(p, phase3:)
     [ "STM32WLE5JC continuous RX", wh(p[:mcu_ma], p[:mcu_v], 24.0), true ],
     [ "SIM7070G idle", wh(p[:modem_idle_ma], p[:modem_v], 24.0 - tx_h), true ],
     [ "SIM7070G LTE-M flush-сесії", wh(p[:tx_session_ma], p[:modem_v], tx_h), true ],
-    [ "MPPT+BMS quiescent (12V)", wh(p[:quiescent_ma], p[:quiescent_v], 24.0), false ]
+    [ "MPPT quiescent (12V; BMS not modelled)", wh(p[:quiescent_ma], p[:quiescent_v], 24.0), false ]
   ]
   if phase3
     starlink_h = p[:starlink_min_per_h] / 60.0 * 24.0
