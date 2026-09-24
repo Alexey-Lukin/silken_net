@@ -1471,7 +1471,7 @@ KET = "dft/cathode_ket_lambda.json"
 _KET_ROWS = (
     # (row label as SUMMARY prints it, scenario key in the cache)
     (r"canon λ=0\.7 \(old assumption\)", "canon λ=0.7 (old assumption)"),
-    (r"\*\*literature λ\*\* \(Cu 2\.0 / Co 1\.4 / Ce 1\.0\)", "literature λ"),
+    (r"\*\*literature λ\*\* \(Cu 2\.0–2\.4 / Co 1\.4 / Ce 1\.0\)", "literature λ"),
     (r"computed λ \(B3LYP, Co spin-crossover ~2× over-est\)", "computed λ (B3LYP, Co over-est)"),
     (r"Co→Ru swap \(computed λ_Ru = 0\.78\)", "Ru-swap (Co→Ru, computed)"),
 )
@@ -1513,12 +1513,24 @@ CHECKS += [
     (
         "L3b k_DET · paper §3.4 adverse end → cathode_ket_lambda (the figure the paper now quotes)",
         PAPER_RESULTS, rf"turns the literature-λ figure into a bracket of \*\*×{N} to",
-        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.0006,
+        KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.00006,
     ),
     (
         "L3b k_DET · paper §3.4 favourable end → cathode_ket_lambda",
         PAPER_RESULTS, rf"bracket of \*\*×[\d.]+ to ×{N}\*\*",
         KET, lambda d: d["scenarios"]["literature λ"]["margin_vs_turnover_favourable"], 0.6,
+    ),
+    (
+        # 2026-09-24: λ(Cu) became the bracket's SECOND axis — the reading that sets the adverse
+        # corner is pinned where the doc names it, so the axis cannot live without an instrument.
+        "L3b k_DET · the λ(Cu) Cu(phen)₂ reading → cathode_ket_lambda (the corner's second axis)",
+        SUMMARY, rf"gives\n\*\*≈{N} eV for Cu\(phen\)₂²⁺/⁺ self-exchange\*\*",
+        KET, lambda d: d["lambda_cu_readings_eV"]["cu_phen2"], 0.05,
+    ),
+    (
+        "L3b k_DET · FO-DFT adverse corner → cathode_ket_lambda",
+        SUMMARY, rf"\*\*×{N} at the adverse corner\*\* of the λ\(Cu\) bracket",
+        KET, lambda d: d["fodft_cuco_rigor"]["margin_adverse_corner"], 0.002,
     ),
     (
         "L3b k_DET · paper §3.4 site-energy gap → cathode_ket_lambda",
@@ -1804,3 +1816,50 @@ def test_every_doc_target_triggers_this_guard():
     assert not missing, (
         f"doc targets outside {WORKFLOW} — their pins cannot fire on a change to the doc alone:\n  "
         + "\n  ".join(missing))
+
+
+# ── generator ⟷ committed artefact: the class that bit THREE times on 2026-09-24 ──
+# A cache-schema change (505a1fac4, 2026-09-21) broke `60`, `61` and `31b` silently — no CI ran
+# any of them — and the paper's Table 3 was hand-edited around the break, so it kept printing a
+# single ΔG = 0 margin the cache had already turned into a bracket.
+TABLES = "docs/protocols/ebfc/in_silico/paper/06_tables.md"
+
+
+def test_paper_tables_match_their_generator():
+    """`06_tables.md` must be exactly what `61` renders from the committed caches.
+
+    Run in a subprocess via `runpy.run_path`, which compiles the script from SOURCE — no
+    `__pycache__` for the target (the stale-bytecode trap `_mirror_in_code` documents).
+    CAN catch: a generator that no longer runs on the committed caches · a hand edit of the
+    table · a cache change after which nobody regenerated it.
+    CANNOT catch: `60`'s figures (PNG bytes are not portable across matplotlib builds) — the
+    same class, left to in-silico §When Modifying #19.
+    """
+    import subprocess
+    import sys
+    code = "import runpy, sys; sys.stdout.write(runpy.run_path(sys.argv[1])['build']())"
+    run = subprocess.run(
+        [sys.executable, "-c", code, str(REPO / "tools/in_silico/scripts/61_paper_tables.py")],
+        capture_output=True, text=True, check=False)
+    assert run.returncode == 0, f"61 no longer renders on the committed caches:\n{run.stderr[-2000:]}"
+    assert run.stdout == (REPO / TABLES).read_text(encoding="utf-8"), (
+        f"{TABLES} differs from what 61 renders — re-run 61, never hand-edit the table")
+
+
+def test_cathode_rct_reads_the_current_bracket():
+    """`31b`'s k_DET scenarios must be the CURRENT corners of `25`'s bracket × turnover.
+
+    CAN catch: a `31b` cache left behind after `25` moved (it read a ΔG = 0 default for three
+    days after the bracket landed) · a scenario dropped or added on one side only.
+    CANNOT catch: whether `31b`'s Laviron grid is the right physics — a coherence pin only.
+    """
+    ket, rct = C("dft/cathode_ket_lambda.json"), C("kinetics/cathode_det_rct.json")
+    lit, fo, t = ket["scenarios"]["literature λ"], ket["fodft_cuco_rigor"], ket["turnover_s"]
+    expected = sorted([
+        lit["margin_vs_turnover_adverse"], lit["margin_vs_turnover_at_dG0"],
+        lit["margin_vs_turnover_favourable"], fo["margin_adverse_corner"],
+        fo["margin_vs_turnover_by_dG_sign"]["dG=0"], fo["margin_favourable_corner"]])
+    got = sorted(k / t for k in rct["k_scenarios_s"].values())
+    assert len(got) == len(expected) and all(
+        math.isclose(a, b, rel_tol=1e-9) for a, b in zip(got, expected, strict=True)), (
+        f"31b k_DET/turnover {got} ≠ the 25 bracket {expected} — re-run 31b")

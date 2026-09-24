@@ -15,7 +15,7 @@ relationship for the osmium mediator (slope ≈ −0.92 eV per σ unit) furnishe
 and rationalises the empirical potential optimum; and charge-localised ΔSCF with first-principles
 reorganisation energies places the bimetallic-ZIF cathode direct electron transfer — for an oriented
 enzyme–framework contact — at a margin that is borderline at zero driving force and falls below enzymatic
-turnover once the computed site-energy gap is carried with its adverse sign, with explicit low-λ
+turnover once the computed site-energy gap and the cited Cu reorganisation energy are carried at their adverse ends, with explicit low-λ
 mitigation. The apparently uphill
 anode→mediator cascade is shown to be a *quantified* limitation of continuum solvation on charged
 transition-metal couples — decomposed into a chloro↔bis-imidazole differential-solvation bracket and a

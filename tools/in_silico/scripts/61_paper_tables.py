@@ -36,7 +36,10 @@ def _close(a: float, b: float, tol: float, what: str) -> None:
         sys.exit(f"CANON DRIFT [{what}]: cache {a:.4f} vs canon {b:.4f} (tol {tol})")
 
 
-def main() -> int:
+def build() -> str:
+    """The whole 06_tables.md, rendered from the caches — `main` writes it, and
+    `test_doc_cache_sync` compares it with the committed file (a generator no CI ran
+    lay broken three days after a cache-schema change, and the table was hand-edited)."""
     series = _load("os_mediator_series.json")
     zif = _load("zif_hopping.json")
     fodft = _load("fodft_coupling.json")
@@ -52,7 +55,11 @@ def main() -> int:
     _close(koop_dm, 6.020, 0.01, "T2 Koopmans ωB97X (dimethyl)")
     _close(zif["pairs"][0]["t_ij_eV"], 0.00128, 1e-4, "T3 Cu-Co ΔSCF t_ij")
     _close(fodft["t_ij_eV"], 0.005462, 1e-4, "T3 Cu-Co FO-DFT t_ij")
-    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover"], 1.385, 0.05, "T3 lit-λ margin")
+    # 505a1fac4 (2026-09-21) split the single margin into a bracket, and 2026-09-24 added the λ(Cu)
+    # reading as its second axis — the asserts follow the fields that now carry each number.
+    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_at_dG0"], 1.385, 0.05, "T3 lit-λ margin (ΔG=0)")
+    _close(ket["scenarios"]["literature λ"]["margin_vs_turnover_adverse"], 0.00448, 0.0002,
+           "T3 lit-λ adverse corner")
     names = [c["name"] for c in series["complexes"]]
     _close(series["complexes"][names.index("bpy")]["cascade_delta_eV"], -0.9093, 0.005, "T4 H cascade")
     _close(series["complexes"][names.index("so2cf3")]["cascade_delta_eV"], -0.2269, 0.005, "T4 SO₂CF₃ cascade")
@@ -70,11 +77,13 @@ def main() -> int:
     md.append("| Tier | Functional | Basis / ECP | Solvent | Used for |")
     md.append("|---|---|---|---|---|")
     md.append("| Screening | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, mediator series (①), speciation (②) |")
-    md.append("| Publication | ωB97X | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | adiabatic ΔSCF cross-check; speciation functional-robustness |")
+    md.append("| Publication — cascade | ωB97X (FAD geometries B3LYP/def2-SVP) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | adiabatic ΔSCF cross-check |")
+    md.append("| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |")
     md.append("| PCET | B3LYP/6-31G(d) + thermodynamic proton reference (Isse–Gennaro) | — | PCM | FAD E°; semiquinone cascade |")
     md.append("| Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |")
-    md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); FO-DFT two-state Mulliken–Hush (24b) | C-PCM | ZIF inter-metal t_ij |")
-    md.append("\n*Reproducibility: deterministic scripts in `tools/in_silico`, version-pinned conda-lock env.*\n")
+    md.append("| DET coupling | ΔSCF-UKS energy-splitting (24); FO-DFT two-state Mulliken–Hush (24b) | none (gas phase) | ZIF inter-metal t_ij |")
+    md.append("\n*Reproducibility: deterministic scripts in `tools/in_silico`; every DFT cache computed with PySCF 2.11.0 "
+              "(the recorded environment — §2.7).*\n")
 
     # ── Table 2 — cascade energetics, all methods ──
     koop = koop_dm
@@ -93,25 +102,55 @@ def main() -> int:
     # ── Table 3 — DET hops + reorganization energies (cathode) ──
     p = {x["label"].split()[0]: x for x in zif["pairs"]}   # "Cu-Co"/"Co-Ce"/"Ce-graphene"
     lam_lit, lam_comp = ket["lambda_lit_eV"], ket["lambda_computed_eV"]
+    cu_read = ket["lambda_cu_readings_eV"]                  # λ(Cu) is a bracket of named readings
+    cu_lo, cu_hi = min(cu_read.values()), max(cu_read.values())
+
+    def _hop_band(other: float) -> str:
+        """λ_hop(Cu–X) over the λ(Cu) readings — a band, because λ(Cu) is one."""
+        return f"{(cu_lo + other) / 2:.2f}–{(cu_hi + other) / 2:.2f}"
+
     md.append("## Table 3. Cathode DET hops, couplings and reorganisation energies\n")
     md.append("| Hop | t_ij ΔSCF (eV) | t_ij FO-DFT (eV) | λ_hop lit (eV) | λ_hop computed (eV) |")
     md.append("|---|---|---|---|---|")
-    md.append(f"| **Cu–Co** (T1↔node, bottleneck) | {p['Cu-Co']['t_ij_eV']:.5f} | {fodft['t_ij_eV']:.5f} | {(lam_lit['Cu']+lam_lit['Co'])/2:.2f} | {(lam_comp['Cu']+lam_comp['Co'])/2:.2f} |")
+    md.append(f"| **Cu–Co** (T1↔node, bottleneck) | {p['Cu-Co']['t_ij_eV']:.5f} | {fodft['t_ij_eV']:.5f} | {_hop_band(lam_lit['Co'])} | {_hop_band(lam_comp['Co'])} |")
     md.append(f"| Co–Ce (node↔vacancy) | {p['Co-Ce']['t_ij_eV']:.5f} | — | {(lam_lit['Co']+lam_lit['Ce'])/2:.2f} | {(lam_comp['Co']+lam_comp['Ce'])/2:.2f} |")
     md.append(f"| Ce–graphene (vacancy↔MWCNT) | {p['Ce-graphene']['t_ij_eV']:.5f} | — | — | — |")
-    md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario:**\n")
-    md.append("| λ scenario | margin |")
-    md.append("|---|---|")
+    md.append("\n**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario** — each a "
+              "bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer "
+              "reading is the ADVERSE corner:\n")
+    md.append("| λ scenario | adverse corner | ΔG = 0 (default, not a measurement) | favourable corner |")
+    md.append("|---|---|---|---|")
     sc = ket["scenarios"]
-    md.append(f"| canon λ=0.7 (old, withdrawn) | ×{sc['canon λ=0.7 (old assumption)']['margin_vs_turnover']:.3g} |")
-    md.append(f"| **literature λ** (Cu 2.0/Co 1.4/Ce 1.0) | **×{sc['literature λ']['margin_vs_turnover']:.2f}** (borderline) |")
-    md.append(f"| computed λ (B3LYP, Co over-est) | ×{sc['computed λ (B3LYP, Co over-est)']['margin_vs_turnover']:.3g} |")
-    md.append(f"| Ru-swap (Co→Ru, computed λ 0.78) | ×{sc['Ru-swap (Co→Ru, computed)']['margin_vs_turnover']:.0f} |")
-    fos = ket["fodft_cuco_rigor"]["margin_vs_turnover_by_dG_sign"]
-    md.append(f"| FO-DFT rigorous (ΔG −/0/+gap) | ×{fos['dG=+gap']:.2g} – ×{fos['dG=-gap']:.0f} (×{fos['dG=0']:.0f} at ΔG=0) |")
-    md.append("\n*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35); B3LYP over-estimates the first-row "
-              "λ (Co spin-crossover) → the literature row is the honest estimate. Cathode is borderline / "
-              "possibly co-limiting (k_DET ~ turnover).*\n")
+
+    def _row(label: str, s: dict, bold: bool = False) -> str:
+        a, z, f = (s["margin_vs_turnover_adverse"], s["margin_vs_turnover_at_dG0"],
+                   s["margin_vs_turnover_favourable"])
+        cell = (lambda v: f"**×{v:.2g}**") if bold else (lambda v: f"×{v:.2g}")
+        return f"| {label} | {cell(a)} | ×{z:.2g} | ×{f:.2g} |"
+
+    md.append(_row("canon λ=0.7 (old, withdrawn)", sc["canon λ=0.7 (old assumption)"]))
+    md.append(_row(f"**literature λ** (Cu {cu_lo:.1f}–{cu_hi:.1f} / Co {lam_lit['Co']:.1f} / Ce {lam_lit['Ce']:.1f})",
+                   sc["literature λ"], bold=True))
+    md.append(_row("computed λ (B3LYP, Co over-est; Cu literature)", sc["computed λ (B3LYP, Co over-est)"]))
+    md.append(_row(f"Ru-swap (Co→Ru, computed λ {lam_comp['Ru']:.2f}) — *spread is λ(Cu) only: the Cu–Ru "
+                   "site gap is not obtainable from the minimal cluster, so every column is ΔG = 0*",
+                   sc["Ru-swap (Co→Ru, computed)"]))
+    fo = ket["fodft_cuco_rigor"]
+    md.append(f"| FO-DFT rigorous coupling (literature λ) | ×{fo['margin_adverse_corner']:.2g} | "
+              f"×{fo['margin_vs_turnover_by_dG_sign']['dG=0']:.2g} | ×{fo['margin_favourable_corner']:.3g} |")
+    lit = sc["literature λ"]
+    below = lit["margin_vs_turnover_adverse"] < 1.0 <= lit["margin_vs_turnover_favourable"]
+    md.append("\n*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35) for Co, Ce and Ru; λ(Cu) is a "
+              f"literature bracket of two solution readings — {cu_lo:.1f} eV (textbook value, source not "
+              f"found) and {cu_hi:.1f} eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ "
+              "hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. "
+              "Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below "
+              "both (0.7 eV in azurin, same source), so the favourable corner is no floor. B3LYP "
+              "over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest "
+              "estimate. The adverse corner is the uphill gap sign at the higher λ(Cu). "
+              + ("Cathode: rate-limiting at the adverse corner, above turnover at the favourable one — "
+                 "the bracket straddles turnover.*\n" if below else
+                 "Cathode: the bracket does not straddle turnover — read the corners.*\n"))
 
     # ── Table 4 — mediator structure–activity series ──
     md.append("## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)\n")
@@ -131,8 +170,12 @@ def main() -> int:
               f"LFER slope ≈ −{abs(lf_slope):.2f} eV/σ over OMe→NO₂ (Fig 3b). Higher E°(Os) lowers OCV, so "
               f"the cell optimum (~+309 mV) balances driving force vs overpotential.*\n")
 
+    return "\n".join(md) + "\n"
+
+
+def main() -> int:
     out = PAPER_DIR / "06_tables.md"
-    out.write_text("\n".join(md) + "\n")
+    out.write_text(build())
     print(f"  ✓ wrote {out.relative_to(REPO_ROOT)} (T1–T4)")
     print("Done — all canon cross-checks passed.")
     return 0

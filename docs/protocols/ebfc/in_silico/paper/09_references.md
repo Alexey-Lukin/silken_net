@@ -12,7 +12,7 @@
 > Year = the issue/volume year (`published-print` → journal-issue → `issued`), never the online year and
 > never the year inside a DOI suffix. Journal abbreviations are CASSI-style and set by hand; author lists
 > are complete (truncation is a reference-manager setting). Ref 47 is software: its DOI is
-> DataCite-registered (Zenodo), not Crossref. Ref 50 is cited for the GAFF2 parameters used (`gaff-2.11`),
+> DataCite-registered (Zenodo), not Crossref. Ref 51 is cited for the GAFF2 parameters used (`gaff-2.11`),
 > which have no separate paper. The founder's final reference-manager pass still applies.
 >
 > **Corrections carried in this list.** 2026-06-19 pass (all 41 scaffold DOIs resolved, zero fabrications):
@@ -28,7 +28,7 @@
 > (vol 22). Method sources added for every method named in §2 (B3LYP, ωB97X, 6-31G(d), LANL2DZ,
 > Stuttgart RSC, def2, C-PCM, PySCF, MMFF94s, RDKit, ChimeraX, AlphaFold 3, Beratan–Onuchic, Marcus,
 > Nelsen, Hammett, cluster-continuum), and 2026-09-24 (second pass) for the VWN term of the PySCF B3LYP and
-> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 54 is the one
+> the molecular-dynamics ensemble (OpenMM 8, ff14SB, GAFF, TIP3P-FB, MDTraj). Ref 55 is the one
 > `[CITATION NEEDED]` closed from an open-access full text (§2.1 of that paper: aryl-NO₂ films are reduced to
 > aryl-NH₂ and aryl-NHOH under acidic electrochemical conditions — grafted films on gold, not the
 > 4,4′-nitro-bpy ligand, so it supports the chemistry, not the device).
@@ -48,11 +48,16 @@ author's.
   population in the space of two MOs, which is neither the dipole-based generalised Mulliken–Hush nor a
   textbook FO-DFT fragment basis; which published method it IS is an attribution call. 👤
 - §2.5, §3.4 (twice) — the literature λ values (Cu 2.0 / Co 1.4 / Ce 1.0 / Ru 0.8 eV, `25` `LAMBDA_LIT`).
-  ⚠️ The one OA reading found DISAGREES for Cu: Gray & Winkler, *PNAS* 2005, *102*, 3534 (PMC553296,
-  §"Ru-Proteins") give ≈2.4 eV for aqueous Cu(II/I) self-exchange (0.7 eV in azurin). 👤
-- §3.1, Fig 2 — the 18–20 Å efficient-tunnelling window. The same OA text does not state such a window: it
-  takes 20 Å as the distance where multistep hopping is needed for sub-millisecond transport (Fig. 5
-  discussion). Likely primary: Page et al., *Nature* 1999 (paywall). 👤
+  ✅ 2026-09-24 for Cu: λ(Cu) is now a bracket of two named readings, judged at its adverse corner — 2.4 eV
+  is the **Cu(phen)₂²⁺/⁺** self-exchange of ref 48 (PMC553296, §"Ru-Proteins", citing its ref 24). ⚠️ The
+  species is an inline formula IMAGE that the page's text layer drops; read from the image, it is a
+  bis-phenanthroline N₄ chelate, not the aqueous ion this note once said. 2.0 eV keeps
+  `[CITATION NEEDED]`. Co/Ce/Ru: no primary found. 👤 primary for Cu 2.0 (or drop it) and for Co/Ce/Ru
+- §3.1, Fig 2 — the tunnelling window. ✅ 2026-09-24: replaced by what ref 48 states («the maximum
+  center-to-center distance for single-step tunneling through proteins can be no more than ≈20 Å», for the
+  micro-to-millisecond times a redox machine needs — §"Hopping", with its Fig. 4); the unsourced 18 Å edge is
+  dropped, and the text now says that 16.0 Å is a burial depth — a lower bound on the donor–acceptor
+  separation, not the separation.
 - §3.2, §3.6, Fig 3 — the free-flavin E°(FAD/FADH₂) = −208 mV at pH 7 (`32` labels it "well-known").
   ⚠️ OA DISAGREES: ref 25 (PMC4480342, Introduction, citing its ref 105) gives E_m(FAD, water) = −0.22 V.
   Against −0.22 V the computed −158 mV is ~62 mV off, not "~50 mV". ✅ ⚖️ founder 2026-09-24: both readings
@@ -114,16 +119,17 @@ author's.
 44. Cossi, M.; Rega, N.; Scalmani, G.; Barone, V. Energies, structures, and electronic properties of molecules in solution with the C-PCM solvation model. *J. Comput. Chem.* **2003**, *24*, 669–681. DOI: 10.1002/jcc.10189.
 45. Halgren, T. A. Merck molecular force field. I. Basis, form, scope, parameterization, and performance of MMFF94. *J. Comput. Chem.* **1996**, *17*, 490–519. DOI: 10.1002/(sici)1096-987x(199604)17:5/6<490::aid-jcc1>3.0.co;2-p.
 46. Halgren, T. A. MMFF VI. MMFF94s option for energy minimization studies. *J. Comput. Chem.* **1999**, *20*, 720–729. DOI: 10.1002/(sici)1096-987x(199905)20:7<720::aid-jcc7>3.0.co;2-x.
-47. Landrum, G.; Tosco, P.; et al. *RDKit: Open-Source Cheminformatics Software*; Zenodo. DOI: 10.5281/zenodo.591637 (concept DOI, DataCite-registered) [version as pinned in `tools/in_silico/conda-lock.yml` — fill at submission].
-48. Eastman, P.; Galvelis, R.; Peláez, R. P.; Abreu, C. R. A.; Farr, S. E.; Gallicchio, E.; Gorenko, A.; Henry, M. M.; Hu, F.; Huang, J.; Krämer, A.; Michel, J.; Mitchell, J. A.; Pande, V. S.; Rodrigues, J. P.; Rodriguez-Guerra, J.; Simmonett, A. C.; Singh, S.; Swails, J.; Turner, P.; Wang, Y.; Zhang, I.; Chodera, J. D.; De Fabritiis, G.; Markland, T. E. OpenMM 8: Molecular Dynamics Simulation with Machine Learning Potentials. *J. Phys. Chem. B* **2024**, *128*, 109–116. DOI: 10.1021/acs.jpcb.3c06662.
-49. Maier, J. A.; Martinez, C.; Kasavajhala, K.; Wickstrom, L.; Hauser, K. E.; Simmerling, C. ff14SB: Improving the Accuracy of Protein Side Chain and Backbone Parameters from ff99SB. *J. Chem. Theory Comput.* **2015**, *11*, 3696–3713. DOI: 10.1021/acs.jctc.5b00255.
-50. Wang, J.; Wolf, R. M.; Caldwell, J. W.; Kollman, P. A.; Case, D. A. Development and testing of a general amber force field. *J. Comput. Chem.* **2004**, *25*, 1157–1174. DOI: 10.1002/jcc.20035.
-51. Wang, L.-P.; Martinez, T. J.; Pande, V. S. Building Force Fields: An Automatic, Systematic, and Reproducible Approach. *J. Phys. Chem. Lett.* **2014**, *5*, 1885–1891. DOI: 10.1021/jz500737m.
-52. McGibbon, R. T.; Beauchamp, K. A.; Harrigan, M. P.; Klein, C.; Swails, J. M.; Hernández, C. X.; Schwantes, C. R.; Wang, L.-P.; Lane, T. J.; Pande, V. S. MDTraj: A Modern Open Library for the Analysis of Molecular Dynamics Trajectories. *Biophys. J.* **2015**, *109*, 1528–1532. DOI: 10.1016/j.bpj.2015.08.015.
-53. Sterling, C. M.; Bjornsson, R. Multistep Explicit Solvation Protocol for Calculation of Redox Potentials. *J. Chem. Theory Comput.* **2019**, *15*, 52–67. DOI: 10.1021/acs.jctc.8b00982.
-54. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
-55. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
-56. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
+47. Landrum, G.; Tosco, P.; et al. *RDKit: Open-Source Cheminformatics Software*; Zenodo. DOI: 10.5281/zenodo.591637 (concept DOI, DataCite-registered) [version 2025.09.5, as recorded in `tools/in_silico/environment.computed.explicit.txt`].
+48. Gray, H. B.; Winkler, J. R. Long-range electron transfer. *Proc. Natl. Acad. Sci. U.S.A.* **2005**, *102*, 3534–3539. DOI: 10.1073/pnas.0408029102.
+49. Eastman, P.; Galvelis, R.; Peláez, R. P.; Abreu, C. R. A.; Farr, S. E.; Gallicchio, E.; Gorenko, A.; Henry, M. M.; Hu, F.; Huang, J.; Krämer, A.; Michel, J.; Mitchell, J. A.; Pande, V. S.; Rodrigues, J. P.; Rodriguez-Guerra, J.; Simmonett, A. C.; Singh, S.; Swails, J.; Turner, P.; Wang, Y.; Zhang, I.; Chodera, J. D.; De Fabritiis, G.; Markland, T. E. OpenMM 8: Molecular Dynamics Simulation with Machine Learning Potentials. *J. Phys. Chem. B* **2024**, *128*, 109–116. DOI: 10.1021/acs.jpcb.3c06662.
+50. Maier, J. A.; Martinez, C.; Kasavajhala, K.; Wickstrom, L.; Hauser, K. E.; Simmerling, C. ff14SB: Improving the Accuracy of Protein Side Chain and Backbone Parameters from ff99SB. *J. Chem. Theory Comput.* **2015**, *11*, 3696–3713. DOI: 10.1021/acs.jctc.5b00255.
+51. Wang, J.; Wolf, R. M.; Caldwell, J. W.; Kollman, P. A.; Case, D. A. Development and testing of a general amber force field. *J. Comput. Chem.* **2004**, *25*, 1157–1174. DOI: 10.1002/jcc.20035.
+52. Wang, L.-P.; Martinez, T. J.; Pande, V. S. Building Force Fields: An Automatic, Systematic, and Reproducible Approach. *J. Phys. Chem. Lett.* **2014**, *5*, 1885–1891. DOI: 10.1021/jz500737m.
+53. McGibbon, R. T.; Beauchamp, K. A.; Harrigan, M. P.; Klein, C.; Swails, J. M.; Hernández, C. X.; Schwantes, C. R.; Wang, L.-P.; Lane, T. J.; Pande, V. S. MDTraj: A Modern Open Library for the Analysis of Molecular Dynamics Trajectories. *Biophys. J.* **2015**, *109*, 1528–1532. DOI: 10.1016/j.bpj.2015.08.015.
+54. Sterling, C. M.; Bjornsson, R. Multistep Explicit Solvation Protocol for Calculation of Redox Potentials. *J. Chem. Theory Comput.* **2019**, *15*, 52–67. DOI: 10.1021/acs.jctc.8b00982.
+55. Olguín, C. F.; Agurto, N.; Silva, C. P.; Candia, C. P.; Santander-Nelli, M.; Oyarzo, J.; Gómez, A.; Silva, J. F.; Pavez, J. Tuning the Covering on Gold Surfaces by Grafting Amino-Aryl Films Functionalized with Fe(II) Phthalocyanine: Performance on the Electrocatalysis of Oxygen Reduction. *Molecules* **2021**, *26*, 1631. DOI: 10.3390/molecules26061631.
+56. Laviron, E. A.C. polarography and faradaic impedance of strongly adsorbed electroactive species. *J. Electroanal. Chem. Interfacial Electrochem.* **1979**, *97*, 135–149. DOI: 10.1016/s0022-0728(79)80057-1.
+57. Schachinger, F.; Ma, S.; Ludwig, R. Redox potential of FAD-dependent glucose dehydrogenase. *Electrochem. Commun.* **2023**, *146*, 107405. DOI: 10.1016/j.elecom.2022.107405.
 
 ## Verified but not cited in the text (NOT part of the numbered list)
 

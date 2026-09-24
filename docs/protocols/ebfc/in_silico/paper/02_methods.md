@@ -20,8 +20,8 @@ charged residues within ≈5 Å), retaining backbone amide caps.
 
 ## 2.2 Electronic-structure setup
 
-All density-functional calculations used **PySCF**<sup>30,31</sup> (version pinned in the repository
-environment, §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
+All density-functional calculations used **PySCF**<sup>30,31</sup> (version 2.11.0, with geomeTRIC 1.1 for
+geometry optimisation; §2.7). Two functionals were employed: **B3LYP**<sup>32–34</sup> (the PySCF/libxc `B3LYP`, i.e. with the VWN RPA local-correlation
 term<sup>35</sup> of the Gaussian convention, not the VWN5 variant) for the orbital-resolved and ΔSCF
 energetics, and the range-separated hybrid **ωB97X**<sup>36</sup> for a higher-rung adiabatic cross-check. The
 basis was **6-31G(d)**<sup>37–39</sup> on all non-metal atoms, with the **LANL2DZ** effective-core potential
@@ -80,15 +80,17 @@ rate is the series combination of the three hops.
 (two relaxed geometries + two cross single-points seeded from the diagonal density). For the
 cathode this was applied to the well-behaved mixed-valence metal couples — **Co, Ce and Ru; Cu(II/I)
 was not computed**, a d¹⁰ Cu(I) hexa-aqua optimisation being unphysical in implicit solvent, so λ(Cu)
-enters as the literature value [CITATION NEEDED] and λ_hop(Cu–Co) is half computed and half cited; for the anode the
+enters as a bracket of two literature readings of Cu(II/I) self-exchange — 2.0 eV [CITATION NEEDED] and
+2.4 eV, the value for Cu(phen)₂²⁺/⁺<sup>48</sup> — judged at its adverse end (§3.4), and λ_hop(Cu–Co) is half
+computed and half cited; for the anode the
 physically-correct **FADH⁻/FADH• (deprotonated semiquinone) couple** was used — the naïve
 FADH₂/FADH₂•⁺ radical-cation is geometrically pathological in implicit solvent and does not yield
 a meaningful λ. Reported λ are inner-sphere; the Marcus outer-sphere term adds on top.
 
 **Thermal ensemble.** Frames were taken from a separate explicit-solvent molecular-dynamics production
-trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>48</sup> using Amber ff14SB<sup>49</sup> for
-the protein, GAFF2 parameters<sup>50</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>51</sup>
-(scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>52</sup> so that the
+trajectory of the enzyme in its immobilisation matrix, run with OpenMM<sup>49</sup> using Amber ff14SB<sup>50</sup> for
+the protein, GAFF2 parameters<sup>51</sup> for the FAD cofactor and the matrix components, and TIP3P-FB water<sup>52</sup>
+(scripts in the Supporting Information). Periodic images were re-assembled with MDTraj<sup>53</sup> so that the
 protein is whole and the non-covalently bound FAD lies in the same image, and the Beratan–Onuchic analysis
 was replayed on 15 frames; the ensemble rate enters through the conformational-gating factor
 ⟨exp(−2β·d)⟩/exp(−2⟨β·d⟩). For the flavin frontier orbital, the hydrogen-capped isoalloxazine ring was cut
@@ -98,13 +100,16 @@ from MD snapshots and evaluated by gas-phase B3LYP/6-31G(d) single points.
 
 To probe the implicit-solvation limit on the charge-changing octahedral couples, explicit
 first/second-shell waters were added around the redox centre and the chloride ligand and the ΔSCF
-redox energy re-evaluated as a function of shell size,<sup>17,53</sup> benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
+redox energy re-evaluated as a function of shell size,<sup>17,54</sup> benchmarked on the [Os(H₂O)₆]³⁺/²⁺ couple
 (the literature group-8 ~1 V PCM error<sup>19</sup>). The residual cascade gap was decomposed into a
 chloro↔bis-imidazole differential-solvation bracket and a 4,4′-dimethyl substituent term.
 
 ## 2.7 Reproducibility
 
 The pipeline is fully scripted and deterministic (fixed RDKit embedding seeds, a shared geometry
-/ DFT-runner library, committed cache JSONs) and runs in a **conda-lock-pinned** environment;
+/ DFT-runner library, committed cache JSONs) and was run in one **recorded** environment (PySCF 2.11.0,
+geomeTRIC 1.1, Python 3.12; the exact package list with checksums is in the Supporting Information). The
+repository's conda-lock file was generated after the calculations and resolves PySCF 2.13.1, so a re-run
+under it is a reproduction attempt, not a replay of the environment the numbers came from;
 every figure/number traces to a numbered script under `tools/in_silico/`. The scripts and golden
 reference outputs are provided as Supporting Information.

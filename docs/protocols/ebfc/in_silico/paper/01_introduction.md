@@ -68,7 +68,7 @@ The osmium mediator at the centre of this device is precisely such a couple.
 Rather than treat this as a nuisance to be absorbed into an empirical correction, we make it part of the
 result — quantifying the error on a clean benchmark and decomposing the device-level discrepancy into its
 physical contributions. Reproducibility is treated with the same seriousness: every calculation is
-scripted, seeded, and run from a version-pinned environment, in line with current best-practice DFT
+scripted, seeded, and run from a recorded, version-exact environment, in line with current best-practice DFT
 reporting.<sup>20,21</sup>
 
 ## Contribution
@@ -81,7 +81,7 @@ proton reference, isolating the cascade discrepancy to the mediator rather than 
 establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive and
 rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the
 bimetallic-ZIF cathode direct-electron-transfer kinetics with first-principles reorganization energies,
-finding a borderline, λ-limited margin — a corrected finding, not the orders-of-magnitude artefact an
+finding a λ- and driving-force-limited margin that straddles enzymatic turnover — a corrected finding, not the orders-of-magnitude artefact an
 earlier geometry-and-λ error had implied — together with the design levers (a low-reorganization metal,
 conductive-MOF band transport, or an acid-stable enzyme-free catalyst) that relieve it; and (iv) show
 that the apparent uphill cascade is a *quantified* limitation of continuum solvation on charged
@@ -96,7 +96,7 @@ reorganization energetics, the cathode direct-electron-transfer kinetics, the me
 series, and the solvation methodology; long-timescale matrix stability and the device-level
 delta-t/impedance behaviour are deferred to companion work and enter here only as experimental-closure
 predictions for the forthcoming titanium-coin measurements. All calculations are reproducible from the
-accompanying version-pinned scripts.
+accompanying scripts and their recorded environment.
 
 ---
 

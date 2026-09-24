@@ -204,8 +204,9 @@ def fig4() -> None:
     t = ket["t_ij_eV"]
     fo = ket["fodft_cuco_rigor"]
     sc = ket["scenarios"]
-    # 505a1fac4 (2026-09-21) split the margin into a bracket over the gap sign; panel (b) keeps the
-    # ΔG = 0 column, and the caption says so (the bracket is carried by the text, 03_results §3.4).
+    # 505a1fac4 (2026-09-21) split the margin into a bracket over the gap sign, and 2026-09-24 added
+    # the λ(Cu) reading as its second axis: panel (b) draws the ΔG = 0 column as the bar and the
+    # bracket's two CORNERS as its whisker, so the figure says what the table and §3.4 say.
     _close(sc["literature λ"]["margin_vs_turnover_at_dG0"], 1.385, 0.05, "③ lit-λ margin (ΔG=0)")
     _close(fo["margin_vs_turnover_by_dG_sign"]["dG=0"], 25.165, 0.1, "③ FO-DFT margin")
     _close(fo["t_ij_eV"], 0.005462, 1e-4, "③ FO-DFT t_ij")
@@ -234,31 +235,38 @@ def fig4() -> None:
 
     # ---- (b) k_DET margin vs turnover ----
     order = ["canon λ=0.7 (old assumption)", "literature λ", "computed λ (B3LYP, Co over-est)", "Ru-swap (Co→Ru, computed)"]
-    disp = ["canon λ=0.7\n(withdrawn)", "literature λ\n(2.0/1.4/1.0)", "computed λ\n(B3LYP)", "Ru-swap\n(Co→Ru)"]
+    cu = ket["lambda_cu_readings_eV"]
+    disp = ["canon λ=0.7\n(withdrawn)",
+            f"literature λ\n(Cu {min(cu.values()):.1f}–{max(cu.values()):.1f}/1.4/1.0)",
+            "computed λ\n(B3LYP)", "Ru-swap\n(Co→Ru)"]
     margins = [sc[k]["margin_vs_turnover_at_dG0"] for k in order]
+    lows = [sc[k]["margin_vs_turnover_adverse"] for k in order]
+    highs = [sc[k]["margin_vs_turnover_favourable"] for k in order]
     cols = [C["grey"], C["orange"], C["grey"], C["green"]]
     xs = np.arange(len(order))
     axb.bar(xs, margins, color=cols, width=0.6, zorder=3)
-    for x, m in zip(xs, margins, strict=False):
-        axb.text(x, m * (1.4 if m >= 1 else 0.5), f"×{m:.3g}", ha="center",
-                 va="bottom" if m >= 1 else "top", fontsize=7)
+    axb.errorbar(xs - 0.12, margins, yerr=[np.subtract(margins, lows), np.subtract(highs, margins)],
+                 fmt="none", ecolor="k", capsize=3, lw=1.0, zorder=4,
+                 label="bracket: adverse ↔ favourable corner\n(gap sign × λ(Cu) reading)")
+    for x, m, lo in zip(xs, margins, lows, strict=False):
+        axb.text(x + 0.05, lo * 0.55, f"×{lo:.2g}", ha="left", va="top", fontsize=6.5)
+        axb.text(x, m * 1.4, f"×{m:.3g}", ha="center", va="bottom", fontsize=7)
 
-    # FO-DFT rigorous range as an error bar on top of the literature-λ column
-    fo_lo = fo["margin_vs_turnover_by_dG_sign"]["dG=+gap"]
-    fo_hi = fo["margin_vs_turnover_by_dG_sign"]["dG=-gap"]
+    # FO-DFT rigorous bracket beside the literature-λ column
+    fo_lo, fo_hi = fo["margin_adverse_corner"], fo["margin_favourable_corner"]
     fo_mid = fo["margin_vs_turnover_by_dG_sign"]["dG=0"]
-    axb.errorbar([1], [fo_mid], yerr=[[fo_mid - fo_lo], [fo_hi - fo_mid]], fmt="D",
+    axb.errorbar([1.18], [fo_mid], yerr=[[fo_mid - fo_lo], [fo_hi - fo_mid]], fmt="D",
                  color=C["red"], ms=6, capsize=4, lw=1.4, zorder=5,
-                 label=f"FO-DFT range ×{fo_lo:.2g}–{fo_hi:.0f}\n(×{fo_mid:.0f} at ΔG=0)")
+                 label=f"FO-DFT coupling ×{fo_lo:.2g}–{fo_hi:.0f}\n(×{fo_mid:.0f} at ΔG=0)")
 
     axb.axhline(1.0, color="k", lw=1.1, ls="--", zorder=2)
-    axb.text(len(order) - 0.5, 1.25, "enzymatic turnover (10³ s⁻¹)", ha="right", va="bottom", fontsize=7)
+    axb.text(2.0, 1.25, "enzymatic turnover (10³ s⁻¹)", ha="center", va="bottom", fontsize=7)
     axb.set_yscale("log")
     axb.set_xticks(xs)
     axb.set_xticklabels(disp, fontsize=7)
     axb.set_ylabel("k$_{DET}$ margin vs turnover  (×)")
-    axb.set_title("(b) DET rate is λ-sensitive & borderline")
-    axb.set_ylim(1e-4, 1e6)
+    axb.set_title("(b) DET margin is a bracket that straddles turnover")
+    axb.set_ylim(3e-7, 3e6)
     axb.legend(loc="upper right", frameon=False)
 
     fig.tight_layout()
@@ -404,7 +412,7 @@ def fig2() -> None:
         if len(n5):
             pn = proj(xyz[n5[0]])[0]
             ax.plot([pn[0], pe[0]], [pn[1], pe[1]], ":", color="k", lw=1.0, zorder=2)
-    txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (< 18–20 Å tunnelling window)\n"
+    txt = (f"d_FAD (N5→Tyr90 OH) = {d_fad:.1f} Å  (burial depth; single-step ceiling ≈20 Å)\n"
            f"through-bond path {tun['through_bond_path_A']:.1f} Å · β·d = {tun['effective_beta_d']:.2f}")
     ax.text(0.02, 0.02, txt, transform=ax.transAxes, fontsize=7, va="bottom",
             bbox={"boxstyle": "round,pad=0.4", "fc": "#f5f5f5", "ec": "#888888", "alpha": 0.95})

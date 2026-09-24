@@ -7,12 +7,13 @@
 | Tier | Functional | Basis / ECP | Solvent | Used for |
 |---|---|---|---|---|
 | Screening | B3LYP | 6-31G(d); LANL2DZ (Os, Cu, Co); stuttgart_rsc (Ce) | C-PCM (water) | frontier orbitals, ΔSCF redox, mediator series (①), speciation (②) |
-| Publication | ωB97X | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | adiabatic ΔSCF cross-check; speciation functional-robustness |
+| Publication — cascade | ωB97X (FAD geometries B3LYP/def2-SVP) | def2-TZVP; LANL2DZ (Os) | C-PCM (water) | adiabatic ΔSCF cross-check |
+| Publication — speciation | ωB97X | 6-31G(d); LANL2DZ (Os) | C-PCM (water) | speciation functional-robustness (②) |
 | PCET | B3LYP/6-31G(d) + thermodynamic proton reference (Isse–Gennaro) | — | PCM | FAD E°; semiquinone cascade |
 | Reorganisation λ | B3LYP/def2-SVP (29b), 6-31G(d)+LANL2DZ/stuttgart_rsc (35); Nelsen 4-point | C-PCM | inner-sphere λ_i; + Marcus two-sphere outer-sphere λ_o (29c, analytical) |
-| DET coupling | ΔSCF-UKS energy-splitting (24); FO-DFT two-state Mulliken–Hush (24b) | C-PCM | ZIF inter-metal t_ij |
+| DET coupling | ΔSCF-UKS energy-splitting (24); FO-DFT two-state Mulliken–Hush (24b) | none (gas phase) | ZIF inter-metal t_ij |
 
-*Reproducibility: deterministic scripts in `tools/in_silico`, version-pinned conda-lock env.*
+*Reproducibility: deterministic scripts in `tools/in_silico`; every DFT cache computed with PySCF 2.11.0 (the recorded environment — §2.7).*
 
 ## Table 2. Anode→mediator cascade ΔG per electron, all methods
 
@@ -30,21 +31,21 @@
 
 | Hop | t_ij ΔSCF (eV) | t_ij FO-DFT (eV) | λ_hop lit (eV) | λ_hop computed (eV) |
 |---|---|---|---|---|
-| **Cu–Co** (T1↔node, bottleneck) | 0.00128 | 0.00546 | 1.70 | 2.55 |
+| **Cu–Co** (T1↔node, bottleneck) | 0.00128 | 0.00546 | 1.70–1.90 | 2.55–2.75 |
 | Co–Ce (node↔vacancy) | 0.00687 | — | 1.20 | 1.98 |
 | Ce–graphene (vacancy↔MWCNT) | 0.11294 | — | — | — |
 
-**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario:**
+**Cu–Co bottleneck margin vs enzymatic turnover (10³ s⁻¹), by λ scenario** — each a bracket over the sign of the computed site-energy gap and the λ(Cu) reading; the consumer reading is the ADVERSE corner:
 
-| λ scenario | margin |
-|---|---|
-| canon λ=0.7 (old, withdrawn) | ×3.63e+04 |
-| **literature λ** (Cu 2.0/Co 1.4/Ce 1.0) | **×1.38** (borderline) |
-| computed λ (B3LYP, Co over-est) | ×0.000298 |
-| Ru-swap (Co→Ru, computed λ 0.78) | ×31 *(ΔG = 0; the Cu–Ru site gap is not obtainable from the minimal cluster)* |
-| FO-DFT rigorous (ΔG −/0/+gap) | ×0.59 – ×732 (×25 at ΔG=0) |
+| λ scenario | adverse corner | ΔG = 0 (default, not a measurement) | favourable corner |
+|---|---|---|---|
+| canon λ=0.7 (old, withdrawn) | ×6.5e+02 | ×3.6e+04 | ×8e+05 |
+| **literature λ** (Cu 2.0–2.4 / Co 1.4 / Ce 1.0) | **×0.0045** | ×1.4 | ×40 |
+| computed λ (B3LYP, Co over-est; Cu literature) | ×1e-06 | ×0.0003 | ×0.0092 |
+| Ru-swap (Co→Ru, computed λ 0.78) — *spread is λ(Cu) only: the Cu–Ru site gap is not obtainable from the minimal cluster, so every column is ΔG = 0* | ×4.2 | ×31 | ×31 |
+| FO-DFT rigorous coupling (literature λ) | ×0.081 | ×25 | ×732 |
 
-*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35) for Co, Ce and Ru; λ(Cu) is the literature value, a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. Cathode is borderline / possibly co-limiting (k_DET ~ turnover).*
+*Inner-sphere λ via Nelsen 4-point on [M(H₂O)₆] (35) for Co, Ce and Ru; λ(Cu) is a literature bracket of two solution readings — 2.0 eV (textbook value, source not found) and 2.4 eV (Cu(phen)₂²⁺/⁺ self-exchange, Gray & Winkler) — a Cu(I) d¹⁰ hexa-aqua optimisation being unphysical, so λ_hop(Cu–Co) is half computed and half cited. Both readings are unconstrained solution couples; a framework-held Cu–N₄ site can lie below both (0.7 eV in azurin, same source), so the favourable corner is no floor. B3LYP over-estimates the first-row λ (Co spin-crossover) → the literature row is the honest estimate. The adverse corner is the uphill gap sign at the higher λ(Cu). Cathode: rate-limiting at the adverse corner, above turnover at the favourable one — the bracket straddles turnover.*
 
 ## Table 4. Osmium mediator series — E° and cascade-Δ vs Hammett σ (①)
 

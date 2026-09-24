@@ -67,7 +67,7 @@ what sets up *your* gap.
 Goal: **a competent reader could reproduce every number.** Report, per JPCB/Boggs (Pure Appl. Chem.
 1998, 70, 1015): functional(s), basis sets + ECPs per element, solvent model + parameters, what was
 optimized vs single-point, convergence criteria, software + **version**, and that geometries/coordinates
-are in the SI. Your reproducibility (conda-lock env, deterministic seeded scripts, committed caches) is
+are in the SI. Your reproducibility (the recorded computational env — `tools/in_silico/environment.computed.explicit.txt`, deterministic seeded scripts, committed caches) is
 a genuine selling point — say so. Draft is in [`02_methods.md`](02_methods.md). Pitfall: vague Methods
 ("DFT was used") is the fastest reviewer complaint.
 
@@ -107,7 +107,7 @@ EIS predictions). No new information.
   manager (Zotero/Paperpile) — do *not* hand-format.
 - **Length:** JPCB Articles have no hard limit but value concision; ~6000–8000 words + figures is
   typical. Confirm current limits on the ACS author-guidelines page at draft-freeze.
-- **SI:** scripts, optimized-geometry coordinates, golden outputs, the conda-lock file. This is where
+- **SI:** scripts, optimized-geometry coordinates, golden outputs, the recorded explicit environment (the conda-lock file postdates the calculations and resolves another PySCF — a re-run, not a replay). This is where
   reproducibility lives.
 
 ## 5. The process (and the gates)

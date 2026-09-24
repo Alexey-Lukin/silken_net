@@ -13,10 +13,10 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 | Level | Question | Method | Verdict |
 |-------|----------|--------|---------|
-| **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å < tunneling 18-20 Å |
+| **L1** | Does deglycosylated FAD-GDH fold correctly? | AlphaFold 3 | ✅ d_FAD = 15.998 Å burial depth — below the ≈20 Å single-step ceiling (a lower bound on the D–A separation; MET rests on the β·d path) |
 | **L2** | Does the full matrix denature the protein? | OpenMM MD (481k atoms) | ✅ RMSD 1.22 Å (100ps), Rg stable at 10ns |
 | **L3** | Does electron cascade FAD→Os flow downhill? | PySCF DFT (66 atoms, dimethyl) | ✅ Downhill (verified +574 mV); raw DFT uphill = method limit, decomposed by ② |
-| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline at ΔG = 0 (×1–30), 🔴 **below turnover on the adverse driving-force reading** (lit-λ bracket ×0.032…×40) — NOT the old ×10⁵ (see §Cathode) |
+| **L3b** | Is DET through ZIF nanozyme fast enough? | PySCF ΔSCF + Marcus | 🟡 borderline at ΔG = 0 (×1–30), 🔴 **below turnover on the adverse reading** (lit-λ bracket ×0.0045…×40 over the gap sign × the λ(Cu) reading) — NOT the old ×10⁵ (see §Cathode) |
 | **L4** | Does BASELINE_DELTA_T_S = 60s make physical sense? | Analytical MM+Arrhenius | ✅ Healthy 19.9s / Stressed 100.7s (η_BQ 0.68 post-HW.47; re-anchored on the dgrGcGDH asymptote 2026-09-18, HW.5.IS) |
 
 **Bottom line:** All computational checks pass. The design is ready for physical prototyping (Ti-coin Stage 2).
@@ -34,7 +34,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 | ipTM (protein↔FAD interface) | 0.99 |
 | pTM (global fold confidence) | 0.93 |
 | **FAD N5 → surface (Tyr90 OH)** | **15.998 Å** |
-| Tunneling range (Os-bpy polymer) | 18-20 Å |
+| Single-step tunnelling ceiling through protein, centre-to-centre (Gray & Winkler 2005, PMC553296) | ≈20 Å |
 
 **Conclusion:** d_FAD < r_tunneling → MET architecture mathematically proven viable.
 
@@ -308,32 +308,44 @@ diabatisation returns |ΔE| and does not say which site is the donor on the cath
 every row is now a **bracket**, and the consumer's ceiling is the **adverse** end, cited
 (`in-silico` §When Modifying #11).
 
+🔴 **Since 2026-09-24 the bracket has a SECOND axis — the λ(Cu) reading.** λ(Cu) was one unsourced
+textbook number (2.0 eV); the one open primary found, Gray & Winkler, *PNAS* 2005 (PMC553296), gives
+**≈2.4 eV for Cu(phen)₂²⁺/⁺ self-exchange** — ⚠️ the species is an inline formula IMAGE that the
+page's text layer drops, and it had been carried as «aqueous Cu(II/I)»; read from the image, it is a
+bis-phenanthroline N₄ chelate. Both readings stay in the bracket (the unsourced end keeps
+`[CITATION NEEDED]`), and the adverse column is the worst **corner** (uphill gap × higher λ(Cu)),
+computed over all six cells, not assumed. ⛔ Both are **unconstrained solution couples**: a
+framework-held Cu–N₄ node can sit **below both** (the same paragraph gives Cu(II/I) in azurin
+0.7 eV — the entatic fold), so the bracket bounds the READINGS, not the site — its adverse end is a
+consumer ceiling, its kind end is no floor. The ΔG = 0 column stays on the 2.0 reading so the
+pre-2026-09-21 published ×1.4 remains traceable.
+
 | λ scenario | bottleneck | **adverse (+gap)** | ΔG = 0 (assumption) | favourable (−gap) |
 |---|---|---|---|---|
 | canon λ=0.7 (old assumption) | Cu-Co | **×647** | ×3.6×10⁴ | ×8.0×10⁵ |
-| **literature λ** (Cu 2.0 / Co 1.4 / Ce 1.0) | Cu-Co | **×0.032** | ×1.4 | ×40 |
-| computed λ (B3LYP, Co spin-crossover ~2× over-est) | Cu-Co | **×7.4×10⁻⁶** | ×3.0×10⁻⁴ | ×9.2×10⁻³ |
-| Co→Ru swap (computed λ_Ru = 0.78) | **Cu-Ru** | ×31 | ×31 | ×31 |
+| **literature λ** (Cu 2.0–2.4 / Co 1.4 / Ce 1.0) | Cu-Co | **×0.0045** | ×1.4 | ×40 |
+| computed λ (B3LYP, Co spin-crossover ~2× over-est) | Cu-Co | **×1.0×10⁻⁶** | ×3.0×10⁻⁴ | ×9.2×10⁻³ |
+| Co→Ru swap (computed λ_Ru = 0.78) | **Cu-Ru** | ×4.2 | ×31 | ×31 |
 
-⚠️ **Read the last row differently from the others: its three columns are identical because the
-Cu–Ru node has NO usable gap** — script 24d returns 0.128 eV and *self-flags it non-physical*
+⚠️ **Read the last row differently from the others: its spread is the λ(Cu) reading ALONE, and its
+ΔG = 0 and favourable columns are identical, because the Cu–Ru node has NO usable gap** — script 24d returns 0.128 eV and *self-flags it non-physical*
 (`localised: false`, `physically_reasonable: false`: both diabatic orbitals sit on Ru, pop(Cu) = 0),
 the same failure that disqualified its t_ij. So **the Ru lever's driving force is unmeasured by
-construction, and its ×31 is a ΔG = 0 reading**, not a bracket that happened to be flat.
+construction, and its ×4.2…×31 is a ΔG = 0 reading over λ(Cu)**, not a gap bracket that happened to be flat.
 ⊕ The bottleneck hop is **branch-invariant**: Cu–Co (or Cu–Ru) limits in every ΔG branch of every
 scenario, so the sign question moves the margin, never the identity of what limits.
-⚠️ The adverse literature-λ figure is quoted as **×0.032** and never as its reciprocal — the
-reciprocal collides numerically with the Ru row's ×31 and means the opposite thing.
+⚠️ The adverse literature-λ figure is quoted as **×0.0045** and never as its reciprocal — a
+reciprocal reads as a margin ABOVE turnover and means the opposite thing.
 
-**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ **and ΔG = 0**, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET reads **borderline / possibly co-limiting**, not comfortably fast. 🔴 **Carrying the measured site-energy gap into that table moves the honest reading further: at literature λ the adverse end is ×0.032, i.e. BELOW turnover — rate-limiting rather than borderline.** The ×1–30 band is the ΔG = 0 column of a bracket, and it stays in this page only as the traceable predecessor of the figures above. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4). **FO-DFT rigorous coupling (script 24b, CHEM.14)** now confirms this is not a crude-t_ij artifact: a two-state Mulliken-Hush diabatisation gives t_ij(Cu-Co) = **0.00546 eV** (~4× the crude ΔSCF 0.00128, still meV-scale) + a **0.18 eV computed site-energy gap** the crude assumed away → the Cu-Co margin spans **×0.6 (uphill) to ×730 (downhill), ×25 at ΔG=0** — so the **borderline/sensitive verdict is robust to the coupling method**, and the old ×10⁵ is firmly excluded. Remaining closure = experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×31), conductive-MOF band transport ([`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / CHEM.31), or enzyme-free SAC (CHEM.6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
+**Conclusion (revised, honest):** the old "k_DET = 1.09×10⁸, ×10⁵ above turnover, *not* rate-limiting" was a **double artifact** — a broken bridging geometry (clashing N–H) **and** an assumed λ = 0.7 eV. On the corrected geometry with realistic λ **and ΔG = 0**, the Cu-Co bottleneck sits at **~enzymatic turnover (×1–30)** → cathode DET reads **borderline / possibly co-limiting**, not comfortably fast. 🔴 **Carrying the measured site-energy gap into that table moves the honest reading further: at literature λ the adverse end is ×0.032 on the 2.0 reading and ×0.0045 at the λ(Cu) bracket's adverse corner, i.e. BELOW turnover — rate-limiting rather than borderline.** The ×1–30 band is the ΔG = 0 column of a bracket, and it stays in this page only as the traceable predecessor of the figures above. B3LYP over-estimates the first-row λ (Co ≈ 2× lit), so the truth most likely tracks the literature-λ row (~×1.4). **FO-DFT rigorous coupling (script 24b, CHEM.14)** now confirms this is not a crude-t_ij artifact: a two-state Mulliken-Hush diabatisation gives t_ij(Cu-Co) = **0.00546 eV** (~4× the crude ΔSCF 0.00128, still meV-scale) + a **0.18 eV computed site-energy gap** the crude assumed away → the Cu-Co margin spans **×0.6 (uphill) to ×730 (downhill), ×25 at ΔG=0** on the 2.0 reading, and **×0.081 at the adverse corner** of the λ(Cu) bracket — so the **straddling verdict is robust to the coupling method**, and the old ×10⁵ is firmly excluded. Remaining closure = experimental EIS. **Mitigation:** low-λ metal (Co→Ru, ×4.2…×31), conductive-MOF band transport ([`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell) / CHEM.31), or enzyme-free SAC (CHEM.6). Numbers: `dft/zif_hopping.json` + `dft/cathode_ket_lambda.json`.
 
-**Ru lever — the t_ij "double-whammy" is NOT confirmed (CHEM.32, scripts 24c/24d).** The Co→Ru ×31 above is a **ΔG = 0 reading** (table note) and is the **λ** benefit alone (λ_Ru 0.78). We tested whether Ru's diffuse 4d *also* raises the coupling: at the canon cluster geometry with Co→Ru (identical coordinates; control Cu-Co reproduces canon t_ij 0.00128 ✅), the crude ΔSCF gave a large splitting (×81, t_ij 0.10 eV) and the FO-DFT diabatisation gave t_ij 0.105 eV — **but both FAIL the physicality check**: the frontier MOs localize entirely on Ru with **no Cu-d partner** in the window (24d self-flags non-physical — both diabatic orbitals pop(Ru) ≈ 0.86, pop(Cu) = 0.00). The minimal cluster's Cu-d and Ru-d manifolds are too energy-mismatched to form a clean Cu↔Ru diabatic pair (unlike Cu-Co). So the coupling boost is **plausible but unvalidated by this approach** — a rigorous Cu-Ru t_ij needs **CDFT constrained diabatic states** (a follow-up capstone: PyCDFT in-house or a specialist collaboration). The Ru lever stands on its **λ** advantage; its coupling advantage is a hypothesis, not a result. Caches: `dft/cu_ru_coupling.json` + `dft/cu_ru_fodft.json`.
+**Ru lever — the t_ij "double-whammy" is NOT confirmed (CHEM.32, scripts 24c/24d).** The Co→Ru ×4.2…×31 above is a **ΔG = 0 reading** over λ(Cu) (table note) and is the **λ** benefit alone (λ_Ru 0.78). We tested whether Ru's diffuse 4d *also* raises the coupling: at the canon cluster geometry with Co→Ru (identical coordinates; control Cu-Co reproduces canon t_ij 0.00128 ✅), the crude ΔSCF gave a large splitting (×81, t_ij 0.10 eV) and the FO-DFT diabatisation gave t_ij 0.105 eV — **but both FAIL the physicality check**: the frontier MOs localize entirely on Ru with **no Cu-d partner** in the window (24d self-flags non-physical — both diabatic orbitals pop(Ru) ≈ 0.86, pop(Cu) = 0.00). The minimal cluster's Cu-d and Ru-d manifolds are too energy-mismatched to form a clean Cu↔Ru diabatic pair (unlike Cu-Co). So the coupling boost is **plausible but unvalidated by this approach** — a rigorous Cu-Ru t_ij needs **CDFT constrained diabatic states** (a follow-up capstone: PyCDFT in-house or a specialist collaboration). The Ru lever stands on its **λ** advantage; its coupling advantage is a hypothesis, not a result. Caches: `dft/cu_ru_coupling.json` + `dft/cu_ru_fodft.json`.
 
 **Model caveats** (frame the borderline — *not* a margin-chase): t_ij is **geometry-bounded** — a clash-corrected programmatic cluster, not DFT-relaxed (these flat-PES metal clusters resist geom-opt, cf. script 21c); and the single-hop bottleneck is **conservative** — the ZIF is a wide-gap **insulator**, so transport is the discrete Marcus hops modelled (not bands), and the 3D framework offers **parallel** instances of the bottleneck hop (band-like transport = the cMOF lever, CHEM.31).
 
 🔴 **«Geometry-bounded» now carries a NUMBER (2026-09-21, CHEM.35 probe) — and what makes it matter is not its size but that nothing declared it.** The bridge ring's roll about its own N···N axis is a degree of freedom the builder never scored. Rolling it out of the metals' coordination plane — Cu **0.696 Å**, Co **1.371 Å** off-plane, everything else identical — moves the FO-DFT coupling **0.00546 → 0.1327 eV** (×24.3), because an out-of-plane metal stops binding through the nitrogen's in-plane lone pair and starts overlapping the ring π directly.
 
-⛔ **It is NOT a ×|t|² story, and quoting it as one understates it ~25× and misdescribes it in kind:** the same diabatisation of the same cluster also moves the site-energy gap (0.183 → **0.0264 eV**), so the consumer-rule margin goes **×0.59 → ×8855 — a factor of ×15 008 — and that CROSSES enzymatic turnover.** In other words this one construction choice does not widen ③'s verdict, it **flips** it, from «rate-limiting on the adverse reading» to «comfortably fast» (`cathode_ket_lambda.json` → `geometry_sensitivity_refused_offplane.flips_the_verdict`).
+⛔ **It is NOT a ×|t|² story, and quoting it as one understates it ~25× and misdescribes it in kind:** the same diabatisation of the same cluster also moves the site-energy gap (0.183 → **0.0264 eV**), so the consumer-rule margin goes **×0.59 → ×8855 — a factor of ×15 008 — and that CROSSES enzymatic turnover** (both on the 2.0 λ(Cu) reading — the probe prices the geometry, not λ). In other words this one construction choice does not widen ③'s verdict, it **flips** it, from «rate-limiting on the adverse reading» to «comfortably fast» (`cathode_ket_lambda.json` → `geometry_sensitivity_refused_offplane.flips_the_verdict`).
 
 🔑 **So read it as a LOAD-BEARING criterion, not as an uncertainty band.** The off-plane geometry is **refused** — script `23` exits 1 on it (`bridge_out_of_plane` vs `PLANARITY_TOL_A`), because a coordinating nitrogen binds through an in-plane lone pair — and the shipped cluster is correct on exactly that axis (metals **0.000 Å** from the bridge plane). ③'s verdict therefore rests on one geometric criterion being right, and until 2026-09-21 nothing in the tree named it, gated it or measured it. ⚠️ **What remains genuinely open is different and still unmeasured:** the residual spread WITHIN the in-plane family (M–N–C angles, the ring's in-plane tilt). The probe is rebuildable on purpose — `23 --solve-bridge --roll perpendicular` → `24b --geometry offplane` — so the criterion has a live instrument, not a remembered number.
 
@@ -347,7 +359,7 @@ reciprocal collides numerically with the Ru row's ×31 and means the opposite th
 
 🔑 **Three things follow, and the third closes CHEM.35.** (1) The lever's canon caveat — «a bigger ligand pushes the metals apart» — is **false on the bridge axis**: a ring fused at C4–C5 grows the ligand footprint by 0.9 Å without touching the N–C–N span that sets M···M. (2) The canon recipe «swap the linker in `23`, re-run `24`» builds a cluster with **no bridge at all** (the second N lands 3.217 Å from its metal, the N–H survives the clash filter, the charge is off by one) — `24` would still have returned a coupling. (3) A correctly-bridged ring **does not fit this model**: hold the metals in-plane and the bridge collides with the coplanar terminals (0.254 Å methylimidazolate, 0.358 Å benzimidazolate); hold the sterics and the metals leave the plane, which is the ×24 artifact above. **So the shipped geometry is the best the 2D minimal cluster can do, and CHEM.35 is unanswerable here — it needs a 3D cluster with tetrahedral terminals, an instrument change that moves every number in this section** — ⚖️ ratified (delegated) 2026-09-22: **not built now**; the return trigger is the measured cathode EIS of coin Stage 2 (verdict, price and weakest link — [`01_03 §3.2`](../../../01_03_EBFC_Enzymatic_Bio_Fuel_Cell.md)).
 
-⊕ **Acceptance threshold for any COUPLING lever** (`dft/cathode_ket_lambda.json` → `coupling_gain_to_reach_turnover`): since `k_ET ∝ |t_ij|²`, lifting the consumer-rule (adverse) reading to enzymatic turnover needs **×1.302** on the FO-DFT t_ij, or ×5.55 on the crude ΔSCF one. ⛔ It does NOT apply to a λ lever (Co→Ru): λ sits in the Marcus exponent, not the prefactor.
+⊕ **Acceptance threshold for any COUPLING lever** (`dft/cathode_ket_lambda.json` → `coupling_gain_to_reach_turnover`): since `k_ET ∝ |t_ij|²`, lifting the consumer-rule (adverse) reading to enzymatic turnover needs **×3.506** on the FO-DFT t_ij, or ×14.9 on the crude ΔSCF one — both at the adverse CORNER (uphill gap × higher λ(Cu)). ⛔ It does NOT apply to a λ lever (Co→Ru): λ sits in the Marcus exponent, not the prefactor.
 
 ---
 
@@ -424,9 +436,9 @@ pH 7.4 is quoting a medium we do not deploy in.
 
 The 72.9 Ω Rct above is the **anode** charge-transfer (enzyme→Os, from j_max; script 31). The
 **cathode** DET Rct is *not* a single value — script 31b (Laviron, surface-confined) gives a band
-**~0.002–230 Ω** across the borderline k_DET (λ/coupling-sensitive) × the unknown site coverage Γ
-(×10⁵ spread): the cathode arc can be negligible (fast/dense) or comparable to the anode (slow/sparse),
-so it **cannot be predicted a priori** — the robust statement stays the **kinetic competition**
+**~0.002–3×10⁴ Ω** across the k_DET bracket (gap sign × λ(Cu) reading × coupling method) × the unknown
+site coverage Γ (~×10⁷ spread): the cathode arc can be negligible (fast/dense) or **exceed the anode arc
+up to ~×400** (adverse corner, sparse coverage), so it **cannot be predicted a priori** — the robust statement stays the **kinetic competition**
 k_DET ~ turnover (§Cathode), with the measured Ti-coin cathode EIS the decisive test. INDICATIVE
 (`kinetics/cathode_det_rct.json`).
 

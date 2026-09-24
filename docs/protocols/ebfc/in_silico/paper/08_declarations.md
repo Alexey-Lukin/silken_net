@@ -12,7 +12,7 @@ This study used artificial-intelligence tools, disclosed here for transparency:
 - **Structure prediction.** The enzyme model was generated with **AlphaFold 3** (cited in Methods §2.1);
   predicted geometries were assessed by pLDDT and a molecular-dynamics ensemble before use.
 - **Computational pipeline & analysis.** The DFT/MD pipeline was implemented with the assistance of an
-  **LLM coding-agent**; every calculation is deterministic, version-pinned (conda-lock), scripted, and
+  **LLM coding-agent**; every calculation is deterministic, run in a recorded version-exact environment, scripted, and
   reproducible from the Supporting Information, and all numerical results were verified against committed
   result caches.
 - **Manuscript preparation.** An LLM assisted with drafting and editing. **All scientific content,

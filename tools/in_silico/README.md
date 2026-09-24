@@ -50,7 +50,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 24b | `24b_fodft_coupling.py` | L3b: FO-DFT two-state coupling t_ij for the Cu-Co hop (rigor upgrade of 24; loads zif_hopping cache for comparison) | ~hours |
 | 24c | `24c_cu_ru_coupling.py` | L3b CHEM.32: Cu-Ru crude ΔSCF (Co→Ru @identical geom) + Cu-Co control; t_ij non-physical (see 24d) | ~2 h |
 | 24d | `24d_fodft_cu_ru.py` | L3b CHEM.32: Cu-Ru FO-DFT diabatisation → t_ij NON-PHYSICAL (frontier all-Ru, no Cu-d partner); coupling-boost CDFT-pending | ~15 min |
-| 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest borderline DET margin (reads 24 t_ij + 35 λ) | ~1 s |
+| 25 | `25_cathode_ket_lambda.py` | L3b ③: Marcus k_ET vs **computed** λ — honest DET margin bracket — gap sign × λ(Cu) reading (reads 24 t_ij + 35 λ) | ~1 s |
 | 27 | `27_md_dft_ensemble.py` | L3/L2 bridge: FAD HOMO across 5 MD snapshots (thermal-robustness check) | ~30 min |
 | 28 | `28_electron_tunneling_pathway.py` | L3: Beratan-Onuchic tunneling pathway, single snapshot | < 1 s |
 | 28b | `28b_tunneling_ensemble.py` | L3 (CHEM.16): Beratan-Onuchic over the MD ensemble → β·d distribution + conformational gating (image_molecules PBC unwrap) | ~few min |
@@ -65,7 +65,7 @@ SSOT artifacts (PDB structures, validation results, papers) live in
 | 30 | `30_kinetics_delta_t.py` | L4: EBFC kinetics → delta_t(glucose, temp) → growth_points directly (NOT β-perturbation — reversed, 00_07 E.63) | ~1 s |
 | 30b | `30b_kinetics_monte_carlo.py` | L4b: Monte Carlo uncertainty (10k samples) → 90% CI for delta_t **at the pH-7.4 ceiling**, with the sap-pH 5.5 band printed beside it (⚖️ 2026-09-18 shape, applied here 2026-09-21) | ~1 s |
 | 31 | `31_eis_impedance_model.py` | L4c: EIS Randles circuit → Nyquist/Bode predictions for Ti-coin tests | ~1 s |
-| 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (borderline k_DET × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |
+| 31b | `31b_cathode_det_rct.py` | L4c ③: cathode DET R_ct band (the k_DET bracket's corners × unknown Γ) → kinetic competition, not a fixed Rct; INDICATIVE | ~1 s |
 | 40 | `40_validate_vs_experiment.py` | Ti-coin Stage 2: compare in-silico predictions vs experimental CV/EIS | ~1 s |
 | 50 | `50_thermal_stress_lame.py` | HW.3 anchor: Lamé thermal stress + Findley creep | ~1 s |
 | 51 | `51_gusak_degradation_model.py` | HW.3 anchor: Arrhenius aging + Kirkendall V diffusion + H7/s6 window | ~1 s |

@@ -12,8 +12,8 @@ rule** for the osmium mediator gives a predictive, transferable design handle an
 experimental optimum, while making explicit that the cascade-thermodynamic optimum is not the
 cell-voltage optimum. The **direct electron transfer** through the bimetallic ZIF cathode is, on a
 clash-free geometry, with reorganisation energies computed for Co, Ce and Ru (λ(Cu) cited), and with the enzyme's T1 site oriented
-toward the framework node, a *borderline* process at zero driving force and a *rate-limiting* one on the
-adverse reading of the computed site-energy gap — limited by reorganisation energy and by driving force
+toward the framework node, a *borderline* process at zero driving force and a *rate-limiting* one at the
+adverse ends of the computed site-energy gap and of the cited Cu reorganisation energy — limited by reorganisation energy and by driving force
 together, a quantitative finding (corrected from an earlier artefact) that motivates a low-reorganisation-energy
 metal, conductive-MOF band transport, or an acid-stable enzyme-free catalyst.
 
