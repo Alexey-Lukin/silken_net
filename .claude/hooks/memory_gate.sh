@@ -399,7 +399,7 @@ rb_dark() {
 # в операційному мануалі індексу).
 # 2026-09-18: 166 → 167 — `log_crown_roots` (тіла вимірів і застосувань рамки «крона ⊥ корінь», евакуйовані
 # дослівно з `feedback_crown_bounded_by_roots` 33.7 → ~10 kB). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-165}
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
