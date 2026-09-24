@@ -1581,12 +1581,12 @@ BioContractFirmware
 Cluster, User, Organization
 ```
 
-**Початкові організації:** `ActiveBridge` + `EcoFuture Fund`
+**Початкові організації:** `Сосновий бір` + `EcoFuture Fund` (обидві `billing_email` — plus-адреси `SEED_EMAIL_BASE`, як і в користувачів)
 
 **Початкові ролі:**
 - `oracle.executioner@system.silkennet.com` — super_admin, системний бот (без org)
 - `<база>+superadmin@…` — super_admin, **Григорій Сковорода** — єдиний актор БЕЗ організації
-- `<база>+admin@…` — admin, ActiveBridge (access_level :organization), **Алішер Навої**
+- `<база>+admin@…` — admin, «Сосновий бір» (access_level :organization), **Алішер Навої**
 - `<база>+forester@…` — forester (access_level :field), **Тарас Шевченко**
 - `<база>+subscriber@…` — subscriber (access_level :read_only), **Фарід Аттар**
 

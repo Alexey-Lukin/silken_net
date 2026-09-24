@@ -182,22 +182,6 @@ puts "   ⚙️  Системні параметри:   #{SystemParameter.count}
 # =========================================================================
 # 1. МАКРОЕКОНОМІКА ТА ЛЮДИ
 # =========================================================================
-# [KYC.1] Явний approved: dev-сіди детерміновані без Sidekiq-прогону
-# (у проді статус ставить HadronKycVerificationWorker на біндингу адреси).
-active_bridge = Organization.create!(
-  name: "ActiveBridge",
-  crypto_public_address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  billing_email: "finance@activebridge.org",
-  hadron_kyc_status: "approved"
-)
-
-eco_future_fund = Organization.create!(
-  name: "EcoFuture Fund",
-  crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-  billing_email: "billing@ecofuture.fund",
-  hadron_kyc_status: "approved"
-)
-
 # 🔴 Демо-пароль відомий ЛИШЕ локально. Слот `canopy` біжить із `RAILS_ENV=production`
 # й публічно доступний крізь Cloudflare, а цей файл лежить у публічному репо — тож
 # літеральний пароль на будь-якому не-local середовищі є super_admin-логіном для
@@ -214,7 +198,7 @@ DEMO_PASSWORD = Rails.env.local? ? "password123456" : SecureRandom.hex(24)
 # 📬 АДРЕСИ ДЕМО-КОРИСТУВАЧІВ — plus-адресація на ОДНУ живу скриньку.
 #
 # 🔴 Підстава не косметична. Доти сід роздавав адреси на доменах, яких не існує
-# (`silkennet.com` · `activebridge.org` · `ecofuture.fund`), тож ЖОДЕН із двох
+# (`silkennet.com` · домен демо-Клієнта · `ecofuture.fund`), тож ЖОДЕН із двох
 # живих поштових трактів не був перевірний на демо-даних: ані password-reset,
 # ані critical-alert не мали куди долетіти. Plus-адресація дає чотири РІЗНІ
 # адреси (уніфікація `email_address` їх розрізняє), які всі падають в одну
@@ -241,6 +225,27 @@ seed_email = lambda do |tag|
   "#{local}+#{tag}@#{domain}"
 end
 
+# [KYC.1] Явний approved: dev-сіди детерміновані без Sidekiq-прогону
+# (у проді статус ставить HadronKycVerificationWorker на біндингу адреси).
+# 🌲 «Сосновий бір» — демо-Клієнт, названий бором сосни звичайної: тим лісом, з
+# яким працює проєкт (імʼя — вибір засновника, 2026-09-24).
+# ⛔ Імені РЕАЛЬНОЇ компанії тут не ставити: доти демо-Клієнтом була справжня
+# компанія засновника — та, що за entity-присудом BIZ.20 є ПРОВАЙДЕРОМ за MSA, —
+# а `billing_email` на її домені отримував би critical-алерти `AlertMailer`.
+sosnovyi_bir = Organization.create!(
+  name: "Сосновий бір",
+  crypto_public_address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  billing_email: seed_email.call("org-sosnovyi-bir"),
+  hadron_kyc_status: "approved"
+)
+
+eco_future_fund = Organization.create!(
+  name: "EcoFuture Fund",
+  crypto_public_address: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+  billing_email: seed_email.call("org-ecofuture"),
+  hadron_kyc_status: "approved"
+)
+
 puts "👤 Створення Патрульних..."
 
 # [ORACLE EXECUTIONER]: Системний бот для автоматичних операцій (спалювання, мейнтенанс).
@@ -265,7 +270,7 @@ super_admin = User.create!(
   last_name: "Сковорода"
 )
 
-# [RBAC: access_level :organization] — Адміністратор ActiveBridge з повним доступом в межах організації.
+# [RBAC: access_level :organization] — Адміністратор «Соснового бору» з повним доступом в межах організації.
 # 🏛 Навої — роль `admin` є ОБМЕЖЕНОЮ владою, витраченою на будівництво, і саме
 # цим він у нашому родоводі й записаний: не аскет-утікач, а візир, що витратив
 # владу на 370 будівель — медресе, лікарні, канали, караван-сараї. Важіль не
@@ -274,7 +279,7 @@ alexey = User.create!(
   email_address: seed_email.call("admin"),
   password: DEMO_PASSWORD,
   role: :admin,
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   first_name: "Алішер",
   last_name: "Навої"
 )
@@ -288,7 +293,7 @@ forester = User.create!(
   email_address: seed_email.call("forester"),
   password: DEMO_PASSWORD,
   role: :forester,
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   first_name: "Тарас",
   last_name: "Шевченко"
 )
@@ -315,7 +320,7 @@ subscriber = User.create!(
 cherkasy_forest = Cluster.create!(
   name: "Черкаський бір",
   region: "Центральна Україна",
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   # [ARCH.102] `seismic_sensitivity_threshold` тут БІЛЬШЕ НЕ сідиться: механізму, що його
   # читає, не існує (сейсмічний вердикт знято — вимірювача немає), тож демо друкувало на
   # картці кластера чутливість детектора, якого платформа не має. Ключ лишається живим
@@ -418,7 +423,7 @@ naas_contract = NaasContract.create!(
 )
 
 NaasContract.create!(
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   cluster: amazon_sector,
   total_funding: 120_000.0,
   start_date: 1.month.ago,
@@ -436,7 +441,7 @@ ParametricInsurance.create!(
 )
 
 ParametricInsurance.create!(
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   cluster: amazon_sector,
   payout_amount: 200_000.0,
   threshold_value: 15.0,
@@ -824,7 +829,7 @@ codex_forests.each_with_index do |(slug, family), idx|
   cluster = Cluster.create!(
     name: node.fetch("title_uk"),
     region: "Центральна Україна",
-    organization: active_bridge,
+    organization: sosnovyi_bir,
     environmental_settings: { "custom_fire_threshold" => 60, "timezone" => "Europe/Kyiv" },
     geojson_polygon: { type: "Polygon", coordinates: [ [ [ lon - d, lat - d ], [ lon + d, lat - d ], [ lon + d, lat + d ], [ lon - d, lat + d ], [ lon - d, lat - d ] ] ] }
   )
@@ -982,7 +987,7 @@ BlockchainTransaction.create!(
   token_type: :carbon_coin,
   status: :pending,
   blockchain_network: "evm",
-  to_address: active_bridge.crypto_public_address,
+  to_address: sosnovyi_bir.crypto_public_address,
   locked_points: 50_000,
   notes: "Очікує підтвердження в мережі Polygon."
 )
@@ -1129,7 +1134,7 @@ puts "📋 Запис аудит-логів..."
 # для детермінізму, тож мішанина символів і рядків в одному JSONB нічого не «економить».
 AuditLog.create!(
   user: alexey,
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   action: "user_role_changed",
   auditable: alexey,
   ip_address: "192.168.1.1",
@@ -1151,7 +1156,7 @@ AuditLog.create!(
 # і це стан, а не прогалина: писача-людини в цього рядка немає.
 AuditLog.create!(
   user: oracle,
-  organization: active_bridge,
+  organization: sosnovyi_bir,
   action: "slash_verdict_frozen",
   auditable: naas_contract,
   metadata: { "source" => "DailyAggregationWorker", "trees_evaluated" => 100 }
@@ -1205,7 +1210,7 @@ AiInsight.create!(
 
 # Інсайт на рівні організації
 AiInsight.create!(
-  analyzable: active_bridge,
+  analyzable: sosnovyi_bir,
   insight_type: :carbon_yield_forecast,
   target_date: 1.month.from_now.to_date,
   probability_score: 78.0,
