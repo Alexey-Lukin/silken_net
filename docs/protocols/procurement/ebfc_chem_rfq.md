@@ -70,7 +70,7 @@
 |---|---|
 | **Продукт** | Трьохметалевий **nCoCuCeZIF** нанозим (альт. nCuCeAuZIF) — laccase-mimic для ORR/DET |
 | **Метод** | Сольвотермальний синтез |
-| **Розмір частинок** | **40–80 нм** — жорстко в T&C + **SEM-контроль** (макрокристали відпадуть з електрода — `01_03 §3.7`) |
+| **Розмір частинок** | **Медіана 40–80 нм** за діаметром еквівалентного кола з SEM, `n ≥ 200` кристалів на `≥ 3` полях — це й є умова приймання (⚖️ делеговано 2026-09-24, [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.5). ⊕ Окремим рядком договору: звіт МУСИТЬ нести частку поза 40–80 нм, найбільший зміряний кристал і `D99` — вони не судяться в першій партії, але без них критерій вироджується в саму медіану (макрокристали відпадуть з електрода — `01_03 §3.7`) |
 | **Гібрид** | поєднання з Laccase на MWCNT (резерв безферментного каталізу при денатурації) |
 | **QC / acceptance** | SEM (розмір/морфологія), XRD (фаза ZIF), ICP/EDS (Cu:Co:Ce стехіометрія), BET (площа) |
 | **Цільові показники** (дзеркало) | ×10 power density vs чиста Laccase; 75% активності після 10 днів; **+7.5%** з 0.25 М NaCl (vs −41.7% чиста Laccase) — **значення в `01_03 §1`** (таблиця «Катод») |
@@ -239,7 +239,7 @@ We are an R&D group developing a tree-integrated enzymatic bio-fuel cell for for
 
 - Product: tri-metallic zeolitic-imidazolate-framework nanozyme (Co/Cu/Ce) acting as a laccase mimic for oxygen reduction and direct electron transfer. A Cu/Ce/Au ZIF composition is an acceptable alternative if that is your established route.
 - Method: solvothermal synthesis.
-- **Particle size 40–80 nm — a contractual requirement, SEM-verified.** Macrocrystalline product is unusable on our electrode.
+- **Particle size — the MEDIAN equivalent-circle diameter from SEM must fall in 40–80 nm**, counted over at least 200 crystals in at least 3 fields; that median is the acceptance condition for the first batch. Please also REPORT, as a separate contractual line, the fraction outside 40–80 nm, the largest crystal measured and `D99`: we do not set a limit on them for the first batch, but without them the criterion collapses into the median alone. Macrocrystalline product is unusable on our electrode.
 - Optional add-on: a hybrid formulation with laccase supported on MWCNT — quote separately if you offer it.
 - Quantity: R&D scale — please quote your minimum synthesis batch plus one scale-up tier.
 - QC / acceptance: SEM (size distribution and morphology) · XRD (ZIF phase) · ICP-OES or EDS (Cu:Co:Ce stoichiometry) · BET specific surface area.
