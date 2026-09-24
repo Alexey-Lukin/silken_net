@@ -141,8 +141,8 @@ def crown_edge_r_mm(radome: dict) -> float:
     return float(radome["bell_radius_mm"])
 FR4_THICKNESS_MM = 1.6           # 02_01 §3.1 BOM pos. 8 — «FR4, 4 шари, 1.6 мм», both decks
 FR4_THICKNESS_UNSOURCED_MM = 1.0 # what the 2026-09-11 vertical budget used; no home anywhere — a contrast row
-B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FTSH/CLT board-to-board stack height 8–10
-B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40, 6 mm stack) — priced, not chosen
+B2B_STACK_MM = (8.0, 10.0)       # 02_01 §3.1 BOM pos. 12 — Samtec FW-SM/CLP mated height 8–10 (the FTSH/CLT pair named until 2026-09-24 does not mate)
+B2B_STACK_ALT_MM = 6.0           # the same row's named alternative (Hirose DF40TC — 6 mm exists only in the TC variant) — priced, not chosen
 # The three live piezo candidates with the heights 02_01 §6 quotes for them (vendor figures, not re-verified
 # here). Canon puts the piezo BESIDE the pad, not inside the gap `GAP_PZ` models (⚖️ 2026-09-22, delegated —
 # 02_01 §6, HW.30); the heights stay because the rejected `pad_under_piezo` rows are that verdict's evidence.
@@ -190,6 +190,7 @@ def cem(stem: str) -> dict:
 
 # ── Tolerance contributors (± half-width, mm) ──
 # Shared Power↔Zone3 gap: DMLS Ti flange + both FR4 decks + B2B stack + CNC radome engagement.
+# ⚠️ B2B_stack 0.15 has NO datasheet: Samtec says «processing conditions will affect mated height» (02_01 §3.1 pos. 12).
 TOL_PZ = {"DMLS_Ti": 0.30, "FR4_power": 0.20, "B2B_stack": 0.15, "FR4_rf": 0.20, "CNC_radome": 0.10}
 # O-ring chain: ONE machined dimension — the flange groove depth (branch (а): the flat rim is a hard datum
 # on the flange face, so the DMLS seat and the CNC rim engagement that used to be the two contributors here
