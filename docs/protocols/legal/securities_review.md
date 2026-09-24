@@ -12,7 +12,7 @@
 >
 > **Регістр документа (той самий, що в трекері — [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.22):** нижче фіксується, що **as-built fact-pattern збігається з пронгами** відповідних тестів і що **консультація + product-redesign гейтять перший live-mint**. Це тригер для кваліфікованої оцінки, а не самостійна кваліфікація проєкту.
 >
-> **Дата підготовки:** 2026-07-24 · **Статус проєкту:** System TRL 3 (anchor/EBFC-гейт); контракти code-complete, **ще НЕ задеплоєні** (placeholder-адреси — [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md)), **першого live-mint ще не було** — це вікно, коли redesign найдешевший.
+> **Дата підготовки:** 2026-07-24 · **Статус проєкту:** System TRL 3 (anchor/EBFC-гейт); контракти code-complete, **на mainnet НЕ задеплоєні** (звірено 2026-09-24: з 2026-09-01/02 живуть лише testnet-двійники на Polygon Amoy та Ethereum Sepolia — тестові токени без вартості, ролі виставлено на genesis, деплоєр адмін-ролей не тримає — [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md); mainnet-адрес немає, тож для mainnet лишаються placeholder-адреси — [`05_03`](../../05_03_Tokenomics_SCC_and_SFC.md)), **першого live-mint ще не було** — це вікно, коли redesign найдешевший.
 >
 > **Джерела орієнтаційного дослідження (наші, public web-research, НЕ юр-порада):** [`R2_offshore_token_securities.md`](../research/R2_offshore_token_securities.md) (securities/MiCA/RWA), [`R5_trademark_ip.md`](../research/R5_trademark_ip.md) (AGPL/open-license). Посилання на них у тексті як **[R2 §X]** / **[R5 §X]**.
 
