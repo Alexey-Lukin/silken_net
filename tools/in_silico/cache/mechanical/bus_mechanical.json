@@ -1956,7 +1956,35 @@
           }
         }
       ],
-      "declared_ceilings": "FULL engagement and quasi-static: the peak at the end of the stroke, not a force-displacement curve, and no lead-in chamfer on either part (a chamfer is the cheapest lever and no drawing carries one). Asperity flattening on assembly is not modelled and LOWERS the real force. The tube is treated as a column in pure compression - buckling of an 18 mm tube of 0.15 mm wall is NOT checked and would bite before yield. \u00b5 is a SWEEP with no measured member for PEEK<->drawn Ti (anchor_liner_tribo_rfq part B), so mu_crit is a TARGET for that test, never a result"
+      "buckling_first_order": {
+        "second_moment_mm4": 0.088456,
+        "free_column_pinned_N_at_full_length": 10.78,
+        "by_mu": {
+          "0.1": {
+            "worst_load_over_critical": 0.83,
+            "at_engagement_fraction": 0.33,
+            "buckles_before_yield": false
+          },
+          "0.2": {
+            "worst_load_over_critical": 1.66,
+            "at_engagement_fraction": 0.33,
+            "buckles_before_yield": true
+          },
+          "0.3": {
+            "worst_load_over_critical": 2.5,
+            "at_engagement_fraction": 0.33,
+            "buckles_before_yield": true
+          },
+          "0.4": {
+            "worst_load_over_critical": 3.33,
+            "at_engagement_fraction": 0.33,
+            "buckles_before_yield": true
+          }
+        },
+        "reading": "the yield verdict is NOT the only ceiling: across most of the swept \u00b5 the tube binds by BUCKLING before the wall yields, and the margin is thinnest around a third of the stroke. \u26d4 It does NOT bind at the bottom of the sweep (\u00b5 0.1), so \u00abbuckling always bites first\u00bb would be an overclaim \u2014 which is exactly what the prose said before this block",
+        "declared_ceilings": "pinned-pinned; a flat pusher is nearer fixed-pinned and would carry MORE, a guided sleeve more again. The engaged length is treated as rigidly supported and the free length as a bare column \u2014 the truth is a beam on an elastic foundation and lies between. No initial curvature, and a real extruded tube has some, which LOWERS the capacity"
+      },
+      "declared_ceilings": "FULL engagement and quasi-static: the peak at the end of the stroke, not a force-displacement curve, and no lead-in chamfer on either part (a chamfer is the cheapest lever and no drawing carries one). Asperity flattening on assembly is not modelled and LOWERS the real force. The tube is treated as a column in pure compression; buckling is checked to first order in buckling_first_order below and is NOT dominated by yield. \u00b5 is a SWEEP with no measured member for PEEK<->drawn Ti (anchor_liner_tribo_rfq part B), so mu_crit is a TARGET for that test, never a result"
     }
   },
   "wear_budget": {

@@ -1404,6 +1404,40 @@ def main() -> int:
                           "normal_force_N": round(f_norm, 1),
                           "mu_crit": round(SIGMA_YIELD_PEEK_PA * a_tube / f_norm, 4),
                           "by_mu": by_mu})
+    # BUCKLING — checked 2026-09-24 because the yield verdict above is NOT the only ceiling, and the
+    # first-order number says so. The tube is pushed ONTO the wire, so the engaged part is laterally
+    # held by the wire itself and only the UNENGAGED length is a column — it carries the full pusher
+    # force, since nothing has been shed to friction yet. Worst point is partway through the stroke:
+    # the force grows with engagement while the free length shrinks.
+    i_tube = np.pi * ((2 * LINER_OD_M) ** 4 - (2 * LINER_BORE_M) ** 4) / 64.0
+    buckling = None
+    if cold_rows:
+        f_full = next(r for r in cold_rows if r["at"] == "ratified_nominal")["normal_force_N"] \
+            if any(r["at"] == "ratified_nominal" for r in cold_rows) else None
+        if f_full is not None:
+            by_mu_buck = {}
+            for mu in MU_PEEK_TI_SWEEP:
+                worst = max(((mu * f_full * x) / (np.pi ** 2 * E_PEEK_PA * i_tube
+                                                  / ((1.0 - x) * LINER_LENGTH_MM * MM_M) ** 2),
+                             x) for x in np.arange(0.01, 1.0, 0.01))
+                by_mu_buck[mu] = {"worst_load_over_critical": round(float(worst[0]), 2),
+                                  "at_engagement_fraction": round(float(worst[1]), 2),
+                                  "buckles_before_yield": bool(worst[0] > 1.0)}
+            buckling = {"second_moment_mm4": round(i_tube / MM_M ** 4, 6),
+                        "free_column_pinned_N_at_full_length": round(
+                            float(np.pi ** 2 * E_PEEK_PA * i_tube / (LINER_LENGTH_MM * MM_M) ** 2), 2),
+                        "by_mu": by_mu_buck,
+                        "reading": ("the yield verdict is NOT the only ceiling: across most of the swept µ "
+                                    "the tube binds by BUCKLING before the wall yields, and the margin is "
+                                    "thinnest around a third of the stroke. ⛔ It does NOT bind at the bottom "
+                                    "of the sweep (µ 0.1), so «buckling always bites first» would be an "
+                                    "overclaim — which is exactly what the prose said before this block"),
+                        "declared_ceilings": ("pinned-pinned; a flat pusher is nearer fixed-pinned and would "
+                                              "carry MORE, a guided sleeve more again. The engaged length is "
+                                              "treated as rigidly supported and the free length as a bare "
+                                              "column — the truth is a beam on an elastic foundation and lies "
+                                              "between. No initial curvature, and a real extruded tube has "
+                                              "some, which LOWERS the capacity")}
     cold_nominal = next((r for r in cold_rows if r["at"] == "ratified_nominal"), None)
     if cold_nominal is not None:
         print(f"\n  Cold press-fit at the ratified nominal: {cold_nominal['normal_force_N']:.0f} N normal "
@@ -1544,12 +1578,13 @@ def main() -> int:
             "tube_section_mm2": round(a_tube / MM_M ** 2, 4),
             "mu_sweep": list(MU_PEEK_TI_SWEEP),
             "rows": cold_rows,
+            "buckling_first_order": buckling,
             "declared_ceilings": ("FULL engagement and quasi-static: the peak at the end of the stroke, "
                                  "not a force-displacement curve, and no lead-in chamfer on either part "
                                  "(a chamfer is the cheapest lever and no drawing carries one). Asperity "
                                  "flattening on assembly is not modelled and LOWERS the real force. The "
-                                 "tube is treated as a column in pure compression - buckling of an 18 mm "
-                                 "tube of 0.15 mm wall is NOT checked and would bite before yield. µ is a "
+                                 "tube is treated as a column in pure compression; buckling is checked to "
+                                 "first order in buckling_first_order below and is NOT dominated by yield. µ is a "
                                  "SWEEP with no measured member for PEEK<->drawn Ti (anchor_liner_tribo_rfq "
                                  "part B), so mu_crit is a TARGET for that test, never a result"),
         },
