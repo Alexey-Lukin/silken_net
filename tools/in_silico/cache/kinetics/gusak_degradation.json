@@ -21,6 +21,20 @@
     "n_days": 10958,
     "mean_c": 9.38,
     "frac_days_below_0c": 0.193,
+    "freeze_thaw": {
+      "years": 30,
+      "years_with_no_frost_day": [],
+      "frost_days_per_year": {
+        "min": 34,
+        "median": 72,
+        "max": 99
+      },
+      "zero_crossings_per_year_min": 10,
+      "coldest_daily_mean_c": -24.2,
+      "coldest_date": "2006-01-21",
+      "days_below_minus20c": 12,
+      "reading": "every one of the 30 winters freezes, so the OCCURRENCE half of FMEA #26's `O` is measured, not assumed \u2014 what stays open is whether the socket pocket HOLDS water, i.e. drainage (02_02 \u00a74.4). \u26d4 Daily means UNDER-count crossings (nights are colder and are not in this series); and the coldest daily mean approaches the EDLC's -25 \u00b0C rated floor (00_07 HW.37), which is a SECOND question this series raises and does not answer"
+    },
     "t_field_assumed_c": 15.0,
     "by_ea": {
       "0.7": {

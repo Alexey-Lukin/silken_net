@@ -111,6 +111,40 @@ FIELD_SERIES_CSV = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/daily_t2m_mea
 EA_FOREIGN_READING_EV = 8.52e3 / 96485.332  # 8.52 kJ/mol → eV per particle (F = N_A·e)
 
 
+def _freeze_thaw(rows: list[str]) -> dict:
+    """Per-winter frost statistics from the same daily series (FMEA #26, 00_07 HW.36)."""
+    import collections
+
+    frost: collections.Counter = collections.Counter()
+    cross: collections.Counter = collections.Counter()
+    prev = None
+    coldest = (999.0, "")
+    for r in rows:
+        date, val = r.split(",")[0], float(r.split(",")[1])
+        year = date[:4]
+        if val < 0.0:
+            frost[year] += 1
+        if prev is not None and (prev < 0.0) != (val < 0.0):
+            cross[year] += 1
+        if val < coldest[0]:
+            coldest = (val, date)
+        prev = val
+    years = sorted(set(frost) | set(cross))
+    fd = sorted(frost[y] for y in years)
+    return {"years": len(years),
+            "years_with_no_frost_day": [y for y in years if frost[y] == 0],
+            "frost_days_per_year": {"min": fd[0], "median": fd[len(fd) // 2], "max": fd[-1]},
+            "zero_crossings_per_year_min": min(cross[y] for y in years),
+            "coldest_daily_mean_c": coldest[0], "coldest_date": coldest[1],
+            "days_below_minus20c": sum(1 for r in rows if float(r.split(",")[1]) < -20.0),
+            "reading": ("every one of the 30 winters freezes, so the OCCURRENCE half of FMEA #26's "
+                        "`O` is measured, not assumed — what stays open is whether the socket pocket "
+                        "HOLDS water, i.e. drainage (02_02 §4.4). ⛔ Daily means UNDER-count crossings "
+                        "(nights are colder and are not in this series); and the coldest daily mean "
+                        "approaches the EDLC's -25 °C rated floor (00_07 HW.37), which is a SECOND "
+                        "question this series raises and does not answer")}
+
+
 def arrhenius_field_temperature(
     ea_range_ev=(0.7, 0.85, 1.0),
     t_field_assumed_k: float = 288.15,
@@ -168,6 +202,12 @@ def arrhenius_field_temperature(
         "n_days": int(t_k.size),
         "mean_c": round(float(t_k.mean()) - 273.15, 2),
         "frac_days_below_0c": round(float(np.mean(t_k < 273.15)), 3),
+        # FREEZE–THAW — a second question of the same series, added 2026-09-24 for FMEA #26
+        # (00_07 HW.36): frost-wedging needs water in a pocket to FREEZE, so what matters is not
+        # the mean but whether every winter crosses zero, and how often. ⛔ Daily MEANS only: the
+        # true crossing count is HIGHER (nights), so every number here is a LOWER bound — and the
+        # coldest daily mean sits near the EDLC's -25 °C floor, which no canon line carries.
+        "freeze_thaw": _freeze_thaw(rows),
         "t_field_assumed_c": round(t_field_assumed_k - 273.15, 2),
         "by_ea": per_ea,
         "assumed_is_conservative": True,  # asserted per Ea above
