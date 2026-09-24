@@ -810,8 +810,9 @@ CHECKS = [
     # ── Accelerated-test equivalence (canon 01_02 §2 «Концепція»), owner = script 51 ──
     # ⛔ The canon block printed «≈ 1 рік» and «≈ 3–5 років» with no owner beside it while script 51
     # already cached the isotherm — and neither end matched the cache. Both ends of both rows are pinned,
-    # because a bracket quoted as its middle is exactly how that drift read. It is the 40 °C ISOTHERM;
-    # the protocol's 20–40 °C cycle has no computed equivalence anywhere (00_07 HW.3 ⚖️).
+    # because a bracket quoted as its middle is exactly how that drift read. It is the 40 °C ISOTHERM,
+    # which the protocol itself is since 2026-09-24 (⚖️ founder, 01_02 §2 «Концепція»; the earlier
+    # 20–40 °C cycle never had a computed equivalence).
     (
         "accelerated test, 4 weeks @ 40 °C, Ea low end → gusak_degradation.json §arrhenius_aging",
         METALLURGY, rf"4 тижні @ 40°C ≈ {N}–",
