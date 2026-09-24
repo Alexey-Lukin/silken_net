@@ -546,6 +546,8 @@ Arrhenius scaling: t_lab = t_field × exp(−Ea/k × (1/T_field − 1/T_lab))
 
 **Investor-Grade Claim:** _"Ti-6Al-4V gyroid anchor demonstrates < 0.1 µg/cm² ion release after equivalent 5-year accelerated aging test in synthetic xylem sap (Pinus sylvestris, Cherkasy)"_
 
+> ⚠️ **Шаблон відстав від трьох ратифікованих присудів (позначено 2026-09-24; формулювання шаблону збережено):** «5-year» — лише верхній кінець вилки 2.2–5.7 року, досяжний при Ea ≳ 0.96 еВ (⚖️ 2026-09-17/24, врізка вище) · «Ti-6Al-4V» — анод Zone 1 іде V-free, сплав обирає bake-off (§2.5) · «Cherkasy» — точка рецепта соку не з Черкас (§2.1). Форма, яку ці присуди дозволяють сказати сьогодні, до результату тесту: _"V-free gyroid anchor: < 0.1 µg/cm² ion release over a 12-week accelerated test at 40 °C in synthetic Pinus sylvestris xylem sap — 2.2–5.7 field-year equivalent"_; числа рівнів — лише після тесту, і лише виміряні.
+
 ### 2.5. V-release Zone 1 — напрям (a) V-free обрано; сплав → Stage-2 coin bake-off
 
 > **In-silico baseline (script 51):** Kirkendall-дифузія (Fick's 1st law) → **V-release 1.12 µg/cm²/yr для голого Ti-6Al-4V** — перевищує target §2.4 (0.02 µg/cm²) у **56×**. ⚠️ **Обидва числа стоять на двох неназваних входах:** коефіцієнт дифузії V крізь оксид (10⁻²⁰ м²/с) скрипт підписує «literature» без джерела, а потік лінійний по ньому, тож порядок `D` і є порядком відповіді; а ціль §2.4 дістала часову базу лише 2026-09-17 — кумулятив 12-тижневого прискореного тесту, багаторічний еквівалент (§2.4) — тож «56×», що ділить РІЧНИЙ потік на цей поріг, є НИЖНЬОЮ межею перевищення: за понад рік кумулятив лише більший. Напрямок (V-free знімає V у джерелі) від цього не залежить — залежить лише розмір запасу. Arrhenius: 12 тиж @ 40°C ≈ 2.2–5.7 польових років (Ea 0.7–1.0 eV).

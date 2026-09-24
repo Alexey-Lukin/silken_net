@@ -158,9 +158,11 @@ the hot end (+40 °C + min fit) the effective interference goes **negative** —
 ## Remaining Tasks
 
 - [ ] **Prony-series stress-relaxation fit** for PEEK 450G (Maxwell-Wiechert, measured creep data) — the
-  authoritative multi-term fit replacing the interim conservative 2-term estimate (школа Гусака, `00_02 Стаття 2`).
-- [ ] **Barb-tip stress-concentration FEA** → школа Гусака (heavy mesh-FEA outsourced, `00_03 §3.6`). 👤 — but
-  if Гусак stays unresponsive, a **self-own** light bound is a future-candidate (00_07 HW.3.IS).
+  authoritative multi-term fit replacing the interim conservative 2-term estimate: item (А) of the FEA/Prony
+  request, [`lock_fea_prony_brief`](../../outreach/lock_fea_prony_brief.md) §3 (00_07 HW.26).
+- [ ] **Barb-tip stress-concentration FEA** — item (В) of the same request. Channel: ЧНУ, replaced by a
+  commercial executor on the event named in the brief's §8 (ratified 2026-09-24). ⛔ No parallel self-own FEA:
+  two executors on one number is the class `00_03 §3.6` removed; the Lamé bound here stays the calibration case.
 - [ ] **MD ion-permeation** of Ti²⁺/V³⁺ through PEEK via MSD (classical MD, like script 13) — NOT DFT.
   🤖 self-own, ~2-3 weeks GPU (00_07 HW.3.IS); separate milestone, not part of this geometry sync.
 - [x] **Unified thick-wall Lamé** combining interference + thermal stress in one model ✅ 2026-06-22

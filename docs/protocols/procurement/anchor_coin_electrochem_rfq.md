@@ -253,7 +253,7 @@ The technical specification is openly published, so no confidentiality agreement
 
 ### Possible follow-on (not part of this quotation)
 
-We also plan a longer accelerated-ageing exposure of coupons in the same medium, with elevated-temperature cycling, mechanical loading, and ion release and EIS at intervals. If that is within your scope, say so and we will send a separate request.
+We also plan a longer accelerated-ageing exposure of coupons in the same medium, at a constant 40 °C, with mechanical loading, and ion release and EIS at intervals. If that is within your scope, say so and we will send a separate request.
 
 ### Commercial & logistics
 
@@ -378,7 +378,7 @@ Nothing is required from us for an initial quotation. On request we supply the w
 
 **Конфіденційність і публікація.** Технічна специфікація відкрито опублікована, тож для її обговорення угода про конфіденційність не потрібна; ми готові підписати вашу стандартну взаємну угоду щодо комерційних умов (ціни, строки, дані контролю якості). Результати вимірювань ми маємо намір опублікувати в рецензованому журналі — повідомте, будь ласка, чи маєте умови щодо публікації даних, отриманих для нас, наприклад згадку установи чи опис методу.
 
-**Можливе продовження (не входить у цю пропозицію).** Ми плануємо також довшу прискорену експозицію купонів у тому самому середовищі — з циклуванням підвищеної температури, механічним навантаженням, виходом іонів і EIS з інтервалами. Якщо це у вашій сфері — скажіть, і ми надішлемо окремий запит.
+**Можливе продовження (не входить у цю пропозицію).** Ми плануємо також довшу прискорену експозицію купонів у тому самому середовищі — за сталої 40 °C, з механічним навантаженням, виходом іонів і EIS з інтервалами. Якщо це у вашій сфері — скажіть, і ми надішлемо окремий запит.
 
 **Додатки.** Для первинної пропозиції від нас нічого не потрібно. На запит надамо письмовий протокол іммобілізації, креслення купона й рецептуру середовища з примітками щодо приготування.
 
