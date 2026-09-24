@@ -101,6 +101,96 @@ def arrhenius_aging(
     return results
 
 
+FIELD_SERIES_CSV = REPO_ROOT / "tools/in_silico/data/era5_cherkasy/daily_t2m_mean_1991_2020.csv"
+
+# The one open reading of an apparent Ea for Ti-6Al-4V corrosion found on 2026-09-24 — in a FOREIGN role
+# (§When Modifying #10): Icorr from Tafel in pH 1.5 brine (Cl⁻ 128 g/L) under 12 MPa with H2S/CO2,
+# 23-100 °C (Sci. Rep. 2022, 12, 16586; doi 10.1038/s41598-022-21047-0, Fig. 18). Not our medium and
+# not our quantity (ion release from a passive film in mild sap), so it never enters the bracket; it
+# is carried as the PRICE of the bracket having no source: an order lower, it shrinks the equivalence.
+EA_FOREIGN_READING_EV = 8.52e3 / 96485.332  # 8.52 kJ/mol → eV per particle (F = N_A·e)
+
+
+def arrhenius_field_temperature(
+    ea_range_ev=(0.7, 0.85, 1.0),
+    t_field_assumed_k: float = 288.15,
+    t_lab_k: float = 313.15,
+    target_years: float = 5.0,
+    target_weeks: int = 12,
+):
+    """The field temperature the equivalence above ASSUMED (15 °C, no source) against the one a
+    30-year daily series implies.
+
+    The right quantity is not the mean temperature but the ARRHENIUS-EFFECTIVE one,
+    T_eff = −(Ea/k)/ln⟨exp(−Ea/kT)⟩ — a rate averages over the year with warm days dominating.
+    CAN catch: an assumed T_field that is warmer than the series (then the years above are
+    over-claimed) — asserted per Ea. CANNOT catch: stem ≠ air and frost ≠ slow liquid; both only
+    lower the true T_eff, so the series' T_eff is an UPPER bound and the years a LOWER bound
+    (data README). Nor does it say anything about Ea itself — which stays the unsourced input.
+    """
+    banner("1b. Arrhenius field temperature — ERA5 1991-2020 daily series vs the assumed 15 °C")
+    kb_ev = 8.617e-5
+    rows = FIELD_SERIES_CSV.read_text(encoding="utf-8").splitlines()[1:]
+    t_k = np.array([float(r.split(",")[1]) for r in rows]) + 273.15
+
+    def t_eff(ea: float) -> float:
+        return float(-ea / kb_ev / np.log(np.mean(np.exp(-ea / (kb_ev * t_k)))))
+
+    def years(ea: float, weeks: float, t_field: float) -> float:
+        return float(weeks / 52.0 * np.exp(ea / kb_ev * (1 / t_field - 1 / t_lab_k)))
+
+    def break_even_ea(t_field_of) -> float:
+        lo, hi = 0.05, 2.0  # bisection on a monotone function of Ea (all |ΔT| > 0 here)
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if years(mid, target_weeks, t_field_of(mid)) < target_years:
+                lo = mid
+            else:
+                hi = mid
+        return round(0.5 * (lo + hi), 3)
+
+    per_ea = {}
+    for ea in ea_range_ev:
+        te = t_eff(ea)
+        assert te <= t_field_assumed_k + 0.05, (
+            f"Ea {ea}: T_eff {te - 273.15:.2f} °C is WARMER than the assumed "
+            f"{t_field_assumed_k - 273.15:.0f} °C — the equivalence above over-claims years")
+        per_ea[str(ea)] = {
+            "t_eff_c": round(te - 273.15, 2),
+            "years_at_t_eff": {str(w): round(years(ea, w, te), 1) for w in (4, 8, 12)},
+            "years_at_assumed": {str(w): round(years(ea, w, t_field_assumed_k), 1) for w in (4, 8, 12)},
+        }
+        print(f"  Ea {ea:.2f} eV: T_eff = {te - 273.15:5.2f} °C · 12 wk ≈ "
+              f"{years(ea, 12, te):.1f} yr (vs {years(ea, 12, t_field_assumed_k):.1f} at 15 °C)")
+    foreign = EA_FOREIGN_READING_EV
+    out = {
+        "series": str(FIELD_SERIES_CSV.relative_to(REPO_ROOT)),
+        "n_days": int(t_k.size),
+        "mean_c": round(float(t_k.mean()) - 273.15, 2),
+        "frac_days_below_0c": round(float(np.mean(t_k < 273.15)), 3),
+        "t_field_assumed_c": round(t_field_assumed_k - 273.15, 2),
+        "by_ea": per_ea,
+        "assumed_is_conservative": True,  # asserted per Ea above
+        "break_even_ea_ev": {
+            f"{target_years:g}_yr_at_{target_weeks}_wk_t_eff": break_even_ea(t_eff),
+            f"{target_years:g}_yr_at_{target_weeks}_wk_assumed": break_even_ea(lambda _ea: t_field_assumed_k),
+        },
+        "ea_foreign_reading": {
+            "ea_ev": round(foreign, 4),
+            "role": "FOREIGN — Icorr (Tafel), pH 1.5 brine + H2S/CO2 12 MPa, 23-100 °C; not ion release in sap",
+            "source": "Sci. Rep. 2022, 12, 16586 (doi 10.1038/s41598-022-21047-0), Fig. 18",
+            "years_12_wk_at_t_eff": round(years(foreign, 12, t_eff(foreign)), 2),
+        },
+        "ceiling": "air ≠ stem and frost ≠ slow liquid both lower the true T_eff → years here are a "
+                   "LOWER bound on T; Ea itself has no source for our medium, and the foreign reading "
+                   "prices that: an order lower Ea turns the 12-week test into months of field time",
+    }
+    print(f"  mean {out['mean_c']} °C · days < 0 °C {out['frac_days_below_0c']:.0%} · "
+          f"break-even Ea for {target_years:g} yr: {out['break_even_ea_ev']}")
+    print(f"  foreign reading Ea {foreign:.3f} eV → 12 wk ≈ {out['ea_foreign_reading']['years_12_wk_at_t_eff']} yr")
+    return out
+
+
 def capacitor_life_hours(
     rated_hours: float,
     t_rated_c: float,
@@ -364,12 +454,14 @@ def press_fit_window():
 
 def main() -> int:
     arrhenius = arrhenius_aging()
+    field_t = arrhenius_field_temperature()
     kirkendall = kirkendall_diffusion()
     press_fit = press_fit_window()
     edlc_endurance = edlc_endurance_hours()
 
     output = {
         "arrhenius_aging": arrhenius,
+        "arrhenius_field_temperature": field_t,
         "kirkendall_diffusion": kirkendall,
         "press_fit_H7s6": press_fit,
         "edlc_endurance_hours": edlc_endurance,

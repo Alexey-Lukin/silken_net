@@ -826,6 +826,28 @@ CHECKS = [
     # which the protocol itself is since 2026-09-24 (⚖️ founder, 01_02 §2 «Концепція»; the earlier
     # 20–40 °C cycle never had a computed equivalence).
     (
+        "Arrhenius-effective T_field, Ea low end → gusak_degradation.json §arrhenius_field_temperature",
+        "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"вона \*\*{N} / [\d.]+ / [\d.]+ °C\*\*",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_field_temperature"]["by_ea"]["0.7"]["t_eff_c"], 0.006,
+    ),
+    (
+        "Arrhenius-effective T_field, Ea high end → gusak_degradation.json §arrhenius_field_temperature",
+        "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"вона \*\*[\d.]+ / [\d.]+ / {N} °C\*\*",
+        "kinetics/gusak_degradation.json", lambda d: d["arrhenius_field_temperature"]["by_ea"]["1.0"]["t_eff_c"], 0.006,
+    ),
+    (
+        "break-even Ea for 5 yr at T_eff → gusak_degradation.json §arrhenius_field_temperature",
+        "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"досягаються вже при Ea ≳ \*\*{N} еВ\*\*",
+        "kinetics/gusak_degradation.json",
+        lambda d: d["arrhenius_field_temperature"]["break_even_ea_ev"]["5_yr_at_12_wk_t_eff"], 0.0006,
+    ),
+    (
+        "foreign-role Ea reading priced in field years → gusak_degradation.json §arrhenius_field_temperature",
+        "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"12 тижнів @ 40 °C ≈ \*\*{N}\*\* року",
+        "kinetics/gusak_degradation.json",
+        lambda d: d["arrhenius_field_temperature"]["ea_foreign_reading"]["years_12_wk_at_t_eff"], 0.006,
+    ),
+    (
         "accelerated test, 4 weeks @ 40 °C, Ea low end → gusak_degradation.json §arrhenius_aging",
         METALLURGY, rf"4 тижні @ 40°C ≈ {N}–",
         "kinetics/gusak_degradation.json", lambda d: d["arrhenius_aging"]["0.7"]["4"], 0.05,
