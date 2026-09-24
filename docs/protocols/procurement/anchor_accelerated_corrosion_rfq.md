@@ -61,7 +61,7 @@
 | схема навантаження (контртіло · режим · частка купонів) | питанням | [`01_02 §2.2`](../../01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md) — лише параметри |
 | реальний склад соку *P. sylvestris* (pH — вже первинка) | «робочий склад» | біо-хаб ЧНУ, [`00_02 §1.1`](../../00_02_Academic_Integration_and_IP.md) |
 
-⛔ **Не цей тест:** 12-тижневий тест мембрани дощем/росою з θ до/після ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.25, [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md)) · трибо-тест лайнера шини на fretting-цикл ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34, три величини `k` · режим · µ) · S-N ([`anchor_sn_fatigue_rfq`](anchor_sn_fatigue_rfq.md)).
+⛔ **Не цей тест:** 12-тижневий тест мембрани дощем/росою з θ до/після ([`00_07`](../../00_07_Action_Plan_Tracker.md) HW.25, [`01_04 §5.6`](../../01_04_CODIT_and_Xylemointegration.md)) · трибо-тест лайнера шини на fretting-цикл (окремий аркуш [`anchor_liner_tribo_rfq`](anchor_liner_tribo_rfq.md), [`00_07`](../../00_07_Action_Plan_Tracker.md) HW.34, три величини `k` · режим · µ) · S-N ([`anchor_sn_fatigue_rfq`](anchor_sn_fatigue_rfq.md)).
 
 ---
 
