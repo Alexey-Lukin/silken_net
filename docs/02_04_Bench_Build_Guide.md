@@ -207,7 +207,7 @@ AA 1.5В→дільник 44мВ→LTC3108  →  BQ25570 (VSTOR)  →  LoRa-E5 m
 1. TPS22860: `VIN`←3V3, `VOUT`→BME280 `VDD`, `ON`←GPIO (power-gate).
 2. BME280: `SCL`→PB6, `SDA`→PB7, спільна шина; pull-up 4.7к на SCL/SDA до 3V3.
 3. **Checkpoint:** I2C-scan бачить BME280 (0x76 при SDO→GND / 0x77 при SDO→VDD); forced-mode read дає t°/RH/тиск.
-4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (I2C-глю ще писати — §4).
+4. Деталі VPD/DCI-guard → [`02_01 §3.4`](02_01_Hardware_Architecture_and_BOM); firmware `bme280.h` (логіка forced-mode є, HAL-глю — на стенді, §4). ⚠️ **Гейт TPS22860 — лише на VDD, VDDIO лишити на постійній 3V3** (датащит Bosch BME280 §3.2: піни в «1» при вимкненому VDDIO можуть незворотно пошкодити чіп через ESD-діоди, і шина спільна з SE051C2); breakout, де VDD і VDDIO з'єднані, під гейт не ставити.
 
 ### 3.5 Security (SE051C2)
 1. SE051C2 (eval-плата): I2C `SCL`→PB6, `SDA`→PB7 (спільна з BME280) + pull-upّи; живлення за load-switch'ем (окремий TPS22860 або спільний — bench).
