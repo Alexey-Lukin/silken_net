@@ -222,7 +222,7 @@ securities-консультація на as-built NaaS-продукт (UNI.16 / 
 
 ### 5.3 ⛔ ЧОГО НЕ РОБИТИ ЗАРАЗ
 
-- **Не проектувати складну офшорну dual/tri-entity структуру як «зараз».** TRL3, нуль виручки, нічого не задеплоєно, DAO far-horizon → premature canon [R2 Bottom Line, YAGNI-драбинка].
+- **Не проектувати складну офшорну dual/tri-entity структуру як «зараз».** TRL3, нуль виручки, у production нічого не задеплоєно (живі лише testnet-слот і testnet-контракти — звірено 2026-09-24), DAO far-horizon → premature canon [R2 Bottom Line, YAGNI-драбинка].
 - **Не вносити токен-емісію в operational-vehicle** (банк-проблема + securities-імпорт у multi-founder going-concern + незвірений 90%-тест + двозначність титулу).
 - **Не лишати титул на SilkenNet-IP невизначеним** (§1.2) — оформити межу ДО того, як IP торкнеться контуру компанії.
 - **Не реєструвати ™ на юрособу** (двозначність титулу + втрата survivability).
