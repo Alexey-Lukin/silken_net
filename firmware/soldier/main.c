@@ -2056,7 +2056,7 @@ int main(void)
   // і останній лишає чіп готовим слухати; довжину payload'у `RadioSend`
   // переписує на кожен кадр. Дім номіналів — 03_05 §2.1.
   Lora_Phy_Apply_Sync_Word();
-  Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+  Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
   Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_SOLDIER);
 
   // 5. Вибір контракту: Перевіряємо, чи є в Flash-пам'яті оновлений код
@@ -3375,7 +3375,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // зловить. Контекст: main-loop Path-B (EXTI лише ставить
     // vibration_detected) — блокуючий SetTxConfig/HAL_Delay безпечні;
     // НЕ кликати цю функцію з ISR.
-    Lora_Phy_Apply_Tx(Cad_Panic_Preamble_Symbols(
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, Cad_Panic_Preamble_Symbols(
         EMA_Get_Vcap_Mv(), CAD_PANIC_PREAMBLE_VCAP_MIN_MV,
         Cad_Preamble_Symbols_For_Ms(CAD_PANIC_PREAMBLE_MS,
                                     CAD_T_SYM_SF9_BW125_US)));
@@ -3400,7 +3400,7 @@ void Trigger_Emergency_LoRa_TX(void)
     // [FW.61] Відновлюється ПОВНИЙ набір із базлайну, а не один аргумент із
     // шести: решта п'ять і далі проходили б повз, і правильними вони були
     // лише тому, що дорівнювали канону випадково.
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
 #endif
 
     // 6. Примусово присипляємо радіо, щоб не садити батарею

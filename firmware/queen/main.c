@@ -1809,11 +1809,13 @@ static void Restore_ECB_Mode(void)
 // [FW.61] Базлайн модуляції Королеви. Несучий тут ОДИН порядок — sync word
 // першим (він відновлює регістр після LoRaWAN-детуру); TX-перед-RX є
 // конвенцією форми, не вимогою заліза. `rxContinuous = true` робить Королеву
-// always-on listener'ом (03_02 §1). Номінали — 03_05 §2.1 через `lora_phy.h`.
+// always-on listener'ом (03_02 §1); потужність — ВЛАСНА стала Королеви
+// (+10 дБм: стеля ЕВП НКЕК з її 5-dBi антеною, ⚖️ 2026-09-24), не Солдатова.
+// Номінали — 03_05 §2.1 через `lora_phy.h`.
 static void Queen_Apply_Lora_Baseline(void)
 {
     Lora_Phy_Apply_Sync_Word();
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_QUEEN, LORA_PHY_PREAMBLE_SYMBOLS);
     Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_QUEEN);
 }
 

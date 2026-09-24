@@ -39,15 +39,18 @@ static inline void Lora_Phy_Apply_Sync_Word(void)
 }
 
 /*
- * TX-половина базлайну. Преамбула — ЄДИНИЙ аргумент, який кличуть змінним:
- * ARCH.26 «останній зойк» подовжує її, а відновлення передає сюди
- * `LORA_PHY_PREAMBLE_SYMBOLS`. Решта дванадцять не мають другого написання
- * ніде в дереві — саме це й робить відновлення повним за побудовою
- * (`firmware`-скіл гоча #1, нога «в»: часткове відновлення читалось як повне).
+ * TX-половина базлайну. Змінних аргументів ДВА, і природа в них різна.
+ * Потужність — стала РОЛІ (`LORA_PHY_TX_POWER_DBM_SOLDIER` ⊥ `_QUEEN`,
+ * ⚖️ 2026-09-24): кожен вузол передає одне й те саме число завжди, як RX-
+ * половина — свій `rx_continuous`. Преамбула — стала СТАНУ: ARCH.26 «останній
+ * зойк» подовжує її, а відновлення передає сюди `LORA_PHY_PREAMBLE_SYMBOLS`.
+ * Решта одинадцять не мають другого написання ніде в дереві — саме це й
+ * робить відновлення повним за побудовою (`firmware`-скіл гоча #1, нога «в»:
+ * часткове відновлення читалось як повне).
  */
-static inline void Lora_Phy_Apply_Tx(uint16_t preamble_symbols)
+static inline void Lora_Phy_Apply_Tx(int8_t tx_power_dbm, uint16_t preamble_symbols)
 {
-    Radio.SetTxConfig(MODEM_LORA, LORA_PHY_TX_POWER_DBM, 0u,
+    Radio.SetTxConfig(MODEM_LORA, tx_power_dbm, 0u,
                       LORA_PHY_BW, LORA_PHY_SF, LORA_PHY_CR,
                       preamble_symbols, LORA_PHY_FIX_LEN, LORA_PHY_CRC_ON,
                       LORA_PHY_FREQ_HOP_ON, LORA_PHY_HOP_PERIOD, LORA_PHY_IQ_INVERTED,

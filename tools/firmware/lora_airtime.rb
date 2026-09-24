@@ -60,7 +60,7 @@ def read_profile(text)
   bools = text.scan(/^#define\s+(LORA_PHY_\w+)\s+(true|false)\b/).to_h { |k, v| [ k, v == "true" ] }
   defines = nums.merge(bools)
   missing = %w[LORA_PHY_FREQ_HZ LORA_PHY_SF LORA_PHY_BW_HZ LORA_PHY_CR
-               LORA_PHY_PREAMBLE_SYMBOLS LORA_PHY_TX_POWER_DBM] - defines.keys
+               LORA_PHY_PREAMBLE_SYMBOLS LORA_PHY_TX_POWER_DBM_SOLDIER LORA_PHY_TX_POWER_DBM_QUEEN] - defines.keys
   abort("lora_phy.h: не знайдено #{missing.join(', ')} — парсер або заголовок змінились") unless missing.empty?
   defines
 end
@@ -71,7 +71,8 @@ BW_HZ = PROFILE.fetch("LORA_PHY_BW_HZ")
 CR = PROFILE.fetch("LORA_PHY_CR")
 PREAMBLE = PROFILE.fetch("LORA_PHY_PREAMBLE_SYMBOLS")
 FREQ_HZ = PROFILE.fetch("LORA_PHY_FREQ_HZ")
-TX_DBM = PROFILE.fetch("LORA_PHY_TX_POWER_DBM")
+TX_DBM_SOLDIER = PROFILE.fetch("LORA_PHY_TX_POWER_DBM_SOLDIER")
+TX_DBM_QUEEN = PROFILE.fetch("LORA_PHY_TX_POWER_DBM_QUEEN")
 
 # LowDatarateOptimize — НЕ наш вибір і не константа: драйвер виводить його
 # сам (`radio.c` RadioSetRx/TxConfig): 1 лише при (BW125 ∧ SF∈{11,12}) або
@@ -128,8 +129,8 @@ KEY_FRAMES = {
 
 def report
   puts "LoRa PHY-профіль (firmware/common/lora_phy.h — дім номіналів 03_05 §2.1):"
-  puts format("  %.1f МГц · SF%d · BW %d кГц · CR 4/%d · преамбула %d симв · +%d дБм",
-              FREQ_HZ / 1e6, SF, BW_HZ / 1000, CR + 4, PREAMBLE, TX_DBM)
+  puts format("  %.1f МГц · SF%d · BW %d кГц · CR 4/%d · преамбула %d симв · TX +%d дБм Солдат / +%d дБм Королева",
+              FREQ_HZ / 1e6, SF, BW_HZ / 1000, CR + 4, PREAMBLE, TX_DBM_SOLDIER, TX_DBM_QUEEN)
   puts format("  T_sym = 2^%d / %d Гц = %d мкс · LDRO = %s (драйвер виводить сам)",
               SF, BW_HZ, t_sym_us, ldro?(SF, BW_HZ) ? "1" : "0")
   puts
@@ -203,10 +204,17 @@ CANON_PROFILE_KEYS = {
   "datarate" => "LORA_PHY_SF",
   "bandwidth" => "LORA_PHY_BW",
   "coderate" => "LORA_PHY_CR",
-  "preambleLen" => "LORA_PHY_PREAMBLE_SYMBOLS",
-  "power" => "LORA_PHY_TX_POWER_DBM"
+  "preambleLen" => "LORA_PHY_PREAMBLE_SYMBOLS"
 }.freeze
-CANON_PROFILE_EXPECTED = CANON_PROFILE_KEYS.size + 1 # + SetChannel
+# Потужність — єдиний аргумент, що різниться між ролями (⚖️ 2026-09-24, 00_07 FW.61):
+# аргумент драйвера в обох рядках однаковий (`power = …`), тож define обирає РОЛЬ,
+# названа в першій колонці рядка. Без ролі обидва рядки писали б в один ключ, і
+# останній мовчки перемагав би.
+CANON_POWER_BY_ROLE = {
+  "Солдат" => "LORA_PHY_TX_POWER_DBM_SOLDIER",
+  "Королев" => "LORA_PHY_TX_POWER_DBM_QUEEN"
+}.freeze
+CANON_PROFILE_EXPECTED = CANON_PROFILE_KEYS.size + CANON_POWER_BY_ROLE.size + 1 # + SetChannel
 
 def parse_canon_profile(section)
   found = {}
@@ -217,6 +225,10 @@ def parse_canon_profile(section)
     CANON_PROFILE_KEYS.each do |arg, define|
       found[define] = Integer(Regexp.last_match(1)) if line =~ /\b#{arg}\s*=\s*(-?\d+)/
     end
+    next unless line =~ /\bpower\s*=\s*(-?\d+)/
+
+    power = Integer(Regexp.last_match(1))
+    CANON_POWER_BY_ROLE.each { |role, define| found[define] = power if line.include?(role) }
   end
   found
 end

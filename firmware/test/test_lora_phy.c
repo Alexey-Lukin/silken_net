@@ -170,14 +170,14 @@ static void reset_capture(void)
 
 /* ── Тести ─────────────────────────────────────────────────────────────── */
 
-/* Сценарій C (02_03 §9.8): +14 дБм @ SF9/BW125/CR4-5. ⛔ Не «те саме, що в
+/* Сценарій C (02_03 §9.8): Солдат +14 дБм @ SF9/BW125/CR4-5. ⛔ Не «те саме, що в
  * заголовку» — це пін на те, що ТУПЛ, який їде у драйвер, несе саме ці
  * величини у саме цих позиціях. Зсунь два аргументи місцями — заголовок
  * лишиться правдивим, а цей тест почервоніє. */
 static void test_tx_baseline_tuple(void)
 {
     reset_capture();
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
 
     ASSERT_EQ(g_tx.calls, 1);
     ASSERT_EQ(g_tx.modem, MODEM_LORA);
@@ -195,16 +195,42 @@ static void test_tx_baseline_tuple(void)
     ASSERT_EQ(g_tx.timeout, 0u);   /* [transitional] без програмного TX-таймауту — FW.61 👤 */
 }
 
+/* ⚖️ 2026-09-24 (00_07 FW.61): потужність — друге поле, що різниться між
+ * вузлами, і різниця РЕГУЛЯТОРНА, не енергетична: Королева на +14 дБм у свою
+ * 5-dBi антену давала ЕВП ≈ 16.85 дБм при стелі НКЕК 13.98. Пін тримає, що шов
+ * везе у драйвер САМЕ аргумент ролі і що більше між ролями не різниться нічого.
+ * Стелю ЕВП тримає _Static_assert у lora_phy.h — там, де число народжується. */
+static void test_tx_power_differs_by_node(void)
+{
+    reset_capture();
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
+    TxCapture soldier = g_tx;
+
+    reset_capture();
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_QUEEN, LORA_PHY_PREAMBLE_SYMBOLS);
+
+    ASSERT_EQ(soldier.power, 14);
+    ASSERT_EQ(g_tx.power, 10);
+    ASSERT_EQ(g_tx.modem, soldier.modem);
+    ASSERT_EQ(g_tx.bandwidth, soldier.bandwidth);
+    ASSERT_EQ(g_tx.datarate, soldier.datarate);
+    ASSERT_EQ(g_tx.coderate, soldier.coderate);
+    ASSERT_EQ(g_tx.preamble_len, soldier.preamble_len);
+    ASSERT_EQ(g_tx.crc_on, soldier.crc_on);
+    ASSERT_EQ(g_tx.iq_inverted, soldier.iq_inverted);
+    ASSERT_EQ(g_tx.timeout, soldier.timeout);
+}
+
 /* Єдине, що ARCH.26 «останній зойк» має право змінити, — преамбула. Якщо
  * колись подовжать ще щось, цей тест назве що саме. */
 static void test_panic_changes_preamble_only(void)
 {
     reset_capture();
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
     TxCapture baseline = g_tx;
 
     reset_capture();
-    Lora_Phy_Apply_Tx(973u); /* ≈4 с @ SF9 — «останній зойк», 02_03 §9.10 */
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, 973u); /* ≈4 с @ SF9 — «останній зойк», 02_03 §9.10 */
 
     ASSERT_EQ(g_tx.preamble_len, 973u);
     ASSERT_EQ(g_tx.power, baseline.power);
@@ -221,12 +247,12 @@ static void test_panic_changes_preamble_only(void)
 static void test_panic_restore_is_total(void)
 {
     reset_capture();
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS);
     TxCapture baseline = g_tx;
 
     reset_capture();
-    Lora_Phy_Apply_Tx(973u);
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS); /* restore */
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, 973u);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_SOLDIER, LORA_PHY_PREAMBLE_SYMBOLS); /* restore */
 
     /* ⛔ НЕ memcmp по структурі: він читав би й padding-байти, тобто міг би
      * як пропустити розбіжність, так і зловити шум. Поля — поіменно, бо
@@ -315,7 +341,7 @@ static void test_full_baseline_order(void)
 {
     reset_capture();
     Lora_Phy_Apply_Sync_Word();
-    Lora_Phy_Apply_Tx(LORA_PHY_PREAMBLE_SYMBOLS);
+    Lora_Phy_Apply_Tx(LORA_PHY_TX_POWER_DBM_QUEEN, LORA_PHY_PREAMBLE_SYMBOLS);
     Lora_Phy_Apply_Rx(LORA_PHY_RX_CONTINUOUS_QUEEN);
     ASSERT_EQ(strcmp(g_order, "STR"), 0);
 }
@@ -345,6 +371,7 @@ int main(void)
     printf("test_tx_baseline_tuple\n");               test_tx_baseline_tuple();
     printf("test_rx_baseline_tuple\n");               test_rx_baseline_tuple();
     printf("test_rx_continuous_differs_by_node\n");   test_rx_continuous_differs_by_node();
+    printf("test_tx_power_differs_by_node\n");       test_tx_power_differs_by_node();
     printf("test_panic_changes_preamble_only\n");     test_panic_changes_preamble_only();
     printf("test_panic_restore_is_total\n");          test_panic_restore_is_total();
     printf("test_sync_word_is_private_and_explicit\n"); test_sync_word_is_private_and_explicit();
