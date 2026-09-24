@@ -1854,7 +1854,109 @@
       "temperature_dependence": "E_PEEK and the yield are the 23 C datasheet values; both move at -30 C and in opposite directions for this bound",
       "form_error": "tube ovality, wire out-of-round and bore straightness are assumed zero; a real pair consumes part of this window on form before it consumes any on size",
       "surface": "asperity flattening on assembly reduces the effective interference, and no Sa for either surface exists in canon",
-      "insertion_force": "the force to press the tube onto the wire is not computed; at the ceiling it is a real handling question"
+      "insertion_force_superseded_2026_09_24": "this key used to read 'not computed'; cold_press_fit below now derives it (00_07 HW.34)"
+    },
+    "cold_press_fit": {
+      "question": "01_01 1.4 rules cold assembly out and names a \u00b5 below which it returns. Both numbers lived in PROSE ONLY until 2026-09-24; here they are derived from the same fields as the rest of the window",
+      "peek_yield_MPa": 100.0,
+      "contact_area_mm2": 55.9034,
+      "tube_section_mm2": 0.5365,
+      "mu_sweep": [
+        0.1,
+        0.2,
+        0.3,
+        0.4
+      ],
+      "rows": [
+        {
+          "at": "ratified_nominal",
+          "interference_radial_um": 5.705,
+          "contact_pressure_MPa": 10.83,
+          "normal_force_N": 605.7,
+          "mu_crit": 0.0886,
+          "by_mu": {
+            "0.1": {
+              "friction_N": 60.6,
+              "wall_axial_MPa": 112.9,
+              "wall_yields": true
+            },
+            "0.2": {
+              "friction_N": 121.1,
+              "wall_axial_MPa": 225.8,
+              "wall_yields": true
+            },
+            "0.3": {
+              "friction_N": 181.7,
+              "wall_axial_MPa": 338.7,
+              "wall_yields": true
+            },
+            "0.4": {
+              "friction_N": 242.3,
+              "wall_axial_MPa": 451.5,
+              "wall_yields": true
+            }
+          }
+        },
+        {
+          "at": "window_floor",
+          "interference_radial_um": 0.38,
+          "contact_pressure_MPa": 0.72,
+          "normal_force_N": 40.3,
+          "mu_crit": 1.3313,
+          "by_mu": {
+            "0.1": {
+              "friction_N": 4.0,
+              "wall_axial_MPa": 7.5,
+              "wall_yields": false
+            },
+            "0.2": {
+              "friction_N": 8.1,
+              "wall_axial_MPa": 15.0,
+              "wall_yields": false
+            },
+            "0.3": {
+              "friction_N": 12.1,
+              "wall_axial_MPa": 22.5,
+              "wall_yields": false
+            },
+            "0.4": {
+              "friction_N": 16.1,
+              "wall_axial_MPa": 30.0,
+              "wall_yields": false
+            }
+          }
+        },
+        {
+          "at": "window_ceiling",
+          "interference_radial_um": 10.894,
+          "contact_pressure_MPa": 20.69,
+          "normal_force_N": 1156.5,
+          "mu_crit": 0.0464,
+          "by_mu": {
+            "0.1": {
+              "friction_N": 115.7,
+              "wall_axial_MPa": 215.6,
+              "wall_yields": true
+            },
+            "0.2": {
+              "friction_N": 231.3,
+              "wall_axial_MPa": 431.1,
+              "wall_yields": true
+            },
+            "0.3": {
+              "friction_N": 347.0,
+              "wall_axial_MPa": 646.7,
+              "wall_yields": true
+            },
+            "0.4": {
+              "friction_N": 462.6,
+              "wall_axial_MPa": 862.2,
+              "wall_yields": true
+            }
+          }
+        }
+      ],
+      "declared_ceilings": "FULL engagement and quasi-static: the peak at the end of the stroke, not a force-displacement curve, and no lead-in chamfer on either part (a chamfer is the cheapest lever and no drawing carries one). Asperity flattening on assembly is not modelled and LOWERS the real force. The tube is treated as a column in pure compression - buckling of an 18 mm tube of 0.15 mm wall is NOT checked and would bite before yield. \u00b5 is a SWEEP with no measured member for PEEK<->drawn Ti (anchor_liner_tribo_rfq part B), so mu_crit is a TARGET for that test, never a result"
     }
   },
   "wear_budget": {
@@ -2124,6 +2226,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
         "sliding_in_contact_per_cycle_um_upper": 1.33,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00027,
         "area_by_constraint_factor_mm2": {
@@ -2192,6 +2295,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
         "sliding_in_contact_per_cycle_um_upper": 1.33,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.0006,
         "area_by_constraint_factor_mm2": {
@@ -2260,6 +2364,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 21.952,
         "sliding_in_contact_per_cycle_um_upper": 1.33,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00093,
         "area_by_constraint_factor_mm2": {
@@ -2343,6 +2448,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
         "sliding_in_contact_per_cycle_um_upper": 0.659,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00025,
         "area_by_constraint_factor_mm2": {
@@ -2411,6 +2517,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
         "sliding_in_contact_per_cycle_um_upper": 0.659,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00058,
         "area_by_constraint_factor_mm2": {
@@ -2479,6 +2586,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 22.396,
         "sliding_in_contact_per_cycle_um_upper": 0.659,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00091,
         "area_by_constraint_factor_mm2": {
@@ -2554,6 +2662,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
         "sliding_in_contact_per_cycle_um_upper": 20.283,
         "upper_end_is": "free cantilever \u2014 the drag cannot reach the Ti bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00055,
         "area_by_constraint_factor_mm2": {
@@ -2622,6 +2731,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
         "sliding_in_contact_per_cycle_um_upper": 25.214,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00089,
         "area_by_constraint_factor_mm2": {
@@ -2690,6 +2800,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
         "sliding_in_contact_per_cycle_um_upper": 25.214,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00122,
         "area_by_constraint_factor_mm2": {
@@ -2758,6 +2869,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
         "sliding_in_contact_per_cycle_um_upper": 25.214,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00155,
         "area_by_constraint_factor_mm2": {
@@ -3141,6 +3253,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.426,
         "sliding_in_contact_per_cycle_um_upper": 0.874,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00046,
         "area_by_constraint_factor_mm2": {
@@ -3209,6 +3322,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.426,
         "sliding_in_contact_per_cycle_um_upper": 0.874,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00079,
         "area_by_constraint_factor_mm2": {
@@ -3277,6 +3391,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.426,
         "sliding_in_contact_per_cycle_um_upper": 0.874,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00113,
         "area_by_constraint_factor_mm2": {
@@ -3345,6 +3460,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.426,
         "sliding_in_contact_per_cycle_um_upper": 0.874,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00146,
         "area_by_constraint_factor_mm2": {
@@ -3420,6 +3536,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.717,
         "sliding_in_contact_per_cycle_um_upper": 0.433,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00045,
         "area_by_constraint_factor_mm2": {
@@ -3488,6 +3605,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.717,
         "sliding_in_contact_per_cycle_um_upper": 0.433,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00079,
         "area_by_constraint_factor_mm2": {
@@ -3556,6 +3674,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.717,
         "sliding_in_contact_per_cycle_um_upper": 0.433,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00112,
         "area_by_constraint_factor_mm2": {
@@ -3624,6 +3743,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 14.717,
         "sliding_in_contact_per_cycle_um_upper": 0.433,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00145,
         "area_by_constraint_factor_mm2": {
@@ -3699,6 +3819,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.763,
         "sliding_in_contact_per_cycle_um_upper": 16.577,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00063,
         "area_by_constraint_factor_mm2": {
@@ -3767,6 +3888,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.763,
         "sliding_in_contact_per_cycle_um_upper": 16.577,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00097,
         "area_by_constraint_factor_mm2": {
@@ -3835,6 +3957,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.763,
         "sliding_in_contact_per_cycle_um_upper": 16.577,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.0013,
         "area_by_constraint_factor_mm2": {
@@ -3903,6 +4026,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.763,
         "sliding_in_contact_per_cycle_um_upper": 16.577,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00163,
         "area_by_constraint_factor_mm2": {
@@ -4286,6 +4410,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 12.946,
         "sliding_in_contact_per_cycle_um_upper": 0.785,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00052,
         "area_by_constraint_factor_mm2": {
@@ -4354,6 +4479,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 12.946,
         "sliding_in_contact_per_cycle_um_upper": 0.785,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00085,
         "area_by_constraint_factor_mm2": {
@@ -4422,6 +4548,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 12.946,
         "sliding_in_contact_per_cycle_um_upper": 0.785,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00118,
         "area_by_constraint_factor_mm2": {
@@ -4490,6 +4617,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 12.946,
         "sliding_in_contact_per_cycle_um_upper": 0.785,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00152,
         "area_by_constraint_factor_mm2": {
@@ -4565,6 +4693,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 13.208,
         "sliding_in_contact_per_cycle_um_upper": 0.388,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00051,
         "area_by_constraint_factor_mm2": {
@@ -4633,6 +4762,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 13.208,
         "sliding_in_contact_per_cycle_um_upper": 0.388,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00085,
         "area_by_constraint_factor_mm2": {
@@ -4701,6 +4831,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 13.208,
         "sliding_in_contact_per_cycle_um_upper": 0.388,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00118,
         "area_by_constraint_factor_mm2": {
@@ -4769,6 +4900,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 13.208,
         "sliding_in_contact_per_cycle_um_upper": 0.388,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00151,
         "area_by_constraint_factor_mm2": {
@@ -4844,6 +4976,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.482,
         "sliding_in_contact_per_cycle_um_upper": 14.891,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00064,
         "area_by_constraint_factor_mm2": {
@@ -4912,6 +5045,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.482,
         "sliding_in_contact_per_cycle_um_upper": 14.891,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00098,
         "area_by_constraint_factor_mm2": {
@@ -4980,6 +5114,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.482,
         "sliding_in_contact_per_cycle_um_upper": 14.891,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00131,
         "area_by_constraint_factor_mm2": {
@@ -5048,6 +5183,7 @@
         "out_of_contact_rotation_per_cycle_um_rigid_wall": 2.482,
         "sliding_in_contact_per_cycle_um_upper": 14.891,
         "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
         "area_material_bound_mm2": 0.00164,
         "area_by_constraint_factor_mm2": {
@@ -5462,6 +5598,7 @@
       "out_of_contact_rotation_per_cycle_um_rigid_wall": 4.202,
       "sliding_in_contact_per_cycle_um_upper": 25.214,
       "upper_end_is": "Ti-bore stop \u2014 the polymer wall fully yielded, rod against the bare bore",
+      "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4\u00b7r\u00b7\u0394\u03b8 of a COAXIAL cycle is the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod crosses between the \u00b1wall states), yet the budget charges the whole path to ONE patch, so the per-patch DEPTH \u2014 which is what t_mm bounds \u2014 is over-charged \u00d72. The file's own offset regime is the control: there a static offset holds the rod on one side, one episode per cycle, and it uses 2\u00b7r\u00b7\u0394\u03b8. \u26d4 The bound is NOT relaxed on this argument: where the two patches sit, and whether they overlap once the mouth is compliant, is measured nowhere. The cost of keeping it is named instead \u2014 the k-resolution asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the per-patch depth needs",
       "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4\u00b7r\u00b7(\u03b8_upper \u2212 \u03b8_rigid)]; the rigid-wall rotation 4\u00b7r\u00b7\u03b8_rigid is OUT of contact and bounds nothing; the contact compliance that places the pair in the bracket is measured nowhere, and the mode at the rigid end is a reversing normal load with a landing (partial slip / impact fretting, not modelled)",
       "area_material_bound_mm2": 0.00155,
       "area_by_constraint_factor_mm2": {

@@ -1380,6 +1380,42 @@ def main() -> int:
     print("     where the tube slips and relieves. The ratified nominal (window centre, fitted hot) ships the")
     print("     wire-gripped regime; the floor case returns only if relaxation above T_g (unmodelled) drops the fit.")
 
+    # ── COLD PRESS-FIT — the two numbers 01_01 1.4 carried in PROSE ONLY until 2026-09-24 ────────
+    # Canon states «≈600 N normal, 60-240 N friction at µ 0.1-0.4, i.e. 110-440 MPa against PEEK's
+    # 100 ⇒ hot assembly; below µ ≈ 0.09 cold returns». Both numbers were reproducible from fields
+    # already here and neither had a measurer in the tree (00_07 HW.34). They are DERIVED here.
+    # ⛔ The µ band is a SWEEP, not a measurement: the pair PEEK↔drawn Ti has no measured µ anywhere
+    # (anchor_liner_tribo_rfq part B asks for exactly this), so µ_crit is what the RFQ answer is
+    # judged against — it does not itself decide anything.
+    cold_rows = []
+    for label, delta in (("ratified_nominal", (D_BUS - LINER_BORE_SPECIFIED_MM) * MM_M / 2.0
+                          if LINER_BORE_SPECIFIED_MM is not None else None),
+                         ("window_floor", floor), ("window_ceiling", ceiling)):
+        if delta is None or delta <= 0.0:
+            continue
+        p_c = per_um["P_c"] * delta                       # Pa at full engagement
+        f_norm = p_c * peri                               # N — the whole contact carries it
+        by_mu = {mu: {"friction_N": round(mu * f_norm, 1),
+                      "wall_axial_MPa": round(mu * f_norm / a_tube / 1e6, 1),
+                      "wall_yields": bool(mu * f_norm / a_tube > SIGMA_YIELD_PEEK_PA)}
+                 for mu in MU_PEEK_TI_SWEEP}
+        cold_rows.append({"at": label, "interference_radial_um": round(delta * 1e6, 3),
+                          "contact_pressure_MPa": round(p_c / 1e6, 2),
+                          "normal_force_N": round(f_norm, 1),
+                          "mu_crit": round(SIGMA_YIELD_PEEK_PA * a_tube / f_norm, 4),
+                          "by_mu": by_mu})
+    cold_nominal = next((r for r in cold_rows if r["at"] == "ratified_nominal"), None)
+    if cold_nominal is not None:
+        print(f"\n  Cold press-fit at the ratified nominal: {cold_nominal['normal_force_N']:.0f} N normal "
+              f"({cold_nominal['contact_pressure_MPa']:.1f} MPa over the whole {LINER_LENGTH_MM:.0f} mm).")
+        print(f"    Friction {cold_nominal['by_mu'][min(MU_PEEK_TI_SWEEP)]['friction_N']:.0f}-"
+              f"{cold_nominal['by_mu'][max(MU_PEEK_TI_SWEEP)]['friction_N']:.0f} N over the swept µ, i.e. "
+              f"{cold_nominal['by_mu'][min(MU_PEEK_TI_SWEEP)]['wall_axial_MPa']:.0f}-"
+              f"{cold_nominal['by_mu'][max(MU_PEEK_TI_SWEEP)]['wall_axial_MPa']:.0f} MPa in the tube wall "
+              f"against PEEK yield {SIGMA_YIELD_PEEK_PA / 1e6:.0f}.")
+        print(f"    ⇒ the wall yields on EVERY swept µ; cold returns only below µ_crit "
+              f"{cold_nominal['mu_crit']:.4f} — which nothing has measured (anchor_liner_tribo_rfq B).")
+
     interference_window = {
         "question": "00_07 HW.34 — the 2026-09-11 direction verdict asserts the tube is TIGHT on the "
                     "wire; canon carried no nominal for that pair until 2026-09-18 (now 01_01 1.4: bore = "
@@ -1497,8 +1533,26 @@ def main() -> int:
                                        "form before it consumes any on size",
                          "surface": "asperity flattening on assembly reduces the effective "
                                     "interference, and no Sa for either surface exists in canon",
-                         "insertion_force": "the force to press the tube onto the wire is not "
-                                            "computed; at the ceiling it is a real handling question"},
+                         "insertion_force_superseded_2026_09_24": "this key used to read 'not computed'; "
+                                            "cold_press_fit below now derives it (00_07 HW.34)"},
+        "cold_press_fit": {
+            "question": "01_01 1.4 rules cold assembly out and names a µ below which it returns. Both "
+                        "numbers lived in PROSE ONLY until 2026-09-24; here they are derived from the "
+                        "same fields as the rest of the window",
+            "peek_yield_MPa": SIGMA_YIELD_PEEK_PA / 1e6,
+            "contact_area_mm2": round(peri / MM_M ** 2, 4),
+            "tube_section_mm2": round(a_tube / MM_M ** 2, 4),
+            "mu_sweep": list(MU_PEEK_TI_SWEEP),
+            "rows": cold_rows,
+            "declared_ceilings": ("FULL engagement and quasi-static: the peak at the end of the stroke, "
+                                 "not a force-displacement curve, and no lead-in chamfer on either part "
+                                 "(a chamfer is the cheapest lever and no drawing carries one). Asperity "
+                                 "flattening on assembly is not modelled and LOWERS the real force. The "
+                                 "tube is treated as a column in pure compression - buckling of an 18 mm "
+                                 "tube of 0.15 mm wall is NOT checked and would bite before yield. µ is a "
+                                 "SWEEP with no measured member for PEEK<->drawn Ti (anchor_liner_tribo_rfq "
+                                 "part B), so mu_crit is a TARGET for that test, never a result"),
+        },
     }
 
 
@@ -1639,6 +1693,17 @@ def main() -> int:
                         "out_of_contact_rotation_per_cycle_um_rigid_wall": round(rot_rigid_mm * 1000.0, 3),
                         "sliding_in_contact_per_cycle_um_upper": round(s_upper_mm * 1000.0, 3),
                         "upper_end_is": v["upper_end_is"],
+                        "two_patch_conservatism": "DECLARED 2026-09-24 (00_07 HW.34): the 4·r·Δθ of a COAXIAL cycle is "
+                                                  "the sum of TWO contact episodes on OPPOSITE sides of the edge (the rod "
+                                                  "crosses between the ±wall states), yet the budget charges the whole path "
+                                                  "to ONE patch, so the per-patch DEPTH — which is what t_mm bounds — is "
+                                                  "over-charged ×2. The file's own offset regime is the control: there a "
+                                                  "static offset holds the rod on one side, one episode per cycle, and it "
+                                                  "uses 2·r·Δθ. ⛔ The bound is NOT relaxed on this argument: where the two "
+                                                  "patches sit, and whether they overlap once the mouth is compliant, is "
+                                                  "measured nowhere. The cost of keeping it is named instead — the k-resolution "
+                                                  "asked of the tribo test (anchor_liner_tribo_rfq) is twice finer than the "
+                                                  "per-patch depth needs",
                         "sliding_bracket_note": "in-contact sliding per cycle lies in [0 (rigid wall), 4·r·(θ_upper − θ_rigid)]; "
                                                 "the rigid-wall rotation 4·r·θ_rigid is OUT of contact and bounds nothing; the "
                                                 "contact compliance that places the pair in the bracket is measured nowhere, and "

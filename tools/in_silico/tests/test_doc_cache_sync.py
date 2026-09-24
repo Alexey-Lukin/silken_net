@@ -595,6 +595,22 @@ CHECKS = [
     # 7.8 µm inside the wall) went with the drift picture on 2026-09-14: those keys are gone from the cache
     # and the doc sentences that carried them now say the numbers are retired. What canon and SUMMARY quote
     # from the equilibrium instead is pinned below — each to the key it is read from, never to a neighbour.
+    # ⛔ The cold press-fit pair below entered canon as PROSE with no measurer and stayed that way until
+    # 2026-09-24 (00_07 HW.34) — the exact shape this file exists against. Both now read from the cache.
+    (
+        "cold press-fit normal force at the ratified nominal → bus_mechanical.json §cold_press_fit",
+        COAXIAL, rf"\*\*{N} Н\*\* нормальної сили",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["interference_window"]["cold_press_fit"]["rows"]
+                       if r["at"] == "ratified_nominal")["normal_force_N"], 1.0,
+    ),
+    (
+        "µ below which cold assembly returns → bus_mechanical.json §cold_press_fit",
+        COAXIAL, rf"µ_крит {N}\*\*",
+        "mechanical/bus_mechanical.json",
+        lambda d: next(r for r in d["interference_window"]["cold_press_fit"]["rows"]
+                       if r["at"] == "ratified_nominal")["mu_crit"], 0.0005,
+    ),
     (
         "mouth approach angle per µm of channel offset, shipped branch, placeholder → bus_mechanical.json §edge_bearing",
         SUMMARY, rf"the approach angle grows at \*\*{N}°/µm\*\* of offset past the play on the placeholder",
