@@ -23,7 +23,7 @@
 ## 0. Bottom-line наперед (перед деталями)
 
 1. **🔴 НЕСУЧЕ: жоден реєстр — ні класичний, ні digital-native — НЕ приймає сирий фізіологічний/біоелектричний сигнал дерева як прямий carbon-quantification-вхід.** Усі forest-методології рахують tCO₂e через remote-sensing canopy-proxy (LiDAR/NDVI/Stocking Index) або алометрію DBH. Навіть найбільш «digital-native» реєстр (Isometric) рахує дерево через Pachama-супутник/LiDAR, **не** через дендрометр чи EBFC-сигнал у стовбурі. Це **той самий клас чесності, що «in-silico ≠ TRL 4»** — не поразка, а точна локалізація того, де наша цінність реальна (§1).
-2. **SCC ≠ прямий carbon-credit.** Реальний трек ЗАРАЗ — не власний реєстр-мінт, а **«vetted MRV Data Service Provider»** (структурний аналог Sylvera/Kanop/Chloris у Verra VM0047) АБО **permanence/disturbance-monitoring шар** (`chainsaw_detected`/panic — реальна, диференційована цінність, якої remote-sensing не дає в real-time) поверх ЧУЖОГО вже-credited проєкту (§1.3, §6).
+2. **SCC ≠ прямий carbon-credit.** Реальний трек ЗАРАЗ — не власний реєстр-мінт, а **«vetted MRV Data Service Provider»** (структурний аналог Sylvera/Kanop/Chloris у Verra VM0047) АБО **permanence/disturbance-monitoring шар** (`chainsaw_detected`/panic — диференційована цінність, якої remote-sensing не дає в real-time; тракт відвантажено, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md)) поверх ЧУЖОГО вже-credited проєкту (§1.3, §6).
 3. **Для лісового пілоту як проєкту:** **Isometric** — найкращий cost/timeline fit (buyer-pays, ~1 міс, CCP-eligible), АЛЕ потребує anchor-buyer наперед; **Gold Standard Microscale** (<10k tCO₂e/рік) — найкращий fallback без buyer; **Verra** — buyer-recognition топ, але $100–300k+ / 2–3 роки (погано для solo pre-revenue) (§2).
 4. **Double-count / Article 6 UA — найбільший відкритий невідомий, НЕ registry-специфіка.** UA прийняла Article-6 pilot 18.06.2026 + нацреєстр (forestry-пріоритет); NDC покриває 100% LULUCF → структурний double-count-ризик. **Прямий запит нац-focal-point (Міндовкілля), не web** (§3).
 5. **Biodiversity (both/and) — co-benefit evidence ЗАРАЗ, не окремий SKU 2026.** Cercarbono/Savimbo ISBM = єдиний живий реєстр, що приймає звукозапис як доказ — але **species-level** (56 indicator species), а наш TinyML = 5-клас presence → gap. COP17 (Єреван, жовт-2026) = контрольна точка (§4).
@@ -62,7 +62,7 @@
 
 **(B) Permanence / disturbance-monitoring шар** — `chainsaw_detected` / panic-flag.
 - **Це найсильніший чесний value-prop.** Continuous permanence-monitoring — рівно те, чого remote-sensing НЕ дає: супутникові прольоти періодичні; подія бензопили між прольотами невидима до наступного знімка. Наш real-time acoustic-тригер закриває саме цю сліпу пляму.
-- Реальна, вже-shipped спроможність: `chainsaw_detected` живе у firmware/telemetry (SLASH-1, [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) — справжня пилка = panic→`chainsaw_detected`), не гіпотеза.
+- Відвантажена спроможність: тракт `chainsaw_detected` живе у firmware/telemetry (SLASH-1, [`05_05 §3.2`](../../05_05_Slashing_and_Risk_Policy.md) — справжня пилка = panic→`chainsaw_detected`). ⚠️ Відвантаження ≠ доведеність: польової точності детекції немає ([`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус), тож Клієнтові це сигнал до перевірки, не доказ події.
 
 **Технічний registry-integration-surface написаний і покритий** (⚠️ «доведений» тут = про КОД; наскрізного прогону в живий реєстр не було): `PuroEarth::PassportService`/`PuroEarth::RegistryApiService` (`[MAINNET READY]` — мітка про наш код, не про досяжність каналу; ARCH.5) — transform → canonical JSON → SHA-256 → on-chain anchor → IPFS → REST submit. Тобто плагін у ЧУЖИЙ реєстр = **format-адаптери × N поверх доведеного патерну**, не greenfield. Твердий гейт — не код, а BIZ.9-методолог (methodology-ID) + institutional buyer.
 
@@ -133,7 +133,7 @@ Puro **НЕ покриває** живий-ліс ARR/IFM — це engineered/dur
 
 ### 3.3 Дія (⚖️/👤)
 
-- ⚖️ **Прямий запит до нац-focal-point** (Міндовкілля / профільний департамент нацреєстру): чи потрібна authorization для VCM (не-Стаття-6) кредитів + чи прийматимуть покупці кредити без corresponding adjustment. **Не web-ресьорч.**
+- ⛔ **ВІДКЛАДЕНО ⚖️ founder 2026-08-29** (тригер — реальний ліс АБО контрагент-оператор; шапка ↑) — **прямий запит до нац-focal-point** (Міндовкілля / профільний департамент нацреєстру): чи потрібна authorization для VCM (не-Стаття-6) кредитів + чи прийматимуть покупці кредити без corresponding adjustment. **Не web-ресьорч.**
 - Не хардкодити припущення в архітектуру/бізнес-план до з'ясування.
 
 ---

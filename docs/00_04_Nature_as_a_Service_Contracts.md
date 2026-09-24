@@ -303,7 +303,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | Передумова | Дім стану |
 |---|---|
 | B2B MSA + SLA + Subscription Order Form (каркас — [`msa_skeleton.md`](protocols/legal/msa_skeleton.md)) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 |
-| B2C ToS / Privacy / Cookie (чернетки — [`b2c_tos_privacy.md`](protocols/legal/b2c_tos_privacy.md)); чи адресуємо CCPA/CPRA | [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 |
+| B2C ToS / Privacy / Cookie (чернетки — [`b2c_tos_privacy.md`](protocols/legal/b2c_tos_privacy.md)); CCPA/CPRA — напрям «так» (founder 2026-08-29), відкрито КОЛИ й у якій формі, тригер — перша B2C-поверхня для резидентів США або US-контрагент | [`00_07`](00_07_Action_Plan_Tracker) BIZ.3 |
 | Машинна інтеграційна поверхня для Клієнта (OpenAPI-контракт · org-scoped outbound-webhooks). ⚠️ Канон її НЕ обіцяє: [`00_01 §8`](00_01_Vision_Mission_and_Roadmap) тримає production API-доступ серед **УТРИМУВАНИХ** активів — а чернетковий шар уже продає «Tier A (Dashboard + API)» | [`00_07`](00_07_Action_Plan_Tracker) ARCH.63 |
 | KYC/AML-процес для B2B (регуляторний шар поверх `hadron_kyc_status`) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.20 |
 | B2B Fiat-to-Retirement SPV (юрисдикція · ліцензія · кастодіан · сертифікат-флоу) | [`00_07`](00_07_Action_Plan_Tracker) BIZ.15 |
@@ -346,7 +346,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 | **B2C онбординг** | 🔴 Заблоковано: ToS, Privacy Policy відсутні |
 | **CO₂ методологія** | ✅ 2000 SCC = 1 tCO₂ (1 SCC = 0.5 kg CO₂) — on-chain + SystemParameter. **Внутрішня облікова конвенція**, НЕ registry-визнаний кредит (§3) |
 | **DAO Governance** | 🟡 SFC `slash()`/`slashUpTo()` реалізовано, але кличе їх **лише ручний DAO/Timelock** (бекенд-автоматизації немає) → vote-power-вікно необмежене; Vote Escrow — **рекомендований** доп-захист (§8) |
-| **RWA реєстрація** | 🟡 Інфраструктура є, процес не відпрацьований |
+| **RWA реєстрація** | 🟡 Код є, адресата немає: вендора, чиє імʼя носить код, не існує, провайдера ERC-3643 не обрано; правова природа запису — чекає RWA-меморандуму ([`00_07`](00_07_Action_Plan_Tracker) BIZ.11) |
 | **DB schema** | ✅ Узгоджено (`signed_at` прибрано з коду) |
 
 ---

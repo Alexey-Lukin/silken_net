@@ -65,7 +65,7 @@ VERIFICATION-backbone→  ISO 14064-3 / -2 (§3) — незалежна валі
 | 3 | Transparency | Governance | continuous telemetry = сильний transparency-актив |
 | 4 | Robust independent 3rd-party validation & verification | Governance | ⚑ наш data-фід має пройти VVB (ISO 14064-3) |
 | 5 | **Additionality** | **Emissions Impact** | host-проєкт, не ми; наш permanence ≠ additionality (REDD+-пастка → registry-matrix) |
-| 6 | **Permanence** | Emissions Impact | ⭐ **наш найсильніший чесний внесок** — real-time `chainsaw_detected` |
+| 6 | **Permanence** | Emissions Impact | ⭐ **наш найсильніший чесний внесок** — real-time `chainsaw_detected` (відвантажений тракт, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус: сигнал до перевірки, не доказ події) |
 | 7 | **Robust quantification** of reductions/removals | Emissions Impact | 🔴 **metrology-gap живе ТУТ** — SCC не квантифікує tCO₂e |
 | 8 | **No double-counting** | Emissions Impact | ⚑ **прямий зчеп з UA-Article-6** (§3.3, §8) |
 | 9 | Sustainable development benefits & safeguards | **Sustainable Dev** | ⭐ **міст до biodiversity** — acoustic co-benefit підсилює P9 (§8) |
@@ -232,7 +232,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 1. **SCC = Condition/Proof-of-Growth-токен** (homeostasis), НЕ сертифікований tCO₂e. Спертися на «Condition Coin»-прочитання (вже латентне в каноні [`02_06 §7`](../../02_06_Unit_Economics_and_BOM.md)). «2000 SCC = 1 tCO₂» on-chain = **внутрішня облікова конвенція** (дзеркало SSOT → [`00_04 §3`](../../00_04_Nature_as_a_Service_Contracts.md); правити там), не CCP/VCMI-визнаний кредит. — не пом'якшую (guardrail).
 
 2. **Enterprise-pitch-каркас (3 чесні value-props, жоден не претендує на quantification):**
-   - **(A) Permanence-monitor** — real-time `chainsaw_detected` закриває CCP-P6 + rating-permanence-risk там, де remote-sensing сліпий між прольотами. **Найсильніший.**
+   - **(A) Permanence-monitor** — real-time `chainsaw_detected` (відвантажений тракт, польова точність детекції НЕ доведена — [`03_03`](../../03_03_TinyML_Acoustic_Inference.md) ✅ Статус: сигнал до перевірки, не доказ події) закриває CCP-P6 + rating-permanence-risk там, де remote-sensing сліпий між прольотами. **Найсильніший.**
    - **(B) Transparency/ground-truth data-layer** — continuous per-tree telemetry живить CCP-P3 + ISO 14064-2-моніторинг + TNFD-disclosure host-проєкту.
    - **(C) Biodiversity co-benefit evidence** — acoustic soundscape підсилює CCP-P9 (sustainable-dev safeguards) + готує IAPB-stewardship-стрім (§8). **Нести разом із field-валідністю fauna-класу (§4.4) — інакше value-prop стає саме тим unbacked-claim, за який ринок карає.**
 
@@ -260,7 +260,7 @@ TNFD = **disclosure-стандарт** (як carbon-reporting), не прийм�
 ### 8.3 CCP/VCMI (carbon-integrity) × UA-Article-6-authorization
 
 - **CCP-принцип 8 «No double-counting» = прямий зчеп** (§3.3). Ланцюг: CCP-label вимагає розв'язаного double-count → UA-100%-LULUCF-NDC створює overlap → розв'язок залежить від UA-Article-6-authorization-режиму (18.06.2026, невідомий для voluntary) → **без ясності CCP-label (і VCMI-claim, що його вимагає з 01.01.2026) під питанням для UA-лісу.**
-- **Практично:** U1 (чи потрібна authorization для voluntary UA-кредитів) — не адмін-дрібниця, а **вузол, що ґейтить весь carbon-integrity-стек**. Найдешевша найвища-leverage дія: ⚖️ прямий запит Міндовкілля/нац-focal-point (не web).
+- **Практично:** U1 (чи потрібна authorization для voluntary UA-кредитів) — не адмін-дрібниця, а **вузол, що ґейтить весь carbon-integrity-стек**. Найдешевша найвища-leverage дія — прямий запит Міндовкілля/нац-focal-point (не web) — ⛔ **ВІДКЛАДЕНА ⚖️ founder 2026-08-29 з тригером** (реальний ліс АБО контрагент-оператор; [`00_07`](../../00_07_Action_Plan_Tracker.md) BIZ.9): «0 грн» правдиве лише в грошах.
 - **Biodiversity × UA:** biodiversity-кредит НЕ несе Article-6-CA-навантаження (CA — carbon-механізм) — але несе IAPB local-to-local-обмеження + UA-держлісгосп-governance (73% держвласність) замість IPLC-схеми. Різні планки, обидві реальні.
 
 ---
