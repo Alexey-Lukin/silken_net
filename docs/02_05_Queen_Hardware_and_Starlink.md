@@ -624,7 +624,7 @@ Starlink Mini — компактний термінал LEO-супутника �
 | Чинник | Soldier (STM32WLE5JC, EBFC) | Queen (STM32WLE5JC + LiFePO4 12V/20Ah) |
 |--------|-----------------------------|------------------------------------------|
 | Flash budget для LoRaWAN-стека (LoRaMac-node ≈ 30 KB) | ❌ Конкурує з mruby VM + TinyML | ✅ Достатньо ресурсу |
-| TX power для +15 dBm (Helium SF12 reach 15 км) | ❌ EBFC vcap ~500 мВ — без запасу потужності | ✅ +22 dBm з власної мережі живлення |
+| TX power для +15 dBm (Helium SF12 reach 15 км) | ❌ EBFC vcap ~500 мВ — без запасу потужності | ✅ живлення дозволяє +22 dBm, але ВИПРОМІНЮВАННЯ обмежене регулятором: у P2P провідна +10 дБм (⚖️ 2026-09-24, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)), а LoRaWAN-детур з дефолтами MAC перевищує ЕВП ([`certification_roadmap`](protocols/legal/certification_roadmap.md) §2.3) |
 | Знання uplink topology | ❌ Soldier має бути topology-agnostic | ✅ Queen вже є topology-aware |
 | OTAA join state + FCntUp counter persistence | ❌ Cold sleep STOP2 ускладнює state mgmt | ✅ Завжди живий під час кризи |
 
