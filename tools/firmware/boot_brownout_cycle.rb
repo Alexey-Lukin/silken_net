@@ -175,14 +175,16 @@ if assert_mode
     margin = win - sensitivity_3cycle_mj(params, wire: :ecb, p_gen_uw: p_gen)
     failures << "ECB @ P_gen=#{p_gen}µW margin=%.2f мДж (< 0)" % margin if margin.negative?
   end
-  # self-check: відтворюємо надруковані в 02_03 §9.3/§9.6/§9.8 проміжні числа
+  # self-check: відтворюємо надруковані в 02_03 §9.3/§9.6/§9.8 проміжні числа. Це
+  # властивість МОДЕЛІ на канонних дефолтах, тож звіряється PARAMS, а не override:
+  # інакше будь-який override червонить self-check, а не запас (HW.12, 2026-09-24).
   checks = {
-    "P_BQ_Q (§9.3, 2.20 µW)" => ((params[:i_bq_quiescent_na] / 1000.0) * params[:v_vstor_avg] - 2.196).abs < 0.01,
-    "sleep-drain @ Сценарій C (§9.6, 4.18 µW)" => (sleep_drain_uw(params) - 4.176).abs < 0.01,
-    "E_sleep_supercap (§9.6, 15.04 мДж/год)" => (sleep_mj_per_hour(params) - 15.0336).abs < 0.01,
-    "E_gen_winter @5µW (§9.8, 11.7 мДж/год)" => (gen_mj_per_hour(params, 5.0) - 11.7).abs < 0.01,
+    "P_BQ_Q (§9.3, 2.20 µW)" => ((PARAMS[:i_bq_quiescent_na] / 1000.0) * PARAMS[:v_vstor_avg] - 2.196).abs < 0.01,
+    "sleep-drain @ Сценарій C (§9.6, 4.18 µW)" => (sleep_drain_uw(PARAMS) - 4.176).abs < 0.01,
+    "E_sleep_supercap (§9.6, 15.04 мДж/год)" => (sleep_mj_per_hour(PARAMS) - 15.0336).abs < 0.01,
+    "E_gen_winter @5µW (§9.8, 11.7 мДж/год)" => (gen_mj_per_hour(PARAMS, 5.0) - 11.7).abs < 0.01,
     "E_active_from_VSTOR ECB (§9.6, 38.25 мДж)" =>
-      (active_cycle_from_vstor_mj(params, wire: :ecb) - 38.25).abs < 0.01
+      (active_cycle_from_vstor_mj(PARAMS, wire: :ecb) - 38.25).abs < 0.01
   }
   checks.each { |name, ok| failures << "self-check провалено: #{name}" unless ok }
 

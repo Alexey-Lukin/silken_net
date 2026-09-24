@@ -123,7 +123,13 @@ def net_mj_h(p) = e_gen_mj_h(p) - e_sleep_mj_h(p)
 
 # H — інтервал між пакетами, за якого баланс рівно нульовий. ⚠️ Це БЕЗЗАПАСНА
 # точка: канон бере трохи довший інтервал і тому друкує «+1.4 мДж/год».
-def interval_h(p, t_air_ms) = e_active_from_vstor_mj(p, t_air_ms) / net_mj_h(p)
+# Нетто ≤ 0 = вузол не накопичує на жоден пакет: H = ∞, а m тоді 0. Ділення без
+# цієї гілки давало від'ємне H, і m затискалось на 1.0 — повний метаболізм на
+# вузлі, що не заряджається (HW.12, 2026-09-24).
+def interval_h(p, t_air_ms)
+  net = net_mj_h(p)
+  net.positive? ? e_active_from_vstor_mj(p, t_air_ms) / net : Float::INFINITY
+end
 
 # m(Δt) — метаболічне відображення (bio_contract.rb). Нижче нуля воно не
 # опускається: GP сідає на підлогу, і саме тому «H зріс» і «мінт упав» — різні
@@ -159,6 +165,10 @@ def report(p)
   rows.each do |r|
     puts format("  %-42s %6d %9.1f %6.2f мДж %7.2f мДж %7.3f %6.3f",
                 r[:label], r[:payload_b], r[:t_air_ms], r[:e_tx_mj], r[:e_active_mj], r[:h_hours], r[:m])
+  end
+  unless net_mj_h(p).positive?
+    puts "\n  ⚠️ баланс ≤ 0: вузол не накопичує на жоден TX — H = ∞, m = 0; робочої точки, про яку далі, немає."
+    return 0
   end
   ecb, ccm = rows
   puts
