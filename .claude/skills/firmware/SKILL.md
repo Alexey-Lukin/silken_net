@@ -59,6 +59,7 @@ points, it does not restate (so it can't drift). Verify a fact at its home befor
 12. cppcheck version-skew: a green local lint proves NOTHING about CI
 13. Enabling compile-coverage of a gated block = wire ALL its board-freeze deps FIRST; only the ARM `hal_check_ccm` lane sees the gated branch, so build it locally (`firmware/.toolchain/`, gotcha 7.4) before pushing, or each miss is a separate red CI push
 14. The audio window is guarded BEFORE the HAL, and the vendored HAL is the reason
+15. A `--assert` model is trusted TWICE — as a gate and as a READING — and the two fail in opposite directions; the day you drive it past its design point, both failures surface at once
 
 <!-- /FIRMWARE-GOTCHAS-INDEX -->
 
