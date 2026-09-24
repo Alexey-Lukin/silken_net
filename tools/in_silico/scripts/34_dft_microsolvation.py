@@ -7,7 +7,7 @@ WHY. The raw FADH₂→Os cascade is uphill in *every* implicit-solvent method
 driving force is −0.574 eV (lib.constants CASCADE_DRIVING_FORCE_MV). ⛔ The older −0.14 eV / +140 mV
 Cosnier figure is WITHDRAWN: it rested on a mis-valued E°(FAD)=+60 mV and on glucose *oxidase*, not
 GcGDH — so the ~1 eV residual quoted below is measured against −0.574, not against −0.14. Script 32 already shows the *flavin* PCET potential is reproduced to
-~50 mV, so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
+50–62 mV (free-flavin bracket), so the flavin solvation is NOT the culprit — the ~1 eV residual lives on
 the charge-changing **Os(III)²⁺/Os(II)⁺** couple. This is the textbook failure of
 implicit (PCM) solvation for group-8 octahedral M(III/II): the ~1 V error is
 pinned on the *directionality of 2nd-shell H-bonds* that a continuum cannot model

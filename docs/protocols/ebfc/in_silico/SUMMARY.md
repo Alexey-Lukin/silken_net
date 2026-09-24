@@ -149,7 +149,7 @@ The 4-level Zero-Lab pipeline validates the Gen 2.0 EBFC design entirely in sili
 
 **Conclusion:** Raw DFT verdict UPHILL is a **method limit** (differential PCM solvation, chloro↔bis-Im bracket + the 4,4'-dimethyl substituent), decomposed by ② (§"Cluster-Continuum Micro-Solvation"). The cascade is **experimentally downhill** (+574 mV, verified E°s — Os +309 vs NHE / FAD-GDH −265 mV SHE). The earlier «bias-corrected Δε ≈ −0.07 eV reproduces exp −0.14» was fortuitous cancellation tuned to a mis-valued (+60 mV) FAD potential — **withdrawn**; Cosnier 1999's +140 mV pertains to glucose-oxidase, not GcGDH.
 
-**PCET validation (script 32 — thermodynamic proton reference):** the flavin couple itself is NOT the culprit — E°(FAD/FADH₂) = **−158 mV vs NHE** (pH 7; −10 mV pH 4.5, +256 mV pH 0) lands **within 50 mV** of the free-flavin experimental value → the ~1 eV raw-DFT gap is isolated to the **differential PCM solvation of the charge-changing Os couple**, not the flavin. (Cache `dft/pcet_redox_potential.json`; the cascade-PCET reframe of script 33 does not flip it downhill — same PCM limit, not proton coupling.)
+**PCET validation (script 32 — thermodynamic proton reference):** the flavin couple itself is NOT the culprit — E°(FAD/FADH₂) = **−158 mV vs NHE** (pH 7; −10 mV pH 4.5, +256 mV pH 0) lands **50–62 mV** from the free-flavin experimental bracket (−220 · −208 mV; ⚖️ founder 2026-09-24 — only −220 has a source, the paper's ref 25) → the ~1 eV raw-DFT gap is isolated to the **differential PCM solvation of the charge-changing Os couple**, not the flavin. (Cache `dft/pcet_redox_potential.json`; the cascade-PCET reframe of script 33 does not flip it downhill — same PCM limit, not proton coupling.)
 
 ### Publication-grade: ωB97X/def2-TZVP (dimethyl mediator, B1 ✅ 2026-06-17)
 
@@ -212,7 +212,7 @@ Local slope over that pair: **B3LYP −0.8756 ⊥ ωB97X −0.8765 eV/σ — 0.1
 
 Tests whether the raw cascade gap (above) is the implicit-solvation (PCM) limit, by
 adding explicit waters / probing speciation on the charge-changing **Os(III/II)**
-couple (the flavin couple is already within 50 mV of exp — script 32 — so it is not
+couple (the flavin couple is already within 50–62 mV of exp — script 32 — so it is not
 the culprit). Recomputed on the **real 4,4'-dimethyl-bpy mediator** (Zafar +309 mV vs
 NHE), not the plain-bpy model. B3LYP/6-31G(d)+LANL2DZ(Os)+C-PCM vertical ΔSCF; cascade
 Δ = HOMO(FADH₂ −5.137)−LUMO(OsIII). All ⟨S²⟩≈0.754 (clean doublets). Numbers:

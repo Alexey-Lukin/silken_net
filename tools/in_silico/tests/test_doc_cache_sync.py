@@ -154,6 +154,18 @@ CHECKS = [
         SUMMARY, rf"E°\(FAD/FADH₂\) = \*\*{N} mV vs NHE",
         "dft/pcet_redox_potential.json", lambda d: d["E_vs_SHE_mV"]["pH_7.0"], 1.0,
     ),
+    # The free-flavin exp value is a BRACKET since 2026-09-24 (00_07 HW.5.IS): «within ~50 mV» had been
+    # quoted from the unsourced −208 end while the sourced −220 end sits 62 mV away. Both ends pinned.
+    (
+        "PCET Δ vs free-flavin, −208 end → pcet_redox_potential.json",
+        SUMMARY, rf"lands \*\*{N}–[\d.]+ mV\*\* from the free-flavin",
+        "dft/pcet_redox_potential.json", lambda d: d["delta_vs_exp_pH7_mV"][1], 1.0,
+    ),
+    (
+        "PCET Δ vs free-flavin, −220 end → pcet_redox_potential.json",
+        SUMMARY, rf"lands \*\*[\d.]+–{N} mV\*\* from the free-flavin",
+        "dft/pcet_redox_potential.json", lambda d: d["delta_vs_exp_pH7_mV"][0], 1.0,
+    ),
     # ── Hammett LFER ──
     (
         "LFER slope → os_mediator_series.json",

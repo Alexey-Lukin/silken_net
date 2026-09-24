@@ -76,7 +76,7 @@ reporting.<sup>20,21</sup>
 We report a first-principles, electronic-structure account of the electron-transfer energetics of a
 complete Gen-2.0 EBFC chain, and — equally — an honest assessment of where affordable
 implicit-solvation density-functional theory reaches its limit on this problem. Specifically, we (i)
-reproduce the proton-coupled FAD redox potential to within ~50 mV of experiment using a thermodynamic
+reproduce the proton-coupled FAD redox potential to within 50–62 mV of experiment using a thermodynamic
 proton reference, isolating the cascade discrepancy to the mediator rather than the flavin; (ii)
 establish a Hammett<sup>22</sup> structure–activity relationship for the osmium mediator that is predictive and
 rationalizes the empirically observed optimum<sup>23,24</sup>; (iii) compute the

@@ -26,9 +26,10 @@ substitutions) preserves this geometry.
 
 Treating the FAD/FADH₂ couple with a thermodynamic proton reference (rather than an explicit, and in
 implicit solvent grossly over-stabilised, hydronium ion) recovers **E°(FAD/FADH₂) = −158 mV vs NHE** —
-within ~50 mV of the experimental free-flavin value [CITATION NEEDED] (Fig 3a). This is the paper's clean positive result: a
-proton-coupled redox potential of a biological cofactor, reproduced by implicit-solvation DFT once the
-proton is handled correctly. It also isolates the cascade discrepancy discussed in §3.5 to the
+50–62 mV positive of the experimental free-flavin value, which the literature gives as −208 mV
+[CITATION NEEDED] or −220 mV<sup>25</sup> (Fig 3a). This is the paper's positive result on the anode side: a
+proton-coupled redox potential of a biological cofactor, reproduced by implicit-solvation DFT inside the
+±0.15 V uncertainty of the absolute-SHE convention once the proton is handled correctly. It also isolates the cascade discrepancy discussed in §3.5 to the
 mediator side of the chain, not the flavin.
 
 The inner-sphere reorganisation energy of the first anode oxidation was likewise computed, not assumed.
@@ -154,7 +155,7 @@ explicit-water QM/MM of the **chloro** species.
 ## 3.6 The protein environment on the FAD potential
 
 The bound enzyme potential is **E°(FAD-GDH) = −265 mV vs SHE** (an experimentally verified value<sup>56</sup>); the
-protein shifts the cofactor from the free-flavin −208 mV [CITATION NEEDED] to a more negative −265 mV, i.e. makes FAD a
+protein shifts the cofactor from the free-flavin −208 to −220 mV (§3.2) to a more negative −265 mV, i.e. makes FAD a
 *better* electron donor and enlarges the cascade driving force — a mechanistic gain, not a gap. An
 active-site cluster (isoalloxazine plus the catalytic His537, the charged Glu61 and the backbone amide
 contacts within ~5 Å) is defined from the AF3 structure; the rigorous QM-cluster potential, sensitive
@@ -199,8 +200,8 @@ rate-determining FADH₂→Os(III) step (B3LYP/6-31G(d)+LANL2DZ(Os)/C-PCM). The 
 is uphill (Δε = −1.05 eV on the dimethyl mediator) and the adiabatic ΔSCF free energy is +1.03 eV on the dimethyl mediator (+0.88 eV plain-bpy reference), whereas the verified driving force is downhill (+574 mV / −0.574 eV, from E°(Os) **+309 mV vs NHE**
 [the device 4,4′-dimethyl-bpy Os-PVI polymer<sup>8</sup>] and the verified bound E°(FAD-GDH) −265 mV vs SHE<sup>56</sup>); the
 raw inversion is the PCM-solvation + 4,4′-dimethyl-substituent artefact decomposed in Fig 5. The
-proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies within 50 mV of
-experiment (−208 mV [CITATION NEEDED]). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
+proton-referenced flavin potential, E°(FAD/FADH₂) = −158 mV vs SHE at pH 7, lies 50–62 mV from
+experiment (free flavin −208 mV [CITATION NEEDED] or −220 mV<sup>25</sup>). *(b)* Hammett structure–activity relationship for cis-[Os(4,4′-X-bpy)₂(1-MeIm)Cl]⁺/²⁺
 at constant charge: ΔE_red(III→II) is linear in σ_para (slope −0.92 eV/σ, r² = 1.00; fit over the
 OMe→NO₂ regime), with donor-resonance saturation at NMe₂/NH₂. Electron-withdrawing substituents raise the
 cascade driving force; the realistic optimum is the electrochemically inert SO₂CF₃ (NO₂ degrades on

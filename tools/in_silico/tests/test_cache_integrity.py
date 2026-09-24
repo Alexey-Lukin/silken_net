@@ -1175,13 +1175,15 @@ def test_md_dft_ensemble_thermally_robust():
 
 
 def test_pcet_redox_potential_valid():
-    """Proton-reference PCET must land within 100 mV of free-flavin exp (pH 7)."""
+    """Proton-reference PCET must land within 100 mV of BOTH free-flavin readings (pH 7) — the exp value
+    is a bracket since 2026-09-24 (00_07 HW.5.IS), and a pass on the kinder end alone is not a pass."""
     path = DFT / "pcet_redox_potential.json"
     if not path.exists():
         pytest.skip("PCET not computed")
     data = json.loads(path.read_text())
     assert data["valid_proton_reference"] is True
-    assert abs(data["delta_vs_exp_pH7_mV"]) < 100
+    assert len(data["delta_vs_exp_pH7_mV"]) == len(data["exp_free_flavin_pH7_mV"]) == 2
+    assert max(abs(d) for d in data["delta_vs_exp_pH7_mV"]) < 100
     assert data["couple"].startswith("FAD")
 
 

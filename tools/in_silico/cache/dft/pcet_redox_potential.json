@@ -11,8 +11,18 @@
     "pH_4.5": -10.5,
     "pH_7.0": -158.4
   },
-  "exp_free_flavin_pH7_mV": -208,
-  "delta_vs_exp_pH7_mV": 49.6,
+  "exp_free_flavin_pH7_mV": [
+    -220,
+    -208
+  ],
+  "exp_free_flavin_pH7_sources": [
+    "ref 25 (PMC4480342) quoting its ref 105",
+    "none found"
+  ],
+  "delta_vs_exp_pH7_mV": [
+    61.6,
+    49.6
+  ],
   "valid_proton_reference": true,
   "caveats": "Electronic E proxy for G; SHE_abs convention \u00b10.15 V; geom-opt+thermal at wB97X is the publication-grade refinement."
 }

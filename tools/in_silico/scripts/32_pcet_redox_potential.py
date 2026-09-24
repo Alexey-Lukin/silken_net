@@ -51,7 +51,13 @@ N_H = 2
 NERNST_SLOPE = 0.05916   # V per pH unit at 298 K
 
 # Experimental references for context
-EXP_FREE_FLAVIN_PH7_MV = -208   # free FAD/FADH₂ vs NHE @ pH 7 (well-known)
+# Free FAD/FADH₂ vs NHE @ pH 7 — a BRACKET of two readings, not a point (⚖️ founder 2026-09-24,
+# 00_07 HW.5.IS). Order = (sourced, unsourced):
+#   −220 mV — paper ref 25 (Bhattacharyya et al., J. Phys. Chem. A 2007, PMC4480342, Introduction:
+#             E_m(FAD, water) = −0.22 V, itself quoted from that paper's ref 105);
+#   −208 mV — the value this script carried as "well-known"; no primary source in the tree, and a
+#             search on 2026-09-24 found none. Kept as the second end, never as the anchor.
+EXP_FREE_FLAVIN_PH7_MV = (-220, -208)
 EXP_PROTEIN_BOUND_MV = -265     # GcGDH bound FAD, VERIFIED −0.265 V vs SHE (Schachinger, Ma, Ludwig, Electrochem. Commun. 2023, 146, 107405); 01_03 "+60 mV" was wrong (conflated w/ Os mediator)
 
 OUT_JSON = DFT_CACHE / "pcet_redox_potential.json"
@@ -85,14 +91,17 @@ def main() -> int:
         print(f"  E°'(pH {ph:>3}) vs NHE = {e_ph * 1000:+.0f} mV")
 
     e_ph7 = results["pH_7.0"]
+    deltas = [round(e_ph7 - ref, 1) for ref in EXP_FREE_FLAVIN_PH7_MV]
     print()
-    print(f"  vs free-flavin exp (pH 7): {EXP_FREE_FLAVIN_PH7_MV} mV "
-          f"→ Δ = {e_ph7 - EXP_FREE_FLAVIN_PH7_MV:+.0f} mV")
+    for ref, d in zip(EXP_FREE_FLAVIN_PH7_MV, deltas, strict=True):
+        print(f"  vs free-flavin exp (pH 7): {ref} mV → Δ = {d:+.0f} mV")
     print(f"  (protein-bound FAD-GDH is tuned to ~{EXP_PROTEIN_BOUND_MV} mV — "
           f"this is the free cofactor)")
 
-    verdict = abs(e_ph7 - EXP_FREE_FLAVIN_PH7_MV) < 100
-    print(f"  Within 100 mV of free-flavin exp: {'✅ YES' if verdict else '⚠️ NO'} "
+    # The verdict stands on the WORSE end of the bracket: a point quoted from the kinder end is how
+    # «within ~50 mV» outlived the sourced −220 mV reading (00_07 HW.5.IS, 2026-09-24).
+    verdict = max(abs(d) for d in deltas) < 100
+    print(f"  Within 100 mV of BOTH free-flavin readings: {'✅ YES' if verdict else '⚠️ NO'} "
           f"→ proton-reference PCET is VALID with implicit solvation alone")
 
     print()
@@ -110,8 +119,9 @@ def main() -> int:
         "SHE_abs_V": SHE_ABS_V,
         "E_abs_V": round(e_abs, 4),
         "E_vs_SHE_mV": dict(results.items()),
-        "exp_free_flavin_pH7_mV": EXP_FREE_FLAVIN_PH7_MV,
-        "delta_vs_exp_pH7_mV": round(e_ph7 - EXP_FREE_FLAVIN_PH7_MV, 1),
+        "exp_free_flavin_pH7_mV": list(EXP_FREE_FLAVIN_PH7_MV),
+        "exp_free_flavin_pH7_sources": ["ref 25 (PMC4480342) quoting its ref 105", "none found"],
+        "delta_vs_exp_pH7_mV": deltas,
         "valid_proton_reference": bool(verdict),
         "caveats": "Electronic E proxy for G; SHE_abs convention ±0.15 V; "
                    "geom-opt+thermal at wB97X is the publication-grade refinement.",

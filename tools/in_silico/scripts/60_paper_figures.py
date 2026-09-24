@@ -96,7 +96,9 @@ def fig3() -> None:
     _close(raw_delta, -1.051, 0.01, "raw Δε (dimethyl)")
     e_pcet_ph7 = pcet["E_vs_SHE_mV"]["pH_7.0"]
     _close(e_pcet_ph7, -158.4, 1.0, "PCET E° pH7")
-    _close(pcet["delta_vs_exp_pH7_mV"], 49.6, 1.0, "PCET Δ vs exp")
+    d_lo, d_hi = pcet["delta_vs_exp_pH7_mV"]  # vs −220 (sourced) · −208 (unsourced) — 00_07 HW.5.IS
+    _close(d_lo, 61.6, 1.0, "PCET Δ vs exp −220")
+    _close(d_hi, 49.6, 1.0, "PCET Δ vs exp −208")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(9.6, 4.3))
 
@@ -123,7 +125,7 @@ def fig3() -> None:
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eef6ff", "ec": C["blue"], "alpha": 0.92})
     axa.text(0.98, 0.03,
              f"PCET E°(FAD/FADH₂) = {e_pcet_ph7:.0f} mV vs SHE @pH7\n"
-             f"(exp −208; Δ{pcet['delta_vs_exp_pH7_mV']:.0f} mV → flavin clean in implicit DFT)",
+             f"(exp −220…−208; Δ{d_hi:.0f}–{d_lo:.0f} mV → flavin clean in implicit DFT)",
              transform=axa.transAxes, fontsize=6.4, va="bottom", ha="right",
              bbox={"boxstyle": "round,pad=0.35", "fc": "#eefaf2", "ec": C["green"], "alpha": 0.92})
     axa.set_xlim(-0.55, 1.55)
@@ -202,7 +204,9 @@ def fig4() -> None:
     t = ket["t_ij_eV"]
     fo = ket["fodft_cuco_rigor"]
     sc = ket["scenarios"]
-    _close(sc["literature λ"]["margin_vs_turnover"], 1.385, 0.05, "③ lit-λ margin")
+    # 505a1fac4 (2026-09-21) split the margin into a bracket over the gap sign; panel (b) keeps the
+    # ΔG = 0 column, and the caption says so (the bracket is carried by the text, 03_results §3.4).
+    _close(sc["literature λ"]["margin_vs_turnover_at_dG0"], 1.385, 0.05, "③ lit-λ margin (ΔG=0)")
     _close(fo["margin_vs_turnover_by_dG_sign"]["dG=0"], 25.165, 0.1, "③ FO-DFT margin")
     _close(fo["t_ij_eV"], 0.005462, 1e-4, "③ FO-DFT t_ij")
 
@@ -231,7 +235,7 @@ def fig4() -> None:
     # ---- (b) k_DET margin vs turnover ----
     order = ["canon λ=0.7 (old assumption)", "literature λ", "computed λ (B3LYP, Co over-est)", "Ru-swap (Co→Ru, computed)"]
     disp = ["canon λ=0.7\n(withdrawn)", "literature λ\n(2.0/1.4/1.0)", "computed λ\n(B3LYP)", "Ru-swap\n(Co→Ru)"]
-    margins = [sc[k]["margin_vs_turnover"] for k in order]
+    margins = [sc[k]["margin_vs_turnover_at_dG0"] for k in order]
     cols = [C["grey"], C["orange"], C["grey"], C["green"]]
     xs = np.arange(len(order))
     axb.bar(xs, margins, color=cols, width=0.6, zorder=3)

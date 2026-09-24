@@ -173,7 +173,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 - ⚖️ **Зовнішнього колаборанта в авторах Ст.1 НЕМАЄ** (founder 2026-09-23, ратифіковано по рекомендації — [`00_07`](00_07_Action_Plan_Tracker) HW.5.IS): explicit-water QM/MM лишається НАЗВАНОЮ межею методу, а не секцією, дописаною перед сабмітом; її закриття — follow-up (рядок вище). **Підстава:** cover letter і декларації описували внесок, якого не існує. **Ціна:** рецензент може попросити QM/MM, і відповідь буде «future work». Склад авторів понад це й corresponding author — окреме рішення founder-а.
 
 **Foreground (сильні, чисті результати):**
-- **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах ~50 mV від експ. free-flavin (script 32).
+- **PCET редокс-потенціал FAD** — proton thermodynamic reference відтворює E°(FAD/FADH₂) у межах 50–62 mV від експ. free-flavin (дужка −220…−208 мВ, ⚖️ founder 2026-09-24; script 32).
 - **Mediator structure–activity (Hammett LFER ①)** — E°(Os III/II) лінійний у σ_para (нахил ≈ −0.92 eV/σ) → предиктивне правило дизайну; реалістичний оптимум = інертний **SO₂CF₃** (NO₂ деградує на циклюванні). Триангульовано DFT↔Lever↔Hammett (script 21e).
 - **DET через ZIF-нанозим** — ΔSCF hopping (geom-fixed) + computed Nelsen λ: **borderline** at realistic λ (Cu-Co ~turnover, не old ×10⁵) + low-λ-metal (Ru) design rule (scripts 23/24/25/35).
 - **Геометрія + through-bond tunneling** анода — глибина залягання FAD < tunneling-межі (L1 + script 28).

@@ -5,7 +5,7 @@
 
 We have computed the electron-transfer energetics of a FAD–osmium enzymatic biofuel cell from first
 principles, following the electron from the buried flavin to the external circuit. Four results stand on
-their own. The **PCET potential of the FAD cofactor** is recovered to within ~50 mV of experiment once
+their own. The **PCET potential of the FAD cofactor** is recovered to within 50–62 mV of experiment once
 the proton is treated thermodynamically, and the anode reorganisation energy is obtained from the
 physically correct deprotonated semiquinone couple rather than assumed. A **Hammett structure–activity
 rule** for the osmium mediator gives a predictive, transferable design handle and rationalises the

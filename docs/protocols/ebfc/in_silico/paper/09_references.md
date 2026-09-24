@@ -55,8 +55,9 @@ author's.
   discussion). Likely primary: Page et al., *Nature* 1999 (paywall). 👤
 - §3.2, §3.6, Fig 3 — the free-flavin E°(FAD/FADH₂) = −208 mV at pH 7 (`32` labels it "well-known").
   ⚠️ OA DISAGREES: ref 25 (PMC4480342, Introduction, citing its ref 105) gives E_m(FAD, water) = −0.22 V.
-  Against −0.22 V the computed −158 mV is ~62 mV off, not "~50 mV" — the §3.2 wording depends on which
-  value is right. 👤 verdict
+  Against −0.22 V the computed −158 mV is ~62 mV off, not "~50 mV". ✅ ⚖️ founder 2026-09-24: both readings
+  as a bracket — §3.2/§3.6/Fig 3 now say 50–62 mV and cite −220 mV to ref 25; −208 mV keeps its
+  [CITATION NEEDED] (no primary found by search 2026-09-24). 👤 primary for −208 or drop it
 - §3.2 — the literature anode λ (~0.7–0.8 eV) adopted in the rates. OA gives typical protein-ET λ of
   0.7–0.8 eV (Gray & Winkler 2005: Cu azurin 0.7, cyt c/b₅ 0.8) but for other proteins, not this couple. 👤
 - §3.3 — "the measured series" the Hammett rule is triangulated against: no record in SUMMARY/L3 of which
