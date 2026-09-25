@@ -328,7 +328,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 
 ## 🏛️ 4. IP-інструменти (TISC + trademark + UA-юр-review)
 
-> Під defensive-publication ([`00_01 §8`](00_01_Vision_Mission_and_Roadmap)) prior-art landscape уже готовий ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md)); лишаються TISC-консультація, trademark і точковий UA-юр-review.
+> Під defensive-publication ([`00_01 §8`](00_01_Vision_Mission_and_Roadmap)) query-set prior-art landscape готовий, а сам прогін ще ні ([`prior_art_landscape.md`](protocols/anchor/prior_art_landscape.md) — план FTO-перевірки, не її результат); лишаються прогін, TISC-консультація, trademark і точковий UA-юр-review.
 
 ### 4.1 TISC — консультація (prior-art / IP / open-license)
 
