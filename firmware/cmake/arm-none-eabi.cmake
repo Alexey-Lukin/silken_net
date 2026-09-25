@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# firmware/cmake/arm-none-eabi.cmake — CMake toolchain file for STM32WLE5JC.
+# firmware/cmake/arm-none-eabi.cmake — CMake toolchain file for STM32WLE5xx (node board: WLE5CC,
+# UFQFPN48 — 02_01 §3.1 pos. 1; bench: WLE5JC inside the LoRa-E5 module; same core, same radio).
 #
 # [FW.46] Pinned bare-metal cross-compile toolchain for the SilkenNet firmware
 # ARM build. Used by the owned-code foundation (firmware/common/*.c + mruby)
@@ -10,7 +11,7 @@
 #   • pass -DARM_TOOLCHAIN_PATH=/abs/path/to/bin at configure time.
 # When the CubeMX/HAL phase lands, re-pin to match the CubeIDE toolchain.
 #
-# STM32WLE5JC core = Arm Cortex-M4 WITHOUT FPU — the STM32WL family omits it
+# STM32WLE5 core = Arm Cortex-M4 WITHOUT FPU — the STM32WL family omits it
 # (the word "FPU" never appears in DS13105/RM0461). All float math is software
 # (__aeabi_f*/__aeabi_d* from libgcc), hence -mfloat-abi=soft below: a
 # hard-float binary would UsageFault on the first VFP instruction on silicon.
