@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace SilkenCad;
@@ -56,6 +57,19 @@ internal static class Cem
     public static T Parse<T>(string strJson) =>
         JsonSerializer.Deserialize<T>(strJson, Opts)
         ?? throw new InvalidDataException("CEM manifest deserialized to null");
+
+    // ONE read serves both the parse and the manifest IDENTITY, so a drawing and a build-record name the very
+    // bytes they were generated from (decoded exactly as File.ReadAllText would: UTF-8, BOM-aware). One home for
+    // the `cem_sha256` both artefacts print (00_07 HW.51). 🔴 The hash is of the BYTES — what `sha256sum` prints
+    // on the file a vendor holds — never of the decoded text: a BOM is stripped by the decode, so a text hash
+    // would name a file nobody has. No shipped manifest carries a BOM, which is why that half has its own pin
+    // (`BuildRecordTests.A_Bom_Manifest_Is_Hashed_By_Its_Bytes_Not_Its_Text`).
+    public static (string Json, string Sha256) ReadWithSha256(string strPath)
+    {
+        byte[] aBytes = File.ReadAllBytes(strPath);
+        using var oReader = new StreamReader(new MemoryStream(aBytes));
+        return (oReader.ReadToEnd(), Convert.ToHexStringLower(SHA256.HashData(aBytes)));
+    }
 }
 
 // Engineering-drawing PMI (Product Manufacturing Information) — the tolerance + GD&T spec a drawing/DXF

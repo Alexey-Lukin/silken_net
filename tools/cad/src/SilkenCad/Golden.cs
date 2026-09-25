@@ -22,7 +22,8 @@ internal static class Golden
 {
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
-    private static string Path(string strCem) =>
+    // Internal: `BuildRecord` finds a manifest's baseline through THIS rule, never a copy of it.
+    internal static string Path(string strCem) =>
         System.IO.Path.ChangeExtension(strCem, null) + ".golden.json";
 
     // Which metrics are worth pinning, with the tolerance each one deserves. ⚠️ The tolerances are
@@ -65,7 +66,7 @@ internal static class Golden
         JsonElement oRoot = oDoc.RootElement;
 
         if (oRoot.TryGetProperty("voxel_size_mm", out JsonElement oVox)
-            && Math.Abs(oVox.GetDouble() - fVoxelMm) > 1e-6)
+            && !SameGrid(oVox.GetDouble(), fVoxelMm))
         {
             Console.WriteLine($"  ℹ golden baseline is for voxel {oVox.GetDouble():F3} mm, this run is "
                             + $"{fVoxelMm:F3} — NOT compared (a baseline does not cross grids)");
@@ -89,6 +90,10 @@ internal static class Golden
         Console.WriteLine(bOk ? "  golden baseline ✓" : "  ⚠ golden baseline DRIFTED — intended? `verify --write-golden`");
         return bOk;
     }
+
+    // «A baseline does not cross grids» — one home for `Check` and for `BuildRecord`, which copies a baseline
+    // only when it was measured on the grid the manifest builds at.
+    internal static bool SameGrid(double dBaselineVoxelMm, double dVoxelMm) => Math.Abs(dBaselineVoxelMm - dVoxelMm) <= 1e-6;
 
     private static double? Value(GeometryMetrics oM, string strKey) => strKey switch
     {

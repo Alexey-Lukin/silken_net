@@ -177,7 +177,8 @@ hubs — `02_06 §8.1`) + web-grounding (sources below).
    RECONNAISSANCE, not a guarantee; it buys an external ground under a verdict we already hold
    («the lattice is a note, not a contour»). **Named trigger: the first draft part-RFQ.**
    **Price of waiting, stated:** until then our sheets stay on our own convention, and if a vendor asks
-   for Y14.46 conformance, the purchase becomes a precondition rather than an improvement.
+   for Y14.46 conformance, the purchase becomes a precondition rather than an improvement. The standard
+   itself costs ~$150 (an orientation figure, not a quote; migrated from `00_07` HW.51 on 2026-09-25).
 1. **Deliverable format** — **DXF (netDxf) + SVG + STL**. No STEP for now: AM shops print from
    STL/3D, and the drawing is for **GD&T/CMM acceptance**, not the print. STEP = deferred path B if a
    shop contractually requires it.

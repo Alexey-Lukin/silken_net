@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Numerics;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using PicoGK;
@@ -29,6 +28,12 @@ internal static class Program
                 "scan" => args.Length >= 2 ? Scan(args[1]) : Fail("usage: scan <cem.json>"),
                 "converge" => args.Length >= 2 ? Converge(args) : Fail("usage: converge <cem.json> [--divisors 24,32]"),
                 "draw" => args.Length >= 2 ? Draw(args[1]) : Fail("usage: draw <cem.json>"),
+                // Build-record of ONE batch (BuildRecord.cs, 00_07 HW.51) — pure-managed. STDOUT on purpose: `out/`
+                // is gitignored and outside every gate (picogk gotcha #17), the very place a record meant to live
+                // 20–25 years would rot unseen; the operator names where the filled record is committed.
+                "build-record" => args.Length >= 2
+                    ? BuildRecord.Print(args[1..], CadRev())
+                    : Fail("usage: CAD_REV=$(git rev-parse HEAD) build-record <cem.json>... > <batch>.json"),
                 // Voxel-FE elasticity (VoxelFea.cs) — pure-managed like `draw`, no Library.Go.
                 "fea" => args.Length >= 2 ? Fea(args) : Fail("usage: fea <cem.json> [--step-div N] [--sweep] | fea <cem.json> --dilate downskin|iso | fea --ladder"),
                 "render" => args.Length >= 2 ? Render(args[1]) : Fail("usage: render <cem.json>"),
@@ -357,6 +362,11 @@ internal static class Program
         return oR.WallMin is not null ? 0 : 1;
     }
 
+    // The commit the operator declares for this run — ONE home for both artefacts that print it (the sheet's
+    // `rev`, the build-record's `git_commit`). null = not declared; each reader renders that absence its own way,
+    // never as a plausible value. ⛔ Declared, not checked: nothing compares it with HEAD or a clean tree.
+    internal static string? CadRev() => Environment.GetEnvironmentVariable("CAD_REV") is { Length: > 0 } rev ? rev : null;
+
     // CEM-native engineering drawing (tools/cad/docs/drawings_program.md): analytic orthographic SVG
     // computed from the CEM numbers (no mesh, no Library.Go) — the Noyron "generator documents itself".
     // Phase 1 = ti_coin (Stage-2 coupon, the most urgent physical part); Phase 2 landed cathode_flange
@@ -367,20 +377,14 @@ internal static class Program
     // manifest, because a hash wired wrong inside one `case` is invisible to any test that calls `Drawing.X` directly.
     internal static int Draw(string strCemPath, string strOutDir = "out")
     {
-        // ONE read serves both the parse and the hash, so the sheet names the very bytes it was drawn from
-        // (decoded exactly as File.ReadAllText would: UTF-8, BOM-aware).
-        byte[] aCemBytes = File.ReadAllBytes(strCemPath);
-        using var oReader = new StreamReader(new MemoryStream(aCemBytes));
-        string strJson = oReader.ReadToEnd();
-        string strCemSha256 = Convert.ToHexStringLower(SHA256.HashData(aCemBytes));
+        // ONE read serves both the parse and the hash, so the sheet names the very bytes it was drawn from.
+        (string strJson, string strCemSha256) = Cem.ReadWithSha256(strCemPath);
         string strKind = Cem.Kind(strJson);
         // 🔴 Was `?? "local"`, and "rev local" on a factory drawing is worse than no rev at all: it LOOKS
         // like a revision, so nobody asks which commit the geometry came from — while a drawing that
         // cannot be traced back to a manifest revision cannot be re-issued, compared, or blamed after a
         // bad batch. The marker is deliberately unmistakable AND actionable (it names the fix).
-        string strRev = Environment.GetEnvironmentVariable("CAD_REV") is { Length: > 0 } rev
-            ? rev
-            : "UNTRACKED (set CAD_REV=$(git rev-parse --short HEAD))";
+        string strRev = CadRev() ?? "UNTRACKED (set CAD_REV=$(git rev-parse --short HEAD))";
         Directory.CreateDirectory(strOutDir);
 
         // Same CEM-native pipeline per kind: SVG (human / publication / self-review) + DXF (factory
@@ -1056,6 +1060,7 @@ internal static class Program
             "  sweep             generate + verify every cem/anchor_zone1.*.json (5-SKU)\n" +
             "  scan <cem.json>   wallParam working-window scan (anchor) → out/<name>.wallscan.json\n" +
             "  draw <cem.json>   CEM-native engineering drawing → out/<name>.drawing.svg + .dxf (ti_coin | cathode_flange | mechanical_lock | anchor_zone1 | zone2_sleeve)\n" +
+            "  build-record <cem.json>...  one batch's build-record JSON → stdout (commit + manifest sha256 + golden metrics; vendor fields EMPTY, filled from the order)\n" +
             "  fea <cem.json>    voxel-FE apparent stiffness / E_solid → cache/fea/<name>.json  [--step-div N | --step-mm H | --sweep]\n" +
             "  fea <cem.json> --dilate downskin|iso   face-offset SENSITIVITY of the intent, not the printed body → cache/fea/dilation_sensitivity.*  [--face-offsets-mm | --step-div N | --step-mm H]\n" +
             "  fea --ladder      size-effect ladder: the same lattice as an n-cell cube  [--cells 1,2,3,4,6,8 | --period | --wall | --sheet]\n" +
