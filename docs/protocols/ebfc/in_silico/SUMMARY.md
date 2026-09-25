@@ -688,9 +688,12 @@ sibling `capacitor_life_hours()` added for the vendor temperature+voltage doubli
 
 **Verdict** — 🔴 Confirmed via the actual pipeline (not hand-math): the 20-year claim at full
 rated voltage does **not** hold for either SKU (2.6-7.3 yr, a 3-8× shortfall). Whether 20 years is
-reachable depends entirely on the still-open `VBAT_OV` target (`00_07` HW.7) — at 10°C, the
-conservative vendor coefficient needs ≤4.92V, the optimistic one only ≤5.20V. This is a **derate /
-oversize / SKU-freeze ⚖️ now live and blocking** (`00_07` HW.37) — not decided here. The
+reachable depended on the `VBAT_OV` target — at 10°C the conservative vendor coefficient needs
+≤4.92V, the optimistic one only ≤5.20V. **Derate RATIFIED 2026-09-09 (`VBAT_OV` = 4.822 V) and SKU
+closed 2026-09-22 (Eaton KR):** at the ratified point the same pipeline gives 23.6–76.5 yr @ 10°C and
+8.4–27.1 yr @ 25°C (conservative–optimistic), so 20 years holds at 10°C across the bracket and at 25°C
+only at its optimistic end; the bracket itself is the open vendor voltage coefficient (FAE, `00_07` HW.37).
+The
 cycle-count argument in `02_03 §12.1` is not wrong, only insufficient on its own; both axes now
 stand side by side there. (`kinetics/gusak_degradation.json` → `edlc_endurance_hours`)
 

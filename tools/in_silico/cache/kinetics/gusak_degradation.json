@@ -326,6 +326,17 @@
           "optimistic_yr": 20.7,
           "conservative_yr": 12.3
         }
+      },
+      "ratified_vbat_ov": {
+        "v_target": 4.822,
+        "25.0": {
+          "optimistic_yr": 27.1,
+          "conservative_yr": 8.4
+        },
+        "10.0": {
+          "optimistic_yr": 76.5,
+          "conservative_yr": 23.6
+        }
       }
     },
     "KEMET_FG0H474ZF": {
@@ -356,6 +367,17 @@
         "5.2": {
           "optimistic_yr": 20.7,
           "conservative_yr": 12.3
+        }
+      },
+      "ratified_vbat_ov": {
+        "v_target": 4.822,
+        "25.0": {
+          "optimistic_yr": 27.1,
+          "conservative_yr": 8.4
+        },
+        "10.0": {
+          "optimistic_yr": 76.5,
+          "conservative_yr": 23.6
         }
       }
     }

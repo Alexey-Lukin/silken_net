@@ -30,6 +30,7 @@ on:
       - 'docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md'
       - 'docs/01_04_CODIT_and_Xylemointegration.md'
       - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
+      - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
       - 'docs/protocols/procurement/ebfc_chem_rfq.md'
       - '.github/workflows/in_silico_smoke.yml'
 
@@ -57,6 +58,7 @@ jobs:
               - 'docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md'
               - 'docs/01_04_CODIT_and_Xylemointegration.md'
               - 'docs/02_02_Blind_Mate_Pogo_Pin_Interface.md'
+              - 'docs/02_03_BQ25570_MPPT_Nano_Power.md'
               - 'docs/protocols/procurement/ebfc_chem_rfq.md'
               - '.github/workflows/in_silico_smoke.yml'
 

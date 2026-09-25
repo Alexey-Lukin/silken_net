@@ -44,6 +44,7 @@ from lib.constants import (
     SIGMA_YIELD_PEEK_PA,
     T_ASSEMBLY_C,
     THERMAL_DOUBLING_INTERVAL_K,
+    VBAT_OV_RATIFIED_V,
     VOLTAGE_DOUBLING_CONSERVATIVE_V,
     VOLTAGE_DOUBLING_OPTIMISTIC_V,
 )
@@ -354,11 +355,31 @@ def edlc_endurance_hours():
                 "optimistic_yr": round(life_opt_yr, 1),
                 "conservative_yr": round(life_cons_yr, 1),
             }
+        # (c) The RATIFIED operating point (VBAT_OV 4.822 V, Derate — founder 2026-09-09), at BOTH
+        # field temperatures. The three points above are the pre-verdict candidates, kept because
+        # canon quotes them; this block is the one a lifetime claim may be made from — and only as
+        # a bracket, because the vendor voltage coefficient is the unanswered FAE question.
+        ratified = {"v_target": VBAT_OV_RATIFIED_V}
+        print(f"    Ratified VBAT_OV {VBAT_OV_RATIFIED_V:.3f} V:")
+        print(f"    {'T_field(°C)':>12s}  {'optimistic (yr)':>16s}  {'conservative (yr)':>18s}")
+        for t_f in FIELD_TEMPS_C:
+            yrs = {}
+            for label, dv in (("optimistic_yr", VOLTAGE_DOUBLING_OPTIMISTIC_V), ("conservative_yr", VOLTAGE_DOUBLING_CONSERVATIVE_V)):
+                yrs[label] = round(
+                    capacitor_life_hours(
+                        sku["rated_hours"], sku["t_rated_c"], sku["v_rated_v"], t_f, VBAT_OV_RATIFIED_V,
+                        dt_double_c=THERMAL_DOUBLING_INTERVAL_K, dv_double_v=dv,
+                    ) / hours_per_year,
+                    1,
+                )
+            print(f"    {t_f:>12.0f}  {yrs['optimistic_yr']:>16.1f}  {yrs['conservative_yr']:>18.1f}")
+            ratified[str(t_f)] = yrs
+        sku_result["ratified_vbat_ov"] = ratified
         results[name] = sku_result
 
     print()
-    print("  ⚖️  post-Arrhenius derate/oversize/SKU-freeze decision is LIVE (00_07 HW.37) —")
-    print("      NOT made here; this reports the life numbers the decision needs.")
+    print("  ⚖️  Derate RATIFIED 2026-09-09 (VBAT_OV 4.822 V) and SKU closed 2026-09-22 (Eaton KR) —")
+    print("      what stays open is the vendor voltage coefficient: the bracket above IS that openness.")
 
     return results
 

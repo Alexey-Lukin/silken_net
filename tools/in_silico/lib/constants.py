@@ -344,3 +344,5 @@ VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles 
 # (00_07 HW.37) — report the sensitivity across the Eaton-derived bracket above rather
 # than a false-precise single number.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7
+VBAT_OV_RATIFIED_V = 4.822         # V — the RATIFIED VBAT_OV (Derate, founder 2026-09-09): 02_03 §4.Б divider
+                                   #     1.5 × 1.21 × (1 + 7.87/4.75); the EDLC's operating ceiling (00_07 HW.7/HW.37)
