@@ -48,7 +48,16 @@ set -uo pipefail
 # silently disable a neighbour. Each case runs with a fresh session id: the
 # warn() markers are per-session, and a shared id would let case N suppress
 # case N+1's expected warning.
+# 🔴 «Fresh» held only WITHIN one run: the id is `selftest-<PID>-<n>`, the markers
+# were never removed, and a PID recycles — so a later run whose PID matched an old
+# one found its warn markers already there and read every expected warning as
+# silence. Measured 2026-09-25: 2,038 orphan markers in the local TMPDIR, and the
+# band's red self-test ran as a PID that owned six of them. CI never sees it (a
+# fresh machine), which is exactly why it read as «local red, CI green». Hence the
+# battery gets its OWN TMPDIR, removed on exit — every child inherits it.
 if [[ "${1:-}" == "--selftest" ]]; then
+  TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/bashguard-selftest.XXXXXX"); export TMPDIR
+  trap 'rm -rf "$TMPDIR"' EXIT
   self="$0"; fails=0; n=0
   # 4th arg = the `run_in_background` flag (default false). It exists because
   # rule F is the one detector whose verdict turns on CONTEXT, not on text: the
@@ -216,7 +225,7 @@ body with `01_02:177` inside"'
   # commit is involved. `trap` guarantees removal even if a case aborts.
   dfix=".bashguard_selftest_dirty.tmp"
   if git rev-parse --git-dir >/dev/null 2>&1; then
-    trap 'git rm --cached -q "$dfix" 2>/dev/null; rm -f "$dfix"' EXIT
+    trap 'git rm --cached -q "$dfix" 2>/dev/null; rm -f "$dfix"; rm -rf "$TMPDIR"' EXIT
     printf 'a\nb\n' > "$dfix"
     git add -N "$dfix" 2>/dev/null
     t "D: checkout of a DIRTY tracked file denies" deny \
@@ -227,7 +236,7 @@ body with `01_02:177` inside"'
       "cp $dfix /tmp/f.bak && git checkout $dfix"
     git rm --cached -q "$dfix" 2>/dev/null
     rm -f "$dfix"
-    trap - EXIT
+    trap 'rm -rf "$TMPDIR"' EXIT  # back to the battery's own trap, not to none
     # The false-positive arm: a path with NO uncommitted lines must never deny,
     # or every legitimate revert becomes blocked work.
     t "D: checkout of a CLEAN file stays silent" silent \
