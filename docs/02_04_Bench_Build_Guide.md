@@ -100,6 +100,7 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 | SWD прошивка/дебаг | ST-LINK-V3MINIE | 🛒 | — |
 | USB-UART консоль | FT232RL (3.3 В) | ✅ | **джампер рівня → 3.3 В** (не 5 В); дублює вбудований USB-C міст LoRa-E5 |
 | Макетка + дроти + мультиметр | — | ✅ | — |
+| Прилади виміру | Nordic PPK2 · Joulescope JS220 / SMU · осцилограф — що навіщо: `firmware/scripts/bench/RUNBOOK.md` §0 | 🛒 PPK2 · позичити решту | PPK2 бачить ~100 нА, тож сон 300 нА атестує лише JS220/SMU; осцилограф — просадки під TX-сплеском |
 
 ### Блок 1 — Power harvester (legacy 44 мВ)
 | Компонент | Модель | Статус | ⚠️ Кусає |
@@ -115,6 +116,8 @@ silicon-атестація (µА-профілі, crypto-KAT) — у `firmware/sc
 |---|---|---|---|
 | PMIC breakout | CJMCU-2557 (BQ25570) | ✅ | дільники `VBAT_OV`/`VBAT_OK`/`VOUT`/MPPT ще Li-Po — перепрог лише разом із EDLC (§6 п. 5; `VBAT_OV` = 4.822 В, ⚖️ derate [`00_07` — HW.37](00_07_Action_Plan_Tracker)); `VBAT_UV` не програмується — кремній 1.95 В ([`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power)) |
 | Накопичувач (lab) | 1000 µF/25 В алюміній **або** 1000 µF/6.3 В полімер OS-CON | 🛒 обидва | **полярність РІЗНА**: полімер смужка=`+`, алюміній смужка=`−` (переплутаєш → спалах/пшик) |
+| Дільники під supercap | номінали — таблиця [`02_03 §4`](02_03_BQ25570_MPPT_Nano_Power) (`ROV1` 4.75 МΩ · `ROV2` **7.87 МΩ** · дільники `VBAT_OK`, `VOUT`, MPPT), 1 % | 🛒 | без них CJMCU-2557 лишає Li-Po OV ≈ 4.2 В; перепайка на breakout-і — з EDLC разом (§6 п. 5) |
+| OVP-кламп VSTOR (макетка) | `TLV840NAPL50` + **`2N7002BK`** (SOT-23; П2 — той самий supervisor, що П1 плати), `R_dump` 22 кΩ, pull-down затвора 10 МΩ — [`ovp_clamp_shortlist`](protocols/hardware/ovp_clamp_shortlist.md) | 🛒 | поруч з overcharge-тестом — ОБОВʼЯЗКОВО регресія cold start із запаяним клампом ([`00_07` HW.12](00_07_Action_Plan_Tracker)) |
 | Buffer (LoRa TX peak) | 47 µF / **25 В** X7R 1210 | 🛒 | **НЕ 6.3 В** — DC-bias з'їдає −45…85% ([`02_03 §6.1`](02_03_BQ25570_MPPT_Nano_Power)) |
 | _(production)_ | 0.47 Ф/5.5 В EDLC (**Eaton KR-5R5H474-R** — KEMET `FG0H474ZF` виключено геометрично ⚖️ 2026-09-22, [`02_01 §3`](02_01_Hardware_Architecture_and_BOM) поз. 3) | — | лише для реального EBFC; на 44 мВ = ~31 доба заряду (§5) |
 
