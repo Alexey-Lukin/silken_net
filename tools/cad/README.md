@@ -210,7 +210,7 @@ inputs mirror `tools/in_silico/scripts/52`. Canon `02_02 §4.4`.
 
 **Zone-2 sleeve / Деталь 2 (shipped)** — `zone2_sleeve` CEM → plain hollow PEEK tube via `BasePipe` (bore Ø11 / OD
 Ø15 wound / 50 mm, frozen `01_01 §1`). The simplest part: no barbs/grooves/hex — the smooth bore receives the Ti
-shanks at 150 °C (hex anti-rotation `§4.3 C` is bench-gated → deferred). `verify` gates hollow + OD = bore+2·wall + length.
+shanks at 150 °C (hex anti-rotation `§4.3 C` is NOT on this part — an open decision, not a deferral: its ≤0.05 mm clearance fit cannot share this bore with the interference fit, `00_07` HW.26). `verify` gates hollow + OD = bore+2·wall + length.
 
 **Full axial stack / mate-audit (shipped)** — `AxialStack.cs` + `anchor_axial_stack` CEM brings ALL FOUR zones (anode
 → Zone-2 sleeve → flange → radome) into one axis and MEASURES the press-fit interfaces the capsule-end never touched:
