@@ -51,7 +51,7 @@
 on-chain активи (SilkenCarbonCoin / SCC). Пайплайн складається з двох
 взаємопов'язаних частин:
 
-1. **Firmware (Залізо + mruby)** — STM32WLE5JC Солдат обчислює Z-координату
+1. **Firmware (Залізо + mruby)** — STM32WLE5CC Солдат обчислює Z-координату
    і пакує `status_byte` з `growth_points` на рівні дерева.
 2. **Backend (Rails 8.1 + Sidekiq)** — сервер розпаковує, перевіряє, надсилає
    до peaq / IoTeX / Chainlink і мінтить токени на Polygon та Solana.
@@ -81,12 +81,12 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║  L1/L2: FIRMWARE (STM32WLE5JC)                                      ║
+║  L1/L2: FIRMWARE (STM32WLE5CC/JC)                                   ║
 ║                                                                      ║
 ║  [EBFC Аноду → BQ25570 MPPT → 0.47F EDLC Суперконденсатор]         ║
 ║       │ >500 mV від метаболізму глюкози дерева                      ║
 ║       ▼                                                              ║
-║  [STM32WLE5JC SOLDIER]                                               ║
+║  [STM32WLE5CC SOLDIER]                                               ║
 ║   ФАЗА 1: SENSE                                                      ║
 ║     ADC → Vcap (мВ), Temp (°C), IWDG heartbeat                      ║
 ║     DMA 16kHz → raw_audio[512] → log-mel[40] → inference             ║
@@ -217,7 +217,7 @@ tree.peaq_did ≠ nil                        ← peaq Machine Identity
 
 ## Детальний Опис Кожного Кроку
 
-### Firmware: Солдат (STM32WLE5JC)
+### Firmware: Солдат (STM32WLE5CC)
 
 **Файл:** `firmware/soldier/main.c`
 

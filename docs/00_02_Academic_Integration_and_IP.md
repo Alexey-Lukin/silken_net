@@ -227,7 +227,7 @@ B2G-міст до ДСНС + академічне обґрунтування SOP
 | **Косенюк Г.В.** (ЧНУ ФОТІУС) | Аналітичний розрахунок імпедансу, FEKO/CST моделювання діаграми, LC-узгодження; Link Budget LoRa у лісі (SF=7–9, [`02_01 §5.3`](02_01_Hardware_Architecture_and_BOM)); 3D-діаграма з Ti-анкером (Zone 1 + Zone 3 фланець) як Ground Plane; CE/FCC compliance roadmap |
 | **Гончаров А.В.** (ЧДТУ, перший проректор, каф. РТРС) | VNA-виміри S11 реальної зборки, натурні вимірювання path loss у лісі, EMC pre-compliance |
 | Каф. РТРС | Лабораторна інфраструктура: VNA, EMC-камера, вимірювальні стенди |
-| Архітектор (Silken Net) | STM32WLE5JC RF-конфіг, PEEK-радом IoT-капсули (∅25 мм frozen, IP68 — окрема деталь, не PEEK-втулка Zone 2; ≥8 мм Z-clearance проти Ti-фланця), Ti-6Al-4V Ground Plane, firmware radio driver, EBFC Gen 2.0 як джерело (>500 мВ, <500 мкВт — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) |
+| Архітектор (Silken Net) | STM32WLE5CC RF-конфіг, PEEK-радом IoT-капсули (∅25 мм frozen, IP68 — окрема деталь, не PEEK-втулка Zone 2; ≥8 мм Z-clearance проти Ti-фланця), Ti-6Al-4V Ground Plane, firmware radio driver, EBFC Gen 2.0 як джерело (>500 мВ, <500 мкВт — [`01_03`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell)) |
 
 **Тип зв'язку:** Послідовний — ЧНУ (Косенюк) розраховує → ЧДТУ (РТРС, Гончаров) верифікує на VNA/у лісі → коригування LC → серійна специфікація. Крипто-навантаження того ж кадру (CCM-MIC ↔ airtime) — наш self-own розрахунок, партнера на ньому немає.
 

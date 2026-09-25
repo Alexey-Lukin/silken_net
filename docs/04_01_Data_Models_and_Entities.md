@@ -241,7 +241,7 @@ normalize_identifier :device_uid  # HardwareKey
 
 ### `Tree` — Солдат (основний юніт моніторингу)
 
-**Призначення:** Кожне дерево з встановленим EBFC-анкером та STM32WLE5JC-капсулою.
+**Призначення:** Кожне дерево з встановленим EBFC-анкером та STM32WLE5CC-капсулою.
 
 **Includes:** `AASM`, `Firmwareable`, `GeoLocatable`, `NormalizeIdentifier`
 

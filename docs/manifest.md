@@ -43,7 +43,7 @@ The power source is a **tri-zone coaxial anchor** manufactured from Ti-6Al-4V (t
 
 The enzymatic stack is immobilized in a **Genipin-crosslinked chitosan-CNC matrix** — genipin being a natural aglycone from *Gardenia jasminoides* that replaces glutaraldehyde, whose trace leachate induces local parenchyma necrosis and triggers the very immune cascade the geometry is engineered to avoid. The whole assembly is protected by a **Nafion-g-PSBMA zwitterionic anti-fouling membrane** synthesized via surface-initiated ATRP grafting.
 
-Result: a sustained open-circuit voltage above 500 mV, feeding a TI BQ25570 nano-power MPPT harvester (cold-start threshold 600 mV typ / 700 mV max, SLUSBH2G Rev F onward — the margin here is under measurement, not settled) buffering into a 0.47 F supercapacitor — which in turn drives an STM32WLE5JC microcontroller running an mruby virtual machine in STOP2 mode at single-digit microamps.
+Result: a sustained open-circuit voltage above 500 mV, feeding a TI BQ25570 nano-power MPPT harvester (cold-start threshold 600 mV typ / 700 mV max, SLUSBH2G Rev F onward — the margin here is under measurement, not settled) buffering into a 0.47 F supercapacitor — which in turn drives an STM32WLE5CC microcontroller running an mruby virtual machine in STOP2 mode at single-digit microamps.
 
 The forest powers its own observation.
 
@@ -141,7 +141,7 @@ This matters. A protocol that burns its clients' tokens because lightning struck
 We are not announcing a finished product. We are announcing an architecture in which each layer is honestly readable on the NASA Technology Readiness Level scale:
 
 - **Backend (Rails 8.1, Sidekiq, 11-chain orchestration, dual-token contracts):** TRL 8. Production-grade, RSpec-covered; the Solidity contracts are code-complete and pass a CI audit-stack (Slither, Aderyn, Halmos, Medusa), Polygon-targeted and pre-mainnet (external audit + mainnet deployment are the TRL-9 gate).
-- **Firmware (STM32WLE5JC Soldier, mruby Lorenz Bio-Contract, star-topology LoRa, Queen gateway):** TRL 6. Running on hardware, parity-verified server-side, with named open blockers — AES-CCM migration and an OTA-deployable acoustic model. (The TinyML inference call-site was one of these until a self-owned baseline landed; we cross it off rather than keep it as decoration.)
+- **Firmware (STM32WLE5CC Soldier, mruby Lorenz Bio-Contract, star-topology LoRa, Queen gateway):** TRL 6. Running on hardware, parity-verified server-side, with named open blockers — AES-CCM migration and an OTA-deployable acoustic model. (The TinyML inference call-site was one of these until a self-owned baseline landed; we cross it off rather than keep it as decoration.)
 - **Hardware capsule:** TRL 6 — specified, prototyped, pre-flight checklists drafted. **BQ25570 MPPT power chain and EDLC buffer:** TRL 4 — breadboard-tested on a CJMCU-2557, not yet in the capsule. The capsule's architecture is ahead of the power chain that must feed it, and the module reads at the lower number, not the higher one.
 - **Tri-zone coaxial anchor and Gen-2.0 EBFC enzymatic stack:** TRL 3. Zero-Lab in-silico pipeline (L1-L4) PASSED 2026-05-25 — validated protein architecture, matrix stability (6 tree species), electron cascade, and kinetics entirely in silico (analytical PoC; per NASA/ISO 16290 in-silico = TRL 3). Next (physical TRL 4): in-vitro titanium-coin biochemistry in synthetic xylem sap, then full SLM-printed anchors.
 

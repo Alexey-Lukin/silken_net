@@ -492,7 +492,7 @@ STM32WLE5CC
 #### Link Budget
 
 ```
-  TX Power (STM32WLE5JC SX1262):  +14 dBm   ← ратифіковано (було +22), див. нижче
+  TX Power (STM32WLE5CC SX1262):  +14 dBm   ← ратифіковано (було +22), див. нижче
   TX Antenna Gain (SMD на платі):  0 dBi   ← НЕ зміряно: ККД малої землі, ⚖️ HW.17
   EIRP:                           +14 dBm
 

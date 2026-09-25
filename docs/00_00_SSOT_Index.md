@@ -109,7 +109,7 @@ _Електроніка Soldier/Queen, енергетичні буфери, ме
 
 ## 🧠 Модуль 03: Прошивка та Edge AI (The Brain)
 
-_Логіка STM32WLE5JC: STOP2 / DMA / TinyML / mruby Lorenz / апаратний AES — Soldier і Queen firmware._
+_Логіка STM32WLE5 (Солдат — CC, Королева — JC): STOP2 / DMA / TinyML / mruby Lorenz / апаратний AES — Soldier і Queen firmware._
 
 - [`03_01` — Firmware Lifecycle and DMA](03_01_Firmware_Lifecycle_and_DMA) (Soldier цикл Phase 0-5, Watchdog, STOP2, RX-вікно, RTC reg-map)
 - [`03_02` — Queen Gateway Firmware](03_02_Queen_Gateway_Firmware) (Queen LoRa RX → CIFO → CoAP flush)
