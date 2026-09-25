@@ -976,7 +976,7 @@ reading and every temperature of the tests each condition belongs to:
 
 | condition | KOH to reach it | K⁺ total | β at 25 °C | strong acid for −0.1 pH |
 |---|---|---|---|---|
-| pH 5.75 (both tests, 20–40 °C) | **4.09–4.15 mM** | 7.29–7.35 mM | **0.61 mM/pH** | 0.066 mM |
+| pH 5.75 (coin 20–25 °C · accelerated — 40 °C isotherm, ⚖️ 2026-09-24) | **4.09–4.15 mM** | 7.29–7.35 mM | **0.61 mM/pH** | 0.066 mM |
 | pH 4.5 (coin side series, 20–25 °C) | **2.57–2.72 mM** | 5.77–5.92 mM | **1.45 mM/pH** | 0.14 mM |
 
 Gypsum stays far from saturation (SI ≤ −2.2), and with oxalate gone no calcium oxalate hydrate can form. The

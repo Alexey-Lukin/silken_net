@@ -1287,7 +1287,7 @@ CHECKS += [
     (f"sap ratified point, {what} → sap_recipe_saturation.json (SUMMARY §HW.3 Q6)", SUMMARY, pattern, SAP,
      lambda d, c=cond, q=key, j=j: d["q6_ratified_point"]["conditions"][c][q] if j is None
      else d["q6_ratified_point"]["conditions"][c][q][j], tol)
-    for cond, row in (("setpoint", r"\| pH 5\.75 \(both tests, 20–40 °C\) \| "),
+    for cond, row in (("setpoint", r"\| pH 5\.75 \(coin 20–25 °C · accelerated — 40 °C isotherm, ⚖️ 2026-09-24\) \| "),
                       ("side_series", r"\| pH 4\.5 \(coin side series, 20–25 °C\) \| "))
     for what, key, j, pattern, tol in (
         (f"{cond} KOH low", "base_koh_mM", 0, row + rf"\*\*{N}–[\d.]+ mM\*\*", 0.006),

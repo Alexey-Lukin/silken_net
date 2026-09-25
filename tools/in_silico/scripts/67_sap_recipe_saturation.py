@@ -98,6 +98,11 @@ RECIPE_RANGES_MM = {"malic": (1.0, 5.0), "oxalic": (0.5, 2.0), "kno3": (2.0, 5.0
 # ICP-MS only, in the coin test. ──
 RATIFIED_POINT_MM = {"malic": 2.2, "oxalic": 0.0, "kno3": 3.2, "cacl2": 1.0, "mgso4": 0.45}
 RATIFIED_PH = {"setpoint": (5.75, ("coin", "accelerated")), "side_series": (4.5, ("coin",))}
+# Temperatures of the LIVE protocol, split from the pre-verdict bands in TESTS the same way pH is: the accelerated
+# test is a 40 °C ISOTHERM with a temperature log (⚖️ founder 2026-09-24, 01_02 §2 «Концепція»; the earlier
+# 20–40 °C cycle belongs to no test any more), the coin test keeps 20–25 °C (01_03 §3.5). Q6 prices these;
+# Q1–Q5 keep pricing the TESTS bands the verdicts replaced.
+RATIFIED_T_C = {"coin": (20.0, 25.0), "accelerated": (40.0,)}
 # Each test in its own band. Temperatures on a 5 °C grid, pH on a 0.5 grid; every band end is a grid point.
 # ⚠️ PRE-VERDICT, like RECIPE_RANGES_MM above: the pH bands below (and their `ph_home` strings) are the two canon
 # bands as they stood BEFORE 2026-09-17. Canon no longer carries either — §2.1 is a set-point (5.75) plus a side
@@ -109,7 +114,7 @@ TESTS = {
              "t_c": (20.0, 25.0), "t_home": "01_03 §3.5 — 20–25 °C"},
     "accelerated": {"label": "12-week accelerated corrosion test",
                     "ph": (5.0, 5.5), "ph_home": "pre-verdict band (retired 2026-09-17); live pH → RATIFIED_PH, 01_02 §2.1",
-                    "t_c": (20.0, 25.0, 30.0, 35.0, 40.0), "t_home": "01_02 §2.1 — 20–40 °C cycle"},
+                    "t_c": (20.0, 25.0, 30.0, 35.0, 40.0), "t_home": "01_02 §2.1 — 20–40 °C cycle (PRE-VERDICT: live = 40 °C isotherm, RATIFIED_T_C)"},
 }
 FIXED_LEVELS_MM = (0.5, 1.0, 2.0)   # both canon ranges (CaCl2 and oxalic acid) run 0.5–2 mM
 
@@ -692,7 +697,7 @@ def ratified_point() -> dict:
     readings = [sc for sc in SCENARIOS if sc.key != "hard_bound"]
     conditions_out = {}
     for name, (ph, tests) in RATIFIED_PH.items():
-        temps = sorted({t for test in tests for t in TESTS[test]["t_c"]})
+        temps = sorted({t for test in tests for t in RATIFIED_T_C[test]})
         base, ionic, si_gypsum = [], [], []
         for sc in readings:
             for t_c in temps:
