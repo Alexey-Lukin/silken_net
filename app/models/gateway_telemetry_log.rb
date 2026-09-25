@@ -54,7 +54,8 @@ class GatewayTelemetryLog < ApplicationRecord
   # ActiveRecord валідації на кожному INSERT (зокрема при insert_all) — зайві цикли CPU.
 
   # --- СКОУПИ ---
-  # [ARCH.54] Пульс v2 напруги/температури НЕ несе (Королева без ADC) —
+  # [ARCH.54] Пульс v2 напруги/температури НЕ несе (напруга — без ADC-тракту,
+  # температура — без датчика; DS18B20 по 1-Wire, HW.16) —
   # battery/thermal-скоупи лишаються для ери залізного тракту (nil-рядки
   # ці WHERE природно відсіюють), джерело даних сьогодні = health-блок.
   scope :recent, -> { order(created_at: :desc) }

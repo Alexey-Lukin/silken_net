@@ -49,8 +49,8 @@ class GatewayTelemetryWorker
   # окулярами (uptime персистився як voltage, cache_count — як CSQ, і
   # health мовчки дропався валідацією саме під навантаженням).
   #
-  # voltage_mv / temperature_c СВІДОМО відсутні у v2-пульсі: Королева без
-  # ADC-тракту — не брешемо (колонки лишаються в БД nullable до заліза).
+  # voltage_mv / temperature_c СВІДОМО відсутні у v2-пульсі: напруга — без
+  # ADC-тракту, температура — без датчика (DS18B20 по 1-Wire, HW.16) — не брешемо (колонки лишаються в БД nullable до заліза).
   def perform(queen_uid, stats = {})
     # Sentry context: tag with queen UID for error correlation
     Sentry.set_tags(queen_uid: queen_uid || "unknown")
