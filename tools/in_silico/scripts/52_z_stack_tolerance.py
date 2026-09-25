@@ -151,6 +151,10 @@ PIEZO_HEIGHT_MM = {"Mallory AST1240MLTRQ": 3.3, "Mallory AST1109MLTRQ": 2.0, "Mu
 # https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC_Module/ (read 2026-09-14). WHICH SIDE of the RF deck it
 # rides is a layout choice (HW.9), so the budget TESTS the top side instead of assuming it.
 RF_DECK_TALLEST_BOM_PART_MM = 2.5
+# 🔴 ⚖️ founder 2026-09-25 (02_01 §3.1 pos. 1): the module is OFF the node board — chip STM32WLE5CC instead, because
+# its 12×12 mm footprint (diagonal 16.97) never fits the ≤Ø15.57 − 2·t_collar outline this very script hands to HW.9;
+# only the height was ever judged here. The 2.5 stays as an UPPER BOUND among the parts read so far (no RF-deck
+# candidate is taller), so every verdict it drives is conservative, not wrong. Re-run when the RF front-end has P/Ns.
 # 🔴 That constant is the LoRa-E5 module and WAS the tallest only because the BOM's antenna row named a
 # 1.6 × 0.8 mm part that does not exist at 868 MHz (00_07 HW.17, verified 2026-09-22). The verified ceramic
 # SMD candidate is 4 mm — TALLER than the module — while the Virtual-Antenna candidate is 1 mm, so «what
