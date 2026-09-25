@@ -50,7 +50,7 @@
 
 ### 1.1 Мікроконтролер
 
-**MCU:** STM32WLE5JC — ARM Cortex-M4 @ 48 MHz + інтегрований SX1262 LoRa трансивер
+**MCU:** STM32WLE5CC — ARM Cortex-M4 @ 48 MHz + інтегрований SX1262 LoRa трансивер
 
 | Характеристика | Значення |
 |----------------|----------|
@@ -998,7 +998,7 @@ OtaPackagerService → 512-byte chunks → Queen poll-fetch [FW.60] → LoRa →
 >
 > | Рівень | Що відбувається | Envelope |
 > |--------|----------------|----------|
-> | **L1 Soldier** | Inference-only: виконання **попередньо скомпільованого** mruby bytecode + емісія 1-bit stigmergic сигналу | STM32WLE5JC + 0.47F, +1.4 мДж/год headroom |
+> | **L1 Soldier** | Inference-only: виконання **попередньо скомпільованого** mruby bytecode + емісія 1-bit stigmergic сигналу | STM32WLE5CC + 0.47F, +1.4 мДж/год headroom |
 > | **L2 Conductor** | Кластерний агрегатор: локальний GA на (σ, ρ, β) для свого кластера → candidate sets до Queen | Solar + LiFePO4 (спека відкрита — [`00_07` ARCH.1](00_07_Action_Plan_Tracker)) |
 > | **L3 Queen** | Distributed parameter estimation (Lorenz) + Cluster-level Edge Retraining (TinyML → `.tflite` OTA); справжній FL лише як Queen↔Rails обмін оновленнями моделі | 20Ah LiFePO4 + Solar + LTE ([`02_05`](02_05_Queen_Hardware_and_Starlink)) |
 >

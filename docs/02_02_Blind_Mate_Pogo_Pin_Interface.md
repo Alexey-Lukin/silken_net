@@ -429,7 +429,7 @@ Ti (анкер) → Copper (пін)          ← різниця > 0.5 В → к�
         ↓
 [BQ25570 GND вхід]
         ↓ (MPPT + Boost Converter)
-[0.47F Supercapacitor] → 3.3V STM32WLE5JC
+[0.47F Supercapacitor] → 3.3V STM32WLE5CC
         ↓ (електрони повертаються через зовнішнє коло)
 [BQ25570 VIN_DC]
         ↓
