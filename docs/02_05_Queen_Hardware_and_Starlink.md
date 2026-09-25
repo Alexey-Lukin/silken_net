@@ -162,7 +162,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 
 ### Вибір модему: SIM7070G
 
-Модем кластера — **SIM7070G** (не SIM7000G). Firmware вже орієнтований на нього (`AT+CNMP=38` — LTE-M-специфічна init-команда). Обґрунтування вибору — нижче.
+Модем кластера — **SIM7070G** (не SIM7000G). Firmware вже орієнтований на нього (`AT+CNMP=38` — режим «лише LTE»; вибір Cat-M ⊥ NB-IoT задає окрема `AT+CMNB`, якої init не шле — SIMCom AT Command Manual V1.03 §5.2.16–5.2.17, [`00_07`](00_07_Action_Plan_Tracker) HW.41). Обґрунтування вибору — нижче.
 
 **SIM7000G vs SIM7070G — різні пристрої:**
 
@@ -172,7 +172,7 @@ STM32WLE5JC ─[UART AT]─▶ SIM8200G-M2 ─[WiFi]─▶ Starlink Mini
 | LTE-M / NB-IoT | ✅ | ✅ |
 | GPS | ✅ | ✅ |
 | Пікове споживання TX | ~500 мА (LTE-M) | ~400 мА (NB-IoT peak) |
-| max TX power | 23 dBm | 23 dBm |
+| max TX power | 23 dBm | power class 5 — тип. 21 дБм (0.125 Вт); 23 дБм — лише варіант -HP (SIMCom, звірено 2026-09-25 — [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §5) |
 | **eDRX (Extended DRX)** | ✅ Підтримує | ✅ **Покращена підтримка** (AT+CEDRXS) |
 | **PSM (Power Saving Mode)** | ✅ Підтримує | ✅ **Покращена підтримка** (AT+CPSMS) |
 | **Idle споживання (PSM)** | ~10 мкА | **~3 мкА** (критично для IoT) |
@@ -274,7 +274,7 @@ EdgeCache forest_cache[50]; // 50 × 22 байти = 1.1 KB
 ```c
 // firmware/queen/main.c (init: SIM7070_Transact)
 SIM7070_SendATCommand("AT\r\n", 500);          // Перевірка зв'язку
-SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000); // LTE-M only mode
+SIM7070_SendATCommand("AT+CNMP=38\r\n", 1000); // LTE only (Cat-M ⊥ NB-IoT — AT+CMNB, не задано)
 ```
 
 **CoAP Uplink (при кожному flush):**
@@ -715,8 +715,8 @@ if (Helium_Sos_Should_Fire(min_since_uplink_ok, min_since_last_sos,
 | 8 | **BMS** | 12V / 20А continuous / 50А peak, температурний захист | 1/2.5/3 | 🟡 Модель не зафіксована |
 | 9 | **DC-DC buck 12V→3.7V** | ≥3А continuous, ≥5А peak | 1/2.5 | ✅ Архітектурно |
 | 10 | **DC-DC buck 12V→3.3V** | ≥500 мА | 1/2.5/3 | ✅ Архітектурно |
-| 11 | **LTE-M / NB-IoT антена** | Wideband Cellular **700–2700 МГц** (покриває Kyivstar B1/B3/B7/B8/B20). Зовнішня SMA, IP67. **БЕЗ суміщення з 868 МГц LoRa** — окремі чіпи (STM32WLE5JC vs SIM7070G), окремі RF-порти. Опційно: LTE+Active GNSS combo (Taoglas FXUB63, Pulse W3007) — додає GPS L1 1575 МГц для PPS time-sync SIM7070G. «868/LTE-M dual-band» **виключено** (поганий VSWR на вузькому 868, низьке gain). | 1/2.5 | ✅ Архітектурно |
-| 12 | **LoRa антена** | 868 МГц **tuned** (вузькодіапазонна, 863–870 EU ISM), 5 dBi Fiberglass collinear omni (Mobilemark OD8-868, Taoglas ALL.4101 або еквівалент). Зовнішня SMA, IP67. Призначена для пробивання вологого лісу 150+ м до Soldiers. **НЕ використовувати dual-band/wideband** — VSWR > 2.5 на 868, втрата ~3-5 дБ EIRP → втрата покриття. ⚠️ З цією антеною провідну потужність TX Королеви знижено до +10 дБм — стеля ЕВП НКЕК 13.98 дБм (⚖️ founder 2026-09-24, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); чи дозволені 5 dBi взагалі — п. 104 постанови ставить «до 2 дБі», рядок розсуджує НКЕК ([`00_07`](00_07_Action_Plan_Tracker) ARCH.24). | 1/2.5/3 | ✅ Архітектурно |
+| 11 | **LTE-M / NB-IoT антена** | Wideband Cellular **700–2700 МГц** (покриває смуги Kyivstar ∩ SIM7070G: **B1/B3/B8**, згодом B28; ⚠️ «B7/B20», що тут стояли, хибні — B7 модем не підтримує, B20 в українських джерелах не знайдено, [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §2.1). Зовнішня SMA, IP67. **БЕЗ суміщення з 868 МГц LoRa** — окремі чіпи (STM32WLE5JC vs SIM7070G), окремі RF-порти. Опційно: LTE+Active GNSS combo — додає GPS L1 1575 МГц для PPS time-sync SIM7070G; ⚠️ названі тут Taoglas FXUB63 (наліпна вбудовувана з U.FL, без IP-класу й без активного GNSS) і Pulse W3007 (у первинці не знайдено) цьому класу не відповідають — шортлист §1. «868/LTE-M dual-band» **виключено** (поганий VSWR на вузькому 868, низьке gain). | 1/2.5 | ✅ Архітектурно |
+| 12 | **LoRa антена** | 868 МГц **tuned** (вузькодіапазонна, 863–870 EU ISM), 5 dBi Fiberglass collinear omni. Зовнішня SMA, IP67. ⚠️ Названі тут доти Mobilemark OD8-868 і Taoglas ALL.4101 первинкою не підтверджені (сторінка виробника — 404 · пошук за P/N — нуль, 2026-09-25), а трійки «5 dBi + SMA + IP67» у первинці немає: обидва 5-dBi колінеари з паспортом мають N-type (кандидати, ЕВП і кабель — [`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §1, §3). Призначена для пробивання вологого лісу 150+ м до Soldiers. **НЕ використовувати dual-band/wideband** — VSWR > 2.5 на 868, втрата ~3-5 дБ EIRP → втрата покриття. ⚠️ З цією антеною провідну потужність TX Королеви знижено до +10 дБм — стеля ЕВП НКЕК 13.98 дБм (⚖️ founder 2026-09-24, [`03_05 §2.1`](03_05_Hardware_Symmetric_Crypto_and_Security)); чи дозволені 5 dBi взагалі — п. 104 постанови ставить «до 2 дБі», рядок розсуджує НКЕК ([`00_07`](00_07_Action_Plan_Tracker) ARCH.24). | 1/2.5/3 | ✅ Архітектурно |
 | 13 | **IP67 корпус** | ABS/PC + ущільнення, ≥2.5L | 1/2.5/3 | 📋 Не специфіковано |
 | 14 | **SWD програматор** | ST-LINK-V3MINIE | — | ✅ |
 | 15 | **UART адаптер** | FT232RL, 3.3V режим | — | ✅ |
