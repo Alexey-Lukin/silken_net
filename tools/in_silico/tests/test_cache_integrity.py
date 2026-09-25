@@ -1294,6 +1294,52 @@ def test_constants_match_mechanical_output():
         ), topology
 
 
+def test_delta_t_aux_power_cache_on_ratified_window():
+    """Pin script 63's cache to the EDLC window it must be computed from (00_07 HW.37 → HW.42).
+
+    Born of a ratified derate that never reached the model: `VBAT_OV` went to 4.822 V on 2026-09-09
+    while 63 kept dividing a typed 3.87 J built on the part's 5.5 V rating — green across the suite,
+    because nothing tied that literal to `VBAT_OV`. The window is now DERIVED in `lib/constants.py`.
+    CATCHES: (a) a C / VBAT_OV / VBAT_OK / η_buck edit without re-running 63 (the cached window and
+    every absolute delta_t still carry the old one); (b) an absolute delta_t that is not the VSTOR
+    window over P·η — e.g. the post-buck window back in the charging role, where η_buck does not
+    act; (c) a percentage shift that stops being its window-FREE closed form — HW.42's verdict rests
+    on the shift not depending on the window. Does NOT catch: canon stating a different window
+    (`test_doc_cache_sync`, the `02_03 §8` rows), nor which floor — VBAT_OK ON or OFF — canon should use.
+    """
+    import sys
+    sys.path.insert(0, str(REPO / "tools/in_silico"))
+    from lib.constants import (
+        C_EDLC_F,
+        EDLC_WINDOW_USABLE_J,
+        EDLC_WINDOW_VSTOR_J,
+        ETA_BUCK_ACTIVE,
+        VBAT_OK_ON_V,
+        VBAT_OV_RATIFIED_V,
+    )
+
+    data = json.loads((KINETICS / "delta_t_aux_power_sensitivity.json").read_text())
+    const = data["constants"]
+    assert const["C_EDLC_F"] == C_EDLC_F
+    assert const["VBAT_OV_V"] == VBAT_OV_RATIFIED_V
+    assert const["VBAT_OK_ON_V"] == VBAT_OK_ON_V
+    assert const["eta_buck_active"] == ETA_BUCK_ACTIVE
+    assert const["E_window_vstor_J"] == EDLC_WINDOW_VSTOR_J
+    assert const["E_window_usable_J"] == EDLC_WINDOW_USABLE_J
+
+    e_j = const["E_window_vstor_J"]
+    for name, season in data["seasons"].items():
+        p_gen_w, eta = season["P_gen_uW"] * 1e-6, season["eta_boost"]
+        assert season["delta_t_baseline_s"] == pytest.approx(e_j / (p_gen_w * eta), abs=0.006), name
+        for row in season["sweep"]:
+            p_aux_uw = row["P_aux_uW"]
+            assert row["delta_t_A_s"] == pytest.approx(e_j / ((p_gen_w + p_aux_uw * 1e-6) * eta), abs=0.006)
+            assert row["pct_shift_A"] == pytest.approx(
+                p_aux_uw / (season["P_gen_uW"] + p_aux_uw) * 100.0, abs=0.0051), (name, p_aux_uw)
+            assert row["pct_shift_B"] == pytest.approx(
+                p_aux_uw / (season["P_gen_uW"] * eta + p_aux_uw) * 100.0, abs=0.0051), (name, p_aux_uw)
+
+
 def test_dft_os_redox_pair_ordering():
     """Os(II) HOMO should be higher than Os(III) HOMO (reduced is less bound)."""
     path = DFT / "os_complex.json"

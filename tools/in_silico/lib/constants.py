@@ -311,16 +311,23 @@ SWAY_F0_HZ_HIGH_READING = 0.74           # Hz — Schindler & Kolbe 2020, one tr
 ANCHOR_SERVICE_LIFE_YEARS = 20.0         # yr — the span the cycle budget is counted over (01_02 §2.2)
 SECONDS_PER_YEAR = 365.25 * 86400.0      # s — Julian year
 
-# ── EDLC energy budget (HW.42, script 63; 02_03 §9/§12) — delta_t sensitivity to a
+# ── EDLC energy budget (HW.42, script 63; 02_03 §8/§9/§12) — delta_t sensitivity to a
 # second power source landing on the SAME BQ25570 charging rail. Mirror of canon;
 # edit `02_03`, not here (same discipline as ETA_BQ above). ──
 C_EDLC_F = 0.47                  # F — EDLC capacitance (02_03 §12.1)
-VSTOR_MAX_V = 5.5                # V — EDLC absolute max voltage (02_03 §12.1)
-VBAT_OK_ON_V = 3.40              # V — buck re-enable threshold, window floor (02_03 §4.Г)
+VBAT_OV_RATIFIED_V = 4.822       # V — the RATIFIED VBAT_OV (Derate, founder 2026-09-09): 02_03 §4.Б divider
+                                 #     1.5 × 1.21 × (1 + 7.87/4.75); the EDLC's operating ceiling (00_07 HW.7/HW.37)
+VBAT_OK_ON_V = 3.40              # V — buck re-enable threshold (OK_HYST), window floor (02_03 §4.Г, §8)
 ETA_BUCK_ACTIVE = 0.88           # — buck efficiency, active load (02_03 §9.1 buck table)
-EDLC_WINDOW_USABLE_J = 3.87      # J — usable window energy post-buck (02_03 §12.1):
-# ½·C_EDLC_F·(VSTOR_MAX_V²−VBAT_OK_ON_V²)·ETA_BUCK_ACTIVE ≈ 3.865 J — reconstructed as a
-# sanity check in script 63, not re-derived from C/V/eta as the primary path.
+# The window is DERIVED from the thresholds above, never typed: a typed 3.87 J stayed on the part's 5.5 V
+# rating after the derate was ratified, because nothing tied it to VBAT_OV (00_07 HW.37).
+# ⛔ The ceiling is the ratified VBAT_OV, NOT the 5.5 V rating (EATON_KR_RATED_VOLTAGE_V below; the BQ25570
+#    VSTOR absolute max) — the rating bounds the PART, the OV threshold bounds the WINDOW.
+EDLC_WINDOW_VSTOR_J = 0.5 * C_EDLC_F * (VBAT_OV_RATIFIED_V**2 - VBAT_OK_ON_V**2)  # J ≈ 2.748 (02_03 §8 «2.75 Дж»)
+EDLC_WINDOW_USABLE_J = EDLC_WINDOW_VSTOR_J * ETA_BUCK_ACTIVE                      # J ≈ 2.418 (02_03 §8 «≈ 2.42 Дж»)
+# ⚠️ Two ROLES, not two precisions: the VSTOR window is what the boost must PUT IN, so a charging time
+#    (`delta_t`) is it over P·η_boost; the usable one is what the load GETS OUT through the buck. η_buck
+#    sits on the discharge side and never enters a charging time.
 P_GEN_SUMMER_UW = 15.0           # µW — typical Gen 2.0 EBFC, summer (02_03 §9.2)
 P_GEN_WINTER_RANGE_UW = (3.0, 5.0)   # µW — winter range (02_03 §9.8 prose)
 ETA_BOOST_WINTER = 0.65          # — boost eta at P_gen≈5µW winter (02_03 §9.8: "eta_boost
@@ -346,5 +353,4 @@ VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles 
 # (00_07 HW.37) — report the sensitivity across the Eaton-derived bracket above rather
 # than a false-precise single number.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7
-VBAT_OV_RATIFIED_V = 4.822         # V — the RATIFIED VBAT_OV (Derate, founder 2026-09-09): 02_03 §4.Б divider
-                                   #     1.5 × 1.21 × (1 + 7.87/4.75); the EDLC's operating ceiling (00_07 HW.7/HW.37)
+# The ratified operating voltage these ratings are derated to is VBAT_OV_RATIFIED_V (EDLC energy block above).

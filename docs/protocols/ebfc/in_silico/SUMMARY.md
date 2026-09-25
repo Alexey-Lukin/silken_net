@@ -706,7 +706,9 @@ Canon home → [`02_03 §9`](../../../02_03_BQ25570_MPPT_Nano_Power.md); decisio
 Since [E.63], the EDLC recharge interval `delta_t` drives `growth_points` directly — a
 money-minting signal. `HW.21` carries a checkbox to put a TEG on the SAME BQ25570 charging rail
 as the EBFC; `01_03 §4`'s instrumental-noise list is exhaustively chemical and has no axis for "a
-second power source on the shared rail". Closed form: `delta_t = E_window / (P·η_boost)`,
+second power source on the shared rail". Closed form: `delta_t = E_window / (P·η_boost)`, where
+`E_window` is the EDLC window ON VSTOR at the ratified `VBAT_OV` (`02_03 §8`, doc↔cache-pinned — the
+energy the boost puts in; the post-buck figure is the discharge side and never a charging time),
 swept over auxiliary power P_aux = 10-200 µW (spanning HW.21's own 50-200 µW TEG estimate),
 reported as a 3-way bracket (shared-boost floor / direct-injection ceiling / BQ25570's own
 measured η(P) curve as a cross-check) since the multi-input topology itself is still open

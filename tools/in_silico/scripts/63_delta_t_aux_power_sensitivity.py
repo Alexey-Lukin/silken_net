@@ -21,9 +21,14 @@ underlying delta_t = energy / power form):
 
     delta_t_baseline(P) = E_window / (P * eta_boost)
 
-with E_window = 3.87 J (§12.1's usable post-buck window) and the two canon
-season/efficiency anchors: summer 15 uW @ eta_boost=0.68 (ETA_BQ, §9.2), winter 3-5 uW
-@ eta_boost=0.65 (§9.8: "eta_boost lower at lower I_IN").
+with E_window = the EDLC window ON VSTOR, VBAT_OK ON (3.40 V) -> the RATIFIED VBAT_OV
+(4.822 V, Derate — founder 2026-09-09), `02_03 §8` ≈ 2.75 J: the energy the boost has to PUT
+IN, which is what a charging time divides. ⛔ Not the post-buck usable window (≈ 2.42 J,
+also §8): eta_buck sits on the DISCHARGE side and never enters a charging time — until
+2026-09-25 this script divided the post-buck figure, and on the part's 5.5 V rating instead
+of VBAT_OV (00_07 HW.37). The two canon season/efficiency anchors: summer 15 uW @
+eta_boost=0.68 (ETA_BQ, §9.2), winter 3-5 uW @ eta_boost=0.65 (§9.8: "eta_boost lower at
+lower I_IN").
 
 Injecting P_aux onto the SAME rail is reported as a BRACKET, not a single number,
 because the multi-input TOPOLOGY itself is still open (FW.50 — this script does not
@@ -46,10 +51,12 @@ decide it, and does not decide HW.42's rail-split (v) either):
     parameter — it is Model A with a MEASURED, not assumed-constant, eta_boost.
     Flagged EXTRAPOLATED wherever P_gen+P_aux exceeds the table's 100 uW top point.
 
-C = 0.47 F is used ONLY as a sanity cross-check that 3.87 J is the right order of
-magnitude for canon's own VBAT_OK(3.40V)->VSTOR_MAX(5.5V) window post-buck — energy
-= power x time is exact for constant-power charging, so the window energy is taken
-from canon directly below, not re-derived from C as the primary path.
+The window is DERIVED in `lib/constants.py` from C and the two thresholds — one truth, so a
+moved VBAT_OV reaches it. Its controls live where they can fail: `test_doc_cache_sync` pins
+the cached window to `02_03 §8` (canon ⟷ machine), `test_cache_integrity` pins the cache to
+the constants and every absolute delta_t to E_window/(P·eta). Re-deriving the same formula
+here would be an identity, not a check (in-silico §When Modifying #8), so the script prints
+the derivation and asserts nothing about it.
 
 Scope: SENSITIVITY NUMBER ONLY. Whether this forces a physical rail split or blocks
 HW.21's multi-input checkbox is an explicit (v) reserved for the founder (00_07
@@ -72,6 +79,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.constants import (
     C_EDLC_F,
     EDLC_WINDOW_USABLE_J,
+    EDLC_WINDOW_VSTOR_J,
     ETA_BOOST_TABLE_UW,
     ETA_BOOST_WINTER,
     ETA_BQ,
@@ -81,7 +89,7 @@ from lib.constants import (
     P_GEN_WINTER_RANGE_UW,
     REPO_ROOT,
     VBAT_OK_ON_V,
-    VSTOR_MAX_V,
+    VBAT_OV_RATIFIED_V,
 )
 from lib.utils import banner
 
@@ -110,8 +118,8 @@ def eta_boost_curve(p_total_uw: float, floor_eta: float) -> tuple[float, bool]:
     return float(np.interp(np.log(p_total_uw), log_ps, etas)), False
 
 
-def delta_t_seconds(p_w: float, eta: float, e_window_j: float = EDLC_WINDOW_USABLE_J) -> float:
-    """Closed form: time to move E_window Joules across the EDLC at net power p_w*eta."""
+def delta_t_seconds(p_w: float, eta: float, e_window_j: float = EDLC_WINDOW_VSTOR_J) -> float:
+    """Closed form: time to put E_window Joules INTO the EDLC at net charging power p_w*eta."""
     return e_window_j / (p_w * eta)
 
 
@@ -129,7 +137,7 @@ def sweep_season(label: str, p_gen_uw: float, eta_boost_season: float) -> dict:
         pct_a = (dt_base_s - dt_a) / dt_base_s * 100.0
         pct_a_check.append(p_aux_uw / p_total_uw * 100.0)
 
-        dt_b = EDLC_WINDOW_USABLE_J / (p_gen_w * eta_boost_season + p_aux_w)
+        dt_b = EDLC_WINDOW_VSTOR_J / (p_gen_w * eta_boost_season + p_aux_w)
         pct_b = (dt_base_s - dt_b) / dt_base_s * 100.0
 
         eta_c, extrapolated = eta_boost_curve(p_total_uw, floor_eta=eta_boost_season)
@@ -181,18 +189,16 @@ def sweep_season(label: str, p_gen_uw: float, eta_boost_season: float) -> dict:
 def main() -> int:
     banner("HW.42 — delta_t sensitivity to a second power source on the shared BQ25570 rail")
 
-    # -- Sanity cross-check: does 3.87 J reconstruct from C / window voltages / eta_buck? --
-    banner("0. Sanity check — reconstructing the 3.87 J usable window (02_03 §12.1)")
-    e_window_raw_j = 0.5 * C_EDLC_F * (VSTOR_MAX_V**2 - VBAT_OK_ON_V**2)
-    e_window_check_j = e_window_raw_j * ETA_BUCK_ACTIVE
+    # -- The window, derived in lib/constants.py (no assert here: it would be an identity — see docstring) --
+    banner("0. EDLC window at the RATIFIED VBAT_OV (02_03 §8; Derate, founder 2026-09-09)")
+    print(f"  C={C_EDLC_F} F, VBAT_OK ON {VBAT_OK_ON_V} V -> VBAT_OV {VBAT_OV_RATIFIED_V} V")
+    print(f"  on VSTOR (what the boost puts in):       {EDLC_WINDOW_VSTOR_J:.3f} J  <- every delta_t below divides THIS")
     print(
-        f"  C={C_EDLC_F} F, window {VBAT_OK_ON_V}-{VSTOR_MAX_V} V -> raw {e_window_raw_j:.3f} J "
-        f"x eta_buck={ETA_BUCK_ACTIVE} = {e_window_check_j:.3f} J (canon states {EDLC_WINDOW_USABLE_J} J)"
+        f"  on VOUT after buck (x eta_buck {ETA_BUCK_ACTIVE}): {EDLC_WINDOW_USABLE_J:.3f} J  "
+        "(discharge side — never a charging time)"
     )
-    assert abs(e_window_check_j - EDLC_WINDOW_USABLE_J) < 0.02, "3.87 J window does not reconstruct from C/V/eta_buck"
-    print("  Sanity check PASSED — canon's 3.87 J is internally consistent; used directly below.")
     print()
-    print("  NOTE — this script's delta_t_baseline (below) is a FULL-WINDOW-FILL time (empty->3.87J),")
+    print(f"  NOTE — this script's delta_t_baseline (below) is a FULL-WINDOW-FILL time ({EDLC_WINDOW_VSTOR_J:.2f} J),")
     print("  a different quantity from §9.6 Scenario C's ~1.77 h (time to replenish ONE TX cycle's")
     print("  spend). This codebase already carries several non-interchangeable delta_t definitions")
     print("  (script 30's chemistry model: 20-101 s; 06_08 notes a 63-320x spread among them) —")
@@ -233,16 +239,16 @@ def main() -> int:
 
     output = {
         "model": (
-            "delta_t = E_window / (P * eta_boost); P_aux bracket = shared-boost (A) vs "
+            "delta_t = E_window_vstor / (P * eta_boost); P_aux bracket = shared-boost (A) vs "
             "direct-injection (B) vs measured-eta-curve (C); multi-input topology (FW.50) still open"
         ),
         "constants": {
             "C_EDLC_F": C_EDLC_F,
-            "E_window_usable_J": EDLC_WINDOW_USABLE_J,
-            "E_window_reconstructed_J": round(e_window_check_j, 3),
-            "eta_buck_active": ETA_BUCK_ACTIVE,
-            "VSTOR_MAX_V": VSTOR_MAX_V,
+            "VBAT_OV_V": VBAT_OV_RATIFIED_V,
             "VBAT_OK_ON_V": VBAT_OK_ON_V,
+            "eta_buck_active": ETA_BUCK_ACTIVE,
+            "E_window_vstor_J": EDLC_WINDOW_VSTOR_J,
+            "E_window_usable_J": EDLC_WINDOW_USABLE_J,
             "P_aux_range_uW": [float(v) for v in P_AUX_RANGE_UW],
         },
         "seasons": {

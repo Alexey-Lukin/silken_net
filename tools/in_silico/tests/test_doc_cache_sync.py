@@ -863,6 +863,19 @@ CHECKS = [
         "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*[\d.]+–{N} року @ 25 °C\*\*",
         "kinetics/gusak_degradation.json", lambda d: d["edlc_endurance_hours"]["Eaton_KR-5R5H474-R"]["ratified_vbat_ov"]["25.0"]["optimistic_yr"], 0.05,
     ),
+    # EDLC window at the ratified VBAT_OV (HW.37 → HW.42): `02_03 §8` is the window's home and script 63
+    # divides it (history: `test_delta_t_aux_power_cache_on_ratified_window`). Both §8 rows are pinned,
+    # because they carry two ROLES — VSTOR = charging, post-buck = discharge.
+    (
+        "EDLC window on VSTOR @ ratified VBAT_OV (canon 02_03 §8 → script 63 premise: re-run 63 on a window change)",
+        "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*Енергія робочого вікна \(на VSTOR, 3\.4В→VBAT_OV\)\*\* \| \*\*{N} Дж\*\*",
+        "kinetics/delta_t_aux_power_sensitivity.json", lambda d: d["constants"]["E_window_vstor_J"], 0.006,
+    ),
+    (
+        "EDLC usable window after buck @ ratified VBAT_OV (canon 02_03 §8 → script 63 premise: re-run 63 on a window change)",
+        "docs/02_03_BQ25570_MPPT_Nano_Power.md", rf"\*\*Корисна енергія на VOUT після Buck @ η=0\.88\*\* \| \*\*≈ {N} Дж\*\*",
+        "kinetics/delta_t_aux_power_sensitivity.json", lambda d: d["constants"]["E_window_usable_J"], 0.006,
+    ),
     (
         "Arrhenius-effective T_field, Ea low end → gusak_degradation.json §arrhenius_field_temperature",
         "docs/01_02_Ti_6Al_4V_Metallurgy_and_DMLS.md", rf"вона \*\*{N} / [\d.]+ / [\d.]+ °C\*\*",
