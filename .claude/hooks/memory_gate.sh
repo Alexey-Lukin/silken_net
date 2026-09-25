@@ -231,7 +231,9 @@ SELF=${BASH_SOURCE[0]:-$0}
 # ⊕ 26675 → 26721 (+46) — та сама подія, що підняла FILE_WARN нижче: 24 слаги в індексі стали довшими
 #   на 3 B кожен (конвенція DOC-T.118). Чистий приріст був би +72, але консолідація tooling-родини того ж
 #   проходу зняла два рядки-лінки — тобто ратчет фіксує РІЗНИЦЮ, а не дозвіл рости.
-IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26721}
+# ⊕ 26721 → 26767 (+46) — новий дім `project_02_node_board_fit`, влитий ІНЛАЙНОМ у рядок-хаб Soldier breadboard
+#   (важіль hub-inline), а не окремим рядком: окремий коштував +111. Залишок — ціна однієї адреси.
+IDX_BASELINE=${MEMORY_GATE_IDX_BASELINE:-26767}
 FILE_CAP=${MEMORY_GATE_FILE_CAP:-40960}          # rule-file ceiling
 FILE_WARN=${MEMORY_GATE_FILE_WARN:-36120}        # set just under the known relapse file: it regrew 35->53 kB in 18h
 # 36000 -> 36120 (DOC-T.118, 2026-09-21): the slug convention `<тип>_<NN>_<предмет>` lengthened every
@@ -399,7 +401,9 @@ rb_dark() {
 # в операційному мануалі індексу).
 # 2026-09-18: 166 → 167 — `log_crown_roots` (тіла вимірів і застосувань рамки «крона ⊥ корінь», евакуйовані
 # дослівно з `feedback_crown_bounded_by_roots` 33.7 → ~10 kB). Підняття робить новий дім захищеним підлогою.
-CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-166}
+# 2026-09-25: 166 → 167 — `project_02_node_board_fit` (жива вісь §02: плата Солдата в стелі, присуд founder-а
+# про чіп замість модуля й дозвіл рухати корінь геометрії). Підняття робить новий дім захищеним підлогою.
+CORPUS_FLOOR=${MEMORY_GATE_CORPUS_FLOOR:-167}
 
 # Index reach — DERIVED, never a constant, and the reason is a correction to an
 # earlier draft of this very block. Reach and corpus size count different
@@ -525,7 +529,9 @@ index_reach_expected() {
 # Прецедент дотримано: власний опис стиснуто (185 → 130 B) ПЕРЕД бампом, чужих не підрізано.
 # 2026-09-18: 45215 → 44148 (−1067) — храповик опущено до факту після того самого злиття (вісім описів
 # пішли, три нові короткі прийшли); зекономлене не стає запасом.
-DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43277}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
+# 2026-09-25: 43277 → 43410 (+133) — вартість опису нового дому `project_02_node_board_fit`. Прецедент дотримано:
+# власний опис стиснуто (273 → 208 B) ПЕРЕД бампом, чужих не підрізано.
+DESC_BASELINE=${MEMORY_GATE_DESC_BASELINE:-43410}   # +15 від тієї ж події: описи журналів цитують слаг свого дому
 
 # Content-overlap between two files. The corpus has ONE structural failure mode
 # no other check can see: a class written into two homes, where every link
