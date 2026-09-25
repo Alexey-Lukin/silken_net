@@ -1221,7 +1221,7 @@ HAL_CRYP_Decrypt(&hcryp, (uint32_t*)(payload + 16), ...);  // Дешифруєм
 ## 🔄 5. Діаграма Криптографічного Пайплайну
 
 ```
-SOLDIER (STM32WLE5JC)
+SOLDIER (STM32WLE5CC)
 ──────────────────────────────────────────────────────
 Phase 2: Pack Payload
   lora_payload[16] = [DID:4][Vcap:2][Temp:1][Acoustic:1]

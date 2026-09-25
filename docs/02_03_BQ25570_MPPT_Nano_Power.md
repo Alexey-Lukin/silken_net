@@ -79,15 +79,15 @@
 ```
 Поточна архітектура (Post-Pivot):
 
-Tree EBFC (>500mV)
+Tree EBFC (V_OC: гейт ≥700mV, не виміряно)
       │
-      ▼  VIN_DC (>500mV, типово 500–800mV)
+      ▼  VIN_DC (V_OC-гейт — 01_03 §3.5; «>500mV» — ера порога 330мВ)
 ┌──────────────────────────────────────────────┐
 │  BQ25570 (Power Management IC)               │
 │  CJMCU-2557 breakout module                 │
 │  - Cold Start: ⚠️ поріг 600мВ typ (HW.46)     │
 │  - MPPT: VOC sampling / 16s                  │
-│  - Boost Charger → VSTOR (до 5.5V)          │
+│  - Boost Charger → VSTOR (до OV 4.822V)     │
 │  - Buck Converter → VOUT (3.3V стабілізовано)│
 │  - VBAT_OK → GPIO STM32 (гейт живлення — HW)│
 └───────────────────┬──────────────────────────┘
@@ -198,7 +198,7 @@ BQ25570 VBAT_OK ──▶ STM32 GPIO (status/gate-вхід)
 
 **Гістерезис:** пороги VBAT_OK **програмовані** ROK-резисторами (`VBAT_OK_PROG` — спад, Eq. (3); `VBAT_OK_HYST` — підйом, Eq. (4); TI SLUSBH2G), а **не** «вбудовані 3%». 🔴 Різницю між ними створює **третій** резистор `ROK3` (§4.Г): без нього обидва рівняння тотожні й гістерезису НЕМАЄ — тобто «~97 % від 3.4 В» є не механізмом, а збігом, і на нього спиратись не можна. Запобігають дрижанню (chatter) при граничній напрузі. Значення 3.40 / 3.31 В у таблиці — поточна **ціль дизайну** (фінал — bench).
 
-**У Firmware:** VBAT_OK — апаратний buck/brownout-**гейт**, НЕ періодичний wake. Канон wake-source (RTC WUT + Vcap-енергогейт + RTC-календар timebase) — [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) (FW.49): при буфері 4.39 Дж VBAT_OK залипає HIGH → rising-edge не дає heartbeat; cold-start після глибокого розряду = power-on-reset (нижче порогу MCU знеструмлений).
+**У Firmware:** VBAT_OK — апаратний buck/brownout-**гейт**, НЕ періодичний wake. Канон wake-source (RTC WUT + Vcap-енергогейт + RTC-календар timebase) — [`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA) (FW.49): при буфері 2.75 Дж (ратифікований `VBAT_OV` 4.822 В; було 4.39 Дж на стелі 5.5 В) VBAT_OK залипає HIGH → rising-edge не дає heartbeat; cold-start після глибокого розряду = power-on-reset (нижче порогу MCU знеструмлений).
 
 ---
 
@@ -519,7 +519,7 @@ VOUT (3.3V) ──┬── [STM32WLE5JC 3V3 pin]
 
 **Граничний ланцюжок живлення (cold-start / brownout-recovery):**
 ```
-EBFC (>500mV) → BQ25570 Boost → VSTOR ≥ 3.4V → VBAT_OK HIGH
+EBFC (V_OC ≥700mV) → BQ25570 Boost → VSTOR ≥ 3.4V → VBAT_OK HIGH
                                               → Buck ON → VOUT = 3.3V
                                               → MCU під живленням (перший boot / brownout-recovery = power-on-reset)
                                               → штатний heartbeat далі = RTC-WUT ([`03_01 §1.10`](03_01_Firmware_Lifecycle_and_DMA)), НЕ VBAT_OK-edge
@@ -780,7 +780,7 @@ EBFC (Ti-6Al-4V anchor)  V_OC: ≥ 700 мВ pass · 600–700 лише з LTC310
 ### 10.2. Альтернативне Lab-Джерело (для відсутності живого EBFC)
 
 Замість 44 мВ-симулятора через дільник напруги — використати **програмований source-meter (Keithley 2400 або еквівалент)** у режимі «emulated EBFC»:
-- V_OC = 500 мВ (program voltage source)
+- V_OC = 700 мВ (program voltage source) — нижня межа pass-гейту [`01_03 §3.5`](01_03_EBFC_Enzymatic_Bio_Fuel_Cell); ⛔ 500 мВ нижче `VIN(CS)` 600 мВ typ, тож cold-start такий емулятор не відтворить
 - Series R = 10 кΩ (симуляція R_int EBFC; за потреби — підняти до 15-20 кΩ для stress-test §1.5)
 - Поведінкова крива: лінійна VR-характеристика; за потреби — Tafel-curve через Python script на SCPI
 
@@ -912,7 +912,7 @@ EBFC (Ti-6Al-4V anchor)  V_OC: ≥ 700 мВ pass · 600–700 лише з LTC310
 
 > **⚠️ DCI-safe архітектура [HW.19, verified 2026-05-29].** Корекцію застосовувати **НЕ в Z-математиці.** `SilkenNet::Attractor` — бітове дзеркало firmware `bio_contract.rb` для **Dual Computation Integrity** (server-Z мусить == device-Z). Firmware VOC не має → якщо сервер скоригує Z (σ/ρ) за VOC, server-Z розійдеться з device-Z → `check_z_divergence!` флагне фрод на **кожному** пакеті. Тому:
 > - **Z лишається ідентичним firmware** (без VOC) — DCI недоторканий.
-> - VOC-корекція живе на **шарі рішення про slashing** (`ContractHealthCheckService` / degradation count): дерево зі **здоровим VOC (≥500мВ) + degraded `delta_t`/`vcap`** → *hardware-confounded* → **виключається зі slashing-підрахунку** (не false-slash інвестора за старіння заліза).
+> - VOC-корекція живе на **шарі рішення про slashing** (`ContractHealthCheckService` / degradation count): дерево зі **здоровим VOC (стабільним на власній базовій лінії вузла, §12.4.2) + degraded `delta_t`/`vcap`** → *hardware-confounded* → **виключається зі slashing-підрахунку** (не false-slash інвестора за старіння заліза).
 > - **VOC = рідкісний діагностичний сигнал** (кап деградує роками), НЕ per-packet (sensor payload повний) — потрібен окремий механізм доставки.
 
 **Статус:** Концепт **верифіковано** (2026-05-29), DCI-safe дизайн зафіксовано. Реалізація gated: (1) firmware VOC-вимір — ⚠️ **гіпотеза 2026-09-10 (HW.19, [`00_06 §0`](00_06_SSOT_Documentation_Standard) Validation Gate; напрям ратифіковано founder того ж дня — фізику підтверджує лише стенд):** окремий GPIO-розрив і TPS22860 можуть бути зайвими — BQ25570 сам розмикає вхід на 256 мс кожні 16 с (MPPT-семплінг, §3.2), тож ADC-канал на `VIN_DC` із max-hold над вікном ≥ 16.3 с читає `V_OC` без ключа (0.5–0.8 В < 3.3 В, дільник не потрібен; `R_int` 5–20 кΩ вимагає довгого sample-time); синхронізацію з вікном перевіряє стенд після FW.46 board-freeze, (2) delivery-контракт, (3) slashing-layer корекція + `voc_mv` колонка. Backlog: HW.19. TRL 8+.

@@ -615,10 +615,12 @@ def vertical_stack_budget(boss: dict) -> dict:
     two placements is physical, and they price differently. ⚖️ 2026-09-22 (delegated, 02_01 §6, HW.30):
     `pad_beside_piezo` is RATIFIED on this very budget — it closes under the crown at canonical B2B 8, while
     `pad_under_piezo` closes in no canonical B2B row. Both are still REPORTED: the rejected rows are the
-    evidence the verdict stands on, and its re-measure trigger is the crown or `cavity_height_mm` moving:
+    evidence the verdict stands on, and its re-measure trigger is the crown or `cavity_height_mm` moving —
+    ⊕ and since 2026-09-25 the RF front-end P/Ns too: two of this verdict's three grounds rested on the
+    2.5 mm module, which is off the board (02_01 §6):
       • pad_beside_piezo — RATIFIED: the pad spans board↔flange as `GAP_PZ` models it; the piezo stands on
-        the board beside it — top side (sub-branch (а-2), the starting one) or over a pocket in the flange
-        face ((а-1), the named fallback, which no CEM row carries yet); which one, the bench decides;
+        the board beside it — top side (sub-branch (а-2), the starting one); the flange-face pocket ((а-1)) is
+        NOT physical on the current face (02_01 §3.5: ≈ 5.3 mm square between the PEEK ring and the seal);
       • pad_under_piezo — REJECTED: the board stands h_piezo higher, the pogo protrusion grows by h_piezo,
         and pad and pogo stop sharing one gap (the 3-spring model above splits).
     Tolerance is reported against TWO chain readings, because the TOP clearance is not the gap chain: the

@@ -4,7 +4,8 @@
   ******************************************************************************
   * @file           : main.c
   * @brief          : Прошивка вузла Silken Net (Стан Нульового Лагу + TinyML + DID + Directed Mesh + DMA Sleep)
-  * @processor      : STM32WLE5JC
+  * @processor      : STM32WLE5CC (node board, UFQFPN48; the bench runs the same image on the
+  *                  STM32WLE5JC inside LoRa-E5 — same core and radio, pins differ, 03_01 Pinout)
   ******************************************************************************
   */
 /* USER CODE END Header */
