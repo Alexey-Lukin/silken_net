@@ -14,9 +14,12 @@ to glutamine to give the aglycosylated variant used throughout. (The gene ordere
 carries three further surface substitutions chosen after this modelling; the structure and every
 number below stand on the eleven-substitution sequence as modelled.) The FAD cofactor was
 placed from the AF3 complex prediction; the cofactor-to-surface depth and the electron-exit
-region were measured in ChimeraX.<sup>28,29</sup> Active-site clusters for the redox and proton-coupled
-calculations were carved from the predicted structure (isoalloxazine ring plus the H-bonding and
-charged residues within ≈5 Å), retaining backbone amide caps.
+region were measured in ChimeraX.<sup>28,29</sup> The flavin redox and proton-coupled energetics (§2.3,
+§2.4) were computed on **lumiflavin** (7,8,10-trimethylisoalloxazine), the canonical truncation of the
+isoalloxazine redox core, in the continuum of §2.2 — without protein residues. An active-site cluster
+(isoalloxazine ring plus the H-bonding and charged residues within ≈5 Å, retaining backbone amide caps)
+was defined from the predicted structure for the explicit-solvent QM/MM follow-up (§3.6); no energy
+reported here is computed on it.
 
 ## 2.2 Electronic-structure setup
 

@@ -47,7 +47,8 @@ two-sphere result only to confirm that it is physically reasonable.
 
 Varying the 4,4′-bipyridine substituents across the experimental potential range gives a clean **Hammett
 linear free-energy relationship**: the Os(III/II) reduction energy is linear in σ_para with slope
-≈ **−0.92 eV per σ unit** (r² = 1.00; Fig 3b; Table 4), triangulated against the additive Lever E_L scheme<sup>23</sup> and the measured series [CITATION NEEDED].
+≈ **−0.92 eV per σ unit** (r² = 1.00; Fig 3b; Table 4). This is a trend within one method: it is not
+triangulated here against Lever's additive E_L parametrisation<sup>23</sup> or against a measured substituent series.
 Electron-withdrawing substituents raise E°(Os) and improve the FADH₂→Os cascade alignment, giving a
 predictive design handle rather than a one-off optimisation.
 

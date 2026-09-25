@@ -65,8 +65,13 @@ author's.
   [CITATION NEEDED] (no primary found by search 2026-09-24). 👤 primary for −208 or drop it
 - §3.2 — the literature anode λ (~0.7–0.8 eV) adopted in the rates. OA gives typical protein-ET λ of
   0.7–0.8 eV (Gray & Winkler 2005: Cu azurin 0.7, cyt c/b₅ 0.8) but for other proteins, not this couple. 👤
-- §3.3 — "the measured series" the Hammett rule is triangulated against: no record in SUMMARY/L3 of which
-  series or of the triangulation itself. 👤 (author's, not a literature search)
+- §3.3 — ✅ 2026-09-25: the claim is WITHDRAWN, not sourced. The text said the Hammett slope was
+  "triangulated against the additive Lever E_L scheme and the measured series"; no script, cache or
+  SUMMARY/L3 entry performs either comparison, so §3.3 now says the slope is a within-method trend that is
+  NOT triangulated here. Restoring the claim needs an instrument (a script and its cache), not a citation.
+- §2.1 — ✅ 2026-09-25: Methods said the redox and PCET calculations ran on active-site clusters "carved"
+  from the structure; `20` and `32` compute lumiflavin in C-PCM and no script carves a cluster (§3.6 itself
+  says the cluster is only *defined*). §2.1 now says which model the energies stand on.
 - §3.4 — the T1 copper's depth below the laccase surface. No OA statement found. 👤
 - §3.4 — the ZIF as a wide-gap insulator. OA supports it only for Zn ZIF-8 (PMC8159372, Introduction:
   "a typical wide-bandgap … MOF"); our framework is Co-noded (ZIF-67-type), so it does not transfer. 👤
