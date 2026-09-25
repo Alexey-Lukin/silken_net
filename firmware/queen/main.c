@@ -1178,10 +1178,10 @@ int main(void)
   (void)SIM7070_Transact("AT+CEDRXS=1,5,\"0010\"\r\n", AT_INIT_BUDGET_MS);
 
   // [HW.41] Активуємо PDP-контекст, щойно решта init-параметрів на місці —
-  // AT+CNACT=<pdpidx>,<action>: pdpidx=1 (той самий cid, що CGDCONT вище),
-  // action=1 (Active). Той самий verbatim-caveat, що й CGDCONT вище: syntax
-  // із SIMCom TCP/IP AT-набору (SIM7070/7080/7090 спільний), не з canon чи
-  // vendored ноти в цьому репо.
+  // AT+CNACT=<pdpidx>,<action>: pdpidx=1, action=1 (Active). Синтаксис
+  // підтверджує SIM7080 AT Manual V1.02; «pdpidx = cid з CGDCONT» — НАШЕ
+  // припущення, мануал його не стверджує, а APN APP-контексту там задає
+  // окрема AT+CNCFG, якої тут немає → bench/RUNBOOK.md 5.1 (V1.03 + транскрипт).
   (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
 
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання

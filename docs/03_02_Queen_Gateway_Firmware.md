@@ -417,7 +417,7 @@ CPU — байти й URC поза вікном читання (запізніл
 | `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим LTE-M only (відключає NB-IoT) |
 | `AT+CGDCONT=1,"IP","<QUEEN_APN>"` | `AT_INIT_BUDGET_MS` | [HW.41] Явний PDP-контекст — `QUEEN_APN` build-time `#ifndef`-override (дефолт `""`, 3GPP-порожній APN, behavior-identical з до-HW.41 auto-APN); граматика зі стандарту (3GPP TS 27.007 §10.1.1) |
 | `AT+CPSMS=…` / `AT+CEDRXS=…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`) |
-| `AT+CNACT=1,1` | `AT_INIT_BUDGET_MS` | [HW.41] Активація PDP-контексту (той самий `cid=1`, що CGDCONT). ⚠️ Синтаксис із загального SIMCom TCP/IP AT-набору, verbatim НЕ звірено з SIM7070G AT Command Manual (репо не тримає вендорського мануала) — bench-residual, [`00_07`](00_07_Action_Plan_Tracker) HW.41 |
+| `AT+CNACT=1,1` | `AT_INIT_BUDGET_MS` | [HW.41] Активація APP-мережі (pdpidx 1). ⚠️ Проти V1.03 не звірено; старша SIM7080 V1.02 (2026-09-25) синтаксис підтверджує, але APN цього контексту в ній задає окрема `AT+CNCFG`, якої ми не шлемо, а «той самий `cid=1`, що CGDCONT» — наше припущення, не текст мануала. Відкрите — `firmware/scripts/bench/RUNBOOK.md` 5.1, [`00_07`](00_07_Action_Plan_Tracker) HW.41 |
 
 Провал init не фатальний: модем міг ще прокидатись — flush-розмова повторить
 усе зі свіжим бюджетом.
