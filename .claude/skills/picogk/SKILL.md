@@ -71,7 +71,7 @@ append-only (`0a` · `0b` · `4a` · `9b` are items of their own).
 2. `ImplicitRadialGyroid` is degenerate near r=0 — use a cartesian gyroid for a small part near its own axis
 3. Run headless through `Library.Go(voxel, task, bEndAppWithTask:true)`, never `new Library()` — and headless CI cannot run it at all
 4. Gyroid `wallParam` is a DIMENSIONLESS level of the gyroid equation, and the sheet and network branches read it differently
-4a. «Porosity is voxel-dependent → MEASURE it», and the suspected cause of the coarse-voxel collapse is REFUTED — both now live in #4 (evidence: `00_07` HW.49)
+4a. «Porosity is voxel-dependent → MEASURE it», and the suspected cause of the coarse-voxel collapse is REFUTED — both now live in #4 (evidence: `01_02 §6`)
 5. Voxel-resolution floor + gradient distortion — the grid's floor and the printer's floor are different ceilings, and the printable one depends on topology
 6. Keep `ImplicitUsings` ENABLED for the vendored `src/SilkenCad.Leap`, and the strict knobs ON only for our own code
 7. Set `DOTNET_ROOT=$HOME/.dotnet` when running the apphost binary directly, and look for its lowercase name `silkencad`
