@@ -230,6 +230,8 @@ ALLOY_PROPERTIES = {
     "beta-Ti-13Nb-13Zr": {
         "spec": "ASTM F1713 / UNS R58130 — WROUGHT composition ref (AM spec UNKNOWN - F3302 grade table unread; low-E V/Al-free)",
         "V_wt": 0.0, "Al_wt": 0.0, "Nb_wt": 13.0, "Zr_wt": 13.0,
+        # yield_MPa 900 has NO source; a literature figure of ~795 MPa is quoted without citation (01_03 §3.5,
+        # Stage-2 layout weakest link) — the rule (в) inclusion of this alloy is precautionary, not proven
         "E_GPa": 80.0, "nu": 0.33, "alpha_1K": 8.8e-6, "yield_MPa": 900.0, "rho_kg_m3": 5050.0,
         "lambda_W_mK": 7.5,   # estimate — β-Ti(Nb,Zr) heavily alloyed, sparse data
     },
