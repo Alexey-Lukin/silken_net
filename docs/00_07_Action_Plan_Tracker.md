@@ -706,8 +706,7 @@
 #### HW.38 — Phytotox-скоуп лише tree-only: немає non-target екологічного скріну
 - **P3** · 👤 · 🟡 · → `01_03 §3.5`, `00_02`
 - **Стан:** «Стаття 29» (`00_02`) явно скоуплена на *Pinus sylvestris* біоакумуляцію/safety-margin. Ніщо не оцінює non-target екологічну долю на planetary fleet-scale: ґрунтовий мікробіом, ґрунтові води, invertebrate/wildlife food-chain exposure до ZIF-нанозиму (Co/Cu/Ce/Ru) чи end-of-life/damaged-unit leachate коли дерево гине / анкер покинуто. Scope-extension, не нова інфраструктура — той самий ICP-MS/in-silico-потік. Scope-extension Статті 29 (P3; важить pre-field TRL5/6, не блокує зараз). **🤖-half ✅ SHIPPED** — [`non_target_ecoscreen.md`](protocols/ebfc/non_target_ecoscreen.md) (endpoints: soil-microbiome/16S · groundwater OECD 312+EPA 1312 · invertebrate OECD 207/222/232; metal-set split Co/Cu/Ce baseline vs Ru-swap candidate звірено проти `01_03 §2.2/§3.2`); 👤 = paper-scope + партнер при фіксації ролей. Канон `01_03 §3.5` (Ti-coin ICP-MS leachate-гейт = найближчий дім; dedicated env-fate home ще нема), `00_02`.
-- [x] 🤖 чернетка non-target ecoscreen-протоколу — [`non_target_ecoscreen.md`](protocols/ebfc/non_target_ecoscreen.md)
-- [ ] 👤 включити в Статтю 29 scope при фіксації ролей (Суховий/Гусак) — pre-field TRL5/6
+- [ ] 👤 включити в Статтю 29 scope при фіксації ролей — pre-field TRL5/6: токсикологія — Суховий (ЧМА; холодного контакту ще не було — [`UNI.13`](00_07_Action_Plan_Tracker)), мікробіолог/секвенування — TBD. Роль Гусака в Статті 29 — калібрування Kirkendall-моделі Ti, і до ZIF-ecotox вона не переноситься; ICP-MS — зовнішня лабораторія ([`00_02`](00_02_Academic_Integration_and_IP) Стаття 29)
 
 #### E.29 — Альтернативні EBFC медіатори
 - **P3** · 👤 · 🌿 · → `01_03 §3.1`
