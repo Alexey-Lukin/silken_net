@@ -87,6 +87,7 @@ mechanism, the incident and the bounds are in the companion. Numbering is append
 9. Declaring an anchor dimension: name the REFERENT, not the number — and if canon gives a RANGE, say which end you took and why
 10. A literature constant can be the right NUMBER in the wrong ROLE and of the wrong FORM — and the two errors compound silently
 11. A part that enters a stack budget is judged on EVERY axis the envelope constrains, not on the axis the script was built for
+12. Two scripts that model ONE physical part describe the same hardware only if they cite the same part number — each can agree with its own document while the pair describes two different parts
 
 <!-- /INSILICO-RULES-INDEX -->
 
