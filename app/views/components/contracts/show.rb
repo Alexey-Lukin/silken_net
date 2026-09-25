@@ -43,7 +43,7 @@ module Contracts
            # вичитці її пропускають. Мітку резолвить єдиний дім деривації.
            p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".status", value: Views::Shared::UI::StatusBadge.label(@contract.status).upcase) }
            p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".period", start: @contract.start_date&.strftime("%d.%m.%Y"), end: @contract.end_date&.strftime("%d.%m.%Y")) }
-           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".total_funding", amount: @contract.total_funding) }
+           p(class: "mt-1 text-xs font-mono text-gaia-text-muted") { t(".total_service_fee", amount: @contract.total_service_fee) }
          end
 
          div(class: "mt-8 md:mt-0 text-center md:text-right") do

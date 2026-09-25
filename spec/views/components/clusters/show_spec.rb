@@ -247,8 +247,8 @@ RSpec.describe Clusters::Show do
 
     context "with active contract" do
       it "renders contract details" do
-        # 🔴 [TEST.12] Реальний `NaasContract`, і це не гігієна: `total_value` — alias
-        # на `total_funding`, колонка `numeric`, тож прод друкує BigDecimal («50000.0»),
+        # 🔴 [TEST.12] Реальний `NaasContract`, і це не гігієна: `total_service_fee` —
+        # колонка `numeric`, тож прод друкує BigDecimal («50000.0»),
         # а не Integer. Доти пін `include("50000")` був підрядком обох форм — тобто не
         # здатен був побачити ані тип, ані ОДИНИЦЮ, яку цей рядок тепер несе (USD:
         # сусідній рядок правомірно каже «Emitted SCC», і без підпису плата за послугу
@@ -258,7 +258,7 @@ RSpec.describe Clusters::Show do
         # компонент діставав його сам у `initialize`, тобто спека мусила підробляти
         # DB-виклик, щоб описати екран. Стаб на `active_contract` став би тепер
         # мертвим — і мовчки, бо `nil`-гілка теж рендериться.
-        contract = NaasContract.new(status: :active, total_funding: 50_000)
+        contract = NaasContract.new(status: :active, total_service_fee: 50_000)
         html = render_component(cluster: build_cluster, gateways: [], recent_alerts: [],
                                 active_contract: contract, cluster_emission: 340)
         expect(html).to include("ACTIVE")

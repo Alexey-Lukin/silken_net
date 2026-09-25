@@ -213,14 +213,14 @@ class Organization < ApplicationRecord
   # Загальна законтрактована сума за всіма контрактами.
   # Та сама пара, що вище: `sum(:колонка)` — це SQL-агрегат повз preload,
   # блокова форма підсумовує вже завантажені записи. `.to_f` поелементно, бо
-  # `total_funding` nullable, і на голому `&:` порожня сума впала б на `nil`.
+  # `total_service_fee` nullable, і на голому `&:` порожня сума впала б на `nil`.
   def total_contracted
-    naas_contracts.sum { |contract| contract.total_funding.to_f }
+    naas_contracts.sum { |contract| contract.total_service_fee.to_f }
   end
 
   # Загальний обсяг фінансування за активними контрактами
   def active_tokens_count
-    naas_contracts.active.sum(:total_funding)
+    naas_contracts.active.sum(:total_service_fee)
   end
 
   # Загальний вуглецевий баланс організації (сума всіх гаманців дерев)

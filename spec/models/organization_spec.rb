@@ -183,8 +183,8 @@ RSpec.describe Organization, type: :model do
     it "returns the sum of all contract funding" do
       organization = create(:organization)
       cluster = create(:cluster, organization: organization)
-      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 30_000)
-      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 20_000)
+      create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 30_000)
+      create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 20_000)
 
       expect(organization.total_contracted).to eq(50_000.0)
     end
@@ -196,12 +196,12 @@ RSpec.describe Organization, type: :model do
   end
 
   describe "#active_tokens_count" do
-    it "returns the sum of total_funding for active contracts" do
+    it "returns the sum of total_service_fee for active contracts" do
       organization = create(:organization)
       cluster = create(:cluster, organization: organization)
-      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 10_000, status: :active)
-      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 5_000, status: :active)
-      create(:naas_contract, organization: organization, cluster: cluster, total_funding: 3_000, status: :draft)
+      create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 10_000, status: :active)
+      create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 5_000, status: :active)
+      create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 3_000, status: :draft)
 
       expect(organization.active_tokens_count).to eq(15_000)
     end

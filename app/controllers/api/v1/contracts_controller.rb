@@ -31,12 +31,11 @@ module Api
               # (семантика кластерна), тож рядок несе `cluster_emission` — ту саму
               # величину, що HTML-комірка. Точність — прецедент `#stats`
               # (`total_tokens_minted`: `.to_f.round(4)`).
-              # ⚠️ `total_funding` — СХЕМНЕ імʼя: `as_json(only:)` МОВЧКИ ігнорує alias,
-              # тож `:total_value`, що стояв тут роками, не віддавав НІЧОГО (виміряно) —
-              # список без вартості контракту й був фактичною відповіддю.
+              # ⛔ Лише СХЕМНІ імена: `as_json(only:)` аліаси МОВЧКИ ігнорує (виміряно —
+              # через аліас вартість контракту роками не їхала в цю відповідь).
               data: @contracts.map { |contract|
                 contract.as_json(
-                  only: [ :id, :status, :total_funding ],
+                  only: [ :id, :status, :total_service_fee ],
                   include: {
                     cluster: { only: [ :id, :name ] },
                     organization: { only: [ :id, :name ] }
@@ -64,7 +63,7 @@ module Api
             # рухів немає. Це протилежність тому, чим була `emitted_tokens` — колонка без
             # писача, чий нуль ніколи не був відповіддю на питання.
             @stats = {
-              total_contracted: scope.sum(:total_value),
+              total_contracted: scope.sum(:total_service_fee),
               total_minted: BlockchainTransaction.for_cluster(cluster_ids_for_scope(scope))
                                                  .net_minted_supply(:carbon_coin),
               # [ОПТИМІЗАЦІЯ]: SQL агрегація замість перебору масиву в Ruby
@@ -101,7 +100,7 @@ module Api
               # їхала назовні як факт про гроші. Список = живі колонки схеми; емісія
               # героя — окремим ключем нижче, бо вона belongs КЛАСТЕРУ, не контракту.
               contract: @contract.as_json(
-                only: [ :id, :organization_id, :cluster_id, :total_funding, :start_date,
+                only: [ :id, :organization_id, :cluster_id, :total_service_fee, :start_date,
                         :end_date, :status, :cancellation_terms, :cancelled_at,
                         :hadron_asset_id, :created_at, :updated_at ]
               ),
@@ -155,7 +154,7 @@ module Api
         cluster_health = calculate_cluster_health(organization)
 
         render json: {
-          total_contracted: organization.naas_contracts.sum(:total_value),
+          total_contracted: organization.naas_contracts.sum(:total_service_fee),
           # ✅ [ARCH.103] Кластерна семантика (дім присуду — `#index` вище). Тут скоуп
           # ширший і чесніший за назву: `for_organization` бере ВСІ рухи орендаря, а не
           # лише кластери під контрактами — на цьому ендпоінті це і є питання, бо решта

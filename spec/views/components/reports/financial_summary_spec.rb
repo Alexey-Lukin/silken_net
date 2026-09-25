@@ -5,7 +5,7 @@ require "rails_helper"
 
 RSpec.describe Reports::FinancialSummary do
   # Склад ключів і типи — з `Api::V1::ReportsController#financial_summary`, який
-  # цей хеш і будує: `Organization#total_contracted` підсумовує `total_funding.to_f`,
+  # цей хеш і будує: `Organization#total_contracted` підсумовує `total_service_fee.to_f`,
   # тобто Float; лічильники — Integer; `blockchain_transactions` приходить із
   # `group(:status).count`.
   #

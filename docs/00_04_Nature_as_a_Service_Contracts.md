@@ -62,11 +62,11 @@ NaaS — це модель підписки, де клієнти (Організ
 
 **Умови входу:**
 - KYC/KYB верифікація через **зовнішнього identity-провайдера** за стандартом ERC-3643. Поле `hadron_kyc_status = 'approved'` на `Wallet` є обов'язковою guard clause перед будь-яким мінтингом SCC. 🔴 **Провайдера ЩЕ НЕ ОБРАНО, і це не формальність, а вхідна умова, яку сьогодні НЕМА ЧИМ виконати** [ARCH.118]: імʼя `hadron_*` у колонці й сервісі історичне — продукту «Polygon Hadron» не існує (`api.hadron.polygon.technology` без DNS, перевимір 2026-09-04), тож єдиний писач `approved` не має адресата. Вибір провайдера (Sumsub / Veriff / Onfido / Persona) і перейменування схеми — один присуд [`00_07`](00_07_Action_Plan_Tracker) `BIZ.20`; **до нього ця умова входу не може бути виконана жодним клієнтом**.
-- `total_funding > 0` (валідація моделі).
+- `total_service_fee > 0` (валідація моделі).
 - `start_date < end_date`.
 
 **Страхова премія (Hybrid Protocol Gaia):**
-При активації контракту 5% від `total_funding` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — **обчислюється** як частка форестера, але диспенс-шляху ще немає (метод не має жодного call-site поза власною спекою) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy).
+При активації контракту 5% від `total_service_fee` направляється до DAO Treasury Parametric Insurance Pool (константа `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")`). Залишок 95% — `forester_share_amount` — **обчислюється** як частка форестера, але диспенс-шляху ще немає (метод не має жодного call-site поза власною спекою) → [`05_05 §3.1`](05_05_Slashing_and_Risk_Policy).
 
 **Поточний стан:** Бізнес-логіка реалізована в коді. Юридичного шаблону угоди (Term Sheet, Master Service Agreement) — немає → відкрите [`00_07`](00_07_Action_Plan_Tracker) BIZ.2 (B2B MSA).
 
@@ -138,8 +138,8 @@ NaaS — це модель підписки, де клієнти (Організ
 | **Конверсія: growth_points → SCC** | 10,000 growth_points = 1 SCC | [`05_03`](05_03_Tokenomics_SCC_and_SFC), `TokenomicsEvaluatorWorker` |
 | **Денне накопичення** | **Calibration-pending** (`delta_t` recharge-каденція + GP-магнітуда = placeholder, чекають bench-кривої, [E.63](00_07_Action_Plan_Tracker)). Self-consistent realistic (Variant C, `delta_t`≈1.77 год [`02_03 §9.6`](02_03_BQ25570_MPPT_Nano_Power) — ⚠️ це ECB-ерний каденс на кадрі 16 Б; CCM-кадр 30 Б зсуває його до ≈2.19 год, тобто пакетів на добу МЕНШЕ, перерахунок [`00_07`](00_07_Action_Plan_Tracker) ARCH.8): ~13.6 пакети/добу × ~16 stored GP = **~217 growth_points/добу → ~8 SCC/дерево/рік**. Магнітуда = f(EBFC recharge): швидший `delta_t` → вище (фіз. стеля Δt=600s ≈ 326 SCC/рік; 1 TX/год = energy-negative без мітигацій). wire 5–31 × [FW.29] ×2 | [`05_03`](05_03_Tokenomics_SCC_and_SFC), [`02_06 §7.1`](02_06_Unit_Economics_and_BOM), [`02_03 §9`](02_03_BQ25570_MPPT_Nano_Power) |
 | **Поріг емісії** | `Wallet.available_balance >= 10,000` (NET — сконвертоване лишається в `locked_balance`, [ARCH.94]) | `TokenomicsEvaluatorWorker` |
-| **Страхова премія** | 5% від `total_funding` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
-| **Частка форестера** | 95% від `total_funding` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
+| **Страхова премія** | 5% від `total_service_fee` → DAO Treasury Pool | `NaasContract::INSURANCE_PREMIUM_RATE = BigDecimal("0.05")` |
+| **Частка форестера** | 95% від `total_service_fee` — обчислюється, не диспенситься ([`05_05 §3.1`](05_05_Slashing_and_Risk_Policy)) | `NaasContract#forester_share_amount` |
 | **Celo ReFi нагорода** | 5 cUSD / здоровий кластер / добу | `CeloRewardWorker`, `Celo::CommunityRewardService` |
 | **Solana мікро-нагорода** | 0.01–0.0162 USDC / LoRa пакет (10 000 + GP×100 lamports; stored GP ≤ 62 = wire 5-bit ×2) | `SolanaMicroRewardWorker`, `Solana::MintingService`; формула-дім [`04_02`](04_02_Business_Logic_and_Services) |
 | **Штраф / повернення при достроковому розірванні** | **НЕ існують** — Опція 1 MSA ([`msa_skeleton §B.6.3`](protocols/legal/msa_skeleton.md), ⚖️ founder 2026-08-29): передоплачена послуга не повертається, early-exit-fee немає взагалі; формули `calculate_early_exit_fee`/`calculate_prorated_refund` зняті з коду [BIZ.22, ⚖️ 2026-08-30] — redemption-механіка = securities-сигнал F5/F6 | `ContractTerminationService` (cancel + погоджена форфейтура) |
@@ -156,7 +156,7 @@ Organization pays for monitoring
            │
            ▼
     NaasContract (status: draft)
-    start_date, end_date, total_funding
+    start_date, end_date, total_service_fee
     cancellation_terms (JSONB)
     5% → DAO Insurance Pool (INSURANCE_PREMIUM_RATE)
            │
@@ -228,7 +228,7 @@ NaasContract (status: cancelled, cancelled_at: now)
 |---|---|---|
 | `organization_id` | bigint FK | Організація-клієнт |
 | `cluster_id` | bigint FK | Лісовий кластер під захистом |
-| `total_funding` | numeric | Загальна сума оплати за послугу (USDC/USD) |
+| `total_service_fee` | numeric | Загальна сума оплати за послугу (USDC/USD) |
 | `start_date` | timestamp | Дата початку контракту |
 | `end_date` | timestamp | Дата закінчення контракту |
 | `status` | integer (enum) | `draft(0)`, `active(1)`, `fulfilled(2)`, `breached(3)`, `cancelled(4)` |

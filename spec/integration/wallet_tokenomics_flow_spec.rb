@@ -182,7 +182,7 @@ RSpec.describe "Wallet tokenomics flow end-to-end" do
       create(:naas_contract,
              organization: organization,
              cluster: cluster,
-             total_funding: 100_000,
+             total_service_fee: 100_000,
              start_date: 60.days.ago,
              end_date: 300.days.from_now,
              cancellation_terms: {

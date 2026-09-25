@@ -185,7 +185,7 @@ module Polygon
         chain: "polygon",
         organization_id: naas_contract.organization_id,
         cluster_id: naas_contract.cluster_id,
-        total_funding: naas_contract.total_funding.to_f,
+        total_service_fee: naas_contract.total_service_fee.to_f,
         start_date: naas_contract.start_date.iso8601,
         end_date: naas_contract.end_date.iso8601,
         metadata: {

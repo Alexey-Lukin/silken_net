@@ -402,7 +402,7 @@ puts "📜 Підписання NaasContract та ParametricInsurance..."
 naas_contract = NaasContract.create!(
   organization: eco_future_fund,
   cluster: cherkasy_forest,
-  total_funding: 50_000.0,
+  total_service_fee: 50_000.0,
   start_date: Time.current,
   end_date: 1.year.from_now,
   status: :active,
@@ -425,7 +425,7 @@ naas_contract = NaasContract.create!(
 NaasContract.create!(
   organization: sosnovyi_bir,
   cluster: amazon_sector,
-  total_funding: 120_000.0,
+  total_service_fee: 120_000.0,
   start_date: 1.month.ago,
   end_date: 2.years.from_now,
   status: :active

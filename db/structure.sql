@@ -1032,7 +1032,7 @@ CREATE TABLE public.naas_contracts (
     id bigint NOT NULL,
     organization_id bigint NOT NULL,
     cluster_id bigint NOT NULL,
-    total_funding numeric,
+    total_service_fee numeric,
     start_date timestamp(6) without time zone,
     end_date timestamp(6) without time zone,
     status integer,
@@ -4735,5 +4735,6 @@ ALTER TABLE public.telemetry_logs
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260925090000'),
 ('20260905133000');
 

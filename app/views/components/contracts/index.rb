@@ -56,8 +56,8 @@ module Contracts
 
     def render_stats_hero
       div(class: "grid grid-cols-1 md:grid-cols-3 gap-6") do
-        # Одиниця тут USD, а не SCC: `total_contracted` агрегує `naas_contracts.total_value`
-        # (alias на `total_funding`) — «сума оплати за послугу (USDC/USD)» за 00_04 §5, і вся
+        # Одиниця тут USD, а не SCC: `total_contracted` агрегує `naas_contracts.total_service_fee`
+        # — «сума оплати за послугу (USDC/USD)» за 00_04 §5, і вся
         # юніт-економіка 02_06 §1-§10 рахує в $. Сусідня картка нижче правомірно в SCC —
         # там справді емісія. Дві різні валюти на одній сітці, тож не «уніфікуй» їх.
         render Views::Shared::UI::StatCard.new(label: t(".stats.portfolio_capital"), value: "#{formatted_amount(@stats[:total_contracted])} USD", sub: t(".stats.total_injected"))
@@ -91,10 +91,10 @@ module Contracts
         end
         td(class: "p-4 text-gaia-text-muted") { contract.organization&.name || "—" }
         td(class: "p-4 text-gaia-primary-strong") { contract.cluster&.name || t(".unassigned") }
-        # `total_value` = alias на `total_funding` (плата за послугу, USD) ⊥ сусідня
+        # `total_service_fee` (плата за послугу, USD) ⊥ сусідня
         # комірка — чиста емісія КЛАСТЕРА в SCC. Дві сусідні комірки в РІЗНИХ валютах
         # і про РІЗНІ субʼєкти (контракт ⊥ кластер) — це не дрейф, а наслідок ARCH.103.
-        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_value} USD" }
+        td(class: "p-4 text-gaia-text-muted") { "#{contract.total_service_fee} USD" }
         # 🔴 [ARCH.103] Тут ДВА різні стани, і зливати їх не можна. Контракт БЕЗ кластера —
         # питання без субʼєкта, тобто чесне «не виміряно». Кластер, що Є, завжди дає
         # число, і нуль у ньому ВИМІРЯНИЙ (агрегат виконався, підтверджених рухів немає) —

@@ -9,17 +9,17 @@ RSpec.describe Contracts::Index do
   # `cluster_id`), тож фікстура, що клала б її полем контракту, вигадувала б знятий
   # ⚖️-присудом контракт зі значенням.
   #
-  # 🔴 `total_value` (alias на `total_funding`) — колонка `numeric`, тобто BigDecimal:
+  # 🔴 `total_service_fee` — колонка `numeric`, тобто BigDecimal:
   # прод друкує десяткову частку, а Integer у фікстурі її ховав.
   def build_contract(id: 42, status: :active, org_name: "Cherkasy Forest Fund",
-                     cluster_id: 77, cluster_name: "Carpathian-Alpha", total_funding: 10_000,
+                     cluster_id: 77, cluster_name: "Carpathian-Alpha", total_service_fee: 10_000,
                      start_date: 6.months.ago, end_date: 6.months.from_now)
     NaasContract.new(
       id: id,
       status: status,
       organization: Organization.new(name: org_name),
       cluster: Cluster.new(id: cluster_id, name: cluster_name),
-      total_funding: total_funding,
+      total_service_fee: total_service_fee,
       start_date: start_date,
       end_date: end_date
     )
@@ -102,7 +102,7 @@ RSpec.describe Contracts::Index do
     end
 
     # 🔴 Дві сусідні комірки НАВМИСНО в різних валютах, і плутати їх не можна в жоден бік:
-    # `total_value` = alias на `total_funding` — плата клієнта за послугу, деномінована в
+    # `total_service_fee` — плата клієнта за послугу, деномінована в
     # USD (00_04 §5 + вся юніт-економіка §11-§20 в $), тоді як кластерна емісія — справжні
     # SCC. Доти обидві казали «SCC», тобто фіат малювався карбоновим токеном.
     it "renders the contracted service fee in USD, not in the carbon token" do

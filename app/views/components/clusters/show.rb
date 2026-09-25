@@ -208,11 +208,11 @@ module Clusters
             contract_row(t(".contract.status"), Views::Shared::UI::StatusBadge.label(@active_contract.status).upcase)
             # 🔴 Одиниця тут USD, а не SCC, і сусідство це приховувало: рядок нижче
             # правомірно каже «Emitted SCC», а цей стояв БЕЗ одиниці взагалі, тож
-            # читався в тій самій валюті. `total_value` — alias на `total_funding`,
-            # тобто плата клієнта за послугу (`00_04 §5`) — той самий клас, що [I18N.1]
+            # читався в тій самій валюті. `total_service_fee` — плата клієнта
+            # за послугу (`00_04 §5`) — той самий клас, що [I18N.1]
             # закрив на семи сайтах; цей був восьмим. Формат — як у `contracts/index`:
             # гроші друкуються з копійками, бо `numeric` через голий `to_s` дає «50000.0».
-            contract_row(t(".contract.value"), "#{formatted_amount(@active_contract.total_value)} USD")
+            contract_row(t(".contract.value"), "#{formatted_amount(@active_contract.total_service_fee)} USD")
             # ✅ [ARCH.103] ⚖️ Кластерна семантика: рядок друкує емісію САМОГО кластера
             # цієї сторінки, а не приписану контрактові. `measured_value` лишається,
             # але спрацювати на `nil` тут уже не може — субʼєкт відомий завжди, і нуль

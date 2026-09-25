@@ -117,9 +117,9 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         row = response.parsed_body["data"].find { |c| c["id"] == own_contract.id }
         expect(row["cluster_emission"]).to eq(100.0)
         expect(row).not_to have_key("emitted_tokens")
-        # `total_funding`, не alias: `as_json(only:)` мовчки ігнорує alias-атрибути,
-        # тож `:total_value` у старому списку не віддавав нічого (виміряно).
-        expect(row).to include("total_funding")
+        # Колонка, не аліас: `as_json(only:)` аліаси мовчки ігнорує — пін стереже, що
+        # вартість контракту справді їде у відповідь.
+        expect(row).to include("total_service_fee")
       end
 
       it "returns empty data when user has no contracts" do
@@ -246,7 +246,7 @@ RSpec.describe Api::V1::ContractsController, type: :request do
         get "/contracts/#{own_contract.id}", headers: headers, as: :json
 
         expect(response.parsed_body["cluster_emission"]).to eq(100.0)
-        expect(response.parsed_body["contract"]).to include("total_funding", "status")
+        expect(response.parsed_body["contract"]).to include("total_service_fee", "status")
         expect(response.parsed_body["contract"]).not_to have_key("emitted_tokens")
       end
 

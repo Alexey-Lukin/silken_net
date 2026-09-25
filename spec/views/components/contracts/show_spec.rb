@@ -37,7 +37,7 @@ RSpec.describe Contracts::Show do
   # її kwarg'ом `cluster_emission:` — фікстурне поле на контракті вигадувало б
   # семантику, зняту ⚖️-присудом.
   def build_contract(id: 99, status: :active, org: nil, cluster: nil,
-                     total_funding: 50_000,
+                     total_service_fee: 50_000,
                      start_date: 6.months.ago, end_date: 6.months.from_now,
                      cancellation_terms: nil)
     NaasContract.new(
@@ -45,7 +45,7 @@ RSpec.describe Contracts::Show do
       status: status,
       organization: org || build_org,
       cluster: cluster,
-      total_funding: total_funding,
+      total_service_fee: total_service_fee,
       start_date: start_date,
       end_date: end_date,
       cancellation_terms: cancellation_terms

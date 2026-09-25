@@ -61,8 +61,8 @@ RSpec.describe Api::V1::ClustersController, type: :request do
       # [ARCH.103 ⚖️ 08-20] Ліхтар знака: додатна база не друкує мінуса.
       expect(response.body).not_to include("-100.0")
       contract_row = response.parsed_body["naas_contracts"].find { |c| c["id"] == contract.id }
-      # `total_funding`, не alias: `as_json(only:)` мовчки ігнорує alias-атрибути.
-      expect(contract_row).to include("status", "total_funding")
+      # Колонка, не аліас: `as_json(only:)` аліаси мовчки ігнорує.
+      expect(contract_row).to include("status", "total_service_fee")
       expect(contract_row).not_to have_key("emitted_tokens")
     end
 

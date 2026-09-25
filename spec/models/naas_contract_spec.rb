@@ -320,8 +320,8 @@ RSpec.describe NaasContract, type: :model do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
-    it "requires total_funding to be positive" do
-      contract = build(:naas_contract, organization: organization, cluster: cluster, total_funding: -1)
+    it "requires total_service_fee to be positive" do
+      contract = build(:naas_contract, organization: organization, cluster: cluster, total_service_fee: -1)
       expect(contract).not_to be_valid
     end
 
@@ -456,18 +456,18 @@ RSpec.describe NaasContract, type: :model do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
-    it "returns 5% of total_funding" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 100_000)
+    it "returns 5% of total_service_fee" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 100_000)
       expect(contract.insurance_premium_amount).to eq(BigDecimal("5000.0"))
     end
 
     it "returns correct premium for small amounts" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 1)
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 1)
       expect(contract.insurance_premium_amount).to eq(BigDecimal("0.05"))
     end
 
     it "uses BigDecimal precision" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 33_333)
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 33_333)
       expect(contract.insurance_premium_amount).to eq(BigDecimal("1666.65"))
     end
   end
@@ -476,14 +476,14 @@ RSpec.describe NaasContract, type: :model do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
-    it "returns 95% of total_funding" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 100_000)
+    it "returns 95% of total_service_fee" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 100_000)
       expect(contract.forester_share_amount).to eq(BigDecimal("95000.0"))
     end
 
-    it "sums to total_funding with insurance_premium_amount" do
-      contract = create(:naas_contract, organization: organization, cluster: cluster, total_funding: 77_777)
-      expect(contract.insurance_premium_amount + contract.forester_share_amount).to eq(contract.total_funding)
+    it "sums to total_service_fee with insurance_premium_amount" do
+      contract = create(:naas_contract, organization: organization, cluster: cluster, total_service_fee: 77_777)
+      expect(contract.insurance_premium_amount + contract.forester_share_amount).to eq(contract.total_service_fee)
     end
   end
 
@@ -491,17 +491,17 @@ RSpec.describe NaasContract, type: :model do
     let(:organization) { create(:organization) }
     let(:cluster) { create(:cluster, organization: organization) }
 
-    it "is 5% of total_funding across activated (active/fulfilled/breached) contracts" do
-      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_funding: 100_000)
-      create(:naas_contract, status: :fulfilled, organization: organization, cluster: cluster, total_funding: 200_000)
-      create(:naas_contract, status: :breached, organization: organization, cluster: cluster, total_funding: 100_000)
+    it "is 5% of total_service_fee across activated (active/fulfilled/breached) contracts" do
+      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_service_fee: 100_000)
+      create(:naas_contract, status: :fulfilled, organization: organization, cluster: cluster, total_service_fee: 200_000)
+      create(:naas_contract, status: :breached, organization: organization, cluster: cluster, total_service_fee: 100_000)
       # (100k + 200k + 100k) × 5% = 20_000
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("20000.0"))
     end
 
     it "excludes draft (premium not yet paid) and cancelled (refunded)" do
-      create(:naas_contract, status: :draft, organization: organization, cluster: cluster, total_funding: 500_000)
-      create(:naas_contract, status: :cancelled, organization: organization, cluster: cluster, total_funding: 500_000)
+      create(:naas_contract, status: :draft, organization: organization, cluster: cluster, total_service_fee: 500_000)
+      create(:naas_contract, status: :cancelled, organization: organization, cluster: cluster, total_service_fee: 500_000)
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("0.0"))
     end
 
@@ -519,8 +519,8 @@ RSpec.describe NaasContract, type: :model do
     it "scopes to a single organization when called on a relation" do
       other_organization = create(:organization)
       other_cluster = create(:cluster, organization: other_organization)
-      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_funding: 100_000)
-      create(:naas_contract, status: :active, organization: other_organization, cluster: other_cluster, total_funding: 900_000)
+      create(:naas_contract, status: :active, organization: organization, cluster: cluster, total_service_fee: 100_000)
+      create(:naas_contract, status: :active, organization: other_organization, cluster: other_cluster, total_service_fee: 900_000)
 
       expect(described_class.total_insurance_premiums).to eq(BigDecimal("50000.0"))
       expect(organization.naas_contracts.total_insurance_premiums).to eq(BigDecimal("5000.0"))
@@ -562,7 +562,7 @@ RSpec.describe NaasContract, type: :model do
     end
 
     it "does not record non-status updates" do
-      expect { contract.update!(total_funding: contract.total_funding + 1) }
+      expect { contract.update!(total_service_fee: contract.total_service_fee + 1) }
         .not_to change { AuditLogWorker.jobs.size }
     end
   end

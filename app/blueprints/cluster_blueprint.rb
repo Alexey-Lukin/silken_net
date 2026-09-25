@@ -29,9 +29,9 @@ class ClusterBlueprint < Blueprinter::Base
     end
     association :gateways, blueprint: GatewayBlueprint
     field(:naas_contracts) do |cluster|
-      # ⚠️ `total_funding` — СХЕМНЕ імʼя: `as_json(only:)` МОВЧКИ ігнорує alias
-      # (`:total_value` у цьому списку роками не віддавав нічого — виміряно).
-      cluster.naas_contracts.as_json(only: [ :id, :status, :total_funding ])
+      # ⛔ Лише СХЕМНІ імена: `as_json(only:)` аліаси МОВЧКИ ігнорує (виміряно — вартість
+      # контракту роками не їхала в цей список через аліас).
+      cluster.naas_contracts.as_json(only: [ :id, :status, :total_service_fee ])
     end
   end
 end

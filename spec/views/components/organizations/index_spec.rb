@@ -9,7 +9,7 @@ RSpec.describe Organizations::Index do
   # методів приходять від моделі, а не вигадуються фікстурою.
   #
   # `total_clusters` і `total_contracted` — АГРЕГАТИ по асоціаціях (`clusters.count`,
-  # `naas_contracts.sum(:total_funding).to_f`), тож на незбереженому записі вони чесно
+  # `naas_contracts.sum(:total_service_fee).to_f`), тож на незбереженому записі вони чесно
   # дають 0/0.0. Стабимо самі ридери: методи існують, підміняється лише значення —
   # той самий легальний хід, яким [`UI.4`] діставав інакше недосяжну гілку.
   #
@@ -62,7 +62,7 @@ RSpec.describe Organizations::Index do
 
     # 🔴 Пін навмисно несе «.0» і «USD»: обидва — правда про прод, і обидва доти були
     # недосяжні. Float дає десяткову частку (`naas_contracts.sum(...).to_f`), а одиниця
-    # тут USD, бо `total_funding` — «сума оплати за послугу (USDC/USD)» (00_04 §5), тоді
+    # тут USD, бо `total_service_fee` — «сума оплати за послугу (USDC/USD)» (00_04 §5), тоді
     # як SCC є карбоновою емісією. Сусідня колонка «SCC Minted» лишається в SCC правомірно.
     it "renders total contracted with the USD unit and the Float scale it really has" do
       expect(html).to include("12000.0 USD")

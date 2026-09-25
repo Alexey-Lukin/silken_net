@@ -1428,7 +1428,7 @@ Turbo-стріму детерміноване й без TTL, а ActionCable пі
 
 | Поле | Тип | Значення |
 |---|---|---|
-| `total_contracted` | decimal | Σ `total_value` активних контрактів організації — **USD**, плата за послугу ([`00_04 §5`](00_04_Nature_as_a_Service_Contracts)), не токени |
+| `total_contracted` | decimal | Σ `total_service_fee` активних контрактів організації — **USD**, плата за послугу ([`00_04 §5`](00_04_Nature_as_a_Service_Contracts)), не токени |
 | `total_tokens_minted` | decimal | **Чиста емісія ОРЕНДАРЯ** (Σmints − Σburns, `carbon_coin`) через One-Home `BlockchainTransaction.for_organization(id).net_minted_supply` — ⚖️ ARCH.103 зняв контрактну семантику на користь кластерної/орендарської. `null` більше НЕ повертається: агрегат завжди виконується, і нуль тут ВИМІРЯНИЙ |
 | `cluster_health` | float \| **null** | Середнє `clusters.health_index` по кластерах організації, шкала **0..1** (не відсоток — у відсоток переводить в'ю). **`null` = не виміряно**, і це НЕ те саме, що виміряний `0.0` |
 | `clusters_measured` | integer | Скільки кластерів дали вимір за добу звіту |

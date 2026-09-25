@@ -118,11 +118,11 @@ RSpec.describe Api::V1::ReportsController, type: :request do
     # виразити дефект (`04_06 §B.2` BP #21).
     it "scopes insurance premiums to the acting organization, never the whole platform" do
       create(:naas_contract, status: :active, organization: organization,
-                             cluster: create(:cluster, organization: organization), total_funding: 600_000)
+                             cluster: create(:cluster, organization: organization), total_service_fee: 600_000)
 
       other_org = create(:organization)
       create(:naas_contract, status: :active, organization: other_org,
-                             cluster: create(:cluster, organization: other_org), total_funding: 4_000_000)
+                             cluster: create(:cluster, organization: other_org), total_service_fee: 4_000_000)
 
       get "/reports/financial_summary", headers: headers, as: :json
       expect(response).to have_http_status(:ok)
@@ -236,7 +236,7 @@ RSpec.describe Api::V1::ReportsController, type: :request do
         # org-ключем, тож збою subgraph нічим її зачепити — і саме це пінить пара
         # тверджень нижче (блок обнулився ⊥ премія ціла).
         create(:naas_contract, status: :active, organization: organization,
-                               cluster: create(:cluster, organization: organization), total_funding: 200_000)
+                               cluster: create(:cluster, organization: organization), total_service_fee: 200_000)
 
         get "/reports/financial_summary", headers: headers, as: :json
         expect(response).to have_http_status(:ok)

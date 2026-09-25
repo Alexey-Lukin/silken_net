@@ -128,8 +128,8 @@ RSpec.describe "Phlex не друкує BigDecimal", type: :model do
   it "перелічує decimal-колонки з рантайму, а не з рукописного списку" do
     # Liveness: без цього прикладу порожній перелік зробив би головний гейт
     # вакуумним — «нуль порушень» означало б «нуль перевірок».
-    expect(decimal_names).to include("balance", "z_value", "total_funding")
-    expect(decimal_names).to include("scc_balance", "total_value") # аліаси
+    expect(decimal_names).to include("balance", "z_value", "total_service_fee")
+    expect(decimal_names).to include("scc_balance") # аліас
   end
 
   it "тримає обидва доми формату оголошеними (liveness другої осі)" do

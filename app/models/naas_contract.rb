@@ -6,14 +6,13 @@ class NaasContract < ApplicationRecord
   include Auditable
 
   # [HYBRID PROTOCOL GAIA]: Ставка корпоративної страхової премії (Corporate Premium).
-  # 5% від total_funding кожного NaaS-контракту направляється до DAO Treasury Parametric Insurance Pool.
+  # 5% від total_service_fee кожного NaaS-контракту направляється до DAO Treasury Parametric Insurance Pool.
   INSURANCE_PREMIUM_RATE = BigDecimal("0.05")
 
   # --- ЗВ'ЯЗКИ ---
   belongs_to :organization
   belongs_to :cluster
 
-  alias_attribute :total_value, :total_funding
 
   # --- СТАТУСИ (The Lifecycle of Trust) ---
   enum :status, {
@@ -41,7 +40,7 @@ class NaasContract < ApplicationRecord
     state :cancelled
 
     # Активація контракту (після підтвердження оплати)
-    # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_funding)
+    # [HYBRID PROTOCOL GAIA]: При активації контракту insurance_premium_amount (5% від total_service_fee)
     # у USDC направляється до DAO Treasury Parametric Insurance Pool.
     # Це забезпечує фінансування страхового пулу для параметричних виплат.
     # ⛔ Перелік перилів тут НЕ дублюємо — дім один: `ParametricInsurance#trigger_event`
@@ -70,29 +69,29 @@ class NaasContract < ApplicationRecord
   # HYBRID PROTOCOL GAIA: Corporate Premium (Insurance Pool Funding)
   # =========================================================================
 
-  # Сума страхової премії (5% від total_funding), що направляється до DAO Treasury
+  # Сума страхової премії (5% від total_service_fee), що направляється до DAO Treasury
   # Parametric Insurance Pool при активації контракту.
   def insurance_premium_amount
-    (total_funding * INSURANCE_PREMIUM_RATE).round(2)
+    (total_service_fee * INSURANCE_PREMIUM_RATE).round(2)
   end
 
-  # Частка total_funding, що залишається форестеру після вирахування страхової премії (95%).
+  # Частка total_service_fee, що залишається форестеру після вирахування страхової премії (95%).
   def forester_share_amount
-    (total_funding - insurance_premium_amount).round(2)
+    (total_service_fee - insurance_premium_amount).round(2)
   end
 
-  # [SEC.1] Сукупна страхова премія (5% від funding), спрямована до DAO Treasury
+  # [SEC.1] Сукупна страхова премія (5% від плати за послугу), спрямована до DAO Treasury
   # Parametric Insurance Pool через активовані контракти. Премія сплачується при
   # активації (USDC) і лишається в пулі через fulfilled/breached; draft ще не сплачено,
   # cancelled повертається — обидва виключені. Це DB-джерело правди для premium-показника
   # Real-Yield звіту: премія — off-chain USDC-факт, НЕ on-chain SCC-подія (знятий
   # `PremiumPaid` — канон 05_03).
   def self.total_insurance_premiums
-    (where(status: %i[active fulfilled breached]).sum(:total_funding) * INSURANCE_PREMIUM_RATE).round(2)
+    (where(status: %i[active fulfilled breached]).sum(:total_service_fee) * INSURANCE_PREMIUM_RATE).round(2)
   end
 
   # --- ВАЛІДАЦІЇ ---
-  validates :total_funding, presence: true, numericality: { greater_than: 0 }
+  validates :total_service_fee, presence: true, numericality: { greater_than: 0 }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
 
@@ -147,7 +146,7 @@ class NaasContract < ApplicationRecord
   end
 
   # [UI.10] `current_yield_performance` ЗНЯТО 2026-08-14 (присуд власника).
-  # Він ділив `emitted_tokens` (SCC) на `total_funding` (USD за послугу,
+  # Він ділив `emitted_tokens` (SCC) на `total_service_fee` (USD за послугу,
   # `00_04 §5`) і подавав частку відсотком, а `.clamp(0, 100)` маскував те, що
   # величина не міряє нічого: у чисельника й знаменника різні одиниці. Датчик,
   # який він живив, стояв під підписом «Cluster Health» — тобто чужа величина
@@ -167,7 +166,7 @@ class NaasContract < ApplicationRecord
   private
 
   # [ARCH.57] Імена state-based (raw update!-шляхи breach/cancel не мають AASM-події).
-  # Chain-only (без IPFS): total_funding комерційно чутливий — публічний IPFS-периметр
+  # Chain-only (без IPFS): total_service_fee комерційно чутливий — публічний IPFS-периметр
   # лишається за money-tx переходами MRV.1.
   def record_contract_audit_trail
     from, to = saved_change_to_status
@@ -176,7 +175,7 @@ class NaasContract < ApplicationRecord
       organization_id: organization_id,
       metadata: {
         from: from.to_s, to: to.to_s,
-        cluster_id: cluster_id, total_funding: total_funding.to_s
+        cluster_id: cluster_id, total_service_fee: total_service_fee.to_s
       }
     )
   end
