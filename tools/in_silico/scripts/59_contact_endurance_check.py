@@ -97,6 +97,12 @@ def pogo_spring_verdict(budget: dict) -> dict:
             "anchor_points_MPa_cycles": becu_anchor_MPa_cycles,
             "vhcf_caveat": "C17200 shows NO strict flat endurance limit in VHCF (>1e7) — stress continues "
                            "to matter at very-high-cycle counts, unlike a classic steel fatigue limit.",
+            "loading_mode_caveat": "the two anchor points are ultrasonic VHCF data whose loading mode is not recorded "
+                                   "in the tree (ultrasonic fatigue is usually push-pull, i.e. NORMAL stress), while a "
+                                   "helical spring wire works in TORSION (shear stress, tau = 8*F*D*K_w/(pi*d^3)) — the "
+                                   "wire stress may be judged only against torsional S-N data or after an equivalent-"
+                                   "stress conversion, never against these points directly (in-silico #10: right number, "
+                                   "wrong form).",
             "anchor_covers_budget_ceiling": anchor_covers,
             "verdict": ("PARTIAL — physically the right model (micro-motion, not full-stroke), and the "
                         f"240 MPa -> 1e10-cycle anchor {'covers' if anchor_covers else 'does NOT cover'} the "
@@ -109,7 +115,9 @@ def pogo_spring_verdict(budget: dict) -> dict:
         "closed": False,
         "verdict": "TWO mismatched framings, neither closed — see framing_A (fails, likely wrong model) "
                    "and framing_B (physically right, needs one missing datum) above.",
-        "missing_datum": "spring wire diameter/rate (the chosen series' full mechanical dwg, 00_07 HW.9) + actual sway-"
+        "missing_datum": "spring wire diameter, mean coil diameter, active coils and rate (the chosen series' full "
+                          "mechanical dwg, 00_07 HW.9 — wire diameter and rate alone do not give the shear stress) + "
+                          "a torsional S-N reference for C17200 + actual sway-"
                           "induced micro-deflection amplitude at the pogo contact (bench/field, not the "
                           "1.40 mm nominal travel, 1.40 +/- 0.13, 00_07 HW.43) — without it, framing B cannot be "
                           "closed to a number.",
