@@ -47,7 +47,9 @@ DECLARED CEILINGS:
   * The field loads are HAND-SET (four scenarios, no field data). Any conclusion of the form
     "X is not the risk" is arithmetic against those four numbers, not a measurement of the site.
     Droplet impact (water hammer), which can exceed a static head by orders of magnitude, is not
-    among them.
+    among them. The one RATIFIED load — the capsule's IP68 immersion, 1.5 m / 30 min (`02_02 §3.3`)
+    — is far above the set and lives in its OWN block (3c): folded into the set it would become the
+    worst field load and silently move the headline theta threshold that canon quotes.
   * `J_MAX_25C` in lib.constants is the ANODE pair's literature current density (Zafar 2012).
     Using it as the cathode's demand is legitimate only because the cell is in series and the
     current is shared — it is not an independent cathode measurement.
@@ -67,7 +69,16 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from lib.constants import F_CONST, J_MAX_25C, KINETICS_DIR, R_GAS, REPO_ROOT, TEMPERATURE_K
+from lib.constants import (
+    F_CONST,
+    IP68_IMMERSION_DEPTH_M,
+    IP68_IMMERSION_DURATION_MIN,
+    J_MAX_25C,
+    KINETICS_DIR,
+    R_GAS,
+    REPO_ROOT,
+    TEMPERATURE_K,
+)
 from lib.kinetics import ph_current_ratio_bounds
 from lib.utils import banner
 
@@ -113,6 +124,14 @@ def m_h2o_to_pa(h_m: float) -> float:
 def pore_for_head(head_m: float, theta_deg: float, gamma: float = GAMMA_WATER) -> float:
     """Inverse of Young-Laplace: the largest pore (um) that still holds a given water head."""
     return -4.0 * gamma * math.cos(math.radians(theta_deg)) / m_h2o_to_pa(head_m) * 1e6
+
+
+def theta_at_breakthrough_deg(p_pa: float, pore_d_um: float, gamma: float = GAMMA_WATER) -> float:
+    """Inverse of Young-Laplace in theta: the contact angle at which a pore of diameter d lets water
+    in under an over-pressure p. |cos(theta)| = p * d / (4 gamma); clamped at 180 deg where no angle
+    holds p. ONE home for the threshold, so the hand-set loads and the ratified flood use one form."""
+    c = p_pa * (pore_d_um * 1e-6) / (4.0 * gamma)
+    return math.degrees(math.acos(-min(c, 1.0)))
 
 
 def knudsen_diffusivity(pore_d_um: float, t_k: float = TEMPERATURE_K) -> float:
@@ -224,15 +243,55 @@ def main() -> int:
     print(f"  real exposure. Theta at which LEP drops to the worst field load ({worst_field:.0f} Pa):")
     theta_fail = {}
     for d in PORE_SPEC_UM:
-        # |cos(theta)| = dP * d / (4 gamma)
-        c = worst_field * (d * 1e-6) / (4.0 * GAMMA_WATER)
-        th = math.degrees(math.acos(-min(c, 1.0)))
+        th = theta_at_breakthrough_deg(worst_field, d)
         theta_fail[f"{d}um"] = th
         print(f"    pore {d} um -> breaks through only once theta falls to {th:.2f} deg "
               f"(spec floor is {CONTACT_ANGLE_DEG[0]:.0f} deg)")
     print("  => the membrane tolerates a very large loss of hydrophobicity before water enters,")
     print("     which turns the 12-week rain/dew test into a THETA measurement with a number to")
     print("     accept against, instead of a pass/fail with no criterion.")
+
+    # ── (3c) the RATIFIED flood — its own block, never a row of `field` ────────
+    # 02_02 §3.3 ratifies IP68 for the capsule: immersion 1.5 m / 30 min. The membrane is outside that
+    # seal (the radome does not seal the cathode, 01_04 §5.5 A) but on the same node, so an immersion of
+    # the capsule is an immersion of the band. ⛔ It stays out of `field`: `field` feeds `worst_field`,
+    # i.e. the headline threshold 01_04 §5.3/§5.6 quote, and a load far above the hand-set set would
+    # silently replace that number instead of standing beside it.
+    banner("(3c) The ratified flood — capsule IP68 (02_02 §3.3), not one of the hand-set loads")
+    flood_pa = m_h2o_to_pa(IP68_IMMERSION_DEPTH_M)
+    theta_flood = {f"{d}um": theta_at_breakthrough_deg(flood_pa, d) for d in PORE_SPEC_UM}
+    d_at_flood = pore_for_head(IP68_IMMERSION_DEPTH_M, CONTACT_ANGLE_DEG[0])
+    spec_over_flood = worst / flood_pa   # equals d_at_flood in value only because the widest spec pore is 1.0 um
+    accept_below_flood = BENCH_ACCEPT_M < IP68_IMMERSION_DEPTH_M
+    print(f"  immersion {IP68_IMMERSION_DEPTH_M} m / {IP68_IMMERSION_DURATION_MIN} min -> "
+          f"{flood_pa:.0f} Pa static head ({flood_pa / worst_field:.0f}x the worst hand-set load)")
+    for d in PORE_SPEC_UM:
+        print(f"    pore {d} um -> breaks through once theta falls to {theta_flood[f'{d}um']:.2f} deg "
+              f"(hand-set worst: {theta_fail[f'{d}um']:.2f} deg)")
+    print(f"  widest spec pore at {CONTACT_ANGLE_DEG[0]:.0f} deg holds {pa_to_m_h2o(worst):.1f} m = "
+          f"{spec_over_flood:.1f}x the flood; at {CONTACT_ANGLE_DEG[0]:.0f} deg the flood fails only "
+          f"pores wider than {d_at_flood:.2f} um")
+    if accept_below_flood:
+        accept_clause = (f"The §5.6 acceptance criterion (>= {BENCH_ACCEPT_M:.1f} m H2O) is BELOW this "
+                         f"head, so a membrane whose water-entry head lies between {BENCH_ACCEPT_M:.1f} "
+                         f"and {IP68_IMMERSION_DEPTH_M:.1f} m passes acceptance and floods in the "
+                         f"ratified scenario.")
+    else:
+        accept_clause = (f"The §5.6 acceptance criterion (>= {BENCH_ACCEPT_M:.1f} m H2O) is not below "
+                         f"this head.")
+    print(f"  ⚠️ {accept_clause}")
+    print("  Whether a real flood reaches the band depends on the mounting height, which canon does not")
+    print("  carry; the ratified scenario is an immersion of the NODE, so under it the band is submerged")
+    print("  by construction. The 30 min enters no term of a static Young-Laplace.")
+    flood_finding = (
+        f"The ratified capsule immersion ({IP68_IMMERSION_DEPTH_M} m / {IP68_IMMERSION_DURATION_MIN} min, "
+        f"{flood_pa:.0f} Pa, {flood_pa / worst_field:.0f}x the worst hand-set load) breaks through the "
+        f"{PORE_SPEC_UM[0]}-{PORE_SPEC_UM[-1]} um spec pores once theta falls to "
+        f"{min(theta_flood.values()):.2f}-{max(theta_flood.values()):.2f} deg, against "
+        f"{min(theta_fail.values()):.2f}-{max(theta_fail.values()):.2f} deg for the hand-set set: the "
+        f"threshold rises and stays far below the {CONTACT_ANGLE_DEG[0]:.0f} deg spec floor, and the "
+        f"widest spec pore at that floor holds the flood {spec_over_flood:.1f}x. {accept_clause}"
+    )
 
     # ── (4) O2 supply margin across the whole pore window ───────────────────
     banner("(4) O2 supply through the membrane vs the cathode's demand")
@@ -338,6 +397,33 @@ def main() -> int:
                                "(water hammer) is not modelled",
         "theta_inversion": theta_inv,
         "theta_at_which_worst_field_load_breaks_through_deg": theta_fail,
+        "ratified_flood_scenario": {
+            "source": "02_02 §3.3 — capsule IP68 ratified by founder 2026-07-03 ('дощі, повінь у лісі'). "
+                      "A RATIFIED scenario, not a hand-set load, and deliberately kept out of "
+                      "field_pressures_Pa: that set's maximum is the headline threshold "
+                      "theta_at_which_worst_field_load_breaks_through_deg",
+            "immersion_depth_m": IP68_IMMERSION_DEPTH_M,
+            "duration_min": IP68_IMMERSION_DURATION_MIN,
+            "pressure_Pa": flood_pa,
+            "x_worst_hand_set_load": flood_pa / worst_field,
+            "theta_at_which_it_breaks_through_deg": theta_flood,
+            "pore_failed_at_spec_floor_theta_um": d_at_flood,
+            "spec_worst_case_head_over_flood_x": spec_over_flood,
+            "acceptance_criterion_below_flood": accept_below_flood,
+            "finding": flood_finding,
+            "reaches_the_band": "Not computed: canon carries no mounting height (00_07 ARCH.102). The "
+                                "ratified scenario is an immersion of the NODE, and the band sits on the "
+                                "same node, so under it the band is submerged by construction; mounting "
+                                "height decides how often a real flood produces this immersion, not "
+                                "whether the membrane shares it.",
+            "ceilings": "Static head only — the 30 min enters no term (duration acts through theta loss "
+                        "under contact, which is the stand's axis) and a moving flood's velocity head is "
+                        "not modelled. Canon does not name the point of the capsule the depth is taken "
+                        "at; the band lies within the node's centimetre-scale above-bark envelope "
+                        "(01_04 §5.5 A). Pure water at 20 C: a surfactant in flood water lowers gamma "
+                        "and RAISES every threshold here, colder water raises gamma and lowers them. "
+                        "Whether water that entered leaves once the head drops is not computed.",
+        },
         "o2_budget": {"demand_mol_m2_s": demand, "air_c_O2_mol_m3": c_o2, "per_pore": o2,
                       "margin_thickest_membrane_smallest_SPEC_pore_x": thick_flux / demand,
                       "j_max_provenance": "lib.constants J_MAX_25C is the ANODE pair's literature "

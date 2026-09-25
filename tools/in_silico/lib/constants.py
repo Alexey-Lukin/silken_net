@@ -354,3 +354,10 @@ VOLTAGE_DOUBLING_CONSERVATIVE_V = 0.4  # V — Vishay/Eaton-style: life doubles 
 # than a false-precise single number.
 FIELD_TEMPS_C = (25.0, 10.0)       # °C — field reference points already ratified in 00_07 HW.37/HW.7
 # The ratified operating voltage these ratings are derated to is VBAT_OV_RATIFIED_V (EDLC energy block above).
+
+# ── Capsule immersion class (02_02 §3.3, edit there first) — IP68 ratified by founder 2026-07-03 for
+# «дощі, повінь у лісі». REFERENT: the depth of water over the NODE's capsule, a ratified DESIGN POINT —
+# not a flood depth over the ground and not a site measurement (no flood hydrology for the site is in the
+# tree). Canon does not name the point of the capsule the depth is taken at. Consumer: `57` (HW.25). ──
+IP68_IMMERSION_DEPTH_M = 1.5       # m — 02_02 §3.3
+IP68_IMMERSION_DURATION_MIN = 30   # min — 02_02 §3.3

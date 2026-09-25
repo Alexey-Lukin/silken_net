@@ -410,6 +410,37 @@ CHECKS = [
         "kinetics/gdl_breakthrough.json",
         lambda d: d["o2_budget"]["per_pore"]["0.02um"]["margin_x"], 1.0,
     ),
+    # The RATIFIED flood (02_02 §3.3) — its own cache block, so the hand-set headline above never moves.
+    (
+        "ratified-flood head → gdl_breakthrough.json (SUMMARY §HW.25)",
+        SUMMARY, rf"the row above does not move \| \*\*{N} kPa\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["ratified_flood_scenario"]["pressure_Pa"] / 1000.0, 0.1,
+    ),
+    (
+        "ratified-flood θ threshold, 0.2 µm → gdl_breakthrough.json (SUMMARY §HW.25)",
+        SUMMARY, rf"breaking through at θ \*\*{N} / [\d.]+ / [\d.]+°\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["ratified_flood_scenario"]["theta_at_which_it_breaks_through_deg"]["0.2um"], 0.01,
+    ),
+    (
+        "ratified-flood θ threshold, 0.5 µm → gdl_breakthrough.json (SUMMARY §HW.25)",
+        SUMMARY, rf"breaking through at θ \*\*[\d.]+ / {N} / [\d.]+°\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["ratified_flood_scenario"]["theta_at_which_it_breaks_through_deg"]["0.5um"], 0.01,
+    ),
+    (
+        "ratified-flood θ threshold, 1.0 µm → gdl_breakthrough.json (SUMMARY §HW.25)",
+        SUMMARY, rf"breaking through at θ \*\*[\d.]+ / [\d.]+ / {N}°\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["ratified_flood_scenario"]["theta_at_which_it_breaks_through_deg"]["1.0um"], 0.01,
+    ),
+    (
+        "spec worst case over the ratified flood → gdl_breakthrough.json (SUMMARY §HW.25)",
+        SUMMARY, rf"widest spec pore at 110° holds it \*\*{N}×\*\*",
+        "kinetics/gdl_breakthrough.json",
+        lambda d: d["ratified_flood_scenario"]["spec_worst_case_head_over_flood_x"], 0.1,
+    ),
     # ── HW.21 TEG across the PEEK break (script 64) — the load-bearing four ──
     (
         "gap-mount asymptote → teg_across_peek_break.json (SUMMARY §HW.21 verdict)",

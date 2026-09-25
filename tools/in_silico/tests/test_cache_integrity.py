@@ -260,6 +260,32 @@ def test_gdl_breakthrough():
     assert lep["0.2um"]["CA_110"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
     assert lep["1.0um"]["CA_120"]["pressure_Pa"] > lep["1.0um"]["CA_110"]["pressure_Pa"]
 
+    # The RATIFIED flood (02_02 §3.3) stands BESIDE the hand-set set, never inside it. CAN catch: the
+    # flood folded into field_pressures_Pa (the headline would then be recomputed from it and move),
+    # a head not equal to ρ·g·depth of the cache's own inputs, a threshold not on the Young–Laplace
+    # inverse, a flood threshold that does not sit between the hand-set one and the spec floor.
+    # CANNOT catch: a wrong DEPTH — 1.5 m mirrors canon, and the doc↔code value pin was refused (HW.45).
+    inp = d["inputs"]
+    field = d["field_pressures_Pa"]
+    flood = d["ratified_flood_scenario"]
+    headline = d["theta_at_which_worst_field_load_breaks_through_deg"]
+
+    def theta_at(p_pa, pore_key):
+        pore_m = float(pore_key.removesuffix("um")) * 1e-6
+        return math.degrees(math.acos(-min(p_pa * pore_m / (4.0 * inp["gamma_water_N_m"]), 1.0)))
+
+    assert flood["pressure_Pa"] > max(field.values())
+    assert abs(flood["pressure_Pa"] - inp["rho_water_kg_m3"] * inp["g_m_s2"]
+               * flood["immersion_depth_m"]) < 1e-6
+    floor = min(inp["contact_angle_deg"])
+    for pore, th_flood in flood["theta_at_which_it_breaks_through_deg"].items():
+        assert abs(headline[pore] - theta_at(max(field.values()), pore)) < 1e-9   # headline = hand-set max
+        assert abs(th_flood - theta_at(flood["pressure_Pa"], pore)) < 1e-9
+        assert 90.0 < headline[pore] < th_flood < floor
+    assert flood["spec_worst_case_head_over_flood_x"] > 1.0                  # the spec holds the flood
+    assert flood["acceptance_criterion_below_flood"] is (
+        d["bench_inversion"]["acceptance_column_m"] < flood["immersion_depth_m"])
+
 
 def test_thermal_install_field():
     """Script 58: 2D axisymmetric thermal-install field + the orphan-cache generator (HW.6).

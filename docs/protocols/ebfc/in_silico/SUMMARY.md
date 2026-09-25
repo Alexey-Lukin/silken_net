@@ -625,6 +625,7 @@ plus a Bosanquet (bulk + Knudsen) steady-diffusion O₂ budget against `J_MAX_25
 | Pore the "≥ 1 m" criterion demands at θ 110° / 115° / 120° | **10.2 / 12.6 / 14.9 µm** |
 | Water-entry pressure at θ 110° — pore AND angle together, NOT a bubble point (that one runs in a wetting liquid and does not see θ) | 100 / 199 / 498 kPa for 1.0 / 0.5 / 0.2 µm |
 | θ at which the worst field load breaks through | **90.02 – 90.10°** |
+| Ratified flood — capsule IP68 immersion 1.5 m / 30 min ([`02_02 §3.3`](../../../02_02_Blind_Mate_Pogo_Pin_Interface.md)); NOT one of the four hand-set loads, so it has its own cache block and the row above does not move | **14.7 kPa**, breaking through at θ **90.58 / 91.44 / 92.89°** for 0.2 / 0.5 / 1.0 µm; the widest spec pore at 110° holds it **6.8×** — but the acceptance criterion "≥ 1 m H₂O" (`01_04 §5.6`) lies BELOW it, so a membrane whose water-entry head is between 1 and 1.5 m passes acceptance and floods |
 | O₂ transport margin at the canon's own lower bound (0.02 µm) | **4838×** |
 
 **Verdict** — 🟢 Spec sound and over-specified at both ends; ⚠️ the BENCH was aimed at the wrong

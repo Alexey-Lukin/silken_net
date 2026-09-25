@@ -123,6 +123,24 @@
     "0.5um": 90.0481514713944,
     "1.0um": 90.09630297679705
   },
+  "ratified_flood_scenario": {
+    "source": "02_02 \u00a73.3 \u2014 capsule IP68 ratified by founder 2026-07-03 ('\u0434\u043e\u0449\u0456, \u043f\u043e\u0432\u0456\u043d\u044c \u0443 \u043b\u0456\u0441\u0456'). A RATIFIED scenario, not a hand-set load, and deliberately kept out of field_pressures_Pa: that set's maximum is the headline threshold theta_at_which_worst_field_load_breaks_through_deg",
+    "immersion_depth_m": 1.5,
+    "duration_min": 30,
+    "pressure_Pa": 14683.497045,
+    "x_worst_hand_set_load": 30.0,
+    "theta_at_which_it_breaks_through_deg": {
+      "0.2um": 90.57782738351796,
+      "0.5um": 91.44469705235025,
+      "1.0um": 92.89031364064085
+    },
+    "pore_failed_at_spec_floor_theta_um": 6.7828709626327806,
+    "spec_worst_case_head_over_flood_x": 6.7828709626327806,
+    "acceptance_criterion_below_flood": true,
+    "finding": "The ratified capsule immersion (1.5 m / 30 min, 14683 Pa, 30x the worst hand-set load) breaks through the 0.2-1.0 um spec pores once theta falls to 90.58-92.89 deg, against 90.02-90.10 deg for the hand-set set: the threshold rises and stays far below the 110 deg spec floor, and the widest spec pore at that floor holds the flood 6.8x. The \u00a75.6 acceptance criterion (>= 1.0 m H2O) is BELOW this head, so a membrane whose water-entry head lies between 1.0 and 1.5 m passes acceptance and floods in the ratified scenario.",
+    "reaches_the_band": "Not computed: canon carries no mounting height (00_07 ARCH.102). The ratified scenario is an immersion of the NODE, and the band sits on the same node, so under it the band is submerged by construction; mounting height decides how often a real flood produces this immersion, not whether the membrane shares it.",
+    "ceilings": "Static head only \u2014 the 30 min enters no term (duration acts through theta loss under contact, which is the stand's axis) and a moving flood's velocity head is not modelled. Canon does not name the point of the capsule the depth is taken at; the band lies within the node's centimetre-scale above-bark envelope (01_04 \u00a75.5 A). Pure water at 20 C: a surfactant in flood water lowers gamma and RAISES every threshold here, colder water raises gamma and lowers them. Whether water that entered leaves once the head drops is not computed."
+  },
   "o2_budget": {
     "demand_mol_m2_s": 2.282730373652753e-05,
     "air_c_O2_mol_m3": 8.563112327689195,
