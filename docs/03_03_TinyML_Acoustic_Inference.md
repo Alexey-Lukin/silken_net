@@ -261,7 +261,7 @@ for(int i = 0; i < 512; i++) {
 | CPU per inference | ~10–25 мс @ 48 MHz |
 | Сильні сторони | Нуль firmware-DSP; найшвидший шлях до FW.4 розкоментованого `Run_Inference()`. Може спрацювати для класів 0–3 (silence/wind/cavitation/chainsaw) з достатньо великим вікном (32 мс достатньо для chainsaw F0~100 Hz: 3.2 цикли) |
 | Слабкі сторони | **Не оптимальний для класу 4 (fauna soundscape)** — без частотного аналізу важко відрізнити layered спектр комах+птахів+амфібій від хаотичного шуму. Модель буде більшою на 30-50%, бо вчиться "FFT-features" з нуля |
-| Коли обрати | Якщо ML-партнер хоче швидкий MVP для 4 класів без fauna; або як baseline для GA-оптимізації Любченка |
+| Коли обрати | Якщо ML-партнер хоче швидкий MVP для 4 класів без fauna; або як baseline для GA-оптимізації |
 
 #### Path B — Log-Mel Spectrogram + 2D CNN ⭐ Default recommendation
 
@@ -870,9 +870,9 @@ RWA market: інвестор бачить не лише CO₂, а й функц�
 | Залежність | Партнер | Документ | Що потрібно |
 |------------|---------|----------|-------------|
 | ~~FW.4 (`Run_Inference()`) + модель~~ — ✅ **закрито self-owned** ([`00_07` FW.4](00_07_Action_Plan_Tracker) 🟢: ESC-50 baseline landed, 972 B Flash / 76 B стеку; call-site розкоментовано) | — (партнерів нема; модель НАША end-to-end) | [`03_03 §4.1`](03_03_TinyML_Acoustic_Inference) | Партнерська/польова модель = **опційний апгрейд, НЕ блокер** |
-| ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | Ярмілко-консультація по SPI/DMA лишається опційною ([`03_01`](03_01_Firmware_Lifecycle_and_DMA) — дім DMA) |
+| ~~FW.25 (DSP-шлях choice gate)~~ — ✅ **вирішено self-owned**: Path B (log-mel) обрано, `Compute_LogMel` реалізовано (librosa≡stdlib≡C golden-vector parity) | — (рішення НЕ чекало партнера) | [`03_03 §3.2`](03_03_TinyML_Acoustic_Inference) | — (SPI/DMA-оптимізація — [`00_07` E.9](00_07_Action_Plan_Tracker), дім DMA — [`03_01`](03_01_Firmware_Lifecycle_and_DMA)) |
 | Калібрувальний датасет з dawn/dusk записами Черкаського бору | Базіло + Бондаренко (ЧДТУ ПМКТ) + Спрягайло/Гаврилюк (ЧНУ Біо-хаб) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) (ПМКТ калібрувальний датасет), [`00_02 §1.2`](00_02_Academic_Integration_and_IP) Homeostasis Baseline | Польові аудіозаписи на світанку/в сутінках на ділянках різного типу (захищений бір, регенерація, монокультура), мінімум 4 сезони |
-| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk | Любченко (ЧНУ ФОТІУС) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo), compute — ⚠️ **не призначено**: доти рядок називав compute знятої платформи, і заміна на `UNI.9` була б обміном одного неіснуючого ресурсу на інший (той канал — P3-👤 зі зустріччю попереду, не провіжений кластер). Для GA над чотирма фічами вистачає локальної машини; питання виникне лише зі зростанням датасету |
+| GA-оптимізація 5-class моделі та confidence thresholds для dawn/dusk — опційний апгрейд | — (self-owned: пошук параметрів — машинна робота; партнера знято ⚖️ 2026-09-26) | [`00_02 §1.1`](00_02_Academic_Integration_and_IP) (Біо-хаб — ground truth) | Фітнес-функція з ground-truth (data-gate = Біо-хаб); GA generic (pymoo) на локальній машині — ⛔ compute не `UNI.9`: той канал — провідництво й статистика, не провіжений кластер; питання compute виникне лише зі зростанням датасету |
 | Macro-Micro verification (NDVI Sentinel-2 ↔ TinyML soundscape) | наш NDVI-адаптер + Карапетян (статистика fusion) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | NDVI band-ratio (open-data Sentinel-2) ↔ TinyML; вихід → `biodiversity_trend` (наш enum); fusion = permutation/ANOVA (Карапетян) |
 | Статистика розподілів `fauna_activity_index` між ділянками | Карапетян (ЧДТУ Data Science) | [`00_02 §1.2`](00_02_Academic_Integration_and_IP) | R-аналіз, ANOVA dawn/dusk peak amplitude між ландшафтами |
 

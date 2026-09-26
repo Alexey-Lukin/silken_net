@@ -8,9 +8,9 @@
  *          symbols that `firmware/soldier/main.c` references so the build still
  *          compiles. The PRIMARY header now EXISTS — a self-owned INT8 baseline
  *          (ESC-50, FW.4, `silken_ml.export`, gemmlowp pure-C forward pass); a
- *          future partner/field model (Любченко + Cherkasy soundscape,
- *          `docs/00_02 §1.1` (Любченко, ЧНУ ФОТІУС)) replaces it. FW.4 closed the model gap 2026-06-12 (model
- *          landed, call-site uncommented).
+ *          future field model trained on the Cherkasy soundscape dataset
+ *          (`docs/00_02` Стаття 24a) may replace it. FW.4 closed the model gap
+ *          2026-06-12 (model landed, call-site uncommented).
  *
  *          With this stub present the ARM toolchain can compile main.c and
  *          run `arm-none-eabi-size firmware.elf` / `make size-check` to
