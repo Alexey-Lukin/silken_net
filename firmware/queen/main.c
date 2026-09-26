@@ -1198,7 +1198,9 @@ int main(void)
   // підтверджує SIM7080 AT Manual V1.02; «pdpidx = cid з CGDCONT» — НАШЕ
   // припущення, мануал його не стверджує, а APN APP-контексту там задає
   // окрема AT+CNCFG, якої тут немає → bench/RUNBOOK.md 5.1 (V1.03 + транскрипт).
-  (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
+  // [HW.31] Лише за підтвердженого «лише LTE»: на модемі, що лишився в режимі з GSM,
+  // активація пішла б 2G. Не підтверджено — PDP підніме ворота flush'у на пізньому OK.
+  if (lte_only_ok) (void)SIM7070_Transact("AT+CNACT=1,1\r\n", AT_INIT_BUDGET_MS);
 
   // 4. Відкриваємо вуха: Королева переходить у режим безперервного слухання
   Radio.Rx(LORA_RX_INFINITE);

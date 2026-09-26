@@ -2933,7 +2933,9 @@ TEST(test_hw41_cgdcont_configured_apn_wire_form) {
 }
 
 /* Mirror of firmware/queen/main.c's init-time SIM7070_Transact(...) calls,
- * in order (default/unconfigured QUEEN_APN build). */
+ * in order (default/unconfigured QUEEN_APN build), on the path where AT+CNMP=38
+ * returned OK — otherwise init skips AT+CNACT and the flush gate raises PDP later
+ * (00_07 HW.31). */
 static const char* const kQueenInitSequence[] = {
     "ATE0\r\n",
     "AT\r\n",

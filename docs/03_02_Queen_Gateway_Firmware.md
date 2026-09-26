@@ -416,20 +416,26 @@ CPU — байти й URC поза вікном читання (запізніл
 |------------|--------|-------------|
 | `ATE0` | `AT_INIT_BUDGET_MS` | Вимкнути ехо (токенайзер його переживає, але ефір чистіший) |
 | `AT` | `AT_INIT_BUDGET_MS` | Перевірка зв'язку з модемом |
-| `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим «лише LTE» (вимикає GSM, не NB-IoT) — SIMCom AT Command Manual V1.03 §5.2.16. ⚠️ Несучий і для антени поз. 11: GSM-стелі підсилення модуля нижчі за пік рекомендованої антени ([`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §2.1). Тому це **ворота передачі** (HW.31, 2026-09-26): init тримає результат (`lte_only_ok`), а flush перед першою RF-командою кличе `Sim7070_Ensure_Lte_Only` (`sim7070_coap.h`) — не підтверджено → CNMP=38 знову, і до OK ні DNS, ні PUT, ні poll; на пізньому OK — переактивація PDP (`AT+CNACT=1,1`). Host-тест `test_hw31_lte_only_gate`. ⚠️ Стеля: реєстрацію модем робить сам, тож ворота тримають ДАНІ, не сигналізацію реєстрації свіжого модема до першого OK |
+| `AT+CNMP=38` | `AT_INIT_BUDGET_MS` | Режим «лише LTE» (вимикає GSM, не NB-IoT) — SIMCom AT Command Manual V1.03 §5.2.16. ⚠️ Несучий і для антени поз. 11: GSM-стелі підсилення модуля нижчі за пік рекомендованої антени ([`queen_antenna_shortlist`](protocols/hardware/queen_antenna_shortlist.md) §2.1). Тому це **ворота передачі** (HW.31, 2026-09-26): init тримає результат (`lte_only_ok`), а flush перед першою RF-командою кличе `Sim7070_Ensure_Lte_Only` (`sim7070_coap.h`) — не підтверджено → CNMP=38 знову, і до OK ні DNS, ні PUT, ні poll; на пізньому OK — переактивація PDP (`AT+CNACT=1,1`). Host-тест `test_hw31_lte_only_gate` покриває саму функцію воріт, не її місце в `main.c` (його host не компілює). Init шле `AT+CNACT` лише за підтвердженого режиму. ⚠️ Дві стелі: реєстрацію модем робить сам, тож ворота тримають ДАНІ й PDP, не сигналізацію реєстрації свіжого модема до першого OK; і ознака не перечитується — самочинний ребут модема за незбереженого CNMP повернув би 2G (readback `AT+CNMP?` — нога HW.31) |
 | `AT+CMNB=3` | `AT_INIT_BUDGET_MS` | [HW.41] Cat-M **і** NB-IoT — вибір RAT явно, а не збереженим у модемі станом (`CMNB` — AUTO_SAVE, дефолт мануал не називає; §5.2.17) |
 | `AT+CGDCONT=1,"IP","<QUEEN_APN>"` | `AT_INIT_BUDGET_MS` | [HW.41] Явний PDP-контекст — `QUEEN_APN` build-time `#ifndef`-override (дефолт `""`, 3GPP-порожній APN, behavior-identical з до-HW.41 auto-APN); граматика зі стандарту (3GPP TS 27.007 §10.1.1) |
 | `AT+CPSMS=…` / `AT+CEDRXS=1,4,…` + `AT+CEDRXS=1,5,…` | `AT_INIT_BUDGET_MS` | PSM/eDRX (деталі 3GPP — коментарі в `main.c`); eDRX запитано для ОБОХ AcT — 4 = CAT-M, 5 = NB-IoT (§5.2.42), бо RAT обирає мережа (`CMNB=3`) |
 | `AT+CNACT=1,1` | `AT_INIT_BUDGET_MS` | [HW.41] Активація APP-мережі (pdpidx 1). ⚠️ Проти V1.03 не звірено; старша SIM7080 V1.02 (2026-09-25) синтаксис підтверджує, але APN цього контексту в ній задає окрема `AT+CNCFG`, якої ми не шлемо, а «той самий `cid=1`, що CGDCONT» — наше припущення, не текст мануала. Відкрите — `firmware/scripts/bench/RUNBOOK.md` 5.1, [`00_07`](00_07_Action_Plan_Tracker) HW.41 |
 
-Провал init не фатальний: модем міг ще прокидатись — flush-розмова повторить
-усе зі свіжим бюджетом.
+Провал init не фатальний: модем міг ще прокидатись. ⚠️ Але flush повторює лише CoAP-розмову (DNS/PUT), не
+init-команди: несучу з них (`AT+CNMP=38`, HW.31) перевіряють ворота кроку 0а, решта лишається з тим, що модем зберіг;
+провал `AT+CNACT` (init чи пізній) до ребуту не повторюється ([`00_07`](00_07_Action_Plan_Tracker) HW.41).
 
 ### CoAP Flush Sequence (кожен flush)
 
 ```
 0. [FW.16→FW.3] Restore_ECB_Mode() — ОДРАЗУ після CBC-encrypt батча,
    ще ДО розмови з модемом: вікно чужого CRYP-режиму = нуль.
+
+0а. [HW.31] Ворота «лише LTE» (Sim7070_Ensure_Lte_Only) — перед першою RF-командою:
+   підтверджено → ні байта; ні → AT+CNMP=38 → OK → AT+CNACT=1,1 (PDP уже в LTE);
+   ERROR · +CME · тиша → return: слоти живі (FW.51), провал у health.
+   ⚠️ Ознака не перечитується (ребут модема за незбереженого CNMP) — 00_07 HW.31.
 
 1. DNS (кеш порожній → резолв): AT+CDNSGIP="api.silkennet.com"
    ↳ URC +CDNSGIP: 1,"<host>","<ip>" (до АБО після OK — двигун ловить обидва
